@@ -396,7 +396,8 @@ end)
 - A tab between fields; inside a field, character 30 (`\030`) between the elements of a list or map,
   character 31 (`\031`) between an element's parts (a map's key and value, a point's map, x and y, a
   tuple's parts). Game text holds none of them, so nothing is escaped and a row is taken apart with plain
-  finds. **An empty part is no value.** Empty fields at a row's end are left out.
+  finds. **An empty part is no value,** of every type: an empty element of a list is a hole (those after
+  it keep their places), an empty value of a map no key. Empty fields at a row's end are left out.
 - **A row of only a build and a day is a gone version.**
 - **Values:** whole numbers as they are, other numbers as `%.14g`; `bool` `1` or empty; `point` `map\031x\031y`.
 
@@ -420,9 +421,11 @@ Data.Prepare("Items")               -- load soon: after the loading screen, out 
 | `Items:Versions(key, n)` | The last n of `History`, oldest first. |
 | `Items:Changes(key)` | An array, oldest first, of `{ since, day, patch, field, from, to }`, one per field that changed, in the pack's order of the fields (an entry gone: `field = "gone"`, `from = false`, `to = true`; back again the other way round). An empty array for an entry that never changed. |
 | `Items:Keys(index, value)` | An array of keys from the entries' newest versions (`replaces`, `replacedBy` too); an empty one when none. |
-| `Items:Each(fn, done)` | A job: `fn(key, record)` for every entry the client has (gone ones left out), out of combat, within the budget; then `done()`. false when the set is not ready (it is asked for). |
+| `Items:Each(fn, done)` | A job: `fn(key, record)` for every entry the client has (gone ones left out), out of combat, within the budget; then `done(problem)`: nil after the last entry, the error's text when `fn` failed (the walk stops there; noted under one label per set, `data job Each Items`). Gives the job's handle (`:Stop()`); false when the set is not ready (it is asked for). |
 | `Items:Stamp()` | A number that moves when the set loads, and later when learned or accepted data changes it. |
-| `Items:OnStamp(fn)` | `fn(handle)` after the stamp moved: a view redraws then, instead of looking every frame. |
+| `Items:OnStamp(fn)` | `fn(handle)` on the frame after the stamp moved, never inside the loader's job (a listener may start a job, or run `Steps.Check`): a view redraws then, instead of looking every frame. A `fn` given twice is told once; its failure is noted as `data: Items listener`. |
+| `Items:OffStamp(fn)` | Stops telling `fn`: one given to `OnStamp`, or one waiting in `WhenReady`. |
+| `Data.WhenReady(Items, fn)` | `fn(handle)` once the set (its handle or its name) is ready: at once if it is, in the caller's own call; else on the frame after it arrived, once, and its pack is asked for (`Prepare`). |
 | `Items:State()` | `"ready"`, `"loading"`, `"idle"` (can be loaded, not asked for), `"missing"`, `"off"` (switched off in the addon list) or `"refused"`; and a few words why. |
 | `Items:Ready()` | `State() == "ready"`. |
 | `Items.hash`, `Items.build` | Where the data came from: its hash, the newest build it knows (nil until loaded). |
@@ -430,15 +433,18 @@ Data.Prepare("Items")               -- load soon: after the loading screen, out 
 - **What this client has reached:** a pack made for a later patch than the client's build answers with the
   versions that build has; `History`, `At`, `Changes` and `Each` stop there too. `Keys` come from the pack's
   newest versions, so on such a client `Get` of one of them can be nil.
-- **nil means not known.** No read ever raises an error, and a read is always cheap: one table index and,
-  the first time, one row taken apart (about 2.5 µs). **`Get` never loads a pack** (decision 20).
+- **nil means not known.** No read ever raises an error, also on a pack's values of the wrong kind (a row,
+  a history or an index that is no text or table is no entry), and a read is always cheap: one table index
+  and, the first time, one row taken apart (about 2.5 µs); a set that cannot be had (its pack missing, off
+  or refused) remembers it, so a `Get` of it makes no text. **`Get` never loads a pack** (decision 20).
 - **Records and arrays are shared and read-only.** A module never writes into one (`Versions` and `Keys`
   give a new array each time, of the shared records). The tests hand out
   frozen ones (`Data.frozen`): writing a new key fails at once, changing one is found by
   `Data.Tampered()`.
 - **A record is made only for an entry somebody asks for,** and kept while anybody holds it (weak values).
 - **A list is an array, a map a table, a point `{ map = m, x = x, y = y }`, a tuple a table by its parts'
-  names.**
+  names.** A list's empty element is a hole, nil at its place (a `false` of a `list bool` is one): `ipairs`
+  stops at the first, so a list that may hold one is walked with `pairs`.
 - **The game first:** where the client tells (an item's name, a quest's title), a module asks the client;
   the data fills in what the client does not say.
 - A module that draws often (Tooltips) calls `Prepare` in its `OnLogin`, so its packs are there before the
@@ -462,43 +468,59 @@ Data.Prepare("Items")               -- load soon: after the loading screen, out 
 ### `/sane data`
 
 The client's game version and build with the three answers it was told by, every pack with its state and
-its sets' hashes, and the scheduler's jobs. `/sane data show <set> <key>` prints an entry and what changed,
-by patch (and asks for its pack if it is not loaded). `/sane data` also tells the client anew (`Data.Find`):
-its game version and build, and the answers made from them are made again.
+its sets' hashes, and the scheduler's jobs, each with the milliseconds it worked and its frames, and whether
+they wait now (a fight, a restriction). `/sane data show <set> <key>` prints an entry and what changed, by
+patch (and asks for its pack if it is not loaded); the key is a number only in a set keyed by numbers (a
+text key may look like one). `/sane data` also tells the client anew (`Data.Find`): its game version and
+build; the answers made from them are made again only when either changed.
 
 ## The scheduler: jobs
 
 `Core.Steps` (`src/Core/Data/Steps.lua`) runs every long piece of the framework's work in steps: loading
-packs, a walk over a set, later the scan's reading, shared data taken in, the characters, the crawl.
+packs, a walk over a set, later the scan's reading, shared data taken in, the characters, the crawl; and
+Core's other long work (Sync finding the game's CVars).
 
 ```lua
 local Steps = SaneUI.Core.Steps
-Steps.Run("Each Items", function(...)   -- a job, run as a coroutine; false if one of that name runs
+local job = Steps.Run("Each Items", function(...)  -- a job, run as a coroutine; false if one of that name runs
     for key in pairs(rows) do
         Work(key)
         Steps.Check()                     -- between pieces of work: yields when the frame's time is spent
     end
 end, ...)
+job:Stop()                                -- it never goes on
+
+Steps.Run({ name = "Scan", priority = true, label = "Market: the scan",
+    done = function(problem) end,         -- nil after its last step, the error's text after an error
+    error = function(problem) end }, Scan)
 ```
 
 | Call | Does |
 | --- | --- |
-| `Steps.Run(name, fn, ...)` | Starts a job; a job of the same name is not started twice (gives false). |
+| `Steps.Run(name, fn, ...)` | Starts a job and gives its handle; a job of the same name is not started twice (gives false). In place of the name, options: `name`; `priority = true` (served first in every frame, after a job waiting in `Fresh`); `done(problem)`, told when it ended, after its last step (nil) or an error (its text); `error(problem)`, after an error only, after the report; `label`, what a failure is noted under (else `data job <name>`). Both are told outside its coroutine, safely. |
+| `job:Stop()`, `Steps.Stop(name)` | Stops a job: it never goes on and is told nothing (from inside, it runs on to its next `Check`, `Fresh` or `Spend`). false when it is over already. `job:Running()`. |
+| `job.name`, `job.ms`, `job.frames` | Its name, the milliseconds it worked so far, the frames it worked in (for `/sane data`). |
 | `Steps.Check()` | In a job: yields when the frame's budget is spent, else returns at once. Outside a job: nothing. |
 | `Steps.Fresh()` | In a job: waits for a frame of its own (no other work before it in that frame). |
 | `Steps.Spend()` | In a job: the frame's time is all used; nothing else runs in it. With `Fresh` before it: a step that cannot be cut (loading a pack) runs alone in its frame. |
-| `Steps.Running(name)`, `Steps.Jobs()` | Whether that job runs; the names of the jobs running (for `/sane data`). |
+| `Steps.Running(name)`, `Steps.Jobs()`, `Steps.Paused()` | Whether that job runs; the handles of the jobs running, in the order they were started; whether they wait now (a fight or a restriction). |
 
 - **The budget:** at most 5 ms a frame for all jobs together, and never more than a quarter of a frame at
   the current frame rate (`GetFramerate`), measured with `debugprofilestop`. A slower computer takes more
   frames, no frame more time.
-- **Nothing in combat or under a restriction:** the scheduler stops at `PLAYER_REGEN_DISABLED` and while a
-  restriction is active (`C_RestrictedActions.IsAddOnRestrictionActive`, `ADDON_RESTRICTION_STATE_CHANGED`:
-  combat, an encounter, a challenge mode, a PvP match, a map; not chat), and goes on after.
+- **The order in a frame:** a job waiting in `Fresh` first; then the jobs with priority, in the order they
+  were started; then the others, each in its turn first in some frame. A job is served once a frame.
+- **Nothing in combat or under a restriction:** the scheduler stops at `PLAYER_REGEN_DISABLED` and while
+  `Core.Restricted()` says so: a fight, or a restriction of `Core.RESTRICTIONS` (combat, an encounter, a
+  challenge mode, a PvP match, a map; not chat), kept by Core from `ADDON_RESTRICTION_STATE_CHANGED`'s own
+  state (the game's `IsAddOnRestrictionActive` answers false while that event is sent); and goes on after.
+  Nothing is asked of the game in a frame but the frame rate.
 - **Each job is its own guard:** `coroutine.resume` catches its error; the job is dropped and reported
-  (`Core.Report`), the others go on.
+  (`Core.Report`, once per label), the others go on.
 - **A job never yields inside `pcall`, `xpcall` or `Core.Safe`:** Lua 5.1 cannot, the yield fails into the
-  `pcall`, and the job runs on past its budget without a word.
+  `pcall`, and the job runs on past its budget without a word. Neither inside an event the game sends from
+  within it (a pack's `ADDON_LOADED` comes inside `LoadAddOn`): what an event tells is told after the job,
+  on the next frame (`OnStamp`).
 - Its frame is shown only while there is work: no `OnUpdate` at rest.
 
 ## Saved variables *(1c)*
@@ -602,8 +624,9 @@ unique on its realm (`Thrall-Draenor`).
   Python compiler wrote from the sample masters (the one test that keeps the two languages in step);
   packs found, loaded, refused (missing, switched off, a wrong format, another game version, asked for in
   combat); `Get` never loads; frozen records; the answers on a sample with history (`History`, `At`,
-  `Versions`, `Changes`, `Keys`, `Each`), also from a pack newer than the client; the scheduler's budget,
-  pauses and guards.
+  `Versions`, `Changes`, `Keys`, `Each`), also from a pack newer than the client; listeners told after the
+  loader's job, `WhenReady`, `OffStamp`; the scheduler's budget, pauses (by a restriction's own event),
+  guards, handles (`Stop`, `done`, `error`, `label`) and priority.
 - **Nothing hostile raises an error:** a broken row, a broken saved file or message is dropped or set aside.
 - **Players by their key** (`dev/tests/core.lua`): a whole name with or without a realm is one key, the same
   first name or surname two players, a first name alone none; Retail's `Name-Realm`. Steps 1c and 1f test
