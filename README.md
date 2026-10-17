@@ -35,6 +35,17 @@ dev/build
 It runs the tests, builds the addon folders in `BUILD` and copies them into the game. Then `/reload` in
 the game (a new file or a first install needs a game restart). `dev/build --no-install` only tests and builds.
 
+## Trying what is on GitHub, such as a Claude cloud session's work
+```bash
+Scripts/update                      # the branch you are on
+Scripts/update --latest             # the cloud session's branch (claude/...) pushed to last
+Scripts/update claude/<name>        # that branch; Scripts/update main goes back
+```
+It fetches from GitHub, switches to the branch, pulls it, then runs `dev/build`: the game has it after a
+`/reload`. It never merges and stops on changes not committed. A cloud session's branch that GitHub has
+started anew is taken as it is there; commits only on this computer are first kept on a branch `saved/...`.
+`Scripts/update --list` lists GitHub's branches, newest first.
+
 ## Technical details
 - **One addon per module.** `src` has one folder per module, each with its own TOC. Core is the addon
   `SaneUI`; every other module is `SaneUI_<Module>`, depends on Core only and is grouped under it in the
@@ -60,6 +71,7 @@ the game (a new file or a first install needs a game restart). `dev/build --no-i
 | `references/BlizzardInterfaceCode/` | Blizzard's interface code as the client ships it: the API and templates the addon builds on |
 | `BUILD/` | The build to hand out, one addon folder per module; also what is copied into the game |
 | `dev/build` | Tests, builds, copies into the game |
+| `Scripts/update` | Fetches and pulls from GitHub (the branch you are on, one named, or the newest cloud session's), then `dev/build` |
 | `assets/` | The original art (banners, icons, logo); `assets/optimized/` the game's textures made from it by `dev/tools/art` |
 | `dev/tests/` | `run` (everything), `lint`, `core.lua`, `sync.lua`, `abilities.lua`, `tooltips.lua`, `social.lua`, `window.lua`, `voices.py`, `wowstub.lua` (the stand-in client) |
 | `dev/tools/` | `art` and `tooltip-art` (the game's textures), `errors` (prints the error log), `cvar-labels` (the shipped CVar names), `sync-pages` (what each of the game's options pages sets, for Sync), `project-index` (the index in `Doc/agent/`) |

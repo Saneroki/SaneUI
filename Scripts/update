@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+# Brings this copy of Sane UI up to date with GitHub, builds it and puts it into the game, in one go:
+# the quick way to try in WoW: Forever what a Claude cloud session pushed.
+#
+#   1. Fetches every branch from GitHub (origin), and forgets the ones deleted there.
+#   2. Switches to the branch named, if one is. A branch only on GitHub, such as a cloud session's
+#      claude/..., is made here the first time. --latest takes the claude/ branch pushed to last.
+#   3. Pulls the branch forward to GitHub's. Nothing is merged and nothing is lost: if this copy and
+#      GitHub both have commits the other lacks, it stops. Except on a cloud session's branch
+#      (claude/...), which GitHub's session may start anew or rewrite: there GitHub's is taken, and
+#      commits only this copy had are first kept on a branch saved/claude/.... Changes not committed
+#      stop it before anything is touched.
+#   4. Runs dev/build: the tests, BUILD, and the copy into the game's AddOns folder (WOW_FOREVER
+#      sets where the game is, as for dev/build).
+#
+# Usage:  Scripts/update                the branch checked out: pull, build, install
+#         Scripts/update <branch>       switch to <branch> (main, claude/...), then the same
+#         Scripts/update --latest       the claude/ branch pushed to last, then the same
+#         Scripts/update --list         the branches on GitHub, newest first; changes nothing
+#         --no-install or --check with any of these goes to dev/build: build only, or show only
+set -euo pipefail
+
+here="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+cd "$here"
+
+branch="" latest="" list="" mode="" bad=""
+for arg in "$@"; do
+    case "$arg" in
+        --latest) latest=1 ;;
+        --list) list=1 ;;
+        --no-install|--check) [ -z "$mode" ] || bad=1; mode="$arg" ;;
+        -*) bad=1 ;;
+        *) [ -z "$branch" ] || bad=1; branch="${arg#origin/}" ;;
+    esac
+done
+if [ -n "$bad" ] || { [ -n "$branch" ] && [ -n "$latest" ]; }; then
+    sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+    exit 1
+fi
+
+# GitHub's branches as this copy last saw them, before the fetch moves them: see "Commits made here".
+seen="$(git for-each-ref --format='%(objectname)' refs/remotes/origin)"
+echo "Fetching from GitHub..."
+git fetch --prune origin || { echo "Could not fetch from GitHub. Nothing was changed." >&2; exit 1; }
+
+current="$(git symbolic-ref --short -q HEAD || true)"
+
+if [ -n "$list" ]; then
+    git for-each-ref --sort=-committerdate \
+        --format='%(refname:lstrip=3)%09%(committerdate:relative)%09%(subject)' refs/remotes/origin |
+        while IFS=$'\t' read -r name when subject; do
+            [ "$name" = HEAD ] && continue
+            mark=" "
+            [ "$name" = "$current" ] && mark="*"
+            printf '%s %-40s %-16s %s\n' "$mark" "$name" "$when" "$subject"
+        done
+    exit 0
+fi
+
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+    echo "This copy has changes not committed. Commit them or put them aside (git stash), then run this again:" >&2
+    git status --short --untracked-files=no >&2
+    exit 1
+fi
+
+if [ -n "$latest" ]; then
+    branch="$(git for-each-ref --sort=-committerdate --count=1 --format='%(refname:lstrip=3)' refs/remotes/origin/claude)"
+    [ -n "$branch" ] || { echo "GitHub has no claude/ branch." >&2; exit 1; }
+fi
+if [ -z "$branch" ]; then
+    branch="$current"
+    [ -n "$branch" ] || { echo "No branch is checked out: name one, such as Scripts/update main." >&2; exit 1; }
+elif [ "$branch" != "$current" ]; then
+    if git show-ref --verify --quiet "refs/heads/$branch"; then
+        git switch --quiet "$branch"
+    elif git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+        git switch --quiet --track "origin/$branch"
+    else
+        echo "No branch $branch, here or on GitHub. Scripts/update --list shows GitHub's." >&2
+        exit 1
+    fi
+    echo "Switched to $branch."
+fi
+
+# The branch's own on GitHub: the one it follows, else the one of its name.
+if upstream="$(git rev-parse --abbrev-ref '@{upstream}' 2>/dev/null)"; then
+    :
+elif git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+    upstream="origin/$branch"
+    git branch --quiet --set-upstream-to="$upstream"
+else
+    upstream=""
+fi
+
+before="$(git rev-parse HEAD)"
+if [ -z "$upstream" ]; then
+    echo "$branch is not on GitHub: nothing to pull, it is built as it is here."
+elif [ "$before" = "$(git rev-parse "$upstream")" ]; then
+    echo "Up to date with GitHub."
+elif git merge-base --is-ancestor HEAD "$upstream"; then
+    git merge --ff-only --quiet "$upstream"
+elif git merge-base --is-ancestor "$upstream" HEAD; then
+    echo "Nothing to pull: this copy's $branch is ahead of GitHub's (commits not pushed yet)."
+elif [[ "$branch" == claude/* ]]; then
+    # Commits made here: on no branch of GitHub's now, and on none as this copy saw them before
+    # (the branches before the fetch, and every place this one was fetched to, its reflog).
+    # shellcheck disable=SC2046,SC2086  # one word per commit
+    own="$(git rev-list --count HEAD --not --remotes $seen $(git log -g --format=%H "refs/remotes/$upstream" 2>/dev/null))"
+    if [ "$own" != 0 ]; then
+        saved="saved/$branch-$(git rev-parse --short HEAD)"
+        git show-ref --verify --quiet "refs/heads/$saved" || git branch "$saved"
+        echo "Commits of this copy's $branch that are not on GitHub ($own): kept on the branch $saved."
+    fi
+    echo "GitHub's $branch was started anew or rewritten: this copy takes it."
+    git reset --hard --quiet "$upstream"
+else
+    echo "This copy's $branch and GitHub's have gone apart. These commits are only here:" >&2
+    git log --oneline --no-decorate "$upstream..HEAD" >&2
+    echo "Push them or put them on another branch, then run this again. Nothing was changed." >&2
+    exit 1
+fi
+
+if [ "$(git rev-parse HEAD)" != "$before" ]; then
+    echo "Pulled from GitHub, the newest first:"
+    git log --oneline --no-decorate -n 15 "$before..HEAD"
+fi
+echo "Building $branch at $(git log -1 --format='%h, %s (%cr)')."
+echo
+
+exec "$here/dev/build" ${mode:+"$mode"}

@@ -8,6 +8,7 @@
 | `dev/build` | Tests, rsync source into five `BUILD/` addon folders (one per `src/*/*.toc`), compile the data packs (`BUILD/SaneUI_Data_*`, Forever live's), install copies in game (the packs of the game folder's own game version, by its `.flavor.info`) |
 | `dev/build --no-install` | Tests/build only |
 | `dev/build --check` | Tests and rsync dry-run; writes nothing |
+| `Scripts/update [branch\|--latest\|--list] [--no-install\|--check]` | `git fetch --prune`, switch to the branch (a `claude/` one only on GitHub is made tracking; `--latest` = newest `claude/`), fast-forward only, then `exec dev/build`. Stops on tracked changes and on a non-`claude/` branch that has diverged; a diverged `claude/` branch is reset to GitHub's after its commits never seen on GitHub (remote branches before the fetch, the remote ref's reflog) go to `saved/<branch>-<hash>` |
 | `dev/tools/errors [10\|30\|all\|short]` | Read client's saved error log after reload/logout |
 | `dev/tools/tooltip-art` | Regenerate six original white/alpha TGA shapes in Tooltips/Art |
 | `dev/tools/art` | `assets/*.png` → BLP2 DXT5 with mipmaps, sized for 4K from the drawn size, in `assets/optimized/`; banners also to `<Module>/Art/banner.blp`; kind `sheet` keeps a flipbook whole (needs Pillow, NumPy, ImageMagick; see `Doc/guides/images.md`) |

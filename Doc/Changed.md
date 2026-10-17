@@ -6,6 +6,17 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 The Home page, the marks, Settings on demand, the Tooltips module and the Social module are not yet tried in the game.
 Tests: lint, 195 checks (Core, with its options), 280 checks (Spellbook), 328 checks (Tooltips), 332 checks (Social), 62 checks (Sync), 234 checks (windows).
 
+### Scripts/update: GitHub's newest into the game in one go
+- **`Scripts/update`** (Saneroki: try a Claude cloud session's work in the game without the git steps)
+  fetches from GitHub, switches to the branch named (`--latest`: the `claude/` branch pushed to last; one only
+  on GitHub is made here), pulls it forward only, then runs `dev/build`. Changes not committed stop it; so does
+  a branch that has gone apart from GitHub's, except a cloud session's, which GitHub may start anew: that one
+  is taken as GitHub has it, and commits only this computer had go to a branch `saved/<branch>-<commit>`.
+  `--list` shows GitHub's branches, newest first; `--no-install` and `--check` go to `dev/build`. Tried on a
+  stand-in GitHub: up to date, behind, ahead, gone apart, a session's branch squashed and started anew with
+  and without a commit of this computer's, a branch deleted on GitHub, no branch checked out.
+  It is the first file of `Scripts/` in git; `.gitattributes` keeps that folder LF.
+
 ### Core's data framework
 - **Players by their whole name** (Saneroki: a Forever player is first name and surname, and players can
   share either). `Core.PlayerKey(unit)` and `Core.PlayerKeyOf(text)` give a player's key: on Forever the
