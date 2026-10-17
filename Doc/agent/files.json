@@ -5,9 +5,9 @@
   "files": [
     {
       "path": ".gitattributes",
-      "bytes": 541,
-      "sha256": "7f5b3781924f1e1362e480966bbb45beb7b7c978a5fb99a6929d1cb1398d510b",
-      "lines": 23
+      "bytes": 566,
+      "sha256": "1c6b7136c7c02225d351167fa33ba4a3330aa302da95ce40e1aa868bc093a6fb",
+      "lines": 24
     },
     {
       "path": ".gitignore",
@@ -17,9 +17,9 @@
     },
     {
       "path": "Doc/Changed.md",
-      "bytes": 247147,
-      "sha256": "4412e6b6010238c78905e054cc77c4d8030cfeb855253679adf6a796978df63a",
-      "lines": 2896,
+      "bytes": 248145,
+      "sha256": "29de5807e8425992a653ac56db9cd5719e0140284eac487170a143f619aa75ce",
+      "lines": 2907,
       "headings": [
         {
           "title": "Sane UI: developer changelog",
@@ -70,644 +70,648 @@
           "line": 166
         },
         {
-          "title": "Core's data framework",
+          "title": "Scripts/update: GitHub's newest into the game in one go",
           "line": 193
         },
         {
+          "title": "Core's data framework",
+          "line": 204
+        },
+        {
           "title": "New designs across the modules (Saneroki, 2026-10-17)",
-          "line": 320
+          "line": 331
         },
         {
           "title": "Images: one pipeline for concept art, interface parts and animations",
-          "line": 419
+          "line": 430
         },
         {
           "title": "Voices: the voice tool, and short sounds",
-          "line": 446
+          "line": 457
         },
         {
           "title": "Ideas: prices per auction house, the game's facts for every realm",
-          "line": 472
+          "line": 483
         },
         {
           "title": "Ideas: data of game versions kept apart",
-          "line": 487
+          "line": 498
         },
         {
           "title": "Ideas: Sane Sync: finding the game, several game versions",
-          "line": 506
+          "line": 517
         },
         {
           "title": "Voices: how lore names are said",
-          "line": 520
+          "line": 531
         },
         {
           "title": "Ideas: Sane Sync: the computer set up, measured, two processes",
-          "line": 526
+          "line": 537
         },
         {
           "title": "Voices: the voice database, the cast, the directions",
-          "line": 539
+          "line": 550
         },
         {
           "title": "Ideas: Sane Sync: built with Rust and Tauri 2",
-          "line": 559
+          "line": 570
         },
         {
           "title": "Ideas: Sane Sync: hear a sample of the voices",
-          "line": 568
+          "line": 579
         },
         {
           "title": "Ideas: Lore: the voices are downloads of their own",
-          "line": 575
+          "line": 586
         },
         {
           "title": "Ideas: Lore: what the voices cost and weigh",
-          "line": 587
+          "line": 598
         },
         {
           "title": "Ideas: Lore: where the texts come from, the voice service",
-          "line": 593
+          "line": 604
         },
         {
           "title": "Ideas: Lore",
-          "line": 606
-        },
-        {
-          "title": "The page Sane UI: links and feedback",
           "line": 617
         },
         {
+          "title": "The page Sane UI: links and feedback",
+          "line": 628
+        },
+        {
           "title": "Social: the button Sane UI on the game's chat; no title on the small window",
-          "line": 634
+          "line": 645
         },
         {
           "title": "The name Sane Sync in the licence; licensing left to Saneroki",
-          "line": 648
+          "line": 659
         },
         {
           "title": "Ideas: the app is Sane Sync; Sane UI is open source",
-          "line": 655
+          "line": 666
         },
         {
           "title": "Ideas: Onboarding: the switch and the ?",
-          "line": 663
+          "line": 674
         },
         {
           "title": "Ideas: the Sane UI app",
-          "line": 671
+          "line": 682
         },
         {
           "title": "Windows: Saneroki's answers to the review",
-          "line": 683
+          "line": 694
         },
         {
           "title": "Windows reviewed: the guide, and what the review fixed",
-          "line": 699
+          "line": 710
         },
         {
           "title": "Ideas: Onboarding",
-          "line": 721
+          "line": 732
         },
         {
           "title": "The Navigation plan reviewed, and how it is built",
-          "line": 729
+          "line": 740
         },
         {
           "title": "Ideas: the Tooltips redesign reviewed, and how it is built",
-          "line": 746
+          "line": 757
         },
         {
           "title": "Ideas: Economy reviewed: checked against the code, a plan for building it",
-          "line": 763
+          "line": 774
         },
         {
           "title": "The data plan: second pass, contracts and the build in commits",
-          "line": 785
+          "line": 796
         },
         {
           "title": "Ideas: Navigation: leveling guide",
-          "line": 809
+          "line": 820
         },
         {
           "title": "Dialogue planned",
-          "line": 815
+          "line": 826
         },
         {
           "title": "The data plan reviewed",
-          "line": 834
+          "line": 845
         },
         {
           "title": "Nine dock zones",
-          "line": 850
+          "line": 861
         },
         {
           "title": "No banners for Abilities and Social",
-          "line": 856
+          "line": 867
         },
         {
           "title": "Ideas: Economy: Hide Blizzard's window per window, Esc closes, mailbox, guild bank and bags",
-          "line": 862
+          "line": 873
         },
         {
           "title": "Ideas: quests, creatures and the map in the data plan",
-          "line": 869
+          "line": 880
         },
         {
           "title": "Ideas: Combat's first decisions",
-          "line": 876
+          "line": 887
         },
         {
           "title": "Windows: title bars with a fuzzy search; what a window was left as",
-          "line": 884
+          "line": 895
         },
         {
           "title": "Art: making pictures with image models",
-          "line": 915
+          "line": 926
         },
         {
           "title": "Combat: a new module, set up",
-          "line": 928
+          "line": 939
         },
         {
           "title": "Ideas: every look of a tooltip, from layers",
-          "line": 943
-        },
-        {
-          "title": "Ideas: Economy's windows, Classic remembered, the history in Core's database",
           "line": 954
         },
         {
+          "title": "Ideas: Economy's windows, Classic remembered, the history in Core's database",
+          "line": 965
+        },
+        {
           "title": "Tooltips: live 3D portraits",
-          "line": 964
+          "line": 975
         },
         {
           "title": "Ideas: every tooltip type and portrait type, for the redesign",
-          "line": 981
+          "line": 992
         },
         {
           "title": "Spellbook is Abilities",
-          "line": 989
+          "line": 1000
         },
         {
           "title": "Windows: a dock place in the middle; buttons on free and centred windows",
-          "line": 1005
+          "line": 1016
         },
         {
           "title": "Windows: moved and sized only in Blizzard's Edit Mode",
-          "line": 1031
+          "line": 1042
         },
         {
           "title": "Ideas: the Economy module",
-          "line": 1055
+          "line": 1066
         },
         {
           "title": "Social: open points written down",
-          "line": 1065
+          "line": 1076
         },
         {
           "title": "Social: the messages stay in sight while the window fills the screen",
-          "line": 1071
+          "line": 1082
         },
         {
           "title": "Social: a smiley with icons and emotes",
-          "line": 1079
+          "line": 1090
         },
         {
           "title": "Full screen: the dropdown Classic windows; a full screen is square",
-          "line": 1100
+          "line": 1111
         },
         {
           "title": "One licence; data in Core; Actionbar Organizer gone",
-          "line": 1120
+          "line": 1131
         },
         {
           "title": "Tooltips: a lighter Gold section",
-          "line": 1135
+          "line": 1146
         },
         {
           "title": "Windows: round corners and a trim, opened by a click, a progress bar",
-          "line": 1148
+          "line": 1159
         },
         {
           "title": "Chat is Social",
-          "line": 1192
+          "line": 1203
         },
         {
           "title": "Navigation: our own data",
-          "line": 1206
+          "line": 1217
         },
         {
           "title": "Navigation: one pin per thing",
-          "line": 1210
+          "line": 1221
         },
         {
           "title": "Navigation: every kind of pin",
-          "line": 1216
+          "line": 1227
         },
         {
           "title": "Ideas: one toggle, Click required to expand window",
-          "line": 1220
+          "line": 1231
         },
         {
           "title": "Ideas: Expand on hover in Core's Hotcorners and in each module",
-          "line": 1226
+          "line": 1237
         },
         {
           "title": "Ideas: windows in Edit Mode's layouts; chat views as windows and tabs",
-          "line": 1233
-        },
-        {
-          "title": "Ideas: expand by a left click; Expand on hover",
           "line": 1244
         },
         {
+          "title": "Ideas: expand by a left click; Expand on hover",
+          "line": 1255
+        },
+        {
           "title": "Ideas: the screen layout of docked windows; Chat becomes Social",
-          "line": 1251
+          "line": 1262
         },
         {
           "title": "Navigation: feasibility, full screen, pins and routes",
-          "line": 1261
+          "line": 1272
         },
         {
           "title": "Navigation: planning notes",
-          "line": 1269
+          "line": 1280
         },
         {
           "title": "Tooltips: comparisons at absolute places; Press ALT for +N more",
-          "line": 1275
+          "line": 1286
         },
         {
           "title": "Tooltips: comparisons in one place, a gap apart; Questlog over the quests' standing",
-          "line": 1290
+          "line": 1301
         },
         {
           "title": "Tooltips: a Quest section with where you stand with each quest; the chart's words readable",
-          "line": 1303
+          "line": 1314
         },
         {
           "title": "Tooltips: gold for one item, the vendor price everywhere, captions Loot and Inventory",
-          "line": 1316
-        },
-        {
-          "title": "Tooltips: gold advice; item quests",
           "line": 1327
         },
         {
+          "title": "Tooltips: gold advice; item quests",
+          "line": 1338
+        },
+        {
           "title": "Tooltips: drop chances on a creature's loot objectives",
-          "line": 1347
+          "line": 1358
         },
         {
           "title": "Spellbook: a reservation dragged off the bars is removed",
-          "line": 1355
+          "line": 1366
         },
         {
           "title": "Spellbook: a carried spell finds every action button",
-          "line": 1360
+          "line": 1371
         },
         {
           "title": "Spellbook: moving a reservation from button to button",
-          "line": 1372
+          "line": 1383
         },
         {
           "title": "Spellbook: hidden empty buttons, and the order in a tab",
-          "line": 1381
+          "line": 1392
         },
         {
           "title": "Spellbook: reserving on a bar addon's bars",
-          "line": 1394
+          "line": 1405
         },
         {
           "title": "Review: settings texts, bugs, performance and documentation across every module",
-          "line": 1403
+          "line": 1414
         },
         {
           "title": "Review: Spellbook, Tooltips and Chat bugs, hardening, performance",
-          "line": 1475
+          "line": 1486
         },
         {
           "title": "Review: Core and Sync bugs, hardening, performance",
-          "line": 1521
+          "line": 1532
         },
         {
           "title": "Windows: Expand window; the full window takes the mouse; a corner's square",
-          "line": 1555
+          "line": 1566
         },
         {
           "title": "Profiles: Empty; SaneUI Defaults only Sane UI's own settings",
-          "line": 1572
+          "line": 1583
         },
         {
           "title": "Sync: the Edit Mode layout is kept again",
-          "line": 1585
+          "line": 1596
         },
         {
           "title": "Chat: no white ghost of a message in the window's corner",
-          "line": 1599
+          "line": 1610
         },
         {
           "title": "Chat: an older history sorted anew, so the ticks hide it too",
-          "line": 1606
+          "line": 1617
         },
         {
           "title": "Chat: loot, skill ups and channel joins in their own groups in every client",
-          "line": 1614
+          "line": 1625
         },
         {
           "title": "Chat: a channel's tick hides all its messages",
-          "line": 1626
+          "line": 1637
         },
         {
           "title": "Chat: chat history; switches for system, creature, addon messages and channel joins; closer bubbles",
-          "line": 1633
+          "line": 1644
         },
         {
           "title": "Chat: all bubbles alike, on a color or a game texture; Settings: a color swatch",
-          "line": 1646
+          "line": 1657
         },
         {
           "title": "Chat: every line the game's chat shows; the line to write in is grey",
-          "line": 1660
+          "line": 1671
         },
         {
           "title": "Settings and Sync are part of Core",
-          "line": 1674
+          "line": 1685
         },
         {
           "title": "Profiles: New Characters",
-          "line": 1697
+          "line": 1708
         },
         {
           "title": "Profiles: SaneUI Defaults, always there and never changed",
-          "line": 1707
+          "line": 1718
         },
         {
           "title": "Core: a docked window fills the screen from its screen edge; the kinds of motion; Chat: full screen",
-          "line": 1725
+          "line": 1736
         },
         {
           "title": "Chat: the animation lines renamed; Settings: room between a checkbox and its words",
-          "line": 1750
+          "line": 1761
         },
         {
           "title": "Chat: its page in tabs, General and Appearance; Settings: a module's page in tabs",
-          "line": 1757
+          "line": 1768
         },
         {
           "title": "Chat: a page Appearance with the animations; Core: switches on a page under a module's, under another switch",
-          "line": 1771
-        },
-        {
-          "title": "Chat: gone messages stay gone when a new one comes; the fade-in shows",
           "line": 1782
         },
         {
-          "title": "Chat: every message fades by itself, apart from the slide",
-          "line": 1790
+          "title": "Chat: gone messages stay gone when a new one comes; the fade-in shows",
+          "line": 1793
         },
         {
-          "title": "Chat: faded messages stay faded under the mouse; fade in, slide up, smooth scrolling",
+          "title": "Chat: every message fades by itself, apart from the slide",
           "line": 1801
         },
         {
+          "title": "Chat: faded messages stay faded under the mouse; fade in, slide up, smooth scrolling",
+          "line": 1812
+        },
+        {
           "title": "Chat: notes in bubbles, achievements and the guild's message of the day",
-          "line": 1810
+          "line": 1821
         },
         {
           "title": "Chat: clicks go through, the scroll bar only scrolled up, a click on a name whispers",
-          "line": 1819
+          "line": 1830
         },
         {
           "title": "Player names: first name and surname",
-          "line": 1829
+          "line": 1840
         },
         {
           "title": "Game chat channels on the page Chat; Sync parts ticked in older saved settings",
-          "line": 1839
+          "line": 1850
         },
         {
           "title": "Profiles: All settings accountwide, modules account wide or not, a profile per character",
-          "line": 1851
+          "line": 1862
         },
         {
           "title": "Profiles: a page with tabs and boxes; Sync in fine-grained parts",
-          "line": 1872
+          "line": 1883
         },
         {
           "title": "Options: Sane UI with only its logo, then Profiles, General, Appearance, the modules",
-          "line": 1890
+          "line": 1901
         },
         {
           "title": "Sync, the game's CVars, and profiles loaded and saved by themselves",
-          "line": 1904
+          "line": 1915
         },
         {
           "title": "Profiles: the account's settings or a character's own, and named copies of them",
-          "line": 1943
+          "line": 1954
         },
         {
           "title": "Images: a guide, and the textures sized for 4K",
-          "line": 1970
+          "line": 1981
         },
         {
           "title": "Art and banners in the options",
-          "line": 1985
+          "line": 1996
         },
         {
           "title": "Project: context for future coding chats",
-          "line": 2004
+          "line": 2015
         },
         {
           "title": "Tooltips: review fixes",
-          "line": 2012
+          "line": 2023
         },
         {
           "title": "Chat: review fixes",
-          "line": 2041
+          "line": 2052
         },
         {
           "title": "Spellbook: review fixes, lighter at login",
-          "line": 2070
+          "line": 2081
         },
         {
           "title": "Core: the options' AddOns tab, shared tools, hardening",
-          "line": 2103
+          "line": 2114
         },
         {
           "title": "Core: windows",
-          "line": 2125
+          "line": 2136
         },
         {
           "title": "Spellbook, evening",
-          "line": 2147
+          "line": 2158
         },
         {
           "title": "Tooltips: a chat link's tooltip in the middle of the screen, closed by a click, no X",
-          "line": 2164
+          "line": 2175
         },
         {
           "title": "Tooltips: gone at once when the mouse leaves",
-          "line": 2177
+          "line": 2188
         },
         {
           "title": "Tooltips: fixed: the comparison of what you wear jumped between two places again",
-          "line": 2185
+          "line": 2196
         },
         {
           "title": "Tooltips: descriptions in the middle; done objectives left out",
-          "line": 2195
+          "line": 2206
         },
         {
           "title": "Tooltips: the mouse option a dropdown; Always and Default at first",
-          "line": 2204
+          "line": 2215
         },
         {
           "title": "Tooltips: seen only while a key is held; Settings: dropdowns",
-          "line": 2216
+          "line": 2227
         },
         {
           "title": "Tooltips: quest data by side; grey default panels; more tooltips hooked",
-          "line": 2228
-        },
-        {
-          "title": "Tooltips: a dead creature keeps its portrait and dragon",
           "line": 2239
         },
         {
+          "title": "Tooltips: a dead creature keeps its portrait and dragon",
+          "line": 2250
+        },
+        {
           "title": "Tooltips: room under the name; no class for friendly NPCs",
-          "line": 2246
+          "line": 2257
         },
         {
           "title": "Tooltips: a larger quest database; grey panel for dead and offline units",
-          "line": 2252
+          "line": 2263
         },
         {
           "title": "Tooltips: auction prices of our own",
-          "line": 2259
+          "line": 2270
         },
         {
           "title": "Tooltips: our own quest database",
-          "line": 2266
+          "line": 2277
         },
         {
           "title": "Tooltips: NPC title and faction in the header; a section for experience and quests",
-          "line": 2283
+          "line": 2294
         },
         {
           "title": "Tooltips: spec, titles, tapped; spell columns, Healing/CC/Utility; health numbers centred",
-          "line": 2297
+          "line": 2308
         },
         {
           "title": "Tooltips: unit header in four lines, a weapon's numbers in one, a small plaque",
-          "line": 2317
+          "line": 2328
         },
         {
           "title": "Tooltips: items short and clear, prices, spell numbers, experience, a plainer plaque",
-          "line": 2332
+          "line": 2343
         },
         {
           "title": "Tooltips: a unit's target above its health",
-          "line": 2361
+          "line": 2372
         },
         {
           "title": "Tooltips: dragons closer, none for creatures without a rank",
-          "line": 2365
+          "line": 2376
         },
         {
           "title": "Tooltips: the side's emblem in the top left corner",
-          "line": 2371
+          "line": 2382
         },
         {
           "title": "Tooltips: narrower soft edge, also on bars and buff icons",
-          "line": 2378
+          "line": 2389
         },
         {
           "title": "Tooltips: soft icons, silver dragon for every other creature",
-          "line": 2385
+          "line": 2396
         },
         {
           "title": "Tooltips: the target frame's dragons",
-          "line": 2394
+          "line": 2405
         },
         {
           "title": "Tooltips: the game's gold plaque, item level on it, power over health",
-          "line": 2404
+          "line": 2415
         },
         {
           "title": "Tooltips: fixes after a look at a buff",
-          "line": 2418
+          "line": 2429
         },
         {
           "title": "Tooltips: a player's item level",
-          "line": 2431
+          "line": 2442
         },
         {
           "title": "Tooltips: round icons, gold plaque",
-          "line": 2446
+          "line": 2457
         },
         {
           "title": "Tooltips, a third look",
-          "line": 2458
+          "line": 2469
         },
         {
           "title": "Core: the error log",
-          "line": 2506
+          "line": 2517
         },
         {
           "title": "Tooltips, later the same day",
-          "line": 2518
+          "line": 2529
         },
         {
           "title": "Spellbook, later the same day",
-          "line": 2602
+          "line": 2613
         },
         {
           "title": "Removed",
-          "line": 2622
+          "line": 2633
         },
         {
           "title": "Changed",
-          "line": 2629
+          "line": 2640
         },
         {
           "title": "Added",
-          "line": 2656
+          "line": 2667
         },
         {
           "title": "0.2.0 (2026-10-14)",
-          "line": 2766
+          "line": 2777
         },
         {
           "title": "Changed",
-          "line": 2770
+          "line": 2781
         },
         {
           "title": "Added",
-          "line": 2814
+          "line": 2825
         },
         {
           "title": "Project",
-          "line": 2819
+          "line": 2830
         },
         {
           "title": "0.1.0 (2026-10-14)",
-          "line": 2826
+          "line": 2837
         },
         {
           "title": "Added",
-          "line": 2829
+          "line": 2840
         },
         {
           "title": "Changed (against Actionbar Organizer 0.3.0)",
-          "line": 2855
+          "line": 2866
         },
         {
           "title": "Removed",
-          "line": 2872
+          "line": 2883
         },
         {
           "title": "Project",
-          "line": 2877
+          "line": 2888
         }
       ]
     },
@@ -821,9 +825,9 @@
     },
     {
       "path": "Doc/agent/development.md",
-      "bytes": 10084,
-      "sha256": "df9f450ea4f5f3243723c97b3d5d334376bfe1f468b352ca861c619f52fcd9f0",
-      "lines": 97,
+      "bytes": 10576,
+      "sha256": "c963af3558e3b7260609b0aba718b022b9e0b4f3d4473bc0c047b645eca984a7",
+      "lines": 98,
       "headings": [
         {
           "title": "Development, data and reference lookup",
@@ -835,19 +839,19 @@
         },
         {
           "title": "Tests and their limits",
-          "line": 31
+          "line": 32
         },
         {
           "title": "Reference search routes",
-          "line": 57
+          "line": 58
         },
         {
           "title": "Data and licensing",
-          "line": 75
+          "line": 76
         },
         {
           "title": "Existing documentation caveats",
-          "line": 86
+          "line": 87
         }
       ]
     },
@@ -3097,9 +3101,9 @@
     },
     {
       "path": "README.md",
-      "bytes": 6936,
-      "sha256": "47feb15bb9126b8102e0161011c45ceec04d93cefa7e3add39442614d2e03c3d",
-      "lines": 85,
+      "bytes": 7767,
+      "sha256": "dac478d4333373f25a02dd0d029608300f33326fd07cf2a12f9d53df98e3f0d1",
+      "lines": 97,
       "headings": [
         {
           "title": "Sane UI",
@@ -3118,16 +3122,20 @@
           "line": 31
         },
         {
-          "title": "Technical details",
+          "title": "Trying what is on GitHub, such as a Claude cloud session's work",
           "line": 38
         },
         {
+          "title": "Technical details",
+          "line": 49
+        },
+        {
           "title": "Files",
-          "line": 56
+          "line": 67
         },
         {
           "title": "History",
-          "line": 74
+          "line": 86
         }
       ]
     },

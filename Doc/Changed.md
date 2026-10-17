@@ -190,6 +190,17 @@ A game restart takes it in (new files in Core's and Social's TOCs, key bindings)
     Core's data). A restart of the game: new files (`Kinds/Inventory.lua`, Core's `Data/Characters.lua`)
     and a new addon folder (`SaneUI_Data_Characters`, `SaneUI_Data_Quests`, `SaneUI_Data_World`).
 
+### Scripts/update: GitHub's newest into the game in one go
+- **`Scripts/update`** (Saneroki: try a Claude cloud session's work in the game without the git steps)
+  fetches from GitHub, switches to the branch named (`--latest`: the `claude/` branch pushed to last; one only
+  on GitHub is made here), pulls it forward only, then runs `dev/build`. Changes not committed stop it; so does
+  a branch that has gone apart from GitHub's, except a cloud session's, which GitHub may start anew: that one
+  is taken as GitHub has it, and commits only this computer had go to a branch `saved/<branch>-<commit>`.
+  `--list` shows GitHub's branches, newest first; `--no-install` and `--check` go to `dev/build`. Tried on a
+  stand-in GitHub: up to date, behind, ahead, gone apart, a session's branch squashed and started anew with
+  and without a commit of this computer's, a branch deleted on GitHub, no branch checked out.
+  It is the first file of `Scripts/` in git; `.gitattributes` keeps that folder LF.
+
 ### Core's data framework
 - **1c.4 Characters, for the Inventory (in part, ahead of 1c.1).** New `src/Core/Data/Characters.lua` (in
   `SaneUI.toc`): each character of the account by its GUID with its whole name (a first name alone never

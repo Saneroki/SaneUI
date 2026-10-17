@@ -10,6 +10,7 @@
 /dev/build   text eol=lf
 /dev/tests/* text eol=lf
 /dev/tools/* text eol=lf
+/Scripts/*   text eol=lf
 
 # Blizzard's interface code: kept byte for byte as the client ships it (mostly CRLF), never converted
 /references/BlizzardInterfaceCode/** -text
