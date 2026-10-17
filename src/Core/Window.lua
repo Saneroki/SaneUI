@@ -158,6 +158,8 @@ local SELECTION = {
     Center = { atlas = "%s-NineSlice-Center", x = -8, y = 8, x1 = 8, y1 = -8 },
 }
 local HIGHLIGHT = "editmode-actionbar-highlight" -- the kit Edit Mode shows every movable frame in
+local SELECTED = "editmode-actionbar-selected"   -- and the one chosen (Selection.lua)
+local REACH = 8 -- how near a line of Edit Mode's grid a free window's edge snaps to it (EditModeMagnetismManager's)
 local HOVER = 0.4 -- the brighter copy over it while the mouse is on it: so opaque, added (as Blizzard's)
 
 local GRIP = "Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-" -- the game's grip (PanelResizeButtonTemplate)
@@ -276,10 +278,11 @@ local function Kept(window)
     return nil
 end
 
--- Where the window stands now is kept. zone: the name of the zone it docks to, or nil.
-local function Keep(window, zone)
+-- Where the window stands now is kept (x, y: its top left corner there instead). zone: the name of the zone
+-- it docks to, or nil.
+local function Keep(window, zone, x, y)
     local frame = window.frame
-    local place = { x = frame:GetLeft(), y = frame:GetTop(), dock = zone }
+    local place = { x = x or frame:GetLeft(), y = y or frame:GetTop(), dock = zone }
     if window.options.sizable then place.width, place.height = frame:GetWidth(), frame:GetHeight() end
     local was = window.options.store[Key(window)] -- what it was left as stays (Remember)
     if type(was) == "table" then place.full, place.native, place.tab = was.full, was.native, was.tab end
@@ -417,15 +420,55 @@ local function Close(window)
     if window.options.close then window.options.close() else window.frame:Hide() end
 end
 
+-- The spacing of Edit Mode's grid while the game shows it and snaps to it, nil else. Edit Mode is read here,
+-- never written: its manager's IsSnapEnabled, its grid's own fields.
+local function Grid()
+    local manager = rawget(_G, "EditModeManagerFrame")
+    if not (Core.EditMode.active and manager and type(manager.IsSnapEnabled) == "function") then return nil end
+    if not Core.Ask(manager.IsSnapEnabled, manager) then return nil end
+    local grid = rawget(manager, "Grid")
+    if type(grid) ~= "table" or not grid:IsShown() then return nil end
+    local spacing = Core.Plain(rawget(grid, "gridSpacing"))
+    return type(spacing) == "number" and spacing > 0 and spacing or nil
+end
+
+-- How far to move a side that runs from low to high so its start, middle or end lies on the nearest of the
+-- grid's lines (every spacing from the screen's middle, at middle): the least way, nil when none is in reach.
+local function Line(low, high, middle, spacing)
+    local best
+    for _, at in ipairs({ low, (low + high) / 2, high }) do
+        local by = middle + math.floor((at - middle) / spacing + 0.5) * spacing - at
+        if math.abs(by) <= REACH and (not best or math.abs(by) < math.abs(best)) then best = by end
+    end
+    return best
+end
+
+-- A free place let go in Edit Mode, near a line of its grid: an edge (or the middle) of the window on that
+-- line, as the game's own frames snap to it while its snapping is on. Returns the top left corner then.
+local function Snap(window)
+    local spacing, frame = Grid(), window.frame
+    local left, top = frame:GetLeft(), frame:GetTop()
+    if not (spacing and left and top) then return nil end
+    local width, height = frame:GetWidth(), frame:GetHeight()
+    local x = Line(left, left + width, UIParent:GetWidth() / 2, spacing) or 0
+    local y = Line(top - height, top, UIParent:GetHeight() / 2, spacing) or 0
+    return left + x, top + y
+end
+
 -- A drag of the box, or a sizing by the grip, is over (also when Edit Mode closes in the middle of it):
--- a dragged window docks where it was let go, a sized one stays in its zone. Once: Edit Mode let go of
--- it, and the game's end of the drag that comes after finds nothing in hand.
+-- a dragged window docks where it was let go (free, on Edit Mode's grid, if near a line of it), a sized one
+-- stays in its zone. Once: Edit Mode let go of it, and the game's end of the drag that comes after finds
+-- nothing in hand.
 local function Moved(window)
     if not window.moving then return end
     window.moving = false
     window.frame:StopMovingOrSizing()
     window.frame:SetUserPlaced(false) -- the place is kept by us
-    Keep(window, window.options.dock and Core.Dock.Drop() or nil)
+    local zone = window.options.dock and Core.Dock.Drop() or nil
+    local x, y
+    if not zone then x, y = Snap(window) end
+    Keep(window, zone, x, y)
+    if Core.Selection then Core.Selection.Moved(window) end
 end
 
 local function Sized(window)
@@ -434,6 +477,7 @@ local function Sized(window)
     window.frame:StopMovingOrSizing()
     window.frame:SetUserPlaced(false)
     Keep(window, window.zone)
+    if Core.Selection then Core.Selection.Moved(window) end
 end
 
 -- The box over the window in Edit Mode, made when Edit Mode first opens: Edit Mode's blue frame, a
@@ -468,6 +512,10 @@ local function Box(window)
     box:SetScript("OnLeave", function()
         hover:Hide()
         title:Hide()
+    end)
+    -- A click on it chooses the window, as Edit Mode's own frames are chosen (Selection.lua).
+    box:HookScript("OnMouseDown", function()
+        if Core.Selection then Core.Safe("Edit Mode", Core.Selection.Select, window) end
     end)
     Window.Mover(box, frame, {
         usable = window.usable,
@@ -680,11 +728,18 @@ function methods:Refresh()
     if stop then bar.box:SetPoint("RIGHT", stop, "LEFT", -Window.BOX_INSET, 0) else bar.box:SetPoint("RIGHT", -Window.BOX_INSET, 0) end
 end
 
+-- Chosen in Edit Mode (Selection.lua): its box in Edit Mode's look for that, or as every other one.
+function methods:Selected(on)
+    local box, nineSlice = self.box, rawget(_G, "NineSliceUtil")
+    if box and nineSlice then Core.Safe("Edit Mode", nineSlice.ApplyLayout, box, SELECTION, on and SELECTED or HIGHLIGHT) end
+end
+
 -- Its name anew: on its title bar, and on its box in Edit Mode.
 function methods:SetTitle(text)
     self.options.title = text
     if self.bar then Title(self) end
     if self.box then self.box.title:SetText(text or "") end
+    if Core.Selection then Core.Selection.Moved(self) end -- its dialog in Edit Mode, if chosen
 end
 
 -- May the title bar move the window now: only a kind of window with a title bar of its own, not in Edit

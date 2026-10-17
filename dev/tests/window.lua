@@ -1183,6 +1183,56 @@ manager:ShowSystemSelections()
 check(Core.EditMode.active and talkWindow.box:IsShown(), "and come back with them")
 EventRegistry:TriggerEvent("EditMode.Exit")
 check(not Core.EditMode.active and not talkWindow.box:IsShown(), "Edit Mode closed, they are gone")
+
+-- Chosen in Edit Mode: its box in the selected look, and a small dialog of Core's; free, it snaps to Edit
+-- Mode's grid while the game snaps
+do
+    local grid = CreateFrame("Frame", nil, UIParent)
+    grid.gridSpacing = 50
+    local snapping = true
+    manager.IsSnapEnabled = function() return snapping end
+    manager.Grid = grid
+    local picked = CreateFrame("Frame", nil, UIParent)
+    local pickedStore = {}
+    local pickedWindow = Window.New(picked, { store = pickedStore, title = "Auction House", dock = true, sizable = true,
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
+    pickedWindow:Place()
+    EventRegistry:TriggerEvent("EditMode.Enter")
+    local pickedBox = pickedWindow.box
+    pickedBox:GetScript("OnMouseDown")(pickedBox)
+    local selection = Core.Selection
+    local dialog = selection.window == pickedWindow and talkWindow.box.Center._atlas == "editmode-actionbar-highlight"
+    local panel
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == UIParent and widget._strata == "DIALOG" and rawget(widget, "reset") then panel = widget end
+    end
+    check(dialog and pickedBox.Center._atlas == "editmode-actionbar-selected" and panel and panel:IsShown()
+        and panel.title._text == "Auction House" and not panel.reset:IsEnabled() and panel._level == 200,
+        "a click on its box in Edit Mode chooses it: the box in Edit Mode's selected look, a dialog of Core's that names it; at its first place, nothing to reset")
+    at(picked, 113, 497)
+    pickedBox:GetScript("OnDragStart")(pickedBox)
+    pickedBox:GetScript("OnDragStop")(pickedBox)
+    check(pickedStore.place.x == 110 and pickedStore.place.y == 690 and stands(picked, "TOPLEFT", 110, 690),
+        "let go free near a line of Edit Mode's grid while the game snaps to it, its edges are put on the lines")
+    check(panel.reset:IsEnabled(), "moved, the dialog can put it back")
+    snapping = false
+    at(picked, 113, 497)
+    pickedBox:GetScript("OnDragStart")(pickedBox)
+    pickedBox:GetScript("OnDragStop")(pickedBox)
+    check(pickedStore.place.x == 113, "with the game's snapping off it stays where it was let go")
+    panel.reset:GetScript("OnClick")(panel.reset)
+    check(pickedStore.place == nil and picked._points[1][1] == "CENTER" and not panel.reset:IsEnabled(),
+        "Reset To Default Position puts it at its first place and size")
+    talkWindow.box:GetScript("OnMouseDown")(talkWindow.box)
+    check(selection.window == talkWindow and pickedBox.Center._atlas == "editmode-actionbar-highlight"
+        and talkWindow.box.Center._atlas == "editmode-actionbar-selected" and panel.title._text == "Vendor",
+        "another chosen, the first is not any more")
+    EventRegistry:TriggerEvent("EditMode.Exit")
+    check(not panel:IsShown() and selection.window == nil and talkWindow.box.Center._atlas == "editmode-actionbar-highlight",
+        "Edit Mode closed, nothing is chosen and the dialog is gone")
+    picked:Hide()
+    manager.IsSnapEnabled, manager.Grid = nil, nil
+end
 rawset(_G, "EditModeManagerFrame", nil)
 
 -- One window to a zone at a time (Saneroki, 2026-10-16)
