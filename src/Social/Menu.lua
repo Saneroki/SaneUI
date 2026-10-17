@@ -33,19 +33,12 @@ local function Write(channel)
     ChatFrameUtil.ActivateChat(editBox) -- shows it, puts the cursor in it and writes the label anew
 end
 
--- A tick flipped: the window shows the list anew, and an open options page shows the switch as it is now.
-local function Flip(chat)
-    ns.Channels.Flip(chat.group)
-    ns.Window.Refill()
-    local Config = SaneUI.Core.Config -- the open options page shows the new tick
-    if Config then Config.Refresh() end
-end
-
--- The menu asks and tells outside our own guard.
+-- The menu asks and tells outside our own guard. A tick flipped is a switch set (Channels.Flip): the
+-- window shows the list anew, and an open options page shows the switch as it is now.
 local function IsWriting(channel) return ns.Guarded(Writing, channel) end
 local function Choose(channel) ns.Guarded(Write, channel) end
 local function IsShown(chat) return ns.Guarded(ns.Channels.Shown, chat.group) end
-local function Switch(chat) ns.Guarded(Flip, chat) end
+local function Switch(chat) ns.Guarded(ns.Channels.Flip, chat.group) end
 -- The game's channels are apart from the window: a failure there is noted, the window stays.
 local function IsWished(choice) return ns.Join.Wished(choice.name) == choice.wish end
 local function Wish(choice) ns.Safe("channels", ns.Join.Wish, choice.name, choice.wish) end

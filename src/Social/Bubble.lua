@@ -18,6 +18,7 @@ local _, ns = ...
 --  hidden as a whole while the row itself, whose alpha the fading uses, stays
 --  the list's.
 -------------------------------------------------------------------------------
+local Core = SaneUI.Core
 local Layout = ns.Layout
 local Bubble = {}
 ns.Bubble = Bubble
@@ -26,45 +27,32 @@ local UNKNOWN = "Interface\\Icons\\INV_Misc_QuestionMark" -- a speaker without a
 
 local font       -- the messages' and the names' font: the game's chat font, in the size chosen
 local sized = 0  -- counts the changes of that size: a message measured before one is measured again
-local solid = 1  -- how solid a bubble's fill is: 1 fully, 0 not there
-local back       -- the bubbles' background: one of the game's textures (ns.BACKS), or nil: the colour
-local r, g, b = 0.15, 0.15, 0.17 -- that colour
+local look = { top = { 0.15, 0.15, 0.17 }, alpha = 1 } -- every bubble's fill (Core's Shape), as set
+local painted = 0 -- counts the changes of that look: a bubble drawn before one is painted again
 local brief = true -- the chats' names in short: "G" for "Guild"
 local ruler
-local parts = {} -- [row] = { body, ring, icon, name, meta, bubble, plate, text }
+local parts = {} -- [row] = { body, ring, icon, name, meta, bubble, plate, text, painted }
 
 -- The size of the text. The font stays the game's chat font (which differs by language); a font of
--- ours takes it over and only changes the size, as the game does for its own chat windows.
+-- ours takes it over and only changes the size, as the game does for its own chat windows (Core.Font).
 function Bubble.Size(size)
-    if not font then
-        font = CreateFont("SaneUIChatFont")
-        font:CopyFontObject(ChatFontNormal)
-    end
-    local file, _, flags = font:GetFont()
-    font:SetFont(file, size, flags)
+    font = Core.Font("SaneUIChatFont", ChatFontNormal, size)
     Layout.HEAD = size + 4
     sized = sized + 1
 end
 
--- A colour written as six hex digits ("26262B"); nil for one that cannot be read.
-local function Color(hex)
-    local red, green, blue = tostring(hex):match("^(%x%x)(%x%x)(%x%x)$")
-    if not red then return nil end
-    return tonumber(red, 16) / 255, tonumber(green, 16) / 255, tonumber(blue, 16) / 255
-end
-
 -- How solid the bubbles' fill is, in percent (100 solid, 0 only the text); and what it is, as set
--- (bubbleBack, bubbleColor), the same for every bubble. The text in them stays as it is: only its
--- colour tells the kind of message.
+-- (bubbleBack: one of the game's tiles, Core.Skin.TILES, or a colour, bubbleColor), the same for every
+-- bubble. The text in them stays as it is: only its colour tells the kind of message.
 function Bubble.Opacity(percent)
-    solid = math.min(math.max(percent, 0), 100) / 100
     local options = ns.options or {}
-    back = nil
-    for _, texture in ipairs(ns.BACKS) do
-        if texture.file and texture.key == options.bubbleBack then back = texture end
-    end
-    local red, green, blue = Color(options.bubbleColor)
-    if red then r, g, b = red, green, blue end
+    local tile = Core.Skin.Tile(options.bubbleBack)
+    look.alpha = math.min(math.max(percent, 0), 100) / 100
+    look.file, look.size = tile and tile.file, tile and tile.size
+    local red, green, blue = Core.RGB(options.bubbleColor)
+    if red then look.top[1], look.top[2], look.top[3] = red, green, blue end
+    look.bottom = nil -- the colour all the way down
+    painted = painted + 1
 end
 
 -- The chats' names above the bubbles in short, or in full.
@@ -72,13 +60,9 @@ function Bubble.Brief(on)
     brief = on and true or false
 end
 
--- Paints a plate as the bubbles are painted; the line you write in has their fill too.
+-- Paints a plate (Core's Shape) as the bubbles are painted; the line you write in has their fill too.
 function Bubble.Paint(plate)
-    if back then
-        plate:Tile(back.file, back.size, solid)
-    else
-        plate:Color(r, g, b, solid)
-    end
+    plate:Look(look)
 end
 
 -- A text that only measures, never seen: in a frame of its own that is fully see-through. Not the
@@ -139,15 +123,15 @@ local function Build(row)
     ns.Links.Enable(body) -- the speaker's name
 
     -- The icon is round, on a round disc a little larger: the disc's rim is the ring around the icon.
-    -- Both are round by the game's round mask over all of them (Plate.lua).
+    -- Both are round by a round mask over the whole of each (Core.Shape.Round).
     part.ring = body:CreateTexture(nil, "BACKGROUND")
     part.ring:SetSize(Layout.ICON, Layout.ICON)
     part.ring:SetPoint("TOPLEFT")
-    ns.Round(body, part.ring):SetAllPoints(part.ring)
+    Core.Shape.Round(part.ring)
     part.icon = body:CreateTexture(nil, "ARTWORK")
     part.icon:SetSize(Layout.ICON - 2 * Layout.RING, Layout.ICON - 2 * Layout.RING)
     part.icon:SetPoint("CENTER", part.ring)
-    ns.Round(body, part.icon):SetAllPoints(part.icon)
+    Core.Shape.Round(part.icon)
 
     part.name = body:CreateFontString(nil, "ARTWORK")
     part.name:SetFontObject(font)
@@ -156,8 +140,10 @@ local function Build(row)
     part.meta = body:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     part.meta:SetWordWrap(false)
 
+    -- A plain fill with round corners and nothing else: no border, no ornament (Core's Shape, of one
+    -- radius wherever it is).
     part.bubble = CreateFrame("Frame", nil, body)
-    part.plate = ns.Plate(part.bubble, Layout.RADIUS)
+    part.plate = Core.Shape.New(part.bubble, { radius = Layout.RADIUS })
     ns.Links.Enable(part.bubble) -- the links in a message
     part.text = part.bubble:CreateFontString(nil, "ARTWORK")
     part.text:SetFontObject(font)
@@ -215,8 +201,13 @@ function Bubble.Init(row, entry, rowWidth)
     else
         part.bubble:SetPoint("TOPRIGHT", 0, -Layout.HEAD)
     end
-    part.bubble:SetSize(Layout.Bubble(entry.textWidth, entry.textHeight))
-    Bubble.Paint(part.plate)
+    local width, height = Layout.Bubble(entry.textWidth, entry.textHeight)
+    part.bubble:SetSize(width, height)
+    if part.painted ~= painted then
+        part.painted = painted
+        Bubble.Paint(part.plate)
+    end
+    part.plate:Fit(0, 0, width, height) -- only its size counts: its corners are round wherever it is
     -- As wide as the ruler was, so the text wraps where it was measured.
     part.text:SetWidth(entry.widest)
     part.text:SetText(entry.text)

@@ -14,6 +14,10 @@ Core's window system (`Core.Window.New`, `Dock.lua`, `Edge.lua`, see `src/Core/R
 - **Full screen from the edge:** a docked window made with `edge` fills the whole screen when the mouse is
   pushed against its screen edge (docked in a corner: into that corner), and goes back when pushed again.
 - **Moving and sizing:** in Blizzard's Edit Mode; a window with a title bar also moves by it at any time.
+- **Since 2026-10-17:** a first place in a zone (`first.dock`), Esc by one stand-in for all of Sane UI,
+  tabs in the game's style, a click bringing a panel to the front, the holder (the game's window out of
+  sight while ours is chosen), and in Edit Mode a window chosen by a click on its box, with its dialog
+  *Reset To Default Position* and Edit Mode's grid.
 
 The Chat window uses all of this; the Navigation window is planned on it (`Doc/ideas/Navigation.md`).
 
@@ -41,7 +45,9 @@ push against (its window fills the screen by its maximize button).
 **A place holds one window at a time** (Saneroki, 2026-10-16; in Core, `Dock.lua`): while a window is docked
 there and shown, the place takes no other. Dragged there (Edit Mode, or a title bar), another window gets no
 shape and, let go, stays free where it was let go. A window that opens while its kept place is taken stands
-free at its kept spot that time, and docks there again the next time the place is free. A window that is not
+free that time, clear of the window there: at its kept spot, or beside the place, a little down and aside
+from each window already there (in Core, 2026-10-17); it docks there again the next time the place is
+free. A window that is not
 shown holds nothing, so the talk windows (vendor, trainer, auction house, bank), which are never open
 together, share the middle.
 
@@ -112,7 +118,7 @@ together, share the middle.
 - **What the Combat module shows is no window:** nameplates, unit frames, buffs, action bars. The Combat
   module handles them its own way, not as Core's windows.
 
-## The game's own triggers (Saneroki, 2026-10-16; plan)
+## The game's own triggers (Saneroki, 2026-10-16; in Core but the secure switch)
 
 - **Every window is handled the same way, by Core's system.** What the game opens by a key, a button of
   its micro menu, a slash command or an NPC (the spellbook, the guild, the friends list, a vendor) opens
@@ -121,19 +127,21 @@ together, share the middle.
   the player chose **the game's own window or ours**, and acts on that when the game asks for the window.
   In Core: `window:Remember(what, value)` (with the place in the module's settings), `window:Native(on)`
   (the toggle buttons), `window:Open()` (the game asked: the game's own window if that was chosen, else
-  ours, full screen again if it was left so). Done in Core; no module calls `Open` yet.
+  ours, full screen again if it was left so). Done in Core; Social's switch *Chat window* opens its window
+  by `Open`.
 - **Core keeps the game's window out of sight** (Saneroki, 2026-10-16: the window system handles it, one way
   for every window), by Economy's holder made Core's (`Doc/ideas/Economy.md`, *Hidden, not closed*): set to
   Sane UI, the game's window is a child of a hidden frame of Core's, set while it is closed. The game then
   opens and closes it as always, by its key, its micro menu button, a link, an NPC, but unseen: its `OnShow`
   and `OnHide` do not run, so it neither ends a talk nor touches anything. Core follows (hooks after its own
   `Show` and `Hide`) and opens and closes ours. No key and no button of the game's is taken over, nothing of
-  Blizzard's replaced.
+  Blizzard's replaced. In Core since 2026-10-17 (`Holder.lua`, a window's `native.hold`); the game's chat is
+  never closed, so Social keeps it out of sight its own way.
 - **Switching while it is open:** to the game's, ours closes and the game's window is given back to its
   parent and comes into sight. That runs its `OnShow` from our code: fine for most windows; not for the
   spellbook (its `OnShow` changes the action bars, protected) and the map (an emote). Those are given back
-  by a secure click on the game's own button (to prove in the game first; until then the switch closes the
-  game's window unseen and it opens normally at its key's next press). To ours, the game's window is made
+  by a secure click on the game's own button (to come; until then the switch closes the game's window
+  unseen, `native.unseen`, and it opens normally at its key's next press). To ours, the game's window is made
   tiny and clear until it closes (a hidden parent would end a talk), then held again. The guide (section 7)
   has the rules and the facts.
 - **The spellbook (Saneroki):** the Abilities module changes the game's own spellbook today. It goes back to
@@ -192,8 +200,9 @@ game's screen. These calls are fine on our own frames, which are not protected.
 ## Esc (Saneroki, 2026-10-16; in Core)
 
 - **A panel or a talk window closes on Esc,** small or full, as the game's panels do; full, it is not made
-  small first, so it opens full again next time (Core's `escape = "close"`: our stand-in in
-  `UISpecialFrames`). Closing a talk window ends the talk (the module's `close`).
+  small first, so it opens full again next time (Core's `escape = "close"`: one stand-in of ours,
+  `SaneUIEscape`, in `UISpecialFrames` for all of Sane UI, `Core.Escape`). Closing a talk window ends the talk
+  (the module's `close`). In a fight a window holding protected frames closes once the fight is over.
 - **A screen window** (the chat, the minimap) does not close on Esc; full, Esc brings it back to its size.
 
 ## Default places
@@ -210,7 +219,8 @@ game's screen. These calls are fine on our own frames, which are not protected.
 | Bottom right | Character and bags (working name) | Character sheet, bags | Character frame, bags |
 
 Small, docked, the window shows its everyday part (the minimap, the chat); full screen it shows all its
-views. Bold names are modules that exist (Social, Abilities, Combat) or are planned (Navigation); the others have
+views. A window's first place is its zone (Core's `first.dock`, 2026-10-17): Social starts docked bottom
+left, a talk window in the middle. Bold names are modules that exist (Social, Abilities, Combat) or are planned (Navigation); the others have
 no module yet.
 
 ## Edit Mode
@@ -236,7 +246,10 @@ functions and the way it works.
   for a window never saved in that layout that is its default place. *Reset To Default Position*, in the
   dialog of the frame selected, puts that one frame at its default place
   (`EditModeSystemMixin:ResetToDefaultPosition`). Both should do for our windows what they do for
-  Blizzard's frames.
+  Blizzard's frames. *Reset To Default Position* is in Core (2026-10-17, `Selection.lua`): a click on a
+  window's box in Edit Mode selects it (the box in Edit Mode's selected look) and Core's dialog names it,
+  with that button. With Edit Mode's *Snap* on, a free window let go near a line of its grid lines up with
+  it (the grid only read).
 
 Notes for building it (from `references/`):
 
@@ -270,9 +283,9 @@ Notes for building it (from `references/`):
   (to build).
 - Edit Mode can be opened in a fight: a window holding protected frames does not move then
   (`window:Locked()`).
-- A window selected in Edit Mode would get a small dialog of Core's in the style of Blizzard's, with
+- A window selected in Edit Mode gets a small dialog of Core's in the style of Blizzard's, with
   *Reset To Default Position*: our windows are not Blizzard systems, so Blizzard's dialog does not know
-  them.
+  them (built 2026-10-17).
 - A layout shared as text (Edit Mode's export and import) carries only Blizzard's frames, not our windows.
 - Resilience: if the client has no Edit Mode (or no event registry to hear it), `/sane arrange` gives Sane
   UI's windows the same mode (in Core, `EditMode.lua`), so they never get stuck.
@@ -293,7 +306,8 @@ Notes for building it (from `references/`):
 - What goes to the left and the right place.
 - Where a window may go: any of the nine places (and free), or only its own place? (One window to a place
   at a time: decided, above.)
-- How the views of one window are switched (tabs like Blizzard's, a bar at the top).
+- How the views of one window are switched: tabs like Blizzard's, in a row at the top of what the window
+  holds (built in Core 2026-10-17, `Views.lua`; `/sane window` shows two).
 - What right and middle click on a trigger area do.
 - On which of Sane UI's own pages the section *Hotcorners* stands (*General* or *Appearance*, where
   *Animation type* is).

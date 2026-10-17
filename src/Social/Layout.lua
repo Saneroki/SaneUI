@@ -16,7 +16,6 @@ ns.Layout = Layout
 
 Layout.WIDTH, Layout.HEIGHT = 380, 260        -- the window at first
 Layout.MIN_WIDTH, Layout.MIN_HEIGHT = 180, 130
-Layout.BAR = 20                                -- the top bar, the handle to move the window by
 Layout.LEVEL = 100                             -- the window's frame level: above the action bars (50 and a few)
 Layout.FADE = 1                                -- seconds a message takes to fade out, at first (a setting: fadeOutTime)
 Layout.APPEAR = 0.4                            -- seconds a message takes to fade in, at first (a setting: fadeInTime)
@@ -71,9 +70,10 @@ function Layout.InputHeight(textHeight, lineHeight)
 end
 
 -- The height of the list in a window that high; input: the height of the line to write in, if it is shown;
--- top: where the list starts, BAR at first (lower while the window fills the screen: Window.lua, Top).
+-- top: where the list starts from the window's top, EDGE at first (lower under Core's title bar while the
+-- window fills the screen: Window.lua, Top).
 function Layout.ListHeight(windowHeight, input, top)
-    return math.floor(windowHeight) - (top or Layout.BAR) - Layout.EDGE - (input and Layout.Input(input) or 0)
+    return math.floor(windowHeight) - (top or Layout.EDGE) - Layout.EDGE - (input and Layout.Input(input) or 0)
 end
 
 -- The widest a message's text may be in a row that wide. Whole pixels: half ones blur.

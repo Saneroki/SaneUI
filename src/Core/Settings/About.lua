@@ -137,7 +137,6 @@ local function Build()
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-    tinsert(UISpecialFrames, "SaneUIFeedbackFrame") -- Esc closes it
 
     local ask = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     ask:SetPoint("TOPLEFT", 20, -34)
@@ -170,6 +169,7 @@ local function Build()
     make:SetScript("OnClick", function() Core.Safe("Settings: feedback", About.Toggle) end)
 
     frame:SetScript("OnHide", function()
+        Core.Escape(frame, nil)
         if frame.kind and not frame.made then drafts[frame.kind.key] = box:GetText() end
         PlaySound(SOUNDKIT.IG_CHARACTER_INFO_CLOSE)
     end)
@@ -213,6 +213,7 @@ function About.Open(kind)
     if window.SetTitle then window:SetTitle(kind.name) end
     window:Show()
     window:Raise()
+    Core.Escape(window, window.Hide) -- Esc closes it (Core's one stand-in in the game's list)
     PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN)
     Write(drafts[kind.key])
     return window

@@ -16,22 +16,21 @@ local _, ns = ...
 --  A fade begins from wherever the message is: one that turns back half way
 --  turns back from there, and takes only the time for the rest of the way.
 --  How long a whole fade takes, in and out, is a setting (Fade.Times); with
---  no time, a message is there or not at once.
+--  no time, or Sane UI's animations off (Core.general.animations), a message is
+--  there or not at once. Its way is one of the game's easing curves, slow at
+--  both ends (Core.Motion.Ease, Fade.CURVE).
 -------------------------------------------------------------------------------
+local Core = SaneUI.Core
 local Layout = ns.Layout
 local Fade = {}
 ns.Fade = Fade
 
+Fade.CURVE = "InOutQuadratic" -- slow at both ends, so neither its start nor its end shows as a step
 local fadeIn, fadeOut = Layout.APPEAR, Layout.FADE -- seconds of a whole fade in, and out
 
 -- How long a whole fade in and a whole fade out take; 0: none, at once.
 function Fade.Times(inSeconds, outSeconds)
     fadeIn, fadeOut = math.max(inSeconds or 0, 0), math.max(outSeconds or 0, 0)
-end
-
--- Slow at both ends, so neither its start nor its end shows as a step.
-local function Ease(t)
-    return t * t * (3 - 2 * t)
 end
 
 -- How much of the message is seen at that time: 0 nothing, 1 all. A message no fade ever touched is seen.
@@ -44,7 +43,7 @@ function Fade.Alpha(entry, now)
         return entry.to
     end
     if t <= 0 then return entry.from end
-    return entry.from + (entry.to - entry.from) * Ease(t)
+    return entry.from + (entry.to - entry.from) * Core.Motion.Ease(Fade.CURVE, t)
 end
 
 -- Whether it is fading right now.
@@ -59,7 +58,7 @@ function Fade.To(entry, to, now, instantly)
     local alpha = Fade.Alpha(entry, now)
     entry.to = to
     local span = (to > alpha and fadeIn or fadeOut) * math.abs(to - alpha)
-    if instantly or span <= 0 then
+    if instantly or span <= 0 or (Core.general and Core.general.animations == false) then
         entry.since = nil
         return
     end

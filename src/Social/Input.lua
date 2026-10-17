@@ -31,7 +31,10 @@ local _, ns = ...
 --  to wrap its text: when the text is wider than the line, the line grows
 --  taller (Grow) and the window gives it more room. For that the chat's name
 --  hangs on the line's top instead of its middle, and the text gets an inset
---  above and below. All of it is undone when our window goes (Release).
+--  above and below. All of it is undone when our window goes (Release): what
+--  is changed of the game's (the edit box's place, its layer, its alpha and
+--  mouse at rest, its label's place, its border's alpha) is lent (Core.Lend),
+--  each thing noted the first time it is changed and given back exactly.
 --
 --  A click on the chat's name, or on the window's button, opens the list of
 --  the chats you can write in (Menu.lua). The smiley right of the line is
@@ -47,14 +50,14 @@ ns.Input = Input
 local window, room  -- our window, and room(height or false): it makes or gives back the room for the line
 local given = false -- the height the window makes room for now; false: none
 local seated        -- the edit box in our window now
-local home = {}     -- [edit box] = its own anchors, to put it back
-local dressed = {}  -- [edit box] = its label's own anchors: it has our look now
+local home = {}     -- [edit box] = its place, lent: in our window
+local dressed = {}  -- [edit box] = its look, lent: its border's pieces (their alpha), its label (.header): ours now
 local hooked = {}   -- [edit box] = true: it tells us of its text, its label and its rest
-local drawn = {}    -- [edit box] = { strata, level } it had before it was drawn with our window
-local resting = {}  -- [edit box] = its alpha before it was put to rest (invisible, the mouse goes through)
+local drawn = {}    -- [edit box] = its layer, lent: drawn with our window
+local resting = {}  -- [edit box] = its alpha and mouse, lent: at rest (invisible, the mouse goes through)
 local label         -- the button on the edit box's label
 local plate, ruler  -- the frame behind the line (of our window), and the text that measures the line's
-local fill          -- that frame's fill: drawn as your own bubbles are
+local fill          -- that frame's fill (Core's Shape): drawn as your own bubbles are
 
 local function Label(editBox)
     if not label then
@@ -148,12 +151,14 @@ local function Relabelled(editBox)
 end
 
 -- Nobody writes in the line, and the game keeps it on show (IM style): out of sight instead, and the
--- room above it is the messages' again. Its alpha is kept, to give it back when our window goes.
--- Again and again if need be: the game makes a line at rest faded (not invisible) each time.
+-- room above it is the messages' again. Its alpha and mouse are lent, to give them back when it is in use
+-- again or our window goes. Again and again if need be: the game makes a line at rest faded (not
+-- invisible) each time.
 local function Rest(editBox)
-    if not resting[editBox] then resting[editBox] = editBox:GetAlpha() end
-    editBox:SetAlpha(0)
-    editBox:EnableMouse(false)
+    local rest = resting[editBox] or Core.Lend(editBox)
+    resting[editBox] = rest
+    rest:SetAlpha(0)
+    rest:SetMouse(false)
     if label then label:EnableMouse(false) end -- the button on the chat's name, unseen, would take clicks
     plate:Hide()
     ns.Picker.Show(nil)
@@ -164,7 +169,7 @@ end
 -- when it gives it the cursor.)
 local function Rise(editBox)
     if not resting[editBox] then return end
-    resting[editBox] = nil
+    resting[editBox] = nil -- what was lent for the rest: in use, it is seen and clicked
     editBox:SetAlpha(1)
     editBox:EnableMouse(true)
     if label then label:EnableMouse(true) end
@@ -178,19 +183,27 @@ end
 
 local function Dress(editBox)
     if not dressed[editBox] then
+        local look = {}
         local name = editBox:GetName()
         for _, piece in ipairs(ART) do
             local art = name and _G[name .. piece]
-            if art then art:SetAlpha(0) end
+            if art then
+                local lent = Core.Lend(art)
+                lent:SetAlpha(0)
+                look[#look + 1] = lent
+            end
         end
         editBox:SetMultiLine(true)
         local header = editBox.header
-        dressed[editBox] = header and Core.Points(header) or {}
         if header then
             -- Where it is in a line of the first height, but counted from the top: it stays on the first line.
-            header:ClearAllPoints()
-            header:SetPoint("TOPLEFT", 15, -math.floor((Layout.INPUT_HEIGHT - (Core.Plain(header:GetHeight()) or 14)) / 2))
+            look.header = Core.Lend(header)
+            look.header:SetPoints(function(region)
+                region:ClearAllPoints()
+                region:SetPoint("TOPLEFT", 15, -math.floor((Layout.INPUT_HEIGHT - (Core.Plain(region:GetHeight()) or 14)) / 2))
+            end)
         end
+        dressed[editBox] = look
     end
     if not hooked[editBox] then
         hooked[editBox] = true
@@ -207,17 +220,13 @@ local function Dress(editBox)
     ns.Picker.Show(editBox)
 end
 
-local function Undress(editBox, headerPoints)
-    local name = editBox:GetName()
-    for _, piece in ipairs(ART) do
-        local art = name and _G[name .. piece]
-        if art then art:SetAlpha(1) end
-    end
+local function Undress(editBox, look)
+    for _, lent in ipairs(look) do lent:Return() end
     editBox:SetMultiLine(false)
     editBox:SetHeight(Layout.INPUT_HEIGHT)
     local left, right = Insets(editBox)
     if left and right then editBox:SetTextInsets(left, right, 0, 0) end
-    if editBox.header and #headerPoints > 0 then Core.Repoint(editBox.header, headerPoints) end
+    if look.header then look.header:Return() end
 end
 
 -- A text that wraps can hold line breaks (pasted ones); a chat message cannot. The game tells
@@ -231,11 +240,15 @@ end
 -------------------------------------------------------------------------------
 --  The edit box's place
 -------------------------------------------------------------------------------
-local function Seat(editBox)
-    if not home[editBox] then home[editBox] = Core.Points(editBox) end
+local function Place(editBox)
     editBox:ClearAllPoints()
     editBox:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", Layout.INPUT_LEFT, Layout.INPUT_BOTTOM)
     editBox:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -Layout.INPUT_RIGHT, Layout.INPUT_BOTTOM)
+end
+
+local function Seat(editBox)
+    home[editBox] = home[editBox] or Core.Lend(editBox)
+    home[editBox]:SetPoints(Place)
     seated = editBox
     Rise(editBox)
     Label(editBox)
@@ -244,11 +257,10 @@ local function Seat(editBox)
 end
 
 -- The game puts the line you write in above everything; ours is as high as the window it is in.
--- What it had is kept, to give back.
+-- What it had is lent, to give back.
 local function Lift(editBox)
-    if not drawn[editBox] then drawn[editBox] = { editBox:GetFrameStrata(), editBox:GetFrameLevel() } end
-    editBox:SetFrameStrata(window:GetFrameStrata())
-    editBox:SetFrameLevel(window:GetFrameLevel() + 10)
+    drawn[editBox] = drawn[editBox] or Core.Lend(editBox)
+    drawn[editBox]:SetLayer(window:GetFrameStrata(), window:GetFrameLevel() + 10)
 end
 
 -- The window is drawn in another layer now (it fills the screen, or is back): a line in use goes with it.
@@ -321,7 +333,8 @@ function Input.Take(frame, makeRoom)
     if not plate then
         plate = CreateFrame("Frame", nil, frame)
         plate:SetFrameLevel(frame:GetFrameLevel() + 5) -- above the list, below the edit box
-        fill = ns.Plate(plate, Layout.RADIUS)
+        fill = Core.Shape.New(plate, { radius = Layout.RADIUS }) -- the bubbles' plate, following the line's size
+        fill:Follow()
         plate:Hide()
         ruler = ns.Ruler(frame) -- never seen (Bubble.lua)
         ns.Picker.Take(frame)
@@ -348,25 +361,6 @@ function Input.Toggle(owner)
     end
 end
 
--- One edit box as the game had it: its place first (should the rest fail), then its look, its layer
--- and, if it was at rest, its alpha and the mouse.
-local function Return(editBox)
-    Core.Repoint(editBox, home[editBox])
-    local headerPoints = dressed[editBox]
-    if headerPoints then Undress(editBox, headerPoints) end
-    local layer = drawn[editBox]
-    if layer then
-        -- The game may have set a strata of its own since (a line at rest is low): that one stays.
-        if editBox:GetFrameStrata() == window:GetFrameStrata() then editBox:SetFrameStrata(layer[1]) end
-        editBox:SetFrameLevel(layer[2])
-    end
-    local alpha = resting[editBox]
-    if alpha then
-        editBox:SetAlpha(alpha)
-        editBox:EnableMouse(true)
-    end
-end
-
 -- One step of Release; the first failure is kept, and raised when all steps are done.
 local problem
 local function Try(step, ...)
@@ -374,12 +368,23 @@ local function Try(step, ...)
     if not ok and not problem then problem = failed end
 end
 
+-- One edit box as the game had it, each thing by itself: its place first, then its look, its layer and,
+-- if it was at rest, its alpha and the mouse.
+local function Return(editBox)
+    local place, look, layer, rest = home[editBox], dressed[editBox], drawn[editBox], resting[editBox]
+    Try(place.Return, place)
+    if look then Try(Undress, editBox, look) end
+    -- The game may have set a layer of its own since (a line at rest is low): that one stays.
+    if layer and editBox:GetFrameStrata() == window:GetFrameStrata() then Try(layer.Return, layer) end
+    if rest then Try(rest.Return, rest) end
+end
+
 -- Our window is gone: every edit box is where the game had it, and looks as the game made it. Each
 -- by itself, so one that fails keeps no other in our window.
 function Input.Release()
     if not window then return end
     problem = nil
-    for editBox in pairs(home) do Try(Return, editBox) end
+    for editBox in pairs(home) do Return(editBox) end
     wipe(home)
     wipe(dressed)
     wipe(drawn)

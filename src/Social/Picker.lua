@@ -127,12 +127,7 @@ function Picker.Take(frame)
     end
     button:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
     button:SetScript("OnClick", function(self) ns.Guarded(Picker.Open, self) end)
-    button:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip_SetTitle(GameTooltip, ns.TEXT.picker)
-        GameTooltip:Show()
-    end)
-    button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    Core.Tip(button, ns.TEXT.picker, nil, "ANCHOR_TOP")
     button:Hide()
 end
 

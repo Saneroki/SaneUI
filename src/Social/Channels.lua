@@ -61,15 +61,14 @@ function Channels.Shown(group)
     return not ns.options.mute[group]
 end
 
--- The tick of a group flipped (the list of what to show).
+-- The tick of a group flipped (the list of what to show): set as the options page sets it (Core.Set), so the
+-- window shows the list anew and an open options page shows the switch as it is now.
 function Channels.Flip(group)
     local key = ns.SHOWS[group]
-    if key then
-        ns.options[key] = not ns.options[key]
-    else
-        local mute = ns.options.mute
-        mute[group] = not mute[group] or nil
-    end
+    if key then return Core.Set(ns.name, key, not ns.options[key]) end
+    local mute = Core.Copy(ns.options.mute)
+    mute[group] = not mute[group] or nil
+    Core.Set(ns.name, "mute", mute)
 end
 
 local function Add(list, kind)

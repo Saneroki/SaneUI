@@ -23,18 +23,27 @@ Serial.lua
 Motion.lua
 Saved.lua
 Profiles.lua
-# What every window can use: places at the screen's edges to dock to, a plate with round corners,
-# background and border, moving (by a title bar, or in Blizzard's Edit Mode) and sizing (in Edit Mode), opening under the mouse or
-# a click, filling the screen from its screen edge, a title bar with a fuzzy search, and a progress bar
+# What every window can use: places at the screen's edges to dock to, Esc, a watch on the mouse, a plate with
+# round corners, background and border, moving (by a title bar, or in Blizzard's Edit Mode, chosen there with its
+# dialog) and sizing (in Edit Mode), opening under the mouse, filling the screen from its screen edge, a title bar
+# with a fuzzy search, views behind tabs, the game's own window kept out of sight while ours is chosen (the
+# holder), and a progress bar
 Dock.lua
 EditMode.lua
+Escape.lua
+Watch.lua
 Fuzzy.lua
 Shape.lua
 Skin.lua
 Edge.lua
 Window.lua
+Views.lua
+Selection.lua
+Holder.lua
 Expand.lua
 Bar.lua
+# The words of Sane UI's keys in the game's key bindings (what they do: Bindings.xml, read by the game itself)
+Bindings.lua
 # /sane window: a window to try them with
 Demo.lua
 # The data framework: Sane UI's own databases, loaded on demand from the data packs (SaneUI_Data_*), and the

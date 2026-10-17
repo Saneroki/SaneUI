@@ -32,7 +32,9 @@ local Core = SaneUI.Core
 --                                           -- for, in the dropdown Classic windows (or a function giving them)
 --      filled = function(full) end          -- it has begun to fill the screen (true) or to go back
 --      docked = function(zone) end          -- Window's hook, called once it has filled the screen too
---  A switch of the section was changed: edge:Update().
+--  A switch of the section changed (its options page, a profile, Core.Set):
+--  every window that reads that module's settings is updated at once
+--  (edge:Update()); the module need not pass it on.
 --  edge.full: it fills the screen or is on its way there. edge.away: it is not
 --  at rest in its zone (full, or on its way back); it is neither moved nor
 --  sized then, and its grip is out of sight.
@@ -51,9 +53,9 @@ local Core = SaneUI.Core
 --  the motion sizes it, unseen) and lay out in its docked hook instead, which
 --  Edge calls once at the end of either way.
 --
---  Esc brings a full window back as it closes the game's windows: a small
---  named frame of ours stands in the game's list UISpecialFrames while a
---  window fills the screen, and when the game hides it, the window goes back.
+--  Esc brings a full window back as it closes the game's windows (Core.Escape,
+--  Escape.lua); a window Esc closes (escape = "close") is closed instead, full
+--  as it is (Window.lua).
 --
 --  The mouse at the edge is an event, not a look every frame: along the
 --  docked side lies a strip two of the screen's pixels wide, above everything,
@@ -77,21 +79,8 @@ Edge.CLASSIC = "Classic windows" -- the dropdown's words
 Edge.MENU_WIDTH, Edge.MENU_INSET = 180, 10 -- its width; from the full window's top right corner, or its buttons
 
 -- The backgrounds to choose from: solid black, or one of the quiet tiles Blizzard fills its windows
--- with, repeated every size units as the chat's bubbles repeat them, and named as they name them.
--- Ours to come.
-Edge.TEXTURES = {
-    { key = "solid", text = "Solid black" },
-    { key = "marble", text = "Marble", file = "Interface\\FrameGeneral\\UI-Background-Marble", size = 256 },
-    { key = "rock", text = "Rock", file = "Interface\\FrameGeneral\\UI-Background-Rock", size = 512 },
-    { key = "slate", text = "Slate", file = "Interface\\Collections\\CollectionsBackgroundTile", size = 256 },
-    { key = "iron", text = "Iron", file = "Interface\\BlackMarket\\BlackMarketBackground-Tile", size = 256 },
-    { key = "night", text = "Night", file = "Interface\\FrameGeneral\\UIFrameOribosBackground", size = 256 },
-}
-local textures, textureChoices = {}, {}
-for index, texture in ipairs(Edge.TEXTURES) do
-    textures[texture.key] = texture
-    textureChoices[index] = { texture.key, texture.text }
-end
+-- with (Skin.TILES), repeated every size units.
+Edge.SOLID = "Solid black"
 local BLACK = { 0, 0, 0 }
 
 -- The section's switches, as a window without settings of its own has them (edge = true).
@@ -101,9 +90,13 @@ for key, value in pairs(Core.Shape.DEFAULTS) do
     Edge.DEFAULTS[key], Edge.KEYS[key] = value, true
 end
 
+local sections = {} -- [a module's list of switches] = true: it holds the section
+
 -- Puts the section Expand window into a module's switches (Core.Options) at that place of its list,
--- in that tab of its page. A window reads them by its option edge = the module's settings.
-function Edge.Options(list, at, tab)
+-- in that tab of its page. A window reads them by its option edge = the module's settings. under: switches
+-- of the module's own that some of the section's stand under too, [key] = a key or a list of them
+-- ({ motion = "animations" }: the animation type is greyed out while the module's animations are off).
+function Edge.Options(list, at, tab, under)
     local section = {
         { key = "expand", default = Edge.DEFAULTS.expand, text = "Can expand to fullscreen", header = "Expand window",
           headerTip = "Docked to a screen edge, the window can fill the whole screen and go back.",
@@ -112,19 +105,33 @@ function Edge.Options(list, at, tab)
           tip = "Glide is quick and settles softly, Swing goes a little past and comes back, Even starts and ends gently, Instant does not move at all. Use global type: as set under Sane UI > Appearance." },
         { key = "expandOpacity", default = Edge.DEFAULTS.expandOpacity, min = 0, max = 100, step = 5, unit = "%", text = "Background opacity", parent = "expand",
           tip = "How much the background hides the game while the window fills the screen: 0 shows all of it, 100 hides it." },
-        { key = "expandTexture", default = Edge.DEFAULTS.expandTexture, text = "Background texture", parent = "expand", choices = textureChoices,
+        { key = "expandTexture", default = Edge.DEFAULTS.expandTexture, text = "Background texture", parent = "expand", choices = Core.Skin.Choices(Edge.SOLID),
           tip = "What the full window stands on: solid black, or one of the game's own backgrounds." },
     }
     for index, option in ipairs(section) do
         option.tab = tab
+        local more = under and under[option.key]
+        if more then
+            local parents = { option.parent }
+            for _, key in ipairs(type(more) == "table" and more or { more }) do parents[#parents + 1] = key end
+            option.parent = parents
+        end
         table.insert(list, at + index - 1, option)
     end
     Core.Shape.Options(list, at + #section, tab, "expand")
+    sections[list] = true
 end
 
--- The corners a side's strip runs between, inside the window.
-local SIDES = { left = { "TOPLEFT", "BOTTOMLEFT" }, right = { "TOPRIGHT", "BOTTOMRIGHT" },
-                top = { "TOPLEFT", "TOPRIGHT" }, bottom = { "BOTTOMLEFT", "BOTTOMRIGHT" } }
+-- The corners a side's strip runs between, inside the window; and which way is out of it.
+local SIDES = { left = { "TOPLEFT", "BOTTOMLEFT", -1, 0 }, right = { "TOPRIGHT", "BOTTOMRIGHT", 1, 0 },
+                top = { "TOPLEFT", "TOPRIGHT", 0, 1 }, bottom = { "BOTTOMLEFT", "BOTTOMRIGHT", 0, -1 } }
+
+-- How far out of the window a strip at that side lies: as far as the window keeps from the screen's edge
+-- there (its insets), so the strip is on the screen's very edge.
+local function Out(edge, side)
+    local insets = edge.window.options.insets
+    return insets and insets[side] or 0
+end
 
 local methods = {}
 
@@ -149,8 +156,9 @@ local function Strip(edge, key)
     strip:SetScript("OnEnter", function() Core.Safe("full screen", edge.Pushed, edge) end)
     local corners = SIDES[key]
     if corners then
-        strip:SetPoint(corners[1])
-        strip:SetPoint(corners[2])
+        local out = Out(edge, key)
+        strip:SetPoint(corners[1], corners[3] * out, corners[4] * out)
+        strip:SetPoint(corners[2], corners[3] * out, corners[4] * out)
     end
     edge.strips[key] = strip
     return strip
@@ -158,8 +166,8 @@ end
 
 -- The background as set: one of Blizzard's tiles, or solid black; the trim in Sane UI's bronze.
 local function Paint(edge)
-    local texture = textures[edge.settings.expandTexture] or textures.solid
-    edge.back:Look({ file = texture.file, size = texture.size, top = BLACK, bottom = BLACK, trim = Core.GOLD })
+    local tile = Core.Skin.Tile(edge.settings.expandTexture)
+    edge.back:Look({ file = tile and tile.file, size = tile and tile.size, top = BLACK, bottom = BLACK, trim = Core.GOLD })
 end
 
 -- How opaque the background is once the window fills the screen.
@@ -199,71 +207,35 @@ local function Back(edge)
     return edge.back
 end
 
--- Esc: the game hides every frame named in UISpecialFrames (CloseSpecialWindows). One frame of ours
--- with nothing to see stands in for all windows that fill the screen: shown while one does (filling),
--- and when the game hides it, each of them goes back. Made at the first fill. Hiding it from Fill is no
--- call back into Fill: the game, as the stand-in, fires OnHide only for a frame that was shown.
-local escape, filling = nil, {}
+-- Esc, while the window fills the screen: it goes back (Core.Escape). A window Esc closes (escape =
+-- "close") is closed by Window.lua instead, full as it is.
+local function Escaped(edge)
+    edge:Fill(false)
+end
 
 local function Escape(edge, on)
-    if not escape then
-        if not on then return end
-        escape = CreateFrame("Frame", "SaneUIEdgeEscape", UIParent)
-        escape:Hide()
-        escape:SetScript("OnHide", function()
-            -- A window Esc closes (escape = "close") is closed by Window.lua's own stand-in, full as it is.
-            for full in pairs(filling) do
-                if full.window.options.escape ~= "close" then Core.Safe("full screen", full.Fill, full, false) end
-            end
-        end)
-        local special = rawget(_G, "UISpecialFrames")
-        if type(special) == "table" then table.insert(special, "SaneUIEdgeEscape") end
-    end
-    filling[edge] = on or nil
-    escape:SetShown(next(filling) ~= nil)
+    if edge.window.options.escape == "close" then return end
+    Core.Escape(edge, on and Escaped or nil)
 end
 
--- What the window holds: its fade out, and its coming in, at once 10 higher, then down to its place.
--- Two moves at once, as the game's own animations do it: one of no time up, one down.
-local function Moves(content)
-    local out = content:CreateAnimationGroup()
-    local fade = out:CreateAnimation("Alpha")
-    fade:SetDuration(Edge.OUT)
-    fade:SetToAlpha(0)
-    out:SetToFinalAlpha(true)
-    local come = content:CreateAnimationGroup()
-    local up = come:CreateAnimation("Translation")
-    up:SetDuration(0)
-    up:SetOffset(0, Edge.DROP)
-    local down = come:CreateAnimation("Translation")
-    down:SetDuration(Edge.IN)
-    down:SetOffset(0, -Edge.DROP)
-    down:SetSmoothing("OUT")
-    local appear = come:CreateAnimation("Alpha")
-    appear:SetDuration(Edge.IN)
-    appear:SetFromAlpha(0)
-    appear:SetToAlpha(1)
-    appear:SetSmoothing("OUT")
-    come:SetToFinalAlpha(true)
-    return { out = out, fade = fade, come = come }
-end
-
--- coming: true, it comes in; false, it fades out; nil, it is in sight and still. With a motion of no
--- time it is simply in sight.
+-- What the window holds: coming, true, it comes in, from a little above down to its place, as a panel's
+-- intro (Motion.Slide, Motion.Fade); false, it fades out; nil, it is in sight and still. With a motion of
+-- no time it is simply in sight.
 local function Content(edge, coming)
     local content = edge.window.options.content
-    if not content or (coming == nil and not edge.moves) then return end
-    edge.moves = edge.moves or Moves(content)
-    local moves = edge.moves
-    moves.out:Stop()
-    moves.come:Stop()
+    if not content or (coming == nil and not edge.fade) then return end
+    if not edge.fade then
+        edge.fade = Core.Motion.Fade(content)
+        edge.slide = Core.Motion.Slide(content, Edge.IN)
+    end
+    edge.slide:Stop()
     if coming == nil or edge.kind.time <= 0 then
-        content:SetAlpha(1)
+        edge.fade:To(1)
     elseif coming then
-        moves.come:Play()
+        edge.fade:To(1, Edge.IN, 0)
+        edge.slide:From(0, Edge.DROP)
     else
-        moves.fade:SetFromAlpha(content:GetAlpha())
-        moves.out:Play()
+        edge.fade:To(0, Edge.OUT)
     end
 end
 
@@ -329,7 +301,7 @@ local function Stand(edge)
         frame:SetAllPoints(UIParent)
         Menu(edge, true)
         window:Refresh() -- the search box ends left of the dropdown now
-        if window.options.docked then window.options.docked(Core.Dock.ZONES[edge.zone]) end
+        if window.options.docked then Core.Safe("full screen", window.options.docked, Core.Dock.ZONES[edge.zone]) end
     else
         window:Place()
     end
@@ -360,9 +332,11 @@ local function Failed(edge, problem)
     Core.Safe("full screen", edge.window.Place, edge.window)
 end
 
--- Fills the screen (true) or goes back to its zone (false), from where the window is now.
+-- Fills the screen (true) or goes back to its zone (false), from where the window is now. Not in Edit
+-- Mode, where windows are arranged at their size.
 function methods:Fill(on)
     if on == self.full or not self.placed or self.off or (on and not self.settings.expand) then return end
+    if on and Core.EditMode.active then return end
     if self.window:Locked() then return end -- a protected window in a fight: not now (Window.lua)
     local frame, window = self.frame, self.window
     local left, bottom = frame:GetLeft(), frame:GetBottom()
@@ -393,6 +367,7 @@ function methods:Fill(on)
             window.grip:SetAlpha(0)
             window.grip:EnableMouse(false)
         end
+        if window.skin then window.skin:Hold(true) end -- fitted on every step (Cover), once
     end
     self.full = on
     Escape(self, on)
@@ -406,15 +381,15 @@ function methods:Fill(on)
         to[1], to[2], to[3], to[4], to[5] = 0, 0, screenWidth, screenHeight, 1
     else
         if self.zone then
-            to[1], to[2] = Core.Dock.Rect(self.zone, self.width, self.height, screenWidth, screenHeight)
+            to[1], to[2] = Core.Dock.Rect(self.zone, self.width, self.height, screenWidth, screenHeight, window.options.insets)
         else
             to[1], to[2] = self.left, self.bottom
         end
         to[3], to[4], to[5] = self.width, self.height, 0
     end
-    self.kind = Core.Motion.Kind(window.options.motion and window.options.motion() or self.settings.motion)
+    self.kind = Core.Motion.Kind(window.options.motion and Core.Safe("full screen", window.options.motion) or self.settings.motion)
     Content(self, false)
-    if window.options.filled then window.options.filled(on) end
+    if window.options.filled then Core.Safe("full screen", window.options.filled, on) end
     self.clock = self.clock or Core.Motion.Clock(frame, function(progress) Step(self, progress) end,
         function(problem) Failed(self, problem) end)
     self.clock:Run(self.kind.time)
@@ -448,7 +423,10 @@ function methods:Stop()
     end
     frame:EnableMouseWheel(self.wheel or false)
     self.back:SetShown(false)
-    if window.skin then window.skin:SetAlpha(1) end
+    if window.skin then
+        window.skin:Hold(false)
+        window.skin:SetAlpha(1)
+    end
     frame:SetClampedToScreen(true)
     frame:SetSize(self.width, self.height)
     if window.grip then
@@ -480,7 +458,8 @@ local function Strips(edge)
     if not square then return end
     if corner then
         square:ClearAllPoints()
-        square:SetPoint(corner)
+        square:SetPoint(corner, zone.left and -Out(edge, "left") or Out(edge, "right"),
+            zone.top and Out(edge, "top") or -Out(edge, "bottom"))
         square:SetSize(width, width)
     end
     square:SetShown(corner and true or false)
@@ -517,6 +496,31 @@ Core.On("PLAYER_REGEN_DISABLED", function()
         if edge.away and edge.clock and edge.clock:IsRunning() and edge.frame:IsProtected() then
             edge.clock:Stop()
             Core.Safe("full screen", Step, edge, 1)
+        end
+    end
+end)
+
+-- A switch of the section changed in a module's settings: every window that reads them is as set now.
+local function Changed(name)
+    local settings = Core.Settings(name)
+    for edge in pairs(edges) do
+        if edge.settings == settings then edge:Update() end
+    end
+end
+
+-- Each module whose switches hold the section is followed once its addon has loaded (it described them
+-- while its files were read): its changed hears of a switch of the section only after the windows have
+-- taken it in.
+local followed = {}
+Core.On("ADDON_LOADED", function()
+    for name, described in pairs(Core.described) do
+        if sections[described.list] and not followed[name] then
+            followed[name] = true
+            local own = described.changed
+            described.changed = function(key, ...)
+                if Edge.KEYS[key] then Core.Safe("full screen", Changed, name) end
+                if own then return own(key, ...) end
+            end
         end
     end
 end)

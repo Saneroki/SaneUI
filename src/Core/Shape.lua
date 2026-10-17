@@ -18,17 +18,22 @@ local Core = SaneUI.Core
 --      local shape = Shape.New(host, settings, rect)
 --          host       the frame its textures are drawn in, on its BACKGROUND layer
 --          settings   a table with those two switches, read at every Fit (a module's
---                     settings); nil: as they are at first (Shape.DEFAULTS)
+--                     settings); nil: as they are at first (Shape.DEFAULTS); or
+--                     { radius = 8 }: every corner that round, in UI units, wherever it is
+--                     (a chat's bubble)
 --          rect       the frame whose place it fills; nil: host
 --      shape:Look(look)     -- look = { file = a tile, size = its size in UI units (or no file: a
 --                           -- colour), top = { r, g, b }, bottom = { r, g, b } (the fill's gradient),
---                           -- trim = { r, g, b } (or none) }
+--                           -- alpha = how solid the fill is (1: solid), trim = { r, g, b } (or none) }
 --      shape:Fit(left, bottom, width, height)  -- laid out for that place (from the screen's lower left
 --                           -- corner); without: where its frame is now, or else where it last was
+--      shape:Follow()       -- laid out anew whenever its frame's size changes (a plate that lives in a
+--                           -- frame of its own: what it needs is its size)
 --      shape:Base(width, height)   -- the size its corners are measured on; nil: its size at each Fit
 --      shape:Flatten(share)        -- that share of the way to square (0: as set, 1: square; at the next
 --                                  -- Fit): a window filling the screen ends square, its trim out of sight
 --      shape:SetAlpha(fill, trim)  shape:SetShown(on)
+--      Shape.Round(texture)        -- a round mask of the same circle over the texture (an icon); returns it
 --
 --  How it is drawn. A mask is stretched whole (Tooltips found it: no slice
 --  margins) and a texture takes three at most, so each corner is a square piece
@@ -40,7 +45,8 @@ local Core = SaneUI.Core
 --  corner). The trim lies over the fill: a strip along each side between its
 --  corners, and in each round corner the arc, the corner's piece in the trim's
 --  colour cut by the same circle and by a hole (Art/circle-hole) the trim's
---  width smaller. Without the masks (the files not found) every corner is square.
+--  width smaller; it is made only for a look that has one. Without the masks
+--  (the files not found) every corner is square.
 --
 --  Each corner's radius is its own. With the switch on it is no larger than its
 --  gaps to the screen's edges, so a corner that comes to an edge flattens out on
@@ -55,6 +61,7 @@ Core.Shape = Shape
 Shape.TRIM = 2 -- the trim's width in UI units
 Shape.CIRCLE = "Interface\\AddOns\\" .. ADDON .. "\\Art\\circle"
 Shape.HOLE = "Interface\\AddOns\\" .. ADDON .. "\\Art\\circle-hole"
+Shape.PORTRAIT = "Interface\\CharacterFrame\\TempPortraitAlphaMask" -- the game's round mask, should ours be missing
 local WHITE = "Interface\\Buttons\\WHITE8X8"
 local HOLLOW = 0.01 -- a hole too small to see: an arc no wider than the trim is a whole quarter disc
 
@@ -106,7 +113,7 @@ end
 local function Tint(look, share)
     local top, bottom = look.top, look.bottom
     return CreateColor(bottom[1] + (top[1] - bottom[1]) * share, bottom[2] + (top[2] - bottom[2]) * share,
-        bottom[3] + (top[3] - bottom[3]) * share, 1)
+        bottom[3] + (top[3] - bottom[3]) * share, look.alpha or 1)
 end
 
 -- A piece of the fill from x0, y0 to x1, y1, in a fill that high: put there and painted for that place.
@@ -143,9 +150,13 @@ local function Lay(shape)
     -- now, and with the switch on no more than the gaps between that corner's sides and the screen's edges.
     local gapLeft, gapBottom = left, bottom
     local gapRight, gapTop = UIParent:GetWidth() - left - width, UIParent:GetHeight() - bottom - height
-    local share = shape.square and 0 or Clamp((tonumber(settings.corners) or 0) / 100, 0, 1)
     local flat = shape.flat or 0
-    local radius = share * (1 - flat) * math.min(shape.baseWidth or width, shape.baseHeight or height) / 2
+    local radius = tonumber(settings.radius)
+    if not radius then
+        local share = Clamp((tonumber(settings.corners) or 0) / 100, 0, 1)
+        radius = share * math.min(shape.baseWidth or width, shape.baseHeight or height) / 2
+    end
+    radius = shape.square and 0 or math.max(radius, 0) * (1 - flat)
     local square, half, radii = settings.squareEdges, math.min(width, height) / 2, shape.radii
     for index, corner in ipairs(CORNERS) do
         local round = radius
@@ -172,7 +183,6 @@ local function Lay(shape)
         Fill(shape, STRIPS + index, x, y, x + round, y + round, height)
         local centreX, centreY = corner.left and round or width - round, corner.bottom and round or height - round
         Circle(shape, shape.circles[index], centreX, centreY, round)
-        Circle(shape, shape.holes[index], centreX, centreY, round - Shape.TRIM)
     end
 
     -- The trim: a strip along each side between its corners. With the switch on, a side that comes to the
@@ -184,6 +194,12 @@ local function Lay(shape)
     if not look.trim then
         for _, piece in ipairs(trims) do piece:Hide() end
         return
+    end
+    for index = 1, #CORNERS do
+        local corner = CORNERS[index]
+        local round = radii[index]
+        Circle(shape, shape.holes[index], corner.left and round or width - round, corner.bottom and round or height - round,
+            round - Shape.TRIM)
     end
     local trim = Shape.TRIM
     local function Out(gap)
@@ -205,24 +221,49 @@ local function Lay(shape)
     end
 end
 
--- How it looks: its tile or its gradient, and the trim's colour.
+-- The trim's pieces, made for the first look that has a trim: the strips along the sides and the arcs,
+-- each arc cut by its corner's circle and by a hole the trim's width smaller.
+local function Trims(shape)
+    if #shape.trims > 0 then return end
+    local host = shape.host
+    for index = 1, SIDES + #CORNERS do
+        local piece = host:CreateTexture(nil, "BACKGROUND", nil, -7)
+        piece:SetTexture(WHITE)
+        shape.trims[index] = piece
+    end
+    for index = 1, #CORNERS do
+        local hole = host:CreateMaskTexture()
+        if hole:SetTexture(Shape.HOLE, "CLAMPTOWHITE", "CLAMPTOWHITE") and not shape.square then
+            local arc = shape.trims[SIDES + index]
+            arc:AddMaskTexture(shape.circles[index])
+            arc:AddMaskTexture(hole)
+        else
+            shape.square = true
+        end
+        shape.holes[index] = hole
+    end
+end
+
+-- How it looks: its tile or its gradient, how solid, and the trim's colour.
 function methods:Look(look)
     self.look = look
     local top, bottom = look.top or { 0, 0, 0 }, look.bottom or look.top or { 0, 0, 0 }
     look.top, look.bottom = top, bottom
+    local alpha = look.alpha or 1
     self.gradient = not look.file and (top[1] ~= bottom[1] or top[2] ~= bottom[2] or top[3] ~= bottom[3])
     for _, piece in ipairs(self.fills) do
         if look.file then
             piece:SetTexture(look.file, "REPEAT", "REPEAT")
-            piece:SetVertexColor(1, 1, 1, 1)
+            piece:SetVertexColor(1, 1, 1, alpha)
         else
             piece:SetTexture(WHITE)
             piece:SetTexCoord(0, 1, 0, 1)
-            piece:SetVertexColor(bottom[1], bottom[2], bottom[3], 1) -- the gradient, if any, is set by Fill
+            piece:SetVertexColor(bottom[1], bottom[2], bottom[3], alpha) -- the gradient, if any, is set by Fill
         end
     end
     local trim = look.trim
     if trim then
+        Trims(self)
         for _, piece in ipairs(self.trims) do piece:SetVertexColor(trim[1], trim[2], trim[3], 1) end
     end
     Lay(self)
@@ -237,6 +278,17 @@ function methods:Fit(left, bottom, width, height)
         if x and y then self.left, self.bottom, self.width, self.height = x, y, rect:GetWidth(), rect:GetHeight() end
     end
     Lay(self)
+end
+
+-- Its frame's size changed: laid out for it, at its place if it has one (a plate that is not by the
+-- screen's edges needs only its size).
+local function Followed(shape)
+    local rect = shape.rect
+    shape:Fit(rect:GetLeft() or 0, rect:GetBottom() or 0, rect:GetWidth(), rect:GetHeight())
+end
+
+function methods:Follow()
+    self.rect:HookScript("OnSizeChanged", function() Core.Safe("shape", Followed, self) end)
 end
 
 function methods:Base(width, height)
@@ -263,24 +315,27 @@ function Shape.New(host, settings, rect)
     local shape = setmetatable({ host = host, settings = settings or Shape.DEFAULTS, rect = rect or host, shown = true,
                                  fills = {}, trims = {}, circles = {}, holes = {}, radii = { 0, 0, 0, 0 } }, { __index = methods })
     for index = 1, STRIPS + #CORNERS do shape.fills[index] = host:CreateTexture(nil, "BACKGROUND", nil, -8) end
-    for index = 1, SIDES + #CORNERS do
-        local piece = host:CreateTexture(nil, "BACKGROUND", nil, -7)
-        piece:SetTexture(WHITE)
-        shape.trims[index] = piece
-    end
     for index = 1, #CORNERS do
         -- A mask carries its file before it is given to a texture. SetTexture says whether the game found it.
-        local circle, hole = host:CreateMaskTexture(), host:CreateMaskTexture()
-        local found = circle:SetTexture(Shape.CIRCLE, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-        found = hole:SetTexture(Shape.HOLE, "CLAMPTOWHITE", "CLAMPTOWHITE") and found
-        if found then
+        local circle = host:CreateMaskTexture()
+        if circle:SetTexture(Shape.CIRCLE, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE") then
             shape.fills[STRIPS + index]:AddMaskTexture(circle)
-            shape.trims[SIDES + index]:AddMaskTexture(circle)
-            shape.trims[SIDES + index]:AddMaskTexture(hole)
         else
             shape.square = true
         end
-        shape.circles[index], shape.holes[index] = circle, hole
+        shape.circles[index] = circle
     end
     return shape
+end
+
+-- A round icon: a mask of the same circle over the whole texture (the game's round portrait mask where
+-- ours is not found). Returns the mask.
+function Shape.Round(texture)
+    local mask = texture:GetParent():CreateMaskTexture()
+    if not mask:SetTexture(Shape.CIRCLE, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE") then
+        mask:SetTexture(Shape.PORTRAIT, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    end
+    mask:SetAllPoints(texture)
+    texture:AddMaskTexture(mask)
+    return mask
 end

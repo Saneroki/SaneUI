@@ -6,15 +6,21 @@ local _, ns = ...
 --  back exactly as it was when it is not (Show).
 --
 --  Nothing is hidden, closed or switched off: each of its frames gets a hidden
---  frame of ours as parent, and its own parent back later. So the game's chat
---  goes on collecting every line, and when our window goes (or fails) it is
---  complete. The game's edit boxes are not among them: they belong to the
---  screen, not to a chat frame, and Input.lua puts them into our window.
+--  frame of ours as parent, and its own parent back later (lent, Core.Lend). So
+--  the game's chat goes on collecting every line, and when our window goes (or
+--  fails) it is complete. The game's edit boxes are not among them: they belong
+--  to the screen, not to a chat frame, and Input.lua puts them into our window.
 --
 --  The game moves some of these frames to other parents itself (a tab into the
 --  dock and out of it, all of them under a window that fills the screen). One
---  it has moved meanwhile is left where the game put it.
+--  it has moved meanwhile is left where the game put it (Lend gives a parent
+--  back only while it is still ours).
+--
+--  Core's window holder (Holder.lua) is not for these: it keeps a window of the
+--  game's out of sight only while that window is closed, and the game's chat is
+--  never closed.
 -------------------------------------------------------------------------------
+local Core = SaneUI.Core
 local Native = {}
 ns.Native = Native
 
@@ -23,22 +29,23 @@ ns.Native = Native
 local PARTS = { "GeneralDockManager", "QuickJoinToastButton", "TextToSpeechButtonFrame", "ChatAlertFrame",
                 "ChatFrameToggleVoiceDeafenButton", "ChatFrameToggleVoiceMuteButton" }
 
-local hidden       -- the parent of what is out of sight
-local parents = {} -- [frame] = its own parent
+local hidden    -- the parent of what is out of sight
+local lent = {} -- [frame] = Core.Lend of it: its own parent, and its layer
 
--- A new parent, the same layer: the game's own way for its chat frames.
-local function Move(frame, parent)
-    if FrameUtil and FrameUtil.SetParentMaintainRenderLayering then
-        FrameUtil.SetParentMaintainRenderLayering(frame, parent)
-    else
-        frame:SetParent(parent)
-    end
-end
-
+-- Out of sight under our frame. Its strata and level are noted with its parent: given back with it, the frame
+-- is drawn as before, as the game's own way of moving its chat frames keeps them
+-- (FrameUtil.SetParentMaintainRenderLayering).
 local function Away(frame)
     if not frame or frame:GetParent() == hidden then return end
-    parents[frame] = frame:GetParent()
-    Move(frame, hidden)
+    local lend = Core.Lend(frame)
+    lend:SetLayer()
+    if lend:SetParent(hidden) then lent[frame] = lend end
+end
+
+-- Its own parent back, if it is still ours, and then its layer; one the game has moved is left as it is.
+local function Back(frame, lend)
+    if frame:GetParent() ~= hidden then return end
+    lend:Return()
 end
 
 -- The game makes new frames of its chat while ours is open: they go out of sight too.
@@ -69,8 +76,6 @@ end
 -- Each frame by itself: one that fails keeps none of the others out of sight.
 function Native.Show()
     Native.away = false
-    for frame, parent in pairs(parents) do
-        if frame:GetParent() == hidden then pcall(Move, frame, parent) end
-    end
-    wipe(parents)
+    for frame, lend in pairs(lent) do pcall(Back, frame, lend) end
+    wipe(lent)
 end

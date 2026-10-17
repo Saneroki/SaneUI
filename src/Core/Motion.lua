@@ -24,11 +24,15 @@ local Core = SaneUI.Core
 --      local clock = Motion.Clock(frame, step, failed)
 --      clock:Run(seconds)  clock:Stop()  clock:IsRunning()
 --
+--      local fade = Motion.Fade(region)         -- its alpha moves: fade:To(alpha, seconds, from)
+--      local slide = Motion.Slide(region, seconds)  -- slide:From(x, y): shown that far off, it moves back
+--
 --  The clock calls step(progress) every frame while it runs and step(1) at its
 --  end: an animation of the game's that moves nothing by itself, so the game
 --  calls it only while it runs and nothing is looked at while nothing moves.
---  Out of sight, or with no time, it is at its end at once. An error in step
---  stops it (it would come again every frame) and goes to failed(problem).
+--  Out of sight, or with no time, it is at its end at once: also when the frame
+--  is hidden while it runs. An error in step stops it (it would come again
+--  every frame) and goes to failed(problem).
 -------------------------------------------------------------------------------
 local Motion = {}
 Core.Motion = Motion
@@ -111,6 +115,91 @@ function Motion.Clock(frame, step, failed)
         if progress < 1 then Tick(clock, progress) end
     end)
     group:SetScript("OnFinished", function() Tick(clock, 1) end)
+    -- Hidden on the way, it is at its end at once: nothing waits out of sight half way (an opening
+    -- window caught at half its size).
+    frame:HookScript("OnHide", function()
+        if not group:IsPlaying() then return end
+        group:Stop()
+        Tick(clock, 1)
+    end)
     clock.group, clock.animation = group, animation
     return clock
+end
+
+-------------------------------------------------------------------------------
+--  A region's fade and slide
+-------------------------------------------------------------------------------
+--  What a window holds fading out and coming in again (Edge.lua), a list's
+--  messages sliding up to make room (Social): the game's own animations, an
+--  Alpha and a Translation, smoothed as the game smooths its own (SetSmoothing
+--  OUT: quick at first, settling), so the game moves them and no code of ours
+--  runs on the way. With Sane UI's animations off (Core.general.animations), no
+--  time, or out of sight, each is where it goes at once.
+--
+--      local fade = Motion.Fade(region)
+--      fade:To(alpha, seconds, from)    -- from its alpha now (or from), to alpha
+--      local slide = Motion.Slide(region, seconds)
+--      slide:From(x, y)                 -- shown that far from its place at once, it moves back to it in its
+--                                       -- seconds; one still on its way adds what it had left
+--      slide:SetTime(seconds)   fade:Stop()   slide:Stop()   fade:IsPlaying()   slide:IsPlaying()
+local function Moves(region)
+    return not (Core.general and Core.general.animations == false) and region:IsVisible()
+end
+
+local fades = {}
+
+function fades:To(alpha, seconds, from)
+    self.group:Stop()
+    local region = self.region
+    if not seconds or seconds <= 0 or not Moves(region) then return region:SetAlpha(alpha) end
+    self.alpha:SetFromAlpha(from or region:GetAlpha())
+    self.alpha:SetToAlpha(alpha)
+    self.alpha:SetDuration(seconds)
+    self.group:Play()
+end
+
+function fades:Stop() self.group:Stop() end
+function fades:IsPlaying() return self.group:IsPlaying() end
+
+function Motion.Fade(region)
+    local group = region:CreateAnimationGroup()
+    local alpha = group:CreateAnimation("Alpha")
+    alpha:SetSmoothing("OUT")
+    group:SetToFinalAlpha(true) -- the region keeps the alpha it went to
+    return setmetatable({ region = region, group = group, alpha = alpha }, { __index = fades })
+end
+
+local slides = {}
+
+function slides:SetTime(seconds)
+    self.time = seconds or 0
+    self.home:SetDuration(self.time)
+end
+
+-- Two moves at once, as the game's own animations do it: one of no time away from the place, one back to it.
+function slides:From(x, y)
+    if (x == 0 and y == 0) or self.time <= 0 or not Moves(self.region) then return end
+    if self.group:IsPlaying() then
+        local left = 1 - self.home:GetSmoothProgress()
+        x, y = x + self.x * left, y + self.y * left
+    end
+    self.group:Stop()
+    self.x, self.y = x, y
+    self.away:SetOffset(x, y)
+    self.home:SetOffset(-x, -y)
+    self.group:Play()
+end
+
+function slides:Stop() self.group:Stop() end
+function slides:IsPlaying() return self.group:IsPlaying() end
+
+function Motion.Slide(region, seconds)
+    local group = region:CreateAnimationGroup()
+    local away = group:CreateAnimation("Translation")
+    away:SetDuration(0)
+    local home = group:CreateAnimation("Translation")
+    home:SetSmoothing("OUT")
+    local slide = setmetatable({ region = region, group = group, away = away, home = home, x = 0, y = 0 }, { __index = slides })
+    slide:SetTime(seconds)
+    return slide
 end

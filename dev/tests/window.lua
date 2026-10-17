@@ -46,6 +46,7 @@ function methods:SetGradient(orientation, low, high) self._gradient = { orientat
 function methods:SetBlendMode(mode) self._blend = mode end
 function methods:OverrideText(text) self._override = text end
 function methods:SetUserPlaced(placed) self._userPlaced = placed end
+function methods:SetToplevel(on) self._toplevel = on end
 function methods:GetName() return self._name end
 function methods:SetText(text) -- an edit box tells of its new text, as the game's does
     self._text = text
@@ -68,6 +69,21 @@ W.templates.MaximizeMinimizeButtonFrameTemplate = function(widget)
     function widget:Minimize(_, skip)
         if not skip then self:minimized() end
         self.isMinimized = true
+    end
+end
+-- Blizzard's tab system (TabSystemTemplate): a tab button for each AddTab; a click asks the callback, which
+-- may show the choice itself (true).
+W.templates.TabSystemTemplate = function(widget)
+    widget.tabs = {}
+    function widget:SetTabSelectedCallback(fn) self.callback = fn end
+    function widget:SetTabVisuallySelected(id) self.selected = id end
+    function widget:AddTab(text)
+        local tab = CreateFrame("Button", nil, self)
+        tab._text = text
+        self.tabs[#self.tabs + 1] = tab
+        local id = #self.tabs
+        tab:SetScript("OnClick", function() if not self.callback(id, true) then self:SetTabVisuallySelected(id) end end)
+        return id
     end
 end
 -- Blizzard's nine-slice: a texture per piece the layout names, in the kit's atlases.
@@ -94,6 +110,7 @@ function methods:CreateAnimationGroup()
         function animation:GetProgress() return group.progress end
         function animation:SetOffset(_, y) self.y = y end
         function animation:SetFromAlpha(alpha) self.from = alpha end
+        function animation:GetSmoothProgress() return self.progress or 0 end
         group.moves[#group.moves + 1] = animation
         return animation
     end
@@ -319,6 +336,39 @@ EventRegistry:TriggerEvent("EditMode.Exit")
 check(not Core.EditMode.active and not frame._moving and not window.moving and store.place.x == 300 and store.place.y == 560,
     "Edit Mode closes while it is in hand: it is let go there, and that is kept")
 check(not bar:IsShown() and not window.grip:IsShown(), "Edit Mode closed, box and grip are gone")
+EventRegistry:TriggerEvent("EditMode.Enter")
+bar:GetScript("OnDragStart")(bar)
+at(frame, 0, 410)
+EventRegistry:TriggerEvent("EditMode.Exit")
+check(store.place.dock == "LEFT" and window.zone == "LEFT", "(Edit Mode closes while it is in hand at the left edge: it docks there)")
+bar:GetScript("OnDragStop")(bar)
+check(store.place.dock == "LEFT" and window.zone == "LEFT" and stands(frame, "LEFT", 0, 540),
+    "the game's end of that drag, coming after, changes nothing: it is let go once, and its zone stays kept")
+window:Reset()
+
+-- A module's hook that fails stops nothing of the window's own
+do
+local brokenFrame = CreateFrame("Frame", nil, UIParent)
+local brokenStore = {}
+local brokenWindow = Window.New(brokenFrame, { store = brokenStore, title = "Broken", dock = true, sizable = true,
+    first = { point = "CENTER", x = 0, y = 0, width = 200, height = 100 }, docked = function() error("the module's own") end })
+brokenWindow:Place()
+check(Core.errors.window and brokenFrame._points[1][1] == "CENTER" and brokenFrame._width == 200,
+    "a module's hook that fails is noted, and the window is placed all the same")
+EventRegistry:TriggerEvent("EditMode.Enter")
+at(brokenFrame, 500, 500)
+brokenWindow.box:GetScript("OnDragStart")(brokenWindow.box)
+brokenWindow.box:GetScript("OnDragStop")(brokenWindow.box)
+check(not brokenWindow.moving and not brokenFrame._moving and brokenStore.place.x == 500 and brokenStore.place.y == 600,
+    "dragged and let go, it is out of hand and kept where it was let go, though the hook fails again")
+brokenWindow.grip:GetScript("OnMouseDown")(brokenWindow.grip)
+brokenWindow.grip:GetScript("OnMouseUp")(brokenWindow.grip)
+check(not brokenWindow.sizing and not brokenFrame._sizing, "and so is a sizing")
+EventRegistry:TriggerEvent("EditMode.Exit")
+brokenFrame:Hide()
+brokenWindow.options.docked = nil
+Core.errors.window = nil
+end
 
 -- The parts, for a window that is not ours ------------------------------------------------------
 local theirs, handle, told = CreateFrame("Frame", "TheGamesWindow", UIParent), CreateFrame("Frame"), {}
@@ -366,6 +416,34 @@ check(steady and Motion.Share(glide, 0.5) > 0.9 and Motion.Share(off, 0) == 1,
 local choices = Motion.Choices(true)
 check(#choices == 5 and choices[1][1] == "global" and choices[1][2] == "Use global type" and choices[2][1] == "glide" and #Motion.Choices() == 4,
     "a window's own setting has Use global type first")
+
+-- A region's fade and slide
+do
+    local region = CreateFrame("Frame", nil, UIParent)
+    local fade, slide = Motion.Fade(region), Motion.Slide(region, 0.3)
+    local fading, sliding = region._groups[1], region._groups[2]
+    fade:To(0, 0.2)
+    check(fading.playing and fading.moves[1].duration == 0.2, "a fade is the game's own animation, as long as it is asked to be")
+    fade:To(1)
+    check(not fading.playing and region._alpha == 1, "with no time it is there at once")
+    slide:From(0, -12)
+    check(sliding.playing and sliding.moves[1].y == -12 and sliding.moves[2].y == 12 and sliding.moves[2].duration == 0.3,
+        "a slide shows the region that far off at once and moves it back in its time")
+    sliding.moves[2].progress = 0.25
+    slide:From(0, -8)
+    check(sliding.moves[2].y == 8 + 12 * 0.75, "one still on its way adds what it had left")
+    slide:SetTime(0.6)
+    check(sliding.moves[2].duration == 0.6, "its time can be set anew")
+    slide:Stop()
+    Core.general.animations = false
+    fade:To(0.5, 1)
+    slide:From(0, 20)
+    check(not fading.playing and region._alpha == 0.5 and not sliding.playing, "with Sane UI's animations off nothing moves: it is there at once")
+    Core.general.animations = true
+    region:Hide()
+    fade:To(0.25, 1)
+    check(not fading.playing and region._alpha == 0.25, "nor out of sight")
+end
 
 -- Opening while the mouse rests on it ---------------------------------------------------------------
 local opener, changes = CreateFrame("Frame", nil, UIParent), {}
@@ -432,6 +510,29 @@ opener:Hide()
 expand:Open()
 check(opener._width == 420 and not clock.playing, "out of sight it does not move: it has its new size at once")
 expand:Close()
+opener:Show()
+expand:Open()
+clock:Run(0.5)
+opener:Hide()
+check(opener._width == 420 and not clock.playing, "hidden while it opens, it is open at once: nothing waits half way out of sight")
+expand:Close()
+check(opener._width == 240, "and closes to its own small size, not one it was caught at")
+opener:Show()
+expand:Open()
+clock:Run(1)
+expand:Close()
+clock:Run(1)
+check(opener._width == 240 and opener._height == 44, "opened again, it closes to that size: the half way one was never taken for it")
+do
+local fragile = CreateFrame("Frame", nil, UIParent)
+fragile:SetSize(100, 50)
+local fragileExpand = Expand.New(fragile, { width = 200, height = 100, changed = function() error("the module's own") end,
+    motion = function() return "off" end })
+fragileExpand:Open()
+check(fragileExpand.open and fragile._width == 200 and Core.errors.expand, "a module's hook that fails is noted, and it opens all the same")
+fragileExpand:Close()
+Core.errors.expand = nil
+end
 local cornered = CreateFrame("Frame", nil, UIParent)
 local before = #W.frames
 local corneredExpand = Expand.New(cornered, { width = 300, height = 300, corner = "BOTTOMLEFT" })
@@ -461,7 +562,7 @@ check(not sharedExpand.open and shared._width == 100 and shared._height == 50, "
 local faulty = CreateFrame("Frame", nil, UIParent)
 local faultyExpand = Expand.New(faulty, { width = 10, height = 10 })
 faulty:GetScript("OnEnter")(faulty)
-faultyExpand.hot = nil
+faultyExpand.hover.hot = 5 -- (a look that cannot be done)
 faultyExpand.watch:GetScript("OnUpdate")(faultyExpand.watch, 1)
 check(not faultyExpand.watch:IsShown() and Core.errors.expand, "a look that fails takes the watch in, and is noted")
 Core.errors.expand = nil
@@ -473,6 +574,7 @@ local keptExpand = Expand.New(kept, { width = 300, height = 120, hover = false, 
 check(kept:GetScript("OnEnter") == nil and not kept._motion and not keptExpand.open, "without hover the mouse's coming does nothing")
 keptExpand:Stay(true)
 check(keptExpand.open and keptExpand.stays and kept._width == 300, "kept open, it opens")
+check(not keptExpand.watch:IsShown(), "and nothing looks at the mouse while it is kept open")
 kept._mouseOver = false
 keptExpand.watch:GetScript("OnUpdate")(keptExpand.watch, 5)
 check(keptExpand.open, "and stays open when the mouse is away")
@@ -485,12 +587,51 @@ both._mouseOver = true
 both:GetScript("OnEnter")(both)
 bothExpand.watch:GetScript("OnUpdate")(bothExpand.watch, 1)
 bothExpand:Stay(true)
-check(bothExpand.open and bothExpand.stays, "with hover too: the mouse opens it, and it can be kept open")
+check(bothExpand.open and bothExpand.stays and not bothExpand.watch:IsShown(), "with hover too: the mouse opens it, and it can be kept open, unwatched")
 bothExpand:Stay(false)
-check(bothExpand.open and not bothExpand.stays, "let go, it stays open while the mouse is on it")
+check(bothExpand.open and not bothExpand.stays and bothExpand.watch:IsShown(), "let go, it stays open while the mouse is on it, watched again")
 both._mouseOver = false
 bothExpand.watch:GetScript("OnUpdate")(bothExpand.watch, 1)
 check(not bothExpand.open, "and closes once the mouse has gone")
+
+-- A watch, and the mouse on a window
+do
+    local watched, looks = CreateFrame("Frame", nil, UIParent), {}
+    local watch = Core.Watch(watched, 0.2, function(passed) looks[#looks + 1] = passed end)
+    check(not watch:IsRunning() and not watch.frame:IsShown() and watch.frame._parent == watched,
+        "a watch is a small frame of its own in the frame it watches, hidden: nothing runs at first")
+    watch:Start()
+    watch.frame:GetScript("OnUpdate")(watch.frame, 0.1)
+    check(#looks == 0, "out, it looks only every so many seconds")
+    watch.frame:GetScript("OnUpdate")(watch.frame, 0.15)
+    check(#looks == 1 and near(looks[1], 0.25), "then it looks, told how long it waited")
+    check(watch.frame:IsVisible(), "it runs while the frame it watches is shown")
+    watched:Hide()
+    check(not watch.frame:IsVisible(), "and not while it is hidden (the game runs no OnUpdate of a frame out of sight)")
+    watched:Show()
+    watch:Stop()
+    check(not watch:IsRunning(), "taken in, it is hidden again")
+    local broken = Core.Watch(watched, 0, function() error("broken") end, "test watch")
+    broken:Start()
+    broken.frame:GetScript("OnUpdate")(broken.frame, 1)
+    check(not broken:IsRunning() and Core.errors["test watch"], "a look that fails stops it, and is noted")
+    Core.errors["test watch"] = nil
+
+    local told = {}
+    local spot = CreateFrame("Frame", nil, UIParent)
+    local hover = Core.Hover(spot, { linger = 0.4, every = 0.2,
+        enter = function() told[#told + 1] = "enter" end, leave = function() told[#told + 1] = "leave" end })
+    check(spot._motion and not spot._mouse and not hover.watch:IsRunning(), "the mouse on a window: it takes only the mouse's coming, and nothing runs")
+    spot._mouseOver = true
+    spot:GetScript("OnEnter")(spot)
+    check(hover.over and told[1] == "enter" and hover.watch:IsRunning(), "the mouse comes: it is there at once, and from then it is watched")
+    spot._mouseOver = false
+    hover.watch.frame:GetScript("OnUpdate")(hover.watch.frame, 0.2)
+    check(hover.over and #told == 1, "a moment away is not gone")
+    hover.watch.frame:GetScript("OnUpdate")(hover.watch.frame, 0.2)
+    check(not hover.over and told[2] == "leave" and not hover.watch:IsRunning(), "gone long enough it is told, and the watch is in")
+    spot:Hide()
+end
 
 -- Filling the screen from its edge ------------------------------------------------------------------
 local wide = CreateFrame("Frame", nil, UIParent)
@@ -602,8 +743,8 @@ check(wide._mouse == false and wide._wheel == false, "the mouse goes through it 
 W.Wait(1)
 strip:GetScript("OnEnter")(strip)
 clock:Run(1)
-local escape = SaneUIEdgeEscape
-check(edge.full and escape and escape:IsShown() and UISpecialFrames[#UISpecialFrames] == "SaneUIEdgeEscape",
+local escape = SaneUIEscape
+check(edge.full and escape and escape:IsShown() and UISpecialFrames[#UISpecialFrames] == "SaneUIEscape",
     "full, a frame of ours stands shown in the game's list of what Esc closes")
 escape:Hide()
 check(not edge.full and edge.away and clock.playing and fills[#fills] == false, "the game hides it (Esc): the window goes back")
@@ -680,8 +821,29 @@ check(described[6].min == 0 and described[6].max == 100 and described[6].unit ==
     and described[6].text == "Corner radius" and described[7].default == true and described[7].text == "Don't round corners on screen edges",
     "the corner radius is a share, a tenth at first; the corners on the screen's edges are square at first")
 check(described[3].choices[1][1] == Core.Motion.GLOBAL and described[4].min == 0 and described[4].max == 100 and described[4].unit == "%"
-    and described[4].default == 50 and described[5].default == "solid" and #described[5].choices == #Edge.TEXTURES,
+    and described[4].default == 50 and described[5].default == "solid" and #described[5].choices == #Core.Skin.TILES + 1 and described[5].choices[1][2] == Edge.SOLID,
     "the animation type may be the general one, the opacity is a share, half by default, the texture solid black or one of Blizzard's")
+
+do -- A module's section, followed by itself
+    local list = { { key = "animations", default = true, text = "Animations" } }
+    Edge.Options(list, 2, nil, { motion = "animations" })
+    local heard = {}
+    Core.Options("EdgeTest", list, function(key) heard[#heard + 1] = key end)
+    check(list[3].key == "motion" and list[3].parent[1] == "expand" and list[3].parent[2] == "animations" and list[2].parent == nil
+        and list[4].parent == "expand", "a module can put some of the section under switches of its own too")
+    W.Fire("ADDON_LOADED", "SaneUI_EdgeTest")
+    local own = CreateFrame("Frame", nil, UIParent)
+    local ownWindow = Window.New(own, { store = { place = { x = 0, y = 0, width = 200, height = 100, dock = "BOTTOM" } }, sizable = true,
+        dock = true, edge = Core.Settings("EdgeTest"), first = { point = "CENTER", x = 0, y = 0, width = 200, height = 100 } })
+    ownWindow:Place()
+    check(ownWindow.edge.strips.bottom:IsShown(), "(docked at the bottom, its strip there)")
+    Core.Set("EdgeTest", "expand", false)
+    check(not ownWindow.edge.strips.bottom:IsShown() and heard[1] == "expand",
+        "a switch of the section changed: the window takes it in by itself, and the module still hears of it")
+    Core.Set("EdgeTest", "expand", true)
+    check(ownWindow.edge.strips.bottom:IsShown(), "and back")
+    own:Hide()
+end
 
 local tall = CreateFrame("Frame", nil, UIParent)
 local tallSettings = { expand = true, motion = "off", expandOpacity = 100, expandTexture = "rock", corners = 10, squareEdges = true }
@@ -695,7 +857,7 @@ W.Wait(1)
 at(tall, 0, 880)
 tallEdge.strips.corner:GetScript("OnEnter")(tallEdge.strips.corner)
 local tallMiddle = tallEdge.back.fills[3]
-check(tallEdge.full and tall._width == 1920 and tallMiddle._alpha == 1 and tallMiddle._texture == Edge.TEXTURES[3].file
+check(tallEdge.full and tall._width == 1920 and tallMiddle._alpha == 1 and tallMiddle._texture == Core.Skin.Tile("rock").file
     and tallMiddle._wrap == "REPEAT" and near(tallMiddle._coords[2], 1920 / 512) and near(tallMiddle._coords[4], 1080 / 512),
     "with settings of its own it moves as they say (Off: at once), its background as opaque as set, a tile of Blizzard's, repeated at its size")
 tallSettings.expandOpacity, tallSettings.expandTexture = 25, "solid"
@@ -743,6 +905,11 @@ skinnedEdge.strips.corner:GetScript("OnEnter")(skinnedEdge.strips.corner)
 skinned._group:Run(0.1)
 check(skinnedSkin._alpha < 1 and skinnedSkin._alpha > 0 and near(skinnedSkin._alpha, 1 - skinnedEdge.cover) and round(skinnedSkin.shape, 0, 13, 0, 0),
     "on its way its skin fades as the background comes, and follows its size")
+local stepWidth, kept = skinnedSkin.shape.width, skinned._width
+skinned._width = 999
+skinnedSkin:GetScript("OnSizeChanged")(skinnedSkin)
+check(skinnedSkin.shape.width == stepWidth, "fitted once per step (by the motion): its own size change fits nothing then")
+skinned._width = kept
 skinned._group:Run(1)
 check(skinnedSkin._alpha == 0 and skinnedEdge.cover == 1, "full, only the background is there")
 skinnedWindow:Place()
@@ -818,6 +985,11 @@ traderWindow.options.dragDocked = nil
 -- In Edit Mode
 EventRegistry:TriggerEvent("EditMode.Enter")
 check(not buttons:IsShown() and not traderWindow:Draggable() and traderWindow.box:IsShown(), "in Edit Mode its box moves it, and the buttons are not there")
+traderWindow.edge:Fill(true)
+traderStore.place.full = true
+check(traderWindow:Open() == "ours" and not traderWindow.edge.full and not traderWindow.edge.away,
+    "in Edit Mode nothing fills the screen, not even a window asked for that was left full: windows are arranged at their size")
+traderStore.place.full = nil
 at(trader, 760, 390)
 traderWindow.box:GetScript("OnDragStart")(traderWindow.box)
 traderWindow.box:GetScript("OnDragStop")(traderWindow.box)
@@ -916,6 +1088,34 @@ W.Fire("PLAYER_REGEN_DISABLED")
 check(not secure._group.playing and secure._width == 1920 and secureWindow.edge.full,
     "a fight begins while it is on its way: it is at the end of the way at once, so nothing moves it in the fight")
 secureWindow:Place()
+secure:Hide()
+
+-- A protected window Esc closes is not hidden in a fight: it closes once the fight is over
+do
+local guarded = CreateFrame("Frame", nil, UIParent)
+local guardedClosed = 0
+local guardedWindow = Window.New(guarded, {
+    store = {}, title = "Spellbook", titleBar = true, escape = "close",
+    first = { point = "CENTER", x = 0, y = 0, width = 400, height = 300 },
+})
+guardedWindow:Place()
+guarded._protected = true
+guarded:HookScript("OnHide", function() guardedClosed = guardedClosed + 1 end)
+local guardStand = SaneUIEscape
+W.combat = true
+local guardClose = guardedWindow.buttons.list[1]
+guardClose:GetScript("OnClick")(guardClose)
+check(guarded:IsShown() and guardedClosed == 0, "in a fight its close button does not hide it: nothing of ours hides it then")
+guardStand:Hide()
+check(guarded:IsShown(), "nor does Esc")
+W.Wait(0.1)
+check(guardStand:IsShown(), "and Esc stays ours while it is shown: the stand-in is back a moment later")
+W.combat = false
+W.Fire("PLAYER_REGEN_ENABLED")
+check(not guarded:IsShown() and guardedClosed == 1, "the fight over, it closes, once")
+W.Wait(0.1)
+check(not guardStand:IsShown(), "and Esc is the game's again")
+end
 
 -- Esc closes a window made so, small or full, as the game's panels close
 local talked = CreateFrame("Frame", nil, UIParent)
@@ -926,9 +1126,11 @@ local talkWindow = Window.New(talked, {
     close = function() talkClosed = talkClosed + 1; talked:Hide() end,
 })
 talkWindow:Place()
-local stand = SaneUIWindowEscape
-check(stand and stand:IsShown() and UISpecialFrames[#UISpecialFrames] == "SaneUIWindowEscape",
-    "shown, a window Esc closes puts a stand-in of ours into the game's list of what Esc closes")
+local stand = SaneUIEscape
+local ours = 0
+for _, name in ipairs(UISpecialFrames) do if name:find("^SaneUI") then ours = ours + 1 end end
+check(stand and stand:IsShown() and ours == 1,
+    "shown, a window Esc closes has the stand-in of ours shown, the one frame Sane UI puts into the game's list of what Esc closes")
 stand:Hide()
 check(talkClosed == 1 and not talked:IsShown(), "Esc: it closes, as its module says")
 W.Wait(0.1)
@@ -937,11 +1139,20 @@ talked:Show()
 at(talked, 760, 390)
 talkWindow.edge:Fill(true)
 talked._group:Run(1)
-check(stand:IsShown() and SaneUIEdgeEscape:IsShown(), "full, both stand-ins are shown")
-SaneUIEdgeEscape:Hide()
+check(stand:IsShown(), "full, the same stand-in is shown")
+local spare = CreateFrame("Frame", nil, UIParent)
+local spareWindow = Window.New(spare, { store = {}, edge = true, sizable = true,
+    first = { point = "CENTER", x = 0, y = 0, width = 200, height = 100 } })
+spareWindow:Place()
+at(spare, 860, 490)
+spareWindow.edge:Fill(true)
+spare._group:Run(1)
 stand:Hide()
 check(talkClosed == 2 and not talked:IsShown() and talkStore.place.full == true,
     "Esc closes it full as it is: not made small first, so it opens full again")
+check(not spareWindow.edge.full and spareWindow.edge.away and spare:IsShown(), "and a full window Esc does not close goes back, by the same Esc")
+spare._group:Run(1)
+spare:Hide()
 check(talkWindow:Open() == "ours" and talkWindow.edge.full, "the next time it is asked for, it is full again")
 talkWindow:Place()
 
@@ -972,6 +1183,56 @@ manager:ShowSystemSelections()
 check(Core.EditMode.active and talkWindow.box:IsShown(), "and come back with them")
 EventRegistry:TriggerEvent("EditMode.Exit")
 check(not Core.EditMode.active and not talkWindow.box:IsShown(), "Edit Mode closed, they are gone")
+
+-- Chosen in Edit Mode: its box in the selected look, and a small dialog of Core's; free, it snaps to Edit
+-- Mode's grid while the game snaps
+do
+    local grid = CreateFrame("Frame", nil, UIParent)
+    grid.gridSpacing = 50
+    local snapping = true
+    manager.IsSnapEnabled = function() return snapping end
+    manager.Grid = grid
+    local picked = CreateFrame("Frame", nil, UIParent)
+    local pickedStore = {}
+    local pickedWindow = Window.New(picked, { store = pickedStore, title = "Auction House", dock = true, sizable = true,
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
+    pickedWindow:Place()
+    EventRegistry:TriggerEvent("EditMode.Enter")
+    local pickedBox = pickedWindow.box
+    pickedBox:GetScript("OnMouseDown")(pickedBox)
+    local selection = Core.Selection
+    local dialog = selection.window == pickedWindow and talkWindow.box.Center._atlas == "editmode-actionbar-highlight"
+    local panel
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == UIParent and widget._strata == "DIALOG" and rawget(widget, "reset") then panel = widget end
+    end
+    check(dialog and pickedBox.Center._atlas == "editmode-actionbar-selected" and panel and panel:IsShown()
+        and panel.title._text == "Auction House" and not panel.reset:IsEnabled() and panel._level == 200,
+        "a click on its box in Edit Mode chooses it: the box in Edit Mode's selected look, a dialog of Core's that names it; at its first place, nothing to reset")
+    at(picked, 113, 497)
+    pickedBox:GetScript("OnDragStart")(pickedBox)
+    pickedBox:GetScript("OnDragStop")(pickedBox)
+    check(pickedStore.place.x == 110 and pickedStore.place.y == 690 and stands(picked, "TOPLEFT", 110, 690),
+        "let go free near a line of Edit Mode's grid while the game snaps to it, its edges are put on the lines")
+    check(panel.reset:IsEnabled(), "moved, the dialog can put it back")
+    snapping = false
+    at(picked, 113, 497)
+    pickedBox:GetScript("OnDragStart")(pickedBox)
+    pickedBox:GetScript("OnDragStop")(pickedBox)
+    check(pickedStore.place.x == 113, "with the game's snapping off it stays where it was let go")
+    panel.reset:GetScript("OnClick")(panel.reset)
+    check(pickedStore.place == nil and picked._points[1][1] == "CENTER" and not panel.reset:IsEnabled(),
+        "Reset To Default Position puts it at its first place and size")
+    talkWindow.box:GetScript("OnMouseDown")(talkWindow.box)
+    check(selection.window == talkWindow and pickedBox.Center._atlas == "editmode-actionbar-highlight"
+        and talkWindow.box.Center._atlas == "editmode-actionbar-selected" and panel.title._text == "Vendor",
+        "another chosen, the first is not any more")
+    EventRegistry:TriggerEvent("EditMode.Exit")
+    check(not panel:IsShown() and selection.window == nil and talkWindow.box.Center._atlas == "editmode-actionbar-highlight",
+        "Edit Mode closed, nothing is chosen and the dialog is gone")
+    picked:Hide()
+    manager.IsSnapEnabled, manager.Grid = nil, nil
+end
 rawset(_G, "EditModeManagerFrame", nil)
 
 -- One window to a zone at a time (Saneroki, 2026-10-16)
@@ -984,14 +1245,36 @@ local oneWindow = Window.New(one, { store = zoneStore, key = "a", title = "Vendo
 local twoWindow = Window.New(two, { store = zoneStore, key = "b", title = "Bank", dock = true, first = { point = "CENTER", x = 0, y = 0 } })
 oneWindow:Place()
 twoWindow:Place()
-check(oneWindow.zone == "CENTER" and twoWindow.zone == nil and stands(two, "TOPLEFT", 810, 640) and zoneStore.b.dock == "CENTER",
-    "a zone holds one window at a time: the second opens free at its kept place, its zone kept for the next time")
+check(oneWindow.zone == "CENTER" and twoWindow.zone == nil and stands(two, "TOPLEFT", 810 + Window.CASCADE, 640 - Window.CASCADE)
+    and zoneStore.b.dock == "CENTER",
+    "a zone holds one window at a time: the second opens free, a step aside of the first so it covers none of it; its zone kept for the next time")
 one:Hide()
 twoWindow:Place()
 check(twoWindow.zone == "CENTER", "a window not shown holds nothing: the talk windows share the middle")
 one:Show()
-check(oneWindow.zone == nil and stands(one, "TOPLEFT", 810, 640) and zoneStore.a.dock == "CENTER",
-    "shown again while another holds its zone, it stands free this time")
+check(oneWindow.zone == nil and stands(one, "TOPLEFT", 810 + Window.CASCADE, 640 - Window.CASCADE) and zoneStore.a.dock == "CENTER",
+    "shown again while another holds its zone, it stands free this time, clear of it")
+do
+local three = CreateFrame("Frame", nil, UIParent)
+three:SetSize(300, 200)
+local threeWindow = Window.New(three, { store = { place = { x = 810, y = 640, dock = "CENTER" } }, title = "Trainer", dock = true,
+    first = { point = "CENTER", x = 0, y = 0 } })
+threeWindow:Place()
+check(stands(three, "TOPLEFT", 810 + 2 * Window.CASCADE, 640 - 2 * Window.CASCADE),
+    "a third one there stands a step further aside: a step for every window of ours that starts where it would")
+three:Hide()
+local corner = CreateFrame("Frame", nil, UIParent)
+corner:SetSize(300, 200)
+local cornerWindow = Window.New(corner, { store = { place = { x = 1620, y = 200, dock = "CENTER" } }, title = "Bank", dock = true,
+    first = { point = "TOP", x = 0, y = -50 } })
+local cornerOther = Window.New(CreateFrame("Frame", nil, UIParent), { store = { place = { x = 1620, y = 200 } }, title = "Other",
+    first = { point = "CENTER", x = 0, y = 0 } })
+cornerOther:Place()
+cornerWindow:Place()
+check(stands(corner, "TOP", 960, 1030), "where no step aside stays on the screen, it stands at its first place")
+corner:Hide()
+cornerOther.frame:Hide()
+end
 EventRegistry:TriggerEvent("EditMode.Enter")
 local oneBox = oneWindow.box
 oneBox:GetScript("OnDragStart")(oneBox)
@@ -1018,9 +1301,115 @@ local given = kindWindow.options
 check(given.titleBar and given.dock and given.skin and given.edge and given.escape == "close" and kindWindow.skin and kindWindow.edge,
     "a kind gives a window its options: a panel has a title bar, a skin, full screen, Esc closes it")
 check(given.sizable == false and kindWindow.grip == nil, "what the module gives itself wins")
+check(kindFrame._toplevel and kindFrame._mouse, "a panel comes to the front when clicked, as the game's own panels do, and takes the click")
+traderWindow:SetTitle("Merchant")
+check(traderWindow.bar.title._text == "Merchant" and traderWindow.box.title._text == "Merchant" and traderWindow.options.title == "Merchant",
+    "a window's name can be set anew: on its title bar and on its box in Edit Mode")
 check(Window.KINDS.screen.titleBar == nil and Window.KINDS.screen.skin == nil and Window.KINDS.talk.escape == "close",
     "the chat's kind has no title bar and no skin; a talk closes with Esc")
 kindFrame:Hide()
+do
+local talkFrame = CreateFrame("Frame", nil, UIParent)
+local talkKindStore = {}
+local talkKind = Window.New(talkFrame, { store = talkKindStore, kind = "talk", title = "Vendor",
+    first = { width = 400, height = 300 } })
+talkKind:Place()
+check(talkKind.zone == "CENTER" and stands(talkFrame, "CENTER", 960, 540) and talkKind.options.first.width == 400 and talkKindStore.place == nil,
+    "a talk window stands docked in the middle at first, at the size its module gives it")
+check(Window.KINDS.talk.first.width == nil, "(the kind's own first place is not changed by a module's)")
+skinned:Hide() -- (it holds the lower left corner)
+local chatFrame = CreateFrame("Frame", nil, UIParent)
+local chatStore = {}
+local chatKind = Window.New(chatFrame, { store = chatStore, kind = "screen", title = "Chat",
+    first = { dock = "BOTTOMLEFT", width = 380, height = 260 } })
+chatKind:Place()
+check(chatKind.zone == "BOTTOMLEFT" and stands(chatFrame, "BOTTOMLEFT", 0, 0), "a window can start docked: its first place is a zone")
+chatStore.place = { x = 500, y = 600 }
+chatKind:Place()
+chatKind:Reset()
+check(chatKind.zone == "BOTTOMLEFT" and chatStore.place == nil, "reset, it is docked in its first zone again")
+talkFrame:Hide()
+chatFrame:Hide()
+end
+
+-- A window that keeps a room from the screen's edges
+do
+    local room = { right = 10, top = 20 }
+    local inset = CreateFrame("Frame", nil, UIParent)
+    local insetStore = { place = { x = 0, y = 0, width = 300, height = 200, dock = "TOPRIGHT" } }
+    local insetWindow = Window.New(inset, { store = insetStore, sizable = true, dock = true, edge = true, insets = room,
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
+    insetWindow:Place()
+    check(stands(inset, "TOPRIGHT", 1910, 1060), "docked, a window with insets keeps that room from the edges it touches")
+    local left, low = Dock.Rect("TOPRIGHT", 300, 200, 1920, 1080, room)
+    check(left == 1610 and low == 860 and Dock.Find(1610, 860, 300, 200, 1920, 1080, nil, room) == "TOPRIGHT"
+        and Dock.Rect("TOPRIGHT", 300, 200, 1920, 1080) == 1620, "its zone's place counts that room; without insets it is flush")
+    local square = insetWindow.edge.strips.corner
+    check(square._points[1][1] == "TOPRIGHT" and square._points[1][4] == 10 and square._points[1][5] == 20,
+        "the square the mouse fills the screen from lies in the screen's very corner, out of the window by that room")
+    W.Wait(1)
+    at(inset, 1610, 860)
+    square:GetScript("OnEnter")(square)
+    inset._group:Run(1)
+    W.Wait(1)
+    square:GetScript("OnEnter")(square)
+    check(insetWindow.edge.to[1] == 1610 and insetWindow.edge.to[2] == 860, "and its way back from full screen ends at that room from the edges")
+    inset._group:Run(1)
+    check(stands(inset, "TOPRIGHT", 1910, 1060), "where it hangs again")
+    inset:Hide()
+end
+
+-- The holder: ours or the game's, never both -------------------------------------------------------
+do
+    local game = CreateFrame("Frame", "TestFriendsFrame", UIParent)
+    game:Hide()
+    game:SetFrameStrata("MEDIUM")
+    game:SetFrameLevel(7)
+    local ours = CreateFrame("Frame", nil, UIParent)
+    ours:Hide()
+    local oursStore, shows, backs = {}, 0, 0
+    local held = Window.New(ours, { store = oursStore, kind = "panel", title = "Friends", sizable = false,
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 300 },
+        native = { frame = game, hold = true, show = function() shows = shows + 1 end, back = function() backs = backs + 1 end } })
+    local holder = held.holder
+    local box = game._parent
+    check(holder and holder.held and box ~= UIParent and not box:IsShown(), "while ours is chosen the game's window has a hidden frame of ours as its parent")
+    game:Show()
+    check(game:IsShown() and not game:IsVisible() and ours:IsShown(), "the game opens its window: it counts as shown but is not in sight; ours opens instead")
+    game:Hide()
+    check(not ours:IsShown() and holder.held, "the game closes it: ours closes, the game's stays held")
+    game:Show()
+    held:Native(true)
+    check(game._parent == UIParent and game:IsVisible() and not ours:IsShown() and shows == 1 and oursStore.place.native == true
+        and not holder.held and game._strata == "MEDIUM" and game._level == 7,
+        "switched to the game's: its window is back where it was and as it was, in sight; ours closes")
+    game:Hide()
+    game:Show()
+    check(game:IsVisible() and not ours:IsShown(), "the game's chosen, the game opens it as always")
+    held:Native(false)
+    check(ours:IsShown() and game:IsShown() and game._scale == Core.Holder.TINY and game._alpha == 0 and holder.shrunk and backs == 1,
+        "back to ours while the game's is open: ours opens at once, the game's is made tiny and clear, not hidden")
+    game:Hide()
+    check(game._scale == 1 and game._alpha == 1 and holder.held and game._parent == box and not ours:IsShown(),
+        "the game closes it: it is as it was, and held again")
+    game:Show()
+    ours:Hide()
+    check(not game:IsShown() and holder.held, "ours closed while the game's is held open: the game's closes too, unseen")
+    held.options.native.unseen = true
+    game:Show()
+    held:Native(true)
+    check(game._parent == UIParent and not game:IsShown(), "a window whose own opening must not run from ours is closed unseen first, then given back")
+    held.options.native.unseen = nil
+    held:Native(false)
+    check(holder.held and ours:IsShown(), "(held again, ours open)")
+    held.options.native.frame = function() error("gone") end
+    game:Hide()
+    check(holder.off and game._parent == UIParent and Core.errors["window holder"],
+        "a step of the holder that fails gives the game's window back at once, and it is held no more")
+    Core.errors["window holder"] = nil
+    held:GiveBack()
+    ours:Hide()
+end
 
 -- Fuzzy finding, for the search ------------------------------------------------------------------------
 local Fuzzy = Core.Fuzzy
@@ -1057,6 +1446,42 @@ for _, case in ipairs({ { "rge", "Ironforge" }, { "gsr", "Goldshire" }, { "tb", 
 end
 check(same, "the rank alone (no tables made) is the rank with the spots")
 
+-- A list filtered by the search, a long one a part per frame
+do
+    local rows = {}
+    for index = 1, 30 do rows[index] = { name = index % 3 == 0 and "Stormwind Guard" or "Goldshire Farmer", zone = "Elwynn" } end
+    local got, ranked
+    Fuzzy.Filter(rows, "guard", { "name", "zone" }, function(found, ranks) got, ranked = found, ranks end)
+    check(got and #got == 10 and got[1] == rows[3] and ranked[1] == Fuzzy.Rank("guard", "Stormwind Guard"),
+        "a short list is filtered at once: the rows every word is in, in their order, with their ranks")
+    Fuzzy.Filter(rows, "elw farm", { "name", function(row) return row.zone end }, function(found) got = found end)
+    check(#got == 20, "every word in one of the fields: a key, or what a function says of the row")
+    rows[1].name = "Stormwind Guard"
+    Fuzzy.Filter(rows, "guard", { "name" }, function(found) got = found end)
+    check(#got == 11 and got[1] == rows[1], "a row whose text changed is found by its new text")
+    Fuzzy.Filter(rows, nil, { "name" }, function(found) got = found end)
+    check(#got == 30, "nothing typed: every row")
+
+    local long = {}
+    for index = 1, 500 do long[index] = { name = index == 500 and "Thunder Bluff" or "Ironforge " .. index } end
+    local clock, frames = debugprofilestop, 0
+    debugprofilestop = function() W.ms = W.ms + 0.05; return W.ms end -- every look takes its time
+    local older, newer
+    Fuzzy.Filter(long, "iron", { "name" }, function(found) older = found end)
+    check(older == nil and #Core.Steps.Jobs() == 1, "a long list is not filtered in the call: it is a job of the scheduler")
+    local step = Core.Steps.frame:GetScript("OnUpdate")
+    step()
+    frames = frames + 1
+    Fuzzy.Filter(long, "tb", { "name" }, function(found) newer = found end)
+    while #Core.Steps.Jobs() > 0 and frames < 100 do
+        step()
+        frames = frames + 1
+    end
+    debugprofilestop = clock
+    check(newer and #newer == 1 and newer[1] == long[500] and frames > 2, "it is filtered a part per frame, and told once it is done")
+    check(older == nil, "a newer search makes the older one stop: its rows never come")
+end
+
 -- The bar ----------------------------------------------------------------------------------------------
 STATUS_BAR_NUM_SEGMENTS = 8 -- the pieces the game cuts its own bar into
 local counted = {}
@@ -1080,6 +1505,13 @@ check(near(bar.coming._value, 0.9), "what is still to come is at its new place a
 rise:Run(0.2)
 check(bar.filled._value > 0.5 and bar.filled._value < 0.8 and counted[#counted] > 500 and counted[#counted] < 800
     and near(bar.flare._points[1][4], 200 * bar.shown + 1), "on its way the fill rises, the number counts along, the flare at its end")
+do
+    local laid, divider = 0, bar.dividers[1]
+    divider.SetPoint = function(self, ...) laid = laid + 1; return methods.SetPoint(self, ...) end
+    rise:Run(0.3)
+    check(laid == 0 and bar.pip._points[1][4] == 180, "on every step only the fill and its flare move: the dividers and the pip stay as they are")
+    divider.SetPoint = nil
+end
 rise:Run(1)
 check(bar.filled._value == 0.8 and not bar.flare:IsShown() and counted[#counted] == 800, "and settles at its value")
 bar:SetValue(850, 1000)
@@ -1096,6 +1528,12 @@ bar:SetValue(200, 1000)
 check(not rise.playing and bar.filled._value == 0.2, "with the motion Instant a gain is there at once too")
 Core.general.motion = "glide"
 check(#Bar.New(UIParent, { segments = 1 }).dividers == 0, "one piece: no dividers")
+do
+local told = Bar.New(UIParent, { moved = function() error("the module's own") end })
+told:SetValue(5, 10)
+check(told.filled._value == 0.5 and Core.errors.bar, "a module's hook that fails is noted; the bar shows its value all the same")
+Core.errors.bar = nil
+end
 local sizer = bar.frame._groups[2]
 bar:SetSize(302, 16)
 check(sizer.playing, "a new size moves there")
@@ -1106,43 +1544,119 @@ check(bar.frame._width == 302 and bar.frame._height == 16, "and ends at it")
 W.Fire("PLAYER_LOGIN")
 before = #W.frames
 SlashCmdList.SANEUI("window")
-local demo = W.frames[before + 1]
-check(demo._parent == UIParent and demo:IsShown() and demo._points[1][1] == "CENTER" and demo._group, "/sane window makes a window to try it with")
-local keepBox, addButton, demoWatch, demoFill
-for index = before + 1, #W.frames do
-    local widget = W.frames[index]
-    if widget._kind == "CheckButton" and widget.Text and widget.Text._text == "Keep open" then keepBox = widget end
-    if widget._kind == "Button" and widget._text == "Add" then addButton = widget end
-    if widget._parent == demo and widget._scripts.OnUpdate then demoWatch = widget end
-    if widget._kind == "StatusBar" and widget._bar == Bar.ART.fill then demoFill = widget end
+do
+    local demo = W.frames[before + 1]
+    check(demo._parent == UIParent and demo:IsShown() and demo._points[1][1] == "CENTER" and demo._group, "/sane window makes a window to try it with")
+    local demoWindow
+    for _, known in ipairs(Window.All()) do if known.frame == demo then demoWindow = known end end
+    check(demoWindow and demoWindow.options.kind == "panel" and demoWindow.options.escape == "close" and demoWindow.bar:IsShown()
+        and demo._mouse and demoWindow.top == Window.BAR and demoWindow.inside._points[1][5] == -Window.BAR,
+        "a panel: its title bar, Esc closes it, a click on it is its own; what it holds stands under the bar (window.inside)")
+    local tabs, views = demoWindow.tabs, demoWindow.views
+    check(tabs and #tabs.tabs == 2 and tabs.tabs[1]._text == "Window" and tabs.selected == 1 and views[1] and views[1]:IsShown() and not views[2]
+        and views[1]._parent == demoWindow.inside and views[1]._points[1][5] == -Window.TABS,
+        "two views behind the game's tabs, on top of them: the first chosen, built and shown, the second not built yet")
+    local own = demoWindow.buttons.list[3]
+    check(#demoWindow.buttons.list == 3 and demoWindow.buttons.first == own and own._points[1][2] == demoWindow.full,
+        "a button of its module's own, left of Core's")
+    local keepBox, demoWatch
+    for index = before + 1, #W.frames do
+        local widget = W.frames[index]
+        if widget._kind == "CheckButton" and widget.Text and widget.Text._text == "Keep open" then keepBox = widget end
+        if widget._parent == demo and widget._scripts.OnUpdate then demoWatch = widget end
+    end
+    check(keepBox and keepBox._parent == views[1] and demoWatch, "the first view: a box Keep open")
+    demo._mouseOver = true
+    demo:GetScript("OnEnter")(demo)
+    demoWatch:GetScript("OnUpdate")(demoWatch, 1)
+    check(demo._width == 380 or demo._group.playing, "the mouse rests on it: it opens")
+    demo._group:Run(1)
+    keepBox:SetChecked(true)
+    keepBox:GetScript("OnClick")(keepBox)
+    demo._mouseOver = false
+    demoWatch:GetScript("OnUpdate")(demoWatch, 5)
+    check(demo._width == 380 and not demoWatch:IsShown(), "Keep open keeps it open when the mouse goes")
+    local made = #W.frames
+    tabs.tabs[2]:GetScript("OnClick")(tabs.tabs[2])
+    local addButton, demoFill
+    for index = made + 1, #W.frames do
+        local widget = W.frames[index]
+        if widget._kind == "Button" and widget._text == "Add" then addButton = widget end
+        if widget._kind == "StatusBar" and widget._bar == Bar.ART.fill then demoFill = widget end
+    end
+    check(views[2] and views[2]:IsShown() and not views[1]:IsShown() and tabs.selected == 2 and addButton and demoFill
+        and SaneUIDB.modules.Core.demo.tab == 2, "the second tab: its view is built now, and shown; the tab chosen is kept")
+    addButton:GetScript("OnClick")(addButton)
+    demoFill._parent._groups[1]:Run(1)
+    check(demoFill._value == 0.15, "Add fills the bar a step")
+    for _ = 1, 6 do addButton:GetScript("OnClick")(addButton) end
+    demoFill._parent._groups[1]:Run(1)
+    check(demoFill._value == 1, "up to full")
+    addButton:GetScript("OnClick")(addButton)
+    check(demoFill._value == 0, "and full, it starts again from nothing, at once")
+    addButton:GetScript("OnClick")(addButton)
+    demoFill._parent._groups[1]:Run(1)
+    own:GetScript("OnClick")(own)
+    check(demoFill._value == 0, "the module's button starts it again too")
+    tabs.tabs[1]:GetScript("OnClick")(tabs.tabs[1])
+    keepBox:SetChecked(false)
+    keepBox:GetScript("OnClick")(keepBox)
+    demo._group:Run(1)
+    check(demo._width == 260, "let go with the mouse away, it closes")
+    SlashCmdList.SANEUI("window")
+    check(not demo:IsShown(), "typed again it hides it")
+    SlashCmdList.SANEUI("window reset")
+    check(demo:IsShown() and SaneUIDB.modules.Core.demo == nil, "and reset shows it at its first place (its first tab is no more to keep)")
+    W.printed = {}
+    at(demo, 100, 100)
+    demoWindow.bar:GetScript("OnDragStart")(demoWindow.bar)
+    demoWindow.bar:GetScript("OnDragStop")(demoWindow.bar)
+    check(SaneUIDB.modules.Core.demo.x == 100, "(moved)")
+    SlashCmdList.SANEUI("window reset all")
+    check(SaneUIDB.modules.Core.demo == nil and demo._points[1][1] == "CENTER" and W.printed[1]:find("first place"),
+        "/sane window reset all puts every window of Sane UI at its first place and size")
+    check(next(Core.errors) == nil, "nothing went wrong on the way")
 end
-check(keepBox and addButton and demoWatch and demoFill and not keepBox:IsShown() and not addButton:IsShown(),
-    "with a box Keep open and a button Add, out of sight while it is small, and a bar")
-demo._mouseOver = true
-demo:GetScript("OnEnter")(demo)
-demoWatch:GetScript("OnUpdate")(demoWatch, 1)
-check(keepBox:IsShown() and addButton:IsShown(), "the mouse rests on it: it opens, and shows them")
-keepBox:SetChecked(true)
-keepBox:GetScript("OnClick")(keepBox)
-demo._mouseOver = false
-demoWatch:GetScript("OnUpdate")(demoWatch, 5)
-check(addButton:IsShown(), "Keep open keeps it open when the mouse goes")
-addButton:GetScript("OnClick")(addButton)
-demoFill._parent._groups[1]:Run(1)
-check(demoFill._value == 0.15, "Add fills the bar a step")
-for _ = 1, 6 do addButton:GetScript("OnClick")(addButton) end
-demoFill._parent._groups[1]:Run(1)
-check(demoFill._value == 1, "up to full")
-addButton:GetScript("OnClick")(addButton)
-check(demoFill._value == 0, "and full, it starts again from nothing, at once")
-keepBox:SetChecked(false)
-keepBox:GetScript("OnClick")(keepBox)
-check(not addButton:IsShown(), "let go with the mouse away, it closes")
-SlashCmdList.SANEUI("window")
-check(not demo:IsShown(), "typed again it hides it")
-SlashCmdList.SANEUI("window reset")
-check(demo:IsShown() and SaneUIDB.modules.Core.demo == nil, "and reset shows it at its first place")
-check(next(Core.errors) == nil, "nothing went wrong on the way")
+
+-- Sane UI's keys -----------------------------------------------------------------------------------
+do
+    local file = assert(io.open(root .. "/src/Core/Bindings.xml", "r"))
+    local xml = file:read("*a")
+    file:close()
+    local keys = 0
+    for name, category, body in xml:gmatch('<Binding name="([%w_]+)" category="([%w_]+)">(.-)</Binding>') do
+        keys = keys + 1
+        check(category == "BINDING_HEADER_SANEUI" and type(_G[category]) == "string" and type(_G["BINDING_NAME_" .. name]) == "string",
+            "a key of Sane UI's is in its section of the game's key bindings, named in the game's way: " .. name)
+        W.options.opened = nil
+        assert(loadstring(body))()
+        check(W.options.opened ~= nil, "and what it runs does what it says: " .. name)
+    end
+    check(keys == 1 and BINDING_HEADER_SANEUI == "Sane UI", "Core has one key: the options")
+end
+
+-- A plate of one radius that follows its frame (a chat's bubble), and a round icon ----------------
+do
+    local bubble = CreateFrame("Frame", nil, UIParent)
+    local plate = Shape.New(bubble, { radius = 8 })
+    plate:Look({ top = { 0.2, 0.2, 0.25 }, alpha = 0.5 })
+    plate:Follow()
+    check(#plate.fills == 9 and #plate.trims == 0 and #plate.holes == 0, "a plate without a trim has no trim made, nor its holes")
+    bubble._width, bubble._height = 100, 40
+    bubble:GetScript("OnSizeChanged")(bubble, 100, 40)
+    check(round(plate, 8, 8, 8, 8) and plate.fills[3]._vertex[4] == 0.5 and near(plate.fills[3]._vertex[3], 0.25),
+        "its size changed, it lays itself out: every corner that round wherever it is, the fill as solid as asked")
+    bubble._width, bubble._height = 12, 10
+    bubble:GetScript("OnSizeChanged")(bubble, 12, 10)
+    check(round(plate, 5, 5, 5, 5), "no rounder than half its shorter side")
+    plate:Look({ file = Core.Skin.Tile("marble").file, size = 256, alpha = 0.25 })
+    check(plate.fills[3]._texture == Core.Skin.Tile("marble").file and plate.fills[3]._vertex[4] == 0.25, "or one of the game's tiles, as solid")
+    local icon = bubble:CreateTexture()
+    local mask = Shape.Round(icon)
+    check(mask._texture == Shape.CIRCLE and icon._masks[#icon._masks] == mask and mask._points[1][2] == icon,
+        "a round icon: the same circle as a mask over the whole of it")
+    bubble:Hide()
+end
 
 -- A plate round everywhere, flattened -------------------------------------------------------------
 local loose = CreateFrame("Frame", nil, UIParent)

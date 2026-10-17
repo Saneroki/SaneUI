@@ -111,6 +111,7 @@ ChatFrame1Minimized = false
 FCF_MinimizeFrame = function() Named("Button", "ChatFrame1Minimized", UIParent) end
 local editBox = Named("EditBox", "ChatFrame1EditBox", UIParent)
 editBox.header, editBox.kind, editBox._shown = W.NewWidget("FontString", nil, editBox), "SAY", false
+editBox._mouse = true -- it takes the mouse, as the game's does
 editBox:SetPoint("TOPLEFT", native, "BOTTOMLEFT", -5, -2)
 editBox:SetPoint("RIGHT", native, "RIGHT", 8, 0)
 function editBox:GetChatType() return self.kind end
@@ -180,6 +181,7 @@ end
 -- The chat's font, and the font the module makes of it: it remembers its size.
 local methods = W.methods
 ChatFontNormal = W.NewWidget("Font", "ChatFontNormal")
+function ChatFontNormal:GetFont() return "the game's chat font", 14, "" end
 local chatFont
 CreateFont = function(name)
     chatFont = W.NewWidget("Font", name)
@@ -195,6 +197,12 @@ function methods:GetWrappedWidth() return math.min(self:GetStringWidth(), self._
 function methods:GetStringHeight() return 2 * letter() * math.max(1, math.ceil(self:GetStringWidth() / self._width)) end
 function methods:GetLineHeight() return 2 * letter() end
 function methods:SetColorTexture(r, g, b, a) self._color = { r, g, b, a } end
+function methods:SetVertexColor(r, g, b, a) self._color = { r, g, b, a } end -- (a fill's colour, how solid)
+function methods:SetTexture(texture) self._texture = texture return true end -- found
+function methods:SetMouseMotionEnabled(on) self._motion = on end
+function methods:IsMouseMotionEnabled() return self._motion or false end
+function methods:SetMouseClickEnabled(on) self._mouse = on end
+function methods:IsMouseClickEnabled() return self._mouse or false end
 function methods:SetFrameStrata(strata) self._strata = strata end
 function methods:GetFrameStrata() return self._strata end
 function methods:SetFrameLevel(level) self._level = level end
@@ -323,8 +331,7 @@ local function say(text, guid, who) W.Fire("CHAT_MSG_SAY", text, who or "Thrall-
 W.LoadCore(root)
 local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
-local ns = {}
-for _, file in ipairs({ "Social", "Log", "Layout", "Plate", "Links", "Fade", "Bubble", "Channels", "Native", "Input", "Menu", "Picker", "Join", "Window" }) do W.Load(root, "SaneUI_Social", "Social/" .. file, ns) end
+local ns = W.LoadAddon(root, "Social", "SaneUI_Social")
 check(SaneUI.Social == ns and ns.addon == "SaneUI_Social", "the module is an addon of its own")
 W.Fire("ADDON_LOADED", "SaneUI_Social")
 local Log, Layout = ns.Log, ns.Layout
@@ -395,15 +402,16 @@ check(Layout.RowHeight("left", 24) == Layout.HEAD + height and Layout.RowHeight(
 W.Fire("PLAYER_LOGIN")
 local window = box and box._parent
 check(window and window:IsShown() and window._parent == UIParent, "the window is there after the login")
-local watch = W.ticker
-check(watch and watch.every <= 0.25 and not window._mouse and not window._scripts.OnEnter, "it takes no mouse: a click goes through to the game; a ticker looks for the mouse over it")
-check(window._width == Layout.WIDTH and window._height == Layout.HEIGHT and window._points[1][1] == "LEFT", "at its first place and size")
+check(window._motion and not window._mouse and window._scripts.OnEnter and W.ticker == nil,
+    "it takes only the mouse's coming, no click: a click goes through to the game; nothing looks for the mouse until it comes")
+check(window._width == Layout.WIDTH and window._height == Layout.HEIGHT and window._points[1][1] == "BOTTOMLEFT"
+    and window._points[1][3] == "BOTTOMLEFT", "at its first place and size: docked in the screen's lower left corner")
 function methods:SetResizeBounds(width, height) self._bounds = { width, height } end
 for _, widget in ipairs(W.frames) do
     if widget._parent == window and widget._Normal and type(widget._Normal._texture) == "string" and widget._Normal._texture:find("SizeGrabber") then grip = widget end
 end
-check(grip and grip._points[1][1] == "BOTTOMRIGHT" and not grip:IsShown(),
-    "with Core's grip in its lower right corner, out of sight outside Blizzard's Edit Mode")
+check(grip and grip._points[1][1] == "TOPRIGHT" and not grip:IsShown(),
+    "with Core's grip in its corner away from the screen's edges, out of sight outside Blizzard's Edit Mode")
 check(#box.provider.list == 0, "and empty")
 
 -- Messages
@@ -415,17 +423,21 @@ native:AddMessage("You are now AFK.", 1, 1, 0, ChatTypeInfo.SYSTEM.id)
 check(#box.provider.list == 4 and #Log.list == 4, "every message goes into the log and into the list")
 local rows = box.rows
 -- The room the list leaves above the messages, for a list with or without the line to write in.
-local function listTop() -- where the list starts: its last TOPLEFT, the one the game keeps
-    local y
-    for _, point in ipairs(box._points) do if point[1] == "TOPLEFT" then y = point[5] end end
-    return y
+-- Where the list starts from the window's top: its last TOPLEFT (the one the game keeps), on what Core lays out
+-- for what the window holds (under its title bar while there is one).
+local function listTop()
+    local y, on
+    for _, point in ipairs(box._points) do if point[1] == "TOPLEFT" then y, on = point[5], point[2] end end
+    local below = on and on ~= window and on._points[1] and on._points[1][5] or 0
+    return y + below
 end
 local function above(input)
     local total = 0
     for index, height in ipairs(box.heights) do total = total + height + (index > 1 and Layout.SPACING or 0) end
     return math.max(Layout.ListHeight(window._height, input, -listTop()) - total, 0)
 end
-check(listTop() == -Layout.BAR, "the list starts under its own bar")
+check(listTop() == -Layout.EDGE and box._points[1][2] ~= window and box._points[1][2]._parent == window,
+    "the list starts at the window's top, in what Core lays out for what a window holds: it has no bar of its own")
 check(above() > 0 and box.view.padding.top == above(), "a few messages stand at the bottom of the list: the room they leave is above them")
 check(bubble(rows[1]):IsShown() and bubble(rows[1])._points[1][1] == "TOPLEFT" and icon(rows[1]):IsShown(), "somebody else's bubble is on the left, with an icon")
 check(icon(rows[1])._atlas == "classicon-shaman", "the class's")
@@ -438,10 +450,11 @@ for _, widget in ipairs(W.frames) do
     if widget._parent == bubble(rows[1]) and widget._kind == "Texture" then pieces = pieces + 1 end
     if widget._parent == bubble(rows[1]) and widget._kind == "MaskTexture" then corners = corners + 1 end
 end
-check(pieces == 7 and corners == 4 and bubble(rows[1])._fill == nil, "the bubble is a plain fill with four round corners, without a border")
-local square, round = part(bubble(rows[1]), "Texture", 4), part(bubble(rows[1]), "MaskTexture", 1)
-check(square._width == Layout.RADIUS and round._width == 2 * Layout.RADIUS and round._points[1][1] == square._points[1][1] and round._texcoord == nil,
-    "a corner is a square under the whole round mask, twice its size and on the same corner: a quarter circle")
+check(pieces == 9 and corners == 4 and bubble(rows[1])._fill == nil,
+    "the bubble is a plain fill with four round corners, without a border: Core's plate, without its trim")
+local square, round = part(bubble(rows[1]), "Texture", 6), part(bubble(rows[1]), "MaskTexture", 1)
+check(square._width == Layout.RADIUS and round._width == 2 * Layout.RADIUS and round._points[1][1] == "CENTER" and round._points[1][4] == Layout.RADIUS,
+    "a corner is a square piece under a circle twice as wide, on the arc's centre: a quarter circle of the bubble's radius")
 check(options.bubbleOpacity == 50 and part(bubble(rows[1]), "Texture")._color[4] == 0.5 and part(bubble(rows[1]), "Texture", 7)._color[4] == 0.5, "half see-through at first")
 check(Layout.RING == 1 and icon(rows[1])._width == Layout.ICON - 2, "the ring around the icon is one pixel")
 check(name(rows[1])._text == "|Hplayer:Thrall-Stub:1:SAY|hThrall|h" and name(rows[1])._color[3] == 0.87 and name(rows[1])._height == Layout.HEAD, "above it the name, in the class's colour")
@@ -640,7 +653,7 @@ for _, widget in ipairs(W.frames) do
 end
 local linePieces = 0
 for _, widget in ipairs(W.frames) do if widget._parent == plate and widget._kind == "Texture" then linePieces = linePieces + 1 end end
-check(plate and plate:IsShown() and linePieces == 7 and part(plate, "Texture")._color[3] == FILL and part(plate, "Texture")._color[4] == 0.5,
+check(plate and plate:IsShown() and linePieces == 9 and part(plate, "Texture")._color[3] == FILL and part(plate, "Texture")._color[4] == 0.5,
     "the line stands on the very fill of your own bubbles: same pieces, same colour, as see-through")
 check(art[1]._alpha == 0 and art[6]._alpha == 0, "the game's border around it is invisible")
 check(editBox.wraps == true and editBox.header._points[1][1] == "TOPLEFT" and editBox.header._points[1][5] == -9 and editBox.insets[3] == 9 and editBox.insets[1] == 50,
@@ -741,7 +754,8 @@ EventRegistry:TriggerEvent("EditMode.Enter")
 grip:GetScript("OnMouseDown")(grip)
 window._left, window._top, window._width, window._height = 300, 700, 500, 320
 grip:GetScript("OnMouseUp")(grip)
-check(sized == "BOTTOMRIGHT" and window._bounds[1] == Layout.MIN_WIDTH and window._bounds[2] == Layout.MIN_HEIGHT, "the grip sizes it, down to a smallest size")
+check(sized == "TOPRIGHT" and window._bounds[1] == Layout.MIN_WIDTH and window._bounds[2] == Layout.MIN_HEIGHT,
+    "the grip sizes it from its corner away from the screen's edges, down to a smallest size")
 local place = Core.Store("Social").place
 check(place.x == 300 and place.y == 700 and place.width == 500 and place.height == 320, "after sizing, place and size are kept")
 EventRegistry:TriggerEvent("EditMode.Exit")
@@ -762,7 +776,8 @@ SlashCmdList.SANEUI("social")
 check(window:IsShown() and #box.provider.list == #Log.list and Core.Store("Social").options.window == true, "shown again, it has what came meanwhile")
 check(native._parent == away, "and the game's chat is out of sight again")
 SlashCmdList.SANEUI("social reset")
-check(Core.Store("Social").place == nil and window._width == Layout.WIDTH and window._points[1][1] == "LEFT", "/sane social reset puts it back at its first place and size")
+check(Core.Store("Social").place == nil and window._width == Layout.WIDTH and window._points[1][1] == "BOTTOMLEFT",
+    "/sane social reset puts it back at its first place and size")
 
 -- Messages fade, each by itself: the fade is the message's own, not its row's -------------------------
 local Fade = ns.Fade
@@ -811,9 +826,22 @@ box.scrolled()
 step(Layout.APPEAR / 2)
 check(seen(last) == 0 and entry(last).to == 0, "a gone message stays gone when the list moves by itself")
 box.scrolls = false
-watch = W.ticker -- the window's, since it was last shown
-window._mouseOver = true
-watch.fn()
+-- The mouse comes over the window (the game's OnEnter: it takes the mouse's coming), and the watch that
+-- looks after it then, until it has gone.
+local function come()
+    window._mouseOver = true
+    window._scripts.OnEnter(window)
+end
+local function looker()
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == window and widget._scripts.OnUpdate then return widget end
+    end
+end
+local function look()
+    local watching = looker()
+    if watching:IsShown() then watching._scripts.OnUpdate(watching, 1) end
+end
+come()
 step(Layout.APPEAR)
 check(seen(last) == 0, "the mouse over the window does not bring them back")
 box._scripts.OnMouseWheel(box, 1)
@@ -822,7 +850,7 @@ check(seen(last) > 0 and seen(last) < 1, "a turn of the mouse wheel does, fading
 step(Layout.APPEAR)
 check(seen(last) == 1, "until they are there")
 window._mouseOver = false
-watch.fn()
+look()
 step(Layout.FADE / 2)
 check(seen(last) > 0 and seen(last) < 1 and seen(last + 1) == 1, "when the mouse leaves, those whose time is over fade out again; the others stay")
 step(Layout.FADE)
@@ -832,12 +860,13 @@ box.atEnd, box.scrolls = false, true
 box.scrolled()
 step(Layout.APPEAR)
 check(seen(last) == 1, "scrolled up with the wheel, every message is there again")
-watch.fn()
+come()
+window._mouseOver = false
+look()
 step(Layout.FADE)
 check(seen(last) == 1, "and stays, the mouse gone, to read on")
 box.atEnd = true
 box.scrolled()
-watch.fn()
 step(Layout.FADE)
 check(seen(last) == 0, "back at the newest message, with the mouse gone, they fade again")
 box.scrolls = false
@@ -1019,7 +1048,7 @@ open()
 check(part(plate, "Texture")._color[1] == 1, "and the line to write in")
 close()
 backing.setting:SetValue("marble")
-local top = part(bubble(rows[1]), "Texture") -- the piece between the upper corners
+local top = part(bubble(rows[1]), "Texture", 5) -- the piece between the upper corners
 check(top._texture == "Interface\\FrameGeneral\\UI-Background-Marble" and top._texcoord[1] == Layout.RADIUS / 256 and top._texcoord[3] == 0,
     "or one of the game's textures, each piece showing the part where it lies")
 check(tint.widget._alpha == 0.4, "the color is greyed out then")
@@ -1084,7 +1113,6 @@ for _, message in ipairs(Log.list) do if message.group == "SAY" then said = said
 check(not saying.checked(saying.data) and Core.Store("Social").options.mute.SAY == true and said > 0 and #box.provider.list == shownBefore - said, "unticked, the messages of that chat leave the window")
 check(#Log.list == shownBefore, "but not the log")
 say("not shown")
-print("DBG", #box.provider.list, shownBefore, said, Log.list[#Log.list].text, Log.list[#Log.list].group, ns.Channels.Shown("SAY"))
 check(#box.provider.list == shownBefore - said and Log.list[#Log.list].text == "not shown", "a new one of that chat is kept and not shown")
 W.Fire("CHAT_MSG_GUILD", "shown", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 1, THRALL)
 check(#box.provider.list == shownBefore - said + 1, "one of another chat is")
@@ -1196,30 +1224,27 @@ check(ring(rows[last + 1])._color[2] == Layout.TIES.guild[2] and ring(rows[last 
 check(Layout.TIES.raid[3] > Layout.TIES.raid[2] and Layout.TIES.party[3] == 1, "(purple for the raid, blue for the party)")
 
 -- What the window is handled by is only there with the mouse over it
-local bar, titled -- its bar: a child of the window across its top; and no title on it (Saneroki)
+local titled -- no title on the small window (Saneroki), nor a bar of its own
 for _, widget in ipairs(W.frames) do
-    if widget._kind == "Frame" and widget._parent == window and widget._height == Layout.BAR then bar = widget end
     if widget._kind == "FontString" and widget._text == "Social" and widget._parent and widget._parent._parent == window
         and not widget._parent._scripts.OnDragStart then titled = true end -- not the one on Core's box in Edit Mode
 end
-check(bar and not titled, "the window's bar has no title")
-local title = bar
-check(not write:IsShown() and not grip:IsShown() and not title:IsVisible(), "without the mouse over the window its button and its bar are out of sight")
+check(not titled, "the small window has no title")
+check(not write:IsShown() and not grip:IsShown(), "without the mouse over the window its button is out of sight")
 check(window._strata == "MEDIUM" and window._level == Layout.LEVEL and window._fill == nil, "the window has no background, and is drawn above the action bars")
-watch = W.ticker
 W.held = true
-watch.fn()
-check(not write:IsShown(), "a button held elsewhere does not bring them")
+look()
+check(not write:IsShown() and not looker():IsShown(), "a button held elsewhere does not bring it, and nothing looks for the mouse")
 W.held = false
-window._mouseOver = true
-watch.fn()
-check(write:IsShown() and title:IsVisible() and not grip:IsShown(), "with the mouse over it they are there; the grip only in Blizzard's Edit Mode")
+come()
+check(write:IsShown() and not grip:IsShown() and looker():IsShown(),
+    "the mouse comes over it: the button is there at once, and the mouse is watched; the grip only in Blizzard's Edit Mode")
 window._mouseOver, W.held = false, true
-watch.fn()
-check(write:IsShown(), "and stay while a mouse button is held: something of the window may be in hand")
+look()
+check(write:IsShown(), "and stays while a mouse button is held: something of the window may be in hand")
 W.held = false
-watch.fn()
-check(not write:IsShown() and not title:IsShown() and not title._mouse, "and go when the mouse has left, the bar too, which takes no click")
+look()
+check(not write:IsShown() and not looker():IsShown(), "and goes when the mouse has left; then nothing looks for it any more")
 local coreBar -- Core's title bar: the small chat has none (only filling the screen, below)
 for _, widget in ipairs(W.frames) do
     if widget._parent == window and rawget(widget, "box") then coreBar = widget end
@@ -1396,7 +1421,8 @@ do
     for _, widget in ipairs(W.frames) do
         if widget._parent == window and rawget(widget, "box") then coreBar = widget end
     end
-    check(coreBar and coreBar:IsShown() and coreBar.title._text == "Social" and coreBar.glass:IsShown() and listTop() == -Core.Window.BAR, "full, Core's title bar is at its top, with the search; the list starts under it")
+    check(coreBar and coreBar:IsShown() and coreBar.title._text == "Social" and coreBar.glass:IsShown() and listTop() == -(Core.Window.BAR + Layout.EDGE),
+        "full, Core's title bar is at its top, with the search; the list starts under it (Core lays out what the window holds there)")
     local shown = #box.provider.list
     coreBar.find:GetScript("OnMouseDown")(coreBar.find)
     coreBar.find:GetScript("OnClick")(coreBar.find)
@@ -1419,7 +1445,7 @@ do
     classic._items[2].fn()
     check(tab == 1 and window._width == Layout.WIDTH and window:IsShown() and not classic:IsShown(),
         "Friends list: the window goes back to its zone, and the game's friends list opens")
-    check(listTop() == -Layout.BAR, "back, the list starts under the bar again")
+    check(listTop() == -Layout.EDGE, "back, the list starts at the window's top again")
     W.Wait(1)
     strip:GetScript("OnEnter")(strip)
     W.printed = {}
@@ -1439,6 +1465,32 @@ do
     check(not window:IsShown() and sane:IsShown(), "/sane social puts ours away again, and the button is back")
     SlashCmdList.SANEUI("social")
     check(window:IsShown() and options.window == true and window._width == Layout.WIDTH, "/sane social brings it back, in its zone")
+    local file = assert(io.open(root .. "/src/Social/Bindings.xml", "r"))
+    local xml = file:read("*a")
+    file:close()
+    local keys = 0
+    for name, category, body in xml:gmatch('<Binding name="([%w_]+)" category="([%w_]+)">(.-)</Binding>') do
+        keys = keys + 1
+        check(category == "BINDING_HEADER_SANEUI" and type(_G[category]) == "string" and type(_G["BINDING_NAME_" .. name]) == "string",
+            "Social's key is in Sane UI's section of the game's key bindings, named in the game's way")
+        local press = assert(loadstring(body))
+        press()
+        check(not window:IsShown() and options.window == false and native:IsShown(), "pressed, it puts our window away as /sane social does")
+        press()
+        check(window:IsShown() and options.window == true and window._width == Layout.WIDTH, "pressed again, it is back")
+    end
+    check(keys == 1, "Social has one key")
+    local kept = Core.Store("Social")
+    W.Wait(1)
+    strip:GetScript("OnEnter")(strip)
+    SlashCmdList.SANEUI("social")
+    check(not window:IsShown() and kept.place.full == true and kept.place.native == true and options.window == false,
+        "put away while it fills the screen: the switch and Core's window say the same, the game's chat; ours was left full")
+    SlashCmdList.SANEUI("social")
+    check(window:IsShown() and window._width == 1920 and kept.place.native == nil, "brought back, it fills the screen again, as it was left")
+    W.Wait(1)
+    strip:GetScript("OnEnter")(strip)
+    check(window._width == Layout.WIDTH, "(back in its zone)")
     W.Wait(1)
     strip:GetScript("OnEnter")(strip)
     for _, widget in ipairs(W.frames) do
@@ -1450,8 +1502,8 @@ do
     end
     W.printed = {}
     toggleButton:GetScript("OnClick")(toggleButton)
-    check(not window:IsShown() and options.window == false and W.printed[1]:find("/sane social"),
-        "full, its button for the game's own window puts ours away and the game's chat is back")
+    check(not window:IsShown() and options.window == false and W.printed[1]:find("/sane social") and Core.Store("Social").place.native == true,
+        "full, its button for the game's own window puts ours away and the game's chat is back: the switch and Core's window agree")
     SlashCmdList.SANEUI("social")
     W.Wait(1)
     strip:GetScript("OnEnter")(strip)
