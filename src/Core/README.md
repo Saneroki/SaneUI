@@ -241,6 +241,8 @@ window to try those with (`/sane window`).
 | `Core.Profiles` | Whose settings are in use, and the profiles (see above) |
 | `Core.Config` | The options (`Settings/`): `Fill()` makes the pages' controls (once), `Open()` opens them |
 | `Core.Sync` | Sync (`Sync/`): the game's own settings kept with Sane UI's |
+| `Core.Data` | Sane UI's own databases (`Data/`): a set's handle (`Data.Set(name)`: `Get`, `History`, `Each`, `OnStamp`, ...), `Data.Prepare(name)`, `Data.WhenReady(set, fn)` ([Doc/guides/data.md](../../Doc/guides/data.md)) |
+| `Core.Steps` | The scheduler of long work (`Data/Steps.lua`): `Run(name or options, fn, ...)` gives a job's handle (`:Stop()`); a job asks `Check()` between pieces and goes on in the next frame when the frame's few milliseconds are spent; nothing in a fight or under a restriction |
 | `Core.Copy(value)` | A copy of a value that shares no table with it |
 | `Core.described`, `Core.optionOrder` | The described switches, for whoever shows them (Settings) |
 | `Core.class`, `Core.charName`, `Core.realm`, `Core.charKey` | The character, from login on (`charName` is first name and surname, `charKey` the GUID) |
@@ -371,7 +373,7 @@ window to try those with (`/sane window`).
   - The look and the motion: square at the screen edge, round elsewhere, the tile of the game's dark dialogs
     with a bronze trim; the motions are the game's own easing curves (`EasingUtil`) with times set here.
 - **Tests:** `lua5.1 dev/tests/core.lua` (Core with its options, 210 checks), `lua5.1 dev/tests/sync.lua`
-  (Sync, 65 checks) and
+  (Sync, 81 checks) and
   `lua5.1 dev/tests/window.lua` (the windows, 256 checks).
 
 ## Files
@@ -392,6 +394,7 @@ window to try those with (`/sane window`).
 | `Expand.lua` | A window that opens while the mouse rests on it, and can be kept open |
 | `Bar.lua` | A progress bar whose value and size move |
 | `Demo.lua` | `/sane window` |
+| `Data/` | The data framework: the scheduler (`Steps.lua`), a pack's row into a record (`Codec.lua`), the packs and the answers (`Data.lua`); [Doc/guides/data.md](../../Doc/guides/data.md) |
 | `Sync/` | Sync: the game's own per-character settings kept with Sane UI's ([README](Sync/README.md)) |
 | `Settings/` | The options: the pages, their controls, `/sane options` ([README](Settings/README.md)) |
 | `Art/banner.blp` | Sane UI's banner, at the top of the options' page *Sane UI*. Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/SaneUI-banner.png` |

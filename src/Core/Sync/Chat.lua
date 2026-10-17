@@ -109,9 +109,23 @@ local function Tab(id)
     return tab
 end
 
--- Adds and removes members of a list (kinds of chat, channels) until it holds what is wanted.
+-- Whether a kept value is a table of so many numbers (a colour, a place): one of an older shape is not.
+local function Numbers(list, first, last)
+    if type(list) ~= "table" then return false end
+    for index = first, last do
+        if type(list[index]) ~= "number" then return false end
+    end
+    return true
+end
+
+-- Adds and removes members of a list (kinds of chat, channels) until it holds what is wanted; a member
+-- that is no text is not one this version kept.
 local function Match(id, want, have, add, remove)
-    local wanted, had, changed = Set(want), Set(have), false
+    local names = {}
+    for _, value in ipairs(want) do
+        if type(value) == "string" then names[#names + 1] = value end
+    end
+    local wanted, had, changed = Set(names), Set(have), false
     for value in pairs(had) do
         if not wanted[value] then remove(id, value) changed = true end
     end
@@ -121,25 +135,32 @@ local function Match(id, want, have, add, remove)
     return changed
 end
 
--- Gives one window what was kept; true if anything differed.
+-- Gives one window what was kept; true if anything differed. Each value is checked for its kind first: one
+-- of an older shape, or missing, leaves that setting as the game has it.
 local function WriteTab(id, want)
     local have, changed = Tab(id), false
     local function Put(differs, set, ...)
         if differs then set(id, ...) changed = true end
     end
-    local tint, now = type(want.tint) == "table" and want.tint or have.tint, have.tint
+    local function Switch(key, set)
+        Put(type(want[key]) == "boolean" and want[key] ~= have[key], set, want[key])
+    end
+    local tint, now = want.tint, have.tint
     Put(type(want.title) == "string" and want.title ~= "" and want.title ~= have.title, SetChatWindowName, want.title)
     Put(type(want.font) == "number" and want.font > 0 and want.font ~= have.font, SetChatWindowSize, want.font)
-    Put(Apart(tint[1], now[1]) or Apart(tint[2], now[2]) or Apart(tint[3], now[3]), SetChatWindowColor, tint[1], tint[2], tint[3])
-    Put(Apart(tint[4], now[4]), SetChatWindowAlpha, tint[4])
-    Put(want.shown ~= have.shown, SetChatWindowShown, want.shown)
-    Put(want.locked ~= have.locked, SetChatWindowLocked, want.locked)
-    Put(want.through ~= have.through, SetChatWindowUninteractable, want.through)
-    Put(want.dock ~= have.dock, SetChatWindowDocked, want.dock or nil)
+    if Numbers(tint, 1, 3) then
+        Put(Apart(tint[1], now[1]) or Apart(tint[2], now[2]) or Apart(tint[3], now[3]), SetChatWindowColor, tint[1], tint[2], tint[3])
+    end
+    if Numbers(tint, 4, 4) then Put(Apart(tint[4], now[4]), SetChatWindowAlpha, tint[4]) end
+    Switch("shown", SetChatWindowShown)
+    Switch("locked", SetChatWindowLocked)
+    Switch("through", SetChatWindowUninteractable)
+    local dock = want.dock
+    Put((dock == false or type(dock) == "number") and dock ~= have.dock, SetChatWindowDocked, dock or nil)
     if type(want.kinds) == "table" and Match(id, want.kinds, have.kinds, AddChatWindowMessages, RemoveChatWindowMessages) then changed = true end
     if type(want.channels) == "table" and Match(id, want.channels, have.channels, AddChatWindowChannel, RemoveChatWindowChannel) then changed = true end
     local spot, at = want.spot, have.spot
-    if id > 1 and type(spot) == "table" and type(spot[1]) == "string" then
+    if id > 1 and type(spot) == "table" and type(spot[1]) == "string" and Numbers(spot, 2, 5) then
         Put(spot[1] ~= at[1] or Apart(spot[2], at[2]) or Apart(spot[3], at[3]), SetChatWindowSavedPosition, spot[1], spot[2], spot[3])
         Put(Apart(spot[4], at[4]) or Apart(spot[5], at[5]), SetChatWindowSavedDimensions, spot[4], spot[5])
     end
@@ -166,7 +187,8 @@ local function WriteColours(colours)
     for kind, want in pairs(colours) do
         local info = ChatTypeInfo[kind]
         if type(info) == "table" and type(want) == "table" then
-            if Apart(want.r, info.r) or Apart(want.g, info.g) or Apart(want.b, info.b) then
+            local colour = type(want.r) == "number" and type(want.g) == "number" and type(want.b) == "number"
+            if colour and (Apart(want.r, info.r) or Apart(want.g, info.g) or Apart(want.b, info.b)) then
                 ChangeChatColor(kind, want.r, want.g, want.b)
                 changed = true
             end
