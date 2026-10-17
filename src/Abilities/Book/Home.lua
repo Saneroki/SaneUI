@@ -32,7 +32,7 @@ local book, paged      -- the game's frames
 local tab, cover, pane -- ours: the Home tab, the stand-in over the game's selected tab, the page
 local headers, empties, more = {}, {}, nil
 local levels = {}      -- the small headings of the quest section: "Level 10"
-local rowPoints        -- where the row of the game's tabs stood before we moved it (Core.Points)
+local row              -- the row of the game's tabs, moved to make room for Home (Core.Lend)
 local SHIFT = 46       -- one tab and the gap after it
 local SEARCH_WIDTH, SEARCH_GAP = 300, 10 -- the game's search box: its widest, and its room from the tabs
 local LEVEL_HEIGHT = 22
@@ -324,28 +324,34 @@ local function FitSearchBox()
     if right then box:SetWidth(math.max(math.min(right - left - SEARCH_GAP, SEARCH_WIDTH), 0)) end
 end
 
+-- The row one tab further right: its one point, moved.
+local function Shift(frame)
+    local point, relativeTo, relativePoint, x, y = frame:GetPoint(1)
+    frame:ClearAllPoints()
+    frame:SetPoint(point, relativeTo, relativePoint, (x or 0) + SHIFT, y or 0)
+end
+
 -- Home stands where the row of the game's tabs begins; the row makes room for it (on) or gets
 -- its place back. Only the row's place is changed. In a fight a frame of the game's may be
--- locked: then Home takes the gap in front of the row instead, and the row goes back after it.
+-- locked: then Home takes the gap in front of the row instead, and the row goes back once the
+-- fight is over.
 local function PlaceTabs(on)
-    local row = book.CategoryTabSystem
-    local locked = B.Locked(row)
-    if on and not rowPoints and not locked and row:GetNumPoints() == 1 then
-        rowPoints = Core.Points(row)
-        local point = rowPoints[1]
-        row:ClearAllPoints()
-        row:SetPoint(point[1], point[2], point[3], (point[4] or 0) + SHIFT, point[5] or 0)
-        FitSearchBox()
-    elseif not on and rowPoints and not locked then
-        Core.Repoint(row, rowPoints)
-        rowPoints = nil
-        FitSearchBox()
+    local tabs = book.CategoryTabSystem
+    row = row or Core.Lend(tabs)
+    if on and not row:Lent() and tabs:GetNumPoints() == 1 then
+        if row:SetPoints(Shift) then FitSearchBox() end
+    elseif not on and row:Lent() then
+        if Core.Locked(tabs) then
+            Core.AfterCombat("Abilities: home tabs", PlaceTabs, false)
+        elseif row:Return() then
+            FitSearchBox()
+        end
     end
     tab:ClearAllPoints()
-    if rowPoints then
-        tab:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", -SHIFT, 0)
+    if row:Lent() then
+        tab:SetPoint("BOTTOMLEFT", tabs, "BOTTOMLEFT", -SHIFT, 0)
     else
-        tab:SetPoint("BOTTOMRIGHT", row, "BOTTOMLEFT", -2, 0)
+        tab:SetPoint("BOTTOMRIGHT", tabs, "BOTTOMLEFT", -2, 0)
     end
 end
 
@@ -372,9 +378,5 @@ ns.Listen("REFRESH", function()
     -- Not while the spellbook is closed (pane stays shown in it): it is filled when it opens.
     if pane and pane:IsVisible() then Fill() end
     -- The window may have another width now (Window.lua redraws after every change of size).
-    if rowPoints and book:IsVisible() then FitSearchBox() end
-end)
--- A fight kept the row of tabs from getting its place back when the pages went to the game.
-ns.On("PLAYER_REGEN_ENABLED", function()
-    if rowPoints and not B.Armed() then ns.Safe("home", PlaceTabs, false) end
+    if row and row:Lent() and book:IsVisible() then FitSearchBox() end
 end)

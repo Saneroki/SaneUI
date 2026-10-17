@@ -26,7 +26,7 @@ local _, ns = ...
 --  One limit comes from the game: in a fight an addon may not move a frame
 --  that carries one of the game's protected frames. A spellbook entry does so
 --  after you opened its spell flyout. Such an entry is left where it is until
---  the fight is over (Locked).
+--  the fight is over (Core.Locked, Core.AfterCombat).
 --
 --  If any of this fails, StandDown() gives the pages back to the game.
 -------------------------------------------------------------------------------
@@ -43,9 +43,13 @@ local book, paged, view1, view2, nativePager -- the game's frames
 local container, pager                       -- ours
 local headers = {}                           -- our headings: "tab", "extra", "passive", "skills"
 local armed, standDown, hooked = false, nil, false
-local columnTaken, pagerTaken = false, false -- what of the game's we changed and must give back
-local nativeHeight, nativePagerPoints
+local columnTaken, nativeHeight = false, nil -- the game's column, made tall (its own height, to give back)
+local pagerLent                              -- the game's page buttons, moved off the screen (Core.Lend)
 local lastHeader                             -- the last heading of the game's we saw; ours copy its look
+-- What a fight held up, each done once it is over (Core.AfterCombat): the layout, giving back,
+-- an entry's own size after giving back, taking over.
+local AFTER_LAYOUT, AFTER_GIVE, AFTER_SIZE, AFTER_ARM =
+    "Abilities: book", "Abilities: book given back", "Abilities: book entries' size", "Abilities: book taken over"
 
 local pool = {}      -- our grey entries, reused
 local managed = {}   -- [one of the game's entries] = { anchor, x, y, corner, view } where we put it
@@ -78,11 +82,12 @@ end
 --  Placing the game's entries. Only ClearAllPoints and SetPoint: no script of
 --  the entry runs and nothing is written on it.
 -------------------------------------------------------------------------------
--- In a fight the game forbids an addon to move a frame that holds a protected one. (Home.lua too.)
-local function Locked(frame)
-    return InCombatLockdown() and frame:IsProtected() and true or false
+-- In a fight the game forbids an addon to move a frame that holds a protected one. Such an entry
+-- is put right once the fight is over: asked once, however often it is met.
+local Locked = Core.Locked
+local function Owe()
+    if not Core.Owed(AFTER_LAYOUT) then Core.AfterCombat(AFTER_LAYOUT, B.Relayout) end
 end
-B.Locked = Locked
 
 local function InPlace(frame, want)
     if frame:GetNumPoints() ~= 1 then return false end
@@ -106,7 +111,7 @@ local function Place(frame, anchor, x, y, view, size)
     else
         want.anchor, want.x, want.y, want.corner = UIParent, PARK, PARK, "BOTTOMLEFT"
     end
-    if Locked(frame) then return end
+    if Locked(frame) then return Owe() end
     if math.abs((frame:GetScale() or 1) - size) > 0.001 then frame:SetScale(size) end
     if InPlace(frame, want) then return end
     frame:ClearAllPoints()
@@ -547,11 +552,16 @@ function B.OnNative()
 end
 
 -- Every entry the game has made stands where we put it. An entry we have not placed at
--- all counts as out of place, so a redraw we were not told about is caught here too.
+-- all counts as out of place, so a redraw we were not told about is caught here too. One that
+-- a fight holds counts as in place until the fight is over (Owe).
 local function AllInPlace()
     for _, frame in ipairs(paged:GetFrames()) do
         local want = managed[frame]
-        if not want or not (InPlace(frame, want) or Locked(frame)) then return false end
+        if not want then return false end
+        if not InPlace(frame, want) then
+            if not Locked(frame) then return false end
+            Owe()
+        end
     end
     return true
 end
@@ -603,16 +613,28 @@ end
 -------------------------------------------------------------------------------
 --  Giving the pages back
 -------------------------------------------------------------------------------
--- The column's height and the game's page buttons, as they were. In a fight the column
--- may be one of the frames an addon must not touch; then this waits for the fight's end.
+-- The column's height and the game's page buttons, as they were. In a fight either may be one
+-- of the frames an addon must not touch; then it waits for the fight's end (the page buttons by
+-- Core.Lend itself).
 local function GiveBack()
-    if columnTaken and not Locked(view1) then
-        view1:SetHeight(nativeHeight or L.VIEW_HEIGHT)
-        columnTaken = false
+    if columnTaken then
+        if Locked(view1) then
+            Core.AfterCombat(AFTER_GIVE, GiveBack)
+        else
+            view1:SetHeight(nativeHeight or L.VIEW_HEIGHT)
+            columnTaken = false
+        end
     end
-    if pagerTaken and not Locked(nativePager) then
-        Core.Repoint(nativePager, nativePagerPoints)
-        pagerTaken = false
+    if pagerLent and pagerLent:Lent() then pagerLent:Return() end
+end
+
+-- Every entry at the game's size again, also those of other pages and folded ranks. One that a
+-- fight holds gets it once the fight is over.
+local function FullSize()
+    for _, frame in ipairs(paged:GetFrames()) do
+        if frame:GetScale() ~= 1 then
+            if Locked(frame) then Core.AfterCombat(AFTER_SIZE, FullSize) else frame:SetScale(1) end
+        end
     end
 end
 
@@ -635,10 +657,7 @@ function B.StandDown(reason)
             local anchor = (index == 1 and view1) or (index == 2 and perPage == 2 and view2) or nil
             for _, cell in ipairs(view) do Place(cell.item.frame, anchor, cell.x, cell.y, index) end
         end
-        -- every entry at the game's size again, also those of other pages and folded ranks
-        for _, frame in ipairs(paged:GetFrames()) do
-            if not Locked(frame) and frame:GetScale() ~= 1 then frame:SetScale(1) end
-        end
+        FullSize()
     end)
     wipe(managed)
     container:Hide()
@@ -705,6 +724,14 @@ local function MakeFrames()
     container, pager, headers, toggle = frame, paging, made, box
 end
 
+local TryArm -- below
+
+-- The game's page buttons wait off the screen while ours stand in their place.
+local function Park(frame)
+    frame:ClearAllPoints()
+    frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", PARK, PARK)
+end
+
 local function Arm()
     if armed or standDown or not ns.options.book then return end
     if Gamepad() then
@@ -720,7 +747,10 @@ local function Arm()
         return
     end
     view1, view2, nativePager = columns[1], columns[2] or columns[1], paged.PagingControls
-    if Locked(view1) or Locked(nativePager) then return end -- tried again when the fight is over
+    if Locked(view1) or Locked(nativePager) then
+        Core.AfterCombat(AFTER_ARM, TryArm) -- tried again when the fight is over
+        return
+    end
 
     if not container then MakeFrames() end
 
@@ -737,16 +767,14 @@ local function Arm()
     end
 
     -- Now the game's column and its page buttons. Their own height and place are only noted
-    -- while they still have them, never what we gave them.
+    -- while they still have them, never what we gave them: ours take the page buttons' place.
     local height = view1:GetHeight()
     if height and height < TALL - 1 then nativeHeight = height end
     view1:SetHeight(TALL)
     columnTaken = true
-    if not pagerTaken then nativePagerPoints = Core.Points(nativePager) end
-    Core.Repoint(pager, nativePagerPoints)
-    nativePager:ClearAllPoints()
-    nativePager:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", PARK, PARK)
-    pagerTaken = true
+    pagerLent = pagerLent or Core.Lend(nativePager)
+    if not pagerLent:Lent() then Core.Repoint(pager, Core.Points(nativePager)) end
+    pagerLent:SetPoints(Park)
 
     container:Show()
     armed = true
@@ -755,7 +783,7 @@ local function Arm()
 end
 
 -- An error while taking over: it is not tried again, and what it took of the game's goes back.
-local function TryArm()
+function TryArm()
     if not (ns.DB and ns.char) then return end
     local loaded = C_AddOns and C_AddOns.IsAddOnLoaded
     if not (loaded and loaded("Blizzard_PlayerSpells")) then return end
@@ -768,16 +796,6 @@ end
 ns.On("PLAYER_LOGIN", TryArm)
 ns.On("ADDON_LOADED", function(name)
     if name == "Blizzard_PlayerSpells" then TryArm() end
-end)
--- What a fight held up: taking over, giving back, an entry that could not be moved.
-ns.On("PLAYER_REGEN_ENABLED", function()
-    if armed then
-        B.Relayout()
-    elseif standDown then
-        if view1 then ns.Safe("book", GiveBack) end
-    else
-        TryArm()
-    end
 end)
 ns.Listen("REFRESH", B.Relayout)
 

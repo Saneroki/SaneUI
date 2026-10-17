@@ -212,10 +212,13 @@ local queued, wantScan = false, false
 local function RunUpdate()
     queued = false
     if not ns.ready then return end
-    -- What you have is read again out of a fight only: in one nothing real can be placed, and
-    -- PLAYER_REGEN_ENABLED asks for an update at its end. The list of spells still to come is
-    -- not built here at all, but when something shows it (Sources.lua, S.All).
-    if wantScan and not InCombatLockdown() then
+    -- What you have is read again out of a fight only: in one nothing real can be placed, and an
+    -- update in a fight asks for another once it is over (Core.AfterCombat: however many there
+    -- were, one). The list of spells still to come is not built here at all, but when something
+    -- shows it (Sources.lua, S.All).
+    if InCombatLockdown() then
+        Core.AfterCombat("Abilities: update", ns.QueueUpdate, false)
+    elseif wantScan then
         wantScan = false
         ns.Safe("scan", ns.Sources.ScanBook)
     end
@@ -293,7 +296,6 @@ function ns.OnLogin()
     ns.On("UPDATE_MACROS", update)
     ns.On("BAG_UPDATE_DELAYED", update)
     ns.On("PLAYER_REGEN_DISABLED", update)
-    ns.On("PLAYER_REGEN_ENABLED", update)
     ns.On("CURSOR_CHANGED", function()
         if ns.Engine.pending then update() end
     end)

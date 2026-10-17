@@ -1387,9 +1387,23 @@ W.printed = {}
 searching, activeTab = false, tabs[3]
 made = DrawTab("Fire", { "Fireball" })
 check(ghostCount() == 2 and stands(made[1], view1, 0, -61), "the Fire tab once more, with its grey entries")
+-- It happens in a fight, where the game locks its frames: the column, the page buttons, the row of
+-- tabs, and an entry drawn small (one whose flyout was opened).
+local function locked() return true end
+local held = W.NewWidget("Frame", nil, view1)
+held:SetScale(0.75)
+paged.frames[#paged.frames + 1] = held
+view1.IsProtected, nativePager.IsProtected, tabSystem.IsProtected, held.IsProtected = locked, locked, locked, locked
+W.combat = true
 W.gamepad = true                      -- a controller is switched on: the game pages by itself then
 H.Open()                              -- Home empties the page underneath, and that redraw notices it
-check(view1:GetHeight() == 590 and stands(nativePager, paged, -75, 40), "when the plan cannot hold, the game's column and page buttons are given back")
+check(view1:GetHeight() == 60000 and not stands(nativePager, paged, -75, 40) and stands(tabSystem, book, 116, -26) and held:GetScale() == 0.75,
+    "in a fight what the game locks is left as it is")
+W.combat = false
+view1.IsProtected, nativePager.IsProtected, tabSystem.IsProtected, held.IsProtected = nil, nil, nil, nil
+W.Fire("PLAYER_REGEN_ENABLED")
+check(view1:GetHeight() == 590 and stands(nativePager, paged, -75, 40) and held:GetScale() == 1,
+    "when the plan cannot hold, the game's column and page buttons are given back, and every entry its own size: after the fight")
 check(not SaneUISpellbook:IsShown() and printedMatch("left the spellbook's pages to the game %(a controller is in use%)"), "the addon's entries go, and it says why")
 H.Open()
 check(not ns.Home.IsOpen() and not SaneUISpellbookHome:IsShown() and stands(tabSystem, book, 70, -26),
