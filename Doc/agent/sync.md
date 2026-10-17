@@ -12,18 +12,21 @@
 
 ## Contracts
 
-- No module (no `SaneUI.Sync`), so no page; `Settings/Synced.lua` builds the tab *Accountwide*: box Sane UI, then
-  one box per `Sync.GROUPS` entry (`SETTING_GROUP_GAMEPLAY`, `_ACCESSIBILITY`, `_SYSTEM`, `elsewhere`) with a
+- No module (no `SaneUI.Sync`), so no page; `Settings/Synced.lua` builds the tab *Game settings*: one box per
+  `Sync.GROUPS` entry (`SETTING_GROUP_GAMEPLAY`, `_ACCESSIBILITY`, `_SYSTEM`, `elsewhere`) with a
   checkbox per part of that group (`Sync.PartKept` / `Sync.KeepPart`). Group and page titles are the game's
   strings (`Sync.Word(name, fallback)`, the same function as `Core.Word`).
-- Saved (`SaneUIDB.modules.Sync.options`, ride along with account/character/profile settings): `off[id] = true`
+- Only with *Accountwide settings* on (`Core.Profiles.On()`): off, `Give` and `Capture` do nothing and Sync's settings
+  are a table of the session (Core.Options hook `game = true`).
+- Saved (`Core.Settings("Sync")`, in the profile in use only, never a character's own): `off[id] = true`
   (part left to the game; every part kept by default, new ones too), `taken[id] = data`, `named[cvar] = value`
   (`Sync.Keep`/`Sync.Kept`, used by Settings' CVar list). No upgrade code: earlier shapes are ignored.
 - Part = `{ id, group, text, tip, reload?, Read() -> data, Write(data) -> needsReload }`, in `Sync.parts` in file
   order (Layout, Chat, Game). `Sync.Capture` (Core's `capture`, before every snapshot) rebuilds `taken` from kept
   parts (a failing Read keeps the old data) and refreshes `named`; it does nothing until `Sync.Give` ran this
   session. `Sync.Give`: 2 s after first PEW once `C_CVar.AreCVarsLoaded()` (else 2 s after `VARIABLES_LOADED`),
-  after combat if needed, and on `changed("taken")` (profile load / own switch); writes only table data, only
+  after combat if needed, and on the `moved` hook (another profile used, Accountwide switched on), once the
+  first writing came due (`settled`); writes only table data, only
   differences; one reload dialog per writing (`Sync.OfferReload` → `Core.AskReload`) naming parts whose Write
   returned true (Edit Mode, also a waiting layout set later; chat windows/colours; action bars).
 - Page parts write only CVars of their own list that the client has; flags/clicks the game does not answer keep
