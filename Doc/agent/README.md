@@ -20,6 +20,7 @@ Use current source and the user's instructions when they differ from a note.
 | NPC talks, books and letters as a scene, part of Social (not built yet) | `Doc/ideas/Dialogue.md` |
 | Lore: AI voice overs, a library of the world's lore, tidbits in tooltips (an idea, not built) | `Doc/ideas/Lore.md` |
 | Game settings kept per account/character/profile, chat windows, own channels | [sync.md](sync.md) |
+| Core's data framework: the master (`assets/data/`), packs, `Data.Set`, the scheduler (being built, step 1a) | [Doc/guides/data.md](../guides/data.md), then `Doc/ideas/Data-build.md` |
 | Build, tests, generators, reference paths, documentation caveats | [development.md](development.md) |
 | Locate a declaration or find changed files | `rg -n 'symbol' src dev`; `dev/tools/project-index --check` |
 

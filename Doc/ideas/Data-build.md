@@ -29,7 +29,7 @@ at most the commit it was on, and the next session goes on from there.
 
 ## 1a The frame, with CVarLabels the whole way
 
-- [ ] **1a.1 The guide.** `Doc/guides/data.md` holds the contracts (Data.md, *Contracts*) and how to add a
+- [x] **1a.1 The guide.** `Doc/guides/data.md` holds the contracts (Data.md, *Contracts*) and how to add a
   set. `AGENTS.md` and `CLAUDE.md` name it where they list the guides (both are local files, in
   `.gitignore`, edited, never committed; a cloud session hands Saneroki edited copies).
 - [ ] **1a.2 The master and its check.**

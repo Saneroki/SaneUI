@@ -7,6 +7,13 @@ The Home page, the marks, Settings on demand, the Tooltips module and the Social
 Tests: lint, 195 checks (Core, with its options), 280 checks (Spellbook), 328 checks (Tooltips), 332 checks (Social), 62 checks (Sync), 234 checks (windows).
 
 ### Core's data framework
+- **1a.1 The guide** `Doc/guides/data.md`, the reference from now on: the master in `assets/data/`
+  (`builds.toml`, `sources.toml`, `packs.toml`, a schema per set with its types, a line of the master, fixes,
+  another game version's files), staging and every case of the import, the check, a pack's TOC and set file,
+  a row, what a module reads (with `OnStamp` for a view that redraws, as Navigation asked, and `State`),
+  loading, the scheduler's jobs, the saved variables, messages and clocks to come, and how to add a set. The
+  plan's *Contracts* now point to it. `Doc/agent/README.md` names it; `AGENTS.md` and `CLAUDE.md` (local)
+  were handed over edited.
 - **The plan's open decisions answered** (Saneroki, 2026-10-17), written into `Doc/ideas/Data.md`:
   - as proposed: packs as load-on-demand addons (1); saved variables declared by the packs (2); the
     auction history archived in the master and shipped back (6); the limits' numbers as start values to

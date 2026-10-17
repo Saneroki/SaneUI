@@ -1526,146 +1526,20 @@ module then reads through `Core.Data`, and its old file is deleted in the same c
 
 ## Contracts
 
-The exact shapes a building session keeps to, so that no two sessions invent their own (*Review*). Step 1a
-carries them into the guide `Doc/guides/data.md`; from then on the guide is the reference, and this
-section only says why.
+The exact shapes a building session keeps to are in the guide [Doc/guides/data.md](../guides/data.md),
+since step 1a.1: a line of the master, the schema, staging and the import's cases, the check, a pack's TOC
+and Lua file, a row, the answers in the game, the scheduler's jobs, the saved variables, the messages and the
+clocks. The guide is the reference; where this page and the guide differ, the guide wins. Why they are so is
+in this page's own sections:
 
-### A line of the master
-
-```json
-{"key":16801,"since":0,"src":[3],"name":"Arcanist Gloves","slot":"hands","armor":40,"stats":{"int":10,"spi":5},"effect":"..."}
-{"key":16801,"since":65100,"day":"2026-11-03","src":["game"],"armor":36,"stats":{"int":8,"spi":5},"effect":null}
-```
-
-- Keys in this order: `key`, `since`, `day`, `src`, `gone`, `replaces`, then the fields in schema order.
-  The tools write every line so, sorted by key, build and day; the check refuses another order in a file
-  the tools write (`fixes.jsonl`, written by people, only has to parse and fit).
-- `day` is the server's day of the version (*Series*), left out where it is not known.
-- A later version holds only the fields that changed, each in full; `null` clears a field.
-- `key` is a whole number or a text, as the schema's `key` says.
-
-### A pack
-
-The TOC, written by the build (`Interface` and `Version` are Core's):
-
-```
-## Interface: 16001
-## Title: Data: Items
-## Version: 0.3.0
-## Dependencies: SaneUI
-## Group: SaneUI
-## LoadOnDemand: 1
-## SavedVariables: SaneUIData_Items
-## X-SaneUI-Sets: Items, ItemSets
-## X-SaneUI-Format: 1
-## X-SaneUI-Game: forever
-## X-License: MIT
-
-Items.lua
-ItemSets.lua
-```
-
-A set's file, made by the compiler and never edited (`\030`, `\031` are how Lua writes the characters 30
-and 31):
-
-```lua
-local S = SaneUI.Core.Data.Add(1, "Items", {
-    game = "forever", hash = "3f9a2c1e", build = 65100,
-    fields = { "name", "quality", "slot", "armor", "stats", "sell" },
-    types = { "text", "int", "enum", "int", "map int", "money" },
-})
-if not S then return end
-local R, H, I = S.rows, S.history, S.index
-;(function()
-R[16801] = "65100\t20760\tArcanist Gloves\t3\thands\t36\tint\0318\030spi\0315\t1550"
-R[16802] = "0\t\tArcanist Boots\t3\tfeet\t..."
-end)()
-H[16801] = "0\t\tArcanist Gloves\t3\thands\t40\tint\03110\030spi\0315\t1550"
-I.bySlot = { hands = "16801\03016802", feet = "16802" }
-```
-
-- `Data.Add(format, set, header)` gives nil for a format this Core does not read: the file stops there, and
-  the set is *not ready* (said once).
-- **A row:** its build, its day (days since 1970; empty where not known), then the fields. A tab between
-  fields; character 30 between the items of a list or map; character 31 between an item's parts (a map's
-  key and value, a point's map, x and y, an objective's kind, what, count and text). Deeper nesting is
-  refused by the check: such a field becomes two fields or a set of its own. An empty part is no value. A
-  row of only a build and a day is a *gone* version.
-- **Values:** numbers as Lua writes them (`%.14g`); money in copper; `bool` `1` or empty; `enum` its word;
-  `flags` a whole number; `point` map, x and y, x and y in percent of the map with one decimal; `ref` the
-  other entry's key.
-- `R` holds every entry's newest version; `H` the older ones, oldest first, cut by character 28, only for
-  entries that have them. On a client older than a row's build, `Get` takes the newest version in `H` the
-  client has reached, or nil.
-- `I[index][value]` holds keys cut by character 30. The compiler writes its own indexes the same way (the
-  other side of `replaces`, a quest's breadcrumbs, a chain's order).
-- At most 50,000 rows per function (*Building*). A pack's domain code (decision 24) comes after its set
-  files in the TOC.
-
-### Answers in the game
-
-| Call | Gives |
-| --- | --- |
-| `Get(key)` | A record: field = value; a list is an array, a map a table, a point `{ map, x, y }`; also `since` and `day`. Shared and read-only, kept while held |
-| `Get(key, field)` | One value |
-| `At(key, build)` | The record as it was at that build, or nil |
-| `History(key)` | An array of records, oldest first, each with `since`, `day`, `patch` (from `builds.toml`) and `gone` |
-| `Versions(key, n)` | The last n of `History`, oldest first |
-| `Changes(key)` | An array, oldest first, of `{ since, day, patch, field, from, to }` |
-| `Keys(index, value)` | An array of keys, shared and read-only; an empty one when none |
-| `Each(fn)` | A job (*Performance*): `fn(key, record)` for every entry, out of combat, within the budget |
-| `Stamp()` | A number that moves when the set loads and when learned or accepted data changes it |
-
-- **nil means *not known*:** no such set, not loaded, no such entry, gone. No read ever raises an error.
-- Records and arrays are shared: the tests hand out frozen ones, so a module that writes into one fails its
-  tests.
-
-### Saved variables
-
-- **Keyed by game version first:** `SaneUIDB.data["forever"]`, `SaneUIData_Items["forever-beta"]`. Everything
-  below is inside the client's own game version's key; the other keys are left as they are (*Game versions
-  kept apart*).
-- **Core's** (`SaneUIDB.data`, decision 19): `format`, the inbox (`[set][key] = row`, *proposal* at most
-  2,000), the last build checked per set, the size each pack saved last (*A lost file*), the crawl's place
-  per kind. Small and bounded.
-- **A pack's** (`SaneUIData_<Pack>`): `format`; `learned` (`[set][key] = row`); `broken` (parts of a wrong
-  shape, kept for the harvest); and what the pack has: the Market pack its series per auction house
-  (`houses["eu/1234/horde"]`, *Realms and regions*), the World pack its drop counts, the Characters pack
-  the characters. Sharing's own part keeps its waiting facts, the facts
-  heard and the strikes in its own saved variable.
-- **Packed strings, never tables of tables,** for anything that grows (rows, a series' months, a bag), and a
-  budget of 100,000 values per saved variable (*Series*).
-- Every part is checked on load (the format number with upgrade steps; a part of a wrong shape goes to
-  `broken`, the rest works).
-
-### Messages
-
-- Prefix `SaneUI`, the guild, party and raid channels only (decision 9). A message: its kind (a letter), the protocol number, its game version's
-  short sign (`f`, `fp`, `fb`), then its fields, all cut by tabs (`H1\tf\t...`). A kind, number or game
-  version not known, or not the receiver's, is ignored. At most 255 bytes.
-- **A block** (a scan's 250 items, or a bundle): its rows in the codec's format; packed
-  (`CompressString` with *Zlib*, whose checksum catches damage); made text (`EncodeBase64`); cut into
-  numbered parts (`D1\t<transfer>\t<block>\t<part>\t<parts>\t<text>`). The block's first part also says its
-  unpacked size, checked after unpacking. A packed block is at most 4 KB (*Poisoning*).
-- **A scan's messages** (*have*, its blocks) name its auction house (`eu/1234/horde`); a receiver takes only
-  its own house's (*Realms and regions*).
-- Received text is read, never run: no `loadstring` anywhere in the framework.
-
-### Clocks
-
-- **Build:** the number `GetBuildInfo` gives, as a number. Builds are compared only within one game version.
-- **Game version:** told once at load (*Game versions kept apart*), as `forever`, `forever-ptr` or
-  `forever-beta`.
-- **Day:** `floor(GetServerTime() / 86400)`. **Time:** `GetServerTime()`. Never `time()` for anything kept or
-  shared (*Series*).
-- In the master a day is a date (`2026-11-03`); in packs, saved files and messages it is its number.
-
-### Jobs
-
-- A job is a function run as a coroutine by `Steps.lua`. Between pieces of work it asks the scheduler
-  whether time is left, and yields only when the frame's budget is spent (*Performance*).
-- It never yields inside `pcall` or `Core.Safe`; `coroutine.resume` is its guard.
-- A job is named, so `/sane data` can show what runs, and a job of the same name is not started twice.
+- one string per version, cut by characters no game text holds (*How a pack is stored*);
+- every version whole in the pack, history on demand (*How a pack is stored*);
+- the same master, the same bytes; hashes, not dates; at most 50,000 rows a function (*Building*);
+- nil means not known, and `Get` never loads a pack (*Loading*, decision 20);
+- everything keyed by game version first (*Game versions kept apart*);
+- packed strings and a budget of values in saved files (*Saved variables*, *Series*);
+- jobs as coroutines that never yield inside `pcall` (*Performance*);
+- the server's day for everything kept or shared (*Series*).
 
 ## Three prompts (Saneroki)
 
