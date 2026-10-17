@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The sample master (dev/tests/data/sample) compiled for the game's tests (dev/tests/data.lua): the packs of
 each game version into <folder>/<game version>/, and next to them expected-<game version>.lua, every
-version of every entry as the Python side means it, for Lua to compare with what its codec reads. The one
+version of every entry as the Python side means it (with its build's patch), for Lua to compare with what its codec reads. The one
 place the two languages are held in step.
 
 Usage: python3 -I dev/tests/data/sample.py <folder>"""
@@ -41,10 +41,12 @@ def lua(value, field=None, kind=None):
     return compiler.lua_string(str(value))
 
 
-def version_lua(schema, version):
+def version_lua(schema, version, patches):
     parts = [f"since = {version.since}"]
     if version.day:
         parts.append(f"day = {masters.day_number(version.day)}")
+    if version.since in patches:
+        parts.append(f"patch = {compiler.lua_string(patches[version.since]['patch'])}")
     if version.gone:
         parts.append("gone = true")
     for field in schema.fields:
@@ -64,7 +66,7 @@ def expected(master, game):
         view = master.view(name, game)
         lines.append(f"    [{compiler.lua_string(name)}] = {{")
         for key in sorted(view, key=lambda k: (isinstance(k, str), k)):
-            versions = ", ".join(version_lua(schema, version) for version in view[key])
+            versions = ", ".join(version_lua(schema, version, master.builds[game]) for version in view[key])
             lines.append(f"        [{compiler.lua_value(key)}] = {{ {versions} }},")
         lines.append("    },")
     lines.append("}")

@@ -448,10 +448,11 @@ def apply(versions, line):
 
 
 def current(versions, since, day=None):
-    """The version current at a build (and day): the newest one that starts at or before it."""
+    """The version current at a build and day: the newest one that starts at or before it. Without a day,
+    any day of that build: the build's newest version."""
     found = None
     for version in versions:
-        if version.clock() <= (since, day or ""):
+        if (version.clock() <= (since, day) if day else version.since <= since):
             found = version
     return found
 

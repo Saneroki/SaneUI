@@ -250,6 +250,15 @@ that game version's files.
 
 - Fields a source does not have are left alone: sources are partial.
 - Staged lines of one entry are taken in order of build and day, each against what the ones before made.
+  **Live's lines are taken in first,** so another game version stands on what the import made of live.
+- **A staged line without a day** is compared with its build's newest version: the game at a build the
+  master has a day for, saying otherwise, is a conflict, since which came first cannot be told.
+- **A change between two versions** (the game at a build between them): the later lines keep only what they
+  still change, and one that changes nothing any more is dropped, its sources going to the version before.
+- **An entry that comes back** after gone (the game at a later build) starts with a whole first version of
+  the staged facts.
+- **What `--take` does not mend:** a conflict with a gone version or a gone at a build with later versions,
+  and a different `replaces` for an entry another game version stands on. Those are mended by hand.
 
 ## The check
 
@@ -374,23 +383,27 @@ Data.Prepare("Items")               -- load soon: after the loading screen, out 
 
 | Call | Gives |
 | --- | --- |
-| `Items:Get(key)` | The record of the newest version this client has reached: field = value, also `since` and `day`. nil: not known, not loaded (and then `Prepare` is asked for), no such entry, gone. |
+| `Items:Get(key)` | The record of the newest version this client has reached: field = value, also `since`, `day` and `patch`. nil: not known, not loaded (and then `Prepare` is asked for), no such entry, gone. |
 | `Items:Get(key, field)` | One value of that record. |
-| `Items:At(key, build)` *(1a.6)* | The record as it was at that build, or nil. |
-| `Items:History(key)` *(1a.6)* | An array of records, oldest first, each with `since`, `day`, `patch` and, for a gone version, `gone = true`. |
-| `Items:Versions(key, n)` *(1a.6)* | The last n of `History`, oldest first. |
-| `Items:Changes(key)` *(1a.6)* | An array, oldest first, of `{ since, day, patch, field, from, to }` (an entry gone: `field = "gone"`). |
-| `Items:Keys(index, value)` *(1a.6)* | An array of keys (`replaces`, `replacedBy` too); an empty one when none. |
-| `Items:Each(fn, done)` *(1a.6)* | A job: `fn(key, record)` for every entry, out of combat, within the budget; then `done()`. |
+| `Items:At(key, build)` | The record as it was at that build, or nil (not there yet, gone). |
+| `Items:History(key)` | An array of records, oldest first, each with `since`, `day`, `patch` (none for `since` 0) and, for a gone version, `gone = true`; its newest is the record `Get` gives. nil when not known. |
+| `Items:Versions(key, n)` | The last n of `History`, oldest first. |
+| `Items:Changes(key)` | An array, oldest first, of `{ since, day, patch, field, from, to }`, one per field that changed, in the pack's order of the fields (an entry gone: `field = "gone"`, `from = false`, `to = true`; back again the other way round). An empty array for an entry that never changed. |
+| `Items:Keys(index, value)` | An array of keys from the entries' newest versions (`replaces`, `replacedBy` too); an empty one when none. |
+| `Items:Each(fn, done)` | A job: `fn(key, record)` for every entry the client has (gone ones left out), out of combat, within the budget; then `done()`. false when the set is not ready (it is asked for). |
 | `Items:Stamp()` | A number that moves when the set loads, and later when learned or accepted data changes it. |
 | `Items:OnStamp(fn)` | `fn(handle)` after the stamp moved: a view redraws then, instead of looking every frame. |
 | `Items:State()` | `"ready"`, `"loading"`, `"idle"` (can be loaded, not asked for), `"missing"`, `"off"` (switched off in the addon list) or `"refused"`; and a few words why. |
 | `Items:Ready()` | `State() == "ready"`. |
 | `Items.hash`, `Items.build` | Where the data came from: its hash, the newest build it knows (nil until loaded). |
 
+- **What this client has reached:** a pack made for a later patch than the client's build answers with the
+  versions that build has; `History`, `At`, `Changes` and `Each` stop there too. `Keys` come from the pack's
+  newest versions, so on such a client `Get` of one of them can be nil.
 - **nil means not known.** No read ever raises an error, and a read is always cheap: one table index and,
   the first time, one row taken apart (about 2.5 µs). **`Get` never loads a pack** (decision 20).
-- **Records and arrays are shared and read-only.** A module never writes into one. The tests hand out
+- **Records and arrays are shared and read-only.** A module never writes into one (`Versions` and `Keys`
+  give a new array each time, of the shared records). The tests hand out
   frozen ones (`Data.frozen`): writing a new key fails at once, changing one is found by
   `Data.Tampered()`.
 - **A record is made only for an entry somebody asks for,** and kept while anybody holds it (weak values).
@@ -419,8 +432,9 @@ Data.Prepare("Items")               -- load soon: after the loading screen, out 
 ### `/sane data`
 
 The client's game version and build with the three answers it was told by, every pack with its state and
-its sets' hashes, and the scheduler's jobs. `/sane data show <set> <key>` prints an entry (and asks for its
-pack if it is not loaded).
+its sets' hashes, and the scheduler's jobs. `/sane data show <set> <key>` prints an entry and what changed,
+by patch (and asks for its pack if it is not loaded). `/sane data` also tells the client anew (`Data.Find`):
+its game version and build, and the answers made from them are made again.
 
 ## The scheduler: jobs
 
@@ -516,9 +530,9 @@ end, ...)
 | `dev/tools/data import <file> [--apply] [--take]` | Staging into the master, the report first. |
 | `dev/tools/data compile <dir> [--game <game version>]` | The packs (run by `dev/build`). |
 | `dev/tools/data game <game folder>` | The game version a game folder holds, by the product its `.flavor.info` names (`wowf`: `forever`; `wow_classic_beta`: `forever-beta` today); nothing for a product not known. `dev/build` installs that game version's packs. |
-| `dev/tools/data show <set> <key>` *(1a.6)* | An entry with every version and source. |
-| `dev/tools/data diff <set> [--patch 1.60.2]` *(1a.6)* | What a patch changed. |
-| `dev/tools/data stats` *(1a.6)* | Counts and sizes per set and pack. |
+| `dev/tools/data show <set> <key> [--game <game version>]` | An entry: every version as its line says it (build, patch, day, sources, what changed) with its fix, then the entry as the packs carry it. |
+| `dev/tools/data diff <set> [--patch 1.60.2] [--game <game version>]` | What a patch changed (the game version's newest when none is named): every entry new, changed (field from → to), gone or back at one of its builds. |
+| `dev/tools/data stats` | Per game version and set: entries, versions, entries that changed, gone ones, its own lines, its file's size in the pack; each pack's totals. |
 | `dev/tools/data harvest` *(1c)* | The packs' saved files into staging, accepted data only. |
 | `dev/tools/cvar-labels --staging` | The CVar labels as staging for the set *CVarLabels*. |
 
@@ -530,5 +544,7 @@ end, ...)
 - **In the game** (`dev/tests/data.lua`, Lua 5.1 with `wowstub.lua`): the codec reads back every row the
   Python compiler wrote from the sample masters (the one test that keeps the two languages in step);
   packs found, loaded, refused (missing, switched off, a wrong format, another game version, asked for in
-  combat); `Get` never loads; frozen records; the scheduler's budget, pauses and guards.
+  combat); `Get` never loads; frozen records; the answers on a sample with history (`History`, `At`,
+  `Versions`, `Changes`, `Keys`, `Each`), also from a pack newer than the client; the scheduler's budget,
+  pauses and guards.
 - **Nothing hostile raises an error:** a broken row, a broken saved file or message is dropped or set aside.

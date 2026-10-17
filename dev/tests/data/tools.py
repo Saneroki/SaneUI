@@ -101,7 +101,8 @@ check("beta's own entry", 103 in beta, True)
 check("live has none of the beta's", 103 in gear, False)
 check("gone stays gone in the beta", 3 in sample.view("Folk", "forever-beta"), False)
 check("current at a build", masters.current(gear[100], 65050).since, 65000)
-check("current before a day", masters.current(gear[100], 65000).since, 0)
+check("current at a build, its day not known: the build's newest", masters.current(gear[100], 65000).since, 65000)
+check("current before a day", masters.current(gear[100], 65000, "2026-08-31").since, 0)
 check("current on the day", masters.current(gear[100], 65000, "2026-09-01").since, 65000)
 
 # Writing gives the same text as read
@@ -228,7 +229,7 @@ with Copy() as copy:
     check("import: agreeing (also a field the source says is empty)", counts(report, "Folk", "forever").get("agreeing"), 2)
     check("import: beta's new", counts(report, "Folk", "forever-beta").get("new"), 1)
     check("import: beta agrees with its view", counts(report, "Gear", "forever-beta").get("agreeing"), 1)
-    check("import: a change waits for 1a.6", counts(report, "Gear", "forever").get("later"), 1)
+    check("import: the game at a build the master has, saying otherwise: a conflict", counts(report, "Gear", "forever").get("conflict"), 1)
     refused = sorted(text for case, _, _, _, text in report.listed if case == "refused")
     for words in ("cannot be gone", "names its game version", "no game version", "is no set", "not in the schema",
                   "is empty", "not in sources.toml", "not in builds.toml", "forever-beta's batch", "is no key of Folk",
@@ -244,6 +245,163 @@ with Copy() as copy:
     again = importer.run(after, staged[:5])
     check("import again: all agreeing", (counts(again, "Folk", "forever"), again.changed),
           ({"agreeing": 3}, set()))
+
+
+
+def taken(*lines, take=False):
+    """Stages lines into a fresh copy of the sample master and applies them: (report, the master read again,
+    {file: [line, ...]} of the files the import wrote)."""
+    with Copy() as copy:
+        master = loaded(copy.root)
+        report = importer.run(master, stage(copy, *lines), take=take)
+        importer.apply(master, report)
+        after = loaded(copy.root)
+        files = {}
+        for set_name, game in report.changed:
+            for _, path in after.files[(set_name, game)]:
+                files[str(path.relative_to(copy.root))] = [json.loads(raw) for raw in path.read_text(encoding="utf-8").splitlines()]
+        return report, after, files
+
+
+def of(files, name, key):
+    return [line for line in files.get(name, []) if line["key"] == key]
+
+
+def listed(report, case):
+    return [text for each, _, _, _, text in report.listed if each == case]
+
+
+GAME_LINE = {"set": "Gear", "game": "forever", "src": "game"}
+
+# Changed: the game at a newer build, or the same build on a later day
+report, after, files = taken({**GAME_LINE, "key": 101, "build": 65100, "fields": {"quality": 3}},
+                             {**GAME_LINE, "key": 100, "build": 65100, "day": "2026-10-01", "fields": {"sell": 100, "name": "Plain Gloves"}})
+check("import changed: counted", counts(report, "Gear", "forever"), {"changed": 2})
+check("import changed: a newer build", of(files, "Gear/Gear.jsonl", 101)[-1], {"key": 101, "since": 65100, "src": ["game"], "quality": 3})
+check("import changed: the same build on a later day, only what differs",
+      of(files, "Gear/Gear.jsonl", 100)[-1], {"key": 100, "since": 65100, "day": "2026-10-01", "src": ["game"], "sell": 100})
+check("import changed: the master fits", after.errors, [])
+check("import changed: the view", after.view("Gear", "forever", fixes=False)[100][-1].fields["sell"], 100)
+
+# Changed between two versions: the later one keeps only what it still changes, or goes
+report, after, files = taken({**GAME_LINE, "key": 100, "build": 65000, "day": "2026-09-15", "fields": {"weight": None}})
+check("import changed between: the later line keeps what it still changes",
+      [line["since"] for line in of(files, "Gear/Gear.jsonl", 100)] + [of(files, "Gear/Gear.jsonl", 100)[-1]],
+      [0, 65000, 65000, 65100, {"key": 100, "since": 65100, "src": ["game"], "rare": True}])
+check("import changed between: fits", after.errors, [])
+report, after, files = taken({**GAME_LINE, "key": 100, "build": 65000, "day": "2026-09-15", "fields": {"weight": None, "rare": True}})
+check("import changed between: a later line that changes nothing any more goes",
+      [line["since"] for line in of(files, "Gear/Gear.jsonl", 100)], [0, 65000, 65000])
+check("import changed between: fits too", after.errors, [])
+
+# Conflicts: a batch against the game, two values for one build; listed, not applied; --take mends in place
+lines = ({"set": "Gear", "game": "forever", "key": 100, "build": 65100, "src": 1, "fields": {"sell": 99}},
+         {**GAME_LINE, "key": 100, "build": 65000, "fields": {"sell": 98}},
+         {"set": "Folk", "game": "forever", "key": 2, "src": 1, "fields": {"title": "Fisher"}},
+         {"set": "Gear", "game": "forever", "key": 101, "src": 1, "fields": {"flags": None}})
+report, after, files = taken(*lines)
+check("import conflict: listed, nothing written", (counts(report, "Gear", "forever"), counts(report, "Folk", "forever"), files),
+      ({"conflict": 3}, {"conflict": 1}, {}))
+check("import conflict: says both values", any("sell: 110 in the master (65100), 99 staged" in text for text in listed(report, "conflict")), True)
+check("import conflict: the game at the same build", any("98 staged" in text for text in listed(report, "conflict")), True)
+report, after, files = taken(*lines, take=True)
+check("import --take: taken", counts(report, "Gear", "forever"), {"taken": 3})
+check("import --take: into a later version, with its source",
+      of(files, "Gear/Gear.jsonl", 100)[-1], {"key": 100, "since": 65100, "src": ["game", 1], "weight": None, "rare": True, "sell": 99})
+check("import --take: the same build", of(files, "Gear/Gear.jsonl", 100)[1]["sell"], 98)
+check("import --take: into a first version", of(files, "Folk/Folk.jsonl", 2), [{"key": 2, "since": 0, "src": [1], "name": "Tobin Reed", "title": "Fisher"}])
+check("import --take: a field cleared in a first version is left out", "flags" in of(files, "Gear/Gear.jsonl", 101)[0], False)
+check("import --take: fits", after.errors, [])
+
+# Older: put in front, the old first version keeps only what differs
+report, after, files = taken({**GAME_LINE, "key": 102, "build": 65000, "fields": {"quality": 2, "sell": 5}})
+check("import older: a new first version, whole, with replaces",
+      of(files, "Gear/Gear.jsonl", 102), [
+          {"key": 102, "since": 65000, "src": ["game"], "replaces": 101, "name": "Ünder Cap", "quality": 2, "slot": "head", "sell": 5, "from": [1]},
+          {"key": 102, "since": 65100, "src": ["game"], "quality": 3, "sell": None}])
+check("import older: counted, fits", (counts(report, "Gear", "forever"), after.errors), ({"older": 1}, []))
+report, after, files = taken({"set": "Gear", "game": "forever", "key": 102, "build": 65000, "src": 3, "fields": {"quality": 3}})
+check("import older, agreeing: the source added", (counts(report, "Gear", "forever"), of(files, "Gear/Gear.jsonl", 102)[0]["src"]),
+      ({"agreeing": 1}, ["game", 3]))
+report, after, files = taken({**GAME_LINE, "key": 102, "build": 65000, "gone": True})
+check("import older, gone: refused", any("gone before its first version" in text for text in listed(report, "refused")), True)
+
+# Gone: from the game or a person; from a batch refused; agreeing; an entry that comes back
+report, after, files = taken({"set": "Folk", "game": "forever", "key": 2, "build": 65100, "src": "game", "gone": True},
+                             {"set": "Folk", "game": "forever", "key": 1, "build": 65100, "src": 1, "gone": True},
+                             {"set": "Folk", "game": "forever", "key": 3, "build": 65100, "src": "hand", "gone": True},
+                             {**GAME_LINE, "key": 100, "build": 65000, "day": "2026-09-15", "gone": True})
+check("import gone: counted", (counts(report, "Folk", "forever"), counts(report, "Gear", "forever")),
+      ({"gone": 1, "refused": 1, "agreeing": 1}, {"conflict": 1}))
+check("import gone: the line", of(files, "Folk/Folk.jsonl", 2)[-1], {"key": 2, "since": 65100, "src": ["game"], "gone": True})
+check("import gone: from a batch, refused", any("missing from a source is no proof" in text for text in listed(report, "refused")), True)
+check("import gone: agreeing adds the source", of(files, "Folk/Folk.jsonl", 3)[-1]["src"], ["game", "hand"])
+check("import gone: not while a later version stands", any("the master has a later version" in text for text in listed(report, "conflict")), True)
+check("import gone: fits", after.errors, [])
+report, after, files = taken({"set": "Folk", "game": "forever", "key": 3, "build": 65100, "day": "2026-10-01", "src": "game", "fields": {"name": "Hester"}})
+check("import: an entry that comes back starts whole", of(files, "Folk/Folk.jsonl", 3)[-1],
+      {"key": 3, "since": 65100, "day": "2026-10-01", "src": ["game"], "name": "Hester"})
+check("import: it fits", after.errors, [])
+
+# Replaces: written into a new entry's first line; another one for a known entry is a conflict
+report, after, files = taken({**GAME_LINE, "key": 104, "build": 65100, "replaces": 100, "fields": {"name": "New Gloves"}},
+                             {**GAME_LINE, "key": 102, "build": 65100, "replaces": 100, "fields": {"quality": 3}},
+                             {**GAME_LINE, "key": 105, "build": 65100, "replaces": 999, "fields": {"name": "X"}},
+                             {**GAME_LINE, "key": 106, "build": 65100, "replaces": 106, "fields": {"name": "X"}})
+check("import replaces: in the new entry's first line", of(files, "Gear/Gear.jsonl", 104),
+      [{"key": 104, "since": 65100, "src": ["game"], "replaces": 100, "name": "New Gloves"}])
+check("import replaces: another for a known entry is a conflict", any("replaces 100; the master names 101" in text for text in listed(report, "conflict")), True)
+check("import replaces: refused when the old entry is not there, or is itself",
+      (any("replaces 999, which forever does not have" in text for text in listed(report, "refused")),
+       any("cannot replace itself" in text for text in listed(report, "refused"))), (True, True))
+report, after, files = taken({**GAME_LINE, "key": 102, "build": 65100, "replaces": 100, "fields": {"quality": 3}}, take=True)
+check("import replaces --take", (of(files, "Gear/Gear.jsonl", 102)[0]["replaces"], after.errors), (100, []))
+
+# Each game version on its own: a beta build makes a beta version only; live is taken in first
+report, after, files = taken({"set": "Folk", "game": "forever-beta", "key": 1, "build": 66000, "src": "game", "fields": {"title": "Master Smith"}},
+                             {**GAME_LINE, "key": 101, "build": 65100, "fields": {"quality": 3}},
+                             {"set": "Gear", "game": "forever-beta", "key": 101, "src": "game", "fields": {"quality": 3}},
+                             {"set": "Gear", "game": "forever-beta", "key": 100, "build": 66000, "src": "game", "fields": {"quality": 1}},
+                             {"set": "Folk", "game": "forever", "key": 1, "build": 66000, "src": "game", "fields": {"title": "X"}})
+check("import beta: its own file only", (of(files, "Folk/Folk.forever-beta.jsonl", 1), "Folk/Folk.jsonl" in files),
+      ([{"key": 1, "since": 66000, "src": ["game"], "title": "Master Smith"}], False))
+check("import beta: stands on what the import made of live", counts(report, "Gear", "forever-beta"), {"agreeing": 1, "conflict": 1})
+check("import beta: a beta build is no build of live", any("build 66000 is not in builds.toml for forever" in text for text in listed(report, "refused")), True)
+check("import beta: fits", after.errors, [])
+report, after, files = taken({"set": "Gear", "game": "forever-beta", "key": 101, "src": 2, "fields": {"quality": 5}}, take=True)
+check("import beta --take: a correction over live's base is the beta's own line",
+      (of(files, "Gear/Gear.forever-beta.jsonl", 101), after.errors), ([{"key": 101, "since": 0, "src": [2], "quality": 5}], []))
+
+# show, diff and stats ------------------------------------------------------------------------------------
+import views  # noqa: E402
+
+shown_entry = views.show(sample, "Gear", "100")
+check("show: every version with its patch, day and sources", shown_entry[1:4], [
+    '  0 [1]: name "Plain Gloves", quality 1, slot "hands", stats {"agi":2,"sta":3}, weight 1.5, sell 120, from [1,2]',
+    '  65000 (1.60.0) 2026-09-01 [game]: stats {"agi":1,"sta":3}, sell 110',
+    "  65100 (1.60.2) [game]: weight cleared, rare true"])
+check("show: the entry now", shown_entry[-1].startswith('  now: name "Plain Gloves", quality 1') and "weight" not in shown_entry[-1], True)
+fixed = views.show(sample, "Gear", "101")
+check("show: the line as written, then the fix", (fixed[1].startswith('  0 [1, 3]: name "Tall Boots", '), fixed[2],
+                                                  fixed[3].startswith('  now: name "Tall Boots of Wading"')),
+      (True, '    fixed by hand: name "Tall Boots of Wading"', True))
+check("show: the beta's base", views.show(sample, "Gear", "100", "forever-beta")[1:3],
+      ["  0: live's newest version, which forever-beta stands on", "  66000 (1.61.0) [game]: quality 2"])
+check("show: a text key; a gone entry; none", (views.show(sample, "Labels", "with space")[1], views.show(sample, "Folk", "3")[-1],
+                                              views.show(sample, "Gear", "999"), views.show(sample, "Nope", "1")[0][:18]),
+      ('  0 [hand]: label "SPACED"', "  now: gone", ["Gear has no '999' in forever."], "'Nope' is no set ("))
+check("diff: the newest patch", views.diff(sample, "Gear"), [
+    "Gear (forever), patch 1.60.2: 2 changes.",
+    '  100 65100 (1.60.2): weight 1.5 → empty; rare empty → true',
+    '  102 65100 (1.60.2): new: name "Ünder Cap", quality 3, slot "head", from [1]'])
+check("diff: a patch named; gone", views.diff(sample, "Folk", patch="1.60.2"), ["Folk (forever), patch 1.60.2: 1 change.", "  3 65100 (1.60.2): gone"])
+check("diff: an older patch", views.diff(sample, "Gear", patch="1.60.0")[1], '  100 65000 (1.60.0) 2026-09-01: stats {"agi":2,"sta":3} → {"agi":1,"sta":3}; sell 120 → 110')
+check("diff: within the beta", views.diff(sample, "Gear", "forever-beta"), ["Gear (forever-beta), patch 1.61.0: 1 change.", "  100 66000 (1.61.0): quality 1 → 2"])
+check("diff: a patch not known", views.diff(sample, "Gear", patch="9.9.9"), ["No build of forever is 9.9.9 in builds.toml."])
+numbers = views.stats(sample)
+check("stats: per game version, set and pack", (numbers[0], numbers[2].split(), numbers[5]),
+      ("forever:", ["Folk", "Gear", "3", "4", "1", "1", "4", "607", "B"], "  pack Gear: 2 sets, 6 entries, 2.1 KB"))
+check("stats: the beta", [line.split()[:7] for line in numbers if line.startswith("  Gear ")][2], ["Gear", "Gear", "4", "5", "1", "0", "2"])
 
 # Compiling ----------------------------------------------------------------------------------------------
 import compile as compiler  # noqa: E402

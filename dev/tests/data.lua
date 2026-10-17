@@ -254,7 +254,9 @@ for game, sets in pairs(expected) do
                 end
                 for index, version in ipairs(versions) do
                     if list[index] then
-                        problem = problem or Differ(decode(list[index]), version, ("%s's version %d"):format(tostring(key), index))
+                        local got = decode(list[index])
+                        got.patch = file.header.patches[got.since] -- as Data.lua names it
+                        problem = problem or Differ(got, version, ("%s's version %d"):format(tostring(key), index))
                         if Codec.Build(list[index]) ~= version.since then problem = problem or tostring(key) .. "'s build" end
                     end
                 end
@@ -396,6 +398,75 @@ check(Data.Tampered() == gloves, "and a change inside a table of it")
 gloves.stats.agi = 1
 check(Data.Tampered() == nil, "put back: nothing found")
 
+-- Versions: History, At, Versions, Changes, with the patch names the pack carries
+local history = Gear:History(100)
+check(not Differ(history, expected.forever.Gear[100], "History(100)") and history[3] == Gear:Get(100),
+    "History: every version, oldest first, the newest the record Get gives" .. (Differ(history, expected.forever.Gear[100], "") or ""))
+check(history[1].patch == nil and history[2].patch == "1.60.0" and history[3].patch == "1.60.2" and history[2].day == 20697,
+    "each version with its patch (none for since 0) and day")
+check(Gear:History(100) == history and Gear:History(999) == nil, "History is made once and shared; nil for an entry not there")
+local hester = Folk:History(3)
+check(#hester == 2 and hester[2].gone and hester[2].since == 65100 and hester[2].patch == "1.60.2" and Folk:Get(3) == nil,
+    "a gone entry: Get answers nil, History shows it gone")
+check(Gear:At(100, 0).sell == 120 and Gear:At(100, 65050).sell == 110 and Gear:At(100, 65050).since == 65000
+    and Gear:At(100, 99999) == Gear:Get(100), "At: the version at a build")
+check(Folk:At(3, 65000).name == "Old Hester" and Folk:At(3, 65100) == nil and Gear:At(102, 65000) == nil
+    and Gear:At(100) == nil, "At: nil when gone, not there yet, or no build given")
+local last = Gear:Versions(100, 2)
+check(#last == 2 and last[1] == history[2] and last[2] == history[3] and #Gear:Versions(100, 10) == 3 and #Gear:Versions(100) == 3,
+    "Versions: the last n, oldest first")
+local changes = Gear:Changes(100)
+check(#changes == 4 and changes[1].field == "stats" and changes[1].from.agi == 2 and changes[1].to.agi == 1
+    and changes[1].patch == "1.60.0" and changes[1].day == 20697 and changes[1].since == 65000
+    and changes[2].field == "sell" and changes[2].from == 120 and changes[2].to == 110
+    and changes[3].field == "weight" and changes[3].from == 1.5 and changes[3].to == nil
+    and changes[4].field == "rare" and changes[4].from == nil and changes[4].to == true and changes[4].patch == "1.60.2",
+    "Changes: one per field, in the pack's order, with since, day and patch")
+local goneChange = Folk:Changes(3)
+check(#goneChange == 1 and goneChange[1].field == "gone" and goneChange[1].from == false and goneChange[1].to == true,
+    "Changes: an entry gone is the field gone")
+check(#Folk:Changes(1) == 0 and Folk:Changes(9) == nil and Gear:Changes(100) == changes, "Changes: empty for one version, nil for none; shared")
+check(not pcall(function() history[4] = {} end) and not pcall(function() changes[1].extra = 1 end), "histories and changes are frozen too")
+
+-- Keys: the schema's indexes and the compiler's own, from the newest versions
+local function Same(keys, want)
+    local sorted = {}
+    for index, key in ipairs(keys) do sorted[index] = key end
+    table.sort(sorted, function(a, b) return tostring(a) < tostring(b) end)
+    return not Differ(sorted, want)
+end
+check(Same(Gear:Keys("bySlot", "hands"), { 100 }) and Same(Gear:Keys("byFrom", 1), { 100, 102 }), "Keys by an index, numbers as numbers")
+check(Same(Gear:Keys("replaces", 102), { 101 }) and Same(Gear:Keys("replacedBy", 101), { 102 }), "replaces and replacedBy")
+check(#Gear:Keys("bySlot", "nowhere") == 0 and #Gear:Keys("nothing", 1) == 0 and #Labels:Keys("bySlot", "hands") == 0
+    and #Data.Set("NoSuchSet"):Keys("bySlot", "hands") == 0, "an empty array when none")
+
+-- Each: a job of the scheduler, every entry the client has, then done
+local walked, finished = {}, false
+check(Gear:Each(function(key, record) walked[#walked + 1] = key; check(record == Gear:Get(key), "Each hands the shared record") end,
+    function() finished = true end), "Each starts a job")
+check(#walked == 0, "nothing walked before the next frame")
+local walkedFolk = {}
+check(Folk:Each(function(key) walkedFolk[#walkedFolk + 1] = key end), "a second walk at the same time")
+for _ = 1, 10 do Frame() end
+check(finished and Same(walked, { 100, 101, 102 }) and Same(walkedFolk, { 1, 2 }), "every entry walked, gone ones left out; then done")
+check(Data.Set("NoSuchSet"):Each(function() end) == false, "Each of a set that is not there: false")
+
+-- A pack newer than the client: the versions this client has reached
+W.build = 65050
+Data.Find()
+check(Gear:Get(100).since == 65000 and Gear:Get(100).sell == 110 and Gear:Get(100).rare == nil and Gear:Get(102) == nil
+    and Folk:Get(3).name == "Old Hester", "an older client: Get answers what its build has")
+check(#Gear:History(100) == 2 and #Gear:Changes(100) == 2 and Gear:At(100, 70000).since == 65000 and Gear:History(102) == nil,
+    "and History, Changes and At stop at its build")
+walked, finished = {}, false
+Gear:Each(function(key) walked[#walked + 1] = key end, function() finished = true end)
+for _ = 1, 10 do Frame() end
+check(finished and Same(walked, { 100, 101 }), "Each leaves out what the client has not reached")
+W.build = 70245
+Data.Find()
+check(Gear:Get(102) and Gear:Get(102).name == "Ünder Cap" and #Gear:History(100) == 3, "a newer client: all of it again")
+check(Data.Tampered() == nil, "no record was changed by the answers")
+
 -- A loading screen in the middle: the loader waits for its end
 local extra = MakePack("Extra", "Extra", { ["Extra.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Extra", { game = "forever", hash = "0badf00d", build = 65000, key = "int", fields = { "name" }, types = { "text" }, patches = {} })\n'
     .. 'if not S then return end\nS.rows[1] = "65000\\t\\tOne"\n' })
@@ -518,6 +589,8 @@ SlashCmdList.SANEUI("data show Gear 100")
 SlashCmdList.SANEUI("data show Labels with space")
 SlashCmdList.SANEUI("data show Gear 999")
 SlashCmdList.SANEUI("data show")
+check(printedMatch("^|c%x+Sane UI:|r   1%.60%.0: sell 120 %-> 110%.$") and printedMatch("1%.60%.2: rare empty %-> true%.")
+    and printedMatch("1%.60%.0: stats { agi = 2, sta = 3 } %-> { agi = 1, sta = 3 }%."), "/sane data show: what changed, by patch")
 check(printedMatch("Gear 100: { from = { 1, 2 }, name = Plain Gloves,") and printedMatch("Labels with space: { label = SPACED, since = 0 }%.")
     and printedMatch("Gear has no 999%.") and printedMatch("/sane data show <set> <key>"), "/sane data show prints an entry")
 W.printed = {}

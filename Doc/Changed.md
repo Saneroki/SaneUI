@@ -7,6 +7,16 @@ The Home page, the marks, Settings on demand, the Tooltips module and the Social
 Tests: lint, 195 checks (Core, with its options), 280 checks (Spellbook), 328 checks (Tooltips), 332 checks (Social), 62 checks (Sync), 234 checks (windows).
 
 ### Core's data framework
+- **1a.6 Versions in full.** In the game (`Data.lua`): `History`, `At`, `Versions`, `Changes`, `Keys` and
+  `Each` (a job of the scheduler, two walks at once), every record with the patch its build is; a pack newer
+  than the client answers with what the client's build has reached, in all of them; `Data.Find` tells the
+  build anew and forgets the answers made from it; `/sane data show` prints what changed, by patch. The
+  import (`dev/data/importer.py`) takes in every case: changed (also between two versions, the later lines
+  kept to what they still change), older (put in front), gone (never from a batch), an entry back after
+  gone, replaces, and conflicts listed or written in with `--take`; live first, so another game version
+  stands on the import's live. A staged line without a day reads as its build's newest version
+  (`master.current`). New `dev/data/views.py`: `dev/tools/data show`, `diff` and `stats`. Tests: Lua 142
+  checks, tools 200 (each import case within its game version, `--take`, the three views).
 - **1a.5 Packs in the game.** `src/Core/Data/Codec.lua` (a pack's row into a record, every type the
   compiler writes; a broken row read as far as it goes, never an error) and `src/Core/Data/Data.lua`
   (`Core.Data`), both in `SaneUI.toc` after `Steps.lua`: packs found by their TOC lines; the client's game

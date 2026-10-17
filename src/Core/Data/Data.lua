@@ -11,6 +11,7 @@ local Core = SaneUI.Core
 --      SaneUI.Core.Data.Prepare("Items")             -- load soon: after the loading screen, out of combat
 --      local item = Items:Get(16801)                 -- the record, or nil: not known, not loaded yet, gone
 --      Items:OnStamp(Redraw)                         -- told when the set arrives (or changes)
+--      Items:Changes(16801)                          -- its history: also History, At, Versions; Keys, Each
 --
 --  Get never loads a pack: it answers nil and asks for Prepare. Loading is a job of the scheduler
 --  (Steps.lua): one pack a frame, alone in its frame, never in combat. Records are shared and read-only,
@@ -29,6 +30,7 @@ local PREFIX = "SaneUI_Data_"
 local CAMELOT = 18 -- WOW_PROJECT_CAMELOT, WoW: Forever's project number, should the global be missing
 local LOADER = "data: packs"
 local WEAK = { __mode = "v" }
+local LIST = "\030"
 
 local TEXT = {
     missing = "no data pack holds the set %s",
@@ -58,6 +60,11 @@ local TEXT = {
     jobs = "jobs running: %s.",
     noJobs = "none",
     show = "%s %s: %s.",
+    change = "  %s: %s %s -> %s.",
+    goneChange = "  %s: %s.",
+    gone = "gone",
+    back = "back again",
+    empty = "empty",
     noEntry = "%s has no %s.",
     notReady = "%s is %s; asked for it: try again in a moment.",
     notThere = "%s is %s (%s).",
@@ -77,6 +84,7 @@ local found = false   -- the packs were looked for
 local game, told      -- the client's game version, once told
 local build           -- the client's build
 local stamps = 0
+local walks = 0       -- Each's jobs, numbered so that two walks over one set can run at once
 local screen = true   -- the loading screen is up (Core is read during the login's)
 
 local function Say(label, text, loud)
@@ -85,10 +93,16 @@ local function Say(label, text, loud)
     if loud then Core.Report(label, text) else Core.NoteError(label, text) end
 end
 
+-- A set's answers made so far, kept while anybody holds them: records, histories, changes.
+local function Forget(set)
+    set.records, set.histories, set.changes = setmetatable({}, WEAK), setmetatable({}, WEAK), setmetatable({}, WEAK)
+end
+
 local function Internal(name)
     local set = sets[name]
     if not set then
-        set = { name = name, stamp = 0, records = setmetatable({}, WEAK) }
+        set = { name = name, stamp = 0 }
+        Forget(set)
         sets[name] = set
     end
     return set
@@ -145,10 +159,12 @@ local function Judge(pack, client, loadable, reason)
     return "refused", TEXT.cannot:format(tostring(reason))
 end
 
--- Looks for the packs in the addon list, by their TOC lines; tells the client's game version anew. Done
--- once at first need (and by the tests): a pack added while the game runs is found after a restart.
+-- Looks for the packs in the addon list, by their TOC lines; tells the client's game version and build
+-- anew, and forgets the answers made from them. Done once at first need, by /sane data and by the tests: a
+-- pack added while the game runs is found after a restart.
 function Data.Find()
-    found, told = true, false
+    found, told, build = true, false, nil
+    for _, set in pairs(sets) do Forget(set) end
     local client = Data.Game()
     local old, api = packs, C_AddOns
     packs, packList, owner = {}, {}, {}
@@ -263,10 +279,10 @@ function Data.Add(format, name, header)
         set.refused, set.why = true, TEXT.unreadable
         return nil
     end
-    set.decode, set.fields = decode, header.fields
+    set.decode, set.fields, set.key = decode, header.fields, header.key
     set.patches = type(header.patches) == "table" and header.patches or {}
     set.rows, set.history, set.index = {}, {}, {}
-    set.records = setmetatable({}, WEAK)
+    Forget(set)
     set.added, set.refused, set.why = true, nil, nil
     local handle = Data.Set(name)
     handle.hash, handle.build = header.hash, header.build
@@ -307,6 +323,28 @@ function Data.Tampered()
     return nil
 end
 
+-- Hands a record or an array out. While Data.frozen (the tests) it is made read-only and kept with a copy,
+-- so a change is found.
+local function Hand(value)
+    if Data.frozen then
+        handed[#handed + 1] = { record = value, copy = Copy(value) }
+        Freeze(value)
+    end
+    return value
+end
+
+-- A row taken apart, with the patch its build is (builds.toml, through the pack); nil for a row that cannot
+-- be read (said once).
+local function Decode(set, row)
+    local ok, record = pcall(set.decode, row)
+    if not ok or type(record) ~= "table" then
+        Say("data: " .. set.name .. " rows", TEXT.badRow:format(set.name), true)
+        return nil
+    end
+    record.patch = set.patches[record.since]
+    return record
+end
+
 -- The row of the newest version this client has reached: a pack made for a later patch answers with
 -- the version the client has.
 local function Reached(set, key)
@@ -328,18 +366,56 @@ local function Record(set, key)
     if record then return record end
     local row = Reached(set, key)
     if not row then return nil end
-    local ok, decoded = pcall(set.decode, row)
-    if not ok then
-        Say("data: " .. set.name .. " rows", TEXT.badRow:format(set.name), true)
-        return nil
+    record = Decode(set, row)
+    if not record or record.gone then return nil end
+    set.records[key] = Hand(record)
+    return record
+end
+
+-- Every version of an entry this client has reached, oldest first; the newest is the record Get gives.
+local function History(set, key)
+    local list = set.histories[key]
+    if list then return list end
+    local row = set.rows[key]
+    if not row then return nil end
+    local rows = set.history[key] and Codec.Versions(set.history[key]) or {}
+    rows[#rows + 1] = row
+    local client = ClientBuild()
+    while rows[1] and (Codec.Build(rows[#rows]) or 0) > client do rows[#rows] = nil end
+    if not rows[1] then return nil end
+    list = {}
+    for index, version in ipairs(rows) do
+        local record = index == #rows and Record(set, key) or Decode(set, version)
+        if record then list[#list + 1] = record end
     end
-    if decoded.gone then return nil end
-    if Data.frozen then
-        handed[#handed + 1] = { record = decoded, copy = Copy(decoded) }
-        Freeze(decoded)
+    set.histories[key] = Hand(list)
+    return list
+end
+
+-- What changed from each version to the next, oldest first: one change per field, in the pack's order;
+-- an entry gone or back is the field "gone", from false to true or from true to false.
+local function Changes(set, key)
+    local list = set.changes[key]
+    if list then return list end
+    local history = History(set, key)
+    if not history then return nil end
+    list = {}
+    for index = 2, #history do
+        local before, after = history[index - 1], history[index]
+        if before.gone or after.gone then
+            list[#list + 1] = { since = after.since, day = after.day, patch = after.patch, field = TEXT.gone,
+                                from = before.gone or false, to = after.gone or false }
+        else
+            for _, field in ipairs(set.fields) do
+                if not Same(before[field], after[field]) then
+                    list[#list + 1] = { since = after.since, day = after.day, patch = after.patch, field = field,
+                                        from = before[field], to = after[field] }
+                end
+            end
+        end
     end
-    set.records[key] = decoded
-    return decoded
+    set.changes[key] = Hand(list)
+    return list
 end
 
 -------------------------------------------------------------------------------
@@ -358,17 +434,91 @@ function Data.Set(name)
     return handle
 end
 
+-- The set when it is ready; else nil, and its pack is asked for. Never loads a pack itself.
+local function Ready(handle)
+    local set = sets[handle.name]
+    if set and set.ready then return set end
+    Data.Prepare(handle.name)
+    return nil
+end
+
 -- The record of the newest version this client has reached, or one of its fields; nil when not known,
--- not loaded (then the set's pack is asked for), no such entry, or gone. Never loads a pack.
+-- not loaded (then the set's pack is asked for), no such entry, or gone.
 function Handle:Get(key, field)
-    local set = sets[self.name]
-    if not (set and set.ready) then
-        Data.Prepare(self.name)
-        return nil
-    end
+    local set = Ready(self)
+    if not set then return nil end
     local record = Record(set, key)
     if record == nil or field == nil then return record end
     return record[field]
+end
+
+-- The record as it was at a build (of this client's game version), or nil: not known, not yet there, gone.
+function Handle:At(key, at)
+    local set = Ready(self)
+    local list = set and type(at) == "number" and History(set, key)
+    if not list then return nil end
+    for index = #list, 1, -1 do
+        local record = list[index]
+        if (record.since or 0) <= at then
+            if record.gone then return nil end
+            return record
+        end
+    end
+    return nil
+end
+
+-- Every version this client has reached, oldest first, each with since, day, patch, and gone = true for a
+-- gone one; nil when not known.
+function Handle:History(key)
+    local set = Ready(self)
+    return set and History(set, key) or nil
+end
+
+-- The last n versions of History, oldest first.
+function Handle:Versions(key, n)
+    local list = self:History(key)
+    if not list then return nil end
+    local first = math.max(1, #list - (tonumber(n) or #list) + 1)
+    local last = {}
+    for index = first, #list do last[#last + 1] = list[index] end
+    return Hand(last)
+end
+
+-- { since, day, patch, field, from, to } for every change, oldest first (an empty array for an entry that
+-- never changed); nil when not known.
+function Handle:Changes(key)
+    local set = Ready(self)
+    return set and Changes(set, key) or nil
+end
+
+-- The keys an index of the set lists for a value (the schema's indexes, replaces and replacedBy), from the
+-- entries' newest versions; an empty array when none.
+function Handle:Keys(index, value)
+    local set = Ready(self)
+    local keys = {}
+    local joined = set and set.index[index] and set.index[index][value]
+    if type(joined) == "string" then
+        for _, key in ipairs(Codec.Cut(joined, LIST)) do keys[#keys + 1] = set.key == "int" and tonumber(key) or key end
+    end
+    return Hand(keys)
+end
+
+-- A job of the scheduler: fn(key, record) for every entry this client has (gone ones left out), out of
+-- combat and within the frame's budget; then done(). false when the set is not ready (it is asked for).
+function Handle:Each(fn, done)
+    local set = Ready(self)
+    if not set or type(fn) ~= "function" then return false end
+    walks = walks + 1
+    return Steps.Run(("Each %s %d"):format(self.name, walks), function()
+        local keys = {}
+        for key in pairs(set.rows) do keys[#keys + 1] = key end
+        for _, key in ipairs(keys) do
+            local record = Record(set, key)
+            if record then fn(key, record) end
+            Steps.Check()
+        end
+        if done then done() end
+    end)
 end
 
 -- A number that moves when the set arrives (and later when learned or accepted data changes it).
@@ -448,6 +598,15 @@ local function ShowEntry(name, key)
         return
     end
     Core.Print(TEXT.show:format(name, tostring(key), Show(record)))
+    for _, change in ipairs(handle:Changes(tonumber(key) or key) or {}) do
+        local when = change.patch or tostring(change.since)
+        if change.field == TEXT.gone then
+            Core.Print(TEXT.goneChange:format(when, change.to and TEXT.gone or TEXT.back))
+        else
+            Core.Print(TEXT.change:format(when, change.field, change.from == nil and TEXT.empty or Show(change.from),
+                change.to == nil and TEXT.empty or Show(change.to)))
+        end
+    end
 end
 
 local function YesNo(name)

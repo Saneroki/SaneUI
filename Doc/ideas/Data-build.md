@@ -84,7 +84,7 @@ at most the commit it was on, and the next session goes on from there.
   - *In the game:* `/sane data` names the game version (`forever-beta` on the beta; this is also the check
     of what `IsBetaBuild` and `IsTestBuild` answer there) and lists *Game*; after `Prepare`, a CVar's label is
     read.
-- [ ] **1a.6 Versions in full.**
+- [x] **1a.6 Versions in full.**
   - In the game: `History`, `At`, `Versions`, `Changes`, `Keys`, and patch names from `builds.toml`.
   - The import with its report (`import`, `--apply`, `--take`). Its cases:
     - new;
