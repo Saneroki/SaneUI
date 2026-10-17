@@ -32,7 +32,9 @@ local Core = SaneUI.Core
 --                                           -- for, in the dropdown Classic windows (or a function giving them)
 --      filled = function(full) end          -- it has begun to fill the screen (true) or to go back
 --      docked = function(zone) end          -- Window's hook, called once it has filled the screen too
---  A switch of the section was changed: edge:Update().
+--  A switch of the section changed (its options page, a profile, Core.Set):
+--  every window that reads that module's settings is updated at once
+--  (edge:Update()); the module need not pass it on.
 --  edge.full: it fills the screen or is on its way there. edge.away: it is not
 --  at rest in its zone (full, or on its way back); it is neither moved nor
 --  sized then, and its grip is out of sight.
@@ -88,9 +90,13 @@ for key, value in pairs(Core.Shape.DEFAULTS) do
     Edge.DEFAULTS[key], Edge.KEYS[key] = value, true
 end
 
+local sections = {} -- [a module's list of switches] = true: it holds the section
+
 -- Puts the section Expand window into a module's switches (Core.Options) at that place of its list,
--- in that tab of its page. A window reads them by its option edge = the module's settings.
-function Edge.Options(list, at, tab)
+-- in that tab of its page. A window reads them by its option edge = the module's settings. under: switches
+-- of the module's own that some of the section's stand under too, [key] = a key or a list of them
+-- ({ motion = "animations" }: the animation type is greyed out while the module's animations are off).
+function Edge.Options(list, at, tab, under)
     local section = {
         { key = "expand", default = Edge.DEFAULTS.expand, text = "Can expand to fullscreen", header = "Expand window",
           headerTip = "Docked to a screen edge, the window can fill the whole screen and go back.",
@@ -104,9 +110,16 @@ function Edge.Options(list, at, tab)
     }
     for index, option in ipairs(section) do
         option.tab = tab
+        local more = under and under[option.key]
+        if more then
+            local parents = { option.parent }
+            for _, key in ipairs(type(more) == "table" and more or { more }) do parents[#parents + 1] = key end
+            option.parent = parents
+        end
         table.insert(list, at + index - 1, option)
     end
     Core.Shape.Options(list, at + #section, tab, "expand")
+    sections[list] = true
 end
 
 -- The corners a side's strip runs between, inside the window; and which way is out of it.
@@ -483,6 +496,31 @@ Core.On("PLAYER_REGEN_DISABLED", function()
         if edge.away and edge.clock and edge.clock:IsRunning() and edge.frame:IsProtected() then
             edge.clock:Stop()
             Core.Safe("full screen", Step, edge, 1)
+        end
+    end
+end)
+
+-- A switch of the section changed in a module's settings: every window that reads them is as set now.
+local function Changed(name)
+    local settings = Core.Settings(name)
+    for edge in pairs(edges) do
+        if edge.settings == settings then edge:Update() end
+    end
+end
+
+-- Each module whose switches hold the section is followed once its addon has loaded (it described them
+-- while its files were read): its changed hears of a switch of the section only after the windows have
+-- taken it in.
+local followed = {}
+Core.On("ADDON_LOADED", function()
+    for name, described in pairs(Core.described) do
+        if sections[described.list] and not followed[name] then
+            followed[name] = true
+            local own = described.changed
+            described.changed = function(key, ...)
+                if Edge.KEYS[key] then Core.Safe("full screen", Changed, name) end
+                if own then return own(key, ...) end
+            end
         end
     end
 end)

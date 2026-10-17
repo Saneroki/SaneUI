@@ -807,6 +807,27 @@ check(described[3].choices[1][1] == Core.Motion.GLOBAL and described[4].min == 0
     and described[4].default == 50 and described[5].default == "solid" and #described[5].choices == #Core.Skin.TILES + 1 and described[5].choices[1][2] == Edge.SOLID,
     "the animation type may be the general one, the opacity is a share, half by default, the texture solid black or one of Blizzard's")
 
+do -- A module's section, followed by itself
+    local list = { { key = "animations", default = true, text = "Animations" } }
+    Edge.Options(list, 2, nil, { motion = "animations" })
+    local heard = {}
+    Core.Options("EdgeTest", list, function(key) heard[#heard + 1] = key end)
+    check(list[3].key == "motion" and list[3].parent[1] == "expand" and list[3].parent[2] == "animations" and list[2].parent == nil
+        and list[4].parent == "expand", "a module can put some of the section under switches of its own too")
+    W.Fire("ADDON_LOADED", "SaneUI_EdgeTest")
+    local own = CreateFrame("Frame", nil, UIParent)
+    local ownWindow = Window.New(own, { store = { place = { x = 0, y = 0, width = 200, height = 100, dock = "BOTTOM" } }, sizable = true,
+        dock = true, edge = Core.Settings("EdgeTest"), first = { point = "CENTER", x = 0, y = 0, width = 200, height = 100 } })
+    ownWindow:Place()
+    check(ownWindow.edge.strips.bottom:IsShown(), "(docked at the bottom, its strip there)")
+    Core.Set("EdgeTest", "expand", false)
+    check(not ownWindow.edge.strips.bottom:IsShown() and heard[1] == "expand",
+        "a switch of the section changed: the window takes it in by itself, and the module still hears of it")
+    Core.Set("EdgeTest", "expand", true)
+    check(ownWindow.edge.strips.bottom:IsShown(), "and back")
+    own:Hide()
+end
+
 local tall = CreateFrame("Frame", nil, UIParent)
 local tallSettings = { expand = true, motion = "off", expandOpacity = 100, expandTexture = "rock", corners = 10, squareEdges = true }
 local tallWindow = Window.New(tall, {
