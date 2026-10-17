@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Social
-## Notes: A chat window in the style of a messenger: every message in a bubble, yours on the right, everybody else's on the left with name and class icon. Enter or / opens the line to write in at its bottom, a click on the chat's name there lists the chats to write in. Move it by its top bar, size it by its lower right corner. The game's chat stays next to it; the setting Show the game's chat too hides it. /sane social (or /sane chat) hides this window.
+## Notes: A chat window in the style of a messenger: every message in a bubble, yours on the right, everybody else's on the left with name and class icon. Enter or / opens the line to write in at its bottom, a click on the chat's name there lists the chats to write in. Move and size it in Edit Mode; push the mouse against the screen edge it is docked at and it fills the screen. The game's chat stays next to it; the setting Show the game's chat too hides it. /sane social (or /sane chat) hides this window.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -15,8 +15,6 @@ Social.lua
 Log.lua
 # Sizes and spacing, and what follows from a window's width. Knows no frames
 Layout.lua
-# A plain fill with round corners
-Plate.lua
 # The links in a message: tooltip and click
 Links.lua
 # How much of a message is seen: its own fade, kept on the message. Knows no frames

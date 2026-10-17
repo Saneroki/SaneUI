@@ -49,9 +49,11 @@ ns.TEXT = {
     stopped = "the chat window is closed until the next /reload; the game's own chat is back.",
     reset = "the chat window is back at its first place and size.",
     about = "shows or hides the chat window (/sane social reset: first place and size)",
+    binding = "Show or hide the chat window", -- its key, in the game's key bindings under Sane UI (Bindings.xml)
     unread = "a chat message could not be read",
+    solid = "Solid colour", -- what the bubbles stand on, the first of the choices (Core.Skin.Choices)
     -- The dropdown Classic windows while the window fills the screen: the game's own windows it stands for.
-    classicChat = "Chat",
+    classicChat = Core.Word("CHAT", "Chat"),
     classicFriends = "Friends list",
     friendsInFight = "in a fight the game's friends list opens only by its own key.",
     nativeChat = "the chat window is off, the game's own chat is back (its button Sane UI, /sane social, or the switch Chat window, brings it again).",
@@ -63,17 +65,8 @@ ns.TEXT = {
 ns.GIVEN_BACK = "the chat window is closed"
 
 -- What the bubbles stand on: a colour of your choice, or one of the game's own background textures,
--- quiet ones its windows are filled with, repeated every size points (Plate.lua).
-ns.BACKS = {
-    { key = "solid", text = "Solid colour" },
-    { key = "marble", text = "Marble", file = "Interface\\FrameGeneral\\UI-Background-Marble", size = 256 },
-    { key = "rock", text = "Rock", file = "Interface\\FrameGeneral\\UI-Background-Rock", size = 512 },
-    { key = "slate", text = "Slate", file = "Interface\\Collections\\CollectionsBackgroundTile", size = 256 },
-    { key = "iron", text = "Iron", file = "Interface\\BlackMarket\\BlackMarketBackground-Tile", size = 256 },
-    { key = "night", text = "Night", file = "Interface\\FrameGeneral\\UIFrameOribosBackground", size = 256 },
-}
-local BACK_CHOICES = {}
-for index, back in ipairs(ns.BACKS) do BACK_CHOICES[index] = { back.key, back.text } end
+-- quiet ones its windows are filled with, repeated every size points (Core.Skin.TILES, as a full window's).
+local BACK_CHOICES = Core.Skin.Choices(ns.TEXT.solid)
 
 -- The groups of messages (Log.GROUPS) that have a switch of their own: it says whether they are shown
 -- (Channels.Shown), in the settings and in the list of what to show alike.
@@ -146,12 +139,9 @@ local OPTIONS = {
 -- while all animations are off (Window.lua, Kind): greyed out then too.
 for index, option in ipairs(OPTIONS) do
     if option.tab == LOOK then
-        Core.Edge.Options(OPTIONS, index, LOOK)
+        Core.Edge.Options(OPTIONS, index, LOOK, { motion = "animations" })
         break
     end
-end
-for _, option in ipairs(OPTIONS) do
-    if option.key == "motion" then option.parent = { "expand", "animations" } end
 end
 -- The switches of fading and sliding: a change of one sets every fade and slide anew (Window.Animate).
 local MOVES = { animations = true, fadeInOn = true, fadeInTime = true, fadeOutTime = true, slide = true, slideTime = true,
@@ -164,9 +154,10 @@ OPTIONS[#OPTIONS + 1] = { key = "presence", default = {} }
 
 Core.Options(ns.name, OPTIONS, function(key)
     if key == "presence" then return ns.Safe("channels", ns.Join.Settle) end
-    if key == "motion" then return end -- asked for each time the window fills the screen
-    if key == "window" then return ns.Guarded(ns.options.window and ns.Window.Show or ns.Window.Hide) end
-    if Core.Edge.KEYS[key] then return ns.Guarded(ns.Window.Expand) end
+    -- The section Expand window: Core's window takes it in by itself (Edge.lua); its Animation type is asked
+    -- for each time the window fills the screen.
+    if Core.Edge.KEYS[key] then return end
+    if key == "window" then return ns.Guarded(ns.Window.Follow) end
     if SHOWN[key] or key == "mute" then return ns.Guarded(ns.Window.Refill) end
     if key == "history" or key == "historySize" then return ns.Keep() end
     local Window = ns.Window
@@ -211,7 +202,7 @@ end
 
 function ns.OnLoad()
     local store = Core.Store(ns.name)
-    ns.store, ns.options = store, store.options
+    ns.store, ns.options = store, Core.Settings(ns.name)
     for _, copy in ipairs(Core.Profiles and Core.Profiles.Copies(ns.name) or {}) do Mend(copy) end
     -- 2: the ticks of the list (store.mute) and whether the window is shown (store.hidden) were kept
     -- beside the settings; they are settings now, so profiles and a character's own carry them.
@@ -285,14 +276,14 @@ function ns.OnLogin()
     local char = Core.Character(ns.name)
     if ns.options.history then ns.Safe("history", ns.Log.Restore, char.history, char.historyVersion) end
     ns.On("PLAYER_LOGOUT", function() ns.Safe("history", History, char) end)
-    ns.Guarded(ns.options.window and ns.Window.Show or ns.Window.Away)
+    ns.Guarded(ns.Window.Follow)
 end
 
--- The window shown or hidden by the command: its switch (Chat window) follows, on an open options page too.
-local function Shown(on)
-    ns.options.window = on
-    ns.Guarded(on and ns.Window.Show or ns.Window.Hide)
-    if Core.Config then Core.Config.Refresh() end
+-- Ours (on) or the game's chat. The switch Chat window is the one place that is kept: Core.Set tells the
+-- window (changed: Window.Follow, which keeps Core's window's memory of it the same) and an open options
+-- page, so the button Classic window, close, the dropdown, /sane social, its key and the switch agree.
+local function Choose(on)
+    Core.Set(ns.name, "window", on and true or false)
 end
 
 -- The game's own windows ours stands for, in Core's dropdown Classic windows while the window fills
@@ -309,7 +300,7 @@ end
 
 -- Ours put away, the game's chat back (the switch Chat window off), and how to bring ours again is said.
 local function PutAway()
-    Shown(false)
+    Choose(false)
     ns.Print(ns.TEXT.nativeChat)
 end
 
@@ -325,7 +316,7 @@ local function Strip() return rawget(_G, "ChatFrame1ButtonFrame") end
 ns.NATIVE = {
     frame = Strip,
     show = PutAway,
-    back = function() if not ns.off then Shown(true) end end,
+    back = function() if not ns.off then Choose(true) end end,
     anchor = function(button)
         local menu = rawget(_G, "ChatFrameMenuButton")
         if menu and menu:GetParent() == Strip() then
@@ -337,14 +328,21 @@ ns.NATIVE = {
 }
 ns.Close = PutAway
 
+-- The chat window shown or hidden: /sane social, and its key (Bindings.xml).
+function ns.Toggle()
+    if ns.off then return ns.Print(ns.TEXT.stopped) end
+    Choose(not ns.options.window)
+end
+BINDING_NAME_SANEUI_SOCIAL = ns.TEXT.binding
+
 Core.Command("social", ns.TEXT.about, function(rest)
     if ns.off then
         ns.Print(ns.TEXT.stopped)
     elseif rest == "reset" then
-        Shown(true)
+        Choose(true)
         ns.Guarded(ns.Window.Reset)
         ns.Print(ns.TEXT.reset)
     else
-        Shown(not ns.options.window)
+        ns.Toggle()
     end
 end, "chat") -- the module's name before it was Social

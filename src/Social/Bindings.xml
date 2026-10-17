@@ -1,0 +1,7 @@
+<Bindings>
+	<!-- Social's key, in the game's key bindings under Sane UI (BINDING_HEADER_SANEUI, Core's Bindings.lua;
+	     its name: Social.lua); the game reads this file from the addon's folder by itself. -->
+	<Binding name="SANEUI_SOCIAL" category="BINDING_HEADER_SANEUI">
+		SaneUI.Social.Toggle()
+	</Binding>
+</Bindings>

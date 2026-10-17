@@ -2,19 +2,21 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Social - Window
---  The window: a top bar (no title: Saneroki), the list of messages. Moving, sizing
---  (only in Blizzard's Edit Mode: there Core lays its box over the window and
---  puts a grip in a corner), docking to a screen edge and keeping the place are
---  Core's (Core/Window.lua); what follows from a new size is ours.
+--  The window: the list of messages, a window of Core's of the kind screen
+--  (Core.Window.KINDS: on the screen all the time, docked at first in the lower
+--  left corner, no title bar while small). Moving, sizing (only in Blizzard's
+--  Edit Mode: there Core lays its box over the window and puts a grip in a
+--  corner), docking to a screen edge and keeping the place are Core's
+--  (Core/Window.lua); what follows from a new size is ours. The list stands in
+--  what Core lays out for what a window holds (window.inside): the whole window
+--  while it is small, under Core's title bar while it fills the screen.
 --
 --  It has no background and no border: the messages stand over the game, and
 --  a click on them goes through to the game, unless it is on a link or a name
---  (Links.lua). The bar and the button for the line to write in
---  are only there while the mouse is over the window (Chrome); the bar takes
---  no click, the button does only while it is shown. Since nothing else of
---  the window takes the mouse, nothing tells when it comes: a ticker looks,
---  while the window is shown (Watch). The scroll bar is there while the list
---  is scrolled up from its newest message (Bar).
+--  (Links.lua). The window takes only the mouse's coming (Core.Hover): then the
+--  button for the line to write in is there (Chrome), and a watch looks whether
+--  the mouse is still there, until it has gone. The scroll bar is there while
+--  the list is scrolled up from its newest message (Bar).
 --
 --  Built from the game's parts: its scrolling list (which only makes rows for
 --  the messages in view) and its scroll bar.
@@ -65,12 +67,11 @@ local frame, box, view, provider
 local handle         -- Core's part of the window: moves, sizes and docks it, keeps its place
 local rowWidth       -- of the list, from the window's width
 local writing        -- the height of the line to write in while it is shown
-local top            -- where the list starts, from the window's top: under the bar, or under Core's dropdown
-local awake, watch   -- the mouse is over the window; the ticker that sees it come and leave
+local awake, hover   -- the mouse is over the window; what sees it come and leave (Core.Hover)
 local revealed       -- a scroll has brought every message back
-local slide, drop, rise, sliding -- the messages sliding to their place: the animation, its two parts, how far
+local slide          -- the messages sliding to their place (Core.Motion.Slide)
 local scroll         -- the scroll bar
-local chrome = {}    -- what the window is handled by: shown with the mouse over it
+local write          -- the button for the line to write in: shown with the mouse over the window
 local list = {}      -- the messages on show: the log's, without those of the chats switched off
 local stale = true   -- the log has messages the list does not show
 -- The list is at the newest message (or everything fits): it stays there when a message comes
@@ -124,31 +125,32 @@ local function Revealed()
 end
 
 -- The messages moved up by that much at once (down, if less than 0): they are put back where they
--- were and slide up to their place. A slide still going on is taken into the new one.
--- Two moves at once, as the game's own animations do it: one of no time back, one to the place.
+-- were and slide up to their place (Core.Motion.Slide). A slide still going on is taken into the new one.
 local slides = true -- the setting: slides at all
 local function Slide(by)
     if by == 0 or not slides or not frame:IsVisible() then return end
-    if slide:IsPlaying() then by = by + sliding * (1 - rise:GetSmoothProgress()) end
-    slide:Stop()
-    sliding = by
-    drop:SetOffset(0, -by)
-    rise:SetOffset(0, by)
-    slide:Play()
+    slide:From(0, -by)
 end
 
 -- Only a scroll of yours brings the messages back (the wheel, Revealed): the list tells of a scroll
 -- for its own moves too, a new message at its end among them, and for a moment is not at its end.
+-- Back at the newest message with the mouse away, they fade again.
 local function Scrolled()
     follow = box:IsAtEnd() or not box:HasScrollableExtent()
     Bar()
     Laid()
+    if follow and revealed and not frame:IsMouseOver() then Reveal(false) end
+end
+
+-- Where the list starts, from the window's top: under Core's title bar while it is there.
+local function Top()
+    return (handle.top or 0) + Layout.EDGE
 end
 
 -- The room above the messages that puts them at the list's bottom; none once they fill it.
 -- True if it changed. A message's height is known after its first measuring.
 local function Settle()
-    local height = Layout.ListHeight(frame:GetHeight(), writing, top)
+    local height = Layout.ListHeight(frame:GetHeight(), writing, Top())
     local total = 0
     for index = #list, 1, -1 do
         total = total + Bubble.Measure(list[index], rowWidth) + (index > 1 and Layout.SPACING or 0)
@@ -163,17 +165,14 @@ end
 
 -- Not of a chat that is switched off in the list of what to show (Menu.lua).
 -- What is typed into the search box of the full window's title bar (Core's): every word must be in the
--- message's text, its speaker's name or its chat's, as Core's fuzzy finding finds letters; nil: no search.
+-- message's text as it reads (Core.Fuzzy.Plain: without colours, links' codes and icons), its speaker's name
+-- or its chat's, as Core's fuzzy finding finds letters; nil: no search. The list is at most a few hundred
+-- messages: it is searched at once (Fuzzy.Filter is for longer ones).
 local query
-
--- A message's text as it reads: without colours, links' codes and icons.
-local function Readable(text)
-    return (text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|H.-|h(.-)|h", "%1"):gsub("|T.-|t", ""):gsub("|A.-|a", ""))
-end
 
 local function Visible(entry)
     if not ns.Channels.Shown(entry.group) then return false end
-    return not query or Core.Fuzzy.Match(query, Readable(entry.text or ""), entry.name, entry.label) ~= nil
+    return not query or Core.Fuzzy.Match(query, Core.Fuzzy.Plain(entry.text or ""), entry.name, entry.label) ~= nil
 end
 
 local function Fill()
@@ -272,7 +271,7 @@ function Window.Animate()
     Fade.Times(all and options.fadeInOn and options.fadeInTime or 0, all and options.fadeOutTime or 0)
     slides = all and options.slide and options.slideTime > 0 or false -- a slide of no time is none
     if not frame then return end
-    rise:SetDuration(options.slideTime)
+    slide:SetTime(options.slideTime)
     if not slides then slide:Stop() end
     Window.Refade(not all) -- all off: what fades now is where it goes at once
 end
@@ -294,10 +293,9 @@ function Window.Refade(instantly)
     if Paint() then Run() end
 end
 
--- The bar not while the window fills the screen: Core's title bar is at its top then.
+-- The button for the line to write in: there while the mouse is over the window.
 local function Chrome()
-    local full = handle and handle.edge and handle.edge.full
-    for index, part in ipairs(chrome) do part:SetShown(awake and not (index == 1 and full) or false) end
+    write:SetShown(awake or false)
 end
 
 local function Asleep()
@@ -305,26 +303,16 @@ local function Asleep()
     Chrome()
 end
 
--- The mouse came over the window: what it is handled by is there.
+-- The mouse came over the window (Core.Hover: a held button counts, a drag may leave it): its button is there.
 local function Wake()
     awake = true
     Chrome()
 end
 
--- A held button may be a drag (in Edit Mode): the mouse may be outside, the window is still in hand.
-local function Watch()
-    local over = frame:IsMouseOver() or (awake and IsMouseButtonDown("LeftButton"))
-    if over and not awake then
-        Wake()
-    elseif awake and not over then
-        Asleep()
-    end
-    -- Scrolled up, the messages stay to read on, until the list is back at its newest.
-    if not over and follow then Reveal(false) end
-end
-
-local function Watching()
-    ns.Guarded(Watch)
+-- The mouse has gone. Scrolled up, the messages stay to read on, until the list is back at its newest.
+local function Left()
+    Asleep()
+    if follow then Reveal(false) end
 end
 
 -- The list calls these while it scrolls, outside our own guard, and for every message whenever one
@@ -405,18 +393,7 @@ local function Refit()
     if Fit(frame:GetWidth()) then Rewrap() else Resettle() end
 end
 
--- The list starts under the bar; while the window fills the screen, under Core's title bar there (its
--- search, its dropdown Classic windows, its buttons), so that covers neither a message nor the scroll bar.
-local function Top()
-    local want = Layout.BAR
-    if handle.edge and handle.edge.full then want = math.max(Core.Window.BAR, Layout.BAR) end
-    if want == top then return end
-    top = want
-    box:SetPoint("TOPLEFT", Layout.EDGE, -top)
-end
-
 local function Placed()
-    ns.Guarded(Top)
     ns.Guarded(Refit)
     ns.Guarded(ns.Input.Grow)
     ns.Guarded(ns.Input.Layer)
@@ -442,11 +419,6 @@ function Window.Search(text)
     Window.Refill()
 end
 
--- The section Expand window was changed: switched off, the window is back at its size at once.
-function Window.Expand()
-    if frame then handle.edge:Update() end
-end
-
 -- While the window is sized the messages keep their wrapping (Refit wraps them when it is over) and
 -- only stand at the list's bottom anew. The line to write in is as wide as the window. Also on every
 -- frame of its way to the whole screen and back: the messages stay in sight and in place all the
@@ -467,22 +439,21 @@ local function Build()
     frame:SetFrameStrata("MEDIUM")
     frame:SetFrameLevel(Layout.LEVEL)
 
-    local bar = CreateFrame("Frame", nil, frame)
-    bar:SetPoint("TOPLEFT")
-    bar:SetPoint("TOPRIGHT")
-    bar:SetHeight(Layout.BAR)
     handle = Core.Window.New(frame, {
-        store = ns.store, title = ns.TEXT.title, sizable = true, dock = true, edge = ns.options, classic = ns.CLASSIC,
+        kind = "screen", store = ns.store, title = ns.TEXT.title, edge = ns.options, classic = ns.CLASSIC,
         native = ns.NATIVE, close = ns.Close, search = function(text) ns.Guarded(Window.Search, text) end,
-        first = { point = "LEFT", x = 40, y = 0, width = Layout.WIDTH, height = Layout.HEIGHT },
+        first = { dock = "BOTTOMLEFT", width = Layout.WIDTH, height = Layout.HEIGHT },
         minWidth = Layout.MIN_WIDTH, minHeight = Layout.MIN_HEIGHT,
         docked = Placed, motion = Kind,
         filled = function(full) ns.Guarded(Filled, full) end,
     })
+    -- Only the mouse's coming: a click on the window still goes into the game.
+    hover = Core.Hover(frame, { every = 0.2, label = ns.name .. ": mouse",
+        enter = function() ns.Guarded(Wake) end, leave = function() ns.Guarded(Left) end })
 
     -- Opens and closes the line to write in, in the corner where that line starts and as high as it.
     -- The art is the game's own chat button's.
-    local write = CreateFrame("Button", nil, frame)
+    write = CreateFrame("Button", nil, frame)
     write:SetSize(Layout.INPUT_HEIGHT, Layout.INPUT_HEIGHT)
     write:SetPoint("BOTTOMLEFT", 0, Layout.INPUT_BOTTOM)
     write:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-Chat-Up")
@@ -491,8 +462,7 @@ local function Build()
     write:SetScript("OnClick", function(self) ns.Guarded(ns.Input.Toggle, self) end)
 
     box = CreateFrame("Frame", nil, frame, "WowScrollBoxList")
-    top = Layout.BAR
-    box:SetPoint("TOPLEFT", Layout.EDGE, -top)
+    box:SetPoint("TOPLEFT", handle.inside, "TOPLEFT", Layout.EDGE, -Layout.EDGE)
     Bottom(false)
     scroll = CreateFrame("EventFrame", nil, frame, "MinimalScrollBar")
     scroll:SetPoint("TOPLEFT", box, "TOPRIGHT", 4, -2)
@@ -509,17 +479,12 @@ local function Build()
     box:SetInterpolateScroll(true)
     scroll:SetInterpolateScroll(true)
     box:HookScript("OnMouseWheel", Revealed) -- at the newest message too, where there is nothing to scroll
-    slide = box.ScrollTarget:CreateAnimationGroup()
-    drop = slide:CreateAnimation("Translation")
-    drop:SetDuration(0)
-    rise = slide:CreateAnimation("Translation")
-    rise:SetSmoothing("OUT")
+    slide = Core.Motion.Slide(box.ScrollTarget, ns.options.slideTime)
     provider = CreateDataProvider()
     box:SetDataProvider(provider)
     Window.Animate()
     box:RegisterCallback(BaseScrollBoxEvents.OnScroll, Scrolled, Window)
     box:RegisterCallback(BaseScrollBoxEvents.OnLayout, Laid, Window)
-    chrome[1], chrome[2] = bar, write
     Chrome()
     Bar()
 
@@ -551,13 +516,13 @@ local function Back(away)
 end
 
 -- Shown, the window is the chat: the game's edit box comes here, and its chat goes out of sight if set so.
+-- As Core's window was left: filling the screen again if it was left so (Open).
 function Window.Show()
     if not frame then Build() end
     if ns.off then return end -- building it failed half way, and the game's chat is back
-    frame:Show()
+    handle:Remember("native", nil) -- ours is the one chosen
+    handle:Open()
     Back(false)
-    -- Five times a second, the mouse: cheap, and the grip is there as soon as it is wanted.
-    if not watch then watch = C_Timer.NewTicker(0.2, Watching) end
     if stale then Fill() end
     Window.Refade(true) -- what came or ran out meanwhile is as it is now, at once
     Window.Native()
@@ -568,8 +533,8 @@ end
 function Window.Hide()
     if not frame then return end
     frame:Hide()
-    if watch then watch:Cancel() end
-    watch, revealed, dueAt = nil, nil, nil
+    hover:Stop()
+    revealed, dueAt = nil, nil
     frame:SetScript("OnUpdate", nil)
     Asleep()
     ns.Input.Release()
@@ -577,12 +542,18 @@ function Window.Hide()
     Back(true)
 end
 
--- Off at login (the switch Chat window): the window is made, out of sight, so the game's chat has its
--- button to bring ours back.
+-- Put away (the switch Chat window off, also at login): the window is made, out of sight, so the game's chat
+-- has its button to bring ours back; Core's window keeps that the game's is chosen (its native).
 function Window.Away()
     if not frame then Build() end
     if ns.off then return end
     Window.Hide()
+    handle:Remember("native", true)
+end
+
+-- Ours or the game's, as the switch Chat window says: the one place it is kept (Social.lua, Choose).
+function Window.Follow()
+    if ns.options.window then Window.Show() else Window.Away() end
 end
 
 -- A new message. The log lets its oldest go a batch at a time (Log.Add): those leave the list
