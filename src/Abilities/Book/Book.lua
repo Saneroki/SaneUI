@@ -34,6 +34,7 @@ local B = {}
 ns.Book = B
 local S, L, I = ns.Sources, ns.BookLayout, ns.BookItem
 local Core = SaneUI.Core
+local TEXT = ns.TEXT
 
 local TALL = 60000  -- a column this high holds any tab on one page
 local PARK = -8000  -- where entries of other pages wait: far below and left of the screen
@@ -264,7 +265,7 @@ local function MakeFold()
     button:SetPushedTexture("Interface\\Buttons\\UI-PlusButton-Down")
     button:SetHighlightTexture("Interface\\Buttons\\UI-PlusButton-Hilight", "ADD")
     button:SetScript("OnClick", function(self) SetExpanded(self.spell, true) end)
-    Core.Tip(button, function() return ("Show all ranks of %s (%d more)"):format(button.spell, button.more) end)
+    Core.Tip(button, function() return TEXT.showRanks:format(button.spell, button.more) end)
     return button
 end
 
@@ -280,7 +281,7 @@ local function MakeFoldHeader()
     header.Text = header:CreateFontString(nil, "ARTWORK", "SystemFont_Large")
     header.Text:SetPoint("LEFT", header.Minus, "RIGHT", 6, 0)
     header:SetScript("OnClick", function(self) SetExpanded(self.spell, false) end)
-    Core.Tip(header, "Fold the ranks away", nil, "ANCHOR_TOPLEFT")
+    Core.Tip(header, TEXT.foldRanks, nil, "ANCHOR_TOPLEFT")
     return header
 end
 
@@ -407,9 +408,9 @@ end
 
 -- Work out the pages of the tab on show, then draw the current one.
 local function Build()
-    if Gamepad() then return B.StandDown("a controller is in use") end
+    if Gamepad() then return B.StandDown(TEXT.why.gamepad) end
     -- Only at this height does the game make every entry of a tab; without them all, no layout.
-    if view1:GetHeight() < TALL - 1 then return B.StandDown("something changed the spellbook's column") end
+    if view1:GetHeight() < TALL - 1 then return B.StandDown(TEXT.why.column) end
 
     local groups, sample, nativeCount = Collect()
     counts.native, counts.ghosts = nativeCount, 0
@@ -469,14 +470,14 @@ local function Build()
         if hidden and tab == General() then
             -- Passive spells to come are all listed here, whichever tab the game files them in.
             local passives = hidePassives and {} or Items(S.UnlearnedPassives(showRanks))
-            if #passives > 0 then Section({ header = { own = "passive", text = "Passive spells to learn" }, items = passives }) end
+            if #passives > 0 then Section({ header = { own = "passive", text = TEXT.passives }, items = passives }) end
             local skills = Items(S.UnlearnedSkills())
-            if #skills > 0 then Section({ header = { own = "skills", text = "Skills to learn" }, items = skills }, true) end
+            if #skills > 0 then Section({ header = { own = "skills", text = TEXT.skills }, items = skills }, true) end
         end
 
         if hidden and tab == FirstClassTab() then
             local others = Items(S.Unlearned(nil, showRanks))
-            if #others > 0 then Section({ header = { own = "extra", text = "Other spells to learn" }, items = others }, true) end
+            if #others > 0 then Section({ header = { own = "extra", text = TEXT.others }, items = others }, true) end
         end
     end
 
@@ -501,7 +502,7 @@ local function Run(fn)
     local ok, problem = xpcall(fn, Core.Trace)
     if ok then return end
     Core.NoteError(ns.name .. ": book", problem)
-    B.StandDown("a problem, noted in the error log (/sane errors)")
+    B.StandDown(TEXT.why.problem)
 end
 
 function B.Relayout()
@@ -561,7 +562,7 @@ local function Watch(_, elapsed)
     if now - healStart > 2 then healStart, heals = now, 0 end
     heals = heals + 1
     if not ok or heals > 40 then
-        return B.StandDown("something else keeps moving the spellbook's entries")
+        return B.StandDown(TEXT.why.moved)
     end
     B.Relayout()
 end
@@ -638,7 +639,7 @@ function B.StandDown(reason)
     wipe(managed)
     container:Hide()
     GiveBack()
-    ns.Print("left the spellbook's pages to the game (" .. reason .. "). Click another tab of the spellbook and come back: then the page is the game's own again.")
+    ns.Print(TEXT.givenBack:format(reason))
 end
 
 -------------------------------------------------------------------------------
@@ -711,7 +712,7 @@ end
 local function Arm()
     if armed or standDown or not ns.options.book then return end
     if Gamepad() then
-        standDown = "a controller is in use"
+        standDown = TEXT.why.gamepad
         return
     end
     book = PlayerSpellsFrame and PlayerSpellsFrame.SpellBookFrame
@@ -719,7 +720,7 @@ local function Arm()
     local columns = paged and paged.ViewFrames
     if not (columns and columns[1] and paged.PagingControls and paged.GetFrames
             and book.GetActiveCategoryMixin and book.IsInSearchResultsMode and EventRegistry) then
-        standDown = "this spellbook is not the one the addon knows"
+        standDown = TEXT.why.unknown
         return
     end
     view1, view2, nativePager = columns[1], columns[2] or columns[1], paged.PagingControls
@@ -766,7 +767,7 @@ function TryArm()
     local ok, problem = xpcall(Arm, Core.Trace)
     if ok then return end
     ns.Report("book", problem)
-    B.StandDown("an error while taking the pages over")
+    B.StandDown(TEXT.why.failed)
 end
 
 ns.On("PLAYER_LOGIN", TryArm)
@@ -780,15 +781,15 @@ ns.Listen("REFRESH", B.Relayout)
 function B.Why()
     if armed then return nil end
     if standDown then return standDown end
-    if not ns.options.book then return ("\"%s\" is off in the options"):format(Core.Described(ns.name, "book").text) end
-    return "not taken yet"
+    if not ns.options.book then return TEXT.why.off:format(Core.Described(ns.name, "book").text) end
+    return TEXT.why.waiting
 end
 
 -- One line for /sane ab debug.
 function B.Describe()
     if armed then
-        return ("spellbook: %d of the game's entries and %d grey ones on %d page(s), page %d on show."):format(
+        return TEXT.describe:format(
             counts.native, counts.ghosts, math.max(1, math.ceil(#views / perPage)), page)
     end
-    return "spellbook: its pages are left to the game (" .. B.Why() .. ")."
+    return TEXT.describeGame:format(B.Why())
 end

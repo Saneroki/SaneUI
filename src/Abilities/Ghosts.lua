@@ -31,7 +31,7 @@ local function ShowTooltip(button)
         or (entry.kind == "item" and pcall(GameTooltip.SetItemByID, GameTooltip, entry.id)))
     if not shown then GameTooltip:SetText(S.Name(entry)) end
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine("Reserved: this button becomes the real thing once you have it.", 1, 0.82, 0.3, true)
+    GameTooltip:AddLine(ns.TEXT.reservedTip, 1, 0.82, 0.3, true)
     GameTooltip:Show()
 end
 

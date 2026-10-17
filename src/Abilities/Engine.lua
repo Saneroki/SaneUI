@@ -47,14 +47,9 @@ function E.Blocked()
     return nil
 end
 
-local REASONS = {
-    combat = "You are in combat: real buttons can be changed after the fight.",
-    cursor = "Your cursor is holding something. Put it down first.",
-}
-
 -- The sentence for a "combat" or "cursor" answer of the functions below.
 function E.Reason(why)
-    return REASONS[why] or "That did not work."
+    return ns.TEXT.reasons[why] or ns.TEXT.failed
 end
 
 local function TakeOff(slot)
@@ -162,7 +157,7 @@ function E.Reconcile()
                 -- Only worth a chat line when it happened by itself, not right after your own drop.
                 local yours = grace[slot] and now < grace[slot]
                 if ns.options.announce and not yours then
-                    ns.Print(("%s is now on %s."):format(S.Name(entry), ns.SlotLabel(slot)))
+                    ns.Print(ns.TEXT.filled:format(S.Name(entry), ns.SlotLabel(slot)))
                 end
             end
         end

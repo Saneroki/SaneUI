@@ -9,6 +9,7 @@ local _, ns = ...
 --  to a menu without its code mixing with the game's lines above them.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
+local TEXT = ns.TEXT
 
 local function Option(key)
     return ns.options[key] and true or false
@@ -32,7 +33,7 @@ local function Checkbox(root, key, enabled)
             GameTooltip_SetTitle(tooltip, text)
             if tip then GameTooltip_AddNormalLine(tooltip, tip) end
             if enabled and not enabled() then
-                GameTooltip_AddErrorLine(tooltip, "The spellbook's pages are the game's right now: " .. (ns.Book.Why() or "") .. ".")
+                GameTooltip_AddErrorLine(tooltip, TEXT.pagesGame:format(ns.Book.Why() or ""))
             end
         end)
     end
@@ -49,15 +50,15 @@ local function PagesOurs()
 end
 
 local function Layouts(root)
-    local menu = root:CreateButton("Action bar layouts")
-    menu:CreateButton("Save the current layout as...", ns.Presets.AskSave)
+    local menu = root:CreateButton(TEXT.layoutsMenu)
+    menu:CreateButton(TEXT.saveAs, ns.Presets.AskSave)
     for _, name in ipairs(ns.Presets.List()) do
         local layout = menu:CreateButton(name)
-        layout:CreateButton("Load", function() ns.Presets.AskLoad(name) end)
-        layout:CreateButton("Save the current layout over it", function()
+        layout:CreateButton(TEXT.load, function() ns.Presets.AskLoad(name) end)
+        layout:CreateButton(TEXT.saveOver, function()
             ns.Print((select(2, ns.Presets.Save(name))))
         end)
-        layout:CreateButton("Delete", function() ns.Presets.AskDelete(name) end)
+        layout:CreateButton(TEXT.delete, function() ns.Presets.AskDelete(name) end)
     end
 end
 
@@ -72,7 +73,7 @@ local function Extend(_, root)
     -- The game offers this line itself, except to warriors and rogues: their ranks replace
     -- each other, so the game has no old ranks to show. The ranks still to come are worth it.
     if ns.class == "WARRIOR" or ns.class == "ROGUE" then
-        local text = SHOW_ALL_SPELL_RANKS or "Show all spell ranks"
+        local text = Core.Word("SHOW_ALL_SPELL_RANKS", TEXT.allRanks)
         local box = root:CreateCheckbox(text, function() return GetCVarBool("ShowAllSpellRanks") end, function()
             SetCVar("ShowAllSpellRanks", GetCVarBool("ShowAllSpellRanks") and "0" or "1")
             Refresh()
@@ -80,7 +81,7 @@ local function Extend(_, root)
         if box and box.SetTooltip then
             box:SetTooltip(function(tooltip)
                 GameTooltip_SetTitle(tooltip, text)
-                GameTooltip_AddNormalLine(tooltip, "With unlearned spells shown: one grey icon for every rank you have not trained yet, instead of one per ability.")
+                GameTooltip_AddNormalLine(tooltip, TEXT.allRanksTip)
             end)
         end
     end

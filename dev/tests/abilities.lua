@@ -236,6 +236,15 @@ end
 
 -- Login -----------------------------------------------------------------------
 check(SaneUI.Abilities == ns and ns.addon == "SaneUI_Abilities", "the module is an addon of its own and found under its name")
+local words = true
+for _, text in pairs(ns.TEXT) do
+    if type(text) == "table" then
+        for _, line in pairs(text) do words = words and type(line) == "string" end
+    else
+        words = words and type(text) == "string"
+    end
+end
+check(words and ns.TEXT.home == "Home" and #ns.TEXT.help >= 6, "every word the module shows is in one table of its own (ns.TEXT)")
 check(next(D.spells) == nil and D.class == nil, "the trainer data waits for the login: who you are is only certain then")
 W.Fire("PLAYER_LOGIN")
 check(D.class == "MAGE" and D.raceID == 1 and #D.spells == 11 and not warriorRows, "at login only the spells of your class are read")

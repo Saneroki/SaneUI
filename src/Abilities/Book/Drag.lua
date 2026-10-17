@@ -164,7 +164,7 @@ function D.Stop()
         ns.Print(E.Reason(why))
     elseif not S.Available(entry) and UIErrorsFrame and UIErrorsFrame.AddMessage then
         -- A spell you have becomes a real button at once and needs no words.
-        UIErrorsFrame:AddMessage(("%s reserved on %s."):format(S.Name(entry), ns.SlotLabel(slot)), 1, 0.82, 0.3)
+        UIErrorsFrame:AddMessage(ns.TEXT.reservedHere:format(S.Name(entry), ns.SlotLabel(slot)), 1, 0.82, 0.3)
     end
     if ok then Core.Sound("IG_ABILITY_ICON_DROP") end
 end

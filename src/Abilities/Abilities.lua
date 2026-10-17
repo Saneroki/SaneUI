@@ -43,6 +43,99 @@ ns.PAGES = { 0, 72, 84, 96, 108 }
 ns.QUEST_MARK = "QuestNormal"                -- the quest giver's "!": a quest reward
 ns.RESERVED_MARK = "auctionhouse-icon-clock" -- waiting for something: a button is reserved for it
 
+-- Every word the module shows, in one place; the switches' own words are in OPTIONS below. Where
+-- the game has a word of its own, the file that shows it asks for that first (Core.Word).
+ns.TEXT = {
+    -- Bars and slots (here), in chat, tooltips and menus
+    slot = "Bar %d, button %d", formSlot = "Bar 1 (%s), button %d", actionSlot = "action slot %d",
+    normalRow = "normal", formRow = "form or stance %d", pageRow = "page %d", -- Bar 1's rows
+    -- The spellbook's pages change hands at a /reload only
+    pagesOn = "the spellbook shows your unlearned spells again after /reload.",
+    pagesOff = "the spellbook's pages are left to the game after /reload.",
+    pagesReload = "the spellbook's pages",
+    -- /sane abilities
+    about = "unlearned spells in the spellbook, reserved buttons, saved bar layouts",
+    help = {
+        "the spells you have not learned yet are in your spellbook, in grey. Drag one onto an action bar button to reserve that button. (/sane ab is short for /sane abilities.)",
+        "/sane ab list - your reservations     /sane ab clear - remove them all",
+        "/sane ab save <name>, /sane ab load <name>, /sane ab delete <name>, /sane ab layouts - saved bar layouts",
+        "/sane ab add <spell ID or link> - list a spell the addon does not know about",
+        "/sane ab item <item ID or link> <bar> <button> - reserve a button for an item",
+        "/sane ab pages off - leave the spellbook's pages to the game (and /sane ab pages on)",
+        "/sane ab window reset - the spellbook's own size and place again",
+        "/sane ab debug - what the lists were built from",
+    },
+    debugSpells = "spells: %d learned, %d still to learn (trainer list %d, weapon skills %d, talents %d, read at the trainer %d, added by hand %d).",
+    debugTabs = "spellbook tab found for %d of them (%d by a rank you know, %d at the trainer, %d asked from the game, %d from the built-in list, %d by talent tree); %d without a tab.",
+    debugSlots = "reservations: %d. Bar 1 shows slots %d-%d.",
+    noReservations = "no reservations. Drag a grey spell from the spellbook onto an action bar button to make one.",
+    reservation = "%s: %s", removedOne = "1 reservation removed.", removedMany = "%d reservations removed.",
+    itemUsage = "type: /sane ab item <item ID or link> <bar 1-%d> <button 1-12>",
+    noItem = "there is no item with the ID %s.", itemReserved = "item reserved on %s.",
+    noLayouts = "no saved layouts yet. Save one with /sane ab save <name>.", layouts = "saved layouts: %s",
+    addUsage = "type: /sane ab add <spell ID or link>", windowUsage = "type: /sane ab window reset",
+    pagesUsage = "type: /sane ab pages on  or  /sane ab pages off",
+    -- The trainer's list, a spell added by hand (Sources.lua)
+    trainerRead = "read your class trainer's list. Every spell now sits in its own spellbook tab.",
+    noSpell = "there is no spell with the ID %s.", isPassive = "%s is passive: it cannot go on a button.",
+    known = "you already have %s.", listed = "%s is already in the spellbook's list.",
+    added = "%s added. It is in your spellbook now, in grey.", someSpell = "spell %s",
+    -- Reservations (Engine.lua, Ghosts.lua, Book/Drag.lua)
+    reasons = {
+        combat = "You are in combat: real buttons can be changed after the fight.",
+        cursor = "Your cursor is holding something. Put it down first.",
+    },
+    failed = "That did not work.", filled = "%s is now on %s.", reservedHere = "%s reserved on %s.",
+    reservedTip = "Reserved: this button becomes the real thing once you have it.",
+    -- Saved layouts (Presets.lua)
+    needsName = "The layout needs a name.", saveInFight = "You are in combat: save the layout after the fight.",
+    saved = "Layout \"%s\" saved (%d buttons).", noLayout = "There is no saved layout with that name.",
+    loadInFight = "You are in combat: load the layout after the fight.", loaded = "Layout \"%s\" loaded.",
+    deleted = "layout \"%s\" deleted.",
+    askName = "Name for this action bar layout:", save = "Save", -- the game's SAVE first
+    askLoad = "Load the layout \"%s\"?\n\nIt replaces the buttons of your action bars. Spells and items you do not have yet become reservations.",
+    askDelete = "Delete the layout \"%s\"?",
+    noDialog = "the game's dialog for this is missing: type /sane ab %s.",
+    typeSave = "save <name>", typeLoad = "load %s", typeDelete = "delete %s",
+    -- A grey entry (Book/Item.lua): its third line, its tooltip and its menu. The first two and
+    -- passive are the game's own where it has them (SPELLBOOK_TRAINABLE, SPELLBOOK_AVAILABLE_AT, SPELL_PASSIVE).
+    trainable = "Available at a trainer", availableAt = "Available at level %d", level = "Level %d",
+    needs = "Needs %s first", needsRank = "Needs the rank before it", needsSpell = "Needs another spell first",
+    needsTalent = "Needs a talent first", fromQuest = "From a quest", talent = "Talent", notLearned = "Not learned yet",
+    passive = "Passive", status = "%s.", cost = "Cost: %s", reservedOn = "Reserved on %s.",
+    dragHint = "Drag onto an action bar button to reserve it.", clickHint = "Shift-click: link in chat. Right-click: more.",
+    removeFrom = "Remove from %s", removeExtra = "Remove from the spellbook's list",
+    -- The pages (Book/Book.lua): the sections of ours, the folds, why they are the game's
+    passives = "Passive spells to learn", skills = "Skills to learn", others = "Other spells to learn",
+    showRanks = "Show all ranks of %s (%d more)", foldRanks = "Fold the ranks away",
+    givenBack = "left the spellbook's pages to the game (%s). Click another tab of the spellbook and come back: then the page is the game's own again.",
+    why = {
+        gamepad = "a controller is in use", column = "something changed the spellbook's column",
+        problem = "a problem, noted in the error log (/sane errors)", moved = "something else keeps moving the spellbook's entries",
+        unknown = "this spellbook is not the one the addon knows", failed = "an error while taking the pages over",
+        off = "\"%s\" is off in the options", waiting = "not taken yet",
+    },
+    describe = "spellbook: %d of the game's entries and %d grey ones on %d page(s), page %d on show.",
+    describeGame = "spellbook: its pages are left to the game (%s).",
+    -- Home (Book/Home.lua); its name is the game's HOME where it has one
+    home = "Home", homeTip = "What you can learn now, and the spells you get from quests.",
+    copper = "%s copper", questIn = "Quest in %s",
+    trainNow = "At your trainer now", trainNowCost = "At your trainer now: %s", nothingToTrain = "Nothing to learn right now.",
+    fromQuests = "From quests", noQuests = "No spell left that comes from a quest.",
+    more = "And %d more: you find them in the tabs of the spellbook.",
+    -- The window (Book/Window.lua)
+    sizeTip = "Drag to resize the spellbook", sizeTipMore = "/sane ab window reset puts it back.",
+    windowReset = "the spellbook has its own size again. Close and open it: the game then puts it in its own place.",
+    windowResetLater = "you are in combat: the spellbook gets its own size back when the fight is over.",
+    -- The spellbook's own menu (Book/Menu.lua); the rank line is the game's SHOW_ALL_SPELL_RANKS where it has it
+    pagesGame = "The spellbook's pages are the game's right now: %s.",
+    allRanks = "Show all spell ranks",
+    allRanksTip = "With unlearned spells shown: one grey icon for every rank you have not trained yet, instead of one per ability.",
+    layoutsMenu = "Action bar layouts", saveAs = "Save the current layout as...", load = "Load",
+    saveOver = "Save the current layout over it", delete = "Delete",
+}
+local TEXT = ns.TEXT
+
 -- The module's switches: on its page in the options (Core's) and in the spellbook's own menu (Book/Menu.lua).
 -- Two sections: the book itself, with the four switches under the one they all need, then the action bars.
 local OPTIONS = {
@@ -66,9 +159,8 @@ local OPTIONS = {
 
 -- The pages change hands at a /reload only: said in chat, and offered through Core's dialog where it has one.
 local function PagesChanged(on)
-    ns.Print(on and "the spellbook shows your unlearned spells again after /reload."
-        or "the spellbook's pages are left to the game after /reload.")
-    if Core.AskReload then Core.AskReload({ "the spellbook's pages" }) end
+    ns.Print(on and TEXT.pagesOn or TEXT.pagesOff)
+    if Core.AskReload then Core.AskReload({ TEXT.pagesReload }) end
 end
 
 Core.Options(ns.name, OPTIONS, function(key, value)
@@ -159,28 +251,28 @@ function ns.ManagedSlots()
 end
 
 function ns.PageName(offset)
-    if offset == 0 then return "normal" end
+    if offset == 0 then return TEXT.normalRow end
     local names = ns.DB and ns.DB.pageNames[ns.class]
     if type(names) == "table" and names[offset] then return names[offset] end
     for page = 2, #ns.PAGES do
-        if ns.PAGES[page] == offset then return "form or stance " .. (page - 1) end
+        if ns.PAGES[page] == offset then return TEXT.formRow:format(page - 1) end
     end
-    return "page " .. (offset / ns.NUM_BUTTONS + 1)
+    return TEXT.pageRow:format(offset / ns.NUM_BUTTONS + 1)
 end
 
 function ns.SlotLabel(slot)
     for number, bar in ipairs(ns.BARS) do
         if slot > bar.offset and slot <= bar.offset + ns.NUM_BUTTONS then
-            return ("Bar %d, button %d"):format(number, slot - bar.offset)
+            return TEXT.slot:format(number, slot - bar.offset)
         end
     end
     local offset = slot - 1 - ((slot - 1) % ns.NUM_BUTTONS)
     for page = 2, #ns.PAGES do
         if ns.PAGES[page] == offset then
-            return ("Bar 1 (%s), button %d"):format(ns.PageName(offset), slot - offset)
+            return TEXT.formSlot:format(ns.PageName(offset), slot - offset)
         end
     end
-    return ("action slot %d"):format(slot)
+    return TEXT.actionSlot:format(slot)
 end
 
 -- t[key] as a table: what is there if it is one, a new one if not. Saved data comes from older
@@ -344,23 +436,23 @@ end
 local function Debug()
     ns.Sources.All() -- built first, if something changed since
     local stats = ns.Sources.stats
-    ns.Print(("spells: %d learned, %d still to learn (trainer list %d, weapon skills %d, talents %d, read at the trainer %d, added by hand %d)."):format(
+    ns.Print(TEXT.debugSpells:format(
         stats.known or 0, stats.unlearned or 0, stats.data or 0, stats.skill or 0, stats.talent or 0, stats.trainer or 0, stats.extra or 0))
-    ns.Print(("spellbook tab found for %d of them (%d by a rank you know, %d at the trainer, %d asked from the game, %d from the built-in list, %d by talent tree); %d without a tab."):format(
+    ns.Print(TEXT.debugTabs:format(
         (stats.unlearned or 0) - (stats.tabNone or 0), stats.tabKnown or 0, stats.tabTrainer or 0,
         stats.tabProbe or 0, stats.tabStatic or 0, stats.tabTalent or 0, stats.tabNone or 0))
     if ns.Book and ns.Book.Describe then ns.Print(ns.Book.Describe()) end
-    ns.Print(("reservations: %d. Bar 1 shows slots %d-%d."):format(#Reservations(), ns.Bar1Offset() + 1, ns.Bar1Offset() + ns.NUM_BUTTONS))
+    ns.Print(TEXT.debugSlots:format(#Reservations(), ns.Bar1Offset() + 1, ns.Bar1Offset() + ns.NUM_BUTTONS))
 end
 
 local function List()
     local slots = Reservations()
     if #slots == 0 then
-        ns.Print("no reservations. Drag a grey spell from the spellbook onto an action bar button to make one.")
+        ns.Print(TEXT.noReservations)
         return
     end
     for _, slot in ipairs(slots) do
-        ns.Print(("%s: %s"):format(ns.SlotLabel(slot), ns.Sources.Name(ns.char.reserved[slot])))
+        ns.Print(TEXT.reservation:format(ns.SlotLabel(slot), ns.Sources.Name(ns.char.reserved[slot])))
     end
 end
 
@@ -368,7 +460,7 @@ local function ClearAll()
     local count = #Reservations()
     wipe(ns.char.reserved)
     ns.QueueUpdate(false, 0)
-    ns.Print(count == 1 and "1 reservation removed." or count .. " reservations removed.")
+    ns.Print(count == 1 and TEXT.removedOne or TEXT.removedMany:format(count))
 end
 
 -- "/sane ab item 6948 2 5": reserve an item you do not have yet on bar 2, button 5.
@@ -378,28 +470,17 @@ local function ReserveItem(text)
     bar, button = tonumber(bar), tonumber(button)
     local info = bar and ns.BARS[bar]
     if kind ~= "item" or not info or not button or button < 1 or button > ns.NUM_BUTTONS then
-        ns.Print("type: /sane ab item <item ID or link> <bar 1-" .. #ns.BARS .. "> <button 1-12>")
+        ns.Print(TEXT.itemUsage:format(#ns.BARS))
         return
     end
     if not C_Item.DoesItemExistByID(id) then
-        ns.Print("there is no item with the ID " .. id .. ".")
+        ns.Print(TEXT.noItem:format(id))
         return
     end
     local slot = (info.paged and ns.Bar1Offset() or info.offset) + button
     local ok, why = ns.Engine.Reserve(slot, { kind = "item", id = id, name = C_Item.GetItemNameByID(id) })
-    ns.Print(ok and ("item reserved on %s."):format(ns.SlotLabel(slot)) or ns.Engine.Reason(why))
+    ns.Print(ok and TEXT.itemReserved:format(ns.SlotLabel(slot)) or ns.Engine.Reason(why))
 end
-
-local HELP = {
-    "the spells you have not learned yet are in your spellbook, in grey. Drag one onto an action bar button to reserve that button. (/sane ab is short for /sane abilities.)",
-    "/sane ab list - your reservations     /sane ab clear - remove them all",
-    "/sane ab save <name>, /sane ab load <name>, /sane ab delete <name>, /sane ab layouts - saved bar layouts",
-    "/sane ab add <spell ID or link> - list a spell the addon does not know about",
-    "/sane ab item <item ID or link> <bar> <button> - reserve a button for an item",
-    "/sane ab pages off - leave the spellbook's pages to the game (and /sane ab pages on)",
-    "/sane ab window reset - the spellbook's own size and place again",
-    "/sane ab debug - what the lists were built from",
-}
 
 local commands = {
     debug = Debug,
@@ -408,23 +489,22 @@ local commands = {
     item = ReserveItem,
     layouts = function()
         local names = ns.Presets.List()
-        ns.Print(#names == 0 and "no saved layouts yet. Save one with /sane ab save <name>."
-            or "saved layouts: " .. table.concat(names, ", "))
+        ns.Print(#names == 0 and TEXT.noLayouts or TEXT.layouts:format(table.concat(names, ", ")))
     end,
     save = function(rest) ns.Print((select(2, ns.Presets.Save(rest)))) end,
     load = function(rest) ns.Print((select(2, ns.Presets.Load(rest)))) end,
     delete = function(rest)
         if ns.DB.presets[ns.class][rest] then
             ns.Presets.Delete(rest)
-            ns.Print(("layout \"%s\" deleted."):format(rest))
+            ns.Print(TEXT.deleted:format(rest))
         else
-            ns.Print("there is no saved layout with that name.")
+            ns.Print(TEXT.noLayout)
         end
     end,
     add = function(rest)
         local kind, id = ns.Sources.Parse(rest)
         if kind ~= "spell" then
-            ns.Print("type: /sane ab add <spell ID or link>")
+            ns.Print(TEXT.addUsage)
         else
             ns.Print((select(2, ns.Sources.AddExtra(id))))
         end
@@ -433,7 +513,7 @@ local commands = {
         if rest == "reset" then
             ns.Window.Reset()
         else
-            ns.Print("type: /sane ab window reset")
+            ns.Print(TEXT.windowUsage)
         end
     end,
     pages = function(rest)
@@ -442,18 +522,18 @@ local commands = {
             local on = rest == "on"
             if ns.options.book == on then PagesChanged(on) else Core.Set(ns.name, "book", on) end
         else
-            ns.Print("type: /sane ab pages on  or  /sane ab pages off")
+            ns.Print(TEXT.pagesUsage)
         end
     end,
 }
 
-Core.Command("abilities", "unlearned spells in the spellbook, reserved buttons, saved bar layouts", function(text)
+Core.Command("abilities", TEXT.about, function(text)
     local word, rest = text:match("^(%S+)%s*(.-)$")
     local command = word and commands[word:lower()]
     if not ns.char then return end
     if command then
         command(rest)
     else
-        for _, line in ipairs(HELP) do ns.Print(line) end
+        for _, line in ipairs(TEXT.help) do ns.Print(line) end
     end
 end, "ab", "spellbook", "sb") -- its old name, and the old short word, still work

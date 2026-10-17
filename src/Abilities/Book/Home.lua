@@ -24,9 +24,10 @@ local H = {}
 ns.Home = H
 local S, L, I, B = ns.Sources, ns.BookLayout, ns.BookItem, ns.Book
 local Core = SaneUI.Core
+local TEXT = ns.TEXT
 
 local ICON = "Interface\\Icons\\INV_Misc_Rune_01" -- the hearthstone: "home" in this game
-local TITLE = HOME or "Home"
+local TITLE = Core.Word("HOME", TEXT.home)
 
 local book, paged      -- the game's frames
 local tab, cover, pane -- ours: the Home tab, the stand-in over the game's selected tab, the page
@@ -78,13 +79,13 @@ end
 --  The page
 -------------------------------------------------------------------------------
 local function Coins(copper)
-    return Core.Coins(copper) or (copper .. " copper")
+    return Core.Coins(copper) or TEXT.copper:format(copper)
 end
 
 local function QuestNote(entry)
     local area = entry.quest.areas and entry.quest.areas[1]
     local name = area and C_Map and C_Map.GetAreaInfo and C_Map.GetAreaInfo(area)
-    return name and ("Quest in %s"):format(name) or "From a quest"
+    return name and TEXT.questIn:format(name) or TEXT.fromQuest
 end
 
 local function Text(parent, font)
@@ -116,17 +117,17 @@ local function Fill()
     table.sort(train, L.ByLevel)
     table.sort(quests, L.ByLevel)
 
-    local trainGroup = { key = "train", items = train, none = #train == 0 and "Nothing to learn right now.",
-        header = { own = "train", text = #train > 0 and ("At your trainer now: %s"):format(Coins(total)) or "At your trainer now" } }
-    local questGroups = { { key = "quest", items = {}, none = #quests == 0 and "No spell left that comes from a quest.",
-        header = { own = "quest", text = "From quests" } } }
+    local trainGroup = { key = "train", items = train, none = #train == 0 and TEXT.nothingToTrain,
+        header = { own = "train", text = #train > 0 and TEXT.trainNowCost:format(Coins(total)) or TEXT.trainNow } }
+    local questGroups = { { key = "quest", items = {}, none = #quests == 0 and TEXT.noQuests,
+        header = { own = "quest", text = TEXT.fromQuests } } }
     local playerLevel = UnitLevel("player") or 1
     for _, item in ipairs(quests) do
         local last, level = questGroups[#questGroups], item.entry.level or 0
         if last.level ~= level then
             last = { level = level, gap = 0, items = {},
                      header = { level = true, height = LEVEL_HEIGHT, dim = level > playerLevel,
-                                text = ("Level %d"):format(level) } }
+                                text = TEXT.level:format(level) } }
             questGroups[#questGroups + 1] = last
         end
         last.items[#last.items + 1] = item
@@ -200,7 +201,7 @@ local function Fill()
     more:SetPoint("TOPLEFT", left, "TOPLEFT", 8, -(pageHeight - 14))
     more:SetShown(hidden > 0)
     if hidden > 0 then
-        more:SetText(("And %d more: you find them in the tabs of the spellbook."):format(hidden))
+        more:SetText(TEXT.more:format(hidden))
     end
     H.shown = used -- for the tests and /sane ab debug
 end
@@ -283,7 +284,7 @@ local function Setup()
         Core.Sound("IG_SPELLBOOK_OPEN")
         ns.Safe("home", H.Open)
     end)
-    Core.Tip(tab, TITLE, "What you can learn now, and the spells you get from quests.")
+    Core.Tip(tab, TITLE, TEXT.homeTip)
 
     cover = MakeTab(book)
     Select(cover, false)

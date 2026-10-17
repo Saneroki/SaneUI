@@ -27,6 +27,7 @@ local W = {}
 ns.Window = W
 local B = ns.Book
 local Core = SaneUI.Core
+local TEXT = ns.TEXT
 
 local MIN_WIDTH, MIN_HEIGHT = 420, 360
 -- The spellbook inside the window (Blizzard_PlayerSpells, the Forever variant): 1612 x 702 in
@@ -141,7 +142,7 @@ local function Setup()
     grip = Core.Window.Sizer(frame, {
         name = "SaneUISpellbookSizeGrip", insetX = 4, insetY = 6,
         minWidth = MIN_WIDTH, minHeight = MIN_HEIGHT, usable = Usable,
-        tip = "Drag to resize the spellbook", tipMore = "/sane ab window reset puts it back.",
+        tip = TEXT.sizeTip, tipMore = TEXT.sizeTipMore,
         -- The first sizing: from now on this size is ours, and the game's is remembered to give back.
         started = function()
             local saved, mode = Saved(), Mode()
@@ -200,9 +201,9 @@ end
 function W.Reset()
     ns.DB.window = nil
     if GiveBackNow() then
-        ns.Print("the spellbook has its own size again. Close and open it: the game then puts it in its own place.")
+        ns.Print(TEXT.windowReset)
     else
-        ns.Print("you are in combat: the spellbook gets its own size back when the fight is over.")
+        ns.Print(TEXT.windowResetLater)
     end
 end
 

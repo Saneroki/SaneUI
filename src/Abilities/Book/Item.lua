@@ -21,6 +21,7 @@ local I = {}
 ns.BookItem = I
 local S = ns.Sources
 local Core = SaneUI.Core
+local TEXT = ns.TEXT
 
 local GOLD = { 1, 0.82, 0.3 }
 
@@ -52,27 +53,28 @@ end
 -- What has to be learned first: by its name where it is another spell than this one.
 local function MissingText(entry)
     local name = entry.missing and ns.Data.Info(entry.missing)
-    if name and name ~= entry.name then return ("Needs %s first"):format(name) end
-    if entry.missing == entry.prior then return "Needs the rank before it" end
-    return "Needs another spell first"
+    if name and name ~= entry.name then return TEXT.needs:format(name) end
+    if entry.missing == entry.prior then return TEXT.needsRank end
+    return TEXT.needsSpell
 end
 
 local function StatusText(entry)
     local state = entry.state
     if state == "trainable" then
-        return SPELLBOOK_TRAINABLE or "Available at a trainer"
+        return Core.Word("SPELLBOOK_TRAINABLE", TEXT.trainable)
     elseif state == "level" then
-        return Format(SPELLBOOK_AVAILABLE_AT or "Available at level %d", entry.level) or ("Level " .. entry.level)
+        return Format(Core.Word("SPELLBOOK_AVAILABLE_AT", TEXT.availableAt), entry.level) or Format(TEXT.level, entry.level)
+            or TEXT.notLearned
     elseif state == "spellfirst" then
         return MissingText(entry)
     elseif state == "talentfirst" then
-        return "Needs a talent first"
+        return TEXT.needsTalent
     elseif state == "quest" then
-        return "From a quest"
+        return TEXT.fromQuest
     elseif state == "talent" then
-        return "Talent"
+        return TEXT.talent
     end
-    return "Not learned yet"
+    return TEXT.notLearned
 end
 
 -- Kept on the entry: it is drawn at every page, and only changes with the state (Sources.lua clears it).
@@ -143,17 +145,17 @@ local function ShowTooltip(item)
         GameTooltip:SetText(entry.name)
     end
     GameTooltip:AddLine(" ")
-    AddLine(I.Status(entry) .. ".", GOLD)
+    AddLine(TEXT.status:format(I.Status(entry)), GOLD)
 
     -- What the trainer charges, before any discount your reputation gives.
     local coins = entry.cost and entry.cost > 0 and Core.Coins(entry.cost)
-    if coins then GameTooltip:AddLine("Cost: " .. coins, 1, 1, 1) end
+    if coins then GameTooltip:AddLine(TEXT.cost:format(coins), 1, 1, 1) end
 
     for _, slot in ipairs(ReservedSlots(entry, item.family)) do
-        AddLine("Reserved on " .. ns.SlotLabel(slot) .. ".", GOLD)
+        AddLine(TEXT.reservedOn:format(ns.SlotLabel(slot)), GOLD)
     end
-    if not entry.passive then Instruction("Drag onto an action bar button to reserve it.") end
-    Instruction("Shift-click: link in chat. Right-click: more.")
+    if not entry.passive then Instruction(TEXT.dragHint) end
+    Instruction(TEXT.clickHint)
     GameTooltip:Show()
 end
 
@@ -183,14 +185,14 @@ local function Menu(item)
         if #slots > 0 then
             root:CreateTitle(entry.name)
             for _, slot in ipairs(slots) do
-                root:CreateButton("Remove from " .. ns.SlotLabel(slot), function()
+                root:CreateButton(TEXT.removeFrom:format(ns.SlotLabel(slot)), function()
                     ns.Engine.Clear(slot)
                 end)
             end
         end
         if #slots == 0 then root:CreateTitle(entry.name) end
         if entry.extra then
-            root:CreateButton("Remove from the spellbook's list", function() S.RemoveExtra(entry) end)
+            root:CreateButton(TEXT.removeExtra, function() S.RemoveExtra(entry) end)
         end
     end)
 end
@@ -380,7 +382,7 @@ function I.Set(item, entry, style, width, note, family, showRanks)
         text:SetAlpha(0.6)
     end
     item.Name:SetText(entry.name)
-    item.SubName:SetText(entry.sub or (entry.passive and (SPELL_PASSIVE or "Passive")) or "")
+    item.SubName:SetText(entry.sub or (entry.passive and Core.Word("SPELL_PASSIVE", TEXT.passive)) or "")
     item.RequiredLevel:SetText(note or I.Status(entry))
     LayoutText(item, math.max((width or 220) - TEXT_LEFT, 40))
 

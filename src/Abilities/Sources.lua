@@ -180,7 +180,7 @@ local function ReadTrainer()
     if changed then
         if not store.told then
             store.told = true
-            ns.Print("read your class trainer's list. Every spell now sits in its own spellbook tab.")
+            ns.Print(ns.TEXT.trainerRead)
         end
         Changed()
     end
@@ -577,16 +577,17 @@ end
 
 -- Returns ok, message.
 function S.AddExtra(id)
-    if not C_Spell.DoesSpellExist(id) then return false, "there is no spell with the ID " .. id .. "." end
+    local TEXT = ns.TEXT
+    if not C_Spell.DoesSpellExist(id) then return false, TEXT.noSpell:format(id) end
     local name = C_Spell.GetSpellName(id)
-    if name and C_Spell.IsSpellPassive(id) then return false, name .. " is passive: it cannot go on a button." end
-    if name and S.has[name] then return true, "you already have " .. name .. "." end
+    if name and C_Spell.IsSpellPassive(id) then return false, TEXT.isPassive:format(name) end
+    if name and S.has[name] then return true, TEXT.known:format(name) end
     for _, entry in ipairs(S.All()) do
-        if entry.name == name then return true, name .. " is already in the spellbook's list." end
+        if entry.name == name then return true, TEXT.listed:format(name) end
     end
     if not Contains(ns.DB.extras[ns.class], id) then table.insert(ns.DB.extras[ns.class], id) end
     Changed()
-    return true, (name or "spell " .. id) .. " added. It is in your spellbook now, in grey."
+    return true, TEXT.added:format(name or TEXT.someSpell:format(id))
 end
 
 function S.RemoveExtra(entry)
