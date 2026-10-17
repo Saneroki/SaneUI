@@ -14,7 +14,7 @@ local _, ns = ...
 --    - while the spellbook's pages are ours (Book.lua), the switch is on and the
 --      spellbook, not the talents, is the tab on show;
 --    - out of a fight: the game forbids an addon to move or size this window in
---      one. What a fight held up is done when it ends.
+--      one. What a fight held up is done when it ends (Core.AfterCombat).
 --  Nothing is written into the window: its size, its place, and whether it may
 --  be moved are set through the frame's own functions; what we must remember is
 --  kept here and in the saved settings (window = { large = , small = , left, top }).
@@ -27,6 +27,7 @@ local W = {}
 ns.Window = W
 local B = ns.Book
 local Core = SaneUI.Core
+local TEXT = ns.TEXT
 
 local MIN_WIDTH, MIN_HEIGHT = 420, 360
 -- The spellbook inside the window (Blizzard_PlayerSpells, the Forever variant): 1612 x 702 in
@@ -38,7 +39,8 @@ local frame, book   -- the game's window and the spellbook in it
 local bar, grip     -- ours: what you drag to move, what you drag to size
 local on = false    -- we look after the window's size and place
 local native = {}   -- [large or small] = { width, height } the game gave it, to give back
-local owed = false  -- a fight held up giving the game's size back
+-- What a fight held up, each done once it is over: our size and place put on, the game's given back.
+local AFTER_APPLY, AFTER_GIVE = "Abilities: spellbook window", "Abilities: spellbook window given back"
 
 local function Saved()
     if type(ns.DB.window) ~= "table" then ns.DB.window = {} end
@@ -71,9 +73,14 @@ local function FitBook()
     end
 end
 
--- Our size and place on the window, after the game has put its own.
+local Later -- below
+
+-- Our size and place on the window, after the game has put its own. In a fight: once it is over.
 local function Apply()
-    if not Usable() then return end
+    if not Usable() then
+        if on and InCombatLockdown() then Core.AfterCombat(AFTER_APPLY, Later) end
+        return
+    end
     local saved, mode = Saved(), Mode()
     local width, height = frame:GetSize()
     local size = Size(saved, mode)
@@ -91,7 +98,7 @@ end
 
 -- The game places its windows right after showing one: ours comes a moment later.
 local ApplyLater = Core.Later(function() ns.Safe("window", Apply) end)
-local function Later()
+function Later()
     if on then ApplyLater() end
 end
 
@@ -109,7 +116,7 @@ end
 local Redraw = Core.Later(function() ns.Fire("REFRESH") end, 0.1)
 local function OnSize()
     if not on or not book:IsShown() then return end
-    if not InCombatLockdown() then FitBook() end
+    if InCombatLockdown() then Core.AfterCombat(AFTER_APPLY, Later) else FitBook() end
     Redraw()
 end
 
@@ -135,7 +142,7 @@ local function Setup()
     grip = Core.Window.Sizer(frame, {
         name = "SaneUISpellbookSizeGrip", insetX = 4, insetY = 6,
         minWidth = MIN_WIDTH, minHeight = MIN_HEIGHT, usable = Usable,
-        tip = "Drag to resize the spellbook", tipMore = "/sane ab window reset puts it back.",
+        tip = TEXT.sizeTip, tipMore = TEXT.sizeTipMore,
         -- The first sizing: from now on this size is ours, and the game's is remembered to give back.
         started = function()
             local saved, mode = Saved(), Mode()
@@ -161,14 +168,9 @@ local function Setup()
 end
 
 -- The game's own size again, and its own place the next time it puts its windows. Not in a
--- fight: then when it ends.
+-- fight: then when it ends (GiveBackNow).
 local function GiveBack()
     if not frame then return end
-    if InCombatLockdown() then
-        owed = true
-        return
-    end
-    owed = false
     local size = native[Mode()]
     -- With the talents on show the window has their size: the game gives it the book's at the next tab.
     if size and book:IsShown() then
@@ -177,9 +179,14 @@ local function GiveBack()
     end
 end
 
+-- Now, or once the fight is over; true when it was now (or there is no window to give back).
+local function GiveBackNow()
+    return not frame or Core.AfterCombat(AFTER_GIVE, GiveBack)
+end
+
 -- Takes the window (when the pages are ours and the switch is on) or lets it go.
 function W.Update()
-    local want = B.Armed() and ns.DB.options.window and PlayerSpellsFrame ~= nil and true or false
+    local want = B.Armed() and ns.options.window and PlayerSpellsFrame ~= nil and true or false
     if want then Setup() end
     if want == on then return end
     on = want
@@ -187,24 +194,18 @@ function W.Update()
         bar:SetShown(on)
         grip:SetShown(on)
     end
-    if on then Later() else ns.Safe("window", GiveBack) end
+    if on then Later() else GiveBackNow() end
 end
 
 -- /sane ab window reset
 function W.Reset()
     ns.DB.window = nil
-    GiveBack()
-    if owed then
-        ns.Print("you are in combat: the spellbook gets its own size back when the fight is over.")
+    if GiveBackNow() then
+        ns.Print(TEXT.windowReset)
     else
-        ns.Print("the spellbook has its own size again. Close and open it: the game then puts it in its own place.")
+        ns.Print(TEXT.windowResetLater)
     end
 end
 
 ns.Listen("BOOK_PAGES", W.Update)
 ns.Listen("REFRESH", W.Update)
--- What a fight held up: giving the game's size back, putting ours on.
-ns.On("PLAYER_REGEN_ENABLED", function()
-    if owed then ns.Safe("window", GiveBack) end
-    if on then Later() end
-end)

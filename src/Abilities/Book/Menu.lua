@@ -8,18 +8,23 @@ local _, ns = ...
 --  Menu.ModifyMenu is the game's own door for this: an addon may append lines
 --  to a menu without its code mixing with the game's lines above them.
 -------------------------------------------------------------------------------
+local Core = SaneUI.Core
+local TEXT = ns.TEXT
+
 local function Option(key)
-    return ns.DB.options[key] and true or false
+    return ns.options[key] and true or false
 end
 
 -- One of the module's switches as a line of the menu, with the words of the options page.
+-- A click sets it through Core (Core.Set): the module hears it as from the options page (its
+-- changed redraws), and an open options page shows it too.
 -- enabled: a function; while it says no, the line is greyed out and its tooltip says why (the
 -- game's own lines in this menu do the same while a search is on).
-local function Checkbox(root, key, after, enabled)
-    local text, tip = ns.OPTION[key].text, ns.OPTION[key].tip
+local function Checkbox(root, key, enabled)
+    local option = Core.Described(ns.name, key)
+    local text, tip = option.text, option.tip
     local box = root:CreateCheckbox(text, function() return Option(key) end, function()
-        ns.DB.options[key] = not Option(key)
-        if after then after() end
+        Core.Set(ns.name, key, not Option(key))
     end)
     if not box then return box end
     if enabled and box.SetEnabled then box:SetEnabled(enabled) end
@@ -28,7 +33,7 @@ local function Checkbox(root, key, after, enabled)
             GameTooltip_SetTitle(tooltip, text)
             if tip then GameTooltip_AddNormalLine(tooltip, tip) end
             if enabled and not enabled() then
-                GameTooltip_AddErrorLine(tooltip, "The spellbook's pages are the game's right now: " .. (ns.Book.Why() or "") .. ".")
+                GameTooltip_AddErrorLine(tooltip, TEXT.pagesGame:format(ns.Book.Why() or ""))
             end
         end)
     end
@@ -44,36 +49,16 @@ local function PagesOurs()
     return ns.Book.Armed()
 end
 
--- Deleting asks first, through the game's own dialog, as Core's profiles do: a saved layout is
--- the only copy of every bar of the class. Without the dialog nothing is deleted from here.
-local function AskDelete(name)
-    if not (StaticPopupDialogs and StaticPopupDialogs.GENERIC_CONFIRMATION) then
-        ns.Print(("the game's dialog for this is missing: type /sane ab delete %s to delete the layout."):format(name))
-        return
-    end
-    StaticPopup_Show("GENERIC_CONFIRMATION", nil, nil, {
-        text = "Delete the layout \"%s\"?", text_arg1 = name, showAlert = true,
-        callback = function()
-            ns.Presets.Delete(name)
-            ns.Print(("layout \"%s\" deleted."):format(name))
-        end,
-    })
-end
-
 local function Layouts(root)
-    local menu = root:CreateButton("Action bar layouts")
-    menu:CreateButton("Save the current layout as...", function()
-        StaticPopup_Show("SANEUI_SPELLBOOK_SAVE")
-    end)
+    local menu = root:CreateButton(TEXT.layoutsMenu)
+    menu:CreateButton(TEXT.saveAs, ns.Presets.AskSave)
     for _, name in ipairs(ns.Presets.List()) do
         local layout = menu:CreateButton(name)
-        layout:CreateButton("Load", function()
-            StaticPopup_Show("SANEUI_SPELLBOOK_LOAD", name, nil, name)
-        end)
-        layout:CreateButton("Save the current layout over it", function()
+        layout:CreateButton(TEXT.load, function() ns.Presets.AskLoad(name) end)
+        layout:CreateButton(TEXT.saveOver, function()
             ns.Print((select(2, ns.Presets.Save(name))))
         end)
-        layout:CreateButton("Delete", function() AskDelete(name) end)
+        layout:CreateButton(TEXT.delete, function() ns.Presets.AskDelete(name) end)
     end
 end
 
@@ -81,14 +66,14 @@ end
 local function Extend(_, root)
     if not ns.char then return end
     root:CreateDivider()
-    root:CreateTitle(SaneUI.Core.TITLE)
+    root:CreateTitle(Core.TITLE)
 
-    Checkbox(root, "showHidden", Refresh, PagesOurs)
+    Checkbox(root, "showHidden", PagesOurs)
 
     -- The game offers this line itself, except to warriors and rogues: their ranks replace
     -- each other, so the game has no old ranks to show. The ranks still to come are worth it.
     if ns.class == "WARRIOR" or ns.class == "ROGUE" then
-        local text = SHOW_ALL_SPELL_RANKS or "Show all spell ranks"
+        local text = Core.Word("SHOW_ALL_SPELL_RANKS", TEXT.allRanks)
         local box = root:CreateCheckbox(text, function() return GetCVarBool("ShowAllSpellRanks") end, function()
             SetCVar("ShowAllSpellRanks", GetCVarBool("ShowAllSpellRanks") and "0" or "1")
             Refresh()
@@ -96,17 +81,17 @@ local function Extend(_, root)
         if box and box.SetTooltip then
             box:SetTooltip(function(tooltip)
                 GameTooltip_SetTitle(tooltip, text)
-                GameTooltip_AddNormalLine(tooltip, "With unlearned spells shown: one grey icon for every rank you have not trained yet, instead of one per ability.")
+                GameTooltip_AddNormalLine(tooltip, TEXT.allRanksTip)
             end)
         end
     end
 
-    Checkbox(root, "home", Refresh, PagesOurs)
-    Checkbox(root, "compact", Refresh, PagesOurs)
-    Checkbox(root, "window", Refresh, PagesOurs)
+    Checkbox(root, "home", PagesOurs)
+    Checkbox(root, "compact", PagesOurs)
+    Checkbox(root, "window", PagesOurs)
 
     root:CreateDivider()
-    Checkbox(root, "ghosts", Refresh)
+    Checkbox(root, "ghosts")
     Checkbox(root, "announce")
 
     Layouts(root)

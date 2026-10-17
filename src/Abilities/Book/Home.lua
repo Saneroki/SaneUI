@@ -24,19 +24,18 @@ local H = {}
 ns.Home = H
 local S, L, I, B = ns.Sources, ns.BookLayout, ns.BookItem, ns.Book
 local Core = SaneUI.Core
+local TEXT = ns.TEXT
 
 local ICON = "Interface\\Icons\\INV_Misc_Rune_01" -- the hearthstone: "home" in this game
-local TITLE = HOME or "Home"
+local TITLE = Core.Word("HOME", TEXT.home)
 
 local book, paged      -- the game's frames
 local tab, cover, pane -- ours: the Home tab, the stand-in over the game's selected tab, the page
 local headers, empties, more = {}, {}, nil
-local levels = {}      -- the small headings of the quest section: "Level 10"
-local rowPoints        -- where the row of the game's tabs stood before we moved it (Core.Points)
+local tabRow           -- the row of the game's tabs, moved to make room for Home (Core.Lend)
 local SHIFT = 46       -- one tab and the gap after it
 local SEARCH_WIDTH, SEARCH_GAP = 300, 10 -- the game's search box: its widest, and its room from the tabs
 local LEVEL_HEIGHT = 22
-local pool = {}        -- the rows, reused
 local active = false   -- Home is the page on show
 local underneath       -- the game's tab that was selected when Home was opened
 local hiddenAt         -- when the spellbook was last hidden
@@ -80,13 +79,13 @@ end
 --  The page
 -------------------------------------------------------------------------------
 local function Coins(copper)
-    return Core.Coins(copper) or (copper .. " copper")
+    return Core.Coins(copper) or TEXT.copper:format(copper)
 end
 
 local function QuestNote(entry)
     local area = entry.quest.areas and entry.quest.areas[1]
     local name = area and C_Map and C_Map.GetAreaInfo and C_Map.GetAreaInfo(area)
-    return name and ("Quest in %s"):format(name) or "From a quest"
+    return name and TEXT.questIn:format(name) or TEXT.fromQuest
 end
 
 local function Text(parent, font)
@@ -96,6 +95,11 @@ local function Text(parent, font)
     text:SetAlpha(0.7)
     return text
 end
+
+-- The page's parts, made when first needed and used again (Core.Pool): the rows, and the small
+-- headings of the quest section ("Level 10").
+local rows = Core.Pool(function() return I.Create(pane) end)
+local levels = Core.Pool(function() return Text(pane, "SystemFont_Large") end)
 
 -- Two sections, laid out by the spellbook's own rule (Layout.lua): one on each page of the open
 -- book, one under the other in the small spellbook. The quest rewards stand under the level
@@ -113,17 +117,17 @@ local function Fill()
     table.sort(train, L.ByLevel)
     table.sort(quests, L.ByLevel)
 
-    local trainGroup = { key = "train", items = train, none = #train == 0 and "Nothing to learn right now.",
-        header = { own = "train", text = #train > 0 and ("At your trainer now: %s"):format(Coins(total)) or "At your trainer now" } }
-    local questGroups = { { key = "quest", items = {}, none = #quests == 0 and "No spell left that comes from a quest.",
-        header = { own = "quest", text = "From quests" } } }
+    local trainGroup = { key = "train", items = train, none = #train == 0 and TEXT.nothingToTrain,
+        header = { own = "train", text = #train > 0 and TEXT.trainNowCost:format(Coins(total)) or TEXT.trainNow } }
+    local questGroups = { { key = "quest", items = {}, none = #quests == 0 and TEXT.noQuests,
+        header = { own = "quest", text = TEXT.fromQuests } } }
     local playerLevel = UnitLevel("player") or 1
     for _, item in ipairs(quests) do
         local last, level = questGroups[#questGroups], item.entry.level or 0
         if last.level ~= level then
             last = { level = level, gap = 0, items = {},
                      header = { level = true, height = LEVEL_HEIGHT, dim = level > playerLevel,
-                                text = ("Level %d"):format(level) } }
+                                text = TEXT.level:format(level) } }
             questGroups[#questGroups + 1] = last
         end
         last.items[#last.items + 1] = item
@@ -145,7 +149,9 @@ local function Fill()
         pages = { L.Paginate({ trainGroup }, width, pageHeight, metrics)[1], L.Paginate(questGroups, width, pageHeight, metrics)[1] }
     end
 
-    local used, usedLevels, shown = 0, 0, {}
+    local used, shown = 0, {}
+    rows:Begin()
+    levels:Begin()
     for index, view in ipairs(pages) do
         local anchor, dx = left, 0
         if index == 2 then anchor, dx = rightAnchor, rightX end
@@ -153,12 +159,7 @@ local function Fill()
             local item = cell.item
             local x = cell.x + dx
             if item.level then
-                usedLevels = usedLevels + 1
-                local text = levels[usedLevels]
-                if not text then
-                    text = Text(pane, "SystemFont_Large")
-                    levels[usedLevels] = text
-                end
+                local text = levels:Take()
                 text:ClearAllPoints()
                 text:SetPoint("TOPLEFT", anchor, "TOPLEFT", x + 8, -cell.y)
                 text:SetText(item.text)
@@ -173,11 +174,7 @@ local function Fill()
                 shown[item.own] = { anchor = anchor, x = x, y = cell.y }
             else
                 used = used + 1
-                local row = pool[used]
-                if not row then
-                    row = I.Create(pane)
-                    pool[used] = row
-                end
+                local row = rows:Take()
                 row:SetScale(scale)
                 row:ClearAllPoints()
                 row:SetPoint("TOPLEFT", anchor, "TOPLEFT", x / scale, -cell.y / scale)
@@ -186,11 +183,8 @@ local function Fill()
             end
         end
     end
-    for index = used + 1, #pool do
-        pool[index]:Hide()
-        pool[index].entry = nil
-    end
-    for index = usedLevels + 1, #levels do levels[index]:Hide() end
+    rows:Done()
+    levels:Done()
     for _, group in ipairs({ trainGroup, questGroups[1] }) do
         local at = shown[group.key]
         headers[group.key]:SetShown(at ~= nil)
@@ -207,7 +201,7 @@ local function Fill()
     more:SetPoint("TOPLEFT", left, "TOPLEFT", 8, -(pageHeight - 14))
     more:SetShown(hidden > 0)
     if hidden > 0 then
-        more:SetText(("And %d more: you find them in the tabs of the spellbook."):format(hidden))
+        more:SetText(TEXT.more:format(hidden))
     end
     H.shown = used -- for the tests and /sane ab debug
 end
@@ -262,7 +256,7 @@ end
 -- that is not an opening, and the page you were on stays.
 local function OnShown()
     if hiddenAt ~= GetTime() then
-        active = ns.DB.options.home and true or false
+        active = ns.options.home and true or false
         underneath = (SelectedTab())
     end
     Sync()
@@ -287,22 +281,16 @@ local function Setup()
     tab.Icon:SetTexture(ICON)
     tab:SetScript("OnClick", function()
         if active then return end
-        PlaySound(SOUNDKIT.IG_SPELLBOOK_OPEN)
+        Core.Sound("IG_SPELLBOOK_OPEN")
         ns.Safe("home", H.Open)
     end)
-    tab:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(TITLE)
-        GameTooltip:AddLine("What you can learn now, and the spells you get from quests.", 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-    tab:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    Core.Tip(tab, TITLE, TEXT.homeTip)
 
     cover = MakeTab(book)
     Select(cover, false)
     cover:Hide()
     cover:SetScript("OnClick", function()
-        PlaySound(SOUNDKIT.IG_SPELLBOOK_OPEN)
+        Core.Sound("IG_SPELLBOOK_OPEN")
         ns.Safe("home", H.Close)
     end)
 
@@ -324,28 +312,34 @@ local function FitSearchBox()
     if right then box:SetWidth(math.max(math.min(right - left - SEARCH_GAP, SEARCH_WIDTH), 0)) end
 end
 
+-- The row one tab further right: its one point, moved.
+local function Shift(frame)
+    local point, relativeTo, relativePoint, x, y = frame:GetPoint(1)
+    frame:ClearAllPoints()
+    frame:SetPoint(point, relativeTo, relativePoint, (x or 0) + SHIFT, y or 0)
+end
+
 -- Home stands where the row of the game's tabs begins; the row makes room for it (on) or gets
 -- its place back. Only the row's place is changed. In a fight a frame of the game's may be
--- locked: then Home takes the gap in front of the row instead, and the row goes back after it.
+-- locked: then Home takes the gap in front of the row instead, and the row goes back once the
+-- fight is over.
 local function PlaceTabs(on)
-    local row = book.CategoryTabSystem
-    local locked = B.Locked(row)
-    if on and not rowPoints and not locked and row:GetNumPoints() == 1 then
-        rowPoints = Core.Points(row)
-        local point = rowPoints[1]
-        row:ClearAllPoints()
-        row:SetPoint(point[1], point[2], point[3], (point[4] or 0) + SHIFT, point[5] or 0)
-        FitSearchBox()
-    elseif not on and rowPoints and not locked then
-        Core.Repoint(row, rowPoints)
-        rowPoints = nil
-        FitSearchBox()
+    local tabs = book.CategoryTabSystem
+    tabRow = tabRow or Core.Lend(tabs)
+    if on and not tabRow:Lent() and tabs:GetNumPoints() == 1 then
+        if tabRow:SetPoints(Shift) then FitSearchBox() end
+    elseif not on and tabRow:Lent() then
+        if Core.Locked(tabs) then
+            Core.AfterCombat("Abilities: home tabs", PlaceTabs, false)
+        elseif tabRow:Return() then
+            FitSearchBox()
+        end
     end
     tab:ClearAllPoints()
-    if rowPoints then
-        tab:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", -SHIFT, 0)
+    if tabRow:Lent() then
+        tab:SetPoint("BOTTOMLEFT", tabs, "BOTTOMLEFT", -SHIFT, 0)
     else
-        tab:SetPoint("BOTTOMRIGHT", row, "BOTTOMLEFT", -2, 0)
+        tab:SetPoint("BOTTOMRIGHT", tabs, "BOTTOMLEFT", -2, 0)
     end
 end
 
@@ -372,9 +366,5 @@ ns.Listen("REFRESH", function()
     -- Not while the spellbook is closed (pane stays shown in it): it is filled when it opens.
     if pane and pane:IsVisible() then Fill() end
     -- The window may have another width now (Window.lua redraws after every change of size).
-    if rowPoints and book:IsVisible() then FitSearchBox() end
-end)
--- A fight kept the row of tabs from getting its place back when the pages went to the game.
-ns.On("PLAYER_REGEN_ENABLED", function()
-    if rowPoints and not B.Armed() then ns.Safe("home", PlaceTabs, false) end
+    if tabRow and tabRow:Lent() and book:IsVisible() then FitSearchBox() end
 end)

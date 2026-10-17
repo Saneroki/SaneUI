@@ -96,12 +96,10 @@ end
 -- A line another addon writes with a number of the thing: "Spell ID: 1459", or "IconID" with the
 -- number at the right. Such numbers belong in the section that Alt shows (Details), which has
 -- them: the line is left out, with Alt held or not.
--- The words without colour codes: the game's own C_StringUtil.StripHyperlinks where it has it.
-local strip = rawget(_G, "C_StringUtil") and C_StringUtil.StripHyperlinks
-local function Plainer(text)
-    if strip then return strip(text) end
-    return (text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
-end
+-- The words without colour and link codes, icons and atlases: the game's own
+-- C_StringUtil.StripHyperlinks where it has it (it takes out square brackets too), else Core's
+-- Fuzzy.Plain.
+local Plainer = rawget(_G, "C_StringUtil") and C_StringUtil.StripHyperlinks or Core.Fuzzy.Plain
 function Read.IsIdLine(line)
     local left, right = line.left, line.right
     if not left:find("I[Dd]") then return false end

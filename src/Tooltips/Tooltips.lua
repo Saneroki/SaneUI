@@ -406,8 +406,8 @@ local function Pin(tooltip)
 end
 
 function ns.OnLoad()
-    ns.options = Core.Settings(ns.name)
-    ns.store = Core.Store(ns.name)
+    ns.options = Core.Settings(ns.name) -- the switches above, as Core keeps them (an older shape: Upgrade)
+    ns.store = Core.Store(ns.name)      -- the auction house's prices (Auction.lua)
 end
 
 function ns.OnLogin()
