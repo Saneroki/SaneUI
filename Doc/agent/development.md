@@ -45,6 +45,8 @@ WoW's argument-passing `xpcall` is shimmed because stock Lua 5.1 lacks it.
 | `social.lua` | Event decoding, width/wrapping, native input/restoration, filtering, fading, lockdown and fallback, game channels join/leave |
 | `sync.lua` | Sync parts capture/apply, scope and state filters, reload dialog, combat wait, kept CVars, profiles, per-character CVars, the generated page lists |
 | `window.lua` | Dock arithmetic, movement/sizing/skin, expansion/demo |
+| `data.lua` | The data framework in the game: the scheduler's budget, pauses (combat, restrictions), failing jobs, `Fresh`/`Spend` |
+| `data/tools.py` (Python) | The data tools on `data/sample/`: every rule of the check, the import's cases, compiling (same bytes, game versions apart, rows read back by Lua 5.1), CVarLabels up to date |
 
 A green suite does not prove native API availability, rendering, protected calls or taint.
 For in-game failures inspect saved errors first. Debugger-driven runtime investigation should use

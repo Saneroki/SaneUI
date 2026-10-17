@@ -7,6 +7,14 @@ The Home page, the marks, Settings on demand, the Tooltips module and the Social
 Tests: lint, 195 checks (Core, with its options), 280 checks (Spellbook), 328 checks (Tooltips), 332 checks (Social), 62 checks (Sync), 234 checks (windows).
 
 ### Core's data framework
+- **1a.4 The scheduler** `src/Core/Data/Steps.lua` (in `SaneUI.toc` after `Demo.lua`), `Core.Steps`: every
+  long piece of the framework's work a job, a coroutine (`Run`, `Check`, `Fresh`, `Spend`, `Running`,
+  `Jobs`); at most 5 ms a frame for all jobs and never more than a quarter of a frame at the frame rate, by
+  `debugprofilestop`; each job its turn first in some frame; nothing in combat or while the game restricts
+  addons (not for chat's restriction), the jobs going on after; a job that errors is dropped and reported,
+  the others go on; its frame shown, with an `OnUpdate`, only while there is work. `wowstub.lua` gains
+  `debugprofilestop`, `GetFramerate` and `C_RestrictedActions`. New `dev/tests/data.lua` (34 checks), run
+  by `dev/tests/run`.
 - **1a.3 Compile, and packs in BUILD.** `dev/data/compile.py` and `dev/tools/data compile <folder> [--game]`:
   a pack per `packs.toml` entry with entries (TOC, a Lua file per set, `LICENSE.txt`); rows, history and
   indexes (`replaces` and `replacedBy` the compiler's own), at most 50,000 statements per `Fill` function,

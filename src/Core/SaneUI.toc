@@ -32,6 +32,9 @@ Expand.lua
 Bar.lua
 # /sane window: a window to try them with
 Demo.lua
+# The data framework: Sane UI's own databases, loaded on demand from the data packs (SaneUI_Data_*), and the
+# scheduler that does their long work in steps, a few milliseconds a frame (Doc/guides/data.md)
+Data\Steps.lua
 # Sync: the game's own settings kept with Sane UI's settings, a part per options page of the game
 # and a few for what is on none (Edit Mode layout, chat windows, own channels). Pages.lua is made
 # by dev/tools/sync-pages from Blizzard's options code.

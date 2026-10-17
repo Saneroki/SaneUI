@@ -38,6 +38,9 @@ W.cvarInfo = {}           -- [CVar name] = { default, scope = "character" | "acc
 W.options = { pages = {} } -- the pages the addon put into the game's options (a page under another one has
                            -- .parent); opened = the page on show
 W.caught = nil            -- set to a list to collect the errors of event handlers instead of stopping
+W.ms = 0                  -- the client's precise clock in milliseconds (debugprofilestop), moved by the test
+W.fps = 60                -- the frame rate (GetFramerate)
+W.restrictions = {}       -- [Enum.AddOnRestrictionType] = true while the game restricts addons so
 
 -- Runs one file of an addon as the game would: with the addon's name and the table only its files see.
 -- file is its path in src ("Abilities/Book/Item"). The addon's ADDON_LOADED is the test's to fire.
@@ -598,6 +601,11 @@ function W.Install(env)
         return nil
     end
     env.InCombatLockdown = function() return W.combat end
+    env.debugprofilestop = function() return W.ms end
+    env.GetFramerate = function() return W.fps end
+    -- The game's restrictions on addons (combat, an encounter, a map, chat, ...): a test sets W.restrictions
+    -- and fires ADDON_RESTRICTION_STATE_CHANGED (type, state).
+    env.C_RestrictedActions = { IsAddOnRestrictionActive = function(kind) return W.restrictions[kind] or false end }
     env.GetCursorPosition = function() return 0, 0 end
     env.GetPhysicalScreenSize = function() return 3840, 2160 end
     env.SetCursor = function(cursor) W.cursorArt = cursor end
