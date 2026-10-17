@@ -6,6 +6,18 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 The Home page, the marks, Settings on demand, the Tooltips module and the Social module are not yet tried in the game.
 Tests: lint, 195 checks (Core, with its options), 280 checks (Spellbook), 328 checks (Tooltips), 332 checks (Social), 62 checks (Sync), 234 checks (windows).
 
+### Core's data framework
+- **The plan's open decisions answered** (Saneroki, 2026-10-17), written into `Doc/ideas/Data.md`:
+  - as proposed: packs as load-on-demand addons (1); saved variables declared by the packs (2); the
+    auction history archived in the master and shipped back (6); the limits' numbers as start values to
+    tune (12); a changed drop chance starts the whole history anew (13); 10 a second and 250 ms (15); areas
+    as cells with 3 % around spawn points (17); the beta's batches as live's base (27);
+  - otherwise: the master in `assets/data/`, the engine in `src/Core/Data/` (3); the packs not committed, as
+    `BUILD/` is not (4); sharing with the guild, the party and the raid (9); every other creature's spawn
+    points in a pack of their own, `SaneUI_Data_CreatureSpawns`, so Spawns stays lean (18, Navigation's
+    open question 11).
+  - `Doc/ideas/Data-build.md` follows; a cloud session pushes each commit to `main`.
+
 ### New designs across the modules (Saneroki, 2026-10-17)
 - **Abilities, trainer data:** `Data/Classes/*.lua` are hand-edited in a new format: one string per spell
   family with its ranks in order (`"spell:level:copper"`; a bare spell is a rank the trainer does not sell),

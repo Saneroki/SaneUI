@@ -675,7 +675,8 @@ What Navigation reads (`Doc/ideas/Data.md`); Navigation writes nothing there.
 - **A consequence for the data plan:** with Navigation on, the minimap shows from login, so the pack
   Spawns loads after every login, not at the first map opened. It should hold what the map shows and stay
   lean; every creature's spawns (Data.md, decision 18) would better be a pack of their own (*Open
-  questions*).
+  questions*). Decided so (Saneroki, 2026-10-17): every other creature's spawn points are the set
+  *CreatureSpawns*, pack `SaneUI_Data_CreatureSpawns`, loaded when asked for.
 
 ## Settings and what is kept
 
@@ -968,7 +969,8 @@ Each with a proposal; what is not answered when its step comes is built as propo
    such button (window guide). *Proposal:* no button on the small window; in full screen the dropdown
    *Classic windows* lists both; the switches *Minimap* and *Map* on the page.
 10. **Search in full screen:** zones, dungeons, towns, services and quests? *Proposal:* yes.
-11. **Spawns pack at every login:** with Navigation on, the minimap is open from login, so Spawns loads
+11. Answered (Saneroki, 2026-10-17, Data.md decision 18): as proposed.
+    **Spawns pack at every login:** with Navigation on, the minimap is open from login, so Spawns loads
     after every login. *Proposal:* Spawns holds what the map shows and stays lean; every creature's spawn
     points (Data.md, decision 18) go into a pack of their own, loaded when asked for.
 12. **The game's map in a fight** (when step 0 shows `WorldMapFrame:Hide()` taints): *Proposal:* in a fight

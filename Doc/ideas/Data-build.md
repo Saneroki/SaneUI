@@ -15,7 +15,9 @@ at most the commit it was on, and the next session goes on from there.
    - Changes to other files belong to other sessions: leave them alone (CLAUDE.md, *Parallel sessions*).
 3. Build the commit. Write its tests first where that is possible.
 4. Run `dev/build`. Then commit by path, with a short message. Tick the box in the same commit; `git log`
-   has the hash. Add a line to `Doc/Changed.md` under the heading *Core's data framework*.
+   has the hash. Add a line to `Doc/Changed.md` under the heading *Core's data framework*. On Saneroki's
+   computer a commit is never pushed (CLAUDE.md); a cloud session, whose container is thrown away, pushes
+   each commit to `main` (Saneroki, 2026-10-17) and runs `dev/build --no-install` (there is no game there).
 5. A commit's *in the game* checks are Saneroki's. The session lists them in its answer; it cannot do them.
 
 **Every commit keeps to these rules:**
@@ -28,26 +30,26 @@ at most the commit it was on, and the next session goes on from there.
 ## 1a The frame, with CVarLabels the whole way
 
 - [ ] **1a.1 The guide.** `Doc/guides/data.md` holds the contracts (Data.md, *Contracts*) and how to add a
-  set. `AGENTS.md` and `CLAUDE.md` name it where they list the guides (`CLAUDE.md` is edited, never
-  committed).
+  set. `AGENTS.md` and `CLAUDE.md` name it where they list the guides (both are local files, in
+  `.gitignore`, edited, never committed; a cloud session hands Saneroki edited copies).
 - [ ] **1a.2 The master and its check.**
-  - Files: `src/Core/Data/builds.toml`, `sources.toml` and `CVarLabels/schema.toml`; `dev/data/` (Python:
-    schema, check) and `dev/tools/data check`.
+  - Files: `assets/data/builds.toml`, `sources.toml` and `CVarLabels/schema.toml` (decision 3); `dev/data/`
+    (Python: schema, check) and `dev/tools/data check`.
   - *CVarLabels* is the first master. `dev/tools/cvar-labels` gains a mode that writes staging; its Lua
     file stays as it is. That staging is taken in as new entries, the import's simplest case.
   - Game versions from the start: every staging line names its own; `builds.toml` and `sources.toml` name it
     too; the check knows the other game versions' files (`<Set>.forever-beta.jsonl`) and refuses a line in
     the wrong file.
   - `dev/tests/run` runs the check and the tools' tests (`dev/tests/data/`): each broken rule is caught.
-  - `dev/build` leaves `*.jsonl` and `*.toml` out of `BUILD/SaneUI`.
+  - The master lies outside `src/` (decision 3), so no addon folder takes it in.
 - [ ] **1a.3 Compile, and packs in BUILD.**
   - `dev/data/compile.py` and `dev/tools/data compile <dir>`. It writes rows, history and indexes, at most
     50,000 rows per function, and nothing that changes from one run to the next.
   - Compiled per game version (`--game forever-beta`): live's from the live files only, another's from
     the live files with its own on top; the TOC's `X-SaneUI-Game` and `Data.Add` say which.
-  - `dev/build` makes `BUILD/SaneUI_Data_Game` (Forever live's, the packs that are committed) and installs.
-    It reads the game folder's product (`.flavor.info`): into the beta's folder (`_classic_beta_` today) it
-    installs the beta's packs, compiled into a scratch folder, never committed. The stale clean-up keeps
+  - `dev/build` makes `BUILD/SaneUI_Data_Game` (Forever live's; like all of `BUILD/` not committed,
+    decision 4) and installs. It reads the game folder's product (`.flavor.info`): into the beta's folder
+    (`_classic_beta_` today) it installs the beta's packs, compiled into a scratch folder. The stale clean-up keeps
     the `SaneUI_Data_*` folders. A pack is made only when one of its sets has entries.
   - The lint knows a pack's TOC: `LoadOnDemand`, the `X-SaneUI-*` lines, its saved variable, and Core's
     `Interface` and `Version`.
