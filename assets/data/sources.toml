@@ -8,3 +8,8 @@ about = "The game itself: its code and tables in references/, its API, our crawl
 [hand]
 kind = "hand"
 about = "Written by people: hand-made sets and the fixes."
+
+[old]
+kind = "batch"
+game = "forever"
+about = "The quest facts the Tooltips module shipped in its own file before the data framework (givers, takers, requirements, the items quests ask for, what creatures drop for them, chances in whole percent with 0 for under one), taken in once."

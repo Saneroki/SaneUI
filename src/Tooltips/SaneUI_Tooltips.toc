@@ -23,13 +23,13 @@ Live.lua
 Inspect.lua
 # Numbers that follow from what the game says: a spell's damage per second, a creature's experience
 Numbers.lua
-# The module's own quest facts, and the quest lists of creatures, NPCs and items
-Data\Quests.lua
+# The quest lists of creatures, NPCs and items, from Core's data (the sets Quests and Drops)
 Quests.lua
 # What things fetch at the auction house, noted as you browse it
 Auction.lua
-# How each kind of tooltip is sorted
+# How each kind of tooltip is sorted; an item's Gold and Inventory sections first, which Item.lua draws
 Kinds\Gold.lua
+Kinds\Inventory.lua
 Kinds\Item.lua
 Kinds\Spell.lua
 Kinds\Unit.lua

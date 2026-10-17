@@ -6,6 +6,13 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Tooltips: an item's tooltip shows which of your characters have it,
+  each by first and last name (Sane Lunatic), with where and how many:
+  bags, bank, worn. What other addons write into a tooltip now has a
+  section of its own at the bottom, "Other addons", and no longer mixes
+  with Sane UI's lines. The quest information comes from Sane UI's new
+  data packs, which load by themselves after you log in.
+
 - Tooltips have a cleaner look in the game's own colours. A spell's
   tooltip shows only what the game says about it, now in every language.
   Quest tooltips offer Skyborne characters the quests meant for their

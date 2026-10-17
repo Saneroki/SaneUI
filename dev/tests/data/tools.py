@@ -174,6 +174,9 @@ caught("replaces itself", lambda c: c.replace(G, '"replaces":101', '"replaces":1
 caught("replaces nothing", lambda c: c.replace(G, '"replaces":101', '"replaces":999'), "which forever does not have")
 caught("a ref to nobody", lambda c: c.replace(G, '"from":[1]', '"from":[7]'), "points at Folk 7")
 caught("a beta ref live lacks", lambda c: c.replace("Gear/Gear.forever-beta.jsonl", '"quality":4', '"quality":4,"from":[3]'), "which forever-beta does not have")
+with Copy() as empty:  # a set with no entries yet: the refs into it are checked once it has some
+    empty.path("Folk/Folk.jsonl").unlink()
+    check("refs into a set without entries wait for it", [text for text in loaded(empty.root).errors if "points at Folk" in text], [])
 caught("leaves no value", lambda c: c.replace(G, '"weight":null,"rare":true', '"name":null,"quality":null,"slot":null,"stats":null,"weight":null,"sell":null,"from":null'), "with no value")
 caught("a fix of no version", lambda c: c.replace("Gear/fixes.jsonl", '"since":0', '"since":65100'), "matches no version")
 caught("a fix the game overtook", lambda c: c.append(G.replace("Gear.jsonl", "fixes.jsonl"), '{"key":100,"since":0,"src":["hand"],"weight":2}\n'), "may be stale", level="warning")
@@ -405,7 +408,7 @@ check("diff: within the beta", views.diff(sample, "Gear", "forever-beta"), ["Gea
 check("diff: a patch not known", views.diff(sample, "Gear", patch="9.9.9"), ["No build of forever is 9.9.9 in builds.toml."])
 numbers = views.stats(sample)
 check("stats: per game version, set and pack", (numbers[0], numbers[2].split(), numbers[5]),
-      ("forever:", ["Folk", "Gear", "3", "4", "1", "1", "4", "607", "B"], "  pack Gear: 2 sets, 6 entries, 2.2 KB"))
+      ("forever:", ["Folk", "Gear", "3", "4", "1", "1", "4", "607", "B"], "  pack Gear: 2 sets, 6 entries, 2.1 KB"))
 check("stats: the beta", [line.split()[:7] for line in numbers if line.startswith("  Gear ")][2], ["Gear", "Gear", "4", "5", "1", "0", "2"])
 
 # Compiling ----------------------------------------------------------------------------------------------
@@ -451,7 +454,7 @@ with tempfile.TemporaryDirectory(prefix="saneui-packs-") as folder:
     out = Path(folder)
     made = compiler.compile_packs(sample, out / "one", "forever")
     compiler.compile_packs(sample, out / "two", "forever")
-    check("compile: the packs made", [(pack, sets) for pack, sets, _ in made], [("Gear", ["Folk", "Gear"]), ("Words", ["Labels"])])
+    check("compile: the packs made", [(pack, sets) for pack, sets, _ in made], [("Gear", ["Folk", "Gear"]), ("Kept", []), ("Words", ["Labels"])])
     check("compile: the same master, the same bytes", files_of(out / "one") == files_of(out / "two"), True)
     gear_pack = out / "one" / "SaneUI_Data_Gear"
     check("compile: the pack's files", sorted(p.name for p in gear_pack.iterdir()),
@@ -488,7 +491,7 @@ with tempfile.TemporaryDirectory(prefix="saneui-packs-") as folder:
     code, text, _ = lua_rows(out / "one" / "SaneUI_Data_Words" / "Labels.lua")
     check("compile: text keys", all(f"rows\t{k}\t" in text for k in ("alpha", "end", "with space")), True)
     beta = compiler.compile_packs(sample, out / "beta", "forever-beta")
-    check("compile: the beta's packs", [pack for pack, _, _ in beta], ["Gear", "Words"])
+    check("compile: the beta's packs", [pack for pack, _, _ in beta], ["Gear", "Kept", "Words"])
     code, text, _ = lua_rows(out / "beta" / "SaneUI_Data_Gear" / "Gear.lua")
     head = text.splitlines()[0].split("\t")
     check("compile: the beta's game and build", (head[0], head[2]), ("forever-beta", "66000"))
@@ -501,8 +504,15 @@ with tempfile.TemporaryDirectory(prefix="saneui-packs-") as folder:
         copy.write("Labels/Labels.jsonl", "")
         (out / "one" / "SaneUI_Data_Old").mkdir()
         made = compiler.compile_packs(loaded(copy.root), out / "one", "forever")
-        check("compile: a pack without entries is not made", [pack for pack, _, _ in made], ["Gear"])
-        check("compile: packs no longer made are removed", sorted(p.name for p in (out / "one").iterdir()), ["SaneUI_Data_Gear"])
+        check("compile: a pack without entries is not made, one of saved data is", [pack for pack, _, _ in made], ["Gear", "Kept"])
+        check("compile: packs no longer made are removed", sorted(p.name for p in (out / "one").iterdir()), ["SaneUI_Data_Gear", "SaneUI_Data_Kept"])
+        kept = (out / "one" / "SaneUI_Data_Kept" / "SaneUI_Data_Kept.toc").read_text()
+        check("compile: a pack of saved data says so, names no set and lists no file",
+              ("## X-SaneUI-Saved: 1" in kept, "X-SaneUI-Sets" in kept, [line for line in kept.splitlines() if line and not line.startswith("#")],
+               sorted(p.name for p in (out / "one" / "SaneUI_Data_Kept").iterdir())),
+              (True, False, [], ["LICENSE.txt", "SaneUI_Data_Kept.toc"]))
+        copy.replace("packs.toml", "saved = true", "saved = 1")
+        check("a pack's saved is true or left out", any("'saved' is true or left out" in text for text in loaded(copy.root).errors), True)
     saved, compiler.CHUNK = compiler.CHUNK, 2
     try:
         compiler.compile_packs(sample, out / "small", "forever")
@@ -532,7 +542,8 @@ with tempfile.TemporaryDirectory(prefix="saneui-staging-") as folder:
             "World": ["NPCs", "CreatureSpells", "Objects", "Zones", "Travel", "Places", "Drops"],
             "Spawns": ["Spawns", "QuestAreas", "PatrolPaths"], "CreatureSpawns": ["CreatureSpawns"], "Routes": ["Walking"],
             "Guides": ["Guides"], "Spells": ["Spells", "Auras", "Trainers", "QuestSpells", "WeaponSkills", "SkillLines", "Professions"],
-            "Talents": ["Talents", "Legacy"], "Market": ["Vendors"], "Game": ["CVarLabels", "Currencies"]}
+            "Talents": ["Talents", "Legacy"], "Market": ["Vendors"], "Game": ["CVarLabels", "Currencies"],
+            "Characters": []}  # saved data only (Doc/ideas/Data.md, *Characters*)
     check("every set of the plan has its schema, in its pack",
           {pack: sorted(name for name, schema in real.schemas.items() if schema.pack == pack) for pack in real.packs},
           {pack: sorted(names) for pack, names in plan.items()})

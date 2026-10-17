@@ -19,6 +19,10 @@ ns.TEXT = {
     VENDOR = "Vendor", AUCTION = "Auction", USED_IN = "Used in",
     -- An item's sections (Kinds/Item.lua, Kinds/Gold.lua), from the module's own data
     PROFESSIONS = "Professions", GOLD = "Gold",
+    -- Who of your characters has an item, and where (Kinds/Inventory.lua, from Core's characters' data)
+    INVENTORY = "Inventory", BAGS = "Bags", BANK = "Bank", WORN = "Worn", ACCOUNT_BANK = "Account bank", TOTAL = "Total",
+    -- The lines other addons add to a tooltip: a section of their own, last (Read.lua)
+    ADDONS = "Other addons",
     AH_PROFIT = "AH profit", NO_VENDOR = "Can't be sold",
     SELL_AH = "Sell on the AH for %s", MORE_AH = "+%s over the AH",
     SELL_VENDOR = "Sell to a vendor", BUY_UNDER = "Buy if under %s", NOW = "now %s",

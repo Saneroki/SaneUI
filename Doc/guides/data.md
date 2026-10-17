@@ -21,8 +21,8 @@ A module only reads. Gathering, keeping, checking, sharing and telling about cha
 | The tools | `dev/tools/data`, Python in `dev/data/` | Check the master, take in staging, compile the packs, show and compare entries. |
 | Staging | `dev/data/staging/` (not committed) | What a tool read from a source, in one neutral format, waiting to be taken in. |
 | The packs | `BUILD/SaneUI_Data_<Pack>/` (not committed) | Load-on-demand addons made from the master by `dev/build`: a TOC and a Lua file per set. |
-| The engine | `src/Core/Data/` (in `SaneUI.toc`) | `Steps.lua` (the scheduler), `Codec.lua` (a row's string into a record), `Data.lua` (finding and loading packs, the answers). |
-| Tests | `dev/tests/data/` (tools, sample masters), `dev/tests/data.lua` (in the game) | Run by `dev/tests/run`. |
+| The engine | `src/Core/Data/` (in `SaneUI.toc`) | `Steps.lua` (the scheduler), `Codec.lua` (a row's string into a record), `Data.lua` (finding and loading packs, the answers, the saved parts of packs), `Characters.lua` (what the account's characters have: *Characters*). |
+| Tests | `dev/tests/data/` (tools, sample masters, `packs.py` for a module's tests), `dev/tests/data.lua` (in the game) | Run by `dev/tests/run`. |
 
 ## Words
 
@@ -121,9 +121,16 @@ about = "What our tool read of every quest, 2026-10-20."
 [Game]
 title = "Data: Game"
 notes = "Sane UI's data from the game's own code: the names of the options' settings, currencies. Loaded only when Sane UI needs it."
+
+[Characters]
+title = "Data: Characters"
+notes = "What your own characters have: ..."
+saved = true
 ```
 
-Every schema's `pack` is here. The pack's addon is `SaneUI_Data_<name>`.
+Every schema's `pack` is here. The pack's addon is `SaneUI_Data_<name>`. **`saved = true`** (or left out): a
+pack of saved data, made even when none of its sets has entries (or it has no sets at all, as Characters):
+it holds what Core keeps in the game, in its saved variable (*Saved variables*).
 
 ### schema.toml
 
@@ -193,6 +200,7 @@ prompt 2, which settles what the game gives.
 | Routes | Walking (a region, numbered by our tool) |
 | Guides | Guides (a guide, numbered by our tool) |
 | Spells | Spells, Auras (spell ID), Trainers (the rank's spell ID), QuestSpells (`<spell ID>/<way>`), WeaponSkills (the teaching spell's ID), SkillLines (skill line ID), Professions (the recipe's spell ID) |
+| Characters | No sets: saved data only (*Characters*) |
 | Talents | Talents (trait node ID), Legacy (`node:<ID>`, `challenge:<ID>`, `reward:<level>`) |
 | Market | Vendors (the vendor's creature ID); the series *Prices* (step 1c.2) |
 | Game | CVarLabels (the CVar's name), Currencies (currency ID) |
@@ -203,7 +211,11 @@ prompt 2, which settles what the game gives.
 - **Our own number** where the game gives none; the schema's comment says how a staged thing is matched to
   an entry already there.
 - **A thing with several parts per entry** (a guide's steps, a quest's objectives) is a list of tuples whose
-  parts say which step or objective a row belongs to: a list holds no list (*Types*).
+  parts say which step or objective a row belongs to: a list holds no list (*Types*). A quest's objectives
+  carry their number in the game's list (`index`, `C_QuestLog.GetQuestObjectives`): the data may know only
+  some of them.
+- **A quest a requirement names** (`requires.quest`) is the game's quest ID, also of a quest the set does not
+  hold: the game tells whether it is done.
 
 ### A line of the master
 
@@ -298,7 +310,9 @@ that game version's files.
   pack is known, every `ref` names a set, every index a field of an indexable type.
 - Every set folder holds only its own files; every line parses and fits its schema and the rules of *A line
   of the master*, in order, in the right game version's file, its key in the file's key range.
-- Every `ref` and every `replaces` points at an entry that exists in that game version's view.
+- Every `ref` and every `replaces` points at an entry that exists in that game version's view. A set with no
+  entries at all in that view is still to be filled: the refs into it are checked once it has some (the
+  quests' givers point into NPCs before prompt 2 fills it).
 - Every fix matches a version; a fix that the game may have overtaken is a warning.
 - Text holds no tab and no character 28, 30 or 31.
 
@@ -346,6 +360,9 @@ Currencies.lua
 - `Interface` and `Version` are Core's. Every set of the pack has its file, also one with no entries
   (its handle is then ready and answers nil); the sets in name order. A pack's own code (step 1d) follows
   them, copied from `src/Core/Data/Packs/<Pack>/`.
+- **A pack of saved data** (`saved = true`) says `## X-SaneUI-Saved: 1`. Without sets (Characters) it has no
+  `X-SaneUI-Sets` line and lists no file: the game loads its saved variable all the same (as its own
+  `Blizzard_ClientSavedVariables`).
 - `LICENSE.txt` is the project's `LICENSE`, as in every addon folder.
 
 ### A set's file
@@ -396,7 +413,8 @@ end)
 - A tab between fields; inside a field, character 30 (`\030`) between the elements of a list or map,
   character 31 (`\031`) between an element's parts (a map's key and value, a point's map, x and y, a
   tuple's parts). Game text holds none of them, so nothing is escaped and a row is taken apart with plain
-  finds. **An empty part is no value.** Empty fields at a row's end are left out.
+  finds. **An empty part is no value.** Empty fields at a row's end are left out, and so are empty parts at a
+  tuple's end (`1\031loot\031182`, not `1\031loot\031182\031\031\031`).
 - **A row of only a build and a day is a gone version.**
 - **Values:** whole numbers as they are, other numbers as `%.14g`; `bool` `1` or empty; `point` `map\031x\031y`.
 
@@ -458,6 +476,11 @@ Data.Prepare("Items")               -- load soon: after the loading screen, out 
 - **Said once:** a pack missing or switched off is noted in the error log, quietly (`Core.NoteError`); a pack
   that fails to load or a set file that does not run is reported (`Core.Report`: one line in chat). The
   modules fall back.
+- **A pack of saved data** is found by its `X-SaneUI-Saved` line (a pack with no sets and without it is
+  refused). Its saved variable exists only once it is loaded, so Core's own readers ask for it with
+  `Data.Saved(pack, fn)`: the pack is asked for as by `Prepare`, and `fn(part)` is called once it has loaded
+  (at once when it is), with this client's part (*Saved variables*). Missing, off or refused: said once,
+  `fn` never called, nothing kept. Modules do not call it; they read what Core makes of it.
 
 ### `/sane data`
 
@@ -501,13 +524,17 @@ end, ...)
   `pcall`, and the job runs on past its budget without a word.
 - Its frame is shown only while there is work: no `OnUpdate` at rest.
 
-## Saved variables *(1c)*
+## Saved variables *(1c; built so far: the packs' parts, `format`, `broken`, `saved` and the lost file)*
 
 - **Keyed by game version first:** `SaneUIDB.data["forever"]`, `SaneUIData_Items["forever-beta"]`. Core uses
   only its client's key; the others (a copied `WTF`) are left as they are.
 - **Core's** (`SaneUIDB.data[game]`): `format` (1); `inbox` (`[set][key] = row`, at most 2,000 rows: learned
   data for a pack not loaded yet, decision 19); `checked` (`[set] = build`, the patch check); `saved`
   (`[pack] = values`, how much each pack saved last: *a lost file*); `crawl` (`[kind] = place`).
+- **A lost file:** at the logout Core notes in `saved` how many values each loaded pack's part holds (its
+  own and those of the tables in it). When a pack loads and its saved variable is gone though `saved` says
+  it held something, Core says so at once (`Core.Report`): the game's `.bak` copy still has it until the
+  next logout writes over it.
 - **A pack's** (`SaneUIData_<Pack>[game]`): `format` (1); `learned` (`[set][key] = row`, a whole row in
   the pack's format); `broken` (parts of a wrong shape, kept for the harvest); and what the pack has of its
   own: the Market pack its series per auction house (`houses["eu/1234/horde"]`), the World pack its drop
@@ -516,6 +543,53 @@ end, ...)
   at most 100,000 values per saved variable (Lua's constant limit would lose the whole file).
 - **Every part is checked on load:** the format number with upgrade steps; a part of a wrong shape goes to
   `broken`, the rest works.
+
+## Characters
+
+What the account's characters have, so every character sees its alts' things (the plan, *Characters*):
+`src/Core/Data/Characters.lua`, in Core, kept in the saved variable of the pack Characters, which ships
+nothing (`saved = true`, no sets) and is loaded soon after every login. Never shared.
+
+```lua
+SaneUIData_Characters["forever"] = {
+    format = 1,
+    characters = {
+        ["Player-70-0000ABCD"] = {          -- the character's GUID (Core.charKey), never a name
+            name = "Sane Lunatic",          -- its whole name: first name and surname (guide, *Players*)
+            realm = "...", class = "MAGE", race = 1, level = 12, side = "Alliance",
+            seen = 20743,                   -- the server's day it was last seen
+            money = 12345,                  -- copper
+            bags = "4500\0315\0304501\0311", -- a place: item ID and count, items in order (\030, \031)
+            worn = "...", bank = "...", bankSeen = 20743,
+        },
+    },
+    account = { bank = "...", seen = 20743 }, -- the account's own bank, once per account
+    broken = { { what = "...", value = ... } }, -- parts of a wrong shape, set aside, never wiped
+}
+```
+
+| Call | Gives |
+| --- | --- |
+| `Data.Characters()` | Every character of the account, by name: `{ key, name, realm, class, race, level, side, seen, money, bankSeen }`. nil until the pack is loaded. |
+| `Data.Character(key)` | One of them, or nil. |
+| `Data.Count(item)` | `{ total = 40, [key] = { bags = 12, bank = 8, worn = 1 } }`, the key `account` for the account's bank (`{ bank = 5 }`); nil: none of them has it, or not counted yet. |
+| `Data.CharactersStamp()`, `Data.OnCharacters(fn)` | A number that moves, and `fn()` called, when any of it changes: a view redraws then. |
+
+- **Places:** `bags` (the backpack, the bags, the reagent bag, the keyring where there is one), `worn` (the
+  gear and the bags in their slots), `bank` (the character's bank tabs, `C_Bank.FetchPurchasedBankTabIDs`),
+  the account's `bank` (its tabs, where the game lets the character see them).
+- **Mark, then read:** an event marks a place (`BAG_UPDATE`, `PLAYER_EQUIPMENT_CHANGED`, `PLAYER_MONEY`,
+  `PLAYER_LEVEL_UP`, the bank's events); the reading is a job of the scheduler (out of combat, within the
+  budget, a bag at a time), started at `BAG_UPDATE_DELAYED` for the bags. **The bank only while it is open**
+  (`BANKFRAME_OPENED`, read again when it closes if still marked): read when closed it would be empty, and
+  what was seen of it stays. At the logout what is still marked is read at once.
+- **Nothing read is nothing written:** a client without the container functions reads nothing, and what is
+  kept stays.
+- **The whole name:** a name without its surname (the game not knowing it yet) never takes the place of a
+  whole one; two characters with one first name are two characters (their keys).
+- **Counts** are worked out once, in steps, after the pack has loaded (every place taken apart), and kept up
+  to date from then on: an item's tooltip asks one table.
+- *Not built yet (1c.4):* the auction log and own auctions, the mailbox, a character deleted in *Profiles*.
 
 ## Messages *(1f)*
 
@@ -608,3 +682,8 @@ unique on its realm (`Thrall-Draenor`).
 - **Players by their key** (`dev/tests/core.lua`): a whole name with or without a realm is one key, the same
   first name or surname two players, a first name alone none; Retail's `Name-Realm`. Steps 1c and 1f test
   their senders and characters the same way.
+- **A module's tests** run on a few made-up entries on the real schemas: `python3 -I dev/tests/data/packs.py
+  <sample> <out>` copies the real master's tables and schemas with the sample's lines in place of the real
+  ones (`dev/tests/data/tooltips/` for Tooltips), checks them and compiles the packs; the test puts them into
+  the stand-in client's addon list (`W.AddPack`) before the login. The stand-in client has the pack
+  Characters, as every install has.

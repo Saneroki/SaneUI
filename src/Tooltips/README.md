@@ -7,8 +7,11 @@ Draws the game's tooltips anew on dark panels with round corners and a soft edge
 an item's quality, a player's class, a spell's school. Items, spells, players and creatures, buffs and
 quests each have a layout of their own; everything else gets its name and its lines. Text size and
 opacity can be set, and a switch anchors tooltips to the mouse cursor. An item's panel also shows the
-quests that need it, the professions that use it and what it brings from a vendor and at the auction
-house, with one clear line on what to do with it for gold; Alt shows more.
+quests that need it, the professions that use it, which of your characters have it (each by first name and
+surname: *Sane Lunatic*) and what it brings from a vendor and at the auction house, with one clear line on
+what to do with it for gold; Alt shows more. What other addons write into a tooltip stands in a section of
+its own at the end, *Other addons*, never among the panel's own lines. The quest facts are Sane UI's
+database (Core's data framework), which the panels only read.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Tooltips* under *Sane UI* in the game's addon list. Switched
@@ -30,17 +33,20 @@ house, with one clear line on what to do with it for gold; Alt shows more.
 
   | Tooltip | In its panel |
   |---|---|
-  | **Item** | Over the name, short: how it binds as players write it (*BoP*, *BoE*, *BoU*, *BoA*, *WuE*, *Soulbound*, *Quest*; red until it is bound to you), or *Equipped* on what you wear in a comparison; beside it whether you have its look (*Uncollected*, *Look known*). Name in the colour of its quality; under it, small and grey: kind and slot (what it is, for a thing that is not worn: *Trade Goods · Cloth*) and at the right the level it needs (red while yours is lower) and under it, also at the right, what else it asks of you: a class (*Classes: Mage*), a profession's skill (*Requires Tailoring (75)*), a reputation (red while you lack it); icon with the item's level under it. Then a weapon's damage per second large, its hit and speed smaller in the same line (*3.2 DPS · 1 - 3 dmg · 2.00 spd*), or an armour's armour; its lines in groups (what it is, what it does in green, what is told about it); its durability as a small bar. **Quest** (a section under its caption): *Starts* and the quest it starts, then *Needed for* and the quests that need it (each heading with *Questlog* at the right, over the words that say where you stand: *Not yet* is not yet in your quest log); each with its level small after its name and, at a glance, where you stand with it: *In log* with the ? and your count (*In log 1/4*, gold, green when complete), *Available* with the ! (you can take it now), *Not yet* dim (your level, a quest to do first), *Done* with a tick, grey; first those in your log, then to take, for later, done; without Alt three of those not in your log and *Press ALT for +2 more*. A quest for another class, race or side, or closed to you, is left out. Then, for a trade good, **Professions** (a section under its caption): *Used in* and the professions that use it, with their icons (by the item's kind). Then other addons' lines, small; last **Gold** (see *Gold* below). Each section is there only when something is known for it. Whatever you cannot use is red, as the game colours it. What you wear beside an item (a comparison) has no sections, only other addons' lines and its vendor price for one |
+  | **Item** | Over the name, short: how it binds as players write it (*BoP*, *BoE*, *BoU*, *BoA*, *WuE*, *Soulbound*, *Quest*; red until it is bound to you), or *Equipped* on what you wear in a comparison; beside it whether you have its look (*Uncollected*, *Look known*). Name in the colour of its quality; under it, small and grey: kind and slot (what it is, for a thing that is not worn: *Trade Goods · Cloth*) and at the right the level it needs (red while yours is lower) and under it, also at the right, what else it asks of you: a class (*Classes: Mage*), a profession's skill (*Requires Tailoring (75)*), a reputation (red while you lack it); icon with the item's level under it. Then a weapon's damage per second large, its hit and speed smaller in the same line (*3.2 DPS · 1 - 3 dmg · 2.00 spd*), or an armour's armour; its lines in groups (what it is, what it does in green, what is told about it); its durability as a small bar. **Quest** (a section under its caption): *Starts* and the quest it starts, then *Needed for* and the quests that need it (each heading with *Questlog* at the right, over the words that say where you stand: *Not yet* is not yet in your quest log); each with its level small after its name and, at a glance, where you stand with it: *In log* with the ? and your count (*In log 1/4*, gold, green when complete), *Available* with the ! (you can take it now), *Not yet* dim (your level, a quest to do first), *Done* with a tick, grey; first those in your log, then to take, for later, done; without Alt three of those not in your log and *Press ALT for +2 more*. A quest for another class, race or side, or closed to you, is left out. Then, for a trade good, **Professions** (a section under its caption): *Used in* and the professions that use it, with their icons (by the item's kind). Then **Inventory** (see *Inventory* below): which of your characters have it and where. Then **Gold** (see *Gold* below); last, other addons' lines under *Other addons*. Each section is there only when something is known for it. Whatever you cannot use is red, as the game colours it. What you wear beside an item (a comparison) has no sections, only its vendor price for one (and other addons' lines under *Other addons*) |
   | **Recipe** | Like an item; what it makes stands under the caption *Creates*, with that thing's icon |
   | **Spell, pet ability** | Name; what it is (its school in its colour; without one *Healing* in green, *CC* in blue for crowd control, *Physical*, *Utility*) and rank, or *Passive*; icon. A strip of what its tooltip states, each caption over its value, in the order the game writes them: its cost (*Mana*, *Rage*, *Energy*; a mana cost also as a share of all yours), *Range*, *Cast*, *Cooldown*; a fact the tooltip does not state has no cell. A spell that hurts or heals has a second strip of what follows from it (see *Spell numbers* below): *DPS* or *HPS*, *Damage* or *Healing* on average, what it does *Per Mana* (the melee swing and the shots: their *Speed*), *Crit* (your chance); again only what is known. The description in the middle, its digits in the panel's colour. The panel has the colour the game's combat log gives the spell's school (fire, frost, arcane, nature, shadow, holy; physical for one that only hurts), green if it only heals, none otherwise |
-  | **Player** | Name in the colour of the class; the gold dragon round the portrait; close under the name and as large: the guild, with the player's rank in it small after it; then small: the race and the side (*Human · Alliance*), and under it the class line: spec and class with the talent points (*Feral Combat Druid 0/31/20*; yours at once, another player's once inspected), the title (a PvP rank, *Sergeant*), and what is true now (*PvP* in red, *AFK*, *DND* in orange, *Offline*, *Dead*, *Ghost*; then the panel has no colour of its own); a large portrait in the top right corner with the level on its lower edge (the unit's live 3D model, see *Live 3D portraits*). The health bar with the current health and its share in percent written in its middle (over the power bar), and over its lower part the bar of mana, rage or energy (an empty one shows nothing): flat colours, half see-through, round corners; whom the player targets right above the bars (*Target* and the name right after it; *You*, in red, when it is you). The plaque under the portrait says the item level before the level, *iLvl 50 - 60* (yours at once; another player's after the game has inspected them, see below). Buffs and debuffs as small icons. Then other addons' lines |
+  | **Player** | Name in the colour of the class; the gold dragon round the portrait; close under the name and as large: the guild, with the player's rank in it small after it; then small: the race and the side (*Human · Alliance*), and under it the class line: spec and class with the talent points (*Feral Combat Druid 0/31/20*; yours at once, another player's once inspected), the title (a PvP rank, *Sergeant*), and what is true now (*PvP* in red, *AFK*, *DND* in orange, *Offline*, *Dead*, *Ghost*; then the panel has no colour of its own); a large portrait in the top right corner with the level on its lower edge (the unit's live 3D model, see *Live 3D portraits*). The health bar with the current health and its share in percent written in its middle (over the power bar), and over its lower part the bar of mana, rage or energy (an empty one shows nothing): flat colours, half see-through, round corners; whom the player targets right above the bars (*Target* and the name right after it; *You*, in red, when it is you). The plaque under the portrait says the item level before the level, *iLvl 50 - 60* (yours at once; another player's after the game has inspected them, see below). Buffs and debuffs as small icons. Last, other addons' lines under *Other addons* |
   | **Creature, NPC** | The same; in place of the guild its title (*Bowyer*, *<Flight Master>*: the game's line before its level line) or, for a pet, its owner; in place of the race what it is, its family and its faction (*Beast · Wolf*, *Humanoid · Stormwind*: the faction is the game's line after the level line); on the class line its class (*Warrior*, *Mage*; not for a friendly NPC), its rank in the game's words (*Elite*, *Boss* in gold, *Rare* in silver; a rare elite both), *Tapped* (somebody else's kill), *PvP*, *Dead*; a dead one's panel has no colour of its own. A section of its own for experience and quests: what killing it gives you and how many such kills to your next level; then each quest's name in gold with a sword before what you must still kill and a sack before what you must still loot with how often it drops after its name (*33%*), the count at the right (*5/7*; what is done is left out, and a quest with nothing left to do for it, too; the game's own quest lines, and what it drops for your quests from the module's quest facts: see *Quests* below); the quests it takes back and offers you, each name in gold with a line under it: *Turn in* (ready, green) or *In progress* with the game's ?, *Offers* with the game's !, and the quest's level; a dead creature says *Dead* and what it yields (*Skinnable*) on the class line, the game's *Corpse* line is left out; what killing it gives you (*145 XP*) and how many such kills to your next level (*Next level in 12*), see *Experience* below; the game's own dragon from its target frame curls round the portrait: gold for an elite, gold with a great wing for a raid or dungeon boss, silver and winged for a rare or rare elite; a creature without a rank has none. Your quests' lines for it in gold: a sword beside what you must kill it for, a bag beside what you must loot |
   | **Buff, debuff** | Name; *Buff* or *Debuff* and what takes it away (*Magic*); icon; the description, in the middle; a bar that runs out with its time, with how long it still runs and who cast it written inside (flat, round corners). The panel has the game's colour of what takes it away (the colour of a debuff's border: magic, curse, poison, disease); a debuff nothing takes away the game's colour for that, a buff nothing takes away none |
   | **Quest** | Name; level (in the colour of its difficulty) and where it stands for you (*In progress*, *Ready to turn in*, *Completed*); its text; under the caption *Objectives* a box for each thing to do, ticked and green when it is done |
   | **Anything else** the game fills from data (things in the world such as a mailbox or a herb, macros, the minimap, currencies, mounts, totems, equipment sets, ...) | Name and lines; an empty line becomes a divider; a panel without a colour of its own, whatever colour the name has |
 
-  Lines another addon adds to a tooltip are shown as they are, small, at the bottom (on an item, over the
-  Gold section).
+  **Other addons:** whatever other addons write into a tooltip (one addon or five) stands in one section of
+  its own at the very end of every panel, under the caption *Other addons*: their lines as they wrote them,
+  small and quiet, in their order, an empty line between two of them a divider. Never between the panel's
+  own lines and sections: not before a buff's time bar, not before a quest's objectives, not among an item's
+  sections. Lines that only repeat a number (*Spell ID: 1459*) are left out: Alt shows the numbers.
 - **Hold Alt** for the technical details: a small section at the bottom of every panel with the number of
   the thing at the left (*Spell ID*, *Item ID*, *NPC ID*, *Quest ID*, ...; a player's GUID) and the number
   of its icon at the right (*Icon ID*). Pressing or letting go of Alt redraws the panels that are shown.
@@ -80,36 +86,43 @@ house, with one clear line on what to do with it for gold; Alt shows more.
   **The prices** are the module's own: whenever the game lists auctions to you (browsing the auction
   house), the lowest buyout of each thing is noted and kept in the saved settings (`Auction.lua`); a price
   not seen again for 30 days is forgotten at the login. Nothing is asked of the server.
-- **Quests** (`Quests.lua`, `Data/Quests.lua`): what you must kill the game says in the tooltip's own quest
-  lines. Which creature drops a quest item, who gives which quest and who takes it back, the game does not
-  say; the module ships its own quest facts for that (`ns.QuestFacts`, described at the top of
-  `Data/Quests.lua`): 4796 quests, 1805 NPCs that give or take back quests, 3738 creatures that
-  drop quest items, 2395 items that quests ask for, 370 items that start a quest and 865 creatures that drop
-  those; 546 KB. A quest is one string, `levels;rule;races;classes;title`: its levels in one field
-  (*20-30*, *10-19-19* with the highest that may take it), what it asks first as one small expression
-  (`+` must be done, `/` one of these must be done, `!` closed once you have it or had it: a quest that
-  excludes it, its chain's next step, the quest it leads to), the side as a letter or the game's race and
-  class IDs. An NPC or an item is one string of lettered groups (*g* gives, *t* takes back, *d* drops for
-  an objective, *s* drops an item that starts a quest; *n* an objective asks for it, *b* it starts the
-  quest). What only one side has carries the side's letter, and only your side's counts. Each string is
-  taken apart when a tooltip first asks for it.
+- **Quests** (`Quests.lua`): what you must kill the game says in the tooltip's own quest lines. Which
+  creature drops a quest item, who gives which quest and who takes it back, the game does not say; Sane UI's
+  database has it (Core's data framework, `Doc/guides/data.md`), in two data packs that load soon after the
+  login: *Data: Quests* (the set *Quests*: 4796 quests with their levels, side, races and classes, what they
+  ask first, who gives and takes them back (1805 NPCs), the items that start them (370) and the items their
+  objectives ask for (2395)) and *Data: World* (the set *Drops*: what 3883 creatures drop for quests, with
+  how often). The module only reads them (`Data.Set("Quests")`, `Data.Set("Drops")`): it asks for them at
+  the login, has no quest part in a panel until they are there, and draws the shown panels anew when they
+  come. With *Data: Quests* switched off in the addon list, the panels have no quest part and nothing fails.
   An item's panel shows every quest for you that wants it, and the quest it starts, each with where you
   stand with it: in your quest log (with your count), done, one you can take now (here also one far below
   your level), or one for later; quests of the same name (the same quest at other places) once. A
   creature's shows an item it drops that starts a quest you can take, with how often. Both under the
   caption *Quest*. Every quest's name in a creature's section has its level at the right, in the colour of
   how hard it is (the game's quest line says which quest it is); in an item's, small after the name (*[12]*).
-  **Drop chances** are in the facts where they are known (11731 of 15653 drops; most without one are
+  **Drop chances** are in the data where they are known (6381 of 10034 drops; most without one are
   Forever's own quests), in whole percent: *33%* after the item's name, on the game's own objective line
   too, *<1%* below one. Your progress comes from your quest log (`C_QuestLog.GetQuestObjectives`).
-  What is found for a creature is kept until your quest log or your level
-  changes (`QUEST_LOG_UPDATE`, `QUEST_TURNED_IN`, `PLAYER_LEVEL_UP`, `PLAYER_LEVEL_CHANGED`): its tooltip
-  is read many times a second. A broken record is noted and told once; what was found before it stays.
+  What is found for a creature is kept until your quest log, your level or the data
+  changes (`QUEST_LOG_UPDATE`, `QUEST_TURNED_IN`, `PLAYER_LEVEL_UP`, `PLAYER_LEVEL_CHANGED`, the sets'
+  stamps): its tooltip is read many times a second. A failure while the list is made is noted and told once;
+  what was found before it stays.
   Whether you may take a quest: it is meant for you (your side, also for this client's own races; your race
   by the game's race ID, your class by its class ID), you have reached its lowest level and not passed its
   highest, the quests it asks first are done and none that closes it is in your log or done. An NPC leaves
   out what the game shows grey for your level (`UnitQuestTrivialLevelRange`). A quest that repeats is
-  offered by no NPC in the facts: it shows while it is in your quest log.
+  offered by no NPC in the data: it shows while it is in your quest log.
+- **Inventory** (`Kinds/Inventory.lua`): on an item's panel, under the caption *Inventory*, every character
+  of your account that has it, each by its whole name, first name and surname (*Sane Lunatic*, never
+  *Sane*), in its class's colour (see *Colour players by their class*): you first, then the others by name,
+  the account's own bank last; at the right where and how many (*Bags 12 · Bank 8*, *Worn 1*). With two or
+  more, *Total* and how many in all. Without Alt the first five and *Press ALT for +2 more*. Two characters
+  with the same first name are two characters. Sane UI keeps this itself (Core's data framework: the pack
+  *Data: Characters*, which ships nothing and keeps what your characters have in its own saved file, never
+  shared): each character's bags, what it wears and its bank as last seen. A character's bags are known
+  once it has logged in, its bank once you have opened the bank with it; the panel follows a change at once
+  (read a moment later, never in a fight).
 - **Spell numbers** (`Numbers.lua`): the amounts come from the spell's description, whose numbers on
   this client already hold your spell power and talents. The description is cut at its numbers and the
   words between them say what each is: an amount (*16 to 25* counts as its middle), an amount spread over
@@ -327,9 +340,16 @@ house, with one clear line on what to do with it for gold; Alt shows more.
   (`ns.GiveBack`: each tooltip's alpha, each in a `pcall` of its own), says so once
   (`ns.GIVEN_BACK`) and ends the module's work for the session. A kind reader's error costs its kind only
   (see *Kinds*).
-- **Other addons' lines** stay the game's lines of the tooltip: an item's panel puts the game's own lines
-  first (`Read.Rest("own")`), then its sections, then the lines other addons added after the game's
-  (`Read.Rest("added")`), small and as they are, then the Gold section.
+- **Other addons' lines** stay the game's lines of the tooltip: a line no data of the game names and that
+  stands after the game's last one is another addon's (`Read.Added`). `Read.Rest` shows the game's lines
+  only; after everything of the panel's own (its sections, Alt's details) `Others` in `Read.lua` puts all
+  other addons' lines into one section of their own, *Other addons* (`TEXT.ADDONS`), small and quiet, an
+  empty line among them a divider. Every kind gets it the same way: no reader handles other addons' lines.
+- **Core's data** (`Doc/guides/data.md`): the module keeps no data of its own but the auction prices it
+  notes (`Auction.lua`; the series *Prices* is to take them over). `Quests.lua` reads the sets *Quests* and
+  *Drops* (`Prepare` at the login, `OnStamp` redraws the shown panels), `Kinds/Inventory.lua` reads
+  `Data.Count`, `Data.Character` and `Data.Characters` (`Data.OnCharacters` redraws). Nil from Core means not
+  known: the part is left out.
 - **Not there yet:**
   - Auction house prices from Sane UI's own price database, the biggest part of an item's panel: the
     Economy module (being written) keeps the auction house's prices and their history from what the game
@@ -343,7 +363,11 @@ house, with one clear line on what to do with it for gold; Alt shows more.
   - A spell's school and its numbers in other languages than English (its facts strip works in every
     language, by the game's own sentences).
   - Small pictures the game puts into a tooltip's lines (`AddTexture`).
-- **Tests:** `lua5.1 dev/tests/tooltips.lua` (359 checks): how the lines of each kind are sorted, the
+- **Tests:** `lua5.1 dev/tests/tooltips.lua` (383 checks), on a few made-up quests and drops compiled into
+  packs on the real schemas (`dev/tests/data/tooltips/`, `dev/tests/data/packs.py`): the quest part before
+  and after the packs are there, the Inventory section (whole names, two characters with one first name,
+  the account's bank, the total, bags and the bank read in steps, the bank only while open), other addons'
+  lines in their own section after a buff's bar and a quest's objectives; how the lines of each kind are sorted, the
   strips (only the facts stated, found by the game's sentences, in its order; numbers per cell), the
   description by its kind or by a gold sentence, digits coloured, the palette and the background from the
   game's colours, widths in steps and the right side giving way, a section's name at the left with its
@@ -366,14 +390,14 @@ house, with one clear line on what to do with it for gold; Alt shows more.
 | `Read.lua` | A tooltip's lines, the tools to sort them into a model (also `Read.Prose`, `Read.NpcId`), the details with Alt held; runs each kind's reader by itself |
 | `Kinds/Item.lua` | Items and recipes; their sections Quest and Professions |
 | `Kinds/Gold.lua` | An item's Gold section: vendor, auction house, the advice |
+| `Kinds/Inventory.lua` | An item's Inventory section: which of your characters have it, where and how many (Core's characters' data) |
 | `Kinds/Spell.lua` | Spells and pet abilities: the strip, the school |
 | `Kinds/Unit.lua` | Players and creatures |
 | `Kinds/Aura.lua` | Buffs and debuffs |
 | `Kinds/Quest.lua` | Quests |
 | `Inspect.lua` | Another player's item level, by inspecting them, paced and kept |
 | `Auction.lua` | The lowest auction price of each thing, noted as you browse the auction house, kept |
-| `Quests.lua` | The quest lists of a creature, an NPC or an item, from the quest facts and your quest log, kept until the log changes; whether you may take a quest; a quest's name and level as a row |
-| `Data/Quests.lua` | The module's quest facts (`ns.QuestFacts`); their shape is described at its top |
+| `Quests.lua` | The quest lists of a creature, an NPC or an item, from Core's quest data (the sets Quests and Drops) and your quest log, kept until the log or the data changes; whether you may take a quest; a quest's name and level as a row |
 | `Numbers.lua` | Numbers that follow from what the game says: a spell's damage per second, per mana and crit; a swing; experience per kill |
 | `Live.lua` | A unit's health, power, target and buffs, and a buff's time, while the panel is shown |
 | `Pools.lua` | The parts a panel is drawn with (texts, lines, small icons, bars), used again; a text's size |
@@ -382,6 +406,17 @@ house, with one clear line on what to do with it for gold; Alt shows more.
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## To check in the game
+- **Inventory:** an item two of your characters have (a hearthstone, cloth): *Inventory* with each by first
+  name and surname, you first, in the class's colour, *Bags*, *Bank*, *Worn* at the right, *Total*. A second
+  character of yours whose first name is yours: its own row. The bank's count after the bank was opened;
+  the bags' count changing a moment after you loot. `/sane data` lists *Data: Characters* as loaded.
+- **Other addons:** with an addon switched on that writes into tooltips (a loot or auction addon): its lines
+  under *Other addons* at the very end of the panel, small; on a buff after the time bar, on a quest after
+  its objectives, on an item after *Gold*; with two such addons, a divider between them where they leave an
+  empty line.
+- **Quests from Core's data:** right after the login (the packs load once the loading screen is gone) a
+  creature's and an item's quest part as before; `/sane data` lists *Data: Quests* and *Data: World* as
+  loaded. With *Data: Quests* switched off in the addon list: no quest part, no error.
 - **A player:** guild, race and side, class, PvP in small letters; portrait (nothing behind it) and level;
   *Target* with the name right after it (*You* in red); then the health bar with its numbers inside, the
   power bar over its lower part; buff icons. Do the game's own lines for guild, class, side and level still
@@ -483,6 +518,11 @@ house, with one clear line on what to do with it for gold; Alt shows more.
   quest is taken, progressed or handed in, and after a level-up.
 
 ## History
+- 2026-10-17 — Other addons' lines stand in a section of their own, *Other addons*, at the end of every
+  panel, never among the panel's own lines (they stood before a buff's bar and a quest's objectives). New
+  section *Inventory* on items: which of your characters have it, each by first name and surname, where and
+  how many, from Core's characters' data. The quest facts are Core's (the packs *Data: Quests* and *Data:
+  World*); the module's own quest file is gone.
 - 2026-10-17 — The look built on the game's colours: every colour is one of the game's font
   colours moved toward another, the schools' are the combat log's, the background is the game's tooltip
   ground tinted by the panel's colour. A spell's strip holds only what its tooltip states, found by the

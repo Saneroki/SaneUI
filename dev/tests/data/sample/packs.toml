@@ -5,3 +5,8 @@ notes = "Sample gear and folk."
 [Words]
 title = "Data: Words"
 notes = "Sample words."
+
+[Kept]
+title = "Data: Kept"
+notes = "Sample saved data, nothing shipped."
+saved = true

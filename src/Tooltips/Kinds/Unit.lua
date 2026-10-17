@@ -182,7 +182,7 @@ end
 --   - the game's own quest lines: each quest's name, then what is still to kill (the objective
 --     names the creature) or loot. A done objective is left out, and a quest (or a party
 --     member's line) with none left, too;
---   - from the module's quest facts (Quests.lua): what it drops for your quests, where the
+--   - from Core's quest data (Quests.lua): what it drops for your quests, where the
 --     game did not say so, and for every such thing, the game's line too, how often it drops; the
 --     quests it takes back and offers, each name with a line under it like an objective's: Turn
 --     in or In progress (the game's ?), Offers (the game's !); an item it drops that starts a

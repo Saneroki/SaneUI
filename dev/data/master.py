@@ -233,8 +233,10 @@ class Master:
                 self.error(f"{where}: [{name}] needs 'title' and 'notes'")
                 continue
             for word in info:
-                if word not in ("title", "notes"):
+                if word not in ("title", "notes", "saved"):
                     self.error(f"{where}: [{name}] '{word}' is not part of a pack")
+            if "saved" in info and info["saved"] is not True:
+                self.error(f"{where}: [{name}] 'saved' is true or left out")
             self.packs[name] = info
 
     def _load_schema(self, folder):

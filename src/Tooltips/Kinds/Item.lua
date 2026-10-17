@@ -23,14 +23,16 @@ local _, ns = ...
 --      [?] The Kobold Menace [2]   In log  1/4    (your count), to take, for later, done
 --      PROFESSIONS ────────────────────────       the professions that use it
 --      Used in                     Tailoring
---      (other addons' lines, small)
+--      INVENTORY ──────────────────────────       who of your characters has it, and where
+--      Sane Lunatic         Bags 12  ·  Bank 8    (Kinds/Inventory.lua)
 --      GOLD ───────────────────────────────       what one brings in, and what to do with it
 --      Vendor  ·  AH profit                       (Kinds/Gold.lua)
+--      OTHER ADDONS ───────────────────────       other addons' lines, small, last (Read.lua)
 --
---  Each section is there only when something is known for it; Alt shows more (every quest, where
---  the prices come from). A recipe shows the thing it makes under a caption, with that thing's icon.
---  A comparison's changes ("+2.2 DPS") are shown without the sentence over them; what you wear
---  beside an item (a comparison) has no sections, only its vendor price (for one).
+--  Each section is there only when something is known for it; Alt shows more (every quest, every
+--  character, where the prices come from). A recipe shows the thing it makes under a caption, with
+--  that thing's icon. A comparison's changes ("+2.2 DPS") are shown without the sentence over them;
+--  what you wear beside an item (a comparison) has no sections, only its vendor price (for one).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain, Coins = Core.Plain, Core.Coins
@@ -115,13 +117,6 @@ local function Crafts(model, id)
     return model.crafts
 end
 
--- A section's caption: its name in small capitals and a rule after it, which set it off from what is above.
-local function Caption(ctx, text)
-    ctx.rule = false
-    local row = Read.Row()
-    row.kind, row.left = "caption", text
-end
-
 -- The Quest section (Quests.lua): the quest the item starts, then the quests that need it, each with
 -- where you stand with it, at a glance: in your log (the ?, gold, your count), to take (the !),
 -- for later (dim), done (a tick, grey). Its level small after its name. Without Alt the quests not
@@ -152,7 +147,7 @@ local function QuestRow(entry, index)
 end
 local function QuestSection(ctx, list)
     if list.n == 0 then return end
-    Caption(ctx, TEXT.QUEST)
+    Read.Caption(TEXT.QUEST)
     local alt, others, hidden, headed = IsAltKeyDown(), 0, 0, false
     for index = 1, list.n do
         local entry = list[index]
@@ -179,7 +174,7 @@ end
 local function ProfessionSection(ctx, id)
     local crafts = id and Crafts(ctx.model, id)
     if not crafts then return end
-    Caption(ctx, TEXT.PROFESSIONS)
+    Read.Caption(TEXT.PROFESSIONS)
     local row = Read.Text("sub", TEXT.USED_IN, DETAIL[1], DETAIL[2], DETAIL[3])
     row.right, row.rr, row.rg, row.rb = crafts, LIGHT[1], LIGHT[2], LIGHT[3]
 end
@@ -353,7 +348,7 @@ local function Item(ctx)
         end
     end
     ctx.each = Delta
-    Read.Rest("own")
+    Read.Rest()
     ctx.each, ctx.tones = nil, false
 
     -- Its durability as a bar
@@ -367,13 +362,12 @@ local function Item(ctx)
         row.right = ""
     end
 
-    -- The quests that want it, the sections of what is known of it, and other addons' lines. What
-    -- you wear beside it (a comparison) has none of that: its vendor price only.
+    -- The quests that want it, and the sections of what is known of it (other addons' lines follow,
+    -- in a section of their own: Read.lua). What you wear beside it (a comparison) has none of that:
+    -- its vendor price only.
     local bonding = bind and bind.data and Plain(bind.data.bonding)
     local bound = bonding ~= nil and AUCTIONLESS[bonding] or false
     if head.compared then
-        ctx.rule = true
-        Read.Rest("added")
         local each = ns.Gold.VendorEach(id, coins and ctx.model.price or nil)
         if each then
             ctx.rule = true
@@ -389,8 +383,7 @@ local function Item(ctx)
     end
     QuestSection(ctx, quests)
     ProfessionSection(ctx, id)
-    ctx.rule = true
-    Read.Rest("added")
+    ns.Inventory.Section(ctx, id)
     ns.Gold.Section(ctx, id, coins and ctx.model.price or nil, bound)
     ctx.rule = false
 end

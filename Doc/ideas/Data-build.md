@@ -102,12 +102,19 @@ at most the commit it was on, and the next session goes on from there.
 
 ## 1b The Tooltips quests, a real reader
 
-- [ ] **1b.1 The Quests master.**
+- [x] **1b.1 The Quests master.**
   - Today's `Tooltips/Data/Quests.lua` is turned into staging once, with a script in the scratchpad, not
     kept (a one-time step). It is imported with source *old*.
   - The Quests pack carries its indexes (givers, drops, starters, items).
   - Tests: every quest of the old file gives the same answers from the pack.
-- [ ] **1b.2 Tooltips reads it.**
+  - Done (2026-10-17): 4,796 quests into *Quests* (givers, takers, the items that start them, the loot
+    objectives with the game's objective number, levels, side, races, classes, requirements) and 3,883
+    creatures' drops into *Drops* (World pack: a creature's items with their chance; the quests that want an
+    item come from the Quests index `byObjective`, so a drop needs no quest of its own). A side on a drop
+    followed its quest's and is not kept. `requires.quest` is a plain quest ID (28 quests the old file only
+    named in requirements); refs into a set still empty (NPCs, Items) wait for it. The one-time comparison:
+    110,647 answers, none different.
+- [x] **1b.2 Tooltips reads it.**
   - Tooltips calls `Prepare("Quests")` in its `OnLogin`, reads `Data.Set("Quests")`, and redraws when
     `Stamp` moves.
   - Its old file and data code are deleted, and its tests run on a sample pack.
@@ -138,13 +145,17 @@ at most the commit it was on, and the next session goes on from there.
   - Per game folder: it takes only the part keyed by that folder's own game version (its product in
     `.flavor.info`), and its staging names that game version.
   - Tests with sample saved files, among them two folders whose data go to two game versions.
-- [ ] **1c.4 Characters.**
-  - `Characters.lua`, and the pack Characters: no shipped data, only its saved variable.
+- [ ] **1c.4 Characters.** *Built ahead of 1c.1 for Tooltips' Inventory section (Saneroki, 2026-10-17); still
+  open: the auction log and own auctions, a character deleted in Profiles.*
+  - `Characters.lua`, and the pack Characters: no shipped data, only its saved variable. *Done: the pack is a
+    pack of saved data (`saved = true`, `X-SaneUI-Saved`, `Data.Saved`), with the part of 1c.1 it needs: the
+    part per game version, its format, `broken`, the lost file.*
   - Changes are marked, then read in steps; the bank only while it is open; counts across characters; the
-    auction log; a character deleted in *Profiles*.
+    auction log; a character deleted in *Profiles*. *Done but the last two.*
   - Characters by their GUID; a name kept with one (the character's, a buyer's in the auction log) is the
-    whole name (guide, *Players*).
-  - Tests, among them: two characters of the account with the same first name stay two.
+    whole name (guide, *Players*). *Done for the character's own.*
+  - Tests, among them: two characters of the account with the same first name stay two. *Done
+    (`tooltips.lua`, `data.lua`).*
   - *In the game:* after two characters logged in, `Data.Count` of an item names both.
 - [ ] **1c.5 The crawl and the patch check.**
   - `Crawl.lua` and `/sane data crawl <kind>`.

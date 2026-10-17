@@ -37,6 +37,8 @@ Demo.lua
 Data\Steps.lua
 Data\Codec.lua
 Data\Data.lua
+# What each of the account's characters has (bags, bank, worn), kept in the pack Characters' saved variable
+Data\Characters.lua
 # Sync: the game's own settings kept with Sane UI's settings, a part per options page of the game
 # and a few for what is on none (Edit Mode layout, chat windows, own channels). Pages.lua is made
 # by dev/tools/sync-pages from Blizzard's options code.

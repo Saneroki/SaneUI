@@ -17,6 +17,10 @@ local _, ns = ...
 --
 --  Each kind's reader runs by itself (ns.Read): one that fails switches only
 --  its own kind off, whose tooltips are the game's own from then on.
+--
+--  Lines other addons add to a tooltip never stand among the panel's own rows
+--  and sections: they come last, all of them, in a section of their own under
+--  the caption Other addons (Others).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain, Secret = Core.Plain, Core.Secret
@@ -247,6 +251,15 @@ function Read.Title(caps)
     return row
 end
 
+-- A section's caption: its name in small capitals and a rule after it, which set it off from what is
+-- above (no divider over it).
+function Read.Caption(text)
+    ctx.rule = false
+    local row = Read.Row()
+    row.kind, row.left = "caption", text
+    return row
+end
+
 -- A fact in a strip row: its caption over its value (Model.lua).
 function Read.Cell(row, caption, value)
     row[#row + 1] = caption
@@ -293,46 +306,60 @@ local function Added(line, index)
 end
 Read.Added = Added
 
--- Every line no reader has shown yet, as rows: an empty line is a divider, another addon's
--- lines are small and stand apart at the end. part: "own" for the game's lines alone, "added" for
--- the other addons' alone (a kind that puts its own sections between them); nil for all.
-function Read.Rest(part)
+-- Every line of the game's no reader has shown yet, as rows: an empty line is a divider. Other
+-- addons' lines are not among them: they get a section of their own at the panel's end (Others).
+function Read.Rest()
     local L = ctx.L
-    local lastFamily, small, caption = nil, false, false
+    local lastFamily, caption = nil, false
     for index = 2, ctx.count do
         local line = L[index]
         local kind = line.type
-        local added = Added(line, index)
-        if line.used or IsFeedback(line.left) or Read.IsIdLine(line) or (part == "own" and added) or (part == "added" and not added) then
+        if line.used or IsFeedback(line.left) or Read.IsIdLine(line) or Added(line, index) then
             -- nothing
         elseif ctx.nested and kind == NESTED then
             caption = true
         elseif line.blank or kind == BLANK or kind == SEPARATOR then
             ctx.rule = true
         else
-            if added and not small then
-                small, ctx.rule = true, true
-            end
-            if ctx.tones and not added then
+            if ctx.tones then
                 local family = Family(line.lr, line.lg, line.lb)
                 if lastFamily and family ~= lastFamily then ctx.rule = true end
                 lastFamily = family
             end
             if caption then
                 -- The thing inside the thing: a caption, then its name like a second title.
-                ctx.rule = false
-                local head = Read.Row()
-                head.kind, head.left = "caption", ctx.nested
+                Read.Caption(ctx.nested)
             end
-            local row = Read.Line(line, added and "small" or "row")
-            if added then
-                row.lr, row.lg, row.lb, row.rr, row.rg, row.rb = ASIDE[1], ASIDE[2], ASIDE[3], ASIDE[1], ASIDE[2], ASIDE[3]
-            end
+            local row = Read.Line(line, "row")
             if caption then
                 row.font, row.caps, row.icon = "title", true, ctx.nestedIcon or nil
                 caption, lastFamily = false, nil
             end
             if ctx.each then ctx.each(row, line, index) end
+        end
+    end
+end
+
+-- The lines other addons added to the tooltip, all of them, in a section of their own at the end of
+-- every panel, under the caption Other addons: small and quiet, as they stand, in their order; an empty
+-- line among them is a divider (it parts one addon's lines from the next one's). Nothing when there are
+-- none. Their ID lines are left out (Alt shows the numbers, Details).
+local function Others()
+    local L, captioned = ctx.L, false
+    for index = 2, ctx.count do
+        local line = L[index]
+        if not line.used and Added(line, index) and not IsFeedback(line.left) and not Read.IsIdLine(line) then
+            local kind = line.type
+            if line.blank or kind == BLANK or kind == SEPARATOR then
+                if captioned then ctx.rule = true end
+            else
+                if not captioned then
+                    captioned = true
+                    Read.Caption(TEXT.ADDONS)
+                end
+                local row = Read.Line(line, "small")
+                row.lr, row.lg, row.lb, row.rr, row.rg, row.rb = ASIDE[1], ASIDE[2], ASIDE[3], ASIDE[1], ASIDE[2], ASIDE[3]
+            end
         end
     end
 end
@@ -406,5 +433,7 @@ function ns.Read(tooltip, data, model, options)
         return false
     end
     if IsAltKeyDown() then Details() end
+    -- Last, apart from everything of the panel's own: other addons' lines
+    Others()
     return true, Model.Commit(model)
 end

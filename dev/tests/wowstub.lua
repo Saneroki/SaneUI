@@ -29,7 +29,9 @@ W.links = {}              -- what was sent to the chat line
 W.errors = {}             -- what the red text in the middle of the screen said
 W.foci = {}               -- frames "under the mouse"
 W.loaded = {}             -- [addon name] = true
-W.onDemand = {}           -- [addon name] = function that reads it, for an addon that is loaded when asked for
+W.onDemand = {           -- [addon name] = function that reads it, for an addon that is loaded when asked for
+    SaneUI_Data_Characters = function() end,
+}
 W.slotOfSpell = {}        -- [spell ID] = spellbook slot, for the game's "go to this spell"
 W.gamepad = false         -- a controller is in use
 W.templates = {}          -- [frame template] = function(widget) that gives it its parts
@@ -41,8 +43,13 @@ W.caught = nil            -- set to a list to collect the errors of event handle
 W.ms = 0                  -- the client's precise clock in milliseconds (debugprofilestop), moved by the test
 W.fps = 60                -- the frame rate (GetFramerate)
 W.restrictions = {}       -- [Enum.AddOnRestrictionType] = true while the game restricts addons so
-W.addons = {}             -- the addon list: { name, title, notes, loadable, reason, enabled (0 or 2),
-                          -- metadata = { [field] = text } }; W.AddPack puts a compiled pack in it
+W.addons = {             -- the addon list: { name, title, notes, loadable, reason, enabled (0 or 2),
+                          -- metadata = { [field] = text } }; W.AddPack puts a compiled pack in it. Every
+                          -- install has the pack of the characters' data (dev/build always makes it): a TOC
+                          -- with its saved variable and no files, not loaded
+    { name = "SaneUI_Data_Characters", title = "Data: Characters", loadable = false, reason = "DEMAND_LOADED", enabled = 2,
+      metadata = { Title = "Data: Characters", ["X-SaneUI-Saved"] = "1", ["X-SaneUI-Format"] = "1", ["X-SaneUI-Game"] = "forever" } },
+}
 W.fileErrors = {}         -- the errors of an addon's files that LoadAddOn ran (the game shows them, goes on)
 W.project = 18            -- the client: WOW_PROJECT_ID (WoW: Forever's is 18, WOW_PROJECT_CAMELOT)
 W.build = 70245           -- its build (GetBuildInfo)
