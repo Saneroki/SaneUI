@@ -112,12 +112,13 @@ function Picker.Open(owner)
 end
 
 -- The smiley, made with our window: at the line's right end, before the grip, on its first line's
--- height and staying at the bottom when the line grows. Out of sight until the line is there.
-function Picker.Take(frame)
+-- height and staying at the bottom when the line grows; in the part of the window the line is in (area: the
+-- chat's, Window.lua). Out of sight until the line is there.
+function Picker.Take(frame, area)
     if button then return end
     button = CreateFrame("Button", nil, frame)
     button:SetSize(Layout.FACE, Layout.FACE)
-    button:SetPoint("BOTTOMRIGHT", -Layout.GRIP_ROOM, Layout.INPUT_BOTTOM + (Layout.INPUT_HEIGHT - Layout.FACE) / 2)
+    button:SetPoint("BOTTOMRIGHT", area or frame, "BOTTOMRIGHT", -Layout.GRIP_ROOM, Layout.INPUT_BOTTOM + (Layout.INPUT_HEIGHT - Layout.FACE) / 2)
     button:SetFrameLevel(frame:GetFrameLevel() + 10) -- with the line, above the list
     for _, kind in ipairs({ "Normal", "Pushed" }) do
         local art = button:CreateTexture()

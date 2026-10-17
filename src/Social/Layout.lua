@@ -40,6 +40,21 @@ Layout.GRIP_ROOM = 18                          -- the room the grip takes at the
 Layout.FACE = 24                               -- the smiley beside the line, before the grip (Picker.lua)
 Layout.INPUT_RIGHT = Layout.GRIP_ROOM + Layout.FACE + 2 -- it ends before the smiley
 
+-- The full screen holds panels beside and above the chat (Board.lua): the friends list at the left, the group
+-- finder at the right, a second chat with its own choice of chats above the chat, all within PAD of the screen
+-- and of each other. A panel that would leave the chat narrower than CHAT_MIN is left out (the group
+-- finder first); the second chat takes SPLIT of the height (a setting), and is left out where the chat
+-- under it would be lower than CHAT_LOW.
+Layout.PAD = 12
+Layout.FRIENDS_WIDTH = 300
+Layout.FINDER_WIDTH = 400
+Layout.CHAT_MIN = 420
+Layout.CHAT_LOW = 160
+Layout.FEED_LOW = 120                          -- the second chat at its lowest
+Layout.HEADER = 30                             -- a panel's head: its title and its buttons
+Layout.ROW = 34                                -- a row of the friends list and of the group finder
+Layout.FOOT = 30                               -- a panel's foot: its buttons
+
 -- The only colours of our own: the ring around the icon of somebody who is something to you. The
 -- bubbles' fill is a setting (bubbleBack, bubbleColor: Bubble.Clear), the same for all; yours differ by
 -- their side. Everything else is the game's (chat and class colours). The window itself has no fill
@@ -74,6 +89,38 @@ end
 -- window fills the screen: Window.lua, Top).
 function Layout.ListHeight(windowHeight, input, top)
     return math.floor(windowHeight) - (top or Layout.EDGE) - Layout.EDGE - (input and Layout.Input(input) or 0)
+end
+
+-- Where each part of the full screen stands, in a room that wide and high (what the window holds, under its
+-- title bar): { left, top, width, height } from the room's top left corner, whole pixels. want: which
+-- panels are wished (friends, finder, feed); share: the second chat's part of the height, 0..1. A panel not
+-- wished, or without room, is nil; chat is always there.
+function Layout.Board(width, height, want, share)
+    local pad = Layout.PAD
+    local left, right = pad, math.floor(width) - pad
+    local top, bottom = pad, math.floor(height) - pad
+    local friends = want.friends and Layout.FRIENDS_WIDTH + pad or 0
+    local finder = want.finder and Layout.FINDER_WIDTH + pad or 0
+    if right - left - friends - finder < Layout.CHAT_MIN then finder = 0 end
+    if right - left - friends - finder < Layout.CHAT_MIN then friends = 0 end
+    local board = {}
+    if friends > 0 then
+        board.friends = { left, top, Layout.FRIENDS_WIDTH, bottom - top }
+        left = left + friends
+    end
+    if finder > 0 then
+        board.finder = { right - Layout.FINDER_WIDTH, top, Layout.FINDER_WIDTH, bottom - top }
+        right = right - finder
+    end
+    local tall = bottom - top
+    local feed = want.feed and math.max(math.floor(tall * math.min(math.max(share or 0, 0), 1)), Layout.FEED_LOW) or 0
+    if feed > 0 and tall - feed - pad < Layout.CHAT_LOW then feed = 0 end
+    if feed > 0 then
+        board.feed = { left, top, right - left, feed }
+        top = top + feed + pad
+    end
+    board.chat = { left, top, right - left, bottom - top }
+    return board
 end
 
 -- The widest a message's text may be in a row that wide. Whole pixels: half ones blur.

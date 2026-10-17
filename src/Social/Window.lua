@@ -56,7 +56,14 @@ local _, ns = ...
 --  the mouse, and every message is there to read. The messages stay in sight
 --  and at the list's bottom while the size moves, and are wrapped for the new
 --  width once it stands. Full, Core's dropdown Classic windows offers the game's own chat
---  (ours is put away) and friends list (ns.CLASSIC, Social.lua).
+--  (ours is put away), friends list and group finder (ns.CLASSIC, Social.lua).
+--
+--  The chat stands in a frame of its own (column): all of what the window
+--  holds, but once the window stands full with panels around it (Board.lua: the
+--  friends list, the group finder, a second chat above), its part of the full
+--  screen. The list, the button for the line to write in, the line and its
+--  smiley hang on that frame; what is measured for them is its size (Area).
+--  The panels go when the window starts back, and the chat has the whole window.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Layout, Bubble, Fade = ns.Layout, ns.Bubble, ns.Fade
@@ -65,6 +72,8 @@ ns.Window = Window
 
 local frame, box, view, provider
 local handle         -- Core's part of the window: moves, sizes and docks it, keeps its place
+local column         -- where the chat stands: all of what the window holds, or its part of the full screen
+local board          -- the full screen's parts as they stand (Layout.Board); nil: the chat has the whole window
 local rowWidth       -- of the list, from the window's width
 local writing        -- the height of the line to write in while it is shown
 local awake, hover   -- the mouse is over the window; what sees it come and leave (Core.Hover)
@@ -142,15 +151,32 @@ local function Scrolled()
     if follow and revealed and not frame:IsMouseOver() then Reveal(false) end
 end
 
--- Where the list starts, from the window's top: under Core's title bar while it is there.
-local function Top()
-    return (handle.top or 0) + Layout.EDGE
+-- The chat's width and height: what the window holds (under Core's title bar while that is there), or the
+-- chat's part of the full screen.
+local function Area()
+    local chat = board and board.chat
+    if chat then return chat[3], chat[4] end
+    return frame:GetWidth(), frame:GetHeight() - (handle.top or 0)
+end
+
+-- The chat's frame where Area says.
+local function Seat()
+    local chat = board and board.chat
+    column:ClearAllPoints()
+    if chat then
+        column:SetPoint("TOPLEFT", handle.inside, "TOPLEFT", chat[1], -chat[2])
+        column:SetSize(chat[3], chat[4])
+    else
+        column:SetPoint("TOPLEFT", handle.inside, "TOPLEFT")
+        column:SetPoint("BOTTOMRIGHT", handle.inside, "BOTTOMRIGHT")
+    end
 end
 
 -- The room above the messages that puts them at the list's bottom; none once they fill it.
 -- True if it changed. A message's height is known after its first measuring.
 local function Settle()
-    local height = Layout.ListHeight(frame:GetHeight(), writing, Top())
+    local _, area = Area()
+    local height = Layout.ListHeight(area, writing)
     local total = 0
     for index = #list, 1, -1 do
         total = total + Bubble.Measure(list[index], rowWidth) + (index > 1 and Layout.SPACING or 0)
@@ -167,12 +193,15 @@ end
 -- What is typed into the search box of the full window's title bar (Core's): every word must be in the
 -- message's text as it reads (Core.Fuzzy.Plain: without colours, links' codes and icons), its speaker's name
 -- or its chat's, as Core's fuzzy finding finds letters; nil: no search. The list is at most a few hundred
--- messages: it is searched at once (Fuzzy.Filter is for longer ones).
+-- messages: it is searched at once (Fuzzy.Filter is for longer ones). The second chat (Feed.lua) finds by it too.
 local query
 
-local function Visible(entry)
-    if not ns.Channels.Shown(entry.group) then return false end
+function Window.Found(entry)
     return not query or Core.Fuzzy.Match(query, Core.Fuzzy.Plain(entry.text or ""), entry.name, entry.label) ~= nil
+end
+
+local function Visible(entry)
+    return ns.Channels.Shown(entry.group) and Window.Found(entry)
 end
 
 local function Fill()
@@ -344,6 +373,7 @@ function Window.Resize()
     if not frame then return end
     Bubble.Size(ns.options.textSize)
     Rewrap()
+    ns.Feed.Rewrap()
 end
 
 -- The bubbles are more or less solid, or the chats named otherwise: every row in view is drawn anew.
@@ -353,6 +383,7 @@ function Window.Repaint()
     Bubble.Brief(ns.options.shortNames)
     ns.Input.Paint()
     Rewrap()
+    ns.Feed.Rewrap()
 end
 
 -- The list is higher or lower now: the messages still stand at its bottom.
@@ -361,9 +392,9 @@ local function Resettle()
     if follow then ToEnd() end
 end
 
--- The list ends above the line you write in while that is shown, at the window's edge otherwise.
+-- The list ends above the line you write in while that is shown, at the chat's edge otherwise.
 local function Bottom(input)
-    box:SetPoint("BOTTOMRIGHT", -Layout.EDGE - Layout.SCROLL, Layout.EDGE + (input and Layout.Input(input) or 0))
+    box:SetPoint("BOTTOMRIGHT", column, "BOTTOMRIGHT", -Layout.EDGE - Layout.SCROLL, Layout.EDGE + (input and Layout.Input(input) or 0))
 end
 
 -- input: the height of the line to write in; false: it is gone. It grows with its text.
@@ -376,11 +407,12 @@ local function Room(input)
     if not was ~= not input then Window.Refade() end
 end
 
--- The window is that wide now.
+-- The chat is that wide now; the second chat above it is as wide (Board.lua), and its messages wrap the same.
 local function Fit(width)
     local now = Layout.RowWidth(width)
     if now == rowWidth then return false end
     rowWidth = now
+    ns.Feed.Fit(rowWidth)
     return true
 end
 
@@ -390,21 +422,42 @@ end
 -- A new height alone: the messages stand at the list's bottom anew. The line to write in is as wide as the window
 -- now, and drawn in the window's layer, which is higher while it fills the screen.
 local function Refit()
-    if Fit(frame:GetWidth()) then Rewrap() else Resettle() end
+    if Fit((Area())) then Rewrap() else Resettle() end
+end
+
+-- The full screen's panels as the window stands: there while it stands full (Board.lua), the chat in its
+-- part of the screen; gone at its size, the chat in the whole window.
+local function Lay()
+    local full = handle.edge and handle.edge.full
+    board = full and ns.Board.Show(handle.inside, frame:GetWidth(), frame:GetHeight() - (handle.top or 0)) or nil
+    if not full then ns.Board.Hide() end
+    Seat()
 end
 
 local function Placed()
+    ns.Guarded(Lay)
     ns.Guarded(Refit)
     ns.Guarded(ns.Input.Grow)
     ns.Guarded(ns.Input.Layer)
 end
 
+-- The panels wished on the full screen changed (Board.lua): laid out anew, if it stands full now.
+function Window.Reboard()
+    if frame and handle.edge and handle.edge.full and not (handle.edge.clock and handle.edge.clock:IsRunning()) then Placed() end
+end
+
 -- It has begun to fill the screen (full) or to go back: its layer has changed. Full, it is there to
--- read every message, until the mouse leaves it at the newest one (Watch).
+-- read every message, until the mouse leaves it at the newest one (Watch). On the way back the panels go
+-- at once, and the chat has the whole window again.
 local function Filled(full)
     ns.Input.Layer()
     Chrome()
     if full then Reveal(true) end
+    if not full and board then
+        board = nil
+        ns.Board.Hide()
+        Seat()
+    end
 end
 
 -- How it fills the screen: as its own setting says, or the general one; all animations off, at once.
@@ -417,6 +470,7 @@ end
 function Window.Search(text)
     query = Core.Fuzzy.Query(text)
     Window.Refill()
+    ns.Board.Search(text)
 end
 
 -- While the window is sized the messages keep their wrapping (Refit wraps them when it is over) and
@@ -451,18 +505,21 @@ local function Build()
     hover = Core.Hover(frame, { every = 0.2, label = ns.name .. ": mouse",
         enter = function() ns.Guarded(Wake) end, leave = function() ns.Guarded(Left) end })
 
+    column = CreateFrame("Frame", nil, frame)
+    Seat()
+
     -- Opens and closes the line to write in, in the corner where that line starts and as high as it.
     -- The art is the game's own chat button's.
     write = CreateFrame("Button", nil, frame)
     write:SetSize(Layout.INPUT_HEIGHT, Layout.INPUT_HEIGHT)
-    write:SetPoint("BOTTOMLEFT", 0, Layout.INPUT_BOTTOM)
+    write:SetPoint("BOTTOMLEFT", column, "BOTTOMLEFT", 0, Layout.INPUT_BOTTOM)
     write:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-Chat-Up")
     write:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-Chat-Down")
     write:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
     write:SetScript("OnClick", function(self) ns.Guarded(ns.Input.Toggle, self) end)
 
     box = CreateFrame("Frame", nil, frame, "WowScrollBoxList")
-    box:SetPoint("TOPLEFT", handle.inside, "TOPLEFT", Layout.EDGE, -Layout.EDGE)
+    box:SetPoint("TOPLEFT", column, "TOPLEFT", Layout.EDGE, -Layout.EDGE)
     Bottom(false)
     scroll = CreateFrame("EventFrame", nil, frame, "MinimalScrollBar")
     scroll:SetPoint("TOPLEFT", box, "TOPRIGHT", 4, -2)
@@ -526,13 +583,16 @@ function Window.Show()
     if stale then Fill() end
     Window.Refade(true) -- what came or ran out meanwhile is as it is now, at once
     Window.Native()
-    ns.Input.Take(frame, Room)
+    ns.Input.Take(frame, Room, column)
 end
 
 -- Hidden, the game's chat is back as it was.
 function Window.Hide()
     if not frame then return end
     frame:Hide()
+    board = nil
+    ns.Board.Hide()
+    Seat()
     hover:Stop()
     revealed, dueAt = nil, nil
     frame:SetScript("OnUpdate", nil)
@@ -557,8 +617,9 @@ function Window.Follow()
 end
 
 -- A new message. The log lets its oldest go a batch at a time (Log.Add): those leave the list
--- together, in one update of it.
+-- together, in one update of it. The second chat of the full screen hears of it first (Feed.lua).
 ns.Log.added = function(entry)
+    ns.Feed.Added(entry)
     if not frame or not frame:IsShown() then
         stale = true
         return

@@ -55,7 +55,28 @@ ns.TEXT = {
     -- The dropdown Classic windows while the window fills the screen: the game's own windows it stands for.
     classicChat = Core.Word("CHAT", "Chat"),
     classicFriends = "Friends list",
+    classicFinder = "Group finder",
     friendsInFight = "in a fight the game's friends list opens only by its own key.",
+    finderInFight = "in a fight the game's group finder opens only by its own key.",
+    -- The full screen's panels (Board.lua): the second chat above the chat, and its list of chats.
+    feed = "Second chat",
+    feedFilter = "Chats",
+    friends = Core.Word("FRIENDS", "Friends"),
+    online = "%d / %d online",
+    noFriends = "No friends yet. Add Friend adds one.",
+    noFriendsFound = "No friend found.",
+    finder = "Group finder",
+    category = "Category",
+    refreshTip = "Looks again for groups in the category chosen.",
+    listYourself = "List yourself",
+    activities = "%d activities",
+    level = "Lvl %d",
+    chooseCategory = "Choose a category to look for groups.",
+    searching = Core.Word("SEARCHING", "Searching..."),
+    searchFailed = "The search failed. Refresh to try again.",
+    noGroups = "No groups found. Refresh to look again.",
+    noGroupsFound = "No group found.",
+    finderOff = "The group finder is not open to you here.",
     nativeChat = "the chat window is off, the game's own chat is back (its button Sane UI, /sane social, or the switch Chat window, brings it again).",
     -- The game's channels in the list on the chat's name: what each does on every character (Join.lua).
     everywhere = "On every character",
@@ -100,6 +121,19 @@ local OPTIONS = {
     -- kept with the settings, so profiles and a character's own settings carry them; no control.
     { key = "mute", default = {} },
 
+    -- The full screen's panels around the chat (Board.lua).
+    { key = "boardFriends", default = true, text = "Friends list", header = "Full screen",
+      headerTip = "What stands around the chat while the window fills the screen.",
+      tip = "The friends list at the left of the full screen, as the game's: who is online and where. Click a friend, then Send Message or Invite; a right click opens their menu." },
+    { key = "boardFinder", default = true, text = "Group finder",
+      tip = "The group finder at the right of the full screen, as the game's: the groups and players looking for others in a category. Whisper a leader, or invite a player who is alone." },
+    { key = "boardFeed", default = true, text = "Second chat",
+      tip = "A second chat above the chat, with its own choice of chats in the list on its head: your whispers, groups and guild at first." },
+    { key = "feedShare", default = 40, min = 20, max = 70, step = 5, unit = "%", text = "Height of the second chat", parent = "boardFeed", inline = true,
+      tip = "How much of the full screen's height the second chat takes." },
+    -- The second chat's ticks ([group] = true: shown there), set in the list on its head; no control.
+    { key = "split", default = { WHISPER = true, PARTY = true, RAID = true, INSTANCE_CHAT = true, GUILD = true, OFFICER = true } },
+
     { key = "textSize", default = 14, min = 10, max = 24, step = 1, text = "Text size", tab = LOOK, header = "Messages",
       headerTip = "How the messages and their bubbles look.",
       tip = "The size of the message text and of the names above the bubbles." },
@@ -142,6 +176,8 @@ for index, option in ipairs(OPTIONS) do
     if option.tab == LOOK then last = index end
 end
 Core.Edge.Options(OPTIONS, (last or #OPTIONS) + 1, LOOK, { motion = "animations" })
+-- The switches of the full screen's panels: a change lays the full screen out anew (Window.Reboard).
+local BOARD = { boardFriends = true, boardFinder = true, boardFeed = true, feedShare = true }
 -- The switches of fading and sliding: a change of one sets every fade and slide anew (Window.Animate).
 local MOVES = { animations = true, fadeInOn = true, fadeInTime = true, fadeOutTime = true, slide = true, slideTime = true,
                 fadeFloorOn = true, fadeFloor = true, fade = true, fadeAfter = true }
@@ -166,6 +202,8 @@ Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = funct
     if Core.Edge.KEYS[key] then return end
     if key == "window" then return ns.Guarded(ns.Window.Follow) end
     if SHOWN[key] or key == "mute" then return ns.Guarded(ns.Window.Refill) end
+    if key == "split" then return ns.Guarded(ns.Feed.Refill) end
+    if BOARD[key] then return ns.Guarded(ns.Window.Reboard) end
     if key == "history" or key == "historySize" then return ns.Keep() end
     local Window = ns.Window
     ns.Guarded(key == "textSize" and Window.Resize or key == "showNative" and Window.Native or MOVES[key] and Window.Animate
@@ -303,9 +341,21 @@ local function PutAway()
     ns.Print(ns.TEXT.nativeChat)
 end
 
+-- The game's group finder, opened as its micro menu button opens it (ToggleGroupFinderFrame: the game's
+-- vanilla style finder, LFGParentFrame, loaded by the game when it allows it), only if it is not open
+-- already; as the friends list. tab: the finder's own (1 to list yourself, 2 to browse).
+function ns.OpenFinder(tab)
+    local finder = rawget(_G, "LFGParentFrame")
+    if finder and finder:IsShown() then return end
+    if InCombatLockdown() then return ns.Print(ns.TEXT.finderInFight) end
+    local show, toggle = rawget(_G, "LFGVanilla_ShowFrame"), rawget(_G, "ToggleGroupFinderFrame")
+    if tab and show then show(tab) elseif toggle then toggle() end
+end
+
 ns.CLASSIC = {
     { text = ns.TEXT.classicChat, show = PutAway },
     { text = ns.TEXT.classicFriends, show = function() ns.Safe("friends list", Friends) end },
+    { text = ns.TEXT.classicFinder, show = function() ns.Safe("group finder", ns.OpenFinder) end },
 }
 -- Core's buttons while the window stands free or in the middle of the screen: the game's own window is
 -- its chat, and closing ours puts it away the same way. The button back to ours (Sane UI) goes onto the

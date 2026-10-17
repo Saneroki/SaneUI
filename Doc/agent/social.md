@@ -31,6 +31,10 @@ last messages are saved per character at logout and put back at login (`Log.Save
 | `Native.lua` | Native chat parts lent (`Core.Lend`: layer noted, then parent) to a hidden frame; given back only if still ours. Not Core's holder: the chat is never closed |
 | `Input.lua` | Seat/style/restore **Blizzard's own** edit boxes (place, art, layer, rest each a `Core.Lend`), growing input, callbacks; its plate a `Core.Shape` that follows |
 | `Join.lua` | Game channels by wish (`options.presence[name]` true/false/nil; `ns.Safe`, not Guarded): joins only where `EnumerateServerChannels` offers it, once per zone (`GetRealZoneText`), leaves when false; looks 8 s after each PEW, 2 s after `CHAT_MSG_CHANNEL_NOTICE`, after lockdown if owed, at once on a wish; `Join.List` (joined Zone channels by number, then on offer, then wished) |
+| `Board.lua` | Full screen panels (stand full only, built on first show, `ns.Safe` per part): `Board.Show(inside, w, h)` → `Layout.Board` rects, `Board.Hide`, `Board.Search`; shared `Board.List`/`Fill`/`Row`/`Button`. Part API: `Build(panel)`, `Show(on)`, `Search(text)` |
+| `Feed.lua` | Second chat above the chat: `options.split` ticks (`Channels.Split/FlipSplit`), same `rowWidth` as the chat (`Feed.Fit`), told by `Log.added`; no fade/slide |
+| `Friends.lua` | Friends panel: `BNGetNumFriends`/`C_BattleNet.GetFriendAccountInfo`, `C_FriendList`; game order; click selects, `ChatFrameUtil.SendTell/SendBNetTell`, `FriendsFrame_ShowDropdown/ShowBNDropdown`, `FriendsFrame_InviteOrRequestToJoin` |
+| `Finder.lua` | Group finder panel (vanilla style, Camelot): `C_LFGList.Search` only on a click (restricted), reads `GetFilteredSearchResults`; whisper leader, invite solo; listing stays the game's (`ns.OpenFinder(1)`) |
 | `Window.lua` | A Core window of kind `screen` (`first.dock = "BOTTOMLEFT"`), list in `handle.inside` (no top bar), scroll provider, bottom alignment, follow state, `Core.Hover` for the mouse, slide by `Core.Motion.Slide`; `Window.Follow` (ours or away as `options.window` says), `Show` opens through `handle:Open()` |
 
 Speakers' class/tie caches share a 500-entry cap. Ties clear on friend/guild/group changes;
@@ -39,6 +43,9 @@ hides it from the provider, so unmuting restores earlier messages. Channels use 
 
 ## View and input traps
 
+The chat stands in `column` (child of the window): all of `handle.inside`, or `board.chat` while standing full
+(`Lay` in `Placed`; panels go in `Filled(false)`). Measure with `Area()`, never the window's size. Tests:
+the stand-in makes one list per `WowScrollBoxList` (`boxes`; `box` is the chat's, the first).
 Use Core Window for movement/sizing/docking; default 380×260 docked bottom left, minimum 180×130, MEDIUM level 100.
 Rows need height before creation: one invisible ruler measures wrapping, caches by width/font epoch,
 and rendering uses that same width. Rewrap after resizing ends, not every drag tick. Bottom padding

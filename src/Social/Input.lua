@@ -48,6 +48,7 @@ local Input = {}
 ns.Input = Input
 
 local window, room  -- our window, and room(height or false): it makes or gives back the room for the line
+local area          -- the part of the window the line stands at the bottom of: the chat's (Window.lua)
 local given = false -- the height the window makes room for now; false: none
 local seated        -- the edit box in our window now
 local home = {}     -- [edit box] = its place, lent: in our window
@@ -242,8 +243,8 @@ end
 -------------------------------------------------------------------------------
 local function Place(editBox)
     editBox:ClearAllPoints()
-    editBox:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", Layout.INPUT_LEFT, Layout.INPUT_BOTTOM)
-    editBox:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -Layout.INPUT_RIGHT, Layout.INPUT_BOTTOM)
+    editBox:SetPoint("BOTTOMLEFT", area, "BOTTOMLEFT", Layout.INPUT_LEFT, Layout.INPUT_BOTTOM)
+    editBox:SetPoint("BOTTOMRIGHT", area, "BOTTOMRIGHT", -Layout.INPUT_RIGHT, Layout.INPUT_BOTTOM)
 end
 
 local function Seat(editBox)
@@ -327,9 +328,10 @@ function Input.Forget()
     for _, told in ipairs(TOLD) do EventRegistry:UnregisterCallback(told[1], Input) end
 end
 
--- Our window is open: the game's edit boxes belong into it. makeRoom(height or false) is the window's.
-function Input.Take(frame, makeRoom)
-    window, room = frame, makeRoom
+-- Our window is open: the game's edit boxes belong into it, at the bottom of chat, the chat's part of it
+-- (without: the whole window). makeRoom(height or false) is the window's.
+function Input.Take(frame, makeRoom, chat)
+    window, room, area = frame, makeRoom, chat or frame
     if not plate then
         plate = CreateFrame("Frame", nil, frame)
         plate:SetFrameLevel(frame:GetFrameLevel() + 5) -- above the list, below the edit box
@@ -337,7 +339,7 @@ function Input.Take(frame, makeRoom)
         fill:Follow()
         plate:Hide()
         ruler = ns.Ruler(frame) -- never seen (Bubble.lua)
-        ns.Picker.Take(frame)
+        ns.Picker.Take(frame, area)
     end
     Listen()
     -- One that is shown already (the game's "IM style" keeps it on show).
@@ -396,7 +398,7 @@ function Input.Release()
     plate:Hide()
     ns.Picker.Show(nil)
     local giveBack = given and room
-    window, room, seated, given = nil, nil, nil, false
+    window, room, area, seated, given = nil, nil, nil, nil, false
     if giveBack then Try(giveBack, false) end
     if problem then error(problem, 0) end
 end
