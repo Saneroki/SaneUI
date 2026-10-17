@@ -140,10 +140,11 @@ local function Dialog(which, data)
     return StaticPopup_Show(which, nil, nil, data)
 end
 
--- Asks yes or no. text may name arg (%s); yes() runs on yes, in Core.Safe. alert: the game's warning sign.
-function Core.Confirm(text, arg, yes, alert)
+-- Asks yes or no. text may name arg (%s); yes() runs on yes, in Core.Safe. alert: the game's warning sign;
+-- accept: the word on the yes button (the game's Yes without).
+function Core.Confirm(text, arg, yes, alert, accept)
     return Dialog("GENERIC_CONFIRMATION", { text = text, text_arg1 = arg, showAlert = alert and true or nil,
-        callback = function() Core.Safe("dialog", yes) end })
+        acceptText = accept, callback = function() Core.Safe("dialog", yes) end })
 end
 
 -- Asks for a name or a line. text may name arg (%s); accept: the button's word; typed: filled in and
@@ -200,8 +201,8 @@ end
 --      lent:Return()   -- each thing back, each on its own (one that fails does not keep the
 --                      -- others); the parent only if it is still the one we gave (the game may have
 --                      -- taken it since). Raises the first failure once all are back.
---  A protected frame in a fight is not changed (each Set returns false) and is given back once the
---  fight is over.
+--  A protected frame in a fight is not changed (each Set but SetAlpha returns false) and is given back
+--  once the fight is over; its alpha (the game allows that in a fight) at once.
 local lends = {}
 
 local function Note(self, what, ...)
@@ -287,6 +288,15 @@ local PUT = {
 -- Puts back in the reverse order of the changes: the parent first given is the last taken back.
 function lends:Return()
     if Core.Locked(self.frame) then
+        -- The alpha may change in a fight: a frame given back is seen at once; the rest after the fight.
+        local alpha = self.notes.alpha
+        if alpha then
+            self.frame:SetAlpha(alpha[1])
+            self.notes.alpha = nil
+            for index, what in ipairs(self.order) do
+                if what == "alpha" then table.remove(self.order, index) break end
+            end
+        end
         Core.AfterCombat(self, self.Return, self)
         return false
     end

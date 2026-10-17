@@ -119,7 +119,7 @@ end
 
 -- Loading replaces the buttons of every bar.
 function Presets.AskLoad(name)
-    Asked(Core.Confirm(TEXT.askLoad, name, function() ns.Print((select(2, Presets.Load(name)))) end),
+    Asked(Core.Confirm(TEXT.askLoad, name, function() ns.Print((select(2, Presets.Load(name)))) end, nil, TEXT.load),
         TEXT.typeLoad:format(name))
 end
 

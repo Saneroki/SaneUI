@@ -815,6 +815,16 @@ W.combat = true
 check(lent:SetParent(seat) == false and borrowed:GetParent() == other, "a protected frame is not changed in a fight")
 borrowed.IsProtected = nil
 W.combat = false
+lent:SetParent(seat)
+lent:SetAlpha(0)
+function borrowed:IsProtected() return true end
+W.combat = true
+lent:Return()
+check(borrowed:GetAlpha() == 0.5 and borrowed:GetParent() == seat, "given back in a fight: its alpha at once, the rest after the fight")
+borrowed.IsProtected = nil
+W.combat = false
+W.Fire("PLAYER_REGEN_ENABLED")
+check(borrowed:GetParent() == other and not lent:Lent(), "and the fight over, the rest")
 check(Core.Fuzzy.Plain("|cffff0000Red|r |Hitem:1|h[Sword]|h |TInterface\\Icons\\X:0|t") == "Red [Sword] ", "a text of the game's without its codes, for finding")
 
 -- Messages inside a module ----------------------------------------------------------------
