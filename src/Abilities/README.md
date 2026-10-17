@@ -78,7 +78,17 @@ trainer can teach you right now and which spells you get from quests.
   `## Group: SaneUI`). The module is made with `Core.NewModule(ADDON, "Abilities", ns)` in `Abilities.lua`;
   `ns` in every file is that table, the one the game hands every file of this addon. Chat lines, game
   events, error catching and the saved settings come from Core. It needs no other module: the Settings
-  module only shows its switches on a page (see their READMEs).
+  module only shows its switches on a page (see their READMEs). The small tools every module shares
+  come from Core too: what waits for the end of a fight (`Core.AfterCombat`), the game's frames changed for a while
+  (`Core.Lend`), the switches (`Core.Settings`, `Core.Set`), the game's dialogs, tooltips, pools of frames
+  and sounds (`Core/Kit.lua`).
+- **Its words** stand in one table, `ns.TEXT` (`Abilities.lua`); where the game has a word of its own
+  (`HOME`, `SAVE`, `SPELL_PASSIVE`, `SPELLBOOK_TRAINABLE`, `SPELLBOOK_AVAILABLE_AT`, `SHOW_ALL_SPELL_RANKS`)
+  that comes first (`Core.Word`). The switches' own words are in their description (`OPTIONS`), which the
+  menu and the checkbox read too (`Core.Described`).
+- **The switches** are `ns.options`, the table Core keeps for the module (`Core.Settings`). The
+  spellbook's menu, the checkbox next to the page buttons and `/sane ab pages` set one with `Core.Set`:
+  the module hears it as from the options page, and an open options page shows it at once.
 - **Why reservations:** the game refuses a spell you do not know in an action slot. The module keeps
   `slot → spell/item/macro` in its saved settings, draws a grey icon on the button, and places the real
   thing when you have it (`Engine.lua`).
@@ -96,14 +106,17 @@ trainer can teach you right now and which spells you get from quests.
   about redraws through the game's event registry, which keeps addon code apart from its own.
 - **In a fight** the game forbids an addon to move a frame that holds one of its protected frames. A
   spellbook entry does so after you opened its spell flyout; that entry is left alone until the fight ends.
+  Whatever a fight holds up asks Core once, under a key of its own, to be done when it ends
+  (`Core.AfterCombat`): an update, the layout, giving the pages back, taking them over, the window's size.
 - **"Jump to the new spell"** (the spellbook button after learning a spell) turns the game's pages, of
   which there is only one now; a hook after `GoToSpell` turns the module's page to that entry.
 - **Fallback:** with a controller in use, if something keeps moving the entries, or on an error,
   `Book.StandDown` tidies the page once, gives the column and the page buttons back and says so in chat.
   The tab on show stays one long page until the game draws it afresh (come back to it from another tab).
   An error while taking the pages over is told once and gives back whatever was taken already; it is not
-  tried again until `/reload`. What a fight keeps from being given back (the column, the row of tabs, the
-  window's size) is given back when it ends.
+  tried again until `/reload`. What a fight keeps from being given back (the column, the page buttons,
+  the row of tabs, an entry's own size, the window's size) is given back when it ends. The page buttons
+  and the row of tabs are lent (`Core.Lend`): their place is noted once and given back exactly.
 - **Keeping the entries in place** (`Book.lua`, `Watch`): the game lays its entries out again now and
   then, sometimes a frame after it said it drew. For ten frames after each layout of the module every
   frame is looked at, then five times a second while the spellbook is open; closed, nothing runs.
@@ -209,6 +222,9 @@ trainer can teach you right now and which spells you get from quests.
 - **A spell the game puts on a button by itself** (`SPELL_PUSHED_TO_ACTIONBAR`: the spell and the slot) is
   moved off that one slot only; the same spell on a button of yours stays. A slot the game hides from
   addons (a secret value) is neither ended nor filled.
+- **Saved layouts** (`Presets.lua`) ask in the game's own dialogs: a name to save under (`GENERIC_INPUT_BOX`,
+  `Core.AskText`), yes or no to load or delete (`GENERIC_CONFIRMATION`, `Core.Confirm`). The module puts
+  no dialog of its own into the game's list. Without the game's dialog the command to type is said.
 - **Saved data of another shape** (an older version, a hand edit) is mended or passed over: a reservation
   without a kind is dropped at login, a broken layout is refused, a trainer row without a name is skipped.
 - **Saved settings:** `SaneUIDB.modules.Abilities` in `WTF/Account/<account>/SavedVariables/SaneUI.lua`:
@@ -217,7 +233,7 @@ trainer can teach you right now and which spells you get from quests.
 - **Names in the game:** frames `SaneUISpellbook`, `SaneUISpellbookPager`, `SaneUISpellbookHome`,
   `SaneUISpellbookShowHidden` (the checkbox), `SaneUISpellbookDragBar`, `SaneUISpellbookSizeGrip`.
 - **Tests:** `lua5.1 dev/tests/abilities.lua` runs the module against a small stand-in for the game client,
-  with a stand-in spellbook (326 checks). It proves the rules, not the look. A few made-up rows stand in for
+  with a stand-in spellbook (339 checks). It proves the rules, not the look. A few made-up rows stand in for
   `Data/Classes/`, whose files are only checked for their format.
   The page rule in `Book/Layout.lua` was also run against Blizzard's own paging code: same result in
   42,000 generated cases.
@@ -272,6 +288,11 @@ trainer can teach you right now and which spells you get from quests.
 | `dev/tests/abilities.lua`, `dev/tests/wowstub.lua` | The tests and the stand-in game client |
 
 ## History
+- 2026-10-17 — On Core's shared tools. Saving, loading and deleting a layout ask in the game's own
+  dialogs (loading asks *Yes* or *No*). A switch flipped in the spellbook's menu, by the checkbox next to
+  the page buttons or by `/sane ab pages` shows on an open options page at once. The checkbox sounds as
+  the game's do, on and off. After a fallback in a fight, an entry the fight held gets its own size back
+  when the fight is over (it kept the compact size).
 - 2026-10-17 — New format for the trainer data: one string per spell with its ranks in order, and a small
   table of conditions per class. A higher rank you have counts every rank before it as learned,
   in every class. The hunter's list no longer holds his pet's abilities, which showed as grey hunter

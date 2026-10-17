@@ -169,10 +169,11 @@ house, with one clear line on what to do with it for gold; Alt shows more.
   as written (*Channeled*). Its school is found by English words only: in another language the panel has
   no school colour.
 - **Drawing** (`Panel.lua`): one frame per tooltip, made when that tooltip is first filled or shown (not
-  at login), with pools of texts, thin lines, small icons and bars (`Pools.lua`: each pool a list of the
-  parts made and how many the draw has taken). A draw goes in four steps: every text made and measured
-  (`Measure`), the icon or portrait with its plaque (`Picture`), the rows top to bottom (`Lay`), then the
-  background, the dragon and the frame levels (`Finish`). The rows before the first divider stand beside
+  at login), with pools of texts, thin lines, small icons and bars (`Pools.lua`: each pool a `Core.Pool`,
+  a list of the parts made and how many the draw has taken; a draw hides only what the last one took).
+  A draw goes in four steps: every text made and measured (`Measure`), the icon or portrait with its
+  plaque (`Picture`), the rows top to bottom (`Lay`), then the background, the dragon and the frame
+  levels (`Finish`). The rows before the first divider stand beside
   the icon. The width follows the content, in steps of 8 (from 224 to 432), so a line a little longer or
   shorter leaves the edge where it was; a line that wraps counts as 22 ems at most (22 times its text size).
   Where a row's two sides do not both fit, the left one keeps its room and the right one is cut short on
@@ -186,8 +187,8 @@ house, with one clear line on what to do with it for gold; Alt shows more.
   softly: it reaches 8 past the panel's sides, and the panel's content stands on its solid part. No
   border, no band behind the name, no boxes. A divider is a dark band two hairlines high with a faint
   light hairline under it; a hairline is one unit of the interface rounded to whole dots of the screen
-  (`PixelUtil.GetNearestPixelSize`). A section's name stands at the left in small capitals, in the
-  game's gold made darker, and a rule runs on from it to the right side.
+  (`Core.Pixels`, by the game's `PixelUtil.GetNearestPixelSize`). A section's name stands at the left in
+  small capitals, in the game's gold made darker, and a rule runs on from it to the right side.
 - **The icon** (or a unit's portrait) is 64 large and stands out over the panel's top right corner, 10 past
   the right side and 10 over the top; the rows beside it make room for it. Its edge fades out softly, like the panel's: a
   square icon has round corners (`Art/icon-mask.tga` as a mask), a portrait is a circle
@@ -343,7 +344,7 @@ house, with one clear line on what to do with it for gold; Alt shows more.
   - A spell's school and its numbers in other languages than English (its facts strip works in every
     language, by the game's own sentences).
   - Small pictures the game puts into a tooltip's lines (`AddTexture`).
-- **Tests:** `lua5.1 dev/tests/tooltips.lua` (359 checks): how the lines of each kind are sorted, the
+- **Tests:** `lua5.1 dev/tests/tooltips.lua` (363 checks): how the lines of each kind are sorted, the
   strips (only the facts stated, found by the game's sentences, in its order; numbers per cell), the
   description by its kind or by a gold sentence, digits coloured, the palette and the background from the
   game's colours, widths in steps and the right side giving way, a section's name at the left with its
@@ -483,6 +484,10 @@ house, with one clear line on what to do with it for gold; Alt shows more.
   quest is taken, progressed or handed in, and after a level-up.
 
 ## History
+- 2026-10-17 — On Core's shared tools: the panels' pools (`Core.Pool`), the hairline (`Core.Pixels`), the
+  switches (`Core.Settings`). Where the client has no `C_StringUtil.StripHyperlinks`, another addon's ID
+  line is read without its colours, links, icons and atlases (`Core.Fuzzy.Plain`), so it is left out
+  there too.
 - 2026-10-17 — The look built on the game's colours: every colour is one of the game's font
   colours moved toward another, the schools' are the combat log's, the background is the game's tooltip
   ground tinted by the panel's colour. A spell's strip holds only what its tooltip states, found by the

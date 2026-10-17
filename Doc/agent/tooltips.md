@@ -22,15 +22,16 @@ Read primary tooltip data rather than interpreting appended data as a new toolti
 | `Live.lua` | The parts of a panel that change while it is shown: a unit's health/power, target, auras, a buff's running time; run from the panel's OnUpdate every 0.1 s (auras 0.5 s), in its own `xpcall` |
 | `Inspect.lua` | Paced item level and talent inspection/cache |
 | `Auction.lua` | Passive browse-price observations and expiry |
-| `Pools.lua` | Pools `panel.texts/lines/icons/bars = { taken = n, ... }` (`Take`); a text redressed only when its kind or the fonts change (`Restyle` stamp); `Width` = whole unit past the end; separate live widgets |
-| `Panel.lua` | `Measure` → `Fit` (224..432 in steps of 8; wrapping rows ≤ 22 ems) → `Picture` (icon/plaque) → `Lay` (rows; right side gives way, keeps 4 ems; captions left with a rule; strip cells sized by their words) → `Finish` (ground `TOOLTIP_DEFAULT_BACKGROUND_COLOR` tinted 28% top / darkened + 6% bottom, dragon, levels); hairline = `PixelUtil.GetNearestPixelSize(1, scale, 1)`; one lazy panel per native tooltip; a unit's live 3D model (`Figure`: `PlayerModel`, `SetUnit` only when the GUID changes, flat `SetPortraitTexture` when it cannot draw; dragon/plaque/level on `panel.front` over it) |
+| `Pools.lua` | Pools `panel.texts/lines/icons/bars` = `Core.Pool` (`taken`, `:Take()`); `Reset` hides only the last draw's parts, then `:Begin()`; a text redressed only when its kind or the fonts change (`Restyle` stamp); `Width` = whole unit past the end; separate live widgets |
+| `Panel.lua` | `Measure` → `Fit` (224..432 in steps of 8; wrapping rows ≤ 22 ems) → `Picture` (icon/plaque) → `Lay` (rows; right side gives way, keeps 4 ems; captions left with a rule; strip cells sized by their words) → `Finish` (ground `TOOLTIP_DEFAULT_BACKGROUND_COLOR` tinted 28% top / darkened + 6% bottom, dragon, levels); hairline = `Core.Pixels(panel, 1)` (the game's `PixelUtil.GetNearestPixelSize(1, scale, 1)`); one lazy panel per native tooltip; a unit's live 3D model (`Figure`: `PlayerModel`, `SetUnit` only when the GUID changes, flat `SetPortraitTexture` when it cannot draw; dragon/plaque/level on `panel.front` over it) |
 | `Host.lua` | `Dim`/`Blank`/`Keep` alphas, `Free` restores; `Seat` = blank + place + mouse reach; `Hold` on refresh; places panels by corner, `Beside` (one point on the other panel by the game's side), comparisons at own absolute slots (`Compare`/`Lay`/`Track`, gap = 2 × soft edge) |
 
 `ns.KINDS[dataType]` maps to a reader; unknown type uses Generic. Context contains native lines,
 fill/head, model and options. Readers mark consumed lines; `Read.Rest` preserves remaining lines,
 including other addons' additions (`Rest("added")`: small, unsorted; Item puts its sections between
 `Rest("own")` and them, Gold last).
-PTR feedback and redundant ID lines are omitted; Alt adds own details. Model rows:
+PTR feedback and redundant ID lines are omitted (an ID line is read plain by `C_StringUtil.StripHyperlinks`,
+else `Core.Fuzzy.Plain`, which keeps square brackets); Alt adds own details. Model rows:
 `text/strip/bar/caption/auras`. Adding a model field requires including it in
 `HEAD` or `ROW` reset/comparison lists, or stale fields/undetected changes can result.
 
@@ -80,11 +81,14 @@ Saved `modules.Tooltips`: `options`, `version` migration (currently 3: 2 opacity
 `show` added), `prices`, `seen`.
 Options: `show="always"` (or while a key is held), `cursor="default"` (where the game puts them | while a key is
 held | always), `classColors/icons/models=true`, `textSize=14 (10..20)`, `opacity=97 (30..100)`.
-Changes invalidate `panel.drawn`; redraw on subsequent tooltip work.
-Tests: `dev/tests/tooltips.lua` (359 checks). In-game QA still needed for current layouts, comparison stability,
-secret values, inspection/specs, quest offers, dragon/plaque alignment and coexistence; for the palette from the
-game's colours, the facts strip by the game's sentences (each client's wording), width steps, captions with a rule,
-hairlines at 4K.
+`ns.options` = `Core.Settings(ns.name)`; `ns.store` = `Core.Store` (prices). Changes invalidate `panel.drawn`;
+redraw on subsequent tooltip work. Kept, not Core's kit (Saneroki, 2026-10-17): Host's alpha ledger
+(`Core.Lend` would hold a protected tooltip's alpha back in a fight and costs three tables per piece) and
+the `FONTS`/`Sizes` dressing (follows the game's font objects live; `Core.Font` copies one into a named font).
+Tests: `dev/tests/tooltips.lua` (363 checks; it loads Core's `Core`, `Kit`, `Motion`, `Saved`, `Fuzzy`).
+In-game QA still needed for current layouts, comparison stability, secret values, inspection/specs,
+quest offers, dragon/plaque alignment and coexistence; for the palette from the game's colours, the facts
+strip by the game's sentences (each client's wording), width steps, captions with a rule, hairlines at 4K.
 
 The redesign (AI art, layered looks): `Doc/ideas/Tooltips/Types.md` is the catalogue of every type and
 look, `Doc/ideas/Tooltips/Build.md` how it is built (facts → `Look.lua` → `Looks.lua` → layers) and in
