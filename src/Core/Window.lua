@@ -153,25 +153,26 @@ local MIRROR = {
 -------------------------------------------------------------------------------
 --  The parts
 -------------------------------------------------------------------------------
--- hooks: usable() may it be moved now, started(), stopped() the drag is over.
+-- hooks: usable() may it be moved now, started(), stopped() the drag is over. Each runs in Core.Safe: one
+-- that fails is noted, and the drag is still begun or let go as the game's.
 function Window.Mover(handle, frame, hooks)
     local moving
     handle:EnableMouse(true)
     handle:RegisterForDrag("LeftButton")
     handle:SetScript("OnDragStart", function()
-        if hooks.usable and not hooks.usable() then return end
+        if hooks.usable and not Core.Safe("window", hooks.usable) then return end
         frame:SetMovable(true)
         frame:SetClampedToScreen(true)
         frame:StartMoving()
         moving = true
-        if hooks.started then hooks.started() end
+        if hooks.started then Core.Safe("window", hooks.started) end
     end)
     handle:SetScript("OnDragStop", function()
         if not moving then return end
         moving = false
         frame:StopMovingOrSizing()
         frame:SetUserPlaced(false) -- the place is kept by us; the game's own memory of it would fight ours
-        if hooks.stopped then hooks.stopped() end
+        if hooks.stopped then Core.Safe("window", hooks.stopped) end
     end)
 end
 
@@ -209,13 +210,13 @@ function Window.Sizer(frame, hooks)
     Window.Corner(grip, "BOTTOMRIGHT")
 
     grip:SetScript("OnMouseDown", function()
-        if hooks.usable and not hooks.usable() then return end
+        if hooks.usable and not Core.Safe("window", hooks.usable) then return end
         Hold(frame, grip.corner)
         frame:SetResizable(true)
         if frame.SetResizeBounds then
             frame:SetResizeBounds(hooks.minWidth or 1, hooks.minHeight or 1, UIParent:GetWidth(), UIParent:GetHeight())
         end
-        if hooks.started then hooks.started() end
+        if hooks.started then Core.Safe("window", hooks.started) end
         frame:StartSizing(grip.corner)
         sizing = true
     end)
@@ -224,7 +225,7 @@ function Window.Sizer(frame, hooks)
         sizing = false
         frame:StopMovingOrSizing()
         frame:SetUserPlaced(false)
-        if hooks.stopped then hooks.stopped() end
+        if hooks.stopped then Core.Safe("window", hooks.stopped) end
     end)
     grip:SetScript("OnEnter", function(self)
         SetCursor("UI_RESIZE_CURSOR")
@@ -311,7 +312,7 @@ function methods:Place()
     end
     if self.edge then self.edge:Docked(name) end
     self:Refresh()
-    if options.docked then options.docked(zone or nil) end
+    if options.docked then Core.Safe("window", options.docked, zone or nil) end
 end
 
 -- Its first place and size again; what it was left as (full, native) stays.
@@ -341,8 +342,10 @@ Core.On("PLAYER_REGEN_ENABLED", function()
     end
 end)
 
--- What closing means for the window: its module's (options.close), else it is hidden.
+-- What closing means for the window: its module's (options.close), else it is hidden. One that holds the
+-- game's protected frames is not hidden in a fight (Locked): it closes once the fight is over.
 local function Close(window)
+    if window:Locked() then return Core.AfterCombat(window, Close, window) end
     if window.options.close then window.options.close() else window.frame:Hide() end
 end
 
@@ -371,8 +374,10 @@ local function Closable(window, shown)
 end
 
 -- A drag of the box, or a sizing by the grip, is over (also when Edit Mode closes in the middle of it):
--- a dragged window docks where it was let go, a sized one stays in its zone.
+-- a dragged window docks where it was let go, a sized one stays in its zone. Once: Edit Mode let go of
+-- it, and the game's end of the drag that comes after finds nothing in hand.
 local function Moved(window)
+    if not window.moving then return end
     window.moving = false
     window.frame:StopMovingOrSizing()
     window.frame:SetUserPlaced(false) -- the place is kept by us
@@ -380,6 +385,7 @@ local function Moved(window)
 end
 
 local function Sized(window)
+    if not window.sizing then return end
     window.sizing = false
     window.frame:StopMovingOrSizing()
     window.frame:SetUserPlaced(false)

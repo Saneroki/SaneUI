@@ -329,7 +329,7 @@ local function Stand(edge)
         frame:SetAllPoints(UIParent)
         Menu(edge, true)
         window:Refresh() -- the search box ends left of the dropdown now
-        if window.options.docked then window.options.docked(Core.Dock.ZONES[edge.zone]) end
+        if window.options.docked then Core.Safe("full screen", window.options.docked, Core.Dock.ZONES[edge.zone]) end
     else
         window:Place()
     end
@@ -360,9 +360,11 @@ local function Failed(edge, problem)
     Core.Safe("full screen", edge.window.Place, edge.window)
 end
 
--- Fills the screen (true) or goes back to its zone (false), from where the window is now.
+-- Fills the screen (true) or goes back to its zone (false), from where the window is now. Not in Edit
+-- Mode, where windows are arranged at their size.
 function methods:Fill(on)
     if on == self.full or not self.placed or self.off or (on and not self.settings.expand) then return end
+    if on and Core.EditMode.active then return end
     if self.window:Locked() then return end -- a protected window in a fight: not now (Window.lua)
     local frame, window = self.frame, self.window
     local left, bottom = frame:GetLeft(), frame:GetBottom()
@@ -412,9 +414,9 @@ function methods:Fill(on)
         end
         to[3], to[4], to[5] = self.width, self.height, 0
     end
-    self.kind = Core.Motion.Kind(window.options.motion and window.options.motion() or self.settings.motion)
+    self.kind = Core.Motion.Kind(window.options.motion and Core.Safe("full screen", window.options.motion) or self.settings.motion)
     Content(self, false)
-    if window.options.filled then window.options.filled(on) end
+    if window.options.filled then Core.Safe("full screen", window.options.filled, on) end
     self.clock = self.clock or Core.Motion.Clock(frame, function(progress) Step(self, progress) end,
         function(problem) Failed(self, problem) end)
     self.clock:Run(self.kind.time)

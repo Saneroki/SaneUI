@@ -319,6 +319,36 @@ EventRegistry:TriggerEvent("EditMode.Exit")
 check(not Core.EditMode.active and not frame._moving and not window.moving and store.place.x == 300 and store.place.y == 560,
     "Edit Mode closes while it is in hand: it is let go there, and that is kept")
 check(not bar:IsShown() and not window.grip:IsShown(), "Edit Mode closed, box and grip are gone")
+EventRegistry:TriggerEvent("EditMode.Enter")
+bar:GetScript("OnDragStart")(bar)
+at(frame, 0, 410)
+EventRegistry:TriggerEvent("EditMode.Exit")
+check(store.place.dock == "LEFT" and window.zone == "LEFT", "(Edit Mode closes while it is in hand at the left edge: it docks there)")
+bar:GetScript("OnDragStop")(bar)
+check(store.place.dock == "LEFT" and window.zone == "LEFT" and stands(frame, "LEFT", 0, 540),
+    "the game's end of that drag, coming after, changes nothing: it is let go once, and its zone stays kept")
+window:Reset()
+
+-- A module's hook that fails stops nothing of the window's own
+local brokenFrame = CreateFrame("Frame", nil, UIParent)
+local brokenStore = {}
+local brokenWindow = Window.New(brokenFrame, { store = brokenStore, title = "Broken", dock = true, sizable = true,
+    first = { point = "CENTER", x = 0, y = 0, width = 200, height = 100 }, docked = function() error("the module's own") end })
+brokenWindow:Place()
+check(Core.errors.window and brokenFrame._points[1][1] == "CENTER" and brokenFrame._width == 200,
+    "a module's hook that fails is noted, and the window is placed all the same")
+EventRegistry:TriggerEvent("EditMode.Enter")
+at(brokenFrame, 500, 500)
+brokenWindow.box:GetScript("OnDragStart")(brokenWindow.box)
+brokenWindow.box:GetScript("OnDragStop")(brokenWindow.box)
+check(not brokenWindow.moving and not brokenFrame._moving and brokenStore.place.x == 500 and brokenStore.place.y == 600,
+    "dragged and let go, it is out of hand and kept where it was let go, though the hook fails again")
+brokenWindow.grip:GetScript("OnMouseDown")(brokenWindow.grip)
+brokenWindow.grip:GetScript("OnMouseUp")(brokenWindow.grip)
+check(not brokenWindow.sizing and not brokenFrame._sizing, "and so is a sizing")
+EventRegistry:TriggerEvent("EditMode.Exit")
+brokenFrame:Hide()
+Core.errors.window = nil
 
 -- The parts, for a window that is not ours ------------------------------------------------------
 local theirs, handle, told = CreateFrame("Frame", "TheGamesWindow", UIParent), CreateFrame("Frame"), {}
@@ -432,6 +462,27 @@ opener:Hide()
 expand:Open()
 check(opener._width == 420 and not clock.playing, "out of sight it does not move: it has its new size at once")
 expand:Close()
+opener:Show()
+expand:Open()
+clock:Run(0.5)
+opener:Hide()
+check(opener._width == 420 and not clock.playing, "hidden while it opens, it is open at once: nothing waits half way out of sight")
+expand:Close()
+check(opener._width == 240, "and closes to its own small size, not one it was caught at")
+opener:Show()
+expand:Open()
+clock:Run(1)
+expand:Close()
+clock:Run(1)
+check(opener._width == 240 and opener._height == 44, "opened again, it closes to that size: the half way one was never taken for it")
+local fragile = CreateFrame("Frame", nil, UIParent)
+fragile:SetSize(100, 50)
+local fragileExpand = Expand.New(fragile, { width = 200, height = 100, changed = function() error("the module's own") end,
+    motion = function() return "off" end })
+fragileExpand:Open()
+check(fragileExpand.open and fragile._width == 200 and Core.errors.expand, "a module's hook that fails is noted, and it opens all the same")
+Core.errors.expand = nil
+fragileExpand:Close()
 local cornered = CreateFrame("Frame", nil, UIParent)
 local before = #W.frames
 local corneredExpand = Expand.New(cornered, { width = 300, height = 300, corner = "BOTTOMLEFT" })
@@ -818,6 +869,11 @@ traderWindow.options.dragDocked = nil
 -- In Edit Mode
 EventRegistry:TriggerEvent("EditMode.Enter")
 check(not buttons:IsShown() and not traderWindow:Draggable() and traderWindow.box:IsShown(), "in Edit Mode its box moves it, and the buttons are not there")
+traderWindow.edge:Fill(true)
+traderStore.place.full = true
+check(traderWindow:Open() == "ours" and not traderWindow.edge.full and not traderWindow.edge.away,
+    "in Edit Mode nothing fills the screen, not even a window asked for that was left full: windows are arranged at their size")
+traderStore.place.full = nil
 at(trader, 760, 390)
 traderWindow.box:GetScript("OnDragStart")(traderWindow.box)
 traderWindow.box:GetScript("OnDragStop")(traderWindow.box)
@@ -916,6 +972,32 @@ W.Fire("PLAYER_REGEN_DISABLED")
 check(not secure._group.playing and secure._width == 1920 and secureWindow.edge.full,
     "a fight begins while it is on its way: it is at the end of the way at once, so nothing moves it in the fight")
 secureWindow:Place()
+secure:Hide()
+
+-- A protected window Esc closes is not hidden in a fight: it closes once the fight is over
+local guarded = CreateFrame("Frame", nil, UIParent)
+local guardedClosed = 0
+local guardedWindow = Window.New(guarded, {
+    store = {}, title = "Spellbook", titleBar = true, escape = "close",
+    first = { point = "CENTER", x = 0, y = 0, width = 400, height = 300 },
+})
+guardedWindow:Place()
+guarded._protected = true
+guarded:HookScript("OnHide", function() guardedClosed = guardedClosed + 1 end)
+local guardStand = SaneUIWindowEscape
+W.combat = true
+local guardClose = guardedWindow.buttons.list[1]
+guardClose:GetScript("OnClick")(guardClose)
+check(guarded:IsShown() and guardedClosed == 0, "in a fight its close button does not hide it: nothing of ours hides it then")
+guardStand:Hide()
+check(guarded:IsShown(), "nor does Esc")
+W.Wait(0.1)
+check(guardStand:IsShown(), "and Esc stays ours while it is shown: the stand-in is back a moment later")
+W.combat = false
+W.Fire("PLAYER_REGEN_ENABLED")
+check(not guarded:IsShown() and guardedClosed == 1, "the fight over, it closes, once")
+W.Wait(0.1)
+check(not guardStand:IsShown(), "and Esc is the game's again")
 
 -- Esc closes a window made so, small or full, as the game's panels close
 local talked = CreateFrame("Frame", nil, UIParent)
@@ -1096,6 +1178,10 @@ bar:SetValue(200, 1000)
 check(not rise.playing and bar.filled._value == 0.2, "with the motion Instant a gain is there at once too")
 Core.general.motion = "glide"
 check(#Bar.New(UIParent, { segments = 1 }).dividers == 0, "one piece: no dividers")
+local told = Bar.New(UIParent, { moved = function() error("the module's own") end })
+told:SetValue(5, 10)
+check(told.filled._value == 0.5 and Core.errors.bar, "a module's hook that fails is noted; the bar shows its value all the same")
+Core.errors.bar = nil
 local sizer = bar.frame._groups[2]
 bar:SetSize(302, 16)
 check(sizer.playing, "a new size moves there")

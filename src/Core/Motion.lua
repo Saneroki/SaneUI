@@ -27,8 +27,9 @@ local Core = SaneUI.Core
 --  The clock calls step(progress) every frame while it runs and step(1) at its
 --  end: an animation of the game's that moves nothing by itself, so the game
 --  calls it only while it runs and nothing is looked at while nothing moves.
---  Out of sight, or with no time, it is at its end at once. An error in step
---  stops it (it would come again every frame) and goes to failed(problem).
+--  Out of sight, or with no time, it is at its end at once: also when the frame
+--  is hidden while it runs. An error in step stops it (it would come again
+--  every frame) and goes to failed(problem).
 -------------------------------------------------------------------------------
 local Motion = {}
 Core.Motion = Motion
@@ -111,6 +112,13 @@ function Motion.Clock(frame, step, failed)
         if progress < 1 then Tick(clock, progress) end
     end)
     group:SetScript("OnFinished", function() Tick(clock, 1) end)
+    -- Hidden on the way, it is at its end at once: nothing waits out of sight half way (an opening
+    -- window caught at half its size).
+    frame:HookScript("OnHide", function()
+        if not group:IsPlaying() then return end
+        group:Stop()
+        Tick(clock, 1)
+    end)
     clock.group, clock.animation = group, animation
     return clock
 end

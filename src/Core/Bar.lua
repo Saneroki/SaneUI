@@ -92,13 +92,13 @@ local function Layout(bar)
 end
 
 local function Kind(bar)
-    return Core.Motion.Kind(bar.options.motion and bar.options.motion())
+    return Core.Motion.Kind(bar.options.motion and Core.Safe("bar", bar.options.motion))
 end
 
 -- The value the fill stands for now, on its way or there.
 local function Tell(bar, value)
     bar.standing = value
-    if bar.options.moved then bar.options.moved(value, bar.most) end
+    if bar.options.moved then Core.Safe("bar", bar.options.moved, value, bar.most) end
 end
 
 -- The game's flare at the fill's end, running for that many seconds; or put away (none).

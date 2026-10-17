@@ -46,7 +46,7 @@ Expand.STEP = 0.1   -- seconds between two looks at the mouse while the watch is
 Expand.MARGIN = 4   -- how far outside the window the mouse still counts as on it
 
 local function Still(expand)
-    return expand.options.still and expand.options.still() or false
+    return expand.options.still and Core.Safe("expand", expand.options.still) or false
 end
 
 -- Another part took the size on the way (the window begins to fill the screen): the motion gives it
@@ -77,9 +77,9 @@ local function Go(expand, open)
         expand.toWidth, expand.toHeight = expand.smallWidth, expand.smallHeight
     end
     Watch(expand, open)
-    if options.changed then options.changed(open) end
+    if options.changed then Core.Safe("expand", options.changed, open) end
     -- Out of sight nothing moves: it has its new size at once (Motion.Clock).
-    expand.kind = Core.Motion.Kind(options.motion and options.motion())
+    expand.kind = Core.Motion.Kind(options.motion and Core.Safe("expand", options.motion))
     expand.clock:Run(expand.kind.time)
 end
 
