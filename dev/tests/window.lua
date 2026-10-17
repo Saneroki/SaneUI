@@ -94,6 +94,7 @@ function methods:CreateAnimationGroup()
         function animation:GetProgress() return group.progress end
         function animation:SetOffset(_, y) self.y = y end
         function animation:SetFromAlpha(alpha) self.from = alpha end
+        function animation:GetSmoothProgress() return self.progress or 0 end
         group.moves[#group.moves + 1] = animation
         return animation
     end
@@ -398,6 +399,34 @@ check(steady and Motion.Share(glide, 0.5) > 0.9 and Motion.Share(off, 0) == 1,
 local choices = Motion.Choices(true)
 check(#choices == 5 and choices[1][1] == "global" and choices[1][2] == "Use global type" and choices[2][1] == "glide" and #Motion.Choices() == 4,
     "a window's own setting has Use global type first")
+
+-- A region's fade and slide
+do
+    local region = CreateFrame("Frame", nil, UIParent)
+    local fade, slide = Motion.Fade(region), Motion.Slide(region, 0.3)
+    local fading, sliding = region._groups[1], region._groups[2]
+    fade:To(0, 0.2)
+    check(fading.playing and fading.moves[1].duration == 0.2, "a fade is the game's own animation, as long as it is asked to be")
+    fade:To(1)
+    check(not fading.playing and region._alpha == 1, "with no time it is there at once")
+    slide:From(0, -12)
+    check(sliding.playing and sliding.moves[1].y == -12 and sliding.moves[2].y == 12 and sliding.moves[2].duration == 0.3,
+        "a slide shows the region that far off at once and moves it back in its time")
+    sliding.moves[2].progress = 0.25
+    slide:From(0, -8)
+    check(sliding.moves[2].y == 8 + 12 * 0.75, "one still on its way adds what it had left")
+    slide:SetTime(0.6)
+    check(sliding.moves[2].duration == 0.6, "its time can be set anew")
+    slide:Stop()
+    Core.general.animations = false
+    fade:To(0.5, 1)
+    slide:From(0, 20)
+    check(not fading.playing and region._alpha == 0.5 and not sliding.playing, "with Sane UI's animations off nothing moves: it is there at once")
+    Core.general.animations = true
+    region:Hide()
+    fade:To(0.25, 1)
+    check(not fading.playing and region._alpha == 0.25, "nor out of sight")
+end
 
 -- Opening while the mouse rests on it ---------------------------------------------------------------
 local opener, changes = CreateFrame("Frame", nil, UIParent), {}

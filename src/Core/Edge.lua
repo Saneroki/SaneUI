@@ -218,47 +218,24 @@ local function Escape(edge, on)
     Core.Escape(edge, on and Escaped or nil)
 end
 
--- What the window holds: its fade out, and its coming in, at once 10 higher, then down to its place.
--- Two moves at once, as the game's own animations do it: one of no time up, one down.
-local function Moves(content)
-    local out = content:CreateAnimationGroup()
-    local fade = out:CreateAnimation("Alpha")
-    fade:SetDuration(Edge.OUT)
-    fade:SetToAlpha(0)
-    out:SetToFinalAlpha(true)
-    local come = content:CreateAnimationGroup()
-    local up = come:CreateAnimation("Translation")
-    up:SetDuration(0)
-    up:SetOffset(0, Edge.DROP)
-    local down = come:CreateAnimation("Translation")
-    down:SetDuration(Edge.IN)
-    down:SetOffset(0, -Edge.DROP)
-    down:SetSmoothing("OUT")
-    local appear = come:CreateAnimation("Alpha")
-    appear:SetDuration(Edge.IN)
-    appear:SetFromAlpha(0)
-    appear:SetToAlpha(1)
-    appear:SetSmoothing("OUT")
-    come:SetToFinalAlpha(true)
-    return { out = out, fade = fade, come = come }
-end
-
--- coming: true, it comes in; false, it fades out; nil, it is in sight and still. With a motion of no
--- time it is simply in sight.
+-- What the window holds: coming, true, it comes in, from a little above down to its place, as a panel's
+-- intro (Motion.Slide, Motion.Fade); false, it fades out; nil, it is in sight and still. With a motion of
+-- no time it is simply in sight.
 local function Content(edge, coming)
     local content = edge.window.options.content
-    if not content or (coming == nil and not edge.moves) then return end
-    edge.moves = edge.moves or Moves(content)
-    local moves = edge.moves
-    moves.out:Stop()
-    moves.come:Stop()
+    if not content or (coming == nil and not edge.fade) then return end
+    if not edge.fade then
+        edge.fade = Core.Motion.Fade(content)
+        edge.slide = Core.Motion.Slide(content, Edge.IN)
+    end
+    edge.slide:Stop()
     if coming == nil or edge.kind.time <= 0 then
-        content:SetAlpha(1)
+        edge.fade:To(1)
     elseif coming then
-        moves.come:Play()
+        edge.fade:To(1, Edge.IN, 0)
+        edge.slide:From(0, Edge.DROP)
     else
-        moves.fade:SetFromAlpha(content:GetAlpha())
-        moves.out:Play()
+        edge.fade:To(0, Edge.OUT)
     end
 end
 
