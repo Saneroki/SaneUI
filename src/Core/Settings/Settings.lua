@@ -373,9 +373,12 @@ end
 -- through Core.Set.
 local function Switch(page, name, option)
     local kind, Panel = Config.Kind(option), Config.Panel
+    -- The game's controls need a value (a slider fails on none): the default if the module keeps none.
     local function Get()
         local settings = Core.Settings(name)
-        return settings and settings[option.key]
+        local value = settings and settings[option.key]
+        if value == nil then return option.default end
+        return value
     end
     local function Set(value) Core.Set(name, option.key, value) end
     local function Setting(variableKind, default, get, set)
