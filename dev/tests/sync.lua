@@ -196,6 +196,7 @@ check(next(options.taken) == nil, "nothing is read before the settings were writ
 check(Core.pages.Sync == nil and #W.options.pages == 4, "no page of its own: its checkboxes are on the page Profiles")
 SettingsPanel:GetScript("OnShow")(SettingsPanel)
 local canvas, Config = Core.frames.Profiles, Core.Config
+canvas:Show() -- the game shows the page Profiles: it is built then
 local function Control(label)
     for _, control in ipairs(Config.Panel.controls) do if control.label == label then return control end end
 end
