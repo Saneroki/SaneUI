@@ -65,7 +65,7 @@ at most the commit it was on, and the next session goes on from there.
     - a job that errors is dropped and the others go on;
     - a job of the same name is not started twice;
     - the frame is hidden when there is no work.
-- [ ] **1a.5 Packs in the game.**
+- [x] **1a.5 Packs in the game.**
   - `Codec.lua`, and `Data.lua`:
     - packs found by their TOC lines;
     - `Data.Add`, handles and `Get`;

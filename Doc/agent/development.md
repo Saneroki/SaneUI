@@ -45,7 +45,8 @@ WoW's argument-passing `xpcall` is shimmed because stock Lua 5.1 lacks it.
 | `social.lua` | Event decoding, width/wrapping, native input/restoration, filtering, fading, lockdown and fallback, game channels join/leave |
 | `sync.lua` | Sync parts capture/apply, scope and state filters, reload dialog, combat wait, kept CVars, profiles, per-character CVars, the generated page lists |
 | `window.lua` | Dock arithmetic, movement/sizing/skin, expansion/demo |
-| `data.lua` | The data framework in the game: the scheduler's budget, pauses (combat, restrictions), failing jobs, `Fresh`/`Spend` |
+| `data.lua` | The data framework in the game: the scheduler's budget, pauses (combat, restrictions), failing jobs, `Fresh`/`Spend`; the sample packs (compiled by `data/sample.py` into a temporary folder) read back by the codec as the tools meant them, packs found, loaded one a frame after the loading screen and out of combat, missing, switched off or refused (format, game version, not loadable, a file that does not run), `Get` never loading, frozen records, the client's game version, `/sane data` |
+| `data/sample.py` (Python) | Compiles `data/sample/` for `forever` and `forever-beta` into a folder given, with `expected-<game version>.lua` (every version of every entry as Lua tables) beside the packs: what `data.lua` compares with |
 | `data/tools.py` (Python) | The data tools on `data/sample/`: every rule of the check, the import's cases, compiling (same bytes, game versions apart, rows read back by Lua 5.1), CVarLabels up to date |
 
 A green suite does not prove native API availability, rendering, protected calls or taint.

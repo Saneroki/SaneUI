@@ -336,8 +336,9 @@ I.bySlot.hands = "16801"
 end)
 ```
 
-- `Data.Add(format, set, header)` gives nil for a format, set or game version this Core does not take:
-  the file stops there, and the set is not ready (said once).
+- `Data.Add(format, set, header)` gives nil for a format, set or game version this Core does not take (a
+  type the codec does not know, or a set another pack handed over first, too): the file stops there, and
+  the set is not ready (said once).
 - **`R`** holds every entry's newest version; **`H`** the older ones, oldest first, joined by character 28,
   only for entries that have them; **`I[index][value]`** the keys, joined by character 30, sorted.
 - **At most 50,000 statements per `Fill` function:** Lua 5.1 stops at 262,143 constants in one function, and

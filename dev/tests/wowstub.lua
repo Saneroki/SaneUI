@@ -41,6 +41,13 @@ W.caught = nil            -- set to a list to collect the errors of event handle
 W.ms = 0                  -- the client's precise clock in milliseconds (debugprofilestop), moved by the test
 W.fps = 60                -- the frame rate (GetFramerate)
 W.restrictions = {}       -- [Enum.AddOnRestrictionType] = true while the game restricts addons so
+W.addons = {}             -- the addon list: { name, title, notes, loadable, reason, enabled (0 or 2),
+                          -- metadata = { [field] = text } }; W.AddPack puts a compiled pack in it
+W.fileErrors = {}         -- the errors of an addon's files that LoadAddOn ran (the game shows them, goes on)
+W.project = 18            -- the client: WOW_PROJECT_ID (WoW: Forever's is 18, WOW_PROJECT_CAMELOT)
+W.build = 70245           -- its build (GetBuildInfo)
+W.beta = false            -- IsBetaBuild
+W.test = false            -- IsTestBuild and IsPublicTestClient
 
 -- Runs one file of an addon as the game would: with the addon's name and the table only its files see.
 -- file is its path in src ("Abilities/Book/Item"). The addon's ADDON_LOADED is the test's to fire.
@@ -91,6 +98,57 @@ function W.LoadAddon(root, folder, addon)
     local private = {}
     LoadToc(root, addon, folder, addon .. ".toc", private)
     return private
+end
+
+local function Listed(name)
+    for index, addon in ipairs(W.addons) do
+        if addon.name == name then return addon, index end
+    end
+    return nil
+end
+W.Listed = Listed
+
+-- Puts a compiled pack (folder: its whole path, as dev/tools/data compile wrote it) into the addon list,
+-- not loaded, as the game lists a load-on-demand addon: its TOC's ## lines are its metadata, and
+-- LoadAddOn runs the files it lists (an error in one is kept in W.fileErrors and the next one runs, as
+-- in the game), then fires ADDON_LOADED. options: name (another addon name), enabled, loadable, reason,
+-- metadata (fields over the TOC's; false takes one away). Gives the list's entry.
+function W.AddPack(folder, options)
+    options = options or {}
+    local name = options.name or folder:match("([^/]+)/*$")
+    local toc = assert(io.open(folder .. "/" .. folder:match("([^/]+)/*$") .. ".toc", "r"), "no TOC in " .. folder)
+    local metadata, files = {}, {}
+    for line in toc:lines() do
+        local field, value = line:match("^##%s*([^:]+):%s*(.-)%s*$")
+        if field then
+            metadata[field] = value
+        elseif line:match("%S") and not line:match("^%s*#") then
+            files[#files + 1] = line:match("^%s*(.-)%s*$")
+        end
+    end
+    toc:close()
+    for field, value in pairs(options.metadata or {}) do metadata[field] = value or nil end
+    local addon = { name = name, title = metadata.Title or name, notes = metadata.Notes, metadata = metadata,
+                    loadable = options.loadable or false, reason = options.reason or "DEMAND_LOADED",
+                    enabled = options.enabled or 2 }
+    W.addons[#W.addons + 1] = addon
+    W.onDemand[name] = function()
+        for _, file in ipairs(files) do
+            local chunk, problem = loadfile(folder .. "/" .. file:gsub("\\", "/"))
+            local ok = chunk and true
+            if chunk then ok, problem = pcall(chunk, name, {}) end
+            if not ok then W.fileErrors[#W.fileErrors + 1] = name .. "/" .. file .. ": " .. tostring(problem) end
+        end
+        addon.loadable, addon.reason = true, nil
+    end
+    return addon
+end
+
+-- Takes a pack (or any addon) out of the addon list again.
+function W.RemoveAddon(name)
+    local _, index = Listed(name)
+    if index then table.remove(W.addons, index) end
+    W.onDemand[name], W.loaded[name] = nil, nil
 end
 
 -------------------------------------------------------------------------------
@@ -454,8 +512,10 @@ function W.Install(env)
     env.C_AddOns = {
         IsAddOnLoaded = function(name) return W.loaded[name] or false end,
         LoadAddOn = function(name)
-            local read = W.onDemand[name]
-            if not read then return false, "DISABLED" end
+            local read, listed = W.onDemand[name], Listed(name)
+            if listed and listed.enabled == 0 then return false, "DISABLED" end
+            if listed and not listed.loadable and listed.reason ~= "DEMAND_LOADED" then return false, listed.reason end
+            if not read then return false, listed and "CORRUPT" or "MISSING" end
             if not W.loaded[name] then
                 W.loaded[name] = true
                 read()
@@ -463,9 +523,25 @@ function W.Install(env)
             end
             return true
         end,
-        GetAddOnMetadata = function(_, field) return field == "Version" and "1.2.3" or nil end,
+        -- An addon of the list answers from its metadata; any other has Version 1.2.3 (Core's own).
+        GetAddOnMetadata = function(name, field)
+            local listed = Listed(name)
+            if listed then return listed.metadata[field] end
+            return field == "Version" and "1.2.3" or nil
+        end,
         -- 0: switched off for that character, 2: on. An addon the test did not offer is off.
-        GetAddOnEnableState = function(name) return W.onDemand[name] and 2 or 0 end,
+        GetAddOnEnableState = function(name)
+            local listed = Listed(name)
+            if listed then return listed.enabled end
+            return W.onDemand[name] and 2 or 0
+        end,
+        GetNumAddOns = function() return #W.addons end,
+        -- By index or name: name, title, notes, loadable, reason, security, newVersion.
+        GetAddOnInfo = function(which)
+            local listed = type(which) == "number" and W.addons[which] or Listed(which)
+            if not listed then error("no such addon: " .. tostring(which)) end
+            return listed.name, listed.title, listed.notes, listed.loadable, listed.reason, "INSECURE", false
+        end,
     }
 
     -- The game's options: remember what an addon puts there, so a test can "tick" a checkbox.
@@ -590,7 +666,13 @@ function W.Install(env)
     env.UnitGUID = function() return "Player-70-0000ABCD" end
     env.GetRealmName = function() return "Stub Realm" end
     env.GetNormalizedRealmName = function() return "Stub" end
-    env.GetBuildInfo = function() return "1.60.1", "70245" end
+    env.GetBuildInfo = function() return "1.60.1", tostring(W.build or 70245) end
+    -- The client's game version, as Data.lua tells it: the project, then whether a beta or a test client.
+    env.WOW_PROJECT_CAMELOT = 18
+    env.WOW_PROJECT_ID = W.project
+    env.IsBetaBuild = function() return W.beta end
+    env.IsTestBuild = function() return W.test end
+    env.IsPublicTestClient = function() return W.test end
     -- Every frame there is, in the order it was made, as the game's EnumerateFrames walks them.
     env.EnumerateFrames = function(after)
         local found = after == nil

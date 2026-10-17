@@ -19,6 +19,8 @@
 | `Core/Expand.lua` | Opens after the mouse rests `DWELL` 0.2 s on it (or its `corner` spot; `hover = false`: never by the mouse), closes after `LINGER` 0.5 s away; a hidden-when-idle watch frame's OnUpdate looks every `STEP` 0.1 s (IsMouseOver with `MARGIN`, held left button counts); `expand:Stay(on)` keeps it open; size moves by the kind of motion |
 | `Core/Demo.lua` | Lazy `/sane window` demonstration: opens on rest, *Keep open* box, a bar that *Add* fills (wraps to 0 at full) |
 | `Core/Data/Steps.lua` | `Core.Steps`, the data framework's scheduler: jobs as coroutines (`Run(name, fn, ...)`, `Check`, `Fresh`, `Spend`, `Running`, `Jobs`), at most 5 ms and a quarter of a frame (`GetFramerate`) for all, by `debugprofilestop`; nothing in combat or under a restriction (Combat, Encounter, ChallengeMode, PvPMatch, Map; not Chat); a failing job dropped and reported; its frame has an `OnUpdate` only while there is work. The framework: `Doc/guides/data.md` |
+| `Core/Data/Codec.lua` | Makes `Core.Data`; `Data.Codec`: a pack's row into a record (`Decoder(fields, types)`, `Cut`, `Build`, `Versions`): tab between fields, characters 30 and 31 inside one, an empty part no value, a build and a day only a gone version; never raises on a broken row, never runs what it reads |
+| `Core/Data/Data.lua` | `Core.Data`: packs found by their TOC lines (`Find`), the client's game version (`Game`: `WOW_PROJECT_ID`, `IsBetaBuild`, `IsTestBuild`/`IsPublicTestClient`; none told: every pack refused), `Set(name)` handles (`Get`, `Stamp`, `OnStamp`, `State`, `Ready`, `hash`, `build`), `Prepare` (the scheduler's job *data: packs*: after `LOADING_SCREEN_DISABLED`, one pack a frame, out of combat), `Add` (called by a pack's set file), records made on first ask and kept weakly, `frozen`/`Tampered` for the tests; failures said once; `/sane data [show <set> <key>]` |
 | `Core/Settings/Settings.lua` | `Core.Config` (`Config` locally): put up `Core.pages` at login (`PutUpPages`, `Core.Tabbed`), `Fill` them once on options `OnShow`/`Open` with Blizzard initializers; `/sane options`; compartment func |
 | `Core/Settings/Panel.lua` | Canvas parts: header, MinimalTab tabs, scroll area, titled backdrop boxes, checks, sliders, dropdowns, colour swatches, buttons; `Panel.Refresh` |
 | `Core/Settings/Tabbed.lua` | `Config.BuildTabbed`: a module's canvas page in tabs (`option.tab`), drawn from the option descriptions with Panel controls (a box per `header`, `inline` numbers on their parent's line) |
@@ -29,7 +31,7 @@
 | `Core/Settings/Banner.xml` | Banner row template; its mixin (in Settings.lua) hides the page title while shown |
 | `Core/Sync/*` | `Core.Sync`: see [sync.md](sync.md) |
 
-Core TOC order: Core → Motion → Saved → Profiles → Dock → EditMode → Fuzzy → Shape → Skin → Edge → Window → Expand → Bar → Demo → Data/ (Steps) → Sync/ (Sync,
+Core TOC order: Core → Motion → Saved → Profiles → Dock → EditMode → Fuzzy → Shape → Skin → Edge → Window → Expand → Bar → Demo → Data/ (Steps, Codec, Data) → Sync/ (Sync,
 Data/Pages, Layout, Chat, Game) → Settings/ (Settings, Panel, Tabbed, Profiles, Synced, About, Data/CVarLabels, CVars, XML).
 Settings and Sync are no modules (no `SaneUI.Settings`/`SaneUI.Sync`, no TOC of their own); they hook Core's
 events themselves, after Saved's and Profiles' handlers (TOC order).

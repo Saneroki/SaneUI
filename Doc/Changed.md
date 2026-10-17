@@ -7,6 +7,25 @@ The Home page, the marks, Settings on demand, the Tooltips module and the Social
 Tests: lint, 195 checks (Core, with its options), 280 checks (Spellbook), 328 checks (Tooltips), 332 checks (Social), 62 checks (Sync), 234 checks (windows).
 
 ### Core's data framework
+- **1a.5 Packs in the game.** `src/Core/Data/Codec.lua` (a pack's row into a record, every type the
+  compiler writes; a broken row read as far as it goes, never an error) and `src/Core/Data/Data.lua`
+  (`Core.Data`), both in `SaneUI.toc` after `Steps.lua`: packs found by their TOC lines; the client's game
+  version told by `WOW_PROJECT_ID`, `IsBetaBuild` and `IsTestBuild` (none told: every pack refused); a pack
+  of another format or game version refused, one switched off left off; `Data.Set` handles with `Get`
+  (never loads; the newest version the client's build has reached), `Stamp`, `OnStamp`, `State`, `Ready`,
+  `hash` and `build`; `Prepare` as a job of the scheduler, after the loading screen, one pack a frame, out
+  of combat; `Data.Add` for the set files; records made on first ask and kept weakly, frozen in the tests;
+  every failure said once (missing and off quietly, the rest in chat). `/sane data` names the game version
+  with what told it, the packs with their state and their sets' hashes, and the jobs; `/sane data show <set>
+  <key>` prints an entry. `wowstub.lua` gains the addon list (`GetNumAddOns`, `GetAddOnInfo`, metadata and
+  enable state per addon, `W.AddPack` and `LoadAddOn` of a compiled pack) and the client's game version.
+  New `dev/tests/data/sample.py` compiles the sample master for the Lua test; `dev/tests/data.lua` 114
+  checks (the codec reads back every row of both game versions as the tools meant it, the cases of loading
+  and refusal, frozen records, `/sane data`).
+  - *In the game:* `/sane data` names the game version (`forever-beta` on the beta: the check of what
+    `IsBetaBuild` and `IsTestBuild` answer there) and lists *Data: Game*, not loaded; `/sane data show
+    CVarLabels autolootdefault` asks for the pack, and the same again a moment later prints its entry
+    (`label = AUTO_LOOT_DEFAULT_TEXT, ...`).
 - **1a.4 The scheduler** `src/Core/Data/Steps.lua` (in `SaneUI.toc` after `Demo.lua`), `Core.Steps`: every
   long piece of the framework's work a job, a coroutine (`Run`, `Check`, `Fresh`, `Spend`, `Running`,
   `Jobs`); at most 5 ms a frame for all jobs and never more than a quarter of a frame at the frame rate, by
