@@ -83,7 +83,8 @@ the rest.
 | `SaneUI_Data_Items` | Items (with the game's stats and effects), ItemSets | Tooltips, Economy, later the character sheet | first item looked at |
 | `SaneUI_Data_Quests` | Quests (name, levels, requirements, giver and taker, objectives and stages, chain, breadcrumbs, rewards; givers, takers, drops, starters and chains as indexes; *Quests*) | Tooltips, Navigation | soon after login |
 | `SaneUI_Data_World` | NPCs (stats, abilities, buffs, services: *Creatures*), CreatureSpells, Objects, Zones, Travel, Places, Drops (counts: *Drop rates and gathering*) | Tooltips, Navigation | soon after login |
-| `SaneUI_Data_Spawns` | Spawns (creatures, objects, rares, treasures, herbs and ore), QuestAreas (*Quest areas*), PatrolPaths (the NPCs' paths, Saneroki 2026-10-16) | Navigation | first map opened |
+| `SaneUI_Data_Spawns` | Spawns (what a map shows: NPCs with a service, quest givers and objectives, rares, treasures, objects, herbs and ore), QuestAreas (*Quest areas*), PatrolPaths (the NPCs' paths, Saneroki 2026-10-16) | Navigation | first map opened; with Navigation on, soon after login (the minimap shows from login), so it stays lean |
+| `SaneUI_Data_CreatureSpawns` | CreatureSpawns (every other creature's spawn points and areas; Saneroki, decision 18) | Navigation, a creature's tooltip | first asked for: a creature's spawns, its area on the map |
 | `SaneUI_Data_Routes` | Walking (the walking data for Navigation's routes, made by our tool, its size measured once made; Saneroki 2026-10-16: route data is on demand and Core's) | Navigation | first route asked for |
 | `SaneUI_Data_Guides` | Guides (the leveling guides, Saneroki 2026-10-16: per guide its side, levels and the guide after it; per step its places, quests, NPCs, creatures, items, checks and for whom; `Doc/ideas/Navigation.md`, *Leveling guide*) | Navigation | first guide shown |
 | `SaneUI_Data_Spells` | Spells (the players' spells and abilities, every rank), Auras (buffs that are no player spell: *Creatures*), Trainers, QuestSpells, WeaponSkills, SkillLines, Professions | Abilities, Tooltips, Economy's trainer window | Abilities' login |
@@ -93,6 +94,10 @@ the rest.
 | `SaneUI_Data_Characters` | No shipped data: the characters' own data (*Characters*) | Tooltips (counts on alts), Economy, later bags and a character sheet | soon after every login |
 
 - A set's name is unique across packs: a module asks for `"Items"`, never for a pack.
+- Every set here has its schema since step 1a.7 (`assets/data/<Set>/schema.toml`; the guide lists them with
+  their keys, *The sets*). Spawns and Drops, whose things have IDs that overlap, are keyed by text
+  (`npc:<ID>`, `object:<ID>`). Still open for prompt 2: a mailbox is a kind of both *Objects* and *Places*
+  (one of them is to give it up), and Navigation's *Tiles* has no pack here yet.
 - Packs are Core's own addons, not modules: no settings page, only their data and the code that reads it
   (Saneroki, decision 24: `Quests.lua` comes with the Quests pack, `Scan.lua` with Market, ...), `## Dependencies:
   SaneUI`, `## Group: SaneUI`, `## LoadOnDemand: 1`. In the addon list they stand under Sane UI, titled
@@ -243,8 +248,11 @@ and what players make is kept per auction house.
 
 ### Files
 
+The master is in `assets/data/` (Saneroki, decision 3): originals that a tool turns into the game's files,
+as `assets/` holds the art. The engine that reads the packs stays in `src/Core/Data/`.
+
 ```
-src/Core/Data/
+assets/data/
   builds.toml          the game's builds: game version, patch and date
   sources.toml         the sources: number, kind, the game version it describes, a description
   Items/
@@ -264,7 +272,7 @@ src/Core/Data/
   fixes, so taking in a source again never fights a hand fix. The check warns when the game has a newer
   version than a fix (the game may have fixed it itself). A set that no tool feeds (a short hand-made list)
   is written by hand directly, with source `hand`.
-- The folder is not built into the game: `dev/build` leaves `*.jsonl` and `*.toml` out of `BUILD/SaneUI`.
+- The folder is not built into the game: it lies outside `src/`, so no addon folder takes it in.
 
 ### Schema
 
@@ -355,8 +363,9 @@ written only into its own game version's files (*Game versions kept apart*).
   are unique per build; versions in build order; every `ref` and every fix points at an entry that exists;
   no field outside the schema; every source known.
 - **Compile** (`dev/build`): the master into `BUILD/SaneUI_Data_*/` (TOC, Lua, licence). The same master
-  always gives the same bytes. The packs land in `BUILD/` like every addon folder (committed with it, as
-  `BUILD/` is today); changes are made only in the master, never in a pack.
+  always gives the same bytes. The packs land in `BUILD/` like every addon folder and, like it, are not
+  committed (Saneroki, decision 4): `dev/build` makes them anew from the master at every build. Changes are
+  made only in the master, never in a pack.
 - **Budgets** the check holds: each pack's size; every row decodes; a sample decodes in time.
 - **Lua's constant limit is per function, not per file:** Lua 5.1 stops at 262,143 constants in one
   function, and a file whose main function is over it does not load at all. The compiler therefore puts
@@ -364,8 +373,8 @@ written only into its own game version's files (*Game versions kept apart*).
   the limit. Measured with Lua 5.1: 300,000 rows in one function do not load (*constant table overflow*);
   cut into six functions, the same 7.6 MB load in 131 ms.
 - **The same master gives the same bytes:** compiling is a pure function of the master: no date, no clock,
-  entries sorted by key, one row per line. An unchanged set never shows in a commit, and a changed one
-  shows only its changed lines, which keeps the packs in git small (decision 4).
+  entries sorted by key, one row per line. An unchanged set gives an unchanged pack, so a hash says exactly
+  when a set changed, and Sane Sync downloads only the packs that did (`Doc/ideas/SaneSync.md`).
 - **Hashes, not dates:** every set carries the hash of its master (the first 8 hex digits of its SHA-256)
   and the newest build it knows. A module that keeps something worked out from a set (Tooltips' list of
   what an NPC wants) knows by the hash when it is stale.
@@ -696,7 +705,7 @@ Grouped by the moment the game lets Core read it:
 
 - **Its own saved variable,** `SaneUIData_Characters`, declared by the pack `SaneUI_Data_Characters`, which
   has no shipped data and is loaded soon after every login. Keyed by Core's character key (`Core.charKey`,
-  the GUID: Forever names can collide).
+  the GUID: a name is not kept as the key; two characters can share a first name).
 - **Core reads it, not a module:** many modules show it (Tooltips' *20 on your alts*, Economy's bank and
   auction windows, later bags and a character sheet) and none owns it, so the reading lives with the
   framework (`Characters.lua`). It costs nothing a player would notice:
@@ -803,6 +812,9 @@ members loot 2,000 wolves and 1,000 of them had meat, the chance is 50 %.
   considerably (enough loots on both sides, *proposal* 100 each, and a clear difference: a two-proportion
   test with |z| above 3 and at least a fifth up or down) is a discovery: *Wolf Meat from Prowlers: 50 % →
   30 % in 1.60.2*.
+- **After such a change the whole history starts at that build** (Saneroki, decision 13): for that creature
+  and item, *the whole history* means the periods from the build of the change on, so the chance shown is
+  the new one at once and not a blend with the old. The older periods stay kept and can be shown alone.
 - **Merged to stay small:** the last three periods stay apart for comparing; older ones are merged into one
   *earlier* count per creature and item. An item seen very rarely (*proposal* under 3 drops in all) is kept
   but given no chance until there is more.
@@ -1108,6 +1120,12 @@ Saneroki (2026-10-16): players who use Sane UI share general game knowledge, so 
 stays up to date: auction prices, discoveries (a new quest with its objectives, rewards, giver and place; a
 changed item) and drop and gathering counts. A switch lets anybody opt out.
 
+**With the guild, the party and the raid** (Saneroki, decision 9). The pages below speak of *the guild*
+where the design was first written for it; each such rule holds for the party and the raid the same way,
+each a channel of its own. Still to work out when sharing is built (step 1f): a member in both the guild and
+a group hears a transfer once; a scan goes once per auction house and 15 minutes over all channels together;
+a group of strangers (a group found by the game's finder) weighs less than the guild (*Poisoning*).
+
 ### What the game offers
 
 - `C_ChatInfo.SendAddonMessage(prefix, text, chatType, target)` sends hidden messages to the addons of other
@@ -1238,9 +1256,12 @@ message is treated as possibly hostile, whichever addon it seems to come from.
 
 **What works, in layers:**
 
-1. **Only the guild.** Shared data is taken only from the guild channel. The server puts the sender's name on
-   every message and the sender cannot change it: an attacker has to be a member of the guild, and is then
-   one known name.
+1. **Only the guild, the party and the raid** (decision 9). Shared data is taken only from those channels.
+   The server puts the sender's name on every message and the sender cannot change it: an attacker has to
+   be a member of the guild or the group, and is then one known name: its whole name, first name and
+   surname together on Forever (the guide, *Players*), since players can share either one. A party or raid can hold strangers, so
+   for the rules of several senders (5) a sender known only from a group counts less than a guild member (how
+   much: decided in step 1f, tuned in the game).
 2. **Strict shape.** Strict reading; sizes capped before and after unpacking (the client's unpacking has no
    limit of its own, so the packed block is capped first, *proposal* 4 KB, and zlib cannot make more than a
    few MB of that); every fact checked against its set's schema (kinds, ranges, references). Anything off
@@ -1265,8 +1286,8 @@ message is treated as possibly hostile, whichever addon it seems to come from.
    Saneroki's example: a member sends *these gloves have new stats*. The receiver's game is asked for the
    gloves. The same stats: accepted. Other stats: rejected, the sender gets a strike, nothing changes.
 5. **What the game cannot check needs several senders.** Where an NPC stands, a vendor's goods and prices, a
-   quest's giver and rewards, herb places: accepted only when **3 different members** (*proposal*) sent the
-   same, and nothing the player saw says otherwise. One sender alone never changes anything. The player's
+   quest's giver and rewards, herb places: accepted only when **3 different members** (*proposal*, three
+   different whole names) sent the same, and nothing the player saw says otherwise. One sender alone never changes anything. The player's
    own observation always wins.
 6. **Counts are summed robustly.** Each sender's counts are kept apart per build period. They must be
    possible (loots per hour within what one player can do; never more drops than loots allow). A sender
@@ -1277,7 +1298,7 @@ message is treated as possibly hostile, whichever addon it seems to come from.
    item the median of the senders' prices; a price more than five times off the item's own history
    (*proposal*) needs a second sender.
 8. **Strikes.** Three strikes (*proposal*) and a sender is ignored for a week and its waiting data dropped;
-   kept by name, on this computer only.
+   kept by the sender's whole name, on this computer only.
 9. **Never into the master unchecked.** The harvest takes accepted data only, with how it was accepted (by
    the game, or by how many senders); waiting data never.
 10. **Undo.** A button *Forget shared data* (*The switches*) removes everything accepted from others and all
@@ -1475,21 +1496,23 @@ src/Core/Data/            the framework, in SaneUI.toc (decision 24: in the end 
   Areas.lua               the cells of an area: quests, spawns, herbs; merging, the point test
   Map.lua                 places on the map: spawns, services, the list per map, Near; Data.Map
   Found.lua               the discoveries, and the chat messages the switches ask for
-  Share.lua               sharing with the guild: scans, bundles, the inbox and the queue, the limits
+  Share.lua               sharing with the guild, party and raid: scans, bundles, the inbox and the queue, the limits
   Trust.lua               against poisoning: shape, quarantine, the game's check, several senders, strikes
+  Packs/<Pack>/           a pack's own code (decision 24), copied into its pack by the compiler, not in SaneUI.toc
   README.md
-  builds.toml  sources.toml  <Set>/   the master (*The master*), not built into the game
+assets/data/              the master (*The master*, decision 3): builds.toml, sources.toml, packs.toml, <Set>/
 dev/tools/data            the command
 dev/data/                 its Python: schema, check, import, compile, harvest
 dev/tests/data.lua        runtime tests;  dev/tests/data/  sample masters and the tools' tests
-BUILD/SaneUI_Data_<Pack>/ the packs, made by dev/build (TOC, Lua, licence)
+BUILD/SaneUI_Data_<Pack>/ the packs, made by dev/build (TOC, Lua, licence), not committed (decision 4)
 ```
 
 Where the code loads (Saneroki, decision 24): Core holds the engine (`Data`, `Codec`, `Steps`, `Live`,
 `Found`, `Characters`, the watchers' marks). The domain code ships with its pack: `Quests.lua` with
 Quests, `Areas.lua` and `Map.lua` with Spawns, `Drops.lua` with World, `Scan.lua` with Market. Sharing
 (`Share.lua`, `Trust.lua`) is a load-on-demand part of its own, loaded only while *Share data with my
-guild* is on. The sources stay together in `src/Core/Data/`; the compiler copies each file into its pack.
+guild* is on. The sources stay together in `src/Core/Data/`: a pack's own code in `Packs/<Pack>/`, which
+the compiler copies into its pack after the set files, and which the lint knows is no file of Core's TOC.
 The API stays the same (`Data.Set`, `Data.Map`, ...).
 
 ## What moves over
@@ -1508,146 +1531,20 @@ module then reads through `Core.Data`, and its old file is deleted in the same c
 
 ## Contracts
 
-The exact shapes a building session keeps to, so that no two sessions invent their own (*Review*). Step 1a
-carries them into the guide `Doc/guides/data.md`; from then on the guide is the reference, and this
-section only says why.
+The exact shapes a building session keeps to are in the guide [Doc/guides/data.md](../guides/data.md),
+since step 1a.1: a line of the master, the schema, staging and the import's cases, the check, a pack's TOC
+and Lua file, a row, the answers in the game, the scheduler's jobs, the saved variables, the messages and the
+clocks. The guide is the reference; where this page and the guide differ, the guide wins. Why they are so is
+in this page's own sections:
 
-### A line of the master
-
-```json
-{"key":16801,"since":0,"src":[3],"name":"Arcanist Gloves","slot":"hands","armor":40,"stats":{"int":10,"spi":5},"effect":"..."}
-{"key":16801,"since":65100,"day":"2026-11-03","src":["game"],"armor":36,"stats":{"int":8,"spi":5},"effect":null}
-```
-
-- Keys in this order: `key`, `since`, `day`, `src`, `gone`, `replaces`, then the fields in schema order.
-  The tools write every line so, sorted by key, build and day; the check refuses another order in a file
-  the tools write (`fixes.jsonl`, written by people, only has to parse and fit).
-- `day` is the server's day of the version (*Series*), left out where it is not known.
-- A later version holds only the fields that changed, each in full; `null` clears a field.
-- `key` is a whole number or a text, as the schema's `key` says.
-
-### A pack
-
-The TOC, written by the build (`Interface` and `Version` are Core's):
-
-```
-## Interface: 16001
-## Title: Data: Items
-## Version: 0.3.0
-## Dependencies: SaneUI
-## Group: SaneUI
-## LoadOnDemand: 1
-## SavedVariables: SaneUIData_Items
-## X-SaneUI-Sets: Items, ItemSets
-## X-SaneUI-Format: 1
-## X-SaneUI-Game: forever
-## X-License: MIT
-
-Items.lua
-ItemSets.lua
-```
-
-A set's file, made by the compiler and never edited (`\030`, `\031` are how Lua writes the characters 30
-and 31):
-
-```lua
-local S = SaneUI.Core.Data.Add(1, "Items", {
-    game = "forever", hash = "3f9a2c1e", build = 65100,
-    fields = { "name", "quality", "slot", "armor", "stats", "sell" },
-    types = { "text", "int", "enum", "int", "map int", "money" },
-})
-if not S then return end
-local R, H, I = S.rows, S.history, S.index
-;(function()
-R[16801] = "65100\t20760\tArcanist Gloves\t3\thands\t36\tint\0318\030spi\0315\t1550"
-R[16802] = "0\t\tArcanist Boots\t3\tfeet\t..."
-end)()
-H[16801] = "0\t\tArcanist Gloves\t3\thands\t40\tint\03110\030spi\0315\t1550"
-I.bySlot = { hands = "16801\03016802", feet = "16802" }
-```
-
-- `Data.Add(format, set, header)` gives nil for a format this Core does not read: the file stops there, and
-  the set is *not ready* (said once).
-- **A row:** its build, its day (days since 1970; empty where not known), then the fields. A tab between
-  fields; character 30 between the items of a list or map; character 31 between an item's parts (a map's
-  key and value, a point's map, x and y, an objective's kind, what, count and text). Deeper nesting is
-  refused by the check: such a field becomes two fields or a set of its own. An empty part is no value. A
-  row of only a build and a day is a *gone* version.
-- **Values:** numbers as Lua writes them (`%.14g`); money in copper; `bool` `1` or empty; `enum` its word;
-  `flags` a whole number; `point` map, x and y, x and y in percent of the map with one decimal; `ref` the
-  other entry's key.
-- `R` holds every entry's newest version; `H` the older ones, oldest first, cut by character 28, only for
-  entries that have them. On a client older than a row's build, `Get` takes the newest version in `H` the
-  client has reached, or nil.
-- `I[index][value]` holds keys cut by character 30. The compiler writes its own indexes the same way (the
-  other side of `replaces`, a quest's breadcrumbs, a chain's order).
-- At most 50,000 rows per function (*Building*). A pack's domain code (decision 24) comes after its set
-  files in the TOC.
-
-### Answers in the game
-
-| Call | Gives |
-| --- | --- |
-| `Get(key)` | A record: field = value; a list is an array, a map a table, a point `{ map, x, y }`; also `since` and `day`. Shared and read-only, kept while held |
-| `Get(key, field)` | One value |
-| `At(key, build)` | The record as it was at that build, or nil |
-| `History(key)` | An array of records, oldest first, each with `since`, `day`, `patch` (from `builds.toml`) and `gone` |
-| `Versions(key, n)` | The last n of `History`, oldest first |
-| `Changes(key)` | An array, oldest first, of `{ since, day, patch, field, from, to }` |
-| `Keys(index, value)` | An array of keys, shared and read-only; an empty one when none |
-| `Each(fn)` | A job (*Performance*): `fn(key, record)` for every entry, out of combat, within the budget |
-| `Stamp()` | A number that moves when the set loads and when learned or accepted data changes it |
-
-- **nil means *not known*:** no such set, not loaded, no such entry, gone. No read ever raises an error.
-- Records and arrays are shared: the tests hand out frozen ones, so a module that writes into one fails its
-  tests.
-
-### Saved variables
-
-- **Keyed by game version first:** `SaneUIDB.data["forever"]`, `SaneUIData_Items["forever-beta"]`. Everything
-  below is inside the client's own game version's key; the other keys are left as they are (*Game versions
-  kept apart*).
-- **Core's** (`SaneUIDB.data`, decision 19): `format`, the inbox (`[set][key] = row`, *proposal* at most
-  2,000), the last build checked per set, the size each pack saved last (*A lost file*), the crawl's place
-  per kind. Small and bounded.
-- **A pack's** (`SaneUIData_<Pack>`): `format`; `learned` (`[set][key] = row`); `broken` (parts of a wrong
-  shape, kept for the harvest); and what the pack has: the Market pack its series per auction house
-  (`houses["eu/1234/horde"]`, *Realms and regions*), the World pack its drop counts, the Characters pack
-  the characters. Sharing's own part keeps its waiting facts, the facts
-  heard and the strikes in its own saved variable.
-- **Packed strings, never tables of tables,** for anything that grows (rows, a series' months, a bag), and a
-  budget of 100,000 values per saved variable (*Series*).
-- Every part is checked on load (the format number with upgrade steps; a part of a wrong shape goes to
-  `broken`, the rest works).
-
-### Messages
-
-- Prefix `SaneUI`, the guild only. A message: its kind (a letter), the protocol number, its game version's
-  short sign (`f`, `fp`, `fb`), then its fields, all cut by tabs (`H1\tf\t...`). A kind, number or game
-  version not known, or not the receiver's, is ignored. At most 255 bytes.
-- **A block** (a scan's 250 items, or a bundle): its rows in the codec's format; packed
-  (`CompressString` with *Zlib*, whose checksum catches damage); made text (`EncodeBase64`); cut into
-  numbered parts (`D1\t<transfer>\t<block>\t<part>\t<parts>\t<text>`). The block's first part also says its
-  unpacked size, checked after unpacking. A packed block is at most 4 KB (*Poisoning*).
-- **A scan's messages** (*have*, its blocks) name its auction house (`eu/1234/horde`); a receiver takes only
-  its own house's (*Realms and regions*).
-- Received text is read, never run: no `loadstring` anywhere in the framework.
-
-### Clocks
-
-- **Build:** the number `GetBuildInfo` gives, as a number. Builds are compared only within one game version.
-- **Game version:** told once at load (*Game versions kept apart*), as `forever`, `forever-ptr` or
-  `forever-beta`.
-- **Day:** `floor(GetServerTime() / 86400)`. **Time:** `GetServerTime()`. Never `time()` for anything kept or
-  shared (*Series*).
-- In the master a day is a date (`2026-11-03`); in packs, saved files and messages it is its number.
-
-### Jobs
-
-- A job is a function run as a coroutine by `Steps.lua`. Between pieces of work it asks the scheduler
-  whether time is left, and yields only when the frame's budget is spent (*Performance*).
-- It never yields inside `pcall` or `Core.Safe`; `coroutine.resume` is its guard.
-- A job is named, so `/sane data` can show what runs, and a job of the same name is not started twice.
+- one string per version, cut by characters no game text holds (*How a pack is stored*);
+- every version whole in the pack, history on demand (*How a pack is stored*);
+- the same master, the same bytes; hashes, not dates; at most 50,000 rows a function (*Building*);
+- nil means not known, and `Get` never loads a pack (*Loading*, decision 20);
+- everything keyed by game version first (*Game versions kept apart*);
+- packed strings and a budget of values in saved files (*Saved variables*, *Series*);
+- jobs as coroutines that never yield inside `pcall` (*Performance*);
+- the server's day for everything kept or shared (*Series*).
 
 ## Three prompts (Saneroki)
 
@@ -1764,7 +1661,8 @@ code in `references/` and against Core.
   messages by the sender's name, with the realm (`Ambiguate`).
 - **Data twice in git:** the master and the packs are both committed (decision 4), and the walking data
   alone may be several megabytes (to measure once our tool has made it). The repository is 34 MB today, so
-  weigh decision 4 with that.
+  weigh decision 4 with that. *Settled* (Saneroki, 2026-10-17): `BUILD/` is not committed (`.gitignore`), so
+  neither are the packs; only the master is.
 
 ### Second pass (2026-10-16)
 
@@ -1829,46 +1727,60 @@ The gaps were decisions 19 to 26 below, all answered as proposed (Saneroki), and
 
 ## Decide before prompt 1
 
-What is not answered by then is built as proposed.
+What is not answered by then is built as proposed. Every decision below is answered now (Saneroki, the
+open ones on 2026-10-17).
 
-1. **Packs as load-on-demand addons** in the addon list (under Sane UI, *Data: Items*), or all data inside
-   Core? Inside Core is simpler, but all of it is always in memory and every login slower as it grows.
-   *Proposal:* packs.
-2. **Saved variables declared by the packs** for live data and characters, beside `SaneUIDB`? *Proposal:*
-   yes.
-3. **The master in `src/Core/Data/`** (part of Core, as Saneroki said), or in `assets/data/` (originals that
-   tools turn into game files, like the art)? *Proposal:* `src/Core/Data/`.
-4. **Packs in git:** `BUILD/` is committed today, so each commit would hold the master and the packs made
-   from it (the data twice). *Proposal:* commit them like the rest of `BUILD/`, so a checkout plays without
-   Python.
+1. Answered (Saneroki, 2026-10-17): as proposed, packs. **Packs as load-on-demand addons** in the addon list
+   (under Sane UI, *Data: Items*), or all data inside Core? Inside Core is simpler, but all of it is always
+   in memory and every login slower as it grows. *Proposal:* packs.
+2. Answered (Saneroki, 2026-10-17): as proposed, yes. **Saved variables declared by the packs** for live data
+   and characters, beside `SaneUIDB`? *Proposal:* yes.
+3. Answered (Saneroki, 2026-10-17): **`assets/data/`**, not as proposed. **The master in `src/Core/Data/`**
+   (part of Core, as Saneroki said), or in `assets/data/` (originals that tools turn into game files, like the
+   art)? *Proposal:* `src/Core/Data/`. The engine that reads the packs stays in `src/Core/Data/`.
+4. Answered (Saneroki, 2026-10-17): **the packs are not committed.** The question's ground had moved:
+   `BUILD/` is not committed any more (`.gitignore`), so the packs are made by `dev/build` at every build,
+   as every addon folder is. **Packs in git:** `BUILD/` is committed today, so each commit would hold the
+   master and the packs made from it (the data twice). *Proposal:* commit them like the rest of `BUILD/`, so
+   a checkout plays without Python.
 5. ~~History in the game~~ Answered (Saneroki): the current version by default, history on demand.
-6. **The auction history archived in the repository for ever** and shipped back in the Market pack? It is
-   Saneroki's own scans, for own use; several megabytes a year, to measure. *Proposal:* yes.
+6. Answered (Saneroki, 2026-10-17): as proposed, yes. **The auction history archived in the repository for
+   ever** and shipped back in the Market pack? It is Saneroki's own scans, for own use; several megabytes a
+   year, to measure. *Proposal:* yes.
 7. ~~Names in English only~~ Answered (Saneroki): English only (decision 22).
 8. ~~Who learns~~ Answered (Saneroki): the database; modules only read.
-9. **Sharing beyond the guild:** also with the party or raid, or with friends by whisper? *Proposal:* the
-   guild first; a guild is a group of people who know each other, so trust is simplest there.
+9. Answered (Saneroki, 2026-10-17): **the guild, the party and the raid**, not as proposed; no whispers.
+   *Sharing in the game* says what follows from it. **Sharing beyond the guild:** also with the party or
+   raid, or with friends by whisper? *Proposal:* the guild first; a guild is a group of people who know each
+   other, so trust is simplest there.
 10. ~~Facts from the guild used at once~~ Answered by *Poisoning*: only once accepted (checked by the game,
     or sent by three members).
 11. ~~Chat messages~~ Answered (Saneroki): the database's, behind two switches, off by default.
-12. **The numbers of the limits and the defences** (*Limits*, *Poisoning*, *Drop rates and gathering*):
-    15 minutes; the guild busy above 4 messages a second; three senders; three strikes; a quarter
-    per sender; five times off; 100 loots and |z| above 3 for a changed drop chance. To measure in the game
-    with a real guild before they are final.
-13. **After a drop chance changed with a build:** the whole history by default (Saneroki) mixes the old chance
-    into the new one for a long time. *Proposal:* where a change was found, the whole history starts at that
-    build.
+12. Answered (Saneroki, 2026-10-17): as proposed, start values, each a named constant, tuned in the game
+    (with the party and the raid too) before they are final. **The numbers of the limits and the defences**
+    (*Limits*, *Poisoning*, *Drop rates and gathering*): 15 minutes; the guild busy above 4 messages a
+    second; three senders; three strikes; a quarter per sender; five times off; 100 loots and |z| above 3
+    for a changed drop chance. To measure in the game with a real guild before they are final.
+13. Answered (Saneroki, 2026-10-17): as proposed. **After a drop chance changed with a build:** the whole
+    history by default (Saneroki) mixes the old chance into the new one for a long time. *Proposal:* where a
+    change was found, the whole history starts at that build.
 14. ~~Load client data on load~~ Answered (Saneroki): on by default; switched off, the check runs after the
     loading screen in the background. The frame budget: 5 ms out of combat, nothing in combat (Saneroki).
-15. **The crawl's pace** for what the server must send (items): 10 a second (*proposal*), or slower? And the
-    patch check's step during the loading screen: at most 250 ms (*proposal*)?
+15. Answered (Saneroki, 2026-10-17): as proposed, 10 a second and 250 ms, both start values to measure in
+    the game. **The crawl's pace** for what the server must send (items): 10 a second (*proposal*), or
+    slower? And the patch check's step during the loading screen: at most 250 ms (*proposal*)?
 16. ~~If Sane UI is ever handed out~~ Answered (CLAUDE.md, *Licensing*): not a question for this plan.
-17. **Quest areas as cells** of 1 % of the map (*proposal*), or as outlines (smoother to draw, but hard to
-    merge and to test a point against)? And the margin around spawn points: 3 % (*proposal*)?
-18. **Spawn points of every creature** our data has, or only of those a map shows (rares, NPCs with a
-    service, quest objectives, herbs, ore, chests)? Every creature can be several megabytes. *Proposal:*
-    every creature, in the pack Spawns (it loads with the first map), measured in prompt 2 and split by
-    continent if it is too big.
+17. Answered (Saneroki, 2026-10-17): as proposed, cells and 3 %. **Quest areas as cells** of 1 % of the map
+    (*proposal*), or as outlines (smoother to draw, but hard to merge and to test a point against)? And the
+    margin around spawn points: 3 % (*proposal*)?
+18. Answered (Saneroki, 2026-10-17): **every creature, in a pack of its own** (Navigation's proposal, its
+    open question 11): *Spawns* holds what a map shows and stays lean, as it loads soon after every login
+    with Navigation on; every other creature's spawn points are the set *CreatureSpawns* in the pack
+    `SaneUI_Data_CreatureSpawns`, loaded when asked for, split by continent if measuring says so. **Spawn
+    points of every creature** our data has, or only of those a map shows (rares, NPCs with a service, quest
+    objectives, herbs, ore, chests)? Every creature can be several megabytes. *Proposal:* every creature, in
+    the pack Spawns (it loads with the first map), measured in prompt 2 and split by continent if it is too
+    big.
 19. Answered (Saneroki, 2026-10-16): as proposed. **Where learned data waits while its pack is not loaded** (*Review*). A pack's saved variable exists
     only once the pack is loaded, and whatever Core puts into that global before is overwritten when it
     loads. Yet the watchers fire at any time (a vendor, a tooltip), and the patch check and the discoveries
@@ -1927,7 +1839,9 @@ What is not answered by then is built as proposed.
 
     Each step lists the session's checks (tests, build) apart from Saneroki's checks in the game.
 
-27. **Which game version the data gathered so far counts for** (*Game versions kept apart*). Each staging
+27. Answered (Saneroki, 2026-10-17): as proposed, the beta's batches are Forever live's base (`since` 0),
+    the rest of the beta's own data stays the beta's.
+    **Which game version the data gathered so far counts for** (*Game versions kept apart*). Each staging
     batch says in `sources.toml` which game version it describes. What our tools have gathered so far was
     seen on Forever's beta. Taken strictly, it is the beta's, and Forever live would start with no quests,
     NPCs or places. *Proposal:*

@@ -1,0 +1,33 @@
+set = "Items"
+key = "int"              # the game's item ID
+pack = "Items"
+learn = true             # the game shows items in play: tooltips, bags, the crawl
+about = "Every item players can have, as the game says it, with its history: what it is, its stats and effects, its set."
+
+[fields]
+name      = { type = "text" }                  # in English (decisions 7 and 22)
+quality   = { type = "int", min = 0, max = 8 } # Enum.ItemQuality
+itemLevel = { type = "int", min = 0 }
+minLevel  = { type = "int", min = 0 }          # the level a character needs to use it
+class     = { type = "int", min = 0 }          # the game's item class and subclass (Enum.ItemClass)
+subclass  = { type = "int", min = 0 }
+slot      = { type = "text" }                  # the game's equip location: INVTYPE_HAND
+stack     = { type = "int", min = 1 }
+bind      = { type = "int", min = 0 }          # the game's bind type: on pickup, on equip, on use, quest
+icon      = { type = "int", min = 0 }          # the texture's file ID
+sell      = { type = "money" }
+armor     = { type = "int", min = 0 }
+damageMin = { type = "int", min = 0 }          # a weapon's damage per hit, and its speed in seconds
+damageMax = { type = "int", min = 0 }
+speed     = { type = "number", min = 0 }
+stats     = { type = "map", keys = "text", of = "int" }  # the game's stat names (ITEM_MOD_INTELLECT_SHORT) to their values
+effects   = { type = "list", of = "tuple", parts = [
+    { name = "trigger", type = "enum", values = ["use", "equip", "hit", "learn"] },
+    { name = "spell", type = "int" },
+    { name = "text", type = "text" },
+] }                                            # its spells, as its tooltip names them
+set       = { type = "ref", set = "ItemSets" }
+
+[index]
+bySlot = "slot"
+bySet  = "set"

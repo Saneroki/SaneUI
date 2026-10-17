@@ -1,0 +1,22 @@
+set = "Spells"
+key = "int"              # the game's spell ID: one per rank
+pack = "Spells"
+learn = true             # the game knows every spell by its ID: tooltips, the spellbook, the crawl
+about = "The players' spells and abilities, every rank: what the game says of each, with its history."
+
+[fields]
+name        = { type = "text" }            # in English (decisions 7 and 22)
+rank        = { type = "text" }            # the game's rank line: Rank 3
+description = { type = "text" }
+icon        = { type = "int", min = 0 }
+cost        = { type = "list", of = "tuple", parts = [
+    { name = "power", type = "int" },      # Enum.PowerType
+    { name = "amount", type = "int" },
+] }
+castTime    = { type = "int", min = 0 }    # in milliseconds; 0 instant
+cooldown    = { type = "int", min = 0 }    # in milliseconds
+minRange    = { type = "number", min = 0 } # in yards
+maxRange    = { type = "number", min = 0 }
+
+[index]
+byName = "name"                            # every rank of Frostbolt

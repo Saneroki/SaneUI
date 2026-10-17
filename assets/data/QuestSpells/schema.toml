@@ -1,0 +1,17 @@
+set = "QuestSpells"
+key = "text"             # <spell ID>/<way>: one entry per way to the reward
+pack = "Spells"
+learn = false
+about = "Spells that quests give, by class: each way to one, for which races, from which level, where it starts and by which quests (today Abilities' Data/QuestSpells)."
+
+[fields]
+spell  = { type = "int" }
+class  = { type = "int", min = 1 }
+races  = { type = "list", of = "int" }       # the first way that names a character's race is its
+level  = { type = "int", min = 0 }           # the level its first quest needs
+areas  = { type = "list", of = "int" }       # the game's area IDs where it starts
+quests = { type = "list", of = "ref", set = "Quests" }
+
+[index]
+bySpell = "spell"
+byClass = "class"

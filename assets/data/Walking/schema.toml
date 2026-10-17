@@ -1,0 +1,10 @@
+set = "Walking"
+key = "int"              # a region, numbered by our tool
+pack = "Routes"
+learn = false
+about = "Where players can walk, for Navigation's routes: per region a graph of points and links, packed by our tool (Doc/ideas/Navigation.md, *Routes*)."
+
+[fields]
+map   = { type = "int", min = 0 }
+links = { type = "list", of = "ref", set = "Walking" }  # the regions it borders
+block = { type = "text" }                    # the region's graph, packed; its format comes with the tool

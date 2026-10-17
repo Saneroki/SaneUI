@@ -15,7 +15,9 @@ at most the commit it was on, and the next session goes on from there.
    - Changes to other files belong to other sessions: leave them alone (CLAUDE.md, *Parallel sessions*).
 3. Build the commit. Write its tests first where that is possible.
 4. Run `dev/build`. Then commit by path, with a short message. Tick the box in the same commit; `git log`
-   has the hash. Add a line to `Doc/Changed.md` under the heading *Core's data framework*.
+   has the hash. Add a line to `Doc/Changed.md` under the heading *Core's data framework*. On Saneroki's
+   computer a commit is never pushed (CLAUDE.md); a cloud session, whose container is thrown away, pushes
+   each commit to `main` (Saneroki, 2026-10-17) and runs `dev/build --no-install` (there is no game there).
 5. A commit's *in the game* checks are Saneroki's. The session lists them in its answer; it cannot do them.
 
 **Every commit keeps to these rules:**
@@ -27,34 +29,34 @@ at most the commit it was on, and the next session goes on from there.
 
 ## 1a The frame, with CVarLabels the whole way
 
-- [ ] **1a.1 The guide.** `Doc/guides/data.md` holds the contracts (Data.md, *Contracts*) and how to add a
-  set. `AGENTS.md` and `CLAUDE.md` name it where they list the guides (`CLAUDE.md` is edited, never
-  committed).
-- [ ] **1a.2 The master and its check.**
-  - Files: `src/Core/Data/builds.toml`, `sources.toml` and `CVarLabels/schema.toml`; `dev/data/` (Python:
-    schema, check) and `dev/tools/data check`.
+- [x] **1a.1 The guide.** `Doc/guides/data.md` holds the contracts (Data.md, *Contracts*) and how to add a
+  set. `AGENTS.md` and `CLAUDE.md` name it where they list the guides (both are local files, in
+  `.gitignore`, edited, never committed; a cloud session hands Saneroki edited copies).
+- [x] **1a.2 The master and its check.**
+  - Files: `assets/data/builds.toml`, `sources.toml` and `CVarLabels/schema.toml` (decision 3); `dev/data/`
+    (Python: schema, check) and `dev/tools/data check`.
   - *CVarLabels* is the first master. `dev/tools/cvar-labels` gains a mode that writes staging; its Lua
     file stays as it is. That staging is taken in as new entries, the import's simplest case.
   - Game versions from the start: every staging line names its own; `builds.toml` and `sources.toml` name it
     too; the check knows the other game versions' files (`<Set>.forever-beta.jsonl`) and refuses a line in
     the wrong file.
   - `dev/tests/run` runs the check and the tools' tests (`dev/tests/data/`): each broken rule is caught.
-  - `dev/build` leaves `*.jsonl` and `*.toml` out of `BUILD/SaneUI`.
-- [ ] **1a.3 Compile, and packs in BUILD.**
+  - The master lies outside `src/` (decision 3), so no addon folder takes it in.
+- [x] **1a.3 Compile, and packs in BUILD.**
   - `dev/data/compile.py` and `dev/tools/data compile <dir>`. It writes rows, history and indexes, at most
     50,000 rows per function, and nothing that changes from one run to the next.
   - Compiled per game version (`--game forever-beta`): live's from the live files only, another's from
     the live files with its own on top; the TOC's `X-SaneUI-Game` and `Data.Add` say which.
-  - `dev/build` makes `BUILD/SaneUI_Data_Game` (Forever live's, the packs that are committed) and installs.
-    It reads the game folder's product (`.flavor.info`): into the beta's folder (`_classic_beta_` today) it
-    installs the beta's packs, compiled into a scratch folder, never committed. The stale clean-up keeps
+  - `dev/build` makes `BUILD/SaneUI_Data_Game` (Forever live's; like all of `BUILD/` not committed,
+    decision 4) and installs. It reads the game folder's product (`.flavor.info`): into the beta's folder
+    (`_classic_beta_` today) it installs the beta's packs, compiled into a scratch folder. The stale clean-up keeps
     the `SaneUI_Data_*` folders. A pack is made only when one of its sets has entries.
   - The lint knows a pack's TOC: `LoadOnDemand`, the `X-SaneUI-*` lines, its saved variable, and Core's
     `Interface` and `Version`.
   - Tests: the same master compiled twice gives the same bytes; a live pack holds no line of another game
     version; a beta pack is the live files with the beta's on top; sample masters.
   - *In the game:* the addon list shows *Data: Game* under Sane UI, not loaded.
-- [ ] **1a.4 The scheduler.**
+- [x] **1a.4 The scheduler.**
   - `src/Core/Data/Steps.lua`, in `SaneUI.toc`.
   - `wowstub.lua` gains `debugprofilestop`, `GetFramerate`, `C_RestrictedActions` and its event.
   - Tests:
@@ -63,7 +65,7 @@ at most the commit it was on, and the next session goes on from there.
     - a job that errors is dropped and the others go on;
     - a job of the same name is not started twice;
     - the frame is hidden when there is no work.
-- [ ] **1a.5 Packs in the game.**
+- [x] **1a.5 Packs in the game.**
   - `Codec.lua`, and `Data.lua`:
     - packs found by their TOC lines;
     - `Data.Add`, handles and `Get`;
@@ -82,7 +84,7 @@ at most the commit it was on, and the next session goes on from there.
   - *In the game:* `/sane data` names the game version (`forever-beta` on the beta; this is also the check
     of what `IsBetaBuild` and `IsTestBuild` answer there) and lists *Game*; after `Prepare`, a CVar's label is
     read.
-- [ ] **1a.6 Versions in full.**
+- [x] **1a.6 Versions in full.**
   - In the game: `History`, `At`, `Versions`, `Changes`, `Keys`, and patch names from `builds.toml`.
   - The import with its report (`import`, `--apply`, `--take`). Its cases:
     - new;
@@ -95,7 +97,7 @@ at most the commit it was on, and the next session goes on from there.
   - The commands `show`, `diff` and `stats`.
   - Tests: each import case on sample masters, each within its own game version (a beta build never makes a
     live version); Lua's answers on a sample with history, including a pack newer than the client.
-- [ ] **1a.7 Every set's schema.** The sets of *Sets by concern* and *The game's own data*, each checked,
+- [x] **1a.7 Every set's schema.** The sets of *Sets by concern* and *The game's own data*, each checked,
   with empty masters. Real data comes with prompts 2 and 3.
 
 ## 1b The Tooltips quests, a real reader
@@ -140,7 +142,9 @@ at most the commit it was on, and the next session goes on from there.
   - `Characters.lua`, and the pack Characters: no shipped data, only its saved variable.
   - Changes are marked, then read in steps; the bank only while it is open; counts across characters; the
     auction log; a character deleted in *Profiles*.
-  - Tests.
+  - Characters by their GUID; a name kept with one (the character's, a buyer's in the auction log) is the
+    whole name (guide, *Players*).
+  - Tests, among them: two characters of the account with the same first name stay two.
   - *In the game:* after two characters logged in, `Data.Count` of an item names both.
 - [ ] **1c.5 The crawl and the patch check.**
   - `Crawl.lua` and `/sane data crawl <kind>`.
@@ -195,14 +199,17 @@ at most the commit it was on, and the next session goes on from there.
   - The prefix, the inbox and the send queue.
   - Blocks and parts (*Zlib*, Base64) and the limits.
   - The player's own messages are dropped, and so are messages of another game version.
-  - Tests with a stub guild.
+  - Every sender by its key, the whole name (`Core.PlayerKeyOf`; guide, *Players*); a sender whose name has
+    no key is dropped.
+  - Tests with a stub guild, among them: two members with the same first name are two senders, one member
+    named with and without a realm is one, and a member with the player's first name is not the player.
 - [ ] **1f.2 Scans:** have, want, data, and the question at login, each naming its auction house; a
   receiver takes only its own house's. Tests.
 - [ ] **1f.3 Bundles.** Tests.
 - [ ] **1f.4 Trust.**
   - Shape, quarantine and the game's check.
-  - Three senders, counts and prices.
-  - Strikes.
+  - Three senders, counts and prices: three different keys (guide, *Players*).
+  - Strikes, kept by key.
   - *Forget shared data*: the button and `/sane data forget`.
   - Tests with hostile members.
   - *In the game:* two accounts in one guild share a scan and a bundle, and a false fact one sends is

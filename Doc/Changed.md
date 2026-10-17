@@ -6,8 +6,107 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 The Home page, the marks, Settings on demand, the Tooltips module and the Social module are not yet tried in the game.
 Tests: lint, 195 checks (Core, with its options), 280 checks (Spellbook), 328 checks (Tooltips), 332 checks (Social), 62 checks (Sync), 234 checks (windows).
 
-### Guides: no "not yet tried in the game" (Saneroki, 2026-10-17)
-- `Doc/guides/windows.md`: the README no longer has to say *not yet tried in the game* until the taint log is clean.
+### Core's data framework
+- **Players by their whole name** (Saneroki: a Forever player is first name and surname, and players can
+  share either). `Core.PlayerKey(unit)` and `Core.PlayerKeyOf(text)` give a player's key: on Forever the
+  first name and surname as one, any realm dropped (the whole name is unique across the region), nil for a
+  name without its surname; on Retail `Name-Realm`. `Core.Surnames()` tells which (the Forever project, or
+  `RegionalUniqueNamesEnabled`). `Core.FullName` no longer joins a Retail realm as a surname. The guide's
+  new section *Players* makes it the database's rule: senders of shared data, their limits, quarantine,
+  three senders and strikes by key; own characters by GUID; never a first name or surname alone. The plan
+  (*Poisoning*, *Characters*) and steps 1c.4, 1f.1 and 1f.4 say so, with their tests. `/sane data` says how
+  the client names players. `wowstub.lua` gains `UnitNameUnmodified`, `UnitIsPlayer` and
+  `RegionalUniqueNamesEnabled`. Tests: Core 221 checks (Forever and Retail keys).
+  - *In the game:* `/sane data` ends its first line with *players by first name and surname (regional
+    names: yes)* on Forever.
+- **1a.7 Every set's schema.** `assets/data/` holds the schema of every set of the plan, 28 in all, empty
+  but checked: Items and ItemSets; Quests; NPCs, CreatureSpells, Objects, Zones, Travel, Places and Drops;
+  Spawns, QuestAreas and PatrolPaths; CreatureSpawns; Walking; Guides; Spells, Auras, Trainers, QuestSpells,
+  WeaponSkills, SkillLines and Professions; Talents and Legacy; Vendors; Currencies beside CVarLabels.
+  `packs.toml` names their 11 packs. Their fields follow the plan's tables, Navigation's and today's data
+  files in Abilities and Tooltips; prompt 2 settles them against the game. An index may now name a part of
+  a list of tuples (`byItem = "goods.item"`; `schema.py`, `compile.py`), and an entry is listed once per
+  value. The guide lists the sets with their keys (*The sets*). The Game pack now carries `Currencies.lua`,
+  with no entries. Tests: tools 205 (every set of the plan in its pack; a tuple's part indexed, and the
+  rules for it), Lua 143.
+  - *In the game:* `/sane data` lists *Data: Game* with CVarLabels and Currencies.
+- **1a.6 Versions in full.** In the game (`Data.lua`): `History`, `At`, `Versions`, `Changes`, `Keys` and
+  `Each` (a job of the scheduler, two walks at once), every record with the patch its build is; a pack newer
+  than the client answers with what the client's build has reached, in all of them; `Data.Find` tells the
+  build anew and forgets the answers made from it; `/sane data show` prints what changed, by patch. The
+  import (`dev/data/importer.py`) takes in every case: changed (also between two versions, the later lines
+  kept to what they still change), older (put in front), gone (never from a batch), an entry back after
+  gone, replaces, and conflicts listed or written in with `--take`; live first, so another game version
+  stands on the import's live. A staged line without a day reads as its build's newest version
+  (`master.current`). New `dev/data/views.py`: `dev/tools/data show`, `diff` and `stats`. Tests: Lua 142
+  checks, tools 200 (each import case within its game version, `--take`, the three views).
+- **1a.5 Packs in the game.** `src/Core/Data/Codec.lua` (a pack's row into a record, every type the
+  compiler writes; a broken row read as far as it goes, never an error) and `src/Core/Data/Data.lua`
+  (`Core.Data`), both in `SaneUI.toc` after `Steps.lua`: packs found by their TOC lines; the client's game
+  version told by `WOW_PROJECT_ID`, `IsBetaBuild` and `IsTestBuild` (none told: every pack refused); a pack
+  of another format or game version refused, one switched off left off; `Data.Set` handles with `Get`
+  (never loads; the newest version the client's build has reached), `Stamp`, `OnStamp`, `State`, `Ready`,
+  `hash` and `build`; `Prepare` as a job of the scheduler, after the loading screen, one pack a frame, out
+  of combat; `Data.Add` for the set files; records made on first ask and kept weakly, frozen in the tests;
+  every failure said once (missing and off quietly, the rest in chat). `/sane data` names the game version
+  with what told it, the packs with their state and their sets' hashes, and the jobs; `/sane data show <set>
+  <key>` prints an entry. `wowstub.lua` gains the addon list (`GetNumAddOns`, `GetAddOnInfo`, metadata and
+  enable state per addon, `W.AddPack` and `LoadAddOn` of a compiled pack) and the client's game version.
+  New `dev/tests/data/sample.py` compiles the sample master for the Lua test; `dev/tests/data.lua` 114
+  checks (the codec reads back every row of both game versions as the tools meant it, the cases of loading
+  and refusal, frozen records, `/sane data`).
+  - *In the game:* `/sane data` names the game version (`forever-beta` on the beta: the check of what
+    `IsBetaBuild` and `IsTestBuild` answer there) and lists *Data: Game*, not loaded; `/sane data show
+    CVarLabels autolootdefault` asks for the pack, and the same again a moment later prints its entry
+    (`label = AUTO_LOOT_DEFAULT_TEXT, ...`).
+- **1a.4 The scheduler** `src/Core/Data/Steps.lua` (in `SaneUI.toc` after `Demo.lua`), `Core.Steps`: every
+  long piece of the framework's work a job, a coroutine (`Run`, `Check`, `Fresh`, `Spend`, `Running`,
+  `Jobs`); at most 5 ms a frame for all jobs and never more than a quarter of a frame at the frame rate, by
+  `debugprofilestop`; each job its turn first in some frame; nothing in combat or while the game restricts
+  addons (not for chat's restriction), the jobs going on after; a job that errors is dropped and reported,
+  the others go on; its frame shown, with an `OnUpdate`, only while there is work. `wowstub.lua` gains
+  `debugprofilestop`, `GetFramerate` and `C_RestrictedActions`. New `dev/tests/data.lua` (34 checks), run
+  by `dev/tests/run`.
+- **1a.3 Compile, and packs in BUILD.** `dev/data/compile.py` and `dev/tools/data compile <folder> [--game]`:
+  a pack per `packs.toml` entry with entries (TOC, a Lua file per set, `LICENSE.txt`); rows, history and
+  indexes (`replaces` and `replacedBy` the compiler's own), at most 50,000 statements per `Fill` function,
+  the hash of the file itself, the newest build, the patch names; the same master gives the same bytes.
+  Another game version's packs stand on live's newest version of each entry. `dev/tools/data game <folder>`
+  tells a game folder's game version by its `.flavor.info`. `dev/build` makes `BUILD/SaneUI_Data_Game`,
+  keeps the packs out of its clean-up, and installs the packs of the game folder's own game version (the
+  beta's compiled into a scratch folder), removing packs it no longer makes. The lint compiles the packs of
+  every game version and checks their TOCs and Lua. Tests: 148 checks (same bytes twice, live without the
+  beta, the beta on live, every row read back by Lua 5.1 as Python wrote it, rows cut into functions,
+  packs without entries not made).
+  - *In the game:* the addon list shows *Data: Game* under Sane UI, not loaded.
+- **1a.2 The master and its check.** `assets/data/` with `builds.toml` (Forever live 70245, the beta 70425
+  and 70450, an empty PTR), `sources.toml` (`game`, `hand`), `packs.toml` (*Game*) and the first set,
+  *CVarLabels* (225 CVars, from the game's options code in `references/`; the old Lua file stays as it is).
+  `dev/data/` (Python, no package needed): `schema.py` (types and values), `master.py` (reading, versions
+  worked out whole, another game version over live's newest, writing), `check.py` (the rules across lines),
+  `importer.py` (staging: new entries and agreeing ones, the rest from 1a.6). `dev/tools/data check` and
+  `import`; `dev/tools/cvar-labels --staging`. `dev/data/staging/` is not committed. `dev/tests/run` runs the
+  check and `dev/tests/data/tools.py` (106 checks: every rule broken once on a sample master, the import's
+  cases within their game versions, CVarLabels up to date with `references/`).
+  - Found: the committed `CVarLabels.lua` (239 CVars) is not what `dev/tools/cvar-labels` makes from the
+    committed `references/` (225; `--check` fails): it was made from other options code. Left as it is.
+- **1a.1 The guide** `Doc/guides/data.md`, the reference from now on: the master in `assets/data/`
+  (`builds.toml`, `sources.toml`, `packs.toml`, a schema per set with its types, a line of the master, fixes,
+  another game version's files), staging and every case of the import, the check, a pack's TOC and set file,
+  a row, what a module reads (with `OnStamp` for a view that redraws, as Navigation asked, and `State`),
+  loading, the scheduler's jobs, the saved variables, messages and clocks to come, and how to add a set. The
+  plan's *Contracts* now point to it. `Doc/agent/README.md` names it; `AGENTS.md` and `CLAUDE.md` (local)
+  were handed over edited.
+- **The plan's open decisions answered** (Saneroki, 2026-10-17), written into `Doc/ideas/Data.md`:
+  - as proposed: packs as load-on-demand addons (1); saved variables declared by the packs (2); the
+    auction history archived in the master and shipped back (6); the limits' numbers as start values to
+    tune (12); a changed drop chance starts the whole history anew (13); 10 a second and 250 ms (15); areas
+    as cells with 3 % around spawn points (17); the beta's batches as live's base (27);
+  - otherwise: the master in `assets/data/`, the engine in `src/Core/Data/` (3); the packs not committed, as
+    `BUILD/` is not (4); sharing with the guild, the party and the raid (9); every other creature's spawn
+    points in a pack of their own, `SaneUI_Data_CreatureSpawns`, so Spawns stays lean (18, Navigation's
+    open question 11).
+  - `Doc/ideas/Data-build.md` follows; a cloud session pushes each commit to `main`.
 
 ### New designs across the modules (Saneroki, 2026-10-17)
 - **Abilities, trainer data:** `Data/Classes/*.lua` are hand-edited in a new format: one string per spell

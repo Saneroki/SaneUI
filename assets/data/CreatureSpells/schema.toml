@@ -1,0 +1,16 @@
+set = "CreatureSpells"
+key = "int"              # the game's spell ID
+pack = "World"
+learn = true             # the game gives any spell's facts by its ID, out of combat
+about = "What creatures cast, and the auras they carry or put on others (Doc/ideas/Data.md, *Creatures*)."
+
+[fields]
+name        = { type = "text" }
+description = { type = "text" }
+icon        = { type = "int", min = 0 }
+school      = { type = "flags" }           # the game's spell school mask
+castTime    = { type = "int", min = 0 }    # in milliseconds
+minRange    = { type = "number", min = 0 } # in yards
+maxRange    = { type = "number", min = 0 }
+kind        = { type = "enum", values = ["magic", "curse", "disease", "poison"] }  # an aura's: what can dispel it
+duration    = { type = "int", min = 0 }    # an aura's, in milliseconds

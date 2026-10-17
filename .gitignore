@@ -33,6 +33,9 @@ desktop.ini
 # about 2 GB of sound and are given out on their own (Doc/ideas/Lore.md, *Voice packs*)
 /dev/voices/build/
 /dev/voices/staging/
+# Staging of Core's data framework (Doc/guides/data.md): made again by the tools that read the sources; the
+# master in assets/data is what is kept
+/dev/data/staging/
 /BUILD/SaneUI_Voice_*/
 # What the voice service made (dev/tools/voicegen): the sound is kept with the backups, the previews only to listen
 /dev/voices/sound/

@@ -65,15 +65,76 @@ function Core.Ask(fn, ...)
     return Answer(pcall(fn, ...))
 end
 
+-- Whether this client names a player by a first name and a surname, the two together unique across the
+-- region (WoW: Forever, "Droopy Fairwind": two players can share the first name, or the surname), rather
+-- than by one name unique on its realm (Retail, "Thrall-Draenor").
+function Core.Surnames()
+    if rawget(_G, "WOW_PROJECT_ID") == (rawget(_G, "WOW_PROJECT_CAMELOT") or 18) then return true end
+    return Core.Ask(rawget(_G, "RegionalUniqueNamesEnabled")) == true
+end
+
+local function Separator()
+    local names = Constants and Constants.CharacterNameSeparatorConsts
+    return names and names.CHARACTERNAME_SURNAME_SEPARATOR or " "
+end
+
 -- A unit's whole name, as the game shows it: a Forever character has a first name and a surname
 -- (UnitName gives both), joined by the game's separator ("Droopy Fairwind"); a unit without a
--- surname only its name. nil when it has none or the game hides it. As the game's NameUtil.
+-- surname only its name. nil when it has none or the game hides it. As the game's NameUtil. On a client
+-- without surnames UnitName's second answer is a realm, which is not shown here.
 function Core.FullName(unit)
     local name, surname = Core.Ask(UnitName, unit)
     if type(name) ~= "string" or name == "" then return nil end
-    if type(surname) ~= "string" or surname == "" then return name end
-    local names = Constants and Constants.CharacterNameSeparatorConsts
-    return name .. (names and names.CHARACTERNAME_SURNAME_SEPARATOR or " ") .. surname
+    if not Core.Surnames() or type(surname) ~= "string" or surname == "" then return name end
+    return name .. Separator() .. surname
+end
+
+local function OwnRealm()
+    local realm = Core.Ask(rawget(_G, "GetNormalizedRealmName"))
+    return type(realm) == "string" and realm ~= "" and realm or nil
+end
+
+-- A player's key: the one name that tells players apart, for whatever is kept, compared or shared about
+-- a player. On Forever the first name and the surname as one ("Droopy Fairwind"), never one of them alone,
+-- and no realm (the whole name is unique across the region); elsewhere "Name-Realm". nil for a name that is
+-- not a whole one: a Forever name without its surname is dropped, never guessed.
+local function Key(name, second)
+    if type(name) ~= "string" then return nil end
+    name = name:match("^%s*(.-)%s*$")
+    if name == "" or name:find("-", 1, true) then return nil end
+    second = type(second) == "string" and second:match("^%s*(.-)%s*$") or ""
+    if Core.Surnames() then
+        local separator = Separator()
+        if second == "" then
+            -- the name may hold both already, as names in events and lists do
+            local at = name:find(separator, 1, true)
+            if not at then return nil end
+            name, second = name:sub(1, at - 1), name:sub(at + #separator):match("^%s*(.-)$")
+        end
+        if name == "" or second == "" then return nil end
+        return name .. separator .. second
+    end
+    if name:find("%s") then return nil end
+    local realm = second ~= "" and second:gsub("%s", "") or OwnRealm()
+    return realm and name .. "-" .. realm or nil
+end
+
+-- The key of a player unit (Core.PlayerKey("target")); nil for a unit that is no player, or hidden.
+function Core.PlayerKey(unit)
+    if Core.Ask(UnitIsPlayer, unit) ~= true then return nil end
+    return Key(Core.Ask(rawget(_G, "UnitNameUnmodified") or UnitName, unit))
+end
+
+-- The key of a player named by text, as an event, a list or a message gives it: "Droopy Fairwind",
+-- "Droopy Fairwind-Realm" (the realm dropped on Forever), "Thrall-Draenor" or "Thrall" (the own realm added
+-- elsewhere).
+function Core.PlayerKeyOf(text)
+    text = Core.Plain(text)
+    if type(text) ~= "string" then return nil end
+    local name, realm = text:match("^([^%-]+)%-(.+)$")
+    if not name then return Key(text) end
+    if Core.Surnames() then return Key(name) end
+    return Key(name, realm)
 end
 
 -- An amount of money as the game writes it, with its coin icons; nil if it cannot.

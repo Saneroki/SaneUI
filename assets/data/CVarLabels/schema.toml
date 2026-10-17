@@ -1,0 +1,9 @@
+set = "CVarLabels"
+key = "text"             # the CVar's name in lower case
+pack = "Game"
+learn = false
+about = "Every CVar the game's options show: the names of the game's strings that label and explain it (never the words: the game has them, in its own language)."
+
+[fields]
+label = { type = "text" }   # the global string that names it in the game's options
+tip   = { type = "text" }   # the one that explains it, where the options give one

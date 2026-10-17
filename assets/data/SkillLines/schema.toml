@@ -1,0 +1,16 @@
+set = "SkillLines"
+key = "int"              # the game's skill line ID
+pack = "Spells"
+learn = true
+about = "The skill lines: classes' talent lines, professions, weapons and the rest, with the spells of each (today Abilities' Data/SkillLines, by spell ID instead of name)."
+
+[fields]
+name   = { type = "text" }
+kind   = { type = "enum", values = ["class", "profession", "secondary", "weapon", "armor", "language", "riding", "other"] }
+class  = { type = "int", min = 1 }           # a class line's class, and its place in the talent trees (1 to 3)
+tree   = { type = "int", min = 1, max = 3 }
+spells = { type = "list", of = "int" }
+
+[index]
+byClass = "class"
+bySpell = "spells"

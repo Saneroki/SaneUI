@@ -1,0 +1,26 @@
+set = "Trainers"
+key = "int"              # the game's spell ID of the rank a trainer teaches
+pack = "Spells"
+learn = true             # the trainer window (TRAINER_SHOW)
+about = "What class and profession trainers teach: each rank with its level, cost and what it needs first (today Abilities' Data/Classes)."
+
+# A condition holds for its rank and every later rank of the family.
+[fields]
+class      = { type = "int", min = 1 }       # the game's class ID; none: a profession's
+skill      = { type = "ref", set = "SkillLines" }  # a profession's skill, and the level it needs
+skillLevel = { type = "int", min = 0 }
+family     = { type = "int" }                # the family's first rank, by its spell ID
+rank       = { type = "int", min = 1 }
+level      = { type = "int", min = 0 }
+cost       = { type = "money" }              # the base price, before any discount
+unsold     = { type = "bool" }               # a rank no trainer sells
+talent     = { type = "int" }                # the talent's spell it needs
+after      = { type = "int" }                # the spell it comes after
+alone      = { type = "bool" }
+side       = { type = "enum", values = ["alliance", "horde"] }
+races      = { type = "list", of = "int" }
+
+[index]
+byClass  = "class"
+bySkill  = "skill"
+byFamily = "family"

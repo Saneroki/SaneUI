@@ -1,0 +1,14 @@
+set = "WeaponSkills"
+key = "int"              # the spell that teaches the weapon skill
+pack = "Spells"
+learn = false
+about = "The weapon skills a weapon master teaches, which classes may learn each, from which level, for how much (today Abilities' Data/WeaponSkills)."
+
+[fields]
+name    = { type = "text" }
+classes = { type = "list", of = "int" }
+level   = { type = "int", min = 0 }
+cost    = { type = "money" }
+
+[index]
+byClass = "classes"

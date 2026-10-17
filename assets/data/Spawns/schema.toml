@@ -1,0 +1,20 @@
+set = "Spawns"
+key = "text"             # npc:<creature ID> or object:<object ID>: the two kinds of ID overlap
+pack = "Spawns"
+learn = true
+about = "What a map shows, and where: NPCs with a service, quest givers and objectives, rares, treasures, objects, herbs and ore; their points and areas."
+
+[fields]
+points  = { type = "list", of = "point" }  # its spawn points, on every map it is on
+areas   = { type = "list", of = "tuple", parts = [
+    { name = "map", type = "int" },
+    { name = "row", type = "int", min = 0, max = 99 },
+    { name = "first", type = "int", min = 0, max = 99 },
+    { name = "last", type = "int", min = 0, max = 99 },
+] }                                        # its spawn area: runs of cells per map row (Doc/ideas/Data.md, *Quest areas*)
+middles = { type = "list", of = "tuple", parts = [
+    { name = "map", type = "int" },
+    { name = "x", type = "number", min = 0, max = 100 },
+    { name = "y", type = "number", min = 0, max = 100 },
+    { name = "size", type = "number", min = 0 },
+] }                                        # each area's middle and size, for a view that draws a glow

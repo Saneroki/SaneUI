@@ -1,0 +1,10 @@
+# A sample master for the tests (dev/tests/data/tools.py, dev/tests/data.lua): made-up sets, every type,
+# history, another game version's file, a fix. Not the game's data.
+[forever]
+65000 = { patch = "1.60.0", day = "2026-09-01" }
+65100 = { patch = "1.60.2" }
+
+[forever-ptr]
+
+[forever-beta]
+66000 = { patch = "1.61.0" }

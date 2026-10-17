@@ -1,0 +1,8 @@
+set = "PatrolPaths"
+key = "int"              # the game's creature ID
+pack = "Spawns"
+learn = false
+about = "The paths creatures walk, in order (Saneroki, 2026-10-16)."
+
+[fields]
+path = { type = "list", of = "point" }

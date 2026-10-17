@@ -1,0 +1,21 @@
+set = "Travel"
+key = "int"              # our own number, given once by the import: the same kind between the same two places is the same way
+pack = "World"
+learn = true             # the flight master's watcher: flights and their costs
+about = "The ways to travel other than on foot: boats, zeppelins, trams, lifts, portals and flights, with their times."
+
+[fields]
+kind     = { type = "enum", values = ["boat", "zeppelin", "tram", "lift", "portal", "flight"] }
+name     = { type = "text" }
+from     = { type = "point" }
+to       = { type = "point" }
+fromNode = { type = "int", min = 0 }         # a flight's taxi nodes (the flight points themselves are the game's)
+toNode   = { type = "int", min = 0 }
+side     = { type = "enum", values = ["alliance", "horde"] }  # none: both
+time     = { type = "number", min = 0 }      # the trip, in seconds
+wait     = { type = "number", min = 0 }      # between two departures, in seconds
+cost     = { type = "money" }
+
+[index]
+byKind     = "kind"
+byFromNode = "fromNode"

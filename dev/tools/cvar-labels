@@ -11,9 +11,16 @@ label the options build in code (a format, a function call) is not a global stri
 The file it writes is one table, keyed by the CVar's name in lower case, each entry with the fields
 label and tip (tip only where the options give one), sorted by key.
 
+It also writes the same as staging for Core's data framework (Doc/guides/data.md): one line per CVar for
+the set CVarLabels, Forever live's, from the game (the source "game"), which dev/tools/data import takes in.
+
 Usage:  dev/tools/cvar-labels           write the file
         dev/tools/cvar-labels --check   only say whether the file is as this tool would write it
+        dev/tools/cvar-labels --staging [file] [--build N]
+                                        write staging instead (dev/data/staging/cvar-labels.jsonl); --build:
+                                        the game's build the code in references/ is of, where it is known
 """
+import json
 import re
 import sys
 from pathlib import Path
@@ -22,6 +29,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ADDONS = ROOT / "references" / "BlizzardInterfaceCode" / "Interface" / "AddOns"
 FOLDERS = ("Blizzard_SettingsDefinitions_Frame", "Blizzard_SettingsDefinitions_Shared")
 OUTPUT = ROOT / "src" / "Core" / "Settings" / "Data" / "CVarLabels.lua"
+STAGING = ROOT / "dev" / "data" / "staging" / "cvar-labels.jsonl"
 
 CALL = re.compile(r'Settings\.(SetupCVarCheckbox|SetupCVarSlider|SetupCVarDropdown|RegisterCVarSetting)\(\s*[\w.]+\s*,\s*"([^"]+)"\s*,')
 STRING_NAME = re.compile(r"^[A-Z][A-Z0-9_]*$")
@@ -90,11 +98,31 @@ def write_lua(found):
     return "\n".join(lines) + "\n"
 
 
+def write_staging(found, build):
+    """One staging line per CVar, sorted: the set CVarLabels, Forever live's, from the game."""
+    lines = []
+    for key in sorted(found):
+        label, tip = found[key]
+        fields = {"label": label, **({"tip": tip} if tip else {})}
+        lines.append(json.dumps({"set": "CVarLabels", "key": key, "game": "forever", "build": build, "src": "game",
+                                 "fields": fields}, separators=(",", ":")))
+    return "\n".join(lines) + "\n"
+
+
 def main():
-    check = "--check" in sys.argv[1:]
+    args = sys.argv[1:]
+    check = "--check" in args
     if not ADDONS.is_dir():
         sys.exit(f"Blizzard's code is not in {ADDONS.relative_to(ROOT)}: nothing to read.")
     found = read_options()
+    if "--staging" in args:
+        at = args.index("--staging")
+        target = Path(args[at + 1]) if at + 1 < len(args) and not args[at + 1].startswith("--") else STAGING
+        build = int(args[args.index("--build") + 1]) if "--build" in args else 0
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(write_staging(found, build), encoding="utf-8")
+        print(f"Wrote staging {target}: {len(found)} CVars.")
+        return
     text = write_lua(found)
     current = OUTPUT.read_text(encoding="utf-8") if OUTPUT.exists() else ""
     if check:

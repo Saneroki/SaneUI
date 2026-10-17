@@ -8,8 +8,11 @@
 #   social.lua      the Social module
 #   sync.lua        Core's Sync: the game's own settings kept with Sane UI's
 #   window.lua      what Core gives every window: moving, sizing, docking, opening under the mouse
+#   data.lua        Core's data framework in the game: the scheduler, the packs as the game loads them
 #   voices.py       the voice database's rules: the cast, the names, words, parts, tone, presets
 #   imagegen.py     the image pipeline's lists, recipes and sets, and the flipbook's grid and loops
+#   data check      the master of Core's data framework (assets/data) fits its rules
+#   data/tools.py   the data framework's tools: the check's rules, the import, on a sample master
 #
 # Usage:  dev/tests/run
 set -euo pipefail
@@ -26,5 +29,8 @@ lua5.1 dev/tests/tooltips.lua
 lua5.1 dev/tests/social.lua
 lua5.1 dev/tests/sync.lua
 lua5.1 dev/tests/window.lua
+lua5.1 dev/tests/data.lua
 python3 -I dev/tests/voices.py
 python3 -I dev/tests/imagegen.py
+dev/tools/data check
+python3 -I dev/tests/data/tools.py

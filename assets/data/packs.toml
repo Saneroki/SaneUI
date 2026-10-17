@@ -1,0 +1,46 @@
+# Every pack: a load-on-demand addon, SaneUI_Data_<name>, its title and notes in the game's addon list
+# (Doc/guides/data.md, *packs.toml*). Cut by who needs it and when (Doc/ideas/Data.md, *Sets by concern*); a
+# pack is made only once one of its sets has entries.
+[CreatureSpawns]
+title = "Data: Creature Spawns"
+notes = "Sane UI's data on where every creature without a service spawns. Loaded only when Sane UI first asks where a creature is."
+
+[Game]
+title = "Data: Game"
+notes = "Sane UI's data from the game's own code: the names of the strings that label the options' settings, currencies. Loaded only when Sane UI needs it."
+
+[Guides]
+title = "Data: Guides"
+notes = "Sane UI's leveling guides: their steps, places, quests and checks. Loaded only when a guide is first shown."
+
+[Items]
+title = "Data: Items"
+notes = "Sane UI's data on every item players can have, with its history, and the item sets. Loaded when Sane UI first needs it."
+
+[Market]
+title = "Data: Market"
+notes = "Sane UI's data on vendors and what they sell. Loaded at the first vendor, auction house or price shown."
+
+[Quests]
+title = "Data: Quests"
+notes = "Sane UI's data on every quest: who gives it, what it needs, where its steps are, its chain. Loaded soon after login."
+
+[Routes]
+title = "Data: Routes"
+notes = "Sane UI's walking data for routes on the map. Loaded only when a route is first asked for."
+
+[Spawns]
+title = "Data: Spawns"
+notes = "Sane UI's data on what a map shows: services, quest givers, rares, treasures, herbs, ore, quest areas. Loaded with the first map."
+
+[Spells]
+title = "Data: Spells"
+notes = "Sane UI's data on the players' spells and abilities with every rank, buffs, trainers, skills and professions. Loaded when Sane UI first needs it."
+
+[Talents]
+title = "Data: Talents"
+notes = "Sane UI's data on the class talent trees and the Legacy trees. Loaded when a talent is first looked at."
+
+[World]
+title = "Data: World"
+notes = "Sane UI's data on creatures, their spells, objects, zones, travel and places. Loaded soon after login."

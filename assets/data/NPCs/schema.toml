@@ -1,0 +1,34 @@
+set = "NPCs"
+key = "int"              # the game's creature ID
+pack = "World"
+learn = true             # seen out of combat, with no restriction active (Doc/ideas/Data.md, *Creatures*)
+about = "Every creature: its name, levels, rank, kind, reaction, stats, spells, buffs at rest and services."
+
+[fields]
+name         = { type = "text" }
+title        = { type = "text" }           # the line under its name: Repair Merchant
+levelMin     = { type = "int", min = 0 }   # the lowest and highest level seen
+levelMax     = { type = "int", min = 0 }
+boss         = { type = "bool" }           # its level shows as ??
+rank         = { type = "enum", values = ["normal", "elite", "rare", "rareelite", "worldboss", "trivial", "minus"] }  # UnitClassification
+kind         = { type = "enum", values = ["beast", "critter", "demon", "dragonkin", "elemental", "giant", "humanoid", "mechanical", "undead", "totem", "other"] }
+family       = { type = "text" }           # wolf, cat: what can be skinned follows from it
+faction      = { type = "int", min = 0 }   # the game's faction template
+alliance     = { type = "enum", values = ["friendly", "neutral", "hostile"] }  # its reaction to each side
+horde        = { type = "enum", values = ["friendly", "neutral", "hostile"] }
+health       = { type = "map", keys = "int", of = "int" }  # level seen to its health
+mana         = { type = "map", keys = "int", of = "int" }
+armor        = { type = "int", min = 0 }   # where our data has it (the game gives these for the player and pets)
+resistances  = { type = "map", keys = "text", of = "int" }  # school to value
+damageMin    = { type = "int", min = 0 }
+damageMax    = { type = "int", min = 0 }
+attackSpeed  = { type = "number", min = 0 } # in seconds
+abilities    = { type = "list", of = "ref", set = "CreatureSpells" }
+auras        = { type = "list", of = "int" } # the buffs it carries at rest: spells of CreatureSpells or Auras
+services     = { type = "list", of = "enum", values = ["vendor", "repair", "innkeeper", "trainer", "weaponmaster", "flightmaster", "banker", "auctioneer", "stablemaster", "battlemaster", "spirithealer", "guildmaster", "tabard", "questgiver", "guard"] }
+goods        = { type = "list", of = "enum", values = ["food", "reagents", "poisons", "ammunition", "bags", "tradegoods", "potions"] }  # a vendor's kinds of goods, for the map's filter
+respawn      = { type = "int", min = 0 }   # seconds, where known (rares)
+
+[index]
+byService = "services"                     # every NPC with that service
+byRank    = "rank"                         # the rares

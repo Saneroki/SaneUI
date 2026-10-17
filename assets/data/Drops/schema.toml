@@ -1,0 +1,20 @@
+set = "Drops"
+key = "text"             # npc:<creature ID>, object:<object ID>, zone:<map ID> (fishing): the kinds of ID overlap
+pack = "World"
+learn = false            # counted in play per build period into the pack's saved file (step 1d.3), not learned rows
+about = "What creatures, objects and fishing waters give: per item how, how often and the chance per corpse looted (Doc/ideas/Data.md, *Drop rates and gathering*)."
+
+[fields]
+loots    = { type = "int", min = 0 }         # corpses looted, nodes gathered, casts fished
+levelMin = { type = "int", min = 0 }         # a creature's levels seen
+levelMax = { type = "int", min = 0 }
+items    = { type = "list", of = "tuple", parts = [
+    { name = "item", type = "int" },
+    { name = "how", type = "enum", values = ["loot", "skin", "pickpocket", "gather", "fish"] },
+    { name = "drops", type = "int", min = 0 },
+    { name = "chance", type = "number", min = 0, max = 100 },  # in percent per loot
+    { name = "quest", type = "int" },        # it drops only for those on this quest
+] }
+
+[index]
+byItem = "items.item"

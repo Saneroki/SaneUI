@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""The tool of Core's data framework: the master in assets/data, staging, the packs (Doc/guides/data.md).
+
+Usage:  dev/tools/data check                              check the master (dev/tests/run runs it)
+        dev/tools/data import <staging> [--apply] [--take]  staging into the master: the report, then --apply
+        dev/tools/data compile <folder> [--game <version>]  the packs of a game version (forever) into a folder
+        dev/tools/data game <game folder>                   the game version a game folder holds (.flavor.info)
+        dev/tools/data show <set> <key> [--game <version>]  an entry with every version and source
+        dev/tools/data diff <set> [--patch 1.60.2] [--game <version>]  what a patch changed (the newest one)
+        dev/tools/data stats                                counts and sizes per set and pack
+        --master <folder>                                   another master than assets/data (tests)
+"""
+import argparse
+import sys
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "data"))
+
+import check as checks  # noqa: E402
+import compile as compiler  # noqa: E402
+import importer  # noqa: E402
+import master as masters  # noqa: E402
+import views  # noqa: E402
+
+
+def load(folder):
+    master = masters.Master(Path(folder) if folder else masters.MASTER).load()
+    checks.check(master)
+    return master
+
+
+def say_problems(master):
+    for text in master.warnings:
+        print(f"warning: {text}", file=sys.stderr)
+    for text in master.errors:
+        print(text, file=sys.stderr)
+
+
+def run_check(args):
+    master = load(args.master)
+    say_problems(master)
+    if master.errors:
+        print(f"Data: {len(master.errors)} problems in the master.", file=sys.stderr)
+        return 1
+    lines = sum(len(lines) for lines in master.lines.values())
+    print(f"Data: {len(master.schemas)} sets, {lines} lines, {len(master.games)} game versions, all fit"
+          + (f" ({len(master.warnings)} warnings)." if master.warnings else "."))
+    return 0
+
+
+def run_import(args):
+    master = load(args.master)
+    if master.errors:
+        say_problems(master)
+        print("Data: the master has problems; mend them before an import.", file=sys.stderr)
+        return 1
+    report = importer.run(master, importer.read_staging(Path(args.file)), take=args.take)
+    for line in report.lines():
+        print(line)
+    if not report.counts:
+        print("Nothing staged.")
+    if args.apply:
+        importer.apply(master, report)
+        after = load(args.master)
+        say_problems(after)
+        if after.errors:
+            print("Data: the master has problems after the import.", file=sys.stderr)
+            return 1
+        print(f"Applied: {len(report.changed)} set files written." if report.changed else "Applied: nothing to write.")
+    elif report.changed:
+        print("Nothing written: --apply takes it in.")
+    return 0
+
+
+def run_compile(args):
+    master = load(args.master)
+    if master.errors:
+        say_problems(master)
+        print("Data: the master has problems; no pack is made from it.", file=sys.stderr)
+        return 1
+    if args.game not in master.games:
+        print(f"Data: '{args.game}' is no game version of builds.toml ({', '.join(master.games)}).", file=sys.stderr)
+        return 1
+    folder = Path(args.folder)
+    folder.mkdir(parents=True, exist_ok=True)
+    for pack, sets, entries in compiler.compile_packs(master, folder, args.game):
+        print(f"Built: {folder / (compiler.PREFIX + pack)} ({args.game}: {', '.join(sets)}; {entries} entries)")
+    return 0
+
+
+def checked(args):
+    """The master, or None after saying its problems."""
+    master = load(args.master)
+    if master.errors:
+        say_problems(master)
+        print("Data: the master has problems; mend them first (dev/tools/data check).", file=sys.stderr)
+        return None
+    return master
+
+
+def known_game(master, game):
+    if game in master.games:
+        return True
+    print(f"Data: '{game}' is no game version of builds.toml ({', '.join(master.games)}).", file=sys.stderr)
+    return False
+
+
+def run_show(args):
+    master = checked(args)
+    if master is None or not known_game(master, args.game):
+        return 1
+    print("\n".join(views.show(master, args.set, args.key, args.game)))
+    return 0
+
+
+def run_diff(args):
+    master = checked(args)
+    if master is None or not known_game(master, args.game):
+        return 1
+    print("\n".join(views.diff(master, args.set, args.game, args.patch)))
+    return 0
+
+
+def run_stats(args):
+    master = checked(args)
+    if master is None:
+        return 1
+    print("\n".join(views.stats(master)))
+    return 0
+
+
+def run_game(args):
+    game = compiler.product_game(Path(args.folder))
+    if game is None:
+        return 1
+    print(game)
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="dev/tools/data", description=__doc__.split("\n")[0])
+    parser.add_argument("--master", help="the master's folder (assets/data)")
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("check", help="check the master")
+    taking = commands.add_parser("import", help="staging into the master")
+    taking.add_argument("file")
+    taking.add_argument("--apply", action="store_true", help="write the master")
+    taking.add_argument("--take", action="store_true", help="write conflicts into their versions as corrections")
+    making = commands.add_parser("compile", help="the packs into a folder")
+    making.add_argument("folder")
+    making.add_argument("--game", default=masters.LIVE, help="the game version (forever)")
+    telling = commands.add_parser("game", help="the game version of a game folder")
+    telling.add_argument("folder")
+    showing = commands.add_parser("show", help="an entry with every version and source")
+    showing.add_argument("set")
+    showing.add_argument("key")
+    showing.add_argument("--game", default=masters.LIVE, help="the game version (forever)")
+    comparing = commands.add_parser("diff", help="what a patch changed")
+    comparing.add_argument("set")
+    comparing.add_argument("--patch", help="the patch (1.60.2); the game version's newest when left out")
+    comparing.add_argument("--game", default=masters.LIVE, help="the game version (forever)")
+    commands.add_parser("stats", help="counts and sizes per set and pack")
+    args = parser.parse_args()
+    return {"check": run_check, "import": run_import, "compile": run_compile, "game": run_game, "show": run_show,
+            "diff": run_diff, "stats": run_stats}[args.command](args)
+
+
+sys.exit(main())

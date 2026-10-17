@@ -229,6 +229,8 @@ window to try those with (`/sane window`).
 | `Core.Plain(value)`, `Core.Secret(value)` | Secret values (see above) |
 | `Core.Ask(fn, ...)` | `fn(...)`'s first three answers, each nil when hidden; all nil when `fn` is missing or fails |
 | `Core.FullName(unit)` | A unit's whole name as the game shows it: a Forever character's first name and surname (`UnitName` gives both), joined by the game's separator; nil when hidden. Use it wherever a player's name is shown |
+| `Core.PlayerKey(unit)`, `Core.PlayerKeyOf(text)` | A player's key, the one name that tells players apart: on Forever first name and surname as one (`Droopy Fairwind`, any realm dropped: the whole name is unique across the region), elsewhere `Name-Realm`; nil for a name that is not whole (a first name alone). Use it wherever a player is kept, counted, compared or shared ([Doc/guides/data.md](../../Doc/guides/data.md), *Players*) |
+| `Core.Surnames()` | Whether this client names players by first name and surname (Forever, or `RegionalUniqueNamesEnabled`) |
 | `Core.Coins(copper)` | Money as the game writes it, with coin icons; nil if it cannot |
 | `Core.Points(region)`, `Core.Repoint(region, points)` | Keep a region's anchors and put them back |
 | `Core.pages`, `Core.frames` | The options' pages, from login on, and the frame of a page of our own (`Settings/`) |
@@ -396,6 +398,9 @@ window to try those with (`/sane window`).
 | `Art/circle.blp`, `Art/circle-hole.blp` | The masks round corners are cut with: a white disc, and a white square with the disc taken out (256 × 256, DXT5 with mipmaps). Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
+- 2026-10-17 — Players' keys: `Core.PlayerKey(unit)`, `Core.PlayerKeyOf(text)` and `Core.Surnames()`. A
+  Forever player is first name and surname as one, never either alone; `Core.FullName` no longer shows a
+  Retail realm as a surname.
 - 2026-10-17 — The kinds of motion are Glide (at first), Swing, Even and Instant, each a time and one of the
   game's easing curves (`EasingUtil`). `Expand` opens once the mouse has rested on a window and closes a moment
   after it has gone, a watch frame looking at the mouse only meanwhile; `expand:Stay(on)` keeps it open (`click`

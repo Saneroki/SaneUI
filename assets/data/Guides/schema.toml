@@ -1,0 +1,42 @@
+set = "Guides"
+key = "int"              # a guide, numbered by our tool
+pack = "Guides"
+learn = false
+about = "The leveling guides: per guide its side, levels and the guide after it; per step its places, actions, checks and for whom (Doc/ideas/Navigation.md, *Leveling guide*)."
+
+# A step's parts are rows of the lists below with the step's number: one row per place, action and check.
+[fields]
+name     = { type = "text" }
+side     = { type = "enum", values = ["alliance", "horde"] }
+races    = { type = "list", of = "int" }     # none: every race of its side
+classes  = { type = "list", of = "int" }     # none: every class
+levelMin = { type = "int", min = 0 }
+levelMax = { type = "int", min = 0 }
+zone     = { type = "ref", set = "Zones" }
+next     = { type = "ref", set = "Guides" }
+places   = { type = "list", of = "tuple", parts = [
+    { name = "step", type = "int", min = 1 },
+    { name = "map", type = "int" },
+    { name = "x", type = "number", min = 0, max = 100 },
+    { name = "y", type = "number", min = 0, max = 100 },
+    { name = "near", type = "number", min = 0 },  # how near counts as there, in percent of the map
+] }
+actions  = { type = "list", of = "tuple", parts = [
+    { name = "step", type = "int", min = 1 },
+    { name = "kind", type = "enum", values = ["accept", "complete", "turnin", "talk", "kill", "collect", "train", "buy", "sell", "repair", "bind", "hearth", "fly", "flightpath", "use", "go"] },
+    { name = "id", type = "int" },           # the quest, NPC, creature, item or spell, by its kind
+    { name = "count", type = "int", min = 1 },
+    { name = "class", type = "int" },        # for one class or race only
+    { name = "race", type = "int" },
+    { name = "text", type = "text" },        # a hint
+] }
+checks   = { type = "list", of = "tuple", parts = [
+    { name = "step", type = "int", min = 1 },
+    { name = "kind", type = "enum", values = ["inlog", "done", "turnedin", "level", "xp", "items", "money", "zone", "hand"] },
+    { name = "id", type = "int" },
+    { name = "count", type = "int", min = 0 },
+] }                                          # when the step is done; hand: ticked by the player
+
+[index]
+byZone = "zone"
+byNext = "next"
