@@ -14,7 +14,7 @@ learn form-page names → `Engine.Reconcile` → module `REFRESH`.
 | `Data/Classes/*.lua` | Hand-edited. Families: one string per spell, ranks in order as `spell:level:copper` (bare `spell` = rank not sold, e.g. start/quest). Conditions by spell ID: `talent`, `after`, `alone` (no rank-before requirement), `side`, `raceIDs`; each holds for its rank and later ranks until overridden |
 | `Data/QuestSpells.lua`, `WeaponSkills.lua`, `SkillLines.lua` | Race-specific rewards; weapon skills; English tab fallback and talent-tree lines |
 | `Engine.lua` | Reserve/clear/reconcile slots; defer real actions for combat or busy cursor |
-| `Presets.lua` | Class-shared saved bar layouts and save/load dialogs |
+| `Presets.lua` | Class-shared saved bar layouts; save/load/delete ask in the game's dialogs (`Core.AskText`, `Core.Confirm`) |
 | `Ghosts.lua` | Noninteractive grey overlays on real empty action buttons |
 
 Entry shape: `{kind = "spell"|"item"|"macro", id, name, icon}`. Future spells add `sub/rank/level/cost`,
@@ -64,12 +64,18 @@ providers or frame fields can taint casting and action bars. The workaround is d
   `Book/Menu.lua` appends via `Menu.ModifyMenu("MENU_SPELL_BOOK_SETTINGS", ...)`.
 
 `Book.StandDown` restores column/pager, scales and placement as far as possible; Home/window hear
-`BOOK_PAGES`. Protected frames wait until `PLAYER_REGEN_ENABLED`. Controller mode, failed setup or
-repeated conflicting placement cause fallback. After fallback, changing tabs lets Blizzard redraw.
+`BOOK_PAGES`. What a fight holds up asks `Core.AfterCombat` once under its own key (update, layout,
+give back, take over, entries' size, window, Home's tab row); no file listens for `PLAYER_REGEN_ENABLED`.
+The game's page buttons and tab row are `Core.Lend`-ed; `Locked` is `Core.Locked`. Controller mode,
+failed setup or repeated conflicting placement cause fallback. After fallback, changing tabs lets Blizzard redraw.
 Watcher runs 10 frames after layout, then every 0.2 s only while visible.
 
 Options: `showHidden/home/compact/window/ghosts/announce/book`, initially true. `book` takes effect
-after reload. Commands: `list/clear/debug/add/item/save/load/delete/layouts/pages/window reset`.
+after reload. `ns.options` = `Core.Settings(ns.name)`; menu lines, the page checkbox and `/sane ab pages`
+write through `Core.Set` (the module's `changed` fires `REFRESH`; no second refresh); a switch's words
+via `Core.Described`. Every word shown is in `ns.TEXT` (`Abilities.lua`), the game's via `Core.Word`.
+Pools (`Core.Pool`): Book's grey entries/folds/fold headings, Home's rows/level headings.
+Commands: `list/clear/debug/add/item/save/load/delete/layouts/pages/window reset`.
 Tests: `dev/tests/abilities.lua`; made-up families stand in for class tables, real class files are format-checked.
 Pending QA: learned-spell casting/taint, combat/flyouts, skins, Home tabs/search, resize/minimise,
 weapon-skill recognition and compact readability. See module README for exact checks.

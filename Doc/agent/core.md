@@ -5,8 +5,10 @@
 | File under `src/` | Responsibility |
 | --- | --- |
 | `Core/Core.lua` | Shared table, events, module lifecycle, errors, slash dispatch |
-| `Core/Saved.lua` | `SaneUIDB`, stores, character data, option descriptions/defaults |
-| `Core/Profiles.lua` | Account vs character-specific settings (`SaneUICharDB`), named profiles |
+| `Core/Saved.lua` | `SaneUIDB`, stores (`store.options`: the live settings, found, never kept there), character data, option descriptions (`Core.Options` hooks: changed, replaced, moved, capture, version/upgrade, game), `Core.Settle` (upgrade, check, drop undescribed), `Core.Set`/`Reset`/`Described`/`Settings`/`Same` |
+| `Core/Kit.lua` | `Core.Word`, `RGB`/`Hex`, `Pixels`, `Tip`/`ShowTip`/`HideTip`, `Pool`, `Confirm`/`AskText` (the game's generic dialogs), `Font`, `Sound`, `Lend` (a game frame changed for a while and given back exactly) |
+| `Core/Serial.lua` | `Core.Serial.Write/Read`: plain values as one line of text (profile export/import); read letter by letter, never run |
+| `Core/Profiles.lua` | Where each module's settings live (the profile in use, or with Accountwide off the character's own), `Move` between places, the profiles, the first shape brought over (v1 → v2), `/sane profile` |
 | `Core/Window.lua` | Own windows (Edit Mode: its box to drag, the grip, a click selects it, grid snap when Edit Mode's *Snap* is on; `titleBar`: title (`SetTitle`), search box (`search`), the module's `buttons`, then the game's window / full screen / close, drag at any time but at a screen edge; every full window has the bar; `window.inside` under it; `first.dock`, standing clear of a held zone (`CASCADE`), `insets`, `toplevel`; `Remember`/`Recall`/`Native`/`Open` for the game's triggers; `Attach` on the game's window; `All`/`ResetAll`) and low-level movers/sizers for Blizzard windows |
 | `Core/Views.lua` | `tabs`: views behind `TabSystemTemplate` with `TabSystemTopButtonTemplate` tabs (spellbook widths 100..150, inset 22, row 32) at the top of `window.inside`; built on first choice; `window:Tab(i)`, kept as `place.tab` |
 | `Core/Selection.lua` | Edit Mode selection: box in `editmode-actionbar-selected`, Core's own dialog in Edit Mode's look (`DialogBorderTranslucentTemplate`, DIALOG 200, BOTTOMRIGHT -250,200) with `HUD_EDIT_MODE_RESET_POSITION` → `window:Reset()`; cleared after the manager's `SelectSystem` (hook) and on Edit Mode exit |
@@ -24,20 +26,20 @@
 | `Core/Expand.lua` | Opens after the mouse rests `DWELL` 0.2 s on it (or its `corner` spot; `hover = false`: never by the mouse), closes after `LINGER` 0.5 s away; on `Core.Hover` (every `STEP` 0.1 s, `MARGIN`, held left button counts), stopped while `Stay(true)`; size moves by the kind of motion; hooks via `Core.Safe` |
 | `Core/Bindings.lua`, `Bindings.xml` | `BINDING_HEADER_SANEUI` (Core's title), `SANEUI_OPTIONS` → `Core.Config.Open`; modules add theirs under the same header |
 | `Core/Demo.lua` | Lazy `/sane window` demonstration: a panel (Esc, to the front) with a button of its own (*Start again*) and two tabs (*Window*: opens on rest, *Keep open*; *Bar*: *Add* fills it, wraps to 0 at full); `/sane window reset all` → `Window.ResetAll` |
-| `Core/Data/Steps.lua` | `Core.Steps`, the data framework's scheduler: jobs as coroutines (`Run(name, fn, ...)`, `Check`, `Fresh`, `Spend`, `Running`, `Jobs`), at most 5 ms and a quarter of a frame (`GetFramerate`) for all, by `debugprofilestop`; nothing in combat or under a restriction (Combat, Encounter, ChallengeMode, PvPMatch, Map; not Chat); a failing job dropped and reported; its frame has an `OnUpdate` only while there is work. The framework: `Doc/guides/data.md` |
-| `Core/Data/Codec.lua` | Makes `Core.Data`; `Data.Codec`: a pack's row into a record (`Decoder(fields, types)`, `Cut`, `Build`, `Versions`): tab between fields, characters 30 and 31 inside one, an empty part no value, a build and a day only a gone version; never raises on a broken row, never runs what it reads |
-| `Core/Data/Data.lua` | `Core.Data`: packs found by their TOC lines (`Find`), the client's game version (`Game`: `WOW_PROJECT_ID`, `IsBetaBuild`, `IsTestBuild`/`IsPublicTestClient`; none told: every pack refused), `Set(name)` handles (`Get`, `At`, `History`, `Versions`, `Changes`, `Keys`, `Each`, `Stamp`, `OnStamp`, `State`, `Ready`, `hash`, `build`; the versions the client's build has reached, records with their patch), `Prepare` (the scheduler's job *data: packs*: after `LOADING_SCREEN_DISABLED`, one pack a frame, out of combat), `Add` (called by a pack's set file), records made on first ask and kept weakly, `frozen`/`Tampered` for the tests; failures said once; `/sane data [show <set> <key>]` |
-| `Core/Settings/Settings.lua` | `Core.Config` (`Config` locally): put up `Core.pages` at login (`PutUpPages`, `Core.Tabbed`), `Fill` them once on options `OnShow`/`Open` with Blizzard initializers; `/sane options`; compartment func |
-| `Core/Settings/Panel.lua` | Canvas parts: header, MinimalTab tabs, scroll area, titled backdrop boxes, checks, sliders, dropdowns, colour swatches, buttons; `Panel.Refresh` |
-| `Core/Settings/Tabbed.lua` | `Config.BuildTabbed`: a module's canvas page in tabs (`option.tab`), drawn from the option descriptions with Panel controls (a box per `header`, `inline` numbers on their parent's line) |
-| `Core/Settings/Profiles.lua` | Canvas page *Profiles*: tabs; tab Profiles (All settings accountwide, profile dropdown + buttons, characters list with per-character profile/auto load/save), generic dialogs |
-| `Core/Settings/Synced.lua` | Tab *Accountwide* (box Sane UI: `Profiles.Shared` per module; a box per `Sync.GROUPS` entry with its `Sync.parts`) |
-| `Core/Settings/CVars.lua`, `CVars.xml` | Tab *CVars* of the page Profiles: search box + `WowStyle1FilterDropdownTemplate` (not at default, kept, kind; red cross resets), its own ScrollBox of two-line rows (keep tick, name/label, inline `InputBoxTemplate` value: Enter sets, Esc reverts; `common-icon-undo` reset while not default), details in the row tooltip, status + count under the list; labels `{ label, tip }` from `Data/CVarLabels.lua` (`dev/tools/cvar-labels [--check]`) |
+| `Core/Data/Steps.lua` | `Core.Steps`, the scheduler of the data framework and of Core's other long work: jobs as coroutines (`Run(name or options, fn, ...)` gives a handle: `:Stop()`, `:Running()`, `ms`, `frames`; options `priority`, `done(problem)`, `error(problem)`, `label`; `Stop`, `Check`, `Fresh`, `Spend`, `Running`, `Jobs`, `Paused`), at most 5 ms and a quarter of a frame (`GetFramerate`) for all, by `debugprofilestop`; a frame serves a `Fresh` job, then those with priority, then the rest in turns; nothing while `Core.Restricted()` (a fight; Combat, Encounter, ChallengeMode, PvPMatch, Map from the restriction event's own state; not Chat); a failing job dropped and reported; its frame has an `OnUpdate` only while there is work. The framework: `Doc/guides/data.md` |
+| `Core/Data/Codec.lua` | Makes `Core.Data`; `Data.Codec`: a pack's row into a record (`Decoder(fields, types)`, `Cut`, `Build`, `Versions`): tab between fields, characters 30 and 31 inside one, an empty part no value (a list's element a hole, the others keep their places), a build and a day only a gone version; never raises on a broken row, never runs what it reads |
+| `Core/Data/Data.lua` | `Core.Data`: packs found by their TOC lines (`Find`; the answers made are forgotten only when the game version or build changed), the client's game version (`Game`: `WOW_PROJECT_ID`, `IsBetaBuild`, `IsTestBuild`/`IsPublicTestClient`; none told: every pack refused), `Set(name)` handles (`Get`, `At`, `History`, `Versions`, `Changes`, `Keys`, `Each` (a job's handle, `done(problem)`), `Stamp`, `OnStamp`/`OffStamp` (told on the next frame, never inside the loader's job), `State`, `Ready`, `hash`, `build`; the versions the client's build has reached, records with their patch), `WhenReady(set, fn)`, `Prepare` (the scheduler's job *data: packs*: after `LOADING_SCREEN_DISABLED`, one pack a frame, out of combat; a set that cannot be had remembers it), `Add` (called by a pack's set file), records made on first ask and kept weakly, `frozen`/`Tampered` for the tests; failures said once, a listener's as `data: <set> listener`; `/sane data [show <set> <key>]` |
+| `Core/Settings/Settings.lua` | `Core.Config` (`Config` locally): put up `Core.pages` at login (`PutUpPages`, `Core.Tabbed`; a canvas page is an empty frame built in its first `OnShow`, `OwnPage`; a module's canvas has `OnDefault` → `Core.Reset`), `Fill` the vertical pages once on options `OnShow`/`Open` with Blizzard initializers on `RegisterProxySetting` (read `Core.Settings`, write `Core.Set`); `Config.Kind` (check, slider, number, text, choice, multi, color, button), `Config.Hidden`, `Config.Free`; list rows wired under every parent (`SetParentInitializer` + `AddEvaluateStateCVar` for the others), `hidden` via `AddShownPredicate`; `SaneUISettingsEntryMixin` (on `SettingsControlMixin`) for words/`entry` numbers; `/sane options` (in combat: `Core.AfterCombat`); compartment func |
+| `Core/Settings/Panel.lua` | Canvas parts: header, MinimalTab tabs, `TabbedFrame(page, tabs, top)` (tabs over a box, a scroll part each), scroll area, titled backdrop boxes (tip on the title; `PlaceBox`, `ShowBox`), checks, sliders, dropdowns (one, or `multi` checkboxes), `Edit` (words/numbers; `Number`, `Step`, `Format`, `Written`), colour swatches, buttons; controls kept per page (`Panel.Page`): `Panel.Refresh(page)` that page, `Panel.Refresh()` the shown pages and the others when next shown |
+| `Core/Settings/Tabbed.lua` | `Config.BuildTabbed`: a module's canvas page in tabs (`option.tab`), drawn from the option descriptions with Panel controls (a box per `header`, `headerTip` its tooltip; `inline` numbers on their parent checkbox's line in the same tab, else a line of their own; `hidden` lines closed up on refresh); header search (`Core.Fuzzy`, list under the box, a choice selects tab, scrolls, marks) and *Defaults* (`Core.Confirm`, `Core.Reset`) |
+| `Core/Settings/Profiles.lua` | Canvas page *Profiles*: tabs; tab Profiles (Accountwide settings; this character's profile + New/Rename/Delete/Defaults, Copy from, Export/Import in a text window `SaneUIProfileText`; characters with their profile and Forget, New Characters first) |
+| `Core/Settings/Synced.lua` | Tab *Game settings*: a box per `Sync.GROUPS` entry with its `Sync.parts` (`Sync.PartKept`/`KeepPart`, per profile), off with Accountwide off |
+| `Core/Settings/CVars.lua`, `CVars.xml` | Tab *CVars* of the page Profiles (`Config.CVarsTab`; the list frame made on the tab's first show): search box (refilters only when its words differ from `filters.search`) + `WowStyle1FilterDropdownTemplate` (not at default, kept, kind; red cross resets), its own ScrollBox of two-line rows (keep tick, name/label, inline `InputBoxTemplate` value: Enter sets, Esc reverts; `common-icon-undo` reset while not default), details in the row tooltip, status + count under the list; labels `{ label, tip }` from `Data/CVarLabels.lua` (`dev/tools/cvar-labels [--check]`) |
 | `Core/Settings/About.lua` | Page *Sane UI* under the banner: links (`About.LINKS`: Discord, website, GitHub, shown to copy) and feedback (bug, feature, note: a window that makes a report to copy, `About.Report`, closed by Esc through `Core.Escape`); `/sane feedback` |
-| `Core/Settings/Banner.xml` | Banner row template; its mixin (in Settings.lua) hides the page title while shown |
+| `Core/Settings/Banner.xml` | Our list row templates: the banner (its mixin in Settings.lua hides the page title while shown) and `SaneUISettingsEntryTemplate` (inherits `SettingsListElementTemplate`: a box to type into) |
 | `Core/Sync/*` | `Core.Sync`: see [sync.md](sync.md) |
 
-Core TOC order: Core → Kit → Motion → Saved → Profiles → Dock → EditMode → Escape → Watch → Fuzzy → Shape → Skin → Edge → Window → Views → Selection → Holder → Expand → Bar → Bindings → Demo → Data/ (Steps, Codec, Data) → Sync/ (Sync,
+Core TOC order: Core → Kit → Serial → Motion → Saved → Profiles → Dock → EditMode → Escape → Watch → Fuzzy → Shape → Skin → Edge → Window → Views → Selection → Holder → Expand → Bar → Bindings → Demo → Data/ (Steps, Codec, Data) → Sync/ (Sync,
 Data/Pages, Layout, Chat, Game) → Settings/ (Settings, Panel, Tabbed, Profiles, Synced, About, Data/CVarLabels, CVars, XML).
 Settings and Sync are no modules (no `SaneUI.Settings`/`SaneUI.Sync`, no TOC of their own); they hook Core's
 events themselves, after Saved's and Profiles' handlers (TOC order).
@@ -45,7 +47,7 @@ Modules register via `Core.NewModule(ADDON, name, ns)` in their first file.
 Core dispatches `OnLoad` on that addon's `ADDON_LOADED`, then `OnLogin` on `PLAYER_LOGIN`.
 A module arriving after login gets both steps immediately; one whose `OnLoad` failed gets no `OnLogin`. Saved data is available from `OnLoad`;
 `Core.class`, `charName`, `charKey` from login. Character identity is GUID (first names can be shared),
-with name/realm fallback. Forever names are first name + surname (`UnitName` returns both): show players
+with name/realm fallback; Profiles keys a character by its GUID, else `SaneUICharDB.key`. Forever names are first name + surname (`UnitName` returns both): show players
 with `Core.FullName(unit)`; `charName` is the full name. Any other player is keyed, compared and shared by
 `Core.PlayerKey(unit)` / `Core.PlayerKeyOf(text)`: Forever `First Surname` (realm dropped, regionally
 unique; never either part alone, nil without the surname), Retail `Name-Realm`; `Core.Surnames()` tells
@@ -64,55 +66,63 @@ which (Doc/guides/data.md, *Players*).
   `pcall` and returns up to three plain answers; missing/failing function gives nils.
 - `Core.Later(fn, delay)`: coalescing request function; only one pending timer. `fn` needs its own
   appropriate guard. `Points` / `Repoint` preserve anchors, including nil holes.
-- `Core.Options(name, descriptions, changed)`: describe at file load; defaults repair wrong types
-  and clamp numeric options. `Store(name)` returns the account store; `Character(name)` returns
+- `Core.Options(name, descriptions, hooks)`: describe at file load (hooks: a table, or only `changed`); returns the
+  live settings once Core is loaded. `Core.Settle` makes a copy right whenever it comes into use (upgrade by
+  `version`/`upgrade` first, then kinds/choices/validate/ends; keys no description has go, `_`-keys stay).
+  `Core.Set(name, key, value)` for writes from menus/commands (checks, tells, reload offer, page refresh).
+  `Store(name)` returns the module's store; `Character(name)` returns `modules[name].chars[charKey]`,
+  annotating name/class.
+- `Core.AfterCombat(key, fn, ...)` runs now or after the fight (same key merges); `Core.Locked(frame)`;
+  `Core.Restricted()` (combat or `Core.RESTRICTIONS`, kept from `ADDON_RESTRICTION_STATE_CHANGED`'s payload);
+  `Core.Off`, `Core.OnUnit`/`OffUnit`; `ADDON_ACTION_BLOCKED`/`FORBIDDEN` of ours go to the error log.
   `modules[name].chars[charKey]`, annotating name/class.
 
-Saved shape: `SaneUIDB = { modules = { Core = { options, demo }, <Module> = {...} }, errors, log, profiles, account }`;
-per character `SaneUICharDB = { settings, profile, key }`.
-Errors keyed by label contain `text/count/when`; chronological log entries also contain label,
+Saved shape (v2): `SaneUIDB = { version, modules = { <Module> = { chars, ... } }, profiles = { Accountwide = { <Module> = options }, ... },
+accountwide (false: off), characters = { [key] = { name, realm, class, profile } }, newProfile, ownSince, errors, log }`;
+per character `SaneUICharDB = { settings, since, key, version }`.
+Errors keyed by label contain `text/count/when` (at most 100 labels); chronological log entries also contain label,
 version/build. Keep newest 100; consecutive identical failures coalesce. Uncaught SaneUI errors are
 observed through `ScriptErrorsFrame.DisplayMessageInternal`. The client writes saved variables at
 reload/logout, so run `dev/tools/errors` after that to see current disk evidence.
 
 ## Profiles
 
-`modules.<M>.options` tables are held by modules (and Settings' AddOn settings) for the whole session:
-never replace them, copy into them (`Profiles.lua` `Put`: copy, `Core.CheckOptions`, then `changed(key,
-value)` per changed described key). `Arrange` keeps `using[module]` = nil (account's) | "own" |
-"profile:<name>" and moves each module to `Wanted`: profile if this character's line in
-`SaneUIDB.characters[key]` has `autoLoad` + an existing `profile`; else own if `SaneUIDB.separate` or
-`SaneUIDB.perCharacter[M]`; else account. Leaving a source saves it (own → `SaneUICharDB.settings`,
-profile with `autoSave`, account parked in `SaneUIDB.account`). Runs at Core `ADDON_LOADED` (key from
-`SaneUICharDB.key` or GUID; leftover `account` restored first), on `SetAccountWide`, `SetShared`,
-`SetCharacter` for the current key, `Delete`, and at `PLAYER_LOGOUT` (leaving: all back to account, after
-capture + autoSave snapshot). `PLAYER_LOGIN` notes the character (name, realm, class) and `char.key`.
-Profiles (`SaneUIDB.profiles[name][module]`) are snapshots of all modules' options; Load puts them into
-whatever is in use. `Profiles.Copies(M)` lists every saved copy of M's options reachable now (in use,
-parked account, each profile, this character's own) for one-time upgrades by a module once versions are handed out. `SaneUIDB.newCharacters` (key `Profiles.NEW` in `Character`/`SetCharacter`, `Line`) is copied
-into an unseen character's line by `Register` at `ADDON_LOADED` before `Arrange` (and at `PLAYER_LOGIN` if no GUID
-then); Rename/Delete walk `Lines()` (it plus every character). `Profiles.EMPTY` ("Empty") and `Profiles.DEFAULTS` ("SaneUI Defaults") are virtual, never in `SaneUIDB.profiles`
-(`Exists` vs `Saved`; both `Fixed`: Save/Rename/Delete refuse). Empty = no profile (line `profile` nil; `Character`
-reports it, with autoLoad/autoSave true); Load puts `Kept(name)` (account's aside or `char.settings`, per `Home`)
-where a profile is in use; Duplicate = `KeptProfile()`. Defaults: Load = `Put(..., fresh)` (wipe, then
-`CheckOptions`) for described modules except Sync (`GameSettings`); `Wanted` never gives Sync to it; `Arrange` to it
-wipes the others (later addons get defaults from `Core.Options`); Duplicate writes `Defaults()`; never autoSaved. `Core.Copy` (Saved.lua): table defaults are copied, never shared. Settings' `Config.Refresh` re-notifies controls with the module callbacks muted (Core
-already told them). `Core.Options(name, list, changed, capture)`: every `capture` runs before a snapshot;
-options may have `header`/`headerTip` or no `text` (hidden, still saved). A table option is reported as
-changed on every load (copies). Pages: `Core.pages.top` (logo only), `.Profiles` (canvas: frame
-`Core.frames.Profiles`, filled by Settings' `Config.BuildProfiles` with tabs from `Panel.lua`), `[Core.name]`
-(General), `.Appearance`, then `[module]` titled by `module.title`: a vertical page, or a canvas page of our own
-(`Core.frames[module]`, `Config.BuildTabbed`) when one of its switches names a tab (`Core.Tabbed(name)`; Social's do)
-(only `SaneUI[name]` modules: Sync's switches, described under `Sync`, get no page; the tab Accountwide shows them).
+Saneroki, 2026-10-17. **Accountwide settings** (`SaneUIDB.accountwide ~= false`, on at first): every character uses
+a profile (`characters[key].profile`, nil = *Accountwide*, always there, not renamed or deleted), holding every
+module's settings and Sync's (the game's). Off: each character's own (`SaneUICharDB.settings`, re-seeded from its
+profile when `since ~= ownSince`), the game's settings untouched (Sync's live table is a session table; Give and
+Capture do nothing).
+
+Each module's live table (`Core.Settings`) is stored in exactly one place, the one in use; the game writes a table
+once, so it is never also kept elsewhere (`store.options` is a metatable alias). `Move(to)`: capture, copy the live
+tables into the old place, wipe each live table and fill it from the new place (`Core.Settle`), store it there, tell
+(`changed` per differing key by `Core.Same`, or `replaced`), then `moved` (Sync gives the game's settings). Load:
+`ADDON_LOADED` binds every described module; later modules bind in `Core.Options`. `PLAYER_LOGIN`: a different key
+(no GUID at load) registers and moves. `PLAYER_LOGOUT`: `Capture()` only, so logout listeners see the right
+settings in any order. Upgrade v1 → v2 once (`Profiles.Upgrade`): account options (and a parked `account`) →
+*Accountwide*; module `store.version` stamped as each copy's `_version`; a line's profile kept only with
+`autoLoad`; `separate` → off with `ownSince = 1` (v1 own settings kept); `perCharacter`, `account`, `newCharacters`
+(→ `newProfile`) dropped. Profile names unique case-insensitively; Export/Import through `Core.Serial`
+(`{ kind = "Sane UI profile", version, name, settings }`).
+Pages: `Core.pages.top` (logo only), `.Profiles` (canvas: frame `Core.frames.Profiles`, built in its first `OnShow` by
+`Config.BuildProfiles` with tabs from `Panel.lua`), `[Core.name]` (General), `.Appearance`, then `[module]` titled by
+`module.title`: a vertical page (proxy settings reading `Core.Settings` at each call, writing through `Core.Set`), or a
+canvas page of our own (`Core.frames[module]`, `Config.BuildTabbed`) when one of its switches names a tab
+(`Core.Tabbed(name)`; Social's do). Only `SaneUI[name]` modules get a page: Sync's switches, described under `Sync`,
+are shown by the tab *Game settings*. `Config.Refresh` re-notifies controls, which only read then (Core already told
+the modules).
 
 ## Options trap
 
 `Settings/Settings.lua` registers **empty pages at login**, because Blizzard chooses whether
 to show its AddOns tab when options first open. Registering pages in a late-loaded module loses that
-tab for the session. `Config.Fill` (options `OnShow`, `/sane options`) fills the existing `Core.pages`
-once. Vertical pages use `RegisterInitializer` (`Settings.Create*Initializer`), never direct checkbox
-creation; canvas pages (Profiles, a module's tabbed page) build their controls with `Panel.lua`. Opening
-options in combat currently prints a message and returns; it does not queue an automatic opening.
+tab for the session. `Config.Fill` (options `OnShow`, `/sane options`) fills the existing vertical
+`Core.pages` once; a canvas page (Profiles, a module's tabbed page) stays an empty frame until its first
+`OnShow`, then builds its controls with `Panel.lua`. Vertical pages use `RegisterInitializer`
+(`Settings.Create*Initializer`, `CreateControlInitializer` for our entry row), never direct checkbox
+creation. The game's search reads vertical layouts only (`IsVerticalLayout`), so tabbed pages search
+themselves. Opening options in combat prints a message and queues `Config.Open` with
+`Core.AfterCombat("options", …)`: they open when the fight ends.
 
 ## Window contracts
 

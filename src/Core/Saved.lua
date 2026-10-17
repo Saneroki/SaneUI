@@ -7,26 +7,27 @@ local Core = SaneUI.Core
 --
 --  All of it is one table, SaneUIDB, which the game writes to
 --  WTF/Account/<account>/SavedVariables/SaneUI.lua:
---      SaneUIDB.modules.<Module>            what that module keeps (Store)
---      SaneUIDB.modules.<Module>.options    its switches (Options)
+--      SaneUIDB.modules.<Module>            what that module keeps besides its settings (Store)
 --      SaneUIDB.modules.<Module>.chars      its notes per character (Character)
---      SaneUIDB.modules.Core.options        the general switches
+--      SaneUIDB.profiles.<Profile>.<Module> its settings, in a profile (Profiles.lua)
 --      SaneUIDB.errors                      what went wrong (Core.errors)
 --      SaneUIDB.log                         the same, every time it happened (Core.log)
---      SaneUIDB.profiles, SaneUIDB.account  profiles, and the account's settings kept aside
---                                           while a character has its own (Profiles.lua)
+--  and SaneUICharDB for the character played (its own settings, while Accountwide is off).
 --
 --  It is kept here, in the addon every module depends on, so that a module
 --  finds its settings whichever other modules are switched on, and keeps them
 --  while it is switched off itself.
 --
---  A module describes its switches once (Options). They get their default and
---  are kept. The options (Settings/) show them as checkboxes
---  in the game's options; a module may show them elsewhere too.
+--  A module describes its settings once (Options). Where they live is Profiles.lua's
+--  business: the module holds one table of them for the whole session (Core.Settings,
+--  also store.options), its values made right here (Settle) whenever they come into
+--  use: brought up to date by the module's upgrade, every one of the right kind, the
+--  ones no description has any more taken out. The options (Settings/) show them in
+--  the game's options; a module may show or set them elsewhere too (Core.Set).
 -------------------------------------------------------------------------------
 local db -- SaneUIDB, once the game has read it
 
-Core.described = {}   -- [module name] = { list = { option, ... }, changed = fn }
+Core.described = {}   -- [module name] = { list = { option, ... }, keys, changed, capture, version, upgrade, ... }
 Core.optionOrder = {} -- module names, in the order they described their switches
 
 -- t[key] as a table: what is there if it is one, a new one if not. Saved data comes from older
@@ -36,9 +37,20 @@ local function Table(t, key)
     return t[key]
 end
 
+-- store.options: the module's settings in use (Core.Settings). Found through the store, but not kept in
+-- it: they are kept where Profiles.lua keeps them, and the game writes a table only once.
+local function Alias(store, name)
+    if getmetatable(store) == nil then
+        setmetatable(store, { __index = function(_, key)
+            if key == "options" then return Core.Settings(name) end
+        end })
+    end
+    return store
+end
+
 -- What a module keeps between sessions. From OnLoad on.
 function Core.Store(name)
-    return Table(db.modules, name)
+    return Alias(Table(db.modules, name), name)
 end
 
 -- What a module keeps for the character you play. From OnLogin on.
@@ -102,12 +114,46 @@ local function Check(option, options)
     end
 end
 
--- Every switch of a module made right (Check).
-local function Defaults(name)
-    local options = Table(Core.Store(name), "options")
-    for _, option in ipairs(Core.described[name].list) do Check(option, options) end
+-- A module's settings made right for this version, wherever they come from (a profile, a character's
+-- own, an older version, a hand edit): first the module's upgrade for a copy of an older shape (each copy
+-- carries the version it was made right for, _version), then every switch checked (Check); what no
+-- description has any more goes (the keys beginning with _ are Core's). Returns the values.
+function Core.Settle(name, values)
+    local described = Core.described[name]
+    if not described or type(values) ~= "table" then return values end
+    if described.version then
+        local from = tonumber(values._version) or 0
+        if from < described.version and described.upgrade then
+            Core.Safe(name .. ": upgrade", described.upgrade, values, from)
+        end
+        values._version = described.version
+    end
+    for key in pairs(values) do
+        if not (described.keys[key] or (type(key) == "string" and key:sub(1, 1) == "_")) then values[key] = nil end
+    end
+    for _, option in ipairs(described.list) do Check(option, values) end
+    return values
 end
-Core.CheckOptions = Defaults -- also for switches copied in from a profile (Profiles.lua)
+
+-- What a description can get wrong, said once in the error log (not in chat: nothing the player can mend).
+local function Described(name, list)
+    local keys, seen = {}, {}
+    for index, option in ipairs(list) do
+        local problem
+        if type(option.key) ~= "string" then
+            problem = "an option without a key (#" .. index .. ")"
+        elseif seen[option.key] then
+            problem = "two options called " .. option.key
+        elseif option.max and not option.min then
+            problem = option.key .. " has an end but no start"
+        elseif option.parent and type(option.parent) == "string" and not seen[option.parent] then
+            problem = option.key .. " is under " .. option.parent .. ", which does not come before it"
+        end
+        if problem then Core.NoteError(name .. ": options", problem) end
+        if type(option.key) == "string" then keys[option.key], seen[option.key] = true, true end
+    end
+    return keys
+end
 
 -- Core.Options("Abilities", { { key = "ghosts", default = true, text = "...", tip = "..." } }, changed)
 -- A number instead of a switch has its ends too: { key = "after", default = 60, min = 5, max = 300, step = 5, ... }
@@ -127,14 +173,33 @@ Core.CheckOptions = Defaults -- also for switches copied in from a profile (Prof
 -- reload = true: the game shows a change only after a /reload, which is offered.
 -- button = function() end: an action on the options page (no default, nothing kept).
 -- multi = true (with choices, a table as default): several of the choices at once, [value] = true.
--- Call it while the files are read. changed(key, value) runs after a switch was flipped on the
--- options page, or a profile changed it. capture(), if given, runs before the settings in use are
--- saved anywhere (a profile, the logout): for a module whose settings hold something of the game's
--- own, to bring it up to date (Sync).
-function Core.Options(name, list, changed, capture)
-    Core.described[name] = { list = list, changed = changed, capture = capture }
-    Core.optionOrder[#Core.optionOrder + 1] = name
-    if db then Defaults(name) end -- a module: its files are read after our settings
+-- entry = true (a number): typed into a box instead of a slider, kept within min and max (a number without max is too).
+-- A string default without choices: words typed into a box (Enter sets them, Esc leaves them).
+-- hidden = function(options) return hide end: the control is not there while it returns true (asked again after each change).
+-- Call it while the files are read. Its third argument is a function, changed(key, value), or a table
+-- of hooks:
+--      changed(key, value)   a switch was changed: on the options page, by Core.Set, by another profile
+--      replaced()            instead of changed: once, after the settings in use came from elsewhere
+--                            (another profile, Accountwide switched), if any of them differs
+--      moved()               after the settings in use came from elsewhere, changed or not
+--      capture()             before the settings in use are copied or saved anywhere (a new profile, the
+--                            logout): for settings that hold something of the game's own, to bring it up
+--                            to date (Sync)
+--      version, upgrade      the shape of the settings now (a number), and upgrade(values, from) that
+--                            brings a copy of an older shape (from: 0 for none) up to it; it runs before
+--                            the switches are checked, so a value whose kind changed can still be read
+--      game = true           the settings are the game's own (Sync): kept in profiles only; while
+--                            Accountwide is off they are no one's and not used
+-- The fourth argument may still be capture. Returns the settings in use, once Core's are loaded.
+function Core.Options(name, list, hooks, capture)
+    if type(hooks) ~= "table" then hooks = { changed = hooks, capture = capture } end
+    local described = { list = list, keys = Described(name, list) }
+    for hook, value in pairs(hooks) do described[hook] = value end
+    if not Core.described[name] then Core.optionOrder[#Core.optionOrder + 1] = name end
+    Core.described[name] = described
+    -- A module: its files are read after our settings are there, and its settings come into use at once.
+    if db and Core.Profiles then return Core.Profiles.Arrive(name) end
+    return nil
 end
 
 -- One of a module's switches as described; nil if it describes none of that key.
@@ -149,8 +214,7 @@ end
 
 -- The settings in use of a module: the table it holds for the whole session (from its OnLoad on).
 function Core.Settings(name)
-    local store = db and db.modules[name]
-    return type(store) == "table" and store.options or nil
+    return Core.Profiles and Core.Profiles.Live(name) or nil
 end
 
 -- The options page shows what changed elsewhere, a frame later (Settings.lua).
@@ -213,7 +277,7 @@ local function Move(place)
 end
 local function Rename(char)
     Move(db.modules)
-    Move(db.perCharacter)
+    Move(db.perCharacter) -- (of the first shape of the settings: Profiles.lua takes them over)
     Move(db.account)
     if type(char) == "table" then Move(char.settings) end
     if type(db.profiles) == "table" then
@@ -229,11 +293,21 @@ Core.On("ADDON_LOADED", function(name)
     Table(db, "modules")
     Rename(rawget(_G, "SaneUICharDB"))
     Table(db, "errors")
-    for label, problem in pairs(Core.errors) do db.errors[label] = problem end -- from before the settings were there
+    -- From before the settings were there: added to what was kept, a count to the count kept.
+    for label, problem in pairs(Core.errors) do
+        local kept = db.errors[label]
+        if type(kept) == "table" and type(problem) == "table" then
+            problem.count = (tonumber(problem.count) or 1) + (tonumber(kept.count) or 0)
+        end
+        db.errors[label] = problem
+    end
     Core.errors = db.errors
     Table(db, "log")
     for _, entry in ipairs(Core.log) do db.log[#db.log + 1] = entry end -- likewise
     Core.log = db.log
-    for _, module in ipairs(Core.optionOrder) do Defaults(module) end -- ours: described before the settings were there
-    Core.general = Core.Store(Core.name).options
+    for name, store in pairs(db.modules) do
+        if type(store) == "table" then Alias(store, name) else db.modules[name] = nil end
+    end
+    -- Profiles.lua listens after this (TOC order): it puts the settings of every module described so far
+    -- (Core's, Sync's) in use, and Core.general with them.
 end)

@@ -35,7 +35,16 @@ for _, name in ipairs({ "GameTooltipText", "GameTooltipHeaderText" }) do
     function font:GetFont() return "Fonts\\FRIZQT__.TTF", 12, "" end
     _G[name] = font
 end
-PixelUtil = { GetPixelToUIUnitFactor = function() return 1 end }
+-- The game's PixelUtil (Blizzard_SharedXML/PixelUtil.lua), with one dot of the screen as large as a unit
+-- of the interface, unless a test says otherwise (pixel).
+local pixel = 1
+PixelUtil = { GetPixelToUIUnitFactor = function() return pixel end }
+function PixelUtil.GetNearestPixelSize(size, scale, least)
+    local factor = PixelUtil.GetPixelToUIUnitFactor()
+    local dots = math.floor(size * scale / factor + 0.5)
+    if least and dots < least then dots = least end
+    return dots * factor / scale
+end
 ITEM_QUALITY_COLORS = { [1] = { r = 1, g = 1, b = 1 }, [4] = { r = 0.64, g = 0.21, b = 0.93 } }
 RAID_CLASS_COLORS = { MAGE = { r = 0.25, g = 0.78, b = 0.92 } }
 local colors = {} -- every colour the module made: the first two are the background's gradient
@@ -224,12 +233,19 @@ local function row(panel, index) return panel.model.shown.rows[index] or {} end
 local function count(panel) return panel.model.shown.n end
 
 -- The addons: Core, then the module -----------------------------------------------------------
+-- Of Core only what the module uses: its tools, the kit (pools, pixels, a frame lent), the saved settings
+-- and where they live (Profiles), and Fuzzy for a text without its codes.
 W.Load(root, "SaneUI", "Core/Core", {})
+W.Load(root, "SaneUI", "Core/Kit", {})
+W.Load(root, "SaneUI", "Core/Serial", {})
 W.Load(root, "SaneUI", "Core/Motion", {})
 W.Load(root, "SaneUI", "Core/Saved", {})
+W.Load(root, "SaneUI", "Core/Profiles", {})
+W.Load(root, "SaneUI", "Core/Fuzzy", {})
 local Core = SaneUI.Core
+-- Saved by an earlier version (the first shape of the settings): by hand, no choice; the mouse switch of version 2.
+SaneUIDB = { modules = { Tooltips = { options = { show = "never", cursor = true } } } }
 W.Fire("ADDON_LOADED", "SaneUI")
-Core.Store("Tooltips").options = { show = "never", cursor = true } -- saved by hand: no choice; the mouse switch of version 2
 local files = { "Tooltips", "Texts", "Model", "Read", "Live", "Inspect", "Numbers", "Data/Quests", "Quests", "Auction" }
 for _, name in ipairs({ "Kinds/Gold", "Kinds/Item", "Kinds/Spell", "Kinds/Unit", "Kinds/Aura", "Kinds/Quest", "Pools", "Panel", "Host" }) do
     files[#files + 1] = name
@@ -255,6 +271,7 @@ for _, text in pairs(facts.item) do shaped = shaped and text:find("^[nb][%d%.,]+
 check(shaped, "every record of the facts has its shape: a quest's five fields, an NPC's and an item's groups")
 W.Fire("ADDON_LOADED", "SaneUI_Tooltips")
 local options = ns.options
+check(options == Core.Settings("Tooltips"), "the switches are the table Core keeps for the module")
 check(options.cursor == "always" and options.classColors == true and options.icons == true and options.textSize == 14 and options.opacity == 97,
     "its settings: the mouse off, class colours and icons on, the text 14 high, the background almost solid")
 check(options.show == "always", "and tooltips shown always (a saved value that is no choice of the option gets that)")
@@ -262,7 +279,7 @@ check(Core.described.Tooltips.list[2].choices[1][1] == "default" and Core.descri
     "the mouse option at first: the game's place; one saved as switched on (an older version) is Always now")
 options.cursor = "default"
 options.show = "always" -- shown at once, until the key is tried (below)
-check(Core.Store("Tooltips").version == 3, "the settings say which version of them they are")
+check(options._version == 3, "the settings say which shape of them they are, with each copy")
 check(#postCalls == 0, "nothing is asked of the game before the login")
 local tip = Tooltip("GameTooltip")
 GameTooltip = tip
@@ -566,6 +583,20 @@ for index = 1, panel.lines.taken do
 end
 check(named._points[1][4] == 12 and named._justify == "LEFT" and ruled,
     "a section's name stands at the left, and a rule runs on after it")
+-- A rule's light line is one hairline high: one unit of the interface, to whole dots of the screen.
+local function hairline()
+    local least
+    for index = 1, panel.lines.taken do
+        local height = panel.lines[index]._height
+        if height > 0 and (not least or height < least) then least = height end
+    end
+    return least
+end
+check(hairline() == 1, "a hairline is one unit of the interface, where that is one dot of the screen")
+pixel = 768 / 2160 -- a 4K screen at the interface's scale 1
+tip:Fill({ type = TYPE.Item, id = 2589 }, { { "Linen Cloth" }, { " ", nil, nil, nil, LINE.SellPrice, price = 13 } })
+check(math.abs(hairline() - 3 * pixel) < 1e-9, "and the nearest whole dots elsewhere: three on a 4K screen")
+pixel = 1
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Plate", nil, { 0.64, 0.21, 0.93 } }, { "115 Armor" } })
 check(row(panel, 2).font == "big" and row(panel, 2).left == "115 Armor", "an armour's number is large too")
 options.icons = false
@@ -1062,6 +1093,9 @@ tip:Fill({ type = TYPE.UnitAura, id = 1243 }, { { "Power Word: Fortitude" }, { "
     { "Increases Stamina by 26.", nil, GOLD, nil, LINE.SpellDescription }, { "17 minutes remaining" }, { "IconID", "135932", nil, nil, 0, added = true } })
 check(count(panel) == 4 and row(panel, 3).left == "Increases Stamina by 26." and panel.live.aura.texts.LEFT._text == "17 minutes remaining",
     "another addon's ID lines are left out (Alt shows the numbers), and the time is still found for the bar")
+check(ns.Reader.IsIdLine({ left = "|TInterface\\Icons\\X:0|t |cffffd100Spell ID:|r", right = "|Hspell:1459|h1459|h" })
+    and not ns.Reader.IsIdLine({ left = "|cffffd100Spell ID|r is a word", right = "" }),
+    "an ID line is known also with colours, links and icons in it; a line that only names an ID is none")
 
 -- Alt held: the technical details
 W.alt = true

@@ -32,7 +32,7 @@ local Plain = Core.Plain
 
 local TEXT = {
     header = "CVars",
-    intro = "Every console setting of the game. Enter sets a typed value; a tick keeps the CVar with Sane UI's settings.",
+    intro = "Every console setting of the game. Enter sets a typed value; a tick keeps the CVar in the profile in use.",
     notDefault = "Not at their default",
     kept = "Kept with Sane UI",
     kind = "Kind",
@@ -41,7 +41,7 @@ local TEXT = {
     total = "%d CVars",
     matching = "%d matching",
     keep = "Keep with Sane UI's settings",
-    keepTip = "The same on every character that uses the account's settings, and part of your profiles. Taken when you log out, set when a character comes into the game.",
+    keepTip = "Kept in the profile in use: the same on every character that uses it. Taken when you log out, set when a character comes into the game. Not with Accountwide settings off.",
     reset = "Back to the default",
     resetTip = "The game's default: %s",
     defaultIs = "Default: %s",
@@ -194,8 +194,12 @@ function SaneUISettingsCVarsMixin:OnLoad()
     local search = CreateFrame("EditBox", nil, self, "SearchBoxTemplate")
     search:SetSize(210, 20)
     search:SetPoint("TOPLEFT", 6, -4)
+    -- The game tells of every SetText too, ours in Init and its clear button's (without userInput):
+    -- the list is filtered anew only when the words are other than those it was filtered by.
     search:HookScript("OnTextChanged", function(box)
-        filters.search = box:GetText() or ""
+        local text = box:GetText() or ""
+        if text == filters.search then return end
+        filters.search = text
         Refilter()
     end)
     self.Search = search
@@ -322,6 +326,8 @@ function SaneUISettingsCVarRowMixin:Init(entry)
     self.Value:SetEnabled(free)
     self.Reset:SetShown(free and value ~= default)
     self.Keep:SetChecked(Kept(entry.name))
+    -- Kept CVars are the profile's: with Accountwide settings off there is none, and nothing is kept.
+    self.Keep:SetEnabled(SaneUI.Core.Profiles.On())
 end
 
 -- Gives the row's CVar that value, and says under the list if the game keeps another.
@@ -356,16 +362,25 @@ function SaneUISettingsCVarRowMixin:OnLeave()
     GameTooltip_Hide()
 end
 
--- The tab CVars on the page Profiles: a line on what it is for, the list under it. The list is
--- shown anew each time the tab is.
+-- The tab is shown: the list, made the first time (the page's other tabs do not need it), is shown anew.
+local function ShowList(part)
+    local list = part.list
+    if not list then
+        list = CreateFrame("Frame", nil, part, "SaneUISettingsCVarsTemplate")
+        list:SetPoint("TOPLEFT", 8, -40)
+        list:SetPoint("BOTTOMRIGHT", -8, 8)
+        part.list = list
+    end
+    list:Init()
+end
+
+-- The tab CVars on the page Profiles: a line on what it is for, the list under it.
 function Config.CVarsTab()
     return { name = TEXT.header, scroll = false, build = function(part)
         Config.Panel.Text(part, TEXT.intro, "GameFontHighlight", 12, -12)
-        local list = CreateFrame("Frame", nil, part, "SaneUISettingsCVarsTemplate")
-        list:SetPoint("TOPLEFT", 8, -40)
-        list:SetPoint("BOTTOMRIGHT", -8, 8)
-        part:SetScript("OnShow", function() Core.Safe("Settings: CVars", list.Init, list) end)
-        part:SetScript("OnHide", function() list:Release() end)
-        part.list = list
+        part:SetScript("OnShow", function() Core.Safe("Settings: CVars", ShowList, part) end)
+        part:SetScript("OnHide", function()
+            if part.list then part.list:Release() end
+        end)
     end }
 end

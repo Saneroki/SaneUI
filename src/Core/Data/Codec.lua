@@ -74,9 +74,12 @@ local function Field(spec)
     local of = match(spec, "^list (.+)$")
     if of then
         local decode = Element(of)
+        -- Each element at its own place: an empty one is no value, a hole, and those after it keep theirs.
         return function(part)
             local items, list = Cut(part, LIST), {}
-            for _, item in ipairs(items) do list[#list + 1] = decode(item) end
+            for index, item in ipairs(items) do
+                if item ~= "" then list[index] = decode(item) end
+            end
             return list
         end
     end
@@ -88,9 +91,10 @@ local function Field(spec)
             local map = {}
             for _, item in ipairs(Cut(part, LIST)) do
                 local stop = find(item, PART, 1, true)
-                if stop then
+                local value = stop and sub(item, stop + 1)
+                if value and value ~= "" then
                     local key = sub(item, 1, stop - 1)
-                    map[number and tonumber(key) or key] = decode(sub(item, stop + 1))
+                    map[number and tonumber(key) or key] = decode(value)
                 end
             end
             return map
@@ -126,12 +130,14 @@ function Codec.Decoder(fields, types)
     end
 end
 
--- The build a row starts at, without taking it apart.
+-- The build a row starts at, without taking it apart; nil for one that is no text.
 function Codec.Build(row)
+    if type(row) ~= "string" then return nil end
     return tonumber(match(row, "^(%d+)"))
 end
 
--- An entry's older versions (a pack's history string), oldest first.
+-- An entry's older versions (a pack's history string), oldest first; none for one that is no text.
 function Codec.Versions(history)
+    if type(history) ~= "string" then return {} end
     return Cut(history, VERSION)
 end

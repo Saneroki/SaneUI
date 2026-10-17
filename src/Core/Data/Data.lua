@@ -10,12 +10,14 @@ local Core = SaneUI.Core
 --      local Items = SaneUI.Core.Data.Set("Items")   -- cheap, loads nothing, never nil
 --      SaneUI.Core.Data.Prepare("Items")             -- load soon: after the loading screen, out of combat
 --      local item = Items:Get(16801)                 -- the record, or nil: not known, not loaded yet, gone
---      Items:OnStamp(Redraw)                         -- told when the set arrives (or changes)
+--      Items:OnStamp(Redraw)                         -- told when the set arrives (or changes); OffStamp
+--      SaneUI.Core.Data.WhenReady(Items, Draw)       -- once it is there: at once, or when it arrives
 --      Items:Changes(16801)                          -- its history: also History, At, Versions; Keys, Each
 --
 --  Get never loads a pack: it answers nil and asks for Prepare. Loading is a job of the scheduler
---  (Steps.lua): one pack a frame, alone in its frame, never in combat. Records are shared and read-only,
---  made for an entry when first asked for, and kept while anybody holds them.
+--  (Steps.lua): one pack a frame, alone in its frame, never in combat. A set's listeners are told on the
+--  next frame, never inside that job. Records are shared and read-only, made for an entry when first asked
+--  for, and kept while anybody holds them.
 --
 --  Packs are found by their TOC lines (X-SaneUI-Sets, -Format, -Game), without loading them. A pack of
 --  another format or game version is refused, and so is every pack on a client whose game version cannot
@@ -60,6 +62,9 @@ local TEXT = {
     setBuild = "%s %s (build %d)",
     setState = "%s (%s: %s)",
     jobs = "jobs running: %s.",
+    jobsPaused = "jobs running: %s; they wait while a fight or a restriction of the game's lasts.",
+    job = "%s (%.1f ms in %d frames)",
+    jobOne = "%s (%.1f ms in one frame)",
     noJobs = "none",
     show = "%s %s: %s.",
     change = "  %s: %s %s -> %s.",
@@ -79,6 +84,8 @@ local owner = {}      -- [set name] = its pack
 local sets = {}       -- [set name] = what Core knows of it (made by Add, or when something is said of it)
 local handles = {}    -- [set name] = its handle
 local listeners = {}  -- [set name] = { fn, ... } told when its stamp moves
+local waiting = {}    -- [set name] = { fn, ... } told once, when it is ready (WhenReady)
+local owed = {}       -- the sets whose listeners are still to be told, in the order their stamps moved
 local queue = {}      -- packs waiting to load
 local said = {}       -- [label] = true: a failure is said once
 local handed = {}     -- the records handed out while Data.frozen: { record, copy }
@@ -87,6 +94,7 @@ local game, told      -- the client's game version, once told
 local build           -- the client's build
 local stamps = 0
 local walks = 0       -- Each's jobs, numbered so that two walks over one set can run at once
+local NONE = {}
 local screen = true   -- the loading screen is up (Core is read during the login's)
 
 local function Say(label, text, loud)
@@ -162,12 +170,17 @@ local function Judge(pack, client, loadable, reason)
 end
 
 -- Looks for the packs in the addon list, by their TOC lines; tells the client's game version and build
--- anew, and forgets the answers made from them. Done once at first need, by /sane data and by the tests: a
--- pack added while the game runs is found after a restart.
+-- anew, and forgets the answers made from them if either changed. Done once at first need, by /sane data
+-- and by the tests: a pack added while the game runs is found after a restart.
 function Data.Find()
+    local wasGame, wasBuild = game, build
     found, told, build = true, false, nil
-    for _, set in pairs(sets) do Forget(set) end
     local client = Data.Game()
+    local changed = client ~= wasGame or ClientBuild() ~= wasBuild
+    for _, set in pairs(sets) do
+        set.failed = nil -- its pack is judged anew below
+        if changed then Forget(set) end
+    end
     local old, api = packs, C_AddOns
     packs, packList, owner = {}, {}, {}
     for index = 1, Core.Ask(api.GetNumAddOns) or 0 do
@@ -192,11 +205,33 @@ function Data.Find()
     end
 end
 
+-- The listeners of the sets whose stamps moved: told on the next frame, outside the loader's job and the
+-- game's ADDON_LOADED (a listener may start a job, or run a job's Check, which could not yield there).
+-- Those that wait for a set to be ready (WhenReady) are told first, once.
+local function Tell()
+    local moved = owed
+    owed = {}
+    for _, set in ipairs(moved) do
+        set.owed = nil
+        local handle, label = Data.Set(set.name), "data: " .. set.name .. " listener"
+        local once = set.ready and waiting[set.name]
+        if once then
+            waiting[set.name] = nil
+            for _, fn in ipairs(once) do Core.Safe(label, fn, handle) end
+        end
+        for _, fn in ipairs(listeners[set.name] or NONE) do Core.Safe(label, fn, handle) end
+    end
+end
+local TellSoon = Core.Later(Tell)
+
 local function Moved(set)
     stamps = stamps + 1
     set.stamp = stamps
-    local handle = Data.Set(set.name)
-    for _, fn in ipairs(listeners[set.name] or {}) do Core.Safe("data: " .. set.name, fn, handle) end
+    if not set.owed then
+        set.owed = true
+        owed[#owed + 1] = set
+    end
+    TellSoon()
 end
 
 -- A pack's files have run (loaded by our loader, or by anybody): its sets that the files handed over are
@@ -242,22 +277,29 @@ local function Start()
     if not screen and queue[1] then Steps.Run(LOADER, Loader) end
 end
 
+-- A set that cannot be had (its pack missing, switched off or refused): said once, and remembered on the
+-- set, so that each Get after it costs one look and makes no text.
+local function Fail(name, label, text, loud)
+    if type(name) == "string" then Internal(name).failed = true end
+    Say(label, text, loud)
+end
+
 -- Asks for a set's pack to be loaded soon. A pack missing, switched off or refused is said once.
 function Data.Prepare(name)
     if not found then Data.Find() end
     local set = sets[name]
-    if set and set.ready then return end
+    if set and (set.ready or set.failed) then return end
     local pack = owner[name]
     if not pack then
-        Say("data: " .. tostring(name), TEXT.missing:format(tostring(name)))
+        Fail(name, "data: " .. tostring(name), TEXT.missing:format(tostring(name)))
     elseif pack.state == "idle" then
         pack.state = "loading"
         queue[#queue + 1] = pack
         Start()
     elseif pack.state == "off" then
-        Say("data: " .. pack.name, TEXT.refused:format(pack.title, pack.why))
+        Fail(name, "data: " .. pack.name, TEXT.refused:format(pack.title, pack.why))
     elseif pack.state == "refused" then
-        Say("data: " .. pack.name, TEXT.refused:format(pack.title, pack.why), true)
+        Fail(name, "data: " .. pack.name, TEXT.refused:format(pack.title, pack.why), true)
     end
 end
 
@@ -295,20 +337,7 @@ end
 --  Records
 -------------------------------------------------------------------------------
 local FROZEN = { __newindex = function() error("a record of Sane UI's data is read-only", 2) end }
-
-local function Copy(value)
-    if type(value) ~= "table" then return value end
-    local copy = {}
-    for key, inner in pairs(value) do copy[key] = Copy(inner) end
-    return copy
-end
-
-local function Same(a, b)
-    if type(a) ~= "table" or type(b) ~= "table" then return a == b end
-    for key, value in pairs(a) do if not Same(value, b[key]) then return false end end
-    for key in pairs(b) do if a[key] == nil then return false end end
-    return true
-end
+local Copy, Same = Core.Copy, Core.Same
 
 local function Freeze(value)
     for _, inner in pairs(value) do
@@ -351,7 +380,7 @@ end
 -- the version the client has.
 local function Reached(set, key)
     local row = set.rows[key]
-    if not row then return nil end
+    if type(row) ~= "string" then return nil end
     local client = ClientBuild()
     if (Codec.Build(row) or 0) <= client then return row end
     local history = set.history[key]
@@ -379,8 +408,8 @@ local function History(set, key)
     local list = set.histories[key]
     if list then return list end
     local row = set.rows[key]
-    if not row then return nil end
-    local rows = set.history[key] and Codec.Versions(set.history[key]) or {}
+    if type(row) ~= "string" then return nil end
+    local rows = Codec.Versions(set.history[key])
     rows[#rows + 1] = row
     local client = ClientBuild()
     while rows[1] and (Codec.Build(rows[#rows]) or 0) > client do rows[#rows] = nil end
@@ -498,7 +527,8 @@ end
 function Handle:Keys(index, value)
     local set = Ready(self)
     local keys = {}
-    local joined = set and set.index[index] and set.index[index][value]
+    local list = set and set.index[index]
+    local joined = type(list) == "table" and list[value]
     if type(joined) == "string" then
         for _, key in ipairs(Codec.Cut(joined, LIST)) do keys[#keys + 1] = set.key == "int" and tonumber(key) or key end
     end
@@ -506,12 +536,15 @@ function Handle:Keys(index, value)
 end
 
 -- A job of the scheduler: fn(key, record) for every entry this client has (gone ones left out), out of
--- combat and within the frame's budget; then done(). false when the set is not ready (it is asked for).
+-- combat and within the frame's budget; then done(problem): nil after the last entry, the error's text when
+-- fn failed (the walk stops there). Gives the job's handle (job:Stop()); false when the set is not ready (it
+-- is asked for). A failing fn is noted under one label per set, however often the set is walked.
 function Handle:Each(fn, done)
     local set = Ready(self)
     if not set or type(fn) ~= "function" then return false end
     walks = walks + 1
-    return Steps.Run(("Each %s %d"):format(self.name, walks), function()
+    return Steps.Run({ name = ("Each %s %d"):format(self.name, walks), label = "data job Each " .. self.name,
+        done = type(done) == "function" and done or nil }, function()
         local keys = {}
         for key in pairs(set.rows) do keys[#keys + 1] = key end
         for _, key in ipairs(keys) do
@@ -519,7 +552,6 @@ function Handle:Each(fn, done)
             if record then fn(key, record) end
             Steps.Check()
         end
-        if done then done() end
     end)
 end
 
@@ -529,11 +561,27 @@ function Handle:Stamp()
     return set and set.stamp or 0
 end
 
--- fn(handle) after the stamp moved: a view redraws then instead of looking every frame.
+-- A list of listeners is never changed while it is walked: one added or taken away makes a new list.
+local function Without(list, fn)
+    local rest = {}
+    for _, known in ipairs(list or NONE) do
+        if known ~= fn then rest[#rest + 1] = known end
+    end
+    return rest
+end
+
+-- fn(handle) on the frame after the stamp moved: a view redraws then instead of looking every frame. A fn
+-- given twice is told once.
 function Handle:OnStamp(fn)
-    local list = listeners[self.name] or {}
-    listeners[self.name] = list
+    local list = Without(listeners[self.name], fn)
     list[#list + 1] = fn
+    listeners[self.name] = list
+end
+
+-- Stops telling fn: one given to OnStamp, or one that waits for the set (WhenReady).
+function Handle:OffStamp(fn)
+    local list, once = Without(listeners[self.name], fn), Without(waiting[self.name], fn)
+    listeners[self.name], waiting[self.name] = list[1] and list or nil, once[1] and once or nil
 end
 
 -- ready, loading, idle (can be loaded, not asked for), missing, off or refused; and a few words why.
@@ -550,6 +598,20 @@ end
 
 function Handle:Ready()
     return (self:State()) == "ready"
+end
+
+-- fn(handle) once the set (its handle or its name) is ready: at once if it is, in the caller's own call;
+-- else on the frame after it arrived, once, and its pack is asked for. OffStamp takes it back meanwhile.
+function Data.WhenReady(set, fn)
+    local handle = getmetatable(set) == Handle and set or Data.Set(set)
+    if handle:Ready() then
+        fn(handle)
+        return
+    end
+    local list = Without(waiting[handle.name], fn)
+    list[#list + 1] = fn
+    waiting[handle.name] = list
+    Data.Prepare(handle.name)
 end
 
 -------------------------------------------------------------------------------
@@ -594,13 +656,15 @@ local function ShowEntry(name, key)
         end
         return
     end
-    local record = handle:Get(tonumber(key) or key)
+    local set = sets[name]
+    key = set and set.key == "int" and tonumber(key) or key -- a text key may look like a number ("7")
+    local record = handle:Get(key)
     if not record then
         Core.Print(TEXT.noEntry:format(name, tostring(key)))
         return
     end
     Core.Print(TEXT.show:format(name, tostring(key), Show(record)))
-    for _, change in ipairs(handle:Changes(tonumber(key) or key) or {}) do
+    for _, change in ipairs(handle:Changes(key) or NONE) do
         local when = change.patch or tostring(change.since)
         if change.field == TEXT.gone then
             Core.Print(TEXT.goneChange:format(when, change.to and TEXT.gone or TEXT.back))
@@ -651,6 +715,10 @@ Core.Command("data", TEXT.about, function(rest)
         Core.Print(TEXT.pack:format(pack.title, TEXT.states[pack.state] or pack.state, why,
             #names > 0 and TEXT.sets:format(table.concat(names, ", ")) or ""))
     end
-    local jobs = Steps.Jobs()
-    Core.Print(TEXT.jobs:format(#jobs > 0 and table.concat(jobs, ", ") or TEXT.noJobs))
+    local jobs = {}
+    for index, job in ipairs(Steps.Jobs()) do
+        jobs[index] = (job.frames == 1 and TEXT.jobOne or TEXT.job):format(tostring(job.name), job.ms, job.frames)
+    end
+    local line = #jobs > 0 and Steps.Paused() and TEXT.jobsPaused or TEXT.jobs
+    Core.Print(line:format(#jobs > 0 and table.concat(jobs, ", ") or TEXT.noJobs))
 end)

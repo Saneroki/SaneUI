@@ -33,7 +33,8 @@ local ADDON, ns = ...
 --  or a portrait, Art\bar-mask.tga to a unit's bars, Art\aura-mask.tga to its buff
 --  icons (Live.lua). Icons and the dragons are the game's.
 -------------------------------------------------------------------------------
-local Plain, Ask = SaneUI.Core.Plain, SaneUI.Core.Ask
+local Core = SaneUI.Core
+local Plain, Ask = Core.Plain, Core.Ask
 -- (Missing only after an update that brought Pools.lua and a mere /reload: Tooltips.lua then
 -- leaves the tooltips to the game and asks for a restart. Until then nothing here is called.)
 local Pools = ns.Pools or {}
@@ -164,16 +165,6 @@ local function Sizes()
         end
     end
     if changed then Pools.Restyle() end
-end
-
--- How thick a hairline is in the panel's own units: one unit of the UI, rounded to whole dots of
--- the screen by the game's PixelUtil, and never less than one dot. It stays sharp at every scale.
-local function Hairline(panel)
-    local scale = Plain(panel:GetEffectiveScale())
-    if PixelUtil and PixelUtil.GetNearestPixelSize and scale and scale > 0 then
-        return PixelUtil.GetNearestPixelSize(1, scale, 1)
-    end
-    return 1
 end
 
 local function Gradient(texture, r1, g1, b1, a1, r2, g2, b2, a2)
@@ -660,7 +651,9 @@ function Panel.Draw(panel)
     local y = SIDE
     if tag then y = y + Place(panel, tag, SIDE, y, width - 2 * SIDE - iconRoom) + 3 end
     local iconBottom, plaqueLeft, plaqueTop = Picture(panel, head, badge, width, pictured)
-    y = Lay(panel, rows, count, y, width, iconRoom, iconBottom, plaqueLeft, plaqueTop, Hairline(panel))
+    -- A hairline: one unit of the UI, rounded to whole dots of the screen and never less than one
+    -- (Core.Pixels, by the game's PixelUtil): it stays sharp at every scale.
+    y = Lay(panel, rows, count, y, width, iconRoom, iconBottom, plaqueLeft, plaqueTop, Core.Pixels(panel, 1))
     y = math.max(y, iconBottom + ROW_GAP)
     panel:SetHeight(y + SIDE - ROW_GAP)
     Finish(panel, head, pictured, r, g, b)

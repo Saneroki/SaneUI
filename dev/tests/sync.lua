@@ -33,6 +33,9 @@ local function Fresh()
         gxMonitor = { default = "0", category = 1 },
         Sound_MasterVolume = { default = "1", category = 7 },
         debugThing = { default = "0", category = 0 },
+        graphicsFixed = { default = "1", category = 1, readOnly = true }, -- the game does not let these be set
+        soundLocked = { default = "1", category = 7, locked = true },
+        secureNote = { default = "0", scope = "character", secure = true }, -- not in a fight
     }
     W.cvars = {}
     game.windows = {
@@ -175,13 +178,35 @@ check(Sync.part.CONTROLS_LABEL.group == "SETTING_GROUP_GAMEPLAY" and Sync.part.G
 check(Sync.part.CONTROLS_LABEL.text == "Controls" and Sync.part.NAMEPLATE_OPTIONS_LABEL.text == "Nameplate options",
     "named in the game's words, ours where the client lacks them")
 
--- The parts that find their CVars in the game
+check(Sync.Word == Core.Word, "the game's words: Core's (Kit.lua)")
+
+-- The parts that find their CVars in the game: once a session, a job of Core's scheduler -------------
+local steps = Core.Steps.frame
+-- Frames of the game: the scheduler's work, until it has none.
+local function Settle()
+    for _ = 1, 100 do
+        if not (steps:IsShown() and steps._scripts.OnUpdate) then return end
+        steps._scripts.OnUpdate(steps, 0.016)
+    end
+end
+local graphics, FINDING = Sync.part.GRAPHICS_LABEL, "Sync: the game's CVars"
+options.taken.GRAPHICS_LABEL = { cvars = { graphicsQuality = "2" } }
+check(graphics.Read() == options.taken.GRAPHICS_LABEL and Core.Steps.Running(FINDING) and W.cvarSets == nil,
+    "not found yet: the part keeps what it took, and the game's list is read in a job of the scheduler, not at once")
+graphics.Write({ cvars = { graphicsQuality = "3" } })
+check(W.cvars.graphicsQuality == nil, "what it is given meanwhile waits")
+Settle()
+check(W.cvars.graphicsQuality == "3" and not Core.Steps.Running(FINDING), "and is set once they are found")
+options.taken, W.cvars.graphicsQuality, W.cvarSets = {}, nil, nil
 local function Has(id, name)
-    for _, known in ipairs(Sync.CVarsOf(id)) do if known == name then return true end end
-    return false
+    local data = Sync.part[id].Read()
+    return type(data) == "table" and type(data.cvars) == "table" and data.cvars[name] ~= nil
 end
 check(Has("GRAPHICS_LABEL", "graphicsQuality") and not Has("GRAPHICS_LABEL", "gxMonitor") and Has("AUDIO_LABEL", "Sound_MasterVolume"),
     "graphics and sound: the game's own kinds, but not the hardware")
+check(not Has("GRAPHICS_LABEL", "graphicsFixed") and not Has("AUDIO_LABEL", "soundLocked") and not Has("perCharacter", "secureNote"),
+    "nor a CVar the game does not let us set: read only, locked, secure")
+check(not Core.Steps.Running(FINDING), "found once a session")
 check(Has("perCharacter", "cameraSavedDistance") and Has("perCharacter", "questLogOpen"), "what the game keeps per character")
 check(not Has("perCharacter", "trackedQuests") and not Has("perCharacter", "lastSelectedTab") and not Has("perCharacter", "accountThing")
     and not Has("perCharacter", "nameplateSize") and not Has("perCharacter", "debugThing"),
@@ -196,6 +221,7 @@ check(next(options.taken) == nil, "nothing is read before the settings were writ
 check(Core.pages.Sync == nil and #W.options.pages == 4, "no page of its own: its checkboxes are on the page Profiles")
 SettingsPanel:GetScript("OnShow")(SettingsPanel)
 local canvas, Config = Core.frames.Profiles, Core.Config
+canvas:Show() -- the game shows the page Profiles: it is built then
 local function Control(label)
     for _, control in ipairs(Config.Panel.controls) do if control.label == label then return control end end
 end
@@ -212,8 +238,8 @@ local function Shows(words)
 end
 local names = {}
 for index, tab in ipairs(canvas.tabs) do names[index] = tab.Text._text end
-check(table.concat(names, ", ") == "Profiles, Accountwide, CVars", "its tabs: Profiles, Accountwide, CVars")
-check(Shows("Sane UI") and Control("General") and not Control("Sync"), "Accountwide: first a box Sane UI with Sane UI's modules (not Sync)")
+check(table.concat(names, ", ") == "Profiles, Game settings, CVars", "its tabs: Profiles, Game settings, CVars")
+check(not Control("General") and not Control("Sync"), "Game settings: no box of Sane UI's modules: all of their settings are in the profile")
 check(Shows("Gameplay") and Shows("Accessibility") and Shows("System") and Shows("Elsewhere in the game"),
     "then the game's groups of options pages, and what is on none")
 check(Control("Controls") and Control("Nameplate options") and Control("Graphics") and Control("Edit Mode layout")
@@ -357,11 +383,12 @@ game.layouts = layouts
 W.Fire("EDIT_MODE_LAYOUTS_UPDATED")
 W.Wait(0.1)
 check(game.active == 2 and Called("SetActiveLayout"), "once the manager has them, it is set")
--- Edit Mode open: the player is changing layouts.
+-- Edit Mode open: the player is changing layouts. Core follows it (EditMode.lua).
 game.editMode, game.calls = true, {}
+EventRegistry:TriggerEvent("EditMode.Enter")
 taken.hudLayout = { name = "Mine", kind = 1 }
 Sync.Give()
-check(game.active == 2 and not Called("SetActiveLayout"), "while Edit Mode is open nothing is set")
+check(Core.EditMode.active and game.active == 2 and not Called("SetActiveLayout"), "while Edit Mode is open nothing is set")
 game.editMode = false
 EventRegistry:TriggerEvent("EditMode.Exit")
 W.Wait(0.1)
@@ -378,17 +405,71 @@ W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 W.Wait(0.1)
 check(game.active == 2, "but after it")
--- One that is not there (deleted, or another character's own) leaves the one in use.
-taken.hudLayout = { name = "Gone", kind = 1 }
+-- One that is not there (another character's own, or deleted) leaves the one in use, and stays the one kept
+-- until the player picks a layout: this character's own does not take its place at its logout, so the
+-- character that has it finds it again.
+taken.hudLayout = { name = "Raid A", kind = 1 }
 Sync.Give()
 Sync.Capture()
-check(game.active == 2 and options.taken.hudLayout.name == "Classic", "a layout that is not there leaves the one in use, which is read then")
+check(game.active == 2 and options.taken.hudLayout.name == "Raid A", "a layout that is not there leaves the one in use, and is still kept")
+W.Fire("PLAYER_LEAVING_WORLD")
+game.loggedOut = true
+Sync.Capture()
+check(options.taken.hudLayout.name == "Raid A", "also at the logout")
+game.loggedOut = false
+W.Fire("PLAYER_ENTERING_WORLD", false, false)
+W.Wait(0.1)
+Sync.Capture()
+check(options.taken.hudLayout.name == "Raid A", "and after a loading screen")
+C_EditMode.SetActiveLayout(1) -- the player picks one in Edit Mode
+W.Wait(0.1)
+Sync.Capture()
+check(options.taken.hudLayout.name == "Modern", "the player picks a layout: that one is kept from now on")
 
 -- Data of a shape this version does not know is left alone, not an error -----------------------------
 options.taken.CONTROLS_LABEL, options.taken.chatFrames = 7, "spoiled"
 Sync.Give()
 check(not Core.errors["Sync: writing CONTROLS_LABEL"] and not Core.errors["Sync: writing chatFrames"], "a spoiled value is skipped")
 Sync.Capture()
+-- Kept in an older shape: a window without its switches, a colour that is no number, a kind of chat that is
+-- no name, a shorter list of the bars. What this version does not know stays as the game has it.
+game.calls = {}
+local kinds = #game.windows[1].messages
+local older = { 5 }
+for _, kind in ipairs(game.windows[1].messages) do older[#older + 1] = kind end
+check(Sync.part.chatFrames.Write({ tabs = { { title = game.windows[1].name, tint = { "dark" }, kinds = older } },
+    colours = { SAY = { r = "white" } } }) == false and #game.calls == 0 and #game.windows[1].messages == kinds,
+    "chat windows of an older shape: nothing set, no reload")
+game.bars = { true, true, false }
+check(Sync.part.ACTIONBARS_LABEL.Write({ bars = { false } }) == true and game.bars[1] == false and game.bars[2] == true
+    and game.bars[3] == false, "a shorter list of bars: the bars it does not name stay as they are")
+check(Sync.part.ACTIONBARS_LABEL.Write({ bars = { 1, "on" } }) == false and game.bars[1] == false, "nor one that is not true or false")
+
+-- What the game does not let us set is left alone; one it does not take is noted once, the rest written --
+local setCVar = C_CVar.SetCVar
+C_CVar.SetCVar = function(name, value)
+    if name == "accountThing" then error("the game refused it") end
+    return setCVar(name, value)
+end
+local guarded = { "graphicsFixed", "soundLocked", "accountThing", "debugThing" }
+for _, name in ipairs(guarded) do Sync.Keep(name, true) end
+options.named.graphicsFixed, options.named.soundLocked, options.named.accountThing, options.named.debugThing = "0", "0", "5", "4"
+W.printed = {}
+Sync.Give()
+Sync.Give()
+local noted = Core.errors["Sync: setting CVars"]
+check(W.cvars.debugThing == "4" and W.cvars.graphicsFixed == nil and W.cvars.soundLocked == nil and W.cvars.accountThing == nil,
+    "read only and locked CVars are left alone, and the others are written all the same")
+check(noted and noted.count == 1 and noted.text:find("accountThing") and #W.printed == 0,
+    "one the game does not take is noted once, quietly, and not tried again")
+W.combat = true
+check(Sync.SetCVar("secureNote", "1") == false and W.cvars.secureNote == nil, "a secure CVar is not set in a fight")
+W.combat = false
+check(Sync.SetCVar("secureNote", "1") == true and W.cvars.secureNote == "1", "out of it, it is")
+C_CVar.SetCVar = setCVar
+Core.errors["Sync: setting CVars"] = nil
+for _, name in ipairs(guarded) do Sync.Keep(name, false) end
+W.cvars.debugThing, W.cvars.secureNote = nil, nil
 
 -- CVars kept by name (the options' CVar list) --------------------------------------------------------
 Sync.Keep("debugThing", true)
@@ -403,21 +484,40 @@ Config.CVars.Keep("debugThing", false)
 check(not Sync.Kept("debugThing") and options.named.debugThing == nil, "the CVar list unticks it through Sync")
 
 -- Profiles read and write the game's settings too ------------------------------------------------
+local Profiles = Core.Profiles
 W.cvars.nameplateSize = "3"
-Core.Profiles.Save("Big")
-check(SaneUIDB.profiles.Big.Sync.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "3", "a profile keeps the game's settings of the kept parts")
+check(Profiles.Create("Big") and SaneUIDB.profiles.Big.Sync.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "3",
+    "a new profile keeps the game's settings of the kept parts, as they are this moment")
+check(Profiles.Use("Big") and Profiles.InUse() == "Big", "the character uses it")
 W.cvars.nameplateSize = "1"
-Sync.Capture()
-Core.Profiles.Load("Big")
-check(W.cvars.nameplateSize == "3", "loading it writes them into the game at once")
+check(Profiles.Use("Accountwide") and W.cvars.nameplateSize == "3",
+    "back to Accountwide: what was set meanwhile went into Big, and Accountwide's own are written into the game at once")
+check(SaneUIDB.profiles.Big.Sync.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "1", "Big kept what was set while it was in use")
+Profiles.Use("Big")
+check(W.cvars.nameplateSize == "1", "and gives it back when it is used again")
 C_EditMode.SetActiveLayout(3)
 W.Wait(0.1)
-Core.Profiles.Save("Mine")
+Profiles.Create("Mine")
 C_EditMode.SetActiveLayout(1)
 W.Wait(0.1)
 check(SaneUIDB.profiles.Mine.Sync.taken.hudLayout.name == "Mine", "a profile keeps the Edit Mode layout in use")
-Core.Profiles.Load("Mine")
-check(game.active == 3, "loaded, its layout is set again")
+Profiles.Use("Mine")
+check(game.active == 3, "used, its layout is set again")
+
+-- Accountwide off: the game's settings are left to the game ----------------------------------------
+W.cvars.nameplateSize = "2"
+Profiles.SetOn(false)
+check(SaneUIDB.profiles.Mine.Sync.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "2",
+    "switched off, the game's settings as they are go into the profile last used, read while Sync still keeps them")
+W.cvars.nameplateSize = "4"
+local sets = W.cvarSets
+Sync.Give()
+W.Fire("PLAYER_LOGOUT")
+check(W.cvars.nameplateSize == "4" and W.cvarSets == sets and SaneUIDB.profiles.Mine.Sync.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "2",
+    "off, nothing of the game's is written or read, not even at the logout")
+check(SaneUICharDB.settings and SaneUICharDB.settings.Sync == nil, "nor kept with the character's own settings")
+Profiles.SetOn(true)
+check(Profiles.InUse() == "Mine" and W.cvars.nameplateSize == "2", "switched on again, the character takes its profile's, the game's settings too")
 
 local problems = {}
 for label, problem in pairs(Core.errors) do problems[#problems + 1] = label .. ": " .. tostring(problem.text) end

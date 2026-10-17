@@ -91,8 +91,6 @@ Observed on 2026-10-14, checked again on 2026-10-16; do not mistake older text f
 - Tooltips README's “Not there yet” sub-bullet on a player's specialisation (`src/Tooltips/README.md`,
   section *Not there yet*) conflicts with the spec its Player row and `Inspect.Talents` show; delete
   that sub-bullet there.
-- `Config.Open` (`src/Core/Settings/Settings.lua`) prints “the options open after the fight” in combat
-  but only returns; nothing opens them later. Fix the message there or add the deferred open.
 - Historical `Doc/Changed.md` entries describe removed implementations, including former external
   addon integrations; current source and newest review sections win.
 - `Doc/ideas/Maps.txt` is a proposal (top-centre minimap hot corner, expand/zoom out), no Maps module.

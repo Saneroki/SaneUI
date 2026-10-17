@@ -236,6 +236,15 @@ end
 
 -- Login -----------------------------------------------------------------------
 check(SaneUI.Abilities == ns and ns.addon == "SaneUI_Abilities", "the module is an addon of its own and found under its name")
+local words = true
+for _, text in pairs(ns.TEXT) do
+    if type(text) == "table" then
+        for _, line in pairs(text) do words = words and type(line) == "string" end
+    else
+        words = words and type(text) == "string"
+    end
+end
+check(words and ns.TEXT.home == "Home" and #ns.TEXT.help >= 6, "every word the module shows is in one table of its own (ns.TEXT)")
 check(next(D.spells) == nil and D.class == nil, "the trainer data waits for the login: who you are is only certain then")
 W.Fire("PLAYER_LOGIN")
 check(D.class == "MAGE" and D.raceID == 1 and #D.spells == 11 and not warriorRows, "at login only the spells of your class are read")
@@ -249,9 +258,10 @@ check(ns.DB == SaneUIDB.modules.Abilities and ns.char == ns.DB.chars["Player-70-
     "the module's settings are kept by Core, under its name; what was kept under its old name, Spellbook, moved there")
 check(reserved(70) and reserved(70).name == "Nope" and ns.char.class == "MAGE", "a reservation of an earlier session is still there")
 check(not reserved(71) and not reserved(72) and type(ns.DB.trainer.MAGE.tabs) == "table", "saved data of another shape is dropped or mended at login")
-check(ns.DB.options.showHidden and ns.DB.options.book and ns.DB.options.ghosts, "hidden spells are shown unless you switch them off")
-check(ns.DB.options.announce == false, "a switch you flipped keeps your choice")
-ns.DB.options.announce = true
+check(ns.options == Core.Settings("Abilities") and ns.options == SaneUIDB.modules.Abilities.options, "the switches are the table Core keeps for the module")
+check(ns.options.showHidden and ns.options.book and ns.options.ghosts, "hidden spells are shown unless you switch them off")
+check(ns.options.announce == false, "a switch you flipped keeps your choice")
+ns.options.announce = true
 W.Wait(5)
 W.printed = {}
 
@@ -520,7 +530,15 @@ check(ghostCount() == 2 and at(made[1]) == UIParent and stands(made[2], view1, 0
     "with ranks shown, the ranks of a spell are folded into the highest one you have")
 local plus = fold("Fireball")
 check(plus and plus.more == 3 and stands(plus, view1, 216 - 18, -63) and not fold("Pyroblast"), "it carries a + that says how many more there are; a spell of one rank has none")
+plus:GetScript("OnEnter")(plus)
+check(GameTooltip:GetOwner() == plus and GameTooltip._text == "Show all ranks of Fireball (3 more)", "pointed at, it says so")
+plus:GetScript("OnLeave")(plus)
+local sounds = {}
+local play = PlaySound
+PlaySound = function(id) sounds[#sounds + 1] = id end
 plus:GetScript("OnClick")(plus)
+PlaySound = play
+check(sounds[1] == SOUNDKIT.IG_ABILITY_PAGE_TURN, "a page turns, with the game's sound for it")
 check(fold("Fireball", true) and stands(fold("Fireball", true), view1, 0, -141) and not fold("Fireball"), "a click on it unfolds the ranks into a section of their own, under the tab's spells")
 check(ghostCount() == 4 and stands(made[1], view1, 0, -173) and stands(made[2], view1, 0, -243), "the ranks you have first")
 check(stands(ghost("Fireball", "Rank 3"), view1, 231, -173) and stands(ghost("Fireball", "Rank 4"), view1, 231, -243), "the ranks to come right after them")
@@ -532,10 +550,10 @@ check(not fold("Fireball", true) and fold("Fireball") and ghostCount() == 2 and 
 W.cvars.ShowAllSpellRanks = nil
 
 made = DrawTab("Fire", { "Fireball" })
-ns.DB.options.showHidden = false
+ns.options.showHidden = false
 ns.Fire("REFRESH")
 check(ghostCount() == 0 and stands(made[1], view1, 0, -61), "'Show hidden spells' off: the spellbook as the game draws it")
-ns.DB.options.showHidden = true
+ns.options.showHidden = true
 ns.Fire("REFRESH")
 check(ghostCount() == 2, "and on again")
 
@@ -1011,19 +1029,37 @@ local function line(text)
 end
 check(line("Show unlearned spells") and line("Show unlearned spells").checked() == true, "the spellbook's own menu gets 'Show unlearned spells'")
 line("Show unlearned spells").fn()
-check(ns.DB.options.showHidden == false and ghostCount() == 0, "which switches the grey entries off")
+check(ns.options.showHidden == false and ghostCount() == 0, "which switches the grey entries off")
 line("Show unlearned spells").fn()
-check(ns.DB.options.showHidden == true and ghostCount() > 0, "and on")
+check(ns.options.showHidden == true and ghostCount() > 0, "and on")
 check(not line("Show all spell ranks"), "a mage has the game's own 'Show all spell ranks' line; no second one is added")
 check(line("Show reservations on the action bars").checked() and line("Say in chat when a reserved button is filled"), "the two older options moved here")
 local layouts = line("Action bar layouts")
 check(layouts.sub[1].text == "Save the current layout as..." and layouts.sub[2].text == "Raid" and layouts.sub[2].sub[1].text == "Load", "and so did the saved layouts")
+check(StaticPopupDialogs.SANEUI_SPELLBOOK_SAVE == nil and StaticPopupDialogs.SANEUI_SPELLBOOK_LOAD == nil,
+    "no dialog of the module's own is put into the game's list")
 layouts.sub[1].fn()
-check(W.popups[#W.popups].which == "SANEUI_SPELLBOOK_SAVE", "saving asks for a name")
+local asked = W.popups[#W.popups]
+check(asked.which == "GENERIC_INPUT_BOX" and asked.data.acceptText == "Save" and asked.data.maxLetters == 32, "saving asks for a name, in the game's own dialog")
+W.printed = {}
+asked.data.callback("  Raid 2 ")
+check(ns.DB.presets.MAGE["Raid 2"] and printedMatch('Layout "Raid 2" saved'), "and saves the bars under that name")
+layouts.sub[2].sub[1].fn()
+asked = W.popups[#W.popups]
+check(asked.which == "GENERIC_CONFIRMATION" and asked.data.text_arg1 == "Raid" and asked.data.text:find("replaces the buttons"), "loading asks first")
+asked.data.callback()
+check(printedMatch('Layout "Raid" loaded'), "and loads the layout once confirmed")
+ns.Presets.Delete("Raid 2")
 layouts.sub[2].sub[3].fn()
-check(#ns.Presets.List() == 1 and W.popups[#W.popups].which == "GENERIC_CONFIRMATION", "Delete asks first")
+check(#ns.Presets.List() == 1 and W.popups[#W.popups].which == "GENERIC_CONFIRMATION" and W.popups[#W.popups].data.showAlert, "Delete asks first, with the warning sign")
 W.popups[#W.popups].data.callback()
 check(#ns.Presets.List() == 0, "and deletes the layout once confirmed")
+local show = StaticPopup_Show
+StaticPopup_Show = function() return nil end
+W.printed = {}
+ns.Presets.AskDelete("Raid")
+StaticPopup_Show = show
+check(printedMatch("type /sane ab delete Raid"), "without the game's dialog the command to type is said")
 check(lines[1].title == "Sane UI", "under the addon's name")
 
 -- Sane UI, its own pages Profiles, General and Appearance, then the module's
@@ -1038,12 +1074,19 @@ check(#W.options.pages == 5 and page.name == "Abilities" and page.parent.name ==
     and W.options.opened == page.parent.id, "/sane options fills them: a page for the module under Sane UI, called Abilities, with its seven switches under two headers")
 check(box("Show unlearned spells"):GetValue() == true and box("Show reservations on the action bars") and box("Say in chat when a reserved button is filled"), "the same ones as the spellbook's menu")
 box("Show unlearned spells"):SetValue(false)
-check(ns.DB.options.showHidden == false and ghostCount() == 0 and line("Show unlearned spells").checked() == false, "ticked there, the spellbook follows, and so does its menu")
+check(ns.options.showHidden == false and ghostCount() == 0 and line("Show unlearned spells").checked() == false, "ticked there, the spellbook follows, and so does its menu")
 box("Show unlearned spells"):SetValue(true)
 check(ghostCount() > 0, "and back")
+local notified = box("Show unlearned spells").notified or 0
+line("Show unlearned spells").fn()
+W.Wait(0.1)
+check(ns.options.showHidden == false and ghostCount() == 0 and (box("Show unlearned spells").notified or 0) > notified,
+    "a switch flipped in the spellbook's menu goes through Core: the spellbook follows, and so does the options page")
+line("Show unlearned spells").fn()
+W.Wait(0.1)
 W.printed = {}
 box("Sane UI lays out the spellbook pages"):SetValue(false)
-check(ns.DB.options.book == false and printedMatch("after /reload") and ghostCount() > 0, "giving the pages back to the game waits for a /reload, and says so")
+check(ns.options.book == false and printedMatch("after /reload") and ghostCount() > 0, "giving the pages back to the game waits for a /reload, and says so")
 box("Sane UI lays out the spellbook pages"):SetValue(true)
 
 ns.class, ns.DB.presets.WARRIOR = "WARRIOR", {}
@@ -1070,10 +1113,10 @@ check(barGhost and not barGhost:IsShown(), "no ghost on a real button without a 
 E.Reserve(1, entry("Blink"))
 W.Wait(2)
 check(barGhost:IsShown(), "a ghost shows on the empty, reserved real button")
-ns.DB.options.ghosts = false
+ns.options.ghosts = false
 ns.Fire("REFRESH")
 check(not barGhost:IsShown(), "and hides when ghosts are switched off")
-ns.DB.options.ghosts = true
+ns.options.ghosts = true
 ns.Fire("REFRESH")
 
 -- Carrying a reservation from one button to another, as you drag a real one
@@ -1118,11 +1161,12 @@ check(#W.printed >= 6 and printedMatch("/sane ab list") and not printedMatch("tr
 sane("clear")
 check(next(ns.char.reserved) == nil and printedMatch("reservations removed"), "/sane ab clear removes every reservation")
 sane("pages off")
-check(ns.DB.options.book == false and printedMatch("left to the game after /reload"), "/sane ab pages off leaves the spellbook's pages to the game from the next /reload")
+check(ns.options.book == false and printedMatch("left to the game after /reload"), "/sane ab pages off leaves the spellbook's pages to the game from the next /reload")
+W.printed = {}
 SlashCmdList.SANEUI("AB pages off")
-check(ns.DB.options.book == false, "/sane ab is short for /sane abilities")
+check(ns.options.book == false and printedMatch("left to the game after /reload"), "/sane ab is short for /sane abilities; the same choice again is told too")
 SlashCmdList.SANEUI("SB pages on")
-check(ns.DB.options.book == true, "and the old words, /sane spellbook and /sane sb, still work")
+check(ns.options.book == true, "and the old words, /sane spellbook and /sane sb, still work")
 
 W.spells[MIND].passive = true
 ns.QueueUpdate(true, 0)
@@ -1155,12 +1199,17 @@ check(not section("Skills to learn") and not ghost("Staves") and not ghost("Arca
 -- The checkbox next to the page buttons
 local box = SaneUISpellbookShowHidden
 check(box:IsShown() and box.checked == true and box.Text:GetText() == "Show unlearned spells", "next to the page buttons a checkbox shows whether unlearned spells are on")
+local sounds, play = {}, PlaySound
+PlaySound = function(id) sounds[#sounds + 1] = id end
+SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON, SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF = 856, 857
 box.checked = false
 box:GetScript("OnClick")(box)
-check(ns.DB.options.showHidden == false and ghostCount() == 0, "unticking it hides them")
+check(ns.options.showHidden == false and ghostCount() == 0, "unticking it hides them")
 box.checked = true
 box:GetScript("OnClick")(box)
-check(ns.DB.options.showHidden == true and ghostCount() > 0 and box.checked == true, "ticking it shows them again")
+check(ns.options.showHidden == true and ghostCount() > 0 and box.checked == true, "ticking it shows them again")
+check(sounds[1] == 857 and sounds[2] == 856, "with the game's sounds for a checkbox: off, then on")
+PlaySound = play
 check(stands(tabSystem, book, 116, -26), "the row of the game's tabs stands one tab to the right, to make room for Home")
 check(book.SearchBox:GetWidth() == 244, "and the search box makes room for it, as the game's own sum would")
 
@@ -1217,6 +1266,14 @@ check(not H.IsOpen() and not SaneUISpellbookHome:IsShown(), "the Home page is th
 made = DrawTab("Fire", { "Fireball" })
 EventRegistry:TriggerEvent("PlayerSpellsFrame.SpellBookFrame.Show")
 check(H.IsOpen() and SaneUISpellbookHome:IsShown(), "the spellbook opens on its Home page")
+local homeTab
+for _, widget in ipairs(W.frames) do
+    if widget._parent == book and widget._kind == "Button" and widget.Icon and widget.Icon._texture == "Interface\\Icons\\INV_Misc_Rune_01" then homeTab = widget end
+end
+GameTooltip._lines = {}
+homeTab:GetScript("OnEnter")(homeTab)
+check(GameTooltip:GetOwner() == homeTab and GameTooltip._text == "Home" and GameTooltip._lines[1]:find("What you can learn now"),
+    "its tab, pointed at, says what Home is")
 check(at(made[1]) == UIParent and ghostCount() == 0 and not SaneUISpellbookPager:IsShown() and not box:IsShown(), "the tab underneath steps aside: its entries, the grey ones, the page buttons and the checkbox")
 local fire, wand = homeRow("Fireball"), homeRow("Conjure Wand")
 check(fire and fire.entry.sub == "Rank 3" and fire.RequiredLevel:GetText() == "900 copper" and not fire.Button.Quest:IsShown() and homeRow("Arcane Mind"),
@@ -1271,7 +1328,7 @@ searching = false
 H.Open()
 ns.Fire("BOOK_JUMP")
 check(not H.IsOpen(), "and so does the game jumping to a spell")
-ns.DB.options.home = false
+ns.options.home = false
 EventRegistry:TriggerEvent("PlayerSpellsFrame.SpellBookFrame.Hide")
 W.Wait(1)
 EventRegistry:TriggerEvent("PlayerSpellsFrame.SpellBookFrame.Show")
@@ -1283,7 +1340,7 @@ tabSystem.selectedTabID = 3
 
 -- Compact pages that follow the window's size ---------------------------------------------------
 searching, activeTab = false, tabs[2]
-ns.DB.options.compact = true
+ns.options.compact = true
 paged:SetSize(1612, 652) -- the game's own open book
 made = DrawTab("Arcane", many)
 -- Where an entry stands in the page's own measure: an entry drawn smaller counts in its own.
@@ -1301,14 +1358,14 @@ ns.Fire("REFRESH")
 check(SaneUISpellbookPager.maxPages == 2 and small(made[8], view1, 170, -55) and small(made[22], view1, 510, -55) and at(made[30]) == UIParent,
     "the small spellbook of that width: one page as wide as the window, four columns again")
 paged.viewsPerPage = 2
-ns.DB.options.compact = false
+ns.options.compact = false
 paged:SetSize(0, 0)
 ns.Fire("REFRESH")
 check(made[1]:GetScale() == 1 and stands(made[1], view1, 0, -61) and at(made[40]) == view2, "switched off, the pages are the game's again")
 
 -- Moving and sizing the window --------------------------------------------------------------------
 check(not rawget(_G, "SaneUISpellbookDragBar"), "with the switch off the window is left alone")
-ns.DB.options.window = true
+ns.options.window = true
 ns.Fire("REFRESH")
 local bar, grip = SaneUISpellbookDragBar, SaneUISpellbookSizeGrip
 check(bar and bar:IsShown() and grip:IsShown(), "switched on, the spellbook gets a bar to drag and a grip in its corner")
@@ -1369,7 +1426,7 @@ W.printed = {}
 sane("window reset")
 check(ns.DB.window == nil and PlayerSpellsFrame:GetWidth() == 809 and book:GetWidth() == 806 and printedMatch("its own size again"), "/sane ab window reset gives it the game's size back")
 book.isMinimized = nil
-ns.DB.options.window = false
+ns.options.window = false
 ns.Fire("REFRESH")
 check(not bar:IsShown() and not grip:IsShown(), "switched off, the bar and the grip go")
 
@@ -1378,9 +1435,23 @@ W.printed = {}
 searching, activeTab = false, tabs[3]
 made = DrawTab("Fire", { "Fireball" })
 check(ghostCount() == 2 and stands(made[1], view1, 0, -61), "the Fire tab once more, with its grey entries")
+-- It happens in a fight, where the game locks its frames: the column, the page buttons, the row of
+-- tabs, and an entry drawn small (one whose flyout was opened).
+local function locked() return true end
+local held = W.NewWidget("Frame", nil, view1)
+held:SetScale(0.75)
+paged.frames[#paged.frames + 1] = held
+view1.IsProtected, nativePager.IsProtected, tabSystem.IsProtected, held.IsProtected = locked, locked, locked, locked
+W.combat = true
 W.gamepad = true                      -- a controller is switched on: the game pages by itself then
 H.Open()                              -- Home empties the page underneath, and that redraw notices it
-check(view1:GetHeight() == 590 and stands(nativePager, paged, -75, 40), "when the plan cannot hold, the game's column and page buttons are given back")
+check(view1:GetHeight() == 60000 and not stands(nativePager, paged, -75, 40) and stands(tabSystem, book, 116, -26) and held:GetScale() == 0.75,
+    "in a fight what the game locks is left as it is")
+W.combat = false
+view1.IsProtected, nativePager.IsProtected, tabSystem.IsProtected, held.IsProtected = nil, nil, nil, nil
+W.Fire("PLAYER_REGEN_ENABLED")
+check(view1:GetHeight() == 590 and stands(nativePager, paged, -75, 40) and held:GetScale() == 1,
+    "when the plan cannot hold, the game's column and page buttons are given back, and every entry its own size: after the fight")
 check(not SaneUISpellbook:IsShown() and printedMatch("left the spellbook's pages to the game %(a controller is in use%)"), "the addon's entries go, and it says why")
 H.Open()
 check(not ns.Home.IsOpen() and not SaneUISpellbookHome:IsShown() and stands(tabSystem, book, 70, -26),

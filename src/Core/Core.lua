@@ -595,9 +595,9 @@ Core.On("PLAYER_LOGIN", function()
     Start("OnLogin")
 end)
 
--- Before the game writes the saved settings (a logout, a /reload). Core.lua's listener comes first:
--- a module still has the settings it ran the session with (Profiles.lua puts the account's back
--- right after this), so a module that reads its options at the logout does so here.
+-- Before the game writes the saved settings (a logout, a /reload). Core.lua's listener comes first. The
+-- settings in use stay where they live (Profiles.lua moves nothing at the logout), so a module may read
+-- its options here or in a listener of its own.
 Core.On("PLAYER_LOGOUT", function()
     Start("OnLogout")
 end)

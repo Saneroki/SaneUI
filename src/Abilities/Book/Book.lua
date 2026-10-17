@@ -26,7 +26,7 @@ local _, ns = ...
 --  One limit comes from the game: in a fight an addon may not move a frame
 --  that carries one of the game's protected frames. A spellbook entry does so
 --  after you opened its spell flyout. Such an entry is left where it is until
---  the fight is over (Locked).
+--  the fight is over (Core.Locked, Core.AfterCombat).
 --
 --  If any of this fails, StandDown() gives the pages back to the game.
 -------------------------------------------------------------------------------
@@ -34,6 +34,7 @@ local B = {}
 ns.Book = B
 local S, L, I = ns.Sources, ns.BookLayout, ns.BookItem
 local Core = SaneUI.Core
+local TEXT = ns.TEXT
 
 local TALL = 60000  -- a column this high holds any tab on one page
 local PARK = -8000  -- where entries of other pages wait: far below and left of the screen
@@ -43,11 +44,14 @@ local book, paged, view1, view2, nativePager -- the game's frames
 local container, pager                       -- ours
 local headers = {}                           -- our headings: "tab", "extra", "passive", "skills"
 local armed, standDown, hooked = false, nil, false
-local columnTaken, pagerTaken = false, false -- what of the game's we changed and must give back
-local nativeHeight, nativePagerPoints
+local columnTaken, nativeHeight = false, nil -- the game's column, made tall (its own height, to give back)
+local pagerLent                              -- the game's page buttons, moved off the screen (Core.Lend)
 local lastHeader                             -- the last heading of the game's we saw; ours copy its look
+-- What a fight held up, each done once it is over (Core.AfterCombat): the layout, giving back,
+-- an entry's own size after giving back, taking over.
+local AFTER_LAYOUT, AFTER_GIVE, AFTER_SIZE, AFTER_ARM =
+    "Abilities: book", "Abilities: book given back", "Abilities: book entries' size", "Abilities: book taken over"
 
-local pool = {}      -- our grey entries, reused
 local managed = {}   -- [one of the game's entries] = { anchor, x, y, corner, view } where we put it
 local views = {}     -- the pages of the tab on show, from Layout.Paginate
 local perPage, page, pageKey = 2, 1, nil
@@ -60,7 +64,6 @@ local home = false   -- the Home page (Home.lua) is on show: every entry waits o
 local toggle         -- the checkbox next to the page buttons: hidden spells on or off
 local expanded = {}  -- [spell name] = true: all its ranks are on show (until /reload)
 local parked = {}    -- the game's entries of ranks that are folded away
-local folds, foldHeaders = {}, {} -- our small buttons: "+" on a folded spell, the heading of an unfolded one
 local FOLD_HEIGHT = 22
 
 -- The page as it is right now (Measure): the spellbook can be resized (Window.lua) and compact.
@@ -78,11 +81,12 @@ end
 --  Placing the game's entries. Only ClearAllPoints and SetPoint: no script of
 --  the entry runs and nothing is written on it.
 -------------------------------------------------------------------------------
--- In a fight the game forbids an addon to move a frame that holds a protected one. (Home.lua too.)
-local function Locked(frame)
-    return InCombatLockdown() and frame:IsProtected() and true or false
+-- In a fight the game forbids an addon to move a frame that holds a protected one. Such an entry
+-- is put right once the fight is over: asked once, however often it is met.
+local Locked = Core.Locked
+local function Owe()
+    if not Core.Owed(AFTER_LAYOUT) then Core.AfterCombat(AFTER_LAYOUT, B.Relayout) end
 end
-B.Locked = Locked
 
 local function InPlace(frame, want)
     if frame:GetNumPoints() ~= 1 then return false end
@@ -106,7 +110,7 @@ local function Place(frame, anchor, x, y, view, size)
     else
         want.anchor, want.x, want.y, want.corner = UIParent, PARK, PARK, "BOTTOMLEFT"
     end
-    if Locked(frame) then return end
+    if Locked(frame) then return Owe() end
     if math.abs((frame:GetScale() or 1) - size) > 0.001 then frame:SetScale(size) end
     if InPlace(frame, want) then return end
     frame:ClearAllPoints()
@@ -248,64 +252,53 @@ end
 
 local function SetExpanded(name, on)
     expanded[name] = on or nil
-    PlaySound(SOUNDKIT.IG_ABILITY_PAGE_TURN)
+    Core.Sound("IG_ABILITY_PAGE_TURN")
     B.Relayout()
 end
 
 -- The "+" in the corner of a folded spell. Above the game's entries, or they would take its clicks.
-local function FoldButton(index)
-    local button = folds[index]
-    if not button then
-        button = CreateFrame("Button", nil, container)
-        button:SetSize(16, 16)
-        button:SetFrameLevel(container:GetFrameLevel() + 30)
-        button:SetNormalTexture("Interface\\Buttons\\UI-PlusButton-Up")
-        button:SetPushedTexture("Interface\\Buttons\\UI-PlusButton-Down")
-        button:SetHighlightTexture("Interface\\Buttons\\UI-PlusButton-Hilight", "ADD")
-        button:SetScript("OnClick", function(self) SetExpanded(self.spell, true) end)
-        button:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(("Show all ranks of %s (%d more)"):format(self.spell, self.more))
-            GameTooltip:Show()
-        end)
-        button:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        folds[index] = button
-    end
+local function MakeFold()
+    local button = CreateFrame("Button", nil, container)
+    button:SetSize(16, 16)
+    button:SetFrameLevel(container:GetFrameLevel() + 30)
+    button:SetNormalTexture("Interface\\Buttons\\UI-PlusButton-Up")
+    button:SetPushedTexture("Interface\\Buttons\\UI-PlusButton-Down")
+    button:SetHighlightTexture("Interface\\Buttons\\UI-PlusButton-Hilight", "ADD")
+    button:SetScript("OnClick", function(self) SetExpanded(self.spell, true) end)
+    Core.Tip(button, function() return TEXT.showRanks:format(button.spell, button.more) end)
     return button
 end
 
 -- The heading of a spell's unfolded ranks: a "-" and the spell's name, in one button.
-local function FoldHeader(index)
-    local header = foldHeaders[index]
-    if not header then
-        header = CreateFrame("Button", nil, container)
-        header:SetSize(L.VIEW_WIDTH, FOLD_HEIGHT)
-        header:SetFrameLevel(container:GetFrameLevel() + 30)
-        header.Minus = header:CreateTexture(nil, "ARTWORK")
-        header.Minus:SetTexture("Interface\\Buttons\\UI-MinusButton-Up")
-        header.Minus:SetSize(16, 16)
-        header.Minus:SetPoint("LEFT", 2, 0)
-        header.Text = header:CreateFontString(nil, "ARTWORK", "SystemFont_Large")
-        header.Text:SetPoint("LEFT", header.Minus, "RIGHT", 6, 0)
-        header:SetScript("OnClick", function(self) SetExpanded(self.spell, false) end)
-        header:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT")
-            GameTooltip:SetText("Fold the ranks away")
-            GameTooltip:Show()
-        end)
-        header:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        foldHeaders[index] = header
-    end
+local function MakeFoldHeader()
+    local header = CreateFrame("Button", nil, container)
+    header:SetSize(L.VIEW_WIDTH, FOLD_HEIGHT)
+    header:SetFrameLevel(container:GetFrameLevel() + 30)
+    header.Minus = header:CreateTexture(nil, "ARTWORK")
+    header.Minus:SetTexture("Interface\\Buttons\\UI-MinusButton-Up")
+    header.Minus:SetSize(16, 16)
+    header.Minus:SetPoint("LEFT", 2, 0)
+    header.Text = header:CreateFontString(nil, "ARTWORK", "SystemFont_Large")
+    header.Text:SetPoint("LEFT", header.Minus, "RIGHT", 6, 0)
+    header:SetScript("OnClick", function(self) SetExpanded(self.spell, false) end)
+    Core.Tip(header, TEXT.foldRanks, nil, "ANCHOR_TOPLEFT")
     return header
 end
+
+-- Our parts of a page, made when first needed and used again (Core.Pool): the grey entries, the
+-- "+" on a folded spell, the heading of a spell's unfolded ranks.
+local greys = Core.Pool(function() return I.Create(container) end)
+local folds, foldHeaders = Core.Pool(MakeFold), Core.Pool(MakeFoldHeader)
 
 -------------------------------------------------------------------------------
 --  Drawing one page
 -------------------------------------------------------------------------------
 local function Show()
     local first = (page - 1) * perPage
-    local used, seen, shown = 0, {}, {}
-    local usedFolds, usedHeaders = 0, 0
+    local seen, shown = {}, {}
+    greys:Begin()
+    folds:Begin()
+    foldHeaders:Begin()
 
     for index, view in ipairs(views) do
         local position = index - first
@@ -319,8 +312,7 @@ local function Show()
             local item = cell.item
             local x = cell.x + dx
             if anchor and item.more then
-                usedFolds = usedFolds + 1
-                local button = FoldButton(usedFolds)
+                local button = folds:Take()
                 button.spell, button.more = item.name, item.more
                 button:ClearAllPoints()
                 button:SetPoint("TOPLEFT", anchor, "TOPLEFT", x + cellWidth * scale - 18, -cell.y - 2)
@@ -328,8 +320,7 @@ local function Show()
             end
             if item.fold then
                 if anchor then
-                    usedHeaders = usedHeaders + 1
-                    local header = FoldHeader(usedHeaders)
+                    local header = foldHeaders:Take()
                     header.spell = item.fold
                     header.Text:SetText(item.text)
                     if style.text then header.Text:SetTextColor(style.text[1], style.text[2], style.text[3]) end
@@ -348,12 +339,7 @@ local function Show()
                 header:SetPoint("TOPLEFT", anchor, "TOPLEFT", x, -cell.y)
                 shown[item.own] = true
             elseif anchor then
-                used = used + 1
-                local ghost = pool[used]
-                if not ghost then
-                    ghost = I.Create(container)
-                    pool[used] = ghost
-                end
+                local ghost = greys:Take()
                 ghost:SetScale(scale)
                 ghost:ClearAllPoints()
                 ghost:SetPoint("TOPLEFT", anchor, "TOPLEFT", x / scale, -cell.y / scale)
@@ -366,13 +352,9 @@ local function Show()
         Place(frame, nil)
         seen[frame] = true
     end
-    for index = usedFolds + 1, #folds do folds[index]:Hide() end
-    for index = usedHeaders + 1, #foldHeaders do foldHeaders[index]:Hide() end
-
-    for index = used + 1, #pool do
-        pool[index]:Hide()
-        pool[index].entry = nil
-    end
+    greys:Done()
+    folds:Done()
+    foldHeaders:Done()
     for key, header in pairs(headers) do
         -- our headings take their look from one of the game's
         if shown[key] and lastHeader and lastHeader.Text then
@@ -394,7 +376,7 @@ local function Show()
     CopyText(pager.PageText, nativePager.PageText)
     pager:SetShown(not home)
     toggle:SetShown(not home)
-    toggle:SetChecked(ns.DB.options.showHidden and true or false)
+    toggle:SetChecked(ns.options.showHidden and true or false)
     CopyText(toggle.Text, nativePager.PageText)
     watchFrames = WATCH_FRAMES -- the game may lay its entries out again in the frames that follow
 end
@@ -403,7 +385,7 @@ end
 -- own two sizes (a page of 680 x 590 that starts 85 from the left and 45 from the top; the
 -- right page 76 right of the middle), and follow the window when it has another size.
 local function Measure()
-    local compact = ns.DB.options.compact
+    local compact = ns.options.compact
     scale = compact and COMPACT or 1
     local width, height = paged:GetWidth() or 0, paged:GetHeight() or 0
     local pagesShown = (paged.viewsPerPage or 2) < 2 and 1 or 2
@@ -426,9 +408,9 @@ end
 
 -- Work out the pages of the tab on show, then draw the current one.
 local function Build()
-    if Gamepad() then return B.StandDown("a controller is in use") end
+    if Gamepad() then return B.StandDown(TEXT.why.gamepad) end
     -- Only at this height does the game make every entry of a tab; without them all, no layout.
-    if view1:GetHeight() < TALL - 1 then return B.StandDown("something changed the spellbook's column") end
+    if view1:GetHeight() < TALL - 1 then return B.StandDown(TEXT.why.column) end
 
     local groups, sample, nativeCount = Collect()
     counts.native, counts.ghosts = nativeCount, 0
@@ -442,7 +424,7 @@ local function Build()
     if tab and ns.ready then
         showRanks = GetCVarBool("ShowAllSpellRanks") and true or false
         local hidePassives = GetCVarBool("spellBookHidePassives") and true or false
-        local hidden = ns.DB.options.showHidden
+        local hidden = ns.options.showHidden
 
         local ghosts = {}
         for _, entry in ipairs(hidden and S.Unlearned(tab, showRanks) or {}) do
@@ -488,14 +470,14 @@ local function Build()
         if hidden and tab == General() then
             -- Passive spells to come are all listed here, whichever tab the game files them in.
             local passives = hidePassives and {} or Items(S.UnlearnedPassives(showRanks))
-            if #passives > 0 then Section({ header = { own = "passive", text = "Passive spells to learn" }, items = passives }) end
+            if #passives > 0 then Section({ header = { own = "passive", text = TEXT.passives }, items = passives }) end
             local skills = Items(S.UnlearnedSkills())
-            if #skills > 0 then Section({ header = { own = "skills", text = "Skills to learn" }, items = skills }, true) end
+            if #skills > 0 then Section({ header = { own = "skills", text = TEXT.skills }, items = skills }, true) end
         end
 
         if hidden and tab == FirstClassTab() then
             local others = Items(S.Unlearned(nil, showRanks))
-            if #others > 0 then Section({ header = { own = "extra", text = "Other spells to learn" }, items = others }, true) end
+            if #others > 0 then Section({ header = { own = "extra", text = TEXT.others }, items = others }, true) end
         end
     end
 
@@ -520,7 +502,7 @@ local function Run(fn)
     local ok, problem = xpcall(fn, Core.Trace)
     if ok then return end
     Core.NoteError(ns.name .. ": book", problem)
-    B.StandDown("a problem, noted in the error log (/sane errors)")
+    B.StandDown(TEXT.why.problem)
 end
 
 function B.Relayout()
@@ -547,11 +529,16 @@ function B.OnNative()
 end
 
 -- Every entry the game has made stands where we put it. An entry we have not placed at
--- all counts as out of place, so a redraw we were not told about is caught here too.
+-- all counts as out of place, so a redraw we were not told about is caught here too. One that
+-- a fight holds counts as in place until the fight is over (Owe).
 local function AllInPlace()
     for _, frame in ipairs(paged:GetFrames()) do
         local want = managed[frame]
-        if not want or not (InPlace(frame, want) or Locked(frame)) then return false end
+        if not want then return false end
+        if not InPlace(frame, want) then
+            if not Locked(frame) then return false end
+            Owe()
+        end
     end
     return true
 end
@@ -575,7 +562,7 @@ local function Watch(_, elapsed)
     if now - healStart > 2 then healStart, heals = now, 0 end
     heals = heals + 1
     if not ok or heals > 40 then
-        return B.StandDown("something else keeps moving the spellbook's entries")
+        return B.StandDown(TEXT.why.moved)
     end
     B.Relayout()
 end
@@ -603,16 +590,28 @@ end
 -------------------------------------------------------------------------------
 --  Giving the pages back
 -------------------------------------------------------------------------------
--- The column's height and the game's page buttons, as they were. In a fight the column
--- may be one of the frames an addon must not touch; then this waits for the fight's end.
+-- The column's height and the game's page buttons, as they were. In a fight either may be one
+-- of the frames an addon must not touch; then it waits for the fight's end (the page buttons by
+-- Core.Lend itself).
 local function GiveBack()
-    if columnTaken and not Locked(view1) then
-        view1:SetHeight(nativeHeight or L.VIEW_HEIGHT)
-        columnTaken = false
+    if columnTaken then
+        if Locked(view1) then
+            Core.AfterCombat(AFTER_GIVE, GiveBack)
+        else
+            view1:SetHeight(nativeHeight or L.VIEW_HEIGHT)
+            columnTaken = false
+        end
     end
-    if pagerTaken and not Locked(nativePager) then
-        Core.Repoint(nativePager, nativePagerPoints)
-        pagerTaken = false
+    if pagerLent and pagerLent:Lent() then pagerLent:Return() end
+end
+
+-- Every entry at the game's size again, also those of other pages and folded ranks. One that a
+-- fight holds gets it once the fight is over.
+local function FullSize()
+    for _, frame in ipairs(paged:GetFrames()) do
+        if frame:GetScale() ~= 1 then
+            if Locked(frame) then Core.AfterCombat(AFTER_SIZE, FullSize) else frame:SetScale(1) end
+        end
     end
 end
 
@@ -635,15 +634,12 @@ function B.StandDown(reason)
             local anchor = (index == 1 and view1) or (index == 2 and perPage == 2 and view2) or nil
             for _, cell in ipairs(view) do Place(cell.item.frame, anchor, cell.x, cell.y, index) end
         end
-        -- every entry at the game's size again, also those of other pages and folded ranks
-        for _, frame in ipairs(paged:GetFrames()) do
-            if not Locked(frame) and frame:GetScale() ~= 1 then frame:SetScale(1) end
-        end
+        FullSize()
     end)
     wipe(managed)
     container:Hide()
     GiveBack()
-    ns.Print("left the spellbook's pages to the game (" .. reason .. "). Click another tab of the spellbook and come back: then the page is the game's own again.")
+    ns.Print(TEXT.givenBack:format(reason))
 end
 
 -------------------------------------------------------------------------------
@@ -679,7 +675,7 @@ local function MakeFrames()
 
     -- Unlearned spells on or off, where the pages are turned. The same switch as in the spellbook's
     -- menu and the options, with the same words and the same explanation when pointed at.
-    local option = ns.OPTION.showHidden
+    local option = Core.Described(ns.name, "showHidden")
     local box = CreateFrame("CheckButton", "SaneUISpellbookShowHidden", frame, "UICheckButtonTemplate")
     box:SetSize(24, 24)
     box:SetFrameLevel(frame:GetFrameLevel() + 30)
@@ -687,10 +683,11 @@ local function MakeFrames()
     box.Text:SetText(option.text)
     box.Text:ClearAllPoints()
     box.Text:SetPoint("RIGHT", box, "LEFT", -2, 0)
+    -- Set through Core, which tells the module (its changed redraws the pages) and the options page.
     box:SetScript("OnClick", function(self)
-        ns.DB.options.showHidden = self:GetChecked() and true or false
-        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-        ns.Fire("REFRESH")
+        local on = self:GetChecked() and true or false
+        Core.Sound(on and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF")
+        self:SetChecked(Core.Set(ns.name, "showHidden", on) and true or false)
     end)
     box:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -704,10 +701,18 @@ local function MakeFrames()
     container, pager, headers, toggle = frame, paging, made, box
 end
 
+local TryArm -- below
+
+-- The game's page buttons wait off the screen while ours stand in their place.
+local function Park(frame)
+    frame:ClearAllPoints()
+    frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", PARK, PARK)
+end
+
 local function Arm()
-    if armed or standDown or not ns.DB.options.book then return end
+    if armed or standDown or not ns.options.book then return end
     if Gamepad() then
-        standDown = "a controller is in use"
+        standDown = TEXT.why.gamepad
         return
     end
     book = PlayerSpellsFrame and PlayerSpellsFrame.SpellBookFrame
@@ -715,11 +720,14 @@ local function Arm()
     local columns = paged and paged.ViewFrames
     if not (columns and columns[1] and paged.PagingControls and paged.GetFrames
             and book.GetActiveCategoryMixin and book.IsInSearchResultsMode and EventRegistry) then
-        standDown = "this spellbook is not the one the addon knows"
+        standDown = TEXT.why.unknown
         return
     end
     view1, view2, nativePager = columns[1], columns[2] or columns[1], paged.PagingControls
-    if Locked(view1) or Locked(nativePager) then return end -- tried again when the fight is over
+    if Locked(view1) or Locked(nativePager) then
+        Core.AfterCombat(AFTER_ARM, TryArm) -- tried again when the fight is over
+        return
+    end
 
     if not container then MakeFrames() end
 
@@ -736,16 +744,14 @@ local function Arm()
     end
 
     -- Now the game's column and its page buttons. Their own height and place are only noted
-    -- while they still have them, never what we gave them.
+    -- while they still have them, never what we gave them: ours take the page buttons' place.
     local height = view1:GetHeight()
     if height and height < TALL - 1 then nativeHeight = height end
     view1:SetHeight(TALL)
     columnTaken = true
-    if not pagerTaken then nativePagerPoints = Core.Points(nativePager) end
-    Core.Repoint(pager, nativePagerPoints)
-    nativePager:ClearAllPoints()
-    nativePager:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", PARK, PARK)
-    pagerTaken = true
+    pagerLent = pagerLent or Core.Lend(nativePager)
+    if not pagerLent:Lent() then Core.Repoint(pager, Core.Points(nativePager)) end
+    pagerLent:SetPoints(Park)
 
     container:Show()
     armed = true
@@ -754,29 +760,19 @@ local function Arm()
 end
 
 -- An error while taking over: it is not tried again, and what it took of the game's goes back.
-local function TryArm()
+function TryArm()
     if not (ns.DB and ns.char) then return end
     local loaded = C_AddOns and C_AddOns.IsAddOnLoaded
     if not (loaded and loaded("Blizzard_PlayerSpells")) then return end
     local ok, problem = xpcall(Arm, Core.Trace)
     if ok then return end
     ns.Report("book", problem)
-    B.StandDown("an error while taking the pages over")
+    B.StandDown(TEXT.why.failed)
 end
 
 ns.On("PLAYER_LOGIN", TryArm)
 ns.On("ADDON_LOADED", function(name)
     if name == "Blizzard_PlayerSpells" then TryArm() end
-end)
--- What a fight held up: taking over, giving back, an entry that could not be moved.
-ns.On("PLAYER_REGEN_ENABLED", function()
-    if armed then
-        B.Relayout()
-    elseif standDown then
-        if view1 then ns.Safe("book", GiveBack) end
-    else
-        TryArm()
-    end
 end)
 ns.Listen("REFRESH", B.Relayout)
 
@@ -785,15 +781,15 @@ ns.Listen("REFRESH", B.Relayout)
 function B.Why()
     if armed then return nil end
     if standDown then return standDown end
-    if not ns.DB.options.book then return ("\"%s\" is off in the options"):format(ns.OPTION.book.text) end
-    return "not taken yet"
+    if not ns.options.book then return TEXT.why.off:format(Core.Described(ns.name, "book").text) end
+    return TEXT.why.waiting
 end
 
 -- One line for /sane ab debug.
 function B.Describe()
     if armed then
-        return ("spellbook: %d of the game's entries and %d grey ones on %d page(s), page %d on show."):format(
+        return TEXT.describe:format(
             counts.native, counts.ghosts, math.max(1, math.ceil(#views / perPage)), page)
     end
-    return "spellbook: its pages are left to the game (" .. B.Why() .. ")."
+    return TEXT.describeGame:format(B.Why())
 end

@@ -12,6 +12,7 @@ local _, ns = ...
 local D = {}
 ns.Drag = D
 local S, E = ns.Sources, ns.Engine
+local Core = SaneUI.Core
 
 local holder  -- the icon that follows the mouse
 local hint    -- the gold frame around the button you are over
@@ -147,7 +148,7 @@ function D.Stop()
         -- A reservation carried off the bars and let go on no button is taken off, as a real
         -- action dragged off its button and let go is.
         E.Clear(origin)
-        if PlaySound and SOUNDKIT and SOUNDKIT.IG_ABILITY_ICON_DROP then PlaySound(SOUNDKIT.IG_ABILITY_ICON_DROP) end
+        Core.Sound("IG_ABILITY_ICON_DROP")
         return
     end
     if not slot then return end
@@ -155,7 +156,7 @@ function D.Stop()
         if slot == origin then return end
         local ok, why = E.Move(origin, slot)
         if not ok and why then ns.Print(E.Reason(why)) end
-        if ok and PlaySound and SOUNDKIT and SOUNDKIT.IG_ABILITY_ICON_DROP then PlaySound(SOUNDKIT.IG_ABILITY_ICON_DROP) end
+        if ok then Core.Sound("IG_ABILITY_ICON_DROP") end
         return
     end
     local ok, why = E.Reserve(slot, entry, true)
@@ -163,9 +164,9 @@ function D.Stop()
         ns.Print(E.Reason(why))
     elseif not S.Available(entry) and UIErrorsFrame and UIErrorsFrame.AddMessage then
         -- A spell you have becomes a real button at once and needs no words.
-        UIErrorsFrame:AddMessage(("%s reserved on %s."):format(S.Name(entry), ns.SlotLabel(slot)), 1, 0.82, 0.3)
+        UIErrorsFrame:AddMessage(ns.TEXT.reservedHere:format(S.Name(entry), ns.SlotLabel(slot)), 1, 0.82, 0.3)
     end
-    if ok and PlaySound and SOUNDKIT and SOUNDKIT.IG_ABILITY_ICON_DROP then PlaySound(SOUNDKIT.IG_ABILITY_ICON_DROP) end
+    if ok then Core.Sound("IG_ABILITY_ICON_DROP") end
 end
 
 function D.Held()

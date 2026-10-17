@@ -1,18 +1,19 @@
 # Sane UI: Sync (part of Core)
 
-**Status:** written and tested outside the game; **not yet tried in the game** · **Since:** 2026-10-14 · **Addon:** `SaneUI` (Core), folder `src/Core/Sync/`
+**Status:** written and tested offline · **Since:** 2026-10-14 · **Addon:** `SaneUI` (Core), folder `src/Core/Sync/`
 
 ## TL;DR
 The game keeps much of what you set for each character alone: the options you chose on its pages, the Edit
 Mode layout in use, the chat windows, the channels you joined, the map filters, the tutorials you have seen.
 A new character starts without them. Sync keeps them with Sane UI's settings instead, laid out as the game's
-own options are, so they are the same on all your characters and part of your profiles. (Joining or leaving
+own options are, in the profile in use: with *Accountwide settings* on (at first) they are the same on all
+your characters that use one profile. With it off, Sync does nothing. (Joining or leaving
 the game's own chat channels on every character is the Social module's.)
 
 ## How to use
 - **Its checkboxes are on the page *Profiles*** of the game's options (Esc > Options > AddOns > Sane UI >
-  Profiles), in the tab *Accountwide*; Sync has no page of its own.
-- **Accountwide:** after the box *Sane UI* (Sane UI's own modules), a box for each of the game's groups of
+  Profiles), in the tab *Game settings*; Sync has no page of its own.
+- **Game settings:** a box for each of the game's groups of
   options pages, with a checkbox for each of its pages, named as the game names them; then a box for what is
   on none of its pages:
   - **Gameplay:** Controls, Interface, Action Bars, Combat, Social, Gamepad, Keybindings (only the modifier
@@ -24,24 +25,25 @@ the game's own chat channels on every character is the Social module's.)
     filters, the quest log, the calendar, tutorials seen, and whatever else the game keeps per character).
 
   All are ticked at first. The mouse over a checkbox says what it holds. An unticked part is left to the
-  game, which keeps it for each character. A ticked part is saved when you log out (and when you save a
-  profile) and set when a character comes into the game (and when you load a profile).
+  game, which keeps it for each character. A ticked part is read into the profile in use when you log out
+  (and when you make a new profile or use another), and set when a character comes into the game (and when
+  another profile comes into use). Each profile keeps its own ticks.
 - **The game shows chat windows and the extra action bars after a `/reload`,** and after another Edit Mode
   layout or chat colour a reload gives its frames back untainted. When a character got such changes, a
   dialog offers the reload (*Reload* / *Later*), once each time.
-- **Whose settings:** the account's, which every character shares (*All settings accountwide*, tab
-  *Profiles*); with that unticked, each character's own; or, for a character with a profile and *Load at
-  login*, its profile's. The first character to log out after a part was ticked gives its settings to the
-  others.
+- **Whose settings:** the profile's in use (*Accountwide* at first, which every character shares; tab
+  *Profiles*). The first character to log out after a part was ticked gives its settings to the others of that
+  profile. With *Accountwide settings* off nothing is kept: each character has the game's own, per character.
 - **Single CVars:** in the tab *CVars*, tick any CVar to keep it the same way.
 - **Not keeping any:** untick every part (and no CVar ticked in the tab *CVars*): the game's settings stay as
   they are, each character with its own. Sync is part of Sane UI, so it is not in the addon list.
 
 ## Technical details
 - **Part of Core,** not a module: its files are in Core's TOC and share `Core.Sync` (no `SaneUI.Sync`). Its
-  settings are described to Core as a module's are, under the name `Sync` (`SaneUIDB.modules.Sync.options`),
-  so the account's, a character's own and the profiles hold them; being no module, it gets no page of its
-  own: the tab *Accountwide* of the page Profiles (`Settings/Synced.lua`) shows a checkbox per part, a box per
+  settings are described to Core as a module's are, under the name `Sync` (`Core.Settings("Sync")`), with the
+  hook `game = true`: they live in the profile in use only, never in a character's own (with *Accountwide
+  settings* off they are a table of the session, and `Give` and `Capture` do nothing). Being no module, it
+  gets no page of its own: the tab *Game settings* of the page Profiles (`Settings/Synced.lua`) shows a checkbox per part, a box per
   `Sync.GROUPS` entry. Its work starts from Core's events: its settings at Core's `ADDON_LOADED` (after
   `Saved.lua` and `Profiles.lua`, which come first in the TOC), the writing at `PLAYER_ENTERING_WORLD`.
   `Sync.Safe` notes a failure as `Sync: <step>`.
@@ -67,24 +69,32 @@ the game's own chat channels on every character is the Social module's.)
     (`Enum.ConsoleCategory`), as the game lists them (`ConsoleGetAllCommands`).
   - **Other per-character settings:** every other CVar the game stores for each character
     (`C_CVar.GetCVarInfo`: stored for the character, not locked, not read only) that no page holds.
-  - These last two are found once a session when first wanted, in one pass (`Sync.CVarsOf(id)`). Never taken
-    by them: a character's state (tracked, collapsed, last chosen or seen) and one computer's (`gx*`,
-    drivers, devices, monitor, window mode, speech voices).
+  - These last two are found once a session when first wanted, in one pass that is a job of Core's scheduler
+    (`Core.Steps`: a few milliseconds a frame, never in a fight); until then what was kept stays, and what is
+    to be set is set once they are found. Never taken by them: a character's state (tracked, collapsed, last
+    chosen or seen), one computer's (`gx*`, drivers, devices, monitor, window mode, speech voices), and a
+    CVar the game does not let addons set (locked, secure or read only).
   - **Edit Mode layout** (`Layout.lua`), **your own chat channels** and **chat windows** (`Chat.lua`).
   - Each part reads only what this client has and writes only what differs; one the game does not answer
-    (a flag, a modifier key) keeps what was kept. Data of a shape this version does not know is skipped.
+    (a flag, a modifier key) keeps what was kept. Data of a shape this version does not know is skipped:
+    each value is checked for its kind first, so a chat window's switch, colour or place of an older shape,
+    or a shorter list of the action bars, leaves that setting as the game has it.
 - **Read** (`Sync.Capture`, given to `Core.Options` as its capture): Core calls it before Sane UI's settings
-  are saved anywhere: a profile saved, the character's own switched, the logout. Kept parts are read from
+  are copied or saved anywhere: a new profile made, another one used, the logout. Kept parts are read from
   the game; the others are dropped. Nothing is read before this session wrote the settings into the game,
   so a character that leaves before then does not spread its own.
 - **Written** (`Sync.Give`): 2 seconds after the first `PLAYER_ENTERING_WORLD` of a session once the game
-  has its stored settings (`C_CVar.AreCVarsLoaded`, else 2 seconds after `VARIABLES_LOADED`), and when a
-  profile was loaded or the character's own switched (the option `taken` changed: Core calls `changed`).
+  has its stored settings (`C_CVar.AreCVarsLoaded`, else 2 seconds after `VARIABLES_LOADED`), and when
+  another profile came into use or *Accountwide settings* was switched on (Core's hook `moved`), once the
+  first writing came due.
   Never in a fight: then at `PLAYER_REGEN_ENABLED`. Your own channels are joined before the chat windows are
   written (a join puts a channel into the first window). One reload dialog per writing (`Sync.OfferReload`,
   through `Core.AskReload`) names what the game shows only after one.
 - **Through the game's stored settings, never its frames** (no taint):
-  - CVars with `C_CVar.SetCVar`; game functions in pairs (`SetAutoDeclineGuildInvites`, ...); modifier keys
+  - CVars with `C_CVar.SetCVar` (`Sync.SetCVar`), only one the game lets addons set: not locked, not read
+    only, a secure one not in a fight. One it does not take is noted once in the error log (`/sane errors`,
+    *Sync: setting CVars*) and left alone for the session; the others are set all the same.
+  - Game functions in pairs (`SetAutoDeclineGuildInvites`, ...); modifier keys
     with `SetModifiedClick`, the key bindings in use then saved with `SaveBindings`; the extra action bars
     with `SetActionBarToggles` (not where the game forces them), read by the bars at the next load.
   - Chat windows with `SetChatWindowName/Size/Color/Alpha/Shown/Locked/Docked/Uninteractable`,
@@ -103,16 +113,18 @@ the game's own chat channels on every character is the Social module's.)
       (`EDIT_MODE_LAYOUTS_UPDATED`, `PLAYER_SPECIALIZATION_CHANGED`) and when the settings are read, only
       between `PLAYER_ENTERING_WORLD` and `PLAYER_LEAVING_WORLD`; after that the last one seen is read.
     - **Set when the game lets us:** not before the manager has its layouts (early in a login), not while
-      Edit Mode is open, not in a fight. Such a layout waits and is set when the manager has its layouts,
-      Edit Mode closes (`EditMode.Exit`) or the fight is over; meanwhile it counts as the one in use. One
-      that is not there (deleted, another character's own) leaves the layout in use.
+      Edit Mode is open (`Core.EditMode`), not in a fight. Such a layout waits and is set when the manager
+      has its layouts, Edit Mode closes or the fight is over; meanwhile it counts as the one in use. One
+      that is not there (deleted, another character's own) leaves the layout in use, and is still the one
+      kept until a layout is picked in this session: a character that does not have it does not give its
+      own to the others at its logout, and the character that has it finds it again.
 - **Left out, and why:**
   - The game's System pages Languages, Network and Mac: they belong to one computer or installation.
   - Edit Mode per specialization, screen-resolution settings, import and export.
   - The zone map's place, the damage meter's windows, chat tab protection: they write into the game's own
     frames or saved tables, which taints them.
 - **Globals:** none.
-- **Tests:** `lua5.1 dev/tests/sync.lua` (65 checks), with a small model of the game's settings and the real
+- **Tests:** `lua5.1 dev/tests/sync.lua` (81 checks), with a small model of the game's settings and the real
   `Data/Pages.lua`.
 
 ## Files
@@ -125,6 +137,13 @@ the game's own chat channels on every character is the Social module's.)
 | `Game.lua` | The page parts, Graphics and Audio, other per-character settings |
 
 ## History
+
+- 2026-10-17 — In the profile in use only (Saneroki): with *Accountwide settings* off Sync keeps, reads and writes nothing. The tab is *Game settings*; each profile keeps its own ticks. Written again when another profile comes into use (`moved`).
+- 2026-10-17 — The CVars of Graphics, Audio and the other per-character settings are found in steps, a few
+  milliseconds a frame (no stall when a character comes into the game). Only CVars the game lets addons set
+  are written, each on its own: one it does not take is noted once, the others are set all the same. A kept
+  Edit Mode layout a character does not have stays the kept one until a layout is picked. Settings kept in
+  an older shape are left as the game has them.
 - 2026-10-17 — Laid out as the game's own options: a part per options page (Gameplay, Accessibility,
   System), named in the game's words, what each page sets made from Blizzard's options code by
   `dev/tools/sync-pages`; Edit Mode layout, own channels, chat windows (with their places) and other

@@ -906,7 +906,8 @@ local Config = Core.Config
 local page
 for _, candidate in ipairs(W.options.pages) do if candidate.name == "Social" then page = candidate end end
 local canvas = Core.frames.Social
-check(page and page.frame == canvas and #page.items == 0, "the page Social is a page of our own")
+check(page and page.frame == canvas and #page.items == 0 and not canvas.tabs, "the page Social is a page of our own, built when first shown")
+canvas:Show() -- the game shows it
 local tabNames = {}
 for index, tab in ipairs(canvas.tabs) do tabNames[index] = tab.Text._text end
 check(table.concat(tabNames, ", ") == "General, Appearance", "with two tabs: General and Appearance")

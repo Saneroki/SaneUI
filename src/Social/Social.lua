@@ -152,7 +152,15 @@ local MOVES = { animations = true, fadeInOn = true, fadeInTime = true, fadeOutTi
 -- with the settings, so profiles and a character's own settings carry it; no control on the page.
 OPTIONS[#OPTIONS + 1] = { key = "presence", default = {} }
 
-Core.Options(ns.name, OPTIONS, function(key)
+-- Settings saved by an older version, in each copy of them (a profile's, a character's own), brought up
+-- to this shape before Core checks them (Core.Options: version, upgrade). 3: the bubbles' Transparency
+-- (bubbleClear, 0 solid) is their Bubble opacity now (100 solid).
+local function Upgrade(copy, from)
+    if from < 3 and type(copy.bubbleClear) == "number" then copy.bubbleOpacity = 100 - copy.bubbleClear end
+    copy.bubbleClear = nil
+end
+
+Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = function(key)
     if key == "presence" then return ns.Safe("channels", ns.Join.Settle) end
     -- The section Expand window: Core's window takes it in by itself (Edge.lua); its Animation type is asked
     -- for each time the window fills the screen.
@@ -163,7 +171,7 @@ Core.Options(ns.name, OPTIONS, function(key)
     local Window = ns.Window
     ns.Guarded(key == "textSize" and Window.Resize or key == "showNative" and Window.Native or MOVES[key] and Window.Animate
         or Window.Repaint)
-end)
+end })
 
 -- One step of giving back. Each runs by itself, so one that fails does not keep the next from its work.
 local function Back(step)
@@ -192,18 +200,10 @@ local function Heard(event, ...)
     end
 end
 
--- Settings saved by an older version, in every copy of them (the settings in use, a profile, a
--- character's own: Core.Profiles.Copies). The bubbles' Transparency (bubbleClear, 0 solid) is their
--- Bubble opacity now (100 solid). Done once per copy: the old key goes.
-local function Mend(copy)
-    if type(copy.bubbleClear) == "number" then copy.bubbleOpacity = 100 - copy.bubbleClear end
-    copy.bubbleClear = nil
-end
 
 function ns.OnLoad()
     local store = Core.Store(ns.name)
     ns.store, ns.options = store, Core.Settings(ns.name)
-    for _, copy in ipairs(Core.Profiles and Core.Profiles.Copies(ns.name) or {}) do Mend(copy) end
     -- 2: the ticks of the list (store.mute) and whether the window is shown (store.hidden) were kept
     -- beside the settings; they are settings now, so profiles and a character's own carry them.
     if (store.version or 1) < 2 then
