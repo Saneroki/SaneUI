@@ -1,7 +1,8 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/">
     <!--
-        A banner at the top of an options page, in place of the page's title (Settings.lua). A row of
-        the game's own settings list, which reads the row's height from here. The art is drawn at 3 : 1,
+        Our rows in the game's own settings lists (Settings.lua). The game reads a row's height from here.
+
+        A banner at the top of an options page, in place of the page's title. The art is drawn at 3 : 1,
         the box dev/tools/art sets every banner in, so all banners stand the same height. The file is
         1024 x 256 for a 4K screen; the box fills its left 768 (Settings.lua: BANNER_RIGHT).
     -->
@@ -18,5 +19,17 @@
                 </Texture>
             </Layer>
         </Layers>
+    </Frame>
+
+    <!--
+        A switch to type into (words, or a number with entry = true): the game's own row of a setting, its
+        words at the left, and the game's input box where its other rows have their control (made in
+        SaneUISettingsEntryMixin:OnLoad). As high as the game's other rows.
+    -->
+    <Frame name="SaneUISettingsEntryTemplate" inherits="SettingsListElementTemplate" mixin="SaneUISettingsEntryMixin" virtual="true">
+        <Size x="280" y="26"/>
+        <Scripts>
+            <OnLoad method="OnLoad"/>
+        </Scripts>
     </Frame>
 </Ui>

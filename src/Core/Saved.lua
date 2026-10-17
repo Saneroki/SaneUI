@@ -173,6 +173,9 @@ end
 -- reload = true: the game shows a change only after a /reload, which is offered.
 -- button = function() end: an action on the options page (no default, nothing kept).
 -- multi = true (with choices, a table as default): several of the choices at once, [value] = true.
+-- entry = true (a number): typed into a box instead of a slider, kept within min and max (a number without max is too).
+-- A string default without choices: words typed into a box (Enter sets them, Esc leaves them).
+-- hidden = function(options) return hide end: the control is not there while it returns true (asked again after each change).
 -- Call it while the files are read. Its third argument is a function, changed(key, value), or a table
 -- of hooks:
 --      changed(key, value)   a switch was changed: on the options page, by Core.Set, by another profile

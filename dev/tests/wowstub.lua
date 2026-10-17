@@ -365,9 +365,29 @@ local function BookRows()
 end
 
 -- A row of the game's options: one under another (its parent) is drawn indented, and switched off
--- while its predicate says no.
+-- while its predicate says no. Its predicates (AddModifyPredicate: switched off; AddShownPredicate: not
+-- on the page) are asked as the game asks them; watched: the settings by whose change the game looks at
+-- it again (AddEvaluateStateCVar); tags: what the options' search finds it by.
 function W.Row(row)
-    function row:SetParentInitializer(parent, predicate) self.parent, self.predicate = parent, predicate end
+    row.predicates, row.shownBy, row.watched, row.tags = {}, {}, {}, {}
+    function row:SetParentInitializer(parent, predicate)
+        self.parent, self.predicate = parent, predicate
+        if predicate then self:AddModifyPredicate(predicate) end
+    end
+    function row:AddModifyPredicate(fn) self.predicates[#self.predicates + 1] = fn end
+    function row:AddShownPredicate(fn) self.shownBy[#self.shownBy + 1] = fn end
+    function row:AddEvaluateStateCVar(variable) self.watched[#self.watched + 1] = variable end
+    function row:AddSearchTags(...) for index = 1, select("#", ...) do self.tags[#self.tags + 1] = select(index, ...) end end
+    function row:EvaluateModifyPredicates()
+        for _, fn in ipairs(self.predicates) do if not fn() then return false end end
+        return true
+    end
+    function row:ShouldShow()
+        for _, fn in ipairs(self.shownBy) do if not fn() then return false end end
+        return true
+    end
+    function row:GetOptions() return self.options end
+    function row:GetSetting() return self.setting end
     return row
 end
 
@@ -612,9 +632,18 @@ function W.Install(env)
         CreateSliderInitializer = function(setting, slider, tooltip) return W.Row({ setting = setting, slider = slider, tooltip = tooltip }) end,
         CreateElementInitializer = function(template, data) return { template = template, data = data } end,
         CreateDropdownInitializer = function(setting, options, tooltip) return W.Row({ setting = setting, options = options, tooltip = tooltip }) end,
+        CreateColorSwatchInitializer = function(setting, options, tooltip)
+            return W.Row({ setting = setting, options = options, tooltip = tooltip, swatch = true })
+        end,
+        -- A row of a template of the addon's own, for a setting (its frame is made by the game's list).
+        CreateControlInitializer = function(template, setting, options, tooltip)
+            return W.Row({ template = template, setting = setting, options = options, tooltip = tooltip,
+                data = { setting = setting, options = options, tooltip = tooltip } })
+        end,
         CreateControlTextContainer = function()
             local container = { data = {} }
             function container:Add(value, label) self.data[#self.data + 1] = { value = value, label = label } end
+            function container:AddCheckbox(value, label) self.data[#self.data + 1] = { value = value, label = label, checkbox = true } end
             function container:GetData() return self.data end
             return container
         end,
@@ -623,6 +652,30 @@ function W.Install(env)
         OpenToCategory = function(id) W.options.opened = id end,
     }
     env.CreateSettingsListSectionHeaderInitializer = function(name, tooltip) return { header = name, tooltip = tooltip } end
+    -- The game's own row of a setting in its list, which a row of the addon's builds on
+    -- (SettingsControlMixin, made from SettingsListElementMixin): it keeps its initializer, shows the
+    -- setting's value (SetValue), is there while its shown predicates say so and switched off by the
+    -- others.
+    env.CreateFromMixins = function(...)
+        local made = {}
+        for index = 1, select("#", ...) do
+            for key, value in pairs((select(index, ...))) do made[key] = value end
+        end
+        return made
+    end
+    env.SettingsListElementMixin = {
+        OnLoad = function() end,
+        Init = function(self, initializer) self.initializer, self.data = initializer, initializer.data end,
+        Release = function(self) self.initializer, self.data = nil, nil end,
+        GetElementData = function(self) return self.initializer end,
+        EvaluateState = function(self) self:SetShown(self.initializer:ShouldShow()) end,
+        DisplayEnabled = function(self, enabled) self._displayEnabled = enabled end,
+    }
+    env.SettingsControlMixin = env.CreateFromMixins(env.SettingsListElementMixin, {
+        GetSetting = function(self) return self.initializer:GetSetting() end,
+        IsEnabled = function(self) return self.initializer:EvaluateModifyPredicates() end,
+        OnSettingValueChanged = function(self, _, value) self:SetValue(value) end,
+    })
     -- A row with a button; a child of another row (parent) is drawn under it, and switched off
     -- while its predicate says no.
     env.CreateSettingsButtonInitializer = function(name, button, click, tooltip)

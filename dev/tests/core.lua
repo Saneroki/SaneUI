@@ -106,6 +106,46 @@ function W.methods:SetTexture(file)
     return handle ~= nil
 end
 
+-- Two modules only the tests of the options see (no addon of their own, not in /sane; gone again before
+-- the profiles): one with a switch of every kind on the game's list, and one whose switches are in tabs
+-- (as Social's are), on a page of our own.
+local listed = { pressed = 0, told = {} }
+SaneUI.Listed = { name = "Listed", title = "Listed module", addon = "SaneUI_Listed" }
+Core.Options("Listed", {
+    { key = "show", default = true, text = "Show it", header = "Showing" },
+    { key = "more", default = true, text = "Show more", parent = "show" },
+    { key = "most", default = true, text = "Show most", parent = "more" },
+    { key = "both", default = false, text = "Both", parent = { "show", "more" } },
+    { key = "secret", default = false, text = "Secret", hidden = function(settings) return not settings.show end },
+    { key = "delay", default = 0.35, min = 0, max = 2, step = 0.05, unit = "seconds", text = "Delay" },
+    { key = "side", default = "left", text = "Side", choices = { { "left", "Left" }, { "right", "Right" } } },
+    { key = "kinds", default = { say = true }, multi = true, text = "Kinds",
+      choices = { { "say", "Say" }, { "yell", "Yell" }, { "emote", "Emote" } } },
+    { key = "name", default = "Sane", text = "Name", parent = "show", validate = function(value) return #value <= 8 end },
+    { key = "lines", default = 5, min = 1, max = 50, step = 1, entry = true, unit = "lines", text = "Lines" },
+    { key = "tint", default = "26262B", color = true, text = "Tint" },
+    { key = "clear", button = function() listed.pressed = listed.pressed + 1 end, text = "Clear" },
+    { key = "big", default = false, text = "Big", reload = true },
+}, function(key) listed.told[#listed.told + 1] = key end)
+local tabbed = { cleared = 0, told = {} }
+SaneUI.Tabbed = { name = "Tabbed", title = "Tabbed module", addon = "SaneUI_Tabbed" }
+Core.Options("Tabbed", {
+    { key = "fade", default = true, text = "Fade out", header = "Messages", headerTip = "How messages come and go." },
+    { key = "fadeTime", default = 1, min = 0, max = 2, step = 0.05, unit = "seconds", text = "Fade time", parent = "fade", inline = true },
+    { key = "count", default = 5, min = 1, max = 50, step = 1, text = "Count", parent = { "gone", "fade" }, inline = true,
+      tip = "How many are kept." },
+    { key = "kinds", default = { say = true }, multi = true, text = "Kinds", choices = { { "say", "Say" }, { "yell", "Yell" } } },
+    { key = "greeting", default = "Hello", text = "Greeting", validate = function(value) return #value <= 12 end },
+    { key = "lines", default = 5, min = 1, max = 50, entry = true, unit = "lines", text = "Lines kept" },
+    { key = "clear", button = function() tabbed.cleared = tabbed.cleared + 1 end, text = "Clear the log" },
+    { key = "kept", default = {} },
+    { key = "size", default = 14, min = 10, max = 24, step = 1, text = "Text size", tab = "Look", header = "Text" },
+    { key = "big", default = false, text = "Big letters", tab = "Look", hidden = function(settings) return (settings.size or 14) < 12 end },
+    { key = "shadow", default = 2, min = 0, max = 5, step = 1, text = "Shadow", tab = "Look", parent = "fade", inline = true },
+    { key = "tint", default = "26262B", color = true, text = "Tint", tab = "Look" },
+}, function(key) tabbed.told[#tabbed.told + 1] = key end)
+MinimalSliderWithSteppersMixin = { Label = { Right = 2 }, Event = { OnValueChanged = "OnValueChanged" } } -- (the game's slider)
+
 -- The game's own error window, where errors go that nothing of ours caught.
 W.Fire("PLAYER_LOGIN")
 check(steps[2] == "login" and #steps == 2, "a module is told when the character is there; one that could not start is not")
@@ -114,14 +154,19 @@ local function Empty()
     for _, page in ipairs(W.options.pages) do if #page.items > 0 then return false end end
     return true
 end
-check(#W.options.pages == 5 and W.options.pages[1].registered and Core.pages.top == W.options.pages[1] and Core.pages.Profiles == W.options.pages[2]
-    and Core.pages.Core == W.options.pages[3] and Core.pages.Appearance == W.options.pages[4] and Core.pages.Demo == W.options.pages[5] and Empty(),
+check(#W.options.pages == 7 and W.options.pages[1].registered and Core.pages.top == W.options.pages[1] and Core.pages.Profiles == W.options.pages[2]
+    and Core.pages.Core == W.options.pages[3] and Core.pages.Appearance == W.options.pages[4] and Core.pages.Demo == W.options.pages[5]
+    and Core.pages.Listed == W.options.pages[6] and Core.pages.Tabbed == W.options.pages[7] and Empty(),
     "but the pages are put up at login, empty, so the game's options have their AddOns tab")
+check(Core.pages.Profiles.frame == Core.frames.Profiles and Core.pages.Tabbed.frame == Core.frames.Tabbed and not Core.frames.Tabbed:IsShown(),
+    "Profiles and a module whose switches are in tabs get a page of our own: an empty frame, hidden")
 SettingsPanel:GetScript("OnShow")(SettingsPanel)
 local Config = Core.Config
-check(#W.options.pages == 5 and #W.options.pages[5].items == 2, "opening the game's options fills the pages")
+check(#W.options.pages == 7 and #W.options.pages[5].items == 2, "opening the game's options fills the pages")
+check(not Core.frames.Profiles.tabs and not Core.frames.Tabbed.tabs,
+    "but not the pages of our own: each is built the first time the game shows it (a player may open only the game's own pages)")
 SettingsPanel:GetScript("OnShow")(SettingsPanel)
-check(#W.options.pages == 5 and #W.options.pages[5].items == 2 and #steps == 2, "once")
+check(#W.options.pages == 7 and #W.options.pages[5].items == 2 and #steps == 2, "once")
 check(Core.class == "MAGE" and Core.charName == "Tester Stub" and Core.charKey == "Player-70-0000ABCD",
     "a character is known by its own number, and named by its first name and surname")
 check(demo.char == demo.DB.chars["Player-70-0000ABCD"] and demo.char.name == "Tester Stub" and demo.char.class == "MAGE", "a module's notes per character are kept under that number")
@@ -234,12 +279,290 @@ Core.Safe("quiet", function() error("hush") end)
 check(printedMatch("problem in quiet, noted") and Core.errors.quiet.count == 2, "switched on again, it is")
 Core.errors.quiet = nil
 
+-- A frame of a template of ours, as the game makes it: the template's mixin, and the parts it names.
+local function Made(mixin, parts)
+    local widget = W.NewWidget("Frame")
+    for key, value in pairs(mixin) do widget[key] = value end
+    for key, value in pairs(parts or {}) do widget[key] = value end
+    return widget
+end
+-- An edit box takes the keys (SetFocus) and gives them up (ClearFocus, which it tells: OnEditFocusLost).
+function W.methods:HasFocus() return self._focus or false end
+function W.methods:SetFocus() self._focus = true end
+function W.methods:ClearFocus()
+    if not self._focus then return end
+    self._focus = false
+    if self._scripts.OnEditFocusLost then self._scripts.OnEditFocusLost(self) end
+end
+-- Whether a line with these words is drawn anywhere
+local function Drawn(words)
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "FontString" and type(widget._text) == "string" and widget._text:find(words, 1, true) then return true end
+    end
+    return false
+end
+local function Typed(box, text, key)
+    box:SetFocus()
+    box:SetText(text)
+    box:GetScript(key or "OnEnterPressed")(box)
+end
+
+-- A module's switches on the game's list, of every kind; each one set through Core.Set -----------------
+do
+    local page = W.options.pages[6]
+    local function Row(text)
+        for _, item in ipairs(page.items) do
+            if (item.setting and item.setting.name == text) or item.button == text then return item end
+        end
+    end
+    local settings = Core.Settings("Listed")
+    local show, more, most, both, secret = Row("Show it"), Row("Show more"), Row("Show most"), Row("Both"), Row("Secret")
+    check(page.name == "Listed module" and #page.items == 14 and page.items[1].header == "Showing" and show and more and most and both and secret,
+        "a list page: a section header, then a row for each switch with words")
+    check(more.parent == show and most.parent == more and both.parent == show and Row("Name").parent == show,
+        "a switch under another is drawn under it; under two, under the first")
+    local function Watches(row, key)
+        for _, variable in ipairs(row.watched) do if variable == "SaneUI_Listed_" .. key then return true end end
+        return false
+    end
+    check(Watches(most, "show") and Watches(both, "more") and not Watches(more, "show") and not Watches(both, "show"),
+        "the game looks at a row again when its parent changes; it also listens to a parent's parent and to a second parent")
+    show.setting:SetValue(false)
+    check(settings.show == false and not more:EvaluateModifyPredicates() and not most:EvaluateModifyPredicates() and not both:EvaluateModifyPredicates(),
+        "switched off, every switch under it is greyed out, also one two steps down")
+    check(not secret:ShouldShow(), "and one hidden while it is off is not on the page")
+    show.setting:SetValue(true)
+    more.setting:SetValue(false)
+    check(show:EvaluateModifyPredicates() and not most:EvaluateModifyPredicates() and not both:EvaluateModifyPredicates() and secret:ShouldShow(),
+        "a switch under two is greyed out while either is off")
+    more.setting:SetValue(true)
+
+    local delay = Row("Delay")
+    check(delay.slider.min == 0 and delay.slider.max == 2 and delay.slider.step == 0.05 and delay.slider.format(0.35) == "0.35 seconds"
+        and delay.slider.format(2) == "2.00 seconds", "a number between two ends: a slider, its value written with two decimals and its unit")
+    delay.setting:SetValue(0.7000001)
+    check(settings.delay == 0.7, "a slider's value is kept on its step")
+    local side = Row("Side")
+    local words = {}
+    for index, choice in ipairs(side.options()) do words[index] = choice.value .. "=" .. choice.label end
+    check(table.concat(words, " ") == "left=Left right=Right", "one of a few: a dropdown")
+    side.setting:SetValue("up")
+    check(settings.side == "left", "a value that is none of them is refused (Core.Set)")
+    local kinds = Row("Kinds")
+    words = {}
+    for index, choice in ipairs(kinds.options()) do words[index] = choice.value .. "=" .. choice.label .. (choice.checkbox and "+" or "") end
+    check(kinds.setting.kind == "number" and kinds.setting:GetValue() == 1 and table.concat(words, " ") == "1=Say+ 2=Yell+ 3=Emote+",
+        "several of a few: the game's dropdown with a checkbox each, as it keeps such a setting (a bit per choice)")
+    kinds.setting:SetValue(5)
+    check(settings.kinds.say and settings.kinds.emote and not settings.kinds.yell and kinds.setting:GetValue() == 5, "kept as the choices ticked")
+    local name, lines = Row("Name"), Row("Lines")
+    check(name.template == "SaneUISettingsEntryTemplate" and name.setting.kind == "string" and name.options.key == "name"
+        and lines.template == "SaneUISettingsEntryTemplate" and lines.setting.kind == "number",
+        "words, and a number with entry = true: a row of ours with a box to type into (no checkbox, as before)")
+    name.setting:SetValue("Saner")
+    check(settings.name == "Saner", "words set")
+    name.setting:SetValue("Much too long")
+    check(settings.name == "Sane", "words its check refuses get the default")
+    local tint = Row("Tint")
+    check(tint.swatch and tint.setting:GetValue() == "FF26262B", "a colour: the game's swatch, which keeps an alpha in front")
+    tint.setting:SetValue("ffaabbcc")
+    check(settings.tint == "AABBCC", "kept as six hex digits")
+    local clear = Row("Clear")
+    clear.click()
+    check(clear.name == "" and listed.pressed == 1 and settings.clear == nil, "an action: the game's button, which runs it and keeps nothing")
+    W.popups = {}
+    Row("Big").setting:SetValue(true)
+    check(W.popups[1] and W.popups[1].which == "GENERIC_CONFIRMATION" and W.popups[1].data.text_arg1 == "Big",
+        "a switch the game shows only after a /reload offers one")
+    local told = #listed.told
+    Config.Refresh()
+    check(#listed.told == told and (show.setting.notified or 0) > 0, "shown anew, the values are only read: the module is told nothing")
+
+    -- The row to type into, as the game's list makes it from the template (Banner.xml)
+    local entry = Made(SaneUISettingsEntryMixin)
+    entry:OnLoad()
+    entry:Init(name)
+    check(entry.Box._text == "Sane" and entry.Box._width == 214 and entry.Unit._text == "" and entry.Box:IsEnabled(),
+        "a row to type into shows its words in the game's input box")
+    Typed(entry.Box, "Saner")
+    check(settings.name == "Saner" and entry.Box._text == "Saner" and not entry.Box:HasFocus(), "Enter sets what was typed")
+    Typed(entry.Box, "Other", "OnEscapePressed")
+    check(settings.name == "Saner" and entry.Box._text == "Saner", "Esc leaves it as it was")
+    Typed(entry.Box, "Far too long words")
+    check(settings.name == "Sane" and entry.Box._text == "Sane", "what its check refuses is not kept: the row shows the value it has")
+    entry.Box:SetFocus()
+    entry.Box:SetText("Typing")
+    entry:OnSettingValueChanged(name.setting, "Elsewhere")
+    check(entry.Box._text == "Typing", "a value shown anew does not write over what is being typed")
+    entry.Box:ClearFocus()
+    show.setting:SetValue(false)
+    entry:EvaluateState()
+    check(not entry.Box:IsEnabled() and entry._displayEnabled == false, "greyed out under a switch that is off")
+    show.setting:SetValue(true)
+    entry:Release()
+    local number = Made(SaneUISettingsEntryMixin)
+    number:OnLoad()
+    number:Init(lines)
+    check(number.Box._text == "5" and number.Box._width == 70 and number.Unit._text == "lines", "a number: a small box, its unit beside it")
+    Typed(number.Box, "70")
+    check(settings.lines == 50 and number.Box._text == "50", "kept within its ends")
+    Typed(number.Box, "many")
+    check(settings.lines == 50 and number.Box._text == "50", "words that are no number change nothing")
+    number:Release()
+end
+
+-- A module's page in tabs, a page of our own -----------------------------------------------------------
+do
+    local page, settings = Core.frames.Tabbed, Core.Settings("Tabbed")
+    check(page.OnDefault and not page.tabs, "a page in tabs: the game's Defaults reaches it before it is built (OnDefault)")
+    page:Show()
+    local names = {}
+    for index, tab in ipairs(page.tabs) do names[index] = tab.Text._text end
+    check(table.concat(names, ", ") == "General, Look" and page.parts[1]:IsShown() and not page.parts[2]:IsShown() and page.OnRefresh,
+        "shown, it is built: its tabs, General first, the first one shown")
+    local function Control(label)
+        for _, control in ipairs(Config.Panel.controls) do
+            local widget = control
+            while type(widget) == "table" and widget ~= page do widget = widget._parent end
+            if widget == page and control.label == label then return control end
+        end
+    end
+    local function Press(control) control:GetScript("OnClick")(control) end
+    local fade, fadeTime, count = Control("Fade out"), Control("Fade time"), Control("Count")
+    check(fade and fadeTime and fadeTime._points[1][2] == fade:GetParent() and fadeTime._points[1][4] == 230 and fadeTime._points[1][5] == fade._points[1][5],
+        "a number inline is on its checkbox's line, in the column of controls")
+    check(count and count._points[1][5] < fade._points[1][5] and Drawn("Count"),
+        "one under a list of switches whose first is none of the page's is on a line of its own, with its words (no error)")
+    count:Refresh()
+    check(count._disabled, "and greyed out while one of them is off")
+    local box = fade:GetParent()
+    check(box.hover and box.hover:GetScript("OnEnter"), "a box's header tip is the tooltip of its title")
+
+    Typed(Control("Greeting"), "A greeting far too long")
+    check(settings.greeting == "Hello" and Control("Greeting")._text == "Hello", "words: a box to type into; what the switch's check refuses gets the default (Core.Set)")
+    Typed(Control("Greeting"), "Hi there")
+    check(settings.greeting == "Hi there" and tabbed.told[#tabbed.told] == "greeting", "words typed are set, and the module is told")
+    local lines = Control("Lines kept")
+    Typed(lines, "70")
+    check(settings.lines == 50 and lines._text == "50" and Drawn("lines"), "a number with entry = true: a box, kept within its ends, its unit beside it")
+    Typed(lines, "?")
+    check(settings.lines == 50, "words that are no number change nothing")
+    local kinds = Control("Kinds")
+    local function Tick(text)
+        kinds:GenerateMenu()
+        for _, item in ipairs(kinds._items) do if item.text == text then item.fn(item.data) end end
+    end
+    Tick("Yell")
+    check(settings.kinds.say and settings.kinds.yell, "several of a few: a dropdown with a checkbox each")
+    Tick("Say")
+    check(not settings.kinds.say and settings.kinds.yell and kinds._defaultText == "None", "ticked off again; none ticked, it says so")
+    Press(Control("Clear the log"))
+    check(tabbed.cleared == 1, "an action: a button that runs it")
+    check(Control("Tint") and Control("Shadow") and Control("Shadow")._points[1][4] == 230 and Drawn("Shadow"),
+        "a number inline whose switch is in another tab is on a line of its own there")
+
+    -- Hidden: a line goes, the lines under it close up; and back
+    local big, shadow = Control("Big letters"), Control("Shadow")
+    local at = shadow._points[1][5]
+    Core.Set("Tabbed", "size", 10)
+    Config.Panel.Refresh(page)
+    check(not big:IsShown() and shadow._points[1][5] == big._points[1][5] and shadow._points[1][5] > at,
+        "a switch hidden while its hidden() says so is not there; the lines under it close up")
+    Core.Set("Tabbed", "size", 14)
+    Config.Panel.Refresh(page)
+    check(big:IsShown() and shadow._points[1][5] == at, "back, the others make room again")
+
+    -- Only what is shown is shown anew
+    local other, looked = CreateFrame("Frame"), 0
+    Config.Panel.Page(other)
+    Config.Panel.Check(other, "Probe", nil, function() looked = looked + 1 return true end, function() end)
+    looked = 0
+    fade:SetChecked(false)
+    Press(fade)
+    check(settings.fade == false and not Control("Fade time"):IsEnabled() and looked == 0,
+        "a click shows its own page anew (what is under it greyed out at once), not the others")
+    fade:SetChecked(true)
+    Press(fade)
+    Config.Refresh()
+    check(looked == 1, "Config.Refresh shows every page that is shown anew")
+    other:Hide()
+    Config.Refresh()
+    check(looked == 1, "a hidden one waits")
+    other:Show()
+    check(looked == 2, "and catches up when it is shown")
+    other:OnRefresh()
+    other:Hide()
+    other:OnRefresh()
+    check(looked == 3, "the game's OnRefresh shows a page of ours anew while it is shown")
+
+    -- The search over the tabs
+    local find = page.find
+    local function Look(text)
+        find.search:SetText(text)
+        find.search:GetScript("OnTextChanged")(find.search)
+    end
+    Look("fade tim")
+    check(find.list:IsShown() and find.found[1].option.key == "fadeTime" and find.rows[1].Words._text == "Fade time"
+        and find.rows[1].Where._text == "General, Messages", "the search finds a switch by its words, with its tab and box")
+    find.search:GetScript("OnEnterPressed")(find.search)
+    check(not find.list:IsShown() and find.marked and find.marked:IsShown() and page.parts[1]:IsShown(), "Enter goes to the first found: its line is marked")
+    Look("tint")
+    Press(find.rows[1])
+    check(page.parts[2]:IsShown() and not page.parts[1]:IsShown() and find.went.option.key == "tint", "one in another tab: a click shows that tab")
+    Look("kept")
+    check(find.found[1].option.key == "lines" and find.found[2].option.key == "count", "a word of its tooltip finds one too, after those found by their words")
+    Core.Set("Tabbed", "size", 10)
+    Config.Panel.Refresh(page)
+    Look("big lett")
+    check(find.rows[1].entry == nil and find.rows[1].Words._text == "Nothing found", "a switch hidden now is not found")
+    Core.Set("Tabbed", "size", 14)
+    Config.Panel.Refresh(page)
+    find.search:GetScript("OnEscapePressed")(find.search)
+    check(not find.list:IsShown(), "Esc closes the list")
+    Look("")
+    check(not find.list:IsShown() and not find.marked:IsShown(), "no words: no list, no mark")
+
+    -- Defaults
+    W.popups = {}
+    tabbed.told = {}
+    Press(Control("Defaults"))
+    local dialog = W.popups[1]
+    check(dialog and dialog.which == "GENERIC_CONFIRMATION" and dialog.data.text_arg1 == "Tabbed module" and settings.greeting == "Hi there",
+        "Defaults asks first")
+    dialog.data.callback()
+    check(settings.greeting == "Hello" and settings.lines == 5 and settings.kinds.say and not settings.kinds.yell and #tabbed.told == 3,
+        "then every setting of the module is back at its default, and the module is told of each that changed")
+    Core.Set("Tabbed", "greeting", "Hi")
+    page:OnDefault()
+    check(settings.greeting == "Hello", "the game's Defaults (All settings) does the same through OnDefault")
+    page:Hide()
+    other:Hide()
+end
+
+-- The test modules go; the page Profiles is built the first time the game shows it
+for _, name in ipairs({ "Listed", "Tabbed" }) do
+    Core.described[name], SaneUI[name], SaneUIDB.modules[name] = nil, nil, nil
+    for index, known in ipairs(Core.optionOrder) do if known == name then table.remove(Core.optionOrder, index) break end end
+end
+Core.frames.Profiles:Show()
+check(Core.frames.Profiles.tabs and not Core.frames.Profiles.parts[3].list, "the page Profiles is built when shown; its CVar list only once its tab is")
+
 -- Profiles: the page Profiles, a page of our own with tabs ----------------------------------
 local Profiles = Core.Profiles
 local canvas = Core.frames.Profiles
 check(profilesPage.frame == canvas and #profilesPage.items == 0, "Profiles is a page of our own: its frame is shown in place of the game's list")
+-- A control of the page Profiles, by its words (another page may have one of the same words: Defaults).
+local function Inside(widget)
+    while widget do
+        if widget == canvas then return true end
+        widget = widget._parent
+    end
+    return false
+end
 local function Control(label)
-    for _, control in ipairs(Config.Panel.controls) do if control.label == label then return control end end
+    for _, control in ipairs(Config.Panel.controls) do
+        if control.label == label and Inside(control.widget or control) then return control end
+    end
 end
 local function Click(control) control:GetScript("OnClick")(control) end
 local function Tick(check, on)
@@ -443,8 +766,11 @@ SaneUI_OnAddonCompartmentClick()
 check(W.options.opened == top.id, "and so does the minimap's addon list")
 W.options.opened, W.combat = nil, true
 SlashCmdList.SANEUI("config")
-check(W.options.opened == nil and printedMatch("in combat"), "in a fight it says why not")
+check(W.options.opened == nil and printedMatch("open after the fight") and Core.Owed("options"), "in a fight it says why not, and waits")
+SlashCmdList.SANEUI("options")
 W.combat = false
+W.Fire("PLAYER_REGEN_ENABLED")
+check(W.options.opened == top.id and not Core.Owed("options"), "the fight over, the options open, once")
 
 -- The CVars section ----------------------------------------------------------------------
 W.cvarInfo = {
@@ -472,12 +798,6 @@ local list = SaneUISettingsCVarsMixin
 check(type(list) == "table" and type(SaneUISettingsCVarRowMixin) == "table", "the list and its rows are the game's kind of templates, with mixins")
 
 -- The list: the search, the filter button, the count
-local function Made(mixin, parts)
-    local widget = W.NewWidget("Frame")
-    for key, value in pairs(mixin) do widget[key] = value end
-    for key, value in pairs(parts or {}) do widget[key] = value end
-    return widget
-end
 local frame = Made(list)
 W.templates.UICheckButtonTemplate = function(widget) widget.Text = W.NewWidget("FontString") end
 CreateScrollBoxListLinearView = function()
@@ -493,13 +813,6 @@ function W.methods:ForEachFrame(fn) for _, row in ipairs(self._rows or {}) do fn
 function W.methods:SetIsDefaultCallback(fn) self._isDefault = fn end
 function W.methods:SetDefaultCallback(fn) self._toDefault = fn end
 function W.methods:ValidateResetState() self._cross = not self._isDefault() end
-function W.methods:HasFocus() return self._focus or false end
-function W.methods:SetFocus() self._focus = true end
-function W.methods:ClearFocus()
-    if not self._focus then return end
-    self._focus = false
-    if self._scripts.OnEditFocusLost then self._scripts.OnEditFocusLost(self) end
-end
 list.OnLoad(frame)
 list.Init(frame)
 local function Listed() return Names(frame.List._provider.rows) end
@@ -509,6 +822,12 @@ local function Item(text)
 end
 check(frame.List._view.template == "SaneUISettingsCVarRowTemplate" and Listed() == "autoLootDefault buildVersion cameraSavedDistance graphicsQuality secureThing"
     and frame.Count._text == "5 CVars" and not frame.Filter._cross, "shown, the list has every CVar, and says how many")
+-- The game tells of a SetText as of a key (Init's own, the words searched before written back).
+local provider = frame.List._provider
+frame.Search:SetText("")
+frame.Search:GetScript("OnTextChanged")(frame.Search)
+W.Wait(0.2)
+check(frame.List._provider == provider, "the same words again filter nothing anew: one filtering of every CVar each time the tab is shown")
 frame.Search:SetText("loot")
 frame.Search:GetScript("OnTextChanged")(frame.Search)
 W.Wait(0.2)

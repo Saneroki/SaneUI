@@ -365,36 +365,10 @@ local function ProfilesTab(child)
     return 232 + 18 + box:GetHeight() + 8
 end
 
--- Builds the page into the frame Core put up for it. The game calls OnRefresh when it shows it.
+-- Builds the page into the frame Core put up for it (the first time it is shown): its title, a line,
+-- and the tabs over their box (Panel.TabbedFrame), each tab's part in a scroll area but the CVars'.
 function Config.BuildProfiles(page)
     Panel.Header(page, TEXT.title)
     Panel.Text(page, TEXT.intro, "GameFontHighlight", 7, -62)
-    local tabs = { { name = TEXT.tab, build = ProfilesTab } }
-    tabs[#tabs + 1] = Config.AccountTab()
-    tabs[#tabs + 1] = Config.CVarsTab()
-
-    -- The tabs' frame: a box under the tabs, each tab's part filling it
-    local frame = CreateFrame("Frame", nil, page, "BackdropTemplate")
-    frame:SetPoint("TOPLEFT", 7, -118)
-    frame:SetPoint("BOTTOMRIGHT", -7, 8)
-    Panel.Frame(frame)
-    local names, parts = {}, {}
-    for index, tab in ipairs(tabs) do
-        local part = CreateFrame("Frame", nil, frame)
-        part:SetAllPoints()
-        part:Hide()
-        if tab.scroll == false then
-            Core.Safe("Settings: tab " .. tab.name, tab.build, part)
-        else
-            local child = Panel.Scroll(part)
-            child:SetHeight(Core.Safe("Settings: tab " .. tab.name, tab.build, child) or 1)
-        end
-        names[index], parts[index] = tab.name, part
-    end
-    page.tabs = Panel.Tabs(page, names, function(index)
-        for which, part in ipairs(parts) do part:SetShown(which == index) end
-    end, 14, -84)
-    page.parts = parts
-    page.OnRefresh = function() Panel.Refresh() end
-    Panel.Refresh()
+    Panel.TabbedFrame(page, { { name = TEXT.tab, build = ProfilesTab }, Config.AccountTab(), Config.CVarsTab() }, -118)
 end
