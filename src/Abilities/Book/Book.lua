@@ -394,7 +394,7 @@ local function Show()
     CopyText(pager.PageText, nativePager.PageText)
     pager:SetShown(not home)
     toggle:SetShown(not home)
-    toggle:SetChecked(ns.DB.options.showHidden and true or false)
+    toggle:SetChecked(ns.options.showHidden and true or false)
     CopyText(toggle.Text, nativePager.PageText)
     watchFrames = WATCH_FRAMES -- the game may lay its entries out again in the frames that follow
 end
@@ -403,7 +403,7 @@ end
 -- own two sizes (a page of 680 x 590 that starts 85 from the left and 45 from the top; the
 -- right page 76 right of the middle), and follow the window when it has another size.
 local function Measure()
-    local compact = ns.DB.options.compact
+    local compact = ns.options.compact
     scale = compact and COMPACT or 1
     local width, height = paged:GetWidth() or 0, paged:GetHeight() or 0
     local pagesShown = (paged.viewsPerPage or 2) < 2 and 1 or 2
@@ -442,7 +442,7 @@ local function Build()
     if tab and ns.ready then
         showRanks = GetCVarBool("ShowAllSpellRanks") and true or false
         local hidePassives = GetCVarBool("spellBookHidePassives") and true or false
-        local hidden = ns.DB.options.showHidden
+        local hidden = ns.options.showHidden
 
         local ghosts = {}
         for _, entry in ipairs(hidden and S.Unlearned(tab, showRanks) or {}) do
@@ -679,7 +679,7 @@ local function MakeFrames()
 
     -- Unlearned spells on or off, where the pages are turned. The same switch as in the spellbook's
     -- menu and the options, with the same words and the same explanation when pointed at.
-    local option = ns.OPTION.showHidden
+    local option = Core.Described(ns.name, "showHidden")
     local box = CreateFrame("CheckButton", "SaneUISpellbookShowHidden", frame, "UICheckButtonTemplate")
     box:SetSize(24, 24)
     box:SetFrameLevel(frame:GetFrameLevel() + 30)
@@ -687,10 +687,11 @@ local function MakeFrames()
     box.Text:SetText(option.text)
     box.Text:ClearAllPoints()
     box.Text:SetPoint("RIGHT", box, "LEFT", -2, 0)
+    -- Set through Core, which tells the module (its changed redraws the pages) and the options page.
     box:SetScript("OnClick", function(self)
-        ns.DB.options.showHidden = self:GetChecked() and true or false
-        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-        ns.Fire("REFRESH")
+        local on = self:GetChecked() and true or false
+        Core.Sound(on and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF")
+        self:SetChecked(Core.Set(ns.name, "showHidden", on) and true or false)
     end)
     box:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -705,7 +706,7 @@ local function MakeFrames()
 end
 
 local function Arm()
-    if armed or standDown or not ns.DB.options.book then return end
+    if armed or standDown or not ns.options.book then return end
     if Gamepad() then
         standDown = "a controller is in use"
         return
@@ -785,7 +786,7 @@ ns.Listen("REFRESH", B.Relayout)
 function B.Why()
     if armed then return nil end
     if standDown then return standDown end
-    if not ns.DB.options.book then return ("\"%s\" is off in the options"):format(ns.OPTION.book.text) end
+    if not ns.options.book then return ("\"%s\" is off in the options"):format(Core.Described(ns.name, "book").text) end
     return "not taken yet"
 end
 

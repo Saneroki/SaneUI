@@ -224,9 +224,13 @@ local function row(panel, index) return panel.model.shown.rows[index] or {} end
 local function count(panel) return panel.model.shown.n end
 
 -- The addons: Core, then the module -----------------------------------------------------------
+-- Of Core only what the module uses: its tools, the kit (pools, pixels, a frame lent), the saved settings,
+-- and Fuzzy for a text without its codes.
 W.Load(root, "SaneUI", "Core/Core", {})
+W.Load(root, "SaneUI", "Core/Kit", {})
 W.Load(root, "SaneUI", "Core/Motion", {})
 W.Load(root, "SaneUI", "Core/Saved", {})
+W.Load(root, "SaneUI", "Core/Fuzzy", {})
 local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
 Core.Store("Tooltips").options = { show = "never", cursor = true } -- saved by hand: no choice; the mouse switch of version 2
@@ -255,6 +259,7 @@ for _, text in pairs(facts.item) do shaped = shaped and text:find("^[nb][%d%.,]+
 check(shaped, "every record of the facts has its shape: a quest's five fields, an NPC's and an item's groups")
 W.Fire("ADDON_LOADED", "SaneUI_Tooltips")
 local options = ns.options
+check(options == Core.Settings("Tooltips"), "the switches are the table Core keeps for the module")
 check(options.cursor == "always" and options.classColors == true and options.icons == true and options.textSize == 14 and options.opacity == 97,
     "its settings: the mouse off, class colours and icons on, the text 14 high, the background almost solid")
 check(options.show == "always", "and tooltips shown always (a saved value that is no choice of the option gets that)")

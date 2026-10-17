@@ -262,7 +262,7 @@ end
 -- that is not an opening, and the page you were on stays.
 local function OnShown()
     if hiddenAt ~= GetTime() then
-        active = ns.DB.options.home and true or false
+        active = ns.options.home and true or false
         underneath = (SelectedTab())
     end
     Sync()

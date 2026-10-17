@@ -161,7 +161,7 @@ function E.Reconcile()
                 reserved[slot] = nil
                 -- Only worth a chat line when it happened by itself, not right after your own drop.
                 local yours = grace[slot] and now < grace[slot]
-                if ns.DB.options.announce and not yours then
+                if ns.options.announce and not yours then
                     ns.Print(("%s is now on %s."):format(S.Name(entry), ns.SlotLabel(slot)))
                 end
             end

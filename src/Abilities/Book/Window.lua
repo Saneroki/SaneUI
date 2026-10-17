@@ -179,7 +179,7 @@ end
 
 -- Takes the window (when the pages are ours and the switch is on) or lets it go.
 function W.Update()
-    local want = B.Armed() and ns.DB.options.window and PlayerSpellsFrame ~= nil and true or false
+    local want = B.Armed() and ns.options.window and PlayerSpellsFrame ~= nil and true or false
     if want then Setup() end
     if want == on then return end
     on = want

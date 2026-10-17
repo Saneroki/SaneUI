@@ -8,18 +8,22 @@ local _, ns = ...
 --  Menu.ModifyMenu is the game's own door for this: an addon may append lines
 --  to a menu without its code mixing with the game's lines above them.
 -------------------------------------------------------------------------------
+local Core = SaneUI.Core
+
 local function Option(key)
-    return ns.DB.options[key] and true or false
+    return ns.options[key] and true or false
 end
 
 -- One of the module's switches as a line of the menu, with the words of the options page.
+-- A click sets it through Core (Core.Set): the module hears it as from the options page (its
+-- changed redraws), and an open options page shows it too.
 -- enabled: a function; while it says no, the line is greyed out and its tooltip says why (the
 -- game's own lines in this menu do the same while a search is on).
-local function Checkbox(root, key, after, enabled)
-    local text, tip = ns.OPTION[key].text, ns.OPTION[key].tip
+local function Checkbox(root, key, enabled)
+    local option = Core.Described(ns.name, key)
+    local text, tip = option.text, option.tip
     local box = root:CreateCheckbox(text, function() return Option(key) end, function()
-        ns.DB.options[key] = not Option(key)
-        if after then after() end
+        Core.Set(ns.name, key, not Option(key))
     end)
     if not box then return box end
     if enabled and box.SetEnabled then box:SetEnabled(enabled) end
@@ -81,9 +85,9 @@ end
 local function Extend(_, root)
     if not ns.char then return end
     root:CreateDivider()
-    root:CreateTitle(SaneUI.Core.TITLE)
+    root:CreateTitle(Core.TITLE)
 
-    Checkbox(root, "showHidden", Refresh, PagesOurs)
+    Checkbox(root, "showHidden", PagesOurs)
 
     -- The game offers this line itself, except to warriors and rogues: their ranks replace
     -- each other, so the game has no old ranks to show. The ranks still to come are worth it.
@@ -101,12 +105,12 @@ local function Extend(_, root)
         end
     end
 
-    Checkbox(root, "home", Refresh, PagesOurs)
-    Checkbox(root, "compact", Refresh, PagesOurs)
-    Checkbox(root, "window", Refresh, PagesOurs)
+    Checkbox(root, "home", PagesOurs)
+    Checkbox(root, "compact", PagesOurs)
+    Checkbox(root, "window", PagesOurs)
 
     root:CreateDivider()
-    Checkbox(root, "ghosts", Refresh)
+    Checkbox(root, "ghosts")
     Checkbox(root, "announce")
 
     Layouts(root)

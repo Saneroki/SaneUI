@@ -64,9 +64,6 @@ local OPTIONS = {
       tip = "When you learn a spell or get an item a button was reserved for, one chat line names the button. Off: it lands quietly." },
 }
 
-ns.OPTION = {} -- [key] = its description above
-for _, option in ipairs(OPTIONS) do ns.OPTION[option.key] = option end
-
 -- The pages change hands at a /reload only: said in chat, and offered through Core's dialog where it has one.
 local function PagesChanged(on)
     ns.Print(on and "the spellbook shows your unlearned spells again after /reload."
@@ -235,10 +232,11 @@ function ns.QueueUpdate(scan, delay)
 end
 
 -------------------------------------------------------------------------------
---  Saved settings (kept by Core, in SaneUIDB.modules.Spellbook)
+--  Saved settings (kept by Core, in SaneUIDB.modules.Abilities)
 -------------------------------------------------------------------------------
 function ns.OnLoad()
-    local db = Core.Store(ns.name)      -- db.options: the switches above
+    ns.options = Core.Settings(ns.name) -- the switches above, as Core keeps them
+    local db = Core.Store(ns.name)
     Table(db, "presets")                -- per class: saved layouts
     Table(db, "extras")                 -- per class: spells added by hand
     Table(db, "trainer")                -- per class: what was read at the class trainer
@@ -438,8 +436,9 @@ local commands = {
     end,
     pages = function(rest)
         if rest == "on" or rest == "off" then
-            ns.DB.options.book = rest == "on"
-            PagesChanged(rest == "on")
+            -- Core.Set tells the module (PagesChanged) and the options page; the same choice again is told here.
+            local on = rest == "on"
+            if ns.options.book == on then PagesChanged(on) else Core.Set(ns.name, "book", on) end
         else
             ns.Print("type: /sane ab pages on  or  /sane ab pages off")
         end

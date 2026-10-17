@@ -408,9 +408,8 @@ local function Pin(tooltip)
 end
 
 function ns.OnLoad()
-    local store = Core.Store(ns.name)
-    ns.options = store.options
-    ns.store = store
+    ns.options = Core.Settings(ns.name) -- the switches above, as Core keeps them
+    ns.store = Core.Store(ns.name)      -- the auction house's prices (Auction.lua)
     -- The mouse switch of version 2, still on or off in a profile or a character's own settings.
     for _, copy in ipairs(Core.Profiles and Core.Profiles.Copies(ns.name) or {}) do
         if type(copy.cursor) == "boolean" then copy.cursor = copy.cursor and "always" or "default" end

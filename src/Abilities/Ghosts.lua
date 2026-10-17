@@ -125,7 +125,7 @@ end
 function G.Refresh()
     if not ns.char then return end
     Build()
-    local show = ns.DB.options.ghosts
+    local show = ns.options.ghosts
     for button, ghost in pairs(ghosts) do
         local slot = ns.SlotOf(button, ghost.fallback)
         local entry = show and ns.char.reserved[slot]
