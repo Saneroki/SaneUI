@@ -14,6 +14,7 @@ local Core = SaneUI.Core
 --                                               -- low: the text in lower case, if the caller has it;
 --                                               -- spots: a table to get the bytes of the text it took
 --      Fuzzy.Highlight(text, spots)             -- the text with those letters in the game's gold
+--      Fuzzy.Plain(text)                        -- a text of the game's without its colour and link codes
 --
 --  A rank is a whole number. Its hundreds say how the word was found, best
 --  first:
@@ -139,6 +140,13 @@ function Fuzzy.Rank(word, text, low, spots)
     first, last = Spread(word, low, n, m, spots)
     if first then return Ranked(Fuzzy.SPREAD, n, m, first, last) end
     return nil
+end
+
+-- A text of the game's as it reads, for finding: without colour codes, the codes of its links (their
+-- words stay), icons and atlases.
+function Fuzzy.Plain(text)
+    if type(text) ~= "string" then return text end
+    return (text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|H.-|h(.-)|h", "%1"):gsub("|T.-|t", ""):gsub("|A.-|a", ""))
 end
 
 function Fuzzy.Query(text)

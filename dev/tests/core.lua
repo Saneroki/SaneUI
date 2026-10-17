@@ -183,12 +183,15 @@ check(profilesPage.name == "Profiles" and general.name == "General" and appearan
     and profilesPage.parent == top and general.parent == top and appearance.parent == top,
     "under it first Sane UI's own pages: Profiles, General, Appearance")
 check(#general.items == 1 and general.items[1].setting.name == "Errors in chat", "General: the switches of no module")
-local windows, motion = appearance.items[1], appearance.items[2]
+local windows, animations, motion = appearance.items[1], appearance.items[2], appearance.items[3]
 local kinds = {}
 for index, choice in ipairs(motion and motion.options and motion.options() or {}) do kinds[index] = choice.value .. "=" .. choice.label end
-check(#appearance.items == 2 and windows.header == "Windows" and motion.setting.name == "Animation type"
+check(#appearance.items == 3 and windows.header == "Windows" and animations.setting.name == "Animations" and motion.setting.name == "Animation type"
     and table.concat(kinds, " ") == "glide=Glide swing=Swing even=Even off=Instant",
-    "Appearance: under Windows, the animation type for all windows, as a dropdown")
+    "Appearance: under Windows, animations on or off, and the animation type for all windows, as a dropdown")
+Core.general.animations = false
+check(Core.Motion.Kind("swing").key == "off", "animations off: nothing moves, whatever a window's own setting says")
+Core.general.animations = true
 check(motion.setting:GetValue() == "glide" and Core.general.motion == "glide" and Core.Motion.Kind().key == "glide", "Glide at first")
 motion.setting:SetValue("even")
 check(Core.Motion.Kind().key == "even" and Core.Motion.Kind("global").key == "even" and Core.Motion.Kind("swing").key == "swing",
@@ -830,6 +833,54 @@ local count = #toldDemo
 Core.Set("Demo", "loud", loudWas)
 check(#toldDemo == count and count > before, "the same value again tells nobody")
 check(Core.Set("Demo", "nothing", 1) == nil and Core.Described("Demo", "shy").text == "Be shy", "a switch nobody describes is not set; a described one is found")
+
+-- The kit: the game's words, colours, pools, dialogs, a frame of the game's lent for a while
+check(Core.Word("CLOSE", "Shut") == "Close" and Core.Word("NO_SUCH_STRING", "Ours") == "Ours", "the game's own words where it has them")
+local red, green, blue = Core.RGB("FF8000")
+check(red == 1 and green > 0.5 and green < 0.51 and blue == 0 and Core.RGB("nope") == nil and Core.Hex(1, 0.5, 0) == "FF8000",
+    "colours as six hex digits, and back")
+local made = 0
+local pool = Core.Pool(function() made = made + 1; return W.NewWidget("Frame") end)
+local first, second = pool:Take(), pool:Take()
+pool:Done()
+pool:Begin()
+check(pool:Take() == first and made == 2, "a pool makes a part only when it has no free one")
+pool:Done()
+check(first:IsShown() and not second:IsShown(), "and hides what a round did not take")
+W.popups = {}
+local yes = 0
+Core.Confirm("Delete %s?", "this", function() yes = yes + 1 end)
+W.popups[1].data.callback()
+check(W.popups[1].which == "GENERIC_CONFIRMATION" and W.popups[1].data.text_arg1 == "this" and yes == 1, "a question in the game's own dialog")
+local typedName
+Core.AskText("Name:", nil, "Save", "Old", function(text) typedName = text end, 20)
+W.popups[2].data.callback("New")
+check(W.popups[2].box.text == "Old" and W.popups[2].data.maxLetters == 20 and typedName == "New", "a name asked in the game's own dialog")
+local seat, home = W.NewWidget("Frame"), W.NewWidget("Frame")
+local borrowed = W.NewWidget("Frame", nil, home)
+borrowed:SetPoint("TOPLEFT", home, "TOPLEFT", 5, 5)
+borrowed:SetAlpha(0.5)
+local lent = Core.Lend(borrowed)
+lent:SetParent(seat)
+lent:SetPoints(function(frame) frame:ClearAllPoints(); frame:SetPoint("CENTER") end)
+lent:SetAlpha(1)
+lent:SetAlpha(0.2)
+check(lent:Lent() and borrowed:GetParent() == seat and borrowed:GetAlpha() == 0.2, "Core.Lend: a frame of the game's changed for a while")
+lent:Return()
+local point = borrowed:GetPoint(1)
+check(not lent:Lent() and borrowed:GetParent() == home and point == "TOPLEFT" and borrowed:GetAlpha() == 0.5,
+    "and given back as it was, its alpha as before the first change")
+lent:SetParent(seat)
+local other = W.NewWidget("Frame")
+borrowed:SetParent(other)
+lent:Return()
+check(borrowed:GetParent() == other, "a parent the game gave it since is left as it is")
+function borrowed:IsProtected() return true end
+W.combat = true
+check(lent:SetParent(seat) == false and borrowed:GetParent() == other, "a protected frame is not changed in a fight")
+borrowed.IsProtected = nil
+W.combat = false
+check(Core.Fuzzy.Plain("|cffff0000Red|r |Hitem:1|h[Sword]|h |TInterface\\Icons\\X:0|t") == "Red [Sword] ", "a text of the game's without its codes, for finding")
 
 -- Messages inside a module ----------------------------------------------------------------
 local got

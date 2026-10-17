@@ -178,13 +178,24 @@ function Core.Set(name, key, value)
     return now
 end
 
+-- Every switch of a module back to its default, as Core.Set does one: told, shown.
+function Core.Reset(name)
+    local described = Core.described[name]
+    if not described then return end
+    for _, option in ipairs(described.list) do
+        if Keeps(option) then Core.Set(name, option.key, Copy(option.default)) end
+    end
+end
+
 -- The general switches (Core.general): described here like a module's, shown on Sane UI's own pages
 -- General and Appearance.
 Core.Options(Core.name, {
     { key = "errors", default = true, text = "Errors in chat",
       tip = "Says in chat when something of Sane UI goes wrong: one line for each kind of problem. Switched off, the problems are still kept: type /sane errors." },
-    { key = "motion", default = Core.Motion.DEFAULT, text = "Animation type", choices = Core.Motion.Choices(), page = "Appearance",
+    { key = "animations", default = true, text = "Animations", page = "Appearance",
       header = "Windows", headerTip = "How Sane UI's windows move.",
+      tip = "Sane UI's windows move, fade and slide. Off: everything is at once where it goes, in every module, whatever its own settings say." },
+    { key = "motion", default = Core.Motion.DEFAULT, text = "Animation type", choices = Core.Motion.Choices(), page = "Appearance", parent = "animations",
       tip = "How Sane UI's windows move when they fill the screen from a screen edge and go back, and when they open while the mouse rests on them. Glide is quick and settles softly, Swing goes a little past and comes back, Even starts and ends gently, Instant does not move at all. A window can have its own, in its section Expand window (Social: tab Appearance)." },
 })
 

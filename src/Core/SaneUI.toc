@@ -13,6 +13,9 @@
 # Core is the addon every module depends on. Saved.lua keeps the settings of all of them,
 # Profiles.lua whose are in use (the account's or the character's own) and named copies of them.
 Core.lua
+# Small helpers for every module: the game's words, colours, pixels, tooltips, pools, dialogs, fonts,
+# sounds, and frames of the game's lent for a while
+Kit.lua
 # The kinds of motion a window's size can have (Glide, Swing, Even, Instant): before Saved.lua,
 # which describes the general switch that chooses one
 Motion.lua

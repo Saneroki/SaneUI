@@ -259,6 +259,7 @@ function methods:SetAtlas(atlas) self._atlas = atlas end
 function methods:SetChecked(checked) self._checked = checked end
 function methods:GetChecked() return self._checked end
 function methods:GetParent() return self._parent end
+function methods:SetParent(parent) self._parent = parent end
 function methods:ClearAllPoints() self._points = {} end
 function methods:SetPoint(point, relativeTo, relativePoint, x, y)
     if type(relativeTo) == "number" then relativeTo, relativePoint, x, y = nil, nil, relativeTo, relativePoint end

@@ -50,6 +50,8 @@ for _, kind in ipairs(Motion.KINDS) do byKey[kind.key] = kind end
 
 -- The kind a window moves by: its own setting (key), or the general one if it has none or names none.
 function Motion.Kind(key)
+    -- Animations switched off (Appearance): nothing of Sane UI's moves, whatever a window's own setting says.
+    if Core.general and Core.general.animations == false then return byKey.off end
     if not byKey[key] then key = Core.general and Core.general.motion end
     return byKey[key] or byKey[Motion.DEFAULT]
 end
