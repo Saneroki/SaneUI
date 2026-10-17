@@ -80,8 +80,12 @@ local Core = SaneUI.Core
 --          close = function() end,      -- what its close button does; without: it hides the window
 --          native = {                   -- the game's own window it stands for (a vendor's, the auction house)
 --              frame = function() end,  -- that window (or a function giving it, nil while not loaded)
---              show = function() end,   -- the game's window instead of ours (the module does both)
---              back = function() end,   -- ours instead of the game's
+--              hold = true,             -- Core keeps it out of sight while ours is chosen and follows the
+--                                       -- game's opening and closing of it (Holder.lua)
+--              addon = "Blizzard_...",  -- with hold: the addon it comes in, if the game loads it when wanted
+--              unseen = true,           -- with hold: switched to, it is closed unseen first (Holder.lua)
+--              show = function() end,   -- the game's window instead of ours (without hold: the module does
+--              back = function() end,   -- both); ours instead of the game's (with hold: what else changes)
 --              anchor = function(button) end, -- where the button back to ours goes on the game's window
 --                                       -- (without: beside its close button, else at its top right)
 --          },
@@ -772,12 +776,19 @@ function methods:Recall(what)
     return type(place) == "table" and place[what] or nil
 end
 
--- The game's own window instead of ours (on), or ours again: what the toggle buttons do, kept for Open.
+-- The game's own window instead of ours (on), or ours again: what the toggle buttons do, kept for Open. With a
+-- holder (native.hold) Core swaps the two windows (Holder.lua); show and back are what else changes.
 function methods:Native(on)
     local native = self.options.native
     if not native then return end
     self:Remember("native", on)
-    if on then native.show() else native.back() end
+    if self.holder then self.holder:Native(on) end
+    if on and native.show then native.show() elseif not on and native.back then native.back() end
+end
+
+-- The game's own window back for good, as it was (a module that stands down): no more held (Holder.lua).
+function methods:GiveBack()
+    if self.holder then self.holder:GiveBack() end
 end
 
 -- The game asks for the window (its key, an NPC, a link): the game's own if that was chosen last
@@ -788,7 +799,7 @@ function methods:Open()
     local place = self.options.store[Key(self)]
     local left = type(place) == "table" and place or {}
     if left.native and self.options.native then
-        self.options.native.show()
+        if self.options.native.show then self.options.native.show() end
         return "native"
     end
     self.frame:Show()
@@ -909,6 +920,7 @@ function Window.New(frame, options)
     if options.tabs then Core.Safe("window", Window.Views, window) end
     if Core.EditMode.active then Edit(window, true) end
     Core.Safe("window", window.Attach, window)
+    if options.native and options.native.hold then window.holder = Core.Holder.Take(window) end
     -- Esc closes a window made with escape = "close" while it is shown, as the game closes its panels
     -- (Core.Escape): full as it is. A module that closes it later (the talk ends on the game's side
     -- first) leaves it shown, and Esc is still its next time.

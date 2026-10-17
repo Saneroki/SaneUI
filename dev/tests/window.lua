@@ -1359,6 +1359,58 @@ do
     inset:Hide()
 end
 
+-- The holder: ours or the game's, never both -------------------------------------------------------
+do
+    local game = CreateFrame("Frame", "TestFriendsFrame", UIParent)
+    game:Hide()
+    game:SetFrameStrata("MEDIUM")
+    game:SetFrameLevel(7)
+    local ours = CreateFrame("Frame", nil, UIParent)
+    ours:Hide()
+    local oursStore, shows, backs = {}, 0, 0
+    local held = Window.New(ours, { store = oursStore, kind = "panel", title = "Friends", sizable = false,
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 300 },
+        native = { frame = game, hold = true, show = function() shows = shows + 1 end, back = function() backs = backs + 1 end } })
+    local holder = held.holder
+    local box = game._parent
+    check(holder and holder.held and box ~= UIParent and not box:IsShown(), "while ours is chosen the game's window has a hidden frame of ours as its parent")
+    game:Show()
+    check(game:IsShown() and not game:IsVisible() and ours:IsShown(), "the game opens its window: it counts as shown but is not in sight; ours opens instead")
+    game:Hide()
+    check(not ours:IsShown() and holder.held, "the game closes it: ours closes, the game's stays held")
+    game:Show()
+    held:Native(true)
+    check(game._parent == UIParent and game:IsVisible() and not ours:IsShown() and shows == 1 and oursStore.place.native == true
+        and not holder.held and game._strata == "MEDIUM" and game._level == 7,
+        "switched to the game's: its window is back where it was and as it was, in sight; ours closes")
+    game:Hide()
+    game:Show()
+    check(game:IsVisible() and not ours:IsShown(), "the game's chosen, the game opens it as always")
+    held:Native(false)
+    check(ours:IsShown() and game:IsShown() and game._scale == Core.Holder.TINY and game._alpha == 0 and holder.shrunk and backs == 1,
+        "back to ours while the game's is open: ours opens at once, the game's is made tiny and clear, not hidden")
+    game:Hide()
+    check(game._scale == 1 and game._alpha == 1 and holder.held and game._parent == box and not ours:IsShown(),
+        "the game closes it: it is as it was, and held again")
+    game:Show()
+    ours:Hide()
+    check(not game:IsShown() and holder.held, "ours closed while the game's is held open: the game's closes too, unseen")
+    held.options.native.unseen = true
+    game:Show()
+    held:Native(true)
+    check(game._parent == UIParent and not game:IsShown(), "a window whose own opening must not run from ours is closed unseen first, then given back")
+    held.options.native.unseen = nil
+    held:Native(false)
+    check(holder.held and ours:IsShown(), "(held again, ours open)")
+    held.options.native.frame = function() error("gone") end
+    game:Hide()
+    check(holder.off and game._parent == UIParent and Core.errors["window holder"],
+        "a step of the holder that fails gives the game's window back at once, and it is held no more")
+    Core.errors["window holder"] = nil
+    held:GiveBack()
+    ours:Hide()
+end
+
 -- Fuzzy finding, for the search ------------------------------------------------------------------------
 local Fuzzy = Core.Fuzzy
 local spots = {}

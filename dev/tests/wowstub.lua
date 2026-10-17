@@ -462,6 +462,8 @@ function W.Install(env)
         local owner, name, hook = env, a, b
         if type(a) == "table" then owner, name, hook = a, b, c end
         local original = rawget(owner, name)
+        -- A frame's own method (Show, Hide) comes from its kind's: hooked on the frame, as the game does.
+        if original == nil and owner ~= env then original = owner[name] end
         rawset(owner, name, function(...)
             local results = { original(...) }
             hook(...)
