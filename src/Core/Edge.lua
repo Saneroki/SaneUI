@@ -122,9 +122,16 @@ function Edge.Options(list, at, tab)
     Core.Shape.Options(list, at + #section, tab, "expand")
 end
 
--- The corners a side's strip runs between, inside the window.
-local SIDES = { left = { "TOPLEFT", "BOTTOMLEFT" }, right = { "TOPRIGHT", "BOTTOMRIGHT" },
-                top = { "TOPLEFT", "TOPRIGHT" }, bottom = { "BOTTOMLEFT", "BOTTOMRIGHT" } }
+-- The corners a side's strip runs between, inside the window; and which way is out of it.
+local SIDES = { left = { "TOPLEFT", "BOTTOMLEFT", -1, 0 }, right = { "TOPRIGHT", "BOTTOMRIGHT", 1, 0 },
+                top = { "TOPLEFT", "TOPRIGHT", 0, 1 }, bottom = { "BOTTOMLEFT", "BOTTOMRIGHT", 0, -1 } }
+
+-- How far out of the window a strip at that side lies: as far as the window keeps from the screen's edge
+-- there (its insets), so the strip is on the screen's very edge.
+local function Out(edge, side)
+    local insets = edge.window.options.insets
+    return insets and insets[side] or 0
+end
 
 local methods = {}
 
@@ -149,8 +156,9 @@ local function Strip(edge, key)
     strip:SetScript("OnEnter", function() Core.Safe("full screen", edge.Pushed, edge) end)
     local corners = SIDES[key]
     if corners then
-        strip:SetPoint(corners[1])
-        strip:SetPoint(corners[2])
+        local out = Out(edge, key)
+        strip:SetPoint(corners[1], corners[3] * out, corners[4] * out)
+        strip:SetPoint(corners[2], corners[3] * out, corners[4] * out)
     end
     edge.strips[key] = strip
     return strip
@@ -408,7 +416,7 @@ function methods:Fill(on)
         to[1], to[2], to[3], to[4], to[5] = 0, 0, screenWidth, screenHeight, 1
     else
         if self.zone then
-            to[1], to[2] = Core.Dock.Rect(self.zone, self.width, self.height, screenWidth, screenHeight)
+            to[1], to[2] = Core.Dock.Rect(self.zone, self.width, self.height, screenWidth, screenHeight, window.options.insets)
         else
             to[1], to[2] = self.left, self.bottom
         end
@@ -482,7 +490,8 @@ local function Strips(edge)
     if not square then return end
     if corner then
         square:ClearAllPoints()
-        square:SetPoint(corner)
+        square:SetPoint(corner, zone.left and -Out(edge, "left") or Out(edge, "right"),
+            zone.top and Out(edge, "top") or -Out(edge, "bottom"))
         square:SetSize(width, width)
     end
     square:SetShown(corner and true or false)

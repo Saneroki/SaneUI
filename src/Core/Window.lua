@@ -42,7 +42,8 @@ local Core = SaneUI.Core
 --          kind = "panel",              -- its kind (Window.KINDS): the options below it has unless given here
 --          store = ns.store,            -- the module's saved table; the place is kept in store.place
 --          key = "place",               -- another name for it, for a module's second window
---          first = { point = "LEFT", x = 40, y = 0, width = 380, height = 260 },  -- where it stands at first
+--          first = { point = "LEFT", x = 40, y = 0, width = 380, height = 260 },  -- where it stands at first;
+--                                       -- or dock = "BOTTOMLEFT": docked in that zone at first (a talk: CENTER)
 --          title = "Social",            -- its name, on its title bar and on its box in Edit Mode
 --          titleBar = true,             -- it has a title bar (without: only while it fills the screen)
 --          search = function(text) end, -- what is typed into its search box, at every change ("": none)
@@ -108,6 +109,7 @@ Window.DRAG_ZONES = { CENTER = true } -- where a title bar's drag, outside Edit 
 Window.BUTTON, Window.BUTTON_INSET = 24, 4 -- the buttons' size (the game's close button's); from the bar's right
 Window.TEXT_INSET, Window.GLASS = 8, 12 -- the title from the bar's left; the search's magnifier
 Window.BOX, Window.BOX_INSET = 20, 6 -- the search box's height; its room from what stands beside it
+Window.CASCADE = Window.BAR -- a window that cannot stand where it was left stands that far down and right of it
 Window.TEXT = {
     classic = "Classic window", classicTip = "The game's own window instead of this one.",
     sane = "Sane UI window", saneTip = "Sane UI's window instead of the game's.",
@@ -122,7 +124,7 @@ Window.KINDS = {
     panel = { titleBar = true, dock = true, skin = true, edge = true, sizable = true, escape = "close" },
     -- an NPC's: a vendor, a trainer, the auction house, the bank; at first in the middle (its first place),
     -- closing it ends the talk (its close)
-    talk = { titleBar = true, dock = true, skin = true, edge = true, sizable = true, escape = "close" },
+    talk = { titleBar = true, dock = true, skin = true, edge = true, sizable = true, escape = "close", first = { dock = "CENTER" } },
 }
 local SQUARE = "Interface\\Buttons\\UI-SquareButton-" -- the game's square button, as its group finder's refresh
 local ARROWS = "Interface\\Buttons\\UI-RefreshButton"   -- and its icon, the circling arrows, half the button's size
@@ -270,8 +272,45 @@ local function Keep(window, zone)
     window:Place()
 end
 
--- Puts the window where it was left: docked, or at its place; at its first place if it never was moved.
--- One that fills the screen is back in its zone at once. Locked (a fight), once the fight is over.
+local windows = {} -- every window made by New, in the order they were made (Edit Mode, the registry)
+
+-- Where a window's top left corner stands, from the screen's lower left: docked, where its zone puts it;
+-- free, where it was put. nil if that is not known.
+local function Corner(window)
+    if window.zone then
+        local width, height = window.frame:GetSize()
+        local left, bottom = Core.Dock.Rect(window.zone, width, height, UIParent:GetWidth(), UIParent:GetHeight(), window.options.insets)
+        return left, bottom + height
+    end
+    if window.spotX then return window.spotX, window.spotY end
+    return window.frame:GetLeft(), window.frame:GetTop()
+end
+
+-- Whether another shown window of ours has its top left corner at that spot.
+local function Taken(window, x, y)
+    for _, other in ipairs(windows) do
+        if other ~= window and other.frame:IsShown() then
+            local left, top = Corner(other)
+            if left and top and math.abs(left - x) < 1 and math.abs(top - y) < 1 then return true end
+        end
+    end
+    return false
+end
+
+-- A spot clear of the others: the one given, else a step down and to the right of it while another window of
+-- ours starts there; nil once that would leave the screen.
+local function Clear(window, x, y)
+    local width, height = window.frame:GetSize()
+    while Taken(window, x, y) do
+        x, y = x + Window.CASCADE, y - Window.CASCADE
+        if x + width > UIParent:GetWidth() or y - height < 0 then return nil end
+    end
+    return x, y
+end
+
+-- Puts the window where it was left: docked, or at its place; at its first place if it never was moved
+-- (docked, with first.dock). One that fills the screen is back in its zone at once. Locked (a fight),
+-- once the fight is over.
 function methods:Place()
     if self:Locked() then return Later(self) end
     local frame, options = self.frame, self.options
@@ -288,21 +327,34 @@ function methods:Place()
         end
         frame:SetSize(width, height)
     end
-    local name = options.dock and place and Core.Dock.ZONES[place.dock] and place.dock or nil
-    -- A zone holds one window at a time (Dock.lua): with another shown there, this one stands free at its
-    -- kept place this time; the zone stays kept for the next.
-    if name and Core.Dock.Holder(name, frame) then name = nil end
+    local wanted
+    if place then wanted = place.dock else wanted = first.dock end
+    local name = options.dock and Core.Dock.ZONES[wanted] and wanted or nil
+    -- A zone holds one window at a time (Dock.lua): with another shown there, this one stands clear of the
+    -- others this time (where it was left, or a step aside: Clear); the zone stays kept for the next.
+    local held = name and Core.Dock.Holder(name, frame)
+    if held then name = nil end
+    local x, y
     if name then
-        Core.Dock.Anchor(frame, name)
+        Core.Dock.Anchor(frame, name, options.insets)
     else
         frame:ClearAllPoints()
         if place then
-            frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", place.x, place.y)
+            x, y = place.x, place.y
+        elseif held then
+            local width, height = frame:GetSize()
+            local left, bottom = Core.Dock.Rect(wanted, width, height, UIParent:GetWidth(), UIParent:GetHeight(), options.insets)
+            x, y = left, bottom + height
+        end
+        if x and held then x, y = Clear(self, x, y) end
+        if x then
+            frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x, y)
         else
-            frame:SetPoint(first.point, UIParent, first.point, first.x, first.y)
+            local point = first.point or "CENTER"
+            frame:SetPoint(point, UIParent, point, first.x or 0, first.y or 0)
         end
     end
-    self.zone = name
+    self.zone, self.spotX, self.spotY = name, x, y
     Core.Dock.Hold(frame, name)
     local zone = name and Core.Dock.ZONES[name]
     if self.skin then self.skin:Rest() end
@@ -428,7 +480,7 @@ local function Box(window)
         usable = window.usable,
         started = function()
             window.moving = true
-            if options.dock then Core.Dock.Watch(frame) end
+            if options.dock then Core.Dock.Watch(frame, nil, options.insets) end
         end,
         stopped = function() Moved(window) end,
     })
@@ -538,7 +590,7 @@ local function Bar(window)
         started = function()
             window.moving = true
             -- Outside Edit Mode a drag docks only where a screen edge is not (the middle), or not at all.
-            if options.dock then Core.Dock.Watch(frame, not options.dragDocked and Window.DRAG_ZONES or nil) end
+            if options.dock then Core.Dock.Watch(frame, not options.dragDocked and Window.DRAG_ZONES or nil, options.insets) end
         end,
         stopped = function() Moved(window) end,
     })
@@ -695,7 +747,6 @@ local function Edit(window, on)
     window:Refresh()
 end
 
-local windows = {} -- every window made by New, for Edit Mode
 Core.EditMode.Watch(function(on)
     for _, window in ipairs(windows) do Core.Safe("Edit Mode", Edit, window, on) end
 end)
@@ -704,9 +755,19 @@ function Window.New(frame, options)
     local kind = Window.KINDS[options.kind]
     if kind then
         for name, value in pairs(kind) do
-            if options[name] == nil then options[name] = value end
+            if options[name] == nil then
+                options[name] = Core.Copy(value)
+            elseif type(value) == "table" and type(options[name]) == "table" then
+                -- The module's own (its first place), with the kind's for what it leaves out.
+                local own = Core.Copy(options[name])
+                for key, given in pairs(value) do
+                    if own[key] == nil then own[key] = given end
+                end
+                options[name] = own
+            end
         end
     end
+    options.first = options.first or {}
     local window = setmetatable({ frame = frame, options = options }, { __index = methods })
     frame:SetMovable(true)
     frame:SetClampedToScreen(true)

@@ -330,6 +330,7 @@ check(store.place.dock == "LEFT" and window.zone == "LEFT" and stands(frame, "LE
 window:Reset()
 
 -- A module's hook that fails stops nothing of the window's own
+do
 local brokenFrame = CreateFrame("Frame", nil, UIParent)
 local brokenStore = {}
 local brokenWindow = Window.New(brokenFrame, { store = brokenStore, title = "Broken", dock = true, sizable = true,
@@ -349,6 +350,7 @@ check(not brokenWindow.sizing and not brokenFrame._sizing, "and so is a sizing")
 EventRegistry:TriggerEvent("EditMode.Exit")
 brokenFrame:Hide()
 Core.errors.window = nil
+end
 
 -- The parts, for a window that is not ours ------------------------------------------------------
 local theirs, handle, told = CreateFrame("Frame", "TheGamesWindow", UIParent), CreateFrame("Frame"), {}
@@ -475,6 +477,7 @@ clock:Run(1)
 expand:Close()
 clock:Run(1)
 check(opener._width == 240 and opener._height == 44, "opened again, it closes to that size: the half way one was never taken for it")
+do
 local fragile = CreateFrame("Frame", nil, UIParent)
 fragile:SetSize(100, 50)
 local fragileExpand = Expand.New(fragile, { width = 200, height = 100, changed = function() error("the module's own") end,
@@ -483,6 +486,7 @@ fragileExpand:Open()
 check(fragileExpand.open and fragile._width == 200 and Core.errors.expand, "a module's hook that fails is noted, and it opens all the same")
 Core.errors.expand = nil
 fragileExpand:Close()
+end
 local cornered = CreateFrame("Frame", nil, UIParent)
 local before = #W.frames
 local corneredExpand = Expand.New(cornered, { width = 300, height = 300, corner = "BOTTOMLEFT" })
@@ -975,6 +979,7 @@ secureWindow:Place()
 secure:Hide()
 
 -- A protected window Esc closes is not hidden in a fight: it closes once the fight is over
+do
 local guarded = CreateFrame("Frame", nil, UIParent)
 local guardedClosed = 0
 local guardedWindow = Window.New(guarded, {
@@ -998,6 +1003,7 @@ W.Fire("PLAYER_REGEN_ENABLED")
 check(not guarded:IsShown() and guardedClosed == 1, "the fight over, it closes, once")
 W.Wait(0.1)
 check(not guardStand:IsShown(), "and Esc is the game's again")
+end
 
 -- Esc closes a window made so, small or full, as the game's panels close
 local talked = CreateFrame("Frame", nil, UIParent)
@@ -1066,14 +1072,36 @@ local oneWindow = Window.New(one, { store = zoneStore, key = "a", title = "Vendo
 local twoWindow = Window.New(two, { store = zoneStore, key = "b", title = "Bank", dock = true, first = { point = "CENTER", x = 0, y = 0 } })
 oneWindow:Place()
 twoWindow:Place()
-check(oneWindow.zone == "CENTER" and twoWindow.zone == nil and stands(two, "TOPLEFT", 810, 640) and zoneStore.b.dock == "CENTER",
-    "a zone holds one window at a time: the second opens free at its kept place, its zone kept for the next time")
+check(oneWindow.zone == "CENTER" and twoWindow.zone == nil and stands(two, "TOPLEFT", 810 + Window.CASCADE, 640 - Window.CASCADE)
+    and zoneStore.b.dock == "CENTER",
+    "a zone holds one window at a time: the second opens free, a step aside of the first so it covers none of it; its zone kept for the next time")
 one:Hide()
 twoWindow:Place()
 check(twoWindow.zone == "CENTER", "a window not shown holds nothing: the talk windows share the middle")
 one:Show()
-check(oneWindow.zone == nil and stands(one, "TOPLEFT", 810, 640) and zoneStore.a.dock == "CENTER",
-    "shown again while another holds its zone, it stands free this time")
+check(oneWindow.zone == nil and stands(one, "TOPLEFT", 810 + Window.CASCADE, 640 - Window.CASCADE) and zoneStore.a.dock == "CENTER",
+    "shown again while another holds its zone, it stands free this time, clear of it")
+do
+local three = CreateFrame("Frame", nil, UIParent)
+three:SetSize(300, 200)
+local threeWindow = Window.New(three, { store = { place = { x = 810, y = 640, dock = "CENTER" } }, title = "Trainer", dock = true,
+    first = { point = "CENTER", x = 0, y = 0 } })
+threeWindow:Place()
+check(stands(three, "TOPLEFT", 810 + 2 * Window.CASCADE, 640 - 2 * Window.CASCADE),
+    "a third one there stands a step further aside: a step for every window of ours that starts where it would")
+three:Hide()
+local corner = CreateFrame("Frame", nil, UIParent)
+corner:SetSize(300, 200)
+local cornerWindow = Window.New(corner, { store = { place = { x = 1620, y = 200, dock = "CENTER" } }, title = "Bank", dock = true,
+    first = { point = "TOP", x = 0, y = -50 } })
+local cornerOther = Window.New(CreateFrame("Frame", nil, UIParent), { store = { place = { x = 1620, y = 200 } }, title = "Other",
+    first = { point = "CENTER", x = 0, y = 0 } })
+cornerOther:Place()
+cornerWindow:Place()
+check(stands(corner, "TOP", 960, 1030), "where no step aside stays on the screen, it stands at its first place")
+corner:Hide()
+cornerOther.frame:Hide()
+end
 EventRegistry:TriggerEvent("EditMode.Enter")
 local oneBox = oneWindow.box
 oneBox:GetScript("OnDragStart")(oneBox)
@@ -1103,6 +1131,56 @@ check(given.sizable == false and kindWindow.grip == nil, "what the module gives 
 check(Window.KINDS.screen.titleBar == nil and Window.KINDS.screen.skin == nil and Window.KINDS.talk.escape == "close",
     "the chat's kind has no title bar and no skin; a talk closes with Esc")
 kindFrame:Hide()
+do
+local talkFrame = CreateFrame("Frame", nil, UIParent)
+local talkKindStore = {}
+local talkKind = Window.New(talkFrame, { store = talkKindStore, kind = "talk", title = "Vendor",
+    first = { width = 400, height = 300 } })
+talkKind:Place()
+check(talkKind.zone == "CENTER" and stands(talkFrame, "CENTER", 960, 540) and talkKind.options.first.width == 400 and talkKindStore.place == nil,
+    "a talk window stands docked in the middle at first, at the size its module gives it")
+check(Window.KINDS.talk.first.width == nil, "(the kind's own first place is not changed by a module's)")
+skinned:Hide() -- (it holds the lower left corner)
+local chatFrame = CreateFrame("Frame", nil, UIParent)
+local chatStore = {}
+local chatKind = Window.New(chatFrame, { store = chatStore, kind = "screen", title = "Chat",
+    first = { dock = "BOTTOMLEFT", width = 380, height = 260 } })
+chatKind:Place()
+check(chatKind.zone == "BOTTOMLEFT" and stands(chatFrame, "BOTTOMLEFT", 0, 0), "a window can start docked: its first place is a zone")
+chatStore.place = { x = 500, y = 600 }
+chatKind:Place()
+chatKind:Reset()
+check(chatKind.zone == "BOTTOMLEFT" and chatStore.place == nil, "reset, it is docked in its first zone again")
+talkFrame:Hide()
+chatFrame:Hide()
+end
+
+-- A window that keeps a room from the screen's edges
+do
+    local room = { right = 10, top = 20 }
+    local inset = CreateFrame("Frame", nil, UIParent)
+    local insetStore = { place = { x = 0, y = 0, width = 300, height = 200, dock = "TOPRIGHT" } }
+    local insetWindow = Window.New(inset, { store = insetStore, sizable = true, dock = true, edge = true, insets = room,
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
+    insetWindow:Place()
+    check(stands(inset, "TOPRIGHT", 1910, 1060), "docked, a window with insets keeps that room from the edges it touches")
+    local left, low = Dock.Rect("TOPRIGHT", 300, 200, 1920, 1080, room)
+    check(left == 1610 and low == 860 and Dock.Find(1610, 860, 300, 200, 1920, 1080, nil, room) == "TOPRIGHT"
+        and Dock.Rect("TOPRIGHT", 300, 200, 1920, 1080) == 1620, "its zone's place counts that room; without insets it is flush")
+    local square = insetWindow.edge.strips.corner
+    check(square._points[1][1] == "TOPRIGHT" and square._points[1][4] == 10 and square._points[1][5] == 20,
+        "the square the mouse fills the screen from lies in the screen's very corner, out of the window by that room")
+    W.Wait(1)
+    at(inset, 1610, 860)
+    square:GetScript("OnEnter")(square)
+    inset._group:Run(1)
+    W.Wait(1)
+    square:GetScript("OnEnter")(square)
+    check(insetWindow.edge.to[1] == 1610 and insetWindow.edge.to[2] == 860, "and its way back from full screen ends at that room from the edges")
+    inset._group:Run(1)
+    check(stands(inset, "TOPRIGHT", 1910, 1060), "where it hangs again")
+    inset:Hide()
+end
 
 -- Fuzzy finding, for the search ------------------------------------------------------------------------
 local Fuzzy = Core.Fuzzy
@@ -1178,10 +1256,12 @@ bar:SetValue(200, 1000)
 check(not rise.playing and bar.filled._value == 0.2, "with the motion Instant a gain is there at once too")
 Core.general.motion = "glide"
 check(#Bar.New(UIParent, { segments = 1 }).dividers == 0, "one piece: no dividers")
+do
 local told = Bar.New(UIParent, { moved = function() error("the module's own") end })
 told:SetValue(5, 10)
 check(told.filled._value == 0.5 and Core.errors.bar, "a module's hook that fails is noted; the bar shows its value all the same")
 Core.errors.bar = nil
+end
 local sizer = bar.frame._groups[2]
 bar:SetSize(302, 16)
 check(sizer.playing, "a new size moves there")
