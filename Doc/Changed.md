@@ -6,6 +6,9 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 The Home page, the marks, Settings on demand, the Tooltips module and the Social module are not yet tried in the game.
 Tests: lint, 195 checks (Core, with its options), 280 checks (Spellbook), 328 checks (Tooltips), 332 checks (Social), 62 checks (Sync), 234 checks (windows).
 
+### Guides: no "not yet tried in the game" (Saneroki, 2026-10-17)
+- `Doc/guides/windows.md`: the README no longer has to say *not yet tried in the game* until the taint log is clean.
+
 ### New designs across the modules (Saneroki, 2026-10-17)
 - **Abilities, trainer data:** `Data/Classes/*.lua` are hand-edited in a new format: one string per spell
   family with its ranks in order (`"spell:level:copper"`; a bare spell is a rank the trainer does not sell),

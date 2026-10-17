@@ -175,8 +175,7 @@ matters; out of one it runs, but what it writes is tainted for Blizzard's own co
 - **Load on demand:** the spellbook's addon (`Blizzard_PlayerSpells`) loads when the game first opens it.
   Our code never loads it; it waits (`EventUtil.ContinueOnAddOnLoaded`) to attach its button.
 - **Try it in the game with the taint log:** `/console taintLog 1`, `/reload`, the test, then the game
-  folder's `Logs/taint.log`: no line where Sane UI's code touched a Blizzard frame or value. The README
-  says *not yet tried in the game* until it is clean.
+  folder's `Logs/taint.log`: no line where Sane UI's code touched a Blizzard frame or value.
 
 ### The holder: ours or the game's (to build in Core)
 
