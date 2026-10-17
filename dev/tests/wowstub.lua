@@ -34,7 +34,7 @@ W.slotOfSpell = {}        -- [spell ID] = spellbook slot, for the game's "go to 
 W.gamepad = false         -- a controller is in use
 W.templates = {}          -- [frame template] = function(widget) that gives it its parts
 W.cvarInfo = {}           -- [CVar name] = { default, scope = "character" | "account" | nil (the computer),
-                          -- secure, readOnly, category, help }; its value is in W.cvars
+                          -- locked, secure, readOnly, category, help }; its value is in W.cvars
 W.options = { pages = {} } -- the pages the addon put into the game's options (a page under another one has
                            -- .parent); opened = the page on show
 W.caught = nil            -- set to a list to collect the errors of event handlers instead of stopping
@@ -648,11 +648,11 @@ function W.Install(env)
             local known, info = Known(name)
             if not known then return nil end
             return W.cvars[known] or info.default, info.default, info.scope == "account", info.scope == "character",
-                false, info.secure or false, info.readOnly or false
+                info.locked or false, info.secure or false, info.readOnly or false
         end,
         SetCVar = function(name, value)
             local known, info = Known(name)
-            if not known or info.readOnly or (info.secure and W.combat) then return false end
+            if not known or info.locked or info.readOnly or (info.secure and W.combat) then return false end
             W.cvars[known] = tostring(value)
             W.cvarSets = (W.cvarSets or 0) + 1
             return true

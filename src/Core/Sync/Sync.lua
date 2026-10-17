@@ -45,11 +45,8 @@ local TEXT = {
     elsewhere = "Elsewhere in the game",
 }
 
--- A word of the game's own (the name of one of its strings), or ours where this client has none.
-function Sync.Word(name, fallback)
-    local word = rawget(_G, name)
-    return type(word) == "string" and word ~= "" and word or fallback
-end
+-- A word of the game's own (the name of one of its strings), or ours where this client has none (Kit.lua).
+Sync.Word = Core.Word
 
 -- The boxes of the tab Accountwide, in order: the game's own groups of options pages, named in its
 -- words, then what is on none of its pages.
@@ -110,18 +107,18 @@ function Sync.Keep(name, on)
     end
 end
 
+-- A name that is no text (a hand-edited file) is left as it is.
 local function ReadNamed(named)
     for name in pairs(named) do
-        local value = Plain(C_CVar.GetCVar(name))
-        if value ~= nil then named[name] = value end
+        local value = type(name) == "string" and Core.Ask(C_CVar.GetCVar, name)
+        if type(value) == "string" then named[name] = value end
     end
 end
 
+-- Each through Sync.SetCVar (Game.lua): only one that differs and that the game lets us set; one it does
+-- not take is noted once, and the others are written all the same.
 local function WriteNamed(named)
-    for name, value in pairs(named) do
-        local now = type(value) == "string" and Plain(C_CVar.GetCVar(name))
-        if now and now ~= value then C_CVar.SetCVar(name, value) end
-    end
+    for name, value in pairs(named) do Sync.SetCVar(name, value) end
 end
 
 -------------------------------------------------------------------------------

@@ -67,12 +67,16 @@ the game's own chat channels on every character is the Social module's.)
     (`Enum.ConsoleCategory`), as the game lists them (`ConsoleGetAllCommands`).
   - **Other per-character settings:** every other CVar the game stores for each character
     (`C_CVar.GetCVarInfo`: stored for the character, not locked, not read only) that no page holds.
-  - These last two are found once a session when first wanted, in one pass (`Sync.CVarsOf(id)`). Never taken
-    by them: a character's state (tracked, collapsed, last chosen or seen) and one computer's (`gx*`,
-    drivers, devices, monitor, window mode, speech voices).
+  - These last two are found once a session when first wanted, in one pass that is a job of Core's scheduler
+    (`Core.Steps`: a few milliseconds a frame, never in a fight); until then what was kept stays, and what is
+    to be set is set once they are found. Never taken by them: a character's state (tracked, collapsed, last
+    chosen or seen), one computer's (`gx*`, drivers, devices, monitor, window mode, speech voices), and a
+    CVar the game does not let addons set (locked, secure or read only).
   - **Edit Mode layout** (`Layout.lua`), **your own chat channels** and **chat windows** (`Chat.lua`).
   - Each part reads only what this client has and writes only what differs; one the game does not answer
-    (a flag, a modifier key) keeps what was kept. Data of a shape this version does not know is skipped.
+    (a flag, a modifier key) keeps what was kept. Data of a shape this version does not know is skipped:
+    each value is checked for its kind first, so a chat window's switch, colour or place of an older shape,
+    or a shorter list of the action bars, leaves that setting as the game has it.
 - **Read** (`Sync.Capture`, given to `Core.Options` as its capture): Core calls it before Sane UI's settings
   are saved anywhere: a profile saved, the character's own switched, the logout. Kept parts are read from
   the game; the others are dropped. Nothing is read before this session wrote the settings into the game,
@@ -84,7 +88,10 @@ the game's own chat channels on every character is the Social module's.)
   written (a join puts a channel into the first window). One reload dialog per writing (`Sync.OfferReload`,
   through `Core.AskReload`) names what the game shows only after one.
 - **Through the game's stored settings, never its frames** (no taint):
-  - CVars with `C_CVar.SetCVar`; game functions in pairs (`SetAutoDeclineGuildInvites`, ...); modifier keys
+  - CVars with `C_CVar.SetCVar` (`Sync.SetCVar`), only one the game lets addons set: not locked, not read
+    only, a secure one not in a fight. One it does not take is noted once in the error log (`/sane errors`,
+    *Sync: setting CVars*) and left alone for the session; the others are set all the same.
+  - Game functions in pairs (`SetAutoDeclineGuildInvites`, ...); modifier keys
     with `SetModifiedClick`, the key bindings in use then saved with `SaveBindings`; the extra action bars
     with `SetActionBarToggles` (not where the game forces them), read by the bars at the next load.
   - Chat windows with `SetChatWindowName/Size/Color/Alpha/Shown/Locked/Docked/Uninteractable`,
@@ -103,16 +110,18 @@ the game's own chat channels on every character is the Social module's.)
       (`EDIT_MODE_LAYOUTS_UPDATED`, `PLAYER_SPECIALIZATION_CHANGED`) and when the settings are read, only
       between `PLAYER_ENTERING_WORLD` and `PLAYER_LEAVING_WORLD`; after that the last one seen is read.
     - **Set when the game lets us:** not before the manager has its layouts (early in a login), not while
-      Edit Mode is open, not in a fight. Such a layout waits and is set when the manager has its layouts,
-      Edit Mode closes (`EditMode.Exit`) or the fight is over; meanwhile it counts as the one in use. One
-      that is not there (deleted, another character's own) leaves the layout in use.
+      Edit Mode is open (`Core.EditMode`), not in a fight. Such a layout waits and is set when the manager
+      has its layouts, Edit Mode closes or the fight is over; meanwhile it counts as the one in use. One
+      that is not there (deleted, another character's own) leaves the layout in use, and is still the one
+      kept until a layout is picked in this session: a character that does not have it does not give its
+      own to the others at its logout, and the character that has it finds it again.
 - **Left out, and why:**
   - The game's System pages Languages, Network and Mac: they belong to one computer or installation.
   - Edit Mode per specialization, screen-resolution settings, import and export.
   - The zone map's place, the damage meter's windows, chat tab protection: they write into the game's own
     frames or saved tables, which taints them.
 - **Globals:** none.
-- **Tests:** `lua5.1 dev/tests/sync.lua` (65 checks), with a small model of the game's settings and the real
+- **Tests:** `lua5.1 dev/tests/sync.lua` (81 checks), with a small model of the game's settings and the real
   `Data/Pages.lua`.
 
 ## Files
@@ -125,6 +134,11 @@ the game's own chat channels on every character is the Social module's.)
 | `Game.lua` | The page parts, Graphics and Audio, other per-character settings |
 
 ## History
+- 2026-10-17 — The CVars of Graphics, Audio and the other per-character settings are found in steps, a few
+  milliseconds a frame (no stall when a character comes into the game). Only CVars the game lets addons set
+  are written, each on its own: one it does not take is noted once, the others are set all the same. A kept
+  Edit Mode layout a character does not have stays the kept one until a layout is picked. Settings kept in
+  an older shape are left as the game has them.
 - 2026-10-17 — Laid out as the game's own options: a part per options page (Gameplay, Accessibility,
   System), named in the game's words, what each page sets made from Blizzard's options code by
   `dev/tools/sync-pages`; Edit Mode layout, own channels, chat windows (with their places) and other

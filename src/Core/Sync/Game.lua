@@ -11,11 +11,13 @@
 --                      servers (C_CVar.GetCVarInfo): map filters, the minimap,
 --                      tutorials seen, ...
 --  The last two the game lists (ConsoleGetAllCommands): once a session, when
---  first wanted, in one pass, of which only the names stay. A part reads only
---  what this client has, and writes only what differs.
+--  first wanted, in one pass that is a job of Core's scheduler (Steps.lua), of
+--  which only the names stay. A part reads only what this client has, and
+--  writes only what differs and what the game lets us set (Sync.SetCVar).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Sync = Core.Sync -- Sync.lua
+local Steps = Core.Steps -- Data/Steps.lua
 local Plain = Core.Plain
 
 local TEXT = {
@@ -67,11 +69,28 @@ local function ReadCVars(list)
     return values
 end
 
+local refused = {} -- [lower-case name] = true: the game did not take it this session; not tried again
+
+-- Sets a CVar this client has to a value (text) that differs, if the game lets us: not one it locked or
+-- made read only, a secure one not in a fight (SetCVar refuses those). One the game does not take (an error,
+-- or it holds its old value) is noted once, quietly, and left alone for the session. True when it was set.
+function Sync.SetCVar(name, value)
+    if type(name) ~= "string" or type(value) ~= "string" or refused[name:lower()] then return false end
+    local ok, now, _, _, _, locked, secure, readOnly = pcall(C_CVar.GetCVarInfo, name)
+    now = ok and Plain(now)
+    if type(now) ~= "string" or now == value or locked or readOnly or (secure and InCombatLockdown()) then return false end
+    local done, set = pcall(C_CVar.SetCVar, name, value)
+    if done and (set == true or Core.Ask(C_CVar.GetCVar, name) == value) then return true end
+    refused[name:lower()] = true
+    Core.NoteError(Sync.name .. ": setting CVars", ("the game did not take %s = %s%s"):format(name, value,
+        done and "" or " (" .. tostring(set) .. ")"))
+    return false
+end
+
 -- Sets those that differ; only names of the list (allowed: [lower-case name] = true) this client has.
 local function WriteCVars(values, allowed)
     for name, value in pairs(values) do
-        local now = type(name) == "string" and allowed[name:lower()] and Plain(C_CVar.GetCVar(name))
-        if now and type(value) == "string" and now ~= value then C_CVar.SetCVar(name, value) end
+        if type(name) == "string" and allowed[name:lower()] then Sync.SetCVar(name, value) end
     end
 end
 
@@ -138,17 +157,20 @@ local function ReadBars()
     return shown
 end
 
+-- A switch that was not kept (a bar this client has and the kept list lacks, or one not true or false)
+-- stays as the game has it.
 local function WriteBars(shown)
     local rules = rawget(_G, "C_GameRules")
     if rules and rules.IsMultiActionBarVisibilityForced and rules.IsMultiActionBarVisibilityForced() then return false end
     local now = { GetActionBarToggles() }
+    local want, differs = {}, false
     for index = 1, #now do
-        if (now[index] and true or false) ~= (shown[index] and true or false) then
-            SetActionBarToggles(unpack(shown, 1, #now))
-            return true
-        end
+        local have = now[index] and true or false
+        if type(shown[index]) == "boolean" then want[index] = shown[index] else want[index] = have end
+        if want[index] ~= have then differs = true end
     end
-    return false
+    if differs then SetActionBarToggles(unpack(want, 1, #now)) end
+    return differs
 end
 
 -------------------------------------------------------------------------------
@@ -185,7 +207,10 @@ end
 -------------------------------------------------------------------------------
 --  The parts that find their CVars in the game
 -------------------------------------------------------------------------------
-local found = {} -- the parts below, each with names = { CVar, ... } and has = [name] = true once resolved
+-- The parts below, each with names = { CVar, ... } and has = [lower-case name] = true once found; pending:
+-- what it was given to write while they were still being found.
+local found = {}
+local FINDING = "Sync: the game's CVars" -- the scheduler's job that finds them
 
 local function Matches(lower, patterns)
     for _, pattern in ipairs(patterns) do
@@ -194,59 +219,87 @@ local function Matches(lower, patterns)
     return false
 end
 
--- Whether the game stores a CVar for each character, and lets it be changed.
-local function PerCharacter(name)
-    local ok, _, _, _, character, locked, _, readOnly = pcall(C_CVar.GetCVarInfo, name)
-    return ok and character == true and not locked and not readOnly
+-- Whether the game stores a CVar for each character; and whether it lets us set it at all: not locked,
+-- not secure, not read only.
+local function Info(name)
+    local ok, _, _, _, character, locked, secure, readOnly = pcall(C_CVar.GetCVarInfo, name)
+    if not ok then return false, false end
+    return character == true, not (locked or secure or readOnly)
 end
 
--- One pass over the game's list, for every such part at once; nothing is set when the game cannot
--- say (a client update renamed its function): it is asked again next time. A name listed twice
--- counts once.
-local function Resolve()
+-- One pass over the game's list, for every such part at once, as a job of the scheduler (Steps.lua): the
+-- list in one call in a frame of its own, then a piece of it a frame. What a part was given meanwhile is
+-- written then, before its names count as found. Nothing is found when the game cannot say (a client
+-- update renamed its function): it is asked again when next wanted. A name listed twice counts once.
+local function Find()
+    Steps.Fresh()
     local ok, commands = pcall(ConsoleGetAllCommands)
     if not ok or type(commands) ~= "table" then return end
-    local byKind, rest = {}, nil
+    Steps.Check()
+    local byKind, rest, names, has = {}, nil, {}, {}
     for _, part in ipairs(found) do
-        part.names, part.has = {}, {}
+        names[part], has[part] = {}, {}
         if part.kind then byKind[part.kind] = part else rest = part end
     end
     local seen = {}
     for _, command in ipairs(commands) do
         local name = type(command) == "table" and command.commandType == CVAR and command.command
         local lower = type(name) == "string" and name:lower()
-        if lower and not seen[lower] and not onPages[lower] then
+        if lower and not seen[lower] and not onPages[lower] and not Matches(lower, MACHINE) and not Matches(lower, STATE) then
             seen[lower] = true
             local part = byKind[command.category]
-            if not part and rest and PerCharacter(name) then part = rest end
-            if part and not Matches(lower, MACHINE) and not Matches(lower, STATE) then
-                part.names[#part.names + 1] = name
-                part.has[lower] = true
+            if part or rest then
+                local character, free = Info(name)
+                if not part and character then part = rest end
+                if part and free then
+                    local list = names[part]
+                    list[#list + 1] = name
+                    has[part][lower] = true
+                end
             end
         end
+        Steps.Check()
+    end
+    for _, part in ipairs(found) do
+        while part.pending do
+            local data = part.pending
+            part.pending = nil
+            if Sync.PartKept(part.id) and type(data.cvars) == "table" then
+                for name, value in pairs(data.cvars) do
+                    if type(name) == "string" and has[part][name:lower()] then Sync.SetCVar(name, value) end
+                    Steps.Check()
+                end
+            end
+        end
+        part.names, part.has = names[part], has[part]
     end
 end
 
--- The names of such a part's CVars on this client; empty when the game cannot say.
+-- The names of such a part's CVars on this client once found (empty when the game has none of its
+-- kind); nil until then, and the job that finds them is started.
 local function Names(part)
-    if not part.names then Resolve() end
-    return part.names or NONE
+    if part.names then return part.names end
+    Steps.Run({ name = FINDING, label = Sync.name .. ": finding the game's CVars" }, Find)
+    return nil
 end
-Sync.CVarsOf = function(id) return Names(Sync.part[id] or NONE) end
 
--- A part of CVars the game names; kind: its Enum.ConsoleCategory, none for the per-character one.
+-- A part of CVars the game names; kind: its Enum.ConsoleCategory, none for the per-character one. Until
+-- they are found, or when the game cannot say which it has, what was kept stays, and what it is given
+-- is written once they are found.
 local function Found(id, group, kind, part)
     part.kind = kind
     found[#found + 1] = part
-    -- The game cannot say which CVars it has: what was kept stays.
     part.Read = function()
         local names = Names(part)
-        if #names == 0 then return Sync.Taken(id) end
+        if not names or #names == 0 then return Sync.Taken(id) end
         return { cvars = ReadCVars(names) }
     end
     part.Write = function(data)
-        Names(part)
-        if type(data.cvars) == "table" then WriteCVars(data.cvars, part.has or NONE) end
+        if not Names(part) then
+            part.pending = data
+        elseif type(data.cvars) == "table" then
+            WriteCVars(data.cvars, part.has)
+        end
     end
     Sync.Part(id, group, part)
 end

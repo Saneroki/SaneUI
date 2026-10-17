@@ -30,8 +30,10 @@ local Steps = Core.Steps
 local frame = Steps.frame
 check(frame and not frame:IsShown() and not frame._scripts.OnUpdate, "the scheduler's frame is hidden, with no OnUpdate, while there is no work")
 
--- One frame of the game: the scheduler's OnUpdate, if it has one; returns how many milliseconds of work it did.
+-- One frame of the game: the timers asked for in the frame before, then the scheduler's OnUpdate, if it has
+-- one; returns how many milliseconds of work the scheduler did.
 local function Frame()
+    W.Wait(0)
     W.ms = W.ms + 10 -- the game's own work between two frames
     local before = W.ms
     if frame:IsShown() and frame._scripts.OnUpdate then frame._scripts.OnUpdate(frame, 0.016) end
@@ -52,14 +54,18 @@ local function Worker(pieces, cost, done)
 end
 
 local one = { n = 0 }
-check(Steps.Run("one", Worker(100, 0.1, one)) == true and frame:IsShown() and frame._scripts.OnUpdate, "a job started: the frame is shown, with its OnUpdate")
+local oneJob = Steps.Run("one", Worker(100, 0.1, one))
+check(oneJob and oneJob.name == "one" and oneJob:Running() and frame:IsShown() and frame._scripts.OnUpdate,
+    "a job started: its handle, and the frame is shown, with its OnUpdate")
 check(Steps.Run("one", Worker(1, 0.1, {})) == false, "a job of the same name is not started twice")
-check(Steps.Running("one") and Steps.Jobs()[1] == "one", "it is known to be running, by its name")
+check(Steps.Running("one") and Steps.Jobs()[1] == oneJob, "it is known to be running, by its name")
 check(one.n == 0, "nothing runs before the next frame")
 local spent = Frame()
 check(spent <= Budget() + 0.1 + 1e-9 and spent >= Budget() - 1e-9, "a frame at 60 frames a second spends a quarter of it, no more than a piece over")
 for _ = 1, 30 do Frame() end
-check(one.finished and not Steps.Running("one") and not frame:IsShown() and not frame._scripts.OnUpdate, "done: the job is gone, the frame hidden again")
+check(one.finished and not Steps.Running("one") and not oneJob:Running() and not frame:IsShown() and not frame._scripts.OnUpdate,
+    "done: the job is gone, the frame hidden again")
+check(oneJob.frames > 1 and math.abs(oneJob.ms - 10) < 1e-6, "its handle counts the frames it worked in and the milliseconds it worked")
 
 -- The budget follows the frame rate, and never passes 5 ms
 for _, fps in ipairs({ 20, 60, 144, 240 }) do
@@ -124,22 +130,25 @@ check(not frame:IsShown(), "in a fight the frame stops itself even before the ev
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 
--- Nothing while the game restricts addons (an encounter); chat's restriction does not stop it
-W.restrictions[1] = true
+-- Nothing while the game restricts addons (an encounter); chat's restriction does not stop it. The game
+-- answers false while it sends the event (W.restrictions stays empty): the event's own state counts.
+local asked = 0
+local isActive = C_RestrictedActions.IsAddOnRestrictionActive
+C_RestrictedActions.IsAddOnRestrictionActive = function(...) asked = asked + 1 return isActive(...) end
 W.Fire("ADDON_RESTRICTION_STATE_CHANGED", 1, 2)
-check(not frame:IsShown(), "an encounter's restriction stops the scheduler")
+check(not frame:IsShown(), "an encounter's restriction stops the scheduler, by the event's state")
 before = fight.n
 Frame()
 check(fight.n == before, "nothing runs under it")
-W.restrictions[1] = nil
 W.Fire("ADDON_RESTRICTION_STATE_CHANGED", 1, 0)
 check(frame:IsShown(), "it ends: the scheduler goes on")
-W.restrictions[5] = true
 W.Fire("ADDON_RESTRICTION_STATE_CHANGED", 5, 2)
 check(frame:IsShown(), "chat's restriction does not stop it")
-W.restrictions[5] = nil
+W.Fire("ADDON_RESTRICTION_STATE_CHANGED", 5, 0)
 for _ = 1, 400 do Frame() end
 check(fight.finished, "the job finished after the pauses")
+check(asked == 0, "the game is not asked for its restrictions in every frame")
+C_RestrictedActions.IsAddOnRestrictionActive = isActive
 
 -- A job that fails is dropped and reported; the others go on
 local fine = { n = 0 }
@@ -189,6 +198,62 @@ check(loadFrame and order[loadFrame.from]:match("^load at") and loadFrame.to == 
 check(order[#order] == "after load" or order[#order] == "busy", "and the job goes on in a later frame")
 for _ = 1, 10 do Frame() end
 check(not frame:IsShown(), "all done, the frame is hidden again")
+
+-- A job stopped never goes on, from outside or from inside, and is told nothing
+local stopped, stopTold = { n = 0 }, {}
+local stopJob = Steps.Run({ name = "stopped", done = function() stopTold[#stopTold + 1] = "done" end }, Worker(100, 1, stopped))
+Frame()
+local pieces = stopped.n
+check(pieces > 0 and stopJob:Stop() == true and not Steps.Running("stopped") and not stopJob:Running(), "a job stopped by its handle")
+for _ = 1, 5 do Frame() end
+check(stopped.n == pieces and #stopTold == 0 and stopJob:Stop() == false, "never goes on, is told nothing; stopped once")
+check(Steps.Run("stopped", function() end) and Steps.Stop("stopped") == true and Steps.Stop("stopped") == false,
+    "by its name, and its name is free again")
+local selfStopped = 0
+Steps.Run({ name = "itself", done = function() stopTold[#stopTold + 1] = "itself" end }, function()
+    for _ = 1, 10 do
+        selfStopped = selfStopped + 1
+        if selfStopped == 2 then Steps.Stop("itself") end
+        W.ms = W.ms + 3
+        Steps.Check()
+    end
+end)
+for _ = 1, 5 do Frame() end
+check(selfStopped == 2 and #stopTold == 0 and not frame:IsShown(), "a job that stops itself runs to its next Check, never further")
+
+-- Told when it ends: done(problem), and error(problem) after an error, outside its coroutine, after the report
+local ended = {}
+Steps.Run({ name = "ends", done = function(problem) ended.done, ended.inside = problem or "none", coroutine.running() end },
+    function() W.ms = W.ms + 1 end)
+Steps.Run({ name = "breaks", label = "a test's own job", error = function(problem) ended.error = problem end,
+    done = function(problem) ended.broken = problem end }, function() error("it broke") end)
+W.printed = {}
+Frame()
+check(ended.done == "none" and ended.inside == nil, "done() after the last step, outside the job's coroutine")
+check(type(ended.error) == "string" and ended.error:find("it broke") and ended.broken == ended.error,
+    "error(problem) and done(problem) after an error, with its text")
+check(printedMatch("problem in a test's own job") and Core.errors["a test's own job"], "reported under the label it was given")
+
+-- A job with priority is served first in every frame
+local served = {}
+local function Piece(name, pieces)
+    return function()
+        for _ = 1, pieces do
+            served[#served + 1] = name
+            W.ms = W.ms + 3
+            Steps.Check()
+        end
+    end
+end
+Steps.Run("plain", Piece("plain", 4))
+Steps.Run({ name = "urgent", priority = true }, Piece("urgent", 6))
+for index = 1, 3 do
+    local count = #served
+    Frame()
+    check(served[count + 1] == "urgent", ("frame %d: the job with priority goes first"):format(index))
+end
+for _ = 1, 10 do Frame() end
+check(#served == 10 and served[#served] == "plain" and not frame:IsShown(), "and the other one gets its turns after it")
 
 -------------------------------------------------------------------------------
 --  Packs: the sample master compiled by the tools (dev/tests/data/sample.py), read as the game reads them
@@ -283,6 +348,13 @@ local calm = true
 for _, row in ipairs(hostile) do calm = calm and pcall(gearDecode, row) end
 check(calm, "no broken row makes the codec raise an error")
 check(gearDecode("65100\t")["gone"] and gearDecode("65100\t\t\t1").quality == 1, "a build and a day is a gone version; an empty field no value")
+local holes = Codec.Decoder({ "ints", "words", "flags", "named" }, { "list int", "list text", "list bool", "map text bool" })(
+    "1\t\t7\030\0309\tx\030\030z\t1\030\0301\tk\031\030m\0311\030n\031")
+check(holes.ints[1] == 7 and holes.ints[2] == nil and holes.ints[3] == 9 and holes.words[1] == "x" and holes.words[2] == nil
+    and holes.words[3] == "z" and holes.flags[1] == true and holes.flags[2] == nil and holes.flags[3] == true,
+    "an empty element of a list is no value, of every type, and the elements after it keep their places")
+check(holes.named.m == true and holes.named.k == nil and holes.named.n == nil, "an empty value of a map is no value too")
+check(Codec.Build({}) == nil and Codec.Build(65100) == nil and #Codec.Versions(false) == 0, "a row that is no text: no build, no versions")
 check(not pcall(Codec.Decoder, { "a" }, { "wobbly" }) and not pcall(Codec.Decoder, { "a" }, { "map bool int" }),
     "a type the codec does not know is an error (the set is refused then)")
 
@@ -323,6 +395,12 @@ check(Gear:State() == "missing" and not Gear:Ready() and Gear:Get(100) == nil an
     "no pack holds the set: missing, and Get answers nil")
 check(Core.errors["data: Gear"] and Core.errors["data: Gear"].count == 1 and #W.printed == 0,
     "a missing set is noted once in the error log, quietly")
+local made, format, text = 0, string.format, tostring
+string.format = function(...) made = made + 1 return format(...) end
+tostring = function(...) made = made + 1 return text(...) end
+for _ = 1, 100 do Gear:Get(100) end
+string.format, tostring = format, text
+check(made == 0, "after that a Get of it makes no text: the failure is remembered on the set")
 check(Gear.hash == nil and Gear.build == nil and Gear:Stamp() == 0, "no hash, no build, no stamp before it is loaded")
 
 -- The packs installed: found by their TOC lines, not loaded
@@ -334,6 +412,14 @@ check(Gear:State() == "idle" and Labels:State() == "idle" and Folk:State() == "i
     "the packs found by their TOC lines: idle, nothing loaded")
 local told = {}
 Gear:OnStamp(function(handle) told[#told + 1] = handle end)
+Gear:OnStamp(function() error("a listener's own problem") end)
+-- A listener runs a job's Check past any budget: inside the loader's job it would yield into Core.Safe and fail.
+local outside
+Gear:OnStamp(function()
+    W.ms = W.ms + 100
+    Steps.Check()
+    outside = coroutine.running() == nil
+end)
 
 -- Get never loads a pack: it asks for it, and nothing runs while the loading screen is up
 for _ = 1, 3 do check(Gear:Get(100) == nil, "Get before the pack is loaded: nil") end
@@ -341,6 +427,9 @@ check(Gear:State() == "loading" and Loaded() == 0 and not Steps.Running("data: p
     "Get asked for the pack and loaded nothing; no loading while the loading screen is up")
 Data.Prepare("Labels")
 check(Labels:State() == "loading" and Loaded() == 0, "Prepare loads nothing at once either")
+local readyNow = {}
+Data.WhenReady(Labels, function(handle) readyNow[#readyNow + 1] = handle end)
+check(#readyNow == 0, "WhenReady of a set not loaded yet: it waits")
 
 -- The loading screen gone in a fight: nothing until the fight ends
 W.combat = true
@@ -364,6 +453,13 @@ check(#W.fileErrors == 0, "the packs' files ran without an error" .. (W.fileErro
 check(Gear:State() == "ready" and Gear:Ready() and Labels:Ready() and Folk:Ready(), "the sets are ready")
 check(Gear.hash == liveGear.header.hash and Gear.build == 65100, "the handle names the set's hash and build")
 check(Gear:Stamp() > 0 and #told == 1 and told[1] == Gear, "its stamp moved and its listener was told, once")
+check(outside, "listeners are told on the frame after, outside the loader's job: a job's Check returns at once there")
+check(Core.errors["data: Gear listener"] and Core.errors["data: Gear listener"].text:find("a listener's own problem")
+    and Core.errors["data: Gear"].text:find("no data pack holds"), "a listener's failure is noted under a label of its own, apart from the set's")
+check(#readyNow == 1 and readyNow[1] == Labels, "WhenReady: told once the set arrived")
+local atOnce
+Data.WhenReady("Labels", function(handle) atOnce = handle end)
+check(atOnce == Labels, "WhenReady of a set that is ready: at once")
 
 -- Get answers every entry as the tools meant its newest version; gone is nil
 for _, pack in ipairs(PACKS) do
@@ -384,6 +480,9 @@ check(Gear:Get(100, "name") == "Plain Gloves" and Gear:Get(100, "nothing") == ni
     and Gear:Get(999, "name") == nil, "Get of a field; nil for a field or an entry not there")
 check(Labels:Get("end", "label") == "END_TEXT" and Labels:Get("with space", "label") == "SPACED", "text keys, a Lua word and a space among them")
 check(Gear:Get(100) == Gear:Get(100), "a record is made once and shared")
+local kept = Gear:Get(100)
+Data.Find()
+check(Gear:Get(100) == kept, "the packs looked for again (/sane data), the same game version and build: the answers made are kept")
 
 -- Frozen records: a new key fails at once, a change is found
 local gloves = Gear:Get(100)
@@ -451,6 +550,17 @@ check(Folk:Each(function(key) walkedFolk[#walkedFolk + 1] = key end), "a second 
 for _ = 1, 10 do Frame() end
 check(finished and Same(walked, { 100, 101, 102 }) and Same(walkedFolk, { 1, 2 }), "every entry walked, gone ones left out; then done")
 check(Data.Set("NoSuchSet"):Each(function() end) == false, "Each of a set that is not there: false")
+W.printed = {}
+local broken = {}
+for _ = 1, 2 do
+    Gear:Each(function() error("a broken walk") end, function(problem) broken[#broken + 1] = problem end)
+    for _ = 1, 3 do Frame() end
+end
+check(#broken == 2 and broken[1]:find("a broken walk") and Core.errors["data job Each Gear"]
+    and Core.errors["data job Each Gear"].count == 2 and #W.printed == 1,
+    "a walk that fails: done is told the error; noted under one label for the set however often it is walked, said once")
+local walk = Gear:Each(function() end)
+check(walk and walk:Stop() and not Steps.Running(walk.name), "a walk's handle stops it")
 
 -- A pack newer than the client: the versions this client has reached
 W.build = 65050
@@ -474,6 +584,16 @@ local extra = MakePack("Extra", "Extra", { ["Extra.lua"] = 'local S = SaneUI.Cor
 W.AddPack(extra)
 Data.Find()
 W.Fire("LOADING_SCREEN_ENABLED")
+-- Listeners taken back before it arrives are not told: one of OnStamp, one waiting for it (WhenReady)
+local Extra, extraTold = Data.Set("Extra"), {}
+local function Gone() extraTold[#extraTold + 1] = "gone" end
+local function Waits() extraTold[#extraTold + 1] = "waits" end
+Extra:OnStamp(function() extraTold[#extraTold + 1] = "stays" end)
+Extra:OnStamp(Gone)
+Extra:OnStamp(Gone)
+Data.WhenReady("Extra", Waits)
+Extra:OffStamp(Gone)
+Extra:OffStamp(Waits)
 Data.Prepare("Extra")
 for _ = 1, 3 do Frame() end
 check(not W.loaded.SaneUI_Data_Extra, "a loading screen up: nothing loads")
@@ -481,6 +601,30 @@ W.Fire("LOADING_SCREEN_DISABLED")
 for _ = 1, 3 do Frame() end
 check(W.loaded.SaneUI_Data_Extra and Data.Set("Extra"):Get(1, "name") == "One" and Data.Set("Extra").hash == "0badf00d",
     "after it the pack loads, a pack written by hand too")
+check(#extraTold == 1 and extraTold[1] == "stays", "OffStamp: a listener taken back is not told, nor one that waited")
+
+-- A pack's file of values of the wrong kind: Get, History, Keys and Each answer nil or nothing, never an error;
+-- a text key that looks like a number is shown by /sane data show
+W.AddPack(MakePack("Texts", "Texts", { ["Texts.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Texts", { game = "forever", hash = "00000007", build = 65000, key = "text", fields = { "name" }, types = { "text" }, patches = {} })\n'
+    .. 'if not S then return end\nS.rows["7"] = "65000\\t\\tSeven"\nS.rows["8"] = {}\nS.rows["9"] = 65000\nS.history["7"] = {}\nS.index.byName = 5\n' }))
+Data.Find()
+Data.Prepare("Texts")
+for _ = 1, 3 do Frame() end
+local Texts, calmReads = Data.Set("Texts"), true
+for _, key in ipairs({ "7", "8", "9", 7 }) do
+    calmReads = calmReads and pcall(Texts.Get, Texts, key) and pcall(Texts.History, Texts, key) and pcall(Texts.Changes, Texts, key)
+end
+check(calmReads and pcall(Texts.Keys, Texts, "byName", "Seven"), "no read raises an error on a pack's values of the wrong kind")
+check(Texts:Get("7", "name") == "Seven" and #Texts:History("7") == 1 and Texts:Get("8") == nil and Texts:Get("9") == nil
+    and Texts:History("8") == nil and #Texts:Keys("byName", "Seven") == 0 and Texts:Get(7) == nil,
+    "they are no entries; a history that is no text no older versions; an index that is no table no keys")
+local textsWalked = {}
+Texts:Each(function(key) textsWalked[#textsWalked + 1] = key end)
+for _ = 1, 3 do Frame() end
+check(#textsWalked == 1 and textsWalked[1] == "7", "a walk leaves them out")
+W.printed = {}
+SlashCmdList.SANEUI("data show Texts 7")
+check(printedMatch("Texts 7: { name = Seven, since = 65000 }%."), "/sane data show of a text key that looks like a number")
 
 -- Packs that are not used: switched off, of another format or game version, naming no set, not loadable
 W.AddPack(live .. "SaneUI_Data_Gear", { name = "SaneUI_Data_Off", enabled = 0, metadata = { ["X-SaneUI-Sets"] = "Switched" } })
@@ -514,7 +658,7 @@ Data.Prepare("Later")
 Data.Prepare("Later")
 Data.Prepare("Elsewhere")
 check(printedMatch("problem in data: SaneUI_Data_Later") and printedMatch("problem in data: SaneUI_Data_Beta") and #W.printed == 2
-    and Loaded() == 3, "asked for: each said once, loud, and never loaded")
+    and Loaded() == 4, "asked for: each said once, loud, and never loaded")
 Data.Prepare("Vanished")
 Data.Prepare("Broken")
 for _ = 1, 4 do Frame() end
@@ -586,6 +730,16 @@ check(printedMatch("Data: Words: not loaded %- LiveWords%.") and printedMatch("D
 check(printedMatch("Data: Broken: loaded %- Broken %(not used: its file did not run%)%.") and printedMatch("Data: Words: loaded %- Labels %x+%."),
     "a set of a loaded pack that is not used, and why; no build for a set the game never changed")
 check(printedMatch("jobs running: none%."), "and the scheduler's jobs")
+Steps.Run("held", Worker(10, 1, { n = 0 }))
+Frame()
+W.Fire("ADDON_RESTRICTION_STATE_CHANGED", 2, 1)
+W.printed = {}
+SlashCmdList.SANEUI("data")
+check(printedMatch("jobs running: held %(5%.0 ms in one frame%); they wait while a fight or a restriction of the game's lasts%."),
+    "each job with the time it worked and its frames; and that they wait, under a restriction")
+W.Fire("ADDON_RESTRICTION_STATE_CHANGED", 2, 0)
+for _ = 1, 3 do Frame() end
+check(not Steps.Running("held"), "after it the job finishes")
 W.printed = {}
 SlashCmdList.SANEUI("data show Gear 100")
 SlashCmdList.SANEUI("data show Labels with space")
