@@ -15,6 +15,9 @@ local Core = SaneUI.Core
 --                                               -- spots: a table to get the bytes of the text it took
 --      Fuzzy.Highlight(text, spots)             -- the text with those letters in the game's gold
 --      Fuzzy.Plain(text)                        -- a text of the game's without its colour and link codes
+--      Fuzzy.Filter(rows, query, fields, done)  -- the rows every word is found in (by their fields, keys or
+--                                               -- functions of a row), ranked: done(found, ranks); a long
+--                                               -- list a part per frame (below)
 --
 --  A rank is a whole number. Its hundreds say how the word was found, best
 --  first:
@@ -33,7 +36,14 @@ local Core = SaneUI.Core
 --  Cost: no table is made unless spots are asked for, and each look goes once
 --  through the text, so a long list can be ranked at every key. Ask for spots
 --  (Highlight) only for the rows on screen. Colour codes and links in a text
---  are the caller's to take out first.
+--  are the caller's to take out first (Plain).
+--
+--  Filter: a list of up to Fuzzy.AT_ONCE rows is ranked at once, done told in
+--  the same call; a longer one a part per frame on Core's scheduler (Core.Steps,
+--  a few milliseconds a frame, not in a fight), done told once all are looked
+--  at. A newer Filter makes an older one stop where it is: its done never comes.
+--  Each row keeps its texts in lower case (a table of Fuzzy's own, weak): a text
+--  is lowered again only once it has changed.
 -------------------------------------------------------------------------------
 local Fuzzy = {}
 Core.Fuzzy = Fuzzy
@@ -177,6 +187,80 @@ function Fuzzy.Match(query, ...)
         total = total + best
     end
     return total
+end
+
+-------------------------------------------------------------------------------
+--  A long list
+-------------------------------------------------------------------------------
+Fuzzy.AT_ONCE = 200 -- rows ranked in the call itself; a longer list a part per frame
+
+local generation = 0                                -- counts the filters asked for: the newest is the one that counts
+local kept = setmetatable({}, { __mode = "k" })     -- [row] = { texts = { [field's place] = text }, lows = { ... } }
+
+-- A row's text of one field: its value of that key, or what the function says of it.
+local function Text(row, field)
+    local text
+    if type(field) == "function" then text = field(row) else text = row[field] end
+    return type(text) == "string" and text or false
+end
+
+-- A row's rank, every word found in one of its fields; nil if one is in none. Its texts lowered only when new.
+local function Ranked(row, query, fields)
+    local own = kept[row]
+    if not own then
+        own = { texts = {}, lows = {} }
+        kept[row] = own
+    end
+    local texts, lows = own.texts, own.lows
+    for index, field in ipairs(fields) do
+        local text = Text(row, field)
+        if texts[index] ~= text then texts[index], lows[index] = text, text and lower(text) end
+    end
+    local total = 0
+    for _, word in ipairs(query) do
+        local best
+        for index = 1, #fields do
+            local rank = texts[index] and Fuzzy.Rank(word, texts[index], lows[index])
+            if rank and (not best or rank > best) then best = rank end
+        end
+        if not best then return nil end
+        total = total + best
+    end
+    return total
+end
+
+-- The rows found, in their order, and their ranks. mine: the filter's number, when it runs a part per
+-- frame: between two rows it gives the frame back when its time is spent (Core.Steps.Check), and stops
+-- (nil) once a newer filter was asked for.
+local function Sift(rows, query, fields, mine)
+    local found, ranks = {}, {}
+    for _, row in ipairs(rows) do
+        if mine and mine ~= generation then return nil end
+        local rank = 0
+        if query then rank = Ranked(row, query, fields) end
+        if rank then
+            found[#found + 1] = row
+            ranks[#found] = rank
+        end
+        if mine then Core.Steps.Check() end
+    end
+    return found, ranks
+end
+
+-- The scheduler's job: no Safe around the rows (a job never yields inside one), only around done.
+local function Job(rows, query, fields, done, mine)
+    local found, ranks = Sift(rows, query, fields, mine)
+    if found and mine == generation then Core.Safe("search", done, found, ranks) end
+end
+
+function Fuzzy.Filter(rows, query, fields, done)
+    generation = generation + 1
+    if type(query) == "string" then query = Fuzzy.Query(query) end
+    if #rows <= Fuzzy.AT_ONCE or not Core.Steps then
+        local found, ranks = Sift(rows, query, fields, nil)
+        return Core.Safe("search", done, found, ranks)
+    end
+    Core.Steps.Run("search " .. generation, Job, rows, query, fields, done, generation)
 end
 
 -- One character of the text, with where it starts: a first byte and the bytes that continue it. A

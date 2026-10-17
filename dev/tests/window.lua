@@ -1394,6 +1394,42 @@ for _, case in ipairs({ { "rge", "Ironforge" }, { "gsr", "Goldshire" }, { "tb", 
 end
 check(same, "the rank alone (no tables made) is the rank with the spots")
 
+-- A list filtered by the search, a long one a part per frame
+do
+    local rows = {}
+    for index = 1, 30 do rows[index] = { name = index % 3 == 0 and "Stormwind Guard" or "Goldshire Farmer", zone = "Elwynn" } end
+    local got, ranked
+    Fuzzy.Filter(rows, "guard", { "name", "zone" }, function(found, ranks) got, ranked = found, ranks end)
+    check(got and #got == 10 and got[1] == rows[3] and ranked[1] == Fuzzy.Rank("guard", "Stormwind Guard"),
+        "a short list is filtered at once: the rows every word is in, in their order, with their ranks")
+    Fuzzy.Filter(rows, "elw farm", { "name", function(row) return row.zone end }, function(found) got = found end)
+    check(#got == 20, "every word in one of the fields: a key, or what a function says of the row")
+    rows[1].name = "Stormwind Guard"
+    Fuzzy.Filter(rows, "guard", { "name" }, function(found) got = found end)
+    check(#got == 11 and got[1] == rows[1], "a row whose text changed is found by its new text")
+    Fuzzy.Filter(rows, nil, { "name" }, function(found) got = found end)
+    check(#got == 30, "nothing typed: every row")
+
+    local long = {}
+    for index = 1, 500 do long[index] = { name = index == 500 and "Thunder Bluff" or "Ironforge " .. index } end
+    local clock, frames = debugprofilestop, 0
+    debugprofilestop = function() W.ms = W.ms + 0.05; return W.ms end -- every look takes its time
+    local older, newer
+    Fuzzy.Filter(long, "iron", { "name" }, function(found) older = found end)
+    check(older == nil and #Core.Steps.Jobs() == 1, "a long list is not filtered in the call: it is a job of the scheduler")
+    local step = Core.Steps.frame:GetScript("OnUpdate")
+    step()
+    frames = frames + 1
+    Fuzzy.Filter(long, "tb", { "name" }, function(found) newer = found end)
+    while #Core.Steps.Jobs() > 0 and frames < 100 do
+        step()
+        frames = frames + 1
+    end
+    debugprofilestop = clock
+    check(newer and #newer == 1 and newer[1] == long[500] and frames > 2, "it is filtered a part per frame, and told once it is done")
+    check(older == nil, "a newer search makes the older one stop: its rows never come")
+end
+
 -- The bar ----------------------------------------------------------------------------------------------
 STATUS_BAR_NUM_SEGMENTS = 8 -- the pieces the game cuts its own bar into
 local counted = {}
