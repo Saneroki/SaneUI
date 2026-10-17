@@ -212,8 +212,8 @@ local function Shows(words)
 end
 local names = {}
 for index, tab in ipairs(canvas.tabs) do names[index] = tab.Text._text end
-check(table.concat(names, ", ") == "Profiles, Accountwide, CVars", "its tabs: Profiles, Accountwide, CVars")
-check(Shows("Sane UI") and Control("General") and not Control("Sync"), "Accountwide: first a box Sane UI with Sane UI's modules (not Sync)")
+check(table.concat(names, ", ") == "Profiles, Game settings, CVars", "its tabs: Profiles, Game settings, CVars")
+check(not Control("General") and not Control("Sync"), "Game settings: no box of Sane UI's modules: all of their settings are in the profile")
 check(Shows("Gameplay") and Shows("Accessibility") and Shows("System") and Shows("Elsewhere in the game"),
     "then the game's groups of options pages, and what is on none")
 check(Control("Controls") and Control("Nameplate options") and Control("Graphics") and Control("Edit Mode layout")
@@ -403,21 +403,40 @@ Config.CVars.Keep("debugThing", false)
 check(not Sync.Kept("debugThing") and options.named.debugThing == nil, "the CVar list unticks it through Sync")
 
 -- Profiles read and write the game's settings too ------------------------------------------------
+local Profiles = Core.Profiles
 W.cvars.nameplateSize = "3"
-Core.Profiles.Save("Big")
-check(SaneUIDB.profiles.Big.Sync.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "3", "a profile keeps the game's settings of the kept parts")
+check(Profiles.Create("Big") and SaneUIDB.profiles.Big.Sync.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "3",
+    "a new profile keeps the game's settings of the kept parts, as they are this moment")
+check(Profiles.Use("Big") and Profiles.InUse() == "Big", "the character uses it")
 W.cvars.nameplateSize = "1"
-Sync.Capture()
-Core.Profiles.Load("Big")
-check(W.cvars.nameplateSize == "3", "loading it writes them into the game at once")
+check(Profiles.Use("Accountwide") and W.cvars.nameplateSize == "3",
+    "back to Accountwide: what was set meanwhile went into Big, and Accountwide's own are written into the game at once")
+check(SaneUIDB.profiles.Big.Sync.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "1", "Big kept what was set while it was in use")
+Profiles.Use("Big")
+check(W.cvars.nameplateSize == "1", "and gives it back when it is used again")
 C_EditMode.SetActiveLayout(3)
 W.Wait(0.1)
-Core.Profiles.Save("Mine")
+Profiles.Create("Mine")
 C_EditMode.SetActiveLayout(1)
 W.Wait(0.1)
 check(SaneUIDB.profiles.Mine.Sync.taken.hudLayout.name == "Mine", "a profile keeps the Edit Mode layout in use")
-Core.Profiles.Load("Mine")
-check(game.active == 3, "loaded, its layout is set again")
+Profiles.Use("Mine")
+check(game.active == 3, "used, its layout is set again")
+
+-- Accountwide off: the game's settings are left to the game ----------------------------------------
+W.cvars.nameplateSize = "2"
+Profiles.SetOn(false)
+check(SaneUIDB.profiles.Mine.Sync.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "2",
+    "switched off, the game's settings as they are go into the profile last used, read while Sync still keeps them")
+W.cvars.nameplateSize = "4"
+local sets = W.cvarSets
+Sync.Give()
+W.Fire("PLAYER_LOGOUT")
+check(W.cvars.nameplateSize == "4" and W.cvarSets == sets and SaneUIDB.profiles.Mine.Sync.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "2",
+    "off, nothing of the game's is written or read, not even at the logout")
+check(SaneUICharDB.settings and SaneUICharDB.settings.Sync == nil, "nor kept with the character's own settings")
+Profiles.SetOn(true)
+check(Profiles.InUse() == "Mine" and W.cvars.nameplateSize == "2", "switched on again, the character takes its profile's, the game's settings too")
 
 local problems = {}
 for label, problem in pairs(Core.errors) do problems[#problems + 1] = label .. ": " .. tostring(problem.text) end

@@ -3,189 +3,322 @@ local Config = SaneUI.Core.Config -- Settings.lua
 -------------------------------------------------------------------------------
 --  Sane UI - Core - Settings - Profiles
 --  The page Profiles, a page of our own in the game's options (a canvas: Core
---  puts it up, Core.frames.Profiles): its title, a line on whose settings are in
---  use, and tabs, each a box of its own:
---      Profiles        Account wide: All settings accountwide
---                      Saved profiles: the profile, Load, Save, Duplicate, Rename, Delete
---                      (Empty and SaneUI Defaults are always there, and cannot be saved
---                      over, renamed or deleted)
---                      Characters: first New Characters, what a character not seen yet starts
---                      with; then every character seen; each with its profile, Load at login
---                      and Save at logout
---      Accountwide     which settings are account wide: Sane UI's modules, and
---                      Sync's parts in a titled box per group (Synced.lua)
+--  puts it up, Core.frames.Profiles): its title, a line on what profiles are,
+--  and tabs:
+--      Profiles        Accountwide: the switch, and what it means
+--                      This character: the profile it uses, and what can be done
+--                      with profiles (new, rename, delete, defaults, copy from
+--                      another, export and import as text)
+--                      Characters: first New Characters, the profile a character not
+--                      seen yet starts with; then every character seen, each with
+--                      its profile (and a button to forget it)
+--      Game settings   which of the game's settings the profiles keep (Synced.lua)
 --      CVars           the list of the game's CVars (CVars.lua)
+--  With Accountwide off, everything about profiles is switched off: each
+--  character keeps its own settings.
 --
 --  Core keeps the profiles and does the work (Core/Profiles.lua); this file only
---  shows them. The names are asked for in the game's own dialogs, those it keeps
---  for addons (GENERIC_INPUT_BOX, GENERIC_CONFIRMATION).
+--  shows them. Questions and names are asked in the game's own dialogs for
+--  addons (Core.Confirm, Core.AskText).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Profiles = Core.Profiles
 
 local TEXT = {
     title = "Profiles",
-    intro = "Settings are saved account wide by default: every character uses the same ones.",
+    intro = "Profiles keep the settings of Sane UI and of the game. With Accountwide on, every character uses a profile: Accountwide at first, the same for all of them.",
     tab = "Profiles",
-    whose = "Account wide",
-    all = "All settings accountwide",
-    allTip = "Ticked, every character uses the same settings: those ticked in the tab Accountwide. Unticked, every character keeps all its settings to itself. A character with a profile and Load at login (below) uses its profile instead.",
-    allNote = "Ticked will sync all settings accountwide by default. Profiles overwrites the setting on a per character basis.",
+    accountwide = "Accountwide",
+    on = "Accountwide settings",
+    onTip = "On: your characters share their settings through profiles: Sane UI's and the game's (its options, CVars, Edit Mode layout, chat windows: the tab Game settings). The game's are set from the profile when a character comes into the world and read back into it when the character leaves. Off: each character keeps its own Sane UI settings, a copy of its profile's to begin with, and the game's settings are left to the game.",
+    onNote = "On, every character uses the profile Accountwide unless it is given another below. Off, each character keeps its own settings and nothing of the game's is touched.",
+    askOn = "Switch Accountwide settings on? This character takes the settings of its profile, %s, the game's settings too.",
+    turnedOn = "Accountwide settings are on: this character uses the profile %s.",
+    turnedOff = "Accountwide settings are off: each character keeps its own settings, and the game's are left to the game.",
+    yours = "This character",
+    profile = "Profile",
+    profileTip = "The profile this character uses: its settings, Sane UI's and the game's, are the profile's. A change made on any options page goes into it, for every character that uses it.",
+    new = "New",
+    newTip = "A new profile, a copy of the settings in use, which this character uses from then on.",
+    askNew = "A new profile, a copy of the settings in use. Its name:",
+    rename = "Rename",
+    renameTip = "Gives the profile in use another name. Not Accountwide.",
+    askRename = "Rename the profile %s to:",
+    delete = "Delete",
+    deleteTip = "Deletes the profile in use. Every character that used it uses Accountwide from then on, this one at once. Not Accountwide.",
+    askDelete = "Delete the profile %s? Every character that used it uses Accountwide from then on, this one at once.",
+    defaults = "Defaults",
+    defaultsTip = "Every setting of Sane UI in the profile in use back to its default. The game's settings stay as they are.",
+    askDefaults = "Set every setting of Sane UI in the profile %s back to its default? The game's settings stay as they are.",
+    copyFrom = "Copy from",
+    copyFromTip = "The settings in use take those of another profile: Sane UI's and the game's.",
+    askCopy = "Copy the settings of the profile %s into the one in use? What it has now is replaced.",
+    export = "Export",
+    exportTip = "The profile in use as a line of text, to copy and keep or share.",
+    import = "Import",
+    importTip = "A profile from a line of text made by Export.",
+    askImport = "The new profile's name:",
+    exportTitle = "Export the profile %s",
+    exportHelp = "Select all of it (Ctrl+A) and copy it (Ctrl+C).",
+    importTitle = "Import a profile",
+    importHelp = "Paste the text of an exported profile here (Ctrl+V), then Import.",
     characters = "Characters",
     character = "Character",
     you = "(this character)",
-    saved = "Saved profiles",
-    profile = "Profile",
-    profileTip = "A profile keeps the settings of every module under a name, for all your characters. The buttons act on the profile chosen here. Two are always there, and can be loaded and duplicated, not changed, renamed or deleted: Empty, no profile, the settings as they are kept (the account's, or each character's own), loaded at every login and saved at every logout and /reload; and SaneUI Defaults, every setting of Sane UI's own as it is at first, without the game's settings that Sync keeps.",
-    autoLoad = "Load at login",
-    autoLoadTip = "Each time this character logs in (also after a /reload), it uses the settings of its profile: for itself only, the account's stay as they are. Empty always loads.",
-    autoSave = "Save at logout",
-    autoSaveTip = "Each time this character logs out (also at a /reload), its settings are saved into its profile. With Load at login too, it keeps its profile up to date, and so can other characters with the same profile. Empty always saves; SaneUI Defaults never, it stays as it is.",
-    useProfile = "Profile of this character",
-    useProfileTip = "The profile this character loads at login and saves into at logout, as ticked beside it. Empty: no profile, the settings as they are kept, loaded at every login and saved at every logout and /reload.",
     newCharacters = "New Characters",
-    newTip = "A character Sane UI has not seen yet (a new one, or one that has not logged in since Sane UI was installed) starts with this line at its first login: its profile, Load at login and Save at logout. Its own line below can change them afterwards.",
-    load = "Load",
-    loadTip = "Every module takes the settings kept in the profile. They change the account's settings, or this character's own when it has them. Empty puts the kept settings back in use where a profile is in use. SaneUI Defaults sets every setting of Sane UI's modules switched on back to its default; the game's settings that Sync keeps stay as they are.",
-    save = "Save",
-    saveTip = "Keeps the settings of every module in a profile. You are asked for its name; the chosen profile's is filled in.",
-    duplicate = "Duplicate",
-    duplicateTip = "Makes a copy of the profile under another name.",
-    rename = "Rename",
-    renameTip = "Gives the profile another name. Not Empty or SaneUI Defaults.",
-    delete = "Delete",
-    deleteTip = "Deletes the profile. The settings in use stay as they are. Not Empty or SaneUI Defaults.",
-    askSave = "Save the settings of every module as the profile (one of that name is replaced):",
-    askDuplicate = "Copy the profile %s as:",
-    askRename = "Rename the profile %s to:",
-    askDelete = "Delete the profile %s?",
-    loaded = "the settings of the profile %s are in use.",
-    savedAs = "the settings of every module are saved as the profile %s.",
-    noDialog = "the game's dialog for this is missing",
+    newTip = "The profile a character Sane UI has not seen yet (a new one, or one that has not logged in since Sane UI was installed) starts with at its first login. Its own line here can change it afterwards.",
+    useTip = "The profile this character uses. For the character you are playing it counts at once, for the others at their next login.",
+    forget = "Forget",
+    forgetTip = "Forgets the character: its line here and what Sane UI keeps for it. For a character deleted, or moved to another account.",
+    askForget = "Forget the character %s? Sane UI forgets what it keeps for it.",
+    created = "the profile %s is made, and this character uses it.",
+    renamed = "the profile is called %s now.",
+    deleted = "the profile %s is deleted.",
+    reset = "every setting of Sane UI in the profile %s is back at its default.",
+    copied = "the settings of %s are in use now.",
+    imported = "the profile %s is imported.",
+    used = "this character uses the profile %s.",
+    forgotten = "%s is forgotten.",
+    exportFailed = "the profile could not be written as text.",
+    close = "Close",
 }
 local Panel = Config.Panel
 
--- The controls show what changed: the values in use, whose they are, the profiles. A frame later,
--- so that the setting whose change started it has finished its own work first.
+-- The controls show what changed, a frame later: the setting whose change started it has finished first.
 local Refresh = Core.Later(function() Config.Refresh() end)
 
--- Says how a step went: done (with the chosen profile's name) or why not, in chat.
-local function Tell(ok, why, done)
+-- Says how a step went in chat: done (with a name) or why not.
+local function Tell(ok, why, done, name)
     if not ok then
-        Core.Print(why)
-        return
+        Core.Print(tostring(why))
+        return false
     end
-    if done then Core.Print(done:format(Profiles.Chosen())) end
+    if done then Core.Print(done:format(tostring(name))) end
     Refresh()
+    return true
 end
 
 local function Run(fn, ...)
     Core.Safe("Settings: profiles", fn, ...)
 end
 
--- One of the game's dialogs for addons, shown with data; nil (and noted) if it is gone.
-local function Dialog(which, data)
-    if not (StaticPopupDialogs and StaticPopupDialogs[which]) then
-        Core.Report("Settings: profiles", TEXT.noDialog .. " (" .. which .. ")")
-        return nil
+-- The profile in use; nil while Accountwide is off.
+local function InUse()
+    return Profiles.InUse()
+end
+
+-- Whether what acts on the profile in use can be used: Accountwide on, and (fixed) not Accountwide itself.
+local function Usable() return Profiles.On() end
+local function Changeable() return Profiles.On() and not Profiles.Fixed(InUse()) end
+
+-------------------------------------------------------------------------------
+--  Export and import: a window with a box of text
+-------------------------------------------------------------------------------
+local window
+
+local function Window()
+    if window then return window end
+    local frame = CreateFrame("Frame", "SaneUIProfileText", UIParent, "ButtonFrameTemplate")
+    if ButtonFrameTemplate_HidePortrait then ButtonFrameTemplate_HidePortrait(frame) end
+    frame:SetFrameStrata("DIALOG") -- over the game's options, which it is opened from
+    frame:SetToplevel(true)
+    frame:SetSize(520, 300)
+    frame:SetPoint("CENTER")
+    frame:SetClampedToScreen(true)
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    tinsert(UISpecialFrames, "SaneUIProfileText") -- Esc closes it
+
+    local help = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    help:SetPoint("TOPLEFT", 20, -34)
+    help:SetPoint("TOPRIGHT", -20, -34)
+    help:SetJustifyH("LEFT")
+    frame.Help = help
+
+    local scroll = CreateFrame("ScrollFrame", nil, frame, "InputScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", 24, -62)
+    scroll:SetPoint("BOTTOMRIGHT", -30, 44)
+    scroll.hideCharCount = true
+    if scroll.CharCount then scroll.CharCount:Hide() end
+    local box = scroll.EditBox
+    box:SetWidth(520 - 24 - 30 - 18) -- the template sizes its box when it loads, before it has a size here
+    box:SetMaxLetters(0)
+    frame.Box = box
+
+    local close = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    close:SetSize(120, 22)
+    close:SetPoint("BOTTOMRIGHT", -8, 8)
+    close:SetText(Core.Word("CLOSE", TEXT.close))
+    close:SetScript("OnClick", function() frame:Hide() end)
+    local act = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    act:SetSize(120, 22)
+    act:SetPoint("RIGHT", close, "LEFT", -6, 0)
+    act:SetText(TEXT.import)
+    act:SetScript("OnClick", function() if frame.act then Run(frame.act, box:GetText()) end end)
+    frame.Act = act
+    window = frame
+    return frame
+end
+
+local function Export()
+    local name = InUse()
+    local text = Profiles.Export(name)
+    if not text then return Core.Print(TEXT.exportFailed) end
+    local frame = Window()
+    frame:SetTitle(TEXT.exportTitle:format(name))
+    frame.Help:SetText(TEXT.exportHelp)
+    frame.Act:Hide()
+    frame.act = nil
+    frame:Show()
+    frame.Box:SetText(text)
+    frame.Box:SetFocus()
+    frame.Box:HighlightText()
+end
+
+local function Import()
+    local frame = Window()
+    frame:SetTitle(TEXT.importTitle)
+    frame.Help:SetText(TEXT.importHelp)
+    frame.Act:Show()
+    frame.act = function(text)
+        local value = Core.Serial.Read(text)
+        local suggested = type(value) == "table" and type(value.name) == "string" and value.name or nil
+        Core.AskText(TEXT.askImport, nil, TEXT.import, suggested, function(name)
+            local ok, result = Profiles.Import(text, name)
+            if Tell(ok, result, TEXT.imported, result) then frame:Hide() end
+        end, Profiles.MAX_NAME)
     end
-    return StaticPopup_Show(which, nil, nil, data)
+    frame:Show()
+    frame.Box:SetText("")
+    frame.Box:SetFocus()
 end
 
--- Asks for a name. text may name the profile (%s); typed is filled in; done(name) once accepted.
-local function AskName(text, profile, typed, accept, done)
-    local dialog = Dialog("GENERIC_INPUT_BOX", { text = text, text_arg1 = profile, acceptText = accept,
-        maxLetters = Profiles.MAX_NAME, callback = function(name) Run(done, name) end })
-    local box = dialog and dialog.GetEditBox and dialog:GetEditBox()
-    if box and typed then
-        box:SetText(typed)
-        box:HighlightText()
-    end
-end
-
-local function Delete(profile)
-    Tell(Profiles.Delete(profile))
-end
-
--- The chosen profile can be renamed and deleted: not Empty or SaneUI Defaults.
-local function Changeable()
-    return not Profiles.Fixed(Profiles.Chosen())
-end
-
--- What the buttons do, each with the chosen profile (there always is one: at least SaneUI
--- Defaults); needs: when the button can be used.
+-------------------------------------------------------------------------------
+--  The tab Profiles
+-------------------------------------------------------------------------------
+-- What the buttons do with the profile in use; needs: when the button can be used.
 local ACTIONS = {
-    { button = TEXT.load, tip = TEXT.loadTip, run = function(profile)
-        local ok, why = Profiles.Load(profile)
-        Tell(ok, why, TEXT.loaded)
+    { button = TEXT.new, tip = TEXT.newTip, needs = Usable, run = function()
+        Core.AskText(TEXT.askNew, nil, TEXT.new, nil, function(name)
+            local ok, made = Profiles.Create(name)
+            if not Tell(ok, made) then return end
+            Tell(Profiles.Use(made))
+            Core.Print(TEXT.created:format(made))
+        end, Profiles.MAX_NAME)
     end },
-    { button = TEXT.save, tip = TEXT.saveTip, run = function(profile)
-        -- The chosen profile's name to save over it; none for Empty and SaneUI Defaults, which cannot be.
-        local typed = not Profiles.Fixed(profile) and profile or nil
-        AskName(TEXT.askSave, nil, typed, TEXT.save, function(name)
-            local ok, why = Profiles.Save(name)
-            Tell(ok, why, TEXT.savedAs)
-        end)
+    { button = TEXT.rename, tip = TEXT.renameTip, needs = Changeable, run = function()
+        local name = InUse()
+        Core.AskText(TEXT.askRename, name, TEXT.rename, name, function(as)
+            local ok, why = Profiles.Rename(name, as)
+            Tell(ok, why, TEXT.renamed, InUse())
+        end, Profiles.MAX_NAME)
     end },
-    { button = TEXT.duplicate, tip = TEXT.duplicateTip, run = function(profile)
-        AskName(TEXT.askDuplicate, profile, nil, TEXT.duplicate, function(name) Tell(Profiles.Duplicate(profile, name)) end)
+    { button = TEXT.delete, tip = TEXT.deleteTip, needs = Changeable, run = function()
+        local name = InUse()
+        Core.Confirm(TEXT.askDelete, name, function()
+            local ok, why = Profiles.Delete(name)
+            Tell(ok, why, TEXT.deleted, name)
+        end, true)
     end },
-    { button = TEXT.rename, tip = TEXT.renameTip, needs = Changeable, run = function(profile)
-        AskName(TEXT.askRename, profile, profile, TEXT.rename, function(name) Tell(Profiles.Rename(profile, name)) end)
-    end },
-    { button = TEXT.delete, tip = TEXT.deleteTip, needs = Changeable, run = function(profile)
-        Dialog("GENERIC_CONFIRMATION", { text = TEXT.askDelete, text_arg1 = profile, showAlert = true,
-            callback = function() Run(Delete, profile) end })
+    { button = TEXT.defaults, tip = TEXT.defaultsTip, needs = Usable, run = function()
+        local name = InUse()
+        Core.Confirm(TEXT.askDefaults, name, function()
+            local ok, why = Profiles.Reset()
+            Tell(ok, why, TEXT.reset, name)
+        end, true)
     end },
 }
+local MORE = {
+    { button = TEXT.export, tip = TEXT.exportTip, needs = Usable, run = Export },
+    { button = TEXT.import, tip = TEXT.importTip, needs = Usable, run = Import },
+}
+
+-- A row of buttons from x, y in box.
+local function Buttons(box, list, x, y)
+    local previous
+    for _, action in ipairs(list) do
+        local button = Panel.Button(box, action.button, action.tip, function()
+            if not action.needs or action.needs() then Run(action.run) end
+        end, action.needs, 96)
+        if previous then button:SetPoint("LEFT", previous, "RIGHT", 6, 0) else button:SetPoint("TOPLEFT", x, y) end
+        previous = button
+    end
+    return previous
+end
+
+-- One of the game's dropdowns of profiles: chosen(name) whether one is ticked, choose(name), enabled().
+-- skip(name): left out of the list.
+local function Menu(parent, width, tip, title, chosen, choose, enabled, skip)
+    local menu = CreateFrame("DropdownButton", nil, parent, "WowStyle1DropdownTemplate")
+    menu:SetWidth(width)
+    menu:SetupMenu(function(_, root)
+        for _, name in ipairs(Profiles.List()) do
+            if not (skip and skip(name)) then
+                root:CreateRadio(name, chosen, function(value) Run(choose, value) end, name)
+            end
+        end
+    end)
+    Panel.Tooltip(menu, title, tip)
+    Panel.Watch({ label = title, widget = menu, Refresh = function()
+        menu:GenerateMenu()
+        if menu.SetEnabled then menu:SetEnabled(enabled() and true or false) end
+    end })
+    return menu
+end
 
 -- The tab Profiles. Returns the height of what it holds.
 local function ProfilesTab(child)
-    -- Whether the settings are the account's
-    local whose = Panel.Box(child, TEXT.whose, -4)
-    local all = Panel.Check(whose, TEXT.all, TEXT.allTip, Profiles.AccountWide, function(on)
-        Profiles.SetAccountWide(on)
-        Refresh()
+    -- Accountwide: the switch
+    local whose = Panel.Box(child, TEXT.accountwide, -4)
+    local on = Panel.Check(whose, TEXT.on, TEXT.onTip, Profiles.On, function(value)
+        if value then
+            -- Its profile's settings come into use, the game's too: asked first. Till then it shows off.
+            Core.Confirm(TEXT.askOn, Profiles.Character(Core.charKey) and Profiles.Character(Core.charKey).profile
+                or Profiles.ACCOUNTWIDE, function()
+                Profiles.SetOn(true)
+                Tell(true, nil, TEXT.turnedOn, InUse())
+            end)
+            Refresh()
+        else
+            Profiles.SetOn(false)
+            Tell(true, nil, TEXT.turnedOff)
+        end
     end)
-    all:SetPoint("TOPLEFT", 12, -10)
-    Panel.Text(whose, TEXT.allNote, "GameFontDisableSmall", 18, -40)
+    on:SetPoint("TOPLEFT", 12, -10)
+    Panel.Text(whose, TEXT.onNote, "GameFontDisableSmall", 18, -40)
     whose:SetHeight(64)
 
-    -- The saved profiles: the one chosen, what can be done with it
-    local saved = Panel.Box(child, TEXT.saved, -104)
-    local label = saved:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    -- This character's profile, and what can be done with profiles
+    local yours = Panel.Box(child, TEXT.yours, -100)
+    local label = yours:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     label:SetPoint("TOPLEFT", 16, -20)
     label:SetText(TEXT.profile)
-    local menu = CreateFrame("DropdownButton", nil, saved, "WowStyle1DropdownTemplate")
-    menu:SetWidth(260)
+    local menu = Menu(yours, 260, TEXT.profileTip, TEXT.profile, function(name) return InUse() == name end,
+        function(name)
+            local ok, why = Profiles.Use(name)
+            Tell(ok, why, TEXT.used, name)
+        end, Usable)
     menu:SetPoint("LEFT", label, "RIGHT", 16, 0)
-    menu:SetupMenu(function(_, root)
-        local function IsChosen(name) return Profiles.Chosen() == name end
-        local function Choose(name)
-            Profiles.Choose(name)
-            Panel.Refresh()
-        end
-        for _, name in ipairs(Profiles.List()) do root:CreateRadio(name, IsChosen, Choose, name) end
-    end)
-    Panel.Tooltip(menu, TEXT.profile, TEXT.profileTip)
-    Panel.Watch({ label = TEXT.profile, widget = menu, Refresh = function() menu:GenerateMenu() end })
+    Buttons(yours, ACTIONS, 14, -50)
+    local copy = Menu(yours, 196, TEXT.copyFromTip, TEXT.copyFrom, function() return false end, function(name)
+        Core.Confirm(TEXT.askCopy, name, function()
+            local ok, why = Profiles.CopyFrom(name)
+            Tell(ok, why, TEXT.copied, name)
+        end, true)
+    end, Usable, function(name) return name == InUse() end)
+    if copy.OverrideText then copy:OverrideText(TEXT.copyFrom) end
+    copy:SetPoint("TOPLEFT", 14, -80)
+    Buttons(yours, MORE, 222, -80)
+    yours:SetHeight(112)
 
-    local previous
-    for _, action in ipairs(ACTIONS) do
-        local button = Panel.Button(saved, action.button, action.tip, function()
-            if not action.needs or action.needs() then Run(action.run, Profiles.Chosen()) end
-        end, action.needs)
-        if previous then button:SetPoint("LEFT", previous, "RIGHT", 6, 0) else button:SetPoint("TOPLEFT", 14, -50) end
-        previous = button
-    end
-    saved:SetHeight(84)
-
-    -- First the line for characters not seen yet, then every character seen on the account, each on
-    -- a line: its profile, loaded at login and saved at logout if ticked.
+    -- First the line for characters not seen yet, then every character seen on the account.
     local list = Profiles.Characters()
-    table.insert(list, 1, { key = Profiles.NEW, new = true })
-    local box = Panel.Box(child, TEXT.characters, -206)
-    for _, head in ipairs({ { TEXT.character, 16 }, { TEXT.autoLoad, 168 }, { TEXT.autoSave, 268 }, { TEXT.profile, 384 } }) do
+    table.insert(list, 1, Profiles.Character(Profiles.NEW))
+    local box = Panel.Box(child, TEXT.characters, -232)
+    for _, head in ipairs({ { TEXT.character, 16 }, { TEXT.profile, 220 } }) do
         local text = box:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
         text:SetPoint("TOPLEFT", head[2], -12)
         text:SetText(head[1])
@@ -194,12 +327,9 @@ local function ProfilesTab(child)
     for index, character in ipairs(list) do
         local key, y = character.key, -32 - (index - 1) * 30
         local function Line() return Profiles.Character(key) or {} end
-        -- Empty always loads and saves (shown ticked, switched off); SaneUI Defaults is never saved into.
-        local function Loads() return Line().profile ~= Profiles.EMPTY end
-        local function Saves() return not Profiles.Fixed(Line().profile) end
         local name = box:CreateFontString(nil, "ARTWORK", character.new and "GameFontNormal" or "GameFontHighlight")
         name:SetPoint("TOPLEFT", 16, y - 6)
-        name:SetWidth(145)
+        name:SetWidth(196)
         name:SetJustifyH("LEFT")
         if character.new then
             name:SetText(TEXT.newCharacters)
@@ -212,34 +342,27 @@ local function ProfilesTab(child)
             name:SetText(character.current and text .. " " .. you or text)
         end
         local row = { name = name }
-        local loadTip, saveTip, menuTip = TEXT.autoLoadTip, TEXT.autoSaveTip, TEXT.useProfileTip
-        if character.new then loadTip, saveTip, menuTip = TEXT.newTip, TEXT.newTip, TEXT.newTip end
-        row.load = Panel.Check(box, TEXT.autoLoad, loadTip, function() return Line().autoLoad end, function(on)
-            Profiles.SetCharacter(key, "autoLoad", on)
-            Refresh()
-        end, Loads, true)
-        row.load:SetPoint("TOPLEFT", 196, y)
-        row.save = Panel.Check(box, TEXT.autoSave, saveTip, function() return Line().autoSave end, function(on)
-            Profiles.SetCharacter(key, "autoSave", on)
-        end, Saves, true)
-        row.save:SetPoint("TOPLEFT", 296, y)
-        local choice = CreateFrame("DropdownButton", nil, box, "WowStyle1DropdownTemplate")
-        choice:SetWidth(180)
-        choice:SetPoint("TOPLEFT", 384, y)
-        choice:SetupMenu(function(_, root)
-            local function IsChosen(value) return Line().profile == value end
-            local function Choose(value)
-                Profiles.SetCharacter(key, "profile", value)
-                Refresh()
-            end
-            for _, profile in ipairs(Profiles.List()) do root:CreateRadio(profile, IsChosen, Choose, profile) end
-        end)
-        Panel.Tooltip(choice, character.new and TEXT.newCharacters or TEXT.useProfile, menuTip)
-        Panel.Watch({ label = TEXT.useProfile, widget = choice, Refresh = function() choice:GenerateMenu() end })
-        row.menu, Config.characters[key] = choice, row
+        row.menu = Menu(box, 180, character.new and TEXT.newTip or TEXT.useTip,
+            character.new and TEXT.newCharacters or character.name, function(value) return Line().profile == value end,
+            function(value) Tell(Profiles.SetCharacter(key, value)) end, Usable)
+        row.menu:SetPoint("TOPLEFT", 220, y)
+        if not character.new and not character.current then
+            row.forget = Panel.Button(box, TEXT.forget, TEXT.forgetTip, function()
+                Core.Confirm(TEXT.askForget, character.name, function()
+                    local ok, why = Profiles.Forget(key)
+                    if Tell(ok, why, TEXT.forgotten, character.name) then
+                        row.name:SetAlpha(0.4)
+                        row.forget:Disable()
+                        row.gone = true
+                    end
+                end, true)
+            end, function() return not row.gone end, 80)
+            row.forget:SetPoint("TOPLEFT", 412, y - 2)
+        end
+        Config.characters[key] = row
     end
     box:SetHeight(40 + #list * 30)
-    return 206 + 18 + box:GetHeight() + 8
+    return 232 + 18 + box:GetHeight() + 8
 end
 
 -- Builds the page into the frame Core put up for it. The game calls OnRefresh when it shows it.

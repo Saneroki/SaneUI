@@ -36,7 +36,10 @@ ScriptErrorsFrame = { DisplayMessageInternal = function() end } -- the game's er
 W.Fire("ADDON_LOADED", "SaneUI")
 check(SaneUIDB.errors.early and SaneUIDB.errors.early.text:find("too soon") and Core.errors == SaneUIDB.errors, "errors are kept in the saved settings, earlier ones too")
 check(type(SaneUIDB.log) == "table" and type(Core.Store("Spoiled")) == "table", "what is spoiled is made new, not trusted")
-check(SaneUIDB.modules.Core.options.errors == true and Core.general == SaneUIDB.modules.Core.options, "the general switches are kept there as well, with their defaults")
+check(Core.Settings("Core").errors == true and Core.general == Core.Settings("Core") and SaneUIDB.profiles.Accountwide.Core == Core.general,
+    "the general switches are kept with every module's, in the profile Accountwide at first, with their defaults")
+check(SaneUIDB.version == 2 and SaneUIDB.profiles.Accountwide.Demo.shy == true and rawget(SaneUIDB.modules.Demo, "options") == nil,
+    "settings of the first shape (the account's, beside each module's store) are in the profile Accountwide now")
 
 -- Modules: each an addon of its own, read after Core ----------------------------------------
 local steps, flipped, toldDemo, captured = {}, nil, {}, 0
@@ -250,254 +253,186 @@ local function Shows(words)
     end
     return false
 end
-local menu = Control("Profile").widget
-local function Items()
+-- One of the page's dropdowns of profiles: what it lists, which is ticked, choosing one.
+local function Menu(label) return Control(label).widget end
+local function Items(menu)
     menu:GenerateMenu()
     return menu._items
 end
-local function Choices()
-    local names = {}
-    for _, item in ipairs(Items()) do names[#names + 1] = item.text end
-    return #names > 0 and table.concat(names, ", ") or menu._defaultText
+local function Names(menu)
+    local list = {}
+    for _, item in ipairs(Items(menu)) do list[#list + 1] = item.text end
+    return table.concat(list, ", ")
 end
-local function Chosen()
-    for _, item in ipairs(Items()) do if item.checked(item.data) then return item.text end end
+local function Ticked(menu)
+    for _, item in ipairs(Items(menu)) do if item.checked(item.data) then return item.text end end
     return ""
 end
-local function Choose(name)
-    for _, item in ipairs(Items()) do if item.text == name then item.fn(item.data) end end
+local function Pick(menu, name)
+    for _, item in ipairs(Items(menu)) do if item.text == name then item.fn(item.data) end end
 end
-local buttons = {}
-for _, name in ipairs({ "Load", "Save", "Duplicate", "Rename", "Delete" }) do buttons[name] = Control(name) end
-local allCheck = Control("All settings accountwide")
 local function Dialog() return W.popups[#W.popups] end
+local onCheck, profileMenu = Control("Accountwide settings"), Menu("Profile")
+local buttons = {}
+for _, name in ipairs({ "New", "Rename", "Delete", "Defaults", "Export", "Import" }) do buttons[name] = Control(name) end
 
-check(canvas.tabs and #canvas.tabs == 3 and canvas.tabs[1].Text._text == "Profiles" and canvas.tabs[2].Text._text == "Accountwide"
-    and canvas.tabs[3].Text._text == "CVars", "its tabs: Profiles, Accountwide and CVars (Chat channels comes with the Sync module)")
+local tabNames = {}
+for index, tab in ipairs(canvas.tabs) do tabNames[index] = tab.Text._text end
+check(table.concat(tabNames, ", ") == "Profiles, Game settings, CVars", "its tabs: Profiles, Game settings and CVars")
 check(canvas.parts[1]:IsShown() and not canvas.parts[2]:IsShown(), "the first is shown at first")
-check(Shows("Settings are saved account wide by default"), "over the tabs a line says the settings are the account's at first")
-check(Shows("Account wide") and Shows("Saved profiles") and Shows("Characters"), "the tab Profiles: boxes Account wide, Saved profiles, Characters")
-check(allCheck and allCheck:GetChecked() and Shows("Ticked will sync all settings accountwide by default. Profiles overwrites the setting on a per character basis."),
-    "first All settings accountwide, ticked at first, and what it means")
-check(Choices() == "Empty, SaneUI Defaults" and Chosen() == "Empty", "then the profiles to choose from: at first Empty, chosen, and SaneUI Defaults")
-check(buttons.Load and buttons.Save and buttons.Duplicate and buttons.Rename and buttons.Delete, "its buttons: Load, Save, Duplicate, Rename, Delete")
-check(buttons.Load:IsEnabled() and buttons.Save:IsEnabled() and buttons.Duplicate:IsEnabled() and not buttons.Rename:IsEnabled()
-    and not buttons.Delete:IsEnabled(), "Empty can be loaded and duplicated, not renamed or deleted")
+check(Shows("Profiles keep the settings of Sane UI and of the game"), "over the tabs a line says what profiles are")
+check(Shows("Accountwide") and Shows("This character") and Shows("Characters"), "the tab Profiles: boxes Accountwide, This character, Characters")
+check(onCheck and onCheck:GetChecked() and Profiles.On() and Shows("every character uses the profile Accountwide"),
+    "first Accountwide settings, on at first, and what it means")
+check(Names(profileMenu) == "Accountwide" and Ticked(profileMenu) == "Accountwide" and Profiles.InUse() == "Accountwide",
+    "this character's profile: at first the only one there is, Accountwide")
+for _, name in ipairs({ "New", "Rename", "Delete", "Defaults", "Export", "Import" }) do check(buttons[name], "a button " .. name) end
+check(buttons.New:IsEnabled() and not buttons.Rename:IsEnabled() and not buttons.Delete:IsEnabled() and buttons.Defaults:IsEnabled(),
+    "Accountwide is always there: it cannot be renamed or deleted")
 local me, alt = Config.characters["Player-70-0000ABCD"], Config.characters["Player-70-00000002"]
 check(me and alt and me.name._text:find("Tester Stub", 1, true) and me.name._text:find("this character") and alt.name._text:find("Alt")
     and not alt.name._text:find("this character"), "Characters: every character seen by its whole name, this one marked")
-check(not me.load:IsEnabled() and me.load:GetChecked() and not me.save:IsEnabled() and me.save:GetChecked() and me.menu
-    and Profiles.Character(Core.charKey).profile == "Empty",
-    "each with Load at login, Save at logout and its profile: Empty at first, which always loads and saves (ticked, switched off)")
+check(Ticked(me.menu) == "Accountwide" and Ticked(alt.menu) == "Accountwide" and alt.forget and not me.forget,
+    "each with its profile, Accountwide at first; the others can be forgotten, not the one played")
 local newRow = Config.characters[Profiles.NEW]
-check(newRow and newRow.name._text == "New Characters" and not newRow.load:IsEnabled() and newRow.load:GetChecked() and not newRow.save:IsEnabled() and newRow.menu,
-    "first a line New Characters, for characters not seen yet, with the same")
+check(newRow and newRow.name._text == "New Characters" and Ticked(newRow.menu) == "Accountwide",
+    "first a line New Characters: the profile a character not seen yet starts with")
 Click(canvas.tabs[3])
 check(canvas.parts[3]:IsShown() and not canvas.parts[1]:IsShown() and canvas.parts[3].list, "the tab CVars shows the list of the game's CVars")
 check(Shows("Every console setting of the game."), "under a line that says what it is for")
 Click(canvas.tabs[1])
 
--- Save: the settings of every module, under a name asked for in the game's own dialog
-Click(buttons.Save)
+-- New: a copy of the settings in use under a name asked for in the game's own dialog, used from then on
+local held = Core.Settings("Demo")
+loud.setting:SetValue(false)
+Click(buttons.New)
 local dialog = Dialog()
-check(dialog.which == "GENERIC_INPUT_BOX" and dialog.data.maxLetters == 32 and dialog.data.acceptText == "Save" and dialog.box.text == "",
-    "Save asks for a name in the game's own dialog")
+check(dialog.which == "GENERIC_INPUT_BOX" and dialog.data.maxLetters == 32 and dialog.data.acceptText == "New" and dialog.box.text == "",
+    "New asks for a name in the game's own dialog")
 W.printed = {}
 local before = captured
 dialog.data.callback("  Quiet ")
-local quietProfile = SaneUIDB.profiles.Quiet
-check(captured == before + 1 and quietProfile.Demo.outside.taken == captured,
-    "before a profile is saved, a module whose settings hold something of the game's brings it up to date")
-check(quietProfile and quietProfile.Demo.loud == false and quietProfile.Demo.shy == true and quietProfile.Core.errors == true
-    and quietProfile.Demo ~= demo.DB.options, "a copy of the settings of every module is kept under that name, without the spaces around it")
-check(Chosen() == "Quiet" and Choices() == "Empty, SaneUI Defaults, Quiet" and printedMatch("saved as the profile Quiet"), "it is the chosen profile now, and chat says so")
-local notified = loud.setting.notified or 0
+local quiet = SaneUIDB.profiles.Quiet
+check(captured > before and quiet.Demo.outside.taken == before + 1,
+    "before a profile is made, a module whose settings hold something of the game's brings it up to date")
+check(quiet and quiet.Demo.loud == false and quiet.Demo.shy == true and quiet.Core.errors == true,
+    "it holds the settings of every module, under the name without the spaces around it")
+check(Profiles.InUse() == "Quiet" and Core.Settings("Demo") == held and quiet.Demo == held and demo.DB.options == held,
+    "this character uses it: the table the module holds is the same, and lives in the new profile now")
+check(SaneUIDB.profiles.Accountwide.Demo ~= held and SaneUIDB.profiles.Accountwide.Demo.loud == false,
+    "Accountwide keeps a copy of its own of what it had")
+check(printedMatch("the profile Quiet is made"), "chat says so")
 W.Wait(0.1)
-check((loud.setting.notified or 0) > notified and buttons.Load:IsEnabled(),
-    "a moment later the controls show what changed")
+check(Ticked(profileMenu) == "Quiet" and Names(profileMenu) == "Accountwide, Quiet" and buttons.Rename:IsEnabled() and buttons.Delete:IsEnabled(),
+    "a moment later the page shows it: chosen, listed after Accountwide; it can be renamed and deleted")
+check(Profiles.Create("quiet") == false and Profiles.Create("  ") == false and Profiles.Create("Quiet") == false,
+    "a name needs letters, and one that is taken is refused, in any letter case")
 
--- Another profile, from other settings. The chosen one's name is offered, to save over it.
+-- A change goes into the profile in use, and only there
 loud.setting:SetValue(true)
+check(quiet.Demo.loud == true and SaneUIDB.profiles.Accountwide.Demo.loud == false, "a change is the profile's in use, the others keep theirs")
+
+-- Another profile in use: the modules are told what differs
+local toldBefore = #toldDemo
+Pick(profileMenu, "Accountwide")
+check(Profiles.InUse() == "Accountwide" and Core.Settings("Demo") == held and held.loud == false and SaneUIDB.profiles.Accountwide.Demo == held,
+    "chosen, the module's table takes the settings of Accountwide, and lives there now")
+check(toldDemo[toldBefore + 1] == "loud=false" and #toldDemo == toldBefore + 1, "the module is told of what changed, only that")
+check(quiet.Demo.loud == true and quiet.Demo ~= held, "Quiet keeps what it had, as a copy of its own")
+check(printedMatch("this character uses the profile Accountwide"), "chat says so")
+Pick(profileMenu, "Quiet")
+
+-- Rename
+Click(buttons.Rename)
+dialog = Dialog()
+check(dialog.box.text == "Quiet" and dialog.box.highlighted and dialog.data.text_arg1 == "Quiet", "Rename offers the name, marked")
+dialog.data.callback("Solo")
+check(SaneUIDB.profiles.Solo == quiet and SaneUIDB.profiles.Quiet == nil and Profiles.InUse() == "Solo"
+    and Profiles.Character(Core.charKey).profile == "Solo", "renamed, it stays in use, every character that had it keeps it")
+check(Profiles.Rename("Solo", "Accountwide") == false and Profiles.Rename("Accountwide", "Mine") == false and SaneUIDB.profiles.Accountwide,
+    "a name taken is refused; Accountwide keeps its name")
+
+-- Copy from another profile
+local copyMenu = Menu("Copy from")
+check(Names(copyMenu) == "Accountwide", "Copy from lists the other profiles, not the one in use")
+Pick(copyMenu, "Accountwide")
+dialog = Dialog()
+check(dialog.which == "GENERIC_CONFIRMATION" and dialog.data.text_arg1 == "Accountwide" and held.loud == true, "it asks first")
+dialog.data.callback()
+check(Profiles.InUse() == "Solo" and held.loud == false and SaneUIDB.profiles.Accountwide.Demo.loud == false and SaneUIDB.profiles.Accountwide.Demo ~= held,
+    "the profile in use takes the other's settings, as a copy")
+
+-- Defaults: Sane UI's settings in the profile in use back to their defaults; the game's stay
+local syncTaken = Core.Settings("Sync").taken
+syncTaken.marker = { kept = true }
 shy.setting:SetValue(false)
-Click(buttons.Save)
+Click(buttons.Defaults)
+Dialog().data.callback()
+check(held.loud == true and held.shy == false and Core.Settings("Sync").taken.marker and Core.Settings("Sync").taken.marker.kept,
+    "every setting of Sane UI at its default, the game's as they were")
+syncTaken.marker = nil
+
+-- Export and import, as a line of text
+Click(buttons.Export)
+local textWindow = SaneUIProfileText
+local text = textWindow.Box:GetText()
+local value = Core.Serial.Read(text)
+check(textWindow:IsShown() and type(value) == "table" and value.kind == "Sane UI profile" and value.name == "Solo"
+    and value.settings.Demo.loud == true, "Export shows the profile in use as a line of text to copy")
+textWindow:Hide()
+Click(buttons.Import)
+textWindow.Box:SetText(text)
+Click(textWindow.Act)
 dialog = Dialog()
-check(dialog.box.text == "Quiet" and dialog.box.highlighted, "saving again offers the chosen profile's name")
-dialog.data.callback("loud")
-check(Choices() == "Empty, SaneUI Defaults, loud, Quiet" and SaneUIDB.profiles.loud.Demo.loud == true and Chosen() == "loud",
-    "another name keeps another profile; they are listed in alphabetical order, after Empty and SaneUI Defaults")
+check(dialog.which == "GENERIC_INPUT_BOX" and dialog.box.text == "Solo", "Import asks for the new profile's name, the text's own offered")
+dialog.data.callback("Shared")
+check(SaneUIDB.profiles.Shared and SaneUIDB.profiles.Shared.Demo.loud == true and not textWindow:IsShown()
+    and printedMatch("the profile Shared is imported"), "and keeps it under that name")
+check(Profiles.Import("nonsense") == false and Profiles.Import(Core.Serial.Write({ kind = "other" })) == false
+    and Profiles.Import(text, "Shared") == false, "a text that is no profile, or a name that is taken, is refused")
 
--- Load
-Choose("Quiet")
-toldDemo = {}
-W.printed = {}
-Click(buttons.Load)
-check(demo.DB.options.loud == false and demo.DB.options.shy == true and printedMatch("profile Quiet are in use"),
-    "loading the chosen profile puts its settings in use")
-check(#toldDemo == 2 and toldDemo[1] == "loud=false" and toldDemo[2] == "shy=true", "and each module is told of each switch that changed")
-W.Wait(0.1)
-check(#toldDemo == 2 and loud.setting:GetValue() == false, "the controls show the new values without telling the module twice")
--- A profile from an older version or a hand edit: a spoiled switch, a module not here, no general switches
-SaneUIDB.profiles.Old = { Demo = { loud = "yes" }, Gone = { x = 1 } }
-Choose("Old")
-toldDemo = {}
-Click(buttons.Load)
-check(demo.DB.options.loud == true and demo.DB.options.shy == true and #toldDemo == 1 and Core.general.errors == true,
-    "a profile's spoiled switch gets its default; what it does not have stays as it is")
-check(SaneUIDB.modules.Gone.options.x == 1, "the settings of a module not switched on here are kept for it")
+-- The characters' profiles
+Pick(alt.menu, "Solo")
+check(SaneUIDB.characters["Player-70-00000002"].profile == "Solo" and Profiles.InUse() == "Solo", "another character is given a profile for its next login")
+Pick(newRow.menu, "Shared")
+check(SaneUIDB.newProfile == "Shared", "and the characters not seen yet")
+Pick(me.menu, "Shared")
+check(Profiles.InUse() == "Shared", "this character's, at once")
+Pick(me.menu, "Solo")
 
--- Duplicate and Rename: a name of its own
-Choose("Quiet")
-Click(buttons.Duplicate)
-dialog = Dialog()
-check(dialog.data.text:find("%%s") and dialog.data.text_arg1 == "Quiet" and dialog.box.text == "", "Duplicate asks for the copy's name")
-W.printed = {}
-dialog.data.callback("loud")
-check(printedMatch("there is already a profile called loud") and Choices() == "Empty, SaneUI Defaults, loud, Old, Quiet", "a name that is taken is refused")
-dialog.data.callback("   ")
-check(printedMatch("a profile needs a name"), "and so is none")
-dialog.data.callback("Raid")
-check(SaneUIDB.profiles.Raid.Demo.loud == false and SaneUIDB.profiles.Raid.Demo ~= SaneUIDB.profiles.Quiet.Demo and Chosen() == "Raid",
-    "a copy of the profile is kept under the new name, and chosen")
-Click(buttons.Rename)
-dialog = Dialog()
-check(dialog.box.text == "Raid" and dialog.data.text_arg1 == "Raid", "Rename offers the profile's name to change")
-W.printed = {}
-dialog.data.callback("Quiet")
-check(printedMatch("already a profile called Quiet"), "not into one that is taken")
-dialog.data.callback("Raid night")
-check(SaneUIDB.profiles.Raid == nil and SaneUIDB.profiles["Raid night"].Demo.loud == false and Chosen() == "Raid night",
-    "renamed, it is still the chosen one")
-
--- A game without the dialog (a client update took it): noted and told, nothing else happens.
-local inputBox, popups = StaticPopupDialogs.GENERIC_INPUT_BOX, #W.popups
-StaticPopupDialogs.GENERIC_INPUT_BOX = nil
-W.printed = {}
-Click(buttons.Rename)
-check(#W.popups == popups and Core.errors["Settings: profiles"] and printedMatch("problem in Settings: profiles, noted"),
-    "a dialog the game no longer has is noted, not shown")
-StaticPopupDialogs.GENERIC_INPUT_BOX, Core.errors["Settings: profiles"] = inputBox, nil
-
--- Delete, after asking
+-- Delete
 Click(buttons.Delete)
 dialog = Dialog()
-check(dialog.which == "GENERIC_CONFIRMATION" and dialog.data.text_arg1 == "Raid night" and SaneUIDB.profiles["Raid night"], "Delete asks first")
+check(dialog.data.showAlert and dialog.data.text_arg1 == "Solo", "Delete asks first, with the game's warning sign")
 dialog.data.callback()
-check(SaneUIDB.profiles["Raid night"] == nil and Chosen() == "Empty", "then the profile is gone, and Empty is chosen")
-for _, name in ipairs({ "loud", "Old", "Quiet" }) do Profiles.Delete(name) end
-Config.Refresh()
-check(Chosen() == "Empty" and Choices() == "Empty, SaneUI Defaults" and buttons.Load:IsEnabled() and not buttons.Delete:IsEnabled(),
-    "with none left Empty and SaneUI Defaults are still there")
+check(SaneUIDB.profiles.Solo == nil and Profiles.InUse() == "Accountwide" and SaneUIDB.characters["Player-70-00000002"].profile == nil
+    and Core.Settings("Demo") == held, "deleted, the characters that had it use Accountwide, this one at once")
+check(Profiles.Delete("Accountwide") == false, "Accountwide cannot be deleted")
 
--- Empty: no profile, the settings as they are kept; loaded and duplicated, never changed
-Click(buttons.Save)
+-- Forget a character: its line and what every module kept for it
+demo.DB.chars["Player-70-00000002"] = { note = "theirs" }
+Click(alt.forget)
+Dialog().data.callback()
+check(SaneUIDB.characters["Player-70-00000002"] == nil and demo.DB.chars["Player-70-00000002"] == nil, "forgotten, nothing of it is kept")
+check(Profiles.Forget(Core.charKey) == false, "not the one played")
+
+-- Accountwide off: each character keeps its own settings
+local loudWas = held.loud
+Tick(onCheck, false)
+check(not Profiles.On() and Profiles.InUse() == nil and SaneUICharDB.settings.Demo == held and held.loud == loudWas,
+    "switched off, this character keeps what it uses as its own: the module's table lives in its file now")
+check(SaneUIDB.profiles.Accountwide.Demo.loud == loudWas and SaneUIDB.profiles.Accountwide.Demo ~= held, "its profile keeps a copy")
+check(SaneUICharDB.settings.Sync == nil, "the game's settings are kept nowhere then")
+W.Wait(0.1)
+check(not buttons.New:IsEnabled() and not buttons.Defaults:IsEnabled(), "the profiles' buttons are switched off")
+loud.setting:SetValue(not loudWas)
+check(SaneUIDB.profiles.Accountwide.Demo.loud == loudWas and held.loud == not loudWas, "a change is this character's alone")
+Tick(onCheck, true)
 dialog = Dialog()
-check(dialog.box.text == "", "Save does not offer Empty's name")
-W.printed = {}
-dialog.data.callback("Empty")
-check(printedMatch("Empty stays as it is") and SaneUIDB.profiles.Empty == nil, "nor saves over it")
-check(not Profiles.Rename("Empty", "Mine") and not Profiles.Delete("Empty") and Chosen() == "Empty", "it cannot be renamed or deleted")
-Profiles.Duplicate("Empty", "Kept")
-check(SaneUIDB.profiles.Kept.Demo.loud == demo.DB.options.loud and SaneUIDB.profiles.Kept.Sync and Chosen() == "Kept",
-    "duplicated, it is a profile of the settings as they are kept, the game's that Sync keeps too")
-Profiles.Delete("Kept")
-
--- SaneUI Defaults: every switch of Sane UI's own at its default, made from what the modules describe;
--- not the game's settings Sync keeps; never saved
-loud.setting:SetValue(false)
-shy.setting:SetValue(true)
-check(demo.DB.options.outside.taken ~= nil, "(what the module took from the game is in use)")
-local syncOptions = Core.Sync.options
-syncOptions.off.CONTROLS_LABEL, syncOptions.named.someThing, syncOptions.taken.perCharacter = true, "1", { cvars = { cameraSavedDistance = "30" } }
-toldDemo = {}
-W.printed = {}
-Choose("SaneUI Defaults")
-Click(buttons.Load)
-check(demo.DB.options.loud == true and demo.DB.options.shy == false and next(demo.DB.options.outside) == nil and Core.general.errors == true
-    and printedMatch("profile SaneUI Defaults are in use"), "loading SaneUI Defaults puts every switch back to its default, a table empty again")
-check(#toldDemo == 2 and toldDemo[1] == "loud=true" and toldDemo[2] == "shy=false", "and each module is told of each switch that changed")
-check(SaneUIDB.modules.Gone.options.x == 1 and SaneUIDB.profiles["SaneUI Defaults"] == nil,
-    "a module not switched on here keeps its settings; SaneUI Defaults is not saved anywhere")
-check(syncOptions.off.CONTROLS_LABEL and syncOptions.named.someThing == "1" and syncOptions.taken.perCharacter.cvars.cameraSavedDistance == "30",
-    "the game's settings Sync keeps stay as they are, and which of them it keeps")
-syncOptions.off.CONTROLS_LABEL, syncOptions.named.someThing, syncOptions.taken.perCharacter = nil, nil, nil
-Click(buttons.Save)
-dialog = Dialog()
-check(dialog.box.text == "", "Save does not offer its name")
-W.printed = {}
-dialog.data.callback("SaneUI Defaults")
-check(printedMatch("SaneUI Defaults stays as it is") and SaneUIDB.profiles["SaneUI Defaults"] == nil, "nor saves over it")
-check(not Profiles.Rename("SaneUI Defaults", "Mine") and not Profiles.Delete("SaneUI Defaults") and Chosen() == "SaneUI Defaults",
-    "it cannot be renamed or deleted")
-Click(buttons.Duplicate)
-Dialog().data.callback("Mine")
-W.Wait(0.1)
-local mine = SaneUIDB.profiles.Mine
-check(mine and mine.Demo.loud == true and mine.Demo.shy == false and type(mine.Demo.outside) == "table" and mine.Core.errors == true
-    and mine.Sync == nil and Chosen() == "Mine" and buttons.Rename:IsEnabled() and buttons.Delete:IsEnabled(),
-    "duplicated, it is a profile of its own with every switch at its default, which can be renamed and deleted")
-check(not Profiles.Duplicate("Mine", "SaneUI Defaults") and not Profiles.Rename("Mine", "SaneUI Defaults"), "no other profile takes its name")
-Profiles.Delete("Mine")
-shy.setting:SetValue(true)
-
--- All settings accountwide: unticked, every character keeps all its settings to itself
-loud.setting:SetValue(false)
-toldDemo = {}
-Tick(allCheck, false)
-check(not Profiles.AccountWide() and SaneUIDB.separate == true and SaneUIDB.account.Demo.loud == false and SaneUIDB.account.Core.errors == true,
-    "unticked, no settings are account wide: the account's are kept aside")
-check(demo.DB.options.loud == false and #toldDemo == 0, "at first this character's own are a copy of the account's: nothing changes")
-loud.setting:SetValue(true)
-check(SaneUIDB.account.Demo.loud == false, "a change is this character's own")
-toldDemo = {}
-Tick(allCheck, true)
-check(Profiles.AccountWide() and SaneUIDB.separate == nil and demo.DB.options.loud == false and SaneUIDB.account == nil and toldDemo[1] == "loud=false",
-    "ticked again, the account's settings are in use, and the module is told")
-check(SaneUICharDB.settings.Demo.loud == true, "this character's own are kept for when they count again")
-
--- One module's settings each character's own: the tab Accountwide, its box Sane UI
-local demoShared = Control("Demo module")
-check(Shows("Sane UI") and Control("General") and demoShared and demoShared:GetChecked() and demoShared:IsEnabled(),
-    "the tab Accountwide: a box Sane UI with a checkbox for every module, account wide at first")
-toldDemo = {}
-Tick(demoShared, false)
-check(not Profiles.Shared("Demo") and SaneUIDB.perCharacter.Demo and demo.DB.options.loud == true and SaneUIDB.account.Demo.loud == false
-    and SaneUIDB.account.Core == nil and toldDemo[1] == "loud=true",
-    "unticked, that module's settings are this character's own; the others stay the account's")
-Tick(allCheck, false)
-check(not demoShared:IsEnabled() and SaneUIDB.account.Core, "with nothing account wide, those checkboxes are switched off")
-Tick(allCheck, true)
-Tick(demoShared, true)
-check(Profiles.Shared("Demo") and demo.DB.options.loud == false and SaneUIDB.account == nil, "ticked again: the account's")
-W.Wait(0.1)
-
--- A character's profile: chosen on its line, loaded at login and saved at logout if ticked there
-local function ChooseFor(row, name)
-    row.menu:GenerateMenu()
-    for _, item in ipairs(row.menu._items) do if item.text == name then item.fn(item.data) end end
-end
-Profiles.Save("Solo")
-ChooseFor(alt, "Solo")
-Tick(alt.load, true)
-W.Wait(0.1)
-check(SaneUIDB.characters["Player-70-00000002"].profile == "Solo" and SaneUIDB.characters["Player-70-00000002"].autoLoad and alt.load:IsEnabled(),
-    "another character's profile and Load at login are set from here, kept for the account")
-check(SaneUIDB.account == nil and demo.DB.options.loud == false, "and change nothing for this one")
-ChooseFor(me, "Solo")
-Tick(me.save, true)
-W.Wait(0.1)
-check(Profiles.Character(Core.charKey).profile == "Solo" and SaneUIDB.characters[Core.charKey].autoSave and me.load:IsEnabled() and not me.load:GetChecked(),
-    "this character: Save at logout into its profile, without Load at login")
-ChooseFor(newRow, "Solo")
-Tick(newRow.load, true)
-W.Wait(0.1)
-check(SaneUIDB.newCharacters.profile == "Solo" and SaneUIDB.newCharacters.autoLoad and newRow.save:IsEnabled() and SaneUIDB.account == nil,
-    "New Characters: a profile and Load at login for characters not seen yet, kept for the account; nothing changes for this one")
-Profiles.Rename("Solo", "Duo")
-check(SaneUIDB.newCharacters.profile == "Duo" and SaneUIDB.characters[Core.charKey].profile == "Duo", "a profile renamed is renamed there too")
-Profiles.Rename("Duo", "Solo")
-Tick(newRow.load, false)
-ChooseFor(newRow, "Empty")
-check(SaneUIDB.newCharacters.profile == nil and not SaneUIDB.newCharacters.autoLoad, "and taken off again")
+check(not Profiles.On() and dialog.which == "GENERIC_CONFIRMATION" and dialog.data.text_arg1 == "Accountwide", "switching it on asks first")
+dialog.data.callback()
+check(Profiles.On() and Profiles.InUse() == "Accountwide" and held.loud == loudWas and SaneUIDB.profiles.Accountwide.Demo == held,
+    "on again, this character takes its profile's settings")
 shy.setting:SetValue(false)
 
 W.printed = {}
@@ -916,10 +851,6 @@ check(box:GetNumPoints() == 1 and point == "TOPLEFT" and relativeTo == UIParent 
 
 -- Profiles: the next session --------------------------------------------------------------
 -- This character logs out; the game writes the saved settings and reads them at the next login.
-before = captured
-W.Fire("PLAYER_LOGOUT")
-check(SaneUIDB.account == nil and captured == before + 1 and SaneUIDB.profiles.Solo.Demo.shy == false and SaneUIDB.profiles.Solo.Demo.outside.taken == captured,
-    "at logout the settings are brought up to date and saved into its profile, with Save at logout ticked")
 local function Written(value)
     if type(value) ~= "table" then return value end
     local copy = {}
@@ -931,90 +862,111 @@ local function NextSession(account, character)
     Core.errors, Core.log = {}, {}
     W.Fire("ADDON_LOADED", "SaneUI")
 end
-SaneUIDB.characters[Core.charKey].autoLoad = true
-SaneUIDB.profiles.Solo.Demo.loud = true
-NextSession(SaneUIDB, SaneUICharDB)
-check(SaneUIDB.modules.Demo.options.loud == true and SaneUIDB.account.Demo.loud == false,
-    "with Load at login, the character uses its profile before any module reads its settings; the account's are kept aside")
-SaneUIDB.modules.Demo.options.shy = true
+local held = Core.Settings("Demo")
+before = captured
 W.Fire("PLAYER_LOGOUT")
-check(SaneUIDB.profiles.Solo.Demo.shy == true and SaneUIDB.modules.Demo.options.loud == false and SaneUIDB.account == nil,
-    "its changes go into its profile at logout, and the account's are back where every character finds them")
--- A logout that does not finish (the account's still aside), and a character never seen comes next.
-SaneUIDB.account = { Demo = { loud = false } }
-SaneUIDB.modules.Demo.options.loud = true
-UnitGUID = function() return "Player-70-00000003" end
-NextSession(SaneUIDB, "spoiled")
-check(SaneUIDB.modules.Demo.options.loud == false and SaneUIDB.account == nil and type(SaneUICharDB) == "table",
-    "the account's settings, still kept aside, are put back in use first")
--- That other one has its own settings for one module.
-SaneUIDB.perCharacter.Demo = true
-SaneUICharDB.settings = { Demo = { loud = true } }
+check(captured == before + 1 and Core.Settings("Demo") == held and SaneUIDB.profiles.Accountwide.Demo == held,
+    "at logout the game's settings are brought up to date; everything stays where it lives")
+Profiles.Create("Raid")
+Profiles.Use("Raid")
+Core.Set("Demo", "loud", false)
 NextSession(SaneUIDB, SaneUICharDB)
-check(SaneUIDB.modules.Demo.options.loud == true and SaneUIDB.account.Demo.loud == false and SaneUIDB.account.Core == nil,
-    "a module not account wide takes this character's own at login, the others the account's")
--- That one is given SaneUI Defaults with Load at login (and Save at logout, which does not count for it).
--- A profile a player called so before it was there keeps its settings under another name.
-W.Fire("PLAYER_LOGOUT")
-SaneUIDB.characters["Player-70-00000003"] = { name = "Third", profile = "SaneUI Defaults", autoLoad = true, autoSave = true }
-SaneUIDB.profiles["SaneUI Defaults"], SaneUIDB.profiles.Empty = { Demo = { loud = false } }, { Demo = { loud = true } }
-SaneUIDB.modules.Demo.options.shy = true
-SaneUIDB.modules.Sync.options.off.CONTROLS_LABEL = true
+check(Profiles.InUse() == "Raid" and Core.Settings("Demo").loud == false and Core.Settings("Demo") == SaneUIDB.profiles.Raid.Demo,
+    "the next session, this character uses its profile before any module reads its settings")
+check(SaneUICharDB.key == Core.charKey, "and its file says which character it is")
+
+-- The key of the file must not win over the game's own number for the character (a file copied from another)
+SaneUICharDB.key = "Player-70-00000009"
 NextSession(SaneUIDB, SaneUICharDB)
-check(SaneUIDB.profiles["SaneUI Defaults"] == nil and SaneUIDB.profiles["SaneUI Defaults (old)"].Demo.loud == false
-    and SaneUIDB.profiles.Empty == nil and SaneUIDB.profiles["Empty (old)"].Demo.loud == true,
-    "saved profiles called SaneUI Defaults or Empty are kept as SaneUI Defaults (old), Empty (old)")
-check(SaneUIDB.modules.Demo.options.loud == true and SaneUIDB.modules.Demo.options.shy == false and SaneUIDB.account.Demo.shy == true,
-    "with Load at login, every switch is at its default before any module reads them; the account's are kept aside")
-check(next(SaneUIDB.modules.Gone.options) == nil and SaneUIDB.account.Gone.x == 1,
-    "a module whose addon is read later starts empty: it gets its defaults when it describes its switches")
-check(SaneUIDB.modules.Sync.options.off.CONTROLS_LABEL == true and SaneUIDB.account.Sync == nil,
-    "the game's settings Sync keeps stay the account's")
-check(Profiles.Character("Player-70-00000003").profile == "SaneUI Defaults" and not Profiles.Character("Player-70-00000003").autoSave,
-    "its line shows SaneUI Defaults, without Save at logout")
-SaneUICharDB.settings.Demo.loud = false -- this character's own, kept while the profile is in use (Demo is not account wide)
-Profiles.Load("Empty")
-check(SaneUIDB.modules.Demo.options.loud == false and SaneUIDB.modules.Sync.options.off.CONTROLS_LABEL == true,
-    "loading Empty puts the kept settings back in use: here this character's own")
-SaneUIDB.modules.Demo.options.loud = false
-W.Fire("PLAYER_LOGOUT")
-check(SaneUIDB.profiles["SaneUI Defaults"] == nil and SaneUIDB.modules.Demo.options.shy == true and SaneUIDB.modules.Gone.options.x == 1
-    and SaneUIDB.account == nil, "at logout nothing is saved into it, and the account's settings are back")
--- A line that names Empty (an older version, a hand edit) has no profile: what is changed is kept at logout.
--- A profile called Empty from before is kept under a free name.
-SaneUIDB.characters["Player-70-00000003"] = { name = "Third", profile = "Empty", autoLoad = true, autoSave = true }
-SaneUIDB.profiles.Empty = { Demo = { loud = false } }
-NextSession(SaneUIDB, SaneUICharDB)
-check(SaneUIDB.profiles["Empty (old 2)"] and SaneUIDB.profiles["Empty (old 2)"].Demo.loud == false and SaneUIDB.profiles["Empty (old)"].Demo.loud == true,
-    "a name taken by an earlier move: the profile gets the next free one")
-SaneUIDB.modules.Demo.options.shy = false
-W.Fire("PLAYER_LOGOUT")
-NextSession(SaneUIDB, SaneUICharDB)
-check(SaneUIDB.modules.Demo.options.shy == false, "a line that names Empty keeps the settings changed in the session")
--- A module renamed (Chat is Social now): what was kept under its old name moves to the new one, once.
-SaneUIDB.modules.Chat, SaneUIDB.perCharacter.Chat = { options = { window = false } }, true
-SaneUIDB.profiles.Solo.Chat, SaneUIDB.profiles.Solo.Social = { window = false }, { window = true }
-SaneUICharDB.settings = SaneUICharDB.settings or {}
-SaneUICharDB.settings.Chat = { window = false }
-NextSession(SaneUIDB, SaneUICharDB)
-check(SaneUIDB.modules.Chat == nil and SaneUIDB.modules.Social.options.window == false and SaneUIDB.perCharacter.Social == true
-    and SaneUICharDB.settings.Social.window == false and SaneUIDB.profiles.Solo.Chat == nil and SaneUIDB.profiles.Solo.Social.window == true,
-    "a renamed module's saved settings move to its new name, everywhere; what the new name already has stays")
-SaneUIDB.modules.Social, SaneUIDB.perCharacter.Social, SaneUIDB.profiles.Solo.Social, SaneUICharDB.settings.Social = nil, nil, nil, nil
-SaneUIDB.characters["Player-70-00000003"].profile = nil
--- New Characters with a profile and Load at login: a character never seen takes them at its first login.
-Profiles.SetCharacter(Profiles.NEW, "profile", "Solo")
-Profiles.SetCharacter(Profiles.NEW, "autoLoad", true)
-SaneUIDB.modules.Demo.options.loud = not SaneUIDB.profiles.Solo.Demo.loud
-UnitGUID = function() return "Player-70-00000004" end
+check(Profiles.InUse() == "Raid", "the game's number for the character counts, not a key copied with the file")
+
+-- A character never seen, the game's number not known yet at the load: its profile from the login on
+SaneUIDB.newProfile = "Shared"
+local guid = UnitGUID
+UnitGUID = function() return nil end
 NextSession(SaneUIDB, nil)
+check(Profiles.InUse() == "Accountwide", "before the game names it, it uses Accountwide")
+UnitGUID = function() return "Player-70-00000004" end
+local toldBefore = #toldDemo
+W.Fire("PLAYER_LOGIN")
 local fourth = SaneUIDB.characters["Player-70-00000004"]
-check(fourth and fourth.profile == "Solo" and fourth.autoLoad and not fourth.autoSave and fourth ~= SaneUIDB.newCharacters,
-    "a character never seen gets the line of New Characters as its own")
-check(SaneUIDB.modules.Demo.options.loud == SaneUIDB.profiles.Solo.Demo.loud and SaneUIDB.account.Demo.loud ~= SaneUIDB.profiles.Solo.Demo.loud,
-    "and uses that profile from its very first login, before any module reads its settings")
-Profiles.Delete("Solo")
-check(SaneUIDB.newCharacters.profile == nil and fourth.profile == nil, "a profile deleted is taken off New Characters too")
+check(fourth and fourth.profile == "Shared" and Profiles.InUse() == "Shared" and fourth.name == "Tester Stub",
+    "named at the login, it gets the profile for new characters, and uses it from then on")
+check(#toldDemo > toldBefore, "the modules are told of what changed")
+
+-- Accountwide off: two characters, each with its own settings
+Profiles.SetOn(false)
+Core.Set("Demo", "shy", true)
+local fourthFile = Written(SaneUICharDB)
+UnitGUID = guid
+NextSession(SaneUIDB, {})
+check(not Profiles.On() and Profiles.InUse() == nil and SaneUICharDB.settings.Demo.shy == SaneUIDB.profiles.Raid.Demo.shy
+    and Core.Settings("Demo").loud == false, "another character's own settings start as a copy of its profile's")
+Core.Set("Demo", "loud", true)
+local firstFile = Written(SaneUICharDB)
+UnitGUID = function() return "Player-70-00000004" end
+NextSession(SaneUIDB, fourthFile)
+check(Core.Settings("Demo").shy == true and Core.Settings("Demo").loud == SaneUIDB.profiles.Shared.Demo.loud,
+    "each keeps its own: the fourth has what it set")
+-- On, then off again: own settings from before start anew
+Profiles.SetOn(true)
+check(Profiles.InUse() == "Shared" and Core.Settings("Demo").shy == SaneUIDB.profiles.Shared.Demo.shy, "on again, its profile")
+Profiles.SetOn(false)
+UnitGUID = guid
+NextSession(SaneUIDB, firstFile)
+check(Core.Settings("Demo").loud == SaneUIDB.profiles.Raid.Demo.loud, "own settings from an earlier time off start anew from the profile")
+Profiles.SetOn(true)
+
+-- A module installed later: in the profile it starts at its defaults; off, a copy of the profile's
+SaneUIDB.profiles.Raid.Later = nil
+local later = Core.Options("Later", { { key = "on", default = true, text = "On" } })
+check(later and later.on == true and SaneUIDB.profiles.Raid.Later == later, "a module read later gets its settings in the profile in use")
+
+-- What no description has any more goes; Core's own keys stay
+Core.Settings("Demo").gone, Core.Settings("Demo")._mine = 1, 2
+NextSession(SaneUIDB, SaneUICharDB)
+check(Core.Settings("Demo").gone == nil and Core.Settings("Demo")._mine == 2, "a setting no module describes any more is left out")
+
+-- A module whose settings changed their shape: its upgrade comes before the check of their kinds
+SaneUIDB.profiles.Raid.Shaped = { size = true, colour = "red" } -- the first shape: big or not
+SaneUIDB.profiles.Accountwide.Shaped = { size = "large", _version = 2 }
+local shaped = Core.Options("Shaped", {
+    { key = "size", default = "medium", text = "Size", choices = { { "small", "Small" }, { "medium", "Medium" }, { "large", "Large" } } },
+}, { version = 2, upgrade = function(values, from)
+    if from < 2 then values.size = values.size == true and "large" or "small" end
+end })
+check(shaped.size == "large" and shaped._version == 2 and shaped.colour == nil,
+    "an older copy is brought up to date, not reset: the switch that became a choice keeps its meaning")
+Profiles.Use("Accountwide")
+check(shaped.size == "large" and SaneUIDB.profiles.Raid.Shaped._version == 2, "each copy carries its own version")
+Profiles.Use("Raid")
+
+-- The first shape of these settings (an earlier version of Sane UI) is brought over once
+UnitGUID = guid
+NextSession({
+    modules = { Demo = { options = { loud = false, shy = true }, version = 1 }, Chat = { options = { window = false } } },
+    account = { Demo = { loud = true, shy = true } }, -- kept aside by a logout that did not finish: the account's own
+    profiles = { Raid = { Demo = { loud = false } }, Accountwide = { Demo = { shy = false } }, Unused = { Demo = { shy = false } } },
+    characters = { ["Player-70-0000ABCD"] = { name = "Tester Stub", profile = "Raid", autoLoad = true, autoSave = true },
+        ["Player-70-00000002"] = { name = "Alt", profile = "Unused", autoLoad = false } },
+    newCharacters = { profile = "Raid", autoLoad = true },
+    perCharacter = { Demo = true },
+}, { settings = { Demo = { loud = true } }, profile = "Raid" })
+check(SaneUIDB.version == 2 and SaneUIDB.profiles.Accountwide.Demo.loud == true and SaneUIDB.profiles.Accountwide.Demo.shy == true
+    and SaneUIDB.profiles["Accountwide (old)"].Demo.shy == false, "the account's settings (also those kept aside) are the profile Accountwide; one called so before keeps its under another name")
+check(SaneUIDB.profiles.Accountwide.Social.window == false and SaneUIDB.modules.Chat == nil, "a module renamed since is found under its new name")
+check(SaneUIDB.characters["Player-70-0000ABCD"].profile == "Raid" and SaneUIDB.characters["Player-70-00000002"].profile == nil
+    and SaneUIDB.characters["Player-70-0000ABCD"].autoLoad == nil and SaneUIDB.newProfile == "Raid",
+    "a character that loaded its profile at login keeps it; one that did not uses Accountwide")
+check(Profiles.On() and Profiles.InUse() == "Raid" and SaneUICharDB.settings == nil and SaneUIDB.perCharacter == nil
+    and SaneUIDB.account == nil and SaneUIDB.newCharacters == nil, "all settings were account wide: Accountwide on, nothing of the first shape left")
+check(SaneUIDB.profiles.Accountwide.Demo._version == 1, "a module's own count of its shape is carried by its copies")
+NextSession({ modules = { Demo = { options = { loud = false } } }, separate = true }, { settings = { Demo = { loud = true } } })
+check(not Profiles.On() and Core.Settings("Demo").loud == true and SaneUICharDB.since == 1,
+    "every setting each character's own (All settings accountwide unticked): Accountwide off, each keeps its own")
+Profiles.SetOn(true)
+check(Profiles.InUse() == "Accountwide" and Core.Settings("Demo").loud == false, "switched on, the account's are in use")
+UnitGUID = guid
 
 -- Players' names ----------------------------------------------------------------------
 -- WoW: Forever names a player by a first name and a surname, unique together across the region; players

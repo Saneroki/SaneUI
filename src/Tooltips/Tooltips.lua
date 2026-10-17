@@ -27,23 +27,21 @@ Core.NewModule(ADDON, "Tooltips", ns)
 local Plain = Core.Plain
 local Guarded = ns.Guarded -- runs a step; its error stands the module down (Core)
 
--- Settings saved by an older version, put right before Core.Options checks them against their
--- defaults. 2: the background was 90 percent solid at first; it is 97 now, and 90 is taken for the
--- old default, not for a choice. 3: the mouse switch, on or off, is one of a few now (always, or
--- while a key is held); tooltips were shown only while Shift was held at first, for a day: Always
--- is that default now.
-do
-    local ok, store = pcall(Core.Store, ns.name)
-    local saved = ok and type(store.options) == "table" and store.options
-    if saved and (store.version or 1) < 2 then
+-- Settings saved by an older version, in each copy of them (a profile's, a character's own), brought up
+-- to this shape before Core checks them against their defaults (Core.Options: version, upgrade). 2: the
+-- background was 90 percent solid at first; it is 97 now, and 90 is taken for the old default, not for a
+-- choice. 3: the mouse switch, on or off, is one of a few now (always, or while a key is held); tooltips
+-- were shown only while Shift was held at first, for a day: Always is that default now.
+local VERSION = 3
+local function Upgrade(saved, from)
+    if from < 2 then
         if saved.opacity == 90 then saved.opacity = 97 end
         saved.border = nil -- a setting that is gone
     end
-    if saved and (store.version or 1) < 3 then
-        if type(saved.cursor) == "boolean" then saved.cursor = saved.cursor and "always" or "default" end
+    if from < 3 then
         if saved.show == "shift" then saved.show = "always" end
     end
-    if ok then store.version = 3 end
+    if type(saved.cursor) == "boolean" then saved.cursor = saved.cursor and "always" or "default" end
 end
 
 -- The keys the two options below can wait for
@@ -64,10 +62,10 @@ Core.Options(ns.name, {
       tip = "How large a tooltip's name and lines are written. The smaller texts follow." },
     { key = "opacity", default = 97, min = 30, max = 100, step = 1, text = "Opacity",
       tip = "How solid a tooltip's background is, in percent. Its texts and pictures stay as they are." },
-}, function()
+}, { version = VERSION, upgrade = Upgrade, changed = function()
     -- A switch was flipped: what the panels show is no longer what they would show.
     for _, panel in pairs(ns.Panel.All()) do panel.drawn = false end
-end)
+end })
 
 local adopted = {} -- [tooltip] = true: hooked; false: not one we can draw
 -- The game's tooltips that are also written into by hand (a hint), hooked at login. Those filled
@@ -408,13 +406,8 @@ local function Pin(tooltip)
 end
 
 function ns.OnLoad()
-    local store = Core.Store(ns.name)
-    ns.options = store.options
-    ns.store = store
-    -- The mouse switch of version 2, still on or off in a profile or a character's own settings.
-    for _, copy in ipairs(Core.Profiles and Core.Profiles.Copies(ns.name) or {}) do
-        if type(copy.cursor) == "boolean" then copy.cursor = copy.cursor and "always" or "default" end
-    end
+    ns.options = Core.Settings(ns.name)
+    ns.store = Core.Store(ns.name)
 end
 
 function ns.OnLogin()

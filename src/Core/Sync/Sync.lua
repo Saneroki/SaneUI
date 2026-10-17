@@ -3,21 +3,23 @@ local ADDON = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Core - Sync
 --  The game keeps much of what a player sets for each character alone. Sync
---  keeps it with Sane UI's settings instead, so it goes where they go
---  (Core/Profiles.lua): to every character that uses the account's settings,
---  or stays with a character that has its own, and into every profile.
+--  keeps it with Sane UI's settings instead, in the profile in use
+--  (Core/Profiles.lua): with Accountwide on (at first), every character that
+--  uses a profile has the game's settings of that profile, the same for all of
+--  them with the profile Accountwide. With Accountwide off, Sync does nothing:
+--  the game keeps its settings for each character, as it does without Sane UI.
 --
 --  What it keeps comes in parts, laid out as the game lays out its own options
 --  (Esc > Options): a part per options page of the game, in the game's groups
 --  Gameplay, Accessibility and System, and a few parts for what is on none of
 --  its pages (Edit Mode layout, chat windows, own channels, what it keeps per
---  character). Each part has a checkbox in the tab Accountwide of the page
+--  character). Each part has a checkbox in the tab Game settings of the page
 --  Profiles (Settings/Synced.lua), ticked at first. A ticked part is read from
---  the game whenever Sane UI's settings are saved (Core's capture: a profile
---  saved, the logout) and written back into the game when a character is in
---  the world (a moment after it entered, never in a fight) and when a profile
---  was loaded. Nothing is read before it was written once this session, so a
---  character that leaves at once does not spread its own.
+--  the game whenever Sane UI's settings are saved (Core's capture: a new
+--  profile, another one used, the logout) and written back into the game when a
+--  character is in the world (a moment after it entered, never in a fight) and
+--  when another profile came into use. Nothing is read before it was written
+--  once this session, so a character that leaves at once does not spread its own.
 --
 --  Only the game's stored settings are touched (CVars, its chat window and
 --  action bar settings, C_EditMode, the modifier keys), never its frames. Where
@@ -125,11 +127,16 @@ end
 -------------------------------------------------------------------------------
 --  Reading and writing
 -------------------------------------------------------------------------------
+-- Whether Sync keeps the game's settings at all: only with Accountwide on (Profiles.lua).
+local function On()
+    return Core.Profiles.On()
+end
+
 -- Reads the kept parts into the settings in use; what is not kept, or no part of this version, is
 -- dropped. Core calls it before Sane UI's settings are saved anywhere. Not while a writing waits for
 -- a fight to end: the game still holds the old settings then (a profile just loaded would be lost).
 function Sync.Capture()
-    if not given or waiting then return end
+    if not On() or not given or waiting then return end
     local options, taken = Sync.options, {}
     for _, part in ipairs(Sync.parts) do
         if Sync.PartKept(part.id) then
@@ -155,6 +162,7 @@ end
 
 -- Writes the kept parts of the settings in use into the game; in a fight, once it is over.
 function Sync.Give()
+    if not On() then return end
     if InCombatLockdown() then
         waiting = true
         return
@@ -173,14 +181,16 @@ function Sync.Give()
     Sync.OfferReload(later)
 end
 
--- A profile was loaded, or the character's own settings switched: what they hold goes into the game
--- at once, if the character is in the world already (otherwise that happens anyway).
-function Sync.Changed(key)
-    if key == "taken" and given then Sync.Safe("writing", Sync.Give) end
+local settled -- the character is in the world, and its first writing came due (GiveSoon)
+
+-- The settings in use came from elsewhere (another profile, Accountwide switched on): what they hold
+-- goes into the game at once, if the character is in the world already (otherwise that happens anyway).
+function Sync.Moved()
+    if settled then Sync.Safe("writing", Sync.Give) end
 end
 
--- Kept with the settings like a module's switches (the account's, a character's own, a profile's),
--- none with a control of the game's options:
+-- Kept with the settings like a module's switches, in the profile in use (never a character's own:
+-- the game's settings are kept only with Accountwide on), none with a control of the game's options:
 --      off     [part id] = true: left to the game, which keeps it per character
 --      taken   [part id] = what the part read last
 --      named   [CVar] = its value: single CVars kept by name
@@ -188,19 +198,22 @@ Core.Options(Sync.name, {
     { key = "off", default = {} },
     { key = "taken", default = {} },
     { key = "named", default = {} },
-}, function(key) Sync.Changed(key) end, function() Sync.Capture() end)
+}, { capture = function() Sync.Capture() end, moved = function() Sync.Moved() end, game = true })
 
 -- Core's saved settings are there, and in use where they should come from (Saved.lua and
 -- Profiles.lua listen before this file: they come first in the TOC).
 Core.On("ADDON_LOADED", function(name)
-    if name == ADDON then Sync.options = Core.Store(Sync.name).options end
+    if name == ADDON then Sync.options = Core.Settings(Sync.name) end
 end)
 
 local SETTLE = 2 -- seconds after the character is in the world and the game has its own settings
 
 local entered, late
 local function GiveSoon()
-    C_Timer.After(SETTLE, function() Sync.Safe("writing", Sync.Give) end)
+    C_Timer.After(SETTLE, function()
+        settled = true
+        Sync.Safe("writing", Sync.Give)
+    end)
 end
 
 -- Whether the game has its stored settings: on a slow login they come from the server after the

@@ -225,11 +225,15 @@ local function count(panel) return panel.model.shown.n end
 
 -- The addons: Core, then the module -----------------------------------------------------------
 W.Load(root, "SaneUI", "Core/Core", {})
+W.Load(root, "SaneUI", "Core/Kit", {})
+W.Load(root, "SaneUI", "Core/Serial", {})
 W.Load(root, "SaneUI", "Core/Motion", {})
 W.Load(root, "SaneUI", "Core/Saved", {})
+W.Load(root, "SaneUI", "Core/Profiles", {})
 local Core = SaneUI.Core
+-- Saved by an earlier version (the first shape of the settings): by hand, no choice; the mouse switch of version 2.
+SaneUIDB = { modules = { Tooltips = { options = { show = "never", cursor = true } } } }
 W.Fire("ADDON_LOADED", "SaneUI")
-Core.Store("Tooltips").options = { show = "never", cursor = true } -- saved by hand: no choice; the mouse switch of version 2
 local files = { "Tooltips", "Texts", "Model", "Read", "Live", "Inspect", "Numbers", "Data/Quests", "Quests", "Auction" }
 for _, name in ipairs({ "Kinds/Gold", "Kinds/Item", "Kinds/Spell", "Kinds/Unit", "Kinds/Aura", "Kinds/Quest", "Pools", "Panel", "Host" }) do
     files[#files + 1] = name
@@ -262,7 +266,7 @@ check(Core.described.Tooltips.list[2].choices[1][1] == "default" and Core.descri
     "the mouse option at first: the game's place; one saved as switched on (an older version) is Always now")
 options.cursor = "default"
 options.show = "always" -- shown at once, until the key is tried (below)
-check(Core.Store("Tooltips").version == 3, "the settings say which version of them they are")
+check(options._version == 3, "the settings say which shape of them they are, with each copy")
 check(#postCalls == 0, "nothing is asked of the game before the login")
 local tip = Tooltip("GameTooltip")
 GameTooltip = tip
