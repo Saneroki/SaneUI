@@ -37,6 +37,8 @@ Views.lua
 Selection.lua
 Expand.lua
 Bar.lua
+# The words of Sane UI's keys in the game's key bindings (what they do: Bindings.xml, read by the game itself)
+Bindings.lua
 # /sane window: a window to try them with
 Demo.lua
 # The data framework: Sane UI's own databases, loaded on demand from the data packs (SaneUI_Data_*), and the

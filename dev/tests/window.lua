@@ -1530,6 +1530,23 @@ do
     check(next(Core.errors) == nil, "nothing went wrong on the way")
 end
 
+-- Sane UI's keys -----------------------------------------------------------------------------------
+do
+    local file = assert(io.open(root .. "/src/Core/Bindings.xml", "r"))
+    local xml = file:read("*a")
+    file:close()
+    local keys = 0
+    for name, category, body in xml:gmatch('<Binding name="([%w_]+)" category="([%w_]+)">(.-)</Binding>') do
+        keys = keys + 1
+        check(category == "BINDING_HEADER_SANEUI" and type(_G[category]) == "string" and type(_G["BINDING_NAME_" .. name]) == "string",
+            "a key of Sane UI's is in its section of the game's key bindings, named in the game's way: " .. name)
+        W.options.opened = nil
+        assert(loadstring(body))()
+        check(W.options.opened ~= nil, "and what it runs does what it says: " .. name)
+    end
+    check(keys == 1 and BINDING_HEADER_SANEUI == "Sane UI", "Core has one key: the options")
+end
+
 -- A plate of one radius that follows its frame (a chat's bubble), and a round icon ----------------
 do
     local bubble = CreateFrame("Frame", nil, UIParent)

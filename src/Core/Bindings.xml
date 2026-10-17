@@ -1,0 +1,7 @@
+<Bindings>
+	<!-- Sane UI's keys, in the game's key bindings under Sane UI (BINDING_HEADER_SANEUI, Bindings.lua);
+	     the game reads this file from the addon's folder by itself. -->
+	<Binding name="SANEUI_OPTIONS" category="BINDING_HEADER_SANEUI">
+		SaneUI.Core.Safe("options", SaneUI.Core.Config.Open)
+	</Binding>
+</Bindings>
