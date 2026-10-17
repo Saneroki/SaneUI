@@ -32,7 +32,7 @@ at most the commit it was on, and the next session goes on from there.
 - [x] **1a.1 The guide.** `Doc/guides/data.md` holds the contracts (Data.md, *Contracts*) and how to add a
   set. `AGENTS.md` and `CLAUDE.md` name it where they list the guides (both are local files, in
   `.gitignore`, edited, never committed; a cloud session hands Saneroki edited copies).
-- [ ] **1a.2 The master and its check.**
+- [x] **1a.2 The master and its check.**
   - Files: `assets/data/builds.toml`, `sources.toml` and `CVarLabels/schema.toml` (decision 3); `dev/data/`
     (Python: schema, check) and `dev/tools/data check`.
   - *CVarLabels* is the first master. `dev/tools/cvar-labels` gains a mode that writes staging; its Lua

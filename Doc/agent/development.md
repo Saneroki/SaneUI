@@ -17,7 +17,8 @@
 | `dev/tools/voicedb build\|stats\|show\|request\|batch\|names\|check` | The voice database: every game text that gets a voice, its speaker, preset and direction, in `dev/voices/build/` (see `Doc/guides/voice-generation.md`) |
 | `dev/tools/voicegen key\|account\|design\|pick\|names\|say\|sound\|ogg` | Send the voice database's lines, the cast's designs and the names to the cloud voice service; master WAVs and game Ogg files in `dev/voices/sound/`, every file made in `dev/voices/made.jsonl`; short UI sounds as candidates in `assets/generated/sounds/`. Key and service config in `~/.config/saneui/voice-service.json`, never in the repository (stdlib and ffmpeg; see `Doc/guides/voice-generation.md`) |
 | `dev/tools/project-index [--check]` | Regenerate navigation hashes/index, or report stale files |
-| `dev/tools/cvar-labels [--check]` | Regenerate `src/Core/Settings/Data/CVarLabels.lua` (CVar → game string names) from `references/` options code |
+| `dev/tools/cvar-labels [--check]` | Regenerate `src/Core/Settings/Data/CVarLabels.lua` (CVar → game string names) from `references/` options code; `--staging [file] [--build N]` writes the same as staging for the data set *CVarLabels* (`dev/data/staging/cvar-labels.jsonl`) |
+| `dev/tools/data check\|import` | Core's data framework (`Doc/guides/data.md`): check the master in `assets/data/` (run by `dev/tests/run`); `import <staging> [--apply]` takes staging in, the report first; `--master <folder>` for another master (tests); Python in `dev/data/` |
 | `dev/tools/sync-pages [--check]` | Regenerate `src/Core/Sync/Data/Pages.lua` (what each of the game's options pages sets) from `references/` options code |
 
 Required build tools: Bash, Python 3, `lua5.1`, `luac5.1`, `rsync`. No dependencies need downloading

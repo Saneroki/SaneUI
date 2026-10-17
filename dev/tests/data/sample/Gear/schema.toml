@@ -1,0 +1,23 @@
+set = "Gear"
+key = "int"
+pack = "Gear"
+learn = true
+about = "Made-up things, one field of every type."
+
+[fields]
+name = { type = "text" }
+quality = { type = "int", min = 0, max = 7 }
+slot = { type = "enum", values = ["head", "hands", "feet"] }
+stats = { type = "map", keys = "text", of = "int" }
+weight = { type = "number", min = 0 }
+sell = { type = "money" }
+flags = { type = "flags" }
+rare = { type = "bool" }
+from = { type = "list", of = "ref", set = "Folk" }
+spots = { type = "list", of = "point" }
+tasks = { type = "list", of = "tuple", parts = [ { name = "kind", type = "enum", values = ["kill", "loot"] }, { name = "what", type = "int" }, { name = "count", type = "int" }, { name = "text", type = "text" } ] }
+parts = { type = "map", keys = "int", of = "int" }
+
+[index]
+bySlot = "slot"
+byFrom = "from"

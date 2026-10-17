@@ -1,0 +1,12 @@
+# The game's builds, per game version: the patch each build is, and (where known) the first day it was
+# seen. A version's `since` names one of its own game version's builds here, or 0. Builds are compared only
+# within one game version. A table per game version, also an empty one: these are the game versions the
+# tools know (Doc/guides/data.md, *builds.toml*).
+[forever]
+70245 = { patch = "1.60.1" }
+
+[forever-ptr]
+
+[forever-beta]
+70425 = { patch = "1.60.1" }
+70450 = { patch = "1.60.1" }

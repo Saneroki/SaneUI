@@ -1,0 +1,4 @@
+{"key":"alpha","since":0,"src":["hand"],"label":"ALPHA_TEXT","tip":"ALPHA_TIP"}
+{"key":"beta","since":0,"src":["hand"],"label":"BETA_TEXT"}
+{"key":"end","since":0,"src":["hand"],"label":"END_TEXT"}
+{"key":"with space","since":0,"src":["hand"],"label":"SPACED"}

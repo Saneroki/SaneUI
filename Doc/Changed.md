@@ -7,6 +7,17 @@ The Home page, the marks, Settings on demand, the Tooltips module and the Social
 Tests: lint, 195 checks (Core, with its options), 280 checks (Spellbook), 328 checks (Tooltips), 332 checks (Social), 62 checks (Sync), 234 checks (windows).
 
 ### Core's data framework
+- **1a.2 The master and its check.** `assets/data/` with `builds.toml` (Forever live 70245, the beta 70425
+  and 70450, an empty PTR), `sources.toml` (`game`, `hand`), `packs.toml` (*Game*) and the first set,
+  *CVarLabels* (225 CVars, from the game's options code in `references/`; the old Lua file stays as it is).
+  `dev/data/` (Python, no package needed): `schema.py` (types and values), `master.py` (reading, versions
+  worked out whole, another game version over live's newest, writing), `check.py` (the rules across lines),
+  `importer.py` (staging: new entries and agreeing ones, the rest from 1a.6). `dev/tools/data check` and
+  `import`; `dev/tools/cvar-labels --staging`. `dev/data/staging/` is not committed. `dev/tests/run` runs the
+  check and `dev/tests/data/tools.py` (106 checks: every rule broken once on a sample master, the import's
+  cases within their game versions, CVarLabels up to date with `references/`).
+  - Found: the committed `CVarLabels.lua` (239 CVars) is not what `dev/tools/cvar-labels` makes from the
+    committed `references/` (225; `--check` fails): it was made from other options code. Left as it is.
 - **1a.1 The guide** `Doc/guides/data.md`, the reference from now on: the master in `assets/data/`
   (`builds.toml`, `sources.toml`, `packs.toml`, a schema per set with its types, a line of the master, fixes,
   another game version's files), staging and every case of the import, the check, a pack's TOC and set file,

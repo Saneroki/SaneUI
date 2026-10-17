@@ -1,0 +1,10 @@
+# Every source a line of the master may name in its `src` (Doc/guides/data.md, *sources.toml*).
+# A batch of staging gets a number, the game version its lines go to (`game`), where it was seen if that
+# differs (`seen`), and the build it was read at (`build`, optional).
+[game]
+kind = "game"
+about = "The game itself: its code and tables in references/, its API, our crawls, scans and learned data."
+
+[hand]
+kind = "hand"
+about = "Written by people: hand-made sets and the fixes."

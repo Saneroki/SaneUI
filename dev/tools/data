@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""The tool of Core's data framework: the master in assets/data, staging, the packs (Doc/guides/data.md).
+
+Usage:  dev/tools/data check                              check the master (dev/tests/run runs it)
+        dev/tools/data import <staging> [--apply] [--take]  staging into the master: the report, then --apply
+        --master <folder>                                   another master than assets/data (tests)
+"""
+import argparse
+import sys
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "data"))
+
+import check as checks  # noqa: E402
+import importer  # noqa: E402
+import master as masters  # noqa: E402
+
+
+def load(folder):
+    master = masters.Master(Path(folder) if folder else masters.MASTER).load()
+    checks.check(master)
+    return master
+
+
+def say_problems(master):
+    for text in master.warnings:
+        print(f"warning: {text}", file=sys.stderr)
+    for text in master.errors:
+        print(text, file=sys.stderr)
+
+
+def run_check(args):
+    master = load(args.master)
+    say_problems(master)
+    if master.errors:
+        print(f"Data: {len(master.errors)} problems in the master.", file=sys.stderr)
+        return 1
+    lines = sum(len(lines) for lines in master.lines.values())
+    print(f"Data: {len(master.schemas)} sets, {lines} lines, {len(master.games)} game versions, all fit"
+          + (f" ({len(master.warnings)} warnings)." if master.warnings else "."))
+    return 0
+
+
+def run_import(args):
+    master = load(args.master)
+    if master.errors:
+        say_problems(master)
+        print("Data: the master has problems; mend them before an import.", file=sys.stderr)
+        return 1
+    report = importer.run(master, importer.read_staging(Path(args.file)), take=args.take)
+    for line in report.lines():
+        print(line)
+    if not report.counts:
+        print("Nothing staged.")
+    if args.apply:
+        importer.apply(master, report)
+        after = load(args.master)
+        say_problems(after)
+        if after.errors:
+            print("Data: the master has problems after the import.", file=sys.stderr)
+            return 1
+        print(f"Applied: {len(report.changed)} set files written." if report.changed else "Applied: nothing to write.")
+    elif report.changed:
+        print("Nothing written: --apply takes it in.")
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="dev/tools/data", description=__doc__.split("\n")[0])
+    parser.add_argument("--master", help="the master's folder (assets/data)")
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("check", help="check the master")
+    taking = commands.add_parser("import", help="staging into the master")
+    taking.add_argument("file")
+    taking.add_argument("--apply", action="store_true", help="write the master")
+    taking.add_argument("--take", action="store_true", help="apply conflicts as corrections (step 1a.6)")
+    args = parser.parse_args()
+    return {"check": run_check, "import": run_import}[args.command](args)
+
+
+sys.exit(main())

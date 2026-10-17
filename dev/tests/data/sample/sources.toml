@@ -1,0 +1,24 @@
+[game]
+kind = "game"
+about = "The game."
+
+[hand]
+kind = "hand"
+about = "People."
+
+[1]
+kind = "batch"
+game = "forever"
+about = "A made-up batch for live."
+
+[2]
+kind = "batch"
+game = "forever-beta"
+build = 66000
+about = "A made-up batch for the beta."
+
+[3]
+kind = "batch"
+game = "forever"
+seen = "forever-beta"
+about = "A made-up batch seen on the beta, live's base."

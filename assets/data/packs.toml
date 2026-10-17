@@ -1,0 +1,5 @@
+# Every pack: a load-on-demand addon, SaneUI_Data_<name>, its title and notes in the game's addon list
+# (Doc/guides/data.md, *packs.toml*).
+[Game]
+title = "Data: Game"
+notes = "Sane UI's data from the game's own code: the names of the strings that label the options' settings. Loaded only when Sane UI needs it."
