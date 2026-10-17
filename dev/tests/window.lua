@@ -804,7 +804,7 @@ check(described[6].min == 0 and described[6].max == 100 and described[6].unit ==
     and described[6].text == "Corner radius" and described[7].default == true and described[7].text == "Don't round corners on screen edges",
     "the corner radius is a share, a tenth at first; the corners on the screen's edges are square at first")
 check(described[3].choices[1][1] == Core.Motion.GLOBAL and described[4].min == 0 and described[4].max == 100 and described[4].unit == "%"
-    and described[4].default == 50 and described[5].default == "solid" and #described[5].choices == #Edge.TEXTURES,
+    and described[4].default == 50 and described[5].default == "solid" and #described[5].choices == #Core.Skin.TILES + 1 and described[5].choices[1][2] == Edge.SOLID,
     "the animation type may be the general one, the opacity is a share, half by default, the texture solid black or one of Blizzard's")
 
 local tall = CreateFrame("Frame", nil, UIParent)
@@ -819,7 +819,7 @@ W.Wait(1)
 at(tall, 0, 880)
 tallEdge.strips.corner:GetScript("OnEnter")(tallEdge.strips.corner)
 local tallMiddle = tallEdge.back.fills[3]
-check(tallEdge.full and tall._width == 1920 and tallMiddle._alpha == 1 and tallMiddle._texture == Edge.TEXTURES[3].file
+check(tallEdge.full and tall._width == 1920 and tallMiddle._alpha == 1 and tallMiddle._texture == Core.Skin.Tile("rock").file
     and tallMiddle._wrap == "REPEAT" and near(tallMiddle._coords[2], 1920 / 512) and near(tallMiddle._coords[4], 1080 / 512),
     "with settings of its own it moves as they say (Off: at once), its background as opaque as set, a tile of Blizzard's, repeated at its size")
 tallSettings.expandOpacity, tallSettings.expandTexture = 25, "solid"
@@ -867,6 +867,11 @@ skinnedEdge.strips.corner:GetScript("OnEnter")(skinnedEdge.strips.corner)
 skinned._group:Run(0.1)
 check(skinnedSkin._alpha < 1 and skinnedSkin._alpha > 0 and near(skinnedSkin._alpha, 1 - skinnedEdge.cover) and round(skinnedSkin.shape, 0, 13, 0, 0),
     "on its way its skin fades as the background comes, and follows its size")
+local stepWidth, kept = skinnedSkin.shape.width, skinned._width
+skinned._width = 999
+skinnedSkin:GetScript("OnSizeChanged")(skinnedSkin)
+check(skinnedSkin.shape.width == stepWidth, "fitted once per step (by the motion): its own size change fits nothing then")
+skinned._width = kept
 skinned._group:Run(1)
 check(skinnedSkin._alpha == 0 and skinnedEdge.cover == 1, "full, only the background is there")
 skinnedWindow:Place()
@@ -1320,6 +1325,13 @@ check(near(bar.coming._value, 0.9), "what is still to come is at its new place a
 rise:Run(0.2)
 check(bar.filled._value > 0.5 and bar.filled._value < 0.8 and counted[#counted] > 500 and counted[#counted] < 800
     and near(bar.flare._points[1][4], 200 * bar.shown + 1), "on its way the fill rises, the number counts along, the flare at its end")
+do
+    local laid, divider = 0, bar.dividers[1]
+    divider.SetPoint = function(self, ...) laid = laid + 1; return methods.SetPoint(self, ...) end
+    rise:Run(0.3)
+    check(laid == 0 and bar.pip._points[1][4] == 180, "on every step only the fill and its flare move: the dividers and the pip stay as they are")
+    divider.SetPoint = nil
+end
 rise:Run(1)
 check(bar.filled._value == 0.8 and not bar.flare:IsShown() and counted[#counted] == 800, "and settles at its value")
 bar:SetValue(850, 1000)
@@ -1389,6 +1401,29 @@ check(not demo:IsShown(), "typed again it hides it")
 SlashCmdList.SANEUI("window reset")
 check(demo:IsShown() and SaneUIDB.modules.Core.demo == nil, "and reset shows it at its first place")
 check(next(Core.errors) == nil, "nothing went wrong on the way")
+
+-- A plate of one radius that follows its frame (a chat's bubble), and a round icon ----------------
+do
+    local bubble = CreateFrame("Frame", nil, UIParent)
+    local plate = Shape.New(bubble, { radius = 8 })
+    plate:Look({ top = { 0.2, 0.2, 0.25 }, alpha = 0.5 })
+    plate:Follow()
+    check(#plate.fills == 9 and #plate.trims == 0 and #plate.holes == 0, "a plate without a trim has no trim made, nor its holes")
+    bubble._width, bubble._height = 100, 40
+    bubble:GetScript("OnSizeChanged")(bubble, 100, 40)
+    check(round(plate, 8, 8, 8, 8) and plate.fills[3]._vertex[4] == 0.5 and near(plate.fills[3]._vertex[3], 0.25),
+        "its size changed, it lays itself out: every corner that round wherever it is, the fill as solid as asked")
+    bubble._width, bubble._height = 12, 10
+    bubble:GetScript("OnSizeChanged")(bubble, 12, 10)
+    check(round(plate, 5, 5, 5, 5), "no rounder than half its shorter side")
+    plate:Look({ file = Core.Skin.Tile("marble").file, size = 256, alpha = 0.25 })
+    check(plate.fills[3]._texture == Core.Skin.Tile("marble").file and plate.fills[3]._vertex[4] == 0.25, "or one of the game's tiles, as solid")
+    local icon = bubble:CreateTexture()
+    local mask = Shape.Round(icon)
+    check(mask._texture == Shape.CIRCLE and icon._masks[#icon._masks] == mask and mask._points[1][2] == icon,
+        "a round icon: the same circle as a mask over the whole of it")
+    bubble:Hide()
+end
 
 -- A plate round everywhere, flattened -------------------------------------------------------------
 local loose = CreateFrame("Frame", nil, UIParent)

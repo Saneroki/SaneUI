@@ -77,21 +77,8 @@ Edge.CLASSIC = "Classic windows" -- the dropdown's words
 Edge.MENU_WIDTH, Edge.MENU_INSET = 180, 10 -- its width; from the full window's top right corner, or its buttons
 
 -- The backgrounds to choose from: solid black, or one of the quiet tiles Blizzard fills its windows
--- with, repeated every size units as the chat's bubbles repeat them, and named as they name them.
--- Ours to come.
-Edge.TEXTURES = {
-    { key = "solid", text = "Solid black" },
-    { key = "marble", text = "Marble", file = "Interface\\FrameGeneral\\UI-Background-Marble", size = 256 },
-    { key = "rock", text = "Rock", file = "Interface\\FrameGeneral\\UI-Background-Rock", size = 512 },
-    { key = "slate", text = "Slate", file = "Interface\\Collections\\CollectionsBackgroundTile", size = 256 },
-    { key = "iron", text = "Iron", file = "Interface\\BlackMarket\\BlackMarketBackground-Tile", size = 256 },
-    { key = "night", text = "Night", file = "Interface\\FrameGeneral\\UIFrameOribosBackground", size = 256 },
-}
-local textures, textureChoices = {}, {}
-for index, texture in ipairs(Edge.TEXTURES) do
-    textures[texture.key] = texture
-    textureChoices[index] = { texture.key, texture.text }
-end
+-- with (Skin.TILES), repeated every size units.
+Edge.SOLID = "Solid black"
 local BLACK = { 0, 0, 0 }
 
 -- The section's switches, as a window without settings of its own has them (edge = true).
@@ -112,7 +99,7 @@ function Edge.Options(list, at, tab)
           tip = "Glide is quick and settles softly, Swing goes a little past and comes back, Even starts and ends gently, Instant does not move at all. Use global type: as set under Sane UI > Appearance." },
         { key = "expandOpacity", default = Edge.DEFAULTS.expandOpacity, min = 0, max = 100, step = 5, unit = "%", text = "Background opacity", parent = "expand",
           tip = "How much the background hides the game while the window fills the screen: 0 shows all of it, 100 hides it." },
-        { key = "expandTexture", default = Edge.DEFAULTS.expandTexture, text = "Background texture", parent = "expand", choices = textureChoices,
+        { key = "expandTexture", default = Edge.DEFAULTS.expandTexture, text = "Background texture", parent = "expand", choices = Core.Skin.Choices(Edge.SOLID),
           tip = "What the full window stands on: solid black, or one of the game's own backgrounds." },
     }
     for index, option in ipairs(section) do
@@ -166,8 +153,8 @@ end
 
 -- The background as set: one of Blizzard's tiles, or solid black; the trim in Sane UI's bronze.
 local function Paint(edge)
-    local texture = textures[edge.settings.expandTexture] or textures.solid
-    edge.back:Look({ file = texture.file, size = texture.size, top = BLACK, bottom = BLACK, trim = Core.GOLD })
+    local tile = Core.Skin.Tile(edge.settings.expandTexture)
+    edge.back:Look({ file = tile and tile.file, size = tile and tile.size, top = BLACK, bottom = BLACK, trim = Core.GOLD })
 end
 
 -- How opaque the background is once the window fills the screen.
@@ -367,6 +354,7 @@ function methods:Fill(on)
             window.grip:SetAlpha(0)
             window.grip:EnableMouse(false)
         end
+        if window.skin then window.skin:Hold(true) end -- fitted on every step (Cover), once
     end
     self.full = on
     Escape(self, on)
@@ -422,7 +410,10 @@ function methods:Stop()
     end
     frame:EnableMouseWheel(self.wheel or false)
     self.back:SetShown(false)
-    if window.skin then window.skin:SetAlpha(1) end
+    if window.skin then
+        window.skin:Hold(false)
+        window.skin:SetAlpha(1)
+    end
     frame:SetClampedToScreen(true)
     frame:SetSize(self.width, self.height)
     if window.grip then

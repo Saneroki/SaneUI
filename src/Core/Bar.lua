@@ -70,7 +70,26 @@ local function Fill(frame, atlas, above)
     return status
 end
 
--- The pieces that follow the length and the height: the dividers, the pip, the flare.
+-- The pip, at the end of what is still to come: there when a value is set, and with a new size.
+local function Pip(bar)
+    local width, height = bar.frame:GetWidth(), bar.frame:GetHeight()
+    local reach = math.min(bar.to + bar.ahead, 1)
+    bar.pip:SetSize(math.max(height * PIP_WIDE, 1), height)
+    bar.pip:ClearAllPoints()
+    bar.pip:SetPoint("CENTER", bar.frame, "LEFT", width * reach, 0)
+    bar.pip:SetShown(bar.ahead > 0 and reach >= PIP_EDGE and reach <= 1 - PIP_EDGE)
+end
+
+-- The flare, at the fill's end: the one piece that moves on every step of a rise.
+local function Flare(bar)
+    if not bar.flare then return end
+    local width, height = bar.frame:GetWidth(), bar.frame:GetHeight()
+    bar.flare:SetSize(height * FLIPBOOK.wide, height)
+    bar.flare:ClearAllPoints()
+    bar.flare:SetPoint("RIGHT", bar.frame, "LEFT", width * bar.shown + 1, 0)
+end
+
+-- Every piece that follows the length and the height: the dividers, the pip, the flare (a new size).
 local function Layout(bar)
     local width, height = bar.frame:GetWidth(), bar.frame:GetHeight()
     local count = #bar.dividers + 1
@@ -79,16 +98,8 @@ local function Layout(bar)
         divider:ClearAllPoints()
         divider:SetPoint("CENTER", bar.frame, "LEFT", math.floor(width * index / count + 0.5), 0)
     end
-    local reach = math.min(bar.to + bar.ahead, 1)
-    bar.pip:SetSize(math.max(height * PIP_WIDE, 1), height)
-    bar.pip:ClearAllPoints()
-    bar.pip:SetPoint("CENTER", bar.frame, "LEFT", width * reach, 0)
-    bar.pip:SetShown(bar.ahead > 0 and reach >= PIP_EDGE and reach <= 1 - PIP_EDGE)
-    if bar.flare then
-        bar.flare:SetSize(height * FLIPBOOK.wide, height)
-        bar.flare:ClearAllPoints()
-        bar.flare:SetPoint("RIGHT", bar.frame, "LEFT", width * bar.shown + 1, 0)
-    end
+    Pip(bar)
+    Flare(bar)
 end
 
 local function Kind(bar)
@@ -102,7 +113,7 @@ local function Tell(bar, value)
 end
 
 -- The game's flare at the fill's end, running for that many seconds; or put away (none).
-local function Flare(bar, seconds)
+local function Flaring(bar, seconds)
     if not bar.flare then return end
     bar.flaring:Stop()
     bar.flare:SetShown(seconds ~= nil)
@@ -115,18 +126,18 @@ end
 local function Settle(bar)
     bar.shown = bar.to
     bar.filled:SetValue(bar.to)
-    Flare(bar, nil)
-    Layout(bar)
+    Flaring(bar, nil)
+    Flare(bar)
     Tell(bar, bar.value)
 end
 
--- One step of a rise, that share of its time.
+-- One step of a rise, that share of its time: the fill and its flare.
 local function Rise(bar, progress)
     if progress >= 1 then return Settle(bar) end
     local share = Core.Motion.Ease(Bar.CURVE, progress)
     bar.shown = bar.from + (bar.to - bar.from) * share
     bar.filled:SetValue(bar.shown)
-    Layout(bar)
+    Flare(bar)
     Tell(bar, bar.started + (bar.value - bar.started) * share)
 end
 
@@ -140,11 +151,11 @@ function methods:SetValue(value, most, ahead)
     self.value, self.most, self.to = value, most, share
     self.coming:SetValue(math.min(share + self.ahead, 1))
     self.rising:Stop()
-    Layout(self) -- what is still to come and its pip are at their new place at once
+    Pip(self) -- what is still to come and its pip are at their new place at once
     if not gain or Kind(self).time <= 0 then return Settle(self) end
     self.from, self.started = self.shown, started
     local seconds = Bar.RISE + (Bar.RISE_WHOLE - Bar.RISE) * (share - self.shown)
-    Flare(self, seconds)
+    Flaring(self, seconds)
     self.rising:Run(seconds)
 end
 
