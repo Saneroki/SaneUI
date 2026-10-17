@@ -1019,12 +1019,30 @@ check(not line("Show all spell ranks"), "a mage has the game's own 'Show all spe
 check(line("Show reservations on the action bars").checked() and line("Say in chat when a reserved button is filled"), "the two older options moved here")
 local layouts = line("Action bar layouts")
 check(layouts.sub[1].text == "Save the current layout as..." and layouts.sub[2].text == "Raid" and layouts.sub[2].sub[1].text == "Load", "and so did the saved layouts")
+check(StaticPopupDialogs.SANEUI_SPELLBOOK_SAVE == nil and StaticPopupDialogs.SANEUI_SPELLBOOK_LOAD == nil,
+    "no dialog of the module's own is put into the game's list")
 layouts.sub[1].fn()
-check(W.popups[#W.popups].which == "SANEUI_SPELLBOOK_SAVE", "saving asks for a name")
+local asked = W.popups[#W.popups]
+check(asked.which == "GENERIC_INPUT_BOX" and asked.data.acceptText == "Save" and asked.data.maxLetters == 32, "saving asks for a name, in the game's own dialog")
+W.printed = {}
+asked.data.callback("  Raid 2 ")
+check(ns.DB.presets.MAGE["Raid 2"] and printedMatch('Layout "Raid 2" saved'), "and saves the bars under that name")
+layouts.sub[2].sub[1].fn()
+asked = W.popups[#W.popups]
+check(asked.which == "GENERIC_CONFIRMATION" and asked.data.text_arg1 == "Raid" and asked.data.text:find("replaces the buttons"), "loading asks first")
+asked.data.callback()
+check(printedMatch('Layout "Raid" loaded'), "and loads the layout once confirmed")
+ns.Presets.Delete("Raid 2")
 layouts.sub[2].sub[3].fn()
-check(#ns.Presets.List() == 1 and W.popups[#W.popups].which == "GENERIC_CONFIRMATION", "Delete asks first")
+check(#ns.Presets.List() == 1 and W.popups[#W.popups].which == "GENERIC_CONFIRMATION" and W.popups[#W.popups].data.showAlert, "Delete asks first, with the warning sign")
 W.popups[#W.popups].data.callback()
 check(#ns.Presets.List() == 0, "and deletes the layout once confirmed")
+local show = StaticPopup_Show
+StaticPopup_Show = function() return nil end
+W.printed = {}
+ns.Presets.AskDelete("Raid")
+StaticPopup_Show = show
+check(printedMatch("type /sane ab delete Raid"), "without the game's dialog the command to type is said")
 check(lines[1].title == "Sane UI", "under the addon's name")
 
 -- Sane UI, its own pages Profiles, General and Appearance, then the module's

@@ -48,36 +48,16 @@ local function PagesOurs()
     return ns.Book.Armed()
 end
 
--- Deleting asks first, through the game's own dialog, as Core's profiles do: a saved layout is
--- the only copy of every bar of the class. Without the dialog nothing is deleted from here.
-local function AskDelete(name)
-    if not (StaticPopupDialogs and StaticPopupDialogs.GENERIC_CONFIRMATION) then
-        ns.Print(("the game's dialog for this is missing: type /sane ab delete %s to delete the layout."):format(name))
-        return
-    end
-    StaticPopup_Show("GENERIC_CONFIRMATION", nil, nil, {
-        text = "Delete the layout \"%s\"?", text_arg1 = name, showAlert = true,
-        callback = function()
-            ns.Presets.Delete(name)
-            ns.Print(("layout \"%s\" deleted."):format(name))
-        end,
-    })
-end
-
 local function Layouts(root)
     local menu = root:CreateButton("Action bar layouts")
-    menu:CreateButton("Save the current layout as...", function()
-        StaticPopup_Show("SANEUI_SPELLBOOK_SAVE")
-    end)
+    menu:CreateButton("Save the current layout as...", ns.Presets.AskSave)
     for _, name in ipairs(ns.Presets.List()) do
         local layout = menu:CreateButton(name)
-        layout:CreateButton("Load", function()
-            StaticPopup_Show("SANEUI_SPELLBOOK_LOAD", name, nil, name)
-        end)
+        layout:CreateButton("Load", function() ns.Presets.AskLoad(name) end)
         layout:CreateButton("Save the current layout over it", function()
             ns.Print((select(2, ns.Presets.Save(name))))
         end)
-        layout:CreateButton("Delete", function() AskDelete(name) end)
+        layout:CreateButton("Delete", function() ns.Presets.AskDelete(name) end)
     end
 end
 
