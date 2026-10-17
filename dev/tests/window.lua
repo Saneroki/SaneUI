@@ -815,8 +815,9 @@ Edge.Options(described, 2, "Appearance")
 check(#described == 8 and described[1].key == "first" and described[2].key == "expand" and described[2].header == "Expand window"
     and described[3].key == "motion" and described[4].key == "expandOpacity" and described[5].key == "expandTexture"
     and described[6].key == "corners" and described[7].key == "squareEdges" and described[8].key == "last"
-    and described[7].tab == "Appearance" and described[3].parent == "expand" and described[7].parent == "expand",
-    "a module puts the section Expand window where it wants it: whether it fills the screen, how it moves, its background, its corners")
+    and described[7].tab == "Appearance" and described[3].parent == "expand" and described[7].parent == nil
+    and described[6].header == "Window corners",
+    "a module puts the section Expand window where it wants it: whether it fills the screen, how it moves, its background; then its corners, a section of their own")
 check(described[6].min == 0 and described[6].max == 100 and described[6].unit == "%" and described[6].default == 10
     and described[6].text == "Corner radius" and described[7].default == true and described[7].text == "Don't round corners on screen edges",
     "the corner radius is a share, a tenth at first; the corners on the screen's edges are square at first")

@@ -75,7 +75,8 @@ Edge.QUIET = 0.25    -- seconds after the window was placed in which the mouse's
 Edge.OUT = 0.15      -- seconds what the window holds takes to fade out when the motion begins
 Edge.IN = 0.4        -- and to come in once the window stands, from so far above
 Edge.DROP = 10
-Edge.CLASSIC = "Classic windows" -- the dropdown's words
+Edge.CLASSIC = "Classic windows"
+Edge.CORNERS = "Window corners" -- the section of the corners' switches (Edge.Options) -- the dropdown's words
 Edge.MENU_WIDTH, Edge.MENU_INSET = 180, 10 -- its width; from the full window's top right corner, or its buttons
 
 -- The backgrounds to choose from: solid black, or one of the quiet tiles Blizzard fills its windows
@@ -118,7 +119,8 @@ function Edge.Options(list, at, tab, under)
         end
         table.insert(list, at + index - 1, option)
     end
-    Core.Shape.Options(list, at + #section, tab, "expand")
+    -- The corners shape the window at its place too: a section of their own, not under the full screen.
+    Core.Shape.Options(list, at + #section, tab, nil, Edge.CORNERS)
     sections[list] = true
 end
 

@@ -47,18 +47,19 @@ end
 -- The keys the two options below can wait for
 local KEYS = { { "shift", "While Shift is held" }, { "ctrl", "While Ctrl is held" }, { "alt", "While Alt is held" } }
 Core.Options(ns.name, {
-    { key = "show", default = "always", text = "Show tooltips",
+    { key = "show", default = "always", text = "Show tooltips", header = "When and where",
+      headerTip = "When tooltips show, and where they stand.",
       choices = { { "always", "Always" }, KEYS[1], KEYS[2], KEYS[3], { "shiftalt", "While Shift and Alt are held" } },
       tip = "Always: tooltips show at once, as the game's do. Or they stay hidden until you hold a key down, and hide again when you let go." },
     { key = "cursor", default = "default", text = "Tooltips at the mouse cursor",
       choices = { { "default", "Default: where the game puts them" }, KEYS[1], KEYS[2], KEYS[3], { "always", "Always" } },
       tip = "The tooltips that stand in the corner of the screen (of creatures, players and things in the world, and of your action bars) follow the mouse instead: always, or while a key is held. Pressing or letting go of the key moves a shown tooltip at once." },
-    { key = "classColors", default = true, text = "Colour players by their class",
+    { key = "classColors", header = "What they show", headerTip = "What a tooltip shows besides the game's own lines.", default = true, text = "Colour players by their class",
       tip = "Switched off, a player's tooltip takes the colour the game gives the name." },
     { key = "icons", default = true, text = "Show the icon of items and spells" },
     { key = "models", default = true, text = "Live 3D portraits",
       tip = "A creature's or player's portrait is the game's 3D model of it, moving. Switched off, or where the game cannot draw the model, it is the flat picture." },
-    { key = "textSize", default = 14, min = 10, max = 20, step = 1, text = "Text size",
+    { key = "textSize", header = "Look", headerTip = "How large and how solid tooltips are.", default = 14, min = 10, max = 20, step = 1, text = "Text size",
       tip = "How large a tooltip's name and lines are written. The smaller texts follow." },
     { key = "opacity", default = 97, min = 30, max = 100, step = 1, text = "Opacity",
       tip = "How solid a tooltip's background is, in percent. Its texts and pictures stay as they are." },

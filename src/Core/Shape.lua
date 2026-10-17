@@ -70,10 +70,11 @@ Shape.DEFAULTS = { corners = 10, squareEdges = true }
 Shape.KEYS = { corners = true, squareEdges = true }
 
 -- Puts the two switches into a module's (Core.Options) at that place of its list, in that tab, under
--- that parent switch (or none).
-function Shape.Options(list, at, tab, parent)
+-- that parent switch (or none), and (header) as a section of their own.
+function Shape.Options(list, at, tab, parent, header)
     local section = {
         { key = "corners", default = Shape.DEFAULTS.corners, min = 0, max = 100, step = 1, unit = "%", text = "Corner radius",
+          header = header, headerTip = header and "How round the window is at its place: filling the screen, it is always square.",
           tip = "How round the window's corners are, as a share of half its shorter side at its size in its zone. 0 is square; at 100 a square window is a circle. Filling the screen, a window is always square." },
         { key = "squareEdges", default = Shape.DEFAULTS.squareEdges, text = "Don't round corners on screen edges",
           tip = "A corner that lies on the edge of the screen stays square, so the window is one with that edge. Off: every corner is round, wherever it is, until the window fills the screen." },

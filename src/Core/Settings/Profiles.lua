@@ -130,7 +130,9 @@ local function Window()
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-    tinsert(UISpecialFrames, "SaneUIProfileText") -- Esc closes it
+    -- Esc closes it while it is shown (Core's one stand-in in the game's list).
+    frame:SetScript("OnShow", function(self) Core.Escape(self, self.Hide) end)
+    frame:SetScript("OnHide", function(self) Core.Escape(self, nil) end)
 
     local help = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     help:SetPoint("TOPLEFT", 20, -34)

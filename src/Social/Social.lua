@@ -134,15 +134,14 @@ local OPTIONS = {
     { key = "slideTime", default = 0.3, min = 0, max = 2, step = 0.05, unit = "seconds", text = "Slide time", tab = LOOK, parent = "slide", inline = true,
       tip = "How long a slide takes." },
 }
--- First on the tab Appearance, above the other sections: the section Expand window, as Core has it for
--- every window (Edge.lua), with how round its corners are (Shape.lua). Its Animation type is ignored
--- while all animations are off (Window.lua, Kind): greyed out then too.
+-- Last on the tab Appearance, after the messages' look: the sections Expand window and Window corners, as
+-- Core has them for every window (Edge.lua, Shape.lua). Its Animation type is ignored while all
+-- animations are off (Window.lua, Kind): greyed out then too.
+local last
 for index, option in ipairs(OPTIONS) do
-    if option.tab == LOOK then
-        Core.Edge.Options(OPTIONS, index, LOOK, { motion = "animations" })
-        break
-    end
+    if option.tab == LOOK then last = index end
 end
+Core.Edge.Options(OPTIONS, (last or #OPTIONS) + 1, LOOK, { motion = "animations" })
 -- The switches of fading and sliding: a change of one sets every fade and slide anew (Window.Animate).
 local MOVES = { animations = true, fadeInOn = true, fadeInTime = true, fadeOutTime = true, slide = true, slideTime = true,
                 fadeFloorOn = true, fadeFloor = true, fade = true, fadeAfter = true }

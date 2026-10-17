@@ -1352,15 +1352,15 @@ do
     local expand, kind = control("Can expand to fullscreen"), control("Animation type")
     local opacity, texture = control("Background opacity"), control("Background texture")
     local radius, edges = control("Corner radius"), control("Don't round corners on screen edges")
-    check(table.concat(headers, ", ") == "Expand window, Messages, Animations" and expand.setting:GetValue() == true,
-        "the tab Appearance has the section Expand window first, above the others: the window can fill the screen at first")
+    check(table.concat(headers, ", ") == "Messages, Animations, Expand window, Window corners" and expand.setting:GetValue() == true,
+        "the tab Appearance: first the messages' look and their animations, then Expand window and Window corners: the window can fill the screen at first")
     check(kind.setting:GetValue() == "global" and opacity.setting:GetValue() == 50 and texture.setting:GetValue() == "solid"
         and radius.setting:GetValue() == 10 and edges.setting:GetValue() == true
         and kind.predicate() and opacity.predicate() and texture.predicate() and radius.predicate() and edges.predicate(),
         "under it the window's own animation type (Use global type), the background half opaque, solid black, its corners a tenth round, square at the screen's edges")
     expand.setting:SetValue(false)
-    check(not kind.predicate() and not opacity.predicate() and not texture.predicate() and not radius.predicate() and not edges.predicate(),
-        "all greyed out while it cannot")
+    check(not kind.predicate() and not opacity.predicate() and not texture.predicate() and radius.predicate() and edges.predicate(),
+        "the full screen's switches greyed out while it cannot; the corners not: they shape the window at its place too")
     expand.setting:SetValue(true)
     UIParent._width, UIParent._height = 1920, 1080
     function methods:GetBottom() return self._bottom end

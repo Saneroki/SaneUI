@@ -230,7 +230,14 @@ table.remove(Core.log)
 check(profilesPage.name == "Profiles" and general.name == "General" and appearance.name == "Appearance"
     and profilesPage.parent == top and general.parent == top and appearance.parent == top,
     "under it first Sane UI's own pages: Profiles, General, Appearance")
-check(#general.items == 1 and general.items[1].setting.name == "Errors in chat", "General: the switches of no module")
+local resetRow = general.items[4]
+check(#general.items == 4 and general.items[1].header == "Errors" and general.items[2].setting.name == "Errors in chat" and general.items[3].header == "Windows"
+    and resetRow and resetRow.button == "Reset window positions", "General: the switches of no module, and a button that puts every window back")
+local resetAll, resets = Core.Window.ResetAll, 0
+Core.Window.ResetAll = function() resets = resets + 1 end
+resetRow.click()
+Core.Window.ResetAll = resetAll
+check(resets == 1, "the button puts every window of Sane UI back")
 local windows, animations, motion = appearance.items[1], appearance.items[2], appearance.items[3]
 local kinds = {}
 for index, choice in ipairs(motion and motion.options and motion.options() or {}) do kinds[index] = choice.value .. "=" .. choice.label end
@@ -270,7 +277,7 @@ check(title:GetAlpha() == 1, "a picture the game cannot find leaves the title")
 SettingsPanel.GetSettingsList = nil
 
 -- The general switch: errors in chat
-local tell = general.items[1].setting
+local tell = general.items[2].setting
 tell:SetValue(false)
 W.printed = {}
 check(Core.Safe("quiet", function() error("hush") end) == nil and #W.printed == 0 and Core.errors.quiet.text:find("hush"), "switched off, a problem is kept but not told")

@@ -477,9 +477,9 @@ the three ways of *Hidden, not closed*.
 | The last scan whole, sold between scans (*The history*) | database work: wishes |
 
 **The Esc option** (`escape = "close"` in `Window.New`, as Core is getting it): while such a window is
-shown, a named stand-in of Core's (`SaneUIWindowEscape`, one for all such windows) stands in
+shown, a named stand-in of Core's (`SaneUIEscape`, `Core.Escape`, one for all of Sane UI) stands in
 `UISpecialFrames`; when the game hides it (Esc: `CloseAllWindows`, after the game's own panels), Core runs
-the window's `close`, as its close button does, and Edge's own stand-in leaves such a window full, so
+the window's `close`, as its close button does, and leaves such a window full (not made small first), so
 `full` stays kept and the next talk opens it full again. Economy's `close` is the game's close call, so Esc
 ends the talk also while Blizzard's window is held (*Hidden, not closed*).
 

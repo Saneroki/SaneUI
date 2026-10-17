@@ -254,8 +254,13 @@ end
 -- The general switches (Core.general): described here like a module's, shown on Sane UI's own pages
 -- General and Appearance.
 Core.Options(Core.name, {
-    { key = "errors", default = true, text = "Errors in chat",
+    { key = "errors", default = true, text = "Errors in chat", header = "Errors",
+      headerTip = "What Sane UI says when something of it goes wrong.",
       tip = "Says in chat when something of Sane UI goes wrong: one line for each kind of problem. Switched off, the problems are still kept: type /sane errors." },
+    { key = "resetWindows", text = "Reset window positions", header = "Windows",
+      headerTip = "Where Sane UI's windows stand.",
+      tip = "Puts every window of Sane UI back at its first place and size. Whether a window was left in full screen, or the game's own window chosen instead, stays as it is. Also /sane window reset all.",
+      button = function() if Core.Window and Core.Window.ResetAll then Core.Window.ResetAll() end end },
     { key = "animations", default = true, text = "Animations", page = "Appearance",
       header = "Windows", headerTip = "How Sane UI's windows move.",
       tip = "Sane UI's windows move, fade and slide. Off: everything is at once where it goes, in every module, whatever its own settings say." },
