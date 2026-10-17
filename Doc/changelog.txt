@@ -6,6 +6,42 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Profiles, made simple: with "Accountwide settings" on (as at first),
+  all your characters share one profile, Accountwide: Sane UI's
+  settings and the game's own (its options, Edit Mode layout, chat
+  windows). Make more profiles and give one to any character, copy one
+  from another, reset one to its defaults, or export it as text to share
+  and import it again. With Accountwide settings off, each character
+  keeps its own Sane UI settings and the game's settings are left alone.
+  /sane profile lists your profiles and switches to one.
+
+- Sane UI's windows: Esc closes them as it closes the game's panels, a
+  click brings a panel to the front, and they have tabs like the game's.
+  In Edit Mode a click on a window selects it, with "Reset To Default
+  Position", and windows snap to Edit Mode's grid. "Reset window
+  positions" (Options > General, or /sane window reset all) puts every
+  window back. Key bindings: a section "Sane UI" with keys for the
+  options and the chat window. Animations can be switched off for all
+  of Sane UI (Options > Appearance).
+
+- The chat window starts docked in the lower left corner and has no bar
+  of its own.
+
+- Sane UI's options: settings you type in, dropdowns where you tick
+  several, and buttons. A page with tabs (Social) has a search box that
+  finds a setting in any tab, and a Defaults button. /sane options
+  during a fight opens the options when the fight is over. Tooltips'
+  settings come in sections.
+
+- The game settings Sane UI keeps no longer stall the game when a
+  character comes into the world, and settings the game does not let
+  addons change are left alone. An Edit Mode layout only one character
+  has stays that character's choice when another character logs out.
+
+- Abilities: saving, loading and deleting an action bar layout asks in
+  the game's own dialogs. A switch flipped in the spellbook's menu shows
+  on the options page at once.
+
 - Tooltips have a cleaner look in the game's own colours. A spell's
   tooltip shows only what the game says about it, now in every language.
   Quest tooltips offer Skyborne characters the quests meant for their

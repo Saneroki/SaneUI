@@ -3,8 +3,108 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-The Home page, the marks, Settings on demand, the Tooltips module and the Social module are not yet tried in the game.
-Tests: lint, 195 checks (Core, with its options), 280 checks (Spellbook), 328 checks (Tooltips), 332 checks (Social), 62 checks (Sync), 234 checks (windows).
+Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 363 (Tooltips), 349 (Social), 88 (Sync), 351 (windows), 175 (data in the game).
+A game restart takes it in (new files in Core's TOC, key bindings).
+
+### Profiles anew: Accountwide settings (Saneroki, 2026-10-17)
+- **Accountwide settings** (on at first): every character uses a profile, a named set of the settings of
+  every module and of the game's own that Sync keeps (CVars, Edit Mode layout, chat windows, ...). At first
+  there is one, *Accountwide*, used by every character, so all of them have the same settings; more can be
+  made and given to characters, each its own. Off: no profile is in use, each character keeps its own Sane
+  UI settings (a copy of its profile's to begin with, made anew each time it is switched off: `ownSince`,
+  `since`) and Sync reads and writes nothing of the game's.
+- **One place for each module's settings** (`Profiles.lua` rewritten): the table a module holds
+  (`Core.Settings`, `store.options` through a metatable, never kept twice in the saved file) lives in the
+  profile in use or the character's own. Another profile, Accountwide switched, the profile in use deleted:
+  `Move` captures the game's settings, leaves a copy in the old place, fills the held table from the new one
+  and tells each module what differs (`changed` by deep comparison, or `replaced` once), then `moved`
+  (Sync writes the game's). Nothing moves at the logout (only `capture`), so a logout listener reads the
+  right settings in any order (was: the account's put back first). A character is keyed by its GUID (a key
+  copied with a file loses), one the game names only at login moves to its own profile then, and a module
+  read later binds its settings in the place in use (was: the account's, for its first session).
+- **The page Profiles:** *Accountwide settings*; *This character*: its profile, *New*, *Rename*, *Delete*,
+  *Defaults*, *Copy from*, *Export*/*Import* (a window with a line of text, `Core.Serial`, read letter by
+  letter, never run); *Characters*: each with its profile, *Forget* (its line and what every module keeps
+  for it), *New Characters* first. The tab *Accountwide* is *Game settings* (Sync's parts, per profile).
+  Names are unique in any letter case. `/sane profile [name]`. Gone: *Load*, *Save*, *Duplicate*, *Load at
+  login*, *Save at logout*, *Empty*, *SaneUI Defaults*, the per-module switches.
+- **The first shape brought over once** (`SaneUIDB.version` 2): the account's settings (also those kept aside
+  by a logout that did not finish) are *Accountwide* (a profile of that name keeps its under *Accountwide
+  (old)*); a line keeps its profile where it loaded it at login; *All settings accountwide* unticked is
+  Accountwide off with each character's own kept; a module's `store.version` is stamped into each copy.
+- **Settings carry their shape:** `Core.Options(name, list, hooks)` with `version` and `upgrade(values,
+  from)`, run on each copy as it comes into use, before the kinds are checked (`Core.Settle`), so a value
+  whose kind changed keeps its meaning (was: reset to its default before the module's upgrade saw it).
+  Tooltips (3) and Social (3) use it; `Profiles.Copies` remains for old code. What no description has any more
+  goes; a description that cannot be right is noted. `Core.Set(name, key, value)`, `Core.Reset(name)`,
+  `Core.Described`, `Core.Same`; option fields `validate`, `reload`, `button`, `multi`.
+- Tests: Core 320 (the page, every step, next sessions, a character never seen, Accountwide off with two
+  characters, upgrades, the first shape), Sync 88 (profiles keep the game's settings; off, nothing is read or
+  written).
+  - *In the game:* the page *Profiles* shows *Accountwide settings* ticked and *Accountwide* in use; a second
+    character gets the first one's game settings after its login; `/sane profile` lists the profiles.
+
+### Core's shared tools
+- `Core.AfterCombat(key, fn, ...)` (now, or once the fight is over; the same key once), `Core.Owed`,
+  `Core.Locked(frame)`, `Core.Restricted()` (combat or the game's restrictions, kept from the event's payload),
+  `Core.Off`, `Core.OnUnit`/`OffUnit`; the game's blocked actions of ours go to the error log
+  (`ADDON_ACTION_BLOCKED`/`FORBIDDEN`); the error log keeps at most 100 kinds; errors from before the
+  settings add to the kept count. `Kit.lua`: `Core.Word`, `RGB`/`Hex`, `Pixels`, `Tip`, `Pool`, `Confirm` (with
+  its own word), `AskText`, `Font`, `Sound`, `Lend` (a frame of the game's changed for a while and given back
+  exactly; its alpha at once in a fight). `Core.Fuzzy.Plain`. The switch *Animations* on Appearance (off:
+  nothing of Sane UI moves). A button *Reset window positions* on General.
+
+### Windows (Core) and Social
+- Windows: close and Esc wait for a fight's end; a first zone (`first.dock`, talk in the middle), standing clear
+  of a held zone (`Window.CASCADE`); a motion whose frame is hidden is at its end at once; no full screen in
+  Edit Mode; every module hook guarded; letting go is done once. One Esc stand-in for all of Sane UI
+  (`Core.Escape`, `SaneUIEscape`; the profile window and the feedback window too). New: `window.inside`,
+  `SetTitle`, module `buttons`, tabs (`Views.lua`, the game's tab system), `toplevel`, `insets`,
+  `Window.All`/`ResetAll` (`/sane window reset all`), the holder (`Holder.lua`), Edit Mode selection and its
+  dialog with *Reset To Default Position* and grid snap (`Selection.lua`), `Core.Watch`/`Core.Hover` (Expand on
+  them), `Motion.Fade`/`Slide`, `Fuzzy.Filter`, `Skin.TILES` (was `Edge.TEXTURES`), Shape's fixed
+  radius/`Follow`/`alpha`/`Round`, `Edge.Options(..., under)` with changes followed by Core, the corners a
+  section of their own (*Window corners*, no longer greyed with full screen), key bindings (`Bindings.xml`).
+  `/sane window` is a panel with two tabs. Tests: windows 351.
+- Social: a `screen` window of Core's, docked bottom left at first, no bar of its own, the mouse by
+  `Core.Hover`; *Chat window* the one switch for ours or the game's chat (`Core.Set`, `Window.Follow`); a key;
+  bubbles on `Core.Shape` (`Plate.lua` gone), tiles `Core.Skin.TILES` (`ns.BACKS` gone), `Core.Lend` for the
+  game's chat and edit boxes, `Core.Motion.Slide`, `Core.Font`, `Core.Tip`, `Core.Fuzzy.Plain`; its tab
+  *Appearance* has the messages' look first, then *Expand window* and *Window corners*. Tests: Social 349.
+  - *In the game:* whether units behind the chat window still get their mouseover (the window takes the
+    mouse's motion for `Core.Hover`).
+
+### Settings: every kind of switch, a search on pages in tabs, pages built when first shown
+- `Settings.lua`: a switch on a list page is a proxy setting (`Settings.RegisterProxySetting`) reading `Core.Settings` and writing through `Core.Set` (checked, `validate`, `reload` offered, the page shown anew; was `RegisterAddOnSetting`). `Config.Kind` names its control: words, and numbers with `entry` (or without `max`), in a box to type into (`SaneUISettingsEntryTemplate`, Banner.xml, on the game's `SettingsControlMixin`; a string was a checkbox that failed when clicked), `multi` the game's dropdown of checkboxes, `button` the game's button row, `color` its swatch row. A row under several switches, or two steps down, listens to each (`AddEvaluateStateCVar`); `hidden` via `AddShownPredicate`; a slider writes its `unit`. Pages of our own are built in their first `OnShow` (was: at every first opening of the options); a module's canvas has `OnDefault` → `Core.Reset`. `/sane options` in a fight opens them once it is over (`Core.AfterCombat`).
+- `Panel.lua`: controls kept per page (`Panel.Page`): a click shows its own page anew, `Panel.Refresh()` the pages shown, a hidden one when shown next. New `TabbedFrame` (the page Profiles uses it too), `Edit`, `multi` dropdowns, box tips, `PlaceBox`, `ShowBox`, `Step`, `Number`, `Written`; `Tooltip` hooks; `RGB`/`Hex` are Core's; `ROW` gone.
+- `Tabbed.lua`: writes through `Core.Set`; `headerTip` on the box title; a number inline under a list, an unknown key, no checkbox or another tab is on a line of its own (was: an error that emptied the tab, or not drawn); the new kinds; `hidden` lines close up; a search box (`Core.Fuzzy`) and *Defaults* over the tabs.
+- `CVars.lua`: the list made when its tab is first shown; filtered once per showing (was twice).
+- `dev/tests`: wowstub initializer predicates, `CreateControlInitializer`, `CreateColorSwatchInitializer`, `AddCheckbox`, `CreateFromMixins`, the game's row mixins; core.lua: two modules for the options tests only.
+- Polish: Tooltips gets sections (*When and where*, *What they show*, *Look*), General one for *Errors* and one
+  for *Windows* with *Reset window positions*. Tests: Core 320.
+  - *In the game:* `/sane options` in a fight opens the options when it ends; on *Social* the search finds *Fade-in time* by "fade in"; *Defaults* asks first.
+
+### Core's data framework: listeners after the job, jobs with handles
+- **Listeners after the job, jobs with handles, holes in lists.** A set's `OnStamp` listeners are told on the frame after it arrived, never inside the loader's job, so a listener may run `Steps.Check`. Its failure is noted as `data: <set> listener`. New: `Data.WhenReady(set, fn)` and `handle:OffStamp(fn)`. `Core.Steps.Run(name or options, fn, ...)` gives a job's handle (`:Stop()`, `:Running()`, `ms`, `frames`; `Steps.Stop`, `Steps.Paused`, `Steps.Jobs` gives handles). Options: `priority` (served first in every frame), `done(problem)` (also after an error), `error(problem)`, `label`. A stopped job never goes on. The scheduler pauses by `Core.Restricted()`, from the restriction event's own state, and asks the game nothing per frame but the frame rate. `Each` gives the job's handle, tells `done(problem)` and notes a failing walk under `data job Each <set>`. An empty element of a list or map is no value at its own place, of every type. No read raises on a pack's values of the wrong kind. `Data.Find` keeps its answers unless the game version or build changed. A set that cannot be had makes no text on `Get`. `/sane data show` keeps a text key text. Tests: Lua 175.
+  - *In the game:* `/sane data` lists each job with its milliseconds and frames, and says when they wait.
+
+### Sync: guarded CVar writes, found in steps
+- **Guarded CVar writes, CVars found in steps, a missing layout kept.** Every CVar write goes through `Sync.SetCVar`: not locked or read only, a secure one not in a fight, each in a pcall. One the game does not take is noted once (`Sync: setting CVars`) and the rest are written. The Graphics, Audio and per-character CVars are found by the scheduler job `Sync: the game's CVars`, a few milliseconds a frame, skipping locked, secure and read-only CVars; what is given meanwhile is written once they are found. Chat windows and the action bars check saved values of an older shape before use. Layout follows `Core.EditMode`, and a kept layout this character does not have stays kept until a layout is picked. `Sync.Word` is `Core.Word`; `Sync.CVarsOf` is gone. `wowstub.lua`: `GetCVarInfo` reports `locked`. Tests: Sync 81 (88 with the profiles).
+
+### Abilities and Tooltips on Core's shared tools
+- **Abilities:** what a fight holds up asks `Core.AfterCombat` once under its own key; no file listens for
+  `PLAYER_REGEN_ENABLED`. The game's page buttons and row of tabs are lent (`Core.Lend`); `Locked` is Core's.
+  Switches: `ns.options = Core.Settings`; the menu, the page checkbox and `/sane ab pages` set them with
+  `Core.Set` (an open options page follows); `ns.OPTION` gave way to `Core.Described`. Layouts ask in the
+  game's `GENERIC_INPUT_BOX`/`GENERIC_CONFIRMATION` (`Core.AskText`, `Core.Confirm`); no dialog of ours in
+  the game's list. Tips, pools and sounds are Core's (`Core.Tip`, `Core.Pool`, `Core.Sound`). Every word in
+  `ns.TEXT`, the game's by `Core.Word`. Fixed: the checkbox's sound when unticked; an entry a fight held at a
+  fallback kept its compact size. Tests: 339.
+- **Tooltips:** pools on `Core.Pool` (a draw still hides only the last one's parts), hairline `Core.Pixels`,
+  `ns.options = Core.Settings`; an ID line's fallback reading is `Core.Fuzzy.Plain`. Host's alpha ledger and
+  the font dressing stay the module's (they work per draw, where a ledger per piece would cost tables).
+  Tests: 363.
+
 
 ### Core's data framework
 - **Players by their whole name** (Saneroki: a Forever player is first name and surname, and players can

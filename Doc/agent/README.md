@@ -34,8 +34,9 @@ reserves action slots. Tooltips draws panels over native tooltips. Social suppli
 window and temporarily seats Blizzard's own chat edit boxes in it, and joins or leaves the game's chat
 channels as chosen on its page. Combat (2026-10-16) is set up for unit frames, party, raid, buffs,
 nameplates and pets; nothing built yet (`src/Combat/README.md`, plan `Doc/ideas/Combat.md`). Sync keeps the game's per-character
-settings (CVars, chat windows/channels, Edit Mode layout, action bars) with Sane UI's settings; its switches
-are in the tab Accountwide of the options page Profiles, next to the CVar list.
+settings (CVars, chat windows/channels, Edit Mode layout, action bars) in the profile in use (*Accountwide settings*
+on, the profile *Accountwide* for every character at first; off, each character's own Sane UI settings and nothing
+of the game's); its switches are in the tab Game settings of the options page Profiles, next to the CVar list.
 
 All addon source is Lua and TOCs, plus XML templates (`Core/Settings/Banner.xml`, `Core/Settings/CVars.xml`: settings-list rows);
 no package manager or compiled application. Original art ships in `<Module>/Art/`: banners as BLP, Tooltips' masks and shapes as TGA (`dev/tools/tooltip-art`).
@@ -48,8 +49,8 @@ Tooltips has settings but no dedicated slash subcommand.
 
 ## Validation and scope of this review
 
-`dev/tests/run` passed on 2026-10-14: lint (5 addons, 61 TOC files) and **1,117 checks**:
-Core/Settings 80; Abilities 274 + 270 without Settings; Tooltips 252; Social 185; Windows 56.
+`dev/tests/run` passed on 2026-10-17: lint (5 addons, 99 TOC files) and Lua suites of **1,985 checks**:
+Core (with Settings and Profiles) 320; Abilities 339; Tooltips 363; Social 349; Sync 88; Windows 351; Data 175.
 These numbers are a dated baseline; run the suite to obtain current results.
 
 Review covered addon implementation, TOCs, module documentation, guides, development tools,
