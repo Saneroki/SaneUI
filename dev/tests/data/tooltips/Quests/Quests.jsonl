@@ -1,0 +1,18 @@
+{"key":60,"since":0,"src":["hand"],"name":"The Kobold Menace","level":2,"minLevel":1,"side":"alliance","objectives":[{"index":2,"kind":"loot","what":772},{"index":3,"kind":"loot","what":775}]}
+{"key":61,"since":0,"src":["hand"],"name":"Report to Gryan","level":3,"minLevel":1,"finishNPCs":[{"npc":1}]}
+{"key":62,"since":0,"src":["hand"],"name":"Wanted: Hogger","level":11,"minLevel":1,"classes":[8],"startNPCs":[{"npc":1},{"npc":3}]}
+{"key":63,"since":0,"src":["hand"],"name":"Far Ahead","level":35,"minLevel":30,"startNPCs":[{"npc":1}]}
+{"key":64,"since":0,"src":["hand"],"name":"After Another","level":3,"minLevel":1,"requires":[{"kind":"done","quest":65}],"startNPCs":[{"npc":1}]}
+{"key":66,"since":0,"src":["hand"],"name":"Long Ago","level":1,"minLevel":1,"startNPCs":[{"npc":3}]}
+{"key":70,"since":0,"src":["hand"],"name":"For the Horde","level":3,"minLevel":1,"startNPCs":[{"npc":1,"side":"horde"}]}
+{"key":80,"since":0,"src":["hand"],"name":"A Letter","level":55,"minLevel":1,"startItems":[5000]}
+{"key":90,"since":0,"src":["hand"],"name":"Candles for Gryan","level":5,"minLevel":1,"objectives":[{"index":1,"kind":"loot","what":772},{"index":2,"kind":"loot","what":775}]}
+{"key":91,"since":0,"src":["hand"],"name":"Wax Works","level":62,"minLevel":62,"objectives":[{"index":1,"kind":"loot","what":772},{"index":2,"kind":"loot","what":775}]}
+{"key":92,"since":0,"src":["hand"],"name":"Holy Candles","level":10,"minLevel":1,"classes":[2],"objectives":[{"index":1,"kind":"loot","what":772}]}
+{"key":93,"since":0,"src":["hand"],"name":"Candle Light","level":58,"minLevel":1,"objectives":[{"index":1,"kind":"loot","what":772},{"index":2,"kind":"loot","what":775},{"index":3,"kind":"loot","what":773}]}
+{"key":94,"since":0,"src":["hand"],"name":"One More","level":58,"minLevel":1,"objectives":[{"index":1,"kind":"loot","what":775}]}
+{"key":95,"since":0,"src":["hand"],"name":"And Another","level":58,"minLevel":1,"objectives":[{"index":1,"kind":"loot","what":775}]}
+{"key":96,"since":0,"src":["hand"],"name":"Candle Light","level":58,"minLevel":1,"objectives":[{"index":1,"kind":"loot","what":773}]}
+{"key":97,"since":0,"src":["hand"],"name":"High Above","level":20,"minLevel":1,"races":[95],"objectives":[{"index":1,"kind":"loot","what":773}]}
+{"key":98,"since":0,"src":["hand"],"name":"Old Kingdoms","level":20,"minLevel":1,"races":[1,3],"objectives":[{"index":1,"kind":"loot","what":773}]}
+{"key":99,"since":0,"src":["hand"],"name":"For the Alliance","level":20,"minLevel":1,"side":"alliance","objectives":[{"index":1,"kind":"loot","what":773}]}

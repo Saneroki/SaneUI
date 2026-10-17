@@ -23,7 +23,9 @@ local _, ns = ...
 --               short: a small bar with left and right text beside it
 --    "caption"  left: a section's name, with a rule running on after it
 --    "auras"    the unit's buffs and debuffs (Live.lua)
---  Every row: rule (a divider above it), bar colour br, bg, bb.
+--  Every row: space (a little room above it: the game's empty line inside a
+--  section), bar colour br, bg, bb. A panel's only dividers are its sections'
+--  captions.
 --
 --  The palette is here too (ns.COLOR): every colour the rows are given, and
 --  the panel's own.
@@ -100,10 +102,11 @@ end
 -------------------------------------------------------------------------------
 --  The two copies
 -------------------------------------------------------------------------------
-local ROW = { "kind", "font", "left", "right", "lr", "lg", "lb", "rr", "rg", "rb", "rule", "label", "labelFont", "icon",
+local ROW = { "kind", "font", "left", "right", "lr", "lg", "lb", "rr", "rg", "rb", "space", "label", "labelFont", "icon",
     "iconRight", "indent", "caps", "prose", "live", "value", "max", "flush", "short", "br", "bg", "bb", "points" }
 local HEAD = { "tag", "compared", "accent", "ar", "ag", "ab", "icon", "portrait", "badge", "badgeR", "badgeG", "badgeB",
-    "dragon", "unit", "guid", "power", "hasTarget", "hasAuras", "auraUnit", "auraID", "numbers" }
+    "dragon", "unit", "guid", "power", "hasTarget", "hasAuras", "auraUnit", "auraID", "numbers",
+    "model", "modelKind", "modelZoom", "modelTurn" }
 
 local function Copy()
     return { n = 0, head = {}, rows = {} }

@@ -22,7 +22,8 @@ local _, ns = ...
 --  With Alt held, under it: the price it comes from, the cut and the deposit.
 --
 --  The prices are the ones you last saw yourself at the auction house
---  (Auction.lua). Without one, the section is the vendor's row.
+--  (Auction.lua). Without one, the section is the vendor's row, under its
+--  caption all the same.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -151,15 +152,9 @@ end
 function Gold.Section(ctx, id, line, bound)
     local m = Work(id, Gold.VendorEach(id, line), bound, ctx.tooltip)
     if not (m.vendor or m.ah or m.advice) then return end
-    -- A vendor's price alone is a row under a divider, as the game has it: no caption, no advice.
+    -- A vendor's price alone has no advice: there is no choice to make.
     local alone = not (m.ah or m.advice == "buy")
-    if alone then
-        ctx.rule = true
-    else
-        ctx.rule = false
-        local caption = Read.Row()
-        caption.kind, caption.left = "caption", TEXT.GOLD
-    end
+    Read.Section(TEXT.GOLD)
     if m.vendor then Row(TEXT.VENDOR, m.vendor) end -- every item, also one no vendor buys
     if m.ah then Row(TEXT.AH_PROFIT, m.ah) end
     if not alone then Advice(m) end

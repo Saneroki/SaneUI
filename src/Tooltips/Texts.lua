@@ -17,8 +17,18 @@ ns.TEXT = {
     COST = "Cost", CAST = "Cast", COOLDOWN = "Cooldown", RANGE = "Range",
     SECONDS = "%s sec", MINUTES = "%s min", HOURS = "%s hr", YARDS = "%s yd",
     VENDOR = "Vendor", AUCTION = "Auction", USED_IN = "Used in",
-    -- An item's sections (Kinds/Item.lua, Kinds/Gold.lua), from the module's own data
+    -- The names of a panel's sections (Read.Section). An item's: its numbers and plain lines, what it
+    -- does (the game's green), the set it belongs to, its description, its durability, and those from
+    -- the module's own data (Kinds/Item.lua, Kinds/Gold.lua)
+    STATS = "Stats", EFFECTS = "Effects", SET = "Set", DESCRIPTION = "Description", DURABILITY = "Durability",
     PROFESSIONS = "Professions", GOLD = "Gold",
+    -- A unit's target, health, power and buffs (Kinds/Unit.lua); how long a buff still runs (Kinds/Aura.lua);
+    -- the game's lines of no kind of their own (Read.Named); the numbers Alt shows (Read.lua)
+    STATUS = "Status", DURATION = "Duration", DETAILS = "Details", IDS = "IDs",
+    -- Who of your characters has an item, and where (Kinds/Inventory.lua, from Core's characters' data)
+    INVENTORY = "Inventory", BAGS = "Bags", BANK = "Bank", WORN = "Worn", ACCOUNT_BANK = "Account bank", TOTAL = "Total",
+    -- The lines other addons add to a tooltip: a section of their own, last (Read.lua)
+    ADDONS = "Addons",
     AH_PROFIT = "AH profit", NO_VENDOR = "Can't be sold",
     SELL_AH = "Sell on the AH for %s", MORE_AH = "+%s over the AH",
     SELL_VENDOR = "Sell to a vendor", BUY_UNDER = "Buy if under %s", NOW = "now %s",
@@ -90,6 +100,7 @@ ns.PATTERN = {
     ARMOR = Pattern("ARMOR_TEMPLATE", "%s Armor"),
     DURABILITY = Pattern("DURABILITY_TEMPLATE", "Durability %d / %d"),
     ITEM_LEVEL = Pattern("ITEM_LEVEL", "Item Level %d"),
+    SET_NAME = Pattern("ITEM_SET_NAME", "%s (%d/%d)"), -- the name of the set an item belongs to, and how much of it you wear
     -- What else an item asks of you: a class or race, a profession's skill, a reputation, a spell
     -- known. The panel shows them in its header, under the level it needs (Kinds/Item.lua).
     REQUIRES = {

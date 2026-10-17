@@ -24,7 +24,7 @@ them, and you see what you can train and what it costs.
 | Core: Settings | `SaneUI` | The options pages | [README](src/Core/Settings/README.md) |
 | Core: Sync | `SaneUI` | The settings the game keeps for each character (Edit Mode layout, chat windows and channels, camera, nameplates, ...) the same on all characters and in profiles. Its switches are on the options page *Profiles*, tab *Accountwide* | [README](src/Core/Sync/README.md) |
 | Abilities | `SaneUI_Abilities` | Unlearned spells in the spellbook, reserved buttons, a Home page with what you can learn now | [README](src/Abilities/README.md) |
-| Tooltips | `SaneUI_Tooltips` | The game's tooltips drawn anew: items, spells, units (bars, target, buffs), buffs, quests; can follow the mouse | [README](src/Tooltips/README.md) |
+| Tooltips | `SaneUI_Tooltips` | The game's tooltips drawn anew: items (with which of your characters have them), spells, units (bars, target, buffs), buffs, quests; every section under its name, other addons' lines in one section of their own (*Addons*), 3D models of units, mounts, pets and gear; can follow the mouse | [README](src/Tooltips/README.md) |
 | Social | `SaneUI_Social` | A chat window in the style of a messenger, in place of the game's chat: bubbles, yours on the right, a line to write in. Also joins or leaves the game's chat channels on every character. A prototype | [README](src/Social/README.md) |
 | Combat | `SaneUI_Combat` | Frames for the fight: your own, target, pet, party, raid, buffs, nameplates. Set up, nothing built yet | [README](src/Combat/README.md) |
 

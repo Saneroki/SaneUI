@@ -6,6 +6,7 @@ local root = arg[0]:match("^(.*)/dev/tests/") or "."
 package.path = root .. "/dev/tests/?.lua;" .. package.path
 local W = require("wowstub")
 W.Install(_G)
+W.RemoveAddon("SaneUI_Data_Characters") -- the packs here are the sample's (Kept: a pack of saved data)
 
 local passed = 0
 local function check(condition, what)
@@ -757,6 +758,46 @@ check(printedMatch("Nowhere is missing %(no data pack holds the set Nowhere%)%.$
 for _ = 1, 4 do Frame() end
 Data.frozen = false
 
+-------------------------------------------------------------------------------
+--  A pack of saved data (packs.toml: saved): no sets, only its saved variable, handed to Core's readers
+-------------------------------------------------------------------------------
+W.AddPack(live .. "SaneUI_Data_Kept")
+SaneUIData_Kept = { forever = { format = 9, old = true }, ["forever-beta"] = { format = 1, mine = "beta" } }
+Data.Find()
+local parts = {}
+Data.Saved("Kept", function(part) parts[#parts + 1] = part end)
+check(#parts == 0 and not W.loaded.SaneUI_Data_Kept, "a pack of saved data is found by its TOC (no sets) and asked for, not loaded at once")
+for _ = 1, 4 do Frame() end
+local part = parts[1]
+check(#parts == 1 and part == SaneUIData_Kept.forever and part.format == 1 and part.broken and part.broken[1].old == true and part.old == nil,
+    "loaded, its reader is handed this client's part; one of a format it does not read is set aside under broken, never wiped")
+check(SaneUIData_Kept["forever-beta"].mine == "beta", "another game version's part is left as it is")
+Data.Saved("Kept", function(given) parts[#parts + 1] = given end)
+check(#parts == 2 and parts[2] == part, "a reader that asks once it is loaded is handed it at once")
+W.Fire("PLAYER_LOGOUT")
+check(SaneUIDB.data.forever.format == 1 and SaneUIDB.data.forever.saved.Kept == 1, "at the logout Core notes how much each pack of saved data holds")
+-- A file that held data at the last logout and did not load now: said at once, while its .bak copy still has it
+W.AddPack(live .. "SaneUI_Data_Kept", { name = "SaneUI_Data_Lost" })
+SaneUIDB.data.forever.saved.Lost = 5
+Data.Find()
+W.printed = {}
+local lost
+Data.Saved("Lost", function(given) lost = given end)
+for _ = 1, 4 do Frame() end
+check(lost and lost.format == 1 and SaneUIData_Lost.forever == lost and Core.errors["data: SaneUI_Data_Lost lost"]
+    and Core.errors["data: SaneUI_Data_Lost lost"].text:find(".bak", 1, true) and printedMatch("problem in data: SaneUI_Data_Lost lost"),
+    "a saved file that held data at the last logout and is gone now is told at once (copy the .bak back); the reader starts anew")
+local never = true
+Data.Saved("Nowhere", function() never = false end)
+for _ = 1, 4 do Frame() end
+check(never and Core.errors["data: SaneUI_Data_Nowhere"], "a pack of saved data that is not installed: noted, and its reader is never called")
+W.AddPack(live .. "SaneUI_Data_Kept", { name = "SaneUI_Data_Plain", metadata = { ["X-SaneUI-Saved"] = false } })
+Data.Find()
+local plain = true
+Data.Saved("Plain", function() plain = false end)
+for _ = 1, 4 do Frame() end
+check(plain and not W.loaded.SaneUI_Data_Plain and Core.errors["data: SaneUI_Data_Plain"],
+    "a pack that names no set and says no saved data is no pack of saved data: refused, never loaded for it")
 os.execute(("rm -rf '%s'"):format(folder))
 
 print = nil -- the stand-in's print; use the real one for the summary

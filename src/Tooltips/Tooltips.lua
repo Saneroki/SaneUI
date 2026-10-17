@@ -57,8 +57,8 @@ Core.Options(ns.name, {
     { key = "classColors", header = "What they show", headerTip = "What a tooltip shows besides the game's own lines.", default = true, text = "Colour players by their class",
       tip = "Switched off, a player's tooltip takes the colour the game gives the name." },
     { key = "icons", default = true, text = "Show the icon of items and spells" },
-    { key = "models", default = true, text = "Live 3D portraits",
-      tip = "A creature's or player's portrait is the game's 3D model of it, moving. Switched off, or where the game cannot draw the model, it is the flat picture." },
+    { key = "models", default = true, text = "3D model in tooltips",
+      tip = "Where a tooltip's thing has a 3D model, it stands in the picture's place: a creature or player, moving; a mount or a pet; a piece of gear, worn by your own character. Switched off, or where the game cannot load the model, it is the picture: the portrait or the item's icon." },
     { key = "textSize", header = "Look", headerTip = "How large and how solid tooltips are.", default = 14, min = 10, max = 20, step = 1, text = "Text size",
       tip = "How large a tooltip's name and lines are written. The smaller texts follow." },
     { key = "opacity", default = 97, min = 30, max = 100, step = 1, text = "Opacity",
@@ -74,8 +74,8 @@ local adopted = {} -- [tooltip] = true: hooked; false: not one we can draw
 local SHOWN_PLAIN = { "GameTooltip", "ItemRefTooltip", "ShoppingTooltip1", "ShoppingTooltip2", "ItemRefShoppingTooltip1",
     "ItemRefShoppingTooltip2", "GameNoHeaderTooltip", "GameSmallHeaderTooltip", "BuffFrameTooltip", "AuraButtonTooltip" }
 -- What each of the module's other files leaves in its table: all there, or the module is not whole.
-local PARTS = { "TEXT", "Model", "Reader", "Live", "Inspect", "Numbers", "QuestFacts", "Quests", "Auction", "Gold",
-    "KINDS", "Pools", "Panel", "Host" }
+local PARTS = { "TEXT", "Model", "Reader", "Live", "Inspect", "Numbers", "Quests", "Auction", "Figures", "Gold",
+    "Inventory", "KINDS", "Pools", "Panel", "Host" }
 
 -- Whether the player sees the tooltip: it is visible, and placed somewhere. Other addons read what
 -- the game says of a thing with tooltips of their own that nobody sees: owned, but placed nowhere
@@ -458,8 +458,16 @@ function ns.OnLogin()
     end)
     -- The auction house's prices, noted as you browse it (Auction.lua)
     ns.Auction.Start(ns.store)
-    -- What a creature's quest section says is kept until your quests or your level change (Quests.lua)
-    ns.Quests.Start()
+    -- Core's data the panels show: the shown ones are read anew when it comes or changes. What a
+    -- creature's quest section says is kept until your quests, your level or the quest data change
+    -- (Quests.lua; the data asked for now); an item's Inventory follows your characters' bags.
+    local function Redraw()
+        for tooltip, panel in pairs(ns.Panel.All()) do
+            if panel:IsShown() and not panel.pending then Guarded(Draw, tooltip, panel.data) end
+        end
+    end
+    ns.Quests.Start(Redraw)
+    Core.Data.OnCharacters(Redraw)
     -- A player's item level has come (Inspect.lua): their panel is read anew.
     ns.Inspect.Start(function(guid)
         for tooltip, panel in pairs(ns.Panel.All()) do

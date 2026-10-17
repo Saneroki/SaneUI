@@ -85,7 +85,7 @@ def run_compile(args):
     folder = Path(args.folder)
     folder.mkdir(parents=True, exist_ok=True)
     for pack, sets, entries in compiler.compile_packs(master, folder, args.game):
-        print(f"Built: {folder / (compiler.PREFIX + pack)} ({args.game}: {', '.join(sets)}; {entries} entries)")
+        print(f"Built: {folder / (compiler.PREFIX + pack)} ({args.game}: {', '.join(sets) + f'; {entries} entries' if sets else 'saved data only'})")
     return 0
 
 

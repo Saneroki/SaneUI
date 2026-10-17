@@ -106,7 +106,93 @@ A game restart takes it in (new files in Core's TOC, key bindings).
   Tests: 363.
 
 
+### Tooltips: every section named, one section Addons, 3D models (Saneroki, 2026-10-17)
+- **Every section under its name.** The only dividers are captions: a row has no `rule` any more (`ROW` in
+  `Model.lua` has `space` instead: the game's empty line inside a section is a small gap, `SPACE` in
+  `Panel.lua`). `Read.Section(name)` opens a section under its caption, or stays in the one of that name;
+  `Read.Rest` puts each of the game's lines into the section `ctx.name` names (default `Read.Named`:
+  *Description* for a description, else *Details*), a new name opening a new section. Items: *Stats* (a
+  weapon's DPS or an armour's armour, then plain lines), *Effects* (green, or the game's spell-trigger
+  line kinds), *Set* (from a line `ITEM_SET_NAME` up to an empty or gold line: `PATTERN.SET_NAME`),
+  *Description* (gold, `FlavorText`), *Durability*; *Gold* now also over a vendor's price alone and over a
+  comparison's. Spells: *Stats* over the strips, *Description*. Units: *Status* over target, bars, buffs and
+  experience. Buffs: *Duration* over the time bar. Quests: *Description*. Alt's numbers: *IDs*.
+  `Read.Generic` has no sections (`ctx.flat`). `ctx.tones` is gone.
+- **One section Addons, whatever an addon writes where.** The caption is *Addons* (`TEXT.ADDONS`, was
+  *Other addons*). Where the game's data says where its lines stand (`lineIndex`, `ctx.placed`), a line
+  that is none of the data counts as another addon's wherever it stands after the game's first line
+  (`ctx.firstOwn`): an addon that writes right after one of the game's lines
+  (`TooltipDataProcessor.AddLinePostCall`) no longer puts its line among the panel's sections. Where the
+  lines are only found by their text, after the game's last line as before. An empty line among addons'
+  lines is a gap.
+- **3D model in tooltips.** The setting `models` is *3D model in tooltips* (was *Live 3D portraits*; same
+  key, ticked at first). New `Figures.lua` (in the TOC after `Auction.lua`, and in the module's file check):
+  which model a thing has (`head.model`, `modelKind`, `modelZoom`, `modelTurn`, in `HEAD`): a mount's (by
+  its item or its spell, the game's mount collection), a pet's (by its item, the pet collection), and gear
+  on your own character (dressable items: `C_Item.IsDressableItemByID`, or by where it is worn). `Figure` in
+  `Panel.lua`: a `PlayerModel` for units (as before) and displays (`SetDisplayInfo`), a `DressUpModel` for
+  gear (`SetUnit("player")` once, then `Dress` and `TryOn(link)`); the icon until the game has loaded the
+  model (`OnModelLoaded`, `GetModelFileID`), the icon where `TryOn` or the load fails or the option is off.
+- Tests: `tooltips.lua` 408 checks (`shape(panel)`: the rows with captions by name): every kind's sections,
+  an item set, a gap, a hint without sections, an addon's line right after one of the game's lines (and
+  where lines are found by their text), the 3D models of a mount, a pet, gear (dressed anew, a cloak from
+  behind, a failed try-on, a ring without), a mount's spell, switched off, without icons.
+  - *In the game:* a restart of the game: a new file (`Figures.lua`). See the module's README, *To check in
+    the game* (Addons, Section names, 3D models).
+
+### Tooltips on Core's data: quests, your characters' things, other addons' lines apart (Saneroki, 2026-10-17)
+- **Other addons' lines in a section of their own.** Whatever other addons write into a tooltip stands
+  last on every panel, under the caption *Other addons* (`TEXT.ADDONS`): small and quiet, in their order, an
+  empty line among them a divider. `Read.Rest` now shows the game's lines only; `Others` in `Read.lua`
+  appends the others' after the kind's rows and Alt's details, for every kind alike. Before, they stood
+  among the panel's own rows: before a buff's time bar, before a quest's *Objectives*, between an item's
+  sections and *Gold*. `Read.Caption` is the shared caption row (`Kinds/Item.lua` uses it).
+- **Inventory.** New `Kinds/Inventory.lua` (in the TOC before `Kinds/Item.lua`, and in the module's file
+  check): an item's section *Inventory* from Core's characters' data (`Data.Count`): every character of the
+  account that has it, by its whole name (first name and surname, *Sane Lunatic*, never *Sane*) in its
+  class's colour, you first, the others by name, the account's bank last; *Bags 12 · Bank 8 · Worn 1* at
+  the right; *Total* with two or more; five without Alt. Shown panels are drawn anew when the characters'
+  data changes (`Data.OnCharacters`).
+- **Quests from Core's data (1b.2).** `Quests.lua` reads the sets *Quests* and *Drops*
+  (`Data.Set`, `Keys` by `byStartNPC`, `byFinishNPC`, `byStartItem`, `byObjective`), asks for them at the
+  login (`Quests.Start(redraw)` → `Data.Prepare`) and draws the shown panels anew when they arrive
+  (`OnStamp`); the lists are kept until the quest log, the level or the data change. No quest part until the
+  packs are there, none with *Data: Quests* switched off, no error either way. `Data/Quests.lua`
+  (`ns.QuestFacts`, 546 KB) is deleted, and so is it from the TOC and the module's file check.
+- Tests: `tooltips.lua` 383 checks, on sample packs compiled from `dev/tests/data/tooltips/` by the new
+  `dev/tests/data/packs.py` (a module's sample lines on the real schemas); the quests before and after the
+  packs load, the Inventory section, other addons' lines after a buff's bar and a quest's objectives.
+  `wowstub.lua`'s client has the pack Characters, as every install has.
+  - *In the game:* see the module's README, *To check in the game* (Inventory, Other addons, quests from
+    Core's data). A restart of the game: new files (`Kinds/Inventory.lua`, Core's `Data/Characters.lua`)
+    and a new addon folder (`SaneUI_Data_Characters`, `SaneUI_Data_Quests`, `SaneUI_Data_World`).
+
 ### Core's data framework
+- **1c.4 Characters, for the Inventory (in part, ahead of 1c.1).** New `src/Core/Data/Characters.lua` (in
+  `SaneUI.toc`): each character of the account by its GUID with its whole name (a first name alone never
+  replaces a whole one), realm, class, race, level, side, the day last seen, gold, and its places packed
+  (`item\031count\030...`): bags (with the reagent bag and the keyring), what it wears, its bank, and the
+  account's bank. Marks from the game's events, read as the scheduler's job *characters* (the bank only while
+  open, read again at close; what is marked read at the logout); counts worked out in steps once loaded.
+  `Data.Characters()`, `Data.Character(key)`, `Data.Count(item)`, `Data.CharactersStamp()`,
+  `Data.OnCharacters(fn)`. Kept in the saved variable of the new pack **Characters**, a *pack of saved data*:
+  `packs.toml` `saved = true` (the check knows it), made even without sets, its TOC `## X-SaneUI-Saved: 1`,
+  no sets line and no file (`compile.py`, the lint). In the game `Data.Saved(pack, fn)` hands Core's readers
+  the pack's part of their game version once loaded; a part of a format Core does not read is set aside under
+  `broken`; `SaneUIDB.data[game].saved[pack]` notes how much each part held at the logout, and a saved file
+  gone since is reported at once (copy the `.bak` back). Still open: the auction log, own auctions, a
+  character deleted in *Profiles*.
+- **1b.1 The Quests master.** The Tooltips module's quest facts, taken in once as the batch `old`
+  (`sources.toml`) by a script outside the project: 4,796 quests into *Quests* (`assets/data/Quests/`) and
+  3,883 creatures' drops into *Drops* (`assets/data/Drops/`, pack World). A quest's objectives carry their
+  number in the game's list (`index`, a new first part); `requires.quest` is a plain quest ID (28 quests are
+  named only by requirements). A drop is a creature's item and its chance; the quests that want the item
+  come from the Quests index `byObjective`. Every one of 110,647 answers of the old file compared equal
+  through Core's codec and handles. The check leaves refs into a set with no entries yet (NPCs, Items) until
+  that set has some. The compiler leaves out empty parts at a tuple's end, as it does a row's empty fields
+  (Quests 1.0 → 0.9 MB, Drops 0.5 → 0.4 MB). Tests: tools 208, Lua 151 (packs of saved data).
+  - *In the game:* `/sane data` lists *Data: Characters*, *Data: Quests* and *Data: World* as loaded soon
+    after the login; `/sane data show Quests 7` prints *Kobold Camp Cleanup*.
 - **Players by their whole name** (Saneroki: a Forever player is first name and surname, and players can
   share either). `Core.PlayerKey(unit)` and `Core.PlayerKeyOf(text)` give a player's key: on Forever the
   first name and surname as one, any realm dropped (the whole name is unique across the region), nil for a

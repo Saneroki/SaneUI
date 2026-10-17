@@ -69,13 +69,16 @@ def _entries(master, set_name, game, lines):
 
 
 def _refs(master):
-    """Every ref and every replaces points at an entry the game version's view has."""
+    """Every ref and every replaces points at an entry the game version's view has. A set with no entries at
+    all in that view is still to be filled: the refs into it are checked once it has some."""
     known = {}
     for where, game, set_name, key in master.refs:
         if set_name not in master.schemas:
             continue  # said already: no such set
         if (set_name, game) not in known:
             known[(set_name, game)] = set(master.view(set_name, game, fixes=False))
+        if not known[(set_name, game)]:
+            continue
         if key not in known[(set_name, game)]:
             master.error(f"{where}: points at {set_name} {key!r}, which {game} does not have")
 

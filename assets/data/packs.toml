@@ -1,6 +1,12 @@
 # Every pack: a load-on-demand addon, SaneUI_Data_<name>, its title and notes in the game's addon list
 # (Doc/guides/data.md, *packs.toml*). Cut by who needs it and when (Doc/ideas/Data.md, *Sets by concern*); a
-# pack is made only once one of its sets has entries.
+# pack is made only once one of its sets has entries, or always when it holds saved data (saved = true: what
+# Core keeps in the game goes into its saved variable, SaneUIData_<name>).
+[Characters]
+title = "Data: Characters"
+notes = "What your own characters have: their bags, bank and what they wear, for the counts on your alts. Nothing shipped; kept on this computer only, never shared. Loaded soon after login."
+saved = true
+
 [CreatureSpawns]
 title = "Data: Creature Spawns"
 notes = "Sane UI's data on where every creature without a service spawns. Loaded only when Sane UI first asks where a creature is."

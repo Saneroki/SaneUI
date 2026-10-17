@@ -232,6 +232,8 @@ but for a window to try those with (`/sane window`).
 | `Core.FullName(unit)` | A unit's whole name as the game shows it: a Forever character's first name and surname (`UnitName` gives both), joined by the game's separator; nil when hidden. Use it wherever a player's name is shown |
 | `Core.PlayerKey(unit)`, `Core.PlayerKeyOf(text)` | A player's key, the one name that tells players apart: on Forever first name and surname as one (`Droopy Fairwind`, any realm dropped: the whole name is unique across the region), elsewhere `Name-Realm`; nil for a name that is not whole (a first name alone). Use it wherever a player is kept, counted, compared or shared ([Doc/guides/data.md](../../Doc/guides/data.md), *Players*) |
 | `Core.Surnames()` | Whether this client names players by first name and surname (Forever, or `RegionalUniqueNamesEnabled`) |
+| `Core.Data.Set(name)` and its handle | Sane UI's databases, loaded on demand from the data packs; a module only reads ([Doc/guides/data.md](../../Doc/guides/data.md)) |
+| `Core.Data.Characters()`, `Character(key)`, `Count(item)`, `OnCharacters(fn)` | What the account's characters have: each by its GUID with its whole name, its bags, bank and what it wears; where the account has an item and how many ([Doc/guides/data.md](../../Doc/guides/data.md), *Characters*) |
 | `Core.Coins(copper)` | Money as the game writes it, with coin icons; nil if it cannot |
 | `Core.Points(region)`, `Core.Repoint(region, points)` | Keep a region's anchors and put them back |
 | `Core.pages`, `Core.frames` | The options' pages, from login on, and the frame of a page of our own (`Settings/`) |
@@ -439,13 +441,17 @@ but for a window to try those with (`/sane window`).
 | `Bar.lua` | A progress bar whose value and size move |
 | `Bindings.lua`, `Bindings.xml` | Sane UI's section in the game's key bindings, and its key for the options |
 | `Demo.lua` | `/sane window` |
-| `Data/` | The data framework: the scheduler (`Steps.lua`), a pack's row into a record (`Codec.lua`), the packs and the answers (`Data.lua`); [Doc/guides/data.md](../../Doc/guides/data.md) |
+| `Data/` | The data framework: `Steps.lua` (the scheduler), `Codec.lua` (a pack's row into a record), `Data.lua` (the packs, the answers, the saved parts of packs), `Characters.lua` (what the account's characters have) ([Doc/guides/data.md](../../Doc/guides/data.md)) |
 | `Sync/` | Sync: the game's own per-character settings kept with Sane UI's ([README](Sync/README.md)) |
 | `Settings/` | The options: the pages, their controls, `/sane options` ([README](Settings/README.md)) |
 | `Art/banner.blp` | Sane UI's banner, at the top of the options' page *Sane UI*. Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/SaneUI-banner.png` |
 | `Art/circle.blp`, `Art/circle-hole.blp` | The masks round corners are cut with: a white disc, and a white square with the disc taken out (256 × 256, DXT5 with mipmaps). Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
+- 2026-10-17 — What the account's characters have (`Data/Characters.lua`): each character by its GUID with
+  its whole name (first name and surname), its bags, what it wears, its bank, and the account's bank, kept in
+  the saved file of the pack *Data: Characters*; `Data.Count(item)` says where the account has an item.
+  Packs of saved data (`Data.Saved`), and a warning when such a pack's saved file was lost.
 - 2026-10-17 — The windows, finished and filled in: closing and Esc wait for a fight's end; a first zone
   (`first.dock`: the talk kind in the middle) and standing clear of a window that holds it (`Window.CASCADE`);
   a motion whose frame is hidden is at its end at once; no full screen in Edit Mode; every module hook

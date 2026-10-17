@@ -71,8 +71,8 @@ def scalar(kind, value):
 def element(field, kind, value):
     if kind == "point":
         return PART.join((str(value[0]), number(value[1]), number(value[2])))
-    if kind == "tuple":
-        return PART.join(scalar(part.element, value.get(part.name)) for part in field.parts)
+    if kind == "tuple":  # empty parts at its end left out, as a row's empty fields
+        return PART.join(scalar(part.element, value.get(part.name)) for part in field.parts).rstrip(PART)
     return scalar(kind, value)
 
 
@@ -250,7 +250,10 @@ def set_file(master, schema, game):
 
 
 def toc(master, pack, sets, game, interface, version):
+    """A pack's TOC. A pack of saved data (packs.toml: saved) says so; one without sets lists no file: the
+    game loads its saved variable all the same, and Core keeps what it reads in the game there."""
     info = master.packs[pack]
+    marks = ([f"## X-SaneUI-Sets: {', '.join(sets)}"] if sets else []) + (["## X-SaneUI-Saved: 1"] if info.get("saved") else [])
     lines = [
         f"## Interface: {interface}",
         f"## Title: {info['title']}",
@@ -262,7 +265,7 @@ def toc(master, pack, sets, game, interface, version):
         "## Dependencies: SaneUI",
         "## LoadOnDemand: 1",
         f"## SavedVariables: SaneUIData_{pack}",
-        f"## X-SaneUI-Sets: {', '.join(sets)}",
+    ] + marks + [
         f"## X-SaneUI-Format: {FORMAT}",
         f"## X-SaneUI-Game: {game}",
         "## X-License: MIT",
@@ -284,7 +287,7 @@ def compile_packs(master, folder, game):
             text, count = set_file(master, master.schemas[name], game)
             files[f"{name}.lua"] = text
             entries += count
-        if not entries:
+        if not entries and not master.packs[pack].get("saved"):
             continue
         target = folder / f"{PREFIX}{pack}"
         if target.exists():

@@ -93,7 +93,8 @@ local world = {
     mouseover = { player = true, name = "Jaina", surname = "Proudmoore", level = 60, class = { "Mage", "MAGE" }, race = "Human", guild = "Dawnbreakers",
         side = "Alliance", pvp = true, power = "MANA", target = true },
     target = { name = "Kobold", level = 5, creature = "Humanoid", kind = "elite", power = false },
-    player = { player = true, name = "Tester", level = 60, class = { "Mage", "MAGE", 8 }, race = "Human", raceID = 1, side = "Alliance", power = "MANA" },
+    player = { player = true, name = "Sane", surname = "Lunatic", level = 60, class = { "Mage", "MAGE", 8 }, race = "Human", raceID = 1,
+        side = "Alliance", power = "MANA" },
     mouseovertarget = { name = "Ragnaros", level = 63 },
 }
 local function unitOf(unit) return world[unit] or {} end
@@ -231,10 +232,42 @@ local function tick(panel, elapsed) panel._scripts.OnUpdate(panel, elapsed or 0.
 local function head(panel) return panel.model.shown.head end
 local function row(panel, index) return panel.model.shown.rows[index] or {} end
 local function count(panel) return panel.model.shown.n end
+-- Its rows in short: a section's caption by its name in capitals, every other row by its kind
+-- ("text", "strip", "bar", "auras"), a row with room above it with a "+" before
+local function shape(panel)
+    local list = {}
+    for index = 1, count(panel) do
+        local one = row(panel, index)
+        list[index] = (one.space and "+" or "") .. (one.kind == "caption" and one.left:upper() or one.kind)
+    end
+    return table.concat(list, " ")
+end
 
--- The addons: Core, then the module -----------------------------------------------------------
+-- Core's data the module reads: a few made-up quests and drops (dev/tests/data/tooltips) compiled into packs
+-- on the real schemas, in the addon list before the login
+local folder = io.popen("mktemp -d -t saneui-tooltips-XXXXXX"):read("*l")
+check(folder and os.execute(("python3 -I '%s/dev/tests/data/packs.py' '%s/dev/tests/data/tooltips' '%s'"):format(root, root, folder)) == 0,
+    "the tools compiled the sample quests and drops into packs")
+for _, pack in ipairs({ "Quests", "World" }) do W.AddPack(folder .. "/SaneUI_Data_" .. pack) end -- Characters: every install's (wowstub)
+-- The characters' saved file: two alts, one of them sharing your first name; a broken entry
+SaneUIData_Characters = { forever = { format = 1, characters = {
+    ["Player-70-0000BEEF"] = { name = "Droopy Fairwind", class = "WARRIOR", level = 30, bags = "4500\03112\0304501\0311", bank = "4500\0318" },
+    ["Player-70-0000CAFE"] = { name = "Sane Moonwhisper", class = "PRIEST", level = 12, worn = "4500\0311" },
+    ["Player-70-0000DEAD"] = "not a character",
+}, account = { bank = "4500\0315" } }, ["forever-beta"] = { format = 1, characters = { ["Player-70-0000BEEF"] = { name = "Beta", bags = "4502\0319" } } } }
+-- Your own bags: the backpack with three of the first thing, a bag with two more
+local bagItems = { [0] = { { itemID = 4500, stackCount = 3 } }, [1] = { {}, { itemID = 4500, stackCount = 2 } } }
+C_Container = {
+    GetContainerNumSlots = function(bag) return bagItems[bag] and #bagItems[bag] or 0 end,
+    GetContainerItemInfo = function(bag, slot) local info = bagItems[bag] and bagItems[bag][slot] return info and info.itemID and info or nil end,
+}
+GetInventoryItemID = function() return nil end
+Enum.BankType = { Character = 0, Account = 2 }
+GetMoney = function() return 12345 end
+
+-- The addons: Core (with its data framework), then the module -------------------------------------------
 -- Of Core only what the module uses: its tools, the kit (pools, pixels, a frame lent), the saved settings
--- and where they live (Profiles), and Fuzzy for a text without its codes.
+-- and where they live (Profiles), Fuzzy for a text without its codes, and the data framework.
 W.Load(root, "SaneUI", "Core/Core", {})
 W.Load(root, "SaneUI", "Core/Kit", {})
 W.Load(root, "SaneUI", "Core/Serial", {})
@@ -242,33 +275,31 @@ W.Load(root, "SaneUI", "Core/Motion", {})
 W.Load(root, "SaneUI", "Core/Saved", {})
 W.Load(root, "SaneUI", "Core/Profiles", {})
 W.Load(root, "SaneUI", "Core/Fuzzy", {})
+for _, file in ipairs({ "Steps", "Codec", "Data", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
 local Core = SaneUI.Core
+local Data = Core.Data
 -- Saved by an earlier version (the first shape of the settings): by hand, no choice; the mouse switch of version 2.
 SaneUIDB = { modules = { Tooltips = { options = { show = "never", cursor = true } } } }
 W.Fire("ADDON_LOADED", "SaneUI")
-local files = { "Tooltips", "Texts", "Model", "Read", "Live", "Inspect", "Numbers", "Data/Quests", "Quests", "Auction" }
-for _, name in ipairs({ "Kinds/Gold", "Kinds/Item", "Kinds/Spell", "Kinds/Unit", "Kinds/Aura", "Kinds/Quest", "Pools", "Panel", "Host" }) do
+-- The scheduler's frames (Steps.lua): loading a pack, reading the characters
+local function Steps(frames)
+    local steps = Core.Steps.frame
+    for _ = 1, frames or 10 do
+        W.ms = W.ms + 20
+        if steps:IsShown() and steps._scripts.OnUpdate then steps._scripts.OnUpdate(steps, 0.016) end
+    end
+    W.Wait(0) -- the next frame: Core tells a set's listeners then
+end
+local files = { "Tooltips", "Texts", "Model", "Read", "Live", "Inspect", "Numbers", "Quests", "Auction", "Figures" }
+for _, name in ipairs({ "Kinds/Gold", "Kinds/Inventory", "Kinds/Item", "Kinds/Spell", "Kinds/Unit", "Kinds/Aura", "Kinds/Quest", "Pools", "Panel", "Host" }) do
     files[#files + 1] = name
 end
 for _, file in ipairs(files) do
     W.Load(root, "SaneUI_Tooltips", "Tooltips/" .. file, ns)
 end
 check(SaneUI.Tooltips == ns and ns.addon == "SaneUI_Tooltips", "the module is an addon of its own")
-local facts = ns.QuestFacts
-local kobold = ns.Quests.Record(7)
-check(type(facts) == "table" and facts.quest[7] == "1-2;+783!15;A;;Kobold Camp Cleanup" and facts.npc[197]:find("^g7,")
-    and kobold.title == "Kobold Camp Cleanup" and kobold.from == 1 and kobold.level == 2 and kobold.after[1] == 783
-    and kobold.closers[1] == 15 and kobold.side == "A" and not kobold.races and not kobold.classes,
-    "the module's own quest facts are there: Marshal McBride gives Kobold Camp Cleanup, from level 1, of level 2, for the "
-    .. "Alliance, after A Threat Within; closed once Investigate Echo Ridge, the next step, is taken")
-check(facts.npc[3041]:find("H1718", 1, true) and facts.quest[113]:find("!H32!A162", 1, true)
-    and #ns.Quests.Record(113).closers == 1 and ns.Quests.Record(113).closers[1] == 162,
-    "what is one side's only is tagged (The Islander is given by Horde NPCs), and only the player's side counts (Alliance)")
-local shaped = true
-for _, text in pairs(facts.quest) do shaped = shaped and text:find("^[%d%-]*;[%+/!AH%d]*;[AH%d%.]*;[%d%.]*;") ~= nil end
-for _, text in pairs(facts.npc) do shaped = shaped and text:find("^[gtds][AH%d%.,]+[gtds AH%d%.,]*$") ~= nil end
-for _, text in pairs(facts.item) do shaped = shaped and text:find("^[nb][%d%.,]+[nb %d%.,]*$") ~= nil end
-check(shaped, "every record of the facts has its shape: a quest's five fields, an NPC's and an item's groups")
+check(ns.QuestFacts == nil and ns.Quests and Data.Set("Quests"):State() == "idle",
+    "the module keeps no quest data of its own: it reads Core's, whose pack is not loaded before anybody asks for it")
 W.Fire("ADDON_LOADED", "SaneUI_Tooltips")
 local options = ns.options
 check(options == Core.Settings("Tooltips"), "the switches are the table Core keeps for the module")
@@ -297,6 +328,9 @@ pinned.CloseButton:EnableMouse(true)
 ns.store.prices, ns.store.seen = { [1] = 5, [2] = 6, [3] = 7 }, { [1] = 100 - 31, [2] = 100 - 30 }
 W.Fire("PLAYER_LOGIN")
 check(#postCalls == 1 and postCalls[1].kind == "ALL", "one listener for every kind of tooltip data")
+check(Data.Set("Quests"):State() == "loading" and Data.Set("Drops"):State() == "loading",
+    "at the login the module asks for Core's quest data (Quests, Drops): loaded once the loading screen is gone")
+check(Data.Characters() == nil and Data.Count(4500) == nil, "and Core asks for the characters' data; until it is there, nothing is counted")
 check(tip._scripts.OnTooltipCleared and tip._scripts.OnShow and ns.Panel.All()[tip] == nil,
     "the tooltips that also show hints are hooked at login; their panels are only made when first needed")
 check(ns.store.prices[1] == nil and ns.store.prices[2] == 6 and ns.store.prices[3] == nil and ns.store.seen[1] == nil,
@@ -328,26 +362,31 @@ end
 local COLOR = ns.COLOR
 local function code(color) return ns.Hex(color[1], color[2], color[3]) end
 local DETAIL_HEX = code(COLOR.DETAIL)
-check(count(panel) == 5 and row(panel, 1).left == "Elune's Light" and row(panel, 1).font == "title" and row(panel, 1).caps
+check(count(panel) == 8 and row(panel, 1).left == "Elune's Light" and row(panel, 1).font == "title" and row(panel, 1).caps
     and row(panel, 2).left == "|cff" .. DETAIL_HEX .. "Utility|r  \194\183  Racial" and head(panel).icon == 1000 + 5,
     "the header: name; what it is (neither hurting nor healing: utility) and rank; icon")
-check(row(panel, 3).kind == "strip" and row(panel, 3).rule and cells(row(panel, 3)) == "Cast Instant, Cooldown 3 min",
-    "one strip under a divider: the facts the tooltip's lines state, found by the game's sentences for them")
-check(not cells(row(panel, 3)):find("Cost") and not cells(row(panel, 3)):find("Range"), "a fact the tooltip does not state has no cell")
-check(row(panel, 4).left:find("^Increases") and row(panel, 4).rule and row(panel, 4).prose and row(panel, 4).lr == COLOR.PROSE[1]
-    and row(panel, 4).lb == COLOR.PROSE[3], "the description is a row, in the game's gold made lighter; the test realm's line about F6 is left out")
-check(row(panel, 5).right == "Racial" and row(panel, 5).font == "small" and row(panel, 5).rule, "a line another addon added is small and apart")
+check(shape(panel) == "text text STATS strip DESCRIPTION text ADDONS text",
+    "every section under its name, the only dividers: Stats, Description, Addons")
+check(row(panel, 4).kind == "strip" and cells(row(panel, 4)) == "Cast Instant, Cooldown 3 min",
+    "one strip under Stats: the facts the tooltip's lines state, found by the game's sentences for them")
+check(not cells(row(panel, 4)):find("Cost") and not cells(row(panel, 4)):find("Range"), "a fact the tooltip does not state has no cell")
+check(row(panel, 6).left:find("^Increases") and row(panel, 6).prose and row(panel, 6).lr == COLOR.PROSE[1]
+    and row(panel, 6).lb == COLOR.PROSE[3], "the description is a row, in the game's gold made lighter; the test realm's line about F6 is left out")
+check(row(panel, 7).left == "Addons" and row(panel, 8).right == "Racial" and row(panel, 8).font == "small",
+    "a line another addon added stands last, small, in a section of its own under the caption Addons")
 check(not head(panel).accent and row(panel, 1).lr == COLOR.TITLE[1] and COLOR.TITLE[1] < 1, "a white name gives a panel without a colour, and a softer white")
 local shown = {}
 for index = 1, panel.texts.taken do shown[#shown + 1] = panel.texts[index]._text end
-check(shown[1] == "ELUNE'S LIGHT" and shown[3] == "|cff" .. DETAIL_HEX .. "Utility|r  \194\183  Racial" and shown[5] == "CAST" and shown[6] == "Instant"
-    and shown[7] == "COOLDOWN" and shown[8] == "3 min",
-    "drawn: the name in capitals, then the strip's captions, each over its value")
+check(shown[1] == "ELUNE'S LIGHT" and shown[3] == "|cff" .. DETAIL_HEX .. "Utility|r  \194\183  Racial" and shown[5] == "STATS"
+    and shown[6] == "CAST" and shown[7] == "Instant" and shown[8] == "COOLDOWN" and shown[9] == "3 min" and shown[10] == "DESCRIPTION",
+    "drawn: the name in capitals, then the section's name, the strip's captions, each over its value")
 local function color(label) local r, g, b = label:GetTextColor() return r .. " " .. g .. " " .. b end
-check(color(panel.texts[6]) == color(panel.texts[8]) and color(panel.texts[5]) == table.concat(COLOR.CAPTION, " "),
-    "the values alike; the captions in the game's gold, darker")
+check(color(panel.texts[7]) == color(panel.texts[9]) and color(panel.texts[6]) == table.concat(COLOR.CAPTION, " ")
+    and color(panel.texts[5]) == table.concat(COLOR.CAPTION, " "),
+    "the values alike; the captions, a section's and a strip's, in the game's gold, darker")
 local function size(label) return label.dressed and label.dressed.size end -- the size its font was given
-check(size(panel.texts[1]) == 14 and size(panel.texts[9]) == 14 and size(panel.texts[6]) == 12 and size(panel.texts[5]) == 10 and size(panel.texts[11]) == 10,
+check(size(panel.texts[1]) == 14 and size(panel.texts[11]) == 14 and size(panel.texts[7]) == 12 and size(panel.texts[6]) == 10 and size(panel.texts[13]) == 10
+    and size(panel.texts[15]) == 10,
     "name and lines in the text size, the strip's values two smaller, captions and another addon's lines as small as the game's small font")
 check(panel.back._texture == "Interface\\AddOns\\SaneUI_Tooltips\\Art\\soft" and panel.back._points[1][4] == -8 and panel.back._points[2][4] == 8,
     "the panel has no border: its background is a shape with round corners and a soft edge, reaching a little past the panel")
@@ -366,11 +405,11 @@ local function spell(cooldown)
         { "Hurls a fiery ball that causes 16 to 25 Fire damage.", nil, GOLD, nil, LINE.SpellDescription } })
 end
 spell()
-check(drawn == 1 and count(panel) == 5 and cells(row(panel, 3)) == "Mana 30 (30%), Range 35 yd, Cast 1.5 sec",
+check(drawn == 1 and count(panel) == 7 and cells(row(panel, 4)) == "Mana 30 (30%), Range 35 yd, Cast 1.5 sec",
     "a spell that hurts: its facts in the order the game writes them, its cost also as a share of all your mana; no cooldown it has not")
-check(row(panel, 3).kind == "strip" and row(panel, 4).kind == "strip" and not row(panel, 4).rule and row(panel, 5).rule,
-    "under the strip a second one; then a divider")
-check(cells(row(panel, 4)) == "DPS 8.2, Damage 21, Per Mana 0.68, Crit 6.2%",
+check(shape(panel) == "text text STATS strip strip DESCRIPTION text",
+    "under the strip a second one, both under Stats; then the description under its name")
+check(cells(row(panel, 5)) == "DPS 8.2, Damage 21, Per Mana 0.68, Crit 6.2%",
     "what follows from them: per second of its cast, on average, per point of mana, the chance of a critical strike")
 check(head(panel).accent and head(panel).ar == 1 and head(panel).ag == 0.5 and head(panel).ab == 0
     and row(panel, 2).left == "|cffff7f00Fire|r  \194\183  Rank 2",
@@ -386,7 +425,7 @@ tip:Hide()
 spell()
 check(drawn == 1 and tip:GetAlpha() == 0 and panel:IsShown(), "filled again with the same lines, nothing is drawn again, not even after it was hidden")
 spell("8 sec cooldown")
-check(drawn == 2 and cells(row(panel, 3)) == "Mana 30 (30%), Range 35 yd, Cast 1.5 sec, Cooldown 8 sec", "a changed line is")
+check(drawn == 2 and cells(row(panel, 4)) == "Mana 30 (30%), Range 35 yd, Cast 1.5 sec, Cooldown 8 sec", "a changed line is")
 
 -- What fills a tooltip goes on writing into it, as the game does for a comparison
 local comparison = { { "Fireball", "Rank 2" }, { "30 Mana", "35 yd range" }, { "1.5 sec cast", "8 sec cooldown" },
@@ -399,7 +438,8 @@ local function compare()
     frame()                                       -- and the frame ends
 end
 compare()
-check(drawn == 3 and count(panel) == 6 and row(panel, 6).font == "small", "lines written after the game told us are in the panel when it is first drawn")
+check(drawn == 3 and count(panel) == 9 and row(panel, 8).left == "Addons" and row(panel, 9).font == "small",
+    "lines written after the game told us are in the panel when it is first drawn")
 compare()
 compare()
 check(drawn == 3 and panel:IsShown(), "and a tooltip that is hidden and filled the same way again and again is drawn once")
@@ -411,44 +451,46 @@ tip.count = tip.count + 1
 tip.left[tip.count] = W.NewWidget("FontString", nil, tip)
 tip.left[tip.count]:SetText("Learned from a trainer")
 tick(panel)
-check(drawn == 3 and count(panel) == 6 and row(panel, 6).left == "Learned from a trainer", "a line added after the panel was drawn is taken in on the next frame")
+check(drawn == 3 and count(panel) == 9 and row(panel, 8).kind == "caption" and row(panel, 9).left == "Learned from a trainer",
+    "a line added after the panel was drawn is taken in on the next frame, in the section of other addons' lines")
 
 -- Lines that are no numbers of a spell stay rows
 tip:Fill({ type = TYPE.Spell, id = 75 }, { { "Shoot" }, { "Requires Ranged Weapon" }, { "Shoots.", nil, GOLD, nil, LINE.SpellDescription } })
-check(count(panel) == 4 and row(panel, 3).left == "Requires Ranged Weapon" and row(panel, 3).kind == "text",
-    "a line that states none of the facts stays a row, and there is no strip (nor one of a shot, without a ranged weapon)")
+check(shape(panel) == "text text DETAILS text DESCRIPTION text" and row(panel, 4).left == "Requires Ranged Weapon",
+    "a line that states none of the facts stays a row, under Details, and there is no strip (nor one of a shot, without a ranged weapon)")
 tip:Fill({ type = TYPE.Spell, id = 2383 }, { { "Find Herbs" }, { "Passive", nil, nil, nil, LINE.SpellPassive }, { "Shows herbs.", nil, GOLD, nil, LINE.SpellDescription } })
-check(row(panel, 2).left == "|cff" .. DETAIL_HEX .. "Utility|r  \194\183  Passive" and count(panel) == 3, "a passive spell says so under its name")
+check(row(panel, 2).left == "|cff" .. DETAIL_HEX .. "Utility|r  \194\183  Passive" and count(panel) == 4, "a passive spell says so under its name")
 tip:Fill({ type = TYPE.Spell, id = 1243 }, { { "Renew" }, { "Heals the target of 45 damage over 15 sec.", nil, GOLD, nil, LINE.SpellDescription } })
-check(head(panel).ag == COLOR.HEALTH[2] and head(panel).ag > head(panel).ar and row(panel, 2).left:find("Healing") and row(panel, 4).prose,
+check(head(panel).ag == COLOR.HEALTH[2] and head(panel).ag > head(panel).ar and row(panel, 2).left:find("Healing") and row(panel, 6).prose,
     "a spell that names no school but heals is green, and says Healing")
-check(count(panel) == 4 and row(panel, 3).kind == "strip" and row(panel, 3).rule and cells(row(panel, 3)) == "HPS 3.0, Healing 45, Crit 6.2%",
+check(shape(panel) == "text text STATS strip DESCRIPTION text" and cells(row(panel, 4)) == "HPS 3.0, Healing 45, Crit 6.2%",
     "a heal over time: what it heals, per second of its time (not of the global cooldown), your chance with spells; it costs "
     .. "nothing, so no cell for what it does per point of cost, and no strip of facts its tooltip does not state")
 UnitDamage, UnitAttackSpeed, GetCritChance = function() return 40, 60 end, function() return 2.5 end, function() return 5 end
 W.spells[6603] = { name = "Attack" }
 tip:Fill({ type = TYPE.Spell, id = 6603 }, { { "Attack" }, { "Toggles attack.", nil, GOLD, nil, LINE.SpellDescription } })
-check(cells(row(panel, 3)) == "DPS 20.0, Damage 50, Speed 2.50, Crit 5.0%" and row(panel, 2).left:find("Physical")
+check(cells(row(panel, 4)) == "DPS 20.0, Damage 50, Speed 2.50, Crit 5.0%" and row(panel, 2).left:find("Physical")
     and head(panel).ar == 1 and head(panel).ag == 1 and head(panel).ab == 0,
     "the melee swing: physical, in the combat log's colour for it; its damage per second, on average, its speed, the chance of a critical strike")
 tip:Fill({ type = TYPE.Spell, id = 5 }, { { "Inner Fire" }, { "Increases armor by 50 for 10 min.", nil, GOLD, nil, LINE.SpellDescription } })
-check(count(panel) == 3 and row(panel, 2).left == "|cff" .. DETAIL_HEX .. "Utility|r", "a spell that neither hurts nor heals has no numbers")
+check(count(panel) == 4 and row(panel, 2).left == "|cff" .. DETAIL_HEX .. "Utility|r", "a spell that neither hurts nor heals has no numbers")
 W.spells[853] = { name = "Hammer of Justice" }
 tip:Fill({ type = TYPE.Spell, id = 853 }, { { "Hammer of Justice" }, { "Stuns the target for 3 sec.", nil, GOLD, nil, LINE.SpellDescription } })
 check(row(panel, 2).left:find("CC") and head(panel).ab == 1, "a spell that takes control of the target is CC, in blue")
 -- Facts the game writes without a number stand as written; a client's own wording of a sentence is the one read
 W.spells[1510] = { name = "Volley" }
 tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Channeled", "Melee Range" }, { "Rains arrows on the enemy.", nil, GOLD, nil, LINE.SpellDescription } })
-check(cells(row(panel, 3)) == "Range Melee Range, Cast Channeled", "facts without a number, as the game writes them, in the game's order")
+check(cells(row(panel, 4)) == "Range Melee Range, Cast Channeled", "facts without a number, as the game writes them, in the game's order")
 tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Shot at the next swing" }, { "Rains arrows on the enemy.", nil, GOLD, nil, LINE.SpellDescription } })
-check(cells(row(panel, 3)) == "Cast Shot at the next swing", "a fact found by the game's own sentence for it, not by the English one")
+check(cells(row(panel, 4)) == "Cast Shot at the next swing", "a fact found by the game's own sentence for it, not by the English one")
 -- Where the data gives a line no kind, a sentence in the game's gold is taken for the description
 tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Channeled" }, { "Rains arrows on all enemies in the area for a while.", nil, GOLD } })
-check(row(panel, 4).prose and row(panel, 4).lr == COLOR.PROSE[1], "a gold line of no kind that reads as a sentence is the description")
+check(row(panel, 6).prose and row(panel, 6).lr == COLOR.PROSE[1] and row(panel, 5).left == "Description",
+    "a gold line of no kind that reads as a sentence is the description")
 tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Channeled" }, { "Reagents: Arrow", nil, GOLD } })
-check(count(panel) == 4 and not row(panel, 4).prose, "a short one is none")
+check(count(panel) == 6 and not row(panel, 6).prose and row(panel, 5).left == "Details", "a short one is none: it is one of the details")
 tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Channeled" }, { "Rains arrows on all enemies in the area for a while.", nil, GOLD, nil, LINE.QuestTitle } })
-check(not row(panel, 4).prose, "nor is a line the data gives another kind")
+check(not row(panel, 6).prose, "nor is a line the data gives another kind")
 W.spells[2948] = { name = "Scorch" }
 tip:Fill({ type = TYPE.Spell, id = 2948 }, { { "Scorch" }, { "Scorches the enemy for 1.5 sec, causing 12 Fire damage.", nil, GOLD, nil, LINE.SpellDescription } })
 local scorched = false
@@ -504,25 +546,27 @@ check(head(panel).badge == "iLvl 63", "its level under the icon")
 check(panel.iconMask._texture == "Interface\\AddOns\\SaneUI_Tooltips\\Art\\icon-mask",
     "a square icon has round corners and an edge that fades out softly (a mask in its own shape)")
 check(head(panel).tag == "|cff" .. code(COLOR.RED) .. "BoP|r", "over the name how it binds, short as players write it, red until it is bound")
-check(row(panel, 3).font == "big" and row(panel, 3).left == "53.8 |cff" .. DETAIL_HEX .. "DPS|r" and row(panel, 3).rule,
-    "a weapon's damage per second, large, under a divider")
-check(row(panel, 3).label == "\194\183  44 - 115 dmg  \194\183  1.90 spd" and row(panel, 3).labelFont == "sub",
+check(shape(panel) == "text text STATS text text EFFECTS text DURABILITY bar GOLD text",
+    "an item's sections, each under its name: Stats, Effects, Durability, Gold")
+check(row(panel, 4).font == "big" and row(panel, 4).left == "53.8 |cff" .. DETAIL_HEX .. "DPS|r",
+    "a weapon's damage per second, large, first in Stats")
+check(row(panel, 4).label == "\194\183  44 - 115 dmg  \194\183  1.90 spd" and row(panel, 4).labelFont == "sub",
     "its hit's damage and its speed after it in the same line, smaller")
-check(row(panel, 4).left == "+5 Agility" and not row(panel, 4).rule and row(panel, 5).lg == 1 and row(panel, 5).rule, "then its lines; what it does, in green, stands apart")
-check(row(panel, 6).kind == "bar" and row(panel, 6).short and row(panel, 6).value == 61 and row(panel, 6).max == 120
-    and row(panel, 6).left == "61 / 120" and row(panel, 6).right == "" and row(panel, 6).rule, "at the bottom its durability as a small bar")
-check(count(panel) == 7 and row(panel, 7).left == "Vendor" and row(panel, 7).right == "25500c" and row(panel, 7).rule,
-    "and under a divider what a vendor pays for it, in coins: alone, without the Gold section's caption and advice")
+check(row(panel, 5).left == "+5 Agility" and row(panel, 7).lg == 1, "then its lines; what it does, in green, stands apart under Effects")
+check(row(panel, 9).kind == "bar" and row(panel, 9).short and row(panel, 9).value == 61 and row(panel, 9).max == 120
+    and row(panel, 9).left == "61 / 120" and row(panel, 9).right == "", "its durability as a small bar")
+check(count(panel) == 11 and row(panel, 11).left == "Vendor" and row(panel, 11).right == "25500c",
+    "and under Gold what a vendor pays for it, in coins: alone, without advice")
 reaper[3].data.bonding = 3
 tip:Fill({ type = TYPE.Item, id = 19019 }, reaper)
 check(head(panel).tag == "|cff" .. DETAIL_HEX .. "Soulbound|r", "once it is bound to you, that is no longer red")
 indexed = true
 tip:Fill({ type = TYPE.Item, id = 19019 }, reaper)
-check(count(panel) == 7 and row(panel, 2).left == "Sword \194\183 One-Hand" and head(panel).badge == "iLvl 63", "the same when the game says where each of its lines stands")
+check(count(panel) == 11 and row(panel, 2).left == "Sword \194\183 One-Hand" and head(panel).badge == "iLvl 63", "the same when the game says where each of its lines stands")
 table.insert(reaper, 10, { nothing = true, [5] = LINE.SellPrice, price = 25500 })
 tip:Fill({ type = TYPE.Item, id = 19019 }, reaper)
 table.remove(reaper, 10)
-check(count(panel) == 7 and row(panel, 5).left == "Chance on hit: Blasts your enemy with lightning.",
+check(count(panel) == 11 and row(panel, 7).left == "Chance on hit: Blasts your enemy with lightning.",
     "a line of the game's data without text takes nothing from the line before it, which has the same index")
 indexed = false
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Plans: Gloves", nil, { 0.64, 0.21, 0.93 } }, { "Requires Blacksmithing (80)" },
@@ -530,8 +574,30 @@ tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Plans: Gloves", nil, { 0.64, 0.2
     { " ", nil, nil, nil, LINE.SellPrice, price = 400 } })
 check(row(panel, 3).kind == "caption" and row(panel, 3).left == "Creates" and row(panel, 4).left == "Veteran's Gloves" and row(panel, 4).font == "title"
     and row(panel, 4).icon == 2000 + 19019, "a recipe: what it makes under a caption, with that thing's icon")
-check(row(panel, 5).left == "115 Armor" and row(panel, 6).left == "Vendor" and row(panel, 6).right == "400c" and row(panel, 6).rule and count(panel) == 6,
-    "the thing's lines are left as they are; the price under a divider")
+check(row(panel, 5).left == "115 Armor" and row(panel, 7).left == "Vendor" and row(panel, 7).right == "400c" and shape(panel) == "text text CREATES text text GOLD text",
+    "the thing's lines are left as they are, all of them in the section Creates; the price under Gold")
+-- An item set: its name, its pieces and its bonuses one section, Set; the description after it its own
+tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Belt of Might", nil, { 0.64, 0.21, 0.93 } }, { "+9 Strength" },
+    { "Equip: Improves your chance to hit by 1%.", nil, GREEN }, { " ", nil, nil, nil, LINE.Blank }, { "Equip: Increases defense by 3.", nil, GREEN },
+    { " ", nil, nil, nil, LINE.Blank }, { "Battlegear of Might (2/8)", nil, GOLD }, { "  Belt of Might", nil, { 0.5, 0.5, 0.5 } },
+    { "(3) Set: +20 Armor", nil, GREEN }, { "(5) Set: +5 Strength", nil, { 0.5, 0.5, 0.5 } }, { '"Forged in the deep."', nil, GOLD } })
+check(shape(panel) == "text STATS text EFFECTS text +text SET text text text text DESCRIPTION text",
+    "each kind of line under its name: the game's empty line between two effects a gap; a set with its pieces and bonuses "
+    .. "in one section, Set; its description after it")
+-- Another addon's line right after one of the game's (as TooltipDataProcessor.AddLinePostCall writes
+-- it), where the game says where each of its lines stands: in the section Addons, not among the item's
+indexed = true
+tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Belt of Might", nil, { 0.64, 0.21, 0.93 } }, { "+9 Strength" },
+    { "Upgrade: +12%", nil, GREEN, added = true }, { "Equip: Improves your chance to hit by 1%.", nil, GREEN },
+    { "Seen in 3 shops", added = true } })
+check(shape(panel) == "text STATS text EFFECTS text ADDONS text text" and row(panel, 7).left == "Upgrade: +12%"
+    and row(panel, 8).left == "Seen in 3 shops", "other addons' lines all in one section, Addons, wherever they wrote them in the tooltip")
+indexed = false
+tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Belt of Might", nil, { 0.64, 0.21, 0.93 } }, { "+9 Strength" },
+    { "Upgrade: +12%", nil, GREEN, added = true }, { "Equip: Improves your chance to hit by 1%.", nil, GREEN },
+    { "Seen in 3 shops", added = true } })
+check(shape(panel) == "text STATS text EFFECTS text text ADDONS text",
+    "where the game does not say where its lines stand (they are found by their words), only the lines after its last are known as another addon's")
 
 -- The game's line of the price, the look, the auction house (prices noted while you browse it), a trade good
 local hatchet = { { "Skull Hatchet", nil, { 0.64, 0.21, 0.93 } }, { "Binds when equipped", nil, nil, nil, LINE.ItemBinding, data = { bonding = 7 } },
@@ -539,8 +605,8 @@ local hatchet = { { "Skull Hatchet", nil, { 0.64, 0.21, 0.93 } }, { "Binds when 
     { " ", nil, nil, nil, LINE.SellPrice, price = 81 } }
 tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
 check(head(panel).tag == "|cff" .. code(COLOR.RED) .. "BoE|r  \194\183  |cff8787edUncollected|r", "whether you have its look, short, beside how it binds, in the game's colour for it")
-check(count(panel) == 2 and row(panel, 2).left == "Vendor" and row(panel, 2).right == "81c",
-    "the game's own line of the price is left out: the panel has a row for it; no auction price before you have seen one")
+check(count(panel) == 3 and row(panel, 2).left == "Gold" and row(panel, 3).left == "Vendor" and row(panel, 3).right == "81c",
+    "the game's own line of the price is left out: the panel has a row for it, under Gold; no auction price before you have seen one")
 browse = { { itemKey = { itemID = 19019 }, minPrice = 98765 }, { itemKey = { itemID = 4 }, minPrice = 0 } }
 W.Fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
 tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
@@ -563,18 +629,15 @@ check(ns.store.prices[19019] == 500, "also when more rows of the same list come"
 ns.store.prices[19019] = 98765
 hatchet[2].data.bonding = 6
 tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
-check(count(panel) == 2 and row(panel, 2).left == "Vendor", "a thing that is bound when picked up has no auction price")
+check(count(panel) == 3 and row(panel, 3).left == "Vendor", "a thing that is bound when picked up has no auction price")
 ns.store.prices[19019] = nil
 C_Item.GetItemInfoInstant = function(id) if id == 2589 then return id, "Trade Goods", "Cloth", "", 1, 7, 5 end end
 W.items[2589] = { name = "Linen Cloth", quality = 1 }
 W.spells[3908] = { name = "Tailoring" }
-local database = ns.QuestFacts
-ns.QuestFacts = { quest = {}, npc = {}, item = {} } -- here without the quests that want linen cloth (below: an item's quests)
 tip:Fill({ type = TYPE.Item, id = 2589 }, { { "Linen Cloth" }, { " ", nil, nil, nil, LINE.SellPrice, price = 13 } })
-ns.QuestFacts = database
 check(row(panel, 2).left == "Trade Goods \194\183 Cloth" and row(panel, 2).font == "detail", "a thing that is not worn says what it is")
 check(row(panel, 3).kind == "caption" and row(panel, 3).left == "Professions" and row(panel, 4).left == "Used in"
-    and row(panel, 4).right == "|T4908:0|t Tailoring" and row(panel, 5).left == "Vendor" and row(panel, 5).rule,
+    and row(panel, 4).right == "|T4908:0|t Tailoring" and row(panel, 5).left == "Gold" and row(panel, 6).left == "Vendor",
     "a trade good: under the caption Professions, the professions that use it, with their icons")
 local named, ruled = panel.left[3], false
 for index = 1, panel.lines.taken do
@@ -594,11 +657,12 @@ local function hairline()
 end
 check(hairline() == 1, "a hairline is one unit of the interface, where that is one dot of the screen")
 pixel = 768 / 2160 -- a 4K screen at the interface's scale 1
+panel.drawn = false -- (the same lines: drawn again only for the new screen)
 tip:Fill({ type = TYPE.Item, id = 2589 }, { { "Linen Cloth" }, { " ", nil, nil, nil, LINE.SellPrice, price = 13 } })
 check(math.abs(hairline() - 3 * pixel) < 1e-9, "and the nearest whole dots elsewhere: three on a 4K screen")
 pixel = 1
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Plate", nil, { 0.64, 0.21, 0.93 } }, { "115 Armor" } })
-check(row(panel, 2).font == "big" and row(panel, 2).left == "115 Armor", "an armour's number is large too")
+check(row(panel, 2).left == "Stats" and row(panel, 3).font == "big" and row(panel, 3).left == "115 Armor", "an armour's number is large too, in Stats")
 options.icons = false
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury" }, { "Epic" } })
 check(head(panel).icon == nil and head(panel).accent, "the icons can be switched off")
@@ -635,15 +699,15 @@ end
 panel.drawn = false
 tip:Fill({ type = TYPE.Unit, guid = "Player-1" }, jaina)
 local narrow, plaqueLeft = select(4, panel.plaque:GetPoint(2)) - panel:GetWidth(), select(4, panel.plaque:GetPoint(1)) - panel:GetWidth()
-check(row(panel, 5).left == "Target" and row(panel, 5).live == "target" and row(panel, 5).rule, "under a divider: whom it targets")
-check(row(panel, 6).kind == "bar" and row(panel, 6).live == "health" and not row(panel, 6).rule, "under that the health bar")
-check(row(panel, 7).kind == "bar" and row(panel, 7).live == "power" and row(panel, 7).bb == 1, "and the bar of its mana, in mana's colour")
+check(row(panel, 5).left == "Status" and row(panel, 6).left == "Target" and row(panel, 6).live == "target", "under the caption Status: whom it targets")
+check(row(panel, 7).kind == "bar" and row(panel, 7).live == "health", "under that the health bar")
+check(row(panel, 8).kind == "bar" and row(panel, 8).live == "power" and row(panel, 8).bb == 1, "and the bar of its mana, in mana's colour")
 check(panel.live.health._height == 18 and panel.live.power._height == 5 and panel.live.power._points[1][1] == "BOTTOMLEFT"
     and panel.live.power._points[1][2] == panel.live.health, "the mana lies over the lower part of the health bar, not under it")
 check(#inspected == 1 and inspected[1] == "mouseover", "for its item level, the server is asked")
-check(row(panel, 8).kind == "auras", "and its buffs")
-check(count(panel) == 9 and row(panel, 9).left == "Item Level 61" and row(panel, 9).font == "small" and row(panel, 9).rule,
-    "the tooltip's own lines that say the same are left out; another addon's line stays")
+check(row(panel, 9).kind == "auras", "and its buffs")
+check(count(panel) == 11 and row(panel, 10).kind == "caption" and row(panel, 10).left == "Addons" and row(panel, 11).left == "Item Level 61"
+    and row(panel, 11).font == "small", "the tooltip's own lines that say the same are left out; another addon's line stays, in its own section, last")
 tip:Fill({ type = TYPE.Unit, guid = "Player-1" }, jaina)
 tip:Fill({ type = TYPE.Unit, guid = "Player-1" }, jaina)
 check(#inspected == 1, "while the answer is on its way, the server is not asked again")
@@ -705,7 +769,7 @@ UnitGUID = function(unit) return unit == "mouseover" and "Player-2" or guidOf(un
 UnitHealth = function() return 7 end
 world.mouseover.target = false
 for _ = 1, 5 do tick(panel, 0.2) end
-check(panel.live.healthText._text == "40   83%" and count(panel) == 9 and row(panel, 5).live == "target",
+check(panel.live.healthText._text == "40   83%" and count(panel) == 11 and row(panel, 6).live == "target",
     "once the mouse has left the unit, its panel stands still: no other unit's numbers, no row taken away")
 UnitGUID, UnitHealth = guidOf, function() return 40 end
 world.mouseover.target = true
@@ -723,10 +787,10 @@ check(#panel.auraIcons == 3 and panel.auraIcons[1]._texture == 11 and panel.aura
 check(panel.auraIcons[1].mask._texture == "Interface\\AddOns\\SaneUI_Tooltips\\Art\\aura-mask", "each with a soft edge")
 world.mouseover.target = false
 for _ = 1, 5 do tick(panel, 0.2) end
-check(count(panel) == 8 and row(panel, 7).kind == "auras", "when it lets go of its target, the row for it goes")
+check(count(panel) == 10 and row(panel, 8).kind == "auras", "when it lets go of its target, the row for it goes")
 W.combat = true
 for _ = 1, 5 do tick(panel, 0.2) end
-check(count(panel) == 7 and not panel.auraIcons[1]:IsShown(), "in a fight a unit's buffs cannot be asked for: no row for them")
+check(count(panel) == 9 and not panel.auraIcons[1]:IsShown(), "in a fight a unit's buffs cannot be asked for: no row for them")
 W.combat = false
 world.mouseover.target = true
 options.classColors = false
@@ -765,19 +829,20 @@ check(panel.dragon:IsShown() and panel.dragon._texture == "Interface\\HUD\\UIUni
 check(panel.icon._width == 64 and panel.icon._points[1][1] == "TOPRIGHT" and panel.icon._points[1][4] == 10 and panel.icon._points[1][5] == 10,
     "the portrait is large and stands out over the corner, where the dragon covers its edge")
 check(row(panel, 3).left == "|cffffd100Elite|r", "under what it is, its rank in the colour of its dragon")
-check(row(panel, 4).kind == "bar" and row(panel, 4).live == "health", "its health, and no row for a target or buffs it has not")
-check(row(panel, 5).kind == "caption" and row(panel, 5).left == "Quest" and row(panel, 6).left == "The Kobold Menace" and row(panel, 6).lg == 0.82,
+check(row(panel, 4).left == "Status" and row(panel, 5).kind == "bar" and row(panel, 5).live == "health",
+    "under Status its health, and no row for a target or buffs it has not")
+check(row(panel, 6).kind == "caption" and row(panel, 6).left == "Quest" and row(panel, 7).left == "The Kobold Menace" and row(panel, 7).lg == 0.82,
     "a section of its own for your quests, under the caption Quest: the quest's name in gold")
-check(row(panel, 7).icon == "kill" and row(panel, 7).left == "Kobold slain" and row(panel, 7).right == "4/10"
-    and row(panel, 8).icon == "loot" and row(panel, 8).left == "Candle" and row(panel, 8).right == "1/4",
+check(row(panel, 8).icon == "kill" and row(panel, 8).left == "Kobold slain" and row(panel, 8).right == "4/10"
+    and row(panel, 9).icon == "loot" and row(panel, 9).left == "Candle" and row(panel, 9).right == "1/4",
     "a sword before what you must kill it for, a sack before what you must loot, the count at the right")
-check(row(panel, 9).left == "Boars and Cats" and row(panel, 10).left == "Rival" and row(panel, 11).left == "Kobold slain" and row(panel, 11).right == "3/5",
+check(row(panel, 10).left == "Boars and Cats" and row(panel, 11).left == "Rival" and row(panel, 12).left == "Kobold slain" and row(panel, 12).right == "3/5",
     "what is done is left out (the game says so, or its count is full); what is still to do stays")
-check(count(panel) == 11, "and a quest with nothing left to do here is left out, its name too")
+check(count(panel) == 12, "and a quest with nothing left to do here is left out, its name too")
 world.player.level = 4
 world.target.class = { "Mage", "MAGE" }
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } } })
-check(row(panel, 5).left == "137 XP" and row(panel, 5).right == "Next level in 7" and row(panel, 5).font == "sub",
+check(row(panel, 6).left == "137 XP" and row(panel, 6).right == "Next level in 7" and row(panel, 6).font == "sub",
     "what killing it gives you (one level above you, elite: twice) and how many such kills to your next level")
 -- The rule's rows: at level 45 a creature fades to nothing 14 levels below you and is grey from 10 below
 world.player.level, world.target.level = 45, 36
@@ -792,7 +857,7 @@ check(row(panel, 2).left == "Humanoid" and row(panel, 3).left == "Mage  \194\183
     "a creature that is more than a plain fighter says its class, before its rank")
 world.target.dead = true
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } } })
-check(row(panel, 3).left == "Mage  \194\183  |cffffd100Elite|r  \194\183  |cff" .. ASIDE_HEX .. "Dead|r" and row(panel, 5).left ~= "137 XP",
+check(row(panel, 3).left == "Mage  \194\183  |cffffd100Elite|r  \194\183  |cff" .. ASIDE_HEX .. "Dead|r" and row(panel, 6).left ~= "137 XP",
     "a dead one says so, and gives nothing any more")
 world.target.dead = nil
 world.target.family, world.target.tapped = "Wolf", true
@@ -811,16 +876,8 @@ world.target.reaction = 5
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Bowyer" }, { "Level 5 Humanoid (Elite)" } })
 check(row(panel, 4).left == "|cffffd100Elite|r", "a friendly one does not")
 world.target.reaction = nil
--- The module's own quest facts (Data/Quests.lua), here a few: quest 60 asks for a candle the
--- creature drops (its second objective), it takes quest 61 back and gives 62, 63, 64 and 70
-local allFacts = ns.QuestFacts
-ns.QuestFacts = { quest = {
-    [60] = "1-2;;A;;The Kobold Menace", [61] = "1-3;;;;Report to Gryan",
-    [62] = "1-11;;;8;Wanted: Hogger",  -- for mages, as you are
-    [63] = "30-35;;;;Far Ahead",       -- too high a level for you
-    [64] = "1-3;+65;;;After Another",  -- quest 65 must be done first
-    [70] = "1-3;;;;For the Horde",     -- it gives that one to the Horde only (gH70)
-}, npc = { [1] = "g62,63,64,H70 t61 dA60.2.33" }, item = {} } -- the candle drops for the Alliance (you), 33% of the time
+-- Core's quest data (the sample, dev/tests/data/tooltips): quest 60 asks for a candle (item 772, its second
+-- objective) that this creature (NPC 1) drops 33% of the time; it takes quest 61 back and gives 62, 63, 64 and 70
 quests[60] = { on = true, title = "The Kobold Menace",
     objectives = { { text = "4/10 Kobold Vermin slain", finished = false }, { text = "Candle: 1/4", finished = false } } }
 quests[61] = { on = true, ready = true, title = "Report to Gryan" }
@@ -828,45 +885,55 @@ local askedLog = 0 -- how often the quest log was asked for a quest's objectives
 C_QuestLog.GetQuestObjectives = function(id) askedLog = askedLog + 1 return quests[id] and quests[id].objectives end
 C_QuestLog.GetTitleForQuestID = function(id) return quests[id] and quests[id].title end
 units["Creature-0-1-2-3-1-4"] = "target"
-tip:Fill({ type = TYPE.Unit, guid = "Creature-0-1-2-3-1-4" }, { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Level 5 Humanoid (Elite)" },
+local kobold = { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Level 5 Humanoid (Elite)" },
     { "The Kobold Menace", nil, GOLD, nil, LINE.QuestTitle, data = { id = 60 } }, { "4/10 Kobold Vermin slain", nil, nil, nil, LINE.QuestObjective },
-    { "Not ours", added = true } })
-check(row(panel, 5).left == "137 XP" and row(panel, 5).rule and row(panel, 6).kind == "caption" and row(panel, 6).left == "Quest"
-    and row(panel, 7).left == "The Kobold Menace" and not row(panel, 7).rule,
-    "experience, then the quests under the caption Quest")
-check(row(panel, 7).right == "Level 2" and row(panel, 7).rr == 1 and row(panel, 7).rb == 0,
+    { "Not ours", added = true } }
+tip:Fill({ type = TYPE.Unit, guid = "Creature-0-1-2-3-1-4" }, kobold)
+check(row(panel, 8).left == "The Kobold Menace" and row(panel, 8).right == "" and count(panel) == 11 and askedLog == 0,
+    "before Core's quest data is loaded, a creature has the game's own quest lines and nothing of the data (no error)")
+W.Fire("LOADING_SCREEN_DISABLED")
+Steps()
+check(Data.Set("Quests"):Ready() and Data.Set("Drops"):Ready(), "once the loading screen is gone, the packs load (one a frame, out of combat)")
+check(row(panel, 6).left == "137 XP" and row(panel, 5).live == "health" and row(panel, 7).kind == "caption" and row(panel, 7).left == "Quest"
+    and row(panel, 8).left == "The Kobold Menace",
+    "and the panel that is shown is read anew, by itself: experience (in Status, under its health), then the quests under the caption Quest")
+check(row(panel, 8).right == "Level 2" and row(panel, 8).rr == 1 and row(panel, 8).rb == 0,
     "a quest's name has its level at the right (the game's line says which quest it is), in the colour of how hard it is")
-check(row(panel, 8).icon == "kill" and row(panel, 8).left == "Kobold Vermin slain" and row(panel, 8).right == "4/10",
+check(row(panel, 9).icon == "kill" and row(panel, 9).left == "Kobold Vermin slain" and row(panel, 9).right == "4/10",
     "the game's objective: a sword before what to kill (it names the creature), the count at the right")
-check(row(panel, 9).icon == "loot" and row(panel, 9).left == "Candle" and row(panel, 9).right == "1/4",
-    "from our database: what it drops for the same quest, under it, with a sack")
-check(row(panel, 9).label == "33%" and row(panel, 8).label == nil, "with how often it drops after its name; nothing after what to kill")
-check(panel.after[9] and panel.after[9]._text == "33%" and panel.after[9]:IsShown() and panel.right[9]._text == "1/4",
+check(row(panel, 10).icon == "loot" and row(panel, 10).left == "Candle" and row(panel, 10).right == "1/4",
+    "from Core's data: what it drops for the same quest, under it, with a sack")
+check(row(panel, 10).label == "33%" and row(panel, 9).label == nil, "with how often it drops after its name; nothing after what to kill")
+check(panel.after[10] and panel.after[10]._text == "33%" and panel.after[10]:IsShown() and panel.right[10]._text == "1/4",
     "the panel writes the chance after the name, and the count still at the right")
-check(row(panel, 10).left == "Report to Gryan" and row(panel, 10).lg == 0.82 and row(panel, 10).right == "Level 3" and row(panel, 11).icon == "active"
-    and row(panel, 11).left == "Turn in" and row(panel, 11).lr == COLOR.DONE[1] and row(panel, 11).right == "",
+check(row(panel, 11).left == "Report to Gryan" and row(panel, 11).lg == 0.82 and row(panel, 11).right == "Level 3" and row(panel, 12).icon == "active"
+    and row(panel, 12).left == "Turn in" and row(panel, 12).lr == COLOR.DONE[1] and row(panel, 12).right == "",
     "a quest of yours it takes back: its name like a quest's with its level, under it Turn in (ready, in green)")
-check(row(panel, 12).left == "Wanted: Hogger" and row(panel, 12).right == "Level 11" and row(panel, 13).icon == "available" and row(panel, 13).left == "Offers",
+check(row(panel, 13).left == "Wanted: Hogger" and row(panel, 13).right == "Level 11" and row(panel, 14).icon == "available" and row(panel, 14).left == "Offers",
     "a quest it offers you, the same way; not one too far above your level, nor one whose first quest you have not done, "
     .. "nor one it gives the other side only")
-check(count(panel) == 14 and row(panel, 14).left == "Not ours" and row(panel, 14).rule, "another addon's line stays, after the section")
+check(count(panel) == 16 and row(panel, 15).kind == "caption" and row(panel, 15).left == "Addons" and row(panel, 16).left == "Not ours",
+    "another addon's line stays, after the section, in a section of its own")
+askedLog = 0
 tip:Fill({ type = TYPE.Unit, guid = "Creature-0-1-2-3-1-4" }, { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Level 5 Humanoid (Elite)" } })
-check(askedLog == 1 and count(panel) == 12, "read again (as a unit frame's tooltip is, many times a second), the quest log is not asked again")
+tip:Fill({ type = TYPE.Unit, guid = "Creature-0-1-2-3-1-4" }, { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Level 5 Humanoid (Elite)" } })
+check(askedLog == 0 and count(panel) == 13, "read again (as a unit frame's tooltip is, many times a second), the quest log is not asked again")
 quests[61].ready = false
 W.Fire("QUEST_LOG_UPDATE")
 tip:Fill({ type = TYPE.Unit, guid = "Creature-0-1-2-3-1-4" }, { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Level 5 Humanoid (Elite)" } })
-check(askedLog == 2 and row(panel, 10).left == "In progress", "once the quest log changes, it is")
+check(askedLog == 1 and row(panel, 11).left == "In progress", "once the quest log changes, it is")
 -- The game's own line for what the database knows it drops: the chance too, and a sack even where
 -- the words name the creature
 quests[60].objectives[2].text = "Kobold Candle: 1/4"
 W.Fire("QUEST_LOG_UPDATE")
 tip:Fill({ type = TYPE.Unit, guid = "Creature-0-1-2-3-1-4" }, { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Level 5 Humanoid (Elite)" },
     { "The Kobold Menace", nil, GOLD, nil, LINE.QuestTitle }, { " - Kobold Candle: 1/4", nil, nil, nil, LINE.QuestObjective } })
-check(row(panel, 8).icon == "loot" and row(panel, 8).left == "Kobold Candle" and row(panel, 8).label == "33%"
-    and row(panel, 9).left == "Report to Gryan", "the game's own line for a drop gets its chance and a sack, and is not there twice")
+check(row(panel, 9).icon == "loot" and row(panel, 9).left == "Kobold Candle" and row(panel, 9).label == "33%"
+    and row(panel, 10).left == "Report to Gryan", "the game's own line for a drop gets its chance and a sack, and is not there twice")
 quests[60].objectives[2].text = "Candle: 1/4"
 quests[61].ready = true
--- What the game shows grey for your level an NPC does not offer (here grey: more than 2 below you)
+-- What the game shows grey for your level an NPC does not offer (here grey: more than 2 below you).
+-- NPC 3 gives quest 66, of level 1, and quest 62.
 local function gives(npc, quest)
     local list = ns.Quests.Of(npc)
     for index = 1, list.n do
@@ -874,32 +941,35 @@ local function gives(npc, quest)
     end
     return false
 end
-ns.QuestFacts.quest[66] = "1;;;;Long Ago"
-ns.QuestFacts.npc[1] = "g62,63,64,66,H70 t61 dA60.2.33"
 UnitQuestTrivialLevelRange = function() return 2 end
 W.Fire("QUEST_LOG_UPDATE")
-check(not gives(1, 66) and gives(1, 62), "a quest three levels below you is grey to the game (its range: 2): not offered")
+check(not gives(3, 66) and gives(3, 62), "a quest three levels below you is grey to the game (its range: 2): not offered")
 UnitQuestTrivialLevelRange = function() return 3 end
 W.Fire("QUEST_LOG_UPDATE")
-check(gives(1, 66), "with a wider range it is")
+check(gives(3, 66), "with a wider range it is")
 UnitQuestTrivialLevelRange = nil
--- How often, below 1 %
-ns.QuestFacts.npc[2] = "d60.2.0"
+-- How often, below 1 % (NPC 2 drops the candle that rarely)
 check(ns.Quests.Of(2).n == 1 and ns.Quests.Of(2)[1].kind == "drop" and ns.Quests.Of(2)[1].extra == "<1", "a chance below 1 % is shown as <1")
-ns.QuestFacts.quest[71] = 123 -- a broken record
-ns.QuestFacts.npc[1] = "g71,62,63,64,H70 t61 dA60.2.33"
+check(ns.Quests.Of(999).n == 0 and ns.Quests.Item(999).n == 0, "a creature or an item Core's data does not know has no quest list")
+-- A reader of the data that fails: noted and told once, what was found before it stays
+local keys = Data.Set("Quests").Keys
+Data.Set("Quests").Keys = function(self, index, value)
+    if index == "byStartNPC" then error("broken") end
+    return keys(self, index, value)
+end
 W.Fire("QUEST_LOG_UPDATE")
 W.printed = {}
 tip:Fill({ type = TYPE.Unit, guid = "Creature-0-1-2-3-1-4" }, { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Level 5 Humanoid (Elite)" } })
-check(panel:IsShown() and count(panel) == 10 and row(panel, 7).left == "The Kobold Menace" and row(panel, 8).left == "Candle"
-    and row(panel, 9).left == "Report to Gryan", "a broken record ends the list there: what was found before it stays")
-check(Core.errors["Tooltips: quest facts"] and #W.printed == 1 and not ns.off, "it is noted and told once")
-ns.QuestFacts = { quest = {}, npc = {}, item = {} }
+check(panel:IsShown() and count(panel) == 11 and row(panel, 8).left == "The Kobold Menace" and row(panel, 9).left == "Candle"
+    and row(panel, 10).left == "Report to Gryan", "a failure in the quest list ends it there: what was found before it stays")
+check(Core.errors["Tooltips: quest data"] and #W.printed == 1 and not ns.off, "it is noted and told once")
+Data.Set("Quests").Keys = nil -- the handle's own again
+W.Fire("QUEST_LOG_UPDATE")
 -- A dead creature: the corpse line goes (the class line says Dead), what it yields goes on the class line
 world.target.dead, world.target.class = true, { "Kobold", "WARRIOR" }
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Level 5 Humanoid (Elite)" }, { "Corpse" },
     { "Skinnable", nil, { 1, 0.1, 0.1 } } })
-check(row(panel, 3).left == "|cffffd100Elite|r  \194\183  |cff" .. ASIDE_HEX .. "Dead|r  \194\183  |cffff1919Skinnable|r" and count(panel) == 4,
+check(row(panel, 3).left == "|cffffd100Elite|r  \194\183  |cff" .. ASIDE_HEX .. "Dead|r  \194\183  |cffff1919Skinnable|r" and count(panel) == 5,
     "a dead creature: Dead and Skinnable (in the game's colour for it) on the class line; no corpse line, no class that is only its name")
 check(head(panel).ar == COLOR.NEUTRAL[1] and head(panel).ag == COLOR.NEUTRAL[2] and head(panel).ab == COLOR.NEUTRAL[3], "its panel has no colour of its own")
 check(head(panel).portrait == "target" and panel.icon:IsShown() and head(panel).dragon == "elite" and panel.dragon:IsShown(),
@@ -979,15 +1049,88 @@ W.Fire("MODIFIER_STATE_CHANGED", "LSHIFT", 0)
 W.methods.SetUnit = nil -- the units below have the flat picture again
 figure:Hide()
 
--- An item's quests, and the quests items start (the module's quest facts) ---------------------
-ns.QuestFacts = { quest = { [60] = "1-2;;A;;The Kobold Menace", [80] = "1-55;;;;A Letter",
-    [90] = "1-5;;;;Candles for Gryan", -- done long ago
-    [91] = "62;;;;Wax Works",          -- for later: from level 62
-    [92] = "1-10;;;2;Holy Candles",    -- for paladins only: not yours
-    [93] = "1-58;;;;Candle Light" },   -- you can take it
-    -- the candle is wanted by quest 60's second objective and by four more; the letter starts quest 80
-    item = { [772] = "n60.2,90.1,91.1,92.1,93.1", [5000] = "b80" },
-    npc = { [1] = "s5000.80.3" } }     -- the kobold drops the letter, 3% of the time
+-- A thing's 3D model in its icon's place (the option models, Figures.lua): a mount's and a pet's by the
+-- game's collections, gear on your own character. The icon stands until the game has loaded the model.
+local loads = {} -- what the models were given, in order
+W.methods.SetDisplayInfo = function(self, display) loads[#loads + 1] = "display " .. display end
+W.methods.TryOn = function(self, link) loads[#loads + 1] = "try " .. link; return link:find("6006") and 1 or 0 end
+W.methods.Dress = function(self) loads[#loads + 1] = "dress" end
+W.methods.SetUnit = function(self, unit) loads[#loads + 1] = "unit " .. unit; return true end
+W.methods.SetFacing = function(self, turn) self._turn = turn end
+Enum.ItemTryOnReason = { Success = 0, WrongRace = 1 }
+C_MountJournal = {
+    GetMountFromItem = function(id) return id == 6001 and 7 or nil end,
+    GetMountFromSpell = function(id) return id == 6101 and 8 or nil end,
+    GetMountInfoExtraByID = function(mount) if mount == 7 then return 1234 end end,
+    GetMountAllCreatureDisplayInfoByID = function(mount) if mount == 8 then return { { creatureDisplayID = 4321 } } end end,
+}
+C_PetJournal = { GetPetInfoByItemID = function(id) if id == 6002 then return "Cat", 1, 1, 99, "", "", false, false, true, false, true, 555 end end }
+local WEAR = { [6003] = "INVTYPE_HEAD", [6004] = "INVTYPE_CLOAK", [6005] = "INVTYPE_FINGER", [6006] = "INVTYPE_CHEST", [6007] = "INVTYPE_FEET" }
+local instant = C_Item.GetItemInfoInstant
+C_Item.GetItemInfoInstant = function(id) if WEAR[id] then return id, "Armor", "Cloth", WEAR[id] end return id, "Misc", "Junk", "" end
+C_Item.IsDressableItemByID = function(id) return WEAR[id] ~= nil and WEAR[id] ~= "INVTYPE_FINGER" end
+for id = 6001, 6007 do W.items[id] = { name = "Thing " .. id, quality = 1 } end
+local function loaded(model) model._scripts.OnModelLoaded(model) end -- the game has the model now
+tip:Fill({ type = TYPE.Item, id = 6001 }, { { "Reins of the Wolf" } })
+check(head(panel).model == 1234 and head(panel).modelKind == "display" and loads[#loads] == "display 1234",
+    "a mount's item: the mount's model (the game's mount collection), given to the model frame")
+check(figure:IsShown() and figure:GetAlpha() == 0 and panel.icon:IsShown() and panel.icon._texture == 2000 + 6001,
+    "until the game has loaded it, the icon stands, the model unseen")
+loaded(figure)
+check(figure:GetAlpha() == 1 and not panel.icon:IsShown() and figure._turn == -0.5, "loaded, the model stands in the icon's place, a little from the side")
+panel.drawn = false
+tip:Fill({ type = TYPE.Item, id = 6001 }, { { "Reins of the Wolf" } })
+check(#loads == 1 and figure:GetAlpha() == 1 and not panel.icon:IsShown(), "drawn again, the same model is not given again, and stands at once")
+tip:Fill({ type = TYPE.Item, id = 6002 }, { { "Cat Carrier" } })
+check(loads[#loads] == "display 555" and panel.icon:IsShown(), "a pet's item: the pet's model (its twelfth answer), the icon until it is loaded")
+loaded(figure)
+tip:Fill({ type = TYPE.Item, id = 6003 }, { { "Helm" } })
+local dresser = panel.dresser
+check(dresser and dresser._kind == "DressUpModel" and not figure:IsShown() and dresser:IsShown(),
+    "a piece of gear: a model frame of its own that dresses a character, the other one hidden")
+check(loads[#loads - 1] == "unit player" and loads[#loads] == "try item:6003" and dresser._zoom == 0.9 and panel.icon:IsShown(),
+    "your own character, trying it on (the item, where the tooltip does not give its link), the face close up for a helm; the icon until it is loaded")
+loaded(dresser)
+check(not panel.icon:IsShown() and dresser:GetAlpha() == 1, "then you wearing it")
+function tip:GetItem() return "Cloak", "|cffffffff|Hitem:6004::::|h[Cloak]|h|r" end
+tip:Fill({ type = TYPE.Item, id = 6004 }, { { "Cloak" } })
+check(loads[#loads - 1] == "dress" and loads[#loads] == "try |cffffffff|Hitem:6004::::|h[Cloak]|h|r" and dresser._turn == math.pi
+    and dresser._zoom == 0 and not panel.icon:IsShown(),
+    "the next piece: your character dressed anew and trying it on (its own link), at once; a cloak seen from behind, the whole character")
+tip.GetItem = nil
+local asked = #loads
+tip:Fill({ type = TYPE.Item, id = 6005 }, { { "Ring" } })
+check(#loads == asked and not dresser:IsShown() and not figure:IsShown() and panel.icon:IsShown(), "a ring is not seen on a character: its icon")
+tip:Fill({ type = TYPE.Item, id = 6006 }, { { "Robe" } })
+check(loads[#loads] == "try item:6006" and not dresser:IsShown() and panel.icon:IsShown(), "where your character cannot try it on: the icon")
+tip:Fill({ type = TYPE.Item, id = 6007 }, { { "Boots" } })
+check(loads[#loads - 1] == "unit player" and loads[#loads] == "try item:6007", "(hidden, the frame forgot your character: asked for anew)")
+loaded(dresser)
+dresser:Hide() -- with its panel
+W.spells[6101] = { name = "Swift Wolf" }
+tip:Fill({ type = TYPE.Spell, id = 6101 }, { { "Swift Wolf" } })
+check(head(panel).model == 4321 and loads[#loads] == "display 4321" and figure:IsShown(),
+    "a spell that summons a mount: the mount's model (the first of its displays)")
+options.models = false
+asked = #loads
+tip:Fill({ type = TYPE.Item, id = 6003 }, { { "Helm" } })
+check(#loads == asked and panel.icon:IsShown() and not figure:IsShown() and not dresser:IsShown(),
+    "switched off: the icon, and no model is asked for")
+options.models, options.icons = true, false
+tip:Fill({ type = TYPE.Item, id = 6003 }, { { "Helm" } })
+check(#loads == asked and head(panel).model == nil and not dresser:IsShown(), "without icons there is no picture, and no model in its place")
+options.icons = true
+check(Core.described.Tooltips.list[5].key == "models" and Core.described.Tooltips.list[5].text == "3D model in tooltips"
+    and Core.described.Tooltips.list[5].default == true, "the setting: 3D model in tooltips, ticked at first")
+W.methods.SetDisplayInfo, W.methods.TryOn, W.methods.Dress, W.methods.SetUnit, W.methods.SetFacing = nil, nil, nil, nil, nil
+C_MountJournal, C_PetJournal, C_Item.IsDressableItemByID, C_Item.GetItemInfoInstant = nil, nil, nil, instant
+figure:Hide()
+dresser:Hide()
+
+-- An item's quests, and the quests items start (Core's quest data, the sample) ------------------------
+-- The candle (772) is wanted by quest 60's second objective and by four more: 90 (done long ago), 91 (for
+-- later: from level 62), 92 (for paladins only: not yours), 93 (you can take it). The letter (5000) starts
+-- quest 80; NPC 4 drops it, 3% of the time.
 quests[60].objectives[2].numFulfilled, quests[60].objectives[2].numRequired = 1, 4
 quests[90] = { done = true }
 local flagged = C_QuestLog.IsQuestFlaggedCompleted
@@ -995,31 +1138,32 @@ C_QuestLog.IsQuestFlaggedCompleted = function(id) return quests[id] and quests[i
 W.items[772], W.items[5000] = { name = "Candle", quality = 1 }, { name = "Dusty Letter", quality = 1 }
 W.Fire("QUEST_LOG_UPDATE")
 tip:Fill({ type = TYPE.Item, id = 772 }, { { "Candle" }, { "Quest Item" } })
-check(row(panel, 3).kind == "caption" and row(panel, 3).left == "Quest" and row(panel, 4).left == "Needed for" and row(panel, 4).font == "small"
-    and row(panel, 4).right == "Questlog", "an item quests want: a section of its own under the caption Quest; Questlog over where you stand")
-check(row(panel, 5).left == "The Kobold Menace" and row(panel, 5).icon == "active" and row(panel, 5).label == "[2]" and row(panel, 5).lg == 0.82
-    and row(panel, 5).right == "In log  1/4" and row(panel, 5).rg == 0.82,
+check(row(panel, 2).left == "Stats" and row(panel, 3).left == "Quest Item" and row(panel, 4).kind == "caption" and row(panel, 4).left == "Quest"
+    and row(panel, 5).left == "Needed for" and row(panel, 5).font == "small" and row(panel, 5).right == "Questlog",
+    "an item quests want: a section of its own under the caption Quest; Questlog over where you stand")
+check(row(panel, 6).left == "The Kobold Menace" and row(panel, 6).icon == "active" and row(panel, 6).label == "[2]" and row(panel, 6).lg == 0.82
+    and row(panel, 6).right == "In log  1/4" and row(panel, 6).rg == 0.82,
     "first the quest in your log: the ?, its name in gold, its level, In log and your count")
-check(row(panel, 6).left == "Candle Light" and row(panel, 6).icon == "available" and row(panel, 6).right == "Available"
-    and row(panel, 7).left == "Wax Works" and row(panel, 7).icon == nil and row(panel, 7).right == "Not yet" and row(panel, 7).lr == COLOR.DETAIL[1]
-    and row(panel, 8).left == "Candles for Gryan" and row(panel, 8).icon == "check" and row(panel, 8).right == "Done" and row(panel, 8).rg == COLOR.DONE[2],
+check(row(panel, 7).left == "Candle Light" and row(panel, 7).icon == "available" and row(panel, 7).right == "Available"
+    and row(panel, 8).left == "Wax Works" and row(panel, 8).icon == nil and row(panel, 8).right == "Not yet" and row(panel, 8).lr == COLOR.DETAIL[1]
+    and row(panel, 9).left == "Candles for Gryan" and row(panel, 9).icon == "check" and row(panel, 9).right == "Done" and row(panel, 9).rg == COLOR.DONE[2],
     "then one you can take (the !), one for later (dim), one you have done (a tick, Done in green); not one for another class")
-check(count(panel) == 8, "and nothing else")
+check(count(panel) == 9, "and nothing else")
 quests[60].objectives[2].numFulfilled, quests[60].objectives[2].finished = 4, true
 W.Fire("QUEST_LOG_UPDATE")
 tip:Fill({ type = TYPE.Item, id = 772 }, { { "Candle" }, { "Quest Item" } })
-check(row(panel, 5).right == "In log  4/4" and row(panel, 5).rg == COLOR.DONE[2], "the count green once the objective is complete")
+check(row(panel, 6).right == "In log  4/4" and row(panel, 6).rg == COLOR.DONE[2], "the count green once the objective is complete")
 quests[60].objectives[2].numFulfilled, quests[60].objectives[2].finished = 1, false
-ns.QuestFacts.item[772] = "n60.2,90.1,91.1,93.1,94.1,95.1"
-ns.QuestFacts.quest[94], ns.QuestFacts.quest[95] = "1-58;;;;One More", "1-58;;;;And Another"
+-- Wax (775) is wanted by quest 60 (its third objective), 90, 91, 93, and by 94 and 95, which you can take too
 W.Fire("QUEST_LOG_UPDATE")
-tip:Fill({ type = TYPE.Item, id = 772 }, { { "Candle" }, { "Quest Item" } })
+tip:Fill({ type = TYPE.Item, id = 775 }, { { "Wax" }, { "Quest Item" } })
 local more = row(panel, count(panel))
-check(more.left == "Press ALT for +2 more" and more.font == "small" and row(panel, 8).left == "And Another",
+check(more.left == "Press ALT for +2 more" and more.font == "small" and row(panel, 9).left == "And Another",
     "of the quests not in your log three, and how many more Alt shows")
 W.alt = true
-tip:Fill({ type = TYPE.Item, id = 772 }, { { "Candle" }, { "Quest Item" } })
-check(row(panel, 10).left == "Candles for Gryan" and count(panel) == 11, "with Alt all of them (and the details under them)")
+tip:Fill({ type = TYPE.Item, id = 775 }, { { "Wax" }, { "Quest Item" } })
+check(row(panel, 11).left == "Candles for Gryan" and count(panel) == 13 and row(panel, 12).left == "IDs" and row(panel, 13).font == "small",
+    "with Alt all of them (and the details under them, under IDs)")
 W.alt = false
 tip:Fill({ type = TYPE.Item, id = 5000 }, { { "Dusty Letter" }, { "This Item Begins a Quest" } })
 check(row(panel, 2).kind == "caption" and row(panel, 2).left == "Quest" and row(panel, 3).left == "Starts" and row(panel, 4).left == "A Letter"
@@ -1031,11 +1175,8 @@ tip:Fill({ type = TYPE.Item, id = 5000 }, { { "Dusty Letter" }, { "This Item Beg
 check(row(panel, 4).icon == "active" and row(panel, 4).right == "In log", "once taken, it says so, with the ?")
 quests[80], quests[90] = nil, nil
 C_QuestLog.IsQuestFlaggedCompleted = flagged
--- Quests of the same name (the same quest at other places) come once; a quest for one race
-local facts = ns.QuestFacts
-facts.quest[96], facts.quest[97], facts.quest[98], facts.quest[99] = "1-58;;;;Candle Light", "1-20;;95;;High Above",
-    "1-20;;1.3;;Old Kingdoms", "1-20;;A;;For the Alliance"
-facts.item[773] = "n93.1,96.1,97.1,98.1,99.1"
+-- Quests of the same name (the same quest at other places) come once; a quest for one race. Item 773 is
+-- wanted by 93 and 96 (both Candle Light), 97 (for race 95), 98 (humans and dwarves), 99 (the Alliance).
 W.Fire("QUEST_LOG_UPDATE")
 local function wanted(item)
     local list, names = ns.Quests.Item(item), {}
@@ -1049,8 +1190,6 @@ W.Fire("QUEST_LOG_UPDATE")
 check(wanted(773) == "Candle Light, High Above, For the Alliance",
     "one of this client's own races (95, whose bit is above 2^31) takes its own quests and its whole side's, not another race's")
 world.player.raceID = 1
-facts.item[773] = nil
-ns.QuestFacts.item[772] = "n60.2"
 W.Fire("QUEST_LOG_UPDATE")
 -- What else an item asks of you: in its header
 tip:Fill({ type = TYPE.Item, id = 772 }, { { "Robe" }, { "Classes: Mage" }, { "Requires Tailoring (75)", nil, { 1, 0.13, 0.13 } }, { "Requires Level 20" } })
@@ -1064,15 +1203,77 @@ tip:Fill({ type = TYPE.Item, id = 772 }, { { "Robe" }, { "Classes: Mage" }, { "R
 check(row(panel, 2).left == "Armor \194\183 Cloth" and row(panel, 2).right == "Requires Level 20" and row(panel, 3).right == "Classes: Mage",
     "beside what it is, the level and the class one under the other")
 C_Item.GetItemInfoInstant = cloth
--- A creature that drops an item that starts a quest you can take
-tip:Fill({ type = TYPE.Unit, guid = "Creature-0-1-2-3-1-4" }, { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Level 5 Humanoid (Elite)" } })
+-- A creature that drops an item that starts a quest you can take (NPC 4)
+units["Creature-0-1-2-3-4-4"] = "target"
+tip:Fill({ type = TYPE.Unit, guid = "Creature-0-1-2-3-4-4" }, { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Level 5 Humanoid (Elite)" } })
 local letter
 for index = 1, count(panel) do if row(panel, index).left == "Dusty Letter" then letter = index end end
 check(letter and row(panel, letter - 1).left == "A Letter" and row(panel, letter - 1).right == "Level 55" and row(panel, letter).icon == "available"
     and row(panel, letter).label == "3%" and row(panel, letter).right == "Starts the quest",
     "a creature that drops an item that starts a quest you can take: the quest and its level, the item with the ! and how often it drops")
-ns.QuestFacts = { quest = {}, npc = {}, item = {} }
 W.Fire("ADDON_LOADED", "Nothing")
+
+-- Your characters' things (Core's characters' data, read in steps since the login) --------------------
+local saved = SaneUIData_Characters
+check(Data.Characters() and #Data.Characters() == 3 and saved.forever.broken and saved.forever.broken[1].what == "Player-70-0000DEAD"
+    and saved["forever-beta"].characters["Player-70-0000BEEF"].name == "Beta",
+    "Core has read the characters' saved file: yours and two alts; a broken entry is set aside, never wiped; another game version's part is left as it is")
+local me = Data.Character(Core.charKey)
+check(me and me.name == "Sane Lunatic" and me.class == "MAGE" and type(me.level) == "number" and saved.forever.characters[Core.charKey].bags == "4500\0315",
+    "you, kept by your GUID, with your whole name (first name and surname); your bags packed: one item, five of it")
+world.player.surname = nil -- the game says the first name alone for a moment
+W.Fire("PLAYER_LEVEL_UP")
+Steps()
+check(Data.Character(Core.charKey).name == "Sane Lunatic", "a first name alone never takes the place of the whole name")
+world.player.surname = "Lunatic"
+local function find(left)
+    for index = 1, count(panel) do if row(panel, index).left == left then return index end end
+end
+W.items[4500] = { name = "Runecloth", quality = 1 }
+tip:Fill({ type = TYPE.Item, id = 4500 }, { { "Runecloth" }, { "Extra", added = true } })
+local at = find("Inventory")
+check(at and row(panel, at).kind == "caption", "an item your characters have: a section Inventory")
+check(row(panel, at + 1).left == "Sane Lunatic" and row(panel, at + 1).right == "Bags 5" and row(panel, at + 1).lr == RAID_CLASS_COLORS.MAGE.r,
+    "you first, by your whole name in your class's colour, with where you have it and how many")
+check(row(panel, at + 2).left == "Droopy Fairwind" and row(panel, at + 2).right == "Bags 12  \194\183  Bank 8"
+    and row(panel, at + 3).left == "Sane Moonwhisper" and row(panel, at + 3).right == "Worn 1",
+    "then the others by name, each by first name and surname: one that shares your first name is another character")
+check(row(panel, at + 4).left == "Account bank" and row(panel, at + 4).right == "Bank 5" and row(panel, at + 5).left == "Total"
+    and row(panel, at + 5).right == "31", "the account's own bank last, then how many in all")
+check(row(panel, at + 6).kind == "caption" and row(panel, at + 6).left == "Addons" and row(panel, at + 7).left == "Extra"
+    and count(panel) == at + 7, "other addons' lines after it, in their own section, last")
+bagItems[0][1].stackCount = 5
+W.Fire("BAG_UPDATE", 0)
+W.Fire("BAG_UPDATE_DELAYED")
+check(row(panel, at + 1).right == "Bags 5", "a bag changes: nothing is read at once")
+Steps()
+check(row(panel, at + 1).right == "Bags 7" and row(panel, at + 5).right == "33" and saved.forever.characters[Core.charKey].bags == "4500\0317",
+    "it is read in steps, kept, and the panel that is shown follows")
+C_Bank = { CanViewBank = function() return true end, FetchPurchasedBankTabIDs = function(kind) return kind == 0 and { 6 } or {} end }
+bagItems[6] = { { itemID = 4500, stackCount = 4 } }
+W.Fire("BANKFRAME_OPENED")
+Steps()
+check(row(panel, at + 1).right == "Bags 7  \194\183  Bank 4" and saved.forever.characters[Core.charKey].bank == "4500\0314",
+    "the bank, read while it is open")
+W.Fire("BANKFRAME_CLOSED")
+bagItems[6] = nil
+W.Fire("BAG_UPDATE", 6)
+W.Fire("BAG_UPDATE_DELAYED")
+Steps()
+check(saved.forever.characters[Core.charKey].bank == "4500\0314", "closed, the bank is not read: what was seen of it stays")
+tip:Fill({ type = TYPE.Item, id = 4501 }, { { "Thing" } })
+at = find("Inventory")
+check(at and row(panel, at + 1).left == "Droopy Fairwind" and row(panel, at + 1).right == "Bags 1" and not find("Total"),
+    "an item one character has: no total")
+tip:Fill({ type = TYPE.Item, id = 4502 }, { { "Other" } })
+check(not find("Inventory"), "an item none of them has (another game version's part does not count): no section")
+options.classColors = false
+tip:Fill({ type = TYPE.Item, id = 4500 }, { { "Runecloth" } })
+at = find("Inventory")
+check(row(panel, at + 1).lr == COLOR.LIGHT[1], "with class colours switched off, the names are light")
+options.classColors = true
+W.Fire("PLAYER_LOGOUT")
+check(SaneUIDB.data and SaneUIDB.data.forever.saved.Characters > 0, "at the logout Core notes how much the characters' file holds (a lost file is noticed)")
 
 -- A buff -------------------------------------------------------------------------------------
 auras.player = { HELPFUL = { { isHelpful = true, dispelName = "Magic", duration = 1800, expirationTime = W.clock + 1000, sourceUnit = "mouseover", auraInstanceID = 7 } } }
@@ -1080,9 +1281,14 @@ tip.info = { getterName = "GetUnitBuff", getterArgs = { "player", 1 } }
 local fortitude = { { "Power Word: Fortitude" }, { "Increases Stamina by 26.", nil, GOLD, nil, LINE.SpellDescription }, { "17 minutes remaining" } }
 tip:Fill({ type = TYPE.UnitAura, id = 1243 }, fortitude)
 check(row(panel, 1).caps and row(panel, 2).left == "Buff  \194\183  Magic" and head(panel).ab == 1 and head(panel).icon == 1000 + 1243, "a buff: what it is under its name, in blue")
-check(row(panel, 3).prose and row(panel, 3).rule, "its description")
-check(count(panel) == 4 and row(panel, 4).kind == "bar" and row(panel, 4).live == "aura" and row(panel, 4).rule and head(panel).auraID == 7
-    and panel.live.auraEnds == W.clock + 1000, "then a bar that runs out with it")
+check(row(panel, 3).left == "Description" and row(panel, 4).prose, "its description, under its name")
+check(shape(panel) == "text text DESCRIPTION text DURATION bar" and row(panel, 6).live == "aura" and head(panel).auraID == 7
+    and panel.live.auraEnds == W.clock + 1000, "then under Duration a bar that runs out with it")
+tip:Fill({ type = TYPE.UnitAura, id = 1243 }, { { "Power Word: Fortitude" }, { "Increases Stamina by 26.", nil, GOLD, nil, LINE.SpellDescription },
+    { "17 minutes remaining" }, { "Cast 4 times today", added = true } })
+check(count(panel) == 8 and row(panel, 6).kind == "bar" and row(panel, 7).left == "Addons" and row(panel, 8).left == "Cast 4 times today",
+    "another addon's line comes after the bar, in a section of its own, not between the buff's lines and its bar")
+tip:Fill({ type = TYPE.UnitAura, id = 1243 }, fortitude)
 local timer = panel.live.aura
 check(timer._height == 18 and timer.texts.LEFT._text == "17 minutes remaining" and timer.texts.RIGHT._text == "by Jaina Proudmoore" and timer.texts.LEFT:GetParent():GetParent() == timer,
     "inside it, the game's line for how long it still runs, and who cast it (first name and surname)")
@@ -1091,7 +1297,7 @@ check(panel.barMask._points[1][5] == select(5, timer:GetPoint(1)), "with round c
 -- Another addon's ID line, among the buff's own lines and after them
 tip:Fill({ type = TYPE.UnitAura, id = 1243 }, { { "Power Word: Fortitude" }, { "Spell ID: 1459", nil, GOLD, nil, 0, added = true },
     { "Increases Stamina by 26.", nil, GOLD, nil, LINE.SpellDescription }, { "17 minutes remaining" }, { "IconID", "135932", nil, nil, 0, added = true } })
-check(count(panel) == 4 and row(panel, 3).left == "Increases Stamina by 26." and panel.live.aura.texts.LEFT._text == "17 minutes remaining",
+check(count(panel) == 6 and row(panel, 4).left == "Increases Stamina by 26." and panel.live.aura.texts.LEFT._text == "17 minutes remaining",
     "another addon's ID lines are left out (Alt shows the numbers), and the time is still found for the bar")
 check(ns.Reader.IsIdLine({ left = "|TInterface\\Icons\\X:0|t |cffffd100Spell ID:|r", right = "|Hspell:1459|h1459|h" })
     and not ns.Reader.IsIdLine({ left = "|cffffd100Spell ID|r is a word", right = "" }),
@@ -1100,16 +1306,16 @@ check(ns.Reader.IsIdLine({ left = "|TInterface\\Icons\\X:0|t |cffffd100Spell ID:
 -- Alt held: the technical details
 W.alt = true
 W.Fire("MODIFIER_STATE_CHANGED", "LALT", 1)
-check(count(panel) == 5 and row(panel, 5).font == "small" and row(panel, 5).rule and row(panel, 5).left == "Spell ID: 1243" and row(panel, 5).right == "Icon ID: 2243",
-    "with Alt held a tooltip has its technical details at the bottom, small: the spell's number at the left, its icon's at the right")
+check(count(panel) == 8 and row(panel, 7).left == "IDs" and row(panel, 8).font == "small" and row(panel, 8).left == "Spell ID: 1243" and row(panel, 8).right == "Icon ID: 2243",
+    "with Alt held a tooltip has its technical details at the bottom, small, under IDs: the spell's number at the left, its icon's at the right")
 W.alt = false
 W.Fire("MODIFIER_STATE_CHANGED", "LALT", 0)
-check(count(panel) == 4, "let go, they are gone")
+check(count(panel) == 6, "let go, they are gone")
 W.Fire("MODIFIER_STATE_CHANGED", "LSHIFT", 1)
-check(count(panel) == 4, "(another key changes nothing)")
+check(count(panel) == 6, "(another key changes nothing)")
 auras.player.HELPFUL[1] = { isHarmful = true, dispelName = "Magic", duration = 0, auraInstanceID = 8 }
 tip:Fill({ type = TYPE.UnitAura, id = 1243 }, { { "Polymorph" }, { "Cannot attack or cast spells.", nil, GOLD, nil, LINE.SpellDescription } })
-check(row(panel, 2).left == "Debuff  \194\183  Magic" and head(panel).ag == 0.6 and count(panel) == 3, "a debuff has the colour of its kind; without a time, no bar")
+check(row(panel, 2).left == "Debuff  \194\183  Magic" and head(panel).ag == 0.6 and count(panel) == 4, "a debuff has the colour of its kind; without a time, no bar")
 auras.player.HARMFUL = { { isHarmful = true, duration = 0, auraInstanceID = 9 } }
 tip.info = { getterName = "GetUnitDebuffByAuraInstanceID", getterArgs = { "player", 9 } }
 tip:Fill({ type = TYPE.UnitAura, id = 1243 }, { { "Curse of Nothing" } })
@@ -1118,10 +1324,11 @@ check(row(panel, 2).left == "Debuff" and head(panel).ar == 0.8 and head(panel).a
 auras.player.HARMFUL = nil
 tip.info = nil
 tip:Fill({ type = TYPE.UnitAura, id = 1243 }, fortitude)
-check(count(panel) == 3 and not head(panel).accent and panel:IsShown(), "a buff the game says nothing more about still gets its name and lines")
+check(shape(panel) == "text DESCRIPTION text DETAILS text" and not head(panel).accent and panel:IsShown(),
+    "a buff the game says nothing more about still gets its name and lines, each kind under its name")
 W.alt = true
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury" } })
-check(row(panel, 2).left == "Item ID: 19019" and row(panel, 2).right == "Icon ID: 21019", "an item's: its number and its icon's")
+check(row(panel, 3).left == "Item ID: 19019" and row(panel, 3).right == "Icon ID: 21019", "an item's: its number and its icon's")
 tip:Fill({ type = TYPE.Unit, guid = "Creature-0-1-2-3-4711-5" }, { { "Kobold" } })
 check(row(panel, count(panel)).left == "NPC ID: 4711", "a creature's: its number")
 tip:Fill({ type = TYPE.Quest, id = 77 }, { { "Wolves", nil, GOLD } })
@@ -1134,20 +1341,34 @@ tip:Fill({ type = TYPE.Quest, id = 77 }, { { "Wolves Across the Border", nil, GO
     { "Tough Wolf Meat: 8/8", nil, nil, nil, LINE.QuestObjective, data = { completed = true } }, { "3/8 Wolf Paw", nil, nil, nil, LINE.QuestObjective } })
 check(row(panel, 1).caps and head(panel).ag == 0.82 and row(panel, 2).left == "Level 6" and row(panel, 2).label == "\194\183  In progress" and row(panel, 2).lb == 0,
     "a quest: gold, its level in the colour of its difficulty, and where it stands for you")
-check(row(panel, 3).left == "Bring their paws to Eagan." and row(panel, 3).rule and row(panel, 4).kind == "caption" and row(panel, 4).left == "Objectives",
-    "what it says, then what there is to do under a caption")
-check(row(panel, 5).left == "Tough Wolf Meat" and row(panel, 5).right == "8/8" and row(panel, 5).icon == "check" and row(panel, 5).lg == COLOR.DONE[2],
+check(row(panel, 3).left == "Description" and row(panel, 4).left == "Bring their paws to Eagan." and row(panel, 5).kind == "caption"
+    and row(panel, 5).left == "Objectives", "what it says, under Description, then what there is to do under a caption")
+check(row(panel, 6).left == "Tough Wolf Meat" and row(panel, 6).right == "8/8" and row(panel, 6).icon == "check" and row(panel, 6).lg == COLOR.DONE[2],
     "a thing that is done: ticked and green, its count at the right")
-check(row(panel, 6).left == "Wolf Paw" and row(panel, 6).right == "3/8" and row(panel, 6).icon == "box" and count(panel) == 6, "a thing still to do: an empty box")
+check(row(panel, 7).left == "Wolf Paw" and row(panel, 7).right == "3/8" and row(panel, 7).icon == "box" and count(panel) == 7, "a thing still to do: an empty box")
+-- Lines of several other addons, with an empty line between them: never between the quest's text and its
+-- objectives, but after everything of the panel's own, under one caption, the empty line a gap
+W.alt = true
+tip:Fill({ type = TYPE.Quest, id = 77 }, { { "Wolves Across the Border", nil, GOLD }, { "Bring their paws to Eagan.", nil, WHITE },
+    { "Tough Wolf Meat: 8/8", nil, nil, nil, LINE.QuestObjective, data = { completed = true } }, { "3/8 Wolf Paw", nil, nil, nil, LINE.QuestObjective },
+    { "Seen by 3 guild members", nil, GREEN, added = true }, { " ", added = true }, { "Worth 12 points", "A note", nil, nil, 0, added = true } })
+check(row(panel, 7).left == "Wolf Paw" and row(panel, 8).left == "IDs" and row(panel, 9).left == "Quest ID: 77" and row(panel, 10).kind == "caption"
+    and row(panel, 10).left == "Addons" and row(panel, 11).left == "Seen by 3 guild members" and row(panel, 11).font == "small"
+    and row(panel, 11).lg == COLOR.ASIDE[2] and row(panel, 12).left == "Worth 12 points" and row(panel, 12).right == "A note" and row(panel, 12).space
+    and count(panel) == 12,
+    "other addons' lines: after the objectives and the details Alt shows, in one section of their own, small and quiet, an empty line between them a gap")
+W.alt = false
 quests[77].ready = true
 tip:Fill({ type = TYPE.Quest, id = 77 }, { { "Wolves Across the Border", nil, GOLD } })
 check(row(panel, 2).label == "\194\183  Ready to turn in" and count(panel) == 2, "ready to hand in, it says so")
 
 -- Anything else
-tip:Fill({ type = TYPE.Object, id = 1 }, { { "Mithril Deposit", nil, GOLD }, { "Requires Mining 175", nil, { 1, 0.1, 0.1 } }, { " " }, { "Gathered here 12 times", nil, nil, nil, 0, added = true } })
-check(row(panel, 1).caps and not head(panel).accent and row(panel, 2).lr == 1 and row(panel, 2).rule and row(panel, 3).font == "small" and count(panel) == 3,
-    "any other kind (a mailbox, a herb): its name, its lines in their colours, an empty line being a divider; a panel without "
-    .. "a colour of its own, whatever colour its name has")
+tip:Fill({ type = TYPE.Object, id = 1 }, { { "Mithril Deposit", nil, GOLD }, { "Requires Mining 175", nil, { 1, 0.1, 0.1 } }, { " " }, { "Rich vein" },
+    { "Gathered here 12 times", nil, nil, nil, 0, added = true } })
+check(row(panel, 1).caps and not head(panel).accent and row(panel, 2).lr == 1 and shape(panel) == "text text +text ADDONS text"
+    and row(panel, 5).font == "small",
+    "any other kind (a mailbox, a herb): its name, its lines in their colours under it, no sections, an empty line a gap; a panel "
+    .. "without a colour of its own, whatever colour its name has; another addon's line in its own section")
 local plainR, plainG = ns.Mix(COLOR.BACKDROP, COLOR.NEUTRAL, 0.28)
 check(math.abs(colors[2].r - plainR) < 1e-9 and math.abs(colors[2].g - plainG) < 1e-9, "its background the same as a dead unit's")
 
@@ -1159,7 +1380,7 @@ tip:Fill(nil, { { "Close", nil, GOLD } })
 check(panel:IsShown() and tip:GetAlpha() == 0 and count(panel) == 1 and row(panel, 1).left == "Close" and not row(panel, 1).caps,
     "a tooltip somebody wrote lines into gets a panel too, its lines as they are written")
 spell()
-check(panel:IsShown() and cells(row(panel, 3)):find("Mana 30 (30%)", 1, true) == 1, "(a spell again)")
+check(panel:IsShown() and cells(row(panel, 4)):find("Mana 30 (30%)", 1, true) == 1, "(a spell again)")
 tip:Fill(nil, { { "Close" }, { "Closes the window." } })
 check(panel:IsShown() and tip:GetAlpha() == 0 and row(panel, 2).left == "Closes the window." and head(panel).icon == nil and not head(panel).strip,
     "lines written into it after a spell's are a hint, not that spell")
@@ -1308,9 +1529,9 @@ check(worn:GetAlpha() == 0.85, "and stands back a little")
 shopping:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury", nil, { 0.64, 0.21, 0.93 } }, { "Binds when picked up", nil, nil, nil, LINE.ItemBinding, data = { bonding = 3 } },
     { "", added = true }, { "If you replace this item, the following stat changes will occur:", nil, GOLD, added = true },
     { "|cff00ff00+2.2|r damage per second", added = true }, { "+3 Stamina", added = true } })
-check(head(worn).tag == "|cffffd100EQUIPPED|r" and count(worn) == 3 and row(worn, 2).left == "|cff00ff00+2.2|r DPS" and row(worn, 2).font == "row"
-    and row(worn, 2).rule and row(worn, 3).left == "+3 Stamina" and row(worn, 3).font == "row",
-    "a comparison's changes without the sentence over them, as the game's own lines, damage per second short")
+check(head(worn).tag == "|cffffd100EQUIPPED|r" and count(worn) == 4 and row(worn, 2).left == "Stats" and row(worn, 3).left == "|cff00ff00+2.2|r DPS"
+    and row(worn, 3).font == "row" and row(worn, 4).left == "+3 Stamina" and row(worn, 4).font == "row",
+    "a comparison's changes without the sentence over them, as the game's own lines under Stats, damage per second short")
 
 -- What you wear beside what you look at, at places of the module's own: the game moves its
 -- comparisons about several times a second (one on the other, then the other way round, hidden and

@@ -17,7 +17,7 @@ races          = { type = "list", of = "int" }  # the game's race IDs; none: eve
 classes        = { type = "list", of = "int" }  # the game's class IDs; none: every class
 requires       = { type = "list", of = "tuple", parts = [
     { name = "kind", type = "enum", values = ["done", "one", "closed"] },  # all done first, one of them done, closed once had
-    { name = "quest", type = "ref", set = "Quests" },
+    { name = "quest", type = "int" },        # the game's quest ID, also of a quest this set does not hold: the game tells whether it is done
     { name = "side", type = "enum", values = ["alliance", "horde"] },
 ] }
 reputation     = { type = "tuple", parts = [
@@ -47,6 +47,7 @@ finishObjects  = { type = "list", of = "tuple", parts = [
     { name = "side", type = "enum", values = ["alliance", "horde"] },
 ] }
 objectives     = { type = "list", of = "tuple", parts = [
+    { name = "index", type = "int", min = 1 },  # its number in the game's list (C_QuestLog.GetQuestObjectives); the list may leave some out
     { name = "kind", type = "enum", values = ["kill", "loot", "object", "explore", "talk", "event"] },
     { name = "what", type = "int" },          # the creature, item or object, by its kind
     { name = "count", type = "int", min = 1 },

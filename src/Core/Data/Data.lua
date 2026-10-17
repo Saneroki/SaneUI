@@ -22,6 +22,10 @@ local Core = SaneUI.Core
 --  Packs are found by their TOC lines (X-SaneUI-Sets, -Format, -Game), without loading them. A pack of
 --  another format or game version is refused, and so is every pack on a client whose game version cannot
 --  be told; a pack the player switched off stays off. A failure is said once, and the modules fall back.
+--
+--  A pack of saved data (X-SaneUI-Saved; Characters is one) ships nothing: it holds what Core keeps in the game,
+--  in its saved variable SaneUIData_<Pack>, which exists only once the pack is loaded. Core's own readers
+--  ask for it with Data.Saved(pack, fn) and get its part of this client's game version.
 -------------------------------------------------------------------------------
 local Data = Core.Data -- made by Codec.lua
 local Codec, Steps = Data.Codec, Core.Steps
@@ -36,6 +40,7 @@ local LIST = "\030"
 
 local TEXT = {
     missing = "no data pack holds the set %s",
+    noPack = "the data pack %s is not installed",
     off = "switched off in the addon list",
     refused = "%s is not used: %s",
     noGame = "this client's game version cannot be told, so no data pack is used",
@@ -48,6 +53,7 @@ local TEXT = {
     unreadable = "its fields cannot be read",
     twice = "two data packs hold the set %s; %s is used",
     badRow = "a row of %s cannot be read",
+    lost = "the saved file of %s did not load, so what it kept is missing. Before you log out, copy %s.lua.bak over %s.lua in WTF/Account/<account>/SavedVariables: the next logout writes over that copy.",
     -- /sane data
     about = "Sane UI's databases: the data packs, loaded or not (/sane data show <set> <key>)",
     client = "data of %s, build %s (project %s; beta: %s; test: %s); %s.",
@@ -78,7 +84,7 @@ local TEXT = {
     usage = "/sane data show <set> <key>",
 }
 
-local packs = {}      -- [addon name] = { name, title, sets, format, game, state, why }
+local packs = {}      -- [addon name] = { name, title, sets, saved, format, game, state, why, part }
 local packList = {}   -- the packs in the addon list's order
 local owner = {}      -- [set name] = its pack
 local sets = {}       -- [set name] = what Core knows of it (made by Add, or when something is said of it)
@@ -87,6 +93,7 @@ local listeners = {}  -- [set name] = { fn, ... } told when its stamp moves
 local waiting = {}    -- [set name] = { fn, ... } told once, when it is ready (WhenReady)
 local owed = {}       -- the sets whose listeners are still to be told, in the order their stamps moved
 local queue = {}      -- packs waiting to load
+local keepers = {}    -- [pack name, "Characters"] = { fn, ... }: handed its saved part once it is there
 local said = {}       -- [label] = true: a failure is said once
 local handed = {}     -- the records handed out while Data.frozen: { record, copy }
 local found = false   -- the packs were looked for
@@ -162,7 +169,7 @@ local function Judge(pack, client, loadable, reason)
     if not client then return "refused", TEXT.noGame end
     if pack.format ~= tostring(Data.FORMAT) then return "refused", TEXT.format:format(tostring(pack.format), Data.FORMAT) end
     if pack.game ~= client then return "refused", TEXT.otherGame:format(tostring(pack.game), client) end
-    if #pack.sets == 0 then return "refused", TEXT.noSets end
+    if #pack.sets == 0 and not pack.saved then return "refused", TEXT.noSets end
     local enabled = Core.Ask(C_AddOns.GetAddOnEnableState, pack.name, Core.Plain(UnitGUID("player")))
     if reason == "DISABLED" or enabled == 0 then return "off", TEXT.off end
     if loadable or reason == "DEMAND_LOADED" or reason == "DEP_DEMAND_LOADED" then return "idle" end
@@ -190,6 +197,7 @@ function Data.Find()
             local pack = old[name] or { name = name }
             pack.title = Core.Plain(title) or name
             pack.sets, pack.format, pack.game = SetNames(Meta(name, "X-SaneUI-Sets")), Meta(name, "X-SaneUI-Format"), Meta(name, "X-SaneUI-Game")
+            pack.saved = Meta(name, "X-SaneUI-Saved") == "1"
             if pack.state ~= "ready" and pack.state ~= "loading" and not pack.failed then
                 pack.state, pack.why = Judge(pack, client, Core.Plain(loadable), Core.Plain(reason))
             end
@@ -234,11 +242,55 @@ local function Moved(set)
     TellSoon()
 end
 
+-- Core's own part of its saved variable, SaneUIDB.data[game] (Doc/guides/data.md, *Saved variables*): what
+-- Core keeps of the packs. saved[pack]: how much the pack's saved part held at the last logout. nil while
+-- the client's game version cannot be told or SaneUIDB is not read yet.
+local function Own()
+    local client = Data.Game()
+    if not client or type(SaneUIDB) ~= "table" then return nil end
+    if type(SaneUIDB.data) ~= "table" then SaneUIDB.data = {} end
+    local own = SaneUIDB.data[client]
+    if type(own) ~= "table" then
+        own = {}
+        SaneUIDB.data[client] = own
+    end
+    own.format = Data.FORMAT
+    if type(own.saved) ~= "table" then own.saved = {} end
+    return own
+end
+
+-- A pack of saved data has loaded: its saved variable (SaneUIData_<Pack>) is there now, keyed by game
+-- version first; this client's part is made where it is missing, and one of a format this Core does not
+-- read is set aside under broken, never wiped. Other game versions' parts (a copied WTF) are left as they
+-- are. A file that was there at the last logout and is gone now (it failed to load) is said at once,
+-- while the game's .bak copy of it still holds it.
+local function Keep(pack)
+    local short = pack.name:sub(#PREFIX + 1)
+    local global, own = "SaneUIData_" .. short, Own()
+    local all = rawget(_G, global)
+    if type(all) ~= "table" then
+        if own and (tonumber(own.saved[short]) or 0) > 0 then Say("data: " .. pack.name .. " lost", TEXT.lost:format(pack.title, global, global), true) end
+        all = {}
+        _G[global] = all
+    end
+    local client = Data.Game()
+    local part = all[client]
+    if type(part) ~= "table" then
+        part = {}
+    elseif part.format ~= nil and part.format ~= Data.FORMAT then
+        part = { broken = { part } }
+    end
+    all[client], part.format, pack.part = part, Data.FORMAT, part
+    for _, fn in ipairs(keepers[short] or {}) do Core.Safe("data: " .. short, fn, part) end
+end
+
 -- A pack's files have run (loaded by our loader, or by anybody): its sets that the files handed over are
 -- ready, the others refused. A pack refused before keeps its state; its files refused their sets too.
+-- A pack of saved data hands its part to Core's readers.
 local function Finish(pack)
     if pack.state == "ready" then return end
     if pack.state ~= "refused" then pack.state, pack.why = "ready", nil end
+    if pack.saved and pack.state == "ready" then Keep(pack) end
     for _, name in ipairs(pack.sets) do
         local set = Internal(name)
         if set.added and not set.ready then
@@ -284,15 +336,10 @@ local function Fail(name, label, text, loud)
     Say(label, text, loud)
 end
 
--- Asks for a set's pack to be loaded soon. A pack missing, switched off or refused is said once.
-function Data.Prepare(name)
-    if not found then Data.Find() end
-    local set = sets[name]
-    if set and (set.ready or set.failed) then return end
-    local pack = owner[name]
-    if not pack then
-        Fail(name, "data: " .. tostring(name), TEXT.missing:format(tostring(name)))
-    elseif pack.state == "idle" then
+-- Asks for a pack to be loaded soon; a pack switched off or refused is said once (name: the set asked
+-- for, remembered as failed then).
+local function Ask(pack, name)
+    if pack.state == "idle" then
         pack.state = "loading"
         queue[#queue + 1] = pack
         Start()
@@ -300,6 +347,38 @@ function Data.Prepare(name)
         Fail(name, "data: " .. pack.name, TEXT.refused:format(pack.title, pack.why))
     elseif pack.state == "refused" then
         Fail(name, "data: " .. pack.name, TEXT.refused:format(pack.title, pack.why), true)
+    end
+end
+
+-- Asks for a set's pack to be loaded soon. A pack missing, switched off or refused is said once.
+function Data.Prepare(name)
+    if not found then Data.Find() end
+    local set = sets[name]
+    if set and (set.ready or set.failed) then return end
+    local pack = owner[name]
+    if pack then
+        Ask(pack, name)
+    else
+        Fail(name, "data: " .. tostring(name), TEXT.missing:format(tostring(name)))
+    end
+end
+
+-- For Core's own readers of a pack of saved data (Characters.lua): fn(part) once the pack has loaded,
+-- with its part of this client's game version, SaneUIData_<pack>[game] (format checked); at once when it
+-- is loaded already. The pack is asked for (loaded soon, as Prepare). A pack missing, switched off or
+-- refused is said once, and fn is never called: the reader keeps nothing.
+function Data.Saved(name, fn)
+    if not found then Data.Find() end
+    local list = keepers[name] or {}
+    keepers[name] = list
+    list[#list + 1] = fn
+    local pack = packs[PREFIX .. name]
+    if not (pack and pack.saved) then
+        Say("data: " .. PREFIX .. name, TEXT.noPack:format(PREFIX .. name))
+    elseif pack.part then
+        Core.Safe("data: " .. name, fn, pack.part)
+    else
+        Ask(pack)
     end
 end
 
@@ -621,6 +700,31 @@ Core.On("LOADING_SCREEN_ENABLED", function() screen = true end)
 Core.On("LOADING_SCREEN_DISABLED", function()
     screen = false
     Start()
+end)
+
+-- How much a saved part holds: its values, and those of the tables in it.
+local function Size(part)
+    local size = 0
+    for key, value in pairs(part) do
+        if key ~= "format" then
+            if type(value) == "table" then
+                for _ in pairs(value) do size = size + 1 end
+            else
+                size = size + 1
+            end
+        end
+    end
+    return size
+end
+
+-- At the logout, how much each pack of saved data holds: a file that fails to load is noticed at the
+-- next login (Keep).
+Core.On("PLAYER_LOGOUT", function()
+    local own = Own()
+    if not own then return end
+    for _, pack in pairs(packs) do
+        if pack.part then own.saved[pack.name:sub(#PREFIX + 1)] = Size(pack.part) end
+    end
 end)
 
 -- A pack loaded, by our loader or by anybody: its sets are ready.

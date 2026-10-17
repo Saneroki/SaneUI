@@ -129,7 +129,8 @@ def check_packs(core):
                 fields, listed = read_toc(toc)
                 want = {"Interface": core.get("Interface"), "Version": core.get("Version"), "Dependencies": MAIN,
                         "Group": MAIN, "LoadOnDemand": "1", "SavedVariables": f"SaneUIData_{pack}",
-                        "X-SaneUI-Sets": ", ".join(sets), "X-SaneUI-Format": str(compiler.FORMAT), "X-SaneUI-Game": game}
+                        "X-SaneUI-Sets": ", ".join(sets) or None, "X-SaneUI-Format": str(compiler.FORMAT), "X-SaneUI-Game": game,
+                        "X-SaneUI-Saved": "1" if data.packs[pack].get("saved") else None}
                 for field, value in want.items():
                     if fields.get(field) != value:
                         problems.append(f"{where}: '## {field}: {fields.get(field)}', wants '{value}'")
