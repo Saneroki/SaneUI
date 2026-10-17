@@ -21,9 +21,11 @@ Kit.lua
 Motion.lua
 Saved.lua
 Profiles.lua
-# What every window can use: places at the screen's edges to dock to, a plate with round corners,
-# background and border, moving (by a title bar, or in Blizzard's Edit Mode) and sizing (in Edit Mode), opening under the mouse or
-# a click, filling the screen from its screen edge, a title bar with a fuzzy search, and a progress bar
+# What every window can use: places at the screen's edges to dock to, Esc, a watch on the mouse, a plate with
+# round corners, background and border, moving (by a title bar, or in Blizzard's Edit Mode, chosen there with its
+# dialog) and sizing (in Edit Mode), opening under the mouse, filling the screen from its screen edge, a title bar
+# with a fuzzy search, views behind tabs, the game's own window kept out of sight while ours is chosen (the
+# holder), and a progress bar
 Dock.lua
 EditMode.lua
 Escape.lua
