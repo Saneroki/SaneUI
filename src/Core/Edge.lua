@@ -51,9 +51,9 @@ local Core = SaneUI.Core
 --  the motion sizes it, unseen) and lay out in its docked hook instead, which
 --  Edge calls once at the end of either way.
 --
---  Esc brings a full window back as it closes the game's windows: a small
---  named frame of ours stands in the game's list UISpecialFrames while a
---  window fills the screen, and when the game hides it, the window goes back.
+--  Esc brings a full window back as it closes the game's windows (Core.Escape,
+--  Escape.lua); a window Esc closes (escape = "close") is closed instead, full
+--  as it is (Window.lua).
 --
 --  The mouse at the edge is an event, not a look every frame: along the
 --  docked side lies a strip two of the screen's pixels wide, above everything,
@@ -207,28 +207,15 @@ local function Back(edge)
     return edge.back
 end
 
--- Esc: the game hides every frame named in UISpecialFrames (CloseSpecialWindows). One frame of ours
--- with nothing to see stands in for all windows that fill the screen: shown while one does (filling),
--- and when the game hides it, each of them goes back. Made at the first fill. Hiding it from Fill is no
--- call back into Fill: the game, as the stand-in, fires OnHide only for a frame that was shown.
-local escape, filling = nil, {}
+-- Esc, while the window fills the screen: it goes back (Core.Escape). A window Esc closes (escape =
+-- "close") is closed by Window.lua instead, full as it is.
+local function Escaped(edge)
+    edge:Fill(false)
+end
 
 local function Escape(edge, on)
-    if not escape then
-        if not on then return end
-        escape = CreateFrame("Frame", "SaneUIEdgeEscape", UIParent)
-        escape:Hide()
-        escape:SetScript("OnHide", function()
-            -- A window Esc closes (escape = "close") is closed by Window.lua's own stand-in, full as it is.
-            for full in pairs(filling) do
-                if full.window.options.escape ~= "close" then Core.Safe("full screen", full.Fill, full, false) end
-            end
-        end)
-        local special = rawget(_G, "UISpecialFrames")
-        if type(special) == "table" then table.insert(special, "SaneUIEdgeEscape") end
-    end
-    filling[edge] = on or nil
-    escape:SetShown(next(filling) ~= nil)
+    if edge.window.options.escape == "close" then return end
+    Core.Escape(edge, on and Escaped or nil)
 end
 
 -- What the window holds: its fade out, and its coming in, at once 10 higher, then down to its place.

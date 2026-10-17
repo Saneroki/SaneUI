@@ -26,6 +26,7 @@ Profiles.lua
 # a click, filling the screen from its screen edge, a title bar with a fuzzy search, and a progress bar
 Dock.lua
 EditMode.lua
+Escape.lua
 Fuzzy.lua
 Shape.lua
 Skin.lua

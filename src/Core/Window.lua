@@ -401,30 +401,6 @@ local function Close(window)
     if window.options.close then window.options.close() else window.frame:Hide() end
 end
 
--- Esc closes a window made with escape = "close", as the game closes its panels: a named stand-in of ours
--- in the game's list UISpecialFrames is shown while such a window is; when the game hides it (Esc,
--- CloseSpecialWindows), each of them closes. Made with the first such window. A module that closes its
--- window later (the talk ends on the game's side first) leaves it shown: the stand-in is shown again a
--- moment after, while one is.
-local closable, stand, closing = {}, nil, false
-
-local function Closable(window, shown)
-    if not stand then
-        stand = CreateFrame("Frame", "SaneUIWindowEscape", UIParent)
-        stand:Hide()
-        stand:SetScript("OnHide", function()
-            closing = true -- the windows' own hiding does not show the stand-in again in the middle of this
-            for open in pairs(closable) do Core.Safe("window", Close, open) end
-            closing = false
-            C_Timer.After(0, function() stand:SetShown(next(closable) ~= nil) end)
-        end)
-        local special = rawget(_G, "UISpecialFrames")
-        if type(special) == "table" then table.insert(special, "SaneUIWindowEscape") end
-    end
-    closable[window] = shown or nil
-    if not closing then stand:SetShown(next(closable) ~= nil) end
-end
-
 -- A drag of the box, or a sizing by the grip, is over (also when Edit Mode closes in the middle of it):
 -- a dragged window docks where it was let go, a sized one stays in its zone. Once: Edit Mode let go of
 -- it, and the game's end of the drag that comes after finds nothing in hand.
@@ -799,10 +775,13 @@ function Window.New(frame, options)
     end)
     if Core.EditMode.active then Edit(window, true) end
     Core.Safe("window", window.Attach, window)
+    -- Esc closes a window made with escape = "close" while it is shown, as the game closes its panels
+    -- (Core.Escape): full as it is. A module that closes it later (the talk ends on the game's side
+    -- first) leaves it shown, and Esc is still its next time.
     if options.escape == "close" then
-        frame:HookScript("OnShow", function() Closable(window, true) end)
-        frame:HookScript("OnHide", function() Closable(window, false) end)
-        if frame:IsShown() then Closable(window, true) end
+        frame:HookScript("OnShow", function() Core.Escape(window, Close) end)
+        frame:HookScript("OnHide", function() Core.Escape(window, nil) end)
+        if frame:IsShown() then Core.Escape(window, Close) end
     end
     return window
 end

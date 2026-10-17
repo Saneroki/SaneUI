@@ -657,8 +657,8 @@ check(wide._mouse == false and wide._wheel == false, "the mouse goes through it 
 W.Wait(1)
 strip:GetScript("OnEnter")(strip)
 clock:Run(1)
-local escape = SaneUIEdgeEscape
-check(edge.full and escape and escape:IsShown() and UISpecialFrames[#UISpecialFrames] == "SaneUIEdgeEscape",
+local escape = SaneUIEscape
+check(edge.full and escape and escape:IsShown() and UISpecialFrames[#UISpecialFrames] == "SaneUIEscape",
     "full, a frame of ours stands shown in the game's list of what Esc closes")
 escape:Hide()
 check(not edge.full and edge.away and clock.playing and fills[#fills] == false, "the game hides it (Esc): the window goes back")
@@ -989,7 +989,7 @@ local guardedWindow = Window.New(guarded, {
 guardedWindow:Place()
 guarded._protected = true
 guarded:HookScript("OnHide", function() guardedClosed = guardedClosed + 1 end)
-local guardStand = SaneUIWindowEscape
+local guardStand = SaneUIEscape
 W.combat = true
 local guardClose = guardedWindow.buttons.list[1]
 guardClose:GetScript("OnClick")(guardClose)
@@ -1014,9 +1014,11 @@ local talkWindow = Window.New(talked, {
     close = function() talkClosed = talkClosed + 1; talked:Hide() end,
 })
 talkWindow:Place()
-local stand = SaneUIWindowEscape
-check(stand and stand:IsShown() and UISpecialFrames[#UISpecialFrames] == "SaneUIWindowEscape",
-    "shown, a window Esc closes puts a stand-in of ours into the game's list of what Esc closes")
+local stand = SaneUIEscape
+local ours = 0
+for _, name in ipairs(UISpecialFrames) do if name:find("^SaneUI") then ours = ours + 1 end end
+check(stand and stand:IsShown() and ours == 1,
+    "shown, a window Esc closes has the stand-in of ours shown, the one frame Sane UI puts into the game's list of what Esc closes")
 stand:Hide()
 check(talkClosed == 1 and not talked:IsShown(), "Esc: it closes, as its module says")
 W.Wait(0.1)
@@ -1025,11 +1027,20 @@ talked:Show()
 at(talked, 760, 390)
 talkWindow.edge:Fill(true)
 talked._group:Run(1)
-check(stand:IsShown() and SaneUIEdgeEscape:IsShown(), "full, both stand-ins are shown")
-SaneUIEdgeEscape:Hide()
+check(stand:IsShown(), "full, the same stand-in is shown")
+local spare = CreateFrame("Frame", nil, UIParent)
+local spareWindow = Window.New(spare, { store = {}, edge = true, sizable = true,
+    first = { point = "CENTER", x = 0, y = 0, width = 200, height = 100 } })
+spareWindow:Place()
+at(spare, 860, 490)
+spareWindow.edge:Fill(true)
+spare._group:Run(1)
 stand:Hide()
 check(talkClosed == 2 and not talked:IsShown() and talkStore.place.full == true,
     "Esc closes it full as it is: not made small first, so it opens full again")
+check(not spareWindow.edge.full and spareWindow.edge.away and spare:IsShown(), "and a full window Esc does not close goes back, by the same Esc")
+spare._group:Run(1)
+spare:Hide()
 check(talkWindow:Open() == "ours" and talkWindow.edge.full, "the next time it is asked for, it is full again")
 talkWindow:Place()
 
