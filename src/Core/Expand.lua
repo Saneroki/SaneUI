@@ -29,13 +29,14 @@ local Core = SaneUI.Core
 --  the point it hangs on: a docked window (Dock.lua) away from its screen edge.
 --
 --  The mouse's coming is the game's event (OnEnter, motion only: clicks go on
---  to what is under it). From then until the window is closed again a small
---  frame of its own, the watch, looks at the mouse every Expand.STEP seconds in
---  its OnUpdate: whether it is over the window (IsMouseOver measures the window's
---  rectangle, so a button in it is the window too; Expand.MARGIN around). A held
---  left button counts as the mouse on it: the window is being dragged. The
---  rest of the time the watch is hidden and costs nothing. The motion is an
---  animation of the game's that runs only while the size changes (Motion.Clock).
+--  to what is under it). From then until the window is closed again a watch
+--  (Core.Hover, Watch.lua) looks at the mouse every Expand.STEP seconds: whether
+--  it is over the window (IsMouseOver measures the window's rectangle, so a
+--  button in it is the window too; Expand.MARGIN around). A held left button
+--  counts as the mouse on it: the window is being dragged. Kept open (Stay),
+--  there is nothing to look for, and the watch is in. The rest of the time it
+--  costs nothing. The motion is an animation of the game's that runs only while
+--  the size changes (Motion.Clock).
 -------------------------------------------------------------------------------
 local Expand = {}
 Core.Expand = Expand
@@ -58,12 +59,6 @@ local function Step(expand, progress)
         expand.fromHeight + (expand.toHeight - expand.fromHeight) * share)
 end
 
--- The watch comes out (the mouse came, or the window opened), or goes in again.
-local function Watch(expand, on)
-    expand.waited, expand.rested, expand.away = 0, 0, 0
-    expand.watch:SetShown(on)
-end
-
 local function Go(expand, open)
     if expand.open == open or Still(expand) then return end
     local frame, options = expand.frame, expand.options
@@ -76,33 +71,12 @@ local function Go(expand, open)
     else
         expand.toWidth, expand.toHeight = expand.smallWidth, expand.smallHeight
     end
-    Watch(expand, open)
+    -- Open, the watch closes it once the mouse has gone (not while it is kept open); closed, it is in.
+    if open and not expand.stays then expand.hover:Start(true) else expand.hover:Stop() end
     if options.changed then Core.Safe("expand", options.changed, open) end
     -- Out of sight nothing moves: it has its new size at once (Motion.Clock).
     expand.kind = Core.Motion.Kind(options.motion and Core.Safe("expand", options.motion))
     expand.clock:Run(expand.kind.time)
-end
-
--- One look of the watch, after that many seconds. Closed: the mouse resting on the spot opens it, the
--- mouse gone takes the watch in. Open: the mouse away long enough closes it.
-local function Look(expand, elapsed)
-    expand.waited = expand.waited + elapsed
-    if expand.waited < Expand.STEP then return end
-    local passed, margin = expand.waited, Expand.MARGIN
-    expand.waited = 0
-    if not expand.open then
-        if not expand.hot:IsMouseOver() then return Watch(expand, false) end
-        expand.rested = expand.rested + passed
-        if expand.rested >= Expand.DWELL then Go(expand, true) end
-        return
-    end
-    if expand.stays or Still(expand) or IsMouseButtonDown("LeftButton")
-        or expand.frame:IsMouseOver(margin, -margin, -margin, margin) then
-        expand.away = 0
-        return
-    end
-    expand.away = expand.away + passed
-    if expand.away >= Expand.LINGER then expand:Close() end
 end
 
 local methods = {}
@@ -113,41 +87,37 @@ function methods:Close()
     Go(self, false)
 end
 
--- Kept open; or let go, and closed unless the mouse may keep it open and is on it (then the watch
--- closes it once the mouse has gone).
+-- Kept open: nothing to look for, the watch is in. Let go: closed, unless the mouse may keep it open and
+-- is on it (then the watch closes it once the mouse has gone).
 function methods:Stay(on)
     self.stays = on and true or false
-    if self.stays then return Go(self, true) end
-    if self.options.hover == false or not self.frame:IsMouseOver() then Go(self, false) end
+    if self.stays then
+        Go(self, true)
+        return self.hover:Stop()
+    end
+    if self.options.hover == false or not self.frame:IsMouseOver() then return Go(self, false) end
+    if self.open then self.hover:Start(true) end
 end
 
 function Expand.New(frame, options)
     local expand = setmetatable({ frame = frame, options = options, open = false, stays = false }, { __index = methods })
     expand.clock = Core.Motion.Clock(frame, function(progress) Step(expand, progress) end)
 
-    local watch = CreateFrame("Frame", nil, frame)
-    watch:Hide()
-    watch:SetScript("OnUpdate", function(_, elapsed)
-        local ok, problem = pcall(Look, expand, elapsed)
-        if ok then return end
-        Watch(expand, false) -- it would fail again at every look
-        Core.Report("expand", problem)
-    end)
-    expand.watch = watch
-
-    expand.hot = frame
-    if options.hover ~= false then
-        if options.corner then
-            expand.hot = CreateFrame("Frame", nil, frame)
-            expand.hot:SetSize(options.spot or 24, options.spot or 24)
-            expand.hot:SetPoint(options.corner)
-        end
-        local hot = expand.hot
-        -- Only the mouse's coming is asked for: clicks go on to what is under it.
-        if hot.SetMouseMotionEnabled then hot:SetMouseMotionEnabled(true) else hot:EnableMouse(true) end
-        hot:HookScript("OnEnter", function()
-            if not expand.open then Watch(expand, true) end
-        end)
+    -- Without hover the mouse opens nothing; with a corner, only the mouse in that corner does.
+    local hot = options.hover ~= false and frame or false
+    if hot and options.corner then
+        hot = CreateFrame("Frame", nil, frame)
+        hot:SetSize(options.spot or 24, options.spot or 24)
+        hot:SetPoint(options.corner)
     end
+    expand.hot = hot or frame
+    -- The mouse on it opens it (the hover is there); gone a while, it closes. While it is kept open, or
+    -- another part has its size, the mouse's going closes nothing.
+    expand.hover = Core.Hover(frame, { hot = hot, dwell = Expand.DWELL, linger = Expand.LINGER, margin = Expand.MARGIN,
+        every = Expand.STEP, label = "expand",
+        keep = function() return expand.stays or Still(expand) end,
+        enter = function() Go(expand, true) end,
+        leave = function() expand:Close() end })
+    expand.watch = expand.hover.watch.frame
     return expand
 end

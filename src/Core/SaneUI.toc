@@ -27,6 +27,7 @@ Profiles.lua
 Dock.lua
 EditMode.lua
 Escape.lua
+Watch.lua
 Fuzzy.lua
 Shape.lua
 Skin.lua

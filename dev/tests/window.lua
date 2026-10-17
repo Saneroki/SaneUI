@@ -484,8 +484,8 @@ local fragileExpand = Expand.New(fragile, { width = 200, height = 100, changed =
     motion = function() return "off" end })
 fragileExpand:Open()
 check(fragileExpand.open and fragile._width == 200 and Core.errors.expand, "a module's hook that fails is noted, and it opens all the same")
-Core.errors.expand = nil
 fragileExpand:Close()
+Core.errors.expand = nil
 end
 local cornered = CreateFrame("Frame", nil, UIParent)
 local before = #W.frames
@@ -516,7 +516,7 @@ check(not sharedExpand.open and shared._width == 100 and shared._height == 50, "
 local faulty = CreateFrame("Frame", nil, UIParent)
 local faultyExpand = Expand.New(faulty, { width = 10, height = 10 })
 faulty:GetScript("OnEnter")(faulty)
-faultyExpand.hot = nil
+faultyExpand.hover.hot = 5 -- (a look that cannot be done)
 faultyExpand.watch:GetScript("OnUpdate")(faultyExpand.watch, 1)
 check(not faultyExpand.watch:IsShown() and Core.errors.expand, "a look that fails takes the watch in, and is noted")
 Core.errors.expand = nil
@@ -528,6 +528,7 @@ local keptExpand = Expand.New(kept, { width = 300, height = 120, hover = false, 
 check(kept:GetScript("OnEnter") == nil and not kept._motion and not keptExpand.open, "without hover the mouse's coming does nothing")
 keptExpand:Stay(true)
 check(keptExpand.open and keptExpand.stays and kept._width == 300, "kept open, it opens")
+check(not keptExpand.watch:IsShown(), "and nothing looks at the mouse while it is kept open")
 kept._mouseOver = false
 keptExpand.watch:GetScript("OnUpdate")(keptExpand.watch, 5)
 check(keptExpand.open, "and stays open when the mouse is away")
@@ -540,12 +541,51 @@ both._mouseOver = true
 both:GetScript("OnEnter")(both)
 bothExpand.watch:GetScript("OnUpdate")(bothExpand.watch, 1)
 bothExpand:Stay(true)
-check(bothExpand.open and bothExpand.stays, "with hover too: the mouse opens it, and it can be kept open")
+check(bothExpand.open and bothExpand.stays and not bothExpand.watch:IsShown(), "with hover too: the mouse opens it, and it can be kept open, unwatched")
 bothExpand:Stay(false)
-check(bothExpand.open and not bothExpand.stays, "let go, it stays open while the mouse is on it")
+check(bothExpand.open and not bothExpand.stays and bothExpand.watch:IsShown(), "let go, it stays open while the mouse is on it, watched again")
 both._mouseOver = false
 bothExpand.watch:GetScript("OnUpdate")(bothExpand.watch, 1)
 check(not bothExpand.open, "and closes once the mouse has gone")
+
+-- A watch, and the mouse on a window
+do
+    local watched, looks = CreateFrame("Frame", nil, UIParent), {}
+    local watch = Core.Watch(watched, 0.2, function(passed) looks[#looks + 1] = passed end)
+    check(not watch:IsRunning() and not watch.frame:IsShown() and watch.frame._parent == watched,
+        "a watch is a small frame of its own in the frame it watches, hidden: nothing runs at first")
+    watch:Start()
+    watch.frame:GetScript("OnUpdate")(watch.frame, 0.1)
+    check(#looks == 0, "out, it looks only every so many seconds")
+    watch.frame:GetScript("OnUpdate")(watch.frame, 0.15)
+    check(#looks == 1 and near(looks[1], 0.25), "then it looks, told how long it waited")
+    check(watch.frame:IsVisible(), "it runs while the frame it watches is shown")
+    watched:Hide()
+    check(not watch.frame:IsVisible(), "and not while it is hidden (the game runs no OnUpdate of a frame out of sight)")
+    watched:Show()
+    watch:Stop()
+    check(not watch:IsRunning(), "taken in, it is hidden again")
+    local broken = Core.Watch(watched, 0, function() error("broken") end, "test watch")
+    broken:Start()
+    broken.frame:GetScript("OnUpdate")(broken.frame, 1)
+    check(not broken:IsRunning() and Core.errors["test watch"], "a look that fails stops it, and is noted")
+    Core.errors["test watch"] = nil
+
+    local told = {}
+    local spot = CreateFrame("Frame", nil, UIParent)
+    local hover = Core.Hover(spot, { linger = 0.4, every = 0.2,
+        enter = function() told[#told + 1] = "enter" end, leave = function() told[#told + 1] = "leave" end })
+    check(spot._motion and not spot._mouse and not hover.watch:IsRunning(), "the mouse on a window: it takes only the mouse's coming, and nothing runs")
+    spot._mouseOver = true
+    spot:GetScript("OnEnter")(spot)
+    check(hover.over and told[1] == "enter" and hover.watch:IsRunning(), "the mouse comes: it is there at once, and from then it is watched")
+    spot._mouseOver = false
+    hover.watch.frame:GetScript("OnUpdate")(hover.watch.frame, 0.2)
+    check(hover.over and #told == 1, "a moment away is not gone")
+    hover.watch.frame:GetScript("OnUpdate")(hover.watch.frame, 0.2)
+    check(not hover.over and told[2] == "leave" and not hover.watch:IsRunning(), "gone long enough it is told, and the watch is in")
+    spot:Hide()
+end
 
 -- Filling the screen from its edge ------------------------------------------------------------------
 local wide = CreateFrame("Frame", nil, UIParent)
