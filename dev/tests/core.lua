@@ -756,6 +756,81 @@ W.caught = nil
 Core.On("NOT_A_REAL_EVENT", function() end)
 check(true, "an event this client does not know is skipped")
 
+-- Listening stops; a listener taken away while the event is sent still hears that one
+local offHeard = 0
+local function Once() offHeard = offHeard + 1; Core.Off("ZONE_CHANGED_INDOORS", Once) end
+local function Stays() offHeard = offHeard + 10 end
+Core.On("ZONE_CHANGED_INDOORS", Once)
+Core.On("ZONE_CHANGED_INDOORS", Stays)
+W.Fire("ZONE_CHANGED_INDOORS")
+W.Fire("ZONE_CHANGED_INDOORS")
+check(offHeard == 21, "Core.Off: a listener that leaves while the event is sent misses only the next ones; the others hear every one")
+Core.Off("ZONE_CHANGED_INDOORS", Stays)
+W.Fire("ZONE_CHANGED_INDOORS")
+check(offHeard == 21, "the last one gone, the event reaches nobody")
+
+-- An event of one unit only
+local auras = {}
+local function Aura(unit) auras[#auras + 1] = unit end
+Core.OnUnit("UNIT_AURA", "player", Aura)
+W.Fire("UNIT_AURA", "party1")
+W.Fire("UNIT_AURA", "player")
+check(#auras == 1 and auras[1] == "player", "Core.OnUnit: the game sends the event for that unit alone")
+Core.OffUnit("UNIT_AURA", "player", Aura)
+W.Fire("UNIT_AURA", "player")
+check(#auras == 1, "and Core.OffUnit stops it")
+
+-- After the fight
+local afterRuns = {}
+check(Core.AfterCombat("now", function(a) afterRuns[#afterRuns + 1] = a end, "free") and afterRuns[1] == "free",
+    "Core.AfterCombat: out of a fight it runs at once")
+W.combat = true
+check(not Core.AfterCombat("place", function(a) afterRuns[#afterRuns + 1] = a end, "first") and Core.Owed("place"), "in a fight it waits")
+Core.AfterCombat("place", function(a) afterRuns[#afterRuns + 1] = a end, "last")
+Core.AfterCombat("other", function() error("fails after the fight") end)
+check(Core.Restricted(), "a fight is a restriction")
+W.combat = false
+W.printed = {}
+W.Fire("PLAYER_REGEN_ENABLED")
+check(#afterRuns == 2 and afterRuns[2] == "last" and not Core.Owed("place"), "the fight over, the same key asked twice runs once, as asked last")
+check(printedMatch("problem in other, noted"), "a failing one is caught and told under its key; the others ran")
+W.Fire("ADDON_RESTRICTION_STATE_CHANGED", 1, 1)
+check(Core.Restricted(), "the game's restrictions count from their announcement (an encounter)")
+W.Fire("ADDON_RESTRICTION_STATE_CHANGED", 5, 2)
+W.Fire("ADDON_RESTRICTION_STATE_CHANGED", 1, 0)
+check(not Core.Restricted(), "until they end; the chat's restriction does not hold the work up")
+local guarded = W.NewWidget("Frame")
+function guarded:IsProtected() return true end
+W.combat = true
+check(Core.Locked(guarded) and not Core.Locked(W.NewWidget("Frame")), "Core.Locked: a protected frame in a fight")
+W.combat = false
+
+-- An action the game blocked because of Sane UI's code is noted; another addon's is not ours
+W.printed = {}
+W.Fire("ADDON_ACTION_BLOCKED", "SaneUI_Social", "Frame:Hide()")
+W.Fire("ADDON_ACTION_FORBIDDEN", "SomeOther", "CastSpell()")
+check(Core.errors["blocked action"] and Core.errors["blocked action"].text:find("SaneUI_Social") and printedMatch("problem in blocked action"),
+    "the game's blocked actions of ours are in the error log")
+check(not tostring(Core.errors["blocked action"].text):find("SomeOther"), "another addon's are left alone")
+
+-- Many kinds of problem: the list of kinds stays short
+for index = 1, 130 do Core.NoteError("many " .. index, "again") end
+local kinds = 0
+for _ in pairs(Core.errors) do kinds = kinds + 1 end
+check(kinds <= 100, "the error log keeps at most a hundred kinds of problem")
+
+-- A switch set from elsewhere than the options page (a menu, a command)
+local before = #toldDemo
+local loudWas = Core.Settings("Demo").loud
+check(Core.Set("Demo", "loud", not loudWas) == not loudWas and toldDemo[#toldDemo] == "loud=" .. tostring(not loudWas),
+    "Core.Set: written, and the module is told")
+check(Core.Set("Demo", "loud", "nonsense") == true and Core.Settings("Demo").loud == true, "a value of the wrong kind gets the default")
+Core.Set("Demo", "loud", loudWas)
+local count = #toldDemo
+Core.Set("Demo", "loud", loudWas)
+check(#toldDemo == count and count > before, "the same value again tells nobody")
+check(Core.Set("Demo", "nothing", 1) == nil and Core.Described("Demo", "shy").text == "Be shy", "a switch nobody describes is not set; a described one is found")
+
 -- Messages inside a module ----------------------------------------------------------------
 local got
 demo.Listen("PING", function(a, b) got = a + b end)

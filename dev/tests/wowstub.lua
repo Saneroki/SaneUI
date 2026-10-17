@@ -210,6 +210,13 @@ function methods:RegisterEvent(event)
     if event == "NOT_A_REAL_EVENT" then error("unknown event") end
     self._events[event] = true
 end
+function methods:RegisterUnitEvent(event, ...)
+    self:RegisterEvent(event)
+    self._units = self._units or {}
+    self._units[event] = { ... }
+end
+function methods:UnregisterEvent(event) self._events[event] = nil end
+function methods:IsEventRegistered(event) return self._events[event] == true end
 function methods:Show()
     local was = self._shown
     self._shown = true
@@ -287,7 +294,12 @@ function methods:GetFrameLevel() return 1 end
 
 function W.Fire(event, ...)
     for _, widget in ipairs(W.frames) do
-        if widget._events[event] and widget._scripts.OnEvent then
+        local only = widget._units and widget._units[event]
+        local wanted = not only or #only == 0
+        if only then
+            for _, unit in ipairs(only) do wanted = wanted or unit == (...) end
+        end
+        if widget._events[event] and widget._scripts.OnEvent and wanted then
             widget._scripts.OnEvent(widget, event, ...)
         end
     end

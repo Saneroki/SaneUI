@@ -65,19 +65,47 @@ local function Copy(value)
 end
 Core.Copy = Copy
 
--- Every switch gets its default when it has none, or one of the wrong kind or no choice of its
--- own; a number one within its ends. A table's default is copied: what is kept in it later must
--- not change the description (nor the profile SaneUI Defaults, which is made from it).
+-- Whether two values are the same, tables by what they hold (a profile's copy is never the same table).
+local function Same(a, b)
+    if a == b then return true end
+    if type(a) ~= "table" or type(b) ~= "table" then return false end
+    for key, value in pairs(a) do
+        if not Same(value, b[key]) then return false end
+    end
+    for key in pairs(b) do
+        if a[key] == nil then return false end
+    end
+    return true
+end
+Core.Same = Same
+
+-- Whether an option keeps a value: a button (an action) keeps none.
+local function Keeps(option)
+    return option.default ~= nil and not option.button
+end
+
+-- One switch made right: its default when it has none, one of the wrong kind, no choice of its own or
+-- one its check (validate) refuses; a number within its ends. A table's default is copied: what is kept
+-- in it later must not change the description.
+local function Check(option, options)
+    if not Keeps(option) then return end
+    local value = options[option.key]
+    local wrong = type(value) ~= type(option.default) or (option.choices and not option.multi and not Chosen(option, value))
+    if not wrong and option.validate then
+        local ok, fine = pcall(option.validate, value)
+        wrong = not ok or not fine
+    end
+    if wrong then
+        options[option.key] = Copy(option.default)
+    elseif option.max and type(value) == "number" and (value < (option.min or value) or value > option.max) then
+        options[option.key] = math.min(math.max(value, option.min or value), option.max)
+    end
+end
+
+-- Every switch of a module made right (Check).
 local function Defaults(name)
     local options = Table(Core.Store(name), "options")
-    for _, option in ipairs(Core.described[name].list) do
-        local value = options[option.key]
-        if type(value) ~= type(option.default) or (option.choices and not Chosen(option, value)) then
-            options[option.key] = Copy(option.default)
-        elseif option.max and (value < option.min or value > option.max) then
-            options[option.key] = math.min(math.max(value, option.min), option.max)
-        end
-    end
+    for _, option in ipairs(Core.described[name].list) do Check(option, options) end
 end
 Core.CheckOptions = Defaults -- also for switches copied in from a profile (Profiles.lua)
 
@@ -95,6 +123,10 @@ Core.CheckOptions = Defaults -- also for switches copied in from a profile (Prof
 -- color = true (in tabs): a colour, six hex digits as default ("26262B"), chosen with the game's picker.
 -- unit = "seconds", "%": written after a number's value.
 -- page = "Appearance" (Core's own switches only): on that page of Sane UI's instead of General.
+-- validate = function(value) return ok end: a value it refuses gets the default (at the load, Core.Set).
+-- reload = true: the game shows a change only after a /reload, which is offered.
+-- button = function() end: an action on the options page (no default, nothing kept).
+-- multi = true (with choices, a table as default): several of the choices at once, [value] = true.
 -- Call it while the files are read. changed(key, value) runs after a switch was flipped on the
 -- options page, or a profile changed it. capture(), if given, runs before the settings in use are
 -- saved anywhere (a profile, the logout): for a module whose settings hold something of the game's
@@ -103,6 +135,47 @@ function Core.Options(name, list, changed, capture)
     Core.described[name] = { list = list, changed = changed, capture = capture }
     Core.optionOrder[#Core.optionOrder + 1] = name
     if db then Defaults(name) end -- a module: its files are read after our settings
+end
+
+-- One of a module's switches as described; nil if it describes none of that key.
+function Core.Described(name, key)
+    local described = Core.described[name]
+    if not described then return nil end
+    for _, option in ipairs(described.list) do
+        if option.key == key then return option end
+    end
+    return nil
+end
+
+-- The settings in use of a module: the table it holds for the whole session (from its OnLoad on).
+function Core.Settings(name)
+    local store = db and db.modules[name]
+    return type(store) == "table" and store.options or nil
+end
+
+-- The options page shows what changed elsewhere, a frame later (Settings.lua).
+local Shown = Core.Later(function()
+    if Core.Config and Core.Config.Refresh then Core.Config.Refresh() end
+end)
+
+-- Sets one of a module's switches from elsewhere than its options page (a menu, a command, a button):
+-- written, made right as at the load (Check), the module told (changed) if it changed, a /reload
+-- offered for a switch that needs one (reload = true), and the options page shows it. Returns the
+-- value the switch has now.
+function Core.Set(name, key, value)
+    local option, options = Core.Described(name, key), Core.Settings(name)
+    if not (option and options and Keeps(option)) then return nil end
+    local before = Copy(options[key])
+    options[key] = value
+    Check(option, options)
+    local now = options[key]
+    if not Same(before, now) then
+        local changed = Core.described[name].changed
+        if changed then Core.Safe(name .. ": option", changed, key, now) end
+        if option.reload and Core.AskReload then Core.AskReload({ option.text or key }) end
+    end
+    Shown()
+    return now
 end
 
 -- The general switches (Core.general): described here like a module's, shown on Sane UI's own pages

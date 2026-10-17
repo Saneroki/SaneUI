@@ -173,6 +173,7 @@ Core.errors = {}
 -- game writes it at a /reload or when you log out: dev/tools/errors reads the log from it.
 Core.log = {}
 local LOG_MAX = 100 -- the oldest entries go
+local ERRORS_MAX = 100 -- kinds of problem kept by label; the one seen longest ago goes
 local BUILD = GetBuildInfo and select(2, GetBuildInfo()) or "?"
 -- The general switches, those of no module. Saved.lua describes them and puts the saved ones here.
 Core.general = {}
@@ -190,6 +191,14 @@ function Core.NoteError(label, text)
     if type(seen) == "table" then
         seen.text, seen.count, seen.when = line, (tonumber(seen.count) or 0) + 1, now:sub(1, 16)
     else
+        -- A new kind: the list stays short however many there were (a label with a number in it).
+        local count, oldest, oldestWhen = 0, nil, nil
+        for known, problem in pairs(Core.errors) do
+            count = count + 1
+            local when = type(problem) == "table" and tostring(problem.when) or ""
+            if not oldestWhen or when < oldestWhen then oldest, oldestWhen = known, when end
+        end
+        if count >= ERRORS_MAX and oldest ~= nil then Core.errors[oldest] = nil end
         Core.errors[label] = { text = line, count = 1, when = now:sub(1, 16) }
     end
     -- The same problem again and again (in every frame, say) is one entry that counts.
@@ -306,19 +315,53 @@ end
 local frame = CreateFrame("Frame")
 local handlers = {}
 
+-- A list of listeners is never changed while it is walked: a listener added or taken away during an
+-- event makes a new list (that happens seldom), so the event in hand reaches exactly those it had.
+local function Without(list, fn)
+    local rest = {}
+    for _, known in ipairs(list) do
+        if known ~= fn then rest[#rest + 1] = known end
+    end
+    return rest
+end
+
+local function With(list, fn)
+    local more = {}
+    for index, known in ipairs(list) do more[index] = known end
+    more[#more + 1] = fn
+    return more
+end
+
+-- Registers an event on a frame; an event name this client does not know is an error: skipped instead
+-- of breaking the addon, and noted (not told: it is nothing the player can mend), so /sane errors and
+-- the log say why a feature is quiet.
+local function Register(target, event, ...)
+    local method = select("#", ...) > 0 and target.RegisterUnitEvent or target.RegisterEvent
+    if pcall(method, target, event, ...) then return true end
+    Core.NoteError("event " .. tostring(event), "this client has no such event; whatever listens to it is off")
+    return false
+end
+
 -- An event is only asked of the game once somebody listens to it.
 function Core.On(event, fn)
     if not handlers[event] then
-        -- An event name this client does not know is an error; skip it instead of breaking the addon,
-        -- noted (not told: it is nothing the player can mend), so /sane errors and the log say why a
-        -- feature is quiet.
-        if not pcall(frame.RegisterEvent, frame, event) then
-            Core.NoteError("event " .. tostring(event), "this client has no such event; whatever listens to it is off")
-            return
-        end
+        if not Register(frame, event) then return end
         handlers[event] = {}
     end
-    table.insert(handlers[event], fn)
+    handlers[event] = With(handlers[event], fn)
+end
+
+-- Stops listening; the last listener gone, the game no longer sends the event.
+function Core.Off(event, fn)
+    local list = handlers[event]
+    if not list then return end
+    list = Without(list, fn)
+    if #list > 0 then
+        handlers[event] = list
+    else
+        handlers[event] = nil
+        frame:UnregisterEvent(event)
+    end
 end
 
 -- One listener's error must not keep the others (another module's, mostly) from hearing
@@ -328,6 +371,121 @@ frame:SetScript("OnEvent", function(_, event, ...)
     if not list then return end
     for _, fn in ipairs(list) do xpcall(fn, CallErrorHandler, ...) end
 end)
+
+-- An event of one unit only (UNIT_AURA of "player"): the game sends it for that unit alone, not for
+-- every unit about, which matters for the UNIT_ events that come many times a second in a group.
+-- One frame per unit; fn gets the event's arguments as Core.On's listeners do (the unit first).
+local units = {} -- [unit] = { frame, handlers = { [event] = list } }
+
+function Core.OnUnit(event, unit, fn)
+    local entry = units[unit]
+    if not entry then
+        entry = { frame = CreateFrame("Frame"), handlers = {} }
+        entry.frame:SetScript("OnEvent", function(_, name, ...)
+            local list = entry.handlers[name]
+            if not list then return end
+            for _, listener in ipairs(list) do xpcall(listener, CallErrorHandler, ...) end
+        end)
+        units[unit] = entry
+    end
+    if not entry.handlers[event] then
+        if not Register(entry.frame, event, unit) then return end
+        entry.handlers[event] = {}
+    end
+    entry.handlers[event] = With(entry.handlers[event], fn)
+end
+
+function Core.OffUnit(event, unit, fn)
+    local entry = units[unit]
+    local list = entry and entry.handlers[event]
+    if not list then return end
+    list = Without(list, fn)
+    if #list > 0 then
+        entry.handlers[event] = list
+    else
+        entry.handlers[event] = nil
+        entry.frame:UnregisterEvent(event)
+    end
+end
+
+-------------------------------------------------------------------------------
+--  Fights and the game's restrictions
+-------------------------------------------------------------------------------
+-- Whether a frame may not be moved, sized, shown or hidden by our code now: it is protected (it
+-- holds secure buttons, or is one) and a fight is on.
+function Core.Locked(frame)
+    return InCombatLockdown() and frame:IsProtected() and true or false
+end
+
+-- The restrictions under which Sane UI's long work waits (Enum.AddOnRestrictionType): combat, an
+-- encounter, a challenge mode, a PvP match, a map that restricts addons. Not chat, which only limits
+-- addon messages. The game tells each change before a restriction begins and after it ends; its state
+-- is kept from that event, not asked (the game answers false while the event is sent).
+Core.RESTRICTIONS = { 0, 1, 2, 3, 4 }
+local restricted = {} -- [type] = true while the game restricts it (or is about to)
+
+Core.On("ADDON_RESTRICTION_STATE_CHANGED", function(kind, state)
+    for _, known in ipairs(Core.RESTRICTIONS) do
+        if known == kind then restricted[kind] = state ~= 0 or nil end
+    end
+end)
+
+-- At login the state is asked once: a /reload inside a restriction gets no event for its beginning.
+Core.On("PLAYER_LOGIN", function()
+    local api = rawget(_G, "C_RestrictedActions")
+    if not (api and api.IsAddOnRestrictionActive) then return end
+    for _, kind in ipairs(Core.RESTRICTIONS) do
+        restricted[kind] = Core.Ask(api.IsAddOnRestrictionActive, kind) == true or nil
+    end
+end)
+
+-- In a fight, or the game restricts addons now.
+function Core.Restricted()
+    return InCombatLockdown() or next(restricted) ~= nil
+end
+
+-- Runs fn now, or once the fight is over (in a fight). The same key asked again in a fight is one
+-- run, with the arguments asked last: for a window to place, a frame to give back. Returns true when
+-- it ran now. Each run is safe: a failure is noted, the others go on.
+local owed, order = {}, {} -- [key] = { fn, label, args, count }; the keys in the order they were asked
+
+local function Label(key)
+    return type(key) == "string" and key or "after the fight"
+end
+
+function Core.AfterCombat(key, fn, ...)
+    if not InCombatLockdown() then
+        Core.Safe(Label(key), fn, ...)
+        return true
+    end
+    if not owed[key] then order[#order + 1] = key end
+    owed[key] = { fn = fn, args = { ... }, count = select("#", ...) }
+    return false
+end
+
+-- Whether something waits for the fight's end under that key.
+function Core.Owed(key)
+    return owed[key] ~= nil
+end
+
+Core.On("PLAYER_REGEN_ENABLED", function()
+    local keys = order
+    order = {}
+    for _, key in ipairs(keys) do
+        local job = owed[key]
+        owed[key] = nil
+        if job then Core.Safe(Label(key), job.fn, unpack(job.args, 1, job.count)) end
+    end
+end)
+
+-- An action the game blocked because it came from Sane UI's code ("Interface action failed because of
+-- an AddOn"): noted, so the error log says what did it. Another addon's are not ours to note.
+local function Blocked(addon, action)
+    if type(addon) ~= "string" or not addon:find("^SaneUI") then return end
+    Core.Report("blocked action", ("%s: the game blocked %s"):format(addon, tostring(action)))
+end
+Core.On("ADDON_ACTION_BLOCKED", Blocked)
+Core.On("ADDON_ACTION_FORBIDDEN", Blocked)
 
 -------------------------------------------------------------------------------
 --  Modules
