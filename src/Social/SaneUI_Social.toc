@@ -33,5 +33,13 @@ Menu.lua
 Picker.lua
 # The game's own chat channels, the same on every character as wished. Knows no frames
 Join.lua
+# The full screen's panels around the chat: where they stand, their look
+Board.lua
+# The second chat of the full screen, above the chat, with its own choice of chats
+Feed.lua
+# The friends list of the full screen, as the game's
+Friends.lua
+# The group finder of the full screen, as the game's
+Finder.lua
 # The window: moved, sized, scrolled
 Window.lua

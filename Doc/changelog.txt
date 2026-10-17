@@ -20,6 +20,13 @@ The bigger changes of each version, newest first.
   setting "3D model in tooltips" (on at first) switches it off; where a
   model cannot be loaded, the picture stays.
 
+- The chat window's full screen holds more than the chat: the friends
+  list at the left and the group finder at the right, both as the
+  game's own, and a second chat above the chat that shows only the
+  chats you tick for it (whispers, groups and guild at first). Each can
+  be switched off (Options > Social > General > Full screen). The
+  search in the title bar finds in all of them.
+
 - Profiles, made simple: with "Accountwide settings" on (as at first),
   all your characters share one profile, Accountwide: Sane UI's
   settings and the game's own (its options, Edit Mode layout, chat

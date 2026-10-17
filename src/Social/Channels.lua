@@ -11,7 +11,8 @@ local _, ns = ...
 --
 --  And what the window can show (Showable): every kind of chat and every
 --  channel you are in, for the list of what to show; whether a group is shown
---  (Shown). And a chat's name in short (Brief).
+--  (Shown), and in the full screen's second chat (Split). And a chat's name in
+--  short (Brief).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Channels = {}
@@ -69,6 +70,19 @@ function Channels.Flip(group)
     local mute = Core.Copy(ns.options.mute)
     mute[group] = not mute[group] or nil
     Core.Set(ns.name, "mute", mute)
+end
+
+-- Whether the second chat of the full screen shows the messages of a group (Feed.lua): its own ticks, the
+-- setting split ([group] = true: shown there), apart from the chat's.
+function Channels.Split(group)
+    return ns.options.split[group] == true
+end
+
+-- A tick of the second chat flipped: set as the options page sets it (Core.Set), so it shows its list anew.
+function Channels.FlipSplit(group)
+    local split = Core.Copy(ns.options.split)
+    split[group] = not split[group] or nil
+    Core.Set(ns.name, "split", split)
 end
 
 local function Add(list, kind)

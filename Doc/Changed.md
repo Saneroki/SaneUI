@@ -3,8 +3,31 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 363 (Tooltips), 349 (Social), 88 (Sync), 351 (windows), 175 (data in the game).
-A game restart takes it in (new files in Core's TOC, key bindings).
+Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 363 (Tooltips), 371 (Social), 88 (Sync), 351 (windows), 175 (data in the game).
+A game restart takes it in (new files in Core's and Social's TOCs, key bindings).
+
+### Social: panels on the full screen (Saneroki, 2026-10-17)
+- **Standing full, the chat window holds panels around the chat** (`Board.lua`, `Layout.Board`): the friends list
+  at the left, the group finder at the right, a second chat above the chat. Each is a plate in Sane UI's look
+  (`Core.Skin`) with a head; built when first shown, out of sight at the window's size, never sized on the
+  way (they come in once it stands, go when it starts back). Too narrow a screen leaves out the group finder,
+  then the friends list; too low a one the second chat. Each part runs under `ns.Safe`: a failing panel is
+  noted, the chat goes on. The full window's search goes to every panel.
+- **The chat stands in a frame of its own** (`Window.lua`: `column`, `Area`, `Seat`, `Lay`): the list, the button
+  for the line to write in, the line (`Input.Take(frame, room, chat)`) and the smiley (`Picker.Take(frame, area)`)
+  hang on it; measured by its size, not the window's.
+- **Friends list** (`Friends.lua`), as the game's (Camelot's `FriendsFrame`): Battle.net and character friends in
+  its order, status icons, the game's icon, the online count; a click chooses, *Send Message*, *Invite*
+  (`FriendsFrame_InviteOrRequestToJoin` for Battle.net), the game's right click menu, *Add Friend*.
+- **Group finder** (`Finder.lua`), as the game's vanilla-style browse view: a category, refresh, the listings
+  (leader in class colour, activity, comment, members); *Send Message*, *Invite* a player alone, *List
+  yourself* (the game's finder, `ns.OpenFinder`). `C_LFGList.Search` is restricted: called only on a click.
+- **Second chat** (`Feed.lua`): its own ticks (setting `split`, `Channels.Split`/`FlipSplit`, the filter dropdown
+  on its head), the chat's bubbles and width, no fading.
+- **Settings** (*General*, section *Full screen*): `boardFriends`, `boardFinder`, `boardFeed`, `feedShare`; *Group
+  finder* in *Classic windows* (`ToggleGroupFinderFrame`, `LFGVanilla_ShowFrame`).
+- **Tests:** the stand-in's scrolling list is one per list (`boxes`); friends, Battle.net and group finder
+  stand-ins; 22 new checks.
 
 ### Profiles anew: Accountwide settings (Saneroki, 2026-10-17)
 - **Accountwide settings** (on at first): every character uses a profile, a named set of the settings of

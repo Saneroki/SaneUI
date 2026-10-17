@@ -20,8 +20,12 @@ by default and fills the screen from there (`Doc/ideas/Windows.md`).
 - **Dialogue** (Saneroki, 2026-10-16): talking to an NPC, and reading a book or a letter, as a scene in
   the middle of the screen instead of the game's gossip, quest and book windows (`Doc/ideas/Dialogue.md`).
 - **Guild:** the guild (Blizzard: Communities and guild, `Blizzard_Communities`).
-- **Group finder** (Blizzard: `Blizzard_GroupFinder`).
-- **Friends list** (Blizzard: `Blizzard_FriendsFrame`).
+- **Group finder** (Blizzard: `Blizzard_GroupFinder_VanillaStyle` in this client). *Built 2026-10-17* as a
+  panel of the full screen (`Finder.lua`): browse and whisper/invite; listing yourself stays the game's.
+- **Friends list** (Blizzard: `Blizzard_FriendsFrame`). *Built 2026-10-17* as a panel of the full screen
+  (`Friends.lua`).
+- **A second chat with its own filter** *built 2026-10-17* on the full screen, above the chat (`Feed.lua`).
+  The small window's tabs of chat views are still to come.
 - **Classic windows** (Saneroki, 2026-10-16, done): full screen, Core's dropdown *Classic windows* lists the
   game's own windows Social stands for. *Chat* puts our chat window away (the switch *Chat window* off)
   and shows the game's chat; *Friends list* brings our window back to its zone and opens the game's

@@ -104,6 +104,9 @@ together, share the middle.
   rectangle with the same motion; the ones not open come in; the search goes to every window; back, each
   returns to its place. What a window holds stays its own, so it looks the same alone and on the board
   (`Core.Board`, the guide's section 8).
+- **Social's full screen, built 2026-10-17 inside its one window** (`src/Social/Board.lua`): the friends list,
+  the group finder and a second chat are panels of the chat window that come once it stands full. They are
+  Social's own panels, not windows of their own, so `Core.Board` is still to come; they can move onto it.
 
 ## Kinds of window (Saneroki, 2026-10-16; in Core)
 

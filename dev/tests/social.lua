@@ -86,6 +86,54 @@ IsInRaid = function() return W.raiding or false end
 IsInGuild = function() return guilded end
 C_GuildInfo = { IsGuildOfficer = function() return officer end }
 GetChannelList = function() return 1, "General", false, 2, "Trade", false, 3, "Muted", true end
+-- Friends: one Battle.net friend playing, one away elsewhere; two characters, one of them offline.
+BNET_CLIENT_WOW = "WoW"
+local asks = {} -- whispers and invites the module asked for; asks.searched: the group finder's last search
+do
+local BNET_FRIENDS = {
+    { bnetAccountID = 7, accountName = "Jaina", battleTag = "Jaina#1234", note = "raid healer",
+      gameAccountInfo = { isOnline = true, clientProgram = "WoW", characterName = "Proudmoore", areaName = "Theramore", gameAccountID = 70, playerGuid = "Player-1" } },
+    { bnetAccountID = 8, accountName = "", battleTag = "Varian#5678", isAFK = true,
+      gameAccountInfo = { isOnline = true, clientProgram = "App", richPresence = "In the Battle.net app" } },
+    { bnetAccountID = 9, accountName = "Anduin", battleTag = "Anduin#1", gameAccountInfo = { isOnline = false } },
+}
+BNGetNumFriends = function() return #BNET_FRIENDS, 2 end
+C_BattleNet = { GetFriendAccountInfo = function(index) return BNET_FRIENDS[index] end,
+                InviteFriend = function(id) asks[#asks + 1] = "bnet invite " .. id end }
+local WOW_FRIENDS = {
+    { connected = true, name = "Rexxar", className = "Hunter", level = 60, area = "Desolace", dnd = true },
+    { connected = false, name = "Garrosh" },
+}
+C_FriendList = { GetNumFriends = function() return #WOW_FRIENDS end, GetNumOnlineFriends = function() return 1 end,
+                 GetFriendInfoByIndex = function(index) return WOW_FRIENDS[index] end,
+                 ShowFriends = function() asks[#asks + 1] = "show friends" end }
+C_PartyInfo = { InviteUnit = function(name) asks[#asks + 1] = "invite " .. name end }
+ChatFrameUtil.SendTell = function(name) asks[#asks + 1] = "tell " .. name end
+ChatFrameUtil.SendBNetTell = function(name) asks[#asks + 1] = "bnet tell " .. name end
+UnitIsGroupLeader = function() return false end
+UnitIsGroupAssistant = function() return false end
+FRIENDS_LEVEL_TEMPLATE = "Level %d %s"
+-- The group finder: a category with two listings, a group and a player alone; searching is told.
+local LISTINGS = {
+    [11] = { searchResultID = 11, activityIDs = { 100 }, leaderName = "Cairne", comment = "need healer", numMembers = 3, age = 60 },
+    [12] = { searchResultID = 12, activityIDs = { 100 }, leaderName = "Baine", comment = "", numMembers = 1, age = 10 },
+}
+C_LFGInfo = { CanPlayerUsePremadeGroup = function() return true end }
+C_LFGList = {
+    GetAvailableCategories = function() return { 2 } end,
+    GetLfgCategoryInfo = function(id) return { name = id == 2 and "Dungeons" or "?" } end,
+    GetAvailableActivities = function() return { 100 } end,
+    GetActivityInfoTable = function() return { fullName = "Wailing Caverns", shortName = "", maxNumPlayers = 5 } end,
+    Search = function(category, _, _, _, _, _, activities) asks.searched = { category = category, activities = activities } end,
+    GetFilteredSearchResults = function()
+        if not asks.searched then return 0, {} end
+        return 2, { 11, 12 }
+    end,
+    GetSearchResultInfo = function(id) return LISTINGS[id] end,
+    GetSearchResultLeaderInfo = function(id) return { classFilename = id == 11 and "WARRIOR" or "SHAMAN" } end,
+    GetSearchResultPlayerInfo = function() return { level = 24, classFilename = "SHAMAN" } end,
+}
+end
 
 -- The game's own chat: one window, docked, with its tab, its dock and its edit box (which belongs to the screen).
 local function Named(kind, name, parent)
@@ -216,11 +264,11 @@ IsMouseButtonDown = function() return W.held or false end
 GetPlayerLink = function(name, shown, lineID, chatType) return ("|Hplayer:%s:%s:%s|h%s|h"):format(name, lineID or 0, chatType or 0, shown) end
 -- Who is what to you.
 local FRIEND, MATE, RAIDER = "Player-70-00000002", "Player-70-00000003", "Player-70-00000004"
-C_FriendList = { IsFriend = function(guid) asked.tie = asked.tie + 1; return guid == FRIEND end }
-C_BattleNet = { GetAccountInfoByGUID = function() return nil end }
+C_FriendList.IsFriend = function(guid) asked.tie = asked.tie + 1; return guid == FRIEND end
+C_BattleNet.GetAccountInfoByGUID = function() return nil end
 IsGuildMember = function(guid) return guid == MATE or guid == FRIEND end
 -- The game's own; the global IsGUIDInGroup is only there while its old names are switched on.
-C_PartyInfo = { IsGUIDInGroup = function(guid) return guid == RAIDER or guid == MATE end }
+C_PartyInfo.IsGUIDInGroup = function(guid) return guid == RAIDER or guid == MATE end
 function methods:GetLeft() return self._left or 40 end
 function methods:GetTop() return self._top or 500 end
 function methods:SetBackdropColor(r, g, b, a) self._fill = { r, g, b, a } end
@@ -255,19 +303,23 @@ C_Timer.NewTicker = function(seconds, fn)
     return ticker
 end
 
--- The game's scrolling list: here it makes a row for every message, the real one only for those in view.
+-- The game's scrolling list: here it makes a row for every element, the real one only for those in view.
+-- box is the chat's, the first made; the full screen's panels make their own (boxes, in the order made).
 local box, grip
-local function Relay()
-    box.rows, box.heights = box.rows or {}, {}
-    for index, entry in ipairs(box.provider.list) do
-        box.heights[index] = box.view.height(index, entry)
-        box.rows[index] = box.rows[index] or W.NewWidget("Frame", nil, box)
-        box.view.draw(box.rows[index], entry)
+local boxes = {}
+local function Relay(list)
+    if not list then return end
+    list.rows, list.heights = list.rows or {}, {}
+    for index, entry in ipairs(list.provider.list) do
+        list.heights[index] = list.view.height and list.view.height(index, entry) or list.view.extent
+        list.rows[index] = list.rows[index] or W.NewWidget("Frame", nil, list)
+        list.view.draw(list.rows[index], entry)
     end
-    box.relays = (box.relays or 0) + 1
+    list.relays = (list.relays or 0) + 1
 end
 W.templates.WowScrollBoxList = function(widget)
-    box = widget
+    local box = widget
+    boxes[#boxes + 1] = box
     box.atEnd, box.scrolls, box.ends = true, false, 0
     box.ScrollTarget = W.NewWidget("Frame", nil, box)
     function box:IsAtEnd() return self.atEnd end
@@ -276,12 +328,20 @@ W.templates.WowScrollBoxList = function(widget)
     -- How far down the list is scrolled, from its top: kept by the list when its data changes, as the game's does.
     function box:GetDerivedScrollOffset() return self.offset or 0 end
     function box:ScrollToOffset(offset) self.offset = offset end
-    function box:SetDataProvider(provider) self.provider = provider end
+    function box:SetDataProvider(provider) self.provider, provider.box = provider, self end
     function box:RegisterCallback(event, fn) if event == "OnScroll" then self.scrolled = fn else self.laid = fn end end
-    function box:Rebuild() Relay() end
+    function box:Rebuild() Relay(self) end
     function box:FullUpdate() self.updates = (self.updates or 0) + 1 end
     function box:ForEachFrame(fn)
         for index, entry in ipairs(self.provider.list) do fn(self.rows[index], entry) end
+    end
+end
+-- The chat's list is the first made.
+do
+    local made = W.templates.WowScrollBoxList
+    W.templates.WowScrollBoxList = function(widget)
+        made(widget)
+        box = box or widget
     end
 end
 CreateScrollBoxListLinearView = function(_, _, _, _, spacing)
@@ -290,20 +350,22 @@ CreateScrollBoxListLinearView = function(_, _, _, _, spacing)
     function view.padding:SetTop(top) self.top = top end
     function view:GetPadding() return self.padding end
     function view:SetElementExtentCalculator(fn) self.height = fn end
+    function view:SetElementExtent(extent) self.extent = extent end
     function view:SetElementInitializer(kind, fn) self.kind, self.draw = kind, fn end
     return view
 end
 ScrollUtil = { InitScrollBoxListWithScrollBar = function(scrollBox, _, view) scrollBox.view = view end }
 CreateDataProvider = function()
     local provider = { list = {} }
-    function provider:Flush() self.list = {}; Relay() end
-    function provider:InsertTable(list) for _, entry in ipairs(list) do self.list[#self.list + 1] = entry end; Relay() end
-    function provider:Insert(entry) self.list[#self.list + 1] = entry; Relay() end
+    function provider:Flush() self.list = {}; Relay(self.box) end
+    function provider:InsertTable(list) for _, entry in ipairs(list) do self.list[#self.list + 1] = entry end; Relay(self.box) end
+    function provider:Insert(entry) self.list[#self.list + 1] = entry; Relay(self.box) end
     function provider:RemoveIndexRange(first, last)
         for _ = first, last do table.remove(self.list, first) end
         self.removals = (self.removals or 0) + 1
-        Relay()
+        Relay(self.box)
     end
+    function provider:GetSize() return #self.list end
     return provider
 end
 
@@ -425,19 +487,26 @@ local rows = box.rows
 -- The room the list leaves above the messages, for a list with or without the line to write in.
 -- Where the list starts from the window's top: its last TOPLEFT (the one the game keeps), on what Core lays out
 -- for what the window holds (under its title bar while there is one).
+-- The list hangs on the chat's frame (column), which hangs on what Core lays out for what the window holds.
+local column = box._points[1][2]
 local function listTop()
     local y, on
     for _, point in ipairs(box._points) do if point[1] == "TOPLEFT" then y, on = point[5], point[2] end end
-    local below = on and on ~= window and on._points[1] and on._points[1][5] or 0
-    return y + below
+    while on and on ~= window do
+        y = y + (on._points[1] and on._points[1][5] or 0)
+        on = on._points[1] and on._points[1][2]
+    end
+    return y
 end
+-- The chat's height: the column's while it has one of its own (the full screen's panels), else the window's.
 local function above(input)
     local total = 0
     for index, height in ipairs(box.heights) do total = total + height + (index > 1 and Layout.SPACING or 0) end
-    return math.max(Layout.ListHeight(window._height, input, -listTop()) - total, 0)
+    local height = #column._points == 1 and column._height or window._height
+    return math.max(Layout.ListHeight(height, input, -listTop()) - total, 0)
 end
-check(listTop() == -Layout.EDGE and box._points[1][2] ~= window and box._points[1][2]._parent == window,
-    "the list starts at the window's top, in what Core lays out for what a window holds: it has no bar of its own")
+check(listTop() == -Layout.EDGE and column ~= window and column._parent == window and column._points[1][2]._parent == window,
+    "the list starts at the window's top, in the chat's frame in what Core lays out for what a window holds: it has no bar of its own")
 check(above() > 0 and box.view.padding.top == above(), "a few messages stand at the bottom of the list: the room they leave is above them")
 check(bubble(rows[1]):IsShown() and bubble(rows[1])._points[1][1] == "TOPLEFT" and icon(rows[1]):IsShown(), "somebody else's bubble is on the left, with an icon")
 check(icon(rows[1])._atlas == "classicon-shaman", "the class's")
@@ -540,8 +609,8 @@ end
 check(bottom() == Layout.EDGE, "without the line to write in, the list goes down to the window's edge")
 ends = box.ends
 open()
-check(editBox._points[1][1] == "BOTTOMLEFT" and editBox._points[1][2] == window and editBox._points[2][1] == "BOTTOMRIGHT" and #editBox._points == 2,
-    "shown, the game's edit box sits at the bottom of our window")
+check(editBox._points[1][1] == "BOTTOMLEFT" and editBox._points[1][2] == column and editBox._points[2][1] == "BOTTOMRIGHT" and #editBox._points == 2,
+    "shown, the game's edit box sits at the bottom of our window, in the chat's frame")
 check(bottom() == Layout.EDGE + Layout.Input(32) and box.ends > ends, "the list ends above it, and stays at the newest message")
 check(box.view.padding.top == above(32) and above(32) <= above(), "the messages move up with it")
 close()
@@ -741,7 +810,7 @@ SlashCmdList.SANEUI("social")
 check(editBox._points[1][2] == native and editBox._alpha == 0.35 and editBox._mouse == true and editBox._strata == "LOW",
     "at rest, it is the game's faded line again, low, and takes the mouse")
 SlashCmdList.SANEUI("social")
-check(editBox._alpha == 0 and editBox._points[1][2] == window, "back in our window it rests at once")
+check(editBox._alpha == 0 and editBox._points[1][2] == column, "back in our window it rests at once")
 style = "classic"
 editBox:Hide()
 
@@ -1186,7 +1255,7 @@ check(nativeToo.setting.name == "Show the game's chat too" and nativeToo.setting
 nativeToo.setting:SetValue(true)
 check(native._parent == UIParent and dock._parent == UIParent and window:IsShown(), "switched on, the game's chat is on show next to our window")
 open()
-check(editBox._points[1][2] == window, "the line to write in is still ours")
+check(editBox._points[1][2] == column, "the line to write in is still ours")
 close()
 nativeToo.setting:SetValue(false)
 check(native._parent == away, "switched off, it is out of sight again")
@@ -1415,14 +1484,103 @@ do
     for _, widget in ipairs(W.frames) do
         if widget._kind == "DropdownButton" and widget._parent == window then classic = widget end
     end
-    check(classic and classic:IsShown() and #classic._items == 2 and classic._items[1].text == "Chat"
-        and classic._items[2].text == "Friends list", "full, the dropdown Classic windows offers the game's chat and friends list")
+    check(classic and classic:IsShown() and #classic._items == 3 and classic._items[1].text == "Chat"
+        and classic._items[2].text == "Friends list" and classic._items[3].text == "Group finder",
+        "full, the dropdown Classic windows offers the game's chat, friends list and group finder")
     local coreBar -- Core's title bar at the top of the full window
     for _, widget in ipairs(W.frames) do
         if widget._parent == window and rawget(widget, "box") then coreBar = widget end
     end
-    check(coreBar and coreBar:IsShown() and coreBar.title._text == "Social" and coreBar.glass:IsShown() and listTop() == -(Core.Window.BAR + Layout.EDGE),
-        "full, Core's title bar is at its top, with the search; the list starts under it (Core lays out what the window holds there)")
+    -- The full screen's panels: the friends list at the left, the group finder at the right, a second chat above the chat.
+    local board = Layout.Board(1920, 1080 - Core.Window.BAR, { friends = true, finder = true, feed = true }, 0.4)
+    check(board.friends and board.finder and board.feed and board.chat[1] == 2 * Layout.PAD + Layout.FRIENDS_WIDTH
+        and board.chat[3] == 1920 - 4 * Layout.PAD - Layout.FRIENDS_WIDTH - Layout.FINDER_WIDTH
+        and board.feed[4] == math.floor((1080 - Core.Window.BAR - 2 * Layout.PAD) * 0.4) and board.chat[2] == 2 * Layout.PAD + board.feed[4],
+        "the full screen: friends at the left, the group finder at the right, the second chat above the chat, all a little apart")
+    check(coreBar and coreBar:IsShown() and coreBar.title._text == "Social" and coreBar.glass:IsShown()
+        and listTop() == -(Core.Window.BAR + board.chat[2] + Layout.EDGE) and column._width == board.chat[3],
+        "full, Core's title bar is at its top, with the search; the chat stands under the second chat, between the panels")
+    local panels, friends, finder = ns.Board.panels, nil, nil
+    do
+    local narrow = Layout.Board(900, 600, { friends = true, finder = true, feed = true }, 0.4)
+    check(narrow.friends and not narrow.finder and narrow.chat[3] >= Layout.CHAT_MIN, "a screen without room for both panels leaves out the group finder first")
+    narrow = Layout.Board(600, 300, { friends = true, finder = true, feed = true }, 0.4)
+    check(not narrow.friends and not narrow.finder and not narrow.feed and narrow.chat[3] == 600 - 2 * Layout.PAD,
+        "a small one leaves the chat alone")
+    check(panels.friends:IsShown() and panels.finder:IsShown() and panels.feed:IsShown()
+        and panels.friends._points[1][4] == board.friends[1] and panels.finder._points[1][4] == board.finder[1]
+        and panels.feed._width == board.chat[3] and panels.friends.title._text == "Friends",
+        "each panel stands at its place, with its title")
+    local function list(panel)
+        for _, other in ipairs(boxes) do
+            if other._parent == panel.body then return other end
+        end
+    end
+    local function foot(panel, text)
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == panel.body and widget._kind == "Button" and widget._text == text then return widget end
+        end
+    end
+    -- The friends list, in the game's order: Battle.net friends online, characters online, a divider, the offline ones.
+    friends = list(panels.friends)
+    local names = {}
+    for index, friend in ipairs(friends.provider.list) do names[index] = friend.kind == "divider" and "-" or friend.name end
+    check(table.concat(names, ", ") == "Jaina, Varian, Rexxar, Level 60 Hunter, -, Anduin, Garrosh",
+        "the friends list: online Battle.net friends, online characters, a divider, then the offline ones")
+    check(friends.provider.list[1].character == "Proudmoore" and friends.provider.list[1].info == "Theramore"
+        and friends.provider.list[2].status == "Away" and friends.provider.list[2].info == "In the Battle.net app"
+        and friends.provider.list[3].status == "DnD" and friends.provider.list[5].status == "Offline",
+        "with the character they play, where they are or what they do, and their status")
+    check(friends.rows[1].icon._texture == "Interface\\FriendsFrame\\StatusIcon-Online" and friends.rows[1].top._text:find("Proudmoore")
+        and friends.rows[1].side:IsShown() and friends.rows[1].bottom._text == "Theramore", "a row as the game's: status icon, name, where, the game's icon")
+    local send, invite = foot(panels.friends, "Send Message"), foot(panels.friends, "Invite")
+    check(send and invite and not send:IsEnabled() and not invite:IsEnabled(), "Send Message and Invite wait for a friend to be chosen")
+    friends.rows[1]:GetScript("OnClick")(friends.rows[1], "LeftButton")
+    send:GetScript("OnClick")(send)
+    invite:GetScript("OnClick")(invite)
+    check(asks[#asks - 1] == "bnet tell Jaina" and asks[#asks] == "bnet invite 70", "chosen, a Battle.net friend gets a message and an invite to the game they play in")
+    friends.rows[6]:GetScript("OnClick")(friends.rows[6], "LeftButton")
+    check(not send:IsEnabled() and not invite:IsEnabled(), "a character offline gets neither")
+    -- The second chat: the chats ticked for it, apart from the chat's.
+    local feed = list(panels.feed)
+    local says = #feed.provider.list
+    W.Fire("CHAT_MSG_GUILD", "for the horde", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 2, THRALL)
+    check(#feed.provider.list == says + 1 and feed.provider.list[#feed.provider.list].text == "for the horde"
+        and box.provider.list[#box.provider.list].text == "for the horde", "a guild message is in the second chat and in the chat")
+    say("only here")
+    check(#feed.provider.list == says + 1 and box.provider.list[#box.provider.list].text == "only here", "what is said nearby only in the chat")
+    local tick
+    for _, item in ipairs(panels.feed.filter._items) do if item.text == "Say" then tick = item end end
+    check(tick and not tick.checked(tick.data), "its list of chats has Say unticked")
+    tick.fn(tick.data)
+    check(options.split.SAY and feed.provider.list[#feed.provider.list].text == "only here" and ns.Channels.Split("SAY"),
+        "ticked, the second chat shows what is said too")
+    -- The group finder: nothing searched until a category is chosen.
+    finder = list(panels.finder)
+    check(#finder.provider.list == 0 and finder.empty._text == "Choose a category to look for groups." and not asks.searched,
+        "the group finder searches nothing by itself")
+    local categories
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "DropdownButton" and widget._parent == panels.finder.head then categories = widget end
+    end
+    check(categories._items[1].text == "Dungeons", "its categories are the game's")
+    categories._items[1].fn(categories._items[1].data)
+    check(asks.searched.category == 2 and asks.searched.activities[1] == 100 and finder.empty._text == "Searching...",
+        "a category chosen is searched, in all its activities")
+    W.Fire("LFG_LIST_SEARCH_RESULTS_RECEIVED")
+    W.Wait(0.1)
+    check(#finder.provider.list == 2 and finder.provider.list[1].leader == "Baine" and finder.provider.list[1].solo
+        and finder.provider.list[2].activity == "Wailing Caverns" and finder.provider.list[2].comment == "need healer",
+        "what it found: the newest first, a player alone and a group, with the activity and the comment")
+    send, invite = foot(panels.finder, "Send Message"), foot(panels.finder, "Invite")
+    finder.rows[1]:GetScript("OnClick")(finder.rows[1], "LeftButton")
+    check(invite:IsEnabled(), "a player alone can be invited")
+    invite:GetScript("OnClick")(invite)
+    finder.rows[2]:GetScript("OnClick")(finder.rows[2], "LeftButton")
+    check(not invite:IsEnabled() and asks[#asks] == "invite Baine", "a group not: its leader gets a message")
+    send:GetScript("OnClick")(send)
+    check(asks[#asks] == "tell Cairne", "(the leader whispered)")
+    end
     local shown = #box.provider.list
     coreBar.find:GetScript("OnMouseDown")(coreBar.find)
     coreBar.find:GetScript("OnClick")(coreBar.find)
@@ -1433,8 +1591,14 @@ do
     search._text = ns.Log.list[#ns.Log.list].name or "number"
     search:GetScript("OnTextChanged")(search)
     check(#box.provider.list > 0 and #box.provider.list <= shown, "a search for a speaker's name shows their messages")
+    search._text = "theramore"
+    search:GetScript("OnTextChanged")(search)
+    check(#friends.provider.list == 1 and friends.provider.list[1].name == "Jaina" and #finder.provider.list == 0,
+        "the search goes to the panels too: friends by where they are")
     search:GetScript("OnEscapePressed")(search)
-    check(not search:IsShown() and #box.provider.list == shown, "closed, all of them are on show again")
+    search:GetScript("OnTextChanged")(search) -- the game tells of the box emptied (the stand-in does not)
+    check(not search:IsShown() and #box.provider.list == shown and #friends.provider.list == 6 and #finder.provider.list == 2,
+        "closed, all of them are on show again")
     local coreButtons
     for _, widget in ipairs(W.frames) do
         if widget._parent == coreBar and rawget(widget, "list") then coreButtons = widget end
@@ -1445,7 +1609,8 @@ do
     classic._items[2].fn()
     check(tab == 1 and window._width == Layout.WIDTH and window:IsShown() and not classic:IsShown(),
         "Friends list: the window goes back to its zone, and the game's friends list opens")
-    check(listTop() == -Layout.EDGE, "back, the list starts at the window's top again")
+    check(listTop() == -Layout.EDGE and not panels.friends:IsShown() and not panels.finder:IsShown() and not panels.feed:IsShown(),
+        "back, the panels are gone and the list starts at the window's top again")
     W.Wait(1)
     strip:GetScript("OnEnter")(strip)
     W.printed = {}
@@ -1521,8 +1686,9 @@ end
 
 -- A message that cannot be read is left out ----------------------------------------------------------
 W.printed = {}
+local before = Log.list[#Log.list]
 say("hello", THRALL, "Broken")
-check(not ns.off and window:IsShown() and Log.list[#Log.list].text == "number " .. Log.MAX and Core.errors["Social: a chat message could not be read"]
+check(not ns.off and window:IsShown() and Log.list[#Log.list] == before and Core.errors["Social: a chat message could not be read"]
     and #W.printed == 1, "a message that cannot be read is left out and noted; the window goes on")
 say("hello", THRALL, "Broken")
 say("fine")
@@ -1531,7 +1697,7 @@ check(#W.printed == 1 and Log.list[#Log.list].text == "fine", "it is said once, 
 -- A failure: the window goes -------------------------------------------------------------------------
 W.printed = {}
 open()
-check(editBox._points[1][2] == window and editBox.wraps, "(the line to write in is in our window)")
+check(editBox._points[1][2] == column and editBox.wraps, "(the line to write in is in our window)")
 local multiLine = editBox.SetMultiLine
 editBox.SetMultiLine = function(self, on)
     if not on then error("and this too") end
