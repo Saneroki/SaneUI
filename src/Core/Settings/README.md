@@ -1,16 +1,18 @@
 # Sane UI: Settings (part of Core)
 
-**Status:** written and tested outside the game; **not yet tried in the game** · **Since:** 2026-10-14 · **Addon:** `SaneUI` (Core), folder `src/Core/Settings/`
+**Status:** written and tested outside the game · **Since:** 2026-10-14 · **Addon:** `SaneUI` (Core), folder `src/Core/Settings/`
 
 ## TL;DR
 Shows the switches of Sane UI in the game's own options: the page *Sane UI* with its logo, under it *Profiles*
 (with the synced game settings and every CVar of the game), *General* and *Appearance*, then one page for
 every module that is switched on.
-Checkboxes, sliders for numbers, dropdowns for one of a few, and a list of the CVars.
+Checkboxes, sliders for numbers, boxes to type words or a number into, dropdowns for one of a few (or several,
+ticked), colours, buttons, and a list of the CVars. A module's page in tabs has a search box and *Defaults*.
 
 ## How to use
 - **Open the options:** Esc > Options > AddOns > Sane UI, or `/sane options`, or click *Sane UI* in
-  the minimap's addon list. Not in combat: the game does not let an addon open its options in a fight.
+  the minimap's addon list. In a fight the game does not let an addon open its options: chat says so, and
+  they open by themselves once the fight is over.
 - **Sane UI** itself shows only Sane UI's logo. Under it, in this order (the button in front of *Sane UI* folds
   them in and out):
   - *Profiles:* a page of its own: its title, the line *Settings are saved
@@ -56,19 +58,32 @@ Checkboxes, sliders for numbers, dropdowns for one of a few, and a list of the C
     edge, and goes back; also how a window opens while the mouse rests on it. A window can have its own (Social).
   - *Social*, *Abilities*, *Tooltips*: one page per module that is switched on and has switches, called by its
     name, with the module's banner at the top in place of its title. A module that is switched off in the
-    addon list has no page.
-- A change counts at once unless the line says it needs a `/reload`.
+    addon list has no page. A module whose switches are in tabs (*Social*) has over its tabs, at the right of
+    its title, a search box and the button *Defaults*:
+    - **Search:** type a few letters of a setting's words (or of its tab, its box or its tooltip): the settings
+      found are listed under the box, best first, the letters found in gold, each with its tab and box. Click
+      one, or press Enter for the first: its tab is shown, scrolled to it, its line marked. Esc closes the list.
+    - **Defaults:** asks first, then sets every setting of the module back to its default, in all its tabs.
+      The game's own *Defaults* button (on a list page) with *All settings* does the same for such a page.
+- A change counts at once. One the game shows only after a `/reload` offers it (the game's dialog: *Reload*,
+  *Later*).
+- Words or a number in a box: Enter sets what was typed, Esc (or a click elsewhere) leaves the value as it was.
+  A number is kept within its ends; words the module refuses get the default back.
 
 ## Technical details
 - **Part of Core,** not a module: its files are in Core's TOC, after Sync, and share `Core.Config` (called
   `Config` in them: `Settings` is the game's own options library). It cannot be switched off.
 - **The pages are put up at login, empty** (`Core.pages`, `PutUpPages` at `PLAYER_LOGIN`): the game's options
   window shows its *AddOns* tab only if an addon has a page the first time it opens, and decides that for the
-  whole session. Their controls are made only the first time the options open (`Config.Fill`, from the
-  options window's `OnShow` or `/sane options`), so a session that never opens them builds no frame. A
-  module whose switches fail to go on its page does not keep the others from theirs.
+  whole session. The rows of the game's lists are handed to it the first time the options open (`Config.Fill`,
+  from the options window's `OnShow` or `/sane options`; the game makes their frames only when a page is
+  shown). A page of our own (a canvas: *Profiles*, a module's page in tabs) is an empty frame until the game
+  first shows it: then it is built (its `OnShow`, `OwnPage`). So a session that never opens the options builds
+  no frame, and one that opens only the game's own pages (*Graphics*) builds none of ours. A module whose
+  switches fail to go on its page does not keep the others from theirs.
 - **`/sane options`** (`config`, `settings`) and the minimap's addon list (`## AddonCompartmentFunc` in Core's
-  TOC: `SaneUI_OnAddonCompartmentClick`) open the options (`Config.Open`); not in a fight.
+  TOC: `SaneUI_OnAddonCompartmentClick`) open the options (`Config.Open`); in a fight once it is over
+  (`Core.AfterCombat("options", Config.Open)`: asked twice, it opens once).
 - **The pages, in this order** (`Config.Fill`):
   - *Sane UI* (`Core.pages.top`): the banner, then `About.lua`'s rows (the game's section headers and button
     rows): *Community* (Discord, Website, GitHub: *Copy link* shows the address selected in the game's
@@ -83,18 +98,22 @@ Checkboxes, sliders for numbers, dropdowns for one of a few, and a list of the C
   modules switched on, the class and level but no name, what was written, and for a bug the 5 newest
   entries of Core's error log); *Back to writing* returns. What was written is kept per kind for the
   session, not saved.
-  - *Profiles*: a page of our own (a canvas, `Core.frames.Profiles`), built by `Config.BuildProfiles`: the
-    title over the game's divider, a line, the tabs (`MinimalTabTemplate`, the options window's own tabs, in a
-    radio group), and under them a box with one part per tab, each but *CVars* in a scroll area
-    (`ScrollFrameTemplate`, the game's thin scroll bar). Tabs: *Profiles* (`Profiles.lua`), *Accountwide*
-    (`Synced.lua`: the box *Sane UI* from `Core.Profiles.Shared`, then Sync's parts by `Sync.GROUPS`, a box
-    each), *CVars* (`CVars.lua`). A character's line in *Characters* has its own dropdown, and checkboxes without words
-    under the column heads (their words in the tooltip).
-  - **The parts of such a page** (`Panel.lua`): titled boxes (`BackdropTemplate` with the tooltip border, as
-    boxes in the game's options have had), checkboxes (`UICheckButtonTemplate`) in two columns, buttons (`UIPanelButtonTemplate`), the profile dropdown
-    (`WowStyle1DropdownTemplate`). Each control reads its value from a function when the page is shown
-    (`OnRefresh`, which the game calls) and after a change (`Config.Refresh`); one that cannot be used now is
-    switched off with grey words.
+  - *Profiles*: a page of our own (a canvas, `Core.frames.Profiles`), built by `Config.BuildProfiles` the first
+    time it is shown: the title over the game's divider, a line, the tabs (`MinimalTabTemplate`, the options
+    window's own tabs, in a radio group), and under them a box with one part per tab, each but *CVars* in a
+    scroll area (`ScrollFrameTemplate`, the game's thin scroll bar). Tabs: *Profiles* (`Profiles.lua`),
+    *Accountwide* (`Synced.lua`: the box *Sane UI* from `Core.Profiles.Shared`, then Sync's parts by
+    `Sync.GROUPS`, a box each), *CVars* (`CVars.lua`). A character's line in *Characters* has its own dropdown,
+    and checkboxes without words under the column heads (their words in the tooltip).
+  - **The parts of such a page** (`Panel.lua`): the tabs over their box (`Panel.TabbedFrame(page, tabs, top)`:
+    each tab `{ name, build, scroll, label }`, its part in a scroll area unless `scroll = false`), titled boxes
+    (`BackdropTemplate` with the tooltip border, as boxes in the game's options have had; a box's tip is the
+    tooltip of its title), checkboxes (`UICheckButtonTemplate`) in two columns, sliders, dropdowns of one or
+    several (`WowStyle1DropdownTemplate`; several: a checkbox each), boxes to type words or a number into
+    (`InputBoxTemplate`), colours, buttons (`UIPanelButtonTemplate`). Each control reads its value from a
+    function and is kept by its page (`Panel.Page`): a click shows its own page anew; the game's `OnRefresh`
+    shows a page anew when it shows it; `Config.Refresh` shows anew the pages shown then, and a hidden one once
+    it is shown. One that cannot be used now is switched off with grey words.
   - *General* and *Appearance*: Core's switches, each on the page its `page` names (`Fill(page, name, onPage)`;
     none: *General*).
   - A module's page, called by its name (*Abilities*).
@@ -114,9 +133,13 @@ Checkboxes, sliders for numbers, dropdowns for one of a few, and a list of the C
   the options first open, long after every addon that is switched on has been read. So a module needs nothing
   from the options, and the order in which the game reads the addons does not matter.
 - **The pages are Blizzard's** vertical settings lists: `Settings.RegisterVerticalLayoutCategory` for
-  *Sane UI*, `Settings.RegisterVerticalLayoutSubcategory` for each module, `RegisterAddOnSetting` for a
-  switch; the game makes the controls only when a page is opened. Only *Profiles* is a page of our own
-  (`Settings.RegisterCanvasLayoutSubcategory`), built from the game's parts when the options first open.
+  *Sane UI*, `Settings.RegisterVerticalLayoutSubcategory` for each module, `Settings.RegisterProxySetting` for a
+  switch (it reads the module's settings, `Core.Settings`, and writes them through `Core.Set`: checked, told to
+  the module, a `/reload` offered for `reload = true`, the page shown anew); the game makes the controls only
+  when a page is opened. *Profiles* and a module's page in tabs are pages of our own
+  (`Settings.RegisterCanvasLayoutSubcategory`), built from the game's parts the first time they are shown.
+  The game's search (`SettingsPanelMixin:FindInitializersMatchingSearchText`) reads only vertical lists, so a
+  page in tabs has a search of its own.
 - **Rows go in through `Settings.RegisterInitializer`,** which lets the game's own code put them on the
   page. `Settings.CreateCheckbox` would add them from addon code, and the options' search reads every page.
 - **The name:** the table is `Core.Config`; inside these files it is called `Config`, because `Settings` is
@@ -126,34 +149,69 @@ Checkboxes, sliders for numbers, dropdowns for one of a few, and a list of the C
   - Names and the question before deleting go through the dialogs the game keeps for addons
     (`GENERIC_INPUT_BOX`, `GENERIC_CONFIRMATION` with `StaticPopup_Show`): nothing is written into the
     game's `StaticPopupDialogs`. Should a client update take one away, it is noted and nothing happens.
-  - **Shown anew:** when values change under the controls (a profile loaded, the character's own switched),
-    `Config.Refresh`, a frame later, asks each setting of the list pages to show its value again
-    (`SettingMixin:NotifyUpdate`, what the game does for a value changed elsewhere) and each control of the
-    page Profiles to read its own. The modules were told by Core already; the callbacks hear that refresh,
-    but keep quiet (`quiet`). A list page that is not open makes its controls anew when it is.
-- **A switch without `text`** gets no control; one with `header` starts a section above it. One with `parent` is
-  drawn under that switch (`SetParentInitializer`, as the game's own options do), with a predicate that greys it
-  out while any switch above it is off (`Config.Free`). A slider with a step below 1 writes its value with two
-  decimals.
+  - **Shown anew:** when values change under the controls (a profile loaded, the character's own switched, a
+    switch set elsewhere with `Core.Set`), `Config.Refresh`, a frame later, asks each setting of the list pages
+    to show its value again (`SettingMixin:NotifyUpdate`, what the game does for a value changed elsewhere) and
+    the pages of our own to show theirs (`Panel.Refresh`). The settings only read their values then: nothing is
+    told to the modules twice (Core told them). A list page that is not open makes its controls anew when it is.
+- **Kinds of switches** (`Config.Kind`, from the description `Core.Options` keeps; the same on a list page and a
+  page in tabs):
+
+  | Description | Control |
+  | --- | --- |
+  | no `text` (or no `default`, or a table that is no `multi`) | none: kept with the settings, in profiles too |
+  | `default` true or false | a checkbox |
+  | a number with `min` and `max` (`step`, `unit`) | a slider, its value written right of it: two decimals for steps below 1, then `unit` |
+  | a number with `entry = true`, or without `max` | a box to type it into (Enter sets, Esc leaves it), kept within `min`/`max`, on its `step`; `unit` beside it |
+  | words (a string `default`, no `choices`) | a box to type them into (Enter sets, Esc leaves it); a `validate` that refuses them gives the default back |
+  | `choices` (`{ value, words }`) | a dropdown of one of them |
+  | `choices` with `multi = true` (`default` a table `{ [value] = true }`) | a dropdown with a checkbox per choice; on a list page the game's own (a setting with a bit per choice) |
+  | `color = true` (six hex digits) | a swatch that opens the game's colour picker (on a list page the game's own swatch row) |
+  | `button = fn` (no `default`) | a button that runs it; nothing is kept |
+
+  Besides: `header` (and `headerTip`, its tooltip) starts a section (a list page) or a titled box (in tabs).
+  `parent` (a key, or a list of keys) draws it under that switch and greys it out while any switch above it is
+  off, a parent's parent too (`Config.Free`); `parentValue` while the first parent is not set to that value.
+  On a list page it is drawn under the first parent on the page (`SetParentInitializer`, indented, as the
+  game's own options do); the game looks at a row again only when that one changes, so the row also listens to
+  every other switch above it (`AddEvaluateStateCVar`, by a setting's name). `hidden = fn(settings)`: the
+  control is not there while it returns true (a list page: `AddShownPredicate`, the game asks after every
+  change and closes the gap; in tabs the lines under it close up when the page shows its values anew).
+  `reload = true`: a change offers a `/reload` (`Core.Set`). `validate`: `Core.Set` gives the default for a value
+  it refuses. On a list page the words and number boxes are a row of ours (`SaneUISettingsEntryTemplate` in
+  `Banner.xml`, `SaneUISettingsEntryMixin`): the game's own row of a setting (`SettingsControlMixin`, its words,
+  tooltip, greying and *Defaults*) with the game's `InputBoxTemplate`; a button is the game's
+  `CreateSettingsButtonInitializer`, a colour its `CreateColorSwatchInitializer` (it keeps `FF` in front).
 - **A module's page in tabs** (`Tabbed.lua`): when a module's switches name a `tab`, its page is one of our
-  own (a canvas, `Core.frames[module]`), drawn as Profiles is: the title, the
-  game's tabs (*General* first, for the switches that name none), each a scroll area of titled boxes, one per
-  `header`. A line is a checkbox, or words with a slider (`Panel.Slider`: the game's
-  `MinimalSliderWithSteppersTemplate`, its value and `unit` at its right) or a dropdown (`Panel.Dropdown`) in a
-  column right of them, or a colour (`color`, six hex digits: `Panel.Color`, the game's `ColorSwatchTemplate`;
-  a click opens the game's `ColorPickerFrame`, each move there is set at once, Cancel sets the one before).
-  A number with `inline` is drawn on the line of its parent switch. Greyed out as above; one with
-  `parentValue` is under one of a few and greyed out while that is not set to that value (`Config.Free`).
-  A colour is only drawn on such a page, not on a list page.
+  own (a canvas, `Core.frames[module]`), built the first time it is shown, drawn as Profiles is
+  (`Panel.TabbedFrame`): the title, the game's tabs (*General* first, for the switches that name none; a tab
+  without a control is none), each a scroll area of titled boxes, one per `header` (an empty one is not drawn).
+  A line is a checkbox, or words with its control in a column right of them: a slider (`Panel.Slider`: the
+  game's `MinimalSliderWithSteppersTemplate`, its value and `unit` at its right), a dropdown (`Panel.Dropdown`),
+  a box to type into (`Panel.Edit`), a colour (`Panel.Color`, the game's `ColorSwatchTemplate`; a click opens the
+  game's `ColorPickerFrame`, each move there is set at once, Cancel sets the one before); or a button. A number
+  with `inline` is drawn on the line of its parent switch (the first of a list) when that is a checkbox of the
+  same tab, one number per checkbox; any other on a line of its own.
+  - **Over the tabs:** a search box (`SearchBoxTemplate`) and *Defaults* (`SETTINGS_DEFAULTS`, where the game's
+    list pages have theirs). The search ranks every setting of the page at every key with `Core.Fuzzy`: its
+    words in any of Fuzzy's ways, or else the start of a word of its tab, box title or tooltip (300 lower); a
+    setting hidden now is not found. Up to 8 are listed under the box in the look of the game's search
+    suggestions (`search-highlight`), the letters found in gold (`Fuzzy.Highlight`), with tab and box; *Nothing
+    found* (`SETTINGS_SEARCH_NOTHING_FOUND`) if none. A choice selects its tab, scrolls to its line and marks it
+    (until the words change or the lines move). *Defaults* asks with `Core.Confirm`, then `Core.Reset(module)`;
+    the page's `OnDefault` (`Settings.lua`, set when the page is put up) does it for the game's *All settings*.
 - **The CVar list (`CVars.lua`, `CVars.xml`):**
   - One frame filling the tab *CVars* (`SaneUISettingsCVarsTemplate`), with a scroll box of its own, built in
     its `OnLoad` from the game's parts: `SearchBoxTemplate`, `WowStyle1FilterDropdownTemplate` (checkboxes and
     radios; `SetIsDefaultCallback`, `SetDefaultCallback` for its red cross), `WowScrollBoxList` with
     `MinimalScrollBar` and a linear view of `SaneUISettingsCVarRowTemplate` rows (`UICheckButtonTemplate`,
     `InputBoxTemplate`, a button with the atlas `common-icon-undo`).
-  - It is filled each time the tab is shown and let go when it is hidden: what was searched and filtered is
-    kept in the file (`filters`), not on the frame. A row sets every field (rows are used again); what is being
-    typed into a row stays while it shows the same CVar (a CVar changed elsewhere does not overwrite it).
+  - It is made the first time the tab is shown (the page's other tabs do not need it), filled each time the
+    tab is shown and let go when it is hidden: what was searched and filtered is kept in the file (`filters`),
+    not on the frame. The search box tells of every `SetText` too (the list's own, writing back what was
+    searched; its clear button's): the list is filtered anew only when the words differ from those it was
+    filtered by. A row sets every field (rows are used again); what is being typed into a row stays while it
+    shows the same CVar (a CVar changed elsewhere does not overwrite it).
   - The CVars come from the game (`ConsoleGetAllCommands`, those of `Enum.ConsoleCommandType.Cvar`, once each
     whatever the case of their letters; their kind from `Enum.ConsoleCategory`), when the list is first shown; their values from `C_CVar.GetCVarInfo`, which also says the
     default, where the game keeps it, and whether it is locked, secure or read-only. Search waits 0.15 s after
@@ -166,30 +224,40 @@ Checkboxes, sliders for numbers, dropdowns for one of a few, and a list of the C
     `RegisterCVarSetting`). The text is looked up in the game, in its language; a string this client lacks is
     left out.
   - Keeping one is Sync's (`Core.Sync.Keep`).
-- **Globals:** `SaneUI_OnAddonCompartmentClick`, `SaneUISettingsBannerMixin`, `SaneUIFeedbackFrame`, `SaneUISettingsCVarsMixin`,
-  `SaneUISettingsCVarRowMixin` (the templates' mixins: XML
+- **Globals:** `SaneUI_OnAddonCompartmentClick`, `SaneUISettingsBannerMixin`, `SaneUISettingsEntryMixin`, `SaneUIFeedbackFrame`,
+  `SaneUISettingsCVarsMixin`, `SaneUISettingsCVarRowMixin` (the templates' mixins: XML
   finds it by name).
-- **Tests:** `lua5.1 dev/tests/core.lua` (Core with its options, 210 checks); Sync's sections in
-  `dev/tests/sync.lua`.
+- **Tests:** `lua5.1 dev/tests/core.lua` (Core with its options, 317 checks; two modules only its options
+  tests see, one with a switch of every kind on a list page, one in tabs); Sync's sections in
+  `dev/tests/sync.lua`, the page Social in `dev/tests/social.lua`.
 
 ## Files
 | File | What it is |
 |---|---|
-| `Settings.lua` | The pages (put up at login, filled when first opened), their switches, the banners, `/sane options` |
-| `Panel.lua` | The parts of a page of our own: header, tabs, scroll area, titled boxes, checkboxes, sliders, dropdowns, buttons |
-| `Tabbed.lua` | A module's page in tabs, drawn from its switches' descriptions (`tab`, `header`, `parent`, `parentValue`, `inline`, `unit`, `color`) |
+| `Settings.lua` | The pages (put up at login; the lists filled when the options first open, a page of our own built when first shown), the kinds of switches and their rows on the game's lists, the row to type into, the banners, `/sane options` |
+| `Panel.lua` | The parts of a page of our own: header, tabs over their box, scroll area, titled boxes, checkboxes, sliders, dropdowns (one or several), boxes to type into, colours, buttons; each page's controls shown anew together |
+| `Tabbed.lua` | A module's page in tabs, drawn from its switches' descriptions (`tab`, `header`, `headerTip`, `parent`, `parentValue`, `inline`, `unit`, `hidden`, the kinds), its search and *Defaults* |
 | `Profiles.lua` | The page *Profiles*: its tabs, and the tab *Profiles* |
 | `Synced.lua` | The tab *Accountwide*: Sane UI's modules, Sync's parts |
 | `CVars.lua` | The tab *CVars* on the page *Profiles*: the list of the game's CVars |
 | `CVars.xml` | The list's frame, and one CVar's row in it |
 | `Data/CVarLabels.lua` | The names of the game's strings for the CVars its options show; made by `dev/tools/cvar-labels` |
 | `About.lua` | The page *Sane UI* under its banner: the links (`About.LINKS`), the feedback buttons, the feedback window and its report, `/sane feedback` |
-| `Banner.xml` | The row a banner is drawn in: its height, the art's size and place |
+| `Banner.xml` | Our rows in the game's lists: the one a banner is drawn in (its height, the art's size and place), and the one to type into |
 
 Sane UI's banner, for the page *Sane UI*, is Core's: `src/Core/Art/banner.blp` (original art of Sane UI, see
 the project's `LICENSE`; made by `dev/tools/art` from `assets/SaneUI-banner.png`).
 
 ## History
+- 2026-10-17 — Every kind of switch on both kinds of page: words and numbers typed into a box (`entry`), several
+  of a few in a dropdown of checkboxes (`multi`), a button (`button`), a colour on a list page too; `hidden`
+  takes a control away while it says so. Every change goes through `Core.Set` (checked, a `/reload` offered,
+  the page shown anew). A list page's row under two switches, or under one two steps up, is greyed out as soon
+  as any of them changes. A module's page in tabs: a search box and *Defaults*, `headerTip` as its box's tooltip,
+  the game's *All settings* reaches it (`OnDefault`); a number inline whose switch is no checkbox of its tab is
+  on a line of its own (was: not drawn, or the tab empty). Pages of our own are built when first shown (was: when
+  the options opened), each click shows only its own page anew, the CVar list is made when its tab is first
+  shown and filtered once per showing (was: twice). `/sane options` in a fight opens the options once it is over.
 - 2026-10-15 — *Empty* in the profile lists, chosen at first (was *None* on a character's line): with it a
   line's checkboxes are ticked and switched off.
 - 2026-10-15 — Part of Core (`src/Core/Settings/`), no addon of its own: the pages are put up here at login (was
