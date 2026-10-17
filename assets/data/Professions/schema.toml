@@ -1,0 +1,26 @@
+set = "Professions"
+key = "int"              # the game's spell ID of the recipe
+pack = "Spells"
+learn = true             # the profession window, while it is open
+about = "The professions' recipes: what each makes, from what, at which skill, with which tools and cooldown."
+
+[fields]
+skill    = { type = "ref", set = "SkillLines" }
+creates  = { type = "int" }                  # the item it makes, and how many
+count    = { type = "int", min = 1 }
+reagents = { type = "list", of = "tuple", parts = [
+    { name = "item", type = "int" },
+    { name = "count", type = "int", min = 1 },
+] }
+learnAt  = { type = "int", min = 0 }         # the skill it is learned at, and where it turns yellow, green and grey
+yellow   = { type = "int", min = 0 }
+green    = { type = "int", min = 0 }
+grey     = { type = "int", min = 0 }
+tools    = { type = "list", of = "int" }
+cooldown = { type = "int", min = 0 }         # in seconds
+recipe   = { type = "int" }                  # the item that teaches it
+
+[index]
+bySkill   = "skill"
+byReagent = "reagents.item"
+byCreates = "creates"

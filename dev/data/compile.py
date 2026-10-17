@@ -164,12 +164,20 @@ def chunks(statements):
     return out
 
 
-def index_key(field, value, master):
+def index_key(index, value, master):
     """An index value as a Lua table key: a number for whole-number kinds, else text."""
-    kind = field.element
+    kind = index.element
     if kind == "ref":
-        return value if master.schemas[field.set].key == "int" else str(value)
+        return value if master.schemas[index.set].key == "int" else str(value)
     return value if kind in ("int", "flags", "money") else str(value)
+
+
+def index_values(index, value):
+    """The values an entry's field gives an index: each element of a list, a tuple's part (of each element)."""
+    values = value if index.type == "list" else [value]
+    if index.part is not None:
+        values = [each.get(index.part.name) for each in values]
+    return [each for each in values if each is not None]
 
 
 def set_file(master, schema, game):
@@ -186,15 +194,16 @@ def set_file(master, schema, game):
         if len(versions) > 1:
             history.append(f"H{lua_key(key)} = {lua_string(VERSION.join(row(schema, v) for v in versions[:-1]))}")
     indexes = {}
-    for name, field in schema.index.items():
+    for name, index in schema.index.items():
         table = {}
         for key in keys:
             newest = view[key][-1]
-            if newest.gone or field.name not in newest.fields:
+            if newest.gone or index.name not in newest.fields:
                 continue
-            value = newest.fields[field.name]
-            for each in (value if field.type == "list" else [value]):
-                table.setdefault(index_key(field, each, master), []).append(key)
+            for each in index_values(index, newest.fields[index.name]):
+                found = table.setdefault(index_key(index, each, master), [])
+                if not found or found[-1] != key:  # an entry once per value
+                    found.append(key)
         indexes[name] = table
     replaces, replaced_by = {}, {}
     for line in master.fixed(schema.set, masters.base_of(game)) + (master.fixed(schema.set, game) if masters.base_of(game) != game else []):

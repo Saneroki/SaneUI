@@ -1,0 +1,20 @@
+set = "CreatureSpawns"
+key = "int"              # the game's creature ID
+pack = "CreatureSpawns"
+learn = true             # every looted creature tells where it was (Doc/ideas/Data.md, *What every kill teaches*)
+about = "Where every creature that is not in Spawns spawns: its points and areas (decision 18), so Spawns stays lean."
+
+[fields]
+points  = { type = "list", of = "point" }
+areas   = { type = "list", of = "tuple", parts = [
+    { name = "map", type = "int" },
+    { name = "row", type = "int", min = 0, max = 99 },
+    { name = "first", type = "int", min = 0, max = 99 },
+    { name = "last", type = "int", min = 0, max = 99 },
+] }
+middles = { type = "list", of = "tuple", parts = [
+    { name = "map", type = "int" },
+    { name = "x", type = "number", min = 0, max = 100 },
+    { name = "y", type = "number", min = 0, max = 100 },
+    { name = "size", type = "number", min = 0 },
+] }

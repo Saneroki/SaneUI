@@ -1,0 +1,13 @@
+set = "Currencies"
+key = "int"              # the game's currency ID
+pack = "Game"
+learn = true
+about = "Every currency: its name, icon and caps (C_CurrencyInfo), legacy points among them."
+
+[fields]
+name        = { type = "text" }
+description = { type = "text" }
+icon        = { type = "int", min = 0 }
+quality     = { type = "int", min = 0, max = 8 }
+cap         = { type = "int", min = 0 }    # most a character can have; none: no cap
+weeklyCap   = { type = "int", min = 0 }

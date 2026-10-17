@@ -1,0 +1,90 @@
+set = "Quests"
+key = "int"              # the game's quest ID
+pack = "Quests"
+learn = true             # the quest watchers (Doc/ideas/Data.md, *What the game tells, and when*)
+about = "Every quest: who it is offered to and what it needs first, who gives and takes it, its objectives, chain and rewards (Doc/ideas/Data.md, *Quests*)."
+
+# Only one side of a link is written (requires, next, breadcrumbTo); the indexes give the other. Givers and
+# takers are references: where they stand is theirs (Spawns). A side on a giver, taker or requirement: it
+# holds for that side only.
+[fields]
+name           = { type = "text" }
+level          = { type = "int", min = 0 }
+minLevel       = { type = "int", min = 0 }   # the levels it is offered from and up to
+maxLevel       = { type = "int", min = 0 }
+side           = { type = "enum", values = ["alliance", "horde"] }  # none: both
+races          = { type = "list", of = "int" }  # the game's race IDs; none: every race of its side
+classes        = { type = "list", of = "int" }  # the game's class IDs; none: every class
+requires       = { type = "list", of = "tuple", parts = [
+    { name = "kind", type = "enum", values = ["done", "one", "closed"] },  # all done first, one of them done, closed once had
+    { name = "quest", type = "ref", set = "Quests" },
+    { name = "side", type = "enum", values = ["alliance", "horde"] },
+] }
+reputation     = { type = "tuple", parts = [
+    { name = "faction", type = "int" },
+    { name = "standing", type = "int" },
+] }
+skill          = { type = "tuple", parts = [
+    { name = "line", type = "ref", set = "SkillLines" },
+    { name = "level", type = "int", min = 0 },
+] }
+carry          = { type = "ref", set = "Items" }  # an item to carry
+startNPCs      = { type = "list", of = "tuple", parts = [
+    { name = "npc", type = "ref", set = "NPCs" },
+    { name = "side", type = "enum", values = ["alliance", "horde"] },
+] }
+startObjects   = { type = "list", of = "tuple", parts = [
+    { name = "object", type = "ref", set = "Objects" },
+    { name = "side", type = "enum", values = ["alliance", "horde"] },
+] }
+startItems     = { type = "list", of = "ref", set = "Items" }  # an item that starts it
+finishNPCs     = { type = "list", of = "tuple", parts = [
+    { name = "npc", type = "ref", set = "NPCs" },
+    { name = "side", type = "enum", values = ["alliance", "horde"] },
+] }
+finishObjects  = { type = "list", of = "tuple", parts = [
+    { name = "object", type = "ref", set = "Objects" },
+    { name = "side", type = "enum", values = ["alliance", "horde"] },
+] }
+objectives     = { type = "list", of = "tuple", parts = [
+    { name = "kind", type = "enum", values = ["kill", "loot", "object", "explore", "talk", "event"] },
+    { name = "what", type = "int" },          # the creature, item or object, by its kind
+    { name = "count", type = "int", min = 1 },
+    { name = "text", type = "text" },         # the game's
+    { name = "stage", type = "int", min = 1 },
+] }
+next           = { type = "ref", set = "Quests" }  # the next quest of its chain
+breadcrumbTo   = { type = "ref", set = "Quests" }  # the quest this breadcrumb leads to
+line           = { type = "int", min = 0 }   # the game's quest line, its name and this quest's place in it
+lineName       = { type = "text" }
+lineOrder      = { type = "int", min = 1 }
+rewardMoney    = { type = "money" }
+rewardXP       = { type = "int", min = 0 }
+rewardItems    = { type = "list", of = "tuple", parts = [
+    { name = "item", type = "ref", set = "Items" },
+    { name = "count", type = "int", min = 1 },
+] }
+rewardChoices  = { type = "list", of = "tuple", parts = [
+    { name = "item", type = "ref", set = "Items" },
+    { name = "count", type = "int", min = 1 },
+] }                                          # one of them to choose
+rewardFactions = { type = "list", of = "tuple", parts = [
+    { name = "faction", type = "int" },
+    { name = "amount", type = "int" },
+] }
+rewardSpell    = { type = "int" }
+tags           = { type = "list", of = "enum", values = ["elite", "group", "dungeon", "raid", "class", "daily", "repeatable", "pvp"] }
+groupSize      = { type = "int", min = 2 }
+retired        = { type = "bool" }           # not offered any more
+
+[index]
+byStartNPC     = "startNPCs.npc"
+byStartObject  = "startObjects.object"
+byStartItem    = "startItems"
+byFinishNPC    = "finishNPCs.npc"
+byFinishObject = "finishObjects.object"
+byObjective    = "objectives.what"           # the quests whose objectives name this ID: the reader checks the kind
+byRequired     = "requires.quest"            # the quests that need this one first, or that it closes
+byNext         = "next"                      # the quest before
+byBreadcrumb   = "breadcrumbTo"              # the breadcrumbs that lead to a quest
+byLine         = "line"

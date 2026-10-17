@@ -1,0 +1,17 @@
+set = "Zones"
+key = "int"              # the game's map ID (C_Map)
+pack = "World"
+learn = false
+about = "The zones: their names, level ranges, sides and continents, in the order players come to them."
+
+[fields]
+name      = { type = "text" }
+levelMin  = { type = "int", min = 0 }
+levelMax  = { type = "int", min = 0 }
+side      = { type = "enum", values = ["alliance", "horde", "contested", "sanctuary"] }
+continent = { type = "int", min = 0 }        # its continent's map ID
+area      = { type = "int", min = 0 }        # the game's area ID (AreaTable), where it is not the map's
+order     = { type = "int", min = 1 }        # its place in the order of zones
+
+[index]
+byContinent = "continent"

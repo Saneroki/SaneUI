@@ -1,0 +1,14 @@
+set = "Objects"
+key = "int"              # the game's object ID
+pack = "World"
+learn = true
+about = "The world's objects players use: chests, herbs, ore, mailboxes, quest objects, books; what they give is in the drops."
+
+[fields]
+name       = { type = "text" }
+kind       = { type = "enum", values = ["chest", "herb", "ore", "mailbox", "quest", "book", "door", "other"] }
+skill      = { type = "ref", set = "SkillLines" }  # the skill it needs, and from which level (herbalism 150)
+skillLevel = { type = "int", min = 0 }
+
+[index]
+byKind = "kind"

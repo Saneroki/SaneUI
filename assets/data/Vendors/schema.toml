@@ -1,0 +1,17 @@
+set = "Vendors"
+key = "int"              # the vendor's creature ID
+pack = "Market"
+learn = true             # at every vendor (MERCHANT_SHOW); the same on every realm
+about = "What each vendor sells, for how much, how many, and in which other currency."
+
+[fields]
+goods = { type = "list", of = "tuple", parts = [
+    { name = "item", type = "int" },
+    { name = "price", type = "money" },
+    { name = "stock", type = "int", min = 0 },     # a limited stock; none: no limit
+    { name = "currency", type = "int" },           # a cost in another currency, and how much
+    { name = "amount", type = "int", min = 0 },
+] }
+
+[index]
+byItem = "goods.item"

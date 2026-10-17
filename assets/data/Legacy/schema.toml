@@ -1,0 +1,30 @@
+set = "Legacy"
+key = "text"             # node:<trait node ID>, challenge:<ID>, reward:<level of the reward track>
+pack = "Talents"
+learn = true             # C_Traits for the trees, C_MajorFactions for the reward track
+about = "Forever's three Legacy trees (professions 1187, adventure 1188, progression 1189, paid in legacy points, currency 4225), their challenges and the reward track (faction 2802)."
+
+[fields]
+kind        = { type = "enum", values = ["node", "challenge", "reward"] }
+tree        = { type = "int", min = 0 }    # a node's tree
+name        = { type = "text" }
+description = { type = "text" }
+x           = { type = "int" }             # a node's place in its tree
+y           = { type = "int" }
+links       = { type = "list", of = "ref", set = "Legacy" }  # the nodes a node leads to
+entries     = { type = "list", of = "tuple", parts = [
+    { name = "entry", type = "int" },
+    { name = "spell", type = "int" },
+    { name = "ranks", type = "int", min = 1 },
+] }
+cost        = { type = "int", min = 0 }    # legacy points a rank costs
+level       = { type = "int", min = 0 }    # a reward's level on the track
+rewards     = { type = "list", of = "tuple", parts = [
+    { name = "kind", type = "enum", values = ["item", "currency", "spell", "title", "mount", "pet", "toy"] },
+    { name = "id", type = "int" },
+    { name = "count", type = "int", min = 1 },
+] }
+
+[index]
+byKind = "kind"
+byTree = "tree"

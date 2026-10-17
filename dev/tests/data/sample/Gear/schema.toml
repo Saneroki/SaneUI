@@ -21,3 +21,4 @@ parts = { type = "map", keys = "int", of = "int" }
 [index]
 bySlot = "slot"
 byFrom = "from"
+byTask = "tasks.what"

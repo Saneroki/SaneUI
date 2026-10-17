@@ -43,6 +43,19 @@ class Field:
         return self.of if self.type in ("list", "map") else self.type
 
 
+class Index:
+    """An index of a set: the field it lists the keys by, and for a list of tuples the part (bySeller =
+    "goods.seller"). element and set are those of the value it is keyed by."""
+
+    def __init__(self, field, part=None):
+        self.field, self.part = field, part
+        inner = part or field
+        self.name = field.name
+        self.element = inner.element if part is None else inner.type
+        self.set = inner.set
+        self.type = field.type
+
+
 class Schema:
     def __init__(self):
         self.set = None
@@ -166,14 +179,21 @@ def load(path, where=None):
         problems.append(f"{where}: [index] maps an index's name to a field")
         index = {}
     for name, target in index.items():
+        field_name, _, part_name = target.partition(".") if isinstance(target, str) else ("", "", "")
+        field = schema.byname.get(field_name)
+        part = next((p for p in (field.parts or []) if p.name == part_name), None) if field and part_name else None
         if name in RESERVED_INDEXES or not FIELD_NAME.match(name):
             problems.append(f"{where}: '{name}' is no name for an index ({' and '.join(RESERVED_INDEXES)} are the compiler's)")
-        elif target not in schema.byname:
+        elif field is None:
             problems.append(f"{where}: index '{name}' names no field ('{target}')")
-        elif schema.byname[target].element not in INDEXABLE or schema.byname[target].type == "map":
-            problems.append(f"{where}: index '{name}': a field of type {schema.byname[target].type} cannot be indexed")
+        elif part_name and (field.element != "tuple" or field.type == "map" or part is None):
+            problems.append(f"{where}: index '{name}': '{target}' is no part of a tuple or list of tuples")
+        elif part_name and part.type not in INDEXABLE:
+            problems.append(f"{where}: index '{name}': a part of type {part.type} cannot be indexed")
+        elif not part_name and (field.element not in INDEXABLE or field.type == "map"):
+            problems.append(f"{where}: index '{name}': a field of type {field.type} cannot be indexed")
         else:
-            schema.index[name] = schema.byname[target]
+            schema.index[name] = Index(field, part)
     return schema, problems
 
 

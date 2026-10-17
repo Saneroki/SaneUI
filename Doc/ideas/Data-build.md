@@ -97,7 +97,7 @@ at most the commit it was on, and the next session goes on from there.
   - The commands `show`, `diff` and `stats`.
   - Tests: each import case on sample masters, each within its own game version (a beta build never makes a
     live version); Lua's answers on a sample with history, including a pack newer than the client.
-- [ ] **1a.7 Every set's schema.** The sets of *Sets by concern* and *The game's own data*, each checked,
+- [x] **1a.7 Every set's schema.** The sets of *Sets by concern* and *The game's own data*, each checked,
   with empty masters. Real data comes with prompts 2 and 3.
 
 ## 1b The Tooltips quests, a real reader

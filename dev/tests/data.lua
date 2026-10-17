@@ -437,6 +437,7 @@ local function Same(keys, want)
 end
 check(Same(Gear:Keys("bySlot", "hands"), { 100 }) and Same(Gear:Keys("byFrom", 1), { 100, 102 }), "Keys by an index, numbers as numbers")
 check(Same(Gear:Keys("replaces", 102), { 101 }) and Same(Gear:Keys("replacedBy", 101), { 102 }), "replaces and replacedBy")
+check(Same(Gear:Keys("byTask", 2), { 101 }) and Same(Gear:Keys("byTask", 100), { 101 }), "Keys by a part of a list of tuples")
 check(#Gear:Keys("bySlot", "nowhere") == 0 and #Gear:Keys("nothing", 1) == 0 and #Labels:Keys("bySlot", "hands") == 0
     and #Data.Set("NoSuchSet"):Keys("bySlot", "hands") == 0, "an empty array when none")
 

@@ -1,0 +1,15 @@
+set = "Auras"
+key = "int"              # the game's spell ID
+pack = "Spells"
+learn = true
+about = "Buffs and debuffs that are no player spell and no creature's: food, potions, elixirs, item effects, world buffs."
+
+[fields]
+name        = { type = "text" }
+description = { type = "text" }
+icon        = { type = "int", min = 0 }
+school      = { type = "flags" }           # the game's spell school mask
+source      = { type = "enum", values = ["food", "potion", "elixir", "item", "world"] }
+kind        = { type = "enum", values = ["magic", "curse", "disease", "poison"] }  # what can dispel it
+castTime    = { type = "int", min = 0 }    # in milliseconds
+duration    = { type = "int", min = 0 }    # in milliseconds; none: until cancelled

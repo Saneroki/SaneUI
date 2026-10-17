@@ -127,6 +127,11 @@ caught("an enum's values", lambda c: c.replace("Gear/schema.toml", ', values = [
 caught("a list of lists", lambda c: c.replace("Gear/schema.toml", 'of = "point"', 'of = "list"'), "a list's 'of' is one of")
 caught("a ref's set", lambda c: c.replace("Gear/schema.toml", 'set = "Folk"', 'set = "Nobody"'), "which is no set")
 caught("an index on a map", lambda c: c.replace("Gear/schema.toml", 'byFrom = "from"', 'byStats = "stats"'), "cannot be indexed")
+caught("an index on a part of no tuple", lambda c: c.replace("Gear/schema.toml", 'byFrom = "from"', 'byFrom = "spots.map"'), "is no part of a tuple")
+caught("an index on a part not there", lambda c: c.replace("Gear/schema.toml", 'byFrom = "from"', 'byFrom = "tasks.nothing"'), "is no part of a tuple")
+caught("an index on a part that cannot be", lambda c: (
+    c.replace("Gear/schema.toml", '{ name = "text", type = "text" } ]', '{ name = "text", type = "text" }, { name = "weight", type = "number" } ]'),
+    c.replace("Gear/schema.toml", 'byFrom = "from"', 'byFrom = "tasks.weight"')), "a part of type number cannot be indexed")
 caught("a reserved index", lambda c: c.replace("Gear/schema.toml", 'byFrom = "from"', 'replaces = "from"'), "the compiler's")
 caught("a schema's pack", lambda c: c.replace("Labels/schema.toml", 'pack = "Words"', 'pack = "Nowhere"'), "is not in packs.toml")
 caught("a schema's about", lambda c: c.replace("Labels/schema.toml", 'about = "Made-up words keyed by a name."', ""), "'about' says")
@@ -400,7 +405,7 @@ check("diff: within the beta", views.diff(sample, "Gear", "forever-beta"), ["Gea
 check("diff: a patch not known", views.diff(sample, "Gear", patch="9.9.9"), ["No build of forever is 9.9.9 in builds.toml."])
 numbers = views.stats(sample)
 check("stats: per game version, set and pack", (numbers[0], numbers[2].split(), numbers[5]),
-      ("forever:", ["Folk", "Gear", "3", "4", "1", "1", "4", "607", "B"], "  pack Gear: 2 sets, 6 entries, 2.1 KB"))
+      ("forever:", ["Folk", "Gear", "3", "4", "1", "1", "4", "607", "B"], "  pack Gear: 2 sets, 6 entries, 2.2 KB"))
 check("stats: the beta", [line.split()[:7] for line in numbers if line.startswith("  Gear ")][2], ["Gear", "Gear", "4", "5", "1", "0", "2"])
 
 # Compiling ----------------------------------------------------------------------------------------------
@@ -478,6 +483,7 @@ with tempfile.TemporaryDirectory(prefix="saneui-packs-") as folder:
     check("compile: history", f"history\t100\t{shown(chr(28).join(compiler.row(sample.schemas['Gear'], v) for v in view[100][:-1]))}" in got, True)
     check("compile: an index", "index.bySlot\thands\t100" in got, True)
     check("compile: an index of a list", f"index.byFrom\t1\t100{shown(chr(30))}102" in got, True)
+    check("compile: an index of a tuple's part", ("index.byTask\t2\t101" in got, "index.byTask\t100\t101" in got), (True, True))
     check("compile: replaces both ways", ("index.replaces\t102\t101" in got, "index.replacedBy\t101\t102" in got), (True, True))
     code, text, _ = lua_rows(out / "one" / "SaneUI_Data_Words" / "Labels.lua")
     check("compile: text keys", all(f"rows\t{k}\t" in text for k in ("alpha", "end", "with space")), True)
@@ -521,6 +527,15 @@ with tempfile.TemporaryDirectory(prefix="saneui-staging-") as folder:
     check("cvar-labels stages", result.returncode, 0)
     real = loaded(masters.MASTER)
     check("the real master fits", real.errors, [])
+    # Every set of the plan (Doc/ideas/Data.md, *Sets by concern*), in its pack
+    plan = {"Items": ["Items", "ItemSets"], "Quests": ["Quests"],
+            "World": ["NPCs", "CreatureSpells", "Objects", "Zones", "Travel", "Places", "Drops"],
+            "Spawns": ["Spawns", "QuestAreas", "PatrolPaths"], "CreatureSpawns": ["CreatureSpawns"], "Routes": ["Walking"],
+            "Guides": ["Guides"], "Spells": ["Spells", "Auras", "Trainers", "QuestSpells", "WeaponSkills", "SkillLines", "Professions"],
+            "Talents": ["Talents", "Legacy"], "Market": ["Vendors"], "Game": ["CVarLabels", "Currencies"]}
+    check("every set of the plan has its schema, in its pack",
+          {pack: sorted(name for name, schema in real.schemas.items() if schema.pack == pack) for pack in real.packs},
+          {pack: sorted(names) for pack, names in plan.items()})
     report = importer.run(real, importer.read_staging(staging))
     check("CVarLabels up to date with references/", (set(counts(report, "CVarLabels", "forever")), report.changed),
           ({"agreeing"}, set()))

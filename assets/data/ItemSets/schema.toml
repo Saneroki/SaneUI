@@ -1,0 +1,17 @@
+set = "ItemSets"
+key = "int"              # the game's item set ID
+pack = "Items"
+learn = true             # an item's tooltip shows its set
+about = "The item sets: their items and what wearing several of them gives."
+
+[fields]
+name    = { type = "text" }
+items   = { type = "list", of = "ref", set = "Items" }
+bonuses = { type = "list", of = "tuple", parts = [
+    { name = "count", type = "int", min = 1 },   # how many of the set's items
+    { name = "spell", type = "int" },
+    { name = "text", type = "text" },
+] }
+
+[index]
+byItem = "items"

@@ -1,0 +1,19 @@
+set = "Places"
+key = "int"              # our own number, given once by the import: the same kind on the same map within half a percent is the same place
+pack = "World"
+learn = false
+about = "What is no creature and no object but belongs on the map: zone crossings, cave and dungeon entrances, piers, mailboxes, meeting stones, spirit healers."
+
+[fields]
+kind     = { type = "enum", values = ["crossing", "cave", "dungeon", "raid", "pier", "mailbox", "meetingstone", "spirithealer"] }
+name     = { type = "text" }
+point    = { type = "point" }
+to       = { type = "int", min = 0 }       # the map it leads to: a crossing's, an entrance's
+zone     = { type = "ref", set = "Zones" }
+instance = { type = "int", min = 0 }       # a dungeon's or raid's instance ID, and its level range
+levelMin = { type = "int", min = 0 }
+levelMax = { type = "int", min = 0 }
+
+[index]
+byKind = "kind"
+byZone = "zone"

@@ -7,6 +7,17 @@ The Home page, the marks, Settings on demand, the Tooltips module and the Social
 Tests: lint, 195 checks (Core, with its options), 280 checks (Spellbook), 328 checks (Tooltips), 332 checks (Social), 62 checks (Sync), 234 checks (windows).
 
 ### Core's data framework
+- **1a.7 Every set's schema.** `assets/data/` holds the schema of every set of the plan, 28 in all, empty
+  but checked: Items and ItemSets; Quests; NPCs, CreatureSpells, Objects, Zones, Travel, Places and Drops;
+  Spawns, QuestAreas and PatrolPaths; CreatureSpawns; Walking; Guides; Spells, Auras, Trainers, QuestSpells,
+  WeaponSkills, SkillLines and Professions; Talents and Legacy; Vendors; Currencies beside CVarLabels.
+  `packs.toml` names their 11 packs. Their fields follow the plan's tables, Navigation's and today's data
+  files in Abilities and Tooltips; prompt 2 settles them against the game. An index may now name a part of
+  a list of tuples (`byItem = "goods.item"`; `schema.py`, `compile.py`), and an entry is listed once per
+  value. The guide lists the sets with their keys (*The sets*). The Game pack now carries `Currencies.lua`,
+  with no entries. Tests: tools 205 (every set of the plan in its pack; a tuple's part indexed, and the
+  rules for it), Lua 143.
+  - *In the game:* `/sane data` lists *Data: Game* with CVarLabels and Currencies.
 - **1a.6 Versions in full.** In the game (`Data.lua`): `History`, `At`, `Versions`, `Changes`, `Keys` and
   `Each` (a job of the scheduler, two walks at once), every record with the patch its build is; a pack newer
   than the client answers with what the client's build has reached, in all of them; `Data.Find` tells the

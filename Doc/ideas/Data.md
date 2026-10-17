@@ -94,6 +94,10 @@ the rest.
 | `SaneUI_Data_Characters` | No shipped data: the characters' own data (*Characters*) | Tooltips (counts on alts), Economy, later bags and a character sheet | soon after every login |
 
 - A set's name is unique across packs: a module asks for `"Items"`, never for a pack.
+- Every set here has its schema since step 1a.7 (`assets/data/<Set>/schema.toml`; the guide lists them with
+  their keys, *The sets*). Spawns and Drops, whose things have IDs that overlap, are keyed by text
+  (`npc:<ID>`, `object:<ID>`). Still open for prompt 2: a mailbox is a kind of both *Objects* and *Places*
+  (one of them is to give it up), and Navigation's *Tiles* has no pack here yet.
 - Packs are Core's own addons, not modules: no settings page, only their data and the code that reads it
   (Saneroki, decision 24: `Quests.lua` comes with the Quests pack, `Scan.lua` with Market, ...), `## Dependencies:
   SaneUI`, `## Group: SaneUI`, `## LoadOnDemand: 1`. In the addon list they stand under Sane UI, titled

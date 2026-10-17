@@ -1,0 +1,23 @@
+set = "Talents"
+key = "int"              # the game's trait node ID
+pack = "Talents"
+learn = true             # the tree, when it opens (C_Traits)
+about = "Each class's talent tree: its nodes, where they stand, the links between them, their ranks and the spell of each rank."
+
+[fields]
+class   = { type = "int", min = 1 }        # the game's class ID
+tree    = { type = "int", min = 0 }        # the game's trait tree
+name    = { type = "text" }
+x       = { type = "int" }                 # the node's place in the tree, as the game gives it
+y       = { type = "int" }
+kind    = { type = "enum", values = ["single", "tiered", "selection"] }  # Enum.TraitNodeType
+links   = { type = "list", of = "ref", set = "Talents" }  # the nodes it leads to
+entries = { type = "list", of = "tuple", parts = [
+    { name = "entry", type = "int" },
+    { name = "spell", type = "int" },
+    { name = "ranks", type = "int", min = 1 },
+] }                                        # a choice node has more than one
+
+[index]
+byClass = "class"
+byTree  = "tree"

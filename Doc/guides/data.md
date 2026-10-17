@@ -172,8 +172,38 @@ bySlot = "slot"
   a set of its own.
 - **Indexes** (`[index]`: name = field) list the keys of the entries by a field's value, worked out by the
   compiler from each entry's newest version. The field is an `int`, `text`, `enum`, `ref`, `flags` or
-  `money`, or a list of one of these (each element counts). The names `replaces` and `replacedBy` are the
-  compiler's own (below).
+  `money`, or a list of one of these (each element counts), or one part of a tuple or a list of tuples,
+  written `field.part` (`byItem = "goods.item"`: each element's part counts). An entry is listed once per
+  value. The names `replaces` and `replacedBy` are the compiler's own (below).
+
+### The sets
+
+Every set of the plan (*Sets by concern*, *The game's own data*) has its schema; its fields and indexes are
+in `assets/data/<Set>/schema.toml`. **A set without entries may still change its fields freely;** once a
+pack of it is in use, the rule of *schema.toml* holds (a field only added at the end). Real data comes with
+prompt 2, which settles what the game gives.
+
+| Pack | Sets and their keys |
+| --- | --- |
+| Items | Items (item ID), ItemSets (item set ID) |
+| Quests | Quests (quest ID) |
+| World | NPCs (creature ID), CreatureSpells (spell ID), Objects (object ID), Zones (map ID), Travel and Places (our own numbers), Drops (`npc:<ID>`, `object:<ID>`, `zone:<map ID>`) |
+| Spawns | Spawns (`npc:<ID>`, `object:<ID>`), QuestAreas (`<quest>/<objective>/<stage>/<map>`), PatrolPaths (creature ID) |
+| CreatureSpawns | CreatureSpawns (creature ID) |
+| Routes | Walking (a region, numbered by our tool) |
+| Guides | Guides (a guide, numbered by our tool) |
+| Spells | Spells, Auras (spell ID), Trainers (the rank's spell ID), QuestSpells (`<spell ID>/<way>`), WeaponSkills (the teaching spell's ID), SkillLines (skill line ID), Professions (the recipe's spell ID) |
+| Talents | Talents (trait node ID), Legacy (`node:<ID>`, `challenge:<ID>`, `reward:<level>`) |
+| Market | Vendors (the vendor's creature ID); the series *Prices* (step 1c.2) |
+| Game | CVarLabels (the CVar's name), Currencies (currency ID) |
+
+- **A text key `<kind>:<ID>`** where one set holds things whose IDs overlap (a creature and an object can have
+  the same number); **a text key of parts** where an entry is one of several per thing (an area per
+  objective, stage and map).
+- **Our own number** where the game gives none; the schema's comment says how a staged thing is matched to
+  an entry already there.
+- **A thing with several parts per entry** (a guide's steps, a quest's objectives) is a list of tuples whose
+  parts say which step or objective a row belongs to: a list holds no list (*Types*).
 
 ### A line of the master
 
