@@ -13,28 +13,25 @@ Checkboxes, sliders for numbers, dropdowns for one of a few, and a list of the C
   the minimap's addon list. Not in combat: the game does not let an addon open its options in a fight.
 - **Sane UI** itself shows only Sane UI's logo. Under it, in this order (the button in front of *Sane UI* folds
   them in and out):
-  - *Profiles:* a page of its own: its title, the line *Settings are saved
-    account wide by default*, and tabs, each with titled boxes:
+  - *Profiles:* a page of its own: its title, the line *Profiles keep the settings of Sane UI and of the
+    game...*, and tabs, each with titled boxes (Saneroki, 2026-10-17):
     - *Profiles:*
-      - *Account wide*: *All settings accountwide* (ticked at first), with the line *Ticked will sync all
-        settings accountwide by default. Profiles overwrites the setting on a per character basis.* Unticked,
-        every character keeps all its settings to itself.
-      - *Saved profiles*: the profile to act on (a dropdown), the buttons *Load* (every module takes its
-        settings), *Save* (asks for a name, the chosen profile's filled in; one of that name is replaced),
-        *Duplicate*, *Rename*, *Delete* (asks first). Chat says what was loaded or saved, and why a name was
-        refused. First in the list, always there: *Empty* (chosen at first; no profile, the settings as they
-        are kept, loaded at every login and saved at every logout and `/reload`) and *SaneUI Defaults* (every
-        setting of Sane UI's own as it is at first, not the game's settings that Sync keeps). With either
-        chosen, *Rename* and *Delete* are switched off and *Save* offers no name.
-      - *Characters*: first *New Characters*, what a character not seen yet starts with at its first login;
-        then every character seen on the account, this one marked; each on a line with *Load at
-        login*, *Save at logout* and its profile (a dropdown; *Empty* at first). A character with a profile
-        and *Load at login* uses it instead of the account's settings, for itself only. With *Empty* both
-        checkboxes are ticked and switched off: it always loads and saves; with *SaneUI Defaults* *Save at
-        logout* is switched off.
-    - *Accountwide:* what is account wide. A box *Sane UI* with a checkbox per module (General, Social,
-      Abilities, Tooltips); then a box per group of Sync's parts (`Sync.GROUPS`: the game's own options groups,
-      then *Elsewhere in the game*), checkboxes in two columns. All ticked at first; switched off while *All settings accountwide* is unticked.
+      - *Accountwide*: *Accountwide settings* (on at first) and what it means. On, every character uses a
+        profile, Sane UI's settings and the game's; off, each character keeps its own Sane UI settings and the
+        game's are left to the game. Switching it on asks first (the character takes its profile's settings).
+      - *This character*: the profile it uses (a dropdown: choosing one uses it at once), the buttons *New*
+        (asks for a name: a copy of the settings in use, used from then on), *Rename*, *Delete* (asks first;
+        the characters that had it use *Accountwide*), *Defaults* (asks first: Sane UI's settings of the
+        profile in use back to their defaults), then *Copy from* (a dropdown of the other profiles; asks
+        first), *Export* (a window with the profile as a line of text, selected to copy) and *Import* (the same
+        window, empty: paste, *Import*, a name). *Accountwide* cannot be renamed or deleted. Chat says what was
+        done, and why a name was refused.
+      - *Characters*: first *New Characters*, the profile a character not seen yet starts with; then every
+        character seen on the account, this one marked, each with its profile (a dropdown) and, but this one,
+        *Forget* (asks first). Everything here is switched off while *Accountwide settings* is off.
+    - *Game settings:* which of the game's settings the profiles keep: a box per group of Sync's parts
+      (`Sync.GROUPS`: the game's own options groups, then *Elsewhere in the game*), checkboxes in two columns,
+      kept per profile. All ticked at first; switched off while *Accountwide settings* is off.
     - *CVars:* *Every console setting of the game. Enter sets a typed value; a tick keeps the CVar with Sane
       UI's settings.* Every CVar of the game in one list, to look up, change and keep:
       - Over the list a search box (a CVar's name, or the label the game's own options give it) and the game's
@@ -86,10 +83,9 @@ Checkboxes, sliders for numbers, dropdowns for one of a few, and a list of the C
   - *Profiles*: a page of our own (a canvas, `Core.frames.Profiles`), built by `Config.BuildProfiles`: the
     title over the game's divider, a line, the tabs (`MinimalTabTemplate`, the options window's own tabs, in a
     radio group), and under them a box with one part per tab, each but *CVars* in a scroll area
-    (`ScrollFrameTemplate`, the game's thin scroll bar). Tabs: *Profiles* (`Profiles.lua`), *Accountwide*
-    (`Synced.lua`: the box *Sane UI* from `Core.Profiles.Shared`, then Sync's parts by `Sync.GROUPS`, a box
-    each), *CVars* (`CVars.lua`). A character's line in *Characters* has its own dropdown, and checkboxes without words
-    under the column heads (their words in the tooltip).
+    (`ScrollFrameTemplate`, the game's thin scroll bar). Tabs: *Profiles* (`Profiles.lua`), *Game settings*
+    (`Synced.lua`: Sync's parts by `Sync.GROUPS`, a box each), *CVars* (`CVars.lua`). A character's line in
+    *Characters* has its own dropdown and a button *Forget*.
   - **The parts of such a page** (`Panel.lua`): titled boxes (`BackdropTemplate` with the tooltip border, as
     boxes in the game's options have had), checkboxes (`UICheckButtonTemplate`) in two columns, buttons (`UIPanelButtonTemplate`), the profile dropdown
     (`WowStyle1DropdownTemplate`). Each control reads its value from a function when the page is shown
@@ -123,10 +119,12 @@ Checkboxes, sliders for numbers, dropdowns for one of a few, and a list of the C
   the game's own options library.
 - **Profiles (`Profiles.lua`):** only shown here; Core keeps them and does the work (`Core.Profiles`, see
   [Core's README](../README.md)).
-  - Names and the question before deleting go through the dialogs the game keeps for addons
-    (`GENERIC_INPUT_BOX`, `GENERIC_CONFIRMATION` with `StaticPopup_Show`): nothing is written into the
-    game's `StaticPopupDialogs`. Should a client update take one away, it is noted and nothing happens.
-  - **Shown anew:** when values change under the controls (a profile loaded, the character's own switched),
+  - Names and every question go through the dialogs the game keeps for addons (`Core.AskText`,
+    `Core.Confirm`: `GENERIC_INPUT_BOX`, `GENERIC_CONFIRMATION` with `StaticPopup_Show`): nothing is written
+    into the game's `StaticPopupDialogs`. Should a client update take one away, it is noted and nothing happens.
+  - Export and import show a window of ours (`SaneUIProfileText`, `ButtonFrameTemplate` with an
+    `InputScrollFrameTemplate` box; Esc closes it): the text of `Core.Profiles.Export`, or a box to paste into.
+  - **Shown anew:** when values change under the controls (another profile used, Accountwide switched),
     `Config.Refresh`, a frame later, asks each setting of the list pages to show its value again
     (`SettingMixin:NotifyUpdate`, what the game does for a value changed elsewhere) and each control of the
     page Profiles to read its own. The modules were told by Core already; the callbacks hear that refresh,
@@ -178,8 +176,8 @@ Checkboxes, sliders for numbers, dropdowns for one of a few, and a list of the C
 | `Settings.lua` | The pages (put up at login, filled when first opened), their switches, the banners, `/sane options` |
 | `Panel.lua` | The parts of a page of our own: header, tabs, scroll area, titled boxes, checkboxes, sliders, dropdowns, buttons |
 | `Tabbed.lua` | A module's page in tabs, drawn from its switches' descriptions (`tab`, `header`, `parent`, `parentValue`, `inline`, `unit`, `color`) |
-| `Profiles.lua` | The page *Profiles*: its tabs, and the tab *Profiles* |
-| `Synced.lua` | The tab *Accountwide*: Sane UI's modules, Sync's parts |
+| `Profiles.lua` | The page *Profiles*: its tabs, the tab *Profiles*, the export/import window |
+| `Synced.lua` | The tab *Game settings*: Sync's parts, kept per profile |
 | `CVars.lua` | The tab *CVars* on the page *Profiles*: the list of the game's CVars |
 | `CVars.xml` | The list's frame, and one CVar's row in it |
 | `Data/CVarLabels.lua` | The names of the game's strings for the CVars its options show; made by `dev/tools/cvar-labels` |
@@ -190,6 +188,8 @@ Sane UI's banner, for the page *Sane UI*, is Core's: `src/Core/Art/banner.blp` (
 the project's `LICENSE`; made by `dev/tools/art` from `assets/SaneUI-banner.png`).
 
 ## History
+
+- 2026-10-17 — The page *Profiles* anew (Saneroki): *Accountwide settings*; *This character* with its profile and *New*, *Rename*, *Delete*, *Defaults*, *Copy from*, *Export*, *Import*; *Characters* with a profile each and *Forget*. *Load*, *Save*, *Duplicate*, *Load at login*, *Save at logout*, *Empty* and *SaneUI Defaults* are gone. The tab *Accountwide* is *Game settings*, without the box of modules.
 - 2026-10-15 — *Empty* in the profile lists, chosen at first (was *None* on a character's line): with it a
   line's checkboxes are ticked and switched off.
 - 2026-10-15 — Part of Core (`src/Core/Settings/`), no addon of its own: the pages are put up here at login (was

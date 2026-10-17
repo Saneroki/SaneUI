@@ -55,6 +55,10 @@ local TEXT = {
     taken = "there is already a profile called %s.",
     missing = "there is no profile called %s.",
     fixed = "the profile Accountwide is always there: it cannot be renamed or deleted.",
+    about = "the profiles: /sane profile lists them, /sane profile <name> is this character's from now on",
+    list = "profiles: %s. This character uses %s.",
+    listOff = "profiles: %s. Accountwide settings are off: each character keeps its own settings.",
+    using = "this character uses the profile %s.",
     off = "Accountwide is switched off: each character keeps its own settings, and no profile is in use.",
     current = "that is the character you are playing.",
     unknown = "Sane UI has not seen that character.",
@@ -645,3 +649,16 @@ function Profiles.Copies(name)
     Add(char.settings and char.settings[name])
     return list
 end
+
+-- /sane profile: the profiles, and one used by name (in any letter case), without the options window.
+Core.Command("profile", TEXT.about, function(rest)
+    local wanted = Name(rest)
+    if not wanted then
+        local names = table.concat(Profiles.List(), ", ")
+        if Profiles.On() then Core.Print(TEXT.list:format(names, tostring(source))) else Core.Print(TEXT.listOff:format(names)) end
+        return
+    end
+    local name = Taken(wanted) or wanted
+    local ok, why = Profiles.Use(name)
+    Core.Print(ok and TEXT.using:format(name) or why)
+end, "profiles")

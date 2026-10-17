@@ -1,11 +1,11 @@
 # Sane UI: Core
 
-**Status:** written and tested outside the game; the split into several addons is **not yet tried in the game** · **Since:** 2026-10-14 · **Addon:** `SaneUI`
+**Status:** written and tested offline · **Since:** 2026-10-14 · **Addon:** `SaneUI`
 
 ## TL;DR
 The main addon, the one every module needs: chat lines, game events, error catching, the list of modules,
-the `/sane` command, the saved settings of all modules (the account's, or a character's own, and profiles
-of them), Sane UI's options (`Settings/`), Sync, which keeps the game's own per-character settings with
+the `/sane` command, the saved settings of all modules (in profiles: *Accountwide* at first, the same for
+every character), Sane UI's options (`Settings/`), Sync, which keeps the game's own per-character settings with
 Sane UI's (`Sync/`), and what every window can use: moving, sizing,
 docking to a screen edge, round corners, opening while the mouse rests on it, filling the screen, and
 a progress bar. It does nothing you can see by itself, but for a
@@ -66,32 +66,26 @@ window to try those with (`/sane window`).
   edge fills the screen and goes back, and how a window opens while the mouse rests on it: *Glide* (quick,
   settling softly), *Swing* (a little past, then back), *Even* (a gentle start and end), *Instant* (no motion). A window can have its own type,
   in its section *Expand window* (Social, tab *Appearance*), which can be *Use global type*: this one.
-- **Profiles,** on the page *Profiles* (the options show them; `Profiles.lua` keeps them):
-  - *All settings accountwide* (ticked at first): every character uses the same settings, the account's.
-    Unticked, every character keeps all its settings to itself.
-  - In the tab *Accountwide*, box *Sane UI*: a checkbox per module (General, Social, Abilities, Tooltips):
-    unticked, that module's settings are each character's own while the others stay the account's.
-  - *Saved profiles:* settings of every module kept under a name, for all characters of the account. Choose
-    one, then *Load* it (every module takes its settings), *Save* (the settings in use, under the chosen name
-    or a new one), *Duplicate*, *Rename* or *Delete* it.
-  - Two profiles are always first in the list. Both can be loaded, duplicated (a profile of your own to
-    start from) and given to a character; neither can be saved over, renamed or deleted:
-    - *Empty*, the one every character has at first: no profile, the settings as they are kept (the
-      account's, with *All settings accountwide*, or each character's own), loaded at every login and saved
-      at every logout and `/reload`, the game's settings Sync keeps too. Loading it puts those back in use
-      where a profile is in use.
-    - *SaneUI Defaults*: every setting of Sane UI's own as it is at first (every checkbox, slider and choice
-      of the modules switched on, and the general ones), not the game's settings that Sync keeps nor which of
-      them it keeps: loading it leaves those as they are. *Save at logout* does not save into it.
-  - *Characters:* every character seen on the account (learned at its login), each with *Load at login*,
-    *Save at logout* and its profile (*Empty* at first: ticked, switched off). A character with a profile and *Load at login* uses its profile
-    instead of the account's settings, for itself only; with *Save at logout* its changes go back into the
-    profile. Several characters can share one profile that way. Any character can set them for any other.
-    The first line, *New Characters*, is what a character Sane UI has not seen yet starts with at its first
-    login (a new one, or one not logged in since Sane UI came): its profile, *Load at login* and *Save at
-    logout*, which count from that very login.
-  - The settings hold the game's own settings too, as far as Sync's parts are ticked (see
-    [Sync's README](Sync/README.md)).
+- **Profiles,** on the page *Profiles* (the options show them; `Profiles.lua` keeps them), Saneroki, 2026-10-17:
+  - *Accountwide settings* (on at first): every character uses a profile, a named set of the settings of
+    every module and of the game's own (its options, CVars, Edit Mode layout, chat windows: as far as the
+    tab *Game settings* ticks them). At first there is one, *Accountwide*, used by every character, so all of
+    them have the same settings: the game's are set from it a moment after a character comes into the world,
+    and read back into it when the character leaves (logout, `/reload`).
+  - Off: no profile is in use. Each character keeps its own Sane UI settings (a copy of its profile's to begin
+    with), and the game's settings are left to the game, as without Sane UI. Switched on again, a character
+    takes its profile's settings (asked first).
+  - *This character:* the profile it uses (choose another: its settings, Sane UI's and the game's, are that
+    profile's at once). *New* makes a copy of the settings in use under a name and uses it; *Rename*, *Delete*
+    (every character that had it uses *Accountwide*); *Defaults* sets Sane UI's settings of the profile in use
+    back to their defaults (the game's stay); *Copy from* takes another profile's settings; *Export* shows the
+    profile as a line of text to copy, *Import* makes a profile from one. *Accountwide* cannot be renamed or
+    deleted. `/sane profile` lists the profiles, `/sane profile <name>` uses one.
+  - *Characters:* every character seen on the account, each with its profile (for another character it counts
+    at its next login) and *Forget* (its line and what Sane UI keeps for it: for a character deleted or moved).
+    The first line, *New Characters*, is the profile a character Sane UI has not seen yet starts with.
+  - Every change on any options page goes into the profile in use, for every character that uses it. Nothing
+    is copied at a logout: the settings live in their profile, and only the game's are read into it.
 
 ## Technical details
 - **Several addons, one shared table.** The game gives every addon a table only its own files see, so what
@@ -110,77 +104,75 @@ window to try those with (`/sane window`).
 
   | Where | What |
   |---|---|
-  | `SaneUIDB.modules.<Module>` | What that module keeps: `Core.Store(name)`, from `OnLoad` on |
-  | `SaneUIDB.modules.<Module>.options` | Its switches |
+  | `SaneUIDB.modules.<Module>` | What that module keeps besides its settings: `Core.Store(name)`, from `OnLoad` on |
   | `SaneUIDB.modules.<Module>.chars[GUID]` | Its notes per character: `Core.Character(name)`, from `OnLogin` on |
-  | `SaneUIDB.modules.Core.options` | The general switches (`Core.general`) |
+  | `SaneUIDB.profiles.<Profile>.<Module>` | A module's settings in a profile; `Accountwide` is always there |
+  | `SaneUIDB.accountwide` | false: *Accountwide settings* is off (nil: on) |
+  | `SaneUIDB.characters[key]` | Every character seen: `name`, `realm`, `class`, its `profile` (nil: Accountwide) |
+  | `SaneUIDB.newProfile` | *New Characters*: the profile a character not seen yet starts with (nil: Accountwide) |
+  | `SaneUIDB.ownSince` | When *Accountwide settings* was last switched off: a character's own settings from before then start anew |
+  | `SaneUIDB.version` | The shape of these settings (`Profiles.VERSION`, 2) |
   | `SaneUIDB.errors` | What went wrong (`Core.errors`), for `/sane errors` |
   | `SaneUIDB.log` | The same, every time it happened: the error log (`Core.log`) |
-  | `SaneUIDB.profiles.<Name>.<Module>` | A profile: the switches of every module, under a name |
-  | `SaneUIDB.account.<Module>` | The account's switches, kept aside while this character uses other ones |
-  | `SaneUIDB.separate` | true: *All settings accountwide* is unticked |
-  | `SaneUIDB.perCharacter.<Module>` | true: that module's settings are each character's own |
-  | `SaneUIDB.characters[key]` | Every character seen: `name`, `realm`, `class`, its `profile`, `autoLoad`, `autoSave` |
-  | `SaneUIDB.newCharacters` | *New Characters*: `profile`, `autoLoad`, `autoSave`, copied into a character's line when it is first seen |
-  | `SaneUICharDB` | Per character (`WTF/Account/<account>/<realm>/<character>/SavedVariables/SaneUI.lua`): `settings.<Module>` (its own, as at its last logout), `profile` (the one chosen in the options, for their buttons), `key` (its key in `characters`, to find it before the login) |
+  | `SaneUICharDB` | Per character (`WTF/Account/<account>/<realm>/<character>/SavedVariables/SaneUI.lua`): `settings.<Module>` (its own, with *Accountwide settings* off), `since` (the `ownSince` they were made under), `key` (its key in `characters`, to find it before the login) |
 
-- **Profiles (`Profiles.lua`).** *The settings in use* are `SaneUIDB.modules.<Module>.options` of every
-  module, the general ones too. The modules hold on to those tables for the session, so they are never
-  replaced: what is loaded is copied into them (`Core.CheckOptions` puts a spoiled value right), and each
-  module is told of every switch that changed, through the `changed` it gave `Core.Options`, as after a tick
-  on its page.
-  - **Where they come from** (`Arrange`), for each module: the account's (by default); the character's own
-    (`separate`, or the module in `perCharacter`); a profile (the character's line has one, with
-    `autoLoad`: for every module, before the others). `Arrange` moves a module from where its settings came
-    from to where they should: what it used goes back first (the character's own to `SaneUICharDB.settings`,
-    a profile's into the profile with `autoSave`, the account's aside into `SaneUIDB.account`), then the new
-    ones are copied in, and the modules are told. It runs at Core's `ADDON_LOADED` (before any module reads
-    its settings, without telling), whenever one of those switches changes (at once, telling), and at
-    `PLAYER_LOGOUT`, which brings every module back to the account's so the shared file holds them for every
-    other character. Account's still aside at a login (a logout that did not finish) are put back first.
-    The character's key at `ADDON_LOADED` is the one its last login noted (`SaneUICharDB.key`) or its GUID.
-  - **A profile** holds the switches of every module there are saved settings for, also of those switched
-    off for this character; loading one (*Load*) sets what it has in the settings in use, wherever those come
-    from, and leaves the rest. Renamed, it stays every character's that had it; deleted, no character's.
-  - **Empty** (`Profiles.EMPTY`) is no profile: a character's line with none (`profile` nil) shows it, and
-    `SetCharacter(key, "profile", Empty)` sets none. Its settings are where they come from without a profile
-    (`Home`: the account's, or the character's own). `Load` puts those (`Kept`: the account's kept aside, or
-    `SaneUICharDB.settings`) into the settings in use where a profile is in use; `Duplicate` copies them
-    (`KeptProfile`). `Character` reports *Load at login* and *Save at logout* for it.
-  - **SaneUI Defaults** (`Profiles.DEFAULTS`) is never saved: it is made from the modules' descriptions, so
-    it follows every new version. It leaves out Sync's settings (`GameSettings`): they stay where they were,
-    also with *Load at login* (`Wanted`). `Load` empties the settings in use of every other module switched on
-    and gives each switch its default (`Put`'s `fresh`); with *Load at login* `Arrange` empties every other
-    module's, and one whose addon is read later gets its defaults when it describes its switches. `Duplicate`
-    writes those defaults (`Defaults`).
-  - Both are `Fixed`: `Save`, `Rename` and `Delete` refuse them, no other profile takes their names, and no
-    logout saves into them. A saved profile of either name from before is moved to *Empty (old)*, *SaneUI
-    Defaults (old)* at the login.
-  - **Brought up to date before saving:** a module whose settings hold something of the game's own (Sync)
-    gives `Core.Options` a `capture` function; Core calls every one before the settings in use are saved
-    anywhere: a profile saved, a module moved, the logout (`Snapshot`). At `PLAYER_LOGOUT`: capture, then
-    *Save at logout* into this character's profile, then `Arrange`.
-  - `Core.Profiles`: `AccountWide()`, `SetAccountWide(on)`, `Shared(module)`, `SetShared(module, on)`,
-    `Characters()`, `Character(key)`, `SetCharacter(key, field, value)` (`"profile"`, `"autoLoad"`,
-    `"autoSave"`; `Profiles.NEW` as the key: the line *New Characters*), `List()`, `Chosen()`, `Choose(name)`, `Save(name)`, `Load(name)`, `Duplicate(name, as)`,
-    `Rename(name, as)`, `Delete(name)`, `Fixed(name)` (Empty, SaneUI Defaults: cannot be changed). A step returns
-    true, or false and a line for chat saying why not (a name that is taken or empty, a fixed profile). Names up to `MAX_NAME` (32) letters. `Copies(module)`: every saved copy of
-    a module's switches this character can reach (in use, the account's kept aside, each profile's, its own),
-    for a module that brings what an earlier version saved up to date (Social does).
+- **Profiles (`Profiles.lua`).** Each module's settings live in one place only, the one in use: a profile
+  (*Accountwide settings* on), or the character's own (`SaneUICharDB.settings`, off). The module holds that
+  table for the whole session (`Core.Settings(name)`, also `Core.Store(name).options`, which is found through
+  the store but never kept there).
+  - **Moving** (`Move`): another profile used, *Accountwide settings* switched, the profile in use deleted.
+    The modules that hold something of the game's bring it up to date first (`capture`); what each module
+    holds stays in the old place as a copy of its own; the table it holds takes what the new place has
+    (`Core.Settle` makes it right) and lives there now; each module is told what differs (`changed`, or
+    `replaced` once), then `moved`. The options page shows it a frame later.
+  - **At the load** (Core's `ADDON_LOADED`, before any module reads its settings): the place is the
+    character's profile (its line's, if that is there, else *Accountwide*) or, off, its own. The character's
+    key is its GUID, else `SaneUICharDB.key`; at `PLAYER_LOGIN` a character the game names only then (or
+    another one) moves to its profile. A module's settings come into use when it describes them
+    (`Core.Options`), from the place in use; a profile that has none for it gives its defaults, a character's
+    own that have none a copy of its profile's.
+  - **At the logout** nothing moves: only `capture` runs (Sync reads the game's settings into the profile).
+  - **Own settings** start as a copy of the character's profile's whenever they are older than the last time
+    *Accountwide settings* was switched off (`ownSince`, `since`): every time it is off, each character
+    starts from its profile.
+  - **The game's settings** (Sync's, `game = true`) live in profiles only; with *Accountwide settings* off they
+    are kept nowhere (a table of the session) and Sync reads and writes nothing.
+  - **The first shape** (version 1: the account's settings in `modules.<Module>.options` or kept aside in
+    `account`, profiles copied in and out with `autoLoad`/`autoSave`, `separate`, `perCharacter`,
+    `newCharacters`) is brought over once: the account's settings are *Accountwide* (a profile of the player's
+    called so keeps its under *Accountwide (old)*), a character's line keeps its profile where it loaded it at
+    login, `separate` is *Accountwide settings* off (each character's own kept), `perCharacter` goes.
+  - `Core.Profiles`: `On()`, `SetOn(on)`, `InUse()` (the profile in use; nil off), `List()` (Accountwide first),
+    `Exists(name)`, `Fixed(name)` (Accountwide), `Create(name, from)` (a copy of the settings in use, or of
+    profile `from`), `Use(name)`, `Rename(name, as)`, `Delete(name)`, `CopyFrom(name)`, `Reset()` (Sane UI's
+    settings in use at their defaults), `Export(name)` (a line of text, `Core.Serial`), `Import(text, as)`,
+    `Characters()`, `Character(key)` (`Profiles.NEW`: *New Characters*), `SetCharacter(key, name)`,
+    `Forget(key)`, `Capture()`. A step returns true, or false and a line for chat saying why not. Names are up
+    to `MAX_NAME` (32) letters, unique in any letter case. `/sane profile [name]`.
 
 - **A switch is described once,** by its module, while its files are read:
-  `Core.Options(name, { { key, default, text, tip }, ... }, changed, capture)`. Core gives it its default and
-  keeps it. The options (`Settings/`) show it as a checkbox and call `changed(key, value)` after a
-  tick; Core calls it too when a profile changed it. A number is described the same way with its ends (`min`,
-  `max`, `step`) and is shown as a slider; one of a few with its `choices`, as a dropdown. `header` (and
-  `headerTip`) starts a section of the page above the switch. `tab = "Appearance"` makes the module's page one of
-  our own in tabs, as Profiles (`Core.Tabbed`; the frame is `Core.frames[module]`), the switch in that tab, those
-  that name none in a first tab *General*; `parent = "key"` puts it under an earlier switch, greyed out while that
-  one, or one above it, is off; `inline` draws a number on its parent switch's line; `unit` follows its value.
-  Core's own switches name the page they are on with `page = "Appearance"` (none: *General*). One without `text` has no control but is kept
-  with the settings and in profiles (Sync keeps what it took from the game so). `capture`: see Profiles.
-  A module may show the same switches elsewhere (Abilities does, in the spellbook's menu) by reading and
-  writing `options[key]` directly.
+  `Core.Options(name, { { key, default, text, tip }, ... }, hooks)`, hooks a table (`changed(key, value)`,
+  `replaced()`, `moved()`, `capture()`, `version` and `upgrade(values, from)`, `game`) or only `changed`.
+  Core gives it its default and keeps it. The options (`Settings/`) show it as a checkbox and call
+  `changed(key, value)` after a tick; Core calls it too when a profile changed it. A number is described the
+  same way with its ends (`min`, `max`, `step`) and is shown as a slider; one of a few with its `choices`, as a
+  dropdown. `header` (and `headerTip`) starts a section of the page above the switch. `tab = "Appearance"`
+  makes the module's page one of our own in tabs, as Profiles (`Core.Tabbed`; the frame is
+  `Core.frames[module]`), the switch in that tab, those that name none in a first tab *General*;
+  `parent = "key"` puts it under an earlier switch, greyed out while that one, or one above it, is off;
+  `inline` draws a number on its parent switch's line; `unit` follows its value; `validate`, `reload`,
+  `button`, `multi`: see `Saved.lua`. Core's own switches name the page they are on with
+  `page = "Appearance"` (none: *General*). One without `text` has no control but is kept with the settings and
+  in profiles (Sync keeps what it took from the game so).
+- **Settings made right** (`Core.Settle`), whenever a copy comes into use: the module's `upgrade` for a copy of
+  an older `version` (each copy carries its own, `_version`), so a value whose kind changed is brought over
+  before it is checked; then every switch of the wrong kind, no choice of its own or refused by `validate` gets
+  its default, a number is cut to its ends, and what no description has any more goes (keys beginning with
+  `_` are Core's). A description that cannot be right (a key twice, a parent that does not come before it) is
+  noted in the error log.
+- **A switch set from elsewhere** (a menu, a command): `Core.Set(name, key, value)` writes it, makes it right,
+  tells the module, offers a `/reload` for a `reload` switch and refreshes the options page; `Core.Reset(name)`
+  sets every switch of a module back to its default so. `Core.Described(name, key)` finds a description.
 - **Load little, start late.** A file only defines things when it is read. Work starts in `OnLoad` or
   `OnLogin`, or later, when what it serves is first used (a window when it is opened). A game event is only
   asked of the game once somebody listens (`Core.On`).
@@ -238,7 +230,10 @@ window to try those with (`/sane window`).
 | `Core.Store(name)`, `Core.Character(name)` | What a module keeps, for the account and for the character |
 | `Core.Options(name, list, changed)` | Describes a module's switches |
 | `Core.CheckOptions(name)` | Gives a module's switches their defaults where they have none or a spoiled one |
-| `Core.Profiles` | Whose settings are in use, and the profiles (see above) |
+| `Core.Profiles` | Where the settings in use live, and the profiles (see above) |
+| `Core.Settings(name)`, `Core.Set(name, key, value)`, `Core.Reset(name)`, `Core.Described(name, key)` | A module's settings in use; one set from elsewhere than its page; all back to their defaults; a description |
+| `Core.AfterCombat(key, fn, ...)`, `Core.Owed(key)`, `Core.Locked(frame)`, `Core.Restricted()` | Run now, or once the fight is over (the same key once); a protected frame in a fight; a fight or a restriction of the game's |
+| `Core.Off(event, fn)`, `Core.OnUnit(event, unit, fn)`, `Core.OffUnit(event, unit, fn)` | Stop listening; an event of one unit only |
 | `Core.Config` | The options (`Settings/`): `Fill()` makes the pages' controls (once), `Open()` opens them |
 | `Core.Sync` | Sync (`Sync/`): the game's own settings kept with Sane UI's |
 | `Core.Copy(value)` | A copy of a value that shares no table with it |
@@ -380,7 +375,9 @@ window to try those with (`/sane window`).
 | `SaneUI.toc` | The addon `SaneUI` |
 | `Core.lua` | Chat, events, errors, modules, `/sane` |
 | `Saved.lua` | The saved settings and the description of the switches |
-| `Profiles.lua` | Whose settings are in use (the account's or the character's own), and the profiles |
+| `Profiles.lua` | Where every module's settings live: a profile (Accountwide at first) or the character's own; the profiles |
+| `Serial.lua` | Plain values as a line of text and back (`Core.Serial.Write`, `Read`): a profile exported and imported |
+| `Kit.lua` | Small helpers for every module: `Core.Word`, `RGB`/`Hex`, `Pixels`, `Tip`, `Pool`, `Confirm`, `AskText`, `Font`, `Sound`, `Lend` |
 | `Dock.lua` | The zones at the screen's edges, and the shape that shows where a dragged window docks |
 | `Shape.lua` | A plate with round corners and a trim, square where it touches the screen's edge |
 | `Skin.lua` | A window's background and border on a Shape, one with an edge it is docked to |
@@ -398,6 +395,8 @@ window to try those with (`/sane window`).
 | `Art/circle.blp`, `Art/circle-hole.blp` | The masks round corners are cut with: a white disc, and a white square with the disc taken out (256 × 256, DXT5 with mipmaps). Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
+
+- 2026-10-17 — Profiles anew (Saneroki): *Accountwide settings* (on at first) with the profile *Accountwide* for every character, the game's settings in profiles only, each module's settings in one place (the profile in use or, off, the character's own) and moved, never copied at the logout; *Empty*, *SaneUI Defaults*, *Load at login*, *Save at logout* and the per-module switches gone (the first shape brought over once). New: *Copy from*, *Defaults*, *Export*/*Import* (`Core.Serial`), *Forget*, `/sane profile`. Settings carry their version (`version`, `upgrade`), are made right whenever they come into use (`Core.Settle`), and can be set from elsewhere (`Core.Set`). Core: `AfterCombat`, `Locked`, `Restricted`, `Off`, `OnUnit`, blocked actions in the error log, the kit (`Kit.lua`).
 - 2026-10-17 — Players' keys: `Core.PlayerKey(unit)`, `Core.PlayerKeyOf(text)` and `Core.Surnames()`. A
   Forever player is first name and surname as one, never either alone; `Core.FullName` no longer shows a
   Retail realm as a surname.

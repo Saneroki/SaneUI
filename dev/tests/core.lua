@@ -966,6 +966,14 @@ check(not Profiles.On() and Core.Settings("Demo").loud == true and SaneUICharDB.
     "every setting each character's own (All settings accountwide unticked): Accountwide off, each keeps its own")
 Profiles.SetOn(true)
 check(Profiles.InUse() == "Accountwide" and Core.Settings("Demo").loud == false, "switched on, the account's are in use")
+Profiles.Create("Raid")
+W.printed = {}
+SlashCmdList.SANEUI("profile")
+check(printedMatch("profiles: Accountwide, Raid%.") and printedMatch("This character uses Accountwide"), "/sane profile lists them")
+SlashCmdList.SANEUI("profile raid")
+check(Profiles.InUse() == "Raid" and printedMatch("uses the profile Raid"), "/sane profile <name> uses one, in any letter case")
+SlashCmdList.SANEUI("profiles nothing")
+check(Profiles.InUse() == "Raid" and printedMatch("there is no profile called nothing"), "a name that is none says so")
 UnitGUID = guid
 
 -- Players' names ----------------------------------------------------------------------
