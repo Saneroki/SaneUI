@@ -31,12 +31,10 @@ local TITLE = HOME or "Home"
 local book, paged      -- the game's frames
 local tab, cover, pane -- ours: the Home tab, the stand-in over the game's selected tab, the page
 local headers, empties, more = {}, {}, nil
-local levels = {}      -- the small headings of the quest section: "Level 10"
 local row              -- the row of the game's tabs, moved to make room for Home (Core.Lend)
 local SHIFT = 46       -- one tab and the gap after it
 local SEARCH_WIDTH, SEARCH_GAP = 300, 10 -- the game's search box: its widest, and its room from the tabs
 local LEVEL_HEIGHT = 22
-local pool = {}        -- the rows, reused
 local active = false   -- Home is the page on show
 local underneath       -- the game's tab that was selected when Home was opened
 local hiddenAt         -- when the spellbook was last hidden
@@ -97,6 +95,11 @@ local function Text(parent, font)
     return text
 end
 
+-- The page's parts, made when first needed and used again (Core.Pool): the rows, and the small
+-- headings of the quest section ("Level 10").
+local rows = Core.Pool(function() return I.Create(pane) end)
+local levels = Core.Pool(function() return Text(pane, "SystemFont_Large") end)
+
 -- Two sections, laid out by the spellbook's own rule (Layout.lua): one on each page of the open
 -- book, one under the other in the small spellbook. The quest rewards stand under the level
 -- you get them at. What does not fit is counted, not shown.
@@ -145,7 +148,9 @@ local function Fill()
         pages = { L.Paginate({ trainGroup }, width, pageHeight, metrics)[1], L.Paginate(questGroups, width, pageHeight, metrics)[1] }
     end
 
-    local used, usedLevels, shown = 0, 0, {}
+    local used, shown = 0, {}
+    rows:Begin()
+    levels:Begin()
     for index, view in ipairs(pages) do
         local anchor, dx = left, 0
         if index == 2 then anchor, dx = rightAnchor, rightX end
@@ -153,12 +158,7 @@ local function Fill()
             local item = cell.item
             local x = cell.x + dx
             if item.level then
-                usedLevels = usedLevels + 1
-                local text = levels[usedLevels]
-                if not text then
-                    text = Text(pane, "SystemFont_Large")
-                    levels[usedLevels] = text
-                end
+                local text = levels:Take()
                 text:ClearAllPoints()
                 text:SetPoint("TOPLEFT", anchor, "TOPLEFT", x + 8, -cell.y)
                 text:SetText(item.text)
@@ -173,11 +173,7 @@ local function Fill()
                 shown[item.own] = { anchor = anchor, x = x, y = cell.y }
             else
                 used = used + 1
-                local row = pool[used]
-                if not row then
-                    row = I.Create(pane)
-                    pool[used] = row
-                end
+                local row = rows:Take()
                 row:SetScale(scale)
                 row:ClearAllPoints()
                 row:SetPoint("TOPLEFT", anchor, "TOPLEFT", x / scale, -cell.y / scale)
@@ -186,11 +182,8 @@ local function Fill()
             end
         end
     end
-    for index = used + 1, #pool do
-        pool[index]:Hide()
-        pool[index].entry = nil
-    end
-    for index = usedLevels + 1, #levels do levels[index]:Hide() end
+    rows:Done()
+    levels:Done()
     for _, group in ipairs({ trainGroup, questGroups[1] }) do
         local at = shown[group.key]
         headers[group.key]:SetShown(at ~= nil)
@@ -287,22 +280,16 @@ local function Setup()
     tab.Icon:SetTexture(ICON)
     tab:SetScript("OnClick", function()
         if active then return end
-        PlaySound(SOUNDKIT.IG_SPELLBOOK_OPEN)
+        Core.Sound("IG_SPELLBOOK_OPEN")
         ns.Safe("home", H.Open)
     end)
-    tab:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(TITLE)
-        GameTooltip:AddLine("What you can learn now, and the spells you get from quests.", 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-    tab:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    Core.Tip(tab, TITLE, "What you can learn now, and the spells you get from quests.")
 
     cover = MakeTab(book)
     Select(cover, false)
     cover:Hide()
     cover:SetScript("OnClick", function()
-        PlaySound(SOUNDKIT.IG_SPELLBOOK_OPEN)
+        Core.Sound("IG_SPELLBOOK_OPEN")
         ns.Safe("home", H.Close)
     end)
 

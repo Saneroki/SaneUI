@@ -51,7 +51,6 @@ local lastHeader                             -- the last heading of the game's w
 local AFTER_LAYOUT, AFTER_GIVE, AFTER_SIZE, AFTER_ARM =
     "Abilities: book", "Abilities: book given back", "Abilities: book entries' size", "Abilities: book taken over"
 
-local pool = {}      -- our grey entries, reused
 local managed = {}   -- [one of the game's entries] = { anchor, x, y, corner, view } where we put it
 local views = {}     -- the pages of the tab on show, from Layout.Paginate
 local perPage, page, pageKey = 2, 1, nil
@@ -64,7 +63,6 @@ local home = false   -- the Home page (Home.lua) is on show: every entry waits o
 local toggle         -- the checkbox next to the page buttons: hidden spells on or off
 local expanded = {}  -- [spell name] = true: all its ranks are on show (until /reload)
 local parked = {}    -- the game's entries of ranks that are folded away
-local folds, foldHeaders = {}, {} -- our small buttons: "+" on a folded spell, the heading of an unfolded one
 local FOLD_HEIGHT = 22
 
 -- The page as it is right now (Measure): the spellbook can be resized (Window.lua) and compact.
@@ -253,64 +251,53 @@ end
 
 local function SetExpanded(name, on)
     expanded[name] = on or nil
-    PlaySound(SOUNDKIT.IG_ABILITY_PAGE_TURN)
+    Core.Sound("IG_ABILITY_PAGE_TURN")
     B.Relayout()
 end
 
 -- The "+" in the corner of a folded spell. Above the game's entries, or they would take its clicks.
-local function FoldButton(index)
-    local button = folds[index]
-    if not button then
-        button = CreateFrame("Button", nil, container)
-        button:SetSize(16, 16)
-        button:SetFrameLevel(container:GetFrameLevel() + 30)
-        button:SetNormalTexture("Interface\\Buttons\\UI-PlusButton-Up")
-        button:SetPushedTexture("Interface\\Buttons\\UI-PlusButton-Down")
-        button:SetHighlightTexture("Interface\\Buttons\\UI-PlusButton-Hilight", "ADD")
-        button:SetScript("OnClick", function(self) SetExpanded(self.spell, true) end)
-        button:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(("Show all ranks of %s (%d more)"):format(self.spell, self.more))
-            GameTooltip:Show()
-        end)
-        button:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        folds[index] = button
-    end
+local function MakeFold()
+    local button = CreateFrame("Button", nil, container)
+    button:SetSize(16, 16)
+    button:SetFrameLevel(container:GetFrameLevel() + 30)
+    button:SetNormalTexture("Interface\\Buttons\\UI-PlusButton-Up")
+    button:SetPushedTexture("Interface\\Buttons\\UI-PlusButton-Down")
+    button:SetHighlightTexture("Interface\\Buttons\\UI-PlusButton-Hilight", "ADD")
+    button:SetScript("OnClick", function(self) SetExpanded(self.spell, true) end)
+    Core.Tip(button, function() return ("Show all ranks of %s (%d more)"):format(button.spell, button.more) end)
     return button
 end
 
 -- The heading of a spell's unfolded ranks: a "-" and the spell's name, in one button.
-local function FoldHeader(index)
-    local header = foldHeaders[index]
-    if not header then
-        header = CreateFrame("Button", nil, container)
-        header:SetSize(L.VIEW_WIDTH, FOLD_HEIGHT)
-        header:SetFrameLevel(container:GetFrameLevel() + 30)
-        header.Minus = header:CreateTexture(nil, "ARTWORK")
-        header.Minus:SetTexture("Interface\\Buttons\\UI-MinusButton-Up")
-        header.Minus:SetSize(16, 16)
-        header.Minus:SetPoint("LEFT", 2, 0)
-        header.Text = header:CreateFontString(nil, "ARTWORK", "SystemFont_Large")
-        header.Text:SetPoint("LEFT", header.Minus, "RIGHT", 6, 0)
-        header:SetScript("OnClick", function(self) SetExpanded(self.spell, false) end)
-        header:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT")
-            GameTooltip:SetText("Fold the ranks away")
-            GameTooltip:Show()
-        end)
-        header:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        foldHeaders[index] = header
-    end
+local function MakeFoldHeader()
+    local header = CreateFrame("Button", nil, container)
+    header:SetSize(L.VIEW_WIDTH, FOLD_HEIGHT)
+    header:SetFrameLevel(container:GetFrameLevel() + 30)
+    header.Minus = header:CreateTexture(nil, "ARTWORK")
+    header.Minus:SetTexture("Interface\\Buttons\\UI-MinusButton-Up")
+    header.Minus:SetSize(16, 16)
+    header.Minus:SetPoint("LEFT", 2, 0)
+    header.Text = header:CreateFontString(nil, "ARTWORK", "SystemFont_Large")
+    header.Text:SetPoint("LEFT", header.Minus, "RIGHT", 6, 0)
+    header:SetScript("OnClick", function(self) SetExpanded(self.spell, false) end)
+    Core.Tip(header, "Fold the ranks away", nil, "ANCHOR_TOPLEFT")
     return header
 end
+
+-- Our parts of a page, made when first needed and used again (Core.Pool): the grey entries, the
+-- "+" on a folded spell, the heading of a spell's unfolded ranks.
+local ghosts = Core.Pool(function() return I.Create(container) end)
+local folds, foldHeaders = Core.Pool(MakeFold), Core.Pool(MakeFoldHeader)
 
 -------------------------------------------------------------------------------
 --  Drawing one page
 -------------------------------------------------------------------------------
 local function Show()
     local first = (page - 1) * perPage
-    local used, seen, shown = 0, {}, {}
-    local usedFolds, usedHeaders = 0, 0
+    local seen, shown = {}, {}
+    ghosts:Begin()
+    folds:Begin()
+    foldHeaders:Begin()
 
     for index, view in ipairs(views) do
         local position = index - first
@@ -324,8 +311,7 @@ local function Show()
             local item = cell.item
             local x = cell.x + dx
             if anchor and item.more then
-                usedFolds = usedFolds + 1
-                local button = FoldButton(usedFolds)
+                local button = folds:Take()
                 button.spell, button.more = item.name, item.more
                 button:ClearAllPoints()
                 button:SetPoint("TOPLEFT", anchor, "TOPLEFT", x + cellWidth * scale - 18, -cell.y - 2)
@@ -333,8 +319,7 @@ local function Show()
             end
             if item.fold then
                 if anchor then
-                    usedHeaders = usedHeaders + 1
-                    local header = FoldHeader(usedHeaders)
+                    local header = foldHeaders:Take()
                     header.spell = item.fold
                     header.Text:SetText(item.text)
                     if style.text then header.Text:SetTextColor(style.text[1], style.text[2], style.text[3]) end
@@ -353,12 +338,7 @@ local function Show()
                 header:SetPoint("TOPLEFT", anchor, "TOPLEFT", x, -cell.y)
                 shown[item.own] = true
             elseif anchor then
-                used = used + 1
-                local ghost = pool[used]
-                if not ghost then
-                    ghost = I.Create(container)
-                    pool[used] = ghost
-                end
+                local ghost = ghosts:Take()
                 ghost:SetScale(scale)
                 ghost:ClearAllPoints()
                 ghost:SetPoint("TOPLEFT", anchor, "TOPLEFT", x / scale, -cell.y / scale)
@@ -371,13 +351,9 @@ local function Show()
         Place(frame, nil)
         seen[frame] = true
     end
-    for index = usedFolds + 1, #folds do folds[index]:Hide() end
-    for index = usedHeaders + 1, #foldHeaders do foldHeaders[index]:Hide() end
-
-    for index = used + 1, #pool do
-        pool[index]:Hide()
-        pool[index].entry = nil
-    end
+    ghosts:Done()
+    folds:Done()
+    foldHeaders:Done()
     for key, header in pairs(headers) do
         -- our headings take their look from one of the game's
         if shown[key] and lastHeader and lastHeader.Text then

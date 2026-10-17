@@ -521,7 +521,15 @@ check(ghostCount() == 2 and at(made[1]) == UIParent and stands(made[2], view1, 0
     "with ranks shown, the ranks of a spell are folded into the highest one you have")
 local plus = fold("Fireball")
 check(plus and plus.more == 3 and stands(plus, view1, 216 - 18, -63) and not fold("Pyroblast"), "it carries a + that says how many more there are; a spell of one rank has none")
+plus:GetScript("OnEnter")(plus)
+check(GameTooltip:GetOwner() == plus and GameTooltip._text == "Show all ranks of Fireball (3 more)", "pointed at, it says so")
+plus:GetScript("OnLeave")(plus)
+local sounds = {}
+local play = PlaySound
+PlaySound = function(id) sounds[#sounds + 1] = id end
 plus:GetScript("OnClick")(plus)
+PlaySound = play
+check(sounds[1] == SOUNDKIT.IG_ABILITY_PAGE_TURN, "a page turns, with the game's sound for it")
 check(fold("Fireball", true) and stands(fold("Fireball", true), view1, 0, -141) and not fold("Fireball"), "a click on it unfolds the ranks into a section of their own, under the tab's spells")
 check(ghostCount() == 4 and stands(made[1], view1, 0, -173) and stands(made[2], view1, 0, -243), "the ranks you have first")
 check(stands(ghost("Fireball", "Rank 3"), view1, 231, -173) and stands(ghost("Fireball", "Rank 4"), view1, 231, -243), "the ranks to come right after them")
@@ -1182,12 +1190,17 @@ check(not section("Skills to learn") and not ghost("Staves") and not ghost("Arca
 -- The checkbox next to the page buttons
 local box = SaneUISpellbookShowHidden
 check(box:IsShown() and box.checked == true and box.Text:GetText() == "Show unlearned spells", "next to the page buttons a checkbox shows whether unlearned spells are on")
+local sounds, play = {}, PlaySound
+PlaySound = function(id) sounds[#sounds + 1] = id end
+SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON, SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF = 856, 857
 box.checked = false
 box:GetScript("OnClick")(box)
 check(ns.options.showHidden == false and ghostCount() == 0, "unticking it hides them")
 box.checked = true
 box:GetScript("OnClick")(box)
 check(ns.options.showHidden == true and ghostCount() > 0 and box.checked == true, "ticking it shows them again")
+check(sounds[1] == 857 and sounds[2] == 856, "with the game's sounds for a checkbox: off, then on")
+PlaySound = play
 check(stands(tabSystem, book, 116, -26), "the row of the game's tabs stands one tab to the right, to make room for Home")
 check(book.SearchBox:GetWidth() == 244, "and the search box makes room for it, as the game's own sum would")
 
@@ -1244,6 +1257,14 @@ check(not H.IsOpen() and not SaneUISpellbookHome:IsShown(), "the Home page is th
 made = DrawTab("Fire", { "Fireball" })
 EventRegistry:TriggerEvent("PlayerSpellsFrame.SpellBookFrame.Show")
 check(H.IsOpen() and SaneUISpellbookHome:IsShown(), "the spellbook opens on its Home page")
+local homeTab
+for _, widget in ipairs(W.frames) do
+    if widget._parent == book and widget._kind == "Button" and widget.Icon and widget.Icon._texture == "Interface\\Icons\\INV_Misc_Rune_01" then homeTab = widget end
+end
+GameTooltip._lines = {}
+homeTab:GetScript("OnEnter")(homeTab)
+check(GameTooltip:GetOwner() == homeTab and GameTooltip._text == "Home" and GameTooltip._lines[1]:find("What you can learn now"),
+    "its tab, pointed at, says what Home is")
 check(at(made[1]) == UIParent and ghostCount() == 0 and not SaneUISpellbookPager:IsShown() and not box:IsShown(), "the tab underneath steps aside: its entries, the grey ones, the page buttons and the checkbox")
 local fire, wand = homeRow("Fireball"), homeRow("Conjure Wand")
 check(fire and fire.entry.sub == "Rank 3" and fire.RequiredLevel:GetText() == "900 copper" and not fire.Button.Quest:IsShown() and homeRow("Arcane Mind"),

@@ -3,10 +3,10 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Tooltips - Pools
 --  The parts a panel is drawn with (Panel.lua): texts, thin lines, small
---  pictures and bars. Each kind is a pool of the panel's own: a list of the
---  parts made so far, and how many of them the draw has taken (taken). A draw
---  begins with every pool given back (Reset) and takes what it needs again.
---  And how large a text is (Width, Place).
+--  pictures and bars. Each kind is a pool of the panel's own (Core.Pool): a
+--  list of the parts made so far, and how many of them the draw has taken
+--  (taken). A draw begins with every pool given back (Reset) and takes what it
+--  needs again. And how large a text is (Width, Place).
 --
 --  A unit's numbers (Live.lua) get texts and bars of their own instead
 --  (LiveText, LiveBar, BarText): the game may hand them numbers it hides, and
@@ -18,7 +18,8 @@ local _, ns = ...
 --  size still be hidden, it counts as 0 and the draw is spoilt (Spoilt): that
 --  tooltip is then left to the game.
 -------------------------------------------------------------------------------
-local Secret = SaneUI.Core.Secret
+local Core = SaneUI.Core
+local Secret = Core.Secret
 local COLOR = ns.COLOR
 local VALUE, HEALTH = COLOR.TITLE, COLOR.HEALTH
 local Pools = {}
@@ -39,34 +40,27 @@ local PICTURE = {
     active = "Interface\\GossipFrame\\ActiveQuestIcon",       -- a quest in the log: the ?
 }
 local POOLS = { "texts", "lines", "icons", "bars" }
+local NewText, NewLine, NewIcon, NewBar -- below: how each kind of part is made
 
 local spoilt = false -- a size of this draw was hidden
 local style = 0      -- counts the changes of the fonts' files and sizes (Restyle)
 
 -- A panel's pools and its live parts, when it is made.
 function Pools.Prepare(panel)
-    for _, name in ipairs(POOLS) do panel[name] = { taken = 0 } end
+    panel.texts = Core.Pool(function() return NewText(panel) end)
+    panel.lines = Core.Pool(function() return NewLine(panel) end)
+    panel.icons = Core.Pool(function() return NewIcon(panel) end)
+    panel.bars = Core.Pool(function() return NewBar(panel) end)
     panel.liveTexts, panel.liveBars = {}, {} -- [use] = its own text or bar (LiveText, LiveBar)
 end
 
--- The next part of a pool for this draw; make(panel) makes one when the pool has no more.
-local function Take(pool, make, panel)
-    local n = pool.taken + 1
-    pool.taken = n
-    local part = pool[n]
-    if not part then
-        part = make(panel)
-        pool[n] = part
-    end
-    return part
-end
-
--- Every part of the panel hidden, the pools given back: a draw begins.
+-- Every part of the panel hidden, the pools given back: a draw begins. Only what the last draw
+-- took is hidden: the rest is hidden already.
 function Pools.Reset(panel)
     for _, name in ipairs(POOLS) do
         local pool = panel[name]
         for index = 1, pool.taken do pool[index]:Hide() end
-        pool.taken = 0
+        pool:Begin()
     end
     local live = panel.live
     for key in pairs(live) do live[key] = nil end
@@ -92,14 +86,14 @@ local function Dress(label, kind)
     if kind.path then label:SetFont(kind.path, kind.size, kind.flags or "") end
 end
 
-local function NewText(panel)
+function NewText(panel)
     local label = panel:CreateFontString(nil, "OVERLAY")
     label:SetJustifyV("TOP")
     return label
 end
 
 function Pools.Text(panel, kind, text, r, g, b, align)
-    local label = Take(panel.texts, NewText, panel)
+    local label = panel.texts:Take()
     if label.lifted then
         label:SetParent(panel)
         label.lifted = nil
@@ -167,14 +161,14 @@ function Pools.Place(panel, label, x, y, width)
     return Size(label:GetStringHeight())
 end
 
-local function NewLine(panel)
+function NewLine(panel)
     local line = panel:CreateTexture(nil, "ARTWORK", nil, 0)
     line:SetTexture(WHITE)
     return line
 end
 
 function Pools.Line(panel, r, g, b, a)
-    local line = Take(panel.lines, NewLine, panel)
+    local line = panel.lines:Take()
     line:ClearAllPoints()
     line:SetVertexColor(r, g, b, a)
     line:Show()
@@ -192,13 +186,13 @@ function Pools.Rule(panel, x, y, width, hairline)
     light:SetSize(width, hairline)
 end
 
-local function NewIcon(panel)
+function NewIcon(panel)
     return panel:CreateTexture(nil, "ARTWORK", nil, 2)
 end
 
 -- A small picture: one of PICTURE, or an icon of the game's.
 function Pools.Icon(panel, picture, size)
-    local icon = Take(panel.icons, NewIcon, panel)
+    local icon = panel.icons:Take()
     local known = PICTURE[picture]
     local crop = Pools.ICON_CROP
     icon:SetTexture(known or picture)
@@ -259,7 +253,7 @@ function Pools.LiveBar(panel, key, height, r, g, b)
     return bar
 end
 
-local function NewBar(panel)
+function NewBar(panel)
     local bar = CreateFrame("StatusBar", nil, panel)
     bar:SetStatusBarTexture(BAR)
     local track = bar:CreateTexture(nil, "BACKGROUND")
@@ -269,7 +263,7 @@ local function NewBar(panel)
 end
 
 function Pools.Bar(panel, r, g, b)
-    local bar = Take(panel.bars, NewBar, panel)
+    local bar = panel.bars:Take()
     bar:SetStatusBarColor(r or HEALTH[1], g or HEALTH[2], b or HEALTH[3])
     bar:SetHeight(Pools.BAR_HEIGHT)
     bar:ClearAllPoints()
