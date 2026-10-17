@@ -245,6 +245,116 @@ with Copy() as copy:
     check("import again: all agreeing", (counts(again, "Folk", "forever"), again.changed),
           ({"agreeing": 3}, set()))
 
+# Compiling ----------------------------------------------------------------------------------------------
+import compile as compiler  # noqa: E402
+
+
+def files_of(folder):
+    return {str(path.relative_to(folder)): path.read_bytes() for path in sorted(folder.rglob("*")) if path.is_file()}
+
+
+def lua_rows(path):
+    """Every row of a compiled set file as Lua 5.1 reads it: [(table, key, row)], by running the file with a
+    stand-in SaneUI.Core.Data.Add (characters below 32 written as \\ddd)."""
+    script = r'''
+local rows = {}
+SaneUI = { Core = { Data = { Add = function(format, set, header)
+    local S = { rows = {}, history = {}, index = {} }
+    rows.S, rows.header = S, header
+    return S
+end } } }
+dofile(arg[1])
+local function show(s) return (s:gsub("[%z\1-\31\\]", function(c) return string.format("\\%03d", c:byte()) end)) end
+local out = {}
+for _, part in ipairs({ "rows", "history" }) do
+    for key, row in pairs(rows.S[part]) do out[#out + 1] = part .. "\t" .. tostring(key) .. "\t" .. show(row) end
+end
+for name, index in pairs(rows.S.index) do
+    for value, keys in pairs(index) do out[#out + 1] = "index." .. name .. "\t" .. tostring(value) .. "\t" .. show(keys) end
+end
+table.sort(out)
+print(rows.header.game .. "\t" .. rows.header.hash .. "\t" .. rows.header.build)
+print(table.concat(out, "\n"))
+'''
+    result = subprocess.run(["lua5.1", "-", str(path)], input=script, capture_output=True, text=True)
+    return result.returncode, result.stdout, result.stderr
+
+
+def shown(text):
+    return "".join(f"\\{ord(c):03d}" if ord(c) < 32 or c == "\\" else c for c in text)
+
+
+with tempfile.TemporaryDirectory(prefix="saneui-packs-") as folder:
+    out = Path(folder)
+    made = compiler.compile_packs(sample, out / "one", "forever")
+    compiler.compile_packs(sample, out / "two", "forever")
+    check("compile: the packs made", [(pack, sets) for pack, sets, _ in made], [("Gear", ["Folk", "Gear"]), ("Words", ["Labels"])])
+    check("compile: the same master, the same bytes", files_of(out / "one") == files_of(out / "two"), True)
+    gear_pack = out / "one" / "SaneUI_Data_Gear"
+    check("compile: the pack's files", sorted(p.name for p in gear_pack.iterdir()),
+          ["Folk.lua", "Gear.lua", "LICENSE.txt", "SaneUI_Data_Gear.toc"])
+    toc = (gear_pack / "SaneUI_Data_Gear.toc").read_text()
+    interface, version = compiler.core_toc()
+    for line in (f"## Interface: {interface}", f"## Version: {version}", "## LoadOnDemand: 1", "## Dependencies: SaneUI",
+                 "## Group: SaneUI", "## SavedVariables: SaneUIData_Gear", "## X-SaneUI-Sets: Folk, Gear",
+                 "## X-SaneUI-Format: 1", "## X-SaneUI-Game: forever", "## Title: Data: Gear"):
+        check(f"compile: TOC has {line}", line in toc.splitlines(), True)
+    check("compile: TOC lists the sets' files", toc.splitlines()[-2:], ["Folk.lua", "Gear.lua"])
+    gear_text = (gear_pack / "Gear.lua").read_text()
+    digest = compiler.hashlib.sha256(gear_text.replace(gear_text.split('hash = "')[1][:8], "00000000", 1).encode()).hexdigest()[:8]
+    check("compile: the hash is the file's", f'hash = "{digest}"' in gear_text, True)
+    check("compile: live's build", 'build = 65100' in gear_text, True)
+    check("compile: patch names", 'patches = { [65000] = "1.60.0", [65100] = "1.60.2" }' in gear_text, True)
+    check("compile: decoder types", '"map text int", "number", "int", "int", "bool", "list int", "list point", '
+          '"list tuple(kind:text,what:int,count:int,text:text)", "map int int"' in gear_text, True)
+    check("compile: nothing of the beta in live's packs", any(b"Beta Ring" in data for data in files_of(out / "one").values()), False)
+    code, text, problem = lua_rows(gear_pack / "Gear.lua")
+    check("compile: Lua 5.1 runs the file", (code, problem), (0, ""))
+    got = text.splitlines()
+    view = sample.view("Gear", "forever")
+    want_rows = [f"rows\t{key}\t{shown(compiler.row(sample.schemas['Gear'], versions[-1]))}" for key, versions in view.items()]
+    check("compile: every row read back by Lua as written", all(line in got for line in want_rows), True)
+    check("compile: a row", f"rows\t101\t{shown(compiler.row(sample.schemas['Gear'], view[101][-1]))}" in got, True)
+    check("compile: the fix in the row", "Tall Boots of Wading" in text and "Tall Boots\\009" not in text, True)
+    check("compile: a gone version is a build and a day", compiler.row(sample.schemas["Folk"], sample.view("Folk", "forever")[3][-1]), "65100\t")
+    check("compile: history", f"history\t100\t{shown(chr(28).join(compiler.row(sample.schemas['Gear'], v) for v in view[100][:-1]))}" in got, True)
+    check("compile: an index", "index.bySlot\thands\t100" in got, True)
+    check("compile: an index of a list", f"index.byFrom\t1\t100{shown(chr(30))}102" in got, True)
+    check("compile: replaces both ways", ("index.replaces\t102\t101" in got, "index.replacedBy\t101\t102" in got), (True, True))
+    code, text, _ = lua_rows(out / "one" / "SaneUI_Data_Words" / "Labels.lua")
+    check("compile: text keys", all(f"rows\t{k}\t" in text for k in ("alpha", "end", "with space")), True)
+    beta = compiler.compile_packs(sample, out / "beta", "forever-beta")
+    check("compile: the beta's packs", [pack for pack, _, _ in beta], ["Gear", "Words"])
+    code, text, _ = lua_rows(out / "beta" / "SaneUI_Data_Gear" / "Gear.lua")
+    head = text.splitlines()[0].split("\t")
+    check("compile: the beta's game and build", (head[0], head[2]), ("forever-beta", "66000"))
+    beta_view = sample.view("Gear", "forever-beta")
+    check("compile: the beta stands on live's newest", f"history\t100\t{shown(compiler.row(sample.schemas['Gear'], beta_view[100][0]))}" in text
+          and beta_view[100][0].fields["sell"] == 110, True)
+    check("compile: the beta's own entry", "rows\t103\t0\\009\\009Beta Ring\\0094" in text, True)
+    check("compile: no live history in the beta's pack", "\\02865000" in text or "1.60.0" in (out / "beta" / "SaneUI_Data_Gear" / "Gear.lua").read_text(), False)
+    with Copy() as copy:
+        copy.write("Labels/Labels.jsonl", "")
+        (out / "one" / "SaneUI_Data_Old").mkdir()
+        made = compiler.compile_packs(loaded(copy.root), out / "one", "forever")
+        check("compile: a pack without entries is not made", [pack for pack, _, _ in made], ["Gear"])
+        check("compile: packs no longer made are removed", sorted(p.name for p in (out / "one").iterdir()), ["SaneUI_Data_Gear"])
+    saved, compiler.CHUNK = compiler.CHUNK, 2
+    try:
+        compiler.compile_packs(sample, out / "small", "forever")
+        small = (out / "small" / "SaneUI_Data_Gear" / "Gear.lua").read_text()
+        check("compile: rows cut into Fill functions", small.count("Fill(function()") >= 4, True)
+        code, text, problem = lua_rows(out / "small" / "SaneUI_Data_Gear" / "Gear.lua")
+        check("compile: cut rows read back", (code, all(line in text.splitlines() for line in want_rows)), (0, True))
+    finally:
+        compiler.CHUNK = saved
+    for product, want in (("wowf", "forever"), ("wow_classic_beta", "forever-beta"), ("wow_unknown", None)):
+        place = out / product
+        place.mkdir()
+        (place / ".flavor.info").write_text(f"Product Flavor!STRING:0\n{product}\n")
+        check(f"compile: the game version of a {product} folder", compiler.product_game(place), want)
+    check("compile: a folder without .flavor.info", compiler.product_game(out), None)
+
 # The real master is as the game's code says (the CVar labels) -------------------------------------------
 with tempfile.TemporaryDirectory(prefix="saneui-staging-") as folder:
     staging = Path(folder) / "cvar-labels.jsonl"

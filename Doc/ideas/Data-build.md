@@ -42,7 +42,7 @@ at most the commit it was on, and the next session goes on from there.
     the wrong file.
   - `dev/tests/run` runs the check and the tools' tests (`dev/tests/data/`): each broken rule is caught.
   - The master lies outside `src/` (decision 3), so no addon folder takes it in.
-- [ ] **1a.3 Compile, and packs in BUILD.**
+- [x] **1a.3 Compile, and packs in BUILD.**
   - `dev/data/compile.py` and `dev/tools/data compile <dir>`. It writes rows, history and indexes, at most
     50,000 rows per function, and nothing that changes from one run to the next.
   - Compiled per game version (`--game forever-beta`): live's from the live files only, another's from

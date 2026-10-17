@@ -7,6 +7,18 @@ The Home page, the marks, Settings on demand, the Tooltips module and the Social
 Tests: lint, 195 checks (Core, with its options), 280 checks (Spellbook), 328 checks (Tooltips), 332 checks (Social), 62 checks (Sync), 234 checks (windows).
 
 ### Core's data framework
+- **1a.3 Compile, and packs in BUILD.** `dev/data/compile.py` and `dev/tools/data compile <folder> [--game]`:
+  a pack per `packs.toml` entry with entries (TOC, a Lua file per set, `LICENSE.txt`); rows, history and
+  indexes (`replaces` and `replacedBy` the compiler's own), at most 50,000 statements per `Fill` function,
+  the hash of the file itself, the newest build, the patch names; the same master gives the same bytes.
+  Another game version's packs stand on live's newest version of each entry. `dev/tools/data game <folder>`
+  tells a game folder's game version by its `.flavor.info`. `dev/build` makes `BUILD/SaneUI_Data_Game`,
+  keeps the packs out of its clean-up, and installs the packs of the game folder's own game version (the
+  beta's compiled into a scratch folder), removing packs it no longer makes. The lint compiles the packs of
+  every game version and checks their TOCs and Lua. Tests: 148 checks (same bytes twice, live without the
+  beta, the beta on live, every row read back by Lua 5.1 as Python wrote it, rows cut into functions,
+  packs without entries not made).
+  - *In the game:* the addon list shows *Data: Game* under Sane UI, not loaded.
 - **1a.2 The master and its check.** `assets/data/` with `builds.toml` (Forever live 70245, the beta 70425
   and 70450, an empty PTR), `sources.toml` (`game`, `hand`), `packs.toml` (*Game*) and the first set,
   *CVarLabels* (225 CVars, from the game's options code in `references/`; the old Lua file stays as it is).

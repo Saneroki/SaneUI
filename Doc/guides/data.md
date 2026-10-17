@@ -514,6 +514,7 @@ end, ...)
 | `dev/tools/data check` | Checks the master (run by `dev/tests/run`). |
 | `dev/tools/data import <file> [--apply] [--take]` | Staging into the master, the report first. |
 | `dev/tools/data compile <dir> [--game <game version>]` | The packs (run by `dev/build`). |
+| `dev/tools/data game <game folder>` | The game version a game folder holds, by the product its `.flavor.info` names (`wowf`: `forever`; `wow_classic_beta`: `forever-beta` today); nothing for a product not known. `dev/build` installs that game version's packs. |
 | `dev/tools/data show <set> <key>` *(1a.6)* | An entry with every version and source. |
 | `dev/tools/data diff <set> [--patch 1.60.2]` *(1a.6)* | What a patch changed. |
 | `dev/tools/data stats` *(1a.6)* | Counts and sizes per set and pack. |

@@ -3,6 +3,8 @@
 
 Usage:  dev/tools/data check                              check the master (dev/tests/run runs it)
         dev/tools/data import <staging> [--apply] [--take]  staging into the master: the report, then --apply
+        dev/tools/data compile <folder> [--game <version>]  the packs of a game version (forever) into a folder
+        dev/tools/data game <game folder>                   the game version a game folder holds (.flavor.info)
         --master <folder>                                   another master than assets/data (tests)
 """
 import argparse
@@ -13,6 +15,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "data"))
 
 import check as checks  # noqa: E402
+import compile as compiler  # noqa: E402
 import importer  # noqa: E402
 import master as masters  # noqa: E402
 
@@ -66,6 +69,30 @@ def run_import(args):
     return 0
 
 
+def run_compile(args):
+    master = load(args.master)
+    if master.errors:
+        say_problems(master)
+        print("Data: the master has problems; no pack is made from it.", file=sys.stderr)
+        return 1
+    if args.game not in master.games:
+        print(f"Data: '{args.game}' is no game version of builds.toml ({', '.join(master.games)}).", file=sys.stderr)
+        return 1
+    folder = Path(args.folder)
+    folder.mkdir(parents=True, exist_ok=True)
+    for pack, sets, entries in compiler.compile_packs(master, folder, args.game):
+        print(f"Built: {folder / (compiler.PREFIX + pack)} ({args.game}: {', '.join(sets)}; {entries} entries)")
+    return 0
+
+
+def run_game(args):
+    game = compiler.product_game(Path(args.folder))
+    if game is None:
+        return 1
+    print(game)
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(prog="dev/tools/data", description=__doc__.split("\n")[0])
     parser.add_argument("--master", help="the master's folder (assets/data)")
@@ -75,8 +102,13 @@ def main():
     taking.add_argument("file")
     taking.add_argument("--apply", action="store_true", help="write the master")
     taking.add_argument("--take", action="store_true", help="apply conflicts as corrections (step 1a.6)")
+    making = commands.add_parser("compile", help="the packs into a folder")
+    making.add_argument("folder")
+    making.add_argument("--game", default=masters.LIVE, help="the game version (forever)")
+    telling = commands.add_parser("game", help="the game version of a game folder")
+    telling.add_argument("folder")
     args = parser.parse_args()
-    return {"check": run_check, "import": run_import}[args.command](args)
+    return {"check": run_check, "import": run_import, "compile": run_compile, "game": run_game}[args.command](args)
 
 
 sys.exit(main())

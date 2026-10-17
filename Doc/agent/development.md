@@ -5,7 +5,7 @@
 | Command | Effect |
 | --- | --- |
 | `dev/tests/run` | Lua 5.1 syntax/global/TOC lint, then all offline tests |
-| `dev/build` | Tests, rsync source into five `BUILD/` addon folders (one per `src/*/*.toc`), install copies in game |
+| `dev/build` | Tests, rsync source into five `BUILD/` addon folders (one per `src/*/*.toc`), compile the data packs (`BUILD/SaneUI_Data_*`, Forever live's), install copies in game (the packs of the game folder's own game version, by its `.flavor.info`) |
 | `dev/build --no-install` | Tests/build only |
 | `dev/build --check` | Tests and rsync dry-run; writes nothing |
 | `dev/tools/errors [10\|30\|all\|short]` | Read client's saved error log after reload/logout |
@@ -18,7 +18,7 @@
 | `dev/tools/voicegen key\|account\|design\|pick\|names\|say\|sound\|ogg` | Send the voice database's lines, the cast's designs and the names to the cloud voice service; master WAVs and game Ogg files in `dev/voices/sound/`, every file made in `dev/voices/made.jsonl`; short UI sounds as candidates in `assets/generated/sounds/`. Key and service config in `~/.config/saneui/voice-service.json`, never in the repository (stdlib and ffmpeg; see `Doc/guides/voice-generation.md`) |
 | `dev/tools/project-index [--check]` | Regenerate navigation hashes/index, or report stale files |
 | `dev/tools/cvar-labels [--check]` | Regenerate `src/Core/Settings/Data/CVarLabels.lua` (CVar → game string names) from `references/` options code; `--staging [file] [--build N]` writes the same as staging for the data set *CVarLabels* (`dev/data/staging/cvar-labels.jsonl`) |
-| `dev/tools/data check\|import` | Core's data framework (`Doc/guides/data.md`): check the master in `assets/data/` (run by `dev/tests/run`); `import <staging> [--apply]` takes staging in, the report first; `--master <folder>` for another master (tests); Python in `dev/data/` |
+| `dev/tools/data check\|import\|compile\|game` | Core's data framework (`Doc/guides/data.md`): check the master in `assets/data/` (run by `dev/tests/run`); `import <staging> [--apply]` takes staging in, the report first; `compile <folder> [--game G]` the packs; `game <folder>` a game folder's game version; `--master <folder>` for another master (tests); Python in `dev/data/` |
 | `dev/tools/sync-pages [--check]` | Regenerate `src/Core/Sync/Data/Pages.lua` (what each of the game's options pages sets) from `references/` options code |
 
 Required build tools: Bash, Python 3, `lua5.1`, `luac5.1`, `rsync`. No dependencies need downloading
@@ -31,7 +31,8 @@ game restart; changed known files need reload. Preserve unrelated `BUILD/SaneUI.
 ## Tests and their limits
 
 `dev/tests/lint` checks every `src/` folder: one TOC each, listed/missing source, matching versions/interface,
-dependency/group metadata, Lua 5.1 parsing, and bytecode `SETGLOBAL` names. It is not a full API lint.
+dependency/group metadata, Lua 5.1 parsing, and bytecode `SETGLOBAL` names; and the data packs, compiled for every game
+version into a scratch folder (TOC lines, files, Lua that writes no global). It is not a full API lint.
 `wowstub.lua` supplies events/timers/actions/cursor/spells/options and generic widgets; unknown
 PascalCase widget methods silently succeed. Tests extend this with tooltip/chat/book fixtures.
 WoW's argument-passing `xpcall` is shimmed because stock Lua 5.1 lacks it.

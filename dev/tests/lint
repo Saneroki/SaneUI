@@ -10,15 +10,22 @@ Sane UI is one addon per folder in src: SaneUI (Core) and one for each module.
   3. Every Lua file parses (the game's Lua is 5.1).
   4. No file writes a global that is not Sane UI's own: all addons share one set of globals,
      and a stray one (a forgotten "local") can break another addon or the game's own code.
+  5. The data packs (Doc/guides/data.md), compiled from the master for every game version into a scratch
+     folder: their TOCs (load on demand, under Sane UI, the X-SaneUI lines, the saved variable, Core's
+     Interface and Version), their files, and their Lua, which parses and writes no global.
 
 Usage:  dev/tests/lint
 """
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
+sys.dont_write_bytecode = True
 SRC = Path(__file__).resolve().parents[2] / "src"
+sys.path.insert(0, str(SRC.parent / "dev" / "data"))
 MAIN = "SaneUI"  # the addon every module depends on; a module's addon is SaneUI_<Module>
 
 # Globals the addons may write: the table they share, their saved settings and functions,
@@ -90,21 +97,61 @@ def check_tocs():
     return counts
 
 
-def check_lua():
-    for path in sorted(SRC.rglob("*.lua")):
+def check_lua(paths, base, allowed=OWN):
+    for path in paths:
         result = subprocess.run(["luac5.1", "-l", "-p", str(path)], capture_output=True, text=True)
         if result.returncode != 0:
             problems.append(f"does not parse: {result.stderr.strip()}")
             continue
         for line, name in re.findall(r"\[(\d+)\]\s+SETGLOBAL\s+\S+\s+\S+\s*;\s*(\S+)", result.stdout):
-            if not OWN.match(name):
-                problems.append(f"{path.relative_to(SRC)}:{line}: writes the global '{name}' (forgotten 'local'?)")
+            if not allowed.match(name):
+                problems.append(f"{path.relative_to(base)}:{line}: writes the global '{name}' (forgotten 'local'?)")
+
+
+def check_packs(core):
+    """Compiles the master's packs for every game version and checks each pack. Returns how many."""
+    import check as checks
+    import compile as compiler
+    import master as masters
+    data = masters.Master().load()
+    checks.check(data)
+    if data.errors:
+        problems.append("the data packs are not checked: the master has problems (dev/tools/data check)")
+        return 0
+    count, folder = 0, Path(tempfile.mkdtemp(prefix="saneui-lint-"))
+    try:
+        for game in data.games:
+            made = compiler.compile_packs(data, folder / game, game)
+            for pack, sets, _ in made:
+                name = compiler.PREFIX + pack
+                where = f"data pack {name} ({game})"
+                toc = folder / game / name / f"{name}.toc"
+                fields, listed = read_toc(toc)
+                want = {"Interface": core.get("Interface"), "Version": core.get("Version"), "Dependencies": MAIN,
+                        "Group": MAIN, "LoadOnDemand": "1", "SavedVariables": f"SaneUIData_{pack}",
+                        "X-SaneUI-Sets": ", ".join(sets), "X-SaneUI-Format": str(compiler.FORMAT), "X-SaneUI-Game": game}
+                for field, value in want.items():
+                    if fields.get(field) != value:
+                        problems.append(f"{where}: '## {field}: {fields.get(field)}', wants '{value}'")
+                for field in ("Title", "Notes", "Author"):
+                    if not fields.get(field):
+                        problems.append(f"{where}: no '## {field}'")
+                files = sorted(p for p in (folder / game / name).iterdir() if p.suffix == ".lua")
+                if sorted(listed) != files:
+                    problems.append(f"{where}: its TOC and its Lua files differ")
+                check_lua(files, folder, re.compile(r"^$"))
+                count += 1
+    finally:
+        shutil.rmtree(folder)
+    return count
 
 
 counts = check_tocs()
-check_lua()
+check_lua(sorted(SRC.rglob("*.lua")), SRC)
+core_fields, _ = read_toc(SRC / "Core" / f"{MAIN}.toc")
+packs = check_packs(core_fields)
 for problem in problems:
     print(problem, file=sys.stderr)
 if problems:
     sys.exit(1)
-print(f"Lint: {len(counts)} addons, {sum(counts)} files in their TOCs, all there, all parse, no stray globals.")
+print(f"Lint: {len(counts)} addons, {sum(counts)} files in their TOCs, all there, all parse, no stray globals; {packs} data packs fit.")
