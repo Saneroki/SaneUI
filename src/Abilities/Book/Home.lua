@@ -32,7 +32,7 @@ local TITLE = Core.Word("HOME", TEXT.home)
 local book, paged      -- the game's frames
 local tab, cover, pane -- ours: the Home tab, the stand-in over the game's selected tab, the page
 local headers, empties, more = {}, {}, nil
-local row              -- the row of the game's tabs, moved to make room for Home (Core.Lend)
+local tabRow           -- the row of the game's tabs, moved to make room for Home (Core.Lend)
 local SHIFT = 46       -- one tab and the gap after it
 local SEARCH_WIDTH, SEARCH_GAP = 300, 10 -- the game's search box: its widest, and its room from the tabs
 local LEVEL_HEIGHT = 22
@@ -325,18 +325,18 @@ end
 -- fight is over.
 local function PlaceTabs(on)
     local tabs = book.CategoryTabSystem
-    row = row or Core.Lend(tabs)
-    if on and not row:Lent() and tabs:GetNumPoints() == 1 then
-        if row:SetPoints(Shift) then FitSearchBox() end
-    elseif not on and row:Lent() then
+    tabRow = tabRow or Core.Lend(tabs)
+    if on and not tabRow:Lent() and tabs:GetNumPoints() == 1 then
+        if tabRow:SetPoints(Shift) then FitSearchBox() end
+    elseif not on and tabRow:Lent() then
         if Core.Locked(tabs) then
             Core.AfterCombat("Abilities: home tabs", PlaceTabs, false)
-        elseif row:Return() then
+        elseif tabRow:Return() then
             FitSearchBox()
         end
     end
     tab:ClearAllPoints()
-    if row:Lent() then
+    if tabRow:Lent() then
         tab:SetPoint("BOTTOMLEFT", tabs, "BOTTOMLEFT", -SHIFT, 0)
     else
         tab:SetPoint("BOTTOMRIGHT", tabs, "BOTTOMLEFT", -2, 0)
@@ -366,5 +366,5 @@ ns.Listen("REFRESH", function()
     -- Not while the spellbook is closed (pane stays shown in it): it is filled when it opens.
     if pane and pane:IsVisible() then Fill() end
     -- The window may have another width now (Window.lua redraws after every change of size).
-    if row and row:Lent() and book:IsVisible() then FitSearchBox() end
+    if tabRow and tabRow:Lent() and book:IsVisible() then FitSearchBox() end
 end)

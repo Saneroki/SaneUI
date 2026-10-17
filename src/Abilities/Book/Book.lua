@@ -287,7 +287,7 @@ end
 
 -- Our parts of a page, made when first needed and used again (Core.Pool): the grey entries, the
 -- "+" on a folded spell, the heading of a spell's unfolded ranks.
-local ghosts = Core.Pool(function() return I.Create(container) end)
+local greys = Core.Pool(function() return I.Create(container) end)
 local folds, foldHeaders = Core.Pool(MakeFold), Core.Pool(MakeFoldHeader)
 
 -------------------------------------------------------------------------------
@@ -296,7 +296,7 @@ local folds, foldHeaders = Core.Pool(MakeFold), Core.Pool(MakeFoldHeader)
 local function Show()
     local first = (page - 1) * perPage
     local seen, shown = {}, {}
-    ghosts:Begin()
+    greys:Begin()
     folds:Begin()
     foldHeaders:Begin()
 
@@ -339,7 +339,7 @@ local function Show()
                 header:SetPoint("TOPLEFT", anchor, "TOPLEFT", x, -cell.y)
                 shown[item.own] = true
             elseif anchor then
-                local ghost = ghosts:Take()
+                local ghost = greys:Take()
                 ghost:SetScale(scale)
                 ghost:ClearAllPoints()
                 ghost:SetPoint("TOPLEFT", anchor, "TOPLEFT", x / scale, -cell.y / scale)
@@ -352,7 +352,7 @@ local function Show()
         Place(frame, nil)
         seen[frame] = true
     end
-    ghosts:Done()
+    greys:Done()
     folds:Done()
     foldHeaders:Done()
     for key, header in pairs(headers) do
