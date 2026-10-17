@@ -46,6 +46,12 @@ local Core = SaneUI.Core
 --                                       -- or dock = "BOTTOMLEFT": docked in that zone at first (a talk: CENTER)
 --          title = "Social",            -- its name, on its title bar and on its box in Edit Mode
 --          titleBar = true,             -- it has a title bar (without: only while it fills the screen)
+--          buttons = { { atlas = "common-icon-undo", tip = "Start again", click = function(button) end } },
+--                                       -- the module's own buttons in the title bar, left of Core's (or texture)
+--          tabs = { { text = "Spells", build = function(view) end } },  -- views, as the game's tabs (Views.lua)
+--          toplevel = true,             -- a click brings it to the front of its layer (a panel's, a talk's)
+--          insets = { left = 0, right = 0, top = 0, bottom = 0 },  -- docked, the room it keeps from the
+--                                       -- screen's edges (UI units; without: flush with them)
 --          search = function(text) end, -- what is typed into its search box, at every change ("": none)
 --          dragDocked = true,           -- its title bar moves it docked at a screen edge too (not in Edit Mode)
 --          escape = "close",            -- Esc closes it, small or full, as the game's panels close (close, else
@@ -87,6 +93,9 @@ local Core = SaneUI.Core
 --      window:Native(on)                -- the game's own window instead (on), or ours again; kept for Open
 --      window:Remember(what, value)     -- kept with its place (full, native)
 --      window:Refresh()                 -- its title bar and buttons as the window is now
+--      window:SetTitle(text)            -- its name anew, on its title bar and its box in Edit Mode
+--      window.inside                    -- a frame for what it holds: below the title bar while there is one,
+--                                       -- the whole window while not; window.top: how far below its top that is
 --      window:Locked()                  -- it holds the game's protected frames and a fight is on: nothing of
 --                                       -- ours moves, sizes, shows or hides it now (placing waits for the end)
 --      window:Attach()                  -- puts the button back to ours onto the game's window (done at New
@@ -100,6 +109,9 @@ local Core = SaneUI.Core
 --  away from its edges, so its grip moves to a corner that is not at one.
 --
 --  A window made by New is a child of UIParent at its scale.
+--
+--  Every window made by New is known (Window.All()): /sane window reset all puts
+--  each at its first place and size (Window.ResetAll()).
 -------------------------------------------------------------------------------
 local Window = {}
 Core.Window = Window
@@ -113,6 +125,7 @@ Window.CASCADE = Window.BAR -- a window that cannot stand where it was left stan
 Window.TEXT = {
     classic = "Classic window", classicTip = "The game's own window instead of this one.",
     sane = "Sane UI window", saneTip = "Sane UI's window instead of the game's.",
+    search = Core.Word("SEARCH", "Search"),
 }
 -- The kinds of window (Saneroki, 2026-10-16; Doc/guides/windows.md, section 2): the options each kind has
 -- unless the module gives them itself. What the Combat module shows (unit frames, nameplates, buffs, action
@@ -120,11 +133,13 @@ Window.TEXT = {
 Window.KINDS = {
     -- on the screen all the time: the chat, the minimap; no title bar while small, see-through
     screen = { dock = true, edge = true, sizable = true },
-    -- opened and closed by the player: the spellbook, the talents, the guild, the bags
-    panel = { titleBar = true, dock = true, skin = true, edge = true, sizable = true, escape = "close" },
+    -- opened and closed by the player: the spellbook, the talents, the guild, the bags; a click brings it to the
+    -- front, as the game's own panels (toplevel, CharacterFrame.xml)
+    panel = { titleBar = true, dock = true, skin = true, edge = true, sizable = true, escape = "close", toplevel = true },
     -- an NPC's: a vendor, a trainer, the auction house, the bank; at first in the middle (its first place),
     -- closing it ends the talk (its close)
-    talk = { titleBar = true, dock = true, skin = true, edge = true, sizable = true, escape = "close", first = { dock = "CENTER" } },
+    talk = { titleBar = true, dock = true, skin = true, edge = true, sizable = true, escape = "close", toplevel = true,
+             first = { dock = "CENTER" } },
 }
 local SQUARE = "Interface\\Buttons\\UI-SquareButton-" -- the game's square button, as its group finder's refresh
 local ARROWS = "Interface\\Buttons\\UI-RefreshButton"   -- and its icon, the circling arrows, half the button's size
@@ -267,7 +282,7 @@ local function Keep(window, zone)
     local place = { x = frame:GetLeft(), y = frame:GetTop(), dock = zone }
     if window.options.sizable then place.width, place.height = frame:GetWidth(), frame:GetHeight() end
     local was = window.options.store[Key(window)] -- what it was left as stays (Remember)
-    if type(was) == "table" then place.full, place.native = was.full, was.native end
+    if type(was) == "table" then place.full, place.native, place.tab = was.full, was.native, was.tab end
     window.options.store[Key(window)] = place
     window:Place()
 end
@@ -367,11 +382,12 @@ function methods:Place()
     if options.docked then Core.Safe("window", options.docked, zone or nil) end
 end
 
--- Its first place and size again; what it was left as (full, native) stays.
+-- Its first place and size again; what it was left as (full, native, its tab) stays.
 function methods:Reset()
     local store, key = self.options.store, Key(self)
     local was = store[key]
-    store[key] = type(was) == "table" and (was.full or was.native) and { full = was.full, native = was.native } or nil
+    store[key] = type(was) == "table" and (was.full or was.native or was.tab)
+        and { full = was.full, native = was.native, tab = was.tab } or nil
     self:Place()
 end
 
@@ -444,6 +460,7 @@ local function Box(window)
     title:SetPoint("CENTER")
     title:SetText(options.title or "")
     title:Hide()
+    box.title = title
     box:SetScript("OnEnter", function()
         hover:Show()
         title:Show()
@@ -464,30 +481,30 @@ local function Box(window)
     return box
 end
 
--- The button that swaps a window for the game's own one, or back: the game's square button with its
--- circling arrows, a tip to say which way.
-local function Toggle(parent, text, tip, click)
+-- A button of the title bar: the game's square button with a picture on it (an atlas or a texture, half
+-- its size), the game's click sound, a tip to say what it does.
+local function Square(parent, art, text, tip, click)
     local button = CreateFrame("Button", nil, parent)
     button:SetSize(Window.BUTTON, Window.BUTTON)
     button:SetNormalTexture(SQUARE .. "Up")
     button:SetPushedTexture(SQUARE .. "Down")
     button:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-    local arrows = button:CreateTexture(nil, "ARTWORK", nil, 5)
-    arrows:SetTexture(ARROWS)
-    arrows:SetSize(Window.BUTTON / 2, Window.BUTTON / 2)
-    arrows:SetPoint("CENTER", -1, 0)
-    button:SetScript("OnClick", function()
-        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-        Core.Safe("window", click)
+    local picture = button:CreateTexture(nil, "ARTWORK", nil, 5)
+    if art.atlas then picture:SetAtlas(art.atlas) else picture:SetTexture(art.texture) end
+    picture:SetSize(Window.BUTTON / 2, Window.BUTTON / 2)
+    picture:SetPoint("CENTER", -1, 0)
+    button:SetScript("OnClick", function(self)
+        Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
+        Core.Safe("window", click, self)
     end)
-    button:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText(text)
-        GameTooltip:AddLine(tip, 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-    button:SetScript("OnLeave", GameTooltip_Hide)
+    Core.Tip(button, text, tip, "ANCHOR_TOP")
     return button
+end
+
+-- The button that swaps a window for the game's own one, or back: with its circling arrows (as the game's
+-- group finder's refresh), a tip to say which way.
+local function Toggle(parent, text, tip, click)
+    return Square(parent, { texture = ARROWS }, text, tip, click)
 end
 
 -- Full screen (on) or back, by the button: as the edge does it; the button then shows what it is now.
@@ -513,6 +530,13 @@ local function Search(window, on)
         if bar.box:GetText() ~= "" then bar.box:SetText("") end -- OnTextChanged tells the module
         bar.box:ClearFocus()
     end
+end
+
+-- The window's title: its width on the bar, the click that opens the search, as long as its words.
+local function Title(window)
+    local bar, search = window.bar, window.options.search
+    bar.title:SetText(window.options.title or "")
+    bar.find:SetWidth(Window.TEXT_INSET * 2 + (search and Window.GLASS + 4 or 0) + math.max(bar.title:GetStringWidth() or 0, 40))
 end
 
 -- The title bar, made when it is first shown: across the window's top, Window.BAR high, above what the
@@ -544,8 +568,9 @@ local function Bar(window)
     glass:SetShown(options.search ~= nil)
     local title = find:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     if options.search then title:SetPoint("LEFT", glass, "RIGHT", 4, 0) else title:SetPoint("LEFT", Window.TEXT_INSET, 0) end
-    title:SetText(options.title or "")
-    find:SetWidth(Window.TEXT_INSET * 2 + (options.search and Window.GLASS + 4 or 0) + math.max(title:GetStringWidth() or 0, 40))
+    bar.find, bar.title = find, title
+    window.bar = bar
+    Title(window)
     find:SetScript("OnMouseDown", function() find.dragged = false end)
     find:SetScript("OnClick", function()
         if not find.dragged then Core.Safe("window", Search, window, true) end
@@ -554,12 +579,14 @@ local function Bar(window)
     local box = CreateFrame("EditBox", nil, bar, "SearchBoxTemplate")
     box:SetHeight(Window.BOX)
     box:Hide()
+    local instructions = rawget(box, "Instructions") -- the template's words in an empty box
+    if type(instructions) == "table" and instructions.SetText then instructions:SetText(Window.TEXT.search) end
     box:HookScript("OnTextChanged", function(self) Searched(window, self:GetText()) end)
     box:HookScript("OnEditFocusLost", function(self)
         if self:GetText() == "" then Core.Safe("window", Search, window, false) end
     end)
     box:HookScript("OnEscapePressed", function() Core.Safe("window", Search, window, false) end)
-    bar.find, bar.title, bar.glass, bar.box = find, title, glass, box
+    bar.glass, bar.box = glass, box
 
     Window.Mover(bar, frame, {
         usable = function() return window:Draggable() end,
@@ -576,12 +603,11 @@ local function Bar(window)
         bar:GetScript("OnDragStart")(bar)
     end)
     find:SetScript("OnDragStop", function() bar:GetScript("OnDragStop")(bar) end)
-    window.bar = bar
     return bar
 end
 
 -- The buttons at the title bar's right, made with it: from the right, close, full screen (with edge), the
--- game's own window (with native).
+-- game's own window (with native), then the module's own (buttons).
 local function Buttons(window)
     if window.buttons then return window.buttons end
     local frame, options = window.frame, window.options
@@ -602,8 +628,21 @@ local function Buttons(window)
         window.toggle = Toggle(buttons, Window.TEXT.classic, Window.TEXT.classicTip, function() window:Native(true) end)
         buttons.list[#buttons.list + 1] = window.toggle
     end
+    for _, own in ipairs(options.buttons or {}) do
+        buttons.list[#buttons.list + 1] = Square(buttons, own, own.tip, own.text, own.click)
+    end
     window.buttons = buttons
     return buttons
+end
+
+-- How far below the window's top what it holds starts: under the title bar while it is there.
+local function Inside(window, bar)
+    local top = bar and Window.BAR or 0
+    if top == window.top then return end
+    window.top = top
+    window.inside:ClearAllPoints()
+    window.inside:SetPoint("TOPLEFT", 0, -top)
+    window.inside:SetPoint("BOTTOMRIGHT")
 end
 
 -- The title bar as the window is now: there with titleBar (a kind of window that has one; the chat, small,
@@ -614,6 +653,7 @@ end
 function methods:Refresh()
     local edge = self.edge
     local shown = (self.options.titleBar or (edge and edge.full)) and true or false
+    Inside(self, shown)
     if not shown and not self.bar then return end
     local bar, buttons = Bar(self), Buttons(self)
     if not shown and bar.box:IsShown() then Search(self, false) end
@@ -640,6 +680,13 @@ function methods:Refresh()
     if stop then bar.box:SetPoint("RIGHT", stop, "LEFT", -Window.BOX_INSET, 0) else bar.box:SetPoint("RIGHT", -Window.BOX_INSET, 0) end
 end
 
+-- Its name anew: on its title bar, and on its box in Edit Mode.
+function methods:SetTitle(text)
+    self.options.title = text
+    if self.bar then Title(self) end
+    if self.box then self.box.title:SetText(text or "") end
+end
+
 -- May the title bar move the window now: only a kind of window with a title bar of its own, not in Edit
 -- Mode (there its box does), not while it fills the screen or is on its way, and, docked at a screen edge,
 -- only if it says so (dragDocked): an edge is Edit Mode's.
@@ -651,12 +698,23 @@ function methods:Draggable()
 end
 
 -- What the window was left as, kept with its place in the module's settings: full (it filled the screen),
--- native (the game's own window was chosen instead). Open acts on both.
+-- native (the game's own window was chosen instead), tab (the view chosen, Views.lua). Open acts on the
+-- first two. Nothing is kept for a value that is none.
 function methods:Remember(what, value)
     local store, key = self.options.store, Key(self)
-    local place = type(store[key]) == "table" and store[key] or {}
+    local place = store[key]
+    if type(place) ~= "table" then
+        if not value then return end
+        place = {}
+        store[key] = place
+    end
     place[what] = value or nil
-    store[key] = place
+end
+
+-- What it was left as (Remember), or nil.
+function methods:Recall(what)
+    local place = self.options.store[Key(self)]
+    return type(place) == "table" and place[what] or nil
 end
 
 -- The game's own window instead of ours (on), or ours again: what the toggle buttons do, kept for Open.
@@ -727,6 +785,18 @@ Core.EditMode.Watch(function(on)
     for _, window in ipairs(windows) do Core.Safe("Edit Mode", Edit, window, on) end
 end)
 
+-- Every window made by New, in the order they were made (a list of its own: changing it changes nothing).
+function Window.All()
+    local all = {}
+    for index, window in ipairs(windows) do all[index] = window end
+    return all
+end
+
+-- Every window at its first place and size again (what each was left as stays: Reset).
+function Window.ResetAll()
+    for _, window in ipairs(windows) do Core.Safe("window", window.Reset, window) end
+end
+
 function Window.New(frame, options)
     local kind = Window.KINDS[options.kind]
     if kind then
@@ -747,6 +817,14 @@ function Window.New(frame, options)
     local window = setmetatable({ frame = frame, options = options }, { __index = methods })
     frame:SetMovable(true)
     frame:SetClampedToScreen(true)
+    -- As the game's own panels: a click on it brings it to the front of its layer, and what is behind it is
+    -- not clicked.
+    if options.toplevel then
+        frame:SetToplevel(true)
+        frame:EnableMouse(true)
+    end
+    window.inside = CreateFrame("Frame", nil, frame)
+    Inside(window, options.titleBar)
     if options.skin then
         window.skin = Core.Skin.New(frame, options.corners or type(options.edge) == "table" and options.edge or nil)
     end
@@ -773,6 +851,7 @@ function Window.New(frame, options)
     frame:HookScript("OnShow", function()
         if window.zone and Core.Dock.Holder(window.zone, frame) then Core.Safe("window", window.Place, window) end
     end)
+    if options.tabs then Core.Safe("window", Window.Views, window) end
     if Core.EditMode.active then Edit(window, true) end
     Core.Safe("window", window.Attach, window)
     -- Esc closes a window made with escape = "close" while it is shown, as the game closes its panels

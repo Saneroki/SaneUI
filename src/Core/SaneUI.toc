@@ -33,6 +33,7 @@ Shape.lua
 Skin.lua
 Edge.lua
 Window.lua
+Views.lua
 Expand.lua
 Bar.lua
 # /sane window: a window to try them with

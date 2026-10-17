@@ -46,6 +46,7 @@ function methods:SetGradient(orientation, low, high) self._gradient = { orientat
 function methods:SetBlendMode(mode) self._blend = mode end
 function methods:OverrideText(text) self._override = text end
 function methods:SetUserPlaced(placed) self._userPlaced = placed end
+function methods:SetToplevel(on) self._toplevel = on end
 function methods:GetName() return self._name end
 function methods:SetText(text) -- an edit box tells of its new text, as the game's does
     self._text = text
@@ -68,6 +69,21 @@ W.templates.MaximizeMinimizeButtonFrameTemplate = function(widget)
     function widget:Minimize(_, skip)
         if not skip then self:minimized() end
         self.isMinimized = true
+    end
+end
+-- Blizzard's tab system (TabSystemTemplate): a tab button for each AddTab; a click asks the callback, which
+-- may show the choice itself (true).
+W.templates.TabSystemTemplate = function(widget)
+    widget.tabs = {}
+    function widget:SetTabSelectedCallback(fn) self.callback = fn end
+    function widget:SetTabVisuallySelected(id) self.selected = id end
+    function widget:AddTab(text)
+        local tab = CreateFrame("Button", nil, self)
+        tab._text = text
+        self.tabs[#self.tabs + 1] = tab
+        local id = #self.tabs
+        tab:SetScript("OnClick", function() if not self.callback(id, true) then self:SetTabVisuallySelected(id) end end)
+        return id
     end
 end
 -- Blizzard's nine-slice: a texture per piece the layout names, in the kit's atlases.
@@ -350,6 +366,7 @@ brokenWindow.grip:GetScript("OnMouseUp")(brokenWindow.grip)
 check(not brokenWindow.sizing and not brokenFrame._sizing, "and so is a sizing")
 EventRegistry:TriggerEvent("EditMode.Exit")
 brokenFrame:Hide()
+brokenWindow.options.docked = nil
 Core.errors.window = nil
 end
 
@@ -1234,6 +1251,10 @@ local given = kindWindow.options
 check(given.titleBar and given.dock and given.skin and given.edge and given.escape == "close" and kindWindow.skin and kindWindow.edge,
     "a kind gives a window its options: a panel has a title bar, a skin, full screen, Esc closes it")
 check(given.sizable == false and kindWindow.grip == nil, "what the module gives itself wins")
+check(kindFrame._toplevel and kindFrame._mouse, "a panel comes to the front when clicked, as the game's own panels do, and takes the click")
+traderWindow:SetTitle("Merchant")
+check(traderWindow.bar.title._text == "Merchant" and traderWindow.box.title._text == "Merchant" and traderWindow.options.title == "Merchant",
+    "a window's name can be set anew: on its title bar and on its box in Edit Mode")
 check(Window.KINDS.screen.titleBar == nil and Window.KINDS.screen.skin == nil and Window.KINDS.talk.escape == "close",
     "the chat's kind has no title bar and no skin; a talk closes with Esc")
 kindFrame:Hide()
@@ -1385,43 +1406,79 @@ check(bar.frame._width == 302 and bar.frame._height == 16, "and ends at it")
 W.Fire("PLAYER_LOGIN")
 before = #W.frames
 SlashCmdList.SANEUI("window")
-local demo = W.frames[before + 1]
-check(demo._parent == UIParent and demo:IsShown() and demo._points[1][1] == "CENTER" and demo._group, "/sane window makes a window to try it with")
-local keepBox, addButton, demoWatch, demoFill
-for index = before + 1, #W.frames do
-    local widget = W.frames[index]
-    if widget._kind == "CheckButton" and widget.Text and widget.Text._text == "Keep open" then keepBox = widget end
-    if widget._kind == "Button" and widget._text == "Add" then addButton = widget end
-    if widget._parent == demo and widget._scripts.OnUpdate then demoWatch = widget end
-    if widget._kind == "StatusBar" and widget._bar == Bar.ART.fill then demoFill = widget end
+do
+    local demo = W.frames[before + 1]
+    check(demo._parent == UIParent and demo:IsShown() and demo._points[1][1] == "CENTER" and demo._group, "/sane window makes a window to try it with")
+    local demoWindow
+    for _, known in ipairs(Window.All()) do if known.frame == demo then demoWindow = known end end
+    check(demoWindow and demoWindow.options.kind == "panel" and demoWindow.options.escape == "close" and demoWindow.bar:IsShown()
+        and demo._mouse and demoWindow.top == Window.BAR and demoWindow.inside._points[1][5] == -Window.BAR,
+        "a panel: its title bar, Esc closes it, a click on it is its own; what it holds stands under the bar (window.inside)")
+    local tabs, views = demoWindow.tabs, demoWindow.views
+    check(tabs and #tabs.tabs == 2 and tabs.tabs[1]._text == "Window" and tabs.selected == 1 and views[1] and views[1]:IsShown() and not views[2]
+        and views[1]._parent == demoWindow.inside and views[1]._points[1][5] == -Window.TABS,
+        "two views behind the game's tabs, on top of them: the first chosen, built and shown, the second not built yet")
+    local own = demoWindow.buttons.list[3]
+    check(#demoWindow.buttons.list == 3 and demoWindow.buttons.first == own and own._points[1][2] == demoWindow.full,
+        "a button of its module's own, left of Core's")
+    local keepBox, demoWatch
+    for index = before + 1, #W.frames do
+        local widget = W.frames[index]
+        if widget._kind == "CheckButton" and widget.Text and widget.Text._text == "Keep open" then keepBox = widget end
+        if widget._parent == demo and widget._scripts.OnUpdate then demoWatch = widget end
+    end
+    check(keepBox and keepBox._parent == views[1] and demoWatch, "the first view: a box Keep open")
+    demo._mouseOver = true
+    demo:GetScript("OnEnter")(demo)
+    demoWatch:GetScript("OnUpdate")(demoWatch, 1)
+    check(demo._width == 380 or demo._group.playing, "the mouse rests on it: it opens")
+    demo._group:Run(1)
+    keepBox:SetChecked(true)
+    keepBox:GetScript("OnClick")(keepBox)
+    demo._mouseOver = false
+    demoWatch:GetScript("OnUpdate")(demoWatch, 5)
+    check(demo._width == 380 and not demoWatch:IsShown(), "Keep open keeps it open when the mouse goes")
+    local made = #W.frames
+    tabs.tabs[2]:GetScript("OnClick")(tabs.tabs[2])
+    local addButton, demoFill
+    for index = made + 1, #W.frames do
+        local widget = W.frames[index]
+        if widget._kind == "Button" and widget._text == "Add" then addButton = widget end
+        if widget._kind == "StatusBar" and widget._bar == Bar.ART.fill then demoFill = widget end
+    end
+    check(views[2] and views[2]:IsShown() and not views[1]:IsShown() and tabs.selected == 2 and addButton and demoFill
+        and SaneUIDB.modules.Core.demo.tab == 2, "the second tab: its view is built now, and shown; the tab chosen is kept")
+    addButton:GetScript("OnClick")(addButton)
+    demoFill._parent._groups[1]:Run(1)
+    check(demoFill._value == 0.15, "Add fills the bar a step")
+    for _ = 1, 6 do addButton:GetScript("OnClick")(addButton) end
+    demoFill._parent._groups[1]:Run(1)
+    check(demoFill._value == 1, "up to full")
+    addButton:GetScript("OnClick")(addButton)
+    check(demoFill._value == 0, "and full, it starts again from nothing, at once")
+    addButton:GetScript("OnClick")(addButton)
+    demoFill._parent._groups[1]:Run(1)
+    own:GetScript("OnClick")(own)
+    check(demoFill._value == 0, "the module's button starts it again too")
+    tabs.tabs[1]:GetScript("OnClick")(tabs.tabs[1])
+    keepBox:SetChecked(false)
+    keepBox:GetScript("OnClick")(keepBox)
+    demo._group:Run(1)
+    check(demo._width == 260, "let go with the mouse away, it closes")
+    SlashCmdList.SANEUI("window")
+    check(not demo:IsShown(), "typed again it hides it")
+    SlashCmdList.SANEUI("window reset")
+    check(demo:IsShown() and SaneUIDB.modules.Core.demo == nil, "and reset shows it at its first place (its first tab is no more to keep)")
+    W.printed = {}
+    at(demo, 100, 100)
+    demoWindow.bar:GetScript("OnDragStart")(demoWindow.bar)
+    demoWindow.bar:GetScript("OnDragStop")(demoWindow.bar)
+    check(SaneUIDB.modules.Core.demo.x == 100, "(moved)")
+    SlashCmdList.SANEUI("window reset all")
+    check(SaneUIDB.modules.Core.demo == nil and demo._points[1][1] == "CENTER" and W.printed[1]:find("first place"),
+        "/sane window reset all puts every window of Sane UI at its first place and size")
+    check(next(Core.errors) == nil, "nothing went wrong on the way")
 end
-check(keepBox and addButton and demoWatch and demoFill and not keepBox:IsShown() and not addButton:IsShown(),
-    "with a box Keep open and a button Add, out of sight while it is small, and a bar")
-demo._mouseOver = true
-demo:GetScript("OnEnter")(demo)
-demoWatch:GetScript("OnUpdate")(demoWatch, 1)
-check(keepBox:IsShown() and addButton:IsShown(), "the mouse rests on it: it opens, and shows them")
-keepBox:SetChecked(true)
-keepBox:GetScript("OnClick")(keepBox)
-demo._mouseOver = false
-demoWatch:GetScript("OnUpdate")(demoWatch, 5)
-check(addButton:IsShown(), "Keep open keeps it open when the mouse goes")
-addButton:GetScript("OnClick")(addButton)
-demoFill._parent._groups[1]:Run(1)
-check(demoFill._value == 0.15, "Add fills the bar a step")
-for _ = 1, 6 do addButton:GetScript("OnClick")(addButton) end
-demoFill._parent._groups[1]:Run(1)
-check(demoFill._value == 1, "up to full")
-addButton:GetScript("OnClick")(addButton)
-check(demoFill._value == 0, "and full, it starts again from nothing, at once")
-keepBox:SetChecked(false)
-keepBox:GetScript("OnClick")(keepBox)
-check(not addButton:IsShown(), "let go with the mouse away, it closes")
-SlashCmdList.SANEUI("window")
-check(not demo:IsShown(), "typed again it hides it")
-SlashCmdList.SANEUI("window reset")
-check(demo:IsShown() and SaneUIDB.modules.Core.demo == nil, "and reset shows it at its first place")
-check(next(Core.errors) == nil, "nothing went wrong on the way")
 
 -- A plate of one radius that follows its frame (a chat's bubble), and a round icon ----------------
 do
