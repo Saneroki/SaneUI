@@ -58,8 +58,8 @@ Core.Options(ns.name, {
     { key = "classColors", default = true, text = "Colour players by their class",
       tip = "Switched off, a player's tooltip takes the colour the game gives the name." },
     { key = "icons", default = true, text = "Show the icon of items and spells" },
-    { key = "models", default = true, text = "Live 3D portraits",
-      tip = "A creature's or player's portrait is the game's 3D model of it, moving. Switched off, or where the game cannot draw the model, it is the flat picture." },
+    { key = "models", default = true, text = "3D model in tooltips",
+      tip = "Where a tooltip's thing has a 3D model, it stands in the picture's place: a creature or player, moving; a mount or a pet; a piece of gear, worn by your own character. Switched off, or where the game cannot load the model, it is the picture: the portrait or the item's icon." },
     { key = "textSize", default = 14, min = 10, max = 20, step = 1, text = "Text size",
       tip = "How large a tooltip's name and lines are written. The smaller texts follow." },
     { key = "opacity", default = 97, min = 30, max = 100, step = 1, text = "Opacity",
@@ -75,7 +75,7 @@ local adopted = {} -- [tooltip] = true: hooked; false: not one we can draw
 local SHOWN_PLAIN = { "GameTooltip", "ItemRefTooltip", "ShoppingTooltip1", "ShoppingTooltip2", "ItemRefShoppingTooltip1",
     "ItemRefShoppingTooltip2", "GameNoHeaderTooltip", "GameSmallHeaderTooltip", "BuffFrameTooltip", "AuraButtonTooltip" }
 -- What each of the module's other files leaves in its table: all there, or the module is not whole.
-local PARTS = { "TEXT", "Model", "Reader", "Live", "Inspect", "Numbers", "Quests", "Auction", "Gold",
+local PARTS = { "TEXT", "Model", "Reader", "Live", "Inspect", "Numbers", "Quests", "Auction", "Figures", "Gold",
     "Inventory", "KINDS", "Pools", "Panel", "Host" }
 
 -- Whether the player sees the tooltip: it is visible, and placed somewhere. Other addons read what

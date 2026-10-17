@@ -8,11 +8,10 @@ local ADDON, ns = ...
 --      | EQUIPPED (a comparison only)  [ICON] |   the first rows stand beside the icon,
 --      | NAME                          [ 60 ] |   a word on its lower edge (a level)
 --      | A line under it                       |
---      |---------------------------------------|   a divider: a thin dark line
---      |  MANA   |  RANGE  |  CAST   | COOLDOWN|   a strip: facts side by side, each caption
---      | 30 (6%) |  35 yd  | 1.5 sec |  8 sec  |   over its value, each cell as wide as its words
---      |---------------------------------------|
---      | QUEST ------------------------------- |   a section's name and a rule after it
+--      | STATS ------------------------------- |   a section's name and a rule after it: the
+--      |  MANA   |  RANGE  |  CAST   | COOLDOWN|   only dividers. A strip: facts side by side,
+--      | 30 (6%) |  35 yd  | 1.5 sec |  8 sec  |   each caption over its value, each cell as
+--      | QUEST ------------------------------- |   wide as its words
 --      | Rows: text left and right, a bar, a   |
 --      | unit's buffs.                         |
 --      \---------------------------------------/
@@ -59,7 +58,7 @@ local ICON_CROP = Pools.ICON_CROP
 local ROW_GAP = 3
 local FLUSH = 1                 -- a row that stands close under the one before it: its gap is so much smaller
 local BASE_LINE = 0.8           -- where a text's base line is, of its size from its top
-local RULE_ABOVE, RULE_BELOW = 6, 8
+local SPACE = 6                 -- above a row with room above it (the game's empty line inside a section)
 local CAPTION_ABOVE, CAPTION_BELOW = 6, 5 -- round a section's name
 local CAPTION_GAP = 6           -- between a section's name and its rule
 local CAPTION_RULE = 24         -- the shortest rule after a section's name; less room, no rule
@@ -212,8 +211,8 @@ local function Create(tooltip)
     panel.iconMask = panel:CreateMaskTexture()
     panel.iconMask:SetAllPoints(panel.icon)
     panel.icon:AddMaskTexture(panel.iconMask)
-    -- Over a unit's live figure (Figure, a frame of its own: it would cover the panel's own
-    -- pictures): the dragon, the plaque and the level on it.
+    -- Over the 3D model (Figure, a frame of its own: it would cover the panel's own pictures): the
+    -- dragon, the plaque and the level on it.
     panel.front = CreateFrame("Frame", nil, panel)
     panel.front:SetAllPoints(panel)
     -- The level's plaque, over the dragon, under the number
@@ -232,38 +231,121 @@ local function Create(tooltip)
     return panel
 end
 
--- A unit's live figure in the portrait's place (the option models): the game's 3D model of the
--- unit, moving, on a see-through ground, its face in view (SetPortraitZoom). A frame of its own
--- (PlayerModel), made for the first unit a panel shows. It is given the unit only when the unit
--- changes (its GUID), as giving it again would load it anew and start its moves over, and a panel is
--- drawn many times while it is shown; once hidden it forgets the unit. False where the game cannot
--- draw the model (the unit out of sight, its identity hidden, a client without the frame): the flat
--- picture (SetPortraitTexture) stands there then.
-local function Forget(figure) figure.guid = nil end
-local function Figure(panel, head)
-    local figure = panel.figure
-    if not (head.portrait and head.guid and ns.options and ns.options.models ~= false) then
-        if figure then figure:Hide() end
-        return false
+-- The 3D model in the picture's place (the option models), on a see-through ground: a unit's own,
+-- moving, its face in view (PlayerModel: SetUnit, SetPortraitZoom); a mount's or a pet's (PlayerModel:
+-- SetDisplayInfo); a piece of gear on your own character (DressUpModel: you as you are, wearing it).
+-- Which one, and how near and turned, is the reader's (head.model, Figures.lua). Each kind of frame is
+-- made for the first model of its kind a panel shows (a client without it: the picture, always).
+-- A frame is given its model only when that changes, as giving it again would load it anew and start
+-- its moves over, and a panel is drawn many times while it is shown; once hidden it forgets it.
+-- The picture stands until the model is there: a unit's as soon as the game takes the unit; a
+-- creature's and a piece of gear when the game has loaded it (OnModelLoaded). Where the game cannot
+-- draw it (a unit out of sight, its identity hidden, a model it does not load), the picture stays.
+local FRAMES = { figure = "PlayerModel", dresser = "DressUpModel" } -- [the panel's field] = the kind of frame
+local TRIED = Enum.ItemTryOnReason and Enum.ItemTryOnReason.Success or 0
+
+local function Forget(figure) figure.key, figure.ready, figure.dressed = nil, false, false end
+
+-- The model has come: it stands in the picture's place from now.
+local function Loaded(figure)
+    if figure.ready or not figure.key then return end
+    figure.ready = true
+    local panel = figure.panel
+    if panel.figured ~= figure then return end
+    panel.icon:Hide()
+    figure:SetAlpha(panel.allowed and 1 or 0)
+end
+
+local function Made(panel, field)
+    local figure = panel[field]
+    if figure ~= nil then return figure end
+    local made
+    made, figure = pcall(CreateFrame, FRAMES[field], nil, panel)
+    figure = made and figure or false -- false: this client has none, not asked again
+    if figure then
+        figure.panel = panel
+        figure:SetAllPoints(panel.icon)
+        figure:SetScript("OnHide", Forget)
+        pcall(figure.SetScript, figure, "OnModelLoaded", Loaded)
+        Forget(figure)
     end
-    if figure == nil then
-        local made
-        made, figure = pcall(CreateFrame, "PlayerModel", nil, panel)
-        figure = made and figure or false -- false: this client has none, not asked again
-        if figure then
-            figure:SetAllPoints(panel.icon)
-            figure:SetScript("OnHide", Forget)
+    panel[field] = figure
+    return figure
+end
+
+-- Gives a frame its model. Returns whether the game took it, and whether it is there at once. was:
+-- whether the frame's model before was there.
+local LOAD = {
+    unit = function(figure, head)
+        local taken = Ask(figure.SetUnit, figure, head.portrait) == true
+        if taken then figure:SetPortraitZoom(1) end
+        return taken, taken
+    end,
+    display = function(figure, head)
+        return pcall(figure.SetDisplayInfo, figure, head.model), false
+    end,
+    dress = function(figure, head, was)
+        -- Your character once, then only dressed anew for each piece
+        local again = figure.dressed
+        if again then
+            pcall(figure.Dress, figure)
+        elseif Ask(figure.SetUnit, figure, "player") ~= true then
+            return false, false
         end
-        panel.figure = figure
+        figure.dressed = true
+        local tried, reason = pcall(figure.TryOn, figure, head.model)
+        reason = Plain(reason)
+        return tried and (reason == nil or reason == TRIED), again and was
+    end,
+}
+
+-- The model the picture's place shows: what kind, which (it is given anew when this changes).
+local function Wanted(head)
+    if head.portrait then return head.guid and "unit" or nil, head.guid end
+    if head.icon then return head.modelKind, head.model end
+    return nil
+end
+
+-- Shows the frame for the head's model, given it if it is a new one. Returns whether the model stands
+-- in the picture's place now.
+local function Figure(panel, head)
+    local kind, key = Wanted(head)
+    if not (key and LOAD[kind] and ns.options and ns.options.models ~= false) then kind = nil end
+    local field = kind == "dress" and "dresser" or "figure"
+    for other in pairs(FRAMES) do
+        local frame = panel[other]
+        if frame and (other ~= field or not kind) then frame:Hide() end
     end
+    panel.figured = nil
+    if not kind then return false end
+    local figure = Made(panel, field)
     if not figure then return false end
-    if figure.guid ~= head.guid then
-        figure:ClearModel()
-        figure.guid = Ask(figure.SetUnit, figure, head.portrait) == true and head.guid or nil
-        if figure.guid then figure:SetPortraitZoom(1) end
+    figure:Show()
+    if figure.key ~= key then
+        if kind ~= "dress" or not figure.dressed then
+            figure:ClearModel()
+            figure.dressed = false
+        end
+        local was = figure.ready
+        figure.key, figure.ready = key, false
+        local taken, ready = LOAD[kind](figure, head, was)
+        if not taken then
+            figure:Hide() -- (it forgets the key)
+            return false
+        end
+        if kind ~= "unit" then pcall(figure.SetPortraitZoom, figure, head.modelZoom or 0) end
+        -- Turned (a mount a little, a cloak from behind); a unit as the game turns it, back from a turn
+        local turn = kind ~= "unit" and head.modelTurn or 0
+        if turn ~= 0 or figure.turned then
+            pcall(figure.SetFacing, figure, turn)
+            figure.turned = turn ~= 0
+        end
+        -- There at once: the game says so, or it had the model already
+        local file = Ask(figure.GetModelFileID, figure)
+        if ready or (type(file) == "number" and file > 0) then figure.ready = true end
     end
-    figure:SetShown(figure.guid ~= nil)
-    return figure.guid ~= nil
+    panel.figured = figure
+    return figure.ready
 end
 
 -- The tooltip's panel, made when it is first asked for.
@@ -276,10 +358,13 @@ function Panel.All()
 end
 
 -- The panel seen at its strength, or see-through while it may not be seen yet (the option show).
--- Its live figure too, by itself: a model frame need not follow the alpha of the frame it is in.
+-- Its 3D model too, by itself (a model frame need not follow the alpha of the frame it is in), once
+-- the model is there.
 function Panel.Strength(panel, allowed)
+    panel.allowed = allowed
     panel:SetAlpha(allowed and panel.strength or 0)
-    if panel.figure then panel.figure:SetAlpha(allowed and 1 or 0) end
+    local figure = panel.figured
+    if figure then figure:SetAlpha(allowed and figure.ready and 1 or 0) end
 end
 
 -------------------------------------------------------------------------------
@@ -323,7 +408,7 @@ local function WordsAndAfter(panel, row, left, after, x, y, room)
 end
 
 -- Makes every text of the model and works out how wide the panel must be for them. The rows
--- before the first divider stand beside the icon (iconRoom). Returns that width, and the tag's text.
+-- before the first caption stand beside the icon (iconRoom). Returns that width, and the tag's text.
 local function Measure(panel, head, rows, count, r, g, b, iconRoom)
     local wanted, beside, tag = 0, true, nil
     if head.tag and head.tag ~= "" then
@@ -333,7 +418,7 @@ local function Measure(panel, head, rows, count, r, g, b, iconRoom)
     for index = 1, count do
         local row = rows[index]
         local kind = row.kind
-        if row.rule or kind ~= "text" then beside = false end
+        if row.space or kind ~= "text" then beside = false end
         panel.left[index], panel.right[index], panel.after[index] = nil, nil, nil
         if kind == "text" and row.live then
             -- A row Live.lua fills: only words of our own are measured (see Pools.lua).
@@ -384,8 +469,8 @@ local function Measure(panel, head, rows, count, r, g, b, iconRoom)
     return wanted, tag
 end
 
--- The icon, or a unit's portrait (its live figure, or else its flat picture), and the plaque with
--- its words on the lower edge. Returns how far down the picture reaches, and where a plaque wider
+-- The icon, or a unit's portrait, or the 3D model in their place (Figure), and the plaque with its
+-- words on the lower edge. Returns how far down the picture reaches, and where a plaque wider
 -- than the picture begins (its left and top), for the rows beside it.
 local function Picture(panel, head, badge, width, pictured)
     local figured = Figure(panel, head)
@@ -419,7 +504,7 @@ local function Picture(panel, head, badge, width, pictured)
     plaque:SetPoint("BOTTOMRIGHT", panel, "TOPLEFT", right + PLAQUE.out, -(top + height + PLAQUE.out))
     Gradient(plaque, PLAQUE.foot[1], PLAQUE.foot[2], PLAQUE.foot[3], PLAQUE.alpha,
         PLAQUE.top[1], PLAQUE.top[2], PLAQUE.top[3], PLAQUE.alpha)
-    Pools.Lift(badge, panel.front) -- over a live figure, with its plaque
+    Pools.Lift(badge, panel.front) -- over a 3D model, with its plaque
     badge:SetDrawLayer("OVERLAY", 7)
     badge:SetShadowColor(0, 0, 0, 1)
     Place(panel, badge, left, top + (height - FONTS.badge.size) / 2, wide)
@@ -548,11 +633,8 @@ local function Lay(panel, rows, count, y, width, iconRoom, iconBottom, plaqueLef
         local row = rows[index]
         local kind = row.kind
         local font = FONTS[row.font] or FONTS.row
-        if (row.rule or kind ~= "text") and y < iconBottom then y = iconBottom + ROW_GAP end
-        if row.rule then
-            Rule(panel, SIDE, y + RULE_ABOVE, inner, hairline)
-            y = y + RULE_ABOVE + RULE_BELOW
-        end
+        if (row.space or kind ~= "text") and y < iconBottom then y = iconBottom + ROW_GAP end
+        if row.space then y = y + SPACE end
         -- What the icon (and a plaque wider than it) takes of the row's width, from the right side
         local reserve = y < iconBottom and iconRoom or 0
         if plaqueLeft and y < iconBottom and y + font.size > plaqueTop then
@@ -622,9 +704,9 @@ local function Finish(panel, head, pictured, r, g, b)
     -- Over its tooltip. (A frame's level may be hidden: then the panel keeps its own.)
     local level = Plain(panel.tooltip:GetFrameLevel())
     if level then panel:SetFrameLevel(level + 5) end
-    -- The live figure over the panel's own pictures, the dragon and the plaque over the figure
+    -- The 3D model over the panel's own pictures, the dragon and the plaque over the model
     local own = Plain(panel:GetFrameLevel()) or 0
-    if panel.figure then panel.figure:SetFrameLevel(own + 1) end
+    if panel.figured then panel.figured:SetFrameLevel(own + 1) end
     panel.front:SetFrameLevel(own + 2)
 end
 

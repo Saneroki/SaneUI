@@ -8,16 +8,16 @@ local _, ns = ...
 --      Arcanite Reaper                            "Equipped" on what you wear); whether you
 --      Axe · Two-Hand    Requires Level 58        have its look. Its name in the colour of
 --                         Classes: Warrior        its quality; small: kind, slot, and at the
---      ------------------------------  iLvl 63    right the level it needs (red while too low)
---      53.8 DPS  ·  153 - 256 dmg  ·  3.80 spd    and under it what else it asks of you (a
---                                                 class, a profession's skill).
---                                                 A weapon's damage per second large, its hit
---      +13 Stamina                                and speed small; then its lines, in the
---      ------------------------------------       game's colours, a divider where their colour
---      Equip: ...                                 group changes
---      ------------------------------------
+--                                  iLvl 63    right the level it needs (red while too low)
+--      STATS ──────────────────────────────       and under it what else it asks of you (a
+--      53.8 DPS  ·  153 - 256 dmg  ·  3.80 spd    class, a profession's skill).
+--      +13 Stamina                                A weapon's damage per second large, its hit
+--                                                 and speed small; then its lines, in the
+--      EFFECTS ────────────────────────────       game's colours, each kind under its name:
+--      Equip: ...                                 Stats (plain), Effects (green), Set (the set
+--                                                 it belongs to), Description (gold)
+--      DURABILITY ─────────────────────────
 --      [====    ] 61 / 120                        its durability as a bar
---      ------------------------------------
 --      QUEST ──────────────────────────────       the quest it starts and the quests that need it,
 --      Needed for                                 each with where you stand with it: in your log
 --      [?] The Kobold Menace [2]   In log  1/4    (your count), to take, for later, done
@@ -27,12 +27,13 @@ local _, ns = ...
 --      Sane Lunatic         Bags 12  ·  Bank 8    (Kinds/Inventory.lua)
 --      GOLD ───────────────────────────────       what one brings in, and what to do with it
 --      Vendor  ·  AH profit                       (Kinds/Gold.lua)
---      OTHER ADDONS ───────────────────────       other addons' lines, small, last (Read.lua)
+--      ADDONS ─────────────────────────────       other addons' lines, small, last (Read.lua)
 --
 --  Each section is there only when something is known for it; Alt shows more (every quest, every
 --  character, where the prices come from). A recipe shows the thing it makes under a caption, with
 --  that thing's icon. A comparison's changes ("+2.2 DPS") are shown without the sentence over them;
---  what you wear beside an item (a comparison) has no sections, only its vendor price (for one).
+--  what you wear beside an item (a comparison) has none of the sections from data, only its vendor
+--  price (for one) under Gold.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain, Coins = Core.Plain, Core.Coins
@@ -42,7 +43,12 @@ local LINE = Enum.TooltipDataLineType or {}
 local BIND = Enum.TooltipDataItemBinding or {}
 
 local EQUIP_SLOT, BINDING, SELL_PRICE = LINE.EquipSlot or -1, LINE.ItemBinding or -1, LINE.SellPrice or -1
-local ITEM_LEVEL, NESTED = LINE.ItemLevel or -1, LINE.NestedBlock or -1
+local ITEM_LEVEL, NESTED, FLAVOR = LINE.ItemLevel or -1, LINE.NestedBlock or -1, LINE.FlavorText or -1
+-- The game's kinds of line that say what an item does, whatever their colour (grey: not for you)
+local EFFECT = {}
+for _, name in ipairs({ "ItemSpellTriggerOnUse", "ItemSpellTriggerOnEquip", "ItemSpellTriggerOnProc", "ItemSpellTriggerLearn" }) do
+    if LINE[name] then EFFECT[LINE[name]] = true end
+end
 -- How an item binds, short: [the game's kind of binding] = "BoE"
 local BINDS = {}
 for name, short in pairs(TEXT.BINDS) do
@@ -192,6 +198,26 @@ local function White(line)
     return Like(line.lr, line.lg, line.lb, COLOR.WHITE)
 end
 
+-- The section each of the item's own lines goes in (Read.Rest), by its kind or else its colour: what it
+-- does (Equip:, Use:; the game's green), its description (the game's gold), its numbers and plain
+-- lines. A set's name, the set's items and its bonuses under it are the section Set, up to an empty
+-- line or a gold one.
+local inSet
+local function Section(line, _, fresh)
+    if fresh then inSet = false end
+    if line.left:match(PATTERN.SET_NAME) then
+        inSet = true
+        return TEXT.SET
+    end
+    local family = Read.Family(line.lr, line.lg, line.lb)
+    if inSet and family ~= "gold" then return TEXT.SET end
+    inSet = false
+    if EFFECT[line.type] then return TEXT.EFFECTS end
+    if line.type == FLAVOR or family == "gold" then return TEXT.DESCRIPTION end
+    if family == "green" then return TEXT.EFFECTS end
+    return TEXT.STATS
+end
+
 -- A comparison's changes: "+2.2 damage per second" says "+2.2 DPS".
 local deltaAt
 local function Delta(row, line, index)
@@ -268,6 +294,7 @@ local function Item(ctx)
     local color = quality and ITEM_QUALITY_COLORS[quality]
     if color then Read.Accent(color.r, color.g, color.b) else Read.AccentFromTitle() end
     head.icon = ctx.options.icons and id and Plain(C_Item.GetItemIconByID(id)) or nil
+    if head.icon then ns.Figures.Item(head, id, ctx.tooltip) end -- a mount's, a pet's, gear on you: in the icon's place
     if level then head.badge = Read.Memo("level", TEXT.ITEM_LEVEL, level) end
     -- Without an icon there is no plaque to hold it: the level stands right of the name.
     if head.badge and not head.icon then title.right = head.badge end
@@ -313,9 +340,10 @@ local function Item(ctx)
         line.used = true
     end
 
-    -- A weapon's or an armour's number. A weapon's in one line: "3.2 DPS  ·  1 - 3 dmg  ·  2.00 spd",
-    -- its damage per second large, the hit's damage and its speed smaller.
-    ctx.rule = true
+    -- A weapon's or an armour's number, first in the section Stats. A weapon's in one line:
+    -- "3.2 DPS  ·  1 - 3 dmg  ·  2.00 spd", its damage per second large, the hit's damage and its
+    -- speed smaller.
+    if dps or armor then Read.Section(TEXT.STATS) end
     if dps then
         local row = Read.Text("big", Read.Memo("dps", "%s |cff%s%s|r", dps.left:match(PATTERN.DPS), LABEL_HEX, TEXT.DPS), TITLE[1], TITLE[2], TITLE[3])
         dps.used = true
@@ -335,9 +363,9 @@ local function Item(ctx)
     local quests = ns.Quests.Item(id)
     if begins and quests.n > 0 and quests[1].kind == "opener" then begins.used = true end
 
-    -- Its own lines; a recipe's product under a caption
+    -- Its own lines, each kind under its name; a recipe's product under a caption
     if durability then durability.used = true end
-    ctx.tones = true
+    ctx.name, inSet = Section, false
     if last < ctx.count then
         ctx.nested = TEXT.CREATES
         local made = L[last + 1].data
@@ -349,11 +377,11 @@ local function Item(ctx)
     end
     ctx.each = Delta
     Read.Rest()
-    ctx.each, ctx.tones = nil, false
+    ctx.each, ctx.name = nil, nil
 
     -- Its durability as a bar
     if durability then
-        ctx.rule = true
+        Read.Section(TEXT.DURABILITY)
         local row = Read.Row()
         row.kind, row.short, row.value, row.max = "bar", true, now, most
         row.br, row.bg, row.bb = DURABLE[1], DURABLE[2], DURABLE[3]
@@ -370,7 +398,7 @@ local function Item(ctx)
     if head.compared then
         local each = ns.Gold.VendorEach(id, coins and ctx.model.price or nil)
         if each then
-            ctx.rule = true
+            Read.Section(TEXT.GOLD)
             local row = Read.Text("sub", TEXT.VENDOR, DETAIL[1], DETAIL[2], DETAIL[3])
             if each > 0 then
                 row.right, row.rr, row.rg, row.rb = ns.Gold.Money(each), MONEY[1], MONEY[2], MONEY[3]
@@ -378,14 +406,12 @@ local function Item(ctx)
                 row.right, row.rr, row.rg, row.rb = TEXT.NO_VENDOR, DETAIL[1], DETAIL[2], DETAIL[3]
             end
         end
-        ctx.rule = false
         return
     end
     QuestSection(ctx, quests)
     ProfessionSection(ctx, id)
     ns.Inventory.Section(ctx, id)
     ns.Gold.Section(ctx, id, coins and ctx.model.price or nil, bound)
-    ctx.rule = false
 end
 
 if TYPE.Item then ns.KINDS[TYPE.Item] = Item end

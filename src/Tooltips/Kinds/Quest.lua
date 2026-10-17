@@ -6,10 +6,10 @@ local _, ns = ...
 --
 --      THE FURY RUNS DEEP
 --      Level 27  ·  In progress                   the level in the colour of its difficulty
---      ------------------------------------
+--      DESCRIPTION ────────────────────────
 --      Motley Garmason wants Kam Deepfury's       what the tooltip says
 --      head brought to him at Dun Modr.
---      ------------- OBJECTIVES -------------
+--      OBJECTIVES ─────────────────────────
 --      [ ] Head of Deepfury                0/1    a box for each thing to do,
 --      [x] Tough Wolf Meat                 8/8    ticked and green when it is done
 -------------------------------------------------------------------------------
@@ -31,6 +31,9 @@ local function State(id)
     if log.IsQuestFlaggedCompleted and Plain(log.IsQuestFlaggedCompleted(id)) then return TEXT.DONE end
     return nil
 end
+
+-- What the tooltip says of the quest: its description, all of it
+local function Description() return TEXT.DESCRIPTION end
 
 local function Quest(ctx)
     local L, id = ctx.L, ctx.id
@@ -57,12 +60,11 @@ local function Quest(ctx)
             L[index].used, objectives = true, true
         end
     end
-    ctx.rule = true
+    ctx.name = Description
     Read.Rest()
+    ctx.name = nil
     if not objectives then return end
-    ctx.rule = false
-    local caption = Read.Row()
-    caption.kind, caption.left = "caption", TEXT.OBJECTIVES
+    Read.Caption(TEXT.OBJECTIVES)
     for index = 2, ctx.count do
         local line = L[index]
         if line.type == OBJECTIVE then

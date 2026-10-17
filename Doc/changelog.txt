@@ -8,10 +8,17 @@ The bigger changes of each version, newest first.
 ------------------
 - Tooltips: an item's tooltip shows which of your characters have it,
   each by first and last name (Sane Lunatic), with where and how many:
-  bags, bank, worn. What other addons write into a tooltip now has a
-  section of its own at the bottom, "Other addons", and no longer mixes
-  with Sane UI's lines. The quest information comes from Sane UI's new
-  data packs, which load by themselves after you log in.
+  bags, bank, worn. Every part of a tooltip has its name on its divider
+  (Stats, Effects, Quest, Gold, ...). What other addons write into a
+  tooltip, wherever they write it, is gathered in one section at the
+  bottom, "Addons", and no longer mixes with Sane UI's lines. The quest
+  information comes from Sane UI's new data packs, which load by
+  themselves after you log in.
+
+- Tooltips show 3D models in place of the picture: creatures and
+  players, mounts, pets, and gear worn by your own character. The new
+  setting "3D model in tooltips" (on at first) switches it off; where a
+  model cannot be loaded, the picture stays.
 
 - Tooltips have a cleaner look in the game's own colours. A spell's
   tooltip shows only what the game says about it, now in every language.

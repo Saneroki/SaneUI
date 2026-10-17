@@ -6,6 +6,40 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 The Home page, the marks, Settings on demand, the Tooltips module and the Social module are not yet tried in the game.
 Tests: lint, 195 checks (Core, with its options), 280 checks (Spellbook), 328 checks (Tooltips), 332 checks (Social), 62 checks (Sync), 234 checks (windows).
 
+### Tooltips: every section named, one section Addons, 3D models (Saneroki, 2026-10-17)
+- **Every section under its name.** The only dividers are captions: a row has no `rule` any more (`ROW` in
+  `Model.lua` has `space` instead: the game's empty line inside a section is a small gap, `SPACE` in
+  `Panel.lua`). `Read.Section(name)` opens a section under its caption, or stays in the one of that name;
+  `Read.Rest` puts each of the game's lines into the section `ctx.name` names (default `Read.Named`:
+  *Description* for a description, else *Details*), a new name opening a new section. Items: *Stats* (a
+  weapon's DPS or an armour's armour, then plain lines), *Effects* (green, or the game's spell-trigger
+  line kinds), *Set* (from a line `ITEM_SET_NAME` up to an empty or gold line: `PATTERN.SET_NAME`),
+  *Description* (gold, `FlavorText`), *Durability*; *Gold* now also over a vendor's price alone and over a
+  comparison's. Spells: *Stats* over the strips, *Description*. Units: *Status* over target, bars, buffs and
+  experience. Buffs: *Duration* over the time bar. Quests: *Description*. Alt's numbers: *IDs*.
+  `Read.Generic` has no sections (`ctx.flat`). `ctx.tones` is gone.
+- **One section Addons, whatever an addon writes where.** The caption is *Addons* (`TEXT.ADDONS`, was
+  *Other addons*). Where the game's data says where its lines stand (`lineIndex`, `ctx.placed`), a line
+  that is none of the data counts as another addon's wherever it stands after the game's first line
+  (`ctx.firstOwn`): an addon that writes right after one of the game's lines
+  (`TooltipDataProcessor.AddLinePostCall`) no longer puts its line among the panel's sections. Where the
+  lines are only found by their text, after the game's last line as before. An empty line among addons'
+  lines is a gap.
+- **3D model in tooltips.** The setting `models` is *3D model in tooltips* (was *Live 3D portraits*; same
+  key, ticked at first). New `Figures.lua` (in the TOC after `Auction.lua`, and in the module's file check):
+  which model a thing has (`head.model`, `modelKind`, `modelZoom`, `modelTurn`, in `HEAD`): a mount's (by
+  its item or its spell, the game's mount collection), a pet's (by its item, the pet collection), and gear
+  on your own character (dressable items: `C_Item.IsDressableItemByID`, or by where it is worn). `Figure` in
+  `Panel.lua`: a `PlayerModel` for units (as before) and displays (`SetDisplayInfo`), a `DressUpModel` for
+  gear (`SetUnit("player")` once, then `Dress` and `TryOn(link)`); the icon until the game has loaded the
+  model (`OnModelLoaded`, `GetModelFileID`), the icon where `TryOn` or the load fails or the option is off.
+- Tests: `tooltips.lua` 408 checks (`shape(panel)`: the rows with captions by name): every kind's sections,
+  an item set, a gap, a hint without sections, an addon's line right after one of the game's lines (and
+  where lines are found by their text), the 3D models of a mount, a pet, gear (dressed anew, a cloak from
+  behind, a failed try-on, a ring without), a mount's spell, switched off, without icons.
+  - *In the game:* a restart of the game: a new file (`Figures.lua`). See the module's README, *To check in
+    the game* (Addons, Section names, 3D models).
+
 ### Tooltips on Core's data: quests, your characters' things, other addons' lines apart (Saneroki, 2026-10-17)
 - **Other addons' lines in a section of their own.** Whatever other addons write into a tooltip stands
   last on every panel, under the caption *Other addons* (`TEXT.ADDONS`): small and quiet, in their order, an

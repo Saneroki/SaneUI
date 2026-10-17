@@ -1,6 +1,6 @@
 # Sane UI: Tooltips
 
-**Status:** written and tested outside the game. The first panels were tried in the game; the layouts of 2026-10-14 (items, units, buffs, quests) are **not yet tried in the game** · **Since:** 2026-10-14 · **Addon:** `SaneUI_Tooltips`
+**Status:** working · **Since:** 2026-10-14 · **Addon:** `SaneUI_Tooltips`
 
 ## TL;DR
 Draws the game's tooltips anew on dark panels with round corners and a soft edge, each in the colour of what it is about:
@@ -9,9 +9,11 @@ quests each have a layout of their own; everything else gets its name and its li
 opacity can be set, and a switch anchors tooltips to the mouse cursor. An item's panel also shows the
 quests that need it, the professions that use it, which of your characters have it (each by first name and
 surname: *Sane Lunatic*) and what it brings from a vendor and at the auction house, with one clear line on
-what to do with it for gold; Alt shows more. What other addons write into a tooltip stands in a section of
-its own at the end, *Other addons*, never among the panel's own lines. The quest facts are Sane UI's
-database (Core's data framework), which the panels only read.
+what to do with it for gold; Alt shows more. Every section has its name on its divider (*STATS*, *EFFECTS*,
+*QUEST*, *GOLD*, ...). What other addons write into a tooltip, wherever they write it, stands in one section of
+its own at the end, *Addons*, never among the panel's own lines. Where a thing has a 3D model (a creature, a
+player, a mount, a pet, a piece of gear on your own character) it stands in the picture's place. The quest
+facts are Sane UI's database (Core's data framework), which the panels only read.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Tooltips* under *Sane UI* in the game's addon list. Switched
@@ -25,7 +27,7 @@ database (Core's data framework), which the panels only read.
   | *Tooltips at the mouse cursor* | Default | A dropdown: *Default* (where the game puts them), while Shift, Ctrl or Alt is held, or *Always*. The tooltips that stand in the corner of the screen (creatures, players, things in the world, your action bars) follow the mouse instead. Pressing or letting go of the key moves a shown tooltip at once, to the mouse and back |
   | *Colour players by their class* | on | Off: a player's tooltip takes the colour the game gives the name |
   | *Show icons and portraits* | on | Off: no icon of an item, spell or buff, and no portrait for units: the level stands beside the name |
-  | *Live 3D portraits* | on | A unit's portrait is the game's 3D model of it, moving, its face in view. Off, or where the game cannot draw the model (the unit out of sight): the flat picture |
+  | *3D model in tooltips* | on | Where the thing has a 3D model, it stands in the picture's place (see *3D models* below): a creature or player, moving, its face in view; a mount or a pet; a piece of gear, worn by your own character. Off, or where the game cannot load the model: the picture (the portrait, the item's icon) |
   | *Text size* | 14 | From 10 to 20: how large a tooltip's name and lines are written; the smaller texts follow |
   | *Background opacity* | 97 % | From 30 to 100 percent: how solid the background is. Texts and pictures stay as they are |
 
@@ -33,21 +35,37 @@ database (Core's data framework), which the panels only read.
 
   | Tooltip | In its panel |
   |---|---|
-  | **Item** | Over the name, short: how it binds as players write it (*BoP*, *BoE*, *BoU*, *BoA*, *WuE*, *Soulbound*, *Quest*; red until it is bound to you), or *Equipped* on what you wear in a comparison; beside it whether you have its look (*Uncollected*, *Look known*). Name in the colour of its quality; under it, small and grey: kind and slot (what it is, for a thing that is not worn: *Trade Goods · Cloth*) and at the right the level it needs (red while yours is lower) and under it, also at the right, what else it asks of you: a class (*Classes: Mage*), a profession's skill (*Requires Tailoring (75)*), a reputation (red while you lack it); icon with the item's level under it. Then a weapon's damage per second large, its hit and speed smaller in the same line (*3.2 DPS · 1 - 3 dmg · 2.00 spd*), or an armour's armour; its lines in groups (what it is, what it does in green, what is told about it); its durability as a small bar. **Quest** (a section under its caption): *Starts* and the quest it starts, then *Needed for* and the quests that need it (each heading with *Questlog* at the right, over the words that say where you stand: *Not yet* is not yet in your quest log); each with its level small after its name and, at a glance, where you stand with it: *In log* with the ? and your count (*In log 1/4*, gold, green when complete), *Available* with the ! (you can take it now), *Not yet* dim (your level, a quest to do first), *Done* with a tick, grey; first those in your log, then to take, for later, done; without Alt three of those not in your log and *Press ALT for +2 more*. A quest for another class, race or side, or closed to you, is left out. Then, for a trade good, **Professions** (a section under its caption): *Used in* and the professions that use it, with their icons (by the item's kind). Then **Inventory** (see *Inventory* below): which of your characters have it and where. Then **Gold** (see *Gold* below); last, other addons' lines under *Other addons*. Each section is there only when something is known for it. Whatever you cannot use is red, as the game colours it. What you wear beside an item (a comparison) has no sections, only its vendor price for one (and other addons' lines under *Other addons*) |
+  | **Item** | Over the name, short: how it binds as players write it (*BoP*, *BoE*, *BoU*, *BoA*, *WuE*, *Soulbound*, *Quest*; red until it is bound to you), or *Equipped* on what you wear in a comparison; beside it whether you have its look (*Uncollected*, *Look known*). Name in the colour of its quality; under it, small and grey: kind and slot (what it is, for a thing that is not worn: *Trade Goods · Cloth*) and at the right the level it needs (red while yours is lower) and under it, also at the right, what else it asks of you: a class (*Classes: Mage*), a profession's skill (*Requires Tailoring (75)*), a reputation (red while you lack it); icon with the item's level under it (or its 3D model). Then its own lines, each kind in a section under its name: **Stats** (a weapon's damage per second large, its hit and speed smaller in the same line, *3.2 DPS · 1 - 3 dmg · 2.00 spd*, or an armour's armour, then its plain lines: *+5 Agility*, *Unique*), **Effects** (what it does, the game's green: *Equip:*, *Use:*, *Chance on hit:*), **Set** (the set it belongs to: its name, its pieces and its bonuses), **Description** (what is told about it, the game's gold); **Durability** as a small bar. **Quest** (a section under its caption): *Starts* and the quest it starts, then *Needed for* and the quests that need it (each heading with *Questlog* at the right, over the words that say where you stand: *Not yet* is not yet in your quest log); each with its level small after its name and, at a glance, where you stand with it: *In log* with the ? and your count (*In log 1/4*, gold, green when complete), *Available* with the ! (you can take it now), *Not yet* dim (your level, a quest to do first), *Done* with a tick, grey; first those in your log, then to take, for later, done; without Alt three of those not in your log and *Press ALT for +2 more*. A quest for another class, race or side, or closed to you, is left out. Then, for a trade good, **Professions** (a section under its caption): *Used in* and the professions that use it, with their icons (by the item's kind). Then **Inventory** (see *Inventory* below): which of your characters have it and where. Then **Gold** (see *Gold* below); last, other addons' lines under *Addons*. Each section is there only when something is known for it. Whatever you cannot use is red, as the game colours it. What you wear beside an item (a comparison) has its changes under *Stats* and none of the sections from data, only its vendor price for one under *Gold* (and other addons' lines under *Addons*) |
   | **Recipe** | Like an item; what it makes stands under the caption *Creates*, with that thing's icon |
-  | **Spell, pet ability** | Name; what it is (its school in its colour; without one *Healing* in green, *CC* in blue for crowd control, *Physical*, *Utility*) and rank, or *Passive*; icon. A strip of what its tooltip states, each caption over its value, in the order the game writes them: its cost (*Mana*, *Rage*, *Energy*; a mana cost also as a share of all yours), *Range*, *Cast*, *Cooldown*; a fact the tooltip does not state has no cell. A spell that hurts or heals has a second strip of what follows from it (see *Spell numbers* below): *DPS* or *HPS*, *Damage* or *Healing* on average, what it does *Per Mana* (the melee swing and the shots: their *Speed*), *Crit* (your chance); again only what is known. The description in the middle, its digits in the panel's colour. The panel has the colour the game's combat log gives the spell's school (fire, frost, arcane, nature, shadow, holy; physical for one that only hurts), green if it only heals, none otherwise |
-  | **Player** | Name in the colour of the class; the gold dragon round the portrait; close under the name and as large: the guild, with the player's rank in it small after it; then small: the race and the side (*Human · Alliance*), and under it the class line: spec and class with the talent points (*Feral Combat Druid 0/31/20*; yours at once, another player's once inspected), the title (a PvP rank, *Sergeant*), and what is true now (*PvP* in red, *AFK*, *DND* in orange, *Offline*, *Dead*, *Ghost*; then the panel has no colour of its own); a large portrait in the top right corner with the level on its lower edge (the unit's live 3D model, see *Live 3D portraits*). The health bar with the current health and its share in percent written in its middle (over the power bar), and over its lower part the bar of mana, rage or energy (an empty one shows nothing): flat colours, half see-through, round corners; whom the player targets right above the bars (*Target* and the name right after it; *You*, in red, when it is you). The plaque under the portrait says the item level before the level, *iLvl 50 - 60* (yours at once; another player's after the game has inspected them, see below). Buffs and debuffs as small icons. Last, other addons' lines under *Other addons* |
-  | **Creature, NPC** | The same; in place of the guild its title (*Bowyer*, *<Flight Master>*: the game's line before its level line) or, for a pet, its owner; in place of the race what it is, its family and its faction (*Beast · Wolf*, *Humanoid · Stormwind*: the faction is the game's line after the level line); on the class line its class (*Warrior*, *Mage*; not for a friendly NPC), its rank in the game's words (*Elite*, *Boss* in gold, *Rare* in silver; a rare elite both), *Tapped* (somebody else's kill), *PvP*, *Dead*; a dead one's panel has no colour of its own. A section of its own for experience and quests: what killing it gives you and how many such kills to your next level; then each quest's name in gold with a sword before what you must still kill and a sack before what you must still loot with how often it drops after its name (*33%*), the count at the right (*5/7*; what is done is left out, and a quest with nothing left to do for it, too; the game's own quest lines, and what it drops for your quests from the module's quest facts: see *Quests* below); the quests it takes back and offers you, each name in gold with a line under it: *Turn in* (ready, green) or *In progress* with the game's ?, *Offers* with the game's !, and the quest's level; a dead creature says *Dead* and what it yields (*Skinnable*) on the class line, the game's *Corpse* line is left out; what killing it gives you (*145 XP*) and how many such kills to your next level (*Next level in 12*), see *Experience* below; the game's own dragon from its target frame curls round the portrait: gold for an elite, gold with a great wing for a raid or dungeon boss, silver and winged for a rare or rare elite; a creature without a rank has none. Your quests' lines for it in gold: a sword beside what you must kill it for, a bag beside what you must loot |
-  | **Buff, debuff** | Name; *Buff* or *Debuff* and what takes it away (*Magic*); icon; the description, in the middle; a bar that runs out with its time, with how long it still runs and who cast it written inside (flat, round corners). The panel has the game's colour of what takes it away (the colour of a debuff's border: magic, curse, poison, disease); a debuff nothing takes away the game's colour for that, a buff nothing takes away none |
-  | **Quest** | Name; level (in the colour of its difficulty) and where it stands for you (*In progress*, *Ready to turn in*, *Completed*); its text; under the caption *Objectives* a box for each thing to do, ticked and green when it is done |
-  | **Anything else** the game fills from data (things in the world such as a mailbox or a herb, macros, the minimap, currencies, mounts, totems, equipment sets, ...) | Name and lines; an empty line becomes a divider; a panel without a colour of its own, whatever colour the name has |
+  | **Spell, pet ability** | Name; what it is (its school in its colour; without one *Healing* in green, *CC* in blue for crowd control, *Physical*, *Utility*) and rank, or *Passive*; icon (a mount's spell: the mount's 3D model). Under **Stats** a strip of what its tooltip states, each caption over its value, in the order the game writes them: its cost (*Mana*, *Rage*, *Energy*; a mana cost also as a share of all yours), *Range*, *Cast*, *Cooldown*; a fact the tooltip does not state has no cell. A spell that hurts or heals has a second strip of what follows from it (see *Spell numbers* below): *DPS* or *HPS*, *Damage* or *Healing* on average, what it does *Per Mana* (the melee swing and the shots: their *Speed*), *Crit* (your chance); again only what is known. Under **Description** the description in the middle, its digits in the panel's colour; any other line of the game's under **Details**. The panel has the colour the game's combat log gives the spell's school (fire, frost, arcane, nature, shadow, holy; physical for one that only hurts), green if it only heals, none otherwise |
+  | **Player** | Name in the colour of the class; the gold dragon round the portrait; close under the name and as large: the guild, with the player's rank in it small after it; then small: the race and the side (*Human · Alliance*), and under it the class line: spec and class with the talent points (*Feral Combat Druid 0/31/20*; yours at once, another player's once inspected), the title (a PvP rank, *Sergeant*), and what is true now (*PvP* in red, *AFK*, *DND* in orange, *Offline*, *Dead*, *Ghost*; then the panel has no colour of its own); a large portrait in the top right corner with the level on its lower edge (the unit's live 3D model, see *3D model in tooltips*). Under **Status** the health bar with the current health and its share in percent written in its middle (over the power bar), and over its lower part the bar of mana, rage or energy (an empty one shows nothing): flat colours, half see-through, round corners; whom the player targets right above the bars (*Target* and the name right after it; *You*, in red, when it is you). The plaque under the portrait says the item level before the level, *iLvl 50 - 60* (yours at once; another player's after the game has inspected them, see below). Buffs and debuffs as small icons. Last, other addons' lines under *Addons* |
+  | **Creature, NPC** | The same; in place of the guild its title (*Bowyer*, *<Flight Master>*: the game's line before its level line) or, for a pet, its owner; in place of the race what it is, its family and its faction (*Beast · Wolf*, *Humanoid · Stormwind*: the faction is the game's line after the level line); on the class line its class (*Warrior*, *Mage*; not for a friendly NPC), its rank in the game's words (*Elite*, *Boss* in gold, *Rare* in silver; a rare elite both), *Tapped* (somebody else's kill), *PvP*, *Dead*; a dead one's panel has no colour of its own. Under **Status**, after its health, what killing it gives you and how many such kills to your next level; then under **Quest** each quest's name in gold with a sword before what you must still kill and a sack before what you must still loot with how often it drops after its name (*33%*), the count at the right (*5/7*; what is done is left out, and a quest with nothing left to do for it, too; the game's own quest lines, and what it drops for your quests from the module's quest facts: see *Quests* below); the quests it takes back and offers you, each name in gold with a line under it: *Turn in* (ready, green) or *In progress* with the game's ?, *Offers* with the game's !, and the quest's level; a dead creature says *Dead* and what it yields (*Skinnable*) on the class line, the game's *Corpse* line is left out; what killing it gives you (*145 XP*) and how many such kills to your next level (*Next level in 12*), see *Experience* below; the game's own dragon from its target frame curls round the portrait: gold for an elite, gold with a great wing for a raid or dungeon boss, silver and winged for a rare or rare elite; a creature without a rank has none. Your quests' lines for it in gold: a sword beside what you must kill it for, a bag beside what you must loot |
+  | **Buff, debuff** | Name; *Buff* or *Debuff* and what takes it away (*Magic*); icon; under **Description** the description, in the middle; under **Duration** a bar that runs out with its time, with how long it still runs and who cast it written inside (flat, round corners). The panel has the game's colour of what takes it away (the colour of a debuff's border: magic, curse, poison, disease); a debuff nothing takes away the game's colour for that, a buff nothing takes away none |
+  | **Quest** | Name; level (in the colour of its difficulty) and where it stands for you (*In progress*, *Ready to turn in*, *Completed*); under **Description** its text; under **Objectives** a box for each thing to do, ticked and green when it is done |
+  | **Anything else** the game fills from data (things in the world such as a mailbox or a herb, macros, the minimap, currencies, mounts, totems, equipment sets, ...) | Name and its lines under it as the game has them, no sections (an empty line is a small gap); a panel without a colour of its own, whatever colour the name has |
 
-  **Other addons:** whatever other addons write into a tooltip (one addon or five) stands in one section of
-  its own at the very end of every panel, under the caption *Other addons*: their lines as they wrote them,
-  small and quiet, in their order, an empty line between two of them a divider. Never between the panel's
-  own lines and sections: not before a buff's time bar, not before a quest's objectives, not among an item's
-  sections. Lines that only repeat a number (*Spell ID: 1459*) are left out: Alt shows the numbers.
-- **Hold Alt** for the technical details: a small section at the bottom of every panel with the number of
+  **Sections:** every part of a panel under its header is a section with its name on its divider, in small
+  capitals with a rule after it (*GOLD ———*): there is no divider without a name. An item's *Stats*,
+  *Effects*, *Set*, *Description*, *Creates* (a recipe's thing), *Durability*, *Quest*, *Professions*,
+  *Inventory*, *Gold*; a spell's *Stats* and *Description*; a unit's *Status* and *Quest*; a buff's
+  *Description* and *Duration*; a quest's *Description* and *Objectives*; a line of the game's of no other
+  kind under *Details*; Alt's numbers under *IDs*; other addons' lines under *Addons*. Two neighbours of the
+  same kind are one section (the game's empty line between them is a small gap).
+
+  **Addons:** whatever other addons write into a tooltip (one addon or five) stands in one section of its own
+  at the very end of every panel, under the caption *Addons*: their lines as they wrote them, small and quiet,
+  in their order, an empty line between two of them a small gap. Wherever an addon writes its line, at the
+  end or right after one of the game's lines, it comes here: never between the panel's own lines and
+  sections, not before a buff's time bar, not before a quest's objectives, not among an item's sections.
+  Lines that only repeat a number (*Spell ID: 1459*) are left out: Alt shows the numbers.
+
+  **3D models** (the setting *3D model in tooltips*): a creature's or a player's portrait is its live 3D
+  model, moving, its face in view. A mount (the item that teaches it, the spell that summons it) and a pet
+  (the item that teaches it) show their model, a little from the side. A piece of gear you can see on a
+  character (a helm, a chest, a weapon, a cloak; not a ring) shows your own character wearing it, as the
+  game's dressing room does: a helm close to the face, a cloak from behind. The icon stands until the game
+  has loaded the model; where it cannot (your character cannot try it on), the icon stays.
+- **Hold Alt** for the technical details: a small section at the bottom of every panel, *IDs*, with the number of
   the thing at the left (*Spell ID*, *Item ID*, *NPC ID*, *Quest ID*, ...; a player's GUID) and the number
   of its icon at the right (*Icon ID*). Pressing or letting go of Alt redraws the panels that are shown.
   On an item Alt shows more too: every quest that needs it (without Alt, three of those not in your log),
@@ -80,7 +98,7 @@ database (Core's data framework), which the panels only read.
   `GetItemKey`) it is *Buy if under 2s 79c* instead: the most it is worth paying, what it brings again at
   the auction house (less the cut) or from a vendor; green while the lowest price now is under it, red
   over it, *now* and that price at the right. A vendor's price alone (no auction price known) stands under
-  a divider with no caption and no advice. With Alt, small under the advice: *Lowest* and the price the
+  the caption *Gold* too, with no advice. With Alt, small under the advice: *Lowest* and the price the
   numbers come from, then the cut and the deposit (taken as 15% of the vendor price for every 12 hours of
   a 48-hour auction, an estimate), *back when it sells*.
   **The prices** are the module's own: whenever the game lists auctions to you (browsing the auction
@@ -185,8 +203,8 @@ database (Core's data framework), which the panels only read.
   at login), with pools of texts, thin lines, small icons and bars (`Pools.lua`: each pool a list of the
   parts made and how many the draw has taken). A draw goes in four steps: every text made and measured
   (`Measure`), the icon or portrait with its plaque (`Picture`), the rows top to bottom (`Lay`), then the
-  background, the dragon and the frame levels (`Finish`). The rows before the first divider stand beside
-  the icon. The width follows the content, in steps of 8 (from 224 to 432), so a line a little longer or
+  background, the dragon and the frame levels (`Finish`). The rows before the first section's caption stand
+  beside the icon. The width follows the content, in steps of 8 (from 224 to 432), so a line a little longer or
   shorter leaves the edge where it was; a line that wraps counts as 22 ems at most (22 times its text size).
   Where a row's two sides do not both fit, the left one keeps its room and the right one is cut short on
   one line; it keeps 4 ems at least. A text's size is hidden from addons while what it
@@ -197,10 +215,11 @@ database (Core's data framework), which the panels only read.
   taken toward the panel's colour: 28% of the way at the top; at the bottom the ground darkened, and 6%
   of the way. The opacity setting is its alpha. Its shape has round corners and an edge that fades out
   softly: it reaches 8 past the panel's sides, and the panel's content stands on its solid part. No
-  border, no band behind the name, no boxes. A divider is a dark band two hairlines high with a faint
-  light hairline under it; a hairline is one unit of the interface rounded to whole dots of the screen
-  (`PixelUtil.GetNearestPixelSize`). A section's name stands at the left in small capitals, in the
-  game's gold made darker, and a rule runs on from it to the right side.
+  border, no band behind the name, no boxes. The only dividers are the sections' captions: a section's name
+  stands at the left in small capitals, in the game's gold made darker, and a rule runs on from it to the
+  right side, a dark band two hairlines high with a faint light hairline under it; a hairline is one unit of
+  the interface rounded to whole dots of the screen (`PixelUtil.GetNearestPixelSize`). An empty line of the
+  game's inside a section is a small gap (a row's `space`).
 - **The icon** (or a unit's portrait) is 64 large and stands out over the panel's top right corner, 10 past
   the right side and 10 over the top; the rows beside it make room for it. Its edge fades out softly, like the panel's: a
   square icon has round corners (`Art/icon-mask.tga` as a mask), a portrait is a circle
@@ -219,18 +238,30 @@ database (Core's data framework), which the panels only read.
   measured from the art (`DRAGONS`, `DRAGON_RING` in `Panel.lua`; the reference has no atlas file for the
   sheet), and it is scaled and placed so that the circle lies on the portrait and covers its edge by 2.
   Over the portrait, under the texts.
-- **The live 3D portrait** (`Figure` in `Panel.lua`): a model frame of the game's (`PlayerModel`) in the
-  portrait's place, 64 large, given the unit (`SetUnit`) and turned to its face (`SetPortraitZoom(1)`): the
-  game draws the unit's own model, moving, on a see-through ground, so no picture of it is shipped. One per
-  panel, made for the first unit it shows. It is given the unit only when the unit changes (its GUID): giving
-  it again would load the model anew and start its moves over, and a panel is drawn many times while it is
-  shown; once hidden it forgets the unit. Where `SetUnit` does not say it can draw it (the unit out of
-  sight, its identity hidden, an error) or the client has no such frame, the flat picture
-  (`SetPortraitTexture`) stands there, as with the option switched off. A frame draws over the panel's own
-  pictures, so the dragon, the plaque and the level stand on a frame over it (`panel.front`; the level's
-  text is lifted onto it, `Pools.Lift`). Its alpha follows the panel's by itself (`Panel.Strength`): a model
-  frame need not follow the frame it is in. Unlike the picture it has no round soft edge (a mask works on
-  pictures only): it is cut square.
+- **The 3D model** (`Figure` in `Panel.lua`, `Figures.lua`): a model frame of the game's in the picture's
+  place, 64 large, on a see-through ground, so no picture of it is shipped. A unit's: a `PlayerModel` given
+  the unit (`SetUnit`) and turned to its face (`SetPortraitZoom(1)`), moving. A mount's and a pet's: the same
+  frame given the creature's display (`SetDisplayInfo`; the display from the game's collections:
+  `C_MountJournal.GetMountFromItem`, `GetMountFromSpell`, `GetMountInfoExtraByID` or the first of
+  `GetMountAllCreatureDisplayInfoByID`; `C_PetJournal.GetPetInfoByItemID`'s twelfth answer), turned a little
+  (`SetFacing(-0.5)`). A piece of gear: a `DressUpModel` given your own character once (`SetUnit("player")`)
+  and dressed anew (`Dress`) and trying the piece on (`TryOn` with the item's link from the tooltip,
+  `GetItem`, else `item:<id>`) for each piece, as the game's dressing room does; which pieces, by
+  `C_Item.IsDressableItemByID` (where the client lacks it, by where it is worn), how near (`SetPortraitZoom`:
+  0.9 for a helm, 0.6 for shoulders, else the whole character) and a cloak from behind (`SetFacing(pi)`) by
+  where it is worn (`GetItemInfoInstant`). What a thing has is asked once per thing and kept. Each kind of
+  frame is made for a panel's first model of its kind. It is given its model only when that changes (the
+  unit's GUID, the display, the link): giving it again would load the model anew and start its moves over,
+  and a panel is drawn many times while it is shown; once hidden it forgets it. The picture stands until the
+  model is there: a unit's at once when `SetUnit` says it can draw it; the others when the game has loaded
+  the model (`OnModelLoaded`, or `GetModelFileID` at once). Where the game does not take the model (the unit
+  out of sight, its identity hidden, `TryOn` failing, an error) or the client has no such frame, the picture
+  (`SetPortraitTexture`, the icon) stays, as with the option switched off. A model needs the picture's place:
+  with *Show icons and portraits* off there is none. A frame draws over the panel's own pictures, so the
+  dragon, the plaque and the level stand on a frame over it (`panel.front`; the level's text is lifted onto
+  it, `Pools.Lift`). Its alpha follows the panel's by itself (`Panel.Strength`): a model frame need not follow
+  the frame it is in. Unlike the picture it has no round soft edge (a mask works on pictures only): it is cut
+  square.
 - **Fonts and the text size.** The font file is asked of the game's font objects at every draw
   (`GameTooltipText`, `GameTooltipHeaderText`), so the game's language and a UI addon's font are
   followed; the size is set by us (`SetFont`), because it is the player's setting. Name and lines have
@@ -340,11 +371,20 @@ database (Core's data framework), which the panels only read.
   (`ns.GiveBack`: each tooltip's alpha, each in a `pcall` of its own), says so once
   (`ns.GIVEN_BACK`) and ends the module's work for the session. A kind reader's error costs its kind only
   (see *Kinds*).
-- **Other addons' lines** stay the game's lines of the tooltip: a line no data of the game names and that
-  stands after the game's last one is another addon's (`Read.Added`). `Read.Rest` shows the game's lines
-  only; after everything of the panel's own (its sections, Alt's details) `Others` in `Read.lua` puts all
-  other addons' lines into one section of their own, *Other addons* (`TEXT.ADDONS`), small and quiet, an
-  empty line among them a divider. Every kind gets it the same way: no reader handles other addons' lines.
+- **Sections** (`Read.Section`, `Read.Caption`): a reader opens each section of its own rows under its name;
+  `Read.Rest` puts each of the game's lines into the section its kind names (`ctx.name`: an item's by the
+  line's kind or colour, a set by the game's `ITEM_SET_NAME`; others by `Read.Named`: a description or the
+  details). A line of another name than the one before it starts a new section; one of the same name stays
+  in it, the game's empty line before it a gap (`ctx.gap`, a row's `space`). `Read.Generic` has no sections
+  (`ctx.flat`). There is no divider without a name: the model's rows have no `rule` any more.
+- **Other addons' lines** stay the game's lines of the tooltip: a line no data of the game names is another
+  addon's (`Read.Added`). Where the data says where each of its lines stands (`lineIndex`), wherever it stands
+  after the game's first line: an addon may write a line right after one of the game's
+  (`TooltipDataProcessor.AddLinePostCall`), not only at the end; where the game's lines are only found by
+  their text, after the last of them. `Read.Rest` shows the game's lines only; after everything of the
+  panel's own (its sections, Alt's details) `Others` in `Read.lua` puts all other addons' lines into one
+  section of their own, *Addons* (`TEXT.ADDONS`), small and quiet, an empty line among them a gap. Every kind
+  gets it the same way: no reader handles other addons' lines.
 - **Core's data** (`Doc/guides/data.md`): the module keeps no data of its own but the auction prices it
   notes (`Auction.lua`; the series *Prices* is to take them over). `Quests.lua` reads the sets *Quests* and
   *Drops* (`Prepare` at the login, `OnStamp` redraws the shown panels), `Kinds/Inventory.lua` reads
@@ -363,11 +403,14 @@ database (Core's data framework), which the panels only read.
   - A spell's school and its numbers in other languages than English (its facts strip works in every
     language, by the game's own sentences).
   - Small pictures the game puts into a tooltip's lines (`AddTexture`).
-- **Tests:** `lua5.1 dev/tests/tooltips.lua` (383 checks), on a few made-up quests and drops compiled into
+- **Tests:** `lua5.1 dev/tests/tooltips.lua` (408 checks), on a few made-up quests and drops compiled into
   packs on the real schemas (`dev/tests/data/tooltips/`, `dev/tests/data/packs.py`): the quest part before
   and after the packs are there, the Inventory section (whole names, two characters with one first name,
   the account's bank, the total, bags and the bank read in steps, the bank only while open), other addons'
-  lines in their own section after a buff's bar and a quest's objectives; how the lines of each kind are sorted, the
+  lines in their own section after a buff's bar and a quest's objectives and from right after one of the
+  game's lines, every section under its name (a set, a gap inside a section, a hint without sections), the 3D
+  models of a mount, a pet and gear (the icon until loaded, the frame for gear, dressed anew, a failed
+  try-on, a ring without, a mount's spell, switched off); how the lines of each kind are sorted, the
   strips (only the facts stated, found by the game's sentences, in its order; numbers per cell), the
   description by its kind or by a gold sentence, digits coloured, the palette and the background from the
   game's colours, widths in steps and the right side giving way, a section's name at the left with its
@@ -387,7 +430,8 @@ database (Core's data framework), which the panels only read.
 | `Tooltips.lua` | The module's table, its settings, the hooks, the fall-back, the chat link's tooltip |
 | `Texts.lua` | The module's own words; the sentences of the game it must know, as patterns |
 | `Model.lua` | What a panel shows, as data: head and rows (a strip's cells in its array part), in two copies; the palette (`ns.COLOR`, each colour one of the game's moved toward another), `ns.Hex`, `ns.Like` |
-| `Read.lua` | A tooltip's lines, the tools to sort them into a model (also `Read.Prose`, `Read.NpcId`), the details with Alt held; runs each kind's reader by itself |
+| `Read.lua` | A tooltip's lines, the tools to sort them into a model and its named sections (`Read.Section`; also `Read.Prose`, `Read.NpcId`), other addons' lines in *Addons*, the details with Alt held; runs each kind's reader by itself |
+| `Figures.lua` | Which 3D model a thing has for its picture's place: a mount's, a pet's (the game's collections), gear on your own character |
 | `Kinds/Item.lua` | Items and recipes; their sections Quest and Professions |
 | `Kinds/Gold.lua` | An item's Gold section: vendor, auction house, the advice |
 | `Kinds/Inventory.lua` | An item's Inventory section: which of your characters have it, where and how many (Core's characters' data) |
@@ -401,7 +445,7 @@ database (Core's data framework), which the panels only read.
 | `Numbers.lua` | Numbers that follow from what the game says: a spell's damage per second, per mana and crit; a swing; experience per kill |
 | `Live.lua` | A unit's health, power, target and buffs, and a buff's time, while the panel is shown |
 | `Pools.lua` | The parts a panel is drawn with (texts, lines, small icons, bars), used again; a text's size |
-| `Panel.lua` | The panel: its parts, the layout |
+| `Panel.lua` | The panel: its parts, the layout, the 3D model in the picture's place |
 | `Host.lua` | Where each panel stands (by its tooltip's corner, beside another panel, comparisons at slots of their own); the game's tooltip out of sight meanwhile, its mouse area the panel's, all set back after |
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
@@ -410,10 +454,17 @@ database (Core's data framework), which the panels only read.
   name and surname, you first, in the class's colour, *Bags*, *Bank*, *Worn* at the right, *Total*. A second
   character of yours whose first name is yours: its own row. The bank's count after the bank was opened;
   the bags' count changing a moment after you loot. `/sane data` lists *Data: Characters* as loaded.
-- **Other addons:** with an addon switched on that writes into tooltips (a loot or auction addon): its lines
-  under *Other addons* at the very end of the panel, small; on a buff after the time bar, on a quest after
-  its objectives, on an item after *Gold*; with two such addons, a divider between them where they leave an
-  empty line.
+- **Addons:** with addons switched on that write into tooltips (a loot, an auction, an upgrade addon): all
+  their lines under *Addons* at the very end of the panel, small, also the lines an addon writes right after
+  one of the game's lines; on a buff after the time bar, on a quest after its objectives, on an item after
+  *Gold*; a small gap between two addons where they leave an empty line. Nothing of theirs among the item's
+  *Stats* or *Effects*.
+- **Section names:** every divider has its name: an item's *Stats*, *Effects*, *Set* (an item of a set),
+  *Description*, *Durability*; a spell's *Stats*, *Description*; a unit's *Status*; a buff's *Duration*. Is
+  any line in a section whose name does not fit it? A button's hint: its lines under its name, no caption.
+- **3D models:** a mount's item and a mount on the action bar, a pet's item: the model, a little from the
+  side? A helm (your face with it), a chest, boots, a weapon, a cloak (from behind): your character wearing
+  it? A ring: its icon. How long the icon stands before the model; a piece your race cannot wear.
 - **Quests from Core's data:** right after the login (the packs load once the loading screen is gone) a
   creature's and an item's quest part as before; `/sane data` lists *Data: Quests* and *Data: World* as
   loaded. With *Data: Quests* switched off in the addon list: no quest part, no error.
@@ -426,7 +477,7 @@ database (Core's data framework), which the panels only read.
   the screen: on the left, and staying there. With *Tooltips at the mouse cursor*: moving the mouse over
   one item, the comparisons follow once the mouse rests.
 - **A button's hint** (bags, menu buttons): a panel, not the game's tooltip.
-- **The live 3D portrait:** a creature, a player: is the model there, moving, its face in view, the dragon
+- **The live 3D model of a unit:** a creature, a player: is the model there, moving, its face in view, the dragon
   and the level over it? Its square edge: how does it look? Out of sight (a party member far away): the flat
   picture? A dead creature, a ghost, a critter, a totem, a boss far larger than its box: how does it stand?
   With *Show tooltips* waiting for a key: is the model unseen until the key is held? The frame rate with
@@ -487,8 +538,7 @@ database (Core's data framework), which the panels only read.
   yellow), captions in a darker gold, values near white, details light grey; readable on every panel
   colour, at the bright top and the dark bottom? The background's navy ground from the game's tooltips,
   taken toward the panel's colour: too dark, too blue?
-- **Captions:** the name at the left with a rule after it (*QUEST ———*), in the Gold, Quest and
-  Professions sections and a recipe's *Creates*.
+- **Captions:** the name at the left with a rule after it (*QUEST ———*), on every section.
 - **Widths:** panels in steps of 8; a long right side (a price, a count) cut short only when the panel is
   at its widest; descriptions wrapping at a good measure at text sizes 10 and 20.
 - **Hairlines:** dividers and the strip's separators at UI scales 0.64 to 1 and on a 4K screen: sharp, not
@@ -503,7 +553,7 @@ database (Core's data framework), which the panels only read.
 - **A quest link:** level, state, objectives with boxes.
 - **In a fight:** do the panels stay, or do tooltips fall back to the game's look?
 - **The soft edge:** does the background fade out evenly around the panel, corners included, in the panel's colour? Is it too wide or too narrow?
-- The dividers: visible but quiet, at the bright top and at the dark bottom of a panel.
+- The captions' rules: visible but quiet, at the bright top and at the dark bottom of a panel.
 - The opacity and text size sliders.
 - **The mouse off a creature, a player, a mailbox, a unit frame:** is the tooltip gone at once, with
   nothing of the game's tooltip fading out after it? Back onto it: there again?
@@ -518,6 +568,12 @@ database (Core's data framework), which the panels only read.
   quest is taken, progressed or handed in, and after a level-up.
 
 ## History
+- 2026-10-17 — Every section has its name on its divider (*Stats*, *Effects*, *Set*, *Description*,
+  *Durability*, *Status*, *Duration*, *Details*, *IDs*; *Gold* also for a vendor's price alone); there is no
+  divider without a name, an empty line inside a section is a small gap, a hint has no sections. Other
+  addons' lines all in one section, *Addons* (was *Other addons*), also those an addon writes right after one
+  of the game's lines. The setting *3D model in tooltips* (was *Live 3D portraits*): mounts, pets and gear on
+  your own character get their 3D model in the icon's place too, the icon until it is loaded.
 - 2026-10-17 — Other addons' lines stand in a section of their own, *Other addons*, at the end of every
   panel, never among the panel's own lines (they stood before a buff's bar and a quest's objectives). New
   section *Inventory* on items: which of your characters have it, each by first name and surname, where and

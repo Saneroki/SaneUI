@@ -24,15 +24,22 @@ Read primary tooltip data rather than interpreting appended data as a new toolti
 | `Inspect.lua` | Paced item level and talent inspection/cache |
 | `Auction.lua` | Passive browse-price observations and expiry |
 | `Pools.lua` | Pools `panel.texts/lines/icons/bars = { taken = n, ... }` (`Take`); a text redressed only when its kind or the fonts change (`Restyle` stamp); `Width` = whole unit past the end; separate live widgets |
-| `Panel.lua` | `Measure` → `Fit` (224..432 in steps of 8; wrapping rows ≤ 22 ems) → `Picture` (icon/plaque) → `Lay` (rows; right side gives way, keeps 4 ems; captions left with a rule; strip cells sized by their words) → `Finish` (ground `TOOLTIP_DEFAULT_BACKGROUND_COLOR` tinted 28% top / darkened + 6% bottom, dragon, levels); hairline = `PixelUtil.GetNearestPixelSize(1, scale, 1)`; one lazy panel per native tooltip; a unit's live 3D model (`Figure`: `PlayerModel`, `SetUnit` only when the GUID changes, flat `SetPortraitTexture` when it cannot draw; dragon/plaque/level on `panel.front` over it) |
+| `Panel.lua` | `Measure` → `Fit` (224..432 in steps of 8; wrapping rows ≤ 22 ems) → `Picture` (icon/plaque) → `Lay` (rows; right side gives way, keeps 4 ems; captions left with a rule; strip cells sized by their words) → `Finish` (ground `TOOLTIP_DEFAULT_BACKGROUND_COLOR` tinted 28% top / darkened + 6% bottom, dragon, levels); hairline = `PixelUtil.GetNearestPixelSize(1, scale, 1)`; one lazy panel per native tooltip; the 3D model in the picture's place (`Figure`, option `models`: `panel.figure` `PlayerModel` for a unit (`SetUnit`, ready at once) or a display (`SetDisplayInfo`), `panel.dresser` `DressUpModel` for gear (`SetUnit("player")` once, then `Dress` + `TryOn(link)`); given only when `head.model`/GUID changes, forgotten on hide; the picture until `OnModelLoaded`/`GetModelFileID`, kept when the load fails; `panel.figured` is the active one, its alpha by `Panel.Strength` and readiness; dragon/plaque/level on `panel.front` over it) |
+| `Figures.lua` | `Figures.Item(head, id, tooltip)` / `Figures.Spell(head, id)` set `head.model`, `modelKind` (`display`/`dress`), `modelZoom`, `modelTurn`: a mount (`C_MountJournal.GetMountFromItem`/`FromSpell` → `GetMountInfoExtraByID` or first of `GetMountAllCreatureDisplayInfoByID`), a pet (`C_PetJournal.GetPetInfoByItemID` 12th answer), dressable gear (`C_Item.IsDressableItemByID`, else by equip location; zoom/turn by equip location; the link from `tooltip:GetItem()`); cached per id (nil = ask again) |
 | `Host.lua` | `Dim`/`Blank`/`Keep` alphas, `Free` restores; `Seat` = blank + place + mouse reach; `Hold` on refresh; places panels by corner, `Beside` (one point on the other panel by the game's side), comparisons at own absolute slots (`Compare`/`Lay`/`Track`, gap = 2 × soft edge) |
 
 `ns.KINDS[dataType]` maps to a reader; unknown type uses Generic. Context contains native lines,
 fill/head, model and options. Readers mark consumed lines; `Read.Rest` shows the remaining game lines
-only. Other addons' lines (`Read.Added`: not in the data, after its last line) never reach a reader's rows:
-`ns.Read` appends them after the kind's rows and Alt's `Details`, in one section `Others` (caption
-`TEXT.ADDONS`, small, ASIDE colour, blank → divider). `Read.Caption(text)` is the shared caption row.
-PTR feedback and redundant ID lines are omitted; Alt adds own details. Model rows:
+only, each in the section `ctx.name(line, index, fresh)` names (default `Read.Named`: Description or
+Details; Item: Stats/Effects/Set/Description by line type, `ITEM_SET_NAME` or colour family; Quest: always
+Description; nested recipe product stays in `Creates`); a new name opens `Read.Section(name)` (caption, or the
+same section: the game's blank → `ctx.gap` → row `space`). `Read.Generic` sets `ctx.flat` (no sections, blank
+→ gap). No row has a divider of its own: captions are the only rules (`ROW` has `space`, no `rule`). Kinds
+open their own sections with `Read.Section`/`Read.Caption` (`ctx.section` = current name). Other addons'
+lines (`Read.Added`: not in the data; with `lineIndex` (`ctx.placed`) anywhere after the first data line,
+`ctx.firstOwn`, else after the last, `ctx.lastOwn`) never reach a reader's rows: `ns.Read` appends them after
+the kind's rows and Alt's `Details` (caption `TEXT.IDS`), in one section `Others` (caption `TEXT.ADDONS` =
+"Addons", small, ASIDE colour, blank → gap). PTR feedback and redundant ID lines are omitted. Model rows:
 `text/strip/bar/caption/auras`. Adding a model field requires including it in
 `HEAD` or `ROW` reset/comparison lists, or stale fields/undetected changes can result.
 
@@ -85,9 +92,10 @@ own `xpcall`: a failure is reported once and switches live values off, not the m
 Saved `modules.Tooltips`: `options`, `version` migration (currently 3: 2 opacity 90→97, 3 `cursor` a choice and
 `show` added), `prices`, `seen`.
 Options: `show="always"` (or while a key is held), `cursor="default"` (where the game puts them | while a key is
-held | always), `classColors/icons/models=true`, `textSize=14 (10..20)`, `opacity=97 (30..100)`.
+held | always), `classColors/icons/models=true` (`models`: "3D model in tooltips"; a model needs a picture,
+so `icons` too), `textSize=14 (10..20)`, `opacity=97 (30..100)`.
 Changes invalidate `panel.drawn`; redraw on subsequent tooltip work.
-Tests: `dev/tests/tooltips.lua` (383 checks; sample packs from `dev/tests/data/tooltips/` via
+Tests: `dev/tests/tooltips.lua` (408 checks; `shape(panel)` lists rows with captions by name; sample packs from `dev/tests/data/tooltips/` via
 `dev/tests/data/packs.py`, the stub's default Characters pack, `Steps()` pumps the scheduler). In-game QA still needed for current layouts, comparison stability,
 secret values, inspection/specs, quest offers, dragon/plaque alignment and coexistence; for the palette from the
 game's colours, the facts strip by the game's sentences (each client's wording), width steps, captions with a rule,

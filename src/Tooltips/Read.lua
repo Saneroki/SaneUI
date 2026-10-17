@@ -18,9 +18,16 @@ local _, ns = ...
 --  Each kind's reader runs by itself (ns.Read): one that fails switches only
 --  its own kind off, whose tooltips are the game's own from then on.
 --
+--  A panel is made of sections, each under its name (Read.Section: QUEST,
+--  GOLD, ...), below the header (the name and what stands beside the picture).
+--  There is no divider without a name: the game's empty lines start a new
+--  section only where what follows is another kind of thing (Rest), and are a
+--  small gap where it is the same.
+--
 --  Lines other addons add to a tooltip never stand among the panel's own rows
---  and sections: they come last, all of them, in a section of their own under
---  the caption Other addons (Others).
+--  and sections, wherever an addon wrote them (at the end, or right after one
+--  of the game's lines): they come last, all of them, in one section of their
+--  own under the caption Addons (Others).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain, Secret = Core.Plain, Core.Secret
@@ -47,8 +54,12 @@ local LOOK_AHEAD = 3 -- how far a line may stand from where the data has it
 --       type, data                             the kind of line and its data, if the game says
 --       own                                    the game's line (not one another addon added)
 --       blank, used                            empty; already shown by the kind's reader
---   rule                                       the next row gets a divider above it
---   tones                                      a change of colour group starts a new section (items)
+--   section                                    the name of the section rows go into now
+--   rule                                       the game had an empty line here: a section may end (Rest)
+--   gap                                        the next row stands a little apart (Panel.lua: space)
+--   name(line, index, fresh)                   the kind's name for the section a line of the game's
+--                                              belongs in (Rest); fresh: an empty line before it
+--   flat                                       no sections at all for the game's lines (Generic)
 --   each(row, line)                            the kind's last word on a row Rest makes
 --   nested                                     the caption over a thing inside the thing (a recipe's item)
 local ctx = { L = {} }
@@ -157,6 +168,7 @@ local function Mark(index, info)
     line.type, line.data, line.own = Plain(info.type), info, true
     ctx.matched = true
     if index > ctx.lastOwn then ctx.lastOwn = index end
+    if index < ctx.firstOwn then ctx.firstOwn = index end
 end
 
 -- Reads the tooltip's lines into ctx.L and says which the game's data knows. False when a line
@@ -179,7 +191,7 @@ local function Collect(tooltip, data)
         line.type, line.data, line.own, line.used = nil, nil, false, false
         line.blank = right == "" and not left:find("%S")
     end
-    ctx.count, ctx.matched, ctx.lastOwn = count, false, 0
+    ctx.count, ctx.matched, ctx.placed, ctx.firstOwn, ctx.lastOwn = count, false, false, count + 1, 0
 
     local lines = data and Plain(data.lines)
     if type(lines) ~= "table" then lines = nil end
@@ -192,6 +204,7 @@ local function Collect(tooltip, data)
         local index = type(info) == "table" and Plain(info.lineIndex)
         if type(index) == "number" and index >= 1 and index <= count and not L[index].own then Mark(index, info) end
     end
+    ctx.placed = ctx.matched
     if ctx.matched then return true end
     -- ...or it does not: then its lines are found by their text, in the tooltip's order.
     local nextLine = 1
@@ -211,12 +224,12 @@ end
 -------------------------------------------------------------------------------
 --  The tools of the readers
 -------------------------------------------------------------------------------
--- The next row. It takes the divider that is waiting, unless it is the panel's first row.
+-- The next row. It takes the gap that is waiting.
 function Read.Row()
     local row = Model.Row(ctx.fill)
-    if ctx.rule then
-        row.rule = ctx.fill.n > 1 or nil
-        ctx.rule = false
+    if ctx.gap then
+        row.space = ctx.fill.n > 1 or nil
+        ctx.gap = false
     end
     return row
 end
@@ -252,12 +265,21 @@ function Read.Title(caps)
 end
 
 -- A section's caption: its name in small capitals and a rule after it, which set it off from what is
--- above (no divider over it).
+-- above. The rows after it are that section's.
 function Read.Caption(text)
-    ctx.rule = false
+    ctx.rule, ctx.gap, ctx.section = false, false, text
     local row = Read.Row()
     row.kind, row.left = "caption", text
     return row
+end
+
+-- The next rows are a section of this name: under its caption, or, where the rows before them are
+-- one of the same name already, among those (two sections of one name are one). There the game's
+-- empty line between them is a gap.
+function Read.Section(name)
+    if name ~= ctx.section then return Read.Caption(name) end
+    if ctx.rule then ctx.gap = true end
+    ctx.rule = false
 end
 
 -- A fact in a strip row: its caption over its value (Model.lua).
@@ -300,17 +322,32 @@ function Read.Memo(key, format, a, b, c)
     return memo.text
 end
 
--- Whether a line is one another addon added (after the game's own).
+-- Whether a line is one another addon added: a line of the tooltip that is none of the game's data.
+-- Where the data says where each of its lines stands, such a line is found wherever it is after the
+-- game's first one: an addon may write its line right after one of the game's
+-- (TooltipDataProcessor.AddLinePostCall), not only at the end. Where the game's lines are only
+-- found by their words, only after the last of them.
 local function Added(line, index)
-    return ctx.matched and not line.own and index > ctx.lastOwn
+    if not ctx.matched or line.own then return false end
+    if ctx.placed then return index > ctx.firstOwn end
+    return index > ctx.lastOwn
 end
 Read.Added = Added
 
--- Every line of the game's no reader has shown yet, as rows: an empty line is a divider. Other
--- addons' lines are not among them: they get a section of their own at the panel's end (Others).
+-- The name of the section a line of the game's belongs in, where the kind has no names of its own:
+-- a description, or the details.
+function Read.Named(line)
+    return Read.IsProse(line) and TEXT.DESCRIPTION or TEXT.DETAILS
+end
+
+-- Every line of the game's no reader has shown yet, as rows, each in its section (ctx.name, or
+-- Read.Named): a line of another kind than the one before it starts a new section under its name. An
+-- empty line of the game's is a gap where the same kind goes on. A panel without sections (ctx.flat)
+-- has the lines as they come, an empty line a gap. Other addons' lines are not among them: they get a
+-- section of their own at the panel's end (Others).
 function Read.Rest()
     local L = ctx.L
-    local lastFamily, caption = nil, false
+    local caption, inside = false, false
     for index = 2, ctx.count do
         local line = L[index]
         local kind = line.type
@@ -321,29 +358,34 @@ function Read.Rest()
         elseif line.blank or kind == BLANK or kind == SEPARATOR then
             ctx.rule = true
         else
-            if ctx.tones then
-                local family = Family(line.lr, line.lg, line.lb)
-                if lastFamily and family ~= lastFamily then ctx.rule = true end
-                lastFamily = family
-            end
             if caption then
-                -- The thing inside the thing: a caption, then its name like a second title.
+                -- The thing inside the thing: a caption, then its name like a second title. Its lines
+                -- are that section's.
                 Read.Caption(ctx.nested)
+                inside = true
+            elseif ctx.flat then
+                if ctx.rule then ctx.gap = true end
+                ctx.rule = false
+            elseif inside then
+                Read.Section(ctx.nested)
+            else
+                Read.Section((ctx.name or Read.Named)(line, index, ctx.rule))
             end
             local row = Read.Line(line, "row")
             if caption then
                 row.font, row.caps, row.icon = "title", true, ctx.nestedIcon or nil
-                caption, lastFamily = false, nil
+                caption = false
             end
             if ctx.each then ctx.each(row, line, index) end
         end
     end
+    ctx.rule = false
 end
 
 -- The lines other addons added to the tooltip, all of them, in a section of their own at the end of
--- every panel, under the caption Other addons: small and quiet, as they stand, in their order; an empty
--- line among them is a divider (it parts one addon's lines from the next one's). Nothing when there are
--- none. Their ID lines are left out (Alt shows the numbers, Details).
+-- every panel, under the caption Addons: small and quiet, as they stand, in their order; an empty line
+-- among them is a gap (it parts one addon's lines from the next one's). Nothing when there are none.
+-- Their ID lines are left out (Alt shows the numbers, Details).
 local function Others()
     local L, captioned = ctx.L, false
     for index = 2, ctx.count do
@@ -351,7 +393,7 @@ local function Others()
         if not line.used and Added(line, index) and not IsFeedback(line.left) and not Read.IsIdLine(line) then
             local kind = line.type
             if line.blank or kind == BLANK or kind == SEPARATOR then
-                if captioned then ctx.rule = true end
+                if captioned then ctx.gap = true end
             else
                 if not captioned then
                     captioned = true
@@ -365,18 +407,20 @@ local function Others()
 end
 
 -- A name and its lines: every kind of tooltip no file in Kinds knows (a mailbox, a herb, a button's
--- hint). Its panel has no colour of its own (Panel.lua: COLOR.NEUTRAL), whatever colour its name has.
+-- hint). Its panel has no colour of its own (Panel.lua: COLOR.NEUTRAL), whatever colour its name has,
+-- and no sections: its lines stand under its name as the game has them.
 function Read.Generic()
     Read.Title(ctx.data ~= nil) -- a name in capitals; a hint somebody wrote stays as written
     local rank = ctx.L[1].right
     if rank ~= "" then Read.Text("sub", rank, DETAIL[1], DETAIL[2], DETAIL[3]) end
-    ctx.rule = true
+    ctx.flat = true
     Read.Rest()
 end
 
 -------------------------------------------------------------------------------
 --  With Alt held: the technical details, small, in a section of their own at
---  the bottom: the number of the thing at the left, of its icon at the right.
+--  the bottom, under the caption IDs: the number of the thing at the left, of
+--  its icon at the right.
 -------------------------------------------------------------------------------
 local TYPE = Enum.TooltipDataType or {}
 local KIND_NAMES = {} -- [the game's kind of tooltip data] = its name: "Item", "Quest", ...
@@ -400,7 +444,7 @@ local function Details()
         if icon then right = Read.Memo("detailRight", TEXT.ID, TEXT.ICON, icon) end
     end
     if left == "" and right == "" then return end
-    ctx.rule = true
+    Read.Caption(TEXT.IDS)
     local row = Read.Text("small", left, ASIDE[1], ASIDE[2], ASIDE[3])
     row.right = right
 end
@@ -419,7 +463,8 @@ function ns.Read(tooltip, data, model, options)
     ctx.kind, ctx.id = data and Plain(data.type), data and Plain(data.id)
     ctx.fill = Model.Begin(model)
     ctx.head = ctx.fill.head
-    ctx.rule, ctx.tones, ctx.each, ctx.nested, ctx.nestedIcon = false, false, nil, nil, nil
+    ctx.rule, ctx.gap, ctx.section, ctx.name, ctx.flat = false, false, nil, nil, false
+    ctx.each, ctx.nested, ctx.nestedIcon = nil, nil, nil
     ctx.head.tag = Tag(tooltip)
     ctx.head.compared = ctx.head.tag ~= "" or nil -- what you wear, beside what you look at
     local kind = ctx.kind ~= nil and ns.KINDS[ctx.kind] or Read.Generic

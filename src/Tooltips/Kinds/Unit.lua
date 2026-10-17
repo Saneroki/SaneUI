@@ -8,20 +8,21 @@ local _, ns = ...
 --      <Dawnbreakers> Officer  [iLvl 50 - 60]     class, a creature's as the game colours it;
 --      Human  ·  Alliance                         the guild as large, close under it, the rank
 --      Arms Warrior 31/5/0  ·  Sergeant  ·  PvP   in it small (a creature: its title, a pet: its
---      ------------------------------------       owner); small: race and side (what a creature
+--                                                 owner); small: race and side (what a creature
 --                                                 is, its family and faction), then spec and
 --                                                 class, title, and what is true now (PvP, AFK,
 --                                                 DND, dead; a creature's rank, tapped). The
---                                                 level on a plaque
+--      STATUS ─────────────────────────────       level on a plaque
 --      Target  Ragnaros                           whom it targets
 --      [======= 4,230   83% ========    ]          health as a bar, its numbers inside, and
 --      [================_______________]          over its lower part its mana, rage or energy
 --      [] [] [] [] []                             its buffs and debuffs
 --      145 XP                      12 to level    a creature: what killing it gives you, and
---      ------------------------------------       how many such kills to your next level
---      The Defias Brotherhood                     what else the tooltip says: your quests
---       - Defias Pillager slain: 4/10      /      (a sword: to kill; a bag: to loot),
---      Item Level 61                              and other addons' lines
+--      QUEST ──────────────────────────────       how many such kills to your next level
+--      The Defias Brotherhood                     your quests (a sword: to kill; a bag: to loot)
+--       - Defias Pillager slain: 4/10      /      and what else the tooltip says (Details);
+--      ADDONS ─────────────────────────────       other addons' lines last (Read.lua)
+--      Item Level 61
 --
 --  A creature says its class only when it is more than a plain fighter (Mage).
 --  Round the portrait lies the dragon the game's target frame gives a creature
@@ -177,8 +178,8 @@ local function Done(line, count)
     return have ~= nil and tonumber(need) > 0 and tonumber(have) >= tonumber(need)
 end
 
--- The quest section: what killing it gives you, then under the caption Quest its part in your
--- quests:
+-- The quest section: what killing it gives you (the last row of Status), then under the caption
+-- Quest its part in your quests:
 --   - the game's own quest lines: each quest's name, then what is still to kill (the objective
 --     names the creature) or loot. A done objective is left out, and a quest (or a party
 --     member's line) with none left, too;
@@ -194,9 +195,7 @@ local captioned
 local function QuestTitle(ctx, title, quest)
     if not captioned then
         captioned = true
-        ctx.rule = false
-        local caption = Read.Row()
-        caption.kind, caption.left = "caption", TEXT.QUEST
+        Read.Caption(TEXT.QUEST)
     end
     return ns.Quests.Heading(title, quest)
 end
@@ -205,7 +204,6 @@ local function QuestSection(ctx, unit, npc)
     local L = ctx.L
     local xp, kills = ns.Numbers.Experience(unit)
     local list = ns.Quests.Of(npc)
-    ctx.rule = true
     if xp then
         local row = Read.Text("sub", Read.Memo("xp", TEXT.XP, xp), DETAIL[1], DETAIL[2], DETAIL[3])
         if kills then row.right, row.rr, row.rg, row.rb = Read.Memo("kills", TEXT.KILLS, kills), DETAIL[1], DETAIL[2], DETAIL[3] end
@@ -450,7 +448,7 @@ local function Unit(ctx)
     -- as the unit is this one (the GUID): "mouseover" is another unit, or none, once the mouse left it
     head.unit, head.guid = unit, Plain(UnitGUID(unit))
     head.hasTarget, head.hasAuras, head.power = ns.Live.Facts(unit)
-    ctx.rule = true
+    Read.Section(TEXT.STATUS)
     if head.hasTarget then
         local target = Read.Text("sub", ns.Global("TARGET") or TEXT.TARGET, DETAIL[1], DETAIL[2], DETAIL[3])
         target.live = "target"
@@ -468,7 +466,6 @@ local function Unit(ctx)
 
     -- Experience and quests, then what else the tooltip says
     QuestSection(ctx, unit, not player and Read.NpcId(guid) or nil)
-    ctx.rule = true
     Read.Rest()
 end
 

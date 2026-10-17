@@ -6,9 +6,9 @@ local _, ns = ...
 --
 --      POWER WORD: FORTITUDE           [icon]
 --      Buff  ·  Magic                             what it is, and what takes it away
---      ------------------------------------
+--      DESCRIPTION ────────────────────────
 --      Increases Stamina by 26.                   its numbers in the panel's colour
---      ------------------------------------
+--      DURATION ───────────────────────────
 --      [ 17 minutes remaining  by Somniferie ]    a bar that runs out with its time; inside it
 --                                                 the game's line for that, and who cast it
 --
@@ -111,11 +111,10 @@ local function Aura(ctx)
         end
     end
 
-    ctx.rule = true
     ctx.each = Read.Prose
     Read.Rest()
     if timed then
-        ctx.rule = true
+        Read.Section(TEXT.DURATION)
         local bar = Read.Row()
         bar.kind, bar.live = "bar", "aura"
         bar.left, bar.right = time and time.left or "", by
