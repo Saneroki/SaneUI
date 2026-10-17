@@ -1,0 +1,638 @@
+#!/usr/bin/env python3
+"""The voice database: every text of the game that gets a voice, with what is needed to voice it well.
+How it is made and used: Doc/guides/voice-generation.md. Not the game's data framework, and never
+shipped: it is the workbench for the voice overs (Doc/ideas/Lore.md, *Voice*).
+
+Reads:
+  staging        the texts and their speakers, in the staging format (Doc/ideas/Data.md, *Staging*):
+                 dev/voices/staging/*.jsonl (not in git), or the files given
+  dev/voices/cast.md         the voice presets, one per kind of speaker
+  dev/voices/names.md        how lore names are said
+  dev/voices/fixes.jsonl     hand fixes: {"key": "npc:448", "preset": "gnoll-male"}, or a line's "voice": false
+  dev/voices/analysis/*.jsonl  direction for single lines, by a language model or by hand, tied to the
+                 text's hash: {"key": "quest:176:offer#1", "hash": "...", "tone": ..., "direction": ...}
+Writes (dev/voices/build/, not in git; made again by every build):
+  lines.jsonl    one line per part of a text that is voiced, with its speaker, preset, analysis, request
+  voices.sqlite  the same as tables, for questions (sqlite3 dev/voices/build/voices.sqlite)
+
+Usage:  dev/tools/voicedb build [staging.jsonl ...]   make the database
+        dev/tools/voicedb stats                        what is in it: counts, characters, cost, presets
+        dev/tools/voicedb show <key or words>          entries in full (a key like quest:176:offer#1,
+                                                       or words found in the text or the speaker)
+        dev/tools/voicedb request <key>                what would be sent to the voice service
+        dev/tools/voicedb batch <file> [filter]        lines for a language model to direct (see the guide)
+        dev/tools/voicedb names [n]                    names in the texts that names.md lacks
+        dev/tools/voicedb check                        cast.md and names.md read without errors
+"""
+import collections
+import glob
+import hashlib
+import json
+import os
+import re
+import sqlite3
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+VOICES = os.path.join(ROOT, "dev", "voices")
+OUT = os.path.join(VOICES, "build")
+STAGING = os.path.join(VOICES, "staging")
+PRICE = {"newest": 0.08, "fast": 0.04}       # US dollars per 1,000 characters (Doc/ideas/Lore.md)
+
+
+# --- the cast and the names ----------------------------------------------------------------------
+
+FIELD = re.compile(r"^- \*\*(.+?):\*\* ?(.*)$")
+NUMBERS = ("Stability", "Similarity", "Speed")
+
+
+def read_cast(path=os.path.join(VOICES, "cast.md")):
+    """The presets: a section `## <id>` with `- **Field:** value` lines; sections without a race are notes."""
+    presets, current, errors = {}, None, []
+    for n, line in enumerate(open(path, encoding="utf-8"), 1):
+        line = line.rstrip("\n")
+        if line.startswith("## "):
+            current = {"id": line[3:].strip(), "line": n}
+            presets[current["id"]] = current
+        elif current and FIELD.match(line):
+            name, value = FIELD.match(line).groups()
+            current[name.lower()] = float(value) if name in NUMBERS else value.strip()
+    presets = {k: v for k, v in presets.items() if "race" in v}
+    for p in presets.values():
+        for need in ("sex", "kind", "design prompt", "design text", "stability", "similarity", "speed"):
+            if need not in p:
+                errors.append(f"cast.md:{p['line']}: {p['id']} has no {need}")
+        if not 20 <= len(p.get("design prompt", "")) <= 1000:
+            errors.append(f"cast.md:{p['line']}: {p['id']}: the design prompt must have 20 to 1000 characters")
+        if not 100 <= len(p.get("design text", "")) <= 1000:
+            errors.append(f"cast.md:{p['line']}: {p['id']}: the design text must have 100 to 1000 characters")
+    return presets, errors
+
+
+def read_names(path=os.path.join(VOICES, "names.md")):
+    """Table rows `| Name | Say | IPA | Note |` under any heading."""
+    names, errors = {}, []
+    if not os.path.exists(path):
+        return names, errors
+    for n, line in enumerate(open(path, encoding="utf-8"), 1):
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if not line.startswith("|") or len(cells) < 2 or cells[0] in ("Name", "") or set(cells[0]) <= set("-: "):
+            continue
+        name, say = cells[0], cells[1]
+        ipa = cells[2] if len(cells) > 2 else ""
+        if not say:
+            errors.append(f"names.md:{n}: {name} has no way to say it")
+            continue
+        alias = say.replace("-", "").lower()
+        names[name] = {"alias": alias[:1].upper() + alias[1:], "say": say, "ipa": ipa.strip("/[] ") or None}
+    return names, errors
+
+
+# --- who speaks: race, sex, kind, and so the preset ---------------------------------------------
+
+RACES = {"human": "human", "dwarf": "dwarf", "gnome": "gnome", "nightelf": "nightelf", "orc": "orc",
+         "troll": "troll", "tauren": "tauren", "scourge": "undead", "goblin": "goblin", "skyborne": "skyborne",
+         "foresttroll": "troll", "darkirondwarf": "dwarf", "naga_": "naga", "skeleton": "scourge",
+         "bloodelf": "human", "thinhuman": "human", "kultiran": "human"}
+MODELS = [  # model folder (exact, or its start), then race, and the sex or kind it gives
+    ("troglodyte", "trogg"), ("gnoll", "gnoll"), ("kobold", "kobold"), ("ogre", "ogre"), ("furbolg", "furbolg"),
+    ("satyr", "satyr"), ("centaur", "centaur"), ("harpy", "harpy"), ("quillboar", "quillboar"),
+    ("quilboar", "quillboar"), ("humanmalekid", "child", "male"), ("orcmalekid", "child", "male"),
+    ("humanfemalekid", "child", "female"), ("orcfemalekid", "child", "female"), ("ghoul", "abomination"),
+    ("fleshgolem", "abomination"), ("abomination", "abomination"), ("banshee", "ghost", "female"),
+    ("ghost", "ghost"), ("shade", "ghost"), ("spirit", "ghost"), ("dryad", "nightelf", "female"),
+    ("keeperofthegrove", "nightelf", "male", "elder"), ("ancientof", "nightelf", "male", "elder"),
+    ("forceofnature", "nightelf", "male", "elder"), ("waterelemental", "elemental"),
+    ("elemental", "elemental"), ("fireelemental", "elemental"), ("ragnaros", "elemental"),
+    ("infernal", "elemental"), ("imp", "imp"), ("succubus", "demon", "female"), ("dreadlord", "demon", "male"),
+    ("felguard", "demon", "male"), ("doomguard", "demon", "male"), ("eredar", "demon"), ("dragonspawn", "dragon"),
+    ("drake", "dragon"), ("dragon", "dragon"), ("onyxia", "dragon", "female"), ("quiraj", "qiraji"),
+    ("qiraj", "qiraji"), ("silithid", "qiraji"), ("skeleton", "scourge"), ("lich", "scourge"),
+    ("seagiant", "giant"), ("mountaingiant", "giant"), ("giant", "giant"), ("trolldire", "troll"),
+    ("humanmale", "human", "male"), ("humanfemale", "human", "female"), ("gnome", "gnome", "male"),
+    ("naga", "naga"), ("cthun", "oldgod", "male"), ("goblin", "goblin"), ("worgen", "gnoll"),
+]
+PLAYABLE = {"human", "dwarf", "gnome", "nightelf", "orc", "troll", "tauren", "undead"}
+ELDER = re.compile(r"(?i)\belder\b|\bgrand(?:mother|father|ma|pa)\b|\bold\b|\bancient\b|\bgranny\b|\bmatron\b"
+                   r"|\bpatriarch\b|\bcrone\b|\bhermit\b|\bgrandmaster\b")
+MARTIAL = re.compile(r"(?i)guard|soldier|sentinel|marshal|captain|lieutenant|sergeant|commander|general\b"
+                     r"|warrior|grunt|mountaineer|rifleman|footman|knight|champion|warlord|legionnaire|defender"
+                     r"|ranger|brave\b|battlemaster|blademaster|deathguard|\bwatch|militia|deputy|scout|hunter"
+                     r"|warden|outrider|lancer|enforcer|bodyguard|kor'kron|protector|sharpshooter|veteran"
+                     r"|berserker|executioner|paladin|centurion|raider|mercenary|bounty|gladiator|commando"
+                     r"|weapon|armor|blacksmith|stable|wrangler|axe|fighter|sentry|patrol|trooper|infantry")
+REFINED = re.compile(r"(?i)\blord\b|\blady\b|\bking\b|\bqueen\b|prince|duke|duchess|baron|\bcount\b|magistrate"
+                     r"|mayor|ambassador|emissary|envoy|archmage|magus|\bmage\b|wizard|sorcer|priest|bishop"
+                     r"|cleric|scholar|historian|librarian|chronicler|keeper|archdruid|druid|sage\b|arcanist"
+                     r"|apothecary|alchemist|warlock|necromancer|scribe|council|noble|steward|chancellor"
+                     r"|advisor|overlord|chieftain|thane|regent|seer|oracle|shaman|witch doctor|mystic"
+                     r"|astronomer|professor|explorer|archaeolog|enchant|banker|herald|emperor|high ")
+CLASS_KIND = {"warrior": "martial", "paladin": "martial", "hunter": "martial", "mage": "refined",
+              "priest": "refined", "warlock": "refined", "druid": "refined", "shaman": "refined"}
+CRIER = re.compile(r"(?i)wanted|missing|notice|bounty|board|poster|proclamation|decree|sign\b")
+
+
+def kind_of(sp):
+    words = " ".join(x for x in (sp.get("title"), sp.get("name")) if x)
+    if ELDER.search(words):
+        return "elder", "the name or title"
+    if MARTIAL.search(words):
+        return "martial", "the name or title"
+    if REFINED.search(words) or "leader" in sp.get("roles", []):
+        return "refined", "the name or title"
+    if sp.get("class") in CLASS_KIND:
+        return CLASS_KIND[sp["class"]], f"its class ({sp['class']})"
+    return "common", "the default"
+
+
+def race_of(sp):
+    """Race, sex and kind from the model, where the model says more than the race."""
+    model = sp.get("model") or ""
+    for rule in MODELS:
+        if model == rule[0] or model.startswith(rule[0]):
+            sex = next((x for x in rule[2:] if x in ("male", "female")), None)
+            kind = next((x for x in rule[2:] if x not in ("male", "female")), None)
+            if sp.get("race") in RACES and RACES[sp["race"]] in PLAYABLE:
+                return RACES[sp["race"]], None, None
+            return rule[1], sex, kind
+    return RACES.get(sp.get("race") or ""), None, None
+
+
+def preset_for(key, sp, presets, fixes):
+    """The preset of a speaker, and why."""
+    if key in fixes and "preset" in fixes[key]:
+        return [fixes[key]["preset"]], "a hand fix", []
+    kind_ = key.split(":")[0]
+    if kind_ in ("object", "item"):
+        name = sp.get("name") or ""
+        return (["crier"], "a notice", []) if CRIER.search(name) else (["reader"], "a written text", [])
+    race, sex, kind = race_of(sp)
+    flags = []
+    sexes = [sex] if sex else (["male", "female"] if sp.get("sex") == "mixed" else [sp.get("sex")])
+    if sexes == [None]:
+        sexes, _ = ["male"], flags.append("sex unknown")
+    if not race:
+        race = "human"
+        flags.append("race unknown: as a human")
+    why = f"{race}, {'/'.join(sexes)}"
+    if race in PLAYABLE:
+        kind, how = (kind, "its model") if kind else kind_of(sp)
+        why += f", {kind} by {how}"
+    out = []
+    for s in sexes:
+        for cand in ([f"{race}-{s}-{kind}", f"{race}-{s}-common"] if race in PLAYABLE else
+                     [f"{race}-{s}", f"{race}-male", f"{race}-female", f"{race}-none"]):
+            if cand in presets:
+                out.append(cand)
+                break
+        else:
+            flags.append(f"no preset for {race} {s}: as a human")
+            out.append(f"human-{s}-common")
+    return out, why, flags
+
+
+# --- making a text ready to be said --------------------------------------------------------------
+
+GENDER = re.compile(r"\$[Gg]\s*([^:;$]*?)\s*:\s*([^;$]*?)\s*;")
+ACTION = re.compile(r"<([^<>]{1,300})>")
+ACTION_TAGS = [(re.compile(r"(?i)sigh"), "[sighs]"), (re.compile(r"(?i)laugh|chuckle|giggle|grin"), "[laughs]"),
+               (re.compile(r"(?i)whisper"), "[whispers]"), (re.compile(r"(?i)cough"), "[coughs]"),
+               (re.compile(r"(?i)sob|weep|cr(?:y|ies)\b"), "[sobs]"), (re.compile(r"(?i)clears? (?:his|her) throat"), "[clears throat]")]
+WORD = {"N": None, "C": "adventurer", "R": "traveler"}
+FILLER = re.compile(r"(?i)^\s*(?:missing text|text missing|placeholder|test|todo|tbd|\.+|<?unused>?)\s*[.!]?\s*$")
+
+
+def speakable(text, player_sex):
+    """The words to say: placeholders resolved or left out, stage directions taken out. Gives the text,
+    the stage directions, and what needs a look by hand."""
+    review = []
+    text = GENDER.sub(lambda m: m.group(1) if player_sex == "male" else m.group(2), text)
+    actions = [a.strip() for a in ACTION.findall(text)]
+    text = ACTION.sub(" ", text)
+    text = re.sub(r"\$[Bb]", " ", text)
+    for letter, word in WORD.items():
+        token = rf"\$[{letter}{letter.lower()}]"
+        text = re.sub(rf",\s*{token}(?=\s*[.,!?;:])", "", text)                 # "Greetings, $N." -> "Greetings."
+        text = re.sub(rf"(^|[.!?]\s+){token},\s*(\w)", lambda m: m.group(1) + m.group(2).upper(), text)
+        if re.search(token, text):
+            if word:
+                text = re.sub(token, word, text)
+                review.append(f"${letter} said as \"{word}\"")
+            else:
+                text = re.sub(token, "friend", text)
+                review.append("the name said as \"friend\"")
+    text = re.sub(r"\b([Aa]) (adventurer)", lambda m: ("An" if m.group(1) == "A" else "an") + " " + m.group(2), text)
+    text = re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"\s+([.,!?;:])", r"\1", text)
+    if "$" in text:
+        review.append("a placeholder left")
+    return text, actions, review
+
+
+NAMELIKE = re.compile(r"\b[A-Z][a-z]*'[A-Za-z]+\b|\b[A-Z][a-z]+[A-Z][a-z]+\b")   # Kel'Thuzad, VanCleef
+CONTRACTION = re.compile(r"(?i)'(?:s|m|d|ll|ve|re|t)$")
+SHORT = 60      # characters: a shorter part joins its neighbour, so the voice does not stop and start
+
+
+def parts_of(text):
+    """A text in parts: its paragraphs ($B$B or blank lines). A part that is only a stage direction, or
+    very short, joins the next one; a very short last part joins the one before."""
+    raw = [p.strip() for p in re.split(r"(?:\$[Bb]\s*){2,}|\n\s*\n", text) if p.strip()]
+    out = []
+    for p in raw:
+        last = out[-1] if out else None
+        if last is not None and (len(last) < SHORT or not ACTION.sub("", last).strip()):
+            out[-1] = last + " " + p
+        else:
+            out.append(p)
+    if len(out) > 1 and len(ACTION.sub("", out[-1]).strip()) < SHORT:
+        out[-2:] = [out[-2] + " " + out[-1]]
+    return out or [text]
+
+
+# --- tone and cadence -----------------------------------------------------------------------------
+
+LEX = {
+    "urgent": r"hurry|quick(?:ly)?|at once|immediately|no time|hasten|before it'?s too late|right away|urgent|without delay",
+    "worried": r"worr|concern|trouble|uneasy|fear (?:that|for)|missing|lost track|haven'?t returned",
+    "fearful": r"afraid|terrif|scared|frighten|dread|horror|nightmare|run for",
+    "grieving": r"\bdead\b|\bdied\b|death|killed|slain|murder|mourn|grief|griev|sorrow|weep|tears|alas|widow|orphan|buried|grave",
+    "angry": r"vengeance|revenge|\bcurse|damn|fools?\b|traitor|wretched|filthy|scum|slaughter|how dare|enough!|despise|hatred|\bhate\b",
+    "menacing": r"\bdie\b|your death|perish|foolish mortal|none shall|suffer|crush you|feast|your soul|bow before|tremble|insect",
+    "grateful": r"thank|grateful|gratitude|bless you|appreciate|well done|you'?ve done|excellent work|splendid|indebted|you did it|my thanks",
+    "proud": r"\bhonou?r|glory|\bpride\b|for the horde|for the alliance|lok'tar|victory|strength and|our people",
+    "mysterious": r"ancient|secret|strange|myster|whisper|shadow|darkness|arcane|prophec|vision|riddle|unknown|forbidden",
+    "solemn": r"\blight\b|earth mother|elune|ancestors|sacred|holy|\bpray|spirits? of|the fallen|remember them|honou?r the",
+    "excited": r"wonderful|fantastic|amazing|marvel|brilliant|incredible|can'?t wait|finally!|at last!|exciting|\bboom\b|profit",
+    "humorous": r"\bha+\b|haha|\bheh\b|\bhah\b|joke|silly|ridiculous|funny",
+    "weary": r"tired|weary|long day|exhaust|\bache|my bones|too old|sigh",
+    "stern": r"\bmust\b|you will|do not fail|failure|orders|discipline|no excuses|understood\?|i expect",
+}
+LEX = {k: re.compile(r"(?i)" + v) for k, v in LEX.items()}
+REGISTER = [("archaic", re.compile(r"(?i)\b(?:thee|thou|thy|thine|hast|doth|art thou|ye|'tis|nay|aye)\b")),
+            ("formal", re.compile(r"(?i)\b(?:greetings|indeed|shall|my lord|my lady|your majesty|sir|madam|i must ask|perhaps|therefore)\b")),
+            ("rough", re.compile(r"(?i)\b(?:ain'?t|ya|yer|'em|gonna|outta|git|mon|lad|lass|wee|kin|dat|da|dem|dis)\b"))]
+TAGS = {"urgent": "[urgently]", "worried": "[worried]", "fearful": "[fearfully]", "grieving": "[sorrowful]",
+        "angry": "[angry]", "menacing": "[menacing]", "grateful": "[warmly]", "proud": "[proudly]",
+        "mysterious": "[mysteriously]", "solemn": "[solemnly]", "excited": "[excited]", "humorous": "[amused]",
+        "weary": "[tired]", "stern": "[sternly]"}
+PACE = {"urgent": "fast", "excited": "brisk", "angry": "brisk", "fearful": "brisk", "menacing": "measured",
+        "grieving": "slow", "solemn": "slow", "mysterious": "slow", "weary": "slow"}
+STAGE = {  # tone when the words say nothing, base intensity, volume
+    "offer": ("earnest", 2, "normal"), "objectives": ("plain", 1, "normal"), "progress": ("expectant", 2, "normal"),
+    "complete": ("grateful", 2, "normal"), "greeting": ("friendly", 2, "normal"), "trainer": ("friendly", 2, "normal"),
+    "gossip": ("friendly", 2, "normal"), "say": ("plain", 2, "normal"), "yell": ("urgent", 4, "shout"),
+    "zone yell": ("urgent", 5, "shout"), "whisper": ("mysterious", 2, "whisper"), "page": ("plain", 1, "normal"),
+    "mail": ("warm", 2, "normal"),
+}
+
+
+def analyse(text, stage, speaker):
+    scores = collections.Counter({tone: len(rx.findall(text)) for tone, rx in LEX.items()})
+    hostile = speaker.get("side") == "hostile"
+    if hostile:
+        scores["menacing"] += scores["angry"] + (1 if stage in ("yell", "zone yell") else 0)
+    if stage == "complete":
+        scores["grateful"] += 1
+    tone, hits = scores.most_common(1)[0]
+    base, intensity, volume = STAGE.get(stage, ("plain", 2, "normal"))
+    if hits == 0 or (hits == 1 and tone == "stern") or (hits == 1 and tone == "solemn" and stage == "complete"):
+        tone = "menacing" if hostile and stage in ("yell", "zone yell", "say") else base
+    bangs = text.count("!")
+    intensity += min(2, bangs) + (1 if tone in ("angry", "menacing", "fearful", "urgent", "grieving") else 0)
+    intensity += 1 if speaker.get("rank") == "boss" else 0
+    intensity = max(1, min(5, intensity))
+    words = len(text.split())
+    sentences = max(1, len(re.findall(r"[.!?]+", text)))
+    pace = PACE.get(tone, "measured")
+    if pace == "measured" and words / sentences < 8 and bangs:
+        pace = "brisk"
+    register = next((name for name, rx in REGISTER if len(rx.findall(text)) >= (1 if name == "archaic" else 2)), "plain")
+    if tone == "grieving" and volume == "normal":
+        volume = "soft"
+    return {"tone": tone, "intensity": intensity, "pace": pace, "register": register, "volume": volume,
+            "questions": text.count("?"), "pauses": text.count("...") + text.count("--")}
+
+
+def direction(a, sp, stage, preset):
+    who = " ".join(x for x in (sp.get("name"),) if x) or "The speaker"
+    title = f", {sp['title']}" if sp.get("title") else ""
+    what = {"offer": "asking the player for help", "progress": "checking how the task goes",
+            "complete": "taking the finished task", "greeting": "greeting the player", "trainer": "greeting a student",
+            "gossip": "talking to the player", "say": "speaking aloud", "yell": "yelling", "zone yell": "yelling for all to hear",
+            "whisper": "whispering", "page": "read from a written text", "mail": "read from a letter",
+            "objectives": "summing up the task"}.get(stage, "speaking")
+    return (f"{who}{title} ({preset}), {what}: {a['tone']}, {a['pace']}, {a['volume']} voice, "
+            f"intensity {a['intensity']} of 5, {a['register']} speech.")
+
+
+# --- building ------------------------------------------------------------------------------------
+
+def load_staging(paths):
+    sets = collections.defaultdict(dict)
+    for path in paths:
+        for line in open(path, encoding="utf-8"):
+            e = json.loads(line)
+            sets[e["set"]][e["key"]] = e
+    return sets
+
+
+def load_jsonl(pattern):
+    out = {}
+    for path in sorted(glob.glob(pattern)):
+        for n, line in enumerate(open(path, encoding="utf-8"), 1):
+            if line.strip():
+                e = json.loads(line)
+                out[e["key"]] = e
+    return out
+
+
+def digest(text):
+    return hashlib.sha1(text.encode("utf-8")).hexdigest()[:12]
+
+
+def stage_of(f):
+    if f["kind"] == "quest":
+        return f["part"]
+    if f["kind"] == "broadcast":
+        return "gossip" if "gossip" in f.get("uses", []) and f.get("chat") == "say" else f.get("chat", "say")
+    return f["kind"]
+
+
+def build(paths):
+    presets, errors = read_cast()
+    names, nerrors = read_names()
+    if errors or nerrors:
+        sys.exit("\n".join(errors + nerrors))
+    sets = load_staging(paths)
+    speakers = {k: e["fields"] for k, e in sets["VoiceSpeakers"].items()}
+    quests = {int(k): e["fields"] for k, e in sets["VoiceQuests"].items()}
+    zones = {int(k): e["fields"] for k, e in sets["VoiceZones"].items()}
+    fixes = load_jsonl(os.path.join(VOICES, "fixes.jsonl"))
+    directed = load_jsonl(os.path.join(VOICES, "analysis", "*.jsonl"))
+    lines = []
+    for key, e in sorted(sets["VoiceLines"].items(), key=lambda kv: kv[0]):
+        f = e["fields"]
+        stage = stage_of(f)
+        voice, why_not = True, None
+        if stage in ("emote", "boss emote", "zone emote"):
+            voice, why_not = False, "an emote: told, not said"
+        elif f.get("voiced"):
+            voice, why_not = False, "the game voices it already"
+        elif FILLER.match(f["text"]):
+            voice, why_not = False, "a filler text of the game's data"
+        elif stage == "objectives":
+            voice, why_not = False, "the objectives: shown, not said (a choice)"
+        keys = f.get("speakers") or []
+        if not keys and f["kind"] in ("page", "mail"):
+            keys = ["reader"]
+        if not keys and voice:
+            voice, why_not = False, "nobody known says it"
+        if key in fixes and "voice" in fixes[key]:
+            voice, why_not = fixes[key]["voice"], "a hand fix"
+        main = keys[0] if keys else None
+        sp = speakers.get(main, {}) if main != "reader" else {"name": "The reader", "type": "book"}
+        chosen, why, flags = ([], "nobody", [])
+        if main == "reader":
+            chosen, why = ["reader"], "a written text"
+        elif main:
+            seen = []
+            for k in keys:
+                p, w, fl = preset_for(k, speakers.get(k, {}), presets, fixes)
+                if k == main:
+                    why, flags = w, fl
+                seen += [x for x in p if x not in seen]
+            chosen = seen
+        q = quests.get(f.get("quest"), {})
+        zone = zones.get(f.get("zone") or q.get("zone") or 0, {})
+        context = {k: v for k, v in {
+            "quest": f.get("quest"), "title": q.get("title"), "level": q.get("level"), "quest kind": q.get("kind"),
+            "side": q.get("side"), "zone": zone.get("name"), "chain": bool(q.get("prev") or q.get("next")),
+            "book": f.get("book"), "page": f.get("page"), "chat": f.get("chat"), "language": f.get("language"),
+            "in this client": q.get("forever") if f.get("quest") else None}.items() if v not in (None, False, "")}
+        texts = parts_of(f["text"])
+        variants = ["male", "female"] if GENDER.search(f["text"]) else [None]
+        for n, part in enumerate(texts, 1):
+            pkey = f"{key}#{n}" if len(texts) > 1 else key
+            words = {}
+            review = list(flags)
+            actions = []
+            for v in variants:
+                s, act, rv = speakable(part, v or "male")
+                words[v or "any"] = s
+                actions = act
+                review += [r for r in rv if r not in review]
+            text = next(iter(words.values())) or ""
+            line_voice, line_why = (voice, why_not) if text else (False, why_not or "nothing left to say")
+            a = analyse(text, stage, sp)
+            tags = [t for rx, t in ACTION_TAGS for act in actions if rx.search(act)][:1]
+            if a["volume"] == "whisper":
+                tags.append("[whispers]")
+            elif a["volume"] == "shout":
+                tags.append("[shouting]")
+            if a["tone"] in TAGS and a["intensity"] >= 2:
+                tags.insert(0, TAGS[a["tone"]])
+            a["tags"] = list(dict.fromkeys(tags))[:2]
+            a["source"] = "rules"
+            hand = directed.get(pkey)
+            if hand and hand.get("hash") == digest(part):
+                for k, val in hand.items():
+                    if k not in ("key", "hash", "fix"):
+                        a[k] = val
+                a["source"] = hand.get("source", "llm")
+                if hand.get("fix") and len(words) == 1:
+                    words = {next(iter(words)): hand["fix"]}
+                    review.append("mended by its direction")
+            elif hand:
+                review.append("its direction was made for an older text")
+            base = presets.get(chosen[0], {}) if chosen else {}
+            stability = base.get("stability", 0.5) - 0.05 * (a["intensity"] - 2)
+            a["stability"] = round(max(0.25, min(0.85, stability)), 2)
+            if "direction" not in a or a["source"] == "rules":
+                a["direction"] = direction(a, sp, stage, chosen[0] if chosen else "nobody")
+            unknown = sorted({w for w in (re.sub(r"'s$", "", c) for c in NAMELIKE.findall(text))
+                              if ("'" in w or re.search(r"[a-z][A-Z]", w)) and not CONTRACTION.search(w)
+                              and w not in names})
+            chars = sum(len(s) + sum(len(t) + 1 for t in a["tags"]) for s in words.values())
+            lines.append({
+                "key": pkey, "text key": key, "part": n, "parts": len(texts), "kind": f["kind"], "stage": stage,
+                "voice": line_voice, "why not": line_why, "text": part, "speech": words, "actions": actions,
+                "hash": digest(part), "speaker": main, "speakers": keys,
+                "who": {k: v for k, v in sp.items() if k in ("name", "title", "race", "sex", "model", "type", "rank", "side", "roles", "class", "caster", "level")},
+                "presets": chosen, "why preset": why, "context": context, "analysis": a,
+                "names": [w for w in names if re.search(rf"(?<![A-Za-z']){re.escape(w)}(?![A-Za-z])(?!'(?!s\b))", text)],
+                "unknown names": unknown, "review": review,
+                "chars": chars * max(1, len(chosen)), "src": e["src"],
+            })
+    for i, line in enumerate(lines):          # neighbours, for the voice to keep its flow across parts
+        if line["part"] > 1:
+            line["previous"] = lines[i - 1]["key"]
+        if line["part"] < line["parts"]:
+            line["next"] = lines[i + 1]["key"]
+    os.makedirs(OUT, exist_ok=True)
+    with open(os.path.join(OUT, "lines.jsonl"), "w", encoding="utf-8") as fh:
+        for line in lines:
+            fh.write(json.dumps(line, ensure_ascii=False, sort_keys=True) + "\n")
+    write_sqlite(lines, speakers, presets)
+    used = collections.Counter(p for l in lines if l["voice"] for p in l["presets"])
+    missing = sorted(p for p in used if p not in presets)
+    print(f"voicedb: {len(lines)} lines ({sum(l['voice'] for l in lines)} voiced) from {len(sets['VoiceLines'])} texts; "
+          f"{len(presets)} presets, {len(used)} in use; {len(names)} names")
+    if missing:
+        print("voicedb: presets in use that cast.md lacks: " + ", ".join(missing))
+    stats(lines)
+
+
+def write_sqlite(lines, speakers, presets):
+    path = os.path.join(OUT, "voices.sqlite")
+    if os.path.exists(path):
+        os.remove(path)
+    db = sqlite3.connect(path)
+    db.execute("create table lines (key text primary key, text_key text, kind text, stage text, voice int, "
+               "speaker text, preset text, tone text, intensity int, pace text, volume text, register text, "
+               "chars int, zone text, quest int, title text, text text, speech text, review text, line text)")
+    db.execute("create table speakers (key text primary key, name text, title text, race text, sex text, "
+               "model text, rank text, side text, fields text)")
+    db.execute("create table presets (id text primary key, race text, sex text, kind text, fields text)")
+    db.executemany("insert into lines values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [(
+        l["key"], l["text key"], l["kind"], l["stage"], int(l["voice"]), l["speaker"], ",".join(l["presets"]),
+        l["analysis"]["tone"], l["analysis"]["intensity"], l["analysis"]["pace"], l["analysis"]["volume"],
+        l["analysis"]["register"], l["chars"], l["context"].get("zone"), l["context"].get("quest"),
+        l["context"].get("title"), l["text"], json.dumps(l["speech"], ensure_ascii=False), "; ".join(l["review"]),
+        json.dumps(l, ensure_ascii=False)) for l in lines])
+    db.executemany("insert into speakers values (?,?,?,?,?,?,?,?,?)", [(
+        k, v.get("name"), v.get("title"), v.get("race"), v.get("sex"), v.get("model"), v.get("rank"), v.get("side"),
+        json.dumps(v, ensure_ascii=False)) for k, v in speakers.items()])
+    db.executemany("insert into presets values (?,?,?,?,?)", [(
+        k, v.get("race"), v.get("sex"), v.get("kind"), json.dumps(v, ensure_ascii=False)) for k, v in presets.items()])
+    db.commit()
+    db.close()
+
+
+def read_lines():
+    path = os.path.join(OUT, "lines.jsonl")
+    if not os.path.exists(path):
+        sys.exit("voicedb: no database yet: dev/tools/voicedb build")
+    return [json.loads(l) for l in open(path, encoding="utf-8")]
+
+
+def stats(lines=None):
+    lines = lines or read_lines()
+    voiced = [l for l in lines if l["voice"]]
+    chars = sum(l["chars"] for l in voiced)
+    print(f"\n{len(voiced)} of {len(lines)} lines voiced, {chars:,} characters with every variant "
+          f"(about {chars / 900 / 60:.0f} hours of speech)")
+    print("  cost: " + ", ".join(f"{name} model about ${chars / 1000 * rate:,.0f}" for name, rate in PRICE.items()))
+    by = collections.Counter()
+    for l in voiced:
+        by[l["stage"]] += l["chars"]
+    print("  by stage: " + ", ".join(f"{s} {c / 1e6:.2f}M" for s, c in by.most_common()))
+    why = collections.Counter(l["why not"] for l in lines if not l["voice"])
+    print("  not voiced: " + ", ".join(f"{n} {w}" for w, n in why.most_common()))
+    tones = collections.Counter(l["analysis"]["tone"] for l in voiced)
+    print("  tones: " + ", ".join(f"{t} {n}" for t, n in tones.most_common()))
+    presets = collections.Counter(p for l in voiced for p in l["presets"])
+    print(f"  presets: {len(presets)} in use; most: " + ", ".join(f"{p} {n}" for p, n in presets.most_common(12)))
+    review = collections.Counter(r.split(":")[0] for l in voiced for r in l["review"])
+    print("  to look at: " + ", ".join(f"{n} {r}" for r, n in review.most_common(10)))
+
+
+def show(query):
+    lines = read_lines()
+    hits = [l for l in lines if l["key"] == query or l["text key"] == query]
+    if not hits:
+        q = query.lower()
+        hits = [l for l in lines if q in l["text"].lower() or q in (l["who"].get("name") or "").lower()][:10]
+    for l in hits:
+        print(json.dumps(l, ensure_ascii=False, indent=2))
+    if not hits:
+        print("voicedb: nothing found")
+
+
+def request(key, model="newest"):
+    """The request the voice tool sends for a line (and each variant), without sending anything."""
+    lines = {l["key"]: l for l in read_lines()}
+    keys = [key] if key in lines else [k for k, l in lines.items() if l["text key"] == key]
+    if not keys:
+        sys.exit(f"voicedb: no line {key}")
+    print(json.dumps(requests(lines, keys, model), ensure_ascii=False, indent=2))
+
+
+def requests(lines, keys, model="newest"):
+    """The requests for these lines, one per variant and preset (dev/tools/voicegen sends them).
+    lines: every line by key, for the neighbouring parts."""
+    presets, _ = read_cast()
+    names, _ = read_names()
+    out = []
+    for l, preset in ((lines[k], p) for k in keys for p in lines[k]["presets"]):
+        key = l["key"]
+        p = presets.get(preset, {})
+        for variant, speech in l["speech"].items():
+            tags = " ".join(l["analysis"]["tags"]) if model == "newest" else ""
+            out.append({
+                "line": key, "variant": variant, "preset": preset, "model": model,
+                "text": (tags + " " + speech).strip(),
+                "settings": {"stability": l["analysis"]["stability"], "similarity": p.get("similarity", 0.75),
+                             "speed": p.get("speed", 1.0)},
+                "previous text": (lines[l["previous"]]["speech"].get(variant) if l.get("previous")
+                                  else l["analysis"].get("cue")),
+                "next text": lines[l["next"]]["speech"].get(variant) if l.get("next") else None,
+                "names": {n: names[n]["alias"] for n in l["names"]},
+                "file": f"{key.replace(':', '-').replace('#', '-')}" + (f"-{variant}" if variant != "any" else "")
+                        + (f"-{preset}" if len(l["presets"]) > 1 else "") + ".ogg",
+                "direction": l["analysis"]["direction"],
+            })
+    return out
+
+
+def batch(path, query=None, size=40):
+    """Lines for a language model to direct: the line, its speaker and context, and the analysis so far."""
+    lines = [l for l in read_lines() if l["voice"]]
+    if query:
+        q = query.lower()
+        lines = [l for l in lines if q in json.dumps(l["context"]).lower() or q in l["key"] or
+                 q in (l["who"].get("name") or "").lower()]
+    with open(path, "w", encoding="utf-8") as fh:
+        for l in lines:
+            fh.write(json.dumps({"key": l["key"], "hash": l["hash"], "speaker": l["who"], "preset": l["presets"][:1],
+                                 "stage": l["stage"], "context": l["context"], "text": l["speech"].get("any") or l["speech"]["male"],
+                                 "actions": l["actions"], "rules": {k: l["analysis"][k] for k in ("tone", "intensity", "pace", "volume", "register")}},
+                                ensure_ascii=False) + "\n")
+    print(f"voicedb: {len(lines)} lines to {path}, in batches of {size} for the prompt in Doc/guides/voice-generation.md")
+
+
+def unknown_names(top=60):
+    count = collections.Counter(n for l in read_lines() if l["voice"] for n in l["unknown names"])
+    for name, n in count.most_common(top):
+        print(f"{n:6d}  {name}")
+
+
+def check():
+    presets, errors = read_cast()
+    names, nerrors = read_names()
+    for msg in errors + nerrors:
+        print(msg)
+    print(f"voicedb: {len(presets)} presets, {len(names)} names" + (", errors above" if errors + nerrors else ", all read"))
+    return 1 if errors + nerrors else 0
+
+
+if __name__ == "__main__":
+    args = sys.argv[1:]
+    cmd = args[0] if args else "help"
+    if cmd == "build":
+        build(args[1:] or sorted(glob.glob(os.path.join(STAGING, "*.jsonl"))) or
+              sys.exit(f"voicedb: no staging files in {STAGING}"))
+    elif cmd == "stats":
+        stats()
+    elif cmd == "show" and len(args) > 1:
+        show(" ".join(args[1:]))
+    elif cmd == "request" and len(args) > 1:
+        request(args[1], args[2] if len(args) > 2 else "newest")
+    elif cmd == "batch" and len(args) > 1:
+        batch(args[1], args[2] if len(args) > 2 else None)
+    elif cmd == "names":
+        unknown_names(int(args[1]) if len(args) > 1 else 60)
+    elif cmd == "check":
+        sys.exit(check())
+    else:
+        sys.exit(__doc__)

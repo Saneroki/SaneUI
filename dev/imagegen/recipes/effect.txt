@@ -1,0 +1,6 @@
+# Recipe: effect. An effect on its own, without a part (sparks, embers, a magic swirl, a burst of light),
+# with a real transparent background: Wan-Alpha, 33 frames, 2 s at 16 fps, 832 x 480.
+workflow: wan-alpha-t2v
+fps: 16
+count: 2
+style: One effect on its own, centred, on a transparent background. No objects, no scenery, no text. The camera does not move.

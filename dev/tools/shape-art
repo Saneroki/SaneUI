@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+"""Makes the two masks Core's round corners are cut with (src/Core/Shape.lua), in src/Core/Art.
+
+  circle.blp       white, its alpha a disc as large as the picture: what lies inside stays. A
+                   window's corner is drawn by a square piece of its fill, this mask over the
+                   circle the corner's arc belongs to (twice the radius wide, centred on the arc's
+                   centre), so the piece keeps only its quarter of the disc.
+  circle-hole.blp  the same disc taken out of a white square: what lies outside stays. The trim's
+                   arc is the corner's piece in the trim's colour, cut by the circle and by this
+                   hole, which is the trim's width smaller: a ring as wide as the trim, at any radius.
+
+A mask is stretched whole (Tooltips found it: no slice margins), so a circle stays a circle only
+in a square; the corners' pieces are squares. The game has a circle of its own
+(Interface\\CharacterFrame\\TempPortraitAlphaMask, 128 texels), but no hole, and the two must be
+cut alike so the trim's inner edge meets the fill's.
+
+Analytic shapes, so each mipmap is drawn anew at its size (16 samples a texel, the share of them
+inside the disc): the edge stays one texel soft at every level. BLP2 with DXT5, as Doc/guides/images.md
+says, made by ImageMagick as in dev/tools/art. 256 texels: sharp up to a radius of about 45 UI units on
+a 4K screen, softer above.
+
+Needs Python with Pillow and NumPy, and ImageMagick 7 (magick).
+
+Usage:  dev/tools/shape-art
+"""
+import io
+import struct
+import subprocess
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[2]
+ART = ROOT / "src" / "Core" / "Art"
+SIZE = 256
+SAMPLES = 4  # a side's samples per texel
+
+
+def disc(size):
+    """The share of each texel (size x size) that lies inside the disc as large as the picture."""
+    offsets = (np.arange(SAMPLES) + 0.5) / SAMPLES
+    centres = np.arange(size)[:, None] + offsets[None, :]          # texel, sample
+    axis = centres.reshape(-1) - size / 2
+    inside = (axis[:, None] ** 2 + axis[None, :] ** 2) <= (size / 2) ** 2
+    return inside.reshape(size, SAMPLES, size, SAMPLES).mean(axis=(1, 3))
+
+
+def dxt5(alpha):
+    """The DXT5 blocks of a white picture with this alpha (0-1), by ImageMagick (as dev/tools/art)."""
+    rgba = np.ones(alpha.shape + (4,))
+    rgba[..., 3] = alpha
+    png = io.BytesIO()
+    Image.fromarray(np.round(rgba * 255).astype(np.uint8), "RGBA").save(png, "PNG")
+    data = subprocess.run(["magick", "png:-", "-define", "dds:compression=dxt5", "-define", "dds:mipmaps=0",
+                           "-define", "dds:cluster-fit=true", "dds:-"],
+                          input=png.getvalue(), capture_output=True, check=True).stdout
+    blocks = max(1, (alpha.shape[1] + 3) // 4) * max(1, (alpha.shape[0] + 3) // 4)
+    assert data[:4] == b"DDS " and data[84:88] == b"DXT5" and len(data) == 128 + 16 * blocks, "no DXT5 from magick"
+    return data[128:]
+
+
+def blp(levels, size):
+    """A BLP2 file: DXT5 (encoding 2, alpha depth 8, alpha encoding 7), mipmaps, largest first."""
+    offsets, sizes, start = [], [], 148 + 1024  # header, then a palette DXT does not use
+    for level in levels:
+        offsets.append(start + sum(sizes))
+        sizes.append(len(level))
+    unused = [0] * (16 - len(levels))
+    header = b"BLP2" + struct.pack("<I4B2I", 1, 2, 8, 7, 1, size, size)
+    header += struct.pack("<16I", *offsets, *unused) + struct.pack("<16I", *sizes, *unused)
+    return header + bytes(1024) + b"".join(levels)
+
+
+def make(name, hole):
+    levels, size = [], SIZE
+    while size >= 1:
+        shape = disc(size)
+        levels.append(dxt5(1 - shape if hole else shape))
+        size //= 2
+    out = ART / name
+    ART.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(blp(levels, SIZE))
+    with Image.open(out) as image:  # read back: the disc's centre and corner as they should be
+        back = np.asarray(image.convert("RGBA"))[..., 3]
+    centre, corner = back[SIZE // 2, SIZE // 2], back[0, 0]
+    assert (centre, corner) == ((0, 255) if hole else (255, 0)), f"{name} reads back wrong: {centre}, {corner}"
+    print(f"Wrote {out.relative_to(ROOT)} ({SIZE}x{SIZE}, {len(levels)} levels, {out.stat().st_size // 1024} KB).")
+
+
+make("circle.blp", hole=False)
+make("circle-hole.blp", hole=True)

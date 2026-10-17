@@ -1,0 +1,7 @@
+# Recipe: free concept. Like concept, but from words alone, without the anchor picture: for trying a look
+# that is not the house style yet. Fast (5 s a picture), so many ideas.
+include: dev/imagegen/style.txt
+workflow: zimage-turbo-t2i
+set: width=1536, height=1024
+count: 8
+before: Concept art of a game interface element, shown whole and centred on a plain dark grey background:

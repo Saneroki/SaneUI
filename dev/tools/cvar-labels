@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+"""Writes src/Core/Settings/Data/CVarLabels.lua from Blizzard's options code in references/.
+
+The game's options name a CVar where they show it: a call Settings.SetupCVarCheckbox, SetupCVarSlider or
+SetupCVarDropdown (CVar, ..., label, tooltip) or Settings.RegisterCVarSetting (CVar, ..., label), in
+Blizzard_SettingsDefinitions_Frame and _Shared. This tool reads those calls and keeps, for each CVar, the
+names of the two global strings: the one that labels it and the one that explains it (AUTO_LOOT_DEFAULT_TEXT,
+OPTION_TOOLTIP_AUTO_LOOT_DEFAULT). Never the words themselves: the game has them, in its own language. A
+label the options build in code (a format, a function call) is not a global string and is skipped.
+
+The file it writes is one table, keyed by the CVar's name in lower case, each entry with the fields
+label and tip (tip only where the options give one), sorted by key.
+
+Usage:  dev/tools/cvar-labels           write the file
+        dev/tools/cvar-labels --check   only say whether the file is as this tool would write it
+"""
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+ADDONS = ROOT / "references" / "BlizzardInterfaceCode" / "Interface" / "AddOns"
+FOLDERS = ("Blizzard_SettingsDefinitions_Frame", "Blizzard_SettingsDefinitions_Shared")
+OUTPUT = ROOT / "src" / "Core" / "Settings" / "Data" / "CVarLabels.lua"
+
+CALL = re.compile(r'Settings\.(SetupCVarCheckbox|SetupCVarSlider|SetupCVarDropdown|RegisterCVarSetting)\(\s*[\w.]+\s*,\s*"([^"]+)"\s*,')
+STRING_NAME = re.compile(r"^[A-Z][A-Z0-9_]*$")
+NAME_KEY = re.compile(r"^[a-z_][a-z0-9_]*$")
+KEYWORDS = set("and break do else elseif end false for function if in local nil not or repeat return then true until while".split())
+# For each call, which of the arguments after the CVar's name are its label and its tooltip.
+WHERE = {"SetupCVarCheckbox": (0, 1), "SetupCVarSlider": (1, 2), "SetupCVarDropdown": (2, 3), "RegisterCVarSetting": (1, None)}
+
+HEADER = """local Config = SaneUI.Core.Config -- Settings.lua
+
+-- Written by dev/tools/cvar-labels from Blizzard's options code; change the tool, not this file.
+-- [CVar in lower case] = { label = the global string that names it in the game's options,
+--                          tip = the one that explains it, where there is one }
+-- The game supplies the words, in its own language (CVars.lua looks them up).
+Config.CVAR_LABELS = {"""
+
+
+def split_arguments(text, start):
+    """The arguments from start up to the call's closing bracket, split at its own commas."""
+    parts, depth, current = [], 0, []
+    for char in text[start:]:
+        if char in "([{":
+            depth += 1
+        elif char in ")]}":
+            if depth == 0:
+                parts.append("".join(current).strip())
+                return parts
+            depth -= 1
+        elif char == "," and depth == 0:
+            parts.append("".join(current).strip())
+            current = []
+            continue
+        current.append(char)
+    return parts
+
+
+def read_options():
+    """{ cvar in lower case: (label, tip or None) }; the first call that names a tip wins."""
+    found = {}
+    for folder in FOLDERS:
+        for path in sorted((ADDONS / folder).rglob("*.lua")):
+            text = path.read_text(encoding="utf-8", errors="replace")
+            for call in CALL.finditer(text):
+                kind, cvar = call.group(1), call.group(2)
+                args = split_arguments(text, call.end())
+                at_label, at_tip = WHERE[kind]
+                label = args[at_label] if at_label < len(args) else ""
+                tip = args[at_tip] if at_tip is not None and at_tip < len(args) else ""
+                if not STRING_NAME.match(label):
+                    continue
+                tip = tip if STRING_NAME.match(tip) else None
+                key = cvar.lower()
+                if key not in found or (found[key][1] is None and tip):
+                    found[key] = (label, tip)
+    return found
+
+
+def write_lua(found):
+    lines = [HEADER]
+    for key in sorted(found):
+        label, tip = found[key]
+        name = key if NAME_KEY.match(key) and key not in KEYWORDS else f'["{key}"]'
+        fields = f'label = "{label}"' + (f', tip = "{tip}"' if tip else "")
+        lines.append(f"    {name} = {{ {fields} }},")
+    lines.append("}")
+    return "\n".join(lines) + "\n"
+
+
+def main():
+    check = "--check" in sys.argv[1:]
+    if not ADDONS.is_dir():
+        sys.exit(f"Blizzard's code is not in {ADDONS.relative_to(ROOT)}: nothing to read.")
+    found = read_options()
+    text = write_lua(found)
+    current = OUTPUT.read_text(encoding="utf-8") if OUTPUT.exists() else ""
+    if check:
+        print("up to date" if current == text else f"{OUTPUT.relative_to(ROOT)} would change")
+        sys.exit(0 if current == text else 1)
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT.write_text(text, encoding="utf-8")
+    print(f"Wrote {OUTPUT.relative_to(ROOT)}: {len(found)} CVars.")
+
+
+main()

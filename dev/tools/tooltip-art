@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""Makes the pictures the Tooltips module ships, in src/Tooltips/Art. The game has none of its
+own that can be stretched with fixed corners (slice margins) like these.
+
+  soft.tga    A white square with round corners whose edge fades out softly. The panel's
+              background is drawn with it, coloured by the panel's gradient.
+              SIZE, FADE (how wide the soft edge is), RADIUS (the solid part's corners).
+              Panel.lua: SOFT_MARGIN (at least FADE + RADIUS).
+  icon-mask.tga  The mask for a square icon, as large as the icon (a mask cannot be stretched
+              with fixed corners: it is stretched whole): round corners and an edge that fades
+              out softly, like the panel's. ICON_SIZE, ICON_RADIUS, ICON_FADE.
+  portrait-mask.tga  The same for a unit's portrait: a circle whose edge fades out softly.
+              ICON_SIZE, ICON_FADE.
+  bar-mask.tga   The same for a unit's health and power bars together (and a buff's bar), long
+              and flat, so that stretched to the bars' size its corners stay about round.
+              BAR_WIDTH, BAR_HEIGHT, BAR_RADIUS, BAR_FADE.
+  aura-mask.tga  The same for the small icons of a unit's buffs. AURA_SIZE, AURA_RADIUS, AURA_FADE.
+  plaque.tga  Like soft.tga, small: the plaque a level stands on, coloured gold by Panel.lua and
+              stretched with fixed corners. PLAQUE_SIZE, PLAQUE_RADIUS, PLAQUE_FADE.
+              Panel.lua: PLAQUE_MARGIN (at least PLAQUE_FADE + PLAQUE_RADIUS).
+
+Usage:  dev/tools/tooltip-art
+"""
+import struct
+from pathlib import Path
+
+SIZE, FADE, RADIUS = 64, 12, 10
+ICON_SIZE, ICON_RADIUS, ICON_FADE = 64, 12, 6
+BAR_WIDTH, BAR_HEIGHT, BAR_RADIUS, BAR_FADE = 256, 16, 3, 3
+AURA_SIZE, AURA_RADIUS, AURA_FADE = 32, 6, 5
+PLAQUE_SIZE, PLAQUE_RADIUS, PLAQUE_FADE = 32, 3, 5
+ART = Path(__file__).resolve().parents[2] / "src" / "Tooltips" / "Art"
+
+
+def alpha(x, y):
+    """How solid the pixel is: 1 inside the solid part, falling smoothly to 0 over FADE."""
+    inner = FADE + RADIUS  # where the corner circles' centres are
+    dx = max(inner - x, 0, x - (SIZE - 1 - inner))
+    dy = max(inner - y, 0, y - (SIZE - 1 - inner))
+    outside = max((dx * dx + dy * dy) ** 0.5 - RADIUS, 0)  # distance from the solid part
+    t = max(0.0, 1.0 - outside / FADE)
+    return t * t * (3 - 2 * t)
+
+
+def soft_rounded(width, height, radius, fade):
+    """1 inside, fading out smoothly over the outer fade pixels: a rectangle with round corners."""
+    inner = fade + radius
+    def shape(x, y):
+        cx, cy = x + 0.5, y + 0.5
+        dx = max(inner - cx, 0, cx - (width - inner))
+        dy = max(inner - cy, 0, cy - (height - inner))
+        outside = max((dx * dx + dy * dy) ** 0.5 - radius, 0)
+        t = max(0.0, 1.0 - outside / fade)
+        return t * t * (3 - 2 * t)
+    return shape
+
+
+def soft_circle(size, fade):
+    """1 inside, fading out smoothly over the outer fade pixels: a circle as large as the picture."""
+    def shape(x, y):
+        r = ((x + 0.5 - size / 2) ** 2 + (y + 0.5 - size / 2) ** 2) ** 0.5
+        t = max(0.0, min(1.0, (size / 2 - r) / fade))
+        return t * t * (3 - 2 * t)
+    return shape
+
+
+def write(name, width, height, shape):
+    """An uncompressed 32-bit TGA, top row first. White everywhere, so a faint pixel has no dark rim."""
+    header = struct.pack("<BBBHHBHHHHBB", 0, 0, 2, 0, 0, 0, 0, 0, width, height, 32, 0x28)
+    pixels = bytearray()
+    for y in range(height):
+        for x in range(width):
+            pixels += bytes((255, 255, 255, round(255 * shape(x, y))))
+    out = ART / name
+    ART.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(header + bytes(pixels))
+    print(f"Wrote {out.relative_to(ART.parents[2])} ({width}x{height}, {out.stat().st_size} bytes).")
+
+
+write("soft.tga", SIZE, SIZE, alpha)
+write("icon-mask.tga", ICON_SIZE, ICON_SIZE, soft_rounded(ICON_SIZE, ICON_SIZE, ICON_RADIUS, ICON_FADE))
+write("portrait-mask.tga", ICON_SIZE, ICON_SIZE, soft_circle(ICON_SIZE, ICON_FADE))
+write("bar-mask.tga", BAR_WIDTH, BAR_HEIGHT, soft_rounded(BAR_WIDTH, BAR_HEIGHT, BAR_RADIUS, BAR_FADE))
+write("aura-mask.tga", AURA_SIZE, AURA_SIZE, soft_rounded(AURA_SIZE, AURA_SIZE, AURA_RADIUS, AURA_FADE))
+write("plaque.tga", PLAQUE_SIZE, PLAQUE_SIZE, soft_rounded(PLAQUE_SIZE, PLAQUE_SIZE, PLAQUE_RADIUS, PLAQUE_FADE))

@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+"""Makes the game's textures from the pictures drawn for Sane UI (large PNGs in assets/).
+
+How and why, with the measurements behind every number: Doc/guides/images.md. In short:
+
+The game draws BLP files. Blizzard's own logos are BLP2 with DXT5 compression and a full chain of
+mipmaps (Interface/GLUES/...-LOGO.BLP), and so are these: a quarter of the memory of an uncompressed
+picture, kept compressed on the graphics card, sides a power of two, and a ready smaller copy for
+small screens. The game reads them only when something that shows one is opened.
+
+Each kind has the size it is drawn at in the game, in UI units. A texture is made for a 4K screen
+at UI scale 1 (a unit is 2160 / 768 pixels there): each side the power of two that holds that many
+texels, or the one below it if that still has SLACK of them. The picture keeps its proportions: it
+is cropped, fitted into its drawn box (at the left or centred), and the box is put at the top left
+of the texture; what is left over stays clear and is cut off in the game with SetTexCoord (the tool
+prints the numbers).
+
+  banner   drawn 300 x 100 (src/Core/Settings/Banner.xml): 1024 x 256, the box 768 x 256, TexCoords 0.75 x 1.
+  icon     drawn up to 40 x 40 (not drawn yet: up to an action button): 128 x 128.
+  button   drawn 24 x 24 (the smiley beside the line to write in, src/Social/Picker.lua): 64 x 64.
+  logo     drawn up to 96 x 96 (not drawn yet): 256 x 256.
+  sheet    a flipbook made by dev/tools/flipbook: kept whole, its sides are powers of two already (its
+           frame's side came from the drawn size there); TexCoords 0-1.
+
+They go into assets/optimized/, and a module's banner also into that module, as Art/banner.blp:
+that copy is the one the game loads (the options page of the module shows it at the top). Another
+picture a module ships goes there under its own name (Art/smiley.blp).
+
+On the way, alpha from SOLID up becomes solid (the drawings' solid parts came 99 % opaque, which
+the game would draw faintly see-through), and the colour at the picture's edge is carried into the
+clear pixels around it, so no dark seam shows where the game blends between neighbouring pixels.
+
+The DXT5 blocks are made by ImageMagick (its cluster fit, after libsquish): Pillow's own DXT5
+writer washes out the letters and leaves red specks on gold.
+
+Needs Python with Pillow and NumPy, and ImageMagick 7 (magick).
+
+Usage:  dev/tools/art
+"""
+import io
+import struct
+import subprocess
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[2]
+ASSETS = ROOT / "assets"
+OUT = ASSETS / "optimized"
+
+SOLID = 250          # alpha (0-255) from which a pixel counts as solid
+MARGIN = 2           # clear texels around a picture, so the texture's border never cuts its edge
+UNIT_PIXELS = 2160 / 768  # a UI unit on a 4K screen at UI scale 1 (Blizzard's PixelUtil: 768 / height)
+SLACK = 0.85         # a side may have this share of the texels 4K asks for before it doubles
+LARGEST = 1024       # no side larger
+KINDS = {            # kind: (drawn width, height in UI units; set at the left, else centred)
+    "banner": (300, 100, True),
+    "icon": (40, 40, False),
+    "button": (24, 24, False),
+    "logo": (96, 96, False),
+}
+# The pictures: (file in assets, a pattern; name in assets/optimized; kind; the module that ships it;
+# its file in that module's Art/, banner.blp if none is given).
+PICTURES = [
+    ("SaneUI-banner.png", "SaneUI-banner", "banner", "Core"),  # the page Sane UI of the options
+    ("SaneSpellbook-banner.png", "SaneSpellbook-banner", "banner", None),  # not shipped: Abilities has no banner
+    ("SaneChat-ban*.png", "SaneChat-banner", "banner", None),  # came as "banenr"; not shipped: Social has no banner
+    ("SaneTooltip-banner.png", "SaneTooltip-banner", "banner", "Tooltips"),
+    ("SaneUI-Icon.png", "SaneUI-Icon", "icon", None),
+    ("SaneSpellbook-Icon.png", "SaneSpellbook-Icon", "icon", None),
+    ("SaneChat-Icon.png", "SaneChat-Icon", "icon", None),
+    ("SaneTooltip-Icon.png", "SaneTooltip-Icon", "icon", None),
+    ("SaneSocial-Smiley.png", "SaneSocial-Smiley", "button", "Social", "smiley.blp"),  # drawn by dev/tools/smiley-art
+    ("SaneUI-BigLogo.png", "SaneUI-BigLogo", "logo", None),
+]
+
+
+def load(path, crop=True):
+    """The picture as floats (0-1), colour premultiplied by alpha, cropped to what is not clear."""
+    rgba = np.asarray(Image.open(path).convert("RGBA"), dtype=np.float64) / 255
+    alpha = np.minimum(1.0, rgba[..., 3] * 255 / SOLID)
+    ys, xs = np.nonzero(alpha > 8 / 255)
+    rgba[..., :3] *= alpha[..., None]
+    rgba[..., 3] = alpha
+    return rgba[ys.min():ys.max() + 1, xs.min():xs.max() + 1] if crop else rgba
+
+
+def side(units):
+    """A texture's side for something drawn that many UI units long (see the docstring)."""
+    size = 1
+    while size < SLACK * units * UNIT_PIXELS and size < LARGEST:
+        size *= 2
+    return size
+
+
+def place(art, aspect, high, left):
+    """The drawn box, aspect : 1, in the art's own pixels, with the art inside a margin of MARGIN
+    texels (the box becomes high texels high): as large as fits, at the left or centred."""
+    ah, aw = art.shape[:2]
+    margin = 2 * MARGIN / high
+    h = max(ah / (1 - margin), aw / (aspect - margin))
+    box = np.zeros((round(h), round(h * aspect), 4))
+    x = round(MARGIN * h / high) if left else round((box.shape[1] - aw) / 2)
+    y = round((box.shape[0] - ah) / 2)
+    box[y:y + ah, x:x + aw] = art
+    return box
+
+
+def resize(canvas, width, height):
+    """The canvas at width x height, each channel resampled by itself (Lanczos, premultiplied)."""
+    channels = [Image.fromarray(canvas[..., c].astype(np.float32), "F").resize((width, height), Image.LANCZOS)
+                for c in range(4)]
+    out = np.stack([np.asarray(c, dtype=np.float64) for c in channels], axis=-1)
+    out[..., 3] = np.clip(out[..., 3], 0, 1)
+    out[..., :3] = np.clip(out[..., :3], 0, out[..., 3:4])
+    return out
+
+
+def blur(channel, radius):
+    """A Gaussian blur, outside counting as clear (Pillow does not blur pictures of floats)."""
+    reach = int(3 * radius) + 1
+    kernel = np.exp(-0.5 * (np.arange(-reach, reach + 1) / radius) ** 2)
+    kernel /= kernel.sum()
+    padded = np.pad(channel, reach)
+    rows = np.apply_along_axis(np.convolve, 1, padded, kernel, "valid")
+    return np.apply_along_axis(np.convolve, 0, rows, kernel, "valid")
+
+
+def straight(level):
+    """8-bit RGBA, colour no longer premultiplied. Clear texels take the colour of the edge near them."""
+    alpha = level[..., 3]
+    rgb = level[..., :3] / np.maximum(alpha, 1e-6)[..., None]
+    radius = max(1, min(level.shape[:2]) / 32)
+    near = blur(alpha, radius)
+    bled = np.stack([blur(level[..., c], radius) for c in range(3)], axis=-1) / np.maximum(near, 1e-6)[..., None]
+    mean = level[..., :3].sum(axis=(0, 1)) / max(alpha.sum(), 1e-6)
+    bled = np.where((near > 1e-4)[..., None], bled, mean)
+    rgb = np.where((alpha < 1 / 255)[..., None], bled, rgb)
+    out = np.concatenate([np.clip(rgb, 0, 1), alpha[..., None]], axis=-1)
+    return Image.fromarray(np.round(out * 255).astype(np.uint8), "RGBA")
+
+
+def dxt5(image):
+    """The DXT5 blocks of an RGBA picture: ImageMagick writes them as a DDS file (header of 128 bytes)."""
+    png = io.BytesIO()
+    image.save(png, "PNG")
+    data = subprocess.run(["magick", "png:-", "-define", "dds:compression=dxt5", "-define", "dds:mipmaps=0",
+                           "-define", "dds:cluster-fit=true", "dds:-"],
+                          input=png.getvalue(), capture_output=True, check=True).stdout
+    blocks = max(1, (image.width + 3) // 4) * max(1, (image.height + 3) // 4)
+    assert data[:4] == b"DDS " and data[84:88] == b"DXT5" and len(data) == 128 + 16 * blocks, "no DXT5 from magick"
+    return data[128:]
+
+
+def blp(levels, width, height):
+    """A BLP2 file: DXT5 (encoding 2, alpha depth 8, alpha encoding 7), mipmaps, largest first."""
+    offsets, sizes, start = [], [], 148 + 1024  # header, then a palette DXT does not use
+    for level in levels:
+        offsets.append(start + sum(sizes))
+        sizes.append(len(level))
+    unused = [0] * (16 - len(levels))
+    header = b"BLP2" + struct.pack("<I4B2I", 1, 2, 8, 7, 1, width, height)
+    header += struct.pack("<16I", *offsets, *unused) + struct.pack("<16I", *sizes, *unused)
+    return header + bytes(1024) + b"".join(levels)
+
+
+def check(path, first):
+    """Reads the file back (Pillow's own BLP reader) and says how close it is to the picture."""
+    with Image.open(path) as image:
+        back = np.asarray(image.convert("RGBA"), dtype=np.float64)
+    want = np.asarray(first, dtype=np.float64)
+    weight = want[..., 3:4] / 255
+    noise = ((back[..., :3] - want[..., :3]) ** 2 * weight).sum() / max(weight.sum() * 3, 1)
+    psnr = 10 * np.log10(255 ** 2 / max(noise, 1e-9))
+    return psnr, np.abs(back[..., 3] - want[..., 3]).max()
+
+
+def make(pattern, name, kind, module, shipped_as="banner.blp"):
+    found = sorted(ASSETS.glob(pattern))
+    if len(found) != 1:
+        print(f"Skipped {name}: {len(found)} files in assets/ match {pattern}.")
+        return
+    if kind == "sheet":
+        box = load(found[0], crop=False)
+        box_h, box_w = height, width = box.shape[:2]
+        if width & (width - 1) or height & (height - 1):
+            print(f"Skipped {name}: a sheet's sides must be powers of two, not {width} x {height} (dev/tools/flipbook).")
+            return
+    else:
+        drawn_w, drawn_h, left = KINDS[kind]
+        width, height = side(drawn_w), side(drawn_h)
+        texels = min(width / drawn_w, height / drawn_h)  # per UI unit, the same both ways
+        box_w, box_h = round(drawn_w * texels), round(drawn_h * texels)
+        box = place(load(found[0]), drawn_w / drawn_h, box_h, left)
+    levels, first, k = [], None, 0
+    while True:
+        # Every level made from the full picture (not from the level before), the box at the top left.
+        w, h = max(1, width >> k), max(1, height >> k)
+        bw, bh = max(1, round(box_w / 2 ** k)), max(1, round(box_h / 2 ** k))
+        texture = np.zeros((h, w, 4))
+        texture[:bh, :bw] = resize(box, bw, bh)
+        image = straight(texture)
+        if first is None:
+            first = image
+        levels.append(dxt5(image))
+        if w == h == 1:
+            break
+        k += 1
+    data = blp(levels, width, height)
+    targets = [OUT / f"{name}.blp"] + ([ROOT / "src" / module / "Art" / shipped_as] if module else [])
+    for target in targets:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+    psnr, alpha = check(targets[0], first)
+    shipped = f", shipped as src/{module}/Art/{shipped_as}" if module else ""
+    print(f"{found[0].name} ({found[0].stat().st_size // 1024} KB) -> {name}.blp {width}x{height}, "
+          f"{len(levels)} levels, {len(data) // 1024} KB (read back: {psnr:.1f} dB, alpha off by {alpha:.0f} at most){shipped}")
+    if kind != "sheet":
+        print(f"    drawn {drawn_w} x {drawn_h} units: SetTexCoord(0, {box_w / width:g}, 0, {box_h / height:g}), "
+              f"{texels / UNIT_PIXELS:.0%} of the texels 4K at UI scale 1 asks for")
+
+
+for picture in PICTURES:
+    make(*picture)

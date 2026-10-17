@@ -1,0 +1,7 @@
+# 3. Animation of a chosen part, then its flipbook (in the game drawn with alphaMode="ADD" over the star):
+#      dev/tools/imagegen dev/imagegen/sets/example/anim.txt
+#      dev/tools/flipbook assets/generated/example/anim/star-glint-1 assets/Example-star-glint.png --loop drop-last --glow --fps 16 --drawn 24
+include: dev/imagegen/recipes/anim.txt
+ref: assets/Example-star.png
+out: assets/generated/example/anim
+star-glint: The star stays warm gold. Its golden centre glows brighter and fades again, and a small glint of light runs along its points.

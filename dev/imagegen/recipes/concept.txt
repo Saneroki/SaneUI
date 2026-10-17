@@ -1,0 +1,9 @@
+# Recipe: concept. A whole window, panel or screen as one picture, in the house style: many quick drafts
+# to choose one from. The chosen one becomes the set's anchor, and every part is made from it.
+# Image 1 is the house's anchor picture: say what to make, not what image 1 shows.
+include: dev/imagegen/style.txt
+workflow: qwen21-turbo-edit-1ref
+set: width=1536, height=1024
+count: 8
+ref: assets/Concept art/Elements.png
+before: Use image 1 only as a reference for the style, materials, colours, rims and ornaments. Create new concept art of a game interface element, shown whole and centred on a plain dark grey background, with nothing else from image 1:

@@ -1,0 +1,43 @@
+## Interface: 16001
+## Title: Tooltips
+## Notes: Draws the game's tooltips anew: items, spells, players and creatures (health, power, target, buffs), buffs and quests, each in a tidy panel in its own colour. Shows what an item brings in, with advice on what to do with it for gold. Can anchor tooltips to the mouse cursor. Switched off, the tooltips are the game's own again.
+## Author: Saneroki
+## Version: 0.3.0
+## Category: Sane UI
+## Group: SaneUI
+## Dependencies: SaneUI
+## IconTexture: Interface\Icons\INV_Misc_Note_01
+## X-License: MIT
+
+# The module's own table, its switches and when a tooltip is drawn. First: the other files add to that table.
+Tooltips.lua
+# The module's own words, and the words of the game it has to know
+Texts.lua
+# A panel's contents as plain data, and the palette made from the game's colours
+Model.lua
+# Reads a tooltip's lines and sorts them into a model
+Read.lua
+# What changes while a panel is shown: a unit's health and power, its target, its buffs
+Live.lua
+# A player's item level, by inspecting them
+Inspect.lua
+# Numbers that follow from what the game says: a spell's damage per second, a creature's experience
+Numbers.lua
+# The module's own quest facts, and the quest lists of creatures, NPCs and items
+Data\Quests.lua
+Quests.lua
+# What things fetch at the auction house, noted as you browse it
+Auction.lua
+# How each kind of tooltip is sorted
+Kinds\Gold.lua
+Kinds\Item.lua
+Kinds\Spell.lua
+Kinds\Unit.lua
+Kinds\Aura.lua
+Kinds\Quest.lua
+# The parts a panel is drawn with, used again for every draw
+Pools.lua
+# The panel that is drawn over the game's tooltip
+Panel.lua
+# Where each panel stands, and the game's tooltip kept out of sight meanwhile, then restored
+Host.lua

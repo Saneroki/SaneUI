@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Runs every check and test of Sane UI. The first failure stops the run.
+#
+#   lint            the TOCs, the syntax and stray globals of all files (no game needed)
+#   core.lua        Core, with its options (Settings)
+#   abilities.lua   the Abilities module
+#   tooltips.lua    the Tooltips module
+#   social.lua      the Social module
+#   sync.lua        Core's Sync: the game's own settings kept with Sane UI's
+#   window.lua      what Core gives every window: moving, sizing, docking, opening under the mouse
+#   voices.py       the voice database's rules: the cast, the names, words, parts, tone, presets
+#   imagegen.py     the image pipeline's lists, recipes and sets, and the flipbook's grid and loops
+#
+# Usage:  dev/tests/run
+set -euo pipefail
+
+here="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+cd "$here/../.."
+
+command -v lua5.1 >/dev/null || { echo "lua5.1 is not installed: the tests cannot run." >&2; exit 1; }
+
+dev/tests/lint
+lua5.1 dev/tests/core.lua
+lua5.1 dev/tests/abilities.lua
+lua5.1 dev/tests/tooltips.lua
+lua5.1 dev/tests/social.lua
+lua5.1 dev/tests/sync.lua
+lua5.1 dev/tests/window.lua
+python3 -I dev/tests/voices.py
+python3 -I dev/tests/imagegen.py

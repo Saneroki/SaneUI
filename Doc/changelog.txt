@@ -1,0 +1,321 @@
+Sane UI: what is new
+====================
+
+The bigger changes of each version, newest first.
+
+
+0.3.0 (2026-10-14)
+------------------
+- Tooltips have a cleaner look in the game's own colours. A spell's
+  tooltip shows only what the game says about it, now in every language.
+  Quest tooltips offer Skyborne characters the quests meant for their
+  race, show rare drops as "<1%", and creatures say "Next level in N".
+
+- Abilities: hunters no longer see their pet's abilities as grey spells,
+  and a spell that needs another spell first says which one.
+
+- The game settings Sane UI keeps the same on all characters now follow
+  the game's own options pages. The game's chat channels are chosen in
+  the chat window's channel list.
+
+- Windows that open under the mouse wait a moment before they open and
+  close, and can be kept open. The CVar list lets you edit values in
+  place and filter them with the game's filter button.
+
+- The Sane UI page in the game's options (Esc > Options > AddOns >
+  Sane UI) shows where to find Sane UI (Discord, website, GitHub) and
+  has buttons to report a bug, suggest a feature or send feedback. Write
+  it there, and Sane UI makes a report to copy and paste on GitHub or
+  Discord. Also /sane feedback.
+
+- Windows get a title bar with their name and their buttons (the game's
+  own window, maximize and minimize, close). Drag it to move the window.
+  Click the name to search the window: type a few letters, in order, and
+  only what matches stays (a full screen chat finds messages, speakers and
+  chats that way). A window remembers whether you left it maximized.
+
+- Tooltips: a creature's or player's portrait is now its live 3D model,
+  moving, its face in view. Where the game cannot draw it, the picture
+  stays as before. The setting Live 3D portraits switches it off.
+
+- The Spellbook module is now called Abilities: it will do more than the
+  spellbook. Its settings and reservations carry over. Type /sane abilities
+  (or /sane ab); the old /sane spellbook still works.
+
+- Windows can dock in the middle of the screen too, the place for windows
+  you talk to (vendor, trainer, auction house; to come). A window in the
+  middle or not docked has buttons in its top right corner: the game's own
+  window instead (and on the game's window a button to come back),
+  maximize and minimize, and close. In Social the first and the last bring
+  the game's chat back.
+
+- Sane UI's windows are moved and sized like the game's own frames: only in
+  Edit Mode (Esc > Edit Mode). There each shows Edit Mode's blue box with
+  its name; drag it, and size it by its grip. Outside Edit Mode there is no
+  grip and nothing is dragged by accident.
+
+- Social: a smiley at the end of the line you write in. It puts the game's
+  raid marks into your message (where the game's chat shows them: not in
+  General, Trade and its other public channels) and does the emotes played
+  most, such as /hello, /cheer and /thank.
+
+- Chat is now called Social: it is to hold everything social, the chat
+  first. Your settings come along; /sane chat still works next to
+  /sane social.
+
+- A window that fills the screen has a dropdown Classic windows in its top
+  right corner with the game's own windows it stands for. In Social: Chat
+  puts our chat window away and brings the game's chat back (/sane social
+  brings ours again); Friends list opens the game's friends list. A window
+  that fills the screen is always square; only a small window is round.
+
+- Windows get round corners and a thin bronze trim, square where they meet
+  the edge of the screen. The chat window shows them as it grows to fill
+  the screen. Under Social > Appearance > Expand window (first in the tab
+  again): Corner radius, and Don't round corners on screen edges (off:
+  every corner is round; at 100 % a square window becomes a circle).
+
+- /sane window: a window to try Sane UI's windows; click it to keep it
+  open.
+
+- Tooltips: what you wear stands still beside the item you look at, a small
+  gap between them, instead of flickering between two places.
+
+- Tooltips: the Gold section says what one item brings at a vendor and at
+  the auction house after the cut, by the prices you saw there yourself
+  (every item shows its vendor price, also in a stack: for one), and tells
+  you in one line what to do: sell it at the auction house for a price, sell
+  it to a vendor, or at the auction house the most it is worth buying for.
+  Hold Alt for the numbers behind it.
+
+- Tooltips: an item's quests in a Quest section of their own: the quest it
+  starts and every quest that needs it, each saying whether it is in your
+  quest log (with your count), available to take, not yet for you, or done.
+  Creatures show items they drop that start a quest; every quest name has
+  its level. A class or profession an
+  item asks for stands at the right under the level it needs.
+
+- Spellbook: move a reservation like any button. Drag its grey icon on the
+  action bar to another button, with the bars unlocked or Shift held. Let
+  go where there is no button and the reservation is removed.
+
+- Spellbook: drag a grey spell onto an empty button even where the bar hides
+  its empty buttons ("always show buttons" off). The
+  reservation shows on that spot.
+
+- Spellbook: in every tab the spells you know come first, then the ones you
+  can learn now, then the rest in the order you will get them.
+
+- Every setting explains itself: hover a checkbox, slider or dropdown
+  and its tooltip says in a sentence or two what it does and what
+  "Off" means. Labels say what they are: Chat's Fade in, Fade out and
+  Slide up with their times, Bubble opacity (100 solid, like every
+  other opacity slider), Show the game's chat too; the Spellbook's
+  Show unlearned spells, Move and resize the spellbook.
+
+- Spellbook: its options page has two sections. "Sane UI lays out the
+  spellbook pages" comes first; the four switches that need it are
+  greyed out while it is off. The spellbook's own menu has the switches
+  about the book too. Deleting a saved layout asks first. Fixed: a
+  layout saved in a fight lost the buttons the game hid.
+
+- Chat: a switch "Chat window" shows or hides the window; the ticks in
+  the list on the chat's name follow your profiles now.
+
+- Esc brings a window that fills the screen back.
+
+- Many fixes after a full review: a character whose profile was
+  Empty lost its changes at every logout; windows docked to a screen
+  edge stay there when you change the UI scale; the spellbook keeps
+  its height when you make it small or large; item and unit levels
+  show when tooltip icons are off; the chat keeps your place while
+  you read back, and shows raid marks as icons.
+
+- Profiles: Empty, first in the list and what every character has at
+  first: your settings as they are kept, loaded at every login and saved
+  at every logout and /reload. SaneUI Defaults now only resets Sane UI's
+  own settings, not the game settings that Sync keeps.
+
+- Sync: the Edit Mode layout you choose is kept, also in your profiles.
+  It was set back to Modern at every login.
+
+- Chat: saves your chat history (the last 100 messages at first, up to
+  500) and shows it again at the next login. System, creature and
+  addon messages, and channel joins and leaves, each have a switch
+  in Chat > General; joins and leaves are hidden at first. The
+  bubbles stand closer together.
+
+- Chat: all bubbles look alike, yours too. Choose their background in
+  Chat > Appearance: a solid color of your choice, or one of five of
+  the game's own background textures (Marble, Rock, Slate, Iron, Night).
+
+- Chat: everything the game's chat shows is in the chat window too:
+  system messages, pings, loot, money, experience, battleground and
+  channel notices, friends coming online, addon messages. Each kind
+  can be shown or hidden in the list on the chat's name.
+
+- Settings and Sync are part of Sane UI itself now, no addons of their
+  own. If you installed an earlier 0.3.0, delete the folders
+  SaneUI_Settings and SaneUI_Sync from Interface\AddOns.
+
+- Profiles: the profile SaneUI Defaults is always there, with every
+  setting as Sane UI has it at first. Load it to go back to those
+  settings, or duplicate it to start a profile of your own. It cannot be
+  changed, renamed or deleted.
+
+- Profiles: the line New Characters in the list of characters sets the
+  profile, Load at login and Save at logout that a character starts
+  with when it first logs in: a new one, or one you have not played
+  since installing Sane UI.
+
+- Windows docked to a screen edge fill the whole screen when you push
+  the mouse against that edge (docked in a corner: all the way into
+  that corner), and spring back when you push it there again. While a
+  window fills the screen, nothing behind it can be clicked. How they
+  move is chosen under Sane UI > Appearance (Animation type). The chat
+  window does it; its section Expand window (Chat >
+  Appearance) switches it on or off and sets its own animation type and
+  the background's opacity and texture.
+
+- New: Sync, part of Sane UI itself: the settings the game keeps for each character on its
+  own are the same on all your characters and part of your profiles, in
+  parts you tick, from the Edit Mode layout and the chat windows to
+  graphics and sound.
+
+- Chat: clicks on the chat window go through to the game, except on
+  links, names and the chat button. Click a name to whisper to them.
+  The scroll bar is only there while you are scrolled up. System
+  messages, emotes and achievements are bubbles too, in the middle; the
+  guild's message of the day and guild achievements are shown. Faded
+  messages come back with the mouse wheel, not the mouse alone. New
+  messages fade in and the others slide up smoothly. The options page
+  Chat has two tabs, General and Appearance; Appearance sets the text,
+  the fade in and out speeds, how long messages are shown, how visible
+  faded ones stay, the slide speed, or switches all animations off.
+
+- Chat: the game's chat channels (General, Trade, ...) can be joined or
+  left on every character at once, on the page Chat of the options.
+
+- Options: a list of every CVar of the game. Search it, see what each one
+  does and its default, change it, and tick it to keep it the same on all
+  your characters.
+
+- Options: a clearer layout. Sane UI shows its logo; under it are the pages
+  Profiles, General and Appearance, then one page per module, called by its
+  name (Chat, Spellbook, Tooltips).
+
+- Profiles: a page of their own, with tabs: Profiles, Accountwide and
+  CVars. All settings are account wide at first; untick "All
+  settings accountwide" and every character keeps its own, or untick single
+  modules in the tab Accountwide. Save the settings of every module as a
+  profile, and load, duplicate, rename or delete profiles. In the list of
+  your characters, give any character a profile to load at login and save
+  into at logout: it uses that profile instead of the account's settings.
+
+- Options: every page of Sane UI now has its banner at the top. The
+  general page shows the Sane UI banner above General, and each module's
+  page shows its own (Sane Spellbook, Sane Chat, Sane Tooltips).
+
+- Windows dock to the screen's edges. Drag the chat window near a corner, the
+  middle of an edge, or the middle of the screen, and it snaps there and stays
+  there. Drag it away to free it. Type
+  /sane window for a small window to try it with: that one also springs open
+  when you move the mouse onto it.
+
+- Spellbook: a Home page. The spellbook opens on a new first tab that shows
+  what your trainer can teach you right now, with prices, and which spells you
+  get from quests and where.
+
+- Spellbook: marks on the icons. A yellow "!" means you get the spell from a
+  quest, not from the trainer. A small
+  clock means a button is reserved for it; the reserved button on your action
+  bar carries the same clock and shows the spell's tooltip.
+
+- Spellbook: the old training tab and window are gone. Home replaces them.
+
+- Spellbook: move it and resize it. Drag the bar at the top to move the
+  spellbook, drag its lower right corner to give it any size. The pages fill
+  the window, and they are more compact: about twice as many spells on a page.
+
+- Spellbook: all ranks of a spell fold into one entry. Click the + on it to see
+  every rank, and the heading above them to fold them away again.
+
+- Spellbook: the General tab lists the passive spells and the weapon skills you
+  can still learn. A checkbox next to the page buttons hides and shows all the
+  grey entries.
+
+- Modules are called by their plain name in the addon list: Spellbook,
+  Tooltips, Chat. The options' controls are built when you first open them.
+
+- New module: Chat, a first try. A chat window that looks like a messenger:
+  every message in a bubble, yours on the right, everybody else's on the left
+  with name and class icon. Drag its top bar to move it and its lower right
+  corner to size it. It takes the place of the game's chat: press Enter or /
+  and the line to write in opens at its bottom. Click the chat's name in that
+  line (Say, Guild) to choose where you write. Messages fade out after a
+  while; move the mouse over the window to read them again. You can switch
+  the fading off or set its seconds in the options. The same list lets you
+  tick which chats the window shows. Point at a linked item, spell or quest
+  to see its tooltip; click it as in the game's chat. Tick Chat in the addon
+  list; /sane chat switches between this window and the game's own chat. The game's
+  chat stays on screen next to it unless you switch "Show native chat" off.
+
+- New module: Tooltips. The game's tooltips are drawn anew on dark panels in
+  the colour of what they are about. Items show their damage, level, durability
+  and price at a glance; spells their cost, cast time, cooldown and range side
+  by side; players and creatures a portrait, health and mana bars, their target
+  and their buffs; buffs how long they still run; quests what is left to do.
+  Spells that hurt or heal also show their damage, damage per second, damage
+  per mana and your crit chance; creatures the experience a kill gives and how
+  many kills to your next level, and what your quests still want from them (to
+  kill or to loot, with how often they drop it); quest givers the quests they offer you and take back; items
+  their vendor price and the auction price you last saw and, for trade goods, the
+  professions that use them.
+  In the options you can have tooltips show only while you hold Shift, Ctrl,
+  Alt, or Shift and Alt, and have them follow the mouse cursor always or while
+  you hold a key. A tooltip is gone as soon as the mouse leaves what it is
+  about, without fading out slowly. A link clicked in chat opens its tooltip
+  in the middle of the screen; click the tooltip to close it. You can also set the text size and the opacity. Tick
+  Tooltips in the addon list; untick it and
+  the tooltips are the game's own again.
+
+- Fixed: Sane UI's options were missing from Esc > Options > AddOns when no
+  other addon had options of its own. They are back.
+
+- Chat: in a fight or a dungeon, where the game shows addons no chat, the
+  game's own chat comes back until it is over, so no message is missed.
+
+- Lighter and sturdier everywhere: the spellbook does its heavy work only when
+  you open it, the chat does less per message, and a part that fails gives the
+  game's own back without taking the rest of Sane UI with it.
+
+
+0.2.0 (2026-10-14)
+------------------
+- Modules you can switch on and off. In the game's addon list, Sane UI now has
+  its modules under it: Settings and Spellbook. Untick the ones
+  you do not want. What a module saved is kept until you switch it on again.
+
+- Options with a page per module. Esc > Options > AddOns > Sane UI is the
+  general page; each module that is switched on has its own page under it.
+
+- If you update from 0.1.0: copy all three folders (SaneUI, SaneUI_Settings,
+  SaneUI_Spellbook) into your AddOns folder and restart the game.
+
+
+0.1.0 (2026-10-14)
+------------------
+The first version of Sane UI.
+
+- Spells you have not learned yet, in your spellbook. They are listed in grey,
+  in the tab where they will end up, with the level or trainer they come from.
+
+- Reserve action bar buttons. Drag a grey spell onto a button: the button waits
+  for it and becomes the real spell the moment you learn it.
+
+- Training: a tab in the spellbook shows what your trainer has for you, and
+  what it costs.
+
+- Action bar layouts. Save all your bars under a name and load them again later.
+
+- Options in the game's own menu: Esc > Options > AddOns > Sane UI, or type /sane.

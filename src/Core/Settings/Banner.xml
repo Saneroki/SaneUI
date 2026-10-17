@@ -1,0 +1,22 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <!--
+        A banner at the top of an options page, in place of the page's title (Settings.lua). A row of
+        the game's own settings list, which reads the row's height from here. The art is drawn at 3 : 1,
+        the box dev/tools/art sets every banner in, so all banners stand the same height. The file is
+        1024 x 256 for a 4K screen; the box fills its left 768 (Settings.lua: BANNER_RIGHT).
+    -->
+    <Frame name="SaneUISettingsBannerTemplate" mixin="SaneUISettingsBannerMixin" virtual="true">
+        <Size y="108"/>
+        <Layers>
+            <Layer level="ARTWORK">
+                <Texture parentKey="Art">
+                    <Size x="300" y="100"/>
+                    <Anchors>
+                        <!-- In line with the page's title: the rows start 3 to the right of it. -->
+                        <Anchor point="TOPLEFT" x="-3" y="0"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+        </Layers>
+    </Frame>
+</Ui>

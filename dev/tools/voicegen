@@ -1,0 +1,539 @@
+#!/usr/bin/env python3
+"""Makes Sane UI's voice overs, and short sounds for its windows, with the cloud voice service.
+How it is used: Doc/guides/voice-generation.md, *The voice tool*. What gets a voice, who says it and how:
+the voice database, dev/tools/voicedb.
+
+The service's address, its models and the key stay on this computer, never in the repository: in
+~/.config/saneui/voice-service.json (or the file $SANEUI_VOICE_CONFIG names), readable by its owner only:
+
+  {"host": "<the service's address>", "header": "<the key's header>", "key": "",
+   "models": {"newest": {"id": "...", "sounds": true, "leave out": ["speed"], "stability steps": null},
+              "fast":   {"id": "...", "sounds": false},
+              "design": {"id": "..."},
+              "sound":  {"id": "...", "format": "pcm_44100"}}}
+
+  sounds            the model reads the names' sounds (IPA); the others get the respellings only
+  leave out         settings or fields the model does not take (speed, previous_text, ...)
+  stability steps   the only stabilities the model takes, e.g. [0.0, 0.5, 1.0]; null: any
+  format            how short sounds come back: pcm_<rate> (raw, the best) or mp3_<rate>_<kbps>
+
+$SANEUI_VOICE_KEY, when set, is the key instead. `voicegen key` asks for the key and writes it there.
+
+Reads:  dev/voices/build/lines.jsonl (dev/tools/voicedb build), dev/voices/cast.md, dev/voices/names.md
+Writes: dev/voices/voices.json    each preset's voice and the names' dictionaries, as the service knows them
+                                  (in git)
+        dev/voices/made.jsonl     every file made: line, preset, model, take, voice, the service's request
+                                  number and characters (in git: what is made already, and what it cost)
+        dev/voices/sound/         not in git: master/<hash>.wav and .json (the service's sound, and when
+                                  each character is said), <model>/<file>.ogg (the game's files)
+        dev/voices/design/        not in git: the previews of each preset's voice
+        assets/generated/sounds/  not in git: candidates for short sounds, and sounds.jsonl (what made them)
+
+Usage:  dev/tools/voicegen key                       ask for the service's key and keep it in the config file
+        dev/tools/voicegen account                   the plan, characters used and left, voice slots
+        dev/tools/voicegen design <preset>           three previews of a preset's voice, to listen to
+        dev/tools/voicegen pick <preset> <n>         keep preview n as the preset's voice
+        dev/tools/voicegen names                     send names.md as the pronunciation dictionaries
+        dev/tools/voicegen say <key or words> [options]   make the voices of lines (a line's key, a text's
+                                                     key, or words of its zone, quest, speaker or key)
+            --model newest|fast   the model (default newest)
+            --preset ID           only the files of this preset
+            --take N              another take of lines made before (another seed; default 1)
+            --limit N             at most N files
+            --jobs N              requests at a time (default 3; the plan allows more on its newest
+                                  model, twice that on the fast one)
+            --yes                 send even if it is more than 20,000 characters
+            --dry-run             what would be sent and what it costs; nothing is sent
+        dev/tools/voicegen sound <name> "<what it sounds like>" [--seconds S] [--count N] [--influence F]
+                                 [--loop]            short sounds for windows, as candidates to listen to
+        dev/tools/voicegen ogg <in> <out.ogg> [--ui] the game's file from any sound (--ui: a short sound)
+"""
+import argparse
+import array
+import base64
+import concurrent.futures
+import datetime
+import getpass
+import hashlib
+import importlib.machinery
+import importlib.util
+import json
+import os
+import shutil
+import subprocess
+import sys
+import threading
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+import wave
+
+sys.dont_write_bytecode = True
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(HERE))
+VOICES = os.path.join(ROOT, "dev", "voices")
+SOUND = os.path.join(VOICES, "sound")
+MASTER = os.path.join(SOUND, "master")
+DESIGN = os.path.join(VOICES, "design")
+CANDIDATES = os.path.join(ROOT, "assets", "generated", "sounds")
+VOICES_FILE = os.path.join(VOICES, "voices.json")
+MADE = os.path.join(VOICES, "made.jsonl")
+CONFIG = os.environ.get("SANEUI_VOICE_CONFIG") or os.path.expanduser("~/.config/saneui/voice-service.json")
+
+VOICE_RATE = 24000      # the service's speech: 16-bit PCM, one channel, samples a second
+ASK = 20000             # characters: more than this in one go needs --yes
+GAP = (0.05, 0.15)      # seconds of quiet kept before and after the speech
+QUIET = 0.003           # a sample below this share of full scale (about -50 dB) is quiet
+
+# The game's files (Doc/ideas/Lore.md, *The service: cost and form*): speech at even loudness, one
+# channel at 22.05 kHz, Ogg Vorbis of about 40 kbps. Short sounds stay at 44.1 kHz and are evened by
+# their peak: loudness measures need longer than a click lasts.
+VOICE_OGG = ["-ac", "1", "-ar", "22050", "-c:a", "libvorbis", "-b:a", "40k"]
+SOUND_OGG = ["-ac", "1", "-ar", "44100", "-c:a", "libvorbis", "-q:a", "6"]
+LOUDNESS = "I=-18:TP=-2:LRA=11"
+PEAK = -1.0             # dBFS a short sound's loudest sample is set to
+
+loader = importlib.machinery.SourceFileLoader("voicedb", os.path.join(HERE, "voicedb"))
+db = importlib.util.module_from_spec(importlib.util.spec_from_loader("voicedb", loader))
+loader.exec_module(db)
+
+
+# --- the service ---------------------------------------------------------------------------------
+
+class ServiceError(Exception):
+    def __init__(self, message, code=None):
+        super().__init__(message)
+        self.code = code        # 401 a wrong key, 402 no credits left: nothing more can be made
+
+
+def config(need_key=True):
+    if not os.path.exists(CONFIG):
+        sys.exit(f"voicegen: no {CONFIG} (Doc/guides/voice-generation.md, *The voice tool*)")
+    with open(CONFIG, encoding="utf-8") as fh:
+        cfg = json.load(fh)
+    cfg["key"] = os.environ.get("SANEUI_VOICE_KEY") or cfg.get("key")
+    if need_key and not cfg.get("key"):
+        sys.exit("voicegen: no key yet: run dev/tools/voicegen key")
+    return cfg
+
+
+def call(cfg, method, path, body=None, raw=False, tries=6):
+    """One request; waits and tries again while the service is busy (409 still making, 429 too many at
+    a time) or down (5xx). Gives the answer (JSON, or bytes with raw) and its headers."""
+    data = json.dumps(body).encode("utf-8") if body is not None else None
+    for attempt in range(tries):
+        req = urllib.request.Request(cfg["host"].rstrip("/") + path, data=data, method=method,
+                                     headers={cfg["header"]: cfg["key"], "Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=300) as r:
+                payload = r.read()
+                return (payload if raw else json.loads(payload or b"{}")), r.headers
+        except urllib.error.HTTPError as e:
+            text = e.read().decode("utf-8", "replace")
+            if e.code in (409, 429, 500, 502, 503, 504) and attempt < tries - 1:
+                time.sleep(min(60, 2 ** attempt * 2))
+                continue
+            raise ServiceError(f"{method} {path.split('?')[0]}: {e.code} {text[:400]}", e.code) from None
+        except urllib.error.URLError as e:
+            if attempt < tries - 1:
+                time.sleep(min(60, 2 ** attempt * 2))
+                continue
+            raise ServiceError(f"{method} {path.split('?')[0]}: {e.reason}") from None
+
+
+def load(path, empty):
+    if not os.path.exists(path):
+        return empty
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def save(path, data):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path + ".new", "w", encoding="utf-8") as fh:
+        json.dump(data, fh, ensure_ascii=False, indent=2)
+        fh.write("\n")
+    os.replace(path + ".new", path)
+
+
+def today():
+    return datetime.date.today().isoformat()
+
+
+def digest(data):
+    return hashlib.sha1(json.dumps(data, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+# --- sound files ---------------------------------------------------------------------------------
+
+def write_wav(path, pcm, rate):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with wave.open(path, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(pcm)
+
+
+def span(pcm, rate):
+    """The seconds to keep of 16-bit PCM: from just before the first sound to just after the last."""
+    samples = array.array("h", pcm)
+    if sys.byteorder == "big":
+        samples.byteswap()
+    level = int(32767 * QUIET)
+    first = next((i for i, s in enumerate(samples) if abs(s) > level), None)
+    if first is None:
+        return 0.0, len(samples) / rate
+    last = next(i for i in range(len(samples) - 1, -1, -1) if abs(samples[i]) > level)
+    return max(0.0, first / rate - GAP[0]), min(len(samples) / rate, last / rate + GAP[1])
+
+
+def ffmpeg(*args):
+    if not shutil.which("ffmpeg"):
+        sys.exit("voicegen: ffmpeg is not installed")
+    run = subprocess.run(["ffmpeg", "-hide_banner", "-nostdin", *args], capture_output=True, text=True)
+    if run.returncode:
+        raise ServiceError("ffmpeg: " + run.stderr.strip().splitlines()[-1])
+    return run.stderr
+
+
+def encode(src, dst, ui=False, keep=None):
+    """The game's file: cut to `keep` (start, end in seconds) or to the sound, evened, Ogg Vorbis."""
+    if keep:
+        cut = f"atrim=start={keep[0]:.3f}:end={keep[1]:.3f},asetpts=PTS-STARTPTS"
+    else:                       # a short sound starts at once and keeps a little of its tail
+        quiet = "silenceremove=start_periods=1:start_threshold={}dB:start_silence={}:detection=peak"
+        start, end, level = (0, 0.03, -60) if ui else (GAP[0], GAP[1], -50)
+        cut = f"{quiet.format(level, start)},areverse,{quiet.format(level, end)},areverse"
+    if ui:
+        stats = ffmpeg("-i", src, "-af", cut + ",volumedetect", "-f", "null", "-")
+        peak = float(stats.rsplit("max_volume:", 1)[1].split("dB")[0])
+        chain = f"{cut},afade=t=in:d=0.003,areverse,afade=t=in:d=0.02,areverse,volume={PEAK - peak:.2f}dB"
+    else:
+        stats = ffmpeg("-i", src, "-af", f"{cut},loudnorm={LOUDNESS}:print_format=json", "-f", "null", "-")
+        start = stats.rindex("{")
+        m = json.loads(stats[start:stats.index("}", start) + 1])
+        chain = (f"{cut},loudnorm={LOUDNESS}:measured_I={m['input_i']}:measured_TP={m['input_tp']}"
+                 f":measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}"
+                 f":offset={m['target_offset']}:linear=true")
+    os.makedirs(os.path.dirname(os.path.abspath(dst)), exist_ok=True)
+    ffmpeg("-y", "-v", "error", "-i", src, "-af", chain, *(SOUND_OGG if ui else VOICE_OGG), dst)
+
+
+# --- the cast and the names ----------------------------------------------------------------------
+
+def preset_of(name):
+    presets, errors = db.read_cast()
+    if errors:
+        sys.exit("voicegen: cast.md has errors: dev/tools/voicedb check")
+    if name not in presets:
+        sys.exit(f"voicegen: no preset {name} in dev/voices/cast.md")
+    return presets[name]
+
+
+def design(name):
+    """Three previews of a preset's voice, from its design prompt and design text in cast.md."""
+    p = preset_of(name)
+    cfg = config()
+    answer, _ = call(cfg, "POST", "/v1/text-to-voice/design", {
+        "voice_description": p["design prompt"], "text": p["design text"], "model_id": cfg["models"]["design"]["id"]})
+    folder = os.path.join(DESIGN, name)
+    os.makedirs(folder, exist_ok=True)
+    kept = []
+    for n, preview in enumerate(answer["previews"], 1):
+        path = os.path.join(folder, f"{n}.mp3")
+        with open(path, "wb") as fh:
+            fh.write(base64.b64decode(preview["audio_base_64"]))
+        kept.append({"n": n, "id": preview["generated_voice_id"], "file": path})
+        print(f"  {n}: {os.path.relpath(path, ROOT)}")
+    save(os.path.join(folder, "previews.json"), {"preset": name, "date": today(), "previews": kept})
+    print(f"voicegen: listen, then keep the best one: dev/tools/voicegen pick {name} <n>")
+
+
+def pick(name, n):
+    """Keeps preview n as a voice of our account, and notes it in voices.json for every line of the preset."""
+    p = preset_of(name)
+    previews = load(os.path.join(DESIGN, name, "previews.json"), None)
+    if not previews or not 1 <= n <= len(previews["previews"]):
+        sys.exit(f"voicegen: no preview {n} of {name}: dev/tools/voicegen design {name}")
+    cfg = config()
+    answer, _ = call(cfg, "POST", "/v1/text-to-voice", {
+        "voice_name": f"Sane UI {name}", "voice_description": p["design prompt"][:1000],
+        "generated_voice_id": previews["previews"][n - 1]["id"]})
+    voices = load(VOICES_FILE, {})
+    voices.setdefault("presets", {})[name] = {"voice": answer["voice_id"], "preview": n, "date": today(),
+                                              "design": digest([p["design prompt"], p["design text"]])[:12]}
+    save(VOICES_FILE, voices)
+    print(f"voicegen: {name} speaks with voice {answer['voice_id']} (dev/voices/voices.json)")
+
+
+def names_rules():
+    """Two dictionaries from names.md: respellings, which every model reads, and the sounds (IPA), which
+    only some models read; a name with sounds is in both, and only the first rule that matches counts."""
+    names, errors = db.read_names()
+    if errors:
+        sys.exit("voicegen: names.md has errors: dev/tools/voicedb check")
+    alias = [{"type": "alias", "string_to_replace": n, "alias": v["alias"]} for n, v in sorted(names.items())]
+    sounds = [{"type": "phoneme", "string_to_replace": n, "phoneme": v["ipa"], "alphabet": "ipa"}
+              for n, v in sorted(names.items()) if v["ipa"]]
+    return {"respellings": alias, "sounds": sounds}
+
+
+def send_names():
+    voices = load(VOICES_FILE, {})
+    cfg = None
+    for kind, rules in names_rules().items():
+        known = voices.setdefault("names", {}).get(kind, {})
+        if known.get("hash") == digest(rules)[:12]:
+            print(f"voicegen: the {kind} are as sent before ({len(rules)} names)")
+            continue
+        cfg = cfg or config()
+        if known.get("dictionary"):     # the same dictionary, in a new version
+            answer, _ = call(cfg, "POST", f"/v1/pronunciation-dictionaries/{known['dictionary']}/set-rules",
+                             {"rules": rules})
+        else:
+            answer, _ = call(cfg, "POST", "/v1/pronunciation-dictionaries/add-from-rules",
+                             {"name": f"Sane UI names, {kind}", "rules": rules})
+        voices["names"][kind] = {"dictionary": answer["id"], "version": answer["version_id"],
+                                 "hash": digest(rules)[:12], "names": len(rules), "date": today()}
+        save(VOICES_FILE, voices)
+        print(f"voicegen: {len(rules)} {kind} sent")
+
+
+# --- voices for lines ----------------------------------------------------------------------------
+
+def body_of(r, cfg, voices, model, take):
+    """What is sent for one request of the voice database (voicedb.requests), and the hash of all that
+    shapes its sound. The names count only where the line has them, so a new name remakes only its lines."""
+    m, s = cfg["models"][model], r["settings"]
+    out = set(m.get("leave out", []))
+    stability = s["stability"]
+    if m.get("stability steps"):    # a model that knows a few steps only (creative, natural, robust)
+        stability = min(m["stability steps"], key=lambda v: abs(v - stability))
+    settings = {"stability": stability, "similarity_boost": s["similarity"], "speed": s["speed"]}
+    body = {"text": r["text"], "model_id": m["id"],
+            "voice_settings": {k: v for k, v in settings.items() if k not in out}}
+    for field, value in (("previous_text", r["previous text"]), ("next_text", r["next text"])):
+        if value and field not in out:
+            body[field] = value
+    voice = voices.get("presets", {}).get(r["preset"], {}).get("voice")
+    shape = digest({"voice": voice, "body": body, "names": r["names"], "take": take})[:16]
+    body["seed"] = int(shape[:8], 16)
+    names = voices.get("names", {})
+    body["pronunciation_dictionary_locators"] = [
+        {"pronunciation_dictionary_id": names[k]["dictionary"], "version_id": names[k]["version"]}
+        for k in (("sounds", "respellings") if m.get("sounds") else ("respellings",)) if k in names]
+    return voice, body, shape
+
+
+def made():
+    """Every file made so far, by the hash of what shaped its sound."""
+    if not os.path.exists(MADE):
+        return {}
+    with open(MADE, encoding="utf-8") as fh:
+        return {e["sound"]: e for e in map(json.loads, fh)}
+
+
+def select(query, model, preset):
+    lines = {l["key"]: l for l in db.read_lines()}
+    keys = [query] if query in lines else [k for k, l in lines.items() if l["text key"] == query]
+    if not keys:
+        q = query.lower()
+        keys = [k for k, l in lines.items() if q in k or q in json.dumps(l["context"], ensure_ascii=False).lower()
+                or q in (l["who"].get("name") or "").lower()]
+    keys = [k for k in keys if lines[k]["voice"]]
+    found = db.requests(lines, keys, model)
+    return [r for r in found if not preset or r["preset"] == preset], lines
+
+
+def say(query, model="newest", preset=None, take=1, limit=None, jobs=3, yes=False, dry=False):
+    requests, lines = select(query, model, preset)
+    if not requests:
+        sys.exit(f"voicegen: no voiced line found for {query!r}")
+    if dry and not os.path.exists(CONFIG):
+        cfg = {"models": {model: {"id": f"<the {model} model>"}}}
+    else:
+        cfg = config(need_key=not dry)
+    voices, done = load(VOICES_FILE, {}), made()
+    todo, again, missing = [], [], set()
+    for r in requests:
+        voice, body, shape = body_of(r, cfg, voices, model, take)
+        if not voice:
+            missing.add(r["preset"])
+            if not dry:         # a dry run counts them all the same, for the cost
+                continue
+        if shape in done and os.path.exists(os.path.join(MASTER, shape + ".wav")):
+            again.append((r, shape))
+            continue
+        todo.append((r, voice, body, shape))
+    todo = todo[:limit] if limit else todo
+    chars = sum(len(t[2]["text"]) for t in todo)
+    print(f"voicegen: {len(todo)} files to make, {chars:,} characters, about "
+          f"${chars / 1000 * db.PRICE[model]:,.2f} on the {model} model; {len(again)} made before")
+    if missing:
+        print("  no voice yet (dev/tools/voicegen design, pick): " + ", ".join(sorted(missing)))
+    if dry:
+        for r, voice, body, shape in todo[:3]:
+            print(json.dumps({"file": r["file"], "voice": voice, "body": body}, ensure_ascii=False, indent=2))
+        return 0
+    for r, shape in again:      # made and paid before: only the game's file, if it is missing
+        out = os.path.join(SOUND, model, r["file"])
+        if not os.path.exists(out):
+            encode(os.path.join(MASTER, shape + ".wav"), out, keep=done[shape].get("keep"))
+    if chars > ASK and not yes:
+        sys.exit(f"voicegen: more than {ASK:,} characters: send them with --yes")
+    lock, ok, failed, stop = threading.Lock(), [], [], threading.Event()
+
+    def make(job):
+        r, voice, body, shape = job
+        if stop.is_set():
+            return
+        try:
+            answer, headers = call(cfg, "POST", f"/v1/text-to-speech/{voice}/with-timestamps"
+                                   f"?output_format=pcm_{VOICE_RATE}", body)
+            pcm = base64.b64decode(answer["audio_base64"])
+            wav = os.path.join(MASTER, shape + ".wav")
+            write_wav(wav, pcm, VOICE_RATE)
+            keep = span(pcm, VOICE_RATE)
+            save(os.path.join(MASTER, shape + ".json"), {"keep": keep, "alignment": answer.get("alignment")})
+            encode(wav, os.path.join(SOUND, model, r["file"]), keep=keep)
+        except ServiceError as e:
+            with lock:
+                failed.append(r["file"])
+                print(f"  FAILED {r['file']}: {e}")
+            if e.code in (401, 402, 403):   # the key, or the credits: the next ones would fail the same
+                stop.set()
+            return
+        entry = {"file": r["file"], "line": r["line"], "hash": lines[r["line"]]["hash"], "variant": r["variant"],
+                 "preset": r["preset"], "model": model, "take": take, "sound": shape, "voice": voice,
+                 "request": headers.get("request-id"), "chars": int(headers.get("character-cost") or headers.get("x-character-count") or len(body["text"])),
+                 "seconds": round(keep[1] - keep[0], 2), "keep": [round(t, 3) for t in keep], "date": today()}
+        with lock:
+            with open(MADE, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            ok.append(r["file"])
+            print(f"  {r['file']}  {entry['seconds']:.1f} s")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, jobs)) as pool:
+        list(pool.map(make, todo))
+    left = " (stopped: the key or the credits)" if stop.is_set() else ""
+    print(f"voicegen: {len(ok)} made, {len(failed)} failed{left}; the game's files in "
+          f"{os.path.relpath(os.path.join(SOUND, model), ROOT)}/")
+    return 1 if failed else 0
+
+
+# --- short sounds --------------------------------------------------------------------------------
+
+def sound(name, prompt, seconds=1.0, count=4, influence=0.5, loop=False):
+    """Candidates for a short sound: <name>-<n>.wav as the service made it, and <name>-<n>.ogg as the
+    game would play it. The one chosen is made the game's file with `voicegen ogg <wav> <module's
+    Sounds/name.ogg> --ui`."""
+    cfg = config()
+    os.makedirs(CANDIDATES, exist_ok=True)
+    first = 1
+    while os.path.exists(os.path.join(CANDIDATES, f"{name}-{first}.wav")):
+        first += 1
+    m = cfg["models"]["sound"]
+    form = m.get("format", "mp3_44100_128")     # raw PCM at 44.1 kHz needs the higher plans
+    body = {"text": prompt, "duration_seconds": seconds, "prompt_influence": influence, "model_id": m["id"]}
+    if loop:
+        body["loop"] = True
+    for n in range(first, first + count):
+        audio, headers = call(cfg, "POST", f"/v1/sound-generation?output_format={form}", body, raw=True)
+        wav = os.path.join(CANDIDATES, f"{name}-{n}.wav")
+        if form.startswith("pcm_"):
+            write_wav(wav, audio, int(form.split("_")[1]))
+        else:
+            with open(wav[:-4] + ".mp3", "wb") as fh:
+                fh.write(audio)
+            ffmpeg("-y", "-v", "error", "-i", wav[:-4] + ".mp3", wav)
+            os.remove(wav[:-4] + ".mp3")
+        encode(wav, wav[:-4] + ".ogg", ui=True)
+        with open(os.path.join(CANDIDATES, "sounds.jsonl"), "a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"file": os.path.basename(wav), "prompt": prompt, **{k: v for k, v in body.items()
+                                 if k not in ("text", "model_id")}, "request": headers.get("request-id"),
+                                 "date": today()}, ensure_ascii=False) + "\n")
+        print(f"  {os.path.relpath(wav, ROOT)}  (and .ogg)")
+
+
+# --- the key and the account ---------------------------------------------------------------------
+
+def set_key():
+    cfg = config(need_key=False)
+    key = getpass.getpass("The service's API key (not shown): ").strip()
+    if not key:
+        sys.exit("voicegen: nothing entered")
+    cfg["key"] = key
+    with open(CONFIG, encoding="utf-8") as fh:
+        kept = json.load(fh)
+    kept["key"] = key
+    fd = os.open(CONFIG + ".new", os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump(kept, fh, indent=2)
+        fh.write("\n")
+    os.replace(CONFIG + ".new", CONFIG)
+    print(f"voicegen: key kept in {CONFIG} (readable by you only)")
+    account(cfg)
+
+
+def account(cfg=None):
+    cfg = cfg or config()
+    s, _ = call(cfg, "GET", "/v1/user/subscription")
+    used, limit = s.get("character_count", 0), s.get("character_limit", 0)
+    reset = s.get("next_character_count_reset_unix")
+    print(f"plan: {s.get('tier')} ({s.get('status')})")
+    print(f"characters: {used:,} of {limit:,} used, {limit - used:,} left"
+          + (f", new on {datetime.date.fromtimestamp(reset)}" if reset else ""))
+    print(f"own voices: {s.get('voice_slots_used', '?')} of {s.get('voice_limit', '?')}")
+    voices = load(VOICES_FILE, {})
+    presets, _ = db.read_cast()
+    have = voices.get("presets", {})
+    print(f"cast: {len(have)} of {len(presets)} presets have their voice"
+          + (f"; the names: {', '.join(voices['names'])}" if voices.get("names") else "; the names not sent yet"))
+
+
+def main():
+    ap = argparse.ArgumentParser(add_help=False)
+    ap.add_argument("command", nargs="?")
+    ap.add_argument("args", nargs="*")
+    ap.add_argument("--model", default="newest", choices=("newest", "fast"))
+    ap.add_argument("--preset")
+    ap.add_argument("--take", type=int, default=1)
+    ap.add_argument("--limit", type=int)
+    ap.add_argument("--jobs", type=int, default=3)
+    ap.add_argument("--yes", action="store_true")
+    ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--seconds", type=float, default=1.0)
+    ap.add_argument("--count", type=int, default=4)
+    ap.add_argument("--influence", type=float, default=0.5)
+    ap.add_argument("--loop", action="store_true")
+    ap.add_argument("--ui", action="store_true")
+    a = ap.parse_args()
+    cmd, args = a.command, a.args
+    try:
+        if cmd == "key":
+            set_key()
+        elif cmd == "account":
+            account()
+        elif cmd == "design" and len(args) == 1:
+            design(args[0])
+        elif cmd == "pick" and len(args) == 2:
+            pick(args[0], int(args[1]))
+        elif cmd == "names":
+            send_names()
+        elif cmd == "say" and args:
+            return say(" ".join(args), a.model, a.preset, a.take, a.limit, a.jobs, a.yes, a.dry_run)
+        elif cmd == "sound" and len(args) == 2:
+            sound(args[0], args[1], a.seconds, a.count, a.influence, a.loop)
+        elif cmd == "ogg" and len(args) == 2:
+            encode(args[0], args[1], ui=a.ui)
+        else:
+            sys.exit(__doc__)
+    except ServiceError as e:
+        sys.exit(f"voicegen: {e}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+"""Measures how sharply the game would draw a picture from textures of different sizes and filters:
+the numbers behind Doc/guides/images.md. Run it again only if the client changes how it draws, or for
+a picture unlike ours (very fine lines, text only, a photo).
+
+The graphics card's sampler is simulated: bilinear from one level, or two levels blended (TRILINEAR),
+the level picked by the side that is shrunk most. The result is compared with the drawing resized
+perfectly (Lanczos) to the same pixels, on the options' dark background: PSNR in dB, higher is closer.
+DXT5 is left out, to compare sizes and filters alone (the tool art reports it per file).
+
+Usage:  dev/tools/art-measure [picture] [drawn width] [drawn height]
+        default: assets/SaneSpellbook-banner.png, 300 x 100 units (a banner)
+"""
+import math
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[2]
+UNIT_PIXELS = 2160 / 768  # as in dev/tools/art
+SLACK = 0.85
+SCREENS = [(2160, 1.15), (2160, 1.0), (2160, 0.65), (1440, 1.0), (1440, 0.65), (1080, 1.0), (1080, 0.65)]
+BACKGROUND = 0.11
+
+
+def side(units):
+    size = 1
+    while size < SLACK * units * UNIT_PIXELS and size < 1024:
+        size *= 2
+    return size
+
+
+def load(path, aspect):
+    """The drawing, cropped, premultiplied, at the left of its drawn box."""
+    a = np.asarray(Image.open(path).convert("RGBA"), dtype=np.float64) / 255
+    ys, xs = np.nonzero(a[..., 3] > 8 / 255)
+    a = a[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    a[..., :3] *= a[..., 3:4]
+    ah, aw = a.shape[:2]
+    h = max(ah, round(aw / aspect))
+    box = np.zeros((h, round(h * aspect), 4))
+    box[:ah, :aw] = a
+    return box
+
+
+def lanczos(image, w, h):
+    return np.stack([np.asarray(Image.fromarray(image[..., c].astype(np.float32), "F").resize((w, h), Image.LANCZOS))
+                     for c in range(4)], -1).clip(0, 1)
+
+
+def bilinear(texture, u, v, w, h):
+    """Sampled as the graphics card does: texel centres, two by two, no filtering before."""
+    th, tw = texture.shape[:2]
+    x = ((np.arange(w) + 0.5) / w * u * tw - 0.5).clip(0, tw - 1)
+    y = ((np.arange(h) + 0.5) / h * v * th - 0.5).clip(0, th - 1)
+    x0, y0 = np.floor(x).astype(int), np.floor(y).astype(int)
+    x1, y1 = np.minimum(x0 + 1, tw - 1), np.minimum(y0 + 1, th - 1)
+    fx, fy = (x - x0)[None, :, None], (y - y0)[:, None, None]
+    t = texture
+    return (t[y0][:, x0] * (1 - fx) * (1 - fy) + t[y0][:, x1] * fx * (1 - fy)
+            + t[y1][:, x0] * (1 - fx) * fy + t[y1][:, x1] * fx * fy)
+
+
+def psnr(image, reference):
+    def over(p):
+        return p[..., :3] + (1 - p[..., 3:4]) * BACKGROUND
+    return 10 * math.log10(1 / max(((over(image) - over(reference)) ** 2).mean(), 1e-12))
+
+
+class Texture:
+    """box drawn into used_w x used_h texels at the top left of a width x height texture, with mipmaps."""
+
+    def __init__(self, box, width, height, used_w, used_h):
+        self.box, self.size, self.used, self.levels = box, (width, height), (used_w, used_h), {}
+
+    def level(self, k):
+        if k not in self.levels:
+            (width, height), (uw, uh) = self.size, self.used
+            t = np.zeros((max(1, height >> k), max(1, width >> k), 4))
+            w, h = max(1, round(uw / 2 ** k)), max(1, round(uh / 2 ** k))
+            t[:h, :w] = lanczos(self.box, w, h)
+            self.levels[k] = t
+        return self.levels[k]
+
+    def draw(self, w, h, mode):
+        (width, height), (uw, uh) = self.size, self.used
+        u, v = uw / width, uh / height
+        lod = max(0.0, math.log2(max(uw / w, uh / h)))
+        if mode == "full picture":
+            return bilinear(self.level(0), u, v, w, h)
+        if mode == "nearest mipmap":
+            return bilinear(self.level(int(lod + 0.5)), u, v, w, h)
+        k, f = int(lod), lod - int(lod)
+        out = bilinear(self.level(k), u, v, w, h)
+        return (1 - f) * out + f * bilinear(self.level(k + 1), u, v, w, h) if f else out
+
+
+def pixels(units, height, scale):
+    return max(1, round(units * height / 768 * scale))
+
+
+def main():
+    picture = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "assets" / "SaneSpellbook-banner.png"
+    drawn_w, drawn_h = (float(sys.argv[2]), float(sys.argv[3])) if len(sys.argv) > 3 else (300.0, 100.0)
+    box = load(picture, drawn_w / drawn_h)
+    width, height = side(drawn_w), side(drawn_h)
+
+    def kept(w, h):
+        texels = min(w / drawn_w, h / drawn_h)
+        return Texture(box, w, h, round(drawn_w * texels), round(drawn_h * texels))
+
+    candidates = [(f"{width // 2}x{height}, squeezed in", Texture(box, width // 2, height, width // 2, height)),
+                  (f"{width}x{height}, squeezed in", Texture(box, width, height, width, height)),
+                  (f"{width}x{height}, proportions kept (the rule)", kept(width, height)),
+                  (f"{width}x{height * 2}, proportions kept", kept(width, height * 2))]
+    names = [f"{h}p x{s:.2f}" for h, s in SCREENS]
+    print(f"{picture.name}, drawn {drawn_w:g} x {drawn_h:g} units. Textures, all drawn with TRILINEAR (dB):")
+    print(f"  {'':44}" + "".join(f"{n:>13}" for n in names))
+    references = {}
+    for name, texture in candidates:
+        row = f"  {name:44}"
+        for (h, s), n in zip(SCREENS, names):
+            w_px, h_px = pixels(drawn_w, h, s), pixels(drawn_h, h, s)
+            references.setdefault(n, lanczos(box, w_px, h_px))
+            row += f"{psnr(texture.draw(w_px, h_px, 'trilinear'), references[n]):13.1f}"
+        print(row)
+    print(f"\nThe rule's texture, {width}x{height}, by filter (dB):")
+    texture = kept(width, height)
+    for h, s in SCREENS:
+        w_px, h_px = pixels(drawn_w, h, s), pixels(drawn_h, h, s)
+        reference = references[f"{h}p x{s:.2f}"]
+        shown = w_px / texture.used[0]
+        print(f"  {h}p x{s:.2f}, drawn at {shown:.2f} of the texture:  game's filter, full picture "
+              f"{psnr(texture.draw(w_px, h_px, 'full picture'), reference):5.1f}   game's filter, nearest mipmap "
+              f"{psnr(texture.draw(w_px, h_px, 'nearest mipmap'), reference):5.1f}   TRILINEAR "
+              f"{psnr(texture.draw(w_px, h_px, 'trilinear'), reference):5.1f}")
+
+
+main()

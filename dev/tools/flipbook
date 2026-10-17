@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""Packs a clip's frames into a flipbook: one picture with the frames in a grid, which the game plays
+with a FlipBook animation. dev/tools/imagegen saves a clip as a folder of numbered frames
+(<name>-<seed>/001.png ...); the pipeline around it: Doc/guides/image-generation.md, *Animation*.
+
+Blizzard's flipbooks show the measure: 20 to 64 frames for 0.7 to 1.5 seconds, in a grid (the proc
+glow of an action button: 30 frames, 1 second, ActionButtonSpellAlerts.xml), many of them drawn with
+alphaMode="ADD", so on black, which adds nothing.
+
+The grid's columns and rows are powers of two, and so is a frame's side: the whole picture is a power
+of two, ready for dev/tools/art (kind "sheet"), and the FlipBook divides the whole texture
+(flipBookFrameWidth and flipBookFrameHeight 0). A frame's side follows Doc/guides/images.md: the size
+it is drawn at in the game, in UI units, at 4K. Frames that are not square are fitted into it.
+
+Usage:  dev/tools/flipbook <clip folder> <sheet.png> [options]
+  --frames N      frames in the flipbook (default 32), picked evenly from the clip
+  --drawn UNITS   the size it is drawn at in the game, in UI units (default 40, an action button)
+  --loop MODE     how the end meets the start, for a flipbook that repeats:
+                    none        the clip loops already, or plays once (the default)
+                    drop-last   the last frame is the first one again (a first-last-frame clip): left out
+                    fade:K      the last K frames are faded into the first K (any clip; about 8)
+  --glow          only the light the clip adds to its first frame: a flipbook drawn with
+                  alphaMode="ADD" over the still part, which stays as it is
+  --black         the clip is on black, for alphaMode="ADD": the sheet has no transparency
+  --fps N         the clip's frame rate (default 24; Wan 2.2 14B and Wan-Alpha: 16), for the duration
+
+Writes the sheet and <sheet>.gif, a preview at the game's speed, and prints the FlipBook's numbers.
+Needs Python with Pillow and NumPy.
+"""
+import argparse
+import re
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+UNIT_PIXELS = 2160 / 768  # a UI unit on a 4K screen at UI scale 1, as in dev/tools/art
+SLACK = 0.85              # as in dev/tools/art: a side may have this share of the texels before it doubles
+LARGEST = 2048            # no side of the sheet larger
+PREVIEW = 256
+
+
+def fail(message):
+    print(message, file=sys.stderr)
+    sys.exit(1)
+
+
+def side(units):
+    """A frame's side for something drawn that many UI units long (as dev/tools/art's side)."""
+    size = 1
+    while size < SLACK * units * UNIT_PIXELS:
+        size *= 2
+    return size
+
+
+def grid(frames):
+    """Columns and rows, each a power of two, for that many frames: the least waste, then the squarest."""
+    sizes = [2 ** k for k in range(7)]
+    return min(((c, r) for c in sizes for r in sizes if c * r >= frames and c >= r),
+               key=lambda cr: (cr[0] * cr[1], cr[0] - cr[1]))
+
+
+def loop(frames, mode):
+    """The clip made to repeat."""
+    if mode == "none":
+        return frames
+    if mode == "drop-last":
+        return frames[:-1]
+    match = re.fullmatch(r"fade:(\d+)", mode)
+    if not match:
+        fail(f"--loop wants none, drop-last or fade:K, not {mode}")
+    k = int(match.group(1))
+    if not 0 < k < len(frames) // 2:
+        fail(f"--loop fade:{k}: the clip has {len(frames)} frames")
+    # The last k frames go, faded into the first k: the clip's end now runs on into its start.
+    start = [frames[-k + i] * (1 - (i + 1) / (k + 1)) + frames[i] * ((i + 1) / (k + 1)) for i in range(k)]
+    return start + frames[k:-k]
+
+
+def pick(frames, count):
+    """count frames, evenly over the clip."""
+    count = min(count, len(frames))
+    return [frames[round(i * len(frames) / count) % len(frames)] for i in range(count)]
+
+
+def fit(frame, cell, opaque):
+    """A frame (floats, straight alpha) made cell x cell, centred, Lanczos with premultiplied alpha."""
+    image = Image.fromarray(np.round(np.clip(frame, 0, 1) * 255).astype(np.uint8), "RGBA")
+    scale = cell / max(image.size)
+    small = image.resize((max(1, round(image.width * scale)), max(1, round(image.height * scale))), Image.LANCZOS)
+    out = Image.new("RGBA", (cell, cell), (0, 0, 0, 255 if opaque else 0))
+    out.alpha_composite(small, ((cell - small.width) // 2, (cell - small.height) // 2))
+    if opaque:
+        out.putalpha(255)
+    return out
+
+
+def read(folder):
+    def order(path):
+        return [int(n) for n in re.findall(r"\d+", path.stem)] or [0]
+    files = sorted(Path(folder).glob("*.png"), key=order)
+    if len(files) < 2:
+        fail(f"{folder}: a clip needs at least two frames (PNG)")
+    return [np.asarray(Image.open(f).convert("RGBA"), dtype=np.float32) / 255 for f in files]
+
+
+def main():
+    parser = argparse.ArgumentParser(description="A clip's frames into a flipbook (see the file's head).")
+    parser.add_argument("clip")
+    parser.add_argument("sheet")
+    parser.add_argument("--frames", type=int, default=32)
+    parser.add_argument("--drawn", type=float, default=40)
+    parser.add_argument("--loop", default="none")
+    parser.add_argument("--glow", action="store_true")
+    parser.add_argument("--black", action="store_true")
+    parser.add_argument("--fps", type=float, default=24)
+    args = parser.parse_args()
+
+    clip = read(args.clip)
+    looped = loop(clip, args.loop)
+    seconds = len(looped) / args.fps
+    frames = pick(looped, args.frames)
+    shown = frames
+    if args.glow:
+        # What each frame adds to the first: drawn with ADD over the still part, it gives the clip back.
+        first = clip[0]
+        frames = [np.concatenate([np.clip(f[..., :3] - first[..., :3], 0, 1), np.ones_like(f[..., 3:])], axis=-1)
+                  for f in frames]
+    opaque = args.black or args.glow
+
+    columns, rows = grid(len(frames))
+    cell = side(args.drawn)
+    while columns * cell > LARGEST and cell > 16:
+        cell //= 2
+    sheet = Image.new("RGBA", (columns * cell, rows * cell), (0, 0, 0, 255 if opaque else 0))
+    for i, frame in enumerate(frames):
+        sheet.paste(fit(frame, cell, opaque), ((i % columns) * cell, (i // columns) * cell))
+    target = Path(args.sheet)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    sheet.save(target)
+
+    preview = []
+    for frame in shown:
+        image = fit(frame, PREVIEW, False)
+        under = Image.new("RGBA", image.size, (0, 0, 0, 255) if opaque else (40, 40, 40, 255))
+        under.alpha_composite(image)
+        preview.append(under.convert("RGB"))
+    preview[0].save(target.with_suffix(".gif"), save_all=True, append_images=preview[1:],
+                    duration=round(1000 * seconds / len(frames)), loop=0)
+
+    print(f"{target}: {sheet.width} x {sheet.height}, {len(frames)} frames of {cell} x {cell} "
+          f"({columns} columns x {rows} rows), {seconds:.2f} s; preview {target.with_suffix('.gif')}")
+    print(f'  <FlipBook duration="{seconds:.2f}" flipBookRows="{rows}" flipBookColumns="{columns}" '
+          f'flipBookFrames="{len(frames)}" flipBookFrameWidth="0" flipBookFrameHeight="0"/>')
+    if opaque:
+        print('  on black: draw the texture with alphaMode="ADD"' + (" over the still part" if args.glow else ""))
+
+
+if __name__ == "__main__":
+    main()

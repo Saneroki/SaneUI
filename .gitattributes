@@ -1,0 +1,23 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# The addon's files and the scripts: always LF, also in a checkout on Windows
+*.lua text eol=lf
+*.toc text eol=lf
+*.xml text eol=lf
+*.md  text eol=lf
+*.txt text eol=lf
+/dev/build   text eol=lf
+/dev/tests/* text eol=lf
+/dev/tools/* text eol=lf
+
+# Blizzard's interface code: kept byte for byte as the client ships it (mostly CRLF), never converted
+/references/BlizzardInterfaceCode/** -text
+
+# Art
+*.blp binary
+*.tga binary
+*.png binary
+*.jpg binary
+*.ttf binary
+*.ogg binary

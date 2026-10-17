@@ -1,0 +1,230 @@
+#!/usr/bin/env python3
+"""Makes src/Core/Sync/Data/Pages.lua: for each of the game's options pages in its groups Gameplay and
+Accessibility (Esc > Options), what that page sets, so Sync can keep it with Sane UI's settings.
+
+It reads Blizzard's options code in references/ as this client loads it (game type camelot, family
+Mainline: the TOCs of Blizzard_SettingsDefinitions_Shared and _Frame with their conditions, and the
+Lua files their XML files name). A page is the category a file registers
+(Settings.RegisterVerticalLayoutCategory); a file "<Name>Overrides.lua" adds to the page of <Name>.lua.
+Per page it keeps:
+  cvars   every CVar the page registers (Settings.SetupCVar*, RegisterCVarSetting, CreateCVarAccessorClosures,
+          CVarCallbackRegistry) or writes (SetCVar); not one it only reads to decide something else.
+          Sorted by name, without regard to case; a CVar two pages have stays with the first.
+          Left out: the computer's speech voices (names ending in "Voice"), which differ per computer.
+  flags   pairs of game functions a page's proxy setting reads and writes by their global names
+          (GetAutoDeclineGuildInvites, SetAutoDeclineGuildInvites); a file's own local functions are not.
+  clicks  the modifier keys of clicks the page offers (Settings.RegisterModifiedClickSetting); the page of
+          the key bindings takes those of the client's bindings file (Bindings_Camelot.xml) no page offers.
+  bars    true for the page that switches the extra action bars (SetActionBarToggles).
+Pages are in the game's order: the Gameplay pages by CUSTOM_GAMEPLAY_SETTINGS_ORDER, then the
+Accessibility pages as the game loads them. A page with nothing of these is left out. The game's group
+System (graphics, sound, languages, network) is not read: Sync finds graphics and sound by the game's own
+kind of CVar in the game, and the rest belongs to one computer.
+
+Usage:  dev/tools/sync-pages           write the file
+        dev/tools/sync-pages --check   say whether the file is up to date, write nothing
+"""
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+ADDONS = ROOT / "references" / "BlizzardInterfaceCode" / "Interface" / "AddOns"
+FOLDERS = ("Blizzard_SettingsDefinitions_Shared", "Blizzard_SettingsDefinitions_Frame")
+BINDINGS = ADDONS / "Blizzard_FrameXML" / "Bindings_Camelot.xml"
+OUTPUT = ROOT / "src" / "Core" / "Sync" / "Data" / "Pages.lua"
+GAME, FAMILY = "camelot", "Mainline"
+GROUPS = ("SETTING_GROUP_GAMEPLAY", "SETTING_GROUP_ACCESSIBILITY")
+KEYBINDINGS = "SETTINGS_KEYBINDINGS_LABEL"
+WIDTH = 104  # characters of names on one line of the file
+
+NAME = r'"([A-Za-z0-9_]+)"'
+REGISTERED = re.compile(r'(?:Settings\.(?:SetupCVarCheckbox|SetupCVarSlider|SetupCVarDropdown|RegisterCVarSetting)\(\s*[\w.]+\s*,\s*'
+                        r'|Settings\.CreateCVarAccessorClosures\(\s*|CVarCallbackRegistry:RegisterCallback\(\s*)' + NAME)
+WRITTEN = re.compile(r'(?:C_CVar\.)?SetCVar\(\s*' + NAME)
+CLICK = re.compile(r'Settings\.RegisterModifiedClickSetting\(\s*[\w.]+\s*,\s*"([A-Z]+)"')
+CATEGORY = re.compile(r'Settings\.RegisterVerticalLayoutCategory\(\s*([\w.]+)(\(\))?\s*\)')
+GROUP = re.compile(r'Settings\.RegisterCategory\(\s*category\s*,\s*(SETTING_GROUP_\w+)')
+PROXY = re.compile(r'Settings\.RegisterProxySetting\(([^;]*?)\);', re.S)
+LOCAL = re.compile(r'local\s+function\s+(\w+)|local\s+(\w+)\s*=')
+ORDER = re.compile(r'\[(\w+)\]\s*=\s*(\d+)')
+LABEL_FUNCTION = re.compile(r'function\s+(Settings\.\w+)\(\)\s*return\s+(\w+)\s*;?\s*end')
+
+
+def loads(conditions):
+    """Whether a TOC line with these conditions loads for this client."""
+    def names(found):
+        return [name for group in found for name in group.replace(",", " ").split()]
+    allow = names(re.findall(r"\[AllowLoadGameType ([^\]]+)\]", conditions))
+    deny = names(re.findall(r"\[ExcludeLoadGameType ([^\]]+)\]", conditions))
+    return (not allow or GAME in allow) and GAME not in deny
+
+
+def files():
+    """The Lua files of both addons, in the order the game loads them."""
+    found = []
+    for folder in FOLDERS:
+        base = ADDONS / folder
+        for line in (base / f"{folder}.toc").read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            path, _, conditions = line.partition(" ")
+            if not loads(conditions):
+                continue
+            path = path.replace("[Family]", FAMILY).replace("[Game]", "Camelot").replace("\\", "/")
+            full = base / path
+            if not full.exists():
+                continue
+            if full.suffix == ".lua":
+                found.append(full)
+                continue
+            for script in re.findall(r'<Script file="([^"]+)"', full.read_text(encoding="utf-8", errors="replace")):
+                script = script.replace("\\", "/")
+                lua = full.parent / script if (full.parent / script).exists() else base / script
+                if lua.exists():
+                    found.append(lua)
+    return found
+
+
+def arguments(text):
+    """A call's arguments, split at its own commas."""
+    found, depth, current = [], 0, []
+    for char in text:
+        if char in "([{":
+            depth += 1
+        elif char in ")]}":
+            depth -= 1
+        elif char == "," and depth == 0:
+            found.append("".join(current).strip())
+            current = []
+            continue
+        current.append(char)
+    found.append("".join(current).strip())
+    return found
+
+
+def flags(text):
+    """Pairs of global game functions a file's proxy settings read and write."""
+    local = {a or b for a, b in LOCAL.findall(text)}
+    pairs = []
+    for match in PROXY.finditer(text):
+        args = arguments(match.group(1))
+        if len(args) < 7:
+            continue
+        get, put = args[5], args[6]
+        if (re.fullmatch(r"(Get|Is)[A-Z]\w+", get) and re.fullmatch(r"Set[A-Z]\w+", put)
+                and get not in local and put not in local and (get, put) not in pairs):
+            pairs.append((get, put))
+    return pairs
+
+
+def collect():
+    sources = [(path, path.read_text(encoding="utf-8", errors="replace")) for path in files()]
+    labels = dict(match for _, text in sources for match in LABEL_FUNCTION.findall(text))
+    order = {}
+    pages, by_stem, extras = [], {}, []
+    for path, text in sources:
+        order.update({name: int(number) for name, number in ORDER.findall(text)} if "CUSTOM_GAMEPLAY_SETTINGS_ORDER" in text else {})
+        category = CATEGORY.search(text)
+        found = {
+            "registered": REGISTERED.findall(text), "written": WRITTEN.findall(text),
+            "clicks": CLICK.findall(text), "flags": flags(text), "bars": "SetActionBarToggles(" in text,
+        }
+        if category:
+            label = labels.get(category.group(1)) if category.group(2) else category.group(1)
+            groups = GROUP.findall(text)
+            group = GROUPS[0] if GROUPS[0] in groups else (groups[0] if groups else None)
+            page = {"page": label, "group": group, "loaded": len(pages), "parts": [found]}
+            pages.append(page)
+            by_stem[path.stem] = page
+        elif path.stem.endswith("Overrides"):
+            extras.append((path.stem[: -len("Overrides")], found))
+    for stem, found in extras:
+        if stem in by_stem:
+            by_stem[stem]["parts"].append(found)
+
+    pages = [page for page in pages if page["page"] and page["group"] in GROUPS]
+    pages.sort(key=lambda page: (GROUPS.index(page["group"]), order.get(page["page"], 0), page["loaded"]))
+    seen, offered, result = set(), set(), []
+    for page in pages:
+        cvars, clicks, pairs, bars = {}, [], [], False
+        for found in page["parts"]:
+            for name in found["registered"] + found["written"]:
+                if name.lower() not in seen and not name.endswith("Voice"):
+                    seen.add(name.lower())
+                    cvars[name.lower()] = name
+            clicks += [click for click in found["clicks"] if click not in offered and click not in clicks]
+            pairs += [pair for pair in found["flags"] if pair not in pairs]
+            bars = bars or found["bars"]
+        offered.update(clicks)
+        result.append({"page": page["page"], "group": page["group"], "cvars": [cvars[key] for key in sorted(cvars)],
+                       "clicks": clicks, "flags": pairs, "bars": bars})
+    if BINDINGS.exists():
+        rest = [action for action in re.findall(r'<ModifiedClick\s+action="([A-Z]+)"', BINDINGS.read_text(encoding="utf-8"))
+                if action not in offered]
+        for page in result:
+            if page["page"] == KEYBINDINGS:
+                page["clicks"] += rest
+    for page in result:
+        page["clicks"].sort()
+    return [page for page in result if page["cvars"] or page["clicks"] or page["flags"] or page["bars"]]
+
+
+def names(field, items, indent):
+    """field = { "a", "b", ... }, wrapped."""
+    lines, line = [], f"{indent}{field} = {{"
+    for item in items:
+        word = f' "{item}",'
+        if len(line) + len(word) > WIDTH:
+            lines.append(line)
+            line = indent + "   "
+        line += word
+    lines.append(line.rstrip(",") + " },")
+    return lines
+
+
+def render(pages):
+    lines = [
+        "local Sync = SaneUI.Core.Sync -- Sync.lua",
+        "",
+        "-- What each of the game's options pages in its groups Gameplay and Accessibility sets, in the game's",
+        "-- order: page and group are the names of the game's own strings for them; cvars the CVars it sets,",
+        "-- flags the pairs of game functions it reads and writes, clicks the modifier keys of clicks it offers,",
+        "-- bars whether it switches the extra action bars (Game.lua).",
+        "-- Made by dev/tools/sync-pages from Blizzard's options code; do not edit by hand.",
+        "Sync.PAGES = {",
+    ]
+    for page in pages:
+        lines.append(f'    {{ page = "{page["page"]}", group = "{page["group"]}"' + (", bars = true" if page["bars"] else ","))
+        if page["bars"]:
+            lines[-1] += ","
+        if page["cvars"]:
+            lines += names("cvars", page["cvars"], "      ")
+        if page["clicks"]:
+            lines += names("clicks", page["clicks"], "      ")
+        if page["flags"]:
+            lines.append("      flags = {")
+            lines += [f'          {{ "{get}", "{put}" }},' for get, put in page["flags"]]
+            lines.append("      },")
+        lines.append("    },")
+    lines.append("}")
+    return "\n".join(lines) + "\n"
+
+
+def main():
+    check = "--check" in sys.argv[1:]
+    if not ADDONS.is_dir():
+        sys.exit(f"Blizzard's code is not in {ADDONS.relative_to(ROOT)}: nothing to read.")
+    pages = collect()
+    text = render(pages)
+    if check:
+        current = OUTPUT.read_text(encoding="utf-8") if OUTPUT.exists() else ""
+        print("up to date" if current == text else f"{OUTPUT.relative_to(ROOT)} would change")
+        sys.exit(0 if current == text else 1)
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT.write_text(text, encoding="utf-8")
+    print(f"Wrote {OUTPUT.relative_to(ROOT)}: {len(pages)} pages, {sum(len(page['cvars']) for page in pages)} CVars.")
+
+
+main()

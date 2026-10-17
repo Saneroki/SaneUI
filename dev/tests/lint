@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+"""Checks of the addons' files that need no game and no test: the mistakes the game only shows at login.
+
+Sane UI is one addon per folder in src: SaneUI (Core) and one for each module.
+
+  1. Each folder has one TOC. Every file it lists is there (spelled the same, capitals too), and
+     every Lua and XML file in the folder is listed, or the game would silently not load it.
+  2. The TOCs agree: same game version and addon version, and every module depends on SaneUI and
+     is grouped under it, or the game would read it before Core or list it apart.
+  3. Every Lua file parses (the game's Lua is 5.1).
+  4. No file writes a global that is not Sane UI's own: all addons share one set of globals,
+     and a stray one (a forgotten "local") can break another addon or the game's own code.
+
+Usage:  dev/tests/lint
+"""
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+SRC = Path(__file__).resolve().parents[2] / "src"
+MAIN = "SaneUI"  # the addon every module depends on; a module's addon is SaneUI_<Module>
+
+# Globals the addons may write: the table they share, their saved settings and functions,
+# the slash command, key bindings.
+OWN = re.compile(r"^(SaneUI\w*|SLASH_SANEUI\d|BINDING_(HEADER|NAME)_SANEUI\w*)$")
+
+problems = []
+
+
+def read_toc(toc):
+    """The TOC's fields, and the files the game loads: its lines, and what a listed XML file includes."""
+    fields, files = {}, set()
+    for line in toc.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        field = re.match(r"##\s*([^:]+?)\s*:\s*(.*)$", line)
+        if field:
+            fields[field.group(1)] = field.group(2)
+        if not line or line.startswith("#"):
+            continue
+        path = toc.parent / line.replace("\\", "/")
+        files.add(path)
+        if path.suffix == ".xml" and path.exists():
+            for included in re.findall(r'<(?:Script|Include)\s+file="([^"]+)"', path.read_text(encoding="utf-8")):
+                files.add(path.parent / included.replace("\\", "/"))
+    return fields, files
+
+
+def check_addon(folder):
+    """One folder of src. Returns its TOC's fields and how many files it lists."""
+    tocs = sorted(folder.glob("*.toc"))
+    if len(tocs) != 1:
+        problems.append(f"{folder.name}: needs exactly one TOC, has {len(tocs)}")
+        return None, 0
+    toc = tocs[0]
+    name = toc.relative_to(SRC)
+    fields, listed = read_toc(toc)
+    for path in sorted(listed):
+        # A name that only differs in capitals loads on Windows and nowhere else; ask for the exact one.
+        if not path.exists() or path.name not in {p.name for p in path.parent.iterdir()}:
+            problems.append(f"{name} lists a file that is not there: {path.relative_to(folder)}")
+    for path in sorted(folder.rglob("*")):
+        if path.suffix in (".lua", ".xml") and path not in listed and path.name != "Bindings.xml":
+            problems.append(f"not listed in {name}, so the game will not load it: {path.relative_to(folder)}")
+
+    if toc.stem != MAIN:
+        if not toc.stem.startswith(MAIN + "_"):
+            problems.append(f"{name}: a module's TOC is called {MAIN}_<Module>.toc")
+        if MAIN not in re.split(r"\s*,\s*", fields.get("Dependencies", "")):
+            problems.append(f"{name}: no '## Dependencies: {MAIN}', so the game may read it before Core")
+        if fields.get("Group") != MAIN:
+            problems.append(f"{name}: no '## Group: {MAIN}', so the addon list may not show it under Sane UI")
+    return fields, len(listed)
+
+
+def check_tocs():
+    counts, seen = [], {}
+    for folder in sorted(p for p in SRC.iterdir() if p.is_dir()):
+        fields, count = check_addon(folder)
+        if fields is None:
+            continue
+        counts.append(count)
+        for field in ("Interface", "Version"):
+            seen.setdefault(field, set()).add(fields.get(field))
+    for field, values in seen.items():
+        if len(values) > 1:
+            problems.append(f"the TOCs disagree on '## {field}': {', '.join(sorted(map(str, values)))}")
+    if not (SRC / "Core" / f"{MAIN}.toc").exists():
+        problems.append(f"Core/{MAIN}.toc is not there: every module depends on that addon")
+    return counts
+
+
+def check_lua():
+    for path in sorted(SRC.rglob("*.lua")):
+        result = subprocess.run(["luac5.1", "-l", "-p", str(path)], capture_output=True, text=True)
+        if result.returncode != 0:
+            problems.append(f"does not parse: {result.stderr.strip()}")
+            continue
+        for line, name in re.findall(r"\[(\d+)\]\s+SETGLOBAL\s+\S+\s+\S+\s*;\s*(\S+)", result.stdout):
+            if not OWN.match(name):
+                problems.append(f"{path.relative_to(SRC)}:{line}: writes the global '{name}' (forgotten 'local'?)")
+
+
+counts = check_tocs()
+check_lua()
+for problem in problems:
+    print(problem, file=sys.stderr)
+if problems:
+    sys.exit(1)
+print(f"Lint: {len(counts)} addons, {sum(counts)} files in their TOCs, all there, all parse, no stray globals.")

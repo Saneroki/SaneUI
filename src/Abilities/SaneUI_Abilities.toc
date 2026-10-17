@@ -1,0 +1,44 @@
+## Interface: 16001
+## Title: Abilities
+## Notes: Sane UI's spellbook. The spells you have not learned yet are in your spellbook, in grey, and a Home page says what you can learn now. Drag a grey spell onto an action bar button and the button is reserved until you learn the spell. Type /sane abilities.
+## Author: Saneroki
+## Version: 0.3.0
+## Category: Sane UI
+## Group: SaneUI
+## Dependencies: SaneUI
+## IconTexture: Interface\Icons\INV_Misc_Book_09
+## X-License: MIT
+
+# The module's own table, its switches and its commands. First: every other file adds to that table.
+Abilities.lua
+
+# What the trainers teach: the file of your class fills the list, then the quest rewards are added
+Data\Trainer.lua
+Data\Classes\Druid.lua
+Data\Classes\Hunter.lua
+Data\Classes\Mage.lua
+Data\Classes\Paladin.lua
+Data\Classes\Priest.lua
+Data\Classes\Rogue.lua
+Data\Classes\Shaman.lua
+Data\Classes\Warlock.lua
+Data\Classes\Warrior.lua
+Data\QuestSpells.lua
+Data\WeaponSkills.lua
+
+# Reservations
+Data\SkillLines.lua
+Sources.lua
+Buttons.lua
+Engine.lua
+Ghosts.lua
+Presets.lua
+
+# The spellbook
+Book\Layout.lua
+Book\Item.lua
+Book\Drag.lua
+Book\Book.lua
+Book\Home.lua
+Book\Window.lua
+Book\Menu.lua

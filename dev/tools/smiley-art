@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+"""Draws the smiley beside the line to write in (Social, Picker.lua): assets/SaneSocial-Smiley.png.
+
+The game has no smiley of its own to use there (no atlas, no file in its chat art), so it is Sane UI's
+own: a round face in warm gold with a dark bronze rim, eyes and a smile, a small shine on the upper
+left. Drawn large (1024 x 1024); dev/tools/art makes the game's texture of it (src/Social/Art/smiley.blp,
+drawn 24 x 24). A drawing by hand can take its place in assets/ under the same name.
+
+Needs Python with Pillow and NumPy.
+
+Usage:  dev/tools/smiley-art          writes assets/SaneSocial-Smiley.png, then run dev/tools/art
+        dev/tools/smiley-art out.png  writes it there instead
+"""
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageDraw, ImageFilter
+N = 1024
+c = N / 2
+y, x = np.mgrid[0:N, 0:N].astype(float)
+d = np.hypot(x - c, y - c) / (N * 0.46)          # 1 at the rim
+# Face: warm gold, lighter to the upper left, darker to the rim.
+light = np.clip(1 - np.hypot(x - c * 0.75, y - c * 0.7) / (N * 0.75), 0, 1)
+base = np.array([0.93, 0.68, 0.16]); top = np.array([1.0, 0.90, 0.45]); edge = np.array([0.62, 0.36, 0.06])
+rgb = base + (top - base) * light[..., None] ** 1.2
+rgb = rgb + (edge - rgb) * np.clip((d - 0.72) / 0.28, 0, 1)[..., None] ** 2
+img = np.zeros((N, N, 4))
+img[..., :3] = rgb
+img[..., 3] = np.clip((1 - d) * N * 0.46 / 2, 0, 1)                   # soft 2 px edge
+face = Image.fromarray((img * 255).astype(np.uint8), "RGBA")
+# A small shine on the upper left.
+shine = Image.new("RGBA", (N, N)); ds = ImageDraw.Draw(shine)
+ds.ellipse([c - N * 0.27, c - N * 0.33, c - N * 0.10, c - N * 0.22], fill=(255, 250, 220, 120))
+face = Image.alpha_composite(face, shine.filter(ImageFilter.GaussianBlur(N * 0.02)))
+# Rim: a dark bronze ring.
+ring = Image.new("RGBA", (N, N)); dr = ImageDraw.Draw(ring)
+r = N * 0.46; w = N * 0.045
+dr.ellipse([c - r, c - r, c + r, c + r], outline=(58, 30, 6, 255), width=int(w))
+face = Image.alpha_composite(face, ring.filter(ImageFilter.GaussianBlur(2)))
+# Eyes and smile, dark brown.
+ink = (52, 26, 6, 255)
+mark = Image.new("RGBA", (N, N)); dm = ImageDraw.Draw(mark)
+for ex in (c - N * 0.15, c + N * 0.15):
+    dm.ellipse([ex - N * 0.05, c - N * 0.19, ex + N * 0.05, c - N * 0.03], fill=ink)
+dm.arc([c - N * 0.26, c - N * 0.22, c + N * 0.26, c + N * 0.27], 25, 155, fill=ink, width=int(N * 0.055))
+for a in (25, 155):  # round ends of the smile
+    t = np.radians(a); rx, ry = N * 0.26 - N * 0.0275, N * 0.245 - N * 0.0275
+    px, py = c + rx * np.cos(t), c + 0.025 * N + ry * np.sin(t)
+    dm.ellipse([px - N * 0.0275, py - N * 0.0275, px + N * 0.0275, py + N * 0.0275], fill=ink)
+face = Image.alpha_composite(face, mark.filter(ImageFilter.GaussianBlur(1.5)))
+face.save(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parents[2] / "assets" / "SaneSocial-Smiley.png")

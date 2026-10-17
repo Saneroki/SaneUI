@@ -1,0 +1,39 @@
+# references/: only Blizzard's interface code is kept, the base Sane UI is built on and the ground truth
+# for the client's API (46 MB). Everything else there, such as Blizzard's interface art (11 GB), stays local
+/references/*
+!/references/BlizzardInterfaceCode/
+# The instructions for the sessions that work on Sane UI: kept on this computer only
+/CLAUDE.md
+/AGENTS.md
+
+/BUILD/*
+
+# Lua and Python bytecode, editors, operating systems
+luac.out
+__pycache__/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Claude Code: settings and worktrees of this computer only
+/.claude/
+
+# Source art and concept art stay local: only the game's textures (assets/optimized) are committed
+/assets/*.png
+/assets/Concept art/
+# What the image models make (dev/tools/imagegen): many large candidates, the chosen ones move to assets/
+/assets/generated/
+# Release archives are made from BUILD, not part of it
+*.zip
+# The voice database is made again by dev/tools/voicedb build from its staging files; the voice packs are
+# about 2 GB of sound and are given out on their own (Doc/ideas/Lore.md, *Voice packs*)
+/dev/voices/build/
+/dev/voices/staging/
+/BUILD/SaneUI_Voice_*/
+# What the voice service made (dev/tools/voicegen): the sound is kept with the backups, the previews only to listen
+/dev/voices/sound/
+/dev/voices/design/

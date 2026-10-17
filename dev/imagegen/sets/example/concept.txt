@@ -1,0 +1,10 @@
+# Example set: the steps of a set, from the concept to the parts to an animation. To start a new set,
+# copy this folder and change the names (example, Example) and the prompts.
+# Doc/guides/image-generation.md, *A set, step by step*.
+#
+# 1. Concept: run, look at contact.png, copy the chosen one to assets/Concept art/Example/concept.png.
+#      dev/tools/imagegen dev/imagegen/sets/example/concept.txt
+include: dev/imagegen/recipes/concept.txt
+out: assets/generated/example/concept
+# chosen: icon-plate-3
+icon-plate: A round icon medallion with a slim polished rim, between two four-pointed stars, set on the left end of a short, dark name plate with rounded ends.

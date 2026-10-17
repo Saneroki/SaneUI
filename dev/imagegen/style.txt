@@ -1,0 +1,5 @@
+# Sane UI's house style: the look every picture of Sane UI shares, in words. Every recipe that makes
+# interface art includes it, so all sets say the same. Its picture is the anchor, assets/Concept art/
+# Elements.png: the recipes give it as image 1 where no picture of the set is there yet.
+# Change it only on purpose: every set made after the change looks different from the ones before.
+style: Polished fantasy game interface art: slim rims of polished bronze and warm gold with a soft bevel and a fine black outline, panels of deep charcoal black with a faint grain, sweeping curves that end in sharp points, four-pointed star ornaments with a glowing golden centre, small warm glints of light along the rims. Clean, crisp, chunky shapes that stay readable when small. Flat front view, no perspective, even light from the top left. No text, no letters, no numbers, no watermark.

@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# Builds Sane UI and puts it into the game.
+#
+#   1. Runs the checks and tests (dev/tests/run). A failure stops everything.
+#   2. Builds the addons into BUILD, one folder each: a folder of src becomes the addon its TOC
+#      names (src/Core -> BUILD/SaneUI, src/Abilities -> BUILD/SaneUI_Abilities), without what
+#      only development needs (the READMEs), plus the project's licence, which covers every
+#      addon. These folders are the ones to hand to other people.
+#   3. Copies them into WoW: Forever's AddOns folder, and removes a module's folder there under its
+#      old name (SaneUI_Chat, now SaneUI_Social; SaneUI_Spellbook, now SaneUI_Abilities).
+#
+# Why a copy and not a symlink: the game runs inside Steam's container, which
+# cannot see /data. A link from the AddOns folder to this project would be dead there.
+#
+# Usage:  dev/build                test, build, copy into the game
+#         dev/build --no-install   test and build only
+#         dev/build --check        test, then only show what would change
+set -euo pipefail
+
+here="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+wow="${WOW_FOREVER:-$HOME/.local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c/Program Files (x86)/World of Warcraft/_classic_beta_}"
+addons="$wow/Interface/AddOns"
+build="$here/BUILD"
+
+mode="${1:-}"
+case "$mode" in
+    ""|--no-install|--check) ;;
+    *) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+esac
+
+"$here/dev/tests/run"
+
+# The addons: [name of the TOC] = its folder in src.
+declare -A source
+for toc in "$here"/src/*/*.toc; do
+    source[$(basename "$toc" .toc)]="$(dirname "$toc")"
+done
+names="$(printf '%s\n' "${!source[@]}" | sort)"
+
+# LICENSE.txt is not in src (it is the project's LICENSE): keep it when rsync tidies the build.
+to_build() { rsync -a --delete --exclude='*.md' --exclude='/LICENSE' --filter='P /LICENSE.txt' "${@:2}" "${source[$1]}/" "$build/$1/"; }
+to_game() { rsync -a --delete "${@:2}" "$build/$1/" "$addons/$1/"; }
+
+# stale <folder>: the Sane UI addons in it that this build does not make (a module renamed or removed).
+stale() {
+    local dir
+    for dir in "$1"/SaneUI "$1"/SaneUI_*; do
+        if [ -d "$dir" ] && [ -z "${source[$(basename "$dir")]:-}" ]; then echo "$dir"; fi
+    done
+}
+
+if [ "$mode" = "--check" ]; then
+    for name in $names; do
+        echo "BUILD/$name would change like this:"
+        to_build "$name" --dry-run --itemize-changes
+        if [ -d "$addons" ] && [ -d "$build/$name" ]; then
+            echo "The game's copy differs from the present BUILD/$name like this:"
+            to_game "$name" --dry-run --itemize-changes
+        fi
+    done
+    stale "$build" | sed 's/^/Would be removed from the build: /'
+    echo "Nothing written (--check)."
+    exit 0
+fi
+
+stale "$build" | while read -r dir; do
+    rm -rf "$dir"
+    echo "Removed from the build: $dir"
+done
+for name in $names; do
+    mkdir -p "$build/$name"
+    to_build "$name"
+    cp "$here/LICENSE" "$build/$name/LICENSE.txt"
+    echo "Built: BUILD/$name ($(find "$build/$name" -type f | wc -l) files)"
+done
+echo "Version $(sed -n 's/^## Version: //p' "$build/SaneUI/SaneUI.toc")."
+
+[ "$mode" = "--no-install" ] && exit 0
+
+if [ ! -d "$addons" ]; then
+    echo "AddOns folder not found: $addons" >&2
+    echo "Set WOW_FOREVER to the game's _classic_beta_ folder. The build itself is done." >&2
+    exit 1
+fi
+for name in $names; do
+    to_game "$name"
+    echo "Installed: $addons/$name"
+done
+# Our own old names (a module renamed): those folders are ours, and would load next to the new one.
+for old in SaneUI_Chat SaneUI_Spellbook; do
+    if [ -d "$addons/$old" ] && [ -z "${source[$old]:-}" ]; then
+        rm -rf "${addons:?}/$old"
+        echo "Removed from the game, the module's old name: $addons/$old"
+    fi
+done
+# Not ours to delete: somebody else's addon may carry that name.
+stale "$addons" | sed 's/^/In the game but not in this build, remove it by hand if it is an old module: /'
+echo "New addon or new file: restart the game. Changed file only: /reload in the game."

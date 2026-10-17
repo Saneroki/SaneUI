@@ -1,0 +1,11 @@
+# Recipe: animation. A chosen part comes alive (a gem glows, runes shimmer, a star glints): image 1 is the
+# part (ref:, from assets/), laid on black. Wan 2.2 14B with the part as its first and last frame, so the
+# clip is a loop that starts and ends on the still part: 49 frames, 3 s at 16 fps, about a minute a clip.
+# Pack it with dev/tools/flipbook --loop drop-last --fps 16.
+# Say only what moves, and that the colour stays ("the star stays warm gold"); the words below keep the
+# rest still.
+workflow: wan22-14b-loop-1ref
+fps: 16
+count: 2
+flatten: #000000
+style: The camera does not move: no zoom, no pan, no rotation. The object keeps its exact shape, size, position and colours; only the light changes. Pure black background.

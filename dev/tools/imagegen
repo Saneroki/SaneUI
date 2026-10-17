@@ -1,0 +1,461 @@
+#!/usr/bin/env python3
+"""Makes many pictures at once with ComfyUI: a list of prompts, run through one workflow with the same
+reference pictures and seeds. The pipeline it serves (the house style, the recipes, a set from concept
+to parts to animation, choosing): Doc/guides/image-generation.md.
+
+The list of prompts is a text file, one line each:
+
+  # a comment
+  include: dev/imagegen/recipes/part.txt     the lines of that file, as if they were written here
+  workflow: qwen21-edit-1ref                 the workflow (below)
+  set: steps=25, width=1024, height=1024     inputs of the workflow, set by name in every node
+  count: 4                                   pictures per prompt, one seed each
+  seed: 1                                    the first seed
+  out: assets/generated/example/parts        where the pictures are saved (below)
+  fps: 16                                    a clip's frame rate, for its preview
+  flatten: #000000                           reference pictures with transparency are laid on this colour
+  before: This is an RGBA format image ...   put before every prompt that follows
+  style: Hand-painted fantasy game ...       put after every prompt that follows
+  ref: assets/Concept art/Elements.png, ...  the reference pictures for the prompts that follow
+  frame-window: an empty window frame ...    one prompt: its name (letters, digits, - and _) and its text
+
+workflow, set, count, seed, out, fps and flatten hold for the whole list (the last one counts; set adds
+up). before, style and ref hold for the prompts after them: a new line replaces it, an empty one ends
+it. The options on the command line win over the list. Paths are from the current folder (Sane UI's).
+Reference pictures: PNG, JPG, or the game's BLP (turned into PNG; needs Pillow, as flatten does).
+
+The workflow is a ComfyUI graph in its API form (menu Workflow > Export (API)): a path to the .json, or
+a name, looked up in dev/imagegen/workflows/ and then in the ComfyUI folder's workflows/
+($IMAGEGEN_HOME, default /data/Projects/ImageGen). The model it loads is the model used. Before
+exporting, write into the graph:
+
+  {prompt}     in the prompt's text box: the whole text, or a part of it (a fixed sentence around it stays)
+  {name}       in Save Image's file name prefix, e.g. imagegen/{name}
+  Load Image   one node per reference picture. They get the list's pictures in the order of their
+               titles (ref1, ref2, ...), nodes without such a title after them by node number. A node
+               the list gives no picture for keeps its own.
+
+Every input called seed or noise_seed gets the seed: the first seed for the first picture of each
+prompt and one more for each further one. Every prompt of a set so runs through the same seeds, which
+keeps a set alike; a picture is made again by its seed (the number in its file name).
+
+With out (or --out) the tool waits and saves there:
+
+  <name>-<seed>.png        a picture
+  <name>-<seed>/001.png    a clip (a job that gives many pictures): its frames, for dev/tools/flipbook,
+  <name>-<seed>.gif        and a preview at the clip's speed
+  contact.png              this run's pictures side by side: a row per prompt, a column per seed
+  imagegen.jsonl           how each was made (prompt, seed, workflow, settings, references), a line each
+
+Without it the tool returns once all is queued and the pictures stay in ComfyUI's output folder.
+
+Usage:  dev/tools/imagegen <list.txt> [options]
+        dev/tools/imagegen <workflow.json> <list.txt> [options]
+  --workflow W    the workflow (a name or a path), instead of the list's
+  --count N       pictures per prompt (default 1)
+  --seed N        the first seed (default 1)
+  --only a,b      only the prompts of these names
+  --set key=val   set every input of that name in the graph, e.g. steps=8, cfg=1.5,
+                  unet_name=qwen_image_2.1_turbo_int8_convrot.safetensors (repeatable)
+  --out DIR       wait for the pictures and save them there
+  --server ADDR   where ComfyUI runs (default 127.0.0.1:8188, this computer)
+  --dry-run       print what would be queued, send nothing
+"""
+import argparse
+import copy
+import datetime
+import hashlib
+import io
+import json
+import os
+import re
+import shutil
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+import uuid
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+WORKFLOWS = [ROOT / "dev" / "imagegen" / "workflows",
+             Path(os.environ.get("IMAGEGEN_HOME", "/data/Projects/ImageGen")) / "workflows"]
+NAME = re.compile(r"^[A-Za-z0-9_-]+$")
+REF_TITLE = re.compile(r"^ref\s*(\d+)$", re.IGNORECASE)
+SEED_INPUTS = ("seed", "noise_seed")
+UPLOAD_FOLDER = "saneui"  # inside ComfyUI's input folder
+THUMB = 256               # side of a picture in contact.png and of a clip's preview
+CHECK_FILES = True        # reference pictures must exist (the tests read lists without them)
+
+
+def fail(message):
+    print(message, file=sys.stderr)
+    sys.exit(1)
+
+
+# --- The list of prompts -----------------------------------------------------------------------
+
+def new_run():
+    """What a list sets for the whole run."""
+    return {"workflow": None, "set": {}, "count": None, "seed": None, "out": None, "fps": None, "flatten": None}
+
+
+def sentence(*parts):
+    """The parts one after another, each ending in a mark (a full stop if it has none)."""
+    out = ""
+    for part in filter(None, parts):
+        out = part if not out else out + (" " if out[-1] in ".,;:!?" else ". ") + part
+    return out
+
+
+def value(text):
+    try:
+        return json.loads(text)
+    except ValueError:
+        return text
+
+
+def setting(item, where):
+    key, sep, text = item.partition("=")
+    if not sep or not key.strip():
+        fail(f"{where}: set wants key=value, not {item.strip()!r}")
+    return key.strip(), value(text.strip())
+
+
+def colour(text, where):
+    match = re.fullmatch(r"#?([0-9a-fA-F]{6})", text.strip())
+    if not match:
+        fail(f"{where}: flatten wants a colour like #000000, not {text!r}")
+    return tuple(int(match.group(1)[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def picture(text, where):
+    path = Path(text)
+    if CHECK_FILES and not path.is_file():
+        fail(f"{where}: no such picture: {path}")
+    return path
+
+
+def read_list(path, run=None, jobs=None, state=None, inside=()):
+    """Reads a list (and the lists it includes) into the run's settings and its jobs: [{name, prompt, refs}]."""
+    run = new_run() if run is None else run
+    jobs = [] if jobs is None else jobs
+    state = {"before": "", "style": "", "refs": []} if state is None else state
+    path = Path(path)
+    if path.resolve() in inside:
+        fail(f"{path} includes itself")
+    if not path.is_file():
+        fail(f"No such list: {path}")
+    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        where = f"{path}:{number}"
+        key, sep, text = line.partition(":")
+        key, text = key.strip(), text.strip()
+        if not sep or not NAME.match(key):
+            fail(f"{where}: expected 'name: prompt', or a word like style:, ref:, include:")
+        if key == "include":
+            read_list(text, run, jobs, state, inside + (path.resolve(),))
+        elif key in ("before", "style"):
+            state[key] = text
+        elif key == "ref":
+            state["refs"] = [picture(p.strip(), where) for p in text.split(",") if p.strip()]
+        elif key == "set":
+            run["set"].update(setting(item, where) for item in text.split(",") if item.strip())
+        elif key in ("count", "seed", "fps"):
+            if not text.isdigit():
+                fail(f"{where}: {key} wants a number")
+            run[key] = int(text)
+        elif key in ("workflow", "out"):
+            run[key] = text or None
+        elif key == "flatten":
+            run["flatten"] = colour(text, where) if text else None
+        else:
+            jobs.append({"name": key, "prompt": sentence(state["before"], text, state["style"]),
+                         "refs": list(state["refs"])})
+    return run, jobs
+
+
+# --- The workflow --------------------------------------------------------------------------------
+
+def find_workflow(text):
+    """A workflow by its path, or by its name in WORKFLOWS."""
+    path = Path(text)
+    if path.suffix == ".json" or "/" in text:
+        if path.is_file():
+            return path
+        fail(f"No such workflow: {path}")
+    for folder in WORKFLOWS:
+        if (folder / f"{text}.json").is_file():
+            return folder / f"{text}.json"
+    fail(f"No workflow called {text} in " + " or ".join(str(f) for f in WORKFLOWS))
+
+
+def natural(node_id):
+    return [int(n) for n in re.findall(r"\d+", node_id)] or [0]
+
+
+def ref_nodes(graph):
+    """The Load Image nodes in the order references are given to them."""
+    def order(item):
+        node_id, node = item
+        title = REF_TITLE.match(node.get("_meta", {}).get("title", "").strip())
+        return (int(title.group(1)) if title else 1_000_000, natural(node_id))
+    nodes = [(i, n) for i, n in graph.items() if n.get("class_type") == "LoadImage"]
+    return [node for _, node in sorted(nodes, key=order)]
+
+
+def fill(graph, job, seed, settings, uploaded):
+    """A copy of the graph for one picture."""
+    graph = copy.deepcopy(graph)
+    for node in graph.values():
+        inputs = node.get("inputs", {})
+        for key, val in inputs.items():
+            if isinstance(val, list):  # a link to another node's output
+                continue
+            if key in settings:
+                inputs[key] = settings[key]
+            elif key in SEED_INPUTS and isinstance(val, int):
+                inputs[key] = seed
+            elif isinstance(val, str):
+                inputs[key] = val.replace("{prompt}", job["prompt"]).replace("{name}", job["name"])
+    for node, ref in zip(ref_nodes(graph), job["refs"]):
+        node["inputs"]["image"] = uploaded[ref]
+    return graph
+
+
+def check(graph, jobs):
+    text = json.dumps(graph)
+    if '"class_type"' not in text:
+        fail("The workflow is not in the API form: export it with Workflow > Export (API).")
+    if "{prompt}" not in text:
+        fail("The workflow has no {prompt}: write it into the prompt's text box, then export (API) again.")
+    if "{name}" not in text:
+        print("Note: the workflow has no {name} in Save Image's prefix; ComfyUI names the pictures itself.")
+    most = max((len(job["refs"]) for job in jobs), default=0)
+    if most > len(ref_nodes(graph)):
+        fail(f"The list gives up to {most} reference pictures, the workflow has {len(ref_nodes(graph))} Load Image nodes.")
+
+
+# --- ComfyUI's server ----------------------------------------------------------------------------
+
+class Server:
+    def __init__(self, address):
+        self.url = address.rstrip("/") if "://" in address else "http://" + address.rstrip("/")
+        self.client = str(uuid.uuid4())
+
+    def call(self, path, data=None, headers=None):
+        request = urllib.request.Request(self.url + path, data=data, headers=headers or {})
+        try:
+            with urllib.request.urlopen(request) as response:
+                return response.read()
+        except urllib.error.HTTPError as error:
+            fail(f"ComfyUI refused {path}: {error.code}\n{error.read().decode(errors='replace')}")
+        except urllib.error.URLError as error:
+            fail(f"ComfyUI is not reachable at {self.url} ({error.reason}). Start it first: comfyui start")
+
+    def upload(self, path, flatten=None):
+        """Sends a reference picture into ComfyUI's input folder; returns what Load Image takes."""
+        data, suffix = path.read_bytes(), path.suffix.lower()
+        if suffix == ".blp" or flatten:
+            from PIL import Image  # only for the game's own pictures, and for flatten
+            image = Image.open(io.BytesIO(data))
+            if flatten:
+                under = Image.new("RGBA", image.size, flatten + (255,))
+                under.alpha_composite(image.convert("RGBA"))
+                image = under.convert("RGB")
+            out = io.BytesIO()
+            image.save(out, "PNG")
+            data, suffix = out.getvalue(), ".png"
+        name = f"{path.stem}-{hashlib.sha1(data).hexdigest()[:8]}{suffix}"
+        boundary = uuid.uuid4().hex
+        parts = []
+        for field, content in (("subfolder", UPLOAD_FOLDER), ("type", "input"), ("overwrite", "true")):
+            parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="{field}"\r\n\r\n{content}\r\n'.encode())
+        parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="image"; filename="{name}"\r\n'
+                     f"Content-Type: application/octet-stream\r\n\r\n".encode() + data + b"\r\n")
+        parts.append(f"--{boundary}--\r\n".encode())
+        answer = json.loads(self.call("/upload/image", b"".join(parts),
+                                      {"Content-Type": f"multipart/form-data; boundary={boundary}"}))
+        return f"{answer['subfolder']}/{answer['name']}" if answer.get("subfolder") else answer["name"]
+
+    def queue(self, graph):
+        body = json.dumps({"prompt": graph, "client_id": self.client}).encode()
+        return json.loads(self.call("/prompt", body, {"Content-Type": "application/json"}))["prompt_id"]
+
+    def wait(self, prompt_id):
+        """Waits until ComfyUI has run the job (a job is in the history once it is done, or failed)."""
+        while True:
+            entry = json.loads(self.call(f"/history/{prompt_id}")).get(prompt_id)
+            if entry:
+                return entry
+            time.sleep(1)
+
+    def pictures(self, entry):
+        for output in entry.get("outputs", {}).values():
+            for image in output.get("images", []):
+                if image.get("type") == "output":
+                    query = urllib.parse.urlencode({k: image.get(k, "") for k in ("filename", "subfolder", "type")})
+                    yield self.call(f"/view?{query}")
+
+
+# --- Saving --------------------------------------------------------------------------------------
+
+def save(out, name, seed, pictures, fps):
+    """Saves one job's pictures; returns the file to show for it (a clip: its first frame)."""
+    if len(pictures) == 1:
+        target = out / f"{name}-{seed}.png"
+        target.write_bytes(pictures[0])
+        return target
+    folder = out / f"{name}-{seed}"
+    if folder.is_dir():
+        shutil.rmtree(folder)  # the frames of an earlier run of this name and seed
+    folder.mkdir()
+    for index, data in enumerate(pictures, 1):
+        (folder / f"{index:03}.png").write_bytes(data)
+    preview(sorted(folder.glob("*.png")), out / f"{name}-{seed}.gif", fps)
+    return folder / "001.png"
+
+
+def pillow():
+    try:
+        from PIL import Image, ImageDraw
+        return Image, ImageDraw
+    except ImportError:
+        return None, None
+
+
+def on_grey(image, side):
+    """A picture made small, laid on a checkerboard where it is clear."""
+    Image, _ = pillow()
+    image = image.convert("RGBA")
+    image.thumbnail((side, side))
+    board = Image.new("RGBA", image.size, (52, 52, 52, 255))
+    cell = 16
+    for y in range(0, image.height, cell):
+        for x in range(0, image.width, cell):
+            if (x // cell + y // cell) % 2:
+                board.paste((72, 72, 72, 255), (x, y, x + cell, y + cell))
+    board.alpha_composite(image)
+    return board.convert("RGB")
+
+
+def preview(frames, target, fps):
+    Image, _ = pillow()
+    if not Image or not frames:
+        return
+    images = [on_grey(Image.open(f), THUMB) for f in frames]
+    images[0].save(target, save_all=True, append_images=images[1:], duration=round(1000 / fps), loop=0)
+
+
+def contact(out, shown):
+    """contact.png: a row per prompt, a column per seed, each named under it."""
+    Image, ImageDraw = pillow()
+    if not Image or not shown:
+        return
+    names = list(dict.fromkeys(name for name, _, _ in shown))
+    seeds = sorted({seed for _, seed, _ in shown})
+    label, gap = 20, 8
+    sheet = Image.new("RGB", (gap + len(seeds) * (THUMB + gap), gap + len(names) * (THUMB + label + gap)), (28, 28, 28))
+    draw = ImageDraw.Draw(sheet)
+    for name, seed, path in shown:
+        x = gap + seeds.index(seed) * (THUMB + gap)
+        y = gap + names.index(name) * (THUMB + label + gap)
+        thumb = on_grey(Image.open(path), THUMB)
+        sheet.paste(thumb, (x + (THUMB - thumb.width) // 2, y + THUMB - thumb.height))  # on its name
+        draw.text((x + 2, y + THUMB + 3), f"{name}-{seed}", fill=(220, 220, 220))
+    sheet.save(out / "contact.png")
+
+
+# --- Main ----------------------------------------------------------------------------------------
+
+def main():
+    parser = argparse.ArgumentParser(description="Many pictures at once with ComfyUI (see the file's head).")
+    parser.add_argument("files", nargs="+", metavar="[workflow.json] list.txt")
+    parser.add_argument("--workflow")
+    parser.add_argument("--count", type=int)
+    parser.add_argument("--seed", type=int)
+    parser.add_argument("--only", default="")
+    parser.add_argument("--set", action="append", default=[], metavar="KEY=VALUE")
+    parser.add_argument("--out")
+    parser.add_argument("--server", default="127.0.0.1:8188")
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args()
+    if len(args.files) > 2:
+        parser.error("give a list, or a workflow and a list")
+
+    run, jobs = read_list(args.files[-1])
+    for key in ("count", "seed", "out"):
+        if getattr(args, key) is not None:
+            run[key] = getattr(args, key)
+    run["workflow"] = args.workflow or (args.files[0] if len(args.files) == 2 else run["workflow"])
+    run["set"].update(setting(item, "--set") for item in args.set)
+    count, first, fps = run["count"] or 1, run["seed"] or 1, run["fps"] or 24
+    if not run["workflow"]:
+        fail("No workflow: name one in the list (workflow: ...) or on the command line.")
+    workflow = find_workflow(run["workflow"])
+    graph = json.loads(workflow.read_text(encoding="utf-8"))
+    if args.only:
+        wanted = set(args.only.split(","))
+        jobs = [job for job in jobs if job["name"] in wanted]
+    if not jobs:
+        fail("No prompts to run.")
+    check(graph, jobs)
+
+    if args.dry_run:
+        settings = ", ".join(f"{k}={v}" for k, v in run["set"].items()) or "none"
+        print(f"workflow {workflow}\nsettings {settings}\nout {run['out'] or '(ComfyUI only)'}")
+        for job in jobs:
+            refs = ", ".join(str(r) for r in job["refs"]) or "none"
+            print(f"{job['name']}  seeds {first}-{first + count - 1}  refs: {refs}\n  {job['prompt']}")
+        return
+
+    server = Server(args.server)
+    uploaded, queued = {}, []
+    for job in jobs:
+        for ref in job["refs"]:
+            if ref not in uploaded:
+                uploaded[ref] = server.upload(ref, run["flatten"])
+        for seed in range(first, first + count):
+            queued.append((job, seed, server.queue(fill(graph, job, seed, run["set"], uploaded))))
+    print(f"Queued {len(queued)} jobs ({len(jobs)} prompts x {count}) on {workflow.stem}.")
+    if not run["out"]:
+        return
+
+    out = Path(run["out"])
+    out.mkdir(parents=True, exist_ok=True)
+    failed, shown = 0, []
+    with open(out / "imagegen.jsonl", "a", encoding="utf-8") as log:
+        for done, (job, seed, prompt_id) in enumerate(queued, 1):
+            entry = server.wait(prompt_id)
+            pictures = list(server.pictures(entry))
+            if entry.get("status", {}).get("status_str") != "success" or not pictures:
+                print(f"[{done}/{len(queued)}] {job['name']} seed {seed}: failed, see: comfyui log")
+                failed += 1
+                continue
+            shown_file = save(out, job["name"], seed, pictures, fps)
+            shown.append((job["name"], seed, shown_file))
+            made = shown_file.parent if len(pictures) > 1 else shown_file
+            log.write(json.dumps({
+                "file": made.name, "name": job["name"], "seed": seed, "prompt": job["prompt"],
+                "workflow": workflow.stem, "set": run["set"], "refs": [str(r) for r in job["refs"]],
+                "flatten": run["flatten"], "pictures": len(pictures),
+                "made": datetime.datetime.now().isoformat(timespec="seconds"),
+            }) + "\n")
+            log.flush()
+            print(f"[{done}/{len(queued)}] {made}" + (f" ({len(pictures)} frames)" if len(pictures) > 1 else ""))
+    contact(out, shown)
+    if shown and pillow()[0]:
+        print(f"Side by side: {out / 'contact.png'}")
+    if failed:
+        fail(f"{failed} of {len(queued)} jobs failed.")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nStopped waiting. ComfyUI keeps its queue: clear it there if it should not run on.")
+        sys.exit(130)

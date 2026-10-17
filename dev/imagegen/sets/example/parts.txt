@@ -1,0 +1,8 @@
+# 2. Parts, cut out of the chosen concept: run, choose, copy each chosen one to assets/Example-<part>.png.
+#      dev/tools/imagegen dev/imagegen/sets/example/parts.txt
+include: dev/imagegen/recipes/part.txt
+ref: assets/Concept art/Example/concept.png
+out: assets/generated/example/parts
+# chosen: star-2
+star: the golden four-pointed star that sits inside the round medallion on the left. Remove the medallion, the plate and everything else
+medallion: the round medallion on the left with its rim, its dark face and the star in it. Remove the plate, the small stars beside it and everything else

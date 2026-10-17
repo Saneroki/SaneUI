@@ -1,0 +1,6 @@
+# 2b. Parts the concept does not have, in its style: run, choose, copy as the parts.
+#      dev/tools/imagegen dev/imagegen/sets/example/parts-new.txt
+include: dev/imagegen/recipes/part-new.txt
+ref: assets/Concept art/Example/concept.png
+out: assets/generated/example/parts-new
+button: a square button with a slim polished rim around a dark, empty face

@@ -1,0 +1,68 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <!--
+        The CVar list (CVars.lua): a frame filling the tab CVars of the page Profiles, with a scroll box of
+        its own inside. Its parts are made in OnLoad from the game's templates.
+    -->
+    <Frame name="SaneUISettingsCVarsTemplate" mixin="SaneUISettingsCVarsMixin" virtual="true">
+        <Size y="460"/>
+        <Scripts>
+            <OnLoad method="OnLoad"/>
+        </Scripts>
+    </Frame>
+
+    <!--
+        One CVar in the list, two lines high: a tick to keep it; its name, and under it the label the game's
+        options give it; at the right its value to type into, and the game's undo arrow while it is not at
+        its default.
+    -->
+    <Button name="SaneUISettingsCVarRowTemplate" mixin="SaneUISettingsCVarRowMixin" virtual="true">
+        <Size y="34"/>
+        <Layers>
+            <Layer level="ARTWORK">
+                <FontString parentKey="Name" inherits="GameFontHighlightSmall" justifyH="LEFT" wordwrap="false">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="32" y="-5"/>
+                        <Anchor point="RIGHT" x="-172" y="0"/>
+                    </Anchors>
+                </FontString>
+                <FontString parentKey="Label" inherits="GameFontDisableSmall" justifyH="LEFT" wordwrap="false">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativeKey="$parent.Name" relativePoint="BOTTOMLEFT" x="0" y="-3"/>
+                        <Anchor point="RIGHT" x="-172" y="0"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <CheckButton parentKey="Keep" inherits="UICheckButtonTemplate">
+                <Size x="22" y="22"/>
+                <Anchors>
+                    <Anchor point="LEFT" x="4" y="0"/>
+                </Anchors>
+            </CheckButton>
+            <EditBox parentKey="Value" inherits="InputBoxTemplate" autoFocus="false">
+                <Size x="124" y="20"/>
+                <Anchors>
+                    <Anchor point="RIGHT" x="-34" y="0"/>
+                </Anchors>
+            </EditBox>
+            <Button parentKey="Reset" hidden="true">
+                <Size x="20" y="20"/>
+                <Anchors>
+                    <Anchor point="RIGHT" x="-6" y="0"/>
+                </Anchors>
+                <NormalTexture atlas="common-icon-undo"/>
+                <HighlightTexture atlas="common-icon-undo" alphaMode="ADD" alpha="0.4"/>
+            </Button>
+        </Frames>
+        <HighlightTexture alphaMode="ADD">
+            <Color r="1" g="1" b="1" a="0.06"/>
+        </HighlightTexture>
+        <Scripts>
+            <OnLoad method="OnLoad"/>
+            <OnClick method="OnClick"/>
+            <OnEnter method="OnEnter"/>
+            <OnLeave method="OnLeave"/>
+        </Scripts>
+    </Button>
+</Ui>

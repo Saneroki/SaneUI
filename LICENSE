@@ -1,0 +1,50 @@
+Sane UI
+Copyright (c) 2026 Saneroki
+
+What this license covers
+------------------------
+
+1. The source code of Sane UI, with its data, is licensed under the MIT License below. You may
+   use it, change it and distribute it, also in your own addon and under your
+   own name.
+
+2. The names "Sane UI" (also written "SaneUI") and "Sane Sync", and the logo,
+   are trademarks of Saneroki. The MIT License below does not grant any
+   right to them. An addon or app built from this code must carry a different
+   name and must not suggest that it is Sane UI or Sane Sync, or that their
+   author endorses it. Saying truthfully that it is based on Sane UI is fine.
+
+3. The original art of Sane UI (textures, icons, logos and other images made
+   for it) is not covered by the MIT License below. Copyright (c) 2026
+   Saneroki, all rights reserved. It may be used and distributed only as part
+   of an unmodified copy of Sane UI.
+
+4. World of Warcraft and all Blizzard code, art and names belong to Blizzard
+   Entertainment, Inc. Nothing here grants a right to them.
+
+A request, not a condition: please do not publish the whole addon again as a
+new addon. Take the parts you need and build something of your own.
+
+--------------------------------------------------------------------------------
+
+MIT License
+
+Copyright (c) 2026 Saneroki
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

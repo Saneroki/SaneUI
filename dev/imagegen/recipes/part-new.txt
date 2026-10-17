@@ -1,0 +1,8 @@
+# Recipe: new part. A part the concept does not have (a button, a check box, a scroll bar's knob), made in
+# its style: image 1 is the set's concept (ref:, in the set's list), only as a reference. Say what the
+# part is, not what image 1 shows.
+include: dev/imagegen/style.txt
+workflow: qwen21-turbo-edit-1ref
+set: width=1024, height=1024
+count: 4
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background. Use image 1 only as a reference for the style, materials, colours and the width of its rims, and do not show anything from image 1. Create a new picture of one single interface part, alone, straight on, centred and filling most of the picture:

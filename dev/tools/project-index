@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+"""Index repository source/docs for selective reading in future chats.
+
+Usage: dev/tools/project-index          refresh Doc/agent/files.json
+       dev/tools/project-index --check  report changed/added/removed files, write nothing
+
+Only project-owned paths are scanned. No Git changes, game files, dependencies or personal
+saved settings are read. Declaration matches are navigation hints, not a semantic parser.
+"""
+import argparse
+import hashlib
+import json
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+OUTPUT = ROOT / "Doc/agent/files.json"
+FOLDERS = ("src", "dev", "Doc")
+ROOT_FILES = ("README.md", "LICENSE", ".gitignore", ".gitattributes")  # CLAUDE.md and AGENTS.md are local only
+LUA_FUNCTION = re.compile(r"^\s*(?:local\s+)?function\s+([\w.:]+)\s*\(")
+PYTHON_FUNCTION = re.compile(r"^(?:async\s+)?def\s+(\w+)\s*\(")
+HEADING = re.compile(r"^(#{1,6})\s+(.+)")
+
+
+def paths():
+    found = {ROOT / name for name in ROOT_FILES if (ROOT / name).is_file()}
+    for folder in FOLDERS:
+        for path in (ROOT / folder).rglob("*"):
+            relative = path.relative_to(ROOT)
+            if (not path.is_file() or path.is_symlink() or path == OUTPUT
+                    or any(part.startswith(".") or part == "__pycache__" for part in relative.parts)
+                    or path.suffix in (".pyc", ".swp") or path.name.endswith("~")
+                    or relative.parts[:3] in (("dev", "voices", "build"), ("dev", "voices", "staging"))):
+                continue
+            found.add(path)
+    return sorted(found)
+
+
+def entry(path):
+    data = path.read_bytes()
+    result = {"path": path.relative_to(ROOT).as_posix(), "bytes": len(data),
+              "sha256": hashlib.sha256(data).hexdigest()}
+    if path.suffix == ".tga" and "Tooltips/Art/" in result["path"]:
+        result["generated_by"] = "dev/tools/tooltip-art"
+    if path.suffix.lower() in (".tga", ".png", ".jpg", ".blp", ".zip") or b"\0" in data:
+        result["binary"] = True
+        return result
+    try:
+        lines = data.decode("utf-8").splitlines()
+    except UnicodeDecodeError:
+        result["binary"] = True
+        return result
+    result["lines"] = len(lines)
+    declarations, headings = [], []
+    for number, line in enumerate(lines, 1):
+        match = LUA_FUNCTION.match(line) or PYTHON_FUNCTION.match(line)
+        if match:
+            declarations.append({"name": match[1], "line": number})
+        if path.suffix == ".md":
+            match = HEADING.match(line)
+            if match:
+                headings.append({"title": match[2], "line": number})
+    if declarations:
+        result["declarations"] = declarations
+    if headings:
+        result["headings"] = headings
+    if path.suffix == ".toc":
+        result["load_order"] = [line.strip().replace("\\", "/") for line in lines
+                                if line.strip() and not line.lstrip().startswith("#")]
+    return result
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true")
+    args = parser.parse_args()
+    current = [entry(path) for path in paths()]
+    if args.check:
+        if not OUTPUT.exists():
+            print("Index missing; run dev/tools/project-index.")
+            return 1
+        old = {item["path"]: item["sha256"] for item in json.loads(OUTPUT.read_text())["files"]}
+        new = {item["path"]: item["sha256"] for item in current}
+        changes = []
+        for path in sorted(old.keys() | new.keys()):
+            if path not in old:
+                changes.append("added: " + path)
+            elif path not in new:
+                changes.append("removed: " + path)
+            elif old[path] != new[path]:
+                changes.append("changed: " + path)
+        for change in changes:
+            print(change)
+        print(f"{len(changes)} stale entries; {len(current)} project files indexed.")
+        return int(bool(changes))
+    document = {"schema": 1, "scope": "Project source, tools, documentation and root rules; excludes BUILD, references, IDE and personal state",
+                "note": "Hashes detect source changes; prose notes require manual updates. Declaration matches are lexical navigation hints.",
+                "files": current}
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT.write_text(json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Indexed {len(current)} project files in {OUTPUT.relative_to(ROOT)}.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

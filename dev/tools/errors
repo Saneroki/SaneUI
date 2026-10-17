@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Shows what went wrong in the game: the error log Sane UI keeps (Core.log).
+#
+# An addon cannot write a file of its own. The one file it has is its saved settings, which the
+# game writes at a /reload and when you log out:
+#     <game>/WTF/Account/<account>/SavedVariables/SaneUI.lua
+# Core keeps its log in there (SaneUIDB.log): every problem in the order it happened, with its
+# time, the place it happened, the addon's version and the game's build. This prints it.
+#
+# So after an error in the game: /reload (or log out), then run this.
+#
+# Usage:  dev/tools/errors          the newest 10 entries, each with the place it happened
+#         dev/tools/errors 30       the newest 30
+#         dev/tools/errors all      all of them (the log keeps 100)
+#         dev/tools/errors short    one line each, without the places
+set -euo pipefail
+
+wow="${WOW_FOREVER:-$HOME/.local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c/Program Files (x86)/World of Warcraft/_classic_beta_}"
+command -v lua5.1 >/dev/null || { echo "lua5.1 is not installed." >&2; exit 1; }
+
+found=0
+for file in "$wow"/WTF/Account/*/SavedVariables/SaneUI.lua; do
+    [ -f "$file" ] || continue
+    found=1
+    echo "$file"
+    echo "written $(date -r "$file" '+%Y-%m-%d %H:%M:%S') (what happened after that is not in it yet: /reload first)"
+    lua5.1 - "$file" "${1:-10}" <<'LUA'
+local file, want = arg[1], arg[2]
+dofile(file)
+local log = type(SaneUIDB) == "table" and SaneUIDB.log
+if type(log) ~= "table" or #log == 0 then
+    -- A version of Sane UI before the log only kept the last problem of each kind.
+    local errors = type(SaneUIDB) == "table" and SaneUIDB.errors or {}
+    local any = false
+    for label, problem in pairs(errors) do
+        any = true
+        print(("\n%s  %s  (%dx)\n%s"):format(problem.when or "?", label, problem.count or 1, tostring(problem.text)))
+    end
+    print(any and "\n(no log yet in this file: these are the last problems of each kind)" or "No errors noted.")
+    return
+end
+local short = want == "short"
+local count = (want == "all" or short) and #log or tonumber(want) or 10
+for index = math.max(1, #log - count + 1), #log do
+    local entry = log[index]
+    local text = tostring(entry.text)
+    print(("%s%s  %s  (%dx, Sane UI %s, game build %s)"):format(short and "" or "\n", entry.when or "?", entry.label or "?",
+        entry.count or 1, entry.version or "?", entry.build or "?"))
+    print(short and ("    " .. text:match("^[^\n]*")) or text)
+end
+print(("\n%d of %d entries."):format(math.min(count, #log), #log))
+LUA
+done
+[ "$found" = 1 ] || { echo "No saved settings of Sane UI found under $wow/WTF. Set WOW_FOREVER to the game's _classic_beta_ folder." >&2; exit 1; }

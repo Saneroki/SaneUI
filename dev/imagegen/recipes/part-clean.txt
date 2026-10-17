@@ -1,0 +1,8 @@
+# Recipe: clean part. Image 1 is a piece cut out of the concept by hand (a rectangle around the part, from
+# any picture editor), or a rough sketch: the model makes it a clean asset on a transparent background.
+# For a part the recipe part does not find in the whole concept. Say what is to go: "Remove the dark grey
+# background and the cut-off piece of the plate on the right."
+workflow: qwen21-turbo-edit-1ref
+set: width=1024, height=1024
+count: 4
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background. Turn image 1 into a clean game interface asset: keep its shapes, materials and colours exactly, at high detail, centred and filling the picture.

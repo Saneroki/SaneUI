@@ -1,0 +1,6 @@
+# Recipe: animation with Wan 2.2 5B. As animation, but the clip only starts on the part: 49 frames, 2 s at
+# 24 fps, 704 x 704. Not a loop by itself: dev/tools/flipbook --loop fade:8. In the test it moved far less
+# than the 14B model for the same words; for a motion that ends somewhere else than it began.
+include: dev/imagegen/recipes/anim.txt
+workflow: wan22-5b-i2v-1ref
+fps: 24

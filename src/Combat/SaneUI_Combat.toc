@@ -1,0 +1,13 @@
+## Interface: 16001
+## Title: Combat
+## Notes: Sane UI's frames for the fight: your own, your target's and your pet's, party and raid, buffs and debuffs, nameplates. Being built: for now it changes nothing, the game's own frames stay as they are.
+## Author: Saneroki
+## Version: 0.3.0
+## Category: Sane UI
+## Group: SaneUI
+## Dependencies: SaneUI
+## IconTexture: Interface\Icons\Ability_DualWield
+## X-License: MIT
+
+# The module's own table. First: the other files will add to that table.
+Combat.lua

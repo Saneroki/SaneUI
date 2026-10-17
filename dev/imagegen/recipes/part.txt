@@ -1,0 +1,12 @@
+# Recipe: part. One piece of a set's concept (a corner, an edge, the button, the gem, an ornament) cut out
+# as a game asset on a transparent background: image 1 is the set's concept (ref:, in the set's list).
+# The part keeps the concept's exact look, so all parts of a set match. Name the part as it is in the
+# concept, and what goes: "the star inside the round medallion on the left. Remove the medallion, the
+# plate and everything else". No house style here: image 1 carries the look, and the house's words about
+# panels bring the whole concept back. Qwen 2.1 turbo, 8 s a picture; for the very best, run the chosen
+# words again with --workflow qwen21-edit-1ref (25 steps, 15-18 s; another model, so other pictures).
+workflow: qwen21-turbo-edit-1ref
+set: width=1024, height=1024
+count: 4
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background. Isolate one element of image 1 as a game asset: keep only
+style: Show it alone, straight on, centred and enlarged until it fills most of the picture.

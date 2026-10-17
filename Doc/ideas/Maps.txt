@@ -1,0 +1,7 @@
+Maps: first notes (Saneroki). The plan is Doc/ideas/Navigation.md; where the two differ, that page is newer.
+
+- The minimap stands at the top centre of the screen.
+- Hot corner: the mouse held a moment at the top centre makes the minimap fill the screen.
+- In full screen a right-click zooms out from the minimap's view to the zone map, a second one to the
+  world map.
+- Black minimap: where the map cannot show (no terrain or map for the place), the minimap is black.

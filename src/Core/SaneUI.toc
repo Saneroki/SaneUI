@@ -1,0 +1,55 @@
+## Interface: 16001
+## Title: Sane UI
+## Notes: A sane user interface, built in modules. This is the part every module needs, with Sane UI's options (Esc > Options > AddOns > Sane UI, or /sane options) and the game settings it keeps the same on all your characters. The modules are listed below it: switch each one on or off by itself. Type /sane.
+## Author: Saneroki
+## Version: 0.3.0
+## Category: Sane UI
+## SavedVariables: SaneUIDB
+## SavedVariablesPerCharacter: SaneUICharDB
+## IconTexture: Interface\Icons\INV_Misc_Gear_01
+## AddonCompartmentFunc: SaneUI_OnAddonCompartmentClick
+## X-License: MIT
+
+# Core is the addon every module depends on. Saved.lua keeps the settings of all of them,
+# Profiles.lua whose are in use (the account's or the character's own) and named copies of them.
+Core.lua
+# The kinds of motion a window's size can have (Glide, Swing, Even, Instant): before Saved.lua,
+# which describes the general switch that chooses one
+Motion.lua
+Saved.lua
+Profiles.lua
+# What every window can use: places at the screen's edges to dock to, a plate with round corners,
+# background and border, moving (by a title bar, or in Blizzard's Edit Mode) and sizing (in Edit Mode), opening under the mouse or
+# a click, filling the screen from its screen edge, a title bar with a fuzzy search, and a progress bar
+Dock.lua
+EditMode.lua
+Fuzzy.lua
+Shape.lua
+Skin.lua
+Edge.lua
+Window.lua
+Expand.lua
+Bar.lua
+# /sane window: a window to try them with
+Demo.lua
+# Sync: the game's own settings kept with Sane UI's settings, a part per options page of the game
+# and a few for what is on none (Edit Mode layout, chat windows, own channels). Pages.lua is made
+# by dev/tools/sync-pages from Blizzard's options code.
+Sync\Sync.lua
+Sync\Data\Pages.lua
+Sync\Layout.lua
+Sync\Chat.lua
+Sync\Game.lua
+# Settings: the options, last: they show what everything above describes. The pages are put up
+# at login, their controls made when the options are first opened.
+Settings\Settings.lua
+Settings\Panel.lua
+Settings\Tabbed.lua
+Settings\Profiles.lua
+Settings\Synced.lua
+# The page Sane UI: links (Discord, website, GitHub) and feedback
+Settings\About.lua
+Settings\Data\CVarLabels.lua
+Settings\CVars.lua
+Settings\Banner.xml
+Settings\CVars.xml
