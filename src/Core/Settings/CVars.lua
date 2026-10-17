@@ -32,7 +32,7 @@ local Plain = Core.Plain
 
 local TEXT = {
     header = "CVars",
-    intro = "Every console setting of the game. Enter sets a typed value; a tick keeps the CVar with Sane UI's settings.",
+    intro = "Every console setting of the game. Enter sets a typed value; a tick keeps the CVar in the profile in use.",
     notDefault = "Not at their default",
     kept = "Kept with Sane UI",
     kind = "Kind",
@@ -41,7 +41,7 @@ local TEXT = {
     total = "%d CVars",
     matching = "%d matching",
     keep = "Keep with Sane UI's settings",
-    keepTip = "The same on every character that uses the account's settings, and part of your profiles. Taken when you log out, set when a character comes into the game.",
+    keepTip = "Kept in the profile in use: the same on every character that uses it. Taken when you log out, set when a character comes into the game. Not with Accountwide settings off.",
     reset = "Back to the default",
     resetTip = "The game's default: %s",
     defaultIs = "Default: %s",
@@ -326,6 +326,8 @@ function SaneUISettingsCVarRowMixin:Init(entry)
     self.Value:SetEnabled(free)
     self.Reset:SetShown(free and value ~= default)
     self.Keep:SetChecked(Kept(entry.name))
+    -- Kept CVars are the profile's: with Accountwide settings off there is none, and nothing is kept.
+    self.Keep:SetEnabled(SaneUI.Core.Profiles.On())
 end
 
 -- Gives the row's CVar that value, and says under the list if the game keeps another.
