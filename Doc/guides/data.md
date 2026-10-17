@@ -520,6 +520,8 @@ end, ...)
 ## Messages *(1f)*
 
 - **Prefix `SaneUI`;** the guild, party and raid channels only (decision 9).
+- **The sender** is the one the server names (`CHAT_MSG_ADDON`'s sender), by its key (*Players*); a message
+  never names its own sender.
 - **A message:** its kind (a letter), the protocol number, its game version's short sign, then its fields,
   all cut by tabs (`H1\tf\t...`). A kind, number or game version not known, or not the receiver's, is
   ignored. At most 255 bytes.
@@ -529,6 +531,31 @@ end, ...)
   also says the unpacked size, checked after unpacking; a packed block is at most 4 KB.
 - **A scan's messages** name its auction house (`eu/1234/horde`); a receiver takes only its own house's.
 - **Received text is read, never run:** no `loadstring` anywhere in the framework.
+
+## Players
+
+WoW: Forever names a player by a **first name and a surname** (`Droopy Fairwind`). Players can share a first
+name or a surname, so only the two together tell them apart, and the two together are unique across the
+region (`RegionalUniqueNamesEnabled`): the game leaves the realm out. Retail names a player by one name,
+unique on its realm (`Thrall-Draenor`).
+
+- **A player's key** is the whole name as one: `Core.PlayerKey(unit)` for a unit,
+  `Core.PlayerKeyOf(text)` for a name an event, a list or a message gives (`CHAT_MSG_ADDON`'s sender). On
+  Forever the first name, the game's separator (a space) and the surname, with any realm dropped; on Retail
+  `Name-Realm`, the own realm added where the name has none. `Core.Surnames()` tells which.
+- **Never a part of it:** nothing is kept, counted, compared or shared by a first name alone or a surname
+  alone, and a name is never cut at its space. A Forever name that comes without its surname has no key
+  (nil): what it would name is dropped, never guessed.
+- **What uses it:** the senders of shared data (*Messages*): their limits, quarantine, the three senders
+  of a fact, the counts kept per sender, strikes (one sender per key: two members with one first name are
+  two senders, one member named with and without a realm is one); the player's own messages, dropped by
+  their key; any player named in kept data.
+- **The account's own characters** are kept by their GUID (`Core.charKey`), never by a name; their whole
+  name is kept beside it for showing (`Core.FullName`, `Core.charName`).
+- **Shown** with `Core.FullName(unit)` (Forever: first name and surname) or the key itself.
+- **In rows, saved files and messages** a name is text: it may hold a space (only a tab and the characters
+  28, 30 and 31 cut), so a key can stand in a field or be a text key (`"Droopy Fairwind"`).
+- `/sane data` says how this client names players, with what `RegionalUniqueNamesEnabled` answers.
 
 ## Clocks
 
@@ -578,3 +605,6 @@ end, ...)
   `Versions`, `Changes`, `Keys`, `Each`), also from a pack newer than the client; the scheduler's budget,
   pauses and guards.
 - **Nothing hostile raises an error:** a broken row, a broken saved file or message is dropped or set aside.
+- **Players by their key** (`dev/tests/core.lua`): a whole name with or without a realm is one key, the same
+  first name or surname two players, a first name alone none; Retail's `Name-Realm`. Steps 1c and 1f test
+  their senders and characters the same way.

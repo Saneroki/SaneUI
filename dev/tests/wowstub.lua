@@ -48,6 +48,7 @@ W.project = 18            -- the client: WOW_PROJECT_ID (WoW: Forever's is 18, W
 W.build = 70245           -- its build (GetBuildInfo)
 W.beta = false            -- IsBetaBuild
 W.test = false            -- IsTestBuild and IsPublicTestClient
+W.regionalNames = true    -- RegionalUniqueNamesEnabled: a player is a first name and a surname, unique in the region
 
 -- Runs one file of an addon as the game would: with the addon's name and the table only its files see.
 -- file is its path in src ("Abilities/Book/Item"). The addon's ADDON_LOADED is the test's to fire.
@@ -654,6 +655,9 @@ function W.Install(env)
     env.SetCVar = function(name, value) W.cvars[name] = tostring(value) end
 
     env.UnitName = function() return "Tester", "Stub" end -- a Forever name: first name and surname
+    env.UnitNameUnmodified = function(unit) return env.UnitName(unit) end
+    env.UnitIsPlayer = function() return true end
+    env.RegionalUniqueNamesEnabled = function() return W.regionalNames end
     env.Constants = { CharacterNameSeparatorConsts = { CHARACTERNAME_SURNAME_SEPARATOR = " " } }
     env.UnitClass = function() return "Mage", "MAGE" end
     env.UnitFactionGroup = function() return "Alliance" end

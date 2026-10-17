@@ -890,5 +890,37 @@ check(SaneUIDB.modules.Demo.options.loud == SaneUIDB.profiles.Solo.Demo.loud and
 Profiles.Delete("Solo")
 check(SaneUIDB.newCharacters.profile == nil and fourth.profile == nil, "a profile deleted is taken off New Characters too")
 
+-- Players' names ----------------------------------------------------------------------
+-- WoW: Forever names a player by a first name and a surname, unique together across the region; players
+-- can share either one. Retail names a player by one name, unique on its realm.
+check(Core.Surnames() and Core.FullName("player") == "Tester Stub" and Core.PlayerKey("player") == "Tester Stub",
+    "Forever: a player's name and key are the first name and surname as one")
+check(Core.PlayerKeyOf("Droopy Fairwind") == "Droopy Fairwind" and Core.PlayerKeyOf(" Droopy Fairwind ") == "Droopy Fairwind"
+    and Core.PlayerKeyOf("Droopy Fairwind-Stormrage") == "Droopy Fairwind", "a whole name from an event, with or without a realm, is one key")
+check(Core.PlayerKeyOf("Droopy Fairwind") ~= Core.PlayerKeyOf("Droopy Brightwater")
+    and Core.PlayerKeyOf("Ama Fairwind") ~= Core.PlayerKeyOf("Droopy Fairwind"), "the same first name, or the same surname: two players")
+check(Core.PlayerKeyOf("Droopy") == nil and Core.PlayerKeyOf("Droopy-Stormrage") == nil and Core.PlayerKeyOf("") == nil
+    and Core.PlayerKeyOf(nil) == nil and Core.PlayerKeyOf(42) == nil and Core.PlayerKeyOf("-Stormrage") == nil,
+    "a first name alone is no player's key: dropped, never guessed")
+local unitName, unitIsPlayer = UnitName, UnitIsPlayer
+UnitName = function() return "Droopy", nil end
+check(Core.PlayerKey("target") == nil and Core.FullName("target") == "Droopy", "a unit whose surname the game does not give has no key")
+UnitName = function() return "Droopy Fairwind", nil end
+check(Core.PlayerKey("target") == "Droopy Fairwind", "a name that holds the surname already")
+UnitName, UnitIsPlayer = function() return "Marshal Dughan", nil end, function() return false end
+check(Core.PlayerKey("target") == nil and Core.FullName("target") == "Marshal Dughan", "a creature is no player: no key")
+UnitIsPlayer = unitIsPlayer
+-- Retail: UnitName's second answer is a realm, never shown as a surname
+WOW_PROJECT_ID, W.regionalNames = 1, false
+UnitName = function(unit) if unit == "target" then return "Thrall", "Draenor" end return "Jaina", nil end
+check(not Core.Surnames() and Core.FullName("target") == "Thrall" and Core.FullName("player") == "Jaina",
+    "Retail: the name alone is shown, not the realm as a surname")
+check(Core.PlayerKey("target") == "Thrall-Draenor" and Core.PlayerKey("player") == "Jaina-Stub", "Retail: the key is name and realm")
+check(Core.PlayerKeyOf("Thrall-Draenor") == "Thrall-Draenor" and Core.PlayerKeyOf("Thrall") == "Thrall-Stub"
+    and Core.PlayerKeyOf("Droopy Fairwind") == nil, "Retail: the own realm added; a name with a space is none")
+W.regionalNames = true
+check(Core.Surnames() and Core.PlayerKeyOf("Droopy Fairwind") == "Droopy Fairwind", "another client with regional names: first name and surname too")
+WOW_PROJECT_ID, UnitName = 18, unitName
+
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Core: all %d checks passed.\n"):format(passed))

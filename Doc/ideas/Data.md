@@ -705,7 +705,7 @@ Grouped by the moment the game lets Core read it:
 
 - **Its own saved variable,** `SaneUIData_Characters`, declared by the pack `SaneUI_Data_Characters`, which
   has no shipped data and is loaded soon after every login. Keyed by Core's character key (`Core.charKey`,
-  the GUID: Forever names can collide).
+  the GUID: a name is not kept as the key; two characters can share a first name).
 - **Core reads it, not a module:** many modules show it (Tooltips' *20 on your alts*, Economy's bank and
   auction windows, later bags and a character sheet) and none owns it, so the reading lives with the
   framework (`Characters.lua`). It costs nothing a player would notice:
@@ -1258,7 +1258,8 @@ message is treated as possibly hostile, whichever addon it seems to come from.
 
 1. **Only the guild, the party and the raid** (decision 9). Shared data is taken only from those channels.
    The server puts the sender's name on every message and the sender cannot change it: an attacker has to
-   be a member of the guild or the group, and is then one known name. A party or raid can hold strangers, so
+   be a member of the guild or the group, and is then one known name: its whole name, first name and
+   surname together on Forever (the guide, *Players*), since players can share either one. A party or raid can hold strangers, so
    for the rules of several senders (5) a sender known only from a group counts less than a guild member (how
    much: decided in step 1f, tuned in the game).
 2. **Strict shape.** Strict reading; sizes capped before and after unpacking (the client's unpacking has no
@@ -1285,8 +1286,8 @@ message is treated as possibly hostile, whichever addon it seems to come from.
    Saneroki's example: a member sends *these gloves have new stats*. The receiver's game is asked for the
    gloves. The same stats: accepted. Other stats: rejected, the sender gets a strike, nothing changes.
 5. **What the game cannot check needs several senders.** Where an NPC stands, a vendor's goods and prices, a
-   quest's giver and rewards, herb places: accepted only when **3 different members** (*proposal*) sent the
-   same, and nothing the player saw says otherwise. One sender alone never changes anything. The player's
+   quest's giver and rewards, herb places: accepted only when **3 different members** (*proposal*, three
+   different whole names) sent the same, and nothing the player saw says otherwise. One sender alone never changes anything. The player's
    own observation always wins.
 6. **Counts are summed robustly.** Each sender's counts are kept apart per build period. They must be
    possible (loots per hour within what one player can do; never more drops than loots allow). A sender
@@ -1297,7 +1298,7 @@ message is treated as possibly hostile, whichever addon it seems to come from.
    item the median of the senders' prices; a price more than five times off the item's own history
    (*proposal*) needs a second sender.
 8. **Strikes.** Three strikes (*proposal*) and a sender is ignored for a week and its waiting data dropped;
-   kept by name, on this computer only.
+   kept by the sender's whole name, on this computer only.
 9. **Never into the master unchecked.** The harvest takes accepted data only, with how it was accepted (by
    the game, or by how many senders); waiting data never.
 10. **Undo.** A button *Forget shared data* (*The switches*) removes everything accepted from others and all

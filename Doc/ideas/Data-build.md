@@ -142,7 +142,9 @@ at most the commit it was on, and the next session goes on from there.
   - `Characters.lua`, and the pack Characters: no shipped data, only its saved variable.
   - Changes are marked, then read in steps; the bank only while it is open; counts across characters; the
     auction log; a character deleted in *Profiles*.
-  - Tests.
+  - Characters by their GUID; a name kept with one (the character's, a buyer's in the auction log) is the
+    whole name (guide, *Players*).
+  - Tests, among them: two characters of the account with the same first name stay two.
   - *In the game:* after two characters logged in, `Data.Count` of an item names both.
 - [ ] **1c.5 The crawl and the patch check.**
   - `Crawl.lua` and `/sane data crawl <kind>`.
@@ -197,14 +199,17 @@ at most the commit it was on, and the next session goes on from there.
   - The prefix, the inbox and the send queue.
   - Blocks and parts (*Zlib*, Base64) and the limits.
   - The player's own messages are dropped, and so are messages of another game version.
-  - Tests with a stub guild.
+  - Every sender by its key, the whole name (`Core.PlayerKeyOf`; guide, *Players*); a sender whose name has
+    no key is dropped.
+  - Tests with a stub guild, among them: two members with the same first name are two senders, one member
+    named with and without a realm is one, and a member with the player's first name is not the player.
 - [ ] **1f.2 Scans:** have, want, data, and the question at login, each naming its auction house; a
   receiver takes only its own house's. Tests.
 - [ ] **1f.3 Bundles.** Tests.
 - [ ] **1f.4 Trust.**
   - Shape, quarantine and the game's check.
-  - Three senders, counts and prices.
-  - Strikes.
+  - Three senders, counts and prices: three different keys (guide, *Players*).
+  - Strikes, kept by key.
   - *Forget shared data*: the button and `/sane data forget`.
   - Tests with hostile members.
   - *In the game:* two accounts in one guild share a scan and a bundle, and a false fact one sends is

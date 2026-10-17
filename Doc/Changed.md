@@ -7,6 +7,18 @@ The Home page, the marks, Settings on demand, the Tooltips module and the Social
 Tests: lint, 195 checks (Core, with its options), 280 checks (Spellbook), 328 checks (Tooltips), 332 checks (Social), 62 checks (Sync), 234 checks (windows).
 
 ### Core's data framework
+- **Players by their whole name** (Saneroki: a Forever player is first name and surname, and players can
+  share either). `Core.PlayerKey(unit)` and `Core.PlayerKeyOf(text)` give a player's key: on Forever the
+  first name and surname as one, any realm dropped (the whole name is unique across the region), nil for a
+  name without its surname; on Retail `Name-Realm`. `Core.Surnames()` tells which (the Forever project, or
+  `RegionalUniqueNamesEnabled`). `Core.FullName` no longer joins a Retail realm as a surname. The guide's
+  new section *Players* makes it the database's rule: senders of shared data, their limits, quarantine,
+  three senders and strikes by key; own characters by GUID; never a first name or surname alone. The plan
+  (*Poisoning*, *Characters*) and steps 1c.4, 1f.1 and 1f.4 say so, with their tests. `/sane data` says how
+  the client names players. `wowstub.lua` gains `UnitNameUnmodified`, `UnitIsPlayer` and
+  `RegionalUniqueNamesEnabled`. Tests: Core 221 checks (Forever and Retail keys).
+  - *In the game:* `/sane data` ends its first line with *players by first name and surname (regional
+    names: yes)* on Forever.
 - **1a.7 Every set's schema.** `assets/data/` holds the schema of every set of the plan, 28 in all, empty
   but checked: Items and ItemSets; Quests; NPCs, CreatureSpells, Objects, Zones, Travel, Places and Drops;
   Spawns, QuestAreas and PatrolPaths; CreatureSpawns; Walking; Guides; Spells, Auras, Trainers, QuestSpells,

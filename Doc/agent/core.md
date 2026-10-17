@@ -38,9 +38,12 @@ events themselves, after Saved's and Profiles' handlers (TOC order).
 Modules register via `Core.NewModule(ADDON, name, ns)` in their first file.
 Core dispatches `OnLoad` on that addon's `ADDON_LOADED`, then `OnLogin` on `PLAYER_LOGIN`.
 A module arriving after login gets both steps immediately; one whose `OnLoad` failed gets no `OnLogin`. Saved data is available from `OnLoad`;
-`Core.class`, `charName`, `charKey` from login. Character identity is GUID (Forever names can collide),
+`Core.class`, `charName`, `charKey` from login. Character identity is GUID (first names can be shared),
 with name/realm fallback. Forever names are first name + surname (`UnitName` returns both): show players
-with `Core.FullName(unit)`; `charName` is the full name.
+with `Core.FullName(unit)`; `charName` is the full name. Any other player is keyed, compared and shared by
+`Core.PlayerKey(unit)` / `Core.PlayerKeyOf(text)`: Forever `First Surname` (realm dropped, regionally
+unique; never either part alone, nil without the surname), Retail `Name-Realm`; `Core.Surnames()` tells
+which (Doc/guides/data.md, *Players*).
 
 ## Shared contracts
 

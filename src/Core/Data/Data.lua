@@ -48,8 +48,10 @@ local TEXT = {
     badRow = "a row of %s cannot be read",
     -- /sane data
     about = "Sane UI's databases: the data packs, loaded or not (/sane data show <set> <key>)",
-    client = "data of %s, build %s (project %s; beta: %s; test: %s).",
+    client = "data of %s, build %s (project %s; beta: %s; test: %s); %s.",
     unknown = "this client's game version cannot be told (project %s; beta: %s; test: %s): no data pack is used.",
+    surnames = "players by first name and surname (regional names: %s)",
+    realms = "players by name and realm (regional names: %s)",
     none = "no data pack is installed.",
     states = { ready = "loaded", loading = "loading", idle = "not loaded", off = "switched off", refused = "not used", missing = "missing" },
     pack = "%s: %s%s%s.",
@@ -625,7 +627,8 @@ Core.Command("data", TEXT.about, function(rest)
     local project = tostring(rawget(_G, "WOW_PROJECT_ID"))
     local client = Data.Game()
     if client then
-        Core.Print(TEXT.client:format(client, ClientBuild(), project, YesNo("IsBetaBuild"), YesNo("IsTestBuild")))
+        local names = (Core.Surnames() and TEXT.surnames or TEXT.realms):format(YesNo("RegionalUniqueNamesEnabled"))
+        Core.Print(TEXT.client:format(client, ClientBuild(), project, YesNo("IsBetaBuild"), YesNo("IsTestBuild"), names))
     else
         Core.Print(TEXT.unknown:format(project, YesNo("IsBetaBuild"), YesNo("IsTestBuild")))
     end

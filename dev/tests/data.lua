@@ -577,7 +577,8 @@ check(Told() == "forever" and StateOf("LiveWords") == "idle", "back to Forever")
 -- /sane data
 W.printed = {}
 SlashCmdList.SANEUI("data")
-check(printedMatch("data of forever, build 70245 %(project 18; beta: no; test: no%)"), "/sane data: the game version, build and answers")
+check(printedMatch("data of forever, build 70245 %(project 18; beta: no; test: no%); players by first name and surname %(regional names: yes%)%."),
+    "/sane data: the game version, build and answers, and how players are named")
 check(printedMatch("Data: Gear: loaded %- Folk %x+ %(build 65100%), Gear " .. Gear.hash .. " %(build 65100%)%."), "a pack loaded, with its sets' hashes")
 check(printedMatch("Data: Words: not loaded %- LiveWords%.") and printedMatch("Data: Gear: switched off %- Switched%.")
     and printedMatch("not used %(of format 2") and printedMatch("Data: Gear: not used %(it names no set%)%.")
