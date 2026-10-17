@@ -214,18 +214,19 @@ function Entry:OnLoad()
     box:SetScript("OnEnterPressed", function() self:Enter() end)
     box:SetScript("OnEscapePressed", function(edit) edit:ClearFocus() end)
     box:HookScript("OnEditFocusLost", function()
-        if self.data then self:SetValue(self:GetSetting():GetValue()) end
+        if self.option then self:SetValue(self:GetSetting():GetValue()) end
     end)
     self.Box = box
     self.Unit = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     self.Unit:SetPoint("LEFT", box, "RIGHT", 8, 0)
 end
 
--- The switch's description is the row's options (Switch below).
+-- The switch's description is the row's options (Switch below); the row keeps it while it shows it.
 function Entry:Init(initializer)
     Base.Init(self, initializer)
     local option = initializer:GetOptions()
     local number = type(option.default) == "number"
+    self.option = option
     self.Box:SetWidth(number and 70 or 214)
     self.Unit:SetText(number and option.unit or "")
     self:SetValue(self:GetSetting():GetValue())
@@ -235,7 +236,8 @@ end
 -- What was typed: a number for a number (on its step, within its ends: Panel.Number), set if it is
 -- one and not the value there already.
 function Entry:Enter()
-    local option, setting = self:GetElementData():GetOptions(), self:GetSetting()
+    local option, setting = self.option, self:GetSetting()
+    if not option then return end
     local value = self.Box:GetText() or ""
     if type(option.default) == "number" then value = Config.Panel.Number(option, value) end
     if value ~= nil and value ~= setting:GetValue() then setting:SetValue(value) end
@@ -245,8 +247,8 @@ end
 
 -- The game shows a value (its own, or one set elsewhere); not over what is being typed.
 function Entry:SetValue(value)
-    if self.Box:HasFocus() then return end
-    self.Box:SetText(Config.Panel.Written(self:GetElementData():GetOptions(), value))
+    if not self.option or self.Box:HasFocus() then return end
+    self.Box:SetText(Config.Panel.Written(self.option, value))
 end
 
 function Entry:EvaluateState()
@@ -256,7 +258,9 @@ function Entry:EvaluateState()
     self:DisplayEnabled(enabled)
 end
 
+-- The game lets the row go (another page, scrolled away): what was being typed is dropped.
 function Entry:Release()
+    self.option = nil
     self.Box:ClearFocus()
     Base.Release(self)
 end
