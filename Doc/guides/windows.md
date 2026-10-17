@@ -36,35 +36,43 @@ window its kind's options (`Window.KINDS`); what the module gives itself wins.
 
 | Kind | Examples | Title bar | Docked at first | Full screen by | Esc | Moved outside Edit Mode |
 | --- | --- | --- | --- | --- | --- | --- |
-| **screen** | the chat, the minimap | no (`titleBar` off): see-through or a look of its own | a screen edge zone | its screen edge (push, or click: section 8) | brings it back from full screen | no |
+| **screen** | the chat, the minimap | no (`titleBar` off): see-through or a look of its own | a screen edge zone (`first.dock`: the chat `BOTTOMLEFT`) | its screen edge (push, or click: section 8) | brings it back from full screen | no |
 | **panel** | the spellbook, the talents, the guild, the bags | yes | a screen edge middle, or free | its maximize button (and its edge, if docked there) | closes it (`escape = "close"`) | by its title bar, not docked at an edge |
-| **talk** | vendor, trainer, auction house, bank | yes | the middle (`CENTER`) | its maximize button | closes it, ends the talk | by its title bar |
+| **talk** | vendor, trainer, auction house, bank | yes | the middle (`first.dock = "CENTER"`, the kind's) | its maximize button | closes it, ends the talk | by its title bar |
 
 | Option | screen | panel | talk |
 | --- | --- | --- | --- |
-| given by the kind | `dock`, `edge`, `sizable` | `titleBar`, `dock`, `skin`, `edge`, `sizable`, `escape = "close"` | as panel |
-| the module's | `store`, `first`, `title`, `search`, `content`, `docked`, `classic`, `native`, `close`, `minWidth`, `minHeight` | the same | the same; `first` in the middle, `close` ends the talk |
+| given by the kind | `dock`, `edge`, `sizable` | `titleBar`, `dock`, `skin`, `edge`, `sizable`, `escape = "close"`, `toplevel` (a click brings it to the front) | as panel, and `first = { dock = "CENTER" }` |
+| the module's | `store`, `first`, `title`, `search`, `content`, `docked`, `classic`, `native`, `close`, `minWidth`, `minHeight`, `insets`, `buttons`, `tabs` | the same | the same; `close` ends the talk |
 | left out | `skin` (see-through), `titleBar` (only while full) | | |
+
+A table the module gives where its kind has one (`first`) is merged: the module's keys win, the kind's fill
+in the rest.
 
 ## 3. The parts, and who does what
 
 | Core file | It does |
 | --- | --- |
-| `Dock.lua` | The nine zones (corners, edge middles, `CENTER`); which zone a let-go window docks to; the tinted shape while dragging. Plain numbers, no frames but the shape. |
-| `Window.lua` | The window: its place and size kept and restored, the title bar (title, search box, buttons), dragging by the title bar or Edit Mode's box, sizing by the grip, Esc, the combat lock, what it was left as (`Remember`, `Native`, `Open`), the button on the game's window (`Attach`). |
+| `Dock.lua` | The nine zones (corners, edge middles, `CENTER`); which zone a let-go window docks to, kept `insets` from the screen's edges; the tinted shape while dragging. Plain numbers, no frames but the shape. |
+| `Window.lua` | The window: its place and size kept and restored (its first zone, standing clear of a zone another holds), the title bar (title, `SetTitle`, search box, Core's buttons and the module's), `window.inside` (where what it holds stands), dragging by the title bar or Edit Mode's box (snapping to Edit Mode's grid), sizing by the grip, to the front (`toplevel`), the combat lock, what it was left as (`Remember`, `Recall`, `Native`, `Open`), the button on the game's window (`Attach`), every window (`All`, `ResetAll`). |
 | `EditMode.lua` | Whether Blizzard's Edit Mode is open (its event registry); `/sane arrange` where there is none. |
-| `Edge.lua` | Full screen: the trigger at the screen edge, the motion there and back, the background, the dropdown *Classic windows*, the section *Expand window*. |
-| `Motion.lua` | The kinds of motion (Glide, Swing, Even, Instant), each a time and one of the game's easing curves (`EasingUtil`), and a clock that runs only while something moves. |
-| `Shape.lua`, `Skin.lua` | The plate: round corners (square at the screen's edges, always square in full screen), the trim; the skin, a window's background and border. |
+| `Selection.lua` | A window chosen in Edit Mode by a click on its box, and Core's dialog in Edit Mode's look (*Reset To Default Position*). |
+| `Escape.lua` | Esc: one stand-in in the game's `UISpecialFrames` for everything of Sane UI's that Esc closes (`Core.Escape`). |
+| `Watch.lua` | `Core.Watch` (a look a few times a second, only while out and shown) and `Core.Hover` (the mouse on a window: its coming by `OnEnter`, a watch until it has gone). |
+| `Edge.lua` | Full screen: the trigger at the screen edge, the motion there and back, the background, the dropdown *Classic windows*, the section *Expand window* (its changes followed by Core). |
+| `Views.lua` | A window's views behind the game's tabs (`tabs`), the tab last chosen kept. |
+| `Holder.lua` | The game's window kept out of sight while ours is chosen, and the game's own opening and closing of it followed (section 7, *The holder*). |
+| `Motion.lua` | The kinds of motion (Glide, Swing, Even, Instant), each a time and one of the game's easing curves (`EasingUtil`), a clock that runs only while something moves, a region's fade and slide (`Motion.Fade`, `Motion.Slide`). |
+| `Shape.lua`, `Skin.lua` | The plate: round corners (a share of the window, or a fixed radius; square at the screen's edges, always square in full screen), the trim, a round icon (`Shape.Round`); the skin, a window's background and border; the game's background tiles (`Skin.TILES`). |
 | `Expand.lua` | A window that opens larger once the mouse has rested on it, closes a moment after the mouse has gone, and can be kept open (`Stay`). |
-| `Fuzzy.lua` | Fuzzy finding for the search. |
+| `Fuzzy.lua` | Fuzzy finding for the search; a list ranked by it, a long one a part per frame (`Fuzzy.Filter`). |
 | `Bar.lua` | A progress bar in the art of the game's experience bar. |
 
 **The module does:** what the window holds and its layout (laid out once in `docked`, not on every step of a
 motion); what the search finds (`search`); what closing means (`close`); what its window stands for
 (`native.frame`) and what changes besides when the player switches (`native.show`, `native.back`); its settings (the section *Expand window* through `Edge.Options`).
-**Core does** (or will: section 8): keeping the game's window out of sight while ours is chosen and
-following the game's own opening and closing of it (section 7, *The holder*).
+**Core does:** keeping the game's window out of sight while ours is chosen and following the game's own
+opening and closing of it (`native.hold`; section 7, *The holder*).
 
 ## 4. States
 
@@ -79,7 +87,9 @@ A window's state is held in a few flags; Core keeps them, the module reads them.
 | arranging | `Core.EditMode.active` | Edit Mode opens (or `/sane arrange`) | it closes | Edit Mode's box over every window, grips shown, buttons hidden, no full screen (full windows put back), title bars do not drag |
 | locked | `window:Locked()` | a fight, for a window holding protected frames | the fight's end | nothing of ours moves, sizes, shows or hides it; `Place` waits; `Open` says `"locked"` |
 | the game's own chosen | `store.place.native` | the toggle (`Native(true)`) | the toggle on the game's window (`Native(false)`) | `Open` shows the game's window |
-| holding its zone | `Dock.Holder(zone)` is it | placed docked, shown | hidden, or docked elsewhere | no other window docks there (no shape on a drag; one opening with that zone kept stands free) |
+| holding its zone | `Dock.Holder(zone)` is it | placed docked, shown | hidden, or docked elsewhere | no other window docks there (no shape on a drag; one opening with that zone kept stands clear of it) |
+| selected | `Core.Selection.window` is it | a click on its box in Edit Mode | another chosen (ours or the game's), Edit Mode closing | its box in Edit Mode's selected look, Core's dialog names it |
+| the game's held | `window.holder.held` | ours chosen and the game's closed (`native.hold`) | the game's chosen (`Native(true)`), a failure, `GiveBack` | the game's window is under our hidden frame: opened by the game, it opens ours |
 
 **Invariants** (keep them when changing anything):
 
@@ -95,21 +105,29 @@ A window's state is held in a few flags; Core keeps them, the module reads them.
 4. **Hidden means at rest.** A window hidden while away is back in its place at once: nothing moves out of
    sight.
 5. **Nothing runs at rest.** No `OnUpdate` while nothing changes: the dock shape only during a drag, the
-   motion clock only during a motion, Expand's watch only from the mouse's coming until the window is closed. A module's own
-   ticker (the chat's) is the module's to justify.
+   motion clock only during a motion, Expand's watch only from the mouse's coming until the window is closed
+   (none while it is kept open). A module that must look at something does so by `Core.Watch` or
+   `Core.Hover` (the chat's mouse), which run only while out and shown.
 6. **A protected window is never touched in a fight** (section 7).
 7. **One window to a zone at a time** (Saneroki, 2026-10-16): the first one shown there holds it; a zone's
-   kept name is never dropped because it was taken (the window docks there again once it is free).
+   kept name is never dropped because it was taken (the window docks there again once it is free). One
+   opening meanwhile stands clear: where it stood, or beside the zone, `Window.CASCADE` down and to the side
+   of each window already there.
+8. **A module's hooks never break a window.** Every hook (`docked`, `filled`, `motion`, Expand's `changed`,
+   `motion` and `still`, a bar's `moved`, the Mover's and Sizer's) runs through `Core.Safe`; Core's own flags
+   (`moving`, `sizing`, `away`) are set back whatever a hook did.
 
 ## 5. What is kept
 
 - **Where:** `store[key]`, `store` the module's (`Core.Store(module)`: `SaneUIDB.modules.<Module>`, for the
   account, not in profiles), `key` the window's (`"place"` at first, another name for a second window).
-- **What:** `{ x, y, width, height, dock, full, native }`: `x`, `y` the top left corner from the screen's lower
-  left one; `width`, `height` only for a sizable window; `dock` a zone's name (a zone that no longer exists:
-  the kept coordinates count); `full` it was left in full screen; `native` the game's own window was chosen.
+- **What:** `{ x, y, width, height, dock, full, native, tab }`: `x`, `y` the top left corner from the screen's
+  lower left one; `width`, `height` only for a sizable window; `dock` a zone's name (a zone that no longer
+  exists: the kept coordinates count); `full` it was left in full screen; `native` the game's own window was
+  chosen; `tab` the tab last chosen (none: the first).
 - **Read with care:** a kept size larger than the screen is cut to it; a place that cannot be read gives the
-  first place; `Reset` puts the first place and size back and keeps `full` and `native`.
+  first place; `Reset` (Edit Mode's dialog, `/sane window reset all` for all: `Window.ResetAll`) puts the
+  first place and size back and keeps `full`, `native` and `tab`.
 - **To come:** one place per Edit Mode layout, following Save, Revert and switching layouts (section 8,
   item 2, has the keys and the new shape of the store).
 
@@ -117,32 +135,42 @@ A window's state is held in a few flags; Core keeps them, the module reads them.
 
 1. **Make the frame when it is first needed** (`CreateFrame("Frame", nil, UIParent)`), not at login.
 2. **`Core.Window.New(frame, options)`** with its `kind` (section 2) and what its kind does not give. A
-   frame Esc may close needs nothing more: Core keeps its own stand-in in `UISpecialFrames`.
-3. **Build what it holds as children of the frame,** below the title bar (`Core.Window.BAR`) when it has
-   one; name the part that fades while the size moves (`content`).
+   frame Esc may close needs nothing more: Core keeps one stand-in for all of Sane UI in `UISpecialFrames`
+   (`SaneUIEscape`). Anything else of a module's that Esc should close (a small window that is no
+   `Core.Window`) takes `Core.Escape(owner, close)` while it is shown and `Core.Escape(owner, nil)` when it
+   hides; never an entry of its own in that list.
+3. **Build what it holds in `window.inside`,** which stands under the title bar while there is one (also
+   when a window without one fills the screen) and the whole window otherwise; `window.top` says how far
+   down it starts. Name the part that fades while the size moves (`content`). Several views: `tabs`, each
+   built in the frame its tab gives when first chosen. Buttons of the module's own in the title bar:
+   `buttons = { { atlas, tip, text, click } }`, left of Core's.
 4. **Lay out in `docked(zone)`,** which comes once the window stands (placed, or full screen reached), not in
    `OnSizeChanged` while `window.edge.away` (every step of a motion is a new size).
-5. **Search:** `search = function(text)`: `local query = Core.Fuzzy.Query(text)` once, then
-   `Core.Fuzzy.Match(query, row's texts...)` per row (nil: hide it; the number: its rank, if the list is
-   sorted by it), `Core.Fuzzy.Rank(word, text, nil, spots)` and `Core.Fuzzy.Highlight` only for the rows on
-   screen. A list of thousands is ranked a part per frame (a coroutine resumed from a short `OnUpdate` that
-   stops when done), never all at once in one frame.
-6. **The game's own window** (`native`): `frame` (a function if its addon loads on demand; call
-   `window:Attach()` again once it has loaded), `anchor` (optional: where the button back to ours goes on
-   the game's window, for one without a close button, such as the chat), `show` and `back` (what else changes when the player
-   switches to the game's and back; until Core's holder is built, also hiding ours and showing the game's:
-   out of a fight only).
-7. **The game's triggers** need nothing of the module once Core's holder is built (section 7): the game
-   opens its own window as always, unseen, and Core opens ours (`window:Open()`: `"ours"`, `"native"`, or
-   `"locked"` in a fight when ours holds protected frames and is closed). Until then a module follows the
-   game by a hook after its toggle and calls `window:Open()` itself.
+5. **Search:** `search = function(text)`, then `Core.Fuzzy.Filter(rows, text, fields, done)`: `fields` the
+   keys of a row (or functions of it) to look in, `done(found, ranks)` the rows every word is in, best
+   first. Up to `Fuzzy.AT_ONCE` (200) rows it answers at once; a longer list is ranked a part per frame on
+   `Core.Steps`, and a newer search stops an older one. A short list may do it by hand: `Core.Fuzzy.Query`
+   once, `Core.Fuzzy.Match(query, row's texts...)` per row (Social's log, `Core.Fuzzy.Plain` for the game's
+   coded texts). `Core.Fuzzy.Rank(word, text, nil, spots)` and `Core.Fuzzy.Highlight` only for the rows on
+   screen.
+6. **The game's own window** (`native`): `frame` (a function if its addon loads on demand), `hold = true`
+   (Core's holder keeps it out of sight while ours is chosen), `addon` (the addon that brings it: held, and
+   our button attached, once it has loaded), `unseen` (a window whose `OnShow` must not run from our code:
+   closed unseen before it is given back), `anchor` (optional: where the button back to ours goes on the
+   game's window, for one without a close button, such as the chat), `show` and `back` (what else changes
+   when the player switches to the game's and back). Without `hold` (the chat, which is never closed) the
+   module hides and shows the game's itself, out of a fight only.
+7. **The game's triggers** need nothing of the module with `hold` (section 7): the game opens its own window
+   as always, unseen, and Core opens ours (`window:Open()`: `"ours"`, `"native"`, or `"locked"` in a fight
+   when ours holds protected frames and is closed). A module that stands down calls `window:GiveBack()`.
 8. **`close`:** what closing means (end the talk with the game's own call; hide). Without, Core hides it.
 9. **`window:Place()`** once it is built.
-10. **Settings:** `Core.Edge.Options(list, at, tab)` puts the section *Expand window* (with the corners) into
-    the module's switches; a change of one calls `window.edge:Update()`.
+10. **Settings:** `Core.Edge.Options(list, at, tab, under)` puts the section *Expand window* (with the
+    corners) into the module's switches (`under`: a switch of the module's own one of them stands under
+    too, `{ motion = "animations" }`); a change of one is followed by Core (`window.edge:Update()` for every
+    window with those settings), before the module's `changed` is told: the module need do nothing.
 11. **Test** with the stand-in client (`dev/tests/window.lua` shows how: frames that know their place, a
-    clock that is run by hand, Edit Mode by `EventRegistry:TriggerEvent`), and mark the README *not yet
-    tried in the game* until it is.
+    clock that is run by hand, Edit Mode by `EventRegistry:TriggerEvent`).
 
 ## 7. Rules
 
@@ -171,43 +199,46 @@ matters; out of one it runs, but what it writes is tainted for Blizzard's own co
 - **Never alpha 0** for a game's window: it keeps its place among the game's panels, and its buttons still
   take clicks.
 - **Ours are plain frames,** shown with `:Show()`, not registered as the game's panels (`UIPanelWindows`), so
-  they open in a fight; Esc by Core's stand-in in `UISpecialFrames`.
+  they open in a fight; Esc by Core's one stand-in in `UISpecialFrames` (`Core.Escape`).
 - **Load on demand:** the spellbook's addon (`Blizzard_PlayerSpells`) loads when the game first opens it.
   Our code never loads it; it waits (`EventUtil.ContinueOnAddOnLoaded`) to attach its button.
 - **Try it in the game with the taint log:** `/console taintLog 1`, `/reload`, the test, then the game
   folder's `Logs/taint.log`: no line where Sane UI's code touched a Blizzard frame or value.
 
-### The holder: ours or the game's (to build in Core)
+### The holder: ours or the game's (`Holder.lua`)
 
 One way for every window, from Economy's plan (`Doc/ideas/Economy.md`, *Hidden, not closed*), made
-Core's: a frame of ours that is never shown, and the game's windows held in it while ours is chosen.
+Core's: a frame of ours that is never shown, and the game's windows held in it while ours is chosen
+(`native.hold = true`; `window.holder`).
 
-- **Held while closed.** Set to Sane UI, the game's window gets the holder as its parent (`SetParent`; its
-  parent, scale and alpha noted in our own table and put back exactly), only while it is not open: at
-  login, once its addon has loaded (`EventUtil.ContinueOnAddOnLoaded`), and again each time it closes. The
-  game then opens and closes it as always, by its own code: it counts as shown (`IsShown()`), but it never
-  comes into sight, so its `OnShow` and `OnHide` do not run (no talk ended, no action bar touched, no bags).
-- **Followed.** Hooks after the game's window's own `Show` and `Hide` (`hooksecurefunc(frame, "Show")`;
-  every way passes there: its key, a micro menu button, a link, an NPC, Esc) open and close ours. Nothing of
-  the game's is taken over or replaced.
+- **Held while closed.** Set to Sane UI, the game's window gets the holder as its parent (lent,
+  `Core.Lend`: its parent and layer noted and put back exactly, the parent only if it is still ours), only
+  while it is not open: at once, once its addon has loaded (`native.addon`, `EventUtil.ContinueOnAddOnLoaded`),
+  and again each time it closes. The game then opens and closes it as always, by its own code: it counts as
+  shown (`IsShown()`), but it never comes into sight, so its `OnShow` and `OnHide` do not run (no talk
+  ended, no action bar touched, no bags).
+- **Followed.** Hooks after the game's window's own `Show`, `Hide` and `SetShown` (`hooksecurefunc`; every
+  way passes there: its key, a micro menu button, a link, an NPC, Esc) open and close ours (`window:Open()`;
+  `"locked"`: the game's is given back for that time). Nothing of the game's is taken over or replaced.
 - **To the game's** (our title bar's first button, the dropdown *Classic windows*): ours closes; the game's
   window goes back to its parent and comes into sight, so its `OnShow` runs from our code. Fine for most
   windows (the friends list, the guild, a vendor: as if it had just opened). Not for the spellbook (its
   `OnShow` sets the action bars' grids: their buttons are protected, and the fields it writes would be
-  tainted) or the map (it does an emote, an API with restrictions): there the button is a secure action
-  button (`SecureActionButtonTemplate`, `type = "click"` on the game's own micro menu button) whose
-  `PreClick` first closes the held window unseen and gives it back, so that the game's own click opens it,
-  as its own code. To prove in the game (a secure button makes our window protected: `window:Locked()` in a
-  fight); until then the switch closes the held window unseen and the game's opens at its key's next press.
+  tainted) or the map (it does an emote, an API with restrictions): with `native.unseen` the held window
+  is closed unseen first and given back, and the game's opens at its key's next press. The secure switch
+  that opens it at once is still to come (section 8).
 - **To ours** (the Sane UI button on the game's window, while it is in sight): the game's window is not
-  hidden (its `OnHide` would end a talk, or touch the action bars) but made tiny and clear (`SetScale` very
-  small, alpha 0: its buttons shrink to a point and take no clicks; the game's panel layout counts its
-  scale) until the game closes it; then it is held again. Ours opens at once.
+  hidden (its `OnHide` would end a talk, or touch the action bars) but made tiny and clear (`SetScale`
+  `Holder.TINY`, alpha 0: its buttons shrink to a point and take no clicks; the game's panel layout counts
+  its scale) until the game closes it; then it is held again. Ours opens at once. Ours closed while the
+  game's is held open: the game's is closed too, unseen.
 - **The empty place:** the game's panel layout still counts a held window as open (sight is not looked at),
   so another of the game's panels opened beside it stands where it would stand beside the game's. To see in
   the game whether that disturbs.
-- **A failure gives the game's back:** if our window fails (`module.Guarded`), the game's window goes back
-  to its parent at once (*Resilience*).
+- **A failure gives the game's back:** a step of the holder that fails gives the game's window back at once
+  and holds it no more (`holder.off`); a module whose window fails calls `window:GiveBack()` (*Resilience*).
+- **Not for the chat:** the game's chat frames are never closed, so Social keeps them out of sight itself
+  (`src/Social/Native.lua`, on `Core.Lend` as well).
 
 ### Combat
 
@@ -227,10 +258,12 @@ Core's: a frame of ours that is never shown, and the game's windows held in it w
   Edit Mode's box, the full screen background, the dropdown are each made the first time they are shown.
 - **A motion is the game's animation** (`Motion.Clock`): one call per frame, only while it runs; out of sight
   it ends at once.
-- **Per step of a motion** only what moves is touched (place, size, the plate's pieces); what the window
-  holds is laid out once at the end.
+- **Per step of a motion** only what moves is touched (place, size, the plate's pieces, fitted once: a
+  skin is held meanwhile, `skin:Hold`); what the window holds is laid out once at the end. A bar's rise
+  moves only its fill and flare.
 - **Search:** no tables per row (`Fuzzy.Rank` without spots), one pass through a text per look, lower-case
-  once per text, spots only for rows on screen, long lists in parts.
+  once per text (kept while the row's text stays the same), spots only for rows on screen, long lists in
+  parts (`Fuzzy.Filter`).
 - **Events, not polling.** Edit Mode by its callbacks, the mouse at the screen edge by a strip's `OnEnter`.
 
 ### Resilience
@@ -247,9 +280,10 @@ Core's: a frame of ours that is never shown, and the game's windows held in it w
 
 - Built from Blizzard's parts: the close button (`UIPanelCloseButtonNoScripts`), maximize and minimize
   (`MaximizeMinimizeButtonFrameTemplate`), the search box (`SearchBoxTemplate`), the dropdown
-  (`WowStyle1DropdownTemplate`), Edit Mode's selection art (its nine-slice atlases), the title in
-  `GameFontNormal`. Sane UI's own: the plate (round corners only on a small window; square in full screen),
-  the bronze trim.
+  (`WowStyle1DropdownTemplate`), the tabs (`TabSystemTemplate`, `TabSystemTopButtonTemplate`), Edit Mode's
+  selection art (its nine-slice atlases, highlighted and selected) and its dialog's look
+  (`DialogBorderTranslucentTemplate`), the title in `GameFontNormal`. Sane UI's own: the plate (round
+  corners only on a small window; square in full screen), the bronze trim.
 - The game's own sounds where Blizzard plays them, by `SOUNDKIT` (a window opening and closing: to come,
   section 8).
 
@@ -261,15 +295,18 @@ Every word a window shows is in one place per module (`ns.TEXT`), or the game's 
 
 Each with what is decided and what it needs; the plan has the decisions in full.
 
-1. **The holder** (decided: ours or the game's, Core's job; section 7, *The holder*). Abilities' new spellbook
-   window, Economy and Dialogue wait for it. Prove first in the game, with the taint log: a vendor (held,
-   opened by the NPC, given back mid-talk), then the spellbook (held, its key, the secure switch).
+1. **The secure switch to the game's spellbook and map** (section 7, *The holder*, *To the game's*): a
+   secure action button (`SecureActionButtonTemplate`, `type = "click"` on the game's own micro menu button)
+   whose `PreClick` closes the held window unseen and gives it back, so that the game's own click opens it
+   at once, as its own code. It makes our window protected (`window:Locked()` in a fight). Today
+   `native.unseen` gives it back closed, and it opens at its key's next press. With the taint log: a vendor
+   (held, opened by the NPC, given back mid-talk), then the spellbook (held, its key, the switch).
 2. **Click to expand** (decided: [Windows.md](../ideas/Windows.md), *Click to expand, not hover*): the edge
    strip takes the left button (`SetMouseClickEnabled`, `SetPassThroughButtons` for the others) when the
    setting *Click required to expand window* is ticked (Core's section *Hotcorners*, overridden per module).
    Today the mouse's coming alone fills the screen.
-3. **Edit Mode's layouts, Save, Revert, Reset To Default Position** (decided; the plan's *Edit Mode* has the
-   design, section 9 the facts). In short: a place per layout, keyed `preset:<number>`,
+3. **Edit Mode's layouts, Save, Revert** (decided; the plan's *Edit Mode* has the design, section 9 the
+   facts; *Reset To Default Position* is built, in Core's own dialog: `Selection.lua`). In short: a place per layout, keyed `preset:<number>`,
    `account:<name>`, `character:<character>:<name>`; one hook after `EditModeManagerFrame:UpdateLayoutInfo`
    (every way to a layout passes there: login, switching, *Revert Changes*, a new or imported layout),
    `EditMode.SavedLayouts` for *Save*, hooks after `RenameLayout` and `DeleteLayout` (a list of the layouts'
@@ -295,6 +332,12 @@ Each with what is decided and what it needs; the plan has the decisions in full.
    opening motion (`window:Appear()`, Economy's plan; Blizzard's panels do not animate: open for Saneroki).
 
 Built since the review: the kinds (`kind`, section 2) and one window to a zone (invariant 7), 2026-10-16.
+On 2026-10-17: the holder (section 7), a first zone (`first.dock`) and standing clear of a zone another
+holds, one Esc stand-in (`Core.Escape`), tabs (`Views.lua`), to the front (`toplevel`), `window.inside`,
+`SetTitle`, the module's buttons, `insets`, `Window.All` and `ResetAll`, Edit Mode's selection and dialog
+with *Reset To Default Position* and the grid's snap (`Selection.lua`), `Fuzzy.Filter`, `Core.Watch` and
+`Core.Hover`, `Motion.Fade` and `Motion.Slide`, `Skin.TILES`, a fixed radius and `Shape.Round`, key bindings
+(`Bindings.xml`).
 
 ## 9. Facts checked in the references
 
@@ -323,6 +366,12 @@ All in `references/BlizzardInterfaceCode/Interface/AddOns/`, checked 2026-10-16.
 | `RegisterPlayerInteraction(type, { frame = <global name>, showFunc, hideFunc, loadFunc })`: without `showFunc` the game calls `ShowUIPanel(frame)`; the table it replaces is local | `Blizzard_UIPanels_Game/Shared/PlayerInteractionFrameManager.lua` 56-75, 114-163 | how a talk window of ours stands for the game's; back only by a `/reload` |
 | The map's `OnShow` does `C_ChatInfo.PerformEmote("READ")` (an API with restrictions) | `Blizzard_WorldMap/Blizzard_WorldMap.lua` 398 | the map is never shown from our code |
 | Camelot's keys: `TOGGLESPELLBOOK`, `TOGGLEPETBOOK`, `TOGGLETALENTS`, `TOGGLEWORLDMAP`, `TOGGLEQUESTLOG`, `TOGGLEGUILDTAB`, `TOGGLESOCIAL`, `TOGGLEFRIENDSTAB` | `Blizzard_FrameXML/Bindings_Camelot.xml` 1211-1256 | the bindings a window of ours takes over by override bindings |
-| A mask is stretched whole (no slice margins); a texture takes at most three masks | Tooltips' and Social's experience (`src/Tooltips/Panel.lua`, `src/Social/Plate.lua`) | round corners are a masked piece per corner (`Shape.lua`) |
+| A mask is stretched whole (no slice margins); a texture takes at most three masks | Tooltips' and Social's experience (`src/Tooltips/Panel.lua`, Social's bubbles) | round corners are a masked piece per corner (`Shape.lua`, Social's bubbles on it too) |
 | `EasingUtil` (`InQuadratic` ... `OutBack`), loaded in every flavour (2026-10-17) | `Blizzard_SharedXML/EasingUtil.lua`; `Blizzard_SharedXML.toc` 33 | `Motion.lua`'s curves, by name; a client without it moves straight |
 | Camelot's experience bar: `UI-HUD-ExperienceBar-Background`, `-Fill-Experience`, `-Fill-Prediction` (rested, under the fill), `-Frame-Pip` (hidden within 1 % of an end), `ui-hud-experiencebar-divider`, the flare flipbook (7 x 4, 28 pictures, 32.5 x 10); `STATUS_BAR_NUM_SEGMENTS` 20 (2026-10-17) | `Blizzard_StatusTrackingBar/Mainline/ExpBar.xml`, `StatusTrackingBarTemplate.xml`, `ExpBarOverrides.lua`, `Shared/ExpBar.lua` 130-160, `Camelot/StatusTrackingBarConstants.lua`; `Blizzard_FrameXMLBase/GradualAnimatedStatusBar.xml` | `Bar.lua`'s art, sizes and dividers |
+| Esc hides every shown frame whose global name is in `UISpecialFrames` (`_G[value]`) | `Blizzard_UIParentPanelManager/Shared/UIParentPanelManager.lua` 1106-1116 (2026-10-17) | one named stand-in of ours (`SaneUIEscape`) for all of Sane UI (`Escape.lua`) |
+| The game's panels are `toplevel="true"`: a click raises them | `Blizzard_UIPanels_Game/Camelot/CharacterFrame.xml` 403 (2026-10-17) | the panel and talk kinds' `toplevel` (`SetToplevel`) |
+| `TabSystemTemplate` with `TabSystemTopButtonTemplate` tabs (the housing dashboard); the spellbook's tabs 100 to 150 wide, 22 from its left; the template's sound `IG_CHARACTER_INFO_TAB` | `Blizzard_SharedXML/Shared/TabSystem/TabSystemTemplates.xml` 132-160; `Blizzard_PlayerSpells/Camelot/Blizzard_PlayerSpellsFrame.xml` 22-29; `Blizzard_HousingDashboard/Blizzard_HousingDashboardHouseInfoContent.xml` 81-85 (2026-10-17) | `Views.lua` |
+| Edit Mode's dialog: `DialogBorderTranslucentTemplate`, strata `DIALOG` level 200; its button *Reset To Default Position* (`HUD_EDIT_MODE_RESET_POSITION`) | `Blizzard_EditMode/Shared/EditModeDialogs.xml` 254-273; `EditModeSystemTemplates.lua` 542 (2026-10-17) | `Selection.lua`'s dialog, in that look, our own frame |
+| *Snap*: `EditModeManagerFrame:IsSnapEnabled()`; its grid's spacing (`SetGridSpacing`); the magnetism's range 8 | `EditModeManager.lua` 1076-1081, 1099; `EditModeUtil.lua` 119 (2026-10-17) | a free window of ours lines up with the grid, only read |
+| A key binding: `<Binding name="..." category="BINDING_HEADER_...">` in an addon's `Bindings.xml`, its name `BINDING_NAME_...` | `Blizzard_FrameXML/Bindings_Camelot.xml` 4 (2026-10-17) | `src/Core/Bindings.xml`, `src/Social/Bindings.xml` |

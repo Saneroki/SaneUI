@@ -17,7 +17,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **Dock:** in Edit Mode, let the window go near a corner of the screen or the middle of one of its edges, and it
   snaps there (a tinted shape shows where). It then
   stays at that edge at any size; the grip moves to a corner that is not at the screen's edge. Drag it
-  away to free it, or to the screen's middle to dock it there.
+  away to free it, or to the screen's middle to dock it there. At first it is docked in the lower left
+  corner (if another of Sane UI's windows is docked there, it stands beside it).
 - **No title bar while small:** the small chat is see-through by design and has no title bar of Core's;
   it moves in Edit Mode only.
 - **Full screen title bar:** filling the screen, the window has Core's title bar at its top: *Social* with a
@@ -43,8 +44,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   the newest message. At the newest message the window follows new ones; scrolled up to read, it stays
   where you are.
 - **No background, no border, clicks go through:** the messages stand over the game, and a click on them
-  is a click into the game. Only a link, a speaker's name and the chat button take the mouse. The bar
-  (it has no title) and the chat button are only there while the mouse is over the window.
+  is a click into the game. Only a link, a speaker's name and the chat button take the mouse. The chat
+  button is only there while the mouse is over the window; the window has no bar of its own.
 - **Click a speaker's name** to whisper to them, right click it for their menu, as in the game's chat.
 - **Write:** press Enter or `/` as always, or click the chat button in the window's lower left corner
   (there with the mouse over the window, as high as the line to write in, which opens right of it).
@@ -112,9 +113,10 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   Every bubble, yours too, and the line are drawn the same way: the same fill (a color or one of the game's
   textures, as set), the same corners, as see-through. Only the text's color tells the kind of message.
   A texture runs on across the plate's pieces without a seam: each piece shows the part of it where it lies
-  (texture coordinates from the plate's top left, measured anew at each size, `Plate.lua`). The textures are
-  quiet tiles the game fills its own windows with (`ns.BACKS` in `Social.lua`: `UI-Background-Marble`,
-  `UI-Background-Rock`, `CollectionsBackgroundTile`, `BlackMarketBackground-Tile`, `UIFrameOribosBackground`).
+  (texture coordinates from the plate's top left, measured anew at each size: Core's `Shape.lua`). The
+  textures are quiet tiles the game fills its own windows with (Core's `Skin.TILES`, the same as for a full
+  window's background: `UI-Background-Marble`, `UI-Background-Rock`, `CollectionsBackgroundTile`,
+  `BlackMarketBackground-Tile`, `UIFrameOribosBackground`).
 - **The line grows with its text:** when the text is wider than the line, it wraps and the line gets
   taller (up to 6 lines), and the messages move up.
 - **The chat button also shows where you can write:** it opens the line and, with it, the list of the
@@ -137,7 +139,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   A whisper is not in the list: it needs a name (`/w name`, `/r`).
 - **The game's own chat stays on show next to this window** by default (setting *Show the game's chat too*).
   Switched off, the game's chat (its windows, tabs and buttons) is out of sight while this window is open.
-  `/sane social` (or `/sane chat`, its word from before) switches between the two: our window, or the game's chat as it was. The game's chat goes
+  `/sane social` (or `/sane chat`, its word from before) switches between the two: our window, or the game's chat as it was. So does a key
+  of your choice (Esc > Options > Keybindings, section *Sane UI*: *Show or hide the chat window*). The game's chat goes
   on collecting every line meanwhile, so nothing is missing when it comes back.
 - **In a fight or a dungeon** the game may give addons no chat at all (*chat lockdown*). For that time
   the game's own chat is on show, whatever the setting; afterwards it goes out of sight again.
@@ -191,16 +194,26 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   width once. The window is in the layer `HIGH` while it fills the screen: the line to write
   in follows it (`Input.Layer`, at the start and at the end). Full, every message is there to read (`Reveal`, as
   after a turn of the wheel). Its kind of motion is `options.motion`; `off` while all animations are off.
-  Full, the list starts `Core.Window.BAR` below the top, under Core's title bar (`Top`, in `Placed`;
-  `Layout.ListHeight`'s `top`); Social's own bar is hidden then (`Chrome`). The title bar's search goes to
+  The list stands in what Core lays out for what a window holds (`window.inside`): the whole window while it
+  is small (it has no bar of its own), under Core's title bar while it is full (`Top`: `handle.top`;
+  `Layout.ListHeight`'s `top`). The title bar's search goes to
   `Window.Search`: `Core.Fuzzy.Query`, and `Visible` keeps a message only if `Core.Fuzzy.Match` finds every
-  word in its readable text (colours, links' codes and icons taken out: `Readable`), its `name` or its `label`.
-  The title bar holds Core's dropdown *Classic windows*, whose list is `ns.CLASSIC` (`Social.lua`): *Chat* (`Shown(false)`, a
+  word in its readable text (colours, links' codes and icons taken out: `Core.Fuzzy.Plain`), its `name` or its
+  `label`. The log is at most a few hundred messages, so it is searched at once (`Core.Fuzzy.Filter` is for
+  longer lists).
+  The title bar holds Core's dropdown *Classic windows*, whose list is `ns.CLASSIC` (`Social.lua`): *Chat* (`Choose(false)`, a
   line in chat says how to bring the window back), *Friends list* (`ToggleFriendsFrame(FRIEND_TAB_FRIENDS)`,
   as the game's key opens it, only if `FriendsFrame` is not shown; nothing if the game has no such function). The
   section *Expand window* is Core's (`Edge.Options`, with its corner switches, `Shape.Options`), put at the
-  top of the tab, before the first switch of the tab *Appearance*; the window reads it by
-  `edge = ns.options`, and a change of one of its switches goes to `Window.Expand` (`edge:Update`).
+  top of the tab, before the first switch of the tab *Appearance*, its *Animation type* also under *All
+  animations and fades* (`Edge.Options`' `under`); the window reads it by `edge = ns.options`, and Core
+  itself follows a change of one of its switches (`edge:Update`).
+- **Ours or the game's chat, one switch:** the setting *Chat window* (`options.window`) is the one place it
+  is kept. Every way to change it sets it (`Choose`, `Core.Set`: an open options page follows): the button
+  for the game's own window in the full window's title bar, its close button, *Chat* in *Classic windows*,
+  the button *Sane UI* on the game's chat, `/sane social`, the key (`Bindings.xml`: `ns.Toggle`). Its change
+  goes to `Window.Follow`, which shows ours (through Core's `window:Open()`, full again if it was left so) or
+  puts it away, and keeps Core's memory of the window (`place.native`) the same.
 - **The line to write in is the game's edit box** (`Input.lua`), only moved. An edit box of our own
   could not run `/cast`, `/target` and the like (they must come from the game's code), and would have
   to rebuild history, completion, `/w` and `/r`. The game says when one of its edit boxes is shown or
@@ -222,13 +235,13 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   the edit box above everything while you write (`DIALOG`); a frame after it was shown it gets the
   window's strata and a level just above the window's. Strata and level are given back when our window
   goes (unless the game has set its own strata since), and so are the alpha and the mouse of a line at rest.
-- **No background, clickthrough:** the window is a plain frame that takes no mouse (no `EnableMouse`,
-  no motion); the list takes only the wheel. Its chrome (`chrome` in `Window.lua`: the bar, without a title,
-  which takes no mouse, and the chat button, which does) is hidden while the mouse is not over the
-  window, so then nothing but links does. The box to move it by and the grip are Core's, in Blizzard's
-  Edit Mode only (Core's `Window.lua`, `EditMode.lua`; the window's `title` is on the box). Without a frame to tell of the mouse, a ticker (5 a second, only while the
-  window is shown) asks `IsMouseOver` and wakes the handles and the faded messages; they stay while a
-  mouse button is held, so a drag that leaves the window does not lose its grip.
+- **No background, clickthrough:** the window is a plain frame that takes no click; it takes only the
+  mouse's coming (Core's `Core.Hover`: `SetMouseMotionEnabled`, its `OnEnter`), and the list the wheel. Its
+  chrome (the chat button, which takes clicks) is hidden while the mouse is not over the window, so then
+  nothing but links does. The box to move it by and the grip are Core's, in Blizzard's Edit Mode only
+  (Core's `Window.lua`, `EditMode.lua`; the window's `title` is on the box). From the mouse's coming a watch
+  (5 a second) asks whether it is still over the window, until it has gone (`Wake`, `Left`); a held mouse
+  button counts, so a drag that leaves the window does not lose its grip.
 - **Scroll bar** (`Window` `Bar`): shown while the list does not follow the newest message (`follow`,
   set on every scroll), whatever the mouse.
 - **Names are links** (`Log` `Link`): a speaker's name is the game's own link to them, `GetPlayerLink`
@@ -238,8 +251,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **Cut rows** (`Window` `Trim`, `Bubble.Cut`): after the list has laid out or scrolled (`OnLayout`,
   `OnScroll`, and once more a frame later), a row whose top is above the list's top edge has its
   content hidden. The content is one frame inside the row, so the row's alpha stays the fading's.
-- **Round icons and rings** (`Bubble.lua`): the class icon under the game's round portrait mask
-  (`Interface\CharacterFrame\TempPortraitAlphaMask`), on a round disc of plain colour 2 pixels larger;
+- **Round icons and rings** (`Bubble.lua`): the class icon cut round by Core (`Core.Shape.Round`: Core's
+  circle mask, else the game's portrait mask `Interface\CharacterFrame\TempPortraitAlphaMask`), on a round
+  disc of plain colour 2 pixels larger;
   the disc's rim is the ring. What a speaker is to you is asked when the message comes (`Log.lua`
   `Tie`: `C_FriendList.IsFriend`, `C_BattleNet.GetAccountInfoByGUID`, `IsGuildMember`,
   `C_PartyInfo.IsGUIDInGroup`, `IsInRaid`) and kept with the message. The ring's colour is the only sign
@@ -248,7 +262,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   per GUID (at most 500 speakers, then all are asked anew). What a speaker is to you is asked anew
   when your friends, your guild or your group change (`FRIENDLIST_UPDATE`, `BN_FRIEND_INFO_CHANGED`,
   `BN_FRIEND_LIST_SIZE_CHANGED`, `GUILD_ROSTER_UPDATE`, `PLAYER_GUILD_UPDATE`, `GROUP_ROSTER_UPDATE`).
-- **Text size** (`Bubble.Size`): a font object of ours (`SaneUIChatFont`) copies the game's chat font and
+- **Text size** (`Bubble.Size`): a font object of ours (`SaneUIChatFont`, `Core.Font`) copies the game's chat font and
   only sets the size, as the game does for its own chat windows; messages, names and notes use it. A
   change measures every message anew and sets the height of the line above a bubble (`Layout.HEAD`).
 - **Links** (`Links.lua`): a bubble's frame and a row's body have links enabled
@@ -265,19 +279,19 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   `"CHANNEL:2"`, `"PRINT"`; a channel by its number, which is what the list has). `Log.GROUPS` is the one
   list of them, in the order the list of what to show offers them, each with the kinds of chat that
   belong to it (a leader's and a warning's lines belong to their chat, Battle.net whispers to
-  whispers). The switched-off groups are kept in `SaneUIDB.modules.Social.mute`, but for the four with a
+  whispers). The switched-off groups are kept in the setting `mute`, but for the four with a
   setting of their own (`ns.SHOWS`: `SYSTEM`, `MONSTER`, `PRINT`, `CHANNEL_NOTICES`): their tick in the list and
-  the switch in the settings are the same value (`Channels.Shown`, `Channels.Flip`). The log keeps every
+  the switch in the settings are the same value (`Channels.Shown`, `Channels.Flip`, by `Core.Set`). The log keeps every
   message; the window's list is the log without the switched-off groups, made anew when a tick
   changes. The channels listed are those the game says you are in (`GetChannelList`): only they bring
   messages.
-- **The plate** (`Plate.lua`): the game has no round-cornered fill that takes any colour, so one is put
-  together from plain colour: a square in each corner under the whole round mask (`ns.Round`, also the
-  icons' mask; twice the square's
-  size, on the frame's corner, so the square sees a quarter circle; picking a quarter of the mask by
-  texture coordinates did not work in the game), a bar above, one below and the middle, all hung on the frame's corners so it
-  follows any size. No piece lies over another, so the fill can be see-through (`Bubble.Clear`); the
-  text is not part of it and stays solid. Seven textures and four masks per bubble.
+- **The plate** (Core's `Shape.lua`): the game has no round-cornered fill that takes any colour, so a
+  bubble stands on a Core Shape of a fixed radius (`Layout.RADIUS`, 8): strips and a square piece in each
+  corner, the corners cut by Core's circle mask (a whole mask twice the radius wide on the arc's centre),
+  of plain colour or of a tile. No piece lies over another, so the fill can be see-through; the text is not
+  part of it and stays solid. One look is shared by every bubble (`Bubble` `Paint`: colour, tile, alpha), and
+  a bubble is painted again only when that look changed; a plate without a trim makes none. The line to
+  write in has a plate too, which follows its size (`shape:Follow`).
 - **The line's look and height** (`Input.lua` `Dress`, `Grow`): the six pieces of the game's border
   around the edit box are made invisible (alpha 0, not hidden: the game shows and hides them itself)
   and a plate of ours lies behind it. The edit box is set to several lines (`SetMultiLine`), so its
@@ -312,7 +326,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **Fading** (`Fade.lua`, no frames): a message's fade is its own, kept on the message (`from`, `to`,
   `since`, `span`), never on a row: the list hands its rows from one message to another whenever it
   lays them out, and a fade kept on a row was cut off or begun anew by a new message, a scroll or a
-  slide. `Fade.Alpha(entry, now)` follows from those four alone (eased, slow at both ends); a fade that
+  slide. `Fade.Alpha(entry, now)` follows from those four alone (eased on the game's curve `InOutQuadratic`,
+  `Fade.CURVE`, through `Core.Motion.Ease`: slow at both ends); a fade that
   turns back starts from where it is and takes only the time for the rest of the way. In 0.4 s
   (`Layout.APPEAR`), out 1 s (`Layout.FADE`). A new message enters from nothing (`Fade.Enter`).
 - **Painting** (`Window` `Paint`): every row shows its message's alpha, when it is drawn (`DrawRow`)
@@ -323,13 +338,14 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   makes older ones do nothing) looks again when the next message's time is over. Messages that came
   while the window was hidden are set at once when it is shown (`Refade(true)`).
   `Window` `Reveal`: a turn of the wheel (`HookScript` `OnMouseWheel` on the list, also at its end where
-  nothing scrolls) shows all; the ticker ends it when the mouse is away and the list follows again. The
+  nothing scrolls) shows all; it ends when the mouse leaves while the list follows, or when the list comes
+  back to its newest message with the mouse away. The
   list's own `OnScroll` does not reveal: it comes for the list's own moves too, and while a message is
   added the list is for a moment not at its end.
 - **Sliding** (`Window` `Slide`): when the messages move up at once (a new one at the newest, the line to
-  write in opening or growing), the list's `ScrollTarget` plays two Translation animations together, as
-  the game's own do: one of no time back down by the move, one of `Layout.SLIDE` (0.3 s, smoothed) up
-  by it. A slide still going on adds what it had left (`GetSmoothProgress`). The list clips its children,
+  write in opening or growing), the list's `ScrollTarget` slides (`Core.Motion.Slide`: two Translation
+  animations together, as the game's own do: one of no time back down by the move, one of the slide time,
+  0.3 s at first, smoothed, up by it). A slide still going on adds what it had left (`GetSmoothProgress`). The list clips its children,
   so a new row slides in from its bottom edge, fading in on its way (0.4 s, so most of it is seen). Wheel scrolling is the list's own interpolation
   (`SetInterpolateScroll` on list and scroll bar). The slide moves the list's content and touches no
   alpha; the fades touch no position: neither knows the other.
@@ -341,8 +357,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   no field is written into the edit box.
 - **The game's chat out of sight** (`Native.lua`): every chat window (`CHAT_FRAMES`), the tab of an
   undocked one, the button of a minimised one (`ChatFrame<n>Minimized`, a child of the screen), the
-  dock and the chat's buttons get a hidden frame of ours as parent
-  (`FrameUtil.SetParentMaintainRenderLayering`, the game's own way), and their own parent back later,
+  dock and the chat's buttons get a hidden frame of ours as parent (lent, `Core.Lend`: their strata and
+  level noted first, so they are drawn as before once back, as the game's own way of moving them keeps
+  them), and their own parent back later,
   but only while their parent is still ours: the game moves some of them itself (tabs into and out of
   the dock, all of them under a window that fills the screen). Nothing is hidden or unregistered, so
   the game's chat stays complete. Done again when the game makes a whisper window
@@ -379,13 +396,14 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   locked down (`C_ChatInfo.InChatMessagingLockdown`) it waits, and looks again at the next
   `ADDON_RESTRICTION_STATE_CHANGED`. It runs through `ns.Safe`, not `ns.Guarded`: an error there is noted and
   does not close the window. The menu's three choices per channel are submenus (`Menu.lua`).
-- **Moving, sizing, docking and the kept place** are Core's (`Core.Window.New`,
-  [src/Core/README.md](../Core/README.md)); the place is `SaneUIDB.modules.Social.place`.
+- **Moving, sizing, docking and the kept place** are Core's (`Core.Window.New` of the kind `screen`, docked
+  at first in the lower left corner: `first.dock`; [src/Core/README.md](../Core/README.md)); the place is
+  `SaneUIDB.modules.Social.place`.
 - **The window** (`Window.lua`) is made at the first show, from the game's parts:
 
   | Part | The game's |
   |---|---|
-  | Fill of bubbles and of the line to write in | Ours, from plain colour (`Plate.lua`); the round corners are the game's portrait mask |
+  | Fill of bubbles and of the line to write in | Core's `Shape`, of plain colour or one of the game's tiles (`Skin.TILES`); the round corners are Core's circle mask |
   | List | `WowScrollBoxList` + `MinimalScrollBar` + a linear view with `SetElementExtentCalculator`; rows only for the messages in view |
   | Grip | `PanelResizeButtonTemplate` (it sizes the window and holds the smallest size) |
   | Text | `ChatFontNormal`; the line above a bubble `GameFontHighlightSmall` |
@@ -394,8 +412,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 
   The only colours of our own are the rings (`Layout.TIES`) and the bubbles' first grey (`26262B`).
 - **No art is shipped.**
-- **Saved** (in Core's `SaneUIDB.modules.Social`, which Core moves there once from `modules.Chat`): `place = { x, y, width, height }` (top left corner from
-  the screen's bottom left), `hidden`. No frame name, so the client itself saves nothing.
+- **Saved** (in Core's `SaneUIDB.modules.Social`, which Core moves there once from `modules.Chat`): `place = { x, y, width, height, dock, full, native }` (top left corner from
+  the screen's bottom left; Core's window), the settings (`options`, with `window` and `mute`). No frame name, so the client itself saves nothing.
 - **The history** (`Log.Saved`, `Log.Restore`): at `PLAYER_LOGOUT` (also at a `/reload`; the game writes the
   saved settings right after) the last *Messages kept* messages go into `chars[character].history`, only
   what a message is made of (`KEPT`: side, text, name, link, class, tie, labels, group, colour, time). A message
@@ -412,8 +430,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   system's first, none if they differ). A line it has twice at once, as a print and in a group (the
   guild's message of the day), is there once.
 - **Cost.** Per chat event: one table for the message, one measurement, one update of the list (and
-  every 25 messages one more, for the oldest that go). A speaker is asked about once. No `OnUpdate`. Timers:
-  the ticker for the mouse leaving (only while it is over the window) and a look a frame later
+  every 25 messages one more, for the oldest that go). A speaker is asked about once. No `OnUpdate` at
+  rest: the fades' runs only while a message in view fades, Core's watch of the mouse only from its coming
+  over the window until it has gone. Timers: a look a frame later
   (`Core.Later`) after the list scrolled, the line was shown or chat lockdown changed. Hidden, the
   window draws nothing; the messages still go into the log.
 - **Secret values.** In a fight the game may hide a message from addons. Everything read goes through
@@ -435,7 +454,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   `C_ChatInfo.SendChatMessage`, which has restrictions). Whether a message sent, or a `/cast` typed,
   after such a choice is blocked must be tried in the game with `/console taintLog 1` (`Logs/taint.log`;
   switch it off afterwards). Enter, `/`, Esc and sending themselves stay the game's code.
-- **Tests:** `lua5.1 dev/tests/social.lua` (342 checks): what an event says, the layout arithmetic, sides and
+- **Tests:** `lua5.1 dev/tests/social.lua` (349 checks): what an event says, the layout arithmetic, sides and
   bubbles, wrapping anew once a sizing is over, following the newest message, place and size, the game's
   chat out of sight and back (also a minimised window's button, a frame the game moved meanwhile, chat
   lockdown), printed lines, the line to write in and its button, the line at rest in both chat styles
@@ -443,7 +462,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   rings, a speaker asked about once, community channels, the handles with the mouse over the window,
   cut rows, the oldest messages going in batches, a message that cannot be read, the fall-back, the
   game's channels and their wishes (the list, once a zone, only where offered, not in lockdown, a profile's
-  wishes, with the window closed).
+  wishes, with the window closed), the switch *Chat window*, Core's window and the game's chat agreeing
+  whichever way it changed, and the key.
   They cannot judge the look.
 
 ## Files
@@ -463,6 +483,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Art/smiley.blp` | The smiley (24 x 24). Original art of Sane UI (see the project's `LICENSE`), drawn by `dev/tools/smiley-art` into `assets/SaneSocial-Smiley.png`, made by `dev/tools/art`; the game has no smiley of its own |
 | `Join.lua` | The game's chat channels, the same on every character as wished. Knows no frames |
 | `Window.lua` | The window: moved, sized, scrolled, kept |
+| `Bindings.xml` | Its key in the game's key bindings (section *Sane UI*, Core's): the chat window shown or hidden |
 
 ## To check in the game
 - The smiley stands right of the line while you write and goes with it. Its list: a click on a mark puts
@@ -471,6 +492,10 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   in an instance while chat is locked down). The menu row of marks is as wide as the list, each with its
   name as tooltip. In a channel of your own (not the game's) the marks are offered: check that they show
   there too (only the game's *Zone* channels are taken to hide them).
+- With the mouse over the window, a unit of the world behind it still shows its tooltip and highlight, and
+  a click goes through (the window takes only the mouse's motion, for `Core.Hover`); the chat button comes
+  as the mouse does and goes a moment after it has left.
+- At the first login the window stands docked in the lower left corner, over the game's chat there.
 - Filling the screen and going back, the bubbles stay in sight and at the bottom all the way, and are
   wrapped for the new width once the window stands.
 - Joins and leaves of channels (FGLayer) stay hidden with *Channel joins and leaves* off, also those
@@ -542,6 +567,13 @@ Tabs or filters per chat (more chat views, `Doc/ideas/Social.md`), messages of o
 a group, a close button, a sign besides colour for what a speaker is to you.
 
 ## History
+- 2026-10-17 — On Core's parts: a window of the kind `screen`, docked at first in the lower left corner, its
+  list in Core's `window.inside` (the small window's bar is gone); the mouse seen by `Core.Hover` (the ticker
+  is gone); the switch *Chat window* the one place ours or the game's chat is kept (`Choose`, `Core.Set`,
+  `Window.Follow`; Core's window remembers the same); a key in the game's key bindings (`Bindings.xml`). The
+  bubbles on Core's `Shape` (`Plate.lua` is gone), their tiles Core's `Skin.TILES` (`ns.BACKS` is gone), the
+  icons `Core.Shape.Round`, the slide `Core.Motion.Slide`, the fade's curve the game's (`Core.Motion.Ease`),
+  the game's chat and edit boxes lent with `Core.Lend`, `Core.Font`, `Core.Tip`, `Core.Fuzzy.Plain`.
 - 2026-10-17 — The game's chat channels moved from the page *Social* into the list on the chat's name
   (*On every character*: *The game decides*, *Always in it*, *Never in it*), listed from the game, joined only
   where the game offers them; their wishes are the setting `presence` (the earlier switches are not read).
