@@ -12,11 +12,13 @@ Read primary tooltip data rather than interpreting appended data as a new toolti
 | `Texts.lua` | Own words, localized-global patterns (`Pattern`); a spell's facts by the game's sentences (`ns.FACTS`: `MANA_COST`, `SPELL_RANGE`, `SPELL_CAST_TIME_*`, the cooldown sentences, ...); English school/heal/control words |
 | `Model.lua` | Reused `shown/fill` buffers, row/head field lists (a strip's cells in its array part, compared too); the palette `ns.COLOR`: the game's font colours (`GameColor`, with fallbacks) moved toward each other (`Mix`/`Tone`); `Hex`, `Like` (a line's colour near one of the game's, ±0.12) |
 | `Read.lua` | Actual native lines/colours, align data by index/text, readers' helpers, Alt details |
-| `Kinds/Item.lua` | Binding/appearance, kind/slot, requirements, stats, recipes, durability; sections Quest (`Quests.Item`) and Professions (*Used in*, by trade-goods subclass); a comparison gets only added lines and its vendor price |
+| `Kinds/Item.lua` | Binding/appearance (handed to Gold's first row, `Gold.Terms`; only *Equipped* over the name of a comparison), kind/slot, requirements, stats, recipes, durability; sections Quest (`Quests.Item`), Professions (*Used in*, by trade-goods subclass), Gathering (`Gathering.Item`); a comparison gets only its vendor price |
 | `Kinds/Inventory.lua` | Inventory section: `Data.Count(item)` per character (you first, the others by name from `Data.Characters()`, the account's bank last), whole names in class colours, *Bags/Bank/Worn* counts, Total with two or more; five without Alt |
-| `Kinds/Gold.lua` | Gold section, always per one: *Vendor* (`GetItemInfo`), *AH profit* (`Gold.Sale`: own lowest price less 5% cut; not when bound); one advice line (AH needs 5% over vendor; *Buy if under* on AH listings, by getter name); Alt: lowest, cut, deposit (60% of vendor) |
+| `Kinds/Gold.lua` | Gold section, always per one: first `Terms` (binding left, red until bound; look right), then *Vendor* (`GetItemInfo`), *AH profit* (`Gold.Sale`: own lowest price less 5% cut; not when bound); one advice line (AH needs 5% over vendor; *Buy if under* on AH listings, by getter name); Alt: lowest, cut, deposit (60% of vendor) |
 | `Kinds/Spell.lua` | School (combat-log colours, `STRING_SCHOOL_*` names)/category; a facts strip in the game's order cost, range, cast, cooldown with cells only for stated facts; a numbers strip (per second, amount, per power or swing speed, crit; cells only for known numbers) |
 | `Kinds/Unit.lua` | Unit header, portrait/rank, inspection, target/bars, quest section |
+| `Kinds/Object.lua` | Things in the world: `Read.Generic`; a node `Gathering.Find` knows by its name gets `Gathering.Node`, the game's line naming its skill marked used |
+| `Gathering.lua` | Core's `Objects` (`byName`; `kind` herb/ore, `skill` 182/186, `skillLevel`) and `Drops` (`byItem`, `object:<id>`, `how == "gather"`); caches by name (≤ 400) and item, wiped on stamps, none while not `Ready`; your skill `C_SkillInfo.GetSkillLineInfoByID` (rank, `modifier`, `maxRank`, name) until `SKILL_LINES_CHANGED`; chance red (rank+bonus < need), orange, yellow +25, green +50, grey +100 (rank); the game's `*_DIFFICULTY_COLOR` (else `QuestDifficultyColors`); bands text cached per level; item rows easiest first, Alt for all |
 | `Kinds/Aura.lua`, `Quest.lua` | Aura found by its getter (`GETTERS`: exact getter name → by instance or list filter); colour of what removes it (`AuraUtil`, `None` for a debuff), none for a plain buff; timer/caster. Quest state/objectives |
 | `Numbers.lua` | Description cut at its numbers into amounts/times; per second when cast again and again; swing stats, mana share, XP from one table |
 | `Quests.lua` | Quest lists over Core's sets `Quests` and `Drops` (`Keys` by `byStartNPC`, `byFinishNPC`, `byStartItem`, `byObjective`; `Get("npc:<id>")` of Drops): creature and item lists, quest standing; `Start(redraw)` prepares both sets at login and redraws on their stamps |
@@ -24,8 +26,8 @@ Read primary tooltip data rather than interpreting appended data as a new toolti
 | `Inspect.lua` | Paced item level and talent inspection/cache |
 | `Auction.lua` | Passive browse-price observations and expiry |
 | `Pools.lua` | Pools `panel.texts/lines/icons/bars` = `Core.Pool` (`taken`, `:Take()`); `Reset` hides only the last draw's parts, then `:Begin()`; a text redressed only when its kind or the fonts change (`Restyle` stamp); `Width` = whole unit past the end; separate live widgets |
-| `Panel.lua` | `Measure` → `Fit` (224..432 in steps of 8; wrapping rows ≤ 22 ems) → `Picture` (icon/plaque) → `Lay` (rows; right side gives way, keeps 4 ems; captions left with a rule; strip cells sized by their words) → `Finish` (ground `TOOLTIP_DEFAULT_BACKGROUND_COLOR` tinted 28% top / darkened + 6% bottom, dragon, levels); hairline = `PixelUtil.GetNearestPixelSize(1, scale, 1)`; one lazy panel per native tooltip; the 3D model in the picture's place (`Figure`, option `models`: `panel.figure` `PlayerModel` for a unit (`SetUnit`, ready at once) or a display (`SetDisplayInfo`), `panel.dresser` `DressUpModel` for gear (`SetUnit("player")` once, then `Dress` + `TryOn(link)`); given only when `head.model`/GUID changes, forgotten on hide; the picture until `OnModelLoaded`/`GetModelFileID`, kept when the load fails; `panel.figured` is the active one, its alpha by `Panel.Strength` and readiness; dragon/plaque/level on `panel.front` over it) |
-| `Figures.lua` | `Figures.Item(head, id, tooltip)` / `Figures.Spell(head, id)` set `head.model`, `modelKind` (`display`/`dress`), `modelZoom`, `modelTurn`: a mount (`C_MountJournal.GetMountFromItem`/`FromSpell` → `GetMountInfoExtraByID` or first of `GetMountAllCreatureDisplayInfoByID`), a pet (`C_PetJournal.GetPetInfoByItemID` 12th answer), dressable gear (`C_Item.IsDressableItemByID`, else by equip location; zoom/turn by equip location; the link from `tooltip:GetItem()`); cached per id (nil = ask again) |
+| `Panel.lua` | `Measure` → `Fit` (224..432 in steps of 8; wrapping rows ≤ 22 ems) → `Picture` (icon/plaque) → `Lay` (rows; right side gives way, keeps 4 ems; captions left with a rule; strip cells sized by their words) → `Finish` (ground `TOOLTIP_DEFAULT_BACKGROUND_COLOR` tinted 28% top / darkened + 6% bottom, dragon, levels); hairline = `PixelUtil.GetNearestPixelSize(1, scale, 1)`; one lazy panel per native tooltip; the 3D model in the picture's place (`Figure`, option `models`: `panel.figure` `PlayerModel` for a unit (`SetUnit`, ready at once) or a display (`SetDisplayInfo`); given only when `head.model`/GUID changes, forgotten on hide; the picture until `OnModelLoaded`/`GetModelFileID`, kept when the load fails; `panel.figured` is the active one, its alpha by `Panel.Strength` and readiness; dragon/plaque/level on `panel.front` over it); `Panel.Stage` (draw and every `Watch` frame): with Alt over `head.dress` (not compared, option `models`) `panel.stage` beside the panel, height = panel's, width 0.6 ×, 16 apart, left unless `GetLeft` lacks room or `Host.CompareSide` is left; `DressUpModel` `SetUnit("player")` once, `SetKeepModelOnHide`, each show `Dress` + `SetPortraitZoom(0)` + `TryOn(link)` (refused: hidden until the link changes); unseen until loaded; `OnUpdate` `SetFacing` 0.1 turns/s |
+| `Figures.lua` | `Figures.Item(head, id, tooltip, pictured)` / `Figures.Spell(head, id)` set `head.model`, `modelKind` (`display`), `modelZoom`, `modelTurn` for a mount (`C_MountJournal.GetMountFromItem`/`FromSpell` → `GetMountInfoExtraByID` or first of `GetMountAllCreatureDisplayInfoByID`) or a pet (`C_PetJournal.GetPetInfoByItemID` 12th answer), only with a picture; dressable gear (`C_Item.IsDressableItemByID`, else by equip location) sets `head.dress` (the link from `tooltip:GetItem()`, else `item:<id>`) for the stage, picture or not; cached per id (nil = ask again) |
 | `Host.lua` | `Dim`/`Blank`/`Keep` alphas, `Free` restores; `Seat` = blank + place + mouse reach; `Hold` on refresh; places panels by corner, `Beside` (one point on the other panel by the game's side), comparisons at own absolute slots (`Compare`/`Lay`/`Track`, gap = 2 × soft edge) |
 
 `ns.KINDS[dataType]` maps to a reader; unknown type uses Generic. Context contains native lines,
@@ -37,9 +39,9 @@ same section: the game's blank → `ctx.gap` → row `space`). `Read.Generic` se
 → gap). No row has a divider of its own: captions are the only rules (`ROW` has `space`, no `rule`). Kinds
 open their own sections with `Read.Section`/`Read.Caption` (`ctx.section` = current name). Other addons'
 lines (`Read.Added`: not in the data; with `lineIndex` (`ctx.placed`) anywhere after the first data line,
-`ctx.firstOwn`, else after the last, `ctx.lastOwn`) never reach a reader's rows: `ns.Read` appends them after
-the kind's rows and Alt's `Details` (caption `TEXT.IDS`), in one section `Others` (caption `TEXT.ADDONS` =
-"Addons", small, ASIDE colour, blank → gap). PTR feedback and redundant ID lines are omitted (an ID line is read plain by `C_StringUtil.StripHyperlinks`,
+`ctx.firstOwn`, else after the last, `ctx.lastOwn`) never reach a reader's rows: only while Alt is held
+`ns.Read` appends them after the kind's rows and Alt's `Details` (caption `TEXT.IDS`), in one section
+`Others` (caption `TEXT.ADDONS` = "Addons", small, ASIDE colour, blank → gap); without Alt they are not shown. PTR feedback and redundant ID lines are omitted (an ID line is read plain by `C_StringUtil.StripHyperlinks`,
 else `Core.Fuzzy.Plain`, which keeps square brackets). Model rows:
 `text/strip/bar/caption/auras`. Adding a model field requires including it in
 `HEAD` or `ROW` reset/comparison lists, or stale fields/undetected changes can result.
@@ -82,6 +84,8 @@ own `xpcall`: a failure is reported once and switches live values off, not the m
   from `byObjective` (check `kind == "loot"`, IDs overlap). Records are shared/read-only: derive, never
   write. Lists cached per NPC/item until a quest-log, level or stamp change; nil sets → empty lists.
   List kinds: drop, opener, due, give, wants; item states: log, open, soon, done.
+- Gathering data is Core's (master `assets/data/Objects`, 47 herb and ore nodes, and their `object:<id>`
+  lines in `assets/data/Drops`, source `hand`); names in English, so node lookups work on English clients.
 - Characters (Core `Data/Characters.lua`, pack `SaneUI_Data_Characters`, saved only): `Data.Count(item)` →
   `{ total, [guid] = { bags, bank, worn }, account = { bank } }`, nil until counted. Names shown are the
   stored whole names (never a first name alone).
@@ -99,7 +103,7 @@ so `icons` too), `textSize=14 (10..20)`, `opacity=97 (30..100)`.
 redraw on subsequent tooltip work. Kept, not Core's kit (2026-10-17): Host's alpha ledger
 (`Core.Lend` would hold a protected tooltip's alpha back in a fight and costs three tables per piece) and
 the `FONTS`/`Sizes` dressing (follows the game's font objects live; `Core.Font` copies one into a named font).
-Tests: `dev/tests/tooltips.lua` (412 checks; it loads Core's `Core`, `Kit`, `Motion`, `Saved`, `Profiles`, `Fuzzy` and `Data/`;
+Tests: `dev/tests/tooltips.lua` (439 checks; it loads Core's `Core`, `Kit`, `Motion`, `Saved`, `Profiles`, `Fuzzy` and `Data/`;
 `shape(panel)` lists rows with captions by name; sample packs from `dev/tests/data/tooltips/` via `dev/tests/data/packs.py`,
 the stub's default Characters pack, `Steps()` pumps the scheduler and the next frame).
 In-game QA still needed for current layouts, comparison stability, secret values, inspection/specs,

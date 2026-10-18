@@ -25,9 +25,11 @@ Inspect.lua
 Numbers.lua
 # The quest lists of creatures, NPCs and items, from Core's data (the sets Quests and Drops)
 Quests.lua
+# How likely gathering a herb or an ore raises your skill, from Core's data (the sets Objects and Drops)
+Gathering.lua
 # What things fetch at the auction house, noted as you browse it
 Auction.lua
-# Which 3D model a thing has for its picture's place: a mount's, a pet's, gear on your character
+# Which 3D model a thing has: a mount's or a pet's in its picture's place, gear for your character beside it
 Figures.lua
 # How each kind of tooltip is sorted; an item's Gold and Inventory sections first, which Item.lua draws
 Kinds\Gold.lua
@@ -37,6 +39,7 @@ Kinds\Spell.lua
 Kinds\Unit.lua
 Kinds\Aura.lua
 Kinds\Quest.lua
+Kinds\Object.lua
 # The parts a panel is drawn with, used again for every draw
 Pools.lua
 # The panel that is drawn over the game's tooltip

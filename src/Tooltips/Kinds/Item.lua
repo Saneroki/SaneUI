@@ -4,13 +4,12 @@ local _, ns = ...
 --  Sane UI - Tooltips - Kinds - Item
 --  An item's tooltip:
 --
---      BoE  ·  Uncollected             [icon]     how it binds, red until it is bound (or
---      Arcanite Reaper                            "Equipped" on what you wear); whether you
---      Axe · Two-Hand    Requires Level 58        have its look. Its name in the colour of
---                         Classes: Warrior        its quality; small: kind, slot, and at the
---                                  iLvl 63    right the level it needs (red while too low)
---      STATS ──────────────────────────────       and under it what else it asks of you (a
---      53.8 DPS  ·  153 - 256 dmg  ·  3.80 spd    class, a profession's skill).
+--      Arcanite Reaper                 [icon]     its name in the colour of its quality
+--      Axe · Two-Hand    Requires Level 58        ("Equipped" over it on what you wear); small:
+--                         Classes: Warrior        kind, slot, and at the right the level it
+--                                  iLvl 63    needs (red while too low) and under it what
+--      STATS ──────────────────────────────       else it asks of you (a class, a profession's
+--      53.8 DPS  ·  153 - 256 dmg  ·  3.80 spd    skill).
 --      +13 Stamina                                A weapon's damage per second large, its hit
 --                                                 and speed small; then its lines, in the
 --      EFFECTS ────────────────────────────       game's colours, each kind under its name:
@@ -23,10 +22,13 @@ local _, ns = ...
 --      [?] The Kobold Menace [2]   In log  1/4    (your count), to take, for later, done
 --      PROFESSIONS ────────────────────────       the professions that use it
 --      Used in                     Tailoring
+--      GATHERING ──────────────────────────       the node that gives it, in the colour of your
+--      Peacebloom            1  25  50  100       chance of a point (Gathering.lua)
 --      INVENTORY ──────────────────────────       who of your characters has it, and where
 --      Sane Lunatic         Bags 12  ·  Bank 8    (Kinds/Inventory.lua)
---      GOLD ───────────────────────────────       what one brings in, and what to do with it
---      Vendor  ·  AH profit                       (Kinds/Gold.lua)
+--      GOLD ───────────────────────────────       how it binds (red until it is bound) and
+--      BoE                       Uncollected      whether you have its look; what one brings
+--      Vendor  ·  AH profit                       in, and what to do with it (Kinds/Gold.lua)
 --      ADDONS ─────────────────────────────       other addons' lines, small, last (Read.lua)
 --
 --  Each section is there only when something is known for it; Alt shows more (every quest, every
@@ -294,27 +296,26 @@ local function Item(ctx)
     local color = quality and ITEM_QUALITY_COLORS[quality]
     if color then Read.Accent(color.r, color.g, color.b) else Read.AccentFromTitle() end
     head.icon = ctx.options.icons and id and Plain(C_Item.GetItemIconByID(id)) or nil
-    if head.icon then ns.Figures.Item(head, id, ctx.tooltip) end -- a mount's, a pet's, gear on you: in the icon's place
+    -- A mount's or a pet's model in the icon's place; gear: you wearing it, beside the panel with Alt
+    ns.Figures.Item(head, id, ctx.tooltip, head.icon ~= nil)
     if level then head.badge = Read.Memo("level", TEXT.ITEM_LEVEL, level) end
     -- Without an icon there is no plaque to hold it: the level stands right of the name.
     if head.badge and not head.icon then title.right = head.badge end
 
-    -- Over the name, short: how it binds (BoE), red until it is bound, or "Equipped" on what you
-    -- wear; whether you have its look
-    local first, second
-    if head.compared then
-        first = Read.Memo("tagFirst", "|cff%s%s|r", EQUIPPED_HEX, head.tag:upper())
-    elseif bind then
+    -- Over the name only "Equipped", on what you wear beside another item. How it binds (BoE, red until
+    -- it is bound) and whether you have its look stand in the Gold section (Kinds/Gold.lua), short.
+    head.tag = head.compared and Read.Memo("tagFirst", "|cff%s%s|r", EQUIPPED_HEX, head.tag:upper()) or ""
+    local binding, looks
+    if bind then
         local bonding = bind.data and Plain(bind.data.bonding)
         local word = bonding ~= nil and BINDS[bonding] or bind.left
-        first = Read.Memo("tagFirst", "|cff%s%s|r", bonding ~= nil and UNBOUND[bonding] and RED_HEX or BOUND_HEX, word)
+        binding = Read.Memo("binding", "|cff%s%s|r", bonding ~= nil and UNBOUND[bonding] and RED_HEX or BOUND_HEX, word)
+        bind.used = true
     end
-    if bind then bind.used = true end
     if look then
         local hex = ns.Hex(look.lr or 0.5, look.lg or 0.5, look.lb or 1)
-        second = Read.Memo("tagSecond", "|cff%s%s|r", hex, look.left == LINES.UNCOLLECTED and TEXT.UNCOLLECTED or TEXT.LOOK_KNOWN)
+        looks = Read.Memo("looks", "|cff%s%s|r", hex, look.left == LINES.UNCOLLECTED and TEXT.UNCOLLECTED or TEXT.LOOK_KNOWN)
     end
-    head.tag = first and second and Read.Memo("tag", "%s  \194\183  %s", first, second) or first or second or ""
 
     -- Under the name, small and grey: kind and slot (what it is, for a thing that is not worn),
     -- and the level it needs (red while yours is lower)
@@ -410,8 +411,9 @@ local function Item(ctx)
     end
     QuestSection(ctx, quests)
     ProfessionSection(ctx, id)
+    ns.Gathering.Item(ctx, id)
     ns.Inventory.Section(ctx, id)
-    ns.Gold.Section(ctx, id, coins and ctx.model.price or nil, bound)
+    ns.Gold.Section(ctx, id, coins and ctx.model.price or nil, bound, binding, looks)
 end
 
 if TYPE.Item then ns.KINDS[TYPE.Item] = Item end

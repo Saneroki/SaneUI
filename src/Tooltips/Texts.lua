@@ -22,6 +22,9 @@ ns.TEXT = {
     -- the module's own data (Kinds/Item.lua, Kinds/Gold.lua)
     STATS = "Stats", EFFECTS = "Effects", SET = "Set", DESCRIPTION = "Description", DURABILITY = "Durability",
     PROFESSIONS = "Professions", GOLD = "Gold",
+    -- How likely gathering a herb or an ore raises your skill (Gathering.lua): the section, the skills'
+    -- names where the game does not give them, your skill
+    GATHERING = "Gathering", HERBALISM = "Herbalism", MINING = "Mining", NOT_LEARNED = "Not learned", SKILL = "%d/%d",
     -- A unit's target, health, power and buffs (Kinds/Unit.lua); how long a buff still runs (Kinds/Aura.lua);
     -- the game's lines of no kind of their own (Read.Named); the numbers Alt shows (Read.lua)
     STATUS = "Status", DURATION = "Duration", DETAILS = "Details", IDS = "IDs",

@@ -234,6 +234,19 @@ local function Compare(tooltip, panel)
     return (Plain(panel:GetNumPoints()) or 0) > 0
 end
 
+-- The side the comparisons of main stand on while one of them is shown, else nil: the stage of your
+-- character (Panel.lua) keeps to the other side.
+function Host.CompareSide(main)
+    local layout, shops = layouts[main], rawget(main, "shoppingTooltips")
+    if not (layout and layout.side and type(shops) == "table") then return nil end
+    local panels = ns.Panel.All()
+    for _, shop in ipairs(shops) do
+        local shopPanel = panels[shop]
+        if shopPanel and shopPanel:IsShown() then return layout.side end
+    end
+    return nil
+end
+
 -- Every frame of a main panel with comparisons (Tooltips.lua): has it moved, and rested in its new
 -- place for REST seconds? Then its comparisons follow it, once.
 local function Near(a, b) return math.abs(a - b) <= MOVED end

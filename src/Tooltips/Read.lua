@@ -27,7 +27,7 @@ local _, ns = ...
 --  Lines other addons add to a tooltip never stand among the panel's own rows
 --  and sections, wherever an addon wrote them (at the end, or right after one
 --  of the game's lines): they come last, all of them, in one section of their
---  own under the caption Addons (Others).
+--  own under the caption Addons (Others), and only while Alt is held.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain, Secret = Core.Plain, Core.Secret
@@ -381,9 +381,9 @@ function Read.Rest()
 end
 
 -- The lines other addons added to the tooltip, all of them, in a section of their own at the end of
--- every panel, under the caption Addons: small and quiet, as they stand, in their order; an empty line
--- among them is a gap (it parts one addon's lines from the next one's). Nothing when there are none.
--- Their ID lines are left out (Alt shows the numbers, Details).
+-- every panel, under the caption Addons, while Alt is held: small and quiet, as they stand, in their
+-- order; an empty line among them is a gap (it parts one addon's lines from the next one's). Nothing
+-- when there are none. Their ID lines are left out (Alt shows the numbers, Details).
 local function Others()
     local L, captioned = ctx.L, false
     for index = 2, ctx.count do
@@ -475,8 +475,11 @@ function ns.Read(tooltip, data, model, options)
         ns.Report(("%s tooltips are the game's own"):format(kind ~= Read.Generic and KIND_NAMES[ctx.kind] or "Other"), problem)
         return false
     end
-    if IsAltKeyDown() then Details() end
-    -- Last, apart from everything of the panel's own: other addons' lines
-    Others()
+    -- With Alt held, last: the technical details, then, apart from everything of the panel's own,
+    -- other addons' lines
+    if IsAltKeyDown() then
+        Details()
+        Others()
+    end
     return true, Model.Commit(model)
 end

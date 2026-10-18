@@ -106,7 +106,7 @@ local ROW = { "kind", "font", "left", "right", "lr", "lg", "lb", "rr", "rg", "rb
     "iconRight", "indent", "caps", "prose", "live", "value", "max", "flush", "short", "br", "bg", "bb", "points" }
 local HEAD = { "tag", "compared", "accent", "ar", "ag", "ab", "icon", "portrait", "badge", "badgeR", "badgeG", "badgeB",
     "dragon", "unit", "guid", "power", "hasTarget", "hasAuras", "auraUnit", "auraID", "numbers",
-    "model", "modelKind", "modelZoom", "modelTurn" }
+    "model", "modelKind", "modelZoom", "modelTurn", "dress" }
 
 local function Copy()
     return { n = 0, head = {}, rows = {} }

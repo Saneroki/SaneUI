@@ -7,6 +7,8 @@ local _, ns = ...
 --  also when you point at a stack: the ways compare one to one.
 --
 --      GOLD ───────────────────────────────
+--      BoE                     Uncollected    how it binds (red until it is bound: it can still
+--                                             be traded) and whether you have its look, short
 --      Vendor                       2s 98c    what a vendor pays for one (every item; one
 --                                             it does not buy: "Can't be sold")
 --      AH profit                    2s 85c    what a sale of one at the auction house brings,
@@ -147,14 +149,24 @@ function Gold.VendorEach(id, line)
     return line
 end
 
+-- The section's first row: how the item binds at the left, whether you have its look at the right,
+-- each a short word in its colour (Kinds/Item.lua); none without either.
+function Gold.Terms(binding, looks)
+    if not (binding or looks) then return end
+    local row = Read.Text("sub", binding or "", DETAIL[1], DETAIL[2], DETAIL[3])
+    row.right = looks or ""
+end
+
 -- The section, at the panel's end. line: what a vendor pays as the game's price line says (a stack:
--- for all of it); id: the item; bound: it cannot be sold at the auction house.
-function Gold.Section(ctx, id, line, bound)
+-- for all of it); id: the item; bound: it cannot be sold at the auction house; binding and looks: the
+-- first row's words (Terms).
+function Gold.Section(ctx, id, line, bound, binding, looks)
     local m = Work(id, Gold.VendorEach(id, line), bound, ctx.tooltip)
-    if not (m.vendor or m.ah or m.advice) then return end
+    if not (m.vendor or m.ah or m.advice or binding or looks) then return end
     -- A vendor's price alone has no advice: there is no choice to make.
     local alone = not (m.ah or m.advice == "buy")
     Read.Section(TEXT.GOLD)
+    Gold.Terms(binding, looks)
     if m.vendor then Row(TEXT.VENDOR, m.vendor) end -- every item, also one no vendor buys
     if m.ah then Row(TEXT.AH_PROFIT, m.ah) end
     if not alone then Advice(m) end

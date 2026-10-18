@@ -12,3 +12,4 @@ skillLevel = { type = "int", min = 0 }
 
 [index]
 byKind = "kind"
+byName = "name"          # a thing in the world is known by its name where the game's tooltip gives no ID

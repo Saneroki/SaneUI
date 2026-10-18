@@ -203,19 +203,15 @@ Each step is a commit that ships on its own and changes nothing the player sees 
    types and gear. With `dev/tools/imagegen` and `dev/tools/art` ([image-generation.md](../../guides/image-generation.md),
    [images.md](../../guides/images.md)); `dev/tools/art` gets the kinds `ground`, `border` and `socket`.
 4. **Art, second set:** professions, goods and places, homelands.
-5. **An item's 3D model** in its place, once units look right in the game: `SetItem(itemID)` on the
-   model frame (weapons, shields, a helm alone), `TryOn` on your own character for armour; the camera
-   by `Model_ApplyUICamera` with `C_TransmogCollection.GetAppearanceCameraID` where the client has them
-   (`Model_ApplyUICamera` is in `Blizzard_SharedXML/Mainline/ModelFrames.lua`; Blizzard's Classic
-   wardrobe does it so: `Blizzard_Collections/Classic/Blizzard_Wardrobe.lua`). Checked for before use.
-6. **World objects,** a layout of their own, once Core's World pack knows objects.
+5. **An item's 3D model:** decided (Saneroki, 2026-10-18): a piece of gear keeps its icon; with Alt held, your
+   own character wearing it stands beside the panel, as high as it, turning slowly (built: `Panel.Stage`,
+   the module's README). A mount's and a pet's item keep their model in the icon's place.
+6. **World objects,** a layout of their own. Herbs and ores have their Gathering section already (built:
+   `Gathering.lua`, Core's *Objects* by name, in English: the tooltip of a thing in the world gives no ID).
 7. **An NPC's services and a spell's source** as marks and grounds, once Core's packs have them.
 
 ## To check in the game
 
-- Whether the tooltip of a thing in the world carries its ID: `/dump C_TooltipInfo.GetWorldCursor()` over
-  a herb or a mailbox (`id`, or a `guid` *GameObject-...*). Without one, objects are known only by their
-  words.
 - Which subclass this client gives a potion, food or a scroll (`C_Item.GetItemInfoInstant`). If they are
   all *Generic*, they share the Consumable ground until Core's item data says more.
 - Grounds at 512 x 256 beside 1024 x 512, on 4K and 1440p (`dev/tools/art-measure`, then in the game).

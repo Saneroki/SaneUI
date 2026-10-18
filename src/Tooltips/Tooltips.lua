@@ -165,6 +165,7 @@ local function Draw(tooltip, data)
         return
     end
     ns.Host.Seat(tooltip, panel)
+    ns.Panel.Stage(panel)
 end
 
 -- New lines are coming. If the game fills the tooltip from data again, the panel is drawn anew;
@@ -276,6 +277,7 @@ local function Watch(tooltip)
     else
         ns.Host.Keep(tooltip)
         ns.Host.Track(tooltip, panel) -- its comparisons follow it, once it has moved (Host.lua)
+        ns.Panel.Stage(panel)         -- your character beside it while Alt is held (Panel.lua)
         -- A unit's numbers are kept up to date; if it has got or lost a row (a target, its
         -- buffs), the tooltip is read anew.
         if ns.Live.Update(panel, panel.elapsed or 0) then Draw(tooltip, panel.data) end
@@ -467,6 +469,7 @@ function ns.OnLogin()
         end
     end
     ns.Quests.Start(Redraw)
+    ns.Gathering.Start(Redraw)
     Core.Data.OnCharacters(Redraw)
     -- A player's item level has come (Inspect.lua): their panel is read anew.
     ns.Inspect.Start(function(guid)

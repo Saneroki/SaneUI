@@ -1,3 +1,7 @@
 {"key":"npc:1","since":0,"src":["hand"],"items":[{"item":772,"chance":33}]}
 {"key":"npc:2","since":0,"src":["hand"],"items":[{"item":772,"chance":0}]}
 {"key":"npc:4","since":0,"src":["hand"],"items":[{"item":5000,"chance":3}]}
+{"key":"object:1618","since":0,"src":["hand"],"items":[{"item":2447,"how":"gather"}]}
+{"key":"object:175404","since":0,"src":["hand"],"items":[{"item":10620,"how":"gather"}]}
+{"key":"object:2040","since":0,"src":["hand"],"items":[{"item":3858,"how":"gather"}]}
+{"key":"object:324","since":0,"src":["hand"],"items":[{"item":10620,"how":"gather"}]}

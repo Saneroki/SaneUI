@@ -3,8 +3,34 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 363 (Tooltips), 371 (Social), 88 (Sync), 351 (windows), 175 (data in the game).
-A game restart takes it in (new files in Core's and Social's TOCs, key bindings).
+Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 88 (Sync), 351 (windows), 175 (data in the game).
+A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, key bindings).
+
+### Tooltips: your character beside gear, Gathering, binding in Gold, Addons with Alt (Saneroki, 2026-10-18)
+- **Gear keeps its icon** (`Figures.lua`): no more character in the picture's place. With Alt held over a piece
+  you can see on a character, your own character wearing it stands beside the panel (`Panel.Stage`): a
+  `DressUpModel` on a dark ground like the panel's, as high as the panel, at its left (its right where the
+  left has no room or the comparisons stand there: `Host.CompareSide`), turning slowly (one turn in ten
+  seconds). Given your character once and kept while hidden; dressed anew in what you wear and trying the
+  piece on each time it is shown; unseen until loaded; a piece your character cannot wear leaves none.
+  Followed every frame (`Watch`), so Alt and the comparisons move it at once. New head field `dress`; the
+  frame `panel.dresser` and the kind `dress` are gone.
+- **How an item binds and whether you have its look** stand in the first row of *Gold* (`Gold.Terms`): the
+  binding at the left (red until bound), the look at the right. Over the name only *Equipped*, on a
+  comparison, which shows no binding.
+- **Other addons' lines** (*Addons*) are shown only while Alt is held (`Read.lua`).
+- **Gathering** (new `Gathering.lua`, `Kinds/Object.lua`): on a herb or an ore in the world, the skill it needs in
+  the colour of your chance of a point (the game's difficulty colours: red, orange, yellow, green, grey),
+  your skill after it, and at the right where each colour begins (what it needs, +25, +50, +100); on what
+  nodes give, each node by name, the easiest first (Alt: all). Your skill from `C_SkillInfo`. The game's own
+  line of the skill is left out on a node's tooltip.
+- **Core's data:** 47 herb and ore nodes in `assets/data/Objects` (name, kind, skill line, the skill they need;
+  source `hand`), what each gives in `assets/data/Drops` (`object:<id>`, `how = "gather"`), taken in through
+  `dev/tools/data import`; the set *Objects* has the index `byName` (a thing in the world is known by its name).
+- Tests (439 checks): Addons only with Alt; gear and the stage (size, sides, loading, turning, dressing, refusal,
+  not asked again each frame); binding and look in Gold; Gathering on nodes and ores, every colour, a bonus,
+  skill changes. Sample nodes in `dev/tests/data/tooltips/Objects` and `Drops`.
+- `src/Tooltips/README.md`: the list *To check in the game* is gone (CLAUDE.md, *Trying it in the game*).
 
 ### Social: panels on the full screen (Saneroki, 2026-10-17)
 - 2026-10-18 — Social: the group finder is the friends panel's last tab, *Group Finder*

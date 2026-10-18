@@ -224,18 +224,17 @@ end
 
 -- The 3D model in the picture's place (the option models), on a see-through ground: a unit's own,
 -- moving, its face in view (PlayerModel: SetUnit, SetPortraitZoom); a mount's or a pet's (PlayerModel:
--- SetDisplayInfo); a piece of gear on your own character (DressUpModel: you as you are, wearing it).
--- Which one, and how near and turned, is the reader's (head.model, Figures.lua). Each kind of frame is
--- made for the first model of its kind a panel shows (a client without it: the picture, always).
+-- SetDisplayInfo). Which one, and how near and turned, is the reader's (head.model, Figures.lua). The
+-- frame is made for the first model a panel shows (a client without it: the picture, always).
 -- A frame is given its model only when that changes, as giving it again would load it anew and start
 -- its moves over, and a panel is drawn many times while it is shown; once hidden it forgets it.
 -- The picture stands until the model is there: a unit's as soon as the game takes the unit; a
 -- creature's and a piece of gear when the game has loaded it (OnModelLoaded). Where the game cannot
 -- draw it (a unit out of sight, its identity hidden, a model it does not load), the picture stays.
-local FRAMES = { figure = "PlayerModel", dresser = "DressUpModel" } -- [the panel's field] = the kind of frame
+local FRAMES = { figure = "PlayerModel" } -- [the panel's field] = the kind of frame
 local TRIED = Enum.ItemTryOnReason and Enum.ItemTryOnReason.Success or 0
 
-local function Forget(figure) figure.key, figure.ready, figure.dressed = nil, false, false end
+local function Forget(figure) figure.key, figure.ready = nil, false end
 
 -- The model has come: it stands in the picture's place from now.
 local function Loaded(figure)
@@ -275,19 +274,6 @@ local LOAD = {
     display = function(figure, head)
         return pcall(figure.SetDisplayInfo, figure, head.model), false
     end,
-    dress = function(figure, head, was)
-        -- Your character once, then only dressed anew for each piece
-        local again = figure.dressed
-        if again then
-            pcall(figure.Dress, figure)
-        elseif Ask(figure.SetUnit, figure, "player") ~= true then
-            return false, false
-        end
-        figure.dressed = true
-        local tried, reason = pcall(figure.TryOn, figure, head.model)
-        reason = Plain(reason)
-        return tried and (reason == nil or reason == TRIED), again and was
-    end,
 }
 
 -- The model the picture's place shows: what kind, which (it is given anew when this changes).
@@ -302,7 +288,7 @@ end
 local function Figure(panel, head)
     local kind, key = Wanted(head)
     if not (key and LOAD[kind] and ns.options and ns.options.models ~= false) then kind = nil end
-    local field = kind == "dress" and "dresser" or "figure"
+    local field = "figure"
     for other in pairs(FRAMES) do
         local frame = panel[other]
         if frame and (other ~= field or not kind) then frame:Hide() end
@@ -313,13 +299,9 @@ local function Figure(panel, head)
     if not figure then return false end
     figure:Show()
     if figure.key ~= key then
-        if kind ~= "dress" or not figure.dressed then
-            figure:ClearModel()
-            figure.dressed = false
-        end
-        local was = figure.ready
+        figure:ClearModel()
         figure.key, figure.ready = key, false
-        local taken, ready = LOAD[kind](figure, head, was)
+        local taken, ready = LOAD[kind](figure, head)
         if not taken then
             figure:Hide() -- (it forgets the key)
             return false
@@ -356,6 +338,146 @@ function Panel.Strength(panel, allowed)
     panel:SetAlpha(allowed and panel.strength or 0)
     local figure = panel.figured
     if figure then figure:SetAlpha(allowed and figure.ready and 1 or 0) end
+    local stage = panel.stage
+    if stage then stage.model:SetAlpha(allowed and stage.model.ready and 1 or 0) end
+end
+
+-------------------------------------------------------------------------------
+--  The stage: with Alt held over a piece of gear (head.dress, Figures.lua),
+--  your own character wearing it, as the game's dressing room puts it on you
+--  (DressUpModel: you as you are, then TryOn), on a ground of its own beside
+--  the panel: as high as the panel, the soft edges of the two just meeting,
+--  turning slowly round. At the panel's left; at its right where the left has
+--  no room on the screen, or the comparisons (Host.lua) stand there. Let go
+--  of Alt and it is gone; hidden, it does not turn.
+--
+--  Your character is given to the frame once (SetUnit) and kept while hidden
+--  (SetKeepModelOnHide), so Alt shows it at once; each time it is shown it is
+--  dressed anew in what you wear (Dress), then tries the piece on. It stands
+--  unseen until the game has loaded it (OnModelLoaded), so nothing half-made
+--  is seen. A client without the frame, or that cannot put your character in
+--  it, has no stage: the panel alone.
+-------------------------------------------------------------------------------
+local STAGE_WIDE = 0.6 -- the stage's width, of its height: room for a character standing and turning
+local STAGE_TURNS = 0.1 -- turns a second: once round in ten seconds
+local STAGE_IN = 4      -- between the stage's edge and your character
+local TURN = 2 * math.pi
+local FACING = rawget(_G, "MODELFRAME_DEFAULT_ROTATION") or 0 -- where it starts: as the game's dressing room turns you
+
+-- Turns the character, every frame while the stage is shown. Should the game refuse, it stands still.
+local function Turn(model, elapsed)
+    model.facing = (model.facing + elapsed * STAGE_TURNS * TURN) % TURN
+    if not pcall(model.SetFacing, model, model.facing) then model:SetScript("OnUpdate", nil) end
+end
+
+local function Arrived(model)
+    model.ready = true
+    local panel = model.panel
+    model:SetAlpha(panel.allowed and 1 or 0)
+end
+
+-- The panel's stage, made when it is first wanted; false where the client has no such frame.
+local function Staged(panel)
+    local stage = panel.stage
+    if stage ~= nil then return stage end
+    stage = CreateFrame("Frame", nil, panel)
+    local made, model = pcall(CreateFrame, "DressUpModel", nil, stage)
+    if not made or not model then
+        panel.stage = false
+        return false
+    end
+    stage.back = stage:CreateTexture(nil, "BACKGROUND", nil, 1)
+    stage.back:SetTexture(SOFT)
+    stage.back:SetTextureSliceMargins(SOFT_MARGIN, SOFT_MARGIN, SOFT_MARGIN, SOFT_MARGIN)
+    stage.back:SetPoint("TOPLEFT", stage, "TOPLEFT", -SOFT_OUT, SOFT_OUT)
+    stage.back:SetPoint("BOTTOMRIGHT", stage, "BOTTOMRIGHT", SOFT_OUT, -SOFT_OUT)
+    model.panel, model.ready, model.facing = panel, false, FACING
+    model:SetPoint("TOPLEFT", stage, "TOPLEFT", STAGE_IN, -STAGE_IN)
+    model:SetPoint("BOTTOMRIGHT", stage, "BOTTOMRIGHT", -STAGE_IN, STAGE_IN)
+    pcall(model.SetKeepModelOnHide, model, true)
+    pcall(model.SetScript, model, "OnModelLoaded", Arrived)
+    model:SetScript("OnUpdate", Turn)
+    stage.model = model
+    stage:Hide()
+    panel.stage = stage
+    return stage
+end
+
+-- Your character in the stage's frame, wearing link. False where the game will not have it.
+local function Dressed(model, link)
+    if not model.unit then
+        if Ask(model.SetUnit, model, "player") ~= true then return false end
+        model.unit = true
+        local file = Ask(model.GetModelFileID, model)
+        if type(file) == "number" and file > 0 then model.ready = true end
+    else
+        pcall(model.Dress, model) -- what you wear now, not the piece tried on before
+    end
+    pcall(model.SetPortraitZoom, model, 0) -- the whole of you
+    local tried, reason = pcall(model.TryOn, model, link)
+    reason = Plain(reason)
+    return tried and (reason == nil or reason == TRIED)
+end
+
+-- The side of the panel the stage stands on: its left, unless the left has no room for it on the
+-- screen or the panel's comparisons stand there.
+local function StageSide(panel, wide)
+    if ns.Host.CompareSide and ns.Host.CompareSide(panel.tooltip) == "left" then return "right" end
+    local left = Plain(panel:GetLeft())
+    if type(left) == "number" and left - wide - 2 * SOFT_OUT < 0 then return "right" end
+    return "left"
+end
+
+-- Shows the stage where it is wanted now, or hides it: at every draw and once a frame while the panel is
+-- shown (Tooltips.lua), so pressing or letting go of Alt, or the comparisons coming, moves it at once.
+function Panel.Stage(panel)
+    local head = panel.model.shown.head
+    local link = head.dress
+    local wanted = link and not head.compared and IsAltKeyDown() and ns.options and ns.options.models ~= false
+    local stage = panel.stage
+    if not wanted then
+        if stage and stage:IsShown() then stage:Hide() end
+        return
+    end
+    stage = Staged(panel)
+    if not stage then return end
+    local high = Plain(panel:GetHeight())
+    if not (type(high) == "number" and high > 0) then return end
+    local wide = math.floor(high * STAGE_WIDE + 0.5)
+    if stage.high ~= high then
+        stage.high = high
+        stage:SetSize(wide, high)
+    end
+    local side = StageSide(panel, wide)
+    if stage.side ~= side then
+        stage.side = side
+        stage:ClearAllPoints()
+        if side == "left" then
+            stage:SetPoint("TOPRIGHT", panel, "TOPLEFT", -2 * SOFT_OUT, 0)
+        else
+            stage:SetPoint("TOPLEFT", panel, "TOPRIGHT", 2 * SOFT_OUT, 0)
+        end
+    end
+    -- Among the frames just over the panel
+    local model, own = stage.model, Plain(panel:GetFrameLevel()) or 0
+    if stage.level ~= own then
+        stage.level = own
+        stage:SetFrameLevel(own + 1)
+        model:SetFrameLevel(own + 2)
+    end
+    -- Shown already, or refused: nothing to do until the piece changes (asked once a frame)
+    if stage.link == link and (stage.refused or stage:IsShown()) then return end
+    stage.link, stage.refused = link, false
+    -- The ground as the panel's own, without its colour
+    local opacity = (ns.options and tonumber(ns.options.opacity) or DEFAULT_OPACITY) / 100
+    Gradient(stage.back, FOOT[1], FOOT[2], FOOT[3], opacity, GROUND[1], GROUND[2], GROUND[3], opacity)
+    stage:Show()
+    if not Dressed(model, link) then
+        stage.refused = true -- (your character cannot wear it: not asked again for this piece)
+        stage:Hide()
+        return
+    end
+    model:SetAlpha(panel.allowed and model.ready and 1 or 0)
 end
 
 -------------------------------------------------------------------------------
