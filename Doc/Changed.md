@@ -3,8 +3,34 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 88 (Sync), 351 (windows), 175 (data in the game).
+Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 90 (Sync), 351 (windows), 175 (data in the game).
 A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, key bindings).
+
+### Sync and the CVar list made again from Blizzard's options code (Saneroki, 2026-10-18)
+- `Settings/Data/CVarLabels.lua` and `Sync/Data/Pages.lua` were made from older options code than
+  `references/`, so both `--check` runs failed (noted at 1a.2). In the code now: the floating combat text's
+  options for you are one dropdown of choices (a table of rows) instead of a checkbox per CVar, those for the
+  target a menu; the gamepad's action bar options are gone; *Auto Ranged Combat* (Combat), the voice chat
+  service and its Discord setting (Audio) are new; remote text to speech's tip is made in code; the button that
+  shows the tutorials again writes three more tutorial CVars.
+- `CVarLabels.lua`: 225 CVars (was 239), what the master's set *CVarLabels* already holds: new
+  `autoRangedCombat`, `voiceProvider`, `voiceUseDiscordSettings`; gone the floating combat text's 12 checkboxes
+  and the gamepad's 5 action bar options; `remoteTextToSpeech` without a tip.
+- `dev/tools/sync-pages`:
+  - Reads the TOCs with the load group `mainline` too, as `dev/blizzard/export.py` does
+    (`[AllowLoadGameType mainline]` loads, `[ExcludeLoadGameType camelot]` does not). New pages: *Ping System*
+    and *Advanced Options* (Gameplay), *Text* (Accessibility). Both Gameplay pages are Forever's:
+    `Blizzard_PingUI` loads for `mainline`; *Advanced Options* is the only page with the swing timer, the
+    cooldown viewer and the damage meter, which the game's camelot overrides switch on.
+  - A CVar the options name through a variable counts by the names the file gives it: a local or a field set
+    to it, a function's parameter, a column of a table's rows. So *Combat* keeps the floating combat text's 20
+    CVars, *Social*, *Gamepad* and Accessibility's *Audio* and *General* get the ones they name so (censored
+    messages, the gamepad's camera and stick sliders, combat audio alerts, the smallest name size), and
+    Accessibility's *Subtitles* comes in.
+  - `Pages.lua`: 15 pages and 259 CVars (was 11 and 197). A CVar that is now on a page leaves *Other
+    per-character settings*.
+- Tests: `dev/tests/sync.lua` 90 checks (the pages of `mainline`, a file left out for camelot, CVars named
+  through a variable).
 
 ### Development: Blizzard updates, the todo list of a new build (Saneroki, 2026-10-18)
 - `dev/tools/blizzard` (new, Python in `dev/blizzard/`): a new build's Blizzard interface code against

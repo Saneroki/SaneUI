@@ -2,13 +2,17 @@
 """Makes src/Core/Sync/Data/Pages.lua: for each of the game's options pages in its groups Gameplay and
 Accessibility (Esc > Options), what that page sets, so Sync can keep it with Sane UI's settings.
 
-It reads Blizzard's options code in references/ as this client loads it (game type camelot, family
-Mainline: the TOCs of Blizzard_SettingsDefinitions_Shared and _Frame with their conditions, and the
-Lua files their XML files name). A page is the category a file registers
+It reads Blizzard's options code in references/ as this client loads it (game type camelot, which also
+counts the load group mainline; family Mainline: the TOCs of Blizzard_SettingsDefinitions_Shared and _Frame
+with their conditions, and the Lua files their XML files name). A page is the category a file registers
 (Settings.RegisterVerticalLayoutCategory); a file "<Name>Overrides.lua" adds to the page of <Name>.lua.
 Per page it keeps:
   cvars   every CVar the page registers (Settings.SetupCVar*, RegisterCVarSetting, CreateCVarAccessorClosures,
           CVarCallbackRegistry) or writes (SetCVar); not one it only reads to decide something else.
+          A CVar named through a variable counts by the names the file gives it: a local or field set to
+          a name (local cvar = "excludedCensorSources", { cvarName = "..." }), the name a call passes for a
+          function's parameter of that name, and an entry of each row of a table the file goes through
+          (local cvarName = row[3] in a loop over ipairs(rows)).
           Sorted by name, without regard to case; a CVar two pages have stays with the first.
           Left out: the computer's speech voices (names ending in "Voice"), which differ per computer.
   flags   pairs of game functions a page's proxy setting reads and writes by their global names
@@ -35,15 +39,19 @@ ADDONS = Path(os.environ.get("BLIZZARD_CODE") or ROOT / "references" / "Blizzard
 FOLDERS = ("Blizzard_SettingsDefinitions_Shared", "Blizzard_SettingsDefinitions_Frame")
 BINDINGS = ADDONS / "Blizzard_FrameXML" / "Bindings_Camelot.xml"
 OUTPUT = ROOT / "src" / "Core" / "Sync" / "Data" / "Pages.lua"
-GAME, FAMILY = "camelot", "Mainline"
+GAME_TYPES = {"camelot", "mainline"}  # the load groups this client is in, as dev/blizzard/export.py has them
+FAMILY = "Mainline"
 GROUPS = ("SETTING_GROUP_GAMEPLAY", "SETTING_GROUP_ACCESSIBILITY")
 KEYBINDINGS = "SETTINGS_KEYBINDINGS_LABEL"
 WIDTH = 104  # characters of names on one line of the file
 
 NAME = r'"([A-Za-z0-9_]+)"'
+NAMED = NAME + r'|(?:\w+\.)*(\w+)\s*[,)]'  # a CVar's name, or the variable that holds it
 REGISTERED = re.compile(r'(?:Settings\.(?:SetupCVarCheckbox|SetupCVarSlider|SetupCVarDropdown|RegisterCVarSetting)\(\s*[\w.]+\s*,\s*'
-                        r'|Settings\.CreateCVarAccessorClosures\(\s*|CVarCallbackRegistry:RegisterCallback\(\s*)' + NAME)
-WRITTEN = re.compile(r'(?:C_CVar\.)?SetCVar\(\s*' + NAME)
+                        r'|Settings\.CreateCVarAccessorClosures\(\s*|CVarCallbackRegistry:RegisterCallback\(\s*)(?:' + NAMED + ')')
+WRITTEN = re.compile(r'(?:C_CVar\.)?SetCVar\(\s*(?:' + NAMED + ')')
+FUNCTION = re.compile(r'function\s+([\w.:]+)\s*\(([^)]*)\)')
+QUOTED = re.compile(NAME + r'$')
 CLICK = re.compile(r'Settings\.RegisterModifiedClickSetting\(\s*[\w.]+\s*,\s*"([A-Z]+)"')
 CATEGORY = re.compile(r'Settings\.RegisterVerticalLayoutCategory\(\s*([\w.]+)(\(\))?\s*\)')
 GROUP = re.compile(r'Settings\.RegisterCategory\(\s*category\s*,\s*(SETTING_GROUP_\w+)')
@@ -56,10 +64,10 @@ LABEL_FUNCTION = re.compile(r'function\s+(Settings\.\w+)\(\)\s*return\s+(\w+)\s*
 def loads(conditions):
     """Whether a TOC line with these conditions loads for this client."""
     def names(found):
-        return [name for group in found for name in group.replace(",", " ").split()]
+        return {name.lower() for group in found for name in group.replace(",", " ").split()}
     allow = names(re.findall(r"\[AllowLoadGameType ([^\]]+)\]", conditions))
     deny = names(re.findall(r"\[ExcludeLoadGameType ([^\]]+)\]", conditions))
-    return (not allow or GAME in allow) and GAME not in deny
+    return (not allow or bool(allow & GAME_TYPES)) and not deny & GAME_TYPES
 
 
 def files():
@@ -106,6 +114,53 @@ def arguments(text):
     return found
 
 
+def enclosed(text, start):
+    """What stands between the bracket at text[start] and the one that closes it."""
+    depth = 0
+    for at in range(start, len(text)):
+        if text[at] in "([{":
+            depth += 1
+        elif text[at] in ")]}":
+            depth -= 1
+            if depth == 0:
+                return text[start + 1:at]
+    return text[start + 1:]
+
+
+def held(text, variable):
+    """The CVars a file names through a variable: the names it gives that variable."""
+    found = re.findall(r'\b' + variable + r'\s*=\s*' + NAME, text)
+
+    def take(item):
+        quoted = QUOTED.match(item.strip())
+        if quoted:
+            found.append(quoted.group(1))
+
+    for function, parameters in FUNCTION.findall(text):
+        parameters = [parameter.strip() for parameter in parameters.split(",")]
+        if variable in parameters:
+            for call in re.finditer(re.escape(function) + r'\(', text):
+                args = arguments(enclosed(text, call.end() - 1))
+                if len(args) > parameters.index(variable):
+                    take(args[parameters.index(variable)])
+    for row, index in re.findall(r'\b' + variable + r'\s*=\s*(\w+)\[(\d+)\]', text):
+        for rows in re.findall(r'for\s+\w+\s*,\s*' + row + r'\s+in\s+ipairs\(\s*(\w+)\s*\)', text):
+            table = re.search(r'\b' + rows + r'\s*=\s*\{', text)
+            for entry in re.finditer(r'\{([^{}]*)\}', enclosed(text, table.end() - 1) if table else ""):
+                args = arguments(entry.group(1))
+                if len(args) >= int(index):
+                    take(args[int(index) - 1])
+    return found
+
+
+def named(pattern, text):
+    """The CVars the calls of a pattern name, as a name or through a variable."""
+    found = []
+    for name, variable in pattern.findall(text):
+        found += [name] if name else held(text, variable)
+    return found
+
+
 def flags(text):
     """Pairs of global game functions a file's proxy settings read and write."""
     local = {a or b for a, b in LOCAL.findall(text)}
@@ -130,7 +185,7 @@ def collect():
         order.update({name: int(number) for name, number in ORDER.findall(text)} if "CUSTOM_GAMEPLAY_SETTINGS_ORDER" in text else {})
         category = CATEGORY.search(text)
         found = {
-            "registered": REGISTERED.findall(text), "written": WRITTEN.findall(text),
+            "registered": named(REGISTERED, text), "written": named(WRITTEN, text),
             "clicks": CLICK.findall(text), "flags": flags(text), "bars": "SetActionBarToggles(" in text,
         }
         if category:

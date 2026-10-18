@@ -177,6 +177,16 @@ check(Sync.part.CONTROLS_LABEL.group == "SETTING_GROUP_GAMEPLAY" and Sync.part.G
     "each in the game's group of its page; the rest elsewhere")
 check(Sync.part.CONTROLS_LABEL.text == "Controls" and Sync.part.NAMEPLATE_OPTIONS_LABEL.text == "Nameplate options",
     "named in the game's words, ours where the client lacks them")
+-- Data/Pages.lua: Blizzard's options code as this client loads it (game type camelot with the group mainline)
+local pageOf = {}
+for _, page in ipairs(Sync.PAGES) do
+    for _, name in ipairs(page.cvars or {}) do pageOf[name] = page.page end
+end
+check(ids.PING_SYSTEM_LABEL and pageOf.showSwingTimer == "ADVANCED_OPTIONS_LABEL" and pageOf.questTextContrast == "ACCESSIBILITY_INTERFACE_LABEL"
+    and pageOf.motionSicknessFocalCircle == nil, "the pages of the group mainline are there, a file left out for camelot is not")
+check(pageOf.floatingCombatTextAuras_v2 == "COMBAT_LABEL" and pageOf.floatingCombatTextSpellMechanicsOther_v2 == "COMBAT_LABEL"
+    and pageOf.excludedCensorSources == "SOCIAL_LABEL" and pageOf.GamePadCameraYawSpeed == "GAMEPAD_LABEL",
+    "a CVar the options name through a variable: a table's rows, a menu's fields, a local, a function's parameter")
 
 check(Sync.Word == Core.Word, "the game's words: Core's (Kit.lua)")
 

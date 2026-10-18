@@ -55,8 +55,10 @@ while in the world: PEW → PLAYER_LEAVING_WORLD), `waiting` (not set yet: no ma
 and not by us, the player's pick; so a character without another's own layout does not overwrite the choice
 at its logout). Read = waiting or missing or seen or what was taken.
 
-Regenerate `Data/Pages.lua` after a client update: `dev/tools/sync-pages` (reads `references/`, camelot game type,
-Mainline family; Gameplay order from `CUSTOM_GAMEPLAY_SETTINGS_ORDER`).
+Regenerate `Data/Pages.lua` after a client update: `dev/tools/sync-pages` (reads `references/`, camelot game type
+with the load group mainline as `dev/blizzard/export.py` has them, Mainline family; Gameplay order from
+`CUSTOM_GAMEPLAY_SETTINGS_ORDER`; a CVar named through a variable counts by the names the file gives it: a local,
+a field, a function's parameter, a column of a table's rows).
 
 Tests: `dev/tests/sync.lua` (model of chat windows, own channels, Edit Mode with the logout loss and a missing
 layout, bars, modifier keys, scoped CVars, per-character discovery as a job, CVars the game does not let us
