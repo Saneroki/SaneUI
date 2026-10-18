@@ -329,19 +329,19 @@ function View.Build(page)
         row:SetScript("OnClick", function(self, button) ns.Safe("raid", MemberClick, self, button) end)
         row:SetScript("OnEnter", function(self) ns.Safe("raid", MemberTip, self) end)
         row:SetScript("OnLeave", GameTooltip_Hide)
-        row:SetScript("OnDragStart", function(self)
+        row:SetScript("OnDragStart", ns.Guard(function(self)
             local member = self.element
             if member and member.kind == "member" and MayArrange() then
                 moving = member
                 self:SetAlpha(0.5)
             end
-        end)
-        row:SetScript("OnDragStop", function(self)
+        end))
+        row:SetScript("OnDragStop", ns.Guard(function(self)
             self:SetAlpha(1)
             local member = moving
             moving = nil
             if member then ns.Safe("raid", Drop, member) end
-        end)
+        end))
     end, Layout.LINE + Layout.EDGE)
     roster.infoButton = Board.Button(roster, Core.Word("RAID_INFO", "Raid Info"), 100, function() Showing("info") end)
     roster.convert = Board.Button(roster, Core.Word("CONVERT_TO_RAID", "Convert to Raid"), 130, function() C_PartyInfo.ConvertToRaid() end, roster.infoButton)

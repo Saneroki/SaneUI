@@ -73,7 +73,7 @@ function Contacts.StatusMenu(root, wanted, changed)
         changed()
     end
     for _, entry in ipairs(Contacts.STATUSES) do
-        root:CreateCheckbox(Contacts.StatusText(entry.key), IsTicked, Tick, entry.key)
+        root:CreateCheckbox(Contacts.StatusText(entry.key), ns.Guard(IsTicked), ns.Guard(Tick), entry.key)
     end
 end
 

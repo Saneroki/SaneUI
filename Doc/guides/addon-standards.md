@@ -221,6 +221,15 @@ And so:
   `C_Timer.After(1, ns.Guard(Retry))`. A script without a guard is still caught (at the game's error
   window), but only after the game's error handler had it, and an `OnUpdate` without one fails again every
   frame until its frame is hidden.
+- **The lint checks it** (`dev/tests/lint`, run by `dev/build`): in a module's folder, every function given
+  to `SetScript`, `HookScript`, `hooksecurefunc`, `C_Timer.After`/`NewTimer`/`NewTicker`, `RegisterCallback`,
+  `Menu.ModifyMenu`, `MenuUtil.CreateContextMenu`/`HookTooltipScripts`, a menu's `CreateButton`,
+  `CreateCheckbox`, `CreateRadio` or `AddInitializer` (also through `pcall`) is one of: `ns.Guard(fn)`, a name
+  the file set to `ns.Guard(...)` (`local OnShown = ns.Guard(Reshown)`), `nil`, the game's own
+  `GameTooltip_Hide`, or a function whose one step is `ns.Safe(...)` or `ns.Guarded(...)`
+  (`function(self) ns.Safe("drag", Drag, self) end`, for what must go on after the module stood down), given
+  there or by the name of a one-line local function (`local function Wish(choice) ns.Safe(...) end`). An intended exception says why on the call's line, `-- unguarded: <why>`:
+  only for what has to work after a stand-down and is too small to fail (setting a flag).
 - **An error belongs to a module** by its place: the first module folder its message or trace names
   (`Interface/AddOns/SaneUI_Social/...`). A step of Core that a module called is that module's error. Core's
   own errors are told under the door's name (the event), and Core goes on.

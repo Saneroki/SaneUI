@@ -164,7 +164,7 @@ end
 local function Categories(_, root)
     if not Usable() then return end
     for _, id in ipairs(C_LFGList.GetAvailableCategories() or {}) do
-        root:CreateRadio(Category(id), IsCategory, Choose, id)
+        root:CreateRadio(Category(id), ns.Guard(IsCategory), ns.Guard(Choose), id)
     end
 end
 

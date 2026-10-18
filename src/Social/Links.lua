@@ -42,6 +42,6 @@ end
 function Links.Enable(frame)
     frame:SetHyperlinksEnabled(true)
     frame:SetScript("OnHyperlinkEnter", function(self, link) ns.Guarded(Enter, self, link) end)
-    frame:SetScript("OnHyperlinkLeave", function() GameTooltip:Hide() end)
+    frame:SetScript("OnHyperlinkLeave", ns.Guard(function() GameTooltip:Hide() end))
     frame:SetScript("OnHyperlinkClick", function(_, link, text, button) ns.Guarded(Click, link, text, button) end)
 end

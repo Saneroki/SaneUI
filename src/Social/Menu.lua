@@ -40,7 +40,8 @@ local function Choose(channel) ns.Guarded(Write, channel) end
 local function IsShown(chat) return ns.Guarded(ns.Channels.Shown, chat.group) end
 local function Switch(chat) ns.Guarded(ns.Channels.Flip, chat.group) end
 -- The game's channels are apart from the window: a failure there is noted, the window stays.
-local function IsWished(choice) return ns.Join.Wished(choice.name) == choice.wish end
+local function Wished(choice) return ns.Join.Wished(choice.name) == choice.wish end
+local function IsWished(choice) return ns.Safe("channels", Wished, choice) end
 local function Wish(choice) ns.Safe("channels", ns.Join.Wish, choice.name, choice.wish) end
 
 local function Fill(_, root)
@@ -69,5 +70,5 @@ end
 -- Opens the list at owner, for the line line (the edit box in our window, if one is).
 function Menu.Open(owner, line)
     editBox = line
-    MenuUtil.CreateContextMenu(owner, Fill)
+    MenuUtil.CreateContextMenu(owner, function(menu, root) ns.Safe("the list", Fill, menu, root) end)
 end

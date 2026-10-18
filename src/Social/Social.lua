@@ -316,10 +316,10 @@ local function Before(window, event)
     return false
 end
 
-local function Printed(window, text, r, g, b, id, _, _, event)
-    if ns.off or Core.Secret(id) or Core.Secret(event) then return end
-    ns.Guarded(ns.Log.Line, window, text, r, g, b, id, event)
-end
+local Printed = ns.Guard(function(window, text, r, g, b, id, _, _, event)
+    if Core.Secret(id) or Core.Secret(event) then return end
+    ns.Log.Line(window, text, r, g, b, id, event)
+end)
 
 -- While chat is locked down (a fight, a dungeon) addons get no messages to show: the game's own
 -- chat comes back for that time. The game tells before a lockdown begins and after it ended; it
@@ -343,7 +343,7 @@ function ns.OnLogin()
         -- The game's combat log is no chat.
         if window and window ~= COMBATLOG and window.AddMessage then
             hooksecurefunc(window, "AddMessage", Printed)
-            window:HookScript("OnEvent", ns.Log.After)
+            window:HookScript("OnEvent", ns.Guard(ns.Log.After))
         end
     end
     local AddFilter = ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter or rawget(_G, "ChatFrame_AddMessageEventFilter")

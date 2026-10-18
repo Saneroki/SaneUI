@@ -145,10 +145,10 @@ local function Click(row, button)
     local group = row.group
     if not group then return end
     if button == "RightButton" then
-        return MenuUtil.CreateContextMenu(row, function(_, root)
+        return MenuUtil.CreateContextMenu(row, ns.Guard(function(_, root)
             root:CreateTitle(group.known.name)
-            root:CreateButton(Core.Word("WHISPER", "Whisper"), function() Whisper(group) end)
-        end)
+            root:CreateButton(Core.Word("WHISPER", "Whisper"), ns.Guard(function() Whisper(group) end))
+        end))
     end
     chosen = group.guid
     Contacts.Mark(box, "guid", chosen)
@@ -178,21 +178,21 @@ local function Join(button)
     local group = Chosen()
     if not group or InGroup() then return end
     local can = Roles()
-    MenuUtil.CreateContextMenu(button, function(_, root)
+    MenuUtil.CreateContextMenu(button, ns.Guard(function(_, root)
         root:CreateTitle(Core.Word("ROLE", "Role"))
         local function IsTicked(role) return roles[role] == true end
         local function Tick(role) roles[role] = not roles[role] or nil end
         for _, role in ipairs(ROLE_WORDS) do
-            if can[role[1]] then root:CreateCheckbox(Core.Word(role[1], role[2]), IsTicked, Tick, role[1]) end
+            if can[role[1]] then root:CreateCheckbox(Core.Word(role[1], role[2]), ns.Guard(IsTicked), ns.Guard(Tick), role[1]) end
         end
-        root:CreateButton(group.listed and Core.Word("SIGN_UP", "Sign Up") or Core.Word("JOIN_QUEUE", "Join Queue"), function()
+        root:CreateButton(group.listed and Core.Word("SIGN_UP", "Sign Up") or Core.Word("JOIN_QUEUE", "Join Queue"), ns.Guard(function()
             if not (roles.TANK or roles.HEALER or roles.DAMAGER) then
                 return UIErrorsFrame:AddMessage(ns.TEXT.chooseRole, 1, 0.1, 0.1)
             end
             ns.Safe("quick join", System().RequestToJoin, group.guid, roles.TANK and true or false,
                 roles.HEALER and true or false, roles.DAMAGER and true or false)
-        end)
-    end)
+        end))
+    end))
 end
 
 function View.Build(page)

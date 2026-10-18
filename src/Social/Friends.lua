@@ -155,10 +155,10 @@ function Friends.Build(holder)
     end
     group = CreateRadioButtonGroup()
     group:AddButtons(buttons)
-    group:RegisterCallback(ButtonGroupBaseMixin.Event.Selected, function(_, button)
+    group:RegisterCallback(ButtonGroupBaseMixin.Event.Selected, ns.Guard(function(_, button)
         if shown then Core.Sound("IG_CHARACTER_INFO_TAB") end
         Present(button.key)
-    end, panel)
+    end), panel)
     -- The search box and the filter, under the tabs.
     tools = CreateFrame("Frame", nil, panel.body)
     tools:SetPoint("TOPLEFT", 0, -Layout.TABS)
@@ -184,12 +184,12 @@ function Friends.Build(holder)
     search:SetHeight(20)
     -- The game tells of every SetText too (ours from the full window's box among them): the list is asked
     -- anew only when the words are other than those it was given.
-    search:HookScript("OnTextChanged", function(box)
+    search:HookScript("OnTextChanged", ns.Guard(function(box)
         local text = box:GetText() or ""
         if text == typed then return end
         typed = text
         Searched()
-    end)
+    end))
     Arrange()
     group:SelectAtIndex(1)
 end

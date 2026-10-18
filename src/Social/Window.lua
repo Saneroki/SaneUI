@@ -251,9 +251,9 @@ local function Paint()
     return moving
 end
 
-local function Step()
-    if not ns.Guarded(Paint) then frame:SetScript("OnUpdate", nil) end
-end
+local Step = ns.Guard(function()
+    if not Paint() then frame:SetScript("OnUpdate", nil) end
+end)
 
 local function Run()
     frame:SetScript("OnUpdate", Step)
@@ -290,7 +290,7 @@ local function Due()
     if Paint() then Run() end
 end
 
-Expire = function() ns.Guarded(Due) end
+Expire = ns.Guard(Due)
 
 -- The settings of fading and sliding: how long a fade in and out takes (fading in switched off: at
 -- once), whether the messages fade out at all and how far, whether they slide and how fast. All
@@ -539,17 +539,17 @@ local function Build()
     ScrollUtil.InitScrollBoxListWithScrollBar(box, scroll, view)
     box:SetInterpolateScroll(true)
     scroll:SetInterpolateScroll(true)
-    box:HookScript("OnMouseWheel", Revealed) -- at the newest message too, where there is nothing to scroll
+    box:HookScript("OnMouseWheel", ns.Guard(Revealed)) -- at the newest message too, where there is nothing to scroll
     slide = Core.Motion.Slide(box.ScrollTarget, ns.options.slideTime)
     provider = CreateDataProvider()
     box:SetDataProvider(provider)
     Window.Animate()
-    box:RegisterCallback(BaseScrollBoxEvents.OnScroll, Scrolled, Window)
-    box:RegisterCallback(BaseScrollBoxEvents.OnLayout, Laid, Window)
+    box:RegisterCallback(BaseScrollBoxEvents.OnScroll, ns.Guard(Scrolled), Window)
+    box:RegisterCallback(BaseScrollBoxEvents.OnLayout, ns.Guard(Laid), Window)
     Chrome()
     Bar()
 
-    frame:SetScript("OnSizeChanged", Sized)
+    frame:SetScript("OnSizeChanged", ns.Guard(Sized))
 
     handle:Place() -- where it was left; at its first place and size if it never was moved
 end

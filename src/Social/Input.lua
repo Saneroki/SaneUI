@@ -140,16 +140,16 @@ function Input.Paint()
     if fill then ns.Bubble.Paint(fill) end
 end
 
-local function Changed(editBox)
-    if InUse(editBox) then ns.Guarded(Grow, editBox) end
-end
+local Changed = ns.Guard(function(editBox)
+    if InUse(editBox) then Grow(editBox) end
+end)
 
 -- The label's width is the text's left inset: both the insets and the height follow it.
-local function Relabelled(editBox)
+local Relabelled = ns.Guard(function(editBox)
     if not InUse(editBox) then return end
-    ns.Guarded(Inset, editBox)
-    ns.Guarded(Grow, editBox)
-end
+    Inset(editBox)
+    Grow(editBox)
+end)
 
 -- Nobody writes in the line, and the game keeps it on show (IM style): out of sight instead, and the
 -- room above it is the messages' again. Its alpha and mouse are lent, to give them back when it is in use
@@ -178,9 +178,9 @@ end
 
 -- The game has put the line to rest (Esc, sent, the cursor gone). In its classic style it hides the
 -- line itself; in its IM style the line stays on show, and rests here.
-local function Deactivated(editBox)
-    if editBox == seated and editBox:IsShown() then ns.Guarded(Rest, editBox) end
-end
+local Deactivated = ns.Guard(function(editBox)
+    if editBox == seated and editBox:IsShown() then Rest(editBox) end
+end)
 
 local function Dress(editBox)
     if not dressed[editBox] then

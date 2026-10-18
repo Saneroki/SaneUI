@@ -55,6 +55,21 @@ A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, ke
 - Tests: `dev/tests/core.lua` 344 checks (the doors, the module named by the error's place, the game's error
   window both ways, `Later`), `dev/tests/abilities.lua` 344 (its give-back). The stand-in shows Lua errors
   (`scriptErrors` on), so an error caught at a door still ends a test run unless the test collects it.
+- Every module's doors guarded, and the lint holds them to it:
+  - `dev/tests/lint` (check 6): in a module's folder, every function given to `SetScript`, `HookScript`,
+    `hooksecurefunc`, `C_Timer.After`/`NewTimer`/`NewTicker`, `RegisterCallback`, `Menu.ModifyMenu`,
+    `MenuUtil.CreateContextMenu`/`HookTooltipScripts`, a menu's `CreateButton`/`CreateCheckbox`/`CreateRadio`/
+    `AddInitializer` (also through `pcall`) is `ns.Guard(fn)`, a name set to one, `nil`, `GameTooltip_Hide`, or
+    a function whose one step is `ns.Safe`/`ns.Guarded`; an intended exception says `-- unguarded: <why>` on
+    its line. Documented in `addon-standards.md` (10).
+  - Abilities: the book's buttons, checkbox, hooks on the game's spellbook, the item's scripts and menu, the
+    spellbook menu's lines, the window's hooks, the ghosts' hooks and the trainer's timer, 41 in all.
+  - Tooltips: the tooltip hooks are `ns.Guard`s now (were functions running `Guarded`), the panel's `OnUpdate`,
+    the driver's, the models' scripts and the inspect hook. The chat link's tooltip still closes on a click
+    after a stand-down: its mouse-up runs `Safe`, its two flags are marked.
+  - Social: the contacts' menus, scripts and callbacks, the input line's hooks, the window's `OnUpdate`, timer,
+    scroll callbacks and size, the emote picker, the chat hooks and the native chat's hooks, 60 in all; the
+    list on the chat's name opens and keeps the channel wishes after a stand-down (`Safe`), as before.
 
 ### Sync and the CVar list made again from Blizzard's options code (Saneroki, 2026-10-18)
 - `Settings/Data/CVarLabels.lua` and `Sync/Data/Pages.lua` were made from older options code than

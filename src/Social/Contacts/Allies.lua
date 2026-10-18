@@ -252,7 +252,7 @@ function View.Filter(root)
         kinds[value] = not kinds[value] or nil
         Update()
     end
-    for _, kind in ipairs(list) do root:CreateCheckbox(kind.text, IsTicked, Tick, kind.value) end
+    for _, kind in ipairs(list) do root:CreateCheckbox(kind.text, ns.Guard(IsTicked), ns.Guard(Tick), kind.value) end
 end
 
 function View.Filtered() return next(wanted) ~= nil or next(kinds) ~= nil end

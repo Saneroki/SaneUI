@@ -49,9 +49,9 @@ local function Back(frame, lend)
 end
 
 -- The game makes new frames of its chat while ours is open: they go out of sight too.
-local function Again()
-    if Native.away then ns.Guarded(Native.Hide) end
-end
+local Again = ns.Guard(function()
+    if Native.away then Native.Hide() end
+end)
 
 function Native.Hide()
     if not hidden then

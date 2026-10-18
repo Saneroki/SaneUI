@@ -243,12 +243,12 @@ local function Invite(friend, owner)
     if not CanInvite(friend) then return end
     if friend.kind == "wow" then return C_PartyInfo.InviteUnit(friend.whisper) end
     if #friend.games == 1 then return Ask(friend.games[1]) end
-    MenuUtil.CreateContextMenu(owner, function(_, root)
+    MenuUtil.CreateContextMenu(owner, ns.Guard(function(_, root)
         root:CreateTitle(ASKS.INVITE)
         for _, game in ipairs(friend.games) do
             root:CreateButton(Toon(game), function() ns.Safe("friends", Ask, game) end)
         end
-    end)
+    end))
 end
 
 -- What the invite button of a row says: what it would do, or why it cannot.
@@ -480,7 +480,7 @@ function View.Filter(root)
         kinds[key] = not kinds[key] or nil
         Update()
     end
-    for _, kind in ipairs(KINDS) do root:CreateCheckbox(kind.text, IsTicked, Tick, kind.key) end
+    for _, kind in ipairs(KINDS) do root:CreateCheckbox(kind.text, ns.Guard(IsTicked), ns.Guard(Tick), kind.key) end
 end
 
 function View.Filtered() return next(wanted) ~= nil or next(kinds) ~= nil end

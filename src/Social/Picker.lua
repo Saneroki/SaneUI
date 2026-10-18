@@ -78,12 +78,12 @@ local function Row(frame, _, menu)
         mark:SetPoint("LEFT", MARK_PAD + (index - 1) * (MARK_SIZE + MARK_GAP), 0)
         mark:SetNormalTexture(MARK:format(index))
         mark:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-        mark:SetScript("OnClick", function()
+        mark:SetScript("OnClick", ns.Guard(function()
             ns.Guarded(Mark, index)
             Menu.GetManager():CloseMenu(menu)
-        end)
+        end))
         local name = rawget(_G, "RAID_TARGET_" .. index)
-        if name then MenuUtil.HookTooltipScripts(mark, function(tooltip) GameTooltip_SetTitle(tooltip, name) end) end
+        if name then MenuUtil.HookTooltipScripts(mark, ns.Guard(function(tooltip) GameTooltip_SetTitle(tooltip, name) end)) end
     end
 end
 
@@ -98,17 +98,17 @@ end
 local function Fill(_, root)
     root:CreateTitle(ns.TEXT.marks)
     if editBox and ns.Guarded(Picker.Marks, editBox) then
-        root:CreateFrame():AddInitializer(Lay)
+        root:CreateFrame():AddInitializer(ns.Guard(Lay))
     else
         root:CreateButton(ns.TEXT.noMarks):SetEnabled(false)
     end
     root:CreateDivider()
     root:CreateTitle(ns.TEXT.emotes)
-    for _, token in ipairs(Picker.EMOTES) do root:CreateButton(Picker.Command(token), Do, token) end
+    for _, token in ipairs(Picker.EMOTES) do root:CreateButton(Picker.Command(token), ns.Guard(Do), token) end
 end
 
 function Picker.Open(owner)
-    MenuUtil.CreateContextMenu(owner, Fill)
+    MenuUtil.CreateContextMenu(owner, ns.Guard(Fill))
 end
 
 -- The smiley, made with our window: at the line's right end, before the grip, on its first line's

@@ -97,7 +97,7 @@ end
 local function Statuses(_, root)
     for index = 1, 3 do -- Offline is not a status you can choose
         local entry = Contacts.STATUSES[index]
-        root:CreateRadio(Contacts.StatusText(entry.key), Mine, function(key) ns.Safe("status", Choose, key) end, entry.key)
+        root:CreateRadio(Contacts.StatusText(entry.key), ns.Guard(Mine), function(key) ns.Safe("status", Choose, key) end, entry.key)
     end
 end
 
@@ -113,7 +113,7 @@ end
 local function Contents(_, root)
     root:CreateTitle(Core.Word("CONTACTS_MENU_NAME", "Contacts Menu"))
     if Me() then root:CreateButton(Core.Word("CONTACTS_MENU_BROADCAST_BUTTON_NAME", "Broadcast"), function() ns.Safe("broadcast", Broadcast) end) end
-    root:CreateButton(Core.Word("CONTACTS_MENU_IGNORE_BUTTON_NAME", "Ignore List"), function() ns.Friends.Open("Ignored") end)
+    root:CreateButton(Core.Word("CONTACTS_MENU_IGNORE_BUTTON_NAME", "Ignore List"), ns.Guard(function() ns.Friends.Open("Ignored") end))
 end
 
 function Account.Build(holder)

@@ -13,6 +13,11 @@ Sane UI is one addon per folder in src: SaneUI (Core) and one for each module.
   5. The data packs (Doc/guides/data.md), compiled from the master for every game version into a scratch
      folder: their TOCs (load on demand, under Sane UI, the X-SaneUI lines, the saved variable, Core's
      Interface and Version), their files, and their Lua, which parses and writes no global.
+  6. Every function a module gives the game to call later (a frame's script, a hook, a timer, a menu's
+     function) is behind a guard (Doc/guides/addon-standards.md, section 10): ns.Guard(fn), a name the
+     file set to ns.Guard(...), or a function whose one step is ns.Safe(...) or ns.Guarded(...), given
+     there or by the name of a one-line local function. An intended exception says why on the call's
+     line: -- unguarded: <why>.
 
 Usage:  dev/tests/lint
 """
@@ -147,12 +152,138 @@ def check_packs(core):
     return count
 
 
+# The doors a module's functions come in by, later, from the game: [call] = which arguments are functions.
+# hooksecurefunc's function is its second argument after a global's name, its third after a table; a
+# door called through pcall (pcall(hooksecurefunc, ...), pcall(frame.SetScript, frame, ...)) has one more.
+DOORS = {
+    ":SetScript": (2,), ":HookScript": (2,), "hooksecurefunc": (2,),
+    "C_Timer.After": (2,), "C_Timer.NewTimer": (2,), "C_Timer.NewTicker": (2,),
+    ":RegisterCallback": (2,), "Menu.ModifyMenu": (2,), "MenuUtil.CreateContextMenu": (2,),
+    "MenuUtil.HookTooltipScripts": (2,), ":CreateButton": (2,), ":CreateCheckbox": (2, 3),
+    ":CreateRadio": (2, 3), ":AddInitializer": (1,), "pcall": (),
+}
+DOOR = re.compile("(" + "|".join(re.escape(d) if d[0] == ":" else r"(?<![\w.:])" + re.escape(d)
+                             for d in sorted(DOORS, key=len, reverse=True)) + r")\s*\(")
+GAMES = {"GameTooltip_Hide"}  # the game's own functions, which run none of our code
+BARE_OK = re.compile(r"--\s*unguarded:\s*\S")  # the mark of an intended exception, with its reason
+WORD = re.compile(r"[A-Za-z_]\w*")
+OPENS, CLOSES = {"function", "if", "do", "repeat"}, {"end", "until"}
+
+
+def blanked(text):
+    """The Lua text with its comments and the insides of its strings turned to spaces: places and
+    lines stay where they were, and nothing in a string or a comment looks like code."""
+    out, i, n = list(text), 0, len(text)
+    def blank(a, b):
+        for k in range(a, b):
+            if out[k] != "\n":
+                out[k] = " "
+    while i < n:
+        long = re.match(r"(--)?\[(=*)\[", text[i:i + 64])
+        if text.startswith("--", i) and not long:
+            end = text.find("\n", i)
+            end = n if end < 0 else end
+            blank(i, end)
+            i = end
+        elif long and (long.group(1) or text[i] == "["):
+            close = "]" + long.group(2) + "]"
+            end = text.find(close, i + len(long.group(0)))
+            end = n if end < 0 else end + len(close)
+            blank(i + (0 if long.group(1) else 1), end - (0 if long.group(1) else 1))
+            i = end
+        elif text[i] in "\"'":
+            j = i + 1
+            while j < n and text[j] != text[i] and text[j] != "\n":
+                j += 2 if text[j] == "\\" else 1
+            blank(i + 1, min(j, n))
+            i = j + 1
+        else:
+            i += 1
+    return "".join(out)
+
+
+def arguments(code, start):
+    """The arguments of the call whose '(' is at start: (begin, end) of each, in code."""
+    spans, depth, blocks, begin, i = [], 0, 0, start + 1, start + 1
+    while i < len(code):
+        c = code[i]
+        word = WORD.match(code, i) if (c.isalpha() or c == "_") and not (code[i - 1].isalnum() or code[i - 1] in "_.:") else None
+        if word:
+            blocks += (word.group() in OPENS) - (word.group() in CLOSES)
+            i = word.end()
+            continue
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            if depth == 0 and blocks == 0:
+                spans.append((begin, i))
+                return spans
+            depth -= 1
+        elif c == "," and depth == 0 and blocks == 0:
+            spans.append((begin, i))
+            begin = i + 1
+        i += 1
+    return spans
+
+
+def guarded(arg, names):
+    """Whether a function argument is guarded: ns.Guard(fn), a name the file set to one or to a function of one
+    such step (names), nil, one of
+    the game's own (GAMES), or a function that does one step through ns.Safe or ns.Guarded and nothing else."""
+    arg = arg.strip()
+    if arg in ("", "nil") or arg in names or arg in GAMES or arg.startswith("ns.Guard("):
+        return True
+    step = re.match(r"function\s*\([^)]*\)\s*(return\s+)?ns\.(Safe|Guarded)\s*\(", arg)
+    if not step:
+        return False
+    rest = arg[step.end() - 1:]
+    call = arguments(rest, 0)
+    return bool(call) and re.fullmatch(r"\)\s*end", rest[call[-1][1]:].strip()) is not None
+
+
+def check_guards(folders):
+    """Every function a module gives the game to call later is behind a guard (addon-standards, section 10).
+    Returns how many are marked as intended exceptions."""
+    count = 0
+    for path in sorted(p for folder in folders for p in folder.rglob("*.lua")):
+        text = path.read_text(encoding="utf-8")
+        code, lines = blanked(text), text.splitlines()
+        names = set(re.findall(r"([A-Za-z_][\w.]*)\s*=\s*ns\.Guard\(", code))
+        # A function of one line whose one step is Safe or Guarded counts as one by its name too.
+        for name, params, body in re.findall(r"^\s*local function (\w+)\(([^)\n]*)\)([^\n]*)$", code, re.M):
+            if guarded(f"function({params}){body}", ()):
+                names.add(name)
+        for door in DOOR.finditer(code):
+            name, spans = door.group(1), arguments(code, door.end() - 1)
+            wanted, first = DOORS[name], 0  # first: the argument before which the door's own begin
+            if name == "pcall" and spans:
+                called = code[spans[0][0]:spans[0][1]].strip()
+                if called == "hooksecurefunc":
+                    name, first = called, 1
+                elif re.fullmatch(r"[\w.]+\.(SetScript|HookScript)", called):
+                    wanted = (4,)
+            if name == "hooksecurefunc" and len(spans) > first:
+                named = text[spans[first][0]:spans[first][1]].strip()[:1] in "\"'"
+                wanted = (first + (2 if named else 3),)
+            line = code.count("\n", 0, door.start()) + 1
+            for index in wanted:
+                if index > len(spans) or guarded(code[spans[index - 1][0]:spans[index - 1][1]], names):
+                    continue
+                if BARE_OK.search(lines[line - 1]):
+                    count += 1
+                else:
+                    problems.append(f"{path.relative_to(SRC)}:{line}: {name.lstrip(':')} gets a function without a guard: ns.Guard(fn), or mark it '-- unguarded: <why>'")
+    return count
+
+
 counts = check_tocs()
 check_lua(sorted(SRC.rglob("*.lua")), SRC)
 core_fields, _ = read_toc(SRC / "Core" / f"{MAIN}.toc")
 packs = check_packs(core_fields)
+doors = check_guards(p for p in SRC.iterdir() if p.is_dir() and p.name != "Core")
 for problem in problems:
     print(problem, file=sys.stderr)
 if problems:
     sys.exit(1)
-print(f"Lint: {len(counts)} addons, {sum(counts)} files in their TOCs, all there, all parse, no stray globals; {packs} data packs fit.")
+print(f"Lint: {len(counts)} addons, {sum(counts)} files in their TOCs, all there, all parse, no stray globals, "
+      f"every door of the modules guarded ({doors} marked bare); {packs} data packs fit.")

@@ -106,17 +106,17 @@ end
 local function Accept(request) BNAcceptFriendInvite(request.id) end
 
 local function Decline(request, owner)
-    MenuUtil.CreateContextMenu(owner, function(_, root)
-        root:CreateButton(Core.Word("DECLINE", "Decline"), function() BNDeclineFriendInvite(request.id) end)
+    MenuUtil.CreateContextMenu(owner, ns.Guard(function(_, root)
+        root:CreateButton(Core.Word("DECLINE", "Decline"), ns.Guard(function() BNDeclineFriendInvite(request.id) end))
         if C_BattleNet.SetBlocked then
-            root:CreateButton(Core.Word("BLOCK_INVITES", "Block Invites"), function()
+            root:CreateButton(Core.Word("BLOCK_INVITES", "Block Invites"), ns.Guard(function()
                 Core.Confirm(Core.Word("BLOCK_INVITES_CONFIRMATION", "Are you sure you want to block all invites from %s?"), request.name, function()
                     C_BattleNet.SetBlocked(request.id, true)
                     BNDeclineFriendInvite(request.id)
                 end)
-            end)
+            end))
         end
-    end)
+    end))
 end
 
 -- A small button of the game's at a row's right (UIMenuButtonStretchTemplate, as its requests have): Accept
@@ -167,7 +167,7 @@ function View.Build(page)
     line:SetAutoFocus(false)
     line:SetMaxLetters(127)
     line:SetScript("OnEnterPressed", function() ns.Safe("add friend", Add) end)
-    line:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    line:SetScript("OnEscapePressed", ns.Guard(function(self) self:ClearFocus() end))
     add = CreateFrame("Button", nil, page.body, "UIPanelButtonTemplate")
     add:SetSize(100, 22)
     add:SetPoint("TOPRIGHT", -Layout.EDGE, -(Layout.LINE - 22) / 2 - Layout.EDGE)
@@ -178,7 +178,7 @@ function View.Build(page)
     local hint = line:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     hint:SetPoint("LEFT", 2, 0)
     hint:SetText(ns.TEXT.addHint)
-    line:HookScript("OnTextChanged", function(self) hint:SetShown((self:GetText() or "") == "") end)
+    line:HookScript("OnTextChanged", ns.Guard(function(self) hint:SetShown((self:GetText() or "") == "") end))
     Core.Tip(add, Core.Word("ADD_FRIEND", "Add Friend"), ns.TEXT.addTip, "ANCHOR_TOP")
     box = Board.List(page, function(row, request) Draw(row, request) end, Layout.LINE + Layout.EDGE)
 end

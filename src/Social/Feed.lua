@@ -75,7 +75,7 @@ local function Tick(chat) ns.Guarded(ns.Channels.FlipSplit, chat.group) end
 local function Menu(_, root)
     root:CreateTitle(ns.TEXT.showing)
     for _, chat in ipairs(ns.Channels.Showable()) do
-        root:CreateCheckbox(chat.text, IsTicked, Tick, chat)
+        root:CreateCheckbox(chat.text, ns.Guard(IsTicked), ns.Guard(Tick), chat)
     end
 end
 
@@ -103,7 +103,7 @@ function Feed.Build(holder)
     scroll:SetInterpolateScroll(true)
     provider = CreateDataProvider()
     box:SetDataProvider(provider)
-    box:RegisterCallback(BaseScrollBoxEvents.OnScroll, Scrolled, Feed)
+    box:RegisterCallback(BaseScrollBoxEvents.OnScroll, ns.Guard(Scrolled), Feed)
     Bar()
 end
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs every check and test of Sane UI. The first failure stops the run.
 #
-#   lint            the TOCs, the syntax and stray globals of all files (no game needed)
+#   lint            the TOCs, the syntax and stray globals of all files, the modules' guards (no game needed)
 #   core.lua        Core, with its options (Settings)
 #   abilities.lua   the Abilities module
 #   tooltips.lua    the Tooltips module
