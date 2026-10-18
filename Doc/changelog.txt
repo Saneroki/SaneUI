@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Social: conversations at the left of the full screen. Every whisper,
+  and the chat of your party and your raid, is a conversation of its
+  own, listed with its last message and how many wait to be read.
+  Choose one to read it in bubbles and write in it right there. Kept
+  for each character.
 - When something in Sane UI fails, that part steps aside and the game's
   own takes its place (its spellbook, chat or tooltips) until the next
   /reload. No error window pops up: one line in chat says where, and

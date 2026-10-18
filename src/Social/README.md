@@ -48,12 +48,24 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     (alone: their level and class icon), the activity and the comment, how many are in it. Choose one, then
     *Send Message* to its leader, or *Invite* a player who is alone. *List yourself* opens the game's own
     finder (its comment can only be typed there). Nothing is searched by itself: only a click of yours does.
+  - **Conversations** at the left: every whisper, and the chat of your party, your raid and your instance
+    group, each a conversation of its own, the last spoken in first. A row shows the class icon (a Battle.net
+    friend: the game's Battle.net portrait; a group: the game's conversation icon), the name (your alias for
+    them), the last message, its time and how many messages wait to be read; the panel's title counts them
+    all. Click one to read it: its messages in the chat's bubbles, a pill for each day, the name and your note
+    about them above. Write in the line under them and press Enter: it goes to that conversation (a line
+    starting with `/` goes to the game's line, where Enter runs it). A right click on a whisper opens the
+    game's menu of that player. *Whisper* opens the game's line with `/w` to name whom; your first message
+    chooses the new conversation. *Remove* takes the one chosen away, with its messages, once confirmed. A
+    group you are in is listed though nobody spoke yet. Each keeps its last messages (a setting), for each
+    character, also over a logout.
   - **Second chat** above the chat: the same bubbles, but only the chats ticked in its list (*Chats* on its
     head; at first whispers, party, raid, instance, guild and officer), whatever the chat shows. Every
     message in it stays to read; scrolled up, it stays where you are.
-  - The chat stands left of the friends list, under the second chat, with its line to write in. A screen too
-    narrow leaves out the friends list; too low, the second chat. The search in the title
-    bar finds in all of them: messages, friends (name, where, note) and groups (leader, activity, comment).
+  - The chat stands between the conversations and the friends list, under the second chat, with its line to
+    write in. A screen too narrow makes the conversations narrower, then leaves them out, then the friends
+    list; too low, the second chat. The search in the title bar finds in all of them: messages, friends
+    (name, where, note), groups (leader, activity, comment) and conversations (by name or by their messages).
     Going back, the panels go at once and the chat has the whole window.
 - **Classic windows:** full, the dropdown *Classic windows* in the top right corner offers the game's own
   windows instead: *Chat* puts this window away (the switch *Chat window* goes off) and the game's chat is
@@ -98,7 +110,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     (on), *Channel joins and leaves* (off: somebody joined or left a channel, also the hidden channels addons
     use, such as FGLayer). The same four ticks are in the list on the chat's name. *Full screen*: *Friends
     list*, under it *Group finder* (its tab), *Second chat* (all on) with *Height of the second chat* (20 to 70 % of the full
-    screen, at first 40 %). The second chat's ticks are kept with the settings too (`split`), no control.
+    screen, at first 40 %), *Conversations* (on) with *Messages kept per conversation* (20 to 500, at first 100).
+    The second chat's ticks are kept with the settings too (`split`), no control.
   - *Appearance:* *Expand window* (Core's, the same for every window that can fill the screen):
 
     | Line | At first |
@@ -454,6 +467,25 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   notice, a white one stays a print, else the group of the kinds of chat with its very colour (the
   system's first, none if they differ). A line it has twice at once, as a print and in a group (the
   guild's message of the day), is there once.
+- **Conversations** (`Talks.lua`, no frames; `Conversations.lua`, the panel): `Log.Read` puts on a whisper
+  whom it is with (`with`: the sender, or whom you told; `account`: a Battle.net friend's account this
+  session). `Social.lua`'s `Heard` hands a whisper or a party, raid or instance message to `Talks.Add`
+  (`ns.Safe`, apart from the window), which keeps a copy (`Log.KEPT` and `stamp`, `time()`) in its
+  conversation: `W:<player key>` (`Core.PlayerKeyOf`), `B:<BattleTag>` (`C_BattleNet.GetAccountInfoByID`; one
+  the game names no BattleTag for is kept this session only), or the group's kind. A whisper's copy has no
+  chat's name (the conversation says whose). Each keeps its last `talkSize`, the one read (`Talks.reading`) all
+  until it is left; at most 50 conversations (`Talks.MOST`), the quietest goes. Sending is the game's way
+  (`ChatFrameUtil.SubstituteChatMessageBeforeSend`, `SetLastToldTarget`, then `C_ChatInfo.SendChatMessage` or
+  `C_BattleNet.SendWhisper`, the account found anew by BattleTag); the message joins from its `_INFORM` or
+  group event. The line is an `EditBox` of ours, not the game's; `/` lines go to `ChatFrameUtil.OpenChat`; in
+  chat lockdown (`InChatMessagingLockdown`) nothing is sent. Saved at `PLAYER_LOGOUT` in
+  `chars[character].talks` (`talksVersion` 1): a Battle.net friend's messages without their name and link
+  (`|K…|k` is this session's), links without line numbers; restored at the login, checked field by field.
+  The panel is a part of `Board.lua` (its new `Part.Size` tells it its width); `Layout.Board` gives it
+  `TALKS_WIDTH` (600), narrower down to `TALKS_MIN` (460) to keep `CHAT_MIN`. Its list is `Board.List`, its
+  messages a list like the second chat's (`Bubble.Init`, no fade, no slide), a pill per day (`CALENDAR_WEEKDAY_NAMES`,
+  `FormatShortDate`). The search uses `Window.Found` for messages. Shown, it listens to group and Battle.net
+  events; `Window.Repaint` and `Resize` redraw it (an alias, the bubbles' look, the text size).
 - **Cost.** Per chat event: one table for the message, one measurement, one update of the list (and
   every 25 messages one more, for the oldest that go). A speaker is asked about once. No `OnUpdate` at
   rest: the fades' runs only while a message in view fades, Core's watch of the mouse only from its coming
@@ -509,6 +541,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Join.lua` | The game's chat channels, the same on every character as wished. Knows no frames |
 | `Board.lua` | The full screen's panels around the chat: where each stands (`Layout.Board`), their plate and head, the search to all; the list, row and buttons the friends list's tabs share |
 | `Feed.lua` | The second chat above the chat: its own ticks (`split`), the same bubbles |
+| `Talks.lua` | The conversations: whispers, the party's, raid's and instance group's chat, each apart, kept per character. Knows no frames |
+| `Conversations.lua` | The conversations' panel at the full screen's left: their list, the one chosen, the line to write in it |
 | `Friends.lua` | The friends list, as the game's (`C_FriendList`, `C_BattleNet`); the game's own menu, whisper and invite |
 | `Contacts/Finder.lua` | The group finder, the friends list's last tab, as the game's browse view (`C_LFGList`); searches only on a click |
 | `Window.lua` | The window: moved, sized, scrolled, kept |
@@ -605,6 +639,10 @@ Tabs of chat views in the small window (`Doc/ideas/Social.md`), the guild in the
 a group, a close button, a sign besides colour for what a speaker is to you.
 
 ## History
+- 2026-10-18 — Conversations at the full screen's left (`Talks.lua`, `Conversations.lua`): every whisper (a
+  Battle.net friend by BattleTag), the party's, raid's and instance group's chat, each apart, with its own line
+  to write in; kept per character. Settings `boardTalks`, `talkSize`; `Log.KEPT`, a whisper's `with` and
+  `account`; `Board`'s `Part.Size`.
 - 2026-10-18 — Aliases (Core's `Core.People`): above a bubble the alias in the speaker's link
   (`Bubble.Speaker`), in the friends list in place of a character's name and of a Battle.net friend's
   character; the chat's search finds it; a change redraws both (`Core.People.Watch`).

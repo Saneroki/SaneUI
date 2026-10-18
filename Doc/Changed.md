@@ -6,6 +6,27 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 90 (Sync), 351 (windows), 175 (data in the game).
 A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, key bindings).
 
+### Social: conversations on the full screen (Saneroki, 2026-10-18)
+- A panel at the full screen's left (`Conversations.lua`, a part of `Board.lua`): the list of conversations, the
+  last spoken in first (class icon, alias or name, last message, time, unread count; the title counts all), and
+  the one chosen in the chat's bubbles with a pill per day, its name and note above, an edit box of ours under
+  it that sends to it (`/` lines go to the game's line; nothing sent in chat lockdown). Right click: the game's
+  menu of the player. Foot: *Whisper* (the game's line with `/w`), *Remove* (confirmed). The full window's
+  search finds conversations by name and messages.
+- `Talks.lua` (no frames): every whisper (a Battle.net friend by BattleTag) and the party's, raid's and
+  instance group's chat, each a conversation; copies of the log's messages (`Log.KEPT`, now shared) with a
+  `stamp`; `talkSize` kept each (the one read keeps all until left), 50 conversations at most; sent the game's
+  way (`SendChatMessage`, `C_BattleNet.SendWhisper`); saved per character (`chars[key].talks`, Battle.net
+  messages without the session's names).
+- `Log.Read` puts `with` and `account` on whispers; `Heard` hands whispers and group chat to `Talks.Add`.
+- `Layout.Board`: `talks` at the left, `TALKS_WIDTH` 600, down to `TALKS_MIN` 460 to keep the chat's
+  `CHAT_MIN`, else left out. `Board` tells a part its size (`Part.Size`). `Window.Repaint` and `Resize` redraw it.
+- Settings (*Full screen*): *Conversations* (`boardTalks`, on), *Messages kept per conversation* (`talkSize`,
+  20 to 500, at first 100).
+- Tests: Social 464 checks (the board with the panel, whispers in and out, Battle.net, a party, sending,
+  commands, lockdown, aliases, search, trimming, saving and restoring, removing). The stand-in's `date` takes a
+  time, as the game's.
+
 ### Errors handled gracefully, a hard rule (Saneroki, 2026-10-18)
 - Core (`Core.lua`, *Errors*): every piece of Sane UI's code the game calls runs behind a guard, a step
   (`Safe`, `Guarded`) or the door it came in by. An error at a door that no step caught stands the module it

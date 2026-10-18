@@ -20,6 +20,8 @@ local _, ns = ...
 --      time    "21:07"
 --      at      when it came, on the game's clock (GetTime): what fading counts from
 --      gone    true once the log let it go (Add): the window lets it go too
+--      with    a whisper's other one, as the game names them (sender, or whom you told), and
+--      account for a Battle.net friend their account in this session: the conversations' (Talks.lua)
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Log = { list = {} }
@@ -82,6 +84,9 @@ end
 local NAME_FIRST = { CHAT_MSG_EMOTE = true }
 local NAME_INSIDE = { CHAT_MSG_MONSTER_EMOTE = true, CHAT_MSG_ACHIEVEMENT = true, CHAT_MSG_GUILD_ACHIEVEMENT = true }
 local NAME_LINKED = { CHAT_MSG_ACHIEVEMENT = true, CHAT_MSG_GUILD_ACHIEVEMENT = true }
+-- A whisper, either way: the other one is told on the message (with, account).
+local WHISPERS = { CHAT_MSG_WHISPER = true, CHAT_MSG_WHISPER_INFORM = true, CHAT_MSG_BN_WHISPER = true,
+                   CHAT_MSG_BN_WHISPER_INFORM = true }
 
 -- "Thrall-Realm" is "Thrall" on your own realm.
 local function Short(name)
@@ -205,6 +210,7 @@ function Log.Read(event, text, sender, _, _, _, _, _, channelIndex, channelName,
     end
 
     entry.text = Icons(text, kind, noIcons)
+    if WHISPERS[event] then entry.with, entry.account = sender, kind:sub(1, 3) == "BN_" and ns.Plain(account) or nil end
     if side == MINE then
         entry.side, entry.label = MINE, name and ns.TEXT.to:format(name) or nil
         return entry
@@ -368,6 +374,7 @@ end
 -------------------------------------------------------------------------------
 -- What of a message is kept; the rest is the window's (measures, fading) or of this session (at).
 local KEPT = { "side", "text", "name", "link", "class", "tie", "label", "short", "group", "r", "g", "b", "time" }
+Log.KEPT = KEPT -- the conversations' copies of a message are made of the same (Talks.lua)
 
 -- So many messages are kept at least, for a history that long.
 function Log.Keep(count)

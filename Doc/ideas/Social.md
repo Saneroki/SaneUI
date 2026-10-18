@@ -25,6 +25,10 @@ by default and fills the screen from there (`Doc/ideas/Windows.md`).
   panel of the full screen (`Finder.lua`): browse and whisper/invite; listing yourself stays the game's.
 - **Friends list** (Blizzard: `Blizzard_FriendsFrame`). *Built 2026-10-17* as a panel of the full screen
   (`Friends.lua`).
+- **Conversations** (Saneroki, 2026-10-18) *built 2026-10-18* as a panel at the full screen's left
+  (`Conversations.lua`, `Talks.lua`): every whisper and the party's, raid's and instance group's chat, each a
+  conversation of its own, listed by the last message; the one chosen in the chat's bubbles with a line to
+  write in it; kept per character.
 - **A second chat with its own filter** *built 2026-10-17* on the full screen, above the chat (`Feed.lua`).
   The small window's tabs of chat views are still to come.
 - **Classic windows** (Saneroki, 2026-10-16, done): full screen, Core's dropdown *Classic windows* lists the

@@ -1576,13 +1576,21 @@ do
     for _, widget in ipairs(W.frames) do
         if widget._parent == window and rawget(widget, "box") then coreBar = widget end
     end
-    -- The full screen's panels: the friends list at the right (the group finder a tab of it), a second chat above the chat.
-    local board = Layout.Board(1920, 1080 - Core.Window.BAR, { friends = true, feed = true }, 0.4)
-    check(board.friends and board.feed and board.chat[1] == Layout.PAD
+    -- The full screen's panels: the friends list at the right (the group finder a tab of it), the conversations at
+    -- the left, a second chat above the chat.
+    local board = Layout.Board(1920, 1080 - Core.Window.BAR, { friends = true, talks = true, feed = true }, 0.4)
+    check(board.friends and board.feed and board.talks and board.talks[1] == Layout.PAD and board.talks[3] == Layout.TALKS_WIDTH
+        and board.talks[4] == 1080 - Core.Window.BAR - 2 * Layout.PAD and board.chat[1] == 2 * Layout.PAD + Layout.TALKS_WIDTH
         and board.friends[1] == 1920 - Layout.PAD - Layout.FRIENDS_WIDTH
-        and board.chat[3] == 1920 - 3 * Layout.PAD - Layout.FRIENDS_WIDTH
+        and board.chat[3] == 1920 - 4 * Layout.PAD - Layout.FRIENDS_WIDTH - Layout.TALKS_WIDTH
         and board.feed[4] == math.floor((1080 - Core.Window.BAR - 2 * Layout.PAD) * 0.4) and board.chat[2] == 2 * Layout.PAD + board.feed[4],
-        "the full screen: friends at the right, the second chat above the chat, all a little apart")
+        "the full screen: friends at the right, the conversations at the left, the second chat above the chat, all a little apart")
+    local tight = Layout.Board(1366, 768, { friends = true, talks = true, feed = true }, 0.4)
+    check(tight.talks and tight.talks[3] == 1366 - 4 * Layout.PAD - Layout.FRIENDS_WIDTH - Layout.CHAT_MIN and tight.chat[3] == Layout.CHAT_MIN,
+        "on a smaller screen the conversations are narrower, the chat keeps its least width")
+    check(not Layout.Board(1200, 768, { friends = true, talks = true, feed = true }, 0.4).talks
+        and Layout.Board(1200, 768, { friends = true, talks = true, feed = true }, 0.4).friends,
+        "where even that does not fit, they are left out, the friends list stays")
     check(coreBar and coreBar:IsShown() and coreBar.title._text == "Social" and coreBar.glass:IsShown()
         and listTop() == -(Core.Window.BAR + board.chat[2] + Layout.EDGE) and column._width == board.chat[3],
         "full, Core's title bar is at its top, with the search; the chat stands under the second chat, between the panels")
@@ -1881,6 +1889,217 @@ do
     Core.described[ns.name].changed("boardFinder")
     W.Wait(0.1)
     check(finderTab:IsShown(), "on again, the tab is back")
+    ;(function() -- the conversations' panel: every whisper, the party's and the raid's chat, each apart
+    local Talks, talks = ns.Talks, panels.talks
+    local function click(widget, button) widget:GetScript("OnClick")(widget, button or "LeftButton") end
+    local function inside(panel)
+        local found = {}
+        for _, other in ipairs(boxes) do
+            if within(other, panel) then found[#found + 1] = other end
+        end
+        return found[1], found[2]
+    end
+    local function texts(list)
+        local said = {}
+        for index, element in ipairs(list.provider.list) do said[index] = element.text end
+        return table.concat(said, " | ")
+    end
+    local rows, messages = inside(talks)
+    local edit
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "EditBox" and within(widget, talks) then edit = widget end
+    end
+    local function write(words)
+        edit._text = words
+        edit:GetScript("OnEnterPressed")(edit)
+    end
+    local sent, told = {}, nil
+    C_ChatInfo.SendChatMessage = function(text, kind, _, target) sent[#sent + 1] = kind .. " " .. tostring(target) .. " " .. text end
+    C_BattleNet.SendWhisper = function(id, text) sent[#sent + 1] = "BN " .. id .. " " .. text end
+    C_BattleNet.GetAccountInfoByID = function(id)
+        for _, friend in ipairs(asks.bnet) do
+            if friend.bnetAccountID == id then return friend end
+        end
+    end
+    ChatFrameUtil.SetLastToldTarget = function(target, kind) told = kind .. " " .. target end
+    GetBNPlayerLink = function(name, shown, account, line, kind)
+        return ("|HBNplayer:%s:%d:%d:%s|h%s|h"):format(name, account, line, kind, shown)
+    end
+    local wasGrouped, wasRaiding = grouped, W.raiding
+    grouped, W.raiding = false, false
+    W.Fire("GROUP_LEFT")
+    W.Wait(0.1)
+    check(talks and talks:IsShown() and talks._points[1][4] == board.talks[1] and talks._width == board.talks[3]
+        and talks.title._text == "Conversations" and rows and messages and edit,
+        "the conversations stand at the left of the full screen: their list, the one chosen, a line to write in it")
+    check(#rows.provider.list == 0 and rows.empty._text:find("No conversations yet") and not edit:IsEnabled(),
+        "none yet: it says what comes here, and there is nowhere to write")
+    -- A whisper: a conversation of its own, chosen while it is the only one, read as it is on show.
+    W.Fire("CHAT_MSG_WHISPER", "are you coming?", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 5, THRALL)
+    local thrall = Talks.by["W:Thrall-Stub"]
+    check(thrall and thrall.kind == "WHISPER" and thrall.with == "Thrall-Stub" and thrall.class == "SHAMAN" and thrall.unread == 0
+        and #rows.provider.list == 1 and rows.rows[1].top._text == "Thrall" and rows.rows[1].bottom._text == "are you coming?"
+        and rows.rows[1].icon._atlas == "classicon-shaman",
+        "a whisper starts a conversation with its sender: their class icon, their name, what they said; on show, it is read")
+    check(texts(messages) == "Today | are you coming?" and messages.provider.list[2].label == nil
+        and messages.provider.list[2].name == "Thrall" and messages.provider.list[2] ~= Log.list[#Log.list],
+        "its messages in the chat's bubbles, a pill for the day; its own copies, without the chat's name above them")
+    check(edit:IsEnabled(), "chosen, it can be written in")
+    write("on my way")
+    check(sent[#sent] == "WHISPER Thrall-Stub on my way" and told == "WHISPER Thrall-Stub" and edit._text == "",
+        "Enter sends the words as a whisper to them, as the game's line does (they are the one told last), and empties the line")
+    W.Fire("CHAT_MSG_WHISPER_INFORM", "on my way", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 6, THRALL)
+    check(texts(messages) == "Today | are you coming? | on my way" and messages.provider.list[3].side == "right"
+        and rows.rows[1].bottom._text == "You: on my way",
+        "the whisper comes back from the game and joins the conversation on your side")
+    -- A Battle.net friend: by their BattleTag; the newest first, waiting to be read.
+    W.Fire("CHAT_MSG_BN_WHISPER", "raid at 8?", "|Kq7|k", "", "", "", "", 0, 0, "", 0, 7, nil, 7)
+    local jaina = Talks.by["B:Jaina#1234"]
+    check(jaina and jaina.kind == "BN_WHISPER" and jaina.name == "|Kq7|k" and jaina.unread == 1
+        and rows.provider.list[1] == jaina and rows.rows[1].icon._texture == "Interface\\FriendsFrame\\Battlenet-Portrait"
+        and rows.rows[1].count._text == "1" and talks.title._text == "Conversations (1)" and messages.provider.list[2].text == "are you coming?",
+        "a Battle.net friend's whisper: their own conversation, first, its count waiting, the title counting all; the one chosen stays")
+    click(rows.rows[1])
+    check(jaina.unread == 0 and talks.title._text == "Conversations" and texts(messages) == "Today | raid at 8?",
+        "chosen, its messages are on show and read")
+    write("yes")
+    check(sent[#sent] == "BN 7 yes" and told == "BN_WHISPER |Kq7|k", "written to over Battle.net")
+    -- A group: listed while you are in it, to write in; its messages under the speakers' names.
+    grouped = true
+    W.Fire("GROUP_ROSTER_UPDATE")
+    W.Wait(0.1)
+    local party = Talks.by.PARTY
+    check(party and rows.provider.list[3] == party and rows.rows[3].top._text == "Party" and #party.messages == 0,
+        "in a party, its chat is there to write in, though nobody spoke yet")
+    W.Fire("CHAT_MSG_PARTY", "pull now", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 8, THRALL)
+    check(rows.provider.list[1] == party and rows.rows[1].bottom._text == "Thrall: pull now" and party.unread == 1,
+        "the party's chat comes into its conversation, the speaker named in the list")
+    click(rows.rows[1])
+    write("ok")
+    check(sent[#sent] == "PARTY nil ok" and messages.provider.list[2].label == "Party", "written in the party's chat; a group's bubbles keep its chat's name")
+    grouped = false
+    W.Fire("GROUP_LEFT")
+    W.Wait(0.1)
+    check(not edit:IsEnabled() and rows.provider.list[1] == party, "out of the party, its conversation stays to read, not to write in")
+    local hint
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "FontString" and widget._parent == edit then hint = widget end
+    end
+    check(hint and hint._text == "You aren't in a party.", "the line says why, in the game's words")
+    -- A command goes to the game's line; in a lockdown nothing is sent.
+    click(rows.rows[3])
+    local opened
+    local openChat = ChatFrameUtil.OpenChat
+    ChatFrameUtil.OpenChat = function(text) opened = text end
+    local before = #sent
+    write("/dance")
+    check(opened == "/dance" and #sent == before and edit._text == "", "a command goes to the game's line, where Enter runs it")
+    W.locked = true
+    W.printed = {}
+    write("still there?")
+    check(#sent == before and edit._text == "still there?" and W.printed[1] and W.printed[1]:find("locked down"),
+        "while chat is locked down nothing is sent: the words stay, and that is said")
+    W.locked = false
+    edit._text = ""
+    -- Whisper: the game's line opens, to name whom; your first message to them chooses their conversation.
+    click(foot(talks, "Whisper"))
+    check(opened == "/w ", "Whisper opens the game's line with /w")
+    ChatFrameUtil.OpenChat = openChat
+    W.Fire("CHAT_MSG_WHISPER_INFORM", "hey", "Rexxar-Stub", "", "", "", "", 0, 0, "", 0, 9, nil)
+    local rexxar = Talks.by["W:Rexxar-Stub"]
+    check(rexxar and rows.provider.list[1] == rexxar and texts(messages) == "Today | hey" and rows.rows[1].icon._texture:find("QuestionMark"),
+        "a conversation you began is chosen; whose class is not known yet shows the game's question mark")
+    -- A right click: the game's own menu of that player, as the friends list opens it.
+    local menu
+    FriendsFrame_ShowDropdown = function(name, connected, _, kind) menu = name .. " " .. tostring(connected) .. " " .. kind end
+    click(rows.rows[4], "RightButton")
+    check(menu == "Thrall-Stub true WHISPER", "a right click opens the game's menu of the player")
+    -- An alias: in the list and above the conversation, the whole name and the note in the tooltip.
+    W.Fire("CHAT_MSG_WHISPER", "hi there", "Droopy Fairwind", "", "", "", "", 0, 0, "", 0, 9, nil)
+    local droopy = Talks.by["W:Droopy Fairwind"]
+    click(rows.rows[1])
+    Core.People.Set("Droopy Fairwind", "alias", "Saneroki")
+    Core.People.Set("Droopy Fairwind", "note", "my alt")
+    local heading
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "FontString" and widget._parent and widget._parent._parent == talks.body and widget._text
+            and widget._text:find("Saneroki") then heading = widget end
+    end
+    check(droopy and rows.rows[1].top._text == "Saneroki" and heading and heading._text:find("my alt", 1, true),
+        "an alias the player gave stands in place of the name, the note beside it above the conversation")
+    GameTooltip._lines = nil
+    rows.rows[1]:GetScript("OnEnter")(rows.rows[1])
+    check(GameTooltip._lines and GameTooltip._lines[1] == "Droopy Fairwind" and GameTooltip._lines[2]:find("my alt"),
+        "the mouse on it: their whole name and the note")
+    Talks.Remove(droopy)
+    Core.People.Set("Droopy Fairwind", "alias", nil)
+    Core.People.Set("Droopy Fairwind", "note", nil)
+    click(rows.rows[1])
+    -- Hidden, nothing is read; shown again, the one chosen is.
+    ns.Board.Hide()
+    W.Fire("CHAT_MSG_WHISPER", "hello?", "Rexxar-Stub", "", "", "", "", 0, 0, "", 0, 10, nil)
+    check(rexxar.unread == 1, "a message while the panel is hidden waits to be read")
+    ns.Window.Reboard()
+    check(talks:IsShown() and rexxar.unread == 0 and texts(messages) == "Today | hey | hello?", "shown again, the one chosen is read, with what came")
+    -- The search: conversations by name or by their messages.
+    ns.Window.Search("raid at")
+    check(#rows.provider.list == 1 and rows.provider.list[1] == jaina and texts(messages) == "Today | raid at 8?",
+        "the full window's search finds a conversation by its messages, and shows it")
+    ns.Window.Search("thrall")
+    check(#rows.provider.list == 2 and rows.provider.list[1] == Talks.by.PARTY and rows.provider.list[2] == thrall,
+        "by its name, or a speaker's in a group")
+    ns.Window.Search("")
+    check(#rows.provider.list == 4, "emptied, all of them again")
+    -- Each keeps its last messages; the one read keeps all until it is left.
+    local function rowOf(talk)
+        for index, element in ipairs(rows.provider.list) do
+            if element == talk then return rows.rows[index] end
+        end
+    end
+    click(rowOf(rexxar))
+    options.talkSize = 20
+    for count = 1, 25 do W.Fire("CHAT_MSG_WHISPER", "line " .. count, "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 10 + count, THRALL) end
+    check(#thrall.messages == 20 and thrall.messages[20].text == "line 25" and thrall.unread == 25,
+        "a conversation keeps its last messages as set")
+    for count = 1, 25 do W.Fire("CHAT_MSG_WHISPER", "more " .. count, "Rexxar-Stub", "", "", "", "", 0, 0, "", 0, 40 + count, nil) end
+    check(#rexxar.messages == 27 and #messages.provider.list == 28, "the one read keeps all of them while it is read")
+    click(rowOf(thrall))
+    check(#rexxar.messages == 20 and Talks.reading == thrall and thrall.unread == 0, "left, it keeps its last ones too")
+    options.talkSize = 100
+    -- Kept over a logout: a Battle.net friend's by their BattleTag, without their name of this session.
+    local char = {}
+    Talks.Save(char)
+    local kept = {}
+    for _, talk in ipairs(char.talks) do kept[talk.key] = talk end
+    check(char.talksVersion == 1 and kept["B:Jaina#1234"] and kept["B:Jaina#1234"].messages[1].name == nil
+        and kept["B:Jaina#1234"].messages[1].text == "raid at 8?" and kept["W:Thrall-Stub"].messages[1].name == "Thrall"
+        and kept.PARTY and #char.talks == 4,
+        "saved for the character: every conversation with messages, a Battle.net friend's without the name of this session")
+    local saved = Talks.list
+    Talks.list, Talks.by = {}, {}
+    Talks.Restore(char.talks)
+    check(#Talks.list == 4 and Talks.by["B:Jaina#1234"] and Talks.by["B:Jaina#1234"].messages[1].name == nil
+        and Talks.Name(Talks.by["B:Jaina#1234"]) == "Jaina" and Talks.Account(Talks.by["B:Jaina#1234"]) == 7,
+        "back at the login, a Battle.net friend found anew by their BattleTag")
+    Talks.Restore({ { key = "W:X", kind = "WHISPER", messages = { { text = "no with" } } }, "junk", { key = "Y", kind = "NOPE" } })
+    check(#Talks.list == 4, "a saved conversation of the wrong shape is left out")
+    Talks.list, Talks.by = saved, {}
+    for _, talk in ipairs(saved) do Talks.by[talk.key] = talk end
+    -- Remove: the one chosen and its messages, once confirmed.
+    click(rows.rows[1])
+    local chosen = rows.provider.list[1]
+    click(foot(talks, "Remove"))
+    W.popups[#W.popups].data.callback()
+    check(Talks.by[chosen.key] == nil and #rows.provider.list == 3 and rows.provider.list[1] ~= chosen,
+        "Remove takes the conversation chosen away, once confirmed, and another is chosen")
+    -- Switched off, nothing more is gathered.
+    options.boardTalks = false
+    W.Fire("CHAT_MSG_WHISPER", "anyone?", "Garrosh-Stub", "", "", "", "", 0, 0, "", 0, 70, nil)
+    check(Talks.by["W:Garrosh-Stub"] == nil, "with the panel switched off, whispers go into no conversation")
+    options.boardTalks = true
+    check(not Core.errors["Social: conversations"] and not Core.errors["Social: talks"] and not ns.off, "nothing went wrong in the conversations")
+    grouped, W.raiding = wasGrouped, wasRaiding
+    end)()
     end
     local shown = #box.provider.list
     coreBar.find:GetScript("OnMouseDown")(coreBar.find)

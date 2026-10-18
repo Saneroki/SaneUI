@@ -410,7 +410,7 @@ function W.Install(env)
     env.strtrim = function(text) return (text:gsub("^%s+", ""):gsub("%s+$", "")) end
     env.wipe = function(t) for key in pairs(t) do t[key] = nil end return t end
     env.GetTime = function() return W.clock end
-    env.date = function(format) return os.date(format) end
+    env.date = function(format, at) return os.date(format, at) end
 
     -- The game's xpcall hands further arguments on to the function; plain Lua 5.1's does not.
     local plain = xpcall

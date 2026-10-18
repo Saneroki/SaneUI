@@ -4,8 +4,9 @@ local _, ns = ...
 --  Sane UI - Social - Board
 --  The full screen's panels around the chat: while the window stands full,
 --  the friends list at its right (Friends.lua, the group finder one of its
---  tabs) and a second chat above the chat (Feed.lua), as the settings
---  wish (the section Full screen) and as the screen has room (Layout.Board).
+--  tabs), the conversations at its left (Conversations.lua) and a second chat
+--  above the chat (Feed.lua), as the settings wish (the section Full screen)
+--  and as the screen has room (Layout.Board).
 --  The chat itself is the window's (Window.lua): it stands in the room left.
 --
 --  A panel is a frame of ours on a plate in Sane UI's look (Core.Skin: the
@@ -22,12 +23,14 @@ local _, ns = ...
 --
 --  What is typed into the full window's search box goes to every panel
 --  (Board.Search): the second chat finds messages as the chat does, the
---  friends list what its tab shown lists (friends, groups, ...).
+--  friends list what its tab shown lists (friends, groups, ...), the
+--  conversations those with the words in their name or their messages.
 --
 --  A part is a table with:
 --      Part.Build(panel)      makes what it holds; panel.title, panel.head, panel.body are there
 --      Part.Show(on)          its panel is shown (on) or hidden
 --      Part.Search(text)      what is typed into the search box ("": nothing)
+--      Part.Size(w, h)        its panel is that wide and high now, before it is shown (a part may lack it)
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Layout = ns.Layout
@@ -39,6 +42,7 @@ Board.FADE = 0.3 -- seconds a panel takes to come in
 -- The panels by their key in Layout.Board, with the switch that wishes each and its part.
 Board.PANELS = {
     { key = "friends", wish = "boardFriends", part = "Friends" },
+    { key = "talks", wish = "boardTalks", part = "Conversations" },
     { key = "feed", wish = "boardFeed", part = "Feed" },
 }
 Board.panels = {} -- [key] = the panel, once made
@@ -163,6 +167,7 @@ local function Put(inside, spec, rect)
     panel:SetPoint("TOPLEFT", inside, "TOPLEFT", rect[1], -rect[2])
     panel:SetSize(rect[3], rect[4])
     panel.skin:Rest()
+    if panel.part.Size then ns.Safe(spec.key, panel.part.Size, rect[3], rect[4]) end
     if panel:IsShown() then return end
     panel:Show()
     panel.fade:To(1, ns.options.animations and Board.FADE or 0, 0)
@@ -174,7 +179,7 @@ end
 -- is put at its place; returns the board (Layout.Board), whose chat is the room left for the chat.
 function Board.Show(inside, width, height)
     local options = ns.options
-    local want = { friends = options.boardFriends, feed = options.boardFeed }
+    local want = { friends = options.boardFriends, talks = options.boardTalks, feed = options.boardFeed }
     local board = Layout.Board(width, height, want, options.feedShare / 100)
     -- The second chat is as wide as the chat (Window.lua tells it so too): its messages are measured once,
     -- for that width, when it first fills its list.

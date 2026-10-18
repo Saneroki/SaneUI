@@ -96,6 +96,19 @@ ns.TEXT = {
     noGroupsFound = "No group found.",
     finderOff = "The group finder is not open to you here.",
     nativeChat = "the chat window is off, the game's own chat is back (its button Sane UI, /sane social, or the switch Chat window, brings it again).",
+    -- The conversations' panel of the full screen (Conversations.lua, Talks.lua).
+    talks = "Conversations",
+    talksCount = "Conversations (%d)",
+    noTalks = "No conversations yet. Your whispers, and the chat of your party and your raid, come here.",
+    noTalkFound = "No conversation found.",
+    talkEmpty = "Nothing said here yet.",
+    talkHint = "Message %s",
+    talkGone = "Not among your Battle.net friends.",
+    talkLocked = "while chat is locked down (a fight, a dungeon), only the game's own chat line can send. The message is still in the line.",
+    talkRemove = "Remove the conversation with %s and all its messages?",
+    today = "Today",
+    yesterday = "Yesterday",
+    you = Core.Word("YOU", "You"),
     -- The game's channels in the list on the chat's name: what each does on every character (Join.lua).
     everywhere = "On every character",
     wishes = { { text = "The game decides" }, { wish = true, text = "Always in it" }, { wish = false, text = "Never in it" } },
@@ -149,6 +162,10 @@ local OPTIONS = {
       tip = "A second chat above the chat, with its own choice of chats in the list on its head: your whispers, groups and guild at first." },
     { key = "feedShare", default = 40, min = 20, max = 70, step = 5, unit = "%", text = "Height of the second chat", parent = "boardFeed", inline = true,
       tip = "How much of the full screen's height the second chat takes." },
+    { key = "boardTalks", default = true, text = "Conversations",
+      tip = "At the left of the full screen, your whispers, your party's and your raid's chat, each a conversation of its own, the last spoken in first. Choose one to read it and write in it. Kept for each character." },
+    { key = "talkSize", default = 100, min = 20, max = 500, step = 10, unit = "messages", text = "Messages kept per conversation", parent = "boardTalks", inline = true,
+      tip = "How many of the last messages each conversation keeps, also for the next login." },
     -- The second chat's ticks ([group] = true: shown there), set in the list on its head; no control.
     { key = "split", default = { WHISPER = true, PARTY = true, RAID = true, INSTANCE_CHAT = true, GUILD = true, OFFICER = true } },
 
@@ -195,7 +212,7 @@ for index, option in ipairs(OPTIONS) do
 end
 Core.Edge.Options(OPTIONS, (last or #OPTIONS) + 1, LOOK, { motion = "animations" })
 -- The switches of the full screen's panels: a change lays the full screen out anew (Window.Reboard).
-local BOARD = { boardFriends = true, boardFeed = true, feedShare = true }
+local BOARD = { boardFriends = true, boardTalks = true, boardFeed = true, feedShare = true }
 -- The switches of fading and sliding: a change of one sets every fade and slide anew (Window.Animate).
 local MOVES = { animations = true, fadeInOn = true, fadeInTime = true, fadeOutTime = true, slide = true, slideTime = true,
                 fadeFloorOn = true, fadeFloor = true, fade = true, fadeAfter = true }
@@ -223,6 +240,7 @@ Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = funct
     if key == "split" then return ns.Guarded(ns.Feed.Refill) end
     -- The group finder is a tab of the friends list: its switch offers the tab or takes it away.
     if key == "boardFinder" then return ns.Safe("friends tabs", ns.Friends.Relabel) end
+    if key == "talkSize" then return ns.Safe("conversations", ns.Talks.Trim) end
     if BOARD[key] then return ns.Guarded(ns.Window.Reboard) end
     if key == "history" or key == "historySize" then return ns.Keep() end
     local Window = ns.Window
@@ -247,6 +265,7 @@ end
 
 -- Reading a message touches nothing (Log.Read): one that cannot be read is left out and noted,
 -- and the window goes on. Chat arrives many times a second in a city: no table and no closure here.
+-- A whisper, or a group's chat, goes into its conversation too (Talks.lua), apart from the window.
 local function Heard(event, ...)
     if ns.off then return end
     local ok, entry = xpcall(ns.Log.Read, Core.Trace, event, ...)
@@ -254,6 +273,7 @@ local function Heard(event, ...)
         ns.Report(ns.TEXT.unread, entry)
     elseif entry then
         ns.Guarded(ns.Log.Add, entry)
+        if entry.with or ns.Talks.GROUPS[entry.group] then ns.Safe("conversations", ns.Talks.Add, entry) end
     end
 end
 
@@ -332,7 +352,11 @@ function ns.OnLogin()
     end
     local char = Core.Character(ns.name)
     if ns.options.history then ns.Safe("history", ns.Log.Restore, char.history, char.historyVersion) end
-    ns.On("PLAYER_LOGOUT", function() ns.Safe("history", History, char) end)
+    ns.Safe("conversations", ns.Talks.Restore, char.talks)
+    ns.On("PLAYER_LOGOUT", function()
+        ns.Safe("history", History, char)
+        ns.Safe("conversations", ns.Talks.Save, char)
+    end)
     ns.Guarded(ns.Window.Follow)
     -- An alias given or changed (Core.People, the game's menu of a player): the names above the bubbles anew.
     if Core.People then Core.People.Watch(function() ns.Guarded(ns.Window.Repaint) end) end

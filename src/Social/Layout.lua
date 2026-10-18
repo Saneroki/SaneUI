@@ -41,10 +41,11 @@ Layout.FACE = 24                               -- the smiley beside the line, be
 Layout.INPUT_RIGHT = Layout.GRIP_ROOM + Layout.FACE + 2 -- it ends before the smiley
 
 -- The full screen holds panels beside and above the chat (Board.lua): the friends list at the right (the
--- group finder is one of its tabs), a second chat with its own choice of chats above the chat, all within PAD
--- of the screen and of each other. The friends list is left out where it would leave the chat narrower than
--- CHAT_MIN; the second chat takes SPLIT of the height (a setting), and is left out where the chat
--- under it would be lower than CHAT_LOW.
+-- group finder is one of its tabs), the conversations at the left, a second chat with its own choice of chats
+-- above the chat, all within PAD of the screen and of each other. The friends list is left out where it would
+-- leave the chat narrower than CHAT_MIN; the conversations are TALKS_WIDTH wide, narrower where the chat would
+-- be narrower than CHAT_MIN, and left out below TALKS_MIN; the second chat takes SPLIT of the height (a
+-- setting), and is left out where the chat under it would be lower than CHAT_LOW.
 Layout.PAD = 12
 Layout.FRIENDS_WIDTH = 340                     -- the game's friends list is as wide (Blizzard_FriendsFrame)
 Layout.CHAT_MIN = 420
@@ -61,6 +62,10 @@ Layout.TAB_PAD = 20                            -- a tab's room around its words,
 Layout.TOOLS = 28                              -- the search box and the filter
 Layout.LINE = 28                               -- a list's own line above it
 Layout.INVITE = 24                             -- the button at a row's right to ask a friend into your group
+-- The conversations' panel (Conversations.lua): the list of them at its left, the one chosen beside it.
+Layout.TALKS_WIDTH, Layout.TALKS_MIN = 600, 460
+Layout.TALK_LIST = 190                         -- the list of conversations
+Layout.TALK_ICON = 24                          -- a conversation's icon in that list
 
 -- The only colours of our own: the ring around the icon of somebody who is something to you. The
 -- bubbles' fill is a setting (bubbleBack, bubbleColor: Bubble.Clear), the same for all; yours differ by
@@ -100,7 +105,7 @@ end
 
 -- Where each part of the full screen stands, in a room that wide and high (what the window holds, under its
 -- title bar): { left, top, width, height } from the room's top left corner, whole pixels. want: which
--- panels are wished (friends, feed); share: the second chat's part of the height, 0..1. A panel not
+-- panels are wished (friends, talks, feed); share: the second chat's part of the height, 0..1. A panel not
 -- wished, or without room, is nil; chat is always there.
 function Layout.Board(width, height, want, share)
     local pad = Layout.PAD
@@ -112,6 +117,11 @@ function Layout.Board(width, height, want, share)
     if friends > 0 then
         board.friends = { right - Layout.FRIENDS_WIDTH, top, Layout.FRIENDS_WIDTH, bottom - top }
         right = right - friends
+    end
+    local talks = want.talks and math.min(Layout.TALKS_WIDTH, right - left - pad - Layout.CHAT_MIN) or 0
+    if talks >= Layout.TALKS_MIN then
+        board.talks = { left, top, talks, bottom - top }
+        left = left + talks + pad
     end
     local tall = bottom - top
     local feed = want.feed and math.max(math.floor(tall * math.min(math.max(share or 0, 0), 1)), Layout.FEED_LOW) or 0

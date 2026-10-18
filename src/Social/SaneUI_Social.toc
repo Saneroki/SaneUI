@@ -23,6 +23,8 @@ Fade.lua
 Bubble.lua
 # Where you can write right now. Knows no frames
 Channels.lua
+# The conversations: every whisper, the party's, the raid's chat, each apart and kept. Knows no frames
+Talks.lua
 # The game's own chat: out of sight, and back
 Native.lua
 # The line you write in: the game's edit box, in our window
@@ -49,5 +51,7 @@ Contacts\Quick.lua
 Contacts\Finder.lua
 # The friends list's panel: everything the game's friends list holds, and the group finder, its lists under tabs
 Friends.lua
+# The conversations' panel of the full screen: the list of them, and the one chosen to read and write in
+Conversations.lua
 # The window: moved, sized, scrolled
 Window.lua

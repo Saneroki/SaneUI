@@ -60,8 +60,8 @@ local _, ns = ...
 --
 --  The chat stands in a frame of its own (column): all of what the window
 --  holds, but once the window stands full with panels around it (Board.lua: the
---  friends list with the group finder as a tab, a second chat above), its part of the full
---  screen. The list, the button for the line to write in, the line and its
+--  friends list with the group finder as a tab, the conversations, a second chat above), its part
+--  of the full screen. The list, the button for the line to write in, the line and its
 --  smiley hang on that frame; what is measured for them is its size (Area).
 --  The panels go when the window starts back, and the chat has the whole window.
 -------------------------------------------------------------------------------
@@ -375,9 +375,11 @@ function Window.Resize()
     Bubble.Size(ns.options.textSize)
     Rewrap()
     ns.Feed.Rewrap()
+    ns.Safe("conversations", ns.Conversations.Rewrap)
 end
 
--- The bubbles are more or less solid, or the chats named otherwise: every row in view is drawn anew.
+-- The bubbles are more or less solid, or the chats named otherwise, or a player's alias changed: every row
+-- in view is drawn anew, in the chat and in the full screen's second chat and conversations.
 function Window.Repaint()
     if not frame then return end
     Bubble.Opacity(ns.options.bubbleOpacity)
@@ -385,6 +387,7 @@ function Window.Repaint()
     ns.Input.Paint()
     Rewrap()
     ns.Feed.Rewrap()
+    ns.Safe("conversations", ns.Conversations.Rewrap)
 end
 
 -- The list is higher or lower now: the messages still stand at its bottom.
