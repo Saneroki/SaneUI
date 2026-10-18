@@ -1,0 +1,86 @@
+# Leveling
+
+The plan for Sane UI's own leveling routes: a tool that computes the fastest way from level 1 to 60
+from Core's data, and the guide that leads the player along it. Nothing is built yet (2026-10-18); this
+page prepares the work. How the guide is shown (the step, the waypoint, the item button) is Navigation's
+plan (`Doc/ideas/Navigation.md`, *Leveling guide*); the guides are the set *Guides*
+(`assets/data/Guides/schema.toml`).
+
+**Decision (Saneroki, 2026-10-18):** the routes are our own, computed by our tool from our data, and good
+enough to stand beside the best hand-made leveling guides. They are not written by hand step by step, and
+not copied from any guide.
+
+## What has to exist first
+
+| Needed | Where | State (2026-10-18) |
+| --- | --- | --- |
+| Quests: givers, takers, objectives, levels, requirements, chains, breadcrumbs, rewards (XP, money) | set *Quests* (`Doc/ideas/Data.md`, *Quests*) | 4,796 quests in the master; objectives and XP to complete |
+| Where objectives are done | sets *Spawns*, *QuestAreas*, *Drops*, *Objects* | schemas only |
+| Creatures: level, elite, spawn density, respawn | sets *NPCs*, *CreatureSpawns* | partly |
+| Getting around: walking times, flights, boats, hearthstone | sets *Walking*, *Travel* | schemas only |
+| Class and race facts: trainers, class quests, starting areas | sets *Trainers*, *Zones* | partly |
+| The game's XP rules: XP per kill by level difference, quest XP falling off by level, rested XP | Blizzard's code and the game | to gather |
+| The character's state: level, completed quests, log, bags | Core's *Characters* | planned |
+| The window and the waypoint | Navigation | planned |
+
+The planner can only be as good as the quest and travel data: those come first.
+
+## The planner (a tool, `dev/tools/route`)
+
+The route is computed once, at build time, and shipped as data. The game only follows it.
+
+1. **The quest graph.** Every quest of a side becomes a node with its giver's place, its objectives' places,
+   its taker's place, its level band, its XP and what it needs first. Chains and breadcrumbs are edges.
+2. **The cost of a quest.** Time to walk to it and through its objectives (from *Walking* and the spawn
+   density of what is to be killed or looted), plus fight time from the level difference, against the XP it
+   gives (with the kills on the way counted in). A quest is worth it when its XP per minute beats grinding
+   at that level.
+3. **Grouping.** Quests whose objectives lie together are done together: accept all in a hub, do the
+   objectives in one loop, hand in all at once. A loop is a travelling-salesman problem over a few dozen
+   points; a near-best solution (nearest neighbour, then 2-opt) is plenty.
+4. **The order of hubs.** From hub to hub by level: the next hub is the one with the best XP per minute
+   including the way there (flights, boats, hearthstone). The character's level at each point is followed,
+   so a quest is not taken before it is offered and is left out once it gives too little.
+5. **Leaving out.** Elite and group quests, escorts that fail often, long walks for little XP: off by
+   default, a switch each (open: dungeons in the way).
+6. **Output.** One guide per leg in the set *Guides*: places, actions, checks. Step texts are written by
+   Navigation from the facts.
+
+The tool reports per leg: the expected time, XP from quests against kills, quests left out and why. These
+figures are how one route is compared with another.
+
+## Measuring it
+
+- **A simulator in the tool:** walks the route with a model character (walking speed, kill time by level
+  difference, rested XP) and gives the time per level. Every change to the planner is measured against it.
+- **The game's answer:** Core's data framework learns from play (time per step, where players stray, steps
+  skipped). Those figures tune the simulator's numbers and show which steps are slow.
+- **The target:** a time from 1 to 60 per side, set once the simulator runs, and lowered from there.
+
+## Beyond a fixed route
+
+What a computed route can do that a written one cannot:
+
+- **Start anywhere:** the planner runs again from the character's level, place and completed quests (a
+  small version in the game, or a set of precomputed entry points per level band).
+- **Per class and race:** class quests and starting areas are placed where they cost least.
+- **Fit the player:** dungeons in or out, professions on the way, group or alone.
+- **After a patch:** the route is computed again from the changed data, not rewritten by hand.
+
+## Order of work
+
+1. Quest data complete: objectives, XP, requirements, levels (Data-build).
+2. Places: spawns, quest areas, drops.
+3. Travel: walking times, flights, boats.
+4. The planner and its simulator for one starting area; compare with the time a good player needs.
+5. All legs of one side to 60, then the other side.
+6. Navigation's guide view follows the shipped routes (Navigation, build step 7).
+7. Learned figures from play feed the simulator.
+
+## Open questions
+
+1. **Planner in the game too?** Only precomputed routes, or a small planner at login for a character that
+   is off the route. *Proposal:* precomputed entry points every few levels first.
+2. **Grinding steps:** where no quest is worth it, the route says where to kill and to which XP.
+   *Proposal:* yes, from spawn density and creature level.
+3. **One route or several** (fast, relaxed, with dungeons). *Proposal:* one route with switches.

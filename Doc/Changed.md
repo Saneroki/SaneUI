@@ -6,6 +6,10 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 88 (Sync), 351 (windows), 175 (data in the game).
 A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, key bindings).
 
+### Leveling: the plan for our own routes (Saneroki, 2026-10-18)
+- `Doc/ideas/Leveling.md`: a tool that computes the leveling route from Core's quest, spawn and travel data,
+  a simulator to measure it, what has to exist first, the order of work. Nothing built.
+
 ### Tooltips: your character beside gear, Gathering, binding in Gold, Addons with Alt (Saneroki, 2026-10-18)
 - **Gear keeps its icon** (`Figures.lua`): no more character in the picture's place. With Alt held over a piece
   you can see on a character, your own character wearing it stands beside the panel (`Panel.Stage`): a
