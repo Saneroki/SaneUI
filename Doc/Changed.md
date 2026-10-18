@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 88 (Sync), 351 (windows), 175 (data in the game).
 A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, key bindings).
 
+### Data: game facts apart from personal data (Saneroki, 2026-10-18)
+- `Doc/guides/data.md`, new *Game facts and personal data*: the packs hold facts about the game, shared by
+  every player; characters, progress, settings, the auction log and players' names are the player's own and
+  stay on the computer. Learned facts are stripped where they are gathered; sharing and the harvest read only
+  learned data and series. `Doc/ideas/Data.md`, *Harvest*: game facts only.
+
 ### Leveling: the plan for our own routes (Saneroki, 2026-10-18)
 - `Doc/ideas/Leveling.md`: a tool that computes the leveling route from Core's quest, spawn and travel data,
   a simulator to measure it, what has to exist first, the order of work. Nothing built.

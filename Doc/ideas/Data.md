@@ -356,6 +356,8 @@ written only into its own game version's files (*Game versions kept apart*).
 
 `dev/tools/data harvest` reads the packs' saved files from the game's `WTF`, loading them as data only
 (no functions run), and writes learned entries and series as staging for the import. It also reads the client's `.bak` copies when a saved file is missing.
+It takes game facts only: never the characters, own auctions, sellers' names, settings or anything else
+of the player's own (the guide, *Game facts and personal data*).
 
 ## Building
 

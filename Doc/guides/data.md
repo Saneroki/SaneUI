@@ -50,6 +50,25 @@ Facts of one game version never reach another (the plan, *Game versions kept apa
   Any other project, or a missing answer, gives nil: **a client that cannot be told refuses every pack.**
   `/sane data` prints the three answers, so the game shows what each client says.
 
+## Game facts and personal data
+
+The packs are shared by every player and hold facts about the game; the saved files also hold what is the
+player's own, which never leaves the computer but into the player's own backups (Saneroki, 2026-10-18).
+
+| Kind | What | Kept in | Goes |
+| --- | --- | --- | --- |
+| **Game facts** | The same for every player of a game version: items, quests, NPCs, objects, places, drops, vendors, trainers, travel; the markets per auction house | The master and the packs; learned ones in a pack's `learned` and series | Into the packs; learned ones by sharing and the harvest |
+| **Personal** | The account's characters (their bags, bank, money, gear, level, progress), the auction log and own auctions, mail, settings, profiles, layouts, notes, players' names (sellers, senders, friends, guilds) | `SaneUIDB`, `SaneUICharDB`, the pack Characters' saved file, a module's own saved parts | Nowhere: shown to the player only |
+
+- **A set holds game facts only:** no field for a character, an account, a guild, a GUID or a player's name,
+  and no source in `sources.toml` names a player.
+- **Learned facts are stripped where they are gathered:** a text with the player's name, race and class put
+  back as the game's placeholders (`$N`, `$R`, `$C`); a place as the thing's place, never the path the
+  player walked; times no finer than the day; prices without sellers.
+- **Personal data stays out of `learned` and the series:** sharing and the harvest read only those, never
+  the pack Characters (`saved = true`) or a part kept for the player's own views (the last whole auction
+  scan with its sellers, the auction log).
+
 ## The master: `assets/data/`
 
 ```
