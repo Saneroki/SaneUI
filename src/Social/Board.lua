@@ -3,8 +3,8 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Social - Board
 --  The full screen's panels around the chat: while the window stands full,
---  the friends list at its left (Friends.lua), the group finder at its right
---  (Finder.lua) and a second chat above the chat (Feed.lua), as the settings
+--  the friends list at its right (Friends.lua, the group finder one of its
+--  tabs) and a second chat above the chat (Feed.lua), as the settings
 --  wish (the section Full screen) and as the screen has room (Layout.Board).
 --  The chat itself is the window's (Window.lua): it stands in the room left.
 --
@@ -22,7 +22,7 @@ local _, ns = ...
 --
 --  What is typed into the full window's search box goes to every panel
 --  (Board.Search): the second chat finds messages as the chat does, the
---  friends list friends, the group finder groups.
+--  friends list what its tab shown lists (friends, groups, ...).
 --
 --  A part is a table with:
 --      Part.Build(panel)      makes what it holds; panel.title, panel.head, panel.body are there
@@ -39,7 +39,6 @@ Board.FADE = 0.3 -- seconds a panel takes to come in
 -- The panels by their key in Layout.Board, with the switch that wishes each and its part.
 Board.PANELS = {
     { key = "friends", wish = "boardFriends", part = "Friends" },
-    { key = "finder", wish = "boardFinder", part = "Finder" },
     { key = "feed", wish = "boardFeed", part = "Feed" },
 }
 Board.panels = {} -- [key] = the panel, once made
@@ -70,7 +69,7 @@ local function Make(inside, spec)
     return panel
 end
 
--- What the friends list and the group finder are built from, as the game builds its own: a list of rows
+-- What the lists of the friends list's tabs are built from, as the game builds its own: a list of rows
 -- of one height (its scrolling list and scroll bar) between the head and a foot of buttons
 -- (UIPanelButtonTemplate). init(row, element) draws a row, made by the list; the list is returned.
 -- holder: a panel, or a part of one (holder.body, the frame to fill; holder.label, its name in the error
@@ -175,7 +174,7 @@ end
 -- is put at its place; returns the board (Layout.Board), whose chat is the room left for the chat.
 function Board.Show(inside, width, height)
     local options = ns.options
-    local want = { friends = options.boardFriends, finder = options.boardFinder, feed = options.boardFeed }
+    local want = { friends = options.boardFriends, feed = options.boardFeed }
     local board = Layout.Board(width, height, want, options.feedShare / 100)
     -- The second chat is as wide as the chat (Window.lua tells it so too): its messages are measured once,
     -- for that width, when it first fills its list.

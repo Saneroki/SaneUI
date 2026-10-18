@@ -2,7 +2,7 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Social - Friends
---  The friends list's panel of the full screen (Board.lua), at its left:
+--  The friends list's panel of the full screen (Board.lua), at its right:
 --  everything the game's friends list (Blizzard_FriendsFrame, its Camelot copy)
 --  holds, in one panel, so that its window is not needed.
 --
@@ -10,7 +10,8 @@ local _, ns = ...
 --                friends are online, the contacts menu (Contacts/Account.lua)
 --      tabs      Friends, Recent Allies, Requests, Raid, Quick Join: the game's
 --                tabs of its friends list and of the bar under it, those this
---                client has; a count in brackets where something waits
+--                client has; a count in brackets where something waits. Then
+--                Group Finder (Contacts/Finder.lua), while its switch is on
 --      tools     the search box, and the filter of a list that has one
 --      the list  of the tab chosen, with its buttons at the foot (Contacts/*.lua)
 --
@@ -26,8 +27,9 @@ local Friends = {}
 ns.Friends = Friends
 
 -- The tabs, in the game's order: its friends list's own (Friends, Recent Allies, and the requests it shows
--- at its top), then those of the bar under it (Raid, Quick Join). Each is a list of Contacts.
-local TABS = { "Friends", "Allies", "Requests", "Raid", "Quick" }
+-- at its top), then those of the bar under it (Raid, Quick Join), then the group finder. Each is a list of
+-- Contacts.
+local TABS = { "Friends", "Allies", "Requests", "Raid", "Quick", "Finder" }
 
 local panel, strip, tools, search, filter, group
 local tabs = {}  -- [key] = the tab's button
@@ -132,6 +134,9 @@ local Relabel = Core.Later(function()
         if view and view.Usable and not view.Usable() then Friends.Open("Friends") end
     end)
 end)
+
+-- The tabs offered changed (the switch Group finder): laid out anew, a moment later.
+Friends.Relabel = Relabel
 
 function Friends.Build(holder)
     panel = holder

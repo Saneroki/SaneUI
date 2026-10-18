@@ -7,6 +7,15 @@ Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 
 A game restart takes it in (new files in Core's and Social's TOCs, key bindings).
 
 ### Social: panels on the full screen (Saneroki, 2026-10-17)
+- 2026-10-18 — Social: the group finder is the friends panel's last tab, *Group Finder*
+  (`Contacts/Finder.lua`, a view of `Contacts`).
+  - Its category and refresh button stand on a line of its own under the tabs, and its three foot
+    buttons share the panel's width.
+  - The switch *Group finder* (now under *Friends list*) offers the tab or takes it away, back to
+    Friends.
+  - The finder's own panel is gone, and so is `Layout.FINDER_WIDTH`.
+  - The friends panel stands at the full screen's right, and the chat left of it (`Layout.Board`).
+  - TOC: `Contacts\Finder.lua` in place of `Finder.lua`. Tests: 423 checks (Social).
 - 2026-10-18 — Social: the full screen's friends panel holds all of the game's friends list: your BattleTag, status, broadcast, contacts menu; tabs Friends (favourites, invite button, tooltip, filter), Recent Allies, Requests (add friend, accept/decline/block), Raid (groups by drag, assistants, Raid Info), Quick Join; ignore list; search box and filter (`Friends.lua`, `Contacts/`). Handoff: `Doc/handoff/Social-friends-panel.md`.
 - **Standing full, the chat window holds panels around the chat** (`Board.lua`, `Layout.Board`): the friends list
   at the left, the group finder at the right, a second chat above the chat. Each is a plate in Sane UI's look

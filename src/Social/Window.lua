@@ -60,7 +60,7 @@ local _, ns = ...
 --
 --  The chat stands in a frame of its own (column): all of what the window
 --  holds, but once the window stands full with panels around it (Board.lua: the
---  friends list, the group finder, a second chat above), its part of the full
+--  friends list with the group finder as a tab, a second chat above), its part of the full
 --  screen. The list, the button for the line to write in, the line and its
 --  smiley hang on that frame; what is measured for them is its size (Area).
 --  The panels go when the window starts back, and the chat has the whole window.

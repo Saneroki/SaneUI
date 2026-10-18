@@ -36,13 +36,14 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   moves, its background and how round its corners start.
 - **Full screen panels:** standing full, the window holds more than the chat (each can be switched off,
   section *Full screen* of the settings):
-  - **Friends list** at the left, as the game's: online Battle.net friends, online characters, a divider,
+  - **Friends list** at the right, as the game's: online Battle.net friends, online characters, a divider,
     then the offline ones; each with the game's status icon (online, away, busy, offline), the name (a
     Battle.net friend with the character they play in brackets), where they are or what they play, and the
     icon of the game they are in. The head says how many are online. Click a friend to choose them, then
     *Send Message* (the line to write in opens with the whisper) or *Invite*; a right click opens the game's
     own menu of a friend; *Add Friend* opens the game's own dialog.
-  - **Group finder** at the right, as the game's browse view: choose a *Category* (it is searched then), the
+  - **Group finder**, the last tab of the friends list (*Group Finder*), as the game's browse view: on its
+    line under the tabs choose a *Category* (it is searched then), the
     refresh button searches again. A row for every group or player listed: the leader in their class colour
     (alone: their level and class icon), the activity and the comment, how many are in it. Choose one, then
     *Send Message* to its leader, or *Invite* a player who is alone. *List yourself* opens the game's own
@@ -50,8 +51,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   - **Second chat** above the chat: the same bubbles, but only the chats ticked in its list (*Chats* on its
     head; at first whispers, party, raid, instance, guild and officer), whatever the chat shows. Every
     message in it stays to read; scrolled up, it stays where you are.
-  - The chat stands between them, under the second chat, with its line to write in. A screen too narrow
-    leaves out the group finder, then the friends list; too low, the second chat. The search in the title
+  - The chat stands left of the friends list, under the second chat, with its line to write in. A screen too
+    narrow leaves out the friends list; too low, the second chat. The search in the title
     bar finds in all of them: messages, friends (name, where, note) and groups (leader, activity, comment).
     Going back, the panels go at once and the chat has the whole window.
 - **Classic windows:** full, the dropdown *Classic windows* in the top right corner offers the game's own
@@ -94,7 +95,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     0 to 500, at first 100). *Messages to show*: *System messages*, *Creature messages*, *Addon messages*
     (on), *Channel joins and leaves* (off: somebody joined or left a channel, also the hidden channels addons
     use, such as FGLayer). The same four ticks are in the list on the chat's name. *Full screen*: *Friends
-    list*, *Group finder*, *Second chat* (all on) with *Height of the second chat* (20 to 70 % of the full
+    list*, under it *Group finder* (its tab), *Second chat* (all on) with *Height of the second chat* (20 to 70 % of the full
     screen, at first 40 %). The second chat's ticks are kept with the settings too (`split`), no control.
   - *Appearance:* *Expand window* (Core's, the same for every window that can fill the screen):
 
@@ -504,10 +505,10 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Picker.lua` | The smiley beside the line and its list: raid marks to write, emotes to do |
 | `Art/smiley.blp` | The smiley (24 x 24). Original art of Sane UI (see the project's `LICENSE`), drawn by `dev/tools/smiley-art` into `assets/SaneSocial-Smiley.png`, made by `dev/tools/art`; the game has no smiley of its own |
 | `Join.lua` | The game's chat channels, the same on every character as wished. Knows no frames |
-| `Board.lua` | The full screen's panels around the chat: where each stands (`Layout.Board`), their plate and head, the search to all; the list, row and buttons the friends list and the group finder share |
+| `Board.lua` | The full screen's panels around the chat: where each stands (`Layout.Board`), their plate and head, the search to all; the list, row and buttons the friends list's tabs share |
 | `Feed.lua` | The second chat above the chat: its own ticks (`split`), the same bubbles |
 | `Friends.lua` | The friends list, as the game's (`C_FriendList`, `C_BattleNet`); the game's own menu, whisper and invite |
-| `Finder.lua` | The group finder, as the game's browse view (`C_LFGList`); searches only on a click |
+| `Contacts/Finder.lua` | The group finder, the friends list's last tab, as the game's browse view (`C_LFGList`); searches only on a click |
 | `Window.lua` | The window: moved, sized, scrolled, kept |
 | `Bindings.xml` | Its key in the game's key bindings (section *Sane UI*, Core's): the chat window shown or hidden |
 
@@ -590,9 +591,10 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 
 - Full screen panels: the friends list fills at once and follows a friend coming online; *Send Message*,
   *Invite* (a Battle.net friend in this game: invite or request to join), the right click menu, *Add
-  Friend*. The group finder: a category chosen searches (`C_LFGList.Search` is restricted: from our click it
+  Friend*. The friends list at the full screen's right. The group finder, its tab *Group Finder*: a category chosen searches (`C_LFGList.Search` is restricted: from our click it
   should be allowed, check for *Interface action failed*), the refresh button, results of the game's own
-  finder shown when the panel opens, *Invite* a player alone, *List yourself*. The second chat's ticks, its
+  finder shown when the tab opens, *Invite* a player alone, *List yourself*; the switch *Group finder* off
+  takes the tab away. The second chat's ticks, its
   scrolling, its width the chat's. The panels' look next to the full screen's background, at 1920 × 1080
   and on a smaller screen (panels left out).
 
@@ -601,6 +603,9 @@ Tabs of chat views in the small window (`Doc/ideas/Social.md`), the guild in the
 a group, a close button, a sign besides colour for what a speaker is to you.
 
 ## History
+- 2026-10-18 — The group finder is a tab of the friends list (`Contacts/Finder.lua`, the last of its tabs; the
+  switch *Group finder* offers it), no panel of its own; the friends list stands at the full screen's right,
+  the chat left of it (`Layout.Board`).
 - 2026-10-17 — Full screen panels (`Board.lua`): the friends list (`Friends.lua`), the group finder
   (`Finder.lua`) and a second chat with its own ticks (`Feed.lua`) around the chat, which stands in a frame of
   its own (`Window.lua`: `column`, `Area`; the line to write in and the smiley hang on it). Settings

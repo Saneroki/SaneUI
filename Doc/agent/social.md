@@ -34,7 +34,7 @@ last messages are saved per character at logout and put back at login (`Log.Save
 | `Board.lua` | Full screen panels (stand full only, built on first show, `ns.Safe` per part): `Board.Show(inside, w, h)` → `Layout.Board` rects, `Board.Hide`, `Board.Search`; shared `Board.List`/`Fill`/`Row`/`Button`. Part API: `Build(panel)`, `Show(on)`, `Search(text)` |
 | `Feed.lua` | Second chat above the chat: `options.split` ticks (`Channels.Split/FlipSplit`), same `rowWidth` as the chat (`Feed.Fit`), told by `Log.added`; no fade/slide |
 | `Friends.lua` | Friends panel: `BNGetNumFriends`/`C_BattleNet.GetFriendAccountInfo`, `C_FriendList`; game order; click selects, `ChatFrameUtil.SendTell/SendBNetTell`, `FriendsFrame_ShowDropdown/ShowBNDropdown`, `FriendsFrame_InviteOrRequestToJoin` |
-| `Finder.lua` | Group finder panel (vanilla style, Camelot): `C_LFGList.Search` only on a click (restricted), reads `GetFilteredSearchResults`; whisper leader, invite solo; listing stays the game's (`ns.OpenFinder(1)`) |
+| `Contacts/Finder.lua` | Group finder, the friends panel's last tab (vanilla style, Camelot): `C_LFGList.Search` only on a click (restricted), reads `GetFilteredSearchResults`; whisper leader, invite solo; listing stays the game's (`ns.OpenFinder(1)`) |
 | `Window.lua` | A Core window of kind `screen` (`first.dock = "BOTTOMLEFT"`), list in `handle.inside` (no top bar), scroll provider, bottom alignment, follow state, `Core.Hover` for the mouse, slide by `Core.Motion.Slide`; `Window.Follow` (ours or away as `options.window` says), `Show` opens through `handle:Open()` |
 
 Speakers' class/tie caches share a 500-entry cap. Ties clear on friend/guild/group changes;

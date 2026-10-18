@@ -142,9 +142,9 @@ local OPTIONS = {
     -- The full screen's panels around the chat (Board.lua).
     { key = "boardFriends", default = true, text = "Friends list", header = "Full screen",
       headerTip = "What stands around the chat while the window fills the screen.",
-      tip = "The friends list at the left of the full screen, as the game's: who is online and where. Click a friend, then Send Message or Invite; a right click opens their menu." },
-    { key = "boardFinder", default = true, text = "Group finder",
-      tip = "The group finder at the right of the full screen, as the game's: the groups and players looking for others in a category. Whisper a leader, or invite a player who is alone." },
+      tip = "The friends list at the right of the full screen, as the game's: who is online and where. Click a friend, then Send Message or Invite; a right click opens their menu." },
+    { key = "boardFinder", default = true, text = "Group finder", parent = "boardFriends",
+      tip = "The group finder as a tab of the friends list, as the game's: the groups and players looking for others in a category. Whisper a leader, or invite a player who is alone." },
     { key = "boardFeed", default = true, text = "Second chat",
       tip = "A second chat above the chat, with its own choice of chats in the list on its head: your whispers, groups and guild at first." },
     { key = "feedShare", default = 40, min = 20, max = 70, step = 5, unit = "%", text = "Height of the second chat", parent = "boardFeed", inline = true,
@@ -195,7 +195,7 @@ for index, option in ipairs(OPTIONS) do
 end
 Core.Edge.Options(OPTIONS, (last or #OPTIONS) + 1, LOOK, { motion = "animations" })
 -- The switches of the full screen's panels: a change lays the full screen out anew (Window.Reboard).
-local BOARD = { boardFriends = true, boardFinder = true, boardFeed = true, feedShare = true }
+local BOARD = { boardFriends = true, boardFeed = true, feedShare = true }
 -- The switches of fading and sliding: a change of one sets every fade and slide anew (Window.Animate).
 local MOVES = { animations = true, fadeInOn = true, fadeInTime = true, fadeOutTime = true, slide = true, slideTime = true,
                 fadeFloorOn = true, fadeFloor = true, fade = true, fadeAfter = true }
@@ -221,6 +221,8 @@ Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = funct
     if key == "window" then return ns.Guarded(ns.Window.Follow) end
     if SHOWN[key] or key == "mute" then return ns.Guarded(ns.Window.Refill) end
     if key == "split" then return ns.Guarded(ns.Feed.Refill) end
+    -- The group finder is a tab of the friends list: its switch offers the tab or takes it away.
+    if key == "boardFinder" then return ns.Safe("friends tabs", ns.Friends.Relabel) end
     if BOARD[key] then return ns.Guarded(ns.Window.Reboard) end
     if key == "history" or key == "historySize" then return ns.Keep() end
     local Window = ns.Window

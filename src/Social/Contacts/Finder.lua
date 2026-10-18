@@ -1,10 +1,11 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Finder
---  The group finder of the full screen (Board.lua), as the game's own browse
---  view (Blizzard_GroupFinder_VanillaStyle, the finder of this client): a
---  category to look in, a refresh button, and a row for every group or player
+--  Sane UI - Social - Contacts - Finder
+--  The group finder, a tab of the friends list's panel (Friends.lua), as the
+--  game's own browse view (Blizzard_GroupFinder_VanillaStyle, the finder of
+--  this client): a line with the category to look in and a refresh button,
+--  and under it a row for every group or player
 --  listed there: the leader in their class colour (a player alone: their level
 --  and class icon; a group: the leader's crown), the activity and the comment
 --  under it, and how many are in it.
@@ -18,17 +19,18 @@ local _, ns = ...
 --  Searching is a restricted call of the game's (C_LFGList.Search): it is only
 --  made on a click of yours (a category chosen, the refresh button), never by
 --  itself. Shown, the panel reads what the last search found, the game's own
---  finder's too, and follows its results while it is shown. The search box of
---  the full window finds listings by their leader, activity and comment.
+--  finder's too, and follows its results while it is shown. The panel's search
+--  box finds listings by their leader, activity and comment. Its tab is there
+--  while the switch Group finder is on.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-local Board = ns.Board
-local Finder = {}
-ns.Finder = Finder
+local Board, Contacts, Layout = ns.Board, ns.Contacts, ns.Layout
+local View = { name = Core.Word("GROUP_FINDER", "Group Finder") }
+Contacts.Finder = View
 
 local REFRESH = "Interface\\Buttons\\UI-RefreshButton"
 
-local panel, box, categories, send, invite
+local box, categories, send, invite
 local shown
 local category -- the category looked in (its id), once chosen
 local state    -- "searching", "failed", or nil
@@ -214,12 +216,21 @@ local function Invite()
     if listing and listing.leader then C_PartyInfo.InviteUnit(listing.leader) end
 end
 
-function Finder.Build(holder)
-    panel = holder
-    panel.title:SetText(ns.TEXT.finder)
-    local refresh = CreateFrame("Button", nil, panel.head)
+-- Its tab is offered while the switch Group finder is on; where the game's finder is closed to this
+-- character, the list says so.
+function View.Usable()
+    return ns.options.boardFinder and true or false
+end
+
+function View.Build(page)
+    -- Its own line above the list: the category to look in and the refresh button, at the right.
+    local line = CreateFrame("Frame", nil, page.body)
+    line:SetPoint("TOPLEFT")
+    line:SetPoint("TOPRIGHT")
+    line:SetHeight(Layout.LINE)
+    local refresh = CreateFrame("Button", nil, line)
     refresh:SetSize(24, 24)
-    refresh:SetPoint("RIGHT", -ns.Layout.EDGE, 0)
+    refresh:SetPoint("RIGHT", -Layout.EDGE, 0)
     refresh:SetNormalTexture("Interface\\Buttons\\UI-SquareButton-Up")
     refresh:SetPushedTexture("Interface\\Buttons\\UI-SquareButton-Down")
     refresh:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
@@ -229,25 +240,27 @@ function Finder.Build(holder)
     arrows:SetPoint("CENTER", -1, 0)
     refresh:SetScript("OnClick", function() ns.Safe("group finder", Search) end)
     Core.Tip(refresh, Core.Word("REFRESH", "Refresh"), ns.TEXT.refreshTip, "ANCHOR_TOP")
-    categories = CreateFrame("DropdownButton", nil, panel.head, "WowStyle1DropdownTemplate")
+    categories = CreateFrame("DropdownButton", nil, line, "WowStyle1DropdownTemplate")
     categories:SetPoint("RIGHT", refresh, "LEFT", -4, 0)
     categories:SetWidth(150)
     categories:SetDefaultText(ns.TEXT.category)
     categories:SetupMenu(Categories)
-    box = Board.List(panel, function(row, listing)
+    box = Board.List(page, function(row, listing)
         Draw(row, listing)
         row:SetScript("OnClick", function(self) ns.Safe("group finder", Click, self) end)
-    end)
-    send = Board.Button(panel, Core.Word("SEND_MESSAGE", "Send Message"), 122, Send)
-    invite = Board.Button(panel, Core.Word("INVITE", "Invite"), 122, Invite, send)
-    Board.Button(panel, ns.TEXT.listYourself, 122, function() ns.OpenFinder(1) end, invite)
+    end, Layout.LINE + Layout.EDGE)
+    -- Three buttons share the foot, as wide as the panel lets them be.
+    local width = math.floor((Layout.FRIENDS_WIDTH - 2 * Layout.EDGE - 8) / 3)
+    send = Board.Button(page, Core.Word("SEND_MESSAGE", "Send Message"), width, Send)
+    invite = Board.Button(page, Core.Word("INVITE", "Invite"), width, Invite, send)
+    Board.Button(page, ns.TEXT.listYourself, width, function() ns.OpenFinder(1) end, invite)
 end
 
 -- Shown, it reads what was found last and follows the game's results; hidden, it hears nothing.
 local EVENTS = { LFG_LIST_SEARCH_RESULTS_RECEIVED = Received, LFG_LIST_SEARCH_RESULT_UPDATED = Changed,
                  LFG_LIST_SEARCH_FAILED = Failed, LFG_LIST_AVAILABILITY_UPDATE = Changed, GROUP_ROSTER_UPDATE = Changed }
 
-function Finder.Show(on)
+function View.Show(on)
     shown = on
     for event, fn in pairs(EVENTS) do
         if on then Core.On(event, fn) else Core.Off(event, fn) end
@@ -255,7 +268,7 @@ function Finder.Show(on)
     if on then Update() end
 end
 
-function Finder.Search(text)
-    query = Core.Fuzzy.Query(text)
+function View.Search(found)
+    query = found
     Update()
 end

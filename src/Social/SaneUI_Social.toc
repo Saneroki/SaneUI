@@ -46,9 +46,8 @@ Contacts\Ignored.lua
 Contacts\Allies.lua
 Contacts\Raid.lua
 Contacts\Quick.lua
-# The friends list's panel: everything the game's friends list holds, its lists under tabs
+Contacts\Finder.lua
+# The friends list's panel: everything the game's friends list holds, and the group finder, its lists under tabs
 Friends.lua
-# The group finder of the full screen, as the game's
-Finder.lua
 # The window: moved, sized, scrolled
 Window.lua

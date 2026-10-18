@@ -1568,24 +1568,25 @@ do
     for _, widget in ipairs(W.frames) do
         if widget._parent == window and rawget(widget, "box") then coreBar = widget end
     end
-    -- The full screen's panels: the friends list at the left, the group finder at the right, a second chat above the chat.
-    local board = Layout.Board(1920, 1080 - Core.Window.BAR, { friends = true, finder = true, feed = true }, 0.4)
-    check(board.friends and board.finder and board.feed and board.chat[1] == 2 * Layout.PAD + Layout.FRIENDS_WIDTH
-        and board.chat[3] == 1920 - 4 * Layout.PAD - Layout.FRIENDS_WIDTH - Layout.FINDER_WIDTH
+    -- The full screen's panels: the friends list at the right (the group finder a tab of it), a second chat above the chat.
+    local board = Layout.Board(1920, 1080 - Core.Window.BAR, { friends = true, feed = true }, 0.4)
+    check(board.friends and board.feed and board.chat[1] == Layout.PAD
+        and board.friends[1] == 1920 - Layout.PAD - Layout.FRIENDS_WIDTH
+        and board.chat[3] == 1920 - 3 * Layout.PAD - Layout.FRIENDS_WIDTH
         and board.feed[4] == math.floor((1080 - Core.Window.BAR - 2 * Layout.PAD) * 0.4) and board.chat[2] == 2 * Layout.PAD + board.feed[4],
-        "the full screen: friends at the left, the group finder at the right, the second chat above the chat, all a little apart")
+        "the full screen: friends at the right, the second chat above the chat, all a little apart")
     check(coreBar and coreBar:IsShown() and coreBar.title._text == "Social" and coreBar.glass:IsShown()
         and listTop() == -(Core.Window.BAR + board.chat[2] + Layout.EDGE) and column._width == board.chat[3],
         "full, Core's title bar is at its top, with the search; the chat stands under the second chat, between the panels")
     local panels, friends, finder = ns.Board.panels, nil, nil
     do
-    local narrow = Layout.Board(900, 600, { friends = true, finder = true, feed = true }, 0.4)
-    check(narrow.friends and not narrow.finder and narrow.chat[3] >= Layout.CHAT_MIN, "a screen without room for both panels leaves out the group finder first")
-    narrow = Layout.Board(600, 300, { friends = true, finder = true, feed = true }, 0.4)
-    check(not narrow.friends and not narrow.finder and not narrow.feed and narrow.chat[3] == 600 - 2 * Layout.PAD,
+    local narrow = Layout.Board(900, 600, { friends = true, feed = true }, 0.4)
+    check(narrow.friends and narrow.chat[3] >= Layout.CHAT_MIN, "a screen with room keeps the friends list")
+    narrow = Layout.Board(600, 300, { friends = true, feed = true }, 0.4)
+    check(not narrow.friends and not narrow.feed and narrow.chat[3] == 600 - 2 * Layout.PAD,
         "a small one leaves the chat alone")
-    check(panels.friends:IsShown() and panels.finder:IsShown() and panels.feed:IsShown()
-        and panels.friends._points[1][4] == board.friends[1] and panels.finder._points[1][4] == board.finder[1]
+    check(panels.friends:IsShown() and panels.finder == nil and panels.feed:IsShown()
+        and panels.friends._points[1][4] == board.friends[1]
         and panels.feed._width == board.chat[3] and panels.friends.title._text == "Tester|cff416380#4321|r",
         "each panel stands at its place, with its title; the friends list's is your BattleTag, its number dimmed")
     -- What a panel holds, wherever in it: the list on show, a button of a foot on show, a tab.
@@ -1606,7 +1607,7 @@ do
             if widget._kind == "Button" and widget._text == text and within(widget, panel) and widget:IsVisible() then return widget end
         end
     end
-    local send, invite
+    local send, invite, finderTab, friendsTab
     ;(function() -- the friends list's panel, its tabs one by one
     local function click(widget, button) widget:GetScript("OnClick")(widget, button or "LeftButton") end
     local function named(list, ...)
@@ -1645,8 +1646,10 @@ do
     check(asks[#asks] == "broadcast raid tonight", "a broadcast written is sent to Battle.net")
     -- The tabs: the game's, a count where something waits.
     check(tabs.Friends._text == nil and tabs.Friends.Text._text == "Friends" and tabs.Allies.Text._text == "Recent Allies"
-        and tabs.Requests.Text._text == "Requests (2)" and tabs.Raid.Text._text == "Raid" and tabs.Quick.Text._text == "Quick Join (1)",
-        "the tabs: Friends, Recent Allies, Requests with how many wait, Raid, Quick Join with how many groups")
+        and tabs.Requests.Text._text == "Requests (2)" and tabs.Raid.Text._text == "Raid" and tabs.Quick.Text._text == "Quick Join (1)"
+        and tabs.Finder.Text._text == "Group Finder" and tabs.Finder:IsShown(),
+        "the tabs: Friends, Recent Allies, Requests with how many wait, Raid, Quick Join with how many groups, Group Finder")
+    finderTab, friendsTab = tabs.Finder, tabs.Friends
     -- The friends list, in the game's order: Battle.net friends online, characters online, a divider, the offline ones.
     friends = list(panels.friends)
     check(named(friends) == "Jaina, Varian, Rexxar, Level 60 Hunter, -, Anduin, Garrosh",
@@ -1836,13 +1839,14 @@ do
     tick.fn(tick.data)
     check(options.split.SAY and feed.provider.list[#feed.provider.list].text == "only here" and ns.Channels.Split("SAY"),
         "ticked, the second chat shows what is said too")
-    -- The group finder: nothing searched until a category is chosen.
-    finder = list(panels.finder)
+    -- The group finder, a tab of the friends list: nothing searched until a category is chosen.
+    finderTab:GetScript("OnClick")(finderTab, "LeftButton")
+    finder = list(panels.friends)
     check(#finder.provider.list == 0 and finder.empty._text == "Choose a category to look for groups." and not asks.searched,
         "the group finder searches nothing by itself")
     local categories
     for _, widget in ipairs(W.frames) do
-        if widget._kind == "DropdownButton" and widget._parent == panels.finder.head then categories = widget end
+        if widget._kind == "DropdownButton" and widget._defaultText == "Category" and within(widget, panels.friends) then categories = widget end
     end
     check(categories._items[1].text == "Dungeons", "its categories are the game's")
     categories._items[1].fn(categories._items[1].data)
@@ -1853,7 +1857,7 @@ do
     check(#finder.provider.list == 2 and finder.provider.list[1].leader == "Baine" and finder.provider.list[1].solo
         and finder.provider.list[2].activity == "Wailing Caverns" and finder.provider.list[2].comment == "need healer",
         "what it found: the newest first, a player alone and a group, with the activity and the comment")
-    send, invite = foot(panels.finder, "Send Message"), foot(panels.finder, "Invite")
+    send, invite = foot(panels.friends, "Send Message"), foot(panels.friends, "Invite")
     finder.rows[1]:GetScript("OnClick")(finder.rows[1], "LeftButton")
     check(invite:IsEnabled(), "a player alone can be invited")
     invite:GetScript("OnClick")(invite)
@@ -1861,6 +1865,14 @@ do
     check(not invite:IsEnabled() and asks[#asks] == "invite Baine", "a group not: its leader gets a message")
     send:GetScript("OnClick")(send)
     check(asks[#asks] == "tell Cairne", "(the leader whispered)")
+    options.boardFinder = false
+    Core.described[ns.name].changed("boardFinder")
+    W.Wait(0.1)
+    check(not finderTab:IsShown() and list(panels.friends) == friends, "its switch off, the tab goes, and Friends is shown again")
+    options.boardFinder = true
+    Core.described[ns.name].changed("boardFinder")
+    W.Wait(0.1)
+    check(finderTab:IsShown(), "on again, the tab is back")
     end
     local shown = #box.provider.list
     coreBar.find:GetScript("OnMouseDown")(coreBar.find)
@@ -1874,11 +1886,11 @@ do
     check(#box.provider.list > 0 and #box.provider.list <= shown, "a search for a speaker's name shows their messages")
     search._text = "theramore"
     search:GetScript("OnTextChanged")(search)
-    check(#friends.provider.list == 1 and friends.provider.list[1].name == "Jaina" and #finder.provider.list == 0,
+    check(#friends.provider.list == 1 and friends.provider.list[1].name == "Jaina",
         "the search goes to the panels too: friends by where they are")
     search:GetScript("OnEscapePressed")(search)
     search:GetScript("OnTextChanged")(search) -- the game tells of the box emptied (the stand-in does not)
-    check(not search:IsShown() and #box.provider.list == shown and #friends.provider.list == 6 and #finder.provider.list == 2,
+    check(not search:IsShown() and #box.provider.list == shown and #friends.provider.list == 6,
         "closed, all of them are on show again")
     local coreButtons
     for _, widget in ipairs(W.frames) do
@@ -1890,7 +1902,7 @@ do
     classic._items[2].fn()
     check(tab == 1 and window._width == Layout.WIDTH and window:IsShown() and not classic:IsShown(),
         "Friends list: the window goes back to its zone, and the game's friends list opens")
-    check(listTop() == -Layout.EDGE and not panels.friends:IsShown() and not panels.finder:IsShown() and not panels.feed:IsShown(),
+    check(listTop() == -Layout.EDGE and not panels.friends:IsShown() and not panels.feed:IsShown(),
         "back, the panels are gone and the list starts at the window's top again")
     W.Wait(1)
     strip:GetScript("OnEnter")(strip)
