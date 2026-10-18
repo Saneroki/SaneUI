@@ -516,6 +516,7 @@ function W.Install(env)
             list[#list + 1] = item
             local sub = Description(item.sub)
             function sub:SetEnabled(enabled) item.disabled = not enabled end
+            function sub:SetTooltip(fn) item.tooltip = fn end
             return sub
         end
         -- A line drawn by the addon (CreateFrame): its initializers, to call with a frame.

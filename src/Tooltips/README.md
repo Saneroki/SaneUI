@@ -500,6 +500,8 @@ gathering facts are Sane UI's database (Core's data framework), which the panels
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## History
+- 2026-10-18 — A player with an alias (Core's `Core.People`, *Set Alias* in the game's menu of a player): the
+  alias in the name's place, the character's name small under the guild, then the note if there is one.
 - 2026-10-18 — A piece of gear keeps its icon; with Alt held, your own character wearing it stands beside the
   panel, as high as the panel, turning slowly. How an item binds and whether you have its look are the first
   row of *Gold* (were over the name). Other addons' lines are shown only while Alt is held. New section

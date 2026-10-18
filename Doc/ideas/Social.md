@@ -19,7 +19,8 @@ by default and fills the screen from there (`Doc/ideas/Windows.md`).
   alone or sit as tabs in the general chat, each with its own choice of chats and channels.
 - **Dialogue** (Saneroki, 2026-10-16): talking to an NPC, and reading a book or a letter, as a scene in
   the middle of the screen instead of the game's gossip, quest and book windows (`Doc/ideas/Dialogue.md`).
-- **Guild:** the guild (Blizzard: Communities and guild, `Blizzard_Communities`).
+- **Guild:** the guild (Blizzard: Communities and guild, `Blizzard_Communities`). Its names show the aliases
+  the player gave (Core's `Core.People.Shown`), as the chat and the friends list do.
 - **Group finder** (Blizzard: `Blizzard_GroupFinder_VanillaStyle` in this client). *Built 2026-10-17* as a
   panel of the full screen (`Finder.lua`): browse and whisper/invite; listing yourself stays the game's.
 - **Friends list** (Blizzard: `Blizzard_FriendsFrame`). *Built 2026-10-17* as a panel of the full screen

@@ -334,6 +334,8 @@ function ns.OnLogin()
     if ns.options.history then ns.Safe("history", ns.Log.Restore, char.history, char.historyVersion) end
     ns.On("PLAYER_LOGOUT", function() ns.Safe("history", History, char) end)
     ns.Guarded(ns.Window.Follow)
+    -- An alias given or changed (Core.People, the game's menu of a player): the names above the bubbles anew.
+    if Core.People then Core.People.Watch(function() ns.Guarded(ns.Window.Repaint) end) end
 end
 
 -- Ours (on) or the game's chat. The switch Chat window is the one place that is kept: Core.Set tells the

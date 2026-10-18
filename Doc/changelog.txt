@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Aliases and notes: right click a player's name anywhere (a chat, the
+  friends list, the guild, the target) and choose Set Alias or Set
+  Note. An alias is your own name for that character: give all of a
+  friend's alts the same alias and Sane UI's chat, friends list and
+  tooltips show it for each. The note shows in their tooltip. Both stay
+  on your computer.
 - Tooltips: an item's tooltip shows which of your characters have it,
   each by first and last name (Sane Lunatic), with where and how many:
   bags, bank, worn. Every part of a tooltip has its name on its divider

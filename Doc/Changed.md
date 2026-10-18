@@ -6,6 +6,26 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 88 (Sync), 351 (windows), 175 (data in the game).
 A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, key bindings).
 
+### Aliases and notes of players (Saneroki, 2026-10-18)
+- `Core/People.lua` (new, in Core's TOC): *Set Alias* and *Set Note* under the game's lines of its menu of a
+  player.
+  - `Menu.ModifyMenu` on every `MENU_UNIT_*` tag of a player: a chat name, friends, the guild and
+    communities, the target, focus and group, recent allies, scoreboards.
+  - Each asks in the game's input dialog (`Core.AskText`); empty text takes it away.
+  - Kept for the account in `SaneUIDB.modules.SaneUI.people[key]`, by `Core.PlayerKeyOf`; personal, never
+    shared.
+  - API: `Core.People.Alias`, `Note`, `Shown`, `Set`, `Watch`.
+- Social:
+  - The alias shows above a bubble, inside the speaker's link (`Bubble.Speaker`), and the chat's search
+    finds it.
+  - The friends list shows it in place of a character friend's name, and of a Battle.net friend's
+    character.
+  - A change redraws both.
+- Tooltips: a player's alias stands in the name's place, with the character's name small under the guild,
+  then the note.
+- `Doc/guides/data.md`: aliases are personal data. `Doc/ideas/Social.md`: the guild will show them.
+- Tests: 330 checks (Core), 426 (Social), 441 (Tooltips); the stand-in's menu button keeps its tooltip.
+
 ### Ideas: an auction house per game version, Forever's per ruleset (Saneroki, 2026-10-18)
 - `Doc/ideas/Data.md`, *Realms and regions*: every game version has its own houses (live, beta and PTR never
   share one); Forever has one realm per ruleset and region, so its house is game version, region, ruleset and

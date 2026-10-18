@@ -92,6 +92,11 @@ local function Invitable(index, account)
     return fit, why
 end
 
+-- The alias the player gave a character (Core.People), shown in place of its name; nil: none.
+local function Shown(name)
+    return Core.People and type(name) == "string" and Core.People.Shown(name) or nil
+end
+
 -- A Battle.net friend: their account's name (or their BattleTag without its number), the character they play.
 local function BattleNet(index)
     local account = C_BattleNet.GetFriendAccountInfo(index)
@@ -113,7 +118,7 @@ local function BattleNet(index)
     end
     local friend = {
         kind = "bnet", key = "bnet:" .. tostring(account.bnetAccountID), online = online, index = index,
-        name = name, character = online and game.characterName ~= "" and game.characterName or nil, info = info,
+        name = name, character = online and game.characterName ~= "" and (Shown(game.characterName) or game.characterName) or nil, info = info,
         status = Contacts.Status(online, account.isAFK or game.isGameAFK, account.isDND or game.isGameBusy),
         client = online and game.clientProgram or nil, account = account.accountName, favorite = account.isFavorite,
         battleTag = account.battleTag, id = account.bnetAccountID, note = account.note, game = game,
@@ -132,7 +137,7 @@ local function Character(index)
     local friend = C_FriendList.GetFriendInfoByIndex(index)
     if not friend or not friend.name then return nil end
     local online = friend.connected and true or false
-    local name = friend.name
+    local name = Shown(friend.name) or friend.name
     if online and friend.level and friend.className then
         name = name .. ", " .. Core.Word("FRIENDS_LEVEL_TEMPLATE", "Level %d %s"):format(friend.level, friend.className)
     end
@@ -485,3 +490,6 @@ function View.Unfilter()
     wipe(kinds)
     Update()
 end
+
+-- An alias or note given or changed: the list drawn anew, if it is shown.
+if Core.People then Core.People.Watch(Changed) end

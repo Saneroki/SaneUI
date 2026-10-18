@@ -68,6 +68,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   is a click into the game. Only a link, a speaker's name and the chat button take the mouse. The chat
   button is only there while the mouse is over the window; the window has no bar of its own.
 - **Click a speaker's name** to whisper to them, right click it for their menu, as in the game's chat.
+  Its *Set Alias* (Core's) gives the character a name of your own: their messages, and the friends list,
+  show it in place of theirs (a click still whispers to the character), and the search finds it.
 - **Write:** press Enter or `/` as always, or click the chat button in the window's lower left corner
   (there with the mouse over the window, as high as the line to write in, which opens right of it).
   The line to write in opens at the bottom of the window and the messages move up above it. It is the
@@ -603,6 +605,9 @@ Tabs of chat views in the small window (`Doc/ideas/Social.md`), the guild in the
 a group, a close button, a sign besides colour for what a speaker is to you.
 
 ## History
+- 2026-10-18 — Aliases (Core's `Core.People`): above a bubble the alias in the speaker's link
+  (`Bubble.Speaker`), in the friends list in place of a character's name and of a Battle.net friend's
+  character; the chat's search finds it; a change redraws both (`Core.People.Watch`).
 - 2026-10-18 — The group finder is a tab of the friends list (`Contacts/Finder.lua`, the last of its tabs; the
   switch *Group finder* offers it), no panel of its own; the friends list stands at the full screen's right,
   the chat left of it (`Layout.Board`).

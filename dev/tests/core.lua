@@ -1344,5 +1344,45 @@ W.regionalNames = true
 check(Core.Surnames() and Core.PlayerKeyOf("Droopy Fairwind") == "Droopy Fairwind", "another client with regional names: first name and surname too")
 WOW_PROJECT_ID, UnitName = 18, unitName
 
+-- People: an alias and a note for a player, set from the game's menu of a player
+local People = Core.People
+check(W.menuModifiers.MENU_UNIT_FRIEND and W.menuModifiers.MENU_UNIT_GUILD and W.menuModifiers.MENU_UNIT_TARGET
+    and W.menuModifiers.MENU_UNIT_COMMUNITIES_GUILD_MEMBER and W.menuModifiers.MENU_UNIT_CHAT_ROSTER,
+    "the game's menus of a player (a chat name, friends, the guild, the target) get Sane UI's lines")
+local lines = {}
+W.menuModifiers.MENU_UNIT_FRIEND(nil, W.Description(lines), { name = "Droopy Fairwind" })
+check(#lines == 2 and lines[1].text == "Set Alias" and lines[2].text == "Set Note" and not lines[1].tooltip,
+    "a name in a chat: Set Alias and Set Note, nothing set yet")
+local heard = 0
+People.Watch(function() heard = heard + 1 end)
+lines[1].fn()
+local dialog = W.popups[#W.popups]
+check(dialog.which == "GENERIC_INPUT_BOX" and dialog.data.text:find("%%s") and dialog.data.text_arg1 == "Droopy Fairwind",
+    "Set Alias asks in the game's input dialog, naming the player")
+dialog.data.callback("  Saneroki ")
+check(People.Alias("Droopy Fairwind") == "Saneroki" and People.Shown("Droopy Fairwind-Stormrage") == "Saneroki" and heard == 1,
+    "the alias is kept by the player's key, trimmed, and every view is told")
+lines = {}
+W.menuModifiers.MENU_UNIT_GUILD(nil, W.Description(lines), { name = "Ama Fairwind" })
+lines[1].fn()
+W.popups[#W.popups].data.callback("Saneroki")
+check(People.Shown("Ama Fairwind") == "Saneroki" and People.Shown("Droopy Fairwind") == "Saneroki",
+    "two alts of one player can share an alias")
+lines[2].fn()
+W.popups[#W.popups].data.callback("Met in Goldshire")
+check(People.Note("Ama Fairwind") == "Met in Goldshire" and People.Note("Droopy Fairwind") == nil, "a note of its own")
+lines = {}
+W.menuModifiers.MENU_UNIT_GUILD(nil, W.Description(lines), { name = "Ama Fairwind" })
+check(lines[1].tooltip and lines[2].tooltip, "set, the menu's lines show what is there in their tooltips")
+lines[1].fn()
+W.popups[#W.popups].data.callback("")
+check(People.Alias("Ama Fairwind") == nil and People.Note("Ama Fairwind") == "Met in Goldshire", "empty, the alias is taken away, the note stays")
+People.Set("Ama Fairwind", "note", nil)
+check(Core.Store(Core.name).people["Ama Fairwind"] == nil, "with nothing left, nothing is kept for the player")
+lines = {}
+W.menuModifiers.MENU_UNIT_FRIEND(nil, W.Description(lines), { name = "Droopy" })
+check(#lines == 0, "a name without its surname gets no lines: no player is guessed")
+People.Set("Droopy Fairwind", "alias", nil)
+
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Core: all %d checks passed.\n"):format(passed))

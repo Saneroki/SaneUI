@@ -353,8 +353,13 @@ local function Unit(ctx)
         end
     end
 
-    -- The header
+    -- The header: the alias the player gave this player (Core.People, the game's menu of a player) in place
+    -- of the name, the name then small under it with the note
     local title = Read.Title(true)
+    local people = player and SaneUI.Core.People
+    local key = people and SaneUI.Core.PlayerKey(unit)
+    local alias, note = key and people.Alias(key), key and people.Note(key)
+    if alias then title.left = alias end
     local color = player and options.classColors and class and RAID_CLASS_COLORS[class] or nil
     if color then
         Read.Accent(color.r, color.g, color.b)
@@ -380,6 +385,11 @@ local function Unit(ctx)
         if guildRank and guildRank ~= "" then row.label, row.labelFont = guildRank, "detail" end
     elseif npcTitle then
         Read.Text("title", npcTitle, LIGHT[1], LIGHT[2], LIGHT[3]).flush = true
+    end
+    if alias then Read.Text("sub", SaneUI.Core.FullName(unit) or key, LIGHT[1], LIGHT[2], LIGHT[3]) end
+    if note then
+        local gold = rawget(_G, "NORMAL_FONT_COLOR") or { r = 1, g = 0.82, b = 0 } -- the game's gold
+        Read.Text("sub", note, gold.r, gold.g, gold.b)
     end
     -- Small: the race and side (what a creature is, its family and its faction: Beast · Wolf,
     -- Humanoid · Stormwind), then the class line: the spec and class (Feral Combat Druid 0/31/20),

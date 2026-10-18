@@ -15,6 +15,11 @@ but for a window to try those with (`/sane window`).
 - **In the addon list** it is the line *Sane UI*. The modules stand under it (*Social*,
   *Abilities*, *Tooltips*): tick or untick each one by itself. With *Sane UI* itself unticked no module loads.
 - `/sane` says which modules are switched on and lists their commands. `/saneui` is the same.
+- **Alias and note:** right click a player's name (in a chat, the friends list, the guild, the target or
+  a group frame): under the game's own lines are *Set Alias* and *Set Note*. An alias is a name of your own
+  for that character, shown by Sane UI in place of theirs (in its chat, friends list and tooltips): give
+  all five alts of one friend the alias *Saneroki*, and each shows as *Saneroki*. A note is shown in the
+  player's tooltip. Empty text takes either away. Kept for your account, never sent to anybody.
 - `/sane errors` lists the error log, one line per problem; `/sane errors clear` empties it. When something
   fails, one line in chat says where (*problem in ..., noted in the error log*), once per kind of problem.
 - **The error log.** Every problem is also kept in a log, in the order it happened, with the place it
@@ -234,6 +239,7 @@ but for a window to try those with (`/sane window`).
 | `Core.Surnames()` | Whether this client names players by first name and surname (Forever, or `RegionalUniqueNamesEnabled`) |
 | `Core.Data.Set(name)` and its handle | Sane UI's databases, loaded on demand from the data packs; a module only reads ([Doc/guides/data.md](../../Doc/guides/data.md)) |
 | `Core.Data.Characters()`, `Character(key)`, `Count(item)`, `OnCharacters(fn)` | What the account's characters have: each by its GUID with its whole name, its bags, bank and what it wears; where the account has an item and how many ([Doc/guides/data.md](../../Doc/guides/data.md), *Characters*) |
+| `Core.People.Alias(key)`, `Note(key)`, `Shown(name)`, `Set(key, what, value)`, `Watch(fn)` | The alias and the note the player gave a player (by `Core.PlayerKeyOf`); what to show for a name; `Watch` tells a view to draw its names anew |
 | `Core.Coins(copper)` | Money as the game writes it, with coin icons; nil if it cannot |
 | `Core.Points(region)`, `Core.Repoint(region, points)` | Keep a region's anchors and put them back |
 | `Core.pages`, `Core.frames` | The options' pages, from login on, and the frame of a page of our own (`Settings/`) |
@@ -441,6 +447,7 @@ but for a window to try those with (`/sane window`).
 | `Bar.lua` | A progress bar whose value and size move |
 | `Bindings.lua`, `Bindings.xml` | Sane UI's section in the game's key bindings, and its key for the options |
 | `Demo.lua` | `/sane window` |
+| `People.lua` | Aliases and notes of players: *Set Alias* and *Set Note* in the game's menu of a player (`Menu.ModifyMenu` on its `MENU_UNIT_*` tags), kept in `SaneUIDB.modules.SaneUI.people` by the player's key |
 | `Data/` | The data framework: `Steps.lua` (the scheduler), `Codec.lua` (a pack's row into a record), `Data.lua` (the packs, the answers, the saved parts of packs), `Characters.lua` (what the account's characters have) ([Doc/guides/data.md](../../Doc/guides/data.md)) |
 | `Sync/` | Sync: the game's own per-character settings kept with Sane UI's ([README](Sync/README.md)) |
 | `Settings/` | The options: the pages, their controls, `/sane options` ([README](Settings/README.md)) |
@@ -448,6 +455,9 @@ but for a window to try those with (`/sane window`).
 | `Art/circle.blp`, `Art/circle-hole.blp` | The masks round corners are cut with: a white disc, and a white square with the disc taken out (256 × 256, DXT5 with mipmaps). Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
+- 2026-10-18 — Aliases and notes of players (`People.lua`): *Set Alias* and *Set Note* in the game's menu of
+  a player, wherever it opens; kept for the account by the player's key, personal, never shared. Social's
+  chat and friends list and the Tooltips' player tooltip show them.
 - 2026-10-17 — What the account's characters have (`Data/Characters.lua`): each character by its GUID with
   its whole name (first name and surname), its bags, what it wears, its bank, and the account's bank, kept in
   the saved file of the pack *Data: Characters*; `Data.Count(item)` says where the account has an item.

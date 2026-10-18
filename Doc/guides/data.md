@@ -58,7 +58,7 @@ player's own, which never leaves the computer but into the player's own backups 
 | Kind | What | Kept in | Goes |
 | --- | --- | --- | --- |
 | **Game facts** | The same for every player of a game version: items, quests, NPCs, objects, places, drops, vendors, trainers, travel; the markets per auction house | The master and the packs; learned ones in a pack's `learned` and series | Into the packs; learned ones by sharing and the harvest |
-| **Personal** | The account's characters (their bags, bank, money, gear, level, progress), the auction log and own auctions, mail, settings, profiles, layouts, notes, players' names (sellers, senders, friends, guilds) | `SaneUIDB`, `SaneUICharDB`, the pack Characters' saved file, a module's own saved parts | Nowhere: shown to the player only |
+| **Personal** | The account's characters (their bags, bank, money, gear, level, progress), the auction log and own auctions, mail, settings, profiles, layouts, notes and aliases of players (Core.People), players' names (sellers, senders, friends, guilds) | `SaneUIDB`, `SaneUICharDB`, the pack Characters' saved file, a module's own saved parts | Nowhere: shown to the player only |
 
 - **A set holds game facts only:** no field for a character, an account, a guild, a GUID or a player's name,
   and no source in `sources.toml` names a player.

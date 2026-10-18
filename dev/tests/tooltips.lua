@@ -276,6 +276,7 @@ W.Load(root, "SaneUI", "Core/Saved", {})
 W.Load(root, "SaneUI", "Core/Profiles", {})
 W.Load(root, "SaneUI", "Core/Fuzzy", {})
 for _, file in ipairs({ "Steps", "Codec", "Data", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
+W.Load(root, "SaneUI", "Core/People", {}) -- aliases and notes of players
 local Core = SaneUI.Core
 local Data = Core.Data
 -- Saved by an earlier version (the first shape of the settings): by hand, no choice; the mouse switch of version 2.
@@ -710,6 +711,16 @@ for index = 1, panel.texts.taken do if panel.texts[index]._text == "60" then lev
 check(level and panel.plaque:IsShown() and panel.plaque._texture == "Interface\\AddOns\\SaneUI_Tooltips\\Art\\plaque" and level:GetTextColor() == 1
     and select(2, level:GetTextColor()) == 1 and level.dressed.flags == "OUTLINE",
     "the level stands on a gold plaque with a soft edge like the panel's, in the colour of how hard the unit is, outlined")
+SaneUI.Core.People.Set("Jaina Proudmoore", "alias", "Saneroki")
+SaneUI.Core.People.Set("Jaina Proudmoore", "note", "Raids on Fridays")
+tip:Fill({ type = TYPE.Unit, guid = "Player-1" }, jaina)
+check(row(panel, 1).left == "Saneroki" and row(panel, 2).left == "<Dawnbreakers>" and row(panel, 3).left == "Jaina Proudmoore"
+    and row(panel, 3).font == "sub" and row(panel, 4).left == "Raids on Fridays",
+    "a player given an alias (the game's menu of a player): the alias for the name, the name small under the guild, then the note")
+SaneUI.Core.People.Set("Jaina Proudmoore", "alias", nil)
+SaneUI.Core.People.Set("Jaina Proudmoore", "note", nil)
+tip:Fill({ type = TYPE.Unit, guid = "Player-1" }, jaina)
+check(row(panel, 1).left == "Jaina" and row(panel, 3).left == "Human  \194\183  Alliance", "without, as before")
 for _, text in ipairs(panel.texts) do -- texts as wide as their letters, so the plaque's width can be seen
     function text:GetUnboundedStringWidth() return #(self._text or "") * 6 end
 end

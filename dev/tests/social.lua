@@ -1368,6 +1368,14 @@ check(ring(rows[last]):IsShown() and ring(rows[last])._color[1] == Layout.TIES.f
 say("from the guild", MATE, "Anduin")
 check(ring(rows[last + 1])._color[2] == Layout.TIES.guild[2] and ring(rows[last + 1])._color[1] == Layout.TIES.guild[1], "a guild member's a green one")
 check(Layout.TIES.raid[3] > Layout.TIES.raid[2] and Layout.TIES.party[3] == 1, "(purple for the raid, blue for the party)")
+say("from an alt", MATE, "Droopy Fairwind")
+local alt = #box.provider.list
+check(name(rows[alt])._text == "|Hplayer:Droopy Fairwind:1:SAY|hDroopy Fairwind|h", "a speaker by their own name")
+Core.People.Set("Droopy Fairwind", "alias", "Saneroki")
+check(name(rows[alt])._text == "|Hplayer:Droopy Fairwind:1:SAY|hSaneroki|h",
+    "given an alias (the game's menu of a player), their messages show it, still a link to whisper the character")
+Core.People.Set("Droopy Fairwind", "alias", nil)
+check(name(rows[alt])._text:find("|hDroopy Fairwind|h$"), "taken away, their own name again")
 
 -- What the window is handled by is only there with the mouse over it
 local titled -- no title on the small window (Saneroki), nor a bar of its own

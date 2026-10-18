@@ -197,7 +197,8 @@ end
 local query
 
 function Window.Found(entry)
-    return not query or Core.Fuzzy.Match(query, Core.Fuzzy.Plain(entry.text or ""), entry.name, entry.label) ~= nil
+    return not query or Core.Fuzzy.Match(query, Core.Fuzzy.Plain(entry.text or ""), entry.name, entry.label,
+        entry.name and Core.People and Core.People.Shown(entry.name)) ~= nil
 end
 
 local function Visible(entry)

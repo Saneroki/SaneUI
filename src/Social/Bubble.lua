@@ -35,6 +35,18 @@ local parts = {} -- [row] = { body, ring, icon, name, meta, bubble, plate, text,
 
 -- The size of the text. The font stays the game's chat font (which differs by language); a font of
 -- ours takes it over and only changes the size, as the game does for its own chat windows (Core.Font).
+-- The speaker's name above a bubble: the alias the player gave them (Core.People) where there is one,
+-- inside the game's player link, so a click still whispers to the character; else the game's link or name.
+function Bubble.Speaker(entry)
+    local link, alias = entry.link, entry.name and Core.People and Core.People.Shown(entry.name)
+    if not alias then return link or entry.name or "" end
+    if type(link) == "string" and link:find("^|Hplayer:") then
+        alias = alias:gsub("|", "||")
+        return (link:gsub("|h(.-)|h$", function() return "|h" .. alias .. "|h" end, 1))
+    end
+    return alias
+end
+
 function Bubble.Size(size)
     font = Core.Font("SaneUIChatFont", ChatFontNormal, size)
     Layout.HEAD = size + 4
@@ -185,7 +197,7 @@ function Bubble.Init(row, entry, rowWidth)
         Icon(part, entry)
         local color = entry.class and RAID_CLASS_COLORS[entry.class] or HIGHLIGHT_FONT_COLOR
         part.name:SetHeight(Layout.HEAD)
-        part.name:SetText(entry.link or entry.name or "") -- a click on it whispers to them (Links.lua)
+        part.name:SetText(Bubble.Speaker(entry)) -- a click on it whispers to them (Links.lua)
         part.name:SetTextColor(color.r, color.g, color.b)
         part.meta:SetPoint("LEFT", part.name, "RIGHT", entry.name and Layout.GAP or 0, 0)
     elseif not note then
