@@ -279,24 +279,24 @@ local function Setup()
 
     tab = MakeTab(book)
     tab.Icon:SetTexture(ICON)
-    tab:SetScript("OnClick", function()
+    tab:SetScript("OnClick", ns.Guard(function()
         if active then return end
         Core.Sound("IG_SPELLBOOK_OPEN")
         ns.Safe("home", H.Open)
-    end)
+    end))
     Core.Tip(tab, TITLE, TEXT.homeTip)
 
     cover = MakeTab(book)
     Select(cover, false)
     cover:Hide()
-    cover:SetScript("OnClick", function()
+    cover:SetScript("OnClick", ns.Guard(function()
         Core.Sound("IG_SPELLBOOK_OPEN")
         ns.Safe("home", H.Close)
-    end)
+    end))
 
     -- Run after the game's own handlers and apart from them.
     EventRegistry:RegisterCallback("PlayerSpellsFrame.SpellBookFrame.Show", function() ns.Safe("home", OnShown) end, H)
-    EventRegistry:RegisterCallback("PlayerSpellsFrame.SpellBookFrame.Hide", function() hiddenAt = GetTime() end, H)
+    EventRegistry:RegisterCallback("PlayerSpellsFrame.SpellBookFrame.Hide", ns.Guard(function() hiddenAt = GetTime() end), H)
     EventRegistry:RegisterCallback("PlayerSpellsFrame.SpellBookFrame.DisplayedSpellsChanged",
         function() ns.Safe("home", OnDrawn) end, H)
 end

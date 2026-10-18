@@ -23,9 +23,9 @@ end
 local function Checkbox(root, key, enabled)
     local option = Core.Described(ns.name, key)
     local text, tip = option.text, option.tip
-    local box = root:CreateCheckbox(text, function() return Option(key) end, function()
+    local box = root:CreateCheckbox(text, ns.Guard(function() return Option(key) end), ns.Guard(function()
         Core.Set(ns.name, key, not Option(key))
-    end)
+    end))
     if not box then return box end
     if enabled and box.SetEnabled then box:SetEnabled(enabled) end
     if box.SetTooltip then
@@ -51,14 +51,14 @@ end
 
 local function Layouts(root)
     local menu = root:CreateButton(TEXT.layoutsMenu)
-    menu:CreateButton(TEXT.saveAs, ns.Presets.AskSave)
+    menu:CreateButton(TEXT.saveAs, ns.Guard(ns.Presets.AskSave))
     for _, name in ipairs(ns.Presets.List()) do
         local layout = menu:CreateButton(name)
-        layout:CreateButton(TEXT.load, function() ns.Presets.AskLoad(name) end)
-        layout:CreateButton(TEXT.saveOver, function()
+        layout:CreateButton(TEXT.load, ns.Guard(function() ns.Presets.AskLoad(name) end))
+        layout:CreateButton(TEXT.saveOver, ns.Guard(function()
             ns.Print((select(2, ns.Presets.Save(name))))
-        end)
-        layout:CreateButton(TEXT.delete, function() ns.Presets.AskDelete(name) end)
+        end))
+        layout:CreateButton(TEXT.delete, ns.Guard(function() ns.Presets.AskDelete(name) end))
     end
 end
 
@@ -74,10 +74,10 @@ local function Extend(_, root)
     -- each other, so the game has no old ranks to show. The ranks still to come are worth it.
     if ns.class == "WARRIOR" or ns.class == "ROGUE" then
         local text = Core.Word("SHOW_ALL_SPELL_RANKS", TEXT.allRanks)
-        local box = root:CreateCheckbox(text, function() return GetCVarBool("ShowAllSpellRanks") end, function()
+        local box = root:CreateCheckbox(text, ns.Guard(function() return GetCVarBool("ShowAllSpellRanks") end), ns.Guard(function()
             SetCVar("ShowAllSpellRanks", GetCVarBool("ShowAllSpellRanks") and "0" or "1")
             Refresh()
-        end)
+        end))
         if box and box.SetTooltip then
             box:SetTooltip(function(tooltip)
                 GameTooltip_SetTitle(tooltip, text)
@@ -98,5 +98,5 @@ local function Extend(_, root)
 end
 
 if Menu and Menu.ModifyMenu then
-    Menu.ModifyMenu("MENU_SPELL_BOOK_SETTINGS", Extend)
+    Menu.ModifyMenu("MENU_SPELL_BOOK_SETTINGS", ns.Guard(Extend))
 end

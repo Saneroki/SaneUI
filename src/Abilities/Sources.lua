@@ -205,10 +205,10 @@ function S.TrainerShown()
        and not GetTrainerServiceTypeFilter("unavailable") then
         filterOpened = true
         SetTrainerServiceTypeFilter("unavailable", true)
-        C_Timer.After(0.5, function()
+        C_Timer.After(0.5, ns.Guard(function()
             ns.Safe("trainer", ReadTrainer)
             RestoreFilter()
-        end)
+        end))
     end
 end
 

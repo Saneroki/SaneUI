@@ -109,10 +109,10 @@ local function Build()
             hint:Hide()
         end
     end))
-    holder:SetScript("OnHide", function()
+    holder:SetScript("OnHide", ns.Guard(function()
         lastButton = nil
         hint:Hide()
-    end)
+    end))
 end
 
 function D.Start(entry)

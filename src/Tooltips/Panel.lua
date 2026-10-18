@@ -255,8 +255,8 @@ local function Made(panel, field)
     if figure then
         figure.panel = panel
         figure:SetAllPoints(panel.icon)
-        figure:SetScript("OnHide", Forget)
-        pcall(figure.SetScript, figure, "OnModelLoaded", Loaded)
+        figure:SetScript("OnHide", ns.Guard(Forget))
+        pcall(figure.SetScript, figure, "OnModelLoaded", ns.Guard(Loaded))
         Forget(figure)
     end
     panel[field] = figure
@@ -395,8 +395,8 @@ local function Staged(panel)
     model:SetPoint("TOPLEFT", stage, "TOPLEFT", STAGE_IN, -STAGE_IN)
     model:SetPoint("BOTTOMRIGHT", stage, "BOTTOMRIGHT", -STAGE_IN, STAGE_IN)
     pcall(model.SetKeepModelOnHide, model, true)
-    pcall(model.SetScript, model, "OnModelLoaded", Arrived)
-    model:SetScript("OnUpdate", Turn)
+    pcall(model.SetScript, model, "OnModelLoaded", ns.Guard(Arrived))
+    model:SetScript("OnUpdate", ns.Guard(Turn))
     stage.model = model
     stage:Hide()
     panel.stage = stage

@@ -90,16 +90,16 @@ local function Attach(button, fallback)
     ghost:Hide()
     ghost:RegisterForDrag("LeftButton")
     ghost:SetScript("OnEnter", function() ns.Safe("ghost tooltip", ShowTooltip, button) end)
-    ghost:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    ghost:SetScript("OnLeave", ns.Guard(function() GameTooltip:Hide() end))
     ghost:SetScript("OnDragStart", function() ns.Safe("ghost drag", OnDragStart, button) end)
     ghost:SetScript("OnDragStop", function() ns.Safe("ghost drag", OnDragStop) end)
     ghosts[button] = ghost
     -- Hooks run after the button's own handlers and leave them as they were.
-    button:HookScript("OnEnter", OnEnter)
+    button:HookScript("OnEnter", ns.Guard(OnEnter))
     button:HookScript("OnDragStart", function(self) ns.Safe("ghost drag", OnDragStart, self) end)
     button:HookScript("OnDragStop", function() ns.Safe("ghost drag", OnDragStop) end)
-    button:HookScript("OnShow", Mouse)
-    button:HookScript("OnHide", Mouse)
+    button:HookScript("OnShow", ns.Guard(Mouse))
+    button:HookScript("OnHide", ns.Guard(Mouse))
 end
 
 -- Give every real button its ghost. Asked again at each redraw until every button of the

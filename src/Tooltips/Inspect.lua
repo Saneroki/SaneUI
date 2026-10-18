@@ -144,7 +144,7 @@ end
 -- Listens for the answers. arrived(guid): an item level or talents are there.
 function Inspect.Start(arrived)
     if not (NotifyInspect and C_PaperDollInfo and C_PaperDollInfo.GetInspectItemLevel) then return end
-    hooksecurefunc("NotifyInspect", function() lastAsked = GetTime() end)
+    hooksecurefunc("NotifyInspect", ns.Guard(function() lastAsked = GetTime() end))
     SaneUI.Core.On("INSPECT_READY", function(guid)
         guid = Plain(guid)
         if not (pending and guid and pending.guid == guid) then return end

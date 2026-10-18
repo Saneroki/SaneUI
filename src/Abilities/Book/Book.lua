@@ -264,7 +264,7 @@ local function MakeFold()
     button:SetNormalTexture("Interface\\Buttons\\UI-PlusButton-Up")
     button:SetPushedTexture("Interface\\Buttons\\UI-PlusButton-Down")
     button:SetHighlightTexture("Interface\\Buttons\\UI-PlusButton-Hilight", "ADD")
-    button:SetScript("OnClick", function(self) SetExpanded(self.spell, true) end)
+    button:SetScript("OnClick", ns.Guard(function(self) SetExpanded(self.spell, true) end))
     Core.Tip(button, function() return TEXT.showRanks:format(button.spell, button.more) end)
     return button
 end
@@ -280,7 +280,7 @@ local function MakeFoldHeader()
     header.Minus:SetPoint("LEFT", 2, 0)
     header.Text = header:CreateFontString(nil, "ARTWORK", "SystemFont_Large")
     header.Text:SetPoint("LEFT", header.Minus, "RIGHT", 6, 0)
-    header:SetScript("OnClick", function(self) SetExpanded(self.spell, false) end)
+    header:SetScript("OnClick", ns.Guard(function(self) SetExpanded(self.spell, false) end))
     Core.Tip(header, TEXT.foldRanks, nil, "ANCHOR_TOPLEFT")
     return header
 end
@@ -684,20 +684,20 @@ local function MakeFrames()
     box.Text:ClearAllPoints()
     box.Text:SetPoint("RIGHT", box, "LEFT", -2, 0)
     -- Set through Core, which tells the module (its changed redraws the pages) and the options page.
-    box:SetScript("OnClick", function(self)
+    box:SetScript("OnClick", ns.Guard(function(self)
         local on = self:GetChecked() and true or false
         Core.Sound(on and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF")
         self:SetChecked(Core.Set(ns.name, "showHidden", on) and true or false)
-    end)
-    box:SetScript("OnEnter", function(self)
+    end))
+    box:SetScript("OnEnter", ns.Guard(function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip_SetTitle(GameTooltip, option.text)
         GameTooltip_AddNormalLine(GameTooltip, option.tip, true)
         GameTooltip:Show()
-    end)
-    box:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    end))
+    box:SetScript("OnLeave", ns.Guard(function() GameTooltip:Hide() end))
     frame:SetScript("OnUpdate", ns.Guard(Watch))
-    frame:SetScript("OnHide", function() ns.Drag.Cancel() end)
+    frame:SetScript("OnHide", ns.Guard(function() ns.Drag.Cancel() end))
     container, pager, headers, toggle = frame, paging, made, box
 end
 
@@ -734,13 +734,13 @@ local function Arm()
     -- All of these run after the game's own handler and apart from it.
     if not hooked then
         hooked = true
-        EventRegistry:RegisterCallback("PlayerSpellsFrame.SpellBookFrame.DisplayedSpellsChanged", B.OnNative, B)
-        EventRegistry:RegisterCallback("PlayerSpellsFrame.SpellBookFrame.Show", B.OnNative, B)
-        view1:HookScript("OnShow", B.OnNative)
-        paged:HookScript("OnMouseWheel", function(_, delta)
+        EventRegistry:RegisterCallback("PlayerSpellsFrame.SpellBookFrame.DisplayedSpellsChanged", ns.Guard(B.OnNative), B)
+        EventRegistry:RegisterCallback("PlayerSpellsFrame.SpellBookFrame.Show", ns.Guard(B.OnNative), B)
+        view1:HookScript("OnShow", ns.Guard(B.OnNative))
+        paged:HookScript("OnMouseWheel", ns.Guard(function(_, delta)
             if armed and not home then pager:OnMouseWheel(delta) end
-        end)
-        if book.GoToSpell then pcall(hooksecurefunc, book, "GoToSpell", OnGoToSpell) end
+        end))
+        if book.GoToSpell then pcall(hooksecurefunc, book, "GoToSpell", ns.Guard(OnGoToSpell)) end
     end
 
     -- Now the game's column and its page buttons. Their own height and place are only noted

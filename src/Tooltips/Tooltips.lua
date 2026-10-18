@@ -251,13 +251,13 @@ local function Faded(tooltip)
     panel:Hide()
 end
 
-local function OnShown(tooltip) Guarded(Reshown, tooltip) end
-local function OnFaded(tooltip) Guarded(Faded, tooltip) end
-local function OnSetShown(tooltip, shown)
-    if shown then Guarded(Reshown, tooltip) end
-end
-local function OnHidden(tooltip) Guarded(Hidden, tooltip) end
-local function OnCleared(tooltip) Guarded(Cleared, tooltip) end
+local OnShown = ns.Guard(Reshown)
+local OnFaded = ns.Guard(Faded)
+local OnSetShown = ns.Guard(function(tooltip, shown)
+    if shown then Reshown(tooltip) end
+end)
+local OnHidden = ns.Guard(Hidden)
+local OnCleared = ns.Guard(Cleared)
 
 -- Once a frame while a panel is shown (see Watching).
 local function Watch(tooltip)
@@ -284,10 +284,10 @@ local function Watch(tooltip)
     end
 end
 
-function Watching(panel, elapsed)
+Watching = ns.Guard(function(panel, elapsed)
     panel.elapsed = elapsed
-    Guarded(Watch, panel.tooltip)
-end
+    Watch(panel.tooltip)
+end)
 
 -- Hooks a tooltip, once. False for one that is not drawn anew.
 local function Adopt(tooltip)
@@ -396,16 +396,18 @@ local function Center(tooltip)
     tooltip:SetPoint("CENTER", UIParent, "CENTER")
 end
 
+local pressed, dragged = false, false -- by the pinned tooltip's mouse: a click closes it, a drag does not
+local function Released(tooltip)
+    local click = pressed and not dragged
+    pressed = false
+    if click then tooltip:Hide() end
+end
+
 local function Pin(tooltip)
-    local pressed, dragged = false, false
     tooltip:HookScript("OnShow", function(self) ns.Safe(PINNED, Center, self) end)
-    tooltip:HookScript("OnMouseDown", function() pressed, dragged = true, false end)
-    tooltip:HookScript("OnDragStart", function() dragged = true end)
-    tooltip:HookScript("OnMouseUp", function(self)
-        local click = pressed and not dragged
-        pressed = false
-        if click then ns.Safe(PINNED, self.Hide, self) end
-    end)
+    tooltip:HookScript("OnMouseDown", function() pressed, dragged = true, false end) -- unguarded: two flags, works on after a stand-down
+    tooltip:HookScript("OnDragStart", function() dragged = true end) -- unguarded: a flag, as above
+    tooltip:HookScript("OnMouseUp", function(self) ns.Safe(PINNED, Released, self) end)
 end
 
 function ns.OnLoad()
@@ -446,14 +448,14 @@ function ns.OnLogin()
     end
     driver = CreateFrame("Frame")
     driver:Hide() -- it only runs while a tooltip waits to be drawn
-    driver:SetScript("OnUpdate", function()
+    driver:SetScript("OnUpdate", ns.Guard(function()
         driver:Hide()
         for index = 1, #queue do
             local tooltip = queue[index]
             queue[index] = nil
             Guarded(Settle, tooltip)
         end
-    end)
+    end))
     ns.driver = driver
     processor.AddTooltipPostCall(processor.AllTypes, function(tooltip, data)
         Guarded(OnFilled, tooltip, data)

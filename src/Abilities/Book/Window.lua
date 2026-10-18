@@ -98,9 +98,9 @@ end
 
 -- The game places its windows right after showing one: ours comes a moment later.
 local ApplyLater = Core.Later(function() ns.Safe("window", Apply) end)
-function Later()
+Later = ns.Guard(function()
     if on then ApplyLater() end
-end
+end)
 
 -- Where the window stands now, as the place to keep.
 local function Remember(size)

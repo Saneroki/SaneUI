@@ -180,21 +180,21 @@ end
 local function Menu(item)
     local entry = item.entry
     if not (entry and MenuUtil and MenuUtil.CreateContextMenu) then return end
-    MenuUtil.CreateContextMenu(item.Button, function(_, root)
+    MenuUtil.CreateContextMenu(item.Button, ns.Guard(function(_, root)
         local slots = ReservedSlots(entry, item.family)
         if #slots > 0 then
             root:CreateTitle(entry.name)
             for _, slot in ipairs(slots) do
-                root:CreateButton(TEXT.removeFrom:format(ns.SlotLabel(slot)), function()
+                root:CreateButton(TEXT.removeFrom:format(ns.SlotLabel(slot)), ns.Guard(function()
                     ns.Engine.Clear(slot)
-                end)
+                end))
             end
         end
         if #slots == 0 then root:CreateTitle(entry.name) end
         if entry.extra then
-            root:CreateButton(TEXT.removeExtra, function() S.RemoveExtra(entry) end)
+            root:CreateButton(TEXT.removeExtra, ns.Guard(function() S.RemoveExtra(entry) end))
         end
-    end)
+    end))
 end
 
 local function OnClick(button, mouseButton)
@@ -284,24 +284,24 @@ function I.Create(parent)
     item.RequiredLevel = FontString(text, "SystemFont_Med1", 1)
     item.lines = { item.Name, item.SubName, item.RequiredLevel } -- in their order, for every draw
 
-    button:SetScript("OnEnter", function(self)
+    button:SetScript("OnEnter", ns.Guard(function(self)
         local owner = self:GetParent()
         if owner.highlight then self.IconHighlight:Show() end
         ShowTooltip(owner)
-    end)
-    button:SetScript("OnLeave", function(self) HideTooltip(self:GetParent()) end)
-    button:SetScript("OnHide", function(self)
+    end))
+    button:SetScript("OnLeave", ns.Guard(function(self) HideTooltip(self:GetParent()) end))
+    button:SetScript("OnHide", ns.Guard(function(self)
         if GameTooltip:GetOwner() == self then HideTooltip(self:GetParent()) end
-    end)
-    button:SetScript("OnClick", OnClick)
-    button:SetScript("OnDragStart", function(self)
+    end))
+    button:SetScript("OnClick", ns.Guard(OnClick))
+    button:SetScript("OnDragStart", ns.Guard(function(self)
         local entry = self:GetParent().entry
         if entry and not entry.passive then
             GameTooltip:Hide()
             ns.Drag.Start(entry)
         end
-    end)
-    button:SetScript("OnDragStop", function() ns.Drag.Stop() end)
+    end))
+    button:SetScript("OnDragStop", ns.Guard(function() ns.Drag.Stop() end))
     return item
 end
 
