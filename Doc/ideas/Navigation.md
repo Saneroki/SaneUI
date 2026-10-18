@@ -244,8 +244,9 @@ and its window guide, and against the data plan.
    `Core.Plain`, and the map has a state for *position unknown* (*Design*).
 7. **Known flight points:** the map's taxi list calls every node known on this client; only the flight
    master's map is reliable (`TAXIMAP_OPENED`, `C_TaxiMap.GetAllTaxiNodes`), kept per character.
-8. **The window** follows Core as it is now: nine zones, the HUD kind of window (no title bar while small,
-   Esc brings it back from full screen), a click into the corner by default.
+8. **The window** follows Core as it is now: nine zones, the kind `screen` (no title bar while small,
+   Esc brings it back from full screen), a click into the corner by default (Core's *Click to expand*, not
+   built yet: today the mouse's coming alone fills the screen).
 9. **The leveling guide's item button** is a secure button: a window that holds one is locked in a fight
    (window guide, *Combat*). It must not be a child of, nor anchored to, the map window (*Design*,
    *Leveling guide*).
@@ -304,7 +305,7 @@ guide), and these for Navigation in particular:
 ## Shape and files
 
 ```
- Core: Window (HUD kind, Edge, Edit Mode)   Core.Data (World, Spawns, Quests, Guides, Routes)   the scheduler
+ Core: Window (kind screen, Edge, Edit Mode) Core.Data (World, Spawns, Quests, Guides, Routes)  the scheduler
             │                                         │                                            │
  ┌──────────┴─────────────────────────────────────────┴────────────────────────────────────────────┴──┐
  │ Navigation                                                                                          │
@@ -669,8 +670,8 @@ What Navigation reads (`Doc/ideas/Data.md`); Navigation writes nothing there.
 
 - **A pack that is not there yet or switched off** leaves its pins out; the map works with the live
   sources alone. `Get` never loads a pack (Data.md, decision 20).
-- **Told when data arrives:** Navigation needs a message from Core when a set becomes ready or its stamp
-  moves (Core's `Listen`), not a look every frame. To put into Core's data guide when it is written.
+- **Told when data arrives:** by Core, not a look every frame: `Set:OnStamp(fn)` when a set arrives or
+  changes, `Data.WhenReady(set, fn)` once it is there.
 - **Map positions to world** are converted by Navigation once per map, kept with the map's pins.
 - **A consequence for the data plan:** with Navigation on, the minimap shows from login, so the pack
   Spawns loads after every login, not at the first map opened. It should hold what the map shows and stay
@@ -750,7 +751,7 @@ Each step ends in something tried in the game, and in the module's README markin
 | Step | What | Needs | Done when |
 | --- | --- | --- | --- |
 | **0. Proof** | A throwaway test behind `/sane map test`, to answer the *to try* points before building on them: (a) a tile by file ID shows and lies under the player; (b) the native `Minimap` in a frame of ours, ground off, rotation ignored: dots on our ground, in and out of a fight, after Edit Mode and a loading screen; (c) the map key opens ours and a fight after it shows no blocked action (taint log on); `WorldMapFrame:Hide()` in a fight; (d) positions in a city, a cave, a dungeon; (e) a `QuestPOIFrame` of ours draws a quest's area; the zone highlight as a mask; (f) many textures and pins on a full screen: the frame time, which sets the caps; (g) the overlay on the minimap: wheel and drag ours, the dots' tooltips the minimap's | the tile table (tool) | every point has its answer written into this page |
-| **1. Minimap** | The window (HUD, top right), canvas, camera, terrain, the native minimap's dots, the wheel through its steps, the toggle *Minimap*, `GiveBack` | Core's window | an hour of play: no error, no blocked action, dots on the ground |
+| **1. Minimap** | The window (kind `screen`, top right), canvas, camera, terrain, the native minimap's dots, the wheel through its steps, the toggle *Minimap*, `GiveBack` | Core's window | an hour of play: no error, no blocked action, dots on the ground |
 | **2. Map** | Full screen, two cameras, zone to world, Blizzard's art, the three views and the cut, the selector, the game's map kept closed, *Map* toggle, *Classic windows* | step 1 | every way of step 0 (c) opens ours; Stormwind lies on Stormwind |
 | **3. Live pins** | Player, group, quests on the map, flights, the map pin by Ctrl-click, vignettes, the game's points, explored areas; the filter | step 2 | pins match the game's own map |
 | **4. Quest log** | The list on the left, its actions | step 2 | the game's quest log is not missed |
