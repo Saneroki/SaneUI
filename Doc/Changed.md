@@ -33,8 +33,9 @@ A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, ke
   source.
 - New *Gathering nodes*: herbs, ore and other nodes have drop tables like creatures (gathers, chance and yield
   per gather and per visit); places merge by yards (a sighting near a known place is that place, a new one
-  needs a second sighting), keep their spawn mix, and give what gathering routes need. `Data-build.md` 1d.3
-  takes it in.
+  needs a second sighting; 8 yards, measured on known spawn points, the place whose mix holds the type
+  first; fishing pools only to a cell), keep their spawn mix, and give what gathering routes need.
+  `Data-build.md` 1d.3 takes it in.
 
 ### Ideas: an auction house per game version, Forever's per ruleset (Saneroki, 2026-10-18)
 - `Doc/ideas/Data.md`, *Realms and regions*: every game version has its own houses (live, beta and PTR never

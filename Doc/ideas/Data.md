@@ -905,12 +905,17 @@ what each gives: enough for a planner to lay efficient gathering routes.
   player a little more, so the player's place at the loot is a sighting near the node, not the node itself.
   Herbs and ore stand closer together than a cell can tell, so they merge by yards (the map's size from
   `C_Map.GetWorldPosFromMapPos`):
-  - a sighting within the merge distance (*proposal* 8 yards, to be set from the spacing of known spawn
-    points) of a known place of the same family is that place: its count goes up, nothing new is made;
+  - a sighting within the merge distance, **8 yards**, of a known place of the same family is that place:
+    its count goes up, nothing new is made. Measured on known spawn points: a player gathering stands up to
+    about 5 yards from the node, with lag about 7, while under 8 yards only 1 to 3 % of exact spawn points
+    have a neighbour of their family. Of several places within 8 yards, the nearest whose spawn mix holds
+    the node type gathered takes it, else the nearest (the type joins its mix);
   - farther away it is a candidate, and becomes a place only at a second sighting on another visit;
   - two places are never made closer than the merge distance from sightings; only the server's exact
     positions (shipped data) can keep two places nearer than that apart;
-  - a place's point: an exact one stays; one from sightings is their median, rounded.
+  - a place's point: an exact one stays; one from sightings is their median, rounded;
+  - **fishing pools** are fished from up to 20 yards away, so a sighting places a pool only to a cell (an
+    area, as for creatures), never to a point.
 - **A place belongs to a family** (herb, ore, chest, fishing pool), not to one node type: several herbs can
   grow on one spot in turn. Each place keeps how often each node type was seen there: its **spawn mix**.
 - **Verified** (*Verified and unverified*): a place is verified once seen in play in this game version, or
