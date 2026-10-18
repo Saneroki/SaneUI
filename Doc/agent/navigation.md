@@ -1,12 +1,12 @@
 # Navigation: handoff for the session that builds it
 
-Written 2026-10-18, before any code. The plan is [Doc/ideas/Navigation.md](../ideas/Navigation.md);
+Written 2026-10-18, before any code; the first proof built the same day (*Built*, below). The plan is [Doc/ideas/Navigation.md](../ideas/Navigation.md);
 where this note and the plan differ, the plan wins. Read the plan's *Design* and *Build order* first, then
 the window guide ([windows.md](../guides/windows.md)) and the data guide ([data.md](../guides/data.md)).
 
 ## What it is
 
-`SaneUI_Navigation`, a module that does not exist yet (no `src/Navigation/`). One window of Core's kind
+`SaneUI_Navigation` (`src/Navigation/`, its README says what is built). One window of Core's kind
 `screen`, docked `TOPRIGHT`, takes the place of the minimap, the world map and the quest log:
 
 1. Small: the minimap. Full screen (a click into the corner, Esc back): the map, the quest log on the left,
@@ -39,6 +39,16 @@ the window guide ([windows.md](../guides/windows.md)) and the data guide ([data.
 
 **Steps 0 to 4 can start now:** they need Core's window system and the game's API only.
 
+## Built (2026-10-18): the first proof
+
+The full screen map from the top right corner, nothing else: Core's window (kind `screen`, `TOPRIGHT`, small
+it shows nothing), the canvas with its holder and keyed pools, the camera (drag, wheel around the mouse,
+bounded to the continent), the terrain from *Tiles* (at most 400 tiles in view, else Blizzard's art), Blizzard's
+map art (the continent's, the zone's in the middle when the view is under 9000 yards high), the three views
+as buttons and the setting *Map view*, `/sane map`, `GiveBack` (the window goes). Not yet: the small view, the
+native minimap's dots, the game's map kept closed, pins, the quest log, routes, the guide. Tests:
+`dev/tests/navigation.lua`.
+
 ## What is not there yet
 
 1. **Core's data framework** has only step 1a (`Doc/ideas/Data-build.md`): packs, `Data.Set`, `Get`,
@@ -46,8 +56,8 @@ the window guide ([windows.md](../guides/windows.md)) and the data guide ([data.
    (1b, 1d.4), the characters' data such as known flight points and rares seen (1c.4).
 2. **Every set Navigation reads has a schema and no entries:** Zones, Places, Travel, NPCs, Objects, Quests,
    Spawns, QuestAreas, PatrolPaths, CreatureSpawns, Guides, Walking. The import (*Three prompts*, 2) is next.
-3. **Set *Tiles*** (the minimap tiles' file IDs per continent and tile): no schema, no pack, no tool. The
-   tool needs the game client's own files.
+3. **Set *Tiles*:** built (2026-10-18), in the pack World: 736 tiles of the Eastern Kingdoms, 988 of Kalimdor,
+   read from the game's own continent files; key continent × 4096 + row × 64 + column.
 4. **The walking data tool** (pack Routes): not written; its format is still open (open question 1).
 5. **The guide tool** that writes *Guides* from Core's quest data: not written.
 6. **Core's windows:** click to expand (`Edge.lua` still fills on the mouse's coming), the holder, the board

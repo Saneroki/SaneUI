@@ -3,8 +3,29 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 90 (Sync), 351 (windows), 175 (data in the game).
-A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, key bindings).
+Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 90 (Sync), 351 (windows), 175 (data in the game), 43 (Navigation).
+A game restart takes it in (a new addon, Navigation; new files in Core's, Social's and Tooltips' TOCs, key bindings).
+
+### Navigation: the first proof, the full screen map (Saneroki, 2026-10-18)
+- A new module, `SaneUI_Navigation` (`src/Navigation/`): a window of Core's (kind `screen`, docked `TOPRIGHT`,
+  small it shows nothing and takes no click) that fills the screen when the mouse goes into the top right
+  corner, and shows the map of the player's continent there. Drag pans, the wheel zooms around the mouse
+  (1.25 a notch, from 2 units a yard out to the whole continent). Three buttons at its top left, also the
+  setting *Map view*: *Blizzard maps* (the continent's art, the zone's over it when the view is under 9000
+  yards high), *Terrain* (the game's minimap textures; past 400 tiles in view, the art), *Overlay* (the art
+  half see-through over the terrain, the zone's alone). `/sane map` (and `reset`).
+- Built as the plan's design says: `Coords.lua` (map, world and plane, a map's box read from the game with
+  the axes found from the map itself, the terrain's grid), `Camera.lua`, `Canvas.lua` (one holder frame moved by
+  a drag, layout only on a zoom or past a margin, keyed texture pools, no `OnUpdate` at rest), `Terrain.lua`,
+  `Art.lua` (the last tiles cut at the art's edge), `Window.lua`. Every script guarded; `GiveBack` hides the
+  window.
+- Core's data: the set *Tiles* (`assets/data/Tiles/`, pack World): each continent tile's minimap texture,
+  1724 entries (Eastern Kingdoms and Kalimdor) from the game's own continent files, build 70245; the beta's
+  are the same. Pack World's notes; the data guide's table; `Doc/ideas/Data.md`.
+- Docs: the module's README, `Doc/agent/navigation.md` (*Built*), `Doc/agent/README.md`, the plan's status.
+- Tests: `dev/tests/navigation.lua` 43 checks (the spaces and the grid, both orders of the game's vector, the
+  camera's zoom around the mouse and its bounds, the map drawn each of the three ways from a sample pack, a
+  drag that moves only the holder, the tile cap, closing, standing down), in `dev/tests/run`.
 
 ### Core's own doors guarded too; the lint covers all of src (Saneroki, 2026-10-18)
 - `Core.Guard(label, fn)` (`Core.lua`): Core's door for a frame's script, a hook, a timer or a menu's function,

@@ -1,0 +1,25 @@
+## Interface: 16001
+## Title: Navigation
+## Notes: Sane UI's map. Move the mouse into the screen's top right corner and the map fills the screen: drag it, zoom it with the mouse wheel, and choose between Blizzard's maps, the terrain, or both laid over each other. Esc or the corner again closes it. Being built: the game's own minimap and map stay as they are.
+## Author: Saneroki
+## Version: 0.3.0
+## Category: Sane UI
+## Group: SaneUI
+## Dependencies: SaneUI
+## IconTexture: Interface\Icons\INV_Misc_Map_01
+## X-License: MIT
+
+# The module's own table, its settings and the command. First: the other files add to that table.
+Navigation.lua
+# The map's spaces: map, world, the plane it is drawn in; the terrain's grid. Knows no frames
+Coords.lua
+# Where a view looks: its middle, its zoom, the drag and the wheel. Knows no frames
+Camera.lua
+# The frame the map is drawn in: its layers, the mouse, what is in view
+Canvas.lua
+# The terrain: the game's minimap textures, tile by tile
+Terrain.lua
+# Blizzard's map art: the continent's, and the zone's up close
+Art.lua
+# The window: docked in the top right corner, the map when it fills the screen, the view buttons
+Window.lua

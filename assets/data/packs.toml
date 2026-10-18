@@ -49,4 +49,4 @@ notes = "Sane UI's data on the class talent trees and the Legacy trees. Loaded w
 
 [World]
 title = "Data: World"
-notes = "Sane UI's data on creatures, their spells, objects, zones, travel and places. Loaded soon after login."
+notes = "Sane UI's data on creatures, their spells, objects, zones, travel and places, and the terrain's pictures for the map. Loaded soon after login."

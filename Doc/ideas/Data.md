@@ -97,7 +97,8 @@ the rest.
 - Every set here has its schema since step 1a.7 (`assets/data/<Set>/schema.toml`; the guide lists them with
   their keys, *The sets*). Spawns and Drops, whose things have IDs that overlap, are keyed by text
   (`npc:<ID>`, `object:<ID>`). Still open for prompt 2: a mailbox is a kind of both *Objects* and *Places*
-  (one of them is to give it up), and Navigation's *Tiles* has no pack here yet.
+  (one of them is to give it up). Navigation's *Tiles* (the terrain's minimap textures, read from the
+  game's own continent files) is in World.
 - Packs are Core's own addons, not modules: no settings page, only their data and the code that reads it
   (Saneroki, decision 24: `Quests.lua` comes with the Quests pack, `Scan.lua` with Market, ...), `## Dependencies:
   SaneUI`, `## Group: SaneUI`, `## LoadOnDemand: 1`. In the addon list they stand under Sane UI, titled
@@ -1202,6 +1203,7 @@ rares, herbs and ore, quests, trainers, repair, inns and every other NPC with a 
 | *Objects* | object ID | Name, kind (chest, herb, ore, mailbox, quest object, book), the skill it needs (herbalism 150); what it gives is in *Drops* | World |
 | *Places* | our own number | What is no creature or object: zone crossings, cave entrances, piers, dungeon entrances | World |
 | *NPCs* | creature ID | `services`: which NPCs are trainers, repair, inns, ...; where they stand is their *Spawns* | World |
+| *Tiles* | continent × 4096 + row × 64 + column | The terrain's picture of each tile of a continent's grid: the game's own minimap texture, for Navigation's map (2026-10-18) | World |
 
 - **One shape for every area:** quest areas, spawn areas and herb or ore areas all use the same cells
   (*Quest areas*), the same merging and the same point test (`Areas.lua`).

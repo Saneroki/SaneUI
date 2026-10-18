@@ -6,6 +6,7 @@
 #   abilities.lua   the Abilities module
 #   tooltips.lua    the Tooltips module
 #   social.lua      the Social module
+#   navigation.lua  the Navigation module: the map's spaces, its camera, the map drawn three ways
 #   sync.lua        Core's Sync: the game's own settings kept with Sane UI's
 #   window.lua      what Core gives every window: moving, sizing, docking, opening under the mouse
 #   data.lua        Core's data framework in the game: the scheduler, the packs as the game loads them
@@ -28,6 +29,7 @@ lua5.1 dev/tests/core.lua
 lua5.1 dev/tests/abilities.lua
 lua5.1 dev/tests/tooltips.lua
 lua5.1 dev/tests/social.lua
+lua5.1 dev/tests/navigation.lua
 lua5.1 dev/tests/sync.lua
 lua5.1 dev/tests/window.lua
 lua5.1 dev/tests/data.lua

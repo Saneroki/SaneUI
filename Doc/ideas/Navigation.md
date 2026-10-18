@@ -1,7 +1,8 @@
 # Navigation
 
 The plan for the **Navigation** module (`SaneUI_Navigation`): the window, the map, the quest log, the pins,
-the waypoint, the routes and the leveling guide. Nothing is built yet (2026-10-16).
+the waypoint, the routes and the leveling guide. Built so far (2026-10-18): a first proof, the full screen map
+from the top right corner, dragged and zoomed, in the three views (`src/Navigation/README.md`).
 
 How to read this page:
 
