@@ -75,6 +75,8 @@ A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, ke
   the reason. The older games' facts fall back only where they pass and Forever's client agrees. *Verified and
   unverified* now applies to what passed; a place seen once or a chance from too few loots is a candidate,
   not a fact.
+- Decision 28: the quests and drops taken in as *old* fail the rule but stay, unverified, until the game's own
+  data or a batch that passes replaces them entry by entry; the one exception.
 
 ### Ideas: verified and unverified facts, gathering nodes (Saneroki, 2026-10-18)
 - `Doc/ideas/Data.md`, new *Verified and unverified*: a fact the game has not confirmed in its own game version

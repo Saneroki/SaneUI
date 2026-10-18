@@ -379,6 +379,8 @@ questionable or old is dropped before the import and never reaches the master or
 - **What the game itself says is never dropped** by these rules: it is the truth for its build (*Import*).
 - **Kept outside the master:** what was dropped stays where it was read, with the reason, so a later look
   can find it; the master holds only what passed.
+- **The one exception:** the quests and drops taken in as *old* stay, unverified, until replaced
+  (decision 28).
 
 ### Verified and unverified
 
@@ -1954,3 +1956,9 @@ open ones on 2026-10-17).
       prices.
     - Stricter, if Saneroki wants it: a batch counts only for the game version it was seen in, and live
       starts empty.
+28. Answered (Saneroki, 2026-10-18): keep both until replaced. **The quests and drops taken in as *old***
+    (step 1b.1: 4,796 quests, 3,883 creatures' drops) fail *When in doubt, left out*: the chances are
+    rounded to whole percent with 0 for under one, and both are the older game's facts from a batch of
+    unknown making. They stay, marked unverified (*Verified and unverified*), so the Tooltips module keeps its
+    quest and drop lines, and give way entry by entry as the game's own data (1d.3, 1d.4) or a batch that
+    passes replaces them. This is the one exception; no other batch is taken in this way.
