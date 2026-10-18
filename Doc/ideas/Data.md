@@ -221,6 +221,12 @@ and what players make is kept per auction house.
   - **Realm:** its number (`GetRealmID`); the name is only for showing. Where connected realms share one
     auction house (`GetAutoCompleteRealms`), the group counts as one realm, named by its lowest number.
   - **Side:** the house of the player's faction, or a neutral one (the house in a goblin town).
+  - **Every game version has its own houses** (Saneroki, 2026-10-18): Forever live, its beta and a PTR
+    never share one, and Classic or retail, when they come, keep theirs the same way.
+  - **Forever has no realm list:** one realm per ruleset (normal, PvP, roleplay, later hardcore) and region.
+    So on Forever a house is its game version, region, ruleset and side, and the ruleset's realm number names
+    it (`forever-beta/us/<the normal realm's number>/alliance`); the ruleset is shown beside it. Where a
+    game has many realms, a house is a realm or a group of connected realms, as above.
   - *To check in the game:* whether Forever's houses are split by faction, how to tell a neutral one at
     `AUCTION_HOUSE_SHOW` (by the NPC that opened it), and whether Forever has connected realms.
 - **The realm's kind needs nothing of its own:** each realm has its own auction house anyway, a hardcore

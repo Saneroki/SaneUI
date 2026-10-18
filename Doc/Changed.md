@@ -6,6 +6,11 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 88 (Sync), 351 (windows), 175 (data in the game).
 A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, key bindings).
 
+### Ideas: an auction house per game version, Forever's per ruleset (Saneroki, 2026-10-18)
+- `Doc/ideas/Data.md`, *Realms and regions*: every game version has its own houses (live, beta and PTR never
+  share one); Forever has one realm per ruleset and region, so its house is game version, region, ruleset and
+  side, named by the ruleset's realm number.
+
 ### Data: game facts apart from personal data (Saneroki, 2026-10-18)
 - `Doc/guides/data.md`, new *Game facts and personal data*: the packs hold facts about the game, shared by
   every player; characters, progress, settings, the auction log and players' names are the player's own and
