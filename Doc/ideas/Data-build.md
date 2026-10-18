@@ -129,6 +129,8 @@ at most the commit it was on, and the next session goes on from there.
   - the packs' saved variables: format, checks, `broken`, a lost file warned of, the budget of values;
   - all saved data keyed by game version first;
   - learned rows over the pack's, dropped once the pack is as new;
+  - confirmations (`confirmed`: per entry the version the game agreed with and the newest day), dropped once
+    the pack's verified mark has that day (the plan, *Verified and unverified*);
   - `Stamp` moves.
   - Tests, among them: saved data under another game version's key (a copied `WTF`) is neither used nor
     changed.
@@ -144,7 +146,12 @@ at most the commit it was on, and the next session goes on from there.
     staging of accepted data only, and reads the `.bak` file when a saved file is missing.
   - Per game folder: it takes only the part keyed by that folder's own game version (its product in
     `.flavor.info`), and its staging names that game version.
-  - Tests with sample saved files, among them two folders whose data go to two game versions.
+  - The verified mark (the plan, *Verified and unverified*): confirmations staged per version; the import
+    writes `verified` (the import's day, the times), at most one per import and only for a confirmation
+    seen after its day, never again for the whole reads of the client's files; the check and the guide know
+    the key; the packs carry it.
+  - Tests with sample saved files, among them two folders whose data go to two game versions, and one saved
+    file taken in twice that counts once.
 - [ ] **1c.4 Characters.** *Built ahead of 1c.1 for Tooltips' Inventory section (Saneroki, 2026-10-17); still
   open: the auction log and own auctions, a character deleted in Profiles.*
   - `Characters.lua`, and the pack Characters: no shipped data, only its saved variable. *Done: the pack is a

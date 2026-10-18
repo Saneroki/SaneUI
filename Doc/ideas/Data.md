@@ -347,7 +347,8 @@ written only into its own game version's files (*Game versions kept apart*).
 
 - **Unknown key:** a new entry, first version `since` = the staged build (or 0).
 - **Known key, all staged fields agree** with the version current at that build: nothing changes; the
-  source is added to that version's sources.
+  source is added to that version's sources, and the game's word moves its mark (*Verified and
+  unverified*).
 - **A field differs, and the source is the game at a newer build, or at the same build on a later day** (a
   hotfix): a new version with the changed fields.
 - **A field differs otherwise** (an import against the game's facts, or two values for the same build): a
@@ -396,8 +397,28 @@ marked, so an older game's fact is never taken for one of Forever's.
 - **Verified later without a new version:** when the game agrees with an unverified version, the import's
   *agreeing* case adds `game` to its sources, and it is verified. When the game says otherwise, a new
   version replaces it (*Changed*).
+- **When and how often, nothing more** (Saneroki, 2026-10-18): a version keeps only the day it was last
+  confirmed and how many times, `"verified":{"day":"2026-11-07","times":3}` after its `src`. No list of the
+  confirmations, nobody's name and no from where, so the master stays small.
+  - `day` is the day of the import that took the newest confirmation in: when our data learned it, never
+    when a player was there (*Game facts, not people*). `times` counts the imports that confirmed it.
+  - The import that makes an unverified version verified writes it with `times` 1; so does one that writes
+    a version from play (the harvest, accepted shared sightings).
+  - A later import that confirms it in play adds one and moves `day` on: at most one per import, and only
+    for a confirmation seen after the version's `day`. So the same saved file taken in twice, or many
+    players in one import, count once.
+  - Whole reads of the game's own data (the tools' reads of the client's tables and caches, the crawl, the
+    patch check) verify an unverified version, but do not count again: a version they wrote is verified by
+    its source and carries no `verified` until play confirms it. So a new build does not rewrite every line
+    of the master.
+  - A new version (the game said otherwise) starts afresh; the one before keeps its mark as it was.
+- **Confirmations in play:** a watcher that finds the pack agreeing with what the game shows notes it in the
+  pack's saved file (`confirmed`: per entry the version it agreed with and the newest day it saw it). It is
+  bounded like `learned` and dropped once the pack's mark has that day or a later one. The harvest stages
+  each as a confirmation of that version; one of a version the master no longer has is dropped.
 - **Carried into the packs** as one mark per version (*proposal*), so a record can answer
-  `record.unverified`; learned data is the game's and never unverified.
+  `record.unverified`, and where the master has them `record.verified` (the day) and
+  `record.verifiedTimes`; learned data is the game's and never unverified.
 - **Shown as such:** a view marks an unverified fact (*not yet seen in Forever*) and may leave it out where
   a wrong fact costs the player (a route through nodes that are not there).
 - **Found again by source:** `dev/tools/data` lists the unverified versions per set and source, so a batch
@@ -944,7 +965,7 @@ what each gives: enough for a planner to lay efficient gathering routes.
 - **A place belongs to a family** (herb, ore, chest, fishing pool), not to one node type: several herbs can
   grow on one spot in turn. Each place keeps how often each node type was seen there: its **spawn mix**.
 - **Verified** (*Verified and unverified*): a place is verified once seen in play in this game version, or
-  from the server's own positions of it; one taken from the baseline alone stays unverified, and so do its
+  from the server's own positions of it, and keeps the day and the times it was confirmed; one taken from the baseline alone stays unverified, and so do its
   yields until enough gathers (*proposal* 50 per node type).
 - **For routes** Core gives, per map and family: the places with their spawn mix and mark, each node type's
   yield per visit and the skill it needs, and where known how many places of a group are up at once and the

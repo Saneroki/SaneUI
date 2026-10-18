@@ -68,6 +68,14 @@ A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, ke
 - `Doc/guides/data.md`: aliases are personal data. `Doc/ideas/Social.md`: the guild will show them.
 - Tests: 330 checks (Core), 426 (Social), 441 (Tooltips); the stand-in's menu button keeps its tooltip.
 
+### Ideas: a verified fact keeps its day and times (Saneroki, 2026-10-18)
+- `Doc/ideas/Data.md`, *Verified and unverified*: a version keeps only the day of the import that last
+  confirmed it and how many imports did (`"verified":{"day":...,"times":...}`), no list of confirmations. One
+  count per import, only for a confirmation seen after that day, so a saved file taken in twice counts once.
+  Whole reads of the client's files verify but do not count again, so a new build leaves the master's lines
+  alone. Watchers note confirmations in the pack's saved file (`confirmed`); the harvest stages them.
+  `Data-build.md` 1c.1 and 1c.3 take it in.
+
 ### Ideas: when in doubt, left out (Saneroki, 2026-10-18)
 - `Doc/ideas/Data.md`, new *When in doubt, left out*: a batch's fact is taken in only if exact, agreed and
   current; contradicting, imprecise (rounded positions or chances, too few sightings), vague, overlapping,
