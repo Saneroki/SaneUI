@@ -358,6 +358,29 @@ written only into its own game version's files (*Game versions kept apart*).
   tool, for example). So the history can reach back before our first crawl.
 - **Missing from a source** is no proof of removal: an entry is *gone* only on the game's word or by hand.
 
+### Verified and unverified
+
+Saneroki (2026-10-18): a fact the game has not confirmed in its own game version is marked, so an old or
+guessed fact is never taken for one of Forever's.
+
+- **Verified:** the game said it in that game version: the client's tables, what the server sends (hotfixes,
+  crawls, scans), the player's own play, or shared sightings the checks accepted (*Poisoning*). Such a
+  version has `game` among its sources. A `hand` fix stands as written: a person checked it.
+- **Unverified:** everything else. A version taken in from a batch (the older games' facts kept as the
+  baseline, the quest facts taken in once as *old*, any batch a tool read), a place seen only once, a
+  chance from too few loots or gathers.
+- **Verified later without a new version:** when the game agrees with an unverified version, the import's
+  *agreeing* case adds `game` to its sources, and it is verified. When the game says otherwise, a new
+  version replaces it (*Changed*).
+- **Carried into the packs** as one mark per version (*proposal*), so a record can answer
+  `record.unverified`; learned data is the game's and never unverified.
+- **Shown as such:** a view marks an unverified fact (*not yet seen in Forever*) and may leave it out where
+  a wrong fact costs the player (a route through nodes that are not there).
+- **Found again by source:** `dev/tools/data` lists the unverified versions per set and source, so a batch
+  that turns out wrong or old can be dropped or replaced whole.
+- **Counts:** a chance or yield taken in from the baseline stays unverified until this game version's own
+  counts have enough loots or gathers (*proposal* 50); then the own counts replace it.
+
 ### Harvest
 
 `dev/tools/data harvest` reads the packs' saved files from the game's `WTF`, loading them as data only
@@ -796,7 +819,7 @@ members loot 2,000 wolves and 1,000 of them had meat, the chance is 50 %.
   one *drop* for each item in it, with its count. Each corpse counts once (its GUID is remembered a while).
   The creature's level as seen (target, mouseover, nameplate): the lowest and highest.
 - **Gathering:** herbs, ore, skinning: one *gather* for the node (or creature), and what it gave; fishing
-  per zone.
+  per zone (*Gathering nodes*).
 - **Items a quest objective asks for** count only while the looting player has the quest (they do not
   drop otherwise), so their chance is the chance for those on the quest.
 - **Items that start a quest** count always, whether the player has the quest or not (Saneroki): the item
@@ -862,6 +885,48 @@ over time.
   no time, never anybody's route.
 - **Bounded:** per creature and map at most a few hundred cells (*proposal*); a cell looted once is kept, but
   takes part in the area only after a second loot there (a long chase is no spawn place).
+
+### Gathering nodes
+
+Saneroki (2026-10-18): herbs, ore and other nodes have drop tables like creatures, and their places are
+learned without duplicates, so that over time the database knows where nodes stand, what grows where and
+what each gives: enough for a planner to lay efficient gathering routes.
+
+- **The node:** the loot's source (an object's GUID gives its ID); without it, the gather spell's target
+  (`UNIT_SPELLCAST_SENT` names it, where the game does not keep it secret: `Core.Plain`) matched to its name
+  in *Objects*. Never guessed from the item alone:
+  several nodes give the same herb.
+- **What it gives:** per node type and build period, one *gather* for each loot window, and for each item
+  how often it came and how many: the chance per gather and the yield. Rare extras (a second herb, a gem)
+  are items like any other.
+- **Per visit:** a vein can be mined more than once before it is gone, so each visit counts its gathers;
+  the yield per visit is what a route gains by walking there.
+- **Places merged by yards, not cells:** a node is gathered from a few yards off, and lag can move the
+  player a little more, so the player's place at the loot is a sighting near the node, not the node itself.
+  Herbs and ore stand closer together than a cell can tell, so they merge by yards (the map's size from
+  `C_Map.GetWorldPosFromMapPos`):
+  - a sighting within the merge distance (*proposal* 8 yards, to be set from the spacing of known spawn
+    points) of a known place of the same family is that place: its count goes up, nothing new is made;
+  - farther away it is a candidate, and becomes a place only at a second sighting on another visit;
+  - two places are never made closer than the merge distance from sightings; only the server's exact
+    positions (shipped data) can keep two places nearer than that apart;
+  - a place's point: an exact one stays; one from sightings is their median, rounded.
+- **A place belongs to a family** (herb, ore, chest, fishing pool), not to one node type: several herbs can
+  grow on one spot in turn. Each place keeps how often each node type was seen there: its **spawn mix**.
+- **Verified** (*Verified and unverified*): a place is verified once seen in play in this game version, or
+  from the server's own positions of it; one taken from the baseline alone stays unverified, and so do its
+  yields until enough gathers (*proposal* 50 per node type).
+- **For routes** Core gives, per map and family: the places with their spawn mix and mark, each node type's
+  yield per visit and the skill it needs, and where known how many places of a group are up at once and the
+  respawn. The route itself is Navigation's, over its walking data.
+- **Shared** like drop counts (*Bundles*): gathers and yields per node type, sightings counted per place,
+  rounded and with no time: never anybody's path.
+
+```lua
+local Map = Data.Map()
+Map:Nodes(map, "herb")         -- the places of a family: point, spawn mix, verified, sightings
+Drops:Of(object)               -- what a node type gives: chance, yield per gather and per visit
+```
 
 ## Quests
 
@@ -1108,6 +1173,7 @@ rares, herbs and ore, quests, trainers, repair, inns and every other NPC with a 
 
 - **Precision:** a place seen from a few yards (talking, looting, gathering) is rounded to a tenth of a cell;
   within a cell of a known spawn point it is that point (*Keys*), farther away it is a new one: a discovery.
+  Herbs, ore and other nodes stand closer than a cell can tell and merge by yards (*Gathering nodes*).
 - **Spawn areas** are made like quest areas: the points grouped, the cells around them. A rare's area is
   where it can spawn (Navigation draws it on a click).
 - **Shared and checked** (*Poisoning*): flight points by the receiver's own game (`C_TaxiMap`); every other

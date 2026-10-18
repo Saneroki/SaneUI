@@ -181,6 +181,8 @@ at most the commit it was on, and the next session goes on from there.
 - [ ] **1d.3 Drops,** with the World pack (decision 24).
   - Loot counted, but only if `GetLootSourceInfo` is there.
   - Build periods, chances, the test for a changed chance, cells.
+  - Gathering nodes (the plan, *Gathering nodes*): gathers and yields per node type and visit, places merged
+    by yards with candidates and the spawn mix; verified and unverified marks (*Verified and unverified*).
   - Tests.
 - [ ] **1d.4 Quests,** with the Quests pack.
   - The quest watchers.

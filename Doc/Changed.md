@@ -26,6 +26,16 @@ A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, ke
 - `Doc/guides/data.md`: aliases are personal data. `Doc/ideas/Social.md`: the guild will show them.
 - Tests: 330 checks (Core), 426 (Social), 441 (Tooltips); the stand-in's menu button keeps its tooltip.
 
+### Ideas: verified and unverified facts, gathering nodes (Saneroki, 2026-10-18)
+- `Doc/ideas/Data.md`, new *Verified and unverified*: a fact the game has not confirmed in its own game version
+  (a batch, the older games' baseline, a place seen once, a chance from too few loots) is marked unverified
+  and shown so; the game agreeing makes it verified without a new version; unverified versions are listed per
+  source.
+- New *Gathering nodes*: herbs, ore and other nodes have drop tables like creatures (gathers, chance and yield
+  per gather and per visit); places merge by yards (a sighting near a known place is that place, a new one
+  needs a second sighting), keep their spawn mix, and give what gathering routes need. `Data-build.md` 1d.3
+  takes it in.
+
 ### Ideas: an auction house per game version, Forever's per ruleset (Saneroki, 2026-10-18)
 - `Doc/ideas/Data.md`, *Realms and regions*: every game version has its own houses (live, beta and PTR never
   share one); Forever has one realm per ruleset and region, so its house is game version, region, ruleset and
