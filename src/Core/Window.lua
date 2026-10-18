@@ -182,21 +182,21 @@ function Window.Mover(handle, frame, hooks)
     local moving
     handle:EnableMouse(true)
     handle:RegisterForDrag("LeftButton")
-    handle:SetScript("OnDragStart", function()
+    handle:SetScript("OnDragStart", Core.Guard("window", function()
         if hooks.usable and not Core.Safe("window", hooks.usable) then return end
         frame:SetMovable(true)
         frame:SetClampedToScreen(true)
         frame:StartMoving()
         moving = true
         if hooks.started then Core.Safe("window", hooks.started) end
-    end)
-    handle:SetScript("OnDragStop", function()
+    end))
+    handle:SetScript("OnDragStop", Core.Guard("window", function()
         if not moving then return end
         moving = false
         frame:StopMovingOrSizing()
         frame:SetUserPlaced(false) -- the place is kept by us; the game's own memory of it would fight ours
         if hooks.stopped then Core.Safe("window", hooks.stopped) end
-    end)
+    end))
 end
 
 -- Puts the grip into that corner of its window: the corner it then drags.
@@ -232,7 +232,7 @@ function Window.Sizer(frame, hooks)
     grip.insetX, grip.insetY = hooks.insetX or 2, hooks.insetY or 2
     Window.Corner(grip, "BOTTOMRIGHT")
 
-    grip:SetScript("OnMouseDown", function()
+    grip:SetScript("OnMouseDown", Core.Guard("window", function()
         if hooks.usable and not Core.Safe("window", hooks.usable) then return end
         Hold(frame, grip.corner)
         frame:SetResizable(true)
@@ -242,26 +242,26 @@ function Window.Sizer(frame, hooks)
         if hooks.started then Core.Safe("window", hooks.started) end
         frame:StartSizing(grip.corner)
         sizing = true
-    end)
-    grip:SetScript("OnMouseUp", function()
+    end))
+    grip:SetScript("OnMouseUp", Core.Guard("window", function()
         if not sizing then return end
         sizing = false
         frame:StopMovingOrSizing()
         frame:SetUserPlaced(false)
         if hooks.stopped then Core.Safe("window", hooks.stopped) end
-    end)
-    grip:SetScript("OnEnter", function(self)
+    end))
+    grip:SetScript("OnEnter", Core.Guard("window", function(self)
         SetCursor("UI_RESIZE_CURSOR")
         if not hooks.tip then return end
         GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT")
         GameTooltip:SetText(hooks.tip)
         if hooks.tipMore then GameTooltip:AddLine(hooks.tipMore, 1, 1, 1, true) end
         GameTooltip:Show()
-    end)
-    grip:SetScript("OnLeave", function()
+    end))
+    grip:SetScript("OnLeave", Core.Guard("window", function()
         SetCursor(nil)
         if hooks.tip then GameTooltip:Hide() end
-    end)
+    end))
     return grip
 end
 
@@ -509,18 +509,18 @@ local function Box(window)
     title:SetText(options.title or "")
     title:Hide()
     box.title = title
-    box:SetScript("OnEnter", function()
+    box:SetScript("OnEnter", Core.Guard("window", function()
         hover:Show()
         title:Show()
-    end)
-    box:SetScript("OnLeave", function()
+    end))
+    box:SetScript("OnLeave", Core.Guard("window", function()
         hover:Hide()
         title:Hide()
-    end)
+    end))
     -- A click on it chooses the window, as Edit Mode's own frames are chosen (Selection.lua).
-    box:HookScript("OnMouseDown", function()
+    box:HookScript("OnMouseDown", Core.Guard("window", function()
         if Core.Selection then Core.Safe("Edit Mode", Core.Selection.Select, window) end
-    end)
+    end))
     Window.Mover(box, frame, {
         usable = window.usable,
         started = function()
@@ -545,10 +545,10 @@ local function Square(parent, art, text, tip, click)
     if art.atlas then picture:SetAtlas(art.atlas) else picture:SetTexture(art.texture) end
     picture:SetSize(Window.BUTTON / 2, Window.BUTTON / 2)
     picture:SetPoint("CENTER", -1, 0)
-    button:SetScript("OnClick", function(self)
+    button:SetScript("OnClick", Core.Guard("window", function(self)
         Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
         Core.Safe("window", click, self)
-    end)
+    end))
     Core.Tip(button, text, tip, "ANCHOR_TOP")
     return button
 end
@@ -623,20 +623,20 @@ local function Bar(window)
     bar.find, bar.title = find, title
     window.bar = bar
     Title(window)
-    find:SetScript("OnMouseDown", function() find.dragged = false end)
-    find:SetScript("OnClick", function()
+    find:SetScript("OnMouseDown", Core.Guard("window", function() find.dragged = false end))
+    find:SetScript("OnClick", Core.Guard("window", function()
         if not find.dragged then Core.Safe("window", Search, window, true) end
-    end)
+    end))
 
     local box = CreateFrame("EditBox", nil, bar, "SearchBoxTemplate")
     box:SetHeight(Window.BOX)
     box:Hide()
     local instructions = rawget(box, "Instructions") -- the template's words in an empty box
     if type(instructions) == "table" and instructions.SetText then instructions:SetText(Window.TEXT.search) end
-    box:HookScript("OnTextChanged", function(self) Searched(window, self:GetText()) end)
-    box:HookScript("OnEditFocusLost", function(self)
+    box:HookScript("OnTextChanged", Core.Guard("window", function(self) Searched(window, self:GetText()) end))
+    box:HookScript("OnEditFocusLost", Core.Guard("window", function(self)
         if self:GetText() == "" then Core.Safe("window", Search, window, false) end
-    end)
+    end))
     box:HookScript("OnEscapePressed", function() Core.Safe("window", Search, window, false) end)
     bar.glass, bar.box = glass, box
 
@@ -650,11 +650,11 @@ local function Bar(window)
         stopped = function() Moved(window) end,
     })
     find:RegisterForDrag("LeftButton")
-    find:SetScript("OnDragStart", function()
+    find:SetScript("OnDragStart", Core.Guard("window", function()
         find.dragged = true
         bar:GetScript("OnDragStart")(bar)
-    end)
-    find:SetScript("OnDragStop", function() bar:GetScript("OnDragStop")(bar) end)
+    end))
+    find:SetScript("OnDragStop", Core.Guard("window", function() bar:GetScript("OnDragStop")(bar) end))
     return bar
 end
 
@@ -914,9 +914,9 @@ function Window.New(frame, options)
     end
     windows[#windows + 1] = window
     -- Shown again in a zone another window holds now (it came first): it stands free this time.
-    frame:HookScript("OnShow", function()
+    frame:HookScript("OnShow", Core.Guard("window", function()
         if window.zone and Core.Dock.Holder(window.zone, frame) then Core.Safe("window", window.Place, window) end
-    end)
+    end))
     if options.tabs then Core.Safe("window", Window.Views, window) end
     if Core.EditMode.active then Edit(window, true) end
     Core.Safe("window", window.Attach, window)
@@ -925,8 +925,8 @@ function Window.New(frame, options)
     -- (Core.Escape): full as it is. A module that closes it later (the talk ends on the game's side
     -- first) leaves it shown, and Esc is still its next time.
     if options.escape == "close" then
-        frame:HookScript("OnShow", function() Core.Escape(window, Close) end)
-        frame:HookScript("OnHide", function() Core.Escape(window, nil) end)
+        frame:HookScript("OnShow", Core.Guard("window", function() Core.Escape(window, Close) end))
+        frame:HookScript("OnHide", Core.Guard("window", function() Core.Escape(window, nil) end))
         if frame:IsShown() then Core.Escape(window, Close) end
     end
     return window

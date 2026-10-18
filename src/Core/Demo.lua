@@ -58,7 +58,7 @@ local function About(view)
     keep:SetPoint("BOTTOMLEFT", INSET - 4, INSET - 4)
     local words = keep.Text or keep.text -- the template's words beside the box
     if type(words) == "table" then words:SetText(TEXT.keep) end
-    keep:SetScript("OnClick", function(box) window.expand:Stay(box:GetChecked() and true or false) end)
+    keep:SetScript("OnClick", Core.Guard("/sane window", function(box) window.expand:Stay(box:GetChecked() and true or false) end))
 end
 
 -- The view with the bar, which Add fills a step at a time; full, from nothing again.
@@ -80,10 +80,10 @@ local function Bar(view)
     bar.frame:SetPoint("BOTTOMLEFT", INSET, INSET)
     bar.frame:SetPoint("BOTTOMRIGHT", -INSET, INSET)
     Fill(value or 0)
-    add:SetScript("OnClick", function()
+    add:SetScript("OnClick", Core.Guard("/sane window", function()
         -- A step, up to full; full, from nothing again (at once: a loss does not move)
         if value >= MOST then Fill(0) else Fill(math.min(value + STEP, MOST)) end
-    end)
+    end))
 end
 
 -- It begins to open, or to close: closed, nothing keeps it open.

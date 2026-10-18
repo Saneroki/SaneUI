@@ -200,10 +200,10 @@ local function Back(edge)
         edge.back = Core.Shape.New(frame, edge.settings)
         local watch = CreateFrame("Frame", nil, frame)
         watch:SetAllPoints()
-        watch:SetScript("OnSizeChanged", function()
+        watch:SetScript("OnSizeChanged", Core.Guard("window", function()
             if not edge.full or not edge.clock or edge.clock:IsRunning() then return end
             Core.Safe("full screen", Cover, edge, edge.cover, 0, 0, frame:GetWidth(), frame:GetHeight())
-        end)
+        end))
     end
     Paint(edge)
     return edge.back
@@ -533,9 +533,9 @@ function Edge.New(window)
                                 full = false, away = false, cover = 0,
                                 settings = type(settings) == "table" and settings or Edge.DEFAULTS }, { __index = methods })
     -- Hidden, it is back in its zone at once: shown again, it is as it was before it filled the screen.
-    edge.frame:HookScript("OnHide", function()
+    edge.frame:HookScript("OnHide", Core.Guard("window", function()
         if edge.away then Core.Safe("full screen", window.Place, window) end
-    end)
+    end))
     edges[edge] = true
     return edge
 end

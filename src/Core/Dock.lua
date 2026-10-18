@@ -152,13 +152,13 @@ function Dock.Watch(frame, only, insets)
         tint:SetColorTexture(Core.GOLD[1], Core.GOLD[2], Core.GOLD[3], 0.35)
         watcher = CreateFrame("Frame")
         -- An error here would come again every frame: the shape goes, the drag itself is the game's.
-        watcher:SetScript("OnUpdate", function()
+        watcher:SetScript("OnUpdate", Core.Guard("window", function()
             local ok, problem = pcall(Look)
             if ok then return end
             watcher:Hide()
             ghost:Hide()
             Core.NoteError("dock", problem)
-        end)
+        end))
     end
     local free = {}
     for name in pairs(Dock.ZONES) do

@@ -110,18 +110,18 @@ function Motion.Clock(frame, step, failed)
     local group = frame:CreateAnimationGroup()
     local animation = group:CreateAnimation("Animation")
     -- The end is OnFinished's alone: a last OnUpdate at 1 would end it twice.
-    group:SetScript("OnUpdate", function()
+    group:SetScript("OnUpdate", Core.Guard("window", function()
         local progress = animation:GetProgress()
         if progress < 1 then Tick(clock, progress) end
-    end)
-    group:SetScript("OnFinished", function() Tick(clock, 1) end)
+    end))
+    group:SetScript("OnFinished", Core.Guard("window", function() Tick(clock, 1) end))
     -- Hidden on the way, it is at its end at once: nothing waits out of sight half way (an opening
     -- window caught at half its size).
-    frame:HookScript("OnHide", function()
+    frame:HookScript("OnHide", Core.Guard("window", function()
         if not group:IsPlaying() then return end
         group:Stop()
         Tick(clock, 1)
-    end)
+    end))
     clock.group, clock.animation = group, animation
     return clock
 end

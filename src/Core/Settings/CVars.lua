@@ -175,8 +175,8 @@ end)
 -- The filter button's menu: two checkboxes, then the kinds.
 local function FilterMenu(_, root)
     local function Flip(key) return function() filters[key] = not filters[key]; Refilter() end end
-    root:CreateCheckbox(TEXT.notDefault, function() return filters.notDefault end, Flip("notDefault"))
-    root:CreateCheckbox(TEXT.kept, function() return filters.kept end, Flip("kept"))
+    root:CreateCheckbox(TEXT.notDefault, Core.Guard("options", function() return filters.notDefault end), Core.Guard("options", Flip("notDefault")))
+    root:CreateCheckbox(TEXT.kept, Core.Guard("options", function() return filters.kept end), Core.Guard("options", Flip("kept")))
     root:CreateDivider()
     root:CreateTitle(TEXT.kind)
     local function IsKind(value) return filters.kind == (value ~= "" and value or nil) end
@@ -184,8 +184,8 @@ local function FilterMenu(_, root)
         filters.kind = value ~= "" and value or nil
         Refilter()
     end
-    root:CreateRadio(TEXT.everyKind, IsKind, SetKind, "")
-    for _, value in ipairs(ORDER) do root:CreateRadio(TEXT.kinds[value], IsKind, SetKind, value) end
+    root:CreateRadio(TEXT.everyKind, Core.Guard("options", IsKind), Core.Guard("options", SetKind), "")
+    for _, value in ipairs(ORDER) do root:CreateRadio(TEXT.kinds[value], Core.Guard("options", IsKind), Core.Guard("options", SetKind), value) end
 end
 
 SaneUISettingsCVarsMixin = {}
@@ -196,12 +196,12 @@ function SaneUISettingsCVarsMixin:OnLoad()
     search:SetPoint("TOPLEFT", 6, -4)
     -- The game tells of every SetText too, ours in Init and its clear button's (without userInput):
     -- the list is filtered anew only when the words are other than those it was filtered by.
-    search:HookScript("OnTextChanged", function(box)
+    search:HookScript("OnTextChanged", Core.Guard("options", function(box)
         local text = box:GetText() or ""
         if text == filters.search then return end
         filters.search = text
         Refilter()
-    end)
+    end))
     self.Search = search
 
     local filter = CreateFrame("DropdownButton", nil, self, "WowStyle1FilterDropdownTemplate")
@@ -281,35 +281,35 @@ end
 SaneUISettingsCVarRowMixin = {}
 
 function SaneUISettingsCVarRowMixin:OnLoad()
-    self.Keep:SetScript("OnClick", function(box)
+    self.Keep:SetScript("OnClick", Core.Guard("options", function(box)
         if self.entry then CVars.Keep(self.entry.name, box:GetChecked()) end
         if filters.kept then Refilter() end
-    end)
-    self.Keep:SetScript("OnEnter", function(box)
+    end))
+    self.Keep:SetScript("OnEnter", Core.Guard("options", function(box)
         GameTooltip:SetOwner(box, "ANCHOR_RIGHT")
         GameTooltip_SetTitle(GameTooltip, TEXT.keep)
         GameTooltip_AddNormalLine(GameTooltip, TEXT.keepTip)
         GameTooltip:Show()
-    end)
+    end))
     self.Keep:SetScript("OnLeave", GameTooltip_Hide)
 
     local value = self.Value
-    value:SetScript("OnEnterPressed", function(box) self:Give(box:GetText()) end)
-    value:SetScript("OnEscapePressed", function(box) box:ClearFocus() end)
-    value:SetScript("OnEditFocusLost", function() if self.entry then self:Init(self.entry) end end)
-    value:SetScript("OnEnter", function() self:OnEnter() end)
+    value:SetScript("OnEnterPressed", Core.Guard("options", function(box) self:Give(box:GetText()) end))
+    value:SetScript("OnEscapePressed", Core.Guard("options", function(box) box:ClearFocus() end))
+    value:SetScript("OnEditFocusLost", Core.Guard("options", function() if self.entry then self:Init(self.entry) end end))
+    value:SetScript("OnEnter", Core.Guard("options", function() self:OnEnter() end))
     value:SetScript("OnLeave", GameTooltip_Hide)
 
-    self.Reset:SetScript("OnClick", function()
+    self.Reset:SetScript("OnClick", Core.Guard("options", function()
         if self.entry then self:Give(select(2, CVars.Info(self.entry.name))) end
-    end)
-    self.Reset:SetScript("OnEnter", function(button)
+    end))
+    self.Reset:SetScript("OnEnter", Core.Guard("options", function(button)
         local default = self.entry and select(2, CVars.Info(self.entry.name))
         GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
         GameTooltip_SetTitle(GameTooltip, TEXT.reset)
         GameTooltip_AddNormalLine(GameTooltip, TEXT.resetTip:format(tostring(default or "?")))
         GameTooltip:Show()
-    end)
+    end))
     self.Reset:SetScript("OnLeave", GameTooltip_Hide)
 end
 
@@ -379,8 +379,8 @@ function Config.CVarsTab()
     return { name = TEXT.header, scroll = false, build = function(part)
         Config.Panel.Text(part, TEXT.intro, "GameFontHighlight", 12, -12)
         part:SetScript("OnShow", function() Core.Safe("Settings: CVars", ShowList, part) end)
-        part:SetScript("OnHide", function()
+        part:SetScript("OnHide", Core.Guard("options", function()
             if part.list then part.list:Release() end
-        end)
+        end))
     end }
 end

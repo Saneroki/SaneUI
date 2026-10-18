@@ -6,6 +6,21 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 90 (Sync), 351 (windows), 175 (data in the game).
 A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, key bindings).
 
+### Core's own doors guarded too; the lint covers all of src (Saneroki, 2026-10-18)
+- `Core.Guard(label, fn)` (`Core.lua`): Core's door for a frame's script, a hook, a timer or a menu's function,
+  as `module.Guard` is a module's. Core stands down for nobody: an error that ran into a module's code stands
+  that module down (found by its place), Core's own is told once under the label and the next call tries
+  again. All results handed on; no table or closure per call.
+- Core's 95 bare doors guarded: its windows (`Window`, `Edge`, `Dock`, `Holder`, `Motion`, `Watch`,
+  `Escape`), Edit Mode (`EditMode`, `Selection`), tips (`Kit`), aliases (`People`), the options (`Settings/`),
+  Sync and the data scheduler (`Data/Steps.lua`: its guarded `OnUpdate` made once, at the first wake; Esc's
+  timer function made once). Four are the guards themselves (the event frames, `Later`'s timer, the ear at
+  the game's error window), marked `-- unguarded:`.
+- `dev/tests/lint`: the check of guards runs over Core too; `Core.Guard(...)`, a one-step `Core.Safe(...)`
+  and a frame's own `StartMoving`/`StopMovingOrSizing` count as guarded.
+- Docs: `Doc/guides/addon-standards.md` 10 (Core's row, made once where it is set), Core's README.
+- Tests: `dev/tests/core.lua` 347 checks (`Core.Guard`: results, told once and tried again, a module's error).
+
 ### Social: conversations on the full screen (Saneroki, 2026-10-18)
 - A panel at the full screen's left (`Conversations.lua`, a part of `Board.lua`): the list of conversations, the
   last spoken in first (class icon, alias or name, last message, time, unread count; the title counts all), and

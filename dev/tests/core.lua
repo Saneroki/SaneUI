@@ -1067,6 +1067,21 @@ W.caught = nil
 W.cvars.scriptErrors = "0"
 for _, label in ipairs({ "Doors: it stopped", "Named: it stopped", "Named: after it stopped", "PLAYER_FLAGS_CHANGED", "Loose: it stopped",
     "Loose: after it stopped", "later", "Shown: it stopped", "Shown: after it stopped" }) do Core.errors[label] = nil end
+-- Core's own doors (Core.Guard): Core stands down for nobody, a module whose code the error ran into does.
+local coreRuns = 0
+local coreDoor = Core.Guard("a window", function(a, b) coreRuns = coreRuns + 1 return b, a end)
+local second, first = coreDoor(1, 2)
+check(second == 2 and first == 1, "a door of Core's hands on all the results")
+local brokenDoor = Core.Guard("a window", function() coreRuns = coreRuns + 1 error("the drag broke") end)
+W.printed = {}
+brokenDoor()
+brokenDoor()
+check(coreRuns == 3 and Core.errors["a window"].count == 2 and #W.printed == 1 and printedMatch("problem in a window, noted"),
+    "its error is Core's: told once under its label, kept each time, and the next call tries again")
+local lent = Core.NewModule("SaneUI_Lent", "Lent")
+Core.Guard("a window", function() error("Interface/AddOns/SaneUI_Lent/Lent.lua:4: a hook of the module broke", 0) end)()
+check(lent.off and Core.errors["Lent: it stopped"], "an error that ran into a module's code stands that module down")
+Core.errors["a window"], Core.errors["Lent: it stopped"] = nil, nil
 
 -- Later: once, a moment later, however often it is asked for
 local runs = 0

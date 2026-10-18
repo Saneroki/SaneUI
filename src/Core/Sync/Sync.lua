@@ -207,10 +207,10 @@ local SETTLE = 2 -- seconds after the character is in the world and the game has
 
 local entered, late
 local function GiveSoon()
-    C_Timer.After(SETTLE, function()
+    C_Timer.After(SETTLE, Core.Guard("sync", function()
         settled = true
         Sync.Safe("writing", Sync.Give)
-    end)
+    end))
 end
 
 -- Whether the game has its stored settings: on a slow login they come from the server after the

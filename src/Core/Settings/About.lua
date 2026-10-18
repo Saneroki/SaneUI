@@ -160,7 +160,7 @@ local function Build()
     close:SetSize(120, 22)
     close:SetPoint("BOTTOMRIGHT", -8, 8)
     close:SetText(CLOSE or "Close")
-    close:SetScript("OnClick", function() frame:Hide() end)
+    close:SetScript("OnClick", Core.Guard("options", function() frame:Hide() end))
 
     local make = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     make:SetSize(140, 22)
@@ -168,11 +168,11 @@ local function Build()
     frame.Make = make
     make:SetScript("OnClick", function() Core.Safe("Settings: feedback", About.Toggle) end)
 
-    frame:SetScript("OnHide", function()
+    frame:SetScript("OnHide", Core.Guard("options", function()
         Core.Escape(frame, nil)
         if frame.kind and not frame.made then drafts[frame.kind.key] = box:GetText() end
         PlaySound(SOUNDKIT.IG_CHARACTER_INFO_CLOSE)
-    end)
+    end))
     return frame
 end
 

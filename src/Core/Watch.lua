@@ -66,7 +66,7 @@ function Core.Watch(parent, every, fn, label)
     local watch = setmetatable({ every = every or 0, fn = fn, waited = 0, label = label or "watch" }, { __index = watches })
     local frame = CreateFrame("Frame", nil, parent)
     frame:Hide()
-    frame:SetScript("OnUpdate", function(_, elapsed) Tick(watch, elapsed) end)
+    frame:SetScript("OnUpdate", Core.Guard("window", function(_, elapsed) Tick(watch, elapsed) end))
     watch.frame = frame
     return watch
 end
@@ -118,11 +118,11 @@ function Core.Hover(frame, options)
     hover.hot = hot
     -- Only the mouse's coming is asked for: clicks go on to what is under it.
     if hot.SetMouseMotionEnabled then hot:SetMouseMotionEnabled(true) else hot:EnableMouse(true) end
-    hot:HookScript("OnEnter", function()
+    hot:HookScript("OnEnter", Core.Guard("window", function()
         if hover.watch:IsRunning() then return end
         if (options.dwell or 0) > 0 then return hover:Start(false) end
         hover:Start(true) -- there at once
         if options.enter then Core.Safe(hover.watch.label, options.enter) end
-    end)
+    end))
     return hover
 end

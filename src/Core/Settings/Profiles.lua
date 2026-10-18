@@ -131,8 +131,8 @@ local function Window()
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
     -- Esc closes it while it is shown (Core's one stand-in in the game's list).
-    frame:SetScript("OnShow", function(self) Core.Escape(self, self.Hide) end)
-    frame:SetScript("OnHide", function(self) Core.Escape(self, nil) end)
+    frame:SetScript("OnShow", Core.Guard("options", function(self) Core.Escape(self, self.Hide) end))
+    frame:SetScript("OnHide", Core.Guard("options", function(self) Core.Escape(self, nil) end))
 
     local help = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     help:SetPoint("TOPLEFT", 20, -34)
@@ -154,12 +154,12 @@ local function Window()
     close:SetSize(120, 22)
     close:SetPoint("BOTTOMRIGHT", -8, 8)
     close:SetText(Core.Word("CLOSE", TEXT.close))
-    close:SetScript("OnClick", function() frame:Hide() end)
+    close:SetScript("OnClick", Core.Guard("options", function() frame:Hide() end))
     local act = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     act:SetSize(120, 22)
     act:SetPoint("RIGHT", close, "LEFT", -6, 0)
     act:SetText(TEXT.import)
-    act:SetScript("OnClick", function() if frame.act then Run(frame.act, box:GetText()) end end)
+    act:SetScript("OnClick", Core.Guard("options", function() if frame.act then Run(frame.act, box:GetText()) end end))
     frame.Act = act
     window = frame
     return frame
@@ -259,7 +259,7 @@ local function Menu(parent, width, tip, title, chosen, choose, enabled, skip)
     menu:SetupMenu(function(_, root)
         for _, name in ipairs(Profiles.List()) do
             if not (skip and skip(name)) then
-                root:CreateRadio(name, chosen, function(value) Run(choose, value) end, name)
+                root:CreateRadio(name, Core.Guard("options", chosen), Core.Guard("options", function(value) Run(choose, value) end), name)
             end
         end
     end)

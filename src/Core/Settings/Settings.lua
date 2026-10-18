@@ -97,11 +97,11 @@ end
 local function OwnPage(top, name, title, build)
     local frame = CreateFrame("Frame")
     frame:Hide()
-    frame:SetScript("OnShow", function(self)
+    frame:SetScript("OnShow", Core.Guard("options", function(self)
         if self.built then return end
         self.built = true
         Core.Safe("Settings: " .. name, build, self, name)
-    end)
+    end))
     Core.frames[name] = frame
     return Settings.RegisterCanvasLayoutSubcategory(top, frame, title)
 end
@@ -211,11 +211,11 @@ function Entry:OnLoad()
     box:SetAutoFocus(false)
     box:SetHeight(20)
     box:SetPoint("LEFT", self, "CENTER", -74, 0)
-    box:SetScript("OnEnterPressed", function() self:Enter() end)
-    box:SetScript("OnEscapePressed", function(edit) edit:ClearFocus() end)
-    box:HookScript("OnEditFocusLost", function()
+    box:SetScript("OnEnterPressed", Core.Guard("options", function() self:Enter() end))
+    box:SetScript("OnEscapePressed", Core.Guard("options", function(edit) edit:ClearFocus() end))
+    box:HookScript("OnEditFocusLost", Core.Guard("options", function()
         if self.option then self:SetValue(self:GetSetting():GetValue()) end
-    end)
+    end))
     self.Box = box
     self.Unit = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     self.Unit:SetPoint("LEFT", box, "RIGHT", 8, 0)

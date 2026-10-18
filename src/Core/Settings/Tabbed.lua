@@ -294,12 +294,12 @@ local function Search(page, anchor, find)
         row.Words:SetPoint("RIGHT", row.Where, "LEFT", -8, 0)
         row.Words:SetJustifyH("LEFT")
         row.Words:SetWordWrap(false)
-        row:SetScript("OnClick", function(self)
+        row:SetScript("OnClick", Core.Guard("options", function(self)
             if not self.entry then return end
             Go(find, self.entry)
             list:Hide()
             search:ClearFocus()
-        end)
+        end))
         return row
     end)
     find.rows = rows
@@ -339,17 +339,17 @@ local function Search(page, anchor, find)
         list:SetHeight(8 + rows.taken * MATCH)
         list:Show()
     end
-    search:HookScript("OnTextChanged", Look)
-    search:HookScript("OnEnterPressed", function(self)
+    search:HookScript("OnTextChanged", Core.Guard("options", Look))
+    search:HookScript("OnEnterPressed", Core.Guard("options", function(self)
         if found[1] then Go(find, found[1]) end
         list:Hide()
         self:ClearFocus()
-    end)
-    search:HookScript("OnEscapePressed", function() list:Hide() end)
-    search:HookScript("OnEditFocusGained", function(self)
+    end))
+    search:HookScript("OnEscapePressed", Core.Guard("options", function() list:Hide() end))
+    search:HookScript("OnEditFocusGained", Core.Guard("options", function(self)
         if (self:GetText() or "") ~= "" then Look() end
-    end)
-    page:HookScript("OnHide", function() list:Hide() end)
+    end))
+    page:HookScript("OnHide", Core.Guard("options", function() list:Hide() end))
     return search
 end
 

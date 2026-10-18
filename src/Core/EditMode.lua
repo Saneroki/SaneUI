@@ -42,8 +42,8 @@ end
 local registry = rawget(_G, "EventRegistry")
 local heard = registry and type(registry.RegisterCallback) == "function"
 if heard then
-    registry:RegisterCallback("EditMode.Enter", function() Tell(true) end, EditMode)
-    registry:RegisterCallback("EditMode.Exit", function() Tell(false) end, EditMode)
+    registry:RegisterCallback("EditMode.Enter", Core.Guard("Edit Mode", function() Tell(true) end), EditMode)
+    registry:RegisterCallback("EditMode.Exit", Core.Guard("Edit Mode", function() Tell(false) end), EditMode)
 end
 
 -- Open already when the game is loaded (a /reload in Edit Mode); and whether there is one to follow.
@@ -52,7 +52,7 @@ Core.On("PLAYER_LOGIN", function()
     EditMode.available = heard and manager and type(manager.IsEditModeActive) == "function" or false
     if not EditMode.available then return end
     for name, active in pairs({ ShowSystemSelections = true, HideSystemSelections = false }) do
-        if type(manager[name]) == "function" then hooksecurefunc(manager, name, function() Tell(active) end) end
+        if type(manager[name]) == "function" then hooksecurefunc(manager, name, Core.Guard("Edit Mode", function() Tell(active) end)) end
     end
     Tell(Core.Ask(manager.IsEditModeActive, manager) and true or false)
 end)

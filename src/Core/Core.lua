@@ -311,7 +311,26 @@ end
 local function ListenForGameErrors()
     local window = rawget(_G, "ScriptErrorsFrame")
     if not (window and window.DisplayMessageInternal) then return end
-    hooksecurefunc(window, "DisplayMessageInternal", function(...) pcall(GameError, ...) end)
+    hooksecurefunc(window, "DisplayMessageInternal", function(...) pcall(GameError, ...) end) -- unguarded: the guard's own ear, behind pcall
+end
+
+-- Through(label, xpcall(fn, ...)): all of fn's results when it worked. Its error came in by a door of Core's.
+local function Through(label, ok, ...)
+    if ok then return ... end
+    Failed(nil, label, (...))
+    return nil
+end
+
+-- fn guarded, for the game to call later: a door of Core's own (a frame's script, a hook, a timer, a
+-- menu's function), as module.Guard is a module's. Core stands down for nobody: an error that ran into a
+-- module's code stands that module down, Core's own is told once under the label (the window, the
+-- options), and the next call tries again. It hands on all of fn's results and makes no table and no
+-- closure when called; made once, where the script is set, not where it runs.
+--     close:SetScript("OnClick", Core.Guard("window", Close))
+function Core.Guard(label, fn)
+    return function(...)
+        return Through(label, xpcall(fn, Trace, ...))
+    end
 end
 
 -- Core.Later(fn, delay) returns a function that asks for fn to run once, delay seconds later
@@ -327,7 +346,7 @@ function Core.Later(fn, delay)
     return function()
         if asked then return end
         asked = true
-        C_Timer.After(delay or 0, Run)
+        C_Timer.After(delay or 0, Run) -- unguarded: Run is the guard (xpcall, Failed)
     end
 end
 
@@ -430,7 +449,7 @@ local function Deliver(list, event, ...)
     end
 end
 
-frame:SetScript("OnEvent", function(_, event, ...)
+frame:SetScript("OnEvent", function(_, event, ...) -- unguarded: the events' guard itself (Deliver)
     local list = handlers[event]
     if list then Deliver(list, event, ...) end
 end)
@@ -444,7 +463,7 @@ function Core.OnUnit(event, unit, fn)
     local entry = units[unit]
     if not entry then
         entry = { frame = CreateFrame("Frame"), handlers = {} }
-        entry.frame:SetScript("OnEvent", function(_, name, ...)
+        entry.frame:SetScript("OnEvent", function(_, name, ...) -- unguarded: the events' guard itself (Deliver)
             local list = entry.handlers[name]
             if list then Deliver(list, name, ...) end
         end)

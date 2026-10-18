@@ -201,11 +201,13 @@ but for a window to try those with (`/sane window`).
     module down.
   - **Doors**, where the game comes in: a game event (each listener on its own: one's error keeps no other
     from the event), `Core.Later`, a module's `OnLoad`/`OnLogin`/`OnLogout` (one whose `OnLoad` failed is not
-    started further), and `module.Guard(fn)` for anything else the game calls later (a frame's script, a
-    hook, a timer, a menu's function). An error at a door that no step caught stands its module down; the
+    started further), `module.Guard(fn)` for anything else the game calls later of a module (a frame's
+    script, a hook, a timer, a menu's function), and `Core.Guard(label, fn)` for the same in Core (its
+    windows, the options, Sync, the scheduler). An error at a door that no step caught stands its module down; the
     module is the first whose folder the error's place or trace names (`Interface/AddOns/SaneUI_Social/...`),
     so an error in a step of Core that a module called is that module's. Core's own is told once under the
-    door's name (the event), and Core goes on.
+    door's name (the event, or `Core.Guard`'s label), and Core goes on: the next call tries again.
+    `dev/tests/lint` fails on a script, hook, timer or menu function without a guard, here and in every module.
   - **What slipped past every guard** (a script without one) reaches the game's own error handler. Core
     listens at the game's error window (`hooksecurefunc` on `ScriptErrorsFrame.DisplayMessageInternal`,
     which leaves the game's handling as it is) and treats those of Sane UI as at a door; a Lua warning is
@@ -253,6 +255,7 @@ but for a window to try those with (`/sane window`).
 | `Core.Trace(message)` | The error handler for `xpcall`: the error and the place it happened |
 | `module.Guarded(fn, ...)`, `module.StandDown(problem)` | A step that gives the game's own back when it fails (see above) |
 | `module.Guard(fn)` | `fn` guarded, for the game to call later (a script, a hook, a timer): its error stands the module down; nothing once it stood down; all results passed on |
+| `Core.Guard(label, fn)` | The same for Core's own code: an error that ran into a module's code stands that module down, Core's own is told once under `label`; tried again at the next call |
 | `Core.Later(fn, delay)` | Returns a function that asks `fn` to run once, `delay` seconds later (none: the next frame); `fn` runs guarded |
 | `Core.Plain(value)`, `Core.Secret(value)` | Secret values (see above) |
 | `Core.Ask(fn, ...)` | `fn(...)`'s first three answers, each nil when hidden; all nil when `fn` is missing or fails |

@@ -84,8 +84,8 @@ function Core.Tip(region, title, text, anchor)
     if region.EnableMouse and not region:IsMouseEnabled() and region.SetMouseMotionEnabled then
         region:SetMouseMotionEnabled(true)
     end
-    region:HookScript("OnEnter", function(self) Core.ShowTip(self, title, text, anchor) end)
-    region:HookScript("OnLeave", Core.HideTip)
+    region:HookScript("OnEnter", Core.Guard("tooltip", function(self) Core.ShowTip(self, title, text, anchor) end))
+    region:HookScript("OnLeave", Core.Guard("tooltip", Core.HideTip))
 end
 
 -------------------------------------------------------------------------------

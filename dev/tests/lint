@@ -13,11 +13,12 @@ Sane UI is one addon per folder in src: SaneUI (Core) and one for each module.
   5. The data packs (Doc/guides/data.md), compiled from the master for every game version into a scratch
      folder: their TOCs (load on demand, under Sane UI, the X-SaneUI lines, the saved variable, Core's
      Interface and Version), their files, and their Lua, which parses and writes no global.
-  6. Every function a module gives the game to call later (a frame's script, a hook, a timer, a menu's
-     function) is behind a guard (Doc/guides/addon-standards.md, section 10): ns.Guard(fn), a name the
-     file set to ns.Guard(...), or a function whose one step is ns.Safe(...) or ns.Guarded(...), given
-     there or by the name of a one-line local function. An intended exception says why on the call's
-     line: -- unguarded: <why>.
+  6. Every function Sane UI gives the game to call later (a frame's script, a hook, a timer, a menu's
+     function), in Core and in every module, is behind a guard (Doc/guides/addon-standards.md, section 10):
+     ns.Guard(fn) (Core.Guard(label, fn) in Core), a name the file set to one, or a function whose one step
+     is ns.Safe(...), ns.Guarded(...) or Core.Safe(...), given there or by the name of a one-line local
+     function. A frame's own method (frame.StartMoving) runs none of our code. An intended exception says
+     why on the call's line: -- unguarded: <why>.
 
 Usage:  dev/tests/lint
 """
@@ -165,6 +166,8 @@ DOORS = {
 DOOR = re.compile("(" + "|".join(re.escape(d) if d[0] == ":" else r"(?<![\w.:])" + re.escape(d)
                              for d in sorted(DOORS, key=len, reverse=True)) + r")\s*\(")
 GAMES = {"GameTooltip_Hide"}  # the game's own functions, which run none of our code
+FRAME_OWN = re.compile(r"[\w.]+\.(StartMoving|StopMovingOrSizing)")  # a frame's own methods, the game's too
+GUARD = re.compile(r"(ns|Core)\.Guard\(")
 BARE_OK = re.compile(r"--\s*unguarded:\s*\S")  # the mark of an intended exception, with its reason
 WORD = re.compile(r"[A-Za-z_]\w*")
 OPENS, CLOSES = {"function", "if", "do", "repeat"}, {"end", "until"}
@@ -227,13 +230,13 @@ def arguments(code, start):
 
 
 def guarded(arg, names):
-    """Whether a function argument is guarded: ns.Guard(fn), a name the file set to one or to a function of one
-    such step (names), nil, one of
-    the game's own (GAMES), or a function that does one step through ns.Safe or ns.Guarded and nothing else."""
+    """Whether a function argument is guarded: ns.Guard(fn) or Core.Guard(label, fn), a name the file set to one or
+    to a function of one such step (names), nil, one of the game's own (GAMES, a frame's own method), or a
+    function that does one step through ns.Safe, ns.Guarded or Core.Safe and nothing else."""
     arg = arg.strip()
-    if arg in ("", "nil") or arg in names or arg in GAMES or arg.startswith("ns.Guard("):
+    if arg in ("", "nil") or arg in names or arg in GAMES or GUARD.match(arg) or FRAME_OWN.fullmatch(arg):
         return True
-    step = re.match(r"function\s*\([^)]*\)\s*(return\s+)?ns\.(Safe|Guarded)\s*\(", arg)
+    step = re.match(r"function\s*\([^)]*\)\s*(return\s+)?(ns\.(Safe|Guarded)|Core\.Safe)\s*\(", arg)
     if not step:
         return False
     rest = arg[step.end() - 1:]
@@ -242,13 +245,13 @@ def guarded(arg, names):
 
 
 def check_guards(folders):
-    """Every function a module gives the game to call later is behind a guard (addon-standards, section 10).
+    """Every function Sane UI gives the game to call later is behind a guard (addon-standards, section 10).
     Returns how many are marked as intended exceptions."""
     count = 0
     for path in sorted(p for folder in folders for p in folder.rglob("*.lua")):
         text = path.read_text(encoding="utf-8")
         code, lines = blanked(text), text.splitlines()
-        names = set(re.findall(r"([A-Za-z_][\w.]*)\s*=\s*ns\.Guard\(", code))
+        names = set(re.findall(r"([A-Za-z_][\w.]*)\s*=\s*(?:ns|Core)\.Guard\(", code))
         # A function of one line whose one step is Safe or Guarded counts as one by its name too.
         for name, params, body in re.findall(r"^\s*local function (\w+)\(([^)\n]*)\)([^\n]*)$", code, re.M):
             if guarded(f"function({params}){body}", ()):
@@ -272,7 +275,8 @@ def check_guards(folders):
                 if BARE_OK.search(lines[line - 1]):
                     count += 1
                 else:
-                    problems.append(f"{path.relative_to(SRC)}:{line}: {name.lstrip(':')} gets a function without a guard: ns.Guard(fn), or mark it '-- unguarded: <why>'")
+                    problems.append(f"{path.relative_to(SRC)}:{line}: {name.lstrip(':')} gets a function without a guard: ns.Guard(fn) "
+                                    f"(Core.Guard(label, fn) in Core), or mark it '-- unguarded: <why>'")
     return count
 
 
@@ -280,10 +284,10 @@ counts = check_tocs()
 check_lua(sorted(SRC.rglob("*.lua")), SRC)
 core_fields, _ = read_toc(SRC / "Core" / f"{MAIN}.toc")
 packs = check_packs(core_fields)
-doors = check_guards(p for p in SRC.iterdir() if p.is_dir() and p.name != "Core")
+doors = check_guards(p for p in SRC.iterdir() if p.is_dir())
 for problem in problems:
     print(problem, file=sys.stderr)
 if problems:
     sys.exit(1)
 print(f"Lint: {len(counts)} addons, {sum(counts)} files in their TOCs, all there, all parse, no stray globals, "
-      f"every door of the modules guarded ({doors} marked bare); {packs} data packs fit.")
+      f"every door guarded ({doors} marked bare); {packs} data packs fit.")

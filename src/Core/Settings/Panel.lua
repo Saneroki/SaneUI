@@ -72,9 +72,9 @@ function Panel.Page(page)
     page.OnRefresh = function(self)
         if self:IsShown() then Panel.Refresh(self) end
     end
-    page:HookScript("OnShow", function(self)
+    page:HookScript("OnShow", Core.Guard("options", function(self)
         if stale[self] then Panel.Refresh(self) end
-    end)
+    end))
 end
 
 -- The page a control is on: the nearest frame from it up that is one (Panel.Page).
@@ -99,12 +99,12 @@ end
 -- What the mouse over a control tells. After the template's own (a dropdown's highlight, a swatch's
 -- border): those stay.
 local function Tooltip(widget, title, tip)
-    widget:HookScript("OnEnter", function(self)
+    widget:HookScript("OnEnter", Core.Guard("options", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip_SetTitle(GameTooltip, title)
         if tip then GameTooltip_AddNormalLine(GameTooltip, tip, true) end
         GameTooltip:Show()
-    end)
+    end))
     widget:HookScript("OnLeave", GameTooltip_Hide)
 end
 Panel.Tooltip = Tooltip
@@ -142,7 +142,7 @@ function Panel.Tabs(page, names, show, x, y)
     end
     local group = CreateRadioButtonGroup()
     group:AddButtons(tabs)
-    group:RegisterCallback(ButtonGroupBaseMixin.Event.Selected, function(_, tab) show(tab.index) end, page)
+    group:RegisterCallback(ButtonGroupBaseMixin.Event.Selected, Core.Guard("options", function(_, tab) show(tab.index) end), page)
     group:SelectAtIndex(1)
     return tabs, group
 end
@@ -155,7 +155,7 @@ function Panel.Scroll(parent)
     local child = CreateFrame("Frame", nil, scroll)
     child:SetSize(1, 1)
     scroll:SetScrollChild(child)
-    scroll:SetScript("OnSizeChanged", function(self, width) child:SetWidth(width) end)
+    scroll:SetScript("OnSizeChanged", Core.Guard("options", function(self, width) child:SetWidth(width) end))
     return child, scroll
 end
 
@@ -250,10 +250,10 @@ function Panel.Check(parent, text, tip, get, set, enabled, bare)
         label:SetPoint("LEFT", check, "RIGHT", 4, 0)
     end
     check.label, check.get = text, get
-    check:SetScript("OnClick", function(self)
+    check:SetScript("OnClick", Core.Guard("options", function(self)
         Core.Safe("Settings: " .. text, set, self:GetChecked() and true or false)
         Panel.Refresh(owner[self])
-    end)
+    end))
     Tooltip(check, text, tip)
     function check:Refresh()
         self:SetChecked(get() and true or false)
@@ -338,7 +338,7 @@ function Panel.Slider(parent, text, tip, option, get, set, enabled)
         Core.Safe("Settings: " .. text, set, value)
     end
     if slider.RegisterCallback and MinimalSliderWithSteppersMixin then
-        slider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, slider.Moved, slider)
+        slider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, Core.Guard("options", slider.Moved), slider)
     end
     Tooltip(slider, text, tip)
     function slider:Refresh()
@@ -376,9 +376,9 @@ function Panel.Dropdown(parent, text, tip, option, get, set, enabled)
         end
         for _, choice in ipairs(option.choices) do
             if multi then
-                root:CreateCheckbox(choice[2], IsChosen, Choose, choice[1])
+                root:CreateCheckbox(choice[2], Core.Guard("options", IsChosen), Core.Guard("options", Choose), choice[1])
             else
-                root:CreateRadio(choice[2], IsChosen, Choose, choice[1])
+                root:CreateRadio(choice[2], Core.Guard("options", IsChosen), Core.Guard("options", Choose), choice[1])
             end
         end
     end)
@@ -407,16 +407,16 @@ function Panel.Edit(parent, text, tip, option, get, set, enabled)
         unit:SetText(option.unit)
     end
     box.label, box.get, box.set = text, get, set
-    box:SetScript("OnEnterPressed", function(self)
+    box:SetScript("OnEnterPressed", Core.Guard("options", function(self)
         local value = self:GetText() or ""
         if number then value = Panel.Number(option, value) end
         if value ~= nil and value ~= get() then Core.Safe("Settings: " .. text, set, value) end
         self:ClearFocus()
         Panel.Refresh(owner[self])
-    end)
-    box:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    end))
+    box:SetScript("OnEscapePressed", Core.Guard("options", function(self) self:ClearFocus() end))
     -- Left without Enter (Esc, a click elsewhere): the value as it is.
-    box:HookScript("OnEditFocusLost", function(self) self:SetText(Panel.Written(option, get())) end)
+    box:HookScript("OnEditFocusLost", Core.Guard("options", function(self) self:SetText(Panel.Written(option, get())) end))
     Tooltip(box, text, tip)
     function box:Refresh()
         if not self:HasFocus() then self:SetText(Panel.Written(option, get())) end
@@ -445,13 +445,13 @@ function Panel.Color(parent, text, tip, get, set, enabled)
         Core.Safe("Settings: " .. text, set, hex)
         swatch:Refresh()
     end
-    swatch:SetScript("OnClick", function()
+    swatch:SetScript("OnClick", Core.Guard("options", function()
         local before = get()
         local r, g, b = Panel.RGB(before)
         ColorPickerFrame:SetupColorPickerAndShow({ r = r, g = g, b = b,
             swatchFunc = function() Set(Panel.Hex(ColorPickerFrame:GetColorRGB())) end,
             cancelFunc = function() Set(before) end })
-    end)
+    end))
     Tooltip(swatch, text, tip)
     function swatch:Refresh()
         self:SetColorRGB(Panel.RGB(get()))

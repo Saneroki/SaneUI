@@ -21,6 +21,7 @@ local closing = false
 local function Again()
     stand:SetShown(next(closes) ~= nil)
 end
+local AgainLater = Core.Guard("window", Again) -- for the timer: made once
 
 -- The game hid the stand-in (Esc). The owners are taken first: closing one may tell of another.
 local function Closed()
@@ -29,7 +30,7 @@ local function Closed()
     for owner, close in pairs(closes) do owners[#owners + 1] = { owner, close } end
     for _, entry in ipairs(owners) do Core.Safe("Esc", entry[2], entry[1]) end
     closing = false
-    C_Timer.After(0, Again)
+    C_Timer.After(0, AgainLater)
 end
 
 function Core.Escape(owner, close)
@@ -37,7 +38,7 @@ function Core.Escape(owner, close)
         if not close then return end
         stand = CreateFrame("Frame", "SaneUIEscape", UIParent)
         stand:Hide()
-        stand:SetScript("OnHide", Closed)
+        stand:SetScript("OnHide", Core.Guard("window", Closed))
         local special = rawget(_G, "UISpecialFrames")
         if type(special) == "table" then table.insert(special, "SaneUIEscape") end
     end

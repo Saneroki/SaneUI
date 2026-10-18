@@ -120,9 +120,9 @@ local function Hook(holder)
     local game = Game(holder)
     if not game or hooked[game] then return end
     hooked[game] = true
-    hooksecurefunc(game, "Show", function() Step(holder, Shown) end)
-    hooksecurefunc(game, "Hide", function() Step(holder, Hidden) end)
-    hooksecurefunc(game, "SetShown", function(_, on) Step(holder, on and Shown or Hidden) end)
+    hooksecurefunc(game, "Show", Core.Guard("window", function() Step(holder, Shown) end))
+    hooksecurefunc(game, "Hide", Core.Guard("window", function() Step(holder, Hidden) end))
+    hooksecurefunc(game, "SetShown", Core.Guard("window", function(_, on) Step(holder, on and Shown or Hidden) end))
 end
 
 -- To the game's window (on) or to ours: what window:Native does with a holder.
@@ -173,6 +173,6 @@ function Holder.Take(window)
         Begin()
     end
     -- Ours closed (its close, Esc) while the game's is held open: the game's closes too.
-    window.frame:HookScript("OnHide", function() Step(holder, Closed) end)
+    window.frame:HookScript("OnHide", Core.Guard("window", function() Step(holder, Closed) end))
     return holder
 end

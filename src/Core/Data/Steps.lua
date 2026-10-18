@@ -57,7 +57,10 @@ local function Budget()
     return Steps.BUDGET
 end
 
--- No OnUpdate at rest: the frame has one only while there is work and nothing holds it back.
+-- No OnUpdate at rest: the frame has one only while there is work and nothing holds it back. The
+-- script is Step behind Core's guard, made once, at the first wake (Step is defined below).
+local stepping
+
 local function Sleep()
     frame:Hide()
     frame:SetScript("OnUpdate", nil)
@@ -65,7 +68,8 @@ end
 
 local function Wake()
     if #jobs > 0 and not Core.Restricted() then
-        frame:SetScript("OnUpdate", Step)
+        if not stepping then stepping = Core.Guard("data", Step) end
+        frame:SetScript("OnUpdate", stepping)
         frame:Show()
     end
 end

@@ -55,10 +55,10 @@ local function Dialog()
     dialog:SetMovable(true)
     dialog:RegisterForDrag("LeftButton")
     dialog:SetScript("OnDragStart", dialog.StartMoving)
-    dialog:SetScript("OnDragStop", function(self)
+    dialog:SetScript("OnDragStop", Core.Guard("Edit Mode", function(self)
         self:StopMovingOrSizing()
         self:SetUserPlaced(false)
-    end)
+    end))
     local ok, border = pcall(CreateFrame, "Frame", nil, dialog, "DialogBorderTranslucentTemplate")
     if ok and border then border:SetAllPoints() end
     local title = dialog:CreateFontString(nil, "ARTWORK", "GameFontHighlightLarge")
@@ -70,11 +70,11 @@ local function Dialog()
     reset:SetSize(Selection.WIDTH - 2 * Selection.PADDING, Selection.BUTTON)
     reset:SetPoint("BOTTOM", 0, Selection.PADDING)
     reset:SetText(TEXT.reset)
-    reset:SetScript("OnClick", function()
+    reset:SetScript("OnClick", Core.Guard("Edit Mode", function()
         local window = Selection.window
         if window then Core.Safe("Edit Mode", window.Reset, window) end
         Update()
-    end)
+    end))
     dialog.title, dialog.reset = title, reset
     dialog:Hide()
     return dialog

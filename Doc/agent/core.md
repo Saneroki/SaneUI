@@ -61,7 +61,8 @@ which (Doc/guides/data.md, *Players*).
   A listener's failure goes to `Failed`: the module whose `AddOns/<folder>/` its error text names first stands
   down (`StandDown`), Core's own is reported under the event name; other listeners still run.
 - Error doors (hard rule, `Doc/guides/addon-standards.md` 10): events, `Core.Later`, module start (`OnLoad` failure:
-  not started further) and `module.Guard(fn)` (closure for scripts/hooks/timers: no-op once `off`, all results passed)
+  not started further), `module.Guard(fn)` (closure for scripts/hooks/timers: no-op once `off`, all results passed)
+  and `Core.Guard(label, fn)` (Core's own scripts: owner by trace stands down, else `Report(label)`, retried next call)
   all go to `Failed`; `GameError` (hook on `ScriptErrorsFrame.DisplayMessageInternal`) catches what slipped past
   (messageType 1 = warning: noted only). Door errors also reach `CallErrorHandler` only when CVar `scriptErrors` is on
   (`showing` flag stops the echo). `module.On` is `Core.On`: listeners keep running after `off`.

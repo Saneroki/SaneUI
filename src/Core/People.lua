@@ -117,5 +117,5 @@ local function Extend(_, root, data)
 end
 
 if Menu and Menu.ModifyMenu then
-    for _, which in ipairs(People.MENUS) do Menu.ModifyMenu("MENU_UNIT_" .. which, Extend) end
+    for _, which in ipairs(People.MENUS) do Menu.ModifyMenu("MENU_UNIT_" .. which, Core.Guard("aliases", Extend)) end
 end
