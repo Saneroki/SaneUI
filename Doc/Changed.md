@@ -211,6 +211,11 @@ A game restart takes it in (new files in Core's and Social's TOCs, key bindings)
   and without a commit of this computer's, a branch deleted on GitHub, no branch checked out.
   It is the first file of `Scripts/` in git; `.gitattributes` keeps that folder LF.
 
+### Navigation
+- **Handoff** for the session that builds it: `Doc/agent/navigation.md` (what it is, the build order with
+  what blocks each step, what Core and its data still lack, the open questions without a proposal); linked
+  from `Doc/agent/README.md`.
+
 ### Core's data framework
 - **1c.4 Characters, for the Inventory (in part, ahead of 1c.1).** New `src/Core/Data/Characters.lua` (in
   `SaneUI.toc`): each character of the account by its GUID with its whole name (a first name alone never
