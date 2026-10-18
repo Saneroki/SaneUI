@@ -16,6 +16,7 @@ Use current source and the user's instructions when they differ from a note.
 | Future spells, reservations, action layouts, spellbook/Home UI | [abilities.md](abilities.md) |
 | Tooltip content, layout, live unit data, quests, prices | [tooltips.md](tooltips.md) |
 | Messages, bubbles, native chat, input, filtering/fading | [social.md](social.md) |
+| Navigation: minimap, world map, quest log, pins, routes, leveling guide (not built yet; handoff) | [navigation.md](navigation.md), then `Doc/ideas/Navigation.md` |
 | Unit frames, party, raid, buffs, nameplates, pets (not built yet) | `src/Combat/README.md`, `Doc/ideas/Combat.md` |
 | NPC talks, books and letters as a scene, part of Social (not built yet) | `Doc/ideas/Dialogue.md` |
 | Lore: AI voice overs, a library of the world's lore, tidbits in tooltips (an idea, not built) | `Doc/ideas/Lore.md` |
