@@ -68,6 +68,8 @@ providers or frame fields can taint casting and action bars. The workaround is d
 give back, take over, entries' size, window, Home's tab row); no file listens for `PLAYER_REGEN_ENABLED`.
 The game's page buttons and tab row are `Core.Lend`-ed; `Locked` is `Core.Locked`. Controller mode,
 failed setup or repeated conflicting placement cause fallback. After fallback, changing tabs lets Blizzard redraw.
+A module-level stand-down (Core's door guard) runs `ns.GiveBack`: `Book.StandDown`, `Drag.Cancel`, `Ghosts.Hide`;
+`RunUpdate`, the login timers and the book/drag `OnUpdate`s are `ns.Guard`ed, `Ghosts.Refresh` is a no-op once `off`.
 Watcher runs 10 frames after layout, then every 0.2 s only while visible.
 
 Options: `showHidden/home/compact/window/ghosts/announce/book`, initially true. `book` takes effect

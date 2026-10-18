@@ -696,7 +696,7 @@ local function MakeFrames()
         GameTooltip:Show()
     end)
     box:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    frame:SetScript("OnUpdate", Watch)
+    frame:SetScript("OnUpdate", ns.Guard(Watch))
     frame:SetScript("OnHide", function() ns.Drag.Cancel() end)
     container, pager, headers, toggle = frame, paging, made, box
 end

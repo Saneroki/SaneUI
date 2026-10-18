@@ -188,16 +188,48 @@ CPU matters more than memory: everything an addon does happens between two frame
 
 ## 10. Errors and resilience
 
-- An addon error must never break the game's own UI. Guard every step that touches Blizzard code or
-  an API that may be missing: check for `nil` first, use `pcall`/`xpcall` where a call may fail.
-- When a feature fails, switch that feature off and give the player the Blizzard default back. Tell it
-  once, not on every frame.
-- Check that a function or frame exists before using it; client updates rename and remove things.
-- Do not swallow errors silently during development: they still go to the game's error handler.
-- In Sane UI: `Core.Safe(label, fn, ...)`, `Core.Report`, `Core.NoteError`, and a way back for every
-  module that changes something of the game's: a module that stands in for a whole feature defines
-  `GiveBack` and runs its steps through `module.Guarded`, which calls `module.StandDown` on an error
-  ([src/Core/README.md](../../src/Core/README.md)).
+**A hard rule:** an error in Sane UI's code never breaks the game's own UI and never leaves the player with
+a broken part of it. The part that failed steps aside, the Blizzard default takes its place, and the
+problem is kept and told once. Core holds the guards
+([src/Core/README.md](../../src/Core/README.md), *Errors are handled, always*); every piece of our code
+that the game calls runs behind one:
+
+| What the game calls | The guard | An error there |
+|---|---|---|
+| A game event (`Core.On`, `ns.On`, `Core.OnUnit`) | Core's event frame, each listener on its own | stands its module down |
+| A step done later (`Core.Later`) | `Core.Later` itself | stands its module down |
+| A module's `OnLoad`, `OnLogin`, `OnLogout` | Core's start | stands it down; after `OnLoad`, it is not started further |
+| A frame's script, a hook (`HookScript`, `hooksecurefunc`), a timer, a menu's or a dialog's function | `ns.Guard(fn)` | stands its module down; nothing once it stood down |
+| A message between a module's files (`ns.Fire`) | `ns.Safe`, each listener | told once, the others go on |
+| What slipped past every guard | the game's error window, where Core listens | stands its module down |
+
+Inside these doors, a step chooses how it fails:
+
+- `ns.Safe(label, fn, ...)` (`Core.Safe` in Core): the step fails alone, is told once, and the rest goes on.
+  For work that leaves nothing of the game's half done: a tooltip line, a click, a redraw of our own frame,
+  and for what must work beside the game's own after the module stood down (a switch, a character's channels).
+- `ns.Guarded(fn, ...)`: the step's error stands the module down. For work that changes the game's own.
+- `Core.Ask(fn, ...)`: a game function that may be missing or may fail answers nil.
+
+And so:
+
+- **Every module that changes something of the game's** defines `ns.GiveBack` (and `ns.GIVEN_BACK`, a few
+  words for chat). Standing down (`ns.StandDown`) happens once: `ns.off` is set, `GiveBack` runs, the error
+  is kept and told. A module without `GiveBack` only stops its guarded work. After a stand-down a `/reload`
+  starts the module afresh.
+- **Write new code with its guard from the start:** `button:SetScript("OnClick", ns.Guard(OnClick))`,
+  `C_Timer.After(1, ns.Guard(Retry))`. A script without a guard is still caught (at the game's error
+  window), but only after the game's error handler had it, and an `OnUpdate` without one fails again every
+  frame until its frame is hidden.
+- **An error belongs to a module** by its place: the first module folder its message or trace names
+  (`Interface/AddOns/SaneUI_Social/...`). A step of Core that a module called is that module's error. Core's
+  own errors are told under the door's name (the event), and Core goes on.
+- **Check that a function or frame exists before using it;** client updates rename and remove things.
+- **No error is silent:** each is in the error log with its place, the version and the build (`/sane errors`,
+  `dev/tools/errors`), and told once in chat (unless *Errors in chat* is off). The game's own error window
+  shows the errors caught at a door only when it shows Lua errors at all (`/console scriptErrors 1`), as it
+  does every addon's: turn it on during development to see them at once. Players, who leave it off, get no
+  pop-up from Sane UI.
 
 ## 11. Living next to other addons
 

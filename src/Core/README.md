@@ -22,6 +22,9 @@ but for a window to try those with (`/sane window`).
   player's tooltip. Empty text takes either away. Kept for your account, never sent to anybody.
 - `/sane errors` lists the error log, one line per problem; `/sane errors clear` empties it. When something
   fails, one line in chat says where (*problem in ..., noted in the error log*), once per kind of problem.
+  A module that fails steps aside: what it stands in for is the game's own again until the next `/reload`
+  (`/sane` lists it as *stopped*). The game's own error window shows Sane UI's errors only when it shows Lua
+  errors at all (`/console scriptErrors 1`).
 - **The error log.** Every problem is also kept in a log, in the order it happened, with the place it
   happened. It is in the saved settings file (`WTF/Account/<account>/SavedVariables/SaneUI.lua`, under
   `log`), which the game writes at a `/reload` and when you log out. `dev/tools/errors` prints it.
@@ -190,18 +193,33 @@ but for a window to try those with (`/sane window`).
 - **Load little, start late.** A file only defines things when it is read. Work starts in `OnLoad` or
   `OnLogin`, or later, when what it serves is first used (a window when it is opened). A game event is only
   asked of the game once somebody listens (`Core.On`).
-- **Errors stay where they happen.** `Safe(label, fn, ...)` runs one step; an error is told once in chat and
-  kept in `Core.errors`. A failing event listener does not keep the next one from the event; the game's
-  own error handler still gets the error (`CallErrorHandler`).
+- **Errors are handled, always (a hard rule).** Every piece of Sane UI's code the game calls runs behind a
+  guard, and no error of ours breaks the game or leaves a broken part of it on screen
+  ([addon standards](../../Doc/guides/addon-standards.md), *Errors and resilience*):
+  - **Steps.** `Safe(label, fn, ...)` runs one step that may fail alone: its error is told once in chat and
+    kept in `Core.errors`, the rest goes on. `module.Guarded(fn, ...)` runs a step whose error stands the
+    module down.
+  - **Doors**, where the game comes in: a game event (each listener on its own: one's error keeps no other
+    from the event), `Core.Later`, a module's `OnLoad`/`OnLogin`/`OnLogout` (one whose `OnLoad` failed is not
+    started further), and `module.Guard(fn)` for anything else the game calls later (a frame's script, a
+    hook, a timer, a menu's function). An error at a door that no step caught stands its module down; the
+    module is the first whose folder the error's place or trace names (`Interface/AddOns/SaneUI_Social/...`),
+    so an error in a step of Core that a module called is that module's. Core's own is told once under the
+    door's name (the event), and Core goes on.
+  - **What slipped past every guard** (a script without one) reaches the game's own error handler. Core
+    listens at the game's error window (`hooksecurefunc` on `ScriptErrorsFrame.DisplayMessageInternal`,
+    which leaves the game's handling as it is) and treats those of Sane UI as at a door; a Lua warning is
+    only noted.
+  - **The game's error window** shows an error caught at a door only when the game shows Lua errors at all
+    (the CVar `scriptErrors`, `/console scriptErrors 1`): as it does every addon's, and during development.
+    Without it nothing pops up; the line in chat and the log say what happened.
 - **The error log** (`Core.log`, saved as `SaneUIDB.log`). `Core.NoteError` adds an entry for every
   problem: time, label, text with the place it happened, the addon's version, the game's build. The same
-  problem twice in a row is one entry that counts; the log keeps the newest 100. Errors that no `Safe`
-  caught (in a frame's script, a timer, a hook) go to the game's own error handler; those that name a
-  Sane UI addon are noted from the game's error window (`hooksecurefunc` on
-  `ScriptErrorsFrame.DisplayMessageInternal`, which only listens). An addon cannot write a file of its
+  problem twice in a row is one entry that counts; the log keeps the newest 100. An addon cannot write a file of its
   own: the saved settings file is the log file, and it is written at a `/reload` or a logout.
 - **Falling back to Blizzard.** A module that changes something of the game's must be able to give it back
-  when a step fails (Abilities: `Book.StandDown`). Game updates change Blizzard's code under us.
+  when it fails (`GiveBack`, below; Abilities' book has a narrower one of its own, `Book.StandDown`). Game
+  updates change Blizzard's code under us.
 - **Secret values.** In combat the client hides some values from addons; comparing one is an error.
   Everything read from the game goes through `Core.Plain(value)` (nil when hidden).
 - **Globals:** `SaneUI`, `SaneUIDB`, `SaneUICharDB`, `SLASH_SANEUI1/2`. `dev/tests/lint` fails on any
@@ -215,11 +233,14 @@ but for a window to try those with (`/sane window`).
   addon has a page by then, and keeps that for the session. Their controls are made when the options first
   open (`Core.Config.Fill`). Sync's switches are kept as a module's, under the name `Sync`. Details:
   [Settings' README](Settings/README.md), [Sync's README](Sync/README.md).
-- **A module that stands in for something of the game's** (its tooltips, its chat) says how to give it
-  back: `module.GiveBack()` and `module.GIVEN_BACK` (a few words for chat). `module.Guarded(fn, ...)` runs
-  a step, and its error calls `module.StandDown(problem)`: once, it sets `module.off`, gives the game's own
-  back, keeps the problem and says so. `Guarded`, `Safe` and `Ask` make no table and no closure (the game's
-  `xpcall` hands arguments on), so they are cheap enough for what runs many times a second.
+- **A module that stands in for something of the game's** (its tooltips, its chat, its spellbook) says how
+  to give it back: `module.GiveBack()` and `module.GIVEN_BACK` (a few words for chat). An error at one of its
+  doors, or in a `Guarded` step, calls `module.StandDown(problem)`: once, it sets `module.off`, gives the
+  game's own back, keeps the problem and says so. From then on its `Guarded` steps and `Guard` functions do
+  nothing. Its event listeners still hear their events: what works beside the game's own (a switch, the
+  channels a character is in) goes on, and runs `Safe`. `Guarded`, `Safe`, `Ask` and a `Guard` function make
+  no table and no closure when they run (the game's `xpcall` hands arguments on), so they are cheap enough for
+  what runs many times a second.
 
 | Function | What it does |
 |---|---|
@@ -231,7 +252,8 @@ but for a window to try those with (`/sane window`).
 | `Core.NoteError(label, text)` | Keep an error a module caught itself, without telling it |
 | `Core.Trace(message)` | The error handler for `xpcall`: the error and the place it happened |
 | `module.Guarded(fn, ...)`, `module.StandDown(problem)` | A step that gives the game's own back when it fails (see above) |
-| `Core.Later(fn, delay)` | Returns a function that asks `fn` to run once, `delay` seconds later (none: the next frame) |
+| `module.Guard(fn)` | `fn` guarded, for the game to call later (a script, a hook, a timer): its error stands the module down; nothing once it stood down; all results passed on |
+| `Core.Later(fn, delay)` | Returns a function that asks `fn` to run once, `delay` seconds later (none: the next frame); `fn` runs guarded |
 | `Core.Plain(value)`, `Core.Secret(value)` | Secret values (see above) |
 | `Core.Ask(fn, ...)` | `fn(...)`'s first three answers, each nil when hidden; all nil when `fn` is missing or fails |
 | `Core.FullName(unit)` | A unit's whole name as the game shows it: a Forever character's first name and surname (`UnitName` gives both), joined by the game's separator; nil when hidden. Use it wherever a player's name is shown |

@@ -58,7 +58,13 @@ which (Doc/guides/data.md, *Players*).
 ## Shared contracts
 
 - `Core.On(event, fn)`: one shared event frame; event registration is lazy and skips unknown events.
-  Listener failures go through `CallErrorHandler`; other listeners still run.
+  A listener's failure goes to `Failed`: the module whose `AddOns/<folder>/` its error text names first stands
+  down (`StandDown`), Core's own is reported under the event name; other listeners still run.
+- Error doors (hard rule, `Doc/guides/addon-standards.md` 10): events, `Core.Later`, module start (`OnLoad` failure:
+  not started further) and `module.Guard(fn)` (closure for scripts/hooks/timers: no-op once `off`, all results passed)
+  all go to `Failed`; `GameError` (hook on `ScriptErrorsFrame.DisplayMessageInternal`) catches what slipped past
+  (messageType 1 = warning: noted only). Door errors also reach `CallErrorHandler` only when CVar `scriptErrors` is on
+  (`showing` flag stops the echo). `module.On` is `Core.On`: listeners keep running after `off`.
 - `Core.Safe(label, fn, ...)`: catches/reports failure (`Core.Report`: one chat line per label, "problem in <label>,
   noted in the error log (/sane errors).", unless *Errors in chat* is off), returns only the first result. Module `Safe`
   prefixes its name. `Listen`/`Fire` are module-local messages, with each listener safe.
@@ -66,8 +72,8 @@ which (Doc/guides/data.md, *Players*).
   `GIVEN_BACK`. Later guarded calls do nothing. Abilities's book has its own narrower fallback.
 - `Core.Secret(v)` / `Plain(v)`: test secret values / return nil for them. `Ask(fn, ...)` calls via
   `pcall` and returns up to three plain answers; missing/failing function gives nils.
-- `Core.Later(fn, delay)`: coalescing request function; only one pending timer. `fn` needs its own
-  appropriate guard. `Points` / `Repoint` preserve anchors, including nil holes.
+- `Core.Later(fn, delay)`: coalescing request function; only one pending timer. `fn` runs behind the
+  door guard (`Failed`). `Points` / `Repoint` preserve anchors, including nil holes.
 - `Core.Options(name, descriptions, hooks)`: describe at file load (hooks: a table, or only `changed`); returns the
   live settings once Core is loaded. `Core.Settle` makes a copy right whenever it comes into use (upgrade by
   `version`/`upgrade` first, then kinds/choices/validate/ends; keys no description has go, `_`-keys stay).

@@ -117,6 +117,10 @@ trainer can teach you right now and which spells you get from quests.
   tried again until `/reload`. What a fight keeps from being given back (the column, the page buttons,
   the row of tabs, an entry's own size, the window's size) is given back when it ends. The page buttons
   and the row of tabs are lent (`Core.Lend`): their place is noted once and given back exactly.
+- **When the whole module stands down** (an error that no step of its own caught, at one of its doors:
+  the update's timer, the watcher, the drag, an event; Core's error guard): `ns.GiveBack` leaves the
+  spellbook to the game (`Book.StandDown`), drops a drag in hand and takes the ghosts off the bars. The
+  reservations stay saved; after the next `/reload` the module starts afresh.
 - **Keeping the entries in place** (`Book.lua`, `Watch`): the game lays its entries out again now and
   then, sometimes a frame after it said it drew. For ten frames after each layout of the module every
   frame is looked at, then five times a second while the spellbook is open; closed, nothing runs.

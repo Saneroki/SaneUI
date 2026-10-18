@@ -1497,5 +1497,21 @@ check(next(Core.errors) == nil, "no step of the module raised an error")
 ns.Safe("test", function() error("boom") end)
 check(SaneUIDB.errors["Abilities: test"].text:find("boom"), "one that does is kept under the module's name")
 
+-- An error at one of its doors (a timer, a script) stands the module down: the game's own is back
+W.actions[1] = nil
+E.Reserve(1, entry("Blink"))
+ns.Fire("REFRESH")
+check(barGhost:IsShown(), "(a ghost on the bars)")
+W.printed, W.caught = {}, {}
+ns.Guard(function() error("a script broke") end)()
+check(#W.caught == 1, "(the game's error window gets it too: the stand-in shows Lua errors)")
+W.caught = nil
+check(ns.off and not ns.Book.Armed() and not barGhost:IsShown(), "an error no step caught leaves the spellbook to the game and takes the ghosts off the bars")
+check(Core.errors["Abilities: " .. ns.GIVEN_BACK] and printedMatch("problem in Abilities: " .. ns.GIVEN_BACK), "it is kept and told")
+ns.QueueUpdate(true, 0)
+W.Wait(1)
+ns.Fire("REFRESH")
+check(not barGhost:IsShown() and ns.char.reserved[1], "nothing shows them again; the reservations are kept for the next session")
+
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Abilities: all %d checks passed.\n"):format(passed))

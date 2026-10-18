@@ -18,7 +18,7 @@ W.macros = {}             -- [name] = index
 W.trainer = nil           -- rows of the open trainer window: { name, kind, icon, level, sub, category, id, cost }
 W.trainerFilter = { available = true, unavailable = true, used = false }
 W.traits = {}             -- spell IDs of the class talent tree
-W.cvars = {}
+W.cvars = { scriptErrors = "1" } -- the game shows Lua errors: those Sane UI catches at a door go to CallErrorHandler too
 W.level = 1
 W.printed = {}
 W.frames = {}

@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- When something in Sane UI fails, that part steps aside and the game's
+  own takes its place (its spellbook, chat or tooltips) until the next
+  /reload. No error window pops up: one line in chat says where, and
+  /sane errors lists what happened.
 - Aliases and notes: right click a player's name anywhere (a chat, the
   friends list, the guild, the target) and choose Set Alias or Set
   Note. An alias is your own name for that character: give all of a

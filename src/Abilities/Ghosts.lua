@@ -123,7 +123,7 @@ local function Build()
 end
 
 function G.Refresh()
-    if not ns.char then return end
+    if not ns.char or ns.off then return end
     Build()
     local show = ns.options.ghosts
     for button, ghost in pairs(ghosts) do
@@ -148,13 +148,21 @@ function G.Refresh()
     end
 end
 
+-- The module stood down: no ghost is left on the game's buttons.
+function G.Hide()
+    for _, ghost in pairs(ghosts) do
+        ghost.entry = nil
+        ghost:Hide()
+    end
+end
+
 ns.Listen("REFRESH", G.Refresh)
 
 -- A bar addon builds its bars after the login: look for its buttons again once it has.
 ns.On("PLAYER_ENTERING_WORLD", function()
-    C_Timer.After(5, function()
+    C_Timer.After(5, ns.Guard(function()
         if InCombatLockdown() then return end
         ns.Buttons.All(true)
         ns.Safe("ghosts", G.Refresh)
-    end)
+    end))
 end)

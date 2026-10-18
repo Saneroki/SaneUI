@@ -161,7 +161,11 @@ function Core.Repoint(region, points)
 end
 
 -------------------------------------------------------------------------------
---  Errors: caught, told once, kept
+--  Errors: caught, told once, kept, and the part that failed steps aside
+--  Every piece of Sane UI's code the game calls runs behind a guard: a step (Safe, a module's
+--  Guarded) or the door it came in by (an event, Later, a module's start, module.Guard). What
+--  slips past all of them reaches the game's error window, and is caught there too. A module's
+--  error stands that module down: it gives the game's own back and stops (module.StandDown).
 -------------------------------------------------------------------------------
 -- [label] = { text, count, when }: text is the problem's first line, what went wrong; the log below
 -- has the whole of it, with the place. Saved.lua keeps this table in the saved settings file, so it
@@ -212,24 +216,6 @@ function Core.NoteError(label, text)
     while #log > LOG_MAX do table.remove(log, 1) end
 end
 
--- An error no Safe caught (in a frame's script, a timer, a hook) goes to the game's own error
--- handler, which hands it to its error window. Those that come from Sane UI are noted from
--- there, with the place they happened. The game's handling is left as it is: this only listens.
-local function GameError(_, message, _, stack)
-    message, stack = Core.Plain(message), Core.Plain(stack)
-    if type(message) ~= "string" then return end
-    if type(stack) ~= "string" then stack = "" end
-    if message:find(ADDON, 1, true) or stack:find(ADDON, 1, true) then
-        Core.NoteError("Lua error", message .. "\n" .. stack)
-    end
-end
-
-local function ListenForGameErrors()
-    local window = rawget(_G, "ScriptErrorsFrame")
-    if not (window and window.DisplayMessageInternal) then return end
-    hooksecurefunc(window, "DisplayMessageInternal", function(...) pcall(GameError, ...) end)
-end
-
 -- The line in chat for a problem: where it happened, and where to read it.
 local TOLD = "problem in %s, noted in the error log (/sane errors)."
 
@@ -258,6 +244,76 @@ function Core.Safe(label, fn, ...)
     return nil
 end
 
+-- [addon folder] = its module (NewModule). The game names an error's place by its file, and the
+-- file by its addon's folder: Interface/AddOns/SaneUI_Social/Board.lua.
+local byAddon = {}
+
+-- The module an error came from: the first module's folder named in its text (its place, then the
+-- trace under it), so a step of Core that a module called is that module's. nil: Core's own.
+local function Owner(text)
+    if Core.Secret(text) or type(text) ~= "string" then return nil end
+    for folder in text:gmatch("AddOns[/\\]([%w_]+)[/\\]") do
+        if byAddon[folder] then return byAddon[folder] end
+    end
+    return nil
+end
+
+-- True while one of our errors is handed to the game's error window (Show): GameError, which
+-- listens there, leaves it alone. It is noted already.
+local showing = false
+
+-- The game shows Lua errors in its error window only if it was asked to (/console scriptErrors 1).
+-- Then ours are shown there too, as every addon's are. Without it nothing pops up: the line in chat
+-- and the log say what happened.
+local function Show(problem)
+    local handler = rawget(_G, "CallErrorHandler")
+    if not handler or Core.Ask(rawget(_G, "GetCVarBool"), "scriptErrors") ~= true then return end
+    showing = true
+    pcall(handler, problem)
+    showing = false
+end
+
+-- Where an error goes that no step caught, but the door it came in by: an event, Later, a module's
+-- start, module.Guard, or the game's error window (seen: it was shown there already). The module it
+-- came from stands down: it gives the game's own back and stops. owner: that module when the door
+-- knows it, otherwise it is found in the error's text. Core's own is told once under the label (the
+-- event, say), and Core goes on.
+local function Failed(owner, label, problem, seen)
+    owner = owner or Owner(problem)
+    if not owner then
+        Core.Report(label, problem)
+    elseif owner.off then
+        -- Stopped already, by an earlier error (a script without a guard runs on): kept, not told again.
+        Core.NoteError(owner.name .. ": after it stopped", problem)
+    else
+        owner.StandDown(problem)
+    end
+    if not seen then Show(problem) end
+end
+
+-- An error that slipped past every guard (a frame's script or a hook that has none) goes to the
+-- game's own error handler, which hands it to its error window: those of Sane UI are caught there,
+-- and fail as at any door. The game's handling is left as it is: this only listens. A Lua warning
+-- (messageType 1, no error) is only noted.
+local function GameError(_, message, messageType, stack)
+    if showing then return end
+    message, stack = Core.Plain(message), Core.Plain(stack)
+    if type(message) ~= "string" then return end
+    local text = type(stack) == "string" and message .. "\n" .. stack or message
+    if not text:find(ADDON, 1, true) then return end
+    if messageType == 1 then
+        Core.NoteError("Lua warning", text)
+    else
+        Failed(nil, "Core", text, true)
+    end
+end
+
+local function ListenForGameErrors()
+    local window = rawget(_G, "ScriptErrorsFrame")
+    if not (window and window.DisplayMessageInternal) then return end
+    hooksecurefunc(window, "DisplayMessageInternal", function(...) pcall(GameError, ...) end)
+end
+
 -- Core.Later(fn, delay) returns a function that asks for fn to run once, delay seconds later
 -- (0 or none: the next frame). Asking again before then changes nothing. For events that come in
 -- bursts, and for work that must wait until the game has finished its own.
@@ -265,7 +321,8 @@ function Core.Later(fn, delay)
     local asked = false
     local function Run()
         asked = false
-        fn()
+        local ok, problem = xpcall(fn, Trace)
+        if not ok then Failed(nil, "later", problem) end
     end
     return function()
         if asked then return end
@@ -364,12 +421,18 @@ function Core.Off(event, fn)
     end
 end
 
--- One listener's error must not keep the others (another module's, mostly) from hearing
--- the event. The game's own error handler still gets it, with the place it happened.
+-- Hands an event to its listeners, each behind a guard of its own: one listener's error keeps no
+-- other (another module's, mostly) from hearing the event, and stands its own module down.
+local function Deliver(list, event, ...)
+    for _, fn in ipairs(list) do
+        local ok, problem = xpcall(fn, Trace, ...)
+        if not ok then Failed(nil, event, problem) end
+    end
+end
+
 frame:SetScript("OnEvent", function(_, event, ...)
     local list = handlers[event]
-    if not list then return end
-    for _, fn in ipairs(list) do xpcall(fn, CallErrorHandler, ...) end
+    if list then Deliver(list, event, ...) end
 end)
 
 -- An event of one unit only (UNIT_AURA of "player"): the game sends it for that unit alone, not for
@@ -383,8 +446,7 @@ function Core.OnUnit(event, unit, fn)
         entry = { frame = CreateFrame("Frame"), handlers = {} }
         entry.frame:SetScript("OnEvent", function(_, name, ...)
             local list = entry.handlers[name]
-            if not list then return end
-            for _, listener in ipairs(list) do xpcall(listener, CallErrorHandler, ...) end
+            if list then Deliver(list, name, ...) end
         end)
         units[unit] = entry
     end
@@ -502,6 +564,7 @@ function Core.NewModule(addon, name, module)
     module.addon, module.name = addon, name
     module.title = module.title or name
     module.Print, module.Plain, module.On = Core.Print, Core.Plain, Core.On
+    byAddon[addon] = byAddon[addon] or module
 
     -- As Core.Safe, the label under the module's name. The step runs first: the label's string is
     -- only made when it failed (Safe is used for what runs many times a second).
@@ -516,9 +579,11 @@ function Core.NewModule(addon, name, module)
         Core.Report(name .. ": " .. label, text)
     end
 
-    -- A module that stands in for something of the game's (its tooltips, its chat) gives it back
-    -- when a step fails. It says how in module.GiveBack (a function) and what is told then in
-    -- module.GIVEN_BACK (a few words). StandDown does it once; from then on module.off is true.
+    -- An error that no step of the module caught stands it down, once: from then on module.off is
+    -- true, and its guarded steps (Guarded) and functions (Guard) do nothing. A module that stands in
+    -- for something of the game's (its tooltips, its chat, its spellbook) gives it back then: it says
+    -- how in module.GiveBack (a function) and what is told in module.GIVEN_BACK (a few words). What
+    -- works beside the game's own (a switch, the channels a character is in) may go on: it runs Safe.
     function module.StandDown(problem)
         if module.off then return end
         module.off = true
@@ -537,6 +602,24 @@ function Core.NewModule(addon, name, module)
         if ok then return result end
         module.StandDown(result)
         return nil
+    end
+
+    -- Pass(xpcall(fn, ...)): all of fn's results when it worked. Its error came in by the door.
+    local function Pass(ok, ...)
+        if ok then return ... end
+        Failed(module, name, (...))
+        return nil
+    end
+
+    -- fn guarded, for the game to call later: a frame's script, a hook, a timer, a menu's or a
+    -- dialog's function. It does nothing once the module stood down, and its error stands the
+    -- module down. It hands on all of fn's results and makes no table and no closure when called.
+    --     button:SetScript("OnClick", ns.Guard(OnClick))
+    function module.Guard(fn)
+        return function(...)
+            if module.off then return nil end
+            return Pass(xpcall(fn, Trace, ...))
+        end
     end
 
     local listeners, labels = {}, {} -- [message] = its functions; = their labels ("refresh2"), made once
@@ -561,16 +644,21 @@ function Core.NewModule(addon, name, module)
     return module
 end
 
--- addon: only the modules of that addon; nil: all of them. A module whose OnLoad failed is not
--- started further: its OnLogin would only fail on what OnLoad did not make.
-local failed = {}
+-- addon: only the modules of that addon; nil: all of them. A step that fails stands its module
+-- down. A module whose OnLoad failed, or that stood down before it (an error in one of its files),
+-- is not started further: its OnLogin would only fail on what OnLoad did not make.
+local unstarted = {}
 local function Start(step, addon)
     for _, module in ipairs(Core.modules) do
-        if module[step] and not failed[module] and (not addon or module.addon == addon) then
-            local ok, problem = xpcall(module[step], Trace)
-            if not ok then
-                module.Report(step, problem)
-                if step == "OnLoad" then failed[module] = true end
+        if module[step] and not unstarted[module] and (not addon or module.addon == addon) then
+            if step == "OnLoad" and module.off then
+                unstarted[module] = true
+            else
+                local ok, problem = xpcall(module[step], Trace)
+                if not ok then
+                    if step == "OnLoad" then unstarted[module] = true end
+                    Failed(module, step, problem)
+                end
             end
         end
     end
@@ -653,7 +741,7 @@ SlashCmdList.SANEUI = function(text)
     end
     local titles = {}
     for index, module in ipairs(Core.modules) do
-        titles[index] = failed[module] and module.title .. " (failed to start, see /sane errors)" or module.title
+        titles[index] = module.off and module.title .. " (stopped, see /sane errors)" or module.title
     end
     Core.Print(("version %s. %s"):format(Core.VERSION, #titles > 0 and "Modules: " .. table.concat(titles, ", ") .. "."
         or "No module is switched on: tick them under " .. Core.TITLE .. " in the addon list."))

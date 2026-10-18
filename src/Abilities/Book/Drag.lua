@@ -88,7 +88,7 @@ local function Build()
 
     -- The gold frame moves only when the button under the mouse is another one.
     local lastButton
-    holder:SetScript("OnUpdate", function(self)
+    holder:SetScript("OnUpdate", ns.Guard(function(self)
         local x, y = GetCursorPosition()
         local scale = UIParent:GetEffectiveScale()
         self:ClearAllPoints()
@@ -108,7 +108,7 @@ local function Build()
         else
             hint:Hide()
         end
-    end)
+    end))
     holder:SetScript("OnHide", function()
         lastButton = nil
         hint:Hide()

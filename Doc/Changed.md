@@ -6,6 +6,35 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 90 (Sync), 351 (windows), 175 (data in the game).
 A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, key bindings).
 
+### Errors handled gracefully, a hard rule (Saneroki, 2026-10-18)
+- Core (`Core.lua`, *Errors*): every piece of Sane UI's code the game calls runs behind a guard, a step
+  (`Safe`, `Guarded`) or the door it came in by. An error at a door that no step caught stands the module it
+  came from down (`StandDown`: `off`, `GiveBack`, kept and told once); Core's own is told once under the door's
+  name and Core goes on.
+  - The module is found by the error's place: the first module folder its message or trace names
+    (`Interface/AddOns/SaneUI_<Module>/`), so a step of Core that a module called is the module's.
+  - Doors: game events (each listener on its own, as before, now caught by Core instead of only going to
+    `CallErrorHandler`), `Core.Later` (its function was unguarded), a module's `OnLoad`/`OnLogin`/`OnLogout`
+    (a failure now stands the module down, not only notes it; a failed `OnLoad`, or a stand-down before it,
+    still keeps the module from being started further), and new `module.Guard(fn)`: a guarded function for
+    scripts, hooks, timers and callbacks (nothing once the module stood down, all results passed on).
+  - What slipped past every guard and reached the game's error window (Core listens there) is no longer only
+    noted as "Lua error": it stands its module down too, and Core's own is told once as "Core". A Lua warning
+    of ours is noted only (`Lua warning`).
+  - The game's error window shows an error caught at a door only when the CVar `scriptErrors` is on, as for
+    every addon; then it is not noted a second time. Players get no pop-up from Sane UI.
+  - `/sane` lists a module that stood down as *stopped* (was *failed to start*, for a failed `OnLoad` only).
+  - Event listeners of a module that stood down still hear their events: Social's channel wishes and the
+    Tooltips' mouse switch work beside the game's own on purpose (they run `Safe`).
+- Abilities: `ns.GiveBack` (leaves the spellbook to the game through `Book.StandDown`, drops a drag, takes the
+  ghosts off the bars; the reservations stay saved) and `ns.GIVEN_BACK`; the update's timer, the login timers
+  and the book's and the drag's `OnUpdate` are `ns.Guard`ed; `Ghosts.Refresh` does nothing once the module
+  stood down.
+- Docs: the hard rule in `Doc/guides/addon-standards.md` (10, with the table of doors) and Core's README.
+- Tests: `dev/tests/core.lua` 344 checks (the doors, the module named by the error's place, the game's error
+  window both ways, `Later`), `dev/tests/abilities.lua` 344 (its give-back). The stand-in shows Lua errors
+  (`scriptErrors` on), so an error caught at a door still ends a test run unless the test collects it.
+
 ### Sync and the CVar list made again from Blizzard's options code (Saneroki, 2026-10-18)
 - `Settings/Data/CVarLabels.lua` and `Sync/Data/Pages.lua` were made from older options code than
   `references/`, so both `--check` runs failed (noted at 1a.2). In the code now: the floating combat text's

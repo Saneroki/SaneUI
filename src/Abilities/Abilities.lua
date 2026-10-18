@@ -301,7 +301,8 @@ end
 -------------------------------------------------------------------------------
 local queued, wantScan = false, false
 
-local function RunUpdate()
+-- A timer runs it: guarded, so that an error in it stands the module down (Core's Guard).
+local RunUpdate = ns.Guard(function()
     queued = false
     if not ns.ready then return end
     -- What you have is read again out of a fight only: in one nothing real can be placed, and an
@@ -317,7 +318,7 @@ local function RunUpdate()
     ns.Safe("pages", LearnPageName)
     ns.Safe("reconcile", ns.Engine.Reconcile)
     ns.Fire("REFRESH")
-end
+end)
 
 function ns.QueueUpdate(scan, delay)
     wantScan = wantScan or scan or false
@@ -416,11 +417,21 @@ ns.On("PLAYER_ENTERING_WORLD", function()
         return
     end
     entered = true
-    C_Timer.After(2, function()
+    C_Timer.After(2, ns.Guard(function()
         ns.ready = true
         ns.QueueUpdate(true, 0)
-    end)
+    end))
 end)
+
+-- An error that no step caught stands the module down (Core's StandDown): the spellbook's pages
+-- and its window go back to the game, and the reservations' marks leave the bars. The
+-- reservations themselves stay saved for the next session.
+ns.GIVEN_BACK = "the game's own spellbook and buttons are back"
+function ns.GiveBack()
+    if ns.Book then ns.Book.StandDown(TEXT.why.problem) end
+    if ns.Drag then ns.Drag.Cancel() end
+    if ns.Ghosts then ns.Ghosts.Hide() end
+end
 
 -------------------------------------------------------------------------------
 --  /sane abilities
