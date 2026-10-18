@@ -24,12 +24,14 @@ kind of CVar in the game, and the rest belongs to one computer.
 Usage:  dev/tools/sync-pages           write the file
         dev/tools/sync-pages --check   say whether the file is up to date, write nothing
 """
+import os
 import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-ADDONS = ROOT / "references" / "BlizzardInterfaceCode" / "Interface" / "AddOns"
+# BLIZZARD_CODE: another export than references/ (dev/tools/blizzard check reads a new build's so).
+ADDONS = Path(os.environ.get("BLIZZARD_CODE") or ROOT / "references" / "BlizzardInterfaceCode") / "Interface" / "AddOns"
 FOLDERS = ("Blizzard_SettingsDefinitions_Shared", "Blizzard_SettingsDefinitions_Frame")
 BINDINGS = ADDONS / "Blizzard_FrameXML" / "Bindings_Camelot.xml"
 OUTPUT = ROOT / "src" / "Core" / "Sync" / "Data" / "Pages.lua"

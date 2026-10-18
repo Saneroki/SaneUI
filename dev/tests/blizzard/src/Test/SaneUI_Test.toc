@@ -1,0 +1,5 @@
+## Interface: 16001
+## Title: Test
+## Dependencies: SaneUI
+Test.lua
+Test.xml

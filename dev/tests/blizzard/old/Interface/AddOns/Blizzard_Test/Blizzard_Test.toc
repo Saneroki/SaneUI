@@ -1,0 +1,9 @@
+## Title: Blizzard_Test
+## Dependencies: Blizzard_SharedXML
+Shared\Test.lua
+Shared\Test.xml
+Vanilla\Only.lua [AllowLoadGameType vanilla]
+[Family]\Family.lua
+[Game]\Game.lua [AllowLoadGameType camelot]
+Mainline\Excluded.lua [AllowLoadGameType mainline] [ExcludeLoadGameType camelot]
+Shared\Glue.lua [AllowLoad glue]

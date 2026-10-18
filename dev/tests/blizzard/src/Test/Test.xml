@@ -1,0 +1,9 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<Button name="SaneUITestButton" inherits="TestButtonTemplate" virtual="true">
+		<Layers>
+			<Layer level="ARTWORK">
+				<FontString parentKey="Label" inherits="TestFont"/>
+			</Layer>
+		</Layers>
+	</Button>
+</Ui>

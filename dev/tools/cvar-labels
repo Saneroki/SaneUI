@@ -21,12 +21,14 @@ Usage:  dev/tools/cvar-labels           write the file
                                         the game's build the code in references/ is of, where it is known
 """
 import json
+import os
 import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-ADDONS = ROOT / "references" / "BlizzardInterfaceCode" / "Interface" / "AddOns"
+# BLIZZARD_CODE: another export than references/ (dev/tools/blizzard check reads a new build's so).
+ADDONS = Path(os.environ.get("BLIZZARD_CODE") or ROOT / "references" / "BlizzardInterfaceCode") / "Interface" / "AddOns"
 FOLDERS = ("Blizzard_SettingsDefinitions_Frame", "Blizzard_SettingsDefinitions_Shared")
 OUTPUT = ROOT / "src" / "Core" / "Settings" / "Data" / "CVarLabels.lua"
 STAGING = ROOT / "dev" / "data" / "staging" / "cvar-labels.jsonl"

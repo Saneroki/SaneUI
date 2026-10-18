@@ -1,0 +1,23 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<Button name="TestButtonTemplate" virtual="true" mixin="TestMixin">
+		<Size x="10" y="20"/>
+		<Layers>
+			<Layer level="ARTWORK">
+				<FontString parentKey="Text" inherits="GameFontNormal"/>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Frame parentKey="Box"/>
+		</Frames>
+		<Scripts>
+			<OnLoad method="OnLoad"/>
+		</Scripts>
+	</Button>
+	<Frame name="TestFrame" parent="UIParent">
+		<Frames>
+			<Button name="$parentClose" parentKey="CloseButton"/>
+		</Frames>
+	</Frame>
+	<Font name="TestFont" virtual="true" height="12"/>
+	<Texture name="TestAtlasTemplate" atlas="test-atlas-old" virtual="true"/>
+</Ui>

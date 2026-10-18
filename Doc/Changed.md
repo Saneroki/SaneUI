@@ -6,6 +6,22 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 88 (Sync), 351 (windows), 175 (data in the game).
 A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, key bindings).
 
+### Development: Blizzard updates, the todo list of a new build (Saneroki, 2026-10-18)
+- `dev/tools/blizzard` (new, Python in `dev/blizzard/`): a new build's Blizzard interface code against
+  `references/BlizzardInterfaceCode`, and what of the difference reaches Sane UI.
+  - `check [<new>]`: the todo list in `dev/blizzard/reports/` (Markdown and JSON, not committed): broken (gone,
+    or a name Blizzard's code no longer mentions), deprecated (with what the stand-in calls), changed
+    (parameters, API arguments, returns and flags, payloads, structures, template keys, enums), review (hooked or
+    used code that changed, with its diff; atlases no longer named), housekeeping (the TOCs' Interface number, the
+    made files, notes citing changed Blizzard files, the adopt).
+  - `show <name>`, `uses [--list] [--unknown]`, `adopt` (the new export into `references/`, with a `.build` note,
+    and CVarLabels and Pages made again). `--old git:<revision>` compares with a commit's `references/`.
+  - Reads exports as this client loads them (game type camelot with the group mainline) and the API
+    documentation whole; Sane UI's globals by `luac5.1`'s listing.
+- `dev/tools/cvar-labels`, `dev/tools/sync-pages`: `BLIZZARD_CODE` reads another export than `references/`.
+- `Doc/guides/blizzard-updates.md` (new): the pipeline, the sections, how both sides are read, the limits.
+- Tests: `dev/tests/blizzard.py` (new, in `dev/tests/run`), 74 checks.
+
 ### Aliases and notes of players (Saneroki, 2026-10-18)
 - `Core/People.lua` (new, in Core's TOC): *Set Alias* and *Set Note* under the game's lines of its menu of a
   player.

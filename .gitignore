@@ -40,3 +40,5 @@ desktop.ini
 # What the voice service made (dev/tools/voicegen): the sound is kept with the backups, the previews only to listen
 /dev/voices/sound/
 /dev/voices/design/
+# The todo lists of dev/tools/blizzard check: made again from the exports whenever they are wanted
+/dev/blizzard/reports/

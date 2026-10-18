@@ -1,0 +1,3 @@
+## Title: Blizzard_Retail
+## AllowLoadGameType: standard
+Retail.lua

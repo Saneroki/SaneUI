@@ -13,6 +13,7 @@
 #   imagegen.py     the image pipeline's lists, recipes and sets, and the flipbook's grid and loops
 #   data check      the master of Core's data framework (assets/data) fits its rules
 #   data/tools.py   the data framework's tools: the check's rules, the import, on a sample master
+#   blizzard.py     dev/tools/blizzard: two Blizzard exports compared, and what reaches a small module
 #
 # Usage:  dev/tests/run
 set -euo pipefail
@@ -34,3 +35,4 @@ python3 -I dev/tests/voices.py
 python3 -I dev/tests/imagegen.py
 dev/tools/data check
 python3 -I dev/tests/data/tools.py
+python3 -I dev/tests/blizzard.py

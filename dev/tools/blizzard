@@ -1,0 +1,218 @@
+#!/usr/bin/env python3
+"""Blizzard's interface code of a new game build against the one Sane UI is built on (references/), and what
+the difference means for Sane UI: a todo list of what broke, what is deprecated, what is called differently,
+what to review, and the housekeeping (Doc/guides/blizzard-updates.md).
+
+Usage:  dev/tools/blizzard check [<new>] [--old <export>|git:<revision>] [--build <version>] [--out <file.md>]
+                                   the todo list, in dev/blizzard/reports/ (Markdown and JSON)
+        dev/tools/blizzard show <name> [<new>] [--old ...]
+                                   a symbol (C_Spell.GetSpellInfo, GameTooltip_SetDefaultAnchor, PLAYER_LOGIN,
+                                   UIPanelButtonTemplate, lua:FooMixin:Bar) in both exports, with its diff
+        dev/tools/blizzard uses [--list] [--unknown]
+                                   what Sane UI takes from Blizzard, by kind, as references/ has it; --unknown:
+                                   the globals it reads that the export does not define (the client's own)
+        dev/tools/blizzard adopt [<new>] [--build <version>]
+                                   the new export becomes references/BlizzardInterfaceCode, and the files made from
+                                   it are made again (CVarLabels.lua, Pages.lua); commit them after the build
+
+<new> is where the game exported its code (in the game, with the console: exportInterfaceFiles code): the game
+folder, its BlizzardInterfaceCode folder or that one's Interface folder. Without it, the game folder dev/build
+installs into ($WOW_FOREVER). --old is references/ unless given: another export, or git:<revision> for
+references/ as a commit has it (git:HEAD~1 after an adopt). The build of an export is read from the game folder
+it is in (.build.info) or the note adopt leaves (.build); --build gives the new one's by hand.
+"""
+import argparse
+import difflib
+import json
+import os
+import subprocess
+import sys
+import tempfile
+from datetime import date
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "dev" / "blizzard"))
+
+import compare  # noqa: E402
+import export as exports  # noqa: E402
+import report  # noqa: E402
+import uses as sane  # noqa: E402
+
+REFERENCES = ROOT / "references" / "BlizzardInterfaceCode"
+REPORTS = ROOT / "dev" / "blizzard" / "reports"
+GAME = Path(os.environ.get("WOW_FOREVER") or Path.home() / ".local/share/Steam/steamapps/compatdata/3133853286/pfx/"
+            "drive_c/Program Files (x86)/World of Warcraft/_classic_beta_")
+# The files made from references/, with the tool that makes each.
+GENERATED = (("dev/tools/cvar-labels", "src/Core/Settings/Data/CVarLabels.lua"),
+             ("dev/tools/sync-pages", "src/Core/Sync/Data/Pages.lua"))
+
+
+def fail(text):
+    print(text, file=sys.stderr)
+    sys.exit(1)
+
+
+def new_export(path, build=None, old=None):
+    where = Path(path) if path else GAME
+    root = exports.locate(where)
+    if root is None:
+        fail(f"No export of Blizzard's interface code in {where}.\n"
+             "In the game: start it with -console (Battle.net: game settings, additional command line arguments),\n"
+             "open the console with ` at the login screen and type: exportInterfaceFiles code\n"
+             "It writes <game folder>/BlizzardInterfaceCode.")
+    if root.resolve() == REFERENCES.resolve() and not old:
+        fail("That is references/ itself: give the new export, or --old git:HEAD to compare it with the last commit.")
+    return exports.Export(root, build=build)
+
+
+def old_export(spec, scratch):
+    if spec and spec.startswith("git:"):
+        root = exports.from_git(spec[4:], ROOT, scratch)
+        return exports.Export(root, label=spec[4:])
+    root = exports.locate(spec) if spec else REFERENCES
+    if root is None:
+        fail(f"No export of Blizzard's interface code in {spec}.")
+    export = exports.Export(root)
+    if not export.build and not spec:
+        export.label = "references"
+    return export
+
+
+def generated(old_root, new_root):
+    """The files made from references/ that the new export would change, and whether they already would."""
+    def stale(code):
+        env = dict(os.environ, BLIZZARD_CODE=str(code))
+        return {tool for tool, _ in GENERATED
+                if subprocess.run([str(ROOT / tool), "--check"], env=env, capture_output=True).returncode}
+
+    def run():
+        before, after = stale(old_root), stale(new_root)
+        return [(tool, made + (" (already out of date with the old export)" if tool in before else ""))
+                for tool, made in GENERATED if tool in after]
+    return run
+
+
+def analysis(args, scratch):
+    old = old_export(args.old, scratch)
+    new = new_export(args.new, args.build, args.old)
+    found = sane.Uses(ROOT / "src", notes=[ROOT / "Doc"], root=ROOT)
+    tocs = sorted((ROOT / "src").glob("*/*.toc"))
+    return compare.Analysis(old, new, found, tocs, generated(old.root, new.root))
+
+
+def run_check(args):
+    with tempfile.TemporaryDirectory() as scratch:
+        result = analysis(args, scratch)
+        name = f"{result.old.build or 'references'}-to-{result.new.build or 'new'}"
+        out = Path(args.out) if args.out else REPORTS / f"{name}.md"
+        report.markdown(result, out, ROOT, args.new)
+        report.as_json(result, out.with_suffix(".json"))
+        try:
+            shown = out.resolve().relative_to(ROOT)
+        except ValueError:
+            shown = out
+        print("\n".join(report.summary(result, shown)))
+
+
+def matches(name, *exports_):
+    ids = set()
+    for export in exports_:
+        for id_ in export.symbols:
+            if id_ == name or id_.partition(":")[2] == name or compare.tail(id_) == name:
+                ids.add(id_)
+    return sorted(ids)
+
+
+def run_show(args):
+    with tempfile.TemporaryDirectory() as scratch:
+        old, new = old_export(args.old, scratch), new_export(args.new, args.build, args.old)
+        ids = matches(args.name, old, new)
+        if not ids:
+            fail(f"Neither export has {args.name!r}.")
+        changes = compare.changes(old, new)
+        for id_ in ids[:12]:
+            a, b, change = old.symbols.get(id_), new.symbols.get(id_), changes.get(id_)
+            print(f"{id_}: " + (change.status if change else "the same") +
+                  (": " + "; ".join(change.notes) if change and change.notes else ""))
+            for label, export, record in (("old", old, a), ("new", new, b)):
+                if record:
+                    where = record["file"] + (f":{record['line']}" if record.get("line") else "")
+                    print(f"  {label}: {where}" + (" (deprecated)" if record["deprecated"] else ""))
+            if a and b and a.get("line") and b.get("line"):
+                text_a = old.lines(a["file"], a["line"], a["end"])
+                text_b = new.lines(b["file"], b["line"], b["end"])
+            else:
+                text_a = json.dumps(a and a["sig"], indent=1, ensure_ascii=False).splitlines()
+                text_b = json.dumps(b and b["sig"], indent=1, ensure_ascii=False).splitlines()
+            for line in difflib.unified_diff(text_a, text_b, "old", "new", lineterm="", n=3):
+                print("  " + line)
+        if len(ids) > 12:
+            print(f"... and {len(ids) - 12} more: " + ", ".join(ids[12:30]))
+
+
+def run_uses(args):
+    export = exports.Export(REFERENCES)
+    found = sane.Uses(ROOT / "src", notes=[ROOT / "Doc"], root=ROOT)
+    result = compare.Analysis(export, export, found)
+    by_kind, unknown = {}, {}
+    for id_, places in result.resolved.items():
+        by_kind.setdefault(id_.partition(":")[0], []).append((id_, places))
+    print(f"Sane UI takes {len(result.resolved)} symbols from Blizzard's code ({export.label}):")
+    for kind, items in sorted(by_kind.items(), key=lambda item: -len(item[1])):
+        print(f"  {len(items):5} {compare.KIND.get(kind, kind)}")
+        if args.list:
+            for id_, places in sorted(items):
+                print(f"          {id_.partition(':')[2]} ({len(places)})")
+    hooks = found.of("hook")
+    print(f"  {len(hooks):5} hooks: " + ", ".join(sorted({u.name for u in hooks})))
+    if args.unknown:
+        for use in found.of("global"):
+            head = use.name.split(".")[0].split(":")[0]
+            if not any(id_ in result.resolved for id_ in (f"lua:{head}",)) and head not in export.names:
+                unknown.setdefault(head, []).append(use)
+        print(f"Globals the export does not define ({len(unknown)}), the client's own or Lua's:")
+        print("  " + ", ".join(sorted(unknown)))
+
+
+def run_adopt(args):
+    new = new_export(args.new, args.build)
+    REFERENCES.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["rsync", "-a", "--delete", f"{new.interface}/", f"{REFERENCES / 'Interface'}/"], check=True)
+    note = REFERENCES / ".build"
+    if new.build:
+        note.write_text(json.dumps({"version": new.build, "adopted": date.today().isoformat()}) + "\n",
+                        encoding="utf-8")
+    elif note.exists():
+        note.unlink()
+    print(f"references/BlizzardInterfaceCode is now the export of {new.build or 'a build not known'}.")
+    for tool, made in GENERATED:
+        subprocess.run([str(ROOT / tool)], check=True, stdout=subprocess.DEVNULL)
+        changed = subprocess.run(["git", "-C", str(ROOT), "diff", "--quiet", "--", made]).returncode
+        print(f"{tool}: {made} " + ("changed" if changed else "as before"))
+    print("Next: dev/build, try it in the game, then commit references/BlizzardInterfaceCode and the made files.")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter)
+    commands = parser.add_subparsers(dest="command", required=True)
+    for name in ("check", "show", "adopt"):
+        command = commands.add_parser(name)
+        if name == "show":
+            command.add_argument("name")
+        command.add_argument("new", nargs="?")
+        command.add_argument("--build")
+        if name != "adopt":
+            command.add_argument("--old")
+        if name == "check":
+            command.add_argument("--out")
+    command = commands.add_parser("uses")
+    command.add_argument("--list", action="store_true")
+    command.add_argument("--unknown", action="store_true")
+    args = parser.parse_args()
+    {"check": run_check, "show": run_show, "uses": run_uses, "adopt": run_adopt}[args.command](args)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,4 @@
+## Title: Blizzard API Documentation Generated
+## LoadOnDemand: 1
+TestDocumentation.lua
+SimpleTestAPIDocumentation.lua
