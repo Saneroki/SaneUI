@@ -358,17 +358,39 @@ written only into its own game version's files (*Game versions kept apart*).
   tool, for example). So the history can reach back before our first crawl.
 - **Missing from a source** is no proof of removal: an entry is *gone* only on the game's word or by hand.
 
+### When in doubt, left out
+
+Saneroki (2026-10-18): fewer facts that hold beat more that might not. A batch's fact is taken in only if
+it is exact, agreed and current; whatever is not reliable, vague, overlapping, contradicting, imprecise,
+questionable or old is dropped before the import and never reaches the master or a pack.
+
+| Dropped | For example |
+| --- | --- |
+| **Contradicting** | Two batches disagree and the game cannot settle it: neither value is taken (a conflict between batches is never `--take`n). |
+| **Imprecise** | Rounded or whole-yard positions, rounded chances (whole percent, 0 for under one), a place or chance from too few sightings, a value estimated rather than seen. |
+| **Vague** | A name without an ID, an area without points, "around" or "sometimes" in place of a value. |
+| **Overlapping** | A second entry for one thing: merged into the one entry, or dropped (*Gathering nodes*). |
+| **Questionable** | A fact nobody saw in the game: guessed, marked unconfirmed, or of unknown making. |
+| **Old** | Superseded by a newer build or batch, or an older game's fact the newest client contradicts (a reworked item, a changed quest). |
+
+- **The older games' facts** fall back only where Forever has nothing of its own yet, and only those that
+  pass: exact, the same everywhere they are known, the thing still in Forever's client, and nothing of
+  Forever's saying otherwise.
+- **What the game itself says is never dropped** by these rules: it is the truth for its build (*Import*).
+- **Kept outside the master:** what was dropped stays where it was read, with the reason, so a later look
+  can find it; the master holds only what passed.
+
 ### Verified and unverified
 
-Saneroki (2026-10-18): a fact the game has not confirmed in its own game version is marked, so an old or
-guessed fact is never taken for one of Forever's.
+Saneroki (2026-10-18): a fact that passed but that the game has not confirmed in its own game version is
+marked, so an older game's fact is never taken for one of Forever's.
 
 - **Verified:** the game said it in that game version: the client's tables, what the server sends (hotfixes,
   crawls, scans), the player's own play, or shared sightings the checks accepted (*Poisoning*). Such a
   version has `game` among its sources. A `hand` fix stands as written: a person checked it.
-- **Unverified:** everything else. A version taken in from a batch (the older games' facts kept as the
-  baseline, the quest facts taken in once as *old*, any batch a tool read), a place seen only once, a
-  chance from too few loots or gathers.
+- **Unverified:** everything else that passed *When in doubt*: a version taken in from a batch (the older
+  games' facts kept as the baseline, any batch a tool read). A place seen only once or a chance from too
+  few loots or gathers is no fact yet: a candidate, not taken in.
 - **Verified later without a new version:** when the game agrees with an unverified version, the import's
   *agreeing* case adds `game` to its sources, and it is verified. When the game says otherwise, a new
   version replaces it (*Changed*).
@@ -378,8 +400,9 @@ guessed fact is never taken for one of Forever's.
   a wrong fact costs the player (a route through nodes that are not there).
 - **Found again by source:** `dev/tools/data` lists the unverified versions per set and source, so a batch
   that turns out wrong or old can be dropped or replaced whole.
-- **Counts:** a chance or yield taken in from the baseline stays unverified until this game version's own
-  counts have enough loots or gathers (*proposal* 50); then the own counts replace it.
+- **Counts:** a chance or yield taken in from the baseline (exact, agreed: *When in doubt*) stays unverified
+  until this game version's own counts have enough loots or gathers (*proposal* 50); then the own counts
+  replace it.
 
 ### Harvest
 

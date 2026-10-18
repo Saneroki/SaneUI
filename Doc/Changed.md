@@ -42,6 +42,14 @@ A game restart takes it in (new files in Core's, Social's and Tooltips' TOCs, ke
 - `Doc/guides/data.md`: aliases are personal data. `Doc/ideas/Social.md`: the guild will show them.
 - Tests: 330 checks (Core), 426 (Social), 441 (Tooltips); the stand-in's menu button keeps its tooltip.
 
+### Ideas: when in doubt, left out (Saneroki, 2026-10-18)
+- `Doc/ideas/Data.md`, new *When in doubt, left out*: a batch's fact is taken in only if exact, agreed and
+  current; contradicting, imprecise (rounded positions or chances, too few sightings), vague, overlapping,
+  questionable or old facts are dropped before the import, never `--take`n, and stay where they were read with
+  the reason. The older games' facts fall back only where they pass and Forever's client agrees. *Verified and
+  unverified* now applies to what passed; a place seen once or a chance from too few loots is a candidate,
+  not a fact.
+
 ### Ideas: verified and unverified facts, gathering nodes (Saneroki, 2026-10-18)
 - `Doc/ideas/Data.md`, new *Verified and unverified*: a fact the game has not confirmed in its own game version
   (a batch, the older games' baseline, a place seen once, a chance from too few loots) is marked unverified
