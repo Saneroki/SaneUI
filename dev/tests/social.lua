@@ -98,6 +98,7 @@ local BNET_FRIENDS = {
     { bnetAccountID = 9, accountName = "Anduin", battleTag = "Anduin#1", gameAccountInfo = { isOnline = false } },
 }
 BNGetNumFriends = function() return #BNET_FRIENDS, 2 end
+asks.bnet = BNET_FRIENDS -- a test makes one a favourite
 C_BattleNet = { GetFriendAccountInfo = function(index) return BNET_FRIENDS[index] end,
                 InviteFriend = function(id) asks[#asks + 1] = "bnet invite " .. id end }
 local WOW_FRIENDS = {
@@ -110,9 +111,85 @@ C_FriendList = { GetNumFriends = function() return #WOW_FRIENDS end, GetNumOnlin
 C_PartyInfo = { InviteUnit = function(name) asks[#asks + 1] = "invite " .. name end }
 ChatFrameUtil.SendTell = function(name) asks[#asks + 1] = "tell " .. name end
 ChatFrameUtil.SendBNetTell = function(name) asks[#asks + 1] = "bnet tell " .. name end
-UnitIsGroupLeader = function() return false end
+UnitIsGroupLeader = function() return asks.leader or false end
 UnitIsGroupAssistant = function() return false end
 FRIENDS_LEVEL_TEMPLATE = "Level %d %s"
+NORMAL_FONT_COLOR, RED_FONT_COLOR, GREEN_FONT_COLOR = Color(1, 0.82, 0), Color(1, 0.1, 0.1), Color(0.1, 1, 0.1)
+time = function() return 100000 end
+UnitExists = function() return false end
+UnitCanCooperate = function() return true end
+-- You on Battle.net: your BattleTag, your status and your broadcast, set as the game sets them.
+local me = { battleTag = "Tester#4321", broadcast = "hello", afk = false, dnd = false }
+BNGetInfo = function() return 1, me.battleTag, 2, me.broadcast, me.afk, me.dnd, false end
+BNConnected = function() return true end
+BNFeaturesEnabled = function() return true end
+C_BattleNet.SetAFK = function(on) me.afk = on; asks[#asks + 1] = "afk " .. tostring(on) end
+C_BattleNet.SetDND = function(on) me.dnd = on; asks[#asks + 1] = "dnd " .. tostring(on) end
+C_BattleNet.SetCustomMessage = function(text) me.broadcast = text; asks[#asks + 1] = "broadcast " .. text end
+-- Two friend requests, the older first; adding a friend and blocking one are told.
+local REQUESTS = { { inviteID = 31, accountName = "Sylvanas", creationTimestamp = 1000 },
+                   { inviteID = 32, accountName = "Tyrande", creationTimestamp = 2000 } }
+BNGetNumFriendInvites = function() return #REQUESTS end
+C_BattleNet.GetFriendInviteInfo = function(index) return REQUESTS[index] end
+BNAcceptFriendInvite = function(id) asks[#asks + 1] = "accept " .. id end
+BNDeclineFriendInvite = function(id) asks[#asks + 1] = "decline " .. id end
+C_BattleNet.SetBlocked = function(id, on) asks[#asks + 1] = "block " .. id .. " " .. tostring(on) end
+C_BattleNet.AreTitleFriendsEnabled = function() return false end
+BNSendFriendInvite = function(text) asks[#asks + 1] = "bnet add " .. text end
+C_FriendList.AddFriend = function(name) asks[#asks + 1] = "add " .. name end
+-- The ignore list: a player ignored, an account whose invites are blocked.
+C_FriendList.GetNumIgnores = function() return 1 end
+C_FriendList.GetIgnoreName = function() return "Gamon" end
+C_FriendList.DelIgnoreByIndex = function(index) asks[#asks + 1] = "unignore " .. index end
+C_FriendList.AddIgnore = function(name) asks[#asks + 1] = "ignore " .. name end
+BNGetNumBlocked = function() return 1 end
+BNGetBlockedInfo = function() return 41, "Spammer" end
+-- Recent allies: one pinned and online, one offline; only Raiding can be filtered by here.
+local ALLIES = {
+    { characterData = { guid = "Player-9", name = "Cairne", fullName = "Cairne Bloodhoof", level = 60, classID = 1, raceID = 6 },
+      stateData = { isOnline = true, pinExpirationDate = 5000, currentLocation = "Mulgore" },
+      interactionData = { interactions = { { description = "Grouped together", timestamp = 90000 } }, note = "tank" } },
+    { characterData = { guid = "Player-10", name = "Magatha", fullName = "Magatha Grimtotem", level = 58, classID = 7 },
+      stateData = { isOnline = false }, interactionData = { interactions = {} } },
+}
+Enum.RecentAlliesInteractionCategoryFilter = { Professions = 1, PvP = 2, Raiding = 3, Dungeons = 4, Delves = 5, Questing = 6 }
+C_RecentAllies = { IsSystemEnabled = function() return true end, IsRecentAllyDataReady = function() return asks.alliesReady or false end,
+                   TryRequestRecentAlliesData = function() asks[#asks + 1] = "allies asked" end,
+                   GetRecentAllies = function() return ALLIES end,
+                   SearchRecentAllies = function(info) asks.allySearch = info; return { ALLIES[2] } end,
+                   IsInteractionCategoryFilterSupportedForCurrentGameType = function(value) return value == 3 end }
+C_CreatureInfo = { GetClassInfo = function(id) return id == 1 and { className = "Warrior", classFile = "WARRIOR" } or { className = "Shaman", classFile = "SHAMAN" } end,
+                   GetRaceInfo = function() return { raceName = "Tauren" } end }
+UnitPopup_OpenMenu = function(which, data) asks[#asks + 1] = "menu " .. which .. " " .. tostring(data.name) end
+-- A raid: you lead group 1 with Thrall, Rexxar is in group 2, offline; saved to one instance.
+local RAID = { { "Tester", 2, 1, 60, "Warrior", "WARRIOR", "Orgrimmar", true, false },
+               { "Thrall", 0, 1, 60, "Shaman", "SHAMAN", "Orgrimmar", true, false },
+               { "Rexxar", 1, 2, 60, "Hunter", "HUNTER", "Desolace", false, false } }
+GetNumGroupMembers = function() return W.raiding and #RAID or 0 end
+GetRaidRosterInfo = function(index) if RAID[index] then return unpack(RAID[index]) end end
+SwapRaidSubgroup = function(a, b) asks[#asks + 1] = "swap " .. a .. " " .. b end
+SetRaidSubgroup = function(a, group) asks[#asks + 1] = "move " .. a .. " " .. group end
+C_PartyInfo.ConvertToRaid = function() asks[#asks + 1] = "convert" end
+C_PartyInfo.AllowedToDoPartyConversion = function() return true end
+C_PartyInfo.SetEveryoneIsAssistant = function(on) asks[#asks + 1] = "all assist " .. tostring(on) end
+GetNumSavedInstances = function() return 1 end
+GetSavedInstanceInfo = function() return "Molten Core", 409, 3600, 9, true, false, 0, true, 40, "40 Player", 0, 0, false end
+GetNumSavedWorldBosses = function() return 0 end
+GetSavedWorldBossInfo = function() end
+RequestRaidInfo = function() asks.raidInfo = true end
+SecondsToTime = function(seconds) return seconds .. " s" end
+GetSavedInstanceChatLink = function() return "[Molten Core]" end
+-- Quick join: a group a Battle.net friend is in with somebody else, queued for a dungeon.
+C_SocialQueue = { GetAllGroups = function() return { "Party-1" } end,
+                  GetGroupMembers = function() return { { guid = "Player-1" }, { guid = "Player-5" } } end,
+                  GetGroupQueues = function() return { { queueData = { queueType = "lfg" } } } end,
+                  GetGroupInfo = function() return true, 1 end,
+                  RequestToJoin = function(guid, tank, healer, damage)
+                      asks[#asks + 1] = ("join %s %s %s %s"):format(guid, tostring(tank), tostring(healer), tostring(damage))
+                  end }
+SocialQueueUtil_GetRelationshipInfo = function() return "Jaina", "|cff82c5ff", "bnfriend" end
+SocialQueueUtil_GetQueueName = function() return "Ragefire Chasm" end
+GetLFGRoles = function() return false, false, true, false end
 -- The group finder: a category with two listings, a group and a player alone; searching is told.
 local LISTINGS = {
     [11] = { searchResultID = 11, activityIDs = { 100 }, leaderName = "Cairne", comment = "need healer", numMembers = 3, age = 60 },
@@ -1509,23 +1586,70 @@ do
         "a small one leaves the chat alone")
     check(panels.friends:IsShown() and panels.finder:IsShown() and panels.feed:IsShown()
         and panels.friends._points[1][4] == board.friends[1] and panels.finder._points[1][4] == board.finder[1]
-        and panels.feed._width == board.chat[3] and panels.friends.title._text == "Friends",
-        "each panel stands at its place, with its title")
+        and panels.feed._width == board.chat[3] and panels.friends.title._text == "Tester|cff416380#4321|r",
+        "each panel stands at its place, with its title; the friends list's is your BattleTag, its number dimmed")
+    -- What a panel holds, wherever in it: the list on show, a button of a foot on show, a tab.
+    local function within(widget, ancestor)
+        while widget do
+            if widget == ancestor then return true end
+            widget = widget._parent
+        end
+        return false
+    end
     local function list(panel)
         for _, other in ipairs(boxes) do
-            if other._parent == panel.body then return other end
+            if within(other, panel) and other:IsVisible() then return other end
         end
     end
     local function foot(panel, text)
         for _, widget in ipairs(W.frames) do
-            if widget._parent == panel.body and widget._kind == "Button" and widget._text == text then return widget end
+            if widget._kind == "Button" and widget._text == text and within(widget, panel) and widget:IsVisible() then return widget end
         end
     end
+    local send, invite
+    ;(function() -- the friends list's panel, its tabs one by one
+    local function click(widget, button) widget:GetScript("OnClick")(widget, button or "LeftButton") end
+    local function named(list, ...)
+        local names = {}
+        for index, element in ipairs(list.provider.list) do
+            local name = element.kind == "divider" and "-" or element.divider and "-" or element.name or element.fullName
+            names[index] = tostring(name)
+        end
+        return table.concat(names, ", ")
+    end
+    -- The head: your status (a dropdown of the game's three), your BattleTag, friends online, the contacts menu.
+    local status, contacts, filter, tabs = nil, nil, nil, {}
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "DropdownButton" and widget._parent == panels.friends.head then
+            if widget._width == 51 then status = widget else contacts = widget end
+        elseif widget._kind == "DropdownButton" and within(widget, panels.friends) then
+            filter = widget
+        elseif widget._kind == "Button" and widget.key and within(widget, panels.friends) then
+            tabs[widget.key] = widget
+        end
+    end
+    local count
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "FontString" and widget._parent == panels.friends.head and widget._text == "3 / 5 online" then count = widget end
+    end
+    check(status and #status._items == 3 and status._items[2].text:find("Away") and count,
+        "the head: Available, Away and Busy to be seen in, and how many friends are online")
+    status._items[2].fn(status._items[2].data)
+    check(asks[#asks] == "afk true", "Away chosen, Battle.net is told")
+    status._items[1].fn(status._items[1].data)
+    check(asks[#asks - 1] == "afk false" and asks[#asks] == "dnd false", "Available: neither away nor busy")
+    check(contacts and contacts._items[2].text == "Broadcast" and contacts._items[3].text == "Ignore List",
+        "the contacts menu: your broadcast and the ignore list")
+    contacts._items[2].fn()
+    W.popups[#W.popups].data.callback("raid tonight")
+    check(asks[#asks] == "broadcast raid tonight", "a broadcast written is sent to Battle.net")
+    -- The tabs: the game's, a count where something waits.
+    check(tabs.Friends._text == nil and tabs.Friends.Text._text == "Friends" and tabs.Allies.Text._text == "Recent Allies"
+        and tabs.Requests.Text._text == "Requests (2)" and tabs.Raid.Text._text == "Raid" and tabs.Quick.Text._text == "Quick Join (1)",
+        "the tabs: Friends, Recent Allies, Requests with how many wait, Raid, Quick Join with how many groups")
     -- The friends list, in the game's order: Battle.net friends online, characters online, a divider, the offline ones.
     friends = list(panels.friends)
-    local names = {}
-    for index, friend in ipairs(friends.provider.list) do names[index] = friend.kind == "divider" and "-" or friend.name end
-    check(table.concat(names, ", ") == "Jaina, Varian, Rexxar, Level 60 Hunter, -, Anduin, Garrosh",
+    check(named(friends) == "Jaina, Varian, Rexxar, Level 60 Hunter, -, Anduin, Garrosh",
         "the friends list: online Battle.net friends, online characters, a divider, then the offline ones")
     check(friends.provider.list[1].character == "Proudmoore" and friends.provider.list[1].info == "Theramore"
         and friends.provider.list[2].status == "Away" and friends.provider.list[2].info == "In the Battle.net app"
@@ -1533,14 +1657,171 @@ do
         "with the character they play, where they are or what they do, and their status")
     check(friends.rows[1].icon._texture == "Interface\\FriendsFrame\\StatusIcon-Online" and friends.rows[1].top._text:find("Proudmoore")
         and friends.rows[1].side:IsShown() and friends.rows[1].bottom._text == "Theramore", "a row as the game's: status icon, name, where, the game's icon")
-    local send, invite = foot(panels.friends, "Send Message"), foot(panels.friends, "Invite")
+    send, invite = foot(panels.friends, "Send Message"), foot(panels.friends, "Invite")
     check(send and invite and not send:IsEnabled() and not invite:IsEnabled(), "Send Message and Invite wait for a friend to be chosen")
-    friends.rows[1]:GetScript("OnClick")(friends.rows[1], "LeftButton")
-    send:GetScript("OnClick")(send)
-    invite:GetScript("OnClick")(invite)
+    click(friends.rows[1])
+    click(send)
+    click(invite)
     check(asks[#asks - 1] == "bnet tell Jaina" and asks[#asks] == "bnet invite 70", "chosen, a Battle.net friend gets a message and an invite to the game they play in")
     friends.rows[6]:GetScript("OnClick")(friends.rows[6], "LeftButton")
     check(not send:IsEnabled() and not invite:IsEnabled(), "a character offline gets neither")
+    -- The invite button of a row: for a Battle.net friend online; greyed, with the reason, where they play another game.
+    local jaina, varian = friends.rows[1].invite, friends.rows[2].invite
+    check(jaina:IsShown() and jaina:IsEnabled() and varian:IsShown() and not varian:IsEnabled() and not friends.rows[3].invite:IsShown(),
+        "the invite button: on Battle.net friends online, greyed for one in another game, none on a character")
+    click(jaina)
+    check(asks[#asks] == "bnet invite 70", "it asks the friend into your group")
+    GameTooltip._lines = nil
+    varian:GetScript("OnEnter")(varian)
+    check(GameTooltip._lines and GameTooltip._lines[1]:find("not in World of Warcraft"), "greyed, its tooltip says why not")
+    GameTooltip._lines = nil
+    friends.rows[1]:GetScript("OnEnter")(friends.rows[1])
+    local said = table.concat(GameTooltip._lines or {}, "|")
+    check(said:find("Jaina#1234", 1, true) and said:find("Theramore") and said:find("raid healer"),
+        "the mouse on a friend: their BattleTag, where they are, their note")
+    -- A favourite stands first, with the game's star.
+    asks.bnet[3].isFavorite = true
+    W.Fire("BN_FRIEND_INFO_CHANGED")
+    W.Wait(0.1)
+    check(named(friends) == "Anduin, -, Jaina, Varian, Rexxar, Level 60 Hunter, -, Garrosh", "a favourite first, apart from the others")
+    asks.bnet[3].isFavorite = nil
+    W.Fire("BN_FRIEND_INFO_CHANGED")
+    W.Wait(0.1)
+    -- The filter: by status and by kind.
+    filter:GenerateMenu()
+    check(filter and filter:IsShown() and filter._items[1].title == "Status" and #filter._items == 8, "the filter: four statuses, two kinds")
+    filter._items[5].fn(filter._items[5].data) -- Offline
+    check(named(friends) == "Anduin, Garrosh", "ticked Offline, the friends offline only")
+    filter._items[5].fn(filter._items[5].data)
+    filter:GenerateMenu()
+    filter._items[8].fn(filter._items[8].data) -- Characters
+    check(named(friends) == "Rexxar, Level 60 Hunter, -, Garrosh", "ticked Characters, the characters only")
+    filter._items[8].fn(filter._items[8].data)
+    check(#friends.provider.list == 6, "unticked, all again")
+    -- The ignore list, from the contacts menu, in the friends list's place.
+    contacts:GenerateMenu()
+    contacts._items[3].fn()
+    local ignored = list(panels.friends)
+    check(ignored ~= friends and named(ignored) == "Ignored, Gamon, Blocked Invites, Spammer", "the ignore list: players ignored, invites blocked")
+    local remove = foot(panels.friends, "Remove")
+    check(remove and not remove:IsEnabled(), "Remove waits for one to be chosen")
+    click(ignored.rows[4])
+    click(remove)
+    check(asks[#asks] == "block 41 false", "a blocked account chosen and removed is blocked no longer")
+    click(foot(panels.friends, "Ignore Player"))
+    W.popups[#W.popups].data.callback("Gazlowe")
+    check(asks[#asks] == "ignore Gazlowe", "Ignore Player asks for a name, and ignores them")
+    click(foot(panels.friends, "Back"))
+    check(list(panels.friends) == friends, "Back: the friends list again")
+    -- Requests: the newest first, Accept and Decline (or block) on each; the line to add a friend.
+    click(foot(panels.friends, "Add Friend"))
+    local requests = list(panels.friends)
+    check(requests ~= friends and named(requests) == "Tyrande, Sylvanas", "Add Friend: the tab Requests, the newest request first")
+    click(requests.rows[1].accept)
+    check(asks[#asks] == "accept 32", "Accept")
+    click(requests.rows[2].decline)
+    local declined = W.menus[#W.menus]
+    check(declined[1].text == "Decline" and declined[2].text == "Block Invites", "Decline: decline, or block their invites")
+    declined[2].fn()
+    W.popups[#W.popups].data.callback()
+    check(asks[#asks - 1] == "block 31 true" and asks[#asks] == "decline 31", "blocked once asked, and declined")
+    local line
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "EditBox" and within(widget, panels.friends) and widget:IsVisible() and widget._scripts.OnEnterPressed then line = widget end
+    end
+    line._text = "Arthas#1111"
+    line:GetScript("OnEnterPressed")(line)
+    check(asks[#asks] == "bnet add Arthas#1111" and line._text == "", "a BattleTag typed asks over Battle.net")
+    line._text = "Uther"
+    click(foot(panels.friends, "Add Friend"))
+    check(asks[#asks] == "add Uther", "a character's name adds the character")
+    -- Recent allies: loading until the game has them; pinned first; the game's own menu.
+    click(tabs.Allies)
+    local allies = list(panels.friends)
+    check(asks[#asks] == "allies asked" and #allies.provider.list == 0 and allies.empty._text == "Loading...",
+        "Recent Allies: asked for, loading until the game has them")
+    asks.alliesReady = true
+    W.Fire("RECENT_ALLIES_CACHE_UPDATE")
+    W.Wait(0.1)
+    check(named(allies) == "Cairne, -, Magatha" and allies.rows[1].top._text == "Cairne Bloodhoof" and allies.rows[1].side:IsShown(),
+        "then the allies: the pinned one first, with the game's pin, a divider, the others")
+    check(allies.rows[1].bottom._text == "Level 60 Warrior - Mulgore", "with the level, class and where they are")
+    click(allies.rows[1], "RightButton")
+    check(asks[#asks] == "menu RECENT_ALLY Cairne Bloodhoof", "a right click: the game's own menu of a recent ally")
+    click(allies.rows[1])
+    click(foot(panels.friends, "Invite"))
+    check(asks[#asks] == "invite Cairne Bloodhoof", "chosen, invited")
+    filter:GenerateMenu()
+    check(#filter._items == 7 and filter._items[6].title == "Activities" and filter._items[7].text == "Raiding",
+        "its filter: the statuses and the kinds of activity this client has")
+    filter._items[7].fn(filter._items[7].data)
+    check(asks.allySearch.interactionCategoryFilters[1] == 3 and named(allies) == "Magatha", "an activity ticked: the game finds the allies")
+    filter._items[7].fn(filter._items[7].data)
+    -- Raid: not in one, Convert to Raid; in one, its groups, to be arranged by dragging.
+    click(tabs.Raid)
+    local raid = list(panels.friends)
+    check(#raid.provider.list == 0 and raid.empty._text:find("raid") and foot(panels.friends, "Convert to Raid"),
+        "Raid: not in one, what a raid is, and Convert to Raid")
+    click(foot(panels.friends, "Convert to Raid"))
+    check(asks[#asks] == "convert", "a party turned into a raid")
+    W.raiding = true
+    W.Fire("GROUP_ROSTER_UPDATE")
+    W.Wait(0.1)
+    check(#raid.provider.list == 11 and raid.provider.list[1].kind == "group" and raid.provider.list[2].name == "Tester"
+        and raid.provider.list[4].group == 2 and raid.provider.list[5].name == "Rexxar" and not foot(panels.friends, "Convert to Raid"),
+        "in a raid: its eight groups with their members")
+    check(raid.rows[2].top._text:find("LeaderIcon") and raid.rows[5].bottom._text == "Level 60 Hunter - Offline",
+        "the leader's crown; one offline says so")
+    raid.rows[3]:GetScript("OnDragStart")(raid.rows[3])
+    raid.rows[5]._mouseOver = true
+    raid.rows[3]:GetScript("OnDragStop")(raid.rows[3])
+    check(asks[#asks] ~= "swap 2 3", "only the leader or an assistant arranges the raid")
+    asks.leader = true
+    raid.rows[3]:GetScript("OnDragStart")(raid.rows[3])
+    raid.rows[3]:GetScript("OnDragStop")(raid.rows[3])
+    check(asks[#asks] == "swap 2 3", "a member dragged onto one of another group: the two swap")
+    raid.rows[5]._mouseOver = nil
+    raid.rows[6]._mouseOver = true
+    raid.rows[3]:GetScript("OnDragStart")(raid.rows[3])
+    raid.rows[3]:GetScript("OnDragStop")(raid.rows[3])
+    check(asks[#asks] == "move 2 3", "onto another group's line: moved there")
+    raid.rows[6]._mouseOver = nil
+    click(raid.rows[2], "RightButton")
+    check(asks[#asks] == "menu RAID Tester", "a right click: the game's menu of a raid member")
+    click(foot(panels.friends, "Raid Info"))
+    local locks = list(panels.friends)
+    check(asks.raidInfo and locks ~= raid and named(locks) == "Molten Core" and locks.rows[1].right._text == "3600 s",
+        "Raid Info: the instances you are saved to, with the time left")
+    click(foot(panels.friends, "Back"))
+    check(list(panels.friends) == raid, "Back: the groups again")
+    asks.leader, W.raiding = nil, false
+    W.Fire("GROUP_ROSTER_UPDATE")
+    W.Wait(0.1)
+    -- Quick Join: groups of friends; the roles to join as, then the request.
+    click(tabs.Quick)
+    local quick = list(panels.friends)
+    check(named(quick) == "nil" and quick.rows[1].top._text:find("Jaina") and quick.rows[1].top._text:find("+1", 1, true)
+        and quick.rows[1].bottom._text == "Ragefire Chasm", "Quick Join: who you know there, and what the group is queued for")
+    local join = foot(panels.friends, "Join Queue")
+    check(join and not join:IsEnabled(), "Join Queue waits for a group to be chosen")
+    click(quick.rows[1])
+    local wasGrouped = grouped
+    grouped = true
+    click(quick.rows[1])
+    check(not join:IsEnabled(), "in a group of your own, none can be joined")
+    grouped = false
+    click(quick.rows[1])
+    check(join:IsEnabled(), "chosen, out of a group, it can be joined")
+    click(join)
+    local roles = W.menus[#W.menus]
+    check(roles[1].title == "Role" and #roles == 5 and roles[3].checked(roles[3].data) and not roles[2].checked(roles[2].data),
+        "the roles to join as, as you chose them last in the group finder")
+    roles[5].fn()
+    check(asks[#asks] == "join Party-1 false true false", "and the request, as a healer")
+    grouped = wasGrouped
+    click(tabs.Friends)
+    check(list(panels.friends) == friends, "back to the friends list")
+    end)()
     -- The second chat: the chats ticked for it, apart from the chat's.
     local feed = list(panels.feed)
     local says = #feed.provider.list

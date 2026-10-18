@@ -73,25 +73,32 @@ end
 -- What the friends list and the group finder are built from, as the game builds its own: a list of rows
 -- of one height (its scrolling list and scroll bar) between the head and a foot of buttons
 -- (UIPanelButtonTemplate). init(row, element) draws a row, made by the list; the list is returned.
-function Board.List(panel, init)
-    local box = CreateFrame("Frame", nil, panel.body, "WowScrollBoxList")
-    box:SetPoint("TOPLEFT", Layout.EDGE, -Layout.EDGE)
+-- holder: a panel, or a part of one (holder.body, the frame to fill; holder.label, its name in the error
+-- log); top: how far down the body the list starts (EDGE at first).
+function Board.List(holder, init, top)
+    local box = CreateFrame("Frame", nil, holder.body, "WowScrollBoxList")
+    box:SetPoint("TOPLEFT", Layout.EDGE, -(top or Layout.EDGE))
     box:SetPoint("BOTTOMRIGHT", -Layout.EDGE - Layout.SCROLL, Layout.FOOT + Layout.EDGE)
-    local scroll = CreateFrame("EventFrame", nil, panel.body, "MinimalScrollBar")
+    local scroll = CreateFrame("EventFrame", nil, holder.body, "MinimalScrollBar")
     scroll:SetPoint("TOPLEFT", box, "TOPRIGHT", 4, -2)
     scroll:SetPoint("BOTTOMLEFT", box, "BOTTOMRIGHT", 4, 2)
     local view = CreateScrollBoxListLinearView(0, 0, 0, 0, 0)
     view:SetElementExtent(Layout.ROW)
-    view:SetElementInitializer("Button", function(row, element) ns.Safe(panel.title:GetText() or "panel", init, row, element) end)
+    view:SetElementInitializer("Button", function(row, element) ns.Safe(Board.Label(holder), init, row, element) end)
     ScrollUtil.InitScrollBoxListWithScrollBar(box, scroll, view)
     box.provider = CreateDataProvider()
     box:SetDataProvider(box.provider)
     -- Said in the list's middle while it holds nothing.
-    box.empty = panel.body:CreateFontString(nil, "ARTWORK", "GameFontDisable")
+    box.empty = holder.body:CreateFontString(nil, "ARTWORK", "GameFontDisable")
     box.empty:SetPoint("LEFT", box, "LEFT", Layout.EDGE, 0)
     box.empty:SetPoint("RIGHT", box, "RIGHT", -Layout.EDGE, 0)
     box.empty:SetWordWrap(true)
     return box
+end
+
+-- The name a panel or a part of one has in the error log.
+function Board.Label(holder)
+    return holder.label or (holder.title and holder.title:GetText()) or "panel"
 end
 
 -- The list shows these elements now; text: what is said while there are none.
@@ -103,6 +110,7 @@ function Board.Fill(box, elements, text)
 end
 
 -- A button of the panel's foot, the game's, that wide, side by side from the left (after: the one left of it).
+-- panel: a panel or a part of one (Board.List).
 function Board.Button(panel, text, width, click, after)
     local button = CreateFrame("Button", nil, panel.body, "UIPanelButtonTemplate")
     button:SetSize(width, 22)
@@ -112,7 +120,7 @@ function Board.Button(panel, text, width, click, after)
         button:SetPoint("BOTTOMLEFT", Layout.EDGE, Layout.EDGE)
     end
     button:SetText(text)
-    button:SetScript("OnClick", function(self) ns.Safe(panel.title:GetText() or "panel", click, self) end)
+    button:SetScript("OnClick", function(self) ns.Safe(Board.Label(panel), click, self) end)
     return button
 end
 

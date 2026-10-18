@@ -46,7 +46,7 @@ Layout.INPUT_RIGHT = Layout.GRIP_ROOM + Layout.FACE + 2 -- it ends before the sm
 -- finder first); the second chat takes SPLIT of the height (a setting), and is left out where the chat
 -- under it would be lower than CHAT_LOW.
 Layout.PAD = 12
-Layout.FRIENDS_WIDTH = 300
+Layout.FRIENDS_WIDTH = 340                     -- the game's friends list is as wide (Blizzard_FriendsFrame)
 Layout.FINDER_WIDTH = 400
 Layout.CHAT_MIN = 420
 Layout.CHAT_LOW = 160
@@ -54,6 +54,14 @@ Layout.FEED_LOW = 120                          -- the second chat at its lowest
 Layout.HEADER = 30                             -- a panel's head: its title and its buttons
 Layout.ROW = 34                                -- a row of the friends list and of the group finder
 Layout.FOOT = 30                               -- a panel's foot: its buttons
+-- The friends list's panel (Friends.lua) holds more than one list: tabs under its head, a line with the search
+-- box and the filter under the tabs where the list shown can be searched, and a line of its own where a list
+-- needs one (the box to add a friend, the raid's switches).
+Layout.TABS = 34                               -- the row of tabs (the game's MinimalTabTemplate stands on its line)
+Layout.TAB_PAD = 20                            -- a tab's room around its words, at most; less where the row is full
+Layout.TOOLS = 28                              -- the search box and the filter
+Layout.LINE = 28                               -- a list's own line above it
+Layout.INVITE = 24                             -- the button at a row's right to ask a friend into your group
 
 -- The only colours of our own: the ring around the icon of somebody who is something to you. The
 -- bubbles' fill is a setting (bubbleBack, bubbleColor: Bubble.Clear), the same for all; yours differ by

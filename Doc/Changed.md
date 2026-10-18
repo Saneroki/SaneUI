@@ -7,6 +7,7 @@ Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 
 A game restart takes it in (new files in Core's and Social's TOCs, key bindings).
 
 ### Social: panels on the full screen (Saneroki, 2026-10-17)
+- 2026-10-18 — Social: the full screen's friends panel holds all of the game's friends list: your BattleTag, status, broadcast, contacts menu; tabs Friends (favourites, invite button, tooltip, filter), Recent Allies, Requests (add friend, accept/decline/block), Raid (groups by drag, assistants, Raid Info), Quick Join; ignore list; search box and filter (`Friends.lua`, `Contacts/`). Handoff: `Doc/handoff/Social-friends-panel.md`.
 - **Standing full, the chat window holds panels around the chat** (`Board.lua`, `Layout.Board`): the friends list
   at the left, the group finder at the right, a second chat above the chat. Each is a plate in Sane UI's look
   (`Core.Skin`) with a head; built when first shown, out of sight at the window's size, never sized on the

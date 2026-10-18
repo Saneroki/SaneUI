@@ -37,7 +37,16 @@ Join.lua
 Board.lua
 # The second chat of the full screen, above the chat, with its own choice of chats
 Feed.lua
-# The friends list of the full screen, as the game's
+# The friends list's panel of the full screen: what its lists share, you on Battle.net, then each list
+Contacts\Contacts.lua
+Contacts\Account.lua
+Contacts\Friends.lua
+Contacts\Requests.lua
+Contacts\Ignored.lua
+Contacts\Allies.lua
+Contacts\Raid.lua
+Contacts\Quick.lua
+# The friends list's panel: everything the game's friends list holds, its lists under tabs
 Friends.lua
 # The group finder of the full screen, as the game's
 Finder.lua
