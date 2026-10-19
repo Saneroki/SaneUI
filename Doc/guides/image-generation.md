@@ -222,8 +222,8 @@ lists, from inputs of its own:
   `assets/generated/maps/meta/`; `dev/tools/terrain-art` makes the terrain and the stitched Sketches.
 - **Zone briefs:** `dev/imagegen/maps/zones.toml`, one table a zone or city: biome, land, plants, colours,
   buildings, roads, places, mood, atmosphere and a prompt paragraph, all without names. A square's words take
-  only the fields that hold everywhere in the zone (biome, plants, colours, atmosphere), never its buildings,
-  places or features: the model paints whatever the words name into the square it is given.
+  only the zone's colours and the light of its atmosphere (its first sentence), never its buildings, plants,
+  places, features or props: the model paints whatever the words name into the square it is given.
 - **One picture a square, the look in words:** image 1 the terrain of the square (the layout and everything on
   it, kept; `qwen21-edit-1ref`; the Atlas at 2048 x 2048, one tile, with `resolution=2048` so the reference
   is read at the painting's size; the minimap textures softened a little first, or their dot pattern comes
@@ -240,6 +240,10 @@ lists, from inputs of its own:
   lakes between islands. So each square's words say which liquids the game has in it ("there is no water
   anywhere in this picture", "the flat bright orange areas are molten lava"), and every painting is checked
   against the game's water and lava (Navigation.md, *Checked against the game*).
+- **Words of an edit keep a picture faithful:** "make image 1 look like a photograph of exactly the same
+  place; change only how things look, never where or what anything is" kept the layout of 8 of 8 hard places,
+  where "repaint image 1 as …" kept 2 (the Atlas lab, Navigation.md, *The lab*). Words that name features,
+  props or buildings bring them into the picture; give colours and light instead.
 - **Straight from above:** "like an orthographic satellite image: no perspective, no tilt, no horizon" keeps
   mountains from turning into cones seen at an angle.
 - The pilots: `dev/imagegen/sets/maps-pilot/looks.txt` (five looks on two squares, 20 pictures in 9 minutes with

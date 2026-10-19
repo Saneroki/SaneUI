@@ -44,13 +44,15 @@ check("joined three", at.joined(["meadow", "dirt", "rock"]), "meadow, dirt and r
 
 fixed = tomllib.loads(at.WORDS.read_text())
 briefs = tomllib.loads(at.BRIEFS.read_text())
-for key in ("ground", "sea", "mostly_water", "look", "roofs", "water", "dry", "lava", "slime", "keep"):
-    check(f"atlas.toml has {key}", isinstance(fixed.get(key), str) and len(fixed[key]) > 20, True)
+for key in ("edit", "sea"):
+    check(f"atlas.toml has {key}", isinstance(fixed.get(key), str) and len(fixed[key]) > 40, True)
+for key in ("water", "dry", "lava", "slime", "last"):
+    check(f"atlas.toml has words.{key}", isinstance(fixed["words"].get(key), str) and len(fixed["words"][key]) > 20, True)
+KINDS = {"rock", "forest floor", "meadow", "farmland", "snow", "sand", "dirt", "swamp", "blight", "ash and lava", "seabed"}
+check("atlas.toml names every kind of ground cover (water and road are said otherwise)", set(fixed["cover"]), KINDS)
 for uimap, brief in briefs.items():
     if uimap != "sea":
-        check(f"{brief['name']} has its words", all(brief.get(k) for k in ("biome", "plants", "colours", "atmosphere")), True)
-        if brief["kind"] == "city":
-            check(f"{brief['name']} has its square", bool(brief.get("square")), True)
+        check(f"{brief['name']} has its words", all(brief.get(k) for k in ("colours", "atmosphere")), True)
 
 
 def facts(**more):
@@ -61,23 +63,21 @@ def facts(**more):
 
 
 text = at.words(fixed, briefs, facts())
-check("words begin with the ground", text.startswith(fixed["ground"]), True)
-check("words end with keep", text.endswith(fixed["keep"]), True)
-check("words: dry square", fixed["dry"] in text and fixed["water"] not in text, True)
-check("words: the ground cover", "the ground here is meadow and rock" in text, True)
-check("words: the zone's atmosphere", briefs["1429"]["atmosphere"] in text, True)
-check("words: no roofs in the wild", fixed["roofs"] in text, False)
+check("words begin with the edit", text.startswith(fixed["edit"]), True)
+check("words end with the last", text.endswith(fixed["words"]["last"]), True)
+check("words: dry square", fixed["words"]["dry"] in text and fixed["words"]["water"] not in text, True)
+check("words: the ground cover", "The ground of image 1 is mostly grass, with bare grey and brown rock, crags and scree." in text, True)
+check("words: the zone's light, not its props", briefs["1429"]["atmosphere"].split(". ")[0].rstrip(".") in text
+      and briefs["1429"]["atmosphere"] not in text, True)
 check("words: never the zone's buildings", briefs["1429"]["buildings"] in text, False)
-check("words: roofs where built", fixed["roofs"] in at.words(fixed, briefs, facts(buildings=0.02)), True)
+check("words: never the zone's plants list", briefs["1429"]["plants"] in text, False)
 lava = at.words(fixed, briefs, facts(lava=0.1))
-check("words: lava", fixed["lava"] in lava and fixed["dry"] in lava, True)
-city = at.words(fixed, briefs, facts(zones=[{"uimap": "1453", "name": "Stormwind City", "share": 1.0}], water=0.2))
-check("words: a city's square line", briefs["1453"]["square"] in city and fixed["roofs"] in city, True)
-check("words: water named", fixed["water"] in city, True)
-sea = at.words(fixed, briefs, facts(zones=[{"uimap": "1453", "name": "Stormwind City", "share": 1.0}], water=0.8))
-check("words: mostly water, not the city", fixed["mostly_water"] in sea and briefs["1453"]["square"] not in sea, True)
+check("words: lava", fixed["words"]["lava"] in lava and fixed["words"]["dry"] in lava, True)
+wet = at.words(fixed, briefs, facts(zones=[{"uimap": "1453", "name": "Stormwind City", "share": 1.0}], water=0.2))
+check("words: water named", fixed["words"]["water"] in wet, True)
 open_sea = at.words(fixed, briefs, facts(zones=[], water=1.0))
 check("words: the open sea", open_sea.startswith(fixed["sea"]) and briefs["sea"]["water"] in open_sea, True)
+
 
 # --- The check against the game's water ------------------------------------------------------------
 
@@ -101,6 +101,17 @@ check("check: lost water fails", result["lost"] > at.LOST and not at.passes(resu
 dusk = (land.astype(np.int16) * (0.4, 0.5, 0.9)).clip(0, 255).astype(np.uint8)   # a zone graded blue, as Duskwood
 dusk[300:460, 60:300] = (20, 50, 110)
 check("check: a blue zone is not water", at.passes(at.check(square, dusk)), True)
+
+# --- What stands in the water stays ------------------------------------------------------------------
+
+pond = np.zeros((40, 40, 3), np.uint8); pond[:] = (30, 70, 80)       # water as the minimap draws it: cool, dark
+pond[10:30, 18:24] = (120, 80, 40)                                    # a pier of warm wood
+pond[2:8, 2:8] = (200, 205, 210)                                      # a white dome
+mask = np.full((40, 40), 255, np.uint8)
+open_ = at.open_water(pond, mask)
+check("open water: the pier is not water", int(open_[20, 21]), 0)
+check("open water: the dome is not water", int(open_[5, 5]), 0)
+check("open water: the water stays water", int(open_[20, 5]), 255)
 
 # --- Joining ----------------------------------------------------------------------------------------
 

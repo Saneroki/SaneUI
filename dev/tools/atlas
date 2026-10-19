@@ -149,6 +149,7 @@ class Game:
                 masks[kind] = np.asarray(small.resize((PX, PX), Image.Resampling.BILINEAR))
         else:  # no terrain: open sea
             masks["water"][:] = 255
+        masks["water"] = open_water(rgb, masks["water"])
         wet = masks["water"][..., None].astype(np.float32) / 255
         rgb = (rgb * (1 - wet) + NAVY * wet).astype(np.uint8)
         self.kept[key] = {"rgb": rgb, **masks, "areas": areas}
@@ -177,6 +178,16 @@ class Game:
                 out["areas"][(ay - y0) // CHUNK:(by - y0) // CHUNK, (ax - x0) // CHUNK:(bx - x0) // CHUNK] = \
                     tile["areas"][(ay - row * PX) // CHUNK:(by - row * PX) // CHUNK, (ax - col * PX) // CHUNK:(bx - col * PX) // CHUNK]
         return out
+
+
+def open_water(rgb, water):
+    """The game's water less what stands in it (piers, stilt houses, bridges, domes; ice): the minimap draws water
+    cool and dark, wood, roofs and stone warm or bright. Only the open water is made flat, and only it counts as
+    water (a flat sheet over Booty Bay's boardwalk erased it from every painting)."""
+    r, g, b = (rgb[..., k].astype(np.int16) for k in range(3))
+    standing = (r > b + 8) | (np.minimum(np.minimum(r, g), b) > 140)
+    standing = grow(shrink(standing, 1), 1) & (water > 127)
+    return np.where(standing, 0, water).astype(np.uint8)
 
 
 class Guides:
@@ -294,7 +305,7 @@ def check(square, painting):
     blue = out[..., 2].astype(np.float32) - (out[..., 0].astype(np.float32) + out[..., 1]) / 2
     land = ~grow(game, slack)
     bar = np.percentile(blue[land], 30) + 12 if land.any() else -255.0
-    painted = (h >= 165) & (h <= 250) & (s >= 0.22) & (v >= 0.18) & (rough < 9) & ~((v > 0.65) & (s < 0.6)) & (blue > bar)
+    painted = (h >= 150) & (h <= 250) & (s >= 0.22) & (v >= 0.18) & (rough < 9) & ~((v > 0.65) & (s < 0.6)) & (blue > bar)
     painted = grow(shrink(painted, 3), 3)
     added = grow(shrink(painted & land, 4), 4)
     lost = grow(shrink(game & ~grow(painted, slack) & ~grow(~game, slack), 4), 4)
@@ -326,32 +337,29 @@ def joined(names):
 
 
 def words(fixed, briefs, facts):
-    """A square's words: what image 1 is, the look, its main zone's words (never a zone's buildings or places:
-    the model paints whatever the words name into the square), roofs where things are built, the liquids the
-    game has, keep."""
-    liquids = [fixed["water"] if facts["water"] >= 0.001 else fixed["dry"]]
+    """A square's words: an edit, never a repaint (what may change: how things look; what never does: where and
+    what they are), the square's own ground, the liquids the game has, its main zone's colours and the light of
+    its atmosphere (never the zone's buildings, places or props: the model paints whatever the words name into
+    the square), and that nothing is added or taken away."""
+    said = fixed["words"]
+    liquids = [said["water"] if facts["water"] >= 0.001 else said["dry"]]
     if facts["lava"] >= 0.005:
-        liquids.append(fixed["lava"])
+        liquids.append(said["lava"])
     if facts["slime"] >= 0.005:
-        liquids.append(fixed["slime"])
+        liquids.append(said["slime"])
     if not facts["zones"]:
-        parts = [fixed["sea"], fixed["look"], briefs["sea"]["water"], *liquids]
-    else:
-        # the main zone's words only: a border's mountains may belong to a zone whose words do not fit them
-        # (north of Stormwind's keep, the volcano's), and image 1 shows where the land changes
-        main = briefs[facts["zones"][0]["uimap"]]
-        city = main.get("kind") == "city"
-        line = fixed["mostly_water"] if facts["water"] >= 0.6 else main.get("square", "") if city else ""
-        ground = [k for k, v in facts["cover"].items() if v >= 0.05 and k not in ("water", "road")] or ["rock"]
-        zone = (f"The land: {only(main['biome'], facts)}; the ground here is {joined(ground)}. "
-                f"Where image 1 has plants: {only(main['plants'], facts)}. Its colours: {only(main['colours'], facts)}. "
-                f"Its atmosphere: {main['atmosphere']}")
-        parts = [fixed["ground"], line, fixed["look"], zone]
-        if city or facts["buildings"] >= 0.005:
-            parts.append(fixed["roofs"])
-        parts += liquids
-    parts.append(fixed["keep"])
-    return " ".join(p for p in parts if p)
+        return " ".join([fixed["sea"], briefs["sea"]["water"], *liquids, said["last"]])
+    parts = [(k, v) for k, v in facts["cover"].items() if k in fixed["cover"] and v >= 0.05]
+    ground = ""
+    if parts:
+        names = [fixed["cover"][k] for k, _ in parts[:4]]
+        ground = "The ground of image 1 is " + (names[0] if len(names) == 1 else f"mostly {names[0]}, with {joined(names[1:])}") + "."
+    # the main zone's words only: a border's mountains may belong to a zone whose words do not fit them (north of
+    # Stormwind's keep, the volcano's), and image 1 shows where the land changes
+    main = briefs[facts["zones"][0]["uimap"]]
+    light = main["atmosphere"].split(". ")[0].rstrip(".")
+    zone = f"Its colours, as image 1 shows them: {only(main['colours'], facts)}. Its light: {light}."
+    return " ".join(p for p in [fixed["edit"], ground, *liquids, zone, said["last"]] if p)
 
 
 # --- The squares ---------------------------------------------------------------------------------

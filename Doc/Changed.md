@@ -6,6 +6,24 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 142 (Navigation), 208 (data tools).
 A game restart takes it in (new addons, Navigation and Atlas; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
 
+### The Atlas faithful: words of an edit, what stands in water kept (Saneroki, 2026-10-19)
+- **Decided** (`Doc/ideas/Navigation.md`, *Faithful above all*): the painted view adds nothing the game does not
+  have; ground too steep to walk is painted as bare rock and cliffs, so a player sees the way is closed.
+- **The Atlas lab** (*The lab*): 26 hard places painted by every method (repaint words, starting from the terrain,
+  the Qwen-Image 2.1 Fun ControlNet on heights and grey, FLUX.2 [klein], relief-shaded and texture-detailed
+  inputs, a map built from the game's data alone, words of an edit), each scored against the game: layout,
+  colour, relief, steep ground painted green, water added and lost. Words of an edit kept the layout on 8 of 8
+  places, the repaint words on 2.
+- **`dev/imagegen/maps/atlas.toml`** now holds words of an edit: make image 1 look like a photorealistic satellite
+  photograph of exactly the same place, change only how things look, never where or what anything is; the
+  square's ground in plain words (a phrase for each kind of ground cover), its liquids, its zone's colours and
+  the light of its atmosphere, nothing added or taken away. `dev/tools/atlas`'s words follow it; the roof rule,
+  the mostly-water line and the capitals' `square` lines (`zones.toml`) are gone.
+- **What stands in water stays:** `dev/tools/atlas` makes only the open water flat (`open_water`): the minimap's
+  piers, stilt houses, bridges, domes and ice over the game's water stay in the picture, and do not count as
+  water (Booty Bay's boardwalk had been erased).
+- **Tests:** `dev/tests/atlas.py`: the new words, what stands in water.
+
 ### The Atlas' painting run: dev/tools/atlas (Saneroki, 2026-10-19)
 - **`dev/tools/atlas`** (new): `paint` paints the Atlas square by square in the local ComfyUI: both continents'
   land in 1,456 squares of one tile at 2048 pixels, overlapping by an eighth, each from the game's terrain (its

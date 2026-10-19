@@ -113,6 +113,11 @@ minimap) and the full-screen window (the world map) show the same map with the s
   words of a square say what the game has in it (its water, lava and slime, its ground), never a zone's
   features that lie elsewhere, and every painting is checked against the game's water and lava before it is
   taken.
+- **Faithful above all: what cannot be walked looks it (Saneroki, 2026-10-19):** the painted view shows the world
+  as the game has it, nothing added: no lake, village or forest where the terrain has none. Above all a mountain
+  stays a mountain: where the terrain is too steep to walk, the painting shows bare rock and cliffs, so a player
+  sees at once that the way is closed (a forest says "you can walk here"). Found and measured in the Atlas lab
+  (*The lab* below), and kept by its words.
 - **Three times closer (Saneroki, 2026-10-19):** the painted view zooms about three times closer than the map
   does now, single buildings large; zoomed out it is the same pictures, smaller. Quality before speed, but all of
   it made within a couple of days on this computer.
@@ -589,24 +594,40 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   level a continent (a long way of the window) a coarser one. The nearest zoom is three times the others' (6
   units a yard, `Camera.Near`); the game's minimap's steps work as before.
 
-- **What the models get** (*The look*, *Only what the game has*): the continents cut into squares of one tile
-  that overlap by an eighth; for each, the terrain of that square as the one picture (its layout and everything
-  on it, kept; the minimap textures softened a little first, or their fine dot pattern comes back in the
-  painting), the look in fixed words (a photorealistic render seen from straight above, like an orthographic
-  satellite picture, shadows to the bottom right), and words put together for the square from what the game
-  has in it: its zone's biome, plants and colours and its **atmosphere** (`dev/imagegen/maps/zones.toml`: light,
-  air, colours and the state of what stands there, never a feature with a place), every phrase about water or
-  lava dropped where the square has none; its ground cover; its liquids ("the flat dark navy areas are water,
-  nowhere else", or "there is no water anywhere in this picture"; "the flat bright orange areas are molten
-  lava"); and, in a capital, its line on what stands there (the brief's `square`). A zone's list of buildings
-  and features is never given: the model painted orc forts, tents and pines from it into a square of empty ash.
-  In a city or town every small, house-sized block of strong colour in the terrain is a roof of that colour,
-  never trees or gardens (Stormwind's ochre roofs around the cathedral came back as gardens), and large areas
-  of one colour stay what they are (told "every block of strong colour", the model built a town on the giant
-  pink branch of Darnassus' tree); a square that is mostly water gets a line about open water, not the city's
-  (a square of sea west of Stormwind came back as a harbour town built on it). The fixed words are in
-  `dev/imagegen/maps/atlas.toml`. A picture of the look as a second
+- **What the models get** (*The look*, *Only what the game has*, *Faithful above all*): the continents cut into
+  squares of one tile that overlap by an eighth; for each, the terrain of that square as the one picture (its
+  layout and everything on it, kept; the minimap textures softened a little first, or their fine dot pattern
+  comes back in the painting; the game's water made flat dark navy, but not what stands in it, piers, stilt
+  houses, bridges, domes and ice: a flat sheet over Booty Bay's boardwalk had erased it before the model saw it),
+  and **words of an edit, not of a repaint** (`dev/imagegen/maps/atlas.toml`): make image 1 look like a
+  photorealistic satellite photograph of exactly the same place; change only how things look; never where or what
+  anything is, rock stays rock, bark stays bark; then the square's own ground in plain words (from the ground
+  cover), its liquids as the game has them ("the flat dark navy areas are water, nowhere else", or "there is no
+  water anywhere in this picture", "the flat bright orange areas are molten lava"), its main zone's colours and
+  the light of its atmosphere (its first sentence: the state and props of the second brought carts onto the
+  rocks), and "add nothing and remove nothing". Never a zone's buildings, plants, places or props: the model
+  painted orc forts, tents and pines from them into a square of empty ash. A picture of the look as a second
   reference did not work: it showed the same city from further out, and the model painted that instead.
+- **The lab** (2026-10-19, `assets/generated/atlas-lab/`: 26 hard places painted by every method and scored
+  against the game: the coarse and fine layout, the colour, the relief against the hillshade of the real
+  heights, the share of ground too steep to walk painted green, the water added and lost):
+  - "Repaint image 1 as a photorealistic render" with the zone's words: the layout held on 2 of 8 places; it
+    built a village with fields on Elwynn's mountains, an elven island on Darnassus' bark, a lake in Redridge.
+  - Starting from the terrain (img2img): either the minimap barely changed, blur and all, or, from a denoise
+    of 0.97 up, the same as a repaint (the sampler counts in whole steps: `int(25 / 0.97)` is 25, nothing kept).
+  - The Qwen-Image 2.1 Fun ControlNet: on the heights as depth, meadows over the mountains (it learnt depth
+    from photographs at an angle); on the terrain's grey, the layout held but the colours went (bark grey or
+    green), at 6.5 minutes a picture; on 12 GB of video memory too slow for the world.
+  - FLUX.2 [klein] (33 s a picture at 2048): just as inventive (lakes and houses in Redridge, water lost at
+    Booty Bay); FLUX.2 [dev] not needed after the edit words.
+  - The terrain shaded by its heights with words about steep ground: a new valley of its own. The game's own
+    ground textures laid into the minimap (sharper): helped FLUX.2, not needed by the edit words.
+  - **Words of an edit:** the layout held on 8 of 8, the mountains bare rock (Elwynn's steep ground painted green
+    5 %, the game 2 %, the repaint 31 %), Darnassus' bark, bridge and dome in place, Booty Bay's bay and town,
+    photorealistic; with the zone's colours and light also its colours (Thousand Needles' sandstone, not grey).
+  - Built from the game's data alone (the ground from its own textures, the tiling broken up, water by its real
+    depth, the minimap's buildings and trees enlarged by an upscaling model): faithful by construction, but soft
+    and game-like; kept as the way to fall back on.
 - **Checked against the game:** every painting is compared with the game's water (its liquids, and the
   speckled blue-grey the minimap draws for a city's canals) and lava: broad sheets of water where the game has
   none, or of the game's water painted as land, fail it (a shore that strays a few yards does not), and the
