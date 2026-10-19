@@ -16,6 +16,10 @@ A game restart takes it in (a new addon, Navigation; new files in Core's, Social
 - **The close-up pilot:** `dev/imagegen/sets/maps-pilot/close.txt`, the look on the terrain itself at the minimap
   textures' 512 pixels a tile (Stormwind, Goldshire with the city's gate, Westfall's edge, Orgrimmar, Razor Hill)
   and one tile at 1024; the terrain the only picture, the look in words.
+- **Zone briefs:** `dev/imagegen/maps/zones.toml` (new), one table for each of the 43 zones and 6 cities and one for
+  the sea: biome, land, plants, colours, buildings, roads, places, mood, a city's layout and a prompt paragraph,
+  in words that name nothing (a name in the words comes back as garbled letters in the picture); caves, mines,
+  entrances and ways between zones left out (pins); the sea's water, the Maelstrom and 11 sprites of its life.
 - **`dev/tools/map-meta`** (new): from the game's terrain files, the texture and object files of each tile and
   the buildings' own files, both continents at 128 texels a tile in `assets/generated/maps/meta/`: the roads
   (the road and paving textures, thin roads kept whole, lone decoration patches dropped), the footprints of the
