@@ -6,7 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 113 (Navigation), 208 (data tools).
 A game restart takes it in (a new addon, Navigation; new files in Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
 
-### Navigation: guides for a painted map view, its look chosen, the close-up pilot (Saneroki, 2026-10-19)
+### Navigation: the views Parchment and Scrying; the painted view's guides, briefs and pilots (Saneroki, 2026-10-19)
+- **The views' names:** the buttons read *Parchment* (was *Sketches*) and *Scrying* (was *Terrain*), with tips to
+  match; *Overlay* stays until the painted *Atlas* takes its place (`Navigation.lua`, README, changelog). The
+  code's keys are unchanged.
+- **Five styles to choose from:** `dev/imagegen/sets/maps-styles/` paints Stormwind, Blackrock Mountain, a forest
+  (Ashenvale around its lake town) and the whole world in five different styles (grimy realism, the original
+  game's painted textures, high-fantasy matte painting, an old oil painting, a photorealistic render): the
+  stylised look felt too cartoonish close up.
 - **Decided** (`Doc/ideas/Navigation.md`): Sketches and Terrain stay as they are; the local image models paint a
   third view of its own in Overlay's place: the terrain repainted in the chosen look, *stylised game art* (bold,
   saturated), every road, building and tree where the game has it, as close as the minimap zooms (single

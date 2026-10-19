@@ -31,12 +31,12 @@ Core.NewModule(ADDON, "Navigation", ns)
 ns.TEXT = {
     title = Core.Word("WORLD_MAP", "World Map"),
     view = "Map view",
-    viewTip = "How the map is drawn, small and full screen, at every zoom. Sketches: the world drawn by hand, every zone's map. Terrain: the land as it is. Overlay: the terrain with the sketches laid over it, half see-through.",
-    views = { sketches = "Sketches", terrain = "Terrain", overlay = "Overlay" },
+    viewTip = "How the map is drawn, small and full screen, at every zoom. Parchment: the old maps, drawn by hand. Scrying: the land as it truly lies. Overlay: the land with the old maps laid over it, half see-through.",
+    views = { sketches = "Parchment", terrain = "Scrying", overlay = "Overlay" },
     viewTips = {
-        sketches = "The world drawn by hand: every zone's map, in full, joined into one map of both continents.",
-        terrain = "The land as it is, its water cut away: both continents, from close up out to the whole world.",
-        overlay = "The terrain, with the sketches laid over it, half see-through.",
+        sketches = "The old maps, drawn by hand on parchment: every zone's map, in full, joined into one map of both continents.",
+        terrain = "The land as it truly lies, as a scrying glass shows it: both continents, from close up out to the whole world.",
+        overlay = "The land as it truly lies, with the old maps laid over it, half see-through.",
     },
     nativeMinimap = "Show the game's minimap",
     nativeMinimapTip = "The game's own minimap in its place, next to this map. Off: its live dots (players, tracked herbs and ore, quest areas) show on this map while it follows you, and the game's minimap is out of sight.",
@@ -56,7 +56,8 @@ ns.TEXT = {
 -- What is told when the module stands down (Core's StandDown).
 ns.GIVEN_BACK = "the map window is closed, the game's own minimap and map are back"
 
--- The three ways to draw the map, in the order of their buttons.
+-- The three ways to draw the map, in the order of their buttons (shown as Parchment, Scrying, Overlay; Overlay gives
+-- way to the painted Atlas once its art is made).
 ns.VIEWS = { "sketches", "terrain", "overlay" }
 
 local OPTIONS = {

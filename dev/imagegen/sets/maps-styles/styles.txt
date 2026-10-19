@@ -1,0 +1,40 @@
+# Five art styles for the painted map view (Atlas), each on four subjects, to choose from: no slight variations but
+# different styles. Saneroki found the stylised look of the close-up pilot too cartoonish and wanted rough, old,
+# grimy realism that stays true to the old World of Warcraft, and high fantasy, to compare.
+#   grimy    gritty, weathered realism, like an old aerial photograph
+#   classic  the original game's hand-painted textures and concept paintings
+#   epic     high-fantasy matte painting, cinematic light
+#   oil      a dark old-master oil painting, varnished and grimy
+#   render   a photorealistic modern game-engine render
+# Image 1 is the subject's terrain (the game's minimap textures, the water flat), the one picture; the style is in
+# words. The words name no place: the model writes legible names into the picture.
+
+workflow: qwen21-edit-1ref
+set: width=1024, height=1024
+count: 1
+out: assets/generated/maps-styles
+style: Keep everything of image 1 exactly where it is, at the same size and in the same shape: every building with its roof, every wall, tower, street, road, bridge and pier, every tree, field, rock, cliff, shore, river and lava flow; add fine detail but change no layout. The flat dark blue areas of image 1 are water. Seen straight from above, north up. No text anywhere: no letters, no words, no names, no labels, no symbols, no frame, no border.
+
+ref: assets/generated/maps-pilot/input/sw-city/terrain.png
+before: Image 1 is the ground of a part of a fantasy world seen straight from above. The heart of a great human city by the sea: streets and plazas of pale stone, roofs of blue slate and red tile, grey stone towers and walls, canals with arched bridges, a great cathedral, a keep, round gardens with trees, and the harbour piers at the left edge.
+grimy-stormwind: Repaint image 1 as a gritty, weathered realistic view from a great height, like an old aerial photograph on an overcast day: worn and dirty stone, soot-stained roofs, muddy rutted roads, moss and lichen, dense natural woods, muted earthy colours with deep shadows and a light haze; old, rough and lived-in.
+classic-stormwind: Repaint image 1 in the hand-painted art style of the original World of Warcraft from 2004: painterly ground textures with visible brush strokes, slightly exaggerated sturdy shapes, a warm earthy palette, soft painted light, the look of the game's own painted textures and early concept paintings, not cartoonish.
+epic-stormwind: Repaint image 1 as an epic high-fantasy matte painting seen from above, like Warcraft's cinematic concept art: rich, deep, natural colours, dramatic golden sunlight breaking through drifting clouds, glowing atmosphere and light rays, crisp architectural detail, majestic and heroic.
+oil-stormwind: Repaint image 1 as a dark old-master oil painting on canvas seen from above: thick varnished oil paint, deep shadows and warm amber light, aged cracked varnish and grime over the whole picture, muted umber, ochre and deep green, like a centuries-old painting of the land.
+render-stormwind: Repaint image 1 as a photorealistic modern game-engine render seen from above: physically based stone, wood, roof tiles and foliage, crisp sunlight with soft shadows and ambient occlusion, clear water with reflections and shallows, extremely detailed, like a high-end remaster.
+
+ref: assets/generated/maps-pilot/input/blackrock/terrain.png
+before: Image 1 is the ground of a part of a fantasy world seen straight from above. A colossal dark volcanic mountain rising from scorched grey wastes: black jagged rock split by glowing rivers and pools of molten lava, a fortress of dark iron and stone built into its heart, a long chain bridge in the south over the lava moat, ash-grey land, smouldering craters and a few dark iron outposts around it.
+grimy-blackrock: Repaint image 1 as a gritty, weathered realistic view from a great height, like an old aerial photograph on an overcast day: worn and dirty stone, soot-stained roofs, muddy rutted roads, moss and lichen, dense natural woods, muted earthy colours with deep shadows and a light haze; old, rough and lived-in.
+classic-blackrock: Repaint image 1 in the hand-painted art style of the original World of Warcraft from 2004: painterly ground textures with visible brush strokes, slightly exaggerated sturdy shapes, a warm earthy palette, soft painted light, the look of the game's own painted textures and early concept paintings, not cartoonish.
+epic-blackrock: Repaint image 1 as an epic high-fantasy matte painting seen from above, like Warcraft's cinematic concept art: rich, deep, natural colours, dramatic golden sunlight breaking through drifting clouds, glowing atmosphere and light rays, crisp architectural detail, majestic and heroic.
+oil-blackrock: Repaint image 1 as a dark old-master oil painting on canvas seen from above: thick varnished oil paint, deep shadows and warm amber light, aged cracked varnish and grime over the whole picture, muted umber, ochre and deep green, like a centuries-old painting of the land.
+render-blackrock: Repaint image 1 as a photorealistic modern game-engine render seen from above: physically based stone, wood, roof tiles and foliage, crisp sunlight with soft shadows and ambient occlusion, clear water with reflections and shallows, extremely detailed, like a high-end remaster.
+
+ref: assets/generated/maps-pilot/input/ashenvale/terrain.png
+before: Image 1 is the ground of a part of a fantasy world seen straight from above. An ancient dense forest of towering trees with deep green crowns tinged with violet, a lake in the middle with an island town of curved elven halls with violet roofs and pale wood, joined to the shores by bridges, dirt roads winding through the forest, small clearings and streams.
+grimy-forest: Repaint image 1 as a gritty, weathered realistic view from a great height, like an old aerial photograph on an overcast day: worn and dirty stone, soot-stained roofs, muddy rutted roads, moss and lichen, dense natural woods, muted earthy colours with deep shadows and a light haze; old, rough and lived-in.
+classic-forest: Repaint image 1 in the hand-painted art style of the original World of Warcraft from 2004: painterly ground textures with visible brush strokes, slightly exaggerated sturdy shapes, a warm earthy palette, soft painted light, the look of the game's own painted textures and early concept paintings, not cartoonish.
+epic-forest: Repaint image 1 as an epic high-fantasy matte painting seen from above, like Warcraft's cinematic concept art: rich, deep, natural colours, dramatic golden sunlight breaking through drifting clouds, glowing atmosphere and light rays, crisp architectural detail, majestic and heroic.
+oil-forest: Repaint image 1 as a dark old-master oil painting on canvas seen from above: thick varnished oil paint, deep shadows and warm amber light, aged cracked varnish and grime over the whole picture, muted umber, ochre and deep green, like a centuries-old painting of the land.
+render-forest: Repaint image 1 as a photorealistic modern game-engine render seen from above: physically based stone, wood, roof tiles and foliage, crisp sunlight with soft shadows and ambient occlusion, clear water with reflections and shallows, extremely detailed, like a high-end remaster.

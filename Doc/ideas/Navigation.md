@@ -86,6 +86,8 @@ minimap) and the full-screen window (the world map) show the same map with the s
   the places' names) and the zones' briefs (their peoples, biomes and buildings). It looks like painted art, not
   like a screen capture of the terrain, and still shows clearly where the buildings and the roads are; the
   roads stand out above all, and the gates and buildings of Stormwind and Orgrimmar must be right.
+- **The views' names (Saneroki, 2026-10-19):** immersive and true to the world, never technical words on the
+  buttons: **Parchment** (Blizzard's maps, was *Sketches*), **Scrying** (the terrain), **Atlas** (the painted view).
 - **Life on the sea (Saneroki, 2026-10-19):** in the painted view the Maelstrom turns between the continents,
   and ships, giant turtles, sea dragons and squids roam the water, each a short looped animation, seen on the
   world map.
@@ -95,9 +97,12 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **Entrances and ways out are pins (Saneroki, 2026-10-19, replacing the same day's ask to paint them):** caves,
   mines, the entrances of dungeons and raids and the ways from one zone into the next are shown by map pins, not
   painted into the view.
-- **The look: stylised game art on the terrain (Saneroki, 2026-10-19):** of the five looks of the pilot,
-  *stylised game art*: bold, saturated colours, chunky stylised trees, painted rocks, warm light, glossy water.
-  The **terrain is the base**: the painted view is the terrain repainted in that look, every building, street,
+- **The look: on the terrain, its style still open (Saneroki, 2026-10-19):** of the five looks of the first pilot,
+  *stylised game art* (bold, saturated colours, chunky trees, painted rocks, glossy water) came first; painted
+  on the terrain close up it felt too cartoonish, like pixel art. Wanted: a rough, old, grimy, realistic look that
+  stays true to the old World of Warcraft; five different styles on four subjects to choose from
+  (`dev/imagegen/sets/maps-styles/`: grimy realism, the original game's painted textures, high-fantasy matte
+  painting, an old oil painting, a photorealistic render). The **terrain is the base**: the painted view is the terrain repainted in that look, every building, street,
   tree and shore where the terrain has it, so it serves as the map of one's close vicinity, zoomed in as close as
   the minimap, single buildings clear. The painted continent maps of the pilot work only far out.
 - **Routes, later (Saneroki, 2026-10-19):** flight paths, and the ships' routes as a red dotted line, shown when

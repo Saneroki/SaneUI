@@ -7,9 +7,9 @@ Sane UI's minimap and world map are one window. Small, in the screen's top right
 move the mouse into that corner and it fills the screen as the map. Both are the same map, drawn and handled
 the same way, only larger, as the chat window is the same chat when it fills the screen. Each keeps its own
 zoom and place. The map is drawn three ways at every zoom, from close up out to the whole world, both
-continents always: *Sketches*, the world drawn by hand, Blizzard's zone maps in full joined into one map that
-fades softly from zone to zone; *Terrain*, the land as the minimap shows it, its water cut away to a calm sea;
-or *Overlay*, the sketches laid over the terrain. The game's own
+continents always: *Parchment*, the world drawn by hand, Blizzard's zone maps in full joined into one map that
+fades softly from zone to zone; *Scrying*, the land as the minimap shows it, its water cut away to a calm sea;
+or *Overlay*, the old maps laid over the land. The game's own
 minimap lies over it for its live dots; the game's map stays closed, and its keys open ours. The plan is in
 `Doc/ideas/Navigation.md`.
 
@@ -31,8 +31,8 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
   - **a click** on the game's minimap (while it shows) pings, as there.
 - **Following you:** both views follow you at first; after a drag the map comes back to you once the mouse
   has been off it for a while (*Follow again after*).
-- **Map view** (the buttons at the full map's top left, or the setting on the page *Navigation*): *Sketches*,
-  *Terrain* or *Overlay*, for both views and at every zoom.
+- **Map view** (the buttons at the full map's top left, or the setting on the page *Navigation*): *Parchment*,
+  *Scrying* or *Overlay*, for both views and at every zoom (in the code `sketches`, `terrain`, `overlay`).
 - **The game's own windows:** the switches *Show the game's minimap* and *Show the game's map* on the page
   bring them back next to ours; the full map's dropdown *Classic windows* offers them too. The game's key to
   show or hide the minimap (in its key bindings) shows or hides our window.
@@ -70,7 +70,7 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
   the land (where the ground lies above the water's surface, read from the game's terrain files by
   `dev/tools/terrain-art`), and the same file is the mask of the game's tiles of its block (`Canvas.Masks`), so
   the coast is cut alike at every zoom; under it the canvas' sea colour.
-- **Art** (`Art.lua`), the view *Sketches*: Blizzard's world and continent maps (`C_Map.GetMapArtLayers`,
+- **Art** (`Art.lua`), the view *Parchment*: Blizzard's world and continent maps (`C_Map.GetMapArtLayers`,
   `GetMapArtLayerTextures`) over their boxes, their paper frames faded off (`Art/Edge.blp`); over them the
   stitched map of every continent in view (`Art/Sketches/`, in the terrain's blocks: every zone's full map cut
   to its outline, made by `dev/tools/terrain-art`); up close every zone's own map in view, cut to its outline
@@ -114,7 +114,7 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
 | `Canvas.lua` | The frame the map is drawn in: holder, layers, pools, layout, the tracker, the mouse |
 | `Terrain.lua` | The terrain layer: the game's minimap textures from Core's set *Tiles*, and the overview |
 | `Outlines.lua` | The zones that have an outline, by continent: made by `dev/tools/terrain-art`, not by hand |
-| `Art.lua` | The view Sketches: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
+| `Art.lua` | The view Parchment: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
 | `Marks.lua` | The player's arrow and the map pin |
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
 | `Native.lua` | The game's map kept closed; its keys |
