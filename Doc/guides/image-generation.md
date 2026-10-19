@@ -221,19 +221,34 @@ lists, from inputs of its own:
   cover and `places.json` (areas, city districts, flight masters, entrances, caves and mines, exits) to
   `assets/generated/maps/meta/`; `dev/tools/terrain-art` makes the terrain and the stitched Sketches.
 - **Zone briefs:** `dev/imagegen/maps/zones.toml`, one table a zone or city: biome, land, plants, colours,
-  buildings, roads, places and a prompt paragraph, all without names.
+  buildings, roads, places, mood, atmosphere and a prompt paragraph, all without names. A square's words take
+  only the fields that hold everywhere in the zone (biome, plants, colours, atmosphere), never its buildings,
+  places or features: the model paints whatever the words name into the square it is given.
 - **One picture a square, the look in words:** image 1 the terrain of the square (the layout and everything on
-  it, kept; `qwen21-edit-1ref`, 1024 x 1024: 2 x 2 tiles at the minimap textures' 512 pixels a tile). A picture of
+  it, kept; `qwen21-edit-1ref`; the Atlas at 2048 x 2048, one tile, with `resolution=2048` so the reference
+  is read at the painting's size; the minimap textures softened a little first, or their dot pattern comes
+  back). A picture of
   the look as image 2, even "only as a reference for the art style", was painted instead of image 1 when it
   showed the same place from further out. The look pilot (`looks.txt`) gave image 2 the softened Sketches of
   the square, for painted continent maps.
 - **No names, anywhere the model can read them:** a place's name in the words, or a label it can read in
   image 2, comes back as garbled lettering in the picture. Describe ("a mine mouth in the hills at the bottom
   left"), never name.
-- **Say what water is:** without "the flat dark blue areas of image 1 are the sea …, no land or paper where
-  image 1 has water" the parchment looks painted the sea over as land.
+- **Say what the game has:** without "the flat dark blue areas of image 1 are the sea …, no land or paper where
+  image 1 has water" the parchment looks painted the sea over as land; with "the flat dark blue areas are
+  water" and nothing of the kind in the square, the photorealistic look painted Blackrock's dark ash plain as
+  lakes between islands. So each square's words say which liquids the game has in it ("there is no water
+  anywhere in this picture", "the flat bright orange areas are molten lava"), and every painting is checked
+  against the game's water and lava (Navigation.md, *Checked against the game*).
+- **Straight from above:** "like an orthographic satellite image: no perspective, no tilt, no horizon" keeps
+  mountains from turning into cones seen at an angle.
 - The pilots: `dev/imagegen/sets/maps-pilot/looks.txt` (five looks on two squares, 20 pictures in 9 minutes with
-  the full model; chosen: stylised game art), `close.txt` (that look on the terrain, close up).
+  the full model), `close.txt` (the stylised look on the terrain, close up), `dev/imagegen/sets/maps-styles/`
+  (five styles; chosen: the photorealistic render), `dev/imagegen/sets/maps-atlas/pilot.txt` (that look, one
+  square of ten zones at 2048, each in its zone's atmosphere; about two and a half minutes a picture).
+- **Upscaling models** (`models/upscale_models/` of ImageGen: 4x-UltraSharpV2 and 4xNomos2, both DAT2, as
+  safetensors, 17 s for 1024 to 4096): they sharpen what is there, the faults too, and add no detail; the
+  painting is made at the size it is shown.
 
 ## Asking for interface art
 

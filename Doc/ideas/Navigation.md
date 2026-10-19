@@ -97,7 +97,21 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **Entrances and ways out are pins (Saneroki, 2026-10-19, replacing the same day's ask to paint them):** caves,
   mines, the entrances of dungeons and raids and the ways from one zone into the next are shown by map pins, not
   painted into the view.
-- **The look: on the terrain, its style still open (Saneroki, 2026-10-19):** of the five looks of the first pilot,
+- **The look: a photorealistic render (Saneroki, 2026-10-19, after the five styles below):** a modern game
+  engine's render of the land seen from straight above, a mix of detail and a precision a map can use. Within
+  that one look **every zone has its own atmosphere**, from its lore: its light, air and colours and the state
+  of what stands there (the volcano's land volatile, smouldering and dangerous; Stormwind and its farmland
+  bright, safe and friendly; the haunted wood a cold dusk), and the buildings, roads and places stay exactly
+  where the terrain has them.
+- **Only what the game has (Saneroki, 2026-10-19):** what the originals (the game's terrain and files) show is
+  painted, nothing more: the model put water around Blackrock Mountain, where there is ash and lava. So the
+  words of a square say what the game has in it (its water, lava and slime, its ground), never a zone's
+  features that lie elsewhere, and every painting is checked against the game's water and lava before it is
+  taken.
+- **Three times closer (Saneroki, 2026-10-19):** the painted view zooms about three times closer than the map
+  does now, single buildings large; zoomed out it is the same pictures, smaller. Quality before speed, but all of
+  it made within a couple of days on this computer.
+- **The look before: on the terrain, its style open (Saneroki, 2026-10-19):** of the five looks of the first pilot,
   *stylised game art* (bold, saturated colours, chunky trees, painted rocks, glossy water) came first; painted
   on the terrain close up it felt too cartoonish, like pixel art. Wanted: a rough, old, grimy, realistic look that
   stays true to the old World of Warcraft; five different styles on four subjects to choose from
@@ -543,12 +557,23 @@ Three spaces, converted only in `Coords.lua`:
 The third view (*A painted third view*), made by the local image models beside the game and shipped as art in
 blocks like the terrain's, so the map draws it the way it draws the others.
 
-- **What the models get** (*The look*): the continents cut into overlapping squares; for each, the terrain of
-  that square as the one picture (its layout and everything on it, kept), the look in fixed words
-  (`dev/imagegen/sets/maps-pilot/close.txt`), and the words from the zones' briefs (`dev/imagegen/maps/zones.toml`:
-  peoples, biome, ground, buildings, roads, palette) of every zone in it, describing what lies where in the square
-  without naming it. A picture of the look as a second reference did not work: it showed the same city from
-  further out, and the model painted that instead.
+- **What the models get** (*The look*, *Only what the game has*): the continents cut into squares of one tile
+  that overlap by an eighth; for each, the terrain of that square as the one picture (its layout and everything
+  on it, kept; the minimap textures softened a little first, or their fine dot pattern comes back in the
+  painting), the look in fixed words (a photorealistic render seen from straight above, like an orthographic
+  satellite picture, shadows to the bottom right), and words put together for the square from what the game
+  has in it: its zone's biome, plants and colours and its **atmosphere** (`dev/imagegen/maps/zones.toml`: light,
+  air, colours and the state of what stands there, never a feature with a place), every phrase about water or
+  lava dropped where the square has none; its ground cover; its liquids ("the flat dark navy areas are water,
+  nowhere else", or "there is no water anywhere in this picture"; "the flat bright orange areas are molten
+  lava"); and a line on what stands in it. A zone's list of buildings and features is never given: the model
+  painted orc forts, tents and pines from it into a square of empty ash. A picture of the look as a second
+  reference did not work: it showed the same city from further out, and the model painted that instead.
+- **Checked against the game:** every painting is compared with the game's water (its liquids, and the
+  speckled blue-grey the minimap draws for a city's canals) and lava: broad sheets of water where the game has
+  none, or of the game's water painted as land, fail it (a shore that strays a few yards does not), and the
+  square is painted again with another seed, the best of up to three kept. Tried on the five styles: it failed
+  every Blackrock with false water (up to 8% of the picture) and passed the faithful ones.
 - **The guides** (`dev/tools/map-meta`, from the game's files): the roads (the ground textures of roads and
   paving), the buildings' footprints as they stand, what covers the ground (meadow, forest floor, farmland,
   sand, rock, snow, swamp, ash, blight), and the places by name with their positions (the terrain's areas, the
@@ -557,16 +582,26 @@ blocks like the terrain's, so the map draws it the way it draws the others.
 - **Words without names:** the words describe what is where ("a village of half-timbered houses at the
   crossroads", "a mine mouth in the hills at the bottom left") but name nothing, and image 2 is softened so its
   labels cannot be read: in the pilot the model wrote every legible name into the picture, garbled.
-- **One look everywhere:** the same words, seeds and references for every square; neighbours overlap by a
-  quarter and are blended with soft edges, so no seam shows. Where the pilot shows the model losing roads,
-  the guide's roads are drawn back over the painting in its colours.
-- **Levels of detail** (*Close up and far out*): the finest level is painted from the terrain at the minimap
-  textures' own detail, 512 pixels a tile (about a yard a pixel; squares of 2 x 2 tiles), where single buildings
-  are clear; a coarse pass over the continents keeps colours and light alike from square to square.
-  The finest level is cut into tiles and every coarser level made from it, as a pyramid the map loads by zoom:
-  only the tiles in view, at the level the zoom asks for. Size, for both continents' land at the finest level
-  (about 900 tiles): some 120 MB at a yard a pixel (DXT1), 160 MB with the coarser levels; the finest level may
-  become an addon of its own, loaded only when installed.
+- **One map, not tiles** (seams): the same look words and sun everywhere, each zone's atmosphere changing only
+  where the zone does; the squares painted in rows from the top left, each with its already painted neighbours
+  pasted into its edges, so it carries their colours, light and detail on; the overlaps (an eighth of a
+  square, 67 yards) blended with soft edges. Where the pilot shows the model losing roads, the guide's roads are drawn
+  back over the painting in its colours.
+- **Levels of detail** (*Close up and far out*, *Three times closer*): the finest level is painted at 2048
+  pixels a tile (a quarter of a yard a pixel, four times the minimap textures), with the full model, one
+  square of one tile a picture (about two and a half minutes each): the model adds detail the terrain does not
+  have (a bridge's chains, the stones of a wall) and keeps the layout. Painting at 1024 and enlarging it with an
+  upscaling model (two tried, 2026-10-19) only sharpened what was there, the dot pattern too; the fast Turbo
+  model kept the layout but painted soft, flat rock. Every coarser level is made from the finest, as a pyramid
+  the map loads by zoom: only the tiles in view, at the level the zoom asks for; the map's nearest zoom
+  (`Camera.NEAR`) goes about three times closer in this view.
+- **The whole run:** 1,112 tiles hold land (472 of the Eastern Kingdoms, 640 of Kalimdor): with the overlaps and
+  the squares painted again about 1,600 pictures, some 2.5 to 3 days on this computer (about 2 days at 1792
+  pixels a tile), started only when Saneroki says so. The 612 tiles of open sea
+  are not painted by the model: their water is made by code from the sea floor's depth, in the look of the
+  painted shores. Size at the finest level (DXT1, the game's only kind of texture for this): about 2.2 GB, 2.9 GB
+  with the coarser levels, or 1.7 GB shipped at 1536 pixels a tile: an art addon of its own, loaded only when
+  installed.
 - **Routes** (*Routes, later*): the game's own paths of ships and zeppelins (its taxi paths of the transports)
   and of flights.
 - **Life on the sea:** each creature and ship a small top-down sprite with a short looped flipbook

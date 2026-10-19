@@ -6,6 +6,26 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 113 (Navigation), 208 (data tools).
 A game restart takes it in (a new addon, Navigation; new files in Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
 
+### Navigation: the Atlas' look, each zone's atmosphere, painted only what the game has (Saneroki, 2026-10-19)
+- **Decided** (`Doc/ideas/Navigation.md`): the painted view is a photorealistic render seen from straight
+  above; every zone has its own atmosphere within it (light, air, colours, the state of what stands there);
+  only what the game's terrain and files show is painted; it zooms about three times closer than the map now,
+  painted at 2048 pixels a tile; the far levels are the same pictures, smaller; quality before speed, within a
+  couple of days of painting, started only when Saneroki says so.
+- **Atmospheres:** `dev/imagegen/maps/zones.toml` gives every zone and city an `atmosphere` (light, air, colour
+  grading, the state of things and small props), which names no feature with a place, so it fits every square
+  of the zone.
+- **The Atlas pilot:** `dev/imagegen/sets/maps-atlas/pilot.txt`, one tile at 2048 in ten zones (Stormwind,
+  Goldshire, Blackrock Mountain, Darkshire, Brill, Orgrimmar, Astranaar, Booty Bay, Everlook, Gadgetzan); each
+  square's words put together from what the game has in it: its main zone's biome, plants, colours and
+  atmosphere (phrases about water or lava dropped where it has none), its ground cover and its liquids. Before,
+  "the flat dark blue areas are water" with no water in the square made the model paint Blackrock's ash plain
+  as lakes, and a zone's list of buildings brought orc forts and tents into empty ash.
+- **Tried for speed, not taken:** painting at 1024 and enlarging with two upscaling models (they sharpen, add no
+  detail) and the Turbo model at 2048 (soft, flat rock).
+- `Doc/guides/image-generation.md`, *Maps*: the briefs' fields a square may use, saying which liquids the game
+  has, the view straight from above, the upscalers.
+
 ### Navigation: the views Parchment and Scrying; the painted view's guides, briefs and pilots (Saneroki, 2026-10-19)
 - **The views' names:** the buttons read *Parchment* (was *Sketches*) and *Scrying* (was *Terrain*), with tips to
   match; *Overlay* stays until the painted *Atlas* takes its place (`Navigation.lua`, README, changelog). The
