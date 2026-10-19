@@ -1,0 +1,564 @@
+#!/usr/bin/env python3
+"""Guides for Navigation's third map view, the one image models paint: what lies where on both continents,
+read from the game's own files, so the painting keeps every road, building and place where the game has it.
+
+The view is made from the two maps Navigation draws already (the terrain overview and the stitched zone maps,
+dev/tools/terrain-art), from the zones' briefs (dev/imagegen/maps/zones.toml) and from these guides:
+
+  roads-<continent>.png      grey: how much of each texel the game's road and paving textures cover; a texel
+                             takes the most any part of it has, so a road a few yards wide stays unbroken
+  buildings-<continent>.png  grey: the footprint of every building standing on the ground, turned as it stands
+                             (the largest ones, the cities and dungeons, are left out: their parts are districts)
+  cover-<continent>.png      colour: what covers the ground at each texel (COVER: water, road, farmland, meadow,
+                             forest floor, sand, rock, snow, swamp, ash and lava, blight, dirt), from the name of the
+                             ground texture that has the most of it
+  places.json                every zone with its box in the continent's texels, and in it every area the terrain
+                             uses (its centre and span in the zone map's percent, as the game's coordinates), the
+                             districts of its cities (from the parts of their buildings), its flight masters, the
+                             entrances of dungeons and raids (where the game sends a ghost back to), the places
+                             under the ground (caves, mines, crypts: buildings that lie below it) and its exits
+                             (where a road crosses into the next zone)
+
+All in assets/generated/maps/meta/ (not committed), the continents' whole grid at TEXELS texels a tile, north up,
+row 0 the grid's north edge, column 0 its west edge (as terrain-art lays the overview).
+
+The input, as the game stores it, for both continents:
+  game files    a folder with the tiles' files, each named <key>.adt by the tile's key in the set Tiles
+                (continent * 4096 + row * 64 + column): adt/ the root files (heights, water, areas), adt-tex0/ the
+                texture files (the ground textures and their blend), adt-obj0/ the object files (where buildings
+                stand), and wmo/ the buildings' root files <file ID>.wmo and the large ones' group files
+                <file ID>_<part>.wmo
+  client tables a folder of the game's client tables as CSV (AreaTable, UiMap, UiMapAssignment, LiquidType,
+                LiquidMaterial, Map, TaxiNodes, WMOAreaTable)
+  file names    the game's file names as lines "<file ID>;<path>" (only the ground textures' are needed)
+
+Needs Python with Pillow and NumPy. Takes about a minute.
+
+Usage:  dev/tools/map-meta <game files> <client tables> <file names> [--texels N]
+"""
+import csv
+import importlib.util
+import json
+import math
+import re
+import struct
+import sys
+from functools import lru_cache
+from importlib.machinery import SourceFileLoader
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageDraw
+
+ROOT = Path(__file__).resolve().parents[2]
+OUT = ROOT / "assets" / "generated" / "maps" / "meta"
+
+# The parsing of the root files and the zones' boxes are terrain-art's.
+_loader = SourceFileLoader("terrain_art", str(Path(__file__).with_name("terrain-art")))
+_spec = importlib.util.spec_from_loader("terrain_art", _loader)
+art = importlib.util.module_from_spec(_spec)
+_loader.exec_module(art)
+
+GRID, CHUNKS, TILE = art.GRID, art.CHUNKS, art.TILE
+HALF = GRID / 2 * TILE   # yards from the grid's middle to its edges
+ALPHA = 64               # a texture layer's blend: 64 x 64 values a map chunk
+BIG = 250                # yards: a building wider than this is a city or a dungeon, drawn by its districts
+ABOVE = 3                # yards a building's top must reach above the ground under it (caves and mines do not)
+RUN = 60                 # yards: a patch of road texture shorter than this, all alone, is decoration, not a road
+THICK = 24               # yards: a patch thicker than this on average (its texels over its length) is a round patch,
+LONG = 300               # unless it is longer than this (a harbour's docks, a town's paved streets)
+ON = 0.3                 # the share of road texture that counts as road, when patches are measured
+CAVE = 20                # yards: a building under the ground narrower than this is a cellar, not a cave
+NEAR = 150               # yards: places of one kind closer than this are one (a mine of several parts, one exit)
+REACH = 4                # map chunks (some 130 yards) between the roads of two zones that still make a way between them
+
+# Ground textures by what their names say, the first that matches; a texture that matches none is "dirt".
+COVER = [  # (class, colour in cover-<continent>.png, words in the texture's file name)
+    ("water", (38, 72, 112), None),
+    # Trodden trails are roads too, but one footprint texture covers whole plains (the salt flats); Desolace draws
+    # its roads in cracked earth.
+    ("road", (226, 58, 42), r"road|cobble|brick|paver|flagstone|cityfloor|trolltile|pillartile|titanplaza|titanfloor|dock"
+                            r"|(?<!desolacedirt)footprint|desolacecracks"),
+    ("farmland", (232, 196, 70), r"crop|straw|farm|wheat"),
+    ("snow", (242, 246, 250), r"snow|ice"),
+    ("ash and lava", (70, 44, 40), r"lava|magma|charcoal|cooled|obsid|pumice|chard|steppsash|mudash"),
+    ("seabed", (64, 108, 128), r"underwater|coral|seaweed|oceanfloor|barnacle"),
+    ("sand", (226, 206, 150), r"(?<!thou)sand|beach|shore|saltflat|dune"),
+    ("forest floor", (44, 102, 52),
+     r"leaf|leaves|root|fern|(?<!thousand)needle|moss|vine|plant|brush|bush|scrub|(?<!dusk)(?<!fel)wood|undergrowth"),
+    ("blight", (128, 84, 140), r"creep|corrupt|blight|plagued|web"),
+    ("meadow", (112, 170, 72), r"grass|meadow|flower|weed"),
+    ("swamp", (92, 92, 52), r"muck|mud|swamp|marsh|bog|slime"),
+    ("rock", (124, 124, 128), r"rock|cliff|stone|gravel|rubble|shale|crack|crystal"),
+    ("dirt", (150, 112, 72), r""),
+]
+ROAD = 1  # COVER's index of the roads
+
+
+def table(folder, name):
+    return list(csv.DictReader(open(folder / f"{name}.csv", encoding="utf-8")))
+
+
+def classes(names):
+    """{texture file ID: its index in COVER}, from the ground textures' names."""
+    found = {}
+    for file, path in names.items():
+        name = path.rsplit("/", 1)[-1].lower()
+        if not path.lower().startswith("tileset/"):
+            continue
+        for index, (_, _, words) in enumerate(COVER):
+            if words is not None and re.search(words, name):
+                found[file] = index
+                break
+    return found
+
+
+def unrle(data, at):
+    """A compressed blend (runs of one value, or of values as they are) of ALPHA x ALPHA values."""
+    out = bytearray()
+    while len(out) < ALPHA * ALPHA:
+        head = data[at]
+        count = head & 0x7F
+        if head & 0x80:
+            out += bytes([data[at + 1]]) * count
+            at += 2
+        else:
+            out += data[at + 1:at + 1 + count]
+            at += 1 + count
+    return np.frombuffer(bytes(out[:ALPHA * ALPHA]), np.uint8)
+
+
+def ground(path, kinds, texels):
+    """A texture file's roads (the share of road textures, the most in each texel) and cover (the class with the
+    largest share), each texels x texels."""
+    data = path.read_bytes()
+    per = texels // CHUNKS
+    step = ALPHA // per
+    road = np.zeros((texels, texels), np.float32)
+    cover = np.full((texels, texels), len(COVER) - 1, np.uint8)
+    files, index = [], 0
+    for name, at, size in art.pieces(data, 0, len(data)):
+        if name == b"MDID":
+            files = struct.unpack_from(f"<{size // 4}I", data, at)
+        elif name == b"MCNK":
+            cy, cx = divmod(index, CHUNKS)
+            index += 1
+            layers, blends = [], None
+            for part, start, length in art.pieces(data, at, at + size):
+                if part == b"MCLY":
+                    layers = [struct.unpack_from("<III", data, start + 16 * i) for i in range(length // 16)]
+                elif part == b"MCAL":
+                    blends = start
+            if not layers:
+                continue
+            # Each layer over the first has its blend; the first takes what the others leave.
+            alphas = []
+            for _, flags, offset in layers[1:]:
+                values = unrle(data, blends + offset) if flags & 0x200 else np.frombuffer(data, np.uint8, ALPHA * ALPHA, blends + offset)
+                alphas.append(values.reshape(ALPHA, ALPHA).astype(np.float32) / 255)
+            weights = [np.clip(1 - sum(alphas), 0, 1) if alphas else np.ones((ALPHA, ALPHA), np.float32)] + alphas
+            total = np.maximum(sum(weights), 1e-6)
+            shares = np.zeros((len(COVER), ALPHA, ALPHA), np.float32)
+            for (texture, _, _), weight in zip(layers, weights):
+                file = files[texture] if texture < len(files) else 0
+                shares[kinds.get(file, len(COVER) - 1)] += weight / total
+            pooled = shares.reshape(len(COVER), per, step, per, step)
+            y, x = cy * per, cx * per
+            road[y:y + per, x:x + per] = pooled[ROAD].max(axis=(1, 3))
+            cover[y:y + per, x:x + per] = pooled.mean(axis=(2, 4)).argmax(axis=0)
+    return road, cover
+
+
+def roads_only(road, texels):
+    """The road share without the lone patches some zones scatter as decoration: of the patches (texels of at least
+    ON, touching sideways or corner to corner) only the long thin ones stay (at least RUN yards along their box's
+    longer side and THICK yards thick on average) and the very long ones (LONG)."""
+    on = road >= ON * 255
+    parent = []
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    runs, previous = [], []  # runs of each row: (row, first, last, label)
+    for row in np.nonzero(on.any(axis=1))[0]:
+        line = np.diff(np.concatenate(([0], on[row].view(np.int8), [0])))
+        starts, ends = np.nonzero(line == 1)[0], np.nonzero(line == -1)[0] - 1
+        current, k = [], 0
+        for first, last in zip(starts, ends):
+            label = len(parent)
+            parent.append(label)
+            if previous and previous[0][0] == row - 1:
+                while k < len(previous) and previous[k][2] < first - 1:
+                    k += 1
+                j = k
+                while j < len(previous) and previous[j][1] <= last + 1:
+                    a, b = find(previous[j][3]), find(label)
+                    if a != b:
+                        parent[max(a, b)] = min(a, b)
+                    j += 1
+            current.append((row, first, last, label))
+        runs += current
+        previous = current
+    boxes = {}
+    for row, first, last, label in runs:
+        root = find(label)
+        box = boxes.setdefault(root, [row, row, first, last, 0])
+        box[0], box[1], box[2], box[3] = min(box[0], row), max(box[1], row), min(box[2], first), max(box[3], last)
+        box[4] += last - first + 1
+    size = TILE / texels
+    kept = {}
+    for root, (top, bottom, left, right, count) in boxes.items():
+        length = (max(bottom - top, right - left) + 1) * size
+        kept[root] = length >= LONG or (length >= RUN and count * size * size / length <= THICK)
+    keep = np.zeros_like(on)
+    for row, first, last, label in runs:
+        if kept[find(label)]:
+            keep[row, first:last + 1] = True
+    # The soft edge around each kept patch stays; what is below ON elsewhere goes.
+    near = keep.copy()
+    near[1:] |= keep[:-1]
+    near[:-1] |= keep[1:]
+    near[:, 1:] |= keep[:, :-1]
+    near[:, :-1] |= keep[:, 1:]
+    return np.where(near, road, 0).astype(np.uint8)
+
+
+def heights(path):
+    """A root file's ground height in each map chunk (the mean of its heights), CHUNKS x CHUNKS."""
+    data = path.read_bytes()
+    found = np.zeros((CHUNKS, CHUNKS), np.float32)
+    for name, at, size in art.pieces(data, 0, len(data)):
+        if name == b"MCNK":
+            x, y = struct.unpack_from("<II", data, at + 4)
+            base = struct.unpack_from("<f", data, at + 0x70)[0]
+            for part, start, _ in art.pieces(data, at + 128, at + size):
+                if part == b"MCVT":
+                    found[y, x] = base + float(np.mean(struct.unpack_from("<145f", data, start)))
+                    break
+    return found
+
+
+def tile(job):
+    """Everything of one tile: (key, roads, cover, its map chunks' heights, their areas)."""
+    key, files, kinds, liquids, texels = job
+    road, cover = ground(files / "adt-tex0" / f"{key}.adt", kinds, texels)
+    land, chunks = art.terrain(files / "adt" / f"{key}.adt", liquids)
+    if texels > land.shape[0]:
+        land = np.repeat(np.repeat(land, texels // land.shape[0], 0), texels // land.shape[0], 1)
+    step = land.shape[0] // texels
+    land = land.reshape(texels, step, texels, step).mean(axis=(1, 3))
+    cover[land < 0.5] = 0
+    return key, (road * 255).round().astype(np.uint8), cover, heights(files / "adt" / f"{key}.adt"), chunks
+
+
+def placements(files):
+    """Every building placed on the continents, once: {(continent, unique ID): its placement}."""
+    found = {}
+    for path in sorted((files / "adt-obj0").glob("*.adt")):
+        continent = int(path.stem) // (GRID * GRID)
+        data = path.read_bytes()
+        for name, at, size in art.pieces(data, 0, len(data)):
+            if name != b"MODF":
+                continue
+            for start in range(at, at + size, 64):
+                (file, unique, px, _, pz, _, turn, _, _, low, _, _, high, _, flags, _, _,
+                 scale) = struct.unpack_from("<II3f3f6fHHHH", data, start)
+                if flags & 0x8:  # the first field is the file's ID
+                    found[(continent, unique)] = dict(continent=continent, file=file, at=(px, pz), turn=turn,
+                                                      scale=scale / 1024 if scale else 1, low=low, high=high)
+    return found
+
+
+@lru_cache(maxsize=None)
+def building(folder, file):
+    """A building's root file: (its own box, its ID in WMOAreaTable)."""
+    data = (folder / f"{file}.wmo").read_bytes()
+    for name, at, _ in art.pieces(data, 0, len(data)):
+        if name == b"MOHD":
+            return struct.unpack_from("<6f", data, at + 36), struct.unpack_from("<I", data, at + 32)[0]
+    return None, None
+
+
+def placed(where, x, y):
+    """A point of a building's own space (x, y level) where the game puts it: (X north, Y west) in yards."""
+    turn = math.radians(-where["turn"])
+    across = (y * math.cos(turn) - x * math.sin(turn)) * where["scale"]
+    along = (y * math.sin(turn) + x * math.cos(turn)) * where["scale"]
+    return HALF - (where["at"][1] + along), HALF - (where["at"][0] + across)
+
+
+def texel(X, Y, texels):
+    """A world position (yards) in the continent's texels: (column, row)."""
+    return (HALF - Y) / TILE * texels, (HALF - X) / TILE * texels
+
+
+def percent(box, X, Y):
+    """A world position in a zone map's percent (x from the west, y from the north)."""
+    north, south, west, east = box
+    return round(100 * (west - Y) / (west - east), 1), round(100 * (north - X) / (north - south), 1)
+
+
+def districts(folder, file, where, names):
+    """A large building's districts: {name: its box in yards (north, south, west, east)}, from its parts' boxes and
+    their areas in WMOAreaTable."""
+    _, wmo = building(folder, file)
+    found = {}
+    for path in sorted(folder.glob(f"{file}_*.wmo")):
+        data = path.read_bytes()
+        for name, at, _ in art.pieces(data, 0, len(data)):
+            if name != b"MOGP":
+                continue
+            box = struct.unpack_from("<6f", data, at + 12)
+            area = names.get((wmo, struct.unpack_from("<I", data, at + 56)[0]))
+            if area:
+                points = [placed(where, x, y) for x in (box[0], box[3]) for y in (box[1], box[4])]
+                found.setdefault(area, []).extend(points)
+            break
+    return {area: (max(p[0] for p in points), min(p[0] for p in points), max(p[1] for p in points),
+                   min(p[1] for p in points)) for area, points in found.items()}
+
+
+def main():
+    args = sys.argv[1:]
+    texels = 128
+    if "--texels" in args:
+        at = args.index("--texels")
+        texels = int(args[at + 1])
+        del args[at:at + 2]
+    if len(args) != 3 or texels % CHUNKS or (ALPHA * CHUNKS) % texels:
+        sys.exit(__doc__)
+    files, tables, listed = Path(args[0]), Path(args[1]), Path(args[2])
+    names = {}
+    for line in open(listed, encoding="utf-8"):
+        file, _, path = line.strip().partition(";")
+        if file.isdigit():
+            names[int(file)] = path
+    kinds = classes(names)
+    liquids = art.waters(tables)
+    keys = sorted(int(path.stem) for path in (files / "adt-tex0").glob("*.adt")
+                  if (files / "adt" / path.name).exists() and int(path.stem) // (GRID * GRID) in (0, 1))
+    side = GRID * texels
+    roads = {c: np.zeros((side, side), np.uint8) for c in (0, 1)}
+    covers = {c: np.zeros((side, side), np.uint8) for c in (0, 1)}
+    ground_at = {c: np.full((GRID * CHUNKS, GRID * CHUNKS), np.nan, np.float32) for c in (0, 1)}
+    grids = {c: np.zeros((GRID * CHUNKS, GRID * CHUNKS), np.int64) for c in (0, 1)}
+    with Pool() as pool:
+        jobs = [(key, files, kinds, liquids, texels) for key in keys]
+        for key, road, cover, chunk, chunks in pool.imap_unordered(tile, jobs, 8):
+            continent, rest = divmod(key, GRID * GRID)
+            row, column = divmod(rest, GRID)
+            roads[continent][row * texels:(row + 1) * texels, column * texels:(column + 1) * texels] = road
+            covers[continent][row * texels:(row + 1) * texels, column * texels:(column + 1) * texels] = cover
+            ground_at[continent][row * CHUNKS:(row + 1) * CHUNKS, column * CHUNKS:(column + 1) * CHUNKS] = chunk
+            grids[continent][row * CHUNKS:(row + 1) * CHUNKS, column * CHUNKS:(column + 1) * CHUNKS] = chunks
+    OUT.mkdir(parents=True, exist_ok=True)
+    palette = np.array([colour for _, colour, _ in COVER], np.uint8)
+    for continent in (0, 1):
+        Image.fromarray(roads_only(roads[continent], texels)).save(OUT / f"roads-{continent}.png", optimize=True)
+        Image.fromarray(palette[covers[continent]]).save(OUT / f"cover-{continent}.png", optimize=True)
+
+    # Buildings: each standing one's own box, turned and placed as the game does.
+    folder = files / "wmo"
+    pictures = {c: Image.new("L", (side, side)) for c in (0, 1)}
+    pens = {c: ImageDraw.Draw(pictures[c]) for c in (0, 1)}
+    large, standing, below = [], 0, []
+    for where in placements(files).values():
+        box, _ = building(folder, where["file"]) if (folder / f"{where['file']}.wmo").exists() else (None, None)
+        if box is None:
+            continue
+        corners = [placed(where, x, y) for x, y in ((box[0], box[1]), (box[3], box[1]), (box[3], box[4]), (box[0], box[4]))]
+        width = max(math.dist(corners[0], corners[1]), math.dist(corners[1], corners[2]))
+        if width > BIG:
+            large.append(where)
+            continue
+        X, Y = sum(p[0] for p in corners) / 4, sum(p[1] for p in corners) / 4
+        row, column = int((HALF - X) / (TILE / CHUNKS)), int((HALF - Y) / (TILE / CHUNKS))
+        if not (0 <= row < GRID * CHUNKS and 0 <= column < GRID * CHUNKS):
+            continue
+        under = ground_at[where["continent"]][row, column]
+        if np.isnan(under):
+            continue
+        if where["high"] < under + ABOVE:
+            if width >= CAVE:
+                below.append((where["continent"], X, Y))
+            continue
+        pens[where["continent"]].polygon([texel(X, Y, texels) for X, Y in corners], fill=255)
+        standing += 1
+    for continent in (0, 1):
+        pictures[continent].save(OUT / f"buildings-{continent}.png", optimize=True)
+
+    # Places: the areas the terrain uses, the cities' districts, the flight masters; each in its zone.
+    areas = {int(row["ID"]): row for row in table(tables, "AreaTable")}
+    found, top = art.zones(tables, {0, 1})
+    by_area = {area: uimap for uimap, (_, _, area) in found.items()}
+    uimaps = {row["ID"]: row["Name_lang"] for row in table(tables, "UiMap")}
+    places = {}
+    for uimap, (continent, box, _) in sorted(found.items()):
+        north, south, west, east = box
+        (x0, y0), (x1, y1) = texel(north, west, texels), texel(south, east, texels)
+        places[uimap] = dict(name=uimaps.get(str(uimap), "?"), continent=continent, box=[round(v, 1) for v in box],
+                             texels=[round(x0), round(y0), round(x1), round(y1)], areas=[], districts=[], flights=[],
+                             entrances=[], underground=[], exits=[])
+
+    chunk = TILE / CHUNKS
+
+    def zone_of(continent, X, Y, prefer=None):
+        """The zone a place belongs to: the one its area is part of (or the area of the ground under it), else the
+        smallest whose box holds it."""
+        if prefer is None:
+            row, column = int((HALF - X) / chunk), int((HALF - Y) / chunk)
+            if 0 <= row < GRID * CHUNKS and 0 <= column < GRID * CHUNKS:
+                area = int(grids[continent][row, column])
+                prefer = by_area.get(top.get(area, area)) if area else None
+        if prefer in places and places[prefer]["continent"] == continent:
+            return prefer
+        holding = [((north - south) * (west - east), uimap) for uimap, (c, (north, south, west, east), _) in found.items()
+                   if c == continent and south <= X <= north and east <= Y <= west]
+        return min(holding)[1] if holding else None
+
+    for continent in (0, 1):
+        grid = grids[continent]
+        for area in np.unique(grid):
+            if area == 0:
+                continue
+            rows, columns = np.nonzero(grid == area)
+            X, Y = HALF - (rows.mean() + 0.5) * chunk, HALF - (columns.mean() + 0.5) * chunk
+            uimap = zone_of(continent, X, Y, by_area.get(top.get(int(area), int(area))))
+            if uimap is None:
+                continue
+            box = places[uimap]["box"]
+            x, y = percent(box, X, Y)
+            north, south, west, east = box
+            places[uimap]["areas"].append(dict(
+                area=int(area), name=areas.get(int(area), {}).get("AreaName_lang", "?"), chunks=len(rows), x=x, y=y,
+                span=[round(100 * (columns.max() - columns.min() + 1) * chunk / (west - east), 1),
+                      round(100 * (rows.max() - rows.min() + 1) * chunk / (north - south), 1)]))
+    wmo_names = {(int(row["WMOID"]), int(row["WMOGroupID"])): row["AreaName_lang"] for row in table(tables, "WMOAreaTable")
+                 if row["AreaName_lang"]}
+    for where in large:
+        if not any(folder.glob(f"{where['file']}_*.wmo")):
+            continue
+        for name, (north, south, west, east) in districts(folder, where["file"], where, wmo_names).items():
+            uimap = zone_of(where["continent"], (north + south) / 2, (west + east) / 2)
+            if uimap is None or name == places[uimap]["name"]:
+                continue
+            box = places[uimap]["box"]
+            (x0, y0), (x1, y1) = percent(box, north, west), percent(box, south, east)
+            places[uimap]["districts"].append(dict(name=name, x=round((x0 + x1) / 2, 1), y=round((y0 + y1) / 2, 1),
+                                                   box=[x0, y0, x1, y1]))
+    # Flight masters: the nodes a mount flies from for a side (flags 1 Alliance, 2 Horde; the others are ships' and
+    # zeppelins' routes, quests' paths, old nodes and the game's placeholders), one entry a place with its sides.
+    for row in table(tables, "TaxiNodes"):
+        continent, name = int(row["ContinentID"]), row["Name_lang"]
+        mounts = (row["MountCreatureID[0]"], row["MountCreatureID[1]"])
+        if continent not in (0, 1) or mounts == ("0", "0") or name.startswith(("zz", "Quest Path", "Generic", "Programmer")):
+            continue
+        X, Y = float(row["Pos[0]"]), float(row["Pos[1]"])
+        uimap = zone_of(continent, X, Y)
+        if uimap is None:
+            continue
+        x, y = percent(places[uimap]["box"], X, Y)
+        flags = int(row["Flags"])
+        sides = {"Alliance"} if flags & 1 else set()
+        sides |= {"Horde"} if flags & 2 else set()
+        if not sides:
+            continue
+        place = name.split(",")[0]
+        same = [f for f in places[uimap]["flights"] if f["name"] == place and abs(f["x"] - x) + abs(f["y"] - y) < 3]
+        if same:
+            same[0]["sides"] = sorted(set(same[0]["sides"]) | sides)
+        else:
+            places[uimap]["flights"].append(dict(name=place, x=x, y=y, sides=sorted(sides)))
+    # Dungeons and raids: where the game sends a ghost back to, at the entrance.
+    for row in table(tables, "Map"):
+        if row["InstanceType"] not in ("1", "2") or row["CorpseMapID"] not in ("0", "1"):
+            continue
+        X, Y = float(row["Corpse[0]"]), float(row["Corpse[1]"])
+        uimap = zone_of(int(row["CorpseMapID"]), X, Y) if (X, Y) != (0, 0) else None
+        if uimap is not None:
+            x, y = percent(places[uimap]["box"], X, Y)
+            places[uimap]["entrances"].append(dict(name=row["MapName_lang"], kind="raid" if row["InstanceType"] == "2" else "dungeon",
+                                                   x=x, y=y))
+
+    def area_at(continent, X, Y):
+        row, column = int((HALF - X) / chunk), int((HALF - Y) / chunk)
+        if 0 <= row < GRID * CHUNKS and 0 <= column < GRID * CHUNKS:
+            return areas.get(int(grids[continent][row, column]), {}).get("AreaName_lang", "")
+        return ""
+
+    def gathered(points, near=NEAR):
+        """Points (yards) closer than near to one another, as one: their middles."""
+        groups = []
+        for X, Y in points:
+            for group in groups:
+                if math.dist(group[0], (X, Y)) < near:
+                    group[1].append((X, Y))
+                    break
+            else:
+                groups.append([(X, Y), [(X, Y)]])
+        return [(sum(p[0] for p in g[1]) / len(g[1]), sum(p[1] for p in g[1]) / len(g[1])) for g in groups]
+
+    # Under the ground: caves, mines, crypts, as the area above them names them.
+    for continent in (0, 1):
+        for X, Y in gathered([(X, Y) for c, X, Y in below if c == continent]):
+            uimap = zone_of(continent, X, Y)
+            if uimap is not None:
+                x, y = percent(places[uimap]["box"], X, Y)
+                places[uimap]["underground"].append(dict(area=area_at(continent, X, Y), x=x, y=y))
+
+    # Exits: where the roads of two zones come within REACH of each other (a border, a bridge over the river
+    # between them, a gate), on the land of each.
+    per = texels // CHUNKS
+    for continent in (0, 1):
+        zone_ids = np.zeros(grids[continent].shape, np.int64)
+        for area in np.unique(grids[continent]):
+            if area:
+                zone_ids[grids[continent] == area] = by_area.get(top.get(int(area), int(area)), 0)
+        cover = covers[continent].reshape(GRID * CHUNKS, per, GRID * CHUNKS, per)
+        road = roads_only(roads[continent], texels).reshape(GRID * CHUNKS, per, GRID * CHUNKS, per).max(axis=(1, 3)) >= ON * 255
+        road &= (zone_ids > 0) & ((cover != 0).mean(axis=(1, 3)) >= 0.5)
+        crossings = {}
+        for zone in np.unique(zone_ids[road]):
+            near = road & (zone_ids == zone)
+            for _ in range(REACH):
+                grown = near.copy()
+                grown[1:] |= near[:-1]
+                grown[:-1] |= near[1:]
+                grown[:, 1:] |= near[:, :-1]
+                grown[:, :-1] |= near[:, 1:]
+                near = grown
+            for row, column in zip(*np.nonzero(near & road & (zone_ids != zone))):
+                other = int(zone_ids[row, column])
+                pair = tuple(sorted((int(zone), other)))
+                crossings.setdefault(pair, []).append((HALF - (row + 0.5) * chunk, HALF - (column + 0.5) * chunk))
+        for (one, other), points in crossings.items():
+            if one not in places or other not in places:
+                continue
+            for X, Y in gathered(points, 2 * NEAR):
+                for here, there in ((one, other), (other, one)):
+                    x, y = percent(places[here]["box"], X, Y)
+                    places[here]["exits"].append(dict(to=places[there]["name"], x=x, y=y))
+
+    for zone in places.values():
+        zone["areas"].sort(key=lambda a: -a["chunks"])
+        zone["districts"].sort(key=lambda d: d["name"])
+        zone["exits"].sort(key=lambda e: (e["to"], e["y"], e["x"]))
+    guide = dict(texels=texels, yards_per_texel=round(TILE / texels, 3),
+                 cover={name: list(colour) for name, colour, _ in COVER}, zones=places)
+    (OUT / "places.json").write_text(json.dumps(guide, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Map guides in {OUT.relative_to(ROOT)}: roads, buildings ({standing} standing, {len(large)} large ones by "
+          f"their districts) and cover of both continents at {texels} texels a tile; places.json with "
+          f"{sum(len(z['areas']) for z in places.values())} areas, "
+          f"{sum(len(z['districts']) for z in places.values())} districts, "
+          f"{sum(len(z['flights']) for z in places.values())} flight masters, "
+          f"{sum(len(z['entrances']) for z in places.values())} entrances, "
+          f"{sum(len(z['underground']) for z in places.values())} places under the ground and "
+          f"{sum(len(z['exits']) for z in places.values())} exits in {len(places)} zones.")
+
+
+if __name__ == "__main__":
+    main()

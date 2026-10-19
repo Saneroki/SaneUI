@@ -212,6 +212,26 @@ dev/tools/imagegen dev/imagegen/sets/example/parts.txt --count 2 --only star
   `output/imagegen/`. ComfyUI keeps a copy there in any case: clear it now and then.
 - Ctrl+C stops the waiting, not ComfyUI: clear its queue there (*Queue* panel).
 
+## Maps
+
+Navigation's painted map view (`Doc/ideas/Navigation.md`, *The painted view*) is made with the same tool and
+lists, from inputs of its own:
+
+- **Guides from the game's files:** `dev/tools/map-meta` writes the roads, the standing buildings, the ground
+  cover and `places.json` (areas, city districts, flight masters, entrances, caves and mines, exits) to
+  `assets/generated/maps/meta/`; `dev/tools/terrain-art` makes the terrain and the stitched Sketches.
+- **Zone briefs:** `dev/imagegen/maps/zones.toml`, one table a zone or city: biome, land, plants, colours,
+  buildings, roads, places and a prompt paragraph, all without names.
+- **Two pictures a square:** image 1 the terrain with the roads drawn in (the layout, kept exactly), image 2 the
+  Sketches of the same square, softened (`qwen21-edit-2ref`, 1024 x 1024).
+- **No names, anywhere the model can read them:** a place's name in the words, or a label it can read in
+  image 2, comes back as garbled lettering in the picture. Describe ("a mine mouth in the hills at the bottom
+  left"), never name.
+- **Say what water is:** without "the flat dark blue areas of image 1 are the sea …, no land or paper where
+  image 1 has water" the parchment looks painted the sea over as land.
+- The look pilot: `dev/imagegen/sets/maps-pilot/looks.txt` (five looks on two squares, 20 pictures, about a
+  minute each with the full model).
+
 ## Asking for interface art
 
 - **Say the view:** "flat front view, no perspective, even light from the top left" (the house style).

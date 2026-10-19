@@ -64,8 +64,12 @@ the corner fills the screen once a visit (Core's Edge); the terrain's water cut 
 their outlines (`dev/tools/terrain-art` reads the game's terrain files: `Art/Terrain/`, `Art/Zones/`,
 `Outlines.lua`). Then: the view *Sketches* (was *Blizzard maps*), one stitched map of both continents at every
 zoom (`Art/Sketches/`), every zone's map in full (Core's set *Overlays*: every part, explored or not), outlines
-fading softly into each other; the dark undiscovered parts taken out again. Asked and planned next: a
-reinterpretation of both views by the local image models, real water, the Maelstrom, sea creatures.
+fading softly into each other; the dark undiscovered parts taken out again. Decided next: Sketches and Terrain
+stay as they are; the local image models paint a third view of its own in Overlay's place, with the Maelstrom
+and looped sea creatures and ships (`Doc/ideas/Navigation.md`, *The painted view*). Its guides from the game's
+files are made by `dev/tools/map-meta` (roads, buildings, ground cover, places with districts and flight
+masters), the zones' briefs are `dev/imagegen/maps/zones.toml`; the pilot lists are in
+`dev/imagegen/sets/maps-pilot/`.
 
 Not yet: pins of Live and of Core's data, the quest log, the top bar (selector, filter), search, routes, the
 guide, dungeon maps and floors, the minimap's small parts (zone text, clock, mail, tracking). Tests:

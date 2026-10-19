@@ -6,6 +6,26 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 113 (Navigation), 208 (data tools).
 A game restart takes it in (a new addon, Navigation; new files in Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
 
+### Navigation: guides for a painted map view, five looks to choose from (Saneroki, 2026-10-19)
+- **Decided** (`Doc/ideas/Navigation.md`): Sketches and Terrain stay as they are; the local image models paint a
+  third view of its own in Overlay's place, from both of them, the game's guides and the zones' briefs, with
+  every road, building, gate, cave, mine, dungeon entrance and way out of a zone where the game has it; sharp
+  from a single building to the whole world (levels of detail); the Maelstrom, ships and sea creatures as looped
+  animations; routes, flight paths and ship lines later, as interactive parts drawn by code.
+- **`dev/tools/map-meta`** (new): from the game's terrain files, the texture and object files of each tile and
+  the buildings' own files, both continents at 128 texels a tile in `assets/generated/maps/meta/`: the roads
+  (the road and paving textures, thin roads kept whole, lone decoration patches dropped), the footprints of the
+  3,206 standing buildings as they are turned, the ground cover in 13 kinds, and `places.json`: 856 areas, 114
+  city districts (from the parts of the cities' buildings), 68 flight masters, 26 dungeon and raid entrances, 251
+  caves and mines, 62 exits where two zones' roads meet. It reuses `dev/tools/terrain-art`'s reading of the root
+  files.
+- **The look pilot:** `dev/imagegen/sets/maps-pilot/looks.txt` (replacing the lists that redrew Sketches and
+  Terrain): five looks (watercolour atlas, natural satellite painting, stylised game art, ink on parchment,
+  gouache storybook) on two squares of 4 x 4 tiles at 256 pixels a tile, Stormwind with Elwynn and Westfall,
+  Orgrimmar with Durotar and the Barrens. The words name no place and image 2 is softened: the model writes
+  every legible name into the picture.
+- `Doc/guides/image-generation.md`, *Maps*; `Doc/agent/development.md`, `navigation.md`.
+
 ### Tooltips: grooves, a spell's table and its requirements (Saneroki, 2026-10-19)
 - **Grooves:** a section's name stands in the middle with a rule at each side, name and rules in one dark
   see-through shade (`COLOR.GROOVE`, black at `Pools.GROOVE` 0.4), as are a spell's table captions and the lines

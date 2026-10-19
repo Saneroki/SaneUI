@@ -79,10 +79,25 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **One map of the world (Saneroki, 2026-10-19):** both continents are visible at every zoom; the world and
   continent maps are our own, stitched from Blizzard's zone maps, their edges fading softly into each other so
   the whole reads as one coherent map. The view *Blizzard maps* is called **Sketches**: a hand-drawn world.
-- **A reinterpretation (Saneroki, 2026-10-19, asked; a pilot first):** with the local image models, Sketches
-  redrawn as by one artist in Blizzard's style, cleaner and seamless; the terrain as a detailed, natural
-  picture of the land without hard straight lines; real water with the Maelstrom turning between the
-  continents, and ships, giant turtles, sea dragons and squids roaming the sea in the terrain view.
+- **A painted third view (Saneroki, 2026-10-19, replacing *a reinterpretation* of the same day):** Sketches and
+  Terrain stay exactly as they are; Blizzard's art and the game's terrain are not redrawn. The local image
+  models paint a **third view of its own** instead of Overlay: one coherent map of the whole world, as by one
+  hand, made from Sketches, Terrain and what the game's files say lies where (roads, buildings, the ground,
+  the places' names) and the zones' briefs (their peoples, biomes and buildings). It looks like painted art, not
+  like a screen capture of the terrain, and still shows clearly where the buildings and the roads are; the
+  roads stand out above all, and the gates and buildings of Stormwind and Orgrimmar must be right.
+- **Life on the sea (Saneroki, 2026-10-19):** in the painted view the Maelstrom turns between the continents,
+  and ships, giant turtles, sea dragons and squids roam the water, each a short looped animation, seen on the
+  world map.
+- **Close up and far out (Saneroki, 2026-10-19):** the painted view holds its quality and small details from a
+  single building up close to the whole world far out: many small detailed pictures stitched together like the
+  game's own tiles, with coarser levels for the far views, so it stays sharp up close and light on the whole world.
+- **Entrances and ways out (Saneroki, 2026-10-19):** the painted view shows caves, mines and the entrances of
+  dungeons and raids, and makes clear where one can leave a zone: the passes through the mountains, bridges,
+  tunnels and gates one walks through into the next.
+- **Routes, later (Saneroki, 2026-10-19):** flight paths, and the ships' routes as a red dotted line, shown when
+  one takes a ship or looks the routes up, the dots running from one harbour to the other. They are interactive
+  parts of the map, drawn by code, never painted into the view's pictures. Not now: after the painted view.
 - **The map moves with its window (Saneroki, 2026-10-19):** on the way to the full screen and back the map grows
   and zooms with the window, not hidden and shown; Core's windows let what they hold go with the motion.
 - **Follows the player:** when the player moves, the map centres on the player.
@@ -101,9 +116,10 @@ When the window fills the screen:
   - **Pin filter,** a dropdown with a checkmark per pin type. A checked type is shown on the map, an
     unchecked type is hidden.
   - **Three view buttons** next to the dropdown:
-    1. **Blizzard maps:** the native map art.
+    1. **Sketches:** Blizzard's own map art (was *Blizzard maps*).
     2. **Terrain:** the terrain render.
-    3. **Overlay:** the terrain, with the Blizzard maps drawn over it at 50% transparency.
+    3. **Overlay:** the terrain, with the Blizzard maps drawn over it at 50% transparency; to be replaced by the
+       painted view once its art is made (*A painted third view*).
 
   The Blizzard maps and the terrain must fit together exactly: the Blizzard map of Stormwind lies on
   Stormwind and its places in the terrain.
@@ -509,6 +525,43 @@ Three spaces, converted only in `Coords.lua`:
   Stormwind. Painted art is not exact to the yard; that is accepted.
 - **Exceptions** with their own handling: a city under the ground (Undercity) has no terrain; a map
   whose box cannot be read is shown alone.
+
+### The painted view (planned)
+
+The third view (*A painted third view*), made by the local image models beside the game and shipped as art in
+blocks like the terrain's, so the map draws it the way it draws the others.
+
+- **What the models get:** the continents cut into overlapping squares of 8 x 8 tiles (1024 pixels at 128 texels
+  a tile). For each: the terrain of that square with the guides drawn in, as image 1 (its layout), and the
+  stitched Sketches of it as image 2; the words from the zones' briefs (`dev/imagegen/maps/zones.toml`: peoples,
+  biome, ground, buildings, roads, palette) of every zone in it, and its places (areas, city districts, flight
+  masters) with where they lie in the square.
+- **The guides** (`dev/tools/map-meta`, from the game's files): the roads (the ground textures of roads and
+  paving), the buildings' footprints as they stand, what covers the ground (meadow, forest floor, farmland,
+  sand, rock, snow, swamp, ash, blight), and the places by name with their positions (the terrain's areas, the
+  districts of the cities from the parts of their buildings, the flight masters, the entrances of dungeons and
+  raids, the caves and mines under the ground, the exits where a zone's roads meet the next zone's).
+- **Words without names:** the words describe what is where ("a village of half-timbered houses at the
+  crossroads", "a mine mouth in the hills at the bottom left") but name nothing, and image 2 is softened so its
+  labels cannot be read: in the pilot the model wrote every legible name into the picture, garbled.
+- **One look everywhere:** the same words, seeds and references for every square; neighbours overlap by a
+  quarter and are blended with soft edges, so no seam shows. Where the pilot shows the model losing roads,
+  the guide's roads are drawn back over the painting in its colours.
+- **Levels of detail** (*Close up and far out*): painted coarse to fine. A first pass paints the continents at a
+  coarse scale, so the whole holds together; finer passes repaint each square at more pixels a tile from the
+  coarser one, keeping its colours (single buildings show at 256 to 512 pixels a tile, 2 to 1 yards a pixel).
+  The finest level is cut into tiles and every coarser level made from it, as a pyramid the map loads by zoom:
+  only the tiles in view, at the level the zoom asks for. Size, for both continents' land at the finest level:
+  about 40 MB at 2 yards a pixel, 150 MB at 1 (DXT1); the finest level may become an addon of its own,
+  loaded only when installed.
+- **Routes** (*Routes, later*): the game's own paths of ships and zeppelins (its taxi paths of the transports)
+  and of flights.
+- **Life on the sea:** each creature and ship a small top-down sprite with a short looped flipbook
+  (`dev/tools/flipbook`), moved along paths over the open sea by code; the Maelstrom a painted whirl turned by
+  code, with a flipbook of foam.
+- **Order:** a pilot of five looks on two squares (Stormwind with Elwynn and Westfall, Orgrimmar with Durotar
+  and the Barrens: `dev/imagegen/sets/maps-pilot/looks.txt`), Saneroki chooses one; then both continents,
+  coarse to fine; packing into the pyramid; then the sea's life; then the routes.
 
 ### Maps without a world box
 
