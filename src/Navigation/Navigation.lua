@@ -2,23 +2,27 @@ local ADDON, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation
---  The module's own table (ns in all its files), its settings and the command.
+--  The module's own table (ns in all its files), its settings, the command, and
+--  giving the game's minimap and map back.
 --
 --  An addon of its own (SaneUI_Navigation): it needs Core and nothing else, and is
 --  switched on and off in the game's addon list. The plan is Doc/ideas/Navigation.md.
 --
---  Built so far, the first step: a window docked in the screen's top right corner
---  that fills the screen when the mouse goes into that corner (Core's window and
---  Edge), and shows the map there: the player's continent, dragged and zoomed,
---  drawn one of three ways (Blizzard's map art, the terrain of the game's own
---  minimap textures, or the art laid over the terrain). Small, the window shows
---  nothing yet; the game's own minimap and map stay as they are.
+--  One window takes the place of the game's minimap and world map: small in the
+--  screen's top right corner it is the minimap, filling the screen it is the map,
+--  the same map drawn and handled the same way, each view with its own camera.
+--  Drawn three ways at every zoom (Blizzard's map art, the terrain of the game's
+--  own minimap textures, or the art over the terrain), from a zone out to the
+--  whole world; the game's minimap lies over it for its live dots. The game's map
+--  stays closed: its keys and every way to it open ours.
 --
---      Coords (map, world, plane) . Camera (where the view looks)     know no frames
---      Canvas (the frame, its layers, the mouse) . Terrain . Art . Window
+--      Coords (the spaces, the map tree) . Camera . Live (what the game tells)   know no frames
+--      Canvas (the frame, its layers, the mouse) . Terrain . Art . Marks
+--      Hybrid (the game's minimap over ours) . Native (the game's map kept closed) . Window
 --
---  The terrain's textures are Core's data (the set Tiles, pack World); the art and
---  every position come from the game's map API.
+--  The terrain's textures are Core's data (the set Tiles, pack World) and the
+--  module's overview (Art/Terrain); the art and every position come from the
+--  game's map API. The pins of the game's data and Core's come later.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 Core.NewModule(ADDON, "Navigation", ns)
@@ -27,19 +31,30 @@ Core.NewModule(ADDON, "Navigation", ns)
 ns.TEXT = {
     title = Core.Word("WORLD_MAP", "World Map"),
     view = "Map view",
-    viewTip = "How the map is drawn. Blizzard maps: the game's own map art. Terrain: the land as the minimap shows it. Overlay: the terrain with Blizzard's maps laid over it, half see-through.",
+    viewTip = "How the map is drawn, small and full screen, at every zoom. Blizzard maps: the game's own map art. Terrain: the land as the minimap shows it. Overlay: the terrain with Blizzard's maps laid over it, half see-through.",
     views = { blizzard = "Blizzard maps", terrain = "Terrain", overlay = "Overlay" },
     viewTips = {
-        blizzard = "The game's own map art: the continent, and up close the zone in the middle.",
-        terrain = "The land as the minimap shows it. Far out, where it would be too much to draw, Blizzard's map.",
+        blizzard = "The game's own map art: the world, the continent, and up close the zone in the middle with what you have explored of it.",
+        terrain = "The land as the minimap shows it, from close up out to the whole world.",
         overlay = "The terrain, with Blizzard's maps laid over it, half see-through.",
     },
+    nativeMinimap = "Show the game's minimap",
+    nativeMinimapTip = "The game's own minimap in its place, next to this map. Off: its live dots (players, tracked herbs and ore, quest areas) show on this map while it follows you, and the game's minimap is out of sight.",
+    nativeMap = "Show the game's map",
+    nativeMapTip = "The game's own map and quest log open as before: its key, the quest log's button, a click on a quest. Off: all of them open this map.",
+    followAgain = "Follow again after",
+    followAgainTip = "After you dragged the map away, it centres on you again once the mouse has been off it for so long. 0: only when you zoom it with the mouse wheel close in.",
+    seconds = "seconds",
+    classicMinimap = "Minimap",
+    classicMap = Core.Word("WORLD_MAP", "World Map"),
+    noPin = Core.Word("MAP_PIN_INVALID_MAP", "A map pin cannot be placed here."),
+    mapInFight = "the game's map opens only by its own key in a fight.",
     about = "the map full screen and back (/sane map reset: the window's first place and size)",
-    stopped = "the map is closed until the next /reload.",
+    stopped = "the map is closed until the next /reload; the game's own minimap and map are back.",
     reset = "the map window is back at its first place and size.",
 }
 -- What is told when the module stands down (Core's StandDown).
-ns.GIVEN_BACK = "the map window is closed"
+ns.GIVEN_BACK = "the map window is closed, the game's own minimap and map are back"
 
 -- The three ways to draw the map, in the order of their buttons.
 ns.VIEWS = { "blizzard", "terrain", "overlay" }
@@ -47,6 +62,10 @@ ns.VIEWS = { "blizzard", "terrain", "overlay" }
 local OPTIONS = {
     { key = "view", default = "overlay", text = ns.TEXT.view, header = ns.TEXT.title, tip = ns.TEXT.viewTip,
       choices = { { "blizzard", ns.TEXT.views.blizzard }, { "terrain", ns.TEXT.views.terrain }, { "overlay", ns.TEXT.views.overlay } } },
+    { key = "followAgain", default = 10, min = 0, max = 60, step = 5, unit = ns.TEXT.seconds, text = ns.TEXT.followAgain,
+      tip = ns.TEXT.followAgainTip },
+    { key = "nativeMinimap", default = false, text = ns.TEXT.nativeMinimap, tip = ns.TEXT.nativeMinimapTip },
+    { key = "nativeMap", default = false, text = ns.TEXT.nativeMap, tip = ns.TEXT.nativeMapTip },
 }
 -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
 Core.Edge.Options(OPTIONS, #OPTIONS + 1)
@@ -55,12 +74,25 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     -- The section Expand window: Core's window takes it in by itself (Edge.lua).
     if Core.Edge.KEYS[key] then return end
     if key == "view" then return ns.Guarded(ns.Window.Restyle) end
+    if key == "nativeMinimap" then
+        ns.Guarded(ns.Hybrid.Update)
+        return ns.Guarded(ns.Native.Update)
+    end
+    if key == "nativeMap" then return ns.Guarded(ns.Native.Update) end
 end })
 
--- Something failed (Core's StandDown calls this once): the window goes, so a map that broke never covers the
--- screen. Nothing of the game's is taken yet, so nothing else is given back.
+-- One step of giving back. Each runs by itself, so one that fails does not keep the next from its work.
+local function Back(step)
+    local ok, problem = xpcall(step, Core.Trace)
+    if not ok then Core.NoteError(ns.name .. ": giving back", problem) end
+end
+
+-- Something failed (Core's StandDown calls this once): the keys back to the game's, the game's minimap back
+-- where it was, the window gone. What must wait for the end of a fight waits for it.
 function ns.GiveBack()
-    ns.Window.Hide()
+    Back(ns.Native.GiveBack)
+    Back(ns.Hybrid.GiveBack)
+    Back(ns.Window.Hide)
 end
 
 function ns.OnLoad()
@@ -68,9 +100,11 @@ function ns.OnLoad()
 end
 
 function ns.OnLogin()
-    -- The terrain's textures, soon after the loading screen: the map can open at any time.
+    -- The terrain's textures, soon after the loading screen: the map shows from login.
     Core.Data.Prepare("Tiles")
     ns.Window.Build()
+    ns.Hybrid.Start(ns.Canvas.frame)
+    ns.Native.Start()
 end
 
 Core.Command("map", ns.TEXT.about, function(rest)

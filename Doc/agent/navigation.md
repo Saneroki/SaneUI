@@ -1,6 +1,6 @@
 # Navigation: handoff for the session that builds it
 
-Written 2026-10-18, before any code; the first proof built the same day (*Built*, below). The plan is [Doc/ideas/Navigation.md](../ideas/Navigation.md);
+Written 2026-10-18, before any code; what is built since is under *Built*, below. The plan is [Doc/ideas/Navigation.md](../ideas/Navigation.md);
 where this note and the plan differ, the plan wins. Read the plan's *Design* and *Build order* first, then
 the window guide ([windows.md](../guides/windows.md)) and the data guide ([data.md](../guides/data.md)).
 
@@ -39,15 +39,28 @@ the window guide ([windows.md](../guides/windows.md)) and the data guide ([data.
 
 **Steps 0 to 4 can start now:** they need Core's window system and the game's API only.
 
-## Built (2026-10-18): the first proof
+## Built (2026-10-19): the module without the map's data
 
-The full screen map from the top right corner, nothing else: Core's window (kind `screen`, `TOPRIGHT`, small
-it shows nothing), the canvas with its holder and keyed pools, the camera (drag, wheel around the mouse,
-bounded to the continent), the terrain from *Tiles* (at most 400 tiles in view, else Blizzard's art), Blizzard's
-map art (the continent's, the zone's in the middle when the view is under 9000 yards high), the three views
-as buttons and the setting *Map view*, `/sane map`, `GiveBack` (the window goes). Not yet: the small view, the
-native minimap's dots, the game's map kept closed, pins, the quest log, routes, the guide. Tests:
-`dev/tests/navigation.lua`.
+Steps 1 and 2 of the plan's build order, and the parts of 3 that are no pins (`src/Navigation/README.md` in
+full):
+
+- the window (Core's kind `screen`, `TOPRIGHT`, strata LOW like the game's minimap), two cameras (small, full),
+  the same canvas and controls in both (Saneroki, 2026-10-19: the minimap and the map look and behave exactly
+  the same): drag, wheel around the mouse (instant, as Blizzard's map), right click one map out, Ctrl-click the
+  game's map pin, a click on the game's minimap pings;
+- levels zone, continent, world in one plane per continent, linked through the world map's rectangles
+  (`Coords.Link`, `Coords.WorldBox`); the camera moves into another continent's plane coming in at the world;
+- the views at every zoom (Saneroki, 2026-10-19): terrain from *Tiles* (up to 400 tiles) over the module's
+  overview (`Art/Terrain/`, `dev/tools/terrain-art`, 45 textures), art of world, continent, zone, explored parts;
+- the game's minimap over ours for its live dots (`Hybrid.lua`): ground off, square, rotation ignored, while
+  the view follows at one of its steps; its cluster out of sight without clicks; given back exactly;
+- the game's map kept closed and its keys (`Native.lua`); the switches *Show the game's minimap* / *map*,
+  *Classic windows*; *Follow again after*;
+- `Live.lua`: player, pin, group, quests, flights, vignettes, area POIs, explored, with the message `LIVE`.
+
+Not yet: pins of Live and of Core's data, the quest log, the top bar (selector, filter), search, routes, the
+guide, dungeon maps and floors, the minimap's small parts (zone text, clock, mail, tracking). Tests:
+`dev/tests/navigation.lua` (98 checks).
 
 ## What is not there yet
 

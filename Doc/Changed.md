@@ -3,8 +3,47 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 90 (Sync), 351 (windows), 175 (data in the game), 43 (Navigation).
+Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 90 (Sync), 351 (windows), 175 (data in the game), 98 (Navigation).
 A game restart takes it in (a new addon, Navigation; new files in Core's, Social's and Tooltips' TOCs, key bindings).
+
+### Navigation: the whole module but the map's data (Saneroki, 2026-10-19)
+- Saneroki's decisions: the minimap and the full screen map look and behave exactly the same (the minimap a
+  smaller part of the screen, as the chat window is the same chat full screen); the three views at every zoom.
+- One window, two cameras (`Window.lua`: `small`, `full`), one canvas for both (`Canvas.lua`): drag, the wheel
+  around the mouse (instant, as Blizzard's map), right click one map out (zone, continent, world), Ctrl-click
+  the game's map pin (`Marks.lua`: Blizzard's pin atlases, clicks and sounds), a click on the game's minimap
+  pings; the tracker follows the player every frame while following (else every 0.1 s) and follows again after
+  *Follow again after* seconds without the mouse on the map. The view buttons at the full map's top left.
+- The map tree at run time (`Coords.lua`): the world map, its continents (`GetMapRectOnMap`: four answers, so
+  `pcall` and not `Core.Ask`, which hands on three), `Link` and `WorldBox` put every continent and the world map
+  into one continent's plane; `ContinentAt`, `ZoneAt`, `MapToPlane`; kept per session. The camera (`Camera.lua`):
+  levels with 15 % slack, `Move` into another continent's plane at the same size on the screen, `StepOut`,
+  `Fit`, `Show`.
+- Terrain at every zoom (`Terrain.lua`): the game's tiles (up to 400) over the module's overview, always drawn
+  under them; at the world every continent's overview. `dev/tools/terrain-art` (new) makes the overview from the
+  game's minimap textures: 45 textures of 512 x 512, 64 texels a tile, BLP2 DXT1 with mipmaps, in
+  `src/Navigation/Art/Terrain/`.
+- Art (`Art.lua`): the world map at the world, the continent's, the zone's over it, and the explored parts
+  (`C_MapExplorationInfo`, placed as Blizzard's exploration provider does; those shown only under the mouse left
+  out); over the terrain the zone's map alone, half see-through.
+- The game's minimap over ours (`Hybrid.lua`): reparented into the canvas, square mask, ground off (indoors on),
+  rotation ignored, wheel ours, left and right clicks through, border and zoom buttons out of sight, the cluster
+  at alpha 0 with every click under it off but Edit Mode's selection; shown while the view follows at one of its
+  steps, each step's radius measured from the game (again after every loading screen, and the first time indoors
+  or outdoors); its mask set again after the game's `UpdateMinimapConfig`; all given back exactly, out of combat.
+- The game's map kept closed (`Native.lua`): override bindings for the keys of the game's map, quest log and
+  minimap on `SaneUINavigationKey` (out of combat, again on `UPDATE_BINDINGS` when they changed); a hook after
+  `WorldMapFrame`'s `OnShow` hides it, closes it on the next frame (`HideUIPanel`) and opens ours at its map; in a
+  fight it stays the game's. Switches *Show the game's minimap* and *Show the game's map*; *Classic windows*.
+- `Live.lua` (new): the player, the pin, the group, quests, flight points, vignettes, area POIs, explored parts,
+  and the message `LIVE` once a frame after the game's events.
+- `GiveBack`: the keys, the game's minimap, the window. Docs: the module's README, `Doc/agent/navigation.md`,
+  `Doc/agent/README.md`, `Doc/agent/development.md`, the plan (the two decisions, far zoom answered, instant zoom,
+  following).
+- Tests: `dev/tests/navigation.lua` 98 checks (the map tree and links, the camera's levels and the continent
+  switch, Live, the minimap taken and given back, the wheel through its steps, drag and following again, ping,
+  Ctrl-click and the pin, right click, both views and the three views at the world, the game's map caught and
+  its keys, the switches, standing down).
 
 ### Navigation: the first proof, the full screen map (Saneroki, 2026-10-18)
 - A new module, `SaneUI_Navigation` (`src/Navigation/`): a window of Core's (kind `screen`, docked `TOPRIGHT`,

@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+"""Makes the terrain's overview for Navigation's map: the game's own minimap textures, smaller.
+
+Up close the map draws the game's minimap textures themselves, one of 512 x 512 per tile of a continent's
+grid (Core's set Tiles names the file of each). Far out that would be hundreds of large textures at once,
+so there the map draws this overview instead: the same tiles at 64 x 64 texels each, eight by eight in one
+texture of 512 x 512, so a whole continent is a few dozen textures (src/Navigation/Terrain.lua).
+
+  src/Navigation/Art/Terrain/<continent>-<row>-<column>.blp   row and column of the block of 8 x 8 tiles
+                                                              (0 to 7), only blocks that hold a tile
+
+Each is BLP2 with DXT1 and a full chain of mipmaps, as the game's own minimap textures are (DXT1: the
+terrain is opaque; half the memory of DXT5). Where a block has no tile (the open sea) it is the canvas'
+ground colour (GROUND, the same as Canvas.GROUND in src/Navigation/Canvas.lua). The DXT1 blocks are made
+by ImageMagick, as dev/tools/art makes its DXT5 ones.
+
+The input is a folder of the game's minimap textures as the game stores them, each named <file ID>.blp,
+for every file the master of the set Tiles names (assets/data/Tiles/Tiles.jsonl). Run it again when the
+set changes.
+
+Needs Python with Pillow and NumPy, and ImageMagick 7 (magick).
+
+Usage:  dev/tools/terrain-art <folder of the game's minimap textures>
+"""
+import io
+import json
+import struct
+import subprocess
+import sys
+from pathlib import Path
+
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[2]
+TILES = ROOT / "assets" / "data" / "Tiles" / "Tiles.jsonl"
+OUT = ROOT / "src" / "Navigation" / "Art" / "Terrain"
+
+GRID = 64          # tiles along each side of a continent's grid
+BLOCK = 8          # tiles along each side of one overview texture
+TEXELS = 64        # texels of a tile in the overview
+GROUND = (10, 13, 15)  # Canvas.GROUND (0.04, 0.05, 0.06) in 0-255
+
+
+def tiles():
+    """{(continent, row, column): file ID} from the master's newest lines."""
+    found = {}
+    for line in TILES.read_text(encoding="utf-8").splitlines():
+        row = json.loads(line)
+        key, file = row["key"], row.get("minimap")
+        place = (key // (GRID * GRID), key % (GRID * GRID) // GRID, key % GRID)
+        if row.get("gone"):
+            found.pop(place, None)
+        elif file:
+            found[place] = file
+    return found
+
+
+def dxt1(image):
+    """The DXT1 blocks of an RGB picture: ImageMagick writes them as a DDS file (header of 128 bytes)."""
+    png = io.BytesIO()
+    image.save(png, "PNG")
+    data = subprocess.run(["magick", "png:-", "-define", "dds:compression=dxt1", "-define", "dds:mipmaps=0",
+                           "-define", "dds:cluster-fit=true", "dds:-"],
+                          input=png.getvalue(), capture_output=True, check=True).stdout
+    blocks = max(1, (image.width + 3) // 4) * max(1, (image.height + 3) // 4)
+    assert data[:4] == b"DDS " and data[84:88] == b"DXT1" and len(data) == 128 + 8 * blocks, "no DXT1 from magick"
+    return data[128:]
+
+
+def blp(levels, side):
+    """A BLP2 file: DXT1 (encoding 2, alpha depth 0, alpha encoding 0), mipmaps, largest first."""
+    offsets, sizes, start = [], [], 148 + 1024  # header, then a palette DXT does not use
+    for level in levels:
+        offsets.append(start + sum(sizes))
+        sizes.append(len(level))
+    unused = [0] * (16 - len(levels))
+    header = b"BLP2" + struct.pack("<I4B2I", 1, 2, 0, 0, 1, side, side)
+    header += struct.pack("<16I", *offsets, *unused) + struct.pack("<16I", *sizes, *unused)
+    return header + bytes(1024) + b"".join(levels)
+
+
+def main():
+    if len(sys.argv) != 2:
+        sys.exit(__doc__)
+    source = Path(sys.argv[1])
+    found = tiles()
+    blocks = sorted({(c, r // BLOCK, k // BLOCK) for c, r, k in found})
+    missing = [file for file in found.values() if not (source / f"{file}.blp").exists()]
+    if missing:
+        sys.exit(f"{len(missing)} of the set's textures are not in {source} (the first: {missing[0]}.blp)")
+    OUT.mkdir(parents=True, exist_ok=True)
+    made = set()
+    side = BLOCK * TEXELS
+    total = 0
+    for continent, block_row, block_column in blocks:
+        picture = Image.new("RGB", (side, side), GROUND)
+        for r in range(BLOCK):
+            for k in range(BLOCK):
+                file = found.get((continent, block_row * BLOCK + r, block_column * BLOCK + k))
+                if file:
+                    with Image.open(source / f"{file}.blp") as tile:
+                        small = tile.convert("RGB").resize((TEXELS, TEXELS), Image.Resampling.LANCZOS, reducing_gap=2.0)
+                    picture.paste(small, (k * TEXELS, r * TEXELS))
+        # Every level made from the full picture, down to 1 x 1.
+        levels, size = [], side
+        while True:
+            level = picture if size == side else picture.resize((size, size), Image.Resampling.BOX)
+            levels.append(dxt1(level))
+            if size == 1:
+                break
+            size //= 2
+        name = f"{continent}-{block_row}-{block_column}.blp"
+        data = blp(levels, side)
+        (OUT / name).write_bytes(data)
+        made.add(name)
+        total += len(data)
+        with Image.open(OUT / name) as back:  # read back by Pillow's own BLP reader
+            assert back.size == (side, side), f"{name} reads back as {back.size}"
+    for old in OUT.glob("*.blp"):
+        if old.name not in made:
+            old.unlink()
+    print(f"Terrain overview: {len(made)} textures of {side} x {side} in {OUT.relative_to(ROOT)}, {total / 1e6:.1f} MB.")
+
+
+if __name__ == "__main__":
+    main()

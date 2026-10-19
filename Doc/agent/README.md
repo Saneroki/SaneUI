@@ -16,7 +16,7 @@ Use current source and the user's instructions when they differ from a note.
 | Future spells, reservations, action layouts, spellbook/Home UI | [abilities.md](abilities.md) |
 | Tooltip content, layout, live unit data, quests, prices | [tooltips.md](tooltips.md) |
 | Messages, bubbles, native chat, input, filtering/fading | [social.md](social.md) |
-| Navigation: minimap, world map, quest log, pins, routes, leveling guide (first proof built: the full screen map; handoff) | [navigation.md](navigation.md), then `Doc/ideas/Navigation.md` |
+| Navigation: minimap, world map, quest log, pins, routes, leveling guide (built: window, both views, canvas, terrain and art at every zoom, the game's minimap and map taken over; pins, quest log, top bar, routes, guide to come; handoff) | [navigation.md](navigation.md), then `Doc/ideas/Navigation.md` |
 | Unit frames, party, raid, buffs, nameplates, pets (not built yet) | `src/Combat/README.md`, `Doc/ideas/Combat.md` |
 | NPC talks, books and letters as a scene, part of Social (not built yet) | `Doc/ideas/Dialogue.md` |
 | Lore: AI voice overs, a library of the world's lore, tidbits in tooltips (an idea, not built) | `Doc/ideas/Lore.md` |
@@ -34,8 +34,8 @@ opened) and Sync (`src/Core/Sync/`, `Core.Sync`); neither is a module. Abilities
 reserves action slots. Tooltips draws panels over native tooltips. Social supplies a messenger-style
 window and temporarily seats Blizzard's own chat edit boxes in it, and joins or leaves the game's chat
 channels as chosen on its page. Combat (2026-10-16) is set up for unit frames, party, raid, buffs,
-nameplates and pets; nothing built yet (`src/Combat/README.md`, plan `Doc/ideas/Combat.md`). Navigation (2026-10-18) shows, so far,
-the full screen map from the top right corner (`src/Navigation/README.md`, plan `Doc/ideas/Navigation.md`). Sync keeps the game's per-character
+nameplates and pets; nothing built yet (`src/Combat/README.md`, plan `Doc/ideas/Combat.md`). Navigation (2026-10-18) is the minimap and the map in one
+window, without the map's data yet (`src/Navigation/README.md`, plan `Doc/ideas/Navigation.md`). Sync keeps the game's per-character
 settings (CVars, chat windows/channels, Edit Mode layout, action bars) in the profile in use (*Accountwide settings*
 on, the profile *Accountwide* for every character at first; off, each character's own Sane UI settings and nothing
 of the game's); its switches are in the tab Game settings of the options page Profiles, next to the CVar list.

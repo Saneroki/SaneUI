@@ -6,10 +6,13 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
-- Navigation, Sane UI's map, a first look: move the mouse into the
-  screen's top right corner and the map fills the screen. Drag it, zoom
-  with the mouse wheel, and switch between Blizzard's maps, the terrain
-  as the minimap shows it, or both laid over each other.
+- Navigation: Sane UI's minimap and map in one window. Small in the top
+  right corner it is your minimap; move the mouse into the corner and
+  the same map fills the screen. Drag it, zoom it with the mouse wheel
+  from close up out to the whole world, right click for one map out,
+  Ctrl-click for the map pin. Draw it as Blizzard's maps, the terrain as
+  the minimap shows it, or both laid over each other, at any zoom. The
+  game's minimap dots still show on it, and the map key opens it.
 - Social: conversations at the left of the full screen. Every whisper,
   and the chat of your party and your raid, is a conversation of its
   own, listed with its last message and how many wait to be read.

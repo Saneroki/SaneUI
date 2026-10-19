@@ -1,0 +1,122 @@
+local _, ns = ...
+
+-------------------------------------------------------------------------------
+--  Sane UI - Navigation - Marks
+--  What stands over the map at a fixed size on the screen, whatever the zoom:
+--
+--      the player's arrow   Blizzard's world map arrow (UI-WorldMapArrow), turned to the facing;
+--                           out of sight while the game's minimap shows its own (Hybrid.lua)
+--      the map pin          the game's own (Waypoint-MapPin-Tracked / -Untracked, as its map's);
+--                           a click leads the game's arrow to it or not, Ctrl-click takes it away
+--
+--  Placed against the canvas' holder like the layers (Canvas.lua), so a drag moves
+--  them with the map; the arrow is moved again on every step of the canvas'
+--  tracker. The map's pins of the game's data and Core's come later, here.
+-------------------------------------------------------------------------------
+local Marks = {}
+ns.Marks = Marks
+
+Marks.ARROW = 27  -- the player's arrow, as Blizzard's map draws it (GroupMembersDataProvider)
+Marks.PIN = 30    -- the map pin, as Blizzard's (WaypointLocationDataProvider)
+
+local Coords, Live = ns.Coords, ns.Live
+local layer, holder, arrow, pin
+
+-- The game's own words for its map pin.
+local function Tip(button)
+    GameTooltip:SetOwner(button, "ANCHOR_RIGHT", -16, -4)
+    GameTooltip:SetText(SaneUI.Core.Word("MAP_PIN_SHARING", "Map Pin"), 1, 1, 1)
+    local more = rawget(_G, "MAP_PIN_SHARING_TOOLTIP")
+    if type(more) == "string" then GameTooltip:AddLine(more, nil, nil, nil, true) end
+    GameTooltip:Show()
+end
+
+local function Sound(key)
+    local id = rawget(_G, "SOUNDKIT") and SOUNDKIT[key]
+    if id then PlaySound(id) end
+end
+
+-- A click on the pin, as on the game's map: Ctrl takes it away, the chat link's modifier writes it into the
+-- chat, a left click leads the game's arrow on the screen to it, or no longer.
+local function Clicked(_, button)
+    if IsControlKeyDown() then
+        Live.ClearWaypoint()
+        Sound("UI_MAP_WAYPOINT_REMOVE")
+    elseif IsModifiedClick("CHATLINK") then
+        local link = C_Map.GetUserWaypointHyperlink and C_Map.GetUserWaypointHyperlink()
+        local chat = rawget(_G, "ChatFrameUtil")
+        if link and chat and chat.InsertLink then chat.InsertLink(link) end
+        Sound("UI_MAP_WAYPOINT_CHAT_SHARE")
+    elseif button == "LeftButton" then
+        local track = not Live.Tracked()
+        C_SuperTrack.SetSuperTrackedUserWaypoint(track)
+        Sound(track and "UI_MAP_WAYPOINT_SUPER_TRACK_ON" or "UI_MAP_WAYPOINT_SUPER_TRACK_OFF")
+    end
+end
+Marks.Sound = Sound
+
+function Marks.Build(canvasHolder)
+    holder = canvasHolder
+    layer = CreateFrame("Frame", nil, holder)
+    layer:SetSize(1, 1)
+    layer:SetPoint("CENTER")
+    layer:SetFrameLevel(holder:GetFrameLevel() + 20) -- over the game's minimap (Hybrid.lua)
+    arrow = layer:CreateTexture(nil, "OVERLAY", nil, 7)
+    arrow:SetAtlas("UI-WorldMapArrow")
+    arrow:SetSize(Marks.ARROW, Marks.ARROW)
+    arrow:Hide()
+    pin = CreateFrame("Button", nil, layer)
+    pin:SetSize(Marks.PIN, Marks.PIN)
+    pin:SetFrameLevel(layer:GetFrameLevel() + 1)
+    pin.icon = pin:CreateTexture(nil, "ARTWORK")
+    pin.icon:SetAllPoints()
+    pin:SetHighlightAtlas("Waypoint-MapPin-Highlight", "ADD")
+    pin:SetScript("OnClick", ns.Guard(Clicked))
+    pin:SetScript("OnEnter", ns.Guard(Tip))
+    pin:SetScript("OnLeave", GameTooltip_Hide)
+    pin:Hide()
+end
+
+-- A point of a continent's plane, at the view's place (the canvas' origin and zoom); nil when not linked.
+local function Spot(view, map, u, v)
+    local link = Coords.Link(map, view.map)
+    if not link then return nil end
+    return (link.du + link.su * u - view.u) * view.k, (link.dv + link.sv * v - view.v) * view.k
+end
+
+-- The player's arrow: where the player is (map, u, v, facing from Live.Player), hidden when hidden is true.
+function Marks.Player(view, map, u, v, facing, hidden)
+    local x, y
+    if not hidden and u then x, y = Spot(view, map, u, v) end
+    if not x then
+        arrow:Hide()
+        return
+    end
+    arrow:SetPoint("CENTER", holder, "CENTER", x, y)
+    if facing then arrow:SetRotation(facing) end
+    arrow:Show()
+end
+
+-- The map pin, where the game has it.
+function Marks.Pin(view)
+    local map, x, y = Live.Waypoint()
+    local home = map and Coords.ContinentOf(map)
+    local u, v, px, py
+    if home then u, v = Coords.MapToPlane(map, x, y, home) end
+    if u then px, py = Spot(view, home, u, v) end
+    if not px then
+        pin:Hide()
+        return
+    end
+    pin.icon:SetAtlas(Live.Tracked() and "Waypoint-MapPin-Tracked" or "Waypoint-MapPin-Untracked")
+    pin:ClearAllPoints()
+    pin:SetPoint("CENTER", holder, "CENTER", px, py)
+    pin:Show()
+end
+
+-- Out of sight, both.
+function Marks.Clear()
+    if not arrow then return end
+    arrow:Hide()
+    pin:Hide()
+end

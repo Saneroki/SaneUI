@@ -1,64 +1,110 @@
 # Sane UI: Navigation
 
-**Status:** the first step: the full screen map, dragged, zoomed, drawn three ways · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
+**Status:** the minimap and the map in one window, without the map's data yet (pins, quest log, top bar, routes and the leveling guide come later) · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
-Sane UI's map, to take the place of the game's minimap, world map and quest log in one window. Built so
-far: a window docked in the screen's top right corner; the mouse in that corner makes it fill the screen,
-with the map of the continent you are on. Drag it, zoom it with the wheel, and choose how it is drawn:
-Blizzard's map art, the terrain as the minimap shows it, or Blizzard's maps laid over the terrain. The plan
-is in `Doc/ideas/Navigation.md`.
+Sane UI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
+move the mouse into that corner and it fills the screen as the map. Both are the same map, drawn and handled
+the same way, only larger, as the chat window is the same chat when it fills the screen. Each keeps its own
+zoom and place. The map is drawn three ways at every zoom, from close up out to the whole world: Blizzard's
+map art, the terrain as the minimap shows it, or Blizzard's maps laid over the terrain. The game's own
+minimap lies over it for its live dots; the game's map stays closed, and its keys open ours. The plan is in
+`Doc/ideas/Navigation.md`.
 
 ## How to use
-- **Open the map:** move the mouse all the way into the screen's top right corner. The corner again, Esc,
-  or the close button on its title bar brings it back. `/sane map` does the same.
-- **Move and zoom:** drag with the left mouse button; the wheel zooms around the point under the mouse,
-  from about the size of a tile of the terrain out to the whole continent.
-- **Map view** (the buttons at the map's top left, or the setting *Map view* on the page *Navigation*):
-  - *Blizzard maps*: the game's own map art: the continent, and up close the zone in the middle over it.
-  - *Terrain*: the land as the minimap shows it. Far out, where it would be too much to load, Blizzard's map.
-  - *Overlay*: the terrain with Blizzard's maps over it, half see-through.
-- **Small, the window shows nothing yet:** the game's own minimap under it works as before. Move and size
-  it in Edit Mode like every Sane UI window.
-- **The section *Expand window*** on the page: whether the corner fills the screen, the animation, the
-  background.
+- **The map:** move the mouse all the way into the screen's top right corner; the corner again, Esc or the
+  close button on its title bar brings it back. The game's map key (M) and quest log key (L), `/sane map`,
+  and every other way to the game's map (the quest log button, a click on a quest, a chat link) open it too.
+- **The same in both views:**
+  - **drag** with the left button: the map moves, and stops following you;
+  - **the mouse wheel** zooms around the point under the mouse; while the map follows you it walks the game's
+    minimap's zoom steps first (its live dots show then), then goes on out to the whole continent and the
+    world;
+  - **right click:** one map out (a zone, its continent, the world), as on the game's map;
+  - **Ctrl and a click:** the game's map pin there; a click on the pin makes the game's arrow on the screen
+    lead to it, Ctrl and a click takes it away, Shift and a click writes it into the chat;
+  - **a click** on the game's minimap (while it shows) pings, as there.
+- **Following you:** both views follow you at first; after a drag the map comes back to you once the mouse
+  has been off it for a while (*Follow again after*).
+- **Map view** (the buttons at the full map's top left, or the setting on the page *Navigation*): *Blizzard
+  maps*, *Terrain* or *Overlay*, for both views and at every zoom.
+- **The game's own windows:** the switches *Show the game's minimap* and *Show the game's map* on the page
+  bring them back next to ours; the full map's dropdown *Classic windows* offers them too. The game's key to
+  show or hide the minimap (in its key bindings) shows or hides our window.
+- **Move and size it** in Edit Mode like every Sane UI window; the section *Expand window* on the page: whether
+  the corner fills the screen, the animation, the background.
 - `/sane map reset`: the window's first place and size.
 
 ## How it works
 - **Three spaces, converted in one file** (`Coords.lua`): a map's own (0 to 1), the world's yards (X to the
   north, Y to the west), and the plane the map is drawn in (u = -Y to the east, v = X to the north), so the
-  screen is the plane times a zoom. A map's box in the world comes from the game, asked once a session.
-- **The camera** (`Camera.lua`): the point in the middle and the zoom; the wheel keeps the point under the
-  mouse where it is; it stays on the continent.
-- **The canvas** (`Canvas.lua`): the layers hang on one holder frame, laid out around an origin. A drag moves
-  the holder only; a layout happens only when the zoom changes or the holder has moved past a margin. The
-  layers' textures come from pools by key, so a tile that stays in view is not loaded again. Nothing runs at
-  rest: the per-frame step exists only while the left button drags.
-- **Terrain** (`Terrain.lua`): the game's own minimap textures, one per tile of the continent's 64 x 64 grid.
-  Which file each tile shows is Core's data, the set *Tiles* in the pack *World* (read from the game's own
-  continent files). Past 400 tiles in view the layer steps aside for Blizzard's art.
-- **Art** (`Art.lua`): the game's map art (`C_Map.GetMapArtLayers`, `GetMapArtLayerTextures`) laid over the
-  map's box, the last tiles cut at the art's edge.
-- **The window** (`Window.lua`): one of Core's (kind `screen`, docked `TOPRIGHT`, Edge fills the screen),
-  laid out in its `docked` hook once it stands.
-- **When something fails:** the module stands down and the window goes (`ns.GiveBack`); nothing of the
-  game's is taken yet.
+  screen is the plane times a zoom. A map's box in the world comes from the game, asked once a session. The
+  map tree is found at run time: the world map, its continents, their zones; a continent's rectangle on the
+  world map puts the other continents and the world map itself into its plane, so one view zooms from a zone
+  out to the whole world.
+- **The camera** (`Camera.lua`), one for each view: the point in the middle, the zoom, whether it follows you,
+  and the level the zoom shows (zone, continent, world), changing with some slack so it does not flicker. The
+  wheel keeps the point under the mouse where it is; coming in over another continent at the world, the camera
+  moves into that continent's plane, at the same size on the screen.
+- **The canvas** (`Canvas.lua`), the same for both views: its layers hang on one holder frame, laid out around
+  an origin. A drag or a step of following moves the holder only; a layout happens when the zoom changes, the
+  holder has moved past a margin, or another zone is in the middle. The layers' textures come from pools by
+  key, so what stays in view is not loaded again. The zoom changes at once, as on the game's map. Nothing runs
+  at rest but the tracker: every frame while the view follows you (two questions to the game and one
+  `SetPoint`), else a few times a second.
+- **Terrain** (`Terrain.lua`): the game's own minimap textures, one per tile of a continent's 64 x 64 grid
+  (Core's data, the set *Tiles* in the pack *World*), up to 400 at once; under them, and alone further out,
+  the module's overview of the same tiles, 64 texels a tile, 8 x 8 tiles a texture (`Art/Terrain/`). At the
+  world, every continent's overview where the world map puts it.
+- **Art** (`Art.lua`): the game's map art (`C_Map.GetMapArtLayers`, `GetMapArtLayerTextures`) over the map's
+  box: the world map, the continent's, and the zone's over it; the last tiles cut at the art's edge, as
+  Blizzard's map canvas lays them; the explored parts over a map's art, as Blizzard's exploration provider
+  places them. Over the terrain (*Overlay*) half see-through, the zone's map alone.
+- **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing) and the
+  game's map pin, at a fixed size.
+- **The game's minimap** (`Hybrid.lua`): over our map while the view follows you at one of its zoom steps,
+  square, as large as the view's shorter side, its ground off (as Blizzard's hybrid minimap does), so only its
+  live dots and their tooltips show; indoors it draws its own ground, which our terrain does not have. Its
+  left and right clicks go through to our map; its border, zoom buttons and the rest of the game's minimap
+  cluster are out of sight and take no clicks (Edit Mode's selection keeps its). Each step's radius is read
+  from the game. Taken out of combat, every part kept first and given back exactly.
+- **The game's map** (`Native.lua`): the keys bound to the game's map, quest log and minimap click a button
+  of ours (override bindings, out of combat, again when the bindings change). Every other way to the game's
+  map shows `WorldMapFrame`: a hook after its `OnShow` hides it at once and closes it on the next frame with
+  the game's `HideUIPanel`, and ours opens at the map it was asked for. In a fight the game refuses an addon
+  that closes a panel, so there the game's map stays open as the game's.
+- **What the game tells** (`Live.lua`): the player, the map pin, the group, the quests, the flight points,
+  rares and chests nearby, the game's own points and the explored parts of a map, each read when the game says
+  it changed (one message `LIVE` a frame). The player and the pin are drawn now; the rest is for the pins.
+- **The window** (`Window.lua`): one of Core's (kind `screen`, docked `TOPRIGHT`, in the layer of the game's
+  minimap), Edge fills the screen; laid out in its `docked` hook once it stands.
+- **When something fails:** the module stands down: the keys go back to the game, its minimap back where it
+  was, our window goes (`ns.GiveBack`); what may not be done in a fight waits for its end.
 
 ## Files
 
 | File | What it holds |
 |---|---|
 | `SaneUI_Navigation.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
-| `Navigation.lua` | The module's table (`ns`), its texts, the setting *Map view*, `/sane map`, `GiveBack` |
-| `Coords.lua` | Map, world and plane; a map's box; the terrain's grid and its keys; the player's place. No frames |
-| `Camera.lua` | Where the view looks: middle, zoom, bounds; drag and wheel. No frames |
-| `Canvas.lua` | The frame the map is drawn in: holder, layers, pools, layout, the mouse |
-| `Terrain.lua` | The terrain layer: the game's minimap textures from Core's set *Tiles* |
-| `Art.lua` | Blizzard's map art: the continent's, and the zone's up close |
-| `Window.lua` | Core's window: the top right corner, the full screen, the view buttons |
+| `Navigation.lua` | The module's table (`ns`), its texts and settings, `/sane map`, `GiveBack` |
+| `Coords.lua` | Map, world and plane; a map's box; the map tree and the links between continents; the terrain's grid; the player's place. No frames |
+| `Camera.lua` | Where a view looks: middle, zoom, following, the level its zoom shows; drag, wheel, one map out. No frames |
+| `Live.lua` | What the game tells while playing, read when it changes. No frames |
+| `Canvas.lua` | The frame the map is drawn in: holder, layers, pools, layout, the tracker, the mouse |
+| `Terrain.lua` | The terrain layer: the game's minimap textures from Core's set *Tiles*, and the overview |
+| `Art.lua` | Blizzard's map art and the explored parts |
+| `Marks.lua` | The player's arrow and the map pin |
+| `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
+| `Native.lua` | The game's map kept closed; its keys |
+| `Window.lua` | Core's window: the top right corner, the full screen, the two cameras, the view buttons |
+| `Art/Terrain/*.blp` | The terrain's overview: the game's minimap textures, smaller, made by `dev/tools/terrain-art` from them |
 
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-19:** the whole module but the map's data: the minimap and the map the same map, each view with its
+  own camera; the views at every zoom out to the world, the terrain's overview; right click, Ctrl-click and
+  the map pin; the game's minimap over ours for its live dots; the game's map and its keys taken over; the
+  switches for the game's own; what the game tells (`Live.lua`).
 - **2026-10-18:** the first step: the full screen map from the top right corner, drag and zoom, the views
   Blizzard maps, Terrain and Overlay; Core's set *Tiles*.

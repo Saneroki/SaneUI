@@ -1,8 +1,9 @@
 # Navigation
 
 The plan for the **Navigation** module (`SaneUI_Navigation`): the window, the map, the quest log, the pins,
-the waypoint, the routes and the leveling guide. Built so far (2026-10-18): a first proof, the full screen map
-from the top right corner, dragged and zoomed, in the three views (`src/Navigation/README.md`).
+the waypoint, the routes and the leveling guide. Built so far (2026-10-19): the module without the map's data
+(pins, quest log, top bar, routes, guide): the window, both views, the canvas and its controls, the terrain and
+the art at every zoom, the game's minimap over ours, the game's map kept closed (`src/Navigation/README.md`).
 
 How to read this page:
 
@@ -61,6 +62,12 @@ minimap) and the full-screen window (the world map) show the same map with the s
   minimap is already a world map.
 - **Independent views:** the small window and the full screen each keep their own zoom and position.
   Expanding to full screen and back returns each to where it was.
+- **The same look and behaviour (Saneroki, 2026-10-19):** the minimap and the full screen map look and behave
+  exactly the same; the minimap is only a smaller part of the screen, as the chat window is the same chat when
+  it fills the screen. So the small view draws our own map too, with the same views and the same mouse; the
+  game's minimap lies over it only for its live dots, its own ground switched off.
+- **Views at every zoom (Saneroki, 2026-10-19):** Blizzard maps, Terrain and Overlay can be chosen at any zoom,
+  from close up out to the whole world; none of them changes into another by the zoom.
 - **Follows the player:** when the player moves, the map centres on the player.
 
 ## Full screen
@@ -377,10 +384,11 @@ Three spaces, converted only in `Coords.lua`:
   so that it does not flicker at the border. So the wheel walks from the minimap's range to the world
   without a jump, in one space per continent: that is what *zooming all the way out* means here.
 - **Zoom:** the wheel multiplies the scale by about 1.25 per notch, around the point under the mouse
-  (that point stays where it is), eased over a short motion. Nearest: the native minimap's nearest step.
-  Farthest: the whole world.
-- **Follow:** on in the small view by default; a drag turns it off, as Social stops following new messages
-  when scrolled up; a button and a few seconds without input (switch) turn it on again.
+  (that point stays where it is), at once, as on Blizzard's map (built so: its world map zooms instantly).
+  Nearest: the native minimap's nearest step. Farthest: the whole world.
+- **Follow:** on in both views at first; a drag turns it off, as Social stops following new messages
+  when scrolled up; it comes on again after some seconds without the mouse on the map (the setting *Follow
+  again after*; in the full screen the mouse is always on the map, so there it stays where it was dragged).
 - **Position unknown** (hidden, a place without a map): the camera stays where it was, the player arrow
   hides, and nothing errors.
 
@@ -431,9 +439,11 @@ Three spaces, converted only in `Coords.lua`:
   the player always sees a minimap, never black.
 - **In view:** the tiles whose square meets the view plus a margin of one tile, keyed `continent:col:row`,
   `SetTexture(fileID, "CLAMP", "CLAMP", "TRILINEAR")`. Up close 4 to 9 tiles; at zone level some dozens.
-- **Far out:** past a scale where too many tiles would be in view (the cap set by step 0's frame-time
-  test), terrain fades out and Blizzard's continent and world art carry the view (open question *Far
-  zoom*).
+- **Far out (built 2026-10-19):** past 400 tiles in view the game's tiles give way to an overview of them: the
+  same tiles at 64 texels, 8 x 8 in one texture of the module's own (`Art/Terrain/`, made by
+  `dev/tools/terrain-art` from the game's minimap textures, BLP2 DXT1 like theirs), a continent in a few dozen
+  textures, the world in under fifty. It is drawn under the tiles at every zoom, so the land never goes black
+  while they load (open question *Far zoom*, answered: terrain at every zoom).
 - **Sea tiles** have no file: the ground shows. Coastlines can be masked later.
 - **Indoors, caves, dungeons:** the minimap tiles hold the outdoors only. There the small view lets the
   native minimap draw its own ground (`SetDrawGroundTextures(true)` while `IsIndoors()` or no tile lies
@@ -951,8 +961,8 @@ Each with a proposal; what is not answered when its step comes is built as propo
 1. **Walking data:** how dense a graph of walkable points (and so how big), and made from what our tool can
    read of the client's terrain? *Proposal:* as sparse as still gives good routes in towns and tunnels,
    decided on the tool's first output and measured, in Core's pack format.
-2. **Far zoom:** Blizzard's art when zoomed far out (fast), or terrain everywhere (slower)? *Proposal:*
-   the art far out, terrain from a scale on, the scale set by the frame time.
+2. Answered (Saneroki, 2026-10-19: the views at every zoom): terrain everywhere, by the overview far out.
+   **Far zoom:** Blizzard's art when zoomed far out (fast), or terrain everywhere (slower)?
 3. **Dungeons:** Blizzard's map only in all three views, or a tool for the instances' own minimap tiles?
    *Proposal:* Blizzard's map only; the tool later if wanted.
 4. **Spawn areas:** per rare by a click, or also a switch in the pin filter that outlines every rare's area

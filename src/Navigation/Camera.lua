@@ -2,67 +2,183 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - Camera
---  Where a view looks: the point of the plane in its middle (u, v), its zoom
---  (k: the canvas' units per yard) and its bounds (a continent's box, the
---  view's size). Knows no frames: the canvas gives it the mouse's moves in its
---  units, x to the right and y up, and draws what it says.
+--  Where a view looks. Each view has its own (the small window and the full
+--  screen keep their own zoom and place). Knows no frames: the canvas gives it
+--  the mouse's moves in its units, x to the right and y up, and draws what it
+--  says.
 --
---      local camera = ns.Camera.New()
---      camera:Frame(box, width, height)   -- the continent it looks at, the view's size: its bounds
---      camera:Look(u, v, k)               -- there, at that zoom (k optional)
---      camera:Pan(dx, dy)                 -- the map dragged by so much
---      camera:ZoomAt(notches, dx, dy)     -- the wheel: the point under the mouse stays where it is
---      camera:View(margin)                -- left, right, top, bottom of what is in view, in the plane
+--      map          the continent whose plane it looks in (Coords.lua)
+--      u, v, k      the point in the view's middle, and the zoom: the canvas' units per yard
+--      follow       it keeps the player in the middle; a drag turns it off, some time without the
+--                   mouse on the map on again (Canvas.lua)
+--      native       the game's minimap's zoom step while the view shows it (Hybrid.lua), else nil
+--      level        "zone", "continent" or "world": which map the zoom shows
+--
+--  Zoomed out past its continent the view shows the whole world, in the same
+--  plane (the world map's box in it, Coords.WorldBox); zoomed in again over
+--  another continent, it moves into that continent's plane (Settle). The levels
+--  change with some slack, so the view does not flicker between two at a
+--  border.
 -------------------------------------------------------------------------------
+local Coords = ns.Coords
 local Camera = {}
 ns.Camera = Camera
 
 Camera.STEP = 1.25   -- the wheel zooms by so much per notch
-Camera.NEAR = 2      -- the nearest zoom: so many units per yard (a terrain tile, 533 yards, about 1000 units)
-Camera.FIT = 0.9     -- the farthest: the whole continent, in so much of the view
+Camera.NEAR = 2      -- the nearest zoom of its own: so many units per yard (the game's minimap goes nearer)
+Camera.FIT = 0.9     -- a whole map, stepped out to, in so much of the view
 Camera.START = 3000  -- yards the view is high when it first looks at a continent: most of a zone
+Camera.ZONE = 9000   -- below so many yards in view's height the zone in the middle is the map shown
+Camera.SLACK = 0.15  -- a level is left only so far past where it is entered
 
 local methods = {}
 
 function Camera.New()
-    return setmetatable({ u = 0, v = 0, k = 0.1, width = 1, height = 1, far = 0.001 }, { __index = methods })
+    return setmetatable({ u = 0, v = 0, k = 0.1, width = 1, height = 1, far = 0.001, fit = 0.001, follow = true,
+                          level = "continent" }, { __index = methods })
 end
 
--- The zoom within its bounds, and the middle on the continent.
-function methods:Clamp()
-    self.k = math.max(self.far, math.min(Camera.NEAR, self.k))
-    local box = self.box
-    if box then
-        self.u = math.max(box.u, math.min(box.u + box.width, self.u))
-        self.v = math.min(box.v, math.max(box.v - box.height, self.v))
+-- The farthest zoom and the zoom that fits the continent, from the view's size and the boxes.
+local function Limits(self)
+    local box = self.map and Coords.Box(self.map)
+    if not box then return end
+    self.box, self.world = box, Coords.WorldBox(self.map)
+    self.fit = math.min(self.width / box.width, self.height / box.height) * Camera.FIT
+    local whole = self.world
+    self.far = whole and math.min(self.width / whole.width, self.height / whole.height) * Camera.FIT or self.fit
+end
+
+-- The level the zoom shows, with slack at each border.
+local function Level(self)
+    local span = self.height / self.k
+    if self.world and (self.k < self.fit * (1 - Camera.SLACK) or (self.level == "world" and self.k < self.fit)) then
+        return "world"
     end
+    if span < Camera.ZONE or (self.level == "zone" and span < Camera.ZONE * (1 + Camera.SLACK)) then return "zone" end
+    return "continent"
 end
 
--- The continent it looks at (its box) and the view's size in units: the farthest zoom shows all of it.
-function methods:Frame(box, width, height)
-    self.box, self.width, self.height = box, width, height
-    self.far = math.min(width / box.width, height / box.height) * Camera.FIT
-    self:Clamp()
+-- The zoom within its bounds, the middle on the map shown (the continent, or the world).
+local function Clamp(self)
+    local box = self.level == "world" and self.world or self.box
+    if not box then return end
+    local near = self.native and self.k or Camera.NEAR
+    self.k = math.max(self.far, math.min(near, self.k))
+    self.u = math.max(box.u, math.min(box.u + box.width, self.u))
+    self.v = math.min(box.v, math.max(box.v - box.height, self.v))
 end
 
+-- Into another continent's plane, keeping the view's place and size on the screen.
+function methods:Move(map)
+    local link = Coords.Link(self.map, map)
+    if not link or not Coords.Box(map) then return false end
+    self.u, self.v = link.du + link.su * self.u, link.dv + link.sv * self.v
+    self.k = self.k / math.sqrt(link.su * link.sv) -- the world map draws a continent alike both ways
+    self.map = map
+    Limits(self)
+    return true
+end
+
+-- After every change: the level, and coming in from the world over another continent, its plane.
+function methods:Settle()
+    local level = Level(self)
+    if self.level == "world" and level ~= "world" then
+        local under = Coords.ContinentAt(self.map, self.u, self.v)
+        if under and under ~= self.map and self:Move(under) then
+            self.level = nil -- its own level, as if come to anew
+            level = Level(self)
+        end
+    end
+    self.level = level
+    Clamp(self)
+end
+
+-- The view's size in units: the zoom that fits a whole continent, and the world, follows from it.
+function methods:Frame(width, height)
+    self.width, self.height = width, height
+    Limits(self)
+    self:Settle()
+end
+
+-- Looks at a point of a continent's plane (k optional: as it is).
 function methods:Look(u, v, k)
     self.u, self.v = u, v
     if k then self.k = k end
-    self:Clamp()
+    self:Settle()
 end
 
--- The map dragged by dx, dy units: what was under the mouse stays under it.
+-- Looks at a continent: there, at that zoom (default: as it is, or about a zone the first time).
+function methods:Show(map, u, v, k)
+    local box = Coords.Box(map)
+    if not box then return false end
+    local first = not self.map
+    self.map = map
+    Limits(self)
+    self.level = "continent"
+    self:Look(u or box.u + box.width / 2, v or box.v - box.height / 2, k or (first and self.height / Camera.START) or self.k)
+    return true
+end
+
+-- Looks at a whole map: a continent or a zone fitted into the view, the world map fitted too.
+function methods:Fit(map)
+    if map == Coords.WorldMap() then
+        if not self.world then return false end
+        local box = self.world
+        self.follow, self.native = false, nil
+        self.level = "world"
+        self:Look(box.u + box.width / 2, box.v - box.height / 2, self.far)
+        return true
+    end
+    local box, continent = Coords.Box(map), Coords.ContinentOf(map)
+    if not box or not continent then return false end
+    if continent ~= self.map then
+        self.map = continent
+        Limits(self)
+    end
+    local u, v = Coords.ToPlane(box, 0.5, 0.5)
+    self.follow, self.native = false, nil
+    self.level = map == continent and "continent" or "zone"
+    self:Look(u, v, math.min(self.width / box.width, self.height / box.height) * Camera.FIT)
+    return true
+end
+
+-- The map dragged by dx, dy units: what was under the mouse stays under it; the view stops following (a
+-- step of the game's minimap stays: it shows again once the view follows again).
 function methods:Pan(dx, dy)
+    self.follow = false
     self.u, self.v = self.u - dx / self.k, self.v - dy / self.k
-    self:Clamp()
+    self:Settle()
 end
 
--- Zoomed by notches of the wheel (up: nearer) around the point dx, dy units from the view's middle.
+-- Zoomed by notches of the wheel (up: nearer) around the point dx, dy units from the view's middle; a view
+-- that follows zooms around its middle, the player.
 function methods:ZoomAt(notches, dx, dy)
+    self.native = nil
+    if self.follow then dx, dy = 0, 0 end
     local u, v = self.u + dx / self.k, self.v + dy / self.k
     local k = math.max(self.far, math.min(Camera.NEAR, self.k * Camera.STEP ^ notches))
     self.u, self.v, self.k = u - dx / k, v - dy / k, k
-    self:Clamp()
+    self:Settle()
+end
+
+-- One map out (the game's right click on its map): from a zone its continent whole, from a continent
+-- the world whole. False at the world.
+function methods:StepOut()
+    if self.level == "zone" then
+        self.native = nil
+        local box = self.box
+        self.follow = false
+        self.level = "continent"
+        self:Look(box.u + box.width / 2, box.v - box.height / 2, self.fit)
+        return true
+    elseif self.level == "continent" and self.world then
+        self.native, self.follow = nil, false
+        local box = self.world
+        self.level = "world"
+        self:Look(box.u + box.width / 2, box.v - box.height / 2, self.far)
+        return true
+    end
+    return false
 end
 
 -- What is in view, and margin units past it on every side: left, right, top, bottom in the plane.

@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Navigation
-## Notes: Sane UI's map. Move the mouse into the screen's top right corner and the map fills the screen: drag it, zoom it with the mouse wheel, and choose between Blizzard's maps, the terrain, or both laid over each other. Esc or the corner again closes it. Being built: the game's own minimap and map stay as they are.
+## Notes: Sane UI's minimap and map in one window. Small in the screen's top right corner it is the minimap; move the mouse into that corner and it fills the screen as the map. Drag it, zoom it with the mouse wheel from a zone out to the whole world, right click for one map out, Ctrl-click for the map pin; draw it as Blizzard's maps, the terrain, or both laid over each other. The game's map keys open it. Settings: the page Navigation.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -11,15 +11,23 @@
 
 # The module's own table, its settings and the command. First: the other files add to that table.
 Navigation.lua
-# The map's spaces: map, world, the plane it is drawn in; the terrain's grid. Knows no frames
+# The map's spaces (map, world, the plane it is drawn in), the map tree, the terrain's grid. Knows no frames
 Coords.lua
-# Where a view looks: its middle, its zoom, the drag and the wheel. Knows no frames
+# Where a view looks: its middle, its zoom, following the player, the map its zoom shows. Knows no frames
 Camera.lua
-# The frame the map is drawn in: its layers, the mouse, what is in view
+# What the game tells while playing: the player, the map pin, group, quests, flights, rares, explored areas. Knows no frames
+Live.lua
+# The frame the map is drawn in, the same for both views: its layers, the player's place, the mouse
 Canvas.lua
-# The terrain: the game's minimap textures, tile by tile
+# The terrain: the game's minimap textures up close, the module's overview of them further out
 Terrain.lua
-# Blizzard's map art: the continent's, and the zone's up close
+# Blizzard's map art: the world's, the continent's, the zone's, and the explored parts
 Art.lua
-# The window: docked in the top right corner, the map when it fills the screen, the view buttons
+# Over the map at a fixed size: the player's arrow, the map pin
+Marks.lua
+# The game's minimap over ours, for its live dots; taken and given back
+Hybrid.lua
+# The game's map kept closed: its keys and every way to it open ours
+Native.lua
+# The window: the minimap in the top right corner, the map when it fills the screen
 Window.lua
