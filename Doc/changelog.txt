@@ -10,13 +10,13 @@ The bigger changes of each version, newest first.
   right corner it is your minimap; move the mouse into the corner and
   the same map fills the screen. Drag it, zoom it with the mouse wheel
   from close up out to the whole world, right click for one map out,
-  Ctrl-click for the map pin. Draw it as Blizzard's maps, the terrain as
-  the minimap shows it, or both laid over each other, at any zoom. The
-  game's minimap dots still show on it, and the map key opens it.
-  Hover a zone to light it up, click it to open it; the map grows
-  and zooms smoothly with the window. Blizzard's maps are cut to
-  their zones' shapes, parts you have not discovered stay dark, and
-  the terrain's water is cut away for a clean coastline.
+  Ctrl-click for the map pin. Draw it as Sketches (every zone's map
+  joined into one hand-drawn map of the world, the zones fading softly
+  into each other), the terrain (its water cut away for a clean
+  coastline), or both laid over each other, at any zoom, both
+  continents always in view. The game's minimap dots still show on
+  it, and the map key opens it. Hover a zone to light it up, click it
+  to open it; the map grows and zooms smoothly with the window.
 - Social: conversations at the left of the full screen. Every whisper,
   and the chat of your party and your raid, is a conversation of its
   own, listed with its last message and how many wait to be read.

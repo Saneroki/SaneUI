@@ -74,8 +74,15 @@ minimap) and the full-screen window (the world map) show the same map with the s
   it; right click one map out.
 - **Zone-shaped maps, the water cut away (Saneroki, 2026-10-19):** Blizzard's maps are cut to their zones'
   outlines, not drawn as squares; the terrain's water is cut away, so the land stands as a clean silhouette.
-- **Undiscovered parts dark (Saneroki, 2026-10-19):** the parts of a map not yet discovered in the game stay
-  dark (a black of our own) until discovered, then show Blizzard's detailed map.
+- **Always the full map (Saneroki, 2026-10-19, replacing *undiscovered parts dark* of the same day):** the
+  terrain and the drawn maps always show every detail, discovered or not; nothing is hidden for now.
+- **One map of the world (Saneroki, 2026-10-19):** both continents are visible at every zoom; the world and
+  continent maps are our own, stitched from Blizzard's zone maps, their edges fading softly into each other so
+  the whole reads as one coherent map. The view *Blizzard maps* is called **Sketches**: a hand-drawn world.
+- **A reinterpretation (Saneroki, 2026-10-19, asked; a pilot first):** with the local image models, Sketches
+  redrawn as by one artist in Blizzard's style, cleaner and seamless; the terrain as a detailed, natural
+  picture of the land without hard straight lines; real water with the Maelstrom turning between the
+  continents, and ships, giant turtles, sea dragons and squids roaming the sea in the terrain view.
 - **The map moves with its window (Saneroki, 2026-10-19):** on the way to the full screen and back the map grows
   and zooms with the window, not hidden and shown; Core's windows let what they hold go with the motion.
 - **Follows the player:** when the player moves, the map centres on the player.
@@ -488,9 +495,14 @@ Three spaces, converted only in `Coords.lua`:
      zones that meet share it), and writes the alpha over the zone map's box (`Art/Zones/<uiMapID>.blp`,
      256 x 256; `Outlines.lua` lists them). Every zone in view is drawn cut to it, in both art views, the
      continent's art under them in Blizzard maps.
-- **Undiscovered parts (built 2026-10-19):** every part of a zone's art the game reveals once explored is
-  Core's set *Overlays* (from the game's tables); those the game does not list as explored
-  (`GetExploredMapTextures`, known by their first texture) are drawn nearly black (`Art.FOG`), cut to the zone.
+- **The full map (built 2026-10-19):** every part of a zone's art the game reveals once explored is Core's set
+  *Overlays* (from the game's tables); all are always drawn, so a zone's map shows every detail.
+- **The stitched map (built 2026-10-19):** `dev/tools/terrain-art` lays every zone's full map, cut by its
+  outline, where it lies on its continent's grid, in the terrain's blocks (`Art/Sketches/`); the outlines keep a
+  zone's land and a little shore (not the open sea, so no painted sea reaches out to a box's edge), whole up to
+  the border and fading some 150 yards past it, and off the paper frame. Sketches draws Blizzard's world and
+  continent maps under it (their frames faded off by `Art/Edge.blp`) and the zones' own maps over it up close;
+  every continent's blocks wherever they are in view, at every zoom.
 - **Hover and click (built 2026-10-19):** at a continent shown whole the zone under the mouse lights up in the
   game's highlight, at the world the continent; a click opens it.
 - **Fit:** art, terrain and pins are all placed by the same world boxes, so Stormwind's map lies on

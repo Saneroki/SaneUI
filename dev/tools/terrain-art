@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Makes Navigation's terrain overview and its zones' outlines from the game's own files.
+"""Makes Navigation's terrain overview, its zones' outlines and its stitched map from the game's own files.
 
 Up close the map draws the game's minimap textures themselves, one of 512 x 512 per tile of a continent's
 grid (Core's set Tiles names the file of each). Far out that would be hundreds of large textures at once,
@@ -16,12 +16,23 @@ alpha is the mask of the game's own textures (Terrain.lua), so the coast is cut 
                                                               (0 to 7), only blocks that hold a tile
 
 Each zone's outline, for Blizzard's map art cut to its zone's shape (src/Navigation/Art.lua): the map chunks
-(a 16th of a tile, 33 1/3 yards) of the zone's areas, softened at the border, as the alpha of a mask over the
-zone map's box (the game's world position of its corners). Two zones that meet share their border: what one
-leaves at it, the other has.
+(a 16th of a tile, 33 1/3 yards) of the zone's areas, as the alpha of a mask over the zone map's box (the
+game's world position of its corners); of the open sea only what lies near its land, so a zone's painted sea
+does not reach out to its box's edge (a lake or a river is its zone's). Whole up to the border, it fades out past it into the neighbour (some
+150 yards), and off the paper frame at the box's edges: two zones that meet overlap there, and the one drawn
+over the other fades into it, so no line shows between them.
 
   src/Navigation/Art/Zones/<uiMapID>.blp       256 x 256, over the zone map's box
   src/Navigation/Outlines.lua                  the zones that have one, by continent (ns.OUTLINES)
+
+The stitched map, Navigation's own map of each continent made of Blizzard's zone maps (the view Sketches
+far out, and the overlay): every zone's full map (its art and every part the game reveals once explored),
+cut by its outline, laid where its box is on the continent's grid, at the overview's size; see-through where
+no zone is (Art.lua draws Blizzard's continent and world maps under it). And the mask that fades their paper
+frames off.
+
+  src/Navigation/Art/Sketches/<continent>-<row>-<column>.blp   as the terrain's overview
+  src/Navigation/Art/Edge.blp                                  256 x 256: a map's box, its frame faded off
 
 All are BLP2 with DXT5 (the alpha needs its own block) and a full chain of mipmaps; the DXT blocks are made
 by ImageMagick (its range fit).
@@ -32,12 +43,15 @@ The input, all as the game stores them, for every tile the master of the set Til
   terrain files      a folder of the game's terrain files (root ADT) of the continents, each named
                      <key>.adt by the tile's key in the set Tiles
   client tables      a folder of the game's client tables as CSV, one a table (LiquidType, LiquidMaterial,
-                     AreaTable, UiMap, UiMapAssignment)
+                     AreaTable, UiMap, UiMapAssignment, UiMapXMapArt, UiMapArtTile, WorldMapOverlay,
+                     WorldMapOverlayTile)
+  map art            a folder of the game's map textures (every map's art and every part revealed once
+                     explored), each named <file ID>.blp
 Run it again when the set or the game's build changes.
 
 Needs Python with Pillow and NumPy, and ImageMagick 7 (magick).
 
-Usage:  dev/tools/terrain-art <minimap textures> <terrain files> <client tables>
+Usage:  dev/tools/terrain-art <minimap textures> <terrain files> <client tables> <map art>
 """
 import csv
 import io
@@ -55,6 +69,8 @@ TILES = ROOT / "assets" / "data" / "Tiles" / "Tiles.jsonl"
 NAVIGATION = ROOT / "src" / "Navigation"
 TERRAIN = NAVIGATION / "Art" / "Terrain"
 ZONES = NAVIGATION / "Art" / "Zones"
+SKETCHES = NAVIGATION / "Art" / "Sketches"
+EDGE = NAVIGATION / "Art" / "Edge.blp"
 OUTLINES = NAVIGATION / "Outlines.lua"
 
 GRID = 64          # tiles along each side of a continent's grid
@@ -65,8 +81,10 @@ CELLS = 8          # cells along each side of a map chunk (heights and water are
 SAMPLES = 2        # samples of land and water along each side of a cell: 256 a tile, 4 x 4 a texel
 TILE = 1600 / 3    # a tile's side in yards
 OUTLINE = 256      # a zone outline's side in texels
-SOFT = 0.75        # how soft a zone's border is, in map chunks
-SHARP = 4.0        # how quickly it goes from out to in there
+SOFT = 2.5         # how far a zone's border is softened, in map chunks (a Gaussian's width)
+FADED = 0.08       # the softened border's value where the outline has faded out (0.5: at the border)
+FRAME = (0.015, 0.05)  # a map's paper frame, as a part of its box's side from each edge: gone, then whole
+SHORE = 2          # map chunks of open sea a zone's map keeps past its land, before its outline fades
 
 ZONE, CONTINENT = "3", "2"  # the game's kinds of map (UiMap's Type)
 
@@ -259,9 +277,11 @@ def bleed(rgb, alpha):
 #  The overview and the outlines
 # -------------------------------------------------------------------------------------------------
 def overview(found, textures, files, liquids):
-    """Every block's overview texture; returns {continent: the area of each map chunk of its grid}."""
+    """Every block's overview texture; returns {continent: (the area of each map chunk of its grid, whether
+    each map chunk holds land)}."""
     blocks = sorted({(c, r // BLOCK, k // BLOCK) for c, r, k in found})
     grids = {c: np.zeros((GRID * CHUNKS, GRID * CHUNKS), np.int64) for c, _, _ in blocks}
+    lands = {c: np.zeros((GRID * CHUNKS, GRID * CHUNKS), bool) for c, _, _ in blocks}
     TERRAIN.mkdir(parents=True, exist_ok=True)
     made, total, side, per = set(), 0, BLOCK * TEXELS, CHUNKS * CELLS * SAMPLES
     for continent, block_row, block_column in blocks:
@@ -283,6 +303,9 @@ def overview(found, textures, files, liquids):
                     grids[continent][row * CHUNKS:(row + 1) * CHUNKS, column * CHUNKS:(column + 1) * CHUNKS] = areas
                 else:
                     land = np.ones((per, per), np.float32)
+                step = per // CHUNKS
+                lands[continent][row * CHUNKS:(row + 1) * CHUNKS, column * CHUNKS:(column + 1) * CHUNKS] = \
+                    land.reshape(CHUNKS, step, CHUNKS, step).max(axis=(1, 3)) > 0
                 # Each texel: how much of it is land, and the colour of its land alone.
                 step = per // TEXELS
                 share = land.reshape(TEXELS, step, TEXELS, step).mean(axis=(1, 3))
@@ -301,7 +324,36 @@ def overview(found, textures, files, liquids):
         if old.name not in made:
             old.unlink()
     print(f"Terrain overview: {len(made)} textures of {side} x {side} in {TERRAIN.relative_to(ROOT)}, {total / 1e6:.1f} MB.")
-    return grids
+    return grids, lands
+
+
+def shore(land):
+    """The map chunks a zone's map may cover: all but the open sea, past SHORE chunks from its land. The open
+    sea is the water (chunks without land) that reaches the grid's edge; a lake or a river stays its zone's."""
+    sea = ~land
+    open_sea = np.zeros_like(sea)
+    edge = np.zeros_like(sea)
+    edge[0, :] = edge[-1, :] = edge[:, 0] = edge[:, -1] = True
+    open_sea[edge & sea] = True
+    while True:  # grown from the edge through the water, a chunk a step
+        grown = open_sea.copy()
+        grown[1:, :] |= open_sea[:-1, :]
+        grown[:-1, :] |= open_sea[1:, :]
+        grown[:, 1:] |= open_sea[:, :-1]
+        grown[:, :-1] |= open_sea[:, 1:]
+        grown &= sea
+        if (grown == open_sea).all():
+            break
+        open_sea = grown
+    kept = ~open_sea
+    for _ in range(SHORE):
+        wider = kept.copy()
+        wider[1:, :] |= kept[:-1, :]
+        wider[:-1, :] |= kept[1:, :]
+        wider[:, 1:] |= kept[:, :-1]
+        wider[:, :-1] |= kept[:, 1:]
+        kept = wider
+    return kept
 
 
 def zones(tables, continents):
@@ -331,16 +383,28 @@ def zones(tables, continents):
     return found, top
 
 
-def outlines(grids, tables):
-    """Every zone's outline, and Outlines.lua."""
+def smoothstep(low, high, value):
+    t = np.clip((value - low) / (high - low), 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+def frame(side):
+    """A map box's frame faded off: along one side of side texels, 0 at its edges, whole within."""
+    t = (np.arange(side) + 0.5) / side
+    return smoothstep(FRAME[0], FRAME[1], np.minimum(t, 1 - t))
+
+
+def outlines(grids, lands, tables):
+    """Every zone's outline, and Outlines.lua. Returns {uiMapID: (continent, its box, its outline's alpha)}."""
     found, top = zones(tables, set(grids))
+    kept = {continent: shore(land) for continent, land in lands.items()}
     ZONES.mkdir(parents=True, exist_ok=True)
     chunk = TILE / CHUNKS
-    made, total, listed = set(), 0, {}
+    made, total, listed, shapes = set(), 0, {}, {}
     blurred = {}
     for uimap, (continent, box, area) in sorted(found.items()):
         grid = grids[continent]
-        inside = np.isin(grid, [a for a, t in top.items() if t == area] + [area]).astype(np.float32)
+        inside = (np.isin(grid, [a for a, t in top.items() if t == area] + [area]) & kept[continent]).astype(np.float32)
         if not inside.any():
             continue
         # Softened on the whole grid, so two zones that meet see the same border.
@@ -355,9 +419,11 @@ def outlines(grids, tables):
         rows = (GRID / 2 * TILE - x_north) / chunk - 0.5
         columns = (GRID / 2 * TILE - y_west) / chunk - 0.5
         value = sample(soft, rows, columns)
-        alpha = np.clip((value - 0.5) * SHARP + 0.5, 0, 1)
+        edges = frame(OUTLINE)
+        alpha = smoothstep(FADED, 0.5, value) * edges[:, None] * edges[None, :]
         if not (alpha > 0).any():
             continue
+        shapes[uimap] = (continent, box, alpha)
         white = np.full((OUTLINE, OUTLINE), 255, np.uint8)
         picture = Image.fromarray(np.dstack([white, white, white, (alpha * 255).round().astype(np.uint8)]), "RGBA")
         name = f"{uimap}.blp"
@@ -378,6 +444,86 @@ def outlines(grids, tables):
     OUTLINES.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Zone outlines: {len(made)} of {OUTLINE} x {OUTLINE} in {ZONES.relative_to(ROOT)}, {total / 1e6:.1f} MB; "
           f"{OUTLINES.relative_to(ROOT)}.")
+    return shapes
+
+
+def full(uimap, tables, art):
+    """A map's full art (its tiles and every part the game reveals once explored), as one RGBA picture of its
+    layer's size; None when the game has none."""
+    picks = [row["UiMapArtID"] for row in tables["UiMapXMapArt"] if row["UiMapID"] == str(uimap) and row["PhaseID"] == "0"]
+    if not picks:
+        return None
+    pick = picks[0]
+    style = next(row["UiMapArtStyleID"] for row in tables["UiMapArt"] if row["ID"] == pick)
+    layer = next(row for row in tables["UiMapArtStyleLayer"] if row["UiMapArtStyleID"] == style and row["LayerIndex"] == "0")
+    width, height = int(layer["LayerWidth"]), int(layer["LayerHeight"])
+    tile_width, tile_height = int(layer["TileWidth"]), int(layer["TileHeight"])
+    picture = Image.new("RGBA", (width + tile_width, height + tile_height))
+    for row in tables["UiMapArtTile"]:
+        if row["UiMapArtID"] == pick and row["LayerIndex"] == "0":
+            with Image.open(art / f"{row['FileDataID']}.blp") as tile:
+                picture.alpha_composite(tile.convert("RGBA"), (int(row["ColIndex"]) * tile_width, int(row["RowIndex"]) * tile_height))
+    for part in tables["WorldMapOverlay"]:
+        if part["UiMapArtID"] != pick:
+            continue
+        for row in tables["parts"].get(part["ID"], []):
+            with Image.open(art / f"{row['FileDataID']}.blp") as tile:
+                picture.alpha_composite(tile.convert("RGBA"), (int(part["OffsetX"]) + int(row["ColIndex"]) * tile_width,
+                                                               int(part["OffsetY"]) + int(row["RowIndex"]) * tile_height))
+    return picture.crop((0, 0, width, height))
+
+
+def sketches(found, shapes, folder, art):
+    """The stitched map's blocks: every zone's full map cut by its outline, on its continent's grid."""
+    tables = {name: table(folder, name) for name in ("UiMapXMapArt", "UiMapArt", "UiMapArtStyleLayer", "UiMapArtTile", "WorldMapOverlay")}
+    tables["parts"] = {}
+    for row in table(folder, "WorldMapOverlayTile"):
+        if row["LayerIndex"] == "0" and int(row["FileDataID"]) > 0:
+            tables["parts"].setdefault(row["WorldMapOverlayID"], []).append(row)
+    side = GRID * TEXELS
+    canvases = {}
+    per_yard = TEXELS / TILE
+    for uimap, (continent, box, alpha) in sorted(shapes.items()):
+        picture = full(uimap, tables, art)
+        if picture is None:
+            continue
+        cut = np.asarray(Image.fromarray((alpha * 255).round().astype(np.uint8)).resize(picture.size, Image.Resampling.BILINEAR),
+                         np.float32) / 255
+        pixels = np.asarray(picture, np.float32)
+        pixels[..., 3] *= cut
+        north, south, west, east = box
+        left, top = (GRID / 2 * TILE - west) * per_yard, (GRID / 2 * TILE - north) * per_yard
+        wide, high = (west - east) * per_yard, (north - south) * per_yard
+        size = (max(1, round(wide)), max(1, round(high)))
+        placed = Image.fromarray(pixels.round().astype(np.uint8), "RGBA").resize(size, Image.Resampling.LANCZOS)
+        canvas = canvases.setdefault(continent, Image.new("RGBA", (side, side)))
+        x, y = round(left), round(top)
+        # The part on the grid only.
+        cx, cy = max(0, -x), max(0, -y)
+        part = placed.crop((cx, cy, min(size[0], side - x), min(size[1], side - y)))
+        if part.width > 0 and part.height > 0:
+            canvas.alpha_composite(part, (x + cx, y + cy))
+    SKETCHES.mkdir(parents=True, exist_ok=True)
+    blocks = sorted({(c, r // BLOCK, k // BLOCK) for c, r, k in found})
+    made, total, step = set(), 0, BLOCK * TEXELS
+    for continent, block_row, block_column in blocks:
+        canvas = canvases.get(continent) or Image.new("RGBA", (side, side))
+        piece = np.asarray(canvas.crop((block_column * step, block_row * step, (block_column + 1) * step, (block_row + 1) * step)),
+                           np.float32)
+        rgb = bleed(piece[..., :3], piece[..., 3] / 255)
+        picture = Image.fromarray(np.dstack([np.clip(rgb, 0, 255), piece[..., 3]]).round().astype(np.uint8), "RGBA")
+        name = f"{continent}-{block_row}-{block_column}.blp"
+        total += write(SKETCHES / name, picture)
+        made.add(name)
+    for old in SKETCHES.glob("*.blp"):
+        if old.name not in made:
+            old.unlink()
+    print(f"Stitched map: {len(made)} textures of {step} x {step} in {SKETCHES.relative_to(ROOT)}, {total / 1e6:.1f} MB.")
+    edges = frame(OUTLINE)
+    white = np.full((OUTLINE, OUTLINE), 255, np.uint8)
+    edge = (edges[:, None] * edges[None, :] * 255).round().astype(np.uint8)
+    write(EDGE, Image.fromarray(np.dstack([white, white, white, edge]), "RGBA"))
+    print(f"The frame's mask: {EDGE.relative_to(ROOT)}.")
 
 
 def gauss(sigma):
@@ -403,9 +549,9 @@ def sample(grid, rows, columns):
 
 
 def main():
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         sys.exit(__doc__)
-    textures, files, tables = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
+    textures, files, tables, art = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]), Path(sys.argv[4])
     found = tiles()
     missing = [file for file in found.values() if not (textures / f"{file}.blp").exists()]
     if missing:
@@ -413,8 +559,9 @@ def main():
     lacking = [key for key in ((c * GRID + r) * GRID + k for c, r, k in found) if not (files / f"{key}.adt").exists()]
     if lacking:
         print(f"{len(lacking)} of the set's tiles have no terrain file in {files}: drawn without water cut away.")
-    grids = overview(found, textures, files, waters(tables))
-    outlines(grids, tables)
+    grids, lands = overview(found, textures, files, waters(tables))
+    shapes = outlines(grids, lands, tables)
+    sketches(found, shapes, tables, art)
 
 
 if __name__ == "__main__":

@@ -17,9 +17,11 @@ local _, ns = ...
 --  same file is the mask of the game's own tiles of its block, so the coast is
 --  cut alike at every zoom.
 --
---  Zoomed out to the world, every continent's overview is laid where the world
---  map puts it (Coords.Link). Until the set Tiles is there the layer draws
---  nothing, and draws once it arrives.
+--  Every continent's overview is laid where the world map puts it (Coords.Link),
+--  at every zoom: the other continent is there whenever it is in view. The
+--  stitched map of Blizzard's zone maps (Art.lua) is cut into the same blocks
+--  and drawn by the same code (Terrain.Overview). Until the set Tiles is there
+--  the layer draws nothing, and draws once it arrives.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Terrain = {}
@@ -62,25 +64,25 @@ local function File(key)
     return file
 end
 
--- The overview's texture of a block of tiles: its path, or false when the block holds no tile.
+-- Whether a block of tiles holds one (its overview textures exist then), and its key in a pool.
 local function Block(continent, row, column)
     local key = OVERVIEW + continent * 64 + row * Terrain.BLOCK + column
-    local path = blocks[key]
-    if path == nil then
-        path = false
+    local held = blocks[key]
+    if held == nil then
+        held = false
         local size = Terrain.BLOCK
         for r = row * size, row * size + size - 1 do
             for c = column * size, column * size + size - 1 do
                 if File(Coords.TileKey(continent, c, r)) then
-                    path = Terrain.PATH:format(continent, row, column)
+                    held = true
                     break
                 end
             end
-            if path then break end
+            if held then break end
         end
-        blocks[key] = path
+        blocks[key] = held
     end
-    return path, key
+    return held, key
 end
 
 -- The range of a continent's grid a rectangle of its plane covers: left, right, top, bottom, clamped.
@@ -92,22 +94,28 @@ local function Range(left, right, top, bottom, side)
            math.max(0, math.floor(r0 / side)), math.min(last, math.floor(r1 / side))
 end
 
--- One continent's overview, laid by link into the view's plane.
-local function Overview(view, continentMap, link)
-    local box = Coords.Box(continentMap)
-    if not box then return end
-    local su, sv = link.su, link.sv
-    -- The view in that continent's own plane.
-    local left, right = (view.left - link.du) / su, (view.right - link.du) / su
-    local top, bottom = (view.top - link.dv) / sv, (view.bottom - link.dv) / sv
-    local c0, c1, r0, r1 = Range(left, right, top, bottom, Terrain.BLOCK)
+-- Every continent's blocks in view, laid by link into the view's plane, from a pool at sublevel: the files
+-- of path (with the continent's instance, the block's row and column), the terrain's overview or the
+-- stitched map's.
+function Terrain.Overview(view, from, path, sublevel)
     local side = Coords.TILE * Terrain.BLOCK
-    for row = r0, r1 do
-        for column = c0, c1 do
-            local path, key = Block(box.continent, row, column)
-            if path then
-                local u, v = Coords.Corner(column * Terrain.BLOCK, row * Terrain.BLOCK)
-                ns.Canvas.Put(pool:Get(key, path, 0), link.du + su * u, link.dv + sv * v, side * su, side * sv)
+    for _, continentMap in ipairs(Coords.Continents()) do
+        local box, link = Coords.Box(continentMap), Coords.Link(continentMap, view.map)
+        if box and link then
+            local su, sv = link.su, link.sv
+            -- The view in that continent's own plane.
+            local left, right = (view.left - link.du) / su, (view.right - link.du) / su
+            local top, bottom = (view.top - link.dv) / sv, (view.bottom - link.dv) / sv
+            local c0, c1, r0, r1 = Range(left, right, top, bottom, Terrain.BLOCK)
+            for row = r0, r1 do
+                for column = c0, c1 do
+                    local held, key = Block(box.continent, row, column)
+                    if held then
+                        local u, v = Coords.Corner(column * Terrain.BLOCK, row * Terrain.BLOCK)
+                        ns.Canvas.Put(from:Get(key, path:format(box.continent, row, column), sublevel),
+                            link.du + su * u, link.dv + sv * v, side * su, side * sv)
+                    end
+                end
             end
         end
     end
@@ -131,11 +139,12 @@ local function Detail(view)
             if file then
                 -- Cut at the coast by its block's overview, laid over the whole block.
                 local blockRow, blockColumn = math.floor(row / size), math.floor(column / size)
-                local path, blockKey = Block(view.continent, blockRow, blockColumn)
+                local held, blockKey = Block(view.continent, blockRow, blockColumn)
                 local mask
-                if path then
+                if held then
                     local u, v = Coords.Corner(blockColumn * size, blockRow * size)
-                    mask = masks:Get(blockKey, path, u, v, side * size, side * size)
+                    mask = masks:Get(blockKey, Terrain.PATH:format(view.continent, blockRow, blockColumn), u, v,
+                        side * size, side * size)
                 end
                 local u, v = Coords.Corner(column, row)
                 ns.Canvas.Put(pool:Get(key, file, 1, mask), u, v, side, side)
@@ -145,26 +154,26 @@ local function Detail(view)
     return true
 end
 
--- The terrain in view (view: Canvas.view), if shown. At the world, every continent's overview; else the
--- view's continent, its overview and, close enough, its tiles over it.
+-- The terrain in view (view: Canvas.view), if shown: every continent's overview in view, and, but at the
+-- world, the view's continent's own tiles over it when close enough.
 function Terrain.Place(view, shown)
     pool:Begin()
     masks:Begin()
     if shown and not Tiles:Ready() then
         Core.Data.Prepare("Tiles")
     elseif shown then
-        if view.level == "world" then
-            for _, continent in ipairs(Coords.Continents()) do
-                local link = Coords.Link(continent, view.map)
-                if link then Overview(view, continent, link) end
-            end
-        else
-            Overview(view, view.map, Coords.Link(view.map, view.map))
-            Detail(view)
-        end
+        Terrain.Overview(view, pool, Terrain.PATH, 0)
+        if view.level ~= "world" then Detail(view) end
     end
     pool:End()
     masks:End()
+end
+
+-- Whether the blocks are known (the set Tiles is there); asked for if not.
+function Terrain.Ready()
+    if Tiles:Ready() then return true end
+    Core.Data.Prepare("Tiles")
+    return false
 end
 
 -- Every texture let go.

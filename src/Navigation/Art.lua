@@ -2,30 +2,34 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - Art
---  Blizzard's map art, laid over its map's box in the view's plane, by the
---  level the zoom shows (Camera.lua):
+--  The map drawn by hand: Blizzard's zone maps made one map of the whole world,
+--  both continents at every zoom (the view Sketches), from the bottom up:
 --
---      world       the world map (its box in the plane: Coords.WorldBox)
---      continent   the continent's map
---      zone        the continent's, and over it every zone's in view, each cut to its zone's
---                  outline (Art/Zones/<uiMapID>.blp, listed in Outlines.lua, both made by
---                  dev/tools/terrain-art from the game's own map chunks and areas), so the zones
---                  meet as on the land and no map stands as a square over another; a zone without
---                  an outline in the middle of the view is drawn whole
+--      the world map and each continent's, Blizzard's, their paper frames faded off
+--                  (Art/Edge.blp): the sea between and around the zones
+--      the stitched map   every zone's full map cut to its outline, laid where it lies on its
+--                  continent (Art/Sketches/<continent>-<row>-<column>.blp, in the terrain's blocks,
+--                  Terrain.Overview): the whole world at once, far out
+--      the zones   up close, every zone's map in view itself, cut to its outline (Art/Zones/<uiMapID>.blp,
+--                  listed in Outlines.lua), whole up to its border and fading out past it, so the one
+--                  over its neighbour fades into it and no line shows; a zone without an outline in the
+--                  middle of the view is drawn whole
+--
+--  Every outline and the stitched map are made by dev/tools/terrain-art from the
+--  game's own map chunks, areas and map art. A zone's map is always the full one:
+--  its art and every part the game reveals once explored, as Core's set Overlays
+--  lists them (until it is there, the parts this character has explored), so the
+--  map shows every detail everywhere.
 --
 --  A map's art is the game's (C_Map.GetMapArtLayers, GetMapArtLayerTextures): its
 --  tiles row by row, the last ones reaching past the art's edge, as Blizzard's map
 --  canvas lays them (Blizzard_MapCanvasDetailLayer.lua); here they are cut there.
---  Over a map's art lie its explored parts (C_MapExplorationInfo), placed as
---  Blizzard's exploration provider places them: in the art's own pixels, cut into
---  the layer's tiles (MapExplorationDataProvider.lua).
+--  A part over it is placed as Blizzard's exploration provider places it: in the
+--  art's own pixels, cut into the layer's tiles (MapExplorationDataProvider.lua).
 --
---  As on the game's map, a zone's map shows the parts explored in detail; the
---  parts not yet explored are dark (Art.FOG) until they are: every part the game
---  has for the map is Core's set Overlays, the game says which it has revealed.
---  Over the terrain (the overlay) the art is half see-through: the zones' maps then
---  stand alone, without the continent's under them, and the land shows around
---  their outlines.
+--  Over the terrain (the overlay) the art is half see-through: far out the
+--  stitched map alone, up close the zones' maps, so nothing shows through twice,
+--  and the land shows around them.
 --
 --  Under the mouse, a map the view shows whole lights up what a click opens, as
 --  Blizzard's map does (MapHighlightDataProvider.lua): at a continent the zone,
@@ -37,12 +41,13 @@ local Art = {}
 ns.Art = Art
 
 Art.HALF = 0.5 -- the art's opacity over the terrain
-Art.FOG = { 0.03, 0.03, 0.04, 0.88 } -- a part of a map not yet explored: nearly black, the land faintly under it
 Art.OUTLINE = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Zones\\%d"
+Art.SKETCH = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Sketches\\%d-%d-%d"
+Art.EDGE = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Edge"
 
 local Coords = ns.Coords
 local arts = {} -- [uiMapID] = its art (tiles across and down, the layer's size and its tiles', the files), or false
-local layer, pool, explored, fog, outlines, glow, light
+local layer, pool, parts, stitched, outlines, glow, light
 local Overlays = Core.Data.Set("Overlays")
 
 function Art.Build(holder)
@@ -50,10 +55,10 @@ function Art.Build(holder)
     layer:SetSize(1, 1)
     layer:SetPoint("CENTER")
     pool = ns.Canvas.Pool(layer, "ARTWORK")
-    explored = ns.Canvas.Pool(layer, "ARTWORK")
-    fog = ns.Canvas.Pool(layer, "ARTWORK")
+    parts = ns.Canvas.Pool(layer, "ARTWORK")
+    stitched = ns.Canvas.Pool(layer, "ARTWORK")
     outlines = ns.Canvas.Masks(layer)
-    Overlays:OnStamp(ns.Guard(function() ns.Canvas.Refresh() end)) -- arrived: the dark parts drawn
+    Overlays:OnStamp(ns.Guard(function() ns.Canvas.Refresh() end)) -- arrived: every part drawn
     -- The highlight on a frame of its own: not half see-through with the art over the terrain.
     glow = CreateFrame("Frame", nil, holder)
     glow:SetSize(1, 1)
@@ -117,10 +122,9 @@ end
 
 -- One part of a map's art (x, y: its top left corner, width and height: its size, in the art's pixels;
 -- files: its textures, row by row) over the map's box, from a pool at level, cut by mask, if given; key: the
--- part's first texture's key in the pool; tint: its colour, if given. Placed as Blizzard's exploration
--- provider places it: in the art's own pixels, cut into the art's tiles, each texture's file a power of two
--- (MapExplorationDataProvider.lua).
-local function Lay(from, key, art, box, x, y, width, height, files, level, view, mask, tint)
+-- part's first texture's key in the pool. Placed as Blizzard's exploration provider places it: in the art's
+-- own pixels, cut into the art's tiles, each texture's file a power of two (MapExplorationDataProvider.lua).
+local function Lay(from, key, art, box, x, y, width, height, files, level, view, mask)
     local scaleU, scaleV = box.width / art.width, box.height / art.height -- yards per pixel of the art
     local across, down = math.ceil(width / art.tileWidth), math.ceil(height / art.tileHeight)
     for row = 1, down do
@@ -137,7 +141,6 @@ local function Lay(from, key, art, box, x, y, width, height, files, level, view,
             local wide, high = pixelsWide * scaleU, pixelsHigh * scaleV
             if file and u < view.right and u + wide > view.left and v > view.bottom and v - high < view.top then
                 local texture = from:Get(key + (row - 1) * across + column, file, level, mask)
-                if tint then texture:SetVertexColor(tint[1], tint[2], tint[3], tint[4]) end
                 local fileWide, fileHigh = FileSide(pixelsWide), FileSide(pixelsHigh)
                 ns.Canvas.Put(texture, u, v, wide * fileWide / pixelsWide, high * fileHigh / pixelsHigh,
                     pixelsWide / fileWide, pixelsHigh / fileHigh)
@@ -146,28 +149,27 @@ local function Lay(from, key, art, box, x, y, width, height, files, level, view,
     end
 end
 
--- A map's explored parts over its art, at sublevel (one higher for those the game draws on top), cut by
--- mask, if given; and the parts not yet explored, dark (Art.FOG): every part the game has for the map
--- (Core's set Overlays) but those it says are explored, known by their first texture. Those the game shows
--- only under the mouse are left out.
-local function Explore(map, box, sublevel, view, mask)
+-- Every part of a map's art the game reveals once explored, over its art at sublevel, cut by mask, if given:
+-- the full map, whatever this character has explored (Core's set Overlays). Until the set is there, the
+-- parts the game says are explored (but those it shows only under the mouse).
+local function Parts(map, box, sublevel, view, mask)
     local art = Of(map)
     if not art or not box then return end
-    local seen = {}
+    if Overlays:Ready() then
+        for _, key in ipairs(Overlays:Keys("byMap", map)) do
+            local part = Overlays:Get(key)
+            if part and part.files then
+                Lay(parts, key * 100, art, box, part.x, part.y, part.width, part.height, part.files, sublevel, view, mask)
+            end
+        end
+        return
+    end
+    Core.Data.Prepare("Overlays")
     for number, part in ipairs(ns.Live.Explored(map)) do
         local files = part.fileDataIDs
-        if type(files) == "table" and files[1] then seen[files[1]] = true end
         if not part.isShownByMouseOver and type(files) == "table" and (part.textureWidth or 0) > 0 then
-            Lay(explored, map * 100000 + number * 100, art, box, part.offsetX, part.offsetY, part.textureWidth,
+            Lay(parts, map * 100000 + number * 100, art, box, part.offsetX, part.offsetY, part.textureWidth,
                 part.textureHeight, files, sublevel + (part.isDrawOnTopLayer and 1 or 0), view, mask)
-        end
-    end
-    if not Overlays:Ready() then return Core.Data.Prepare("Overlays") end
-    for _, key in ipairs(Overlays:Keys("byMap", map)) do
-        local part = Overlays:Get(key)
-        if part and part.files and part.files[1] and not seen[part.files[1]] then
-            Lay(fog, key * 100, art, box, part.x, part.y, part.width, part.height, part.files, sublevel, view, mask,
-                Art.FOG)
         end
     end
 end
@@ -185,41 +187,59 @@ local function Zones(view)
         local box = Coords.Box(zone)
         if box and box.continent == view.continent and Meets(box, view) then
             local mask = outlines:Get(zone, Art.OUTLINE:format(zone), box.u, box.v, box.width, box.height)
-            Draw(zone, box, 3, view, mask)
-            Explore(zone, box, 4, view, mask)
+            Draw(zone, box, 4, view, mask)
+            Parts(zone, box, 5, view, mask)
         end
     end
     local zone = view.zone
     if zone and not listed[zone] then
         local box = Coords.Box(zone)
-        Draw(zone, box, 3, view)
-        Explore(zone, box, 4, view)
+        Draw(zone, box, 4, view)
+        Parts(zone, box, 5, view)
     end
 end
 
--- The art in view (view: Canvas.view): "full" over everything, "half" see-through over the terrain, nil none.
-function Art.Place(view, mode)
-    pool:Begin()
-    explored:Begin()
-    fog:Begin()
-    outlines:Begin()
-    if mode then
-        layer:SetAlpha(mode == "half" and Art.HALF or 1)
-        local full = mode == "full"
-        if view.level == "world" then
-            Draw(Coords.WorldMap(), Coords.WorldBox(view.map), 0, view)
-        else
-            local box = Coords.Box(view.map)
-            if full or view.level == "continent" then
-                Draw(view.map, box, 0, view)
-                if full then Explore(view.map, box, 1, view) end
-            end
-            if view.level == "zone" then Zones(view) end
+-- A box of a continent's plane in the view's plane, by link.
+local function Linked(box, link)
+    return { u = link.du + link.su * box.u, v = link.dv + link.sv * box.v, width = link.su * box.width,
+             height = link.sv * box.height }
+end
+
+-- Under the stitched map: the world map, and every continent's map that meets the view, their paper frames
+-- faded off; the sea between the zones and around them.
+local function Under(view)
+    local world = Coords.WorldBox(view.map)
+    if world and Meets(world, view) then
+        Draw(Coords.WorldMap(), world, 0, view, outlines:Get("world", Art.EDGE, world.u, world.v, world.width, world.height))
+    end
+    for _, continent in ipairs(Coords.Continents()) do
+        local box, link = Coords.Box(continent), Coords.Link(continent, view.map)
+        box = box and link and Linked(box, link)
+        if box and Meets(box, view) then
+            Draw(continent, box, 1, view, outlines:Get(-continent, Art.EDGE, box.u, box.v, box.width, box.height))
         end
     end
+end
+
+-- The art in view (view: Canvas.view): "full" over everything (Sketches), "half" see-through over the terrain
+-- (Overlay), nil none.
+function Art.Place(view, mode)
+    pool:Begin()
+    parts:Begin()
+    stitched:Begin()
+    outlines:Begin()
+    if mode then
+        local full = mode == "full"
+        layer:SetAlpha(full and 1 or Art.HALF)
+        if full then Under(view) end
+        if (full or view.level ~= "zone") and ns.Terrain.Ready() then
+            ns.Terrain.Overview(view, stitched, Art.SKETCH, 2)
+        end
+        if view.level == "zone" then Zones(view) end
+    end
     pool:End()
-    explored:End()
-    fog:End()
+    parts:End()
+    stitched:End()
     outlines:End()
 end
 
@@ -270,10 +290,10 @@ function Art.Clear()
     light:Hide()
     pool:Begin()
     pool:End()
-    fog:Begin()
-    fog:End()
+    parts:Begin()
+    parts:End()
+    stitched:Begin()
+    stitched:End()
     outlines:Begin()
     outlines:End()
-    explored:Begin()
-    explored:End()
 end

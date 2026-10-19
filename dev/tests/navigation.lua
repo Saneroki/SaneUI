@@ -287,10 +287,12 @@ local function Count(shown, low, high)
     for file in pairs(shown) do if type(file) == "number" and file >= low and file <= high then count = count + 1 end end
     return count
 end
-local function Overviews(shown, continent)
+local function Overviews(shown, continent, kind)
     local count = 0
     for file in pairs(shown) do
-        if type(file) == "string" and file:find("Art\\Terrain\\" .. continent .. "-", 1, true) then count = count + 1 end
+        if type(file) == "string" and file:find("Art\\" .. (kind or "Terrain") .. "\\" .. continent .. "-", 1, true) then
+            count = count + 1
+        end
     end
     return count
 end
@@ -588,37 +590,44 @@ local bar
 for _, widget in ipairs(W.frames) do if widget.key == "overlay" then bar = widget._parent end end
 check(bar and bar._shown, "full: the view buttons")
 shown = Shown()
-check(Count(shown, 801, 804) == 4 and Count(shown, 142901, 142912) > 0 and Count(shown, 141501, 141512) == 0,
-    "the overlay up close: the tiles, the zone's map alone over them")
+check(Count(shown, 801, 804) == 4 and Count(shown, 142901, 142912) > 0 and Count(shown, 141501, 141512) == 0
+    and Overviews(shown, 0, "Sketches") == 0, "the overlay up close: the tiles, the zone's map alone over them")
 local function Button(key)
     for _, widget in ipairs(W.frames) do if widget.key == key and widget._scripts.OnClick then return widget end end
 end
 check(Button("overlay")._lit and not Button("terrain")._lit, "the view chosen is lit")
-Button("blizzard")._scripts.OnClick(Button("blizzard"))
+Button("sketches")._scripts.OnClick(Button("sketches"))
 shown = Shown()
-check(ns.options.view == "blizzard" and Button("blizzard")._lit and Count(shown, 801, 804) == 0
-    and Count(shown, 141501, 141512) > 0 and Count(shown, 142901, 142912) > 0, "Blizzard maps: the continent's art, the zone's over it")
+check(ns.options.view == "sketches" and Button("sketches")._lit and Count(shown, 801, 804) == 0
+    and Count(shown, 141501, 141512) > 0 and Overviews(shown, 0, "Sketches") > 0 and Count(shown, 142901, 142912) > 0,
+    "Sketches: the continent's map, the stitched map over it, the zone's own map over that")
 local outline = shown[142901] and shown[142901]._mask
-local whole = true
-for file = 141501, 141512 do if shown[file] and shown[file]._mask then whole = false end end
-check(outline and outline._texture == ns.Art.OUTLINE:format(1429) and near(outline._width, 2000 * full.k) and whole,
-    "the zone's map cut to its outline, laid over its box; the continent's whole")
-check(shown[701] and shown[702] and not shown[703], "and what was explored of the zone, but what shows only under the mouse")
-check(shown[711] and shown[711]._vertex and shown[711]._vertex[1] == ns.Art.FOG[1] and shown[711]._vertex[4] == ns.Art.FOG[4]
-    and not shown[701]._vertex and shown[711]._mask == outline,
-    "what is not yet explored is dark, cut to the zone's outline too; what is explored as the game shows it")
+local framed = true
+for file = 141501, 141512 do if shown[file] and (not shown[file]._mask or shown[file]._mask._texture ~= ns.Art.EDGE) then framed = false end end
+check(outline and outline._texture == ns.Art.OUTLINE:format(1429) and near(outline._width, 2000 * full.k) and framed,
+    "the zone's map cut to its outline, laid over its box; the continent's with its paper frame faded off")
+check(shown[701] and shown[702] and shown[703] and shown[711] and not shown[711]._vertex and shown[711]._mask == outline,
+    "every part of the zone's map, explored or not: the full map, cut to the zone's outline too")
 -- Out to the world: every view stays as chosen.
 full:Fit(947)
 Canvas.Layout()
 shown = Shown()
-check(Count(shown, 94701, 94712) > 0 and Count(shown, 801, 804) == 0, "Blizzard maps at the world: the world map")
+check(Count(shown, 94701, 94712) > 0 and Count(shown, 801, 804) == 0 and Overviews(shown, 0, "Sketches") > 0
+    and Overviews(shown, 1, "Sketches") > 0, "Sketches at the world: the world map, both continents stitched over it")
 Button("terrain")._scripts.OnClick(Button("terrain"))
 shown = Shown()
 check(Overviews(shown, 0) > 0 and Overviews(shown, 1) > 0 and Count(shown, 94701, 94712) == 0,
     "Terrain at the world: every continent's overview, no art")
 Button("overlay")._scripts.OnClick(Button("overlay"))
 shown = Shown()
-check(Overviews(shown, 0) > 0 and Count(shown, 94701, 94712) > 0, "Overlay at the world: both")
+check(Overviews(shown, 0) > 0 and Overviews(shown, 0, "Sketches") > 0 and Count(shown, 94701, 94712) == 0,
+    "Overlay at the world: the terrain, the stitched map over it")
+full:Fit(1415)
+Button("terrain")._scripts.OnClick(Button("terrain"))
+shown = Shown()
+check(full.level == "continent" and Overviews(shown, 0) > 0 and Overviews(shown, 1) > 0,
+    "at a continent the other one too, where it is in view")
+Button("overlay")._scripts.OnClick(Button("overlay"))
 local tilesBefore = ns.Terrain.CAP
 full:Show(1415, 500, -8950, 0.3)
 ns.Terrain.CAP = 2

@@ -6,9 +6,10 @@
 Sane UI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
 move the mouse into that corner and it fills the screen as the map. Both are the same map, drawn and handled
 the same way, only larger, as the chat window is the same chat when it fills the screen. Each keeps its own
-zoom and place. The map is drawn three ways at every zoom, from close up out to the whole world: Blizzard's
-map art, each zone's map cut to its zone's outline and its undiscovered parts dark; the terrain as the minimap
-shows it, its water cut away to a calm sea; or Blizzard's maps laid over the terrain. The game's own
+zoom and place. The map is drawn three ways at every zoom, from close up out to the whole world, both
+continents always: *Sketches*, the world drawn by hand, Blizzard's zone maps in full joined into one map that
+fades softly from zone to zone; *Terrain*, the land as the minimap shows it, its water cut away to a calm sea;
+or *Overlay*, the sketches laid over the terrain. The game's own
 minimap lies over it for its live dots; the game's map stays closed, and its keys open ours. The plan is in
 `Doc/ideas/Navigation.md`.
 
@@ -30,8 +31,8 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
   - **a click** on the game's minimap (while it shows) pings, as there.
 - **Following you:** both views follow you at first; after a drag the map comes back to you once the mouse
   has been off it for a while (*Follow again after*).
-- **Map view** (the buttons at the full map's top left, or the setting on the page *Navigation*): *Blizzard
-  maps*, *Terrain* or *Overlay*, for both views and at every zoom.
+- **Map view** (the buttons at the full map's top left, or the setting on the page *Navigation*): *Sketches*,
+  *Terrain* or *Overlay*, for both views and at every zoom.
 - **The game's own windows:** the switches *Show the game's minimap* and *Show the game's map* on the page
   bring them back next to ours; the full map's dropdown *Classic windows* offers them too. The game's key to
   show or hide the minimap (in its key bindings) shows or hides our window.
@@ -64,18 +65,21 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
 - **Terrain** (`Terrain.lua`): the game's own minimap textures, one per tile of a continent's 64 x 64 grid
   (Core's data, the set *Tiles* in the pack *World*), up to 400 at once; under them, and alone further out,
   the module's overview of the same tiles, 64 texels a tile, 8 x 8 tiles a texture (`Art/Terrain/`). At the
-  world, every continent's overview where the world map puts it. The water is cut away: the overview's alpha is
+  world, every continent's overview where the world map puts it, and at every zoom wherever it is in view. The
+  water is cut away: the overview's alpha is
   the land (where the ground lies above the water's surface, read from the game's terrain files by
   `dev/tools/terrain-art`), and the same file is the mask of the game's tiles of its block (`Canvas.Masks`), so
   the coast is cut alike at every zoom; under it the canvas' sea colour.
-- **Art** (`Art.lua`): the game's map art (`C_Map.GetMapArtLayers`, `GetMapArtLayerTextures`) over the map's
-  box: the world map, the continent's, and at a zone every zone's in view over it, each cut to its zone's
-  outline (`Art/Zones/<uiMapID>.blp`, listed in `Outlines.lua`: the map chunks of the zone's areas, softened at
-  the border, made by `dev/tools/terrain-art`); the last tiles cut at the art's edge, as Blizzard's map canvas
-  lays them; the explored parts over a map's art, as Blizzard's exploration provider places them, and the parts
-  not yet explored nearly black (every part the game has is Core's set *Overlays*; those it does not list as
-  explored are dark). Over the terrain (*Overlay*) half see-through, the zones' maps alone. Under the mouse, at a
-  continent or the world shown whole, the game's own highlight of the zone or continent there.
+- **Art** (`Art.lua`), the view *Sketches*: Blizzard's world and continent maps (`C_Map.GetMapArtLayers`,
+  `GetMapArtLayerTextures`) over their boxes, their paper frames faded off (`Art/Edge.blp`); over them the
+  stitched map of every continent in view (`Art/Sketches/`, in the terrain's blocks: every zone's full map cut
+  to its outline, made by `dev/tools/terrain-art`); up close every zone's own map in view, cut to its outline
+  (`Art/Zones/<uiMapID>.blp`, listed in `Outlines.lua`: the zone's land and a little shore, whole up to its
+  border and fading out past it, so the one over its neighbour fades into it). A zone's map is always the full
+  one: its art and every part the game reveals once explored (Core's set *Overlays*), placed as Blizzard's
+  exploration provider places them. Over the terrain (*Overlay*) half see-through: far out the stitched map,
+  up close the zones' maps. Under the mouse, at a continent or the world shown whole, the game's own highlight
+  of the zone or continent there.
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing) and the
   game's map pin, at a fixed size.
 - **The game's minimap** (`Hybrid.lua`): over our map while the view follows you at one of its zoom steps,
@@ -110,13 +114,15 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
 | `Canvas.lua` | The frame the map is drawn in: holder, layers, pools, layout, the tracker, the mouse |
 | `Terrain.lua` | The terrain layer: the game's minimap textures from Core's set *Tiles*, and the overview |
 | `Outlines.lua` | The zones that have an outline, by continent: made by `dev/tools/terrain-art`, not by hand |
-| `Art.lua` | Blizzard's map art cut to the zones' outlines, the explored parts and the dark undiscovered ones, the highlight under the mouse |
+| `Art.lua` | The view Sketches: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
 | `Marks.lua` | The player's arrow and the map pin |
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
 | `Native.lua` | The game's map kept closed; its keys |
 | `Window.lua` | Core's window: the top right corner, the full screen, the two cameras, the view buttons |
 | `Art/Terrain/*.blp` | The terrain's overview: the game's minimap textures, smaller, the water cut away, made by `dev/tools/terrain-art` from the game's files |
 | `Art/Zones/*.blp` | Each zone's outline over its map's box, made by `dev/tools/terrain-art` from the game's files |
+| `Art/Sketches/*.blp` | The stitched map: every zone's full map on its continent, in the terrain's blocks, made by `dev/tools/terrain-art` |
+| `Art/Edge.blp` | A map's box with its paper frame faded off, for Blizzard's world and continent maps |
 
 Tests: `dev/tests/navigation.lua`.
 
@@ -124,7 +130,9 @@ Tests: `dev/tests/navigation.lua`.
 - **2026-10-19, later:** a zone lights up under the mouse and opens by a click (a continent at the world); the
   map grows and zooms with its window on the way to the full screen and back; the game's minimap covers the
   whole small window, always above the map; the corner fills the screen once a visit. The terrain's water cut
-  away; Blizzard's maps cut to their zones' outlines, every zone in view in its own map; undiscovered parts dark.
+  away; Blizzard's maps cut to their zones' outlines, every zone in view in its own map. Then, at Saneroki's ask:
+  the view *Sketches*, one stitched map of both continents at every zoom, every zone's map in full, the
+  outlines fading softly into each other (the dark undiscovered parts taken out again).
 - **2026-10-19:** the whole module but the map's data: the minimap and the map the same map, each view with its
   own camera; the views at every zoom out to the world, the terrain's overview; right click, Ctrl-click and
   the map pin; the game's minimap over ours for its live dots; the game's map and its keys taken over; the

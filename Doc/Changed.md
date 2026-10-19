@@ -40,6 +40,27 @@ A game restart takes it in (a new addon, Navigation; new files in Core's, Social
   Sell at, gathering with the nodes' own ranges and the game's colour. Sample rows in
   `dev/tests/data/tooltips/` (Objects with their ranges, Disenchants).
 
+### Navigation: Sketches, one stitched map of both continents, every zone's map in full (Saneroki, 2026-10-19)
+- Saneroki's asks: both continents at every zoom; our own world and continent map stitched from Blizzard's zone
+  maps; the dark undiscovered parts out again, every map always in full; soft fades at the zones' edges; the view
+  *Blizzard maps* renamed *Sketches* (key `sketches`).
+- `dev/tools/terrain-art` takes the game's map art too (a fourth folder; the private tools fetch it): every
+  zone's full map (its art and every part the game reveals once explored), cut by its outline, laid on its
+  continent's grid in the terrain's blocks (`src/Navigation/Art/Sketches/`, 45, 15.8 MB, DXT5 with alpha where no
+  zone is); `Art/Edge.blp`, a box with its paper frame faded off. The outlines keep a zone's land and two map
+  chunks of shore (the open sea, water reaching the grid's edge, left out: no zone's painted sea out to its box's
+  edge; lakes and rivers stay), whole up to the border and fading past it (a Gaussian of 2.5 chunks, out at 0.08),
+  and off the frame at the box's edges (`FRAME`).
+- `Terrain.Overview` (was local): every continent's blocks in view, by link, at every level, from any pool and
+  path; the terrain and the stitched map draw through it, so the other continent shows wherever it is in view.
+- `Art.lua`: Sketches draws Blizzard's world map and every continent's in view under the stitched map, their
+  frames faded off by the edge mask; up close the zones' own maps over it. Overlay: the stitched map far out,
+  the zones' maps up close, half see-through. `Parts` (was `Explore`): every part of the set *Overlays*, never
+  tinted; the parts the game lists as explored only until the set is there. `Art.FOG` and the dark parts gone.
+- The canvas' ground follows the view: the sea's colour for the terrain, a dark paper (`Canvas.PAPER`) for
+  Sketches. Tests: Navigation 113 checks (Sketches' layers, both continents at a continent's level, every part
+  drawn).
+
 ### Navigation: the water cut away, zone-shaped maps, undiscovered parts dark (Saneroki, 2026-10-19)
 - `dev/tools/terrain-art` now also reads the game's terrain files (root ADTs, `<tile key>.adt`) and client
   tables: each map chunk's heights (the four triangles of a cell), its water (`MH2O`: the liquid's type, its

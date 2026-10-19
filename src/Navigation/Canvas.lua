@@ -47,6 +47,7 @@ ns.Canvas = Canvas
 
 Canvas.GROUND = { 22 / 255, 38 / 255, 50 / 255 } -- the sea: where neither land nor art is (the terrain's water
                                                 -- is cut away to it, dev/tools/terrain-art)
+Canvas.PAPER = { 0.33, 0.29, 0.21 }             -- the sketches' sea past the world map: its paper, darker
 Canvas.MARGIN = 0.15 -- what is laid out reaches so far past the view, as a part of its larger side
 Canvas.OVERLAP = 1   -- each texture so many units larger than its square, so no seam shows between two
 Canvas.DRAG = 4      -- the mouse moves so many units with the button held before it is a drag, not a click
@@ -54,7 +55,7 @@ Canvas.LOOK = 0.1    -- seconds between two looks at the player's place while th
 Canvas.LEVELS = { holder = 1, terrain = 2, art = 3, light = 4, marks = 20 } -- above the canvas; the game's
                                                          -- minimap at Hybrid.LEVEL, the full map's buttons at 30
 
-local frame, holder, camera, tracker, layers, hover
+local frame, holder, camera, tracker, layers, hover, ground
 local held = false -- on the window's way, or hidden: its size changes lay nothing out
 local morph       -- on the window's way: { a = where it comes from, b = where it goes, now = where it is }
 -- Where the layers were laid out: the origin (u, v), the zoom (k), the view in the plane with its margin
@@ -193,12 +194,14 @@ local function Zone()
     return Coords.ZoneAt(camera.map, camera.u, camera.v)
 end
 
--- The layers, as the view chosen draws them, at every zoom: Blizzard maps (the art), Terrain (the land),
--- Overlay (the land, the art half see-through over it).
+-- The layers, as the view chosen draws them, at every zoom: Sketches (the art), Terrain (the land), Overlay
+-- (the land, the art half see-through over it); the ground is the sea of the one or the other.
 local function Draw()
     local chosen = ns.options.view
-    ns.Safe("terrain", ns.Terrain.Place, view, chosen ~= "blizzard")
-    ns.Safe("map art", ns.Art.Place, view, chosen == "blizzard" and "full" or chosen == "overlay" and "half" or nil)
+    local sea = chosen == "sketches" and Canvas.PAPER or Canvas.GROUND
+    ground:SetColorTexture(sea[1], sea[2], sea[3])
+    ns.Safe("terrain", ns.Terrain.Place, view, chosen ~= "sketches")
+    ns.Safe("map art", ns.Art.Place, view, chosen == "sketches" and "full" or chosen == "overlay" and "half" or nil)
     ns.Safe("marks", ns.Marks.Pin, view)
 end
 
@@ -430,7 +433,7 @@ function Canvas.Build(parent)
     frame:SetAllPoints()
     frame:SetClipsChildren(true)
     Canvas.frame = frame
-    local ground = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
+    ground = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
     ground:SetAllPoints()
     ground:SetColorTexture(Canvas.GROUND[1], Canvas.GROUND[2], Canvas.GROUND[3])
     holder = CreateFrame("Frame", nil, frame)

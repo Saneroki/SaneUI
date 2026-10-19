@@ -31,12 +31,12 @@ Core.NewModule(ADDON, "Navigation", ns)
 ns.TEXT = {
     title = Core.Word("WORLD_MAP", "World Map"),
     view = "Map view",
-    viewTip = "How the map is drawn, small and full screen, at every zoom. Blizzard maps: the game's own map art. Terrain: the land as the minimap shows it. Overlay: the terrain with Blizzard's maps laid over it, half see-through.",
-    views = { blizzard = "Blizzard maps", terrain = "Terrain", overlay = "Overlay" },
+    viewTip = "How the map is drawn, small and full screen, at every zoom. Sketches: the world drawn by hand, every zone's map. Terrain: the land as it is. Overlay: the terrain with the sketches laid over it, half see-through.",
+    views = { sketches = "Sketches", terrain = "Terrain", overlay = "Overlay" },
     viewTips = {
-        blizzard = "The game's own map art: the world, the continent, and up close the zone in the middle with what you have explored of it.",
-        terrain = "The land as the minimap shows it, from close up out to the whole world.",
-        overlay = "The terrain, with Blizzard's maps laid over it, half see-through.",
+        sketches = "The world drawn by hand: every zone's map, in full, joined into one map of both continents.",
+        terrain = "The land as it is, its water cut away: both continents, from close up out to the whole world.",
+        overlay = "The terrain, with the sketches laid over it, half see-through.",
     },
     nativeMinimap = "Show the game's minimap",
     nativeMinimapTip = "The game's own minimap in its place, next to this map. Off: its live dots (players, tracked herbs and ore, quest areas) show on this map while it follows you, and the game's minimap is out of sight.",
@@ -57,11 +57,11 @@ ns.TEXT = {
 ns.GIVEN_BACK = "the map window is closed, the game's own minimap and map are back"
 
 -- The three ways to draw the map, in the order of their buttons.
-ns.VIEWS = { "blizzard", "terrain", "overlay" }
+ns.VIEWS = { "sketches", "terrain", "overlay" }
 
 local OPTIONS = {
     { key = "view", default = "overlay", text = ns.TEXT.view, header = ns.TEXT.title, tip = ns.TEXT.viewTip,
-      choices = { { "blizzard", ns.TEXT.views.blizzard }, { "terrain", ns.TEXT.views.terrain }, { "overlay", ns.TEXT.views.overlay } } },
+      choices = { { "sketches", ns.TEXT.views.sketches }, { "terrain", ns.TEXT.views.terrain }, { "overlay", ns.TEXT.views.overlay } } },
     { key = "followAgain", default = 10, min = 0, max = 60, step = 5, unit = ns.TEXT.seconds, text = ns.TEXT.followAgain,
       tip = ns.TEXT.followAgainTip },
     { key = "nativeMinimap", default = false, text = ns.TEXT.nativeMinimap, tip = ns.TEXT.nativeMinimapTip },

@@ -62,7 +62,10 @@ Later the same day (Saneroki's asks): zones light up under the mouse and open by
 zooms with its window (Core's option `moving`); the game's minimap covers the small window, above the map;
 the corner fills the screen once a visit (Core's Edge); the terrain's water cut away and the zones' maps cut to
 their outlines (`dev/tools/terrain-art` reads the game's terrain files: `Art/Terrain/`, `Art/Zones/`,
-`Outlines.lua`); undiscovered parts dark (Core's set *Overlays*).
+`Outlines.lua`). Then: the view *Sketches* (was *Blizzard maps*), one stitched map of both continents at every
+zoom (`Art/Sketches/`), every zone's map in full (Core's set *Overlays*: every part, explored or not), outlines
+fading softly into each other; the dark undiscovered parts taken out again. Asked and planned next: a
+reinterpretation of both views by the local image models, real water, the Maelstrom, sea creatures.
 
 Not yet: pins of Live and of Core's data, the quest log, the top bar (selector, filter), search, routes, the
 guide, dungeon maps and floors, the minimap's small parts (zone text, clock, mail, tracking). Tests:
