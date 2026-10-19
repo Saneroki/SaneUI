@@ -9,7 +9,8 @@ local _, ns = ...
 --      canvas (clips what it holds; the ground: one colour)
 --       ├─ holder (at the canvas' middle; moved by a drag and by following)
 --       │    ├─ terrain   the game's minimap textures and the overview (Terrain.lua)
---       │    ├─ art       Blizzard's map art and its explored parts (Art.lua)
+--       │    ├─ atlas     the painted map, the view Atlas (Painted.lua)
+--       │    ├─ art       Blizzard's map art and its explored parts, the view Parchment (Art.lua)
 --       │    └─ marks     the player's arrow, the map pin (Marks.lua)
 --       └─ the game's minimap, between the art and the marks, while it shows (Hybrid.lua)
 --  Their frame levels follow the canvas' at every layout (Canvas.LEVELS): a window raised to the full
@@ -52,7 +53,7 @@ Canvas.MARGIN = 0.15 -- what is laid out reaches so far past the view, as a part
 Canvas.OVERLAP = 1   -- each texture so many units larger than its square, so no seam shows between two
 Canvas.DRAG = 4      -- the mouse moves so many units with the button held before it is a drag, not a click
 Canvas.LOOK = 0.1    -- seconds between two looks at the player's place while the view does not follow
-Canvas.LEVELS = { holder = 1, terrain = 2, art = 3, light = 4, marks = 20 } -- above the canvas; the game's
+Canvas.LEVELS = { holder = 1, terrain = 2, atlas = 3, art = 4, light = 5, marks = 20 } -- above the canvas; the game's
                                                          -- minimap at Hybrid.LEVEL, the full map's buttons at 30
 
 local frame, holder, camera, tracker, layers, hover, ground
@@ -194,14 +195,17 @@ local function Zone()
     return Coords.ZoneAt(camera.map, camera.u, camera.v)
 end
 
--- The layers, as the view chosen draws them, at every zoom: Sketches (the art), Terrain (the land), Overlay
--- (the land, the art half see-through over it); the ground is the sea of the one or the other.
+-- The layers, as the view chosen draws them, at every zoom: Parchment (the art), Scrying (the land), Atlas (the
+-- land, the painted map over it); the ground is the sea of the one or the other. The Atlas' module is loaded
+-- the first time its view is drawn; if it cannot be, Scrying (Painted.lua).
 local function Draw()
-    local chosen = ns.options.view
+    local chosen = ns.View()
+    if chosen == "atlas" and not ns.Painted.Ready() then chosen = ns.FALLBACK end
     local sea = chosen == "sketches" and Canvas.PAPER or Canvas.GROUND
     ground:SetColorTexture(sea[1], sea[2], sea[3])
     ns.Safe("terrain", ns.Terrain.Place, view, chosen ~= "sketches")
-    ns.Safe("map art", ns.Art.Place, view, chosen == "sketches" and "full" or chosen == "overlay" and "half" or nil)
+    ns.Safe("atlas", ns.Painted.Place, view, chosen == "atlas")
+    ns.Safe("map art", ns.Art.Place, view, chosen == "sketches")
     ns.Safe("marks", ns.Marks.Pin, view)
 end
 
@@ -216,6 +220,7 @@ local function Stack()
     local base = frame:GetFrameLevel()
     holder:SetFrameLevel(base + Canvas.LEVELS.holder)
     layers.terrain:SetFrameLevel(base + Canvas.LEVELS.terrain)
+    layers.atlas:SetFrameLevel(base + Canvas.LEVELS.atlas)
     layers.art:SetFrameLevel(base + Canvas.LEVELS.art)
     layers.light:SetFrameLevel(base + Canvas.LEVELS.light)
     ns.Marks.Stack(base + Canvas.LEVELS.marks)
@@ -439,7 +444,7 @@ function Canvas.Build(parent)
     holder = CreateFrame("Frame", nil, frame)
     holder:SetSize(1, 1)
     holder:SetPoint("CENTER")
-    layers = { terrain = ns.Terrain.Build(holder) }
+    layers = { terrain = ns.Terrain.Build(holder), atlas = ns.Painted.Build(holder) }
     layers.art, layers.light = ns.Art.Build(holder)
     ns.Marks.Build(holder)
     Stack()
@@ -583,5 +588,6 @@ function Canvas.Close()
     Canvas.Hold()
     laid, morph = false, nil
     ns.Safe("terrain", ns.Terrain.Clear)
+    ns.Safe("atlas", ns.Painted.Clear)
     ns.Safe("map art", ns.Art.Clear)
 end

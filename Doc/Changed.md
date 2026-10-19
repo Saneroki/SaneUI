@@ -3,8 +3,50 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 113 (Navigation), 208 (data tools).
-A game restart takes it in (a new addon, Navigation; new files in Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 142 (Navigation), 208 (data tools).
+A game restart takes it in (new addons, Navigation and Atlas; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
+
+### The Atlas' painting run: dev/tools/atlas (Saneroki, 2026-10-19)
+- **`dev/tools/atlas`** (new): `paint` paints the Atlas square by square in the local ComfyUI: both continents'
+  land in 1,456 squares of one tile at 2048 pixels, overlapping by an eighth, each from the game's terrain (its
+  minimap textures softened a little, its liquids, its map chunks' zones) with its words put together from the
+  zone briefs, `dev/imagegen/maps/atlas.toml` (new: the fixed words) and what the game has in it; each painting
+  checked against the game's water, painted again with another seed when it fails, the best of three kept;
+  resumable (`state.json`, `words.jsonl` in `assets/generated/atlas/`). In a terminal a screen of its own: a
+  progress bar with the share done, the square and zone being painted with its steps, the time left and when it
+  ends; `p` pauses after the picture being painted and frees the graphics card, `q` quits at once. `status`
+  tells how far it is; `join` stitches painted squares into one picture, each overlap cut along the line where
+  the two paintings differ least; `--near` paints a few squares around a place, `--dry` runs without painting.
+- **Every square on its own:** pasting a square's painted neighbours into its edges made the model paint a garish
+  strip at the wrong scale along the opposite edge (Darnassus, 2026-10-19), so squares are joined by the cut.
+- **The words:** a capital's `square` line in `zones.toml` (the six capitals); the roof rule only for house-sized
+  blocks of colour (it had built a town on Darnassus' giant branch).
+- **Tests:** `dev/tests/atlas.py` (new, in `dev/tests/run`): the phrases a square keeps, the words put together, the
+  check on made-up pictures (added and lost water, a zone graded blue), the cut, the grid, the websocket's frames.
+
+### Navigation: the Atlas a module of its own, the view Overlay gone (Saneroki, 2026-10-19)
+- **Decided** (`Doc/ideas/Navigation.md`, *Atlas, a module of its own; Overlay gone*): the painted map is the addon
+  `SaneUI_Atlas`; with it the map offers Parchment, Scrying and Atlas, without it Parchment and Scrying.
+- **The module** (`src/Atlas/`, new: `SaneUI_Atlas.toc` loaded on demand, `Atlas.lua`, README): reads the index of
+  its art once when loaded into a set of the blocks and answers Navigation as `SaneUI.Atlas` (`Ready`, `Levels`,
+  `Span`, `Cells`, `Cell`, `Corner`, `Key`, `Has`, `File`, `PIXELS`). Its art (`Art/<continent>/<level>/<row>_<col>.blp`,
+  512 pixels, BLP2 DXT1, level 0 at 2048 pixels a tile) and its `Index.lua` are made by `dev/tools/atlas` into
+  `assets/optimized/Atlas/`, never into `src/`.
+- **Navigation** (`Painted.lua`, new): finds the module at login without loading it (there, switched on for this
+  character, loadable), offers its button and its choice only then (`ns.Offered`, `ns.View`, `ns.Offer`), loads it
+  the first time the view is drawn and draws its blocks over the terrain as Scrying draws it: the coarsest level
+  with as many pixels a yard as the screen shows, the next coarser one under it, from the canvas' pool; at most
+  400 blocks of a level a continent. If it cannot be loaded or stands down, the map shows Scrying, its button and
+  choice go, the problem is kept and told once. Its nearest zoom is three times the others' (`Camera.Near`, 6
+  units a yard); the game's minimap's steps work as before.
+- **Overlay gone:** its button, its choice, its words and tip, and the art's half see-through mode
+  (`Art.HALF`); the default view is Scrying, a saved Overlay falls back to it (the settings' check).
+- `dev/build` builds `SaneUI_Atlas` from `src/Atlas/` and `assets/optimized/Atlas/` together, only once
+  `assets/optimized/Atlas/Index.lua` is there (rsync copies only what changed); `dev/tests/lint` accepts the TOC's
+  `Index.lua` there, or missing while no art is made, and checks it when it is there.
+- Tests (`dev/tests/navigation.lua`, 142 checks): the views offered with and without the module, a saved Overlay
+  and Atlas falling back, the module found, failing to load and loaded, the index read, the block under a
+  position, the level for a zoom, the blocks drawn, the nearer zoom, the fall back when it stands down.
 
 ### Art and animation in Git LFS (Saneroki, 2026-10-19)
 - `.gitattributes` keeps PNG, BLP, TGA, JPG, GIF, WebP, MP4 and WebM files in Git LFS: the game's textures

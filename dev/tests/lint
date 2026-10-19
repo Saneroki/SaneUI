@@ -4,7 +4,9 @@
 Sane UI is one addon per folder in src: SaneUI (Core) and one for each module.
 
   1. Each folder has one TOC. Every file it lists is there (spelled the same, capitals too), and
-     every Lua and XML file in the folder is listed, or the game would silently not load it.
+     every Lua and XML file in the folder is listed, or the game would silently not load it. The Atlas'
+     index is made with its art into assets/optimized/Atlas, which dev/build puts in: it is checked there,
+     and may be missing while the art is not made (the Atlas is then not built).
   2. The TOCs agree: same game version and addon version, and every module depends on SaneUI and
      is grouped under it, or the game would read it before Core or list it apart.
   3. Every Lua file parses (the game's Lua is 5.1).
@@ -33,6 +35,10 @@ sys.dont_write_bytecode = True
 SRC = Path(__file__).resolve().parents[2] / "src"
 sys.path.insert(0, str(SRC.parent / "dev" / "data"))
 MAIN = "SaneUI"  # the addon every module depends on; a module's addon is SaneUI_<Module>
+# Modules dev/build puts together from src/<folder> and assets/optimized/<folder> (art, and what a tool makes
+# with it): a file their TOC lists may be in either.
+FROM_ASSETS = {"Atlas"}
+ASSETS = SRC.parent / "assets" / "optimized"
 
 # Globals the addons may write: the table they share, their saved settings and functions,
 # the slash command, key bindings.
@@ -69,9 +75,14 @@ def check_addon(folder):
     name = toc.relative_to(SRC)
     fields, listed = read_toc(toc)
     for path in sorted(listed):
+        named = path.relative_to(folder)
+        if folder.name in FROM_ASSETS and not path.exists():
+            path = ASSETS / folder.name / named
+            if not path.exists():
+                continue  # its art is not made yet: dev/build does not build it
         # A name that only differs in capitals loads on Windows and nowhere else; ask for the exact one.
         if not path.exists() or path.name not in {p.name for p in path.parent.iterdir()}:
-            problems.append(f"{name} lists a file that is not there: {path.relative_to(folder)}")
+            problems.append(f"{name} lists a file that is not there: {named}")
     for path in sorted(folder.rglob("*")):
         if path.suffix in (".lua", ".xml") and path not in listed and path.name != "Bindings.xml":
             problems.append(f"not listed in {name}, so the game will not load it: {path.relative_to(folder)}")
@@ -282,6 +293,7 @@ def check_guards(folders):
 
 counts = check_tocs()
 check_lua(sorted(SRC.rglob("*.lua")), SRC)
+check_lua(sorted(p for name in FROM_ASSETS for p in (ASSETS / name).glob("*.lua")), SRC.parent)
 core_fields, _ = read_toc(SRC / "Core" / f"{MAIN}.toc")
 packs = check_packs(core_fields)
 doors = check_guards(p for p in SRC.iterdir() if p.is_dir())

@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Navigation
-## Notes: Sane UI's minimap and map in one window. Small in the screen's top right corner it is the minimap; move the mouse into that corner and it fills the screen as the map. Drag it, zoom it with the mouse wheel from a zone out to the whole world, right click for one map out, Ctrl-click for the map pin; draw it as Blizzard's maps, the terrain, or both laid over each other. The game's map keys open it. Settings: the page Navigation.
+## Notes: Sane UI's minimap and map in one window. Small in the screen's top right corner it is the minimap; move the mouse into that corner and it fills the screen as the map. Drag it, zoom it with the mouse wheel from a zone out to the whole world, right click for one map out, Ctrl-click for the map pin; draw it as Parchment (Blizzard's maps joined into one), as Scrying (the land as it lies) or, with the module Atlas, painted. The game's map keys open it. Settings: the page Navigation.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -25,6 +25,8 @@ Terrain.lua
 Outlines.lua
 # Blizzard's map art: the world's, the continent's, the zones' cut to their outlines, and the explored parts
 Art.lua
+# The view Atlas: the painted map of the module SaneUI_Atlas, found at login, loaded when the view is first drawn
+Painted.lua
 # Over the map at a fixed size: the player's arrow, the map pin
 Marks.lua
 # The game's minimap over ours, for its live dots; taken and given back

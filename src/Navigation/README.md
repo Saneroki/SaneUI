@@ -6,11 +6,11 @@
 Sane UI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
 move the mouse into that corner and it fills the screen as the map. Both are the same map, drawn and handled
 the same way, only larger, as the chat window is the same chat when it fills the screen. Each keeps its own
-zoom and place. The map is drawn three ways at every zoom, from close up out to the whole world, both
+zoom and place. The map is drawn two ways at every zoom, from close up out to the whole world, both
 continents always: *Parchment*, the world drawn by hand, Blizzard's zone maps in full joined into one map that
-fades softly from zone to zone; *Scrying*, the land as the minimap shows it, its water cut away to a calm sea;
-or *Overlay*, the old maps laid over the land. The game's own
-minimap lies over it for its live dots; the game's map stays closed, and its keys open ours. The plan is in
+fades softly from zone to zone; or *Scrying*, the land as the minimap shows it, its water cut away to a calm sea.
+With the module *Atlas* (`SaneUI_Atlas`, `src/Atlas/`) switched on there is a third, *Atlas*: the whole world
+painted as one map, three times closer. The game's own minimap lies over it for its live dots; the game's map stays closed, and its keys open ours. The plan is in
 `Doc/ideas/Navigation.md`.
 
 ## How to use
@@ -31,8 +31,10 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
   - **a click** on the game's minimap (while it shows) pings, as there.
 - **Following you:** both views follow you at first; after a drag the map comes back to you once the mouse
   has been off it for a while (*Follow again after*).
-- **Map view** (the buttons at the full map's top left, or the setting on the page *Navigation*): *Parchment*,
-  *Scrying* or *Overlay*, for both views and at every zoom (in the code `sketches`, `terrain`, `overlay`).
+- **Map view** (the buttons at the full map's top left, or the setting on the page *Navigation*): *Parchment* or
+  *Scrying* (the default), and *Atlas* while that module is switched on in the addon list; for both views and at
+  every zoom (in the code `sketches`, `terrain`, `atlas`). A view not offered (the module switched off or
+  failed, or *Overlay*, which is gone) falls back to Scrying.
 - **The game's own windows:** the switches *Show the game's minimap* and *Show the game's map* on the page
   bring them back next to ours; the full map's dropdown *Classic windows* offers them too. The game's key to
   show or hide the minimap (in its key bindings) shows or hides our window.
@@ -77,9 +79,22 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
   (`Art/Zones/<uiMapID>.blp`, listed in `Outlines.lua`: the zone's land and a little shore, whole up to its
   border and fading out past it, so the one over its neighbour fades into it). A zone's map is always the full
   one: its art and every part the game reveals once explored (Core's set *Overlays*), placed as Blizzard's
-  exploration provider places them. Over the terrain (*Overlay*) half see-through: far out the stitched map,
-  up close the zones' maps. Under the mouse, at a continent or the world shown whole, the game's own highlight
+  exploration provider places them. Under the mouse, at a continent or the world shown whole, the game's own highlight
   of the zone or continent there.
+- **Painted** (`Painted.lua`), the view *Atlas*: the terrain as Scrying draws it, and over it the painted map
+  of the module Atlas (`SaneUI_Atlas`, `src/Atlas/`; its art made into `assets/optimized/Atlas/` and put in by
+  `dev/build`). At login it is looked for in the addon list without being loaded (there, switched on for this
+  character, loadable: `C_AddOns.GetAddOnInfo`, `GetAddOnEnableState`); only then is the view offered, its
+  button after Scrying's and its choice in the setting. The first time the view is drawn it is loaded
+  (`C_AddOns.LoadAddOn`, guarded) and answers as `SaneUI.Atlas`; if it cannot be loaded, or stands down later,
+  the map shows Scrying at once, and on the next frame its button and choice go and the setting is Scrying
+  (`Offer` in `Navigation.lua`), the problem kept and told once. Its blocks (512 pixels, level 0 at 2048 pixels a
+  tile, each level up half the detail) are drawn at the coarsest level whose art still has as many pixels a
+  yard as the screen shows (each continent at its own scale on the screen), so about the same number of blocks
+  at every zoom, and the next coarser level under them, so a block still loading leaves no hole; where the index
+  has none (sea, not painted yet) the terrain shows. At most `Painted.CAP` (400) blocks of a level a continent:
+  past it a coarser level (the window on its way). The nearest zoom is three times the others'
+  (`Camera.Near`: 6 units a yard, else 2).
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing) and the
   game's map pin, at a fixed size.
 - **The game's minimap** (`Hybrid.lua`): over our map while the view follows you at one of its zoom steps,
@@ -115,6 +130,7 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
 | `Terrain.lua` | The terrain layer: the game's minimap textures from Core's set *Tiles*, and the overview |
 | `Outlines.lua` | The zones that have an outline, by continent: made by `dev/tools/terrain-art`, not by hand |
 | `Art.lua` | The view Parchment: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
+| `Painted.lua` | The view Atlas: the module SaneUI_Atlas found at login, loaded when first drawn, its blocks at the level the zoom asks for |
 | `Marks.lua` | The player's arrow and the map pin |
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
 | `Native.lua` | The game's map kept closed; its keys |
@@ -127,6 +143,9 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-19, the Atlas:** the view *Overlay* is gone (the default view is Scrying; a saved Overlay falls back to
+  it); the painted map *Atlas* is a module of its own, `SaneUI_Atlas`, found at login and loaded when its view is
+  first drawn, three times closer; without it the map offers two views.
 - **2026-10-19, later:** a zone lights up under the mouse and opens by a click (a continent at the world); the
   map grows and zooms with its window on the way to the full screen and back; the game's minimap covers the
   whole small window, always above the map; the corner fills the screen once a visit. The terrain's water cut

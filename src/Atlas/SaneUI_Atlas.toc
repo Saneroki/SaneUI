@@ -1,0 +1,17 @@
+## Interface: 16001
+## Title: Atlas
+## Notes: The painted map for Navigation: the whole world painted as one map, from a single building up close out to both continents. Navigation shows it as its third map view, Atlas, while this is switched on. Loaded only when that view is first shown.
+## Author: Saneroki
+## Version: 0.3.0
+## Category: Sane UI
+## Group: SaneUI
+## Dependencies: SaneUI
+## LoadOnDemand: 1
+## IconTexture: Interface\Icons\INV_Misc_Map02
+## X-License: MIT
+
+# The module's own table: the index read into a set of the blocks, and what Navigation asks of it. First: the
+# index fills that table.
+Atlas.lua
+# Which blocks the art has (made by dev/tools/atlas with the art, in assets/optimized/Atlas; dev/build puts it here)
+Index.lua

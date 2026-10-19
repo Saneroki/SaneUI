@@ -280,7 +280,7 @@ function Hybrid.Wheel(camera, notches, size)
         step = math.min(step, minimap:GetZoomLevels() - 1)
     elseif notches > 0 then
         local widest = Hybrid.Zoom(0, size)
-        if not widest or camera.k * ns.Camera.STEP ^ notches < widest and camera.k < ns.Camera.NEAR then return false end
+        if not widest or camera.k * ns.Camera.STEP ^ notches < widest and camera.k < ns.Camera.Near() then return false end
         step = 0
     else
         return false

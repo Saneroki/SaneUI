@@ -1,0 +1,35 @@
+# The fixed words of the Atlas, Navigation's painted map view (Doc/ideas/Navigation.md, *The painted view*).
+#
+# dev/tools/atlas puts each square's words together from these, the zone briefs (zones.toml: the main zone's
+# biome, plants, colours and atmosphere, a city's square line) and what the game has in the square (its
+# liquids, its ground cover, its buildings). The order: ground (or sea), the square's line, look, the zone's
+# words, roofs where things are built, the liquids, keep. Every square is painted on its own: with its painted
+# neighbours pasted into its edges, the model painted a garish strip along the opposite edge.
+# Chosen on 2026-10-19 (the Atlas pilot, dev/imagegen/sets/maps-atlas/pilot.txt): change them only with a new
+# pilot, every square of the map must get the same.
+
+# What image 1 is.
+ground = "Image 1 is the ground of a small part of a fantasy world, about five hundred yards across, seen straight from above."
+sea = "Image 1 is the open sea, about five hundred yards across, seen straight from above."
+
+# A square that is mostly water gets this line instead of its city's: a line about the city built a town on the
+# sea west of Stormwind.
+mostly_water = "Image 1 is mostly open water off a coast: keep all of it water, with only the bits of land image 1 shows; nothing built on the water but what image 1 has."
+
+# The look: a photorealistic render, straight from above (without it, mountains turned into cones seen at an angle).
+look = "Repaint image 1 as a photorealistic modern game-engine render, seen from straight above like an orthographic satellite image: no perspective, no tilt, no horizon; mountains, walls and towers seen from directly overhead. Physically based materials in full detail, soft shadows falling to the bottom right and ambient occlusion, crisp and sharp, like a high-end remaster of the old game."
+
+# Where things are built (a city, or buildings in the square): the minimap draws roofs as blocks of colour, and
+# the model painted Stormwind's ochre roofs as gardens. Only house-sized blocks: told "every block of strong
+# colour", it built a town on the giant pink branch of Darnassus' tree.
+roofs = "Small blocks of strong colour in image 1, each about the size of a house (blue, yellow, ochre, red, purple, brown), are the roofs of buildings: paint each as a roof of that colour, never as trees, gardens, flower beds or fields. Large areas of one colour are ground, rock, bark or water as image 1 shows them, with nothing built on them."
+
+# The liquids, as the game has them in the square: said always, also that there is no water (without it the
+# model painted Blackrock's dark ash plain as lakes).
+water = "The flat dark navy areas of image 1 are water: paint them as water, every shore exactly where image 1 has it. Nowhere else is there water."
+dry = "There is no water anywhere in this picture: dark ground, hollows, furrows and shadows are dry land, never water, lakes or rivers."
+lava = "The flat bright orange areas of image 1 are molten lava, glowing and smoking; the red glowing cracks in the rock are lava too."
+slime = "The flat green pools of image 1 are thick toxic slime."
+
+# Last: keep the layout, add nothing, no text.
+keep = "Keep everything of image 1 exactly where it is, at the same size and in the same shape: every building with its roof, every wall, tower, street, road, bridge and pier, every tree, field, rock, cliff and shore; add fine detail but change no layout. Add nothing that image 1 does not have: no buildings, camps, tents, walls, trees, roads, water or lava of your own. Seen straight from above, north up. No text anywhere: no letters, no words, no names, no labels, no symbols, no frame, no border."

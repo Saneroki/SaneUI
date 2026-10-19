@@ -12,8 +12,9 @@ local _, ns = ...
 --  Each view keeps its own camera: its zoom, its place, whether it follows the
 --  player. Going full screen and back returns each to where it was. Full, a row
 --  of buttons at the map's top left chooses how it is drawn (the setting Map
---  view; both views draw it so), and the dropdown Classic windows offers the
---  game's own minimap and map.
+--  view; both views draw it so): Parchment, Scrying, and Atlas while its module
+--  is there (Painted.lua); the dropdown Classic windows offers the game's own
+--  minimap and map.
 --
 --  On its way to the full screen and back the map goes with the window (Core's
 --  option moving): laid out once at the start for the view it comes to, scaled
@@ -33,11 +34,32 @@ local frame, handle, inside, bar, buttons
 local small, full = ns.Camera.New(), ns.Camera.New() -- each view's camera
 Window.small, Window.full = small, full
 
--- The buttons as the settings say: the view chosen lit.
+-- The buttons as the settings say: the view drawn lit.
 local function Light()
+    local drawn = ns.View()
     for key, button in pairs(buttons) do
-        if key == ns.options.view then button:LockHighlight() else button:UnlockHighlight() end
+        if key == drawn then button:LockHighlight() else button:UnlockHighlight() end
     end
+end
+
+-- The buttons of the views offered (Navigation.lua, Offer), in a row from the map's top left corner.
+function Window.Arrange()
+    if not buttons then return end
+    local previous
+    for _, key in ipairs(ns.VIEWS) do
+        local button, offered = buttons[key], ns.Offered(key)
+        button:SetShown(offered)
+        if offered then
+            button:ClearAllPoints()
+            if previous then
+                button:SetPoint("LEFT", previous, "RIGHT", Window.GAP, 0)
+            else
+                button:SetPoint("TOPLEFT", Window.INSET, -Window.INSET)
+            end
+            previous = button
+        end
+    end
+    Light()
 end
 
 -- The view chosen changed (its button, or the settings): the buttons, and the map drawn anew.
@@ -111,23 +133,17 @@ function Window.Build()
     bar:SetFrameLevel(canvas:GetFrameLevel() + 30) -- over the map, its marks and the game's minimap
     bar:Hide()
     buttons = {}
-    local previous
     for _, key in ipairs(ns.VIEWS) do
         local button = CreateFrame("Button", nil, bar, "UIPanelButtonTemplate")
         button:SetSize(Window.BUTTON_WIDTH, Window.BUTTON_HEIGHT)
         button:SetText(ns.TEXT.views[key])
         button.key = key
-        if previous then
-            button:SetPoint("LEFT", previous, "RIGHT", Window.GAP, 0)
-        else
-            button:SetPoint("TOPLEFT", Window.INSET, -Window.INSET)
-        end
         button:SetScript("OnClick", ns.Guard(Choose))
         button:SetScript("OnEnter", ns.Guard(Tip))
         button:SetScript("OnLeave", GameTooltip_Hide)
-        buttons[key], previous = button, button
+        buttons[key] = button
     end
-    Light()
+    Window.Arrange()
     handle:Place() -- where it was left; at its first place and size if it never was moved
 end
 

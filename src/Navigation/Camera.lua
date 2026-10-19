@@ -26,12 +26,19 @@ ns.Camera = Camera
 
 Camera.STEP = 1.25   -- the wheel zooms by so much per notch
 Camera.NEAR = 2      -- the nearest zoom of its own: so many units per yard (the game's minimap goes nearer)
+Camera.CLOSER = 3    -- the view Atlas goes so many times nearer: its art has four times the terrain's detail
 Camera.FIT = 0.9     -- a whole map, stepped out to, in so much of the view
 Camera.START = 3000  -- yards the view is high when it first looks at a continent: most of a zone
 Camera.ZONE = 9000   -- below so many yards in view's height the zone in the middle is the map shown
 Camera.SLACK = 0.15  -- a level is left only so far past where it is entered
 
 local methods = {}
+
+-- The nearest zoom of its own in the view the map is drawn in (Navigation.lua, View).
+function Camera.Near()
+    if ns.View() == "atlas" then return Camera.NEAR * Camera.CLOSER end
+    return Camera.NEAR
+end
 
 function Camera.New()
     return setmetatable({ u = 0, v = 0, k = 0.1, width = 1, height = 1, far = 0.001, fit = 0.001, follow = true,
@@ -62,7 +69,7 @@ end
 local function Clamp(self)
     local box = self.level == "world" and self.world or self.box
     if not box then return end
-    local near = self.native and self.k or Camera.NEAR
+    local near = self.native and self.k or Camera.Near()
     self.k = math.max(self.far, math.min(near, self.k))
     self.u = math.max(box.u, math.min(box.u + box.width, self.u))
     self.v = math.min(box.v, math.max(box.v - box.height, self.v))
@@ -156,7 +163,7 @@ function methods:ZoomAt(notches, dx, dy)
     self.native = nil
     if self.follow then dx, dy = 0, 0 end
     local u, v = self.u + dx / self.k, self.v + dy / self.k
-    local k = math.max(self.far, math.min(Camera.NEAR, self.k * Camera.STEP ^ notches))
+    local k = math.max(self.far, math.min(Camera.Near(), self.k * Camera.STEP ^ notches))
     self.u, self.v, self.k = u - dx / k, v - dy / k, k
     self:Settle()
 end

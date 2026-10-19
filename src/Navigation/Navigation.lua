@@ -11,18 +11,20 @@ local ADDON, ns = ...
 --  One window takes the place of the game's minimap and world map: small in the
 --  screen's top right corner it is the minimap, filling the screen it is the map,
 --  the same map drawn and handled the same way, each view with its own camera.
---  Drawn three ways at every zoom (Blizzard's map art, the terrain of the game's
---  own minimap textures, or the art over the terrain), from a zone out to the
---  whole world; the game's minimap lies over it for its live dots. The game's map
---  stays closed: its keys and every way to it open ours.
+--  Drawn two ways at every zoom (Blizzard's map art, or the terrain of the game's
+--  own minimap textures), from a zone out to the whole world, and a third, the
+--  painted map, while the module Atlas (SaneUI_Atlas) is there; the game's minimap
+--  lies over it for its live dots. The game's map stays closed: its keys and every
+--  way to it open ours.
 --
 --      Coords (the spaces, the map tree) . Camera . Live (what the game tells)   know no frames
---      Canvas (the frame, its layers, the mouse) . Terrain . Art . Marks
+--      Canvas (the frame, its layers, the mouse) . Terrain . Art . Painted . Marks
 --      Hybrid (the game's minimap over ours) . Native (the game's map kept closed) . Window
 --
 --  The terrain's textures are Core's data (the set Tiles, pack World) and the
 --  module's overview (Art/Terrain); the art and every position come from the
---  game's map API. The pins of the game's data and Core's come later.
+--  game's map API; the painted map is the module Atlas', loaded when its view is
+--  first drawn (Painted.lua). The pins of the game's data and Core's come later.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 Core.NewModule(ADDON, "Navigation", ns)
@@ -31,13 +33,16 @@ Core.NewModule(ADDON, "Navigation", ns)
 ns.TEXT = {
     title = Core.Word("WORLD_MAP", "World Map"),
     view = "Map view",
-    viewTip = "How the map is drawn, small and full screen, at every zoom. Parchment: the old maps, drawn by hand. Scrying: the land as it truly lies. Overlay: the land with the old maps laid over it, half see-through.",
-    views = { sketches = "Parchment", terrain = "Scrying", overlay = "Overlay" },
+    viewTip = "How the map is drawn, small and full screen, at every zoom. Parchment: the old maps, drawn by hand. Scrying: the land as it truly lies. Atlas: the whole world painted as one map (while the module Atlas is switched on in the addon list).",
+    views = { sketches = "Parchment", terrain = "Scrying", atlas = "Atlas" },
     viewTips = {
         sketches = "The old maps, drawn by hand on parchment: every zone's map, in full, joined into one map of both continents.",
         terrain = "The land as it truly lies, as a scrying glass shows it: both continents, from close up out to the whole world.",
-        overlay = "The land as it truly lies, with the old maps laid over it, half see-through.",
+        atlas = "The whole world painted as one map, every road and building where it stands: from a single house up close out to both continents.",
     },
+    atlasFailed = "the map view Atlas could not be loaded (%s); the map shows Scrying.",
+    atlasEmpty = "the module Atlas holds no painted map",
+    atlasBroken = "the module Atlas did not start",
     nativeMinimap = "Show the game's minimap",
     nativeMinimapTip = "The game's own minimap in its place, next to this map. Off: its live dots (players, tracked herbs and ore, quest areas) show on this map while it follows you, and the game's minimap is out of sight.",
     nativeMap = "Show the game's map",
@@ -56,13 +61,17 @@ ns.TEXT = {
 -- What is told when the module stands down (Core's StandDown).
 ns.GIVEN_BACK = "the map window is closed, the game's own minimap and map are back"
 
--- The three ways to draw the map, in the order of their buttons (shown as Parchment, Scrying, Overlay; Overlay gives
--- way to the painted Atlas once its art is made).
-ns.VIEWS = { "sketches", "terrain", "overlay" }
+-- The ways to draw the map, in the order of their buttons (shown as Parchment, Scrying, Atlas). Atlas only while
+-- the module Atlas is there (Painted.lua); a view not offered falls back to Scrying, the default.
+ns.VIEWS = { "sketches", "terrain", "atlas" }
+ns.FALLBACK = "terrain"
+local CHOICES = { { "sketches", ns.TEXT.views.sketches }, { "terrain", ns.TEXT.views.terrain }, { "atlas", ns.TEXT.views.atlas } }
 
 local OPTIONS = {
-    { key = "view", default = "overlay", text = ns.TEXT.view, header = ns.TEXT.title, tip = ns.TEXT.viewTip,
-      choices = { { "sketches", ns.TEXT.views.sketches }, { "terrain", ns.TEXT.views.terrain }, { "overlay", ns.TEXT.views.overlay } } },
+    -- Every view a choice while the settings are first read, so a saved Atlas is kept; at login only those
+    -- offered (Offer).
+    { key = "view", default = ns.FALLBACK, text = ns.TEXT.view, header = ns.TEXT.title, tip = ns.TEXT.viewTip,
+      choices = { CHOICES[1], CHOICES[2], CHOICES[3] } },
     { key = "followAgain", default = 10, min = 0, max = 60, step = 5, unit = ns.TEXT.seconds, text = ns.TEXT.followAgain,
       tip = ns.TEXT.followAgainTip },
     { key = "nativeMinimap", default = false, text = ns.TEXT.nativeMinimap, tip = ns.TEXT.nativeMinimapTip },
@@ -81,6 +90,31 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     end
     if key == "nativeMap" then return ns.Guarded(ns.Native.Update) end
 end })
+
+-- Whether a view can be drawn: Atlas only while its module is there and has not failed.
+function ns.Offered(key)
+    if key == "atlas" then return ns.Painted.Offered() end
+    return key == "sketches" or key == "terrain"
+end
+
+-- The view the map is drawn in: the one chosen, if it is offered, else Scrying.
+function ns.View()
+    local chosen = ns.options.view
+    if ns.Offered(chosen) then return chosen end
+    return ns.FALLBACK
+end
+
+-- The views offered, in the settings' dropdown and on the full map's buttons; a saved view not offered (the
+-- module Atlas switched off, or failed) becomes Scrying. At login, and when the Atlas failed.
+function ns.Offer()
+    local choices = OPTIONS[1].choices
+    wipe(choices)
+    for _, choice in ipairs(CHOICES) do
+        if ns.Offered(choice[1]) then choices[#choices + 1] = choice end
+    end
+    if not ns.Offered(ns.options.view) then Core.Set(ns.name, "view", ns.FALLBACK) end
+    ns.Window.Arrange()
+end
 
 -- One step of giving back. Each runs by itself, so one that fails does not keep the next from its work.
 local function Back(step)
@@ -103,6 +137,8 @@ end
 function ns.OnLogin()
     -- The terrain's textures, soon after the loading screen: the map shows from login.
     Core.Data.Prepare("Tiles")
+    ns.Painted.Find()
+    ns.Offer()
     ns.Window.Build()
     ns.Hybrid.Start(ns.Canvas.frame)
     ns.Native.Start()

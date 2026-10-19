@@ -28,14 +28,16 @@ Use current source and the user's instructions when they differ from a note.
 ## What exists
 
 Sane UI replaces or extends parts of WoW: Forever's UI. Version `0.3.0`, interface `16001` in all
-six TOCs. Modules are independent addons under category/group Sane UI; only Core is required.
+seven TOCs. Modules are independent addons under category/group Sane UI; only Core is required.
 Core holds the options (`src/Core/Settings/`, `Core.Config`: pages put up at login, filled when first
 opened) and Sync (`src/Core/Sync/`, `Core.Sync`); neither is a module. Abilities extends the game's book with future spells and
 reserves action slots. Tooltips draws panels over native tooltips. Social supplies a messenger-style
 window and temporarily seats Blizzard's own chat edit boxes in it, and joins or leaves the game's chat
 channels as chosen on its page. Combat (2026-10-16) is set up for unit frames, party, raid, buffs,
 nameplates and pets; nothing built yet (`src/Combat/README.md`, plan `Doc/ideas/Combat.md`). Navigation (2026-10-18) is the minimap and the map in one
-window, without the map's data yet (`src/Navigation/README.md`, plan `Doc/ideas/Navigation.md`). Sync keeps the game's per-character
+window, without the map's data yet (`src/Navigation/README.md`, plan `Doc/ideas/Navigation.md`); its painted view
+is the module Atlas (`src/Atlas/`, load on demand; its art and index made into `assets/optimized/Atlas/`, built only
+once they are there). Sync keeps the game's per-character
 settings (CVars, chat windows/channels, Edit Mode layout, action bars) in the profile in use (*Accountwide settings*
 on, the profile *Accountwide* for every character at first; off, each character's own Sane UI settings and nothing
 of the game's); its switches are in the tab Game settings of the options page Profiles, next to the CVar list.

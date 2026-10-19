@@ -12,11 +12,15 @@ The bigger changes of each version, newest first.
   from close up out to the whole world, right click for one map out,
   Ctrl-click for the map pin. Draw it as Parchment (every zone's map
   joined into one hand-drawn map of the world, the zones fading softly
-  into each other), as Scrying (the land as it truly lies, its water
-  cut away for a clean coastline), or both laid over each other, at any zoom, both
-  continents always in view. The game's minimap dots still show on
+  into each other) or as Scrying (the land as it truly lies, its water
+  cut away for a clean coastline), at any zoom, both continents always
+  in view. The game's minimap dots still show on
   it, and the map key opens it. Hover a zone to light it up, click it
   to open it; the map grows and zooms smoothly with the window.
+- Navigation: the Overlay view is gone. The painted map, Atlas, comes
+  as a module of its own: switch Atlas on in the addon list and the
+  map gets a third view, the whole world painted as one map, which
+  zooms three times closer.
 - Social: conversations at the left of the full screen. Every whisper,
   and the chat of your party and your raid, is a conversation of its
   own, listed with its last message and how many wait to be read.

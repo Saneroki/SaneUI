@@ -246,6 +246,9 @@ lists, from inputs of its own:
   the full model), `close.txt` (the stylised look on the terrain, close up), `dev/imagegen/sets/maps-styles/`
   (five styles; chosen: the photorealistic render), `dev/imagegen/sets/maps-atlas/pilot.txt` (that look, one
   square of ten zones at 2048, each in its zone's atmosphere; about two and a half minutes a picture).
+- **The Atlas' run:** `dev/tools/atlas` paints every square of both continents from these, checks it against the
+  game's water and keeps the best of three seeds; `--near` paints a few squares around a place first, `join`
+  stitches them; in a terminal it shows its progress, `p` pauses (and frees the graphics card), `q` quits.
 - **Upscaling models** (`models/upscale_models/` of ImageGen: 4x-UltraSharpV2 and 4xNomos2, both DAT2, as
   safetensors, 17 s for 1024 to 4096): they sharpen what is there, the faults too, and add no detail; the
   painting is made at the size it is shown.

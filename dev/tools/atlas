@@ -1,0 +1,944 @@
+#!/usr/bin/env python3
+"""Paints the Atlas, Navigation's painted map view (Doc/ideas/Navigation.md, *The painted view*), and shows how
+far it is.
+
+Both continents are cut into squares of one terrain tile at 2048 pixels (a quarter of a yard a pixel) that
+overlap by an eighth. Each square with land is repainted by the local image model from the game's terrain, in
+rows from the north-west, on its own (with painted neighbours pasted into its edges the model painted a garish
+strip along the opposite edge): its words put together from the zone briefs and from what the game has in it
+(dev/imagegen/maps/zones.toml, atlas.toml), the same light and look for all. Each painting is checked against
+the game's water; one that fails is painted again with another seed, and the best of three is kept. The
+squares are joined later, cut along the line where neighbours differ least.
+
+Usage:
+  dev/tools/atlas paint [--adt DIR --tables DIR --minimap DIR] [--continent 0|1] [--near ...] [--limit N]
+                        [--out DIR] [--keep-comfyui] [--dry]
+  dev/tools/atlas status [--out DIR]
+  dev/tools/atlas join --to FILE [--near ...] [--continent 0|1] [--cut] [--out DIR]
+
+  --adt, --tables, --minimap   the game's terrain files (<key>.adt), its client tables as CSV and its minimap
+                               textures (<file id>.blp), as dev/tools/map-meta reads them; needed the first
+                               time, then remembered in the run's state.json
+  --continent                  only this continent (0 the Eastern Kingdoms, 1 Kalimdor; default both, in order)
+  --limit N                    stop after N squares
+  --out DIR                    the run's folder (default assets/generated/atlas)
+  --keep-comfyui               leave ComfyUI running at the end (it is stopped again if this run started it)
+  --dry                        paint nothing: the game's terrain stands in for each painting (to try the run)
+  --near UIMAP X Y ACROSS DOWN only the squares around a point of a zone's map (its UiMap ID, x and y in
+                               percent as on the game's map), ACROSS by DOWN of them (to try a city first)
+  join                         the painted squares (of --near, or all of a continent) as one picture, FILE: each
+                               overlap cut along the line where the two paintings differ least, softened a few
+                               pixels to either side (--cut: cut in the overlap's middle instead, to compare)
+
+While it runs in a terminal:
+  p   pause after the picture being painted, and free the graphics card; p again goes on
+  q   quit now: the picture being painted is dropped, every square finished is kept; the next run goes on
+Without a terminal (its output to a file) it writes a line a square instead.
+
+It needs ComfyUI (started if it is not running), and the guides of dev/tools/map-meta in
+assets/generated/maps/meta. It writes, in the run's folder: <continent>/sq-<column>-<row>.png, the painting
+kept for each square; state.json, the paths and per square its attempts (seed, water added and lost), the
+one kept, its zone and its seconds; words.jsonl, the words each square was painted with.
+"""
+import argparse
+import base64
+import collections
+import importlib.machinery
+import importlib.util
+import io
+import json
+import os
+import re
+import select
+import shutil
+import signal
+import socket
+import struct
+import subprocess
+import sys
+import termios
+import threading
+import time
+import tomllib
+import tty
+import urllib.request
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageFilter
+
+Image.MAX_IMAGE_PIXELS = None
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def module(name, path):
+    loader = importlib.machinery.SourceFileLoader(name, str(path))
+    spec = importlib.util.spec_from_loader(name, loader)
+    found = importlib.util.module_from_spec(spec)
+    loader.exec_module(found)
+    return found
+
+
+ta = module("terrain_art", ROOT / "dev" / "tools" / "terrain-art")   # the game's terrain files
+ig = module("imagegen", ROOT / "dev" / "tools" / "imagegen")         # ComfyUI and its workflows
+
+META = ROOT / "assets" / "generated" / "maps" / "meta"
+BRIEFS = ROOT / "dev" / "imagegen" / "maps" / "zones.toml"
+WORDS = ROOT / "dev" / "imagegen" / "maps" / "atlas.toml"
+OUT = ROOT / "assets" / "generated" / "atlas"
+COMFY = Path(os.environ.get("IMAGEGEN_HOME", "/data/Projects/ImageGen"))  # ComfyUI's folders (input, output)
+ADDRESS = "127.0.0.1:8188"
+
+PX = 2048          # pixels a tile: four times the minimap textures'
+SQ = 2048          # a square's side: one tile
+STEP = 1792        # from one square to the next: they overlap by an eighth (256 pixels, 67 yards)
+CHUNK = PX // 16   # a map chunk's side in pixels: squares start on chunks (STEP is 14 of them)
+TRIES = 3          # paintings of a square at most: seeds 1, 2, 3
+ADDED, LOST = 0.005, 0.01   # the check: broad sheets of water added, or of the game's water lost, past these fail
+LAND = 0.002       # a square is painted when this much of it is land
+WORKFLOW = "qwen21-edit-1ref"
+SETTINGS = {"width": SQ, "height": SQ, "resolution": SQ}
+NAVY = np.array([22, 38, 50])   # the flat water of the inputs
+CONTINENTS = {0: "Eastern Kingdoms", 1: "Kalimdor"}
+GUESS = 175        # seconds a picture, until the run has its own
+
+
+# --- What the game has in a square ---------------------------------------------------------------
+
+class Game:
+    """The game's files a square is made from, read a tile at a time; the last few tiles are kept, since
+    neighbouring squares share them."""
+
+    def __init__(self, paths):
+        self.adt, self.minimap = Path(paths["adt"]), Path(paths["minimap"])
+        tables = Path(paths["tables"])
+        formats = {row["ID"]: int(row["LVF"]) for row in ta.table(tables, "LiquidMaterial")}
+        types = ta.table(tables, "LiquidType")
+
+        def kinds(banks):  # the game's sound banks: 0 water, 1 ocean, 2 magma, 3 slime
+            return {int(row["ID"]): formats.get(row["MaterialID"], 0) for row in types if row["SoundBank"] in banks}
+        self.liquids = {"water": kinds(("0", "1")), "lava": kinds(("2",)), "slime": kinds(("3",))}
+        areas = ta.table(tables, "AreaTable")
+        self.parent = {int(row["ID"]): int(row["ParentAreaID"]) for row in areas}
+        self.seas = {int(row["ID"]) for row in areas if re.search(r"\bSeas?\b", row["AreaName_lang"])}
+        self.files = {}
+        for line in open(ROOT / "assets" / "data" / "Tiles" / "Tiles.jsonl"):
+            row = json.loads(line)
+            if row.get("minimap"):
+                self.files[row["key"]] = row["minimap"]
+        self.kept = collections.OrderedDict()
+
+    def tile(self, key):
+        """A tile at PX: its terrain (softened a little first: the textures' fine dot pattern comes back in the
+        painting otherwise), its liquids (0 to 255) and its map chunks' areas."""
+        if key in self.kept:
+            self.kept.move_to_end(key)
+            return self.kept[key]
+        rgb = np.empty((PX, PX, 3), np.uint8)
+        rgb[:] = NAVY
+        if key in self.files and (self.minimap / f"{self.files[key]}.blp").is_file():
+            texture = Image.open(self.minimap / f"{self.files[key]}.blp").convert("RGB").filter(ImageFilter.GaussianBlur(0.8))
+            rgb = np.asarray(texture.resize((PX, PX), Image.Resampling.LANCZOS)).copy()
+        masks = {kind: np.zeros((PX, PX), np.uint8) for kind in self.liquids}
+        areas = np.zeros((16, 16), np.int64)
+        path = self.adt / f"{key}.adt"
+        if path.is_file():
+            for kind, types in self.liquids.items():
+                land, areas = ta.terrain(path, types)
+                small = Image.fromarray(((1 - land) * 255).astype(np.uint8))
+                masks[kind] = np.asarray(small.resize((PX, PX), Image.Resampling.BILINEAR))
+        else:  # no terrain: open sea
+            masks["water"][:] = 255
+        wet = masks["water"][..., None].astype(np.float32) / 255
+        rgb = (rgb * (1 - wet) + NAVY * wet).astype(np.uint8)
+        self.kept[key] = {"rgb": rgb, **masks, "areas": areas}
+        if len(self.kept) > 12:
+            self.kept.popitem(last=False)
+        return self.kept[key]
+
+    def square(self, continent, i, j):
+        """A square's terrain, liquids and map chunks' areas (16 x 16: a square is 16 chunks a side)."""
+        x0, y0 = i * STEP, j * STEP
+        out = {"rgb": np.zeros((SQ, SQ, 3), np.uint8), "areas": np.zeros((16, 16), np.int64)}
+        out["rgb"][:] = NAVY
+        for kind in self.liquids:
+            out[kind] = np.full((SQ, SQ), 255 if kind == "water" else 0, np.uint8)
+        for row in range(y0 // PX, (y0 + SQ - 1) // PX + 1):
+            for col in range(x0 // PX, (x0 + SQ - 1) // PX + 1):
+                if not (0 <= row < ta.GRID and 0 <= col < ta.GRID):
+                    continue
+                tile = self.tile(continent * 4096 + row * ta.GRID + col)
+                ax, ay = max(x0, col * PX), max(y0, row * PX)
+                bx, by = min(x0 + SQ, (col + 1) * PX), min(y0 + SQ, (row + 1) * PX)
+                into = (slice(ay - y0, by - y0), slice(ax - x0, bx - x0))
+                take = (slice(ay - row * PX, by - row * PX), slice(ax - col * PX, bx - col * PX))
+                for name in ("rgb", *self.liquids):
+                    out[name][into] = tile[name][take]
+                out["areas"][(ay - y0) // CHUNK:(by - y0) // CHUNK, (ax - x0) // CHUNK:(bx - x0) // CHUNK] = \
+                    tile["areas"][(ay - row * PX) // CHUNK:(by - row * PX) // CHUNK, (ax - col * PX) // CHUNK:(bx - col * PX) // CHUNK]
+        return out
+
+
+class Guides:
+    """dev/tools/map-meta's guides: the ground cover, the buildings, the zones' areas."""
+
+    def __init__(self, game):
+        self.places = json.load(open(META / "places.json"))
+        self.texels = self.places["texels"]
+        self.colours = {name: np.array(colour) for name, colour in self.places["cover"].items()}
+        self.cover = {c: np.asarray(Image.open(META / f"cover-{c}.png").convert("RGB")) for c in CONTINENTS}
+        self.built = {c: np.asarray(Image.open(META / f"buildings-{c}.png").convert("L")) for c in CONTINENTS}
+        owners, seen = {}, collections.Counter()
+        for uimap, zone in self.places["zones"].items():
+            for area in zone["areas"]:
+                owners.setdefault(area["area"], uimap)
+                seen[area["area"]] += 1
+        self.owner = {area: uimap for area, uimap in owners.items() if seen[area] == 1}  # a sea is listed by many
+        self.game = game
+
+    def box(self, i, j):
+        s = PX / self.texels
+        return (round(j * STEP / s), round((j * STEP + SQ) / s)), (round(i * STEP / s), round((i * STEP + SQ) / s))
+
+    def land(self, continent, i, j):
+        (y0, y1), (x0, x1) = self.box(i, j)
+        cover = self.cover[continent][y0:y1, x0:x1].astype(np.int32)
+        if cover.size == 0:
+            return 0.0
+        water = np.abs(cover - self.colours["water"]).sum(-1) < 6
+        return float((~water & (cover.sum(-1) > 0)).mean())
+
+    def zone_of(self, area):
+        while area:
+            if area in self.owner:
+                return self.owner[area]
+            area = self.game.parent.get(area, 0)
+        return None
+
+    def facts(self, continent, i, j, square):
+        """What the game has in the square: its liquids, its zones by their land (a sea's area belongs to some
+        zone in the game's table: west of Stormwind, Westfall's), its ground cover and its buildings."""
+        wet = Image.fromarray(square["water"]).resize((16, 16), Image.Resampling.BOX)
+        wet = np.asarray(wet, np.float32) / 255
+        counts = collections.Counter()
+        for (y, x), area in np.ndenumerate(square["areas"]):
+            if wet[y, x] > 0.9 or int(area) in self.game.seas:
+                continue
+            uimap = self.zone_of(int(area))
+            if uimap:
+                counts[uimap] += 1
+        total = sum(counts.values())
+        zones = [{"uimap": u, "name": self.places["zones"][u]["name"], "share": round(n / total, 3)}
+                 for u, n in counts.most_common()]
+        (y0, y1), (x0, x1) = self.box(i, j)
+        cover = self.cover[continent][y0:y1, x0:x1].astype(np.int32)
+        shares = {}
+        for name, colour in self.colours.items():
+            share = float((np.abs(cover - colour).sum(-1) < 6).mean()) if cover.size else 0.0
+            if share >= 0.02:
+                shares[name] = round(share, 3)
+        built = self.built[continent][y0:y1, x0:x1]
+        return {"water": round(float(water_of(square).mean()), 4),
+                "lava": round(float(square["lava"].mean()) / 255, 4),
+                "slime": round(float(square["slime"].mean()) / 255, 4),
+                "zones": zones, "cover": dict(sorted(shares.items(), key=lambda kv: -kv[1])),
+                "buildings": round(float(built.mean()) / 255, 4) if built.size else 0.0}
+
+
+# --- The check against the game's water ----------------------------------------------------------
+
+CHECK = 512    # pictures are checked at this size: sheets, not detail
+SLACK = 0.02   # of the side: how far a painted shore may stray
+
+
+def small(array, side=CHECK):
+    mode = "RGB" if array.ndim == 3 else "L"
+    return np.asarray(Image.fromarray(array, mode).resize((side, side), Image.Resampling.BOX))
+
+
+def box_mean(a, r):
+    """The mean of a over a square of side 2r + 1 around each point."""
+    c = np.pad(a, r + 1, mode="edge").cumsum(0).cumsum(1)
+    n = 2 * r + 1
+    return (c[n:, n:] - c[:-n, n:] - c[n:, :-n] + c[:-n, :-n])[:a.shape[0], :a.shape[1]] / n ** 2
+
+
+def grow(mask, r):
+    return np.asarray(Image.fromarray(mask.astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(2 * r + 1))) > 127
+
+
+def shrink(mask, r):
+    return np.asarray(Image.fromarray(mask.astype(np.uint8) * 255).filter(ImageFilter.MinFilter(2 * r + 1))) > 127
+
+
+def water_of(square):
+    """The game's water in a square, at CHECK: its liquids, and the speckled dark blue-grey the minimap draws for
+    the water of buildings (city canals), in sheets (the shadows of blue roofs are small)."""
+    terrain = small(square["rgb"]).astype(np.int32)
+    drawn = (terrain[..., 2] >= terrain[..., 0] + 8) & (terrain.max(-1) < 90)
+    drawn = grow(shrink(box_mean(drawn.astype(np.float32), 2) > 0.5, 2), 2)
+    return (small(square["water"]) > 127) | (np.abs(terrain - NAVY).sum(-1) < 30) | drawn
+
+
+def check(square, painting):
+    """How much of the painting is water where the game has none (added), and land where it has water (lost):
+    broad sheets only, a shore may stray a little. Painted water is bluish, smooth, in sheets and bluer than the
+    painting's own land, so a zone graded blue (Duskwood's dusk) and the blue shadows of snow are not water."""
+    out = small(np.asarray(painting))
+    game = water_of(square)
+    hsv = np.asarray(Image.fromarray(out).convert("HSV"), np.float32)
+    h, s, v = hsv[..., 0] * 360 / 255, hsv[..., 1] / 255, hsv[..., 2] / 255
+    grey = out.astype(np.float32).mean(-1)
+    rough = np.sqrt(np.maximum(box_mean(grey ** 2, 2) - box_mean(grey, 2) ** 2, 0))
+    slack = max(1, round(CHECK * SLACK))
+    blue = out[..., 2].astype(np.float32) - (out[..., 0].astype(np.float32) + out[..., 1]) / 2
+    land = ~grow(game, slack)
+    bar = np.percentile(blue[land], 30) + 12 if land.any() else -255.0
+    painted = (h >= 165) & (h <= 250) & (s >= 0.22) & (v >= 0.18) & (rough < 9) & ~((v > 0.65) & (s < 0.6)) & (blue > bar)
+    painted = grow(shrink(painted, 3), 3)
+    added = grow(shrink(painted & land, 4), 4)
+    lost = grow(shrink(game & ~grow(painted, slack) & ~grow(~game, slack), 4), 4)
+    return {"added": round(float(added.mean()), 4), "lost": round(float(lost.mean()), 4)}
+
+
+def passes(result):
+    return result["added"] <= ADDED and result["lost"] <= LOST
+
+
+# --- The words -----------------------------------------------------------------------------------
+
+WET = re.compile(r"coast|shore|sea\b|lake|river|stream|water|shallow|surf|pool|pond|canal|marsh|bog|reed|harbour"
+                 r"|beach|spring|falls|wave|steam", re.I)
+HOT = re.compile(r"lava|molten|magma|ember|glowing", re.I)
+WHERE = re.compile(r"north|south|east|west|centre|middle|edge", re.I)
+
+
+def only(text, facts):
+    """The phrases of a brief's field that fit the square: none about water or lava where the game has none,
+    none that say where in the zone (a square is a small part of it)."""
+    drop = [WHERE] + [rx for rx, there in ((WET, facts["water"] >= 0.001), (HOT, facts["lava"] >= 0.005)) if not there]
+    kept = [p for p in re.split(r"(?<=[,;.:])\s+", text) if not any(rx.search(p) for rx in drop)]
+    return re.sub(r"[,;:.]$", "", " ".join(kept).strip())
+
+
+def joined(names):
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def words(fixed, briefs, facts):
+    """A square's words: what image 1 is, the look, its main zone's words (never a zone's buildings or places:
+    the model paints whatever the words name into the square), roofs where things are built, the liquids the
+    game has, keep."""
+    liquids = [fixed["water"] if facts["water"] >= 0.001 else fixed["dry"]]
+    if facts["lava"] >= 0.005:
+        liquids.append(fixed["lava"])
+    if facts["slime"] >= 0.005:
+        liquids.append(fixed["slime"])
+    if not facts["zones"]:
+        parts = [fixed["sea"], fixed["look"], briefs["sea"]["water"], *liquids]
+    else:
+        # the main zone's words only: a border's mountains may belong to a zone whose words do not fit them
+        # (north of Stormwind's keep, the volcano's), and image 1 shows where the land changes
+        main = briefs[facts["zones"][0]["uimap"]]
+        city = main.get("kind") == "city"
+        line = fixed["mostly_water"] if facts["water"] >= 0.6 else main.get("square", "") if city else ""
+        ground = [k for k, v in facts["cover"].items() if v >= 0.05 and k not in ("water", "road")] or ["rock"]
+        zone = (f"The land: {only(main['biome'], facts)}; the ground here is {joined(ground)}. "
+                f"Where image 1 has plants: {only(main['plants'], facts)}. Its colours: {only(main['colours'], facts)}. "
+                f"Its atmosphere: {main['atmosphere']}")
+        parts = [fixed["ground"], line, fixed["look"], zone]
+        if city or facts["buildings"] >= 0.005:
+            parts.append(fixed["roofs"])
+        parts += liquids
+    parts.append(fixed["keep"])
+    return " ".join(p for p in parts if p)
+
+
+# --- The squares ---------------------------------------------------------------------------------
+
+def plan(guides, continents, near=None):
+    """The squares to paint, in order: by continent, in rows from the north-west, those with land; with near
+    (continent, i0, j0, i1, j1) only those in that block."""
+    count = -(-(ta.GRID * PX - SQ) // STEP) + 1
+    found = []
+    for continent in continents:
+        for j in range(count):
+            for i in range(count):
+                if near and not (continent == near[0] and near[1] <= i < near[3] and near[2] <= j < near[4]):
+                    continue
+                if guides.land(continent, i, j) > LAND:
+                    found.append((continent, i, j))
+    return found
+
+
+def around(guides, uimap, x, y, across, down):
+    """The block of squares around a point of a zone's map: (continent, i0, j0, i1, j1)."""
+    zone = guides.places["zones"][str(uimap)]
+    north, south, west, east = zone["box"]
+    wx, wy = north - y / 100 * (north - south), west - x / 100 * (west - east)
+    half = ta.GRID / 2 * ta.TILE
+    px, py = (half - wy) / ta.TILE * PX, (half - wx) / ta.TILE * PX
+    i0, j0 = round((px - SQ / 2) / STEP - (across - 1) / 2), round((py - SQ / 2) / STEP - (down - 1) / 2)
+    return zone["continent"], i0, j0, i0 + across, j0 + down
+
+
+# --- Joining the squares -------------------------------------------------------------------------
+
+FEATHER = 12   # pixels softened to either side of a cut
+
+
+def seam(a, b):
+    """The weight of a where two overlapping strips meet side by side (a on the left): 1 left of the line where they
+    differ least (found row by row, moving a pixel at most from one row to the next), 0 right of it, softened
+    FEATHER pixels to either side. A cut, not a cross-fade: two paintings of the same trees blended over the
+    whole overlap would show both."""
+    diff = box_mean(np.abs(a.astype(np.int16) - b.astype(np.int16)).sum(-1).astype(np.float32), 2)
+    rows, width = diff.shape
+    cum, back = diff.copy(), np.zeros((rows, width), np.int8)
+    for y in range(1, rows):
+        prev = cum[y - 1]
+        options = np.stack([np.r_[np.inf, prev[:-1]], prev, np.r_[prev[1:], np.inf]])
+        pick = options.argmin(0)
+        back[y] = pick - 1
+        cum[y] += options[pick, np.arange(width)]
+    line = np.empty(rows, int)
+    line[-1] = int(cum[-1].argmin())
+    for y in range(rows - 1, 0, -1):
+        line[y - 1] = line[y] + back[y, line[y]]
+    return np.clip(0.5 - (np.arange(width)[None, :] - line[:, None]) / (2 * FEATHER), 0, 1)[..., None]
+
+
+def join_two(left, right, cut):
+    """Two pictures that overlap by SQ - STEP at the left's right edge, as one."""
+    over = SQ - STEP
+    a, b = left[:, -over:].astype(np.float32), right[:, :over].astype(np.float32)
+    if cut:
+        w = (np.arange(over) < over // 2).astype(np.float32)[None, :, None]
+    else:
+        w = seam(a, b)
+    middle = (a * w + b * (1 - w)).clip(0, 255).astype(np.uint8)
+    return np.concatenate([left[:, :-over], middle, right[:, over:]], axis=1)
+
+
+def join(out, continent, block, cut=False):
+    """The squares of a block (i0, j0, i1, j1) as one picture; a square not painted is the flat sea."""
+    i0, j0, i1, j1 = block
+
+    def picture(i, j):
+        path = out / str(continent) / f"sq-{i}-{j}.png"
+        if path.is_file():
+            return np.asarray(Image.open(path).convert("RGB"))
+        filled = np.empty((SQ, SQ, 3), np.uint8)
+        filled[:] = NAVY
+        return filled
+
+    rows = []
+    for j in range(j0, j1):
+        row = picture(i0, j)
+        for i in range(i0 + 1, i1):
+            row = join_two(row, picture(i, j), cut)
+        rows.append(row)
+    whole = rows[0]
+    for row in rows[1:]:  # rows meet top to bottom: the same, turned
+        whole = join_two(whole.transpose(1, 0, 2), row.transpose(1, 0, 2), cut).transpose(1, 0, 2)
+    return whole
+
+
+def name_of(continent, i, j):
+    return f"{continent}:{i}:{j}"
+
+
+# --- ComfyUI -------------------------------------------------------------------------------------
+
+class Quit(Exception):
+    pass
+
+
+class Painter:
+    """Paints a square's picture in ComfyUI, or with --dry hands the picture back as it is."""
+
+    def __init__(self, shared, dry):
+        self.shared, self.dry = shared, dry
+        self.server = ig.Server(ADDRESS)
+        self.graph = json.loads(ig.find_workflow(WORKFLOW).read_text())
+        self.prompt_id = None
+
+    def reachable(self):
+        try:
+            with urllib.request.urlopen(f"http://{ADDRESS}/queue", timeout=3):
+                return True
+        except OSError:
+            return False
+
+    def paint(self, picture, prompt, name, seed, work):
+        if self.dry:
+            for step in range(1, 6):
+                self.wait_a_moment(0.4)
+                self.shared.set(step=(step, 5))
+            return Image.fromarray(picture)
+        path = work / f"{name}.png"
+        Image.fromarray(picture).save(path)
+        uploaded = {path: self.server.upload(path)}
+        graph = ig.fill(self.graph, {"prompt": prompt, "name": f"atlas-{name}", "refs": [path]}, seed, SETTINGS, uploaded)
+        self.prompt_id = self.server.queue(graph)
+        try:
+            while True:
+                if self.shared.quit:
+                    raise Quit
+                entry = json.loads(self.server.call(f"/history/{self.prompt_id}")).get(self.prompt_id)
+                if entry:
+                    break
+                time.sleep(0.5)
+        finally:
+            self.prompt_id = None
+        if entry.get("status", {}).get("status_str") == "error":
+            raise RuntimeError(f"ComfyUI failed on {name}: {json.dumps(entry.get('status'))[:300]}")
+        data = next(self.server.pictures(entry), None)
+        if data is None:
+            raise RuntimeError(f"ComfyUI gave no picture for {name}")
+        self.tidy(entry, uploaded[path])
+        path.unlink(missing_ok=True)
+        return Image.open(io.BytesIO(data)).convert("RGB")
+
+    def wait_a_moment(self, seconds):
+        end = time.time() + seconds
+        while time.time() < end:
+            if self.shared.quit:
+                raise Quit
+            time.sleep(0.05)
+
+    def tidy(self, entry, uploaded):
+        """ComfyUI keeps every input and output: these are kept in the run's folder, so they go there."""
+        for output in entry.get("outputs", {}).values():
+            for image in output.get("images", []):
+                (COMFY / "output" / image.get("subfolder", "") / image.get("filename", "-")).unlink(missing_ok=True)
+        (COMFY / "input" / uploaded).unlink(missing_ok=True)
+
+    def interrupt(self):
+        if self.dry:
+            return
+        try:
+            if self.prompt_id:
+                body = json.dumps({"delete": [self.prompt_id]}).encode()
+                self.server.call("/queue", body, {"Content-Type": "application/json"})
+            self.server.call("/interrupt", b"")
+        except SystemExit:
+            pass
+
+    def free(self):
+        """Lets go of the graphics card's memory (paused: the game may run)."""
+        if self.dry:
+            return
+        try:
+            body = json.dumps({"unload_models": True, "free_memory": True}).encode()
+            self.server.call("/free", body, {"Content-Type": "application/json"})
+        except SystemExit:
+            pass
+
+
+def frames(buffer):
+    """The websocket frames complete in buffer: (opcode, payload); what is used is taken off the buffer."""
+    found = []
+    while len(buffer) >= 2:
+        opcode, length, at = buffer[0] & 0x0F, buffer[1] & 0x7F, 2
+        masked = buffer[1] & 0x80
+        if length == 126:
+            if len(buffer) < 4:
+                break
+            length, at = struct.unpack(">H", bytes(buffer[2:4]))[0], 4
+        elif length == 127:
+            if len(buffer) < 10:
+                break
+            length, at = struct.unpack(">Q", bytes(buffer[2:10]))[0], 10
+        mask = bytes(buffer[at:at + 4]) if masked else None
+        at += 4 if masked else 0
+        if len(buffer) < at + length:
+            break
+        payload = bytes(buffer[at:at + length])
+        if mask:
+            payload = bytes(b ^ mask[k % 4] for k, b in enumerate(payload))
+        found.append((opcode, payload))
+        del buffer[:at + length]
+    return found
+
+
+def listen(shared, client):
+    """ComfyUI's websocket: the steps of the picture being painted. Without it the bar goes by the time."""
+    host, port = ADDRESS.split(":")
+    while not shared.stopped:
+        try:
+            with socket.create_connection((host, int(port)), timeout=5) as conn:
+                key = base64.b64encode(os.urandom(16)).decode()
+                conn.sendall((f"GET /ws?clientId={client} HTTP/1.1\r\nHost: {ADDRESS}\r\nUpgrade: websocket\r\n"
+                              f"Connection: Upgrade\r\nSec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n").encode())
+                head = b""
+                while b"\r\n\r\n" not in head:
+                    chunk = conn.recv(4096)
+                    if not chunk:
+                        raise OSError("closed")
+                    head += chunk
+                if b" 101 " not in head.split(b"\r\n", 1)[0]:
+                    raise OSError("refused")
+                buffer = bytearray(head.split(b"\r\n\r\n", 1)[1])
+                conn.settimeout(1)
+                while not shared.stopped:
+                    for opcode, payload in frames(buffer):
+                        if opcode == 1:
+                            message = json.loads(payload)
+                            if message.get("type") == "progress":
+                                data = message.get("data", {})
+                                shared.set(step=(data.get("value", 0), data.get("max", 0)))
+                        elif opcode == 8:
+                            raise OSError("closed")
+                    try:
+                        chunk = conn.recv(65536)
+                    except socket.timeout:
+                        continue
+                    if not chunk:
+                        raise OSError("closed")
+                    buffer += chunk
+        except (OSError, ValueError):
+            time.sleep(2)
+
+
+def comfy(command):
+    """comfyui start / stop, quietly; False when the command is not there."""
+    if not shutil.which("comfyui"):
+        return False
+    subprocess.run(["comfyui", command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return True
+
+
+# --- The run -------------------------------------------------------------------------------------
+
+class Shared:
+    """What the painting and the screen share."""
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.phase = "starting"
+        self.now = None          # the square being painted: continent, i, j, zone, attempt, began
+        self.step = (0, 0)
+        self.last = None         # the square finished last
+        self.done = 0
+        self.total = 0
+        self.repainted = 0
+        self.below = 0
+        self.times = collections.deque(maxlen=30)
+        self.picture = GUESS     # seconds a picture, for the bar within a picture
+        self.pictures = 0        # pictures painted in this run
+        self.began = time.time()
+        self.pause = False
+        self.quit = False
+        self.stopped = False
+        self.error = None
+        self.events = []         # lines for a run without a terminal
+
+    def set(self, **values):
+        with self.lock:
+            for key, value in values.items():
+                setattr(self, key, value)
+
+
+def load_state(out):
+    path = out / "state.json"
+    if path.is_file():
+        return json.loads(path.read_text())
+    return {"paths": {}, "squares": {}}
+
+
+def save_state(out, state):
+    path = out / "state.json"
+    temp = path.with_suffix(".tmp")
+    temp.write_text(json.dumps(state, indent=1))
+    os.replace(temp, path)
+
+
+def work(shared, painter, game, guides, fixed, briefs, out, state, todo, limit):
+    """The painting: square after square, each painted until it passes the check or TRIES are made."""
+    words_log = open(out / "words.jsonl", "a")
+    temp = out / "work"
+    temp.mkdir(parents=True, exist_ok=True)
+    try:
+        for count, (continent, i, j) in enumerate(todo):
+            if limit and count >= limit:
+                break
+            began = time.time()
+            square = game.square(continent, i, j)
+            facts = guides.facts(continent, i, j, square)
+            picture = square["rgb"]
+            prompt = words(fixed, briefs, facts)
+            zone = facts["zones"][0]["name"] if facts["zones"] else "the sea"
+            tries, best = [], None
+            for seed in range(1, TRIES + 1):
+                if shared.pause:
+                    shared.set(phase="paused", now=None, step=(0, 0))
+                    painter.free()
+                    while shared.pause and not shared.quit:
+                        time.sleep(0.2)
+                    if shared.quit:
+                        raise Quit
+                shared.set(phase="painting", step=(0, 0),
+                           now={"continent": continent, "i": i, "j": j, "zone": zone, "seed": seed, "began": time.time()})
+                t0 = time.time()
+                painting = painter.paint(picture, prompt, f"{continent}-{i}-{j}-{seed}", seed, temp)
+                result = check(square, painting)
+                tries.append({"seed": seed, **result, "seconds": round(time.time() - t0)})
+                with shared.lock:  # the run's own pace: the first picture sets it, later ones move it
+                    seconds = time.time() - t0
+                    shared.picture = 0.8 * shared.picture + 0.2 * seconds if shared.pictures else seconds
+                    shared.pictures += 1
+                score = result["added"] + result["lost"]
+                if best is None or score < best[0]:
+                    best = (score, seed, painting, result)
+                if passes(result):
+                    break
+            _, seed, painting, result = best
+            target = out / str(continent) / f"sq-{i}-{j}.png"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            painting.save(target)
+            seconds = round(time.time() - began)
+            state["squares"][name_of(continent, i, j)] = {
+                "seed": seed, **result, "ok": passes(result), "tries": tries, "zone": zone, "seconds": seconds,
+                "when": time.strftime("%Y-%m-%d %H:%M")}
+            save_state(out, state)
+            words_log.write(json.dumps({"square": name_of(continent, i, j), "facts": facts, "words": prompt}) + "\n")
+            words_log.flush()
+            with shared.lock:
+                shared.done += 1
+                shared.times.append(seconds)
+                shared.repainted += len(tries) > 1
+                shared.below += not passes(result)
+                shared.last = {"continent": continent, "i": i, "j": j, "zone": zone, "seconds": seconds, **result,
+                               "ok": passes(result), "tries": len(tries)}
+                shared.events.append(shared.last)
+        shared.set(phase="done", now=None)
+    except Quit:
+        shared.set(phase="quit", now=None)
+    except BaseException as error:  # ComfyUI gone (imagegen's fail exits), a file missing: told, the run stops
+        shared.set(phase="error", now=None, error=f"{type(error).__name__}: {error}")
+    finally:
+        words_log.close()
+
+
+# --- The screen ----------------------------------------------------------------------------------
+
+def clock(seconds):
+    seconds = max(0, int(seconds))
+    days, rest = divmod(seconds, 86400)
+    hours, rest = divmod(rest, 3600)
+    minutes, secs = divmod(rest, 60)
+    if days:
+        return f"{days} d {hours} h {minutes:02d} min"
+    if hours:
+        return f"{hours} h {minutes:02d} min"
+    return f"{minutes} min {secs:02d} s"
+
+
+def bar(part, width):
+    part = min(1.0, max(0.0, part))
+    full = int(part * width)
+    return "█" * full + ("▌" if part * width - full >= 0.5 else "") + "░" * (width - full - (part * width - full >= 0.5))
+
+
+def left(shared, history):
+    """Seconds left: the squares to go at the run's own pace (its last 30 squares, repaints included), less what
+    the square being painted has done."""
+    with shared.lock:
+        times = list(shared.times) or history or [GUESS]
+        each = sum(times) / len(times)
+        rest = (shared.total - shared.done) * each
+        if shared.now:
+            rest -= min(time.time() - shared.now["began"], shared.picture)
+    return max(0, rest)
+
+
+def screen(shared, history, per_continent):
+    width = max(60, min(shutil.get_terminal_size((100, 30)).columns, 110))
+    with shared.lock:
+        phase, now, step, last = shared.phase, dict(shared.now or {}), shared.step, shared.last
+        done, total, repainted, below = shared.done, shared.total, shared.repainted, shared.below
+        picture, error, began = shared.picture, shared.error, shared.began
+        pausing = shared.pause and phase == "painting"
+    part = done / total if total else 1.0
+    rest = left(shared, history)
+    state = {"painting": "pausing after this picture" if pausing else "painting", "paused": "paused",
+             "starting": "starting", "done": "done", "quit": "quitting", "error": "stopped"}.get(phase, phase)
+    lines = [f" Atlas · painting the map{state.rjust(width - 26)}", ""]
+    lines.append(f" {bar(part, width - 26)} {part * 100:5.1f} %  {done} of {total}")
+    finish = time.strftime("%a %d %b %H:%M", time.localtime(time.time() + rest))
+    lines.append(f" running {clock(time.time() - began)}   ·   left about {clock(rest)}   ·   done about {finish}")
+    lines.append("")
+    if now:
+        value, most = step
+        inside = value / most if most else min(0.99, (time.time() - now["began"]) / max(1, picture))
+        steps = f"step {value} of {most}" if most else "starting"
+        lines.append(f" now     {CONTINENTS[now['continent']]}, square {now['i']} · {now['j']} ({now['zone']}),"
+                     f" painting {now['seed']} of {TRIES}")
+        lines.append(f"         {bar(inside, 30)} {steps}   {clock(time.time() - now['began'])}")
+    else:
+        lines += [" now     " + ({"paused": "paused: the graphics card is free; p goes on, q quits"}.get(phase, "-")), ""]
+    if last:
+        verdict = "ok" if last["ok"] else "kept the best, below the bar"
+        lines.append(f" last    square {last['i']} · {last['j']} ({last['zone']}) {verdict} in {clock(last['seconds'])},"
+                     f" water added {last['added'] * 100:.1f} % lost {last['lost'] * 100:.1f} %")
+    else:
+        lines.append(" last    -")
+    lines.append(f" painted again: {repainted}   ·   below the bar: {below}   ·   about {clock(picture)} a picture")
+    lines.append(" " + "   ·   ".join(f"{CONTINENTS[c]} {d} of {t}" for c, (d, t) in per_continent(shared).items()))
+    if error:
+        lines += ["", f" stopped: {error}"]
+    lines += ["", " p pause · q quit"]
+    return "\x1b[H\x1b[J" + "\n".join(line[:width] for line in lines)
+
+
+def run_screen(shared, painter, worker, history, per_continent):
+    """The terminal: drawn twice a second; p and q read without Enter."""
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    sys.stdout.write("\x1b[?1049h\x1b[?25l")   # a screen of its own, no cursor
+    try:
+        tty.setcbreak(fd)
+        while worker.is_alive():
+            sys.stdout.write(screen(shared, history, per_continent))
+            sys.stdout.flush()
+            ready, _, _ = select.select([sys.stdin], [], [], 0.5)
+            if ready:
+                key = sys.stdin.read(1).lower()
+                if key == "p":
+                    shared.set(pause=not shared.pause)
+                elif key == "q":
+                    shared.set(quit=True, pause=False)
+                    painter.interrupt()
+        sys.stdout.write(screen(shared, history, per_continent))
+        sys.stdout.flush()
+        time.sleep(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+        sys.stdout.write("\x1b[?25h\x1b[?1049l")
+        sys.stdout.flush()
+
+
+def run_lines(shared, worker, history):
+    """Without a terminal: a line a square."""
+    told = 0
+    while worker.is_alive() or told < len(shared.events):
+        with shared.lock:
+            new, told = shared.events[told:], len(shared.events)
+        for e in new:
+            print(f"{e['continent']}:{e['i']}:{e['j']} {e['zone']}: {'ok' if e['ok'] else 'below the bar'}"
+                  f" after {e['tries']}, {e['seconds']} s, water added {e['added'] * 100:.1f} % lost {e['lost'] * 100:.1f} %;"
+                  f" {shared.done} of {shared.total}, left about {clock(left(shared, history))}", flush=True)
+        time.sleep(1)
+
+
+# --- Commands ------------------------------------------------------------------------------------
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("command", choices=("paint", "status", "join"))
+    parser.add_argument("--near", nargs=5, type=float, metavar=("UIMAP", "X", "Y", "ACROSS", "DOWN"))
+    parser.add_argument("--to")
+    parser.add_argument("--cut", action="store_true")
+    parser.add_argument("--adt")
+    parser.add_argument("--tables")
+    parser.add_argument("--minimap")
+    parser.add_argument("--continent", type=int, choices=sorted(CONTINENTS))
+    parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument("--out", default=str(OUT))
+    parser.add_argument("--keep-comfyui", action="store_true")
+    parser.add_argument("--dry", action="store_true")
+    args = parser.parse_args()
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    state = load_state(out)
+    for key in ("adt", "tables", "minimap"):
+        if getattr(args, key):
+            state["paths"][key] = str(Path(getattr(args, key)).resolve())
+    missing = [key for key in ("adt", "tables", "minimap") if not state["paths"].get(key)]
+    if missing:
+        ig.fail("The first run needs the game's files: " + ", ".join(f"--{key}" for key in missing) + ". See --help.")
+    save_state(out, state)
+    continents = [args.continent] if args.continent is not None else sorted(CONTINENTS)
+    game = Game(state["paths"])
+    guides = Guides(game)
+    near = around(guides, int(args.near[0]), args.near[1], args.near[2], int(args.near[3]), int(args.near[4])) if args.near else None
+    if near:
+        continents = [near[0]]
+    squares = plan(guides, continents, near)
+    done = state["squares"]
+    history = [s["seconds"] for s in list(done.values())[-30:]]
+
+    def per_continent(shared=None):
+        counts = {}
+        for c in continents:
+            mine = [s for s in squares if s[0] == c]
+            counts[c] = (sum(name_of(*s) in done for s in mine), len(mine))
+        return counts
+
+    if args.command == "join":
+        if not args.to:
+            ig.fail("join needs --to FILE")
+        painted = [s for s in squares if name_of(*s) in done]
+        if not painted:
+            ig.fail("No square of these is painted yet.")
+        continent = painted[0][0]
+        mine = [s for s in painted if s[0] == continent]
+        block = near[1:] if near else (min(s[1] for s in mine), min(s[2] for s in mine),
+                                        max(s[1] for s in mine) + 1, max(s[2] for s in mine) + 1)
+        Image.fromarray(join(out, continent, block, args.cut)).save(args.to)
+        print(f"{args.to}: {block[2] - block[0]} x {block[3] - block[1]} squares of {CONTINENTS[continent]}")
+        return
+
+    if args.command == "status":
+        total = len(squares)
+        finished = sum(name_of(*s) in done for s in squares)
+        each = sum(history) / len(history) if history else GUESS
+        print(f"{finished} of {total} squares painted ({finished / max(1, total) * 100:.1f} %), left about "
+              f"{clock((total - finished) * each)} at {clock(each)} a square")
+        for c, (d, t) in per_continent().items():
+            print(f"  {CONTINENTS[c]}: {d} of {t}")
+        below = [k for k, s in done.items() if not s["ok"]]
+        print(f"  painted again: {sum(len(s['tries']) > 1 for s in done.values())}, below the bar: {len(below)}"
+              + (f" ({', '.join(below[:10])}{' ...' if len(below) > 10 else ''})" if below else ""))
+        return
+
+    fixed = tomllib.loads(WORDS.read_text())
+    briefs = tomllib.loads(BRIEFS.read_text())
+    todo = [s for s in squares if name_of(*s) not in done]
+    shared = Shared()
+    shared.total, shared.done = len(squares), len(squares) - len(todo)
+    painter = Painter(shared, args.dry)
+    started = False
+    if not args.dry and not painter.reachable():
+        print("Starting ComfyUI ...", flush=True)
+        started = comfy("start")
+        if not painter.reachable():
+            ig.fail("ComfyUI is not reachable: start it with comfyui start, then run this again.")
+    if not args.dry:
+        threading.Thread(target=listen, args=(shared, painter.server.client), daemon=True).start()
+
+    def stop(*_):
+        shared.set(quit=True, pause=False)
+        painter.interrupt()
+    signal.signal(signal.SIGTERM, stop)
+    worker = threading.Thread(target=work, args=(shared, painter, game, guides, fixed, briefs, out, state, todo, args.limit))
+    worker.start()
+    try:
+        if sys.stdin.isatty() and sys.stdout.isatty():
+            run_screen(shared, painter, worker, history, per_continent)
+        else:
+            run_lines(shared, worker, history)
+    except KeyboardInterrupt:
+        stop()
+    worker.join()
+    shared.set(stopped=True)
+    if started and not args.keep_comfyui:
+        comfy("stop")
+    finished = sum(name_of(*s) in done for s in squares)
+    print(f"{finished} of {len(squares)} squares painted." + (f" Stopped: {shared.error}" if shared.error else "")
+          + ("" if finished == len(squares) else " The next run goes on from here: dev/tools/atlas paint"))
+
+
+if __name__ == "__main__":
+    main()

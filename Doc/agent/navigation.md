@@ -10,7 +10,7 @@ the window guide ([windows.md](../guides/windows.md)) and the data guide ([data.
 `screen`, docked `TOPRIGHT`, takes the place of the minimap, the world map and the quest log:
 
 1. Small: the minimap. Full screen (a click into the corner, Esc back): the map, the quest log on the left,
-   a top bar (map selector, pin filter, the views Blizzard / Terrain / Overlay at 50 %).
+   a top bar (map selector, pin filter, the views Parchment / Scrying, and Atlas while its module is there).
 2. One canvas of our own (not Blizzard's map canvas: its pins taint in a fight), terrain from the game's
    minimap tiles plus Blizzard's map art; drag pans, the wheel zooms from minimap range to the world; two
    cameras, one per view; follows the player; north-up only.
@@ -29,7 +29,7 @@ the window guide ([windows.md](../guides/windows.md)) and the data guide ([data.
 | --- | --- | --- |
 | 0 | Proof behind `/sane map test`: the seven *to try* points (a–g) | the game; (a) needs the tile table |
 | 1 | Minimap: window, canvas, camera, native dots, `GiveBack` | nothing (terrain waits for *Tiles*; the native ground shows until then) |
-| 2 | Map: full screen, zone to world, Blizzard's art, views, selector, the game's map kept closed | step 1; Terrain and Overlay need *Tiles* |
+| 2 | Map: full screen, zone to world, Blizzard's art, views, selector, the game's map kept closed | step 1; Terrain needs *Tiles* |
 | 3 | Live pins | step 2 |
 | 4 | Quest log | step 2 |
 | 5 | Database pins, areas, rares | Core's data (below) |
@@ -71,9 +71,19 @@ files are made by `dev/tools/map-meta` (roads, buildings, ground cover, places w
 masters), the zones' briefs are `dev/imagegen/maps/zones.toml`; the pilot lists are in
 `dev/imagegen/sets/maps-pilot/`.
 
+The Atlas, a module of its own (Saneroki, 2026-10-19): *Overlay* is gone (default Scrying; a saved Overlay falls
+back to it). The painted map is the addon `SaneUI_Atlas` (`src/Atlas/`: TOC, `Atlas.lua`, README; load on
+demand). Its art and index are made by `dev/tools/atlas` into `assets/optimized/Atlas/` (`Art/<continent>/<level>/
+<row>_<col>.blp`, `Index.lua`), never into `src/`; `dev/build` builds the addon from both, only once
+`assets/optimized/Atlas/Index.lua` exists (the lint accepts the TOC's `Index.lua` there or missing). Navigation's
+`Painted.lua` finds it at login without loading it (offered: a third button, a third choice), loads it when the
+view is first drawn and reads it as `SaneUI.Atlas`; on a failure the view falls back to Scrying and its button
+and choice go (`ns.Offer`). The view: the terrain as Scrying, the blocks over it at the coarsest level with
+enough pixels a yard for the screen, the next coarser one under them; `Camera.Near()` 6 units a yard there.
+
 Not yet: pins of Live and of Core's data, the quest log, the top bar (selector, filter), search, routes, the
 guide, dungeon maps and floors, the minimap's small parts (zone text, clock, mail, tracking). Tests:
-`dev/tests/navigation.lua` (113 checks).
+`dev/tests/navigation.lua` (142 checks).
 
 ## What is not there yet
 

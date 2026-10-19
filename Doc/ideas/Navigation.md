@@ -88,6 +88,11 @@ minimap) and the full-screen window (the world map) show the same map with the s
   roads stand out above all, and the gates and buildings of Stormwind and Orgrimmar must be right.
 - **The views' names (Saneroki, 2026-10-19):** immersive and true to the world, never technical words on the
   buttons: **Parchment** (Blizzard's maps, was *Sketches*), **Scrying** (the terrain), **Atlas** (the painted view).
+- **Atlas, a module of its own; Overlay gone (Saneroki, 2026-10-19):** the painted view's art is the addon
+  `SaneUI_Atlas` (`src/Atlas/`), loaded on demand. Navigation finds it at login without loading it: installed and
+  switched on, the map offers **Parchment, Scrying, Atlas**; not found, **Parchment and Scrying**. The view
+  *Overlay* is gone (its button, its choice, its code); the default view is Scrying, and a saved view that is not
+  offered (Overlay, or Atlas without its module) falls back to it. The code's keys: `sketches`, `terrain`, `atlas`.
 - **Life on the sea (Saneroki, 2026-10-19):** in the painted view the Maelstrom turns between the continents,
   and ships, giant turtles, sea dragons and squids roam the water, each a short looped animation, seen on the
   world map.
@@ -398,7 +403,8 @@ guide), and these for Navigation in particular:
 | `Pins.lua` | Pin records from Core's data and from `Live`, merged, filtered | no |
 | `Canvas.lua` | The canvas frame: holder, layers, input (drag, wheel, clicks), the per-frame step | yes |
 | `Terrain.lua` | The terrain layer: tiles in view, pooled | yes |
-| `Art.lua` | Blizzard's map art, explored areas, the overlay's cut | yes |
+| `Art.lua` | Blizzard's map art, explored areas, cut to the zones' outlines (the view Parchment) | yes |
+| `Painted.lua` | The view Atlas: the module `SaneUI_Atlas` found, loaded when first drawn, its blocks by zoom | yes |
 | `PinView.lua` | The pin layer: pin buttons, clusters, tooltips | yes |
 | `Areas.lua` | Quest areas, spawn areas, patrol paths | yes |
 | `Hybrid.lua` | The native `Minimap` in the small view, and back | yes |
@@ -527,7 +533,7 @@ Three spaces, converted only in `Coords.lua`:
   map last), as Blizzard's map shows it. Explored areas from `C_MapExplorationInfo.GetExploredMapTextures`
   (each overlay cut into the layer's tiles, as Blizzard's provider does).
 - **Terrain view:** terrain only; far out, Blizzard's art (the same switch-over as in *Terrain*).
-- **Overlay view:** the terrain, with each zone in view drawn over it at 50 %, **cut to its zone**, so
+- **Overlay view (gone, Saneroki, 2026-10-19: the Atlas takes its place):** the terrain, with each zone in view drawn over it at 50 %, **cut to its zone**, so
   the parchment edge of one zone map does not cover the next. The cut is a mask on the zone's art tiles
   (one mask region over the zone's world box, added to each of its tiles: a mask works in screen space;
   `MaskTexture` ignores texture coordinates). Where the mask comes from, in order:
@@ -561,6 +567,28 @@ Three spaces, converted only in `Coords.lua`:
 The third view (*A painted third view*), made by the local image models beside the game and shipped as art in
 blocks like the terrain's, so the map draws it the way it draws the others.
 
+- **The module (built 2026-10-19, *Atlas, a module of its own*):** `SaneUI_Atlas`, `## LoadOnDemand: 1`, every level in
+  the one addon, Core its only dependency. `src/Atlas/` holds its code only (TOC, `Atlas.lua`, README); its art and index are made by
+  `dev/tools/atlas` into `assets/optimized/Atlas/` (`Art/`, `Index.lua`), and `dev/build` builds the addon from
+  both, only once the index is there (no art made, no module: the map shows two views). Navigation's `Painted.lua`
+  finds it at login (`C_AddOns.GetAddOnInfo` and `GetAddOnEnableState`: there, switched on for this character,
+  loadable), loads it the first time the view is drawn (`C_AddOns.LoadAddOn`, guarded) and reads it as
+  `SaneUI.Atlas`; if it cannot be loaded or stands down, the button and the choice go and the view falls back
+  to Scrying, the problem kept as every other.
+- **The format (fixed, 2026-10-19):** blocks of 512 x 512 pixels, BLP2 DXT1 with mipmaps, at
+  `Interface\AddOns\SaneUI_Atlas\Art\<continent>\<level>\<row>_<col>.blp`, the continent the map's instance
+  (0, 1). Level 0 is the finest, 2048 pixels a tile, a block a quarter tile (`TILE / 4` yards); a block of
+  level L spans `TILE / 4 * 2^L` yards; levels 0 to `levels - 1`. Row and column as the terrain's tiles, from
+  the north-west corner of the 64 x 64 grid: `column = floor((HALF - y) / span)`, `row = floor((HALF - x) /
+  span)`, `HALF = 32 * TILE`, `x`, `y` the world's yards. `Index.lua`: `ns.INDEX = { levels = n, [continent] =
+  { [level] = { [row] = "c,c,a-b" } } }`, the columns of a row that have a block; a block not listed is not there
+  (open sea, or not painted yet), and the terrain shows through.
+- **Drawn (built 2026-10-19):** the terrain exactly as Scrying, the blocks over it from the canvas' pool, with the
+  same margin: the coarsest level whose art still has as many pixels a yard as the screen shows (each continent
+  at its own scale on the screen), never finer than 0, and the next coarser level under it; past 400 blocks of a
+  level a continent (a long way of the window) a coarser one. The nearest zoom is three times the others' (6
+  units a yard, `Camera.Near`); the game's minimap's steps work as before.
+
 - **What the models get** (*The look*, *Only what the game has*): the continents cut into squares of one tile
   that overlap by an eighth; for each, the terrain of that square as the one picture (its layout and everything
   on it, kept; the minimap textures softened a little first, or their fine dot pattern comes back in the
@@ -570,11 +598,14 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   air, colours and the state of what stands there, never a feature with a place), every phrase about water or
   lava dropped where the square has none; its ground cover; its liquids ("the flat dark navy areas are water,
   nowhere else", or "there is no water anywhere in this picture"; "the flat bright orange areas are molten
-  lava"); and a line on what stands in it. A zone's list of buildings and features is never given: the model
-  painted orc forts, tents and pines from it into a square of empty ash. In a city or town every block of
-  strong colour in the terrain is a roof of that colour, never trees or gardens (Stormwind's ochre roofs around
-  the cathedral came back as gardens); a square that is mostly water gets a line about open water, not the
-  city's (a square of sea west of Stormwind came back as a harbour town built on it). A picture of the look as a second
+  lava"); and, in a capital, its line on what stands there (the brief's `square`). A zone's list of buildings
+  and features is never given: the model painted orc forts, tents and pines from it into a square of empty ash.
+  In a city or town every small, house-sized block of strong colour in the terrain is a roof of that colour,
+  never trees or gardens (Stormwind's ochre roofs around the cathedral came back as gardens), and large areas
+  of one colour stay what they are (told "every block of strong colour", the model built a town on the giant
+  pink branch of Darnassus' tree); a square that is mostly water gets a line about open water, not the city's
+  (a square of sea west of Stormwind came back as a harbour town built on it). The fixed words are in
+  `dev/imagegen/maps/atlas.toml`. A picture of the look as a second
   reference did not work: it showed the same city from further out, and the model painted that instead.
 - **Checked against the game:** every painting is compared with the game's water (its liquids, and the
   speckled blue-grey the minimap draws for a city's canals) and lava: broad sheets of water where the game has
@@ -592,10 +623,13 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   crossroads", "a mine mouth in the hills at the bottom left") but name nothing, and image 2 is softened so its
   labels cannot be read: in the pilot the model wrote every legible name into the picture, garbled.
 - **One map, not tiles** (seams): the same look words and sun everywhere, each zone's atmosphere changing only
-  where the zone does; the squares painted in rows from the top left, each with its already painted neighbours
-  pasted into its edges, so it carries their colours, light and detail on; the overlaps (an eighth of a
-  square, 67 yards) blended with soft edges. Where the pilot shows the model losing roads, the guide's roads are drawn
-  back over the painting in its colours.
+  where the zone does; every square painted on its own, and the overlaps (an eighth of a square, 67 yards) cut
+  along the line where the two paintings differ least, softened a few pixels to either side: a cut, not a
+  cross-fade, which would show two paintings of the same trees at once. A square with its painted neighbours
+  pasted into its edges (tried 2026-10-19, to carry their colours on) came back with a garish strip of flowers
+  at the wrong scale along the opposite edge, with or without words about it. Left for the packing: a colour
+  pass that evens out the squares' light where they meet, so far out no patchwork shows. Where the pilot shows
+  the model losing roads, the guide's roads are drawn back over the painting in its colours.
 - **Levels of detail** (*Close up and far out*, *Three times closer*): the finest level is painted at 2048
   pixels a tile (a quarter of a yard a pixel, four times the minimap textures), with the full model, one
   square of one tile a picture (about two and a half minutes each): the model adds detail the terrain does not
@@ -604,9 +638,10 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   model kept the layout but painted soft, flat rock. Every coarser level is made from the finest, as a pyramid
   the map loads by zoom: only the tiles in view, at the level the zoom asks for; the map's nearest zoom
   (`Camera.NEAR`) goes about three times closer in this view.
-- **The whole run:** 1,112 tiles hold land (472 of the Eastern Kingdoms, 640 of Kalimdor): with the overlaps and
-  the squares painted again about 1,600 pictures, some 2.5 to 3 days on this computer (about 2 days at 1792
-  pixels a tile), started only when Saneroki says so. The 612 tiles of open sea
+- **The whole run** (`dev/tools/atlas paint`, in a terminal: a progress bar, the time left, `p` to pause and free
+  the graphics card for the game, `q` to quit; it goes on where it stopped): 1,112 tiles hold land (472 of the
+  Eastern Kingdoms, 640 of Kalimdor), 1,456 squares; with the squares painted again about 1,600 pictures, some
+  3 to 3.5 days on this computer, started only when Saneroki says so. The 612 tiles of open sea
   are not painted by the model: their water is made by code from the sea floor's depth, in the look of the
   painted shores.
 - **Size** (the 1,114 tiles with land, DXT1, the game's only kind of texture for this, with every coarser
@@ -632,7 +667,8 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   the close-up pilot on the terrain (`close.txt`: Stormwind, Goldshire, Westfall's edge, Orgrimmar, Razor Hill,
   and one tile at half a yard a pixel; tried 2026-10-19: the layout kept in 11 of 12 pictures, single houses,
   canals and trees clear at both scales; one of Orgrimmar's painted water where the canyon has land); then both
-  continents; packing into the pyramid; then the sea's life; then the routes.
+  continents; packing into the pyramid (`dev/tools/atlas join` stitches the squares; the levels, the blocks, the
+  colour pass and the index still to come); then the sea's life; then the routes.
 
 ### Maps without a world box
 

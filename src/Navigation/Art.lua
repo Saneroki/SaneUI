@@ -3,7 +3,7 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - Art
 --  The map drawn by hand: Blizzard's zone maps made one map of the whole world,
---  both continents at every zoom (the view Sketches), from the bottom up:
+--  both continents at every zoom (the view Parchment), from the bottom up:
 --
 --      the world map and each continent's, Blizzard's, their paper frames faded off
 --                  (Art/Edge.blp): the sea between and around the zones
@@ -27,10 +27,6 @@ local _, ns = ...
 --  A part over it is placed as Blizzard's exploration provider places it: in the
 --  art's own pixels, cut into the layer's tiles (MapExplorationDataProvider.lua).
 --
---  Over the terrain (the overlay) the art is half see-through: far out the
---  stitched map alone, up close the zones' maps, so nothing shows through twice,
---  and the land shows around them.
---
 --  Under the mouse, a map the view shows whole lights up what a click opens, as
 --  Blizzard's map does (MapHighlightDataProvider.lua): at a continent the zone,
 --  at the world the continent, in the game's own highlight art
@@ -40,7 +36,6 @@ local Core = SaneUI.Core
 local Art = {}
 ns.Art = Art
 
-Art.HALF = 0.5 -- the art's opacity over the terrain
 Art.OUTLINE = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Zones\\%d"
 Art.SKETCH = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Sketches\\%d-%d-%d"
 Art.EDGE = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Edge"
@@ -59,7 +54,7 @@ function Art.Build(holder)
     stitched = ns.Canvas.Pool(layer, "ARTWORK")
     outlines = ns.Canvas.Masks(layer)
     Overlays:OnStamp(ns.Guard(function() ns.Canvas.Refresh() end)) -- arrived: every part drawn
-    -- The highlight on a frame of its own: not half see-through with the art over the terrain.
+    -- The highlight on a frame of its own: over the map in every view, the art's or not.
     glow = CreateFrame("Frame", nil, holder)
     glow:SetSize(1, 1)
     glow:SetPoint("CENTER")
@@ -221,20 +216,16 @@ local function Under(view)
     end
 end
 
--- The art in view (view: Canvas.view): "full" over everything (Sketches), "half" see-through over the terrain
--- (Overlay), nil none.
-function Art.Place(view, mode)
+-- The art in view (view: Canvas.view), if shown (the view Parchment): the world's and the continents' maps,
+-- the stitched map over them, up close every zone's own over that.
+function Art.Place(view, shown)
     pool:Begin()
     parts:Begin()
     stitched:Begin()
     outlines:Begin()
-    if mode then
-        local full = mode == "full"
-        layer:SetAlpha(full and 1 or Art.HALF)
-        if full then Under(view) end
-        if (full or view.level ~= "zone") and ns.Terrain.Ready() then
-            ns.Terrain.Overview(view, stitched, Art.SKETCH, 2)
-        end
+    if shown then
+        Under(view)
+        if ns.Terrain.Ready() then ns.Terrain.Overview(view, stitched, Art.SKETCH, 2) end
         if view.level == "zone" then Zones(view) end
     end
     pool:End()
