@@ -599,9 +599,20 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   the squares painted again about 1,600 pictures, some 2.5 to 3 days on this computer (about 2 days at 1792
   pixels a tile), started only when Saneroki says so. The 612 tiles of open sea
   are not painted by the model: their water is made by code from the sea floor's depth, in the look of the
-  painted shores. Size at the finest level (DXT1, the game's only kind of texture for this): about 2.2 GB, 2.9 GB
-  with the coarser levels, or 1.7 GB shipped at 1536 pixels a tile: an art addon of its own, loaded only when
-  installed.
+  painted shores.
+- **Size** (the 1,114 tiles with land, DXT1, the game's only kind of texture for this, with every coarser
+  level): 512 pixels a tile (1x) 0.19 GB, 1024 (2x) 0.78 GB, 2048 (4x) 3.1 GB, of which the finest level alone
+  is 2.3 GB; zipped for download hardly smaller (8 %). Seen side by side at the nearest zoom
+  (`assets/generated/maps-pilot/sheets/zoom/`, 2026-10-19): 1x blurred, 2x soft, 4x sharp down to single carts
+  and paving. 4x only where things are built saves little: 61 % of the land tiles hold buildings. So the art
+  may come as two addons: the view up to 2x, and the finest level as an addon of its own, used when installed.
+- **Light in the game at every zoom:** only the blocks in view are drawn (512 pixels, 128 KB each), from the
+  level the zoom asks for, so a 4K screen needs some 40 to 60 blocks at any zoom, a few MB of video memory,
+  whatever the package's size: the size costs disk, not frames. What costs frames is loading new blocks, so the
+  textures come from the canvas' pools, a frame loads only a few new blocks, the ring around the view and the
+  next level are loaded ahead, and the coarser level stays drawn under a finer one until it has loaded (never a
+  hole). The blocks are compressed by a fast encoder when the art is built (ImageMagick's careful one took
+  minutes for one tile).
 - **Routes** (*Routes, later*): the game's own paths of ships and zeppelins (its taxi paths of the transports)
   and of flights.
 - **Life on the sea:** each creature and ship a small top-down sprite with a short looped flipbook
