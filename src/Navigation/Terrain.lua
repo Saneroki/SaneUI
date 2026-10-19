@@ -42,9 +42,9 @@ function Terrain.Build(holder)
     local layer = CreateFrame("Frame", nil, holder)
     layer:SetSize(1, 1)
     layer:SetPoint("CENTER")
-    layer:SetFrameLevel(holder:GetFrameLevel() + 1)
     pool = ns.Canvas.Pool(layer, "BACKGROUND")
     Tiles:OnStamp(ns.Guard(Arrived))
+    return layer
 end
 
 local function File(key)

@@ -38,6 +38,10 @@ function methods:EnableMouse(on) self._mouse = on and true or false end
 function methods:IsMouseEnabled() return self._mouse or false end
 function methods:EnableMouseWheel(on) self._wheel = on and true or false end
 function methods:IsMouseWheelEnabled() return self._wheel or false end
+function methods:SetFrameLevel(level) self._level = level end
+function methods:GetFrameLevel() return self._level or 1 end
+function methods:SetBlendMode(mode) self._blend = mode end
+function methods:SetTexCoord(...) self._coords = { ... } end
 function methods:SetFrameStrata(strata) self._strata = strata end
 function methods:GetFrameStrata() return self._strata or "MEDIUM" end
 function methods:SetRotation(angle) self._rotation = angle end
@@ -150,6 +154,13 @@ C_Map = {
             end
         end
         return { mapID = map, mapType = MAPS[map].kind }
+    end,
+    -- Elwynn's highlight under the mouse on the continent's map: file, atlas, the file's used part, its size
+    -- and its top left corner on the map
+    GetMapHighlightInfoAtPosition = function(map, x, y)
+        if map == 1415 and x >= 0.375 and x <= 0.625 and y >= 0.625 and y <= 0.7 then
+            return 4242, nil, 0.75, 0.5, 0.25, 0.075, 0.375, 0.625
+        end
     end,
     HasUserWaypoint = function() return waypoint ~= nil end,
     GetUserWaypoint = function() return waypoint end,
@@ -431,6 +442,16 @@ local shown = Shown()
 local arrow
 for _, widget in ipairs(W.frames) do if widget._atlas == "UI-WorldMapArrow" then arrow = widget end end
 check(arrow and not arrow._shown, "our arrow is out of sight while the game's minimap shows its own")
+check(minimap._level == frame:GetFrameLevel() + Hybrid.LEVEL and minimap._strata == frame:GetFrameStrata()
+    and arrow._parent._level == frame:GetFrameLevel() + Canvas.LEVELS.marks and Hybrid.LEVEL < Canvas.LEVELS.marks
+    and Hybrid.LEVEL > Canvas.LEVELS.art,
+    "the game's minimap above the map's layers, in the canvas' layer, under our marks: set each time it is placed")
+frame._width = 240
+Canvas.Layout()
+check(minimap._width == 240 and minimap._height == 240 and near(small.k, 120 / 160),
+    "a view wider than high: the game's minimap as large as its longer side, so it covers all of it")
+frame._width = 200
+Canvas.Layout()
 check(Count(shown, 801, 804) > 0 and Overviews(shown, 0) > 0, "the overlay under it: the terrain's tiles over its overview")
 
 -- The wheel walks the game's steps, then our map goes on alone.
@@ -498,14 +519,51 @@ frame._scripts.OnMouseDown(frame, "RightButton")
 frame._scripts.OnMouseUp(frame, "RightButton")
 check(small.level == "continent" and near(small.k, small.fit), "right click: its continent whole")
 
+-- The continent whole: the zone under the mouse lights up, and a click opens it.
+local hover, light
+cursorX, cursorY = 100 + (0 - small.u) * small.k, 100 + (-9250 - small.v) * small.k
+frame._mouseOver = true
+frame._scripts.OnEnter(frame)
+for _, widget in ipairs(W.frames) do
+    if widget._parent == frame and widget ~= tracker and widget._scripts.OnUpdate then hover = widget end
+end
+check(hover, "the mouse over the map: a look at what is under it")
+hover._scripts.OnUpdate(hover, 0.016)
+for _, widget in ipairs(W.frames) do if widget._texture == 4242 then light = widget end end
+check(light and light._shown and light._blend == "ADD" and light._coords[2] == 0.75 and light._coords[4] == 0.5
+    and near(light._width, 2000 * small.k + Canvas.OVERLAP, 0.01),
+    "the zone under it lights up in the game's highlight, added onto the map, as large as the game says")
+frame._scripts.OnMouseDown(frame, "LeftButton")
+frame._scripts.OnMouseUp(frame, "LeftButton")
+check(small.level == "zone" and near(small.u, 0) and near(small.v, -9250) and not small.follow and not light._shown,
+    "a click opens it: the zone whole in the view, as the game's map does")
+hover._scripts.OnUpdate(hover, 0.016)
+check(not light._shown, "at a zone nothing lights up")
+frame._mouseOver = false
+hover._scripts.OnUpdate(hover, 0.016)
+check(not hover._scripts.OnUpdate, "off the map the look stops")
+frame._scripts.OnMouseDown(frame, "RightButton")
+frame._scripts.OnMouseUp(frame, "RightButton")
+check(small.level == "continent", "right click: its continent again")
+
 -------------------------------------------------------------------------------
 --  The full screen: the same map, its own camera; the views at every zoom
 -------------------------------------------------------------------------------
 Window.Toggle()
 local clock = Window.frame._group
 check(clock and clock.playing, "the map key fills the screen")
+local holder
+for _, widget in ipairs(W.frames) do
+    if widget._parent == frame and widget._width == 1 and widget._height == 1 then holder = widget end
+end
+check(holder and holder:GetScale() == 1 and frame._parent._groups == nil and not minimap._shown,
+    "on its way the map stays in sight, first as the small view showed it; the game's minimap out of sight")
+clock:Run(0.5)
+local midway = holder:GetScale()
+check(midway > 1 and midway < (868 / Camera.START) / small.k, "half way the map has zoomed part of the way to the full view")
 frame._width, frame._height = 1600, 868
 clock:Run(1)
+check(holder:GetScale() == 1, "standing, it is laid out anew for the full view")
 local full = Window.full
 check(Canvas.camera == full and near(full.u, 500) and near(full.k, 868 / Camera.START), "full: its own camera, at the player the first time")
 local bar

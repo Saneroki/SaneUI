@@ -19,6 +19,11 @@ local _, ns = ...
 --  Over the terrain (the overlay) the art is half see-through: the zone's map then
 --  stands alone, without the continent's under it or its explored parts over it,
 --  so nothing shows through twice.
+--
+--  Under the mouse, a map the view shows whole lights up what a click opens, as
+--  Blizzard's map does (MapHighlightDataProvider.lua): at a continent the zone,
+--  at the world the continent, in the game's own highlight art
+--  (C_Map.GetMapHighlightInfoAtPosition), added onto what is under it, in every view.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Art = {}
@@ -28,15 +33,26 @@ Art.HALF = 0.5 -- the art's opacity over the terrain
 
 local Coords = ns.Coords
 local arts = {} -- [uiMapID] = its art (tiles across and down, the layer's size and its tiles', the files), or false
-local layer, pool, explored
+local layer, pool, explored, glow, light
 
 function Art.Build(holder)
     layer = CreateFrame("Frame", nil, holder)
     layer:SetSize(1, 1)
     layer:SetPoint("CENTER")
-    layer:SetFrameLevel(holder:GetFrameLevel() + 2) -- over the terrain
     pool = ns.Canvas.Pool(layer, "ARTWORK")
     explored = ns.Canvas.Pool(layer, "ARTWORK")
+    -- The highlight on a frame of its own: not half see-through with the art over the terrain.
+    glow = CreateFrame("Frame", nil, holder)
+    glow:SetSize(1, 1)
+    glow:SetPoint("CENTER")
+    light = glow:CreateTexture(nil, "ARTWORK")
+    if light.SetSnapToPixelGrid then
+        light:SetSnapToPixelGrid(false)
+        light:SetTexelSnappingBias(0)
+    end
+    light:SetBlendMode("ADD")
+    light:Hide()
+    return layer, glow
 end
 
 -- A map's art: its first layer, asked of the game once a session; false when it has none.
@@ -149,8 +165,51 @@ function Art.Place(view, mode)
     explored:End()
 end
 
+-- The highlight out of sight.
+function Art.Unlight()
+    light:Hide()
+end
+
+-- The game's highlight of what is under a point of the view's plane (u, v), on a map the view shows whole:
+-- at a continent the zone there, at the world the continent; none at a zone, nor where the game has none.
+function Art.Light(view, u, v)
+    local map, box
+    if view.level == "world" then
+        map, box = Coords.WorldMap(), Coords.WorldBox(view.map)
+    elseif view.level == "continent" then
+        map, box = view.map, Coords.Box(view.map)
+    end
+    if not map or not box then return Art.Unlight() end
+    local x, y = Coords.ToMap(box, u, v)
+    if x < 0 or x > 1 or y < 0 or y > 1 then return Art.Unlight() end
+    -- Eight answers: Core.Ask hands on three.
+    local ok, file, atlas, partX, partY, wide, high, left, top = pcall(C_Map.GetMapHighlightInfoAtPosition, map, x, y)
+    if not ok or type(wide) ~= "number" or type(high) ~= "number" or type(left) ~= "number" or type(top) ~= "number" then
+        return Art.Unlight()
+    end
+    if atlas then
+        -- An atlas at its own size, in the map art's pixels, centred where the game puts it.
+        local info, art = C_Texture.GetAtlasInfo(atlas), Of(map)
+        if not info or not art then return Art.Unlight() end
+        light:SetAtlas(atlas)
+        local across, down = info.width * box.width / art.width, info.height * box.height / art.height
+        local u0 = box.u + (left + wide / 2) * box.width - across / 2
+        local v0 = box.v - (top + high / 2) * box.height + down / 2
+        ns.Canvas.Put(light, u0, v0, across, down)
+        light:SetTexCoord(info.leftTexCoord, info.rightTexCoord, info.topTexCoord, info.bottomTexCoord)
+    elseif type(file) == "number" and file > 0 and wide > 0 and high > 0 and (partX or 0) > 0 and (partY or 0) > 0 then
+        light:SetTexture(file, "CLAMP", "CLAMP", "TRILINEAR")
+        ns.Canvas.Put(light, box.u + left * box.width, box.v - top * box.height, wide * box.width / partX,
+            high * box.height / partY, partX, partY)
+    else
+        return Art.Unlight()
+    end
+    light:Show()
+end
+
 -- Every texture let go.
 function Art.Clear()
+    light:Hide()
     pool:Begin()
     pool:End()
     explored:Begin()

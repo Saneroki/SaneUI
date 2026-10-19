@@ -12,8 +12,9 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
 `Doc/ideas/Navigation.md`.
 
 ## How to use
-- **The map:** move the mouse all the way into the screen's top right corner; the corner again, Esc or the
-  close button on its title bar brings it back. The game's map key (M) and quest log key (L), `/sane map`,
+- **The map:** move the mouse all the way into the screen's top right corner; the corner again (move away
+  from it first), Esc or the close button on its title bar brings it back. On the way the map grows and zooms
+  with the window, from the small view to the full one. The game's map key (M) and quest log key (L), `/sane map`,
   and every other way to the game's map (the quest log button, a click on a quest, a chat link) open it too.
 - **The same in both views:**
   - **drag** with the left button: the map moves, and stops following you;
@@ -21,6 +22,8 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
     minimap's zoom steps first (its live dots show then), then goes on out to the whole continent and the
     world;
   - **right click:** one map out (a zone, its continent, the world), as on the game's map;
+  - **the mouse over a continent shown whole** lights up the zone under it in the game's own highlight, over
+    the world the continent; **a click** opens it, as on the game's map;
   - **Ctrl and a click:** the game's map pin there; a click on the pin makes the game's arrow on the screen
     lead to it, Ctrl and a click takes it away, Shift and a click writes it into the chat;
   - **a click** on the game's minimap (while it shows) pings, as there.
@@ -51,7 +54,12 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
   holder has moved past a margin, or another zone is in the middle. The layers' textures come from pools by
   key, so what stays in view is not loaded again. The zoom changes at once, as on the game's map. Nothing runs
   at rest but the tracker: every frame while the view follows you (two questions to the game and one
-  `SetPoint`), else a few times a second.
+  `SetPoint`), else a few times a second, and, while the mouse is over the map, a look at what is under it
+  when it moved (the game's highlight, `C_Map.GetMapHighlightInfoAtPosition`). On the window's way to the full
+  screen and back the map goes with it (Core's option `moving`): laid out once at the start over what both
+  views show, at the wider one's zoom, then only scaled and moved on each step from the view it leaves to the
+  one it comes to (the middle straight, the zoom by equal factors). The layers' frame levels are set from the
+  canvas' at every layout.
 - **Terrain** (`Terrain.lua`): the game's own minimap textures, one per tile of a continent's 64 x 64 grid
   (Core's data, the set *Tiles* in the pack *World*), up to 400 at once; under them, and alone further out,
   the module's overview of the same tiles, 64 texels a tile, 8 x 8 tiles a texture (`Art/Terrain/`). At the
@@ -63,7 +71,8 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing) and the
   game's map pin, at a fixed size.
 - **The game's minimap** (`Hybrid.lua`): over our map while the view follows you at one of its zoom steps,
-  square, as large as the view's shorter side, its ground off (as Blizzard's hybrid minimap does), so only its
+  square, as large as the view's longer side so it covers all of it (the canvas cuts the rest), above the map's
+  layers and under our marks (its layer and level set again each time it is placed), its ground off (as Blizzard's hybrid minimap does), so only its
   live dots and their tooltips show; indoors it draws its own ground, which our terrain does not have. Its
   left and right clicks go through to our map; its border, zoom buttons and the rest of the game's minimap
   cluster are out of sight and take no clicks (Edit Mode's selection keeps its). Each step's radius is read
@@ -102,6 +111,9 @@ minimap lies over it for its live dots; the game's map stays closed, and its key
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-19, later:** a zone lights up under the mouse and opens by a click (a continent at the world); the
+  map grows and zooms with its window on the way to the full screen and back; the game's minimap covers the
+  whole small window, always above the map; the corner fills the screen once a visit.
 - **2026-10-19:** the whole module but the map's data: the minimap and the map the same map, each view with its
   own camera; the views at every zoom out to the world, the terrain's overview; right click, Ctrl-click and
   the map pin; the game's minimap over ours for its live dots; the game's map and its keys taken over; the

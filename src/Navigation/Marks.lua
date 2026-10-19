@@ -60,14 +60,12 @@ function Marks.Build(canvasHolder)
     layer = CreateFrame("Frame", nil, holder)
     layer:SetSize(1, 1)
     layer:SetPoint("CENTER")
-    layer:SetFrameLevel(holder:GetFrameLevel() + 20) -- over the game's minimap (Hybrid.lua)
     arrow = layer:CreateTexture(nil, "OVERLAY", nil, 7)
     arrow:SetAtlas("UI-WorldMapArrow")
     arrow:SetSize(Marks.ARROW, Marks.ARROW)
     arrow:Hide()
     pin = CreateFrame("Button", nil, layer)
     pin:SetSize(Marks.PIN, Marks.PIN)
-    pin:SetFrameLevel(layer:GetFrameLevel() + 1)
     pin.icon = pin:CreateTexture(nil, "ARTWORK")
     pin.icon:SetAllPoints()
     pin:SetHighlightAtlas("Waypoint-MapPin-Highlight", "ADD")
@@ -75,6 +73,12 @@ function Marks.Build(canvasHolder)
     pin:SetScript("OnEnter", ns.Guard(Tip))
     pin:SetScript("OnLeave", GameTooltip_Hide)
     pin:Hide()
+end
+
+-- The layer at that frame level (the canvas' order, Canvas.lua: over the game's minimap), the pin over it.
+function Marks.Stack(level)
+    layer:SetFrameLevel(level)
+    pin:SetFrameLevel(level + 1)
 end
 
 -- A point of a continent's plane, at the view's place (the canvas' origin and zoom); nil when not linked.

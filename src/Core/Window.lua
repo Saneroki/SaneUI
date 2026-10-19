@@ -76,7 +76,10 @@ local Core = SaneUI.Core
 --          classic = { { text = "Friends list", show = function() end } },  -- the game's own windows it
 --                                       -- stands for: full, it lists them in the dropdown Classic windows;
 --                                       -- one chosen, it goes back to its zone and show() brings the game's
---          filled = function(full) end, -- it has begun to fill the screen (true) or to go back (false)
+--          filled = function(full, width, height) end, -- it has begun to fill the screen (true) or to go
+--                                       -- back (false), to that size
+--          moving = function(share) end, -- with edge: what it holds goes with the motion, in sight, placed at
+--                                       -- every step by the share of the way (Edge.lua), not faded out and in
 --          close = function() end,      -- what its close button does; without: it hides the window
 --          native = {                   -- the game's own window it stands for (a vendor's, the auction house)
 --              frame = function() end,  -- that window (or a function giving it, nil while not loaded)

@@ -30,7 +30,11 @@ local Core = SaneUI.Core
 --      content = region                     -- what the window holds (a chat's list)
 --      classic = { { text = "Friends list", show = function() end }, ... }  -- the game's windows it stands
 --                                           -- for, in the dropdown Classic windows (or a function giving them)
---      filled = function(full) end          -- it has begun to fill the screen (true) or to go back
+--      filled = function(full, width, height) end  -- it has begun to fill the screen (true) or to go back,
+--                                           -- to that size
+--      moving = function(share) end         -- what it holds goes with the motion instead of fading out:
+--                                           -- at each step, the share of the way (0 to 1; Swing goes a
+--                                           -- little past 1 and back)
 --      docked = function(zone) end          -- Window's hook, called once it has filled the screen too
 --  A switch of the section changed (its options page, a profile, Core.Set):
 --  every window that reads that module's settings is updated at once
@@ -51,7 +55,11 @@ local Core = SaneUI.Core
 --  only then (docked), once, not on every step. A window that lays itself out
 --  in its own OnSizeChanged should skip that while edge.away (every step of
 --  the motion sizes it, unseen) and lay out in its docked hook instead, which
---  Edge calls once at the end of either way.
+--  Edge calls once at the end of either way. A window whose content can go with
+--  the motion (option moving: the map grows and zooms with its window) keeps it
+--  in sight the whole way: moving is told how far the motion has come at every
+--  step, and filled where the window goes (its size there), so the content is
+--  made ready once, at the start, and only placed on the steps.
 --
 --  Esc brings a full window back as it closes the game's windows (Core.Escape,
 --  Escape.lua); a window Esc closes (escape = "close") is closed instead, full
@@ -63,7 +71,10 @@ local Core = SaneUI.Core
 --  under it). Docked in a corner, only a square of four pixels in that corner:
 --  the mouse has to go all the way into it. A strip that comes under a mouse
 --  that is there already (a window let go at the edge) does nothing: the mouse
---  has to come anew.
+--  has to come anew. One push is one change: after it the strip counts again
+--  only once the mouse has gone some way from that edge or corner (the window's
+--  motion moves the strip from under the mouse and back, which is no new push);
+--  meanwhile a look a few times a second sees whether it has gone.
 -------------------------------------------------------------------------------
 local Edge = {}
 Core.Edge = Edge
@@ -78,6 +89,8 @@ Edge.DROP = 10
 Edge.CLASSIC = "Classic windows"
 Edge.CORNERS = "Window corners" -- the section of the corners' switches (Edge.Options) -- the dropdown's words
 Edge.MENU_WIDTH, Edge.MENU_INSET = 180, 10 -- its width; from the full window's top right corner, or its buttons
+Edge.AWAY = 24   -- the screen's pixels the mouse has to go from the edge or corner it pushed before a push counts again
+Edge.LOOK = 0.1  -- seconds between two looks whether it has gone
 
 -- The backgrounds to choose from: solid black, or one of the quiet tiles Blizzard fills its windows
 -- with (Skin.TILES), repeated every size units.
@@ -155,7 +168,7 @@ local function Strip(edge, key)
     strip:SetFrameStrata("DIALOG")
     if strip.SetFixedFrameStrata then strip:SetFixedFrameStrata(true) end
     if strip.SetMouseMotionEnabled then strip:SetMouseMotionEnabled(true) else strip:EnableMouse(true) end
-    strip:SetScript("OnEnter", function() Core.Safe("full screen", edge.Pushed, edge) end)
+    strip:SetScript("OnEnter", function() Core.Safe("full screen", edge.Pushed, edge, key) end)
     local corners = SIDES[key]
     if corners then
         local out = Out(edge, key)
@@ -225,6 +238,7 @@ end
 -- no time it is simply in sight.
 local function Content(edge, coming)
     local content = edge.window.options.content
+    if edge.window.options.moving then return end -- it goes with the motion, in sight
     if not content or (coming == nil and not edge.fade) then return end
     if not edge.fade then
         edge.fade = Core.Motion.Fade(content)
@@ -324,6 +338,8 @@ local function Step(edge, progress)
     frame:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", left, bottom)
     frame:SetSize(width, height)
     Cover(edge, Between(from[5], to[5], math.min(math.max(share, 0), 1)), left, bottom, width, height)
+    local moving = edge.window.options.moving
+    if moving then Core.Safe("full screen", moving, share) end
     if progress >= 1 then Stand(edge) end
 end
 
@@ -391,19 +407,49 @@ function methods:Fill(on)
     end
     self.kind = Core.Motion.Kind(window.options.motion and Core.Safe("full screen", window.options.motion) or self.settings.motion)
     Content(self, false)
-    if window.options.filled then Core.Safe("full screen", window.options.filled, on) end
+    if window.options.filled then Core.Safe("full screen", window.options.filled, on, to[3], to[4]) end
     self.clock = self.clock or Core.Motion.Clock(frame, function(progress) Step(self, progress) end,
         function(problem) Failed(self, problem) end)
     self.clock:Run(self.kind.time)
 end
 
--- The mouse came into a strip: it is at the screen's edge where the window touches it, or in its
--- corner. Not if the window was placed under it a moment ago, nor while a button is held (a drag),
--- nor in Edit Mode, where windows are arranged.
-function methods:Pushed()
+-- Whether the mouse is still at the edge or corner it pushed (edge.pushed: a side, or "corner"), within
+-- Edge.AWAY of the screen's pixels.
+local function Near(edge)
+    local zone, key = edge.zone and Core.Dock.ZONES[edge.zone], edge.pushed
+    if not zone or not key then return false end
+    local scale = UIParent:GetEffectiveScale()
+    local x, y = GetCursorPosition()
+    x, y = x / scale, y / scale
+    local room = Pixels(UIParent, Edge.AWAY)
+    local corner = key == "corner"
+    local left, right = key == "left" or corner and zone.left, key == "right" or corner and zone.right
+    local top, bottom = key == "top" or corner and zone.top, key == "bottom" or corner and zone.bottom
+    return (not left or x <= room) and (not right or x >= UIParent:GetWidth() - room)
+        and (not top or y >= UIParent:GetHeight() - room) and (not bottom or y <= room)
+end
+
+-- A look whether the mouse has gone from where it pushed: gone, a push counts again; else another look soon.
+local function Look(edge)
+    if not edge.pushed then return end
+    if not Near(edge) then
+        edge.pushed = nil
+        return
+    end
+    C_Timer.After(Edge.LOOK, edge.looking) -- unguarded: edge.looking is made by Core.Guard (Edge.New)
+end
+
+-- The mouse came into a strip (key: its side, or "corner"): it is at the screen's edge where the window
+-- touches it, or in its corner. Once a visit: not again before the mouse has gone from there. Not if the
+-- window was placed under it a moment ago, nor while a button is held (a drag), nor in Edit Mode, where
+-- windows are arranged.
+function methods:Pushed(key)
+    if self.pushed then return end
     if GetTime() < self.quiet or IsMouseButtonDown() or Core.EditMode.active then return end
     local usable = self.window.options.usable
     if usable and not usable() then return end
+    self.pushed = key or "corner"
+    C_Timer.After(Edge.LOOK, self.looking) -- unguarded: self.looking is made by Core.Guard (Edge.New)
     self:Fill(not self.full)
 end
 
@@ -536,6 +582,7 @@ function Edge.New(window)
     edge.frame:HookScript("OnHide", Core.Guard("window", function()
         if edge.away then Core.Safe("full screen", window.Place, window) end
     end))
+    edge.looking = Core.Guard("full screen", function() Look(edge) end) -- made once: the look while pushed
     edges[edge] = true
     return edge
 end

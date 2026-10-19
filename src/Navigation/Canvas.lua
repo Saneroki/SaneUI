@@ -12,6 +12,8 @@ local _, ns = ...
 --       │    ├─ art       Blizzard's map art and its explored parts (Art.lua)
 --       │    └─ marks     the player's arrow, the map pin (Marks.lua)
 --       └─ the game's minimap, between the art and the marks, while it shows (Hybrid.lua)
+--  Their frame levels follow the canvas' at every layout (Canvas.LEVELS): a window raised to the full
+--  screen and put back leaves its frames' levels as they come.
 --
 --  Laid out around an origin, the camera's middle when it last was: a texture
 --  stands at (its point - origin) * zoom from the holder's middle, and the
@@ -26,7 +28,13 @@ local _, ns = ...
 --  (and stops following); the wheel zooms around the mouse (the game's minimap's
 --  steps first while following, Hybrid.lua); a right click steps one map out
 --  (zone, continent, world); Ctrl and a left click puts the game's map pin there;
---  a plain left click on the game's minimap pings.
+--  a plain left click on the game's minimap pings. Over a continent shown whole
+--  the zone under the mouse lights up, over the world the continent (Art.Light),
+--  and a plain click opens it, as on the game's map.
+--
+--  On the window's way to the full screen and back the map goes with it (Morph): laid
+--  out once, at the start, for the whole way, it is only scaled and moved on the
+--  steps, from where the view it leaves looks to where the view it comes to looks.
 --
 --  The tracker asks where the player is: every frame while the view follows
 --  (two questions to the game and one SetPoint), else a few times a second; and
@@ -42,8 +50,12 @@ Canvas.MARGIN = 0.15 -- what is laid out reaches so far past the view, as a part
 Canvas.OVERLAP = 1   -- each texture so many units larger than its square, so no seam shows between two
 Canvas.DRAG = 4      -- the mouse moves so many units with the button held before it is a drag, not a click
 Canvas.LOOK = 0.1    -- seconds between two looks at the player's place while the view does not follow
+Canvas.LEVELS = { holder = 1, terrain = 2, art = 3, light = 4, marks = 20 } -- above the canvas; the game's
+                                                         -- minimap at Hybrid.LEVEL, the full map's buttons at 30
 
-local frame, holder, camera, tracker
+local frame, holder, camera, tracker, layers, hover
+local held = false -- on the window's way, or hidden: its size changes lay nothing out
+local morph       -- on the window's way: { a = where it comes from, b = where it goes, now = where it is }
 -- Where the layers were laid out: the origin (u, v), the zoom (k), the view in the plane with its margin
 -- (left, right, top, bottom), its height in yards (span); the continent's map whose plane it is (map), its
 -- instance (continent), the level and the zone shown. One table, filled anew at each layout.
@@ -52,6 +64,7 @@ Canvas.view = view
 local laid = false -- something is laid out
 local known = false -- the player's place is known on the view's continent
 local lastInput = 0 -- when the mouse last did something to the map
+local overX, overY -- where the mouse was at the last look for the highlight (nil: look again)
 local nextLook = 0
 
 -------------------------------------------------------------------------------
@@ -135,11 +148,22 @@ local function Native()
     ns.Guarded(ns.Hybrid.Place, camera, width, height, known)
 end
 
+-- The layers' frame levels from the canvas' own.
+local function Stack()
+    local base = frame:GetFrameLevel()
+    holder:SetFrameLevel(base + Canvas.LEVELS.holder)
+    layers.terrain:SetFrameLevel(base + Canvas.LEVELS.terrain)
+    layers.art:SetFrameLevel(base + Canvas.LEVELS.art)
+    layers.light:SetFrameLevel(base + Canvas.LEVELS.light)
+    ns.Marks.Stack(base + Canvas.LEVELS.marks)
+end
+
 -- Every layer laid out anew around the camera's middle.
 function Canvas.Layout()
     if not frame or not camera or not camera.map then return end
     local width, height = frame:GetSize()
     if width <= 0 or height <= 0 then return end
+    morph = nil
     ns.Hybrid.Fit(camera, width, height)
     camera:Frame(width, height)
     local box = Coords.Box(camera.map)
@@ -148,8 +172,11 @@ function Canvas.Layout()
     view.zone = Zone()
     view.span = height / camera.k
     view.left, view.right, view.top, view.bottom = camera:View(math.max(width, height) * Canvas.MARGIN)
+    holder:SetScale(1)
     holder:SetPoint("CENTER", 0, 0)
     laid = true
+    overX = nil -- the highlight is placed anew around the new origin
+    Stack()
     Draw()
     Native()
 end
@@ -264,6 +291,19 @@ local function Pin(x, y)
     end
 end
 
+-- A plain click on a map the view shows whole: the zone under the mouse at a continent, the continent at
+-- the world, fills the view, as a click on the game's map opens it. False where nothing is opened.
+local function Into(x, y)
+    if camera.level == "zone" then return false end
+    local u, v = camera.u + x / camera.k, camera.v + y / camera.k
+    local map
+    if camera.level == "world" then map = Coords.ContinentAt(camera.map, u, v) else map = Coords.ZoneAt(camera.map, u, v) end
+    if not map or not camera:Fit(map) then return false end
+    ns.Art.Unlight()
+    Canvas.Layout()
+    return true
+end
+
 local function Up(_, button)
     frame:SetScript("OnUpdate", nil)
     if button ~= pressed then return end
@@ -276,7 +316,7 @@ local function Up(_, button)
     local x, y = FromMiddle()
     if not x then return end
     if button == "LeftButton" then
-        if IsControlKeyDown() then Pin(x, y) else ns.Hybrid.Ping(x, y) end
+        if IsControlKeyDown() then Pin(x, y) elseif not ns.Hybrid.Ping(x, y) then Into(x, y) end
     elseif button == "RightButton" and camera:StepOut() then
         Canvas.Layout()
     end
@@ -285,7 +325,7 @@ end
 local function Wheel(_, delta)
     lastInput = GetTime()
     local width, height = frame:GetSize()
-    if known and ns.Hybrid.Wheel(camera, delta, math.min(width, height)) then
+    if known and ns.Hybrid.Wheel(camera, delta, ns.Hybrid.Side(width, height)) then
         camera:Settle()
         return Canvas.Layout()
     end
@@ -293,6 +333,26 @@ local function Wheel(_, delta)
     if not x then return end
     camera:ZoomAt(delta, x, y)
     Canvas.Layout()
+end
+
+-- While the mouse is over the canvas: what a click would open lights up, looked at again when the mouse
+-- moved. Off the canvas, a button held, the window on its way: out of sight, and the look stops.
+local function Over()
+    if not frame:IsMouseOver() or pressed or held or not laid then
+        hover:SetScript("OnUpdate", nil)
+        overX = nil
+        return ns.Art.Unlight()
+    end
+    local x, y = FromMiddle()
+    if not x or (x == overX and y == overY) then return end
+    overX, overY = x, y
+    if view.level == "zone" then return ns.Art.Unlight() end
+    ns.Art.Light(view, camera.u + x / camera.k, camera.v + y / camera.k)
+end
+local hovering = ns.Guard(Over) -- made once: the look while the mouse is over the canvas
+
+local function Entered()
+    hover:SetScript("OnUpdate", hovering)
 end
 
 -- A drag ends when the canvas goes (the window on its way, hidden).
@@ -316,16 +376,21 @@ function Canvas.Build(parent)
     holder = CreateFrame("Frame", nil, frame)
     holder:SetSize(1, 1)
     holder:SetPoint("CENTER")
-    ns.Terrain.Build(holder)
-    ns.Art.Build(holder)
+    layers = { terrain = ns.Terrain.Build(holder) }
+    layers.art, layers.light = ns.Art.Build(holder)
     ns.Marks.Build(holder)
+    Stack()
     tracker = CreateFrame("Frame", nil, frame)
+    hover = CreateFrame("Frame", nil, frame)
     frame:EnableMouse(true)
     frame:EnableMouseWheel(true)
     frame:SetScript("OnMouseDown", ns.Guard(Down))
     frame:SetScript("OnMouseUp", ns.Guard(Up))
     frame:SetScript("OnMouseWheel", ns.Guard(Wheel))
+    frame:SetScript("OnEnter", ns.Guard(Entered))
     frame:SetScript("OnHide", ns.Guard(Gone))
+    -- Sized while it stands (Edit Mode): laid out for the new size; not on the window's way, nor hidden.
+    frame:SetScript("OnSizeChanged", ns.Guard(function() if laid and not held then Canvas.Layout() end end))
     ns.Listen("LIVE", function(what)
         if what == "waypoint" then
             if laid then ns.Marks.Pin(view) end
@@ -342,17 +407,22 @@ function Canvas.Use(viewCamera)
     Canvas.camera = camera
 end
 
+-- A camera ready for a view of that size: on the player the first time (else where it was left).
+local function Aim(viewCamera, width, height)
+    if viewCamera.map then return true end
+    viewCamera.width, viewCamera.height = width, height
+    local map, u, v = Live.Player()
+    map = map or Coords.Continents()[1]
+    return map and viewCamera:Show(map, u, v) or false
+end
+
 -- The canvas stands at its size (the window is small, or fills the screen): the camera on the player the
 -- first time (else where it was left), laid out, the tracker on.
 function Canvas.Open()
     local width, height = frame:GetSize()
     if width <= 0 or height <= 0 then return end
-    if not camera.map then
-        local map, u, v = Live.Player()
-        map = map or Coords.Continents()[1]
-        camera.width, camera.height = width, height
-        if not map or not camera:Show(map, u, v) then return end
-    end
+    held = false
+    if not Aim(camera, width, height) then return end
     known = false
     nextLook = 0
     Canvas.Layout()
@@ -369,20 +439,86 @@ function Canvas.Fit(viewCamera, map, width, height)
     return viewCamera:Fit(map)
 end
 
--- On its way to the full screen or back: nothing follows, the game's minimap out of sight.
+-- Nothing follows, the game's minimap and the marks out of sight (the window on its way, or hidden).
 function Canvas.Hold()
     if not frame then return end
+    held = true
     tracker:SetScript("OnUpdate", nil)
     Gone()
     ns.Hybrid.Hide()
     ns.Marks.Clear()
 end
 
+-- Where a view looks, as plain numbers: its continent, middle, zoom, size and level.
+local function Spot(from)
+    return { map = from.map, u = from.u, v = from.v, k = from.k, width = from.width, height = from.height,
+             level = from.level }
+end
+
+-- What a spot shows, and margin units past it: left, right, top, bottom in its plane.
+local function Reach(spot, margin)
+    local across, high = (spot.width / 2 + margin) / spot.k, (spot.height / 2 + margin) / spot.k
+    return spot.u - across, spot.u + across, spot.v + high, spot.v - high
+end
+
+-- The window begins its way to the full screen or back (Window.lua): the canvas will be width x height
+-- and show target's view there. The map is laid out once for the whole way, at the wider of the two
+-- views' zooms, over what both show; Step scales and moves it from the view it leaves (or from where a way
+-- turned back stands) to target's. Without a view to leave it simply stands at target's.
+function Canvas.Morph(target, width, height)
+    if not frame then return end
+    Canvas.Hold()
+    if width <= 0 or height <= 0 or not Aim(target, width, height) then return end
+    ns.Hybrid.Fit(target, width, height)
+    target:Frame(width, height)
+    local b = Spot(target)
+    local a = morph and morph.now or (laid and camera and camera.map and Spot(camera)) or nil
+    if a and a.map ~= b.map then
+        local link = Coords.Link(a.map, b.map) -- into the plane it goes to, at the same size on the screen
+        if link then
+            a.u, a.v, a.k, a.map = link.du + link.su * a.u, link.dv + link.sv * a.v, a.k / math.sqrt(link.su * link.sv), b.map
+        else
+            a = nil
+        end
+    end
+    a = a or b
+    local wide = a.height / a.k > b.height / b.k and a or b
+    local margin = math.max(width, height) * Canvas.MARGIN
+    local l1, r1, t1, b1 = Reach(a, margin)
+    local l2, r2, t2, b2 = Reach(b, margin)
+    view.u, view.v, view.k = wide.u, wide.v, wide.k
+    view.map, view.continent, view.level = b.map, Coords.Box(b.map).continent, wide.level
+    view.zone = wide.level == "zone" and Coords.ZoneAt(b.map, wide.u, wide.v) or nil
+    view.span = wide.height / wide.k
+    view.left, view.right = math.min(l1, l2), math.max(r1, r2)
+    view.top, view.bottom = math.max(t1, t2), math.min(b1, b2)
+    laid = true
+    Stack()
+    Draw()
+    morph = { a = a, b = b, now = Spot(a) }
+    Canvas.Step(0)
+end
+
+-- A step of the window's way: the share of it (0 to 1; past 1 and back for Swing, where the map stays at
+-- its end). The middle goes straight, the zoom by equal factors, so the map neither rushes nor lags.
+function Canvas.Step(share)
+    if not morph then return end
+    local a, b, now = morph.a, morph.b, morph.now
+    local t = math.min(math.max(share, 0), 1)
+    now.u, now.v = a.u + (b.u - a.u) * t, a.v + (b.v - a.v) * t
+    now.k = a.k * (b.k / a.k) ^ t
+    now.width, now.height = frame:GetSize()
+    now.map, now.level = b.map, b.level
+    local scale = now.k / view.k
+    holder:SetScale(scale)
+    holder:SetPoint("CENTER", (view.u - now.u) * now.k / scale, (view.v - now.v) * now.k / scale)
+end
+
 -- Hidden: every texture let go, nothing runs. Where the cameras looked is kept for the next time.
 function Canvas.Close()
     if not frame then return end
     Canvas.Hold()
-    laid = false
+    laid, morph = false, nil
     ns.Safe("terrain", ns.Terrain.Clear)
     ns.Safe("map art", ns.Art.Clear)
 end

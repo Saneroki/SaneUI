@@ -3,8 +3,32 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 320 checks (Core, with its options and profiles), 339 (Abilities), 439 (Tooltips), 371 (Social), 90 (Sync), 351 (windows), 175 (data in the game), 98 (Navigation).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 441 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 109 (Navigation).
 A game restart takes it in (a new addon, Navigation; new files in Core's, Social's and Tooltips' TOCs, key bindings).
+
+### Navigation: zones open by a click, the map goes with its window; Core: one push a visit (Saneroki, 2026-10-19)
+- Core's Edge: one push is one change. After a push the edge or corner counts again only once the mouse has
+  gone `Edge.AWAY` (24) of the screen's pixels from it; a look every `Edge.LOOK` (0.1 s) while it stays sees
+  when (the window's motion moved the square from under the resting mouse and back, which filled the screen
+  and took it back again and again). The strip tells `Pushed` its side.
+- Core's Edge and Window: the option `moving(share)`: what the window holds stays in sight on the way and is
+  placed at every step, instead of fading out and coming in; `filled(on, width, height)` now also says the size
+  the window goes to. The stand-in's `GetCursorPosition` follows `W.cursorX`, `W.cursorY`; the Social test lets
+  the mouse go from the edge before its second push.
+- Navigation's map goes with the window (`Canvas.Morph`, `Canvas.Step`): laid out once at the start over what
+  both views show, at the wider view's zoom; each step scales and moves the holder only, from the view it leaves
+  (or where a way turned back stands) to the one it comes to, the middle straight, the zoom by equal factors.
+  The canvas lays out again when it is sized while it stands (Edit Mode).
+- The game's minimap covers the whole view (`Hybrid.Side`: the longer side; the canvas cuts the rest), its
+  strata and level set from the canvas each time it is placed; the canvas sets its layers' levels at every
+  layout (`Canvas.LEVELS`; `Marks.Stack`; the layers' `Build` return their frames). Its mask is set again after
+  the game's answer to the setting `rotateMinimap` (`CVAR_UPDATE`; in this game the minimap's config is a
+  function of its own, not `MinimapCluster:UpdateMinimapConfig`).
+- The zone under the mouse lights up on a continent shown whole, the continent on the world (`Art.Light`: the
+  game's `C_Map.GetMapHighlightInfoAtPosition`, a file or an atlas, added, on a frame of its own over the art);
+  looked at only while the mouse is over the map and has moved. A plain click opens it (`Camera:Fit`).
+- Tests: Navigation 109 checks (the minimap's level and cover, the map half way through the motion, the
+  highlight and the click), windows 356 (one push a visit, a window whose content goes with the motion).
 
 ### Navigation: the whole module but the map's data (Saneroki, 2026-10-19)
 - Saneroki's decisions: the minimap and the full screen map look and behave exactly the same (the minimap a

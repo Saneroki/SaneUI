@@ -9,7 +9,10 @@ local _, ns = ...
 --  map canvas (Blizzard_HybridMinimap). Both views do the same (Window.lua):
 --
 --      shown        while the view follows the player and its zoom is one of the game's minimap's
---                   steps (camera.native); square, as large as the view's shorter side, in its middle
+--                   steps (camera.native); square, as large as the view's longer side, in its middle,
+--                   so it covers the whole view (the canvas cuts what reaches past the shorter side);
+--                   above the map's layers and under its marks, set again each time it is placed (a
+--                   window raised and put back leaves the levels of its frames as they come)
 --      the wheel    walks the game's steps first; out past the widest our map goes on alone, and
 --                   in again it takes the widest step (Wheel)
 --      clicks       the left and right button go through to our map (drag, Ctrl-click, one map out);
@@ -30,7 +33,7 @@ local Hybrid = {}
 ns.Hybrid = Hybrid
 
 Hybrid.MASK = "Interface\\Buttons\\WHITE8X8" -- square: the corners of our map are the minimap's too
-Hybrid.LEVEL = 10 -- over the canvas' layers, under its marks (Marks.lua)
+Hybrid.LEVEL = 10 -- over the canvas' layers, under its marks (Canvas.lua, Marks.lua)
 local WAIT = "navigation: minimap" -- what waits for the fight's end
 
 local taken, saved, canvas, hooked
@@ -61,6 +64,11 @@ local function Survey()
     end
     minimap:SetZoom(was)
     surveying = false
+end
+
+-- The side of the game's minimap in a view of that size: the longer side, so it covers the whole view.
+function Hybrid.Side(width, height)
+    return math.max(width, height)
 end
 
 -- The zoom a step gives a view of that size (units per yard), or nil while its radius is not known.
@@ -161,14 +169,17 @@ function Hybrid.GiveBack()
     Give()
 end
 
--- The game sets the minimap's mask again when its rotation is switched (MinimapCluster:UpdateMinimapConfig):
--- ours again after it, and its border kept out of sight.
+-- The game sets the minimap's mask again when its rotation is switched (MinimapCluster:UpdateMinimapConfig;
+-- in this game a function of its own, on the setting rotateMinimap): ours again after it, and its border
+-- kept out of sight.
 local function Reset()
     if not taken then return end
     local minimap, _, backdrop = Parts()
     minimap:SetMaskTexture(Hybrid.MASK)
     if backdrop then backdrop:SetAlpha(0) end
 end
+
+local resetting = ns.Guard(Reset) -- made once
 
 -- A zoom step was set (by us, or the game going indoors): its radius learnt, the view's zoom with it. The
 -- first time indoors, or outdoors, every step is measured.
@@ -196,6 +207,8 @@ function Hybrid.Start(canvasFrame)
         hooksecurefunc(cluster, "UpdateMinimapConfig", ns.Guard(Reset))
         hooked = true
     end
+    -- After the game's own answer to the setting, on the next frame.
+    ns.On("CVAR_UPDATE", function(name) if name == "rotateMinimap" then C_Timer.After(0, resetting) end end)
     ns.On("MINIMAP_UPDATE_ZOOM", Zoomed)
     ns.On("ZONE_CHANGED_INDOORS", Zoomed)
     ns.On("PLAYER_ENTERING_WORLD", Entered)
@@ -211,7 +224,7 @@ end
 -- (it changes with the size, and indoors); a step not known any more is left.
 function Hybrid.Fit(camera, width, height)
     if not camera.native then return end
-    local zoom = taken and Hybrid.Zoom(camera.native, math.min(width, height))
+    local zoom = taken and Hybrid.Zoom(camera.native, Hybrid.Side(width, height))
     if zoom then camera.k = zoom else camera.native = nil end
 end
 
@@ -221,7 +234,7 @@ end
 function Hybrid.Place(camera, width, height, known)
     if not taken then return end
     local minimap = Parts()
-    local size = math.min(width, height)
+    local size = Hybrid.Side(width, height)
     local step = camera.native
     local zoom = step and camera.follow and known and Hybrid.Zoom(step, size)
     if not zoom then
@@ -229,6 +242,8 @@ function Hybrid.Place(camera, width, height, known)
         return
     end
     minimap:SetSize(size, size)
+    minimap:SetFrameStrata(canvas:GetFrameStrata())
+    minimap:SetFrameLevel(canvas:GetFrameLevel() + Hybrid.LEVEL)
     if minimap:GetZoom() ~= step then minimap:SetZoom(step) end
     local own = IsIndoors() and true or false
     if own ~= ground then
@@ -248,7 +263,7 @@ function Hybrid.Shown()
     return taken and Parts():IsShown() or false
 end
 
--- The wheel over a view that follows the player (size: its shorter side): the game's steps first. True
+-- The wheel over a view that follows the player (size: Hybrid.Side of it): the game's steps first. True
 -- when it took the notch (the camera's step and zoom are set), false when our map zooms on its own.
 function Hybrid.Wheel(camera, notches, size)
     if not taken or not camera.follow then return false end

@@ -13,6 +13,8 @@ The bigger changes of each version, newest first.
   Ctrl-click for the map pin. Draw it as Blizzard's maps, the terrain as
   the minimap shows it, or both laid over each other, at any zoom. The
   game's minimap dots still show on it, and the map key opens it.
+  Hover a zone to light it up, click it to open it; the map grows
+  and zooms smoothly with the window.
 - Social: conversations at the left of the full screen. Every whisper,
   and the chat of your party and your raid, is a conversation of its
   own, listed with its last message and how many wait to be read.

@@ -687,6 +687,13 @@ strip:GetScript("OnEnter")(strip)
 local clock = wide._group
 check(edge.full and edge.away and fills[1] == true and clock.playing and clock.duration == glide.time,
     "pushed against the screen's edge there, it begins to fill the screen, as the general kind of motion says")
+W.cursorX, W.cursorY = 0, 410
+strip:GetScript("OnEnter")(strip)
+W.Wait(Edge.LOOK)
+check(edge.full and edge.pushed == "left", "the mouse stays at the edge: the strip coming under it again is no new push")
+W.cursorX = 900
+W.Wait(Edge.LOOK)
+check(edge.full and edge.pushed == nil, "once the mouse has gone some way from the edge a push counts again")
 local back = edge.back
 local middle = back.fills[3]
 check(wide._strata == "HIGH" and wide._level == 500 and wide._clamped == false and back.shown and middle._alpha == 0
@@ -728,8 +735,10 @@ check(not edge.full and edge.away and fills[2] == false and clock.playing and ed
     "pushed there again, it goes back to its size in its zone")
 clock:Run(0.5)
 local midway = wide._width
+W.Wait(Edge.LOOK)
 strip:GetScript("OnEnter")(strip)
 check(edge.full and edge.from[3] == midway and edge.to[3] == 1920, "a change of mind on the way starts from where it is")
+W.Wait(Edge.LOOK)
 strip:GetScript("OnEnter")(strip)
 clock:Run(1)
 check(not edge.away and stands(wide, "LEFT", 0, 540) and wide._width == 380 and wide._height == 260,
@@ -808,6 +817,37 @@ clock:Run(0.5)
 check(edge.off and not edge.away and stands(wide, "LEFT", 0, 540) and #strips() == 0 and Core.errors["full screen"],
     "a step that fails puts the window back in its zone, where it stays from now on; the problem is kept")
 wipe(Core.errors)
+
+-- What a window holds can go with the motion (moving): in sight the whole way, placed at every step
+do
+    local roomy = CreateFrame("Frame", nil, UIParent)
+    local held = CreateFrame("Frame", nil, roomy)
+    local shares, going = {}, nil
+    local roomyStore = {}
+    local roomyWindow = Window.New(roomy, {
+        store = roomyStore, dock = true, edge = true, content = held,
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 },
+        filled = function(on, width, height) going = { on, width, height } end,
+        moving = function(share) shares[#shares + 1] = share end,
+    })
+    roomyStore.place = { x = 0, y = 0, width = 300, height = 200, dock = "RIGHT" } -- the left holds the window above
+    roomyWindow:Place()
+    W.Wait(1)
+    local push
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == roomy and widget._scripts.OnEnter and widget:IsShown() then push = widget end
+    end
+    at(roomy, 1620, 440)
+    push:GetScript("OnEnter")(push)
+    local way = roomy._group
+    check(going and going[1] == true and going[2] == 1920 and going[3] == 1080, "it is told where the window goes: the whole screen")
+    way:Run(0.5)
+    check(#shares > 0 and shares[#shares] > 0 and shares[#shares] < 1 and held._groups == nil and held._alpha ~= 0,
+        "on the way what it holds is placed at each step by the share of the way, never faded out")
+    way:Run(1)
+    check(shares[#shares] == 1 and held._groups == nil and roomyWindow.edge.full, "at the end the whole way, and it comes in from nowhere")
+    roomy:Hide()
+end
 
 -- The section Expand window: a module's own settings ------------------------------------------------
 local described = { { key = "first", default = true, text = "First" }, { key = "last", default = true, text = "Last" } }

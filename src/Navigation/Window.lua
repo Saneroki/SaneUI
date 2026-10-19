@@ -15,8 +15,10 @@ local _, ns = ...
 --  view; both views draw it so), and the dropdown Classic windows offers the
 --  game's own minimap and map.
 --
---  Laid out only once the window stands (Core's docked hook), never on the steps
---  of its way to the full screen and back.
+--  On its way to the full screen and back the map goes with the window (Core's
+--  option moving): laid out once at the start for the view it comes to, scaled
+--  and moved on each step from the view it leaves (Canvas.Morph); laid out anew
+--  once the window stands (Core's docked hook).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Window = {}
@@ -65,9 +67,16 @@ local function Placed()
     ns.Canvas.Open()
 end
 
--- On its way to the full screen or back: nothing follows until it stands.
-local function Filled()
-    ns.Canvas.Hold()
+-- On its way to the full screen (full) or back, the window to be width x height: the map goes with it,
+-- into the other view's camera; its buttons wait until it stands.
+local function Filled(on, width, height)
+    bar:Hide()
+    local top = on and Core.Window.BAR or 0 -- full, the title bar is over the map
+    ns.Canvas.Morph(on and full or small, width or 0, (height or 0) - top)
+end
+
+local function Moving(share)
+    ns.Canvas.Step(share)
 end
 
 local function Back()
@@ -90,7 +99,8 @@ function Window.Build()
         first = { dock = "TOPRIGHT", width = Window.WIDTH, height = Window.HEIGHT },
         minWidth = Window.WIDTH / 2, minHeight = Window.HEIGHT / 2,
         docked = function() ns.Guarded(Placed) end,
-        filled = function() ns.Guarded(Filled) end,
+        filled = function(on, width, height) ns.Guarded(Filled, on, width, height) end,
+        moving = function(share) ns.Guarded(Moving, share) end,
         close = function() ns.Guarded(Back) end, -- back to its corner: closed, the corner could not bring it again
     })
     inside:SetAllPoints(handle.inside)

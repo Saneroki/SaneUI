@@ -68,7 +68,10 @@ but for a window to try those with (`/sane window`).
     corners start as round as the window's and flatten, so the full screen is square. In its top right
     corner the dropdown *Classic windows* lists the game's own windows it stands for (a window that has
     some; this one has none): one chosen, the window goes back and the game's own comes. Move away and push
-    there again: it goes back to its size and its zone. Each such window has a section *Expand window*
+    there again: it goes back to its size and its zone. One push is one change: the mouse resting in the
+    corner does nothing more until it has gone some way from it. What the window holds fades out on the way
+    and comes in once it stands; a window whose content can go with it (the map) keeps it in sight, growing
+    and zooming with the window. Each such window has a section *Expand window*
     in its settings: whether it can, how it moves, the background's opacity and texture, and how round
     the small window's corners are: *Corner radius* (0 to 100 % of half the window's shorter side at rest,
     a tenth at first; at 100 % a square window is a circle) and *Don't round corners on screen edges* (on;

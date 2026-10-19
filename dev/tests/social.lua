@@ -1556,6 +1556,8 @@ do
     radius.setting:SetValue(30)
     check(not Core.errors["full screen"] and back:IsShown(), "a new corner radius is taken in while it fills the screen")
     radius.setting:SetValue(10)
+    W.cursorX, W.cursorY = 900, 500 -- the mouse goes from the edge: a push there counts again (Edge.lua)
+    W.Wait(Core.Edge.LOOK)
     strip:GetScript("OnEnter")(strip)
     check(not window._mouse and not window._wheel, "back, the mouse goes through it again")
     check(window._width == Layout.WIDTH and window._height == Layout.HEIGHT and window._points[1][1] == "LEFT" and window._strata == "MEDIUM",

@@ -768,7 +768,7 @@ function W.Install(env)
     -- The game's restrictions on addons (combat, an encounter, a map, chat, ...): a test sets W.restrictions
     -- and fires ADDON_RESTRICTION_STATE_CHANGED (type, state).
     env.C_RestrictedActions = { IsAddOnRestrictionActive = function(kind) return W.restrictions[kind] or false end }
-    env.GetCursorPosition = function() return 0, 0 end
+    env.GetCursorPosition = function() return W.cursorX or 0, W.cursorY or 0 end -- a test moves the mouse by W.cursorX, W.cursorY
     env.GetPhysicalScreenSize = function() return 3840, 2160 end
     env.SetCursor = function(cursor) W.cursorArt = cursor end
     env.GetShapeshiftForm = function() return 0 end
