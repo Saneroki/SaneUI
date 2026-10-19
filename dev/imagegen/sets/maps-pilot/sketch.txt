@@ -1,0 +1,12 @@
+# The map pilot, Sketches: one region of the stitched map (8 x 8 tiles of Eastern Kingdoms at 128 px a tile:
+# Westfall, Elwynn, Stormwind, Duskwood's north) redrawn as one map by one hand. Image 1 is the region as
+# dev/tools/terrain-art stitches it; image 2 one zone's full map, for the style. Its inputs (made by hand
+# for the pilot from the same sources, at 128 px a tile) are in assets/generated/maps-pilot/input/.
+workflow: qwen21-edit-2ref
+set: width=1024, height=1024
+count: 3
+out: assets/generated/maps-pilot/sketch
+ref: assets/generated/maps-pilot/input/sketch.png, assets/generated/maps-pilot/input/anchor.png
+style: Keep every coastline, river, lake, road, mountain range, forest, town and building exactly where it is in image 1, at the same size and in the same shape. No text, no letters, no labels, no frame, no border.
+sketch-unify: Redraw image 1 as one seamless hand-drawn fantasy map, as if one cartographer had painted the whole land on a single sheet of aged parchment in the manner of image 2: fine ink outlines, soft watercolour washes, hand-drawn mountain ridges, little forests, winding roads. Blend the colours of neighbouring regions softly into each other, with no straight lines, seams or patches between them. The flat grey-brown parts are open sea: paint them as calm sea on the same parchment.
+sketch-clean: Repaint image 1 as a clean, modern edition of the same hand-drawn fantasy map in the style of image 2: crisper ink lines, richer but harmonious watercolour, one consistent paper and light over the whole sheet, regions that flow into each other naturally instead of meeting at hard edges. The flat grey-brown parts are open sea: paint them as calm sea on the same parchment.
