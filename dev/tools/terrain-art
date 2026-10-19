@@ -1,27 +1,45 @@
 #!/usr/bin/env python3
-"""Makes the terrain's overview for Navigation's map: the game's own minimap textures, smaller.
+"""Makes Navigation's terrain overview and its zones' outlines from the game's own files.
 
 Up close the map draws the game's minimap textures themselves, one of 512 x 512 per tile of a continent's
 grid (Core's set Tiles names the file of each). Far out that would be hundreds of large textures at once,
 so there the map draws this overview instead: the same tiles at 64 x 64 texels each, eight by eight in one
 texture of 512 x 512, so a whole continent is a few dozen textures (src/Navigation/Terrain.lua).
 
+The water is cut away: each texel's alpha is how much of it is land, read from the game's terrain files,
+where the ground lies above the water's surface (its heights and the water of each map chunk; magma and
+slime stay). The land's colour is taken from land alone, so no dark water rims a coast; transparent
+texels carry the nearest land's colour, so filtering never draws a dark edge either. Up close the same
+alpha is the mask of the game's own textures (Terrain.lua), so the coast is cut alike at every zoom.
+
   src/Navigation/Art/Terrain/<continent>-<row>-<column>.blp   row and column of the block of 8 x 8 tiles
                                                               (0 to 7), only blocks that hold a tile
 
-Each is BLP2 with DXT1 and a full chain of mipmaps, as the game's own minimap textures are (DXT1: the
-terrain is opaque; half the memory of DXT5). Where a block has no tile (the open sea) it is the canvas'
-ground colour (GROUND, the same as Canvas.GROUND in src/Navigation/Canvas.lua). The DXT1 blocks are made
-by ImageMagick, as dev/tools/art makes its DXT5 ones.
+Each zone's outline, for Blizzard's map art cut to its zone's shape (src/Navigation/Art.lua): the map chunks
+(a 16th of a tile, 33 1/3 yards) of the zone's areas, softened at the border, as the alpha of a mask over the
+zone map's box (the game's world position of its corners). Two zones that meet share their border: what one
+leaves at it, the other has.
 
-The input is a folder of the game's minimap textures as the game stores them, each named <file ID>.blp,
-for every file the master of the set Tiles names (assets/data/Tiles/Tiles.jsonl). Run it again when the
-set changes.
+  src/Navigation/Art/Zones/<uiMapID>.blp       256 x 256, over the zone map's box
+  src/Navigation/Outlines.lua                  the zones that have one, by continent (ns.OUTLINES)
+
+All are BLP2 with DXT5 (the alpha needs its own block) and a full chain of mipmaps; the DXT blocks are made
+by ImageMagick (its range fit).
+
+The input, all as the game stores them, for every tile the master of the set Tiles names
+(assets/data/Tiles/Tiles.jsonl):
+  minimap textures   a folder of the game's minimap textures, each named <file ID>.blp
+  terrain files      a folder of the game's terrain files (root ADT) of the continents, each named
+                     <key>.adt by the tile's key in the set Tiles
+  client tables      a folder of the game's client tables as CSV, one a table (LiquidType, LiquidMaterial,
+                     AreaTable, UiMap, UiMapAssignment)
+Run it again when the set or the game's build changes.
 
 Needs Python with Pillow and NumPy, and ImageMagick 7 (magick).
 
-Usage:  dev/tools/terrain-art <folder of the game's minimap textures>
+Usage:  dev/tools/terrain-art <minimap textures> <terrain files> <client tables>
 """
+import csv
 import io
 import json
 import struct
@@ -29,16 +47,28 @@ import subprocess
 import sys
 from pathlib import Path
 
+import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
 TILES = ROOT / "assets" / "data" / "Tiles" / "Tiles.jsonl"
-OUT = ROOT / "src" / "Navigation" / "Art" / "Terrain"
+NAVIGATION = ROOT / "src" / "Navigation"
+TERRAIN = NAVIGATION / "Art" / "Terrain"
+ZONES = NAVIGATION / "Art" / "Zones"
+OUTLINES = NAVIGATION / "Outlines.lua"
 
 GRID = 64          # tiles along each side of a continent's grid
 BLOCK = 8          # tiles along each side of one overview texture
 TEXELS = 64        # texels of a tile in the overview
-GROUND = (10, 13, 15)  # Canvas.GROUND (0.04, 0.05, 0.06) in 0-255
+CHUNKS = 16        # map chunks along each side of a tile
+CELLS = 8          # cells along each side of a map chunk (heights and water are kept per cell)
+SAMPLES = 2        # samples of land and water along each side of a cell: 256 a tile, 4 x 4 a texel
+TILE = 1600 / 3    # a tile's side in yards
+OUTLINE = 256      # a zone outline's side in texels
+SOFT = 0.75        # how soft a zone's border is, in map chunks
+SHARP = 4.0        # how quickly it goes from out to in there
+
+ZONE, CONTINENT = "3", "2"  # the game's kinds of map (UiMap's Type)
 
 
 def tiles():
@@ -55,71 +85,336 @@ def tiles():
     return found
 
 
-def dxt1(image):
-    """The DXT1 blocks of an RGB picture: ImageMagick writes them as a DDS file (header of 128 bytes)."""
+def table(folder, name):
+    return list(csv.DictReader(open(folder / f"{name}.csv", encoding="utf-8")))
+
+
+# -------------------------------------------------------------------------------------------------
+#  The terrain files: each map chunk's heights, water and area
+# -------------------------------------------------------------------------------------------------
+def waters(folder):
+    """{liquid type: its vertex format} of the liquids that are water (the game's sound bank: 0 water,
+    1 ocean; magma and slime are not)."""
+    formats = {row["ID"]: int(row["LVF"]) for row in table(folder, "LiquidMaterial")}
+    return {int(row["ID"]): formats.get(row["MaterialID"], 0) for row in table(folder, "LiquidType")
+            if row["SoundBank"] in ("0", "1")}
+
+
+def pieces(data, start, end):
+    """The file's chunks between start and end: (name, where its data begins, its size)."""
+    at = start
+    while at + 8 <= end:
+        size = struct.unpack_from("<I", data, at + 4)[0]
+        yield data[at:at + 4][::-1], at + 8, size
+        at += 8 + size
+
+
+# Where each sample lies in its cell (0 to 1), and which of the cell's four triangles holds it: the game
+# draws a cell as four triangles meeting at its inner height.
+_f = (np.arange(SAMPLES) + 0.5) / SAMPLES
+FX, FY = np.meshgrid(_f, _f)
+NORTH = (FY < FX) & (FY < 1 - FX)
+SOUTH = (FY > FX) & (FY > 1 - FX)
+WEST = ~NORTH & ~SOUTH & (FX < 0.5)
+
+
+def ground(outer, inner):
+    """The ground's height at every sample of a tile, from its outer (129 x 129) and inner (128 x 128)
+    heights, rows from the north."""
+    side = CHUNKS * CELLS
+    a, b = outer[:-1, :-1], outer[:-1, 1:]   # each cell's corners: north west, north east,
+    c, d = outer[1:, :-1], outer[1:, 1:]     # south west, south east
+    fx, fy = np.tile(FX, (side, side)), np.tile(FY, (side, side))
+    north, south, west = np.tile(NORTH, (side, side)), np.tile(SOUTH, (side, side)), np.tile(WEST, (side, side))
+    big = lambda grid: np.repeat(np.repeat(grid, SAMPLES, 0), SAMPLES, 1)  # noqa: E731
+    a, b, c, d, m = big(a), big(b), big(c), big(d), big(inner)
+    height = b * (fx - fy) + d * (fx + fy - 1) + m * 2 * (1 - fx)                       # east
+    height = np.where(west, a * (1 - fx - fy) + c * (fy - fx) + m * 2 * fx, height)
+    height = np.where(south, c * (fy - fx) + d * (fx + fy - 1) + m * 2 * (1 - fy), height)
+    return np.where(north, a * (1 - fx - fy) + b * (fx - fy) + m * 2 * fy, height)
+
+
+def terrain(path, liquids):
+    """A terrain file's land at every sample (a tile's side: CHUNKS * CELLS * SAMPLES; 1 land, 0 water) and
+    each map chunk's area (CHUNKS x CHUNKS)."""
+    data = path.read_bytes()
+    chunks, water_at = [], None
+    for name, at, size in pieces(data, 0, len(data)):
+        if name == b"MCNK":
+            chunks.append((at, size))
+        elif name == b"MH2O":
+            water_at = at
+    side = CHUNKS * CELLS
+    outer = np.zeros((side + 1, side + 1), np.float32)
+    inner = np.zeros((side, side), np.float32)
+    areas = np.zeros((CHUNKS, CHUNKS), np.int64)
+    for at, size in chunks:
+        x, y = struct.unpack_from("<II", data, at + 4)
+        areas[y, x] = struct.unpack_from("<I", data, at + 0x34)[0]
+        base = struct.unpack_from("<f", data, at + 0x70)[0]
+        for name, start, _ in pieces(data, at + 128, at + size):
+            if name == b"MCVT":
+                heights = np.array(struct.unpack_from("<145f", data, start), np.float32).reshape(-1) + base
+                rows = np.pad(heights, (0, 8)).reshape(9, 17)  # each row: 9 outer heights, then 8 inner
+                outer[y * CELLS:y * CELLS + 9, x * CELLS:x * CELLS + 9] = rows[:, :9]
+                inner[y * CELLS:y * CELLS + 8, x * CELLS:x * CELLS + 8] = rows[:8, 9:]
+                break
+    height = ground(outer, inner)
+    surface = np.full(height.shape, -np.inf, np.float32)
+    if water_at is not None:
+        n = CELLS * SAMPLES
+        for index in range(CHUNKS * CHUNKS):
+            first, layers, _ = struct.unpack_from("<III", data, water_at + index * 12)
+            cy, cx = divmod(index, CHUNKS)
+            for layer in range(layers):
+                kind, form, low, _, left, top, wide, high, bits, levels = struct.unpack_from(
+                    "<HHffBBBBII", data, water_at + first + layer * 24)
+                if kind not in liquids or wide == 0 or high == 0:
+                    continue
+                form = form if form <= 41 else liquids[kind]  # a small number is the format, else an object
+                cells = np.ones((high, wide), bool)
+                if bits:
+                    flags = np.frombuffer(data, np.uint8, (wide * high + 7) // 8, water_at + bits)
+                    cells = np.unpackbits(flags, bitorder="little")[:wide * high].reshape(high, wide).astype(bool)
+                if levels and form in (0, 1, 3):  # these begin with a height at each corner of the cells
+                    corners = np.array(struct.unpack_from(f"<{(wide + 1) * (high + 1)}f", data, water_at + levels),
+                                       np.float32).reshape(high + 1, wide + 1)
+                else:
+                    corners = np.full((high + 1, wide + 1), low, np.float32)
+                big = lambda grid: np.repeat(np.repeat(grid, SAMPLES, 0), SAMPLES, 1)  # noqa: E731
+                fx, fy = np.tile(FX, (high, wide)), np.tile(FY, (high, wide))
+                level = (big(corners[:-1, :-1]) * (1 - fx) * (1 - fy) + big(corners[:-1, 1:]) * fx * (1 - fy)
+                         + big(corners[1:, :-1]) * (1 - fx) * fy + big(corners[1:, 1:]) * fx * fy)
+                level = np.where(big(cells), level, -np.inf)
+                y0, x0 = cy * n + top * SAMPLES, cx * n + left * SAMPLES
+                region = surface[y0:y0 + high * SAMPLES, x0:x0 + wide * SAMPLES]
+                np.maximum(region, level, out=region)
+    return (height >= surface).astype(np.float32), areas
+
+
+# -------------------------------------------------------------------------------------------------
+#  BLP files
+# -------------------------------------------------------------------------------------------------
+def dxt5(image):
+    """The DXT5 blocks of an RGBA picture: ImageMagick writes them as a DDS file (header of 128 bytes). Its
+    range fit: its cluster fit takes about a minute a texture once the alpha is partly see-through, and gains
+    little on a picture made smaller and on the outlines' one colour."""
     png = io.BytesIO()
     image.save(png, "PNG")
-    data = subprocess.run(["magick", "png:-", "-define", "dds:compression=dxt1", "-define", "dds:mipmaps=0",
-                           "-define", "dds:cluster-fit=true", "dds:-"],
+    data = subprocess.run(["magick", "png:-", "-define", "dds:compression=dxt5", "-define", "dds:mipmaps=0", "dds:-"],
                           input=png.getvalue(), capture_output=True, check=True).stdout
     blocks = max(1, (image.width + 3) // 4) * max(1, (image.height + 3) // 4)
-    assert data[:4] == b"DDS " and data[84:88] == b"DXT1" and len(data) == 128 + 8 * blocks, "no DXT1 from magick"
+    assert data[:4] == b"DDS " and data[84:88] == b"DXT5" and len(data) == 128 + 16 * blocks, "no DXT5 from magick"
     return data[128:]
 
 
-def blp(levels, side):
-    """A BLP2 file: DXT1 (encoding 2, alpha depth 0, alpha encoding 0), mipmaps, largest first."""
+def blp(picture):
+    """A BLP2 file of an RGBA picture: DXT5 (encoding 2, alpha depth 8, alpha encoding 7), every mipmap made
+    from the full picture down to 1 x 1, largest first."""
+    side = picture.width
+    levels, size = [], side
+    while True:
+        level = picture if size == side else picture.resize((size, size), Image.Resampling.BOX)
+        levels.append(dxt5(level))
+        if size == 1:
+            break
+        size //= 2
     offsets, sizes, start = [], [], 148 + 1024  # header, then a palette DXT does not use
     for level in levels:
         offsets.append(start + sum(sizes))
         sizes.append(len(level))
     unused = [0] * (16 - len(levels))
-    header = b"BLP2" + struct.pack("<I4B2I", 1, 2, 0, 0, 1, side, side)
+    header = b"BLP2" + struct.pack("<I4B2I", 1, 2, 8, 7, 1, side, side)
     header += struct.pack("<16I", *offsets, *unused) + struct.pack("<16I", *sizes, *unused)
     return header + bytes(1024) + b"".join(levels)
 
 
-def main():
-    if len(sys.argv) != 2:
-        sys.exit(__doc__)
-    source = Path(sys.argv[1])
-    found = tiles()
+def write(path, picture):
+    data = blp(picture)
+    path.write_bytes(data)
+    with Image.open(path) as back:  # read back by Pillow's own BLP reader
+        assert back.size == picture.size, f"{path.name} reads back as {back.size}"
+    return len(data)
+
+
+def bleed(rgb, alpha):
+    """Colour where there is no land: the nearest land's, spread outwards ring by ring."""
+    rgb, have = rgb.copy(), alpha > 0
+    for _ in range(64):
+        if have.all():
+            break
+        total, count = np.zeros_like(rgb), np.zeros(alpha.shape, np.float32)
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                moved = np.roll(np.roll(have, dy, 0), dx, 1)
+                total += np.roll(np.roll(rgb * have[..., None], dy, 0), dx, 1)
+                count += moved
+        fill = ~have & (count > 0)
+        rgb[fill] = total[fill] / count[fill][:, None]
+        have = have | fill
+    return rgb
+
+
+# -------------------------------------------------------------------------------------------------
+#  The overview and the outlines
+# -------------------------------------------------------------------------------------------------
+def overview(found, textures, files, liquids):
+    """Every block's overview texture; returns {continent: the area of each map chunk of its grid}."""
     blocks = sorted({(c, r // BLOCK, k // BLOCK) for c, r, k in found})
-    missing = [file for file in found.values() if not (source / f"{file}.blp").exists()]
-    if missing:
-        sys.exit(f"{len(missing)} of the set's textures are not in {source} (the first: {missing[0]}.blp)")
-    OUT.mkdir(parents=True, exist_ok=True)
-    made = set()
-    side = BLOCK * TEXELS
-    total = 0
+    grids = {c: np.zeros((GRID * CHUNKS, GRID * CHUNKS), np.int64) for c, _, _ in blocks}
+    TERRAIN.mkdir(parents=True, exist_ok=True)
+    made, total, side, per = set(), 0, BLOCK * TEXELS, CHUNKS * CELLS * SAMPLES
     for continent, block_row, block_column in blocks:
-        picture = Image.new("RGB", (side, side), GROUND)
+        rgb = np.zeros((side, side, 3), np.float32)
+        alpha = np.zeros((side, side), np.float32)
         for r in range(BLOCK):
             for k in range(BLOCK):
-                file = found.get((continent, block_row * BLOCK + r, block_column * BLOCK + k))
-                if file:
-                    with Image.open(source / f"{file}.blp") as tile:
-                        small = tile.convert("RGB").resize((TEXELS, TEXELS), Image.Resampling.LANCZOS, reducing_gap=2.0)
-                    picture.paste(small, (k * TEXELS, r * TEXELS))
-        # Every level made from the full picture, down to 1 x 1.
-        levels, size = [], side
-        while True:
-            level = picture if size == side else picture.resize((size, size), Image.Resampling.BOX)
-            levels.append(dxt1(level))
-            if size == 1:
-                break
-            size //= 2
+                row, column = block_row * BLOCK + r, block_column * BLOCK + k
+                file = found.get((continent, row, column))
+                if not file:
+                    continue
+                key = continent * GRID * GRID + row * GRID + column
+                with Image.open(textures / f"{file}.blp") as image:
+                    colour = np.asarray(image.convert("RGB").resize((per, per), Image.Resampling.LANCZOS),
+                                        np.float32)
+                place = files / f"{key}.adt"
+                if place.exists():
+                    land, areas = terrain(place, liquids)
+                    grids[continent][row * CHUNKS:(row + 1) * CHUNKS, column * CHUNKS:(column + 1) * CHUNKS] = areas
+                else:
+                    land = np.ones((per, per), np.float32)
+                # Each texel: how much of it is land, and the colour of its land alone.
+                step = per // TEXELS
+                share = land.reshape(TEXELS, step, TEXELS, step).mean(axis=(1, 3))
+                weighed = (colour * land[..., None]).reshape(TEXELS, step, TEXELS, step, 3).sum(axis=(1, 3))
+                count = land.reshape(TEXELS, step, TEXELS, step).sum(axis=(1, 3))
+                own = np.where(count[..., None] > 0, weighed / np.maximum(count, 1)[..., None], 0)
+                y, x = r * TEXELS, k * TEXELS
+                rgb[y:y + TEXELS, x:x + TEXELS] = own
+                alpha[y:y + TEXELS, x:x + TEXELS] = share
+        rgb = bleed(rgb, alpha)  # a block of open sea is written too: the map asks for every block with tiles
+        picture = Image.fromarray(np.dstack([np.clip(rgb, 0, 255), alpha * 255]).round().astype(np.uint8), "RGBA")
         name = f"{continent}-{block_row}-{block_column}.blp"
-        data = blp(levels, side)
-        (OUT / name).write_bytes(data)
+        total += write(TERRAIN / name, picture)
         made.add(name)
-        total += len(data)
-        with Image.open(OUT / name) as back:  # read back by Pillow's own BLP reader
-            assert back.size == (side, side), f"{name} reads back as {back.size}"
-    for old in OUT.glob("*.blp"):
+    for old in TERRAIN.glob("*.blp"):
         if old.name not in made:
             old.unlink()
-    print(f"Terrain overview: {len(made)} textures of {side} x {side} in {OUT.relative_to(ROOT)}, {total / 1e6:.1f} MB.")
+    print(f"Terrain overview: {len(made)} textures of {side} x {side} in {TERRAIN.relative_to(ROOT)}, {total / 1e6:.1f} MB.")
+    return grids
+
+
+def zones(tables, continents):
+    """{uiMapID: (continent, its box: north, south, west, east in yards, its area IDs)} of every zone map on
+    the continents, from the game's tables: a zone's areas are its own area and those under it."""
+    maps = {row["ID"]: row for row in table(tables, "UiMap")}
+    parent = {int(row["ID"]): int(row["ParentAreaID"]) for row in table(tables, "AreaTable")}
+    found = {}
+    for row in table(tables, "UiMapAssignment"):
+        info = maps.get(row["UiMapID"])
+        mother = info and maps.get(info["ParentUiMapID"])
+        if not info or info["Type"] != ZONE or not mother or mother["Type"] != CONTINENT:
+            continue
+        if (row["UiMin[0]"], row["UiMin[1]"], row["UiMax[0]"], row["UiMax[1]"]) != ("0", "0", "1", "1"):
+            continue
+        continent = int(row["MapID"])
+        if continent not in continents:
+            continue
+        box = (float(row["Region[3]"]), float(row["Region[0]"]), float(row["Region[4]"]), float(row["Region[1]"]))
+        found[int(row["UiMapID"])] = (continent, box, int(row["AreaID"]))
+    top = {}  # every area's zone area: the last of its parents
+    for area in parent:
+        at, seen = area, 0
+        while parent.get(at, 0) and seen < 10:
+            at, seen = parent[at], seen + 1
+        top[area] = at
+    return found, top
+
+
+def outlines(grids, tables):
+    """Every zone's outline, and Outlines.lua."""
+    found, top = zones(tables, set(grids))
+    ZONES.mkdir(parents=True, exist_ok=True)
+    chunk = TILE / CHUNKS
+    made, total, listed = set(), 0, {}
+    blurred = {}
+    for uimap, (continent, box, area) in sorted(found.items()):
+        grid = grids[continent]
+        inside = np.isin(grid, [a for a, t in top.items() if t == area] + [area]).astype(np.float32)
+        if not inside.any():
+            continue
+        # Softened on the whole grid, so two zones that meet see the same border.
+        if continent not in blurred:
+            blurred[continent] = gauss(SOFT)
+        soft = blurred[continent](inside)
+        north, south, west, east = box
+        # Each texel's middle in yards, then on the grid of map chunks (rows from the north, columns from the west).
+        t = (np.arange(OUTLINE) + 0.5) / OUTLINE
+        x_north = north + t * (south - north)      # X of each row of texels
+        y_west = west + t * (east - west)          # Y of each column of texels
+        rows = (GRID / 2 * TILE - x_north) / chunk - 0.5
+        columns = (GRID / 2 * TILE - y_west) / chunk - 0.5
+        value = sample(soft, rows, columns)
+        alpha = np.clip((value - 0.5) * SHARP + 0.5, 0, 1)
+        if not (alpha > 0).any():
+            continue
+        white = np.full((OUTLINE, OUTLINE), 255, np.uint8)
+        picture = Image.fromarray(np.dstack([white, white, white, (alpha * 255).round().astype(np.uint8)]), "RGBA")
+        name = f"{uimap}.blp"
+        total += write(ZONES / name, picture)
+        made.add(name)
+        listed.setdefault(continent, []).append(uimap)
+    for old in ZONES.glob("*.blp"):
+        if old.name not in made:
+            old.unlink()
+    lines = ["local _, ns = ...", "",
+             "-- Made by dev/tools/terrain-art, not by hand: the zones whose outline it drew (Art/Zones/<uiMapID>.blp),",
+             "-- by the continent's instance. Run the tool again when the game's build changes.",
+             "ns.OUTLINES = {"]
+    for continent in sorted(listed):
+        ids = ", ".join(f"[{uimap}] = true" for uimap in sorted(listed[continent]))
+        lines.append(f"    [{continent}] = {{ {ids} }},")
+    lines.append("}")
+    OUTLINES.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Zone outlines: {len(made)} of {OUTLINE} x {OUTLINE} in {ZONES.relative_to(ROOT)}, {total / 1e6:.1f} MB; "
+          f"{OUTLINES.relative_to(ROOT)}.")
+
+
+def gauss(sigma):
+    """A blur by a Gaussian of sigma map chunks, along both sides in turn."""
+    reach = int(np.ceil(sigma * 3))
+    kernel = np.exp(-0.5 * (np.arange(-reach, reach + 1) / sigma) ** 2)
+    kernel /= kernel.sum()
+
+    def blur(grid):
+        out = np.apply_along_axis(lambda line: np.convolve(line, kernel, mode="same"), 0, grid)
+        return np.apply_along_axis(lambda line: np.convolve(line, kernel, mode="same"), 1, out)
+    return blur
+
+
+def sample(grid, rows, columns):
+    """The grid between its points (bilinear), at every row and column asked; 0 outside it."""
+    r = np.clip(rows, 0, grid.shape[0] - 1.001)[:, None]
+    c = np.clip(columns, 0, grid.shape[1] - 1.001)[None, :]
+    r0, c0 = np.floor(r).astype(int), np.floor(c).astype(int)
+    fr, fc = r - r0, c - c0
+    return (grid[r0, c0] * (1 - fr) * (1 - fc) + grid[r0, c0 + 1] * (1 - fr) * fc
+            + grid[r0 + 1, c0] * fr * (1 - fc) + grid[r0 + 1, c0 + 1] * fr * fc)
+
+
+def main():
+    if len(sys.argv) != 4:
+        sys.exit(__doc__)
+    textures, files, tables = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
+    found = tiles()
+    missing = [file for file in found.values() if not (textures / f"{file}.blp").exists()]
+    if missing:
+        sys.exit(f"{len(missing)} of the set's textures are not in {textures} (the first: {missing[0]}.blp)")
+    lacking = [key for key in ((c * GRID + r) * GRID + k for c, r, k in found) if not (files / f"{key}.adt").exists()]
+    if lacking:
+        print(f"{len(lacking)} of the set's tiles have no terrain file in {files}: drawn without water cut away.")
+    grids = overview(found, textures, files, waters(tables))
+    outlines(grids, tables)
 
 
 if __name__ == "__main__":

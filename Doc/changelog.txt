@@ -14,7 +14,9 @@ The bigger changes of each version, newest first.
   the minimap shows it, or both laid over each other, at any zoom. The
   game's minimap dots still show on it, and the map key opens it.
   Hover a zone to light it up, click it to open it; the map grows
-  and zooms smoothly with the window.
+  and zooms smoothly with the window. Blizzard's maps are cut to
+  their zones' shapes, parts you have not discovered stay dark, and
+  the terrain's water is cut away for a clean coastline.
 - Social: conversations at the left of the full screen. Every whisper,
   and the chat of your party and your raid, is a conversation of its
   own, listed with its last message and how many wait to be read.

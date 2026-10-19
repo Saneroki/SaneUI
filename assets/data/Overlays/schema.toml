@@ -1,0 +1,17 @@
+set = "Overlays"
+key = "int"              # the game's own ID of the part (its map art's overlay)
+pack = "World"
+learn = false
+about = "The parts of a map's art the game reveals once they are explored: every one, so the map can keep those not yet explored dark."
+
+[fields]
+map    = { type = "int", min = 1 }               # the map (uiMapID) whose art it lies on
+x      = { type = "int", min = 0 }               # its top left corner in the art's pixels, from the left
+y      = { type = "int", min = 0 }               # and from the top
+width  = { type = "int", min = 1 }               # its size in the art's pixels
+height = { type = "int", min = 1 }
+files  = { type = "list", of = "int", min = 1 }  # its textures' file IDs, row by row, cut at the art's tile size
+flags  = { type = "flags" }                      # the game's flags of it
+
+[index]
+byMap = "map"

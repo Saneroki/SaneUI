@@ -3,7 +3,9 @@
 The plan for the **Navigation** module (`SaneUI_Navigation`): the window, the map, the quest log, the pins,
 the waypoint, the routes and the leveling guide. Built so far (2026-10-19): the module without the map's data
 (pins, quest log, top bar, routes, guide): the window, both views, the canvas and its controls, the terrain and
-the art at every zoom, the game's minimap over ours, the game's map kept closed (`src/Navigation/README.md`).
+the art at every zoom (the water cut away, the zones' maps cut to their outlines, undiscovered parts dark), zones
+that light up and open by a click, the map moving with its window, the game's minimap over ours, the game's map
+kept closed (`src/Navigation/README.md`).
 
 How to read this page:
 
@@ -68,6 +70,14 @@ minimap) and the full-screen window (the world map) show the same map with the s
   game's minimap lies over it only for its live dots, its own ground switched off.
 - **Views at every zoom (Saneroki, 2026-10-19):** Blizzard maps, Terrain and Overlay can be chosen at any zoom,
   from close up out to the whole world; none of them changes into another by the zoom.
+- **Zones as on Blizzard's map (Saneroki, 2026-10-19):** the zone under the mouse lights up and a click opens
+  it; right click one map out.
+- **Zone-shaped maps, the water cut away (Saneroki, 2026-10-19):** Blizzard's maps are cut to their zones'
+  outlines, not drawn as squares; the terrain's water is cut away, so the land stands as a clean silhouette.
+- **Undiscovered parts dark (Saneroki, 2026-10-19):** the parts of a map not yet discovered in the game stay
+  dark (a black of our own) until discovered, then show Blizzard's detailed map.
+- **The map moves with its window (Saneroki, 2026-10-19):** on the way to the full screen and back the map grows
+  and zooms with the window, not hidden and shown; Core's windows let what they hold go with the motion.
 - **Follows the player:** when the player moves, the map centres on the player.
 
 ## Full screen
@@ -444,7 +454,12 @@ Three spaces, converted only in `Coords.lua`:
   `dev/tools/terrain-art` from the game's minimap textures, BLP2 DXT1 like theirs), a continent in a few dozen
   textures, the world in under fifty. It is drawn under the tiles at every zoom, so the land never goes black
   while they load (open question *Far zoom*, answered: terrain at every zoom).
-- **Sea tiles** have no file: the ground shows. Coastlines can be masked later.
+- **Sea tiles** have no file: the ground shows, the sea's colour.
+- **The water cut away (built 2026-10-19):** `dev/tools/terrain-art` reads the game's terrain files (each map
+  chunk's heights, water and liquid type; magma and slime stay) and makes the overview's alpha the land: where
+  the ground lies above the water's surface, sampled 2 yards apart, rivers and lakes too. The overview's colour
+  comes from land alone (no dark rim at a coast). The same overview is the mask of the game's own tiles of its
+  block (`Canvas.Masks`), so the coast is cut alike at every zoom; under it the canvas' sea colour.
 - **Indoors, caves, dungeons:** the minimap tiles hold the outdoors only. There the small view lets the
   native minimap draw its own ground (`SetDrawGroundTextures(true)` while `IsIndoors()` or no tile lies
   under the player), and the full view shows Blizzard's map art of the place.
@@ -465,8 +480,19 @@ Three spaces, converted only in `Coords.lua`:
   `MaskTexture` ignores texture coordinates). Where the mask comes from, in order:
   1. Blizzard's own zone highlight of the continent map (`C_Map.GetMapHighlightInfoAtPosition` gives its
      file and where it lies, *verified* in `MapHighlightDataProvider.lua`): the zone's shape as the game
-     draws it on hover. *To try* as a mask.
-  2. Else a mask per zone made by our tool from the game's area data, shipped in `Art/`.
+     draws it on hover. Tried 2026-10-19: these are 128 x 128, blurred and without alpha (drawn added), so no
+     mask; they are the hover highlight (`Art.Light`).
+  2. **Built (2026-10-19):** a mask per zone made by our tool from the game's area data, shipped in `Art/`:
+     `dev/tools/terrain-art` reads each map chunk's area (a 16th of a tile), its zone through the game's
+     tables (the area's top parent, the zone map assigned to it), softens the border on the whole grid (two
+     zones that meet share it), and writes the alpha over the zone map's box (`Art/Zones/<uiMapID>.blp`,
+     256 x 256; `Outlines.lua` lists them). Every zone in view is drawn cut to it, in both art views, the
+     continent's art under them in Blizzard maps.
+- **Undiscovered parts (built 2026-10-19):** every part of a zone's art the game reveals once explored is
+  Core's set *Overlays* (from the game's tables); those the game does not list as explored
+  (`GetExploredMapTextures`, known by their first texture) are drawn nearly black (`Art.FOG`), cut to the zone.
+- **Hover and click (built 2026-10-19):** at a continent shown whole the zone under the mouse lights up in the
+  game's highlight, at the world the continent; a click opens it.
 - **Fit:** art, terrain and pins are all placed by the same world boxes, so Stormwind's map lies on
   Stormwind. Painted art is not exact to the yard; that is accepted.
 - **Exceptions** with their own handling: a city under the ground (Undercity) has no terrain; a map

@@ -58,9 +58,15 @@ full):
   *Classic windows*; *Follow again after*;
 - `Live.lua`: player, pin, group, quests, flights, vignettes, area POIs, explored, with the message `LIVE`.
 
+Later the same day (Saneroki's asks): zones light up under the mouse and open by a click; the map grows and
+zooms with its window (Core's option `moving`); the game's minimap covers the small window, above the map;
+the corner fills the screen once a visit (Core's Edge); the terrain's water cut away and the zones' maps cut to
+their outlines (`dev/tools/terrain-art` reads the game's terrain files: `Art/Terrain/`, `Art/Zones/`,
+`Outlines.lua`); undiscovered parts dark (Core's set *Overlays*).
+
 Not yet: pins of Live and of Core's data, the quest log, the top bar (selector, filter), search, routes, the
 guide, dungeon maps and floors, the minimap's small parts (zone text, clock, mail, tracking). Tests:
-`dev/tests/navigation.lua` (98 checks).
+`dev/tests/navigation.lua` (113 checks).
 
 ## What is not there yet
 

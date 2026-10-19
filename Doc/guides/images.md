@@ -43,9 +43,11 @@ Needs Python with Pillow and NumPy, and ImageMagick 7 (`magick`).
 | Sides | **Powers of two, at most 1024** | Mipmaps halve evenly, DXT works in blocks of 4 x 4, Blizzard's are. |
 | Name and place | `src/<Module>/Art/<name>.blp`, lower case | Not listed in the TOC: only Lua and XML are. The build copies it. |
 
-One set is no drawn picture: Navigation's terrain overview (`src/Navigation/Art/Terrain/`) is the game's own minimap
-textures made smaller by `dev/tools/terrain-art`. It is opaque, so it is BLP2 with **DXT1** and mipmaps, as the game's
-minimap textures are: half the memory of DXT5.
+Two sets are no drawn pictures: Navigation's terrain overview (`src/Navigation/Art/Terrain/`), the game's own minimap
+textures made smaller, and its zones' outlines (`src/Navigation/Art/Zones/`), both made by `dev/tools/terrain-art` from
+the game's files. The overview's alpha is the land (the water is cut away) and the outlines are alpha only, so both are
+BLP2 with **DXT5** and mipmaps, like the art; ImageMagick's range fit makes them (its cluster fit takes about a minute a
+texture once the alpha is partly see-through).
 
 ## The size
 

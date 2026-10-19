@@ -12,6 +12,11 @@ local _, ns = ...
 --                 a whole continent in a few dozen textures. Always drawn, under the tiles, so the
 --                 land never goes black while the tiles load; far out it is the terrain alone.
 --
+--  The water is cut away, to the canvas' sea: the overview's alpha is the land
+--  (the tool reads where the ground lies above the water's surface), and the
+--  same file is the mask of the game's own tiles of its block, so the coast is
+--  cut alike at every zoom.
+--
 --  Zoomed out to the world, every continent's overview is laid where the world
 --  map puts it (Coords.Link). Until the set Tiles is there the layer draws
 --  nothing, and draws once it arrives.
@@ -29,7 +34,7 @@ local Coords = ns.Coords
 local Tiles = Core.Data.Set("Tiles")
 local files = {}  -- [tile key] = its texture's file ID, or false: none; asked of the set once a tile
 local blocks = {} -- [overview key] = its file's path, or false: the block holds no tile
-local pool
+local pool, masks
 
 -- The set arrived (or changed): asked anew, drawn anew.
 local function Arrived()
@@ -43,6 +48,7 @@ function Terrain.Build(holder)
     layer:SetSize(1, 1)
     layer:SetPoint("CENTER")
     pool = ns.Canvas.Pool(layer, "BACKGROUND")
+    masks = ns.Canvas.Masks(layer)
     Tiles:OnStamp(ns.Guard(Arrived))
     return layer
 end
@@ -117,14 +123,22 @@ local function Detail(view)
         end
         if count > Terrain.CAP then return false end
     end
-    local side = Coords.TILE
+    local side, size = Coords.TILE, Terrain.BLOCK
     for row = r0, r1 do
         for column = c0, c1 do
             local key = Coords.TileKey(view.continent, column, row)
             local file = File(key)
             if file then
+                -- Cut at the coast by its block's overview, laid over the whole block.
+                local blockRow, blockColumn = math.floor(row / size), math.floor(column / size)
+                local path, blockKey = Block(view.continent, blockRow, blockColumn)
+                local mask
+                if path then
+                    local u, v = Coords.Corner(blockColumn * size, blockRow * size)
+                    mask = masks:Get(blockKey, path, u, v, side * size, side * size)
+                end
                 local u, v = Coords.Corner(column, row)
-                ns.Canvas.Put(pool:Get(key, file, 1), u, v, side, side)
+                ns.Canvas.Put(pool:Get(key, file, 1, mask), u, v, side, side)
             end
         end
     end
@@ -135,6 +149,7 @@ end
 -- view's continent, its overview and, close enough, its tiles over it.
 function Terrain.Place(view, shown)
     pool:Begin()
+    masks:Begin()
     if shown and not Tiles:Ready() then
         Core.Data.Prepare("Tiles")
     elseif shown then
@@ -149,10 +164,13 @@ function Terrain.Place(view, shown)
         end
     end
     pool:End()
+    masks:End()
 end
 
 -- Every texture let go.
 function Terrain.Clear()
     pool:Begin()
     pool:End()
+    masks:Begin()
+    masks:End()
 end

@@ -42,6 +42,9 @@ function methods:SetFrameLevel(level) self._level = level end
 function methods:GetFrameLevel() return self._level or 1 end
 function methods:SetBlendMode(mode) self._blend = mode end
 function methods:SetTexCoord(...) self._coords = { ... } end
+function methods:AddMaskTexture(mask) self._mask = mask end
+function methods:RemoveMaskTexture(mask) if self._mask == mask then self._mask = nil end end
+function methods:SetVertexColor(r, g, b, a) self._vertex = { r, g, b, a } end
 function methods:SetFrameStrata(strata) self._strata = strata end
 function methods:GetFrameStrata() return self._strata or "MEDIUM" end
 function methods:SetRotation(angle) self._rotation = angle end
@@ -246,8 +249,18 @@ local out = assert(io.open(packPath .. "/Tiles.lua", "w"))
 out:write('local S = SaneUI.Core.Data.Add(1, "Tiles", { game = "forever", hash = "00000001", build = 70245, key = "int", fields = { "minimap" }, types = { "int" }, patches = {} })\n'
     .. "if not S then return end\nlocal R = S.rows\n" .. table.concat(rows, "\n") .. "\n")
 out:close()
+-- The zone's explorable parts: one explored (701, 702), one not yet (711), one explored that shows only under the mouse (703).
+out = assert(io.open(packPath .. "/Overlays.lua", "w"))
+out:write('local S = SaneUI.Core.Data.Add(1, "Overlays", { game = "forever", hash = "00000002", build = 70245, key = "int", '
+    .. 'fields = { "map", "x", "y", "width", "height", "files", "flags" }, types = { "int", "int", "int", "int", "int", "list int", "int" }, patches = {} })\n'
+    .. "if not S then return end\nlocal R, I = S.rows, S.index\n"
+    .. 'R[11] = "70245\\t\\t1429\\t100\\t50\\t300\\t200\\t701\\030702"\n'
+    .. 'R[12] = "70245\\t\\t1429\\t600\\t300\\t200\\t200\\t711"\n'
+    .. 'R[13] = "70245\\t\\t1429\\t0\\t0\\t64\\t64\\t703"\n'
+    .. 'I.byMap = {}\nI.byMap[1429] = "11\\03012\\03013"\n')
+out:close()
 out = assert(io.open(packPath .. "/SaneUI_Data_World.toc", "w"))
-out:write("## Title: Data: World\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Tiles\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nTiles.lua\n")
+out:write("## Title: Data: World\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Overlays, Tiles\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nOverlays.lua\nTiles.lua\n")
 out:close()
 W.AddPack(packPath)
 
@@ -258,6 +271,8 @@ local ns = W.LoadAddon(root, "Navigation", "SaneUI_Navigation")
 W.Fire("ADDON_LOADED", "SaneUI_Navigation")
 W.Fire("PLAYER_LOGIN")
 check(SaneUI.Navigation == ns and not ns.off, "the module is made and started")
+check(type(ns.OUTLINES) == "table", "the zones that have an outline are listed (Outlines.lua)")
+ns.OUTLINES = { [0] = { [1429] = true } } -- the made-up world's zone has one
 
 -- The textures shown, by file.
 local function Shown()
@@ -453,6 +468,9 @@ check(minimap._width == 240 and minimap._height == 240 and near(small.k, 120 / 1
 frame._width = 200
 Canvas.Layout()
 check(Count(shown, 801, 804) > 0 and Overviews(shown, 0) > 0, "the overlay under it: the terrain's tiles over its overview")
+local cut = shown[801] and shown[801]._mask
+check(cut and cut._kind == "MaskTexture" and cut._texture == ns.Terrain.PATH:format(0, 6, 4) and near(cut._width, 8 * 1600 / 3 * small.k),
+    "each tile cut at the coast by its block's overview, laid over the whole block: the water cut away alike at every zoom")
 
 -- The wheel walks the game's steps, then our map goes on alone.
 frame._scripts.OnMouseWheel(frame, 1)
@@ -580,7 +598,15 @@ Button("blizzard")._scripts.OnClick(Button("blizzard"))
 shown = Shown()
 check(ns.options.view == "blizzard" and Button("blizzard")._lit and Count(shown, 801, 804) == 0
     and Count(shown, 141501, 141512) > 0 and Count(shown, 142901, 142912) > 0, "Blizzard maps: the continent's art, the zone's over it")
+local outline = shown[142901] and shown[142901]._mask
+local whole = true
+for file = 141501, 141512 do if shown[file] and shown[file]._mask then whole = false end end
+check(outline and outline._texture == ns.Art.OUTLINE:format(1429) and near(outline._width, 2000 * full.k) and whole,
+    "the zone's map cut to its outline, laid over its box; the continent's whole")
 check(shown[701] and shown[702] and not shown[703], "and what was explored of the zone, but what shows only under the mouse")
+check(shown[711] and shown[711]._vertex and shown[711]._vertex[1] == ns.Art.FOG[1] and shown[711]._vertex[4] == ns.Art.FOG[4]
+    and not shown[701]._vertex and shown[711]._mask == outline,
+    "what is not yet explored is dark, cut to the zone's outline too; what is explored as the game shows it")
 -- Out to the world: every view stays as chosen.
 full:Fit(947)
 Canvas.Layout()

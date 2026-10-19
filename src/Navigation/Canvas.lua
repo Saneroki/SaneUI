@@ -45,7 +45,8 @@ local Coords, Live = ns.Coords, ns.Live
 local Canvas = {}
 ns.Canvas = Canvas
 
-Canvas.GROUND = { 0.04, 0.05, 0.06 } -- where neither terrain nor art is: nearly black (dev/tools/terrain-art's too)
+Canvas.GROUND = { 22 / 255, 38 / 255, 50 / 255 } -- the sea: where neither land nor art is (the terrain's water
+                                                -- is cut away to it, dev/tools/terrain-art)
 Canvas.MARGIN = 0.15 -- what is laid out reaches so far past the view, as a part of its larger side
 Canvas.OVERLAP = 1   -- each texture so many units larger than its square, so no seam shows between two
 Canvas.DRAG = 4      -- the mouse moves so many units with the button held before it is a drag, not a click
@@ -68,9 +69,24 @@ local overX, overY -- where the mouse was at the last look for the highlight (ni
 local nextLook = 0
 
 -------------------------------------------------------------------------------
---  Pools: a layer's textures, by key
+--  Pools: a layer's textures, by key; masks that cut them to a shape
 -------------------------------------------------------------------------------
-local pools = {}
+local pools, masks = {}, {}
+
+-- A texture cut by a mask (a MaskTexture of Canvas.Masks), or by none (nil); one at most.
+local function Mask(texture, mask)
+    local had = texture.mask
+    if had == mask then return end
+    if had then
+        texture:RemoveMaskTexture(had)
+        had.held[texture] = nil
+    end
+    if mask then
+        texture:AddMaskTexture(mask)
+        mask.held[texture] = true
+    end
+    texture.mask = mask
+end
 
 -- A layer's textures (of frame, in that draw layer), each kept by a key while it is asked for.
 function Canvas.Pool(layer, drawLayer)
@@ -82,8 +98,8 @@ function pools:Begin()
     wipe(self.seen)
 end
 
--- The texture of key, showing file: the same as last time while it stayed in view.
-function pools:Get(key, file, sublevel)
+-- The texture of key, showing file: the same as last time while it stayed in view; cut by mask, if given.
+function pools:Get(key, file, sublevel, mask)
     local texture = self.used[key]
     if not texture then
         texture = table.remove(self.free) or self.frame:CreateTexture(nil, self.drawLayer)
@@ -97,6 +113,7 @@ function pools:Get(key, file, sublevel)
         self.used[key] = texture
     end
     texture:SetDrawLayer(self.drawLayer, sublevel or 0)
+    Mask(texture, mask)
     self.seen[key] = true
     return texture
 end
@@ -107,8 +124,51 @@ function pools:End()
         if not self.seen[key] then
             texture:Hide()
             texture:SetTexture(nil)
+            Mask(texture, nil)
             self.used[key] = nil
             self.free[#self.free + 1] = texture
+        end
+    end
+end
+
+-- A layer's masks (of frame), each kept by a key while it is asked for: the alpha of a file over a
+-- rectangle of the plane cuts the textures given it (a coast, a zone's outline).
+function Canvas.Masks(layer)
+    return setmetatable({ frame = layer, used = {}, seen = {}, free = {} }, { __index = masks })
+end
+
+function masks:Begin()
+    wipe(self.seen)
+end
+
+-- The mask of key, file's alpha over the rectangle of the plane with its top left corner at u, v, width
+-- and height yards large; nothing outside it.
+function masks:Get(key, file, u, v, width, height)
+    local mask = self.used[key]
+    if not mask then
+        mask = table.remove(self.free) or self.frame:CreateMaskTexture()
+        mask.held = mask.held or {}
+        mask:SetTexture(file, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE", "TRILINEAR")
+        mask:Show()
+        self.used[key] = mask
+    end
+    self.seen[key] = true
+    local k = view.k
+    mask:ClearAllPoints()
+    mask:SetPoint("TOPLEFT", holder, "CENTER", (u - view.u) * k, (v - view.v) * k)
+    mask:SetSize(width * k, height * k)
+    return mask
+end
+
+-- The layout is over: the masks not asked for let go of their textures and files.
+function masks:End()
+    for key, mask in pairs(self.used) do
+        if not self.seen[key] then
+            for texture in pairs(mask.held) do Mask(texture, nil) end
+            mask:Hide()
+            mask:SetTexture(nil)
+            self.used[key] = nil
+            self.free[#self.free + 1] = mask
         end
     end
 end

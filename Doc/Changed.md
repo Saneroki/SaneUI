@@ -3,8 +3,26 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 441 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 109 (Navigation).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 441 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 113 (Navigation), 208 (data tools).
 A game restart takes it in (a new addon, Navigation; new files in Core's, Social's and Tooltips' TOCs, key bindings).
+
+### Navigation: the water cut away, zone-shaped maps, undiscovered parts dark (Saneroki, 2026-10-19)
+- `dev/tools/terrain-art` now also reads the game's terrain files (root ADTs, `<tile key>.adt`) and client
+  tables: each map chunk's heights (the four triangles of a cell), its water (`MH2O`: the liquid's type, its
+  cells and surface; water and ocean count, magma and slime not) and area. The overview's alpha is the land,
+  sampled 2 yards apart; its colour from land alone, spread into the sea, so no dark rim; BLP2 DXT5 (45
+  textures, 15.8 MB). Each zone's outline (`src/Navigation/Art/Zones/<uiMapID>.blp`, 47, 4.2 MB): the chunks of
+  its areas (an area's top parent, the zone map assigned to it), softened on the whole grid so neighbours share
+  their border, over the zone map's box; `src/Navigation/Outlines.lua` lists them (new in the TOC). ImageMagick's
+  range fit for DXT5: its cluster fit takes about a minute a texture with a partly see-through alpha.
+- `Canvas.Masks` (new): masks by key, the alpha of a file over a rectangle of the plane; a pool's `Get` takes a
+  mask (`Mask` swaps it, `End` lets go). The terrain's tiles are cut by their block's overview; the canvas'
+  ground is the sea's colour.
+- `Art.lua`: at a zone every zone in view with an outline is drawn in its own map, cut to it (both art views);
+  a zone without one in the middle whole. The explored parts in both views, and the parts not yet explored
+  nearly black (`Art.FOG`): every part of the map is Core's new set *Overlays* (pack World, index `byMap`; 572
+  parts of 45 zones from the game's tables), those the game does not list as explored (known by their first
+  texture) are dark. Tests: Navigation 113 checks (the coast mask, the outline, the dark part).
 
 ### Navigation: zones open by a click, the map goes with its window; Core: one push a visit (Saneroki, 2026-10-19)
 - Core's Edge: one push is one change. After a push the edge or corner counts again only once the mouse has
