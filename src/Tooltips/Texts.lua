@@ -14,7 +14,7 @@ local _, ns = ...
 -- What the panels say themselves.
 ns.TEXT = {
     -- A spell's facts in its strip (Kinds/Spell.lua), and the units after their numbers
-    COST = "Cost", CAST = "Cast", COOLDOWN = "Cooldown", RANGE = "Range",
+    CAST = "Cast", RANGE = "Range",
     SECONDS = "%s sec", MINUTES = "%s min", HOURS = "%s hr", YARDS = "%s yd",
     VENDOR = "Vendor", AUCTION = "Auction", USED_IN = "Used in",
     -- The names of a panel's sections (Read.Section). Info: a thing's own lines (an item's numbers,
@@ -26,7 +26,7 @@ ns.TEXT = {
     -- game does not give them, your skill
     HERBALISM = "Herbalism", MINING = "Mining", NOT_LEARNED = "Not learned", SKILL = "%d/%d",
     -- The tiny line at the bottom of a panel while Alt is not held (Read.lua)
-    MORE_INFO = "Hold ALT for more info",
+    MORE_INFO = "Hold ALT for more",
     -- In the Gold section: what the materials of disenchanting it bring at the auction house; with Alt each
     -- material (its chance, how many, what it brings), and the price to post it at (Kinds/Gold.lua)
     DISENCHANT = "Disenchant", MATERIAL = "%s%%  %s %s", SELL_AT = "Sell at", NO_PRICES = "no prices seen",
@@ -43,7 +43,10 @@ ns.TEXT = {
     PRICES = "Lowest %s", FEES = "Cut %s  \194\183  deposit %s, back when it sells",
     ALT_MORE = "Press ALT for +%d more",
     EQUIPPED = "Equipped",
-    DPS = "DPS", DMG = "dmg", SPD = "spd", HPS = "HPS", DAMAGE = "Damage", HEALING = "Healing", PER = "Per %s", SPEED = "Speed", CRIT = "Crit",
+    DPS = "DPS", DMG = "dmg", SPD = "spd", HPS = "HPS", HEALING = "Healing", PER = "Per %s", SPEED = "Speed", CRIT = "Crit",
+    -- A spell's table (Kinds/Spell.lua): what one cast does, its cooldown, how long it lasts, a cell with
+    -- nothing known
+    HIT = "Dmg", HEAL = "Heal", CD = "CD", NONE = "---",
     MANA = "Mana",
     -- What a spell is when it names no school (Spell.lua)
     PHYSICAL = "Physical", CC = "CC", UTILITY = "Utility",
@@ -116,6 +119,9 @@ ns.PATTERN = {
         Pattern("ITEM_MIN_SKILL", "Requires %s (%d)"), Pattern("ITEM_REQ_REPUTATION", "Requires %s - %s"),
         Pattern("ITEM_REQ_SKILL", "Requires %s"),
     },
+    -- What a spell asks of you: a stance or a form, a weapon. The panel shows them in its header, each in a
+    -- row of its own under what the spell is (Kinds/Spell.lua); so are its reagents and tools (LINES).
+    SPELL_REQUIRES = { Pattern("SPELL_REQUIRED_FORM", "Requires %s"), Pattern("SPELL_EQUIPPED_ITEM", "Requires %s") },
 }
 
 -- Whole lines of the game an item's panel knows by their words.
@@ -132,6 +138,10 @@ ns.LINES = {
     LOOK_KNOWN = Global("TRANSMOGRIFY_TOOLTIP_ITEM_UNKNOWN_APPEARANCE_KNOWN") or "You've collected this appearance, but not from this item",
     -- An item that starts a quest: its panel names the quest instead
     STARTS_QUEST = Global("ITEM_STARTS_QUEST") or "This Item Begins a Quest",
+    -- What a spell uses up or needs to hold: the beginning of its line (the game's sentence has a line
+    -- break after the words; the tooltip's line does not)
+    REAGENTS = ((Global("SPELL_REAGENTS") or "Reagents: "):gsub("|n", "")),
+    TOOLS = ((Global("SPELL_TOTEMS") or "Tools: "):gsub("|n", "")),
 }
 
 -- The facts a spell's tooltip states in lines of their own (Kinds/Spell.lua): what it costs, its
@@ -150,7 +160,7 @@ ns.FACTS = {
     Fact("cost", "ENERGY_COST", "%d Energy", { caption = Global("ENERGY") or "Energy" }),
     Fact("cost", "FOCUS_COST", "%d Focus", { caption = Global("FOCUS") or "Focus" }),
     Fact("range", "SPELL_RANGE", "%s yd range", { unit = ns.TEXT.YARDS }),
-    Fact("range", "MELEE_RANGE", "Melee Range"),
+    Fact("range", "MELEE_RANGE", "Melee Range", { shown = Global("MELEE") or "Melee" }),
     Fact("cast", "SPELL_CAST_TIME_SEC", "%.3g sec cast", { unit = ns.TEXT.SECONDS }),
     Fact("cast", "SPELL_CAST_TIME_MIN", "%.3g min cast", { unit = ns.TEXT.MINUTES }),
     Fact("cast", "SPELL_CAST_TIME_INSTANT", "Instant cast"),

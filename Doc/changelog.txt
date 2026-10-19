@@ -57,7 +57,11 @@ The bigger changes of each version, newest first.
   tiny line at the bottom says that holding Alt shows more: which of your
   characters have it, other addons' lines, the technical details. An
   item's Gold part tells what its materials bring if you disenchant it,
-  and with Alt the price to post it at on the auction house.
+  and with Alt the price to post it at on the auction house. Section
+  names sit in the middle of soft grooves. A spell's numbers stand in a
+  neat table (damage or healing, cost, cast, range; per second, per
+  point of cost, cooldown, crit), what it needs (a stance, a form, a
+  weapon) right under its name, and physical attacks are red.
 
 - The chat window's full screen holds more than the chat: the friends
   list at the right, as the game's own, with the group finder as one of

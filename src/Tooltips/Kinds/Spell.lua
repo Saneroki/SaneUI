@@ -4,26 +4,29 @@ local _, ns = ...
 --  Sane UI - Tooltips - Kinds - Spell
 --  A spell's or a pet ability's tooltip:
 --
---      FIREBALL                        [icon]
---      Fire  ·  Rank 1                            what it is: its school, or Healing, CC,
---      INFO ───────────────────────────────       Physical, Utility; the rank
---        MANA     |  RANGE  |   CAST              what its tooltip states, in the order the
---      30 (6%)    |  35 yd  |  1.5 sec            game writes it: cost, range, cast, cooldown
---        DPS   | DAMAGE | PER MANA |  CRIT         and for one that hurts or heals, what follows
---        8.4   |   21   |   0.68   |  6.2%        from it (Numbers.lua); under them, in the
---      Hurls a fiery ball that causes 16 to       same section, the description, its numbers in the
---      25 Fire damage ...                         panel's colour; any other line of the
---                                                 game's under Details (Read.Named)
+--      REVENGE                         [icon]
+--      Physical  ·  Rank 1                        what it is: its school, or Healing, CC,
+--      Requires Defensive Stance                  Physical, Utility; the rank. What it asks of
+--      ─────────────── INFO ───────────────       you, each in a row of its own: a stance, a
+--         DMG   |   RAGE   |  CAST   | RANGE      form, a weapon, reagents, tools
+--          22   |    5     | Instant | Melee      a table of four columns: what one cast does,
+--         DPS   | PER RAGE |   CD    | CRIT       its cost, its cast, its range; per second,
+--         4.4   |   4.40   |  5 sec  | 2.0%       per point of its cost, its cooldown, your
+--                                                 chance of a critical strike (or, for one that
+--      Instantly counterattacks an enemy for      lasts, how long); "---" for what is not known
+--      22 damage ...                              (Numbers.lua). Then, a little apart, the
+--                                                 description, its numbers in the panel's colour;
+--                                                 any other line of the game's under Details
+--                                                 (Read.Named)
 --
---  A cell only for what is known: a spell whose tooltip states no cooldown has
---  no cooldown cell, and a strip with nothing in it is no strip. A weapon's
---  swing has its speed where a spell has what it does per point of its cost.
---  The panel's colour says what the spell is: its school's, green for one that
---  heals, blue for crowd control, the physical colour for one that hurts, none
---  for the rest.
+--  A spell that neither hurts nor heals has one row: its cost, cast, cooldown
+--  and range, and none where its tooltip states none of them. A weapon's
+--  swing has its speed where a spell has its cast. The panel's colour says what
+--  the spell is: its school's, green for one that heals, blue for crowd
+--  control, red for a physical one, none for the rest.
 -------------------------------------------------------------------------------
-local Plain = SaneUI.Core.Plain
-local Read, TEXT, FACTS, COLOR = ns.Reader, ns.TEXT, ns.FACTS, ns.COLOR
+local Plain, Ask = SaneUI.Core.Plain, SaneUI.Core.Ask
+local Read, TEXT, FACTS, COLOR, PATTERN, LINES = ns.Reader, ns.TEXT, ns.FACTS, ns.COLOR, ns.PATTERN, ns.LINES
 local TYPE = Enum.TooltipDataType or {}
 local LINE = Enum.TooltipDataLineType or {}
 local STATS = ns.STATS[GetLocale()]
@@ -50,7 +53,8 @@ for index, art in pairs(SCHOOL_ART) do
 end
 local HEALTH, CC = COLOR.HEALTH, ns.GameColor("LIGHTBLUE_FONT_COLOR", 0.53, 0.67, 1.00)
 local HEALING = { TEXT.HEALING, HEALTH[1], HEALTH[2], HEALTH[3] }
-local PHYSICAL = { ns.Global("STRING_SCHOOL_PHYSICAL") or TEXT.PHYSICAL, 1.00, 1.00, 0.00 } -- the combat log's physical
+-- Physical in red, the game's red (its combat log has it yellow, too close to holy)
+local PHYSICAL = { ns.Global("STRING_SCHOOL_PHYSICAL") or TEXT.PHYSICAL, COLOR.RED[1], COLOR.RED[2], COLOR.RED[3] }
 local CONTROL = { TEXT.CC, CC[1], CC[2], CC[3] }
 local UTILITY = { TEXT.UTILITY } -- no colour of its own
 
@@ -85,9 +89,6 @@ local function School(id, description)
     return found
 end
 
--- The facts, in the order the game's tooltip writes them: line by line, the left side first.
-local ORDER = { "cost", "range", "cast", "cooldown" }
-local CAPTION = { cost = TEXT.COST, range = TEXT.RANGE, cast = TEXT.CAST, cooldown = TEXT.COOLDOWN }
 local MEMO = { cost = "factCost", range = "factRange", cast = "factCast", cooldown = "factCooldown" }
 local facts = {} -- what the tooltip states, for one read: [key] = value; power = a cost's caption
 
@@ -98,7 +99,7 @@ local function Fact(text)
         local fact = FACTS[index]
         local found = text:match(fact.pattern)
         if found then
-            local value = fact.unit and Read.Memo(MEMO[fact.key], fact.unit, found) or found
+            local value = fact.shown or fact.unit and Read.Memo(MEMO[fact.key], fact.unit, found) or found
             return fact.key, value, fact.caption
         end
     end
@@ -123,10 +124,33 @@ local function Facts(line)
     return true
 end
 
+-- Whether a line says what the spell asks of you: a stance, a form, a weapon (the game's sentences for
+-- them), its reagents or its tools.
+local function Requirement(text)
+    if text:find(LINES.REAGENTS, 1, true) == 1 or text:find(LINES.TOOLS, 1, true) == 1 then return true end
+    for _, pattern in ipairs(PATTERN.SPELL_REQUIRES) do
+        if text:match(pattern) then return true end
+    end
+    return false
+end
+local asks = {} -- the lines that do, for one read
+
+-- The name of your own power ("Rage"), where a spell states no cost to name it by.
+local function YourPower()
+    local _, token = Ask(UnitPowerType, "player")
+    return type(token) == "string" and ns.Global(token) or TEXT.MANA
+end
+
+-- A cell of the table: its caption over its value, "---" where the value is not known.
+local function Cell(row, caption, value)
+    Read.Cell(row, caption, value or TEXT.NONE)
+end
+
 local function Spell(ctx)
     local L, head, id = ctx.L, ctx.head, ctx.id
-    -- The lines before the description that state facts; what the description says.
+    -- The lines before the description that state facts or what it asks of you; what the description says.
     wipe(facts)
+    wipe(asks)
     local passive, description
     for index = 2, ctx.count do
         local line = L[index]
@@ -136,6 +160,8 @@ local function Spell(ctx)
             passive, line.used = line.left, true
         elseif not description and not line.blank and Facts(line) then
             line.used = true
+        elseif not line.blank and line.right == "" and not Read.Added(line, index) and Requirement(line.left) then
+            asks[#asks + 1], line.used = line, true
         end
     end
 
@@ -151,7 +177,8 @@ local function Spell(ctx)
     head.icon = ctx.options.icons and id and Plain(C_Spell.GetSpellTexture(id)) or nil
     if head.icon then ns.Figures.Spell(head, id) end -- a mount's, in the icon's place
 
-    -- Under the name: what it is, in its colour, and its rank
+    -- Under the name: what it is, in its colour, and its rank; under that what it asks of you, each in a
+    -- row of its own, red where the game has it red (you do not have it now)
     local rank = L[1].right
     if rank == "" then rank = passive or "" end
     local hex = school[2] and ns.Hex(school[2], school[3], school[4]) or DETAIL_HEX
@@ -160,41 +187,55 @@ local function Spell(ctx)
     else
         Read.Text("sub", Read.Memo("school", "|cff%s%s|r", hex, school[1]), DETAIL[1], DETAIL[2], DETAIL[3])
     end
-
-    -- The facts it states, in the section Info; its cost also as a share of all your mana
-    local strip
-    for _, key in ipairs(ORDER) do
-        local value = facts[key]
-        if value then
-            if not strip then
-                Read.Section(TEXT.INFO)
-                strip = Read.Row()
-                strip.kind = "strip"
-            end
-            local caption = CAPTION[key]
-            if key == "cost" then
-                caption = facts.power or caption
-                local share = id and ns.Numbers.Share(id)
-                if share then value = Read.Memo("cost", "%s (%d%%)", value, math.floor(share + 0.5)) end
-            end
-            Read.Cell(strip, caption, value)
-        end
+    for _, line in ipairs(asks) do
+        local color = ns.Like(line.lr, line.lg, line.lb, COLOR.RED) and COLOR.RED or DETAIL
+        Read.Text("sub", line.left, color[1], color[2], color[3])
     end
-    -- What follows: per second, on average, per point of its cost (a swing: its speed), critical strikes
+
+    -- Its cost, also as a share of all your mana
+    local power = facts.power or (numbers and numbers.power) or YourPower()
+    local cost = facts.cost
+    if cost then
+        local share = id and ns.Numbers.Share(id)
+        if share then cost = Read.Memo("cost", "%s (%d%%)", cost, math.floor(share + 0.5)) end
+    end
+    -- The table, in the section Info. A spell that hurts or heals: what one cast does, its cost, its cast
+    -- (a swing: its speed), its range; per second, per point of its cost, its cooldown, your chance of a
+    -- critical strike (one that lasts: how long). Any other: its cost, cast, cooldown and range.
     if numbers then
+        Read.Section(TEXT.INFO)
+        local first = Read.Row()
+        first.kind = "strip"
+        Cell(first, numbers.heal and TEXT.HEAL or TEXT.HIT, Read.Memo("amount", "%d", math.floor(numbers.amount + 0.5)))
+        Cell(first, power, cost)
+        if numbers.speed then
+            Cell(first, TEXT.SPEED, Read.Memo("speed", "%.2f", numbers.speed))
+        else
+            Cell(first, TEXT.CAST, facts.cast)
+        end
+        Cell(first, TEXT.RANGE, facts.range)
+        local second = Read.Row()
+        second.kind = "strip"
+        Cell(second, numbers.heal and TEXT.HPS or TEXT.DPS, Read.Memo("perSecond", "%.1f", numbers.perSecond))
+        Cell(second, Read.Memo("per", TEXT.PER, power), numbers.perPower
+            and Read.Memo("perPower", numbers.perPower < 10 and "%.2f" or "%.1f", numbers.perPower))
+        Cell(second, TEXT.CD, facts.cooldown)
+        if numbers.lasting then
+            Cell(second, TEXT.DURATION, Read.Memo("lasting", TEXT.SECONDS, numbers.lasting))
+        else
+            Cell(second, TEXT.CRIT, numbers.crit and Read.Memo("crit", "%.1f%%", numbers.crit))
+        end
+    elseif facts.cost or facts.cast or facts.cooldown or facts.range then
         Read.Section(TEXT.INFO)
         local row = Read.Row()
         row.kind = "strip"
-        Read.Cell(row, numbers.heal and TEXT.HPS or TEXT.DPS, Read.Memo("perSecond", "%.1f", numbers.perSecond))
-        Read.Cell(row, numbers.heal and TEXT.HEALING or TEXT.DAMAGE, Read.Memo("amount", "%d", math.floor(numbers.amount + 0.5)))
-        if numbers.speed then
-            Read.Cell(row, TEXT.SPEED, Read.Memo("speed", "%.2f", numbers.speed))
-        elseif numbers.perPower then
-            Read.Cell(row, Read.Memo("per", TEXT.PER, numbers.power or facts.power or ns.Global("MANA") or TEXT.MANA),
-                Read.Memo("perPower", numbers.perPower < 10 and "%.2f" or "%.1f", numbers.perPower))
-        end
-        if numbers.crit then Read.Cell(row, TEXT.CRIT, Read.Memo("crit", "%.1f%%", numbers.crit)) end
+        Cell(row, power, cost)
+        Cell(row, TEXT.CAST, facts.cast)
+        Cell(row, TEXT.CD, facts.cooldown)
+        Cell(row, TEXT.RANGE, facts.range)
     end
+    -- The description, a little apart from the table
+    ctx.gap = true
     ctx.each = Read.Prose
     Read.Rest()
 end

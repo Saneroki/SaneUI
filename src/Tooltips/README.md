@@ -10,9 +10,10 @@ opacity can be set, and a switch anchors tooltips to the mouse cursor. An item's
 quests that need it, the professions that use it, which of your characters have it (each by first name and
 surname: *Sane Lunatic*) and what it brings from a vendor and at the auction house, with one clear line on
 what to do with it for gold, what its materials bring if you disenchant it, and with Alt the price to post
-it at. Every section has its name on its divider, in the divider's own quiet grey (*INFO*, *QUEST*, *GOLD*,
-...); a thing's own lines (its numbers, what it does, its description, its durability) are one section,
-*Info*. A tiny line at the bottom says that Alt shows more: the technical details, which of your characters
+it at. Every section has its name in the middle of its divider (*INFO*, *QUEST*, *GOLD*, ...), name and
+divider a dark see-through shade, as if pressed into the ground; a thing's own lines (its numbers, what it
+does, its description, its durability) are one section, *Info*; a spell's numbers are a table of four
+columns and two rows. A tiny line at the bottom, between two such rules, says that Alt shows more: the technical details, which of your characters
 have the item (*Inventory*), and what other addons write into a tooltip, wherever they write it, in one
 section of its own at the end, *Addons*, never among the panel's own lines. Where a thing has a 3D model (a
 creature, a player, a mount, a pet) it stands in the picture's place; over a piece of gear, Alt shows your
@@ -43,7 +44,7 @@ only read.
   |---|---|
   | **Item** | *Equipped* over the name on what you wear in a comparison. Name in the colour of its quality; under it, small and grey: kind and slot (what it is, for a thing that is not worn: *Trade Goods · Cloth*) and at the right the level it needs (red while yours is lower) and under it, also at the right, what else it asks of you: a class (*Classes: Mage*), a profession's skill (*Requires Tailoring (75)*), a reputation (red while you lack it); icon with the item's level under it (a mount's or a pet's item: its 3D model). Then its own lines under **Info**, in the game's colours: a weapon's damage per second large, its hit and speed smaller in the same line (*3.2 DPS · 1 - 3 dmg · 2.00 spd*), or an armour's armour; its plain lines (*+5 Agility*, *Unique*), what it does (the game's green: *Equip:*, *Use:*, *Chance on hit:*), what is told about it (the game's gold); last its durability as a bar with *Durability* at its left and *61 / 120* at its right inside, flat with round corners like a unit's health bar. The set it belongs to (its name, its pieces and its bonuses) under **Set**. **Quest** (a section under its caption): *Starts* and the quest it starts, then *Needed for* and the quests that need it (each heading with *Questlog* at the right, over the words that say where you stand: *Not yet* is not yet in your quest log); each with its level small after its name and, at a glance, where you stand with it: *In log* with the ? and your count (*In log 1/4*, gold, green when complete), *Available* with the ! (you can take it now), *Not yet* dim (your level, a quest to do first), *Done* with a tick, grey; first those in your log, then to take, for later, done; without Alt three of those not in your log and *Press ALT for +2 more*. A quest for another class, race or side, or closed to you, is left out. Then, for a trade good, **Professions** (a section under its caption): *Used in* and the professions that use it, with their icons (by the item's kind), and for what a herb or an ore gives, the node that gives it (see *Gathering* below). With Alt, **Inventory** (see *Inventory* below): which of your characters have it and where. Then **Gold** (see *Gold* below), its first row how it binds, short as players write it (*BoP*, *BoE*, *BoU*, *BoA*, *WuE*, *Soulbound*, *Quest*; red until it is bound to you), and at the right whether you have its look (*Uncollected*, *Look known*); with Alt, last, other addons' lines under *Addons*. Each section is there only when something is known for it. Whatever you cannot use is red, as the game colours it. What you wear beside an item (a comparison) has its changes under *Info* and none of the sections from data, only its vendor price for one under *Gold* (and, with Alt, other addons' lines under *Addons*) |
   | **Recipe** | Like an item; what it makes stands under the caption *Creates*, with that thing's icon |
-  | **Spell, pet ability** | Name; what it is (its school in its colour; without one *Healing* in green, *CC* in blue for crowd control, *Physical*, *Utility*) and rank, or *Passive*; icon (a mount's spell: the mount's 3D model). Under **Info** a strip of what its tooltip states, each caption over its value, in the order the game writes them: its cost (*Mana*, *Rage*, *Energy*; a mana cost also as a share of all yours), *Range*, *Cast*, *Cooldown*; a fact the tooltip does not state has no cell. A spell that hurts or heals has a second strip of what follows from it (see *Spell numbers* below): *DPS* or *HPS*, *Damage* or *Healing* on average, what it does *Per Mana* (the melee swing and the shots: their *Speed*), *Crit* (your chance); again only what is known. Under them, in the same section, the description in the middle, its digits in the panel's colour; any other line of the game's under **Details**. The panel has the colour the game's combat log gives the spell's school (fire, frost, arcane, nature, shadow, holy; physical for one that only hurts), green if it only heals, none otherwise |
+  | **Spell, pet ability** | Name; what it is (its school in its colour; without one *Healing* in green, *CC* in blue for crowd control, *Physical* in red, *Utility*) and rank, or *Passive*; under that what it asks of you, each in a row of its own (*Requires Defensive Stance*, *Requires Cat Form*, *Requires Ranged Weapon*, its reagents and tools; red while you lack it, as the game colours it); icon (a mount's spell: the mount's 3D model). Under **Info** a table of four columns, each cell a caption over its value, the captions in the dark see-through shade, the values white, *---* where nothing is known. A spell that hurts or heals has two rows: *Dmg* or *Heal* (what one cast does on average), its cost (*Rage*, *Mana*, *Energy*; a mana cost also as a share of all yours), *Cast* (the melee swing and the shots: their *Speed*), *Range* (*Melee* for melee range); then *DPS* or *HPS*, what it does *Per Rage* or *Per Mana*, *CD* (its cooldown), and *Crit* (your chance), or for one that lasts *Duration* (see *Spell numbers* below). Any other spell has one row: its cost, *Cast*, *CD*, *Range*. Then, a little apart, the description in the middle, its digits in the panel's colour; any other line of the game's under **Details**. The panel has the colour of the spell's school (fire, frost, arcane, nature, shadow, holy in the colours the game's combat log gives them; physical, for one that only hurts, in red), green if it only heals, none otherwise |
   | **Player** | Name in the colour of the class; the gold dragon round the portrait; close under the name and as large: the guild, with the player's rank in it small after it; then small: the race and the side (*Human · Alliance*), and under it the class line: spec and class with the talent points (*Feral Combat Druid 0/31/20*; yours at once, another player's once inspected), the title (a PvP rank, *Sergeant*), and what is true now (*PvP* in red, *AFK*, *DND* in orange, *Offline*, *Dead*, *Ghost*; then the panel has no colour of its own); a large portrait in the top right corner with the level on its lower edge (the unit's live 3D model, see *3D model in tooltips*). Under **Status** the health bar with the current health and its share in percent written in its middle (over the power bar), and over its lower part the bar of mana, rage or energy (an empty one shows nothing): flat colours, half see-through, round corners; whom the player targets right above the bars (*Target* and the name right after it; *You*, in red, when it is you). The plaque under the portrait says the item level before the level, *iLvl 50 - 60* (yours at once; another player's after the game has inspected them, see below). Buffs and debuffs as small icons. With Alt, last, other addons' lines under *Addons* |
   | **Creature, NPC** | The same; in place of the guild its title (*Bowyer*, *<Flight Master>*: the game's line before its level line) or, for a pet, its owner; in place of the race what it is, its family and its faction (*Beast · Wolf*, *Humanoid · Stormwind*: the faction is the game's line after the level line); on the class line its class (*Warrior*, *Mage*; not for a friendly NPC), its rank in the game's words (*Elite*, *Boss* in gold, *Rare* in silver; a rare elite both), *Tapped* (somebody else's kill), *PvP*, *Dead*; a dead one's panel has no colour of its own. Under **Status**, after its health, what killing it gives you and how many such kills to your next level; then under **Quest** each quest's name in gold with a sword before what you must still kill and a sack before what you must still loot with how often it drops after its name (*33%*), the count at the right (*5/7*; what is done is left out, and a quest with nothing left to do for it, too; the game's own quest lines, and what it drops for your quests from the module's quest facts: see *Quests* below); the quests it takes back and offers you, each name in gold with a line under it: *Turn in* (ready, green) or *In progress* with the game's ?, *Offers* with the game's !, and the quest's level; a dead creature says *Dead* and what it yields (*Skinnable*) on the class line, the game's *Corpse* line is left out; what killing it gives you (*145 XP*) and how many such kills to your next level (*Next level in 12*), see *Experience* below; the game's own dragon from its target frame curls round the portrait: gold for an elite, gold with a great wing for a raid or dungeon boss, silver and winged for a rare or rare elite; a creature without a rank has none. Your quests' lines for it in gold: a sword beside what you must kill it for, a bag beside what you must loot |
   | **Buff, debuff** | Name; *Buff* or *Debuff* and what takes it away (*Magic*); icon; under **Info** the description, in the middle; under **Duration** a bar that runs out with its time, with how long it still runs and who cast it written inside (flat, round corners). The panel has the game's colour of what takes it away (the colour of a debuff's border: magic, curse, poison, disease); a debuff nothing takes away the game's colour for that, a buff nothing takes away none |
@@ -52,8 +53,9 @@ only read.
   | **Anything else** the game fills from data (things in the world such as a mailbox or a chest, macros, the minimap, currencies, mounts, totems, equipment sets, ...) | Name and its lines under it as the game has them, no sections (an empty line is a small gap); a panel without a colour of its own, whatever colour the name has |
 
   **Sections:** every part of a panel under its header is a section with its name on its divider, in small
-  capitals with a rule after it (*GOLD ———*), the name in the rule's own quiet grey and as thin as the rule
-  (no shadow): there is no divider without a name. A thing's own lines are *Info*: an item's numbers, what it
+  capitals in the middle with a rule at each side (*——— GOLD ———*), name and rules in one dark see-through
+  shade without a shadow, the same as the lines between a table's cells, so they look like grooves in the
+  ground rather than lines drawn on it: there is no divider without a name. A thing's own lines are *Info*: an item's numbers, what it
   does, its description and its durability; a spell's facts and its description; a buff's and a quest's
   text. An item's *Set*, *Creates* (a recipe's thing), *Quest*, *Professions* (also the node that gives it),
   *Inventory* (with Alt), *Gold*; a herb's or an ore's *Professions*; a unit's *Status* and *Quest*; a buff's
@@ -61,8 +63,9 @@ only read.
   under *IDs*; other addons' lines under *Addons* (with Alt). Two neighbours of the same kind are one section
   (the game's empty line between them is a small gap).
 
-  **Hold ALT for more info:** at the bottom of every panel of the game's data, while Alt is not held, a tiny
-  line in the middle says so; with Alt it gives way to what Alt shows. A button's hint has none: Alt shows
+  **Hold ALT for more:** at the bottom of every panel of the game's data, while Alt is not held, a tiny line
+  between two rules like a section's name (*——— Hold ALT for more ———*) says so; with Alt it gives way to what
+  Alt shows. A button's hint has none: Alt shows
   nothing more there.
 
   **Addons:** whatever other addons write into a tooltip (one addon or five) stands, while Alt is held, in one
@@ -250,8 +253,9 @@ only read.
   of the way. The opacity setting is its alpha. Its shape has round corners and an edge that fades out
   softly: it reaches 8 past the panel's sides, and the panel's content stands on its solid part. No
   border, no band behind the name, no boxes. The only dividers are the sections' captions: a section's name
-  stands at the left in small capitals, without a shadow, and a rule runs on from it to the right side, one
-  hairline; name and rule in the same quiet grey (`COLOR.RULE`), so they read as one; a hairline is one unit of
+  stands in the middle in small capitals, without a shadow, and a rule runs from each side of the panel to
+  it, one hairline each, 6 from the name; name and rules in the groove's shade (`COLOR.GROOVE`, black, seen
+  at `Pools.GROOVE`, 40 %), as are a table's captions and the lines between its cells; a hairline is one unit of
   the interface rounded to whole dots of the screen (`Core.Pixels`, by the game's `PixelUtil.GetNearestPixelSize`). An empty line of the
   game's inside a section is a small gap (a row's `space`).
 - **The icon** (or a unit's portrait) is 64 large and stands out over the panel's top right corner, 10 past
@@ -336,8 +340,17 @@ only read.
   high, flat and half see-through, under the panel's mask for round corners) with the word and the numbers
   written inside (`BarText`, left and right); its values are plain, so it is set like any bar.
 - **The line that Alt shows more** (`Read.lua`): the last row of every panel of the game's data while Alt is
-  not held (`row.center`, font `hint`, a little apart); with Alt the details and other addons' lines come in
-  its place.
+  not held, a caption as written (no `caps`) in the font kind `hint`, with its rules; with Alt the details and
+  other addons' lines come in its place.
+- **A spell's table** (`Kinds/Spell.lua`, `Panel.lua`): two rows of the kind `strip`, four cells each (one row
+  for a spell that neither hurts nor heals), every cell filled (`TEXT.NONE` where nothing is known). The
+  columns of all of a panel's tables are alike, each a quarter of the panel, which is made wide enough for
+  the widest cell of them all (`widestCell`), so the rows line up. What a spell asks of you is known by the
+  game's sentences (`SPELL_REQUIRED_FORM`, `SPELL_EQUIPPED_ITEM`; reagents and tools by the beginning of
+  `SPELL_REAGENTS` and `SPELL_TOTEMS`) and stands under its school as rows of its own. Melee range is the
+  game's word `MELEE`. Where the spell states no cost, the cost's caption is your own power's name
+  (`UnitPowerType`). The last cell is *Duration* where what it does lasts (`Numbers.Spell`'s `lasting`), else
+  *Crit*.
 - **Fonts and the text size.** The font file is asked of the game's font objects at every draw
   (`GameTooltipText`, `GameTooltipHeaderText`), so the game's language and a UI addon's font are
   followed; the size is set by us (`SetFont`), because it is the player's setting. Name and lines have
@@ -353,9 +366,9 @@ only read.
   writes descriptions in), which is made lighter. Every other colour of ours (`ns.COLOR` in `Model.lua`)
   is one of the game's font colours (`HIGHLIGHT_FONT_COLOR`, `NORMAL_FONT_COLOR`, `GRAY_FONT_COLOR`,
   `RED_FONT_COLOR`, `GREEN_FONT_COLOR`, ...) moved part of the way toward another of them (`Tone`): a
-  name and a value nearly white, what is said about a thing light grey, a strip's captions the game's gold
-  made darker, a section's name and its rule a quiet grey (the game's grey toward black), what is done
-  green, what you cannot do red. A line's colour is known by being close to one of
+  name nearly white, a table's values white, what is said about a thing light grey, a section's name, its
+  rules, a table's captions and its lines the groove's dark see-through shade, what is done green, what you
+  cannot do red. A physical spell is the game's red (its combat log has physical yellow, too close to holy). A line's colour is known by being close to one of
   the game's (`ns.Like`). A colour inside a line is written by `ns.Hex`.
 - **Five pictures are ours,** made by `dev/tools/tooltip-art` (the game has none like them):
   `Art/soft.tga` (64 x 64), a white square with round corners and a soft edge, with which the background
@@ -486,14 +499,17 @@ only read.
   - A spell's school and its numbers in other languages than English (its facts strip works in every
     language, by the game's own sentences).
   - Small pictures the game puts into a tooltip's lines (`AddTexture`).
-- **Tests:** `lua5.1 dev/tests/tooltips.lua` (453 checks), on a few made-up quests, drops, nodes and a row of
+- **Tests:** `lua5.1 dev/tests/tooltips.lua` (458 checks), on a few made-up quests, drops, nodes and a row of
   disenchanting compiled
   into packs on the real schemas (`dev/tests/data/tooltips/`, `dev/tests/data/packs.py`): the quest part before
   and after the packs are there, the Inventory section (whole names, two characters with one first name,
   the account's bank, the total, bags and the bank read in steps, the bank only while open; only with Alt),
-  the line that Alt shows more (in the middle, tiny, gone with Alt, none on a button's hint), a thing's own
+  the line that Alt shows more (tiny, between two rules, gone with Alt, none on a button's hint), a thing's own
   lines in one section Info, the durability bar with its words inside and round corners, a section's name in
-  its rule's colour without a shadow, other addons' lines only with Alt, in their own section after a buff's bar and a quest's objectives and from right after
+  the middle with a rule at each side, both in the groove's shade without a shadow, a spell's table (two rows
+  of four, --- for what is not known, Melee, rage, Duration in place of Crit for one that lasts, one row for a
+  utility spell), what a spell asks of you in its header (a stance in red while you lack it, a weapon,
+  reagents, tools), a physical spell in red, other addons' lines only with Alt, in their own section after a buff's bar and a quest's objectives and from right after
   one of the game's lines, every section under its name (a set, a gap inside a section, a hint without
   sections), the 3D models of a mount and a pet (the icon until loaded, a mount's spell, switched off), gear
   with its icon and your character beside the panel with Alt (as high as the panel, at its left or its right,
@@ -544,6 +560,11 @@ only read.
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## History
+- 2026-10-19 — Section names in the middle with a rule at each side, both in a dark see-through shade like
+  grooves; so are a spell's table captions and lines, its values white. A spell's numbers in a table of four
+  columns and two rows (every cell filled, *---* where unknown); what it asks of you (a stance, a form, a
+  weapon, reagents) in its header under its school; *Melee* for melee range; physical spells red. The bottom
+  line *Hold ALT for more* between two rules.
 - 2026-10-19 — A tiny line at the bottom, *Hold ALT for more info*. A thing's own lines (stats, effects,
   description, durability) are one section, *Info*. *Inventory* and *Addons* only with Alt. The node that gives
   a herb or an ore stands under *Professions* (no section *Gathering* any more), each node with its own skills

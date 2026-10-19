@@ -25,6 +25,7 @@ local VALUE, HEALTH = COLOR.TITLE, COLOR.HEALTH
 local Pools = {}
 ns.Pools = Pools
 
+Pools.GROOVE = 0.4 -- how strongly the groove's shade is seen: a section's rules and name, a table's lines
 Pools.BAR_HEIGHT = 6     -- a bar of our own: durability, a buff's time
 Pools.ICON_CROP = 4 / 64 -- the dark rim round the game's icons: four of their 64 texels each side
 local LIVE_ALPHA = 0.5   -- a unit's bars: a flat colour, half see-through
@@ -111,7 +112,7 @@ function Pools.Text(panel, kind, text, r, g, b, align)
         label.dressed, label.style = kind, style
         Dress(label, kind)
     end
-    label:SetTextColor(r or VALUE[1], g or VALUE[2], b or VALUE[3])
+    label:SetTextColor(r or VALUE[1], g or VALUE[2], b or VALUE[3], kind.groove and Pools.GROOVE or 1)
     label:SetJustifyH(align or "LEFT")
     label:SetWordWrap(true)
     label:SetWidth(0) -- unbounded, so its natural width can be asked
@@ -183,11 +184,11 @@ function Pools.Line(panel, r, g, b, a)
     return line
 end
 
--- A divider from x over width at y: one hairline in the quiet grey of a section's name beside it
--- (COLOR.RULE), so the name and its line read as one.
+-- A divider from x over width at y: one hairline in the groove's dark see-through shade, as the section's
+-- name beside it and the lines between a table's cells.
 function Pools.Rule(panel, x, y, width, hairline)
-    local rule = ns.COLOR.RULE
-    local line = Pools.Line(panel, rule[1], rule[2], rule[3], 1)
+    local groove = ns.COLOR.GROOVE
+    local line = Pools.Line(panel, groove[1], groove[2], groove[3], Pools.GROOVE)
     line:SetPoint("TOPLEFT", panel, "TOPLEFT", x, -y)
     line:SetSize(width, hairline)
 end

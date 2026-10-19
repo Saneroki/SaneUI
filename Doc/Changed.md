@@ -3,8 +3,27 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 453 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 113 (Navigation), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 113 (Navigation), 208 (data tools).
 A game restart takes it in (a new addon, Navigation; new files in Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
+
+### Tooltips: grooves, a spell's table and its requirements (Saneroki, 2026-10-19)
+- **Grooves:** a section's name stands in the middle with a rule at each side, name and rules in one dark
+  see-through shade (`COLOR.GROOVE`, black at `Pools.GROOVE` 0.4), as are a spell's table captions and the lines
+  between its cells: they look pressed into the ground. Groove texts have no shadow (font kinds `section`,
+  `caption`, `hint`: `flat`, `groove`). The table's values are white. `COLOR.RULE` and `COLOR.CAPTION` are gone.
+- **The bottom line** reads *Hold ALT for more*, as a caption between two rules (font `hint`, as written:
+  `row.caps` is set only by `Read.Caption`); `row.center` is gone.
+- **A spell's table** in Info: four columns and two rows for a spell that hurts or heals (*Dmg*/*Heal*, its cost,
+  *Cast* or a swing's *Speed*, *Range*; *DPS*/*HPS*, *Per* its power, *CD*, *Crit* or, for one that lasts,
+  *Duration*), one row for any other (cost, *Cast*, *CD*, *Range*); every cell filled, *---* where nothing is
+  known. All columns of a panel's tables alike (`widestCell`), so the rows line up. *Melee* for melee range
+  (the game's `MELEE`). `Numbers.Spell` gives `lasting`. Then the description, a little apart.
+- **What a spell asks of you** (a stance, a form, a weapon: `SPELL_REQUIRED_FORM`, `SPELL_EQUIPPED_ITEM`; its
+  reagents and tools) stands in its header under its school, a row each, red while the game has it red.
+- **Physical spells are red** (the game's red; its combat log's yellow was too close to holy).
+- Tests (458 checks): the centred name and its two rules, the groove's shade and alpha, the table's cells and
+  white values, Revenge as an example (a stance in red, rage, Melee, its second row), a heal over time's
+  Duration, reagents and tools in the header, the swing in red.
 
 ### Tooltips: Info, Alt for more, disenchanting and the price to post; careful gathering data (Saneroki, 2026-10-19)
 - **One section Info** for a thing's own lines: an item's numbers, effects, description and durability; a

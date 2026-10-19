@@ -159,6 +159,7 @@ end
 --   amount, heal, perSecond      what one cast does on average; whether it heals; per second
 --   perPower, power              per point of what it costs, and that power's name ("Mana")
 --   crit                         your chance of a critical strike with spells, in %
+--   lasting                      how long what it does over time lasts, in seconds (nil: right away)
 --   speed                        a weapon's swing: seconds between two
 function Numbers.Spell(id, description)
     if not id then return nil end
@@ -169,7 +170,7 @@ function Numbers.Spell(id, description)
     if not now then return nil end
     local pace = Pace(id)
     local running = lasting and lasting > 0 and math.min(1, pace / (lasting * 1000)) or 1
-    out.amount, out.heal = now + later, heals
+    out.amount, out.heal, out.lasting = now + later, heals, lasting
     out.perSecond = (now + later * running) * 1000 / pace
     local amount, _, name = Price(id)
     if amount then out.perPower, out.power = out.amount / amount, type(name) == "string" and ns.Global(name) or nil end

@@ -351,6 +351,8 @@ check(("Durability 61 / 120"):match(ns.PATTERN.DURABILITY) == "61" and ("(53.8 d
 
 -- A spell -----------------------------------------------------------------------------------
 W.methods.SetShadowOffset = function(self, x, y) self._shadowX, self._shadowY = x, y end
+W.methods.SetTextColor = function(self, r, g, b, a) self._color, self._textAlpha = { r, g, b }, a end
+W.methods.SetVertexColor = function(self, r, g, b, a) self._color = { r, g, b, a } end
 local elune = {
     { "Elune's Light", "Racial" },
     { "Instant", "3 min cooldown" },
@@ -375,27 +377,43 @@ local DETAIL_HEX = code(COLOR.DETAIL)
 check(count(panel) == 5 and row(panel, 1).left == "Elune's Light" and row(panel, 1).font == "title" and row(panel, 1).caps
     and row(panel, 2).left == "|cff" .. DETAIL_HEX .. "Utility|r  \194\183  Racial" and head(panel).icon == 1000 + 5,
     "the header: name; what it is (neither hurting nor healing: utility) and rank; icon")
-check(shape(panel) == "text text INFO strip text",
-    "the spell's own lines in one section, Info: the strip and the description; a line another addon added is not shown without Alt")
-check(row(panel, 4).kind == "strip" and cells(row(panel, 4)) == "Cast Instant, Cooldown 3 min",
-    "one strip under Info: the facts the tooltip's lines state, found by the game's sentences for them")
-check(not cells(row(panel, 4)):find("Cost") and not cells(row(panel, 4)):find("Range"), "a fact the tooltip does not state has no cell")
+check(shape(panel) == "text text INFO strip +text",
+    "the spell's own lines in one section, Info: its table, then a little apart the description; a line another addon "
+    .. "added is not shown without Alt")
+check(row(panel, 4).kind == "strip" and cells(row(panel, 4)) == "Mana ---, Cast Instant, CD 3 min, Range ---",
+    "a spell that neither hurts nor heals: one row of four cells, cost, cast, cooldown, range, each from the game's sentence "
+    .. "for it; --- for what its tooltip does not state")
 check(row(panel, 5).left:find("^Increases") and row(panel, 5).prose and row(panel, 5).lr == COLOR.PROSE[1]
     and row(panel, 5).lb == COLOR.PROSE[3], "the description is a row, in the game's gold made lighter; the test realm's line about F6 is left out")
 check(not head(panel).accent and row(panel, 1).lr == COLOR.TITLE[1] and COLOR.TITLE[1] < 1, "a white name gives a panel without a colour, and a softer white")
 local shown = {}
 for index = 1, panel.texts.taken do shown[#shown + 1] = panel.texts[index]._text end
 check(shown[1] == "ELUNE'S LIGHT" and shown[3] == "|cff" .. DETAIL_HEX .. "Utility|r  \194\183  Racial" and shown[5] == "INFO"
-    and shown[6] == "CAST" and shown[7] == "Instant" and shown[8] == "COOLDOWN" and shown[9] == "3 min" and shown[10]:find("^Increases"),
-    "drawn: the name in capitals, then the section's name, the strip's captions, each over its value")
+    and shown[6] == "MANA" and shown[7] == "---" and shown[8] == "CAST" and shown[9] == "Instant" and shown[10] == "CD"
+    and shown[11] == "3 min" and shown[14]:find("^Increases"),
+    "drawn: the name in capitals, then the section's name, the table's captions, each over its value")
 local function color(label) local r, g, b = label:GetTextColor() return r .. " " .. g .. " " .. b end
-check(color(panel.texts[7]) == color(panel.texts[9]) and color(panel.texts[6]) == table.concat(COLOR.CAPTION, " "),
-    "the values alike; a strip's captions in the game's gold, darker")
-check(color(panel.texts[5]) == table.concat(COLOR.RULE, " ") and panel.texts[5].dressed.flat and panel.texts[6]._shadowX ~= 0,
-    "a section's name in its rule's own colour, without a shadow, as thin as the rule; a strip's captions keep theirs")
+local GROOVE = table.concat(COLOR.GROOVE, " ")
+check(color(panel.texts[9]) == table.concat(COLOR.WHITE, " ") and color(panel.texts[8]) == GROOVE and panel.texts[8]._textAlpha == 0.4
+    and panel.texts[8].dressed.flat, "the table's values white; its captions the groove's dark see-through shade, without a shadow")
+local named = panel.texts[5]
+check(color(named) == GROOVE and named._textAlpha == 0.4 and named.dressed.flat
+    and math.abs(named._points[1][4] + named._width / 2 - panel:GetWidth() / 2) <= 1 and panel.texts[3]._shadowX ~= 0,
+    "a section's name in the same shade, in the middle; the texts that are no groove keep their font's shadow")
+local grooves, rules = 0, {}
+for index = 1, panel.lines.taken do
+    local line = panel.lines[index]
+    if line._color and line._color[4] == 0.4 then grooves = grooves + 1 end
+    if line._height == 1 and line._width > 1 then rules[#rules + 1] = line end
+end
+check(#rules == 4 and rules[1]._points[1][4] == 12 and rules[2]._points[1][4] + rules[2]._width == panel:GetWidth() - 12
+    and rules[1]._points[1][4] + rules[1]._width < panel.texts[5]._points[1][4],
+    "a rule at each side of the section's name, from the panel's edge to the name, one hairline each (and two round the "
+    .. "line that Alt shows more)")
+check(grooves >= 5, "the rules and the lines between the table's cells all in the groove's shade")
 local function size(label) return label.dressed and label.dressed.size end -- the size its font was given
-check(size(panel.texts[1]) == 14 and size(panel.texts[11]) == 14 and size(panel.texts[7]) == 12 and size(panel.texts[6]) == 10,
-    "name and lines in the text size, the strip's values two smaller, captions as small as the game's small font")
+check(size(panel.texts[1]) == 14 and size(panel.texts[14]) == 14 and size(panel.texts[9]) == 12 and size(panel.texts[8]) == 10,
+    "name and lines in the text size, the table's values two smaller, captions as small as the game's small font")
 check(panel.back._texture == "Interface\\AddOns\\SaneUI_Tooltips\\Art\\soft" and panel.back._points[1][4] == -8 and panel.back._points[2][4] == 8,
     "the panel has no border: its background is a shape with round corners and a soft edge, reaching a little past the panel")
 check(colors[1].a == 0.97 and colors[2].a == 0.97 and colors[2].r > colors[1].r, "one gradient behind everything, as solid as the setting says, stronger at the top")
@@ -406,15 +424,16 @@ check(math.abs(colors[2].r - topR) < 1e-9 and colors[1].b > colors[1].r,
 -- With Alt held: the technical details, then the lines other addons added, last
 W.alt = true
 tip:Fill({ type = TYPE.Spell, id = 5 }, elune)
-check(shape(panel) == "text text INFO strip text IDS text ADDONS text" and row(panel, 9).right == "Racial"
+check(shape(panel) == "text text INFO strip +text IDS text ADDONS text" and row(panel, 9).right == "Racial"
     and row(panel, 9).font == "small" and not hinted(panel),
     "with Alt, a line another addon added stands last, small, in a section of its own under the caption Addons")
 W.alt = false
 tip:Fill({ type = TYPE.Spell, id = 5 }, elune)
 check(count(panel) == 5 and hinted(panel), "let go of Alt, and the details and the other addons' lines are gone again")
 local hint = row(panel, 6)
-check(hint.left == "Hold ALT for more info" and hint.center and hint.space and ns.Panel.FONTS.hint.size < ns.Panel.FONTS.small.size,
-    "without Alt a tiny line at the bottom, in the middle, a little apart: that Alt shows more")
+check(hint.kind == "caption" and hint.left == "Hold ALT for more" and not hint.caps and ns.Panel.FONTS.hint.size < ns.Panel.FONTS.small.size
+    and ns.Panel.FONTS.hint.groove,
+    "without Alt a tiny line at the bottom, as written, between two rules like a section's name: that Alt shows more")
 
 -- Filled again with the same lines
 W.methods.SetJustifyH = function(self, side) self._justify = side end
@@ -426,12 +445,13 @@ local function spell(cooldown)
         { "Hurls a fiery ball that causes 16 to 25 Fire damage.", nil, GOLD, nil, LINE.SpellDescription } })
 end
 spell()
-check(drawn == 1 and count(panel) == 6 and cells(row(panel, 4)) == "Mana 30 (30%), Range 35 yd, Cast 1.5 sec",
-    "a spell that hurts: its facts in the order the game writes them, its cost also as a share of all your mana; no cooldown it has not")
-check(shape(panel) == "text text INFO strip strip text",
-    "under the strip a second one, both under Info, then the description")
-check(cells(row(panel, 5)) == "DPS 8.2, Damage 21, Per Mana 0.68, Crit 6.2%",
-    "what follows from them: per second of its cast, on average, per point of mana, the chance of a critical strike")
+check(drawn == 1 and count(panel) == 6 and cells(row(panel, 4)) == "Dmg 21, Mana 30 (30%), Cast 1.5 sec, Range 35 yd",
+    "a spell that hurts: a table, its first row what one cast does on average, its cost (also as a share of all your mana), "
+    .. "its cast, its range")
+check(shape(panel) == "text text INFO strip strip +text",
+    "a table of two rows of four, under Info, then a little apart the description")
+check(cells(row(panel, 5)) == "DPS 8.2, Per Mana 0.68, CD ---, Crit 6.2%",
+    "its second row: per second of its cast, per point of mana, its cooldown (--- where it has none), the chance of a critical strike")
 check(head(panel).accent and head(panel).ar == 1 and head(panel).ag == 0.5 and head(panel).ab == 0
     and row(panel, 2).left == "|cffff7f00Fire|r  \194\183  Rank 2",
     "a spell of fire has the colour the game's combat log gives fire, and says so under its name")
@@ -446,7 +466,7 @@ tip:Hide()
 spell()
 check(drawn == 1 and tip:GetAlpha() == 0 and panel:IsShown(), "filled again with the same lines, nothing is drawn again, not even after it was hidden")
 spell("8 sec cooldown")
-check(drawn == 2 and cells(row(panel, 4)) == "Mana 30 (30%), Range 35 yd, Cast 1.5 sec, Cooldown 8 sec", "a changed line is")
+check(drawn == 2 and cells(row(panel, 5)) == "DPS 8.2, Per Mana 0.68, CD 8 sec, Crit 6.2%", "a changed line is")
 
 -- What fills a tooltip goes on writing into it, as the game does for a comparison
 local comparison = { { "Fireball", "Rank 2" }, { "30 Mana", "35 yd range" }, { "1.5 sec cast", "8 sec cooldown" },
@@ -477,24 +497,41 @@ check(drawn == 3 and count(panel) == 10 and row(panel, 9).kind == "caption" and 
     "a line added after the panel was drawn is taken in on the next frame, in the section of other addons' lines")
 W.alt = false
 
--- Lines that are no numbers of a spell stay rows
+-- What a spell asks of you stands in its header, under what it is
 tip:Fill({ type = TYPE.Spell, id = 75 }, { { "Shoot" }, { "Requires Ranged Weapon" }, { "Shoots.", nil, GOLD, nil, LINE.SpellDescription } })
-check(shape(panel) == "text text DETAILS text INFO text" and row(panel, 4).left == "Requires Ranged Weapon",
-    "a line that states none of the facts stays a row, under Details, and there is no strip (nor one of a shot, without a ranged weapon)")
+check(shape(panel) == "text text text INFO text" and row(panel, 3).left == "Requires Ranged Weapon" and row(panel, 3).font == "sub"
+    and row(panel, 3).lr == COLOR.DETAIL[1],
+    "what a spell asks of you (a weapon) in its header, in a row of its own under what it is; no table where nothing is known "
+    .. "(nor for a shot, without a ranged weapon)")
+local RAGE_COST = { { type = 1, name = "RAGE", cost = 5 } }
+spellCosts[6572] = RAGE_COST
+W.spells[6572] = { name = "Revenge" }
+tip:Fill({ type = TYPE.Spell, id = 6572 }, { { "Revenge", "Rank 1" }, { "5 Rage", "Melee Range" }, { "Instant", "5 sec cooldown" },
+    { "Requires Defensive Stance", nil, { 1, 0.125, 0.125 } },
+    { "Instantly counterattacks an enemy for 22 damage.", nil, GOLD, nil, LINE.SpellDescription } })
+check(shape(panel) == "text text text INFO strip strip +text" and row(panel, 3).left == "Requires Defensive Stance"
+    and row(panel, 3).lr == COLOR.RED[1] and row(panel, 3).lg == COLOR.RED[2],
+    "a stance it needs under what it is, in red while you are not in it; then the table and the description")
+check(cells(row(panel, 5)) == "Dmg 22, Rage 5, Cast Instant, Range Melee" and cells(row(panel, 6)) == "DPS 14.7, Per Rage 4.40, CD 5 sec, Crit 6.2%",
+    "every fact in a cell of its own: what it does, its cost (rage), its cast, its range (Melee, short); per second, per point "
+    .. "of rage, its cooldown, the chance of a critical strike")
+check(head(panel).ar == COLOR.RED[1] and head(panel).ag == COLOR.RED[2] and row(panel, 2).left:find("Physical", 1, true),
+    "a physical one is red")
 tip:Fill({ type = TYPE.Spell, id = 2383 }, { { "Find Herbs" }, { "Passive", nil, nil, nil, LINE.SpellPassive }, { "Shows herbs.", nil, GOLD, nil, LINE.SpellDescription } })
 check(row(panel, 2).left == "|cff" .. DETAIL_HEX .. "Utility|r  \194\183  Passive" and count(panel) == 4, "a passive spell says so under its name")
 tip:Fill({ type = TYPE.Spell, id = 1243 }, { { "Renew" }, { "Heals the target of 45 damage over 15 sec.", nil, GOLD, nil, LINE.SpellDescription } })
-check(head(panel).ag == COLOR.HEALTH[2] and head(panel).ag > head(panel).ar and row(panel, 2).left:find("Healing") and row(panel, 5).prose,
+check(head(panel).ag == COLOR.HEALTH[2] and head(panel).ag > head(panel).ar and row(panel, 2).left:find("Healing") and row(panel, 6).prose,
     "a spell that names no school but heals is green, and says Healing")
-check(shape(panel) == "text text INFO strip text" and cells(row(panel, 4)) == "HPS 3.0, Healing 45, Crit 6.2%",
-    "a heal over time: what it heals, per second of its time (not of the global cooldown), your chance with spells; it costs "
-    .. "nothing, so no cell for what it does per point of cost, and no strip of facts its tooltip does not state")
+check(shape(panel) == "text text INFO strip strip +text" and cells(row(panel, 4)) == "Heal 45, Mana ---, Cast ---, Range ---"
+    and cells(row(panel, 5)) == "HPS 3.0, Per Mana ---, CD ---, Duration 15 sec",
+    "a heal over time: what it heals, per second of its time (not of the global cooldown); it lasts, so its last cell is how "
+    .. "long; --- for what its tooltip does not state, and for what it does per point of a cost it does not have")
 UnitDamage, UnitAttackSpeed, GetCritChance = function() return 40, 60 end, function() return 2.5 end, function() return 5 end
 W.spells[6603] = { name = "Attack" }
 tip:Fill({ type = TYPE.Spell, id = 6603 }, { { "Attack" }, { "Toggles attack.", nil, GOLD, nil, LINE.SpellDescription } })
-check(cells(row(panel, 4)) == "DPS 20.0, Damage 50, Speed 2.50, Crit 5.0%" and row(panel, 2).left:find("Physical")
-    and head(panel).ar == 1 and head(panel).ag == 1 and head(panel).ab == 0,
-    "the melee swing: physical, in the combat log's colour for it; its damage per second, on average, its speed, the chance of a critical strike")
+check(cells(row(panel, 4)) == "Dmg 50, Mana ---, Speed 2.50, Range ---" and cells(row(panel, 5)) == "DPS 20.0, Per Mana ---, CD ---, Crit 5.0%"
+    and row(panel, 2).left:find("Physical") and head(panel).ar == COLOR.RED[1] and head(panel).ag == COLOR.RED[2],
+    "the melee swing: physical, in red; on average, its speed in the place of a cast, per second, the chance of a critical strike")
 tip:Fill({ type = TYPE.Spell, id = 5 }, { { "Inner Fire" }, { "Increases armor by 50 for 10 min.", nil, GOLD, nil, LINE.SpellDescription } })
 check(count(panel) == 4 and row(panel, 2).left == "|cff" .. DETAIL_HEX .. "Utility|r", "a spell that neither hurts nor heals has no numbers")
 W.spells[853] = { name = "Hammer of Justice" }
@@ -503,15 +540,18 @@ check(row(panel, 2).left:find("CC") and head(panel).ab == 1, "a spell that takes
 -- Facts the game writes without a number stand as written; a client's own wording of a sentence is the one read
 W.spells[1510] = { name = "Volley" }
 tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Channeled", "Melee Range" }, { "Rains arrows on the enemy.", nil, GOLD, nil, LINE.SpellDescription } })
-check(cells(row(panel, 4)) == "Range Melee Range, Cast Channeled", "facts without a number, as the game writes them, in the game's order")
+check(cells(row(panel, 4)) == "Mana ---, Cast Channeled, CD ---, Range Melee", "facts without a number, as the game writes them; melee range just Melee")
 tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Shot at the next swing" }, { "Rains arrows on the enemy.", nil, GOLD, nil, LINE.SpellDescription } })
-check(cells(row(panel, 4)) == "Cast Shot at the next swing", "a fact found by the game's own sentence for it, not by the English one")
+check(cells(row(panel, 4)) == "Mana ---, Cast Shot at the next swing, CD ---, Range ---", "a fact found by the game's own sentence for it, not by the English one")
 -- Where the data gives a line no kind, a sentence in the game's gold is taken for the description
 tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Channeled" }, { "Rains arrows on all enemies in the area for a while.", nil, GOLD } })
 check(row(panel, 5).prose and row(panel, 5).lr == COLOR.PROSE[1] and row(panel, 3).left == "Info",
     "a gold line of no kind that reads as a sentence is the description")
-tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Channeled" }, { "Reagents: Arrow", nil, GOLD } })
+tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Channeled" }, { "Needs a bow", nil, GOLD } })
 check(count(panel) == 6 and not row(panel, 6).prose and row(panel, 5).left == "Details", "a short one is none: it is one of the details")
+tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Channeled" }, { "Reagents: Arrow" }, { "Tools: Blacksmith Hammer" } })
+check(row(panel, 3).left == "Reagents: Arrow" and row(panel, 4).left == "Tools: Blacksmith Hammer" and row(panel, 5).left == "Info",
+    "its reagents and tools in its header too, each in a row of its own")
 tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Channeled" }, { "Rains arrows on all enemies in the area for a while.", nil, GOLD, nil, LINE.QuestTitle } })
 check(not row(panel, 6).prose, "nor is a line the data gives another kind")
 W.spells[2948] = { name = "Scorch" }
@@ -677,13 +717,18 @@ check(row(panel, 2).left == "Trade Goods \194\183 Cloth" and row(panel, 2).font 
 check(row(panel, 3).kind == "caption" and row(panel, 3).left == "Professions" and row(panel, 4).left == "Used in"
     and row(panel, 4).right == "|T4908:0|t Tailoring" and row(panel, 5).left == "Gold" and row(panel, 6).left == "Vendor",
     "a trade good: under the caption Professions, the professions that use it, with their icons")
-local named, ruled = panel.left[3], false
+local named, before, after = panel.left[3], false, false
+local nameLeft = named._points[1][4]
 for index = 1, panel.lines.taken do
     local line = panel.lines[index]
-    if line._points[1][4] == 12 + 6 then ruled = true end -- after the name (here measured 0 wide) and a gap
+    local x = line._points[1] and line._points[1][4]
+    if x == 12 and math.abs(x + line._width - (nameLeft - 6)) < 1e-9 then before = true end -- up to the name, a gap before it
+    if x and math.abs(x - (nameLeft + named._width + 6)) < 1e-9 and math.abs(x + line._width - (panel:GetWidth() - 12)) < 1e-9 then
+        after = true
+    end
 end
-check(named._points[1][4] == 12 and named._justify == "LEFT" and ruled,
-    "a section's name stands at the left, and a rule runs on after it")
+check(named._justify == "CENTER" and math.abs(nameLeft + named._width / 2 - panel:GetWidth() / 2) <= 1 and before and after,
+    "a section's name stands in the middle, and a rule runs from each side of the panel to it, a gap before the name")
 -- A rule's light line is one hairline high: one unit of the interface, to whole dots of the screen.
 local function hairline()
     local least
@@ -1564,7 +1609,7 @@ check(not hinted(panel), "a button's hint has no line that Alt shows more: there
 check(panel:IsShown() and tip:GetAlpha() == 0 and count(panel) == 1 and row(panel, 1).left == "Close" and not row(panel, 1).caps,
     "a tooltip somebody wrote lines into gets a panel too, its lines as they are written")
 spell()
-check(panel:IsShown() and cells(row(panel, 4)):find("Mana 30 (30%)", 1, true) == 1, "(a spell again)")
+check(panel:IsShown() and cells(row(panel, 4)):find("Mana 30 (30%)", 1, true) ~= nil, "(a spell again)")
 tip:Fill(nil, { { "Close" }, { "Closes the window." } })
 check(panel:IsShown() and tip:GetAlpha() == 0 and row(panel, 2).left == "Closes the window." and head(panel).icon == nil and not head(panel).strip,
     "lines written into it after a spell's are a hint, not that spell")

@@ -267,7 +267,7 @@ end
 function Read.Caption(text)
     ctx.rule, ctx.gap, ctx.section = false, false, text
     local row = Read.Row()
-    row.kind, row.left = "caption", text
+    row.kind, row.left, row.font, row.caps = "caption", text, "section", true
     return row
 end
 
@@ -476,15 +476,15 @@ function ns.Read(tooltip, data, model, options)
         return false
     end
     -- With Alt held, last: the technical details, then, apart from everything of the panel's own,
-    -- other addons' lines. Without it, a tiny line at the bottom says that Alt shows more (on a tooltip
-    -- of the game's data: a hint somebody wrote has nothing more to show).
+    -- other addons' lines. Without it, a tiny line at the bottom says that Alt shows more, between two
+    -- rules like a section's name (on a tooltip of the game's data: a hint somebody wrote has nothing
+    -- more to show).
     if IsAltKeyDown() then
         Details()
         Others()
     elseif data then
-        ctx.gap = true
-        local row = Read.Text("hint", TEXT.MORE_INFO, ASIDE[1], ASIDE[2], ASIDE[3])
-        row.center = true
+        local row = Read.Row()
+        row.kind, row.left, row.font = "caption", TEXT.MORE_INFO, "hint"
     end
     return true, Model.Commit(model)
 end
