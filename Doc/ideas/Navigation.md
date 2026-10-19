@@ -567,8 +567,9 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   code, with a flipbook of foam.
 - **Order:** a pilot of five looks (`dev/imagegen/sets/maps-pilot/looks.txt`; chosen: stylised game art), then
   the close-up pilot on the terrain (`close.txt`: Stormwind, Goldshire, Westfall's edge, Orgrimmar, Razor Hill,
-  and one tile at half a yard a pixel); then both continents; packing into the pyramid; then the sea's life;
-  then the routes.
+  and one tile at half a yard a pixel; tried 2026-10-19: the layout kept in 11 of 12 pictures, single houses,
+  canals and trees clear at both scales; one of Orgrimmar's painted water where the canyon has land); then both
+  continents; packing into the pyramid; then the sea's life; then the routes.
 
 ### Maps without a world box
 
