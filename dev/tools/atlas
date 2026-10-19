@@ -187,7 +187,8 @@ def open_water(rgb, water):
     cool and dark, wood, roofs and stone warm or bright. Only the open water is made flat, and only it counts as
     water (a flat sheet over Booty Bay's boardwalk erased it from every painting)."""
     r, g, b = (rgb[..., k].astype(np.int16) for k in range(3))
-    standing = (r > b + 8) | (np.minimum(np.minimum(r, g), b) > 140)
+    # clearly warm (wood, roof tiles) or bright (stone, domes, ice); muddy water is a little warm and stays water
+    standing = ((r > b + 25) & (r > 70)) | (np.minimum(np.minimum(r, g), b) > 140)
     standing = grow(shrink(standing, 1), 1) & (water > 127)
     return np.where(standing, 0, water).astype(np.uint8)
 
@@ -307,7 +308,8 @@ def check(square, painting):
     blue = out[..., 2].astype(np.float32) - (out[..., 0].astype(np.float32) + out[..., 1]) / 2
     land = ~grow(game, slack)
     bar = np.percentile(blue[land], 30) + 12 if land.any() else -255.0
-    painted = (h >= 150) & (h <= 250) & (s >= 0.22) & (v >= 0.18) & (rough < 9) & ~((v > 0.65) & (s < 0.6)) & (blue > bar)
+    # (from teal-green on: a tropical lagoon is emerald; meadows are yellower, forests rough)
+    painted = (h >= 125) & (h <= 250) & (s >= 0.22) & (v >= 0.18) & (rough < 9) & ~((v > 0.65) & (s < 0.6)) & (blue > bar)
     painted = grow(shrink(painted, 3), 3)
     added = grow(shrink(painted & land, 4), 4)
     lost = grow(shrink(game & ~grow(painted, slack) & ~grow(~game, slack), 4), 4)

@@ -101,6 +101,9 @@ check("check: added water fails", result["added"] > at.ADDED and not at.passes(r
 lost = land.copy()                          # the game's lake painted as land
 result = at.check(square, lost)
 check("check: lost water fails", result["lost"] > at.LOST and not at.passes(result), True)
+lagoon = land.copy()
+lagoon[300:460, 60:300] = (30, 120, 95)     # the game's lake, painted as an emerald lagoon
+check("check: an emerald lagoon is still water", at.check(square, lagoon)["lost"] <= at.LOST, True)
 dusk = (land.astype(np.int16) * (0.4, 0.5, 0.9)).clip(0, 255).astype(np.uint8)   # a zone graded blue, as Duskwood
 dusk[300:460, 60:300] = (20, 50, 110)
 check("check: a blue zone is not water", at.passes(at.check(square, dusk)), True)
@@ -115,6 +118,8 @@ open_ = at.open_water(pond, mask)
 check("open water: the pier is not water", int(open_[20, 21]), 0)
 check("open water: the dome is not water", int(open_[5, 5]), 0)
 check("open water: the water stays water", int(open_[20, 5]), 255)
+muddy = np.zeros((10, 10, 3), np.uint8); muddy[:] = (70, 60, 55)          # a muddy river, a little warm
+check("open water: muddy water stays water", int(at.open_water(muddy, np.full((10, 10), 255, np.uint8))[5, 5]), 255)
 
 # --- Joining ----------------------------------------------------------------------------------------
 
