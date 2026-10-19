@@ -102,7 +102,9 @@ minimap) and the full-screen window (the world map) show the same map with the s
   on the terrain close up it felt too cartoonish, like pixel art. Wanted: a rough, old, grimy, realistic look that
   stays true to the old World of Warcraft; five different styles on four subjects to choose from
   (`dev/imagegen/sets/maps-styles/`: grimy realism, the original game's painted textures, high-fantasy matte
-  painting, an old oil painting, a photorealistic render). The **terrain is the base**: the painted view is the terrain repainted in that look, every building, street,
+  painting, an old oil painting, a photorealistic render; tried 2026-10-19: all five keep the layout up close; the
+  whole world painted in one picture drew the continents larger than they are, so the far levels are made
+  from the close ones, never painted on their own). The **terrain is the base**: the painted view is the terrain repainted in that look, every building, street,
   tree and shore where the terrain has it, so it serves as the map of one's close vicinity, zoomed in as close as
   the minimap, single buildings clear. The painted continent maps of the pilot work only far out.
 - **Routes, later (Saneroki, 2026-10-19):** flight paths, and the ships' routes as a red dotted line, shown when
