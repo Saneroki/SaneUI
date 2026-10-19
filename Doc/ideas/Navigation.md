@@ -111,6 +111,10 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **Three times closer (Saneroki, 2026-10-19):** the painted view zooms about three times closer than the map
   does now, single buildings large; zoomed out it is the same pictures, smaller. Quality before speed, but all of
   it made within a couple of days on this computer.
+- **Full detail, 4x (Saneroki, 2026-10-19):** the finest level at 2048 pixels a tile, four times the terrain's
+  detail (*Size* below).
+- **Dark zones stay dark (Saneroki, 2026-10-19):** a zone as dark as the game has it (Duskwood's endless dusk)
+  is painted that dark; its atmosphere is not brightened for the map's sake.
 - **The look before: on the terrain, its style open (Saneroki, 2026-10-19):** of the five looks of the first pilot,
   *stylised game art* (bold, saturated colours, chunky trees, painted rocks, glossy water) came first; painted
   on the terrain close up it felt too cartoonish, like pixel art. Wanted: a rough, old, grimy, realistic look that
@@ -567,13 +571,18 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   lava dropped where the square has none; its ground cover; its liquids ("the flat dark navy areas are water,
   nowhere else", or "there is no water anywhere in this picture"; "the flat bright orange areas are molten
   lava"); and a line on what stands in it. A zone's list of buildings and features is never given: the model
-  painted orc forts, tents and pines from it into a square of empty ash. A picture of the look as a second
+  painted orc forts, tents and pines from it into a square of empty ash. In a city or town every block of
+  strong colour in the terrain is a roof of that colour, never trees or gardens (Stormwind's ochre roofs around
+  the cathedral came back as gardens); a square that is mostly water gets a line about open water, not the
+  city's (a square of sea west of Stormwind came back as a harbour town built on it). A picture of the look as a second
   reference did not work: it showed the same city from further out, and the model painted that instead.
 - **Checked against the game:** every painting is compared with the game's water (its liquids, and the
   speckled blue-grey the minimap draws for a city's canals) and lava: broad sheets of water where the game has
   none, or of the game's water painted as land, fail it (a shore that strays a few yards does not), and the
-  square is painted again with another seed, the best of up to three kept. Tried on the five styles: it failed
-  every Blackrock with false water (up to 8% of the picture) and passed the faithful ones.
+  square is painted again with another seed, the best of up to three kept. Water is bluish, smooth, in sheets
+  and bluer than the painting's own land, so a zone graded blue (Duskwood) and the blue shadows of snow are not
+  taken for it. Tried on the five styles and the ten zones: it failed every Blackrock with false water (up to 8%
+  of the picture), the pond added under Stormwind's hill and the sea square built over, and passed the rest.
 - **The guides** (`dev/tools/map-meta`, from the game's files): the roads (the ground textures of roads and
   paving), the buildings' footprints as they stand, what covers the ground (meadow, forest floor, farmland,
   sand, rock, snow, swamp, ash, blight), and the places by name with their positions (the terrain's areas, the
@@ -604,8 +613,9 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   level): 512 pixels a tile (1x) 0.19 GB, 1024 (2x) 0.78 GB, 2048 (4x) 3.1 GB, of which the finest level alone
   is 2.3 GB; zipped for download hardly smaller (8 %). Seen side by side at the nearest zoom
   (`assets/generated/maps-pilot/sheets/zoom/`, 2026-10-19): 1x blurred, 2x soft, 4x sharp down to single carts
-  and paving. 4x only where things are built saves little: 61 % of the land tiles hold buildings. So the art
-  may come as two addons: the view up to 2x, and the finest level as an addon of its own, used when installed.
+  and paving. 4x only where things are built saves little: 61 % of the land tiles hold buildings. Chosen: 4x
+  (*Full detail, 4x*); the art may come as two addons, the view up to 2x and the finest level as an addon of
+  its own, used when installed.
 - **Light in the game at every zoom:** only the blocks in view are drawn (512 pixels, 128 KB each), from the
   level the zoom asks for, so a 4K screen needs some 40 to 60 blocks at any zoom, a few MB of video memory,
   whatever the package's size: the size costs disk, not frames. What costs frames is loading new blocks, so the
