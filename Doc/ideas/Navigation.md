@@ -601,13 +601,18 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   houses, bridges, domes and ice: a flat sheet over Booty Bay's boardwalk had erased it before the model saw it),
   and **words of an edit, not of a repaint** (`dev/imagegen/maps/atlas.toml`): make image 1 look like a
   photorealistic satellite photograph of exactly the same place; change only how things look; never where or what
-  anything is, rock stays rock, bark stays bark; then the square's own ground in plain words (from the ground
-  cover), its liquids as the game has them ("the flat dark navy areas are water, nowhere else", or "there is no
-  water anywhere in this picture", "the flat bright orange areas are molten lava"), its main zone's colours and
-  the light of its atmosphere (its first sentence: the state and props of the second brought carts onto the
-  rocks), and "add nothing and remove nothing". Never a zone's buildings, plants, places or props: the model
-  painted orc forts, tents and pines from them into a square of empty ash. A picture of the look as a second
-  reference did not work: it showed the same city from further out, and the model painted that instead.
+  anything is, rock stays rock, bark stays bark; then its liquids as the game has them ("the flat dark navy areas
+  are water, nowhere else"; under 1 % "only a little water, its few small patches"; or "there is no water anywhere
+  in this picture"; "the flat bright orange areas are molten lava"), its main zone's colours and the quality of its
+  light (the first sentence of its atmosphere without its clauses about colour or haze: those bleached Badlands
+  beige, turned Felwood's sea green and Teldrassil's violet and drew steam clouds over Stranglethorn), "keep the
+  colours of image 1; no clouds, fog, mist or smoke over the ground", and "add nothing and remove nothing". No
+  sentence on the ground: the ground cover, read from the textures' names, called Darkshore's forest floor sand,
+  and the model painted sand and channels. Never a zone's buildings, plants, places or props: the model painted orc
+  forts, tents and pines from them into a square of empty ash. The minimap textures are softened by 2 pixels
+  first (`SOFTEN`; at 0.8 their dot pattern came back as a grid in the rock and suggested a lake by Stormwind's
+  cathedral). A picture of the look as a second reference did not work: it showed the same city from further out,
+  and the model painted that instead.
 - **The lab** (2026-10-19, `assets/generated/atlas-lab/`: 26 hard places painted by every method and scored
   against the game: the coarse and fine layout, the colour, the relief against the hillshade of the real
   heights, the share of ground too steep to walk painted green, the water added and lost):
@@ -625,6 +630,13 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   - **Words of an edit:** the layout held on 8 of 8, the mountains bare rock (Elwynn's steep ground painted green
     5 %, the game 2 %, the repaint 31 %), Darnassus' bark, bridge and dome in place, Booty Bay's bay and town,
     photorealistic; with the zone's colours and light also its colours (Thousand Needles' sandstone, not grey).
+  - Then on all 26 places (`final`): the layout held on all of them (coarse 0.94, fine 0.88 on average; the repaint
+    words 0.46 and 0.29), one stray lake caught by the check; and the light's colour clauses left out (round 7):
+    the colours closer to the game's on 9 places (109 against 126), the layout a little better.
+  - The whole zones painted as one picture each, and both continents in pieces placed as the world map places
+    them (`assets/generated/atlas-looks/`): the layouts held, the mountains bright rock; the open sea painted by
+    the model grew land and showed each piece's blue, so far out the open sea is made by code (one even blue,
+    blending into the painted shallows near the coasts).
   - Built from the game's data alone (the ground from its own textures, the tiling broken up, water by its real
     depth, the minimap's buildings and trees enlarged by an upscaling model): faithful by construction, but soft
     and game-like; kept as the way to fall back on.

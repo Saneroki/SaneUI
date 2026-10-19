@@ -1,8 +1,10 @@
 # The fixed words of the Atlas, Navigation's painted map view (Doc/ideas/Navigation.md, *The painted view*).
 #
 # dev/tools/atlas puts each square's words together from these, the zone briefs (zones.toml: the main zone's
-# colours and the light of its atmosphere) and what the game has in the square (its ground cover and liquids).
-# The order: edit, the ground, the liquids, the colours and light, last.
+# colours and the quality of the light of its atmosphere) and what the game has in the square (its liquids).
+# The order: edit, the liquids, the colours and light, keep the colours, last. No sentence on the ground: the
+# ground cover, read from the textures' names, called Darkshore's forest floor sand, and the model painted sand
+# and water channels; the edit's "rock stays rock" keeps the ground.
 #
 # Chosen in the Atlas lab (2026-10-19, eight hard places: Darnassus' branch, Thousand Needles, Ironforge's gate,
 # Booty Bay, the edge of Elwynn and Duskwood, the steepest squares of Elwynn, Redridge and Alterac): words of an
@@ -16,27 +18,17 @@
 edit = "Make image 1 look like a photorealistic satellite photograph of exactly the same place, seen straight down. Change only how things look: their materials, textures, fine detail and light. Never change where or what anything is: every rock, cliff, mountain, slope, tree, bush, field, road, path, building, wall, bridge, shore and patch of colour stays exactly where it is, with the same shape, size and colour; rock stays rock, bark stays bark, grass stays grass."
 sea = "Make image 1 look like a photorealistic satellite photograph of exactly the same open sea, seen straight down. Change only how the water looks; every shore, rock and island stays exactly where it is."
 
-# The ground, in plain words for each kind of the ground cover (dev/tools/map-meta's classes): what the square's
-# own ground is, never the zone's farms and orchards.
-[cover]
-rock = "bare grey and brown rock, crags and scree"
-"forest floor" = "dense trees"
-meadow = "grass"
-farmland = "tilled fields"
-snow = "snow"
-sand = "sand"
-dirt = "bare earth"
-swamp = "boggy marsh"
-blight = "blighted, dead ground"
-"ash and lava" = "black ash and cinders"
-seabed = "shallow sea floor"
-
 [words]
 # The liquids, as the game has them in the square: said always, also that there is no water (without it the
 # model painted Blackrock's dark ash plain as lakes).
 water = "The flat dark navy areas of image 1 are water: paint them as water, every shore exactly where image 1 has it. Nowhere else is there water."
+# A square with only a few puddles of water (under 1 %): told the water sentence, the model dug channels.
+little = "There is only a little water in image 1: its few small flat dark navy patches, nowhere else."
 dry = "There is no water anywhere in this picture: dark ground, hollows, furrows and shadows are dry land, never water, lakes or rivers."
 lava = "The flat bright orange areas of image 1 are molten lava, glowing and smoking; the red glowing cracks in the rock are lava too."
 slime = "The flat green pools of image 1 are thick toxic slime."
+# After the zone's light (its quality only: its clauses about colour or haze are left out, they bleached Badlands
+# beige, turned Felwood's sea green and Teldrassil's violet, and drew steam clouds over Stranglethorn).
+keep_colours = "Keep the colours of image 1 as they are; the light only warms or cools them a little. No clouds, fog, mist or smoke over the ground."
 # Last: nothing added, nothing taken away, no text.
 last = "Add nothing and remove nothing. No text, no labels, no frame."

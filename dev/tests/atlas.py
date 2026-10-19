@@ -46,10 +46,8 @@ fixed = tomllib.loads(at.WORDS.read_text())
 briefs = tomllib.loads(at.BRIEFS.read_text())
 for key in ("edit", "sea"):
     check(f"atlas.toml has {key}", isinstance(fixed.get(key), str) and len(fixed[key]) > 40, True)
-for key in ("water", "dry", "lava", "slime", "last"):
+for key in ("water", "little", "dry", "lava", "slime", "keep_colours", "last"):
     check(f"atlas.toml has words.{key}", isinstance(fixed["words"].get(key), str) and len(fixed["words"][key]) > 20, True)
-KINDS = {"rock", "forest floor", "meadow", "farmland", "snow", "sand", "dirt", "swamp", "blight", "ash and lava", "seabed"}
-check("atlas.toml names every kind of ground cover (water and road are said otherwise)", set(fixed["cover"]), KINDS)
 for uimap, brief in briefs.items():
     if uimap != "sea":
         check(f"{brief['name']} has its words", all(brief.get(k) for k in ("colours", "atmosphere")), True)
@@ -66,9 +64,14 @@ text = at.words(fixed, briefs, facts())
 check("words begin with the edit", text.startswith(fixed["edit"]), True)
 check("words end with the last", text.endswith(fixed["words"]["last"]), True)
 check("words: dry square", fixed["words"]["dry"] in text and fixed["words"]["water"] not in text, True)
-check("words: the ground cover", "The ground of image 1 is mostly grass, with bare grey and brown rock, crags and scree." in text, True)
-check("words: the zone's light, not its props", briefs["1429"]["atmosphere"].split(". ")[0].rstrip(".") in text
+check("words: no sentence on the ground", "The ground of image 1" in text, False)
+check("words: the zone's light, not its props", at.light_of(briefs["1429"]["atmosphere"]) in text
       and briefs["1429"]["atmosphere"] not in text, True)
+check("words: the colours kept", fixed["words"]["keep_colours"] in text, True)
+check("light: colour and haze clauses left out", at.light_of("Harsh, white-hot sunlight bleaching the red ground, a dusty heat haze, bone-dry. Rest."),
+      "Harsh, bone-dry")
+puddles = at.words(fixed, briefs, facts(water=0.004))
+check("words: a little water", fixed["words"]["little"] in puddles and fixed["words"]["water"] not in puddles, True)
 check("words: never the zone's buildings", briefs["1429"]["buildings"] in text, False)
 check("words: never the zone's plants list", briefs["1429"]["plants"] in text, False)
 lava = at.words(fixed, briefs, facts(lava=0.1))

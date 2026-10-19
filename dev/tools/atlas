@@ -101,6 +101,8 @@ SETTINGS = {"width": SQ, "height": SQ, "resolution": SQ}
 NAVY = np.array([22, 38, 50])   # the flat water of the inputs
 CONTINENTS = {0: "Eastern Kingdoms", 1: "Kalimdor"}
 GUESS = 175        # seconds a picture, until the run has its own
+SOFTEN = 2.0       # the minimap textures softened by so much (pixels) first: their dot pattern came back in the rock and,
+                   # at 0.8, suggested water (a lake by Stormwind's cathedral); the Atlas lab tried 0.8, 1.4 and 2.0
 
 
 # --- What the game has in a square ---------------------------------------------------------------
@@ -137,7 +139,7 @@ class Game:
         rgb = np.empty((PX, PX, 3), np.uint8)
         rgb[:] = NAVY
         if key in self.files and (self.minimap / f"{self.files[key]}.blp").is_file():
-            texture = Image.open(self.minimap / f"{self.files[key]}.blp").convert("RGB").filter(ImageFilter.GaussianBlur(0.8))
+            texture = Image.open(self.minimap / f"{self.files[key]}.blp").convert("RGB").filter(ImageFilter.GaussianBlur(SOFTEN))
             rgb = np.asarray(texture.resize((PX, PX), Image.Resampling.LANCZOS)).copy()
         masks = {kind: np.zeros((PX, PX), np.uint8) for kind in self.liquids}
         areas = np.zeros((16, 16), np.int64)
@@ -336,30 +338,36 @@ def joined(names):
     return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
 
 
+LIGHT_DROP = re.compile(r"colou?r|grade|tint|cast|hue|bleach|drain|wash|haze|mist|steam|smoke|fog|cloud|spray|dust"
+                        r"|shimmer|glow", re.I)
+
+
+def light_of(atmosphere):
+    """The light of a zone's atmosphere, its quality only: its first sentence without the clauses about colour or haze."""
+    first = atmosphere.split(". ")[0].rstrip(".")
+    kept = [clause for clause in first.split(", ") if not LIGHT_DROP.search(clause)]
+    return ", ".join(kept) or "soft daylight"
+
+
 def words(fixed, briefs, facts):
     """A square's words: an edit, never a repaint (what may change: how things look; what never does: where and
-    what they are), the square's own ground, the liquids the game has, its main zone's colours and the light of
-    its atmosphere (never the zone's buildings, places or props: the model paints whatever the words name into
-    the square), and that nothing is added or taken away."""
+    what they are), the liquids the game has, its main zone's colours and the quality of its light, the colours of
+    image 1 kept, nothing added or taken away. Never the zone's buildings, plants, places or props, nor the ground
+    in words: the model paints whatever the words name into the square."""
     said = fixed["words"]
-    liquids = [said["water"] if facts["water"] >= 0.001 else said["dry"]]
+    water = facts["water"]
+    liquids = [said["water"] if water >= 0.01 else said["little"] if water >= 0.001 else said["dry"]]
     if facts["lava"] >= 0.005:
         liquids.append(said["lava"])
     if facts["slime"] >= 0.005:
         liquids.append(said["slime"])
     if not facts["zones"]:
         return " ".join([fixed["sea"], briefs["sea"]["water"], *liquids, said["last"]])
-    parts = [(k, v) for k, v in facts["cover"].items() if k in fixed["cover"] and v >= 0.05]
-    ground = ""
-    if parts:
-        names = [fixed["cover"][k] for k, _ in parts[:4]]
-        ground = "The ground of image 1 is " + (names[0] if len(names) == 1 else f"mostly {names[0]}, with {joined(names[1:])}") + "."
     # the main zone's words only: a border's mountains may belong to a zone whose words do not fit them (north of
     # Stormwind's keep, the volcano's), and image 1 shows where the land changes
     main = briefs[facts["zones"][0]["uimap"]]
-    light = main["atmosphere"].split(". ")[0].rstrip(".")
-    zone = f"Its colours, as image 1 shows them: {only(main['colours'], facts)}. Its light: {light}."
-    return " ".join(p for p in [fixed["edit"], ground, *liquids, zone, said["last"]] if p)
+    zone = f"Its colours, as image 1 shows them: {only(main['colours'], facts)}. Its light: {light_of(main['atmosphere'])}."
+    return " ".join([fixed["edit"], *liquids, zone, said["keep_colours"], said["last"]])
 
 
 # --- The squares ---------------------------------------------------------------------------------

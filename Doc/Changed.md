@@ -22,7 +22,12 @@ A game restart takes it in (new addons, Navigation and Atlas; new files in Navig
 - **What stands in water stays:** `dev/tools/atlas` makes only the open water flat (`open_water`): the minimap's
   piers, stilt houses, bridges, domes and ice over the game's water stay in the picture, and do not count as
   water (Booty Bay's boardwalk had been erased).
-- **Tests:** `dev/tests/atlas.py`: the new words, what stands in water.
+- **The words refined** (rounds 6 and 7 on 26 places, the zones whole, both continents): no sentence on the ground
+  (the ground cover called Darkshore sand); "only a little water" under 1 % (the water sentence dug channels);
+  the zone's light without its clauses about colour or haze, and "keep the colours of image 1, no clouds, fog,
+  mist or smoke over the ground"; the minimap textures softened by 2 pixels (`SOFTEN`, was 0.8: a grid in the rock,
+  a lake by Stormwind's cathedral). `atlas.toml`'s ground-cover phrases are gone.
+- **Tests:** `dev/tests/atlas.py`: the new words, what stands in water, the light's quality, a little water.
 
 ### The Atlas' painting run: dev/tools/atlas (Saneroki, 2026-10-19)
 - **`dev/tools/atlas`** (new): `paint` paints the Atlas square by square in the local ComfyUI: both continents'
