@@ -17,14 +17,19 @@ ns.TEXT = {
     COST = "Cost", CAST = "Cast", COOLDOWN = "Cooldown", RANGE = "Range",
     SECONDS = "%s sec", MINUTES = "%s min", HOURS = "%s hr", YARDS = "%s yd",
     VENDOR = "Vendor", AUCTION = "Auction", USED_IN = "Used in",
-    -- The names of a panel's sections (Read.Section). An item's: its numbers and plain lines, what it
-    -- does (the game's green), the set it belongs to, its description, its durability, and those from
-    -- the module's own data (Kinds/Item.lua, Kinds/Gold.lua)
-    STATS = "Stats", EFFECTS = "Effects", SET = "Set", DESCRIPTION = "Description", DURABILITY = "Durability",
-    PROFESSIONS = "Professions", GOLD = "Gold",
-    -- How likely gathering a herb or an ore raises your skill (Gathering.lua): the section, the skills'
-    -- names where the game does not give them, your skill
-    GATHERING = "Gathering", HERBALISM = "Herbalism", MINING = "Mining", NOT_LEARNED = "Not learned", SKILL = "%d/%d",
+    -- The names of a panel's sections (Read.Section). Info: a thing's own lines (an item's numbers,
+    -- what it does, its description, its durability; a spell's facts and description; a buff's, a
+    -- quest's text); an item's set; the sections from data (Kinds/Item.lua, Kinds/Gold.lua)
+    INFO = "Info", SET = "Set", PROFESSIONS = "Professions", GOLD = "Gold",
+    DURABILITY = "Durability", -- inside an item's durability bar
+    -- How likely gathering a herb or an ore raises your skill (Gathering.lua): the skills' names where the
+    -- game does not give them, your skill
+    HERBALISM = "Herbalism", MINING = "Mining", NOT_LEARNED = "Not learned", SKILL = "%d/%d",
+    -- The tiny line at the bottom of a panel while Alt is not held (Read.lua)
+    MORE_INFO = "Hold ALT for more info",
+    -- In the Gold section: what the materials of disenchanting it bring at the auction house; with Alt each
+    -- material (its chance, how many, what it brings), and the price to post it at (Kinds/Gold.lua)
+    DISENCHANT = "Disenchant", MATERIAL = "%s%%  %s %s", SELL_AT = "Sell at", NO_PRICES = "no prices seen",
     -- A unit's target, health, power and buffs (Kinds/Unit.lua); how long a buff still runs (Kinds/Aura.lua);
     -- the game's lines of no kind of their own (Read.Named); the numbers Alt shows (Read.lua)
     STATUS = "Status", DURATION = "Duration", DETAILS = "Details", IDS = "IDs",

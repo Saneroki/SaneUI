@@ -93,7 +93,7 @@ local DRAGON_RING, DRAGON_COVER = 56.3, 2
 local DRAGON_LEFT = 4
 
 -- The panel's own colours (Model.lua has the palette).
-local LABEL, CAPTION, VALUE, TAG = COLOR.DETAIL, COLOR.CAPTION, COLOR.TITLE, COLOR.GOLD
+local LABEL, CAPTION, VALUE, TAG, RULE = COLOR.DETAIL, COLOR.CAPTION, COLOR.TITLE, COLOR.GOLD, COLOR.RULE
 -- The background: the game's own tooltip ground, taken toward the panel's colour TOP_TINT of the
 -- way at the top; at the bottom the ground darkened by FOOT_DARK, then FOOT_TINT of the way.
 local TOP_TINT, FOOT_TINT, FOOT_DARK = 0.28, 0.06, 0.55
@@ -140,7 +140,10 @@ local FONTS = {
     badge = { font = "GameTooltipHeaderText", add = -1, outline = true }, -- on its gold plaque, outlined
     -- At the default size the small ones are 10, as the game's own small font (GameFontNormalSmall)
     small = { font = "GameTooltipText", add = -4, least = 8 },   -- another addon's lines, the details with Alt
-    caption = { font = "GameTooltipText", add = -4, least = 8 }, -- a section's name, a strip's captions
+    caption = { font = "GameTooltipText", add = -4, least = 8 }, -- a strip's captions
+    section = { font = "GameTooltipText", add = -4, least = 8, flat = true }, -- a section's name: no shadow,
+                                                    -- as thin as the rule beside it, in its colour
+    hint = { font = "GameTooltipText", add = -6, least = 7 },    -- the tiny line that Alt shows more
     detail = { font = "GameTooltipText", add = -4, least = 8 },  -- a unit's kind, PvP
     inside = { font = "GameTooltipText", add = -4, least = 8 },  -- the numbers inside a health bar
 }
@@ -345,9 +348,9 @@ end
 -------------------------------------------------------------------------------
 --  The stage: with Alt held over a piece of gear (head.dress, Figures.lua),
 --  your own character wearing it, as the game's dressing room puts it on you
---  (DressUpModel: you as you are, then TryOn), on a ground of its own beside
---  the panel: as high as the panel, the soft edges of the two just meeting,
---  turning slowly round. At the panel's left; at its right where the left has
+--  (DressUpModel: you as you are, then TryOn), see-through beside the panel,
+--  no ground of its own: as high as the panel, as far from it as two panels
+--  stand apart, turning slowly round. At the panel's left; at its right where the left has
 --  no room on the screen, or the comparisons (Host.lua) stand there. Let go
 --  of Alt and it is gone; hidden, it does not turn.
 --
@@ -386,11 +389,6 @@ local function Staged(panel)
         panel.stage = false
         return false
     end
-    stage.back = stage:CreateTexture(nil, "BACKGROUND", nil, 1)
-    stage.back:SetTexture(SOFT)
-    stage.back:SetTextureSliceMargins(SOFT_MARGIN, SOFT_MARGIN, SOFT_MARGIN, SOFT_MARGIN)
-    stage.back:SetPoint("TOPLEFT", stage, "TOPLEFT", -SOFT_OUT, SOFT_OUT)
-    stage.back:SetPoint("BOTTOMRIGHT", stage, "BOTTOMRIGHT", SOFT_OUT, -SOFT_OUT)
     model.panel, model.ready, model.facing = panel, false, FACING
     model:SetPoint("TOPLEFT", stage, "TOPLEFT", STAGE_IN, -STAGE_IN)
     model:SetPoint("BOTTOMRIGHT", stage, "BOTTOMRIGHT", -STAGE_IN, STAGE_IN)
@@ -468,9 +466,6 @@ function Panel.Stage(panel)
     -- Shown already, or refused: nothing to do until the piece changes (asked once a frame)
     if stage.link == link and (stage.refused or stage:IsShown()) then return end
     stage.link, stage.refused = link, false
-    -- The ground as the panel's own, without its colour
-    local opacity = (ns.options and tonumber(ns.options.opacity) or DEFAULT_OPACITY) / 100
-    Gradient(stage.back, FOOT[1], FOOT[2], FOOT[3], opacity, GROUND[1], GROUND[2], GROUND[3], opacity)
     stage:Show()
     if not Dressed(model, link) then
         stage.refused = true -- (your character cannot wear it: not asked again for this piece)
@@ -538,8 +533,8 @@ local function Measure(panel, head, rows, count, r, g, b, iconRoom)
             local left = Text(panel, FONTS[row.font] or FONTS.row, row.left, row.lr, row.lg, row.lb)
             panel.left[index] = left
             wanted = math.max(wanted, Width(left) + NAME_GAP + LIVE_ROOM)
-        elseif kind == "bar" and row.live == "aura" then
-            -- A buff's bar: wide enough for the time and the caster written inside it
+        elseif kind == "bar" and (row.live == "aura" or row.inside) then
+            -- A buff's bar, an item's durability: wide enough for the words written inside it
             local font = FONTS.inside
             local time, caster = Text(panel, font, row.left), Text(panel, font, row.right)
             wanted = math.max(wanted, Width(time) + Width(caster) + AURA_WORDS)
@@ -548,7 +543,7 @@ local function Measure(panel, head, rows, count, r, g, b, iconRoom)
         elseif kind == "text" or (kind == "bar" and row.short) then
             local font = FONTS[row.font] or FONTS.row
             -- A description stands in the middle, each of its lines
-            local left = Text(panel, font, Words(row, head, r, g, b), row.lr, row.lg, row.lb, row.prose and "CENTER" or nil)
+            local left = Text(panel, font, Words(row, head, r, g, b), row.lr, row.lg, row.lb, (row.prose or row.center) and "CENTER" or nil)
             local right = Text(panel, font, row.right, row.rr, row.rg, row.rb, "RIGHT")
             panel.left[index], panel.right[index] = left, right
             local wide = Width(left) + (row.indent or 0) + (row.icon and SMALL_ICON + 4 or 0)
@@ -574,7 +569,7 @@ local function Measure(panel, head, rows, count, r, g, b, iconRoom)
             end
             wanted = math.max(wanted, wide)
         elseif kind == "caption" then
-            local caption = Text(panel, FONTS.caption, Upper(row.left), CAPTION[1], CAPTION[2], CAPTION[3])
+            local caption = Text(panel, FONTS.section, Upper(row.left), RULE[1], RULE[2], RULE[3]) -- as its rule
             panel.left[index] = caption
             wanted = math.max(wanted, Width(caption) + CAPTION_GAP + CAPTION_RULE)
         end
@@ -686,7 +681,7 @@ local function StripRow(panel, row, index, y, inner, hairline)
 end
 
 -- A unit's health or a buff's time, as Live.lua keeps them (power lies over health: no place of
--- its own), or a bar of ours (durability). Returns the y under it.
+-- its own), an item's durability with its words inside, or a small bar of ours. Returns the y under it.
 local function BarRow(panel, row, index, y, inner, block)
     local live = panel.live
     if row.live == "power" then
@@ -716,6 +711,20 @@ local function BarRow(panel, row, index, y, inner, block)
             BarText(bar, row.right ~= "" and "LEFT" or "CENTER", FONTS.inside):SetText(row.left)
             if row.right ~= "" then BarText(bar, "RIGHT", FONTS.inside):SetText(row.right) end
         end
+        return y + HEALTH_HEIGHT + ROW_GAP
+    end
+    if row.inside then
+        -- An item's durability: as a unit's health bar, flat with round corners, the word at its left and
+        -- the numbers at its right inside
+        local bar = LiveBar(panel, "inside", HEALTH_HEIGHT, row.br, row.bg, row.bb)
+        bar:SetMinMaxValues(0, row.max or 1)
+        bar:SetValue(row.value or 0)
+        bar:SetPoint("TOPLEFT", panel, "TOPLEFT", SIDE, -y)
+        bar:SetWidth(inner)
+        block.top, block.bottom = block.top or y, y + HEALTH_HEIGHT
+        if bar.texts then for _, text in pairs(bar.texts) do text:Hide() end end
+        BarText(bar, "LEFT", FONTS.inside):SetText(row.left)
+        BarText(bar, "RIGHT", FONTS.inside):SetText(row.right)
         return y + HEALTH_HEIGHT + ROW_GAP
     end
     local bar = Bar(panel, row.br, row.bg, row.bb)
@@ -873,3 +882,4 @@ end
 -- For Live.lua, which lays out a unit's buff icons itself: their size, the gap between them, and
 -- where the panel's content begins. For Host.lua: how far a panel's soft edge reaches out.
 Panel.AURA, Panel.AURA_GAP, Panel.SIDE, Panel.EDGE = AURA, AURA_GAP, SIDE, SOFT_OUT
+Panel.FONTS = FONTS -- the kinds of text, for the tests

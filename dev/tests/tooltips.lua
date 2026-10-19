@@ -231,7 +231,13 @@ local function tick(panel, elapsed) panel._scripts.OnUpdate(panel, elapsed or 0.
 -- What a panel shows: its head, and a row by its number.
 local function head(panel) return panel.model.shown.head end
 local function row(panel, index) return panel.model.shown.rows[index] or {} end
-local function count(panel) return panel.model.shown.n end
+-- The rows of a panel, without the tiny line at its bottom that Alt shows more (it is tested by itself)
+local function hinted(panel)
+    local shown = panel.model.shown
+    local last = shown.rows[shown.n]
+    return shown.n > 0 and last.font == "hint"
+end
+local function count(panel) return panel.model.shown.n - (hinted(panel) and 1 or 0) end
 -- Its rows in short: a section's caption by its name in capitals, every other row by its kind
 -- ("text", "strip", "bar", "auras"), a row with room above it with a "+" before
 local function shape(panel)
@@ -247,8 +253,8 @@ end
 -- on the real schemas, in the addon list before the login
 local folder = io.popen("mktemp -d -t saneui-tooltips-XXXXXX"):read("*l")
 check(folder and os.execute(("python3 -I '%s/dev/tests/data/packs.py' '%s/dev/tests/data/tooltips' '%s'"):format(root, root, folder)) == 0,
-    "the tools compiled the sample quests and drops into packs")
-for _, pack in ipairs({ "Quests", "World" }) do W.AddPack(folder .. "/SaneUI_Data_" .. pack) end -- Characters: every install's (wowstub)
+    "the tools compiled the sample quests, drops, nodes and disenchanting into packs")
+for _, pack in ipairs({ "Quests", "World", "Items" }) do W.AddPack(folder .. "/SaneUI_Data_" .. pack) end -- Characters: every install's (wowstub)
 -- The characters' saved file: two alts, one of them sharing your first name; a broken entry
 SaneUIData_Characters = { forever = { format = 1, characters = {
     ["Player-70-0000BEEF"] = { name = "Droopy Fairwind", class = "WARRIOR", level = 30, bags = "4500\03112\0304501\0311", bank = "4500\0318" },
@@ -330,8 +336,8 @@ pinned.CloseButton:EnableMouse(true)
 ns.store.prices, ns.store.seen = { [1] = 5, [2] = 6, [3] = 7 }, { [1] = 100 - 31, [2] = 100 - 30 }
 W.Fire("PLAYER_LOGIN")
 check(#postCalls == 1 and postCalls[1].kind == "ALL", "one listener for every kind of tooltip data")
-check(Data.Set("Quests"):State() == "loading" and Data.Set("Drops"):State() == "loading",
-    "at the login the module asks for Core's quest data (Quests, Drops): loaded once the loading screen is gone")
+check(Data.Set("Quests"):State() == "loading" and Data.Set("Drops"):State() == "loading" and Data.Set("Disenchants"):State() == "loading",
+    "at the login the module asks for Core's data (Quests, Drops, Disenchants): loaded once the loading screen is gone")
 check(Data.Characters() == nil and Data.Count(4500) == nil, "and Core asks for the characters' data; until it is there, nothing is counted")
 check(tip._scripts.OnTooltipCleared and tip._scripts.OnShow and ns.Panel.All()[tip] == nil,
     "the tooltips that also show hints are hooked at login; their panels are only made when first needed")
@@ -344,6 +350,7 @@ check(("Durability 61 / 120"):match(ns.PATTERN.DURABILITY) == "61" and ("(53.8 d
     "a sentence of the game with gaps becomes a pattern that finds what stands in the gaps")
 
 -- A spell -----------------------------------------------------------------------------------
+W.methods.SetShadowOffset = function(self, x, y) self._shadowX, self._shadowY = x, y end
 local elune = {
     { "Elune's Light", "Racial" },
     { "Instant", "3 min cooldown" },
@@ -365,26 +372,27 @@ end
 local COLOR = ns.COLOR
 local function code(color) return ns.Hex(color[1], color[2], color[3]) end
 local DETAIL_HEX = code(COLOR.DETAIL)
-check(count(panel) == 6 and row(panel, 1).left == "Elune's Light" and row(panel, 1).font == "title" and row(panel, 1).caps
+check(count(panel) == 5 and row(panel, 1).left == "Elune's Light" and row(panel, 1).font == "title" and row(panel, 1).caps
     and row(panel, 2).left == "|cff" .. DETAIL_HEX .. "Utility|r  \194\183  Racial" and head(panel).icon == 1000 + 5,
     "the header: name; what it is (neither hurting nor healing: utility) and rank; icon")
-check(shape(panel) == "text text STATS strip DESCRIPTION text",
-    "every section under its name, the only dividers: Stats, Description; a line another addon added is not shown without Alt")
+check(shape(panel) == "text text INFO strip text",
+    "the spell's own lines in one section, Info: the strip and the description; a line another addon added is not shown without Alt")
 check(row(panel, 4).kind == "strip" and cells(row(panel, 4)) == "Cast Instant, Cooldown 3 min",
-    "one strip under Stats: the facts the tooltip's lines state, found by the game's sentences for them")
+    "one strip under Info: the facts the tooltip's lines state, found by the game's sentences for them")
 check(not cells(row(panel, 4)):find("Cost") and not cells(row(panel, 4)):find("Range"), "a fact the tooltip does not state has no cell")
-check(row(panel, 6).left:find("^Increases") and row(panel, 6).prose and row(panel, 6).lr == COLOR.PROSE[1]
-    and row(panel, 6).lb == COLOR.PROSE[3], "the description is a row, in the game's gold made lighter; the test realm's line about F6 is left out")
+check(row(panel, 5).left:find("^Increases") and row(panel, 5).prose and row(panel, 5).lr == COLOR.PROSE[1]
+    and row(panel, 5).lb == COLOR.PROSE[3], "the description is a row, in the game's gold made lighter; the test realm's line about F6 is left out")
 check(not head(panel).accent and row(panel, 1).lr == COLOR.TITLE[1] and COLOR.TITLE[1] < 1, "a white name gives a panel without a colour, and a softer white")
 local shown = {}
 for index = 1, panel.texts.taken do shown[#shown + 1] = panel.texts[index]._text end
-check(shown[1] == "ELUNE'S LIGHT" and shown[3] == "|cff" .. DETAIL_HEX .. "Utility|r  \194\183  Racial" and shown[5] == "STATS"
-    and shown[6] == "CAST" and shown[7] == "Instant" and shown[8] == "COOLDOWN" and shown[9] == "3 min" and shown[10] == "DESCRIPTION",
+check(shown[1] == "ELUNE'S LIGHT" and shown[3] == "|cff" .. DETAIL_HEX .. "Utility|r  \194\183  Racial" and shown[5] == "INFO"
+    and shown[6] == "CAST" and shown[7] == "Instant" and shown[8] == "COOLDOWN" and shown[9] == "3 min" and shown[10]:find("^Increases"),
     "drawn: the name in capitals, then the section's name, the strip's captions, each over its value")
 local function color(label) local r, g, b = label:GetTextColor() return r .. " " .. g .. " " .. b end
-check(color(panel.texts[7]) == color(panel.texts[9]) and color(panel.texts[6]) == table.concat(COLOR.CAPTION, " ")
-    and color(panel.texts[5]) == table.concat(COLOR.CAPTION, " "),
-    "the values alike; the captions, a section's and a strip's, in the game's gold, darker")
+check(color(panel.texts[7]) == color(panel.texts[9]) and color(panel.texts[6]) == table.concat(COLOR.CAPTION, " "),
+    "the values alike; a strip's captions in the game's gold, darker")
+check(color(panel.texts[5]) == table.concat(COLOR.RULE, " ") and panel.texts[5].dressed.flat and panel.texts[6]._shadowX ~= 0,
+    "a section's name in its rule's own colour, without a shadow, as thin as the rule; a strip's captions keep theirs")
 local function size(label) return label.dressed and label.dressed.size end -- the size its font was given
 check(size(panel.texts[1]) == 14 and size(panel.texts[11]) == 14 and size(panel.texts[7]) == 12 and size(panel.texts[6]) == 10,
     "name and lines in the text size, the strip's values two smaller, captions as small as the game's small font")
@@ -398,12 +406,15 @@ check(math.abs(colors[2].r - topR) < 1e-9 and colors[1].b > colors[1].r,
 -- With Alt held: the technical details, then the lines other addons added, last
 W.alt = true
 tip:Fill({ type = TYPE.Spell, id = 5 }, elune)
-check(shape(panel) == "text text STATS strip DESCRIPTION text IDS text ADDONS text" and row(panel, 10).right == "Racial"
-    and row(panel, 10).font == "small",
+check(shape(panel) == "text text INFO strip text IDS text ADDONS text" and row(panel, 9).right == "Racial"
+    and row(panel, 9).font == "small" and not hinted(panel),
     "with Alt, a line another addon added stands last, small, in a section of its own under the caption Addons")
 W.alt = false
 tip:Fill({ type = TYPE.Spell, id = 5 }, elune)
-check(count(panel) == 6, "let go of Alt, and the details and the other addons' lines are gone again")
+check(count(panel) == 5 and hinted(panel), "let go of Alt, and the details and the other addons' lines are gone again")
+local hint = row(panel, 6)
+check(hint.left == "Hold ALT for more info" and hint.center and hint.space and ns.Panel.FONTS.hint.size < ns.Panel.FONTS.small.size,
+    "without Alt a tiny line at the bottom, in the middle, a little apart: that Alt shows more")
 
 -- Filled again with the same lines
 W.methods.SetJustifyH = function(self, side) self._justify = side end
@@ -415,10 +426,10 @@ local function spell(cooldown)
         { "Hurls a fiery ball that causes 16 to 25 Fire damage.", nil, GOLD, nil, LINE.SpellDescription } })
 end
 spell()
-check(drawn == 1 and count(panel) == 7 and cells(row(panel, 4)) == "Mana 30 (30%), Range 35 yd, Cast 1.5 sec",
+check(drawn == 1 and count(panel) == 6 and cells(row(panel, 4)) == "Mana 30 (30%), Range 35 yd, Cast 1.5 sec",
     "a spell that hurts: its facts in the order the game writes them, its cost also as a share of all your mana; no cooldown it has not")
-check(shape(panel) == "text text STATS strip strip DESCRIPTION text",
-    "under the strip a second one, both under Stats; then the description under its name")
+check(shape(panel) == "text text INFO strip strip text",
+    "under the strip a second one, both under Info, then the description")
 check(cells(row(panel, 5)) == "DPS 8.2, Damage 21, Per Mana 0.68, Crit 6.2%",
     "what follows from them: per second of its cast, on average, per point of mana, the chance of a critical strike")
 check(head(panel).accent and head(panel).ar == 1 and head(panel).ag == 0.5 and head(panel).ab == 0
@@ -449,7 +460,7 @@ local function compare()
 end
 W.alt = true -- (other addons' lines are shown with Alt)
 compare()
-check(drawn == 3 and count(panel) == 11 and row(panel, 10).left == "Addons" and row(panel, 11).font == "small",
+check(drawn == 3 and count(panel) == 10 and row(panel, 9).left == "Addons" and row(panel, 10).font == "small",
     "lines written after the game told us are in the panel when it is first drawn")
 compare()
 compare()
@@ -462,20 +473,20 @@ tip.count = tip.count + 1
 tip.left[tip.count] = W.NewWidget("FontString", nil, tip)
 tip.left[tip.count]:SetText("Learned from a trainer")
 tick(panel)
-check(drawn == 3 and count(panel) == 11 and row(panel, 10).kind == "caption" and row(panel, 11).left == "Learned from a trainer",
+check(drawn == 3 and count(panel) == 10 and row(panel, 9).kind == "caption" and row(panel, 10).left == "Learned from a trainer",
     "a line added after the panel was drawn is taken in on the next frame, in the section of other addons' lines")
 W.alt = false
 
 -- Lines that are no numbers of a spell stay rows
 tip:Fill({ type = TYPE.Spell, id = 75 }, { { "Shoot" }, { "Requires Ranged Weapon" }, { "Shoots.", nil, GOLD, nil, LINE.SpellDescription } })
-check(shape(panel) == "text text DETAILS text DESCRIPTION text" and row(panel, 4).left == "Requires Ranged Weapon",
+check(shape(panel) == "text text DETAILS text INFO text" and row(panel, 4).left == "Requires Ranged Weapon",
     "a line that states none of the facts stays a row, under Details, and there is no strip (nor one of a shot, without a ranged weapon)")
 tip:Fill({ type = TYPE.Spell, id = 2383 }, { { "Find Herbs" }, { "Passive", nil, nil, nil, LINE.SpellPassive }, { "Shows herbs.", nil, GOLD, nil, LINE.SpellDescription } })
 check(row(panel, 2).left == "|cff" .. DETAIL_HEX .. "Utility|r  \194\183  Passive" and count(panel) == 4, "a passive spell says so under its name")
 tip:Fill({ type = TYPE.Spell, id = 1243 }, { { "Renew" }, { "Heals the target of 45 damage over 15 sec.", nil, GOLD, nil, LINE.SpellDescription } })
-check(head(panel).ag == COLOR.HEALTH[2] and head(panel).ag > head(panel).ar and row(panel, 2).left:find("Healing") and row(panel, 6).prose,
+check(head(panel).ag == COLOR.HEALTH[2] and head(panel).ag > head(panel).ar and row(panel, 2).left:find("Healing") and row(panel, 5).prose,
     "a spell that names no school but heals is green, and says Healing")
-check(shape(panel) == "text text STATS strip DESCRIPTION text" and cells(row(panel, 4)) == "HPS 3.0, Healing 45, Crit 6.2%",
+check(shape(panel) == "text text INFO strip text" and cells(row(panel, 4)) == "HPS 3.0, Healing 45, Crit 6.2%",
     "a heal over time: what it heals, per second of its time (not of the global cooldown), your chance with spells; it costs "
     .. "nothing, so no cell for what it does per point of cost, and no strip of facts its tooltip does not state")
 UnitDamage, UnitAttackSpeed, GetCritChance = function() return 40, 60 end, function() return 2.5 end, function() return 5 end
@@ -497,7 +508,7 @@ tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Shot at the next s
 check(cells(row(panel, 4)) == "Cast Shot at the next swing", "a fact found by the game's own sentence for it, not by the English one")
 -- Where the data gives a line no kind, a sentence in the game's gold is taken for the description
 tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Channeled" }, { "Rains arrows on all enemies in the area for a while.", nil, GOLD } })
-check(row(panel, 6).prose and row(panel, 6).lr == COLOR.PROSE[1] and row(panel, 5).left == "Description",
+check(row(panel, 5).prose and row(panel, 5).lr == COLOR.PROSE[1] and row(panel, 3).left == "Info",
     "a gold line of no kind that reads as a sentence is the description")
 tip:Fill({ type = TYPE.Spell, id = 1510 }, { { "Volley" }, { "Channeled" }, { "Reagents: Arrow", nil, GOLD } })
 check(count(panel) == 6 and not row(panel, 6).prose and row(panel, 5).left == "Details", "a short one is none: it is one of the details")
@@ -557,29 +568,33 @@ check(head(panel).accent and head(panel).ar == 0.64 and row(panel, 1).lr == 0.64
 check(head(panel).badge == "iLvl 63", "its level under the icon")
 check(panel.iconMask._texture == "Interface\\AddOns\\SaneUI_Tooltips\\Art\\icon-mask",
     "a square icon has round corners and an edge that fades out softly (a mask in its own shape)")
-check(head(panel).tag == "" and row(panel, 11).left == "|cff" .. code(COLOR.RED) .. "BoP|r" and row(panel, 11).right == "",
+check(head(panel).tag == "" and row(panel, 9).left == "|cff" .. code(COLOR.RED) .. "BoP|r" and row(panel, 9).right == "",
     "nothing over the name: how it binds is the first row of Gold, short as players write it, red until it is bound")
-check(shape(panel) == "text text STATS text text EFFECTS text DURABILITY bar GOLD text text",
-    "an item's sections, each under its name: Stats, Effects, Durability, Gold")
+check(shape(panel) == "text text INFO text text text bar GOLD text text",
+    "an item's own lines in one section, Info (its numbers, what it does, its durability), then Gold")
 check(row(panel, 4).font == "big" and row(panel, 4).left == "53.8 |cff" .. DETAIL_HEX .. "DPS|r",
-    "a weapon's damage per second, large, first in Stats")
+    "a weapon's damage per second, large, first in Info")
 check(row(panel, 4).label == "\194\183  44 - 115 dmg  \194\183  1.90 spd" and row(panel, 4).labelFont == "sub",
     "its hit's damage and its speed after it in the same line, smaller")
-check(row(panel, 5).left == "+5 Agility" and row(panel, 7).lg == 1, "then its lines; what it does, in green, stands apart under Effects")
-check(row(panel, 9).kind == "bar" and row(panel, 9).short and row(panel, 9).value == 61 and row(panel, 9).max == 120
-    and row(panel, 9).left == "61 / 120" and row(panel, 9).right == "", "its durability as a small bar")
-check(count(panel) == 12 and row(panel, 12).left == "Vendor" and row(panel, 12).right == "25500c",
+check(row(panel, 5).left == "+5 Agility" and row(panel, 6).lg == 1, "then its lines; what it does in green, in Info too")
+check(row(panel, 7).kind == "bar" and row(panel, 7).inside and row(panel, 7).value == 61 and row(panel, 7).max == 120
+    and row(panel, 7).left == "Durability" and row(panel, 7).right == "61 / 120", "its durability as a bar, last of its own lines")
+local durable = panel.liveBars.inside
+check(durable and durable:IsShown() and durable._height == 18 and durable.texts.LEFT._text == "Durability" and durable.texts.RIGHT._text == "61 / 120",
+    "the word Durability inside the bar at its left, the numbers at its right, as high as a unit's health bar")
+check(panel.barMask._points[1][5] == select(5, durable:GetPoint(1)), "with round corners, like a unit's bars")
+check(count(panel) == 10 and row(panel, 10).left == "Vendor" and row(panel, 10).right == "25500c",
     "and under it what a vendor pays for it, in coins: alone, without advice")
 reaper[3].data.bonding = 3
 tip:Fill({ type = TYPE.Item, id = 19019 }, reaper)
-check(row(panel, 11).left == "|cff" .. DETAIL_HEX .. "Soulbound|r", "once it is bound to you, that is no longer red")
+check(row(panel, 9).left == "|cff" .. DETAIL_HEX .. "Soulbound|r", "once it is bound to you, that is no longer red")
 indexed = true
 tip:Fill({ type = TYPE.Item, id = 19019 }, reaper)
-check(count(panel) == 12 and row(panel, 2).left == "Sword \194\183 One-Hand" and head(panel).badge == "iLvl 63", "the same when the game says where each of its lines stands")
+check(count(panel) == 10 and row(panel, 2).left == "Sword \194\183 One-Hand" and head(panel).badge == "iLvl 63", "the same when the game says where each of its lines stands")
 table.insert(reaper, 10, { nothing = true, [5] = LINE.SellPrice, price = 25500 })
 tip:Fill({ type = TYPE.Item, id = 19019 }, reaper)
 table.remove(reaper, 10)
-check(count(panel) == 12 and row(panel, 7).left == "Chance on hit: Blasts your enemy with lightning.",
+check(count(panel) == 10 and row(panel, 6).left == "Chance on hit: Blasts your enemy with lightning.",
     "a line of the game's data without text takes nothing from the line before it, which has the same index")
 indexed = false
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Plans: Gloves", nil, { 0.64, 0.21, 0.93 } }, { "Requires Blacksmithing (80)" },
@@ -594,9 +609,9 @@ tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Belt of Might", nil, { 0.64, 0.2
     { "Equip: Improves your chance to hit by 1%.", nil, GREEN }, { " ", nil, nil, nil, LINE.Blank }, { "Equip: Increases defense by 3.", nil, GREEN },
     { " ", nil, nil, nil, LINE.Blank }, { "Battlegear of Might (2/8)", nil, GOLD }, { "  Belt of Might", nil, { 0.5, 0.5, 0.5 } },
     { "(3) Set: +20 Armor", nil, GREEN }, { "(5) Set: +5 Strength", nil, { 0.5, 0.5, 0.5 } }, { '"Forged in the deep."', nil, GOLD } })
-check(shape(panel) == "text STATS text EFFECTS text +text SET text text text text DESCRIPTION text",
-    "each kind of line under its name: the game's empty line between two effects a gap; a set with its pieces and bonuses "
-    .. "in one section, Set; its description after it")
+check(shape(panel) == "text INFO text text +text SET text text text text INFO text",
+    "its own lines under Info, the game's empty line between two effects a gap; a set with its pieces and bonuses "
+    .. "in one section, Set; its description after it, under Info again")
 -- Another addon's line right after one of the game's (as TooltipDataProcessor.AddLinePostCall writes
 -- it), where the game says where each of its lines stands: in the section Addons, not among the item's
 local belt = { { "Belt of Might", nil, { 0.64, 0.21, 0.93 } }, { "+9 Strength" },
@@ -604,14 +619,14 @@ local belt = { { "Belt of Might", nil, { 0.64, 0.21, 0.93 } }, { "+9 Strength" }
     { "Seen in 3 shops", added = true } }
 indexed = true
 tip:Fill({ type = TYPE.Item, id = 19019 }, belt)
-check(shape(panel) == "text STATS text EFFECTS text", "other addons' lines are not shown without Alt, wherever they wrote them in the tooltip")
+check(shape(panel) == "text INFO text text", "other addons' lines are not shown without Alt, wherever they wrote them in the tooltip")
 W.alt = true
 tip:Fill({ type = TYPE.Item, id = 19019 }, belt)
-check(shape(panel) == "text STATS text EFFECTS text IDS text ADDONS text text" and row(panel, 9).left == "Upgrade: +12%"
-    and row(panel, 10).left == "Seen in 3 shops", "with Alt, other addons' lines all in one section, Addons, last, wherever they wrote them")
+check(shape(panel) == "text INFO text text IDS text ADDONS text text" and row(panel, 8).left == "Upgrade: +12%"
+    and row(panel, 9).left == "Seen in 3 shops", "with Alt, other addons' lines all in one section, Addons, last, wherever they wrote them")
 indexed = false
 tip:Fill({ type = TYPE.Item, id = 19019 }, belt)
-check(shape(panel) == "text STATS text EFFECTS text text IDS text ADDONS text",
+check(shape(panel) == "text INFO text text text IDS text ADDONS text",
     "where the game does not say where its lines stand (they are found by their words), only the lines after its last are known as another addon's")
 W.alt = false
 
@@ -636,8 +651,13 @@ check(row(panel, 6).left == "Sell on the AH for 98765c" and row(panel, 6).icon =
     "and in one line, in green, what to do: it brings more there than at a vendor")
 W.alt = true
 tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
-check(row(panel, 7).left == "Lowest 98765c" and row(panel, 8).left:find("Cut 4938c", 1, true) == 1,
-    "with Alt, small under it: the price it comes from, the house's cut and the deposit")
+check(row(panel, 6).left == "Sell at" and row(panel, 6).right == "98764c" and row(panel, 7).left == "Sell on the AH for 98765c",
+    "with Alt, the price to post it at, before the advice: one copper under the lowest offer")
+check(row(panel, 8).left == "Lowest 98765c" and row(panel, 9).left:find("Cut 4938c", 1, true) == 1,
+    "and small under the advice: the price it comes from, the house's cut and the deposit")
+check(ns.Gold.PostAt({ current = 90, vendor = 100 }) == 106 and ns.Gold.PostAt({ current = 500, vendor = 0 }) == 499
+    and ns.Gold.PostAt({ vendor = 100 }) == nil,
+    "never so low that a sale, after the cut, brings less than a vendor pays; nothing without an offer seen")
 W.alt = false
 browse = { { itemKey = { itemID = 19019, itemLevel = 60 }, minPrice = 500 }, { itemKey = { itemID = 19019, itemLevel = 70 }, minPrice = 900 } }
 W.Fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
@@ -680,7 +700,7 @@ tip:Fill({ type = TYPE.Item, id = 2589 }, { { "Linen Cloth" }, { " ", nil, nil, 
 check(math.abs(hairline() - 3 * pixel) < 1e-9, "and the nearest whole dots elsewhere: three on a 4K screen")
 pixel = 1
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Plate", nil, { 0.64, 0.21, 0.93 } }, { "115 Armor" } })
-check(row(panel, 2).left == "Stats" and row(panel, 3).font == "big" and row(panel, 3).left == "115 Armor", "an armour's number is large too, in Stats")
+check(row(panel, 2).left == "Info" and row(panel, 3).font == "big" and row(panel, 3).left == "115 Armor", "an armour's number is large too, in Info")
 options.icons = false
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury" }, { "Epic" } })
 check(head(panel).icon == nil and head(panel).accent, "the icons can be switched off")
@@ -1132,7 +1152,8 @@ check(stage and stage.model._kind == "DressUpModel" and stage:IsShown() and load
     "with Alt held: your own character trying it on (the item, where the tooltip does not give its link), on a stage of its own")
 check(stage._height == panel:GetHeight() and stage._width == math.floor(panel:GetHeight() * 0.6 + 0.5) and stage._points[1][1] == "TOPRIGHT"
     and stage._points[1][2] == panel and stage._points[1][3] == "TOPLEFT" and stage._points[1][4] == -16,
-    "as high as the panel, at its left, the soft edges of the two just meeting")
+    "as high as the panel, at its left, as far from it as two panels stand apart")
+check(stage.back == nil, "see-through: no ground of its own behind your character")
 check(stage.model:GetAlpha() == 0 and stage:GetFrameLevel() > panel:GetFrameLevel(), "your character unseen until the game has loaded it")
 loaded(stage.model)
 check(stage.model:GetAlpha() == 1 and stage.model._zoom == 0, "then you wearing it, the whole of you")
@@ -1205,7 +1226,7 @@ C_QuestLog.IsQuestFlaggedCompleted = function(id) return quests[id] and quests[i
 W.items[772], W.items[5000] = { name = "Candle", quality = 1 }, { name = "Dusty Letter", quality = 1 }
 W.Fire("QUEST_LOG_UPDATE")
 tip:Fill({ type = TYPE.Item, id = 772 }, { { "Candle" }, { "Quest Item" } })
-check(row(panel, 2).left == "Stats" and row(panel, 3).left == "Quest Item" and row(panel, 4).kind == "caption" and row(panel, 4).left == "Quest"
+check(row(panel, 2).left == "Info" and row(panel, 3).left == "Quest Item" and row(panel, 4).kind == "caption" and row(panel, 4).left == "Quest"
     and row(panel, 5).left == "Needed for" and row(panel, 5).font == "small" and row(panel, 5).right == "Questlog",
     "an item quests want: a section of its own under the caption Quest; Questlog over where you stand")
 check(row(panel, 6).left == "The Kobold Menace" and row(panel, 6).icon == "active" and row(panel, 6).label == "[2]" and row(panel, 6).lg == 0.82
@@ -1280,6 +1301,41 @@ check(letter and row(panel, letter - 1).left == "A Letter" and row(panel, letter
     "a creature that drops an item that starts a quest you can take: the quest and its level, the item with the ! and how often it drops")
 W.Fire("ADDON_LOADED", "Nothing")
 
+-- Disenchanting (Core's data, the sample: an uncommon weapon of item level 5 to 15 gives 80% 1-2 Lesser Magic
+-- Essence and 20% 1-2 Strange Dust): what its materials bring, at the prices seen, after the cut
+W.items[7001] = { name = "Wolf Blade", quality = 2, level = 10, sell = 50 }
+W.items[10938], W.items[10940] = { name = "Lesser Magic Essence", quality = 2 }, { name = "Strange Dust", quality = 1 }
+local instantBefore = C_Item.GetItemInfoInstant
+C_Item.GetItemInfoInstant = function(id) if id == 7001 then return id, "Weapon", "Swords", "INVTYPE_WEAPON", 1, 2, 7 end end
+C_Item.GetItemInfo = function(id)
+    local item = W.items[id]
+    if item then return item.name, nil, item.quality, item.level, 1, nil, nil, 1, nil, nil, item.sell end
+end
+local blade = { { "Wolf Blade", nil, { 0.12, 1, 0 } }, { "Binds when equipped", nil, nil, nil, LINE.ItemBinding, data = { bonding = 7 } } }
+tip:Fill({ type = TYPE.Item, id = 7001 }, blade)
+local disenchant
+for index = 1, count(panel) do if row(panel, index).left == "Disenchant" then disenchant = index end end
+check(disenchant and row(panel, disenchant).right == "no prices seen" and row(panel, disenchant - 1).left == "Vendor",
+    "an uncommon weapon: under Gold, after the vendor's price, Disenchant; without the materials' prices seen, it says so")
+ns.store.prices[10938], ns.store.prices[10940] = 100, 40
+tip:Fill({ type = TYPE.Item, id = 7001 }, blade)
+check(row(panel, disenchant).right == "125c",
+    "with them: as often and as many as disenchanting gives each, at its lowest price after the cut (80% of 1.5 x 95, 20% of 1.5 x 38)")
+W.alt = true
+tip:Fill({ type = TYPE.Item, id = 7001 }, blade)
+check(row(panel, disenchant + 1).left == "80%  1-2 Lesser Magic Essence" and row(panel, disenchant + 1).right == "95c"
+    and row(panel, disenchant + 2).left == "20%  1-2 Strange Dust" and row(panel, disenchant + 2).font == "small",
+    "with Alt each material under it: how often, how many, and what one brings")
+W.alt = false
+W.items[7001].quality = 1
+tip:Fill({ type = TYPE.Item, id = 7002 }, { { "Plain Blade" } })
+tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury" } })
+local plain = false
+for index = 1, count(panel) do if row(panel, index).left == "Disenchant" then plain = true end end
+check(not plain, "an item no row of disenchanting takes (another class, another level): no such row")
+C_Item.GetItemInfoInstant, C_Item.GetItemInfo = instantBefore, nil
+ns.store.prices[10938], ns.store.prices[10940] = nil, nil
+
 -- Your characters' things (Core's characters' data, read in steps since the login) --------------------
 local saved = SaneUIData_Characters
 check(Data.Characters() and #Data.Characters() == 3 and saved.forever.broken and saved.forever.broken[1].what == "Player-70-0000DEAD"
@@ -1298,8 +1354,11 @@ local function find(left)
 end
 W.items[4500] = { name = "Runecloth", quality = 1 }
 tip:Fill({ type = TYPE.Item, id = 4500 }, { { "Runecloth" }, { "Extra", added = true } })
+check(find("Inventory") == nil, "an item your characters have: no section Inventory without Alt")
+W.alt = true
+tip:Fill({ type = TYPE.Item, id = 4500 }, { { "Runecloth" }, { "Extra", added = true } })
 local at = find("Inventory")
-check(at and row(panel, at).kind == "caption", "an item your characters have: a section Inventory")
+check(at and row(panel, at).kind == "caption", "with Alt held, a section Inventory")
 check(row(panel, at + 1).left == "Sane Lunatic" and row(panel, at + 1).right == "Bags 5" and row(panel, at + 1).lr == RAID_CLASS_COLORS.MAGE.r,
     "you first, by your whole name in your class's colour, with where you have it and how many")
 check(row(panel, at + 2).left == "Droopy Fairwind" and row(panel, at + 2).right == "Bags 12  \194\183  Bank 8"
@@ -1307,7 +1366,8 @@ check(row(panel, at + 2).left == "Droopy Fairwind" and row(panel, at + 2).right 
     "then the others by name, each by first name and surname: one that shares your first name is another character")
 check(row(panel, at + 4).left == "Account bank" and row(panel, at + 4).right == "Bank 5" and row(panel, at + 5).left == "Total"
     and row(panel, at + 5).right == "31", "the account's own bank last, then how many in all")
-check(count(panel) == at + 5, "other addons' lines are not shown without Alt")
+check(row(panel, at + 6).left == "IDs" and row(panel, at + 8).left == "Addons" and row(panel, at + 9).left == "Extra",
+    "after it the details and other addons' lines")
 bagItems[0][1].stackCount = 5
 W.Fire("BAG_UPDATE", 0)
 W.Fire("BAG_UPDATE_DELAYED")
@@ -1338,6 +1398,7 @@ tip:Fill({ type = TYPE.Item, id = 4500 }, { { "Runecloth" } })
 at = find("Inventory")
 check(row(panel, at + 1).lr == COLOR.LIGHT[1], "with class colours switched off, the names are light")
 options.classColors = true
+W.alt = false
 W.Fire("PLAYER_LOGOUT")
 check(SaneUIDB.data and SaneUIDB.data.forever.saved.Characters > 0, "at the logout Core notes how much the characters' file holds (a lost file is noticed)")
 
@@ -1347,8 +1408,8 @@ tip.info = { getterName = "GetUnitBuff", getterArgs = { "player", 1 } }
 local fortitude = { { "Power Word: Fortitude" }, { "Increases Stamina by 26.", nil, GOLD, nil, LINE.SpellDescription }, { "17 minutes remaining" } }
 tip:Fill({ type = TYPE.UnitAura, id = 1243 }, fortitude)
 check(row(panel, 1).caps and row(panel, 2).left == "Buff  \194\183  Magic" and head(panel).ab == 1 and head(panel).icon == 1000 + 1243, "a buff: what it is under its name, in blue")
-check(row(panel, 3).left == "Description" and row(panel, 4).prose, "its description, under its name")
-check(shape(panel) == "text text DESCRIPTION text DURATION bar" and row(panel, 6).live == "aura" and head(panel).auraID == 7
+check(row(panel, 3).left == "Info" and row(panel, 4).prose, "its description, under Info")
+check(shape(panel) == "text text INFO text DURATION bar" and row(panel, 6).live == "aura" and head(panel).auraID == 7
     and panel.live.auraEnds == W.clock + 1000, "then under Duration a bar that runs out with it")
 W.alt = true
 tip:Fill({ type = TYPE.UnitAura, id = 1243 }, { { "Power Word: Fortitude" }, { "Increases Stamina by 26.", nil, GOLD, nil, LINE.SpellDescription },
@@ -1392,7 +1453,7 @@ check(row(panel, 2).left == "Debuff" and head(panel).ar == 0.8 and head(panel).a
 auras.player.HARMFUL = nil
 tip.info = nil
 tip:Fill({ type = TYPE.UnitAura, id = 1243 }, fortitude)
-check(shape(panel) == "text DESCRIPTION text DETAILS text" and not head(panel).accent and panel:IsShown(),
+check(shape(panel) == "text INFO text DETAILS text" and not head(panel).accent and panel:IsShown(),
     "a buff the game says nothing more about still gets its name and lines, each kind under its name")
 W.alt = true
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury" } })
@@ -1409,8 +1470,8 @@ tip:Fill({ type = TYPE.Quest, id = 77 }, { { "Wolves Across the Border", nil, GO
     { "Tough Wolf Meat: 8/8", nil, nil, nil, LINE.QuestObjective, data = { completed = true } }, { "3/8 Wolf Paw", nil, nil, nil, LINE.QuestObjective } })
 check(row(panel, 1).caps and head(panel).ag == 0.82 and row(panel, 2).left == "Level 6" and row(panel, 2).label == "\194\183  In progress" and row(panel, 2).lb == 0,
     "a quest: gold, its level in the colour of its difficulty, and where it stands for you")
-check(row(panel, 3).left == "Description" and row(panel, 4).left == "Bring their paws to Eagan." and row(panel, 5).kind == "caption"
-    and row(panel, 5).left == "Objectives", "what it says, under Description, then what there is to do under a caption")
+check(row(panel, 3).left == "Info" and row(panel, 4).left == "Bring their paws to Eagan." and row(panel, 5).kind == "caption"
+    and row(panel, 5).left == "Objectives", "what it says, under Info, then what there is to do under a caption")
 check(row(panel, 6).left == "Tough Wolf Meat" and row(panel, 6).right == "8/8" and row(panel, 6).icon == "check" and row(panel, 6).lg == COLOR.DONE[2],
     "a thing that is done: ticked and green, its count at the right")
 check(row(panel, 7).left == "Wolf Paw" and row(panel, 7).right == "3/8" and row(panel, 7).icon == "box" and count(panel) == 7, "a thing still to do: an empty box")
@@ -1440,47 +1501,56 @@ local plainR, plainG = ns.Mix(COLOR.BACKDROP, COLOR.NEUTRAL, 0.28)
 check(math.abs(colors[2].r - plainR) < 1e-9 and math.abs(colors[2].g - plainG) < 1e-9, "its background the same as a dead unit's")
 
 -- Gathering: how likely a herb or an ore raises your skill (Gathering.lua; Core's data, the sample: Peacebloom
--- needs Herbalism 1, Mithril Deposit Mining 175; both thorium veins give Thorium Ore, the small one from 245)
+-- needs Herbalism 1, yellow from 25, grey from 100; Mithril Deposit Mining 175, 200, 275; both thorium veins give
+-- Thorium Ore, the small one from 245)
 local skillLines = { [182] = { skillID = 182, name = "Herbalism", rank = 160, modifier = 0, maxRank = 225 } }
 C_SkillInfo = { GetSkillLineInfoByID = function(id) return skillLines[id] end }
 W.Fire("SKILL_LINES_CHANGED")
 local CHANCE = { "ff1919", "ff7f3f", "ffd100", "3fbf3f", "7f7f7f" } -- none, orange, yellow, green, grey (the game's)
-local function bands(level)
-    return ("|cff%s%d|r  |cff%s%d|r  |cff%s%d|r  |cff%s%d|r"):format(CHANCE[2], level, CHANCE[3], level + 25, CHANCE[4], level + 50, CHANCE[5], level + 100)
+local function bands(need, yellow, grey)
+    return ("|cff%s%d|r  |cff%s%d|r  |cff%s%d|r  |cff%s%d|r"):format(CHANCE[2], need, CHANCE[3], yellow, CHANCE[4],
+        math.ceil((yellow + grey) / 2), CHANCE[5], grey)
 end
 local function hex(one, at) return ns.Hex(row(one, at).lr, row(one, at).lg, row(one, at).lb) end
-tip:Fill({ type = TYPE.Object }, { { "Peacebloom" }, { "Herbalism", nil, { 0.5, 0.5, 0.5 } } })
-check(shape(panel) == "text GATHERING text" and row(panel, 3).left == "Herbalism" and row(panel, 3).icon == "Interface\\Icons\\Trade_Herbalism"
+tip:Fill({ type = TYPE.Object }, { { "Peacebloom" }, { "Herbalism", nil, { 1, 1, 1 } } })
+check(shape(panel) == "text PROFESSIONS text" and row(panel, 3).left == "Herbalism" and row(panel, 3).icon == "Interface\\Icons\\Trade_Herbalism"
     and row(panel, 3).label == "160/225" and row(panel, 3).labelFont == "small",
-    "a herb: under Gathering its skill, with its icon and your skill after it; the game's own line of the skill is left out")
-check(hex(panel, 3) == CHANCE[5] and row(panel, 3).right == bands(1),
-    "the skill in the colour of your chance (grey: 160 is 100 past what it needs), at the right where each colour begins")
+    "a herb: under Professions its skill, with its icon and your skill after it; the game's own line of the skill is left out")
+check(hex(panel, 3) == CHANCE[5] and row(panel, 3).right == bands(1, 25, 100) and row(panel, 3).right:find("63", 1, true),
+    "the skill in the colour of your chance (grey: 160 is past the herb's grey), at the right where each colour begins: "
+    .. "what it needs, its own yellow and grey, green halfway between")
+tip:Fill({ type = TYPE.Object }, { { "Peacebloom" }, { "Herbalism", nil, { 0.25, 0.75, 0.25 } } })
+check(hex(panel, 3) == CHANCE[4], "where the game gives its line of the skill a colour of difficulty, that colour: it knows best")
 tip:Fill({ type = TYPE.Object }, { { "Mithril Deposit" }, { "Requires Mining 175", nil, { 1, 0.1, 0.1 } } })
 check(row(panel, 3).left == "Mining" and row(panel, 3).label == "Not learned" and hex(panel, 3) == CHANCE[1] and count(panel) == 3,
     "a vein without the profession: red, and not learned")
 skillLines[186] = { skillID = 186, name = "Mining", rank = 170, modifier = 5, maxRank = 225 }
 W.Fire("SKILL_LINES_CHANGED")
-tip:Fill({ type = TYPE.Object }, { { "Mithril Deposit" }, { "Mining", nil, { 1, 0.5, 0.25 } } })
-check(hex(panel, 3) == CHANCE[2] and row(panel, 3).label == "170/225" and row(panel, 3).right == bands(175),
+tip:Fill({ type = TYPE.Object }, { { "Mithril Deposit" }, { "Mining" } })
+check(hex(panel, 3) == CHANCE[2] and row(panel, 3).label == "170/225" and row(panel, 3).right == bands(175, 200, 275),
     "your skill changes: asked anew; with its bonus it reaches what the vein needs, and every time is a point: orange")
 skillLines[186].rank = 205
 W.Fire("SKILL_LINES_CHANGED")
-tip:Fill({ type = TYPE.Object }, { { "Mithril Deposit" }, { "Mining", nil, { 1, 1, 0 } } })
-check(hex(panel, 3) == CHANCE[3], "25 past it: yellow")
+tip:Fill({ type = TYPE.Object }, { { "Mithril Deposit" }, { "Mining" } })
+check(hex(panel, 3) == CHANCE[3], "from its yellow on: yellow")
+skillLines[186].rank = 238
+W.Fire("SKILL_LINES_CHANGED")
+tip:Fill({ type = TYPE.Object }, { { "Mithril Deposit" }, { "Mining" } })
+check(hex(panel, 3) == CHANCE[4], "from halfway to its grey on: green")
 skillLines[186].rank, skillLines[186].modifier = 160, 0
 W.Fire("SKILL_LINES_CHANGED")
-tip:Fill({ type = TYPE.Object }, { { "Mithril Deposit" }, { "Requires Mining 175", nil, { 1, 0.1, 0.1 } } })
-check(hex(panel, 3) == CHANCE[1], "below it: red")
+tip:Fill({ type = TYPE.Object }, { { "Mithril Deposit" }, { "Requires Mining 175" } })
+check(hex(panel, 3) == CHANCE[1], "below what it needs: red")
 W.items[10620] = { name = "Thorium Ore", quality = 1 }
 tip:Fill({ type = TYPE.Item, id = 10620 }, { { "Thorium Ore" } })
-local gathering = find("Gathering")
-check(gathering and row(panel, gathering + 1).left == "Small Thorium Vein" and row(panel, gathering + 1).right == bands(245)
+local gathering = find("Professions")
+check(gathering and row(panel, gathering + 1).left == "Small Thorium Vein" and row(panel, gathering + 1).right == bands(245, 270, 345)
     and row(panel, gathering + 1).icon == "Interface\\Icons\\Trade_Mining" and hex(panel, gathering + 1) == CHANCE[1],
-    "what a vein gives: under Gathering the vein that gives it by its name, the easiest first, in the colour of your chance")
+    "what a vein gives: under Professions the vein that gives it by its name, the easiest first, in the colour of your chance")
 check(row(panel, gathering + 2).left == "Press ALT for +1 more" and row(panel, gathering + 2).font == "small", "and how many more Alt shows")
 W.alt = true
 tip:Fill({ type = TYPE.Item, id = 10620 }, { { "Thorium Ore" } })
-check(row(panel, gathering + 2).left == "Rich Thorium Vein" and row(panel, gathering + 2).right == bands(275), "with Alt, every vein that gives it")
+check(row(panel, gathering + 2).left == "Rich Thorium Vein" and row(panel, gathering + 2).right == bands(275, 300, 375), "with Alt, every vein that gives it")
 W.alt = false
 tip:Fill({ type = TYPE.Object }, { { "Battered Chest" }, { "Locked", nil, { 1, 0.1, 0.1 } } })
 check(shape(panel) == "text text", "a thing in the world the data has no skill for: no section")
@@ -1490,6 +1560,7 @@ tip:Hide()
 check(not panel:IsShown() and tip:GetAlpha() == 1 and tip.left[1]:GetAlpha() == 1, "a hidden tooltip takes its panel with it and is visible again, its lines too")
 check(#panel._points == 0, "and the panel hangs on nothing any more (so no other panel can come to hang on it the wrong way round)")
 tip:Fill(nil, { { "Close", nil, GOLD } })
+check(not hinted(panel), "a button's hint has no line that Alt shows more: there is nothing more")
 check(panel:IsShown() and tip:GetAlpha() == 0 and count(panel) == 1 and row(panel, 1).left == "Close" and not row(panel, 1).caps,
     "a tooltip somebody wrote lines into gets a panel too, its lines as they are written")
 spell()
@@ -1642,9 +1713,9 @@ check(worn:GetAlpha() == 0.85, "and stands back a little")
 shopping:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury", nil, { 0.64, 0.21, 0.93 } }, { "Binds when picked up", nil, nil, nil, LINE.ItemBinding, data = { bonding = 3 } },
     { "", added = true }, { "If you replace this item, the following stat changes will occur:", nil, GOLD, added = true },
     { "|cff00ff00+2.2|r damage per second", added = true }, { "+3 Stamina", added = true } })
-check(head(worn).tag == "|cffffd100EQUIPPED|r" and count(worn) == 4 and row(worn, 2).left == "Stats" and row(worn, 3).left == "|cff00ff00+2.2|r DPS"
+check(head(worn).tag == "|cffffd100EQUIPPED|r" and count(worn) == 4 and row(worn, 2).left == "Info" and row(worn, 3).left == "|cff00ff00+2.2|r DPS"
     and row(worn, 3).font == "row" and row(worn, 4).left == "+3 Stamina" and row(worn, 4).font == "row",
-    "a comparison's changes without the sentence over them, as the game's own lines under Stats, damage per second short")
+    "a comparison's changes without the sentence over them, as the game's own lines under Info, damage per second short")
 
 -- What you wear beside what you look at, at places of the module's own: the game moves its
 -- comparisons about several times a second (one on the other, then the other way round, hidden and

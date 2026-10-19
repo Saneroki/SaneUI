@@ -1,0 +1,20 @@
+set = "Disenchants"
+key = "int"              # the game's row of disenchanting (its client table ItemDisenchantLoot)
+pack = "Items"
+learn = false
+about = "What disenchanting gives: per range of items (their class, quality and item levels) the materials, how often and how many."
+
+[fields]
+class    = { type = "int", min = 0 }      # the items' class (Enum.ItemClass: 2 weapons, 4 armour)
+quality  = { type = "int", min = 0, max = 8 } # Enum.ItemQuality
+levelMin = { type = "int", min = 0 }      # the items' item levels, from and to
+levelMax = { type = "int", min = 0 }
+gives    = { type = "list", of = "tuple", parts = [
+    { name = "item", type = "int" },
+    { name = "chance", type = "number", min = 0, max = 100 }, # in percent per disenchant
+    { name = "min", type = "int", min = 1 },                  # how many, from and to
+    { name = "max", type = "int", min = 1 },
+] }
+
+[index]
+byQuality = "quality"

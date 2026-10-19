@@ -9,13 +9,17 @@ quests each have a layout of their own; everything else gets its name and its li
 opacity can be set, and a switch anchors tooltips to the mouse cursor. An item's panel also shows the
 quests that need it, the professions that use it, which of your characters have it (each by first name and
 surname: *Sane Lunatic*) and what it brings from a vendor and at the auction house, with one clear line on
-what to do with it for gold; Alt shows more. Every section has its name on its divider (*STATS*, *EFFECTS*,
-*QUEST*, *GOLD*, ...). What other addons write into a tooltip, wherever they write it, stands in one section of
-its own at the end, *Addons*, shown while Alt is held, never among the panel's own lines. Where a thing has a
-3D model (a creature, a player, a mount, a pet) it stands in the picture's place; over a piece of gear, Alt
-shows your own character wearing it beside the panel, turning slowly. A herb or an ore, and what it gives,
-show how likely gathering it raises your skill, in the game's orange, yellow, green and grey. The quest and
-gathering facts are Sane UI's database (Core's data framework), which the panels only read.
+what to do with it for gold, what its materials bring if you disenchant it, and with Alt the price to post
+it at. Every section has its name on its divider, in the divider's own quiet grey (*INFO*, *QUEST*, *GOLD*,
+...); a thing's own lines (its numbers, what it does, its description, its durability) are one section,
+*Info*. A tiny line at the bottom says that Alt shows more: the technical details, which of your characters
+have the item (*Inventory*), and what other addons write into a tooltip, wherever they write it, in one
+section of its own at the end, *Addons*, never among the panel's own lines. Where a thing has a 3D model (a
+creature, a player, a mount, a pet) it stands in the picture's place; over a piece of gear, Alt shows your
+own character wearing it beside the panel, turning slowly. A herb or an ore, and what it gives, show under
+*Professions* how likely gathering it raises your skill, in the game's orange, yellow, green and grey. The
+quest, gathering and disenchanting facts are Sane UI's database (Core's data framework), which the panels
+only read.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Tooltips* under *Sane UI* in the game's addon list. Switched
@@ -37,23 +41,29 @@ gathering facts are Sane UI's database (Core's data framework), which the panels
 
   | Tooltip | In its panel |
   |---|---|
-  | **Item** | *Equipped* over the name on what you wear in a comparison. Name in the colour of its quality; under it, small and grey: kind and slot (what it is, for a thing that is not worn: *Trade Goods · Cloth*) and at the right the level it needs (red while yours is lower) and under it, also at the right, what else it asks of you: a class (*Classes: Mage*), a profession's skill (*Requires Tailoring (75)*), a reputation (red while you lack it); icon with the item's level under it (a mount's or a pet's item: its 3D model). Then its own lines, each kind in a section under its name: **Stats** (a weapon's damage per second large, its hit and speed smaller in the same line, *3.2 DPS · 1 - 3 dmg · 2.00 spd*, or an armour's armour, then its plain lines: *+5 Agility*, *Unique*), **Effects** (what it does, the game's green: *Equip:*, *Use:*, *Chance on hit:*), **Set** (the set it belongs to: its name, its pieces and its bonuses), **Description** (what is told about it, the game's gold); **Durability** as a small bar. **Quest** (a section under its caption): *Starts* and the quest it starts, then *Needed for* and the quests that need it (each heading with *Questlog* at the right, over the words that say where you stand: *Not yet* is not yet in your quest log); each with its level small after its name and, at a glance, where you stand with it: *In log* with the ? and your count (*In log 1/4*, gold, green when complete), *Available* with the ! (you can take it now), *Not yet* dim (your level, a quest to do first), *Done* with a tick, grey; first those in your log, then to take, for later, done; without Alt three of those not in your log and *Press ALT for +2 more*. A quest for another class, race or side, or closed to you, is left out. Then, for a trade good, **Professions** (a section under its caption): *Used in* and the professions that use it, with their icons (by the item's kind). Then, for what a herb or an ore gives, **Gathering** (see *Gathering* below). Then **Inventory** (see *Inventory* below): which of your characters have it and where. Then **Gold** (see *Gold* below), its first row how it binds, short as players write it (*BoP*, *BoE*, *BoU*, *BoA*, *WuE*, *Soulbound*, *Quest*; red until it is bound to you), and at the right whether you have its look (*Uncollected*, *Look known*); with Alt, last, other addons' lines under *Addons*. Each section is there only when something is known for it. Whatever you cannot use is red, as the game colours it. What you wear beside an item (a comparison) has its changes under *Stats* and none of the sections from data, only its vendor price for one under *Gold* (and, with Alt, other addons' lines under *Addons*) |
+  | **Item** | *Equipped* over the name on what you wear in a comparison. Name in the colour of its quality; under it, small and grey: kind and slot (what it is, for a thing that is not worn: *Trade Goods · Cloth*) and at the right the level it needs (red while yours is lower) and under it, also at the right, what else it asks of you: a class (*Classes: Mage*), a profession's skill (*Requires Tailoring (75)*), a reputation (red while you lack it); icon with the item's level under it (a mount's or a pet's item: its 3D model). Then its own lines under **Info**, in the game's colours: a weapon's damage per second large, its hit and speed smaller in the same line (*3.2 DPS · 1 - 3 dmg · 2.00 spd*), or an armour's armour; its plain lines (*+5 Agility*, *Unique*), what it does (the game's green: *Equip:*, *Use:*, *Chance on hit:*), what is told about it (the game's gold); last its durability as a bar with *Durability* at its left and *61 / 120* at its right inside, flat with round corners like a unit's health bar. The set it belongs to (its name, its pieces and its bonuses) under **Set**. **Quest** (a section under its caption): *Starts* and the quest it starts, then *Needed for* and the quests that need it (each heading with *Questlog* at the right, over the words that say where you stand: *Not yet* is not yet in your quest log); each with its level small after its name and, at a glance, where you stand with it: *In log* with the ? and your count (*In log 1/4*, gold, green when complete), *Available* with the ! (you can take it now), *Not yet* dim (your level, a quest to do first), *Done* with a tick, grey; first those in your log, then to take, for later, done; without Alt three of those not in your log and *Press ALT for +2 more*. A quest for another class, race or side, or closed to you, is left out. Then, for a trade good, **Professions** (a section under its caption): *Used in* and the professions that use it, with their icons (by the item's kind), and for what a herb or an ore gives, the node that gives it (see *Gathering* below). With Alt, **Inventory** (see *Inventory* below): which of your characters have it and where. Then **Gold** (see *Gold* below), its first row how it binds, short as players write it (*BoP*, *BoE*, *BoU*, *BoA*, *WuE*, *Soulbound*, *Quest*; red until it is bound to you), and at the right whether you have its look (*Uncollected*, *Look known*); with Alt, last, other addons' lines under *Addons*. Each section is there only when something is known for it. Whatever you cannot use is red, as the game colours it. What you wear beside an item (a comparison) has its changes under *Info* and none of the sections from data, only its vendor price for one under *Gold* (and, with Alt, other addons' lines under *Addons*) |
   | **Recipe** | Like an item; what it makes stands under the caption *Creates*, with that thing's icon |
-  | **Spell, pet ability** | Name; what it is (its school in its colour; without one *Healing* in green, *CC* in blue for crowd control, *Physical*, *Utility*) and rank, or *Passive*; icon (a mount's spell: the mount's 3D model). Under **Stats** a strip of what its tooltip states, each caption over its value, in the order the game writes them: its cost (*Mana*, *Rage*, *Energy*; a mana cost also as a share of all yours), *Range*, *Cast*, *Cooldown*; a fact the tooltip does not state has no cell. A spell that hurts or heals has a second strip of what follows from it (see *Spell numbers* below): *DPS* or *HPS*, *Damage* or *Healing* on average, what it does *Per Mana* (the melee swing and the shots: their *Speed*), *Crit* (your chance); again only what is known. Under **Description** the description in the middle, its digits in the panel's colour; any other line of the game's under **Details**. The panel has the colour the game's combat log gives the spell's school (fire, frost, arcane, nature, shadow, holy; physical for one that only hurts), green if it only heals, none otherwise |
+  | **Spell, pet ability** | Name; what it is (its school in its colour; without one *Healing* in green, *CC* in blue for crowd control, *Physical*, *Utility*) and rank, or *Passive*; icon (a mount's spell: the mount's 3D model). Under **Info** a strip of what its tooltip states, each caption over its value, in the order the game writes them: its cost (*Mana*, *Rage*, *Energy*; a mana cost also as a share of all yours), *Range*, *Cast*, *Cooldown*; a fact the tooltip does not state has no cell. A spell that hurts or heals has a second strip of what follows from it (see *Spell numbers* below): *DPS* or *HPS*, *Damage* or *Healing* on average, what it does *Per Mana* (the melee swing and the shots: their *Speed*), *Crit* (your chance); again only what is known. Under them, in the same section, the description in the middle, its digits in the panel's colour; any other line of the game's under **Details**. The panel has the colour the game's combat log gives the spell's school (fire, frost, arcane, nature, shadow, holy; physical for one that only hurts), green if it only heals, none otherwise |
   | **Player** | Name in the colour of the class; the gold dragon round the portrait; close under the name and as large: the guild, with the player's rank in it small after it; then small: the race and the side (*Human · Alliance*), and under it the class line: spec and class with the talent points (*Feral Combat Druid 0/31/20*; yours at once, another player's once inspected), the title (a PvP rank, *Sergeant*), and what is true now (*PvP* in red, *AFK*, *DND* in orange, *Offline*, *Dead*, *Ghost*; then the panel has no colour of its own); a large portrait in the top right corner with the level on its lower edge (the unit's live 3D model, see *3D model in tooltips*). Under **Status** the health bar with the current health and its share in percent written in its middle (over the power bar), and over its lower part the bar of mana, rage or energy (an empty one shows nothing): flat colours, half see-through, round corners; whom the player targets right above the bars (*Target* and the name right after it; *You*, in red, when it is you). The plaque under the portrait says the item level before the level, *iLvl 50 - 60* (yours at once; another player's after the game has inspected them, see below). Buffs and debuffs as small icons. With Alt, last, other addons' lines under *Addons* |
   | **Creature, NPC** | The same; in place of the guild its title (*Bowyer*, *<Flight Master>*: the game's line before its level line) or, for a pet, its owner; in place of the race what it is, its family and its faction (*Beast · Wolf*, *Humanoid · Stormwind*: the faction is the game's line after the level line); on the class line its class (*Warrior*, *Mage*; not for a friendly NPC), its rank in the game's words (*Elite*, *Boss* in gold, *Rare* in silver; a rare elite both), *Tapped* (somebody else's kill), *PvP*, *Dead*; a dead one's panel has no colour of its own. Under **Status**, after its health, what killing it gives you and how many such kills to your next level; then under **Quest** each quest's name in gold with a sword before what you must still kill and a sack before what you must still loot with how often it drops after its name (*33%*), the count at the right (*5/7*; what is done is left out, and a quest with nothing left to do for it, too; the game's own quest lines, and what it drops for your quests from the module's quest facts: see *Quests* below); the quests it takes back and offers you, each name in gold with a line under it: *Turn in* (ready, green) or *In progress* with the game's ?, *Offers* with the game's !, and the quest's level; a dead creature says *Dead* and what it yields (*Skinnable*) on the class line, the game's *Corpse* line is left out; what killing it gives you (*145 XP*) and how many such kills to your next level (*Next level in 12*), see *Experience* below; the game's own dragon from its target frame curls round the portrait: gold for an elite, gold with a great wing for a raid or dungeon boss, silver and winged for a rare or rare elite; a creature without a rank has none. Your quests' lines for it in gold: a sword beside what you must kill it for, a bag beside what you must loot |
-  | **Buff, debuff** | Name; *Buff* or *Debuff* and what takes it away (*Magic*); icon; under **Description** the description, in the middle; under **Duration** a bar that runs out with its time, with how long it still runs and who cast it written inside (flat, round corners). The panel has the game's colour of what takes it away (the colour of a debuff's border: magic, curse, poison, disease); a debuff nothing takes away the game's colour for that, a buff nothing takes away none |
-  | **Quest** | Name; level (in the colour of its difficulty) and where it stands for you (*In progress*, *Ready to turn in*, *Completed*); under **Description** its text; under **Objectives** a box for each thing to do, ticked and green when it is done |
-  | **Herb, ore** (a thing in the world Core's data knows) | As anything else, and under **Gathering** the skill it needs and your chance (see *Gathering* below); the game's own line of the skill is left out |
+  | **Buff, debuff** | Name; *Buff* or *Debuff* and what takes it away (*Magic*); icon; under **Info** the description, in the middle; under **Duration** a bar that runs out with its time, with how long it still runs and who cast it written inside (flat, round corners). The panel has the game's colour of what takes it away (the colour of a debuff's border: magic, curse, poison, disease); a debuff nothing takes away the game's colour for that, a buff nothing takes away none |
+  | **Quest** | Name; level (in the colour of its difficulty) and where it stands for you (*In progress*, *Ready to turn in*, *Completed*); under **Info** its text; under **Objectives** a box for each thing to do, ticked and green when it is done |
+  | **Herb, ore** (a thing in the world Core's data knows) | As anything else, and under **Professions** the skill it needs and your chance (see *Gathering* below); the game's own line of the skill is left out |
   | **Anything else** the game fills from data (things in the world such as a mailbox or a chest, macros, the minimap, currencies, mounts, totems, equipment sets, ...) | Name and its lines under it as the game has them, no sections (an empty line is a small gap); a panel without a colour of its own, whatever colour the name has |
 
   **Sections:** every part of a panel under its header is a section with its name on its divider, in small
-  capitals with a rule after it (*GOLD ———*): there is no divider without a name. An item's *Stats*,
-  *Effects*, *Set*, *Description*, *Creates* (a recipe's thing), *Durability*, *Quest*, *Professions*,
-  *Gathering*, *Inventory*, *Gold*; a herb's or an ore's *Gathering*; a spell's *Stats* and *Description*; a unit's *Status* and *Quest*; a buff's
-  *Description* and *Duration*; a quest's *Description* and *Objectives*; a line of the game's of no other
-  kind under *Details*; Alt's numbers under *IDs*; other addons' lines under *Addons*. Two neighbours of the
-  same kind are one section (the game's empty line between them is a small gap).
+  capitals with a rule after it (*GOLD ———*), the name in the rule's own quiet grey and as thin as the rule
+  (no shadow): there is no divider without a name. A thing's own lines are *Info*: an item's numbers, what it
+  does, its description and its durability; a spell's facts and its description; a buff's and a quest's
+  text. An item's *Set*, *Creates* (a recipe's thing), *Quest*, *Professions* (also the node that gives it),
+  *Inventory* (with Alt), *Gold*; a herb's or an ore's *Professions*; a unit's *Status* and *Quest*; a buff's
+  *Duration*; a quest's *Objectives*; a line of the game's of no other kind under *Details*; Alt's numbers
+  under *IDs*; other addons' lines under *Addons* (with Alt). Two neighbours of the same kind are one section
+  (the game's empty line between them is a small gap).
+
+  **Hold ALT for more info:** at the bottom of every panel of the game's data, while Alt is not held, a tiny
+  line in the middle says so; with Alt it gives way to what Alt shows. A button's hint has none: Alt shows
+  nothing more there.
 
   **Addons:** whatever other addons write into a tooltip (one addon or five) stands, while Alt is held, in one
   section of its own at the very end of every panel, under the caption *Addons*; without Alt it is not shown.
@@ -68,26 +78,30 @@ gathering facts are Sane UI's database (Core's data framework), which the panels
   (the item that teaches it) show their model, a little from the side. The icon stands until the game has
   loaded the model. A piece of gear keeps its icon. **Hold Alt** over a piece you can see on a character (a
   helm, a chest, a weapon, a cloak; not a ring): your own character wearing it, as the game's dressing room
-  puts it on you, stands beside the panel, as high as the panel, on a dark ground like the panel's, turning
+  puts it on you, stands beside the panel, as high as the panel, see-through (no ground of its own), turning
   slowly round (once in ten seconds). It stands at the panel's left; at its right where the left has no room
   on the screen or the comparisons stand there. Let go of Alt and it is gone; where your character cannot
   try the piece on, there is none.
 
-  **Gathering:** on a herb or an ore in the world, under *Gathering*, the skill it needs with its icon, in the
-  colour of your chance of a point for gathering it: orange (a point each time), yellow, green, grey (no
-  points any more), red while your skill is below what it needs or you do not have the profession; after it,
-  small, your skill (*160/225*) or *Not learned*; at the right where each colour begins, each number in its
-  colour (*125  150  175  225*: what it needs, 25 over it, 50 over it, 100 over it). On what herbs and ores
-  give (a herb, an ore, a stone, *Swiftthistle*), the node that gives it by its name the same way, the
-  easiest first; without Alt only that one and *Press ALT for +1 more*. From Core's data (the nodes, the
-  skill each needs, what each gives); a node is known by its name, in English.
+  **Gathering:** on a herb or an ore in the world, under *Professions*, the skill it needs with its icon, in
+  the colour of your chance of a point for gathering it: orange (a point each time), yellow, green, grey (no
+  points any more), red while your skill is below what it needs or you do not have the profession. On the
+  node's own tooltip that is the colour the game gives its line of the skill, where it gives one of its
+  colours of difficulty; else it is worked out. After it, small, your skill (*160/225*) or *Not learned*; at
+  the right where each colour begins, each number in its colour (*125  150  188  225*: what it needs, the
+  node's own yellow, green halfway from there to grey as the game colours a recipe, the node's own grey).
+  On what herbs and ores give (a herb, an ore, a stone, *Swiftthistle*), the node that gives it by its name
+  the same way, in the same section as the professions that use it, the easiest first; without Alt only that
+  one and *Press ALT for +1 more*. From Core's data (the nodes, the skill each needs, where each turns yellow
+  and grey, what each gives); a node is known by its name, in English.
 - **Hold Alt** for the technical details: a small section at the bottom of every panel, *IDs*, with the number of
   the thing at the left (*Spell ID*, *Item ID*, *NPC ID*, *Quest ID*, ...; a player's GUID) and the number
   of its icon at the right (*Icon ID*), and after it other addons' lines (*Addons*). Pressing or letting go
   of Alt redraws the panels that are shown. On an item Alt shows more too: every quest that needs it
-  (without Alt, three of those not in your log), every node that gives it (*Gathering*), under the Gold
-  section where its numbers come from (the lowest price you saw; the cut and the deposit), and over a piece
-  of gear your character wearing it beside the panel.
+  (without Alt, three of those not in your log), every node that gives it (*Professions*), which of your
+  characters have it (*Inventory*), in the Gold section each material of disenchanting it and the price to
+  post it at (*Sell at*), under the advice where its numbers come from (the lowest price you saw; the cut
+  and the deposit), and over a piece of gear your character wearing it beside the panel.
 - **A link clicked in chat** (an item, a spell, a quest): its tooltip opens in the middle of the screen and
   stays. Click it to close it (Esc does too); it has no X. It can still be dragged, and Shift over it
   compares an item with what you wear.
@@ -100,13 +114,15 @@ gathering facts are Sane UI's database (Core's data framework), which the panels
   comparison tooltips; when the item's panel moves (it follows the mouse), they follow once it has
   stood still for a moment.
 - **Gold** (`Kinds/Gold.lua`): the game's own *Sell Price* line is left out; the section at the panel's end
-  has two rows, each only when it is known, and **always for one** of the item, also when you point at a
+  has these rows, each only when it is known, and **always for one** of the item, also when you point at a
   stack, so the two ways compare one to one:
 
   | Row | What it is |
   |---|---|
   | *Vendor* | What a vendor pays for one; on every item (from the game's item data, `GetItemInfo`, also where the tooltip has no price line), *Can't be sold* where no vendor buys it |
   | *AH profit* | What a sale of one at the auction house brings: the lowest price you last saw for it there, less the house's cut (5%). Not for a thing that is bound |
+  | *Disenchant* | What disenchanting it brings, on a weapon or an armour of uncommon quality and up: every material it gives, as often and as many as disenchanting gives it (Core's data, by the item's class, quality and item level), each at the lowest price you saw for it less the house's cut. *no prices seen* while a material has no price yet. With Alt, under it, each material: how often, how many, what one brings (*80%  1-2 Strange Dust*) |
+  | *Sell at* | With Alt, where the item can go to the auction house: the price to post one at, one copper under the lowest offer you saw, never so low that a sale (after the cut) brings less than a vendor pays |
 
   Last, **the advice** in one line: the way that brings the most (the auction house must bring 5% more
   than a vendor, for the trouble). *Sell on the AH for 3s 09c* (green; the lowest price you saw); *Sell to
@@ -148,11 +164,11 @@ gathering facts are Sane UI's database (Core's data framework), which the panels
   highest, the quests it asks first are done and none that closes it is in your log or done. An NPC leaves
   out what the game shows grey for your level (`UnitQuestTrivialLevelRange`). A quest that repeats is
   offered by no NPC in the data: it shows while it is in your quest log.
-- **Inventory** (`Kinds/Inventory.lua`): on an item's panel, under the caption *Inventory*, every character
+- **Inventory** (`Kinds/Inventory.lua`): on an item's panel while Alt is held, under the caption *Inventory*, every character
   of your account that has it, each by its whole name, first name and surname (*Sane Lunatic*, never
   *Sane*), in its class's colour (see *Colour players by their class*): you first, then the others by name,
   the account's own bank last; at the right where and how many (*Bags 12 · Bank 8*, *Worn 1*). With two or
-  more, *Total* and how many in all. Without Alt the first five and *Press ALT for +2 more*. Two characters
+  more, *Total* and how many in all. Two characters
   with the same first name are two characters. Sane UI keeps this itself (Core's data framework: the pack
   *Data: Characters*, which ships nothing and keeps what your characters have in its own saved file, never
   shared): each character's bags, what it wears and its bank as last seen. A character's bags are known
@@ -234,8 +250,8 @@ gathering facts are Sane UI's database (Core's data framework), which the panels
   of the way. The opacity setting is its alpha. Its shape has round corners and an edge that fades out
   softly: it reaches 8 past the panel's sides, and the panel's content stands on its solid part. No
   border, no band behind the name, no boxes. The only dividers are the sections' captions: a section's name
-  stands at the left in small capitals, in the game's gold made darker, and a rule runs on from it to the
-  right side, a dark band two hairlines high with a faint light hairline under it; a hairline is one unit of
+  stands at the left in small capitals, without a shadow, and a rule runs on from it to the right side, one
+  hairline; name and rule in the same quiet grey (`COLOR.RULE`), so they read as one; a hairline is one unit of
   the interface rounded to whole dots of the screen (`Core.Pixels`, by the game's `PixelUtil.GetNearestPixelSize`). An empty line of the
   game's inside a section is a small gap (a row's `space`).
 - **The icon** (or a unit's portrait) is 64 large and stands out over the panel's top right corner, 10 past
@@ -277,9 +293,9 @@ gathering facts are Sane UI's database (Core's data framework), which the panels
 - **Your character beside a piece of gear** (`Panel.Stage`, `head.dress` from `Figures.lua`): which pieces, by
   `C_Item.IsDressableItemByID` (where the client lacks it, by where it is worn, `GetItemInfoInstant`); the
   link from the tooltip (`GetItem`, else `item:<id>`). A frame of its own beside the panel, made the first
-  time Alt is held over a piece: the ground (`Art/soft.tga` with the panel's own dark gradient, without its
-  colour) and on it a `DressUpModel`, 4 in from its edge. As high as the panel, 0.6 of that wide, 16 from the
-  panel (their soft edges just meet); at its left, at its right where `GetLeft` leaves no room or the
+  time Alt is held over a piece, see-through (no ground: your character stands free), and in it a
+  `DressUpModel`, 4 in from its edge. As high as the panel, 0.6 of that wide, 16 from the panel (as far as two
+  panels stand apart); at its left, at its right where `GetLeft` leaves no room or the
   comparisons stand on the left (`Host.CompareSide`). Your character is given once (`SetUnit("player")`) and
   kept while hidden (`SetKeepModelOnHide`); each time the stage is shown, or the piece changes, it is dressed
   in what you wear (`Dress`), the whole of you (`SetPortraitZoom(0)`), and tries the piece on (`TryOn`); a
@@ -292,23 +308,43 @@ gathering facts are Sane UI's database (Core's data framework), which the panels
   `Tooltips.lua`), so Alt, the comparisons and a move on the screen are followed at once; it sets the
   stage's size, side and frame levels only when they change. Its alpha follows the panel's
   (`Panel.Strength`). Not for what you wear beside an item (a comparison), not with the option off.
-- **Gathering** (`Gathering.lua`, `Kinds/Object.lua`): Core's sets *Objects* (a node's name, kind, skill line
-  and the skill it needs; the index `byName`) and *Drops* (`object:<id>`, what it gives, `how = "gather"`;
+- **Gathering** (`Gathering.lua`, `Kinds/Object.lua`): Core's sets *Objects* (a node's name, kind, skill line,
+  the skill it needs, and where it turns yellow and grey, `yellowAt` and `greyAt`; the index `byName`) and *Drops* (`object:<id>`, what it gives, `how = "gather"`;
   the index `byItem`). A thing in the world is found by its name (`Objects:Keys("byName", ...)`: the tooltip
   of a thing in the world gives no ID), what a node gives by `Drops:Keys("byItem", ...)`; each kept by name
   and by item until the data changes (`OnStamp`), nothing kept while the packs are not there; at most 400
   names, then they are forgotten together. Your skill: `C_SkillInfo.GetSkillLineInfoByID` (rank, its bonus
   `modifier`, `maxRank`, the skill's name in your language), kept until `SKILL_LINES_CHANGED`. The chance:
-  red while rank and bonus are below what the node needs, orange from it, yellow from 25 over it, green from
-  50, grey from 100 (by the rank alone). The colours are the game's (`IMPOSSIBLE_`, `DIFFICULT_`, `FAIR_`,
+  red while rank and bonus are below what the node needs, orange from it, yellow from its `yellowAt`, green
+  from halfway between that and its `greyAt` (rounded up: the game's way with a recipe's colours), grey from
+  its `greyAt` (by the rank alone); a node without the two is orange while you can gather it. On a node's
+  own tooltip the colour of the game's line of the skill wins where it is one of the colours of difficulty
+  (`ns.Like`). The rows join the section *Professions* (`Read.Section`). The colours are the game's (`IMPOSSIBLE_`, `DIFFICULT_`, `FAIR_`,
   `EASY_` and `TRIVIAL_DIFFICULTY_COLOR`; where the client lacks them, `QuestDifficultyColors`), the icons
   the professions' (`Trade_Herbalism`, `Trade_Mining`). On a node's tooltip the game's line that names the
   skill (*Herbalism*, *Requires Mining 175*) is left out. The packs are asked for at the login (`Prepare`).
+- **Disenchanting and the price to post** (`Kinds/Gold.lua`): Core's set *Disenchants* (pack *Data: Items*,
+  asked for at the login; keyed by the game's rows of disenchanting: the items' class, quality and item
+  levels, and the materials with their chance per disenchant, in percent, and how many, from and to). An
+  item's row is found by its class (`GetItemInfoInstant`: weapons and armour), quality (uncommon and up) and
+  item level (`GetItemInfo`'s fourth answer) through the index `byQuality`; kept per item until the data
+  changes (at most 400 items). Its value: Σ chance × the average count × the lowest price you saw less the
+  cut (`Gold.Sale`), rounded; none while a material has no price. *Sell at* (`Gold.PostAt`): the lowest
+  offer you saw less one copper (`UNDERCUT`), never under what makes a sale after the cut bring a vendor's
+  price (`ceil(vendor / 0.95)`); with Alt, for a thing that is not bound.
+- **The durability bar** (`Panel.lua`, a row with `inside`): a bar like a unit's health bar (`LiveBar`, 18
+  high, flat and half see-through, under the panel's mask for round corners) with the word and the numbers
+  written inside (`BarText`, left and right); its values are plain, so it is set like any bar.
+- **The line that Alt shows more** (`Read.lua`): the last row of every panel of the game's data while Alt is
+  not held (`row.center`, font `hint`, a little apart); with Alt the details and other addons' lines come in
+  its place.
 - **Fonts and the text size.** The font file is asked of the game's font objects at every draw
   (`GameTooltipText`, `GameTooltipHeaderText`), so the game's language and a UI addon's font are
   followed; the size is set by us (`SetFont`), because it is the player's setting. Name and lines have
   that size, a weapon's number 4 more, subtitles and the strip's values 2 less; another addon's lines,
-  captions and a unit's details 4 less (10 at the default size, as the game's own small font).
+  captions and a unit's details 4 less (10 at the default size, as the game's own small font); the line that
+  Alt shows more 6 less (8 at the default size, never under 7). A section's name has no shadow (the font
+  kind `section`, `flat`: `Pools.lua` sets every other kind's shadow back to its font's own).
 - **Colours.** The panel's colour is the game's own for the thing: `ITEM_QUALITY_COLORS`,
   `RAID_CLASS_COLORS`, the colour of what takes an aura away (`AuraUtil.GetDebuffDisplayInfoTable`, the
   game's for the borders of debuffs), the colours the game's combat log gives the spell schools,
@@ -317,8 +353,9 @@ gathering facts are Sane UI's database (Core's data framework), which the panels
   writes descriptions in), which is made lighter. Every other colour of ours (`ns.COLOR` in `Model.lua`)
   is one of the game's font colours (`HIGHLIGHT_FONT_COLOR`, `NORMAL_FONT_COLOR`, `GRAY_FONT_COLOR`,
   `RED_FONT_COLOR`, `GREEN_FONT_COLOR`, ...) moved part of the way toward another of them (`Tone`): a
-  name and a value nearly white, what is said about a thing light grey, captions the game's gold made
-  darker, what is done green, what you cannot do red. A line's colour is known by being close to one of
+  name and a value nearly white, what is said about a thing light grey, a strip's captions the game's gold
+  made darker, a section's name and its rule a quiet grey (the game's grey toward black), what is done
+  green, what you cannot do red. A line's colour is known by being close to one of
   the game's (`ns.Like`). A colour inside a line is written by `ns.Hex`.
 - **Five pictures are ours,** made by `dev/tools/tooltip-art` (the game has none like them):
   `Art/soft.tga` (64 x 64), a white square with round corners and a soft edge, with which the background
@@ -430,7 +467,7 @@ gathering facts are Sane UI's database (Core's data framework), which the panels
 - **Core's data** (`Doc/guides/data.md`): the module keeps no data of its own but the auction prices it
   notes (`Auction.lua`; the series *Prices* is to take them over). `Quests.lua` reads the sets *Quests* and
   *Drops* (`Prepare` at the login, `OnStamp` redraws the shown panels), `Gathering.lua` the sets *Objects* and
-  *Drops* (the same way), `Kinds/Inventory.lua` reads
+  *Drops* (the same way), `Kinds/Gold.lua` the set *Disenchants* (the same way), `Kinds/Inventory.lua` reads
   `Data.Count`, `Data.Character` and `Data.Characters` (`Data.OnCharacters` redraws). Nil from Core means not
   known: the part is left out.
 - **Not there yet:**
@@ -438,7 +475,8 @@ gathering facts are Sane UI's database (Core's data framework), which the panels
     Economy module (being written) keeps the auction house's prices and their history from what the game
     shows, and the Gold section is to take them from there instead of the last price you saw.
   - A recipe's reagents with icons and counts (they stay the game's one line), drop tables of ore, herbs
-    and skins, what an item disenchants into, spell coefficients: each needs data of the module's own.
+    and skins, spell coefficients: each needs Core's data first. Disenchanting epic items, and uncommon and
+    rare ones of item level 61 and up: Core's data leaves them out until their materials are certain.
   - Gathering for skinning (by the creature's level) and fishing (by the water), and for nodes in other
     languages than English (Core's data has the names in English).
   - Things in the world (a chest, a *Wanted* poster): the quests they start or end, the quest items in them.
@@ -448,17 +486,23 @@ gathering facts are Sane UI's database (Core's data framework), which the panels
   - A spell's school and its numbers in other languages than English (its facts strip works in every
     language, by the game's own sentences).
   - Small pictures the game puts into a tooltip's lines (`AddTexture`).
-- **Tests:** `lua5.1 dev/tests/tooltips.lua` (439 checks), on a few made-up quests, drops and nodes compiled
+- **Tests:** `lua5.1 dev/tests/tooltips.lua` (453 checks), on a few made-up quests, drops, nodes and a row of
+  disenchanting compiled
   into packs on the real schemas (`dev/tests/data/tooltips/`, `dev/tests/data/packs.py`): the quest part before
   and after the packs are there, the Inventory section (whole names, two characters with one first name,
-  the account's bank, the total, bags and the bank read in steps, the bank only while open), other addons'
-  lines only with Alt, in their own section after a buff's bar and a quest's objectives and from right after
+  the account's bank, the total, bags and the bank read in steps, the bank only while open; only with Alt),
+  the line that Alt shows more (in the middle, tiny, gone with Alt, none on a button's hint), a thing's own
+  lines in one section Info, the durability bar with its words inside and round corners, a section's name in
+  its rule's colour without a shadow, other addons' lines only with Alt, in their own section after a buff's bar and a quest's objectives and from right after
   one of the game's lines, every section under its name (a set, a gap inside a section, a hint without
   sections), the 3D models of a mount and a pet (the icon until loaded, a mount's spell, switched off), gear
   with its icon and your character beside the panel with Alt (as high as the panel, at its left or its right,
   unseen until loaded, turning, dressed anew, not asked again each frame, a failed try-on, a ring without,
-  gone without Alt), how it binds and its look in Gold, Gathering on a herb, a vein and what veins give (each
-  colour of the chance, not learned, a bonus, your skill changing, Alt for every node, a chest without); how the lines of each kind are sorted, the
+  gone without Alt, no ground of its own), how it binds and its look in Gold, Disenchant (no prices seen, the
+  value, each material with Alt, none for another class or level), Sell at (one copper under, never under a
+  vendor's price after the cut), Gathering under Professions on a herb, a vein and what veins give (each
+  colour of the chance from the node's own yellow and grey, green halfway, the game's own colour on a node,
+  not learned, a bonus, your skill changing, Alt for every node, a chest without); how the lines of each kind are sorted, the
   strips (only the facts stated, found by the game's sentences, in its order; numbers per cell), the
   description by its kind or by a gold sentence, digits coloured, the palette and the background from the
   game's colours, widths in steps and the right side giving way, a section's name at the left with its
@@ -480,10 +524,10 @@ gathering facts are Sane UI's database (Core's data framework), which the panels
 | `Model.lua` | What a panel shows, as data: head and rows (a strip's cells in its array part), in two copies; the palette (`ns.COLOR`, each colour one of the game's moved toward another), `ns.Hex`, `ns.Like` |
 | `Read.lua` | A tooltip's lines, the tools to sort them into a model and its named sections (`Read.Section`; also `Read.Prose`, `Read.NpcId`), other addons' lines in *Addons*, the details with Alt held; runs each kind's reader by itself |
 | `Figures.lua` | Which 3D model a thing has: a mount's or a pet's for its picture's place (the game's collections); gear, for your character beside the panel |
-| `Gathering.lua` | The section Gathering: how likely gathering a herb or an ore raises your skill, on the node and on what it gives, from Core's data (the sets Objects and Drops) and your skill |
+| `Gathering.lua` | How likely gathering a herb or an ore raises your skill, in the section Professions, on the node and on what it gives, from Core's data (the sets Objects and Drops) and your skill |
 | `Kinds/Item.lua` | Items and recipes; their sections Quest and Professions |
-| `Kinds/Gold.lua` | An item's Gold section: vendor, auction house, the advice |
-| `Kinds/Inventory.lua` | An item's Inventory section: which of your characters have it, where and how many (Core's characters' data) |
+| `Kinds/Gold.lua` | An item's Gold section: how it binds, vendor, auction house, disenchanting (Core's set Disenchants), the price to post, the advice |
+| `Kinds/Inventory.lua` | An item's Inventory section, with Alt: which of your characters have it, where and how many (Core's characters' data) |
 | `Kinds/Spell.lua` | Spells and pet abilities: the strip, the school |
 | `Kinds/Unit.lua` | Players and creatures |
 | `Kinds/Aura.lua` | Buffs and debuffs |
@@ -500,6 +544,12 @@ gathering facts are Sane UI's database (Core's data framework), which the panels
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## History
+- 2026-10-19 — A tiny line at the bottom, *Hold ALT for more info*. A thing's own lines (stats, effects,
+  description, durability) are one section, *Info*. *Inventory* and *Addons* only with Alt. The node that gives
+  a herb or an ore stands under *Professions* (no section *Gathering* any more), each node with its own skills
+  for yellow and grey. Your character beside gear is see-through. The durability bar has its words inside and
+  round corners. A section's name in its rule's quiet grey, without a shadow. *Gold*: what disenchanting
+  brings, and with Alt each material and *Sell at*, the price to post.
 - 2026-10-18 — A player with an alias (Core's `Core.People`, *Set Alias* in the game's menu of a player): the
   alias in the name's place, the character's name small under the guild, then the note if there is one.
 - 2026-10-18 — A piece of gear keeps its icon; with Alt held, your own character wearing it stands beside the

@@ -80,10 +80,18 @@ function Pools.Restyle()
 end
 
 -- A text's font: the game's font object (its shadow and spacing), then the file and size of the
--- kind of text (Panel.lua, FONTS). A font file that does not load leaves the game's own size.
+-- kind of text (Panel.lua, FONTS). A font file that does not load leaves the game's own size. A flat
+-- kind has no shadow (a section's name, as thin as its rule); every other kind has its font's own, also
+-- on a text that was flat before.
 local function Dress(label, kind)
     if kind.object then label:SetFontObject(kind.object) end
     if kind.path then label:SetFont(kind.path, kind.size, kind.flags or "") end
+    if kind.flat then
+        label:SetShadowOffset(0, 0)
+    elseif kind.object and kind.object.GetShadowOffset then
+        local x, y = kind.object:GetShadowOffset()
+        if x then label:SetShadowOffset(x, y) end
+    end
 end
 
 function NewText(panel)
@@ -175,15 +183,13 @@ function Pools.Line(panel, r, g, b, a)
     return line
 end
 
--- A divider from x over width at y: a dark band two hairlines high, and a faint light hairline
--- under it. The dark one shows where the panel is light, the light one where it is dark.
+-- A divider from x over width at y: one hairline in the quiet grey of a section's name beside it
+-- (COLOR.RULE), so the name and its line read as one.
 function Pools.Rule(panel, x, y, width, hairline)
-    local dark = Pools.Line(panel, 0, 0, 0, 0.55)
-    dark:SetPoint("TOPLEFT", panel, "TOPLEFT", x, -y)
-    dark:SetSize(width, 2 * hairline)
-    local light = Pools.Line(panel, 1, 1, 1, 0.10)
-    light:SetPoint("TOPLEFT", panel, "TOPLEFT", x, -(y + 2 * hairline))
-    light:SetSize(width, hairline)
+    local rule = ns.COLOR.RULE
+    local line = Pools.Line(panel, rule[1], rule[2], rule[3], 1)
+    line:SetPoint("TOPLEFT", panel, "TOPLEFT", x, -y)
+    line:SetSize(width, hairline)
 end
 
 function NewIcon(panel)

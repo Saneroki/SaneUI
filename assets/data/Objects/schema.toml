@@ -9,6 +9,8 @@ name       = { type = "text" }
 kind       = { type = "enum", values = ["chest", "herb", "ore", "mailbox", "quest", "book", "door", "other"] }
 skill      = { type = "ref", set = "SkillLines" }  # the skill it needs, and from which level (herbalism 150)
 skillLevel = { type = "int", min = 0 }
+yellowAt   = { type = "int", min = 0 }   # gathering it turns yellow from this skill (orange from skillLevel)
+greyAt     = { type = "int", min = 0 }   # and grey (no more points) from this one
 
 [index]
 byKind = "kind"

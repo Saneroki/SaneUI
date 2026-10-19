@@ -333,9 +333,9 @@ end
 Read.Added = Added
 
 -- The name of the section a line of the game's belongs in, where the kind has no names of its own:
--- a description, or the details.
+-- a description is the thing's own (Info), anything else the details.
 function Read.Named(line)
-    return Read.IsProse(line) and TEXT.DESCRIPTION or TEXT.DETAILS
+    return Read.IsProse(line) and TEXT.INFO or TEXT.DETAILS
 end
 
 -- Every line of the game's no reader has shown yet, as rows, each in its section (ctx.name, or
@@ -476,10 +476,15 @@ function ns.Read(tooltip, data, model, options)
         return false
     end
     -- With Alt held, last: the technical details, then, apart from everything of the panel's own,
-    -- other addons' lines
+    -- other addons' lines. Without it, a tiny line at the bottom says that Alt shows more (on a tooltip
+    -- of the game's data: a hint somebody wrote has nothing more to show).
     if IsAltKeyDown() then
         Details()
         Others()
+    elseif data then
+        ctx.gap = true
+        local row = Read.Text("hint", TEXT.MORE_INFO, ASIDE[1], ASIDE[2], ASIDE[3])
+        row.center = true
     end
     return true, Model.Commit(model)
 end

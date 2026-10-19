@@ -472,6 +472,7 @@ function ns.OnLogin()
     end
     ns.Quests.Start(Redraw)
     ns.Gathering.Start(Redraw)
+    ns.Gold.Start(Redraw)
     Core.Data.OnCharacters(Redraw)
     -- A player's item level has come (Inspect.lua): their panel is read anew.
     ns.Inspect.Start(function(guid)

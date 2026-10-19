@@ -80,7 +80,7 @@ the rest.
 
 | Pack (addon) | Sets | Asked for by | Loads |
 | --- | --- | --- | --- |
-| `SaneUI_Data_Items` | Items (with the game's stats and effects), ItemSets | Tooltips, Economy, later the character sheet | first item looked at |
+| `SaneUI_Data_Items` | Items (with the game's stats and effects), ItemSets, Disenchants (per row of the game's table of disenchanting: the materials, how often, how many; Saneroki, 2026-10-19) | Tooltips, Economy, later the character sheet | first item looked at |
 | `SaneUI_Data_Quests` | Quests (name, levels, requirements, giver and taker, objectives and stages, chain, breadcrumbs, rewards; givers, takers, drops, starters and chains as indexes; *Quests*) | Tooltips, Navigation | soon after login |
 | `SaneUI_Data_World` | NPCs (stats, abilities, buffs, services: *Creatures*), CreatureSpells, Objects, Zones, Travel, Places, Drops (counts: *Drop rates and gathering*) | Tooltips, Navigation | soon after login |
 | `SaneUI_Data_Spawns` | Spawns (what a map shows: NPCs with a service, quest givers and objectives, rares, treasures, objects, herbs and ore), QuestAreas (*Quest areas*), PatrolPaths (the NPCs' paths, Saneroki 2026-10-16) | Navigation | first map opened; with Navigation on, soon after login (the minimap shows from login), so it stays lean |

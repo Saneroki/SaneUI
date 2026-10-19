@@ -211,7 +211,7 @@ prompt 2, which settles what the game gives.
 
 | Pack | Sets and their keys |
 | --- | --- |
-| Items | Items (item ID), ItemSets (item set ID) |
+| Items | Items (item ID), ItemSets (item set ID), Disenchants (the game's row of disenchanting) |
 | Quests | Quests (quest ID) |
 | World | NPCs (creature ID), CreatureSpells (spell ID), Objects (object ID), Zones (map ID), Travel and Places (our own numbers), Drops (`npc:<ID>`, `object:<ID>`, `zone:<map ID>`), Tiles (continent × 4096 + row × 64 + column), Overlays (the game's overlay ID) |
 | Spawns | Spawns (`npc:<ID>`, `object:<ID>`), QuestAreas (`<quest>/<objective>/<stage>/<map>`), PatrolPaths (creature ID) |

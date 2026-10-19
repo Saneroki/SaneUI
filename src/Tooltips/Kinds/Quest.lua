@@ -6,7 +6,7 @@ local _, ns = ...
 --
 --      THE FURY RUNS DEEP
 --      Level 27  ·  In progress                   the level in the colour of its difficulty
---      DESCRIPTION ────────────────────────
+--      INFO ───────────────────────────────
 --      Motley Garmason wants Kam Deepfury's       what the tooltip says
 --      head brought to him at Dun Modr.
 --      OBJECTIVES ─────────────────────────
@@ -33,7 +33,7 @@ local function State(id)
 end
 
 -- What the tooltip says of the quest: its description, all of it
-local function Description() return TEXT.DESCRIPTION end
+local function Description() return TEXT.INFO end
 
 local function Quest(ctx)
     local L, id = ctx.L, ctx.id

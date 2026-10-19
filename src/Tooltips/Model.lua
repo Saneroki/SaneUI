@@ -75,7 +75,8 @@ ns.COLOR = {
     ASIDE = Tone(GREY, WHITE, 0.3),     -- another addon's lines, the details Alt shows, a heading over a list
     NEUTRAL = Tone(GREY, WHITE, 0.2),   -- a panel without a colour of its own; a dead or offline unit's
     SILVER = Tone(GREY, WHITE, 0.6),    -- a rare creature's rank, as its silver dragon
-    CAPTION = Tone(GOLD, BLACK, 0.2),   -- a section's name and a strip's captions: the game's gold, darker
+    CAPTION = Tone(GOLD, BLACK, 0.2),   -- a strip's captions: the game's gold, darker
+    RULE = Tone(GREY, BLACK, 0.2),      -- a section's divider and its name, alike: a quiet grey
     PROSE = Tone(GOLD, WHITE, 0.4),     -- a description, which the game writes in its gold: lighter
     PLAQUE = Tone(GOLD, WHITE, 0.75),   -- words on the gold plaque of a level (Panel.lua): almost white
     DONE = Tone(GREEN, GREY, 0.2),      -- an objective that is done, a quest to turn in, a good price
@@ -103,7 +104,7 @@ end
 --  The two copies
 -------------------------------------------------------------------------------
 local ROW = { "kind", "font", "left", "right", "lr", "lg", "lb", "rr", "rg", "rb", "space", "label", "labelFont", "icon",
-    "iconRight", "indent", "caps", "prose", "live", "value", "max", "flush", "short", "br", "bg", "bb", "points" }
+    "iconRight", "indent", "caps", "prose", "live", "value", "max", "flush", "short", "br", "bg", "bb", "points", "center" }
 local HEAD = { "tag", "compared", "accent", "ar", "ag", "ab", "icon", "portrait", "badge", "badgeR", "badgeG", "badgeB",
     "dragon", "unit", "guid", "power", "hasTarget", "hasAuras", "auraUnit", "auraID", "numbers",
     "model", "modelKind", "modelZoom", "modelTurn", "dress" }

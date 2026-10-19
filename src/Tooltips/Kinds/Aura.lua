@@ -6,7 +6,7 @@ local _, ns = ...
 --
 --      POWER WORD: FORTITUDE           [icon]
 --      Buff  ·  Magic                             what it is, and what takes it away
---      DESCRIPTION ────────────────────────
+--      INFO ───────────────────────────────
 --      Increases Stamina by 26.                   its numbers in the panel's colour
 --      DURATION ───────────────────────────
 --      [ 17 minutes remaining  by Somniferie ]    a bar that runs out with its time; inside it

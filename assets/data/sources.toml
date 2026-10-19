@@ -13,3 +13,15 @@ about = "Written by people: hand-made sets and the fixes."
 kind = "batch"
 game = "forever"
 about = "The quest facts the Tooltips module shipped in its own file before the data framework (givers, takers, requirements, the items quests ask for, what creatures drop for them, chances in whole percent with 0 for under one), taken in once."
+
+[1]
+kind = "batch"
+game = "forever"
+build = 70245
+about = "Herb and ore nodes: the original game's node types, one entry per name, each with the skill Forever's client asks for it (its lock table), where gathering it turns yellow and grey (Forever's own where its nodes carry it, else the original game's rule: 25 and 100 over its skill there), and the items it gives. Unverified, but for Forever's own new nodes."
+
+[2]
+kind = "batch"
+game = "forever"
+build = 70245
+about = "Disenchanting: for each row of Forever's client table of disenchanting (an item's class, quality and item levels), the materials the original game gives for it, with their chances and counts. Unverified."

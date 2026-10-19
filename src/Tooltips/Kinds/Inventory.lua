@@ -14,19 +14,17 @@ local _, ns = ...
 --      Account bank                     Bank 5
 --      Total                                26    with two or more
 --
---  Without Alt the first five, and how many more Alt shows. Nothing until Core
---  has read the characters (the pack Characters loaded), nothing for an item
---  none of them has.
+--  Only while Alt is held. Nothing until Core has read the characters (the pack
+--  Characters loaded), nothing for an item none of them has.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Data = Core.Data
 local Read, TEXT = ns.Reader, ns.TEXT
 local COLOR = ns.COLOR
-local DETAIL, LIGHT, ASIDE = COLOR.DETAIL, COLOR.LIGHT, COLOR.ASIDE
+local DETAIL, LIGHT = COLOR.DETAIL, COLOR.LIGHT
 local Inventory = {}
 ns.Inventory = Inventory
 
-local SHOWN = 5 -- owners shown without Alt
 local ACCOUNT = "account" -- the account's own bank in a count (Data.Count)
 local PLACES = { { "bags", TEXT.BAGS }, { "bank", TEXT.BANK }, { "worn", TEXT.WORN } }
 local JOIN = { "%s", "%s  \194\183  %s", "%s  \194\183  %s  \194\183  %s" }
@@ -60,15 +58,10 @@ local function Where(row, places)
 end
 
 -- One read's tally, used again
-local seen = { rows = 0, hidden = 0, owners = 0 }
+local seen = { rows = 0 }
 
--- An owner's row, or only counted while Alt is not held and enough are shown
+-- An owner's row
 local function Owner(key, places)
-    seen.owners = seen.owners + 1
-    if not seen.alt and seen.rows >= SHOWN then
-        seen.hidden = seen.hidden + 1
-        return
-    end
     seen.rows = seen.rows + 1
     local name, r, g, b = TEXT.ACCOUNT_BANK, LIGHT[1], LIGHT[2], LIGHT[3]
     if key ~= ACCOUNT then
@@ -82,21 +75,18 @@ local function Owner(key, places)
 end
 
 function Inventory.Section(ctx, id)
+    if not IsAltKeyDown() then return end
     local count = id and Data.Count(id)
     if not count then return end
     Read.Caption(TEXT.INVENTORY)
-    seen.rows, seen.hidden, seen.owners = 0, 0, 0
-    seen.alt, seen.colors = IsAltKeyDown(), ctx.options.classColors
+    seen.rows, seen.colors = 0, ctx.options.classColors
     local me = Core.charKey
     if me and type(count[me]) == "table" then Owner(me, count[me]) end
     for _, who in ipairs(Data.Characters() or NONE) do
         if who.key ~= me and type(count[who.key]) == "table" then Owner(who.key, count[who.key]) end
     end
     if type(count[ACCOUNT]) == "table" then Owner(ACCOUNT, count[ACCOUNT]) end
-    if seen.hidden > 0 then
-        Read.Text("small", Read.Memo("ownedMore", TEXT.ALT_MORE, seen.hidden), ASIDE[1], ASIDE[2], ASIDE[3]).indent = 20
-    end
-    if seen.owners > 1 then
+    if seen.rows > 1 then
         local row = Read.Text("sub", TEXT.TOTAL, DETAIL[1], DETAIL[2], DETAIL[3])
         row.right, row.rr, row.rg, row.rb = Read.Memo("ownedTotal", "%d", count.total), LIGHT[1], LIGHT[2], LIGHT[3]
     end

@@ -1,47 +1,53 @@
-{"key":324,"since":0,"src":["hand"],"name":"Small Thorium Vein","kind":"ore","skill":186,"skillLevel":245}
-{"key":1610,"since":0,"src":["hand"],"name":"Incendicite Mineral Vein","kind":"ore","skill":186,"skillLevel":65}
-{"key":1617,"since":0,"src":["hand"],"name":"Silverleaf","kind":"herb","skill":182,"skillLevel":1}
-{"key":1618,"since":0,"src":["hand"],"name":"Peacebloom","kind":"herb","skill":182,"skillLevel":1}
-{"key":1619,"since":0,"src":["hand"],"name":"Earthroot","kind":"herb","skill":182,"skillLevel":15}
-{"key":1620,"since":0,"src":["hand"],"name":"Mageroyal","kind":"herb","skill":182,"skillLevel":50}
-{"key":1621,"since":0,"src":["hand"],"name":"Briarthorn","kind":"herb","skill":182,"skillLevel":70}
-{"key":1622,"since":0,"src":["hand"],"name":"Bruiseweed","kind":"herb","skill":182,"skillLevel":100}
-{"key":1623,"since":0,"src":["hand"],"name":"Wild Steelbloom","kind":"herb","skill":182,"skillLevel":115}
-{"key":1624,"since":0,"src":["hand"],"name":"Kingsblood","kind":"herb","skill":182,"skillLevel":125}
-{"key":1628,"since":0,"src":["hand"],"name":"Grave Moss","kind":"herb","skill":182,"skillLevel":120}
-{"key":1731,"since":0,"src":["hand"],"name":"Copper Vein","kind":"ore","skill":186,"skillLevel":1}
-{"key":1732,"since":0,"src":["hand"],"name":"Tin Vein","kind":"ore","skill":186,"skillLevel":65}
-{"key":1733,"since":0,"src":["hand"],"name":"Silver Vein","kind":"ore","skill":186,"skillLevel":75}
-{"key":1734,"since":0,"src":["hand"],"name":"Gold Vein","kind":"ore","skill":186,"skillLevel":155}
-{"key":1735,"since":0,"src":["hand"],"name":"Iron Deposit","kind":"ore","skill":186,"skillLevel":125}
-{"key":2040,"since":0,"src":["hand"],"name":"Mithril Deposit","kind":"ore","skill":186,"skillLevel":175}
-{"key":2041,"since":0,"src":["hand"],"name":"Liferoot","kind":"herb","skill":182,"skillLevel":150}
-{"key":2042,"since":0,"src":["hand"],"name":"Fadeleaf","kind":"herb","skill":182,"skillLevel":160}
-{"key":2043,"since":0,"src":["hand"],"name":"Khadgar's Whisker","kind":"herb","skill":182,"skillLevel":185}
-{"key":2044,"since":0,"src":["hand"],"name":"Wintersbite","kind":"herb","skill":182,"skillLevel":195}
-{"key":2045,"since":0,"src":["hand"],"name":"Stranglekelp","kind":"herb","skill":182,"skillLevel":85}
-{"key":2046,"since":0,"src":["hand"],"name":"Goldthorn","kind":"herb","skill":182,"skillLevel":170}
-{"key":2047,"since":0,"src":["hand"],"name":"Truesilver Deposit","kind":"ore","skill":186,"skillLevel":230}
-{"key":2653,"since":0,"src":["hand"],"name":"Lesser Bloodstone Deposit","kind":"ore","skill":186,"skillLevel":75}
-{"key":2866,"since":0,"src":["hand"],"name":"Firebloom","kind":"herb","skill":182,"skillLevel":205}
-{"key":19903,"since":0,"src":["hand"],"name":"Indurium Mineral Vein","kind":"ore","skill":186,"skillLevel":150}
-{"key":73940,"since":0,"src":["hand"],"name":"Ooze Covered Silver Vein","kind":"ore","skill":186,"skillLevel":75}
-{"key":73941,"since":0,"src":["hand"],"name":"Ooze Covered Gold Vein","kind":"ore","skill":186,"skillLevel":155}
-{"key":123309,"since":0,"src":["hand"],"name":"Ooze Covered Truesilver Deposit","kind":"ore","skill":186,"skillLevel":230}
-{"key":123310,"since":0,"src":["hand"],"name":"Ooze Covered Mithril Deposit","kind":"ore","skill":186,"skillLevel":175}
-{"key":123848,"since":0,"src":["hand"],"name":"Ooze Covered Thorium Vein","kind":"ore","skill":186,"skillLevel":245}
-{"key":142140,"since":0,"src":["hand"],"name":"Purple Lotus","kind":"herb","skill":182,"skillLevel":210}
-{"key":142141,"since":0,"src":["hand"],"name":"Arthas' Tears","kind":"herb","skill":182,"skillLevel":220}
-{"key":142142,"since":0,"src":["hand"],"name":"Sungrass","kind":"herb","skill":182,"skillLevel":230}
-{"key":142143,"since":0,"src":["hand"],"name":"Blindweed","kind":"herb","skill":182,"skillLevel":235}
-{"key":142144,"since":0,"src":["hand"],"name":"Ghost Mushroom","kind":"herb","skill":182,"skillLevel":245}
-{"key":142145,"since":0,"src":["hand"],"name":"Gromsblood","kind":"herb","skill":182,"skillLevel":250}
-{"key":165658,"since":0,"src":["hand"],"name":"Dark Iron Deposit","kind":"ore","skill":186,"skillLevel":230}
-{"key":175404,"since":0,"src":["hand"],"name":"Rich Thorium Vein","kind":"ore","skill":186,"skillLevel":275}
-{"key":176583,"since":0,"src":["hand"],"name":"Golden Sansam","kind":"herb","skill":182,"skillLevel":260}
-{"key":176584,"since":0,"src":["hand"],"name":"Dreamfoil","kind":"herb","skill":182,"skillLevel":270}
-{"key":176586,"since":0,"src":["hand"],"name":"Mountain Silversage","kind":"herb","skill":182,"skillLevel":280}
-{"key":176587,"since":0,"src":["hand"],"name":"Plaguebloom","kind":"herb","skill":182,"skillLevel":285}
-{"key":176588,"since":0,"src":["hand"],"name":"Icecap","kind":"herb","skill":182,"skillLevel":290}
-{"key":176589,"since":0,"src":["hand"],"name":"Black Lotus","kind":"herb","skill":182,"skillLevel":300}
-{"key":177388,"since":0,"src":["hand"],"name":"Ooze Covered Rich Thorium Vein","kind":"ore","skill":186,"skillLevel":275}
+{"key":324,"since":0,"src":[1],"name":"Small Thorium Vein","kind":"ore","skill":186,"skillLevel":245,"yellowAt":270,"greyAt":345}
+{"key":1610,"since":0,"src":[1],"name":"Incendicite Mineral Vein","kind":"ore","skill":186,"skillLevel":65,"yellowAt":90,"greyAt":165}
+{"key":1617,"since":0,"src":[1],"name":"Silverleaf","kind":"herb","skill":182,"skillLevel":1,"yellowAt":25,"greyAt":100}
+{"key":1618,"since":0,"src":[1],"name":"Peacebloom","kind":"herb","skill":182,"skillLevel":1,"yellowAt":25,"greyAt":100}
+{"key":1619,"since":0,"src":[1],"name":"Earthroot","kind":"herb","skill":182,"skillLevel":15,"yellowAt":40,"greyAt":115}
+{"key":1620,"since":0,"src":[1],"name":"Mageroyal","kind":"herb","skill":182,"skillLevel":50,"yellowAt":75,"greyAt":150}
+{"key":1621,"since":0,"src":[1],"name":"Briarthorn","kind":"herb","skill":182,"skillLevel":70,"yellowAt":95,"greyAt":170}
+{"key":1622,"since":0,"src":[1],"name":"Bruiseweed","kind":"herb","skill":182,"skillLevel":100,"yellowAt":125,"greyAt":200}
+{"key":1623,"since":0,"src":[1],"name":"Wild Steelbloom","kind":"herb","skill":182,"skillLevel":115,"yellowAt":140,"greyAt":215}
+{"key":1624,"since":0,"src":[1],"name":"Kingsblood","kind":"herb","skill":182,"skillLevel":125,"yellowAt":150,"greyAt":225}
+{"key":1628,"since":0,"src":[1],"name":"Grave Moss","kind":"herb","skill":182,"skillLevel":120,"yellowAt":145,"greyAt":220}
+{"key":1731,"since":0,"src":[1],"name":"Copper Vein","kind":"ore","skill":186,"skillLevel":1,"yellowAt":25,"greyAt":100}
+{"key":1732,"since":0,"src":[1],"name":"Tin Vein","kind":"ore","skill":186,"skillLevel":65,"yellowAt":90,"greyAt":165}
+{"key":1733,"since":0,"src":[1],"name":"Silver Vein","kind":"ore","skill":186,"skillLevel":75,"yellowAt":100,"greyAt":175}
+{"key":1734,"since":0,"src":[1],"name":"Gold Vein","kind":"ore","skill":186,"skillLevel":155,"yellowAt":180,"greyAt":255}
+{"key":1735,"since":0,"src":[1],"name":"Iron Deposit","kind":"ore","skill":186,"skillLevel":125,"yellowAt":150,"greyAt":225}
+{"key":2040,"since":0,"src":[1],"name":"Mithril Deposit","kind":"ore","skill":186,"skillLevel":175,"yellowAt":200,"greyAt":275}
+{"key":2041,"since":0,"src":[1],"name":"Liferoot","kind":"herb","skill":182,"skillLevel":150,"yellowAt":175,"greyAt":250}
+{"key":2042,"since":0,"src":[1],"name":"Fadeleaf","kind":"herb","skill":182,"skillLevel":160,"yellowAt":185,"greyAt":260}
+{"key":2043,"since":0,"src":[1],"name":"Khadgar's Whisker","kind":"herb","skill":182,"skillLevel":185,"yellowAt":210,"greyAt":285}
+{"key":2044,"since":0,"src":[1],"name":"Wintersbite","kind":"herb","skill":182,"skillLevel":195,"yellowAt":220,"greyAt":295}
+{"key":2045,"since":0,"src":[1],"name":"Stranglekelp","kind":"herb","skill":182,"skillLevel":85,"yellowAt":110,"greyAt":185}
+{"key":2046,"since":0,"src":[1],"name":"Goldthorn","kind":"herb","skill":182,"skillLevel":170,"yellowAt":195,"greyAt":270}
+{"key":2047,"since":0,"src":[1],"name":"Truesilver Deposit","kind":"ore","skill":186,"skillLevel":230,"yellowAt":255,"greyAt":330}
+{"key":2653,"since":0,"src":[1],"name":"Lesser Bloodstone Deposit","kind":"ore","skill":186,"skillLevel":75,"yellowAt":100,"greyAt":175}
+{"key":2866,"since":0,"src":[1],"name":"Firebloom","kind":"herb","skill":182,"skillLevel":205,"yellowAt":230,"greyAt":305}
+{"key":19903,"since":0,"src":[1],"name":"Indurium Mineral Vein","kind":"ore","skill":186,"skillLevel":150,"yellowAt":175,"greyAt":250}
+{"key":73940,"since":0,"src":[1],"name":"Ooze Covered Silver Vein","kind":"ore","skill":186,"skillLevel":75,"yellowAt":100,"greyAt":175}
+{"key":73941,"since":0,"src":[1],"name":"Ooze Covered Gold Vein","kind":"ore","skill":186,"skillLevel":155,"yellowAt":180,"greyAt":255}
+{"key":123309,"since":0,"src":[1],"name":"Ooze Covered Truesilver Deposit","kind":"ore","skill":186,"skillLevel":230,"yellowAt":255,"greyAt":330}
+{"key":123310,"since":0,"src":[1],"name":"Ooze Covered Mithril Deposit","kind":"ore","skill":186,"skillLevel":175,"yellowAt":200,"greyAt":275}
+{"key":123848,"since":0,"src":[1],"name":"Ooze Covered Thorium Vein","kind":"ore","skill":186,"skillLevel":245,"yellowAt":270,"greyAt":345}
+{"key":142140,"since":0,"src":[1],"name":"Purple Lotus","kind":"herb","skill":182,"skillLevel":210,"yellowAt":235,"greyAt":310}
+{"key":142141,"since":0,"src":[1],"name":"Arthas' Tears","kind":"herb","skill":182,"skillLevel":220,"yellowAt":245,"greyAt":320}
+{"key":142142,"since":0,"src":[1],"name":"Sungrass","kind":"herb","skill":182,"skillLevel":230,"yellowAt":255,"greyAt":330}
+{"key":142143,"since":0,"src":[1],"name":"Blindweed","kind":"herb","skill":182,"skillLevel":235,"yellowAt":260,"greyAt":335}
+{"key":142144,"since":0,"src":[1],"name":"Ghost Mushroom","kind":"herb","skill":182,"skillLevel":245,"yellowAt":270,"greyAt":345}
+{"key":142145,"since":0,"src":[1],"name":"Gromsblood","kind":"herb","skill":182,"skillLevel":250,"yellowAt":275,"greyAt":350}
+{"key":165658,"since":0,"src":[1],"name":"Dark Iron Deposit","kind":"ore","skill":186,"skillLevel":230,"yellowAt":255,"greyAt":330}
+{"key":175404,"since":0,"src":[1],"name":"Rich Thorium Vein","kind":"ore","skill":186,"skillLevel":275,"yellowAt":300,"greyAt":375}
+{"key":176583,"since":0,"src":[1],"name":"Golden Sansam","kind":"herb","skill":182,"skillLevel":260,"yellowAt":285,"greyAt":360}
+{"key":176584,"since":0,"src":[1],"name":"Dreamfoil","kind":"herb","skill":182,"skillLevel":270,"yellowAt":295,"greyAt":370}
+{"key":176586,"since":0,"src":[1],"name":"Mountain Silversage","kind":"herb","skill":182,"skillLevel":280,"yellowAt":305,"greyAt":380}
+{"key":176587,"since":0,"src":[1],"name":"Plaguebloom","kind":"herb","skill":182,"skillLevel":285,"yellowAt":310,"greyAt":385}
+{"key":176588,"since":0,"src":[1],"name":"Icecap","kind":"herb","skill":182,"skillLevel":290,"yellowAt":315,"greyAt":390}
+{"key":176589,"since":0,"src":[1],"name":"Black Lotus","kind":"herb","skill":182,"skillLevel":300,"yellowAt":325,"greyAt":400}
+{"key":177388,"since":0,"src":[1],"name":"Ooze Covered Rich Thorium Vein","kind":"ore","skill":186,"skillLevel":275,"yellowAt":300,"greyAt":375}
+{"key":180215,"since":0,"src":[1],"name":"Hakkari Thorium Vein","kind":"ore","skill":186,"skillLevel":275,"yellowAt":300,"greyAt":375}
+{"key":181068,"since":0,"src":[1],"name":"Small Obsidian Chunk","kind":"ore","skill":186,"skillLevel":305,"yellowAt":330,"greyAt":405}
+{"key":181069,"since":0,"src":[1],"name":"Large Obsidian Chunk","kind":"ore","skill":186,"skillLevel":305,"yellowAt":330,"greyAt":405}
+{"key":562111,"since":0,"src":[1],"name":"Poor Copper Vein","kind":"ore","skill":186,"skillLevel":1,"yellowAt":10,"greyAt":20}
+{"key":656160,"since":0,"src":[1],"name":"Wilted Peacebloom","kind":"herb","skill":182,"skillLevel":1,"yellowAt":10,"greyAt":20}
+{"key":656161,"since":0,"src":[1],"name":"Stunted Silverleaf","kind":"herb","skill":182,"skillLevel":1,"yellowAt":10,"greyAt":20}

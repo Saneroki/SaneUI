@@ -6,13 +6,12 @@ local _, ns = ...
 --
 --      FIREBALL                        [icon]
 --      Fire  ·  Rank 1                            what it is: its school, or Healing, CC,
---      STATS ──────────────────────────────       Physical, Utility; the rank
+--      INFO ───────────────────────────────       Physical, Utility; the rank
 --        MANA     |  RANGE  |   CAST              what its tooltip states, in the order the
 --      30 (6%)    |  35 yd  |  1.5 sec            game writes it: cost, range, cast, cooldown
 --        DPS   | DAMAGE | PER MANA |  CRIT         and for one that hurts or heals, what follows
---        8.4   |   21   |   0.68   |  6.2%        from it (Numbers.lua)
---      DESCRIPTION ────────────────────────
---      Hurls a fiery ball that causes 16 to       the description, its numbers in the
+--        8.4   |   21   |   0.68   |  6.2%        from it (Numbers.lua); under them, in the
+--      Hurls a fiery ball that causes 16 to       same section, the description, its numbers in the
 --      25 Fire damage ...                         panel's colour; any other line of the
 --                                                 game's under Details (Read.Named)
 --
@@ -162,13 +161,13 @@ local function Spell(ctx)
         Read.Text("sub", Read.Memo("school", "|cff%s%s|r", hex, school[1]), DETAIL[1], DETAIL[2], DETAIL[3])
     end
 
-    -- The facts it states, in the section Stats; its cost also as a share of all your mana
+    -- The facts it states, in the section Info; its cost also as a share of all your mana
     local strip
     for _, key in ipairs(ORDER) do
         local value = facts[key]
         if value then
             if not strip then
-                Read.Section(TEXT.STATS)
+                Read.Section(TEXT.INFO)
                 strip = Read.Row()
                 strip.kind = "strip"
             end
@@ -183,7 +182,7 @@ local function Spell(ctx)
     end
     -- What follows: per second, on average, per point of its cost (a swing: its speed), critical strikes
     if numbers then
-        Read.Section(TEXT.STATS)
+        Read.Section(TEXT.INFO)
         local row = Read.Row()
         row.kind = "strip"
         Read.Cell(row, numbers.heal and TEXT.HPS or TEXT.DPS, Read.Memo("perSecond", "%.1f", numbers.perSecond))

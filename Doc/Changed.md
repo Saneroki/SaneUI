@@ -3,8 +3,42 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 441 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 113 (Navigation), 208 (data tools).
-A game restart takes it in (a new addon, Navigation; new files in Core's, Social's and Tooltips' TOCs, key bindings).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 453 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 113 (Navigation), 208 (data tools).
+A game restart takes it in (a new addon, Navigation; new files in Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
+
+### Tooltips: Info, Alt for more, disenchanting and the price to post; careful gathering data (Saneroki, 2026-10-19)
+- **One section Info** for a thing's own lines: an item's numbers, effects, description and durability; a
+  spell's strips and description; a buff's and a quest's text (`TEXT.INFO`; *Stats*, *Effects*, *Description*
+  and the section *Durability* are gone). A set's lines stay under *Set*.
+- **Hold ALT for more info:** a tiny line (font kind `hint`) in the middle at the bottom of every panel of the
+  game's data while Alt is not held (`Read.lua`). **Inventory** and **Addons** only while Alt is held
+  (Inventory then shows every character: the limit of five is gone).
+- **Gathering joins Professions:** the node that gives a herb or an ore stands under *Professions*, after the
+  professions that use it; a node's own tooltip has its skill under *Professions* too. Each node has its own
+  yellow and grey skill (Core's data); green begins halfway between them, as the game colours a recipe; on
+  a node's tooltip the colour the game gives its line of the skill wins where it is a colour of difficulty.
+- **Your character beside gear** is see-through: no ground behind it.
+- **The durability bar** is like a unit's health bar: 18 high, flat, round corners (the panel's mask), with
+  *Durability* at its left and the numbers at its right inside (`row.inside`).
+- **Section names** in the rule's own quiet grey (`COLOR.RULE`), without a shadow (font kind `section`,
+  `flat`; `Pools.lua` sets every other kind's shadow back); the rule is one hairline in that grey.
+- **Gold:** *Disenchant*, what disenchanting a weapon or armour of uncommon quality and up brings: its
+  materials as often and as many as disenchanting gives them (Core's new set *Disenchants*, by the item's
+  class, quality and item level), each at the lowest price seen less the cut; *no prices seen* while a
+  material lacks one; with Alt each material. With Alt, *Sell at*: the lowest offer less one copper, never
+  so low that a sale brings less than a vendor pays (`Gold.PostAt`, as Economy's plan has it).
+- **Core's data, picked anew** (CLAUDE.md, *Careful data*): the 47 nodes of 2026-10-18 under `hand` are
+  replaced by batch 1: 53 herb and ore node types, one entry per name, the skill each needs as Forever's client
+  asks it (its lock table, build 70245), where each turns yellow and grey (Forever's own for its new nodes,
+  else the original game's rule), and what 51 of them give (`object:<id>` in Drops). The set *Objects* has
+  the fields `yellowAt` and `greyAt`. New set **Disenchants** (pack *Items*, batch 2): 44 rows of Forever's
+  client table of disenchanting with the original game's materials; rows whose materials are not certain
+  (epics, uncommon and rare items of level 61 and up) are left out. Both batches are unverified (sources 1
+  and 2 in `sources.toml`); `Doc/guides/data.md` lists the new set.
+- Tests (453 checks): Info, the hint line, Inventory with Alt, the stage without ground, the durability bar,
+  the captions' colour and shadow, disenchanting (no prices, the value, materials with Alt, another class),
+  Sell at, gathering with the nodes' own ranges and the game's colour. Sample rows in
+  `dev/tests/data/tooltips/` (Objects with their ranges, Disenchants).
 
 ### Navigation: the water cut away, zone-shaped maps, undiscovered parts dark (Saneroki, 2026-10-19)
 - `dev/tools/terrain-art` now also reads the game's terrain files (root ADTs, `<tile key>.adt`) and client

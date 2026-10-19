@@ -8,28 +8,27 @@ local _, ns = ...
 --      Axe · Two-Hand    Requires Level 58        ("Equipped" over it on what you wear); small:
 --                         Classes: Warrior        kind, slot, and at the right the level it
 --                                  iLvl 63    needs (red while too low) and under it what
---      STATS ──────────────────────────────       else it asks of you (a class, a profession's
+--      INFO ───────────────────────────────       else it asks of you (a class, a profession's
 --      53.8 DPS  ·  153 - 256 dmg  ·  3.80 spd    skill).
---      +13 Stamina                                A weapon's damage per second large, its hit
---                                                 and speed small; then its lines, in the
---      EFFECTS ────────────────────────────       game's colours, each kind under its name:
---      Equip: ...                                 Stats (plain), Effects (green), Set (the set
---                                                 it belongs to), Description (gold)
---      DURABILITY ─────────────────────────
---      [====    ] 61 / 120                        its durability as a bar
+--      +13 Stamina                                Its own lines under Info, in the game's
+--      Equip: ...                                 colours: a weapon's damage per second large,
+--      [Durability ====          61 / 120]        its hit and speed small, its numbers, what it
+--                                                 does, its description, its durability as a bar
+--                                                 with the words inside; a set's lines under Set
 --      QUEST ──────────────────────────────       the quest it starts and the quests that need it,
 --      Needed for                                 each with where you stand with it: in your log
 --      [?] The Kobold Menace [2]   In log  1/4    (your count), to take, for later, done
---      PROFESSIONS ────────────────────────       the professions that use it
---      Used in                     Tailoring
---      GATHERING ──────────────────────────       the node that gives it, in the colour of your
---      Peacebloom            1  25  50  100       chance of a point (Gathering.lua)
---      INVENTORY ──────────────────────────       who of your characters has it, and where
---      Sane Lunatic         Bags 12  ·  Bank 8    (Kinds/Inventory.lua)
+--      PROFESSIONS ────────────────────────       the professions that use it; the node that
+--      Used in                       Alchemy      gives it, in the colour of your chance of a
+--      Peacebloom            1  25  62  100       point (Gathering.lua)
+--      INVENTORY ──────────────────────────       with Alt: who of your characters has it, and
+--      Sane Lunatic         Bags 12  ·  Bank 8    where (Kinds/Inventory.lua)
 --      GOLD ───────────────────────────────       how it binds (red until it is bound) and
 --      BoE                       Uncollected      whether you have its look; what one brings
---      Vendor  ·  AH profit                       in, and what to do with it (Kinds/Gold.lua)
---      ADDONS ─────────────────────────────       other addons' lines, small, last (Read.lua)
+--      Vendor  ·  AH profit  ·  Disenchant        in, what its materials bring, and what to do
+--                                                 with it (Kinds/Gold.lua)
+--      ADDONS ─────────────────────────────       with Alt: other addons' lines, small (Read.lua)
+--              Hold ALT for more info             without Alt: a tiny line that Alt shows more
 --
 --  Each section is there only when something is known for it; Alt shows more (every quest, every
 --  character, where the prices come from). A recipe shows the thing it makes under a caption, with
@@ -45,12 +44,7 @@ local LINE = Enum.TooltipDataLineType or {}
 local BIND = Enum.TooltipDataItemBinding or {}
 
 local EQUIP_SLOT, BINDING, SELL_PRICE = LINE.EquipSlot or -1, LINE.ItemBinding or -1, LINE.SellPrice or -1
-local ITEM_LEVEL, NESTED, FLAVOR = LINE.ItemLevel or -1, LINE.NestedBlock or -1, LINE.FlavorText or -1
--- The game's kinds of line that say what an item does, whatever their colour (grey: not for you)
-local EFFECT = {}
-for _, name in ipairs({ "ItemSpellTriggerOnUse", "ItemSpellTriggerOnEquip", "ItemSpellTriggerOnProc", "ItemSpellTriggerLearn" }) do
-    if LINE[name] then EFFECT[LINE[name]] = true end
-end
+local ITEM_LEVEL, NESTED = LINE.ItemLevel or -1, LINE.NestedBlock or -1
 -- How an item binds, short: [the game's kind of binding] = "BoE"
 local BINDS = {}
 for name, short in pairs(TEXT.BINDS) do
@@ -178,11 +172,12 @@ local function QuestSection(ctx, list)
     if hidden > 0 then Read.Text("small", Read.Memo("questsMore", TEXT.ALT_MORE, hidden), ASIDE[1], ASIDE[2], ASIDE[3]).indent = 20 end
 end
 
--- The Professions section: the professions that use a trade good (the module's own, by its kind).
+-- The Professions section: the professions that use a trade good (the module's own, by its kind). The
+-- nodes that give it join it (Gathering.lua).
 local function ProfessionSection(ctx, id)
     local crafts = id and Crafts(ctx.model, id)
     if not crafts then return end
-    Read.Caption(TEXT.PROFESSIONS)
+    Read.Section(TEXT.PROFESSIONS)
     local row = Read.Text("sub", TEXT.USED_IN, DETAIL[1], DETAIL[2], DETAIL[3])
     row.right, row.rr, row.rg, row.rb = crafts, LIGHT[1], LIGHT[2], LIGHT[3]
 end
@@ -200,10 +195,9 @@ local function White(line)
     return Like(line.lr, line.lg, line.lb, COLOR.WHITE)
 end
 
--- The section each of the item's own lines goes in (Read.Rest), by its kind or else its colour: what it
--- does (Equip:, Use:; the game's green), its description (the game's gold), its numbers and plain
--- lines. A set's name, the set's items and its bonuses under it are the section Set, up to an empty
--- line or a gold one.
+-- The section each of the item's own lines goes in (Read.Rest): Info, the thing's own lines (its numbers
+-- and plain lines, what it does, its description). A set's name, the set's items and its bonuses under it
+-- are the section Set, up to an empty line or a gold one.
 local inSet
 local function Section(line, _, fresh)
     if fresh then inSet = false end
@@ -211,13 +205,9 @@ local function Section(line, _, fresh)
         inSet = true
         return TEXT.SET
     end
-    local family = Read.Family(line.lr, line.lg, line.lb)
-    if inSet and family ~= "gold" then return TEXT.SET end
+    if inSet and Read.Family(line.lr, line.lg, line.lb) ~= "gold" then return TEXT.SET end
     inSet = false
-    if EFFECT[line.type] then return TEXT.EFFECTS end
-    if line.type == FLAVOR or family == "gold" then return TEXT.DESCRIPTION end
-    if family == "green" then return TEXT.EFFECTS end
-    return TEXT.STATS
+    return TEXT.INFO
 end
 
 -- A comparison's changes: "+2.2 damage per second" says "+2.2 DPS".
@@ -341,10 +331,10 @@ local function Item(ctx)
         line.used = true
     end
 
-    -- A weapon's or an armour's number, first in the section Stats. A weapon's in one line:
+    -- A weapon's or an armour's number, first in the section Info. A weapon's in one line:
     -- "3.2 DPS  ·  1 - 3 dmg  ·  2.00 spd", its damage per second large, the hit's damage and its
     -- speed smaller.
-    if dps or armor then Read.Section(TEXT.STATS) end
+    if dps or armor then Read.Section(TEXT.INFO) end
     if dps then
         local row = Read.Text("big", Read.Memo("dps", "%s |cff%s%s|r", dps.left:match(PATTERN.DPS), LABEL_HEX, TEXT.DPS), TITLE[1], TITLE[2], TITLE[3])
         dps.used = true
@@ -380,15 +370,14 @@ local function Item(ctx)
     Read.Rest()
     ctx.each, ctx.name = nil, nil
 
-    -- Its durability as a bar
+    -- Its durability, last of its own lines: a bar with the word at its left and the numbers at its right
+    -- inside, its corners round, like a unit's health bar
     if durability then
-        Read.Section(TEXT.DURABILITY)
+        Read.Section(TEXT.INFO)
         local row = Read.Row()
-        row.kind, row.short, row.value, row.max = "bar", true, now, most
+        row.kind, row.inside, row.value, row.max = "bar", true, now, most
         row.br, row.bg, row.bb = DURABLE[1], DURABLE[2], DURABLE[3]
-        row.left = Read.Memo("durability", "%d / %d", now, most)
-        row.lr, row.lg, row.lb = DETAIL[1], DETAIL[2], DETAIL[3]
-        row.right = ""
+        row.left, row.right = TEXT.DURABILITY, Read.Memo("durability", "%d / %d", now, most)
     end
 
     -- The quests that want it, and the sections of what is known of it (other addons' lines follow,
