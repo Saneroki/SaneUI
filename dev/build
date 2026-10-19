@@ -108,6 +108,13 @@ if [ ! -d "$addons" ]; then
     echo "Set WOW_FOREVER to the game's _classic_beta_ folder. The build itself is done." >&2
     exit 1
 fi
+# Art in Git LFS that git never downloaded is a small text file pointing at it: never into the game.
+pointers="$(find "$build" -type f -size -1024c -exec grep -l '^version https://git-lfs.github.com/spec/' {} + || true)"
+if [ -n "$pointers" ]; then
+    echo "Not installed: these are Git LFS pointers, not the art (git lfs pull fetches it):" >&2
+    echo "$pointers" | sed "s|^$build/|  |" >&2
+    exit 1
+fi
 for name in $names; do
     to_game "$name"
     echo "Installed: $addons/$name"

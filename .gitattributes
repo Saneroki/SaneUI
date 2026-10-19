@@ -15,10 +15,17 @@
 # Blizzard's interface code: kept byte for byte as the client ships it (mostly CRLF), never converted
 /references/BlizzardInterfaceCode/** -text
 
-# Art
-*.blp binary
-*.tga binary
-*.png binary
-*.jpg binary
+# Art and animation, kept in Git LFS: the drawings, concept art and flipbook sheets in assets/, the game's
+# textures in assets/optimized/ and the modules' Art/ folders
+*.blp  filter=lfs diff=lfs merge=lfs -text
+*.tga  filter=lfs diff=lfs merge=lfs -text
+*.png  filter=lfs diff=lfs merge=lfs -text
+*.jpg  filter=lfs diff=lfs merge=lfs -text
+*.gif  filter=lfs diff=lfs merge=lfs -text
+*.webp filter=lfs diff=lfs merge=lfs -text
+*.mp4  filter=lfs diff=lfs merge=lfs -text
+*.webm filter=lfs diff=lfs merge=lfs -text
+
+# Fonts and sounds
 *.ttf binary
 *.ogg binary

@@ -22,9 +22,6 @@ desktop.ini
 # Claude Code: settings and worktrees of this computer only
 /.claude/
 
-# Source art and concept art stay local: only the game's textures (assets/optimized) are committed
-/assets/*.png
-/assets/Concept art/
 # What the image models make (dev/tools/imagegen): many large candidates, the chosen ones move to assets/
 /assets/generated/
 # Release archives are made from BUILD, not part of it

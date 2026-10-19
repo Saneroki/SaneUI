@@ -17,7 +17,8 @@ far below its size.
 ## The recipe
 
 1. Put the drawing into `assets/` as a PNG with transparency, large (1-2k pixels is fine). It is the
-   source and never ships. The tool crops it; it needs no exact size or margin.
+   source and never ships; like all art it is committed in Git LFS (`.gitattributes`). The tool crops it;
+   it needs no exact size or margin.
 2. Decide the size it is drawn at in the game, in UI units (what `SetSize` gets).
 3. In `dev/tools/art`, give its kind that drawn size in `KINDS` (or use a kind that has it), and add the
    picture to `PICTURES`: the file in `assets/` (a pattern), the name in `assets/optimized/`, the kind, and

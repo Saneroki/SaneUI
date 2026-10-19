@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 113 (Navigation), 208 (data tools).
 A game restart takes it in (a new addon, Navigation; new files in Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
 
+### Art and animation in Git LFS (Saneroki, 2026-10-19)
+- `.gitattributes` keeps PNG, BLP, TGA, JPG, GIF, WebP, MP4 and WebM files in Git LFS: the game's textures
+  (`assets/optimized/`, the modules' `Art/`) moved there, and the drawings, concept art and flipbook sheets in
+  `assets/` are committed now (they were local only). `assets/generated/` stays local. A new clone needs
+  `git lfs install` once.
+- `dev/build` installs nothing when a built file is a Git LFS pointer instead of the art, and names the files
+  (`git lfs pull` fetches them).
+
 ### Navigation: the Atlas' look, each zone's atmosphere, painted only what the game has (Saneroki, 2026-10-19)
 - **Decided** (`Doc/ideas/Navigation.md`): the painted view is a photorealistic render seen from straight
   above; every zone has its own atmosphere within it (light, air, colours, the state of what stands there);
