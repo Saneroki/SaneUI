@@ -222,15 +222,18 @@ lists, from inputs of its own:
   `assets/generated/maps/meta/`; `dev/tools/terrain-art` makes the terrain and the stitched Sketches.
 - **Zone briefs:** `dev/imagegen/maps/zones.toml`, one table a zone or city: biome, land, plants, colours,
   buildings, roads, places and a prompt paragraph, all without names.
-- **Two pictures a square:** image 1 the terrain with the roads drawn in (the layout, kept exactly), image 2 the
-  Sketches of the same square, softened (`qwen21-edit-2ref`, 1024 x 1024).
+- **One picture a square, the look in words:** image 1 the terrain of the square (the layout and everything on
+  it, kept; `qwen21-edit-1ref`, 1024 x 1024: 2 x 2 tiles at the minimap textures' 512 pixels a tile). A picture of
+  the look as image 2, even "only as a reference for the art style", was painted instead of image 1 when it
+  showed the same place from further out. The look pilot (`looks.txt`) gave image 2 the softened Sketches of
+  the square, for painted continent maps.
 - **No names, anywhere the model can read them:** a place's name in the words, or a label it can read in
   image 2, comes back as garbled lettering in the picture. Describe ("a mine mouth in the hills at the bottom
   left"), never name.
 - **Say what water is:** without "the flat dark blue areas of image 1 are the sea …, no land or paper where
   image 1 has water" the parchment looks painted the sea over as land.
-- The look pilot: `dev/imagegen/sets/maps-pilot/looks.txt` (five looks on two squares, 20 pictures, about a
-  minute each with the full model).
+- The pilots: `dev/imagegen/sets/maps-pilot/looks.txt` (five looks on two squares, 20 pictures in 9 minutes with
+  the full model; chosen: stylised game art), `close.txt` (that look on the terrain, close up).
 
 ## Asking for interface art
 

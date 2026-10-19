@@ -92,9 +92,14 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **Close up and far out (Saneroki, 2026-10-19):** the painted view holds its quality and small details from a
   single building up close to the whole world far out: many small detailed pictures stitched together like the
   game's own tiles, with coarser levels for the far views, so it stays sharp up close and light on the whole world.
-- **Entrances and ways out (Saneroki, 2026-10-19):** the painted view shows caves, mines and the entrances of
-  dungeons and raids, and makes clear where one can leave a zone: the passes through the mountains, bridges,
-  tunnels and gates one walks through into the next.
+- **Entrances and ways out are pins (Saneroki, 2026-10-19, replacing the same day's ask to paint them):** caves,
+  mines, the entrances of dungeons and raids and the ways from one zone into the next are shown by map pins, not
+  painted into the view.
+- **The look: stylised game art on the terrain (Saneroki, 2026-10-19):** of the five looks of the pilot,
+  *stylised game art*: bold, saturated colours, chunky stylised trees, painted rocks, warm light, glossy water.
+  The **terrain is the base**: the painted view is the terrain repainted in that look, every building, street,
+  tree and shore where the terrain has it, so it serves as the map of one's close vicinity, zoomed in as close as
+  the minimap, single buildings clear. The painted continent maps of the pilot work only far out.
 - **Routes, later (Saneroki, 2026-10-19):** flight paths, and the ships' routes as a red dotted line, shown when
   one takes a ship or looks the routes up, the dots running from one harbour to the other. They are interactive
   parts of the map, drawn by code, never painted into the view's pictures. Not now: after the painted view.
@@ -531,11 +536,12 @@ Three spaces, converted only in `Coords.lua`:
 The third view (*A painted third view*), made by the local image models beside the game and shipped as art in
 blocks like the terrain's, so the map draws it the way it draws the others.
 
-- **What the models get:** the continents cut into overlapping squares of 8 x 8 tiles (1024 pixels at 128 texels
-  a tile). For each: the terrain of that square with the guides drawn in, as image 1 (its layout), and the
-  stitched Sketches of it as image 2; the words from the zones' briefs (`dev/imagegen/maps/zones.toml`: peoples,
-  biome, ground, buildings, roads, palette) of every zone in it, and its places (areas, city districts, flight
-  masters) with where they lie in the square.
+- **What the models get** (*The look*): the continents cut into overlapping squares; for each, the terrain of
+  that square as the one picture (its layout and everything on it, kept), the look in fixed words
+  (`dev/imagegen/sets/maps-pilot/close.txt`), and the words from the zones' briefs (`dev/imagegen/maps/zones.toml`:
+  peoples, biome, ground, buildings, roads, palette) of every zone in it, describing what lies where in the square
+  without naming it. A picture of the look as a second reference did not work: it showed the same city from
+  further out, and the model painted that instead.
 - **The guides** (`dev/tools/map-meta`, from the game's files): the roads (the ground textures of roads and
   paving), the buildings' footprints as they stand, what covers the ground (meadow, forest floor, farmland,
   sand, rock, snow, swamp, ash, blight), and the places by name with their positions (the terrain's areas, the
@@ -547,21 +553,22 @@ blocks like the terrain's, so the map draws it the way it draws the others.
 - **One look everywhere:** the same words, seeds and references for every square; neighbours overlap by a
   quarter and are blended with soft edges, so no seam shows. Where the pilot shows the model losing roads,
   the guide's roads are drawn back over the painting in its colours.
-- **Levels of detail** (*Close up and far out*): painted coarse to fine. A first pass paints the continents at a
-  coarse scale, so the whole holds together; finer passes repaint each square at more pixels a tile from the
-  coarser one, keeping its colours (single buildings show at 256 to 512 pixels a tile, 2 to 1 yards a pixel).
+- **Levels of detail** (*Close up and far out*): the finest level is painted from the terrain at the minimap
+  textures' own detail, 512 pixels a tile (about a yard a pixel; squares of 2 x 2 tiles), where single buildings
+  are clear; a coarse pass over the continents keeps colours and light alike from square to square.
   The finest level is cut into tiles and every coarser level made from it, as a pyramid the map loads by zoom:
-  only the tiles in view, at the level the zoom asks for. Size, for both continents' land at the finest level:
-  about 40 MB at 2 yards a pixel, 150 MB at 1 (DXT1); the finest level may become an addon of its own,
-  loaded only when installed.
+  only the tiles in view, at the level the zoom asks for. Size, for both continents' land at the finest level
+  (about 900 tiles): some 120 MB at a yard a pixel (DXT1), 160 MB with the coarser levels; the finest level may
+  become an addon of its own, loaded only when installed.
 - **Routes** (*Routes, later*): the game's own paths of ships and zeppelins (its taxi paths of the transports)
   and of flights.
 - **Life on the sea:** each creature and ship a small top-down sprite with a short looped flipbook
   (`dev/tools/flipbook`), moved along paths over the open sea by code; the Maelstrom a painted whirl turned by
   code, with a flipbook of foam.
-- **Order:** a pilot of five looks on two squares (Stormwind with Elwynn and Westfall, Orgrimmar with Durotar
-  and the Barrens: `dev/imagegen/sets/maps-pilot/looks.txt`), Saneroki chooses one; then both continents,
-  coarse to fine; packing into the pyramid; then the sea's life; then the routes.
+- **Order:** a pilot of five looks (`dev/imagegen/sets/maps-pilot/looks.txt`; chosen: stylised game art), then
+  the close-up pilot on the terrain (`close.txt`: Stormwind, Goldshire, Westfall's edge, Orgrimmar, Razor Hill,
+  and one tile at half a yard a pixel); then both continents; packing into the pyramid; then the sea's life;
+  then the routes.
 
 ### Maps without a world box
 

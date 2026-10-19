@@ -6,12 +6,16 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 113 (Navigation), 208 (data tools).
 A game restart takes it in (a new addon, Navigation; new files in Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
 
-### Navigation: guides for a painted map view, five looks to choose from (Saneroki, 2026-10-19)
+### Navigation: guides for a painted map view, its look chosen, the close-up pilot (Saneroki, 2026-10-19)
 - **Decided** (`Doc/ideas/Navigation.md`): Sketches and Terrain stay as they are; the local image models paint a
-  third view of its own in Overlay's place, from both of them, the game's guides and the zones' briefs, with
-  every road, building, gate, cave, mine, dungeon entrance and way out of a zone where the game has it; sharp
-  from a single building to the whole world (levels of detail); the Maelstrom, ships and sea creatures as looped
-  animations; routes, flight paths and ship lines later, as interactive parts drawn by code.
+  third view of its own in Overlay's place: the terrain repainted in the chosen look, *stylised game art* (bold,
+  saturated), every road, building and tree where the game has it, as close as the minimap zooms (single
+  buildings clear) and out to the whole world (levels of detail); the Maelstrom, ships and sea creatures as
+  looped animations; caves, mines, entrances and ways between zones as pins, not painted; routes, flight paths
+  and ship lines later, as interactive parts drawn by code.
+- **The close-up pilot:** `dev/imagegen/sets/maps-pilot/close.txt`, the look on the terrain itself at the minimap
+  textures' 512 pixels a tile (Stormwind, Goldshire with the city's gate, Westfall's edge, Orgrimmar, Razor Hill)
+  and one tile at 1024; the terrain the only picture, the look in words.
 - **`dev/tools/map-meta`** (new): from the game's terrain files, the texture and object files of each tile and
   the buildings' own files, both continents at 128 texels a tile in `assets/generated/maps/meta/`: the roads
   (the road and paving textures, thin roads kept whole, lone decoration patches dropped), the footprints of the
