@@ -2,7 +2,8 @@
 """Tests of dev/tools/walk-data and dev/tools/travel-data without the game's files: the block's encoding, floors
 joined into surfaces and rectangles on made-up ground (flat land, a steep speck, a hole, a cliff, a bridge, water),
 the openings the game is left to work out and those written, regions too small to keep, a flight's path made
-short, and a boat's way (its docks, its leaps, which way a newer one replaced). Run by dev/tests/run."""
+short, and a boat's way (its docks, on the zone maps too, its leaps, which way a newer one replaced). Run by
+dev/tests/run."""
 import base64
 import importlib.machinery
 import importlib.util
@@ -193,7 +194,23 @@ check("the first point names its map, the docks their stays",
       [(0, None, None), (None, 60, None), (None, None, None), (None, None, True), (1, None, True), (None, 30, None),
        (None, 30, None)])
 check("its length: the yards it moves, its leaps not counted", fields["length"], 510.0)
-check("stops a few yards apart are one dock", travel.docks(ship), [(0, 200.0, 0.0), (1, 9100.0, 50.0)])
+check("stops a few yards apart are one dock", travel.docks(ship), [(0, 200.0, 0.0, 0.0), (1, 9100.0, 50.0, 2.5)])
+check("without a placer no docks on the maps", "docks" in fields, False)
+
+
+class Placer:
+    """map-data's Placer made up: world 0 lies on zone map 10 (x yards to the percent), world 1 on none."""
+
+    def place(self, world, x, y, z=None):
+        return [10, round(x / 10, 1), round(y / 10, 1)] if world == 0 else None
+
+    def area(self, world, x, y, z=None):
+        return 7 if world == 0 else 9
+
+
+placed = travel.transport(ship + [node(9, 0, 300, 0, flags=travel.STOP, delay=60)], Placer())
+check("its docks on the zone maps, one per dock in the order it comes to them, a dock on no map left out with its area",
+      (placed["docks"], placed["dockAreas"]), ([[10, 20.0, 0.0], [10, 30.0, 0.0]], [7, 7]))
 check("a way high over the sea is a zeppelin's",
       travel.transport([node(0, 0, 0, 0, z=60), node(1, 0, 100, 0, z=80)])["kind"], "zeppelin")
 places = {10: [(0, 0.0, 0.0), (1, 500.0, 0.0)], 11: [(0, 5.0, 0.0), (0, 900.0, 0.0), (1, 505.0, 0.0)],

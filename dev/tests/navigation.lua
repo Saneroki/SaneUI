@@ -124,8 +124,10 @@ C_Map = {
     end,
     GetMapInfo = function(map)
         local info = MAPS[map]
-        return info and { mapID = map, mapType = info.kind, parentMapID = info.parent } or nil
+        local name = ({ [1414] = "Kalimdor", [1429] = "Elwynn Forest" })[map]
+        return info and { mapID = map, mapType = info.kind, parentMapID = info.parent, name = name } or nil
     end,
+    GetAreaInfo = function(area) return area == 12 and "The Far Shore" or nil end,
     GetFallbackWorldMapID = function() return 947 end,
     GetMapChildrenInfo = function(map, kind)
         local list = {}
@@ -382,13 +384,16 @@ Set(packPath .. "/Places.lua", "Places", "00000005", "int", '"kind", "name", "po
     '"text", "text", "point", "int", "int", "int"',
     'R[1] = "70245\t\tdungeon\tThe Mines\t1429\03130\03130\t500\t18\t23"\n'
     .. 'R[2] = "70245\t\tmailbox\t\t1429\03170\03170\t\t\t"\n')
+-- The boat's way round has its docks on the maps too: in the east hall, and on Kalimdor in the game's area 12.
 Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
-    '"kind", "name", "from", "to", "fromNode", "toNode", "length", "path"',
-    '"text", "text", "point", "point", "int", "int", "number", "list tuple(x:number,y:number,map:int,stay:number,jump:bool)"',
+    '"kind", "name", "from", "to", "fromNode", "toNode", "length", "path", "docks", "dockAreas"',
+    '"text", "text", "point", "point", "int", "int", "number", "list tuple(x:number,y:number,map:int,stay:number,jump:bool)", '
+    .. '"list point", "list int"',
     'R[1] = "70245\t\tboat\tTo the west\t1429\03190\03190\t1414\03150\03150\t\t\t"\n'
     .. 'R[2] = "70245\t\tflight\t\t\t\t2\t5\t6000"\n'
     .. 'R[3] = "70245\t\tboat\t\t\t\t\t\t3898.1\t-8600\031-450\0310\03160\030-8000\031-2000\0305000\031-9000\0311\031\0311'
-    .. '\0306000\031-9500\031\03160\0305000\031-9000\030-8000\031-2000\0310\031\0311"\n'
+    .. '\0306000\031-9500\031\03160\0305000\031-9000\030-8000\031-2000\0310\031\0311'
+    .. '\t1429\03172.5\0316.7\0301414\03189.6\03135\t0\03012"\n'
     .. 'R[4] = "70245\t\tzeppelin\t\t\t\t\t\t\t-8650\031-400\0310\03130\030-8000\031500\030-500\0310\0312991\031\0311'
     .. '\030-1000\0310\031\03130\030-500\0310\030-8000\031500\0310\031\0311"\n'
     .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byKind = {}\nI.byKind.boat = "1\0303"\nI.byKind.flight = "2"\n'
@@ -650,14 +655,24 @@ check(Tiles:Ready() and Tiles:Get(3104, "minimap") == 801, "the pack is loaded: 
 local places = Core.Data.Map():On(1429)
 local byKey = {}
 for _, place in ipairs(places or {}) do byKey[place.key] = place end
-check(places and #places == 6 and byKey["npc:69"] and byKey["npc:70"] and byKey["object:1617"] and byKey["place:1"]
-    and byKey["place:2"] and byKey["travel:1"] and not byKey["npc:71"],
+check(places and #places == 7 and byKey["npc:69"] and byKey["npc:70"] and byKey["object:1617"] and byKey["place:1"]
+    and byKey["place:2"] and byKey["travel:1"] and byKey["travel:3:1"] and not byKey["npc:71"],
     "Core's places on a map: its NPCs with a service and rares, objects, places and ways; a creature that is neither is not")
 check(near(byKey["npc:69"].x, 0.5) and byKey["npc:69"].what.services[1] == "innkeeper" and byKey["npc:70"].what.rare
     and byKey["object:1617"].what == "herb" and byKey["place:1"].what == "dungeon" and byKey["place:1"].to == 500
     and byKey["travel:1"].what == "boat", "each at its point (0 to 1), with what it is")
-check(#Core.Data.Map():On(1414) == 1 and Core.Data.Map():On(1414)[1].key == "travel:1" and #Core.Data.Map():On(12345) == 0,
-    "a way between two maps stands at both ends; a map without places has none")
+do
+    local onKalimdor = {}
+    for _, place in ipairs(Core.Data.Map():On(1414)) do onKalimdor[place.key] = place end
+    check(#Core.Data.Map():On(1414) == 2 and onKalimdor["travel:1"] and #Core.Data.Map():On(12345) == 0,
+        "a way between two maps stands at both ends; a map without places has none")
+    local dock, across = byKey["travel:3:1"], onKalimdor["travel:3:2"]
+    check(dock and near(dock.x, 0.725) and near(dock.y, 0.067) and dock.what == "boat" and dock.id == 3
+        and #dock.towards == 1 and dock.towards[1].map == 1414 and dock.towards[1].area == 12 and dock.to == 1414
+        and across and near(across.x, 0.896) and across.towards[1].map == 1429 and not across.towards[1].area
+        and across.to == 1429,
+        "a boat at each of its docks, one place each: where it goes from there, with the game's area there")
+end
 check(Core.Data.Map():Spawns("npc:69")[1429][1][1] == 0.5, "a thing's points by map")
 
 -- Small: 200 x 200, following the player at the game's step 2 (radius 160 yards).
@@ -881,7 +896,7 @@ end
 full:Show(1415, 0, -9250, 0.4)
 Canvas.Layout()
 local pins, count = Drawn()
-check(full.level == "zone" and count == 7, "the zone's pins: 8 things, two of them near each other gathered into one")
+check(full.level == "zone" and count == 8, "the zone's pins: 9 things, two of them near each other gathered into one")
 check(pins["quest:7"] and pins["quest:7"].pin.name == "Wolves Across the Border" and not pins["quest:7"].pin.complete
     and pins["quest:7"].disc._atlas == ns.PinView.DISC and pins["quest:7"].icon._atlas == ns.PinView.IN_PROGRESS,
     "the game's quest on its map, in the game's quest disc and mark")
@@ -895,6 +910,16 @@ check(pins["npc:70"] and pins["npc:70"].pin.live and pins["npc:70"].pin.name == 
 check(pins["place:1"] and pins["place:1"].icon._atlas == "Dungeon" and pins["place:1"].pin.to == 500
     and pins["place:2"] and pins["place:2"].icon._atlas == "Mailbox" and pins["travel:1"],
     "Core's places: a dungeon's entrance that opens its map, a mailbox, a boat")
+do
+    local dock = pins["travel:3:1"]
+    check(dock and dock.icon._atlas == "TaxiNode_Continent_Neutral" and dock.pin.name == Pins.WAY_WORDS.boat
+        and dock.pin.to == 1414 and dock.pin.click == "map", "a boat's dock, in the game's atlas, opening the map it sails to")
+    GameTooltip._lines = nil
+    dock._scripts.OnEnter(dock)
+    local lines = GameTooltip._lines
+    check(lines and lines[1] == "To The Far Shore, Kalimdor" and lines[2] == Pins.TEXT.openMap and not lines[3],
+        "its tooltip: where it sails to, the area and the zone in the game's words; the game's own way, not unconfirmed")
+end
 local marker = pins["gathered:npc:69"]
 check(marker and #marker.pin.gathered == 2 and marker.count._text == 2 and not pins["object:1617"],
     "an innkeeper and a herb 40 yards apart cover each other at this zoom: one marker with their number")

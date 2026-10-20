@@ -29,7 +29,8 @@ The bigger changes of each version, newest first.
   world: vendors, trainers, innkeepers, bankers and the other services,
   quest givers, rares, herbs, ore, treasure chests, mailboxes, meeting
   stones, spirit healers and the entrances of dungeons and raids, each
-  marked until the game confirms it.
+  marked until the game confirms it. The docks of the boats and
+  zeppelins show where each one sails to; click one to open that map.
   Pins that would cover each other gather into one; click it to zoom
   in. Choose which kinds show with Pins on the map's bar. The quest
   you follow is shaded where its objectives are.

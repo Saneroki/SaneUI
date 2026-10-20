@@ -15,7 +15,10 @@ staging for Core's set Travel (pack World): the ways Navigation's route planner 
                   map (the world's map it lies on, at its first point and wherever the way comes onto another),
                   stay (where it stops at a dock: the seconds it stands there, the game's delay) and jump (where it
                   leaps to the point from the one before, onto another map or far on the same: the game's teleport;
-                  after its last point it starts again from its first)
+                  after its last point it starts again from its first), docks (its docks on the zone maps, for the
+                  map's pins: one per place it stops at, in the order it first comes to them, each placed by
+                  map-data's Placer; a dock on no zone map left out) and dockAreas (the game's area each of them
+                  lies in, the AreaTable ID its terrain or building gives, which names it; 0 where none does)
 
 On a path a point on a straight run, within STRAIGHT yards of the line between its neighbours, is left out (never a
 dock or a leap). The game's tables hold neither a transport's speed nor its timetable: the planner estimates them
@@ -26,14 +29,18 @@ fewer than two docks (a moving thing, no way between places); and a transport wh
 transport with more docks (or, with the same ones, a newer ID): the older way the newer one replaced. Two stops
 within SAME yards on one map are one dock.
 
-The input: a folder of the game's client tables as CSV (TaxiNodes, TaxiPath, TaxiPathNode), of the build BUILD.
+The input, of the build BUILD: a folder of the game's client tables as CSV (TaxiNodes, TaxiPath, TaxiPathNode, and
+for placing the docks those map-data reads: AreaTable, UiMap, UiMapAssignment, WMOAreaTable), and its terrain files
+as map-data takes them.
 
-Usage:  dev/tools/travel-data <client tables>
+Usage:  dev/tools/travel-data <client tables> <terrain>
 """
 import csv
 import json
 import math
 import sys
+from importlib.machinery import SourceFileLoader
+from importlib.util import module_from_spec, spec_from_loader
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -48,6 +55,14 @@ TELEPORT, STOP = 0x1, 0x2  # TaxiPathNode's Flags: the transport leaps after thi
 
 def table(folder, name):
     return list(csv.DictReader(open(folder / f"{name}.csv", encoding="utf-8")))
+
+
+def map_data():
+    """dev/tools/map-data, whose Placer puts a world position on its zone map, read without running the tool."""
+    loader = SourceFileLoader("map_data", str(ROOT / "dev" / "tools" / "map-data"))
+    module = module_from_spec(spec_from_loader("map_data", loader))
+    loader.exec_module(module)
+    return module
 
 
 def simplified(points):
@@ -92,11 +107,11 @@ def flight(key, row, a, b, path):
 
 
 def docks(path):
-    """A transport's docks: [(map, x, y)], one per place it stops at."""
+    """A transport's docks: [(map, x, y, z)], one per place it stops at, where it first stops there."""
     found = []
     for p in path:
         if int(p["Flags"]) & STOP:
-            place = (int(p["ContinentID"]), float(p["Loc[0]"]), float(p["Loc[1]"]))
+            place = (int(p["ContinentID"]), float(p["Loc[0]"]), float(p["Loc[1]"]), float(p["Loc[2]"]))
             if not any(d[0] == place[0] and math.hypot(d[1] - place[1], d[2] - place[2]) <= SAME for d in found):
                 found.append(place)
     return found
@@ -112,8 +127,9 @@ def replaced(places):
             and (len(places[other]) > len(places[key]) or (len(places[other]) == len(places[key]) and other > key))}
 
 
-def transport(path):
-    """A transport's fields from its path's points (in the game's order)."""
+def transport(path, placer=None):
+    """A transport's fields from its path's points (in the game's order); its docks on the zone maps where a placer
+    (map-data's Placer) is given."""
     points, length = [], 0.0
     for index, p in enumerate(path):
         world, x, y = int(p["ContinentID"]), float(p["Loc[0]"]), float(p["Loc[1]"])
@@ -147,14 +163,22 @@ def transport(path):
         out += [p for _, _, p in simplified(run)][:-1]
     out.append(points[-1])
     heights = [abs(float(p["Loc[2]"])) for p in path]
-    return {"kind": "boat" if max(heights) <= FLOAT else "zeppelin", "length": round(length, 1), "path": out}
+    fields = {"kind": "boat" if max(heights) <= FLOAT else "zeppelin", "length": round(length, 1), "path": out}
+    if placer:
+        placed = [(placer.place(*dock), placer.area(*dock)) for dock in docks(path)]
+        placed = [(point, area) for point, area in placed if point]
+        if placed:
+            fields["docks"] = [point for point, _ in placed]
+            fields["dockAreas"] = [area for _, area in placed]
+    return fields
 
 
 def main():
-    if len(sys.argv) != 2:
+    if len(sys.argv) != 3:
         print(__doc__.strip().splitlines()[-1], file=sys.stderr)
         return 2
     folder = Path(sys.argv[1])
+    placer = map_data().Placer(folder, Path(sys.argv[2]))
     nodes = {int(row["ID"]): row for row in table(folder, "TaxiNodes")}
     points = {}
     for row in table(folder, "TaxiPathNode"):
@@ -176,7 +200,7 @@ def main():
         if key in gone:
             left += 1
         else:
-            lines.append((key, transport(path)))
+            lines.append((key, transport(path, placer)))
     lines.sort(key=lambda line: line[0])
     STAGING.parent.mkdir(parents=True, exist_ok=True)
     with open(STAGING, "w", encoding="utf-8") as out:
@@ -184,8 +208,10 @@ def main():
             line = {"set": "Travel", "key": key, "game": "forever", "build": BUILD, "src": "game", "fields": fields}
             out.write(json.dumps(line, separators=(",", ":")) + "\n")
     ships = sum(1 for _, fields in lines if fields["kind"] != "flight")
-    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines) - ships} flights, {ships} boats and zeppelins "
-          f"({left} ways left out; replaced: {', '.join(map(str, sorted(gone))) or 'none'}).")
+    placed = sum(len(fields.get("docks", ())) for _, fields in lines)
+    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines) - ships} flights, {ships} boats and zeppelins with "
+          f"{placed} docks on the zone maps ({left} ways left out; "
+          f"replaced: {', '.join(map(str, sorted(gone))) or 'none'}).")
     return 0
 
 

@@ -909,6 +909,9 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     Feathermoon and the Feralas coast; Tanaris and Powderfuse Port; the zeppelins between Orgrimmar, Grom'gol and
     the Undercity; two zeppelins to Zephras Isle). Left out: moving things with fewer than two stops, and the older
     Menethil to Auberdine way, whose docks the newer one by way of Southshore all has.
+  - **On the map (2026-10-20):** each dock a pin of its own (*Pin catalogue*, *Travel*), also where a ship stops
+    twice: the tool places the docks on their zone maps as every map point (`docks`, with the game's area each lies
+    in, `dockAreas`, which names it in the other docks' tooltips).
   - **Not in the tables:** the ships' speed and timetable. So their times are estimates in code until they are
     learnt in play (Core's learned data, `Doc/ideas/Data.md`; the set's `wait`, a transport's time once round,
     is where they go): once round is the sailing at `Planner.SAIL` yards a second, the stays, and

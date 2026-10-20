@@ -497,15 +497,18 @@ Map:Spawns("npc:69")                 -- a thing's points: { [map] = { { x, y }, 
 ```
 
 - **A place** (read-only, `x` and `y` 0 to 1 on its map): `kind` (`npc`, `object`, `place`, `travel`: the set it
-  came from), `key` (one per thing: `npc:69`, `object:1617`, `place:12`, `travel:3`), `id`, `what` (an NPC's
-  `{ services, rare, quests, goods }`, an object's, a place's or a way's kind), `name`, `to`, `levelMin`,
-  `levelMax`, `side`.
+  came from), `key` (one per thing: `npc:69`, `object:1617`, `place:12`, `travel:3`; a dock `travel:<way>:<n>`, its
+  number in the way's docks), `id`, `what` (an NPC's `{ services, rare, quests, goods }`, an object's, a place's or
+  a way's kind), `name`, `to`, `levelMin`, `levelMax`, `side`, and a dock's `towards` (the way's other docks, each
+  `{ map, area }`, the area the game's AreaTable ID or nil; `to` their map where there is one).
 - **From** the sets Spawns (NPCs with a service, rares, quest givers, the objects players use; a creature that
-  is none of these is the creatures' spawns' business, not the map's), Places and Travel (a way between two
-  places at both ends; flights not: the game knows its flight points). An NPC with more than
-  `MapReader.MANY` points on a map stands at its areas' middles there.
-- **Filled** by `dev/tools/map-data` (the game's own: *Zones*, the entrances of dungeons and raids in *Places*) and by
-  batches of our picking (`sources.toml`: *NPCs*, *Spawns*, the other *Places*, the treasure chests in *Objects*).
+  is none of these is the creatures' spawns' business, not the map's), Places and Travel (a boat or a zeppelin at
+  each of its `docks`, one place per dock; another way between two places at both ends; flights not: the game knows
+  its flight points). An NPC with more than `MapReader.MANY` points on a map stands at its areas' middles there.
+- **Filled** by `dev/tools/map-data` (the game's own: *Zones*, the entrances of dungeons and raids in *Places*), by
+  `dev/tools/travel-data` (the game's own: the docks of *Travel*'s boats and zeppelins with the areas they lie in)
+  and by batches of our picking (`sources.toml`: *NPCs*, *Spawns*, the other *Places*, the treasure chests in
+  *Objects*).
   Every map point of them is placed by map-data's `Placer`: on the zone map of the area the game gives the
   position (the building part it stands in, else the terrain's map chunk), on the smallest map box only where
   neither tells; *Places*' numbers by its `PlaceKeys`.

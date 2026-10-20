@@ -28,6 +28,11 @@ path     = { type = "list", of = "tuple", parts = [
     { name = "stay", type = "number", min = 0 },
     { name = "jump", type = "bool" },
 ] }
+# A boat's or zeppelin's docks on the zone maps, for the map's pins: one per place it stops at (stops within 20 yards
+# are one), in the order it first comes to them, placed from its path as every map point is (map-data's Placer); and
+# the game's area each lies in (its AreaTable ID, as the terrain or a building there gives it; 0: none), which names it.
+docks     = { type = "list", of = "point" }
+dockAreas = { type = "list", of = "int", min = 0 }
 
 [index]
 byKind     = "kind"

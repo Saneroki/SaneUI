@@ -36,11 +36,12 @@ party), always over the map, and the full map has the quest log at its left. The
 - **Pins:** the game's own marks where it tells them (your quests on their discs, ready to turn in, the quest the
   arrow leads to on its brown disc; flight points of your side; rares and treasures nearby; the game's points and
   ways into other maps), and what Core's data knows (quest givers with a quest you can take, services, entrances,
-  boats, herbs, ore, books: as far as the data holds them; a place the game has not confirmed says so). One pin
-  per thing: the game's word hides the data's. Pins that would cover each other show as one disc with their
-  number: a click zooms in. A click on a quest's pin leads the game's arrow to it; on an entrance or a way, its
-  map opens. A continent whole shows only travel and places; the minimap no books or treasures, services only
-  near you. The party and raid in their class colours.
+  the docks of the boats and zeppelins with where they go, herbs, ore, books: as far as the data holds them; a
+  place the game has not confirmed says so). One pin per thing: the game's word hides the data's. Pins that would
+  cover each other show as one disc with their number: a click zooms in. A click on a quest's pin leads the game's
+  arrow to it; on an entrance, a way or a dock with one destination, its map opens. A continent whole shows only
+  travel and places; the minimap no books or treasures, services only near you. The party and raid in their class
+  colours.
 - **The pin filter** (*Pins* on the full map's bar, or the setting *Pins on the map*): a checkmark per kind.
 - **Quest areas:** the quest the arrow leads to, or the one under the mouse in the quest log, shaded as the game
   shades it on its map.
@@ -132,11 +133,14 @@ party), always over the map, and the full map has the quest log at its left. The
   vignettes, area points, map links, dungeon entrances where it has them) and from Core's data
   (`Data.Map():On`, `Core/Data/Map.lua`): an NPC with quests this character can take (`Pins.Offered`: not done,
   not in the log, level, side, race, class, the quests before) is a quest giver, else a rare, else its service in
-  the game's town tracking atlas; objects, places and ways in the game's atlases. One pin per key: the game's
-  hides the data's (a vignette's GUID names its creature). Kept per map until the game says it changed (the
-  message `LIVE`), or Core's places change; at a zone's level every zone in view, further out the continent and
-  its zones for travel and places only. `Pins.Gather`: pins nearer than `Pins.GATHER` units on the screen are one
-  marker, a quest never. The filter is the multi-choice setting `pins`.
+  the game's town tracking atlas; objects, places and ways in the game's atlases; a boat's or zeppelin's dock
+  (Core's set *Travel*, its `docks`) its own pin, its tooltip where it goes from there (the game's names of each
+  other dock's area and zone, `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`), a click opening the map where it is the
+  only one, not marked unconfirmed (the game's own ways). One pin per key: the game's hides the data's (a
+  vignette's GUID names its creature). Kept per map until the game says it changed (the message `LIVE`), or Core's
+  places change; at a zone's level every zone in view, further out the continent and its zones for travel and
+  places only. `Pins.Gather`: pins nearer than `Pins.GATHER` units on the screen are one marker, a quest never.
+  The filter is the multi-choice setting `pins`.
 - **PinView** (`PinView.lua`): a pooled button per pin, kept by its key while it stays in view, at a fixed size, in
   the game's looks (its quest disc and marks, `UI-QuestPoi-*`, `Quest-In-Progress-Icon-*`); a higher kind over a
   lower one by its frame level, all under the marks. A press on a pin is the map's (a drag moves the map,
@@ -244,6 +248,9 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, docks on the map:** each dock of the boats and zeppelins is a pin (`TaxiNode_Continent_*`), one per
+  dock also where a ship stops twice, its tooltip where it goes from there; the docks' map points written by
+  `dev/tools/travel-data` from the game's tables (Core's set *Travel*, `docks` and `dockAreas`).
 - **2026-10-20, Zephras Isle:** the routes reach it: a map straight on the world map with a box of its own is a
   plane for the planner (`Coords.PlaneOf`, `Coords.Planes`), so its two zeppelins carry the line there, and the
   map pin's mark shows on it; walks there stay straight (no walking data of the isle).

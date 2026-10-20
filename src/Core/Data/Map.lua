@@ -16,14 +16,18 @@ local Core = SaneUI.Core
 --  A place is a plain table, read-only like a record, x and y from 0 to 1 on its map:
 --      kind      "npc", "object", "place" or "travel": which set it came from
 --      key       one per thing (Doc/ideas/Navigation.md, *One pin per thing*): "npc:69", "object:1617",
---                "place:12", "travel:3"
+--                "place:12", "travel:3"; a boat's or zeppelin's dock "travel:<way>:<dock>", its number in the
+--                way's docks
 --      id        the creature's or object's ID; the place's or way's number
 --      what      what it is: an NPC's services (a list) with rare = true, quests = { quest IDs it offers };
 --                an object's kind (herb, ore, chest, mailbox, quest, book, door, other); a place's kind
 --                (crossing, cave, dungeon, raid, pier, mailbox, meetingstone, spirithealer); a way's kind
 --                (boat, zeppelin, tram, lift, portal, flight)
 --      name, to (the map a place or way leads to), levelMin, levelMax, side
---  An NPC with many points on a map (a wanderer, a rare) stands at the middles of its areas there instead.
+--      towards   a dock's: where its boat or zeppelin goes from there, its way's other docks, each { map, area
+--                (the game's area there, AreaTable ID, or nil) }
+--  An NPC with many points on a map (a wanderer, a rare) stands at the middles of its areas there instead; a
+--  boat or a zeppelin at each of its docks (Travel's docks), one place per dock even where it stops twice.
 --
 --  Read as a job of the scheduler when a set it reads arrives or changes. A set no pack holds (empty in the
 --  master, so not shipped) or switched off is passed over without a word: its places are simply not there.
@@ -135,9 +139,29 @@ local function Place(found, key, record)
         name = record.name, to = record.to, levelMin = record.levelMin, levelMax = record.levelMax })
 end
 
--- A way: at its start; a way between two places (not a flight: the game knows its flight points) at both ends.
+-- A boat or a zeppelin at each of its docks, one place each (also where it stops twice), with where it goes from there:
+-- its other docks, each { map, area }, and to (their map) where it is one.
+local function Docks(found, key, record)
+    local docks, areas = record.docks, record.dockAreas or {}
+    for index, dock in ipairs(docks) do
+        local towards = {}
+        for other, there in ipairs(docks) do
+            local area = areas[other]
+            if other ~= index then
+                towards[#towards + 1] = Hand({ map = there.map, area = area and area > 0 and area or nil })
+            end
+        end
+        Put(found, dock.map, dock.x, dock.y, { kind = "travel", key = "travel:" .. key .. ":" .. index, id = key,
+            what = record.kind, name = record.name, side = record.side, towards = Hand(towards),
+            to = #towards == 1 and towards[1].map or nil })
+    end
+end
+
+-- A way: a boat or a zeppelin at its docks; else at its start, and a way between two places (not a flight: the game
+-- knows its flight points) at both ends.
 local function Way(found, key, record)
     if record.kind == "flight" then return end
+    if record.docks then return Docks(found, key, record) end
     local place = { kind = "travel", key = "travel:" .. key, id = key, what = record.kind, name = record.name,
         side = record.side }
     local from, to = record.from, record.to

@@ -72,7 +72,10 @@ Pins.TEXT = {
     gathered = "%d here: click to zoom in",
     unverified = "Not yet confirmed by the game",
     level = "Level %d to %d",
+    towards = "To %s",
 }
+-- A way's kind in the tooltip.
+Pins.WAY_WORDS = { boat = "Boat", zeppelin = "Zeppelin", tram = "Tram", lift = "Lift", portal = "Portal" }
 
 local Map = Core.Data.Map()
 
@@ -236,6 +239,16 @@ local function Me()
            race = select(3, UnitRace("player")), class = select(3, UnitClass("player")) }
 end
 
+-- Where a dock's boat or zeppelin goes, in the game's words: the area there, and its zone where that is another.
+local function Towards(there)
+    local info = Core.Ask(C_Map.GetMapInfo, there.map)
+    local zone = type(info) == "table" and Core.Plain(info.name) or nil
+    local area = there.area and Core.Ask(C_Map.GetAreaInfo, there.area)
+    if area == "" then area = nil end
+    if area and zone and area ~= zone then return area .. ", " .. zone end
+    return area or zone or "?"
+end
+
 -- A place of Core's data as a pin: what it is says its kind and its look; nil for what the map does not show.
 local QUESTS = Core.Data.Set("Quests")
 local function FromData(place)
@@ -282,6 +295,17 @@ local function FromData(place)
         if place.levelMin and place.levelMax then pin.lines = { Pins.TEXT.level:format(place.levelMin, place.levelMax) } end
     elseif kind == "travel" then
         pin.kind, pin.atlas = "travel", WAYS[what] or "TaxiNode_Continent_Neutral"
+        if place.towards then
+            -- A dock: the game's own way (its TaxiPath tables), where it goes from here.
+            pin.name, pin.unverified, pin.lines = pin.name or Pins.WAY_WORDS[what], nil, {}
+            for _, there in ipairs(place.towards) do
+                pin.lines[#pin.lines + 1] = Pins.TEXT.towards:format(Towards(there))
+            end
+            if place.to then
+                pin.to, pin.click = place.to, "map"
+                pin.lines[#pin.lines + 1] = Pins.TEXT.openMap
+            end
+        end
     else
         return nil
     end

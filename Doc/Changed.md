@@ -3,8 +3,29 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 233 (Navigation), 35 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 236 (Navigation), 37 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation and Atlas; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Navigation: the docks of the boats and zeppelins on the map (Saneroki, 2026-10-20)
+- **Their map points** (`dev/tools/travel-data`, Core's set *Travel*): two new fields at the end of the schema,
+  `docks` (each dock of a boat or zeppelin on its zone map: one per place it stops at, stops within 20 yards one, in
+  the order it first comes to them, placed from its path by map-data's `Placer` like every map point) and
+  `dockAreas` (the game's area each lies in, its AreaTable ID from the terrain or a building there; 0 where none
+  is, Zephras Isle's two). 25 docks of the twelve ways, from the game's tables of build 70245, taken into the
+  versions they belong to as our tool's correction in place (`--take`). The tool takes the terrain files too now.
+- **Why the tool, not the run time:** the game's API has no way from a world's map to its zone maps (a world
+  position needs its zone map first), and Core's map reader works per zone map, as for *Spawns* and *Places*; the
+  client's `UiMapAssignment` and terrain areas place each dock once, exactly. *Places* keeps no piers, so a dock
+  is one pin, never two.
+- **On the map** (`Data.Map`, `Pins.lua`): a boat or zeppelin stands at each of its docks, one place each, also
+  where it stops twice (Feathermoon), key `travel:<way>:<n>`, with `towards` (the way's other docks, each map and
+  area; `to` their map where there is one). Its pin in the game's `TaxiNode_Continent_*`, named Boat or Zeppelin,
+  the tooltip where it sails to in the game's names of the area and the zone ("To Ratchet, The Barrens":
+  `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`), a click opening that map where there is one place only; not marked
+  unconfirmed, being the game's own ways. The docks on Zephras Isle wait with the isle's other pins (the canvas
+  keeps to the continents).
+- Tests: the test pack's boat with docks, its places and its pin with the tooltip (`dev/tests/navigation.lua`);
+  the docks placed, one per dock, a dock on no map left out with its area (`dev/tests/walk.py`).
 
 ### Navigation: routes to Zephras Isle (Saneroki, 2026-10-20)
 - **A plane of its own** (`Coords.lua`): a map straight on the world map that is no continent but has a box and a
