@@ -132,6 +132,16 @@ function Board.Take(window)
     Board.layouts = layouts
 end
 
+-- Whether a window is on the layout shown; a window put on it (a key asked for it), as the dropdown Windows does,
+-- only while it stands.
+function Board.Has(key)
+    return layouts and layouts:Has(key) or false
+end
+
+function Board.Add(key)
+    if layouts and layouts.standing and not layouts:Has(key) then layouts:Toggle(key) end
+end
+
 -- The window stands full: what it holds (inside) is that wide and high.
 function Board.Show(inside, width, height)
     if layouts then return layouts:Show(inside, width, height) end

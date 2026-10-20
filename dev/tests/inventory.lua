@@ -203,6 +203,28 @@ W.templates.WowScrollBoxList = W.templates.WowScrollBoxList or function(box)
     end
 end
 
+-- The game's bag keys, its override bindings, its bag windows and bag buttons (Keys.lua).
+W.overrides = {}
+GetBindingKey = function(action)
+    if action == "TOGGLEBACKPACK" then return "B" end
+    if action == "OPENALLBAGS" then return "SHIFT-B" end
+end
+ClearOverrideBindings = function(owner) W.overrides[owner] = nil end
+SetOverrideBinding = function(owner, _, key, command)
+    W.overrides[owner] = W.overrides[owner] or {}
+    W.overrides[owner][key] = command
+end
+NUM_CONTAINER_FRAMES = 2
+ContainerFrameCombinedBags = W.NewWidget("Frame", "ContainerFrameCombinedBags", UIParent)
+ContainerFrame1 = W.NewWidget("Frame", "ContainerFrame1", UIParent)
+ContainerFrame2 = W.NewWidget("Frame", "ContainerFrame2", UIParent)
+for _, bagFrame in ipairs({ ContainerFrameCombinedBags, ContainerFrame1, ContainerFrame2 }) do bagFrame:Hide() end
+MainMenuBarBackpackButton = W.NewWidget("Button", "MainMenuBarBackpackButton", UIParent)
+OpenAllBags = function() ContainerFrameCombinedBags:Show() end
+CloseAllBags = function() ContainerFrameCombinedBags:Hide() end
+local cursorItem = false
+CursorHasItem = function() return cursorItem end
+
 W.LoadCore(root)
 local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
@@ -650,6 +672,50 @@ Push()
 Stand()
 
 -------------------------------------------------------------------------------
+--  The bag keys
+-------------------------------------------------------------------------------
+local Keys = ns.Keys
+local function Overrides()
+    for _, list in pairs(W.overrides) do return list end
+    return {}
+end
+check(Overrides().B == Keys.COMMAND and Overrides()["SHIFT-B"] == Keys.COMMAND,
+    "your bag keys run ours (the game's override bindings, your key bindings as they are)")
+check(ContainerFrameCombinedBags:GetParent() ~= UIParent and ContainerFrame1:GetParent() == ContainerFrameCombinedBags:GetParent()
+    and not ContainerFrameCombinedBags:GetParent():IsShown(), "the game's bag windows stand in a hidden frame of ours")
+OpenAllBags()
+check(not ContainerFrameCombinedBags:IsVisible(), "opened by the game (a vendor, the bank): nothing of them shows")
+CloseAllBags()
+check(not handle.edge.full, "the full screen small before the key")
+Keys.Press()
+Stand()
+check(handle.edge.full and Board.Has("bags") and Board.Panel("bags"):IsShown(), "the bag key: the full screen with the bags on it")
+Keys.Press()
+check(not handle.edge.full, "pressed again: back to its size")
+Stand()
+MainMenuBarBackpackButton:GetScript("PreClick")(MainMenuBarBackpackButton, "LeftButton")
+MainMenuBarBackpackButton:GetScript("OnClick")(MainMenuBarBackpackButton, "LeftButton")
+Stand()
+check(handle.edge.full, "a click on the game's backpack button: ours too")
+Keys.Press()
+Stand()
+cursorItem = true
+MainMenuBarBackpackButton:GetScript("PreClick")(MainMenuBarBackpackButton, "LeftButton")
+cursorItem = false
+MainMenuBarBackpackButton:GetScript("OnClick")(MainMenuBarBackpackButton, "LeftButton")
+check(not handle.edge.full, "a click that put an item into the backpack opens nothing")
+-- The game's bags chosen in Classic windows: they show, until they are all closed.
+Keys.GameBags(true)
+OpenAllBags()
+check(ContainerFrameCombinedBags:GetParent() == UIParent and ContainerFrameCombinedBags:IsVisible(), "the game's bags chosen: they show")
+CloseAllBags()
+check(ContainerFrameCombinedBags:GetParent() ~= UIParent, "all closed: hidden again, ours are the bags")
+Core.Set(ns.name, "bagKeys", false)
+check(next(Overrides()) == nil and ContainerFrameCombinedBags:GetParent() == UIParent, "the setting off: the game's keys and bags are the game's")
+Core.Set(ns.name, "bagKeys", true)
+check(Overrides().B == Keys.COMMAND and ContainerFrameCombinedBags:GetParent() ~= UIParent, "on again")
+
+-------------------------------------------------------------------------------
 --  Standing down
 -------------------------------------------------------------------------------
 Push()
@@ -657,5 +723,7 @@ Stand()
 ns.StandDown("a test")
 check(ns.off and not frame:IsShown() and not handle.edge.full and bags.shown == false and not panel:IsShown(),
     "standing down: the windows go and the window with them")
+check(next(Overrides()) == nil and ContainerFrameCombinedBags:GetParent() == UIParent and ContainerFrame1:GetParent() == UIParent,
+    "and the bag keys and the game's bag windows are the game's again")
 
 io.write(("Inventory: all %d checks passed.\n"):format(passed))

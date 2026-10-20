@@ -94,6 +94,8 @@ ns.TEXT = {
     bagsMoveRight = "Move Right",
     bagsRound = "Round Icons",
     bagsResetColumns = "Reset Columns",
+    bagsKeys = "Bag Keys Open Our Bags",
+    bagsKeysTip = "Your bag keys and the game's bag buttons open the Inventory full screen with our bags; the game's bags stay closed (the dropdown Classic windows still opens them).",
     bagsFirstTip = "The view the bags open with: every item by category, every slot of your bags together, or each bag by itself.",
     bagsShowPinnedTip = "Pinned Items at the top of the bags: the items you pinned with a middle click.",
     bagsPinnedOne = "Pinned in One Bag and Each Bag",
@@ -123,6 +125,9 @@ ns.TEXT = {
     bankOne = "One Bank",
     bankTabsHead = "Tabs",
     bankGroup = "Group by Category",
+    bagsSort = "Sort Bags",
+    bagsSortTip = "Moves your items into the order of the categories, and inside each by Sort By: pinned items first, partial stacks joined, the empty slots last. Not in a fight; the reagent bag, the keyring and bags for one kind of item stay as they are.",
+    bagsSorting = "Sorting your bags...",
     bagsSplit = "Split Stack",
     bagsSplitOne = "Split",
     bagsSplitAll = "Auto Split",
@@ -139,13 +144,14 @@ ns.TEXT = {
 }
 
 -- What is told when the module stands down (Core's StandDown).
-ns.GIVEN_BACK = "the bottom right corner no longer fills the screen with your inventory"
+ns.GIVEN_BACK = "the bottom right corner no longer fills the screen with your inventory; the bag keys open the game's bags"
 
 -- The bags' settings (Bags/): what they show, how items look on them.
 local OPENS = { { "all", ns.TEXT.bagsAllItems }, { "one", ns.TEXT.bagsOneBag }, { "each", ns.TEXT.bagsEachBag } }
 local OPTIONS = {
     { key = "first", default = "all", choices = OPENS, text = ns.TEXT.bagsFirst, tip = ns.TEXT.bagsFirstTip,
       header = ns.TEXT.bags },
+    { key = "bagKeys", default = true, text = ns.TEXT.bagsKeys, tip = ns.TEXT.bagsKeysTip },
     { key = "showPinned", default = true, text = ns.TEXT.bagsShowPinned, tip = ns.TEXT.bagsShowPinnedTip },
     { key = "pinnedOne", default = true, text = ns.TEXT.bagsPinnedOne, tip = ns.TEXT.bagsPinnedOneTip },
     { key = "showRecent", default = true, text = ns.TEXT.bagsShowRecent, tip = ns.TEXT.bagsShowRecentTip },
@@ -166,6 +172,7 @@ Core.Edge.Options(OPTIONS, 1)
 -- Core's window takes the section Expand window in by itself (Edge.lua); a bags' setting draws the bags anew.
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if Core.Edge.KEYS[key] then return end
+    if key == "bagKeys" then return ns.Guarded(ns.Keys.Apply) end
     if ns.Bags then ns.Guarded(ns.Bags.Settled) end
 end })
 
@@ -173,6 +180,7 @@ end })
 function ns.GiveBack()
     ns.Board.Hide()
     ns.Window.Hide()
+    ns.Keys.Leave()
 end
 
 function ns.OnLoad()
@@ -183,4 +191,5 @@ function ns.OnLogin()
     ns.Window.Build()
     ns.Recent.Start()
     ns.Bank.Start()
+    ns.Keys.Start()
 end

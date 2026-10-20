@@ -13,6 +13,8 @@
 Inventory.lua
 # Its window: docked in the bottom right corner, filling the screen from that corner
 Window.lua
+# Your bag keys and the game's bag buttons open ours; the game's bags kept closed
+Keys.lua
 # The full screen's windows on Core's board; the parts after it register theirs
 Board.lua
 # The character sheet, our own, its parts windows of their own on the board: what they share first (the slots, the
@@ -36,7 +38,7 @@ Sheet\Currency.lua
 Sheet\Statistics.lua
 # The bags, our own: what they hold, the categories as the player arranged them, what came in lately, what each
 # view shows and where it goes, the game's item buttons, the foot, the menus, choosing items by clicks, the stack
-# splitter, the list's columns, the drawing, the sidebar, the window; the bank's window
+# splitter, our sort, the list's columns, the drawing, the sidebar, the window; the bank's window
 Bags\Contents.lua
 Bags\Categories.lua
 Bags\Recent.lua
@@ -47,6 +49,7 @@ Bags\Foot.lua
 Bags\Menus.lua
 Bags\Select.lua
 Bags\Split.lua
+Bags\Sort.lua
 Bags\Columns.lua
 Bags\Canvas.lua
 Bags\Sidebar.lua

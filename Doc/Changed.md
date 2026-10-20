@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 92 (Inventory), 90 (sheet), 186 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 105 (Inventory), 90 (sheet), 186 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
 ### Navigation: quest marks as the game's, the pin filter in sections (Saneroki, 2026-10-20)
@@ -212,6 +212,20 @@ Herbs and Find Minerals in turn, silently, all of it with switches in the pin fi
   all around), set out of combat where they reach less, kept per character and put back when switched off.
 - Tests: `dev/tests/navigation.lua`, 332 checks (the names and pictures, the filter switching the finders silently,
   the turns while moving, a herb found on its dot and gone again, the sparkles and the settings put back).
+
+### Inventory: the bag keys open our bags, the game's stay closed (Saneroki, 2026-10-20)
+Saneroki asked that the bag key open the Inventory full screen with our bags and the game's bags stay closed.
+- **Keys** (`Keys.lua`, new; `Bindings.xml`, new: `SANEUI_INVENTORY_BAGS`): the keys of the game's bag actions
+  (`TOGGLEBACKPACK`, `OPENALLBAGS`, `TOGGLEBAG1`-`4`, `TOGGLEREAGENTBAG1`) run ours by the game's override bindings,
+  as Combat's keys do: the full screen with the bags (`Window.Open`, `Window.Toggle`, `Board.Add`, `Board.Has`),
+  pressed again back. A click on the game's bag buttons does the same (hooks after their clicks; not when it put an
+  item into the bag).
+- **The game's bags** stand unseen in a hidden frame of ours (`Core.Lend`), so the game opens and closes them as
+  always (vendor, bank, mail) and nothing shows; Classic windows' *Bags* shows them again until they are all closed.
+- **The setting** *Bag Keys Open Our Bags* (`bagKeys`, on at first) in the section *Bags*; standing down gives it all
+  back.
+- Tests: `dev/tests/inventory.lua` (105 checks): the override bindings, the game's bag windows unseen, the key and
+  the backpack button toggling the full screen, Classic windows' bags, the setting, standing down.
 
 ### Inventory: every category and its name always in the sidebar, the bags' strip at first (Saneroki, 2026-10-20)
 Saneroki asked that the bag slots and categories work and that the categories and their names always show.
