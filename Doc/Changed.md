@@ -6,6 +6,20 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 386 (Navigation), 105 (Inventory), 90 (sheet), 237 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### Navigation: the bosses' 3D models on the dungeon maps (Saneroki, 2026-10-21)
+- **Core's set *Dungeons***: each boss's tuple gains `display` (its look: the first creature of its entry in
+  Blizzard's retail boss journal, `JournalEncounterCreature`, read from the local retail install), only where
+  Forever's live and beta clients both have that creature display (129 of 138; the other 9 got new looks in retail:
+  War Master Voone, Mother Smolderweb, Lethtendris, Sapphiron and five of Stratholme's). Forever's client draws its
+  own model for the display. The batch taken in again (the set is new, nothing else changed).
+- **The dungeons' view** (`Dungeons.lua`): a boss with a look gets a `PlayerModel` of it standing on its mark
+  (`SetDisplayInfo`, as the game's guild news shows a boss), `Dungeons.MODEL_WIDTH` x `MODEL_HEIGHT` at every zoom,
+  turned `Dungeons.FACING`; one lower on the screen in front; hidden while it would reach past the view's edge (the
+  engine does not cut models there), its mark stays; its tooltip the boss's; let go (`ClearModel`) when the view
+  closes.
+- Tests: Navigation 399 checks (the model in its look on its mark, its tooltip, hidden past the edge and back, a
+  boss without a look, let go). A game restart takes it in (the World pack's set changed).
+
 ### Navigation: the travel overlay lower and golden, smooth, and while waiting at a dock (Saneroki, 2026-10-21)
 - **The overlay** (`TripView.lua`, at Saneroki's ask): centred two thirds up the screen (placed again when the
   screen's height changes), a fine golden line in the map route's art (Route.lua's edge, fill and glint, its pulse

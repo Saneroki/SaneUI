@@ -90,7 +90,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 - **Dungeons** on the bar: every dungeon and raid the game has a map of, and those Core's data has a map of
   (26 of Forever's: the classic dungeons and raids, each floor in the game's own map art), A to Z; chosen, its map
   over the map, and beside it its floors. Where the data knows them, each boss in the game's boss mark where it
-  stands, its name in the tooltip (not yet confirmed by the game). The wheel zooms it, a drag moves it, a right
+  stands, and its own 3D model standing on the mark (the game's model of the boss's look), its name in the tooltip
+  (not yet confirmed by the game). The wheel zooms it, a drag moves it, a right
   click goes back to the map at its zone. Shift and a click on a dungeon's entrance opens it too, and inside a
   dungeon the full map opens on its map, at the floor you stand on where the game tells your place.
 - **Zephras Isle** is on the map as a continent is, a zone of its own: the map follows you there, its pins and the
@@ -252,7 +253,11 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   (`Dungeons.Key(instance)` gives the lowest; an entrance's pin takes it as its `to`), its art from the set's tiles
   (the game's files), the player's arrow by `UnitPosition` in the floor's box, the floor you are on by the smallest
   box that holds you (`Dungeons.Here`, the instance from `GetInstanceInfo`), the bosses (`Dungeons.Bosses`) in
-  `Dungeons.BOSS` over the art, the same size at every zoom (`Dungeons.PlaceBosses`), named by the set *Encounters*.
+  `Dungeons.BOSS` over the art, the same size at every zoom (`Dungeons.PlaceBosses`), named by the set *Encounters*;
+  a boss with a look (the set's `display`) gets a `PlayerModel` of it standing on its mark (`SetDisplayInfo`, as the
+  game's guild news shows a boss; `Dungeons.MODEL_WIDTH` x `MODEL_HEIGHT`, turned `Dungeons.FACING`), one lower on
+  the screen in front, hidden while it would reach past the view's edge (models are not cut there), let go
+  (`ClearModel`) when the view closes.
 - **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
   in view: a dark edge, the game's dependency bar art tinted gold, its glint moved along by a
   `TextureCoordTranslation` animation (no code of ours each frame); walks gold, flights pale, ships red. The
@@ -394,7 +399,8 @@ Tests: `dev/tests/navigation.lua`.
   drawn red, straight from entrance to entrance.
 - **2026-10-21, dungeon maps of Core's data, with their bosses:** Forever's client has no maps of its dungeons, so
   the view's list takes Core's new set *Dungeons* too (the classic dungeons' and raids' floors in the game's own map
-  art, their world boxes, where each boss stands), with the game's boss mark per boss.
+  art, their world boxes, where each boss stands and its look), with the game's boss mark per boss and the boss's
+  3D model standing on it.
 - **2026-10-20, quest marks as the game's, the filter in sections:** quests in your log the yellow ?, quests to
   take the yellow ! (no longer see-through), too low the grey !, for later a red ? (`Pins.RED` over the game's
   mark); the tooltips no longer say that a click puts the map pin there; the pin filter in titled sections

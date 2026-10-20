@@ -11,7 +11,8 @@ The bigger changes of each version, newest first.
   dock or a tram station, it shows when the next ship or train comes
   and when you can board (ride it once on your realm for its times).
 - Navigation: the maps of the classic dungeons and raids in the game's
-  own art, floor by floor, with each boss where it stands.
+  own art, floor by floor, with each boss where it stands, its 3D model
+  on the spot.
 - Navigation: the quest marks as the game's: the yellow ! for quests to
   take, the yellow ? for those in your log, grey for those too low and
   a red ? for those you cannot take yet; the pin filter in sections

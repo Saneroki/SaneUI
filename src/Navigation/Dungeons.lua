@@ -16,8 +16,10 @@ local _, ns = ...
 --                   inside
 --      the art      the game's own map art of the floor (Art.Of; the set's: its tiles, the game's
 --                   files), fitted into the view whole
---      the bosses   where Core's set Dungeons has them: the game's boss mark at each one's place, the
---                   same size at every zoom, its name (the set Encounters) in its tooltip
+--      the bosses   where Core's set Dungeons has them: the game's boss mark at each one's place and the
+--                   boss's own 3D model standing on it (the game's model of its display), the same size at
+--                   every zoom, its name (the set Encounters) in the tooltip; a model that would reach past
+--                   the view's edge is hidden (the engine does not cut it there), its mark stays
 --      the mouse    the wheel zooms around the mouse (from the whole map up to Dungeons.NEAR times
 --                   nearer), a drag moves it, a right click goes back to the map, at the zone the
 --                   dungeon lies in where the map can show it
@@ -37,6 +39,8 @@ Dungeons.LOOK = 0.2 -- seconds between two looks at the player's place
 Dungeons.LEVEL = 25 -- over the canvas' layers, under the bar (TopBar: 30)
 Dungeons.BOSS = "vignettekillboss" -- a boss's mark: the game's own
 Dungeons.BOSS_SIZE = 26
+Dungeons.MODEL_WIDTH, Dungeons.MODEL_HEIGHT = 72, 88 -- a boss's model standing on its mark, in screen units
+Dungeons.FACING = 0.35 -- radians: the models turned a little from facing the view, so they read as figures
 Dungeons.TEXT = {
     dungeons = Core.Word("DUNGEONS", "Dungeons"),
     floor = "Floor",
@@ -355,11 +359,60 @@ end
 -------------------------------------------------------------------------------
 --  The bosses
 -------------------------------------------------------------------------------
-local function BossTip(mark)
-    GameTooltip:SetOwner(mark, "ANCHOR_RIGHT")
+local function BossTip(part)
+    local mark = part.mark or part
+    GameTooltip:SetOwner(part, "ANCHOR_RIGHT")
     GameTooltip:SetText(mark.name or "?", 1, 1, 1)
     GameTooltip:AddLine(Dungeons.TEXT.unverified, 0.5, 0.5, 0.5)
     GameTooltip:Show()
+end
+
+-- A boss's mark, and the frame for its model above it (made when a boss with a look first needs it).
+local function Mark()
+    local mark = CreateFrame("Frame", nil, over)
+    mark:SetSize(Dungeons.BOSS_SIZE, Dungeons.BOSS_SIZE)
+    mark.icon = mark:CreateTexture(nil, "ARTWORK")
+    mark.icon:SetAllPoints()
+    mark.icon:SetAtlas(Dungeons.BOSS)
+    mark:EnableMouse(true)
+    mark:SetScript("OnEnter", ns.Guard(BossTip))
+    mark:SetScript("OnLeave", GameTooltip_Hide)
+    return mark
+end
+
+local function Model(mark)
+    local model = CreateFrame("PlayerModel", nil, over)
+    model:SetSize(Dungeons.MODEL_WIDTH, Dungeons.MODEL_HEIGHT)
+    model.mark = mark
+    model:EnableMouse(true)
+    model:SetScript("OnEnter", ns.Guard(BossTip))
+    model:SetScript("OnLeave", GameTooltip_Hide)
+    mark.model = model
+    return model
+end
+
+-- A boss's model shown in its look (the game's creature display), standing on its mark; out of sight without a
+-- look, or where it would reach past the view's edge.
+local function Stand(mark, display, x, y)
+    local model = mark.model
+    if not display then
+        if model then model:Hide() end
+        return
+    end
+    model = model or Model(mark)
+    if model.display ~= display then
+        model.display = display
+        model:SetDisplayInfo(display)
+        model:SetPortraitZoom(0)
+        model:SetFacing(Dungeons.FACING)
+    end
+    local width, height = frame:GetSize()
+    local half = Dungeons.MODEL_WIDTH / 2
+    local inside = x - half >= -width / 2 and x + half <= width / 2 and y >= -height / 2
+        and y + Dungeons.MODEL_HEIGHT <= height / 2
+    model:ClearAllPoints()
+    model:SetPoint("BOTTOM", frame, "CENTER", x, y)
+    model:SetShown(inside)
 end
 
 -- The bosses of the floor shown, as the set has them: { name, x, y } (0 to 1 on the floor's map), in their order.
@@ -370,36 +423,34 @@ function Dungeons.Bosses(map)
     for _, boss in ipairs(SET:Get(floor.instance, "bosses") or {}) do
         if boss.floor == floor.data.floor and boss.x and boss.y then
             found[#found + 1] = { encounter = boss.encounter, name = ENCOUNTERS:Get(boss.encounter, "name"),
-                                  x = boss.x, y = boss.y }
+                                  x = boss.x, y = boss.y, display = boss.display }
         end
     end
     return found
 end
 
--- Each boss's mark where it stands on the art as the zoom and the drag put it (scale: the art's), the same size
--- at every zoom; the marks of no boss hidden.
+-- Each boss's mark where it stands on the art as the zoom and the drag put it (scale: the art's), its model on
+-- it, the same size at every zoom; one lower on the screen in front of one behind it; the marks of no boss hidden.
 function Dungeons.PlaceBosses(art, scale)
     local bosses = shown and Dungeons.Bosses(shown) or {}
+    local base = over:GetFrameLevel()
     for index, boss in ipairs(bosses) do
-        local mark = marks[index]
-        if not mark then
-            mark = CreateFrame("Frame", nil, over)
-            mark:SetSize(Dungeons.BOSS_SIZE, Dungeons.BOSS_SIZE)
-            mark.icon = mark:CreateTexture(nil, "ARTWORK")
-            mark.icon:SetAllPoints()
-            mark.icon:SetAtlas(Dungeons.BOSS)
-            mark:EnableMouse(true)
-            mark:SetScript("OnEnter", ns.Guard(BossTip))
-            mark:SetScript("OnLeave", GameTooltip_Hide)
-            marks[index] = mark
-        end
+        local mark = marks[index] or Mark()
+        marks[index] = mark
         mark.name = boss.name
+        local x, y = panX + (boss.x - 0.5) * art.width * scale, panY - (boss.y - 0.5) * art.height * scale
         mark:ClearAllPoints()
-        mark:SetPoint("CENTER", frame, "CENTER", panX + (boss.x - 0.5) * art.width * scale,
-            panY - (boss.y - 0.5) * art.height * scale)
+        mark:SetPoint("CENTER", frame, "CENTER", x, y)
+        mark:SetFrameLevel(base + 1)
         mark:Show()
+        Stand(mark, boss.display, x, y)
+        -- In front by how far down it stands (the top of the art behind), over the marks.
+        if mark.model then mark.model:SetFrameLevel(base + 2 + math.floor(boss.y * 100)) end
     end
-    for index = #bosses + 1, #marks do marks[index]:Hide() end
+    for index = #bosses + 1, #marks do
+        marks[index]:Hide()
+        if marks[index].model then marks[index].model:Hide() end
+    end
 end
 
 -- Over the canvas, as large as it, under the bar; hidden until a dungeon is chosen.
@@ -463,7 +514,14 @@ function Dungeons.Close()
     frame:SetScript("OnUpdate", nil)
     frame:Hide()
     for _, texture in ipairs(tiles) do texture:SetTexture(nil) end -- its files let go
-    for _, mark in ipairs(marks) do mark:Hide() end
+    for _, mark in ipairs(marks) do
+        mark:Hide()
+        if mark.model then
+            mark.model:Hide()
+            mark.model:ClearModel() -- its model let go
+            mark.model.display = nil
+        end
+    end
     ns.Safe("bar", ns.TopBar.Update)
 end
 

@@ -538,11 +538,11 @@ for row = 0, 2 do
 end
 Set(dungeonsPath .. "/Dungeons.lua", "Dungeons", "0000000b", "int", '"name", "floors", "tiles", "bosses"',
     '"text", "list tuple(floor:int,name:text,width:int,height:int,tile:int,north:number,south:number,west:number,east:number)", '
-    .. '"list tuple(floor:int,row:int,column:int,file:int)", "list tuple(encounter:int,floor:int,x:number,y:number)"',
+    .. '"list tuple(floor:int,row:int,column:int,file:int)", "list tuple(encounter:int,floor:int,x:number,y:number,display:int)"',
     'R[90] = "70245\t\tDeep Halls\t1\031Upper\0311002\031668\031256\031100\031-100\031150\031-150'
     .. '\0302\031Lower\0311002\031668\031256\03150\031-50\03175\031-75\t'
     .. table.concat(upper, "\030") .. '\0302\0310\0310\0319101\0302\0310\0311\0319102'
-    .. '\t700\0311\0310.25\0310.5\030701\0312\0310.5\0310.5"\n')
+    .. '\t700\0311\0310.25\0310.5\0314203\030701\0312\0310.5\0310.5"\n')
 Set(dungeonsPath .. "/Encounters.lua", "Encounters", "0000000c", "int", '"name", "instance", "order"', '"text", "int", "int"',
     'R[700] = "70245\t\tThe First Boss\t90\t0"\nR[701] = "70245\t\tThe Second Boss\t90\t1"\n')
 out = assert(io.open(dungeonsPath .. "/SaneUI_Data_DungeonMaps.toc", "w"))
@@ -2523,6 +2523,9 @@ end)()
 -- game's tiles, the bosses' marks with their names (the set Encounters), the player's arrow by the world.
 ;(function()
     local Dungeons = ns.Dungeons
+    -- A model's look, as the game keeps it.
+    W.methods.SetDisplayInfo = function(self, display) self._display, self._cleared = display, nil end
+    W.methods.ClearModel = function(self) self._cleared = true end
     if Canvas.camera ~= Window.full then
         Window.Toggle()
         Window.frame._group:Run(1)
@@ -2551,6 +2554,7 @@ end)()
         end
         return found
     end
+    Dungeons.frame._width, Dungeons.frame._height = 1600, 868 -- as large as the canvas
     check(Canvas.Show("90:1") and Dungeons.Shown() == "90:1" and Shown(9001, 9012) == 12,
         "its upper floor shown, in the game's tiles the set names")
     local marks = Marks()
@@ -2560,6 +2564,26 @@ end)()
     marks[1]._scripts.OnEnter(marks[1])
     check(GameTooltip._text == "The First Boss" and GameTooltip._lines and GameTooltip._lines[1] == Dungeons.TEXT.unverified,
         "its tooltip: the boss's name as the game's encounters have it, not yet confirmed")
+    local model = marks[1].model
+    check(model and model._kind == "PlayerModel" and model._display == 4203 and model._shown
+        and model._points[1][1] == "BOTTOM" and near(model._points[1][4], marks[1]._points[1][4])
+        and model._level > marks[1]._level, "its own model in its look, standing on its mark, over it")
+    GameTooltip._text = nil
+    model._scripts.OnEnter(model)
+    check(GameTooltip._text == "The First Boss", "the model's tooltip: the boss")
+    -- Dragged 560 to the left: the boss past the view's left edge, its model would reach out of the view.
+    local view = Dungeons.frame
+    local wasX = cursorX
+    view._scripts.OnMouseDown(view, "LeftButton")
+    cursorX = wasX - 560
+    view._scripts.OnUpdate(view, 0.01)
+    view._scripts.OnMouseUp(view, "LeftButton")
+    check(not model._shown and marks[1]._shown, "a model that would reach past the view's edge: hidden, its mark stays")
+    view._scripts.OnMouseDown(view, "LeftButton")
+    cursorX = wasX
+    view._scripts.OnUpdate(view, 0.01)
+    view._scripts.OnMouseUp(view, "LeftButton")
+    check(model._shown, "dragged back: shown again")
     local before, instance = UnitPosition, rawget(_G, "GetInstanceInfo")
     UnitPosition = function() return 0, 0, 0, 0 end
     GetInstanceInfo = function() return "Deep Halls", "party", 1, "", 5, 0, false, 90 end
@@ -2570,9 +2594,11 @@ end)()
     check(Dungeons.Here() == "90:2", "inside: the floor whose box holds the player, the smallest")
     check(Dungeons.Show("90:2") and Shown(9101, 9102) == 2 and Shown(9001, 9012) == 0 and #Marks() == 1,
         "the lower floor: its own tiles and boss")
+    check(not Marks()[1].model or not Marks()[1].model._shown, "a boss without a look: its mark alone")
     UnitPosition, GetInstanceInfo = before, instance
     Dungeons.Close()
-    check(#Marks() == 0, "closed: no marks")
+    check(#Marks() == 0 and not model._shown and model._cleared, "closed: no marks, the models let go")
+    W.methods.SetDisplayInfo, W.methods.ClearModel = nil, nil
 end)()
 
 -- A failure stands the module down: everything given back.
