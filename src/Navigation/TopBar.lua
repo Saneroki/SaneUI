@@ -11,9 +11,11 @@ local _, ns = ...
 --                        Z): the map shows it whole; each says what the map shows now
 --      Dungeons          every dungeon and raid the game has a map of (A to Z): its map over the map
 --                        (Dungeons.lua); beside it, while one with floors shows, its floors
---      Pins              the pin filter: a checkbox per kind of pin with its icon (the setting Pins on the
---                        map), and at its right a slider for that kind's size (the quest areas': their
---                        opacity; the setting pinSizes, kept per profile)
+--      Pins              the pin filter, in sections under their titles (ns.PIN_SECTIONS: around you, quests,
+--                        travel, towns, rares and treasures, gathering): a checkbox per kind of pin with its
+--                        icon large before its words (the setting Pins on the map), and at its right a slider
+--                        for that kind's size (the quest areas': their opacity; the setting pinSizes, kept per
+--                        profile)
 --
 --  Only while the window fills the screen; the game's own menus (WowStyle1DropdownTemplate,
 --  Blizzard's menu system) for the dropdowns.
@@ -29,8 +31,8 @@ TopBar.GAP = 4       -- between two buttons
 TopBar.BUTTON_WIDTH, TopBar.BUTTON_HEIGHT = 110, 24
 TopBar.MENU_WIDTH = 170
 -- The pin filter's rows: a size slider this wide, room right of it for its words (150%), the checkbox's room left
--- of the kind's name, and the row's height.
-TopBar.SIZER, TopBar.SIZE_LABEL, TopBar.CHECK, TopBar.ROW = 120, 44, 40, 26
+-- of the kind's name, the row's height, and its icon's size.
+TopBar.SIZER, TopBar.SIZE_LABEL, TopBar.CHECK, TopBar.ROW, TopBar.ICON = 120, 44, 40, 30, 24
 TopBar.TEXT = {
     questLog = Core.Word("QUEST_LOG", "Quest Log"),
     questLogTip = "The quest log's window over the map, or the map alone. Its pin keeps it on the screen while the map is small too.",
@@ -175,17 +177,48 @@ local function Sizer(button, key)
     return width, TopBar.ROW
 end
 
--- The pin filter: a checkbox per kind with its icon before its words, and the size slider of each kind that has a
--- size (the pins, the party's marks, the route's line); the quest areas' slider is their opacity.
+-- A row without a slider as tall as those with one, room for its large icon.
+local function Tall(button)
+    local text = button.fontString
+    return (text and text:GetUnboundedStringWidth() or 100) + TopBar.CHECK, TopBar.ROW
+end
+
+-- The pin filter: its sections, each under its title and a line between them; in each a checkbox per kind with its
+-- icon before its words, and the size slider of each kind that has a size (the pins, the party's marks, the route's
+-- line); the quest areas' slider is their opacity. A kind of no known section comes last.
 local SIZED = { group = true, route = true, area = true }
 local function Filter(_, root)
     local sliders = rawget(_G, "MinimalSliderWithSteppersMixin") ~= nil
+    -- Scrolled only where the screen is lower than the list (the game's menu scrolls past that height alone).
+    local room = (tonumber(UIParent:GetHeight()) or 0) - TopBar.HEIGHT - 2 * TopBar.INSET
+    if root.SetScrollMode then root:SetScrollMode(math.max(TopBar.LIST_HEIGHT, room)) end
+    local known, sections = {}, {}
+    for index, section in ipairs(ns.PIN_SECTIONS) do
+        known[section[1]] = index
+        sections[index] = { title = section[2] }
+    end
+    local rest = {}
     for _, kind in ipairs(ns.KINDS) do
-        local key = kind[1]
-        local box = root:CreateCheckbox(ns.KindLabel(kind), ns.Guard(function() return ns.Pins.Shows(key) end),
-            ns.Guard(function() Switch(key) end))
-        if sliders and (ns.Pins.SIZE[key] or SIZED[key]) then
-            box:AddInitializer(ns.Guard(function(button) return Sizer(button, key) end))
+        local section = sections[known[kind.section]] or rest
+        section[#section + 1] = kind
+    end
+    sections[#sections + 1] = rest
+    local first = true
+    for _, section in ipairs(sections) do
+        if #section > 0 then
+            if not first then root:CreateDivider() end
+            first = false
+            if section.title then root:CreateTitle(section.title) end
+            for _, kind in ipairs(section) do
+                local key = kind[1]
+                local box = root:CreateCheckbox(ns.KindLabel(kind, TopBar.ICON),
+                    ns.Guard(function() return ns.Pins.Shows(key) end), ns.Guard(function() Switch(key) end))
+                if sliders and (ns.Pins.SIZE[key] or SIZED[key]) then
+                    box:AddInitializer(ns.Guard(function(button) return Sizer(button, key) end))
+                else
+                    box:AddInitializer(ns.Guard(Tall))
+                end
+            end
         end
     end
 end

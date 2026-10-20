@@ -36,24 +36,27 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 - **Following you:** both views follow you at first; after a drag the map comes back to you once the mouse
   has been off it for a while (*Follow again after*).
 - **Pins:** every kind of thing in its own icon, the game's map icons: no discs, no numbers. The game's own marks
-  where it tells them (your quests: the turn-in mark when ready, the target while in progress, the quest the arrow
-  leads to glowing; flight points of your side; rares (a skull) and treasures (a chest) nearby; the game's points
-  and ways into other maps), and what Core's data knows: quest givers with a quest you can take (the yellow !,
-  see-through so your own quests stand out), with a quest too low to give you experience or one you cannot take yet
-  (its level, a quest first: a grey !), or with quests you have done only (grey, off at first); services, each its
+  where it tells them (your quests: the yellow ?, the quest the arrow leads to glowing; flight points of your side;
+  rares (a skull) and treasures (a chest) nearby; the game's points and ways into other maps), and what Core's data
+  knows: quest givers with a quest you can take (the yellow !), with a quest too low to give you experience (a grey
+  !) or one you cannot take yet (its level, a quest first: a red ?), or with quests you have done only (grey, off
+  at first); services, each its
   own (the innkeeper's mug, the banker's bags, a class trainer's book, a profession trainer's scroll, a merchant
   the game's anvil, one of food, reagents, poisons or ammunition the game's icon for those...), entrances, the docks of the boats (a boat) and zeppelins (an airship) with where they go, where
   herbs and ore grow (*Possible herbs*, *Possible ore*), books (an open book): as far as the data holds them; a place the game has not confirmed says so. A tooltip
   says what it is: an NPC's title (*Warrior Trainer*, *Weaponsmith*), its quests with their levels, and why a grey
   one is not for you yet. One pin per thing: the game's word hides the data's. Pins that would cover each other
   show as one, in the first one's icon, its tooltip what is there. **A click on any pin**, on the small map and the
-  full one, puts the game's map pin where it stands (the golden line leads there); a gathered one zooms in too; on
+  full one, puts the game's map pin where it stands (the golden line leads there; the tooltips do not say so); a
+  gathered one zooms in too; on
   the full map a quest in your log also leads the game's arrow to it, and a quest giver's quests show in the quest
   log (below). Shift and a click on an entrance, a way or a dock with one destination opens its map. A continent
   whole shows only travel and places; the minimap no
   books or treasures, services only near you. The party and raid in their class colours.
 - **The pin filter** (*Pins* on the full map's bar, or the setting *Pins on the map*): a checkmark per kind, each
-  with its icon. The quests each a row of their own: *Quests in your log*, *Quest offers*, *Low-level quests* (no
+  with its icon large before its words, in sections under their titles: *Around you* (the route, the minimap's
+  dots, the party and raid), *Quests*, *Travel*, *Towns and services*, *Rares and treasures*, *Gathering*; it
+  scrolls on a screen lower than it. The quests each a row of their own: *Quests in your log*, *Quest offers*, *Low-level quests* (no
   experience for you any more), *Quests for later* (once you meet what they ask) and *Done quests*. Its
   first two are no pins: *Route to the map pin* (the golden line) and *Minimap dots*: what the game's minimap
   shows around you (players, tracked herbs and ore, quest areas), on the small map and on the full map too, there
@@ -379,6 +382,10 @@ Tests: `dev/tests/navigation.lua`.
   it is quicker: from one city's entrance to it to the other's, its cost the walks down and up and the loading
   screens (`Planner.STATION`), half the time between two trains and the run (Core's set *Travel*: `wait`, `time`);
   drawn red, straight from entrance to entrance.
+- **2026-10-20, quest marks as the game's, the filter in sections:** quests in your log the yellow ?, quests to
+  take the yellow ! (no longer see-through), too low the grey !, for later a red ? (`Pins.RED` over the game's
+  mark); the tooltips no longer say that a click puts the map pin there; the pin filter in titled sections
+  (`ns.PIN_SECTIONS`, each kind's `section`) with icons of 24 (`TopBar.ICON`), rows 30 high.
 - **2026-10-20, coasts and Blended:** the coast keeps what stands on the water (docks, piers, bridges, ships, as the
   minimap shows them) and the shallows of a beach, and a tile on a coast is cut by a finer mask of its own
   (`Art/Coasts/`, `Coasts.lua`); the new view *Blended* fades Parchment far out into Scrying close in.

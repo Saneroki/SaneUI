@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: the quest marks as the game's: the yellow ! for quests to
+  take, the yellow ? for those in your log, grey for those too low and
+  a red ? for those you cannot take yet; the pin filter in sections
+  with larger icons.
 - Guild: a new window for your guild, on Social's full screen (or on
   its own), opened with your guild key. An overview of who is where,
   the guild's news and chat and the race to the highest level; the

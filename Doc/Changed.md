@@ -6,6 +6,21 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 92 (Inventory), 90 (sheet), 186 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### Navigation: quest marks as the game's, the pin filter in sections (Saneroki, 2026-10-20)
+- **Quest marks** (`Pins.lua`, `PinView.lua`): quests in your log the game's yellow question mark (`Pins.ICONS.log`;
+  the target mark for one in progress is gone), quests to take the yellow exclamation mark at full opacity
+  (`PinView.OFFERED` gone), too low the grey one, for later the question mark in red (`Pins.ICONS.later`,
+  `pin.tint = Pins.RED` over the game's yellow; the kind *Quests for later* takes its own pins, `low` and `later` no
+  longer share the grey mark).
+- **Tooltips**: no line saying a click puts the map pin there (`Pins.TEXT.drop` gone); the quest lines say only what a
+  click does on the full map.
+- **The pin filter** (`TopBar.lua`, `Navigation.lua`): its kinds in sections under the game's menu titles, a line
+  between them (`ns.PIN_SECTIONS`, each kind's `section`; a kind of no known section last): around you, quests,
+  travel, towns and services, rares and treasures, gathering. Icons of 24 (`TopBar.ICON`; `ns.KindLabel(kind, size)`,
+  a tint in the atlas markup), rows 30 high, those without a slider too; it scrolls on a screen lower than it.
+- Tests: Navigation 380 checks (the four quest marks, the red row in the filter, the sections). A `/reload` takes it
+  in.
+
 ### Navigation: the tram in the routes (Saneroki, 2026-10-20)
 - **The planner takes the Deeprun Tram** (`Planner.lua`, `Tram`): its two entrances (Core's set *Travel*, the
   tram's `docks`: the cities' entrances to its stations, points of the city maps) are docks of the journey on the

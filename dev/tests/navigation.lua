@@ -1169,14 +1169,19 @@ check(full.level == "zone" and count == 12, "the zone's pins: 13 things, two of 
 do
     local giver = pins["npc:72"]
     check(giver and giver.pin.kind == "quest" and giver.pin.offer and giver.icon._atlas == Pins.ICONS.offer
-        and giver._alpha == ns.PinView.OFFERED and pins["quest:7"]._alpha == 1 and giver.pin.click == "preview"
+        and giver._alpha == 1 and not giver.pin.grey and not giver.pin.tint and giver.pin.click == "preview"
         and giver.pin.lines[1][1] == "A Quest to Take (level 5)",
-        "a quest offer: the game's quest mark, see-through, the quests in your log not; its tooltip names it")
+        "a quest offer: the game's yellow exclamation mark, not see-through; its tooltip names it")
     local waiting = pins["npc:74"]
-    check(waiting and waiting.pin.kind == "later" and waiting.pin.grey and waiting.icon._atlas == Pins.ICONS.grey
+    check(waiting and waiting.pin.kind == "later" and not waiting.pin.grey and waiting.pin.tint == Pins.RED
+        and waiting.icon._atlas == Pins.ICONS.later
         and waiting.pin.lines[1][1] == "A Quest for Later (level 30)"
         and waiting.pin.lines[2][1]:find(Pins.TEXT.needsLevel:format(60), 1, true),
-        "a quest for later: a grey mark, its tooltip saying why (the level it asks)")
+        "a quest for later: the question mark in red, its tooltip saying why (the level it asks)")
+    local laterKind
+    for _, kind in ipairs(ns.KINDS) do if kind[1] == "later" then laterKind = kind end end
+    check(ns.KindLabel(laterKind) == "|A:questturnin:16:16:0:0:255:51:38|a " .. ns.TEXT.later,
+        "the pin filter's row for quests for later: the question mark in red before its words")
     local teacher = pins["npc:75"]
     check(teacher and teacher.pin.kind == "service" and teacher.icon._atlas == "class"
         and teacher.pin.lines[1] == "Warrior Trainer" and not teacher.pin.lines[2],
@@ -1196,12 +1201,20 @@ do
     Canvas.Layout()
     check(Pins.Standing({ level = 10 }, 999) == "low" and select(2, Pins.Standing({ level = 10 }, 999)) == Pins.TEXT.low,
         "past the game's green range below you: too low, it gives no experience")
+    W.Fire("PLAYER_LEVEL_UP")
+    W.Wait(0)
+    Canvas.Layout()
+    local low = Drawn()["npc:72"]
+    check(low and low.pin.kind == "low" and low.pin.grey and not low.pin.tint and low.icon._atlas == Pins.ICONS.grey,
+        "its quest too low now: the giver's mark grey")
     UnitLevel = function() return 6 end
+    W.Fire("PLAYER_LEVEL_UP")
+    W.Wait(0)
     Canvas.Layout()
 end
 check(pins["quest:7"] and pins["quest:7"].pin.name == "Wolves Across the Border" and not pins["quest:7"].pin.complete
-    and pins["quest:7"].pin.kind == "log" and pins["quest:7"].icon._atlas == Pins.ICONS.progress,
-    "a quest in your log on the map where the game says, in progress: the target mark, no disc")
+    and pins["quest:7"].pin.kind == "log" and pins["quest:7"].icon._atlas == Pins.ICONS.log,
+    "a quest in your log on the map where the game says, in progress: the yellow question mark, no disc")
 local questPoint = pins["quest:7"]._points[1]
 check(near(questPoint[4], (-200 - 0) * 0.4) and near(questPoint[5], (-9100 + 9250) * 0.4),
     "placed where the game says, on the canvas' holder (a drag moves it with the map)")
@@ -1220,7 +1233,7 @@ do
     GameTooltip._lines = nil
     dock._scripts.OnEnter(dock)
     local lines = GameTooltip._lines
-    check(lines and lines[1] == "To The Far Shore, Kalimdor" and lines[2] == Pins.TEXT.openMap and lines[3] == Pins.TEXT.drop and not lines[4],
+    check(lines and lines[1] == "To The Far Shore, Kalimdor" and lines[2] == Pins.TEXT.openMap and not lines[3],
         "its tooltip: where it sails to, the area and the zone in the game's words; the game's own way, not unconfirmed")
 end
 local marker = pins["gathered:npc:69"]
@@ -1262,12 +1275,30 @@ do
     end
     local rows = {}
     for _, item in ipairs(filter and filter._items or {}) do
-        for _, kind in ipairs(ns.KINDS) do if item.text == ns.KindLabel(kind) then rows[kind[1]] = item end end
+        for _, kind in ipairs(ns.KINDS) do if item.text == ns.KindLabel(kind, ns.TopBar.ICON) then rows[kind[1]] = item end end
     end
     local herbs, route, minimapRow, area = rows.herb, rows.route, rows.minimap, rows.area
-    check(herbs and herbs.text == "|A:professions_tracking_herb:16:16|a Possible herbs" and rows.foundHerb and rows.foundOre and rows.log and rows.quest and rows.low
-        and rows.later and rows.done, "the pin filter: each kind with its icon before its words; the quests in your log, "
+    check(herbs and herbs.text == "|A:professions_tracking_herb:24:24|a Possible herbs" and rows.foundHerb and rows.foundOre and rows.log and rows.quest and rows.low
+        and rows.later and rows.done, "the pin filter: each kind with its icon large before its words; the quests in your log, "
         .. "the quest offers, the low ones and those for later each a row of their own")
+    -- The sections: each title, then its kinds; every kind once.
+    local titles, under, count = {}, {}, 0
+    local current
+    for _, item in ipairs(filter and filter._items or {}) do
+        if item.title then
+            titles[#titles + 1] = item.title
+            current = item.title
+        else
+            for _, kind in ipairs(ns.KINDS) do
+                if item.text == ns.KindLabel(kind, ns.TopBar.ICON) then under[kind[1]] = current count = count + 1 end
+            end
+        end
+    end
+    check(#titles == #ns.PIN_SECTIONS and titles[1] == "Around you" and titles[2] == "Quests" and count == #ns.KINDS
+        and under.route == "Around you" and under.group == "Around you" and under.log == "Quests"
+        and under.area == "Quests" and under.flight == "Travel" and under.service == "Towns and services"
+        and under.treasure == "Rares and treasures" and under.foundOre == "Gathering",
+        "the pin filter in sections under their titles: around you, quests, travel, towns, rares and treasures, gathering")
     local slider = { points = {} }
     function slider:SetWidth(width) self.width = width end
     function slider:ClearAllPoints() self.points = {} end
@@ -1282,8 +1313,12 @@ do
         and slider.low == ns.PIN_SIZES.low and slider.high == ns.PIN_SIZES.high and slider.labels[3](150) == "150%"
         and width > 40 + slider.width and height == ns.TopBar.ROW,
         "the pin filter: a size slider at each kind's right, from its smallest to its largest size")
-    check(route and #route.inits == 1 and minimapRow and #minimapRow.inits == 0 and #rows.low.inits == 1,
-        "the route's line has a size too, as each quest row has; the game's minimap's dots none (the game draws them)")
+    local tallWidth, tallHeight
+    if minimapRow and minimapRow.inits[1] then tallWidth, tallHeight = minimapRow.inits[1](row) end
+    check(route and #route.inits == 1 and minimapRow and #minimapRow.inits == 1 and tallHeight == ns.TopBar.ROW
+        and tallWidth < width and #rows.low.inits == 1,
+        "the route's line has a size too, as each quest row has; the game's minimap's dots none (the game draws them), "
+        .. "their row as tall as the others")
     local opacity = { points = {} }
     for name, fn in pairs(slider) do if type(fn) == "function" then opacity[name] = fn end end
     local areaRow = { fontString = row.fontString }

@@ -9,11 +9,11 @@ local _, ns = ...
 --  clicked in both views.
 --
 --      every pin   its own icon from the game's map icons (Pins.ICONS and the kinds' tables): no discs, no
---                  numbers. A quest in your log: the turn-in mark when ready, the target while in progress (the
---                  one the game's arrow leads to with a glow); a click shows it in the quest log and lets the
---                  arrow lead to it (QuestLog.lua). A quest giver of Core's data: the quest mark, see-through
---                  (grey, without colour, for a quest too low or for later); a click shows its quests in the
---                  quest log as previews (QuestLog.Preview)
+--                  numbers. A quest in your log: the yellow question mark (the one the game's arrow leads to with
+--                  a glow); a click shows it in the quest log and lets the arrow lead to it (QuestLog.lua). A
+--                  quest giver of Core's data: the yellow exclamation mark, grey for a quest too low, a red
+--                  question mark for one for later; a click shows its quests in the quest log as previews
+--                  (QuestLog.Preview)
 --      gathered    pins that would cover each other: one marker in the icon of the first (drawn highest), its
 --                  tooltip what is there; a click zooms in
 --      a click     the game's map pin where it stands, on the small map and the full one (Act); on the
@@ -35,7 +35,6 @@ PinView.GLOW = "UI-QuestPoi-OuterGlow" -- behind the quest the game's arrow lead
 PinView.GREY = 0.8 -- a grey quest's icon: so opaque, its colour taken away
 
 PinView.LEVELS = 6 -- the pins' own levels over their layer: a pin of a higher order stands over a lower one
-PinView.OFFERED = 0.55 -- a quest you can take but have not: see-through, so the quests in your log stand out
 
 local layer, holder, view
 local used, free = {}, {} -- [key] = button while in view; buttons let go
@@ -72,7 +71,6 @@ local function Tip(button)
             else GameTooltip:AddLine(line, 1, 1, 1, true) end
         end
         if pin.unverified then GameTooltip:AddLine(Pins.TEXT.unverified, 0.5, 0.5, 0.5) end
-        if pin.click ~= "preview" then GameTooltip:AddLine(Pins.TEXT.drop, 0.5, 0.5, 0.5) end
     end
     GameTooltip:Show()
 end
@@ -134,17 +132,18 @@ end
 
 -- A button's look for its pin: its icon, whatever its kind (a gathered marker: its first pin's, the one drawn
 -- highest), at its kind's size from the pin filter's slider. A grey quest (and a flight point not found yet) without
--- its colour, a quest offered see-through, the quest the game's arrow leads to with a glow behind it.
+-- its colour, a tinted one in its colour (a quest for later: red), the quest the game's arrow leads to with a glow
+-- behind it.
 local function Look(button, pin)
     local first = pin.gathered and pin.gathered[1] or pin
     local size = (Pins.SIZE[first.kind] or 20) * ns.PinScale(first.kind)
     button:SetSize(size, size)
-    button:SetAlpha(first.offer and PinView.OFFERED or 1)
     button.half = size / 2 -- how far it reaches from its middle (Fit); the focused quest's glow farther
     local icon, glow = button.icon, button.glow
-    local grey = first.grey or first.dim
+    local grey, tint = first.grey or first.dim, first.tint
     icon:SetDesaturated(grey and true or false)
-    icon:SetVertexColor(1, 1, 1, grey and PinView.GREY or 1)
+    if tint then icon:SetVertexColor(tint[1], tint[2], tint[3], 1)
+    else icon:SetVertexColor(1, 1, 1, grey and PinView.GREY or 1) end
     icon:SetAtlas(first.atlas or Pins.ICONS.offer)
     button.light:SetAtlas(first.atlas or Pins.ICONS.offer)
     glow:Hide()

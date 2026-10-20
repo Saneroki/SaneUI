@@ -85,37 +85,53 @@ ns.GIVEN_BACK = "the map window is closed, the game's own minimap and map are ba
 -- (the game's map icons, ObjectIconsAtlas; shown before its words in the filter). The first two are no pins: the
 -- golden line (Planner.lua, Route.lua) and the game's minimap's dots (Hybrid.lua). The quests by where they stand
 -- for this character: in its log (the game's), offered to it now, offered but too low to give it experience,
--- offered once it meets what they ask (its level, a quest first), done.
+-- offered once it meets what they ask (its level, a quest first), done. Each kind in a section of the filter
+-- (ns.PIN_SECTIONS); one without a known section in the last.
 ns.KINDS = {
-    { "route", ns.TEXT.route, on = true, small = true, icon = "poi-traveldirections-arrow" },
-    { "minimap", ns.TEXT.minimap, on = true, small = true, icon = "monsterneutral" },
-    { "log", ns.TEXT.log, on = true, small = true, icon = "questturnin" },
-    { "quest", ns.TEXT.offers, on = true, small = true, icon = "questnormal" },
-    { "low", ns.TEXT.low, on = true, small = true, icon = "trivialquests", grey = true },
-    { "later", ns.TEXT.later, on = true, small = true, icon = "trivialquests", grey = true },
-    { "done", ns.TEXT.done, on = false, small = true, icon = "islands-questbangdisable", grey = true },
-    { "area", "Quest areas", on = true, small = true, icon = "questblob" },
-    { "flight", "Flight points", on = true, small = true, icon = "flightmaster" },
-    { "travel", "Boats, zeppelins and portals", on = true, small = true, icon = "flightmasterferry" },
-    { "entrance", "Dungeons and raids", on = true, small = true, icon = "dungeon" },
-    { "place", "Places", on = true, small = true, icon = "poi-town" },
-    { "service", "Services", on = true, small = true, icon = "innkeeper" },
-    { "rare", "Rares", on = true, small = true, icon = "dungeonskull" },
-    { "treasure", "Treasures", on = true, icon = "vignetteloot" },
-    { "herb", "Possible herbs", on = true, small = true, icon = "professions_tracking_herb" },
-    { "ore", "Possible ore", on = true, small = true, icon = "professions_tracking_ore" },
+    { "route", ns.TEXT.route, section = "around", on = true, small = true, icon = "poi-traveldirections-arrow" },
+    { "minimap", ns.TEXT.minimap, section = "around", on = true, small = true, icon = "monsterneutral" },
+    { "log", ns.TEXT.log, section = "quests", on = true, small = true, icon = "questturnin" },
+    { "quest", ns.TEXT.offers, section = "quests", on = true, small = true, icon = "questnormal" },
+    { "low", ns.TEXT.low, section = "quests", on = true, small = true, icon = "trivialquests", grey = true },
+    { "later", ns.TEXT.later, section = "quests", on = true, small = true, icon = "questturnin", tint = { 255, 51, 38 } },
+    { "done", ns.TEXT.done, section = "quests", on = false, small = true, icon = "islands-questbangdisable", grey = true },
+    { "area", "Quest areas", section = "quests", on = true, small = true, icon = "questblob" },
+    { "flight", "Flight points", section = "travel", on = true, small = true, icon = "flightmaster" },
+    { "travel", "Boats, zeppelins and portals", section = "travel", on = true, small = true, icon = "flightmasterferry" },
+    { "entrance", "Dungeons and raids", section = "travel", on = true, small = true, icon = "dungeon" },
+    { "place", "Places", section = "towns", on = true, small = true, icon = "poi-town" },
+    { "service", "Services", section = "towns", on = true, small = true, icon = "innkeeper" },
+    { "rare", "Rares", section = "finds", on = true, small = true, icon = "dungeonskull" },
+    { "treasure", "Treasures", section = "finds", on = true, icon = "vignetteloot" },
+    { "herb", "Possible herbs", section = "gathering", on = true, small = true, icon = "professions_tracking_herb" },
+    { "ore", "Possible ore", section = "gathering", on = true, small = true, icon = "professions_tracking_ore" },
     -- What the game's minimap shows now (Found.lua); each switches its finder (Nodes.lua). Their icons: the
     -- finders' own, Find Herbs and Find Minerals.
-    { "foundHerb", "Found herbs", on = true, small = true, texture = 133939 },
-    { "foundOre", "Found ore", on = true, small = true, texture = 136025 },
-    { "book", "Books", on = false, icon = "lorewalking-map-icon" },
-    { "group", "Party and raid", on = true, small = true, icon = "partymember" },
+    { "foundHerb", "Found herbs", section = "gathering", on = true, small = true, texture = 133939 },
+    { "foundOre", "Found ore", section = "gathering", on = true, small = true, texture = 136025 },
+    { "book", "Books", section = "finds", on = false, icon = "lorewalking-map-icon" },
+    { "group", "Party and raid", section = "around", on = true, small = true, icon = "partymember" },
 }
--- A kind's words with its icon before them, for the pin filter and the setting's list.
-function ns.KindLabel(kind)
-    if kind.texture then return ("|T%s:16:16|t %s"):format(kind.texture, kind[2]) end
+-- The pin filter's sections, in its order: their key (the kinds' section) and their title.
+ns.PIN_SECTIONS = {
+    { "around", "Around you" },
+    { "quests", Core.Word("QUESTS_LABEL", "Quests") },
+    { "travel", "Travel" },
+    { "towns", "Towns and services" },
+    { "finds", "Rares and treasures" },
+    { "gathering", "Gathering" },
+}
+-- A kind's words with its icon before them (size: the icon's, 16 at first), for the pin filter and the setting's list.
+function ns.KindLabel(kind, size)
+    size = size or 16
+    if kind.texture then return ("|T%s:%d:%d|t %s"):format(kind.texture, size, size, kind[2]) end
     if not kind.icon then return kind[2] end
-    return ("|A:%s:16:16|a %s"):format(kind.icon, kind[2])
+    -- A tinted icon in its colour (0 to 255), as the game's atlas markup takes it.
+    local tint = kind.tint
+    if tint then
+        return ("|A:%s:%d:%d:0:0:%d:%d:%d|a %s"):format(kind.icon, size, size, tint[1], tint[2], tint[3], kind[2])
+    end
+    return ("|A:%s:%d:%d|a %s"):format(kind.icon, size, size, kind[2])
 end
 -- A kind's size, by its slider in the pin filter: from low to high percent in steps (100: as drawn at first). The
 -- quest areas' slider is their opacity instead (PIN_OPACITY).

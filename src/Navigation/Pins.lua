@@ -17,7 +17,8 @@ local _, ns = ...
 --  key, *One pin per thing*), home (the plane u, v are in: Coords.PlaneOf), u, v, map, x, y (on its own
 --  map, 0 to 1), atlas or texture, size, name, lines (its tooltip's further lines), and by kind: quest
 --  (its ID), complete, focused (the quest the game's arrow leads to), to (a map it opens), dim (a flight
---  point not yet found), order (drawn over a lower one).
+--  point not yet found), grey (a quest too low), tint (its icon's colour: a quest for later), order (drawn over a
+--  lower one).
 --
 --  What the game tells is read per map when it said it changed (the message LIVE), Core's places when they
 --  change (Data.Map's OnChange); each map's pins are kept until then, so a layout only places them.
@@ -41,10 +42,13 @@ local ORDER = { log = 10, quest = 9, rare = 8, entrance = 7, flight = 6, travel 
                 later = 1, low = 1, done = 1, herb = 1, ore = 1, book = 0 }
 
 -- Every kind of thing its own icon, from the game's map icons (ObjectIconsAtlas): no discs, no numbers.
+-- The quests as the game marks them: in your log the yellow question mark, to take the yellow exclamation mark, too
+-- low the grey one, for later the question mark in red (Pins.RED).
 Pins.ICONS = {
-    turnIn = "questturnin", progress = "target", offer = "questnormal", grey = "trivialquests",
+    log = "questturnin", offer = "questnormal", grey = "trivialquests", later = "questturnin",
     done = "islands-questbangdisable", rare = "dungeonskull", treasure = "vignetteloot",
 }
+Pins.RED = { 1, 0.2, 0.15 } -- over the yellow mark: the game's red
 -- Core's services: an NPC's first service with an icon gives its pin's (a trainer: Trainer below).
 local SERVICES = {
     repair = "repair", innkeeper = "innkeeper", banker = "banker", auctioneer = "auctioneer",
@@ -87,12 +91,11 @@ Pins.TEXT = {
     needsLevel = Core.Word("ITEM_MIN_LEVEL", "Requires Level %d"),
     needsFirst = "First: %s",
     needsOne = "First one of: %s",
-    preview = "Click: the map pin here; on the full map, its quests in the quest log too",
+    preview = "Click on the full map: its quests in the quest log",
     undiscovered = "Not discovered yet",
-    open = "Click: the map pin here; on the full map, the quest in the quest log too",
+    open = "Click on the full map: the quest in the quest log",
     openMap = "Shift-click: open its map",
-    drop = "Click: the map pin here",
-    gathered = "%d here: a click puts the map pin there and zooms in",
+    gathered = "%d here: a click zooms in",
     unverified = "Not yet confirmed by the game",
     level = "Level %d to %d",
     towards = "To %s",
@@ -148,7 +151,7 @@ local function Quests(list, map)
             seen[quest] = true
             local complete = Core.Ask(C_QuestLog.IsComplete, quest) and true or false
             Add(list, { kind = "log", key = "quest:" .. quest, quest = quest, complete = complete, focused = quest == focused,
-                        atlas = complete and Pins.ICONS.turnIn or Pins.ICONS.progress,
+                        atlas = Pins.ICONS.log,
                         name = Core.Ask(C_QuestLog.GetTitleForQuestID, quest), click = "quest" }, map, info.x, info.y)
         end
     end
@@ -157,7 +160,7 @@ local function Quests(list, map)
         if x then
             local complete = Core.Ask(C_QuestLog.IsComplete, focused) and true or false
             Add(list, { kind = "log", key = "quest:" .. focused, quest = focused, focused = true, way = true,
-                        complete = complete, atlas = complete and Pins.ICONS.turnIn or Pins.ICONS.progress,
+                        complete = complete, atlas = Pins.ICONS.log,
                         name = Core.Ask(C_QuestLog.GetTitleForQuestID, focused), click = "quest" }, map, x, y)
         end
     end
@@ -338,7 +341,8 @@ local function FromData(place)
     local what, kind = place.what, place.kind
     local pin = { key = place.key, name = place.name, unverified = true }
     if kind == "npc" then
-        -- Its quests by where they stand for this character: offered, grey (too low, or for later), done.
+        -- Its quests by where they stand for this character: offered, too low or for later (its pin red while one
+        -- is for later), done.
         local offers, greys, done, grey = {}, {}, {}, nil
         for _, quest in ipairs(type(what) == "table" and what.quests or {}) do
             local standing, reason = Pins.Standing(QUESTS:Get(quest), quest)
@@ -380,8 +384,10 @@ local function FromData(place)
                 end
             end
             if #words > 0 then lines[#lines + 1] = table.concat(words, ", ") end
+        elseif grey == "later" then
+            pin.kind, pin.atlas, pin.tint = "later", Pins.ICONS.later, Pins.RED
         elseif grey then
-            pin.kind, pin.atlas, pin.grey = grey, Pins.ICONS.grey, true
+            pin.kind, pin.atlas, pin.grey = "low", Pins.ICONS.grey, true
         elseif #done > 0 then
             -- Only quests this character has done: a pin of the kind Done quests (off at first), grey.
             pin.kind, pin.atlas, pin.grey = "done", Pins.ICONS.done, true
