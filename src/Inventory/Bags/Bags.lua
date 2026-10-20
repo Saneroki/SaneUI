@@ -286,6 +286,9 @@ local function Kept()
     Columns.Use(bags)
     return bags
 end
+-- The bags' store, checked, the categories and the list's columns as it has them (the alts' window reads them
+-- too, the bags' window perhaps not built yet).
+Bags.Store = Kept
 
 local function IsLook(key) return kept.look == key end
 local function SetLook(key)

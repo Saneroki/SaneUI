@@ -8,7 +8,13 @@ local _, ns = ...
 --  left chooses whose things are shown (Roster.lua); the rest of the window
 --  shows them: a head with the name, level, class, gold and the day it was
 --  last seen, then its bags, its bank and what it wears, as a paper doll where
---  Core keeps it slot by slot (Items.lua).
+--  Core keeps it slot by slot (Items.lua), in the bags' look. Between the
+--  roster and the items a sidebar, Storage: All Places, Bags, Bank, Equipped,
+--  then All Categories and each of the bags' categories with how many of the
+--  character's items it holds; a click shows only that place or category.
+--  The dropdown View on the head: the display (Grid, List, Compact, as the
+--  bags'), Group by Category. Kept for the account in store.alts: look,
+--  group, narrow (the sidebar folded).
 --
 --  Every character of the account is in the roster, the one logged in first
 --  (its bank as last seen is worth a look away from the bank too). Shown at
@@ -44,6 +50,14 @@ Alts.TEXT = {
     unseen = "Not seen yet",
     bankUnseen = "Not seen yet: open the bank with this character",
     now = "Logged in now",
+    storage = "Storage",
+    places = "All Places",
+    categories = "All Categories",
+}
+-- The icons of Storage's places.
+Alts.ICONS = {
+    places = "Interface\\Icons\\INV_Misc_Bag_07", bags = "Interface\\Icons\\INV_Misc_Bag_08",
+    bank = "Interface\\Icons\\INV_Misc_Bag_09", worn = "Interface\\Icons\\INV_Chest_Chain_05",
 }
 
 Alts.ROSTER_GAP = 16 -- between the roster and the items, its scroll bar in it
@@ -51,7 +65,9 @@ Alts.HEAD = 46       -- the head over the items: the name, the level line
 Alts.ROWS = 5        -- the grid's rows the window has room for at least
 local EDGE = Core.Board.EDGE -- from the panel's edge to what is in it
 
-local body, head
+local body, head, menu, rail
+local kept            -- store.alts
+local place, category -- the sidebar's choice: a place ("bags", "bank", "worn"; nil: all), a category (nil: all)
 local chosen          -- the key of the character the player chose (nil: the first choice, Default)
 local query, typed    -- the search: Fuzzy.Query's words (nil: none), and what was typed
 local shown = false
@@ -144,6 +160,37 @@ local function Place(place)
     return title, seen, seen and Alts.TEXT.empty or Alts.TEXT.bankUnseen
 end
 
+-- The sidebar Storage as it is for these sections (the character's, unsearched).
+local PLACES = { { nil, "places" }, { "bags", "bags" }, { "bank", "bank" }, { "worn", "worn" } }
+local function Storage(sections)
+    if not rail then return end
+    local counts = ns.Items.Counts(sections)
+    rail:Begin()
+    for _, entry in ipairs(PLACES) do
+        local key, word = entry[1], Alts.TEXT[entry[2]]
+        local row = rail:Row(word, nil, key and Alts.ICONS[key] or Alts.ICONS.places, nil, 0, place == key)
+        row.view = "place:" .. (key or "")
+    end
+    rail:Divider()
+    local row = rail:Row(Alts.TEXT.categories, counts.total, Alts.ICONS.places, nil, 0, category == nil)
+    row.view = "cat:"
+    for _, key in ipairs(ns.Categories.order) do
+        if counts[key] then
+            local file, atlas = ns.Categories.Icon(key)
+            rail:Row(ns.Categories.Word(key), counts[key], file, atlas, 0, category == key).view = "cat:" .. key
+        end
+    end
+    rail:Done()
+end
+
+-- A click in Storage: a place or a category shown alone, or all again.
+local function Choose(view)
+    local kind, key = view:match("^(%a+):(.*)$")
+    if key == "" then key = nil end
+    if kind == "place" then place = key else category = key end
+    Alts.Refresh(false)
+end
+
 -- Everything drawn as it is now; keep: the lists stay where they were scrolled to.
 local function Refresh(keep)
     local characters = ns.Snapshot.Characters()
@@ -168,7 +215,10 @@ local function Refresh(keep)
     end
     Head(key)
     about = key
-    local elements = ns.Items.Elements(ns.Snapshot.Sections(key, query), Place, query ~= nil)
+    Storage(ns.Snapshot.Sections(key, nil))
+    local places = place and { [place] = true } or nil
+    local elements = ns.Items.Elements(ns.Snapshot.Sections(key, query), Place, query ~= nil,
+        { look = kept.look, group = kept.group, places = places, category = category })
     if query and #elements == 0 then elements[1] = { kind = "note", text = Alts.TEXT.none } end
     ns.Items.Show(elements, keep)
 end
@@ -194,8 +244,40 @@ end
 -------------------------------------------------------------------------------
 --  The part (Board.lua)
 -------------------------------------------------------------------------------
+local function IsLook(key) return kept.look == key end
+local function SetLook(key)
+    kept.look = key
+    Refresh(false)
+end
+local function IsGrouped() return kept.group == true end
+local function ToggleGroup()
+    kept.group = not kept.group or nil
+    Refresh(false)
+end
+local Looked = ns.Guard(IsLook)
+local Look = ns.Guard(SetLook)
+local Grouped = ns.Guard(IsGrouped)
+local Group = ns.Guard(ToggleGroup)
+
+local function Menu(_, root)
+    root:CreateTitle(ns.TEXT.bagsLook)
+    for _, look in ipairs(ns.Layout.LOOKS) do root:CreateRadio(look.word, Looked, Look, look.key) end
+    root:CreateCheckbox(ns.TEXT.bankGroup, Grouped, Group)
+end
+
+local function Kept()
+    local stored = ns.store
+    if type(stored.alts) ~= "table" then stored.alts = {} end
+    local alts = stored.alts
+    if not ns.Layout.LOOK[alts.look] then alts.look = "grid" end
+    alts.group = alts.group == true or nil
+    return alts
+end
+
 function Alts.Build(made)
     local panel = made
+    kept = Kept()
+    ns.Bags.Store()
     body = CreateFrame("Frame", nil, panel.body)
     body:SetPoint("TOPLEFT", EDGE, -EDGE)
     body:SetPoint("BOTTOMRIGHT", -EDGE, EDGE)
@@ -205,8 +287,21 @@ function Alts.Build(made)
     roster:SetWidth(ns.Roster.WIDTH)
     ns.Roster.Build(roster)
 
+    -- Storage between the roster and the items: its top and foot hang on two marks of no height.
+    local top = CreateFrame("Frame", nil, body)
+    top:SetPoint("BOTTOMLEFT", roster, "TOPRIGHT", Alts.ROSTER_GAP, 0)
+    top:SetSize(1, 1)
+    local foot = CreateFrame("Frame", nil, body)
+    foot:SetPoint("TOPLEFT", roster, "BOTTOMRIGHT", Alts.ROSTER_GAP, 0)
+    foot:SetSize(1, 1)
+    rail = ns.Sidebars.New(body, top, foot, {
+        store = kept, narrow = "narrow", word = Alts.TEXT.storage,
+        choose = function(view) Choose(view) end,
+        resized = function() Alts.Size(nil) end,
+    })
+    Alts.rail = rail
     local right = CreateFrame("Frame", nil, body)
-    right:SetPoint("TOPLEFT", roster, "TOPRIGHT", Alts.ROSTER_GAP, 0)
+    right:SetPoint("TOPLEFT", rail.frame, "TOPRIGHT", Alts.ROSTER_GAP, 0)
     right:SetPoint("BOTTOMRIGHT")
     head = CreateFrame("Frame", nil, right)
     head:SetPoint("TOPLEFT")
@@ -222,6 +317,14 @@ function Alts.Build(made)
     head.line = head:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     head.line:SetPoint("TOPLEFT", head.name, "BOTTOMLEFT", 0, -4)
     head.line:SetJustifyH("LEFT")
+    menu = CreateFrame("DropdownButton", nil, head, "WowStyle1DropdownTemplate")
+    menu:SetPoint("BOTTOMRIGHT", -2, 2)
+    menu:SetWidth(ns.Bags.MENU_WIDTH)
+    menu:OverrideText(ns.TEXT.bagsView)
+    menu:SetupMenu(Menu)
+    Alts.menu = menu
+    head.line:SetPoint("RIGHT", menu, "LEFT", -8, 0)
+    head.line:SetWordWrap(false)
     local items = CreateFrame("Frame", nil, right)
     items:SetPoint("TOPLEFT", head, "BOTTOMLEFT")
     items:SetPoint("BOTTOMRIGHT")
@@ -243,13 +346,16 @@ function Alts.Show(on)
     if on then Refresh(true) end
 end
 
--- The panel's body is that wide: the grid as many items wide as fit (the roster, its gap and the scroll
--- bar left out).
+-- The panel's body is that wide (nil: as it was): the grid as many items wide as fit (the roster, Storage,
+-- their gaps and the scroll bar left out).
+local panelWidth = 0
 function Alts.Size(w)
-    local inner = w - 2 * EDGE - ns.Roster.WIDTH - Alts.ROSTER_GAP - ns.Items.BAR
+    panelWidth = w or panelWidth
+    local inner = panelWidth - 2 * EDGE - ns.Roster.WIDTH - 2 * Alts.ROSTER_GAP - (rail and rail:Width() or 0) - ns.Items.BAR
     if inner == width then return end
     width = inner
-    if ns.Items.Fit(inner) and shown then Refresh(true) end
+    local changed = ns.Items.Fit(inner)
+    if (changed or kept and kept.look ~= "grid") and shown then Refresh(true) end
 end
 
 function Alts.Search(text)
@@ -260,10 +366,10 @@ function Alts.Search(text)
     if shown then Refresh(false) end
 end
 
--- The board's least: the roster, the gap, a grid six items wide with its scroll bar, a few rows of it under
--- the head, the panel's head and edges.
+-- The board's least: the roster, Storage folded, their gaps, a grid six items wide with its scroll bar, a few rows
+-- of it under the head, the panel's head and edges.
 local step = ns.Items.SIZE + ns.Items.GAP
 ns.Board.Part("alts", Alts.TEXT.title, {
-    ns.Roster.WIDTH + Alts.ROSTER_GAP + 6 * step + ns.Items.BAR + 2 * EDGE,
+    ns.Roster.WIDTH + 2 * Alts.ROSTER_GAP + ns.Sidebars.NARROW + 6 * step + ns.Items.BAR + 2 * EDGE,
     Alts.HEAD + ns.Items.HEAD + Alts.ROWS * step + Core.Board.HEAD + 2 * EDGE,
 }, Alts)

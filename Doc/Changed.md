@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 351 (Navigation), 85 (Inventory), 90 (sheet), 184 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 351 (Navigation), 92 (Inventory), 90 (sheet), 184 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
 ### Navigation: quest areas in place, nearer zoom, dungeon maps, the quest log a window that pins (Saneroki, 2026-10-20)
@@ -180,6 +180,20 @@ Herbs and Find Minerals in turn, silently, all of it with switches in the pin fi
   all around), set out of combat where they reach less, kept per character and put back when switched off.
 - Tests: `dev/tests/navigation.lua`, 332 checks (the names and pictures, the filter switching the finders silently,
   the turns while moving, a herb found on its dot and gone again, the sparkles and the settings put back).
+
+### Inventory: the alts in the bags' look, Storage, displays and categories (Saneroki, 2026-10-20)
+- **The look** (`Alts/Items.lua`): items 34 wide in the bags' flat look (the icon cut round its edge, a border in
+  its quality's colour, the item level of gear, the bags' count font); a place's head in the bags' style with how
+  many items it holds.
+- **Displays**: the dropdown *View* on the head: Grid, List (the bags' list columns: name, item level, required
+  level, type, bind, count, sell price), Compact (the categories side by side, the bags' planner); Group by
+  Category (a head per category, the bags' order and names). An item's category is the bags' (`Items.Record`).
+- **Storage** (`Alts/Alts.lua`, `ns.Sidebars.New` beside the roster): All Places, Bags, Bank, Equipped, All
+  Categories and each category with how many of the character's items it holds; a click shows only that place or
+  category. Kept in `store.alts` (look, group, narrow); `Bags.Store` gives the alts the bags' categories and
+  columns.
+- Tests: `dev/tests/inventory.lua` (92 checks): Storage, a place alone, a category alone, the list, compact, by
+  category; the heads in the new style.
 
 ### Inventory: the bank, a window of its own (Saneroki, 2026-10-20)
 - **The bank** (`Bags/Bank.lua`, new; the part `bank` after the bags): on the full screen while at a banker (its

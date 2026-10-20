@@ -448,7 +448,7 @@ ns.Items.box.view.factory(function(_, init) init(row, Elements()[2]) end, Elemen
 check(row.buttons[1].item == 4501 and not row.buttons[2]:IsShown() and row.buttons[2].item == nil,
     "a row the list reuses draws all of itself anew: a button it does not need now hidden")
 ns.Items.box.view.factory(function(_, init) init(row, Elements()[1]) end, Elements()[1])
-check(row.title:IsShown() and row.title._text == "Bags" and not row.buttons[1]:IsShown(), "a grid's row reused for a head")
+check(row.head:IsShown() and row.head.word._text == "Bags" and not row.buttons[1]:IsShown(), "a grid's row reused for a head")
 Board.Search("linen")
 people = Roster.box.rows
 check(people[3].right._text == 21 and people[2]:GetAlpha() == Roster.DIM and people[2].right._text == "" and people[1]:GetAlpha() == Roster.DIM,
@@ -465,6 +465,44 @@ people = Roster.box.rows
 check(Alts.head.name._text == "Ann Brook" and Elements()[1].text == "Bags" and people[2]:GetAlpha() == 1,
     "the search cleared: the chosen one again, everything")
 check(requested[4500] == 1 and Snapshot.Name(4500) == nil, "a name the game never tells is asked for once")
+
+-- Storage: the places and the bags' categories, a click shows one alone.
+people[3]:GetScript("OnClick")(people[3], "LeftButton")
+local function StorageRow(word)
+    for _, storageRow in ipairs(Alts.rail:Rows()) do
+        if storageRow.word == word and storageRow:IsShown() then return storageRow end
+    end
+end
+check(StorageRow("All Places").bar:IsShown() and StorageRow("Bank") and StorageRow("All Categories").count._text == "3"
+    and StorageRow("Miscellaneous") and StorageRow("Miscellaneous").count._text == "3",
+    "Storage: the places, every category with how many of the character's items it holds")
+local storageRow = StorageRow("Bank")
+storageRow:GetScript("OnClick")(storageRow, "LeftButton")
+check(Elements()[1].text == "Bank" and #Elements() == 2, "a place alone")
+storageRow = StorageRow("All Places")
+storageRow:GetScript("OnClick")(storageRow, "LeftButton")
+storageRow = StorageRow("Miscellaneous")
+storageRow:GetScript("OnClick")(storageRow, "LeftButton")
+check(Elements()[1].text == "Bags" and Elements()[3].text == "Bank" and #Elements() == 4, "a category alone: its items in each place")
+storageRow = StorageRow("All Categories")
+storageRow:GetScript("OnClick")(storageRow, "LeftButton")
+-- The displays, by category.
+local altsMenu = Alts.menu
+local function AltsPick(text)
+    altsMenu:GenerateMenu()
+    for _, line in ipairs(altsMenu._items) do
+        if line.text == text then return line.fn(line.data) end
+    end
+end
+AltsPick("List")
+check(Elements()[2].kind == "row" and Elements()[3].kind == "row" and Elements()[4].kind == "head", "the list: a line per item")
+AltsPick("Compact")
+check(Elements()[2].kind == "compact" and #Elements()[2].places > 0, "compact: the categories side by side")
+AltsPick("Grid")
+AltsPick("Group by Category")
+check(Elements()[2].kind == "sub" and Elements()[2].text == "Miscellaneous" and Elements()[3].kind == "grid", "grouped by the bags' categories")
+AltsPick("Group by Category")
+check(Elements()[2].kind == "grid", "not grouped again")
 
 -- Hidden, it listens to nothing; shown, it is as Core's data is now.
 Push()
@@ -537,7 +575,7 @@ Redraw()
 check(ranged:IsShown() and ranged.item == 2504 and ammo:IsShown(), "unless something is in it")
 rangedShown = true
 ns.Items.box.view.factory(function(_, init) init(things[6], Elements()[5]) end, Elements()[5])
-check(not doll:IsShown() and things[6].title._text == "Equipped", "a doll's row reused for a head")
+check(not doll:IsShown() and things[6].head.word._text == "Equipped", "a doll's row reused for a head")
 -- The bags worn in their slots: a row of the grid under the doll. While searching, the doll only if something in
 -- it is found.
 local function Equipped() return "Equipped" end

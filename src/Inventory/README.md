@@ -110,7 +110,11 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   character last had it open) and what it wears, on a paper doll slot by slot, with the game's tooltips; Shift or
   Ctrl and a click links an item or tries it on. The search box finds an item across them all, by its name or its
   number: each character says how many it has, and the window lists only what was found. A character's things are as Core last read
-  them while it was logged in; its bank, while it had it open.
+  them while it was logged in; its bank, while it had it open. In the bags' look: each item in its quality's
+  border with its item level, each place under a head with how many items it holds. Beside the roster *Storage*:
+  *All Places*, *Bags*, *Bank*, *Equipped*, then *All Categories* and each of the bags' categories with how many
+  of that character's items it holds; a click shows only that place or category. The dropdown *View* on the head:
+  *Grid*, *List* (in the bags' list columns) or *Compact*, and *Group by Category*.
 - **Settings:** *Sane UI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
   motion, the background's opacity and texture), *Window corners*, and *Bags*: *Open With*, *Show Pinned Items*,
   *Pinned in One Bag and Each Bag*, *Show Recent Items*, *Recent in One Bag and Each Bag*, *Hide Empty
@@ -255,12 +259,17 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     mouse as the game's options list lights its lines (`Options_List_Active`, `Options_List_Hover`); its tooltip
     the level and class, realm, the day last seen, the gold to the copper. While searching, how many each has of
     what is found (stacks counted whole), one without any dimmed (`Roster.DIM`).
-  - **The items** (`Alts/Items.lua`): one scrolling list: a head per place (the bank's with the day it was last
-    seen, or *Not seen yet*), a bag or bank place as rows of the game's item buttons (`ItemButton`, drawn by the
-    game's `SetItemButtonTexture`, `Count`, `Quality`; as many to a row as fit, `Items.Fit`), what is worn as the
+  - **The items** (`Alts/Items.lua`): one scrolling list: a head per place in the bags' style (the bank's with the
+    day it was last seen, or *Not seen yet*; the number of items), a bag or bank place as the display says: rows of
+    the game's item buttons in the bags' flat look (`ItemButton`, drawn by the game's `SetItemButtonTexture`,
+    `Count`, `Quality`, its border hidden for ours in the quality's colour, the item level of gear; as many to a
+    row as fit, `Items.Fit`), with Group by Category a head per category (the bags' order and names); lines in the
+    bags' list columns (`Columns.Place`, `Value`, `Sort`); or one compact piece (`Layout.Lay` *compact* over the
+    categories). An item's record as the bags' (`Items.Record`: `C_Item.GetItemInfoInstant`, `GetItemInfo`,
+    `GetDetailedItemLevelInfo`, `Categories.Classify`; kept once the game knows the item). What is worn as the
     paper doll (below), or as a list (icon, name in its quality's colour) for a character Core has not read slot
     by slot yet (it has not logged in since). Read only: the tooltip is `GameTooltip:SetItemByID`, a modified
-    click `HandleModifiedItemClick`; nothing picks an item up.
+    click `HandleModifiedItemClick`; nothing picks an item up. `Items.Counts`: each category's count for Storage.
   - **The paper doll** (`Alts/Items.lua`, one element of the list): the slots as the sheet has them
     (`Slots.COLUMNS`, `Slots.SIZE`, `GAP`, `AMMO`, `AMMO_GAP`, the game's slot frames
     `UI-Character-Info-GearSlot` and `...Small`; IDs and empty pictures from `GetInventorySlotInfo`), eight down
@@ -270,8 +279,10 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     The bags worn in their slots follow as a row of the grid, in their slots' order. While searching the doll is
     shown only if something in it is found, whole, what is not found dimmed (`SetMatchesSearch`, as the game's
     bags dim it); of the bags only what is found.
-  - **The window** (`Alts/Alts.lua`): the roster at the left, the chosen character's head (name, gold, the level
-    line as the sheet writes it, the day last seen) and items at the right. Shown at first: the first of the
+  - **The window** (`Alts/Alts.lua`): the roster at the left, Storage beside it (`ns.Sidebars.New`: places and
+    categories, the choice held while the window lives), the chosen character's head (name, gold, the level line as
+    the sheet writes it, the day last seen, the dropdown *View*) and items at the right. Kept in `store.alts`:
+    `look`, `group`, `narrow`; the bags' store read for the categories and columns (`Bags.Store`). Shown at first: the first of the
     others; the choice holds until a `/reload`. While searching, if the chosen one has none of it, the first that
     has is shown until the search is cleared. Listens only while shown: `Core.Data.OnCharacters`,
     `GET_ITEM_INFO_RECEIVED`, `ITEM_DATA_LOAD_RESULT`, drawn a frame later (`Core.Later`); drawn anew when shown.
