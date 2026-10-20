@@ -842,7 +842,7 @@ check(near(small.u, 500) and near(small.v, -8950) and near(small.k, 100 / 160), 
 check(minimap._shown and minimap._width == 200 and minimap._zoom == 2, "the game's minimap shows in its middle, as large as the view")
 local shown = Shown()
 local arrow
-for _, widget in ipairs(W.frames) do if widget._atlas == "UI-WorldMapArrow" then arrow = widget end end
+for _, widget in ipairs(W.frames) do if widget._atlas == "UI-WorldMapArrow" and not arrow then arrow = widget end end -- the marks', not a dungeon's
 check(arrow and not arrow._shown, "our arrow is out of sight while the game's minimap shows its own")
 check(minimap._level == frame:GetFrameLevel() + Hybrid.LEVEL and minimap._strata == frame:GetFrameStrata()
     and arrow._parent._level == frame:GetFrameLevel() + Canvas.LEVELS.marks and Hybrid.LEVEL < Canvas.LEVELS.marks
@@ -927,6 +927,20 @@ tracker._scripts.OnUpdate(tracker, 0.016)
 check(arrow._shown and arrow._rotation == 1.5, "our arrow shows instead, turned as the player faces")
 frame._scripts.OnMouseWheel(frame, 1)
 check(small.native == 0 and minimap._shown, "in again: the game's widest step, its minimap back")
+for _ = 1, 5 do frame._scripts.OnMouseWheel(frame, 1) end
+check(small.native == 5 and near(small.k, 2), "in to the game's narrowest step")
+frame._scripts.OnMouseWheel(frame, 1)
+check(small.native == nil and near(small.k, 2 * Camera.STEP) and not minimap._shown,
+    "in past it: our map alone, a notch nearer, the game's minimap out of sight")
+for _ = 1, 10 do frame._scripts.OnMouseWheel(frame, 1) end
+check(small.native == nil and small.k == Camera.NEAR and Camera.NEAR == 4 * 2,
+    "on in to its own nearest zoom: four times the game's narrowest step")
+for _ = 1, 6 do frame._scripts.OnMouseWheel(frame, -1) end
+check(small.native == nil and small.k > 2, "out again: our map alone while nearer than the narrowest step")
+frame._scripts.OnMouseWheel(frame, -1)
+check(small.native == 5 and near(small.k, 2) and minimap._shown, "then the game's narrowest step, its minimap back")
+for _ = 1, 5 do frame._scripts.OnMouseWheel(frame, -1) end
+check(small.native == 0, "and out through its steps to the widest")
 
 -- A drag: no longer following, the game's minimap goes; it follows again after a while without the mouse.
 frame._scripts.OnMouseDown(frame, "LeftButton")
@@ -1318,9 +1332,12 @@ rows = logBox:Draw()
 check(rows[2]._lit and not rows[4]._lit, "the chosen quest lit in the list")
 rows[2]._scripts.OnEnter(rows[2])
 local blob
-for _, widget in ipairs(areaFrames) do if widget._shown and widget._quest then blob = widget end end
-check(blob and blob._quest == 7 and blob._map == 1429 and near(blob._width, 2000 * full.k),
-    "the mouse over it: its area as the game shades it, over its zone")
+for _, widget in ipairs(areaFrames) do if widget._shown and widget._map == 1429 then blob = widget end end
+check(blob and not blob._quest and near(blob._width, 2000 * full.k),
+    "the mouse over it: its zone's area frame placed at once, the area not drawn into its old rectangle")
+blob._parent._scripts.OnUpdate(blob._parent)
+check(blob._quest == 7 and not blob._parent._scripts.OnUpdate,
+    "the next frame: its area as the game shades it, over its zone, laid out at its new place and size")
 rows[2]._scripts.OnLeave(rows[2])
 -- The quest's pin now with the glow of the quest the arrow leads to.
 pins = Drawn()
@@ -1421,6 +1438,109 @@ do
     full.follow = was.follow
     Canvas.Layout()
 end
+-- The window small and full again, as the tests below go there, the small view left as it was.
+function W.SmallAndBack(between)
+    local kept = { u = small.u, v = small.v, k = small.k, level = small.level, map = small.map, follow = small.follow,
+                   native = small.native }
+    local width, height = frame._width, frame._height
+    Window.Toggle()
+    frame._width, frame._height = 200, 200
+    Window.frame._group:Run(1)
+    if between then between() end
+    Window.Toggle()
+    frame._width, frame._height = width, height
+    Window.frame._group:Run(1)
+    for key, value in pairs(kept) do small[key] = value end
+end
+
+-- The dungeons' maps: chosen in the bar, over the map, by floor; the mouse; back to the map.
+;(function()
+    local Dungeons = ns.Dungeons
+    check(Window.handle.edge.full and Canvas.camera == full, "the map fills the screen")
+    local old = { children = C_Map.GetMapChildrenInfo, info = C_Map.GetMapInfo, art = C_Map.GetMapArtLayers }
+    local names = { [500] = "Hollow Keep", [501] = "Hollow Keep", [600] = "Ashen Vault" }
+    C_Map.GetMapChildrenInfo = function(map, kind, all)
+        if map == 947 and kind == 4 and all then
+            return { { mapID = 500, mapType = 4 }, { mapID = 600, mapType = 4 }, { mapID = 501, mapType = 4 } }
+        end
+        return old.children(map, kind, all)
+    end
+    C_Map.GetMapInfo = function(map)
+        if names[map] then return { mapID = map, mapType = 4, parentMapID = map == 600 and 1415 or 1429, name = names[map] } end
+        return old.info(map)
+    end
+    C_Map.GetMapArtLayers = function(map)
+        if names[map] then return { { layerWidth = 1002, layerHeight = 668, tileWidth = 256, tileHeight = 256 } } end
+        return old.art(map)
+    end
+    C_Map.GetMapGroupID = function(map) return (map == 500 or map == 501) and 7 or nil end
+    C_Map.GetMapGroupMembersInfo = function(group)
+        if group ~= 7 then return nil end
+        return { { mapID = 501, relativeHeightIndex = 1, name = "The Lower Hall" },
+                 { mapID = 500, relativeHeightIndex = 0, name = "The Upper Hall" } }
+    end
+    local list = Dungeons.List()
+    check(#list == 2 and list[1].name == "Ashen Vault" and list[2].name == "Hollow Keep" and list[2].map == 500
+        and #list[2].floors == 2 and list[2].floors[2].map == 501, "the dungeons: one entry each, its floors lowest first, A to Z")
+    local menu, floors
+    for _, widget in ipairs(W.frames) do
+        if widget._generator and widget._override == Dungeons.TEXT.dungeons then menu = widget end
+        if widget._generator and widget._override == Dungeons.TEXT.floor then floors = widget end
+    end
+    menu:GenerateMenu()
+    check(#menu._items == 2 and menu._items[2].text == "Hollow Keep" and not menu._items[2].checked(),
+        "the bar's dropdown Dungeons lists them")
+    menu._items[2].fn()
+    local tiles = 0
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Texture" and widget._shown and type(widget._texture) == "number"
+            and widget._texture > 50000 and widget._texture <= 50012 then tiles = tiles + 1 end
+    end
+    check(Dungeons.Shown() == 500 and Dungeons.frame._shown and tiles == 12 and menu._override == "Hollow Keep"
+        and menu._items[2].checked() and floors._shown and floors._override == "The Upper Hall",
+        "chosen: its map over the map, its lowest floor in the game's art, its floors beside it")
+    floors:GenerateMenu()
+    check(#floors._items == 2 and floors._items[1].checked() and floors._items[2].text == "The Lower Hall", "its floors, lowest first")
+    floors._items[2].fn()
+    check(Dungeons.Shown() == 501 and floors._override == "The Lower Hall", "another floor chosen")
+    Dungeons.frame._scripts.OnMouseUp(Dungeons.frame, "RightButton")
+    check(not Dungeons.Shown() and not Dungeons.frame._shown and full.level == "zone" and menu._override == Dungeons.TEXT.dungeons
+        and not floors._shown, "a right click: back to the map, at the zone the dungeon lies in")
+    check(Canvas.Show(600) and Dungeons.Shown() == 600 and not floors._shown,
+        "a pin into a dungeon opens its map here; with one floor, no floors' dropdown")
+    W.SmallAndBack(function()
+        check(not Dungeons.Shown() and not Dungeons.Show(600), "the map small: the dungeon's view goes, and opens only on the full map")
+        player.map = 500
+    end)
+    check(Dungeons.Shown() == 500, "inside a dungeon the full map opens on its map")
+    player.map = 1429
+    Dungeons.Close()
+    C_Map.GetMapChildrenInfo, C_Map.GetMapInfo, C_Map.GetMapArtLayers = old.children, old.info, old.art
+    C_Map.GetMapGroupID, C_Map.GetMapGroupMembersInfo = nil, nil
+end)()
+
+-- The quest log, a window of its own over the full map: pinned, on the screen while the map is small too.
+;(function()
+    local log = ns.QuestLog.handle
+    check(log and log.frame._shown and log.frame._strata == "DIALOG" and Canvas.frame._points[1] and Window.FullSize() == 1600,
+        "full: the quest log a window of its own over the map, which takes the whole screen")
+    local pin = log.own and log.own[1]
+    check(pin and pin.picture._atlas == ns.QuestLog.PIN_OFF and not ns.QuestLog.Pinned(), "its title bar's pin, grey: not pinned")
+    pin._scripts.OnClick(pin)
+    check(ns.QuestLog.Pinned() and pin.picture._atlas == ns.QuestLog.PIN, "a click pins it: lit")
+    W.SmallAndBack(function()
+        check(log.frame._shown and log.frame._strata == "LOW" and log.bar and not log.skin,
+            "the map small: pinned, it stays on the screen, without a background or a border")
+        local transparent = true
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == log.frame and widget._kind == "Texture" and widget._shown then transparent = false end
+        end
+        check(transparent, "nothing drawn behind it but its list")
+        pin._scripts.OnClick(pin)
+        check(not ns.QuestLog.Pinned() and not log.frame._shown, "unpinned: it goes with the full map")
+    end)
+    check(log.frame._shown and log.frame._strata == "DIALOG", "and comes back with it")
+end)()
 
 -- The route's golden line: the parts in view, under the pins.
 ns.Route.Show({ legs = { { kind = "walk", points = { { map = 1415, u = 500, v = -8950 }, { map = 1415, u = 0, v = -9250 } } },
@@ -1688,7 +1808,7 @@ check(Size(Blocks(shown, 1)) == 0 and Size(Blocks(shown, 2)) > 0 and Size(Blocks
 Painted.CAP = 400
 -- Three times nearer than the other views; back to Scrying, no nearer than its own.
 full:ZoomAt(100, 0, 0)
-check(near(full.k, Camera.NEAR * 3) and Camera.Near() == 6, "Atlas zooms three times nearer than the other views")
+check(near(full.k, Camera.NEAR * 3) and Camera.Near() == Camera.NEAR * 3, "Atlas zooms three times nearer than the other views")
 Button("terrain")._scripts.OnClick(Button("terrain"))
 check(full.k == Camera.NEAR and Size(Blocks(Shown(), 0)) == 0, "Scrying: its own nearest zoom, no painted blocks")
 Button("atlas")._scripts.OnClick(Button("atlas"))

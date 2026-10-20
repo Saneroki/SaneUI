@@ -2,7 +2,8 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - QuestLog
---  The quest log, on the left of the full map; the map takes the rest. Our own
+--  The quest log, a window of its own over the full map (in or out by the bar's
+--  button, TopBar.lua). Our own
 --  list (the game's belongs to its map window, which stays closed), read from
 --  the game's quest log: its zones as headers, each quest under its zone with
 --  its level and state, its objectives under it. Built again once a frame after
@@ -19,6 +20,14 @@ local _, ns = ...
 --                    what the data knows of it below (why it is not for you yet, its level, who gives and
 --                    takes it, what it asks first, its objectives, its rewards). Kept until the next /reload
 --
+--  The window (one of Core's): moved by its title bar, docked at a screen edge,
+--  sized by its corner's grip while the mouse is on it; where it stands and its
+--  size are kept. Its title bar's pin (the game's pin of its recent allies) keeps
+--  it on the screen while the map is small too (kept, Saneroki 2026-10-20):
+--  then it has no background, no border and no line under its title bar, only
+--  the list and its words over the game. Over the full map it has its dark
+--  background, to be read over the map; its close button takes it out of both.
+--
 --  Only the game's quest API (C_QuestLog, the game's quest link and share), never
 --  the quest panels of the game's map: called from here they would taint its pins.
 -------------------------------------------------------------------------------
@@ -26,7 +35,10 @@ local Core = SaneUI.Core
 local QuestLog = {}
 ns.QuestLog = QuestLog
 
-QuestLog.WIDTH = 320      -- the panel's width
+QuestLog.WIDTH, QuestLog.HEIGHT = 320, 640 -- the window's first size
+QuestLog.LEAST = 220      -- its least width and height
+QuestLog.FIRST = { x = 12, y = -84 } -- its first place, from the screen's top left: under the map's bar
+QuestLog.BACK = 0.88      -- its background's opacity over the full map (pinned on the screen alone: none)
 QuestLog.EDGE = 10        -- room inside its edges
 QuestLog.HEADER, QuestLog.QUEST, QuestLog.OBJECTIVE = 24, 20, 16 -- the rows' heights
 QuestLog.DETAILS = 0.42   -- the share of the panel's height the chosen quest's text takes
@@ -45,6 +57,8 @@ QuestLog.TEXT = {
     objectives = Core.Word("QUEST_OBJECTIVES", "Quest Objectives"),
     description = Core.Word("QUEST_DESCRIPTION", "Description"),
     previews = "Not in your log",
+    pin = "Pin",
+    pinTip = "Keeps the quest log on the screen while the map is small too, without its background. Click again: only over the full map.",
     remove = "Take it out of the log",
     offered = "You can take this quest.",
     level = "Level %d",
@@ -57,11 +71,15 @@ QuestLog.TEXT = {
     objects = Core.Word("QUEST_OBJECTS_FOUND", "%s: %d/%d"),
 }
 QuestLog.REMOVE = "xmarksthespot" -- the game's red X (ObjectIconsAtlas) on a preview's row
+QuestLog.PIN = "friendslist-recentallies-pin-yellow" -- the game's pin, lit while pinned
+QuestLog.PIN_OFF = "friends-icon-pinned-dis"         -- and grey while not
 
 local QUESTS, NPCS, OBJECTS = Core.Data.Set("Quests"), Core.Data.Set("NPCs"), Core.Data.Set("Objects")
 local previews = {} -- quests shown from the map's pins (Preview), newest first
 
-local panel, box, view, bar, details, story, words, buttons, header
+local panel, box, view, bar, details, story, words, buttons
+local frame, handle, back, pinButton
+local full = false -- the map fills the screen and stands there (Lay)
 local rows = {}    -- what the list shows: { kind = "header" | "quest" | "objective", ... }
 local stale = true -- the log changed while out of sight
 local chosen       -- the quest whose text shows below
@@ -461,7 +479,7 @@ function QuestLog.Preview(quests, map, x, y)
     chosen = quests[1]
     if not ns.TopBar.LogShown() then
         ns.store.questLog = true
-        ns.Window.Lay()
+        QuestLog.Lay(full)
     end
     ns.Window.OpenTo(map, x, y)
     QuestLog.Refresh()
@@ -487,35 +505,88 @@ local function Button(parent, text, click)
     return button
 end
 
--- The panel in parent, at its left edge, as tall as it; hidden until the full screen shows it.
-function QuestLog.Build(parent)
-    panel = CreateFrame("Frame", nil, parent)
-    panel:SetPoint("TOPLEFT")
-    panel:SetPoint("BOTTOMLEFT")
-    panel:SetWidth(QuestLog.WIDTH)
-    panel:EnableMouse(true) -- the map behind it is not clicked through it
-    local back = panel:CreateTexture(nil, "BACKGROUND")
-    back:SetAllPoints()
-    back:SetColorTexture(0.03, 0.03, 0.04, 0.88)
-    local line = panel:CreateTexture(nil, "BORDER")
-    line:SetColorTexture(Core.GOLD[1], Core.GOLD[2], Core.GOLD[3], 0.5)
-    line:SetPoint("TOPRIGHT")
-    line:SetPoint("BOTTOMRIGHT")
-    line:SetWidth(1)
+-- Pinned to the screen (store.questLogPinned): shown while the map is small too.
+function QuestLog.Pinned()
+    return ns.store.questLogPinned and true or false
+end
 
-    header = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    header:SetPoint("TOPLEFT", QuestLog.EDGE, -QuestLog.EDGE)
-    header:SetText(QuestLog.TEXT.title)
+-- The pin as it is: lit while pinned, grey while not.
+local function PinLook()
+    local picture = pinButton and pinButton.picture
+    if not picture then return end
+    local on = QuestLog.Pinned()
+    picture:SetAtlas(on and QuestLog.PIN or QuestLog.PIN_OFF)
+    picture:SetDesaturated(not on)
+end
+
+local function Pin()
+    ns.store.questLogPinned = not QuestLog.Pinned() or nil
+    QuestLog.Lay(full)
+end
+
+-- Its close button: out of the full map and off the screen.
+local function Close()
+    ns.store.questLog = false
+    ns.store.questLogPinned = nil
+    QuestLog.Lay(full)
+    ns.Safe("bar", ns.TopBar.Update)
+end
+
+-- The mouse on the window, rows and all: its grip is seen while it is (Core's grip = "hover"). Leaving the
+-- window itself for one of its rows is no leaving: looked at again each frame until the mouse is off it.
+local function Watching()
+    if frame:IsMouseOver() then return end
+    frame:SetScript("OnUpdate", nil)
+    handle:Hover(false)
+end
+
+local function Entered()
+    handle:Hover(true)
+end
+
+local function Leaving()
+    if frame:IsMouseOver() then
+        frame:SetScript("OnUpdate", ns.Guard(Watching))
+    else
+        handle:Hover(false)
+    end
+end
+
+-- The window, built at login with the map's (Window.lua); hidden until the full map or its pin shows it.
+function QuestLog.Build()
+    frame = CreateFrame("Frame", nil, UIParent)
+    frame:SetFrameStrata("LOW")
+    frame:Hide()
+    handle = Core.Window.New(frame, {
+        store = ns.store, key = "questLogPlace", title = QuestLog.TEXT.title, titleBar = true, barLine = false,
+        dock = true, dragDocked = true, sizable = true, grip = "hover",
+        minWidth = QuestLog.LEAST, minHeight = QuestLog.LEAST,
+        first = { point = "TOPLEFT", x = QuestLog.FIRST.x, y = QuestLog.FIRST.y, width = QuestLog.WIDTH,
+                  height = QuestLog.HEIGHT },
+        buttons = { { atlas = QuestLog.PIN_OFF, tip = QuestLog.TEXT.pin, text = QuestLog.TEXT.pinTip,
+                      click = function() ns.Guarded(Pin) end } },
+        close = function() ns.Guarded(Close) end,
+    })
+    QuestLog.handle = handle
+    frame:EnableMouse(true) -- the map behind it is not clicked through it
+    frame:SetScript("OnEnter", ns.Guard(Entered))
+    frame:SetScript("OnLeave", ns.Guard(Leaving))
+    back = frame:CreateTexture(nil, "BACKGROUND")
+    back:SetAllPoints()
+    back:SetColorTexture(0.03, 0.03, 0.04, QuestLog.BACK)
+
+    panel = CreateFrame("Frame", nil, handle.inside)
+    panel:SetAllPoints()
     panel.count = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    panel.count:SetPoint("TOPRIGHT", -QuestLog.EDGE, -QuestLog.EDGE - 4)
+    panel.count:SetPoint("TOPRIGHT", -QuestLog.EDGE, -4)
     panel.empty = panel:CreateFontString(nil, "ARTWORK", "GameFontDisable")
-    panel.empty:SetPoint("TOPLEFT", QuestLog.EDGE, -48)
+    panel.empty:SetPoint("TOPLEFT", QuestLog.EDGE, -24)
     panel.empty:SetPoint("RIGHT", -QuestLog.EDGE, 0)
     panel.empty:SetJustifyH("LEFT")
     panel.empty:SetText(QuestLog.TEXT.empty)
 
     box = CreateFrame("Frame", nil, panel, "WowScrollBoxList")
-    box:SetPoint("TOPLEFT", QuestLog.EDGE, -40)
+    box:SetPoint("TOPLEFT", QuestLog.EDGE, -20)
     box:SetPoint("BOTTOMRIGHT", -QuestLog.EDGE - 14, QuestLog.EDGE)
     bar = CreateFrame("EventFrame", nil, panel, "MinimalScrollBar")
     bar:SetPoint("TOPLEFT", box, "TOPRIGHT", 4, 0)
@@ -546,7 +617,6 @@ function QuestLog.Build(parent)
     buttons.abandon:SetPoint("BOTTOMRIGHT")
     buttons.share:SetPoint("LEFT", buttons.watch, "RIGHT", 4, 0)
     buttons.share:SetPoint("RIGHT", buttons.abandon, "LEFT", -4, 0)
-    for _, button in pairs(buttons) do button:SetWidth((QuestLog.WIDTH - 2 * QuestLog.EDGE - 8) / 3) end
     local scroll = CreateFrame("ScrollFrame", nil, details)
     scroll:SetPoint("TOPLEFT", 0, -6)
     scroll:SetPoint("BOTTOMRIGHT", buttons.abandon, "TOPRIGHT", 0, 6)
@@ -563,16 +633,23 @@ function QuestLog.Build(parent)
     words:SetJustifyH("LEFT")
     words:SetSpacing(2)
     details.scroll = scroll
-    panel:SetScript("OnSizeChanged", ns.Guard(function()
+    -- Sized: the words take their share of its height, the three buttons its width.
+    local function Sized()
         details:SetHeight(panel:GetHeight() * QuestLog.DETAILS)
-    end))
-    panel:Hide()
-    return panel
+        local width = (panel:GetWidth() - 2 * QuestLog.EDGE - 8) / 3
+        for _, button in pairs(buttons) do button:SetWidth(math.max(width, 1)) end
+        if chosen and details:IsShown() then QuestLog.Details() end
+    end
+    panel:SetScript("OnSizeChanged", ns.Guard(Sized))
+    handle:Place() -- where it was left; at its first place and size if it never was moved
+    pinButton = handle.own and handle.own[1]
+    PinLook()
+    return frame
 end
 
 -- The list drawn anew from the game's log, if it is in sight; else once it is.
 function QuestLog.Refresh()
-    if not panel or not panel:IsShown() then
+    if not frame or not frame:IsShown() then
         stale = true
         return
     end
@@ -585,21 +662,42 @@ function QuestLog.Refresh()
     QuestLog.Details()
 end
 
--- In sight (the full screen with the log) or not.
-function QuestLog.SetShown(on)
-    if not panel then return end
-    panel:SetShown(on)
-    if on and stale then QuestLog.Refresh() end
-    if not on then ns.Areas.Hover(nil) end
+-- Shown or not, as the map is (on: it fills the screen and stands there) and the log is chosen: over the full map
+-- while the bar's button has it in (its background there, above the map's layer), on the screen alone while
+-- pinned (no background, in the game's minimap's layer).
+function QuestLog.Lay(on)
+    if not frame then return end
+    full = on and true or false
+    local shown = (full and ns.TopBar.LogShown()) or QuestLog.Pinned()
+    back:SetShown(full)
+    frame:SetFrameStrata(full and "DIALOG" or "LOW") -- the full map stands in the layer HIGH (Core's Edge)
+    frame:SetAlpha(1)
+    if shown and not frame:IsShown() then frame:Show() elseif not shown and frame:IsShown() then frame:Hide() end
+    PinLook()
+    if shown and stale then QuestLog.Refresh() end
+    if not shown then ns.Areas.Hover(nil) end
 end
 
--- How far it has come in on the window's way to the full screen (0 to 1).
-function QuestLog.Fade(share)
-    if panel then panel:SetAlpha(share) end
+-- On the window's way to the full screen and back (share: how far it has come towards the full screen, 0 to 1):
+-- a log not pinned comes in and goes out with the map; a pinned one stays as it is.
+function QuestLog.Fade(share, coming)
+    if not frame or QuestLog.Pinned() or not ns.TopBar.LogShown() then return end
+    if not frame:IsShown() and coming then
+        back:SetShown(true)
+        frame:SetFrameStrata("DIALOG")
+        frame:Show()
+        if stale then QuestLog.Refresh() end
+    end
+    frame:SetAlpha(share)
 end
 
 function QuestLog.Shown()
-    return panel and panel:IsShown() or false
+    return frame and frame:IsShown() or false
+end
+
+-- The module stood down: the window goes.
+function QuestLog.Hide()
+    if frame then frame:Hide() end
 end
 
 ns.Listen("LIVE", function(what)

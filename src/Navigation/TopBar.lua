@@ -4,11 +4,13 @@ local _, ns = ...
 --  Sane UI - Navigation - TopBar
 --  The bar over the full map's top edge, left to right:
 --
---      Quest Log         the quest log at the map's left in or out (kept)
+--      Quest Log         the quest log's window over the map in or out (kept; QuestLog.lua)
 --      the views         Parchment, Blended, Scrying and Atlas while its module is there: how the map is drawn
 --                        (the setting Map view; Navigation.lua, Offer)
 --      the map selector  the world, a continent or a plane of its own (Zephras Isle), then a zone of it (A to
 --                        Z): the map shows it whole; each says what the map shows now
+--      Dungeons          every dungeon and raid the game has a map of (A to Z): its map over the map
+--                        (Dungeons.lua); beside it, while one with floors shows, its floors
 --      Pins              the pin filter: a checkbox per kind of pin with its icon (the setting Pins on the
 --                        map), and at its right a slider for that kind's size (the quest areas': their
 --                        opacity; the setting pinSizes, kept per profile)
@@ -31,14 +33,17 @@ TopBar.MENU_WIDTH = 170
 TopBar.SIZER, TopBar.SIZE_LABEL, TopBar.CHECK, TopBar.ROW = 120, 44, 40, 26
 TopBar.TEXT = {
     questLog = Core.Word("QUEST_LOG", "Quest Log"),
-    questLogTip = "The quest log at the map's left, or the whole screen for the map.",
+    questLogTip = "The quest log's window over the map, or the map alone. Its pin keeps it on the screen while the map is small too.",
     pins = "Pins",
     world = Core.Word("WORLD", "World"),
     zones = "Zone",
 }
+TopBar.DUNGEON_WIDTH, TopBar.FLOOR_WIDTH = 150, 110 -- narrower: the bar fits a screen 1366 units wide
+TopBar.LIST_HEIGHT = 440 -- the dungeons' list scrolls past so high
 
-local bar, buttons, logButton, continentMenu, zoneMenu, pinMenu
+local bar, buttons, logButton, continentMenu, zoneMenu, dungeonMenu, floorMenu, pinMenu
 local shownMap, shownZone -- what the selector says now
+local shownFloor          -- the dungeon's floor the bar says is shown
 
 -- The map's name, as the game has it.
 local function Name(map)
@@ -87,13 +92,33 @@ local function ViewButton(key)
     return button
 end
 
--- A map chosen in the selector: shown whole.
+-- A map chosen in the selector: shown whole (a dungeon's view that shows goes).
 local function Go(map)
+    ns.Dungeons.Close()
     ns.Canvas.Show(map)
 end
 
 local function Radio(root, name, map)
-    root:CreateRadio(name, ns.Guard(function() return shownMap == map or shownZone == map end), ns.Guard(function() Go(map) end))
+    root:CreateRadio(name, ns.Guard(function() return not shownFloor and (shownMap == map or shownZone == map) end),
+        ns.Guard(function() Go(map) end))
+end
+
+-- Every dungeon and raid, A to Z: its map over the map; ticked while it shows.
+local function DungeonList(_, root)
+    if root.SetScrollMode then root:SetScrollMode(TopBar.LIST_HEIGHT) end -- a long list: scrolled
+    for _, entry in ipairs(ns.Dungeons.List()) do
+        root:CreateRadio(entry.name, ns.Guard(function() return entry.floors == select(2, ns.Dungeons.Shown()) end),
+            ns.Guard(function() ns.Dungeons.Show(entry.map) end))
+    end
+end
+
+-- The floors of the dungeon shown, lowest first.
+local function FloorList(_, root)
+    local _, floors = ns.Dungeons.Shown()
+    for index, floor in ipairs(floors or {}) do
+        root:CreateRadio(floor.name or tostring(index), ns.Guard(function() return shownFloor == floor.map end),
+            ns.Guard(function() ns.Dungeons.Show(floor.map) end))
+    end
 end
 
 -- The world, then each continent and each plane of its own.
@@ -203,6 +228,11 @@ function TopBar.Build(canvas)
     continentMenu = Dropdown(TopBar.MENU_WIDTH, Continents)
     zoneMenu = Dropdown(TopBar.MENU_WIDTH, Zones)
     zoneMenu:SetPoint("LEFT", continentMenu, "RIGHT", TopBar.GAP, 0)
+    dungeonMenu = Dropdown(TopBar.DUNGEON_WIDTH, DungeonList, ns.Dungeons.TEXT.dungeons)
+    dungeonMenu:SetPoint("LEFT", zoneMenu, "RIGHT", TopBar.GAP * 3, 0)
+    floorMenu = Dropdown(TopBar.FLOOR_WIDTH, FloorList, ns.Dungeons.TEXT.floor)
+    floorMenu:SetPoint("LEFT", dungeonMenu, "RIGHT", TopBar.GAP, 0)
+    floorMenu:Hide()
     pinMenu = Dropdown(TopBar.MENU_WIDTH - 40, Filter, TopBar.TEXT.pins)
     pinMenu:SetPoint("RIGHT")
     TopBar.Arrange()
@@ -226,6 +256,15 @@ function TopBar.Update()
     local map = camera.level == "world" and Coords.WorldMap() or camera.map
     local zone = camera.level == "zone" and ns.Canvas.view.zone or nil
     logButton:SetButtonState(TopBar.LogShown() and "PUSHED" or "NORMAL", TopBar.LogShown())
+    local floor, floors = ns.Dungeons.Shown()
+    if floor ~= shownFloor then
+        shownFloor = floor
+        dungeonMenu:OverrideText(floor and Name(floors[1].map) or ns.Dungeons.TEXT.dungeons)
+        local named
+        for _, each in ipairs(floors or {}) do if each.map == floor then named = each.name end end
+        floorMenu:OverrideText(named or ns.Dungeons.TEXT.floor)
+        floorMenu:SetShown(floors and #floors > 1 or false)
+    end
     if map == shownMap and zone == shownZone then return end
     shownMap, shownZone = map, zone
     continentMenu:OverrideText(Name(map))

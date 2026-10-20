@@ -505,8 +505,10 @@ function Canvas.ZoomTo(u, v, notches)
     Canvas.Layout()
 end
 
--- Shows a map whole (a pin that leads into another map), as a click on a zone does.
+-- Shows a map whole (a pin that leads into another map), as a click on a zone does; a dungeon's on the full map
+-- in its own view (Dungeons.lua).
 function Canvas.Show(map)
+    if ns.Dungeons.Show(map) then return true end
     if not laid or not camera:Fit(map) then return false end
     Canvas.Layout()
     return true

@@ -49,7 +49,10 @@ local Core = SaneUI.Core
 --          title = "Social",            -- its name, on its title bar and on its box in Edit Mode
 --          titleBar = true,             -- it has a title bar (without: only while it fills the screen)
 --          buttons = { { atlas = "common-icon-undo", tip = "Start again", click = function(button) end } },
---                                       -- the module's own buttons in the title bar, left of Core's (or texture)
+--                                       -- the module's own buttons in the title bar, left of Core's (or texture);
+--                                       -- once shown, window.own[i] (its picture: button.picture)
+--          barLine = false,             -- the title bar without the line under it (a window without a skin
+--                                       -- that stands over the game: only its title and buttons)
 --          tabs = { { text = "Spells", build = function(view) end } },  -- views, as the game's tabs (Views.lua)
 --          toplevel = true,             -- a click brings it to the front of its layer (a panel's, a talk's)
 --          insets = { left = 0, right = 0, top = 0, bottom = 0 },  -- docked, the room it keeps from the
@@ -576,6 +579,7 @@ local function Square(parent, art, text, tip, click, template)
     if art.atlas then picture:SetAtlas(art.atlas) else picture:SetTexture(art.texture) end
     picture:SetSize(Window.BUTTON / 2, Window.BUTTON / 2)
     picture:SetPoint("CENTER", -1, 0)
+    button.picture = picture
     button:SetScript(template and "PostClick" or "OnClick", Core.Guard("window", function(self)
         Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
         Core.Safe("window", click, self)
@@ -640,6 +644,7 @@ local function Bar(window)
     line:SetPoint("BOTTOMLEFT", Window.BUTTON_INSET, 0)
     line:SetPoint("BOTTOMRIGHT", -Window.BUTTON_INSET, 0)
     line:SetHeight(1)
+    line:SetShown(options.barLine ~= false)
 
     local find = CreateFrame("Button", nil, bar)
     find:SetPoint("TOPLEFT")
@@ -711,8 +716,10 @@ local function Buttons(window)
         window.toggle = Toggle(buttons, Window.TEXT.classic, Window.TEXT.classicTip, function() window:Native(true) end)
         buttons.list[#buttons.list + 1] = window.toggle
     end
-    for _, own in ipairs(options.buttons or {}) do
-        buttons.list[#buttons.list + 1] = Square(buttons, own, own.tip, own.text, own.click)
+    window.own = {}
+    for index, own in ipairs(options.buttons or {}) do
+        window.own[index] = Square(buttons, own, own.tip, own.text, own.click)
+        buttons.list[#buttons.list + 1] = window.own[index]
     end
     window.buttons = buttons
     return buttons

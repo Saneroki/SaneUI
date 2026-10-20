@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: the maps of the dungeons and raids, chosen on the full
+  map's bar, floor by floor; the quest log a window of its own that
+  you can move, dock and size, and pin to stay on the screen with the
+  map small, see-through; the minimap zooms four times closer; quest
+  areas stay in place at every zoom.
 - Navigation: your trip at the top of the screen, on a flight, a ship
   or the Deeprun Tram: where it goes, how far you are, the next stop
   and the time to it, the time to the end. On a flight, Request Stop

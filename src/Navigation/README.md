@@ -13,7 +13,8 @@ fades softly from zone to zone; or *Scrying*, the land as the minimap shows it, 
 With the module *Atlas* (`SaneUI_Atlas`, `src/Atlas/`) switched on there is a third, *Atlas*: the whole world
 painted as one map, three times closer. The game's own minimap lies over it for its live dots; the game's map stays closed, and its keys open ours.
 On the map stand pins in the game's own looks (quests, flight points, rares, entrances, places, services, the
-party), always over the map, and the full map has the quest log at its left. The plan is in
+party), always over the map; the full map has the quest log as a window of its own over it, which its pin keeps
+on the screen while the map is small too, and the maps of the dungeons and raids. The plan is in
 `Doc/ideas/Navigation.md`.
 
 ## How to use
@@ -25,7 +26,7 @@ party), always over the map, and the full map has the quest log at its left. The
   - **drag** with the left button: the map moves, and stops following you;
   - **the mouse wheel** zooms around the point under the mouse; while the map follows you it walks the game's
     minimap's zoom steps first (its live dots show then), then goes on out to the whole continent and the
-    world;
+    world, and in past the game's nearest step four times nearer than it;
   - **right click:** one map out (a zone, its continent, the world), as on the game's map;
   - **the mouse over a continent shown whole** lights up the zone under it in the game's own highlight, over
     the world the continent; **a click** opens it, as on the game's map;
@@ -73,13 +74,19 @@ party), always over the map, and the full map has the quest log at its left. The
   around you up to 20 yards (as the game sets it for a gamepad); switched off, those settings are as they were.
 - **Quest areas:** the quest the arrow leads to, or the one under the mouse in the quest log, shaded as the game
   shades it on its map.
-- **The quest log** at the full map's left (*Quest Log* on the bar puts it in or out): your quests by zone with
+- **The quest log**, a window over the full map (*Quest Log* on the bar puts it in or out; drag its title bar to
+  move it, dock it at a screen edge, size it by its corner): the pin on its title bar keeps it on the screen while
+  the map is small too, there without a background, a border or a line under its title, only the list over the
+  game; its close button takes it out of both. Your quests by zone with
   their level and state, their objectives under them. A click: the arrow leads to it, the map shows where it is,
   its text below with *Track*, *Share* and *Abandon*. Shift and a click tracks it; the right button opens a menu.
   A quest giver's pin clicked: its quests on top, under *Not in your log*, greyed out, each with a red X that takes
   it out again; chosen, below it what the data knows of it: why it is not for you yet, its level, who gives and
   takes it, its objectives and rewards. They stay until the next `/reload`.
 - **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
+- **Dungeons** on the bar: every dungeon and raid the game has a map of, A to Z; chosen, its map over the map,
+  and beside it its floors. The wheel zooms it, a drag moves it, a right click goes back to the map at its zone.
+  Shift and a click on a dungeon's entrance opens it too, and inside a dungeon the full map opens on its map.
 - **Zephras Isle** is on the map as a continent is, a zone of its own: the map follows you there, its pins and the
   map pin stand on it, a click on it at the world opens it, and a right click on it goes out to the world (there is
   no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* and *Atlas* its
@@ -224,19 +231,29 @@ party), always over the map, and the full map has the quest log at its left. The
   `Canvas.Press`/`Release`); a plain click is the pin's. Tooltips with a quest's objectives as the game tells them.
 - **Areas** (`Areas.lua`): the game's quest area frame (`QuestPOIFrame`, which the engine draws a quest's area
   into) over each zone in view, as large as its box, for the quest under the mouse in the log or the one the
-  arrow leads to.
+  arrow leads to. Placed at once, drawn on the next frame: the engine shades into the frame's rectangle as it
+  stands when asked, and a frame just placed or sized has its new one only once the game has laid it out (drawn
+  at once, the area stood where the zoom before had put it).
+- **Dungeons** (`Dungeons.lua`): the maps of kind *Dungeon* under the world map (`C_Map.GetMapChildrenInfo`), one
+  entry per map group (`C_Map.GetMapGroupMembersInfo`: its floors, lowest first), drawn in a view of their own over
+  the canvas, under the bar: the floor's art (`Art.Of`) fitted whole in a frame that is scaled to zoom (up to
+  `Dungeons.NEAR` times) and moved by a drag; the player's arrow where `C_Map.GetPlayerMapPosition` tells it on the
+  floor shown. `Canvas.Show` of a dungeon's map opens it; going small closes it.
 - **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
   in view: a dark edge, the game's dependency bar art tinted gold, its glint moved along by a
   `TextureCoordTranslation` animation (no code of ours each frame); walks gold, flights pale, ships red. The
   animation is the template of `Route.xml`: the game makes this kind only from XML (one made in Lua has no
   `SetOffset`); where the game has not read the file yet, the glint stands still.
-- **QuestLog** (`QuestLog.lua`): a `WowScrollBoxList` of rows read from `C_QuestLog` (the game's headers, folded
+- **QuestLog** (`QuestLog.lua`): a window of Core's of its own (title bar, docks, its grip seen while the mouse is
+  on it; place and size in `store.questLogPlace`), over the full map in the layer `DIALOG` with its dark background,
+  and pinned (`store.questLogPinned`, its title bar's pin) on the screen alone in the layer `LOW` without one (no
+  skin, `barLine = false`); a `WowScrollBoxList` of rows read from `C_QuestLog` (the game's headers, folded
   as the game keeps them; quests with level, state, watched; objectives), built again on `QUEST_LOG_UPDATE` once
   a frame and only while it shows; the chosen quest's text from `GetQuestLogQuestText` with its buttons; abandon
   after the game's own question (`GENERIC_CONFIRMATION`); never the quest panels of the game's map.
 - **TopBar** (`TopBar.lua`): over the full map's top: the quest log's button, the views, the map selector (the
   game's dropdowns, radio entries of the world, its continents and Zephras Isle, the zones of the one shown A to
-  Z, the isle itself on the isle) and the pin filter
+  Z, the isle itself on the isle), the dungeons and the floors of the one shown, and the pin filter
   (checkboxes); it says what the map shows after each layout.
 - **Walk** (`Walk.lua`, no frames): Core's set *Walking* (pack *Data: Routes*, asked for at the first route),
   made by `dev/tools/walk-data` from the game's terrain, buildings and water: per terrain tile a block (base64,
@@ -328,6 +345,7 @@ party), always over the map, and the full map has the quest log at its left. The
 | `Search.lua` | A walk between two points over the walking data, as a job of Core's scheduler. No frames |
 | `Planner.lua` | The way to the map pin: on foot, by the flights this character knows, by boat and zeppelin, by the hearthstone. No frames |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
+| `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, zoomed and dragged |
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
 | `Route.lua` | The golden line of a way, the parts in view: walks gold, flights pale, ships red |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks |
@@ -339,10 +357,10 @@ party), always over the map, and the full map has the quest log at its left. The
 | `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures |
 | `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
 | `Native.lua` | The game's map kept closed; its keys |
-| `QuestLog.lua` | The quest log at the full map's left |
+| `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too |
 | `DockWatch.lua` | At a dock, at the top of the screen: where its boats and zeppelins go and when they arrive and leave |
 | `TripView.lua` | The trip you are on (Core's `Data.Trips`), at the top of the screen: the way, its stops, the times; *Request Stop* on a flight |
-| `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the pin filter |
+| `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the dungeons, the pin filter |
 | `Window.lua` | Core's window: the top right corner, the full screen, the two cameras, the view buttons |
 | `Art/Terrain/*.blp` | The terrain's overview: the game's minimap textures, smaller, the water cut away, made by `dev/tools/terrain-art` from the game's files |
 | `Art/Zones/*.blp` | Each zone's outline over its map's box, made by `dev/tools/terrain-art` from the game's files |

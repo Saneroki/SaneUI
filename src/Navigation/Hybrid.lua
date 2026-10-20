@@ -17,7 +17,9 @@ local _, ns = ...
 --                   under its pins and marks, set again each time it is placed (a window raised and put
 --                   back leaves the levels of its frames as they come)
 --      the wheel    walks the game's steps first; out past the widest our map goes on alone, and
---                   in again it takes the widest step (Wheel)
+--                   in again it takes the widest step; in past the narrowest our map goes on alone
+--                   too, up to its own nearest zoom (Camera.NEAR), and out again it takes the
+--                   narrowest step (Wheel)
 --      clicks       the left and right button go through to our map (drag, Ctrl-click, one map out);
 --                   a plain left click on it pings, as the game's does (Ping); the mouse's moves stay
 --                   the game's, for its tooltips
@@ -328,7 +330,8 @@ end
 function Hybrid.Wheel(camera, notches, size)
     if not taken or not camera.follow then return false end
     local minimap = Parts()
-    local step = camera.native
+    local step, last = camera.native, minimap:GetZoomLevels() - 1
+    local nearest = Hybrid.Zoom(last, size)
     if step then
         step = step + (notches > 0 and 1 or -1)
         if step < 0 then
@@ -337,7 +340,17 @@ function Hybrid.Wheel(camera, notches, size)
             camera.k = (Hybrid.Zoom(0, size) or camera.k) / ns.Camera.STEP
             return true
         end
-        step = math.min(step, minimap:GetZoomLevels() - 1)
+        if step > last then
+            -- In past the narrowest step: our map alone, a notch nearer, up to its own nearest zoom.
+            if not nearest or nearest >= ns.Camera.Near() then return true end
+            camera.native = nil
+            camera.k = math.min(ns.Camera.Near(), nearest * ns.Camera.STEP)
+            return true
+        end
+    elseif nearest and camera.k > nearest then
+        -- Nearer than the narrowest step: our map zooms on alone; out again, it takes the narrowest step.
+        if notches > 0 or camera.k * ns.Camera.STEP ^ notches > nearest * (1 + 1e-6) then return false end
+        step = last
     elseif notches > 0 then
         local widest = Hybrid.Zoom(0, size)
         if not widest or camera.k * ns.Camera.STEP ^ notches < widest and camera.k < ns.Camera.Near() then return false end

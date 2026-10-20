@@ -11,9 +11,12 @@ local _, ns = ...
 --
 --  Each view keeps its own camera: its zoom, its place, whether it follows the
 --  player. Going full screen and back returns each to where it was. Full, the
---  quest log stands at the left (QuestLog.lua; in or out by the bar's button,
---  kept), the map takes the rest, and a bar over the map's top edge holds the
---  views, the map selector and the pin filter (TopBar.lua); the dropdown Classic
+--  map takes the whole screen, the quest log is a window of its own over it
+--  (QuestLog.lua; in or out by the bar's button, kept; pinned, on the screen
+--  while the map is small too), and a bar over the map's top edge holds the
+--  views, the map selector, the dungeons and the pin filter (TopBar.lua); a
+--  dungeon chosen there, or the one the player is in when the map fills the
+--  screen, shows over the map (Dungeons.lua); the dropdown Classic
 --  windows in the title bar offers the game's own minimap and map, each a kept
 --  choice (the switches Show the game's minimap, Show the game's map), ticked
 --  while chosen and chosen again to come back.
@@ -71,27 +74,9 @@ local function Rest(on)
     handle:Hover(false) -- resting, its grip goes too
 end
 
--- Whether the quest log stands at the map's left in the full screen (TopBar's button).
-local function Logged()
-    return ns.TopBar.LogShown()
-end
-
--- The quest log's share of its width (0: out, 1: in), the map to its right: full and standing 1 with the log
--- shown, small 0, on the way between.
-local function Lay(share)
-    local log = Logged() and share > 0
-    local width = log and ns.QuestLog.WIDTH * share or 0
-    canvas:ClearAllPoints()
-    canvas:SetPoint("TOPLEFT", width, 0)
-    canvas:SetPoint("BOTTOMRIGHT")
-    ns.QuestLog.SetShown(log)
-    ns.QuestLog.Fade(log and share or 0)
-end
-
--- The canvas' size once the window fills the screen: the screen but the title bar, and the quest log.
+-- The canvas' size once the window fills the screen: the screen but the title bar.
 function Window.FullSize()
-    local width = UIParent:GetWidth() - (Logged() and ns.QuestLog.WIDTH or 0)
-    return width, UIParent:GetHeight() - Core.Window.BAR
+    return UIParent:GetWidth(), UIParent:GetHeight() - Core.Window.BAR
 end
 
 -- The window stands, small or full: that view's camera, and the map at its size; small with the game's own
@@ -100,36 +85,42 @@ local function Placed()
     going = nil
     local filled = handle.edge and handle.edge.full or false
     ns.Canvas.Use(filled and full or small)
-    Lay(filled and 1 or 0)
+    ns.QuestLog.Lay(filled)
     ns.TopBar.SetShown(filled, canvas)
+    if not filled then
+        ns.Dungeons.Close()
+    elseif not ns.Dungeons.Shown() then
+        local here = ns.Dungeons.Here() -- inside a dungeon: its map at once
+        if here then ns.Dungeons.Show(here) end
+    end
     if Sleeping() then return Rest(true) end
     if resting then Rest(false) end
     ns.Canvas.Open()
 end
 
--- The quest log in or out while the window stands full (TopBar's button): the map laid out for its new size.
+-- The quest log in or out while the window stands full (TopBar's button).
 function Window.Lay()
     if not frame or going ~= nil or not (handle.edge and handle.edge.full) then return end
-    Lay(1)
+    ns.QuestLog.Lay(true)
     ns.TopBar.Update()
 end
 
 -- On its way to the full screen (full) or back, the window to be width x height: the map goes with it,
--- into the other view's camera; the quest log comes in from the left as it goes, the bar waits until it
--- stands. Resting, it comes into sight first.
+-- into the other view's camera; the quest log fades in and out with it (but pinned), the bar and a dungeon's
+-- map wait until it stands. Resting, it comes into sight first.
 local function Filled(on, width, height)
     if resting then Rest(false) end
     going = on
     ns.TopBar.SetShown(false)
+    ns.Dungeons.Close()
     local top = on and Core.Window.BAR or 0 -- full, the title bar is over the map
-    local log = on and Logged() and ns.QuestLog.WIDTH or 0
-    ns.Canvas.Morph(on and full or small, (width or 0) - log, (height or 0) - top)
+    ns.Canvas.Morph(on and full or small, width or 0, (height or 0) - top)
 end
 
 local function Moving(share)
     if going ~= nil then
         local t = math.min(math.max(share, 0), 1)
-        Lay(going and t or 1 - t)
+        ns.QuestLog.Fade(going and t or 1 - t, going)
     end
     ns.Canvas.Step(share)
 end
@@ -179,10 +170,11 @@ function Window.Build()
     })
     Window.handle = handle
     inside:SetAllPoints(handle.inside)
-    ns.QuestLog.Build(inside)
     canvas = ns.Canvas.Build(inside)
-    Lay(0)
+    ns.Dungeons.Build(canvas)
     ns.TopBar.Build(canvas)
+    ns.QuestLog.Build()
+    ns.QuestLog.Lay(false)
     Window.Arrange()
     handle:Place() -- where it was left; at its first place and size if it never was moved
     -- Edit Mode shows a resting window, to be arranged, and lets it rest again once it closes.
@@ -266,5 +258,7 @@ end
 function Window.Hide()
     if not frame then return end
     ns.Canvas.Close()
+    ns.Dungeons.Close()
+    ns.QuestLog.Hide()
     frame:Hide()
 end

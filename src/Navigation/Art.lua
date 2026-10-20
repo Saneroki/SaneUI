@@ -69,7 +69,8 @@ function Art.Build(holder)
     return layer, glow
 end
 
--- A map's art: its first layer, asked of the game once a session; false when it has none.
+-- A map's art: its first layer, asked of the game once a session; false when it has none. { across, down: its
+-- tiles; width, height: the layer's pixels; tileWidth, tileHeight; files: the tiles' files, row by row }
 local function Of(map)
     local art = arts[map]
     if art ~= nil then return art end
@@ -86,6 +87,7 @@ local function Of(map)
     arts[map] = art
     return art
 end
+Art.Of = Of -- the dungeons' maps too (Dungeons.lua)
 
 -- One map's art over its box: the tiles that meet the view, at sublevel; cut by mask, if given. under: drawn under
 -- the stitched map (Under), in textures of its own, so the same map can be drawn over it too (the isle, a zone).

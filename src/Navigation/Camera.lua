@@ -26,7 +26,8 @@ local Camera = {}
 ns.Camera = Camera
 
 Camera.STEP = 1.25   -- the wheel zooms by so much per notch
-Camera.NEAR = 2      -- the nearest zoom of its own: so many units per yard (the game's minimap goes nearer)
+Camera.NEAR = 8      -- the nearest zoom of its own: so many units per yard (four times the game's minimap's
+                     -- nearest step in the small window; Saneroki, 2026-10-20)
 Camera.CLOSER = 3    -- the view Atlas goes so many times nearer: its art has four times the terrain's detail
 Camera.FIT = 0.9     -- a whole map, stepped out to, in so much of the view
 Camera.START = 3000  -- yards the view is high when it first looks at a continent: most of a zone

@@ -6,6 +6,31 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 351 (Navigation), 85 (Inventory), 90 (sheet), 184 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
+### Navigation: quest areas in place, nearer zoom, dungeon maps, the quest log a window that pins (Saneroki, 2026-10-20)
+- **Quest areas** (`Areas.lua`): stood where the zoom before had put them. The engine shades the area into the
+  quest area frame's rectangle as it stands when asked, and a frame just placed or sized has its new one only after
+  the game's layout at the frame's end; now each frame is placed at once and its area drawn on the next frame, as
+  Blizzard's map waits after a change of scale.
+- **Zoom**: `Camera.NEAR` 2 → 8 units a yard, four times the game's nearest minimap step in the small window (the
+  view Atlas three times that). The wheel goes on in past the game's narrowest step with our map alone, and out
+  again takes that step (`Hybrid.Wheel`).
+- **Dungeons** (new `Dungeons.lua`, in the TOC): every map of kind *Dungeon* under the world map, one entry per map
+  group (its floors), in the bar's new dropdown *Dungeons* (A to Z, scrolled) with a floor dropdown beside it; drawn
+  in a view of its own over the canvas from the game's map art (`Art.Of`, now exported): fitted, the wheel zooms up to
+  four times, a drag moves it, a right click goes back to the map at its zone, the player's arrow on the floor shown.
+  `Canvas.Show` of a dungeon's map opens it (Shift and a click on an entrance); inside a dungeon the full map opens
+  on it; going small closes it.
+- **The quest log** (`QuestLog.lua`, `Window.lua`): a window of Core's of its own over the full map in place of the
+  panel at its left (the map takes the whole screen; `Window.FullSize` no longer takes its width off): moved by its
+  title bar, docked, sized by its grip while the mouse is on it, place and size kept (`store.questLogPlace`). The pin
+  on its title bar (`store.questLogPinned`) keeps it on the screen while the map is small, in the layer `LOW`,
+  without background, border or the title bar's line; over the full map it is in `DIALOG` with its dark background.
+  Its close button takes it out of both. The bar's *Quest Log* still puts it in or out over the full map.
+- **Core's window** (`Window.lua`): `barLine = false` (a title bar without its line), `window.own[i]` (the module's
+  own title bar buttons) and `button.picture` on them.
+- Tests: Navigation 375 checks (the area drawn on the next frame, the wheel past the narrowest step, the dungeons,
+  the pinned log). A game restart takes it in (a new file in Navigation's TOC).
+
 ### Navigation: your trip on screen, the flight's way on the map, the tram (Saneroki, 2026-10-20)
 - **Core's trip underway** (new `src/Core/Data/Trips.lua`, `Data.Trips()`, in Core's TOC): the trip the player is
   on, a flight, a boat or a zeppelin, the tram: its stops, how far along, the time to the next stop and to the end;

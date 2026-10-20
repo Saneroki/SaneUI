@@ -11,6 +11,13 @@ local _, ns = ...
 --                    arrow leads to (C_SuperTrack); in the log only
 --      when          at a zone's level, while the pin filter's Quest areas is on
 --
+--  The engine shades the area into the frame's rectangle as it stands when it
+--  is asked; a frame just placed or sized has its new rectangle only once the
+--  game has laid it out, at the frame's end. So a frame is placed at once and
+--  its area drawn on the next frame (Redraw), as Blizzard's map waits for the
+--  frame's end after a change of its scale (QuestBlobPinMixin:OnCanvasScaleChanged):
+--  drawn at once, the area stood where the zoom before had put it.
+--
 --  The game's minimap draws the areas near the player by itself (Hybrid.lua).
 --  Should this client not make the frame for us, there are no areas, said once.
 -------------------------------------------------------------------------------
@@ -27,6 +34,7 @@ local layer, holder
 local frames = {} -- [uiMapID] = its area frame, made when first needed
 local works       -- the game makes the frame for us: nil not tried yet, false it did not
 local hovered     -- the quest under the mouse in the quest log
+local pending     -- the quest to draw on the next frame, into the frames placed for it (Redraw)
 
 -- A zone's area frame, made the first time; nil when the game does not make one.
 local function Frame(map)
@@ -50,6 +58,8 @@ local function Frame(map)
 end
 
 local function HideAll()
+    pending = nil
+    if layer then layer:SetScript("OnUpdate", nil) end
     for _, frame in pairs(frames) do
         frame:DrawNone()
         frame:Hide()
@@ -62,6 +72,21 @@ function Areas.Build(canvasHolder)
     layer:SetSize(1, 1)
     layer:SetPoint("CENTER")
     return layer
+end
+
+-- The frame after a placing: the game has laid the frames out at their new place and size, the area is drawn
+-- into each frame that shows. Once.
+local function Redraw()
+    layer:SetScript("OnUpdate", nil)
+    local quest = pending
+    pending = nil
+    if not quest then return end
+    for _, frame in pairs(frames) do
+        if frame:IsShown() then
+            frame:DrawNone()
+            frame:DrawBlob(quest, true)
+        end
+    end
 end
 
 -- The quest whose area is drawn: the one under the mouse in the log, else the one the game's arrow leads to.
@@ -86,8 +111,7 @@ function Areas.Place(view)
             frame:ClearAllPoints()
             frame:SetPoint("TOPLEFT", holder, "CENTER", (box.u - view.u) * view.k, (box.v - view.v) * view.k)
             frame:SetSize(box.width * view.k, box.height * view.k)
-            frame:DrawNone()
-            frame:DrawBlob(quest, true)
+            frame:DrawNone() -- nothing at the old place meanwhile
             frame:Show()
             drawn[zone.map] = true
         end
@@ -98,6 +122,8 @@ function Areas.Place(view)
             frame:Hide()
         end
     end
+    pending = quest
+    layer:SetScript("OnUpdate", ns.Guard(Redraw))
 end
 
 -- The quest log's mouse over a quest (nil: off it): its area drawn while it is there.

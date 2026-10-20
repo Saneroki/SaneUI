@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Navigation
-## Notes: Sane UI's minimap and map in one window. Small in the screen's top right corner it is the minimap; move the mouse into that corner and it fills the screen as the map. Drag it, zoom it with the mouse wheel from a zone out to the whole world, right click for one map out, Ctrl-click for the map pin; draw it as Parchment (Blizzard's maps joined into one), as Scrying (the land as it lies) or, with the module Atlas, painted. Pins of your quests, flight points, rares, places and party; the quest log at the full map's left; a golden line to the map pin, on foot and by flight. The game's map keys open it. Settings: the page Navigation.
+## Notes: Sane UI's minimap and map in one window. Small in the screen's top right corner it is the minimap; move the mouse into that corner and it fills the screen as the map. Drag it, zoom it with the mouse wheel from a zone out to the whole world, right click for one map out, Ctrl-click for the map pin; draw it as Parchment (Blizzard's maps joined into one), as Scrying (the land as it lies) or, with the module Atlas, painted. Pins of your quests, flight points, rares, places and party; the maps of the dungeons and raids; the quest log over the full map, pinned to the screen if you like; a golden line to the map pin, on foot and by flight. The game's map keys open it. Settings: the page Navigation.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -43,6 +43,8 @@ Painted.lua
 Indoors.lua
 # A quest's areas, as the game shades them, over each zone in view
 Areas.lua
+# The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor
+Dungeons.lua
 # The golden line of the way to the map pin: its pulse (the game makes that animation only from XML), its lines
 Route.xml
 Route.lua
@@ -58,13 +60,13 @@ Found.lua
 Sparkles.lua
 # The game's map kept closed: its keys and every way to it open ours
 Native.lua
-# The quest log at the full map's left
+# The quest log, a window of its own over the full map; pinned, on the screen while the map is small too
 QuestLog.lua
 # At a dock: where its boats and zeppelins go and when they come, at the top of the screen
 DockWatch.lua
 # The trip you are on, at the top of the screen: where it goes, how far, how long; on a flight, Request Stop
 TripView.lua
-# The bar over the full map: the quest log, the views, the map selector, the pin filter
+# The bar over the full map: the quest log, the views, the map selector, the dungeons, the pin filter
 TopBar.lua
 # The window: the minimap in the top right corner, the map when it fills the screen
 Window.lua
