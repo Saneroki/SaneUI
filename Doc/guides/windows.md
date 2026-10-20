@@ -286,6 +286,11 @@ not by itself. The rules:
   module's (`default(width, height)`, laid out for the screen as it is until it is changed, then kept as changed;
   *Reset* makes it the module's again), `+` makes an empty one, a right click renames, resets the first, deletes
   another (confirmed). Out of sight while the search box lies over the bar.
+- **A window's own tab**, after the layouts' tabs and `+`, for a window whose spec has an `icon` (a texture or
+  file ID with its `coords`, or `function(texture)` that draws it, like a portrait): the icon in place of words,
+  lit (the tab selected, the icon in full colour) while the window is in the layout chosen, greyed while not; a
+  click puts it in or takes it off, as its tick in *Windows* does; its tooltip says the window's title. The
+  module picks the game's own icon for what the window stands for.
 - **Kept** in `store[key]` (account-wide, as places are): `{ chosen, tabs = { { name, tree } } }`, a tree only once
   changed (`false`: emptied).
 - **What is in a window is the module's**: a panel of Core's (`Core.Skin` plate, a head `Board.HEAD` high with its

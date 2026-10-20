@@ -6,7 +6,8 @@ local _, ns = ...
 --  (Core.Board), so they share the screen as you arrange them, in layouts
 --  behind tabs in the full window's title bar (drag a window's head to move
 --  it, the gap between two to share their room anew, its X to take it off;
---  the dropdown Windows adds one). The module's windows, in this order:
+--  the dropdown Windows adds one, and so does its icon's tab beside the
+--  layouts' tabs, lit while it is on). The module's windows, in this order:
 --      character   the character: the paper doll (Sheet/Sheet.lua)
 --      stats       the stats and the game's sidebar beside them: gear sets,
 --                  titles, the pet's stats (Sheet/Sidebar.lua)
@@ -14,7 +15,7 @@ local _, ns = ...
 --                  what the game's character sheet has behind its tabs, each a
 --                  window of its own (Sheet/)
 --      bags        the bags
---      alts        the other characters' snapshots
+--      alts        your alts: the other characters' snapshots
 --  Each is a part in files of its own, listed after this one in the TOC, that
 --  registers itself (Board.Part); the board lists the parts that are there.
 --  The first layout puts the windows of Board.FIRST side by side, left to
@@ -36,6 +37,29 @@ local Core = SaneUI.Core
 local Board = {}
 ns.Board = Board
 
+-- Each window's icon, for its tab of its own in the full window's title bar (Core's board: lit while the window
+-- is on the board, a click puts it on or takes it off): the game's own icons for what it stands for (the
+-- character sheet's side tabs', the bags', the portrait), a function where it is drawn (Board.lua's spec.icon).
+local function Portrait(texture)
+    local portrait = rawget(_G, "SetPortraitTexture")
+    if portrait then portrait(texture, "player") end
+end
+local function Honor(texture)
+    texture:SetTexture(UnitFactionGroup("player") == "Horde" and "Interface/ICONS/INV_SideTab_Honor_Horde_c60"
+        or "Interface/ICONS/INV_SideTab_Honor_Alliance_c60")
+end
+Board.ICONS = {
+    character = Portrait,
+    stats = "Interface/ICONS/Spell_Nature_Strength",
+    reputation = "Interface/ICONS/INV_SideTab_Reputation2_c60",
+    skills = "Interface/ICONS/Ability_Racial_JackofAllTrades",
+    pvp = Honor,
+    currency = "Interface/ICONS/INV_SideTab_Currency_c60",
+    statistics = "Interface/ICONS/INV_SideTab_Stats_c60",
+    bags = "Interface/ICONS/INV_Misc_Bag_08",
+    alts = "Interface/ICONS/INV_Misc_GroupNeedMore",
+}
+
 -- The windows in the dropdown's order; those the first layout holds.
 Board.ORDER = { "character", "stats", "reputation", "skills", "pvp", "currency", "statistics", "bags", "alts" }
 Board.FIRST = { character = true, stats = true, bags = true, alts = true }
@@ -54,7 +78,7 @@ end
 -- a function giving it) and the part itself.
 function Board.Part(key, title, least, part)
     parts[key] = { part = part, spec = {
-        key = key, title = title, least = least,
+        key = key, title = title, least = least, icon = Board.ICONS[key],
         build = function(panel) ns.Safe(key, part.Build, panel) end,
         show = Step(key, part, "Show"), size = Step(key, part, "Size"), search = Step(key, part, "Search"),
     } }

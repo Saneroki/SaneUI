@@ -197,6 +197,7 @@ end
 W.templates.MinimalTabTemplate = function(widget)
     widget.Text = NewWidget("FontString", nil, widget)
     function widget.Text:GetStringWidth() return #(self._text or "") * 6 end -- a tab is as wide as its words
+    function widget:SetSelected(selected) self._selected = selected end
 end
 
 function methods:CreateTexture() return NewWidget("Texture", nil, self) end

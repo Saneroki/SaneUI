@@ -252,6 +252,7 @@ end
 GetCurrentArenaSeason = function() return 2 end
 CooldownFrame_SetDisplayAsPercentage = function(_, share) ringShare = share end
 UnitFactionGroup = function() return "Alliance", "Alliance" end
+SetPortraitTexture = function(texture, unit) texture._portrait = unit end
 Enum.PvPRanks = { Rank_1 = 5 }
 local gameText = GetText
 GetText = function(name, ...) if name == "PVP_RANK_7_1" then return "Knight" end return gameText(name, ...) end
@@ -413,6 +414,28 @@ check(Board.layouts:Has("character") and Board.layouts:Has("stats"), "the first 
 check(ns.Sheet.pane:GetScale() < 1 and near(ns.Sheet.pane:GetScale(),
     (Board.layouts.rects.character[3] - 2 * Core.Board.EDGE) / ns.Sheet.WIDTH),
     "the paper doll as large as fits in its window")
+
+-- Each window's tab of its own in the title bar, after the layouts' tabs: its icon in place of words, lit while
+-- the window is on the board; a click puts it on or takes it off.
+local strip = Board.layouts.strip
+local function IconTab(key)
+    for index = 1, strip.icons.taken do
+        if strip.icons[index].key == key then return strip.icons[index] end
+    end
+end
+local iconKeys = {}
+for index = 1, strip.icons.taken do iconKeys[index] = strip.icons[index].key end
+check(table.concat(iconKeys, ",") == table.concat(Board.ORDER, ","),
+    "a tab of its own for each window, in the dropdown's order: " .. table.concat(iconKeys, ","))
+local repIcon, dollIcon = IconTab("reputation"), IconTab("character")
+check(dollIcon._selected and IconTab("alts")._selected and not repIcon._selected and repIcon.Text._text == ""
+    and repIcon.icon._texture == "Interface/ICONS/INV_SideTab_Reputation2_c60" and dollIcon.icon._portrait == "player",
+    "the first layout's windows lit, the others not; no words, the game's icons, the paper doll's your portrait")
+check(IconTab("pvp").icon._texture == "Interface/ICONS/INV_SideTab_Honor_Alliance_c60", "the PvP window's icon of your faction")
+repIcon:GetScript("OnClick")(repIcon)
+check(Board.layouts:Has("reputation") and IconTab("reputation")._selected, "a click puts the window on the board, its tab lit")
+IconTab("reputation"):GetScript("OnClick")(IconTab("reputation"))
+check(not Board.layouts:Has("reputation") and not IconTab("reputation")._selected, "another takes it off again")
 
 -------------------------------------------------------------------------------
 --  The stats and the sidebar

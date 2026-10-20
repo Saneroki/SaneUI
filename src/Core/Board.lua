@@ -27,9 +27,13 @@ local Core = SaneUI.Core
 --  renames it, resets the first, deletes another. The dropdown Windows lists
 --  what the module can show, ticked where it is in the layout: a tick adds it
 --  (it shares the room of the largest window there), an untick takes it off as
---  its X does. A window the module has nothing for right now (present: false;
---  the guild window out of a guild) stays in the layout but is left out of the
---  laying out, the others sharing its room until it is back.
+--  its X does. A window that has an icon (spec.icon) has a tab of its own too,
+--  after the layouts' tabs and the +: its icon in place of words, lit while
+--  the window is in the layout; a click puts it in or takes it off, as its tick
+--  in the dropdown does, and its tooltip says its title. A window the module
+--  has nothing for right now (present: false; the guild window out of a guild)
+--  stays in the layout but is left out of the laying out, the others sharing
+--  its room until it is back.
 --
 --  Kept in the module's store, account-wide as windows' places are:
 --      store[key] = { chosen = 2, tabs = { { name = "Default", tree = nil }, { name = "Raid", tree = node } } }
@@ -50,7 +54,11 @@ local Core = SaneUI.Core
 --               show = function(panel, on) end,
 --               size = function(panel, width, height) end,  -- placed that large (once a change stands)
 --               search = function(panel, text) end,
---               present = function() return true end }      -- it has something to show now
+--               present = function() return true end,       -- it has something to show now
+--               icon = "Interface/ICONS/...",  -- its tab of its own after the layouts' tabs: a texture or file ID
+--                                              -- (coords: its texture coordinates), or function(texture) that
+--                                              -- draws it (a portrait); none: only the dropdown lists it
+--               coords = { left, right, top, bottom } }
 --      local rects = board:Show(inside, width, height)  -- full and standing: [key] = { left, top, width, height }
 --      board:Hide()                       -- the window starts back
 --      board:Search(text)                 -- what is typed into the search box
@@ -73,6 +81,9 @@ Board.LEVEL = 5         -- the panels above what the window holds
 Board.FADE = 0.3        -- seconds a panel takes to come in
 Board.TAB_PAD = 24      -- a tab's room around its words
 Board.MENU_WIDTH = 120  -- the dropdown Windows
+Board.ICON = 18         -- a window's icon in its tab
+Board.ICON_PAD = 14     -- the tab's room around it
+Board.ICON_GAP = 10     -- between the layouts' tabs and the windows' icon tabs
 
 Board.TEXT = {
     default = Core.Word("DEFAULT", "Default"),
@@ -673,8 +684,36 @@ local function Tab(board, strip)
     return tab
 end
 
--- The tabs after the title: one for each layout, the chosen one marked, then +. Out of sight while the search box
--- lies over the title bar.
+-- A window's tab of its own: its icon, lit while the window is in the layout; a click puts it in or takes it off.
+local function IconTab(board, strip)
+    local tab = CreateFrame("Button", nil, strip, "MinimalTabTemplate")
+    tab:SetHeight(Core.Window.BAR)
+    tab:SetWidth(Board.ICON + Board.ICON_PAD)
+    tab.Text:SetText("")
+    tab.icon = tab:CreateTexture(nil, "ARTWORK")
+    tab.icon:SetSize(Board.ICON, Board.ICON)
+    tab:SetScript("OnClick", Core.Guard("board", function(self)
+        Core.Sound("IG_CHARACTER_INFO_TAB")
+        board:Toggle(self.key)
+    end))
+    Core.Tip(tab, function() return tab.spec and (tab.spec.title or tab.spec.key) end, nil, "ANCHOR_BOTTOM")
+    return tab
+end
+
+-- A window's icon drawn in its tab: a texture or file ID (with its coordinates), or the window's own drawing.
+local function Icon(tab, spec)
+    local icon = tab.icon
+    icon:SetTexCoord(0, 1, 0, 1)
+    if type(spec.icon) == "function" then
+        Core.Safe("board", spec.icon, icon)
+    else
+        icon:SetTexture(spec.icon)
+        if spec.coords then icon:SetTexCoord(unpack(spec.coords)) end
+    end
+end
+
+-- The tabs after the title: one for each layout, the chosen one marked, then +, then a tab for each window that
+-- has an icon, lit while it is in the layout. Out of sight while the search box lies over the title bar.
 local function Tabs(board, on)
     local window, strip = board.window, board.strip
     if not on then
@@ -718,6 +757,28 @@ local function Tabs(board, on)
         Core.Tip(plus, function() return plus.plus and Board.TEXT.add or nil end, function() return plus.plus and Board.TEXT.addTip or nil end, "ANCHOR_BOTTOM")
     end
     tabs:Done()
+    strip.icons = strip.icons or Core.Pool(function() return IconTab(board, strip) end)
+    local icons = strip.icons
+    icons:Begin()
+    local gap = Board.ICON_GAP
+    for _, spec in ipairs((Specs(board))) do
+        if spec.icon then
+            local tab = icons:Take()
+            tab.key, tab.spec = spec.key, spec
+            Icon(tab, spec)
+            local on = Board.Holds(board.tree, spec.key)
+            if tab.SetSelected then tab:SetSelected(on) end
+            tab.icon:ClearAllPoints()
+            tab.icon:SetPoint("BOTTOM", 0, on and 7 or 5)
+            tab.icon:SetDesaturation(on and 0 or 0.6)
+            tab:ClearAllPoints()
+            tab:SetPoint("BOTTOMLEFT", previous, "BOTTOMRIGHT", gap, 0)
+            tab:Show()
+            width = width + gap + tab:GetWidth()
+            previous, gap = tab, 2
+        end
+    end
+    icons:Done()
     strip:SetWidth(math.max(width, 1))
     strip:SetShown(not (bar.box and bar.box:IsShown()))
 end

@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Inventory: a tab with an icon for each window of the full screen,
+  right of the layouts' tabs: lit while that window is on the screen,
+  a click puts it there or takes it off.
 - One full screen at a time: opening the map's full screen puts the
   chat's (or any other) back in its place.
 - Nameplates, a new module: the game's nameplates with a clean health
@@ -74,7 +77,7 @@ The bigger changes of each version, newest first.
   put them in. A right click on a head renames, moves, hides or joins
   a group into another.
 - Inventory: your other characters' things, on the inventory's full
-  screen in the window Characters. Every character of your account down
+  screen in the window Alts. Every character of your account down
   its left with its gold, and the gold of them all; click one to see
   its bags, its bank and its gear on a paper doll as it last had them,
   with the game's tooltips. Type in the search box to find an item

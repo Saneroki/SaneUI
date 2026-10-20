@@ -115,7 +115,7 @@ Core keeps item IDs and counts per place, not a bag's slots: the snapshot shows 
 as a grid (in the order the place keeps them). What is worn Core keeps slot by slot too (`Data.Worn`), and the
 snapshot draws it as the game's paper doll.
 
-Built 2026-10-20 (`src/Inventory/Alts/`, the window *Characters*): **one window that switches between
+Built 2026-10-20 (`src/Inventory/Alts/`, the window *Alts*, first called *Characters*): **one window that switches between
 characters**, a roster of them all down its left (the one logged in first, its bank as last seen is worth a look
 too; the account's own bank last), the chosen one's places in one scrolling list. Core gives a character's places
 item by item (`Data.Items`). An alt's gear on a paper doll, slot by slot (`Data.Worn`), built the same day; a

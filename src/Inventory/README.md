@@ -15,7 +15,9 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   Expand window*). In Edit Mode the window can be docked in another corner; the push goes with it.
 - **Arranging the windows:** as on every Sane UI full screen (Core's board): drag a window's head to move it,
   the gap between two to share their room anew, its X to take it off; the dropdown *Windows* adds one; layouts
-  behind tabs in the title bar.
+  behind tabs in the title bar. Right of those tabs, a tab with an icon for each window (your portrait for the
+  character, the game's icons for the others: the sheet's tabs', a bag, a group for your alts), lit while the
+  window is on the screen: a click puts it there or takes it off.
 - **The character sheet**, Sane UI's own, in windows of their own that you move and size on the full screen like
   every other (the dropdown *Windows* adds the ones that are not there; at first the character and the stats):
   - *Character*: your model in the middle (drag to turn it, the wheel or the buttons over it to zoom), your gear
@@ -65,7 +67,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   *Delete* (a group of your own; its items go back to their own groups) and *New Group*. A group of your own
   shows its head when empty too, to let items go over. In the dropdown *View*: *Groups*, every group ticked
   while it is shown, and *New Group*. Pinned and New stay at the top. All of it is kept for the account.
-- **Your other characters** (the window *Characters*): every character of the account down its left, you
+- **Your alts** (the window *Alts*): every character of the account down its left, you
   first, each in its class's colour with its gold, the gold of them all under them; the account's bank last
   where it holds something. A click shows that one's things as last seen: its bags, its bank (as it was when that
   character last had it open) and what it wears, on a paper doll slot by slot, with the game's tooltips; Shift or
@@ -87,7 +89,9 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   `part.Size(width, height)`, `part.Search(text)`; each step runs `ns.Safe`, so a part that fails is noted and
   the others go on. The first layout puts the parts of `Board.FIRST` (the character, the stats, the bags, the other
   characters) side by side, each as wide as its least width, the last taking the rest; the others come from the
-  dropdown *Windows*; later the layout is the player's (kept in the module's store, `board`).
+  dropdown *Windows*; later the layout is the player's (kept in the module's store, `board`). Each window's icon
+  (`Board.ICONS`: a texture, or a function that draws it: the portrait, the PvP icon of your faction) gives it a
+  tab of its own in the title bar (Core's board, `spec.icon`).
 - **The character sheet** (`Sheet/`): the game's Camelot character window rebuilt from Blizzard's code
   (`CharacterFrame.xml`, `PaperDollFrame.xml`, `PaperDollFrame.lua`, `ReputationFrame`, `SkillsFrame`, `PVPRankFrame`,
   `TokenFrame`, `StatisticsFrame`), its parts windows of their own on the board (Saneroki, 2026-10-20), each moved

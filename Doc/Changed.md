@@ -3,8 +3,22 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 296 (Navigation), 85 (Inventory), 85 (sheet), 161 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 296 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Inventory: a tab for each window, the alts' window named Alts (Saneroki, 2026-10-20)
+- **Icon tabs** (`Core/Board.lua`): a window whose spec has an `icon` (a texture or file ID with its `coords`, or
+  `function(texture)` that draws it) gets a tab of its own after the layouts' tabs and `+`, the game's
+  `MinimalTabTemplate` with the icon in place of words: selected and in full colour while the window is in the
+  layout chosen, greyed while not; a click puts it in or takes it off (`board:Toggle`), its tooltip says the
+  window's title. Every module's board can use it; Inventory's windows have their icons (`Inventory/Board.lua`,
+  `Board.ICONS`): your portrait for the character, the game's own icons of its character sheet's tabs (the PvP one
+  by your faction), Strength for the stats, a bag, a group for the alts.
+- **Alts**: the window of the other characters is headed *Alts* (`Alts/Alts.lua`). Its items stay one scrolling
+  list (the mouse wheel, or the thin bar at its right).
+- Tests: `dev/tests/sheet.lua` (90 checks): the icon tabs, in the dropdown's order, lit for the first layout's
+  windows, a click on and off; `dev/tests/inventory.lua`: the window headed *Alts*. The stand-in's
+  `MinimalTabTemplate` keeps whether it is selected.
 
 ### Navigation: indoors without black (Saneroki, 2026-10-20)
 - `Hybrid.lua`: indoors the game's minimap kept drawing its own ground: the indoor plan on black, over our map. Its

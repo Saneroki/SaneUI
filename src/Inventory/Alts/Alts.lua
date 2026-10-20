@@ -29,7 +29,7 @@ ns.Alts = Alts
 -- The window's words; the game's own where it has them.
 local DAYS = Core.Word("LASTONLINE_DAYS", "%d |4day:days;")
 Alts.TEXT = {
-    title = "Characters",
+    title = "Alts",
     bags = Core.Word("HUD_EDIT_MODE_BAGS_LABEL", "Bags"),
     bank = Core.Word("BANK", "Bank"),
     worn = Core.Word("EQUIPPED", "Equipped"),
