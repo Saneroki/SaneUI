@@ -3,8 +3,15 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 295 (Navigation), 85 (Inventory), 85 (sheet), 161 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 296 (Navigation), 85 (Inventory), 85 (sheet), 161 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Navigation: indoors without black (Saneroki, 2026-10-20)
+- `Hybrid.lua`: indoors the game's minimap kept drawing its own ground: the indoor plan on black, over our map. Its
+  ground stays off now, outdoors and in (`C_Minimap.SetDrawGroundTextures(false)` once, when taken), so our map and
+  the game's dots show inside too. Our own indoor maps, from the game's indoor pictures with the black taken out,
+  come next.
+- Tests: `dev/tests/navigation.lua` (296 checks): indoors, the game's minimap without its own ground.
 
 ### Navigation: spirit healers in the game's spirit icon (Saneroki, 2026-10-20)
 - `Pins.lua`: a spirit healer's pin (the NPC's service and the place) is the game's `poi-soulspiritghost`, the pale

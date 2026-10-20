@@ -234,7 +234,8 @@ party), always over the map, and the full map has the quest log at its left. The
   that is not square our map alone along the longer side's ends: bands of a texture of our own as its mask left
   it empty, no dots and no arrow); above the map's
   layers and under our marks (its layer and level set again each time it is placed), its ground off (as Blizzard's hybrid minimap does), so only its
-  live dots and their tooltips show; indoors it draws its own ground, which our terrain does not have. Its
+  live dots and their tooltips show, indoors too (its own indoor plan on black stays off; our own indoor
+  maps are to come). Its
   left and right clicks go through to our map; its border, zoom buttons and the rest of the game's minimap
   cluster are out of sight and take no clicks (Edit Mode's selection keeps its). Each step's radius is read
   from the game. Taken out of combat, every part kept first and given back exactly. On the full map it stands
@@ -295,6 +296,8 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, indoors without black:** the game's minimap keeps its own ground off indoors too (it drew the indoor
+  plan on black over our map); the spirit healers in the game's spirit icon.
 - **2026-10-20, a click on a pin:** the game's map pin where it stands, on both maps; on the full map a quest also in
   the quest log; Shift and a click opens a pin's map.
 - **2026-10-20, the game's minimap square again:** in a window that is not square its band masks left the game's

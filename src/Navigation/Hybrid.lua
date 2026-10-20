@@ -21,8 +21,8 @@ local _, ns = ...
 --      clicks       the left and right button go through to our map (drag, Ctrl-click, one map out);
 --                   a plain left click on it pings, as the game's does (Ping); the mouse's moves stay
 --                   the game's, for its tooltips
---      indoors      a cave, a building: the game's minimap draws its own ground, which our map
---                   cannot (the terrain is the outdoors)
+--      indoors      a cave, a building: its own ground stays off as outdoors (it would draw the
+--                   indoor plan on black over our map, Saneroki 2026-10-20); our map and its dots show
 --
 --  The full map (Wide): around the player at the map's own scale, so its dots stand where they are
 --  on our map: square, at its widest step whose square takes at most Hybrid.ROOM of the canvas'
@@ -48,7 +48,6 @@ local WAIT = "navigation: minimap" -- what waits for the fight's end
 local taken, saved, canvas, hooked
 local surveying -- the steps are being measured: what the game says meanwhile is ours
 local radii = { [true] = {}, [false] = {} } -- [indoors][zoom step] = the view's radius in yards
-local ground -- what the game's minimap draws of its own ground now (nil: not asked)
 local cut -- the mask it is cut by now
 local wide -- on the full map: { side, x, y (the player's place in the holder's units), holder }
 
@@ -131,8 +130,7 @@ local function Take()
     cluster:SetAlpha(0)
     Quiet(cluster, saved.mice)
     C_Minimap.SetIgnoreRotateMinimap(true)
-    C_Minimap.SetDrawGroundTextures(false)
-    ground = false
+    C_Minimap.SetDrawGroundTextures(false) -- outdoors and in: its dots only, our map under them
     Survey()
     minimap:Hide() -- shown by Place, when a view follows at one of its steps
 end
@@ -150,7 +148,7 @@ local function Give()
     minimap:SetZoom(saved.zoom)
     C_Minimap.SetDrawGroundTextures(true)
     C_Minimap.SetIgnoreRotateMinimap(false)
-    ground, cut = nil, nil
+    cut = nil
     for button, was in pairs(saved.buttons) do
         button:SetAlpha(was[1])
         button:EnableMouse(was[2])
@@ -242,7 +240,7 @@ function Hybrid.Fit(camera, width, height)
     if zoom then camera.k = zoom else camera.native = nil end
 end
 
--- Its size, layer, step and ground for a view (mask: the one it is cut by).
+-- Its size, layer and step for a view (mask: the one it is cut by).
 local function Set(minimap, size, step, mask)
     if mask ~= cut then
         minimap:SetMaskTexture(mask)
@@ -252,11 +250,6 @@ local function Set(minimap, size, step, mask)
     minimap:SetFrameStrata(canvas:GetFrameStrata())
     minimap:SetFrameLevel(canvas:GetFrameLevel() + Hybrid.LEVEL)
     if minimap:GetZoom() ~= step then minimap:SetZoom(step) end
-    local own = IsIndoors() and true or false
-    if own ~= ground then
-        C_Minimap.SetDrawGroundTextures(own)
-        ground = own
-    end
 end
 
 -- The full map (its camera, the canvas' size): the widest step whose square at the map's zoom fits in

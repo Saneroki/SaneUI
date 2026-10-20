@@ -777,6 +777,13 @@ check(minimap._shown and minimap._width == 20, "however thin a view: the square 
 frame._width, frame._height = 200, 200
 Canvas.Layout()
 check(minimap._shown and minimap._mask == Hybrid.MASK, "square again: shown, square")
+IsIndoors = function() return true end
+W.Fire("ZONE_CHANGED_INDOORS")
+Canvas.Layout()
+check(minimap._shown and ground == false, "indoors: the game's minimap without its own ground (no indoor plan on black)")
+IsIndoors = function() return false end
+W.Fire("ZONE_CHANGED_INDOORS")
+Canvas.Layout()
 check(Count(shown, 801, 804) > 0 and Overviews(shown, 0) > 0, "Scrying under it: the terrain's tiles over its overview")
 local cut = shown[801] and shown[801]._mask
 check(cut and cut._kind == "MaskTexture" and cut._texture == ns.Terrain.PATH:format(0, 6, 4) and near(cut._width, 8 * 1600 / 3 * small.k),
