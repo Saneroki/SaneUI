@@ -3,8 +3,22 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 550 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 274 (Navigation), 21 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 550 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 274 (Navigation), 16 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Inventory: its own window and full screen in the corner (Saneroki, 2026-10-20)
+- **Our own windows** (Saneroki): the game's character sheet cannot be opened by our code (*Inventory: a new
+  module*, below), so the module gets windows of its own: the character sheet, the bags and the other characters'
+  snapshots, on its full screen. The plan: `Doc/ideas/Inventory.md`.
+- **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked in the bottom right corner at first,
+  empty and see-through while small; Core's corner square (`Edge.lua`) fills the screen with it, pushed again or
+  Esc it goes back. Settings: Core's *Expand window* and *Window corners* (`Inventory.lua`).
+- **The board** (`Board.lua`): Core's board with the module's windows in the order `character`, `bags`, `alts`;
+  each a part in files of its own that registers itself (`Board.Part`), every step of a part `ns.Safe`. The first
+  layout: side by side, each as wide as its least width (Core's pads counted), the last taking the rest.
+- **The corner of the game's bags is gone** (`Corner.lua` removed): the window's own corner takes its place.
+- Tests: `dev/tests/inventory.lua` (16 checks): the window and its corner, parts registered before and after the
+  full screen, the search, a part that fails, standing down.
 
 ### Navigation: the route and the minimap's dots in the pin filter, the dots on the full map too (Saneroki, 2026-10-20)
 - **Two kinds first in the pin filter** (`Navigation.lua`, `ns.KINDS`): *Route to the map pin* (`route`, the setting

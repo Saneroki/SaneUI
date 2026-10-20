@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Inventory
-## Notes: Your bags at the screen's bottom right corner: push the mouse into that corner and the game's own bags open; push it there again and they close. Their key works as before.
+## Notes: What you carry and wear. Push the mouse into the screen's bottom right corner and the screen fills with your inventory's windows, arranged as you like; push it there again, or press Esc, and they go. Settings: the page Inventory.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -9,7 +9,9 @@
 ## IconTexture: Interface\Icons\INV_Misc_Bag_08
 ## X-License: MIT
 
-# The module's own table. First: the other files will add to that table.
+# The module's own table, its words and settings. First: the other files will add to that table.
 Inventory.lua
-# The bottom right corner that opens and closes the game's bags
-Corner.lua
+# Its window: docked in the bottom right corner, filling the screen from that corner
+Window.lua
+# The full screen's windows on Core's board; the parts after it register theirs
+Board.lua

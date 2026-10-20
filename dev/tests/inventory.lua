@@ -1,6 +1,6 @@
--- Runs the Inventory module against the stand-in client (wowstub.lua): the bottom right corner opens and
--- closes the game's bags, one push one change, and never touches the game's window manager (the sheet).
--- How it feels under the hand can only be judged in the game.
+-- Runs the Inventory module against the stand-in client (wowstub.lua): its window docked in the bottom right
+-- corner, the corner's square filling the screen, the module's windows on Core's board (parts that register
+-- themselves), and giving everything back. The look can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/inventory.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -13,134 +13,159 @@ local function check(condition, what)
     if not condition then error("FAILED: " .. what, 2) end
     passed = passed + 1
 end
+local function near(a, b) return math.abs(a - b) < 1e-6 end
 
--- What the module needs of the client: the game's bags (open or not, as its functions say). The game's
--- window manager and its sheet are here to see that the module never calls them: a panel an addon shows
--- or hides taints the manager, and the sheet then fails on the player frame's secret health.
-local bags, button = false, false
-local opened, managed = 0, 0
-IsAnyBagOpen = function() return bags end
-OpenAllBags = function()
-    if bags then return end -- the game's: open already, nothing more
-    bags, opened = true, opened + 1
+-------------------------------------------------------------------------------
+--  What the module needs of the client (as dev/tests/combat.lua)
+-------------------------------------------------------------------------------
+local methods = W.methods
+UIParent._width, UIParent._height = 1920, 1080
+function methods:GetLeft() return self._left end
+function methods:GetBottom() return self._bottom end
+function methods:GetTop() return self._bottom and self._bottom + self._height end
+function methods:SetFrameStrata(strata) self._strata = strata end
+function methods:GetFrameStrata() return self._strata or "MEDIUM" end
+function methods:SetFrameLevel(level) self._level = level end
+function methods:GetFrameLevel() return self._level or 1 end
+function methods:Raise() self._level = 500 end
+function methods:SetClampedToScreen(on) self._clamped = on end
+function methods:EnableMouse(on) self._mouse, self._motion = on, on end
+function methods:SetMouseMotionEnabled(on) self._motion = on end
+function methods:SetMouseClickEnabled(on) self._mouse = on end
+function methods:IsMouseClickEnabled() return self._mouse or false end
+function methods:IsMouseMotionEnabled() return self._motion or false end
+function methods:IsMouseEnabled() return self._mouse or false end
+function methods:EnableMouseWheel(on) self._wheel = on end
+function methods:IsMouseWheelEnabled() return self._wheel or false end
+function methods:SetTexture(texture, wrap) self._texture, self._wrap = texture, wrap return true end
+function methods:SetVertexColor(r, g, b, a) self._vertex = { r, g, b, a } end
+function methods:SetAttribute(name, value) self._attributes = self._attributes or {}; self._attributes[name] = value end
+function methods:GetAttribute(name) return self._attributes and self._attributes[name] end
+function methods:RegisterForClicks(...) self._clicks = { ... } end
+function methods:IsProtected() return self._protected or false end
+-- An animation: the test moves its clock (as dev/tests/window.lua does).
+local function noop() end
+function methods:CreateAnimationGroup()
+    local group = { scripts = {}, playing = false, progress = 0 }
+    function group:SetScript(name, fn) self.scripts[name] = fn end
+    function group:Play() self.playing, self.progress = true, 0 end
+    function group:Stop() self.playing = false end
+    function group:IsPlaying() return self.playing end
+    group.SetToFinalAlpha = noop
+    function group:CreateAnimation()
+        local animation = setmetatable({ SetSmoothing = noop, SetToAlpha = noop }, { __index = function() return noop end })
+        function animation:SetDuration(seconds) group.duration = seconds end
+        function animation:GetProgress() return group.progress end
+        function animation:GetSmoothProgress() return group.progress end
+        return animation
+    end
+    function group:Run(progress)
+        self.progress = progress
+        if progress < 1 then return self.scripts.OnUpdate and self.scripts.OnUpdate() end
+        self.playing = false
+        if self.scripts.OnFinished then self.scripts.OnFinished() end
+    end
+    self._group = self._group or group
+    return group
 end
-CloseAllBags = function() bags = false end
-CharacterFrame = W.NewWidget("Frame", "CharacterFrame")
-CharacterFrame:Hide()
-ToggleCharacter = function() managed = managed + 1 end
-ShowUIPanel = function() managed = managed + 1 end
-HideUIPanel = function() managed = managed + 1 end
-IsMouseButtonDown = function() return button end
-UIParent:SetSize(1920, 1080)
+EasingUtil = { OutQuartic = function(p) return 1 - (1 - p) ^ 4 end }
+IsMouseButtonDown = function() return false end
+GetCursorPosition = function() return W.cursorX or 0, W.cursorY or 0 end
+GetBindingKey = function(action) return action == "TOGGLESPELLBOOK" and "P" or nil end
+GetBindingText = function(key) return key end
 
 W.LoadCore(root)
 local Core = SaneUI.Core
-local Edge = Core.Edge
 W.Fire("ADDON_LOADED", "SaneUI")
-local first = #W.frames
 local ns = W.LoadAddon(root, "Inventory", "SaneUI_Inventory")
 W.Fire("ADDON_LOADED", "SaneUI_Inventory")
 W.Fire("PLAYER_LOGIN")
 check(SaneUI.Inventory == ns and not ns.off, "the module is made and started")
+local Board, Edge = ns.Board, Core.Edge
 
--- The corner: the module's one frame on UIParent that hears the mouse come.
-local square
-for index = first + 1, #W.frames do
-    local frame = W.frames[index]
-    if frame._parent == UIParent and frame._scripts.OnEnter then square = frame end
+-------------------------------------------------------------------------------
+--  The window, docked in the bottom right corner
+-------------------------------------------------------------------------------
+local handle = ns.Window.handle
+local frame = handle.frame
+check(handle.zone == "BOTTOMRIGHT" and frame._width == ns.Window.WIDTH and not frame._mouse,
+    "its window is docked in the bottom right corner at first, and takes no click while small")
+frame._left, frame._bottom = 1920 - ns.Window.WIDTH, 0
+local square = handle.edge.strips.corner
+check(square and square:IsShown() and square._points[1][1] == "BOTTOMRIGHT" and near(square._width, 4 * 768 / 2160)
+    and square._strata == "DIALOG", "the corner's square, four of the screen's pixels, fills the screen")
+for _, side in ipairs({ "left", "right", "top", "bottom" }) do
+    check(not (handle.edge.strips[side] and handle.edge.strips[side]:IsShown()), "no strip along a side: only the corner (" .. side .. ")")
 end
-check(square and square:IsShown() and square._points[1][1] == "BOTTOMRIGHT", "a square lies in the bottom right corner")
-local side = Core.Pixels(square, Edge.CORNER)
-check(square:GetWidth() == side and square:GetHeight() == side, "as large as a docked window's corner")
 
--- The mouse comes into the corner; it leaves, and the look a few times a second sees it gone.
+-------------------------------------------------------------------------------
+--  The full screen: the parts there are, on Core's board
+-------------------------------------------------------------------------------
+-- A part as a part's file registers it: what the board asks of it is noted.
+local function Part(key, least)
+    local part = { built = 0, shown = nil, size = nil, searched = nil }
+    function part.Build(panel) part.built, part.panel = part.built + 1, panel end
+    function part.Show(on) part.shown = on end
+    function part.Size(width, height) part.size = { width, height } end
+    function part.Search(text) part.searched = text end
+    Board.Part(key, key:upper(), least, part)
+    return part
+end
+local sheet = Part("character", { 600, 400 })
+
 local function Push()
-    W.cursorX, W.cursorY = 1920, 0
-    square._scripts.OnEnter(square)
+    W.Wait(1) -- a while after the square came under the mouse
+    square:GetScript("OnEnter")(square)
+    W.cursorX, W.cursorY = 960, 500 -- the mouse goes away again: the next push counts
+    W.Wait(Edge.LOOK)
 end
-local function Leave()
-    W.cursorX, W.cursorY = 900, 500
-    W.Wait(Edge.LOOK * 2)
+local function Stand()
+    frame._group:Run(1)
+    W.Wait(0)
 end
+W.cursorX, W.cursorY = 1920, 0
+Push()
+check(handle.edge.full, "the mouse pushed into the corner fills the screen")
+Stand()
+check(sheet.built == 1 and sheet.shown == true and sheet.panel and sheet.panel:IsShown() and sheet.size,
+    "standing full, the one part there is fills the board: built, shown, told its size")
+check(Board.layouts:Has("character"), "the first layout holds it")
 
--- At login the mouse may lie in the corner already: no push.
-Push()
-check(not bags, "a mouse that was in the corner already opens nothing")
-W.Wait(Edge.QUIET)
+-- A second part comes: side by side, the first as wide as it asks.
+local bags = Part("bags", { 500, 300 })
+ns.Window.Reboard()
+check(bags.built == 1 and bags.shown == true and Board.layouts:Has("bags"), "a part that registers later is laid out too")
+local rects = Board.layouts.rects
+check(rects.character and rects.bags and rects.character[1] < rects.bags[1] and rects.character[3] == 600,
+    "side by side, in the board's order, the first as wide as its least width")
 
--- A push opens the bags, as their key does.
-Push()
-check(bags and opened == 1, "a push opens the bags")
--- The mouse still in the corner: no second push, however it wiggles.
-W.cursorX, W.cursorY = 1915, 6
-W.Wait(Edge.LOOK * 3)
-Push()
-check(bags, "near the corner still: one push, one change")
-Leave()
-Push()
-check(not bags, "back in the corner: they close")
+-- The search box: every part hears it.
+Board.Search("linen")
+check(sheet.searched == "linen" and bags.searched == "linen", "what is typed into the search box goes to every part")
 
--- Opened otherwise (their key, a vendor): a push closes them.
-Leave()
-OpenAllBags()
+-- Pushed again: back, every panel hidden.
 Push()
-check(not bags, "the bags open by their key: a push closes them")
+check(not handle.edge.full and sheet.shown == false and bags.shown == false, "pushed again: back, the windows go at once")
+Stand()
 
--- In a fight the same: the game made its bags for addons to open.
-W.combat = true
-Leave()
+-- A part that fails is noted; the others and the module go on.
+local broken = { Build = function() error("a broken part") end }
+Board.Part("alts", "ALTS", { 300, 200 }, broken)
+W.caught = {}
 Push()
-check(bags, "in a fight a push opens the bags")
-Leave()
+Stand()
+check(not ns.off and handle.edge.full and bags.shown == true, "a part that fails to build: the others are there, the module goes on")
+W.caught = nil
 Push()
-check(not bags, "and closes them")
-W.combat = false
+Stand()
 
--- No push during a drag, in Edit Mode, or while a window of Sane UI's fills the screen.
-Leave()
-button = true
+-------------------------------------------------------------------------------
+--  Standing down
+-------------------------------------------------------------------------------
 Push()
-check(not bags, "a mouse button held (a drag): no push")
-button = false
-Core.EditMode.active = true
-Push()
-check(not bags, "in Edit Mode: no push")
-Core.EditMode.active = false
-local all = Core.Window.All
-Core.Window.All = function() return { { edge = { full = false } }, { edge = { full = true } } } end
-Push()
-check(not bags, "a window of Sane UI's fills the screen: no push")
-Core.Window.All = all
-Push()
-check(bags, "none of those: the push opens them")
-Leave()
-Push()
-check(not bags, "and the next push closes them")
-Leave()
-
--- The interface hidden and shown again (Alt-Z) under a mouse in the corner: no push.
-square:Hide()
-square:Show()
-Push()
-check(not bags, "shown again under the mouse: no push")
-W.Wait(Edge.QUIET)
-
--- The UI's scale changed: the square is still so many of the screen's pixels.
-square:SetSize(1, 1)
-W.Fire("UI_SCALE_CHANGED")
-check(square:GetWidth() == side, "a new UI scale sizes the square anew")
-
--- A failure stands the module down: the corner goes, what is open stays.
-Push()
-check(bags, "a push before standing down")
+Stand()
 ns.StandDown("a test")
-check(ns.off and not square:IsShown() and bags, "standing down: the square goes, the bags stay open")
-Leave()
-Push()
-check(bags, "after it, a push does nothing")
+check(ns.off and not frame:IsShown() and not handle.edge.full and sheet.shown == false,
+    "standing down: the windows go and the window with them")
 
--- Never the game's window manager: neither the sheet nor any other of its panels, shown or hidden.
-check(managed == 0 and not CharacterFrame:IsShown(), "the character sheet and the window manager are never touched")
-
-print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Inventory: all %d checks passed.\n"):format(passed))

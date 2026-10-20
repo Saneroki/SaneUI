@@ -28,8 +28,9 @@ The bigger changes of each version, newest first.
   screen no message fades, and you can copy messages: drag over the
   words of one or more bubbles, anyone's, and press Ctrl+C.
 - Inventory, a new module: push the mouse into the bottom right corner
-  of the screen and your bags open; push it there again and they close.
-  In a fight too.
+  of the screen and it fills with your inventory's windows; push it
+  there again, or press Esc, and they go. Its windows (your character
+  sheet, your bags, your other characters' things) are being built.
 - Navigation: Sane UI's minimap and map in one window. Small in the top
   right corner it is your minimap; move the mouse into the corner and
   the same map fills the screen. Drag it, zoom it with the mouse wheel

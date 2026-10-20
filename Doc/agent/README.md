@@ -18,7 +18,7 @@ Use current source and the user's instructions when they differ from a note.
 | Messages, bubbles, native chat, input, filtering/fading | [social.md](social.md) |
 | Navigation: minimap, world map, quest log, pins, routes, leveling guide (built: window, both views, canvas, terrain and art at every zoom, the game's minimap and map taken over; pins, quest log, top bar, routes, guide to come; handoff) | [navigation.md](navigation.md), then `Doc/ideas/Navigation.md` |
 | Combat: its window at the bottom middle, the full screen's talents and spellbook (built); unit frames, party, raid, buffs, nameplates, pets (not built yet) | `src/Combat/README.md`, `Doc/ideas/Combat.md` |
-| Inventory: bags (built: the bottom right corner opens and closes the game's own; never the character sheet, which taints the window manager) | `src/Inventory/README.md` |
+| Inventory: own character sheet, bags, alts' snapshots on its full screen (built: window in the bottom right corner, its full screen and board; the windows to come; never the game's panels, which taint the window manager) | `src/Inventory/README.md`, then `Doc/ideas/Inventory.md` |
 | NPC talks, books and letters as a scene, part of Social (not built yet) | `Doc/ideas/Dialogue.md` |
 | Lore: AI voice overs, a library of the world's lore, tidbits in tooltips (an idea, not built) | `Doc/ideas/Lore.md` |
 | Game settings kept per account/character/profile, chat windows, own channels | [sync.md](sync.md) |
@@ -37,8 +37,8 @@ window and temporarily seats Blizzard's own chat edit boxes in it, and joins or 
 channels as chosen on its page. Combat (2026-10-16) is set up for unit frames, party, raid, buffs,
 nameplates and pets; built (2026-10-20): its window at the bottom middle, whose full screen (the bottom edge's middle
 half) holds the talents and the spellbook, the game's window seated there (Core's `Seat.lua`) and a talent planner Sane UI
-knows as the talents (the known addons, Core's `Neighbours.lua`) (`src/Combat/README.md`, plan `Doc/ideas/Combat.md`). Inventory (2026-10-20) opens and closes
-the game's own bags from the screen's bottom right corner (`src/Inventory/README.md`). Navigation (2026-10-18) is the minimap and the map in one
+knows as the talents (the known addons, Core's `Neighbours.lua`) (`src/Combat/README.md`, plan `Doc/ideas/Combat.md`). Inventory (2026-10-20) is a window in
+the bottom right corner whose corner fills the screen with its own character sheet, bags and alts' snapshots, being built (`src/Inventory/README.md`, plan `Doc/ideas/Inventory.md`). Navigation (2026-10-18) is the minimap and the map in one
 window, without the map's data yet (`src/Navigation/README.md`, plan `Doc/ideas/Navigation.md`); its painted view
 is the module Atlas (`src/Atlas/`, load on demand; its art and index made into `assets/optimized/Atlas/`, built only
 once they are there). Sync keeps the game's per-character
