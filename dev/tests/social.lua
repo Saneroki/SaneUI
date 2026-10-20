@@ -1880,10 +1880,10 @@ do
     -- Recent allies: loading until the game has them; pinned first; the game's own menu.
     click(tabs.Allies)
     local allies = list(panels.friends)
-    check(asks[#asks] == "allies asked" and #allies.provider.list == 0 and allies.empty._text == "Loading...",
-        "Recent Allies: asked for, loading until the game has them")
+    check(asks[#asks] ~= "allies asked" and #allies.provider.list == 0 and allies.empty._text:find("not read your recent allies"),
+        "Recent Allies: not asked for (only the game's code may), and until the game has them the list says where they come from")
     asks.alliesReady = true
-    W.Fire("RECENT_ALLIES_CACHE_UPDATE")
+    W.Fire("RECENT_ALLIES_DATA_READY")
     W.Wait(0.1)
     check(named(allies) == "Cairne, -, Magatha" and allies.rows[1].top._text == "Cairne Bloodhoof" and allies.rows[1].side:IsShown(),
         "then the allies: the pinned one first, with the game's pin, a divider, the others")

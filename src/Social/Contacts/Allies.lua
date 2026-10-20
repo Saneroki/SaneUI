@@ -13,8 +13,10 @@ local _, ns = ...
 --  together; a right click opens the game's own menu of a recent ally (pin,
 --  note, add as friend, ...); a click chooses one for Send Message and Invite.
 --  Tab and list are there only where the game has the system. Until the game
---  has read your allies the list says it is loading; it is asked for when the
---  tab is shown (TryRequestRecentAlliesData) and followed while shown.
+--  has read your allies the list says so: only the game's own code may ask for
+--  them (TryRequestRecentAlliesData is blocked for an addon), and its friends
+--  list does when its own tab is shown. Once they are there they are followed
+--  while the tab is shown (RECENT_ALLIES_DATA_READY, _CACHE_UPDATE).
 --
 --  The filter keeps them by status and by what you did together (the game's
 --  kinds of it, those this client has); the search box finds them by name,
@@ -120,7 +122,7 @@ local function Update()
     wipe(allies)
     local system = System()
     if not (system and system.IsRecentAllyDataReady and Core.Ask(system.IsRecentAllyDataReady)) then
-        Board.Fill(box, {}, Core.Word("SEARCH_LOADING_TEXT", "Loading..."))
+        Board.Fill(box, {}, ns.TEXT.alliesWaiting)
         return Buttons()
     end
     local elements, pinned = {}, false
@@ -227,13 +229,14 @@ function View.Build(page)
     end, send)
 end
 
+local EVENTS = { "RECENT_ALLIES_CACHE_UPDATE", "RECENT_ALLIES_DATA_READY" }
+
 function View.Show(on)
     shown = on
-    if on then Core.On("RECENT_ALLIES_CACHE_UPDATE", Changed) else Core.Off("RECENT_ALLIES_CACHE_UPDATE", Changed) end
-    if not on then return end
-    local system = System()
-    if system and system.TryRequestRecentAlliesData then system.TryRequestRecentAlliesData() end
-    Update()
+    for _, event in ipairs(EVENTS) do
+        if on then Core.On(event, Changed) else Core.Off(event, Changed) end
+    end
+    if on then Update() end
 end
 
 function View.Search(found)

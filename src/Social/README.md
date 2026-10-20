@@ -704,6 +704,7 @@ Tabs of chat views in the small window (`Doc/ideas/Social.md`), messages of one 
 a group, a close button, a sign besides colour for what a speaker is to you.
 
 ## History
+- 2026-10-20 — Recent Allies asks the game for them no more (an addon may not); it waits until the game has read them.
 - 2026-10-20 — Every group you join a conversation of its own, named by the others in it, ended when you leave
   (by the group's GUID; Saneroki).
 - 2026-10-20 — Chat views (Saneroki): *New chat view* in the conversations, as many as you like, each with its

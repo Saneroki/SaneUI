@@ -235,6 +235,14 @@ A game restart takes it in (new addons, Navigation, Atlas and Inventory; new fil
   New check: the glint pulses by the template.
 - **Guide** (`Doc/guides/gui-development.md`, *Motion*): a `TextureCoordTranslation` comes from an XML template.
 
+### Social: Recent Allies no longer asks the game for them (Saneroki, 2026-10-20)
+- **`Contacts/Allies.lua`**: the tab asked for the recent allies when shown (`C_RecentAllies.TryRequestRecentAlliesData`),
+  which the game blocks for an addon (the error log: *the game blocked TryRequestRecentAlliesData()*, 4x). It asks
+  no more: it shows them once the game has read them (`IsRecentAllyDataReady`, followed by `RECENT_ALLIES_DATA_READY`
+  and `RECENT_ALLIES_CACHE_UPDATE` while shown), and until then says that the game's own friends list reads them on
+  its Recent Allies tab (`TEXT.alliesWaiting`).
+- Tests: `dev/tests/social.lua` (561 checks): not asked for, the words while waiting, the allies once ready.
+
 ### Social: every group you join a conversation of its own (Saneroki, 2026-10-20)
 - **`Talks.lua`**: a group's chat goes to the conversation of the very group you are in (`G:<partyGUID>`, from
   `GROUP_JOINED`; a group you were in already when first asked about, by its category and the time), not to one

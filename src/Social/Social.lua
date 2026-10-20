@@ -111,6 +111,7 @@ ns.TEXT = {
     talkLocked = "while chat is locked down (a fight, a dungeon), only the game's own chat line can send. The message is still in the line.",
     talkRemove = "Remove the conversation with %s and all its messages?",
     groupOver = "You left this group.",
+    alliesWaiting = "The game has not read your recent allies yet. Its own friends list does, on its Recent Allies tab (Classic windows: Friends list).",
     today = "Today",
     yesterday = "Yesterday",
     you = Core.Word("YOU", "You"),
