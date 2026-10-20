@@ -3,8 +3,26 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 558 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 274 (Navigation), 16 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 558 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 274 (Navigation), 36 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Inventory: the character sheet's paper doll (Saneroki, 2026-10-20)
+- **Our own character sheet** (`Sheet/`, the part `character` on the module's full screen): the game's Camelot
+  character window rebuilt from Blizzard's code at its size (398 + 233 by 464 under the panel's head), on the game's
+  art: the left pane with its top strip and the level line (`PaperDollFrame_SetLevel`), the right pane's stat
+  background and stone (the stats come next); the panel's head is the character's name and title (`UnitPVPName`).
+- **Slots** (`Sheet/Slots.lua`): the game's `ItemButton` on its slot frame in the game's places (eight a side, the
+  weapons at the bottom, the ranged slot where the game shows one, the ammo slot for a character that uses ammo),
+  drawn as the game draws them (icon, count, quality, red while broken, grey while locked, the slot's picture when
+  empty); a click or drag `PickupInventoryItem`, a modified click `HandleModifiedItemClick`, the game's tooltip.
+  A right click calls nothing: `UseInventoryItem` is the game's own.
+- **Model** (`Sheet/Model.lua`): the game's model scene for the character sheet
+  (`ModelSceneUtil.SetUpCharacterSheetScene`), its turn and zoom buttons, the race's background (greyed) under the
+  overlay; an item let go over it is put on (`AutoEquipCursorItem`).
+- **Events only while shown**, every value through `Core.Plain`/`Core.Ask`, every function of the game's checked.
+- Tests: `dev/tests/inventory.lua` (36 checks): built when first shown, nineteen slots and the ammo slot, the
+  weapons' row, drawing, the level line, the model, the game's events (put on, locked, broken, the model), clicks,
+  drag, modified click, tooltip, ammo, deaf while hidden.
 
 ### Inventory: its own window and full screen in the corner (Saneroki, 2026-10-20)
 - **Our own windows** (Saneroki): the game's character sheet cannot be opened by our code (*Inventory: a new

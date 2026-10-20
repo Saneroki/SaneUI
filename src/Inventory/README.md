@@ -1,6 +1,6 @@
 # Sane UI: Inventory
 
-**Status:** its window and full screen built; the windows on it (character sheet, bags, other characters) are being built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
+**Status:** its window and full screen built; the character sheet's paper doll built (slots, model, level), its stats and tabs, the bags and the other characters are being built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 The module for what you carry and wear. Push the mouse into the screen's bottom right corner and the screen
@@ -16,6 +16,11 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 - **Arranging the windows:** as on every Sane UI full screen (Core's board): drag a window's head to move it,
   the gap between two to share their room anew, its X to take it off; the dropdown *Windows* adds one; layouts
   behind tabs in the title bar.
+- **The character sheet:** the game's sheet, Sane UI's own: your model in the middle (drag to turn it, the
+  wheel or the buttons over it to zoom), your gear round it in the game's places, your level and class above.
+  A click on a slot picks the item up or puts the one you hold there (a drag the same), Shift or Ctrl and a
+  click links it or tries it on, the tooltip is the game's; an item let go over the model is put on. Using an
+  equipped item with a right click stays on the game's own sheet and the action bars.
 - **Settings:** *Sane UI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
   motion, the background's opacity and texture) and *Window corners*.
 
@@ -31,6 +36,29 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   `part.Size(width, height)`, `part.Search(text)`; each step runs `ns.Safe`, so a part that fails is noted and
   the others go on. The first layout puts the parts side by side, each as wide as its least width, the last
   taking the rest; later the layout is the player's (kept in the module's store, `board`).
+- **The character sheet** (`Sheet/`, the part `character`): the game's Camelot character window rebuilt from
+  Blizzard's code (`CharacterFrame.xml`, `PaperDollFrame.xml`, `PaperDollFrame.lua`), at its size (`Sheet.LEFT`
+  398 + `Sheet.RIGHT` 233 by `Sheet.HEIGHT` 464 under the panel's head; the board's least is that and the panel's
+  edges), at the top of its panel's body. The left pane on the game's `UI-Character-Info-General-BG`, its top strip
+  (the game's rock and edge) with the level line (`PaperDollFrame_SetLevel`: the effective level, the
+  specialization where the game has one, the class in its colour); the right pane on the game's stat background and
+  stone (`UI-Character-Info-Stat-BG`, `…-StoneBG3`, the divider), empty until the stats come. The panel's head is
+  `UnitPVPName`.
+  - **Slots** (`Sheet/Slots.lua`): the game's `ItemButton` on its slot frame (`UI-Character-Info-GearSlot`), in
+    its places (`Slots.TOP`, `LEFT`, `RIGHT`, `BOTTOM`, `SIZE`, `GAP`); the ranged slot only where
+    `C_PaperDollInfo.IsRangedSlotShown`, the ammo slot (`…GearSlotSmall`) and the weapons moved left while
+    `UnitUsesAmmo`. Drawn as `PaperDollItemSlotButton_Update` draws (the game's `SetItemButton…` functions:
+    icon, count, quality, red while broken or unusable, grey while locked; empty, `GetInventorySlotInfo`'s picture).
+    Clicks: `PickupInventoryItem` (left click, drag, drop), `HandleModifiedItemClick` (a modified click); a right
+    click calls nothing (`UseInventoryItem` is the game's own). Tooltip: `GameTooltip:SetInventoryItem`.
+  - **Model** (`Sheet/Model.lua`): a `ModelScene` of the game's `PanningModelSceneMixinTemplate` set up by
+    `ModelSceneUtil.SetUpCharacterSheetScene` when shown and at `UNIT_MODEL_CHANGED`, the game's turn and zoom
+    buttons (`ModelSceneControlFrameTemplate`), the race's background in four parts (`DressUpTexturePath`, greyed)
+    under `UI-Character-Info-RaceBG-Overlay`; an item let go over it: `AutoEquipCursorItem`.
+  - **Events, while shown only** (`Sheet.Show`): `PLAYER_EQUIPMENT_CHANGED`, `ITEM_LOCK_CHANGED`,
+    `UPDATE_INVENTORY_DURABILITY`, `UPDATE_INVENTORY_ALERTS`, `UNIT_INVENTORY_CHANGED` and `UNIT_MODEL_CHANGED`
+    (the player's), `PLAYER_LEVEL_UP`, `UNIT_NAME_UPDATE`, `PLAYER_ENTERING_WORLD`. Every value read goes through
+    `Core.Plain` or `Core.Ask`; every function of the game's is called only if this client has it.
 - **Never the game's panels** (2026-10-20, from the error log): our code neither opens nor closes the game's
   character sheet or any other panel of its window manager (`UIParentPanelManager.lua`). Opened by our code,
   the manager ran tainted and the sheet's `OnShow` failed on the player frame's secret health
@@ -49,10 +77,14 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 | `Inventory.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its settings (Core's *Expand window* and *Window corners*), `GiveBack`, the start |
 | `Window.lua` | Its window: docked in the bottom right corner, filling the screen from that corner |
 | `Board.lua` | The full screen's windows on Core's board; the parts register theirs |
+| `Sheet/Slots.lua` | The character sheet's equipment slots |
+| `Sheet/Model.lua` | The character sheet's model, its background and buttons |
+| `Sheet/Sheet.lua` | The character sheet: its panes, the level line, the head, the game's events; registers the part `character` |
 
 ## History
 - **2026-10-20:** set up as a module of its own. First the bottom right corner opened the game's own bags and
   character sheet; the sheet failed in the game (tainted by our call, on the player frame's secret health), so
   the corner opened the bags only. Then (Saneroki) our own windows instead: the module's window docked in the
   bottom right corner, its corner filling the screen with the character sheet, the bags and the other
-  characters' snapshots on Core's board (`Doc/ideas/Inventory.md`).
+  characters' snapshots on Core's board (`Doc/ideas/Inventory.md`). The character sheet's paper doll: its slots,
+  the model, the level line.
