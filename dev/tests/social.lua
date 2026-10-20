@@ -2200,28 +2200,58 @@ do
         "a reply opened meanwhile: the conversation with them is chosen, its own line has the cursor")
     edit.focus, editBox.kind, editBox.tell = false, "SAY", nil
     click(rowOf(jaina))
-    -- A group: listed while you are in it, to write in; its messages under the speakers' names.
+    -- A group: each one you join a conversation of its own, named by the others in it, listed while you are in it.
+    local unitName = UnitName
+    UnitName = function(unit)
+        if unit == "party1" then return "Thrall-Stub" end
+        if unit == "party2" then return "Jaina" end
+        return unitName(unit)
+    end
+    GetNumSubgroupMembers = function() return grouped and 2 or 0 end
     grouped = true
+    W.Fire("GROUP_JOINED", LE_PARTY_CATEGORY_HOME, "Party-1")
     W.Fire("GROUP_ROSTER_UPDATE")
     W.Wait(0.1)
-    local party = Talks.by.PARTY
-    check(party and rows.provider.list[5] == party and rows.rows[5].top._text == "Party" and #party.messages == 0,
-        "in a party, its chat is there to write in, though nobody spoke yet")
+    local party = Talks.by["G:Party-1"]
+    check(party and party.kind == "PARTY" and rows.provider.list[5] == party and rows.rows[5].top._text == "Party: Thrall, Jaina"
+        and #party.messages == 0, "a party joined: a conversation of its own, named by the others in it, to write in though nobody spoke yet")
     W.Fire("CHAT_MSG_PARTY", "pull now", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 8, THRALL)
     check(rows.provider.list[3] == party and rows.rows[3].bottom._text == "Thrall: pull now" and party.unread == 1,
         "the party's chat comes into its conversation, the speaker named in the list")
     click(rowOf(party))
     write("ok")
     check(sent[#sent] == "PARTY nil ok" and messages.provider.list[2].label == "Party", "written in the party's chat; a group's bubbles keep its chat's name")
-    grouped = false
-    W.Fire("GROUP_LEFT")
+    W.raiding = true
+    W.Fire("GROUP_ROSTER_UPDATE")
     W.Wait(0.1)
-    check(not edit:IsEnabled() and rows.provider.list[3] == party, "out of the party, its conversation stays to read, not to write in")
+    W.Fire("CHAT_MSG_RAID", "raid now", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 9, THRALL)
+    write("on it")
+    check(party.kind == "RAID" and Talks.by["G:Party-1"] == party and party.messages[#party.messages].text == "raid now"
+        and sent[#sent] == "RAID nil on it" and rowOf(party).top._text:find("^Raid: Thrall"),
+        "the party become a raid is the same conversation, a raid's from then on, Rexxar among its names")
+    W.raiding = false
+    grouped = false
+    W.Fire("GROUP_LEFT", LE_PARTY_CATEGORY_HOME, "Party-1")
+    W.Wait(0.1)
+    check(not edit:IsEnabled() and party.ended and rows.provider.list[3] == party, "the group left, its conversation stays to read, not to write in")
     local hint
     for _, widget in ipairs(W.frames) do
         if widget._kind == "FontString" and widget._parent == edit then hint = widget end
     end
-    check(hint and hint._text == "You aren't in a party.", "the line says why, in the game's words")
+    check(hint and hint._text == "You left this group.", "the line says why")
+    grouped = true
+    W.Fire("GROUP_JOINED", LE_PARTY_CATEGORY_HOME, "Party-2")
+    W.Wait(0.1)
+    local again = Talks.by["G:Party-2"]
+    check(again and again ~= party and not again.ended and Talks.Writable(again) and not Talks.Writable(party),
+        "the next group joined: a new conversation; the last one stays as it was")
+    W.Fire("CHAT_MSG_PARTY", "hello again", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 10, THRALL)
+    check(again.messages[1].text == "hello again" and party.messages[#party.messages].text == "raid now",
+        "the new group's chat goes into its own conversation only")
+    grouped = false
+    W.Fire("GROUP_LEFT", LE_PARTY_CATEGORY_HOME, "Party-2")
+    UnitName, GetNumSubgroupMembers = unitName, nil
+    W.Wait(0.1)
     -- A command goes to the game's line; in a lockdown nothing is sent.
     click(rowOf(jaina))
     local opened
@@ -2282,16 +2312,27 @@ do
     check(talks:IsShown() and rexxar.unread == 0 and texts(messages) == "Today | hey | hello?" and not column:IsVisible(),
         "shown again, the one chosen is read, with what came, and still stands in the chat's place")
     -- The search: conversations by name or by their messages; the chat and the second chat find their own.
+    local function found()
+        local set = {}
+        for _, element in ipairs(rows.provider.list) do set[element] = true end
+        return set
+    end
     ns.Window.Search("raid at")
-    check(#rows.provider.list == 3 and rows.provider.list[3] == jaina and rows.provider.list[1].pinned == "chat",
-        "the full window's search finds a conversation by its messages; the chats stay, to find in")
+    local hits = found()
+    check(hits[jaina] and not hits[rexxar] and not hits[thrall] and rows.provider.list[1].pinned == "chat"
+        and rows.provider.list[2].view ~= nil, "the full window's search finds a conversation by its messages; the chats stay, to find in")
     click(rowOf(jaina))
     check(texts(messages) == "Today | raid at 8?", "and shows them")
     ns.Window.Search("thrall")
-    check(#rows.provider.list == 4 and rows.provider.list[3] == Talks.by.PARTY and rows.provider.list[4] == thrall,
+    hits = found()
+    check(hits[party] and hits[again] and hits[thrall] and not hits[jaina] and not hits[rexxar],
         "by its name, or a speaker's in a group")
     ns.Window.Search("")
-    check(#rows.provider.list == 6, "emptied, all of them again")
+    local all = 2
+    for _, talk in ipairs(Talks.list) do
+        if #talk.messages > 0 then all = all + 1 end
+    end
+    check(#rows.provider.list == all, "emptied, all of them again")
     -- Each keeps its last messages; the one read keeps all until it is left.
     click(rowOf(rexxar))
     options.talkSize = 20
@@ -2310,24 +2351,27 @@ do
     for _, talk in ipairs(char.talks) do kept[talk.key] = talk end
     check(char.talksVersion == 1 and kept["B:Jaina#1234"] and kept["B:Jaina#1234"].messages[1].name == nil
         and kept["B:Jaina#1234"].messages[1].text == "raid at 8?" and kept["W:Thrall-Stub"].messages[1].name == "Thrall"
-        and kept.PARTY and #char.talks == 4,
+        and kept["G:Party-1"] and kept["G:Party-1"].members[1] == "Thrall" and kept["G:Party-1"].ended
+        and kept["G:Party-2"] and #char.talks == 5,
         "saved for the character: every conversation with messages, a Battle.net friend's without the name of this session")
     local saved = Talks.list
     Talks.list, Talks.by = {}, {}
-    Talks.Restore(char.talks)
-    check(#Talks.list == 4 and Talks.by["B:Jaina#1234"] and Talks.by["B:Jaina#1234"].messages[1].name == nil
+    Talks.Restore(char.talks, { [LE_PARTY_CATEGORY_HOME] = "G:Party-1" })
+    check(#Talks.list == 5 and Talks.by["G:Party-1"].category == LE_PARTY_CATEGORY_HOME
+        and Talks.by["G:Party-1"].members[2] == "Jaina" and Talks.current[LE_PARTY_CATEGORY_HOME] == nil
+        and Talks.by["B:Jaina#1234"] and Talks.by["B:Jaina#1234"].messages[1].name == nil
         and Talks.Name(Talks.by["B:Jaina#1234"]) == "Jaina" and Talks.Account(Talks.by["B:Jaina#1234"]) == 7,
         "back at the login, a Battle.net friend found anew by their BattleTag")
     Talks.Restore({ { key = "W:X", kind = "WHISPER", messages = { { text = "no with" } } }, "junk", { key = "Y", kind = "NOPE" } })
-    check(#Talks.list == 4, "a saved conversation of the wrong shape is left out")
+    check(#Talks.list == 5, "a saved conversation of the wrong shape is left out")
     Talks.list, Talks.by = saved, {}
     for _, talk in ipairs(saved) do Talks.by[talk.key] = talk end
     -- Remove: the one chosen and its messages, once confirmed; the chat cannot be.
     click(rows.rows[3])
-    local chosen = rows.provider.list[3]
+    local chosen, listed = rows.provider.list[3], #rows.provider.list
     click(foot(talks, "Remove"))
     W.popups[#W.popups].data.callback()
-    check(Talks.by[chosen.key] == nil and #rows.provider.list == 5 and rows.provider.list[3] ~= chosen
+    check(Talks.by[chosen.key] == nil and #rows.provider.list == listed - 1 and rows.provider.list[3] ~= chosen
         and rows.provider.list[1].pinned == "chat" and column:IsVisible(),
         "Remove takes the conversation chosen away, once confirmed, and the chat is chosen")
     check(not foot(talks, "Remove"):IsEnabled(), "the chat cannot be removed")

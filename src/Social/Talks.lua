@@ -2,16 +2,26 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Social - Talks
---  The conversations: every whisper, and the chat of your party, your raid and
---  your instance group, each in a conversation of its own, apart from the
---  chat's log (Log.lua). One for each player whispered with (a Battle.net
---  friend by their BattleTag), one for each kind of group. Knows no frames:
---  the full screen's panel shows them (Conversations.lua).
+--  The conversations: every whisper, and the chat of each group you are in,
+--  each in a conversation of its own, apart from the chat's log (Log.lua). One
+--  for each player whispered with (a Battle.net friend by their BattleTag),
+--  and one for each group you join, as a whisper starts one: the party you
+--  join (and the raid it becomes) is one, the next group you join another, an
+--  instance group one of its own. A group's conversation is known by the
+--  group's own GUID (GROUP_JOINED), its chat (party, raid, raid warning;
+--  instance) goes there and nowhere else, and it is named by the others in it.
+--  Once you leave (GROUP_LEFT) it ends: it stays in the list to read, as long
+--  as the others do, and is written in no more. Knows no frames: the full
+--  screen's panel shows them (Conversations.lua).
 --
 --  A conversation:
 --      key       "W:Droopy Fairwind" (a character, by its player key, Core.PlayerKeyOf),
---                "B:Jaina#1234" (a Battle.net friend), "PARTY", "RAID", "INSTANCE_CHAT"
---      kind      "WHISPER", "BN_WHISPER", or the group's: "PARTY", "RAID", "INSTANCE_CHAT"
+--                "B:Jaina#1234" (a Battle.net friend), "G:<the group's GUID>" (a group)
+--      kind      "WHISPER", "BN_WHISPER", or the group's: "PARTY", "RAID", "INSTANCE_CHAT" (a party that
+--                becomes a raid is a raid from then on)
+--      category  a group's: the game's LE_PARTY_CATEGORY_HOME or _INSTANCE
+--      members   a group's: the others who were in it, as the game names them, in the order they came
+--      started, ended   a group's: when you joined it and left it (time(); ended: none while you are in it)
 --      with      whom: the character's name as the game gives it, or the BattleTag (whispers only)
 --      name      a Battle.net friend's name in this session (|K...|k, the game shows the name)
 --      account   a Battle.net friend's account in this session (its number changes between sessions)
@@ -50,6 +60,10 @@ Talks.VERSION = 1 -- the shape Save writes
 Talks.GROUPS = { PARTY = true, RAID = true, INSTANCE_CHAT = true }
 Talks.GROUP_ORDER = { "PARTY", "RAID", "INSTANCE_CHAT" }
 local KINDS = { WHISPER = true, BN_WHISPER = true, PARTY = true, RAID = true, INSTANCE_CHAT = true }
+local HOME, INSTANCE = LE_PARTY_CATEGORY_HOME or 1, LE_PARTY_CATEGORY_INSTANCE or 2
+Talks.NAMES = 3      -- a group's conversation is named by so many of the others in it, then how many more
+Talks.MEMBERS = 40   -- the others kept for a group, at most
+Talks.current = {}   -- [category] = the key of the conversation of the group you are in
 
 -- Whether you are in a group of that kind now, and the game's words when you are not.
 local IN = {
@@ -76,10 +90,17 @@ local function Tag(account)
     return type(tag) == "string" and tag ~= "" and tag or nil
 end
 
--- The conversation a message is part of: its key, kind and with; nil for none. A Battle.net friend whose
--- BattleTag the game does not say is kept by the account, for this session only.
+local Current -- (below: the conversation of the group you are in)
+
+-- The conversation a message is part of: its key, kind and with; nil for none. A group's chat goes to the group you
+-- are in now (none once you left it). A Battle.net friend whose BattleTag the game does not say is kept by the
+-- account, for this session only.
 local function Whose(entry)
-    if Talks.GROUPS[entry.group] then return entry.group, entry.group end
+    if Talks.GROUPS[entry.group] then
+        local talk = Current(entry.group == "INSTANCE_CHAT" and INSTANCE or HOME)
+        if talk then return talk.key, talk.kind end
+        return nil
+    end
     local with = entry.with
     if type(with) ~= "string" or with == "" then return nil end
     if entry.account then
@@ -155,7 +176,15 @@ function Talks.Name(talk)
         if not talk.name then Talks.Account(talk) end
         return talk.name or (talk.with or "?"):match("^[^#]+")
     end
-    return ns.Channels.Word(talk.kind)
+    local word = ns.Channels.Word(talk.kind)
+    local members = talk.category and talk.members
+    if type(members) ~= "table" or #members == 0 then return word end
+    local shown = {}
+    for index = 1, math.min(#members, Talks.NAMES) do
+        shown[index] = Core.People and Core.People.Shown(members[index]) or members[index]
+    end
+    local more = #members > Talks.NAMES and (" +" .. (#members - Talks.NAMES)) or ""
+    return word .. ": " .. table.concat(shown, ", ") .. more
 end
 
 -- A message of the log (Log.Add) that belongs into a conversation: a copy of it goes there.
@@ -185,11 +214,97 @@ function Talks.Add(entry)
     if Talks.added then Talks.added(talk, message, new) end
 end
 
--- A group's conversation, to write in though nobody spoke there yet (you are in that group); last in the list.
-function Talks.Group(kind)
-    if not Talks.GROUPS[kind] then return nil end
-    return Talks.by[kind] or Make(kind, kind, nil, true)
+-------------------------------------------------------------------------------
+--  Groups
+-------------------------------------------------------------------------------
+-- The kind of chat of the group you are in of that category: an instance group's, a raid's, a party's.
+local function KindOf(category)
+    if category == INSTANCE then return "INSTANCE_CHAT" end
+    return IsInRaid(category) and "RAID" or "PARTY"
 end
+
+-- The others in the group of that category now, as the game names them: a raid's by its roster, a party's by
+-- its units.
+local function Others(category)
+    local names, me = {}, Short(Core.Ask(UnitName, "player"))
+    if IsInRaid(category) then
+        for index = 1, (GetNumGroupMembers(category)) or 0 do
+            local name = Short(Core.Plain((GetRaidRosterInfo(index))))
+            if name and name ~= me then names[#names + 1] = name end
+        end
+        return names
+    end
+    local count = rawget(_G, "GetNumSubgroupMembers")
+    count = count and count(category) or math.max(((GetNumGroupMembers(category)) or 0) - 1, 0)
+    for index = 1, count do
+        local name = Short(Core.Plain((UnitName("party" .. index))))
+        if name then names[#names + 1] = name end
+    end
+    return names
+end
+
+-- The group's conversation as the group is now: its kind (a party become a raid), the others who came.
+local function Roster(talk)
+    talk.kind = KindOf(talk.category)
+    talk.members = type(talk.members) == "table" and talk.members or {}
+    local known = {}
+    for _, name in ipairs(talk.members) do known[name] = true end
+    for _, name in ipairs(Others(talk.category)) do
+        if not known[name] and #talk.members < Talks.MEMBERS then
+            known[name] = true
+            talk.members[#talk.members + 1] = name
+        end
+    end
+end
+
+-- A group joined (its GUID, or none: you were in it already when it was first asked about): a conversation of
+-- its own, last in the list until somebody speaks there.
+local function Begin(category, guid)
+    guid = Core.Plain(guid)
+    local key = "G:" .. (type(guid) == "string" and guid ~= "" and guid or (category .. ":" .. time()))
+    local talk = Talks.by[key] or Make(key, KindOf(category), nil, true)
+    talk.category, talk.started, talk.ended = category, talk.started or time(), nil
+    Talks.current[category] = key
+    Roster(talk)
+    return talk
+end
+
+-- The group of that category left: its conversation ends, to read on.
+local function End(category)
+    local talk = Talks.by[Talks.current[category] or ""]
+    if talk then talk.ended = time() end
+    Talks.current[category] = nil
+end
+
+-- The conversation of the group of that category you are in; nil: you are in none (then one that was is ended).
+Current = function(category)
+    local talk = Talks.by[Talks.current[category] or ""]
+    if not IsInGroup(category) then
+        if Talks.current[category] then End(category) end
+        return nil
+    end
+    return talk or Begin(category, nil)
+end
+
+-- The conversations of the groups you are in, to write in though nobody spoke there yet.
+function Talks.Groups()
+    Current(HOME)
+    Current(INSTANCE)
+end
+
+-- The game tells of a group joined and left (its category: the home group unless the instance's), and of who is
+-- in it: the conversations follow.
+local function Of(category) return category == INSTANCE and INSTANCE or HOME end
+Core.On("GROUP_JOINED", function(category, guid) ns.Safe("talks", Begin, Of(category), guid) end)
+Core.On("GROUP_LEFT", function(category) ns.Safe("talks", End, Of(category)) end)
+Core.On("GROUP_ROSTER_UPDATE", function()
+    ns.Safe("talks", function()
+        for category in pairs(Talks.current) do
+            local talk = Current(category)
+            if talk then Roster(talk) end
+        end
+    end)
+end)
 
 -- The panel reads that conversation now (nil: none, the panel is hidden): its messages are read, and the one
 -- left keeps its last talkSize again.
@@ -235,10 +350,15 @@ function Talks.Account(talk)
     return nil
 end
 
--- Whether you can write in a conversation now; false and why not, in the game's words where it has them.
+-- Whether you can write in a conversation now; false and why not, in the game's words where it has them. A group's:
+-- only while you are in that group.
 function Talks.Writable(talk)
     local within = IN[talk.kind]
     if within then
+        if talk.category then
+            if Talks.current[talk.category] == talk.key and IsInGroup(talk.category) then return true end
+            return false, talk.ended and ns.TEXT.groupOver or OUT[talk.kind]
+        end
         if within() then return true end
         return false, OUT[talk.kind]
     end
@@ -266,7 +386,7 @@ function Talks.Send(talk, text)
         if told then told(talk.with, "WHISPER") end
         send(text, "WHISPER", nil, talk.with)
     else
-        send(text, talk.kind)
+        send(text, talk.category and KindOf(talk.category) or talk.kind)
     end
     return true
 end
@@ -298,7 +418,8 @@ function Talks.Save(char)
     for _, talk in ipairs(Talks.list) do
         if not talk.session and #talk.messages > 0 then
             local kept = { key = talk.key, kind = talk.kind, with = talk.with, class = talk.class, last = talk.last,
-                           unread = talk.unread, messages = {} }
+                           unread = talk.unread, category = talk.category, members = talk.members,
+                           started = talk.started, ended = talk.ended, messages = {} }
             local bnet = talk.kind == "BN_WHISPER"
             for index = math.max(#talk.messages - most + 1, 1), #talk.messages do
                 kept.messages[#kept.messages + 1] = Kept(talk.messages[index], bnet)
@@ -308,6 +429,7 @@ function Talks.Save(char)
     end
     char.talks = #saved > 0 and saved or nil
     char.talksVersion = char.talks and Talks.VERSION or nil
+    char.talkGroups = next(Talks.current) and Core.Copy(Talks.current) or nil -- the groups you are in: the same after a /reload
 end
 
 local SIDES = { left = true, right = true, center = true }
@@ -327,8 +449,9 @@ local function Taken(kept, last)
     return message
 end
 
--- The conversations saved before, back at the login, the newest message first.
-function Talks.Restore(saved)
+-- The conversations saved before, back at the login, the newest message first; current: the groups you were in
+-- (a group you are still in goes on in its conversation; one you left meanwhile ends when it is first asked about).
+function Talks.Restore(saved, current)
     if type(saved) ~= "table" then return end
     for _, kept in ipairs(saved) do
         local fit = type(kept) == "table" and type(kept.key) == "string" and KINDS[kept.kind] and type(kept.messages) == "table"
@@ -338,10 +461,22 @@ function Talks.Restore(saved)
             talk.class = type(kept.class) == "string" and kept.class or nil
             talk.last = tonumber(kept.last) or 0
             talk.unread = math.max(math.floor(tonumber(kept.unread) or 0), 0)
+            if kept.category == HOME or kept.category == INSTANCE then
+                talk.category, talk.started, talk.ended = kept.category, tonumber(kept.started), tonumber(kept.ended)
+                talk.members = {}
+                for _, name in ipairs(type(kept.members) == "table" and kept.members or {}) do
+                    if type(name) == "string" and #talk.members < Talks.MEMBERS then talk.members[#talk.members + 1] = name end
+                end
+            end
             for _, message in ipairs(kept.messages) do talk.messages[#talk.messages + 1] = Taken(message, talk.last) end
             if #talk.messages == 0 then Drop(talk) end
         end
     end
     table.sort(Talks.list, function(a, b) return a.last > b.last end)
     while #Talks.list > Talks.MOST do Drop(Talks.list[#Talks.list]) end
+    for _, category in ipairs({ HOME, INSTANCE }) do
+        local key = type(current) == "table" and current[category]
+        local talk = type(key) == "string" and Talks.by[key]
+        if talk and talk.category == category and not talk.ended then Talks.current[category] = key end
+    end
 end

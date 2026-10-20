@@ -110,6 +110,7 @@ ns.TEXT = {
     talkGone = "Not among your Battle.net friends.",
     talkLocked = "while chat is locked down (a fight, a dungeon), only the game's own chat line can send. The message is still in the line.",
     talkRemove = "Remove the conversation with %s and all its messages?",
+    groupOver = "You left this group.",
     today = "Today",
     yesterday = "Yesterday",
     you = Core.Word("YOU", "You"),
@@ -342,7 +343,7 @@ function ns.OnLogin()
     end
     local char = Core.Character(ns.name)
     if ns.options.history then ns.Safe("history", ns.Log.Restore, char.history, char.historyVersion) end
-    ns.Safe("conversations", ns.Talks.Restore, char.talks)
+    ns.Safe("conversations", ns.Talks.Restore, char.talks, char.talkGroups)
     ns.On("PLAYER_LOGOUT", function()
         ns.Safe("history", History, char)
         ns.Safe("conversations", ns.Talks.Save, char)

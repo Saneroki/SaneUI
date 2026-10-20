@@ -12,6 +12,9 @@ The bigger changes of each version, newest first.
   Esc, and they go. The game's talents and spellbook keys bring them
   there too. With a talent planner addon that Sane UI knows installed,
   its window is your talents there.
+- Social: every party or raid you join starts a conversation of its
+  own, as a whisper does, named by the others in it. It stays in the
+  list to read after you leave the group.
 - Social: chat views. New chat view in the conversations makes one
   more chat with its own choice of chats (a channel like Trade, your
   guild, any mix), as many as you like; each can also be a window of

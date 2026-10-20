@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 558 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 274 (Navigation), 36 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 274 (Navigation), 36 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
 ### Inventory: the character sheet's paper doll (Saneroki, 2026-10-20)
@@ -91,6 +91,17 @@ A game restart takes it in (new addons, Navigation, Atlas and Inventory; new fil
   for a template that is there, and a `TextureCoordTranslation` made in Lua has no `SetOffset`, as in the game.
   New check: the glint pulses by the template.
 - **Guide** (`Doc/guides/gui-development.md`, *Motion*): a `TextureCoordTranslation` comes from an XML template.
+
+### Social: every group you join a conversation of its own (Saneroki, 2026-10-20)
+- **`Talks.lua`**: a group's chat goes to the conversation of the very group you are in (`G:<partyGUID>`, from
+  `GROUP_JOINED`; a group you were in already when first asked about, by its category and the time), not to one
+  per kind of group; it is named by the others in it (`members`, from the raid's roster or the party's units,
+  `Talks.NAMES` of them and how many more), its kind follows the group (a party become a raid), and it ends when
+  you leave (`GROUP_LEFT`: `ended`, no more to write in, `TEXT.groupOver`). The current ones per category are
+  `Talks.current`, kept over a `/reload` (`char.talkGroups`; `Talks.Restore(saved, current)`). `Talks.Group(kind)`
+  is `Talks.Groups()`. Saved groups keep `category`, `members`, `started`, `ended`.
+- Tests: `dev/tests/social.lua` (561 checks): a party joined, its name, its chat, become a raid, left, the next
+  one apart, saved and restored with its members.
 
 ### Social: chat views, the chat's own window, rows lit for messages not seen (Saneroki, 2026-10-20)
 - **Chat views** (`Feed.lua` anew): as many as you make, each with a name and its own ticks (`shows`), kept in

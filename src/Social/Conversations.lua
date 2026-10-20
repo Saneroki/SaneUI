@@ -445,9 +445,7 @@ end
 -- is still listed, else the first.
 local function Update()
     if not shown then return end
-    for _, kind in ipairs(Talks.GROUP_ORDER) do
-        if Talks.Writable({ kind = kind }) then Talks.Group(kind) end
-    end
+    Talks.Groups()
     local elements, listed = {}, false
     if not Board.Has("chat") then
         elements[1], listed = CHAT, open == CHAT

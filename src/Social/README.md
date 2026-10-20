@@ -76,8 +76,11 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     *Send Message* to its leader, or *Invite* a player who is alone. *List yourself* opens the game's own
     finder (its comment can only be typed there). Nothing is searched by itself: only a click of yours does.
   - **Conversations** at the left, all the room the right leaves: first the **chat** itself (unless the layout
-    has it as a window of its own), then your **chat views**, then every whisper, and the chat of your party,
-    your raid and your instance group, each a conversation of its own, the newest message first. The one
+    has it as a window of its own), then your **chat views**, then every whisper, and the chat of each group
+    you join, each a conversation of its own, the newest message first. Every party or raid you join (and
+    every instance group) starts a new one, as a whisper does, named by the others in it (*Party: Thrall,
+    Jaina +2*; a party that becomes a raid stays one conversation); only that group's chat goes there. When
+    you leave the group it stays in the list to read, and the line says you left it. The one
     chosen stands beside the list: the chat with its line to write in, as the window has it small; a chat
     view, the same bubbles but only the chats ticked for it, whatever the chat shows, every message in it to
     read; or a conversation. The chat's and a chat view's name line has *Chats*, the list of the chats each
@@ -538,7 +541,15 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   session). `Social.lua`'s `Heard` hands a whisper or a party, raid or instance message to `Talks.Add`
   (`ns.Safe`, apart from the window), which keeps a copy (`Log.KEPT` and `stamp`, `time()`) in its
   conversation: `W:<player key>` (`Core.PlayerKeyOf`), `B:<BattleTag>` (`C_BattleNet.GetAccountInfoByID`; one
-  the game names no BattleTag for is kept this session only), or the group's kind. A whisper's copy has no
+  the game names no BattleTag for is kept this session only), or `G:<the group's GUID>`: each group joined
+  (`GROUP_JOINED`'s `partyGUID`; the game has no call for it, so a group you were in already when it is first
+  asked about gets a key of its category and the time) is a conversation of its own (`category`, `started`,
+  `ended`, `members`: the others as the game names them, from the raid's roster or the party's units, in the order
+  they came, `Talks.MEMBERS` at most; named by `Talks.NAMES` of them and how many more), the current one per
+  category in `Talks.current` (kept over a `/reload` in `talkGroups`). Its `kind` follows the group (a party
+  become a raid is a raid); party, raid and raid warning go to the home group's, instance chat to the instance
+  group's; none once you left (`GROUP_LEFT` ends it: `ended`, written in no more, `TEXT.groupOver`). `Talks.Groups`
+  makes the current ones for the list. A whisper's copy has no
   chat's name (the conversation says whose). Each keeps its last `talkSize`, the one read (`Talks.reading`) all
   until it is left; at most 50 conversations (`Talks.MOST`), the quietest goes. Sending is the game's way
   (`ChatFrameUtil.SubstituteChatMessageBeforeSend`, `SetLastToldTarget`, then `C_ChatInfo.SendChatMessage` or
@@ -681,7 +692,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Board.lua` | The full screen's windows on Core's board, its first layout, the guild window held in its panel, the search to all; the list, row and buttons the friends list's tabs share |
 | `Guild.lua` | The guild window on the full screen: the one the guild key opens (the game's, or the one that answers the key instead), held at its top right |
 | `Feed.lua` | The chat views: as many as you make, each its own ticks, rows of the conversations' list and windows of the layouts, a list of its own wherever one stands, their messages not seen counted |
-| `Talks.lua` | The conversations: whispers, the party's, raid's and instance group's chat, each apart, kept per character. Knows no frames |
+| `Talks.lua` | The conversations: whispers, and each group you join (its chat apart, named by its members, ended when you leave), kept per character. Knows no frames |
 | `Conversations.lua` | The conversations' panel at the full screen's left: the chat, the chat views and the conversations in a list (rows with messages not seen lit), the one chosen beside it, a conversation's line to write in, *New chat view* |
 | `Friends.lua` | The friends list, as the game's (`C_FriendList`, `C_BattleNet`); the game's own menu, whisper and invite |
 | `Contacts/Finder.lua` | The group finder, the friends list's last tab, as the game's browse view (`C_LFGList`); searches only on a click |
@@ -693,6 +704,8 @@ Tabs of chat views in the small window (`Doc/ideas/Social.md`), messages of one 
 a group, a close button, a sign besides colour for what a speaker is to you.
 
 ## History
+- 2026-10-20 — Every group you join a conversation of its own, named by the others in it, ended when you leave
+  (by the group's GUID; Saneroki).
 - 2026-10-20 — Chat views (Saneroki): *New chat view* in the conversations, as many as you like, each with its
   own ticks, rows of the list and windows of the layouts (`Feed.lua` anew; the switch *Second chat* and the
   setting `split` are gone, the second chat is the first view); the chat as a window of its own (`chat`); rows
