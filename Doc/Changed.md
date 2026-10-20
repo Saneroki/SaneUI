@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 550 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 274 (Navigation), 16 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 558 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 274 (Navigation), 16 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
 ### Inventory: its own window and full screen in the corner (Saneroki, 2026-10-20)
@@ -73,6 +73,29 @@ A game restart takes it in (new addons, Navigation, Atlas and Inventory; new fil
   for a template that is there, and a `TextureCoordTranslation` made in Lua has no `SetOffset`, as in the game.
   New check: the glint pulses by the template.
 - **Guide** (`Doc/guides/gui-development.md`, *Motion*): a `TextureCoordTranslation` comes from an XML template.
+
+### Social: chat views, the chat's own window, rows lit for messages not seen (Saneroki, 2026-10-20)
+- **Chat views** (`Feed.lua` anew): as many as you make, each with a name and its own ticks (`shows`), kept in
+  `store.views` (account-wide, as the layouts that hold them); at first one, the second chat, with the ticks the
+  second chat had (`Feed.FIRST`). A view stands wherever you put it: a row of the conversations' list (chosen, in
+  the page's own list of a view, `Feed.New(nil, page, TALK_HEAD)`, no longer in the chat's frame over its line)
+  and a window of the layouts (`view:<id>`, a list in its body, its *Chats* on its head), in as many as you like;
+  each place is a list of its own (`Feed.New`), all fed by `Feed.Added`. The switch *Second chat* (`boardFeed`)
+  and the setting `split` are gone; `Channels.Split`, `FlipSplit`, `Feed.Room`, `Feed.Fit` too.
+- **The conversations** (`Conversations.lua`): *New chat view* above *Whisper* and *Remove* (`Feed.Make`, chosen,
+  showing nothing until its chats are ticked); a right click on a view renames it (its window's head too:
+  `Board.Retitle`) or removes it (confirmed; `Feed.Remove`, out of every layout: `Board.Forget`); *Remove* removes
+  a chosen view too (`Removable`). A view or a conversation chosen while the game's line is open closes it, unless
+  the chat has its own window; the game's line opened while a view is chosen chooses the chat.
+- **The chat's own window** (`Board.lua`, `chat`): in a layout that has it the chat stands in its body with its
+  line (`board.own`, `Window`'s `Shows`), and the conversations list no row for it.
+- **Not seen yet, lit**: a row is lit with the game's chat tabs' `ChatFrameTab-NewMessage` (additive, tinted with
+  its chat colour, steady) and counts (`99+`): a conversation's waiting to be read, a view's that came while none of
+  its lists was on show (`view.unread`, cleared when one is shown), the chat's that came while it stood out of sight
+  on the full screen (`Window.Unread`, cleared when it is in sight).
+- Tests: `dev/tests/social.lua` (558 checks): a view chosen in its own list, its ticks, rows lit and cleared (the
+  chat's and a view's), *New chat view*, renaming and removing one, the chat's own window, a view's window on the
+  board.
 
 ### Core and Social: the full screen's windows on Core's board, layouts behind tabs (Saneroki, 2026-10-20)
 - **Core's board** (`src/Core/Board.lua`, new in Core's TOC after `Seat.lua`; `Core.Board.New(window, options)`):

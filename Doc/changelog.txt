@@ -12,6 +12,11 @@ The bigger changes of each version, newest first.
   Esc, and they go. The game's talents and spellbook keys bring them
   there too. With a talent planner addon that Sane UI knows installed,
   its window is your talents there.
+- Social: chat views. New chat view in the conversations makes one
+  more chat with its own choice of chats (a channel like Trade, your
+  guild, any mix), as many as you like; each can also be a window of
+  its own in your layouts, and so can the chat itself. Rows with
+  messages you have not seen yet light up, as the game's chat tabs do.
 - Social: arrange the full screen as you like. Its windows share the
   screen without overlapping: drag the gap between two to resize both,
   drag a window by its head next to another or onto it to swap them,

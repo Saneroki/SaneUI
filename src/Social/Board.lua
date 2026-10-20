@@ -16,6 +16,11 @@ local _, ns = ...
 --      guild    the guild window (Guild.lua: the guild key's own), held in its
 --               panel as large as fits there, at most its own size; left out of
 --               the laying out while there is none (out of a guild, closed)
+--      chat     the chat itself, the window's (Window.lua), with its line to
+--               write in: in a layout that has it, the chat stands here and not
+--               among the conversations
+--      view:<id> a chat view (Feed.lua), each one a window of its own: a list of
+--               its own in it, and the list of the chats it shows on its head
 --  The first layout is the arrangement the full screen has at first: the
 --  guild window at the top right as large as it is, the friends list under it
 --  and as wide, the conversations at the left (Layout.Board gives the rooms,
@@ -63,14 +68,45 @@ local function Part(key, part, title, least)
              show = Step(key, part, "Show"), size = Step(key, part, "Size"), search = Step(key, part, "Search") }
 end
 
--- Social's windows, in the dropdown's order.
+-- Social's windows, in the dropdown's order; the chat views' after them (Windows).
 local WINDOWS = {
     Part("talks", "Conversations", ns.TEXT.talks, { Layout.TALKS_MIN, 240 }),
     Part("friends", "Friends", Core.Word("FRIENDS_LIST", "Friends List"), { Layout.FRIENDS_WIDTH, Layout.FRIENDS_LOW }),
     { key = "guild", title = Core.Word("GUILD", "Guild"),
       least = function() return ns.Guild.Least() end,
       present = function() return ns.Guild.Size(inside) ~= nil end },
+    { key = "chat", title = Core.Word("CHAT", "Chat"), least = { Layout.VIEW_LEAST[1], Layout.VIEW_LEAST[2] } },
 }
+
+-- A chat view's window: a list of its own in its body (Feed.New), and on its head the list of the chats it shows.
+local function View(view)
+    local key = "view:" .. view.id
+    return { key = key, title = view.name, least = Layout.VIEW_LEAST,
+        build = function(panel)
+            panel.list = ns.Feed.New(view, panel.body)
+            local filter = CreateFrame("DropdownButton", nil, panel.head, "WowStyle1FilterDropdownTemplate")
+            filter:SetPoint("RIGHT", -Layout.EDGE, 0)
+            filter:SetWidth(100)
+            filter:SetText(ns.TEXT.feedFilter)
+            filter:SetupMenu(ns.Feed.Menu(view))
+            panel.filter = filter
+        end,
+        show = function(panel, on) ns.Safe(key, panel.list.Show, panel.list, on) end,
+        size = function(panel, width) ns.Safe(key, panel.list.Fit, panel.list, Layout.RowWidth(width)) end,
+        search = function(panel) ns.Safe(key, panel.list.Refill, panel.list) end }
+end
+
+local views = {} -- [view] = its window's spec, made once
+local listed = {}
+local function Windows()
+    wipe(listed)
+    for index, spec in ipairs(WINDOWS) do listed[index] = spec end
+    for _, view in ipairs(ns.Feed.Views()) do
+        views[view] = views[view] or View(view)
+        listed[#listed + 1] = views[view]
+    end
+    return listed
+end
 
 -- The guild window's panel as large as the window and its panel's head and edges round it (Body).
 local function Framed(size)
@@ -100,7 +136,7 @@ end
 function Board.Take(window)
     layouts = Core.Board.New(window, {
         store = ns.store, key = "board", label = "Social",
-        windows = function() return WINDOWS end,
+        windows = Windows,
         default = function(width, height) return ns.Safe("board", Default, width, height) end,
         changed = function() ns.Guarded(ns.Window.Reboard) end,
     })
@@ -117,6 +153,21 @@ end
 -- Whether the layout laid out last holds a window.
 function Board.Has(key)
     return layouts ~= nil and layouts:Has(key)
+end
+
+-- A chat view renamed: its window's head says so.
+function Board.Retitle(key, title)
+    for _, spec in pairs(views) do
+        if spec.key == key then spec.title = title end
+    end
+    local panel = layouts and layouts.panels[key]
+    if panel then panel.title:SetText(title) end
+end
+
+-- A chat view that is no more: out of every layout.
+function Board.Forget(key)
+    if layouts then layouts:Forget(key) end
+    if layouts and layouts.standing then ns.Guarded(ns.Window.Reboard) end
 end
 
 -- What the lists of the friends list's tabs are built from, as the game builds its own: a list of rows
@@ -198,15 +249,19 @@ function Board.Row(row)
 end
 
 -- The window stands full: what the window holds (inside) is that wide and high. The windows of the layout chosen
--- are put at their places (Core's board), the guild window held in its panel; returns where the chat stands: the
--- part of the conversations beside their list and under the line with the name of the one chosen (chat; none
--- without the conversations), and their rect (talks).
+-- are put at their places (Core's board), the guild window held in its panel; returns where the chat stands: its own
+-- window's body (own: true), else the part of the conversations beside their list and under the line with the name
+-- of the one chosen (chat; none without either), and the conversations' rect (talks).
 function Board.Show(room, width, height)
     inside = room
     local rects = layouts:Show(room, width, height)
     ns.Guild.Hold(rects.guild and Body(rects.guild))
     local talks, board = rects.talks, { talks = rects.talks }
-    if talks then
+    local own = rects.chat
+    if own then
+        local head = Core.Board.HEAD
+        board.chat, board.own = { own[1], own[2] + head, own[3], own[4] - head }, true
+    elseif talks then
         local list = Layout.TalkList(ns.store.talkList, talks[3])
         local beside, under = list + 1, Core.Board.HEAD + Layout.TALK_HEAD
         board.chat = { talks[1] + beside, talks[2] + under, talks[3] - beside, talks[4] - under }

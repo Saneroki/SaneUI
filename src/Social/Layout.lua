@@ -74,6 +74,7 @@ Layout.TALK_PAGE = Layout.TALKS_MIN - Layout.TALK_LIST - 1 -- the one chosen bes
 Layout.TALK_GRIP = 8                           -- the strip over the line between them that the mouse takes
 Layout.TALK_ICON = 24                          -- a conversation's icon in that list
 Layout.TALK_HEAD = 28                          -- the line with the name of the one chosen
+Layout.VIEW_LEAST = { 300, 160 }              -- a chat view's window, and the chat's, at their smallest
 
 -- The only colours of our own: the ring around the icon of somebody who is something to you. The
 -- bubbles' fill is a setting (bubbleBack, bubbleColor: Bubble.Clear), the same for all; yours differ by

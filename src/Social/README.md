@@ -36,7 +36,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   springs back to its size and place. The section *Expand window* (below) says whether it can, how it
   moves, its background and how round its corners start.
 - **Copy messages:** on the full screen, press the mouse on the words of a bubble and drag over as many
-  messages as you like, yours and everybody else's, in the chat, the second chat or a conversation (the
+  messages as you like, yours and everybody else's, in the chat, a chat view or a conversation (the
   mouse wheel scrolls on while you drag). What you picked is lit grey; press Ctrl+C (Cmd+C on a Mac) to copy
   it. From one message you get just the words picked; from several, each message on its own line after the
   name of whoever said it. The next click, Esc or any other key lets the words go. A click on a link or a
@@ -75,14 +75,20 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     (alone: their level and class icon), the activity and the comment, how many are in it. Choose one, then
     *Send Message* to its leader, or *Invite* a player who is alone. *List yourself* opens the game's own
     finder (its comment can only be typed there). Nothing is searched by itself: only a click of yours does.
-  - **Conversations** at the left, all the room the right leaves: first the **chat** itself and the **second
-    chat**, then every whisper, and the chat of your party, your raid and your instance group, each a
-    conversation of its own, the newest message first. The one chosen stands beside the list: the chat with
-    its line to write in, as the window has it small; the second chat, the same bubbles but only the chats
-    ticked in its list (at first whispers, party, raid, instance, guild and officer), whatever the chat shows,
-    every message in it to read, over the chat's line; or a conversation. The chat's and the second chat's
-    name line has *Chats*, the list of the chats each shows (the chat's are the same ticks as in the list on
-    its line's name). A conversation's row shows the class icon (a Battle.net
+  - **Conversations** at the left, all the room the right leaves: first the **chat** itself (unless the layout
+    has it as a window of its own), then your **chat views**, then every whisper, and the chat of your party,
+    your raid and your instance group, each a conversation of its own, the newest message first. The one
+    chosen stands beside the list: the chat with its line to write in, as the window has it small; a chat
+    view, the same bubbles but only the chats ticked for it, whatever the chat shows, every message in it to
+    read; or a conversation. The chat's and a chat view's name line has *Chats*, the list of the chats each
+    shows (the chat's are the same ticks as in the list on its line's name). **New chat view** (above
+    *Whisper*) makes one more, as many as you like, showing nothing until you tick its chats: one for a
+    channel (Trade, a channel of your own), one for your guild and officers, any mix. A right click on a chat
+    view renames or removes it. Each chat view is a window for the layouts too (the dropdown *Windows*), with
+    its own *Chats* on its head; the first, the **second chat**, shows your whispers, party, raid, instance,
+    guild and officer chat at first. A row with messages you have not seen yet is lit with the game's own
+    new-message glow of its chat tabs, in that chat's colour, and counts them: a conversation's waiting to be
+    read, a chat view's or the chat's that came while it was out of sight. A conversation's row shows the class icon (a Battle.net
     friend: the game's Battle.net portrait; a group: the game's conversation icon), the name (your alias for
     them), the last message, its time and how many messages wait to be read; the panel's title counts them
     all. Click one to read it: its messages in the chat's bubbles, a pill for each day, the name and your note
@@ -92,7 +98,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     theirs; anything else the game's line opens with (`/`, a whisper to somebody new) chooses the chat, whose
     line it is. A right click on a whisper opens the
     game's menu of that player. *Whisper* opens the game's line with `/w` to name whom; your first message
-    chooses the new conversation. *Remove* takes the one chosen away, with its messages, once confirmed. A
+    chooses the new conversation. *Remove* takes the one chosen away (a conversation with its messages, or a
+    chat view), once confirmed. A
     group you are in is listed though nobody spoke yet. Each keeps its last messages (a setting), for each
     character, also over a logout. Drag the line between the list and the one chosen to make the list
     wider or narrower (the mouse shows the game's sizing cursor on it); let go, the one chosen takes the rest,
@@ -100,7 +107,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   - A layout without the conversations has no chat in it (the line to write in still opens, at the screen's
     bottom). On a narrow screen the first layout makes the guild window smaller, then leaves it out, then the
     friends list. The search in the
-    title bar finds in all of them: messages (in the chat and the second chat), friends (name, where, note),
+    title bar finds in all of them: messages (in the chat and the chat views), friends (name, where, note),
     groups (leader, activity, comment) and conversations (by name or by their messages). Going back, the
     panels go at once, the guild window with them, and the chat has the whole window.
 - **Classic windows:** full, the dropdown *Classic windows* in the top right corner offers the game's own
@@ -145,9 +152,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     0 to 500, at first 100). *Messages to show*: *System messages*, *Creature messages*, *Addon messages*
     (on), *Channel joins and leaves* (off: somebody joined or left a channel, also the hidden channels addons
     use). The same four ticks are in the list on the chat's name. *Full screen*: *Messages kept per
-    conversation* (20 to 500, at first 100), *Second chat* (on), *Group finder* (on: its tab in the friends
-    list). Which windows stand on the full screen, and where, is arranged there (its layouts). The second
-    chat's ticks are kept with the settings too (`split`), no control.
+    conversation* (20 to 500, at first 100), *Group finder* (on: its tab in the friends list). Which windows
+    stand on the full screen, and where, is arranged there (its layouts); the chat views and their ticks are
+    made there too (kept the same on all your characters).
   - *Appearance:* *Expand window* (Core's, the same for every window that can fill the screen):
 
     | Line | At first |
@@ -400,7 +407,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   a top padding of whatever the messages leave free (list height minus their heights), none once they
   fill it. Set anew for a message, a new size and the line to write in.
 - **Picking words to copy** (`Select.lua`): the chat's list (only while the window stands full: `Select.Allow`
-  from `Filled`; at its size it takes no click), the second chat's and a conversation's take the mouse
+  from `Filled`; at its size it takes no click), every chat view's list and a conversation's take the mouse
   (`Select.Attach`: `HookScript` `OnMouseDown`/`OnMouseUp` on the scrolling list, a frame of its own runs
   `OnUpdate` while the mouse holds). The letter under the mouse is the game's text's own answer
   (`FindCharacterIndexAtCoordinate`, the cursor over the list's effective scale, as the game's
@@ -547,24 +554,40 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   effective scale), and once let go the width is kept (`store.talkList`) and `Window.Reboard` lays the full
   screen out once, so the messages are measured once for the new width. `Layout.TalkList` keeps it between
   `TALK_LIST_LEAST` (150) and what leaves the one chosen `TALK_PAGE` (269); `Layout.Board` (`want.list`) and
-  `Conversations.Size` both count it so, the chat's frame and the panel's parts at one width. First in its list stand two rows of its own, the chat and
-  the second chat (`pinned`: `"chat"`, `"feed"`; the second chat while `boardFeed`), their last message
-  from `Window.Last` and `Feed.Last` (redrawn a frame after a message, `Conversations.Said`). Chosen, one of
-  them stands where a conversation's messages and line do: `Layout.Board`'s `chat` is that part of the panel
-  (beside the list, under the line with the name, `TALK_HEAD`), and the window seats its frame for the chat
-  (`column`) there; `Window.Pick` says what that frame shows: the chat's own list and line, the second
-  chat's list (`Feed.Show`, made in the frame the first time, over the chat's line: `Feed.Room`), or nothing
-  (a conversation chosen: the frame is hidden, with the list, its scroll bar and the button on it). The name
-  line's dropdown (`WowStyle1FilterDropdownTemplate`) holds the ticks of the one chosen (`Channels.Shown`, as
-  the line's own list; `Feed.Menu`). The game's line opened while a conversation is chosen (`Window`'s
+  `Conversations.Size` both count it so, the chat's frame and the panel's parts at one width. First in its list stands a row of its own, the chat
+  (`pinned = "chat"`; not while `Board.Has("chat")`), then a row per chat view (`pinned = "view"`, `view`, made
+  once per view: `Row`), their last message from `Window.Last` and `Feed.Last(view)` (redrawn a frame after a
+  message, `Conversations.Said`). The chat chosen stands where a conversation's messages and line do:
+  `Board.Show`'s `chat` is that part of the panel (beside the list, under the line with the name, `TALK_HEAD`),
+  and the window seats its frame for the chat (`column`) there; `Window.Pick("chat")`, else (a conversation or a
+  chat view chosen) the frame is hidden, with the list, its scroll bar and the button on it. A chat view chosen
+  stands in the page's own list of a view (`views = Feed.New(nil, page, TALK_HEAD)`, pointed at the one chosen:
+  `Point`). The name line's dropdown (`WowStyle1FilterDropdownTemplate`) holds the ticks of the one chosen
+  (`Channels.Shown` for the chat, as the line's own list; `Feed.Menu(view)`). *New chat view* (`Feed.Make`, a
+  button over the two of the foot; the list ends above both rows) makes and chooses one; a right click on one
+  (`MenuUtil.CreateContextMenu`) renames it (`Core.AskText`, `Feed.Rename`, its window's head too:
+  `Board.Retitle`) or removes it (`Core.Confirm`, `Feed.Remove`, out of every layout: `Board.Forget`). Unseen:
+  `Unread(element)` (a talk's `unread`, `Feed.Unread(view)`, `Window.Unread()`) lights the row with the game's
+  `ChatFrameTab-NewMessage` (additive, `BORDER`, tinted with the last message's chat colour, as the game tints
+  its tabs' glow; steady, no flash) and counts it (`99+` above 99), not on the one chosen. The game's line opened while a conversation is chosen (`Window`'s
   `Room`, then `Conversations.Chat`, a frame later): empty and not a whisper, it is closed
   (`Input.Close`: its `ClearChat`, as Esc) and the conversation's line takes the cursor; a whisper whose
   target has a conversation (`Talks.Whisper`, by `GetTellTarget`) chooses that one, the same; anything else
   chooses the chat. A conversation chosen while the game's line is in use (`Window.Writing`) closes it; one
   you began is chosen only once the line is out of use. Its list is `Board.List`, its
-  messages a list like the second chat's (`Bubble.Init`, no fade, no slide), a pill per day (`CALENDAR_WEEKDAY_NAMES`,
+  messages a list like a chat view's (`Bubble.Init`, no fade, no slide), a pill per day (`CALENDAR_WEEKDAY_NAMES`,
   `FormatShortDate`). The search uses `Window.Found` for messages. Shown, it listens to group and Battle.net
   events; `Window.Repaint` and `Resize` redraw it (an alias, the bubbles' look, the text size).
+- **Chat views** (`Feed.lua`): kept in `store.views = { next, list = { { id, name, shows } } }` (account-wide, as
+  the layouts that name them as windows, `view:<id>`); at first one, `TEXT.feed`, with `Feed.FIRST`'s ticks. A
+  list of a view (`Feed.New(view, parent, top)`: its own scrolling list and scroll bar, made when first shown,
+  `Point` to show another view, `Fit` its row width, `Refill`, `Rewrap`, `Added`) stands wherever the view does:
+  the conversations' page (one list, pointed at the view chosen) and each of its windows on the board (its panel's
+  body; a `WowStyle1FilterDropdownTemplate` with `Feed.Menu(view)` on its head). The window hands every new
+  message to every list (`Feed.Added`, before its own); one out of sight notes it is stale. A view none of whose
+  lists is on show counts a message it shows as not seen (`view.unread`, `view.colour`; not kept); a list of it
+  shown clears that (`Conversations.Said` redraws the rows). The chat's own unseen are counted by the window
+  (`Window.Unread`: its messages that come while it stands out of sight on the full screen).
 - **The full screen's windows** (`Board.lua` on Core's board, `Core.Board`, Doc/guides/windows.md section 7, *The
   board*): Social gives Core its windows (`talks`, `friends`, `guild`: each a part's `Build`, `Show`, `Size`,
   `Search` behind `ns.Safe`, and its `least`; the guild window's `present` asks `Guild.Size`) and the first
@@ -657,9 +680,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Join.lua` | The game's chat channels, the same on every character as wished. Knows no frames |
 | `Board.lua` | The full screen's windows on Core's board, its first layout, the guild window held in its panel, the search to all; the list, row and buttons the friends list's tabs share |
 | `Guild.lua` | The guild window on the full screen: the one the guild key opens (the game's, or the one that answers the key instead), held at its top right |
-| `Feed.lua` | The second chat, a row of the conversations' list: its own ticks (`split`), the same bubbles, in the chat's place |
+| `Feed.lua` | The chat views: as many as you make, each its own ticks, rows of the conversations' list and windows of the layouts, a list of its own wherever one stands, their messages not seen counted |
 | `Talks.lua` | The conversations: whispers, the party's, raid's and instance group's chat, each apart, kept per character. Knows no frames |
-| `Conversations.lua` | The conversations' panel at the full screen's left: the chat, the second chat and the conversations in a list, the one chosen beside it, a conversation's line to write in |
+| `Conversations.lua` | The conversations' panel at the full screen's left: the chat, the chat views and the conversations in a list (rows with messages not seen lit), the one chosen beside it, a conversation's line to write in, *New chat view* |
 | `Friends.lua` | The friends list, as the game's (`C_FriendList`, `C_BattleNet`); the game's own menu, whisper and invite |
 | `Contacts/Finder.lua` | The group finder, the friends list's last tab, as the game's browse view (`C_LFGList`); searches only on a click |
 | `Window.lua` | The window: moved, sized, scrolled, kept |
@@ -670,6 +693,10 @@ Tabs of chat views in the small window (`Doc/ideas/Social.md`), messages of one 
 a group, a close button, a sign besides colour for what a speaker is to you.
 
 ## History
+- 2026-10-20 — Chat views (Saneroki): *New chat view* in the conversations, as many as you like, each with its
+  own ticks, rows of the list and windows of the layouts (`Feed.lua` anew; the switch *Second chat* and the
+  setting `split` are gone, the second chat is the first view); the chat as a window of its own (`chat`); rows
+  with messages not seen yet lit with the game's new-message glow.
 - 2026-10-20 — The full screen's windows on Core's board (Saneroki): layouts behind tabs, the windows sharing the
   screen as you arrange them (drag a gap, a head; the X; the dropdown *Windows*); the switches *Conversations*,
   *Guild window* and *Friends list* are gone (a layout has the windows or not); the guild window held in a panel.

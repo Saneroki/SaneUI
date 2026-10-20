@@ -2089,13 +2089,14 @@ do
         check(column._width == chatWidth, "(back as at first)")
     end
     check(messages._mouse == true, "a conversation's messages take the mouse too: their words are picked to copy as the chat's")
-    -- The second chat: chosen, it stands in the chat's place, the chats ticked for it, apart from the chat's.
+    -- The chat views: the first, the second chat, chosen: a list of its own beside the list, the chats ticked for it.
     click(rows.rows[2])
     local feed
     for _, other in ipairs(boxes) do
-        if other ~= box and within(other, column) then feed = other end
+        if other ~= box and other ~= rows and other ~= messages and within(other, talks) and other:IsVisible() then feed = other end
     end
-    check(feed and feed:IsVisible() and not box:IsVisible() and column:IsVisible(), "the second chat chosen stands in the chat's place")
+    check(feed and feed:IsVisible() and not column:IsVisible() and not messages:IsVisible() and filter:IsShown(),
+        "a chat view chosen stands beside the list in a list of its own; the chat is out of sight")
     local says = #feed.provider.list
     W.Fire("CHAT_MSG_GUILD", "for the horde", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 2, THRALL)
     check(#feed.provider.list == says + 1 and feed.provider.list[#feed.provider.list].text == "for the horde"
@@ -2104,14 +2105,46 @@ do
     check(rows.rows[2].bottom._text == "Thrall: for the horde", "its row says the last message")
     say("only here")
     check(#feed.provider.list == says + 1 and box.provider.list[#box.provider.list].text == "only here", "what is said nearby only in the chat")
+    W.Wait(0.1)
+    check(rows.rows[1].glow:IsShown() and rows.rows[1].count._text == "2" and not rows.rows[2].glow:IsShown(),
+        "the chat out of sight: its row lit for its messages not seen yet (the guild's and what was said), counting them; the view's not, in sight")
+    local second = ns.Feed.Views()[1]
     local tick
     for _, item in ipairs(filter._items) do if item.text == "Say" then tick = item end end
     check(tick and not tick.checked(tick.data), "its list of chats on the line with its name has Say unticked")
     tick.fn(tick.data)
-    check(options.split.SAY and feed.provider.list[#feed.provider.list].text == "only here" and ns.Channels.Split("SAY"),
+    check(second.shows.SAY and feed.provider.list[#feed.provider.list].text == "only here" and ns.Feed.Shows(second, "SAY"),
         "ticked, the second chat shows what is said too")
     click(rows.rows[1])
-    check(box:IsVisible() and not feed:IsVisible(), "the chat chosen again is back in its place")
+    W.Wait(0.1)
+    check(box:IsVisible() and not feed:IsVisible() and not rows.rows[1].glow:IsShown() and rows.rows[1].count._text == "",
+        "the chat chosen again is back in its place, and seen")
+    W.Fire("CHAT_MSG_GUILD", "anyone up?", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 3, THRALL)
+    W.Wait(0.1)
+    check(rows.rows[2].glow:IsShown() and rows.rows[2].count._text == "1" and second.unread == 1,
+        "a message the second chat shows comes while it is out of sight: its row is lit")
+    click(rows.rows[2])
+    W.Wait(0.1)
+    check(not rows.rows[2].glow:IsShown() and second.unread == nil, "chosen, it is seen")
+    -- New chat view: one more, chosen, showing nothing until its chats are ticked; renamed, removed.
+    click(foot(talks, "New chat view"))
+    local made = ns.Feed.Views()[2]
+    check(made and made.name == "Chat view 2" and next(made.shows) == nil and rows.provider.list[3].view == made
+        and #feed.provider.list == 0, "New chat view: one more under the second, chosen, showing nothing yet")
+    click(rows.rows[3], "RightButton")
+    local menu = W.menus[#W.menus]
+    for _, item in ipairs(menu) do
+        if item.text == "Rename" then item.fn() end
+    end
+    W.popups[#W.popups].data.callback("Trade")
+    W.Wait(0.1)
+    check(made.name == "Trade" and rows.rows[3].top._text == "Trade", "renamed by a right click")
+    click(rows.rows[3])
+    click(foot(talks, "Remove"))
+    W.popups[#W.popups].data.callback()
+    check(#ns.Feed.Views() == 1 and #rows.provider.list == 2 and column:IsVisible() and box:IsVisible(),
+        "removed once confirmed, and the chat is chosen")
+    click(rows.rows[1])
     -- A whisper: a conversation of its own, read once it is chosen.
     W.Fire("CHAT_MSG_WHISPER", "are you coming?", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 5, THRALL)
     local thrall = Talks.by["W:Thrall-Stub"]
@@ -2298,11 +2331,19 @@ do
         and rows.provider.list[1].pinned == "chat" and column:IsVisible(),
         "Remove takes the conversation chosen away, once confirmed, and the chat is chosen")
     check(not foot(talks, "Remove"):IsEnabled(), "the chat cannot be removed")
-    -- The second chat switched off: out of the list.
-    Core.Set(ns.name, "boardFeed", false)
-    check(#rows.provider.list == 4 and rows.provider.list[2].pinned == nil, "the second chat switched off is out of the list")
-    Core.Set(ns.name, "boardFeed", true)
-    check(rows.provider.list[2].pinned == "feed", "and back")
+    -- A layout with the chat as a window of its own: it stands there, not among the conversations.
+    ns.store.board.tabs[1].tree = { split = "x", parts = { { key = "talks" }, { key = "chat" } }, shares = { 0.6, 0.4 } }
+    ns.Window.Reboard()
+    local own = ns.Board.panels.chat
+    check(own and own:IsShown() and rows.provider.list[1].pinned == "view" and column:IsVisible() and box:IsVisible()
+        and column._width == own._width and column._points[1][4] == own._points[1][4],
+        "a layout with the chat's own window: the chat stands there, with its line, and is no row of the conversations")
+    click(rows.rows[1])
+    check(column:IsVisible() and box:IsVisible(), "a chat view chosen beside the list, the chat stays in its own window")
+    ns.store.board.tabs[1].tree = nil
+    ns.Window.Reboard()
+    check(rows.provider.list[1].pinned == "chat" and not own:IsShown(), "the first layout again: the chat is among the conversations")
+    click(rows.rows[1])
     check(not Core.errors["Social: conversations"] and not Core.errors["Social: talks"] and not ns.off, "nothing went wrong in the conversations")
     grouped, W.raiding = wasGrouped, wasRaiding
     end)()
@@ -2521,6 +2562,11 @@ do
         check(not talks:IsShown() and panels.friends._width == 1920 - 2 * PAD and not item("Conversations").checked(),
             "its X takes it off the layout, the other takes its room")
         W.cursorX, W.cursorY = mouseX, mouseY
+        item("Second chat").fn()
+        local own = panels["view:1"]
+        check(own and own:IsShown() and own.list and own.list.shown and own.filter and own.title._text == "Second chat"
+            and own._points[1][4] > panels.friends._points[1][4],
+            "a chat view in the dropdown too: a window of its own beside the largest, its list in it, its chats on its head")
         -- A right click on a tab: rename it, delete it.
         listed = tabs()
         listed[2]._scripts.OnClick(listed[2], "RightButton")

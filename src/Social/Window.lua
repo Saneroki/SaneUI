@@ -63,17 +63,19 @@ local _, ns = ...
 --
 --  The chat stands in a frame of its own (column): all of what the window
 --  holds, but once the window stands full with its windows on Core's board
---  (Board.lua: the conversations, the friends list, the guild window, as the
---  layout chosen has them), its part of the full screen: beside the
---  conversations' list, while the chat is the one chosen there; a layout
---  without the conversations has it out of sight. The second chat chosen there stands in the same frame,
---  in the chat's place (Feed.lua); a conversation of theirs chosen, the frame
---  is out of sight, and the conversation's own line is the one to write in.
---  The game's line opened then (Enter, /, a reply) belongs to the chat: the
---  chat is chosen (Room). The list, the button for the line to write in, the
---  line and its smiley hang on that frame; what is measured for them is its
---  size (Area). The panels go when the window starts back, and the chat has
---  the whole window.
+--  (Board.lua: the conversations, the friends list, the guild window, the
+--  chat, the chat views, as the layout chosen has them), its part of the full
+--  screen: the body of the chat's own window, or else beside the
+--  conversations' list while the chat is the one chosen there; a layout with
+--  neither has it out of sight. A conversation or a chat view chosen there
+--  (Feed.lua: a list of its own), the frame is out of sight, and a
+--  conversation's own line is the one to write in. The game's line opened
+--  then (Enter, /, a reply) belongs to the chat: the chat is chosen (Room).
+--  Messages of the chat that come while it is out of sight on the full screen
+--  are not seen yet (Window.Unread: its row there is lit). The list, the
+--  button for the line to write in, the line and its smiley hang on that
+--  frame; what is measured for them is its size (Area). The panels go when the
+--  window starts back, and the chat has the whole window.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Layout, Bubble, Fade = ns.Layout, ns.Bubble, ns.Fade
@@ -84,7 +86,8 @@ local frame, box, view, provider
 local handle         -- Core's part of the window: moves, sizes and docks it, keeps its place
 local column         -- where the chat stands: all of what the window holds, or its part of the full screen
 local board          -- the full screen's parts as they stand (Layout.Board); nil: the chat has the whole window
-local picked = "chat" -- chosen in the full screen's conversations: "chat", "feed" (the second chat), nil (one of theirs)
+local picked = "chat" -- chosen in the full screen's conversations: "chat", or nil (a conversation or a chat view)
+local unread = 0     -- messages of the chat that came while it stood out of sight on the full screen
 local rowWidth       -- of the list, from the window's width
 local writing        -- the height of the line to write in while it is shown
 local awake, hover   -- the mouse is over the window; what sees it come and leave (Core.Hover)
@@ -170,11 +173,11 @@ local function Area()
     return frame:GetWidth(), frame:GetHeight() - (handle.top or 0)
 end
 
--- What the chat's frame shows: the chat, or with the full screen's conversations the one chosen there: the chat,
--- the second chat ("feed"), or one of theirs (nil: the frame is out of sight). A full screen laid out without the
--- conversations has no place for it: out of sight.
+-- What the chat's frame shows: the chat, but on a full screen whose conversations hold it only while it is the one
+-- chosen there (nil: the frame is out of sight). In a layout with the chat's own window it always stands there; in
+-- one with neither, it has no place: out of sight.
 local function Shows()
-    if not board then return "chat" end
+    if not board or board.own then return "chat" end
     if not board.talks then return nil end
     return picked
 end
@@ -195,7 +198,10 @@ local function Seat()
     column:SetShown(shows ~= nil)
     box:SetShown(shows == "chat")
     Bar()
-    ns.Feed.Show(shows == "feed", column)
+    if shows and unread > 0 then
+        unread = 0 -- in sight again: its new messages are seen
+        ns.Conversations.Said()
+    end
 end
 
 -- The room above the messages that puts them at the list's bottom; none once they fill it.
@@ -219,7 +225,7 @@ end
 -- What is typed into the search box of the full window's title bar (Core's): every word must be in the
 -- message's text as it reads (Core.Fuzzy.Plain: without colours, links' codes and icons), its speaker's name
 -- or its chat's, as Core's fuzzy finding finds letters; nil: no search. The list is at most a few hundred
--- messages: it is searched at once (Fuzzy.Filter is for longer ones). The second chat (Feed.lua) finds by it too.
+-- messages: it is searched at once (Fuzzy.Filter is for longer ones). The chat views (Feed.lua) find by it too.
 local query
 
 function Window.Found(entry)
@@ -406,7 +412,7 @@ function Window.Resize()
 end
 
 -- The bubbles are more or less solid, or the chats named otherwise, or a player's alias changed: every row
--- in view is drawn anew, in the chat and in the full screen's second chat and conversations.
+-- in view is drawn anew, in the chat and in the full screen's chat views and conversations.
 function Window.Repaint()
     if not frame then return end
     Bubble.Opacity(ns.options.bubbleOpacity)
@@ -428,13 +434,12 @@ local function Bottom(input)
     box:SetPoint("BOTTOMRIGHT", column, "BOTTOMRIGHT", -Layout.EDGE - Layout.SCROLL, Layout.EDGE + (input and Layout.Input(input) or 0))
 end
 
--- input: the height of the line to write in; false: it is gone. It grows with its text. The second chat ends
--- above it too. Opened while a conversation is chosen on the full screen, the line is the chat's: the chat is chosen.
+-- input: the height of the line to write in; false: it is gone. It grows with its text. Opened while a conversation
+-- or a chat view is chosen on the full screen, the line is the chat's: the chat is chosen.
 local function Room(input)
     local was, stick = writing, follow
     writing = input
     Bottom(input)
-    ns.Feed.Room(input)
     Resettle()
     if stick then Slide((input and Layout.Input(input) or 0) - (was and Layout.Input(was) or 0)) end
     if not was ~= not input then Window.Refade() end
@@ -451,21 +456,27 @@ function Window.Last()
     return list[#list]
 end
 
--- Chosen in the full screen's conversations: the chat ("chat"), the second chat ("feed") or one of theirs (nil).
+-- How many messages of the chat came while it stood out of sight on the full screen, and the chat colour of the
+-- last (its row in the conversations' list is lit for them).
+function Window.Unread()
+    local last = unread > 0 and list[#list]
+    return unread, last and { last.r or 1, last.g or 1, last.b or 1 } or nil
+end
+
+-- Chosen in the full screen's conversations: the chat ("chat"), or a conversation or a chat view (nil).
 function Window.Pick(what)
-    picked = what
+    picked = what == "chat" and "chat" or nil
     ns.Select.Clear() -- what was picked to copy stood in what the frame showed
     if not frame then return end
     Seat()
     if what == "chat" then Resettle() end
 end
 
--- The chat is that wide now; the second chat above it is as wide (Board.lua), and its messages wrap the same.
+-- The chat is that wide now: its messages are wrapped for it.
 local function Fit(width)
     local now = Layout.RowWidth(width)
     if now == rowWidth then return false end
     rowWidth = now
-    ns.Feed.Fit(rowWidth)
     return true
 end
 
@@ -676,18 +687,21 @@ function Window.Follow()
 end
 
 -- A new message. The log lets its oldest go a batch at a time (Log.Add): those leave the list
--- together, in one update of it. The second chat of the full screen hears of it first (Feed.lua), and the
--- conversations' list, whose rows of the chat and the second chat show the last message.
+-- together, in one update of it. The full screen's chat views hear of it first (Feed.lua), and the
+-- conversations' list, whose rows of the chat and the chat views show the last message. One of the chat's that
+-- comes while the chat stands out of sight on the full screen is not seen yet.
 ns.Log.added = function(entry)
     ns.Feed.Added(entry)
-    ns.Conversations.Said()
     if not frame or not frame:IsShown() then
         stale = true
+        ns.Conversations.Said()
         return
     end
     local gone, removed = 0, 0
     while list[gone + 1] and list[gone + 1].gone do gone = gone + 1 end
     local seen = Visible(entry)
+    if seen and board and not Shows() then unread = unread + 1 end
+    ns.Conversations.Said()
     local stick = follow
     -- Scrolled up, what you read stays where it is: the list keeps its offset from the top, and the
     -- rows that leave were above it.

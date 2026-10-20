@@ -58,8 +58,14 @@ ns.TEXT = {
     classicFinder = "Group finder",
     friendsInFight = "in a fight the game's friends list opens only by its own key.",
     finderInFight = "in a fight the game's group finder opens only by its own key.",
-    -- The full screen's second chat (Feed.lua), and the list of chats on the line with its name.
+    -- The full screen's chat views (Feed.lua): the first one's name, a new one's, the list of chats on the line with
+    -- a view's name, its button and its right click.
     feed = "Second chat",
+    newView = "Chat view %d",
+    newViewButton = "New chat view",
+    viewRename = "Name of the chat view:",
+    viewRemove = "Remove the chat view %s?",
+    rename = "Rename",
     feedFilter = "Chats",
     friends = Core.Word("FRIENDS", "Friends"),
     online = "%d / %d online",
@@ -154,12 +160,8 @@ local OPTIONS = {
     { key = "talkSize", default = 100, min = 20, max = 500, step = 10, unit = "messages", text = "Messages kept per conversation", header = "Full screen",
       headerTip = "What the full screen's windows hold. Which windows stand there, and where, you arrange on the full screen itself: drag a window's head to move it, the gap between two to share their room, add one from the dropdown Windows, take one off with its X; each layout behind a tab of its own.",
       tip = "How many of the last messages each conversation keeps, also for the next login." },
-    { key = "boardFeed", default = true, text = "Second chat",
-      tip = "A second chat in the conversations' list, under the chat, with its own choice of chats in the list on the line with its name: your whispers, groups and guild at first." },
     { key = "boardFinder", default = true, text = "Group finder",
       tip = "The group finder as a tab of the friends list, as the game's: the groups and players looking for others in a category. Whisper a leader, or invite a player who is alone." },
-    -- The second chat's ticks ([group] = true: shown there), set in the list on its head; no control.
-    { key = "split", default = { WHISPER = true, PARTY = true, RAID = true, INSTANCE_CHAT = true, GUILD = true, OFFICER = true } },
 
     { key = "textSize", default = 14, min = 10, max = 24, step = 1, text = "Text size", tab = LOOK, header = "Messages",
       headerTip = "How the messages and their bubbles look.",
@@ -227,11 +229,9 @@ Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = funct
     if Core.Edge.KEYS[key] then return end
     if key == "window" then return ns.Guarded(ns.Window.Follow) end
     if SHOWN[key] or key == "mute" then return ns.Guarded(ns.Window.Refill) end
-    if key == "split" then return ns.Guarded(ns.Feed.Refill) end
     -- The group finder is a tab of the friends list: its switch offers the tab or takes it away.
     if key == "boardFinder" then return ns.Safe("friends tabs", ns.Friends.Relabel) end
     if key == "talkSize" then return ns.Safe("conversations", ns.Talks.Trim) end
-    if key == "boardFeed" then return ns.Safe("conversations", ns.Conversations.Relist) end
     if key == "history" or key == "historySize" then return ns.Keep() end
     local Window = ns.Window
     ns.Guarded(key == "textSize" and Window.Resize or key == "showNative" and Window.Native or MOVES[key] and Window.Animate
