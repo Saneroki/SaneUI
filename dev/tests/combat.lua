@@ -1,8 +1,9 @@
 -- Runs the Combat module against the stand-in client (wowstub.lua): its window docked at the bottom middle, the
--- middle half of the bottom edge filling the screen, the panels there (talents, spellbook) with the game's own
--- window seated in the one of the tab it shows, a planner Sane UI knows as the Talents panel, the open buttons
--- (a secure click on the game's micro menu button), fights, and giving everything back. Core's Seat and its
--- strip of a share of the screen's side are tried here too. The look can only be judged in the game.
+-- middle half of the bottom edge filling the screen, its windows there on Core's board (talents, spellbook) with
+-- the game's own window seated in the one of the tab it shows (in another, or on the whole board, with its own
+-- taken off the layout), a planner Sane UI knows as the Talents panel, an empty panel's click (a secure click on
+-- the game's micro menu button), fights, and giving everything back. Core's Seat and its strip of a share of the
+-- screen's side are tried here too. The look can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/combat.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -114,17 +115,18 @@ UIParent._width = 1920
 W.Fire("UI_SCALE_CHANGED")
 check(strip._width == 960, "another UI scale: still half")
 
--- Board.Layout: side by side, each as wide as its share of what both want
-local rects = Board.Layout(0, 1048, 1920, 1048, { talents = Board.TALENTS, spellbook = Board.SPELLBOOK })
-local free = 1920 - 2 * Board.MARGIN - Board.GAP
-local talentsWidth = math.floor(free * Board.TALENTS[1] / (Board.TALENTS[1] + Board.SPELLBOOK[1]) + 0.5)
-check(rects.talents[1] == Board.MARGIN and rects.talents[2] == 1048 - Board.MARGIN and rects.talents[3] == talentsWidth
-    and rects.spellbook[1] == Board.MARGIN + talentsWidth + Board.GAP and rects.spellbook[3] == free - talentsWidth
-    and rects.talents[4] == 1048 - 2 * Board.MARGIN, "the talents at the left, the spellbook at the right, the wider the more it wants")
 
 -------------------------------------------------------------------------------
---  The full screen, nothing open
+--  The full screen: Core's board, nothing open
 -------------------------------------------------------------------------------
+local inside, layouts = handle.inside, Board.layouts
+-- Where what the full window holds stands, and its layer, as the game gives a child its parent's (the stand-in
+-- knows no anchors).
+local top = 1080 - Core.Window.BAR
+inside._left, inside._bottom, inside._height = 0, 0, top
+inside._strata, inside._level = "HIGH", 501
+local pad, edge, head = Core.Board.PAD, Core.Board.EDGE, Core.Board.HEAD
+
 local function Push()
     W.Wait(1) -- a while after the strip came under the mouse
     strip:GetScript("OnEnter")(strip)
@@ -135,27 +137,66 @@ local function Stand()
     frame._group:Run(1)
     W.Wait(0)
 end
+local function Back()
+    frame._group:Run(1)
+    handle:Place()
+    frame._left, frame._bottom = (1920 - ns.Window.WIDTH) / 2, 0
+end
+-- A panel's body (a rect of the board), as a window seated there has it.
+local function Body(rect)
+    return { rect[1] + edge, rect[2] + head + edge, rect[3] - 2 * edge, rect[4] - head - 2 * edge }
+end
+-- A window of that size seated in a room of the board: as large as fits, never larger, in its middle.
+local function Seated(window, room, width, height)
+    local scale = math.min(room[3] / width, room[4] / height, 1)
+    local point = window._points[1]
+    return Core.Lent(window) and near(window._scale, scale) and #window._points == 1 and point[1] == "TOPLEFT"
+        and point[2] == UIParent and near(point[4] * scale, room[1] + (room[3] - width * scale) / 2)
+        and near(point[5] * scale, top - room[2] - (room[4] - height * scale) / 2)
+end
+local function In(key) return Body(layouts.rects[key]) end
+
 Push()
-check(handle.edge.full, "the mouse pushed against the middle of the bottom edge fills the screen")
-local talentsPlate, bookPlate
-for _, widget in ipairs(W.frames) do
-    if widget.skin and widget.title and widget.title._text == ns.TEXT.talents then talentsPlate = widget end
-    if widget.skin and widget.title and widget.title._text == ns.TEXT.spellbook then bookPlate = widget end
-end
-check(talentsPlate and bookPlate and talentsPlate:IsShown() and bookPlate:IsShown(), "both panels are there, empty: the game's window is closed")
-local talentsButton, bookButton
-for _, widget in ipairs(W.frames) do
-    local clicks = widget._attributes and widget._attributes.clickbutton
-    if clicks == TalentMicroButton then talentsButton = widget end
-    if clicks == SpellbookMicroButton then bookButton = widget end
-end
-check(talentsButton and bookButton and not bookButton:IsShown(), "each has its open button, out of sight while the window is on its way")
+check(handle.edge.full and not layouts.standing, "the mouse pushed against the middle of the bottom edge fills the screen; the board waits until it stands")
 Stand()
-check(bookButton:IsShown() and bookButton._parent == UIParent and bookButton._strata == "DIALOG"
-    and bookButton._attributes.type == "click" and bookButton._attributes.useOnKeyDown == false
-    and bookButton._points[1][2] == UIParent, "standing, the open button shows: a secure click on the game's micro menu button, on UIParent above the window")
-check(bookPlate.hint._text == ns.TEXT.hint:format("P") and talentsPlate.hint._text == ns.TEXT.hint:format(ns.TEXT.noKey),
-    "each panel says what opens it: the game's key, or where to set one")
+local talents, book = layouts.panels.talents, layouts.panels.spellbook
+check(layouts.standing and layouts:Has("talents") and layouts:Has("spellbook") and talents and book
+    and talents:IsShown() and book:IsShown(), "standing, Core's board holds the talents and the spellbook")
+check(talents.title._text == ns.TEXT.talents and book.title._text == ns.TEXT.spellbook, "each panel is headed with its name")
+local rects = layouts.rects
+local room = 1920 - 3 * pad
+local talentsWidth = math.floor(room * Board.TALENTS[1] / (Board.TALENTS[1] + Board.SPELLBOOK[1]) + 0.5)
+check(rects.talents[1] == pad and rects.talents[3] == talentsWidth and rects.spellbook[1] == 2 * pad + talentsWidth
+    and rects.spellbook[3] == room - talentsWidth and rects.talents[4] == top - 2 * pad,
+    "the first layout: the talents at the left, the spellbook at the right, each as wide as its share of the game's sizes")
+
+-- An empty panel's body: a secure click on the game's micro menu button.
+local function Click(micro)
+    for _, widget in ipairs(W.frames) do
+        if widget._attributes and widget._attributes.clickbutton == micro then return widget end
+    end
+end
+local talentsClick, bookClick = Click(TalentMicroButton), Click(SpellbookMicroButton)
+local body, point = In("spellbook"), bookClick and bookClick._points[1]
+check(bookClick and bookClick:IsShown() and bookClick._parent == UIParent and bookClick._attributes.type == "click"
+    and bookClick._attributes.useOnKeyDown == false and bookClick._clicks[1] == "LeftButtonUp"
+    and bookClick._strata == "HIGH" and bookClick._level == 501 + Board.LEVEL
+    and point[1] == "TOPLEFT" and point[2] == UIParent and point[3] == "BOTTOMLEFT" and point[4] == body[1]
+    and point[5] == top - body[2] and bookClick._width == body[3] and bookClick._height == body[4],
+    "the empty Spellbook panel's body is a secure click on the game's micro menu button, on UIParent over the body")
+check(talentsClick and talentsClick:IsShown(), "the empty Talents panel's too")
+check(book.hint:IsShown() and book.hint._text == ns.TEXT.click:format("P") and talents.hint._text == ns.TEXT.clickNoKey,
+    "each says what opens the game's window there: a click, or its key")
+
+-- The game keeps the talents closed until a level: its micro menu button is off.
+TalentMicroButton:SetEnabled(false)
+TalentMicroButton.minLevel = 10
+ns.Window.Reboard()
+check(talents.hint._text == ns.TEXT.later:format(10) and not talentsClick:IsShown(), "talents not there yet: the panel says from which level, and has no click")
+TalentMicroButton:SetEnabled(true)
+TalentMicroButton.minLevel = nil
+ns.Window.Reboard()
+check(talentsClick:IsShown() and talents.hint._text == ns.TEXT.clickNoKey, "there: the click is back")
 
 -------------------------------------------------------------------------------
 --  The game's window seated
@@ -177,80 +218,92 @@ W.loaded.Blizzard_PlayerSpells = true
 waiting.Blizzard_PlayerSpells()
 check(not Core.Lent(game), "nothing of the game's window is lent before it opens")
 
-game:Show() -- the open button clicked the game's micro menu button: the game opens its window
+game:Show() -- the click on the panel clicked the game's micro menu button: the game opens its window
 W.Wait(0)
-local room = Board.Layout(0, 1080 - Core.Window.BAR, 1920, 1080 - Core.Window.BAR, { talents = Board.TALENTS, spellbook = { 809, 720 } }).spellbook
-local scale = math.min(room[3] / 809, room[4] / 720, 1)
-local point = game._points[1]
-check(Core.Lent(game) and near(game._scale, scale) and #game._points == 1 and point[1] == "TOPLEFT" and point[2] == UIParent
-    and near(point[4] * scale, room[1] + (room[3] - 809 * scale) / 2) and near(point[5] * scale, room[2] - (room[4] - 720 * scale) / 2),
-    "the game's window showing the spellbook stands in the Spellbook panel, as large as fits, in its middle")
+check(Seated(game, In("spellbook"), 809, 720),
+    "the game's window showing the spellbook stands in the Spellbook panel's body, as large as fits, in its middle")
 check(game._parent == UIParent and game._strata == "HIGH" and game._level == 5000,
     "its parent stays its own; it stands over the full window, at its own level, which is above already")
-check(not bookPlate:IsShown() and not bookButton:IsShown() and talentsPlate:IsShown() and talentsButton:IsShown(),
-    "its plate and open button go; the Talents panel stays empty")
+check(not book.hint:IsShown() and not bookClick:IsShown() and talents.hint:IsShown() and talentsClick:IsShown()
+    and talents.hint._text == ns.TEXT.one .. "\n\n" .. ns.TEXT.clickNoKey,
+    "its panel's words and click go; the Talents panel says that the game shows one of them at a time")
 
 Placed(-80) -- the game places it anew (its panels make room for each other)
-check(game._points[1][1] == "TOPLEFT" and near(game._points[1][4] * scale, room[1] + (room[3] - 809 * scale) / 2), "the game placing it anew: back in its panel")
+check(Seated(game, In("spellbook"), 809, 720), "the game placing it anew: back in its panel")
 game:SetScale(0.7) -- the game scales it to fit the screen
-check(near(game._scale, scale), "the game scaling it anew: ours again")
+check(Seated(game, In("spellbook"), 809, 720), "the game scaling it anew: ours again")
 
 -- Another tab: the talents, another size, the other panel.
 game.SpellBookFrame:Hide()
 game:SetSize(1218, 708)
 game.TalentsFrame:Show()
 W.Wait(0)
-local talentsRoom = Board.Layout(0, 1048, 1920, 1048, { talents = { 1218, 708 }, spellbook = Board.SPELLBOOK }).talents
-local talentsScale = math.min(talentsRoom[3] / 1218, talentsRoom[4] / 708, 1)
-check(near(game._scale, talentsScale) and near(game._points[1][4] * talentsScale, talentsRoom[1] + (talentsRoom[3] - 1218 * talentsScale) / 2)
-    and bookPlate:IsShown() and not talentsPlate:IsShown(), "showing your talents, it stands in the Talents panel; the Spellbook panel is empty again")
+check(Seated(game, In("talents"), 1218, 708) and book.hint:IsShown() and bookClick:IsShown() and not talents.hint:IsShown()
+    and not talentsClick:IsShown(), "showing your talents, it stands in the Talents panel; the Spellbook panel is empty again")
 
 -- Closed by the game (its close button, its key): given back.
 game:Hide()
 W.Wait(0)
 check(not Core.Lent(game) and game._scale == 1 and game._points[1][1] == "TOP" and game._points[1][5] == -41
-    and game._strata == "MEDIUM" and game._level == 5000 and talentsPlate:IsShown(),
+    and game._strata == "MEDIUM" and game._level == 5000 and talents.hint:IsShown() and talentsClick:IsShown(),
     "closed, it is given back exactly as it was lent: its place, scale and layer; its panel is empty again")
 
 -------------------------------------------------------------------------------
---  Going back, and opened by the game while small
+--  Layouts: a panel taken off, an empty one
 -------------------------------------------------------------------------------
 game.TalentsFrame:Hide()
 game.SpellBookFrame:Show()
 game:SetSize(809, 720)
 game:Show()
 W.Wait(0)
-check(Core.Lent(game), "opened again while the screen is full: seated again")
+check(Seated(game, In("spellbook"), 809, 720), "opened again while the screen is full: seated again")
+book.close:GetScript("OnClick")(book.close) -- its X
+W.Wait(0)
+check(not layouts:Has("spellbook") and not book:IsShown() and not bookClick:IsShown(), "its X takes the Spellbook panel off the layout")
+check(Seated(game, In("talents"), 809, 720) and not talents.hint:IsShown() and not talentsClick:IsShown(),
+    "the game's window then stands in the Talents panel, which has nothing of its own")
+talents.close:GetScript("OnClick")(talents.close)
+W.Wait(0)
+check(not layouts:Has("talents") and not talents:IsShown() and not talentsClick:IsShown()
+    and Seated(game, { pad, pad, 1920 - 2 * pad, top - 2 * pad }, 809, 720),
+    "a layout without either: it stands in the middle of the whole board, never behind the full screen")
+ns.store.board.tabs[1].tree = nil -- the first layout as the module has it again (its tab's Reset)
+ns.Window.Reboard()
+check(layouts:Has("talents") and layouts:Has("spellbook") and Seated(game, In("spellbook"), 809, 720) and talentsClick:IsShown(),
+    "the first layout again: in its own panel")
+
+-------------------------------------------------------------------------------
+--  Going back, and opened by the game while small
+-------------------------------------------------------------------------------
 Push()
 check(not handle.edge.full and not Core.Lent(game) and game:IsShown() and game._points[1][1] == "TOP",
     "the bottom edge again: the window goes back, the game's window stays open at its own place")
-check(not talentsPlate:IsShown() and not bookPlate:IsShown() and not talentsButton:IsShown(), "the panels and the open buttons go with the full screen")
-frame._group:Run(1)
-handle:Place()
-frame._left, frame._bottom = (1920 - ns.Window.WIDTH) / 2, 0
+check(not talents:IsShown() and not book:IsShown() and not talentsClick:IsShown() and not bookClick:IsShown(),
+    "the panels and the clicks go with the full screen")
+Back()
 game:Hide()
 game:Show() -- its key, while the window is small
 W.Wait(0)
-check(handle.edge.full and Core.Lent(game), "the game's window opened by its key fills the screen too, and stands in its panel")
-
--- A fight: the open buttons go as it begins, and come back after it.
-game:Hide()
+check(handle.edge.full and not Core.Lent(game), "the game's window opened by its key fills the screen too")
 Stand()
-check(bookButton:IsShown(), "standing, the empty panel's open button is there")
+check(Seated(game, In("spellbook"), 809, 720), "and, the full screen standing, it stands in its panel")
+
+-- A fight: the clicks go as it begins, and come back after it.
+game:Hide()
+W.Wait(0)
+check(bookClick:IsShown(), "closed again, the empty panel's click is there")
 W.Fire("PLAYER_REGEN_DISABLED")
 W.combat = true
 W.Wait(0)
-check(not bookButton:IsShown() and not talentsButton:IsShown() and bookPlate.hint._text == ns.TEXT.hintFight:format("P"),
-    "a fight begins: the open buttons go at once, the panel says what opens it meanwhile")
+check(not bookClick:IsShown() and not talentsClick:IsShown() and book.hint._text == ns.TEXT.fight:format("P")
+    and talents.hint._text == ns.TEXT.fightNoKey, "a fight begins: the clicks go at once, the panels say what opens them meanwhile")
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 W.Wait(0)
-check(bookButton:IsShown() and bookPlate.hint._text == ns.TEXT.hint:format("P"), "the fight is over: they are back")
+check(bookClick:IsShown() and book.hint._text == ns.TEXT.click:format("P"), "the fight is over: they are back")
 Push()
 check(not handle.edge.full, "back to its size")
-frame._group:Run(1)
-handle:Place()
-frame._left, frame._bottom = (1920 - ns.Window.WIDTH) / 2, 0
+Back()
 
 -------------------------------------------------------------------------------
 --  A talent planner Sane UI knows
@@ -279,13 +332,13 @@ local handleOf = Core.Neighbours.Window("talents")
 check(handleOf and handleOf.title == known.title and not handleOf:Shown(), "installed and loaded: Core gives a handle on it")
 
 Push()
-check(handle.edge.full and opens == 1 and planner and planner:IsShown(), "the full screen comes: the planner opens with it")
 Stand()
-local plannerRoom = Board.Layout(0, 1048, 1920, 1048, { talents = { 1000, 640 }, spellbook = Board.SPELLBOOK }).talents
-local plannerScale = math.min(plannerRoom[3] / 1000, plannerRoom[4] / 640, 1)
-check(Core.Lent(planner) and near(planner._scale, plannerScale) and planner._points[1][1] == "TOPLEFT"
-    and planner._level == 500 + Board.LEVEL and not talentsPlate:IsShown() and not talentsButton:IsShown(),
-    "it stands in the Talents panel, raised over the full window")
+check(handle.edge.full and opens == 1 and planner and planner:IsShown(), "the full screen comes: the planner opens with it")
+W.Wait(0)
+check(Seated(planner, In("talents"), 1000, 640) and planner._strata == "HIGH" and planner._level == 501 + Board.LEVEL
+    and not talents.hint:IsShown() and not talentsClick:IsShown(), "it stands in the Talents panel, raised over the full window")
+local plannerTalents = math.floor(room * 1000 / (1000 + Board.SPELLBOOK[1]) + 0.5)
+check(layouts.rects.talents[3] == plannerTalents, "the first layout gives it its share: as wide as it is")
 
 -- The game's window, on its talents tab: the Spellbook panel, since the planner holds the Talents panel.
 game.SpellBookFrame:Hide()
@@ -293,31 +346,33 @@ game.TalentsFrame:Show()
 game:SetSize(1218, 708)
 game:Show()
 W.Wait(0)
-check(Core.Lent(game) and Core.Lent(planner) and not bookPlate:IsShown(),
+check(Seated(game, In("spellbook"), 1218, 708) and Core.Lent(planner) and not book.hint:IsShown(),
     "the game's window, whatever it shows, takes the Spellbook panel while the planner holds the Talents panel")
 game:Hide()
 W.Wait(0)
+check(book.hint._text == ns.TEXT.click:format("P"), "closed: the Spellbook panel is empty, without the words about one at a time")
 
--- Closed by its own close button: its plate, with our open button (its own function opens it again).
+-- Closed by its own close button: the panel opens it again by a click of ours (its own function).
 planner:Hide()
 W.Wait(0)
-check(not Core.Lent(planner) and talentsPlate:IsShown() and talentsPlate.hint._text == ns.TEXT.hintPlanner
-    and talentsPlate.open and talentsPlate.open:IsShown() and not talentsButton:IsShown(),
-    "closed, the Talents panel offers to open it again, by our own button")
-talentsPlate.open:GetScript("OnClick")(talentsPlate.open)
+check(not Core.Lent(planner) and talents.hint:IsShown() and talents.hint._text == ns.TEXT.planner
+    and talents.open and talents.open:IsShown() and not talentsClick:IsShown(),
+    "closed, the Talents panel offers to open it again, by a click of ours")
+talents.open:GetScript("OnClick")(talents.open)
 W.Wait(0)
-check(opens == 2 and planner:IsShown() and Core.Lent(planner) and not talentsPlate:IsShown(), "opened again, it is back in its panel")
+check(opens == 2 and planner:IsShown() and Core.Lent(planner) and not talents.hint:IsShown() and not talents.open:IsShown(),
+    "opened again, it is back in its panel")
 
 Push()
 check(not handle.edge.full and closes >= 1 and not planner:IsShown() and not Core.Lent(planner),
     "the window goes back: the planner is given back and closes")
-frame._group:Run(1)
-handle:Place()
-frame._left, frame._bottom = (1920 - ns.Window.WIDTH) / 2, 0
+Back()
 
 _G[known.api].UI[known.open]() -- opened by its own command while the window is small
 W.Wait(0)
-check(handle.edge.full and Core.Lent(planner), "opened any way of its own, the full screen comes with it")
+check(handle.edge.full, "opened any way of its own, the full screen comes with it")
+Stand()
+check(Core.Lent(planner), "and it stands in its panel there")
 
 -------------------------------------------------------------------------------
 --  A protected window in a fight is left as it is
@@ -331,7 +386,6 @@ check(not Core.Lent(game), "a protected game's window is not seated in a fight")
 game:Hide()
 game._protected, W.combat = false, false
 W.Wait(0)
-
 -------------------------------------------------------------------------------
 --  Quest marks beside nameplates: as the game says it in the creature's tooltip data
 -------------------------------------------------------------------------------
@@ -385,6 +439,7 @@ do
     check(kobold._shown, "on again: there")
 end
 
+
 -------------------------------------------------------------------------------
 --  Standing down
 -------------------------------------------------------------------------------
@@ -392,8 +447,8 @@ game:Show()
 W.Wait(0)
 check(Core.Lent(game), "seated before the module fails")
 ns.StandDown("a test")
-check(ns.off and not Core.Lent(game) and game:IsShown() and not frame:IsShown() and not bookButton:IsShown(),
-    "standing down, all is given back and the window goes; the game's window stays as the game has it")
+check(ns.off and not Core.Lent(game) and game:IsShown() and not frame:IsShown() and not bookClick:IsShown()
+    and not talentsClick:IsShown(), "standing down, all is given back and the window goes; the game's window stays as the game has it")
 local before = Core.Lent(game)
 game:Hide()
 game:Show()

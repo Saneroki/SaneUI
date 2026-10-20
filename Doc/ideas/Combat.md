@@ -9,6 +9,8 @@ nothing in it is built.
 Saneroki, 2026-10-16: **a module called Combat that handles everything about party, raid, buffs, unit frames,
 nameplates, pets** and what goes with them. It is one module (`SaneUI_Combat`), switched on and off by
 itself in the game's addon list like every other; each of its parts has its own files and its own switch.
+The nameplates became a module of their own (Saneroki, 2026-10-20: *Nameplates*, `src/Nameplates/README.md`);
+the notes on them below stay as what the game has.
 
 Decided (Saneroki, 2026-10-16):
 
@@ -24,6 +26,13 @@ Decided (Saneroki, 2026-10-16):
   full it holds the talents and the spellbook as panels. With a talent planner Sane UI knows installed (the
   known addons, Core's `Neighbours.lua`), the planner's window is the Talents panel. What the window shows
   while small (the action bars, a unit frame) is open.
+- **Its full screen on Core's board** (Saneroki, 2026-10-20; built): the talents and the spellbook are windows
+  on Core's board, in layouts behind tabs as Social's and Inventory's, the game's window (and the planner)
+  seated in them as Social seats the guild window. The game's window is opened by the game only (its keys,
+  its micro menu buttons, or a click on its empty window, which is a secure click on the game's micro menu
+  button): opened from our code, its `OnShow` (the action bars' grids) and its spellbook's (which spell each
+  entry casts) would run tainted (`src/Combat/README.md`, *Technical details*). So pushing against the edge
+  brings it only if it is open already; otherwise its window is one click away.
 - **Party style** (the game's raid style or classic party frames) and **click casting** are decided during
   development.
 
@@ -36,7 +45,7 @@ Decided (Saneroki, 2026-10-16):
 | **Party** | Up to four others in your group, with their pets | `PartyFrame` (members `PartyFrame.MemberFrame1..4`), or `CompactPartyFrame` in raid style |
 | **Raid** | Up to forty, in groups, and the raid's tools (marks, ready check, leader) | `CompactRaidFrameContainer`, `CompactRaidFrameManager` (`Blizzard_CompactRaidFrames`); `ReadyCheckFrame` |
 | **Buffs** | Your own buffs and debuffs, your weapon enchants; the buffs shown on every other part | `BuffFrame`, `DebuffFrame`, `DeadlyDebuffFrame` (`Blizzard_BuffFrame`) |
-| **Nameplates** | The plates over the heads of creatures and players | `NamePlateDriverFrame` and its plates (`Blizzard_NamePlates`) |
+| **Nameplates** (the module *Nameplates* since 2026-10-20) | The plates over the heads of creatures and players | `NamePlateDriverFrame` and its plates (`Blizzard_NamePlates`) |
 | **Cast bars** | Your casting, your target's and focus's, a nameplate's | `PlayerCastingBarFrame`, `TargetFrameSpellBar`, `FocusFrameSpellBar`, `PetCastingBarFrame` |
 | **Bosses** | The boss frames of an encounter | `BossTargetFrameContainer` (`Boss1..5TargetFrame`); this client has no arena frames |
 | **Class resources** | What a class counts beside its power: combo points, totems, ... | `ComboFrame` (on the target frame), `TotemFrame`; this client has no runes, shards or holy power bars |
@@ -154,13 +163,18 @@ system, and on demand (Saneroki, 2026-10-16); the rest is a proposal.
 4. **Buffs:** your own, at the top right as the game has them.
 5. **Cast bars**, **bosses**, **class resources**, **swing timers**, **threat.**
 6. **Combat text** and **raid warnings.**
-7. **Nameplates:** last, they are the most restricted by the game (*Nameplates* above).
+7. ~~**Nameplates**~~: a module of their own since 2026-10-20 (`src/Nameplates/`), built there.
 
 Each step is built plain first, tried in the game, then given its look (`blizzard-design-principles.md`, 7).
 
 ## Open questions
 
 - **The look:** developed along the way (decided); what it becomes is open.
+- **The game's spellbook with the full screen, without a click** (for Saneroki): pushing against the edge is
+  no click, and only a click (or a key) lets the game open its window as its own. Core's *Click to expand*
+  (`Doc/guides/windows.md`, section 8, item 2) could make the edge a secure click for Combat: one click there
+  would fill the screen and open the spellbook at once. It makes that strip protected (made, placed and
+  shown out of a fight only).
 - **Click casting** (during development): a spell on a click of a party or raid frame (healers)? It would
   be built from the game's secure attributes, set out of combat.
 - **Party as raid** (during development): party in the game's raid style (the compact frames), or as the

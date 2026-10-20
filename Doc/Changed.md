@@ -3,8 +3,8 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 290 (Navigation), 85 (Inventory), 71 (sheet), 67 (bags), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
-A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 290 (Navigation), 85 (Inventory), 71 (sheet), 67 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
 ### Data: batch 5, more quests, NPCs and places, unverified (Saneroki, 2026-10-20)
 - **Saneroki's decision:** the map showed too few quest givers, vendors, trainers and herb and ore nodes, so a batch
@@ -21,6 +21,22 @@ A game restart takes it in (new addons, Navigation, Atlas and Inventory; new fil
   2 MB, *Data: Quests* from 0.9 to 1.2 MB; new *Data: Creature Spawns* (1.4 MB, on demand) and *Data: Market* (0.3 MB).
 - **A hand fix** (`assets/data/Quests/fixes.jsonl`, new): quest 92516 is *Hippogryph Harassment*, as Forever's server
   sends it.
+
+### Combat: its full screen on Core's board (Saneroki, 2026-10-20)
+- **On Core's board** (`src/Combat/Board.lua`, `Window.lua`): the talents and the spellbook are two windows on
+  `Core.Board` (kept in `store.board`), as Social's and Inventory's: layouts behind tabs, heads dragged, gaps
+  shared, the X and the dropdown *Windows*. The first layout puts them side by side, as wide as what each holds
+  wants. Combat's own panel layout (`Board.Layout`, `Board.Fit`, its plates and margins) is gone; the board is
+  laid out once the full screen stands (`docked`), not as its motion begins.
+- **Seated in the body:** the game's window (and the planner) stands in its panel's body by Core's seat, as the
+  guild window does on Social's board; with its own panel off the layout, in the other one while that has nothing
+  of its own, else in the middle of the whole board (never behind the full screen).
+- **An empty window is a click away:** its body is the secure click on the game's micro menu button (was a small
+  *Open* button), lit under the mouse, on UIParent over the body, out of a fight only; the words say the key, the
+  fight, that the game shows talents and spellbook one at a time, and the level the game gives talents at. The
+  game's window is still never opened by our code: its `OnShow` (the action bars' grids) and its spellbook's
+  (which spell each entry casts, a protected call's arguments) would run tainted (`src/Combat/README.md`).
+- Tests: `dev/tests/combat.lua` (60 checks).
 
 ### Nameplates: a module of its own (Saneroki, 2026-10-20)
 - **The game's plates in our dress** (`src/Nameplates/`, the addon `SaneUI_Nameplates`; Saneroki: the nameplates

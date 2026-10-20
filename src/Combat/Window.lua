@@ -8,12 +8,8 @@ local _, ns = ...
 --  against the middle half of the screen's bottom edge (Core's option strip:
 --  half the screen's width, however wide the window is) fills the screen with
 --  it; pushed there again, or Esc, it goes back. Full, it holds your talents and
---  your spellbook as panels side by side (Board.lua).
---
---  What the window holds goes with Core's motion: the panels are laid out for
---  the full screen as the motion begins (filled), so the windows seated there
---  stand in their rooms at once, and go back as soon as it starts back; laid
---  out once more when the window stands (docked).
+--  your spellbook on Core's board (Board.lua): laid out once it stands
+--  (docked), gone as soon as it starts back.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Window = {}
@@ -22,45 +18,35 @@ ns.Window = Window
 Window.WIDTH, Window.HEIGHT = 400, 32 -- small: an empty strip over the bottom middle, its box in Edit Mode
 Window.STRIP = 0.5                    -- the share of the bottom edge, in its middle, that fills the screen
 
-local frame, handle, inside
+local frame, handle
 
--- The room the full window holds under its title bar, in UIParent's units: left and top from its bottom
--- left corner, width, height. The full window is the whole screen.
-local function Room()
-    local width, height = UIParent:GetWidth(), UIParent:GetHeight()
-    return 0, height - Core.Window.BAR, width, height - Core.Window.BAR
-end
-
--- The panels laid out for the full window, on its layer (what is seated stands over it); moving: on its way.
-local function Board(moving)
-    local left, top, width, height = Room()
-    ns.Board.Show(inside, frame:GetFrameStrata(), frame:GetFrameLevel(), left, top, width, height, moving)
-end
-
--- On its way to the full screen (on) or back.
-local function Filled(on)
-    if on then Board(true) else ns.Board.Hide() end
-end
-
--- It stands, full or small: the panels laid out for where it stands now.
+-- It stands, full or small: the board laid out on the full screen under the title bar, or gone.
 local function Placed()
-    if handle.edge and handle.edge.full then Board() else ns.Board.Hide() end
+    if handle.edge and handle.edge.full then
+        ns.Board.Show(handle.inside, frame:GetWidth(), frame:GetHeight() - (handle.top or 0))
+    else
+        ns.Board.Hide()
+    end
+end
+
+-- On its way back: the board goes at once, and what is seated there is given back.
+local function Filled(full)
+    if not full then ns.Board.Hide() end
 end
 
 function Window.Build()
     if frame then return end
     frame = CreateFrame("Frame", nil, UIParent)
     frame:SetSize(Window.WIDTH, Window.HEIGHT) -- not sizable: its size is ours, not kept
-    inside = CreateFrame("Frame", nil, frame) -- what it holds: the panels, out of sight while its size moves
     handle = Core.Window.New(frame, {
-        kind = "screen", store = ns.store, title = ns.TEXT.title, edge = ns.options, content = inside,
+        kind = "screen", store = ns.store, title = ns.TEXT.title, edge = ns.options,
         first = { dock = "BOTTOM" }, sizable = false,
         strip = Window.STRIP,
-        filled = function(on) ns.Guarded(Filled, on) end,
+        filled = function(full) ns.Guarded(Filled, full) end,
         docked = function() ns.Guarded(Placed) end,
     })
     Window.handle = handle
-    inside:SetAllPoints(handle.inside)
+    ns.Board.Take(handle) -- its full screen: the talents and the spellbook on Core's board
     handle:Place()
 end
 
@@ -75,6 +61,13 @@ function Window.Fill()
     if not handle or not handle.edge or not frame:IsShown() then return false end
     if not handle.edge.full then handle.edge:Fill(true) end
     return handle.edge.full
+end
+
+-- What the board holds changed (a layout, a window that opened, closed or took another size): laid out anew,
+-- if it stands full now.
+function Window.Reboard()
+    local edge = handle and handle.edge
+    if edge and edge.full and not (edge.clock and edge.clock:IsRunning()) then Placed() end
 end
 
 -- The module stood down (GiveBack): the window goes.

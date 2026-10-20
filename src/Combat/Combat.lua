@@ -15,8 +15,8 @@ local ADDON, ns = ...
 --
 --  Built so far: its window (Window.lua), docked in the screen's bottom middle
 --  and filling the screen when the mouse is pushed against the middle half of
---  the bottom edge; full, it holds your talents and your spellbook side by
---  side (Board.lua): the game's own window, or the window of a talent planner
+--  the bottom edge; full, it holds your talents and your spellbook on Core's
+--  board (Board.lua): the game's own window, or the window of a talent planner
 --  Sane UI knows (Core.Neighbours) as the Talents panel. Beside a creature's
 --  nameplate, a mark while it belongs to an objective still to do (QuestMarks.lua).
 --  The game's own frames
@@ -32,13 +32,15 @@ ns.TEXT = {
     title = "Combat",
     talents = Core.Word("TALENTS", "Talents"),
     spellbook = Core.Word("SPELLBOOK", "Spellbook"),
-    open = "Open",
-    -- An empty panel: what opens it here. %s: the game's key for it, or the words below without one.
-    hint = "Not open. %s or the button opens it here.",
-    hintKey = "Not open. %s opens it here.",
-    hintFight = "Not open. %s opens it here; the button comes back after the fight.",
-    hintPlanner = "Closed. The button opens it here again.",
-    noKey = "Its key in the game's Keybindings",
+    -- An empty panel: what opens the window it holds. %s: the game's key for it.
+    click = "Click here or press %s to open it here.",
+    clickNoKey = "Click here to open it here.",
+    fight = "Press %s to open it here. A click here works again after the fight.",
+    fightNoKey = "A click here opens it again after the fight.",
+    one = "The game shows your talents and your spellbook one at a time.",
+    later = "Available at level %d.",
+    notYet = "Not available yet.",
+    planner = "Closed. Click here to open it again.",
     nameplates = "Nameplates",
     questMarks = "Quest marks on nameplates",
     questMarksTip = "A creature that belongs to a quest in your log shows a small mark beside its nameplate while an objective of it is still to do: a sword to kill it, a sack to loot it, with the count still open. As the game says it in the creature's tooltip.",
