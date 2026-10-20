@@ -411,7 +411,8 @@ check(Elements()[1].kind == "head" and grid.buttons[1].item == 2589 and grid.but
 check(Elements()[3].text == "Bank" and Elements()[3].note == "Seen 5 |4day:days; ago" and Elements()[4].items[1].count == 8,
     "its bank as last seen, and when")
 check(Elements()[5].text == "Equipped" and Elements()[6].kind == "gear" and things[6].line.text._text == "item:1001"
-    and things[7].line.text._text == "Linen Cloth" and requested[1001] == 1, "what it wears a list; a name the game does not know yet is asked for")
+    and things[7].line.text._text == "Linen Cloth" and requested[1001] == 1,
+    "what it wears a list (Core has not read it slot by slot: it has not logged in since); a name the game does not know yet is asked for")
 things[7].line:GetScript("OnEnter")(things[7].line)
 check(GameTooltip._itemID == 2589, "its tooltip is the game's for the item")
 W.items[1001] = { name = "Helm", quality = 3 }
@@ -477,10 +478,84 @@ Push()
 Stand()
 people = Roster.box.rows
 people[1]:GetScript("OnClick")(people[1], "LeftButton")
-check(Alts.head.line._text:find("Logged in now", 1, true) and Elements()[2].text == "Empty" and Elements()[8].entry.item == 1003,
-    "shown again: drawn as it is now; you too, what you wear as Core last read it")
+check(Alts.head.line._text:find("Logged in now", 1, true) and Elements()[2].text == "Empty" and Elements()[6].kind == "doll"
+    and Elements()[6].slots[3] == 1003, "shown again: drawn as it is now; you too, what you wear as Core last read it")
 people[3]:GetScript("OnEnter")(people[3])
 check(GameTooltip._lines and GameTooltip._lines[#GameTooltip._lines] == "1234567c", "a character's tooltip: the rest of what is known of it")
+
+-- What you wear, read by Core slot by slot (Core.Data.Worn): the game's paper doll, its slots as our sheet has
+-- them, as wide as the grid (here six items), the weapons' row in the middle below.
+function methods:SetMatchesSearch(on) self._matches = on end
+SHIRTSLOT = "Shirt"
+W.items[1002] = { name = "Amulet", quality = 4 }
+Items.Fit(6 * (Items.SIZE + Items.GAP) - Items.GAP)
+people[1]:GetScript("OnClick")(people[1], "LeftButton")
+things = ns.Items.box.rows
+local function Worn(doll, name)
+    for _, button in ipairs(doll.buttons) do
+        if button.slotName == name then return button end
+    end
+end
+local doll = things[6].doll
+local edge, wide, step = Items.DOLL_EDGE, 6 * (Items.SIZE + Items.GAP) - Items.GAP, Slots.SIZE + Slots.GAP
+local helm, amulet, shirt, hands = Worn(doll, "HeadSlot"), Worn(doll, "NeckSlot"), Worn(doll, "ShirtSlot"), Worn(doll, "HandsSlot")
+check(#doll.buttons == 20 and doll:IsShown() and helm.item == 1001 and drawn[helm].texture == 3001 and drawn[helm].quality == 3
+    and amulet.item == 1002 and drawn[amulet].texture == 3002 and shirt.item == nil and drawn[shirt].texture == "empty-ShirtSlot",
+    "your gear in its slots, drawn as the game draws an item; an empty slot its own picture")
+check(helm._points[1][4] == edge and helm._points[1][5] == -edge and shirt._points[1][5] == -edge - 5 * step
+    and hands._points[1][4] == wide - edge - Slots.SIZE and hands._points[1][5] == -edge,
+    "eight down the left, eight down the right, as far apart as the grid is wide")
+local main, off, ranged, ammo = Worn(doll, "MainHandSlot"), Worn(doll, "SecondaryHandSlot"), Worn(doll, "RangedSlot"), Worn(doll, "AmmoSlot")
+local weapons = 3 * Slots.SIZE + 2 * Slots.GAP
+check(main._points[1][4] == (wide - weapons) / 2 and main._points[1][5] == -edge - 8 * step
+    and off._points[1][4] == (wide - weapons) / 2 + step and ranged:IsShown() and not ammo:IsShown(),
+    "the weapons' row in the middle below them, the ranged slot as the game shows one; no ammo worn: no ammo slot")
+helm:GetScript("OnEnter")(helm)
+check(GameTooltip._itemID == 1001, "a slot's tooltip: the game's for the item")
+shirt:GetScript("OnEnter")(shirt)
+check(GameTooltip._text == "Shirt", "an empty slot's: its name")
+was = linked
+helm:GetScript("OnClick")(helm, "LeftButton")
+check(linked == was and #picked == 2 and W.cursor == nil, "a click moves nothing")
+W.modifier = nil
+helm:GetScript("OnClick")(helm, "LeftButton")
+W.modifier = false
+check(linked == "|Hitem:1001|h[Helm]|h", "a modified click links it")
+-- Ammo worn: its slot beside the ranged one; a client without a ranged slot: neither.
+local element = { kind = "doll", slots = { [0] = 2512, [1] = 1001 } }
+local function Redraw() ns.Items.box.view.factory(function(_, init) init(things[6], element) end, element) end
+Redraw()
+local row = weapons + Slots.AMMO_GAP + Slots.AMMO
+check(ammo:IsShown() and ammo.item == 2512 and ammo._width == Slots.AMMO and main._points[1][4] == (wide - row) / 2
+    and ammo._points[1][4] == (wide - row) / 2 + weapons + Slots.AMMO_GAP and amulet.item == nil and drawn[amulet].texture == "empty-NeckSlot",
+    "ammo worn: its slot beside the ranged one, smaller, the row still in the middle; a doll drawn anew is drawn whole")
+rangedShown = false
+Redraw()
+check(not ranged:IsShown() and not ammo:IsShown(), "a client that shows no ranged slot: none, and no ammo beside it")
+element.slots[18] = 2504
+Redraw()
+check(ranged:IsShown() and ranged.item == 2504 and ammo:IsShown(), "unless something is in it")
+rangedShown = true
+ns.Items.box.view.factory(function(_, init) init(things[6], Elements()[5]) end, Elements()[5])
+check(not doll:IsShown() and things[6].title._text == "Equipped", "a doll's row reused for a head")
+-- The bags worn in their slots: a row of the grid under the doll. While searching, the doll only if something in
+-- it is found.
+local function Equipped() return "Equipped" end
+local bagWorn = { item = 4500, count = 1 }
+laid = Items.Elements({ { place = "worn", items = { { item = 1001, count = 1 }, bagWorn }, slots = { [1] = 1001, [20] = 4500 } } }, Equipped, false)
+check(#laid == 3 and laid[2].kind == "doll" and laid[2].found == nil and laid[3].kind == "grid" and laid[3].items[1].item == 4500,
+    "the bags worn: a row of the grid under the doll")
+laid = Items.Elements({ { place = "worn", items = { bagWorn }, slots = { [1] = 1001, [20] = 4500 } } }, Equipped, true)
+check(#laid == 2 and laid[2].kind == "grid", "a bag found: its row, no doll")
+Board.Search("helm")
+things = ns.Items.box.rows
+doll = things[2].doll
+check(Alts.head.name._text == "Tester Stub" and Elements()[1].text == "Equipped" and Elements()[2].found[1001]
+    and Worn(doll, "HeadSlot")._matches == true and Worn(doll, "NeckSlot")._matches == false and Worn(doll, "ShirtSlot")._matches == true,
+    "searching: the doll whole, what is found lit, the rest dimmed as the game's bags dim it; an empty slot not")
+Board.Search("")
+Alts.Size(0)
+Alts.Size(Board.layouts.rects.alts[3]) -- as wide as its panel again
 
 -------------------------------------------------------------------------------
 --  The board: more parts

@@ -255,10 +255,11 @@ local folder = io.popen("mktemp -d -t saneui-tooltips-XXXXXX"):read("*l")
 check(folder and os.execute(("python3 -I '%s/dev/tests/data/packs.py' '%s/dev/tests/data/tooltips' '%s'"):format(root, root, folder)) == 0,
     "the tools compiled the sample quests, drops, nodes and disenchanting into packs")
 for _, pack in ipairs({ "Quests", "World", "Items" }) do W.AddPack(folder .. "/SaneUI_Data_" .. pack) end -- Characters: every install's (wowstub)
--- The characters' saved file: two alts, one of them sharing your first name; a broken entry
+-- The characters' saved file: two alts, one of them sharing your first name; a broken entry, and what one alt
+-- wears slot by slot in a wrong shape
 SaneUIData_Characters = { forever = { format = 1, characters = {
-    ["Player-70-0000BEEF"] = { name = "Droopy Fairwind", class = "WARRIOR", level = 30, bags = "4500\03112\0304501\0311", bank = "4500\0318" },
-    ["Player-70-0000CAFE"] = { name = "Sane Moonwhisper", class = "PRIEST", level = 12, worn = "4500\0311" },
+    ["Player-70-0000BEEF"] = { name = "Droopy Fairwind", class = "WARRIOR", level = 30, bags = "4500\03112\0304501\0311", bank = "4500\0318", slots = 12 },
+    ["Player-70-0000CAFE"] = { name = "Sane Moonwhisper", class = "PRIEST", level = 12, worn = "4500\0311", slots = "5\0314500" },
     ["Player-70-0000DEAD"] = "not a character",
 }, account = { bank = "4500\0315" } }, ["forever-beta"] = { format = 1, characters = { ["Player-70-0000BEEF"] = { name = "Beta", bags = "4502\0319" } } } }
 -- Your own bags: the backpack with three of the first thing, a bag with two more
@@ -1383,9 +1384,19 @@ ns.store.prices[10938], ns.store.prices[10940] = nil, nil
 
 -- Your characters' things (Core's characters' data, read in steps since the login) --------------------
 local saved = SaneUIData_Characters
-check(Data.Characters() and #Data.Characters() == 3 and saved.forever.broken and saved.forever.broken[1].what == "Player-70-0000DEAD"
+local function aside(what)
+    for _, broken in ipairs(saved.forever.broken or {}) do
+        if broken.what == what then return broken end
+    end
+end
+check(Data.Characters() and #Data.Characters() == 3 and aside("Player-70-0000DEAD")
     and saved["forever-beta"].characters["Player-70-0000BEEF"].name == "Beta",
     "Core has read the characters' saved file: yours and two alts; a broken entry is set aside, never wiped; another game version's part is left as it is")
+check(Data.Worn("Player-70-0000CAFE")[5] == 4500 and Data.Worn("Player-70-0000BEEF") == nil and aside("Player-70-0000BEEF slots").value == 12
+    and Data.Worn("account") == nil and Data.Worn("Player-70-0000DEAD") == nil,
+    "what an alt wears, slot by slot; slots of a wrong shape set aside: not known; nothing for the account's bank or a broken entry")
+check(saved.forever.characters[Core.charKey].slots == "" and next(Data.Worn(Core.charKey)) == nil,
+    "you wear nothing: your slots are kept empty, read (told from an alt whose slots were never read)")
 local me = Data.Character(Core.charKey)
 check(me and me.name == "Sane Lunatic" and me.class == "MAGE" and type(me.level) == "number" and saved.forever.characters[Core.charKey].bags == "4500\0315",
     "you, kept by your GUID, with your whole name (first name and surname); your bags packed: one item, five of it")
@@ -1450,6 +1461,26 @@ at = find("Inventory")
 check(row(panel, at + 1).lr == COLOR.LIGHT[1], "with class colours switched off, the names are light")
 options.classColors = true
 W.alt = false
+-- What you wear, slot by slot: kept beside the place worn; the ammo in its slot only (it lies in the bags).
+INVSLOT_AMMO = 0
+local wearing = { [0] = 2512, [1] = 6001, [16] = 6002 }
+GetInventoryItemID = function(_, slot) return wearing[slot] end
+W.Fire("PLAYER_EQUIPMENT_CHANGED", 1, false)
+check(next(Data.Worn(Core.charKey)) == nil, "put on: nothing is read at once")
+Steps()
+local you = saved.forever.characters[Core.charKey]
+check(you.slots == "0\0312512\0301\0316001\03016\0316002" and you.worn == "6001\0311\0306002\0311",
+    "read in steps: your slots packed, slot by slot in order; the place worn as before, without the ammo")
+local doll = Data.Worn(Core.charKey)
+check(doll[0] == 2512 and doll[1] == 6001 and doll[16] == 6002 and Data.Worn(Core.charKey) == doll
+    and Data.Count(6001)[Core.charKey].worn == 1 and Data.Count(2512) == nil,
+    "Core gives them by the game's slot IDs, the same answer until something changes; only the place worn is counted")
+wearing = {}
+W.Fire("PLAYER_EQUIPMENT_CHANGED", 1, true)
+Steps()
+check(you.slots == "" and you.worn == nil and next(Data.Worn(Core.charKey)) == nil and Data.Count(6001) == nil,
+    "everything taken off: the slots kept empty, the place worn gone")
+INVSLOT_AMMO, GetInventoryItemID = nil, function() return nil end
 W.Fire("PLAYER_LOGOUT")
 check(SaneUIDB.data and SaneUIDB.data.forever.saved.Characters > 0, "at the logout Core notes how much the characters' file holds (a lost file is noticed)")
 

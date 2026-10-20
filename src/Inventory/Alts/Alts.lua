@@ -7,7 +7,8 @@ local _, ns = ...
 --  Core's data framework (Core.Data.Characters; read only). The roster down the
 --  left chooses whose things are shown (Roster.lua); the rest of the window
 --  shows them: a head with the name, level, class, gold and the day it was
---  last seen, then its bags, its bank and what it wears (Items.lua).
+--  last seen, then its bags, its bank and what it wears, as a paper doll where
+--  Core keeps it slot by slot (Items.lua).
 --
 --  Every character of the account is in the roster, the one logged in first
 --  (its bank as last seen is worth a look away from the bank too). Shown at

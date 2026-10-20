@@ -52,9 +52,9 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 - **Your other characters** (the window *Characters*): every character of the account down its left, you
   first, each in its class's colour with its gold, the gold of them all under them; the account's bank last
   where it holds something. A click shows that one's things as last seen: its bags, its bank (as it was when that
-  character last had it open) and what it wears, with the game's tooltips; Shift or Ctrl and a click links an
-  item or tries it on. The search box finds an item across them all, by its name or its number: each character
-  says how many it has, and the window lists only what was found. A character's things are as Core last read
+  character last had it open) and what it wears, on a paper doll slot by slot, with the game's tooltips; Shift or
+  Ctrl and a click links an item or tries it on. The search box finds an item across them all, by its name or its
+  number: each character says how many it has, and the window lists only what was found. A character's things are as Core last read
   them while it was logged in; its bank, while it had it open.
 - **Settings:** *Sane UI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
   motion, the background's opacity and texture) and *Window corners*.
@@ -159,14 +159,14 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     (the player's), `PLAYER_LEVEL_UP`, `UNIT_NAME_UPDATE`, `PLAYER_ENTERING_WORLD`. Every value read goes through
     `Core.Plain` or `Core.Ask`; every function of the game's is called only if this client has it.
 - **The other characters** (`Alts/`, the part `alts`): what the account's characters have, read only from Core's
-  data framework (`Core.Data.Characters`, `Character`, `Items`, `OnCharacters`; `Doc/guides/data.md`,
+  data framework (`Core.Data.Characters`, `Character`, `Items`, `Worn`, `OnCharacters`; `Doc/guides/data.md`,
   *Characters*): nothing is gathered or kept here.
   - **What is shown** (`Alts/Snapshot.lua`, no frames): the roster (`Snapshot.Characters`: the one logged in
     first, the others by name, the account's bank last where it holds something), a character's places in the
-    order `bags`, `bank`, `worn` with their items in the order Core keeps them (by item ID; Core keeps no slots,
-    so no empty ones), the gold of them all. The search: a number typed is an item's ID; words are found in the
-    item's name whole, as a piece or as first letters (`Core.Fuzzy.Rank` from `Fuzzy.INSIDE` up; letters spread
-    through a name are too loose a fit). A name the game does not know yet is asked for once
+    order `bags`, `bank`, `worn` with their items in the order Core keeps them (by item ID; Core keeps no bag's
+    slots, so no empty ones), what is worn also slot by slot where Core keeps it (`Data.Worn`), the gold of them
+    all. The search: a number typed is an item's ID; words are found in the item's name whole, as a piece or as
+    first letters (`Core.Fuzzy.Rank` from `Fuzzy.INSIDE` up; letters spread through a name are too loose a fit). A name the game does not know yet is asked for once
     (`C_Item.RequestLoadItemDataByID`); its answer draws the window anew (`Snapshot.Learned`).
   - **The roster** (`Alts/Roster.lua`): the game's `WowScrollBoxList` and `MinimalScrollBar`, a line per character
     (`GetClassAtlas`, `RAID_CLASS_COLORS`, whole gold by `Core.Coins`), the chosen one lit and the line under the
@@ -175,15 +175,24 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     what is found (stacks counted whole), one without any dimmed (`Roster.DIM`).
   - **The items** (`Alts/Items.lua`): one scrolling list: a head per place (the bank's with the day it was last
     seen, or *Not seen yet*), a bag or bank place as rows of the game's item buttons (`ItemButton`, drawn by the
-    game's `SetItemButtonTexture`, `Count`, `Quality`; as many to a row as fit, `Items.Fit`), what is worn as a
-    list (icon, name in its quality's colour). Read only: the tooltip is `GameTooltip:SetItemByID`, a modified
+    game's `SetItemButtonTexture`, `Count`, `Quality`; as many to a row as fit, `Items.Fit`), what is worn as the
+    paper doll (below), or as a list (icon, name in its quality's colour) for a character Core has not read slot
+    by slot yet (it has not logged in since). Read only: the tooltip is `GameTooltip:SetItemByID`, a modified
     click `HandleModifiedItemClick`; nothing picks an item up.
+  - **The paper doll** (`Alts/Items.lua`, one element of the list): the slots as the sheet has them
+    (`Slots.COLUMNS`, `Slots.SIZE`, `GAP`, `AMMO`, `AMMO_GAP`, the game's slot frames
+    `UI-Character-Info-GearSlot` and `...Small`; IDs and empty pictures from `GetInventorySlotInfo`), eight down
+    each side as far apart as the grid is wide, at most as on the sheet (`Items.DOLL`), the weapons' row in the
+    middle below them; the ranged slot where the game shows one (`C_PaperDollInfo.IsRangedSlotShown`) or something
+    is in it, the ammo beside it where some is worn. An empty slot shows its own picture, its tooltip its name.
+    The bags worn in their slots follow as a row of the grid, in their slots' order. While searching the doll is
+    shown only if something in it is found, whole, what is not found dimmed (`SetMatchesSearch`, as the game's
+    bags dim it); of the bags only what is found.
   - **The window** (`Alts/Alts.lua`): the roster at the left, the chosen character's head (name, gold, the level
     line as the sheet writes it, the day last seen) and items at the right. Shown at first: the first of the
     others; the choice holds until a `/reload`. While searching, if the chosen one has none of it, the first that
     has is shown until the search is cleared. Listens only while shown: `Core.Data.OnCharacters`,
     `GET_ITEM_INFO_RECEIVED`, `ITEM_DATA_LOAD_RESULT`, drawn a frame later (`Core.Later`); drawn anew when shown.
-  - **Next:** a paper doll of an alt needs Core to keep what is worn per slot (today items and counts per place).
 - **The bags** (`Bags/`, the part `bags`): the backpack, the bags, the reagent bag and the keyring
   (`Contents.Carried`: those with slots), and while the bank is open (`BANKFRAME_OPENED`, at the start
   `C_PlayerInteractionManager.IsInteractingWithNpcOfType`) the tabs of each bank the game lets the player see
@@ -243,8 +252,8 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   windows.
 - **Standing down** (`ns.GiveBack`): the board's windows go and the window with them. A `/reload` starts the
   module afresh.
-- Tests: `dev/tests/inventory.lua` (the window, the board, the paper doll, the stats), `dev/tests/sheet.lua` (the
-  side tabs and the tabs), `dev/tests/bags.lua` (the bags).
+- Tests: `dev/tests/inventory.lua` (the window, the board, the paper doll, the stats, the other characters' window
+  and an alt's paper doll), `dev/tests/sheet.lua` (the side tabs and the tabs), `dev/tests/bags.lua` (the bags).
 
 ## Files
 
@@ -273,7 +282,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 | `Bags/Bags.lua` | The bags' window: the head, the scroll area, heads and lines, the events; registers the part `bags` |
 | `Alts/Snapshot.lua` | The other characters' window, without frames: the roster, a character's places and items, the search |
 | `Alts/Roster.lua` | The other characters' window: the account's characters down its left, their gold |
-| `Alts/Items.lua` | The other characters' window: the chosen one's places and items, a grid and a list |
+| `Alts/Items.lua` | The other characters' window: the chosen one's places and items: a grid, the paper doll, a list |
 | `Alts/Alts.lua` | The other characters' window: whose things, the search, the events; registers the part `alts` |
 
 ## History
@@ -284,6 +293,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   characters' snapshots on Core's board (`Doc/ideas/Inventory.md`). The character sheet's paper doll: its slots,
   the model, the level line; its stats; its side tabs and the six tabs of the game's sheet.
   The window of the other characters: the roster, each one's bags, bank and what it wears as last seen, the
-  search across them all; Core's `Data.Items` for it.
+  search across them all; Core's `Data.Items` for it. Then an alt's gear on a paper doll, slot by slot, from Core's
+  new `Data.Worn`.
   Our own bags: every slot and the bank while it is open, the game's item buttons, four views, the search, the
   game's clean-up, the bag bar, junk and reagents, currencies and gold.

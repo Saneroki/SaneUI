@@ -630,6 +630,7 @@ SaneUIData_Characters["forever"] = {
             money = 12345,                  -- copper
             bags = "4500\0315\0304501\0311", -- a place: item ID and count, items in order (\030, \031)
             worn = "...", bank = "...", bankSeen = 20743,
+            slots = "1\03116854\03016\0312139", -- what is worn slot by slot: slot ID and item ID, slots in order
         },
     },
     account = { bank = "...", seen = 20743 }, -- the account's own bank, once per account
@@ -642,12 +643,17 @@ SaneUIData_Characters["forever"] = {
 | `Data.Characters()` | Every character of the account, by name: `{ key, name, realm, class, race, level, side, seen, money, bankSeen }`. nil until the pack is loaded. |
 | `Data.Character(key)` | One of them, or nil. |
 | `Data.Items(key, place)` | What one of them keeps in a place (`bags`, `bank`, `worn`; the key `account` with `bank`: the account's bank), item by item in the order kept (by item ID): `{ { item = 4500, count = 12 }, ... }`. nil: no such character or place, or not loaded yet. |
+| `Data.Worn(key)` | What one of them wears, slot by slot, by the game's inventory slot IDs: `{ [1] = 16854, [16] = 2139, ... }` (the gear, the ammo, the bags' slots), for a paper doll. nil: no such character, not loaded yet, or its slots not read yet (it has not logged in since Sane UI keeps them). |
 | `Data.Count(item)` | `{ total = 40, [key] = { bags = 12, bank = 8, worn = 1 } }`, the key `account` for the account's bank (`{ bank = 5 }`); nil: none of them has it, or not counted yet. |
 | `Data.CharactersStamp()`, `Data.OnCharacters(fn)` | A number that moves, and `fn()` called, when any of it changes: a view redraws then. |
 
 - **Places:** `bags` (the backpack, the bags, the reagent bag, the keyring where there is one), `worn` (the
   gear and the bags in their slots), `bank` (the character's bank tabs, `C_Bank.FetchPurchasedBankTabIDs`),
   the account's `bank` (its tabs, where the game lets the character see them).
+- **What is worn, slot by slot** (`slots`, no place: never counted): read with `worn` from `GetInventoryItemID` per
+  slot (`INVSLOT_FIRST_EQUIPPED` to `INVSLOT_LAST_EQUIPPED`, the bags' slots, and `INVSLOT_AMMO` where the client
+  has it: the ammo is in `slots` only, as it lies in the bags and is counted there). Kept even empty (`""`: read,
+  wearing nothing), so a character that wears nothing is told from one whose slots were never read.
 - **Mark, then read:** an event marks a place (`BAG_UPDATE`, `PLAYER_EQUIPMENT_CHANGED`, `PLAYER_MONEY`,
   `PLAYER_LEVEL_UP`, the bank's events); the reading is a job of the scheduler (out of combat, within the
   budget, a bag at a time), started at `BAG_UPDATE_DELAYED` for the bags. **The bank only while it is open**

@@ -13,6 +13,10 @@ local Core = SaneUI.Core
 --      Data.Items(key, place)  what one of them keeps in a place ("bags", "bank", "worn"; the key "account"
 --                            with "bank": the account's own bank), in the order kept: { { item = 4500,
 --                            count = 12 }, ... }; nil: no such character or place, or not loaded yet
+--      Data.Worn(key)        what one of them wears, slot by slot: { [1] = 16854, [16] = 2139, ... } by the
+--                            game's inventory slot IDs (the gear, the ammo, the bags' slots); nil: no such
+--                            character, not loaded yet, or its slots not read yet (it has not logged in since
+--                            Sane UI keeps them)
 --      Data.Count(item)    { total = 40, [key] = { bags = 12, bank = 8, worn = 1 } }: where the account
 --                            has the item (the key "account": the account's own bank), or nil: none, or
 --                            not known yet
@@ -26,8 +30,10 @@ local Core = SaneUI.Core
 --  reading follows as a job of the scheduler (Steps.lua), out of combat and within the frame's budget, a
 --  bag at a time. The bank is read only while it is open (the game knows it only then); at the logout
 --  what is still marked is read at once. What things are is not kept, only their IDs and counts, one
---  packed string per place: "item\031count\030item\031count", items in order. Counts across characters
---  are worked out once, in steps, when the pack has loaded, and kept up to date from then on.
+--  packed string per place: "item\031count\030item\031count", items in order. What is worn is kept a
+--  second time, slot by slot, for a paper doll: "slot\031item\030slot\031item", slots in order (slots;
+--  "" when nothing is worn, so that it is told from not read yet). Counts across characters are worked
+--  out once, in steps, when the pack has loaded, and kept up to date from then on.
 -------------------------------------------------------------------------------
 local Data, Steps, Codec = Core.Data, Core.Steps, Core.Data.Codec
 local Plain, Ask = Core.Plain, Core.Ask
@@ -35,6 +41,8 @@ local Plain, Ask = Core.Plain, Core.Ask
 local PACK = "Characters"
 local JOB, COUNTING = "characters", "characters: counts"
 local PLACES = { "bags", "bank", "worn" } -- a character's places, in the order a count names them
+local SLOTS = "slots"                     -- what is worn, slot by slot: no place, never counted
+local PACKED = { "bags", "bank", "worn", SLOTS } -- what an entry keeps packed
 local ACCOUNT = "account"                 -- the key of the account's own bank in a count
 local LIST, PART = "\030", "\031"
 
@@ -46,7 +54,7 @@ local parsed = {} -- [key] = { [place] = { [item] = count } }: the packed string
 local counted = false -- every place taken apart: Count answers
 local counts = {} -- [item] = the count handed out, or false: none
 local views, list = {}, nil -- what Character and Characters hand out, made anew after a change
-local held = {}  -- [key][place] = what Items handed out, made anew after a change
+local held = {}  -- [key][place] = what Items handed out ([key].slots: Worn), made anew after a change
 local listeners = {}
 local stamp = 0
 
@@ -171,10 +179,12 @@ local function Bags()
     return map
 end
 
--- What is worn: the gear and the bags in their slots
+-- What is worn: the gear and the bags in their slots, as a place (map: [item] = count) and slot by slot
+-- (bySlot: [slot] = item). The ammo, where the client has its slot, is in bySlot only: it lies in the bags,
+-- and is counted there.
 local function Worn()
     if not rawget(_G, "GetInventoryItemID") then return nil end
-    local map = {}
+    local map, bySlot = {}, {}
     local first, last = rawget(_G, "INVSLOT_FIRST_EQUIPPED") or 1, rawget(_G, "INVSLOT_LAST_EQUIPPED") or 19
     local slots = {}
     for slot = first, last do slots[#slots + 1] = slot end
@@ -183,10 +193,16 @@ local function Worn()
         for bag = 1, BagCount() do slots[#slots + 1] = Ask(api.ContainerIDToInventoryID, bag) end
     end
     for _, slot in ipairs(slots) do
-        local item = Ask(GetInventoryItemID, "player", slot)
-        if type(item) == "number" then map[item] = (map[item] or 0) + 1 end
+        local item = type(slot) == "number" and Ask(GetInventoryItemID, "player", slot)
+        if type(item) == "number" then
+            map[item] = (map[item] or 0) + 1
+            bySlot[slot] = item
+        end
     end
-    return map
+    local ammo = rawget(_G, "INVSLOT_AMMO")
+    local item = type(ammo) == "number" and Ask(GetInventoryItemID, "player", ammo)
+    if type(item) == "number" then bySlot[ammo] = item end
+    return map, bySlot
 end
 
 -- A bank's tabs (Enum.BankType.Character or .Account): the containers the game lists for it
@@ -212,12 +228,13 @@ end
 local BANK_TYPE = Enum and Enum.BankType or {}
 
 -- Puts a place's map into its entry (packed) and into the counts; nil (nothing could be read) keeps
--- what is there
+-- what is there. A place with nothing in it is left out of the entry; the slots are kept even then.
 local function Store(key, entry, place, map)
     if not map then return end
     local text = Pack(map)
-    if (entry[place] or "") == text then return end
-    entry[place] = text ~= "" and text or nil
+    if text == "" and place ~= SLOTS then text = nil end
+    if entry[place] == text then return end
+    entry[place] = text
     parsed[key] = parsed[key] or {}
     parsed[key][place] = map
     Changed()
@@ -228,7 +245,11 @@ local READ = {
     who = Who,
     money = Money,
     bags = function() Store(Core.charKey, mine, "bags", Bags()) end,
-    worn = function() Store(Core.charKey, mine, "worn", Worn()) end,
+    worn = function()
+        local map, bySlot = Worn()
+        Store(Core.charKey, mine, "worn", map)
+        Store(Core.charKey, mine, SLOTS, bySlot)
+    end,
     bank = function()
         if not bankOpen then return end
         local map = Bank(BANK_TYPE.Character)
@@ -295,7 +316,7 @@ local function Check()
             Aside(key, entry)
             part.characters[key] = nil
         else
-            for _, place in ipairs(PLACES) do
+            for _, place in ipairs(PACKED) do
                 if entry[place] ~= nil and type(entry[place]) ~= "string" then
                     Aside(key .. " " .. place, entry[place])
                     entry[place] = nil
@@ -368,6 +389,18 @@ function Data.Items(key, place)
     held[key] = held[key] or {}
     held[key][place] = held[key][place] or Kept(Map(key, place))
     return held[key][place]
+end
+
+function Data.Worn(key)
+    local entry = part and key ~= ACCOUNT and part.characters[key]
+    if type(entry) ~= "table" or type(entry.slots) ~= "string" then return nil end
+    held[key] = held[key] or {}
+    if not held[key].slots then
+        local worn = {}
+        for slot, item in pairs(Map(key, SLOTS)) do worn[slot] = item end
+        held[key].slots = worn
+    end
+    return held[key].slots
 end
 
 function Data.Count(item)

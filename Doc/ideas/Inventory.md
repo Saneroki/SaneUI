@@ -103,15 +103,15 @@ every character's (`src/Inventory/README.md`, *The bags*).
 A snapshot of each of the account's other characters: its bags, its bank (as last seen), what it wears, its
 gold and level, from Core's data framework (`Core.Data.Characters`, read only; `Doc/guides/data.md`,
 *Characters*). The window chooses whose things it shows; the search box finds an item across all of them.
-What Core keeps today is item IDs and counts per place, not slots: the snapshot shows the items of a place as
-a grid (in the order the place keeps them), and the gear as a list. Gear by slot (to draw a paper doll of an
-alt) needs Core's Characters to keep what is worn per slot: a change to Core's data framework, decided when
-that part is built.
+Core keeps item IDs and counts per place, not a bag's slots: the snapshot shows the items of a bag or bank place
+as a grid (in the order the place keeps them). What is worn Core keeps slot by slot too (`Data.Worn`), and the
+snapshot draws it as the game's paper doll.
 
 Built 2026-10-20 (`src/Inventory/Alts/`, the window *Characters*): **one window that switches between
 characters**, a roster of them all down its left (the one logged in first, its bank as last seen is worth a look
 too; the account's own bank last), the chosen one's places in one scrolling list. Core gives a character's places
-item by item (`Data.Items`). Gear by slot is still the next step.
+item by item (`Data.Items`). An alt's gear on a paper doll, slot by slot (`Data.Worn`), built the same day; a
+character Core has not read slot by slot yet (it has not logged in since) shows its gear as a list.
 
 ## Order
 
@@ -120,8 +120,8 @@ item by item (`Data.Items`). Gear by slot is still the next step.
 2. **The character sheet:** the paper doll (slots and model), then the stats, then the tabs one by one.
 3. **The bags** (built 2026-10-20): the bags and the bank, the game's item buttons, four views, sorting, the
    search; next, the steps under *The bags*.
-4. **The other characters** (built 2026-10-20): the snapshot window from `Core.Data.Characters`; next, gear by
-   slot for an alt's paper doll.
+4. **The other characters** (built 2026-10-20): the snapshot window from `Core.Data.Characters`, an alt's gear
+   on a paper doll.
 5. **The game's keys:** whether C and B open ours (Core's holder, `Holder.lua`, keeps the game's window out
    of sight while ours is chosen), and *Classic windows* in the full window's dropdown for the game's own.
 

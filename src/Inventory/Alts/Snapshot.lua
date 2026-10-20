@@ -12,7 +12,10 @@ local _, ns = ...
 --                                     nil while Core's data is not loaded yet
 --      Snapshot.Sections(key, query)  what one of them has, place by place:
 --                                     { { place = "bags", items = { { item, count }, ... } }, ... },
---                                     only what the search finds (query: Fuzzy.Query's words, or nil)
+--                                     only what the search finds (query: Fuzzy.Query's words, or nil);
+--                                     the place worn also slot by slot (slots: [slot ID] = item, all of
+--                                     it), where Core keeps that (Data.Worn): nil for one that has not
+--                                     logged in since
 --      Snapshot.Found(key, query)     how many things of that one the search finds (stacks counted whole)
 --      Snapshot.Gold()                the gold of every character together
 --      Snapshot.Name(item)            an item's name, once the game knows it (asked for, once, if not)
@@ -101,7 +104,7 @@ function Snapshot.Sections(key, query)
             end
             items = found
         end
-        sections[#sections + 1] = { place = place, items = items }
+        sections[#sections + 1] = { place = place, items = items, slots = place == "worn" and Data.Worn(key) or nil }
     end
     return sections
 end
