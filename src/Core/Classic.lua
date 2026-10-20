@@ -69,10 +69,10 @@ function Classic.Ticked(entry)
 end
 
 -- Says which key opens a panel of the game's that our code may not open (binding: its key binding's name,
--- TOGGLESPELLBOOK). what: the window's name.
+-- TOGGLESPELLBOOK; nil where that key opens ours now: then its micro menu button). what: the window's name.
 function Classic.Press(what, binding)
     local find, name = rawget(_G, "GetBindingKey"), rawget(_G, "GetBindingText")
-    local key = find and find(binding)
+    local key = binding and find and find(binding)
     local text = key and (name and name(key) or key)
     Core.Print(text and Classic.TEXT.key:format(what, text) or Classic.TEXT.noKey:format(what))
 end
