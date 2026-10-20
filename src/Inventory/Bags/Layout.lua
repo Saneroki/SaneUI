@@ -2,69 +2,48 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Bags - Layout
---  Where everything a view of the bags shows goes, as plain numbers: cells
---  (an item button), rows (a list's line with its item button at the left)
---  and heads (a line of words over a part). No frame: the window (Bags.lua)
---  puts its buttons and lines where these say.
+--  Where the blocks of a view (Views.lua) go, as plain numbers, in one of
+--  three looks: no frame here, the window (Bags.lua) puts its buttons and
+--  lines where these say.
+--      grid     each block under its head (its name, how many), its cells in
+--               lines as wide as the room, the last line made whole with
+--               pads (dark squares that take no mouse); an empty block of the
+--               player's own a line of pads (to let items go over it)
+--      list     each block under its head, a line per cell: the item at the
+--               left, its words in columns
+--      compact  the blocks side by side in bands, each as near square as its
+--               cells make it, its name over it
+--  A part's head (the bags, the bank) goes over the whole width.
 --
---  The views:
---      slots    every slot, item or empty, in the bags' order: the game's
---               own order, at the game's size; a bag for one kind of item
---               (a quiver, the reagent bag, the keyring) a part of its own;
---               an item the search does not find is dimmed
---      groups   the items in their groups (Groups.lua: the player's order,
---               names and own groups), each under a head with its name and
---               how many, sorted inside; a group of the player's own shows
---               its head when empty too, under the bags (to drop items on);
---               the free slots last, a cell for each kind of bag with how
---               many
---      list     the same as lines: the item, its name in its quality's
---               colour, its item level, its count
---      compact  the items in their groups' order without heads, smaller,
---               the free slots last
---  In every view but slots, what the search does not find is left out, and
---  so are the groups the player hid, unless a search finds their items. The
---  bank, while it is open, follows the bags, each of its parts under a head.
---
---      local count, height = Layout.Lay(view, sections, width, query, order, out)
---      sections: { { word, place, slots = { record, ... }, free = tally }, ... } (Contents.Scan)
---      out: the places, used again: out[i] = { kind = "cell" | "row" | "head", x, y, width, height,
---           record, free (a free slots' tally entry), scale, dim, word, number, spare (the number is of
---           free slots), level (1 a part, 2 a group), section (a part's head: its section), group (a
---           group's head: its key) }
+--      local count, height = Layout.Lay(look, blocks, width, out)
+--      out: the places, used again: out[i] = { kind = "head" | "cell" | "pad" | "row" | "label", x, y,
+--           width, height, size (a cell's, a row's item), entry (a cell's or row's), block (a head's,
+--           a label's, a cell's), level (a head's: 1 a part, 2 a block, 3 a group's member) }
 -------------------------------------------------------------------------------
-local Core = SaneUI.Core
 local Layout = {}
 ns.Layout = Layout
 
-Layout.SIZE = 37         -- an item button, the game's (ContainerFrameItemButtonTemplate)
-Layout.GAP = 5           -- between two, as the game's bags space them
-Layout.SMALL = 30        -- an item button in the compact view
-Layout.SMALL_GAP = 3
-Layout.ROW = 26          -- a list's line
-Layout.ICON = 22         -- its item button
-Layout.ROW_GAP = 2
+Layout.SIZE = 34         -- an item button
+Layout.GAP = 4           -- between two
+Layout.ROW = 24          -- a list's line
+Layout.ICON = 20         -- its item button
 Layout.HEAD = 20         -- a head line
-Layout.APART = 8         -- room above a head that follows something
+Layout.HEAD_GAP = 2      -- under it
+Layout.APART = 6         -- room after a block
+Layout.MEMBER = 16       -- a group's member's head
+Layout.BAND_GAP = 14     -- between two blocks side by side (compact)
+Layout.LABEL = 15        -- a block's name over it (compact)
+Layout.LABEL_GAP = 3
 
-Layout.VIEWS = {
-    { key = "slots", word = ns.TEXT.bagsSlots },
-    { key = "groups", word = ns.TEXT.bagsGroups },
+Layout.LOOKS = {
+    { key = "grid", word = ns.TEXT.bagsGrid },
     { key = "list", word = ns.TEXT.bagsList },
     { key = "compact", word = ns.TEXT.bagsCompact },
 }
-Layout.VIEW = {}
-for _, view in ipairs(Layout.VIEWS) do Layout.VIEW[view.key] = view end
+Layout.LOOK = {}
+for _, look in ipairs(Layout.LOOKS) do Layout.LOOK[look.key] = look end
 
-local Contents, Groups = ns.Contents, ns.Groups
-
--------------------------------------------------------------------------------
---  Flowing cells into lines
--------------------------------------------------------------------------------
-local out, count       -- the places of this laying out, how many
-local width, y         -- the room's width, the top of the line being filled
-local size, gap, column, columns -- the cells' size and gap, the next cell's column, how many fit a line
-local started          -- something is placed already: a head keeps room above it
+local out, count, y
 
 local function Place(kind)
     count = count + 1
@@ -73,157 +52,127 @@ local function Place(kind)
         place = {}
         out[count] = place
     end
-    place.kind, place.record, place.free, place.dim, place.word, place.number, place.spare, place.level =
-        kind, nil, nil, false, nil, nil, false, nil
-    place.scale, place.section, place.group = 1, nil, nil
+    place.kind, place.entry, place.block, place.level, place.size = kind, nil, nil, nil, nil
     return place
 end
 
--- The line being filled ends: the next one starts below it.
-local function Break()
-    if column > 0 then
-        y = y + size + gap
-        column = 0
-    end
-end
-
-local function Cells(cellSize, cellGap)
-    Break()
-    size, gap = cellSize, cellGap
-    columns = math.max(1, math.floor((width + gap) / (size + gap)))
-end
-
-local function Head(word, number, level, spare)
-    Break()
-    if started then y = y + Layout.APART end
+local function Head(block, width)
     local place = Place("head")
-    place.x, place.y, place.width, place.height = 0, y, width, Layout.HEAD
-    place.word, place.number, place.level, place.spare = word, number, level, spare or false
-    y = y + Layout.HEAD
-    started = true
-    return place
+    local height = block.level == 3 and Layout.MEMBER or Layout.HEAD
+    place.x, place.y, place.width, place.height = 0, y, width, height
+    place.block, place.level = block, block.level
+    y = y + height + Layout.HEAD_GAP
 end
 
-local function Cell(record, free, dim)
-    if column >= columns then
-        y = y + size + gap
-        column = 0
+-- A block's cells in lines from x, columns to a line, the last one made whole with pads (pads: whether);
+-- returns the lines taken.
+local function Cells(block, x, columns, pads)
+    local step = Layout.SIZE + Layout.GAP
+    local n = #block.entries
+    local column, line = 0, 0
+    for _, entry in ipairs(block.entries) do
+        if column >= columns then
+            column = 0
+            line = line + 1
+        end
+        local place = Place("cell")
+        place.x, place.y, place.width, place.height = x + column * step, y + line * step, Layout.SIZE, Layout.SIZE
+        place.size, place.entry, place.block = Layout.SIZE, entry, block
+        column = column + 1
     end
-    local place = Place("cell")
-    place.x, place.y, place.width, place.height = column * (size + gap), y, size, size
-    place.record, place.free, place.dim, place.scale = record, free, dim or false, size / Layout.SIZE
-    column = column + 1
-    started = true
-    return place
+    if pads then
+        while column < columns do
+            local place = Place("pad")
+            place.x, place.y, place.width, place.height = x + column * step, y + line * step, Layout.SIZE, Layout.SIZE
+            place.size = Layout.SIZE
+            column = column + 1
+        end
+    end
+    return (n > 0 or pads) and line + 1 or 0
 end
 
-local function Row(record, free)
-    Break()
-    local place = Place("row")
-    place.x, place.y, place.width, place.height = 0, y, width, Layout.ROW
-    place.record, place.free, place.scale = record, free, Layout.ICON / Layout.SIZE
-    y = y + Layout.ROW + Layout.ROW_GAP
-    started = true
-    return place
+local function Columns(width)
+    return math.max(1, math.floor((width + Layout.GAP) / (Layout.SIZE + Layout.GAP)))
 end
+Layout.Columns = Columns
 
--------------------------------------------------------------------------------
---  The views
--------------------------------------------------------------------------------
--- slots: every slot by kind of bag, each kind under a head when there are several.
-local function Slots(section, query)
-    local kinds = section.free.kinds
-    for _, kind in ipairs(kinds) do
-        local entry = section.free[kind]
-        if #kinds > 1 then Head(Contents.KindWord(kind), entry.count, 2, true) end
-        Cells(Layout.SIZE, Layout.GAP)
-        for _, record in ipairs(section.slots) do
-            if record.kind == kind then Cell(record, nil, query ~= nil and record.item ~= nil and not Contents.Found(record, query)) end
+local function Grid(blocks, width)
+    local columns = Columns(width)
+    local step = Layout.SIZE + Layout.GAP
+    for index = 1, blocks.count do
+        local block = blocks[index]
+        Head(block, width)
+        if block.level ~= 1 then
+            local lines = Cells(block, 0, columns, #block.entries > 0 or block.own)
+            y = y + lines * step - (lines > 0 and Layout.GAP or 0) + Layout.APART
         end
     end
 end
 
-local found = {} -- the items found, sorted: used again
-local inGroup = {} -- [group] = how many found
+local function List(blocks, width)
+    for index = 1, blocks.count do
+        local block = blocks[index]
+        Head(block, width)
+        for _, entry in ipairs(block.entries) do
+            local place = Place("row")
+            place.x, place.y, place.width, place.height, place.size = 0, y, width, Layout.ROW, Layout.ICON
+            place.entry, place.block = entry, block
+            y = y + Layout.ROW
+        end
+        if block.level ~= 1 then y = y + Layout.APART end
+    end
+end
 
-local function Found(section, query, order)
-    for index = #found, 1, -1 do found[index] = nil end
-    for key in pairs(inGroup) do inGroup[key] = nil end
-    for _, record in ipairs(section.slots) do
-        if record.item and Contents.Found(record, query) then
-            found[#found + 1] = record
-            inGroup[record.group] = (inGroup[record.group] or 0) + 1
+-- A block's width and height in cells: near square, at least three wide (when it has three), never wider than
+-- the room.
+function Layout.Shape(n, columns)
+    if n <= 0 then return 0, 0 end
+    local wide = math.max(math.ceil(math.sqrt(n)), math.min(3, n))
+    wide = math.min(wide, columns)
+    return wide, math.ceil(n / wide)
+end
+
+local function Compact(blocks, width)
+    local columns = Columns(width)
+    local step = Layout.SIZE + Layout.GAP
+    local x, tallest, band = 0, 0, {}
+    local function Flush()
+        if #band == 0 then return end
+        local top = y
+        for _, item in ipairs(band) do
+            local label = Place("label")
+            label.x, label.y, label.width, label.height, label.block = item.x, top, item.width, Layout.LABEL, item.block
+            y = top + Layout.LABEL + Layout.LABEL_GAP
+            Cells(item.block, item.x, item.wide, false)
+        end
+        y = top + Layout.LABEL + Layout.LABEL_GAP + tallest * step - Layout.GAP + Layout.APART
+        for index = #band, 1, -1 do band[index] = nil end
+        x, tallest = 0, 0
+    end
+    for index = 1, blocks.count do
+        local block = blocks[index]
+        if block.level == 1 then
+            Flush()
+            Head(block, width)
+        elseif #block.entries > 0 then
+            local wide, high = Layout.Shape(#block.entries, columns)
+            local blockWidth = wide * step - Layout.GAP
+            if x > 0 and x + blockWidth > width then Flush() end
+            band[#band + 1] = { block = block, x = x, wide = wide, width = blockWidth }
+            tallest = math.max(tallest, high)
+            x = x + blockWidth + Layout.BAND_GAP
         end
     end
-    return Contents.Sort(found, order, true)
+    Flush()
 end
 
--- How many slots of a section are free, of every kind.
-local function Spare(section)
-    local total = 0
-    for _, kind in ipairs(section.free.kinds) do total = total + section.free[kind].count end
-    return total
-end
-
--- The free slots, a cell (or row) for each kind of bag that has any; not while searching. how: "rows",
--- "cells" (under a head of their own) or "flow" (on after the items, the compact view).
-local function Free(section, query, how)
-    if query then return end
-    local total = Spare(section)
-    if total == 0 then return end
-    if how ~= "flow" then Head(Core.Word("EMPTY", "Empty"), total, 2, true) end
-    if how == "cells" then Cells(size, gap) end
-    for _, kind in ipairs(section.free.kinds) do
-        local entry = section.free[kind]
-        if entry.count > 0 then
-            local record = Contents.Record(entry.bag, entry.slot)
-            if how == "rows" then Row(record, entry) else Cell(record, entry) end
-        end
-    end
-end
-
--- The groups in their order, each under its head; first: the first section (the bags), where the player's own
--- groups show when empty too.
-local function ByGroup(section, query, order, rows, first)
-    local list, index = Found(section, query, order), 1
-    for _, key in ipairs(Groups.list) do
-        local count = inGroup[key] or 0
-        local shown = query ~= nil or not Groups.Hidden(key)
-        if shown and (count > 0 or first and not query and Groups.Own(key)) then
-            Head(Groups.Word(key), count, 2).group = key
-            if not rows then Cells(Layout.SIZE, Layout.GAP) end
-        end
-        while list[index] and list[index].group == key do
-            if shown then
-                if rows then Row(list[index]) else Cell(list[index]) end
-            end
-            index = index + 1
-        end
-    end
-    Free(section, query, rows and "rows" or "cells")
-end
-
-local function Compact(section, query, order)
-    Cells(Layout.SMALL, Layout.SMALL_GAP)
-    for _, record in ipairs(Found(section, query, order)) do
-        if query or not Groups.Hidden(record.group) then Cell(record) end
-    end
-    Free(section, query, "flow")
-end
-
--- Every section (the bags, then the bank's parts) as the view shows them; returns how many places and the
--- height they take.
-function Layout.Lay(view, sections, room, query, order, places)
-    out, count, width, y, column, started = places, 0, math.max(room, Layout.SIZE), 0, 0, false
-    size, gap, columns = Layout.SIZE, Layout.GAP, 1
-    for index, section in ipairs(sections) do
-        if section.word then Head(section.word, Spare(section), 1, true).section = section end
-        if view == "groups" then ByGroup(section, query, order, false, index == 1)
-        elseif view == "list" then ByGroup(section, query, order, true, index == 1)
-        elseif view == "compact" then Compact(section, query, order)
-        else Slots(section, query) end
-    end
-    Break()
+-- The places of the blocks in a look ("grid", "list", "compact") in a room so wide; how many and how high.
+function Layout.Lay(look, blocks, width, places)
+    out, count, y = places, 0, 0
+    width = math.max(width, Layout.SIZE)
+    if look == "list" then List(blocks, width)
+    elseif look == "compact" then Compact(blocks, width)
+    else Grid(blocks, width) end
     for index = count + 1, #places do places[index].kind = nil end
     return count, y
 end

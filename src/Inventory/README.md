@@ -45,32 +45,43 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     watch key puts it on the backpack), with the game's switches Unused and Show on Backpack; the transfer between
     characters stays on the game's own sheet.
   - *Statistics*: the game's statistics by category, each category folding by a click.
-- **Your bags** (the window *Bags*): everything you carry, and the bank too while you are at a banker. The
-  dropdown *View* on its head chooses how they show: *All* (every slot in your bags' order, the empty ones too; a
-  quiver, the reagent bag and the keyring each a part of its own), *Categories* (your items in the game's groups:
-  new ones first, then weapons, armor, containers, consumables, trade goods, ammo, recipes, quest items and the
-  rest, the junk last; then a cell for each kind of bag's free slots, with how many), *List* (the same as lines:
-  name, item level, count) or *Compact* (smaller, without heads); and what sorts them inside a group (quality,
-  name or item level). Every item is the game's own button: click or drag it, right click to use it (in a fight
-  too), to sell it at a vendor or to put it into the bank, Shift-click to link it; the tooltip is the game's.
-  The button left of *View* is the game's *Clean Up Bags*; at the bank each of its parts has its own. The search
-  box finds items by name, category or item level: *All* dims what is not found, the other views show only what
-  is. A new item stays under *New* while the window is open. At a vendor with junk the head also has *Sell All
-  Junk Items*, at a banker *Deposit All Reagents*. At the foot: your bags (point at one to light its items; drop a
-  bag on a slot to put it on, click one to pick it up), the free slots (every bag's in the tooltip), the
-  currencies you watch and your gold (every character's in its tooltip). The game's own bags and bank stay as
-  they are.
-- **Your groups, pins and junk:** Alt and a right click on an item opens its menu: *Pinned* puts it in a group at
-  the very top (and takes it out again), *Junk* marks it as junk (it is sold with the junk at a vendor; a grey item
-  unticked there is kept), *Put Into* puts it into another group or a new one, *Take Out of* takes it out of a
-  group of your own. An item picked up (or dragged) and let go over a group's head is put into that group: over
-  *Pinned* it is pinned, over *Junk* marked as junk, over its own group taken out again; it stays in its slot.
-  A right click on a group's head: *Rename* (a group of the game's gets its name back when given none), *Move
-  Up* and *Move Down*, *Join With* (a group of the game's shows its items in another, until *Show … by Itself*
-  in that one's menu), *Hide* (its items are left out of the views with groups until a search finds them),
-  *Delete* (a group of your own; its items go back to their own groups) and *New Group*. A group of your own
-  shows its head when empty too, to let items go over. In the dropdown *View*: *Groups*, every group ticked
-  while it is shown, and *New Group*. Pinned and New stay at the top. All of it is kept for the account.
+- **Your bags** (the window *Bags*): everything you carry, and the bank too while you are at a banker, in a flat,
+  dark look: each item in a thin border of its quality's colour (a quest item's in gold), its item level at the top
+  left, its count at the bottom right, a quest's mark on an item that starts one, red when you cannot use it.
+  - **The bar** at the top: how many of your bags' slots are taken (every bag's in its tooltip); at the right *Sell
+    All Junk Items* at a vendor, *Deposit All Reagents* at a banker, the bags themselves (a click shows them in a
+    strip under the bar: each with its free slots on it; point at one to light its items, drop a bag on a slot to
+    put it on, click one to pick it up), the game's *Clean Up Bags* and the dropdown *View*.
+  - **The sidebar** at the left: *All Items* (every item by category; the free slots are not shown), *One Bag*
+    (every slot of your bags in their order, the empty ones too) and *Each Bag* (every bag by itself), then
+    *Pinned Items* and *Recent Items*, then every category with how many items it holds. A click shows it; the
+    arrow at its top folds it to its icons.
+  - **Categories:** *Weapons / Trinkets*, *Armor* and *Item Set Gear* (gear of one of your equipment sets) are
+    the group *The Armory*; *Consumables*, *Gear Enhancements* and *Camp Items* the group *Adventure Prep*; then
+    *Trade Goods*, *Professions*, *Reagent Bag*, *Miscellaneous*, *Quest Items* (off at first: those items are in
+    Miscellaneous then), *Special Bags* (what is in a quiver, a soul or herb bag) and *Junk* last. A group shows
+    as one part in All Items, its members set in under it in the sidebar. *Pinned Items* and *Recent Items* (what
+    came into your bags lately) are a second look: those items stay in their own categories too. Stacks of one
+    item show as one with their count added up (gear never; not at a vendor, the bank, the mail, a trade or the
+    auction house, where each stack is its own).
+  - **Your own way:** a middle click on an item pins it (or unpins it; an item you put into a category is taken
+    out of it again). Alt and a right click opens its menu: *Pinned Items*, *Junk*, *Put Into* another category
+    or a new one, *Take Out of* the one you put it into. An item picked up (or dragged) and let go over a
+    category's head or its row in the sidebar goes into that category (over Pinned: pinned). A right click on a
+    category (its row or its head): *Rename*, *Move Up*, *Move Down*, *Create Group With* another, *Add to Group*,
+    *Take Out of* its group, *Hide in All Items*, *Switch Off*; on a group: *Rename*, *Move Up*, *Move Down*,
+    *Hide in All Items*, *Disband Group*; on one of your own also *Icon* and *Delete*. *Add Category* at the
+    sidebar's foot makes one of your own. All of it is kept for the account.
+  - **The dropdown *View*:** *Grid* (each category under its head, its last line filled out), *List* (a line per
+    item: name, item level, count) or *Compact* (the categories side by side, each as near square as it can be);
+    *Sort By* (*Default*: gear by item level, then by kind, quality and name; or quality, name, item level);
+    *Show Pinned Items*, *Show Recent Items*, *Hide Empty Categories*, *Merge Stacks*; *Open With* (the view the
+    window opens with); *Switched Off* lists what you switched off, to switch it on again.
+  - Every item is the game's own button: click or drag it, right click to use it (in a fight too), to sell it at
+    a vendor or to put it into the bank, Shift-click to link it; the tooltip is the game's. The search box finds
+    items by name, category or item level: One Bag and Each Bag fade what is not found, the others show only what
+    is. At the foot your currencies and your gold (every character's in its tooltip). The game's own bags and bank
+    stay as they are.
 - **Your alts** (the window *Alts*): every character of the account down its left, you
   first, each in its class's colour with its gold, the gold of them all under them; the account's bank last
   where it holds something. A click shows that one's things as last seen: its bags, its bank (as it was when that
@@ -241,81 +252,91 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 - **The bags** (`Bags/`, the part `bags`): the backpack, the bags, the reagent bag and the keyring
   (`Contents.Carried`: those with slots), and while the bank is open (`BANKFRAME_OPENED`, at the start
   `C_PlayerInteractionManager.IsInteractingWithNpcOfType`) the tabs of each bank the game lets the player see
-  (`Contents.Banks`: `C_Bank.FetchPurchasedBankTabIDs` of `Enum.BankType.Character`, then `.Account`), each
-  under a head of its own after the bags. The game's bag and bank windows are never opened, closed or touched.
+  (`Contents.Banks`: `C_Bank.FetchPurchasedBankTabIDs` of `Enum.BankType.Character`, then `.Account`), each a
+  part of its own after the bags. The game's bag and bank windows are never opened, closed or touched.
   - **What they hold** (`Bags/Contents.lua`, no frames): a record per slot, made once and filled anew at each
     reading (`Contents.Read`: `C_Container.GetContainerItemInfo`, `GetContainerItemQuestInfo`,
-    `C_NewItems.IsNewItem`, the class from `C_Item.GetItemInfoInstant`, the item level of gear from
+    `C_NewItems.IsNewItem`, the class from `C_Item.GetItemInfoInstant`, the bind type, price, level needed and
+    the class's and subclass's words from `C_Item.GetItemInfo`, the item level of gear from
     `GetDetailedItemLevelInfo`; an item the game does not know yet waits for `GET_ITEM_INFO_RECEIVED`,
-    `Contents.waiting`). Its group (`Contents.GROUPS`): pinned and new first, then the game's auction house
-    categories in Camelot's order (`AUCTION_CATEGORY_*`, by item class: `Contents.CLASSES`), a quest's item by the
-    game's quest info, junk (poor quality with a price) last: its natural group (`Contents.Natural`); the group the
-    player put it into is its home, the one it shows in its `group` (`Contents.Place`); junk is what is in Junk
-    with a price and not pinned (`record.junk`, `Contents.Junk`). The free slots by kind of bag (`Contents.Scan`, `Kind`): the
-    ordinary bags together; a reagent bag, the keyring and a bag for one kind of item (the game's bag family) each
-    by itself; a bank's tabs by that bank. Orders (`Contents.ORDERS`): quality, name, item level, then bag and
-    slot, so that an item keeps its place while only its count changes; grouped, by the group's place in the
-    player's order first (`Groups.rank`). The search (`Contents.Found`): `Core.Fuzzy.Match` over the name, the
-    group's name (the player's, where renamed) and the item level.
-  - **The player's groups** (`Bags/Groups.lua`, no frames): the groups in the order shown (`Groups.list`,
-    `Groups.rank`: Pinned and New first, then the player's order, `ranks`, then the groups not in it yet), each
-    group's name (`Groups.Word`), hidden or not, joined into another (`Groups.Into`, `Shown`: never round, never
-    into Pinned, New or Junk; only a group of the game's other than Junk joins); the player's own groups (`own1`,
-    `own2`, …, made at the top under New: `Groups.New`, `Rename`, `Delete`); moving one past the next group shown
-    (`Groups.Move` with the heads drawn, `Bags.drawn`); an item's home (`Groups.Home`: the group it was put into,
-    else its natural one), pins (`Groups.Pin`), putting it into a group (`Groups.PutInto`: into its natural group
-    nothing is kept, into Pinned it is pinned, into any other it is pinned no more) and marking junk
-    (`Groups.MarkJunk`: into Junk, or into the group of its kind, `Contents.Classed`). Kept by item ID in
-    `store.bags` (`pinned`, `put`, `groups`, `ranks`: account-wide, the player's own settings, never shared),
-    checked when read (`Groups.Check`): a value of the wrong kind goes, a group's entry goes once nothing of it is
-    changed any more.
-  - **The views** (`Bags/Layout.lua`, plain numbers: `Layout.Lay`): *All* (`slots`: every slot in the bags'
-    order at the game's size and spacing, `Layout.SIZE` 37 and `GAP` 5 as `ContainerFrame.lua`; a head per kind of
-    bag where there are several; what the search does not find dimmed), *Categories* (`groups`: a head per group
-    with how many, the items sorted; then *Empty*, a cell per kind of bag that has free slots: its first free
-    slot's button, with how many), *List* (`list`: lines `Layout.ROW` high, the item button `Layout.ICON` at the
-    left), *Compact* (`compact`: `Layout.SMALL` cells, no heads, the free cells last). Outside *All* what the search
-    does not find is left out, and so is what is in a hidden group unless a search finds it; a group of the
-    player's own shows its head when empty too, under the bags and not while searching (a head's place carries its
-    `group`). The view and the order are kept (`store.bags`: `view`, `order`).
-  - **The item buttons** (`Bags/Cells.lua`): the game's `ContainerFrameItemButtonTemplate`, one per slot, made
-    when the slot is first shown (out of a fight: one first needed in a fight waits for its end,
-    `Core.AfterCombat`), used again in every view (`SetScale`, `SetPoint`). They stand in a frame of ours per bag
-    that carries the bag's ID (`SetID`): the template's `GetBagID` asks its parent, as the game's bag windows did,
-    so nothing of ours is written into the button and its click (use, drag, split, sell, deposit) is the
-    template's own code, in a fight too. Drawn as `ContainerFrameMixin:UpdateItems` draws (`ClearItemButtonOverlay`,
-    `SetItemButtonTexture`, `Quality`, `Count`, `Desaturated`, the template's `UpdateQuestItem`, `UpdateNewItem`,
-    `UpdateJunkItem`, `UpdateCooldown`, `SetMatchesSearch`, …; the junk coin given what is junk to us); ours on it:
-    the item level of gear at its top right in its quality's colour. In the list the button's hit rect reaches over
-    its line (`SetHitRectInsets`), so the whole line is the item; a hook after its `OnEnter` lights the line, a hook
-    after its `OnClick` opens our item menu at Alt and the right button, which the template's
-    `OnModifiedClick` does nothing with (`Bags.Clicked`). A bag of the foot's bar lights its
-    items with the template's own mark (`BagIndicator`), as the game's combined bag does.
-  - **The head** (`Bags/Bags.lua`): the game's clean-up button (`bags-button-autosort-up`, `UI_BAG_SORTING_01`,
-    `C_Container.SortBags`; a bank part's head: `C_Container.SortBank` of that bank), not in a fight; the
-    dropdown *View* (`WowStyle1DropdownTemplate`, its words fixed: views, then *Sort By*); left of the clean-up, one
-    button for what can be done there (selling the junk after the game's `SELL_ALL_JUNK_ITEMS_POPUP` in
-    `Core.Confirm`: the bags read anew, then `C_MerchantFrame.SellAllJunkItems` where the junk is just the game's,
-    else `C_Container.UseContainerItem` on each, while the vendor is there and the cursor is empty;
-    `C_Bank.AutoDepositItemsIntoBank` where `DoesBankTypeSupportAutoDeposit`), made by the foot's file. A group's
-    head (a frame of ours) takes the mouse: `OnReceiveDrag` and a left click with an item on the cursor
-    (`GetCursorInfo`) put it into that group and `ClearCursor` puts it back in its slot, a right click opens its
-    menu; it is lit while an item it takes is brought over it, and its tooltip says what can be done there.
-  - **The menus** (`Bags/Menus.lua`): the game's (`MenuUtil.CreateContextMenu`) for an item and for a group's
-    head, and the groups at the foot of the dropdown *View*; names asked in the game's dialogs (`Core.AskText`,
-    `Groups.LETTERS`), a group deleted after `Core.Confirm`. Each choice is kept at once and the window read and
-    drawn anew (`Bags.Refresh`).
-  - **The foot** (`Bags/Foot.lua`): the bag bar (the game's `ItemButton`, its bag icons, `ui-hud-actionbar-
-    iconframe-bags`; the game's tooltip for a bag, *Equip Container* for an empty slot; `PickupBagFromSlot`,
-    `PutItemInBag`, `PutItemInBackpack`, `PutKeyInKeyRing`, out of a fight), the ordinary bags' free slots (every
-    bag's in the tooltip), the backpack's watched currencies (`GetBackpackCurrencyInfo`,
-    `GameTooltip:SetBackpackToken`), the gold (`Core.Coins`; its tooltip every character's from
-    `Core.Data.Characters` and the total).
+    `Contents.waiting`). Whether the character can use it: a line of its tooltip in the game's red
+    (`C_TooltipInfo.GetBagItem`; a recipe: `C_Item.IsUsableItem`), kept per link until `PLAYER_LEVEL_UP`. The
+    equipment set a slot is in (`Contents.Sets`: `C_EquipmentSet.GetItemLocations`, the game's
+    `EquipmentManager_GetLocationData`; the first set wins). The bag it is in: the reagent bag (`reagentBag`) or a
+    bag for one kind of item (`special`: the game's bag family, the keyring). The free slots by kind of bag
+    (`Contents.Scan`, `Kind`). Orders (`Contents.ORDERS`): *Default* (gear by item level, then the subclass's
+    words, quality, name, item ID), quality, name, item level, at last bag and slot. The search
+    (`Contents.Found`): `Core.Fuzzy.Match` over the name, the category's name and the item level. Junk to sell
+    (`Contents.Junk`): in Junk with a price, not in a special bag, not in an equipment set, not pinned, not
+    refundable (`GetContainerItemPurchaseInfo`).
+  - **The categories** (`Bags/Categories.lua`, no frames): the built-in ones (`Categories.LIST`: their rules,
+    icons from the game's own classic icons and atlases, `fixed`, `last`, `alone`, the first groups), the
+    player's own (`own1`, `own2`, …), the order (`Categories.Order`: Pinned and Recent first, the movable ones in
+    the player's order, a new built-in one before Miscellaneous, a late one at the end, Junk last while the junk
+    marker is on), the groups (`GroupOf`, `Members`, `GroupWord`: its own name, its first name, else its members'
+    "A & B"; a group of one is none), an item's category (`Categories.Classify`: the reagent bag's, a special
+    bag's, the player's, Camp Items by the game's item IDs, Quest Items, Junk for grey, Item Set Gear, then by
+    class in order, else Miscellaneous; a category switched off sends its items to Miscellaneous). Kept by item
+    ID in `store.bags` (account-wide, the player's own settings, never shared): `assigned`, `before` (where a
+    junk-marked item was), `pinned`, `own`, `order`, `words`, `member`, `groups`, `off`, `hidden`; checked when
+    read (`Categories.Check`).
+  - **What came in lately** (`Bags/Recent.lua`, no frames): from the login on, a frame after a burst of bag
+    events, every item's count in the carried bags and on the character (`GetInventoryItemID`); one that went up
+    goes to the front of `Recent.list` (at most `Recent.MOST`, until a `/reload`). Not counted while the bank is
+    open; `Recent.SETTLE` seconds after it closes, counted anew without anything new.
+  - **The views** (`Bags/Views.lua`, no frames: `Views.Build`): the sidebar's choice as blocks: *all* (Pinned,
+    Recent, then a block per category in order, a group's members as one, hidden and empty ones left out but the
+    player's own), *one* (Pinned, *Main Bags* with every slot of the ordinary bags, then each special bag and the
+    reagent bag), *each* (every bag), `cat:<key>`, `group:<group>` (its members each a block). Stacks of an item
+    that is no gear merge into one entry with their counts added (`Views.Merging`: not while talking to a vendor,
+    a banker, the mailbox, a trade partner, nor while the auction house is open); a split item stays apart while the window is open
+    (`Views.split`). What the search does not find is left out, or faded in *one* and *each*. `Views.Counts`: how
+    many cells each category and group shows, for the sidebar.
+  - **The displays** (`Bags/Layout.lua`, plain numbers: `Layout.Lay`): *grid* (a head per block, its cells
+    `Layout.SIZE` 34 and `GAP` 4 apart, the last line filled with pads; the player's own empty category a line of
+    pads to drop items on), *list* (a line `Layout.ROW` high per cell, its item button `Layout.ICON` at the left),
+    *compact* (the blocks side by side in bands, each `Layout.Shape` wide: near square, at least three wide, a
+    name over it). The display and the order are kept (`store.bags`: `look`, `order`).
+  - **The item buttons** (`Bags/Cells.lua`): the game's `ContainerFrameItemButtonTemplate`, a pool taken in the
+    order of the cells drawn (`Cells.Take`), each in a holder of ours that carries the bag's ID (`SetID`): the
+    template's `GetBagID` asks its parent, so nothing of ours is written into the button and its click (use,
+    drag, split, sell, deposit) is the template's own code, in a fight too. Made out of a fight only
+    (`Cells.short`, `Core.AfterCombat`). The flat look set on the template's own parts once (the icon cut
+    `Cells.ZOOM` round its edge and to the button's size, its mask, border, normal texture and new item's glow
+    away, the highlight to the button's size, a warm glow pressed), ours beside them in a table of our own: a thin
+    border of the screen's own pixels in the quality's colour (`Cells.QUEST`, twice as thick, on a quest item),
+    above the cooldown's swipe the count, the item level, BoE, the set's name, the game's `QuestNormal` on an item
+    that starts a quest, the junk coin; an empty slot a dark square; a pad (`Cells.Pad`) one that takes no mouse.
+    Drawn by the template's own functions (`SetItemButtonTexture`, `Quality`, `Count`, `Desaturated`,
+    `UpdateCooldown`, …). In the list the button's hit rect reaches over its line. Hooks after its `OnEnter`,
+    `OnClick` and `OnMouseUp` light a list's line, open the item's menu (Alt and the right button, which the
+    template does nothing with) and pin it (the middle button: `Bags.Clicked`).
+  - **The sidebar** (`Bags/Sidebar.lua`, `ns.BagSidebar`): rows of the game's look at Sane UI's size (the view
+    shown with a bar of `Core.GOLD` at its left), a click `Bags.Choose`, an item on the cursor let go there
+    `Menus.Drop`, a right click `Menus.Row`; folded to icons (kept: `narrow`), scrolled by the wheel.
+  - **The window** (`Bags/Bags.lua`): the bar (`Bags.BAR`), the strip of the bags (kept: `strip`), the sidebar,
+    the scroll area, the foot; the heads (a part's, a block's, a group member's) taking items and opening menus,
+    the compact display's labels, the list's lines; the dropdown *View* (`WowStyle1DropdownTemplate`) with the
+    displays, the orders and the switches (`showPinned`, `showRecent`, `hideEmpty`, `merge`, `first`, the
+    categories switched off). The view chosen holds while the window is open (`Bags.Choose`); it opens with
+    `first`.
+  - **The menus** (`Bags/Menus.lua`): the game's (`MenuUtil.CreateContextMenu`) for an item and for a category or
+    group; names asked in the game's dialogs (`Core.AskText`, `Categories.LETTERS`), a category deleted after
+    `Core.Confirm`. Each choice is kept at once and the window read and drawn anew (`Bags.Refresh`).
+  - **The foot** (`Bags/Foot.lua`): the currencies watched (`GetBackpackCurrencyInfo`, `SetBackpackToken`), the
+    gold (`Core.Coins`; its tooltip every character's from `Core.Data.Characters` and the total); the strip of
+    the bags (the game's `ItemButton` with its bag icons in a border of the bag's quality, its free slots on it;
+    the game's tooltip for a bag, *Equip Container* for an empty slot; `PickupBagFromSlot`, `PutItemInBag`,
+    `PutItemInBackpack`, `PutKeyInKeyRing`, out of a fight); the bar's button for what can be done here (selling
+    the junk after the game's `SELL_ALL_JUNK_ITEMS_POPUP` in `Core.Confirm`: the bags read anew, then
+    `C_MerchantFrame.SellAllJunkItems` where the junk is just the game's, else `C_Container.UseContainerItem` on
+    each, while the vendor is there and the cursor is empty; `C_Bank.AutoDepositItemsIntoBank` where
+    `DoesBankTypeSupportAutoDeposit`).
   - **Events, while shown only** (`Bags.Show`): `BAG_UPDATE_DELAYED`, `BAG_NEW_ITEMS_UPDATED`,
-    `BAG_CONTAINER_UPDATE`, the quest events, `MERCHANT_SHOW`/`CLOSED`, `BANKFRAME_OPENED`/`CLOSED` and the bank's
-    slot and tab events: everything read and drawn a frame later (`Core.Later`); `ITEM_LOCK_CHANGED` greys one
-    slot; `BAG_UPDATE_COOLDOWN`, `PLAYER_MONEY`, `CURRENCY_DISPLAY_UPDATE` their own part. New items stay in *New*
-    while the window is open (`fresh`), whatever the game's mark says.
+    `BAG_CONTAINER_UPDATE`, the quest events, the vendor's, mailbox's, trade's and auction house's opening and
+    closing, `EQUIPMENT_SETS_CHANGED`, `BANKFRAME_OPENED`/`CLOSED` and the bank's slot and tab events: everything
+    read and drawn a frame later (`Core.Later`); `ITEM_LOCK_CHANGED` greys one slot; `PLAYER_LEVEL_UP` asks
+    anew who can use what; `BAG_UPDATE_COOLDOWN`, `PLAYER_MONEY`, `CURRENCY_DISPLAY_UPDATE` their own part.
 - **Never the game's panels** (2026-10-20, from the error log): our code neither opens nor closes the game's
   character sheet or any other panel of its window manager (`UIParentPanelManager.lua`). Opened by our code,
   the manager ran tainted and the sheet's `OnShow` failed on the player frame's secret health
@@ -351,13 +372,16 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 | `Sheet/PvP.lua` | The PvP window: the season's rank |
 | `Sheet/Currency.lua` | The currency window |
 | `Sheet/Statistics.lua` | The statistics window |
-| `Bags/Contents.lua` | The bags, without frames: the containers, a record per slot, the groups, free slots, orders, the search, the junk |
-| `Bags/Groups.lua` | The bags' groups as the player arranged them, without frames: their order, names, hidden and joined ones, the player's own; pins, items put into a group, junk marks |
-| `Bags/Layout.lua` | The bags' views: where each cell, line and head goes, as plain numbers |
-| `Bags/Cells.lua` | The bags' item buttons: the game's own, one per slot, drawn the game's way |
-| `Bags/Foot.lua` | The bags' foot: the bag bar, free slots, selling junk or depositing reagents, currencies, gold |
-| `Bags/Menus.lua` | The bags' menus for an item and a group's head, items let go over a head, the groups in the dropdown *View* |
-| `Bags/Bags.lua` | The bags' window: the head, the scroll area, heads and lines, the events; registers the part `bags` |
+| `Bags/Contents.lua` | The bags, without frames: the containers, a record per slot (bind type, price, who can use it, the set it is in), free slots, orders, the search, the junk to sell |
+| `Bags/Categories.lua` | The bags' categories, without frames: the built-in ones and their rules, the player's own, their order, names and groups; pins, items put into a category, junk marks |
+| `Bags/Recent.lua` | What came into the bags lately, without frames: counted from the login on |
+| `Bags/Views.lua` | What each view of the sidebar shows, without frames: blocks of cells, stacks merged, the search |
+| `Bags/Layout.lua` | The bags' displays (grid, list, compact): where each cell, pad, line, head and label goes, as plain numbers |
+| `Bags/Cells.lua` | The bags' item buttons: the game's own, a pool, in the flat look, drawn the game's way |
+| `Bags/Foot.lua` | The bags' foot: currencies, gold; the strip of the bags; selling junk or depositing reagents |
+| `Bags/Menus.lua` | The bags' menus for an item, a category and a group, items let go over a category, new categories |
+| `Bags/Sidebar.lua` | The bags' sidebar: the views, Pinned, Recent, the categories and groups with their counts |
+| `Bags/Bags.lua` | The bags' window: the bar, the strip, the scroll area, heads, labels and lines, the dropdown *View*, the events; registers the part `bags` |
 | `Alts/Snapshot.lua` | The other characters' window, without frames: the roster, a character's places and items, the search |
 | `Alts/Roster.lua` | The other characters' window: the account's characters down its left, their gold |
 | `Alts/Items.lua` | The other characters' window: the chosen one's places and items: a grid, the paper doll, a list |

@@ -1,0 +1,616 @@
+local _, ns = ...
+
+-------------------------------------------------------------------------------
+--  Sane UI - Inventory - Bags - Categories
+--  The categories the bag window sorts its items into, without a frame: the
+--  built-in ones (their rules fixed here), the player's own, the groups of
+--  categories, and what the player chose for single items.
+--
+--  The built-in categories, in their first order (Categories.LIST):
+--      Pinned, Recent       at the very top, never moved: a second look at
+--                           items that stay in their own category too
+--      Weapons / Trinkets   weapons, and trinkets
+--      Armor                armor but trinkets
+--      Item Set Gear        weapons and armor of one of the character's
+--                           equipment sets
+--      Consumables, Gear Enhancements (gems, enchantments), Camp Items (the
+--                           game's camp items, by item ID)
+--      Trade Goods          trade goods and reagents
+--      Professions          recipes and profession items
+--      Reagent Bag          whatever is in the reagent bag
+--      Miscellaneous        what no other category takes
+--      Quest Items          off at first (they are in Miscellaneous then)
+--      Special Bags         what is in a bag for one kind of item (a quiver,
+--                           a soul or herb bag: the game's bag family)
+--      Junk                 the last: grey items not filed elsewhere, and
+--                           what the player marked as junk; only while the
+--                           junk marker is on (Categories.Marker)
+--  An item goes to the first that takes it: the reagent bag's, a special
+--  bag's, the category the player put it into, Camp Items, Quest Items, Junk
+--  (grey), Item Set Gear, then by its class in the categories' order, else
+--  Miscellaneous. A category switched off sends its items to Miscellaneous.
+--
+--  The player may move a category up or down, rename it (no name: its own
+--  again), switch it off, hide it from All Items, put categories together
+--  under a group (a group's items show as one part in All Items, the group
+--  named by its members, "A & B", until the player names it; a group left
+--  with one member is no more), make categories of their own (a name and an
+--  icon; they hold only what is put into them) and delete them. At first
+--  Weapons / Trinkets, Armor and Item Set Gear are the group The Armory,
+--  Consumables, Gear Enhancements and Camp Items the group Adventure Prep.
+--
+--  An item is pinned by its item ID, put into a category (assigned), or
+--  marked as junk (put into Junk; unmarked, it goes back where it was).
+--  What the player chose is kept in store.bags (the window's: Categories.Use),
+--  account-wide, never trusted as it comes (Categories.Check):
+--      assigned  { [item] = key }      an item put into a category
+--      before    { [item] = key }      where a junk-marked item was before
+--      pinned    { [item] = true }
+--      own       { { key, word, icon }, ... }   the player's own categories
+--      order     { key, ... }          the movable categories in the
+--                                      player's order (nil: the first order)
+--      words     { [key] = word }      a category renamed
+--      member    { [key] = group }     a category's group (false: none)
+--      groups    { [group] = { word } } a group's own name (none: its
+--                                      members')
+--      off       { [key] = true }      switched off (nil: Quest Items off)
+--      hidden    { [key or group] = true }   not in All Items
+-------------------------------------------------------------------------------
+local Core = SaneUI.Core
+local Categories = {}
+ns.Categories = Categories
+
+local CLASS = Enum and Enum.ItemClass or {}
+local ICONS = "Interface\\Icons\\"
+
+Categories.PINNED, Categories.RECENT, Categories.JUNK = "pinned", "recent", "junk"
+Categories.CATCH_ALL = "misc"
+Categories.LETTERS = 30   -- the most a name may have
+Categories.OWN_ICON = ICONS .. "INV_Misc_QuestionMark"
+-- The icons a category of the player's own may take (the dialog's choice).
+Categories.ICONS = {
+    "INV_Misc_QuestionMark", "INV_Misc_Bag_10", "INV_Misc_Gem_01", "INV_Potion_54", "INV_Misc_Herb_19",
+    "INV_Ore_Copper_01", "INV_Fabric_Linen_01", "INV_Enchant_DustArcane", "INV_Misc_Key_03", "INV_Misc_Toy_10",
+    "INV_Misc_Ticket_Tarot_Stack_01", "INV_Misc_Bone_HumanSkull_01", "INV_Banner_02", "Trade_Engineering",
+}
+for index, name in ipairs(Categories.ICONS) do Categories.ICONS[index] = ICONS .. name end
+
+-- The game's camp items (by item ID).
+Categories.CAMP = {}
+for _, item in ipairs({
+    279938, 279940, 279941, 279943, 279944, 279945, 279947, 279948, 279949, 279950, 279951, 279952, 279955, 279956,
+    279957, 279959, 279960, 279961, 279962, 279964, 279965, 279966, 279967, 279968, 279969, 279970, 279973, 279974,
+    279976, 279978, 279979, 279981, 279982, 279985, 279987, 279988, 279989, 279990,
+}) do Categories.CAMP[item] = true end
+
+local function Set(...)
+    local set = {}
+    for index = 1, select("#", ...) do
+        local value = select(index, ...)
+        if value ~= nil then set[value] = true end
+    end
+    return set
+end
+
+-- The built-in categories in their first order. fixed: at the top, never moved or grouped; last: after every
+-- other; alone: never in a group; take: what puts an item there besides its class (Categories.Classify).
+Categories.LIST = {
+    { key = "pinned", word = ns.TEXT.bagsPinned, atlas = "Waypoint-MapPin-Tracked", icon = ICONS .. "INV_Misc_Note_01",
+      fixed = true, alone = true, view = true },
+    { key = "recent", word = ns.TEXT.bagsRecent, atlas = "auctionhouse-icon-clock", icon = ICONS .. "INV_Misc_PocketWatch_01",
+      fixed = true, alone = true, view = true },
+    { key = "weapons", word = ns.TEXT.bagsWeapons, icon = ICONS .. "INV_Sword_04", group = "armory",
+      classes = Set(CLASS.Weapon or 2), slots = Set("INVTYPE_TRINKET") },
+    { key = "armor", word = Core.Word("ARMOR", "Armor"), icon = ICONS .. "INV_Chest_Chain_05", group = "armory",
+      classes = Set(CLASS.Armor or 4), notSlots = Set("INVTYPE_TRINKET") },
+    { key = "sets", word = ns.TEXT.bagsSets, icon = ICONS .. "INV_Chest_Plate06", group = "armory", take = "set" },
+    { key = "consumables", word = Core.Word("AUCTION_CATEGORY_CONSUMABLES", "Consumables"), icon = ICONS .. "INV_Potion_51",
+      group = "prep", classes = Set(CLASS.Consumable or 0) },
+    { key = "enhance", word = ns.TEXT.bagsEnhance, icon = ICONS .. "INV_Misc_Gem_Ruby_01", group = "prep",
+      classes = Set(CLASS.Gem or 3, CLASS.ItemEnhancement or 8) },
+    { key = "camp", word = ns.TEXT.bagsCamp, icon = ICONS .. "Ability_Racial_MakeCamp", group = "prep", take = "camp" },
+    { key = "trade", word = Core.Word("AUCTION_CATEGORY_TRADE_GOODS", "Trade Goods"), icon = ICONS .. "INV_Fabric_Linen_01",
+      classes = Set(CLASS.Tradegoods or 7, CLASS.Reagent or 5) },
+    { key = "professions", word = Core.Word("TRADE_SKILLS", "Professions"), icon = ICONS .. "INV_Scroll_03",
+      classes = Set(CLASS.Recipe or 9, CLASS.Profession) },
+    { key = "reagent", word = ns.TEXT.bagsReagentBag, icon = ICONS .. "INV_Misc_Bag_33", alone = true, take = "reagent",
+      unassignable = true },
+    { key = "misc", word = Core.Word("AUCTION_CATEGORY_MISCELLANEOUS", "Miscellaneous"), icon = ICONS .. "INV_Box_01",
+      catchAll = true },
+    { key = "quest", word = Core.Word("AUCTION_CATEGORY_QUEST_ITEMS", "Quest Items"), atlas = "QuestNormal",
+      icon = ICONS .. "INV_Misc_Note_02", take = "quest" },
+    { key = "special", word = ns.TEXT.bagsSpecial, icon = ICONS .. "INV_Misc_Bag_EnchantedRunecloth", alone = true,
+      take = "special", unassignable = true, late = true },
+    { key = "junk", word = Core.Word("BAG_FILTER_JUNK", "Junk"), icon = ICONS .. "INV_Misc_Coin_01", alone = true,
+      last = true },
+}
+Categories.DEF = {}
+for _, def in ipairs(Categories.LIST) do Categories.DEF[def.key] = def end
+-- The groups at first, and their names.
+Categories.GROUPS = { armory = ns.TEXT.bagsArmory, prep = ns.TEXT.bagsPrep }
+Categories.OFF = { quest = true }
+
+local kept = {}
+local order = {}   -- the categories now, in order: { key, ... } (Categories.Order)
+local rank = {}    -- [key] = its place in order
+local groupOf = {} -- [key] = its group now (nil: none)
+Categories.order, Categories.rank = order, rank
+
+-------------------------------------------------------------------------------
+--  What is kept
+-------------------------------------------------------------------------------
+local function Table(t, key)
+    if type(t[key]) ~= "table" then t[key] = {} end
+    return t[key]
+end
+
+local function Known(key)
+    if type(key) ~= "string" then return false end
+    if Categories.DEF[key] then return true end
+    for _, own in ipairs(kept.own or {}) do
+        if own.key == key then return true end
+    end
+    return false
+end
+
+-- Saved data comes from hand edits and older versions: what is not of the right kind goes.
+function Categories.Check(bags)
+    local own = Table(bags, "own")
+    local seen = {}
+    for index = #own, 1, -1 do
+        local entry = own[index]
+        if type(entry) ~= "table" or type(entry.key) ~= "string" or not entry.key:match("^own%d+$") or seen[entry.key]
+            or type(entry.word) ~= "string" or entry.word == "" then
+            table.remove(own, index)
+        else
+            seen[entry.key] = true
+            if type(entry.icon) ~= "string" and type(entry.icon) ~= "number" then entry.icon = nil end
+        end
+    end
+    kept.own = own
+    for _, name in ipairs({ "assigned", "before" }) do
+        local map = Table(bags, name)
+        for item, key in pairs(map) do
+            if type(item) ~= "number" or not Known(key) or Categories.DEF[key] and Categories.DEF[key].unassignable then map[item] = nil end
+        end
+    end
+    local pinned = Table(bags, "pinned")
+    for item, on in pairs(pinned) do
+        if type(item) ~= "number" or on ~= true then pinned[item] = nil end
+    end
+    local words = Table(bags, "words")
+    for key, word in pairs(words) do
+        if not Known(key) or type(word) ~= "string" or word == "" then words[key] = nil end
+    end
+    local member = bags.member
+    if member ~= nil and type(member) ~= "table" then member = nil end
+    if member then
+        for key, group in pairs(member) do
+            if not Known(key) or (group ~= false and type(group) ~= "string") then member[key] = nil end
+        end
+    end
+    bags.member = member
+    local groups = Table(bags, "groups")
+    for group, entry in pairs(groups) do
+        if type(group) ~= "string" or type(entry) ~= "table" or (entry.word ~= nil and type(entry.word) ~= "string") then
+            groups[group] = nil
+        end
+    end
+    if bags.off ~= nil and type(bags.off) ~= "table" then bags.off = nil end
+    for key, on in pairs(bags.off or {}) do
+        if not Known(key) or type(on) ~= "boolean" then bags.off[key] = nil end
+    end
+    local hidden = Table(bags, "hidden")
+    for key, on in pairs(hidden) do
+        if type(key) ~= "string" or on ~= true then hidden[key] = nil end
+    end
+    if type(bags.order) == "table" then
+        local orderSeen = {}
+        for index = #bags.order, 1, -1 do
+            local key = bags.order[index]
+            if not Known(key) or orderSeen[key] or Categories.DEF[key] and (Categories.DEF[key].fixed or Categories.DEF[key].last) then
+                table.remove(bags.order, index)
+            else
+                orderSeen[key] = true
+            end
+        end
+    else
+        bags.order = nil
+    end
+    if type(bags.ownNext) ~= "number" then bags.ownNext = 1 end
+end
+
+-- The window's store (store.bags), checked; the order built anew.
+function Categories.Use(bags)
+    kept = bags
+    Categories.Check(bags)
+    Categories.Order()
+end
+
+-------------------------------------------------------------------------------
+--  The order
+-------------------------------------------------------------------------------
+local function Own(key)
+    for _, own in ipairs(kept.own or {}) do
+        if own.key == key then return own end
+    end
+end
+Categories.Own = function(key) return Own(key) ~= nil end
+
+-- Whether a category is switched off (its items in Miscellaneous).
+function Categories.Off(key)
+    local off = kept.off
+    if off and off[key] ~= nil then return off[key] end
+    return Categories.OFF[key] == true
+end
+
+-- Whether the junk marker is on (Junk exists, marks count); the settings say (Bags' options).
+function Categories.Marker()
+    return kept.marker ~= false
+end
+
+-- A category's group now: the player's choice, else its first one while that group stands.
+local function Group(key)
+    local member = kept.member
+    if member and member[key] ~= nil then return member[key] or nil end
+    local def = Categories.DEF[key]
+    return def and def.group or nil
+end
+
+-- The categories in order, anew: Pinned and Recent first, then the movable ones in the player's order (a
+-- category new since then before Miscellaneous, a late one at the end), Junk last while the marker is on. A
+-- category switched off is still in the order (to switch it on again), but holds nothing.
+function Categories.Order()
+    for index = #order, 1, -1 do order[index] = nil end
+    for key in pairs(rank) do rank[key] = nil end
+    for key in pairs(groupOf) do groupOf[key] = nil end
+    local movable, seen = {}, {}
+    for _, key in ipairs(kept.order or {}) do
+        if Known(key) and not seen[key] then
+            movable[#movable + 1] = key
+            seen[key] = true
+        end
+    end
+    local function Before(key, catchAll)
+        for index, other in ipairs(movable) do
+            if other == catchAll then
+                table.insert(movable, index, key)
+                return
+            end
+        end
+        movable[#movable + 1] = key
+    end
+    for _, def in ipairs(Categories.LIST) do
+        if not (def.fixed or def.last or seen[def.key]) then
+            if not kept.order or def.late then movable[#movable + 1] = def.key else Before(def.key, Categories.CATCH_ALL) end
+            seen[def.key] = true
+        end
+    end
+    for _, own in ipairs(kept.own or {}) do
+        if not seen[own.key] then
+            Before(own.key, Categories.CATCH_ALL)
+            seen[own.key] = true
+        end
+    end
+    for _, def in ipairs(Categories.LIST) do
+        if def.fixed then order[#order + 1] = def.key end
+    end
+    for _, key in ipairs(movable) do order[#order + 1] = key end
+    if Categories.Marker() then order[#order + 1] = Categories.JUNK end
+    for index, key in ipairs(order) do
+        rank[key] = index
+        local def = Categories.DEF[key]
+        if not (def and def.alone) then groupOf[key] = Group(key) end
+    end
+    -- A group of one is no group.
+    local members = {}
+    for _, key in ipairs(order) do
+        local group = groupOf[key]
+        if group then members[group] = (members[group] or 0) + 1 end
+    end
+    for key, group in pairs(groupOf) do
+        if members[group] < 2 then groupOf[key] = nil end
+    end
+    return order
+end
+
+-- A category's group now (nil: none), a group's members in order.
+function Categories.GroupOf(key)
+    return groupOf[key]
+end
+
+function Categories.Members(group)
+    local list = {}
+    for _, key in ipairs(order) do
+        if groupOf[key] == group then list[#list + 1] = key end
+    end
+    return list
+end
+
+-- A category's name and icon (an icon: a texture, or an atlas first and the texture where the game lacks it).
+function Categories.Word(key)
+    local words = kept.words
+    if words and words[key] then return words[key] end
+    local def = Categories.DEF[key]
+    if def then return def.word end
+    local own = Own(key)
+    return own and own.word or tostring(key)
+end
+
+function Categories.Icon(key)
+    local def = Categories.DEF[key]
+    if def then return def.icon, def.atlas end
+    local own = Own(key)
+    return own and own.icon or Categories.OWN_ICON
+end
+
+-- A group's name: the player's, else its own first name, else its members' ("A & B", "A, B, & C").
+function Categories.GroupWord(group)
+    local entry = kept.groups and kept.groups[group]
+    if entry and entry.word then return entry.word end
+    if Categories.GROUPS[group] then return Categories.GROUPS[group] end
+    local words = {}
+    for _, key in ipairs(Categories.Members(group)) do words[#words + 1] = Categories.Word(key) end
+    if #words <= 2 then return table.concat(words, " & ") end
+    return table.concat(words, ", ", 1, #words - 1) .. ", & " .. words[#words]
+end
+
+-------------------------------------------------------------------------------
+--  Sorting an item in
+-------------------------------------------------------------------------------
+-- Where a record with an item goes now: record.category; whether it is junk (record.junk: in Junk with a price,
+-- the marker on, not pinned); whether it is pinned.
+function Categories.Classify(record)
+    local item = record.item
+    local key = (kept.assigned or {})[item]
+    record.pinned = (kept.pinned or {})[item] == true
+    local marker = Categories.Marker()
+    if record.reagentBag then
+        key = "reagent"
+    elseif record.special then
+        key = "special"
+    elseif key == Categories.JUNK and not marker then
+        key = nil
+    end
+    if not key then
+        if Categories.CAMP[item] then
+            key = "camp"
+        elseif record.quest or record.questID then
+            key = "quest"
+        elseif record.quality == ns.Contents.POOR and marker then
+            key = Categories.JUNK
+        elseif record.set and ns.Contents.GEAR[record.class] then
+            key = "sets"
+        else
+            for _, other in ipairs(order) do
+                local def = Categories.DEF[other]
+                if def and def.classes and (def.classes[record.class] or def.slots and def.slots[record.equip])
+                    and not (def.notSlots and def.notSlots[record.equip]) then
+                    key = other
+                    break
+                end
+            end
+        end
+    end
+    if not key or not rank[key] or Categories.Off(key) then key = Categories.CATCH_ALL end
+    record.category = key
+    record.junk = key == Categories.JUNK and not record.worthless and not record.pinned
+    return key
+end
+
+-------------------------------------------------------------------------------
+--  The player's choices for items
+-------------------------------------------------------------------------------
+-- Whether an item may be put into a category (not Pinned, Recent, the reagent bag's, the special bags').
+function Categories.Takes(key)
+    if not rank[key] then return false end
+    local def = Categories.DEF[key]
+    return not (def and (def.fixed or def.unassignable))
+end
+
+function Categories.Pin(item, on)
+    kept.pinned = kept.pinned or {}
+    kept.pinned[item] = on and true or nil
+end
+
+function Categories.Pinned(item)
+    return (kept.pinned or {})[item] == true
+end
+
+-- An item put into a category (nil: back to where the rules put it); Junk remembers where it was.
+function Categories.Assign(item, key)
+    kept.assigned, kept.before = kept.assigned or {}, kept.before or {}
+    if key == Categories.JUNK then
+        local was = kept.assigned[item]
+        if was ~= Categories.JUNK then kept.before[item] = was end
+    else
+        kept.before[item] = nil
+    end
+    kept.assigned[item] = key
+end
+
+function Categories.Assigned(item)
+    return (kept.assigned or {})[item]
+end
+
+-- Marked as junk, or unmarked: back into the category it was put into before, else where the rules put it.
+function Categories.MarkJunk(item, on)
+    if on then return Categories.Assign(item, Categories.JUNK) end
+    kept.assigned = kept.assigned or {}
+    local was = kept.before and kept.before[item]
+    if kept.assigned[item] == Categories.JUNK then kept.assigned[item] = (was and Known(was)) and was or nil end
+    if kept.before then kept.before[item] = nil end
+end
+
+-- Whether an item with this quality counts as junk now: marked, or grey and not put elsewhere.
+function Categories.Junk(item, quality)
+    if not Categories.Marker() then return false end
+    local key = (kept.assigned or {})[item]
+    if key then return key == Categories.JUNK end
+    return quality == ns.Contents.POOR
+end
+
+-------------------------------------------------------------------------------
+--  The player's choices for categories and groups
+-------------------------------------------------------------------------------
+local function Changed()
+    Categories.Order()
+end
+
+-- The movable categories as they stand, kept as the player's order.
+local function Keep()
+    local movable = {}
+    for _, key in ipairs(order) do
+        local def = Categories.DEF[key]
+        if not (def and (def.fixed or def.last)) then movable[#movable + 1] = key end
+    end
+    kept.order = movable
+    return movable
+end
+
+-- A category renamed; no name: a built-in one gets its own back, the player's own keeps the one it has.
+function Categories.Rename(key, word)
+    kept.words = kept.words or {}
+    word = type(word) == "string" and word:match("^%s*(.-)%s*$") or ""
+    local own = Own(key)
+    if own then
+        if word ~= "" then own.word = word:sub(1, Categories.LETTERS) end
+    else
+        kept.words[key] = word ~= "" and word:sub(1, Categories.LETTERS) or nil
+    end
+end
+
+function Categories.RenameGroup(group, word)
+    kept.groups = kept.groups or {}
+    word = type(word) == "string" and word:match("^%s*(.-)%s*$") or ""
+    kept.groups[group] = kept.groups[group] or {}
+    kept.groups[group].word = word ~= "" and word:sub(1, Categories.LETTERS) or nil
+end
+
+-- Moved one place up (-1) or down (1) past the next movable category (a group moves as one).
+function Categories.Move(key, step)
+    local movable = Keep()
+    local index
+    for at, other in ipairs(movable) do
+        if other == key then index = at end
+    end
+    if not index then return end
+    local target = index + step
+    if target < 1 or target > #movable then return end
+    movable[index], movable[target] = movable[target], movable[index]
+    Changed()
+end
+
+function Categories.SwitchOff(key, off)
+    kept.off = kept.off or {}
+    kept.off[key] = off and true or false
+    Changed()
+end
+
+function Categories.Hide(key, hidden)
+    kept.hidden = kept.hidden or {}
+    kept.hidden[key] = hidden and true or nil
+end
+
+function Categories.Hidden(key)
+    return (kept.hidden or {})[key] == true
+end
+
+-- Whether a category may be in a group (not Pinned, Recent, Junk, the bags' own).
+function Categories.Groupable(key)
+    local def = Categories.DEF[key]
+    return rank[key] ~= nil and not (def and def.alone)
+end
+
+local function Member(key, group)
+    kept.member = kept.member or {}
+    kept.member[key] = group or false
+end
+
+-- Two categories made a new group; a category put into a group, or taken out of its group; a group undone.
+function Categories.GroupWith(key, other)
+    kept.ownGroup = (tonumber(kept.ownGroup) or 0) + 1
+    local group = "group" .. kept.ownGroup
+    Member(key, group)
+    Member(other, group)
+    -- The two together in the order: the first one's place.
+    local movable = Keep()
+    local first, second
+    for index, value in ipairs(movable) do
+        if value == key or value == other then
+            if first then second = index else first = index end
+        end
+    end
+    if first and second and second > first + 1 then
+        local moved = table.remove(movable, second)
+        table.insert(movable, first + 1, moved)
+    end
+    Changed()
+    return group
+end
+
+function Categories.Join(key, group)
+    Member(key, group)
+    local movable = Keep()
+    local last, at
+    for index, value in ipairs(movable) do
+        if groupOf[value] == group then last = index end
+        if value == key then at = index end
+    end
+    if last and at and at ~= last then
+        local moved = table.remove(movable, at)
+        if at < last then last = last - 1 end
+        table.insert(movable, last + 1, moved)
+    end
+    Changed()
+end
+
+function Categories.Ungroup(key)
+    Member(key, false)
+    Changed()
+end
+
+function Categories.Disband(group)
+    for _, key in ipairs(Categories.Members(group)) do Member(key, false) end
+    if kept.groups then kept.groups[group] = nil end
+    Changed()
+end
+
+-- A category of the player's own made (its key), renamed, deleted (its items back where the rules put them).
+function Categories.New(word, icon)
+    word = type(word) == "string" and word:match("^%s*(.-)%s*$") or ""
+    if word == "" then return nil end
+    kept.own = kept.own or {}
+    local key = "own" .. kept.ownNext
+    kept.ownNext = kept.ownNext + 1
+    kept.own[#kept.own + 1] = { key = key, word = word:sub(1, Categories.LETTERS), icon = icon }
+    Changed()
+    return key
+end
+
+function Categories.SetIcon(key, icon)
+    local own = Own(key)
+    if own then own.icon = icon end
+end
+
+function Categories.Delete(key)
+    local own = kept.own or {}
+    for index = #own, 1, -1 do
+        if own[index].key == key then table.remove(own, index) end
+    end
+    for item, value in pairs(kept.assigned or {}) do
+        if value == key then kept.assigned[item] = nil end
+    end
+    for item, value in pairs(kept.before or {}) do
+        if value == key then kept.before[item] = nil end
+    end
+    if kept.member then kept.member[key] = nil end
+    if kept.words then kept.words[key] = nil end
+    if kept.hidden then kept.hidden[key] = nil end
+    if kept.order then
+        for index = #kept.order, 1, -1 do
+            if kept.order[index] == key then table.remove(kept.order, index) end
+        end
+    end
+    Changed()
+end

@@ -13,16 +13,20 @@ local _, ns = ...
 --  while the bags change:
 --      { bag, slot, item, count, quality, link, name, icon, locked, bound,
 --        worthless, readable, quest, questID, questActive, new, class,
---        subclass, equip, level, natural, home, junk, group, place }
+--        subclass, equip, level, category, junk, pinned, set, reagentBag,
+--        special, kind, place,
+--        boe (binds when equipped), bind (the game's bind type), sell (one's
+--        price at a vendor), required (the level it needs), kindName,
+--        subName (the game's words for its class and subclass), unusable }
 --  item nil: the slot is empty. place: "bags" (carried) or the bank's kind.
+--  unusable: the character cannot use or wear it (a line of its tooltip in
+--  the game's red), asked once per item link until the next level.
 --
---  The groups are the game's own (its auction house's categories, as
---  Camelot lists them, in their order), with what is pinned and what is new
---  first and the junk last; an item goes by its class
---  (C_Item.GetItemInfoInstant), a quest item by what the game says of it
---  (C_Container.GetContainerItemQuestInfo): its natural group. The player may
---  put it into another (home), pin it, rename, move, hide or join the groups
---  (Groups.lua); group is the one it shows in.
+--  Its category is Categories.lua's (record.category), from its class
+--  (C_Item.GetItemInfoInstant), what the game says of a quest item
+--  (C_Container.GetContainerItemQuestInfo), the bag it is in (reagentBag,
+--  special: a bag for one kind of item) and the equipment set it is in (set:
+--  the set's name, the first set that has that slot).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Contents = {}
@@ -38,32 +42,6 @@ Contents.KEYRING = INDEX.Keyring or -1
 Contents.BACKPACK = INDEX.Backpack or 0
 Contents.POOR = QUALITY.Poor or 0
 
--- The groups in the order they are shown at first (Groups.lua: in the player's order).
-Contents.GROUPS = {
-    { key = "pinned", word = ns.TEXT.bagsPinned },
-    { key = "new", word = Core.Word("NEW", "New") },
-    { key = "weapons", word = Core.Word("AUCTION_CATEGORY_WEAPONS", "Weapons") },
-    { key = "armor", word = Core.Word("AUCTION_CATEGORY_ARMOR", "Armor") },
-    { key = "containers", word = Core.Word("AUCTION_CATEGORY_CONTAINERS", "Containers") },
-    { key = "consumables", word = Core.Word("AUCTION_CATEGORY_CONSUMABLES", "Consumables") },
-    { key = "trade", word = Core.Word("AUCTION_CATEGORY_TRADE_GOODS", "Trade Goods") },
-    { key = "ammo", word = Core.Word("AUCTION_CATEGORY_PROJECTILE", "Ammo") },
-    { key = "recipes", word = Core.Word("AUCTION_CATEGORY_RECIPES", "Recipes") },
-    { key = "quest", word = Core.Word("AUCTION_CATEGORY_QUEST_ITEMS", "Quest Items") },
-    { key = "other", word = Core.Word("AUCTION_CATEGORY_MISCELLANEOUS", "Miscellaneous") },
-    { key = "junk", word = Core.Word("BAG_FILTER_JUNK", "Junk") },
-}
-Contents.GROUP = {} -- [key] = { key, word }
-for _, group in ipairs(Contents.GROUPS) do Contents.GROUP[group.key] = group end
-
--- An item's class to its group, as the game's auction house sorts them; a class not named is "other".
-Contents.CLASSES = {
-    [CLASS.Weapon or 2] = "weapons", [CLASS.Armor or 4] = "armor",
-    [CLASS.Container or 1] = "containers", [CLASS.Quiver or 11] = "containers",
-    [CLASS.Consumable or 0] = "consumables", [CLASS.ItemEnhancement or 8] = "consumables",
-    [CLASS.Tradegoods or 7] = "trade", [CLASS.Reagent or 5] = "trade", [CLASS.Gem or 3] = "trade",
-    [CLASS.Projectile or 6] = "ammo", [CLASS.Recipe or 9] = "recipes", [CLASS.Questitem or 12] = "quest",
-}
 -- The classes whose items carry an item level worth showing: what is worn.
 Contents.GEAR = { [CLASS.Weapon or 2] = true, [CLASS.Armor or 4] = true }
 
@@ -172,34 +150,74 @@ local function Level(link, class)
     return type(level) == "number" and level > 0 and level or nil
 end
 
--- The group of its kind a record with an item goes in: a quest's, else its class's.
-function Contents.Classed(record)
-    if record.quest or record.questID then return "quest" end
-    return Contents.CLASSES[record.class] or "other"
+-- What the game says of an item beyond its slot (C_Item.GetItemInfo): its bind type, price, the level it needs,
+-- its class's and subclass's words; nil while the game does not know it yet.
+local function Info(record)
+    local items = rawget(_G, "C_Item")
+    local fn = items and items.GetItemInfo or rawget(_G, "GetItemInfo")
+    if not fn then return true end
+    local ok, name, _, _, _, required, kindName, subName, _, _, _, sell, _, _, bind = pcall(fn, record.link or record.item)
+    if not ok or Plain(name) == nil then return end
+    record.required, record.kindName, record.subName = Plain(required), Plain(kindName), Plain(subName)
+    record.sell, record.bind = Plain(sell), Plain(bind)
+    return true
 end
 
--- The game's group for a record with an item: junk (grey with a price), else the group of its kind.
-function Contents.Natural(record)
-    if record.quality == Contents.POOR and not record.worthless then return "junk" end
-    return Contents.Classed(record)
+-- Whether the character cannot use an item: a line of its tooltip in the game's red (a recipe: the game's own
+-- answer); kept per link until the next level (Contents.Leveled).
+local unusable = {}
+local function Red(color)
+    return type(color) == "table" and (color.r or 0) > 0.9 and (color.g or 1) < 0.2 and (color.b or 1) < 0.2
 end
-
--- Where a record with an item goes, anew: home (the player's group for it, else its natural one); whether it
--- is junk (in Junk with a price, not pinned); the group it shows in: Pinned, else New while new, else its
--- home's (or the group that one is joined into).
-function Contents.Place(record, new)
-    local Groups = ns.Groups
-    local pinned = Groups.Pinned(record.item)
-    record.home = Groups.Home(record.item, record.natural)
-    record.junk = record.home == Groups.JUNK and not record.worthless and not pinned
-    if pinned then
-        record.group = Groups.PINNED
-    elseif new then
-        record.group = Groups.NEW
-    else
-        record.group = Groups.Shown(record.home)
+local function Unusable(record)
+    local link = record.link
+    if not link then return false end
+    local known = unusable[link]
+    if known ~= nil then return known end
+    local items = rawget(_G, "C_Item") or {}
+    local answer = false
+    if record.class == (CLASS.Recipe or 9) and items.IsUsableItem then
+        answer = Ask(items.IsUsableItem, link) ~= true
+    elseif Contents.GEAR[record.class] or items.GetItemSpell and Ask(items.GetItemSpell, link) then
+        local tips = rawget(_G, "C_TooltipInfo")
+        local data = tips and tips.GetBagItem and Ask(tips.GetBagItem, record.bag, record.slot)
+        if type(data) ~= "table" or type(data.lines) ~= "table" then return false end
+        for _, line in ipairs(data.lines) do
+            if Red(line.leftColor) or Red(line.rightColor) then
+                answer = true
+                break
+            end
+        end
     end
-    return record
+    unusable[link] = answer
+    return answer
+end
+
+function Contents.Leveled()
+    for link in pairs(unusable) do unusable[link] = nil end
+end
+
+-- The equipment sets' slots in the bags and the bank: ["bag:slot"] = the first set's name; read anew before the
+-- slots are (Contents.Sets).
+Contents.setAt = {}
+function Contents.Sets()
+    local at = Contents.setAt
+    for key in pairs(at) do at[key] = nil end
+    local sets = rawget(_G, "C_EquipmentSet")
+    local unpack = rawget(_G, "EquipmentManager_GetLocationData")
+    if not (sets and sets.GetEquipmentSetIDs and sets.GetItemLocations and unpack) then return at end
+    for _, id in ipairs(Ask(sets.GetEquipmentSetIDs) or {}) do
+        local name = sets.GetEquipmentSetInfo and Plain(Ask(sets.GetEquipmentSetInfo, id))
+        for _, location in pairs(Ask(sets.GetItemLocations, id) or {}) do
+            location = Plain(location)
+            local data = type(location) == "number" and location >= 0 and Ask(unpack, location)
+            if type(data) == "table" and data.isBags and data.bag and data.slot then
+                local key = data.bag .. ":" .. data.slot
+                if not at[key] then at[key] = name or "" end
+            end
+        end
+    end
+    return at
 end
 
 local function Bool(value)
@@ -218,8 +236,10 @@ function Contents.Read(bag, slot, place)
         record.count, record.quality, record.link, record.name, record.icon = nil, nil, nil, nil, nil
         record.locked, record.bound, record.worthless, record.readable, record.quest = false, false, false, false, false
         record.questID, record.questActive, record.new = nil, false, false
-        record.class, record.subclass, record.equip, record.level, record.group = nil, nil, nil, nil, nil
-        record.natural, record.home, record.junk = nil, nil, false
+        record.class, record.subclass, record.equip, record.level, record.category = nil, nil, nil, nil, nil
+        record.junk, record.pinned, record.set = false, false, nil
+        record.boe, record.bind, record.sell, record.required, record.kindName, record.subName = false, nil, nil, nil, nil, nil
+        record.unusable = false
         return record
     end
     local count = Plain(info.stackCount)
@@ -241,9 +261,13 @@ function Contents.Read(bag, slot, place)
     record.new = new and new.IsNewItem and Ask(new.IsNewItem, bag, slot) == true or false
     record.class, record.subclass, record.equip = Instant(record.item)
     record.level = Level(record.link, record.class)
-    if record.name == "" or Contents.GEAR[record.class] and not record.level then Contents.waiting[record.item] = true end
-    record.natural = Contents.Natural(record)
-    return Contents.Place(record, record.new)
+    local known = Info(record)
+    record.boe = Contents.GEAR[record.class] and (record.bind == (Enum and Enum.ItemBind and Enum.ItemBind.OnEquip or 2)) or false
+    record.unusable = Unusable(record)
+    if not known or record.name == "" or Contents.GEAR[record.class] and not record.level then Contents.waiting[record.item] = true end
+    record.set = Contents.setAt[bag .. ":" .. slot]
+    ns.Categories.Classify(record)
+    return record
 end
 
 -------------------------------------------------------------------------------
@@ -271,6 +295,30 @@ function Contents.KindWord(kind)
     end
     local api = Containers()
     local name = type(kind) == "number" and api and api.GetBagName and Plain(Ask(api.GetBagName, kind))
+    return type(name) == "string" and name ~= "" and name or Core.Word("BAGSLOT", "Bag")
+end
+
+-- The name a bag is shown by: the backpack, the reagent bag, the keyring, the bag's own name; a bank's tab by
+-- its number in that bank.
+function Contents.BagWord(bag, place)
+    if bag == Contents.BACKPACK then return Core.Word("BAG_NAME_BACKPACK", Core.Word("BACKPACK_TOOLTIP", "Backpack")) end
+    if bag == Contents.KEYRING then return Core.Word("KEYRING", "Keyring") end
+    if (not place or place == "bags") and Contents.Reagent(bag) then return ns.TEXT.bagsReagentBag end
+    if place and place ~= "bags" then
+        local bank = rawget(_G, "C_Bank")
+        for _, kind in ipairs(Contents.BANKS) do
+            if kind.kind == place and bank and bank.FetchPurchasedBankTabData and kind.type then
+                for index, tab in ipairs(Ask(bank.FetchPurchasedBankTabData, kind.type) or {}) do
+                    if Plain(tab.ID) == bag then
+                        local name = Plain(tab.name)
+                        return type(name) == "string" and name ~= "" and name or ns.TEXT.bagsTab:format(index)
+                    end
+                end
+            end
+        end
+    end
+    local api = Containers()
+    local name = api and api.GetBagName and Plain(Ask(api.GetBagName, bag))
     return type(name) == "string" and name ~= "" and name or Core.Word("BAGSLOT", "Bag")
 end
 
@@ -311,8 +359,12 @@ end
 function Contents.Scan(bags, place, slots, free)
     for _, bag in ipairs(bags) do
         local kind = Contents.Kind(bag, place)
+        local carried = not place or place == "bags"
         for slot = 1, Contents.Size(bag) do
-            local record = Contents.Read(bag, slot, place)
+            local record = Contents.Record(bag, slot)
+            record.reagentBag = carried and Contents.Reagent(bag)
+            record.special = carried and kind ~= "bags" and not record.reagentBag
+            Contents.Read(bag, slot, place)
             record.kind = kind
             slots[#slots + 1] = record
             Tally(free, kind, record)
@@ -327,12 +379,14 @@ end
 -- How a view sorts what is in a group: by the first of these that differs, then by the one after; at last by
 -- the bag and slot, so that an item keeps its place while only its count changes.
 Contents.ORDERS = {
+    { key = "default", word = Core.Word("DEFAULT", "Default") },
     { key = "quality", word = Core.Word("QUALITY", "Quality") },
     { key = "name", word = Core.Word("NAME", "Name") },
     { key = "level", word = Core.Word("STAT_AVERAGE_ITEM_LEVEL", "Item Level") },
 }
 
--- Each order's tests: a < b (a comes first), b < a, or neither.
+-- Each order's tests: a < b (a comes first), b < a, or neither. The first order: gear by item level, then the
+-- game's subclass words, the quality, the name.
 local function ByQuality(a, b)
     local qa, qb = a.quality or -1, b.quality or -1
     if qa ~= qb then return qa > qb end
@@ -349,62 +403,74 @@ local function ByPlace(a, b)
     if a.bag ~= b.bag then return a.bag < b.bag end
     return a.slot < b.slot
 end
+local function ByGear(a, b)
+    local ga, gb = Contents.GEAR[a.class] and a.level or 0, Contents.GEAR[b.class] and b.level or 0
+    if ga ~= gb then return ga > gb end
+end
+local function ByKind(a, b)
+    local ka, kb = a.subName or "", b.subName or ""
+    if ka ~= kb then return ka < kb end
+end
+local function ByItem(a, b)
+    if a.item ~= b.item then return (a.item or 0) < (b.item or 0) end
+end
 local TESTS = {
+    default = { ByGear, ByKind, ByQuality, ByName, ByItem },
     quality = { ByQuality, ByLevel, ByName },
     name = { ByName, ByQuality },
     level = { ByLevel, ByQuality, ByName },
 }
 
--- One comparison per order, grouped (the group's place in the player's order first) or not; made once.
+-- One comparison per order; made once. A list holds records, or entries { record, count } (a merged stack).
 local COMPARE = {}
-local rank -- the groups' places (Groups.rank; Groups.lua comes later in the TOC): taken at each sort
 for key, tests in pairs(TESTS) do
-    local function Compare(a, b)
+    COMPARE[key] = function(a, b)
+        a, b = a.record or a, b.record or b
         for _, test in ipairs(tests) do
             local first = test(a, b)
             if first ~= nil then return first end
         end
         return ByPlace(a, b)
     end
-    COMPARE[key] = Compare
-    COMPARE[key .. "+group"] = function(a, b)
-        local ra, rb = rank[a.group] or math.huge, rank[b.group] or math.huge
-        if ra ~= rb then return ra < rb end
-        return Compare(a, b)
-    end
 end
 
--- A list of records with items sorted by order ("quality", "name", "level"), by group first if grouped.
-function Contents.Sort(list, order, grouped)
-    local compare = COMPARE[(TESTS[order] and order or "quality") .. (grouped and "+group" or "")]
-    rank = ns.Groups.rank
-    table.sort(list, compare)
+-- A list of records (or entries) with items sorted by order (Contents.ORDERS' keys).
+function Contents.Sort(list, order)
+    table.sort(list, COMPARE[TESTS[order] and order or "default"])
     return list
 end
 
 -------------------------------------------------------------------------------
 --  Search
 -------------------------------------------------------------------------------
--- Whether a record with an item is found by a query (Core.Fuzzy.Query): by its name, its group's name or
+-- Whether a record with an item is found by a query (Core.Fuzzy.Query): by its name, its category's name or
 -- its item level.
 function Contents.Found(record, query)
     if not query then return true end
     if not record.item then return false end
-    return Core.Fuzzy.Match(query, record.name, ns.Groups.Word(record.group), record.level and tostring(record.level)) ~= nil
+    return Core.Fuzzy.Match(query, record.name, ns.Categories.Word(record.category), record.level and tostring(record.level)) ~= nil
 end
 
 -------------------------------------------------------------------------------
 --  Junk
 -------------------------------------------------------------------------------
--- The records of these slots that are junk, into a list (emptied first); and whether they are just what the
--- game sells as junk (its grey items with a price), so that the game's own sell-all does it.
+-- The records of these slots that are junk to sell, into a list (emptied first): not in a special bag, not in
+-- an equipment set, not pinned, with a price, not one the vendor would buy back for its price (refundable).
+-- And whether they are just what the game sells as junk (its grey items with a price), so that the game's own
+-- sell-all does it.
+local function Refundable(record)
+    local api = Containers()
+    local info = api and api.GetContainerItemPurchaseInfo and Ask(api.GetContainerItemPurchaseInfo, record.bag, record.slot, false)
+    return type(info) == "table" and (Plain(info.refundSeconds) or 0) > 0
+end
 function Contents.Junk(slots, into)
     for index = #into, 1, -1 do into[index] = nil end
     local same = true
     for _, record in ipairs(slots) do
         if record.item then
-            if record.junk then into[#into + 1] = record end
-            if record.junk ~= (record.quality == Contents.POOR and not record.worthless) then same = false end
+            local sold = record.junk and not record.special and not record.set and not record.pinned and not Refundable(record)
+            if sold then into[#into + 1] = record end
+            if (sold or false) ~= (record.quality == Contents.POOR and not record.worthless) then same = false end
         end
     end
     return into, same

@@ -4,58 +4,67 @@ local _, ns = ...
 --  Sane UI - Inventory - Bags - Cells
 --  The item buttons of the bag window: the game's own
 --  (ContainerFrameItemButtonTemplate, Blizzard_UIPanels_Game's
---  ContainerFrame), one per slot of a bag, made the first time that slot is
---  shown and used again in every view. Its click, drag, tooltip, the
---  splitting of a stack, selling at a vendor, putting into the bank: all the
---  template's own code, so using an item from our window is the game's own
---  click, in a fight too.
+--  ContainerFrame), so its click, drag, tooltip, the splitting of a stack,
+--  selling at a vendor and putting into the bank are all the template's own
+--  code, in a fight too.
 --
---  Each bag's buttons stand in a frame of ours that carries the bag's ID
---  (SetID): the template asks its parent for the bag (GetBagID, as the game's
---  bag windows always did), so the bag is never written into the button and
---  nothing of ours taints the click. The slot is the button's own ID.
---  What a button shows is drawn as the game's bag window draws it
---  (ContainerFrameMixin:UpdateItems), by the template's own functions: icon,
---  count, quality border, grey while locked, the quest mark, the glow of a new
---  item, the junk coin at a vendor (on what is junk to us: Groups.lua), the
---  cooldown; the search's dimming is the game's too (SetMatchesSearch). Ours
---  on it: the item level of gear, in its top right corner; in the list, a
---  line behind it that the button's click reaches over (its hit rect), so the
---  whole line is the item. A click the game's button does nothing with (Alt
---  and the right button) opens our menu for the item (Bags.Clicked), by a
---  hook after the button's own click.
+--  A pool: each drawing takes as many buttons as it shows cells, in order
+--  (Cells.Take), so one slot may show twice (pinned and in its category) and
+--  a merged stack is one button. Each button stands in a holder of ours that
+--  carries the bag's ID (SetID): the template asks its parent for the bag
+--  (GetBagID), so nothing of ours is written into the button. The slot is
+--  the button's own ID.
 --
---  Made out of a fight only: a slot first shown in a fight waits for its end
---  (Cells.short tells the window).
+--  The look, flat: the icon cut a little round its edge, a thin border in its
+--  quality's colour (a quest item's thicker, in gold), the game's highlight,
+--  a warm glow while pressed; over it, above the cooldown's swipe, the count
+--  at the bottom right, the item level of gear at the top left in its
+--  quality's colour, BoE at the bottom left on gear not yet bound, the
+--  equipment set's name at the bottom, a quest mark on an item that starts a
+--  quest, a coin on junk. An item the character cannot use is tinted red.
+--  An empty slot is a dark square; a pad (Cells.Pad) is one that fills a row
+--  and takes no mouse. What a search does not find is faded.
+--
+--  Made out of a fight only: a button first needed in a fight waits for its
+--  end (Cells.short tells the window).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Cells = {}
 ns.Cells = Cells
 
 Cells.TEMPLATE = "ContainerFrameItemButtonTemplate"
+Cells.ZOOM = 0.08                       -- the icon's edge cut away, on each side
+Cells.PRESSED = { 0.973, 0.839, 0.604 } -- the glow while pressed
+Cells.NEUTRAL = { 0.25, 0.25, 0.25 }    -- the border of an item without a quality's colour
+Cells.QUEST = { 1, 0.82, 0 }            -- a quest item's border
+Cells.EMPTY = { 0.08, 0.08, 0.08 }      -- an empty slot's square
+Cells.EMPTY_ALPHA, Cells.PAD_ALPHA = 0.6, 0.35
+Cells.EMPTY_EDGE = { 0.15, 0.15, 0.15, 0.5 }
+Cells.PAD_EDGE = { 0, 0, 0, 0.3 }
+Cells.FADED = 0.2                       -- what a search does not find
+Cells.UNUSABLE = { 1, 0.1, 0.1 }
+Cells.MARK, Cells.COIN = 16, 12         -- the quest mark, the junk coin
 
-local holders = {} -- [bag] = the frame its buttons stand in
-local buttons = {} -- [bag] = { [slot] = button }
-local levels = {}  -- [button] = the item level's words on it (ours, kept apart from the game's button)
-local placed = {}  -- [button] = the round it was placed in
-local shown = {}   -- the buttons placed, in a list (Cells.Each)
-local round = 0
-local parent       -- the frame the holders fill (the scroll area's child)
-
--- The mouse on a button, or off it: the window lights a list's line (Bags.Hover).
-local function Hovered(button, on)
-    if ns.Bags and ns.Bags.Hover then ns.Bags.Hover(button, on) end
-end
-
--- A click on a button, after the game's own: the window may answer it (Bags.Clicked).
-local function Clicked(button, mouse)
-    if ns.Bags and ns.Bags.Clicked then ns.Bags.Clicked(button, mouse) end
-end
+local buttons = {}  -- the pool, in order of taking
+local look = {}     -- [button] = what is ours on it (kept apart from the game's button)
+local pads = {}     -- the pads' pool
+local taken, padded = 0, 0
+local at = {}       -- ["bag:slot"] = the first button drawing that slot now
+local recordOf = {} -- [button] = the record it draws now
+local parent        -- the frame the holders stand in (the scroll area's child)
+local fonts
 
 local function Game(name, ...)
     local fn = rawget(_G, name)
     if type(fn) == "function" then return fn(...) end
 end
+
+-- A part of the template's (a texture, a font string, a frame), if this client's template has it.
+local function Part(button, key)
+    local part = button[key]
+    return type(part) == "table" and part or nil
+end
+Cells.Part = Part
 
 -- A method of the template's, if this client's template has it.
 local function Call(button, name, ...)
@@ -63,164 +72,374 @@ local function Call(button, name, ...)
     if type(fn) == "function" then return fn(button, ...) end
 end
 
+local function Fonts()
+    if fonts then return fonts end
+    fonts = {
+        count = Core.Font("SaneUIBagsCount", "NumberFontNormal", 11, "OUTLINE"),
+        level = Core.Font("SaneUIBagsLevel", "NumberFontNormal", 12, "OUTLINE"),
+        bind = Core.Font("SaneUIBagsBind", "NumberFontNormal", 11, "OUTLINE"),
+        set = Core.Font("SaneUIBagsSet", "NumberFontNormal", 9, "OUTLINE"),
+    }
+    return fonts
+end
+Cells.Fonts = Fonts
+
+-- The mouse on a button, or off it; a click after the game's: the window may answer (Bags.Hover, Bags.Clicked).
+local function Hovered(button, on)
+    if ns.Bags and ns.Bags.Hover then ns.Bags.Hover(button, on) end
+end
+
+local function Clicked(button, mouse)
+    if ns.Bags and ns.Bags.Clicked then ns.Bags.Clicked(button, mouse) end
+end
+
 function Cells.Build(child)
     parent = child
 end
 
-local function Holder(bag)
-    local holder = holders[bag]
-    if not holder then
-        holder = CreateFrame("Frame", nil, parent)
-        holder:SetID(bag)
-        holder:SetAllPoints(parent)
-        holders[bag] = holder
+-------------------------------------------------------------------------------
+--  The look
+-------------------------------------------------------------------------------
+-- A thin border inside a frame's edge: four lines, thick pixels of the screen's own.
+local function Border(frame, layer)
+    local lines = {}
+    for index = 1, 4 do
+        lines[index] = frame:CreateTexture(nil, layer or "OVERLAY", nil, 2)
+        lines[index]:SetColorTexture(1, 1, 1, 1)
     end
-    return holder
+    lines[1]:SetPoint("TOPLEFT"); lines[1]:SetPoint("TOPRIGHT")
+    lines[2]:SetPoint("BOTTOMLEFT"); lines[2]:SetPoint("BOTTOMRIGHT")
+    lines[3]:SetPoint("TOPLEFT"); lines[3]:SetPoint("BOTTOMLEFT")
+    lines[4]:SetPoint("TOPRIGHT"); lines[4]:SetPoint("BOTTOMRIGHT")
+    return lines
+end
+Cells.Border = Border
+
+function Cells.Edge(lines, r, g, b, a, thick)
+    for index = 1, 4 do lines[index]:SetVertexColor(r, g, b, a or 1) end
+    if thick then
+        lines[1]:SetHeight(thick); lines[2]:SetHeight(thick)
+        lines[3]:SetWidth(thick); lines[4]:SetWidth(thick)
+    end
 end
 
--- The button of a slot; made now if need be, nil in a fight for one not made yet (Cells.short is set).
-function Cells.Button(bag, slot)
-    local slots = buttons[bag]
-    local button = slots and slots[slot]
+-- The template's own parts set to the flat look, ours added beside them (look[button]).
+local function Skin(button, holder)
+    for _, key in ipairs({ "NewItemTexture", "BattlepayItemTexture", "flash" }) do
+        local part = Part(button, key)
+        if part and part.Hide then part:Hide(); part:SetAlpha(0) end
+    end
+    local glow = Part(button, "newitemglowAnim")
+    if glow and glow.Stop then glow:Stop() end
+    local icon = Part(button, "icon")
+    if icon then
+        icon:ClearAllPoints()
+        icon:SetAllPoints(button)
+        icon:SetTexCoord(Cells.ZOOM, 1 - Cells.ZOOM, Cells.ZOOM, 1 - Cells.ZOOM)
+        local mask = Part(button, "IconMask")
+        if mask and icon.RemoveMaskTexture then
+            icon:RemoveMaskTexture(mask)
+            mask:Hide()
+        end
+    end
+    local light = button:GetHighlightTexture()
+    if light then light:ClearAllPoints(); light:SetAllPoints(button) end
+    local pressed = button:GetPushedTexture()
+    if pressed then
+        pressed:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
+        pressed:SetTexCoord(0, 1, 0, 1)
+        pressed:ClearAllPoints()
+        pressed:SetAllPoints(button)
+        pressed:SetVertexColor(Cells.PRESSED[1], Cells.PRESSED[2], Cells.PRESSED[3], 1)
+    end
+    local normal = button:GetNormalTexture()
+    if normal then normal:SetAlpha(0) end
+    local border = Part(button, "IconBorder")
+    if border then border:SetAlpha(0) end
+
+    local mine = { holder = holder }
+    mine.empty = button:CreateTexture(nil, "BACKGROUND", nil, 1)
+    mine.empty:SetAllPoints()
+    mine.empty:SetColorTexture(Cells.EMPTY[1], Cells.EMPTY[2], Cells.EMPTY[3], 1)
+    mine.border = Border(button)
+    -- Above the cooldown's swipe: the words and marks.
+    local over = CreateFrame("Frame", nil, button)
+    over:SetAllPoints()
+    local cooldown = Part(button, "Cooldown")
+    over:SetFrameLevel((cooldown and cooldown:GetFrameLevel() or button:GetFrameLevel()) + 2)
+    mine.over = over
+    local font = Fonts()
+    local count = Part(button, "Count")
+    if count then
+        count:SetParent(over)
+        if font.count then count:SetFontObject(font.count) end
+        count:ClearAllPoints()
+        count:SetPoint("BOTTOMRIGHT", -2, 2)
+    end
+    local function Words(point, x, y, object)
+        local words = over:CreateFontString(nil, "OVERLAY", nil, 7)
+        if object then words:SetFontObject(object) end
+        words:SetPoint(point, button, point, x, y)
+        return words
+    end
+    mine.level = Words("TOPLEFT", 1, -1, font.level)
+    mine.bind = Words("BOTTOMLEFT", 1, 2, font.bind)
+    mine.set = Words("BOTTOM", 0, 2, font.set)
+    mine.set:SetWordWrap(false)
+    mine.quest = over:CreateTexture(nil, "OVERLAY", nil, 6)
+    mine.quest:SetAtlas("QuestNormal")
+    mine.quest:SetSize(Cells.MARK, Cells.MARK)
+    mine.quest:SetPoint("BOTTOMLEFT", -2, 1)
+    mine.coin = over:CreateTexture(nil, "OVERLAY", nil, 6)
+    mine.coin:SetTexture("Interface\\Icons\\INV_Misc_Coin_01")
+    mine.coin:SetTexCoord(0.12, 0.88, 0.12, 0.88)
+    mine.coin:SetSize(Cells.COIN, Cells.COIN)
+    mine.coin:SetPoint("BOTTOMLEFT", -3, -3)
+    if over.CreateMaskTexture then
+        local round = over:CreateMaskTexture()
+        round:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+        round:SetAllPoints(mine.coin)
+        mine.coin:AddMaskTexture(round)
+    end
+    look[button] = mine
+    return mine
+end
+
+-- The next button of this drawing; made now if need be, nil in a fight for one not made yet (Cells.short).
+function Cells.Take()
+    taken = taken + 1
+    local button = buttons[taken]
     if button then return button end
     if InCombatLockdown() then
+        taken = taken - 1
         Cells.short = true
         return nil
     end
-    if not slots then
-        slots = {}
-        buttons[bag] = slots
-    end
-    button = CreateFrame("ItemButton", nil, Holder(bag), Cells.TEMPLATE)
-    button:SetID(slot)
-    local level = button:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
-    level:SetPoint("TOPRIGHT", -2, -2)
-    level:Hide()
-    levels[button] = level
-    button:SetFrameLevel(parent:GetFrameLevel() + 3) -- above a list's line (the template sets a level of its own)
+    local holder = CreateFrame("Frame", nil, parent)
+    holder:SetSize(ns.Layout.SIZE, ns.Layout.SIZE)
+    button = CreateFrame("ItemButton", nil, holder, Cells.TEMPLATE)
+    button:SetAllPoints(holder)
+    Skin(button, holder)
     button:HookScript("OnEnter", function(self) ns.Safe("bags", Hovered, self, true) end)
     button:HookScript("OnLeave", function(self) ns.Safe("bags", Hovered, self, false) end)
     button:HookScript("OnClick", function(self, mouse) ns.Safe("bags", Clicked, self, mouse) end)
-    slots[slot] = button
+    button:HookScript("OnMouseUp", ns.Guard(function(self, mouse)
+        if mouse == "MiddleButton" then Clicked(self, mouse) end
+    end))
+    buttons[taken] = button
     return button
 end
 
 -------------------------------------------------------------------------------
 --  Drawing
 -------------------------------------------------------------------------------
--- A button as the record says, the game's way; dim: the search did not find it.
-function Cells.Draw(button, record, dim)
-    local texture = record.item and record.icon or nil
-    Game("ClearItemButtonOverlay", button)
-    Call(button, "SetHasItem", texture)
-    Game("SetItemButtonTexture", button, texture)
-    Game("SetItemButtonQuality", button, record.quality, record.link, false, record.bound)
-    Game("SetItemButtonCount", button, record.item and record.count or 0)
-    Game("SetItemButtonDesaturated", button, record.locked)
-    Call(button, "UpdateExtended")
-    Call(button, "UpdateQuestItem", record.quest, record.questID, record.questActive)
-    Call(button, "UpdateNewItem", record.quality)
-    -- The vendor's coin on what is junk to us (marked, or grey and not unmarked), not on every grey item.
-    Call(button, "UpdateJunkItem", record.junk and ns.Contents.POOR or nil, record.worthless)
-    Call(button, "UpdateItemContextMatching")
-    Call(button, "UpdateCooldown", texture)
-    Call(button, "SetReadable", record.readable)
-    local tip = rawget(_G, "GameTooltip")
-    if tip then Call(button, "CheckUpdateTooltip", tip:GetOwner()) end
-    Call(button, "SetMatchesSearch", not dim)
-    local level = levels[button]
-    if record.level then
-        local color = rawget(_G, "ITEM_QUALITY_COLORS") and ITEM_QUALITY_COLORS[record.quality]
-        level:SetText(record.level)
-        if color then level:SetTextColor(color.r, color.g, color.b) else level:SetTextColor(1, 1, 1) end
-        level:Show()
-    else
-        level:Hide()
-    end
+local function Faded(button, mine, faded)
+    local alpha = faded and Cells.FADED or 1
+    button:SetAlpha(alpha)
+    mine.over:SetAlpha(alpha)
 end
 
--- A cell for a kind of bag's free slots: that kind's first free slot, with how many there are.
-function Cells.DrawFree(button, record, entry)
-    Cells.Draw(button, record, false)
-    Game("SetItemButtonCount", button, entry.count)
+local function Plain(mine)
+    mine.level:SetText("")
+    mine.bind:SetText("")
+    mine.set:SetText("")
+    mine.quest:Hide()
+    mine.coin:Hide()
+end
+
+-- An empty slot: the dark square, the mouse taken (an item may be put there).
+local function Empty(button, mine)
+    Game("SetItemButtonTexture", button, nil)
+    Game("SetItemButtonCount", button, 0)
+    Game("SetItemButtonDesaturated", button, false)
+    Call(button, "SetHasItem", nil)
+    local icon = Part(button, "icon")
+    if icon then icon:Hide() end
+    mine.empty:Show()
+    mine.empty:SetAlpha(Cells.EMPTY_ALPHA)
+    local edge = Cells.EMPTY_EDGE
+    Cells.Edge(mine.border, edge[1], edge[2], edge[3], edge[4], Core.Pixels(button, 1))
+    Plain(mine)
+    local cooldown = Part(button, "Cooldown")
+    if cooldown and cooldown.Clear then cooldown:Clear() end
+    Call(button, "UpdateQuestItem", false, nil, false)
+    Faded(button, mine, false)
+end
+
+-- A button as the record says; how: { faded (a search did not find it), count (a merged stack's), coin (the
+-- junk coin shown), grey (junk greyed), bind (BoE shown), set (the set's name shown) }.
+function Cells.Draw(button, record, how)
+    local mine = look[button]
+    local holder = mine.holder
+    holder:SetID(record.bag)
+    button:SetID(record.slot)
+    recordOf[button] = record
+    local key = record.bag .. ":" .. record.slot
+    if not at[key] then at[key] = button end
+    Game("ClearItemButtonOverlay", button)
+    if not record.item then return Empty(button, mine) end
+    mine.empty:Hide()
+    local icon = Part(button, "icon")
+    if icon then icon:Show() end
+    Call(button, "SetHasItem", record.icon)
+    Game("SetItemButtonTexture", button, record.icon)
+    Game("SetItemButtonQuality", button, record.quality, record.link, false, record.bound)
+    local border = Part(button, "IconBorder")
+    if border then border:Hide() end
+    Game("SetItemButtonCount", button, how and how.count or record.count or 0)
+    Game("SetItemButtonDesaturated", button, record.locked or (how and how.grey and record.junk) or false)
+    Call(button, "UpdateExtended")
+    -- The template's own quest overlay stays off: ours is the border and the mark.
+    Call(button, "UpdateQuestItem", false, nil, false)
+    Call(button, "UpdateItemContextMatching")
+    Call(button, "UpdateCooldown", record.icon)
+    Call(button, "SetReadable", record.readable)
+    if icon then
+        local red = record.unusable and Cells.UNUSABLE
+        icon:SetVertexColor(red and red[1] or 1, red and red[2] or 1, red and red[3] or 1)
+    end
+    local pixel = Core.Pixels(button, 1)
+    local quest = record.quest or record.questID
+    local color = rawget(_G, "ITEM_QUALITY_COLORS") and record.quality and ITEM_QUALITY_COLORS[record.quality]
+    if quest then
+        Cells.Edge(mine.border, Cells.QUEST[1], Cells.QUEST[2], Cells.QUEST[3], 1, pixel * 2)
+    elseif color then
+        Cells.Edge(mine.border, color.r, color.g, color.b, 1, pixel)
+    else
+        Cells.Edge(mine.border, Cells.NEUTRAL[1], Cells.NEUTRAL[2], Cells.NEUTRAL[3], 1, pixel)
+    end
+    if record.level then
+        mine.level:SetText(record.level)
+        if color then mine.level:SetTextColor(color.r, color.g, color.b) else mine.level:SetTextColor(1, 1, 1) end
+    else
+        mine.level:SetText("")
+    end
+    local starter = record.questID and not record.questActive
+    mine.quest:SetShown(starter or false)
+    if how and how.bind and record.boe and not record.bound and not starter then
+        mine.bind:SetText(ns.TEXT.bagsBoE)
+        if color then mine.bind:SetTextColor(color.r, color.g, color.b) else mine.bind:SetTextColor(1, 1, 1) end
+    else
+        mine.bind:SetText("")
+    end
+    mine.set:SetText(how and how.set and record.set or "")
+    mine.coin:SetShown((how and how.coin and record.junk) or false)
+    local tip = rawget(_G, "GameTooltip")
+    if tip and tip.IsOwned and tip:IsOwned(button) then Call(button, "UpdateTooltip") end
+    Faded(button, mine, how and how.faded)
+end
+
+-- A button at its place in the parent (its top left, x right and y down), size wide and high; reach: the width
+-- of a list's line its click reaches over (nil: only the button).
+function Cells.Place(button, x, y, size, reach)
+    local holder = look[button].holder
+    holder:ClearAllPoints()
+    holder:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -y)
+    holder:SetSize(size, size)
+    look[button].set:SetWidth(size - 4)
+    button:SetHitRectInsets(0, reach and -(reach - size) or 0, 0, 0)
+    holder:Show()
+    button:Show()
+end
+
+-- A pad: a dark square that fills a row, takes no mouse.
+function Cells.Pad(x, y, size)
+    padded = padded + 1
+    local pad = pads[padded]
+    if not pad then
+        pad = CreateFrame("Frame", nil, parent)
+        pad.back = pad:CreateTexture(nil, "BACKGROUND", nil, 1)
+        pad.back:SetAllPoints()
+        pad.back:SetColorTexture(Cells.EMPTY[1], Cells.EMPTY[2], Cells.EMPTY[3], 1)
+        pad.back:SetAlpha(Cells.PAD_ALPHA)
+        pad.border = Border(pad, "ARTWORK")
+        pads[padded] = pad
+    end
+    local edge = Cells.PAD_EDGE
+    Cells.Edge(pad.border, edge[1], edge[2], edge[3], edge[4], Core.Pixels(pad, 1))
+    pad:ClearAllPoints()
+    pad:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -y)
+    pad:SetSize(size, size)
+    pad:Show()
+    return pad
 end
 
 -- One slot's lock changed (an item picked up or put down): grey or not, as the game shows it.
 function Cells.Lock(record)
-    local slots = buttons[record.bag]
-    local button = slots and slots[record.slot]
-    if button and placed[button] == round then Game("SetItemButtonDesaturated", button, record.locked) end
+    for index = 1, taken do
+        local button = buttons[index]
+        if recordOf[button] == record then Game("SetItemButtonDesaturated", button, record.locked) end
+    end
 end
 
 -- The cooldowns of the buttons shown, anew.
 function Cells.Cooldowns()
-    for _, button in ipairs(shown) do
-        local api = rawget(_G, "C_Container")
-        local holder = button:GetParent()
-        local has = api and api.HasContainerItem and Core.Ask(api.HasContainerItem, holder:GetID(), button:GetID())
-        Call(button, "UpdateCooldown", has)
+    for index = 1, taken do
+        local record = recordOf[buttons[index]]
+        Call(buttons[index], "UpdateCooldown", record and record.item and record.icon or nil)
     end
 end
 
 -- The buttons of one bag lit (the game's mark for a bag's items, as its combined bag does while the mouse is on
 -- a bag of the bag bar); nil: none.
 function Cells.Light(bag)
-    for _, button in ipairs(shown) do
-        local mark = button.BagIndicator
-        if mark and mark.SetShown then mark:SetShown(bag ~= nil and button:GetParent():GetID() == bag) end
+    for index = 1, taken do
+        local button = buttons[index]
+        local mark = Part(button, "BagIndicator")
+        local record = recordOf[button]
+        if mark and mark.SetShown then mark:SetShown(bag ~= nil and record ~= nil and record.bag == bag) end
     end
 end
 
 -------------------------------------------------------------------------------
---  Placing
+--  A drawing
 -------------------------------------------------------------------------------
--- A new round of placing: what is not placed in it goes out of sight at Done.
+-- A new drawing: what is not taken in it goes out of sight at Done.
 function Cells.Begin()
-    round = round + 1
-    for index = #shown, 1, -1 do shown[index] = nil end
+    taken, padded = 0, 0
+    for key in pairs(at) do at[key] = nil end
     Cells.short = false
 end
 
--- A button at its place in the parent (its top left, x right and y down), at that scale; row: the width of a
--- list's line its click reaches over (nil: only the button).
-function Cells.Place(button, x, y, scale, row)
-    button:SetScale(scale)
-    button:ClearAllPoints()
-    button:SetPoint("TOPLEFT", parent, "TOPLEFT", x / scale, -y / scale)
-    local reach = row and (row - ns.Layout.SIZE * scale) / scale or 0
-    button:SetHitRectInsets(0, -reach, 0, 0)
-    button:Show()
-    if placed[button] ~= round then shown[#shown + 1] = button end
-    placed[button] = round
-end
-
 function Cells.Done()
-    for _, slots in pairs(buttons) do
-        for _, button in pairs(slots) do
-            if placed[button] ~= round and button:IsShown() then
-                button:Hide()
-                local mark = button.BagIndicator
-                if mark and mark.Hide then mark:Hide() end
-            end
-        end
+    for index = taken + 1, #buttons do
+        local button = buttons[index]
+        recordOf[button] = nil
+        look[button].holder:Hide()
+        local mark = Part(button, "BagIndicator")
+        if mark and mark.Hide then mark:Hide() end
     end
+    for index = padded + 1, #pads do pads[index]:Hide() end
 end
 
--- The buttons placed in this round, in their order.
+-- The buttons of this drawing, in their order; the record a button draws.
 function Cells.Each()
-    return shown
+    local list = {}
+    for index = 1, taken do list[index] = buttons[index] end
+    return list
 end
 
--- Whether a slot's button stands in the window now.
+function Cells.Record(button)
+    return recordOf[button]
+end
+
+-- The first button that draws a slot now, and whether one does.
+function Cells.Button(bag, slot)
+    return at[bag .. ":" .. slot]
+end
+
 function Cells.Shown(bag, slot)
-    local slots = buttons[bag]
-    local button = slots and slots[slot]
-    return button ~= nil and placed[button] == round and button:IsShown()
+    local button = at[bag .. ":" .. slot]
+    return button ~= nil and button:IsShown()
+end
+
+-- How many pads stand now (the tests).
+function Cells.Pads()
+    return padded
 end
 
 -- Every button out of sight (the module stood down, or the panel hidden).
 function Cells.HideAll()
-    round = round + 1
-    for index = #shown, 1, -1 do shown[index] = nil end
+    Cells.Begin()
     Cells.Done()
 end

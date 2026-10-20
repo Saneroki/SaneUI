@@ -6,6 +6,14 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Inventory: the bags made over. A darker, flatter look with each
+  item in its quality's colour and its item level; a sidebar with All
+  Items, One Bag, Each Bag, Pinned, Recent (what came in lately) and
+  every category with how many items it holds. New categories in two
+  groups (The Armory, Adventure Prep), categories of your own with an
+  icon, groups of your own; rename, move, hide or switch off any of
+  them. A middle click pins an item. Stacks of one item show as one.
+  Grid, list or compact. Your bags in a strip under the bar.
 - Navigation: at the dock of a boat or a zeppelin the top of the screen
   shows where each goes and when it arrives and leaves; aboard, when
   it lands. Ride a ship once on your realm and it knows its times, and

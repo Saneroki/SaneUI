@@ -3,8 +3,46 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 35 (Combat), 35 (spellbook), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
-A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 147 (bags), 35 (Combat), 35 (spellbook), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Inventory: the bags made over (Saneroki, 2026-10-20)
+Saneroki asked for a much richer bag view, in features and looks.
+- **The look** (`Bags/Cells.lua`): the item buttons a pool (`Cells.Take`), each the game's
+  `ContainerFrameItemButtonTemplate` in a holder of ours that carries its bag; flat: the icon cut round its edge,
+  a thin border of the screen's own pixels in the quality's colour (quest items twice as thick, in gold), a warm
+  glow pressed, the count, the item level at the top left, BoE on unbound gear (a switch), the set's name (a
+  switch), the game's `QuestNormal` on an item that starts a quest, the junk coin (a switch), red for what the
+  character cannot use (`Contents.lua`: a red line in `C_TooltipInfo.GetBagItem`), dark squares for empty slots and
+  pads. Sizes 34 and 4 apart (`Layout.SIZE`, `GAP`).
+- **The window** (`Bags/Bags.lua`): a dark bar at the top (the slots taken of how many, every bag's in its tooltip;
+  sell junk or deposit reagents, the bags' strip, the clean-up, the dropdown *View*), the sidebar at the left, a dark
+  foot (currencies, gold; `Foot.lua`), heads in grey with a thin line to the right; the strip of the bags under the
+  bar (`Foot.Bags`: each bag in its quality's border, its free slots on it).
+- **The categories** (`Bags/Categories.lua`, new; `Groups.lua` gone): the built-in ones and their rules (Weapons /
+  Trinkets, Armor, Item Set Gear by the equipment sets' locations, Consumables, Gear Enhancements, Camp Items by the
+  game's item IDs, Trade Goods, Professions, Reagent Bag, Miscellaneous, Quest Items off at first, Special Bags,
+  Junk last), the player's own with an icon, groups of categories (The Armory and Adventure Prep at first; named by
+  their members until named), renamed, moved, hidden from All Items, switched off; pins, items put into a category,
+  junk marks (unmarked: back where they were). Kept in `store.bags`, checked when read.
+- **Recent** (`Bags/Recent.lua`, new): what came into the bags lately, counted from the login on (bags and what is
+  worn), at most 15, newest first; not at the bank.
+- **The views** (`Bags/Views.lua`, new) and **the sidebar** (`Bags/Sidebar.lua`, new, `ns.BagSidebar`): All Items,
+  One Bag (every slot, empty ones too), Each Bag, Pinned and Recent (a second look), a category, a group; stacks of
+  one item merged into one cell (not gear; not at a vendor, bank, mailbox, trade or auction house); counts in the
+  sidebar; the sidebar folds to its icons. A middle click pins an item (or takes it out of the category it was put
+  into); an item let go over a category's row or head goes into it.
+- **The displays** (`Bags/Layout.lua`): grid (the last line filled with pads), list, compact (the categories side
+  by side in bands, each near square).
+- **The menus** (`Bags/Menus.lua`): an item's (Pinned, Junk, Put Into, Take Out of), a category's (Rename, Move Up
+  and Down, Create Group With, Add to Group, Take Out of its group, Hide in All Items, Switch Off; the player's own:
+  Icon, Delete), a group's (Rename, Move, Hide, Disband), Pinned's and Recent's (Hide; Recent: Clear); the dropdown
+  *View*: Grid, List, Compact, Sort By (Default: gear by item level, then kind, quality, name), Show Pinned Items,
+  Show Recent Items, Hide Empty Categories, Merge Stacks, Open With, Switched Off.
+- Selling junk leaves out what is in a special bag, in an equipment set, pinned or refundable.
+- Tests: `dev/tests/bags.lua` rewritten (147 checks): the records, the categories and their rules, the player's
+  choices and what is kept, Recent, the views, the displays, the window with its sidebar, menus, drops, dropdown,
+  events, the strip, selling junk, the bank, a fight.
 
 ### Art: concept art for a quiet grey look (Saneroki, 2026-10-20)
 - New set `dev/imagegen/sets/ui-style/`: high fantasy but subtle, with small grey borders, in three directions

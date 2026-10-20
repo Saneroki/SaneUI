@@ -92,15 +92,22 @@ another (a right click on a group's head); items put into a group by letting the
 menu, taken out again; items marked as junk and sold with it (the game's own sell-all where the junk is just the
 game's, else item by item), a grey item unmarked and kept. Kept for the account by item ID, in the module's store.
 
+**Built (2026-10-20), the bags made over (Saneroki asked for a much richer bag view):** a flat, dark look (items
+34 wide in a thin border of their quality's colour, quest items in gold, item level, BoE, a quest's mark, red for
+what the character cannot use; pads that fill a category's last line); a bar with the slots taken, the bags in a
+strip, the clean-up and the dropdown *View*; a sidebar with *All Items*, *One Bag*, *Each Bag*, Pinned, Recent and
+every category with its count; new categories (Weapons / Trinkets, Armor, Item Set Gear, Consumables, Gear
+Enhancements, Camp Items, Trade Goods, Professions, Reagent Bag, Miscellaneous, Quest Items, Special Bags, Junk) in
+two groups at first (The Armory, Adventure Prep); the player's own categories with an icon, groups of categories,
+renamed, moved, hidden from All Items or switched off; pins by a middle click, a second look in Pinned and Recent
+(what came in lately); stacks of one item merged; three displays (grid, list, compact); a foot with the currencies
+and the gold.
+
 **Next, each its own step:**
-- Several stacks of one item as one cell with their total, where nothing takes one stack at a time (not at a
-  vendor, the bank, the mail, a trade).
-- Gear by its slot inside Weapons and Armor; gear of an equipment set; a mark on unbound gear that binds when
-  worn; red for what the character cannot use.
 - Spells that work on an item (disenchanting, picking a lock) right from the window: a secure button of the
   game's over the item, out of a fight.
 - A splitter for stacks; the list's columns (price, required level, type) sorted by a click on their head, and
-  its groups folded.
+  its groups folded; a "+" at a category's end to put an item in; a mode that marks junk by clicks.
 - Our own sort that moves the items in the bags by our groups (until then the game's clean-up).
 - The bank: buying a tab, a tab's settings, depositing account-bound items, moving gold; the bank as a window of
   its own on the full screen.
