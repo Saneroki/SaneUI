@@ -333,6 +333,59 @@ game._protected, W.combat = false, false
 W.Wait(0)
 
 -------------------------------------------------------------------------------
+--  Quest marks beside nameplates: as the game says it in the creature's tooltip data
+-------------------------------------------------------------------------------
+do
+    local QuestMarks = ns.QuestMarks
+    Enum.TooltipDataLineType = { QuestTitle = 17, QuestObjective = 8 }
+    local plates, related, lines = {}, {}, {}
+    C_NamePlate = { GetNamePlateForUnit = function(unit) return plates[unit] end }
+    C_QuestLog = { UnitIsRelatedToActiveQuest = function(unit) return related[unit] or false end }
+    C_TooltipInfo.GetUnit = function(unit) return { lines = lines[unit] or {} } end
+    UnitIsPlayer = function(unit) return unit == "nameplate9" end
+    UnitName = function(unit) return unit == "nameplate1" and "Young Wolf" or "Kobold Miner" end
+    plates.nameplate1 = W.NewWidget("Frame", nil, UIParent)
+    plates.nameplate1.UnitFrame = W.NewWidget("Frame", nil, plates.nameplate1)
+    plates.nameplate2 = W.NewWidget("Frame", nil, UIParent)
+    related.nameplate1, related.nameplate2 = true, true
+    lines.nameplate1 = { { type = 17, leftText = "Wolves Across the Border" }, { type = 8, leftText = "Young Wolf slain: 3/8" } }
+    lines.nameplate2 = { { type = 17, leftText = "Kobold Candles" }, { type = 8, leftText = "Large Candle: 1/8" } }
+    local function Mark(plate)
+        for _, widget in ipairs(W.frames) do if widget._parent == plate and widget.icon then return widget end end
+    end
+    W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")
+    W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate2")
+    local wolf, kobold = Mark(plates.nameplate1), Mark(plates.nameplate2)
+    check(wolf and wolf._shown and wolf.icon._texture == QuestMarks.ICONS.kill and wolf.count._text == "3/8"
+        and wolf._points[1][2] == plates.nameplate1.UnitFrame, "a creature an objective names: the sword beside its plate, the count left of it")
+    check(kobold and kobold._shown and kobold.icon._texture == QuestMarks.ICONS.loot and kobold.count._text == "1/8",
+        "one the game ties to a quest whose objective names something else: the sack, to loot it")
+    lines.nameplate1[2] = { type = 8, leftText = "Young Wolf slain: 8/8", completed = true }
+    W.Fire("QUEST_LOG_UPDATE")
+    W.Wait(0)
+    check(not wolf._shown and kobold._shown, "the objective done (the quest log changed): its mark goes, the others stay")
+    related.nameplate2 = nil
+    W.Fire("QUEST_LOG_UPDATE")
+    W.Wait(0)
+    check(not kobold._shown, "the game says it no longer belongs to a quest: no mark")
+    related.nameplate2 = true
+    W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate2")
+    W.Fire("QUEST_LOG_UPDATE")
+    W.Wait(0)
+    check(not kobold._shown, "its plate gone: nothing of it is looked at")
+    plates.nameplate9 = W.NewWidget("Frame", nil, UIParent)
+    related.nameplate9 = true
+    W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate9")
+    check(not Mark(plates.nameplate9), "a player's plate: none")
+    W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate2")
+    check(kobold._shown, "shown again on the plate the game hands out again")
+    Core.Set(ns.name, "questMarks", false)
+    check(not kobold._shown, "the setting Quest marks on nameplates off: none")
+    Core.Set(ns.name, "questMarks", true)
+    check(kobold._shown, "on again: there")
+end
+
+-------------------------------------------------------------------------------
 --  Standing down
 -------------------------------------------------------------------------------
 game:Show()

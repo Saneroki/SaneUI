@@ -1,6 +1,6 @@
 # Sane UI: Combat
 
-**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half fills the screen with your talents and spellbook · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever (interface 16001)
+**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half fills the screen with your talents and spellbook; quest marks beside nameplates · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 The module for everything about the fight: your own frame, your target's (and its target's), your
@@ -31,8 +31,12 @@ is the Talents panel.
 - **Going back:** Esc closes the game's window and the planner with the full screen. The bottom edge
   closes the planner and leaves the game's window open where the game puts it: Sane UI never opens or
   closes the game's window itself (*Technical details*).
-- **Settings:** *Sane UI > Combat*: the section *Expand window* (whether it fills the screen, its kind of
-  motion, the background's opacity and texture) and *Window corners*.
+- **Quest marks beside nameplates:** a creature that belongs to a quest in your log shows a small mark left of
+  its nameplate while an objective of it is still to do: a sword to kill it, a sack to loot it, with the count
+  still open ("3/8"). It goes once the objective is done. As the game says it in the creature's tooltip; a
+  creature the game says nothing about has none. *Quest marks on nameplates* switches it off.
+- **Settings:** *Sane UI > Combat*: *Quest marks on nameplates*, the section *Expand window* (whether it fills
+  the screen, its kind of motion, the background's opacity and texture) and *Window corners*.
 
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOM` at first,
@@ -71,8 +75,16 @@ is the Talents panel.
   window by its own functions, follows its opening by a hook after its opening function (any way it opens,
   the full screen comes) and seats it as above. Closed while the full screen stands, its panel shows our own
   *Open* button.
+- **Quest marks** (`QuestMarks.lua`): on `NAME_PLATE_UNIT_ADDED` a frame of ours on the plate the game gives
+  (`C_NamePlate.GetNamePlateForUnit`: none for a forbidden plate; none for players), left of its health bar
+  where it has one (its fields read with `rawget`, never written), one per plate, kept while it shows.
+  `QuestMarks.Read`: `C_QuestLog.UnitIsRelatedToActiveQuest` first, then the tooltip data's lines of the kind
+  `QuestObjective` (`C_TooltipInfo.GetUnit`): the first not `completed` and not full ("8/8") is the mark, the
+  sword (`Interface\CURSOR\Attack`) where its text names the creature, else the sack
+  (`Interface\CURSOR\LootAll`), the count left of it. A secret value (a fight) leaves the mark as it was.
+  Looked at again on `QUEST_LOG_UPDATE` and `UNIT_QUEST_LOG_CHANGED`, once a frame (`Core.Later`).
 - **Standing down** (`ns.GiveBack`): everything seated is given back, the planner closes, the window hides;
-  the open buttons hide now or once the fight is over.
+  the open buttons hide now or once the fight is over; the quest marks hide.
 - Tests: `dev/tests/combat.lua`.
 
 ## Files
@@ -83,8 +95,10 @@ is the Talents panel.
 | `Combat.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its settings (Core's *Expand window* and *Window corners*), `GiveBack`, the start |
 | `Window.lua` | Its window: docked at the bottom middle, filling the screen from the bottom edge's middle half |
 | `Board.lua` | The full screen's panels: the talents and the spellbook, the windows that hold them seated there, the open buttons |
+| `QuestMarks.lua` | A mark beside a creature's nameplate while it belongs to an objective of your quests still to do |
 
 ## History
 - **2026-10-16:** set up as a module of its own, for party, raid, buffs, unit frames, nameplates and pets.
 - **2026-10-20:** its window, docked at the bottom middle (Saneroki); the bottom edge's middle half fills the
   screen with the talents and the spellbook as panels; a talent planner Sane UI knows as the Talents panel.
+- **2026-10-20:** quest marks beside nameplates (Saneroki), from the game's own tooltip data.

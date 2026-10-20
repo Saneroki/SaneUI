@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 281 (Navigation), 36 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 281 (Navigation), 36 (Inventory), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
 ### Inventory: the character sheet's paper doll (Saneroki, 2026-10-20)
@@ -37,6 +37,18 @@ A game restart takes it in (new addons, Navigation, Atlas and Inventory; new fil
 - **The corner of the game's bags is gone** (`Corner.lua` removed): the window's own corner takes its place.
 - Tests: `dev/tests/inventory.lua` (16 checks): the window and its corner, parts registered before and after the
   full screen, the search, a part that fails, standing down.
+
+### Combat: quest marks beside nameplates (Saneroki, 2026-10-20)
+- **`QuestMarks.lua`** (new, in the TOC): a creature that belongs to a quest in your log shows a mark left of its
+  nameplate while an objective of it is still to do, as the game says it: `C_QuestLog.UnitIsRelatedToActiveQuest`,
+  then the tooltip data's `QuestObjective` lines (`C_TooltipInfo.GetUnit`; the first neither `completed` nor full).
+  The game's sword cursor where the objective names the creature (to kill), its sack (to loot) otherwise, the open
+  count left of it. A frame of ours per plate (`C_NamePlate.GetNamePlateForUnit`: none for forbidden plates, none
+  for players), anchored left of the plate's health bar (read with `rawget`); looked at again on the quest log's
+  events once a frame; a secret value in a fight leaves it as it was. Hidden at `GiveBack`.
+- **Setting** *Quest marks on nameplates* (`questMarks`, on), under the header *Nameplates* (`Combat.lua`).
+- **Tests:** `dev/tests/combat.lua` (49 checks): sword and count, sack, gone when done or unrelated, the plate
+  removed, none for a player, the plate handed out again, the setting.
 
 ### Navigation: a size per kind of pin, quests to take see-through, done quests on demand (Saneroki, 2026-10-20)
 - **Sizes** (`TopBar.lua`, `Navigation.lua`, `PinView.lua`, `Marks.lua`, `Route.lua`): each row of the pin filter

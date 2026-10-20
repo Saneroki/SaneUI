@@ -17,7 +17,9 @@ local ADDON, ns = ...
 --  and filling the screen when the mouse is pushed against the middle half of
 --  the bottom edge; full, it holds your talents and your spellbook side by
 --  side (Board.lua): the game's own window, or the window of a talent planner
---  Sane UI knows (Core.Neighbours) as the Talents panel. The game's own frames
+--  Sane UI knows (Core.Neighbours) as the Talents panel. Beside a creature's
+--  nameplate, a mark while it belongs to an objective still to do (QuestMarks.lua).
+--  The game's own frames
 --  stay as they are. Each part falls back to the game's own when it fails
 --  (Core's StandDown, GiveBack), and only reads what it shows: the game's live
 --  data, and Core's data framework for anything kept (Doc/ideas/Data.md).
@@ -37,21 +39,29 @@ ns.TEXT = {
     hintFight = "Not open. %s opens it here; the button comes back after the fight.",
     hintPlanner = "Closed. The button opens it here again.",
     noKey = "Its key in the game's Keybindings",
+    nameplates = "Nameplates",
+    questMarks = "Quest marks on nameplates",
+    questMarksTip = "A creature that belongs to a quest in your log shows a small mark beside its nameplate while an objective of it is still to do: a sword to kill it, a sack to loot it, with the count still open. As the game says it in the creature's tooltip.",
 }
 
 -- What is told when the module stands down (Core's StandDown).
 ns.GIVEN_BACK = "the bottom edge no longer fills the screen; your talents and spellbook are the game's own again"
 
-local OPTIONS = {}
+local OPTIONS = {
+    { key = "questMarks", default = true, text = ns.TEXT.questMarks, header = ns.TEXT.nameplates, tip = ns.TEXT.questMarksTip },
+}
 -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
 Core.Edge.Options(OPTIONS, 1)
--- Core's window takes the section in by itself (Edge.lua): nothing more to do here.
-Core.Options(ns.name, OPTIONS)
+-- Core's window takes the section in by itself (Edge.lua); the quest marks are looked at again.
+Core.Options(ns.name, OPTIONS, { changed = function(key)
+    if key == "questMarks" then ns.Guarded(ns.QuestMarks.Update) end
+end })
 
 -- Standing down, what is seated on the full screen is given back and the window goes.
 function ns.GiveBack()
     ns.Board.Leave()
     ns.Window.Hide()
+    ns.QuestMarks.Hide()
 end
 
 function ns.OnLoad()
@@ -61,4 +71,5 @@ end
 function ns.OnLogin()
     ns.Window.Build()
     ns.Board.Follow()
+    ns.QuestMarks.Start()
 end

@@ -15,3 +15,5 @@ Combat.lua
 Window.lua
 # The full screen's panels: your talents and your spellbook, the windows that hold them seated there
 Board.lua
+# A mark beside a creature's nameplate while it belongs to an objective of your quests still to do
+QuestMarks.lua
