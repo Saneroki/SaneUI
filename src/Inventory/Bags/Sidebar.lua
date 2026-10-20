@@ -2,24 +2,30 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Bags - Sidebar
---  The bag window's sidebar, at its left under the bar: what the window
---  shows. At the top the three views (All Items, One Bag, Each Bag; the one
---  the window opens with first), then Pinned and Recent, a line, every
---  category in the categories' order with how many cells it holds (a group:
---  its name with its members set in under it, each with its own count), Add
---  Category at the foot. A category with nothing in it is left out, unless it
---  is the player's own (Bags' setting). A click shows that view, category or
---  group; the row shown is lit, with a bar at its left in Sane UI's colour.
+--  A window's sidebar, at its left under the bar: a dark column of rows
+--  (an icon, a name, a count) under a little head with the arrow that folds
+--  it to its icons (each with its name and count in its tooltip); it scrolls
+--  with the wheel when its rows are more than its height. The row shown is
+--  lit, with a bar at its left in Sane UI's colour. Sidebar.New makes one for
+--  a window; the window fills it (Begin, Row, Divider, Done) and answers its
+--  clicks (its choose, drop, menu, add).
 --
---  An item brought over a row (picked up, or dragged) and let go there is put
---  into that category (over Pinned: pinned); a right click opens the row's
---  menu (Menus.lua). The arrow at the top folds the sidebar to its icons,
---  each with its name and count in its tooltip. It scrolls with the wheel
---  when its rows are more than its height.
+--  The bags' (ns.BagSidebar): at the top the three views (All Items, One
+--  Bag, Each Bag; the one the window opens with first), then Pinned and
+--  Recent, a line, every category in the categories' order with how many
+--  cells it holds (a group: its name with its members set in under it, each
+--  with its own count), Add Category at the foot. A category with nothing in
+--  it is left out, unless it is the player's own (the setting Hide Empty
+--  Categories). A click shows that view, category or group; an item brought
+--  over a row (picked up, or dragged) and let go there goes into that
+--  category (over Pinned: pinned); a right click opens the row's menu
+--  (Menus.lua).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Sidebar = {}
-ns.BagSidebar = Sidebar
+ns.Sidebars = Sidebar
+local Bag = {}
+ns.BagSidebar = Bag
 
 Sidebar.WIDTH, Sidebar.NARROW = 160, 32
 Sidebar.HEAD = 24
@@ -35,10 +41,8 @@ Sidebar.LIT = 0.1          -- the row shown, in Sane UI's colour
 Sidebar.HOVER = 0.06
 
 local Categories = ns.Categories
-local frame, scroll, child, head, arrow, label
-local rows, dividers   -- pools
-local kept             -- store.bags
-local wide = true
+local Rail = {}            -- a sidebar's functions
+Rail.__index = Rail
 
 local function Fonts()
     return {
@@ -51,7 +55,7 @@ end
 --  A row
 -------------------------------------------------------------------------------
 local function RowTip(row)
-    if wide or not row.word then return end
+    if row.rail.wide or not row.word then return end
     GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
     GameTooltip:SetText(row.word .. (row.number and (" (" .. row.number .. ")") or ""), 1, 1, 1)
     GameTooltip:Show()
@@ -71,25 +75,31 @@ end
 -- A click: an item on the cursor goes into the row's category (pinned over Pinned); else the row is shown, and
 -- a right click opens its menu.
 local function RowClick(row, mouse)
+    local rail = row.rail
     if GetCursorInfo() == "item" then
-        if row.takes then ns.Menus.Drop(row.key) end
+        if row.takes and rail.drop then rail.drop(row) end
         return
     end
     if mouse == "RightButton" then
-        if row.key or row.group then ns.Menus.Row(row, row.key, row.group) end
+        if rail.menu then rail.menu(row) end
         return
     end
-    if row.add then return ns.Menus.Add(row) end
+    if row.add then
+        if rail.add then rail.add(row) end
+        return
+    end
+    if row.view == nil then return end
     Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
-    ns.Bags.Choose(row.view)
+    if rail.choose then rail.choose(row.view) end
 end
 
 local function RowDrop(row)
-    if row.takes then ns.Menus.Drop(row.key) end
+    if row.takes and row.rail.drop then row.rail.drop(row) end
 end
 
-local function MakeRow()
-    local row = CreateFrame("Button", nil, child)
+local function MakeRow(rail)
+    local row = CreateFrame("Button", nil, rail.child)
+    row.rail = rail
     row:SetHeight(Sidebar.ROW)
     row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     row.back = row:CreateTexture(nil, "BACKGROUND")
@@ -121,12 +131,6 @@ local function MakeRow()
     return row
 end
 
-local function MakeDivider()
-    local line = child:CreateTexture(nil, "ARTWORK")
-    line:SetColorTexture(Sidebar.DIVIDER[1], Sidebar.DIVIDER[2], Sidebar.DIVIDER[3], Sidebar.DIVIDER[4])
-    return line
-end
-
 -- An icon: an atlas where the game has it, else a texture, cut a little round its edge.
 local function Icon(texture, file, atlas)
     texture:SetTexCoord(0, 1, 0, 1)
@@ -136,27 +140,36 @@ local function Icon(texture, file, atlas)
 end
 
 -------------------------------------------------------------------------------
---  The rows, anew
+--  A sidebar's rows, anew
 -------------------------------------------------------------------------------
-local y
+function Rail:Width()
+    return self.wide and Sidebar.WIDTH or Sidebar.NARROW
+end
 
-local function Row(word, number, file, atlas, depth, shown)
-    local row = rows:Take()
-    local width = wide and Sidebar.WIDTH or Sidebar.NARROW
+function Rail:Begin()
+    self.rows:Begin()
+    self.dividers:Begin()
+    self.y = 2
+end
+
+-- A row: its name, count (nil: none), icon (a texture, or an atlas first), how far set in, whether it is shown.
+function Rail:Row(word, number, file, atlas, depth, shown)
+    local row = self.rows:Take()
+    local width = self:Width()
     row:ClearAllPoints()
-    row:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -y)
+    row:SetPoint("TOPLEFT", self.child, "TOPLEFT", 0, -self.y)
     row:SetWidth(width - 1)
     row.word, row.number = word, number
     row.key, row.group, row.view, row.add, row.takes = nil, nil, nil, nil, false
     local size = depth > 0 and Sidebar.ICON_SMALL or Sidebar.ICON
     row.icon:SetSize(size, size)
     row.icon:ClearAllPoints()
-    row.icon:SetPoint("LEFT", wide and (8 + depth * Sidebar.INDENT) or (width - size) / 2, 0)
+    row.icon:SetPoint("LEFT", self.wide and (8 + depth * Sidebar.INDENT) or (width - size) / 2, 0)
     Icon(row.icon, file, atlas)
     row.icon:SetAlpha(1)
-    row.label:SetText(wide and word or "")
+    row.label:SetText(self.wide and word or "")
     row.label:SetAlpha(shown and 1 or Sidebar.DIM)
-    row.count:SetText(wide and number and tostring(number) or "")
+    row.count:SetText(self.wide and number and tostring(number) or "")
     local gold = Core.GOLD
     row.bar:SetColorTexture(gold[1], gold[2], gold[3], 1)
     row.bar:SetWidth(Core.Pixels(row, 2))
@@ -164,45 +177,159 @@ local function Row(word, number, file, atlas, depth, shown)
     row.back:SetColorTexture(gold[1], gold[2], gold[3], Sidebar.LIT)
     row.back:SetShown(shown)
     row:Show()
-    y = y + Sidebar.ROW + Sidebar.ROW_GAP
+    self.y = self.y + Sidebar.ROW + Sidebar.ROW_GAP
     return row
 end
 
-local function Divider()
-    local line = dividers:Take()
-    local width = (wide and Sidebar.WIDTH or Sidebar.NARROW) - 1
+function Rail:Divider()
+    local line = self.dividers:Take()
+    local width = self:Width() - 1
     line:ClearAllPoints()
-    line:SetPoint("TOPLEFT", child, "TOPLEFT", width * 0.08, -(y + 2))
-    line:SetSize(width * 0.84, Core.Pixels(child, 1))
+    line:SetPoint("TOPLEFT", self.child, "TOPLEFT", width * 0.08, -(self.y + 2))
+    line:SetSize(width * 0.84, Core.Pixels(self.child, 1))
     line:Show()
-    y = y + 6
+    self.y = self.y + 6
 end
 
+function Rail:Done()
+    self.rows:Done()
+    self.dividers:Done()
+    self.child:SetHeight(math.max(1, self.y))
+end
+
+-- The rows (the tests).
+function Rail:Rows()
+    local list = {}
+    for index = 1, self.rows.taken do list[index] = self.rows[index] end
+    return list
+end
+
+-------------------------------------------------------------------------------
+--  A sidebar made
+-------------------------------------------------------------------------------
+-- The sidebar as wide as it is now (wide, or folded to its icons).
+local function Apply(rail)
+    rail.frame:SetWidth(rail:Width())
+    rail.label:SetShown(rail.wide)
+    rail.arrow:ClearAllPoints()
+    if rail.wide then rail.arrow:SetPoint("RIGHT", rail.head, "RIGHT", -6, 0) else rail.arrow:SetPoint("CENTER", rail.head) end
+    rail.arrow.icon:SetRotation(rail.wide and 0 or math.pi)
+    rail.child:SetWidth(rail:Width())
+end
+
+local function Fold(rail)
+    rail.wide = not rail.wide
+    rail.store[rail.narrowKey] = not rail.wide
+    Apply(rail)
+    if rail.resized then rail.resized() end
+end
+
+local function ArrowEnter(button)
+    button.icon:SetAlpha(0.9)
+    GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+    GameTooltip:SetText(button.rail.wide and ns.TEXT.bagsFold or ns.TEXT.bagsUnfold, 1, 1, 1)
+    GameTooltip:Show()
+end
+
+local function ArrowLeave(button)
+    button.icon:SetAlpha(0.4)
+    GameTooltip:Hide()
+end
+
+local function Wheel(rail, delta)
+    local most = math.max(0, rail.child:GetHeight() - rail.scroll:GetHeight())
+    rail.scroll:SetVerticalScroll(math.max(0, math.min(most, rail.scroll:GetVerticalScroll() - delta * Sidebar.STEP)))
+end
+
+-- A sidebar in body, under top and above bottom. options: { store (where it keeps whether it is folded), narrow
+-- (that key), word (its head's), choose(view), drop(row), menu(row), add(row), resized() }.
+function Sidebar.New(body, top, bottom, options)
+    local rail = setmetatable({ store = options.store, narrowKey = options.narrow or "narrow", choose = options.choose,
+        drop = options.drop, menu = options.menu, add = options.add, resized = options.resized }, Rail)
+    rail.wide = rail.store[rail.narrowKey] ~= true
+    local frame = CreateFrame("Frame", nil, body)
+    frame:SetPoint("TOPLEFT", top, "BOTTOMLEFT")
+    frame:SetPoint("BOTTOMLEFT", bottom, "TOPLEFT")
+    rail.frame = frame
+    local back = frame:CreateTexture(nil, "BACKGROUND")
+    back:SetAllPoints()
+    back:SetColorTexture(Sidebar.SHADE[1], Sidebar.SHADE[2], Sidebar.SHADE[3], Sidebar.SHADE[4])
+    local edge = frame:CreateTexture(nil, "BORDER")
+    edge:SetColorTexture(ns.Bags.RULE[1], ns.Bags.RULE[2], ns.Bags.RULE[3], ns.Bags.RULE[4])
+    edge:SetPoint("TOPRIGHT")
+    edge:SetPoint("BOTTOMRIGHT")
+    edge:SetWidth(Core.Pixels(frame, 1))
+    local head = CreateFrame("Frame", nil, frame)
+    head:SetPoint("TOPLEFT")
+    head:SetPoint("TOPRIGHT")
+    head:SetHeight(Sidebar.HEAD)
+    rail.head = head
+    local label = head:CreateFontString(nil, "ARTWORK")
+    label:SetFontObject(Core.Font("SaneUIBagsSideHead", "GameFontHighlightSmall", 10) or "GameFontHighlightSmall")
+    label:SetTextColor(Sidebar.MUTED[1], Sidebar.MUTED[2], Sidebar.MUTED[3])
+    label:SetPoint("LEFT", 8, 0)
+    label:SetText(options.word or "")
+    rail.label = label
+    local arrow = CreateFrame("Button", nil, head)
+    arrow.rail = rail
+    arrow:SetSize(12, 12)
+    arrow.icon = arrow:CreateTexture(nil, "ARTWORK")
+    arrow.icon:SetAllPoints()
+    arrow.icon:SetTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up")
+    arrow.icon:SetTexCoord(0.2, 0.8, 0.2, 0.8)
+    arrow.icon:SetAlpha(0.4)
+    arrow:SetScript("OnClick", function() ns.Safe("bags", Fold, rail) end)
+    arrow:SetScript("OnEnter", function(self) ns.Safe("bags", ArrowEnter, self) end)
+    arrow:SetScript("OnLeave", function(self) ns.Safe("bags", ArrowLeave, self) end)
+    rail.arrow = arrow
+    local scroll = CreateFrame("ScrollFrame", nil, frame)
+    scroll:SetPoint("TOPLEFT", head, "BOTTOMLEFT")
+    scroll:SetPoint("BOTTOMRIGHT")
+    scroll:EnableMouseWheel(true)
+    scroll:SetScript("OnMouseWheel", function(_, delta) ns.Safe("bags", Wheel, rail, delta) end)
+    rail.scroll = scroll
+    local child = CreateFrame("Frame", nil, scroll)
+    child:SetSize(rail:Width(), 1)
+    scroll:SetScrollChild(child)
+    rail.child = child
+    rail.rows = Core.Pool(function() return MakeRow(rail) end)
+    rail.dividers = Core.Pool(function()
+        local line = child:CreateTexture(nil, "ARTWORK")
+        line:SetColorTexture(Sidebar.DIVIDER[1], Sidebar.DIVIDER[2], Sidebar.DIVIDER[3], Sidebar.DIVIDER[4])
+        return line
+    end)
+    Apply(rail)
+    return rail
+end
+
+-------------------------------------------------------------------------------
+--  The bags' sidebar
+-------------------------------------------------------------------------------
+local rail -- the bags' (Bag.Build)
+
 -- The rows as they are now: counts are Views.Counts', viewing the view shown, options the module's settings.
-function Sidebar.Refresh(counts, viewing, options)
-    if not frame then return end
+function Bag.Refresh(counts, viewing, options)
+    if not rail then return end
     options = options or {}
-    rows:Begin()
-    dividers:Begin()
-    y = 2
+    rail:Begin()
     local default = options.first or "all"
     local fixed = {}
     for _, view in ipairs(ns.Views.FIXED) do
         if view.key == default then table.insert(fixed, 1, view) else fixed[#fixed + 1] = view end
     end
     for _, view in ipairs(fixed) do
-        Row(view.word, nil, view.icon, nil, 0, viewing == view.key).view = view.key
+        rail:Row(view.word, nil, view.icon, nil, 0, viewing == view.key).view = view.key
     end
     local shownFixed = false
     for _, key in ipairs({ Categories.PINNED, Categories.RECENT }) do
         if options[ns.Bags.SHOW[key]] ~= false then
             local file, atlas = Categories.Icon(key)
-            local row = Row(Categories.Word(key), counts[key] or 0, file, atlas, 0, viewing == "cat:" .. key)
+            local row = rail:Row(Categories.Word(key), counts[key] or 0, file, atlas, 0, viewing == "cat:" .. key)
             row.view, row.key, row.takes = "cat:" .. key, key, key == Categories.PINNED
             shownFixed = true
         end
     end
-    if shownFixed then Divider() end
+    if shownFixed then rail:Divider() end
     local done = {}
     local hideEmpty = options.hideEmpty ~= false
     for _, key in ipairs(Categories.order) do
@@ -217,13 +344,13 @@ function Sidebar.Refresh(counts, viewing, options)
                 if total > 0 or not hideEmpty or own then
                     local first = Categories.Members(group)[1]
                     local file, atlas = Categories.Icon(first)
-                    local row = Row(Categories.GroupWord(group), total, file, atlas, 0, viewing == "group:" .. group)
+                    local row = rail:Row(Categories.GroupWord(group), total, file, atlas, 0, viewing == "group:" .. group)
                     row.view, row.group = "group:" .. group, group
                     for _, member in ipairs(Categories.Members(group)) do
                         local number = counts[member] or 0
                         if number > 0 or not hideEmpty or Categories.Own(member) then
                             local mfile, matlas = Categories.Icon(member)
-                            local memberRow = Row(Categories.Word(member), number, mfile, matlas, 1, viewing == "cat:" .. member)
+                            local memberRow = rail:Row(Categories.Word(member), number, mfile, matlas, 1, viewing == "cat:" .. member)
                             memberRow.view, memberRow.key, memberRow.takes = "cat:" .. member, member, Categories.Takes(member)
                         end
                     end
@@ -232,118 +359,40 @@ function Sidebar.Refresh(counts, viewing, options)
                 local number = counts[key] or 0
                 if number > 0 or not hideEmpty or Categories.Own(key) then
                     local file, atlas = Categories.Icon(key)
-                    local row = Row(Categories.Word(key), number, file, atlas, 0, viewing == "cat:" .. key)
+                    local row = rail:Row(Categories.Word(key), number, file, atlas, 0, viewing == "cat:" .. key)
                     row.view, row.key, row.takes = "cat:" .. key, key, Categories.Takes(key)
                 end
             end
         end
     end
     if options.addCategory ~= false then
-        local row = Row(ns.TEXT.bagsAddCategory, nil, Categories.OWN_ICON, nil, 0, false)
+        local row = rail:Row(ns.TEXT.bagsAddCategory, nil, Categories.OWN_ICON, nil, 0, false)
         row.add = true
         row.icon:SetAlpha(0.5)
         row.label:SetAlpha(0.4)
     end
-    rows:Done()
-    dividers:Done()
-    child:SetHeight(math.max(1, y))
+    rail:Done()
 end
 
--------------------------------------------------------------------------------
---  Built once
--------------------------------------------------------------------------------
-local function Width()
-    return wide and Sidebar.WIDTH or Sidebar.NARROW
-end
-Sidebar.Width = Width
-
--- The sidebar as wide as it is now (wide, or folded to its icons).
-local function Apply()
-    frame:SetWidth(Width())
-    label:SetShown(wide)
-    arrow:ClearAllPoints()
-    if wide then arrow:SetPoint("RIGHT", head, "RIGHT", -6, 0) else arrow:SetPoint("CENTER", head) end
-    arrow.icon:SetRotation(wide and 0 or math.pi)
-    child:SetWidth(Width())
+function Bag.Width()
+    return rail and rail:Width() or Sidebar.WIDTH
 end
 
-local function Fold()
-    wide = not wide
-    kept.narrow = not wide
-    Apply()
-    ns.Bags.Resized()
-end
-
-local function ArrowEnter(button)
-    button.icon:SetAlpha(0.9)
-    GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
-    GameTooltip:SetText(wide and ns.TEXT.bagsFold or ns.TEXT.bagsUnfold, 1, 1, 1)
-    GameTooltip:Show()
-end
-
-local function ArrowLeave(button)
-    button.icon:SetAlpha(0.4)
-    GameTooltip:Hide()
-end
-
-local function Wheel(_, delta)
-    local most = math.max(0, child:GetHeight() - scroll:GetHeight())
-    scroll:SetVerticalScroll(math.max(0, math.min(most, scroll:GetVerticalScroll() - delta * Sidebar.STEP)))
-end
-
--- The sidebar in the body, under top (the bar) and above bottom (the foot); bags: store.bags.
-function Sidebar.Build(body, top, bottom, bags)
-    kept = bags
-    wide = kept.narrow ~= true
-    frame = CreateFrame("Frame", nil, body)
-    frame:SetPoint("TOPLEFT", top, "BOTTOMLEFT")
-    frame:SetPoint("BOTTOMLEFT", bottom, "TOPLEFT")
-    frame:SetWidth(Width())
-    local back = frame:CreateTexture(nil, "BACKGROUND")
-    back:SetAllPoints()
-    back:SetColorTexture(Sidebar.SHADE[1], Sidebar.SHADE[2], Sidebar.SHADE[3], Sidebar.SHADE[4])
-    local edge = frame:CreateTexture(nil, "BORDER")
-    edge:SetColorTexture(ns.Bags.RULE[1], ns.Bags.RULE[2], ns.Bags.RULE[3], ns.Bags.RULE[4])
-    edge:SetPoint("TOPRIGHT")
-    edge:SetPoint("BOTTOMRIGHT")
-    edge:SetWidth(Core.Pixels(frame, 1))
-    head = CreateFrame("Frame", nil, frame)
-    head:SetPoint("TOPLEFT")
-    head:SetPoint("TOPRIGHT")
-    head:SetHeight(Sidebar.HEAD)
-    label = head:CreateFontString(nil, "ARTWORK")
-    label:SetFontObject(Core.Font("SaneUIBagsSideHead", "GameFontHighlightSmall", 10) or "GameFontHighlightSmall")
-    label:SetTextColor(Sidebar.MUTED[1], Sidebar.MUTED[2], Sidebar.MUTED[3])
-    label:SetPoint("LEFT", 8, 0)
-    label:SetText(ns.TEXT.bagsCategories)
-    arrow = CreateFrame("Button", nil, head)
-    arrow:SetSize(12, 12)
-    arrow.icon = arrow:CreateTexture(nil, "ARTWORK")
-    arrow.icon:SetAllPoints()
-    arrow.icon:SetTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up")
-    arrow.icon:SetTexCoord(0.2, 0.8, 0.2, 0.8)
-    arrow.icon:SetAlpha(0.4)
-    arrow:SetScript("OnClick", function() ns.Safe("bags", Fold) end)
-    arrow:SetScript("OnEnter", function(self) ns.Safe("bags", ArrowEnter, self) end)
-    arrow:SetScript("OnLeave", function(self) ns.Safe("bags", ArrowLeave, self) end)
-    scroll = CreateFrame("ScrollFrame", nil, frame)
-    scroll:SetPoint("TOPLEFT", head, "BOTTOMLEFT")
-    scroll:SetPoint("BOTTOMRIGHT")
-    scroll:EnableMouseWheel(true)
-    scroll:SetScript("OnMouseWheel", function(self, delta) ns.Safe("bags", Wheel, self, delta) end)
-    child = CreateFrame("Frame", nil, scroll)
-    child:SetSize(Width(), 1)
-    scroll:SetScrollChild(child)
-    rows = Core.Pool(MakeRow)
-    dividers = Core.Pool(MakeDivider)
-    Apply()
-    Sidebar.frame = frame
-    return frame
+-- The bags' sidebar in the body, under top (the bar) and above bottom (the foot); bags: store.bags.
+function Bag.Build(body, top, bottom, bags)
+    rail = Sidebar.New(body, top, bottom, {
+        store = bags, narrow = "narrow", word = ns.TEXT.bagsCategories,
+        choose = function(view) ns.Bags.Choose(view) end,
+        drop = function(row) ns.Menus.Drop(row.key) end,
+        menu = function(row) if row.key or row.group then ns.Menus.Row(row, row.key, row.group) end end,
+        add = function(row) ns.Menus.Add(row) end,
+        resized = function() ns.Bags.Resized() end,
+    })
+    Bag.frame = rail.frame
+    return rail.frame
 end
 
 -- The rows (the tests).
-function Sidebar.Rows()
-    local list = {}
-    for index = 1, rows.taken do list[index] = rows[index] end
-    return list
+function Bag.Rows()
+    return rail and rail:Rows() or {}
 end

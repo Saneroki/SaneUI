@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 351 (Navigation), 85 (Inventory), 90 (sheet), 176 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 351 (Navigation), 85 (Inventory), 90 (sheet), 184 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
 ### Navigation: your trip on screen, the flight's way on the map, the tram (Saneroki, 2026-10-20)
@@ -131,6 +131,20 @@ Herbs and Find Minerals in turn, silently, all of it with switches in the pin fi
   all around), set out of combat where they reach less, kept per character and put back when switched off.
 - Tests: `dev/tests/navigation.lua`, 332 checks (the names and pictures, the filter switching the finders silently,
   the turns while moving, a herb found on its dot and gone again, the sparkles and the settings put back).
+
+### Inventory: the bank, a window of its own (Saneroki, 2026-10-20)
+- **The bank** (`Bags/Bank.lua`, new; the part `bank` after the bags): on the full screen while at a banker (its
+  part's `Present`; `Board.lua` gives a part's `present` to Core's board, which leaves the window out while away;
+  the first layout leaves it out too; `Window.Reboard` at `BANKFRAME_OPENED`/`CLOSED`, listened to from the login).
+  A sidebar with All Bank Tabs, One Bank and each tab by its name with its slots taken; the bar with the slots
+  taken, *Deposit All Reagents* (moved here from the bags' bar), the game's clean-up of the bank shown, the
+  dropdown *View* (Grid, Compact, Group by Category, Sort By); the gold at its foot. The bags window shows the bank
+  no more.
+- **For two windows**: the item buttons a pool per window (`Cells.New`), a sidebar per window (`ns.Sidebars.New`),
+  the drawing per window (`Bags/Canvas.lua`, new, out of `Bags.lua`), `Views.Build` with a window's own store; the
+  views tell the bags' section by its place.
+- Tests: `dev/tests/bags.lua` (184 checks): the bank's window coming and going, its sidebar, views, group by
+  category, clean-up, deposit, a pin from it.
 
 ### Inventory: the stack splitter, the bags' settings (Saneroki, 2026-10-20)
 - **The splitter** (`Bags/Split.lua`, new): Shift and a click on a stack (in All Items and the categories always, in

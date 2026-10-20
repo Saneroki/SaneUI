@@ -520,7 +520,7 @@ kept = ns.store.bags
 local function Y(button) return -button:GetParent()._points[1][5] end
 local function HeadNamed(word)
     for _, widget in ipairs(W.frames) do
-        if widget.clean and widget.word._text == word and widget:IsShown() then return widget end
+        if widget.canvas and widget.line and widget.word._text == word and widget:IsShown() then return widget end
     end
 end
 local function Text(word)
@@ -950,30 +950,69 @@ W.Wait(0)
 check(not Text("Sell All Junk Items"), "the vendor gone: the button too")
 
 -------------------------------------------------------------------------------
---  The bank, while it is open
+--  The bank, a window of its own while at a banker
 -------------------------------------------------------------------------------
+ns.store.board.tabs[1].tree = { split = "x", parts = { { key = "bags" }, { key = "bank" } }, shares = { 0.6, 0.4 } }
+ns.Window.Reboard()
+check(not (ns.Board.Panel("bank") and ns.Board.Panel("bank"):IsShown()) and panel:IsShown(),
+    "away from a banker: no bank window, the bags have the room")
 bankOpen = true
 W.Fire("BANKFRAME_OPENED")
 W.Wait(0)
-local bar = Cells.Button(6, 1)
-check(bar and bar:IsShown() and bar:GetParent():GetID() == 6, "at the bank: its tabs' items after the bags, the game's buttons")
-local bankHead = HeadNamed("Bank")
-check(bankHead and bankHead.clean:IsShown(), "the bank under a head of its own, with its clean-up")
-bankHead.clean:GetScript("OnClick")(bankHead.clean)
+local Bank = ns.Bank
+local bankPanel = ns.Board.Panel("bank")
+check(bankPanel and bankPanel:IsShown() and bankPanel.title._text == "Bank", "at a banker: the bank's window comes")
+local silver = Bank.cells:Button(6, 1)
+check(silver and silver:IsShown() and silver:GetParent():GetID() == 6 and drawn[silver].texture == "icon6001",
+    "its tabs' slots, the game's buttons, in a pool of its own")
+check(not Cells.Shown(6, 1), "the bags show no bank")
+local ores = HeadNamed("Ores")
+check(ores and ores.number._text == "(1 / 8)" and Bank.cells:Shown(6, 8), "All Bank Tabs: each tab under its head, every slot")
+local function BankRow(word)
+    for _, bankRow in ipairs(Bank.rail:Rows()) do
+        if bankRow.word == word and bankRow:IsShown() then return bankRow end
+    end
+end
+check(BankRow("All Bank Tabs").bar:IsShown() and BankRow("One Bank") and BankRow("Ores") and BankRow("Ores").count._text == "1",
+    "its sidebar: All Bank Tabs (shown), One Bank, each tab with its slots taken")
+check(Text("1 / 8 Items"), "its bar: the bank's slots taken of how many")
+row = BankRow("One Bank")
+row:GetScript("OnClick")(row, "LeftButton")
+check(HeadNamed("Bank") and HeadNamed("Bank").number._text == "(1 / 8)", "One Bank: the bank's slots together")
+row = BankRow("Ores")
+row:GetScript("OnClick")(row, "LeftButton")
+check(Bank.Viewing() == "tab:6" and Bank.cells:Shown(6, 1) and BankRow("Ores").bar:IsShown(), "a tab by itself")
+local bankMenu
+for _, widget in ipairs(W.frames) do
+    if widget._generator and widget._override == "View" and widget._parent and widget._parent._parent == bankPanel.body then bankMenu = widget end
+end
+bankMenu:GenerateMenu()
+Choose(bankMenu._items, "Group by Category")
+check(ns.store.bank.group and HeadNamed("Trade Goods") and Bank.cells:Shown(6, 1), "Group by Category: the bank's items by the bags' categories")
+bankMenu:GenerateMenu()
+Choose(bankMenu._items, "Group by Category")
+local bankClean
+for _, widget in ipairs(W.frames) do
+    if widget._parent and widget._parent._parent == bankPanel.body and widget._scripts.OnClick and widget._kind == "Button"
+        and widget:GetWidth() == ns.Bags.BAR_BUTTON then bankClean = widget end
+end
+bankClean:GetScript("OnClick")(bankClean)
 check(calls.sortBank == 0, "the bank's clean-up: the game's, for that bank")
-local deposit = Text("Deposit All Reagents")
-check(deposit, "at the bank: the button to put the reagents in")
-deposit:GetParent():GetScript("OnClick")(deposit:GetParent())
+check(Bank.deposit:IsShown(), "at the bank: the button to put the reagents in")
+Bank.deposit:GetScript("OnClick")(Bank.deposit)
 check(calls.deposit == 0, "the reagents put into the bank, by the game")
-row = RowNamed("Each Bag")
-row:GetScript("OnClick")(row, "LeftButton")
-check(HeadNamed("Ores"), "Each Bag at the bank: its tabs by their names")
-row = RowNamed("All Items")
-row:GetScript("OnClick")(row, "LeftButton")
+silver = Bank.cells:Button(6, 1)
+silver:GetScript("OnMouseUp")(silver, "MiddleButton")
+check(kept.pinned[6001], "a middle click in the bank pins too")
+Categories.Pin(6001, false)
 bankOpen = false
 W.Fire("BANKFRAME_CLOSED")
 W.Wait(0)
-check(not Cells.Shown(6, 1) and not Text("Deposit All Reagents"), "the bank closed: its items go")
+check(not bankPanel:IsShown() and panel:IsShown(), "the bank closed: its window goes, the bags take the room")
+ns.store.board.tabs[1].tree = { key = "bags" }
+ns.Window.Reboard()
+row = RowNamed("All Items")
+row:GetScript("OnClick")(row, "LeftButton")
 
 -------------------------------------------------------------------------------
 --  In a fight, hidden, and again
@@ -987,11 +1026,11 @@ Put(3, 1, 7001, 1)
 W.Fire("BAG_CONTAINER_UPDATE")
 W.Fire("BAG_UPDATE_DELAYED")
 W.Wait(0)
-check(Cells.short and Cells.Shown(3, 16) and not Cells.Shown(-1, 4) and Cells.Shown(0, 1), "in a fight the cells without a button yet wait; the others are drawn")
+check(Cells.short and not Cells.Shown(-1, 4) and Cells.Shown(0, 1), "in a fight the cells without a button yet wait; the others are drawn")
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 W.Wait(0)
-check(not Cells.short and Cells.Shown(-1, 4), "after the fight: made and drawn")
+check(not Cells.short and Cells.Shown(-1, 4) and Cells.Shown(3, 16), "after the fight: made and drawn")
 row = RowNamed("All Items")
 row:GetScript("OnClick")(row, "LeftButton")
 

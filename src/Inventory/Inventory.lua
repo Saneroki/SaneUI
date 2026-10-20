@@ -122,6 +122,10 @@ ns.TEXT = {
     bagsCoinTip = "The game's coin at the corner of every junk item.",
     bagsGrey = "Grey Junk",
     bagsGreyTip = "Junk items shown in grey.",
+    bankTabs = "All Bank Tabs",
+    bankOne = "One Bank",
+    bankTabsHead = "Tabs",
+    bankGroup = "Group by Category",
     bagsSplit = "Split Stack",
     bagsSplitOne = "Split",
     bagsSplitAll = "Auto Split",
@@ -183,4 +187,5 @@ end
 function ns.OnLogin()
     ns.Window.Build()
     ns.Recent.Start()
+    ns.Bank.Start()
 end

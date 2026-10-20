@@ -28,6 +28,8 @@ The bigger changes of each version, newest first.
   columns to sort, move and size (price, level, type, bind...), and
   folds by category. Shift-click a stack to split it, or split it
   all at once. The bags have their own settings on the Inventory page.
+  At a banker the bank comes as a window of its own beside the bags,
+  its tabs in a sidebar.
 - Navigation: herbs and ore on the minimap in their own pictures
   (Found herbs, Found ore in the pin filter; where they can grow is
   Possible herbs and ore), gold sparkles on the herb or ore beside

@@ -3,9 +3,9 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Bags
 --  Our bags: a window on the module's full screen (Board.lua, the key
---  "bags") that shows and handles everything the character carries, and the
---  bank while it is open. The game's own bag windows stay as they are: our
---  code neither opens nor closes them, nor the bank's.
+--  "bags") that shows and handles everything the character carries. The
+--  game's own bag windows stay as they are: our code neither opens nor closes
+--  them.
 --
 --      the bar      a dark band at the top: how many slots of the bags are
 --                   taken of how many (every bag's in its tooltip); at the
@@ -20,10 +20,9 @@ local _, ns = ...
 --                   what sorts the items (Contents.ORDERS), what is shown
 --      the sidebar  at the left: the views and the categories (Sidebar.lua)
 --      the body     a scroll area with the view chosen as its blocks laid out
---                   (Views.lua, Layout.lua), each item the game's own item
---                   button (Cells.lua); the bank's parts follow the bags
---                   while it is open, each under a head with its own clean-up
---                   (C_Container.SortBank)
+--                   (Views.lua, Layout.lua) and drawn (Canvas.lua), each item
+--                   the game's own item button (Cells.lua); the bank has a
+--                   window of its own (Bank.lua)
 --      the foot     a dark band at the bottom: the currencies, the gold
 --                   (Foot.lua)
 --  The search box of the full window finds items by their name, their
@@ -54,9 +53,6 @@ Bags.BAR_GAP = 6
 Bags.MENU_WIDTH = 110
 Bags.SHADE = { 0, 0, 0, 0.5 }        -- the bar's band
 Bags.RULE = { 0.15, 0.15, 0.15, 1 }  -- the line under the bar, over the foot, by the sidebar
-Bags.HEAD_COLOR = { 0.7, 0.7, 0.7 }  -- a category's head
-Bags.MEMBER_COLOR = { 0.55, 0.55, 0.55 }
-Bags.HEAD_LINE = { 0.7, 0.7, 0.7, 0.2 }
 Bags.COUNT_COLOR = { 0.6, 0.6, 0.6 } -- the bar's count
 Bags.LEAST = { 560, 320 }
 -- The settings that show Pinned and Recent (store.bags).
@@ -74,24 +70,11 @@ local viewing         -- the view chosen in the sidebar while the window is open
 local width = 0       -- the panel's body width
 local carried = { place = "bags", slots = {}, free = {} }
 local sections = { carried }
-local banked = {}     -- [kind] = a bank's section
-local bankList = {}
 local carriedBags = {}
-local places = {}
-local heads, rows, labels, pluses -- pools (Core.Pool)
 
 -------------------------------------------------------------------------------
 --  Reading the bags
 -------------------------------------------------------------------------------
-local function Section(kind)
-    local section = banked[kind.kind]
-    if not section then
-        section = { place = kind.kind, word = kind.word, slots = {}, free = {}, bank = kind.type }
-        banked[kind.kind] = section
-    end
-    return section
-end
-
 local function Clear(section)
     for index = #section.slots, 1, -1 do section.slots[index] = nil end
     Contents.ClearFree(section.free)
@@ -107,16 +90,9 @@ function Bags.Carried()
 end
 
 local function Read()
-    for index = #sections, 2, -1 do sections[index] = nil end
     Bags.Carried()
-    for _, kind in ipairs(Contents.Banks(bankList)) do
-        local section = Section(kind)
-        Clear(section)
-        Contents.Scan(kind.bags, kind.kind, section.slots, section.free)
-        sections[#sections + 1] = section
-    end
-    carried.word = #sections > 1 and ns.TEXT.bags or nil
 end
+Bags.Clear = Clear
 
 -------------------------------------------------------------------------------
 --  The view
@@ -145,23 +121,7 @@ end
 -------------------------------------------------------------------------------
 --  Drawing what the layout says
 -------------------------------------------------------------------------------
-local function CleanBank(button)
-    local api = rawget(_G, "C_Container")
-    local kind = Bags.headOf and Bags.headOf[button]
-    if not (api and api.SortBank and kind) or InCombatLockdown() then return end
-    Core.Sound("UI_BAG_SORTING_01")
-    api.SortBank(kind)
-end
-
-local function CleanBankTip(button)
-    local kind = Bags.headOf and Bags.headOf[button]
-    local word = kind == (Enum and Enum.BankType and Enum.BankType.Account) and "BAG_CLEANUP_ACCOUNT_BANK" or "BAG_CLEANUP_BANK"
-    GameTooltip:SetOwner(button, "ANCHOR_TOP")
-    GameTooltip:SetText(Core.Word(word, "Clean Up Bank"), 1, 1, 1)
-    GameTooltip:Show()
-end
-
--- The game's clean-up button (its art and sound), for the bags or a bank.
+-- The game's clean-up button (its art and sound), for the bags or a bank (Bank.lua).
 local function CleanButton(parent, click, enter)
     local button = CreateFrame("Button", nil, parent)
     button:SetSize(Bags.BAR_BUTTON, Bags.BAR_BUTTON)
@@ -173,278 +133,20 @@ local function CleanButton(parent, click, enter)
     button:SetScript("OnLeave", GameTooltip_Hide)
     return button
 end
+Bags.CleanButton = CleanButton
 
--- The fonts of the window's words: a category's head, a group member's, a part's, the bar's count.
+-- The font of the bar's count (and the foot's words).
 local fonts
 local function Fonts()
     if fonts then return fonts end
-    fonts = {
-        head = Core.Font("SaneUIBagsHead", "GameFontHighlightSmall", 11),
-        member = Core.Font("SaneUIBagsMember", "GameFontHighlightSmall", 10),
-        part = Core.Font("SaneUIBagsPart", "GameFontHighlight", 13),
-        count = Core.Font("SaneUIBagsBarCount", "GameFontHighlightSmall", 11),
-    }
+    fonts = { count = Core.Font("SaneUIBagsBarCount", "GameFontHighlightSmall", 11) }
     return fonts
 end
 Bags.Fonts = Fonts
 
--- A category's head: a right click opens its menu, an item let go over it is put into it (Menus.lua); lit while
--- the mouse brings an item it takes.
--- What a block folds by in the list (its category, its group, else its name).
-local function Fold(block)
-    return block.key or block.group and ("group:" .. block.group) or block.word
-end
-
--- A head clicked in the list: its block folded or unfolded; with Shift every block.
-local function Folded(head)
-    local key = head.fold
-    if not key then return end
-    kept.folded = type(kept.folded) == "table" and kept.folded or {}
-    local fold = not kept.folded[key]
-    local shift = rawget(_G, "IsShiftKeyDown")
-    if shift and shift() then
-        local blocks = Bags.blocks
-        for index = 1, blocks and blocks.count or 0 do kept.folded[Fold(blocks[index])] = fold or nil end
-    else
-        kept.folded[key] = fold or nil
-    end
-    Core.Sound(fold and "IG_MAINMENU_OPTION_CHECKBOX_OFF" or "IG_MAINMENU_OPTION_CHECKBOX_ON")
-    Bags.Redraw()
-end
-
-local function HeadUp(head, mouse)
-    if mouse == "RightButton" then
-        Menus.Row(head, head.key, head.group)
-    elseif mouse == "LeftButton" and GetCursorInfo() then
-        Menus.Drop(head.key)
-    elseif mouse == "LeftButton" and kept.look == "list" then
-        Folded(head)
-    end
-end
-
-local function HeadDrop(head)
-    Menus.Drop(head.key)
-end
-
-local function HeadEnter(head)
-    head.lit:SetShown(GetCursorInfo() == "item" and Menus.Takes(head.key))
-    Menus.Tip(head, head.key, head.group)
-end
-
-local function HeadLeave(head)
-    head.lit:Hide()
-    GameTooltip:Hide()
-end
-
--- A head over a part (the bags, a bank), a block (a category, a group) or a group's member: its words and
--- number at the left, a thin line from them to the right edge (a bank's clean-up at its end).
-local function MakeHead()
-    local head = CreateFrame("Frame", nil, child)
-    head.lit = head:CreateTexture(nil, "BACKGROUND")
-    head.lit:SetAllPoints()
-    head.lit:SetColorTexture(1, 1, 1, 0.08)
-    head.lit:Hide()
-    head.arrow = head:CreateTexture(nil, "ARTWORK")
-    head.arrow:SetSize(12, 12)
-    head.arrow:SetPoint("LEFT")
-    head.arrow:SetAlpha(0.6)
-    head.word = head:CreateFontString(nil, "ARTWORK")
-    head.word:SetPoint("LEFT")
-    head.word:SetJustifyH("LEFT")
-    head.number = head:CreateFontString(nil, "ARTWORK")
-    head.number:SetPoint("LEFT", head.word, "RIGHT", 4, 0)
-    head.clean = CleanButton(head, CleanBank, CleanBankTip)
-    head.clean:SetScale(0.75)
-    head.clean:SetPoint("RIGHT", -2, 0)
-    head.line = head:CreateTexture(nil, "ARTWORK")
-    head.line:SetPoint("LEFT", head.number, "RIGHT", 6, 0)
-    head.line:SetPoint("RIGHT", -Layout.GAP, 0)
-    head:SetScript("OnMouseUp", function(self, mouse) ns.Safe("bags", HeadUp, self, mouse) end)
-    head:SetScript("OnReceiveDrag", function(self) ns.Safe("bags", HeadDrop, self) end)
-    head:SetScript("OnEnter", function(self) ns.Safe("bags", HeadEnter, self) end)
-    head:SetScript("OnLeave", function(self) ns.Safe("bags", HeadLeave, self) end)
-    return head
-end
-
-local function DrawHead(place)
-    local head = heads:Take()
-    local block = place.block
-    local font, line = Fonts(), Bags.HEAD_LINE
-    head:ClearAllPoints()
-    head:SetPoint("TOPLEFT", child, "TOPLEFT", place.x + Bags.INSET, -place.y)
-    head:SetSize(place.width, place.height)
-    local object = place.level == 1 and font.part or place.level == 3 and font.member or font.head
-    if object then head.word:SetFontObject(object); head.number:SetFontObject(object) end
-    head.word:SetText(block.word or "")
-    local color = place.level == 3 and Bags.MEMBER_COLOR or Bags.HEAD_COLOR
-    if place.level == 1 then head.word:SetTextColor(1, 1, 1) else head.word:SetTextColor(color[1], color[2], color[3]) end
-    head.number:SetTextColor(color[1], color[2], color[3], 0.9)
-    head.number:SetText(block.number and "(" .. tostring(block.number) .. ")" or "")
-    head.line:SetColorTexture(line[1], line[2], line[3], place.level == 3 and line[4] / 2 or line[4])
-    head.line:SetHeight(Core.Pixels(head, 1))
-    local bank = place.level == 1 and block.section and block.section.bank
-    Bags.headOf = Bags.headOf or {}
-    Bags.headOf[head.clean] = bank
-    head.clean:SetShown(bank ~= nil)
-    head.line:SetPoint("RIGHT", bank ~= nil and head.clean or head, bank ~= nil and "LEFT" or "RIGHT", -Layout.GAP, 0)
-    head.key, head.group = block.key, block.group
-    local list = kept.look == "list" and place.level ~= 1
-    head.fold = list and Fold(block) or nil
-    head.arrow:SetShown(list)
-    if list then
-        head.arrow:SetTexture(block.folded and "Interface\\Buttons\\UI-PlusButton-Up" or "Interface\\Buttons\\UI-MinusButton-Up")
-    end
-    head.word:ClearAllPoints()
-    head.word:SetPoint("LEFT", list and 16 or 0, 0)
-    head:EnableMouse(block.key ~= nil or block.group ~= nil or list)
-    head.lit:Hide()
-    head:Show()
-end
-
--- A block's name over it in the compact display, cut short with its whole name in the tooltip.
-local function LabelEnter(label)
-    if not label.text:IsTruncated() then return end
-    GameTooltip:SetOwner(label, "ANCHOR_TOP")
-    GameTooltip:SetText(label.text:GetText() or "", 1, 1, 1)
-    GameTooltip:Show()
-end
-
-local function MakeLabel()
-    local label = CreateFrame("Frame", nil, child)
-    label.text = label:CreateFontString(nil, "ARTWORK")
-    label.text:SetPoint("LEFT")
-    label.text:SetPoint("RIGHT")
-    label.text:SetJustifyH("LEFT")
-    label.text:SetWordWrap(false)
-    label:SetScript("OnEnter", function(self) ns.Safe("bags", LabelEnter, self) end)
-    label:SetScript("OnLeave", GameTooltip_Hide)
-    label:SetScript("OnMouseUp", function(self, mouse) ns.Safe("bags", HeadUp, self, mouse) end)
-    label:SetScript("OnReceiveDrag", function(self) ns.Safe("bags", HeadDrop, self) end)
-    return label
-end
-
-local function DrawLabel(place)
-    local label = labels:Take()
-    local block, color = place.block, Bags.HEAD_COLOR
-    label:ClearAllPoints()
-    label:SetPoint("TOPLEFT", child, "TOPLEFT", place.x + Bags.INSET, -place.y)
-    label:SetSize(place.width, place.height)
-    local object = Fonts().member
-    if object then label.text:SetFontObject(object) end
-    label.text:SetTextColor(color[1], color[2], color[3])
-    label.text:SetText(block.word or "")
-    label.key, label.group = block.key, block.group
-    label:Show()
-end
-
--- A block's "+": an item brought to it (picked up and clicked here, or dragged here) goes into its category
--- (Pinned's: pinned); clicked with nothing, the next item clicked does (Select.lua).
-local function PlusClick(plus)
-    if GetCursorInfo() == "item" then return Menus.Drop(plus.key) end
-    Select.Start("put", plus.key)
-end
-
-local function PlusEnter(plus)
-    plus.sign:SetAlpha(1)
-    GameTooltip:SetOwner(plus, "ANCHOR_TOP")
-    GameTooltip:SetText(Categories.Word(plus.key), 1, 0.82, 0)
-    Menus.Hint(GameTooltip, ns.TEXT.bagsPlusTip)
-    GameTooltip:Show()
-end
-
-local function PlusLeave(plus)
-    plus.sign:SetAlpha(0.5)
-    GameTooltip:Hide()
-end
-
-local function MakePlus()
-    local plus = CreateFrame("Button", nil, child)
-    local back = plus:CreateTexture(nil, "BACKGROUND")
-    back:SetAllPoints()
-    back:SetColorTexture(0, 0, 0, 0.4)
-    plus.sign = plus:CreateFontString(nil, "ARTWORK")
-    plus.sign:SetFontObject(Core.Font("SaneUIBagsPlus", "GameFontHighlightLarge", 18, "OUTLINE") or "GameFontHighlightLarge")
-    plus.sign:SetPoint("CENTER")
-    plus.sign:SetText("+")
-    plus.sign:SetAlpha(0.5)
-    plus:SetScript("OnClick", function(self) ns.Safe("bags", PlusClick, self) end)
-    plus:SetScript("OnReceiveDrag", function(self) ns.Safe("bags", PlusClick, self) end)
-    plus:SetScript("OnEnter", function(self) ns.Safe("bags", PlusEnter, self) end)
-    plus:SetScript("OnLeave", function(self) ns.Safe("bags", PlusLeave, self) end)
-    return plus
-end
-
-local function DrawPlus(place)
-    local plus = pluses:Take()
-    plus:ClearAllPoints()
-    plus:SetPoint("TOPLEFT", child, "TOPLEFT", place.x + Bags.INSET, -place.y)
-    plus:SetSize(place.size, place.size)
-    plus:SetFrameLevel(child:GetFrameLevel() + 3)
-    plus.key = place.block.key
-    plus:Show()
-end
-
--- A list's line: behind its item button, which reaches over it; a word for each column shown (Columns.lua).
-local function MakeRow()
-    local row = CreateFrame("Frame", nil, child)
-    row.back = row:CreateTexture(nil, "BACKGROUND")
-    row.back:SetAllPoints()
-    row.back:SetColorTexture(1, 1, 1, 0.03)
-    row.lit = row:CreateTexture(nil, "BORDER")
-    row.lit:SetAllPoints()
-    row.lit:SetColorTexture(1, 1, 1, 0.08)
-    row.lit:Hide()
-    row.cells = {}
-    return row
-end
-
-local function Cell(row, key)
-    local cell = row.cells[key]
-    if not cell then
-        cell = row:CreateFontString(nil, "ARTWORK")
-        cell:SetFontObject(Core.Font("SaneUIBagsRow", "GameFontHighlightSmall", 11) or "GameFontHighlightSmall")
-        cell:SetWordWrap(false)
-        cell:SetJustifyH(Columns.DEF[key].number and "RIGHT" or "LEFT")
-        row.cells[key] = cell
-    end
-    return cell
-end
-
-local rowOf = {} -- [button] = the row it stands on now
-Bags.rowOf = rowOf
-
-local function DrawRow(place, button)
-    local row = rows:Take()
-    row:ClearAllPoints()
-    row:SetPoint("TOPLEFT", child, "TOPLEFT", place.x + Bags.INSET, -place.y)
-    row:SetSize(place.width, place.height)
-    row:SetFrameLevel(child:GetFrameLevel() + 1)
-    row.back:SetShown(rows.taken % 2 == 0)
-    row.lit:Hide()
-    local entry = place.entry
-    local spots = Columns.Place(place.width)
-    for _, cell in pairs(row.cells) do cell:Hide() end
-    for _, key in ipairs(Columns.Shown()) do
-        if key ~= "icon" then
-            local cell, spot = Cell(row, key), spots[key]
-            cell:ClearAllPoints()
-            cell:SetPoint("LEFT", spot.x, 0)
-            cell:SetWidth(spot.width)
-            local text, r, g, b = Columns.Value(key, entry)
-            cell:SetText(text)
-            cell:SetTextColor(r or 1, g or 1, b or 1)
-            cell:Show()
-        end
-    end
-    row:SetAlpha(entry.faded and Cells.FADED or 1)
-    rowOf[button] = row
-    row:Show()
-end
-
--- The mouse on a list's item button: its line lit.
+-- The mouse on a list's item button: its line lit (the canvas's).
 function Bags.Hover(button, on)
-    local row = rowOf[button]
-    if row and row:IsShown() then row.lit:SetShown(on) end
+    if Bags.canvas then Bags.canvas:Hover(button, on) end
 end
 
 -- Shift and a click on a stack: our splitter in place of the game's, in the views without empty slots (always)
@@ -491,60 +193,9 @@ local function Draw()
     local options = Options()
     local blocks = Views.Build(View(), sections, query, kept.order, options)
     Bags.blocks = blocks
-    local list = kept.look == "list"
-    local folded = type(kept.folded) == "table" and kept.folded or {}
-    for index = 1, blocks.count do
-        local block = blocks[index]
-        block.folded = list and folded[Fold(block)] == true
-        if list then Columns.Sort(block.entries) end
-    end
-    local count, height = Layout.Lay(kept.look, blocks, room - Bags.INSET, places)
-    heads:Begin()
-    rows:Begin()
-    labels:Begin()
-    pluses:Begin()
-    Cells.Begin()
-    for button in pairs(rowOf) do rowOf[button] = nil end
-    local x = Bags.INSET
     how.bind, how.coin, how.grey, how.set = options.bind == true, options.coin == true, options.grey == true, options.setName == true
     how.level, how.plain = options.itemLevel ~= false, options.borders == false
-    for index = 1, count do
-        local place = places[index]
-        if place.kind == "head" then
-            DrawHead(place)
-        elseif place.kind == "label" then
-            DrawLabel(place)
-        elseif place.kind == "pad" then
-            Cells.Pad(place.x + x, place.y, place.size)
-        elseif place.kind == "plus" then
-            DrawPlus(place)
-        else
-            local entry = place.entry
-            local button = Cells.Take()
-            if button then
-                how.faded, how.count = entry.faded, entry.count
-                Cells.Draw(button, entry.record, how)
-                if place.kind == "row" then
-                    -- The button in the icon's column, in the line's middle; its click over the rest of the line.
-                    local spot = Columns.Place(place.width).icon
-                    local inset = (place.height - place.size) / 2
-                    local left = spot and spot.x + (spot.width - place.size) / 2 or inset
-                    Cells.Place(button, place.x + x + left, place.y + inset, place.size, place.width - left)
-                    Cells.Round(button, kept.round == true)
-                    DrawRow(place, button)
-                else
-                    Cells.Place(button, place.x + x, place.y, place.size)
-                    Cells.Round(button, false)
-                end
-            end
-        end
-    end
-    Cells.Done()
-    heads:Done()
-    rows:Done()
-    labels:Done()
-    pluses:Done()
-    child:SetHeight(math.max(1, height + Bags.INSET))
+    child:SetHeight(math.max(1, Bags.canvas:Draw(blocks, room, how)))
     Bags.Count()
     coin:SetShown(Categories.Marker())
     Sidebar.Refresh(Views.Counts(carried), View(), options)
@@ -584,11 +235,6 @@ end
 -------------------------------------------------------------------------------
 local Soon = Core.Later(Bags.Refresh)
 
-local function Banker(open)
-    Contents.bankOpen = open
-    Soon()
-end
-
 -- A slot's lock changed (an item on the cursor): only its grey.
 local function Locked(bag, slot)
     bag, slot = Core.Plain(bag), Core.Plain(slot)
@@ -615,8 +261,7 @@ local EVENTS = {
     QUEST_ACCEPTED = Soon, QUEST_REMOVED = Soon, MERCHANT_SHOW = Soon, MERCHANT_CLOSED = Soon,
     MAIL_SHOW = Soon, MAIL_CLOSED = Soon, TRADE_SHOW = Soon, TRADE_CLOSED = Soon,
     AUCTION_HOUSE_SHOW = Soon, AUCTION_HOUSE_CLOSED = Soon, EQUIPMENT_SETS_CHANGED = Soon,
-    PLAYERBANKSLOTS_CHANGED = Soon, BANK_TABS_CHANGED = Soon, PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED = Soon,
-    BANKFRAME_OPENED = function() Banker(true) end, BANKFRAME_CLOSED = function() Banker(false) end,
+    BANKFRAME_OPENED = Soon, BANKFRAME_CLOSED = Soon,
     ITEM_LOCK_CHANGED = Locked, GET_ITEM_INFO_RECEIVED = Arrived,
     PLAYER_LEVEL_UP = function() Contents.Leveled(); Soon() end,
     BAG_UPDATE_COOLDOWN = function() Cells.Cooldowns() end,
@@ -892,10 +537,8 @@ function Bags.Build(made)
     child:SetSize(1, 1)
     scroll:SetScrollChild(child)
     Cells.Build(child)
-    heads = Core.Pool(MakeHead)
-    rows = Core.Pool(MakeRow)
-    labels = Core.Pool(MakeLabel)
-    pluses = Core.Pool(MakePlus)
+    Bags.canvas = ns.Canvas.New(child, { store = kept, redraw = function() Bags.Redraw() end, cells = Cells.bags })
+    Bags.rowOf = Bags.canvas.rowOf
     Bags.scroll = scroll
     Select.Build(scroll, { bar, strip, side, Foot.frame })
     Strip()
@@ -911,7 +554,6 @@ function Bags.Show(on)
     end
     if on then
         viewing = nil
-        Contents.bankOpen = Foot.Talking("Banker")
         Bags.Refresh()
     else
         for item in pairs(Views.split) do Views.split[item] = nil end

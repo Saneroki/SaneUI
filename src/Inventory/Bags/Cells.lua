@@ -8,9 +8,10 @@ local _, ns = ...
 --  selling at a vendor and putting into the bank are all the template's own
 --  code, in a fight too.
 --
---  A pool: each drawing takes as many buttons as it shows cells, in order
---  (Cells.Take), so one slot may show twice (pinned and in its category) and
---  a merged stack is one button. Each button stands in a holder of ours that
+--  A pool per window (Cells.New: the bags' is Cells.bags, and Cells' own
+--  functions are its): each drawing takes as many buttons as it shows cells,
+--  in order (Take), so one slot may show twice (pinned and in its category)
+--  and a merged stack is one button. Each button stands in a holder of ours that
 --  carries the bag's ID (SetID): the template asks its parent for the bag
 --  (GetBagID), so nothing of ours is written into the button. The slot is
 --  the button's own ID.
@@ -45,14 +46,11 @@ Cells.FADED = 0.2                       -- what a search does not find
 Cells.UNUSABLE = { 1, 0.1, 0.1 }
 Cells.MARK, Cells.COIN = 16, 12         -- the quest mark, the junk coin
 
-local buttons = {}  -- the pool, in order of taking
 local look = {}     -- [button] = what is ours on it (kept apart from the game's button)
-local pads = {}     -- the pads' pool
-local taken, padded = 0, 0
-local at = {}       -- ["bag:slot"] = the first button drawing that slot now
 local recordOf = {} -- [button] = the record it draws now
-local parent        -- the frame the holders stand in (the scroll area's child)
 local fonts
+local Pool = {}     -- a pool's functions
+Pool.__index = Pool
 
 local function Game(name, ...)
     local fn = rawget(_G, name)
@@ -84,17 +82,28 @@ local function Fonts()
 end
 Cells.Fonts = Fonts
 
--- The mouse on a button, or off it; a click after the game's: the window may answer (Bags.Hover, Bags.Clicked).
-local function Hovered(button, on)
-    if ns.Bags and ns.Bags.Hover then ns.Bags.Hover(button, on) end
+-- The mouse on a button, or off it; a click after the game's: the pool's window may answer (its Hover, Clicked).
+local function Hovered(pool, button, on)
+    local owner = pool.owner or ns.Bags
+    if owner and owner.Hover then owner.Hover(button, on) end
 end
 
-local function Clicked(button, mouse)
-    if ns.Bags and ns.Bags.Clicked then ns.Bags.Clicked(button, mouse) end
+local function Clicked(pool, button, mouse)
+    local owner = pool.owner or ns.Bags
+    if owner and owner.Clicked then owner.Clicked(button, mouse) end
 end
 
+-- A pool of buttons standing in parent (a scroll area's child), its window owner (its Hover and Clicked; nil:
+-- the bags).
+function Cells.New(parent, owner)
+    return setmetatable({ parent = parent, owner = owner, buttons = {}, pads = {}, taken = 0, padded = 0, at = {},
+        short = false }, Pool)
+end
+
+-- The bags' pool, whose functions are Cells' own.
 function Cells.Build(child)
-    parent = child
+    Cells.bags = Cells.New(child)
+    Cells.bags.default = true
 end
 
 -------------------------------------------------------------------------------
@@ -205,28 +214,30 @@ local function Skin(button, holder)
     return mine
 end
 
--- The next button of this drawing; made now if need be, nil in a fight for one not made yet (Cells.short).
-function Cells.Take()
-    taken = taken + 1
-    local button = buttons[taken]
+-- The next button of this drawing; made now if need be, nil in a fight for one not made yet (pool.short).
+function Pool:Take()
+    self.taken = self.taken + 1
+    local button = self.buttons[self.taken]
     if button then return button end
     if InCombatLockdown() then
-        taken = taken - 1
-        Cells.short = true
+        self.taken = self.taken - 1
+        self.short = true
+        if self.default then Cells.short = true end
         return nil
     end
-    local holder = CreateFrame("Frame", nil, parent)
+    local holder = CreateFrame("Frame", nil, self.parent)
     holder:SetSize(ns.Layout.SIZE, ns.Layout.SIZE)
     button = CreateFrame("ItemButton", nil, holder, Cells.TEMPLATE)
     button:SetAllPoints(holder)
     Skin(button, holder)
-    button:HookScript("OnEnter", function(self) ns.Safe("bags", Hovered, self, true) end)
-    button:HookScript("OnLeave", function(self) ns.Safe("bags", Hovered, self, false) end)
-    button:HookScript("OnClick", function(self, mouse) ns.Safe("bags", Clicked, self, mouse) end)
-    button:HookScript("OnMouseUp", ns.Guard(function(self, mouse)
-        if mouse == "MiddleButton" then Clicked(self, mouse) end
+    local pool = self
+    button:HookScript("OnEnter", function(this) ns.Safe("bags", Hovered, pool, this, true) end)
+    button:HookScript("OnLeave", function(this) ns.Safe("bags", Hovered, pool, this, false) end)
+    button:HookScript("OnClick", function(this, mouse) ns.Safe("bags", Clicked, pool, this, mouse) end)
+    button:HookScript("OnMouseUp", ns.Guard(function(this, mouse)
+        if mouse == "MiddleButton" then Clicked(pool, this, mouse) end
     end))
-    buttons[taken] = button
+    self.buttons[self.taken] = button
     return button
 end
 
@@ -269,14 +280,14 @@ end
 -- A button as the record says; how: { faded (a search did not find it), count (a merged stack's), coin (the
 -- junk coin shown), grey (junk greyed), bind (BoE shown), set (the set's name shown), level (the item level
 -- shown), plain (no quality's colour on the border) }.
-function Cells.Draw(button, record, how)
+function Pool:Draw(button, record, how)
     local mine = look[button]
     local holder = mine.holder
     holder:SetID(record.bag)
     button:SetID(record.slot)
     recordOf[button] = record
     local key = record.bag .. ":" .. record.slot
-    if not at[key] then at[key] = button end
+    if not self.at[key] then self.at[key] = button end
     Game("ClearItemButtonOverlay", button)
     if not record.item then return Empty(button, mine) end
     mine.empty:Hide()
@@ -332,10 +343,10 @@ end
 
 -- A button at its place in the parent (its top left, x right and y down), size wide and high; reach: the width
 -- of a list's line its click reaches over (nil: only the button).
-function Cells.Place(button, x, y, size, reach)
+function Pool:Place(button, x, y, size, reach)
     local holder = look[button].holder
     holder:ClearAllPoints()
-    holder:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -y)
+    holder:SetPoint("TOPLEFT", self.parent, "TOPLEFT", x, -y)
     holder:SetSize(size, size)
     look[button].set:SetWidth(size - 4)
     button:SetHitRectInsets(0, reach and -(reach - size) or 0, 0, 0)
@@ -344,48 +355,48 @@ function Cells.Place(button, x, y, size, reach)
 end
 
 -- A pad: a dark square that fills a row, takes no mouse.
-function Cells.Pad(x, y, size)
-    padded = padded + 1
-    local pad = pads[padded]
+function Pool:Pad(x, y, size)
+    self.padded = self.padded + 1
+    local pad = self.pads[self.padded]
     if not pad then
-        pad = CreateFrame("Frame", nil, parent)
+        pad = CreateFrame("Frame", nil, self.parent)
         pad.back = pad:CreateTexture(nil, "BACKGROUND", nil, 1)
         pad.back:SetAllPoints()
         pad.back:SetColorTexture(Cells.EMPTY[1], Cells.EMPTY[2], Cells.EMPTY[3], 1)
         pad.back:SetAlpha(Cells.PAD_ALPHA)
         pad.border = Border(pad, "ARTWORK")
-        pads[padded] = pad
+        self.pads[self.padded] = pad
     end
     local edge = Cells.PAD_EDGE
     Cells.Edge(pad.border, edge[1], edge[2], edge[3], edge[4], Core.Pixels(pad, 1))
     pad:ClearAllPoints()
-    pad:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -y)
+    pad:SetPoint("TOPLEFT", self.parent, "TOPLEFT", x, -y)
     pad:SetSize(size, size)
     pad:Show()
     return pad
 end
 
 -- One slot's lock changed (an item picked up or put down): grey or not, as the game shows it.
-function Cells.Lock(record)
-    for index = 1, taken do
-        local button = buttons[index]
+function Pool:Lock(record)
+    for index = 1, self.taken do
+        local button = self.buttons[index]
         if recordOf[button] == record then Game("SetItemButtonDesaturated", button, record.locked) end
     end
 end
 
 -- The cooldowns of the buttons shown, anew.
-function Cells.Cooldowns()
-    for index = 1, taken do
-        local record = recordOf[buttons[index]]
-        Call(buttons[index], "UpdateCooldown", record and record.item and record.icon or nil)
+function Pool:Cooldowns()
+    for index = 1, self.taken do
+        local record = recordOf[self.buttons[index]]
+        Call(self.buttons[index], "UpdateCooldown", record and record.item and record.icon or nil)
     end
 end
 
 -- The buttons of one bag lit (the game's mark for a bag's items, as its combined bag does while the mouse is on
 -- a bag of the bag bar); nil: none.
-function Cells.Light(bag)
-    for index = 1, taken do
-        local button = buttons[index]
+function Pool:Light(bag)
+    for index = 1, self.taken do
+        local button = self.buttons[index]
         local mark = Part(button, "BagIndicator")
         local record = recordOf[button]
         if mark and mark.SetShown then mark:SetShown(bag ~= nil and record ~= nil and record.bag == bag) end
@@ -396,41 +407,43 @@ end
 --  A drawing
 -------------------------------------------------------------------------------
 -- A new drawing: what is not taken in it goes out of sight at Done.
-function Cells.Begin()
-    taken, padded = 0, 0
-    for key in pairs(at) do at[key] = nil end
-    Cells.short = false
+function Pool:Begin()
+    self.taken, self.padded = 0, 0
+    for key in pairs(self.at) do self.at[key] = nil end
+    self.short = false
+    if self.default then Cells.short = false end
 end
 
-function Cells.Done()
-    for index = taken + 1, #buttons do
-        local button = buttons[index]
+function Pool:Done()
+    for index = self.taken + 1, #self.buttons do
+        local button = self.buttons[index]
         recordOf[button] = nil
         look[button].holder:Hide()
         local mark = Part(button, "BagIndicator")
         if mark and mark.Hide then mark:Hide() end
     end
-    for index = padded + 1, #pads do pads[index]:Hide() end
+    for index = self.padded + 1, #self.pads do self.pads[index]:Hide() end
 end
 
--- The buttons of this drawing, in their order; the record a button draws.
-function Cells.Each()
+-- The buttons of this drawing, in their order.
+function Pool:Each()
     local list = {}
-    for index = 1, taken do list[index] = buttons[index] end
+    for index = 1, self.taken do list[index] = self.buttons[index] end
     return list
 end
 
+-- The record a button of any pool draws now.
 function Cells.Record(button)
     return recordOf[button]
 end
 
 -- The first button that draws a slot now, and whether one does.
-function Cells.Button(bag, slot)
-    return at[bag .. ":" .. slot]
+function Pool:Button(bag, slot)
+    return self.at[bag .. ":" .. slot]
 end
 
-function Cells.Shown(bag, slot)
-    local button = at[bag .. ":" .. slot]
+function Pool:Shown(bag, slot)
+    local button = self.at[bag .. ":" .. slot]
     return button ~= nil and button:IsShown()
 end
 
@@ -459,12 +472,21 @@ function Cells.Round(button, on)
 end
 
 -- How many pads stand now (the tests).
-function Cells.Pads()
-    return padded
+function Pool:Pads()
+    return self.padded
 end
 
 -- Every button out of sight (the module stood down, or the panel hidden).
-function Cells.HideAll()
-    Cells.Begin()
-    Cells.Done()
+function Pool:HideAll()
+    self:Begin()
+    self:Done()
+end
+
+-- Cells' own functions are the bags' pool's.
+for _, name in ipairs({ "Take", "Draw", "Place", "Pad", "Lock", "Cooldowns", "Light", "Begin", "Done", "Each", "Button",
+                        "Shown", "Pads", "HideAll" }) do
+    Cells[name] = function(...)
+        local pool = Cells.bags
+        if pool then return pool[name](pool, ...) end
+    end
 end

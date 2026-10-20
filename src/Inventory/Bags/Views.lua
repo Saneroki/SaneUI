@@ -27,7 +27,8 @@ local _, ns = ...
 --  find is left out of them; in the views of the bags as they are, it is
 --  faded.
 --
---      local blocks = Views.Build(view, sections, query, order, options)
+--      local blocks = Views.Build(view, sections, query, order, options, store)
+--      store: { blocks = {}, entries = {} } a window's own, used again (nil: the bags')
 --      blocks[i] = { word, number, level (1 a part, 2 a block, 3 a group's
 --          member), entries = { { record, count, faded } }, key (a
 --          category's: its head takes items), group (a group's), own (the
@@ -49,8 +50,9 @@ Views.FIXED = {
 
 local Contents, Categories = ns.Contents, ns.Categories
 
-local blocks, used = {}, 0         -- the blocks, used again
-local entries, taken = {}, 0       -- the entries, used again
+local mine = { blocks = {}, entries = {} } -- the bags' blocks and entries, used again (another window has its own)
+local blocks, entries = mine.blocks, mine.entries -- those of the building under way
+local used, taken = 0, 0
 local byLink = {}                  -- [link] = its entry while merging
 local split = {}                   -- [item] = true: split since the window opened, never merged
 Views.split = split
@@ -267,14 +269,16 @@ end
 -- The blocks of the view chosen: sections are the bags' (first) and the bank's parts (Bags.lua); options (the
 -- window's settings, read only): { showPinned, showRecent (shown: not false), pinnedOne (Pinned in One Bag and Each
 -- Bag: not false), recentOne (Recent there: true), merge (not false), plus (the "+" cells: not false) }.
-function Views.Build(view, sections, query, order, options)
+function Views.Build(view, sections, query, order, options, store)
+    store = store or mine
+    blocks, entries = store.blocks, store.entries
     used, taken = 0, 0
     local merge = Views.Merging(options)
     local single = type(view) == "string" and view:match("^cat:(.+)$")
     local group = type(view) == "string" and view:match("^group:(.+)$")
     plus = options.plus ~= false
-    for index, section in ipairs(sections) do
-        local bags = index == 1
+    for _, section in ipairs(sections) do
+        local bags = section.place == "bags"
         if section.word and (bags or view ~= Views.ONE) then
             local block = Block(section.word, 1)
             block.section = section

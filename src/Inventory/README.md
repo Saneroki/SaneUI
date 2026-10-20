@@ -45,7 +45,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     watch key puts it on the backpack), with the game's switches Unused and Show on Backpack; the transfer between
     characters stays on the game's own sheet.
   - *Statistics*: the game's statistics by category, each category folding by a click.
-- **Your bags** (the window *Bags*): everything you carry, and the bank too while you are at a banker, in a flat,
+- **Your bags** (the window *Bags*): everything you carry, in a flat,
   dark look: each item in a thin border of its quality's colour (a quest item's in gold), its item level at the top
   left, its count at the bottom right, a quest's mark on an item that starts one, red when you cannot use it.
   - **The bar** at the top: how many of your bags' slots are taken (every bag's in its tooltip); at the right *Sell
@@ -97,6 +97,13 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     items by name, category or item level: One Bag and Each Bag fade what is not found, the others show only what
     is. At the foot your currencies and your gold (every character's in its tooltip). The game's own bags and bank
     stay as they are.
+- **Your bank** (the window *Bank*): there while you are at a banker, in the bags' look: a sidebar with *All
+  Bank Tabs* (each tab under its head, every slot), *One Bank* (the bank's slots together) and each tab by its
+  name with how many of its slots are taken; on the bar *Deposit All Reagents*, the game's *Clean Up Bank* and the
+  dropdown *View* (*Grid* or *Compact*, *Group by Category* to see the bank's items by the bags' categories, *Sort
+  By*). The items are the game's own: a right click puts one into your bags. Alt and a right click opens an item's
+  menu, a middle click pins it, Shift and a click splits a stack (with *Stack Splitter Everywhere*). Your gold at
+  the foot. Away from the banker the window is gone and the others share its room.
 - **Your alts** (the window *Alts*): every character of the account down its left, you
   first, each in its class's colour with its gold, the gold of them all under them; the account's bank last
   where it holds something. A click shows that one's things as last seen: its bags, its bank (as it was when that
@@ -118,7 +125,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   strata `DIALOG`): its push fills the screen. `docked` lays the board out once the full window stands,
   `filled` takes it away as soon as the window starts back; the search box goes to every part.
 - **The board** (`Board.lua`): Core's (`Core.Board`), the module's windows in the order `Board.ORDER`
-  (`character`, `stats`, `reputation`, `skills`, `pvp`, `currency`, `statistics`, `bags`, `alts`). Each window is a part in files of its own, listed after `Board.lua` in the TOC,
+  (`character`, `stats`, `reputation`, `skills`, `pvp`, `currency`, `statistics`, `bags`, `bank`, `alts`). Each window is a part in files of its own, listed after `Board.lua` in the TOC,
   that registers itself: `Board.Part(key, title, least, part)`, `part.Build(panel)`, `part.Show(on)`,
   `part.Size(width, height)`, `part.Search(text)`; each step runs `ns.Safe`, so a part that fails is noted and
   the others go on. The first layout puts the parts of `Board.FIRST` (the character, the stats, the bags, the other
@@ -268,11 +275,12 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     others; the choice holds until a `/reload`. While searching, if the chosen one has none of it, the first that
     has is shown until the search is cleared. Listens only while shown: `Core.Data.OnCharacters`,
     `GET_ITEM_INFO_RECEIVED`, `ITEM_DATA_LOAD_RESULT`, drawn a frame later (`Core.Later`); drawn anew when shown.
-- **The bags** (`Bags/`, the part `bags`): the backpack, the bags, the reagent bag and the keyring
-  (`Contents.Carried`: those with slots), and while the bank is open (`BANKFRAME_OPENED`, at the start
-  `C_PlayerInteractionManager.IsInteractingWithNpcOfType`) the tabs of each bank the game lets the player see
-  (`Contents.Banks`: `C_Bank.FetchPurchasedBankTabIDs` of `Enum.BankType.Character`, then `.Account`), each a
-  part of its own after the bags. The game's bag and bank windows are never opened, closed or touched.
+- **The bags** (`Bags/`, the parts `bags` and `bank`): the backpack, the bags, the reagent bag and the keyring
+  (`Contents.Carried`: those with slots) in the window *Bags*; while the bank is open (`BANKFRAME_OPENED`, at the
+  login `C_PlayerInteractionManager.IsInteractingWithNpcOfType`: `Bank.Start`, `Contents.bankOpen`) the tabs of
+  each bank the game lets the player see (`Contents.Banks`: `C_Bank.FetchPurchasedBankTabIDs` of
+  `Enum.BankType.Character`, then `.Account`) in the window *Bank*. The game's bag and bank windows are never
+  opened, closed or touched.
   - **What they hold** (`Bags/Contents.lua`, no frames): a record per slot, made once and filled anew at each
     reading (`Contents.Read`: `C_Container.GetContainerItemInfo`, `GetContainerItemQuestInfo`,
     `C_NewItems.IsNewItem`, the class from `C_Item.GetItemInfoInstant`, the bind type, price, level needed and
@@ -336,7 +344,9 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     it shows, `Columns.Sort` a block's entries by it. The head (`Columns.Build`, `Refresh`): a click sorts, a drag
     past `Columns.DRAG` moves the column where its neighbour's middle is crossed, a grip at its right edge sizes it
     (at least `Columns.LEAST`), a right click its menu (the game's). Folded blocks are kept in `folded`.
-  - **The item buttons** (`Bags/Cells.lua`): the game's `ContainerFrameItemButtonTemplate`, a pool taken in the
+  - **The item buttons** (`Bags/Cells.lua`): a pool per window (`Cells.New(parent, owner)`; the bags' is `Cells.bags`,
+    and Cells' own functions are its; the owner's `Hover` and `Clicked` answer its buttons; `Cells.Record` a button's
+    record whatever its pool): the game's `ContainerFrameItemButtonTemplate`, taken in the
     order of the cells drawn (`Cells.Take`), each in a holder of ours that carries the bag's ID (`SetID`): the
     template's `GetBagID` asks its parent, so nothing of ours is written into the button and its click (use,
     drag, split, sell, deposit) is the template's own code, in a fight too. Made out of a fight only
@@ -359,9 +369,23 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   - **The "+" cells** (`Views.lua`'s `block.plus`, `Layout.lua`'s `plus` places, `Bags.lua`'s `DrawPlus`): after
     Pinned (shown when empty too) and every category that takes items (`Categories.Takes`), in the grid; an item
     on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`.
-  - **The sidebar** (`Bags/Sidebar.lua`, `ns.BagSidebar`): rows of the game's look at Sane UI's size (the view
-    shown with a bar of `Core.GOLD` at its left), a click `Bags.Choose`, an item on the cursor let go there
-    `Menus.Drop`, a right click `Menus.Row`; folded to icons (kept: `narrow`), scrolled by the wheel.
+  - **The sidebar** (`Bags/Sidebar.lua`): `ns.Sidebars.New(body, top, bottom, options)` a window's (rows of the
+    game's look at Sane UI's size, the view shown with a bar of `Core.GOLD` at its left; folded to icons, kept in
+    the window's store; scrolled by the wheel; `Begin`, `Row`, `Divider`, `Done`; its `choose`, `drop`, `menu`, `add`
+    answer the clicks); `ns.BagSidebar` the bags' (a click `Bags.Choose`, an item on the cursor let go there
+    `Menus.Drop`, a right click `Menus.Row`).
+  - **The drawing** (`Bags/Canvas.lua`): `ns.Canvas.New(child, owner)` a window's: the heads (a right click
+    `Menus.Row`, an item let go `Menus.Drop`, in the list a click folds: `folded` in the owner's store), the compact
+    display's labels, the "+" cells, the list's lines, the pads and the item buttons (the owner's pool), drawn as
+    `Layout.Lay` places them (`canvas:Draw`). `Views.Build` takes a window's own store of blocks.
+  - **The bank's window** (`Bags/Bank.lua`, the part `bank`, `Present` while `Contents.bankOpen`; the board leaves
+    it out while away and the first layout too: `Board.lua`'s `spec.present`, `Window.Reboard` at the banker's
+    events): its sections read as the bags' (`Contents.Scan` per bank), a sidebar (All Bank Tabs, One Bank, each tab
+    by `Contents.BagWord`, its slots taken), the views (`Views.Build` *each*, *one*, a tab's own section; with
+    `group` the bags' *all* without Pinned, Recent and "+"), a canvas and a pool of its own, the bar (the count, the
+    reagents' deposit: `Foot.Deposits`, `C_Bank.AutoDepositItemsIntoBank`; the clean-up of the bank shown:
+    `C_Container.SortBank`; the dropdown *View*), the gold at its foot. Kept in `store.bank`: `look`, `order`,
+    `group`, `folded`, `narrow`. Listens while shown (bags, bank slots and tabs, locks, cooldowns, money).
   - **The window** (`Bags/Bags.lua`): the bar (`Bags.BAR`), the strip of the bags (kept: `strip`), the sidebar,
     the scroll area, the foot; the heads (a part's, a block's, a group member's) taking items and opening menus,
     the compact display's labels, the list's lines; the dropdown *View* (`WowStyle1DropdownTemplate`) with the
@@ -433,7 +457,9 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 | `Bags/Columns.lua` | The bags' list columns: their values, sorting, widths, the head over the list and its menu |
 | `Bags/Select.lua` | The bags' choosing by clicks: an item into a category after its "+", junk marked by the coin |
 | `Bags/Sidebar.lua` | The bags' sidebar: the views, Pinned, Recent, the categories and groups with their counts |
+| `Bags/Canvas.lua` | A window's drawing of its items: heads, labels, "+", the list's lines, pads, the item buttons |
 | `Bags/Bags.lua` | The bags' window: the bar, the strip, the scroll area, heads, labels and lines, the dropdown *View*, the events; registers the part `bags` |
+| `Bags/Bank.lua` | The bank's window while at a banker: its tabs, sidebar, views, bar and foot; registers the part `bank` |
 | `Alts/Snapshot.lua` | The other characters' window, without frames: the roster, a character's places and items, the search |
 | `Alts/Roster.lua` | The other characters' window: the account's characters down its left, their gold |
 | `Alts/Items.lua` | The other characters' window: the chosen one's places and items: a grid, the paper doll, a list |

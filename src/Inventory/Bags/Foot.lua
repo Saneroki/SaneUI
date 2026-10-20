@@ -18,10 +18,10 @@ local _, ns = ...
 --  the bag up, a bag let go over a slot is put there (the game's
 --  PickupBagFromSlot, PutItemInBag, PutItemInBackpack), out of a fight only,
 --  as the game's bag bar does.
---  And on the window's bar, left of the bags' button, a button for what can be
+--  And on the window's bar, left of the junk marker, a button for what can be
 --  done here and now: Sell All Junk Items at a vendor while there is junk
---  (asked first, in the game's words), Deposit All Reagents at a banker whose
---  bank takes them (C_Bank.AutoDepositItemsIntoBank). The junk is what is
+--  (asked first, in the game's words). (Deposit All Reagents at a banker whose
+--  bank takes them is the bank window's: Foot.Deposits, Bank.lua.) The junk is what is
 --  junk to us (Categories.lua: the game's grey items, the player's marks):
 --  where that is just the game's junk, the game's own sell-all sells it
 --  (C_MerchantFrame.SellAllJunkItems); else each item is sold as a click on it
@@ -51,7 +51,7 @@ local Contents = ns.Contents
 local foot, strip, gold, act, tokens
 local bags = {}        -- [index] = a bag's button; bagOf[button] = its container
 local bagOf = {}
-local doing            -- what the button does now: "junk", "deposit" or nil
+local doing            -- what the button does now: "junk" or nil
 local carried          -- the bags' section (Bags.lua: its slots, its free slots)
 local junk = {}        -- the records of junk to sell (Contents.Junk), used again
 
@@ -257,13 +257,11 @@ local function Deposit()
     return not bank.DoesBankTypeSupportAutoDeposit or Core.Ask(bank.DoesBankTypeSupportAutoDeposit, kind) == true
 end
 
+Foot.Deposits = Deposit
+
 function Foot.Act()
-    doing = Junk() and "junk" or Deposit() and "deposit" or nil
-    if doing == "junk" then
-        act.text:SetText(Core.Word("SELL_ALL_JUNK_ITEMS", "Sell All Junk Items"))
-    elseif doing == "deposit" then
-        act.text:SetText(Core.Word("REAGENTBANK_DEPOSIT", "Deposit All Reagents"))
-    end
+    doing = Junk() and "junk" or nil
+    if doing == "junk" then act.text:SetText(Core.Word("SELL_ALL_JUNK_ITEMS", "Sell All Junk Items")) end
     act:SetWidth(math.max(58, (act.text:GetStringWidth() or 0) + 14))
     act:SetShown(doing ~= nil)
 end
@@ -323,8 +321,6 @@ end
 local function Act()
     if doing == "junk" then
         Core.Confirm(Core.Word("SELL_ALL_JUNK_ITEMS_POPUP", Core.Word("SELL_ALL_JUNK_ITEMS", "Sell All Junk Items")), nil, Sell)
-    elseif doing == "deposit" and not InCombatLockdown() then
-        C_Bank.AutoDepositItemsIntoBank(Enum.BankType.Character)
     end
 end
 

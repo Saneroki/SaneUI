@@ -15,12 +15,14 @@ local _, ns = ...
 --                  what the game's character sheet has behind its tabs, each a
 --                  window of its own (Sheet/)
 --      bags        the bags
+--      bank        the bank, while the character is at a banker
 --      alts        your alts: the other characters' snapshots
 --  Each is a part in files of its own, listed after this one in the TOC, that
 --  registers itself (Board.Part); the board lists the parts that are there.
 --  The first layout puts the windows of Board.FIRST side by side, left to
 --  right, each as wide as it asks (its least width), the last one taking what
---  is left; the others are added from the dropdown Windows.
+--  is left (a window with nothing to show now, the bank away from a banker,
+--  left out); the others are added from the dropdown Windows.
 --
 --  A panel is Core's (Board.lua: a plate in Sane UI's look, a head with its
 --  title and the X, the body under it); what is in it is its part's. A part
@@ -32,6 +34,7 @@ local _, ns = ...
 --      Part.Show(on)          its panel is shown (on) or hidden: listen to the game only while shown
 --      Part.Size(w, h)        its panel's body is that wide and high now (a part may lack it)
 --      Part.Search(text)      what is typed into the search box ("": nothing; a part may lack it)
+--      Part.Present()         whether it has something to show now (a part may lack it: always)
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Board = {}
@@ -57,12 +60,13 @@ Board.ICONS = {
     currency = "Interface/ICONS/INV_SideTab_Currency_c60",
     statistics = "Interface/ICONS/INV_SideTab_Stats_c60",
     bags = "Interface/ICONS/INV_Misc_Bag_08",
+    bank = "Interface/ICONS/INV_Misc_Bag_09",
     alts = "Interface/ICONS/INV_Misc_GroupNeedMore",
 }
 
 -- The windows in the dropdown's order; those the first layout holds.
-Board.ORDER = { "character", "stats", "reputation", "skills", "pvp", "currency", "statistics", "bags", "alts" }
-Board.FIRST = { character = true, stats = true, bags = true, alts = true }
+Board.ORDER = { "character", "stats", "reputation", "skills", "pvp", "currency", "statistics", "bags", "bank", "alts" }
+Board.FIRST = { character = true, stats = true, bags = true, bank = true, alts = true }
 
 local layouts  -- Core's board, once the window is there (Board.Take)
 local parts = {} -- [key] = { part, spec }: registered by the parts' files
@@ -81,6 +85,7 @@ function Board.Part(key, title, least, part)
         key = key, title = title, least = least, icon = Board.ICONS[key],
         build = function(panel) ns.Safe(key, part.Build, panel) end,
         show = Step(key, part, "Show"), size = Step(key, part, "Size"), search = Step(key, part, "Search"),
+        present = part.Present and function() return ns.Safe(key, part.Present) == true end or nil,
     } }
 end
 
@@ -98,7 +103,7 @@ end
 local function Default(width)
     local list = {}
     for _, spec in ipairs(Windows()) do
-        if Board.FIRST[spec.key] then list[#list + 1] = spec end
+        if Board.FIRST[spec.key] and (not spec.present or spec.present()) then list[#list + 1] = spec end
     end
     if #list == 0 then return nil end
     if #list == 1 then return { key = list[1].key } end
