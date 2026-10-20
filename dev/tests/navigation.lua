@@ -767,16 +767,13 @@ check(minimap._level == frame:GetFrameLevel() + Hybrid.LEVEL and minimap._strata
 check(minimap._mask == Hybrid.MASK, "a square view: the game's minimap square")
 frame._width = 240
 Canvas.Layout()
-check(minimap._width == 240 and minimap._height == 240 and near(small.k, 120 / 160),
-    "a view wider than high: the game's minimap as large as its longer side, so it covers all of it")
-check(minimap._mask == Hybrid.MASKS:format("wide", 26),
-    "cut to a band as high as the view (200 of 240: 26 of 32 steps), so nothing of it shows past the window")
-check(Hybrid.Mask(100, 300) == Hybrid.MASKS:format("tall", 10) and Hybrid.Mask(300, 300) == Hybrid.MASK
-    and Hybrid.Mask(1000, 20) == nil and Hybrid.Mask(320, 10) == Hybrid.MASKS:format("wide", 1),
-    "a tall view a band down it; never a band larger than the view; too thin for the narrowest band, none")
+check(minimap._width == 200 and minimap._height == 200 and near(small.k, 100 / 160) and minimap._mask == Hybrid.MASK
+    and minimap._points[1][2] == Canvas.frame and minimap._points[1][1] == "CENTER",
+    "a view wider than high: the game's minimap square, as large as its shorter side, in its middle, the game's own "
+    .. "square its mask (nothing of it past the window); the map at its scale")
 frame._width, frame._height = 1000, 20
 Canvas.Layout()
-check(not minimap._shown, "a view too thin for any band: the game's minimap out of sight, our map alone")
+check(minimap._shown and minimap._width == 20, "however thin a view: the square of its shorter side")
 frame._width, frame._height = 200, 200
 Canvas.Layout()
 check(minimap._shown and minimap._mask == Hybrid.MASK, "square again: shown, square")

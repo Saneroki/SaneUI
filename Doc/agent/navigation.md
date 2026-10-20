@@ -96,7 +96,7 @@ window*, *Always on top*):
   `Window.lua` lays them out (the log comes in with the motion; `Window.FullSize`).
 - Stacking: `Canvas.LEVELS` (map up to `Canvas.MAP` 5, areas 6, route 7, the game's minimap 10, pins 12, marks 20,
   the bar 30), set at every layout.
-- The game's minimap cut to the window's shape (`Hybrid.Mask`, `Art/Masks/`, `dev/tools/minimap-masks`).
+- The game's minimap square, as large as the window's shorter side, cut by the game's own white square (`Hybrid.Side`).
 - Classic windows kept (Core's Edge: entries with `checked`/`back`); with the game's minimap chosen the small
   window rests out of sight (`Window.lua`, `Rest`), the corner still fills the screen with ours.
 

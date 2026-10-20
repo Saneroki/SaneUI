@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 460 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 292 (Navigation), 71 (Inventory), 38 (sheet), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 460 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 290 (Navigation), 71 (Inventory), 38 (sheet), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
 ### Inventory: the other characters' window (Saneroki, 2026-10-20)
@@ -85,6 +85,15 @@ A game restart takes it in (new addons, Navigation, Atlas and Inventory; new fil
 - **The corner of the game's bags is gone** (`Corner.lua` removed): the window's own corner takes its place.
 - Tests: `dev/tests/inventory.lua` (16 checks): the window and its corner, parts registered before and after the
   full screen, the search, a part that fails, standing down.
+
+### Navigation: the game's minimap square again, the player's arrow and dots back (Saneroki, 2026-10-20)
+- **Square** (`Hybrid.lua`): in a small window that is not square (sized by its corner) the game's minimap was cut by
+  a band of a texture of our own as its mask, and drew nothing: no dots, no arrow of its own, and ours hidden while
+  it counted as shown. It is now always as large as the window's shorter side (`Hybrid.Side`), in its middle, cut by
+  the game's own white square (`Hybrid.MASK`); the map at its scale. `Hybrid.Mask`, `Hybrid.BANDS`, `Hybrid.MASKS`,
+  the 62 masks (`Art/Masks/`) and `dev/tools/minimap-masks` are gone.
+- **Tests:** `dev/tests/navigation.lua` (290 checks): a wide window's minimap the square of its shorter side, in its
+  middle, the game's square its mask; a thin one too.
 
 ### Navigation: every pin its own icon, the quests split, previews in the quest log (Saneroki, 2026-10-20)
 - **Icons** (`Pins.lua`, `PinView.lua`): every pin in its own icon from the game's map icons (ObjectIconsAtlas): no

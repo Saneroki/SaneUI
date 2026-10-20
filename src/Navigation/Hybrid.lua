@@ -10,12 +10,12 @@ local _, ns = ...
 --  through (its kind Minimap dots). The small view (Window.lua):
 --
 --      shown        while the view follows the player and its zoom is one of the game's minimap's
---                   steps (camera.native); square, as large as the view's longer side, in its middle,
---                   so it covers the whole view; cut to the view's shape by its mask, a band as tall
---                   (or wide) as the view's shorter side (Mask: the game draws its dots inside its mask
---                   only, whatever its parent cuts, so nothing of it shows past the window); above the
---                   map's layers and under its pins and marks, set again each time it is placed (a
---                   window raised and put back leaves the levels of its frames as they come)
+--                   steps (camera.native); square, as large as the view's shorter side, in its middle,
+--                   cut by the game's own white square (the game draws its dots inside its mask only,
+--                   whatever its parent cuts, so nothing of it shows past the window); in a view that is
+--                   not square, our map alone along its longer side's ends; above the map's layers and
+--                   under its pins and marks, set again each time it is placed (a window raised and put
+--                   back leaves the levels of its frames as they come)
 --      the wheel    walks the game's steps first; out past the widest our map goes on alone, and
 --                   in again it takes the widest step (Wheel)
 --      clicks       the left and right button go through to our map (drag, Ctrl-click, one map out);
@@ -41,8 +41,6 @@ local Hybrid = {}
 ns.Hybrid = Hybrid
 
 Hybrid.MASK = "Interface\\Buttons\\WHITE8X8" -- square: the corners of our map are the minimap's too
-Hybrid.BANDS = 32 -- the steps of the masks for a view that is not square (dev/tools/minimap-masks)
-Hybrid.MASKS = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Masks\\%s-%d"
 Hybrid.LEVEL = 10 -- over the canvas' layers, under its marks (Canvas.lua, Marks.lua)
 Hybrid.ROOM = 0.5 -- the full map: its square takes at most so much of the canvas' shorter side
 local WAIT = "navigation: minimap" -- what waits for the fight's end
@@ -79,21 +77,11 @@ local function Survey()
     surveying = false
 end
 
--- The side of the game's minimap in a view of that size: the longer side, so it covers the whole view.
+-- The side of the game's minimap in a view of that size: the shorter side, so all of it lies inside the view, cut by
+-- the game's own square. (Bands of a texture of our own as its mask, to cover a view that is not square, left the
+-- game's minimap empty: no dots and no arrow of its own, 2026-10-20.)
 function Hybrid.Side(width, height)
-    return math.max(width, height)
-end
-
--- The mask that cuts the game's minimap (square, as large as the view's longer side) to a view of that size:
--- the square itself, or a band through its middle as tall (wide) as the view's shorter side, rounded down to the
--- masks' steps, so it never reaches past the view. nil for a view too thin for the narrowest band.
-function Hybrid.Mask(width, height)
-    local long, short = math.max(width, height), math.min(width, height)
-    if long <= 0 then return nil end
-    local step = math.floor(short / long * Hybrid.BANDS + 1e-6)
-    if step >= Hybrid.BANDS then return Hybrid.MASK end
-    if step < 1 then return nil end
-    return Hybrid.MASKS:format(width > height and "wide" or "tall", step)
+    return math.min(width, height)
 end
 
 -- The zoom a step gives a view of that size (units per yard), or nil while its radius is not known.
@@ -293,7 +281,7 @@ local function Wide(minimap, camera, width, height, known)
 end
 
 -- The game's minimap for a view (camera, the view's size): shown in its middle at the camera's step while
--- it follows the player (known is false while the player's place is not), cut to the view's shape, out of
+-- it follows the player (known is false while the player's place is not), square in its middle, out of
 -- sight otherwise. The camera's zoom is the step's. On the full map: Wide.
 function Hybrid.Place(camera, width, height, known)
     if not taken then return end
@@ -303,15 +291,14 @@ function Hybrid.Place(camera, width, height, known)
     if camera == ns.Window.full then return Wide(minimap, camera, width, height, known) end
     local size = Hybrid.Side(width, height)
     local step = camera.native
-    local zoom = step and camera.follow and known and Hybrid.Zoom(step, size)
-    local mask = Hybrid.Mask(width, height)
-    if not zoom or not mask then
+    local zoom = size > 0 and step and camera.follow and known and Hybrid.Zoom(step, size)
+    if not zoom then
         minimap:Hide()
         return
     end
     minimap:ClearAllPoints()
     minimap:SetPoint("CENTER", canvas, "CENTER")
-    Set(minimap, size, step, mask)
+    Set(minimap, size, step, Hybrid.MASK)
     minimap:Show()
 end
 

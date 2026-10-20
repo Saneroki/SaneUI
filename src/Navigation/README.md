@@ -227,10 +227,10 @@ party), always over the map, and the full map has the quest log at its left. The
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
   pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second).
 - **The game's minimap** (`Hybrid.lua`): over our map while the view follows you at one of its zoom steps,
-  square, as large as the view's longer side so it covers all of it, cut to the window's shape by a mask (the game
-  draws its dots inside its mask only, whatever cuts its parent): a band through the square as tall (or wide) as
-  the window's shorter side, rounded down to a 32nd (`Hybrid.Mask`, `Art/Masks/`, made by
-  `dev/tools/minimap-masks`), so its dots cover the whole window and nothing past it; above the map's
+  square, as large as the view's shorter side, in its middle, cut by the game's own white square (the game draws
+  its dots inside its mask only, whatever cuts its parent, so nothing of it shows past the window; in a window
+  that is not square our map alone along the longer side's ends: bands of a texture of our own as its mask left
+  it empty, no dots and no arrow); above the map's
   layers and under our marks (its layer and level set again each time it is placed), its ground off (as Blizzard's hybrid minimap does), so only its
   live dots and their tooltips show; indoors it draws its own ground, which our terrain does not have. Its
   left and right clicks go through to our map; its border, zoom buttons and the rest of the game's minimap
@@ -289,11 +289,13 @@ party), always over the map, and the full map has the quest log at its left. The
 | `Art/Zones/*.blp` | Each zone's outline over its map's box, made by `dev/tools/terrain-art` from the game's files |
 | `Art/Sketches/*.blp` | The stitched map: every zone's full map on its continent (or the isle), in the terrain's blocks, made by `dev/tools/terrain-art` |
 | `Art/Edge.blp` | A map's box with its paper frame faded off, for Blizzard's world, continent and isle maps |
-| `Art/Masks/*.blp` | The bands that cut the game's minimap to a window that is not square, made by `dev/tools/minimap-masks` |
 
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, the game's minimap square again:** in a window that is not square its band masks left the game's
+  minimap empty (no dots, no arrow); it is now as large as the window's shorter side, cut by the game's own square.
+  The masks and their tool are gone.
 - **2026-10-20, icons and quests:** every kind of pin in its own icon from the game's map icons (no discs or
   numbers, a gathered marker in its first pin's icon), the filter's rows with their icons; the quests split in the
   filter (in your log, offers, low-level, for later, done), grey ! for those too low or for later with why in the
