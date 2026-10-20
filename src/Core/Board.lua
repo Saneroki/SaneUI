@@ -24,7 +24,7 @@ local Core = SaneUI.Core
 --  module's own (its default, laid out for the screen as it is until it is
 --  changed; then it is kept as changed, and Reset makes it the module's
 --  again). The + after the tabs makes an empty one; a right click on a tab
---  renames it, resets the first, deletes another. The dropdown Windows lists
+--  renames it, resets the first, deletes any while another is left. The dropdown Windows lists
 --  what the module can show, ticked where it is in the layout: a tick adds it
 --  (it shares the room of the largest window there), an untick takes it off as
 --  its X does. A window that has an icon (spec.icon) has a tab of its own too,
@@ -99,6 +99,7 @@ Board.TEXT = {
     resetAsk = "Lay out %s as at first again?",
     delete = Core.Word("DELETE", "Delete"),
     deleteAsk = "Delete the layout %s?",
+    tabTip = "Right-click to rename or delete it.",
     accept = Core.Word("ACCEPT", "Accept"),
 }
 
@@ -639,7 +640,7 @@ local function New(board)
     Choose(board, #kept.tabs)
 end
 
--- A right click on a tab: rename it, reset the first, delete another.
+-- A right click on a tab: rename it, reset the first, delete any while another is left.
 local function TabMenu(board, owner, index)
     local kept = Kept(board)
     local tab = kept.tabs[index]
@@ -660,7 +661,8 @@ local function TabMenu(board, owner, index)
                     if board.options.changed then Core.Safe(Label(board), board.options.changed) end
                 end)
             end))
-        else
+        end
+        if #kept.tabs > 1 then
             root:CreateButton(Board.TEXT.delete, Core.Guard("board", function()
                 Core.Confirm(Board.TEXT.deleteAsk, Name(index, tab), function()
                     table.remove(kept.tabs, index)
@@ -681,6 +683,8 @@ local function Tab(board, strip)
         if button == "RightButton" then return TabMenu(board, self, self.index) end
         Choose(board, self.index)
     end))
+    Core.Tip(tab, function() return not tab.plus and tab.Text:GetText() or nil end,
+        function() return not tab.plus and Board.TEXT.tabTip or nil end, "ANCHOR_BOTTOM")
     return tab
 end
 

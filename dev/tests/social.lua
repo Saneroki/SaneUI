@@ -1668,8 +1668,8 @@ do
     for _, widget in ipairs(W.frames) do
         if widget._kind == "DropdownButton" and widget._parent == window and widget ~= ns.Board.layouts.menu then classic = widget end
     end
-    check(classic and classic:IsShown() and #classic._items == 3 and classic._items[1].text == "Chat"
-        and classic._items[2].text == "Friends list" and classic._items[3].text == "Group finder",
+    check(classic and classic:IsShown() and #classic._items == 4 and classic._items[1].title == ns.TEXT.title and classic._items[2].text == "Chat"
+        and classic._items[3].text == "Friends list" and classic._items[4].text == "Group finder",
         "full, the dropdown Classic windows offers the game's chat, friends list and group finder")
     local coreBar -- Core's title bar at the top of the full window
     for _, widget in ipairs(W.frames) do
@@ -2633,7 +2633,19 @@ do
         listed = tabs()
         listed[1]._scripts.OnClick(listed[1], "RightButton")
         menu = W.menus[#W.menus]
-        check(entry("Reset") and not entry("Delete"), "the first can be reset, never deleted")
+        check(entry("Reset") and not entry("Delete"), "the first can be reset; the only one left is never deleted")
+        listed[2]._scripts.OnClick(listed[2], "LeftButton") -- the +
+        check(#tabs() == 3 and ns.store.board.chosen == 2, "+ makes another layout")
+        listed = tabs()
+        listed[1]._scripts.OnClick(listed[1], "RightButton")
+        menu = W.menus[#W.menus]
+        entry("Delete").fn()
+        W.popups[#W.popups].data.callback()
+        check(#tabs() == 2 and #ns.store.board.tabs == 1 and ns.store.board.chosen == 1 and ns.store.board.tabs[1].tree == false,
+            "with another left the first can be deleted too: the other is the first then")
+        ns.store.board.tabs[1].tree = nil -- the first layout as the module has it again (its tab's Reset)
+        ns.store.board.tabs[1].name = nil
+        ns.Window.Reboard()
         check(not Core.errors["board"] and not Core.errors["Social"] and not ns.off, "(nothing went wrong on the board)")
     end)()
     local shown = #box.provider.list
@@ -2660,16 +2672,30 @@ do
     end
     check(coreButtons and #coreButtons.list == 3, "its buttons: close, full screen and back, the game's chat")
     local tab
-    ToggleFriendsFrame, FRIEND_TAB_FRIENDS = function(which) tab = which end, 1
-    classic._items[2].fn()
+    FriendsFrame = CreateFrame("Frame", "FriendsFrame", UIParent)
+    FriendsFrame:Hide()
+    ToggleFriendsFrame, FRIEND_TAB_FRIENDS = function(which) tab = which FriendsFrame:Show() end, 1
+    classic._items[3].fn()
     check(tab == 1 and window._width == Layout.WIDTH and window:IsShown() and not classic:IsShown(),
         "Friends list: the window goes back to its zone, and the game's friends list opens")
     check(listTop() == -Layout.EDGE and not panels.friends:IsShown() and not panels.talks:IsShown() and column:IsShown()
         and box:IsShown(), "back, the panels are gone and the chat starts at the window's top again")
+    do
+    local friendsButton = Core.Classic.Button(FriendsFrame)
+    check(friendsButton and friendsButton:IsShown() and friendsButton._parent == FriendsFrame,
+        "the game's friends list has the button Sane UI")
+    W.Wait(1)
+    friendsButton:GetScript("OnClick")(friendsButton)
+    local socialEdge
+    for _, made in ipairs(Core.Window.All()) do if made.frame == window then socialEdge = made.edge end end
+    check(not FriendsFrame:IsShown() and window:IsShown() and socialEdge and socialEdge.full,
+        "pressed, the game's friends list goes and ours fills the screen")
+    socialEdge:Fill(false)
+    end
     W.Wait(1)
     strip:GetScript("OnEnter")(strip)
     W.printed = {}
-    classic._items[1].fn()
+    classic._items[2].fn()
     check(not window:IsShown() and options.window == false and native:IsShown() and W.printed[1]:find("/sane social"),
         "Chat: our window is put away (the switch Chat window off), the game's chat is back, and how to bring ours again is said")
     local sane

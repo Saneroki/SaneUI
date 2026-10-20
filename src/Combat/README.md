@@ -18,6 +18,10 @@ the planner's window is the Talents panel.
 - **The full screen:** push the mouse against the bottom edge of the screen anywhere in its middle half
   (a quarter of the screen's width either side of the middle). Push there again, or press Esc, to go back.
   Not in Edit Mode, and not with *Can expand to fullscreen* off (*Sane UI > Combat > Expand window*).
+- **The game's own windows:** the full screen's dropdown *Classic windows* has *Spellbook* and *Talents*: the
+  full screen goes back and the game's key for them is said (our code does not open the game's spellbook).
+  The game's spellbook has the button *Sane UI* left of its sizing button: the game's closes and this full
+  screen comes.
 - **What it holds:** two windows on Core's board, at first the *Talents* at the left and the *Spellbook* at
   the right, each as wide as its share of what both hold.
   - The game's talents and spellbook are one window that shows one of them at a time: it stands in the

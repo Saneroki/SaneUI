@@ -38,13 +38,33 @@ local function Search(text)
     ns.Board.Search(text)
 end
 
+-- The game's own character sheet and bags, in Core's dropdown Classic windows; on them the button Sane UI: ours,
+-- filling the screen (Core's Classic.lua). Our code never opens the game's character sheet (README, *Never the
+-- game's panels*): its key is said instead. The bags are no panel: they open and close by our code.
+local CHARACTER = Core.Word("CHARACTER", "Character")
+local function Bags()
+    local open = rawget(_G, "OpenAllBags")
+    if open then open() end
+end
+local function CloseBags()
+    local close = rawget(_G, "CloseAllBags")
+    if close then close() end
+end
+local function Running() return not ns.off end
+local CLASSIC = {
+    { text = CHARACTER, show = function() Core.Classic.Press(CHARACTER, "TOGGLECHARACTER0") end,
+      frame = "CharacterFrame", full = true, ready = Running },
+    { text = Core.Word("BAGSLOTTEXT", "Bags"), show = function() ns.Safe("classic bags", Bags) end,
+      frame = { "ContainerFrameCombinedBags", "ContainerFrame1" }, plain = true, full = true, ready = Running, hide = CloseBags },
+}
+
 function Window.Build()
     if frame then return end
     frame = CreateFrame("Frame", nil, UIParent)
     frame:SetSize(Window.WIDTH, Window.HEIGHT) -- not sizable: its size is ours, not kept
     handle = Core.Window.New(frame, {
         kind = "screen", store = ns.store, title = ns.TEXT.title, edge = ns.options,
-        first = { dock = "BOTTOMRIGHT" }, sizable = false,
+        first = { dock = "BOTTOMRIGHT" }, sizable = false, classic = CLASSIC,
         search = function(text) ns.Guarded(Search, text) end,
         filled = function(full) ns.Guarded(Filled, full) end,
         docked = function() ns.Guarded(Placed) end,

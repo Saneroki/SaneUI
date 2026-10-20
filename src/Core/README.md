@@ -426,11 +426,22 @@ but for a window to try those with (`/sane window`).
     While `away` it is neither dragged nor sized, its grip out of sight. `window:Place()` from elsewhere (a
     reset), hiding it, or a failing step bring it back at once; a failing step also stops the feature for
     that window (`edge.off`). Nothing of it is kept: after a `/reload` it is in its zone.
-  - **Classic windows:** a window's option `classic` (a list, or a function giving one, of `{ text, show }`)
-    names the game's own windows it stands for. While it stands full (not on the way) the dropdown
-    *Classic windows* (`WowStyle1DropdownTemplate`, its words fixed by `OverrideText`, `Edge.MENU_WIDTH` 180)
-    sits in the title bar, `Edge.MENU_INSET` (10) left of its buttons, above what it holds; a button per
-    entry. One chosen: `edge:Fill(false)`, then the entry's `show()`. What the window holds should start
+  - **Classic windows** (`Classic.lua`): a window's option `classic` (a list, or a function giving one, of
+    `{ text, show }`) names the game's own windows it stands for. While it stands full (not on the way) the
+    dropdown *Classic windows* (`WowStyle1DropdownTemplate`, its words fixed by `OverrideText`,
+    `Edge.MENU_WIDTH` 180) sits in the title bar, `Edge.MENU_INSET` (10) left of its buttons, above what it
+    holds: every window's entries (`Window.All`), each under its window's title (`CreateTitle`), this one's
+    first. One chosen: `edge:Fill(false)`, then the entry's `show()`. The other way, an entry with `frame`
+    puts the button *Sane UI* onto the game's window (`Window.Beside`, beside its close button or left of its
+    sizing button, `MaximizeMinimizeButton`/`MaximizeMinimizeFrame`): pressed, the game's goes, a kept choice
+    is ours again (`back`), ours is shown (`ours`, else `Native(false)` and `Show`) and with `full` fills the
+    screen. On a panel of the game's (it has a close button, no `plain`) the button is a
+    `SecureActionButtonTemplate` on UIParent (`type` `click`, `clickbutton` the close button): the game closes
+    its own window, our part runs in `PostClick`; it is made, shown, hidden and raised out of a fight only
+    (`PLAYER_REGEN_ENABLED` catches up). A `plain` window (the bags, the minimap) has a plain button, and our
+    code hides it (`hide`). Shown while the game's window is visible and `ready()` says yes; a window loaded on
+    demand (`addon`) gets it at `EventUtil.ContinueOnAddOnLoaded`. An entry for a panel our code may not open
+    says its key instead (`Classic.Press(what, binding)`). What the window holds should start
     `Window.BAR` below its top while full, under the title bar.
   - **The section *Expand window*:** `Edge.Options(list, at, tab, under)` puts it into a module's switches
     (`Core.Options`) at that place: *Can expand to fullscreen* (on; off: no strips), *Animation type* (Use
@@ -474,6 +485,7 @@ but for a window to try those with (`/sane window`).
 | `Watch.lua` | A look a few times a second while there is something to see; the mouse on a window |
 | `Fuzzy.lua` | Forgiving search of typed words in texts, ranked, for the windows' search; a long list a part per frame |
 | `Edge.lua` | A docked window that fills the screen when the mouse is pushed against its screen edge |
+| `Classic.lua` | The game's windows Sane UI's stand for: the dropdown *Classic windows* across modules, the button *Sane UI* on the game's windows |
 | `Views.lua` | A window's views behind the game's tabs |
 | `Selection.lua` | A window chosen in Edit Mode, and its dialog |
 | `Holder.lua` | The game's window kept out of sight while ours stands for it |

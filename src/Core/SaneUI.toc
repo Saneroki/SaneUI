@@ -37,6 +37,7 @@ Shape.lua
 Skin.lua
 Edge.lua
 Window.lua
+Classic.lua
 Views.lua
 Selection.lua
 Holder.lua

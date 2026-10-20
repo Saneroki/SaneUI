@@ -6,6 +6,26 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 296 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
+### Windows: layouts deleted, Classic windows across modules and back (Saneroki, 2026-10-20)
+- **Layouts** (`Core/Board.lua`): every layout can be deleted from its tab's right-click menu while another is
+  left, the first too (the next is the first then); a tab's tooltip says so (`Board.TEXT.tabTip`).
+- **Classic windows** (new `Core/Classic.lua`, in Core's TOC after `Window.lua`; `Edge.lua` builds its dropdown
+  from it): the dropdown lists every window's game windows, each under its window's title, the open one's
+  first; one of another module's chosen, both full screens go back first.
+- **The button Sane UI on the game's windows** (`Classic.Attach`, `Window.Beside`, `Window.CloseOf`): an entry
+  with `frame` puts it beside the game's window's close button; pressed, ours comes instead (`ours`, `full`, a
+  kept choice's `back`). On the game's panels it is a `SecureActionButtonTemplate` on UIParent that clicks the
+  game's close button (our code neither shows nor hides the game's panels), our part in `PostClick`, made and
+  shown out of a fight only; plain windows (`plain`: the bags, the minimap) get a plain button.
+- **The lists:** Social: the friends list and group finder get the button (`frame`, `full`, `ours`). Navigation:
+  the map (on its border) and the minimap (at its top right). Combat (new): *Spellbook*, *Talents*
+  (`PlayerSpellsFrame`, `Blizzard_PlayerSpells`). Inventory (new): *Character* (`CharacterFrame`), *Bags*
+  (`ContainerFrameCombinedBags`, `ContainerFrame1`, `OpenAllBags`/`CloseAllBags`). The spellbook, talents and
+  character sheet are not opened by our code: chosen, the key that opens them is said (`Classic.Press`).
+- Tests: `dev/tests/window.lua` (the list across windows, the secure button and its click, `ready`),
+  `dev/tests/social.lua` (the friends list's button; the first layout deleted), `dev/tests/navigation.lua`
+  (the dropdown's titles).
+
 ### Inventory: a tab for each window, the alts' window named Alts (Saneroki, 2026-10-20)
 - **Icon tabs** (`Core/Board.lua`): a window whose spec has an `icon` (a texture or file ID with its `coords`, or
   `function(texture)` that draws it) gets a tab of its own after the layouts' tabs and `+`, the game's

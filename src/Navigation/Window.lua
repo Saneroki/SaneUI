@@ -143,15 +143,23 @@ end
 local function Keep(key, on)
     ns.Safe("classic window", Core.Set, ns.name, key, on)
 end
+-- The button Sane UI on the game's minimap (at its top right; the switch hides it) and on its map (beside the
+-- close button on its border, a secure button that clicks it): ours again, the map filling the screen (Core's
+-- Classic.lua).
+local function Running() return not ns.off end
+local function Border() local map = rawget(_G, "WorldMapFrame") return map and map.BorderFrame end
 local CLASSIC = {
     { text = ns.TEXT.classicMinimap, checked = function() return ns.options.nativeMinimap end,
-      show = function() Keep("nativeMinimap", true) end, back = function() Keep("nativeMinimap", false) end },
+      show = function() Keep("nativeMinimap", true) end, back = function() Keep("nativeMinimap", false) end,
+      frame = "Minimap", plain = true, ready = Running, hide = function() end,
+      anchor = function(button, minimap) button:SetPoint("TOPRIGHT", minimap, "TOPRIGHT") end },
     { text = ns.TEXT.classicMap, checked = function() return ns.options.nativeMap end,
       show = function()
           Keep("nativeMap", true)
           ns.Safe("classic map", ns.Native.ShowMap)
       end,
-      back = function() Keep("nativeMap", false) end },
+      back = function() Keep("nativeMap", false) end,
+      frame = Border, full = true, ready = Running },
 }
 
 function Window.Build()

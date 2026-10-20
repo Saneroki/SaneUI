@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Full screen layouts can all be deleted now (right-click a layout's
+  tab), as long as one is left.
+- The dropdown Classic windows lists the game's own windows of every
+  module. And the game's windows Sane UI stands for (friends list,
+  group finder, map, minimap, spellbook, character sheet, bags) have a
+  Sane UI button beside their close button that switches to Sane UI's.
 - Inventory: a tab with an icon for each window of the full screen,
   right of the layouts' tabs: lit while that window is on the screen,
   a click puts it there or takes it off.

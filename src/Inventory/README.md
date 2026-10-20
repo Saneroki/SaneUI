@@ -13,6 +13,10 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 - **The full screen:** push the mouse all the way into the bottom right corner. Push it there again, or press
   Esc, to go back. Not in Edit Mode, and not with *Can expand to fullscreen* off (*Sane UI > Inventory >
   Expand window*). In Edit Mode the window can be docked in another corner; the push goes with it.
+- **The game's own windows:** the full screen's dropdown *Classic windows* has *Character* (the full screen
+  goes back and the game's key for its character sheet is said: our code never opens it) and *Bags* (the
+  game's bags open). The game's character sheet and bags have the button *Sane UI* beside their close button:
+  the game's closes and this full screen comes.
 - **Arranging the windows:** as on every Sane UI full screen (Core's board): drag a window's head to move it,
   the gap between two to share their room anew, its X to take it off; the dropdown *Windows* adds one; layouts
   behind tabs in the title bar. Right of those tabs, a tab with an icon for each window (your portrait for the

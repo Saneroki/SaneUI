@@ -82,7 +82,8 @@ local Core = SaneUI.Core
 --          classic = { { text = "Friends list", show = function() end } },  -- the game's own windows it
 --                                       -- stands for: full, it lists them in the dropdown Classic windows;
 --                                       -- one chosen, it goes back to its zone and show() brings the game's;
---                                       -- with checked() and back(): a kept choice, ticked (Edge.lua)
+--                                       -- with checked() and back(): a kept choice, ticked (Edge.lua);
+--                                       -- with frame: the game's window gets the button Sane UI (Classic.lua)
 --          filled = function(full, width, height) end, -- it has begun to fill the screen (true) or to go
 --                                       -- back (false), to that size
 --          moving = function(share) end, -- with edge: what it holds goes with the motion, in sight, placed at
@@ -564,8 +565,9 @@ end
 
 -- A button of the title bar: the game's square button with a picture on it (an atlas or a texture, half
 -- its size), the game's click sound, a tip to say what it does.
-local function Square(parent, art, text, tip, click)
-    local button = CreateFrame("Button", nil, parent)
+-- With template (a secure one), click runs after the template's own (PostClick).
+local function Square(parent, art, text, tip, click, template)
+    local button = CreateFrame("Button", nil, parent, template)
     button:SetSize(Window.BUTTON, Window.BUTTON)
     button:SetNormalTexture(SQUARE .. "Up")
     button:SetPushedTexture(SQUARE .. "Down")
@@ -574,7 +576,7 @@ local function Square(parent, art, text, tip, click)
     if art.atlas then picture:SetAtlas(art.atlas) else picture:SetTexture(art.texture) end
     picture:SetSize(Window.BUTTON / 2, Window.BUTTON / 2)
     picture:SetPoint("CENTER", -1, 0)
-    button:SetScript("OnClick", Core.Guard("window", function(self)
+    button:SetScript(template and "PostClick" or "OnClick", Core.Guard("window", function(self)
         Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
         Core.Safe("window", click, self)
     end))
@@ -838,8 +840,50 @@ function methods:Open()
     return "ours"
 end
 
+-- The game's close button of a window, read where its template puts it, or by its name; nil without one.
+function Window.CloseOf(game)
+    local name = game:GetName()
+    local close = rawget(game, "CloseButton")
+    if type(close) ~= "table" then close = name and rawget(_G, name .. "CloseButton") end
+    if type(close) ~= "table" or type(close.GetFrameLevel) ~= "function" then return nil end
+    return close
+end
+
+-- The button Sane UI on a game's window (game): beside its close button, or left of the button that sizes it
+-- where it has one (the game's spellbook, its map), else at its top right; anchor(button) puts it elsewhere.
+-- Nothing is written into the game's frame. secure: the game's window is one of its panels, which our code
+-- may neither show nor hide (Doc/guides/addon-standards.md, *Known traps*): the button is a secure one
+-- (SecureActionButtonTemplate) that clicks the game's own close button, so the game closes its window as
+-- its own code, and click runs after that. It stands on UIParent, over the game's window (a protected child
+-- would make that window protected), and is made, shown and hidden out of a fight only (Classic.lua).
+function Window.Beside(game, click, anchor, secure)
+    local close = Window.CloseOf(game)
+    local sizer = rawget(game, "MaximizeMinimizeButton") or rawget(game, "MaximizeMinimizeFrame")
+    if type(sizer) ~= "table" or type(sizer.GetFrameLevel) ~= "function" then sizer = nil end
+    local button
+    if secure and close then
+        button = Square(UIParent, { texture = ARROWS }, Window.TEXT.sane, Window.TEXT.saneTip, click, "SecureActionButtonTemplate")
+        button:RegisterForClicks("LeftButtonUp")
+        button:SetAttribute("type", "click")
+        button:SetAttribute("clickbutton", close)
+        button:SetFrameStrata(game:GetFrameStrata())
+    else
+        button = Toggle(game, Window.TEXT.sane, Window.TEXT.saneTip, click)
+    end
+    if anchor then
+        anchor(button)
+    elseif close then
+        button:SetPoint("RIGHT", sizer or close, "LEFT")
+        button:SetFrameLevel((sizer or close):GetFrameLevel() + (secure and 2 or 0))
+        button.over = secure and (sizer or close) or nil -- above it again each time the game's window shows
+    else
+        button:SetPoint("TOPRIGHT", game, "TOPRIGHT", -Window.BUTTON - Window.BUTTON_INSET, -Window.BUTTON_INSET)
+    end
+    return button
+end
+
 -- The game's own windows with our button on them, and that button: kept in our table, nothing written
--- into theirs. Blizzard's close button is read where its template puts it, or by its name.
+-- into theirs.
 local attached = setmetatable({}, { __mode = "k" })
 
 function methods:Attach()
@@ -848,21 +892,8 @@ function methods:Attach()
     if type(game) == "function" then game = game() end
     if type(game) ~= "table" or type(game.GetObjectType) ~= "function" then return nil end
     if attached[game] then return attached[game] end
-    local name = game:GetName()
-    local close = rawget(game, "CloseButton")
-    if type(close) ~= "table" then close = name and rawget(_G, name .. "CloseButton") end
-    if type(close) ~= "table" or type(close.GetFrameLevel) ~= "function" then close = nil end
-    local button = Toggle(game, Window.TEXT.sane, Window.TEXT.saneTip, function() self:Native(false) end)
-    if native.anchor then
-        native.anchor(button)
-    elseif close then
-        button:SetPoint("RIGHT", close, "LEFT")
-        button:SetFrameLevel(close:GetFrameLevel())
-    else
-        button:SetPoint("TOPRIGHT", -Window.BUTTON - Window.BUTTON_INSET, -Window.BUTTON_INSET)
-    end
-    attached[game] = button
-    return button
+    attached[game] = Window.Beside(game, function() self:Native(false) end, native.anchor)
+    return attached[game]
 end
 
 -- Edit Mode opened (on) or closed: the box and the grip are there only then, the buttons only not. A
@@ -965,6 +996,7 @@ function Window.New(frame, options)
     if options.tabs then Core.Safe("window", Window.Views, window) end
     if Core.EditMode.active then Edit(window, true) end
     Core.Safe("window", window.Attach, window)
+    Core.Safe("window", Core.Classic.Attach, window) -- the button Sane UI on the game's windows it stands for
     if options.native and options.native.hold then window.holder = Core.Holder.Take(window) end
     -- Esc closes a window made with escape = "close" while it is shown, as the game closes its panels
     -- (Core.Escape): full as it is. A module that closes it later (the talk ends on the game's side

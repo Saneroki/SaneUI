@@ -14,12 +14,14 @@ local Core = SaneUI.Core
 --  nor scrolled, as the game's map does it while it is locked.
 --
 --  Full, it has a dropdown Classic windows in its top right corner: the game's
---  own windows this one stands for (the window's option classic). One chosen,
---  the window goes back to its zone and the game's own comes instead (the
---  entry's show: the game's friends list, or the game's chat with ours put away).
---  An entry that is a kept choice (checked) is a checkbox, ticked while the
---  game's own is the one kept; chosen again, ours is the one again (back) and the
---  window stays as it is.
+--  own windows that Sane UI's windows stand for (their option classic), each
+--  module's under its name, this window's first (Classic.lua). One chosen, the
+--  window goes back to its zone and the game's own comes instead (the entry's
+--  show: the game's friends list, or the game's chat with ours put away). An
+--  entry that is a kept choice (checked) is a checkbox, ticked while the game's
+--  own is the one kept; chosen again, ours is the one again (back) and the
+--  window stays as it is. The game's windows have the button Sane UI the other
+--  way.
 --
 --  Each window has a section Expand window in its options (Edge.Options):
 --  whether it fills the screen at all, its kind of motion, the background's
@@ -34,7 +36,8 @@ local Core = SaneUI.Core
 --      classic = { { text = "Friends list", show = function() end }, ... }  -- the game's windows it stands
 --                                           -- for, in the dropdown Classic windows (or a function giving them);
 --                                           -- checked = function() end: a kept choice, ticked while true;
---                                           -- back = function() end: ours again, when chosen while ticked
+--                                           -- back = function() end: ours again, when chosen while ticked;
+--                                           -- the rest of an entry (its button on the game's window): Classic.lua
 --      filled = function(full, width, height) end  -- it has begun to fill the screen (true) or to go back,
 --                                           -- to that size
 --      moving = function(share) end         -- what it holds goes with the motion instead of fading out:
@@ -274,49 +277,17 @@ local function Content(edge, coming)
     end
 end
 
--- The game's own windows the window stands for, as its option gives them; nil: none.
-local function Entries(edge)
-    local list = edge.window.options.classic
-    if type(list) == "function" then list = list() end
-    return type(list) == "table" and #list > 0 and list or nil
-end
-
--- Whether an entry is a kept choice that is ticked now.
-local function Ticked(entry)
-    return entry.checked and Core.Safe("full screen", entry.checked) and true or false
-end
-
--- One chosen: the window goes back to its zone, and the game's own comes instead. A kept choice chosen while
--- ticked: ours is the one again, and the window stays as it is.
-local function Pick(edge, entry)
-    if Ticked(entry) then
-        if entry.back then entry.back() end
-        return
-    end
-    edge:Fill(false)
-    entry.show()
-end
-
--- The dropdown Classic windows, the game's own menu (WowStyle1DropdownTemplate) with a button for each
--- of them, its words always the same (OverrideText). Made when the window first fills the screen with
--- some; nil without.
+-- The dropdown Classic windows, the game's own menu (WowStyle1DropdownTemplate): the game's windows of every
+-- module (Classic.lua), its words always the same (OverrideText). Made when the window first fills the screen
+-- while some window has them; nil without.
 local function Classic(edge)
-    if edge.classic or not Entries(edge) then return edge.classic end
+    if edge.classic or #Core.Classic.Windows(edge.window) == 0 then return edge.classic end
     local frame = edge.frame
     local menu = CreateFrame("DropdownButton", nil, frame, "WowStyle1DropdownTemplate")
     menu:SetWidth(Edge.MENU_WIDTH)
     menu:SetFrameLevel(frame:GetFrameLevel() + 50) -- above what the window holds
     menu:OverrideText(Edge.CLASSIC)
-    menu:SetupMenu(function(_, root)
-        for _, entry in ipairs(Entries(edge) or {}) do
-            local chosen = Core.Guard("full screen", function() Pick(edge, entry) end)
-            if entry.checked then
-                root:CreateCheckbox(entry.text, Core.Guard("full screen", function() return Ticked(entry) end), chosen)
-            else
-                root:CreateButton(entry.text, chosen)
-            end
-        end
-    end)
+    menu:SetupMenu(Core.Guard("full screen", function(_, root) Core.Classic.Menu(edge, root) end))
     menu:Hide()
     edge.classic = menu
     return menu

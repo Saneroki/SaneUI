@@ -199,6 +199,13 @@ game's screen. These calls are fine on our own frames, which are not protected.
   and the game's own chat is back; *Friends list* opens the game's friends list.
 - **Navigation's** full screen lists the map's: the **native minimap** and the **native map and quest
   log** window (one Blizzard window in this client).
+- **Across modules, and back (Saneroki, 2026-10-20, done):** the dropdown lists the game's windows of every
+  module, each module's under its name, the open one's first. Every game window that ours stands for has a
+  button *Sane UI* beside its close button (the game's chat already had one): it closes the game's window
+  and shows ours instead, as the dropdown does the other way (Core's `Classic.lua`). Social: the friends list,
+  the group finder; Navigation: the minimap, the map; Combat: the spellbook and talents; Inventory: the
+  character sheet, the bags. The spellbook, talents and character sheet are panels our code may not open:
+  chosen in the dropdown, the full screen goes back and the game's key for them is said.
 - **Only a small window may be round.** A full screen view's background is always square, whatever the
   window's corner switches say; on its way to full screen it flattens from the small window's corners.
 

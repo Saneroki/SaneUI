@@ -61,6 +61,7 @@ in the rest.
 | `Escape.lua` | Esc: one stand-in in the game's `UISpecialFrames` for everything of Sane UI's that Esc closes (`Core.Escape`). |
 | `Watch.lua` | `Core.Watch` (a look a few times a second, only while out and shown) and `Core.Hover` (the mouse on a window: its coming by `OnEnter`, a watch until it has gone). |
 | `Edge.lua` | Full screen: the trigger at the screen edge, the motion there and back, the background, the dropdown *Classic windows*, the section *Expand window* (its changes followed by Core). |
+| `Classic.lua` | The game's windows ours stand for (`classic`): the dropdown *Classic windows* with every module's, each under its name; the button *Sane UI* on each game window (a secure one clicking the game's close button on its panels), ours instead, full where the entry says. |
 | `Views.lua` | A window's views behind the game's tabs (`tabs`), the tab last chosen kept. |
 | `Holder.lua` | The game's window kept out of sight while ours is chosen, and the game's own opening and closing of it followed (section 7, *The holder*). |
 | `Motion.lua` | The kinds of motion (Glide, Swing, Even, Instant), each a time and one of the game's easing curves (`EasingUtil`), a clock that runs only while something moves, a region's fade and slide (`Motion.Fade`, `Motion.Slide`). |

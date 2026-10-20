@@ -1781,5 +1781,56 @@ talks.edge:Fill(false)
 map.edge:Fill(false)
 W.Wait(1)
 
+-- The game's windows of every module, both ways -----------------------------------------------------------
+do
+    local running, shown = true, {}
+    W.templates.SecureActionButtonTemplate = function(widget)
+        widget._attributes = {}
+        function widget:SetAttribute(key, value) self._attributes[key] = value end
+    end
+    local gameMap = CreateFrame("Frame", "SaneTestGameMap", UIParent)
+    gameMap.CloseButton = CreateFrame("Button", nil, gameMap)
+    gameMap:Hide()
+    local function framed(key, title, list)
+        local frame = CreateFrame("Frame", nil, UIParent)
+        local handle = Window.New(frame, { store = {}, key = key, title = title, dock = true, edge = true, classic = list,
+            first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
+        handle:Place()
+        at(frame, 300, 300)
+        frame:Show()
+        return handle
+    end
+    local chat = framed("chat", "Chat", { { text = "Friends list", show = function() shown[#shown + 1] = "friends" end } })
+    local atlas = framed("atlas", "Map", { { text = "World map", show = function() shown[#shown + 1] = "map" gameMap:Show() end,
+        frame = "SaneTestGameMap", full = true, ready = function() return running end } })
+    chat.edge:Fill(true)
+    chat.frame._group:Run(1)
+    local menu = chat.edge.classic
+    menu:GenerateMenu()
+    local items, mapAt = menu._items, nil
+    for index, item in ipairs(items) do if item.title == "Map" then mapAt = index end end
+    check(items[1].title == "Chat" and items[2].text == "Friends list" and mapAt and items[mapAt + 1].text == "World map",
+        "the dropdown Classic windows: every module's game windows, each under its name, this one's first")
+    items[mapAt + 1].fn()
+    check(shown[#shown] == "map" and not chat.edge.full and gameMap:IsShown(), "another module's chosen: the full window goes back, the game's comes")
+    local button = Core.Classic.Button(gameMap)
+    check(button and button:IsShown() and button._points[1][2] == gameMap.CloseButton and button._parent == UIParent
+        and button._attributes.type == "click" and button._attributes.clickbutton == gameMap.CloseButton,
+        "the game's panel has the button Sane UI beside its close button: a secure one on UIParent that clicks that close button")
+    W.Wait(1)
+    gameMap:Hide() -- the game's close button, clicked by the secure button: the game closes its own window
+    check(not button:IsShown(), "the game's window closed, the button goes with it")
+    button:GetScript("PostClick")(button)
+    check(atlas.frame:IsShown() and atlas.edge.full, "then ours fills the screen")
+    atlas.edge:Fill(false)
+    W.Wait(1)
+    running = false
+    gameMap:Show()
+    check(not button:IsShown(), "while its module does not run, the game's window has no such button")
+    gameMap:Hide()
+    chat.frame:Hide()
+    atlas.frame:Hide()
+end
+
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Windows: all %d checks passed.\n"):format(passed))

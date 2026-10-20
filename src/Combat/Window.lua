@@ -34,13 +34,26 @@ local function Filled(full)
     if not full then ns.Board.Hide() end
 end
 
+-- The game's own spellbook and talents (one window of the game's, PlayerSpellsFrame, loaded on demand), in Core's
+-- dropdown Classic windows: the full screen goes back and the key that opens the game's is said (our code opens
+-- none of the game's panels: its OnShow sets the action bars' grids). On it the button Sane UI: ours, filling the
+-- screen (Core's Classic.lua).
+local SPELLBOOK, TALENTS = Core.Word("SPELLBOOK", "Spellbook"), Core.Word("TALENTS", "Talents")
+local function Running() return not ns.off end
+local CLASSIC = {
+    { text = SPELLBOOK, show = function() Core.Classic.Press(SPELLBOOK, "TOGGLESPELLBOOK") end,
+      frame = "PlayerSpellsFrame", addon = "Blizzard_PlayerSpells", full = true, ready = Running },
+    { text = TALENTS, show = function() Core.Classic.Press(TALENTS, "TOGGLETALENTS") end,
+      frame = "PlayerSpellsFrame", addon = "Blizzard_PlayerSpells", full = true, ready = Running },
+}
+
 function Window.Build()
     if frame then return end
     frame = CreateFrame("Frame", nil, UIParent)
     frame:SetSize(Window.WIDTH, Window.HEIGHT) -- not sizable: its size is ours, not kept
     handle = Core.Window.New(frame, {
         kind = "screen", store = ns.store, title = ns.TEXT.title, edge = ns.options,
-        first = { dock = "BOTTOM" }, sizable = false,
+        first = { dock = "BOTTOM" }, sizable = false, classic = CLASSIC,
         strip = Window.STRIP,
         filled = function(full) ns.Guarded(Filled, full) end,
         docked = function() ns.Guarded(Placed) end,

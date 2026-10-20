@@ -1627,20 +1627,20 @@ check(Hybrid.Taken() and Window.frame._alpha == 1 and Canvas.frame._mouse and Ca
 Window.Toggle()
 Window.frame._group:Run(1)
 local classicMenu = Window.handle.edge.classic
-check(classicMenu and classicMenu:IsShown() and #classicMenu._items == 2 and classicMenu._items[1].checked() == false
-    and classicMenu._items[2].checked() == false, "full, the dropdown Classic windows: the game's minimap and map, neither chosen")
-classicMenu._items[2].fn()
+check(classicMenu and classicMenu:IsShown() and #classicMenu._items == 3 and classicMenu._items[1].title ~= nil and classicMenu._items[2].checked() == false
+    and classicMenu._items[3].checked() == false, "full, the dropdown Classic windows: the game's minimap and map, neither chosen")
+classicMenu._items[3].fn()
 check(ns.options.nativeMap and worldMap._shown and Window.handle.edge.away, "the game's map chosen: kept, opened at once, ours goes back")
 Window.frame._group:Run(1)
 HideUIPanel(worldMap)
 check(overrides.M == nil and Window.frame._alpha == 1, "its key is the game's now; our small window stays the minimap")
 Window.Toggle()
 Window.frame._group:Run(1)
-check(classicMenu._items[2].checked() == true, "the corner still fills the screen with ours, the game's map ticked")
-classicMenu._items[2].fn()
+check(classicMenu._items[3].checked() == true, "the corner still fills the screen with ours, the game's map ticked")
+classicMenu._items[3].fn()
 check(not ns.options.nativeMap and overrides.M == "SaneUINavigationKey:map" and Window.handle.edge.full,
     "chosen again: ours is the map again, the window stays full")
-classicMenu._items[1].fn()
+classicMenu._items[2].fn()
 Window.frame._group:Run(1)
 check(ns.options.nativeMinimap and not Hybrid.Taken() and Window.frame._alpha == 0, "the game's minimap chosen: kept, ours rests")
 Core.Set(ns.name, "nativeMinimap", false)

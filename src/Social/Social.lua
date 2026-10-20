@@ -390,10 +390,16 @@ function ns.OpenFinder(tab)
     if tab and show then show(tab) elseif toggle then toggle() end
 end
 
+-- The button Sane UI on the game's friends list and group finder (Core's Classic.lua): ours, filling the
+-- screen. The game's chat has its own (ns.NATIVE).
+local function Ours() Choose(true) end
+local function Running() return not ns.off end
 ns.CLASSIC = {
     { text = ns.TEXT.classicChat, show = PutAway },
-    { text = ns.TEXT.classicFriends, show = function() ns.Safe("friends list", Friends) end },
-    { text = ns.TEXT.classicFinder, show = function() ns.Safe("group finder", ns.OpenFinder) end },
+    { text = ns.TEXT.classicFriends, show = function() ns.Safe("friends list", Friends) end,
+      frame = "FriendsFrame", full = true, ours = Ours, ready = Running },
+    { text = ns.TEXT.classicFinder, show = function() ns.Safe("group finder", ns.OpenFinder) end,
+      frame = "LFGParentFrame", addon = "Blizzard_GroupFinder_VanillaStyle", full = true, ours = Ours, ready = Running },
 }
 -- Core's buttons while the window stands free or in the middle of the screen: the game's own window is
 -- its chat, and closing ours puts it away the same way. The button back to ours (Sane UI) goes onto the

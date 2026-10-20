@@ -118,7 +118,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   back; its button *Sane UI* (the game's square button with circling arrows, just above its chat menu
   button, left of the game's chat), `/sane social` or the switch brings this one again. *Friends list*: the window goes back to its
   place and the game's friends list opens (in a fight the game refuses that to an addon: a line says to use the
-  game's own key). *Group finder*: the same for the game's group finder.
+  game's own key). *Group finder*: the same for the game's group finder. The game's friends list and group
+  finder have the button *Sane UI* beside their close button: it closes the game's window and this one fills
+  the screen. The dropdown lists the other modules' game windows too, each under its module's name.
 - **Scroll:** mouse wheel, or the bar at the right, which is only there while you are scrolled up from
   the newest message. At the newest message the window follows new ones; scrolled up to read, it stays
   where you are.

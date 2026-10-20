@@ -88,7 +88,9 @@ party), always over the map, and the full map has the quest log at its left. The
   kept once chosen (ticked; chosen again, ours comes back), as the switches *Show the game's minimap* and *Show
   the game's map* on the page. With the game's minimap our small window rests out of sight; with the game's map
   its keys open the game's. Either way the mouse pushed into the top right corner still fills the screen with
-  our map. The game's key to show or hide the minimap (in its key bindings) shows or hides our window.
+  our map. The game's key to show or hide the minimap (in its key bindings) shows or hides our window. The
+  game's map has the button *Sane UI* beside its close button, and the game's minimap one at its top right:
+  ours is the one again (unticked), the map filling the screen.
 - **Size the small window** by its corner away from the screen's edges (at first the lower left): with the mouse
   on the map the game's grip shows there; drag it. The size is kept. **Move and size it** in Edit Mode too, like
   every Sane UI window; the section *Expand window* on the page: whether the corner fills the screen, the
