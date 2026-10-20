@@ -41,8 +41,14 @@ The bigger changes of each version, newest first.
   character sheet, your model with your gear round it as on the game's
   sheet (click, drag and link your items there), and your stats as the
   game lists them; its side tabs, Reputation first: your factions, at
-  war or not, inactive or shown as your experience bar. Its other tabs,
-  your bags and your other characters' things are being built.
+  war or not, inactive or shown as your experience bar. Its other tabs and
+  your bags are being built.
+- Inventory: your other characters' things, on the inventory's full
+  screen in the window Characters. Every character of your account down
+  its left with its gold, and the gold of them all; click one to see
+  its bags, its bank and what it wears as it last had them, with the
+  game's tooltips. Type in the search box to find an item across them
+  all: each says how many it has.
 - Navigation: Sane UI's minimap and map in one window. Small in the top
   right corner it is your minimap; move the mouse into the corner and
   the same map fills the screen. Drag it, zoom it with the mouse wheel

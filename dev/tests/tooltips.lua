@@ -1426,6 +1426,12 @@ W.Fire("BANKFRAME_OPENED")
 Steps()
 check(row(panel, at + 1).right == "Bags 7  \194\183  Bank 4" and saved.forever.characters[Core.charKey].bank == "4500\0314",
     "the bank, read while it is open")
+local alt = Data.Items("Player-70-0000BEEF", "bags")
+check(Data.Items(Core.charKey, "bank")[1].item == 4500 and Data.Items(Core.charKey, "bank")[1].count == 4
+    and #alt == 2 and alt[1].item == 4500 and alt[1].count == 12 and alt[2].item == 4501 and #Data.Items("account", "bank") == 0,
+    "what a character keeps in a place, item by item in the order kept; the account's own bank (read empty at this bank)")
+check(Data.Items("account", "bags") == nil and Data.Items("Player-70-0000DEAD", "bags") == nil and Data.Items(Core.charKey, "mail") == nil,
+    "nothing for a place or a character Core does not keep")
 W.Fire("BANKFRAME_CLOSED")
 bagItems[6] = nil
 W.Fire("BAG_UPDATE", 6)
