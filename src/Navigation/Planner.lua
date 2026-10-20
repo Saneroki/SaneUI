@@ -6,21 +6,25 @@ local _, ns = ...
 --  setting Route to the map pin is on. Knows no frames.
 --
 --      the journey   a small graph over the player, the pin, the flight points this character knows, the docks
---                    of the boats and zeppelins and the hearthstone's place, on the planes of the player and the
---                    pin (a continent, or a map of its own on the world map: Zephras Isle, Coords.PlaneOf); its
+--                    of the boats and zeppelins, the cities' entrances to the tram and the hearthstone's place, on
+--                    the planes of the player and the pin (a continent, or a map of its own on the world map:
+--                    Zephras Isle, Coords.PlaneOf); its
 --                    ways: on foot between two places of one plane (guessed at Planner.DETOUR times the straight
 --                    line, within one region of the walking data), the flights between known
 --                    flight points (the game's, Core's set Travel, as only its side flies them; each at its way's
 --                    length), the boats and zeppelins from dock to dock (Core's set Travel, the game's own ways of
---                    them: the wait for one and the trip, Planner.Ship), the hearthstone from the player to its
---                    place (its cooldown and the cast); the quickest taken (Dijkstra)
+--                    them: the wait for one and the trip, Planner.Ship), the tram from one city's entrance to it to
+--                    the other's (Core's set Travel: the way down and up, the wait for a train and its run, Tram),
+--                    the hearthstone from the player to its place (its cooldown and the cast); the quickest taken
+--                    (Dijkstra)
 --      the walks     then searched on the walking data (Search.lua, a job of Core's scheduler); a walk
 --                    found much longer than its guess is put in at its true length and the journey
 --                    chosen again, once
 --      without data  (the pack Routes not installed, or a plane it has nothing of): each walk a straight line
 --      planned again when the pin moves, when the player has left the line by Planner.OFF yards, or
 --                    when a flight has landed; never more often than every Planner.AGAIN seconds. Aboard a
---                    boat or a zeppelin the line stays, and a new pin is planned from where it lands.
+--                    boat or a zeppelin the line stays, and a new pin is planned from where it lands; in the
+--                    tram's tunnel (a map of no plane) the line stays as it is.
 --      on a flight   its way on (Core's Data.Trips), drawn anew from where the player is every Planner.AGAIN
 --                    seconds, the plan from where it lands to the pin after it; without a pin, the flight's
 --                    way alone
@@ -44,6 +48,8 @@ Planner.RUN = 7          -- yards a second on foot, the game's run speed
 Planner.FLY = 30         -- yards a second on a flight, about the game's flights
 Planner.BOARD = 8        -- seconds a flight takes besides its way: taking off, landing
 Planner.HEARTH = 15      -- seconds the hearthstone takes besides its cooldown: the cast, the loading screen
+Planner.STATION = 30     -- seconds the tram takes besides the wait and its run, a guess: the walks between the
+                         -- cities' entrances and its platforms, the loading screens into its map and out
 Planner.DETOUR = 1.3     -- a walk not searched yet is guessed at so many times the straight line
 Planner.WORSE = 1.6      -- a walk found this much longer than its guess makes the journey be chosen again
 Planner.OFF = 40         -- yards off the line that make a new plan
@@ -208,9 +214,34 @@ function Planner.Ship(way, key)
     return list
 end
 
--- Every dock of the boats and zeppelins on a plane of the world map, by name ("dock:<way>:<n>"): { name, map, u, v
--- (where it stops, in that plane), kind, ways = { { to = name, seconds, from, till, kind, way } } }.
--- Made once Core's set Travel is there, again when it changes.
+-- The tram's two docks (Docks): the cities' entrances to its stations (the set's docks, points of the city maps), each
+-- in its plane and boarded right there (pu, pv), with a way to the other: the walks down and up and the loading
+-- screens (Planner.STATION), the wait for a train (half the seconds between two from a station, the set's wait) and
+-- its run (time). None while the set lacks one of them or the entrances lie on two planes (the tunnel's own map has
+-- none: the way is drawn straight from entrance to entrance).
+local function Tram(found, key, way)
+    local list = type(way.docks) == "table" and way.docks or {}
+    if #list ~= 2 or not way.time or not way.wait then return end
+    local ends = {}
+    for index, dock in ipairs(list) do
+        local map = Coords.PlaneOf(dock.map)
+        local u, v
+        if map and dock.x and dock.y then u, v = Coords.MapToPlane(dock.map, dock.x / 100, dock.y / 100, map) end
+        if not u then return end
+        local name = "dock:" .. key .. ":" .. index
+        ends[index] = { name = name, map = map, u = u, v = v, pu = u, pv = v, kind = "tram", ways = {} }
+    end
+    local a, b = ends[1], ends[2]
+    if a.map ~= b.map then return end
+    local seconds = Planner.STATION + way.wait / 2 + way.time
+    a.ways[1] = { to = b.name, seconds = seconds, kind = "tram", way = way, key = key }
+    b.ways[1] = { to = a.name, seconds = seconds, kind = "tram", way = way, key = key }
+    found[a.name], found[b.name] = a, b
+end
+
+-- Every dock of the boats and zeppelins on a plane of the world map, and the tram's entrances, by name
+-- ("dock:<way>:<n>"): { name, map, u, v (where it stops, in that plane), kind, ways = { { to = name, seconds, from,
+-- till, kind, way } } }. Made once Core's set Travel is there, again when it changes.
 local function Docks()
     if docks then return docks end
     local found = {}
@@ -237,6 +268,10 @@ local function Docks()
                 end
             end
         end
+    end
+    for _, key in ipairs(Travel:Keys("byKind", "tram")) do
+        local way = Travel:Get(key)
+        if way then Tram(found, key, way) end
     end
     if Travel:Ready() and #Coords.Planes() > 0 then docks = found end
     return found
@@ -306,7 +341,7 @@ local function Region(continent, u, v)
 end
 
 -- The quickest journey by the guesses from the player (start) to the pin (end): a list of steps { kind = "walk" |
--- "flight" | "boat" | "zeppelin" | "hearth", from, to, map, u1, v1, map2, u2, v2, ... } and its seconds.
+-- "flight" | "boat" | "zeppelin" | "tram" | "hearth", from, to, map, u1, v1, map2, u2, v2, ... } and its seconds.
 -- measured: { ["from:to"] = seconds } walks searched already, in place of their guesses.
 local function Journey(startMap, pu, pv, endMap, tu, tv, measured)
     local known = Known()
@@ -375,12 +410,13 @@ local function Journey(startMap, pu, pv, endMap, tu, tv, measured)
             for _, flight in ipairs(Flights(current, points, known)) do Reach(flight.to, low + flight.seconds, flight.flight) end
         end
         -- By sea or air: the boats and zeppelins from a dock; the wait for the next one where its times on this
-        -- realm are known (a ride taught them, Data.Ships), else half its round.
+        -- realm are known (a ride taught them, Data.Ships), else half its round. Underground: the tram (Tram).
         if here.dock then
             for _, ship in ipairs(here.dock.ways) do
                 if places[ship.to] then
                     local seconds, at = ship.seconds, now + low
-                    local _, leaves = Ships:Next(ship.key, ship.stop, at)
+                    local _, leaves
+                    if ship.stop then _, leaves = Ships:Next(ship.key, ship.stop, at) end
                     if leaves then seconds = leaves - at + ship.trip end
                     Reach(ship.to, low + seconds, ship)
                 end
@@ -400,6 +436,8 @@ local function Journey(startMap, pu, pv, endMap, tu, tv, measured)
             step.kind, step.guess = "walk", Walking(previous, a, at, b)
         elseif way == "hearth" then
             step.kind = "hearth"
+        elseif way.kind == "tram" then
+            step.kind, step.tram = "tram", way
         elseif way.kind == "flight" then
             step.kind, step.flight = "flight", way
         else
@@ -472,9 +510,10 @@ local function Draw(steps, keep)
             legs[#legs + 1] = { kind = "walk", points = points }
         elseif step.kind == "flight" then
             legs[#legs + 1] = { kind = "flight", points = FlightPoints(step) }
-        elseif step.kind == "hearth" then
-            legs[#legs + 1] = { kind = "hearth", points = { { map = step.map, u = step.u1, v = step.v1 },
-                                                            { map = step.map2, u = step.u2, v = step.v2 } } }
+        elseif step.kind == "hearth" or step.kind == "tram" then
+            -- Straight to the hearthstone's place; the tram's from entrance to entrance (its tunnel's map has no plane).
+            legs[#legs + 1] = { kind = step.kind, points = { { map = step.map, u = step.u1, v = step.v1 },
+                                                             { map = step.map2, u = step.u2, v = step.v2 } } }
         else
             legs[#legs + 1] = { kind = step.kind, ship = true, points = ShipPoints(step) }
         end

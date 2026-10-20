@@ -1,6 +1,6 @@
 # Sane UI: Navigation
 
-**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot, by flight, by boat and zeppelin and by the hearthstone; the leveling guide comes later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
+**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot, by flight, by boat and zeppelin, by the Deeprun Tram and by the hearthstone; the leveling guide comes later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 Sane UI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
@@ -95,8 +95,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 - **Routes:** put the game's map pin (Ctrl and a click) and a golden line leads you there, pulsing towards it,
   around what cannot be walked (mountains, walls, deep water is swum), through gates and doors, and by the flights
   your character knows where that is quicker (visit a flight master once for the map to know yours). A pin on
-  the other continent or on Zephras Isle is reached by boat or zeppelin, the line red from pier to pier, and the
-  hearthstone is taken where it is quickest (the map learns its place where you bind it, or the first time you use
+  the other continent or on Zephras Isle is reached by boat or zeppelin, the line red from pier to pier; between
+  Stormwind and Ironforge the Deeprun Tram is taken where it is quicker, the line red from one city's entrance to it
+  to the other's; and the hearthstone is taken where it is quickest (the map learns its place where you bind it, or the first time you use
   it). Leave the line and it is planned again; on a flight the line shows the flight's way on from where you are,
   pin or none, and from where it lands on to the pin; aboard a ship it waits until you have landed. The game tells no ship's timetable: its sailing comes from its way at the game's
   transports' speed, and once you have ridden a ship on your realm the map knows when it really sails there and
@@ -266,16 +267,20 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   in different regions refused at once, then the line pulled straight through the openings (a funnel, each
   opening drawn in from its ends). `Search.Start` runs it as a job of Core's scheduler.
 - **Planner** (`Planner.lua`, no frames): the way to the map pin, a graph over the player, the pin, the known
-  flight points, the docks and the hearthstone's place on both their planes (a continent, or Zephras Isle; the
-  canvas' tracker hands it the player's place): walks within one region of the
+  flight points, the docks, the tram's entrances and the hearthstone's place on both their planes (a continent, or
+  Zephras Isle; the canvas' tracker hands it the player's place): walks within one region of the
   walking data (guessed), the flights of Core's set *Travel* the player's side may take, the boats and zeppelins of
-  *Travel* from dock to dock (both from the game's tables, by `dev/tools/travel-data`), the hearthstone from the
-  player; the quickest chosen (Dijkstra), the walks then searched and the journey chosen once more when one is
+  *Travel* from dock to dock and its tram from entrance to entrance (all from the game's tables, by
+  `dev/tools/travel-data`), the hearthstone from the player; the quickest chosen (Dijkstra), the walks then searched and the journey chosen once more when one is
   much longer than guessed. A ship (`Planner.Ship`): its docks and trips from Core's timetable of it (`Data.Ships`:
   the game's way and stays, its sailing at the game's transports' speed, stretched to its time once round where
   *Travel* has it, `wait`, or a ride taught it); the wait for it the time to its next departure where a ride on this
   realm taught its times, else half its round; then it sails to the dock (the stays between included). One boards
-  and leaves at the pier, the land nearest where it stops. Planned again when the pin
+  and leaves at the pier, the land nearest where it stops. The tram (`Tram`): boarded and left at the cities'
+  entrances to it (its `docks` in *Travel*), its cost the walks down and up and the loading screens
+  (`Planner.STATION`, a guess), half the time between two trains from a station (*Travel*'s `wait`) and its run
+  (`time`); drawn red, straight from entrance to entrance (its tunnel's map has no plane; in it the line stays as it
+  is). Planned again when the pin
   changes, after a landing, when the player is 40 yards off the line (150 off a ship's way), and when the data
   arrives; aboard a ship a new pin is planned from where it lands. The known flight points are read at the flight
   master, the hearthstone's place where it is bound (`HEARTHSTONE_BOUND`) or where it brought the character, both
@@ -343,7 +348,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, gathered. No frames |
 | `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings. No frames |
 | `Search.lua` | A walk between two points over the walking data, as a job of Core's scheduler. No frames |
-| `Planner.lua` | The way to the map pin: on foot, by the flights this character knows, by boat and zeppelin, by the hearthstone. No frames |
+| `Planner.lua` | The way to the map pin: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by the hearthstone. No frames |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
 | `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, zoomed and dragged |
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
@@ -370,6 +375,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, the tram in the routes:** the planner takes the Deeprun Tram between Stormwind and Ironforge where
+  it is quicker: from one city's entrance to it to the other's, its cost the walks down and up and the loading
+  screens (`Planner.STATION`), half the time between two trains and the run (Core's set *Travel*: `wait`, `time`);
+  drawn red, straight from entrance to entrance.
 - **2026-10-20, coasts and Blended:** the coast keeps what stands on the water (docks, piers, bridges, ships, as the
   minimap shows them) and the shallows of a beach, and a tile on a coast is cut by a finer mask of its own
   (`Art/Coasts/`, `Coasts.lua`); the new view *Blended* fades Parchment far out into Scrying close in.

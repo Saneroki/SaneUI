@@ -5,8 +5,9 @@ the waypoint, the routes and the leveling guide. Built so far (2026-10-20): the 
 its controls, the terrain and the art at every zoom (the water cut away, the zones' maps cut to their outlines),
 zones that light up and open by a click, the map moving with its window, the game's minimap over ours (cut to the
 window's shape), the game's map kept closed; the pins of the game and of Core's data, quest areas, the party, the
-quest log and the bar over the full map, routes to the map pin on foot, by flight, by boat and zeppelin and by the
-hearthstone (`src/Navigation/README.md`). Not yet: trams, lifts and portals in the routes, the leveling guide,
+quest log and the bar over the full map, routes to the map pin on foot, by flight, by boat and zeppelin, by the
+Deeprun Tram and by the hearthstone (`src/Navigation/README.md`). Not yet: lifts and portals in the routes, the
+leveling guide,
 dungeon maps, search, the minimap's small parts.
 
 How to read this page:
@@ -958,8 +959,15 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     way alone.
   - **The tram (2026-10-20):** the Deeprun Tram is a way of Core's set *Travel* (kind `tram`), from the game's own
     tables (`dev/tools/travel-data`): its two stations (the triggers in its map where one leaves it), the run's
-    seconds (its cars' motion, the same for every car), the cities' entrances as its docks (pins). Not yet in
-    the planner's journeys.
+    seconds (its cars' motion, the same for every car), the time between two trains from a station (`wait`: its
+    cars' motion once round, 143.333 seconds, over its two trains, which set out from the two stations together),
+    the cities' entrances as its docks (pins).
+  - **The tram in the journey (built 2026-10-20, `Planner.lua`, `Tram`):** its two entrances are docks of the graph
+    on the Eastern Kingdoms' plane (`Coords.PlaneOf` of each entrance's city map), boarded and left right there
+    (no pier); the way between them costs the walks down and up and the loading screens (`Planner.STATION`, 30
+    seconds, a guess until timed in play), the wait (half of *Travel*'s `wait`) and the run (`time`). Its leg is
+    drawn red, straight from entrance to entrance: the tunnel's own map (369) has no plane, so the game tells no
+    place in it there and the line stays as it is until the player comes out at the other end.
   - **In the journey:** each dock a place of the graph, boarded and left at its pier (the floor of land nearest
     where the ship stops), a way from every dock of a ship to every other; the graph spans the planes of the
     player and the pin (a continent, or Zephras Isle: below), each place in its own plane, walks only within one
@@ -1000,9 +1008,9 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     live's 70245, whose textures differ a little in many tiles; the isle's tiles and file IDs are the same in both),
     and the client the build installs into.
   - **Not yet:** which side's town a dock stands in is not in the client's tables (a town's guards are the
-    server's), so a route may lead through the other side's harbour; Zephras Isle's painting (the Atlas); trams,
-    lifts and portals (the lifts' and the tram's motions are in the client, but not where they stand nor where a
-    portal leads); a new route kept only when clearly better.
+    server's), so a route may lead through the other side's harbour; Zephras Isle's painting (the Atlas); lifts
+    and portals (the lifts' motions are in the client, but not where they stand, nor where a portal leads); the
+    tram's real departures (a ride could teach them, as a ship's); a new route kept only when clearly better.
 
 ### The walking data
 
@@ -1184,8 +1192,8 @@ Each step ends in something tried in the game, and in the module's README markin
 5 built as far as Core's data goes: the pins, gathered overlaps, tooltips and the quest areas the game shades are
 there, and `Data.Map` reads Spawns, Places and Travel, of which Spawns and Places hold no entries yet, so the
 database's pins come with the import; rares' spawn areas and patrol paths wait for their data. 6 built on foot, by
-flight, by boat and zeppelin and by the hearthstone (the walking data, the flights and the ships' ways of the game's
-tables, the planner, the search, the golden line); trams, lifts and portals not yet. Step 0's points are answered in play as each step is tried.
+flight, by boat and zeppelin, by the tram and by the hearthstone (the walking data, the flights, the ships' ways and
+the tram of the game's tables, the planner, the search, the golden line); lifts and portals not yet. Step 0's points are answered in play as each step is tried.
 
 The hardest parts, in order: the walking data (its tool and size); keeping the game's map closed in a
 fight; the small view's dots with our ground; the overlay's cut; the pin data (Core's).

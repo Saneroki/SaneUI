@@ -133,7 +133,7 @@ C_Map = {
         local name = ({ [1414] = "Kalimdor", [1429] = "Elwynn Forest", [2521] = "Zephras Isle" })[map]
         return info and { mapID = map, mapType = info.kind, parentMapID = info.parent, name = name } or nil
     end,
-    GetAreaInfo = function(area) return area == 12 and "The Far Shore" or nil end,
+    GetAreaInfo = function(area) return ({ [12] = "The Far Shore", [1519] = "Stormwind City", [1537] = "Ironforge" })[area] end,
     GetFallbackWorldMapID = function() return 947 end,
     GetMapChildrenInfo = function(map, kind)
         local list = {}
@@ -463,9 +463,9 @@ Set(packPath .. "/Places.lua", "Places", "00000005", "int", '"kind", "name", "po
     .. 'R[2] = "70245\t\tmailbox\t\t1429\03170\03170\t\t\t"\n')
 -- The boat's way round has its docks on the maps too: in the east hall, and on Kalimdor in the game's area 12.
 Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
-    '"kind", "name", "from", "to", "fromNode", "toNode", "length", "path", "docks", "dockAreas", "time"',
+    '"kind", "name", "from", "to", "fromNode", "toNode", "length", "path", "docks", "dockAreas", "time", "wait"',
     '"text", "text", "point", "point", "int", "int", "number", "list tuple(x:number,y:number,map:int,stay:number,jump:bool)", '
-    .. '"list point", "list int", "number"',
+    .. '"list point", "list int", "number", "number"',
     'R[1] = "70245\t\tboat\tTo the west\t1429\03190\03190\t1414\03150\03150\t\t\t"\n'
     .. 'R[2] = "70245\t\tflight\t\t\t\t2\t5\t6000"\n'
     .. 'R[3] = "70245\t\tboat\t\t\t\t\t\t3898.1\t-8600\031-450\0310\03160\030-8000\031-2000\0305000\031-9000\0311\031\0311'
@@ -473,10 +473,13 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     .. '\t1429\03172.5\0316.7\0301414\03189.6\03135\t0\03012"\n'
     .. 'R[4] = "70245\t\tzeppelin\t\t\t\t\t\t\t-8650\031-400\0310\03130\030-8000\031500\030-500\0310\0312991\031\0311'
     .. '\030-1000\0310\031\03130\030-500\0310\030-8000\031500\0310\031\0311\t1429\03170\03110\0302521\03150\03180\t0\0300"\n'
-    -- Two flights with their ways (Alpha to Beta to Gamma, 1000 yards each) and the tram (2000 yards in 50 seconds).
+    -- Two flights with their ways (Alpha to Beta to Gamma, 1000 yards each) and the tram (2000 yards in 50 seconds, a
+    -- train from each station every 120): its entrances on the continent's map, by the player (u 600, v -8900) and far
+    -- in the north (u 0, v 0).
     .. 'R[5] = "70245\t\tflight\t\t\t\t20\t21\t1000\t0\0310\0301000\0310"\n'
     .. 'R[6] = "70245\t\tflight\t\t\t\t21\t22\t1000\t1000\0310\0301000\0311000"\n'
-    .. 'R[7] = "70245\t\ttram\tDeeprun Tram\t\t\t\t\t2000\t0\0310\031369\0302000\0310\t\t\t50"\n'
+    .. 'R[7] = "70245\t\ttram\tDeeprun Tram\t\t\t\t\t2000\t0\0310\031369\0302000\0310'
+    .. '\t1415\03157.5\03164.5\0301415\03150\03120\t1519\0301537\t50\t120"\n'
     .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byFromNode[20] = "5"\nI.byFromNode[21] = "6"\nI.byKind = {}\n'
     .. 'I.byKind.boat = "1\0303"\nI.byKind.flight = "2\0305\0306"\nI.byKind.tram = "7"\nI.byKind.zeppelin = "4"\n')
 out = assert(io.open(packPath .. "/SaneUI_Data_World.toc", "w"))
@@ -2238,12 +2241,32 @@ local function Flights()
     for _ = 1, 10 do W.Wait(1) end
     trip = Trips:Now()
     check(trip and trip.kind == "tram" and trip.next == 2 and math.abs(trip.at - 400) < 41 and math.abs(trip.left - 40) < 1.1
-        and TripView.Lines(trip).title == "Deeprun Tram: Tram to Tram", "on the tram: how far along, how long to the station")
+        and TripView.Lines(trip).title == "Deeprun Tram: Stormwind City to Ironforge",
+        "on the tram: how far along, how long to the station")
     W.place = nil
     W.Wait(3)
     check(Trips:Now() == nil, "off the tram: no trip")
 end
 Flights()
+-- A pin far in the north (u 0, v -200): on foot to the tram's entrance by the player, the tram (the walks inside and
+-- the loading screens, half the time between two trains, its run), on foot from the other entrance to the pin.
+;(function()
+    waypoint = { uiMapID = 1415, position = CreateVector2D(0.5, 0.21) }
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Frames(8)
+    local legs = shownWay and shownWay.legs or {}
+    local tram = legs[2]
+    check(#legs == 3 and legs[1].kind == "walk" and tram.kind == "tram" and legs[3].kind == "walk",
+        "a pin far away by the tram: on foot to its entrance, the tram, on foot to the pin")
+    local down, up, ending = tram.points[1], tram.points[#tram.points], legs[3].points[#legs[3].points]
+    check(#tram.points == 2 and down.map == 1415 and near(down.u, 600) and near(down.v, -8900) and up.map == 1415
+        and near(up.u, 0) and near(up.v, 0) and not tram.ship and near(ending.u, 0) and near(ending.v, -200),
+        "the tram straight from entrance to entrance (its tunnel has no plane), then to the pin")
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
 -- The hearthstone: its place learnt where it is bound, with the game's name of it.
 local bindName = "Lakeside Inn"
 GetBindLocation = function() return bindName end

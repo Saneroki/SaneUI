@@ -13,7 +13,8 @@ fromNode = { type = "int", min = 0 }         # a flight's taxi nodes (the flight
 toNode   = { type = "int", min = 0 }
 side     = { type = "enum", values = ["alliance", "horde"] }  # none: both
 time     = { type = "number", min = 0 }      # the trip, in seconds
-wait     = { type = "number", min = 0 }      # between two departures, in seconds (a transport: from one dock, its way once round)
+wait     = { type = "number", min = 0 }      # between two departures, in seconds (a transport: from one dock, its way once round;
+                                             # the tram: from one station, its trains' round over the trains)
 cost     = { type = "money" }
 length   = { type = "number", min = 0 }      # yards along its way, from the game's path (a transport's once round, its leaps not counted)
 # path: the way's points in the world's yards (x to the north, y to the west), as the game's path has them (points

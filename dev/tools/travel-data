@@ -12,7 +12,9 @@ staging for Core's set Travel (pack World): the ways Navigation's route planner 
     the tram      the Deeprun Tram (no taxi path moves it): kind tram, name (its map's, the game's), path (its two
                   stations in its map's yards: the game's triggers there, where one leaves it, each with its map),
                   length (yards between them), time (seconds a run from one to the other takes, as its cars move
-                  in the game's TransportAnimation, the same for every car within AGREE seconds), docks and
+                  in the game's TransportAnimation, the same for every car within AGREE seconds), wait (seconds
+                  between two trains leaving one station: its cars' motion once round, the same for every car,
+                  over the trains: its cars set out from their stations together, one train each way), docks and
                   dockAreas (the cities' entrances to each station, placed as a transport's docks)
     a transport   a boat or a zeppelin, one way round as the game moves it (a path between no flight points): kind
                   (a boat when all its way lies within FLOAT yards of the sea's level, else a zeppelin), length
@@ -199,7 +201,7 @@ def tram(folder, placer=None):
         car = int(row["TransportID"])
         if car in TRAM_CARS:
             moves.setdefault(car, set()).add((int(row["TimeIndex"]), float(row["Pos[0]"]), float(row["Pos[1]"])))
-    runs = []
+    runs, rounds, ways = [], [], set()
     for car in TRAM_CARS:
         rows = sorted(moves.get(car, ()))
         if not rows:
@@ -210,7 +212,11 @@ def tram(folder, placer=None):
         if not home:
             return None
         runs.append((there[0] - max(home)) / 1000)
-    if max(runs) - min(runs) > AGREE:
+        # Its motion once round (its last point, where the game starts it again), and which way it sets out.
+        rounds.append(rows[-1][0] / 1000)
+        x, y = next((x, y) for t, x, y in rows if t == there[0])
+        ways.add((round(x / far), round(y / far)))
+    if max(runs) - min(runs) > AGREE or max(rounds) - min(rounds) > AGREE:
         return None
     path, places = [], []
     for station, entrance in TRAM_STATIONS:
@@ -225,6 +231,9 @@ def tram(folder, placer=None):
     name = next((row["MapName_lang"] for row in table(folder, "Map") if int(row["ID"]) == TRAM_MAP), "")
     fields = {"kind": "tram", "length": round(math.hypot(path[1]["x"] - path[0]["x"], path[1]["y"] - path[0]["y"]), 1),
               "time": sorted(runs)[len(runs) // 2], "path": path}
+    # A train each way, each from its own station at the round's start: each station sees a train leave twice a round.
+    if len(ways) == 2:
+        fields["wait"] = round(sorted(rounds)[len(rounds) // 2] / len(ways), 3)
     if name:
         fields["name"] = name
     if placer:

@@ -3,8 +3,25 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 351 (Navigation), 92 (Inventory), 90 (sheet), 184 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 92 (Inventory), 90 (sheet), 184 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
+
+### Navigation: the tram in the routes (Saneroki, 2026-10-20)
+- **The planner takes the Deeprun Tram** (`Planner.lua`, `Tram`): its two entrances (Core's set *Travel*, the
+  tram's `docks`: the cities' entrances to its stations, points of the city maps) are docks of the journey on the
+  Eastern Kingdoms' plane, boarded and left right there; the way between them costs the walks down and up and the
+  loading screens (`Planner.STATION`, 30 seconds, a guess), half the time between two trains from a station and its
+  run (`time`, 58.633 seconds). Its leg is drawn red, straight from entrance to entrance (the tunnel's map has no
+  plane; in it the line stays as it is). The ships' ways are as they were; `Ships:Next` is asked only for a ship's
+  stop.
+- **The tram's `wait`** (set *Travel*, `dev/tools/travel-data`): 71.666 seconds between two trains leaving one
+  station, its cars' motion once round (143.333 seconds, the same for all six, the game's TransportAnimation) over
+  its two trains (three cars each, setting out from the two stations together, as their motions show). Taken into
+  the master as a correction of the tram's line alone (`import --take`); the schema's note on `wait` says what it is
+  for the tram.
+- Tests: `dev/tests/navigation.lua` (377 checks: the test pack's tram with its entrances and a wait; a pin far in
+  the north reached on foot, by the tram, on foot, the tram's leg straight between its entrances; the trip view
+  names the tram's stations).
 
 ### Navigation: quest areas in place, nearer zoom, dungeon maps, the quest log a window that pins (Saneroki, 2026-10-20)
 - **Quest areas** (`Areas.lua`): stood where the zoom before had put them. The engine shades the area into the
