@@ -1,6 +1,6 @@
 # Sane UI: Inventory
 
-**Status:** its window and full screen built; the character sheet's paper doll, stats, side tabs, reputation and skills built; its other tabs, the bags and the other characters are being built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
+**Status:** its window and full screen built; the character sheet's paper doll, stats, side tabs, reputation and skills built; its other tabs and the bags are being built; the other characters' window built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 The module for what you carry and wear. Push the mouse into the screen's bottom right corner and the screen
@@ -29,6 +29,13 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   standing, its description, and the game's switches At War, Move to Inactive and Show as Experience Bar.
   Skills lists your skill lines with their ranks (the bonus in green); choose one to see its description, and for
   a weapon skill what it means against a foe of your level and against a raid boss.
+- **Your other characters** (the window *Characters*): every character of the account down its left, you
+  first, each in its class's colour with its gold, the gold of them all under them; the account's bank last
+  where it holds something. A click shows that one's things as last seen: its bags, its bank (as it was when that
+  character last had it open) and what it wears, with the game's tooltips; Shift or Ctrl and a click links an
+  item or tries it on. The search box finds an item across them all, by its name or its number: each character
+  says how many it has, and the window lists only what was found. A character's things are as Core last read
+  them while it was logged in; its bank, while it had it open.
 - **Settings:** *Sane UI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
   motion, the background's opacity and texture) and *Window corners*.
 
@@ -111,6 +118,32 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     `UPDATE_INVENTORY_DURABILITY`, `UPDATE_INVENTORY_ALERTS`, `UNIT_INVENTORY_CHANGED` and `UNIT_MODEL_CHANGED`
     (the player's), `PLAYER_LEVEL_UP`, `UNIT_NAME_UPDATE`, `PLAYER_ENTERING_WORLD`. Every value read goes through
     `Core.Plain` or `Core.Ask`; every function of the game's is called only if this client has it.
+- **The other characters** (`Alts/`, the part `alts`): what the account's characters have, read only from Core's
+  data framework (`Core.Data.Characters`, `Character`, `Items`, `OnCharacters`; `Doc/guides/data.md`,
+  *Characters*): nothing is gathered or kept here.
+  - **What is shown** (`Alts/Snapshot.lua`, no frames): the roster (`Snapshot.Characters`: the one logged in
+    first, the others by name, the account's bank last where it holds something), a character's places in the
+    order `bags`, `bank`, `worn` with their items in the order Core keeps them (by item ID; Core keeps no slots,
+    so no empty ones), the gold of them all. The search: a number typed is an item's ID; words are found in the
+    item's name whole, as a piece or as first letters (`Core.Fuzzy.Rank` from `Fuzzy.INSIDE` up; letters spread
+    through a name are too loose a fit). A name the game does not know yet is asked for once
+    (`C_Item.RequestLoadItemDataByID`); its answer draws the window anew (`Snapshot.Learned`).
+  - **The roster** (`Alts/Roster.lua`): the game's `WowScrollBoxList` and `MinimalScrollBar`, a line per character
+    (`GetClassAtlas`, `RAID_CLASS_COLORS`, whole gold by `Core.Coins`), the chosen one lit and the line under the
+    mouse as the game's options list lights its lines (`Options_List_Active`, `Options_List_Hover`); its tooltip
+    the level and class, realm, the day last seen, the gold to the copper. While searching, how many each has of
+    what is found (stacks counted whole), one without any dimmed (`Roster.DIM`).
+  - **The items** (`Alts/Items.lua`): one scrolling list: a head per place (the bank's with the day it was last
+    seen, or *Not seen yet*), a bag or bank place as rows of the game's item buttons (`ItemButton`, drawn by the
+    game's `SetItemButtonTexture`, `Count`, `Quality`; as many to a row as fit, `Items.Fit`), what is worn as a
+    list (icon, name in its quality's colour). Read only: the tooltip is `GameTooltip:SetItemByID`, a modified
+    click `HandleModifiedItemClick`; nothing picks an item up.
+  - **The window** (`Alts/Alts.lua`): the roster at the left, the chosen character's head (name, gold, the level
+    line as the sheet writes it, the day last seen) and items at the right. Shown at first: the first of the
+    others; the choice holds until a `/reload`. While searching, if the chosen one has none of it, the first that
+    has is shown until the search is cleared. Listens only while shown: `Core.Data.OnCharacters`,
+    `GET_ITEM_INFO_RECEIVED`, `ITEM_DATA_LOAD_RESULT`, drawn a frame later (`Core.Later`); drawn anew when shown.
+  - **Next:** a paper doll of an alt needs Core to keep what is worn per slot (today items and counts per place).
 - **Never the game's panels** (2026-10-20, from the error log): our code neither opens nor closes the game's
   character sheet or any other panel of its window manager (`UIParentPanelManager.lua`). Opened by our code,
   the manager ran tainted and the sheet's `OnShow` failed on the player frame's secret health
@@ -139,6 +172,10 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 | `Sheet/Rows.lua` | The rows the reputation and skills tabs list, in the game's three looks |
 | `Sheet/Reputation.lua` | The reputation tab |
 | `Sheet/Skills.lua` | The skills tab |
+| `Alts/Snapshot.lua` | The other characters' window, without frames: the roster, a character's places and items, the search |
+| `Alts/Roster.lua` | The other characters' window: the account's characters down its left, their gold |
+| `Alts/Items.lua` | The other characters' window: the chosen one's places and items, a grid and a list |
+| `Alts/Alts.lua` | The other characters' window: whose things, the search, the events; registers the part `alts` |
 
 ## History
 - **2026-10-20:** set up as a module of its own. First the bottom right corner opened the game's own bags and
@@ -147,3 +184,5 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   bottom right corner, its corner filling the screen with the character sheet, the bags and the other
   characters' snapshots on Core's board (`Doc/ideas/Inventory.md`). The character sheet's paper doll: its slots,
   the model, the level line; its stats; its side tabs, the reputation and the skills tabs.
+  The window of the other characters: the roster, each one's bags, bank and what it wears as last seen, the
+  search across them all; Core's `Data.Items` for it.

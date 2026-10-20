@@ -160,6 +160,49 @@ BreakUpLargeNumbers = function(value) return tostring(value) end
 PaperDollFrame_FormatBonusValue = function(text) return text end
 STAT_CATEGORY_RESISTANCE, DAMAGE_SCHOOL3 = "Resistance", "Fire"
 
+-- The other characters' window: the account's characters as Core keeps them (Core.Data, Characters.lua) before
+-- the login: two others (one has never opened its bank) and the account's own bank. Item names the game knows.
+SaneUIData_Characters = { forever = { format = 1, characters = {
+    ["Player-70-0000BEEF"] = { name = "Droopy Fairwind", class = "WARRIOR", level = 30, money = 1234567, seen = 20740,
+                               bankSeen = 20738, bags = "4500\0311\0302589\03120", bank = "4500\0318", worn = "1001\0311\0302589\0311" },
+    ["Player-70-0000CAFE"] = { name = "Ann Brook", class = "PRIEST", level = 12, money = 9900, seen = 20743, bags = "4501\0313" },
+}, account = { bank = "4502\0315" } } }
+GetServerTime = function() return 20743 * 86400 + 3600 end -- the server's day 20743
+W.items[2589] = { name = "Linen Cloth", quality = 1 }
+W.items[4501] = { name = "Wool Cloth", quality = 1 }
+W.items[4502] = { name = "Silk Cloth", quality = 1 }
+local requested = {} -- [item] = how often its name was asked of the game
+C_Item.RequestLoadItemDataByID = function(id) requested[id] = (requested[id] or 0) + 1 end
+C_Item.GetItemQualityByID = function(id) return W.items[id] and W.items[id].quality end
+GetItemInfo = function(id) local item = W.items[id] if item then return item.name, "|Hitem:" .. id .. "|h[" .. item.name .. "]|h" end end
+function GameTooltip:SetItemByID(id) self._itemID = id end
+GetClassAtlas = function(class) return "classicon-" .. class end
+LOCALIZED_CLASS_NAMES_MALE = { MAGE = "Mage", WARRIOR = "Warrior", PRIEST = "Priest" }
+RAID_CLASS_COLORS.WARRIOR = { r = 0.78, g = 0.61, b = 0.43, colorStr = "ffc69b6d" }
+ITEM_QUALITY_COLORS = { [1] = { r = 1, g = 1, b = 1 }, [3] = { r = 0, g = 0.44, b = 0.87 } }
+C_CurrencyInfo = { GetCoinTextureString = function(copper) return copper .. "c" end }
+-- Its lists are the game's (WowScrollBoxList, a linear view with a factory of rows), as the sheet's tabs have them:
+-- given what to show, the list makes a row for each and has it drawn.
+local linear = rawget(_G, "CreateScrollBoxListLinearView") or function() return {} end
+CreateScrollBoxListLinearView = function(...)
+    local view = linear(...)
+    view.SetElementFactory = view.SetElementFactory or function(self, fn) self.factory = fn end
+    view.SetElementExtent = view.SetElementExtent or function(self, extent) self.extent = extent end
+    view.SetElementExtentCalculator = view.SetElementExtentCalculator or function(self, fn) self.extent = fn end
+    return view
+end
+W.templates.WowScrollBoxList = W.templates.WowScrollBoxList or function(box)
+    function box:SetDataProvider(provider)
+        self.provider, self.rows = provider, {}
+        for index, element in ipairs(provider.elements) do
+            self.view.factory(function(kind, init)
+                self.rows[index] = W.NewWidget(kind, nil, self)
+                init(self.rows[index], element)
+            end, element)
+        end
+    end
+end
+
 W.LoadCore(root)
 local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
@@ -320,6 +363,126 @@ W.Wait(0)
 check(list.ScrollBox.sets == sets + 1 and not ns.Stats.Owed() and not Names():find("CRITCHANCE"), "the fight over: drawn anew")
 
 -------------------------------------------------------------------------------
+--  The other characters
+-------------------------------------------------------------------------------
+local Alts, Snapshot, Items, Roster = ns.Alts, ns.Snapshot, ns.Items, ns.Roster
+local alts = Board.Panel("alts")
+check(alts and alts:IsShown() and alts.title._text == "Characters" and Alts.body.wait:IsShown(),
+    "the other characters' window is on the full screen at first; until Core's data is there it says so")
+-- The scheduler's frames (Core's Steps.lua): the characters' data loaded and read.
+local function Steps()
+    local steps = Core.Steps.frame
+    for _ = 1, 10 do
+        W.ms = W.ms + 20
+        if steps:IsShown() and steps._scripts.OnUpdate then steps._scripts.OnUpdate(steps, 0.016) end
+    end
+    W.Wait(0)
+end
+W.Fire("LOADING_SCREEN_DISABLED")
+Steps()
+local people = Roster.box.rows
+local function Names()
+    local names = {}
+    for index = 1, #Roster.box.provider.elements do names[index] = people[index].name._text end
+    return table.concat(names, ", ")
+end
+check(not Alts.body.wait:IsShown() and Names() == "Tester Stub, Ann Brook, Droopy Fairwind, Account Bank",
+    "Core's data there: the roster, you first, the others by name, the account's own bank last: " .. Names())
+check(people[3].icon._atlas == "classicon-warrior" and people[3].name._color[1] == 0.78 and people[3].right._text == "1230000c"
+    and Roster.foot.gold._text == "1244467c", "each in its class's colour with its icon and its whole gold; under them the gold of them all")
+check(people[2].lit:IsShown() and not people[1].lit:IsShown() and Alts.head.name._text == "Ann Brook",
+    "shown at first: the first of the others")
+local function Elements() return ns.Items.box.provider.elements end
+check(Elements()[1].text == "Bags" and Elements()[2].kind == "grid" and Elements()[3].text == "Bank"
+    and Elements()[4].text == "Not seen yet: open the bank with this character" and Elements()[5].text == "Equipped"
+    and Elements()[6].text == "Empty", "its bags; a bank never opened says so; nothing worn: empty")
+
+-- Another one chosen: its things.
+people[3]:GetScript("OnClick")(people[3], "LeftButton")
+people = Roster.box.rows
+check(people[3].lit:IsShown() and not people[2].lit:IsShown() and Alts.head.name._text == "Droopy Fairwind"
+    and Alts.head.gold._text == "1234567c" and Alts.head.line._text == "Level 30 |cffc69b6dWarrior|r  |cff808080Seen 3 |4day:days; ago|r",
+    "a click in the roster: that one's head, its gold, its level and class as the sheet writes them, when it was seen")
+local things = ns.Items.box.rows
+local grid = things[2]
+check(Elements()[1].kind == "head" and grid.buttons[1].item == 2589 and grid.buttons[2].item == 4500
+    and drawn[grid.buttons[1]].count == 20 and drawn[grid.buttons[1]].texture == 2000 + 2589 and drawn[grid.buttons[1]].quality == 1,
+    "its bags a grid of the game's item buttons in the order kept (by item ID): icon, count, quality")
+check(Elements()[3].text == "Bank" and Elements()[3].note == "Seen 5 |4day:days; ago" and Elements()[4].items[1].count == 8,
+    "its bank as last seen, and when")
+check(Elements()[5].text == "Equipped" and Elements()[6].kind == "gear" and things[6].line.text._text == "item:1001"
+    and things[7].line.text._text == "Linen Cloth" and requested[1001] == 1, "what it wears a list; a name the game does not know yet is asked for")
+things[7].line:GetScript("OnEnter")(things[7].line)
+check(GameTooltip._itemID == 2589, "its tooltip is the game's for the item")
+W.items[1001] = { name = "Helm", quality = 3 }
+W.Fire("GET_ITEM_INFO_RECEIVED", 1001, true)
+W.Wait(0)
+things = ns.Items.box.rows
+check(things[6].line.text._text == "Helm" and things[6].line.text._color[3] == 0.87 and requested[1001] == 1,
+    "the name comes: drawn anew, in its quality's colour; asked once only")
+check(Snapshot.Learned(1001) == false, "a name the window does not wait for draws nothing anew")
+grid = things[2]
+local was = linked
+grid.buttons[1]:GetScript("OnClick")(grid.buttons[1], "LeftButton")
+check(linked == was and W.cursor == nil and #picked == 2, "a click moves nothing: an alt's things are only looked at")
+W.modifier = nil
+grid.buttons[1]:GetScript("OnClick")(grid.buttons[1], "LeftButton")
+W.modifier = false
+check(linked == "|Hitem:2589|h[Linen Cloth]|h", "a modified click links it")
+
+-- The grid as wide as there is room for.
+check(Items.Fit(6 * (Items.SIZE + Items.GAP) - Items.GAP) and not Items.Fit(6 * (Items.SIZE + Items.GAP)),
+    "six items fit in six buttons and their gaps")
+local eight = {}
+for index = 1, 8 do eight[index] = { item = index, count = 1 } end
+local laid = Items.Elements({ { place = "bags", items = eight } }, function() return "Bags" end, false)
+check(#laid == 3 and laid[2].to == 6 and laid[3].from == 7 and laid[3].to == 8, "eight items, six to a row: two rows")
+Alts.Size(0)
+Alts.Size(Board.layouts.rects.alts[3]) -- as wide as its panel again
+
+-- The search: across every character.
+local row = things[2] -- Droopy's grid of two, drawn again with Ann's: the game's list reuses its rows
+people[2]:GetScript("OnClick")(people[2], "LeftButton")
+ns.Items.box.view.factory(function(_, init) init(row, Elements()[2]) end, Elements()[2])
+check(row.buttons[1].item == 4501 and not row.buttons[2]:IsShown() and row.buttons[2].item == nil,
+    "a row the list reuses draws all of itself anew: a button it does not need now hidden")
+ns.Items.box.view.factory(function(_, init) init(row, Elements()[1]) end, Elements()[1])
+check(row.title:IsShown() and row.title._text == "Bags" and not row.buttons[1]:IsShown(), "a grid's row reused for a head")
+Board.Search("linen")
+people = Roster.box.rows
+check(people[3].right._text == 21 and people[2]:GetAlpha() == Roster.DIM and people[2].right._text == "" and people[1]:GetAlpha() == Roster.DIM,
+    "the roster says how many each has of what is found; one without any of it dimmed")
+check(Alts.head.name._text == "Droopy Fairwind" and people[3].lit:IsShown() and #Elements() == 4
+    and Elements()[1].text == "Bags" and Elements()[2].items[1].item == 2589 and #Elements()[2].items == 1 and Elements()[3].text == "Equipped",
+    "the chosen one has none: the first that has is shown, only what is found, a place without it left out")
+Board.Search("4502")
+check(Alts.head.name._text == "Account Bank" and Elements()[2].items[1].item == 4502, "an item's ID finds it too: in the account's bank")
+Board.Search("zzz")
+check(Alts.head.name._text == "Ann Brook" and #Elements() == 1 and Elements()[1].text == "No items found", "nothing found: says so")
+Board.Search("")
+people = Roster.box.rows
+check(Alts.head.name._text == "Ann Brook" and Elements()[1].text == "Bags" and people[2]:GetAlpha() == 1,
+    "the search cleared: the chosen one again, everything")
+check(requested[4500] == 1 and Snapshot.Name(4500) == nil, "a name the game never tells is asked for once")
+
+-- Hidden, it listens to nothing; shown, it is as Core's data is now.
+Push()
+local before = ns.Items.box.provider
+worn[3] = { texture = "spaulders", count = 1, quality = 2, id = 1003 }
+W.Fire("PLAYER_EQUIPMENT_CHANGED", 3, false)
+Steps()
+check(ns.Items.box.provider == before and Core.Data.Items(Core.charKey, "worn")[3].item == 1003, "hidden: Core's data changes, nothing is drawn")
+Stand()
+Push()
+Stand()
+people = Roster.box.rows
+people[1]:GetScript("OnClick")(people[1], "LeftButton")
+check(Alts.head.line._text:find("Logged in now", 1, true) and Elements()[2].text == "Empty" and Elements()[8].entry.item == 1003,
+    "shown again: drawn as it is now; you too, what you wear as Core last read it")
+people[3]:GetScript("OnEnter")(people[3])
+check(GameTooltip._lines and GameTooltip._lines[#GameTooltip._lines] == "1234567c", "a character's tooltip: the rest of what is known of it")
+
+-------------------------------------------------------------------------------
 --  The board: more parts
 -------------------------------------------------------------------------------
 -- A part as a part's file registers it: what the board asks of it is noted.
@@ -359,7 +522,7 @@ W.Wait(0)
 check(list.ScrollBox.sets == sets, "hidden, the stats do not listen either")
 
 -- A part that fails is noted; the others and the module go on.
-local broken = { Build = function() error("a broken part") end }
+local broken = { Build = function() error("a broken part") end, Show = function() error("a broken part") end }
 Board.Part("alts", "ALTS", { 300, 200 }, broken)
 W.caught = {}
 Push()

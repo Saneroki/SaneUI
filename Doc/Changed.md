@@ -3,8 +3,26 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 292 (Navigation), 44 (Inventory), 38 (sheet), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 460 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 292 (Navigation), 71 (Inventory), 38 (sheet), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Inventory: the other characters' window (Saneroki, 2026-10-20)
+- **Characters** (`src/Inventory/Alts/`, the part `alts` on the module's full screen): what the account's characters
+  have, as last seen, read only from Core's data framework. A roster down the left (`Roster.lua`: the one logged in
+  first, the others by name, the account's bank last; class icon and colour, whole gold; the gold of them all under
+  it; the chosen one lit as the game's options list lights a line), the chosen one's head (name, gold, level line,
+  the day last seen) and its places in one scrolling list (`Items.lua`): Bags and Bank as grids of the game's item
+  buttons in the order Core keeps them, Equipped as a list; the bank's day, or *Not seen yet*. Read only: the game's
+  tooltips, a modified click links or tries on. The logic without frames in `Snapshot.lua`.
+- **The search** across every character: an item's ID, or its name (whole, a piece, first letters; not letters
+  spread out); the roster says how many each has, one without any dimmed; if the chosen one has none, the first that
+  has is shown. An item's name the game does not know yet is asked for once, and its answer draws anew.
+- **Core:** `Data.Items(key, place)` (`src/Core/Data/Characters.lua`): what a character keeps in a place (or the
+  account's bank) item by item in the order kept, made once per change. Documented in `Doc/guides/data.md` and
+  Core's README.
+- Tests: `dev/tests/inventory.lua` (the window, the roster, the items, the search, reused rows, deaf while hidden;
+  the failing part's test now fails at its showing too, as the alts' panel is built before it),
+  `dev/tests/tooltips.lua` (`Data.Items`).
 
 ### Inventory: the character sheet's side tabs and reputation (Saneroki, 2026-10-20)
 - **Side tabs** (`Sheet/Sheet.lua`): the game's `LargeSideTabButtonTemplate` right of the sheet, the Character tab with
@@ -1084,7 +1102,7 @@ A game restart takes it in (new addons, Navigation, Atlas and Inventory; new fil
 - Tooltips: a player's alias stands in the name's place, with the character's name small under the guild,
   then the note.
 - `Doc/guides/data.md`: aliases are personal data. `Doc/ideas/Social.md`: the guild will show them.
-- Tests: 330 checks (Core), 426 (Social), 441 (Tooltips); the stand-in's menu button keeps its tooltip.
+- Tests: 330 checks (Core), 426 (Social), 460 (Tooltips); the stand-in's menu button keeps its tooltip.
 
 ### Ideas: a verified fact keeps its day and times (Saneroki, 2026-10-18)
 - `Doc/ideas/Data.md`, *Verified and unverified*: a version keeps only the day of the import that last
@@ -2579,7 +2597,7 @@ Tests: 296 checks (Tooltips). Not tried in the game. `/reload` is enough.
 ### Review: settings texts, bugs, performance and documentation across every module
 From a full QA, bug-hunt, performance and reasoning pass over the whole project (review agents per module and
 lens, each finding checked against the code). Not tried in the game. Tests: 194 checks (Core), 281 (Spellbook),
-293 (Tooltips), 304 (Chat), 62 (Sync), 105 (windows). The pass was cut short before Core's options pages, the
+460 (Tooltips), 304 (Chat), 62 (Sync), 105 (windows). The pass was cut short before Core's options pages, the
 Tooltips module and the structural Spellbook performance items were done: see the orchestrator's report.
 - **Settings texts, every module:** every switch, slider and dropdown has a tooltip that says in one or two
   sentences what it does and what "Off" means (the Spellbook's *Say in chat when a reserved button is filled*
@@ -2649,7 +2667,7 @@ Tooltips module and the structural Spellbook performance items were done: see th
   longer say "Settings module", "three addons", "six folders", and carry the current test counts.
 
 ### Review: Spellbook, Tooltips and Chat bugs, hardening, performance
-From a full review of the three modules. Not tried in the game. Tests: 280 checks (Spellbook), 293 (Tooltips), 304 (Chat).
+From a full review of the three modules. Not tried in the game. Tests: 280 checks (Spellbook), 460 (Tooltips), 304 (Chat).
 - **Spellbook, bug:** made small or large without a kept size of its own, the spellbook kept the height a kept
   size of the other gave it (the game sets only the book's width), stood out of the window and laid its pages
   out for that height. `Window.lua` fits the book to the window whenever it looks after it (at the game's own

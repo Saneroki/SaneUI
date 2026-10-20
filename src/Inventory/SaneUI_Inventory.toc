@@ -26,3 +26,8 @@ Sheet\Side.lua
 Sheet\Rows.lua
 Sheet\Reputation.lua
 Sheet\Skills.lua
+# The other characters' things, as last seen: what is shown, the roster, the items, the window that holds them
+Alts\Snapshot.lua
+Alts\Roster.lua
+Alts\Items.lua
+Alts\Alts.lua
