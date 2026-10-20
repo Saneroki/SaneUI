@@ -69,6 +69,9 @@ local Core = SaneUI.Core
 --  step, and filled where the window goes (its size there), so the content is
 --  made ready once, at the start, and only placed on the steps.
 --
+--  One window fills the screen at a time: when another begins to (Social's,
+--  then the map's), the one that filled it goes back to its zone.
+--
 --  Esc brings a full window back as it closes the game's windows (Core.Escape,
 --  Escape.lua); a window Esc closes (escape = "close") is closed instead, full
 --  as it is (Window.lua).
@@ -116,6 +119,7 @@ for key, value in pairs(Core.Shape.DEFAULTS) do
 end
 
 local sections = {} -- [a module's list of switches] = true: it holds the section
+local edges = setmetatable({}, { __mode = "k" }) -- every window's edge (Edge.New)
 
 -- Puts the section Expand window into a module's switches (Core.Options) at that place of its list,
 -- in that tab of its page. A window reads them by its option edge = the module's settings. under: switches
@@ -381,6 +385,13 @@ local function Failed(edge, problem)
     Core.Safe("full screen", edge.window.Place, edge.window)
 end
 
+-- One full screen at a time: another window that fills the screen, or is on its way there, goes back.
+local function Others(edge)
+    for other in pairs(edges) do
+        if other ~= edge and other.full and other.frame:IsShown() then Core.Safe("full screen", other.Fill, other, false) end
+    end
+end
+
 -- Fills the screen (true) or goes back to its zone (false), from where the window is now. Not in Edit
 -- Mode, where windows are arranged at their size.
 function methods:Fill(on)
@@ -390,6 +401,7 @@ function methods:Fill(on)
     local frame, window = self.frame, self.window
     local left, bottom = frame:GetLeft(), frame:GetBottom()
     if not left or not bottom then return end -- it has no place yet
+    if on then Others(self) end
     if not self.away then
         -- At rest: what it goes back to is its size, its layer and its mouse now.
         self.away = true
@@ -574,7 +586,6 @@ end
 
 -- A fight begins (the game says so just before it locks protected frames): a protected window on its
 -- way is put at the end of the way at once, so no step of the motion moves it in the fight.
-local edges = setmetatable({}, { __mode = "k" })
 Core.On("PLAYER_REGEN_DISABLED", function()
     for edge in pairs(edges) do
         if edge.away and edge.clock and edge.clock:IsRunning() and edge.frame:IsProtected() then

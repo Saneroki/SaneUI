@@ -85,7 +85,7 @@ A window's state is held in a few flags; Core keeps them, the module reads them.
 | --- | --- | --- | --- | --- |
 | shown | `frame:IsShown()` | the module, `Open` | the module, `close`, Esc | — |
 | at rest | not `edge.away` | `Place` | a full screen motion | it may be moved, sized, dragged |
-| away (to full screen and back) | `edge.away`, `edge.full` | `edge:Fill(true)` (edge, button, `Open`) | back in its place (`Place`) | not moved, not sized, not dragged; content faded out while moving |
+| away (to full screen and back) | `edge.away`, `edge.full` | `edge:Fill(true)` (edge, button, `Open`) | back in its place (`Place`); another window filling the screen sends it back | not moved, not sized, not dragged; content faded out while moving |
 | in hand | `window.moving`, `window.sizing` | a drag (title bar, Edit Mode's box), the grip | let go, Edit Mode closing | the dock shape shows |
 | arranging | `Core.EditMode.active` | Edit Mode opens (or `/sane arrange`) | it closes | Edit Mode's box over every window, grips shown, buttons hidden, no full screen (full windows put back), title bars do not drag |
 | locked | `window:Locked()` | a fight, for a window holding protected frames | the fight's end | nothing of ours moves, sizes, shows or hides it; `Place` waits; `Open` says `"locked"` |

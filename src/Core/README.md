@@ -410,7 +410,8 @@ but for a window to try those with (`/sane window`).
     window was placed (a window let go at the edge, under the mouse), not while a button is held, not while
     `usable` says no. Then size and place go, frame by frame, from where the window is to the whole screen
     (anchored to it at the end, `SetAllPoints(UIParent)`) or back to `Dock.Rect` of its zone at the size it
-    had (then `window:Place()`); unclamped on the way, strata `HIGH` and raised above the rest of it until
+    had (then `window:Place()`). One window fills the screen at a time: as one begins to, every other shown
+    window that fills it, or is on its way there, goes back (`Others`); unclamped on the way, strata `HIGH` and raised above the rest of it until
     it is back (the window's own layer and level after). Until then it takes the mouse and the wheel (as the
     game's map does while it is locked): nothing behind it is clicked, nor the camera turned or zoomed. Under
     it all its background, a Shape in the window (solid black, `Edge.SOLID`, or one of `Skin.TILES`,

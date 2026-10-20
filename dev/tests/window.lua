@@ -1201,11 +1201,12 @@ local spareWindow = Window.New(spare, { store = {}, edge = true, sizable = true,
     first = { point = "CENTER", x = 0, y = 0, width = 200, height = 100 } })
 spareWindow:Place()
 at(spare, 860, 490)
-spareWindow.edge:Fill(true)
-spare._group:Run(1)
 stand:Hide()
 check(talkClosed == 2 and not talked:IsShown() and talkStore.place.full == true,
     "Esc closes it full as it is: not made small first, so it opens full again")
+spareWindow.edge:Fill(true)
+spare._group:Run(1)
+stand:Hide()
 check(not spareWindow.edge.full and spareWindow.edge.away and spare:IsShown(), "and a full window Esc does not close goes back, by the same Esc")
 spare._group:Run(1)
 spare:Hide()
@@ -1759,6 +1760,26 @@ looseShape:Flatten(1)
 looseShape:Fit()
 check(round(looseShape, 0, 0, 0, 0) and looseShape.trims[1]._points[1][4] == -2 and looseShape.trims[2]._points[1][4] == 198,
     "flat, square, the trim out of the screen on its sides there, in sight on the others")
+
+-- One full screen at a time ----------------------------------------------------------------------
+local function screen(key)
+    local frame = CreateFrame("Frame", nil, UIParent)
+    local handle = Window.New(frame, { store = {}, key = key, dock = true, edge = true,
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
+    handle:Place()
+    at(frame, 300, 300)
+    frame:Show()
+    return handle
+end
+local talks, map = screen("talks"), screen("map")
+talks.edge:Fill(true)
+check(talks.edge.full and not map.edge.full, "one window fills the screen")
+map.edge:Fill(true)
+check(map.edge.full and not talks.edge.full and talks.edge.away, "another begins to fill it: the first goes back to its zone")
+talks.frame:Hide()
+talks.edge:Fill(false)
+map.edge:Fill(false)
+W.Wait(1)
 
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Windows: all %d checks passed.\n"):format(passed))

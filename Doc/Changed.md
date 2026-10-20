@@ -3,8 +3,13 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 295 (Navigation), 85 (Inventory), 85 (sheet), 161 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 295 (Navigation), 85 (Inventory), 85 (sheet), 161 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Windows: one full screen at a time (Saneroki, 2026-10-20)
+- `Core/Edge.lua`: a window that begins to fill the screen sends every other shown full window back to its zone
+  (Social's full screen goes back when the map's opens). Check in `dev/tests/window.lua`; the check of Esc on a full
+  window that closes now fills one window at a time.
 
 ### Inventory: pinned items, the player's own groups, junk marks in the bags (Saneroki, 2026-10-20)
 - **The item's menu** (`Bags/Menus.lua`, `Bags.Clicked`): Alt and a right click on an item in our bags, which the

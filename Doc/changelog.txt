@@ -6,6 +6,8 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- One full screen at a time: opening the map's full screen puts the
+  chat's (or any other) back in its place.
 - Nameplates, a new module: the game's nameplates with a clean health
   bar with round corners, lit on your target. As a rogue or a druid in
   cat form, your combo points show along the bottom of your target's
