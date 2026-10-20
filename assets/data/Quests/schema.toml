@@ -5,7 +5,8 @@ learn = true             # the quest watchers (Doc/ideas/Data.md, *What the game
 about = "Every quest: who it is offered to and what it needs first, who gives and takes it, its objectives, chain and rewards (Doc/ideas/Data.md, *Quests*)."
 
 # Only one side of a link is written (requires, next, breadcrumbTo); the indexes give the other. Givers and
-# takers are references: where they stand is theirs (Spawns). A side on a giver, taker or requirement: it
+# takers: where they stand is theirs (Spawns). An NPC giver or taker is the game's creature ID, not a ref: a
+# quest may name a creature the set NPCs does not hold (yet). A side on a giver, taker or requirement: it
 # holds for that side only.
 [fields]
 name           = { type = "text" }
@@ -30,7 +31,7 @@ skill          = { type = "tuple", parts = [
 ] }
 carry          = { type = "ref", set = "Items" }  # an item to carry
 startNPCs      = { type = "list", of = "tuple", parts = [
-    { name = "npc", type = "ref", set = "NPCs" },
+    { name = "npc", type = "int" },          # the game's creature ID, also of one NPCs does not hold
     { name = "side", type = "enum", values = ["alliance", "horde"] },
 ] }
 startObjects   = { type = "list", of = "tuple", parts = [
@@ -39,7 +40,7 @@ startObjects   = { type = "list", of = "tuple", parts = [
 ] }
 startItems     = { type = "list", of = "ref", set = "Items" }  # an item that starts it
 finishNPCs     = { type = "list", of = "tuple", parts = [
-    { name = "npc", type = "ref", set = "NPCs" },
+    { name = "npc", type = "int" },          # the game's creature ID, also of one NPCs does not hold
     { name = "side", type = "enum", values = ["alliance", "horde"] },
 ] }
 finishObjects  = { type = "list", of = "tuple", parts = [

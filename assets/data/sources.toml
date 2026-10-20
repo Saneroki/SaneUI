@@ -25,3 +25,14 @@ kind = "batch"
 game = "forever"
 build = 70245
 about = "Disenchanting: for each row of Forever's client table of disenchanting (an item's class, quality and item levels), the materials the original game gives for it, with their chances and counts. Unverified."
+
+[3]
+kind = "batch"
+game = "forever"
+seen = "forever-beta"
+about = "What Forever's beta servers sent about NPCs and the world's objects (builds 70124 to 70374): NPCs with their titles, ranks, kinds, families, factions, services and goods, and their levels where those were sent too; the spawn points of NPCs with a service, rares, quest givers and takers, herb and ore nodes and treasure chests; mailboxes, meeting stones and spirit healers. Unverified."
+
+[4]
+kind = "batch"
+game = "forever"
+about = "The original game's NPCs and places (patch 1.12), only where every record of it agrees: NPCs with their titles, levels, ranks, kinds, families, factions, services, goods and a rare's respawn; the spawn points of NPCs with a service, rares, quest givers and takers, herb and ore nodes and treasure chests (none a holiday brings); mailboxes, meeting stones and spirit healers, but where Forever's beta showed the spot without one. Unverified: where an entry's points come from both batches, its version names both (batch 3's where Forever's beta showed the thing, this one's elsewhere)."

@@ -331,7 +331,7 @@ that game version's files.
   of the master*, in order, in the right game version's file, its key in the file's key range.
 - Every `ref` and every `replaces` points at an entry that exists in that game version's view. A set with no
   entries at all in that view is still to be filled: the refs into it are checked once it has some (the
-  quests' givers point into NPCs before prompt 2 fills it).
+  quests' items point into Items before it is filled).
 - Every fix matches a version; a fix that the game may have overtaken is a warning.
 - Text holds no tab and no character 28, 30 or 31.
 
@@ -504,6 +504,11 @@ Map:Spawns("npc:69")                 -- a thing's points: { [map] = { { x, y }, 
   is none of these is the creatures' spawns' business, not the map's), Places and Travel (a way between two
   places at both ends; flights not: the game knows its flight points). An NPC with more than
   `MapReader.MANY` points on a map stands at its areas' middles there.
+- **Filled** by `dev/tools/map-data` (the game's own: *Zones*, the entrances of dungeons and raids in *Places*) and by
+  batches of our picking (`sources.toml`: *NPCs*, *Spawns*, the other *Places*, the treasure chests in *Objects*).
+  Every map point of them is placed by map-data's `Placer`: on the zone map of the area the game gives the
+  position (the building part it stands in, else the terrain's map chunk), on the smallest map box only where
+  neither tells; *Places*' numbers by its `PlaceKeys`.
 - **Read** as walks of the scheduler (`Each`), one set after the other, when a set it reads arrives or changes;
   a set that no pack holds (empty in the master) or that is switched off is passed over without a word.
 

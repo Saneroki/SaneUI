@@ -3,8 +3,43 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 224 (Navigation), 35 (walking data), 208 (data tools).
-A game restart takes it in (new addons, Navigation and Atlas; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 224 (Navigation), 35 (walking data), 24 (map data), 208 (data tools).
+A game restart takes it in (new addons, Navigation and Atlas; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Map data: what Navigation's map shows, from the game and two picked batches (Saneroki, 2026-10-20)
+- **Saneroki's ask:** fill Core's map sets so that Navigation's pins of our own data show.
+- **From the game** (`dev/tools/map-data`, new; source `game`, build 70245): *Zones*, the 50 zone maps with their
+  name, side (the area's faction group; Zephras Isle a sanctuary), continent and area; *Places*, 25 entrances of
+  dungeons and raids where the game sends a ghost back to (`Map`'s corpse point), with kind, name, instance and
+  zone. No level ranges: the client's tables hold none for zones, and one level only for a dungeon.
+- **Placing on the zone maps** (`Placer` in `dev/tools/map-data`, used by every tool that writes map points): a
+  world position lies on the zone map of its area, as the game tells it: the building part it stands in (the
+  cities inside a mountain or under the ground, Ironforge and Undercity), else the terrain's map chunk; the
+  smallest map box only where neither tells. The smallest box alone put 28 % of the original game's spawns on
+  the wrong zone (the Barrens' on Durotar's map, Darkshire on Deadwind Pass's, Brill on the Western
+  Plaguelands'). `PlaceKeys` gives *Places* their numbers (half a percent, an entrance by its instance).
+- **Picked** (two batches in `sources.toml`): batch 3, what Forever's beta servers sent, as sent (199 NPCs, among
+  them Forever's new trainers and vendors in the old zones, and all of Zephras Isle); batch 4, the original
+  game's (patch 1.12), only where every record of it agrees: a field the same, a spawn within 10 yards for an
+  NPC and 3 for an object, a mailbox, meeting stone or spirit healer within half a percent, nothing a holiday
+  brings (2,986 NPCs). Both unverified.
+  - *NPCs* (3,185): the quest givers and takers of *Quests*, the NPCs with a service, the rares; name, title,
+    levels, rank and boss, kind, family, faction, services, goods (what they sell, by the client's item classes,
+    and the vendor kinds Forever's templates carry), a rare's respawn.
+  - *Spawns* (3,117 entries, 13,533 points): those NPCs (3,005), the herb and ore node types of *Objects* (41;
+    every template of one name counts for the one kept) and the treasure chests; one entry's points within 10
+    yards of each other as one. Six entries have points of both batches and name both.
+  - *Objects*: 71 treasure chests, the chests whose lock the client's own table calls a treasure.
+  - *Places*: 100 mailboxes, 22 meeting stones, 51 spirit healers more.
+  - Left out: 11,425 single spawns the two records do not share (most of them nodes where one says silver, the
+    other gold or iron), NPCs in no record (95 quest givers of the old quest facts) or on no zone map (in
+    dungeons), the services the two records differ in, names the game does not show players. No piers: a boat's
+    or zeppelin's way in *Travel* stands at both ends already. No zone crossings or caves yet: no source tells
+    them well enough.
+- *Quests*' schema: a giver's and taker's `npc` is the game's creature ID (`int`), no longer a ref into *NPCs*: 97
+  of the 1,805 creatures the old quest facts name are in no source we may take. The packs' bytes stay the same.
+- Tests: `dev/tests/map_data.py` (24): placing by the terrain, in a turned building, on the smallest box, off
+  every map; Places' keys; zones; entrances.
 
 ### Navigation: routes across the sea, by boat and zeppelin, and by the hearthstone (Saneroki, 2026-10-20)
 - **The ships' ways** (`dev/tools/travel-data`): the transports' paths of the game's TaxiPath tables (no flight

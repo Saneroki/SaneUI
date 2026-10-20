@@ -88,7 +88,7 @@ window*, *Always on top*):
 
 - `Pins.lua` (no frames) and `PinView.lua`: the game's pins per map (quests, the arrow's quest's next way, flight
   points of the player's side, vignettes, area points, map links, entrances) and Core's (`Data.Map():On`, new in
-  `Core/Data/Map.lua`: Spawns, Places, Travel; all three hold no entries yet), one per key, filtered (setting
+  `Core/Data/Map.lua`: Spawns, Places, Travel; filled 2026-10-20), one per key, filtered (setting
   `pins`, multi), gathered (`Pins.Gather`), in the game's atlases; `Canvas.Press`/`Release` share drags and clicks.
 - `Areas.lua`: the game's `QuestPOIFrame` per zone in view (the quest under the mouse in the log, else the arrow's).
 - `Marks.Group`: the party and raid. `Route.lua`: the golden line's drawing (`Route.Show(way)`); no planner yet.
@@ -118,8 +118,9 @@ checks), `dev/tests/walk.py` (28).
 1. **Core's data framework** has only step 1a (`Doc/ideas/Data-build.md`): packs, `Data.Set`, `Get`,
    history, `OnStamp`, the scheduler. Not built: `Data.Map()` and `Data.Areas()` (1d.5), the Quests reader
    (1b, 1d.4), the characters' data such as known flight points and rares seen (1c.4).
-2. **Every set Navigation reads has a schema and no entries:** Zones, Places, Travel, NPCs, Objects, Quests,
-   Spawns, QuestAreas, PatrolPaths, CreatureSpawns, Guides, Walking. The import (*Three prompts*, 2) is next.
+2. **Sets Navigation reads with entries** (2026-10-20): Zones, Places, Travel, NPCs, Objects, Quests (the old
+   facts), Spawns, Walking (`dev/tools/map-data`, `travel-data`, `walk-data` and picked batches, `sources.toml`);
+   **still empty:** QuestAreas, PatrolPaths, CreatureSpawns, Guides.
 3. **Set *Tiles*:** built (2026-10-18), in the pack World: 736 tiles of the Eastern Kingdoms, 988 of Kalimdor,
    read from the game's own continent files; key continent × 4096 + row × 64 + column.
 4. **The walking data tool** (pack Routes): written (2026-10-20, `dev/tools/walk-data`), the set filled.

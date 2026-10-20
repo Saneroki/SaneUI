@@ -14,6 +14,7 @@
 #   imagegen.py     the image pipeline's lists, recipes and sets, and the flipbook's grid and loops
 #   atlas.py        the Atlas painting's words, its check against the game's water, the seams, the screen
 #   walk.py         the walking data's tools: floors, surfaces, rectangles, openings, blocks, regions; flights' paths
+#   map_data.py     dev/tools/map-data: world positions on zone maps (terrain, buildings, boxes), Places' keys, zones
 #   data check      the master of Core's data framework (assets/data) fits its rules
 #   data/tools.py   the data framework's tools: the check's rules, the import, on a sample master
 #   blizzard.py     dev/tools/blizzard: two Blizzard exports compared, and what reaches a small module
@@ -39,6 +40,7 @@ python3 -I dev/tests/voices.py
 python3 -I dev/tests/imagegen.py
 python3 -I dev/tests/atlas.py
 python3 -I dev/tests/walk.py
+python3 -I dev/tests/map_data.py
 dev/tools/data check
 python3 -I dev/tests/data/tools.py
 python3 -I dev/tests/blizzard.py

@@ -1,0 +1,50 @@
+{"key":1411,"since":70245,"src":["game"],"name":"Durotar","side":"horde","continent":1414,"area":14}
+{"key":1412,"since":70245,"src":["game"],"name":"Mulgore","side":"horde","continent":1414,"area":215}
+{"key":1413,"since":70245,"src":["game"],"name":"The Barrens","side":"horde","continent":1414,"area":17}
+{"key":1416,"since":70245,"src":["game"],"name":"Alterac Mountains","side":"contested","continent":1415,"area":36}
+{"key":1417,"since":70245,"src":["game"],"name":"Arathi Highlands","side":"contested","continent":1415,"area":45}
+{"key":1418,"since":70245,"src":["game"],"name":"Badlands","side":"contested","continent":1415,"area":3}
+{"key":1419,"since":70245,"src":["game"],"name":"Blasted Lands","side":"contested","continent":1415,"area":4}
+{"key":1420,"since":70245,"src":["game"],"name":"Tirisfal Glades","side":"horde","continent":1415,"area":85}
+{"key":1421,"since":70245,"src":["game"],"name":"Silverpine Forest","side":"horde","continent":1415,"area":130}
+{"key":1422,"since":70245,"src":["game"],"name":"Western Plaguelands","side":"contested","continent":1415,"area":28}
+{"key":1423,"since":70245,"src":["game"],"name":"Eastern Plaguelands","side":"contested","continent":1415,"area":139}
+{"key":1424,"since":70245,"src":["game"],"name":"Hillsbrad Foothills","side":"contested","continent":1415,"area":267}
+{"key":1425,"since":70245,"src":["game"],"name":"The Hinterlands","side":"contested","continent":1415,"area":47}
+{"key":1426,"since":70245,"src":["game"],"name":"Dun Morogh","side":"alliance","continent":1415,"area":1}
+{"key":1427,"since":70245,"src":["game"],"name":"Searing Gorge","side":"contested","continent":1415,"area":51}
+{"key":1428,"since":70245,"src":["game"],"name":"Burning Steppes","side":"contested","continent":1415,"area":46}
+{"key":1429,"since":70245,"src":["game"],"name":"Elwynn Forest","side":"alliance","continent":1415,"area":12}
+{"key":1430,"since":70245,"src":["game"],"name":"Deadwind Pass","side":"contested","continent":1415,"area":41}
+{"key":1431,"since":70245,"src":["game"],"name":"Duskwood","side":"contested","continent":1415,"area":10}
+{"key":1432,"since":70245,"src":["game"],"name":"Loch Modan","side":"alliance","continent":1415,"area":38}
+{"key":1433,"since":70245,"src":["game"],"name":"Redridge Mountains","side":"contested","continent":1415,"area":44}
+{"key":1434,"since":70245,"src":["game"],"name":"Stranglethorn Vale","side":"contested","continent":1415,"area":33}
+{"key":1435,"since":70245,"src":["game"],"name":"Swamp of Sorrows","side":"contested","continent":1415,"area":8}
+{"key":1436,"since":70245,"src":["game"],"name":"Westfall","side":"alliance","continent":1415,"area":40}
+{"key":1437,"since":70245,"src":["game"],"name":"Wetlands","side":"contested","continent":1415,"area":11}
+{"key":1438,"since":70245,"src":["game"],"name":"Teldrassil","side":"alliance","continent":1414,"area":141}
+{"key":1439,"since":70245,"src":["game"],"name":"Darkshore","side":"alliance","continent":1414,"area":148}
+{"key":1440,"since":70245,"src":["game"],"name":"Ashenvale","side":"contested","continent":1414,"area":331}
+{"key":1441,"since":70245,"src":["game"],"name":"Thousand Needles","side":"contested","continent":1414,"area":400}
+{"key":1442,"since":70245,"src":["game"],"name":"Stonetalon Mountains","side":"contested","continent":1414,"area":406}
+{"key":1443,"since":70245,"src":["game"],"name":"Desolace","side":"contested","continent":1414,"area":405}
+{"key":1444,"since":70245,"src":["game"],"name":"Feralas","side":"contested","continent":1414,"area":357}
+{"key":1445,"since":70245,"src":["game"],"name":"Dustwallow Marsh","side":"contested","continent":1414,"area":15}
+{"key":1446,"since":70245,"src":["game"],"name":"Tanaris","side":"contested","continent":1414,"area":440}
+{"key":1447,"since":70245,"src":["game"],"name":"Azshara","side":"contested","continent":1414,"area":16}
+{"key":1448,"since":70245,"src":["game"],"name":"Felwood","side":"contested","continent":1414,"area":361}
+{"key":1449,"since":70245,"src":["game"],"name":"Un'Goro Crater","side":"contested","continent":1414,"area":490}
+{"key":1450,"since":70245,"src":["game"],"name":"Moonglade","side":"contested","continent":1414,"area":493}
+{"key":1451,"since":70245,"src":["game"],"name":"Silithus","side":"contested","continent":1414,"area":1377}
+{"key":1452,"since":70245,"src":["game"],"name":"Winterspring","side":"contested","continent":1414,"area":618}
+{"key":1453,"since":70245,"src":["game"],"name":"Stormwind City","side":"alliance","continent":1415,"area":1519}
+{"key":1454,"since":70245,"src":["game"],"name":"Orgrimmar","side":"horde","continent":1414,"area":1637}
+{"key":1455,"since":70245,"src":["game"],"name":"Ironforge","side":"alliance","continent":1415,"area":1537}
+{"key":1456,"since":70245,"src":["game"],"name":"Thunder Bluff","side":"horde","continent":1414,"area":1638}
+{"key":1457,"since":70245,"src":["game"],"name":"Darnassus","side":"alliance","continent":1414,"area":1657}
+{"key":1458,"since":70245,"src":["game"],"name":"Undercity","side":"horde","continent":1415,"area":1497}
+{"key":2482,"since":70245,"src":["game"],"name":"Mount Hyjal","side":"contested","continent":1414,"area":616}
+{"key":2521,"since":70245,"src":["game"],"name":"Zephras Isle","side":"sanctuary","area":16593}
+{"key":2548,"since":70245,"src":["game"],"name":"Riverglades","side":"contested","continent":1415,"area":16591}
+{"key":2652,"since":70245,"src":["game"],"name":"Shen'dralas","side":"contested","continent":1414,"area":16651}

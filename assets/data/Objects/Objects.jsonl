@@ -23,21 +23,73 @@
 {"key":2046,"since":0,"src":[1],"name":"Goldthorn","kind":"herb","skill":182,"skillLevel":170,"yellowAt":195,"greyAt":270}
 {"key":2047,"since":0,"src":[1],"name":"Truesilver Deposit","kind":"ore","skill":186,"skillLevel":230,"yellowAt":255,"greyAt":330}
 {"key":2653,"since":0,"src":[1],"name":"Lesser Bloodstone Deposit","kind":"ore","skill":186,"skillLevel":75,"yellowAt":100,"greyAt":175}
+{"key":2843,"since":0,"src":[4],"name":"Battered Chest","kind":"chest"}
+{"key":2849,"since":0,"src":[4],"name":"Battered Chest","kind":"chest"}
+{"key":2850,"since":0,"src":[4],"name":"Solid Chest","kind":"chest"}
+{"key":2852,"since":0,"src":[4],"name":"Solid Chest","kind":"chest"}
+{"key":2855,"since":0,"src":[4],"name":"Solid Chest","kind":"chest"}
+{"key":2857,"since":0,"src":[4],"name":"Solid Chest","kind":"chest"}
 {"key":2866,"since":0,"src":[1],"name":"Firebloom","kind":"herb","skill":182,"skillLevel":205,"yellowAt":230,"greyAt":305}
+{"key":3660,"since":0,"src":[4],"name":"Armor Crate","kind":"chest"}
+{"key":3661,"since":0,"src":[4],"name":"Weapon Crate","kind":"chest"}
+{"key":3689,"since":0,"src":[4],"name":"Weapon Crate","kind":"chest"}
+{"key":3702,"since":0,"src":[4],"name":"Armor Crate","kind":"chest"}
+{"key":3715,"since":0,"src":[4],"name":"Alliance Chest","kind":"chest"}
+{"key":3743,"since":0,"src":[4],"name":"Fissure Plant","kind":"chest"}
+{"key":4096,"since":0,"src":[4],"name":"Alliance Chest","kind":"chest"}
+{"key":4149,"since":0,"src":[4],"name":"Solid Chest","kind":"chest"}
+{"key":12654,"since":0,"src":[4],"name":"Mathystra Relic","kind":"chest"}
+{"key":13359,"since":0,"src":[4],"name":"Cat Figurine","kind":"chest"}
+{"key":13360,"since":0,"src":[4],"name":"Mathystra Relic","kind":"chest"}
+{"key":13872,"since":0,"src":[4],"name":"Mathystra Relic","kind":"chest"}
+{"key":19017,"since":0,"src":[4],"name":"Giant Clam","kind":"chest"}
+{"key":19018,"since":0,"src":[4],"name":"Giant Clam","kind":"chest"}
+{"key":19019,"since":0,"src":[4],"name":"Box of Assorted Parts","kind":"chest"}
+{"key":19020,"since":0,"src":[4],"name":"Box of Assorted Parts","kind":"chest"}
+{"key":19602,"since":0,"src":[4],"name":"Venture Co. Engineering Plans","kind":"chest"}
+{"key":19603,"since":0,"src":[4],"name":"Venture Co. Documents","kind":"chest"}
 {"key":19903,"since":0,"src":[1],"name":"Indurium Mineral Vein","kind":"ore","skill":186,"skillLevel":150,"yellowAt":175,"greyAt":250}
+{"key":20725,"since":0,"src":[4],"name":"The Legacy of the Aspects","kind":"chest"}
+{"key":30854,"since":0,"src":[4],"name":"Atal'ai Artifact","kind":"chest"}
+{"key":30855,"since":0,"src":[4],"name":"Atal'ai Artifact","kind":"chest"}
+{"key":30856,"since":0,"src":[4],"name":"Atal'ai Artifact","kind":"chest"}
 {"key":73940,"since":0,"src":[1],"name":"Ooze Covered Silver Vein","kind":"ore","skill":186,"skillLevel":75,"yellowAt":100,"greyAt":175}
 {"key":73941,"since":0,"src":[1],"name":"Ooze Covered Gold Vein","kind":"ore","skill":186,"skillLevel":155,"yellowAt":180,"greyAt":255}
+{"key":103815,"since":0,"src":[4],"name":"Ambermill Strongbox","kind":"chest"}
+{"key":105176,"since":0,"src":[4],"name":"Venture Co. Strongbox","kind":"chest"}
+{"key":105570,"since":0,"src":[4],"name":"Alliance Strongbox","kind":"chest"}
+{"key":105578,"since":0,"src":[4],"name":"Horde Chest","kind":"chest"}
+{"key":105579,"since":0,"src":[4],"name":"Alliance Chest","kind":"chest"}
+{"key":105581,"since":0,"src":[4],"name":"Alliance Chest","kind":"chest"}
+{"key":106318,"since":0,"src":[4],"name":"Battered Chest","kind":"chest"}
+{"key":106319,"since":0,"src":[4],"name":"Battered Chest","kind":"chest"}
+{"key":111095,"since":0,"src":[4],"name":"Alliance Chest","kind":"chest"}
+{"key":121264,"since":0,"src":[4],"name":"Lucius's Lockbox","kind":"chest"}
+{"key":123214,"since":0,"src":[4],"name":"Duskwood Chest","kind":"chest"}
 {"key":123309,"since":0,"src":[1],"name":"Ooze Covered Truesilver Deposit","kind":"ore","skill":186,"skillLevel":230,"yellowAt":255,"greyAt":330}
 {"key":123310,"since":0,"src":[1],"name":"Ooze Covered Mithril Deposit","kind":"ore","skill":186,"skillLevel":175,"yellowAt":200,"greyAt":275}
+{"key":123330,"since":0,"src":[4],"name":"Buccaneer's Strongbox","kind":"chest"}
+{"key":123331,"since":0,"src":[4],"name":"Buccaneer's Strongbox","kind":"chest"}
+{"key":123333,"since":0,"src":[4],"name":"Buccaneer's Strongbox","kind":"chest"}
 {"key":123848,"since":0,"src":[1],"name":"Ooze Covered Thorium Vein","kind":"ore","skill":186,"skillLevel":245,"yellowAt":270,"greyAt":345}
+{"key":129127,"since":0,"src":[4],"name":"Gallywix's Lockbox","kind":"chest"}
 {"key":142140,"since":0,"src":[1],"name":"Purple Lotus","kind":"herb","skill":182,"skillLevel":210,"yellowAt":235,"greyAt":310}
 {"key":142141,"since":0,"src":[1],"name":"Arthas' Tears","kind":"herb","skill":182,"skillLevel":220,"yellowAt":245,"greyAt":320}
 {"key":142142,"since":0,"src":[1],"name":"Sungrass","kind":"herb","skill":182,"skillLevel":230,"yellowAt":255,"greyAt":330}
 {"key":142143,"since":0,"src":[1],"name":"Blindweed","kind":"herb","skill":182,"skillLevel":235,"yellowAt":260,"greyAt":335}
 {"key":142144,"since":0,"src":[1],"name":"Ghost Mushroom","kind":"herb","skill":182,"skillLevel":245,"yellowAt":270,"greyAt":345}
 {"key":142145,"since":0,"src":[1],"name":"Gromsblood","kind":"herb","skill":182,"skillLevel":250,"yellowAt":275,"greyAt":350}
+{"key":142191,"since":0,"src":[4],"name":"Horde Supply Crate","kind":"chest"}
+{"key":143980,"since":0,"src":[4],"name":"Gordunni Scroll","kind":"chest"}
+{"key":153451,"since":0,"src":[4],"name":"Solid Chest","kind":"chest"}
+{"key":153453,"since":0,"src":[4],"name":"Solid Chest","kind":"chest"}
+{"key":153454,"since":0,"src":[4],"name":"Solid Chest","kind":"chest"}
+{"key":153463,"since":0,"src":[4],"name":"Large Solid Chest","kind":"chest"}
+{"key":153468,"since":0,"src":[4],"name":"Large Mithril Bound Chest","kind":"chest"}
+{"key":164662,"since":0,"src":[4],"name":"Equipment Boxes","kind":"chest"}
 {"key":165658,"since":0,"src":[1],"name":"Dark Iron Deposit","kind":"ore","skill":186,"skillLevel":230,"yellowAt":255,"greyAt":330}
 {"key":175404,"since":0,"src":[1],"name":"Rich Thorium Vein","kind":"ore","skill":186,"skillLevel":275,"yellowAt":300,"greyAt":375}
+{"key":176188,"since":0,"src":[4],"name":"Ritual Candle","kind":"chest"}
 {"key":176583,"since":0,"src":[1],"name":"Golden Sansam","kind":"herb","skill":182,"skillLevel":260,"yellowAt":285,"greyAt":360}
 {"key":176584,"since":0,"src":[1],"name":"Dreamfoil","kind":"herb","skill":182,"skillLevel":270,"yellowAt":295,"greyAt":370}
 {"key":176586,"since":0,"src":[1],"name":"Mountain Silversage","kind":"herb","skill":182,"skillLevel":280,"yellowAt":305,"greyAt":380}
@@ -45,9 +97,28 @@
 {"key":176588,"since":0,"src":[1],"name":"Icecap","kind":"herb","skill":182,"skillLevel":290,"yellowAt":315,"greyAt":390}
 {"key":176589,"since":0,"src":[1],"name":"Black Lotus","kind":"herb","skill":182,"skillLevel":300,"yellowAt":325,"greyAt":400}
 {"key":177388,"since":0,"src":[1],"name":"Ooze Covered Rich Thorium Vein","kind":"ore","skill":186,"skillLevel":275,"yellowAt":300,"greyAt":375}
+{"key":178244,"since":0,"src":[4],"name":"Practice Lockbox","kind":"chest"}
+{"key":178246,"since":0,"src":[4],"name":"Practice Lockbox","kind":"chest"}
+{"key":179486,"since":0,"src":[4],"name":"Battered Footlocker","kind":"chest"}
+{"key":179487,"since":0,"src":[4],"name":"Waterlogged Footlocker","kind":"chest"}
+{"key":179488,"since":0,"src":[4],"name":"Battered Footlocker","kind":"chest"}
+{"key":179489,"since":0,"src":[4],"name":"Waterlogged Footlocker","kind":"chest"}
+{"key":179490,"since":0,"src":[4],"name":"Battered Footlocker","kind":"chest"}
+{"key":179491,"since":0,"src":[4],"name":"Waterlogged Footlocker","kind":"chest"}
+{"key":179492,"since":0,"src":[4],"name":"Dented Footlocker","kind":"chest"}
+{"key":179493,"since":0,"src":[4],"name":"Mossy Footlocker","kind":"chest"}
+{"key":179494,"since":0,"src":[4],"name":"Dented Footlocker","kind":"chest"}
+{"key":179496,"since":0,"src":[4],"name":"Dented Footlocker","kind":"chest"}
+{"key":179497,"since":0,"src":[4],"name":"Mossy Footlocker","kind":"chest"}
+{"key":179498,"since":0,"src":[4],"name":"Scarlet Footlocker","kind":"chest"}
 {"key":180215,"since":0,"src":[1],"name":"Hakkari Thorium Vein","kind":"ore","skill":186,"skillLevel":275,"yellowAt":300,"greyAt":375}
 {"key":181068,"since":0,"src":[1],"name":"Small Obsidian Chunk","kind":"ore","skill":186,"skillLevel":305,"yellowAt":330,"greyAt":405}
 {"key":181069,"since":0,"src":[1],"name":"Large Obsidian Chunk","kind":"ore","skill":186,"skillLevel":305,"yellowAt":330,"greyAt":405}
 {"key":562111,"since":0,"src":[1],"name":"Poor Copper Vein","kind":"ore","skill":186,"skillLevel":1,"yellowAt":10,"greyAt":20}
+{"key":616466,"since":0,"src":[3],"name":"Construct Parts","kind":"chest"}
+{"key":616467,"since":0,"src":[3],"name":"Construct Parts","kind":"chest"}
+{"key":616468,"since":0,"src":[3],"name":"Construct Parts","kind":"chest"}
+{"key":626718,"since":0,"src":[3],"name":"Dented Chest","kind":"chest"}
+{"key":626752,"since":0,"src":[3],"name":"Dented Chest","kind":"chest"}
 {"key":656160,"since":0,"src":[1],"name":"Wilted Peacebloom","kind":"herb","skill":182,"skillLevel":1,"yellowAt":10,"greyAt":20}
 {"key":656161,"since":0,"src":[1],"name":"Stunted Silverleaf","kind":"herb","skill":182,"skillLevel":1,"yellowAt":10,"greyAt":20}

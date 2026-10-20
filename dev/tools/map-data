@@ -1,0 +1,323 @@
+#!/usr/bin/env python3
+"""The game's own facts for what Navigation's map shows, from its client tables and terrain files, as staging for
+Core's sets Zones and Places (pack World); and the placing of a world position on its zone map, which our other
+tools that write map data use (Placer, PlaceKeys).
+
+  dev/data/staging/map-game.jsonl   Zones: every zone map (UiMap of the type zone) with its name, side (the
+                                    area's faction group; sanctuary where the area forbids fights between
+                                    players), continent (the continent's map) and area (its AreaTable ID).
+                                    Places: the entrances of the dungeons and raids, where the game sends a ghost
+                                    back to (Map's corpse point), each with its name, kind, instance (the
+                                    instance's map ID) and zone.
+
+Placing: a world position (map, X to the north, Y to the west, Z up, in yards) lies on the zone map of the area
+it is in, as the game tells it: the area of the building part it stands in (a WMO group of WMOAreaTable, for the
+cities built inside a mountain or under the ground), else the area of the terrain's map chunk; an area is the
+zone of its last parent. Where that gives no zone map (an area with none of its own, a map without terrain
+files), the smallest zone map whose box holds the position. Map points are in percent, one decimal.
+
+Places' keys are our own numbers (the set's schema): a place of the same kind on the same map within SAME percent
+of one the master has keeps its number, any other gets the next one free; an entrance is matched by its instance
+instead (two raids can share one gate).
+
+The input, of the build BUILD: the game's client tables as CSV (AreaTable, Map, UiMap, UiMapAssignment,
+WMOAreaTable), and its terrain files as the game stores them: adt/<key>.adt (the root files: each map chunk's
+area), adt-obj0/<key>.adt (where the buildings stand), wmo/<file ID>.wmo and the large buildings' parts
+wmo/<file ID>_<part>.wmo, key = continent * 4096 + row * 64 + column as in the set Tiles.
+
+Usage:  dev/tools/map-data <client tables> <terrain>
+"""
+import csv
+import json
+import math
+import struct
+import sys
+from array import array
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+STAGING = ROOT / "dev" / "data" / "staging" / "map-game.jsonl"
+PLACES = ROOT / "assets" / "data" / "Places"
+BUILD = 70245
+GAME = "forever"
+GRID, CHUNKS = 64, 16             # tiles along a continent's side, map chunks along a tile's
+TILE = 1600 / 3                   # a tile's side in yards
+HALF = GRID * TILE / 2            # the grid's middle is the world's origin
+CHUNK = TILE / CHUNKS
+ZONE, CONTINENT = "3", "2"        # UiMap's Type
+SAME = 0.5                        # percent (Places' schema)
+SIDES = {2: "alliance", 4: "horde"}  # AreaTable's FactionGroupMask
+SANCTUARY = 0x800                 # AreaTable's Flags[0]: no fights between players
+RAID = "2"                        # Map's InstanceType: 1 a dungeon, 2 a raid
+
+
+def table(folder, name):
+    return list(csv.DictReader(open(Path(folder) / f"{name}.csv", encoding="utf-8")))
+
+
+def pieces(data, start, end):
+    """A file's chunks between start and end: (name, where its data begins, its size)."""
+    at = start
+    while at + 8 <= end:
+        size = struct.unpack_from("<I", data, at + 4)[0]
+        yield data[at:at + 4][::-1], at + 8, size
+        at += 8 + size
+
+
+class Placer:
+    """Where world positions lie on the game's zone maps (the module's doc)."""
+
+    def __init__(self, tables, terrain=None):
+        maps = {row["ID"]: row for row in table(tables, "UiMap")}
+        self.parent = {int(row["ID"]): int(row["ParentAreaID"]) for row in table(tables, "AreaTable")}
+        self.boxes = {}    # map ID: [(size, uiMap, region, ui)], the smallest first
+        self.zones = {}    # a zone's area: (uiMap, map ID)
+        self.regions = {}  # (uiMap, map ID): (region, ui)
+        for row in table(tables, "UiMapAssignment"):
+            info = maps.get(row["UiMapID"])
+            if (not info or info["Type"] != ZONE or info["ParentUiMapID"] == "0" or int(row["WMOGroupID"])
+                    or int(row["WMODoodadPlacementID"])):
+                continue  # parent 0: a map the world map does not lead to
+            region = [float(row[f"Region[{i}]"]) for i in range(6)]
+            ui = [float(row[f"UiMin[{i}]"]) for i in (0, 1)] + [float(row[f"UiMax[{i}]"]) for i in (0, 1)]
+            if region[3] <= region[0] or region[4] <= region[1]:
+                continue
+            uimap, map_id = int(row["UiMapID"]), int(row["MapID"])
+            size = (region[3] - region[0]) * (region[4] - region[1])
+            self.boxes.setdefault(map_id, []).append((size, int(row["OrderIndex"]), uimap, region, ui))
+            self.regions.setdefault((uimap, map_id), (region, ui))
+            if int(row["AreaID"]):
+                self.zones.setdefault(int(row["AreaID"]), (uimap, map_id))
+        for found in self.boxes.values():
+            found.sort(key=lambda box: box[:3])
+        self.grids = {}      # continent: each map chunk's area, row by row from the north-east corner
+        self.buildings = {}  # (continent, tile): the buildings with areas that reach into it
+        if terrain:
+            self._terrain(Path(terrain))
+            self._buildings(Path(terrain), tables)
+
+    def _terrain(self, terrain):
+        side = GRID * CHUNKS
+        for path in sorted((terrain / "adt").glob("*.adt")):
+            continent, rest = divmod(int(path.stem), GRID * GRID)
+            row, column = divmod(rest, GRID)
+            grid = self.grids.get(continent)
+            if grid is None:
+                grid = self.grids[continent] = array("I", bytes(4 * side * side))
+            data = path.read_bytes()
+            for name, at, _ in pieces(data, 0, len(data)):
+                if name == b"MCNK":
+                    x, y = struct.unpack_from("<II", data, at + 4)
+                    grid[(row * CHUNKS + y) * side + column * CHUNKS + x] = struct.unpack_from("<I", data, at + 0x34)[0]
+
+    def _buildings(self, terrain, tables):
+        areas = {}  # (WMO ID, name set, group ID): area
+        for row in table(tables, "WMOAreaTable"):
+            if int(row["AreaTableID"]):
+                areas[(int(row["WMOID"]), int(row["NameSetID"]), int(row["WMOGroupID"]))] = int(row["AreaTableID"])
+        wanted = {wmo for wmo, _, _ in areas}
+        roots, parts, seen = {}, {}, set()
+        for path in sorted((terrain / "adt-obj0").glob("*.adt")):
+            continent = int(path.stem) // (GRID * GRID)
+            data = path.read_bytes()
+            for name, at, size in pieces(data, 0, len(data)):
+                if name != b"MODF":
+                    continue
+                for start in range(at, at + size, 64):
+                    (file, unique, px, py, pz, _, turn, _, lx, ly, lz, hx, hy, hz, flags, _, names,
+                     scale) = struct.unpack_from("<II3f3f6fHHHH", data, start)
+                    if not flags & 0x8 or (continent, unique) in seen:  # 0x8: the first field is the file's ID
+                        continue
+                    seen.add((continent, unique))
+                    if file not in roots:
+                        roots[file] = self._root(terrain / "wmo" / f"{file}.wmo")
+                    wmo = roots[file]
+                    if wmo not in wanted:
+                        continue
+                    if file not in parts:
+                        parts[file] = self._parts(terrain / "wmo", file)
+                    groups = []
+                    for box, group in parts[file]:
+                        area = areas.get((wmo, names, group)) or areas.get((wmo, 0, group))
+                        if area:
+                            groups.append(((box[3] - box[0]) * (box[4] - box[1]) * (box[5] - box[2]), box, area))
+                    if not groups:
+                        continue
+                    groups.sort(key=lambda g: g[0])
+                    building = dict(at=(px, py, pz), turn=math.radians(-turn), scale=scale / 1024 if scale else 1,
+                                    north=HALF - lz, south=HALF - hz, west=HALF - lx, east=HALF - hx, low=ly, high=hy,
+                                    groups=groups)
+                    for row in range(int((HALF - building["north"]) // TILE), int((HALF - building["south"]) // TILE) + 1):
+                        for column in range(int((HALF - building["west"]) // TILE), int((HALF - building["east"]) // TILE) + 1):
+                            self.buildings.setdefault((continent, row * GRID + column), []).append(building)
+
+    @staticmethod
+    def _root(path):
+        if not path.exists():
+            return None
+        data = path.read_bytes()
+        for name, at, _ in pieces(data, 0, len(data)):
+            if name == b"MOHD":
+                return struct.unpack_from("<I", data, at + 32)[0]
+        return None
+
+    @staticmethod
+    def _parts(folder, file):
+        """A building's parts: (their box in its own space, their group ID)."""
+        found = []
+        for path in sorted(folder.glob(f"{file}_*.wmo")):
+            data = path.read_bytes()
+            for name, at, _ in pieces(data, 0, len(data)):
+                if name == b"MOGP":
+                    found.append((struct.unpack_from("<6f", data, at + 12), struct.unpack_from("<I", data, at + 56)[0]))
+                    break
+        return found
+
+    def top(self, area):
+        for _ in range(10):
+            if not self.parent.get(area):
+                break
+            area = self.parent[area]
+        return area
+
+    def area(self, map_id, X, Y, Z=None):
+        """The area of a world position: the building part's it stands in, else the map chunk's (0: not known)."""
+        row, column = int((HALF - X) // CHUNK), int((HALF - Y) // CHUNK)
+        side = GRID * CHUNKS
+        if not (0 <= row < side and 0 <= column < side):
+            return 0
+        if Z is not None:
+            for building in self.buildings.get((map_id, (row // CHUNKS) * GRID + column // CHUNKS), ()):
+                if not (building["south"] <= X <= building["north"] and building["east"] <= Y <= building["west"]
+                        and building["low"] <= Z <= building["high"]):
+                    continue
+                px, py, pz = building["at"]
+                along, across = (HALF - X - pz) / building["scale"], (HALF - Y - px) / building["scale"]
+                turn = building["turn"]
+                x = along * math.cos(turn) - across * math.sin(turn)
+                y = along * math.sin(turn) + across * math.cos(turn)
+                z = (Z - py) / building["scale"]
+                for _, box, area in building["groups"]:
+                    if box[0] <= x <= box[3] and box[1] <= y <= box[4] and box[2] <= z <= box[5]:
+                        return area
+        grid = self.grids.get(map_id)
+        return grid[row * side + column] if grid else 0
+
+    def _percent(self, uimap, map_id, X, Y):
+        region, ui = self.regions[(uimap, map_id)]
+        x = 100 * (ui[0] + (region[4] - Y) / (region[4] - region[1]) * (ui[2] - ui[0]))
+        y = 100 * (ui[1] + (region[3] - X) / (region[3] - region[0]) * (ui[3] - ui[1]))
+        if 0 <= x <= 100 and 0 <= y <= 100:
+            return [uimap, round(x, 1), round(y, 1)]
+        return None
+
+    def place(self, map_id, X, Y, Z=None):
+        """A world position as a point of the master, [uiMap, x, y] in percent; None off every zone map."""
+        zone = self.zones.get(self.top(self.area(map_id, X, Y, Z)))
+        if zone and zone[1] == map_id:
+            point = self._percent(zone[0], map_id, X, Y)
+            if point:
+                return point
+        for _, _, uimap, region, _ in self.boxes.get(map_id, ()):
+            if region[0] <= X <= region[3] and region[1] <= Y <= region[4]:
+                point = self._percent(uimap, map_id, X, Y)
+                if point:
+                    return point
+        return None
+
+    def yards(self, point):
+        """The size of a point's map in yards: (west to east, north to south)."""
+        for (uimap, _), (region, ui) in self.regions.items():
+            if uimap == point[0]:
+                return ((region[4] - region[1]) / (ui[2] - ui[0]), (region[3] - region[0]) / (ui[3] - ui[1]))
+        return None
+
+
+class PlaceKeys:
+    """Our own numbers of the set Places (the module's doc), from every game version's lines of the master."""
+
+    def __init__(self, folder=PLACES):
+        newest = {}
+        for path in sorted(Path(folder).glob("Places*.jsonl")):
+            for text in open(path, encoding="utf-8"):
+                line = json.loads(text)
+                fields = newest.setdefault(line["key"], {})
+                fields.update({name: value for name, value in line.items() if name in ("kind", "point", "instance")})
+        self.known = [(fields.get("kind"), fields.get("point"), fields.get("instance"), key)
+                      for key, fields in newest.items()]
+        self.free = max(newest, default=0) + 1
+
+    def key(self, kind, point, instance=None):
+        if instance is not None:
+            near = [(0, key) for what, _, same, key in self.known if what == kind and same == instance]
+        else:
+            near = [(math.dist(point[1:], seen[1:]), key) for what, seen, _, key in self.known
+                    if what == kind and seen and seen[0] == point[0] and math.dist(point[1:], seen[1:]) <= SAME]
+        if near:
+            return min(near)[1]
+        key, self.free = self.free, self.free + 1
+        self.known.append((kind, point, instance, key))
+        return key
+
+
+def zones(tables):
+    """The zone maps: {uiMap: fields}."""
+    maps = {row["ID"]: row for row in table(tables, "UiMap")}
+    areas = {row["ID"]: row for row in table(tables, "AreaTable")}
+    found = {}
+    for row in table(tables, "UiMapAssignment"):
+        info = maps.get(row["UiMapID"])
+        if not info or info["Type"] != ZONE or info["ParentUiMapID"] == "0" or int(row["UiMapID"]) in found:
+            continue  # parent 0: a map the world map does not lead to
+        fields = {"name": info["Name_lang"]}
+        area = areas.get(row["AreaID"])
+        if area:
+            flags, group = int(area["Flags[0]"]), int(area["FactionGroupMask"])
+            fields["side"] = "sanctuary" if flags & SANCTUARY else SIDES.get(group, "contested" if not group else None)
+            if fields["side"] is None:
+                del fields["side"]
+            fields["area"] = int(area["ID"])
+        mother = maps.get(info["ParentUiMapID"])
+        if mother and mother["Type"] == CONTINENT:
+            fields["continent"] = int(mother["ID"])
+        found[int(row["UiMapID"])] = fields
+    return found
+
+
+def entrances(tables, placer, keys):
+    """The dungeons' and raids' entrances: {key: fields}."""
+    found = {}
+    for row in table(tables, "Map"):
+        if row["InstanceType"] not in ("1", "2") or row["CorpseMapID"] == "-1" or row["MapName_lang"].startswith("<"):
+            continue  # <unused> ...
+        X, Y = float(row["Corpse[0]"]), float(row["Corpse[1]"])
+        point = placer.place(int(row["CorpseMapID"]), X, Y) if (X, Y) != (0, 0) else None
+        if not point:
+            continue
+        kind = "raid" if row["InstanceType"] == RAID else "dungeon"
+        found[keys.key(kind, point, int(row["ID"]))] = {"kind": kind, "name": row["MapName_lang"], "point": point,
+                                        "zone": point[0], "instance": int(row["ID"])}
+    return found
+
+
+def main():
+    if len(sys.argv) != 3:
+        print(__doc__.strip().splitlines()[-1], file=sys.stderr)
+        return 2
+    tables, terrain = Path(sys.argv[1]), Path(sys.argv[2])
+    placer = Placer(tables, terrain)
+    found = zones(tables)
+    places = entrances(tables, placer, PlaceKeys())
+    lines = [{"set": "Zones", "key": key, "fields": fields} for key, fields in sorted(found.items())]
+    lines += [{"set": "Places", "key": key, "fields": fields} for key, fields in sorted(places.items())]
+    STAGING.parent.mkdir(parents=True, exist_ok=True)
+    with open(STAGING, "w", encoding="utf-8") as out:
+        for line in lines:
+            line.update(game=GAME, build=BUILD, src="game")
+            out.write(json.dumps(line, ensure_ascii=False, separators=(",", ":")) + "\n")
+    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(found)} zones, {len(places)} entrances of dungeons and raids.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

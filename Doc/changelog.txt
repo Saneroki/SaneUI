@@ -25,7 +25,11 @@ The bigger changes of each version, newest first.
   the way again.
 - Navigation: pins on the map in the game's own looks: your quests,
   flight points, rares and treasures nearby, places, ways into other
-  maps, your party; and what Sane UI's database knows as it fills.
+  maps, your party; and from Sane UI's own database, all over the
+  world: vendors, trainers, innkeepers, bankers and the other services,
+  quest givers, rares, herbs, ore, treasure chests, mailboxes, meeting
+  stones, spirit healers and the entrances of dungeons and raids, each
+  marked until the game confirms it.
   Pins that would cover each other gather into one; click it to zoom
   in. Choose which kinds show with Pins on the map's bar. The quest
   you follow is shaded where its objectives are.
