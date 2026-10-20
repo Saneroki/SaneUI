@@ -59,3 +59,9 @@ kind = "batch"
 game = "forever"
 seen = "forever-beta"
 about = "What Forever's beta servers sent (builds 70124 to 70374) about trainers, vendors and creatures' paths: each spell a trainer teaches with its level, cost and the skill it needs (one answer from every trainer only); vendors' lists where they hold every item already known and more, with each limited item's stock; the paths creatures walk, where a creature has one. Unverified."
+
+[9]
+kind = "batch"
+game = "forever"
+build = 70245
+about = "The maps of the dungeons and raids Forever's client has, from Blizzard's own tables of the newest retail client (12.1.5.70448): each floor's map art (every tile the same file in Forever's live and beta clients), the part of the world it shows, and where each boss stands on it, only where Forever's clients list that boss under the same encounter in the same instance (its name is Forever's, the set Encounters). Unverified: Forever's own word replaces it."

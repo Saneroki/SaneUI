@@ -526,6 +526,31 @@ out = assert(io.open(indoorsPath .. "/SaneUI_Data_Indoors.toc", "w"))
 out:write("## Title: Data: Indoors\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Indoors\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nIndoors.lua\n")
 out:close()
 W.AddPack(indoorsPath)
+-- The maps of dungeons the game has none of (the sets Dungeons and Encounters): tested with the dungeons' view.
+do
+local dungeonsPath = io.popen("mktemp -d -t saneui-dungeons-XXXXXX"):read("*l") .. "/SaneUI_Data_DungeonMaps" -- loaded late
+os.execute(("mkdir -p '%s'"):format(dungeonsPath))
+-- Deep Halls (instance 90): its upper floor 300 by 200 yards (12 tiles), the lower one 150 by 100 (2 tiles), a
+-- boss on each.
+local upper = {}
+for row = 0, 2 do
+    for column = 0, 3 do upper[#upper + 1] = ("1\031%d\031%d\031%d"):format(row, column, 9001 + row * 4 + column) end
+end
+Set(dungeonsPath .. "/Dungeons.lua", "Dungeons", "0000000b", "int", '"name", "floors", "tiles", "bosses"',
+    '"text", "list tuple(floor:int,name:text,width:int,height:int,tile:int,north:number,south:number,west:number,east:number)", '
+    .. '"list tuple(floor:int,row:int,column:int,file:int)", "list tuple(encounter:int,floor:int,x:number,y:number)"',
+    'R[90] = "70245\t\tDeep Halls\t1\031Upper\0311002\031668\031256\031100\031-100\031150\031-150'
+    .. '\0302\031Lower\0311002\031668\031256\03150\031-50\03175\031-75\t'
+    .. table.concat(upper, "\030") .. '\0302\0310\0310\0319101\0302\0310\0311\0319102'
+    .. '\t700\0311\0310.25\0310.5\030701\0312\0310.5\0310.5"\n')
+Set(dungeonsPath .. "/Encounters.lua", "Encounters", "0000000c", "int", '"name", "instance", "order"', '"text", "int", "int"',
+    'R[700] = "70245\t\tThe First Boss\t90\t0"\nR[701] = "70245\t\tThe Second Boss\t90\t1"\n')
+out = assert(io.open(dungeonsPath .. "/SaneUI_Data_DungeonMaps.toc", "w"))
+out:write("## Title: Data: Dungeon maps\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Dungeons, Encounters\n## X-SaneUI-Format: 1\n"
+    .. "## X-SaneUI-Game: forever\nDungeons.lua\nEncounters.lua\n")
+out:close()
+W.AddPack(dungeonsPath)
+end
 -- The walking data (pack Routes): two tiles round the player, their blocks as the game unpacks them (the
 -- encoding stand-ins below hand back these tables). Tile 3104 (its north west corner at u 0, v -8533, 2.08 yards
 -- a sample): a west hall (1) and an east hall (3), a wall between them (columns 128 to 159) with a door (2, rows
@@ -1517,7 +1542,9 @@ end
         return { { mapID = 501, relativeHeightIndex = 1, name = "The Lower Hall" },
                  { mapID = 500, relativeHeightIndex = 0, name = "The Upper Hall" } }
     end
-    local list = Dungeons.List()
+    -- The game's dungeons (those of Core's set, below, may be in the list too).
+    local list = {}
+    for _, entry in ipairs(Dungeons.List()) do if not entry.instance then list[#list + 1] = entry end end
     check(#list == 2 and list[1].name == "Ashen Vault" and list[2].name == "Hollow Keep" and list[2].map == 500
         and #list[2].floors == 2 and list[2].floors[2].map == 501, "the dungeons: one entry each, its floors lowest first, A to Z")
     local menu, floors
@@ -1526,16 +1553,18 @@ end
         if widget._generator and widget._override == Dungeons.TEXT.floor then floors = widget end
     end
     menu:GenerateMenu()
-    check(#menu._items == 2 and menu._items[2].text == "Hollow Keep" and not menu._items[2].checked(),
-        "the bar's dropdown Dungeons lists them")
-    menu._items[2].fn()
+    local keep
+    for _, item in ipairs(menu._items) do if item.text == "Hollow Keep" then keep = item end end
+    check(#menu._items >= 2 and menu._items[1].text == "Ashen Vault" and keep and not keep.checked(),
+        "the bar's dropdown Dungeons lists them, A to Z")
+    keep.fn()
     local tiles = 0
     for _, widget in ipairs(W.frames) do
         if widget._kind == "Texture" and widget._shown and type(widget._texture) == "number"
             and widget._texture > 50000 and widget._texture <= 50012 then tiles = tiles + 1 end
     end
     check(Dungeons.Shown() == 500 and Dungeons.frame._shown and tiles == 12 and menu._override == "Hollow Keep"
-        and menu._items[2].checked() and floors._shown and floors._override == "The Upper Hall",
+        and keep.checked() and floors._shown and floors._override == "The Upper Hall",
         "chosen: its map over the map, its lowest floor in the game's art, its floors beside it")
     floors:GenerateMenu()
     check(#floors._items == 2 and floors._items[1].checked() and floors._items[2].text == "The Lower Hall", "its floors, lowest first")
@@ -2464,6 +2493,62 @@ Core.Set(ns.name, "nodeSparkles", false)
 check(C_CVar.GetCVar("softTargetInteract") == "1" and C_CVar.GetCVar("SoftTargetIconGameObject") == "0"
     and C_CVar.GetCVar("SoftTargetInteractRange") == "10", "the sparkles off: the settings as they were")
 Core.Set(ns.name, "nodeSparkles", true)
+end)()
+
+-- The dungeons of Core's set Dungeons, which the game has no map of (Forever's client has none): their floors, the
+-- game's tiles, the bosses' marks with their names (the set Encounters), the player's arrow by the world.
+;(function()
+    local Dungeons = ns.Dungeons
+    if Canvas.camera ~= Window.full then
+        Window.Toggle()
+        Window.frame._group:Run(1)
+    end
+    Dungeons.List()
+    Frames(12)
+    local entry
+    for _, each in ipairs(Dungeons.List()) do if each.name == "Deep Halls" then entry = each end end
+    check(entry and #entry.floors == 2 and entry.floors[1].map == "90:1" and entry.floors[2].map == "90:2"
+        and entry.floors[2].name == "Lower" and Dungeons.Key(90) == "90:1" and Dungeons.Key(91) == nil,
+        "a dungeon of Core's set in the list: its floors keyed by its instance, lowest first")
+    local function Shown(low, high)
+        local count = 0
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "Texture" and widget._shown and type(widget._texture) == "number"
+                and widget._texture >= low and widget._texture <= high then count = count + 1 end
+        end
+        return count
+    end
+    local function Marks()
+        local found = {}
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "Texture" and widget._atlas == Dungeons.BOSS and widget._parent._shown then
+                found[#found + 1] = widget._parent
+            end
+        end
+        return found
+    end
+    check(Canvas.Show("90:1") and Dungeons.Shown() == "90:1" and Shown(9001, 9012) == 12,
+        "its upper floor shown, in the game's tiles the set names")
+    local marks = Marks()
+    check(#marks == 1 and marks[1]._points[1][4] < 0 and near(marks[1]._points[1][5], 0),
+        "its boss's mark where it stands: a quarter across, half down")
+    GameTooltip._lines = nil
+    marks[1]._scripts.OnEnter(marks[1])
+    check(GameTooltip._text == "The First Boss" and GameTooltip._lines and GameTooltip._lines[1] == Dungeons.TEXT.unverified,
+        "its tooltip: the boss's name as the game's encounters have it, not yet confirmed")
+    local before, instance = UnitPosition, rawget(_G, "GetInstanceInfo")
+    UnitPosition = function() return 0, 0, 0, 0 end
+    GetInstanceInfo = function() return "Deep Halls", "party", 1, "", 5, 0, false, 90 end
+    Dungeons.frame._scripts.OnUpdate(Dungeons.frame, 1)
+    local arrow
+    for _, widget in ipairs(W.frames) do if widget._atlas == "UI-WorldMapArrow" and widget._shown then arrow = widget end end
+    check(arrow and near(arrow._points[1][4], 0) and near(arrow._points[1][5], 0), "the player in its middle: the arrow there")
+    check(Dungeons.Here() == "90:2", "inside: the floor whose box holds the player, the smallest")
+    check(Dungeons.Show("90:2") and Shown(9101, 9102) == 2 and Shown(9001, 9012) == 0 and #Marks() == 1,
+        "the lower floor: its own tiles and boss")
+    UnitPosition, GetInstanceInfo = before, instance
+    Dungeons.Close()
+    check(#Marks() == 0, "closed: no marks")
 end)()
 
 -- A failure stands the module down: everything given back.

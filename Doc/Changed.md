@@ -6,6 +6,26 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 105 (Inventory), 90 (sheet), 220 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### Navigation: dungeon maps of Core's data, with their bosses (Saneroki, 2026-10-21)
+- **Core's new set *Dungeons*** (pack World; `assets/data/Dungeons/`, source batch 9, unverified): Forever's client
+  has no maps of its dungeons (its map table holds 60 maps, none of the kind Dungeon), but its files hold the game's
+  dungeon map art. For the 26 classic dungeons and raids Forever has: each floor's art size and tiles (816 files,
+  every one byte for byte the same in Forever's live and beta clients as in Blizzard's newest retail client), the
+  part of the world the floor shows (one box per floor, its assignments agreeing within half a yard), and where each
+  boss stands (138 bosses, only those Forever's clients list under the same encounter in the same instance; their
+  names are the set *Encounters*). The bosses of the dungeons Blizzard reworked later (the Deadmines, Shadowfang
+  Keep, Gnomeregan and others) are left out: their encounters differ.
+- **The dungeons' view** (`Dungeons.lua`): the list takes the set's dungeons too (walked once it is there, `Each`;
+  the game's own map wins by name), each floor keyed `"<instance>:<floor>"`; their art from the set's tiles; each
+  boss in the game's boss mark (`Dungeons.BOSS`, `vignettekillboss`), the same size at every zoom, its name and "not
+  yet confirmed" in its tooltip; the player's arrow by `UnitPosition` in the floor's box; inside, the full map opens
+  on the floor whose box holds the player (the instance from `GetInstanceInfo`). While the game has told of no
+  dungeon map, it is asked again (as before), the set's dungeons kept beside.
+- **Entrances** (`Pins.lua`, Core's `Data/Map.lua`): a place hands on its `instance`; a dungeon's entrance whose map
+  the set has opens it with Shift and a click (`Dungeons.Key`).
+- Tests: Navigation 390 checks (a dungeon of the set: its floors, tiles, boss marks and names, the arrow, the floor
+  you are on). A game restart takes it in (the World pack's new set).
+
 ### Inventory: categories dragged in the bags' sidebar (Saneroki, 2026-10-21)
 - **The drag** (`Bags/Sidebar.lua`): a row a window marks (`row.drag`) is dragged with the left button (not while an
   item is on the cursor): a ghost of it follows the cursor (`Rail:Lift`; strata `TOOLTIP`, `Sidebar.GHOST`, the row

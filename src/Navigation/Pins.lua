@@ -423,6 +423,13 @@ local function FromData(place)
         pin.service = look[1] == "service"
         if place.to then pin.to, pin.click = place.to, "map" end
         if place.levelMin and place.levelMax then pin.lines = { Pins.TEXT.level:format(place.levelMin, place.levelMax) } end
+        -- A dungeon's entrance whose map Core's set Dungeons has: Shift and a click opens it.
+        local inside = not pin.to and place.instance and ns.Dungeons.Key(place.instance)
+        if inside then
+            pin.to, pin.click = inside, "map"
+            pin.lines = pin.lines or {}
+            pin.lines[#pin.lines + 1] = Pins.TEXT.openMap
+        end
     elseif kind == "travel" then
         pin.kind, pin.atlas = "travel", WAYS[what] or WAYS.boat
         if place.towards then

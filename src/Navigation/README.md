@@ -87,9 +87,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   it out again; chosen, below it what the data knows of it: why it is not for you yet, its level, who gives and
   takes it, its objectives and rewards. They stay until the next `/reload`.
 - **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
-- **Dungeons** on the bar: every dungeon and raid the game has a map of, A to Z; chosen, its map over the map,
-  and beside it its floors. The wheel zooms it, a drag moves it, a right click goes back to the map at its zone.
-  Shift and a click on a dungeon's entrance opens it too, and inside a dungeon the full map opens on its map.
+- **Dungeons** on the bar: every dungeon and raid the game has a map of, and those Core's data has a map of
+  (26 of Forever's: the classic dungeons and raids, each floor in the game's own map art), A to Z; chosen, its map
+  over the map, and beside it its floors. Where the data knows them, each boss in the game's boss mark where it
+  stands, its name in the tooltip (not yet confirmed by the game). The wheel zooms it, a drag moves it, a right
+  click goes back to the map at its zone. Shift and a click on a dungeon's entrance opens it too, and inside a
+  dungeon the full map opens on its map, at the floor you stand on where the game tells your place.
 - **Zephras Isle** is on the map as a continent is, a zone of its own: the map follows you there, its pins and the
   map pin stand on it, a click on it at the world opens it, and a right click on it goes out to the world (there is
   no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* and *Atlas* its
@@ -242,7 +245,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   entry per map group (`C_Map.GetMapGroupMembersInfo`: its floors, lowest first), drawn in a view of their own over
   the canvas, under the bar: the floor's art (`Art.Of`) fitted whole in a frame that is scaled to zoom (up to
   `Dungeons.NEAR` times) and moved by a drag; the player's arrow where `C_Map.GetPlayerMapPosition` tells it on the
-  floor shown. `Canvas.Show` of a dungeon's map opens it; going small closes it.
+  floor shown. `Canvas.Show` of a dungeon's map opens it; going small closes it. Core's set *Dungeons* (pack World)
+  adds the dungeons the game has no map of: walked once it is there (`Each`), each floor keyed `"<instance>:<floor>"`
+  (`Dungeons.Key(instance)` gives the lowest; an entrance's pin takes it as its `to`), its art from the set's tiles
+  (the game's files), the player's arrow by `UnitPosition` in the floor's box, the floor you are on by the smallest
+  box that holds you (`Dungeons.Here`, the instance from `GetInstanceInfo`), the bosses (`Dungeons.Bosses`) in
+  `Dungeons.BOSS` over the art, the same size at every zoom (`Dungeons.PlaceBosses`), named by the set *Encounters*.
 - **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
   in view: a dark edge, the game's dependency bar art tinted gold, its glint moved along by a
   `TextureCoordTranslation` animation (no code of ours each frame); walks gold, flights pale, ships red. The
@@ -382,6 +390,9 @@ Tests: `dev/tests/navigation.lua`.
   it is quicker: from one city's entrance to it to the other's, its cost the walks down and up and the loading
   screens (`Planner.STATION`), half the time between two trains and the run (Core's set *Travel*: `wait`, `time`);
   drawn red, straight from entrance to entrance.
+- **2026-10-21, dungeon maps of Core's data, with their bosses:** Forever's client has no maps of its dungeons, so
+  the view's list takes Core's new set *Dungeons* too (the classic dungeons' and raids' floors in the game's own map
+  art, their world boxes, where each boss stands), with the game's boss mark per boss.
 - **2026-10-20, quest marks as the game's, the filter in sections:** quests in your log the yellow ?, quests to
   take the yellow ! (no longer see-through), too low the grey !, for later a red ? (`Pins.RED` over the game's
   mark); the tooltips no longer say that a click puts the map pin there; the pin filter in titled sections

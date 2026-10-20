@@ -6,6 +6,8 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: the maps of the classic dungeons and raids in the game's
+  own art, floor by floor, with each boss where it stands.
 - Navigation: the quest marks as the game's: the yellow ! for quests to
   take, the yellow ? for those in your log, grey for those too low and
   a red ? for those you cannot take yet; the pin filter in sections

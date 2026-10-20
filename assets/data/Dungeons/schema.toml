@@ -1,0 +1,40 @@
+set = "Dungeons"
+key = "int"              # the instance's map ID (the game's Map table; Encounters' instance)
+pack = "World"
+learn = false
+about = "The maps of the dungeons and raids: each floor's map art from the game's files, the part of the world it shows, and where the bosses stand on it."
+
+# A floor's map is the game's own map art: its tiles (tiles, by floor) laid row by row, each `tile` units square,
+# cut at `width` x `height`. A point of the world (x north, y west, yards) lies on a floor's map, 0 to 1 across
+# from its top left, at
+#   mapX = (west - y) / (west - east),   mapY = (north - x) / (north - south)
+# and a boss (bosses) at its x, y on that floor's map.
+
+[fields]
+name   = { type = "text" }                          # the instance's name, as the game's Map table has it
+floors = { type = "list", of = "tuple", parts = [
+    { name = "floor", type = "int", min = 1 },      # its number, lowest first as the game orders them
+    { name = "name", type = "text" },               # the floor's own name, where the dungeon has several
+    { name = "width", type = "int", min = 1 },      # the art's size in its units
+    { name = "height", type = "int", min = 1 },
+    { name = "tile", type = "int", min = 1 },       # one tile's side in those units
+    { name = "north", type = "number" },            # the world the map shows, yards: its top edge (x),
+    { name = "south", type = "number" },            # its bottom edge (x),
+    { name = "west", type = "number" },             # its left edge (y)
+    { name = "east", type = "number" },             # and its right edge (y)
+] }
+tiles  = { type = "list", of = "tuple", parts = [
+    { name = "floor", type = "int", min = 1 },
+    { name = "row", type = "int", min = 0 },        # from the top
+    { name = "column", type = "int", min = 0 },     # from the left
+    { name = "file", type = "int", min = 1 },       # the tile's file ID in the game's files
+] }
+bosses = { type = "list", of = "tuple", parts = [
+    { name = "encounter", type = "ref", set = "Encounters" },
+    { name = "floor", type = "int", min = 1 },
+    { name = "x", type = "number", min = 0, max = 1 }, # where it stands on that floor's map, 0 to 1 from the left
+    { name = "y", type = "number", min = 0, max = 1 }, # and from the top
+] }
+
+[index]
+byEncounter = "bosses.encounter"

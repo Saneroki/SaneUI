@@ -24,7 +24,8 @@ local Core = SaneUI.Core
 --                an object's kind (herb, ore, chest, mailbox, quest, book, door, other); a place's kind
 --                (crossing, cave, dungeon, raid, pier, mailbox, meetingstone, spirithealer); a way's kind
 --                (boat, zeppelin, tram, lift, portal, flight)
---      name, to (the map a place or way leads to), levelMin, levelMax, side
+--      name, to (the map a place or way leads to), levelMin, levelMax, side; instance (a dungeon's or raid's
+--                entrance: its instance's map ID)
 --      towards   a dock's: where its boat or zeppelin goes from there, its way's other docks, each { map, area
 --                (the game's area there, AreaTable ID, or nil) }
 --  An NPC with many points on a map (a wanderer, a rare) stands at the middles of its areas there instead; a
@@ -138,7 +139,8 @@ local function Place(found, key, record)
     local point = record.point
     if not point then return end
     Put(found, point.map, point.x, point.y, { kind = "place", key = "place:" .. key, id = key, what = record.kind,
-        name = record.name, to = record.to, levelMin = record.levelMin, levelMax = record.levelMax })
+        name = record.name, to = record.to, levelMin = record.levelMin, levelMax = record.levelMax,
+        instance = record.instance })
 end
 
 -- A boat or a zeppelin at each of its docks, one place each (also where it stops twice), with where it goes from there:

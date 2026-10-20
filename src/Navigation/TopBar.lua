@@ -292,7 +292,7 @@ function TopBar.Update()
     local floor, floors = ns.Dungeons.Shown()
     if floor ~= shownFloor then
         shownFloor = floor
-        dungeonMenu:OverrideText(floor and Name(floors[1].map) or ns.Dungeons.TEXT.dungeons)
+        dungeonMenu:OverrideText(floor and (floors.name or Name(floors[1].map)) or ns.Dungeons.TEXT.dungeons)
         local named
         for _, each in ipairs(floors or {}) do if each.map == floor then named = each.name end end
         floorMenu:OverrideText(named or ns.Dungeons.TEXT.floor)
