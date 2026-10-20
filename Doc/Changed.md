@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 35 (Combat), 35 (spellbook), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
+### Art: concept art for a quiet grey look (Saneroki, 2026-10-20)
+- New set `dev/imagegen/sets/ui-style/`: high fantasy but subtle, with small grey borders, in three directions
+  from words alone (slate, moonsilver, iron): `concept.txt` (the character doll with its stats, the spellbook,
+  Combat's full screen, a sheet of controls) and `fullscreen.txt` (Social's, Navigation's, Combat's and the
+  character and bags' full screens and the docked windows, 16:9, moonsilver and iron).
+- Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.
+
 ### Data: items, spells, talents and recipes from the game's own tables (Saneroki, 2026-10-20)
 - New `dev/tools/game-data`: a build's client tables (and a beta's hotfixes) as staging for nine sets that were
   empty. Forever live 70245 and beta 70450 (with its server's updates of 2026-10-18) are in the master:
