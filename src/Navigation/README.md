@@ -40,8 +40,8 @@ party), always over the map, and the full map has the quest log at its left. The
   see-through so your own quests stand out), with a quest too low to give you experience or one you cannot take yet
   (its level, a quest first: a grey !), or with quests you have done only (grey, off at first); services, each its
   own (the innkeeper's mug, the banker's bags, a class trainer's book, a profession trainer's scroll, a merchant
-  the game's anvil, one of food, reagents, poisons or ammunition the game's icon for those...), entrances, the docks of the boats (a boat) and zeppelins (an airship) with where they go, herbs,
-  ore, books (an open book): as far as the data holds them; a place the game has not confirmed says so. A tooltip
+  the game's anvil, one of food, reagents, poisons or ammunition the game's icon for those...), entrances, the docks of the boats (a boat) and zeppelins (an airship) with where they go, where
+  herbs and ore grow (*Possible herbs*, *Possible ore*), books (an open book): as far as the data holds them; a place the game has not confirmed says so. A tooltip
   says what it is: an NPC's title (*Warrior Trainer*, *Weaponsmith*), its quests with their levels, and why a grey
   one is not for you yet. One pin per thing: the game's word hides the data's. Pins that would cover each other
   show as one, in the first one's icon, its tooltip what is there. **A click on any pin**, on the small map and the
@@ -58,6 +58,18 @@ party), always over the map, and the full map has the quest log at its left. The
   around you at the full map's own scale (shown while it fits inside the map). Both are on at first. At each kind's
   right a slider sets its size on the map, 50 to 200 percent (the route: its line's thickness; the party: its
   marks; the quest areas: their opacity, 10 to 100 percent), kept with the settings.
+- **Found herbs and ore** (the pin filter's *Found herbs* and *Found ore*): the herbs and ore the game's minimap
+  shows around you now, each in the picture of what it gives (Peacebloom's flower, Copper Ore's lump) in the gold
+  ring of the game's minimap buttons, grey while your skill is too low for it; on our small map and on the game's
+  own minimap alike. Each switch is also its finder: *Found herbs* on puts Find Herbs on, off takes it off (or
+  Find Minerals in its place, while *Found ore* is on), and so on, without a sound. With both on and both spells
+  known they take turns while you move (the setting *Find Herbs and Find Minerals in turn*: every 6 seconds of
+  moving at first, 0 never), silently too, and the ones of the finder that is off meanwhile stay on the map until
+  you gather one, go far from it or it is five minutes old.
+- **Sparkles** (the setting *Sparkles on herbs and ore*, on at first): gold sparkles in the world on the herb or
+  ore your interact key would gather now, hanging from the game's plate on it, so you see it among the grass and
+  the rocks. They need the game's interact key: while they are on, *Enable Interact Key* is on and it looks all
+  around you up to 20 yards (as the game sets it for a gamepad); switched off, those settings are as they were.
 - **Quest areas:** the quest the arrow leads to, or the one under the mouse in the quest log, shaded as the game
   shades it on its map.
 - **The quest log** at the full map's left (*Quest Log* on the bar puts it in or out): your quests by zone with
@@ -292,7 +304,10 @@ party), always over the map, and the full map has the quest log at its left. The
 | `Route.lua` | The golden line of a way, the parts in view: walks gold, flights pale, ships red |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks |
 | `Marks.lua` | The player's arrow, the map pin, the party |
+| `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders switched by the pin filter and in turn, silently. No frames |
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
+| `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures |
+| `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log at the full map's left |
 | `DockWatch.lua` | At a dock, at the top of the screen: where its boats and zeppelins go and when they arrive and leave; aboard, when it lands |
@@ -306,6 +321,10 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, herbs and ore found:** the pin filter's herbs and ore of Core's data are *Possible herbs* and
+  *Possible ore*; new are *Found herbs* and *Found ore* (`Found.lua`): what the game's minimap shows now, each in
+  its own picture, the switches doubling as Find Herbs and Find Minerals, which take turns while you move, without a
+  sound (`Nodes.lua`); and sparkles on the herb or ore your interact key would gather (`Sparkles.lua`).
 - **2026-10-20, ship times:** the planner takes its ships from Core's timetables (`Data.Ships`, `Planner.SAIL` and
   `Planner.LEAP` gone): the game's transports' speed, the time once round of the ways Forever has as the original
   game's, and when each really sails on this realm, learnt on a ride; the wait for a ship is then the time to its

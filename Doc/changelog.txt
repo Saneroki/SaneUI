@@ -17,6 +17,11 @@ The bigger changes of each version, newest first.
   after each category takes an item brought to it, or the next one you
   click; the coin on the bar marks junk by clicks. Junk is sold one
   item at a time, never what is in a set or pinned.
+- Navigation: herbs and ore on the minimap in their own pictures
+  (Found herbs, Found ore in the pin filter; where they can grow is
+  Possible herbs and ore), gold sparkles on the herb or ore beside
+  you, and Find Herbs and Find Minerals in turn as you move, without
+  a sound.
 - Navigation: at the dock of a boat or a zeppelin the top of the screen
   shows where each goes and when it arrives and leaves; aboard, when
   it lands. Ride a ship once on your realm and it knows its times, and

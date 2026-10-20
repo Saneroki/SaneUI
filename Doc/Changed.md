@@ -6,6 +6,32 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 35 (Combat), 35 (spellbook), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
+### Navigation: herbs and ore found, sparkles, the finders in turn (Saneroki, 2026-10-20)
+Saneroki asked for the herbs and ore on the minimap in their own pictures, sparkles on them in the world, and Find
+Herbs and Find Minerals in turn, silently, all of it with switches in the pin filter and the settings.
+- **The pin filter** (`Navigation.lua`): Core's herbs and ore are *Possible herbs* and *Possible ore*; new kinds
+  *Found herbs* and *Found ore* (the finders' icons before them, their own size sliders), on at first (settings
+  version 3 puts them on in older settings).
+- **Found** (`Found.lua`, new): what the game's minimap shows, found by asking its tooltip at points of it
+  (`Minimap:UpdateMouseoverAtPoint` with its soft cursor on, `C_TooltipInfo.GetMinimapMouseover`) in a sweep of
+  rows shifted by half a step, out of combat and never under the mouse; a point that names a herb or ore narrowed
+  to its dot's middle by halving the way to its edges, which also gives how far a dot answers (the sweep's step).
+  Kept in yards in the player's plane; a sweep settles what its finder shows; the other finder's are kept until
+  looted beside, far or five minutes old. Drawn on a frame of ours over the game's minimap (ours or the game's in
+  its corner, turned with it where it turns): the herb's or ore's icon cut round in the gold ring of the game's
+  minimap buttons (laid as `ItemDisplay.xml` lays it), grey while your skill is too low.
+- **Nodes** (`Nodes.lua`, new): a herb or ore by its name (Core's *Objects*), its picture (what it gives by
+  gathering in *Drops*: the herb or ore whose first word its name has), your skill for it; the finders as the
+  filter's two kinds say (`Nodes.Apply`), and in turn while moving (setting *Find Herbs and Find Minerals in
+  turn*, seconds of moving, 6 at first). Every switch silent: the effect sounds off until its cast went through
+  (`UNIT_SPELLCAST_SUCCEEDED`, then 0.25 s; at most 2 s), what they were kept in the store until then.
+- **Sparkles** (`Sparkles.lua`, new; setting *Sparkles on herbs and ore*, on): gold stars (the cooldown's
+  `star4`, added light) twinkling on a frame of ours on the plate of the game's soft interact target, if it is a
+  herb or ore. The interact key's settings as the game's gamepad setup has them (on, plates for objects, 20 yards,
+  all around), set out of combat where they reach less, kept per character and put back when switched off.
+- Tests: `dev/tests/navigation.lua`, 332 checks (the names and pictures, the filter switching the finders silently,
+  the turns while moving, a herb found on its dot and gone again, the sparkles and the settings put back).
+
 ### Inventory: a "+" to put items in, the junk marker, junk sold one by one (Saneroki, 2026-10-20)
 - **"+" cells** (`Views.lua`, `Layout.lua`, `Bags.lua`): after Pinned (shown when empty too) and every category
   that takes items: an item brought to it goes in (`Menus.Drop`); clicked with nothing, the next item clicked does.

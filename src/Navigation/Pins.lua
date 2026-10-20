@@ -33,7 +33,8 @@ Pins.CONTINENT = { flight = true, travel = true, entrance = true, place = true }
 Pins.NEAR = 300       -- yards: services on the small view only so near the player
 Pins.GATHER = 18      -- units: pins nearer each other than this on the screen are gathered into one marker
 Pins.SIZE = { log = 24, quest = 22, low = 18, later = 18, done = 18, flight = 18, travel = 22, entrance = 22,
-              place = 22, service = 20, rare = 20, treasure = 18, herb = 16, ore = 16, book = 18 }
+              place = 22, service = 20, rare = 20, treasure = 18, herb = 16, ore = 16, book = 18,
+              foundHerb = 14, foundOre = 14 } -- (the found ones are drawn by Found.lua)
 
 -- The order pins are drawn in: a higher one over a lower one, and the first in a gathered marker (its icon).
 local ORDER = { log = 10, quest = 9, rare = 8, entrance = 7, flight = 6, travel = 5, place = 4, treasure = 3, service = 2,

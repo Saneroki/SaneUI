@@ -48,7 +48,7 @@ ns.TEXT = {
     nativeMap = "Show the game's map",
     nativeMapTip = "The game's own map and quest log open as before: its key, the quest log's button, a click on a quest; the mouse pushed into the top right corner still fills the screen with this map. Off: all of them open this map.",
     pins = "Pins on the map",
-    pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar. Route to the map pin: a golden line leads from you to the game's map pin (Ctrl and a click on the map), around what cannot be walked, with the flights you know where they are quicker; planned again when you leave it. Minimap dots: what the game's minimap shows around you (players, tracked herbs and ore, quest areas), on the full map too. Books and treasures only full screen; services on the small map only near you.",
+    pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar. Route to the map pin: a golden line leads from you to the game's map pin (Ctrl and a click on the map), around what cannot be walked, with the flights you know where they are quicker; planned again when you leave it. Minimap dots: what the game's minimap shows around you (players, tracked herbs and ore, quest areas), on the full map too. Possible herbs and ore: where they grow. Found herbs and ore: those the game's minimap shows now, each in its own picture (grey while your skill is too low); each switches Find Herbs or Find Minerals on and off. Books and treasures only full screen; services on the small map only near you.",
     route = "Route to the map pin",
     minimap = "Minimap dots",
     log = "Quests in your log",
@@ -58,6 +58,11 @@ ns.TEXT = {
     done = "Done quests",
     dockTimes = "Ship times at a dock",
     dockTimesTip = "At the dock of a boat or a zeppelin, at the top of the screen: where each that stops there goes, and when it arrives and leaves; aboard, when it lands. Its times show once you have ridden it on this realm (the game tells no timetable: Sane UI learns it on the ride), until then how often it sails.",
+    nodes = "Herbs and ore",
+    nodeSparkles = "Sparkles on herbs and ore",
+    nodeSparklesTip = "Gold sparkles in the world on the herb or ore your interact key would gather, so you see it among the grass and rocks. Sets the game's Enable Interact Key on and lets it find herbs and ore all around you up to 20 yards; switched off, those settings are as they were.",
+    nodeTurns = "Find Herbs and Find Minerals in turn",
+    nodeTurnsTip = "With Found herbs and Found ore both on in the pin filter and both spells known: the other one every so many seconds while you move, without a sound, so the map finds both. 0: never.",
     followAgain = "Follow again after",
     followAgainTip = "After you dragged the map away, it centres on you again once the mouse has been off it for so long. 0: only when you zoom it with the mouse wheel close in.",
     seconds = "seconds",
@@ -94,13 +99,18 @@ ns.KINDS = {
     { "service", "Services", on = true, small = true, icon = "innkeeper" },
     { "rare", "Rares", on = true, small = true, icon = "dungeonskull" },
     { "treasure", "Treasures", on = true, icon = "vignetteloot" },
-    { "herb", "Herbs", on = true, small = true, icon = "professions_tracking_herb" },
-    { "ore", "Ore", on = true, small = true, icon = "professions_tracking_ore" },
+    { "herb", "Possible herbs", on = true, small = true, icon = "professions_tracking_herb" },
+    { "ore", "Possible ore", on = true, small = true, icon = "professions_tracking_ore" },
+    -- What the game's minimap shows now (Found.lua); each switches its finder (Nodes.lua). Their icons: the
+    -- finders' own, Find Herbs and Find Minerals.
+    { "foundHerb", "Found herbs", on = true, small = true, texture = 133939 },
+    { "foundOre", "Found ore", on = true, small = true, texture = 136025 },
     { "book", "Books", on = false, icon = "lorewalking-map-icon" },
     { "group", "Party and raid", on = true, small = true, icon = "partymember" },
 }
 -- A kind's words with its icon before them, for the pin filter and the setting's list.
 function ns.KindLabel(kind)
+    if kind.texture then return ("|T%s:16:16|t %s"):format(kind.texture, kind[2]) end
     if not kind.icon then return kind[2] end
     return ("|A:%s:16:16|a %s"):format(kind.icon, kind[2])
 end
@@ -148,13 +158,16 @@ local OPTIONS = {
     { key = "dockTimes", default = true, text = ns.TEXT.dockTimes, tip = ns.TEXT.dockTimesTip },
     { key = "nativeMinimap", default = false, text = ns.TEXT.nativeMinimap, tip = ns.TEXT.nativeMinimapTip },
     { key = "nativeMap", default = false, text = ns.TEXT.nativeMap, tip = ns.TEXT.nativeMapTip },
+    { key = "nodeSparkles", default = true, text = ns.TEXT.nodeSparkles, tip = ns.TEXT.nodeSparklesTip, header = ns.TEXT.nodes },
+    { key = "nodeTurns", default = 6, min = 0, max = 30, step = 1, unit = ns.TEXT.seconds, text = ns.TEXT.nodeTurns,
+      tip = ns.TEXT.nodeTurnsTip },
 }
 -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
 Core.Edge.Options(OPTIONS, #OPTIONS + 1)
 
 -- Settings of an older shape: 1, the switch Route to the map pin became a kind of the pin filter, as the game's
 -- minimap's dots did (both on, but a route switched off); 2, the quests split: those in the log as Quests were,
--- the low and later ones on.
+-- the low and later ones on; 3, the found herbs and ore came, on.
 local function Upgrade(values, from)
     if type(values.pins) == "table" then
         if from < 1 then
@@ -165,16 +178,21 @@ local function Upgrade(values, from)
             values.pins.log = values.pins.quest
             values.pins.low, values.pins.later = true, true
         end
+        if from < 3 then values.pins.foundHerb, values.pins.foundOre = true, true end
     end
     values.route = nil
 end
 
 local routed -- whether the pin filter let the route through when it last changed
-Core.Options(ns.name, OPTIONS, { version = 2, upgrade = Upgrade, changed = function(key)
+local found -- whether the pin filter let the found herbs and ore through when it last changed ("herb ore")
+Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = function(key)
     -- The section Expand window: Core's window takes it in by itself (Edge.lua).
     if Core.Edge.KEYS[key] then return end
     if key == "view" then return ns.Guarded(ns.Window.Restyle) end
-    if key == "pinSizes" then return ns.Guarded(ns.Canvas.Refresh) end
+    if key == "pinSizes" then
+        ns.Guarded(ns.Found.Update)
+        return ns.Guarded(ns.Canvas.Refresh)
+    end
     if key == "pins" then
         -- The route planned anew (or let go) only when its own switch changed.
         local route = ns.Pins.Shows("route")
@@ -182,6 +200,12 @@ Core.Options(ns.name, OPTIONS, { version = 2, upgrade = Upgrade, changed = funct
             routed = route
             ns.Guarded(ns.Planner.Update)
         end
+        -- The finders switched only when Found herbs or Found ore changed.
+        local now = tostring(ns.Pins.Shows("foundHerb")) .. " " .. tostring(ns.Pins.Shows("foundOre"))
+        if found and now ~= found then ns.Guarded(ns.Nodes.Apply) end
+        found = now
+        ns.Guarded(ns.Nodes.Update)
+        ns.Guarded(ns.Found.Update)
         return ns.Guarded(ns.Canvas.Refresh)
     end
     if key == "nativeMinimap" then
@@ -191,6 +215,8 @@ Core.Options(ns.name, OPTIONS, { version = 2, upgrade = Upgrade, changed = funct
     end
     if key == "nativeMap" then return ns.Guarded(ns.Native.Update) end
     if key == "dockTimes" then return ns.Guarded(ns.DockWatch.Update) end
+    if key == "nodeSparkles" then return ns.Guarded(ns.Sparkles.Settings) end
+    if key == "nodeTurns" then return ns.Guarded(ns.Nodes.Update) end
 end })
 
 -- Whether a view can be drawn: Atlas only while its module is there and has not failed.
@@ -231,6 +257,9 @@ function ns.GiveBack()
     Back(ns.Hybrid.GiveBack)
     Back(ns.Window.Hide)
     Back(ns.DockWatch.Hide)
+    Back(ns.Found.Hide)
+    Back(ns.Nodes.GiveBack)
+    Back(ns.Sparkles.GiveBack)
 end
 
 function ns.OnLoad()
@@ -247,6 +276,10 @@ function ns.OnLogin()
     ns.Window.Build()
     ns.Hybrid.Start(ns.Canvas.frame)
     ns.Native.Start()
+    found = tostring(ns.Pins.Shows("foundHerb")) .. " " .. tostring(ns.Pins.Shows("foundOre"))
+    ns.Nodes.Start()
+    ns.Found.Start()
+    ns.Sparkles.Start()
 end
 
 Core.Command("map", ns.TEXT.about, function(rest)

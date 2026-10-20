@@ -329,6 +329,63 @@ C_Minimap = {
     SetDrawGroundTextures = function(on) ground = on end,
     SetIgnoreRotateMinimap = function(on) ignoreRotation = on end,
 }
+-- The finders the game lists for the character (Nodes.lua): one of them on at a time, as the game has it; each
+-- switch noted with whether the effect sounds were on at that moment.
+local gather = { tracking = { { name = "Find Herbs", spellID = 2383, active = false },
+                              { name = "Find Minerals", spellID = 2580, active = false } },
+                 switches = {}, dots = {}, asked = 0, speed = 0, plate = W.NewWidget("Frame", nil, UIParent) }
+C_Minimap.GetNumTrackingTypes = function() return #gather.tracking end
+C_Minimap.GetTrackingInfo = function(index) return gather.tracking[index] end
+C_Minimap.SetTracking = function(index, on)
+    for each, entry in ipairs(gather.tracking) do
+        if each == index then entry.active = on elseif on then entry.active = false end
+    end
+    gather.switches[#gather.switches + 1] = { index = index, on = on, sounds = C_CVar.GetCVar("Sound_EnableSFX") }
+end
+-- Its answers to a pretend mouse (Found.lua): every dot within 8 units of the point asked, its middle in the
+-- minimap's units from its own middle.
+function minimap:GetCenter() return 600, 400 end
+function minimap:SetUsingSoftCursor(on) self._soft = on end
+function minimap:UpdateMouseoverAtPoint(x, y) self._at, gather.asked = { x - 600, y - 400 }, gather.asked + 1 end
+C_TooltipInfo = { GetMinimapMouseover = function()
+    local lines = {}
+    for _, dot in ipairs(gather.dots) do
+        if (dot[1] - minimap._at[1]) ^ 2 + (dot[2] - minimap._at[2]) ^ 2 <= 64 then lines[#lines + 1] = { leftText = dot[3] } end
+    end
+    return { lines = lines }
+end }
+W.cvarInfo.Sound_EnableSFX = { default = "1", scope = "account" }
+W.cvarInfo.softTargetInteract = { default = "1", scope = "character" }
+W.cvarInfo.SoftTargetIconGameObject = { default = "0", scope = "character" }
+W.cvarInfo.SoftTargetInteractRange = { default = "10", scope = "character" }
+W.cvarInfo.SoftTargetInteractArc = { default = "0", scope = "character" }
+W.cvarInfo.rotateMinimap = { default = "0", scope = "character" }
+GetUnitSpeed = function() return gather.speed end
+IsStealthed = function() return false end
+UnitIsDeadOrGhost = function() return false end
+UnitCastingInfo = function() return nil end
+UnitChannelInfo = function() return nil end
+GetLootSourceInfo = function() return nil end
+C_Timer.NewTimer = function(delay, fn)
+    local timer = {}
+    function timer:Cancel() self.cancelled = true end
+    C_Timer.After(delay, function() if not timer.cancelled then fn(timer) end end)
+    return timer
+end
+C_Timer.NewTicker = function(every, fn)
+    local timer = {}
+    function timer:Cancel() self.cancelled = true end
+    local function Tick()
+        if timer.cancelled then return end
+        fn(timer)
+        C_Timer.After(every, Tick)
+    end
+    C_Timer.After(every, Tick)
+    return timer
+end
+-- The thing the game picked for the interact key, and its plate (Sparkles.lua).
+UnitIsGameObject = function(unit) return unit == "softinteract" and gather.soft ~= nil end
+C_NamePlate = { GetNamePlateForUnit = function(unit) if unit == "softinteract" and gather.soft then return gather.plate end end }
 
 -- The game's map and its panel functions, and the key bindings.
 local worldMap = W.NewWidget("Frame", "WorldMapFrame", UIParent)
@@ -391,8 +448,12 @@ Set(packPath .. "/NPCs.lua", "NPCs", "00000003", "int", '"name", "services", "ra
     .. 'R[73] = "70245\t\tAn Old Friend\t\tnormal\t\t"\n'
     .. 'R[74] = "70245\t\tA Waiting Giver\t\tnormal\t\t"\n'
     .. 'R[75] = "70245\t\tA Teacher\ttrainer\tnormal\t\tWarrior Trainer"\n')
-Set(packPath .. "/Objects.lua", "Objects", "00000004", "int", '"name", "kind"', '"text", "text"',
-    'R[1617] = "70245\t\tSilverleaf\therb"\n')
+Set(packPath .. "/Objects.lua", "Objects", "00000004", "int", '"name", "kind", "skill", "skillLevel"', '"text", "text", "int", "int"',
+    'R[1617] = "70245\t\tSilverleaf\therb\t182\t1"\nR[1731] = "70245\t\tCopper Vein\tore\t186\t1"\n'
+    .. 'I.byName = {}\nI.byName.Silverleaf = "1617"\nI.byName["Copper Vein"] = "1731"\n')
+-- What a herb and a vein give: the herb; stone first, then the ore (the vein's picture is the ore's).
+Set(packPath .. "/Drops.lua", "Drops", "0000000a", "text", '"items"', '"list tuple(item:int,how:text)"',
+    'R["object:1617"] = "70245\t\t765\031gather"\nR["object:1731"] = "70245\t\t2835\031gather\0302770\031gather"\n')
 Set(packPath .. "/Places.lua", "Places", "00000005", "int", '"kind", "name", "point", "to", "levelMin", "levelMax"',
     '"text", "text", "point", "int", "int", "int"',
     'R[1] = "70245\t\tdungeon\tThe Mines\t1429\03130\03130\t500\t18\t23"\n'
@@ -412,8 +473,8 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byKind = {}\nI.byKind.boat = "1\0303"\nI.byKind.flight = "2"\n'
     .. 'I.byKind.zeppelin = "4"\n')
 out = assert(io.open(packPath .. "/SaneUI_Data_World.toc", "w"))
-out:write("## Title: Data: World\n## LoadOnDemand: 1\n## X-SaneUI-Sets: NPCs, Objects, Overlays, Places, Tiles, Travel\n## X-SaneUI-Format: 1\n"
-    .. "## X-SaneUI-Game: forever\nNPCs.lua\nObjects.lua\nOverlays.lua\nPlaces.lua\nTiles.lua\nTravel.lua\n")
+out:write("## Title: Data: World\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Drops, NPCs, Objects, Overlays, Places, Tiles, Travel\n## X-SaneUI-Format: 1\n"
+    .. "## X-SaneUI-Game: forever\nDrops.lua\nNPCs.lua\nObjects.lua\nOverlays.lua\nPlaces.lua\nTiles.lua\nTravel.lua\n")
 out:close()
 W.AddPack(packPath)
 local spawnsPath = folder .. "/SaneUI_Data_Spawns"
@@ -1091,7 +1152,7 @@ do
         if widget._generator then
             widget:GenerateMenu()
             for _, item in ipairs(widget._items or {}) do
-                if type(item.text) == "string" and item.text:find("Herbs", 1, true) then filter = widget end
+                if type(item.text) == "string" and item.text:find("Possible herbs", 1, true) then filter = widget end
             end
         end
     end
@@ -1100,7 +1161,7 @@ do
         for _, kind in ipairs(ns.KINDS) do if item.text == ns.KindLabel(kind) then rows[kind[1]] = item end end
     end
     local herbs, route, minimapRow, area = rows.herb, rows.route, rows.minimap, rows.area
-    check(herbs and herbs.text == "|A:professions_tracking_herb:16:16|a Herbs" and rows.log and rows.quest and rows.low
+    check(herbs and herbs.text == "|A:professions_tracking_herb:16:16|a Possible herbs" and rows.foundHerb and rows.foundOre and rows.log and rows.quest and rows.low
         and rows.later and rows.done, "the pin filter: each kind with its icon before its words; the quests in your log, "
         .. "the quest offers, the low ones and those for later each a row of their own")
     local slider = { points = {} }
@@ -1949,10 +2010,110 @@ check(shownWay == nil, "the pin taken away: no line")
 ns.Route.Show = show
 os.execute(("rm -rf '%s'"):format(routesFolder))
 
+-- (a function of its own: the main chunk has as many locals as Lua lets it)
+;(function()
+-- Herbs and ore (Nodes.lua): known by their names, each in the picture of what it gives.
+local Nodes, Found = ns.Nodes, ns.Found
+W.items[765], W.items[2770], W.items[2835] = { name = "Silverleaf" }, { name = "Copper Ore" }, { name = "Rough Stone" }
+C_Item.GetItemInfoInstant = function(id) return id, nil, nil, nil, 3000 + id, 7, id == 765 and 9 or 7 end
+local silverleaf, vein = Nodes.Find("Silverleaf"), Nodes.Find("Copper Vein")
+check(silverleaf and silverleaf.kind == "herb" and vein and vein.kind == "ore" and Nodes.Find("A Wolf") == nil,
+    "a herb and an ore known by their names, nothing else")
+check(Nodes.Picture(silverleaf) == 3765 and Nodes.Picture(vein) == 5770, "each in the picture of its herb, its ore (not the stone)")
+
+-- The pin filter's Found herbs and Found ore switch the finders, silently.
+do
+    local chosen = Core.Copy(ns.options.pins)
+    check(chosen.foundHerb and chosen.foundOre, "found herbs and ore: on (brought up to date from an older shape)")
+    chosen.foundHerb = nil
+    Core.Set(ns.name, "pins", chosen)
+    check(gather.tracking[2].active and not gather.tracking[1].active and gather.switches[#gather.switches].sounds == "0",
+        "Found herbs off: Find Minerals comes on, the effect sounds off for it")
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-2", 2580)
+    W.Wait(Nodes.AFTER + 0.01)
+    check(C_CVar.GetCVar("Sound_EnableSFX") == "1" and ns.store.sounds == nil, "its cast through: the sounds as they were")
+    chosen = Core.Copy(chosen)
+    chosen.foundOre = nil
+    Core.Set(ns.name, "pins", chosen)
+    check(not gather.tracking[2].active and not gather.tracking[1].active, "Found ore off too: no finder")
+    W.Wait(Nodes.AFTER + 0.01)
+    check(C_CVar.GetCVar("Sound_EnableSFX") == "1", "the sounds back after it, no cast to wait for")
+    chosen = Core.Copy(chosen)
+    chosen.foundHerb, chosen.foundOre = true, true
+    Core.Set(ns.name, "pins", chosen)
+    check(gather.tracking[1].active and not gather.tracking[2].active, "both on again: Find Herbs")
+    W.Wait(Nodes.QUIET + 0.01)
+    check(C_CVar.GetCVar("Sound_EnableSFX") == "1", "no cast heard of: the sounds back after a while all the same")
+    -- In turn while you move.
+    local count = #gather.switches
+    W.Wait(ns.options.nodeTurns + 1)
+    check(#gather.switches == count, "standing still: no turn")
+    gather.speed = 7
+    W.Wait(ns.options.nodeTurns + 1)
+    check(#gather.switches == count + 1 and gather.tracking[2].active, "moving: Find Minerals in turn after the setting's seconds")
+    gather.speed = 0
+    W.Wait(Nodes.QUIET + 0.01)
+end
+
+-- Found herbs (Found.lua): the game's minimap gather.asked, the herb drawn on its dot in its picture.
+gather.tracking[1].active, gather.tracking[2].active = true, false
+for _, widget in ipairs(W.frames) do
+    if widget._parent == minimap and widget._scripts.OnUpdate then gather.overlay = widget end
+end
+check(gather.overlay and gather.overlay._shown, "a frame of ours over the game's minimap")
+local function Sweeps(count)
+    for _ = 1, count do
+        gather.overlay._scripts.OnUpdate(gather.overlay, 0.016)
+        W.Wait(Found.REST)
+    end
+end
+local function Pictures()
+    local list = {}
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == gather.overlay and widget._kind == "Texture" and widget._shown and widget._texture == 3765 then
+            list[#list + 1] = widget
+        end
+    end
+    return list
+end
+gather.dots[1] = { 20, 30, "Silverleaf" }
+Sweeps(40)
+local herbs = Pictures()
+local point = herbs[1] and herbs[1]._points[1]
+check(#herbs == 1 and point and math.abs(point[4] - 20) < 1.5 and math.abs(point[5] - 30) < 1.5 and minimap._soft == false,
+    "the herb on its dot, in its picture; the minimap's soft cursor off again")
+gather.dots[1] = nil
+Sweeps(40)
+check(#Pictures() == 0, "gathered (no dot any more): gone")
+check(gather.asked > 0, "gather.asked the game's minimap")
+
+-- Sparkles (Sparkles.lua): the game's settings for its interact key, the sparkles on the herb's gather.plate.
+check(C_CVar.GetCVar("softTargetInteract") == "3" and C_CVar.GetCVar("SoftTargetIconGameObject") == "1"
+    and C_CVar.GetCVar("SoftTargetInteractRange") == "20", "the interact key's settings as the sparkles need them")
+gather.soft = "Silverleaf"
+local unitName = UnitName
+UnitName = function(unit) if unit == "softinteract" then return gather.soft end return unitName(unit) end
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED")
+W.Wait(0)
+local sparkles
+for _, widget in ipairs(W.frames) do if widget._parent == gather.plate then sparkles = widget end end
+check(sparkles and sparkles._shown, "a herb picked: sparkles on its gather.plate")
+gather.soft = nil
+W.Fire("PLAYER_SOFT_INTERACT_CHANGED")
+W.Wait(0)
+check(not sparkles._shown, "nothing picked: no sparkles")
+Core.Set(ns.name, "nodeSparkles", false)
+check(C_CVar.GetCVar("softTargetInteract") == "1" and C_CVar.GetCVar("SoftTargetIconGameObject") == "0"
+    and C_CVar.GetCVar("SoftTargetInteractRange") == "10", "the sparkles off: the settings as they were")
+Core.Set(ns.name, "nodeSparkles", true)
+end)()
+
 -- A failure stands the module down: everything given back.
 ns.StandDown("a test")
 check(ns.off and not Window.frame:IsShown() and not Hybrid.Taken() and next(overrides) == nil and minimap:GetParent() == container,
     "standing down: the window goes, the game's minimap and keys are back")
+check(C_CVar.GetCVar("softTargetInteract") == "1" and C_CVar.GetCVar("Sound_EnableSFX") == "1" and not gather.overlay._shown,
+    "and the interact key's settings as they were, no found herbs drawn")
 
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Navigation: all %d checks passed.\n"):format(passed))

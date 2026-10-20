@@ -19,6 +19,8 @@ Camera.lua
 Live.lua
 # The pins as plain records: the game's and Core's data, one per thing, filtered, gathered. Knows no frames
 Pins.lua
+# Herbs and ore: what one is by its name, its picture, the game's finders switched silently and in turn. Knows no frames
+Nodes.lua
 # Where a player can walk: Core's walking data, unpacked per tile when first needed. Knows no frames
 Walk.lua
 # A walk between two points over the walking data, as a job of Core's scheduler. Knows no frames
@@ -46,6 +48,10 @@ PinView.lua
 Marks.lua
 # The game's minimap over ours, for its live dots; taken and given back
 Hybrid.lua
+# The herbs and ore the game's minimap shows, found by asking it and drawn over it in their own pictures
+Found.lua
+# Gold sparkles in the world on the herb or ore your interact key would gather
+Sparkles.lua
 # The game's map kept closed: its keys and every way to it open ours
 Native.lua
 # The quest log at the full map's left
