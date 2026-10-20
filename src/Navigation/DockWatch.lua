@@ -5,11 +5,12 @@ local _, ns = ...
 --  At a dock, under the game's own widgets at the top of the screen: each boat
 --  and zeppelin that stops there, where it goes, and when it comes and leaves,
 --  once a ride taught its times on this realm (Core's Data.Ships); until then how
---  often it sails. Aboard: where it lands, and in how long. While the setting
---  Ship times at a dock is on, and not while the map fills the screen.
+--  often it sails; nothing on a trip (TripView.lua shows that). While the
+--  setting Ship times at a dock is on, and not while the map fills the screen.
 --
 --      DockWatch.Rows()     what it shows now: a list of { icon, name, status, known } (knows no frames)
 --      DockWatch.Update()   looked at again now (the setting changed)
+--      DockWatch.Clock(s)   seconds as the game's clock writes them (1:05)
 --
 --  Shown within DockWatch.NEAR yards of where one stops, kept up to DockWatch.FAR
 --  (so it does not blink at the edge); looked at every DockWatch.LOOK seconds,
@@ -31,12 +32,12 @@ DockWatch.TEXT = {
     coming = "Arrives in %s, leaves in %s",
     every = "Sails every %s (ride it once for its times)",
     about = "Sails about every %s (ride it once for its times)",
-    lands = "Lands in %s",
     to = "To %s",
 }
 
 local Travel = Core.Data.Set("Travel")
 local Ships = Core.Data.Ships()
+local Trips = Core.Data.Trips()
 local frame, lines
 local shown = false      -- whether the last look showed rows (then kept up to DockWatch.FAR yards)
 local looking = false
@@ -51,6 +52,7 @@ local function Clock(seconds)
     end
     return ("%d:%02d"):format(math.floor(seconds / 60), seconds % 60)
 end
+DockWatch.Clock = Clock
 
 -- A stop's dock in the game's words (its area, and the zone where that is another); nil when not known.
 local function DockName(key, stop)
@@ -74,18 +76,12 @@ local function Icon(timetable)
     return ns.Pins.WAY_ICONS[timetable.kind] or ns.Pins.WAY_ICONS.boat
 end
 
--- Aboard: where it lands and in how long. Else each way that stops near: the stop of it there that it leaves
--- soonest, and when, known first and soonest first.
+-- Each way that stops near: the stop of it there that it leaves soonest, and when, known first and soonest
+-- first; nothing on a trip.
 function DockWatch.Rows()
     local rows = {}
-    local key, stop, left = Ships:Aboard()
-    local timetable = key and Ships:Table(key)
-    if timetable then
-        local name = timetable.stops[stop] and DockName(key, timetable.stops[stop])
-        rows[1] = { icon = Icon(timetable), name = name or ns.Pins.WAY_WORDS[timetable.kind],
-                    status = DockWatch.TEXT.lands:format(Clock(left)), known = true, at = 0 }
-        return rows
-    end
+    if Trips:Now() then return rows end
+    local timetable
     local best = {}
     for _, near in ipairs(Ships:Near(shown and DockWatch.FAR or DockWatch.NEAR)) do
         timetable = Ships:Table(near.key)

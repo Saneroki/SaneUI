@@ -21,6 +21,9 @@ local _, ns = ...
 --      planned again when the pin moves, when the player has left the line by Planner.OFF yards, or
 --                    when a flight has landed; never more often than every Planner.AGAIN seconds. Aboard a
 --                    boat or a zeppelin the line stays, and a new pin is planned from where it lands.
+--      on a flight   its way on (Core's Data.Trips), drawn anew from where the player is every Planner.AGAIN
+--                    seconds, the plan from where it lands to the pin after it; without a pin, the flight's
+--                    way alone
 --
 --  The flight points this character knows are read at the flight master (the game's flight map
 --  tells them, TAXIMAP_OPENED) and kept for the character: the world map's own list calls every
@@ -54,6 +57,7 @@ Planner.HEARTHSTONE, Planner.HOMEWARD = 6948, 8690 -- the hearthstone: its item,
 local SHIPS = { "boat", "zeppelin" }
 local Travel = Core.Data.Set("Travel")
 local Ships = Core.Data.Ships()
+local Trips = Core.Data.Trips()
 local target            -- { map, u, v }: the pin in its plane
 local plan              -- the journey being planned or drawn: { legs, at, target }
 local jobs = {}         -- the walks being searched
@@ -516,6 +520,8 @@ Make = function(start, measured, again)
             told.sea = true
             ns.Print(Planner.TEXT.sea)
         end
+        -- The leg in front (a flight's way, a ship's) stays drawn.
+        if start.keep then return Draw({}, start.keep) end
         plan = nil
         return ns.Route.Show(nil)
     end
@@ -561,10 +567,35 @@ local function Aboard(map, u, v)
     return nil
 end
 
--- Plans the way from the player to the target now; aboard a boat or zeppelin, from where it lands.
+-- On a flight (Core's Data.Trips): its way on from where the player is, as a leg in the planes; nil without one.
+local function Flying()
+    local trip = Trips:Now()
+    if not trip or trip.kind ~= "flight" or #trip.points < 2 then return nil end
+    local points = {}
+    for _, point in ipairs(trip.points) do
+        local map = Plane(point.world)
+        if map then points[#points + 1] = { map = map, u = -point.y, v = point.x } end
+    end
+    if #points < 2 then return nil end
+    return { kind = "flight", flying = true, points = points }
+end
+
+-- Plans the way from the player to the target now; aboard a boat or zeppelin, from where it lands; on a flight,
+-- from where it lands, its way on drawn in front (without a target, that alone).
 local function Plan()
     lastPlan = GetTime()
-    if not target then return ns.Route.Show(nil) end
+    local flying = Flying()
+    if flying and target then
+        local last = flying.points[#flying.points]
+        return Make({ map = last.map, u = last.u, v = last.v, keep = flying }, {}, true)
+    elseif flying then
+        plan = { legs = { flying }, at = 1 }
+        return ns.Route.Show(plan)
+    end
+    if not target then
+        plan = nil
+        return ns.Route.Show(nil)
+    end
     local map, pu, pv = Live.Player()
     if not pu then return end
     local leg = Aboard(map, pu, pv)
@@ -587,37 +618,53 @@ function Planner.Update()
     Stop()
     local wanted = ns.Pins.Shows("route") and not ns.off
     local map, x, y = Live.Waypoint()
-    if not wanted or not map then
-        target, plan = nil, nil
-        return ns.Route.Show(nil)
-    end
-    local plane = Coords.PlaneOf(map)
+    local plane = wanted and map and Coords.PlaneOf(map)
     local u, v
     if plane then u, v = Coords.MapToPlane(map, x, y, plane) end
-    if not u then
+    target = u and { map = plane, u = u, v = v } or nil
+    -- Without a pin, a flight's way is drawn all the same.
+    if not wanted or (not target and not Flying()) then
         target, plan = nil, nil
         return ns.Route.Show(nil)
     end
-    target = { map = plane, u = u, v = v }
     Plan()
+end
+
+-- On a flight: its way on drawn anew from where the player is, the rest of the plan kept (planned once from where it
+-- lands, when the flight's leg is not the plan's first yet).
+local function Fly(now)
+    local flying = Flying()
+    if not flying then return end
+    if plan and plan.legs[1] and plan.legs[1].flying and #jobs == 0 then
+        lastPlan = now
+        plan.legs[1], plan.at = flying, 1
+        return ns.Route.Show(plan)
+    end
+    if #jobs == 0 then Plan() end
 end
 
 -- A step of the canvas' tracker: the player's place (Route.Track). The line moves on to its next leg when the player
 -- is nearer to that; planned again when the player left the line (aboard a boat or zeppelin: its way), and after a
 -- flight landed.
 function Planner.Track(map, u, v, now)
-    if not target or now < nextLook then return end
+    if now < nextLook then return end
     nextLook = now + Planner.LOOK
     if not u then return end
     local flying = rawget(_G, "UnitOnTaxi") and UnitOnTaxi("player") and true or false
     if flying then
         onTaxi = true
+        if ns.Pins.Shows("route") and not ns.off and now - lastPlan >= Planner.AGAIN then Fly(now) end
         return
     end
     if onTaxi then
         onTaxi = false
+        if not target then
+            plan = nil
+            return ns.Route.Show(nil)
+        end
         if now - lastPlan >= Planner.AGAIN then return Plan() end
     end
+    if not target then return end
     if #jobs > 0 or now - lastPlan < Planner.AGAIN then return end
     if not plan then return Plan() end
     local here, next = Gap(plan.legs[plan.at], map, u, v), Gap(plan.legs[plan.at + 1], map, u, v)
@@ -652,6 +699,20 @@ Travel:OnStamp(function()
 end)
 -- A ride taught a boat's round: its trips made anew.
 Ships:OnLearn(ns.Guard(function() docks = nil end))
+-- A flight began, ended or was asked to land at its next flight point: its way, and the plan from where it lands
+-- (after it: from where the player is).
+local aloft = false
+Trips:OnChange(ns.Guard(function()
+    local trip = Trips:Now()
+    local flying = trip ~= nil and trip.kind == "flight"
+    if not flying and not aloft then return end
+    aloft = flying
+    if not ns.Pins.Shows("route") or ns.off then return end
+    Stop()
+    if target or Flying() then return Plan() end
+    plan = nil
+    ns.Route.Show(nil)
+end))
 ns.Listen("LIVE", function(what)
     if what == "waypoint" then ns.Guarded(Planner.Update) end
 end)

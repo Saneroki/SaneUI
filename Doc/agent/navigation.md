@@ -114,6 +114,11 @@ its next departure once a ride on the realm taught its times (`Ships:Next`), els
 (setting `dockTimes`) shows at a dock where its ships go and when they arrive and leave, aboard when it lands
 (under `UIWidgetTopCenterContainerFrame`, a guarded 1-2 s chain). Ship periods: Travel's `wait` from batch 6.
 
+Trips (2026-10-20): `TripView.lua` (setting `tripView`) draws Core's `Data.Trips` (flight, ship, tram) under the
+top-centre widgets with Core's bar, stop marks (`TaxiNode_Neutral`) and the game's leave button art for Request
+Stop; `Planner.lua` draws a flight's way on as the first leg (`Flying`, `Fly`, `Trips:OnChange`). The Deeprun Tram
+is Travel's key 1000369 (kind `tram`, `dev/tools/travel-data`).
+
 Not yet: portals and lifts in routes, doodads in the walking data (fences, trees), search, the guide, dungeon maps and floors, the minimap's small parts
 (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (210
 checks), `dev/tests/walk.py` (28).

@@ -189,6 +189,9 @@ C_Map = {
 C_SuperTrack = { IsSuperTrackingUserWaypoint = function() return tracked end,
                  SetSuperTrackedUserWaypoint = function(on) tracked = on end }
 C_QuestLog = { GetQuestsOnMap = function(map) return map == 1429 and { { questID = 7, x = 0.4, y = 0.4 } } or nil end }
+-- The flight master's: a flight taken, a stop asked for (Core's Data.Trips hooks both once the world is there).
+TakeTaxiNode = function() end
+TaxiRequestEarlyLanding = function() end
 C_TaxiMap = { GetTaxiNodesForMap = function(map)
     if map ~= 1429 then return {} end
     return { { nodeID = 2, name = "Goldshire", position = CreateVector2D(0.2, 0.8), faction = 2, atlasName = "TaxiNode_Alliance" },
@@ -460,9 +463,9 @@ Set(packPath .. "/Places.lua", "Places", "00000005", "int", '"kind", "name", "po
     .. 'R[2] = "70245\t\tmailbox\t\t1429\03170\03170\t\t\t"\n')
 -- The boat's way round has its docks on the maps too: in the east hall, and on Kalimdor in the game's area 12.
 Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
-    '"kind", "name", "from", "to", "fromNode", "toNode", "length", "path", "docks", "dockAreas"',
+    '"kind", "name", "from", "to", "fromNode", "toNode", "length", "path", "docks", "dockAreas", "time"',
     '"text", "text", "point", "point", "int", "int", "number", "list tuple(x:number,y:number,map:int,stay:number,jump:bool)", '
-    .. '"list point", "list int"',
+    .. '"list point", "list int", "number"',
     'R[1] = "70245\t\tboat\tTo the west\t1429\03190\03190\t1414\03150\03150\t\t\t"\n'
     .. 'R[2] = "70245\t\tflight\t\t\t\t2\t5\t6000"\n'
     .. 'R[3] = "70245\t\tboat\t\t\t\t\t\t3898.1\t-8600\031-450\0310\03160\030-8000\031-2000\0305000\031-9000\0311\031\0311'
@@ -470,8 +473,12 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     .. '\t1429\03172.5\0316.7\0301414\03189.6\03135\t0\03012"\n'
     .. 'R[4] = "70245\t\tzeppelin\t\t\t\t\t\t\t-8650\031-400\0310\03130\030-8000\031500\030-500\0310\0312991\031\0311'
     .. '\030-1000\0310\031\03130\030-500\0310\030-8000\031500\0310\031\0311\t1429\03170\03110\0302521\03150\03180\t0\0300"\n'
-    .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byKind = {}\nI.byKind.boat = "1\0303"\nI.byKind.flight = "2"\n'
-    .. 'I.byKind.zeppelin = "4"\n')
+    -- Two flights with their ways (Alpha to Beta to Gamma, 1000 yards each) and the tram (2000 yards in 50 seconds).
+    .. 'R[5] = "70245\t\tflight\t\t\t\t20\t21\t1000\t0\0310\0301000\0310"\n'
+    .. 'R[6] = "70245\t\tflight\t\t\t\t21\t22\t1000\t1000\0310\0301000\0311000"\n'
+    .. 'R[7] = "70245\t\ttram\tDeeprun Tram\t\t\t\t\t2000\t0\0310\031369\0302000\0310\t\t\t50"\n'
+    .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byFromNode[20] = "5"\nI.byFromNode[21] = "6"\nI.byKind = {}\n'
+    .. 'I.byKind.boat = "1\0303"\nI.byKind.flight = "2\0305\0306"\nI.byKind.tram = "7"\nI.byKind.zeppelin = "4"\n')
 out = assert(io.open(packPath .. "/SaneUI_Data_World.toc", "w"))
 out:write("## Title: Data: World\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Drops, NPCs, Objects, Overlays, Places, Tiles, Travel\n## X-SaneUI-Format: 1\n"
     .. "## X-SaneUI-Game: forever\nDrops.lua\nNPCs.lua\nObjects.lua\nOverlays.lua\nPlaces.lua\nTiles.lua\nTravel.lua\n")
@@ -2007,8 +2014,12 @@ local function Rides()
     end
     local rows = DockWatch.Rows()
     now = W.serverStart + W.clock
-    check(#rows == 1 and rows[1].name:find("The Far Shore", 1, true) and rows[1].status:find("Lands in", 1, true)
-        and rows[1].icon == ns.Pins.WAY_ICONS.boat, "aboard: where the boat lands, and in how long")
+    local trip = Core.Data.Trips():Now()
+    local lines = trip and ns.TripView.Lines(trip)
+    local _, _, sailing = Ships:Aboard()
+    check(#rows == 0 and trip and trip.kind == "boat" and trip.key == 3 and #trip.stops == 2 and sailing
+        and math.abs(trip.left - sailing) < 1.1 and lines.title:find("The Far Shore", 1, true),
+        "aboard: the trip is the boat's, to where it lands, and in how long; the dock watch steps aside")
     W.place = { -8580, -470, 5, 0 }
     W.Wait(5)
     rows = DockWatch.Rows()
@@ -2034,6 +2045,85 @@ local function Rides()
     DockWatch.Update()
 end
 Rides()
+-- The trip (Core's Data.Trips) and its view (TripView.lua): a flight of two hops taken at the flight master (Alpha,
+-- Beta, Gamma: the set's flights 20 to 21 and 21 to 22, 2000 yards), flown at 25 yards a second; then the tram.
+local function Flights()
+    local Trips, TripView = Core.Data.Trips(), ns.TripView
+    local onTaxi = false
+    UnitOnTaxi = function() return onTaxi end
+    GetTaxiMapID = function() return 1429 end
+    C_TaxiMap.GetAllTaxiNodes = function()
+        return { { slotIndex = 1, nodeID = 20 }, { slotIndex = 2, nodeID = 21 }, { slotIndex = 9, nodeID = 22 } }
+    end
+    GetNumRoutes = function(slot) return slot == 9 and 2 or 0 end
+    TaxiGetNodeSlot = function(_, hop, source) return ({ { 1, 2 }, { 2, 9 } })[hop][source and 1 or 2] end
+    local names = { [1] = "Alpha", [2] = "Beta", [9] = "Gamma" }
+    TaxiNodeName = function(slot) return names[slot] end
+    local function Fly()
+        local start = W.clock
+        W.place = function()
+            local s = math.min(2000, (W.clock - start) * 25)
+            if s <= 1000 then return { s, 0, 100, 0 } end
+            return { 1000, s - 1000, 100, 0 }
+        end
+        TakeTaxiNode(9)
+        onTaxi = true
+        W.Fire("PLAYER_CONTROL_LOST")
+    end
+    -- Without a map pin: the flight's way alone on the map.
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Fly()
+    local trip = Trips:Now()
+    check(trip and trip.kind == "flight" and #trip.stops == 3 and trip.stops[1].name == "Alpha" and trip.stops[2].name == "Beta"
+        and trip.stops[3].name == "Gamma" and near(trip.yards, 2000) and trip.next == 2 and near(trip.left, 2000 / Trips.PACE),
+        "a flight taken at the flight master: its stops and its way, its time at the guessed pace until measured")
+    for _ = 1, 20 do W.Wait(1) end
+    trip = Trips:Now()
+    check(math.abs(trip.at - 500) < 26 and math.abs(trip.left - 60) < 1 and math.abs(trip.nextLeft - 20) < 1
+        and trip.canLand and Trips:CanLand(), "on its way: how far along, the time to the next stop and to the end at its own pace")
+    Frames(2)
+    local lines = TripView.Lines(trip)
+    check(TripView.frame and TripView.frame:IsShown() and lines.title == "Alpha to Gamma" and lines.next == "Next: Beta, 0:20"
+        and lines.left == "1:00" and TripView.exit:IsShown(), "its view at the top of the screen, with the game's Request Stop")
+    Planner.Track(1415, 0, 500, GetTime() + 100)
+    Frames(2)
+    local leg = shownWay and shownWay.legs[1]
+    check(leg and leg.flying and #shownWay.legs == 1 and near(leg.points[1].u, 0) and math.abs(leg.points[1].v - 500) < 30
+        and near(leg.points[#leg.points].u, -1000) and near(leg.points[#leg.points].v, 1000),
+        "on the map: the flight's way on from where the player is")
+    TripView.exit._scripts.OnClick(TripView.exit)
+    trip = Trips:Now()
+    check(trip.landing and #trip.stops == 2 and trip.stops[2].name == "Beta" and not Trips:CanLand()
+        and TripView.Lines(trip).next == "Landing at Beta", "Request Stop: the flight ends at the next flight point")
+    for _ = 1, 20 do W.Wait(1) end
+    onTaxi = false
+    W.Fire("PLAYER_CONTROL_GAINED")
+    Frames(2)
+    check(Trips:Now() == nil and not Core.Character(Core.name).trip and not Core.Character(Core.name).flightPaces
+        and not TripView.frame:IsShown(), "landed early: the trip ends, nothing learnt from it")
+    Planner.Track(1415, -1000, 1000, GetTime() + 200)
+    check(shownWay == nil, "after the flight, without a map pin: no line")
+    -- A whole flight: its pace learnt for this character.
+    Fly()
+    for _ = 1, 82 do W.Wait(1) end
+    onTaxi = false
+    W.Fire("PLAYER_CONTROL_GAINED")
+    local paces = Core.Character(Core.name).flightPaces
+    check(paces and #paces == 1 and math.abs(paces[1] - 25) < 0.5, "a flight flown to its end: its pace kept for this character")
+    -- The tram: a place in its map moving along its stations' line at its speed (2000 yards in 50 seconds).
+    local start = W.clock
+    W.place = function() return { (W.clock - start) * 40, 0, -4, 369 } end
+    for _ = 1, 10 do W.Wait(1) end
+    trip = Trips:Now()
+    check(trip and trip.kind == "tram" and trip.next == 2 and math.abs(trip.at - 400) < 41 and math.abs(trip.left - 40) < 1.1
+        and TripView.Lines(trip).title == "Deeprun Tram: Tram to Tram", "on the tram: how far along, how long to the station")
+    W.place = nil
+    W.Wait(3)
+    check(Trips:Now() == nil, "off the tram: no trip")
+end
+Flights()
 -- The hearthstone: its place learnt where it is bound, with the game's name of it.
 local bindName = "Lakeside Inn"
 GetBindLocation = function() return bindName end

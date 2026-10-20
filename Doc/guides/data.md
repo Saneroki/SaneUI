@@ -543,6 +543,25 @@ Ships:OnLearn(fn)     -- fn(key) on the frame after a ride taught its times
 - **Looked at** every `Ships.LOOK` seconds, every `Ships.CLOSE` near a stop or aboard; not in a taxi's flight,
   and nothing while *Travel* is not loaded (Navigation asks for it at login).
 
+### The trip underway (`Data.Trips`)
+
+```lua
+local Trips = SaneUI.Core.Data.Trips()
+local trip = Trips:Now()   -- nil, or { kind, stops = { { name or map and area, at } }, yards, at, next, left, nextLeft,
+                           --   landing, canLand, points = { { world, x, y } } }
+Trips:Land()               -- a flight lands at its next flight point (only from a click)
+Trips:OnChange(fn)         -- fn() after a trip began, ended, or a flight's end changed
+```
+
+- **A flight** is read at the flight master (`TakeTaxiNode`: its hops by the game's flight point IDs, each the
+  set's flight with its path); kept per character (`Core.Character`) until it lands, so a `/reload` in the air
+  finds it again. How far along: the player's place on the hops' points; how long: the yards left at the pace
+  measured on this flight, before that the median of the character's last `Trips.KEEP` flights (kept per character,
+  a flight flown to its end), `Trips.PACE` before the first. Asked to land early (`TaxiRequestEarlyLanding`, ours
+  or the game's button), its end is the next flight point and nothing is learnt from it.
+- **A boat or a zeppelin** as `Data.Ships` finds the player aboard; **the tram** (the set's way of kind `tram`):
+  a place in its map moving along its stations' line at `Trips.SHARE` of its speed (its run's `time`) or more.
+
 ### Loading
 
 - **Packs are found at first need,** by their TOC lines (`C_AddOns.GetAddOnMetadata`, without loading them):

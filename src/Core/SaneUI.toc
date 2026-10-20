@@ -61,6 +61,8 @@ Data\Data.lua
 Data\Map.lua
 # The boats' and zeppelins' timetables, and when they sail on this realm, learnt on a ride (Data.Ships)
 Data\Ships.lua
+# The trip the player is on: a flight, a boat or zeppelin, the tram; its stops, how far along, how long (Data.Trips)
+Data\Trips.lua
 # What each of the account's characters has (bags, bank, worn), kept in the pack Characters' saved variable
 Data\Characters.lua
 # Aliases and notes the player gives other players, set in the game's menu of a player (personal, never shared)

@@ -9,6 +9,11 @@ staging for Core's set Travel (pack World): the ways Navigation's route planner 
                   (alliance or horde where only that side's flight masters stand at both ends; none: both), cost
                   (copper), length (yards along the game's path) and path (its points in the world's yards, x to
                   the north and y to the west)
+    the tram      the Deeprun Tram (no taxi path moves it): kind tram, name (its map's, the game's), path (its two
+                  stations in its map's yards: the game's triggers there, where one leaves it, each with its map),
+                  length (yards between them), time (seconds a run from one to the other takes, as its cars move
+                  in the game's TransportAnimation, the same for every car within AGREE seconds), docks and
+                  dockAreas (the cities' entrances to each station, placed as a transport's docks)
     a transport   a boat or a zeppelin, one way round as the game moves it (a path between no flight points): kind
                   (a boat when all its way lies within FLOAT yards of the sea's level, else a zeppelin), length
                   (yards it moves along its way once round, its leaps not counted) and path: its points, each with
@@ -29,7 +34,8 @@ fewer than two docks (a moving thing, no way between places); and a transport wh
 transport with more docks (or, with the same ones, a newer ID): the older way the newer one replaced. Two stops
 within SAME yards on one map are one dock.
 
-The input, of the build BUILD: a folder of the game's client tables as CSV (TaxiNodes, TaxiPath, TaxiPathNode, and
+The input, of the build BUILD: a folder of the game's client tables as CSV (TaxiNodes, TaxiPath, TaxiPathNode,
+AreaTrigger, Map and TransportAnimation for the tram, and
 for placing the docks those map-data reads: AreaTable, UiMap, UiMapAssignment, WMOAreaTable), and its terrain files
 as map-data takes them.
 
@@ -49,6 +55,7 @@ BUILD = 70245
 STRAIGHT = 2.0  # yards
 FLOAT = 5.0  # yards over or under the sea's level (0) a boat's way keeps to
 SAME = 20.0  # yards between two stops of one dock
+AGREE = 0.005  # seconds the tram's cars' runs may differ by
 ALLIANCE, HORDE = 0x1, 0x2  # the flight points' sides in TaxiNodes' Flags
 TELEPORT, STOP = 0x1, 0x2  # TaxiPathNode's Flags: the transport leaps after this point; it stops here
 
@@ -173,6 +180,61 @@ def transport(path, placer=None):
     return fields
 
 
+# The Deeprun Tram, by the game's IDs: its map; its two stations, each the trigger in that map where one leaves
+# the tram and the trigger in the city that leads to it (AreaTrigger); its cars (TransportAnimation); and our own
+# number for it in the set (the game has no path for it).
+TRAM_MAP = 369
+TRAM_STATIONS = ((2166, 2175), (2171, 2173))
+TRAM_CARS = range(176080, 176086)
+TRAM_KEY = 1000369
+
+
+def tram(folder, placer=None):
+    """The tram's fields, or None when the tables do not have it whole (a station, a car) or its cars disagree."""
+    triggers = {int(row["ID"]): row for row in table(folder, "AreaTrigger")}
+    if any(a not in triggers or b not in triggers for a, b in TRAM_STATIONS):
+        return None
+    moves = {}
+    for row in table(folder, "TransportAnimation"):
+        car = int(row["TransportID"])
+        if car in TRAM_CARS:
+            moves.setdefault(car, set()).add((int(row["TimeIndex"]), float(row["Pos[0]"]), float(row["Pos[1]"])))
+    runs = []
+    for car in TRAM_CARS:
+        rows = sorted(moves.get(car, ()))
+        if not rows:
+            return None
+        far = max(math.hypot(x, y) for _, x, y in rows)
+        there = [t for t, x, y in rows if far - math.hypot(x, y) < 0.01]
+        home = [t for t, x, y in rows if math.hypot(x, y) < 0.01 and t < there[0]]
+        if not home:
+            return None
+        runs.append((there[0] - max(home)) / 1000)
+    if max(runs) - min(runs) > AGREE:
+        return None
+    path, places = [], []
+    for station, entrance in TRAM_STATIONS:
+        here, door = triggers[station], triggers[entrance]
+        if int(here["ContinentID"]) != TRAM_MAP:
+            return None
+        point = {"x": float(here["Pos[0]"]), "y": float(here["Pos[1]"])}
+        if not path:
+            point["map"] = TRAM_MAP
+        path.append(point)
+        places.append((int(door["ContinentID"]), float(door["Pos[0]"]), float(door["Pos[1]"]), float(door["Pos[2]"])))
+    name = next((row["MapName_lang"] for row in table(folder, "Map") if int(row["ID"]) == TRAM_MAP), "")
+    fields = {"kind": "tram", "length": round(math.hypot(path[1]["x"] - path[0]["x"], path[1]["y"] - path[0]["y"]), 1),
+              "time": sorted(runs)[len(runs) // 2], "path": path}
+    if name:
+        fields["name"] = name
+    if placer:
+        placed = [(placer.place(*door), placer.area(*door)) for door in places]
+        if all(point for point, _ in placed):
+            fields["docks"] = [point for point, _ in placed]
+            fields["dockAreas"] = [area for _, area in placed]
+    return fields
+
+
 def main():
     if len(sys.argv) != 3:
         print(__doc__.strip().splitlines()[-1], file=sys.stderr)
@@ -201,16 +263,20 @@ def main():
             left += 1
         else:
             lines.append((key, transport(path, placer)))
+    trams = tram(folder, placer)
+    if trams:
+        lines.append((TRAM_KEY, trams))
     lines.sort(key=lambda line: line[0])
     STAGING.parent.mkdir(parents=True, exist_ok=True)
     with open(STAGING, "w", encoding="utf-8") as out:
         for key, fields in lines:
             line = {"set": "Travel", "key": key, "game": "forever", "build": BUILD, "src": "game", "fields": fields}
             out.write(json.dumps(line, separators=(",", ":")) + "\n")
-    ships = sum(1 for _, fields in lines if fields["kind"] != "flight")
+    ships = sum(1 for _, fields in lines if fields["kind"] in ("boat", "zeppelin"))
     placed = sum(len(fields.get("docks", ())) for _, fields in lines)
-    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines) - ships} flights, {ships} boats and zeppelins with "
-          f"{placed} docks on the zone maps ({left} ways left out; "
+    flights = sum(1 for _, fields in lines if fields["kind"] == "flight")
+    print(f"Wrote {STAGING.relative_to(ROOT)}: {flights} flights, {ships} boats and zeppelins, "
+          f"{'the tram' if trams else 'no tram'}, with {placed} docks on the zone maps ({left} ways left out; "
           f"replaced: {', '.join(map(str, sorted(gone))) or 'none'}).")
     return 0
 

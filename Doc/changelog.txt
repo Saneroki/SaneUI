@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: your trip at the top of the screen, on a flight, a ship
+  or the Deeprun Tram: where it goes, how far you are, the next stop
+  and the time to it, the time to the end. On a flight, Request Stop
+  lands you at the next flight point. While you fly, the map shows
+  the flight's path from where you are, and on to your map pin.
 - Navigation: the coast keeps its docks, piers, bridges and beaches,
   cut finer up close; and a new map view, Blended: the hand-drawn
   maps far out fading into the land as it truly lies close in.

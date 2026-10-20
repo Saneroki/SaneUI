@@ -3,8 +3,36 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 176 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 351 (Navigation), 85 (Inventory), 90 (sheet), 176 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Navigation: your trip on screen, the flight's way on the map, the tram (Saneroki, 2026-10-20)
+- **Core's trip underway** (new `src/Core/Data/Trips.lua`, `Data.Trips()`, in Core's TOC): the trip the player is
+  on, a flight, a boat or a zeppelin, the tram: its stops, how far along, the time to the next stop and to the end;
+  `Now`, `CanLand`, `Land`, `OnChange`. A flight is read at the flight master (`hooksecurefunc("TakeTaxiNode")`:
+  its hops by the game's flight point IDs, each the set's flight with its path) and kept for the character until
+  it lands, so a `/reload` in the air finds it; how far along from the player's place on its points; how long at
+  the pace measured on this flight (after 8 seconds), before that the median of the character's last five
+  flights' paces (a flight flown to its end), 30 yards a second before the first. Asked to land early
+  (`TaxiRequestEarlyLanding`, hooked), it ends at the next flight point and teaches nothing. A ship aboard from
+  `Data.Ships` (`Aboard` gives the run and the yards sailed too); the tram by the player's place in its map moving
+  along its stations' line at its speed.
+- **The tram** (set *Travel*, key 1000369, kind `tram`, `dev/tools/travel-data` from the game's tables): the
+  Deeprun Tram's two stations (the game's triggers in its map where one leaves it), the run's 58.633 seconds (its
+  six cars' motion, alike to the millisecond), the cities' entrances to it as its docks (pins on the city maps);
+  the schema's notes say what a tram's path and docks are.
+- **The trip view** (new `TripView.lua`, in Navigation's TOC; setting *Your trip on screen*, on): under the
+  game's widgets at the top of the screen, from where to where, Core's bar of the way behind with a flight point's
+  mark at each stop (dim once passed), the next stop and its time, the time to the end, the zone below; on a
+  flight with a stop before its end the game's own *Request Stop* button (its art, words and look once asked).
+  Drawn every second while a trip lasts, at once when one begins or ends; not while the map fills the screen.
+  The dock watch steps aside on a trip (its aboard row gone; `DockWatch.Clock`).
+- **The line while flying** (`Planner.lua`): the flight's way on from the player is the line's first leg, drawn
+  anew every 3 seconds, the plan from where it lands after it; without a map pin, the flight's way alone; after
+  landing, planned from the player (or the line goes). A leg in front (a flight's, a ship's) stays drawn when no
+  way on from it is found.
+- Tests: `dev/tests/navigation.lua` (351 checks: a flight of two hops taken, flown, measured, drawn on the map,
+  landed early by Request Stop, flown whole and its pace kept; the tram; a ship's trip; the trip view).
 
 ### Navigation: the coast keeps its docks; the view Blended (Saneroki, 2026-10-20)
 - `dev/tools/terrain-art`: the land's alpha fades out over the first yard of water (`SHALLOW`), so a beach one wades

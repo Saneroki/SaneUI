@@ -90,15 +90,22 @@ party), always over the map, and the full map has the quest log at its left. The
   your character knows where that is quicker (visit a flight master once for the map to know yours). A pin on
   the other continent or on Zephras Isle is reached by boat or zeppelin, the line red from pier to pier, and the
   hearthstone is taken where it is quickest (the map learns its place where you bind it, or the first time you use
-  it). Leave the line and it is planned again; after a flight it goes on from where you landed; aboard a ship it
-  waits until you have landed. The game tells no ship's timetable: its sailing comes from its way at the game's
+  it). Leave the line and it is planned again; on a flight the line shows the flight's way on from where you are,
+  pin or none, and from where it lands on to the pin; aboard a ship it waits until you have landed. The game tells no ship's timetable: its sailing comes from its way at the game's
   transports' speed, and once you have ridden a ship on your realm the map knows when it really sails there and
   counts the wait for the next one (until then half its time once round). *Route to the map pin* in the pin
   filter switches it off.
 - **Ship times at a dock:** at the dock of a boat or a zeppelin, under the game's own notes at the top of the
-  screen, each that stops there: where it goes, when it arrives and when it leaves, counting down; aboard, when
-  it lands. A ship you have not ridden on this realm yet shows how often it sails; one ride teaches its times
-  (kept on this computer for the realm, half a day). *Ship times at a dock* in the settings switches it off.
+  screen, each that stops there: where it goes, when it arrives and when it leaves, counting down. A ship you have
+  not ridden on this realm yet shows how often it sails; one ride teaches its times (kept on this computer for the
+  realm, half a day). *Ship times at a dock* in the settings switches it off.
+- **Your trip on screen:** on a flight, a boat, a zeppelin or the Deeprun Tram, at the top of the screen: from
+  where to where, a bar of the way behind you with a flight point's mark at each stop on it (dim once passed), the
+  next stop and the time to it, the time to the end, and the zone below you. On a flight with a stop before its
+  end, the game's own *Request Stop* button: you land at the next flight point, and the trip ends there. A flight's
+  time comes from your own pace on it, before that from your character's last flights; a ship's from its
+  timetable; the tram's from the game's own. A `/reload` in the air finds the flight again. *Your trip on screen*
+  in the settings switches it off.
 - **Map view** (the buttons on the full map's bar, or the setting on the page *Navigation*): *Parchment*,
   *Blended* or *Scrying* (the default), and *Atlas* while that module is switched on in the addon list; for both
   views and at every zoom (in the code `sketches`, `blend`, `terrain`, `atlas`). *Blended* is Parchment out to a
@@ -256,7 +263,9 @@ party), always over the map, and the full map has the quest log at its left. The
   arrives; aboard a ship a new pin is planned from where it lands. The known flight points are read at the flight
   master, the hearthstone's place where it is bound (`HEARTHSTONE_BOUND`) or where it brought the character, both
   kept per character; the hearthstone counts while it is in the bags and bound there (`GetBindLocation`), its
-  cooldown as a wait. Without walking data, straight lines.
+  cooldown as a wait. Without walking data, straight lines. On a flight (Core's `Data.Trips`) its way on is the
+  line's first leg, drawn anew from the player every `Planner.AGAIN` seconds, the plan from where it lands after
+  it; without a pin that leg alone.
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
   pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second).
 - **Indoors** (`Indoors.lua`): inside a building or a cave (the game's `IsIndoors`) the indoor map of the building
@@ -331,7 +340,8 @@ party), always over the map, and the full map has the quest log at its left. The
 | `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log at the full map's left |
-| `DockWatch.lua` | At a dock, at the top of the screen: where its boats and zeppelins go and when they arrive and leave; aboard, when it lands |
+| `DockWatch.lua` | At a dock, at the top of the screen: where its boats and zeppelins go and when they arrive and leave |
+| `TripView.lua` | The trip you are on (Core's `Data.Trips`), at the top of the screen: the way, its stops, the times; *Request Stop* on a flight |
 | `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the pin filter |
 | `Window.lua` | Core's window: the top right corner, the full screen, the two cameras, the view buttons |
 | `Art/Terrain/*.blp` | The terrain's overview: the game's minimap textures, smaller, the water cut away, made by `dev/tools/terrain-art` from the game's files |
@@ -351,6 +361,12 @@ Tests: `dev/tests/navigation.lua`.
   *Possible ore*; new are *Found herbs* and *Found ore* (`Found.lua`): what the game's minimap shows now, each in
   its own picture, the switches doubling as Find Herbs and Find Minerals, which take turns while you move, without a
   sound (`Nodes.lua`); and sparkles on the herb or ore your interact key would gather (`Sparkles.lua`).
+- **2026-10-20, the trip on screen:** `TripView.lua` (setting *Your trip on screen*) shows the trip Core's
+  `Data.Trips` finds: a flight (its route read at the flight master), a boat or a zeppelin, the Deeprun Tram (Core's
+  set *Travel*, from the game's tables); the game's *Request Stop* button on a flight. While flying, the planner
+  draws the flight's way on from the player (`Planner.lua`, `Fly`) and plans from where it lands; without a map
+  pin, the flight's way alone; a leg in front stays drawn when no way on is found. The dock watch steps aside on a
+  trip.
 - **2026-10-20, ship times:** the planner takes its ships from Core's timetables (`Data.Ships`, `Planner.SAIL` and
   `Planner.LEAP` gone): the game's transports' speed, the time once round of the ways Forever has as the original
   game's, and when each really sails on this realm, learnt on a ride; the wait for a ship is then the time to its

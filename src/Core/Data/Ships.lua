@@ -20,8 +20,10 @@ local Core = SaneUI.Core
 --                              -- realm are not known (no ride seen, or longer ago than Ships.TRUST)
 --      Ships:Near(yards)       -- the stops within so many yards of the player now: a list of { key, stop }
 --      Ships:Seen(key)         -- when its times were last learnt here (server time) and how many rides did
---      Ships:Aboard()          -- aboard a boat or zeppelin now: its key, the stop it comes to next and the seconds
---                              -- until it arrives there (from where the player is along its way); nil else
+--      Ships:Aboard()          -- aboard a boat or zeppelin now: its key, the stop it comes to next, the seconds
+--                              -- until it arrives there (from where the player is along its way), the run it is
+--                              -- on (its number in runs: from stop run to the next) and the yards sailed of it;
+--                              -- nil else
 --      Ships.Timetable(record) -- a timetable from a record of the set (not kept; Table keeps the set's own)
 --      Ships.Run(yards)        -- the seconds a run of so many yards takes from one stop to the next
 --      Ships:OnLearn(fn)       -- fn(key) on the frame after a ride taught its times
@@ -253,8 +255,11 @@ function Ships:Aboard()
     local timetable = self:Table(aboard.key)
     local run = timetable and timetable.runs[aboard.run]
     if not run then return nil end
-    local left = (Run(run.yards) - Into(run.yards, aboard.s)) * timetable.stretch - (GetTime() - aboard.at)
-    return aboard.key, aboard.run % #timetable.stops + 1, math.max(0, left)
+    local since = GetTime() - aboard.at
+    local left = (Run(run.yards) - Into(run.yards, aboard.s)) * timetable.stretch - since
+    -- The yards sailed since that look, at full speed at most.
+    local s = math.min(run.yards, aboard.s + since * Ships.SPEED / timetable.stretch)
+    return aboard.key, aboard.run % #timetable.stops + 1, math.max(0, left), aboard.run, s
 end
 
 function Ships:Seen(key)

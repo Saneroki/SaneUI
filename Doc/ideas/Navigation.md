@@ -946,6 +946,20 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     widgets at the top of the screen, a row for each ship that stops there: its icon, where it goes, and when it
     arrives and leaves, counting down (grey, how often it sails, until a ride taught its times); aboard, when
     it lands. The setting *Ship times at a dock* (on); not while the map fills the screen.
+  - **The trip on screen (built 2026-10-20, `TripView.lua`, Core's `Data.Trips`):** on a flight, a ship or the
+    tram, under the game's widgets at the top of the screen: from where to where, Core's bar (the experience bar's
+    art) of the way behind with a flight point's mark at each stop, the next stop and its time, the time to the
+    end, the zone below; on a flight with a stop before its end the game's own *Request Stop* button
+    (`TaxiRequestEarlyLanding`, its art and words). A flight's route is read at the flight master
+    (`TakeTaxiNode`: its hops, each the set's flight), kept per character for a `/reload` in the air; how far
+    along from the player's place on the hops' points, how long at the pace measured on this flight, before that
+    the median of the character's last five. The setting *Your trip on screen* (on). While flying the planner
+    draws the flight's way on as the line's first leg and plans from where it lands; without a pin, the flight's
+    way alone.
+  - **The tram (2026-10-20):** the Deeprun Tram is a way of Core's set *Travel* (kind `tram`), from the game's own
+    tables (`dev/tools/travel-data`): its two stations (the triggers in its map where one leaves it), the run's
+    seconds (its cars' motion, the same for every car), the cities' entrances as its docks (pins). Not yet in
+    the planner's journeys.
   - **In the journey:** each dock a place of the graph, boarded and left at its pier (the floor of land nearest
     where the ship stops), a way from every dock of a ship to every other; the graph spans the planes of the
     player and the pin (a continent, or Zephras Isle: below), each place in its own plane, walks only within one

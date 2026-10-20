@@ -57,6 +57,8 @@ ns.TEXT = {
     low = "Low-level quests",
     later = "Quests for later",
     done = "Done quests",
+    tripView = "Your trip on screen",
+    tripViewTip = "On a flight, a boat, a zeppelin or the tram, at the top of the screen: where it goes, a bar of the way behind you with each flight point on it, the next stop and the time to it, the time to the end, and the zone below you. On a flight with a stop before its end, the game's Request Stop button lands you at the next flight point.",
     dockTimes = "Ship times at a dock",
     dockTimesTip = "At the dock of a boat or a zeppelin, at the top of the screen: where each that stops there goes, and when it arrives and leaves; aboard, when it lands. Its times show once you have ridden it on this realm (the game tells no timetable: Sane UI learns it on the ride), until then how often it sails.",
     nodes = "Herbs and ore",
@@ -157,6 +159,7 @@ local OPTIONS = {
     { key = "pinSizes", default = {} },
     { key = "followAgain", default = 10, min = 0, max = 60, step = 5, unit = ns.TEXT.seconds, text = ns.TEXT.followAgain,
       tip = ns.TEXT.followAgainTip },
+    { key = "tripView", default = true, text = ns.TEXT.tripView, tip = ns.TEXT.tripViewTip },
     { key = "dockTimes", default = true, text = ns.TEXT.dockTimes, tip = ns.TEXT.dockTimesTip },
     { key = "nativeMinimap", default = false, text = ns.TEXT.nativeMinimap, tip = ns.TEXT.nativeMinimapTip },
     { key = "nativeMap", default = false, text = ns.TEXT.nativeMap, tip = ns.TEXT.nativeMapTip },
@@ -217,6 +220,7 @@ Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = funct
     end
     if key == "nativeMap" then return ns.Guarded(ns.Native.Update) end
     if key == "dockTimes" then return ns.Guarded(ns.DockWatch.Update) end
+    if key == "tripView" then return ns.Guarded(ns.TripView.Update) end
     if key == "nodeSparkles" then return ns.Guarded(ns.Sparkles.Settings) end
     if key == "nodeTurns" then return ns.Guarded(ns.Nodes.Update) end
 end })
@@ -259,6 +263,7 @@ function ns.GiveBack()
     Back(ns.Hybrid.GiveBack)
     Back(ns.Window.Hide)
     Back(ns.DockWatch.Hide)
+    Back(ns.TripView.Hide)
     Back(ns.Found.Hide)
     Back(ns.Nodes.GiveBack)
     Back(ns.Sparkles.GiveBack)
