@@ -1,6 +1,6 @@
 # Sane UI: Inventory
 
-**Status:** its window and full screen built; the character sheet's paper doll, stats, side tabs and all six tabs built; its other tabs and the bags are being built; the other characters' window built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
+**Status:** its window and full screen built; the character sheet's paper doll, stats, side tabs and all six tabs built; its other tabs are being built; the bags built; the other characters' window built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 The module for what you carry and wear. Push the mouse into the screen's bottom right corner and the screen
@@ -34,6 +34,21 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   links it, the game's watch key puts it on the backpack), with the game's switches Unused and Show on Backpack;
   its transfer between characters stays on the game's own sheet. Statistics lists the game's statistics by
   category, each category folding by a click.
+- **Your bags** (the window *Bags*): everything you carry, and the bank too while you are at a banker. The
+  dropdown *View* on its head chooses how they show: *All* (every slot in your bags' order, the empty ones too; a
+  quiver, the reagent bag and the keyring each a part of its own), *Categories* (your items in the game's groups:
+  new ones first, then weapons, armor, containers, consumables, trade goods, ammo, recipes, quest items and the
+  rest, the junk last; then a cell for each kind of bag's free slots, with how many), *List* (the same as lines:
+  name, item level, count) or *Compact* (smaller, without heads); and what sorts them inside a group (quality,
+  name or item level). Every item is the game's own button: click or drag it, right click to use it (in a fight
+  too), to sell it at a vendor or to put it into the bank, Shift-click to link it; the tooltip is the game's.
+  The button left of *View* is the game's *Clean Up Bags*; at the bank each of its parts has its own. The search
+  box finds items by name, category or item level: *All* dims what is not found, the other views show only what
+  is. A new item stays under *New* while the window is open. At a vendor with junk the head also has *Sell All
+  Junk Items*, at a banker *Deposit All Reagents*. At the foot: your bags (point at one to light its items; drop a
+  bag on a slot to put it on, click one to pick it up), the free slots (every bag's in the tooltip), the
+  currencies you watch and your gold (every character's in its tooltip). The game's own bags and bank stay as
+  they are.
 - **Your other characters** (the window *Characters*): every character of the account down its left, you
   first, each in its class's colour with its gold, the gold of them all under them; the account's bank last
   where it holds something. A click shows that one's things as last seen: its bags, its bank (as it was when that
@@ -169,6 +184,57 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     has is shown until the search is cleared. Listens only while shown: `Core.Data.OnCharacters`,
     `GET_ITEM_INFO_RECEIVED`, `ITEM_DATA_LOAD_RESULT`, drawn a frame later (`Core.Later`); drawn anew when shown.
   - **Next:** a paper doll of an alt needs Core to keep what is worn per slot (today items and counts per place).
+- **The bags** (`Bags/`, the part `bags`): the backpack, the bags, the reagent bag and the keyring
+  (`Contents.Carried`: those with slots), and while the bank is open (`BANKFRAME_OPENED`, at the start
+  `C_PlayerInteractionManager.IsInteractingWithNpcOfType`) the tabs of each bank the game lets the player see
+  (`Contents.Banks`: `C_Bank.FetchPurchasedBankTabIDs` of `Enum.BankType.Character`, then `.Account`), each
+  under a head of its own after the bags. The game's bag and bank windows are never opened, closed or touched.
+  - **What they hold** (`Bags/Contents.lua`, no frames): a record per slot, made once and filled anew at each
+    reading (`Contents.Read`: `C_Container.GetContainerItemInfo`, `GetContainerItemQuestInfo`,
+    `C_NewItems.IsNewItem`, the class from `C_Item.GetItemInfoInstant`, the item level of gear from
+    `GetDetailedItemLevelInfo`; an item the game does not know yet waits for `GET_ITEM_INFO_RECEIVED`,
+    `Contents.waiting`). Its group (`Contents.GROUPS`): new first, then the game's auction house categories in
+    Camelot's order (`AUCTION_CATEGORY_*`, by item class: `Contents.CLASSES`), a quest's item by the game's quest
+    info, junk (poor quality with a price) last. The free slots by kind of bag (`Contents.Scan`, `Kind`): the
+    ordinary bags together; a reagent bag, the keyring and a bag for one kind of item (the game's bag family) each
+    by itself; a bank's tabs by that bank. Orders (`Contents.ORDERS`): quality, name, item level, then bag and
+    slot, so that an item keeps its place while only its count changes. The search (`Contents.Found`):
+    `Core.Fuzzy.Match` over the name, the group's name and the item level.
+  - **The views** (`Bags/Layout.lua`, plain numbers: `Layout.Lay`): *All* (`slots`: every slot in the bags'
+    order at the game's size and spacing, `Layout.SIZE` 37 and `GAP` 5 as `ContainerFrame.lua`; a head per kind of
+    bag where there are several; what the search does not find dimmed), *Categories* (`groups`: a head per group
+    with how many, the items sorted; then *Empty*, a cell per kind of bag that has free slots: its first free
+    slot's button, with how many), *List* (`list`: lines `Layout.ROW` high, the item button `Layout.ICON` at the
+    left), *Compact* (`compact`: `Layout.SMALL` cells, no heads, the free cells last). Outside *All* what the search
+    does not find is left out. The view and the order are kept (`store.bags`: `view`, `order`).
+  - **The item buttons** (`Bags/Cells.lua`): the game's `ContainerFrameItemButtonTemplate`, one per slot, made
+    when the slot is first shown (out of a fight: one first needed in a fight waits for its end,
+    `Core.AfterCombat`), used again in every view (`SetScale`, `SetPoint`). They stand in a frame of ours per bag
+    that carries the bag's ID (`SetID`): the template's `GetBagID` asks its parent, as the game's bag windows did,
+    so nothing of ours is written into the button and its click (use, drag, split, sell, deposit) is the
+    template's own code, in a fight too. Drawn as `ContainerFrameMixin:UpdateItems` draws (`ClearItemButtonOverlay`,
+    `SetItemButtonTexture`, `Quality`, `Count`, `Desaturated`, the template's `UpdateQuestItem`, `UpdateNewItem`,
+    `UpdateJunkItem`, `UpdateCooldown`, `SetMatchesSearch`, …); ours on it: the item level of gear at its top right
+    in its quality's colour. In the list the button's hit rect reaches over its line (`SetHitRectInsets`), so
+    the whole line is the item; a hook after its `OnEnter` lights the line. A bag of the foot's bar lights its
+    items with the template's own mark (`BagIndicator`), as the game's combined bag does.
+  - **The head** (`Bags/Bags.lua`): the game's clean-up button (`bags-button-autosort-up`, `UI_BAG_SORTING_01`,
+    `C_Container.SortBags`; a bank part's head: `C_Container.SortBank` of that bank), not in a fight; the
+    dropdown *View* (`WowStyle1DropdownTemplate`, its words fixed: views, then *Sort By*); left of the clean-up, one
+    button for what can be done there (`C_MerchantFrame.SellAllJunkItems` after the game's
+    `SELL_ALL_JUNK_ITEMS_POPUP` in `Core.Confirm`; `C_Bank.AutoDepositItemsIntoBank` where
+    `DoesBankTypeSupportAutoDeposit`), made by the foot's file.
+  - **The foot** (`Bags/Foot.lua`): the bag bar (the game's `ItemButton`, its bag icons, `ui-hud-actionbar-
+    iconframe-bags`; the game's tooltip for a bag, *Equip Container* for an empty slot; `PickupBagFromSlot`,
+    `PutItemInBag`, `PutItemInBackpack`, `PutKeyInKeyRing`, out of a fight), the ordinary bags' free slots (every
+    bag's in the tooltip), the backpack's watched currencies (`GetBackpackCurrencyInfo`,
+    `GameTooltip:SetBackpackToken`), the gold (`Core.Coins`; its tooltip every character's from
+    `Core.Data.Characters` and the total).
+  - **Events, while shown only** (`Bags.Show`): `BAG_UPDATE_DELAYED`, `BAG_NEW_ITEMS_UPDATED`,
+    `BAG_CONTAINER_UPDATE`, the quest events, `MERCHANT_SHOW`/`CLOSED`, `BANKFRAME_OPENED`/`CLOSED` and the bank's
+    slot and tab events: everything read and drawn a frame later (`Core.Later`); `ITEM_LOCK_CHANGED` greys one
+    slot; `BAG_UPDATE_COOLDOWN`, `PLAYER_MONEY`, `CURRENCY_DISPLAY_UPDATE` their own part. New items stay in *New*
+    while the window is open (`fresh`), whatever the game's mark says.
 - **Never the game's panels** (2026-10-20, from the error log): our code neither opens nor closes the game's
   character sheet or any other panel of its window manager (`UIParentPanelManager.lua`). Opened by our code,
   the manager ran tainted and the sheet's `OnShow` failed on the player frame's secret health
@@ -178,7 +244,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 - **Standing down** (`ns.GiveBack`): the board's windows go and the window with them. A `/reload` starts the
   module afresh.
 - Tests: `dev/tests/inventory.lua` (the window, the board, the paper doll, the stats), `dev/tests/sheet.lua` (the
-  side tabs and the tabs).
+  side tabs and the tabs), `dev/tests/bags.lua` (the bags).
 
 ## Files
 
@@ -200,6 +266,11 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 | `Sheet/PvP.lua` | The PvP tab: the season's rank |
 | `Sheet/Currency.lua` | The currency tab |
 | `Sheet/Statistics.lua` | The statistics tab |
+| `Bags/Contents.lua` | The bags, without frames: the containers, a record per slot, the groups, free slots, orders, the search |
+| `Bags/Layout.lua` | The bags' views: where each cell, line and head goes, as plain numbers |
+| `Bags/Cells.lua` | The bags' item buttons: the game's own, one per slot, drawn the game's way |
+| `Bags/Foot.lua` | The bags' foot: the bag bar, free slots, selling junk or depositing reagents, currencies, gold |
+| `Bags/Bags.lua` | The bags' window: the head, the scroll area, heads and lines, the events; registers the part `bags` |
 | `Alts/Snapshot.lua` | The other characters' window, without frames: the roster, a character's places and items, the search |
 | `Alts/Roster.lua` | The other characters' window: the account's characters down its left, their gold |
 | `Alts/Items.lua` | The other characters' window: the chosen one's places and items, a grid and a list |
@@ -214,3 +285,5 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   the model, the level line; its stats; its side tabs and the six tabs of the game's sheet.
   The window of the other characters: the roster, each one's bags, bank and what it wears as last seen, the
   search across them all; Core's `Data.Items` for it.
+  Our own bags: every slot and the bank while it is open, the game's item buttons, four views, the search, the
+  game's clean-up, the bag bar, junk and reagents, currencies and gold.

@@ -24,6 +24,16 @@ Core.NewModule(ADDON, "Inventory", ns)
 -- Every word the module shows; the game's own where it has one.
 ns.TEXT = {
     title = Core.Word("INVENTORY_TOOLTIP", "Inventory"),
+    -- The bags (Bags/)
+    bags = Core.Word("HUD_EDIT_MODE_BAGS_LABEL", "Bags"),
+    bagsView = Core.Word("VIEW", "View"),
+    bagsOrder = Core.Word("RAID_FRAME_SORT_LABEL", "Sort By"),
+    bagsSlots = Core.Word("ALL", "All"),
+    bagsGroups = Core.Word("CATEGORIES", "Categories"),
+    bagsList = "List",
+    bagsCompact = "Compact",
+    bagsFree = "%d free",
+    bagsGold = "Gold on this account",
 }
 
 -- What is told when the module stands down (Core's StandDown).

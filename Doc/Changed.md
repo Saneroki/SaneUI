@@ -3,8 +3,34 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 460 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 290 (Navigation), 71 (Inventory), 71 (sheet), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 460 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 290 (Navigation), 71 (Inventory), 71 (sheet), 67 (bags), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Inventory: the bags (Saneroki, 2026-10-20)
+- **Our own bags** (`src/Inventory/Bags/`, the part `bags` on the module's full screen): every slot of the
+  backpack, the bags, the reagent bag and the keyring, and the bank's tabs while the bank is open, each item the
+  game's own `ContainerFrameItemButtonTemplate` in a frame of ours that carries the bag's ID (the template asks
+  its parent for the bag: nothing written into the button), so using, dragging, splitting, selling and depositing
+  are the template's own code, in a fight too; drawn as the game's `ContainerFrameMixin:UpdateItems` draws, with
+  the item level of gear in the top right corner. The game's own bags and bank are not touched.
+- **Four views** (`Layout.lua`, plain numbers), chosen and kept by the dropdown *View* on the panel's head: *All*
+  (every slot in the bags' order, a part per kind of bag), *Categories* (new items first, the game's auction
+  categories in Camelot's order, junk last, a cell per kind of bag's free slots), *List* (name in its quality's
+  colour, item level, count; the button's click reaching over the line) and *Compact*; sorted inside a group by
+  quality, name or item level, then by place.
+- **What they hold** (`Contents.lua`): a record per slot used again; class, item level, quest, new and junk; free
+  slots by kind of bag (the game's bag family); the search over name, group and item level (Core's fuzzy search):
+  dimmed by the game's own dimming in *All*, left out elsewhere.
+- **Head and foot** (`Bags.lua`, `Foot.lua`): the game's *Clean Up Bags* (and *Clean Up Bank* on a bank part's
+  head) and, at a vendor or a banker, *Sell All Junk Items* (the game's, asked first) or *Deposit All Reagents*;
+  at the foot the bag bar (a bag's items lit by the game's mark, bags picked up and put on out of a fight), the
+  free slots, the watched currencies, the gold with every character's from Core's data.
+- **Events while shown only**, drawn a frame after a burst; a lock greys one slot. Buttons are made out of a fight;
+  one first needed in a fight waits for its end.
+- Tests: `dev/tests/bags.lua` (67 checks, in `dev/tests/run`): the containers, records, groups, free slots, orders,
+  the layout, the game's buttons and their holders, the views and the dropdown, the search, events, new items,
+  the clean-up, the bag bar, selling junk, the bank, a fight, deaf while hidden, standing down.
+  `dev/tests/inventory.lua`'s stand-in part now has a key of its own (`later`).
 
 ### Inventory: the character sheet's PvP, currency and statistics tabs (Saneroki, 2026-10-20)
 - **PvP** (`Sheet/PvP.lua`): the season's rank (the game's renown of its PvP rank faction): season, rank and title,

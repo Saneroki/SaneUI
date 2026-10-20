@@ -496,10 +496,12 @@ local function Part(key, least)
     return part
 end
 
--- A second part comes: side by side, the sheet as wide as it asks.
-local bags = Part("bags", { 500, 300 })
+-- A part comes later (one more key in the board's order: the module's own parts are all there): side by side,
+-- the sheet as wide as it asks.
+Board.ORDER[#Board.ORDER + 1] = "later"
+local bags = Part("later", { 160, 160 })
 ns.Window.Reboard()
-check(bags.built == 1 and bags.shown == true and bags.size and Board.layouts:Has("bags"), "a part that registers later is laid out too")
+check(bags.built == 1 and bags.shown == true and bags.size and Board.layouts:Has("later"), "a part that registers later is laid out too")
 local rects = Board.layouts.rects
 check(rects.character and rects.bags and rects.character[1] < rects.bags[1]
     and rects.character[3] == ns.Sheet.LEFT + ns.Sheet.RIGHT + ns.Sheet.TAB_WIDTH + 2 * Core.Board.EDGE,

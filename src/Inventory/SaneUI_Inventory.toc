@@ -29,6 +29,12 @@ Sheet\Skills.lua
 Sheet\PvP.lua
 Sheet\Currency.lua
 Sheet\Statistics.lua
+# The bags, our own: what they hold, where each view puts it, the game's item buttons, the foot, the window
+Bags\Contents.lua
+Bags\Layout.lua
+Bags\Cells.lua
+Bags\Foot.lua
+Bags\Bags.lua
 # The other characters' things, as last seen: what is shown, the roster, the items, the window that holds them
 Alts\Snapshot.lua
 Alts\Roster.lua

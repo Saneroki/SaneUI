@@ -44,7 +44,19 @@ The bigger changes of each version, newest first.
   (your factions, at war or not, inactive or shown as your experience
   bar), Skills (your ranks, and what a weapon skill means against a raid
   boss), PvP (your season's rank and its next reward), Currency and
-  Statistics. Your bags are being built.
+  Statistics.
+- Inventory: your bags, Sane UI's own, on the inventory's full screen
+  in the window Bags. Every item is the game's own button: click,
+  drag, right click to use it (in a fight too), sell it or put it into
+  the bank. Choose how they show under View: every slot in your bags'
+  order, sorted into the game's categories (new items first, junk
+  last), as a list with names and item levels, or compact; sorted by
+  quality, name or item level. Search by name, category or item level.
+  On the window's head: the game's Clean Up Bags, and Sell All Junk
+  Items at a vendor or Deposit All Reagents at a banker. At the foot:
+  your bags (point at one to light its items), the free slots, your
+  currencies and your gold (all your characters' in its tooltip). At
+  the bank, its items follow yours.
 - Inventory: your other characters' things, on the inventory's full
   screen in the window Characters. Every character of your account down
   its left with its gold, and the gold of them all; click one to see

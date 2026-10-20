@@ -74,6 +74,30 @@ designed for Sane UI: a grid of all slots, items sorted and grouped into categor
 the search box of the full window, the free slots, the gold. Designed on its own terms (CLAUDE.md, *Our own
 shape*): our layout, names, words and numbers; Blizzard's art and colours where it has them.
 
+**Built (2026-10-20):** the window on the full screen with the bags and, while it is open, the bank; the game's
+own item buttons; four views (every slot, categories, a list, compact), sorted inside a group by quality, name or
+item level; the search; the game's clean-up of the bags and of each bank; new items first while the window is
+open; the free slots by kind of bag; the bag bar (a bag's items lit, bags put on and picked up); selling the junk
+at a vendor and depositing the reagents at a banker by the game's own calls; the watched currencies; the gold with
+every character's (`src/Inventory/README.md`, *The bags*).
+
+**Next, each its own step:**
+- Pinned items: a group of their own at the top, set and unset on the item.
+- The player's own groups: rename, reorder, hide or join the game's; items put into one by dropping them on its
+  head, taken out again; an item marked as junk (sold with the junk), and unmarked.
+- Several stacks of one item as one cell with their total, where nothing takes one stack at a time (not at a
+  vendor, the bank, the mail, a trade).
+- Gear by its slot inside Weapons and Armor; gear of an equipment set; a mark on unbound gear that binds when
+  worn; red for what the character cannot use.
+- Spells that work on an item (disenchanting, picking a lock) right from the window: a secure button of the
+  game's over the item, out of a fight.
+- A splitter for stacks; the list's columns (price, required level, type) sorted by a click on their head, and
+  its groups folded.
+- Our own sort that moves the items in the bags by our groups (until then the game's clean-up).
+- The bank: buying a tab, a tab's settings, depositing account-bound items, moving gold; the bank as a window of
+  its own on the full screen.
+- Gold over time and every character's currencies, from Core's data.
+
 ## The other characters
 
 A snapshot of each of the account's other characters: its bags, its bank (as last seen), what it wears, its
@@ -94,8 +118,8 @@ item by item (`Data.Items`). Gear by slot is still the next step.
 1. **The window and the board** (built 2026-10-20): docked in the bottom right corner, its corner fills the
    screen with the parts there are.
 2. **The character sheet:** the paper doll (slots and model), then the stats, then the tabs one by one.
-3. **The bags:** the grid of all bags, the game's item buttons; then sorting, categories, the other views,
-   the bank.
+3. **The bags** (built 2026-10-20): the bags and the bank, the game's item buttons, four views, sorting, the
+   search; next, the steps under *The bags*.
 4. **The other characters** (built 2026-10-20): the snapshot window from `Core.Data.Characters`; next, gear by
    slot for an alt's paper doll.
 5. **The game's keys:** whether C and B open ours (Core's holder, `Holder.lua`, keeps the game's window out
