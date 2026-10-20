@@ -30,8 +30,9 @@ local _, ns = ...
 --  (grey), Item Set Gear, then by its class in the categories' order, else
 --  Miscellaneous. A category switched off sends its items to Miscellaneous.
 --
---  The player may move a category up or down, rename it (no name: its own
---  again), switch it off, hide it from All Items, put categories together
+--  The player may move a category up or down (or drag it to another place
+--  in the sidebar: Categories.Place, a group's members together:
+--  PlaceGroup), rename it (no name: its own again), switch it off, hide it from All Items, put categories together
 --  under a group (a group's items show as one part in All Items, the group
 --  named by its members, "A & B", until the player names it; a group left
 --  with one member is no more), make categories of their own (a name and an
@@ -576,6 +577,51 @@ end
 function Categories.Disband(group)
     for _, key in ipairs(Categories.Members(group)) do Member(key, false) end
     if kept.groups then kept.groups[group] = nil end
+    Changed()
+end
+
+-- Whether a category can be moved (not Pinned, Recent, Junk).
+function Categories.Movable(key)
+    local def = Categories.DEF[key]
+    return rank[key] ~= nil and not (def and (def.fixed or def.last))
+end
+
+-- These categories (in their order) taken out of the player's order and put back before or after target (nil, or
+-- one that does not move: at the end, before Junk).
+local function Put(keys, target, after)
+    local movable = Keep()
+    local moving = {}
+    for _, key in ipairs(keys) do moving[key] = true end
+    for index = #movable, 1, -1 do
+        if moving[movable[index]] then table.remove(movable, index) end
+    end
+    local at = #movable + 1
+    for index, key in ipairs(movable) do
+        if key == target then
+            at = after and index + 1 or index
+            break
+        end
+    end
+    for offset, key in ipairs(keys) do table.insert(movable, at + offset - 1, key) end
+end
+
+-- A category moved before (or after) another (the sidebar's drag), then in group (nil: in none; one that is never
+-- in a group stays in none).
+function Categories.Place(key, target, after, group)
+    if not Categories.Movable(key) or key == target then return end
+    Put({ key }, target, after)
+    if Categories.Groupable(key) then Member(key, group or false) end
+    Changed()
+end
+
+-- A group's members moved together before (or after) a category that is not one of them.
+function Categories.PlaceGroup(group, target, after)
+    local members = Categories.Members(group)
+    if #members == 0 then return end
+    for _, key in ipairs(members) do
+        if key == target then return end
+    end
+    Put(members, target, after)
     Changed()
 end
 

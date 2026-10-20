@@ -82,7 +82,10 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     category (its row or its head): *Rename*, *Move Up*, *Move Down*, *Create Group With* another, *Add to Group*,
     *Take Out of* its group, *Hide in All Items*, *Switch Off*; on a group: *Rename*, *Move Up*, *Move Down*,
     *Hide in All Items*, *Disband Group*; on one of your own also *Icon* and *Delete*. *Add Category* at the
-    sidebar's foot makes one of your own. All of it is kept for the account.
+    sidebar's foot makes one of your own. Drag a category's row in the sidebar to another place: let go at a
+    row's top or foot it goes before or after that row (between a group's members it joins that group), at a
+    row's middle it joins that row's group (or makes one with that category); drag a group's row to move the whole
+    group. Pinned Items and Recent Items stay at the top, Junk at the end. All of it is kept for the account.
   - **The list's columns:** the icon, the name, item level, required level, type, how it binds (BoP, BoE, BoU,
     Quest; SB once bound), the count and what the vendor pays for it. Click a column's head to sort by it (again
     for the other way), drag it sideways to move it, drag its right edge to size it; a right click on the head
@@ -338,7 +341,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     class in order, else Miscellaneous; a category switched off sends its items to Miscellaneous). Kept by item
     ID in `store.bags` (account-wide, the player's own settings, never shared): `assigned`, `before` (where a
     junk-marked item was), `pinned`, `own`, `order`, `words`, `member`, `groups`, `off`, `hidden`; checked when
-    read (`Categories.Check`).
+    read (`Categories.Check`). Moved by the menus (`Move`, one place) and by the sidebar's drag (`Place`: before or
+    after another, then in a group or none; `PlaceGroup`: a group's members together; `Movable`: not Pinned,
+    Recent, Junk; a target that does not move: the end, before Junk).
   - **What came in lately** (`Bags/Recent.lua`, no frames): from the login on, a frame after a burst of bag
     events, every item's count in the carried bags and on the character (`GetInventoryItemID`); one that went up
     goes to the front of `Recent.list` (at most `Recent.MOST`, until a `/reload`). Not counted while the bank is
@@ -418,7 +423,14 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     tooltip), the view shown with a bar of `Core.GOLD` at its left; scrolled by the wheel; `Begin`, `Row`,
     `Divider`, `Done`; its `choose`, `drop`, `menu`, `add` answer the clicks); `ns.BagSidebar` the bags' (every
     category switched on, empty ones too; a click `Bags.Choose`, an item on the cursor let go there `Menus.Drop`, a
-    right click `Menus.Row`).
+    right click `Menus.Row`). A row the window marks (`row.drag`: the bags' movable categories and groups) is
+    dragged (`OnDragStart`, not with an item on the cursor; `Rail:Lift`, `Land`, `Cancel`): a ghost of it on the
+    cursor (`Sidebar.GHOST`, the strata `TOOLTIP`, its `OnUpdate` only while shown, given up when the button is
+    no longer down), the row faded (`Sidebar.LIFTED`), the row under the cursor and how far down it (`Rail:Under`)
+    asked of the window's `aim` (`Bag.Aim`: the top and foot quarter `Sidebar.EDGE` before or after, the middle
+    into; a line of `Core.GOLD`, set in where it lands in a group, or the row lit, `Sidebar.INTO`); let go, the
+    window's `place` (`Bag.Place`: `Categories.Place`, `PlaceGroup`, `Join`, `GroupWith`; drawn anew). Pinned and
+    Recent take nothing, Junk only before it, a group goes before or after a group as a whole.
   - **The drawing** (`Bags/Canvas.lua`): `ns.Canvas.New(child, owner)` a window's: the heads (a right click
     `Menus.Row`, an item let go `Menus.Drop`, in the list a click folds: `folded` in the owner's store), the compact
     display's labels, the "+" cells, the list's lines, the pads and the item buttons (the owner's pool), drawn as

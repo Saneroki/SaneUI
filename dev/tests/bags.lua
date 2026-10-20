@@ -377,6 +377,27 @@ Categories.Check(wrong)
 check(next(wrong.assigned) == nil and next(wrong.pinned) == nil and #wrong.own == 0 and table.concat(wrong.order, ",") == "trade"
     and next(wrong.words) == nil and next(wrong.member) == nil and next(wrong.off) == nil,
     "what is kept that is not of the right kind goes")
+-- Dragged in the sidebar: a category to another place (into a group or out of it), a group as a whole.
+for k in pairs(kept) do kept[k] = nil end
+Categories.Use(kept)
+local rank, order = Categories.rank, Categories.order
+Categories.Place("professions", "weapons", false)
+check(rank.professions == rank.weapons - 1 and Categories.GroupOf("professions") == nil and kept.order[1] == "professions",
+    "a category put before another, the order kept")
+Categories.Place("professions", "armor", true, "armory")
+check(Categories.GroupOf("professions") == "armory" and rank.professions == rank.armor + 1,
+    "put between a group's members: in that group")
+Categories.Place("weapons", nil, true)
+check(Categories.GroupOf("weapons") == nil and order[#order] == "junk" and order[#order - 1] == "weapons",
+    "to the end: before Junk, out of its group")
+Categories.PlaceGroup("prep", "armor", false)
+check(rank.consumables < rank.armor and rank.camp < rank.armor and rank.camp == rank.consumables + 2
+    and Categories.GroupOf("enhance") == "prep", "a group moved as a whole")
+Categories.Place("junk", "weapons", false)
+Categories.Place("pinned", nil, true)
+check(order[1] == "pinned" and order[2] == "recent" and order[#order] == "junk", "Pinned, Recent and Junk never move")
+Categories.Place("reagent", "armor", false, "armory")
+check(Categories.GroupOf("reagent") == nil and rank.reagent == rank.armor - 1, "one that is never in a group stays in none")
 -- Back to the first state for what follows.
 for k in pairs(kept) do kept[k] = nil end
 Categories.Use(kept)
@@ -745,6 +766,76 @@ popup.data.callback()
 check(not RowNamed("Flasks") and #kept.own == 0 and kept.assigned[118] == nil, "deleted")
 menu = RowMenu("Pinned Items")
 check(Line(menu, "Hide") and not Line(menu, "Rename"), "Pinned's menu: only Hide")
+
+-- A category dragged in the sidebar: its ghost on the cursor, a line where it would go (a row lit: into it); let go
+-- there, it is put there and kept.
+local side = RowNamed("Trade Goods").rail
+side.frame._mouseOver = true
+side.child._bottom = 0
+local pressed = true
+IsMouseButtonDown = function() return pressed end
+local function Over(word, part)
+    W.cursorY = side.child:GetTop() - (RowNamed(word).top + part * ns.Sidebars.ROW)
+end
+local function Lift(word)
+    local held = RowNamed(word)
+    held:GetScript("OnDragStart")(held)
+    side.ghost:GetScript("OnUpdate")(side.ghost)
+    return held
+end
+local function Land(held)
+    held:GetScript("OnDragStop")(held)
+end
+Over("Trade Goods", 0.1)
+local held = Lift("Professions")
+check(side.ghost:IsShown() and side.ghost.label._text == "Professions" and held:GetAlpha() < 1,
+    "a category held: its ghost on the cursor, the row faded")
+check(side.line:IsShown() and not side.mark:IsShown(), "over a row's top: a line where it would go")
+Land(held)
+check(Categories.rank.professions == Categories.rank.trade - 1 and kept.order and not side.ghost:IsShown()
+    and RowNamed("Professions").top < RowNamed("Trade Goods").top, "let go: put before that row, kept, the sidebar anew")
+Over("Trade Goods", 0.5)
+held = Lift("Professions")
+check(side.mark:IsShown() and not side.line:IsShown(), "over a row's middle: that row lit")
+Land(held)
+local made = Categories.GroupOf("trade")
+check(made and Categories.GroupOf("professions") == made and RowNamed("Professions & Trade Goods"),
+    "let go there: a group of the two")
+Over("Miscellaneous", 0.1)
+Land(Lift("Professions"))
+check(not Categories.GroupOf("professions") and not Categories.GroupOf("trade")
+    and Categories.rank.professions == Categories.rank.misc - 1, "a member dragged out of its group; a group of one is none")
+Over("Miscellaneous", 0.9)
+Land(Lift("The Armory"))
+check(Categories.rank.weapons > Categories.rank.misc and Categories.rank.sets == Categories.rank.weapons + 2
+    and Categories.GroupOf("armor") == "armory", "a group dragged: its members together, after that row")
+Over("Junk", 0.9)
+Land(Lift("Trade Goods"))
+check(Categories.order[#Categories.order - 1] == "trade" and Categories.order[#Categories.order] == "junk",
+    "over Junk: before it, Junk stays last")
+Over("Pinned Items", 0.5)
+held = Lift("Trade Goods")
+check(not side.line:IsShown() and not side.mark:IsShown(), "over Pinned: nowhere to go")
+Land(held)
+check(Categories.order[#Categories.order - 1] == "trade" and Categories.order[1] == "pinned", "let go there: nothing moved")
+held = Lift("Pinned Items")
+check(not side.ghost:IsShown(), "Pinned is not dragged")
+held = Lift("Junk")
+check(not side.ghost:IsShown(), "nor Junk")
+Over("Armor", 0.5)
+Land(Lift("Trade Goods"))
+check(Categories.GroupOf("trade") == "armory", "let go over a group's member: into that group")
+Over("Trade Goods", 0.5)
+held = Lift("Item Set Gear")
+pressed = false
+side.ghost:GetScript("OnUpdate")(side.ghost)
+check(not side.ghost:IsShown() and held:GetAlpha() == 1, "the mouse let go elsewhere: the drag given up")
+IsMouseButtonDown = function() return false end
+side.frame._mouseOver = false
+kept.order, kept.member = nil, nil
+Categories.Use(kept)
+Bags.Refresh()
+check(Categories.GroupOf("weapons") == "armory" and RowNamed("The Armory"), "the first order again, for what follows")
 
 -- The dropdown View.
 dropdown:GenerateMenu()

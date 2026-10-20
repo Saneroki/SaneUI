@@ -8,7 +8,11 @@ local _, ns = ...
 --  height. The row shown is
 --  lit, with a bar at its left in Sane UI's colour. Sidebar.New makes one for
 --  a window; the window fills it (Begin, Row, Divider, Done) and answers its
---  clicks (its choose, drop, menu, add).
+--  clicks (its choose, drop, menu, add). A row the window marks (row.drag)
+--  can be dragged: a ghost of it follows the cursor, a line in Sane UI's
+--  colour shows where it would go (a row lit in that colour: into it), and
+--  where it is let go the window's place puts it (its aim says where a row
+--  may go, from how far down the row under the cursor is).
 --
 --  The bags' (ns.BagSidebar): at the top the three views (All Items, One
 --  Bag, Each Bag; the one the window opens with first), then Pinned and
@@ -18,7 +22,12 @@ local _, ns = ...
 --  on is listed, empty ones too. A click shows that view, category or group; an item brought
 --  over a row (picked up, or dragged) and let go there goes into that
 --  category (over Pinned: pinned); a right click opens the row's menu
---  (Menus.lua).
+--  (Menus.lua). A category or a group is dragged to another place (never
+--  Pinned, Recent or Junk, which stay first and last): let go at a row's
+--  top or foot it goes before or after it (between a group's members: into
+--  that group; a group goes before or after another group as a whole), at
+--  a row's middle it joins that row's group (or makes one with that
+--  category: Categories.Join, GroupWith); kept by Categories (kept.order).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Sidebar = {}
@@ -38,6 +47,10 @@ Sidebar.DIVIDER = { 0.2, 0.2, 0.2, 1 }
 Sidebar.DIM = 0.75         -- a row's words while not shown
 Sidebar.LIT = 0.1          -- the row shown, in Sane UI's colour
 Sidebar.HOVER = 0.06
+Sidebar.EDGE = 0.25        -- a row's top and foot quarter: before or after it; between: into it
+Sidebar.GHOST = 0.85       -- the dragged row's ghost
+Sidebar.LIFTED = 0.35      -- the dragged row itself meanwhile
+Sidebar.INTO = 0.25        -- the row it would go into, in Sane UI's colour
 
 local Categories = ns.Categories
 local Rail = {}            -- a sidebar's functions
@@ -97,6 +110,15 @@ local function RowDrop(row)
     if row.takes and row.rail.drop then row.rail.drop(row) end
 end
 
+-- A row held (dragged) and let go (Rail:Lift, Rail:Land below).
+local function Lift(row)
+    row.rail:Lift(row)
+end
+
+local function Land(row)
+    row.rail:Land()
+end
+
 local function MakeRow(rail)
     local row = CreateFrame("Button", nil, rail.child)
     row.rail = rail
@@ -128,6 +150,9 @@ local function MakeRow(rail)
     row:SetScript("OnLeave", function(self) ns.Safe("bags", RowLeave, self) end)
     row:SetScript("OnClick", function(self, mouse) ns.Safe("bags", RowClick, self, mouse) end)
     row:SetScript("OnReceiveDrag", function(self) ns.Safe("bags", RowDrop, self) end)
+    row:RegisterForDrag("LeftButton")
+    row:SetScript("OnDragStart", function(self) ns.Safe("bags", Lift, self) end)
+    row:SetScript("OnDragStop", function(self) ns.Safe("bags", Land, self) end)
     return row
 end
 
@@ -161,6 +186,9 @@ function Rail:Row(word, number, file, atlas, depth, shown)
     row:SetWidth(width - 1)
     row.word, row.number = word, number
     row.key, row.group, row.view, row.add, row.takes = nil, nil, nil, nil, false
+    row.drag, row.inside, row.last = false, nil, nil
+    row.depth, row.file, row.atlas, row.top = depth, file, atlas, self.y
+    row:SetAlpha(1)
     local size = depth > 0 and Sidebar.ICON_SMALL or Sidebar.ICON
     row.icon:SetSize(size, size)
     row.icon:ClearAllPoints()
@@ -205,6 +233,144 @@ function Rail:Rows()
 end
 
 -------------------------------------------------------------------------------
+--  Dragging a row to another place
+-------------------------------------------------------------------------------
+-- The row under the cursor and how far down it the cursor is (0 its top, 1 its foot); nil off the rows.
+function Rail:Under()
+    if not self.frame:IsMouseOver() then return nil end
+    local top = self.child:GetTop()
+    if not top then return nil end
+    local _, y = GetCursorPosition()
+    y = top - y / self.child:GetEffectiveScale()
+    local half = Sidebar.ROW_GAP / 2
+    for index = 1, self.rows.taken do
+        local row = self.rows[index]
+        if row:IsShown() and y >= row.top - half and y < row.top + Sidebar.ROW + half then
+            return row, math.max(0, math.min(1, (y - row.top) / Sidebar.ROW))
+        end
+    end
+end
+
+-- Where the row held would go now: the window's aim says (row held, row under the cursor, how far down it) where
+-- ("before", "after", "into"), whether into a group (the line set in) and perhaps another row to show it at.
+local aimed = {}
+function Rail:Aim()
+    local over, part = self:Under()
+    if not (over and self.aim and self.lifted) then return nil end
+    local where, inside, at = self.aim(self.lifted, over, part)
+    if not where then return nil end
+    aimed.row, aimed.where, aimed.inside = at or over, where, inside
+    return aimed
+end
+
+-- The line where the row held would go, or the row it would go into lit.
+function Rail:Show(target)
+    self.line:Hide()
+    self.mark:Hide()
+    if not target then return end
+    local row = target.row
+    if target.where == "into" then
+        self.mark:ClearAllPoints()
+        self.mark:SetAllPoints(row)
+        self.mark:Show()
+        return
+    end
+    local y = target.where == "before" and row.top - Sidebar.ROW_GAP / 2 or row.top + Sidebar.ROW + Sidebar.ROW_GAP / 2
+    local indent = 4 + (target.inside and Sidebar.INDENT or 0)
+    local thick = Core.Pixels(self.child, 2)
+    self.line:ClearAllPoints()
+    self.line:SetPoint("TOPLEFT", self.child, "TOPLEFT", indent, -(y - thick / 2))
+    self.line:SetSize(self:Width() - indent - 5, thick)
+    self.line:Show()
+end
+
+-- The ghost follows the cursor, the line shows where the row would go (looked at again only when the cursor moved).
+local function Follow(ghost)
+    local rail = ghost.rail
+    local button = rawget(_G, "IsMouseButtonDown")
+    if not rail.lifted or button and not button("LeftButton") then return rail:Cancel() end
+    local x, y = GetCursorPosition()
+    if x == ghost.x and y == ghost.y then return end
+    ghost.x, ghost.y = x, y
+    local scale = UIParent:GetEffectiveScale()
+    ghost:ClearAllPoints()
+    ghost:SetPoint("LEFT", UIParent, "BOTTOMLEFT", x / scale + 12, y / scale)
+    rail:Show(rail:Aim())
+end
+local Following = ns.Guard(Follow)
+
+-- The ghost of a row held, the line and the light; made at the first drag.
+local function Ghost(rail)
+    local ghost = CreateFrame("Frame", nil, UIParent)
+    ghost.rail = rail
+    ghost:SetSize(Sidebar.WIDTH, Sidebar.ROW)
+    ghost:SetFrameStrata("TOOLTIP")
+    ghost:SetAlpha(Sidebar.GHOST)
+    local back = ghost:CreateTexture(nil, "BACKGROUND")
+    back:SetAllPoints()
+    back:SetColorTexture(0.05, 0.05, 0.05, 0.95)
+    local gold = Core.GOLD
+    ns.Cells.Edge(ns.Cells.Border(ghost), gold[1], gold[2], gold[3], 1, Core.Pixels(ghost, 1))
+    ghost.icon = ghost:CreateTexture(nil, "ARTWORK")
+    ghost.icon:SetSize(Sidebar.ICON, Sidebar.ICON)
+    ghost.icon:SetPoint("LEFT", 8, 0)
+    ghost.label = ghost:CreateFontString(nil, "ARTWORK")
+    local font = Fonts()
+    if font.label then ghost.label:SetFontObject(font.label) end
+    ghost.label:SetPoint("LEFT", ghost.icon, "RIGHT", 6, 0)
+    ghost.label:SetPoint("RIGHT", -6, 0)
+    ghost.label:SetJustifyH("LEFT")
+    ghost.label:SetWordWrap(false)
+    ghost:SetScript("OnUpdate", Following)
+    ghost:Hide()
+    rail.ghost = ghost
+    rail.line = rail.child:CreateTexture(nil, "OVERLAY")
+    rail.line:SetColorTexture(gold[1], gold[2], gold[3], 1)
+    rail.line:Hide()
+    rail.mark = rail.child:CreateTexture(nil, "OVERLAY")
+    rail.mark:SetColorTexture(gold[1], gold[2], gold[3], Sidebar.INTO)
+    rail.mark:Hide()
+    return ghost
+end
+
+-- A row marked to be dragged (row.drag) held: its ghost on the cursor (not while an item is on it).
+function Rail:Lift(row)
+    if not (row.drag and self.aim and self.place) or GetCursorInfo() then return end
+    self.lifted = row
+    local ghost = self.ghost or Ghost(self)
+    Icon(ghost.icon, row.file, row.atlas)
+    ghost.label:SetText(row.word or "")
+    ghost.x, ghost.y = nil, nil
+    row:SetAlpha(Sidebar.LIFTED)
+    ghost:Show()
+    self:Show(self:Aim())
+end
+
+-- The row held let go: put where the line showed, if anywhere.
+function Rail:Land()
+    local lifted = self.lifted
+    if not lifted then return end
+    local target = self:Aim()
+    local over, where = target and target.row, target and target.where
+    self:Cancel()
+    if over then
+        Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
+        self.place(lifted, over, where)
+    end
+end
+
+-- No row held any more: the ghost, the line and the light gone.
+function Rail:Cancel()
+    if self.lifted then self.lifted:SetAlpha(1) end
+    self.lifted = nil
+    if self.ghost then
+        self.ghost:Hide()
+        self.line:Hide()
+        self.mark:Hide()
+    end
+end
+
+-------------------------------------------------------------------------------
 --  A sidebar made
 -------------------------------------------------------------------------------
 local function Wheel(rail, delta)
@@ -213,9 +379,10 @@ local function Wheel(rail, delta)
 end
 
 -- A sidebar in body, under top and above bottom. options: { word (its head's), choose(view), drop(row), menu(row),
--- add(row) }.
+-- add(row), aim(held, over, part) and place(held, over, where) for rows dragged }.
 function Sidebar.New(body, top, bottom, options)
-    local rail = setmetatable({ choose = options.choose, drop = options.drop, menu = options.menu, add = options.add }, Rail)
+    local rail = setmetatable({ choose = options.choose, drop = options.drop, menu = options.menu, add = options.add,
+                                aim = options.aim, place = options.place }, Rail)
     local frame = CreateFrame("Frame", nil, body)
     frame:SetWidth(Sidebar.WIDTH)
     frame:SetPoint("TOPLEFT", top, "BOTTOMLEFT")
@@ -298,19 +465,22 @@ function Bag.Refresh(counts, viewing, options)
                 local file, atlas = Categories.Icon(first)
                 local row = rail:Row(Categories.GroupWord(group), counts["group:" .. group] or 0, file, atlas, 0,
                     viewing == "group:" .. group)
-                row.view, row.group = "group:" .. group, group
+                row.view, row.group, row.drag = "group:" .. group, group, true
                 for _, member in ipairs(Categories.Members(group)) do
                     if not Categories.Off(member) then
                         local mfile, matlas = Categories.Icon(member)
                         local memberRow = rail:Row(Categories.Word(member), counts[member] or 0, mfile, matlas, 1,
                             viewing == "cat:" .. member)
                         memberRow.view, memberRow.key, memberRow.takes = "cat:" .. member, member, Categories.Takes(member)
+                        memberRow.drag, memberRow.inside = true, group
+                        row.last = memberRow
                     end
                 end
             elseif not group then
                 local file, atlas = Categories.Icon(key)
                 local row = rail:Row(Categories.Word(key), counts[key] or 0, file, atlas, 0, viewing == "cat:" .. key)
                 row.view, row.key, row.takes = "cat:" .. key, key, Categories.Takes(key)
+                row.drag = Categories.Movable(key)
             end
         end
     end
@@ -327,6 +497,75 @@ function Bag.Width()
     return rail and rail:Width() or Sidebar.WIDTH
 end
 
+-------------------------------------------------------------------------------
+--  Dragging a category or a group
+-------------------------------------------------------------------------------
+-- Where a row held (lifted) would go over another row, part of the way down it: "before", "after" or "into" (its
+-- group, or a new one with it), whether that is inside a group, and the row to show it at; nil: nowhere. Pinned
+-- and Recent take nothing; Junk only before it; a group goes before or after a group as a whole.
+function Bag.Aim(lifted, over, part)
+    if over == lifted or not (over.key or over.group) then return nil end
+    local def = over.key and Categories.DEF[over.key]
+    if def and def.fixed then return nil end
+    if def and def.last then return "before", false end
+    local group = lifted.group
+    if group then
+        if over.group == group or over.inside == group then return nil end
+        if over.inside then
+            for _, row in ipairs(rail:Rows()) do
+                if row.group == over.inside then return "after", false, row.last end
+            end
+            return nil
+        end
+        if over.group and part >= 0.5 then return "after", false, over.last or over end
+        return part < 0.5 and "before" or "after", false
+    end
+    local key = lifted.key
+    if over.key == key then return nil end
+    local edge = Sidebar.EDGE
+    if part > edge and part < 1 - edge and Categories.Groupable(key) and (over.group or Categories.Groupable(over.key)) then
+        return "into", false
+    end
+    local where = part < 0.5 and "before" or "after"
+    return where, over.inside ~= nil or over.group ~= nil and where == "after"
+end
+
+-- The row held let go there: the category or group put in its new place (Categories.Place, PlaceGroup), or into a
+-- group (Join, GroupWith); the window drawn anew.
+function Bag.Place(lifted, over, where)
+    local key, group = lifted.key, lifted.group
+    local def = over.key and Categories.DEF[over.key]
+    local target, after, into
+    if def and def.last then
+        target, after = nil, true
+    elseif over.group then
+        local members = Categories.Members(over.group)
+        if where == "before" then
+            target, after = members[1], false
+        elseif group then
+            target, after = members[#members], true
+        else
+            target, after, into = members[1], false, over.group
+        end
+    else
+        target, after, into = over.key, where == "after", over.inside
+    end
+    if group then
+        Categories.PlaceGroup(group, target, after)
+    elseif where == "into" then
+        local theirs = over.group or Categories.GroupOf(over.key)
+        if theirs then Categories.Join(key, theirs) else Categories.GroupWith(key, over.key) end
+    else
+        Categories.Place(key, target, after, into)
+    end
+    ns.Bags.Refresh()
+end
+
+-- A drag under way given up (the window hidden).
+function Bag.Cancel()
+    if rail then rail:Cancel() end
+end
+
 -- The bags' sidebar in the body, under top (the bar) and above bottom (the foot); bags: store.bags.
 function Bag.Build(body, top, bottom, bags)
     rail = Sidebar.New(body, top, bottom, {
@@ -335,6 +574,8 @@ function Bag.Build(body, top, bottom, bags)
         drop = function(row) ns.Menus.Drop(row.key) end,
         menu = function(row) if row.key or row.group then ns.Menus.Row(row, row.key, row.group) end end,
         add = function(row) ns.Menus.Add(row) end,
+        aim = Bag.Aim,
+        place = Bag.Place,
     })
     Bag.frame = rail.frame
     return rail.frame

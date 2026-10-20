@@ -589,6 +589,7 @@ function Bags.Show(on)
         Cells.Light(nil)
         Select.Stop()
         Sort.Stop()
+        Sidebar.Cancel()
     end
 end
 

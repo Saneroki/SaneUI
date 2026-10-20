@@ -3,8 +3,29 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 105 (Inventory), 90 (sheet), 199 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 105 (Inventory), 90 (sheet), 220 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
+
+### Inventory: categories dragged in the bags' sidebar (Saneroki, 2026-10-21)
+- **The drag** (`Bags/Sidebar.lua`): a row a window marks (`row.drag`) is dragged with the left button (not while an
+  item is on the cursor): a ghost of it follows the cursor (`Rail:Lift`; strata `TOOLTIP`, `Sidebar.GHOST`, the row
+  itself faded to `Sidebar.LIFTED`), a line of `Core.GOLD` shows where it would go (set in where it lands inside a
+  group) or the row it would go into is lit (`Sidebar.INTO`); the row under the cursor and how far down it
+  (`Rail:Under`) are asked of the window's `aim`; let go (`Rail:Land`), the window's `place` puts it there. The ghost's
+  `OnUpdate` runs only while it is shown and gives up when the mouse button is no longer down (`Rail:Cancel`; also
+  when the bags hide).
+- **The bags' rules** (`Bag.Aim`, `Bag.Place`): the movable categories and the groups are dragged (Pinned, Recent and
+  Junk never); the top and foot quarter of a row (`Sidebar.EDGE`) put it before or after (between a group's members:
+  into that group; under a group's row: its first member), the middle joins that row's group or makes a group of the
+  two (`Categories.Join`, `GroupWith`); a group goes before or after another group as a whole; Pinned and Recent take
+  nothing, Junk only before it.
+- **Categories** (`Bags/Categories.lua`): `Categories.Movable`, `Place` (a category before or after another, then in a
+  group or none; one that is never grouped stays in none; a target that does not move: the end, before Junk) and
+  `PlaceGroup` (a group's members together), kept in `kept.order` and `kept.member`.
+- Tests: `dev/tests/bags.lua` (220 checks): placed before another, into a group between its members, to the end, a
+  group as a whole, Pinned, Recent and Junk never moving; in the window the ghost and the line, a drop before a row,
+  into a row's middle (a new group), out of a group, a group dragged, before Junk, nothing over Pinned, the drag given
+  up. A `/reload` takes it in.
 
 ### Inventory: our own sort of the bags in One Bag (Saneroki, 2026-10-21)
 - **The sort** (`Bags/Sort.lua`, new in the TOC): the bar's clean-up button in One Bag moves the items of the ordinary
