@@ -18,7 +18,7 @@ Use current source and the user's instructions when they differ from a note.
 | Messages, bubbles, native chat, input, filtering/fading | [social.md](social.md) |
 | Navigation: minimap, world map, quest log, pins, routes, leveling guide (built: window, both views, canvas, terrain and art at every zoom, the game's minimap and map taken over; pins, quest log, top bar, routes, guide to come; handoff) | [navigation.md](navigation.md), then `Doc/ideas/Navigation.md` |
 | Unit frames, party, raid, buffs, nameplates, pets (not built yet) | `src/Combat/README.md`, `Doc/ideas/Combat.md` |
-| Inventory: bags and character sheet (built: the bottom right corner opens and closes the game's own) | `src/Inventory/README.md` |
+| Inventory: bags (built: the bottom right corner opens and closes the game's own; never the character sheet, which taints the window manager) | `src/Inventory/README.md` |
 | NPC talks, books and letters as a scene, part of Social (not built yet) | `Doc/ideas/Dialogue.md` |
 | Lore: AI voice overs, a library of the world's lore, tidbits in tooltips (an idea, not built) | `Doc/ideas/Lore.md` |
 | Game settings kept per account/character/profile, chat windows, own channels | [sync.md](sync.md) |
@@ -36,7 +36,7 @@ reserves action slots. Tooltips draws panels over native tooltips. Social suppli
 window and temporarily seats Blizzard's own chat edit boxes in it, and joins or leaves the game's chat
 channels as chosen on its page. Combat (2026-10-16) is set up for unit frames, party, raid, buffs,
 nameplates and pets; nothing built yet (`src/Combat/README.md`, plan `Doc/ideas/Combat.md`). Inventory (2026-10-20) opens and closes
-the game's own bags and character sheet from the screen's bottom right corner (`src/Inventory/README.md`). Navigation (2026-10-18) is the minimap and the map in one
+the game's own bags from the screen's bottom right corner (`src/Inventory/README.md`). Navigation (2026-10-18) is the minimap and the map in one
 window, without the map's data yet (`src/Navigation/README.md`, plan `Doc/ideas/Navigation.md`); its painted view
 is the module Atlas (`src/Atlas/`, load on demand; its art and index made into `assets/optimized/Atlas/`, built only
 once they are there). Sync keeps the game's per-character

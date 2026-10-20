@@ -113,6 +113,14 @@ combat) the call is blocked and the player sees "action blocked by an addon". Ta
   written: a layout is set through `C_EditMode.SetActiveLayout` out of combat and outside Edit Mode, and
   a `/reload` is asked for afterwards, since the manager moved the game's frames in our call (Sync's
   `hudLayout` part, `src/Core/Sync/Layout.lua`).
+- **The game's panels and the window manager** (seen in the game, 2026-10-20): a panel of the game's that
+  our code shows or hides (`ShowUIPanel`, `HideUIPanel`, `ToggleCharacter` and the other toggles behind its
+  keys) runs the manager (`UIParentPanelManager.lua`) tainted, and its slots stay written by our code until
+  a `/reload`, so the game's own next show or hide there runs tainted too. With secret values that fails at
+  once wherever a panel reads one: the character sheet's `OnShow` and `OnHide` read the player frame's
+  health (`ShowStatusBarText`) and broke on our first call and on the game's own close button after it.
+  So no module opens or closes the character sheet; any other panel of the game's only where it was tried
+  in the game. The bags are no panels and are made for addons (`OpenAllBags`, `CloseAllBags`).
 - **Finding taint** *(convention)*: `/console taintLog 1` writes `Logs/taint.log`; the events
   `ADDON_ACTION_BLOCKED` and `ADDON_ACTION_FORBIDDEN` name the addon. Turn the log off afterwards.
 

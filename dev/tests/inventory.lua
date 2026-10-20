@@ -1,5 +1,5 @@
 -- Runs the Inventory module against the stand-in client (wowstub.lua): the bottom right corner opens and
--- closes the game's bags and character sheet, one push one change, the sheet left alone in a fight.
+-- closes the game's bags, one push one change, and never touches the game's window manager (the sheet).
 -- How it feels under the hand can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/inventory.lua
 
@@ -14,19 +14,22 @@ local function check(condition, what)
     passed = passed + 1
 end
 
--- What the module needs of the client: the game's bags (open or not, as its functions say) and its sheet.
+-- What the module needs of the client: the game's bags (open or not, as its functions say). The game's
+-- window manager and its sheet are here to see that the module never calls them: a panel an addon shows
+-- or hides taints the manager, and the sheet then fails on the player frame's secret health.
 local bags, button = false, false
-local opened, closed, tab = 0, 0, nil
+local opened, managed = 0, 0
 IsAnyBagOpen = function() return bags end
 OpenAllBags = function()
     if bags then return end -- the game's: open already, nothing more
     bags, opened = true, opened + 1
 end
-CloseAllBags = function() bags, closed = false, closed + 1 end
+CloseAllBags = function() bags = false end
 CharacterFrame = W.NewWidget("Frame", "CharacterFrame")
 CharacterFrame:Hide()
-ToggleCharacter = function(which) tab = which CharacterFrame:Show() end
-HideUIPanel = function(frame) frame:Hide() end
+ToggleCharacter = function() managed = managed + 1 end
+ShowUIPanel = function() managed = managed + 1 end
+HideUIPanel = function() managed = managed + 1 end
 IsMouseButtonDown = function() return button end
 UIParent:SetSize(1920, 1080)
 
@@ -62,54 +65,36 @@ end
 
 -- At login the mouse may lie in the corner already: no push.
 Push()
-check(not bags and not CharacterFrame:IsShown(), "a mouse that was in the corner already opens nothing")
+check(not bags, "a mouse that was in the corner already opens nothing")
 W.Wait(Edge.QUIET)
 
--- A push opens both, as their keys do.
+-- A push opens the bags, as their key does.
 Push()
-check(bags and CharacterFrame:IsShown() and tab == "PaperDollFrame", "a push opens the bags and the character sheet")
+check(bags and opened == 1, "a push opens the bags")
 -- The mouse still in the corner: no second push, however it wiggles.
 W.cursorX, W.cursorY = 1915, 6
 W.Wait(Edge.LOOK * 3)
 Push()
-check(bags and CharacterFrame:IsShown(), "near the corner still: one push, one change")
+check(bags, "near the corner still: one push, one change")
 Leave()
 Push()
-check(not bags and not CharacterFrame:IsShown(), "back in the corner: both close")
+check(not bags, "back in the corner: they close")
 
--- Either opened by its key: a push closes it; with neither open, the next opens both.
+-- Opened otherwise (their key, a vendor): a push closes them.
 Leave()
 OpenAllBags()
 Push()
-check(not bags and not CharacterFrame:IsShown(), "the bags open by their key: a push closes them")
-Leave()
-ToggleCharacter("PaperDollFrame")
-Push()
-check(not bags and not CharacterFrame:IsShown(), "the sheet open by its key: a push closes it")
-Leave()
-Push()
-check(bags and CharacterFrame:IsShown() and opened == 3, "neither open: the next push opens both")
-Leave()
-Push()
-check(not bags and not CharacterFrame:IsShown(), "and the next closes both")
+check(not bags, "the bags open by their key: a push closes them")
 
--- In a fight the game keeps its panels to its own keys: only the bags come and go.
-Leave()
-ToggleCharacter("PaperDollFrame")
+-- In a fight the same: the game made its bags for addons to open.
 W.combat = true
-Push()
-check(bags and CharacterFrame:IsShown(), "in a fight, the sheet open: a push opens the bags")
 Leave()
 Push()
-check(not bags and CharacterFrame:IsShown(), "and closes them; the sheet is left as it is")
-HideUIPanel(CharacterFrame)
+check(bags, "in a fight a push opens the bags")
 Leave()
 Push()
-check(bags and not CharacterFrame:IsShown(), "in a fight, the sheet closed: the bags alone")
+check(not bags, "and closes them")
 W.combat = false
-Leave()
-Push()
-check(not bags and not CharacterFrame:IsShown(), "after the fight, the bags open: a push closes them")
 
 -- No push during a drag, in Edit Mode, or while a window of Sane UI's fills the screen.
 Leave()
@@ -127,10 +112,10 @@ Push()
 check(not bags, "a window of Sane UI's fills the screen: no push")
 Core.Window.All = all
 Push()
-check(bags and CharacterFrame:IsShown(), "none of those: the push opens them")
+check(bags, "none of those: the push opens them")
 Leave()
 Push()
-check(not bags and not CharacterFrame:IsShown(), "and the next push closes them")
+check(not bags, "and the next push closes them")
 Leave()
 
 -- The interface hidden and shown again (Alt-Z) under a mouse in the corner: no push.
@@ -152,7 +137,10 @@ ns.StandDown("a test")
 check(ns.off and not square:IsShown() and bags, "standing down: the square goes, the bags stay open")
 Leave()
 Push()
-check(bags and CharacterFrame:IsShown(), "after it, a push does nothing")
+check(bags, "after it, a push does nothing")
+
+-- Never the game's window manager: neither the sheet nor any other of its panels, shown or hidden.
+check(managed == 0 and not CharacterFrame:IsShown(), "the character sheet and the window manager are never touched")
 
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Inventory: all %d checks passed.\n"):format(passed))

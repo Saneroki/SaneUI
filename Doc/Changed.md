@@ -3,21 +3,29 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 258 (Navigation), 25 (Inventory), 37 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 258 (Navigation), 21 (Inventory), 37 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
-### Inventory: a new module, the bags and the character sheet from the corner (Saneroki, 2026-10-20)
+### Inventory: a new module, the bags from the corner (Saneroki, 2026-10-20)
 - **The module** (`src/Inventory/`, addon `SaneUI_Inventory`, *Inventory* under Sane UI in the addon list): what the
   player carries and wears. It needs Core only and has no options page yet.
 - **The corner** (`Corner.lua`): the mouse pushed into the screen's bottom right corner opens the game's own bags
-  (`OpenAllBags`) and character sheet (`ToggleCharacter("PaperDollFrame")`, its key's call) together when neither is
-  open; whenever either is open, however it was opened, a push closes what is open (`CloseAllBags`, `HideUIPanel`). In a fight the game
-  refuses its panels to addons, so there only the bags come and go and the sheet is left as it is. A square of
-  `Edge.CORNER` screen pixels in the strata `DIALOG` that takes only the mouse's coming, one push one change as at a
-  docked window's corner (`Edge.AWAY`, `Edge.LOOK`, `Edge.QUIET`); no push during a drag, in Edit Mode or while a
-  window of Sane UI's fills the screen; a window docked in that corner keeps it (its square lies above).
+  (`OpenAllBags`, as their key); whenever a bag is open, however it was opened, a push closes them (`CloseAllBags`).
+  In a fight too: the game keeps a bag button's bag in a secure attribute, so items used from bags an addon opened
+  stay the game's own clicks. A square of `Edge.CORNER` screen pixels in the strata `DIALOG` that takes only the
+  mouse's coming, one push one change as at a docked window's corner (`Edge.AWAY`, `Edge.LOOK`, `Edge.QUIET`); no
+  push during a drag, in Edit Mode or while a window of Sane UI's fills the screen; a window docked in that corner
+  keeps it (its square lies above).
+- **Not the character sheet** (from the game's error log): it opened with the bags at first
+  (`ToggleCharacter("PaperDollFrame")`, closed by `HideUIPanel`). Shown by our code, the game's window manager ran
+  tainted and the sheet's `OnShow` failed on the player frame's secret health (`ShowStatusBarText`,
+  `TextStatusBar.lua`: "attempt to compare a secret number value (execution tainted by 'SaneUI_Inventory')"); the
+  module stood down after that first push, and the manager's slots, written by our call, made the game's own close
+  button fail the same way until a `/reload`. The sheet is placed only by the manager, so it is left to its key and
+  micro button; the test sees that the module never calls the manager. The trap is in
+  `Doc/guides/addon-standards.md`, *Known traps*.
 - **Standing down** (`ns.GiveBack`): the corner goes; what is open stays open.
-- Tests: `dev/tests/inventory.lua` (25 checks), in `dev/tests/run`.
+- Tests: `dev/tests/inventory.lua` (21 checks), in `dev/tests/run`.
 
 ### Navigation: the map on Zephras Isle (Saneroki, 2026-10-20)
 - **The canvas on the planes** (`Coords.lua`, `Camera.lua`, `Canvas.lua`): the views use the planes the routes use

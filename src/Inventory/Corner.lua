@@ -3,11 +3,19 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Corner
 --  The mouse pushed into the screen's bottom right corner opens the game's own
---  bags and character sheet, as their keys do (all bags, then the character);
---  pushed there again, it closes them: whenever either is open, a push closes
---  what is open, and only when neither is does it open both. In a fight the
---  game opens and closes its panels by its own keys only, so there the corner
---  opens and closes the bags alone and leaves the sheet as it is.
+--  bags, all of them, as their key does; pushed there again, it closes them:
+--  whenever a bag is open, however it was opened, a push closes them. The game
+--  made its bags to be opened by addons: a bag's buttons keep their bag in a
+--  secure attribute (ContainerFrame.lua), so using an item from them stays the
+--  game's own, in a fight too.
+--
+--  Not the character sheet, opened nor closed: the game's panels are placed by
+--  its window manager (UIParentPanelManager.lua), and a panel an addon's code
+--  shows or hides leaves the manager tainted until a /reload. The sheet's own
+--  OnShow and OnHide read the player frame's health and mana, secret values to
+--  tainted code, and fail: at once when an addon opens it, and later when the
+--  game's own key or close button does. Only the game's key and its micro
+--  button open it cleanly.
 --
 --  The corner is a square of a few of the screen's pixels (Core's Edge.CORNER,
 --  as large as a docked window's corner), above the game's bars and windows,
@@ -35,27 +43,9 @@ local function Game(name, ...)
     if type(fn) == "function" then return fn(...) end
 end
 
-local function Sheet()
-    return rawget(_G, "CharacterFrame")
-end
-
--- Whether anything the corner opens is open: the bags, or the sheet unless a fight keeps it as it is.
-local function Open(fight)
-    if Game("IsAnyBagOpen") then return true end
-    local sheet = Sheet()
-    return not fight and sheet and sheet:IsShown() or false
-end
-
--- Closes what is open, or opens both when neither is.
+-- Closes the bags when one is open, else opens them all.
 function Corner.Toggle()
-    local fight, sheet = InCombatLockdown(), Sheet()
-    if Open(fight) then
-        Game("CloseAllBags")
-        if not fight and sheet then Game("HideUIPanel", sheet) end
-    else
-        Game("OpenAllBags")
-        if not fight and sheet then Game("ToggleCharacter", "PaperDollFrame") end
-    end
+    if Game("IsAnyBagOpen") then Game("CloseAllBags") else Game("OpenAllBags") end
 end
 
 -- Whether one of Sane UI's windows fills the screen (Core's Edge.lua).
