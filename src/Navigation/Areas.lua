@@ -76,7 +76,6 @@ end
 function Areas.Place(view)
     local quest = view.level == "zone" and ns.Pins.Shows("area") and Quest()
     if not quest then return HideAll() end
-    layer:SetAlpha(ns.PinScale("area")) -- the pin filter's slider for the quest areas is their opacity
     local drawn = {}
     for _, zone in ipairs(Coords.Zones(view.map)) do
         local box = zone.box

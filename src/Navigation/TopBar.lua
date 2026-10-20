@@ -9,9 +9,8 @@ local _, ns = ...
 --                        (the setting Map view; Navigation.lua, Offer)
 --      the map selector  the world, a continent or a plane of its own (Zephras Isle), then a zone of it (A to
 --                        Z): the map shows it whole; each says what the map shows now
---      Pins              the pin filter: a checkbox per kind of pin with its icon (the setting Pins on the
---                        map), and at its right a slider for that kind's size (the quest areas': their
---                        opacity; the setting pinSizes, kept per profile)
+--      Pins              the pin filter: a checkbox per kind of pin (the setting Pins on the map), and at
+--                        its right a slider for that kind's size (the setting pinSizes, kept per profile)
 --
 --  Only while the window fills the screen; the game's own menus (WowStyle1DropdownTemplate,
 --  Blizzard's menu system) for the dropdowns.
@@ -123,7 +122,7 @@ end
 
 -- A kind's size kept, in the pin filter's steps (100 %: none kept).
 local function Resize(key, value)
-    local sizes = ns.PinRange(key)
+    local sizes = ns.PIN_SIZES
     local percent = math.floor((value - sizes.low) / sizes.step + 0.5) * sizes.step + sizes.low
     if percent == ns.PinPercent(key) then return end
     local kept = Core.Copy(type(ns.options.pinSizes) == "table" and ns.options.pinSizes or {})
@@ -137,7 +136,7 @@ local OWNER = {} -- the sliders' callbacks are of this owner: a slider laid out 
 -- menu while it is open). Returns the row's size.
 local function Sizer(button, key)
     local slider = button:AttachTemplate("MinimalSliderWithSteppersTemplate")
-    local sizes, labels = ns.PinRange(key), MinimalSliderWithSteppersMixin.Label
+    local sizes, labels = ns.PIN_SIZES, MinimalSliderWithSteppersMixin.Label
     slider:SetWidth(TopBar.SIZER)
     slider:ClearAllPoints()
     slider:SetPoint("RIGHT", -TopBar.SIZE_LABEL, 0)
@@ -150,14 +149,14 @@ local function Sizer(button, key)
     return width, TopBar.ROW
 end
 
--- The pin filter: a checkbox per kind with its icon before its words, and the size slider of each kind that has a
--- size (the pins, the party's marks, the route's line); the quest areas' slider is their opacity.
-local SIZED = { group = true, route = true, area = true }
+-- The pin filter: a checkbox per kind, and the size slider of each kind that has a size (the pins, the party's
+-- marks, the route's line).
+local SIZED = { group = true, route = true }
 local function Filter(_, root)
     local sliders = rawget(_G, "MinimalSliderWithSteppersMixin") ~= nil
     for _, kind in ipairs(ns.KINDS) do
         local key = kind[1]
-        local box = root:CreateCheckbox(ns.KindLabel(kind), ns.Guard(function() return ns.Pins.Shows(key) end),
+        local box = root:CreateCheckbox(kind[2], ns.Guard(function() return ns.Pins.Shows(key) end),
             ns.Guard(function() Switch(key) end))
         if sliders and (ns.Pins.SIZE[key] or SIZED[key]) then
             box:AddInitializer(ns.Guard(function(button) return Sizer(button, key) end))

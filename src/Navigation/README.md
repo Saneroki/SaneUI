@@ -33,37 +33,27 @@ party), always over the map, and the full map has the quest log at its left. The
   - **a click** on the game's minimap (while it shows) pings, as there.
 - **Following you:** both views follow you at first; after a drag the map comes back to you once the mouse
   has been off it for a while (*Follow again after*).
-- **Pins:** every kind of thing in its own icon, the game's map icons: no discs, no numbers. The game's own marks
-  where it tells them (your quests: the turn-in mark when ready, the target while in progress, the quest the arrow
-  leads to glowing; flight points of your side; rares (a skull) and treasures (a chest) nearby; the game's points
-  and ways into other maps), and what Core's data knows: quest givers with a quest you can take (the yellow !,
-  see-through so your own quests stand out), with a quest too low to give you experience or one you cannot take yet
-  (its level, a quest first: a grey !), or with quests you have done only (grey, off at first); services, each its
-  own (the innkeeper's mug, the banker's bags, a class trainer's book, a profession trainer's scroll, a vendor by
-  its goods...), entrances, the docks of the boats (a boat) and zeppelins (an airship) with where they go, herbs,
-  ore, books (an open book): as far as the data holds them; a place the game has not confirmed says so. A tooltip
-  says what it is: an NPC's title (*Warrior Trainer*, *Weaponsmith*), its quests with their levels, and why a grey
-  one is not for you yet. One pin per thing: the game's word hides the data's. Pins that would cover each other
-  show as one, in the first one's icon, its tooltip what is there: a click zooms in. A click on a quest in your log
-  leads the game's arrow to it; on a quest giver, its quests show in the quest log (below); on an entrance, a way
-  or a dock with one destination, its map opens. A continent whole shows only travel and places; the minimap no
-  books or treasures, services only near you. The party and raid in their class colours.
-- **The pin filter** (*Pins* on the full map's bar, or the setting *Pins on the map*): a checkmark per kind, each
-  with its icon. The quests each a row of their own: *Quests in your log*, *Quest offers*, *Low-level quests* (no
-  experience for you any more), *Quests for later* (once you meet what they ask) and *Done quests*. Its
+- **Pins:** the game's own marks where it tells them (your quests on their discs, ready to turn in, the quest the
+  arrow leads to on its brown disc; flight points of your side; rares and treasures nearby; the game's points and
+  ways into other maps), and what Core's data knows (quest givers with a quest you can take, see-through so your
+  own quests stand out; givers of quests you have done, grey, under *Done quests* (off at first); services, entrances,
+  the docks of the boats and zeppelins with where they go, herbs, ore, books: as far as the data holds them; a
+  place the game has not confirmed says so). One pin per thing: the game's word hides the data's. Pins that would
+  cover each other show as one disc with their number: a click zooms in. A click on a quest's pin leads the game's
+  arrow to it; on an entrance, a way or a dock with one destination, its map opens. A continent whole shows only
+  travel and places; the minimap no books or treasures, services only near you. The party and raid in their class
+  colours.
+- **The pin filter** (*Pins* on the full map's bar, or the setting *Pins on the map*): a checkmark per kind. Its
   first two are no pins: *Route to the map pin* (the golden line) and *Minimap dots*: what the game's minimap
   shows around you (players, tracked herbs and ore, quest areas), on the small map and on the full map too, there
   around you at the full map's own scale (shown while it fits inside the map). Both are on at first. At each kind's
   right a slider sets its size on the map, 50 to 200 percent (the route: its line's thickness; the party: its
-  marks; the quest areas: their opacity, 10 to 100 percent), kept with the settings.
+  marks), kept with the settings.
 - **Quest areas:** the quest the arrow leads to, or the one under the mouse in the quest log, shaded as the game
   shades it on its map.
 - **The quest log** at the full map's left (*Quest Log* on the bar puts it in or out): your quests by zone with
   their level and state, their objectives under them. A click: the arrow leads to it, the map shows where it is,
   its text below with *Track*, *Share* and *Abandon*. Shift and a click tracks it; the right button opens a menu.
-  A quest giver's pin clicked: its quests on top, under *Not in your log*, greyed out, each with a red X that takes
-  it out again; chosen, below it what the data knows of it: why it is not for you yet, its level, who gives and
-  takes it, its objectives and rewards. They stay until the next `/reload`.
 - **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
 - **Zephras Isle** is on the map as a continent is, a zone of its own: the map follows you there, its pins and the
   map pin stand on it, a click on it at the world opens it, and a right click on it goes out to the world (there is
@@ -294,11 +284,6 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
-- **2026-10-20, icons and quests:** every kind of pin in its own icon from the game's map icons (no discs or
-  numbers, a gathered marker in its first pin's icon), the filter's rows with their icons; the quests split in the
-  filter (in your log, offers, low-level, for later, done), grey ! for those too low or for later with why in the
-  tooltip, a quest giver's quests shown in the quest log as previews with a red X; NPC titles in the tooltips; the
-  quest areas' slider their opacity.
 - **2026-10-20, pin sizes and quests:** a size slider per kind in the pin filter (the setting `pinSizes`, per
   profile), givers of quests you can take see-through, and the kind *Done quests* for givers of quests you have
   done.

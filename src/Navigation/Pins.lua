@@ -9,8 +9,6 @@ local _, ns = ...
 --      Pins.For(view, small)   the pins in view: every zone the view shows at a zone's level, the
 --                              continents' travel and places further out, none at the world
 --      Pins.Gather(list, k)    pins that would cover each other on the screen, gathered (Gather below)
---      Pins.Standing(quest, id) where a quest of Core's data stands for this character, and why (offered, low,
---                              later, log, done, never)
 --      Pins.Offered(quest)     whether this character can take a quest of Core's data now
 --
 --  A pin: kind (the filter's, Pins.KINDS), key (one per thing: the game's word hides Core's for the same
@@ -32,29 +30,20 @@ Pins.KINDS = ns.KINDS
 Pins.CONTINENT = { flight = true, travel = true, entrance = true, place = true } -- kinds shown past a zone
 Pins.NEAR = 300       -- yards: services on the small view only so near the player
 Pins.GATHER = 18      -- units: pins nearer each other than this on the screen are gathered into one marker
-Pins.SIZE = { log = 24, quest = 22, low = 18, later = 18, done = 18, flight = 18, travel = 22, entrance = 22,
-              place = 22, service = 20, rare = 20, treasure = 18, herb = 16, ore = 16, book = 18 }
+Pins.SIZE = { quest = 26, done = 22, flight = 18, travel = 22, entrance = 22, place = 22, service = 18, rare = 18,
+              treasure = 18, herb = 16, ore = 16, book = 18, gathered = 24 }
 
--- The order pins are drawn in: a higher one over a lower one, and the first in a gathered marker (its icon).
-local ORDER = { log = 10, quest = 9, rare = 8, entrance = 7, flight = 6, travel = 5, place = 4, treasure = 3, service = 2,
-                later = 1, low = 1, done = 1, herb = 1, ore = 1, book = 0 }
+-- The order pins are drawn in: a higher one over a lower one, and the first in a gathered marker.
+local ORDER = { quest = 9, rare = 8, entrance = 7, flight = 6, travel = 5, place = 4, treasure = 3, service = 2,
+                done = 1, herb = 1, ore = 1, book = 0 }
 
--- Every kind of thing its own icon, from the game's map icons (ObjectIconsAtlas): no discs, no numbers.
-Pins.ICONS = {
-    turnIn = "questturnin", progress = "target", offer = "questnormal", grey = "trivialquests",
-    done = "islands-questbangdisable", rare = "dungeonskull", treasure = "vignetteloot",
-}
--- Core's services: an NPC's first service with an icon gives its pin's (a trainer: Trainer below).
+-- Core's services, as the game's town tracking draws them (Interface\Minimap\Tracking's atlases).
 local SERVICES = {
-    repair = "repair", innkeeper = "innkeeper", banker = "banker", auctioneer = "auctioneer",
-    stablemaster = "stablemaster", battlemaster = "battlemaster", trainer = "profession", weaponmaster = "upgradeitem-32x32",
-    vendor = "poi-workorders", guildmaster = "crossedflags", tabard = "crossedflags", spirithealer = "poi-graveyard-neutral",
+    repair = "Repair", innkeeper = "Innkeeper", banker = "Banker", auctioneer = "Auctioneer",
+    stablemaster = "StableMaster", battlemaster = "Battlemaster", trainer = "Class", weaponmaster = "Class",
+    vendor = "Food", guildmaster = "Banker", tabard = "Banker", spirithealer = "poi-graveyard-neutral",
 }
--- A vendor by the first of its kinds of goods with an icon.
-local GOODS = { food = "food", reagents = "reagents", poisons = "poisons", ammunition = "ammunition", potions = "greencross",
-                tradegoods = "gear" }
--- A trainer of a class (its title names one of the game's classes) is the class book; of a profession, the scroll.
-local CLASS_TRAINER = "class"
+local GOODS = { food = "Food", reagents = "Reagents", poisons = "Poisons", ammunition = "Ammunition" }
 -- A service's words in the tooltip.
 Pins.SERVICE_WORDS = {
     repair = "Repairs", innkeeper = "Innkeeper", banker = "Banker", auctioneer = "Auctioneer",
@@ -64,27 +53,20 @@ Pins.SERVICE_WORDS = {
 }
 -- Core's places and ways: the filter's kind and the game's atlas for each.
 local PLACES = {
-    crossing = { "place", "poi-door-arrow-up" }, cave = { "place", "caveunderground-down" },
-    dungeon = { "entrance", "dungeon" }, raid = { "entrance", "raid" }, pier = { "travel", "flightmasterferry" },
-    mailbox = { "service", "mailbox" }, meetingstone = { "place", "teleportationnetwork-32x32" },
+    crossing = { "place", "poi-door-arrow-up" }, cave = { "place", "CaveUnderground-Down" },
+    dungeon = { "entrance", "Dungeon" }, raid = { "entrance", "Raid" }, pier = { "travel", "TaxiNode_Continent_Neutral" },
+    mailbox = { "service", "Mailbox" }, meetingstone = { "place", "Ping_Map_Whole_NonThreat" },
     spirithealer = { "service", "poi-graveyard-neutral" },
 }
-local WAYS = { boat = "flightmasterferry", zeppelin = "vehicle-air-horde", tram = "vehicle-alliancecart",
-               lift = "poi-door-up", portal = "mageportalalliance" }
-local OBJECTS = { herb = { "herb", "professions_tracking_herb" }, ore = { "ore", "professions_tracking_ore" },
-                  chest = { "treasure", Pins.ICONS.treasure }, mailbox = { "service", "mailbox" },
-                  book = { "book", "lorewalking-map-icon" } }
+local WAYS = { boat = "TaxiNode_Continent_Neutral", zeppelin = "TaxiNode_Continent_Horde", tram = "TaxiNode_Continent_Neutral",
+               lift = "poi-door-arrow-up", portal = "TaxiNode_Continent_Neutral" }
+local OBJECTS = { herb = { "herb", "Professions_Tracking_Herb" }, ore = { "ore", "Professions_Tracking_Ore" },
+                  chest = { "treasure", "VignetteLoot" }, mailbox = { "service", "Mailbox" },
+                  book = { "book", nil, "Interface\\Icons\\INV_Misc_Book_09" } }
 Pins.TEXT = {
     turnIn = Core.Word("QUEST_WATCH_QUEST_READY", "Ready for turn-in"),
     offered = "A quest to take",
     done = "Quests you have done",
-    quest = "%s (level %d)",
-    low = "Too low to give you experience",
-    later = "Not yet for you",
-    needsLevel = Core.Word("ITEM_MIN_LEVEL", "Requires Level %d"),
-    needsFirst = "First: %s",
-    needsOne = "First one of: %s",
-    preview = "Click: show it in the quest log",
     undiscovered = "Not discovered yet",
     open = "Click: show it in the quest log",
     openMap = "Click: open its map",
@@ -143,17 +125,15 @@ local function Quests(list, map)
         if quest and not info.isMapIndicatorQuest and not seen[quest] then
             seen[quest] = true
             local complete = Core.Ask(C_QuestLog.IsComplete, quest) and true or false
-            Add(list, { kind = "log", key = "quest:" .. quest, quest = quest, complete = complete, focused = quest == focused,
-                        atlas = complete and Pins.ICONS.turnIn or Pins.ICONS.progress,
+            Add(list, { kind = "quest", key = "quest:" .. quest, quest = quest, complete = complete, focused = quest == focused,
                         name = Core.Ask(C_QuestLog.GetTitleForQuestID, quest), click = "quest" }, map, info.x, info.y)
         end
     end
     if focused and focused > 0 and not seen[focused] then
         local x, y = Core.Ask(C_QuestLog.GetNextWaypointForMap, focused, map)
         if x then
-            local complete = Core.Ask(C_QuestLog.IsComplete, focused) and true or false
-            Add(list, { kind = "log", key = "quest:" .. focused, quest = focused, focused = true, way = true,
-                        complete = complete, atlas = complete and Pins.ICONS.turnIn or Pins.ICONS.progress,
+            Add(list, { kind = "quest", key = "quest:" .. focused, quest = focused, focused = true, way = true,
+                        complete = Core.Ask(C_QuestLog.IsComplete, focused) and true or false,
                         name = Core.Ask(C_QuestLog.GetTitleForQuestID, focused), click = "quest" }, map, x, y)
         end
     end
@@ -176,15 +156,13 @@ local function Flights(list, map)
     end
 end
 
--- Rares, treasures and the game's other marks nearby: rares and treasures in their kind's icon, the rest in the
--- game's own atlas.
+-- Rares, treasures and the game's other marks nearby: the game's own atlas for each.
 local function Vignettes(list, map)
     for _, entry in ipairs(Live.Vignettes(map)) do
         local info = entry.info
         if info.onWorldMap ~= false or info.onMinimap then
             local atlas = info.atlasName or "VignetteKill"
             local kind = atlas:find("Loot") and "treasure" or (atlas:find("Kill") and "rare") or "place"
-            if kind ~= "place" then atlas = Pins.ICONS[kind] end
             local key = Thing(info.objectGUID) or ("vignette:" .. tostring(entry.guid))
             Add(list, { kind = kind, key = key, name = info.name, atlas = atlas, live = true }, map, entry.x, entry.y)
         end
@@ -229,70 +207,38 @@ end
 -------------------------------------------------------------------------------
 --  Core's data, per map
 -------------------------------------------------------------------------------
+-- Whether this character can take a quest of Core's data now: not done and not in its log, its level, side,
+-- race and class, the quests it needs first done and none that closes it.
 local me -- { level, side, race, class }: asked at each layout's first question
+function Pins.Offered(quest, id)
+    if type(quest) ~= "table" or quest.retired then return false end
+    if Core.Ask(C_QuestLog.IsQuestFlaggedCompleted, id) then return false end
+    local index = Core.Ask(C_QuestLog.GetLogIndexForQuestID, id)
+    if index and index > 0 then return false end
+    if (quest.minLevel or 0) > me.level or (quest.maxLevel and quest.maxLevel > 0 and me.level > quest.maxLevel) then return false end
+    if quest.side and quest.side ~= me.side then return false end
+    local function Has(list, value)
+        if not list then return true end
+        for _, entry in ipairs(list) do if entry == value then return true end end
+        return false
+    end
+    if not Has(quest.races, me.race) or not Has(quest.classes, me.class) then return false end
+    local one, oneDone = false, false
+    for _, need in ipairs(quest.requires or {}) do
+        if not need.side or need.side == me.side then
+            local done = Core.Ask(C_QuestLog.IsQuestFlaggedCompleted, need.quest) and true or false
+            if need.kind == "done" and not done then return false end
+            if need.kind == "closed" and done then return false end
+            if need.kind == "one" then one, oneDone = true, oneDone or done end
+        end
+    end
+    return not one or oneDone
+end
 
 local function Me()
     local side = Core.Plain(UnitFactionGroup("player"))
     me = { level = Core.Plain(UnitLevel("player")) or 1, side = side and side:lower(),
            race = select(3, UnitRace("player")), class = select(3, UnitClass("player")) }
-end
-
-local QUESTS = Core.Data.Set("Quests")
-local function QuestName(id)
-    return QUESTS:Get(id, "name") or ("#" .. tostring(id))
-end
-
-local function Has(list, value)
-    if not list then return true end
-    for _, entry in ipairs(list) do if entry == value then return true end end
-    return false
-end
-
--- Whether a quest is too low to give this character experience: the game's quest colour grey (its level more than
--- the game's green range below the character's).
-local function Trivial(quest)
-    local level = quest.level
-    if not level or level <= 0 then return false end
-    local green = rawget(_G, "GetQuestGreenRange")
-    local range = green and Core.Plain(Core.Ask(green)) or 8
-    return me.level - level > range
-end
-
--- Where a quest of Core's data stands for this character, and why: "offered" (it may take it now), "low" (it may,
--- but it gives no experience), "later" (once it meets what it asks: its level, a quest first; the reason in words),
--- "log" (in its log), "done", or "never" (not for its side, race or class, past its level, retired, closed).
-function Pins.Standing(quest, id)
-    if not me then Me() end
-    if type(quest) ~= "table" or quest.retired then return "never" end
-    if Core.Ask(C_QuestLog.IsQuestFlaggedCompleted, id) then return "done" end
-    local index = Core.Ask(C_QuestLog.GetLogIndexForQuestID, id)
-    if index and index > 0 then return "log" end
-    if quest.side and quest.side ~= me.side then return "never" end
-    if not Has(quest.races, me.race) or not Has(quest.classes, me.class) then return "never" end
-    if quest.maxLevel and quest.maxLevel > 0 and me.level > quest.maxLevel then return "never" end
-    local missing, ones, oneDone
-    for _, need in ipairs(quest.requires or {}) do
-        if not need.side or need.side == me.side then
-            local done = Core.Ask(C_QuestLog.IsQuestFlaggedCompleted, need.quest) and true or false
-            if need.kind == "closed" and done then return "never" end
-            if need.kind == "done" and not done then missing = missing or need.quest end
-            if need.kind == "one" then
-                ones = ones or {}
-                ones[#ones + 1] = QuestName(need.quest)
-                oneDone = oneDone or done
-            end
-        end
-    end
-    if (quest.minLevel or 0) > me.level then return "later", Pins.TEXT.needsLevel:format(quest.minLevel) end
-    if missing then return "later", Pins.TEXT.needsFirst:format(QuestName(missing)) end
-    if ones and not oneDone then return "later", Pins.TEXT.needsOne:format(table.concat(ones, ", ")) end
-    if Trivial(quest) then return "low", Pins.TEXT.low end
-    return "offered"
-end
-
--- Whether this character can take a quest of Core's data now, and it gives experience.
-function Pins.Offered(quest, id)
-    return Pins.Standing(quest, id) == "offered"
 end
 
 -- Where a dock's boat or zeppelin goes, in the game's words: the area there, and its zone where that is another.
@@ -305,106 +251,53 @@ local function Towards(there)
     return area or zone or "?"
 end
 
--- A trainer's icon: the class book where its title names one of the game's classes, else the profession's scroll.
-local classNames -- the game's class names, asked once
-local function Trainer(title)
-    if not classNames then
-        classNames = {}
-        for _, list in ipairs({ rawget(_G, "LOCALIZED_CLASS_NAMES_MALE"), rawget(_G, "LOCALIZED_CLASS_NAMES_FEMALE") }) do
-            if type(list) == "table" then for _, name in pairs(list) do classNames[#classNames + 1] = name end end
-        end
-    end
-    for _, name in ipairs(classNames) do
-        if type(title) == "string" and title:find(name, 1, true) then return CLASS_TRAINER end
-    end
-    return SERVICES.trainer
-end
-
--- A quest's lines in a pin's tooltip: its name and level, and why it is grey (tables: words and their colour).
-local function QuestLines(lines, id, reason, grey)
-    local level = QUESTS:Get(id, "level")
-    local name = level and Pins.TEXT.quest:format(QuestName(id), level) or QuestName(id)
-    lines[#lines + 1] = grey and { name, 0.6, 0.6, 0.6 } or { name, 1, 0.82, 0 }
-    if reason then lines[#lines + 1] = { "  " .. reason, 0.6, 0.6, 0.6 } end
-end
-
 -- A place of Core's data as a pin: what it is says its kind and its look; nil for what the map does not show.
+local QUESTS = Core.Data.Set("Quests")
 local function FromData(place)
     local what, kind = place.what, place.kind
     local pin = { key = place.key, name = place.name, unverified = true }
     if kind == "npc" then
-        -- Its quests by where they stand for this character: offered, grey (too low, or for later), done.
-        local offers, greys, done, grey = {}, {}, {}, nil
+        local offered, done
         for _, quest in ipairs(type(what) == "table" and what.quests or {}) do
-            local standing, reason = Pins.Standing(QUESTS:Get(quest), quest)
-            if standing == "offered" then
-                offers[#offers + 1] = quest
-            elseif standing == "low" or standing == "later" then
-                greys[#greys + 1] = { quest, reason }
-                grey = (grey == "later" or standing == "later") and "later" or "low"
-            elseif standing == "done" then
-                done[#done + 1] = quest
+            if Pins.Offered(QUESTS:Get(quest), quest) then
+                offered = offered or {}
+                offered[#offered + 1] = QUESTS:Get(quest, "name") or ("#" .. quest)
+            elseif Core.Ask(C_QuestLog.IsQuestFlaggedCompleted, quest) then
+                done = done or {}
+                done[#done + 1] = QUESTS:Get(quest, "name") or ("#" .. quest)
             end
         end
         local services = what.services or {}
-        local service
-        for _, each in ipairs(services) do
-            if SERVICES[each] then service = each break end
-        end
-        local lines = {}
-        if what.title then lines[#lines + 1] = what.title end
-        if #offers > 0 then
-            pin.kind, pin.atlas, pin.offer = "quest", Pins.ICONS.offer, true
+        if offered then
+            pin.kind, pin.atlas, pin.lines = "quest", "QuestNormal", offered
+            pin.offer = true
         elseif what.rare then
-            pin.kind, pin.atlas = "rare", Pins.ICONS.rare
-        elseif service then
-            -- The game's flight points stand for the flight masters (One pin per thing, point 6).
-            local atlas = SERVICES[service]
-            if service == "trainer" then atlas = Trainer(what.title) end
-            if service == "vendor" then
-                for _, goods in ipairs(what.goods or {}) do
-                    if GOODS[goods] then atlas = GOODS[goods] break end
-                end
-            end
-            pin.kind, pin.atlas, pin.service = "service", atlas, true
-            local words = {}
-            for _, each in ipairs(services) do
-                -- A trainer's title says what it trains (Warrior Trainer): the word Trainer only without one.
-                if Pins.SERVICE_WORDS[each] and not (each == "trainer" and what.title) then
-                    words[#words + 1] = Pins.SERVICE_WORDS[each]
-                end
-            end
-            if #words > 0 then lines[#lines + 1] = table.concat(words, ", ") end
-        elseif grey then
-            pin.kind, pin.atlas, pin.grey = grey, Pins.ICONS.grey, true
-        elseif #done > 0 then
-            -- Only quests this character has done: a pin of the kind Done quests (off at first), grey.
-            pin.kind, pin.atlas, pin.grey = "done", Pins.ICONS.done, true
-            lines[#lines + 1] = Pins.TEXT.done
-            for _, quest in ipairs(done) do QuestLines(lines, quest, nil, true) end
+            pin.kind, pin.atlas = "rare", "VignetteKill"
         else
-            return nil
+            -- The game's flight points stand for the flight masters (One pin per thing, point 6).
+            local service
+            for _, each in ipairs(services) do
+                if SERVICES[each] then service = each break end
+            end
+            if not service then
+                if not done then return nil end
+                -- Only quests this character has done: a pin of the kind Done quests (off at first), grey.
+                pin.kind, pin.atlas, pin.dim, pin.lines = "done", "QuestNormal", true, { Pins.TEXT.done }
+                for _, name in ipairs(done) do pin.lines[#pin.lines + 1] = name end
+                pin.roles = services
+                return pin
+            end
+            local atlas = SERVICES[service]
+            if service == "vendor" and what.goods and what.goods[1] then atlas = GOODS[what.goods[1]] or atlas end
+            pin.kind, pin.atlas, pin.service = "service", atlas, true
+            pin.lines = {}
+            for _, each in ipairs(services) do pin.lines[#pin.lines + 1] = Pins.SERVICE_WORDS[each] end
         end
-        -- What it offers, and what it will offer: a click shows them in the quest log.
-        pin.quests = {}
-        for _, quest in ipairs(offers) do
-            QuestLines(lines, quest, nil, false)
-            pin.quests[#pin.quests + 1] = quest
-        end
-        for _, entry in ipairs(greys) do
-            QuestLines(lines, entry[1], entry[2], true)
-            pin.quests[#pin.quests + 1] = entry[1]
-        end
-        if #pin.quests > 0 then
-            pin.click = "preview"
-            lines[#lines + 1] = { Pins.TEXT.preview, 0.5, 0.5, 0.5 }
-        end
-        pin.lines = #lines > 0 and lines or nil
         pin.roles = services
     elseif kind == "object" then
         local look = OBJECTS[what]
         if not look then return nil end
-        pin.kind, pin.atlas = look[1], look[2]
+        pin.kind, pin.atlas, pin.texture = look[1], look[2], look[3]
     elseif kind == "place" then
         local look = PLACES[what]
         if not look then return nil end
@@ -413,7 +306,7 @@ local function FromData(place)
         if place.to then pin.to, pin.click = place.to, "map" end
         if place.levelMin and place.levelMax then pin.lines = { Pins.TEXT.level:format(place.levelMin, place.levelMax) } end
     elseif kind == "travel" then
-        pin.kind, pin.atlas = "travel", WAYS[what] or WAYS.boat
+        pin.kind, pin.atlas = "travel", WAYS[what] or "TaxiNode_Continent_Neutral"
         if place.towards then
             -- A dock: the game's own way (its TaxiPath tables), where it goes from here.
             pin.name, pin.unverified, pin.lines = pin.name or Pins.WAY_WORDS[what], nil, {}
@@ -524,7 +417,7 @@ function Pins.For(view, small, pu, pv)
 end
 
 -- Pins nearer each other on the screen than Pins.GATHER units become one marker, at the first one (the one
--- drawn highest), in its icon; quests in the log and offered are never gathered, nor what the game tells is near.
+-- drawn highest) with the number it holds; quests are never gathered, nor what the game tells is near.
 -- list: For's, sorted; k: the zoom (units a yard). Gives a list of pins and markers ({ gathered = { pins },
 -- pu, pv, key }).
 local cells = {}
@@ -533,7 +426,7 @@ function Pins.Gather(list, k)
     local out = {}
     local size = Pins.GATHER
     for _, pin in ipairs(list) do
-        if pin.kind == "log" or pin.kind == "quest" or pin.live then
+        if pin.kind == "quest" or pin.live then
             out[#out + 1] = pin
         else
             local x, y = pin.pu * k, pin.pv * k

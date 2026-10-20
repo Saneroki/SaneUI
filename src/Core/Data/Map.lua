@@ -19,8 +19,7 @@ local Core = SaneUI.Core
 --                "place:12", "travel:3"; a boat's or zeppelin's dock "travel:<way>:<dock>", its number in the
 --                way's docks
 --      id        the creature's or object's ID; the place's or way's number
---      what      what it is: an NPC's services (a list) with rare = true, quests = { quest IDs it offers }, title (the
---                line under its name: Warrior Trainer);
+--      what      what it is: an NPC's services (a list) with rare = true, quests = { quest IDs it offers };
 --                an object's kind (herb, ore, chest, mailbox, quest, book, door, other); a place's kind
 --                (crossing, cave, dungeon, raid, pier, mailbox, meetingstone, spirithealer); a way's kind
 --                (boat, zeppelin, tram, lift, portal, flight)
@@ -94,8 +93,7 @@ local function Creature(id)
     local services = npc and npc.services
     local rare = npc and (npc.rank == "rare" or npc.rank == "rareelite") or nil
     if not (services and #services > 0) and not rare and #quests == 0 then return nil end
-    return { services = services, rare = rare, quests = #quests > 0 and quests or nil, goods = npc and npc.goods,
-             title = npc and npc.title },
+    return { services = services, rare = rare, quests = #quests > 0 and quests or nil, goods = npc and npc.goods },
         npc and npc.name, npc and npc.levelMin, npc and npc.levelMax
 end
 

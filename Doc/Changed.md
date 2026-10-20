@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 292 (Navigation), 44 (Inventory), 38 (sheet), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 281 (Navigation), 44 (Inventory), 38 (sheet), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
 ### Inventory: the character sheet's side tabs and reputation (Saneroki, 2026-10-20)
@@ -67,37 +67,6 @@ A game restart takes it in (new addons, Navigation, Atlas and Inventory; new fil
 - **The corner of the game's bags is gone** (`Corner.lua` removed): the window's own corner takes its place.
 - Tests: `dev/tests/inventory.lua` (16 checks): the window and its corner, parts registered before and after the
   full screen, the search, a part that fails, standing down.
-
-### Navigation: every pin its own icon, the quests split, previews in the quest log (Saneroki, 2026-10-20)
-- **Icons** (`Pins.lua`, `PinView.lua`): every pin in its own icon from the game's map icons (ObjectIconsAtlas): no
-  quest discs, no numbers. `Pins.ICONS` (a quest in the log: `questturnin` when ready, `target` in progress; an
-  offer `questnormal`; a grey quest `trivialquests`, without colour; done `islands-questbangdisable`; rares
-  `dungeonskull`, the game's own rares too; treasures `vignetteloot`); services by their first service with an
-  icon (`SERVICES`: repair, innkeeper, banker, auction house, stable master, battlemaster, weapon master, guild,
-  spirit healer; a trainer the class book `class` where its title names one of the game's classes,
-  `LOCALIZED_CLASS_NAMES_*`, else the profession scroll; a vendor by its goods, `GOODS`, else `poi-workorders`);
-  places and ways (`PLACES`, `WAYS`: the boat `flightmasterferry`, the zeppelin `vehicle-air-horde`, the tram, the
-  lift, portals, meeting stones `teleportationnetwork-32x32`, books `lorewalking-map-icon`). A gathered marker:
-  its first pin's icon, no number (the pin buttons have no disc or count any more). The focused quest's glow stays.
-- **The filter** (`Navigation.lua`, `TopBar.lua`): each kind its `icon`, shown before its words (`ns.KindLabel`, the
-  setting's list too). The quests split: `log` (*Quests in your log*, the game's), `quest` (*Quest offers*), `low`
-  (*Low-level quests*), `later` (*Quests for later*), `done`, each with its checkbox and size; the settings' version
-  2 takes a saved filter over (`log` as `quest` was, `low` and `later` on). The quest areas' slider is their opacity
-  (`ns.PIN_OPACITY`, 10 to 100 %; `ns.PinRange`; `Areas.lua` sets it on its layer).
-- **Where a quest stands** (`Pins.Standing`): offered, low (the game's quest colour grey: its level more than
-  `GetQuestGreenRange` below yours), later (with why: the level it asks, a quest first, one of some quests first),
-  log, done, never. An NPC's pin: an offer wins, then a rare, then its service, then grey (`later` over `low`), then
-  done; its tooltip lists its title (`Data.Map` hands NPCs' `title` on; *Warrior Trainer* in place of *Trainer*), its
-  services, and its offered and grey quests with their levels and why (lines may carry their colour).
-- **Previews** (`QuestLog.lua`): a click on a quest giver's pin (`QuestLog.Preview`): its quests on top of the log
-  under *Not in your log*, grey, each with the game's red X (`xmarksthespot`) that takes it out (`Unpreview`); the
-  map full screen with the log at the giver's place. Chosen, the words below from Core's data: why it is not for you
-  yet, its level, who gives and takes it, its objectives in the log's words (the game's `QUEST_MONSTERS_KILLED`,
-  `QUEST_ITEMS_NEEDED`, `QUEST_OBJECTS_FOUND`, the names from NPCs, Objects and the game's items), its rewards; no
-  buttons. Kept until the next `/reload`.
-- **Tests:** `dev/tests/navigation.lua` (292 checks; the data with a quest for later, a warrior trainer, quest
-  levels): the icons, the grey quest and why, the trainer's title and book, a quest too low, the filter's icons and
-  quest rows, the areas' opacity, the preview and its red X, the settings taken over.
 
 ### Combat: quest marks beside nameplates (Saneroki, 2026-10-20)
 - **`QuestMarks.lua`** (new, in the TOC): a creature that belongs to a quest in your log shows a mark left of its

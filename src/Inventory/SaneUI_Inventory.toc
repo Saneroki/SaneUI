@@ -23,4 +23,6 @@ Sheet\Stats.lua
 Sheet\Sheet.lua
 Sheet\List.lua
 Sheet\Side.lua
+Sheet\Rows.lua
 Sheet\Reputation.lua
+Sheet\Skills.lua

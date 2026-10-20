@@ -13,6 +13,8 @@ local _, ns = ...
 --      ns.Side.Describe(side, text, height)
 --      ns.Side.Rows(side)  then  ns.Side.Row(side, label, value, labelColor, valueColor)
 --                                ns.Side.Line(side, text, color)
+--                                ns.Side.Category(side, text)   -- the game's title band
+--                                ns.Side.Spacer(side, height)
 --      ns.Side.Empty(side, text)   -- text: empty, saying it; nil: not empty
 --  side.foot is the foot's frame; side.content holds the title down to the rows.
 -------------------------------------------------------------------------------
@@ -25,6 +27,7 @@ Side.LEFT, Side.TOP, Side.RIGHT, Side.BOTTOM = 16, 14, 12, 14
 Side.WIDTH, Side.EMPTY_WIDTH, Side.EMPTY_Y = 195, 170, 30
 Side.DESCRIPTION = 90 -- a description's height unless a tab says
 Side.ROW, Side.GAP = 16, 2
+Side.CATEGORY, Side.SPACER = 40, 8
 
 local function Colour(region, color)
     if color then region:SetTextColor(color.r, color.g, color.b) end
@@ -103,6 +106,9 @@ local function Next(side)
     local row = side.made[side.used]
     if not row then
         row = CreateFrame("Frame", nil, side.rows)
+        row.back = row:CreateTexture(nil, "BACKGROUND")
+        row.back:SetAtlas("UI-Character-Info-Title")
+        row.back:SetAllPoints()
         row.label = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
         row.value = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
         side.made[side.used] = row
@@ -116,6 +122,8 @@ local function Next(side)
     end
     row.label:ClearAllPoints()
     row.value:ClearAllPoints()
+    row.back:Hide()
+    row.label:Show()
     row:Show()
     return row
 end
@@ -148,6 +156,30 @@ function Side.Line(side, text, color)
     Colour(row.label, color or rawget(_G, "NORMAL_FONT_COLOR"))
     row.value:Hide()
     row:SetHeight(math.max(1, Core.Plain(row.label:GetStringHeight()) or Side.ROW))
+    return row
+end
+
+-- A category's band, the game's (CharacterFrameSidePaneCategoryTemplate): its words in its middle.
+function Side.Category(side, text)
+    local row = Next(side)
+    row:SetHeight(Side.CATEGORY)
+    row.back:Show()
+    row.label:SetWidth(0)
+    row.label:SetWordWrap(false)
+    row.label:SetJustifyH("CENTER")
+    row.label:SetPoint("CENTER", 0, 1)
+    row.label:SetText(text or "")
+    Colour(row.label, rawget(_G, "NORMAL_FONT_COLOR"))
+    row.value:Hide()
+    return row
+end
+
+-- Room between rows, that high.
+function Side.Spacer(side, height)
+    local row = Next(side)
+    row:SetHeight(height or Side.SPACER)
+    row.label:Hide()
+    row.value:Hide()
     return row
 end
 

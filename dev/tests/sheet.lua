@@ -159,6 +159,7 @@ end
 W.templates.ColoredProgressBarTemplate = function(widget)
     widget.Fill = W.NewWidget("Texture", nil, widget)
     function widget:SetFillPercent(share) self._fill = share end
+    function widget:SetFillTextureByColorType(kind) self._kind = kind end
 end
 -- The game's reputation: a header, a faction, a header with a standing of its own.
 local factionList = {
@@ -192,6 +193,37 @@ C_Reputation = {
 FACTION_BAR_COLORS = { [4] = { r = 1, g = 1, b = 0 }, [5] = { r = 0, g = 0.6, b = 0.1 } }
 GetText = function(name) return ({ FACTION_STANDING_LABEL5 = "Friendly", FACTION_STANDING_LABEL4 = "Neutral" })[name] end
 REPUTATION, CHARACTER_FRAME_TAB_REPUTATION, CHARACTER_FRAME_TAB_CHARACTER = "Reputation", "Reputation", "Character"
+-- The game's skills: a header, a weapon skill, a class skill (left out), a sub-header with a skill under it.
+local skillList = {
+    { skillID = 6, name = "Weapon Skills", isHeader = true, isCollapsed = false, parentSkillLineID = 0 },
+    { skillID = 43, name = "Swords", rank = 150, maxRank = 300, modifier = 5, skillLineCategoryID = 6, parentSkillLineID = 0,
+      description = "Swords." },
+    { skillID = 200, name = "Arcane", rank = 1, maxRank = 1, modifier = 0, skillLineCategoryID = 7, parentSkillLineID = 0 },
+    { skillID = 11, name = "Professions", isHeader = true, isChild = true, isCollapsed = false, parentSkillLineID = 0 },
+    { skillID = 164, name = "Blacksmithing", rank = 75, maxRank = 150, modifier = 0, isChild = true, skillLineCategoryID = 11,
+      parentSkillLineID = 0, description = "Hammer and anvil." },
+    { skillID = 999, name = "A specialization", rank = 1, maxRank = 1, modifier = 0, parentSkillLineID = 164 },
+}
+local selectedSkill, skillCalls = 0, {}
+C_SkillInfo = {
+    GetNumSkillLines = function() return #skillList end,
+    GetSkillLineInfo = function(index)
+        local skill = skillList[index]
+        if not skill then return nil end
+        local copy = {}
+        for key, value in pairs(skill) do copy[key] = value end
+        return copy
+    end,
+    GetSelectedSkill = function() return selectedSkill end,
+    SetSelectedSkill = function(index) selectedSkill = index end,
+    ExpandSkillHeader = function(index) skillCalls.expand = index end,
+    CollapseSkillHeader = function(index) skillCalls.collapse = index end,
+}
+ColoredProgressBarMixin = { ColorType = { Blue = "blue" } }
+GetGlancingBlowChance = function() return 0.4 end
+GetGlancingBlowPenalty = function() return 0.35 end
+SKILLS, CHARACTER_FRAME_TAB_SKILLS = "Skills", "Skills"
+WEAPON_SKILL_DETAIL_BOSS = "Hit %s, crit %s, glancing %s at %s less"
 ScrollUtil = { InitScrollBoxListWithScrollBar = function(box, _, view) box.view = view end }
 CreateDataProvider = function(elements) return { elements = elements } end
 ScrollBoxConstants = { RetainScrollPosition = true }
@@ -303,7 +335,7 @@ check(header.state:IsShown() and header.state._atlas == "common-button-list-minu
 check(faction.bar:IsShown() and faction.bar._text == "Friendly" and near(faction.bar._fill, 0.5) and faction.bar.Fill._vertex[2] == 0.6,
     "a faction: the game's bar, its standing's word, its share, its colour")
 check(withRep.toggle:IsShown() and withRep.bar._text == "Neutral", "a header with a standing: its fold button and its own bar")
-check(repList.view.extent(nil, factionList[1]) == ns.Reputation.HEADER and repList.view.extent(nil, factionList[2]) == ns.Reputation.ENTRY,
+check(repList.view.extent(nil, factionList[1]) == ns.Rows.HEADER and repList.view.extent(nil, factionList[2]) == ns.Rows.ENTRY,
     "each row as high as the game's")
 faction:GetScript("OnEnter")(faction)
 check(faction.bar._text == faction.bar.progress and faction.bar.progress:find("3000 / 6000", 1, true),
@@ -359,15 +391,56 @@ Pick("Reputation")
 check(repList.rows[2].name._text == "Stormwind", "chosen again: drawn as the game has it now, built only once")
 check(#Lists() == 1, "one list: the tab is built once")
 
+-------------------------------------------------------------------------------
+--  Skills
+-------------------------------------------------------------------------------
+Pick("Skills")
+check(tabButtons.Skills._checked and panel.title._text == "Skills", "the skills tab chosen")
+local skillBox = Lists()[2]
+check(skillBox and #skillBox.rows == 4, "the skill lines as the game lists them: the class's own and the ones under another left out")
+check(selectedSkill == 2, "none chosen: the first skill the game lists")
+local skillHeader, swords, professions, smithing = skillBox.rows[1], skillBox.rows[2], skillBox.rows[3], skillBox.rows[4]
+check(skillHeader.state:IsShown() and swords.bar._text == "150 |cnPURE_GREEN_COLOR:(+5)|r / 300" and near(swords.bar._fill, 0.5)
+    and swords.bar._kind == "blue", "a skill: the game's blue bar, its rank and its bonus in green")
+check(professions.toggle:IsShown() and professions.toggle._points[1][4] == 2 + ns.Skills.INDENT,
+    "a sub-header: its fold button, set in as the game sets it")
+check(smithing.name._points[1][4] == ns.Rows.NAME_LEFT + ns.Skills.INDENT_CHILD and smithing.bar._text == "75 / 150",
+    "a skill under a sub-header: set in further")
+professions:GetScript("OnClick")(professions)
+check(skillCalls.collapse == 4, "a click on a sub-header folds it, as the game's does")
+smithing:GetScript("OnClick")(smithing)
+check(selectedSkill == 5, "a click on a skill chooses it")
+local smithTitle, glancing
+for _, widget in ipairs(W.frames) do
+    if widget._kind == "FontString" and widget._text == "Blacksmithing" and widget ~= smithing.name then smithTitle = widget end
+    if widget._kind == "FontString" and widget._text and widget._text:find("glancing", 1, true) and widget:IsVisible() then glancing = widget end
+end
+check(smithTitle and not glancing, "the chosen skill at the right: its name, no weapon lines for a trade")
+selectedSkill = 2
+W.Fire("SKILL_LINES_CHANGED")
+W.Wait(0)
+for _, widget in ipairs(W.frames) do
+    if widget._kind == "FontString" and widget._text and widget._text:find("glancing", 1, true) and widget:IsVisible() then glancing = widget end
+end
+check(glancing and glancing._text == "Hit -6.40%, crit -6.40%, glancing 40% at 35% less",
+    "a weapon skill: against a raid boss as the game works it out: " .. tostring(glancing and glancing._text))
+skillList[2].rank = 151
+Pick("Reputation")
+W.Fire("SKILL_LINES_CHANGED")
+W.Wait(0)
+check(swords.bar._text:find("^150"), "the skills tab hidden, it does not listen to the game")
+Pick("Skills")
+check(skillBox.rows[2].bar._text:find("^151"), "chosen again: drawn as the game has it now")
+
 -- The sheet hidden with the full screen: the tab shown no longer listens either.
 Push()
 Stand()
 factionList[2].name = "Stormwind Keep"
 W.Fire("UPDATE_FACTION")
 W.Wait(0)
-check(repList.rows[2].name._text == "Stormwind", "the full screen gone: the tab shown does not listen")
+check(repList.rows[2].name._text == "Stormwind", "the full screen gone: the tabs do not listen")
 Push()
 Stand()
-check(repList.rows[2].name._text == "Stormwind Keep" and tabButtons.Reputation._checked, "back: the tab chosen before, as the game has it now")
+check(tabButtons.Skills._checked and skillBox.rows[2]:IsVisible(), "back: the tab chosen before")
 
 io.write(("Sheet: all %d checks passed.\n"):format(passed))

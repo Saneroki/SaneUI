@@ -1,6 +1,6 @@
 # Sane UI: Inventory
 
-**Status:** its window and full screen built; the character sheet's paper doll, stats, side tabs and reputation built; its other tabs, the bags and the other characters are being built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
+**Status:** its window and full screen built; the character sheet's paper doll, stats, side tabs, reputation and skills built; its other tabs, the bags and the other characters are being built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 The module for what you carry and wear. Push the mouse into the screen's bottom right corner and the screen
@@ -27,6 +27,8 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   others to come. Reputation lists your factions as the game does: a click on a header folds or unfolds it, a
   click on a faction chooses it (its standing in numbers under the mouse). At the right the chosen faction: its
   standing, its description, and the game's switches At War, Move to Inactive and Show as Experience Bar.
+  Skills lists your skill lines with their ranks (the bonus in green); choose one to see its description, and for
+  a weapon skill what it means against a foe of your level and against a raid boss.
 - **Settings:** *Sane UI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
   motion, the background's opacity and texture) and *Window corners*.
 
@@ -83,9 +85,12 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     the game's list into our code `ns.Safe`; the side pane over the right pane as the game's
     `CharacterFrameSidePaneTemplate` lays it out (title, subtitle, line, description, rows, foot, the empty word).
     The game's template itself registers into the game's sheet when made, so it is not used.
-  - **Reputation** (`Sheet/Reputation.lua`): the factions of `C_Reputation` in the game's three looks (a header with
-    `common-button-list-collapseExpand` and its fold sign; a header with a standing, its `campaign_headericon` fold
-    button; a faction), the game's heights (`Reputation.HEADER`, `SUBHEADER`, `ENTRY`), its coloured bar
+  - **Rows** (`Sheet/Rows.lua`): the reputation and skills rows in the game's three looks, the same in both (a header
+    with `common-button-list-collapseExpand` and its fold sign; a sub-header with its `campaign_headericon` fold
+    button; an entry with the game's `ColoredProgressBarTemplate`), the game's heights (`Rows.HEADER`, `SUBHEADER`,
+    `ENTRY`), the game's light (`charactercreate-customize-dropdown-linemouseover-…`), an indent; every part made once,
+    its scripts calling the tab's (`owner`), `ns.Safe`.
+  - **Reputation** (`Sheet/Reputation.lua`): the factions of `C_Reputation` on those rows, its coloured bar
     (`ColoredProgressBarTemplate`: the standing's word and colour, `FACTION_BAR_COLORS`, friendships green, renown
     blue; the progress under the mouse), its light (`Reputation.LIT`, `WAR`: brighter chosen or under the mouse,
     red at war). The choice is the game's (`C_Reputation.SetSelectedFaction`), the first faction chosen when none
@@ -93,6 +98,15 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     (`ToggleFactionAtWar`, `SetFactionActive`, `SetWatchedFactionByIndex`, the game's tooltips and sounds). The
     game's own rows are wired to its sheet (its frame, the event registry's selection, its side pane), so ours are
     our own. Drawn anew a frame after `UPDATE_FACTION` and the game's other reputation events, while shown.
+  - **Skills** (`Sheet/Skills.lua`): the top-level skill lines of `C_SkillInfo` (`parentSkillLineID` 0) without the
+    class's own (`Skills.HIDDEN`), as the game lists them: headers, sub-headers (`isChild`; a click folds them),
+    skills set in under a sub-header (`Skills.INDENT_CHILD`, `INDENT`), the game's blue bar with the rank, the bonus in
+    green and defense's bonus from `UnitDefenseSkill`. The choice is the game's (`C_SkillInfo.SetSelectedSkill`), the
+    first skill when none is. The side: name, rank bar, description (`Skills.DESCRIPTION`, shorter for a weapon), and
+    for a weapon skill (`Skills.WEAPONS`, the game's skill line IDs, ranged or not) the game's sums against a foe of
+    your level and a raid boss (`Skills.BOSS_LEVEL`, `RANKS_PER_LEVEL`; glancing blows from the game's
+    `GetGlancingBlowChance`, `GetGlancingBlowPenalty`) under the game's category bands (`Side.Category`). Drawn anew a
+    frame after `SKILL_LINES_CHANGED`, while shown.
   - **Events, while shown only** (`Sheet.Show`): `PLAYER_EQUIPMENT_CHANGED`, `ITEM_LOCK_CHANGED`,
     `UPDATE_INVENTORY_DURABILITY`, `UPDATE_INVENTORY_ALERTS`, `UNIT_INVENTORY_CHANGED` and `UNIT_MODEL_CHANGED`
     (the player's), `PLAYER_LEVEL_UP`, `UNIT_NAME_UPDATE`, `PLAYER_ENTERING_WORLD`. Every value read goes through
@@ -122,7 +136,9 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 | `Sheet/Sheet.lua` | The character sheet: its panes, the side tabs and the tab chosen, the Character tab (paper doll, level line, stats); registers the part `character` |
 | `Sheet/List.lua` | A tab's scrolling list in the game's look |
 | `Sheet/Side.lua` | The side pane at the sheet's right, as the game lays it out |
+| `Sheet/Rows.lua` | The rows the reputation and skills tabs list, in the game's three looks |
 | `Sheet/Reputation.lua` | The reputation tab |
+| `Sheet/Skills.lua` | The skills tab |
 
 ## History
 - **2026-10-20:** set up as a module of its own. First the bottom right corner opened the game's own bags and
@@ -130,4 +146,4 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   the corner opened the bags only. Then (Saneroki) our own windows instead: the module's window docked in the
   bottom right corner, its corner filling the screen with the character sheet, the bags and the other
   characters' snapshots on Core's board (`Doc/ideas/Inventory.md`). The character sheet's paper doll: its slots,
-  the model, the level line; its stats; its side tabs and the reputation tab.
+  the model, the level line; its stats; its side tabs, the reputation and the skills tabs.

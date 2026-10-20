@@ -4,10 +4,10 @@ local _, ns = ...
 --  Sane UI - Inventory - Sheet - Reputation
 --  The sheet's reputation tab, as the game's sheet has it (Camelot's
 --  ReputationFrame), ours: over the left pane the factions you know
---  (C_Reputation), in the game's order and looks: a header (a click folds or
---  unfolds it), a header with a standing of its own (its fold button at its
---  left), a faction with the game's coloured bar (the standing's word in its
---  colour; the progress in numbers under the mouse). A click chooses a faction,
+--  (C_Reputation), in the game's order and looks (Rows.lua): a header (a click
+--  folds or unfolds it), a header with a standing of its own (its fold button
+--  at its left), a faction with the game's coloured bar (the standing's word in
+--  its colour; the progress in numbers under the mouse). A click chooses a faction,
 --  lit in the game's way (brighter under the mouse, red while at war). At the
 --  right the chosen faction (List.lua's side, Side.lua): its name and standing,
 --  its description, its bar, and the game's three switches: at war, inactive,
@@ -22,10 +22,7 @@ local Core = SaneUI.Core
 local Reputation = {}
 ns.Reputation = Reputation
 
--- The game's sizes (ReputationFrame.xml): a header's height, a header with a standing's, a faction's; the bar.
-Reputation.HEADER, Reputation.SUBHEADER, Reputation.ENTRY = 28, 22, 30
-Reputation.BAR, Reputation.BAR_HEIGHT, Reputation.SIDE_BAR = 160, 29, 180
-Reputation.NAME_LEFT, Reputation.HEADER_LEFT = 15, 10
+-- The game's sizes (ReputationFrame.xml; the rows' are Rows.lua's): the switches at the side's foot.
 Reputation.CHECK, Reputation.CHECK_GAP, Reputation.LABEL = 26, 2, 158
 -- How brightly a faction is lit (ReputationEntryMixin:RefreshBackgroundHighlightOpacity): chosen, under the mouse;
 -- at war: chosen, under the mouse, else.
@@ -114,10 +111,7 @@ local function Kind(data)
 end
 
 local function Extent(data)
-    local kind = Kind(data)
-    if kind == "header" then return Reputation.HEADER end
-    if kind == "subheader" then return Reputation.SUBHEADER end
-    return Reputation.ENTRY
+    return ns.Rows.Height(Kind(data))
 end
 
 -- How brightly a faction's row is lit now, and in which colour (red while at war).
@@ -125,20 +119,17 @@ local function Light(row)
     local data = row.data
     if not data or Kind(data) == "header" then return end
     local chosen, over, war = Selected() == data.factionIndex, row:IsMouseOver(), data.atWarWith
-    local alpha = 0
+    local alpha
     if war then
         alpha = (chosen and Reputation.WAR.chosen) or (over and Reputation.WAR.over) or Reputation.WAR.rest
     else
         alpha = (chosen and Reputation.LIT.chosen) or (over and Reputation.LIT.over) or 0
     end
-    local color = war and Color("FACTION_AT_WAR_COLOR") or Color("WHITE_FONT_COLOR")
-    for _, part in ipairs(row.light.parts) do
-        if color then part:SetVertexColor(color.r, color.g, color.b) end
-    end
-    row.light:SetAlpha(alpha)
+    ns.Rows.Light(row, alpha, war and Color("FACTION_AT_WAR_COLOR") or nil)
 end
 
-local function Toggle(row)
+-- A header (or a header with a standing, by its button) folds or unfolds, by the game's own call.
+local function Fold(row)
     local data = row.data
     if not data then return end
     if data.isCollapsed then
@@ -148,11 +139,10 @@ local function Toggle(row)
     end
 end
 
--- A click: a header folds or unfolds; a faction (or a header with a standing) is chosen.
-local function Clicked(row)
+-- A faction (or a header with a standing) chosen, by the game's own call.
+local function Choose(row)
     local data = row.data
     if not data then return end
-    if Kind(data) == "header" then return Toggle(row) end
     Core.Ask(Rep().SetSelectedFaction, data.factionIndex or 0)
     ns.List.Redraw(list)
     Reputation.Detail()
@@ -168,85 +158,13 @@ local function Left(row)
     Light(row)
 end
 
--- Every part a row may need, made once: the header's art and fold sign, the faction's light, fold button, bar, name.
-local function Parts(row)
-    if row.name then return end
-    row:RegisterForClicks("LeftButtonUp")
-    row.headBack = row:CreateTexture(nil, "BACKGROUND")
-    row.headBack:SetAtlas("common-button-list-collapseExpand")
-    row.headBack:SetAllPoints()
-    row.headLight = row:CreateTexture(nil, "HIGHLIGHT")
-    row.headLight:SetAtlas("common-button-list-collapseExpand")
-    row.headLight:SetBlendMode("ADD")
-    row.headLight:SetAlpha(0.3)
-    row.headLight:SetAllPoints()
-    row.state = row:CreateTexture(nil, "BORDER")
-    row.state:SetPoint("RIGHT", -8, -1)
-    row.light = CreateFrame("Frame", nil, row)
-    row.light:SetAllPoints()
-    row.light:SetFrameLevel(math.max(0, row:GetFrameLevel() - 1))
-    local leftSide = row.light:CreateTexture(nil, "BACKGROUND")
-    leftSide:SetAtlas("charactercreate-customize-dropdown-linemouseover-side")
-    leftSide:SetWidth(6)
-    leftSide:SetPoint("TOPLEFT")
-    leftSide:SetPoint("BOTTOMLEFT")
-    local rightSide = row.light:CreateTexture(nil, "BACKGROUND")
-    rightSide:SetAtlas("charactercreate-customize-dropdown-linemouseover-side")
-    rightSide:SetWidth(6)
-    rightSide:SetPoint("TOPRIGHT")
-    rightSide:SetPoint("BOTTOMRIGHT")
-    local middle = row.light:CreateTexture(nil, "BACKGROUND")
-    middle:SetAtlas("charactercreate-customize-dropdown-linemouseover-middle")
-    middle:SetPoint("TOPLEFT", leftSide, "TOPRIGHT")
-    middle:SetPoint("BOTTOMRIGHT", rightSide, "BOTTOMLEFT")
-    row.light.parts = { leftSide, rightSide, middle }
-    row.toggle = CreateFrame("Button", nil, row)
-    row.toggle:SetSize(20, 20)
-    row.toggle:SetPoint("LEFT", 2, 0)
-    row.toggle:SetHighlightTexture("Interface\\Buttons\\UI-PlusButton-Hilight", "ADD")
-    row.toggle:SetScript("OnClick", function() ns.Safe("character", Toggle, row) end)
-    row.bar = CreateFrame("Frame", nil, row, "ColoredProgressBarTemplate")
-    row.bar:SetSize(Reputation.BAR, Reputation.BAR_HEIGHT)
-    row.bar:SetPoint("RIGHT", -3, 0)
-    row.name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    row.name:SetJustifyH("LEFT")
-    row.name:SetWordWrap(false)
-    row.name:SetHeight(15)
-    row:SetScript("OnClick", function(self) ns.Safe("character", Clicked, self) end)
-    row:SetScript("OnEnter", function(self) ns.Safe("character", Entered, self) end)
-    row:SetScript("OnLeave", function(self) ns.Safe("character", Left, self) end)
-end
+local OWNER = { click = Choose, fold = Fold, enter = Entered, leave = Left }
 
 local function Draw(row, data)
-    Parts(row)
     row.data = data
     local kind = Kind(data)
-    local header = kind == "header"
-    row.headBack:SetShown(header)
-    row.headLight:SetShown(header)
-    row.state:SetShown(header)
-    row.light:SetShown(not header)
-    row.bar:SetShown(not header)
-    row.toggle:SetShown(kind == "subheader")
-    row.name:ClearAllPoints()
-    row.name:SetText(data.name or "")
-    if header then
-        row.name:SetFontObject("GameFontNormalLeft")
-        row.name:SetPoint("LEFT", Reputation.HEADER_LEFT, 0)
-        row.name:SetPoint("RIGHT", row.state, "LEFT", -4, 0)
-        row.state:SetAtlas(data.isCollapsed and "common-button-list-plus" or "common-button-list-minus", true)
-        return
-    end
-    row.name:SetFontObject("GameFontHighlight")
-    if kind == "subheader" then
-        local closed = data.isCollapsed
-        row.toggle:SetNormalAtlas(closed and "campaign_headericon_closed" or "campaign_headericon_open")
-        row.toggle:SetPushedAtlas(closed and "campaign_headericon_closedpressed" or "campaign_headericon_openpressed")
-        row.name:SetPoint("LEFT", row.toggle, "RIGHT", 3, 0)
-    else
-        row.name:SetPoint("LEFT", Reputation.NAME_LEFT, 0)
-    end
-    row.name:SetPoint("RIGHT", row.bar, "LEFT", -10, 0)
+    ns.Rows.Draw(row, kind, data.name, data.isCollapsed, OWNER)
+    if kind == "header" then return end
     Bar(row.bar, data)
     Light(row)
 end
@@ -384,7 +302,7 @@ local function Build(left, right)
     list = ns.List.New(left, { extent = Extent, draw = Draw })
     side = ns.Side.New(right, 3 * Reputation.CHECK + 2 * Reputation.CHECK_GAP)
     side.bar = CreateFrame("Frame", nil, side.content, "ColoredProgressBarTemplate")
-    side.bar:SetSize(Reputation.SIDE_BAR, Reputation.BAR_HEIGHT)
+    side.bar:SetSize(ns.Rows.SIDE_BAR, ns.Rows.BAR_HEIGHT)
     side.bar:SetPoint("TOP", side.divider, "BOTTOM", 0, -6)
     side.description:ClearAllPoints()
     side.description:SetPoint("TOP", side.bar, "BOTTOM", 0, -6)

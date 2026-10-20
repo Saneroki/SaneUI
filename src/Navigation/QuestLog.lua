@@ -14,10 +14,6 @@ local _, ns = ...
 --                    modifier: its link into the chat; the right button: a menu (watch, lead to it,
 --                    share, abandon after a question). The mouse over it: its area on the map (Areas.lua)
 --      below         the chosen quest: its objectives' words and its story, and its buttons
---      previews      quests of Core's data a click on their giver's pin showed (QuestLog.Preview): on top,
---                    under Not in your log, grey, each with the game's red X that takes it out again; chosen,
---                    what the data knows of it below (why it is not for you yet, its level, who gives and
---                    takes it, what it asks first, its objectives, its rewards). Kept until the next /reload
 --
 --  Only the game's quest API (C_QuestLog, the game's quest link and share), never
 --  the quest panels of the game's map: called from here they would taint its pins.
@@ -44,22 +40,7 @@ QuestLog.TEXT = {
     showMap = Core.Word("SHOW_MAP", "Show Map"),
     objectives = Core.Word("QUEST_OBJECTIVES", "Quest Objectives"),
     description = Core.Word("QUEST_DESCRIPTION", "Description"),
-    previews = "Not in your log",
-    remove = "Take it out of the log",
-    offered = "You can take this quest.",
-    level = "Level %d",
-    givenBy = "Given by: %s",
-    takenBy = "Turned in to: %s",
-    rewards = Core.Word("QUEST_REWARDS", "Rewards"),
-    experience = "%d experience",
-    killed = Core.Word("QUEST_MONSTERS_KILLED", "%s slain: %d/%d"),
-    items = Core.Word("QUEST_ITEMS_NEEDED", "%s: %d/%d"),
-    objects = Core.Word("QUEST_OBJECTS_FOUND", "%s: %d/%d"),
 }
-QuestLog.REMOVE = "xmarksthespot" -- the game's red X (ObjectIconsAtlas) on a preview's row
-
-local QUESTS, NPCS, OBJECTS = Core.Data.Set("Quests"), Core.Data.Set("NPCs"), Core.Data.Set("Objects")
-local previews = {} -- quests shown from the map's pins (Preview), newest first
 
 local panel, box, view, bar, details, story, words, buttons, header
 local rows = {}    -- what the list shows: { kind = "header" | "quest" | "objective", ... }
@@ -76,13 +57,6 @@ end
 -- The log as rows: each header, its quests (not the hidden ones), each quest's objectives.
 local function Read()
     wipe(rows)
-    if #previews > 0 then
-        rows[#rows + 1] = { kind = "header", text = QuestLog.TEXT.previews }
-        for _, quest in ipairs(previews) do
-            rows[#rows + 1] = { kind = "preview", quest = quest, text = QUESTS:Get(quest, "name") or ("#" .. quest),
-                                level = QUESTS:Get(quest, "level") }
-        end
-    end
     local count = Plain(Core.Ask(C_QuestLog.GetNumQuestLogEntries)) or 0
     local quests = 0
     for index = 1, count do
@@ -196,13 +170,12 @@ end
 -------------------------------------------------------------------------------
 local function Height(_, row)
     if row.kind == "header" then return QuestLog.HEADER end
-    if row.kind == "quest" or row.kind == "preview" then return QuestLog.QUEST end
+    if row.kind == "quest" then return QuestLog.QUEST end
     return QuestLog.OBJECTIVE
 end
 
 local function Colour(row)
     if row.kind == "header" then return 1, 0.82, 0 end
-    if row.kind == "preview" then return 0.55, 0.55, 0.55 end
     if row.kind == "objective" then
         if row.done then return 0.5, 0.5, 0.5 end
         return 0.85, 0.85, 0.85
@@ -217,13 +190,8 @@ local function Clicked(element, mouse)
     local row = element.row
     if not row then return end
     if row.kind == "header" then
-        if not row.index then return end -- Not in your log: no header of the game's
         if row.collapsed then ExpandQuestHeader(row.index) else CollapseQuestHeader(row.index) end
         return
-    end
-    if row.kind == "preview" then
-        chosen = row.quest
-        return QuestLog.Refresh()
     end
     local quest = row.quest
     if mouse == "RightButton" then return Menu(element, quest) end
@@ -259,22 +227,6 @@ local function Draw(element, row)
         element.light = element:CreateTexture(nil, "HIGHLIGHT")
         element.light:SetAllPoints()
         element.light:SetColorTexture(1, 1, 1, 0.08)
-        -- A preview's red X: takes it out of the log again.
-        element.remove = CreateFrame("Button", nil, element)
-        element.remove:SetSize(16, 16)
-        element.remove:SetPoint("RIGHT", -2, 0)
-        element.remove:SetNormalAtlas(QuestLog.REMOVE)
-        element.remove:SetHighlightAtlas(QuestLog.REMOVE, "ADD")
-        element.remove:SetScript("OnClick", ns.Guard(function(self)
-            local row = self:GetParent().row
-            if row and row.kind == "preview" then QuestLog.Unpreview(row.quest) end
-        end))
-        element.remove:SetScript("OnEnter", ns.Guard(function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(QuestLog.TEXT.remove, 1, 1, 1)
-            GameTooltip:Show()
-        end))
-        element.remove:SetScript("OnLeave", GameTooltip_Hide)
         element:RegisterForClicks("LeftButtonUp", "RightButtonUp")
         element:SetScript("OnClick", ns.Guard(Clicked))
         element:SetScript("OnEnter", ns.Guard(Entered))
@@ -285,7 +237,6 @@ local function Draw(element, row)
     text:ClearAllPoints()
     state:SetText("")
     mark:Hide()
-    element.remove:SetShown(row.kind == "preview")
     if row.kind == "header" then
         text:SetFontObject("GameFontNormal")
         text:SetPoint("LEFT", 16, 0)
@@ -293,11 +244,6 @@ local function Draw(element, row)
         mark:SetPoint("LEFT", 0, 0)
         mark:Show()
         text:SetText(row.text or "")
-    elseif row.kind == "preview" then
-        text:SetFontObject("GameFontHighlight")
-        text:SetPoint("LEFT", 16, 0)
-        text:SetPoint("RIGHT", element.remove, "LEFT", -4, 0)
-        text:SetText(row.level and ("[%d] %s"):format(row.level, row.text) or row.text)
     elseif row.kind == "quest" then
         text:SetFontObject("GameFontHighlight")
         text:SetPoint("LEFT", 16, 0)
@@ -322,7 +268,7 @@ local function Draw(element, row)
         text:SetText("- " .. (row.text or ""))
     end
     text:SetTextColor(Colour(row))
-    if row.quest and row.quest == chosen and (row.kind == "quest" or row.kind == "preview") then
+    if row.quest and row.quest == chosen and row.kind == "quest" then
         element.light:SetColorTexture(1, 0.82, 0, 0.15)
         element:LockHighlight()
     else
@@ -335,98 +281,8 @@ end
 --  The chosen quest's text
 -------------------------------------------------------------------------------
 -- The chosen quest's words below the list: its objectives and its story, as the game's log tells them.
-local function Previewed(quest)
-    for index, each in ipairs(previews) do if each == quest then return index end end
-    return nil
-end
-
--- Names of a list of creatures (tuples with npc) or objects of Core's data, joined.
-local function Names(list, field, set)
-    local names = {}
-    for _, entry in ipairs(list or {}) do
-        local id = type(entry) == "table" and entry[field] or entry
-        local name = id and set:Get(id, "name")
-        if name and name ~= "" then names[#names + 1] = name end
-    end
-    return #names > 0 and table.concat(names, ", ") or nil
-end
-
--- An item's name as the game has it; asked of the game when it has not (the details again once it answers).
-local function Item(id)
-    local name = Core.Ask(C_Item.GetItemNameByID, id)
-    if name then return name end
-    Core.Ask(C_Item.RequestLoadItemDataByID, id)
-    return "#" .. tostring(id)
-end
-
--- An objective of Core's data in the words of the game's log: what, none of how many done yet.
-local function Objective(objective)
-    local count, what = objective.count or 1, objective.what
-    if objective.kind == "kill" then
-        local name = what and NPCS:Get(what, "name") or objective.text
-        if name then return QuestLog.TEXT.killed:format(name, 0, count) end
-    elseif objective.kind == "loot" and what then
-        return QuestLog.TEXT.items:format(Item(what), 0, count)
-    elseif objective.kind == "object" then
-        local name = what and OBJECTS:Get(what, "name") or objective.text
-        if name then return QuestLog.TEXT.objects:format(name, 0, count) end
-    end
-    return objective.text
-end
-
--- What Core's data knows of a quest not in the log, as the log's words: why it is not for this character yet, its
--- level, who gives and takes it, what it asks first, its objectives and its rewards.
-local function Preview(quest)
-    local record = QUESTS:Get(quest) or {}
-    local parts = { "|cff999999" .. (record.name or ("#" .. quest)) .. "|r" }
-    local standing, reason = ns.Pins.Standing(record, quest)
-    if reason then parts[#parts + 1] = "|cffff4040" .. reason .. "|r"
-    elseif standing == "offered" then parts[#parts + 1] = "|cff20ff20" .. QuestLog.TEXT.offered .. "|r" end
-    local facts = {}
-    if record.level then facts[#facts + 1] = QuestLog.TEXT.level:format(record.level) end
-    local givers = Names(record.startNPCs, "npc", NPCS) or Names(record.startObjects, "object", OBJECTS)
-    if givers then facts[#facts + 1] = QuestLog.TEXT.givenBy:format(givers) end
-    local takers = Names(record.finishNPCs, "npc", NPCS) or Names(record.finishObjects, "object", OBJECTS)
-    if takers then facts[#facts + 1] = QuestLog.TEXT.takenBy:format(takers) end
-    if #facts > 0 then parts[#parts + 1] = table.concat(facts, "\n") end
-    local objectives = {}
-    for _, objective in ipairs(record.objectives or {}) do
-        local words = Objective(objective)
-        if words and words ~= "" then objectives[#objectives + 1] = "- " .. words end
-    end
-    if #objectives > 0 then
-        parts[#parts + 1] = "|cffffd100" .. QuestLog.TEXT.objectives .. "|r\n" .. table.concat(objectives, "\n")
-    end
-    local rewards = {}
-    if record.rewardXP and record.rewardXP > 0 then rewards[#rewards + 1] = QuestLog.TEXT.experience:format(record.rewardXP) end
-    local coins = rawget(_G, "GetCoinTextureString")
-    if record.rewardMoney and record.rewardMoney > 0 and coins then rewards[#rewards + 1] = coins(record.rewardMoney) end
-    for _, list in ipairs({ record.rewardItems or {}, record.rewardChoices or {} }) do
-        for _, entry in ipairs(list) do
-            rewards[#rewards + 1] = Item(entry.item) .. ((entry.count or 1) > 1 and (" x" .. entry.count) or "")
-        end
-    end
-    if #rewards > 0 then
-        parts[#parts + 1] = "|cffffd100" .. QuestLog.TEXT.rewards .. "|r\n" .. table.concat(rewards, "\n")
-    end
-    return table.concat(parts, "\n\n")
-end
-
--- The words below the list (a preview's from Core's data), the buttons only for a quest in the log.
-local function Words(text, inLog)
-    local width = math.max(details.scroll:GetWidth() - 4, 1)
-    words:SetWidth(width)
-    words:SetText(text)
-    story:SetSize(width, math.max(words:GetStringHeight(), 1))
-    details.scroll:SetVerticalScroll(0)
-    for _, button in pairs(buttons) do button:SetShown(inLog) end
-    details:Show()
-    box:SetPoint("BOTTOMRIGHT", details, "TOPRIGHT", -14, 6)
-end
-
 function QuestLog.Details()
     if not details then return end
-    if chosen and Previewed(chosen) then return Words(Preview(chosen), false) end
     local index = chosen and Core.Ask(C_QuestLog.GetLogIndexForQuestID, chosen)
     if not index or index <= 0 then
         chosen = nil
@@ -443,37 +299,16 @@ function QuestLog.Details()
         parts[#parts + 1] = "|cffffd100" .. QuestLog.TEXT.description .. "|r"
         parts[#parts + 1] = description
     end
-    Words(table.concat(parts, "\n\n"), true)
+    local width = math.max(details.scroll:GetWidth() - 4, 1)
+    words:SetWidth(width)
+    words:SetText(table.concat(parts, "\n\n"))
+    story:SetSize(width, math.max(words:GetStringHeight(), 1))
+    details.scroll:SetVerticalScroll(0)
     local watched = (Core.Ask(C_QuestLog.GetQuestWatchType, chosen)) ~= nil
     buttons.watch:SetText(watched and QuestLog.TEXT.unwatch or QuestLog.TEXT.watch)
     buttons.share:SetEnabled(Core.Ask(C_QuestLog.IsPushableQuest, chosen) and IsInGroup() or false)
-end
-
--- Quests of Core's data shown in the log (a click on their giver's pin): on top under Not in your log, the first
--- chosen; the map full screen with the log at the giver's place (map, x, y: 0 to 1 on it).
-function QuestLog.Preview(quests, map, x, y)
-    for index = #quests, 1, -1 do
-        local quest = quests[index]
-        local at = Previewed(quest)
-        if at then table.remove(previews, at) end
-        table.insert(previews, 1, quest)
-    end
-    chosen = quests[1]
-    if not ns.TopBar.LogShown() then
-        ns.store.questLog = true
-        ns.Window.Lay()
-    end
-    ns.Window.OpenTo(map, x, y)
-    QuestLog.Refresh()
-end
-
--- A preview taken out of the log again (its red X).
-function QuestLog.Unpreview(quest)
-    local at = Previewed(quest)
-    if not at then return end
-    table.remove(previews, at)
-    if chosen == quest then chosen = nil end
-    QuestLog.Refresh()
+    details:Show()
+    box:SetPoint("BOTTOMRIGHT", details, "TOPRIGHT", -14, 6)
 end
 
 -------------------------------------------------------------------------------
@@ -604,9 +439,4 @@ end
 
 ns.Listen("LIVE", function(what)
     if what == "quests" or what == "waypoint" then QuestLog.Refresh() end
-end)
-
--- An item a preview names arrived from the game: its name in the words.
-ns.On("ITEM_DATA_LOAD_RESULT", function()
-    if chosen and Previewed(chosen) and QuestLog.Shown() then QuestLog.Details() end
 end)
