@@ -49,6 +49,8 @@ ns.TEXT = {
     nativeMapTip = "The game's own map and quest log open as before: its key, the quest log's button, a click on a quest; the mouse pushed into the top right corner still fills the screen with this map. Off: all of them open this map.",
     pins = "Pins on the map",
     pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar. Books and treasures only full screen; services on the small map only near you.",
+    route = "Route to the map pin",
+    routeTip = "A golden line on the map leads from you to the game's map pin (Ctrl and a click on the map), around what cannot be walked, with the flights you know where they are quicker. Planned again when you leave it.",
     followAgain = "Follow again after",
     followAgainTip = "After you dragged the map away, it centres on you again once the mouse has been off it for so long. 0: only when you zoom it with the mouse wheel close in.",
     seconds = "seconds",
@@ -98,6 +100,7 @@ local OPTIONS = {
     { key = "view", default = ns.FALLBACK, text = ns.TEXT.view, header = ns.TEXT.title, tip = ns.TEXT.viewTip,
       choices = { CHOICES[1], CHOICES[2], CHOICES[3] } },
     { key = "pins", default = PIN_DEFAULT, multi = true, choices = PIN_CHOICES, text = ns.TEXT.pins, tip = ns.TEXT.pinsTip },
+    { key = "route", default = true, text = ns.TEXT.route, tip = ns.TEXT.routeTip },
     { key = "followAgain", default = 10, min = 0, max = 60, step = 5, unit = ns.TEXT.seconds, text = ns.TEXT.followAgain,
       tip = ns.TEXT.followAgainTip },
     { key = "nativeMinimap", default = false, text = ns.TEXT.nativeMinimap, tip = ns.TEXT.nativeMinimapTip },
@@ -111,6 +114,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if Core.Edge.KEYS[key] then return end
     if key == "view" then return ns.Guarded(ns.Window.Restyle) end
     if key == "pins" then return ns.Guarded(ns.Canvas.Refresh) end
+    if key == "route" then return ns.Guarded(ns.Planner.Update) end
     if key == "nativeMinimap" then
         ns.Guarded(ns.Hybrid.Update)
         ns.Guarded(ns.Window.Update)
@@ -165,6 +169,8 @@ end
 function ns.OnLogin()
     -- The terrain's textures, soon after the loading screen: the map shows from login.
     Core.Data.Prepare("Tiles")
+    -- A map pin kept from the last session: its route (the walking data is asked for then).
+    Core.Later(function() ns.Guarded(ns.Planner.Update) end, 2)()
     ns.Painted.Find()
     ns.Offer()
     ns.Window.Build()

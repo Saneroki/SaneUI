@@ -15,6 +15,11 @@ side     = { type = "enum", values = ["alliance", "horde"] }  # none: both
 time     = { type = "number", min = 0 }      # the trip, in seconds
 wait     = { type = "number", min = 0 }      # between two departures, in seconds
 cost     = { type = "money" }
+length   = { type = "number", min = 0 }      # yards along its way, from the game's path
+path     = { type = "list", of = "tuple", parts = [
+    { name = "x", type = "number" },         # the way's points in the world's yards (x to the north, y to the
+    { name = "y", type = "number" },         # west) on the continent of its start, as the game's path has them
+] }                                          # (points on a straight run left out), for the map to draw it
 
 [index]
 byKind     = "kind"

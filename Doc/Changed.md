@@ -3,8 +3,34 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 195 (Navigation), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 210 (Navigation), 28 (walking data), 208 (data tools).
 A game restart takes it in (new addons, Navigation and Atlas; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
+
+### Navigation: routes to the map pin, on foot and by flight (Saneroki, 2026-10-20)
+- **Saneroki's ask:** route planning around what cannot be walked, with flights.
+- **The walking data** (`dev/tools/walk-data`, new): from the game's own files only, each terrain tile sampled
+  every 2.08 yards: the ground's heights but its holes (smoothed over three samples), every collision triangle of
+  every building placed on the continents (group files, cut into columns as a voxel field), the water (deep: a
+  floor to swim on; magma and slime close what lies under them). Floors (not over 50°, 2 yards free above, one way
+  within 2.6 yards) joined into surfaces by a flood (every two neighbours one way), each cut by a quadtree into
+  rectangles of up to 32 samples, the ground's ragged edges taking a share of steep samples; regions of all one
+  can walk or swim between, those under 3,000 samples left out. A block a tile: surfaces, rectangles, and only the
+  openings the game cannot work out (CBOR, deflate, base64). Both continents: 1,724 tiles, 1.43 million
+  rectangles, 10.7 MB in Core's set *Walking* (pack *Data: Routes*, loaded at the first route); two minutes to
+  make. The baseline's building extraction now takes every group file (`wmo-roots --groups 1`).
+- **The flights** (`dev/tools/travel-data`, new): the game's TaxiPath tables into Core's set *Travel*: 296 flights
+  with their nodes, side, cost, length and path. *Travel*'s schema: `length` and `path` (new fields).
+- **In the game:** `Walk.lua` unpacks a tile (`C_EncodingUtil`), works out the openings within a surface; `Search.lua`
+  walks (A* through the openings, swimming twice, regions refused at once, the line pulled straight by a funnel; a
+  job of Core's scheduler); `Planner.lua` plans walk, flights the character knows (read at the flight master, kept
+  per character), walk, by Dijkstra on guesses, then searches the walks and chooses once more when one is much
+  longer than guessed; planned again when the pin changes, after a landing, 40 yards off the line, and when the
+  data arrives. `Route.lua` draws it (walks gold, flights pale). The setting *Route to the map pin* (on).
+- Not yet: ships, zeppelins, portals and the hearthstone (no timetables in the game's tables); doodads (fences,
+  trees) in the walking data.
+- Tests: Navigation 210 checks (a made-up walking world: a wall with a door, a channel, the next tile, a region
+  nobody reaches; the journey with a flight and without), `dev/tests/walk.py` 28 (CBOR, surfaces and rectangles on
+  made-up ground: flat land, a steep speck, a hole, a cliff, a bridge, a shore; the block; regions; a flight's path).
 
 ### Navigation: pins, the quest log, the bar; classic windows kept (Saneroki, 2026-10-20)
 - **Saneroki's asks** (`Doc/ideas/Navigation.md`): a classic window chosen is kept and the top right corner always

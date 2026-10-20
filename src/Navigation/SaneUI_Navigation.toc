@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Navigation
-## Notes: Sane UI's minimap and map in one window. Small in the screen's top right corner it is the minimap; move the mouse into that corner and it fills the screen as the map. Drag it, zoom it with the mouse wheel from a zone out to the whole world, right click for one map out, Ctrl-click for the map pin; draw it as Parchment (Blizzard's maps joined into one), as Scrying (the land as it lies) or, with the module Atlas, painted. Pins of your quests, flight points, rares, places and party; the quest log at the full map's left. The game's map keys open it. Settings: the page Navigation.
+## Notes: Sane UI's minimap and map in one window. Small in the screen's top right corner it is the minimap; move the mouse into that corner and it fills the screen as the map. Drag it, zoom it with the mouse wheel from a zone out to the whole world, right click for one map out, Ctrl-click for the map pin; draw it as Parchment (Blizzard's maps joined into one), as Scrying (the land as it lies) or, with the module Atlas, painted. Pins of your quests, flight points, rares, places and party; the quest log at the full map's left; a golden line to the map pin, on foot and by flight. The game's map keys open it. Settings: the page Navigation.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -19,6 +19,12 @@ Camera.lua
 Live.lua
 # The pins as plain records: the game's and Core's data, one per thing, filtered, gathered. Knows no frames
 Pins.lua
+# Where a player can walk: Core's walking data, unpacked per tile when first needed. Knows no frames
+Walk.lua
+# A walk between two points over the walking data, as a job of Core's scheduler. Knows no frames
+Search.lua
+# The way to the map pin: on foot and by the flights this character knows. Knows no frames
+Planner.lua
 # The frame the map is drawn in, the same for both views: its layers, the player's place, the mouse
 Canvas.lua
 # The terrain: the game's minimap textures up close, the module's overview of them further out

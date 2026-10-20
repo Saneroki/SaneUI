@@ -100,9 +100,18 @@ window*, *Always on top*):
 - Classic windows kept (Core's Edge: entries with `checked`/`back`); with the game's minimap chosen the small
   window rests out of sight (`Window.lua`, `Rest`), the corner still fills the screen with ours.
 
-Not yet: the route planner, the walking data and its tool, search, the guide, dungeon maps and floors, the
-minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests:
-`dev/tests/navigation.lua` (195 checks).
+Routes (the same day): `dev/tools/walk-data` makes Core's set *Walking* (pack Routes, 1,724 tiles, 10.7 MB) from the
+game's terrain, buildings' collision and water (2.08-yard samples, surfaces, rectangles, regions; block format in
+the tool's header and `Doc/ideas/Navigation.md`, *The walking data*); `dev/tools/travel-data` the flights of
+Core's set *Travel* (296, from the client's TaxiPath tables: nodes, cost, length, path); `Walk.lua` unpacks a tile,
+`Search.lua` walks (A*, funnel, a job of Core's scheduler), `Planner.lua` plans walk/flight/walk to the map pin
+(known flight points per character, `Core.Character`), `Route.lua` draws. Inputs of the tools: the extracted game
+files of the private baseline (`adt/`, `adt-obj0/`, `wmo/` with every group file, the client tables as CSV).
+
+Not yet: ships, zeppelins, portals, lifts and the hearthstone in routes (no timetables in the game's tables),
+doodads in the walking data (fences, trees), search, the guide, dungeon maps and floors, the minimap's small parts
+(zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (210
+checks), `dev/tests/walk.py` (28).
 
 ## What is not there yet
 
@@ -113,7 +122,7 @@ minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, pa
    Spawns, QuestAreas, PatrolPaths, CreatureSpawns, Guides, Walking. The import (*Three prompts*, 2) is next.
 3. **Set *Tiles*:** built (2026-10-18), in the pack World: 736 tiles of the Eastern Kingdoms, 988 of Kalimdor,
    read from the game's own continent files; key continent × 4096 + row × 64 + column.
-4. **The walking data tool** (pack Routes): not written; its format is still open (open question 1).
+4. **The walking data tool** (pack Routes): written (2026-10-20, `dev/tools/walk-data`), the set filled.
 5. **The guide tool** that writes *Guides* from Core's quest data: not written.
 6. **Core's windows:** click to expand (`Edge.lua` still fills on the mouse's coming), the holder, the board
    and Edit Mode layouts are not built. Navigation does not need the holder or the board: it catches the

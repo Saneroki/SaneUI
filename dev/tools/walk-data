@@ -1,0 +1,928 @@
+#!/usr/bin/env python3
+"""Makes the walking data of Navigation's routes from the game's own files: where a player can walk on each terrain
+tile of the continents, as staging for Core's set Walking (pack Routes; Doc/ideas/Navigation.md, *The walking data*).
+
+What is walkable is read from what the game itself collides with, sampled every SAMPLE yards (256 samples along a
+tile's side):
+
+  the ground      each map chunk's heights (the game's four triangles a cell), but where the terrain has a hole (a
+                  cave's mouth, a building's cellar); too steep (over SLOPE degrees) it is no floor, only a surface
+  the buildings   every collision triangle of every building the object files place (WMO group files: their
+                  vertices, indices and each triangle's flags), turned and moved where the game places it; a
+                  triangle cut by each column of samples gives a span of height there (as a voxel field is made)
+  the water       where water stands deeper than DEEP over a floor, that floor is under water, and the water's
+                  surface is a floor to swim on; magma and slime close what lies under them
+
+In each column the spans are joined where they touch; the top of a span is a floor when what made it is not too
+steep and nothing stands within ROOM yards above it (a floor under a low roof or inside a wall is none). Two floors
+side by side are one way when their heights differ by at most CLIMB.
+
+The floors are joined into rectangles of floors that are all one way with each other (land or water, never both),
+at most WIDEST samples a side: few and large in open land, many and small in towns, caves and on mountains. Each
+rectangle keeps its height, its kind and the openings along its sides into its neighbours (on its own tile and the
+next), and every rectangle that can be walked to from another has the same region number, so the game can tell at
+once that a place cannot be reached on foot.
+
+  dev/data/staging/walking.jsonl    one line per tile with ground: set Walking, key the tile's key in the set Tiles
+                                    (continent * 4096 + row * 64 + column), fields map (the continent), links (the
+                                    tiles around it that have ground) and block (below)
+
+A block is CBOR (the game reads it with C_EncodingUtil.DeserializeCBOR), deflated (DecompressString) and in base64
+(DecodeBase64): an array of the format's number (FORMAT), the surfaces, the rectangles and the openings, each a flat
+array of whole numbers:
+
+  surfaces     per surface (its rectangles come one after the other, in this order) 3 numbers: how many rectangles
+               it has, its kind (1 land, 2 water) and its region
+  rectangles   per rectangle 5 numbers: its column and row on the tile (0 to 255, from the north west), its width
+               and height in samples, and its height in quarter yards
+  openings     per rectangle, in order: how many numbers follow, then its openings that the game cannot work out
+               itself. Two rectangles of one surface that touch are open along all their shared edge (any two
+               neighbouring samples of a surface are one way), and are not written. Every other opening is
+               written: one along the whole edge two rectangles share as the neighbour alone, else as -1 - its side
+               (0 north, 1 east, 2 south, 3 west), the first and last sample along that side (on the rectangle's
+               tile), and the neighbour. The neighbour is its index (from 0) times 5 plus where it lies (0 on the
+               same tile, else 1 + the next tile's direction, as the sides). On its own tile an opening is written
+               once, from the north or west of the two; into the next tile, from both.
+
+The input, as for dev/tools/map-meta, for both continents:
+  game files    a folder with adt/ (the root terrain files, <tile key>.adt), adt-obj0/ (the object files: where
+                buildings stand) and wmo/ (every placed building's root file <file ID>.wmo and its group files
+                <file ID>_<part>.wmo)
+  client tables a folder of the game's client tables as CSV (LiquidType, LiquidMaterial)
+Options: --only <key>[,<key>...] some tiles only (with their neighbours' edges), --pictures <folder> a picture of
+each tile's rectangles, --processes N.
+
+Needs Python with NumPy (and Pillow for the pictures). About the game's build of the set Tiles (BUILD).
+
+Usage:  dev/tools/walk-data <game files> <client tables> [--only keys] [--pictures folder] [--processes N]
+"""
+import base64
+import json
+import math
+import struct
+import sys
+import zlib
+from importlib.machinery import SourceFileLoader
+from importlib.util import module_from_spec, spec_from_loader
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+
+ROOT = Path(__file__).resolve().parents[2]
+STAGING = ROOT / "dev" / "data" / "staging" / "walking.jsonl"
+BUILD = 70245          # the client build the game files are of (the set Tiles' build)
+
+GRID = 64              # tiles along each side of a continent
+TILE = 1600 / 3        # a tile's side in yards
+SIDE = 256             # samples along a tile's side
+SAMPLE = TILE / SIDE   # yards between two samples (2.08)
+HALF = GRID / 2 * TILE # yards from a continent's middle to its edges
+
+SLOPE = 50             # degrees: steeper ground or building floor is no floor
+ROOM = 2.0             # yards a floor needs free above it
+CLIMB = 2.6            # yards two floors side by side may differ and still be one way (a little over the slope)
+DEEP = 1.6             # yards of water over a floor that make it one to swim over
+JOIN = 0.25            # yards: spans of a column nearer than this are one
+WIDEST = 32            # samples: a rectangle's longest side
+SMALLEST = 3000        # samples: a region smaller than this (a roof, a ledge, a plateau) is left out
+# A square of the ground (outside buildings) may take this share of steep samples at its edges, by its side: the
+# edges of walkable ground, ragged at two yards, make no crowd of small rectangles.
+TAKEN = {2: 0.5, 4: 0.75, 8: 0.85, 16: 0.9, 32: 0.95}
+THIN = 0.5             # yards: the ground's surface is a span this thick
+UP = math.cos(math.radians(SLOPE))
+STEEP = math.tan(math.radians(SLOPE)) * SAMPLE  # height over one sample past which the ground is too steep
+LAND, WATER = 1, 2
+FORMAT = 1             # the blocks' format, as Navigation's Walk.lua reads it
+
+
+def art():
+    """dev/tools/terrain-art's readers of the terrain files, read without running the tool."""
+    loader = SourceFileLoader("terrain_art", str(ROOT / "dev" / "tools" / "terrain-art"))
+    module = module_from_spec(spec_from_loader("terrain_art", loader))
+    loader.exec_module(module)
+    return module
+
+
+ART = art()
+pieces = ART.pieces
+
+
+# -------------------------------------------------------------------------------------------------
+#  The ground and the water
+# -------------------------------------------------------------------------------------------------
+def holes(data, at):
+    """A map chunk's holes: 8 x 8 cells, True where the terrain has none."""
+    flags = struct.unpack_from("<I", data, at)[0]
+    cells = np.zeros((8, 8), bool)
+    if flags & 0x10000:  # the fine holes: a byte a row of cells
+        for row in range(8):
+            byte = data[at + 0x14 + row]
+            for column in range(8):
+                cells[row, column] = bool(byte & (1 << column))
+    else:  # the coarse ones: 4 x 4, each two cells a side
+        bits = struct.unpack_from("<H", data, at + 0x3C)[0]
+        for index in range(16):
+            if bits & (1 << index):
+                row, column = divmod(index, 4)
+                cells[row * 2:row * 2 + 2, column * 2:column * 2 + 2] = True
+    return cells
+
+
+def ground(path, waters, liquids):
+    """A tile's ground at every sample (SIDE x SIDE, rows from the north), where it has a hole, the water's surface
+    and the surface of what closes the ground under it (magma, slime); -inf where there is none."""
+    data = path.read_bytes()
+    chunks, water_at = [], None
+    for name, at, size in pieces(data, 0, len(data)):
+        if name == b"MCNK":
+            chunks.append((at, size))
+        elif name == b"MH2O":
+            water_at = at
+    cells = ART.CHUNKS * ART.CELLS
+    outer = np.zeros((cells + 1, cells + 1), np.float32)
+    inner = np.zeros((cells, cells), np.float32)
+    hole = np.zeros((cells, cells), bool)
+    for at, size in chunks:
+        x, y = struct.unpack_from("<II", data, at + 4)
+        base = struct.unpack_from("<f", data, at + 0x70)[0]
+        hole[y * 8:y * 8 + 8, x * 8:x * 8 + 8] = holes(data, at)
+        for name, start, _ in pieces(data, at + 128, at + size):
+            if name == b"MCVT":
+                heights = np.array(struct.unpack_from("<145f", data, start), np.float32) + base
+                rows = np.pad(heights, (0, 8)).reshape(9, 17)
+                outer[y * 8:y * 8 + 9, x * 8:x * 8 + 9] = rows[:, :9]
+                inner[y * 8:y * 8 + 8, x * 8:x * 8 + 8] = rows[:8, 9:]
+                break
+    height = ART.ground(outer, inner)
+    hole = np.repeat(np.repeat(hole, ART.SAMPLES, 0), ART.SAMPLES, 1)
+    water = np.full(height.shape, -np.inf, np.float32)
+    closed = np.full(height.shape, -np.inf, np.float32)
+    if water_at is not None:
+        n = ART.CELLS * ART.SAMPLES
+        big = lambda grid: np.repeat(np.repeat(grid, ART.SAMPLES, 0), ART.SAMPLES, 1)  # noqa: E731
+        for index in range(ART.CHUNKS * ART.CHUNKS):
+            first, layers, _ = struct.unpack_from("<III", data, water_at + index * 12)
+            cy, cx = divmod(index, ART.CHUNKS)
+            for layer in range(layers):
+                kind, form, low, _, left, top, wide, high, bits, levels = struct.unpack_from(
+                    "<HHffBBBBII", data, water_at + first + layer * 24)
+                if wide == 0 or high == 0:
+                    continue
+                if kind in waters:
+                    form = form if form <= 41 else waters[kind]
+                else:
+                    form = form if form <= 41 else liquids.get(kind, 0)
+                mask = np.ones((high, wide), bool)
+                if bits:
+                    flags = np.frombuffer(data, np.uint8, (wide * high + 7) // 8, water_at + bits)
+                    mask = np.unpackbits(flags, bitorder="little")[:wide * high].reshape(high, wide).astype(bool)
+                if levels and form in (0, 1, 3):
+                    corners = np.array(struct.unpack_from(f"<{(wide + 1) * (high + 1)}f", data, water_at + levels),
+                                       np.float32).reshape(high + 1, wide + 1)
+                else:
+                    corners = np.full((high + 1, wide + 1), low, np.float32)
+                fx, fy = np.tile(ART.FX, (high, wide)), np.tile(ART.FY, (high, wide))
+                level = (big(corners[:-1, :-1]) * (1 - fx) * (1 - fy) + big(corners[:-1, 1:]) * fx * (1 - fy)
+                         + big(corners[1:, :-1]) * (1 - fx) * fy + big(corners[1:, 1:]) * fx * fy)
+                level = np.where(big(mask), level, -np.inf)
+                y0, x0 = cy * n + top * ART.SAMPLES, cx * n + left * ART.SAMPLES
+                target = water if kind in waters else closed
+                region = target[y0:y0 + high * ART.SAMPLES, x0:x0 + wide * ART.SAMPLES]
+                np.maximum(region, level, out=region)
+    return height, hole, water, closed
+
+
+# -------------------------------------------------------------------------------------------------
+#  The buildings
+# -------------------------------------------------------------------------------------------------
+def placements(folder):
+    """Every building placed on each continent, once: {continent: [placement]} with its file, place, turn, scale
+    and box in world yards (north, south, west, east)."""
+    found = {}
+    for path in sorted((folder / "adt-obj0").glob("*.adt")):
+        continent = int(path.stem) // (GRID * GRID)
+        data = path.read_bytes()
+        for name, at, size in pieces(data, 0, len(data)):
+            if name != b"MODF":
+                continue
+            for start in range(at, at + size, 64):
+                (file, unique, px, py, pz, rx, ry, rz, lx, ly, lz, ux, uy, uz, flags, _, _,
+                 scale) = struct.unpack_from("<II3f3f3f3fHHHH", data, start)
+                if not flags & 0x8:
+                    continue
+                north, south = HALF - min(lz, uz), HALF - max(lz, uz)
+                west, east = HALF - min(lx, ux), HALF - max(lx, ux)
+                found.setdefault(continent, {})[unique] = dict(
+                    file=file, at=(px, py, pz), turn=(rx, ry, rz), scale=scale / 1024 if scale else 1,
+                    box=(north, south, west, east))
+    return {continent: list(places.values()) for continent, places in found.items()}
+
+
+def chunks(data, start, end):
+    return {name: (at, size) for name, at, size in pieces(data, start, end)}
+
+
+def group(path):
+    """A group file's collision triangles in the building's own space: an (n, 3, 3) array of corners (x, y, z)."""
+    data = path.read_bytes()
+    top = chunks(data, 0, len(data))
+    if b"MOGP" not in top:
+        return np.zeros((0, 3, 3), np.float32)
+    at, size = top[b"MOGP"]
+    inner = chunks(data, at + 68, at + size)
+    if b"MOVT" not in inner:
+        return np.zeros((0, 3, 3), np.float32)
+    vat, vsize = inner[b"MOVT"]
+    vertices = np.frombuffer(data, np.float32, vsize // 4, vat).reshape(-1, 3)
+    if b"MOVI" in inner:
+        iat, isize = inner[b"MOVI"]
+        indices = np.frombuffer(data, np.uint16, isize // 2, iat).astype(np.int64).reshape(-1, 3)
+    elif b"MOVX" in inner:
+        iat, isize = inner[b"MOVX"]
+        indices = np.frombuffer(data, np.uint32, isize // 4, iat).astype(np.int64).reshape(-1, 3)
+    else:
+        return np.zeros((0, 3, 3), np.float32)
+    if b"MOPY" in inner:
+        pat, psize = inner[b"MOPY"]
+        info = np.frombuffer(data, np.uint8, psize, pat).reshape(-1, 2)
+        flags, material = info[:, 0].astype(np.int64), info[:, 1].astype(np.int64)
+    elif b"MPY2" in inner:
+        pat, psize = inner[b"MPY2"]
+        info = np.frombuffer(data, np.uint16, psize // 2, pat).reshape(-1, 2)
+        flags, material = info[:, 0].astype(np.int64), info[:, 1].astype(np.int64)
+    else:
+        flags, material = np.full(len(indices), 0x08), np.zeros(len(indices), np.int64)
+    count = min(len(indices), len(flags))
+    flags, indices = flags[:count], indices[:count]
+    # What the game collides with: a triangle marked for collision, or one drawn that is no detail.
+    collides = ((flags & 0x08) != 0) | (((flags & 0x20) != 0) & ((flags & 0x04) == 0))
+    indices = indices[collides]
+    indices = indices[(indices < len(vertices)).all(axis=1)]
+    return vertices[indices].astype(np.float64)
+
+
+_groups = {}
+
+
+def building(folder, file):
+    """Every collision triangle of a building in its own space, its parts joined (kept per process)."""
+    if file not in _groups:
+        parts = [group(path) for path in sorted(folder.glob(f"{file}_*.wmo"))]
+        parts = [part for part in parts if len(part)]
+        _groups[file] = np.concatenate(parts) if parts else np.zeros((0, 3, 3))
+        if len(_groups) > 200:  # keep the memory of one process modest
+            _groups.pop(next(iter(_groups)))
+    return _groups[file]
+
+
+def placed(where, corners):
+    """A building's corners (n, 3, 3: its own x, y, z) where the game places it: (north, west, height) in yards. The
+    game turns buildings about the up axis only, on the continents."""
+    px, py, pz = where["at"]
+    turn = math.radians(-where["turn"][1])
+    scale = where["scale"]
+    x, y, z = corners[..., 0], corners[..., 1], corners[..., 2]
+    across = (y * math.cos(turn) - x * math.sin(turn)) * scale
+    along = (y * math.sin(turn) + x * math.cos(turn)) * scale
+    return np.stack([HALF - (pz + along), HALF - (px + across), py + z * scale], axis=-1)
+
+
+def clip(polygon, axis, low, high):
+    """A polygon ([(a, b, z), ...]) cut to low <= its axis' value <= high (Sutherland and Hodgman, twice)."""
+    for bound, keep in ((low, lambda v: v >= low), (high, lambda v: v <= high)):
+        out = []
+        count = len(polygon)
+        for index in range(count):
+            p, q = polygon[index], polygon[(index + 1) % count]
+            pin, qin = keep(p[axis]), keep(q[axis])
+            if pin:
+                out.append(p)
+            if pin != qin:
+                t = (bound - p[axis]) / (q[axis] - p[axis])
+                out.append(tuple(p[i] + (q[i] - p[i]) * t for i in range(3)))
+        polygon = out
+        if not polygon:
+            break
+    return polygon
+
+
+def rasterize(triangles, spans):
+    """Each triangle (in the tile's samples: column, row, height) into the columns it covers: a span (low, high,
+    walkable) in spans[(row, column)]."""
+    for triangle in triangles:
+        a, b, c = triangle
+        normal = np.cross(b - a, c - a)
+        length = math.sqrt(normal[0] ** 2 + normal[1] ** 2 + normal[2] ** 2)
+        if length == 0:
+            continue
+        # The samples' space is the world's turned (columns east, rows south), so up is still up.
+        walkable = abs(normal[2]) / length >= UP
+        cols, rows = triangle[:, 0], triangle[:, 1]
+        r0, r1 = max(int(math.floor(rows.min())), 0), min(int(math.floor(rows.max())), SIDE - 1)
+        c0, c1 = max(int(math.floor(cols.min())), 0), min(int(math.floor(cols.max())), SIDE - 1)
+        if r0 > r1 or c0 > c1:
+            continue
+        if r0 == r1 and c0 == c1:
+            spans.setdefault((r0, c0), []).append((float(triangle[:, 2].min()), float(triangle[:, 2].max()), walkable))
+            continue
+        polygon = [tuple(point) for point in triangle]
+        for row in range(r0, r1 + 1):
+            strip = clip(polygon, 1, row, row + 1)
+            if len(strip) < 3:
+                continue
+            low = max(int(math.floor(min(p[0] for p in strip))), c0)
+            high = min(int(math.floor(max(p[0] for p in strip))), c1)
+            for column in range(low, high + 1):
+                cell = clip(strip, 0, column, column + 1)
+                if len(cell) < 3:
+                    continue
+                heights = [p[2] for p in cell]
+                spans.setdefault((row, column), []).append((min(heights), max(heights), walkable))
+
+
+# -------------------------------------------------------------------------------------------------
+#  Floors
+# -------------------------------------------------------------------------------------------------
+def smooth(grid):
+    """Each value the mean of it and its eight neighbours (the edges as they are)."""
+    padded = np.pad(grid, 1, mode="edge")
+    total = sum(padded[1 + dr:1 + dr + SIDE, 1 + dc:1 + dc + SIDE] for dr in (-1, 0, 1) for dc in (-1, 0, 1))
+    return total / 9
+
+
+def floors(height, hole, water, closed, spans):
+    """Every column's floors, lowest first: {(row, column): [(height, kind)]}; the columns with only the ground as
+    one floor array (NaN where none) for speed; and where the ground is only too steep (no hole, no building, no
+    water): a speck of it may be walked over (rectangles)."""
+    # The ground over three samples a side: its small bumps make no steep specks, and the slope it is judged by
+    # and the heights its floors are joined by are the same.
+    height = smooth(height.astype(np.float64))
+    gy, gx = np.gradient(height, edge_order=1)
+    steep = np.maximum(np.abs(gy), np.abs(gx)) > STEEP
+    plain = np.where(~hole, height, np.nan)
+    walk = ~hole & ~steep
+    found = {}
+    for (row, column), column_spans in spans.items():
+        if not hole[row, column]:
+            g = float(height[row, column])
+            column_spans = column_spans + [(g - THIN, g, bool(walk[row, column]))]
+        column_spans.sort()
+        joined = []
+        for low, high, walkable in column_spans:
+            if joined and low <= joined[-1][1] + JOIN:
+                last = joined[-1]
+                if high > last[1] + JOIN:
+                    joined[-1] = [last[0], high, walkable]
+                elif high >= last[1] - JOIN:
+                    joined[-1] = [last[0], max(high, last[1]), last[2] or walkable]
+            else:
+                joined.append([low, high, walkable])
+        found[(row, column)] = [(top, LAND, False) for index, (_, top, ok) in enumerate(joined)
+                                if ok and (index + 1 == len(joined) or joined[index + 1][0] - top >= ROOM)]
+    # The ground alone where no building is.
+    alone = np.where(walk, plain, np.nan)
+    speck = steep & ~hole
+    for key in found:
+        alone[key] = np.nan
+        speck[key] = False
+    # The water: a floor under deep water is one to swim over, at the water's surface; what lies under magma
+    # or slime is closed.
+    rows, columns = np.nonzero(np.isfinite(water) | np.isfinite(closed))
+    for row, column in zip(rows.tolist(), columns.tolist()):
+        key = (row, column)
+        here = found.get(key)
+        if here is None:
+            g = alone[row, column]
+            here = [(float(g), LAND, True)] if np.isfinite(g) else []
+            alone[row, column] = np.nan
+        surface, shut = float(water[row, column]), float(closed[row, column])
+        kept = [floor for floor in here if floor[0] >= shut and floor[0] >= surface - DEEP]
+        swum = any(floor[0] < surface - DEEP and floor[0] >= shut for floor in here) or (not here and math.isfinite(surface))
+        if math.isfinite(surface) and surface > shut and (swum or hole[row, column] or not here):
+            if not any(abs(floor[0] - surface) < ROOM for floor in kept):
+                kept.append((surface, WATER, False))
+        kept.sort()
+        found[key] = kept
+        speck[row, column] = False
+    built = np.zeros((SIDE, SIDE), bool)  # the columns a building reaches into
+    for row, column in spans:
+        built[row, column] = True
+    return alone, found, np.where(speck, height, np.nan), built
+
+
+def floors_of(alone, found, row, column):
+    """A column's floors, lowest first."""
+    here = found.get((row, column))
+    if here is not None:
+        return here
+    g = alone[row, column]
+    return [(float(g), LAND, True)] if math.isfinite(g) else []
+
+
+def near(a, b):
+    """Whether two floors side by side are one way: their heights differ by at most CLIMB."""
+    return abs(a[0] - b[0]) <= CLIMB
+
+
+# -------------------------------------------------------------------------------------------------
+#  Rectangles
+# -------------------------------------------------------------------------------------------------
+def surfaces(columns):
+    """The floors in surfaces: each the floors of one kind that are one way with each other, at most one in a column
+    (the ground, a cave's floor under it, a bridge's deck over a river, a building's storey), found by a flood
+    from floor to floor, the neighbour's floor nearest in height taken. A floor joins only when it is one way
+    with every neighbour of the surface around it, so any two neighbouring samples of a surface are one way
+    (the game takes two rectangles of one surface that touch as open along all their edge). A list of
+    {(row, column): index}."""
+    taken = set()
+    found = []
+    for row in range(SIDE):
+        for column in range(SIDE):
+            for index in range(len(columns[row][column])):
+                if (row, column, index) in taken:
+                    continue
+                cells = {(row, column): index}
+                taken.add((row, column, index))
+                queue = [(row, column, index)]
+                while queue:
+                    r, c, i = queue.pop()
+                    floor = columns[r][c][i]
+                    for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+                        if not (0 <= nr < SIDE and 0 <= nc < SIDE) or (nr, nc) in cells:
+                            continue
+                        pick, gap = -1, None
+                        around = [columns[ar][ac][cells[(ar, ac)]]
+                                  for ar, ac in ((nr - 1, nc), (nr + 1, nc), (nr, nc - 1), (nr, nc + 1)) if (ar, ac) in cells]
+                        for j, other in enumerate(columns[nr][nc]):
+                            if (nr, nc, j) in taken or other[1] != floor[1] or not all(near(other, a) for a in around):
+                                continue
+                            distance = abs(other[0] - floor[0])
+                            if gap is None or distance < gap:
+                                pick, gap = j, distance
+                        if pick >= 0:
+                            cells[(nr, nc)] = pick
+                            taken.add((nr, nc, pick))
+                            queue.append((nr, nc, pick))
+                found.append(cells)
+    return found
+
+
+def rectangles(alone, found, specks, built):
+    """The tile's floors joined into rectangles: a list of [column, row, width, height, z, kind], owner
+    {(row, column, index): rectangle} for every floor, and every column's floors.
+
+    Each surface (surfaces) is cut alike: squares of WIDEST on the tile's grid, halved until all their floors are
+    one way with each other (a quadtree), then neighbours of the same size side by side joined while no longer
+    than WIDEST. Outside buildings a square of two samples a side is taken whole when at least two of its
+    samples are of the surface and the rest is ground only too steep (no hole; no floor of its own), walked
+    over at the square's mean height: the land's small bumps would else cut it into single samples. Openings
+    link floors of any surfaces that meet (openings)."""
+    columns = [[floors_of(alone, found, row, column) for column in range(SIDE)] for row in range(SIDE)]
+    owner, rects = {}, []
+    for surface, cells in enumerate(surfaces(columns)):
+        rows = [r for r, _ in cells]
+        cols = [c for _, c in cells]
+        r0, c0 = min(rows) // WIDEST * WIDEST, min(cols) // WIDEST * WIDEST
+        r1, c1 = max(rows) // WIDEST * WIDEST + WIDEST, max(cols) // WIDEST * WIDEST + WIDEST
+        mask = np.zeros((SIDE, SIDE), bool)
+        z = np.zeros((SIDE, SIDE))
+        for (r, c), i in cells.items():
+            mask[r, c] = True
+            z[r, c] = columns[r][c][i][0]
+        kind = columns[rows[0]][cols[0]][cells[(rows[0], cols[0])]][1]
+        across = mask[:, :-1] & mask[:, 1:] & (np.abs(z[:, 1:] - z[:, :-1]) <= CLIMB)
+        down = mask[:-1, :] & mask[1:, :] & (np.abs(z[1:, :] - z[:-1, :]) <= CLIMB)
+        squares = []
+
+        def split(row, column, size):
+            part = mask[row:row + size, column:column + size]
+            if not part.any():
+                return
+            inside_across = across[row:row + size, column:column + size - 1]
+            inside_down = down[row:row + size - 1, column:column + size]
+            if part.all() and inside_across.all() and inside_down.all():
+                squares.append([column, row, size, size])
+                return
+            if kind == LAND and not built[row:row + size, column:column + size].any():
+                # The ground's edge: a square that is mostly this surface, the rest steep ground only (no hole, no
+                # floor of its own), all its own samples one way with their neighbours in it, is taken whole, the
+                # steep samples walked over at the square's mean height. A steep sample's own height is left:
+                # what lies around the square is one way with it only by the square's height, so no cliff is
+                # walked down through it.
+                count = int(part.sum())
+                odd = [(row + r, column + c) for r, c in zip(*np.nonzero(~part))]
+                specky = all(np.isfinite(specks[r, c]) and not columns[r][c] for r, c in odd)
+                if size == 2 and count == 1 and specky:
+                    return  # a lone sample among steep ground: nobody walks there
+                both_across = part[:, :-1] & part[:, 1:]
+                both_down = part[:-1, :] & part[1:, :]
+                mean = float(z[row:row + size, column:column + size][part].mean()) if count else 0.0
+                # Each steep sample taken must be one way, at that height, with the surface's samples around the
+                # square (see surfaces).
+                fits = all(abs(z[ar, ac] - mean) <= CLIMB for r, c in odd
+                           for ar, ac in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1))
+                           if 0 <= ar < SIDE and 0 <= ac < SIDE and mask[ar, ac]
+                           and not (row <= ar < row + size and column <= ac < column + size))
+                if (count >= TAKEN[size] * size * size and specky and fits and inside_across[both_across].all()
+                        and inside_down[both_down].all()):
+                    for r, c in odd:
+                        columns[r][c] = [(mean, LAND, True)]
+                        cells[(r, c)] = 0
+                        mask[r, c], z[r, c] = True, mean
+                    squares.append([column, row, size, size])
+                    return
+            if size == 1:
+                return
+            half = size // 2
+            for dr in (0, half):
+                for dc in (0, half):
+                    split(row + dr, column + dc, half)
+
+        for row in range(r0, min(r1, SIDE), WIDEST):
+            for column in range(c0, min(c1, SIDE), WIDEST):
+                split(row, column, WIDEST)
+
+        # Neighbours of one size joined: side by side along a row, then above each other.
+        def joined(blocks, horizontal):
+            blocks.sort(key=lambda b: (b[1], b[3], b[0]) if horizontal else (b[0], b[2], b[1]))
+            out = []
+            for b in blocks:
+                last = out[-1] if out else None
+                if horizontal and last and last[1] == b[1] and last[3] == b[3] and last[0] + last[2] == b[0] \
+                        and last[2] + b[2] <= WIDEST and across[b[1]:b[1] + b[3], b[0] - 1].all():
+                    last[2] += b[2]
+                elif not horizontal and last and last[0] == b[0] and last[2] == b[2] and last[1] + last[3] == b[1] \
+                        and last[3] + b[3] <= WIDEST and down[b[1] - 1, b[0]:b[0] + b[2]].all():
+                    last[3] += b[3]
+                else:
+                    out.append(list(b))
+            return out
+
+        for column, row, width, height in joined(joined(squares, True), False):
+            number = len(rects)
+            for r in range(row, row + height):
+                for c in range(column, column + width):
+                    owner[(r, c, cells[(r, c)])] = number
+            block = z[row:row + height, column:column + width]
+            rects.append([column, row, width, height, int(round(float(block.mean()) * 4)), kind, surface])
+    return rects, owner, columns
+
+
+SIDES = ((0, -1, 0), (1, 0, 1), (2, 1, 0), (3, 0, -1))  # side, row step, column step: north, east, south, west
+
+
+def openings(rects, owner, columns, borders):
+    """The openings of every rectangle on its own tile: {rect: [[side, first, last, neighbour]]}; and what lies
+    along the tile's edges for the next tiles: borders[side] = [(position, z, rect)] per floor there."""
+    found = {number: [] for number in range(len(rects))}
+    for number, (column, row, width, height, *_) in enumerate(rects):
+        for side, dr, dc in SIDES:
+            if side in (0, 2):
+                cells = [(row if side == 0 else row + height - 1, c) for c in range(column, column + width)]
+            else:
+                cells = [(r, column + width - 1 if side == 1 else column) for r in range(row, row + height)]
+            run = None
+            for r, c in cells:
+                own = None
+                for i, floor in enumerate(columns[r][c]):
+                    if owner.get((r, c, i)) == number:
+                        own = floor
+                        break
+                nr, nc = r + dr, c + dc
+                target = None
+                if 0 <= nr < SIDE and 0 <= nc < SIDE and own is not None:
+                    for i, floor in enumerate(columns[nr][nc]):
+                        if near(floor, own):
+                            other = owner.get((nr, nc, i))
+                            if other is not None and other != number:
+                                target = other
+                                break
+                elif own is not None:
+                    borders.setdefault(side, []).append((c if side in (0, 2) else r, own[0], number))
+                position = c if side in (0, 2) else r
+                if target is not None and run and run[3] == target and run[2] == position - 1:
+                    run[2] = position
+                else:
+                    if run:
+                        found[number].append(run)
+                    run = [side, position, position, target] if target is not None else None
+            if run:
+                found[number].append(run)
+    return found
+
+
+# -------------------------------------------------------------------------------------------------
+#  A tile
+# -------------------------------------------------------------------------------------------------
+def tile(job):
+    """Everything of one tile: (key, rects, openings, borders), or (key, None, None, None) without ground."""
+    key, folder, waters, liquids, near_places = job
+    path = folder / "adt" / f"{key}.adt"
+    if not path.exists():
+        return key, None, None, None
+    height, hole, water, closed = ground(path, waters, liquids)
+    row0, col0 = key % (GRID * GRID) // GRID, key % GRID
+    north0, west0 = HALF - row0 * TILE, HALF - col0 * TILE
+    spans = {}
+    for where in near_places:
+        corners = building(folder / "wmo", where["file"])
+        if not len(corners):
+            continue
+        world = placed(where, corners)
+        # In the tile's samples: column from the west edge, row from the north edge, height as it is.
+        samples = np.stack([(west0 - world[..., 1]) / SAMPLE, (north0 - world[..., 0]) / SAMPLE, world[..., 2]], axis=-1)
+        inside = ((samples[..., 0].max(axis=1) >= 0) & (samples[..., 0].min(axis=1) < SIDE)
+                  & (samples[..., 1].max(axis=1) >= 0) & (samples[..., 1].min(axis=1) < SIDE))
+        rasterize(samples[inside], spans)
+    alone, found, specks, built = floors(height, hole, water, closed, spans)
+    rects, owner, columns = rectangles(alone, found, specks, built)
+    borders = {}
+    links = openings(rects, owner, columns, borders)
+    if not rects:
+        return key, None, None, None
+    return key, rects, links, borders
+
+
+# -------------------------------------------------------------------------------------------------
+#  Joining the tiles: openings across their edges, regions
+# -------------------------------------------------------------------------------------------------
+NEXT = {0: (-1, 0, 2), 1: (0, 1, 3), 2: (1, 0, 0), 3: (0, -1, 1)}  # side: row step, column step, its opposite
+
+
+def across(tiles):
+    """The openings between tiles: for each edge, floors at the same place along it one way with each other."""
+    for key, (rects, links, borders) in tiles.items():
+        continent, rest = divmod(key, GRID * GRID)
+        row, column = divmod(rest, GRID)
+        for side, (dr, dc, opposite) in NEXT.items():
+            other = continent * GRID * GRID + (row + dr) * GRID + (column + dc)
+            if other not in tiles or not (0 <= row + dr < GRID and 0 <= column + dc < GRID):
+                continue
+            theirs = {}
+            for position, z, rect in tiles[other][2].get(opposite, []):
+                theirs.setdefault(position, []).append((z, rect))
+            runs = {}
+            for position, z, rect in sorted(borders.get(side, [])):
+                match = None
+                for their_z, their_rect in theirs.get(position, []):
+                    if abs(their_z - z) <= CLIMB:
+                        match = their_rect
+                        break
+                if match is None:
+                    continue
+                target = match + 65536 * (1 + side)
+                run = runs.get(rect)
+                if run and run[-1][3] == target and run[-1][2] == position - 1:
+                    run[-1][2] = position
+                else:
+                    runs.setdefault(rect, []).append([side, position, position, target])
+            for rect, list_ in runs.items():
+                links[rect].extend(list_)
+
+
+def regions(tiles):
+    """A region number for every rectangle: one for all that can be walked to from each other; regions smaller
+    than SMALLEST samples get none (nobody walks onto a roof or a ledge from the ground)."""
+    parent = {}
+
+    def find(node):
+        while parent.get(node, node) != node:
+            parent[node] = parent.get(parent[node], parent[node])
+            node = parent[node]
+        return node
+
+    for key, (rects, links, _) in tiles.items():
+        continent, rest = divmod(key, GRID * GRID)
+        row, column = divmod(rest, GRID)
+        for number, list_ in links.items():
+            for _, _, _, target in list_:
+                where, index = divmod(target, 65536)
+                other = key
+                if where:
+                    dr, dc, _ = NEXT[where - 1]
+                    other = continent * GRID * GRID + (row + dr) * GRID + (column + dc)
+                a, b = find((key, number)), find((other, index))
+                if a != b:
+                    parent[a] = b
+    area = {}
+    for key, (rects, _, _) in tiles.items():
+        for number, rect in enumerate(rects):
+            root = find((key, number))
+            area[root] = area.get(root, 0) + rect[2] * rect[3]
+    numbers = {}
+    found = {}
+    for key, (rects, _, _) in tiles.items():
+        for number in range(len(rects)):
+            root = find((key, number))
+            if area[root] < SMALLEST:
+                continue
+            if root not in numbers:
+                numbers[root] = len(numbers) + 1
+            found[(key, number)] = numbers[root]
+    return found
+
+
+def kept(tiles, region_of):
+    """Each tile's rectangles of the regions kept, numbered anew, their openings pointing at the new numbers."""
+    renumber = {}
+    for key, (rects, _, _) in tiles.items():
+        count = 0
+        for number in range(len(rects)):
+            if (key, number) in region_of:
+                renumber[(key, number)] = count
+                count += 1
+    out = {}
+    for key, (rects, links, borders) in tiles.items():
+        continent, rest = divmod(key, GRID * GRID)
+        row, column = divmod(rest, GRID)
+        new_rects, new_links = [], {}
+        for number, rect in enumerate(rects):
+            if (key, number) not in region_of:
+                continue
+            index = len(new_rects)
+            new_rects.append(rect + [region_of[(key, number)]])
+            moved = []
+            for side, first, last, target in links.get(number, []):
+                where, other_index = divmod(target, 65536)
+                other = key
+                if where:
+                    dr, dc, _ = NEXT[where - 1]
+                    other = continent * GRID * GRID + (row + dr) * GRID + (column + dc)
+                if (other, other_index) in renumber:
+                    moved.append([side, first, last, where * 65536 + renumber[(other, other_index)]])
+            new_links[index] = moved
+        if new_rects:
+            out[key] = (new_rects, new_links)
+    return out
+
+
+# -------------------------------------------------------------------------------------------------
+#  The block
+# -------------------------------------------------------------------------------------------------
+def cbor(value):
+    """A value in CBOR: whole numbers and arrays only."""
+    if isinstance(value, int):
+        major, number = (0, value) if value >= 0 else (1, -1 - value)
+    else:
+        major, number = 4, len(value)
+    if number < 24:
+        head = bytes([major << 5 | number])
+    elif number < 256:
+        head = bytes([major << 5 | 24, number])
+    elif number < 65536:
+        head = bytes([major << 5 | 25]) + struct.pack(">H", number)
+    elif number < 2 ** 32:
+        head = bytes([major << 5 | 26]) + struct.pack(">I", number)
+    else:
+        head = bytes([major << 5 | 27]) + struct.pack(">Q", number)
+    if major == 4:
+        return head + b"".join(cbor(item) for item in value)
+    return head
+
+
+def shared(a, b, side, dr, dc):
+    """The first and last sample of the edge two rectangles share on a side of a (b on the tile dr, dc tiles
+    away), or None when they share none."""
+    ac, ar, aw, ah = a[0], a[1], a[2], a[3]
+    bc, br, bw, bh = b[0] + dc * SIDE, b[1] + dr * SIDE, b[2], b[3]
+    if side in (0, 2):
+        first, last = max(ac, bc), min(ac + aw, bc + bw) - 1
+    else:
+        first, last = max(ar, br), min(ar + ah, br + bh) - 1
+    return (first, last) if first <= last else None
+
+
+def block(rects, links, key, tiles):
+    """A tile's block: [FORMAT, surfaces, rectangles, openings]. Its rectangles come surface by surface; a
+    surface is written as how many rectangles it has, its kind and its region; a rectangle as its column, row,
+    width, height and z. Two rectangles of one surface that share an edge are one way along all of it, as the
+    game works out from the rectangles themselves; every other opening is written: along the whole edge two
+    rectangles share as the neighbour alone, else as -1 - side, then the first and last sample, then the
+    neighbour. The neighbour is its index times 5 plus where it lies (0 on the tile, else 1 + the next tile's
+    direction). On its own tile an opening is written once, on the north or west side of the two (the game
+    adds the other way when it unpacks the tile); into the next tile, from both."""
+    flat_surfaces, flat_rects, flat_links = [], [], []
+    for number, rect in enumerate(rects):
+        column, row, width, height, z, kind, surface, region = rect
+        if number == 0 or rects[number - 1][6] != surface:
+            flat_surfaces.extend([0, kind, region])
+        flat_surfaces[-3] += 1
+        flat_rects.extend([column, row, width, height, z])
+        out = []
+        for side, first, last, target in links.get(number, []):
+            where, index = divmod(target, 65536)
+            if where == 0 and side in (1, 2):
+                continue  # written from the other one
+            dr, dc = (0, 0) if where == 0 else NEXT[where - 1][:2]
+            other = tiles[key][0][index] if where == 0 else tiles[key + dr * GRID + dc][0][index]
+            edge = shared(rect, other, side, dr, dc)
+            whole = edge is not None and edge == (first, last)
+            if whole and where == 0 and other[6] == surface:
+                continue  # the game finds it from the rectangles
+            if whole:
+                out.append(index * 5 + where)
+            else:
+                out.extend([-1 - side, first, last, index * 5 + where])
+        flat_links.append(len(out))
+        flat_links.extend(out)
+    packed = zlib.compressobj(9, zlib.DEFLATED, -15)
+    data = packed.compress(cbor([FORMAT, flat_surfaces, flat_rects, flat_links])) + packed.flush()
+    return base64.b64encode(data).decode("ascii")
+
+
+# -------------------------------------------------------------------------------------------------
+#  Pictures (to look at, not shipped)
+# -------------------------------------------------------------------------------------------------
+def picture(folder, key, rects, links):
+    from PIL import Image, ImageDraw
+    scale = 3
+    image = Image.new("RGB", (SIDE * scale, SIDE * scale), (20, 20, 24))
+    draw = ImageDraw.Draw(image)
+    for number, (column, row, width, height, z, kind, *_) in enumerate(rects):
+        shade = (number * 2654435761) % 0xFFFFFF
+        colour = ((shade >> 16) & 0x7F | 0x40, (shade >> 8) & 0x7F | 0x40, shade & 0x7F | 0x40)
+        if kind == WATER:
+            colour = (30, 60, 150 + (shade & 0x3F))
+        draw.rectangle([column * scale, row * scale, (column + width) * scale - 1, (row + height) * scale - 1], fill=colour)
+    folder.mkdir(parents=True, exist_ok=True)
+    image.save(folder / f"{key}.png")
+
+
+# -------------------------------------------------------------------------------------------------
+def main():
+    args = sys.argv[1:]
+    only, pictures, processes = None, None, 24
+    if "--only" in args:
+        at = args.index("--only")
+        only = {int(key) for key in args[at + 1].split(",")}
+        del args[at:at + 2]
+    if "--pictures" in args:
+        at = args.index("--pictures")
+        pictures = Path(args[at + 1])
+        del args[at:at + 2]
+    if "--processes" in args:
+        at = args.index("--processes")
+        processes = int(args[at + 1])
+        del args[at:at + 2]
+    if len(args) != 2:
+        print(__doc__.strip().splitlines()[-1], file=sys.stderr)
+        return 2
+    folder, tables = Path(args[0]), Path(args[1])
+    waters = ART.waters(tables)
+    formats = {row["ID"]: int(row["LVF"]) for row in ART.table(tables, "LiquidMaterial")}
+    liquids = {int(row["ID"]): formats.get(row["MaterialID"], 0) for row in ART.table(tables, "LiquidType")}
+    places = placements(folder)
+    keys = sorted(int(path.stem) for path in (folder / "adt").glob("*.adt"))
+    if only:
+        wanted = set(only)
+        for key in only:  # their neighbours too, for the openings across their edges
+            for dr in (-1, 0, 1):
+                for dc in (-1, 0, 1):
+                    wanted.add(key + dr * GRID + dc)
+        keys = [key for key in keys if key in wanted]
+    jobs = []
+    for key in keys:
+        continent, rest = divmod(key, GRID * GRID)
+        row, column = divmod(rest, GRID)
+        north0, south0 = HALF - row * TILE, HALF - (row + 1) * TILE
+        west0, east0 = HALF - column * TILE, HALF - (column + 1) * TILE
+        near_places = [where for where in places.get(continent, [])
+                       if where["box"][1] <= north0 and where["box"][0] >= south0
+                       and where["box"][3] <= west0 and where["box"][2] >= east0]
+        jobs.append((key, folder, waters, liquids, near_places))
+    tiles = {}
+    with Pool(processes) as pool:
+        for done, (key, rects, links, borders) in enumerate(pool.imap_unordered(tile, jobs, chunksize=1), 1):
+            if rects:
+                tiles[key] = (rects, links, borders)
+            if done % 50 == 0 or done == len(jobs):
+                print(f"{done} of {len(jobs)} tiles read", file=sys.stderr, flush=True)
+    across(tiles)
+    tiles = kept(tiles, regions(tiles))
+    STAGING.parent.mkdir(parents=True, exist_ok=True)
+    total, count = 0, 0
+    with open(STAGING, "w", encoding="utf-8") as out:
+        for key in sorted(tiles):
+            if only and key not in only:
+                continue
+            rects, links = tiles[key]
+            text = block(rects, links, key, tiles)
+            total += len(text)
+            count += len(rects)
+            continent, rest = divmod(key, GRID * GRID)
+            row, column = divmod(rest, GRID)
+            around = [continent * GRID * GRID + (row + dr) * GRID + (column + dc)
+                      for dr, dc, _ in NEXT.values() if (continent * GRID * GRID + (row + dr) * GRID + (column + dc)) in tiles]
+            line = {"set": "Walking", "key": key, "game": "forever", "build": BUILD, "src": "game",
+                    "fields": {"map": continent, "links": sorted(around), "block": text}}
+            out.write(json.dumps(line, separators=(",", ":")) + "\n")
+            if pictures:
+                picture(pictures, key, rects, links)
+    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(tiles) if not only else len(only & set(tiles))} tiles, "
+          f"{count} rectangles, {total // 1024} KB of blocks.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

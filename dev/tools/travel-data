@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+"""The flights of the game's flight masters, from its client tables, as staging for Core's set Travel (pack World):
+the ways Navigation's route planner flies (Doc/ideas/Navigation.md, *The planner*).
+
+  dev/data/staging/travel.jsonl   one line per flight (the game's TaxiPath): kind flight, fromNode and toNode (the
+                                  game's flight points, as C_TaxiMap names them), side (alliance or horde where only
+                                  that side's flight masters stand at both ends; none: both), cost (copper), length
+                                  (yards along the game's path) and path (its points in the world's yards, x to
+                                  the north and y to the west; a point on a straight run, within STRAIGHT yards of
+                                  the line between its neighbours, left out)
+
+Flights between flight points of no side (the game's own, not a flight master's) and the ships' ways (paths
+between no flight points: their timetables are not in the client) are left out. The key is the game's TaxiPath ID.
+
+The input: a folder of the game's client tables as CSV (TaxiNodes, TaxiPath, TaxiPathNode), of the build BUILD.
+
+Usage:  dev/tools/travel-data <client tables>
+"""
+import csv
+import json
+import math
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+STAGING = ROOT / "dev" / "data" / "staging" / "travel.jsonl"
+BUILD = 70245
+STRAIGHT = 2.0  # yards
+ALLIANCE, HORDE = 0x1, 0x2  # the flight points' sides in TaxiNodes' Flags
+
+
+def table(folder, name):
+    return list(csv.DictReader(open(folder / f"{name}.csv", encoding="utf-8")))
+
+
+def simplified(points):
+    """The path's points, those on a straight run left out (Douglas and Peucker)."""
+    if len(points) < 3:
+        return points
+    a, b = points[0], points[-1]
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    length = math.hypot(dx, dy)
+    far, at = 0.0, 0
+    for index in range(1, len(points) - 1):
+        p = points[index]
+        if length == 0:
+            gap = math.hypot(p[0] - a[0], p[1] - a[1])
+        else:
+            gap = abs(dy * (p[0] - a[0]) - dx * (p[1] - a[1])) / length
+        if gap > far:
+            far, at = gap, index
+    if far <= STRAIGHT:
+        return [a, b]
+    return simplified(points[:at + 1])[:-1] + simplified(points[at:])
+
+
+def main():
+    if len(sys.argv) != 2:
+        print(__doc__.strip().splitlines()[-1], file=sys.stderr)
+        return 2
+    folder = Path(sys.argv[1])
+    nodes = {int(row["ID"]): row for row in table(folder, "TaxiNodes")}
+    points = {}
+    for row in table(folder, "TaxiPathNode"):
+        points.setdefault(int(row["PathID"]), []).append(row)
+    lines, left = [], 0
+    for row in table(folder, "TaxiPath"):
+        key, start, end = int(row["ID"]), int(row["FromTaxiNode"]), int(row["ToTaxiNode"])
+        a, b = nodes.get(start), nodes.get(end)
+        sides = [int(node["Flags"]) & (ALLIANCE | HORDE) for node in (a, b) if node]
+        if not a or not b or not all(sides):
+            left += 1
+            continue
+        both = sides[0] & sides[1]
+        if not both:
+            left += 1
+            continue
+        side = None if both == ALLIANCE | HORDE else ("alliance" if both == ALLIANCE else "horde")
+        path = sorted(points.get(key, []), key=lambda p: int(p["NodeIndex"]))
+        continent = int(a["ContinentID"])
+        way = [(float(p["Loc[0]"]), float(p["Loc[1]"])) for p in path if int(p["ContinentID"]) == continent]
+        length = sum(math.hypot(q[0] - p[0], q[1] - p[1]) for p, q in zip(way, way[1:]))
+        fields = {"kind": "flight", "fromNode": start, "toNode": end, "cost": int(row["Cost"])}
+        if len(way) >= 2:  # a way the game has no points for keeps no length nor path
+            fields["length"] = round(length, 1)
+            fields["path"] = [{"x": x, "y": y} for x, y in simplified(way)]
+        if side:
+            fields["side"] = side
+        lines.append({"set": "Travel", "key": key, "game": "forever", "build": BUILD, "src": "game", "fields": fields})
+    STAGING.parent.mkdir(parents=True, exist_ok=True)
+    with open(STAGING, "w", encoding="utf-8") as out:
+        for line in lines:
+            out.write(json.dumps(line, separators=(",", ":")) + "\n")
+    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines)} flights ({left} ways left out).")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

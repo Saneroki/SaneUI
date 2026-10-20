@@ -376,8 +376,11 @@ Set(packPath .. "/Places.lua", "Places", "00000005", "int", '"kind", "name", "po
     '"text", "text", "point", "int", "int", "int"',
     'R[1] = "70245\t\tdungeon\tThe Mines\t1429\03130\03130\t500\t18\t23"\n'
     .. 'R[2] = "70245\t\tmailbox\t\t1429\03170\03170\t\t\t"\n')
-Set(packPath .. "/Travel.lua", "Travel", "00000006", "int", '"kind", "name", "from", "to"', '"text", "text", "point", "point"',
-    'R[1] = "70245\t\tboat\tTo the west\t1429\03190\03190\t1414\03150\03150"\n')
+Set(packPath .. "/Travel.lua", "Travel", "00000006", "int", '"kind", "name", "from", "to", "fromNode", "toNode", "length"',
+    '"text", "text", "point", "point", "int", "int", "number"',
+    'R[1] = "70245\t\tboat\tTo the west\t1429\03190\03190\t1414\03150\03150\t\t\t"\n'
+    .. 'R[2] = "70245\t\tflight\t\t\t\t2\t5\t6000"\n'
+    .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\n')
 out = assert(io.open(packPath .. "/SaneUI_Data_World.toc", "w"))
 out:write("## Title: Data: World\n## LoadOnDemand: 1\n## X-SaneUI-Sets: NPCs, Objects, Overlays, Places, Tiles, Travel\n## X-SaneUI-Format: 1\n"
     .. "## X-SaneUI-Game: forever\nNPCs.lua\nObjects.lua\nOverlays.lua\nPlaces.lua\nTiles.lua\nTravel.lua\n")
@@ -391,6 +394,30 @@ Set(spawnsPath .. "/Spawns.lua", "Spawns", "00000007", "text", '"points", "middl
     .. 'R["npc:70"] = "70245\t\t1429\03160\03120\t"\n'
     .. 'R["npc:71"] = "70245\t\t1429\03110\03110\t"\n'
     .. 'R["object:1617"] = "70245\t\t1429\03152\03150\t"\n')
+-- The walking data (pack Routes): two tiles round the player, their blocks as the game unpacks them (the
+-- encoding stand-ins below hand back these tables). Tile 3104 (its north west corner at u 0, v -8533, 2.08 yards
+-- a sample): a west hall (1) and an east hall (3), a wall between them (columns 128 to 159) with a door (2, rows
+-- 100 to 119; the three one surface) and a channel of water (4, rows 200 to 209, a surface of its own, its opening
+-- into the west hall written from its west side, into the east hall from the hall's west side); a corner of
+-- another region nobody can walk to (5). Tile 3105, east of it: one hall (1), open into 3104's east hall.
+local routesFolder = io.popen("mktemp -d -t saneui-routes-XXXXXX"):read("*l") -- loaded late: kept until the end
+local routesPath = routesFolder .. "/SaneUI_Data_Routes"
+os.execute(("mkdir -p '%s'"):format(routesPath))
+local walkBlocks = {
+    [3104] = { 1,
+        { 3, 1, 1,   1, 2, 1,   1, 1, 7 },
+        { 0, 0, 128, 256, 160,   128, 100, 32, 20, 160,   160, 0, 96, 240, 160,   128, 200, 32, 10, 160,   240, 248, 8, 8, 160 },
+        { 0,   0,   2, 15, 2,   1, 0,   0 } },
+    [3105] = { 1, { 1, 1, 1 }, { 0, 0, 64, 256, 160 }, { 1, 14 } },
+}
+Set(routesPath .. "/Walking.lua", "Walking", "00000008", "int", '"map", "links", "block"', '"int", "list int", "text"',
+    'R[3104] = "70245\t\t0\t3105\tblock:3104"\nR[3105] = "70245\t\t0\t3104\tblock:3105"\n')
+out = assert(io.open(routesPath .. "/SaneUI_Data_Routes.toc", "w"))
+out:write("## Title: Data: Routes\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Walking\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nWalking.lua\n")
+out:close()
+W.AddPack(routesPath)
+C_EncodingUtil = { DecodeBase64 = function(text) return text end, DecompressString = function(text) return text end,
+                   DeserializeCBOR = function(text) return walkBlocks[tonumber(text:match("%d+"))] end }
 out = assert(io.open(spawnsPath .. "/SaneUI_Data_Spawns.toc", "w"))
 out:write("## Title: Data: Spawns\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Spawns\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nSpawns.lua\n")
 out:close()
@@ -1171,6 +1198,80 @@ classicMenu._items[1].fn()
 Window.frame._group:Run(1)
 check(ns.options.nativeMinimap and not Hybrid.Taken() and Window.frame._alpha == 0, "the game's minimap chosen: kept, ours rests")
 Core.Set(ns.name, "nativeMinimap", false)
+
+-------------------------------------------------------------------------------
+--  Routes: the walking data, the walk between two points, the journey with a flight
+-------------------------------------------------------------------------------
+local Walk, Search, Planner = ns.Walk, ns.Search, ns.Planner
+check(Walk.Ready() == false and Core.Data.Set("Walking"):State() == "loading", "the walking data is asked for when first needed")
+Frames(4)
+check(Walk.Ready(), "and loads (the pack Routes)")
+local hall = Walk.Tile(3104)
+check(hall and hall.count == 5 and hall.kind[4] == Walk.WATER and hall.region[5] == 7 and select(5, Walk.Rect(hall, 1)) == 40,
+    "a tile unpacked: its rectangles, their kinds, regions and heights")
+local function Openings(tile, index)
+    local list = {}
+    Walk.Openings(tile, index, function(side, first, last, next, other) list[#list + 1] = { side, first, last, next.key, other } end)
+    table.sort(list, function(a, b) return a[1] * 1000 + a[2] < b[1] * 1000 + b[2] end)
+    return list
+end
+local west, east = Openings(hall, 1), Openings(hall, 3)
+check(#west == 2 and west[1][1] == 1 and west[1][2] == 100 and west[1][3] == 119 and west[1][5] == 2
+    and west[2][2] == 200 and west[2][3] == 209 and west[2][5] == 4,
+    "the west hall: into the door along their shared edge (worked out: one surface), into the channel (written once, from it)")
+check(#east == 3 and east[1][1] == 1 and east[1][4] == 3105 and east[1][2] == 0 and east[1][3] == 239
+    and east[2][1] == 3 and east[2][5] == 2 and east[3][1] == 3 and east[3][5] == 4,
+    "the east hall: into the next tile along all its edge, back into the door and the channel")
+check(#Openings(Walk.Tile(3105), 1) == 1 and Openings(Walk.Tile(3105), 1)[1][4] == 3104, "and the next tile's hall back into it")
+local s = Walk.SAMPLE
+local under = Walk.Under(1415, 50 * s, -8533.33 - 50 * s)
+check(#under == 1 and under[1][2] == 1, "the rectangle under a point")
+-- From the west hall to the east hall, both at row 50: through the door (rows 100 to 119), not through the wall.
+local points, cost = Search.Walk(1415, 100 * s, -8533.33 - 50 * s, 200 * s, -8533.33 - 50 * s)
+local through = false
+for index = 1, #points, 2 do
+    local row = (-8533.33 - points[index + 1]) / s
+    if row >= 99 and row <= 121 then through = true end
+end
+check(points and through and cost > 100 * s and #points >= 6, "a walk from hall to hall goes through the door, around the wall")
+local ending = Search.Walk(1415, 100 * s, -8533.33 - 50 * s, 244 * s, -8533.33 - 252 * s)
+check(ending and (-8533.33 - ending[#ending]) / s <= 240.01, "to a place nobody can walk to: the walk ends where one can, nearest to it")
+local far = Search.Walk(1415, 200 * s, -8533.33 - 50 * s, (256 + 30) * s, -8533.33 - 50 * s)
+check(far and #far == 4, "into the next tile: a straight walk where nothing is in the way")
+-- The journey: the pin far away (Elwynn's south west, 1750 yards), a flight point near the player and one near
+-- the pin, both known: walk, fly, walk.
+C_TaxiMap.GetTaxiNodesForMap = function(map)
+    if map ~= 1415 then return {} end
+    return { { nodeID = 2, name = "Near", position = CreateVector2D(0.575, 0.6445), faction = 2, atlasName = "TaxiNode_Alliance" },
+             { nodeID = 5, name = "Far", position = CreateVector2D(0.39, 0.699), faction = 0, atlasName = "TaxiNode_Neutral" } }
+end
+Core.Character(ns.name).flights = { [2] = true, [5] = true }
+local shownWay
+local show = ns.Route.Show
+ns.Route.Show = function(way) shownWay = way return show(way) end
+Live.SetWaypoint(1429, 0.05, 0.99)
+W.Fire("USER_WAYPOINT_UPDATED")
+W.Wait(0)
+Frames(8)
+check(shownWay and #shownWay.legs == 3 and shownWay.legs[1].kind == "walk" and shownWay.legs[2].kind == "flight"
+    and shownWay.legs[3].kind == "walk", "a pin far away: on foot to a known flight point, the flight, on foot to the pin")
+check(#shownWay.legs[1].points >= 2 and near(shownWay.legs[2].points[1].u, 600) and near(shownWay.legs[3].points[2].u, -900),
+    "each leg from where it starts to where it ends")
+-- Unknown flight points are not flown from: on foot all the way.
+Core.Character(ns.name).flights = {}
+ns.Planner.Update()
+Frames(8)
+check(shownWay and #shownWay.legs == 1 and shownWay.legs[1].kind == "walk", "without the flight points known: on foot")
+-- The setting off, or the pin gone: no line.
+Core.Set(ns.name, "route", false)
+check(shownWay == nil, "the setting Route to the map pin off: no line")
+Core.Set(ns.name, "route", true)
+Live.ClearWaypoint()
+W.Fire("USER_WAYPOINT_UPDATED")
+W.Wait(0)
+check(shownWay == nil, "the pin taken away: no line")
+ns.Route.Show = show
+os.execute(("rm -rf '%s'"):format(routesFolder))
 
 -- A failure stands the module down: everything given back.
 ns.StandDown("a test")

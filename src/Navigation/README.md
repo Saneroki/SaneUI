@@ -1,6 +1,6 @@
 # Sane UI: Navigation
 
-**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log and the bar over the full map; routes and the leveling guide come later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
+**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot and by flight; ships in routes and the leveling guide come later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 Sane UI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
@@ -48,6 +48,11 @@ party), always over the map, and the full map has the quest log at its left. The
   their level and state, their objectives under them. A click: the arrow leads to it, the map shows where it is,
   its text below with *Track*, *Share* and *Abandon*. Shift and a click tracks it; the right button opens a menu.
 - **The map selector** on the bar: the world or a continent, then a zone of it.
+- **Routes:** put the game's map pin (Ctrl and a click) and a golden line leads you there, pulsing towards it,
+  around what cannot be walked (mountains, walls, deep water is swum), through gates and doors, and by the flights
+  your character knows where that is quicker (visit a flight master once for the map to know yours). Leave the
+  line and it is planned again; after a flight it goes on from where you landed. Not across the sea yet (no
+  ships). The setting *Route to the map pin* switches it off.
 - **Map view** (the buttons on the full map's bar, or the setting on the page *Navigation*): *Parchment* or
   *Scrying* (the default), and *Atlas* while that module is switched on in the addon list; for both views and at
   every zoom (in the code `sketches`, `terrain`, `atlas`). A view not offered (the module switched off or
@@ -144,6 +149,22 @@ party), always over the map, and the full map has the quest log at its left. The
 - **TopBar** (`TopBar.lua`): over the full map's top: the quest log's button, the views, the map selector (the
   game's dropdowns, radio entries of the world, its continents, the continent's zones A to Z) and the pin filter
   (checkboxes); it says what the map shows after each layout.
+- **Walk** (`Walk.lua`, no frames): Core's set *Walking* (pack *Data: Routes*, asked for at the first route),
+  made by `dev/tools/walk-data` from the game's terrain, buildings and water: per terrain tile a block (base64,
+  deflate, CBOR, read by the game's `C_EncodingUtil`) of surfaces and rectangles of floors, 2.08 yards a sample,
+  each with its height, kind (land, water) and region, and the openings into its neighbours. Unpacked when first
+  needed, the last `Walk.KEEP` kept; the openings of two rectangles of one surface that touch are worked out from
+  the rectangles, written ones once on their tile get their other way. `Under`, `Nearest`, `Openings`, `Portal`.
+- **Search** (`Search.lua`, no frames): a walk between two points: A* over the rectangles through their openings
+  (from where a rectangle was entered to the nearest point of the next opening, swimming twice the cost), ends
+  in different regions refused at once, then the line pulled straight through the openings (a funnel, each
+  opening drawn in from its ends). `Search.Start` runs it as a job of Core's scheduler.
+- **Planner** (`Planner.lua`, no frames): the way to the map pin: walk, or walk to a known flight point, the
+  flights of Core's set *Travel* (from the game's tables, by `dev/tools/travel-data`) the player's side may take,
+  walk from the last; walks guessed, the quickest chosen (Dijkstra), the walks then searched and the journey
+  chosen once more when one is much longer than guessed; planned again when the pin changes, after a landing, when
+  the player is 40 yards off the line, and when the data arrives. The known flight points are read at the flight
+  master and kept per character. Without walking data, straight lines.
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
   pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second).
 - **The game's minimap** (`Hybrid.lua`): over our map while the view follows you at one of its zoom steps,
@@ -188,8 +209,11 @@ party), always over the map, and the full map has the quest log at its left. The
 | `Art.lua` | The view Parchment: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
 | `Painted.lua` | The view Atlas: the module SaneUI_Atlas found at login, loaded when first drawn, its blocks at the level the zoom asks for |
 | `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, gathered. No frames |
+| `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings. No frames |
+| `Search.lua` | A walk between two points over the walking data, as a job of Core's scheduler. No frames |
+| `Planner.lua` | The way to the map pin: on foot and by the flights this character knows. No frames |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
-| `Route.lua` | The golden line of a way, the parts in view |
+| `Route.lua` | The golden line of a way, the parts in view: walks gold, flights pale, ships red |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks |
 | `Marks.lua` | The player's arrow, the map pin, the party |
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
@@ -206,6 +230,9 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, routes:** the golden line to the map pin, on foot and by the flights this character knows, over the
+  walking data made from the game's own terrain, buildings and water (`dev/tools/walk-data`, Core's set *Walking*)
+  and the flights of the game's tables (`dev/tools/travel-data`, Core's set *Travel*).
 - **2026-10-20, pins and the quest log:** the pins of the game and of Core's data (`Data.Map`), one per thing,
   filtered and gathered, always over the map; quest areas; the party; the quest log at the full map's left and the
   bar over the full map (views, map selector, pin filter); the golden line's drawing. The Classic windows are kept

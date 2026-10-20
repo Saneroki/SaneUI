@@ -5,8 +5,9 @@ the waypoint, the routes and the leveling guide. Built so far (2026-10-20): the 
 its controls, the terrain and the art at every zoom (the water cut away, the zones' maps cut to their outlines),
 zones that light up and open by a click, the map moving with its window, the game's minimap over ours (cut to the
 window's shape), the game's map kept closed; the pins of the game and of Core's data, quest areas, the party, the
-quest log and the bar over the full map, the golden line's drawing (`src/Navigation/README.md`). Not yet: the
-planner and the walking data, the leveling guide, dungeon maps, search, the minimap's small parts.
+quest log and the bar over the full map, routes to the map pin on foot and by flight (`src/Navigation/README.md`).
+Not yet: ships, portals and the hearthstone in the routes, the leveling guide, dungeon maps, search, the minimap's
+small parts.
 
 How to read this page:
 
@@ -888,6 +889,17 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
   ship arrived); a new route replaces the shown one only when it is clearly better, so the line does not
   jump. How far off counts as left, and how much better is clearly better, are tuned in the game.
 - **Without walking data** (the pack switched off, inside an instance): a straight line to the pin.
+- **Built (2026-10-20, `Planner.lua`):** the journey on the player's continent over the start, the end and the
+  flight points this character knows (read at the flight master, `C_TaxiMap.GetAllTaxiNodes`, else the older
+  window's names; kept per character), the flights of Core's set *Travel* its side may take (each at its way's
+  length over `Planner.FLY` yards a second and `Planner.BOARD` seconds), walks guessed at `Planner.DETOUR`
+  times the straight line within one region of the walking data; Dijkstra. Then each walk searched
+  (`Search.lua`, a job of Core's scheduler); one found `Planner.WORSE` times its guess or more puts in its true
+  length and the journey is chosen once more. Planned again when the pin changes, after a flight landed, when
+  the player is `Planner.OFF` yards off the line (at most every `Planner.AGAIN` seconds), and when the walking
+  data or the flights arrive. Not yet: ships, zeppelins, trams, lifts and portals (their timetables are not in
+  the game's tables: a pin on another continent gets no line, said once), the hearthstone, a new route kept
+  only when clearly better. The setting *Route to the map pin* (on).
 
 ### The walking data
 
@@ -896,6 +908,37 @@ Core's (pack Routes, loaded on the first route, *Decisions*): per region a block
 real data) and let go when no route is asked for. The format, the tool and the checks are Core's data
 framework's; this is the one set where its rule of plain text gives way, as `Doc/ideas/Data.md` foresees for
 a cold, very large part.
+
+**Built (2026-10-20, `dev/tools/walk-data`; open question 1 answered):** from the game's own files only: each
+map chunk's heights (but its holes), every collision triangle of every building the object files place (their
+group files, turned and moved as the game places them, cut into columns as a voxel field is made), and the
+water (deeper than `DEEP` a floor to swim on; magma and slime close what lies under them). Sampled every 2.08
+yards (256 a tile): a floor is the top of a column's span made by something not too steep (`SLOPE` 50°) with
+`ROOM` (2 yards) free above it; two floors side by side are one way within `CLIMB` (2.6 yards); the ground is
+judged on its heights smoothed over three samples, so its bumps make no specks.
+
+- **Surfaces, then rectangles:** a flood joins floors into surfaces (one kind, at most one floor a column, every
+  two neighbours one way), and each surface is cut by a quadtree into squares of up to `WIDEST` (32 samples, 67
+  yards), neighbours of one size joined. At the ground's edges a square may take a share of steep samples
+  (`TAKEN`: a half at 2 samples up to 95 % at 32; never a hole, water, a building or another surface's floor),
+  walked over at the square's height; a lone sample among steep ground is left out. So the land is a few large
+  rectangles, towns, caves and mountainsides many small ones.
+- **Regions:** all rectangles one can walk or swim between share a number; a region under `SMALLEST` (3,000
+  samples, rooftops, ledges, plateaus nobody walks onto) is left out.
+- **The block** of a tile (CBOR, deflated, base64; the game's `C_EncodingUtil` reads it): its surfaces (count,
+  kind, region), its rectangles (column, row, width, height, height in quarter yards) and the openings the game
+  cannot work out itself: two rectangles of one surface that touch are open along all their edge (not
+  written); every other opening is written (between surfaces, into the next tile, or only part of an edge), on
+  its own tile once (`Walk.lua` adds the other way).
+- **Size:** 1,724 tiles of both continents, 1.43 million rectangles, 10.7 MB in the master (the pack *Data:
+  Routes*, loaded at the first route); about two minutes to make on this computer. Walks across a zone take
+  20 to 65 ms of search, spread over frames by the scheduler.
+- **The search** (`Search.lua`): A* over the rectangles from the one under the start (or the nearest within 40
+  yards) to the one under the end in the same region (different regions: no walk, known at once); a step costs
+  the way from where a rectangle was entered to the nearest point of the opening, swimming twice; the line then
+  pulled straight through the openings passed, each drawn in 0.8 yards from its ends.
+- **Not yet:** the doodads (trees, fences, rocks) are not read: a line may cross a fence; one-way drops (a
+  ledge one can jump down but not climb) are no way.
 
 ### The golden line
 
@@ -1033,9 +1076,10 @@ Each step ends in something tried in the game, and in the module's README markin
 
 **Where it stands (2026-10-20):** steps 1 and 2 built (2026-10-19); 3 and 4 built, the live pins and the quest log;
 5 built as far as Core's data goes: the pins, gathered overlaps, tooltips and the quest areas the game shades are
-there, and `Data.Map` reads Spawns, Places and Travel, which hold no entries yet, so the database's pins come with
-the import; rares' spawn areas and patrol paths wait for their data. Step 0's points are answered in play as each
-step is tried.
+there, and `Data.Map` reads Spawns, Places and Travel, of which Spawns and Places hold no entries yet, so the
+database's pins come with the import; rares' spawn areas and patrol paths wait for their data. 6 built on foot and
+by flight (the walking data, the flights of the game's tables, the planner, the search, the golden line); ships,
+portals and the hearthstone not yet. Step 0's points are answered in play as each step is tried.
 
 The hardest parts, in order: the walking data (its tool and size); keeping the game's map closed in a
 fight; the small view's dots with our ground; the overlay's cut; the pin data (Core's).

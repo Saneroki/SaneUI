@@ -17,6 +17,10 @@ The bigger changes of each version, newest first.
   in view. The game's minimap dots still show on
   it, and the map key opens it. Hover a zone to light it up, click it
   to open it; the map grows and zooms smoothly with the window.
+- Navigation: routes. Put the map pin (Ctrl-click) and a golden line
+  leads you there, around mountains and walls, through gates and
+  doors, swimming where it must, and by the flights you know when they
+  are quicker. Leave the line and it finds the way again.
 - Navigation: pins on the map in the game's own looks: your quests,
   flight points, rares and treasures nearby, places, ways into other
   maps, your party; and what Sane UI's database knows as it fills.
