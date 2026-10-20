@@ -13,7 +13,7 @@ local _, ns = ...
 --                              deflate and CBOR); the last Walk.KEEP kept; nil without ground
 --      Walk.Rect(tile, index)  a rectangle's column, row, width, height (samples), z, kind, region
 --      Walk.Under(continent, u, v)   the rectangles under a point of a continent's plane
---      Walk.Nearest(continent, u, v, reach)  the nearest rectangle within reach yards
+--      Walk.Nearest(continent, u, v, reach, region, kind)  the nearest rectangle within reach yards
 --      Walk.Box(tile, index)   a rectangle in the plane: its left, right, top, bottom
 --
 --  A tile's samples run from its north west corner, 256 along a side (Walk.SAMPLE
@@ -214,18 +214,22 @@ function Walk.Under(continent, u, v)
     return found
 end
 
--- The nearest rectangle within reach yards of a point (on its tile and the tiles around it), and the nearest
--- point of it; nil when none. region: only of that region.
-function Walk.Nearest(continent, u, v, reach, region)
+-- The nearest rectangle within reach yards of a point (on its tile and the tiles around it that reach comes
+-- into), and the nearest point of it; nil when none. region: only of that region; kind: only of that kind.
+function Walk.Nearest(continent, u, v, reach, region, kind)
     local best, bestTile, bestIndex, bu, bv
     local key = Walk.Key(continent, u, v)
     if not key then return nil end
+    local column, row = Coords.Tile(u, v)
     for dr = -1, 1 do
         for dc = -1, 1 do
-            local tile = Walk.Tile(key + dr * 64 + dc)
+            local left, top = Coords.Corner(column + dc, row + dr)
+            local nu = math.max(left, math.min(left + Coords.TILE, u))
+            local nv = math.max(top - Coords.TILE, math.min(top, v))
+            local tile = (nu - u) ^ 2 + (nv - v) ^ 2 <= reach * reach and Walk.Tile(key + dr * 64 + dc)
             if tile then
                 for index = 1, tile.count do
-                    if not region or tile.region[index] == region then
+                    if (not region or tile.region[index] == region) and (not kind or tile.kind[index] == kind) then
                         local left, right, top, bottom = Walk.Box(tile, index)
                         local nu, nv = math.max(left, math.min(right, u)), math.max(bottom, math.min(top, v))
                         local gap = (nu - u) ^ 2 + (nv - v) ^ 2

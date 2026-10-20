@@ -1,16 +1,30 @@
 #!/usr/bin/env python3
-"""The flights of the game's flight masters, from its client tables, as staging for Core's set Travel (pack World):
-the ways Navigation's route planner flies (Doc/ideas/Navigation.md, *The planner*).
+"""The flights of the game's flight masters and the ways of its boats and zeppelins, from its client tables, as
+staging for Core's set Travel (pack World): the ways Navigation's route planner takes (Doc/ideas/Navigation.md,
+*The planner*).
 
-  dev/data/staging/travel.jsonl   one line per flight (the game's TaxiPath): kind flight, fromNode and toNode (the
-                                  game's flight points, as C_TaxiMap names them), side (alliance or horde where only
-                                  that side's flight masters stand at both ends; none: both), cost (copper), length
-                                  (yards along the game's path) and path (its points in the world's yards, x to
-                                  the north and y to the west; a point on a straight run, within STRAIGHT yards of
-                                  the line between its neighbours, left out)
+  dev/data/staging/travel.jsonl   one line per way, its key the game's TaxiPath ID:
 
-Flights between flight points of no side (the game's own, not a flight master's) and the ships' ways (paths
-between no flight points: their timetables are not in the client) are left out. The key is the game's TaxiPath ID.
+    a flight      kind flight, fromNode and toNode (the game's flight points, as C_TaxiMap names them), side
+                  (alliance or horde where only that side's flight masters stand at both ends; none: both), cost
+                  (copper), length (yards along the game's path) and path (its points in the world's yards, x to
+                  the north and y to the west)
+    a transport   a boat or a zeppelin, one way round as the game moves it (a path between no flight points): kind
+                  (a boat when all its way lies within FLOAT yards of the sea's level, else a zeppelin), length
+                  (yards it moves along its way once round, its leaps not counted) and path: its points, each with
+                  map (the world's map it lies on, at its first point and wherever the way comes onto another),
+                  stay (where it stops at a dock: the seconds it stands there, the game's delay) and jump (where it
+                  leaps to the point from the one before, onto another map or far on the same: the game's teleport;
+                  after its last point it starts again from its first)
+
+On a path a point on a straight run, within STRAIGHT yards of the line between its neighbours, is left out (never a
+dock or a leap). The game's tables hold neither a transport's speed nor its timetable: the planner estimates them
+until they are learned in play (Doc/ideas/Data.md, learned data).
+
+Left out: flights between flight points of no side (the game's own, not a flight master's); paths that stop at
+fewer than two docks (a moving thing, no way between places); and a transport whose every dock is one of another
+transport with more docks (or, with the same ones, a newer ID): the older way the newer one replaced. Two stops
+within SAME yards on one map are one dock.
 
 The input: a folder of the game's client tables as CSV (TaxiNodes, TaxiPath, TaxiPathNode), of the build BUILD.
 
@@ -26,7 +40,10 @@ ROOT = Path(__file__).resolve().parents[2]
 STAGING = ROOT / "dev" / "data" / "staging" / "travel.jsonl"
 BUILD = 70245
 STRAIGHT = 2.0  # yards
+FLOAT = 5.0  # yards over or under the sea's level (0) a boat's way keeps to
+SAME = 20.0  # yards between two stops of one dock
 ALLIANCE, HORDE = 0x1, 0x2  # the flight points' sides in TaxiNodes' Flags
+TELEPORT, STOP = 0x1, 0x2  # TaxiPathNode's Flags: the transport leaps after this point; it stops here
 
 
 def table(folder, name):
@@ -34,7 +51,7 @@ def table(folder, name):
 
 
 def simplified(points):
-    """The path's points, those on a straight run left out (Douglas and Peucker)."""
+    """The path's points (x and y first), those on a straight run left out (Douglas and Peucker)."""
     if len(points) < 3:
         return points
     a, b = points[0], points[-1]
@@ -54,6 +71,85 @@ def simplified(points):
     return simplified(points[:at + 1])[:-1] + simplified(points[at:])
 
 
+def flight(key, row, a, b, path):
+    """A flight's fields, or None when no flight master's side stands at both ends."""
+    sides = [int(node["Flags"]) & (ALLIANCE | HORDE) for node in (a, b)]
+    both = sides[0] & sides[1]
+    if not all(sides) or not both:
+        return None
+    side = None if both == ALLIANCE | HORDE else ("alliance" if both == ALLIANCE else "horde")
+    continent = int(a["ContinentID"])
+    way = [(float(p["Loc[0]"]), float(p["Loc[1]"])) for p in path if int(p["ContinentID"]) == continent]
+    length = sum(math.hypot(q[0] - p[0], q[1] - p[1]) for p, q in zip(way, way[1:]))
+    fields = {"kind": "flight", "fromNode": int(row["FromTaxiNode"]), "toNode": int(row["ToTaxiNode"]),
+              "cost": int(row["Cost"])}
+    if len(way) >= 2:  # a way the game has no points for keeps no length nor path
+        fields["length"] = round(length, 1)
+        fields["path"] = [{"x": x, "y": y} for x, y in simplified(way)]
+    if side:
+        fields["side"] = side
+    return fields
+
+
+def docks(path):
+    """A transport's docks: [(map, x, y)], one per place it stops at."""
+    found = []
+    for p in path:
+        if int(p["Flags"]) & STOP:
+            place = (int(p["ContinentID"]), float(p["Loc[0]"]), float(p["Loc[1]"]))
+            if not any(d[0] == place[0] and math.hypot(d[1] - place[1], d[2] - place[2]) <= SAME for d in found):
+                found.append(place)
+    return found
+
+
+def replaced(places):
+    """The transports (by key: their docks) all of whose docks another one has, with more docks, or with the same
+    ones and a newer ID: the older ways the newer ones replaced."""
+    def within(small, large):
+        return all(any(a[0] == b[0] and math.hypot(a[1] - b[1], a[2] - b[2]) <= SAME for b in large) for a in small)
+
+    return {key for key in places for other in places if other != key and within(places[key], places[other])
+            and (len(places[other]) > len(places[key]) or (len(places[other]) == len(places[key]) and other > key))}
+
+
+def transport(path):
+    """A transport's fields from its path's points (in the game's order)."""
+    points, length = [], 0.0
+    for index, p in enumerate(path):
+        world, x, y = int(p["ContinentID"]), float(p["Loc[0]"]), float(p["Loc[1]"])
+        before = path[index - 1] if index else None
+        leap = before is not None and (int(before["ContinentID"]) != world or int(before["Flags"]) & TELEPORT)
+        if before is not None and not leap:
+            length += math.hypot(x - float(before["Loc[0]"]), y - float(before["Loc[1]"]))
+        point = {"x": x, "y": y}
+        if before is None or int(before["ContinentID"]) != world:
+            point["map"] = world
+        if int(p["Flags"]) & STOP:
+            point["stay"] = int(p["Delay"])
+        if leap:
+            point["jump"] = True
+        points.append(point)
+    # Straight runs left out between the points that must stay: the ends, the docks and the leaps (with the point
+    # before each leap, where the transport leaves).
+    kept = {0, len(points) - 1}
+    for index, point in enumerate(points):
+        if "stay" in point or "jump" in point:
+            kept.add(index)
+            if "jump" in point:
+                kept.add(index - 1)
+    marks = sorted(kept)
+    out = []
+    for start, end in zip(marks, marks[1:]):
+        run = [(p["x"], p["y"], p) for p in points[start:end + 1]]
+        if "jump" in points[end]:
+            out.append(points[start])
+            continue
+        out += [p for _, _, p in simplified(run)][:-1]
+    out.append(points[-1])
+    heights = [abs(float(p["Loc[2]"])) for p in path]
+    return {"kind": "boat" if max(heights) <= FLOAT else "zeppelin", "length": round(length, 1), "path": out}
+
+
 def main():
     if len(sys.argv) != 2:
         print(__doc__.strip().splitlines()[-1], file=sys.stderr)
@@ -63,35 +159,33 @@ def main():
     points = {}
     for row in table(folder, "TaxiPathNode"):
         points.setdefault(int(row["PathID"]), []).append(row)
-    lines, left = [], 0
+    lines, left, transports = [], 0, {}
     for row in table(folder, "TaxiPath"):
-        key, start, end = int(row["ID"]), int(row["FromTaxiNode"]), int(row["ToTaxiNode"])
-        a, b = nodes.get(start), nodes.get(end)
-        sides = [int(node["Flags"]) & (ALLIANCE | HORDE) for node in (a, b) if node]
-        if not a or not b or not all(sides):
-            left += 1
-            continue
-        both = sides[0] & sides[1]
-        if not both:
-            left += 1
-            continue
-        side = None if both == ALLIANCE | HORDE else ("alliance" if both == ALLIANCE else "horde")
+        key = int(row["ID"])
+        a, b = nodes.get(int(row["FromTaxiNode"])), nodes.get(int(row["ToTaxiNode"]))
         path = sorted(points.get(key, []), key=lambda p: int(p["NodeIndex"]))
-        continent = int(a["ContinentID"])
-        way = [(float(p["Loc[0]"]), float(p["Loc[1]"])) for p in path if int(p["ContinentID"]) == continent]
-        length = sum(math.hypot(q[0] - p[0], q[1] - p[1]) for p, q in zip(way, way[1:]))
-        fields = {"kind": "flight", "fromNode": start, "toNode": end, "cost": int(row["Cost"])}
-        if len(way) >= 2:  # a way the game has no points for keeps no length nor path
-            fields["length"] = round(length, 1)
-            fields["path"] = [{"x": x, "y": y} for x, y in simplified(way)]
-        if side:
-            fields["side"] = side
-        lines.append({"set": "Travel", "key": key, "game": "forever", "build": BUILD, "src": "game", "fields": fields})
+        fields = flight(key, row, a, b, path) if a and b else None
+        if fields:
+            lines.append((key, fields))
+        elif len(docks(path)) >= 2:
+            transports[key] = path
+        else:
+            left += 1
+    gone = replaced({key: docks(path) for key, path in transports.items()})
+    for key, path in transports.items():
+        if key in gone:
+            left += 1
+        else:
+            lines.append((key, transport(path)))
+    lines.sort(key=lambda line: line[0])
     STAGING.parent.mkdir(parents=True, exist_ok=True)
     with open(STAGING, "w", encoding="utf-8") as out:
-        for line in lines:
+        for key, fields in lines:
+            line = {"set": "Travel", "key": key, "game": "forever", "build": BUILD, "src": "game", "fields": fields}
             out.write(json.dumps(line, separators=(",", ":")) + "\n")
-    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines)} flights ({left} ways left out).")
+    ships = sum(1 for _, fields in lines if fields["kind"] != "flight")
+    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines) - ships} flights, {ships} boats and zeppelins "
+          f"({left} ways left out; replaced: {', '.join(map(str, sorted(gone))) or 'none'}).")
     return 0
 
 

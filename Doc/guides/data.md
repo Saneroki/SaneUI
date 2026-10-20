@@ -213,7 +213,7 @@ prompt 2, which settles what the game gives.
 | --- | --- |
 | Items | Items (item ID), ItemSets (item set ID), Disenchants (the game's row of disenchanting) |
 | Quests | Quests (quest ID) |
-| World | NPCs (creature ID), CreatureSpells (spell ID), Objects (object ID), Zones (map ID), Travel and Places (our own numbers), Drops (`npc:<ID>`, `object:<ID>`, `zone:<map ID>`), Tiles (continent × 4096 + row × 64 + column), Overlays (the game's overlay ID) |
+| World | NPCs (creature ID), CreatureSpells (spell ID), Objects (object ID), Zones (map ID), Travel (the game's TaxiPath ID; our own number for a way it has no path for), Places (our own numbers), Drops (`npc:<ID>`, `object:<ID>`, `zone:<map ID>`), Tiles (continent × 4096 + row × 64 + column), Overlays (the game's overlay ID) |
 | Spawns | Spawns (`npc:<ID>`, `object:<ID>`), QuestAreas (`<quest>/<objective>/<stage>/<map>`), PatrolPaths (creature ID) |
 | CreatureSpawns | CreatureSpawns (creature ID) |
 | Routes | Walking (a region, numbered by our tool) |

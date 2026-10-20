@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Tests of dev/tools/walk-data and dev/tools/travel-data without the game's files: the block's encoding, floors
 joined into surfaces and rectangles on made-up ground (flat land, a steep speck, a hole, a cliff, a bridge, water),
-the openings the game is left to work out and those written, regions too small to keep, and a flight's path made
-short. Run by dev/tests/run."""
+the openings the game is left to work out and those written, regions too small to keep, a flight's path made
+short, and a boat's way (its docks, its leaps, which way a newer one replaced). Run by dev/tests/run."""
 import base64
 import importlib.machinery
 import importlib.util
@@ -172,6 +172,34 @@ check("its rectangles numbered anew", len(kept[0][0]), 1)
 # --- A flight's path made short ---------------------------------------------------------------------
 line = [(0.0, 0.0), (10.0, 0.5), (20.0, 0.0), (30.0, 40.0)]
 check("points on a straight run left out, a bend kept", travel.simplified(line), [(0.0, 0.0), (20.0, 0.0), (30.0, 40.0)])
+
+# --- A boat's way: its docks, its leaps, its points made short; replaced by a newer way --------------------
+def node(index, world, x, y, z=0.0, flags=0, delay=0):
+    return {"NodeIndex": str(index), "ContinentID": str(world), "Loc[0]": str(x), "Loc[1]": str(y), "Loc[2]": str(z),
+            "Flags": str(flags), "Delay": str(delay)}
+
+
+ship = [node(0, 0, 0, 0), node(1, 0, 100, 0), node(2, 0, 200, 0, flags=travel.STOP, delay=60), node(3, 0, 300, 0),
+        node(4, 0, 400, 0, flags=travel.TELEPORT), node(5, 0, 5000, 0), node(6, 1, 9000, 50),
+        node(7, 1, 9100, 50, z=2.5, flags=travel.STOP, delay=30), node(8, 1, 9100, 60, flags=travel.STOP, delay=30)]
+fields = travel.transport(ship)
+path = fields["path"]
+check("a way near the sea's level is a boat's", fields["kind"], "boat")
+check("its points: a straight run made short, the docks and both sides of each leap kept",
+      [(p["x"], p["y"]) for p in path], [(0.0, 0.0), (200.0, 0.0), (400.0, 0.0), (5000.0, 0.0), (9000.0, 50.0),
+                                         (9100.0, 50.0), (9100.0, 60.0)])
+check("the first point names its map, the docks their stays",
+      [(p.get("map"), p.get("stay"), p.get("jump")) for p in path],
+      [(0, None, None), (None, 60, None), (None, None, None), (None, None, True), (1, None, True), (None, 30, None),
+       (None, 30, None)])
+check("its length: the yards it moves, its leaps not counted", fields["length"], 510.0)
+check("stops a few yards apart are one dock", travel.docks(ship), [(0, 200.0, 0.0), (1, 9100.0, 50.0)])
+check("a way high over the sea is a zeppelin's",
+      travel.transport([node(0, 0, 0, 0, z=60), node(1, 0, 100, 0, z=80)])["kind"], "zeppelin")
+places = {10: [(0, 0.0, 0.0), (1, 500.0, 0.0)], 11: [(0, 5.0, 0.0), (0, 900.0, 0.0), (1, 505.0, 0.0)],
+          12: [(0, 0.0, 0.0), (1, 2000.0, 0.0)], 13: [(0, 0.0, 0.0), (1, 2000.0, 0.0)]}
+check("a way all of whose docks a way with more docks has is replaced; of two alike, the older",
+      travel.replaced(places), {10, 12})
 
 if failed:
     print(f"Walking data: {failed} of {checks} checks failed.")

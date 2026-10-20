@@ -1,6 +1,6 @@
 # Sane UI: Navigation
 
-**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot and by flight; ships in routes and the leveling guide come later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
+**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot, by flight, by boat and zeppelin and by the hearthstone; the leveling guide comes later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 Sane UI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
@@ -50,9 +50,12 @@ party), always over the map, and the full map has the quest log at its left. The
 - **The map selector** on the bar: the world or a continent, then a zone of it.
 - **Routes:** put the game's map pin (Ctrl and a click) and a golden line leads you there, pulsing towards it,
   around what cannot be walked (mountains, walls, deep water is swum), through gates and doors, and by the flights
-  your character knows where that is quicker (visit a flight master once for the map to know yours). Leave the
-  line and it is planned again; after a flight it goes on from where you landed. Not across the sea yet (no
-  ships). The setting *Route to the map pin* switches it off.
+  your character knows where that is quicker (visit a flight master once for the map to know yours). A pin on
+  the other continent is reached by boat or zeppelin, the line red from pier to pier, and the hearthstone is
+  taken where it is quickest (the map learns its place where you bind it, or the first time you use it). Leave the
+  line and it is planned again; after a flight it goes on from where you landed; aboard a ship it waits until
+  you have landed. The ships' timetables are not in the game's data: how long one waits for a ship and how long
+  it sails are guessed from its way. The setting *Route to the map pin* switches it off.
 - **Map view** (the buttons on the full map's bar, or the setting on the page *Navigation*): *Parchment* or
   *Scrying* (the default), and *Atlas* while that module is switched on in the addon list; for both views and at
   every zoom (in the code `sketches`, `terrain`, `atlas`). A view not offered (the module switched off or
@@ -159,12 +162,20 @@ party), always over the map, and the full map has the quest log at its left. The
   (from where a rectangle was entered to the nearest point of the next opening, swimming twice the cost), ends
   in different regions refused at once, then the line pulled straight through the openings (a funnel, each
   opening drawn in from its ends). `Search.Start` runs it as a job of Core's scheduler.
-- **Planner** (`Planner.lua`, no frames): the way to the map pin: walk, or walk to a known flight point, the
-  flights of Core's set *Travel* (from the game's tables, by `dev/tools/travel-data`) the player's side may take,
-  walk from the last; walks guessed, the quickest chosen (Dijkstra), the walks then searched and the journey
-  chosen once more when one is much longer than guessed; planned again when the pin changes, after a landing, when
-  the player is 40 yards off the line, and when the data arrives. The known flight points are read at the flight
-  master and kept per character. Without walking data, straight lines.
+- **Planner** (`Planner.lua`, no frames): the way to the map pin, a graph over the player, the pin, the known
+  flight points, the docks and the hearthstone's place on both their continents: walks within one region of the
+  walking data (guessed), the flights of Core's set *Travel* the player's side may take, the boats and zeppelins of
+  *Travel* from dock to dock (both from the game's tables, by `dev/tools/travel-data`), the hearthstone from the
+  player; the quickest chosen (Dijkstra), the walks then searched and the journey chosen once more when one is
+  much longer than guessed. A ship (`Planner.Ship`): its way once round is its sailing at `Planner.SAIL` yards a
+  second, its stays at the docks (the game's) and `Planner.LEAP` seconds a leap, or its time once round when
+  *Travel* has it learnt (`wait`); one waits half of that for it, then sails to the dock (the stays between
+  included). One boards and leaves at the pier, the land nearest where it stops. Planned again when the pin
+  changes, after a landing, when the player is 40 yards off the line (150 off a ship's way), and when the data
+  arrives; aboard a ship a new pin is planned from where it lands. The known flight points are read at the flight
+  master, the hearthstone's place where it is bound (`HEARTHSTONE_BOUND`) or where it brought the character, both
+  kept per character; the hearthstone counts while it is in the bags and bound there (`GetBindLocation`), its
+  cooldown as a wait. Without walking data, straight lines.
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
   pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second).
 - **The game's minimap** (`Hybrid.lua`): over our map while the view follows you at one of its zoom steps,
@@ -211,7 +222,7 @@ party), always over the map, and the full map has the quest log at its left. The
 | `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, gathered. No frames |
 | `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings. No frames |
 | `Search.lua` | A walk between two points over the walking data, as a job of Core's scheduler. No frames |
-| `Planner.lua` | The way to the map pin: on foot and by the flights this character knows. No frames |
+| `Planner.lua` | The way to the map pin: on foot, by the flights this character knows, by boat and zeppelin, by the hearthstone. No frames |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
 | `Route.lua` | The golden line of a way, the parts in view: walks gold, flights pale, ships red |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks |
@@ -230,6 +241,9 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, across the sea:** routes by boat and zeppelin, from dock to dock on the game's own ways of them
+  (`dev/tools/travel-data`, Core's set *Travel*: twelve ways, their docks and stays), the wait and the trip guessed
+  from the way until learnt; the line stays while aboard; the hearthstone, its place learnt per character.
 - **2026-10-20, routes:** the golden line to the map pin, on foot and by the flights this character knows, over the
   walking data made from the game's own terrain, buildings and water (`dev/tools/walk-data`, Core's set *Walking*)
   and the flights of the game's tables (`dev/tools/travel-data`, Core's set *Travel*).

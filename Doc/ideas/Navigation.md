@@ -5,9 +5,9 @@ the waypoint, the routes and the leveling guide. Built so far (2026-10-20): the 
 its controls, the terrain and the art at every zoom (the water cut away, the zones' maps cut to their outlines),
 zones that light up and open by a click, the map moving with its window, the game's minimap over ours (cut to the
 window's shape), the game's map kept closed; the pins of the game and of Core's data, quest areas, the party, the
-quest log and the bar over the full map, routes to the map pin on foot and by flight (`src/Navigation/README.md`).
-Not yet: ships, portals and the hearthstone in the routes, the leveling guide, dungeon maps, search, the minimap's
-small parts.
+quest log and the bar over the full map, routes to the map pin on foot, by flight, by boat and zeppelin and by the
+hearthstone (`src/Navigation/README.md`). Not yet: trams, lifts and portals in the routes, the leveling guide,
+dungeon maps, search, the minimap's small parts.
 
 How to read this page:
 
@@ -897,9 +897,38 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
   (`Search.lua`, a job of Core's scheduler); one found `Planner.WORSE` times its guess or more puts in its true
   length and the journey is chosen once more. Planned again when the pin changes, after a flight landed, when
   the player is `Planner.OFF` yards off the line (at most every `Planner.AGAIN` seconds), and when the walking
-  data or the flights arrive. Not yet: ships, zeppelins, trams, lifts and portals (their timetables are not in
-  the game's tables: a pin on another continent gets no line, said once), the hearthstone, a new route kept
-  only when clearly better. The setting *Route to the map pin* (on).
+  data or the flights arrive. The setting *Route to the map pin* (on).
+- **Built (2026-10-20): boats, zeppelins and the hearthstone.** What the game's tables give and what they do not:
+  - **The ways** (`dev/tools/travel-data`, Core's set *Travel*, keyed by the game's TaxiPath ID like the flights):
+    the transports' paths in the client's TaxiPath tables (no flight point at either end), each one way round as
+    the game moves it: its points in the world's yards, the map each lies on, its stops at docks with the seconds
+    it stands there (the game's delay) and its leaps (the game's teleport, or a change of map; after its last point
+    it starts again from its first). A boat when all its way lies at the sea's level, else a zeppelin. Kept are the
+    paths that stop at two docks or more: twelve in build 70245 (Booty Bay and Ratchet; Menethil Harbor and
+    Theramore; Menethil, Southshore and Auberdine; Rut'theran and Auberdine; Auberdine and Stormwind's harbour;
+    Feathermoon and the Feralas coast; Tanaris and Powderfuse Port; the zeppelins between Orgrimmar, Grom'gol and
+    the Undercity; two zeppelins to Zephras Isle). Left out: moving things with fewer than two stops, and the older
+    Menethil to Auberdine way, whose docks the newer one by way of Southshore all has.
+  - **Not in the tables:** the ships' speed and timetable. So their times are estimates in code until they are
+    learnt in play (Core's learned data, `Doc/ideas/Data.md`; the set's `wait`, a transport's time once round,
+    is where they go): once round is the sailing at `Planner.SAIL` yards a second, the stays, and
+    `Planner.LEAP` seconds a leap; one waits half of that for a ship, then sails to the dock (the stays between
+    included). With a learnt time once round, its speed follows from it. Nothing guessed is in the master.
+  - **In the journey:** each dock a place of the graph, boarded and left at its pier (the floor of land nearest
+    where the ship stops), a way from every dock of a ship to every other; the graph spans the continents of the
+    player and the pin, each place in its own continent's plane, walks only within one continent. The ship's leg
+    is drawn red from pier to pier along its way, across its leap; the line moves on to the next leg when the player
+    is nearer it, and aboard a ship (past its dock, within `Planner.ABOARD` yards of its way) it is not planned
+    anew; a new pin is then planned from where the ship lands.
+  - **The hearthstone:** its place is learnt per character where it is bound (`HEARTHSTONE_BOUND`) and where it
+    brought the character, with the game's name of it (`GetBindLocation`, which tells when it was bound
+    elsewhere since); a way from the player to it while it is in the bags, its cooldown and `Planner.HEARTH`
+    seconds its cost; drawn pale blue, straight.
+  - **Not yet:** which side's town a dock stands in is not in the client's tables (a town's guards are the
+    server's), so a route may lead through the other side's harbour; Zephras Isle is a map of its own that the
+    game's world map has as a zone, not a continent, so its zeppelins wait until the map knows such islands;
+    trams, lifts and portals (the lifts' and the tram's motions are in the client, but not where they stand nor
+    where a portal leads); a new route kept only when clearly better.
 
 ### The walking data
 
@@ -1077,9 +1106,9 @@ Each step ends in something tried in the game, and in the module's README markin
 **Where it stands (2026-10-20):** steps 1 and 2 built (2026-10-19); 3 and 4 built, the live pins and the quest log;
 5 built as far as Core's data goes: the pins, gathered overlaps, tooltips and the quest areas the game shades are
 there, and `Data.Map` reads Spawns, Places and Travel, of which Spawns and Places hold no entries yet, so the
-database's pins come with the import; rares' spawn areas and patrol paths wait for their data. 6 built on foot and
-by flight (the walking data, the flights of the game's tables, the planner, the search, the golden line); ships,
-portals and the hearthstone not yet. Step 0's points are answered in play as each step is tried.
+database's pins come with the import; rares' spawn areas and patrol paths wait for their data. 6 built on foot, by
+flight, by boat and zeppelin and by the hearthstone (the walking data, the flights and the ships' ways of the game's
+tables, the planner, the search, the golden line); trams, lifts and portals not yet. Step 0's points are answered in play as each step is tried.
 
 The hardest parts, in order: the walking data (its tool and size); keeping the game's map closed in a
 fight; the small view's dots with our ground; the overlay's cut; the pin data (Core's).

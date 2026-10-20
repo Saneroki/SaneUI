@@ -1,5 +1,5 @@
 set = "Travel"
-key = "int"              # our own number, given once by the import: the same kind between the same two places is the same way
+key = "int"              # the game's TaxiPath ID of a flight, a boat or a zeppelin; our own number for a way the game has no path for
 pack = "World"
 learn = true             # the flight master's watcher: flights and their costs
 about = "The ways to travel other than on foot: boats, zeppelins, trams, lifts, portals and flights, with their times."
@@ -13,13 +13,21 @@ fromNode = { type = "int", min = 0 }         # a flight's taxi nodes (the flight
 toNode   = { type = "int", min = 0 }
 side     = { type = "enum", values = ["alliance", "horde"] }  # none: both
 time     = { type = "number", min = 0 }      # the trip, in seconds
-wait     = { type = "number", min = 0 }      # between two departures, in seconds
+wait     = { type = "number", min = 0 }      # between two departures, in seconds (a transport: from one dock, its way once round)
 cost     = { type = "money" }
-length   = { type = "number", min = 0 }      # yards along its way, from the game's path
+length   = { type = "number", min = 0 }      # yards along its way, from the game's path (a transport's once round, its leaps not counted)
+# path: the way's points in the world's yards (x to the north, y to the west), as the game's path has them (points
+# on a straight run left out), for the map to draw it. A flight's lie on the continent of its start. A boat's or a
+# zeppelin's is one way round as the game moves it, after its last point again from its first: map is the world's
+# map a point lies on (at its first point and wherever the way comes onto another), stay the seconds it stands
+# there at a dock, jump that it leaps to the point from the one before (onto another map, or far on the same).
 path     = { type = "list", of = "tuple", parts = [
-    { name = "x", type = "number" },         # the way's points in the world's yards (x to the north, y to the
-    { name = "y", type = "number" },         # west) on the continent of its start, as the game's path has them
-] }                                          # (points on a straight run left out), for the map to draw it
+    { name = "x", type = "number" },
+    { name = "y", type = "number" },
+    { name = "map", type = "int", min = 0 },
+    { name = "stay", type = "number", min = 0 },
+    { name = "jump", type = "bool" },
+] }
 
 [index]
 byKind     = "kind"

@@ -15,7 +15,8 @@ local _, ns = ...
 --  tinted gold, and over that its glint, moved along the line by the engine (a
 --  TextureCoordTranslation animation, as the game's talent lines move theirs), so
 --  nothing of ours runs every frame for the pulse. A walk is golden; a flight
---  pale gold; a ship's way red, as the plan has the ships' routes.
+--  pale gold; a boat's or zeppelin's way red, as the plan has the ships' routes;
+--  the hearthstone's pale blue, straight to its place.
 -------------------------------------------------------------------------------
 local Coords = ns.Coords
 local Route = {}

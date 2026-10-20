@@ -358,7 +358,8 @@ out:write('local S = SaneUI.Core.Data.Add(1, "Overlays", { game = "forever", has
     .. 'I.byMap = {}\nI.byMap[1429] = "11\\03012\\03013"\n')
 out:close()
 -- What the map shows of Core's data: an innkeeper who sells food, a rare, a creature that is neither, a herb; a
--- dungeon's entrance and a mailbox; a boat from Elwynn to the other continent.
+-- dungeon's entrance and a mailbox; a boat from Elwynn to the other continent; a flight; a boat's way round (the
+-- game's path: a dock in Elwynn's east hall, x -8600 and y -450, a leap onto Kalimdor, a dock there, a leap back).
 local function Set(file, name, hash, key, fields, types, body)
     local handle = assert(io.open(file, "w"))
     handle:write(('local S = SaneUI.Core.Data.Add(1, "%s", { game = "forever", hash = "%s", build = 70245, key = "%s", '
@@ -376,11 +377,14 @@ Set(packPath .. "/Places.lua", "Places", "00000005", "int", '"kind", "name", "po
     '"text", "text", "point", "int", "int", "int"',
     'R[1] = "70245\t\tdungeon\tThe Mines\t1429\03130\03130\t500\t18\t23"\n'
     .. 'R[2] = "70245\t\tmailbox\t\t1429\03170\03170\t\t\t"\n')
-Set(packPath .. "/Travel.lua", "Travel", "00000006", "int", '"kind", "name", "from", "to", "fromNode", "toNode", "length"',
-    '"text", "text", "point", "point", "int", "int", "number"',
+Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
+    '"kind", "name", "from", "to", "fromNode", "toNode", "length", "path"',
+    '"text", "text", "point", "point", "int", "int", "number", "list tuple(x:number,y:number,map:int,stay:number,jump:bool)"',
     'R[1] = "70245\t\tboat\tTo the west\t1429\03190\03190\t1414\03150\03150\t\t\t"\n'
     .. 'R[2] = "70245\t\tflight\t\t\t\t2\t5\t6000"\n'
-    .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\n')
+    .. 'R[3] = "70245\t\tboat\t\t\t\t\t\t3898.1\t-8600\031-450\0310\03160\030-8000\031-2000\0305000\031-9000\0311\031\0311'
+    .. '\0306000\031-9500\031\03160\0305000\031-9000\030-8000\031-2000\0310\031\0311"\n'
+    .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byKind = {}\nI.byKind.boat = "1\0303"\nI.byKind.flight = "2"\n')
 out = assert(io.open(packPath .. "/SaneUI_Data_World.toc", "w"))
 out:write("## Title: Data: World\n## LoadOnDemand: 1\n## X-SaneUI-Sets: NPCs, Objects, Overlays, Places, Tiles, Travel\n## X-SaneUI-Format: 1\n"
     .. "## X-SaneUI-Game: forever\nNPCs.lua\nObjects.lua\nOverlays.lua\nPlaces.lua\nTiles.lua\nTravel.lua\n")
@@ -1200,7 +1204,7 @@ check(ns.options.nativeMinimap and not Hybrid.Taken() and Window.frame._alpha ==
 Core.Set(ns.name, "nativeMinimap", false)
 
 -------------------------------------------------------------------------------
---  Routes: the walking data, the walk between two points, the journey with a flight
+--  Routes: the walking data, the walk between two points, the journey with a flight, a boat, the hearthstone
 -------------------------------------------------------------------------------
 local Walk, Search, Planner = ns.Walk, ns.Search, ns.Planner
 check(Walk.Ready() == false and Core.Data.Set("Walking"):State() == "loading", "the walking data is asked for when first needed")
@@ -1226,6 +1230,9 @@ check(#Openings(Walk.Tile(3105), 1) == 1 and Openings(Walk.Tile(3105), 1)[1][4] 
 local s = Walk.SAMPLE
 local under = Walk.Under(1415, 50 * s, -8533.33 - 50 * s)
 check(#under == 1 and under[1][2] == 1, "the rectangle under a point")
+check(select(2, Walk.Nearest(1415, 140 * s, -8533.33 - 205 * s, 40)) == 4
+    and select(2, Walk.Nearest(1415, 140 * s, -8533.33 - 205 * s, 40, nil, Walk.LAND)) == 1,
+    "the nearest rectangle: in the channel the water's, of land only the west hall's")
 -- From the west hall to the east hall, both at row 50: through the door (rows 100 to 119), not through the wall.
 local points, cost = Search.Walk(1415, 100 * s, -8533.33 - 50 * s, 200 * s, -8533.33 - 50 * s)
 local through = false
@@ -1262,6 +1269,91 @@ Core.Character(ns.name).flights = {}
 ns.Planner.Update()
 Frames(8)
 check(shownWay and #shownWay.legs == 1 and shownWay.legs[1].kind == "walk", "without the flight points known: on foot")
+-- A boat's way (Core's set Travel, 3): a dock on each continent; each way between them the wait for it (half its
+-- way once round: its sailing at the guessed speed, its stays, its leaps, the one from its last point back to its
+-- first) and the trip.
+local ship = Planner.Ship(Core.Data.Set("Travel"):Get(3))
+local sail, leap = Planner.SAIL, Planner.LEAP
+local d12, d34 = math.sqrt(600 ^ 2 + 1550 ^ 2), math.sqrt(1000 ^ 2 + 500 ^ 2)
+local round = (d12 + 2 * d34) / sail + 120 + 3 * leap
+check(#ship == 2 and ship[1].world == 0 and ship[2].world == 1 and ship[1].ways[ship[2]] and ship[2].ways[ship[1]],
+    "a boat's way: a dock on each continent, a way from each to the other")
+check(near(ship[1].ways[ship[2]].seconds, round / 2 + (d12 + d34) / sail + leap)
+    and near(ship[2].ways[ship[1]].seconds, round / 2 + d34 / sail + 2 * leap),
+    "each the wait for it and the trip; back by the leap to its first point")
+local three = Planner.Ship({ wait = 600, path = { { x = 0, y = 0, map = 0, stay = 60 }, { x = 1000, y = 0, stay = 60 },
+    { x = 2000, y = 0, stay = 60 }, { x = 1000, y = 100 } } })
+local speed = (2000 + math.sqrt(1000 ^ 2 + 100 ^ 2)) / (600 - 180 - leap)
+check(#three == 3 and near(three[1].ways[three[3]].seconds, 300 + 2000 / speed + 60)
+    and near(three[1].ways[three[2]].seconds, 300 + 1000 / speed),
+    "three docks: past the one between, its stay counted; its time once round, learnt, sets its speed")
+local twice = Planner.Ship({ path = { { x = 0, y = 0, map = 0, stay = 30 }, { x = 500, y = 0 }, { x = 1000, y = 0, stay = 60 },
+    { x = 500, y = 50 }, { x = 0, y = 0, stay = 30 } } })
+check(#twice == 2 and near(twice[1].ways[twice[2]].seconds - twice[2].ways[twice[1]].seconds,
+    (1000 - 2 * math.sqrt(500 ^ 2 + 50 ^ 2)) / sail), "a dock stopped at twice is one dock, left from the stop that sails soonest")
+-- A pin on the other continent (Kalimdor, u 9500, v 6500): on foot to the dock, the boat, on foot to the pin.
+waypoint = { uiMapID = 1414, position = CreateVector2D(21500 / 24000, 0.3375) }
+W.Fire("USER_WAYPOINT_UPDATED")
+W.Wait(0)
+Frames(8)
+local boat = shownWay and shownWay.legs[2]
+check(shownWay and #shownWay.legs == 3 and shownWay.legs[1].kind == "walk" and boat.kind == "boat"
+    and shownWay.legs[3].kind == "walk", "a pin across the sea: on foot to the dock, the boat, on foot to the pin")
+local crosses = false
+for _, point in ipairs(boat and boat.points or {}) do crosses = crosses or point.map == 1414 end
+local first, last, ending = boat.points[1], boat.points[#boat.points], shownWay.legs[3].points[#shownWay.legs[3].points]
+check(first.map == 1415 and near(first.u, 450) and near(first.v, -8600) and crosses and last.map == 1414
+    and near(last.u, 9500) and near(last.v, 6000) and ending.map == 1414 and near(ending.u, 9500) and near(ending.v, 6500),
+    "the boat's way from the pier, across its leap onto the other continent, to its dock there; then to the pin")
+-- Aboard: at sea on the boat's way, past its dock (x -8300, y -1225): the line is at the boat and stays.
+player.x, player.y = 1.1125, -0.2 / 1.5
+local before = shownWay
+Planner.Track(1415, 1225, -8300, GetTime() + 10)
+check(shownWay == before and before.at == 2, "aboard the boat: the line is at its leg, not planned anew")
+-- A new pin meanwhile (u 9000, v 7000): planned from where the boat lands, its way kept in front.
+waypoint = { uiMapID = 1414, position = CreateVector2D(21000 / 24000, 0.325) }
+W.Fire("USER_WAYPOINT_UPDATED")
+W.Wait(0)
+Frames(8)
+check(shownWay ~= before and #shownWay.legs == 2 and shownWay.legs[1] == boat and shownWay.legs[2].kind == "walk"
+    and shownWay.legs[2].points[1].map == 1414 and near(shownWay.legs[2].points[1].u, 9500),
+    "a new pin while aboard: planned from where the boat lands")
+-- The hearthstone: its place learnt where it is bound, with the game's name of it.
+local bindName = "Lakeside Inn"
+GetBindLocation = function() return bindName end
+player.x, player.y = 0.75, 0.3
+W.Fire("HEARTHSTONE_BOUND")
+local home = Core.Character(ns.name).hearth
+check(home and home.map == 1415 and near(home.u, 500) and near(home.v, -8950) and home.name == bindName,
+    "the hearthstone's place: learnt where it is bound")
+-- Bound near the pin (Kalimdor, u 9400, v 6400): the hearthstone, then on foot; not while it cools down, nor once bound
+-- elsewhere.
+Core.Character(ns.name).hearth = { map = 1414, u = 9400, v = 6400, name = bindName }
+local cooldown = 0
+C_Item.GetItemCount = function(id) return id == Planner.HEARTHSTONE and 1 or 0 end
+C_Item.GetItemCooldown = function() return cooldown > 0 and GetTime() or 0, cooldown, 1 end
+waypoint = { uiMapID = 1414, position = CreateVector2D(21500 / 24000, 0.3375) }
+W.Fire("USER_WAYPOINT_UPDATED")
+W.Wait(0)
+Frames(8)
+check(shownWay and #shownWay.legs == 2 and shownWay.legs[1].kind == "hearth" and shownWay.legs[1].points[2].map == 1414
+    and shownWay.legs[2].kind == "walk", "a pin near the hearthstone's place: the hearthstone, then on foot")
+cooldown = 1800
+Planner.Update()
+Frames(8)
+check(shownWay and shownWay.legs[2] and shownWay.legs[2].kind == "boat", "while the hearthstone cools down: the boat")
+cooldown, bindName = 0, "Harbour Inn"
+Planner.Update()
+Frames(8)
+check(shownWay and shownWay.legs[2] and shownWay.legs[2].kind == "boat", "bound elsewhere since: the boat")
+-- Used: its place is where it brought the character (x 0.5, y 0.5 of Elwynn).
+W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-1", Planner.HOMEWARD)
+player.x, player.y = 0.5, 0.5
+W.Wait(3)
+home = Core.Character(ns.name).hearth
+check(home.map == 1415 and near(home.u, 0) and near(home.v, -9250) and home.name == "Harbour Inn",
+    "the hearthstone's place: learnt where it brought the character")
+player.x, player.y = 0.75, 0.3
 -- The setting off, or the pin gone: no line.
 Core.Set(ns.name, "route", false)
 check(shownWay == nil, "the setting Route to the map pin off: no line")

@@ -3,8 +3,27 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 210 (Navigation), 28 (walking data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 224 (Navigation), 35 (walking data), 208 (data tools).
 A game restart takes it in (new addons, Navigation and Atlas; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
+
+### Navigation: routes across the sea, by boat and zeppelin, and by the hearthstone (Saneroki, 2026-10-20)
+- **The ships' ways** (`dev/tools/travel-data`): the transports' paths of the game's TaxiPath tables (no flight
+  point at either end) into Core's set *Travel*, keyed by the TaxiPath ID: kind (a boat when its way keeps to the
+  sea's level, else a zeppelin), length (yards once round, leaps not counted) and path, its points now with `map`
+  (the world's map, where it changes), `stay` (a dock: the game's delay) and `jump` (the game's teleport or a change
+  of map). Twelve ways kept; left out: paths with fewer than two docks, and a way whose docks a newer one all has
+  (Menethil to Auberdine, now by way of Southshore). *Travel*'s schema: the path's three new parts; its key is the
+  game's TaxiPath ID. Tests in `dev/tests/walk.py`.
+- **In the game** (`Planner.lua`): the journey a graph over both ends' continents (each place in its own plane):
+  the docks join it, boarded at their piers (`Walk.Nearest` takes a kind now, and opens only the tiles its reach
+  comes into); a ship's way from each of its docks to each other is the wait for it (half its way once round) and
+  the trip, estimated at `Planner.SAIL` yards a second and `Planner.LEAP` seconds a leap until its time once round
+  is learnt (`wait`; the game's tables have no timetables). The line moves on to its next leg as the player comes
+  nearer; aboard a ship it stays, and a new pin is planned from where the ship lands. The hearthstone: its place
+  learnt per character where it is bound and where it brought the character, used while in the bags and bound
+  there, its cooldown as a wait. Ship legs red from pier to pier, the hearthstone's pale blue (`Route.lua`).
+- Not yet: the docks' sides (not in the client's tables), Zephras Isle (a zone on the world map, no continent),
+  trams, lifts and portals.
 
 ### Navigation: routes to the map pin, on foot and by flight (Saneroki, 2026-10-20)
 - **Saneroki's ask:** route planning around what cannot be walked, with flights.
