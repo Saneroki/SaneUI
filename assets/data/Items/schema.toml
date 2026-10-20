@@ -27,6 +27,9 @@ effects   = { type = "list", of = "tuple", parts = [
     { name = "text", type = "text" },
 ] }                                            # its spells, as its tooltip names them
 set       = { type = "ref", set = "ItemSets" }
+description = { type = "text" }                # its line in quotes on the tooltip
+classes   = { type = "list", of = "int" }      # the classes that can use it (the game's class IDs); none: every class
+unique    = { type = "int", min = 1 }          # how many one character can have; none: no limit
 
 [index]
 bySlot = "slot"

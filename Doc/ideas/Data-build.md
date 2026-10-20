@@ -164,7 +164,9 @@ at most the commit it was on, and the next session goes on from there.
   - Tests, among them: two characters of the account with the same first name stay two. *Done
     (`tooltips.lua`, `data.lua`).*
   - *In the game:* after two characters logged in, `Data.Count` of an item names both.
-- [ ] **1c.5 The crawl and the patch check.**
+- [ ] **1c.5 The crawl and the patch check.** *Its sets are filled ahead from the client's tables
+  (`dev/tools/game-data`, Saneroki 2026-10-20); the crawl adds what the client works out: stats, armour, damage,
+  texts.*
   - `Crawl.lua` and `/sane data crawl <kind>`.
   - The patch check at login: readiness, empty answers, the loading step, *gone* only after two misses,
     and the build noted.

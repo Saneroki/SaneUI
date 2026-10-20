@@ -46,3 +46,10 @@ about = "Quests, NPCs and places for Forever's client as our tool picked them, 2
 kind = "batch"
 game = "forever"
 about = "The original game's boats and zeppelins (patch 1.12): the time each takes once round its way, where every record of it agrees to the millisecond and Forever's client has the same way, its points and stays alike. Unverified: a ride in play confirms it."
+
+[7]
+kind = "batch"
+game = "forever"
+seen = "forever-beta"
+build = 70450
+about = "What Forever's beta client and server held, 2026-10-18, that live's client does not hold yet: items, item sets, spells and Legacy entries the beta's server sent with its updates, read by dev/tools/game-data. Live's base until live's own client or server says it (decision 27). Unverified."

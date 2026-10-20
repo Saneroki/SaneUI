@@ -769,6 +769,7 @@ unique on its realm (`Thrall-Draenor`).
 | `dev/tools/data stats` | Per game version and set: entries, versions, entries that changed, gone ones, its own lines, its file's size in the pack; each pack's totals. |
 | `dev/tools/data harvest` *(1c)* | The packs' saved files into staging, accepted data only. |
 | `dev/tools/cvar-labels --staging` | The CVar labels as staging for the set *CVarLabels*. |
+| `dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]` | The game's own facts from a build's client tables (and a beta's hotfixes) as staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy and Currencies; `base <batch>` stages for live what only the beta holds (decision 27). What it leaves out and why: `dev/data/staging/game-<game version>-left.csv`. |
 
 ## Tests
 

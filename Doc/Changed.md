@@ -6,6 +6,26 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 35 (Combat), 35 (spellbook), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
+### Data: items, spells, talents and recipes from the game's own tables (Saneroki, 2026-10-20)
+- New `dev/tools/game-data`: a build's client tables (and a beta's hotfixes) as staging for nine sets that were
+  empty. Forever live 70245 and beta 70450 (with its server's updates of 2026-10-18) are in the master:
+  - Items 22,491 (17,671 from live's client, 4,820 only the beta's server sent, as batch 7, live's base);
+  - ItemSets 269, Spells 5,804, Auras 723 (what items' use puts on: food, potions, elixirs, trinkets);
+  - SkillLines 118, Professions 2,512 recipes (with the skill they are learned at, yellow and grey);
+  - Talents 473 (the nine class trees), Legacy 97 (the three trees, the challenges, the Legacy rank's rewards);
+  - Currencies 7.
+- Left out, with the reason in `dev/data/staging/game-<game version>-left.csv`:
+  - about 1,560 test and placeholder items;
+  - the forms of a spell players never learn, and spells another spell sets off;
+  - skill lines with no spell (the empty twins of the professions);
+  - the second copy of each Legacy challenge (one per set of realms);
+  - item stats, armour, weapon damage and texts the game fills in: the client works them out, and the crawl
+    will read them.
+- Items: new fields `description`, `classes`, `unique` (at the end), so items the game keeps apart don't look
+  alike.
+- Quest 3373's start item 10454 taken out of its line: neither Forever client has the item.
+- Batch 7 in `sources.toml`.
+
 ### Navigation: ship times, learnt on a ride, and the dock watch (Saneroki, 2026-10-20)
 - **Core's timetables** (new `src/Core/Data/Ships.lua`, `Data.Ships()`, in Core's TOC): a boat's or zeppelin's
   timetable from its record in *Travel* (the game's way and stays): between two stops it sails at the game's

@@ -1,0 +1,597 @@
+#!/usr/bin/env python3
+"""The game's own facts from its client tables, as staging for Core's sets: what an item, a spell, a talent or a
+recipe is, as the client of one build holds it (and, for a beta, what its server sent on top: the hotfixes).
+
+  dev/data/staging/game-<game version>.jsonl   one line per entry, the source "game"
+  dev/data/staging/game-<game version>-left.csv every row left out, and why
+
+Sets, and what each takes:
+
+- Items: every item players can have (ItemSparse with Item): name, quality, item level, the level it needs,
+  class and subclass, slot (the game's INVTYPE_ name, as its global strings spell it), stack, bind, icon,
+  sell price, a weapon's speed, its effects (trigger and spell), its set, its line in quotes, the classes that
+  can use it and how many one character can have. Not its stats, armour or a
+  weapon's damage: the client works those out from the item's level, and a value worked out again by us
+  would only be close (the crawl reads them in the game).
+- ItemSets: name, items (those Items keeps), bonuses (how many items, the spell).
+- Spells: the players' spells: every spell of a skill line Sane UI keeps (classes, their pets, professions,
+  secondary skills, weapons, armour, languages, riding, mounts, companions, runes, racials) and every spell of
+  a talent or Legacy node. Name, rank, icon, cost (a fixed amount of a power only), cast time, cooldown, range.
+  Not a line's spells of the kind a player never learns (AcquireMethod 3: another form of a spell players have
+  under their own ID), nor a spell another one sets off (a part of it, as taming's helpers).
+- Auras: the buffs items give that are no player spell: what an item's use casts, and what that spell sets
+  off, where it puts an aura with a duration on the player. Source by the item: food, potion, elixir (flasks
+  too), else item; left out where items of different kinds use one spell.
+- SkillLines: name, kind, class (a class's own line), spells. A line with no spell left is left out: the game
+  has empty twins of the professions under other IDs, and old riding skills without spells.
+- Professions: every recipe of a profession or of First Aid, Cooking and Poisons: what it makes and how many,
+  reagents, the skill it is learned at, where it turns yellow and grey (the client's own two values; green is
+  no value of the client's), tools, cooldown, the item that teaches it (where one item alone does).
+- Talents: the nodes of each class's talent tree (the trees the client ties to a class's skill line): class,
+  tree, name, place, kind, links, entries (entry, spell, ranks).
+- Legacy: the nodes of the three Legacy trees (their numbers from LegacyConstantsDocumentation.lua) with the
+  legacy point a rank costs; the challenges that give legacy points (one of each: the client has most twice,
+  once per set of realms); the rewards of the Legacy rank.
+- Currencies: name, description, icon, quality, caps.
+
+A description or a bonus's text is taken only where it is plain: the client's own texts with $ in them are
+templates the game fills in, and a filled-in text of ours could be wrong.
+
+Left out: test and placeholder rows (their names say so: Monster -, Deprecated, OLD, [PH], [DNT], [DND],
+Test, ...), rows the client cannot read (encrypted: not in the tables), what refers to something left out.
+
+The input: the game's client tables of one build as CSV, one file per table (ItemSparse.csv, ...), and for a
+beta the server's hotfixes as CSV, one file per table with the table's columns after record_id, push_id, status,
+status_name and decode: a valid record takes its row's place, a removed one takes it away, the latest push of a
+record counts.
+
+Live's base from the beta (decision 27): `base` writes dev/data/staging/game-base.jsonl, every entry the beta's
+staging has and live's lacks (the items, spells and sets its server sent that live's client does not hold yet),
+for live as the batch given, build 0, unverified there until live's own client or server says it.
+
+Usage:  dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]
+        <day>: the day the hotfixes were read (YYYY-MM-DD), the lines' day
+        dev/tools/game-data base <batch>       after both runs: forever and forever-beta
+"""
+import csv
+import json
+import re
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+STAGING = ROOT / "dev" / "data" / "staging"
+REFERENCES = ROOT / "references" / "BlizzardInterfaceCode" / "Interface" / "AddOns" / "Blizzard_APIDocumentationGenerated"
+
+TEST = re.compile(r"^(Monster - |OLD[A-Z ]|Deprecated|DEPRECATED|Unused|UNUSED|\[PH\]|\[DNT\]|zz|ZZ)"
+                  r"|\b(test|NYI|DND|DNT|debug)\b|placeholder", re.IGNORECASE)
+NOT_TEST = {"High Test Eternium Fishing Line"}  # a real item: high test is a kind of line
+TRIGGERS = {0: "use", 1: "equip", 2: "hit", 6: "learn"}  # ItemEffect's TriggerType
+CREATE_ITEM = 24                                         # SpellEffect's Effect: makes an item
+AURAS = {6, 35, 65, 119, 128, 129}                       # SpellEffect's Effect: puts an aura on (self, party, raid, pet, ...)
+DISPEL = {1: "magic", 2: "curse", 3: "disease", 4: "poison"}  # SpellCategories' DispelType
+NODE_KINDS = {0: "single", 1: "tiered", 2: "selection"}  # TraitNode's Type, Enum.TraitNodeType
+CONSUMABLE = 0                                           # Item's ClassID
+AURA_SOURCES = {5: "food", 1: "potion", 2: "elixir", 3: "elixir"}  # a consumable's SubclassID
+WEAPON = 2
+NEVER_LEARNED = 3                                        # SkillLineAbility's AcquireMethod: another form of a spell, not one a player learns
+LEGACY_RANK = 48                                        # RenownRewards' CovenantID of the Legacy rank (Covenant: 1.60 Legacy Rank)
+# SkillLine's CategoryID to the set's kind; 7 (class) and 9 (secondary) are told apart line by line
+KINDS = {6: "weapon", 8: "armor", 10: "language", 11: "profession"}
+SECONDARY_RECIPES = {"First Aid", "Cooking", "Poisons"}  # secondary lines with recipes
+
+
+class Tables:
+    """The client's tables of one build, with the hotfixes laid on: rows by their ID, as text."""
+
+    def __init__(self, folder, hotfixes=None):
+        self.folder, self.hotfixes, self.cache = Path(folder), Path(hotfixes) if hotfixes else None, {}
+
+    def __call__(self, name):
+        if name not in self.cache:
+            with open(self.folder / f"{name}.csv", encoding="utf-8", newline="") as file:
+                rows = {row["ID"]: row for row in csv.DictReader(file)}
+            columns = list(next(iter(rows.values())).keys()) if rows else []
+            fixes = self.hotfixes / f"{name}.csv" if self.hotfixes else None
+            if fixes and fixes.exists():
+                latest = {}
+                with open(fixes, encoding="utf-8", newline="") as file:
+                    for row in csv.DictReader(file):
+                        if row["decode"] != "ok" and row["status_name"] != "removed":
+                            continue
+                        push = int(row["push_id"])
+                        if row["record_id"] not in latest or push >= latest[row["record_id"]][0]:
+                            latest[row["record_id"]] = (push, row)
+                for record, (_, row) in latest.items():
+                    if row["status_name"] == "valid":
+                        rows[record] = {column: row.get(column, "") for column in columns or row}
+                    elif row["status_name"] == "removed":
+                        rows.pop(record, None)
+            self.cache[name] = rows
+        return self.cache[name]
+
+    def by(self, name, column):
+        """A table's rows grouped by one column."""
+        out = defaultdict(list)
+        for row in self(name).values():
+            out[row[column]].append(row)
+        return out
+
+
+def num(value):
+    try:
+        return int(value)
+    except ValueError:
+        return int(float(value))
+
+
+def test(name):
+    return name not in NOT_TEST and bool(TEST.search(name))
+
+
+def plain(text):
+    """A text of the client's as it shows it, or None: empty, or a template with $ the game fills in."""
+    text = (text or "").strip()
+    return text if text and "$" not in text and "\t" not in text else None
+
+
+def enum_values(file, name):
+    """{value: name} of one of Blizzard's enums in the generated API documentation."""
+    text = (REFERENCES / file).read_text(encoding="utf-8")
+    block = text[text.index(f'Name = "{name}"'):]
+    block = block[:block.index("\t\t},")]
+    return {int(value): field for field, value in re.findall(r'Name = "(\w+)", Type = "\w+", EnumValue = (-?\d+)', block)}
+
+
+class Writer:
+    def __init__(self, game, build, day):
+        self.game, self.build, self.day = game, build, day
+        self.lines, self.left, self.kept = [], [], defaultdict(int)
+
+    def stage(self, set_name, key, fields):
+        fields = {name: value for name, value in fields.items() if value not in (None, [], {})}
+        line = {"set": set_name, "key": key, "game": self.game, "build": self.build}
+        if self.day:
+            line["day"] = self.day
+        line.update({"src": "game", "fields": fields})
+        self.lines.append(line)
+        self.kept[set_name] += 1
+
+    def leave(self, set_name, key, why):
+        self.left.append((set_name, key, why))
+
+
+class Spells:
+    """What the client says of a spell."""
+
+    def __init__(self, t):
+        self.t = t
+        self.names = {key: row["Name_lang"].strip() for key, row in t("SpellName").items()}
+        self.text = t("Spell")
+        self.misc = {row["SpellID"]: row for row in t("SpellMisc").values() if row["DifficultyID"] == "0"}
+        self.effects = t.by("SpellEffect", "SpellID")
+        self.cooldowns = {row["SpellID"]: row for row in t("SpellCooldowns").values() if row["DifficultyID"] == "0"}
+        self.power = t.by("SpellPower", "SpellID")
+        self.categories = {row["SpellID"]: row for row in t("SpellCategories").values() if row["DifficultyID"] == "0"}
+        self.cast, self.ranges, self.durations = t("SpellCastTimes"), t("SpellRange"), t("SpellDuration")
+
+    def name(self, spell):
+        name = self.names.get(str(spell))
+        return name if name and not test(name) else None
+
+    def description(self, spell):
+        row = self.text.get(str(spell))
+        return plain(row["Description_lang"]) if row else None
+
+    def cast_time(self, misc):
+        row = self.cast.get(misc["CastingTimeIndex"]) if misc else None
+        return num(row["Base"]) if row and num(row["Base"]) > 0 else None
+
+    def duration(self, misc):
+        row = self.durations.get(misc["DurationIndex"]) if misc else None
+        return num(row["Duration"]) if row and num(row["Duration"]) > 0 else None
+
+    def facts(self, spell):
+        key, misc = str(spell), self.misc.get(str(spell))
+        row = self.text.get(key)
+        cost = [{"power": num(p["PowerType"]), "amount": num(p["ManaCost"])}
+                for p in sorted(self.power.get(key, []), key=lambda p: num(p["OrderIndex"])) if num(p["ManaCost"]) > 0]
+        cooldown = self.cooldowns.get(key)
+        cooldown = max(num(cooldown["RecoveryTime"]), num(cooldown["CategoryRecoveryTime"])) if cooldown else 0
+        span = self.ranges.get(misc["RangeIndex"]) if misc else None
+        low, high = (float(span["RangeMin[0]"]), float(span["RangeMax[0]"])) if span else (0, 0)
+        return {
+            "name": self.names[key],
+            "rank": (row["NameSubtext_lang"].strip() or None) if row else None,
+            "description": self.description(spell),
+            "icon": num(misc["SpellIconFileDataID"]) or None if misc else None,
+            "cost": cost,
+            "castTime": self.cast_time(misc),
+            "cooldown": cooldown or None,
+            "minRange": round(low, 2) or None,
+            "maxRange": round(high, 2) or None,
+        }
+
+    def puts_aura(self, spell):
+        return any(num(e["Effect"]) in AURAS for e in self.effects.get(str(spell), []))
+
+
+def slot_names(t):
+    """{InventoryType: the game's INVTYPE_ name}, each checked against the client's global strings."""
+    known = {row["BaseTag"] for row in t("GlobalStrings").values() if row["BaseTag"].startswith("INVTYPE_")}
+    out = {}
+    for value, field in enum_values("ItemConstantsDocumentation.lua", "InventoryType").items():
+        if value == 0:
+            continue  # IndexNonEquipType: an item that is not worn has no slot
+        word = field[len("Index"):-len("Type")]
+        for token in ("INVTYPE_" + word.upper(), "INVTYPE_" + re.sub(r"(?<=[a-z])(?=[A-Z])", "_", word).upper()):
+            if token in known:
+                out[value] = token
+                break
+    return out
+
+
+def items(t, spells, w):
+    """Items and ItemSets."""
+    sparse, base = t("ItemSparse"), t("Item")
+    slots = slot_names(t)
+    playable = sorted(num(key) for key in t("ChrClasses"))
+    effects = defaultdict(list)
+    item_effects = t("ItemEffect")
+    for link in t("ItemXItemEffect").values():
+        effect = item_effects.get(link["ItemEffectID"])
+        if effect:
+            effects[link["ItemID"]].append(effect)
+    kept = {}
+    for key, row in sparse.items():
+        name, item = row["Display_lang"].strip(), base.get(key)
+        if not name or test(name):
+            w.leave("Items", key, "test or placeholder" if name else "no name")
+            continue
+        if not item:
+            w.leave("Items", key, "no row in Item")
+            continue
+        made = []
+        for effect in sorted(effects.get(key, []), key=lambda e: num(e["LegacySlotIndex"])):
+            trigger, spell = TRIGGERS.get(num(effect["TriggerType"])), num(effect["SpellID"])
+            if trigger and spell > 0:
+                made.append({"trigger": trigger, "spell": spell, "text": spells.description(spell) if trigger != "learn" else None})
+        made = [{part: value for part, value in effect.items() if value is not None} for effect in made]
+        delay = num(row["ItemDelay"])
+        mask = num(row["AllowableClass"])
+        allowed = sorted(c for c in playable if mask >> (c - 1) & 1) if mask not in (-1, 0) else []
+        kept[num(key)] = {
+            "name": name,
+            "quality": num(row["OverallQualityID"]),
+            "itemLevel": num(row["ItemLevel"]) or None,
+            "minLevel": num(row["RequiredLevel"]) or None,
+            "class": num(item["ClassID"]),
+            "subclass": num(item["SubclassID"]),
+            "slot": slots.get(num(row["InventoryType"])),
+            "stack": max(num(row["Stackable"]), 1),
+            "bind": num(row["Bonding"]) or None,
+            "icon": num(item["IconFileDataID"]) or None,
+            "sell": num(row["SellPrice"]) or None,
+            "speed": delay / 1000 if delay > 0 and num(item["ClassID"]) == WEAPON else None,
+            "effects": made,
+            "set": num(row["ItemSet"]) or None,
+            "description": plain(row["Description_lang"]),
+            "classes": allowed if len(allowed) < len(playable) else [],
+            "unique": num(row["MaxCount"]) if num(row["MaxCount"]) > 0 else None,
+        }
+    sets = {}
+    bonuses = t.by("ItemSetSpell", "ItemSetID")
+    for key, row in t("ItemSet").items():
+        name = row["Name_lang"].strip()
+        members = sorted({num(row[f"ItemID[{i}]"]) for i in range(17)} & set(kept))
+        if not name or test(name) or not members:
+            w.leave("ItemSets", key, "test or placeholder" if name and test(name) else "no items kept")
+            continue
+        sets[num(key)] = {
+            "name": name,
+            "items": members,
+            "bonuses": [{part: value for part, value in (("count", num(b["Threshold"])), ("spell", num(b["SpellID"])),
+                                                          ("text", spells.description(b["SpellID"]))) if value is not None}
+                        for b in sorted(bonuses.get(key, []), key=lambda b: (num(b["Threshold"]), num(b["SpellID"])))
+                        if num(b["ChrSpecID"]) == 0 and num(b["SpellID"]) > 0 and num(b["Threshold"]) > 0],
+        }
+    for key, fields in sorted(kept.items()):
+        if fields["set"] and fields["set"] not in sets:
+            fields["set"] = None
+        w.stage("Items", key, fields)
+    for key, fields in sorted(sets.items()):
+        w.stage("ItemSets", key, fields)
+    return kept
+
+
+def classes_of(t):
+    """{skill line: the classes it is for} (SkillRaceClassInfo's ClassMask: bit n-1 is class n)."""
+    out = defaultdict(set)
+    for row in t("SkillRaceClassInfo").values():
+        mask = num(row["ClassMask"])
+        out[row["SkillID"]] |= {bit + 1 for bit in range(32) if mask >> bit & 1}
+    return out
+
+
+def skill_lines(t, spells, w):
+    """SkillLines; gives {line: (kind, name)} and {spell: [lines]} of what was kept."""
+    abilities = t.by("SkillLineAbility", "SkillLine")
+    classes = classes_of(t)
+    candidates = {key: {num(a["Spell"]) for a in rows if num(a["AcquireMethod"]) != NEVER_LEARNED and spells.name(a["Spell"])}
+                  for key, rows in abilities.items()}
+    every = set().union(*candidates.values())
+    parts = {num(e["EffectTriggerSpell"]) for spell in every for e in spells.effects.get(str(spell), [])} & every
+    for spell, why in [(s, "set off by another spell: a part of it") for s in sorted(parts)]:
+        w.leave("Spells", spell, why)
+    kept, of_spell = {}, defaultdict(list)
+    for key, row in t("SkillLine").items():
+        name, category = row["DisplayName_lang"].strip(), num(row["CategoryID"])
+        if not name or test(name) or category not in (6, 7, 8, 9, 10, 11):
+            w.leave("SkillLines", key, "test or placeholder" if name and test(name) else "not a player's skill")
+            continue
+        found = sorted(candidates.get(key, set()) - parts)
+        if not found:
+            w.leave("SkillLines", key, "no spell")
+            continue
+        own, kind = None, KINDS.get(category)
+        if category == 7:
+            mine = classes.get(key, set())
+            own = next(iter(mine)) if len(mine) == 1 and not name.startswith("Pet - ") else None
+            kind = "class" if own else "other"
+        elif category == 9:
+            kind = "riding" if "Riding" in name else "other" if "Racial" in name else "secondary"
+        kept[key] = (kind, name)
+        for spell in found:
+            of_spell[spell].append(key)
+        w.stage("SkillLines", num(key), {"name": name, "kind": kind, "class": own, "spells": found})
+    return kept, of_spell
+
+
+def professions(t, spells, lines, item_keys, w):
+    """Professions: the recipes of the profession lines and of First Aid, Cooking and Poisons."""
+    reagents = {row["SpellID"]: row for row in t("SpellReagents").values()}
+    totems = {row["SpellID"]: row for row in t("SpellTotems").values()}
+    teachers = defaultdict(set)
+    item_effects = t("ItemEffect")
+    for link in t("ItemXItemEffect").values():
+        effect = item_effects.get(link["ItemEffectID"])
+        if effect and num(effect["TriggerType"]) == 6 and num(link["ItemID"]) in item_keys:
+            teachers[effect["SpellID"]].add(num(link["ItemID"]))
+    recipes = defaultdict(list)
+    for row in t("SkillLineAbility").values():
+        if num(row["AcquireMethod"]) == NEVER_LEARNED:
+            continue
+        kind, name = lines.get(row["SkillLine"], (None, None))
+        if kind == "profession" or (kind == "secondary" and name in SECONDARY_RECIPES):
+            recipes[row["Spell"]].append(row)
+    for spell, rows in sorted(recipes.items(), key=lambda item: num(item[0])):
+        if not spells.name(spell):
+            continue
+        if len({row["SkillLine"] for row in rows}) > 1:
+            w.leave("Professions", spell, "in more than one profession")
+            continue
+        row = rows[0]
+        made = [e for e in spells.effects.get(spell, []) if num(e["Effect"]) == CREATE_ITEM and num(e["EffectItemType"]) > 0]
+        given = reagents.get(spell)
+        needs = [{"item": num(given[f"Reagent[{i}]"]), "count": num(given[f"ReagentCount[{i}]"])}
+                 for i in range(8) if given and num(given[f"Reagent[{i}]"]) > 0 and num(given[f"ReagentCount[{i}]"]) > 0]
+        if not made and not needs:
+            w.leave("Professions", spell, "makes nothing and needs nothing (a rank or a skill)")
+            continue
+        tools = totems.get(spell)
+        cooldown = spells.cooldowns.get(spell)
+        cooldown = max(num(cooldown["RecoveryTime"]), num(cooldown["CategoryRecoveryTime"])) // 1000 if cooldown else 0
+        teacher = teachers.get(spell, set())
+        w.stage("Professions", num(spell), {
+            "skill": num(row["SkillLine"]),
+            "creates": num(made[0]["EffectItemType"]) if len(made) == 1 else None,
+            "count": num(made[0]["EffectBasePointsF"]) if len(made) == 1 and num(made[0]["EffectBasePointsF"]) >= 1 else None,
+            "reagents": needs,
+            "learnAt": num(row["MinSkillLineRank"]) or None,
+            "yellow": num(row["TrivialSkillLineRankLow"]) or None,
+            "grey": num(row["TrivialSkillLineRankHigh"]) or None,
+            "tools": [num(tools[f"Totem[{i}]"]) for i in (0, 1) if tools and num(tools[f"Totem[{i}]"]) > 0],
+            "cooldown": cooldown or None,
+            "recipe": next(iter(teacher)) if len(teacher) == 1 else None,
+        })
+
+
+def trees(t, spells, w):
+    """Talents and Legacy; gives the spells of their nodes."""
+    legacy = {value: name for name, value in re.findall(
+        r'Name = "(LEGACY_TREE_\w+_ID)", Type = "number", Value = (\d+)',
+        (REFERENCES / "LegacyConstantsDocumentation.lua").read_text(encoding="utf-8"))}
+    legacy = {tree for tree, name in legacy.items() if name.count("_") == 3}  # LEGACY_TREE_<NAME>_ID: the trees
+    classes = classes_of(t)
+    class_of = {}
+    for row in t("SkillLineXTraitTree").values():
+        mine = classes.get(row["SkillLineID"], set())
+        if len(mine) == 1:
+            class_of[row["TraitTreeID"]] = next(iter(mine))
+    definitions, entries = t("TraitDefinition"), t("TraitNodeEntry")
+    of_node = t.by("TraitNodeXTraitNodeEntry", "TraitNodeID")
+    edges = t.by("TraitEdge", "LeftTraitNodeID")
+    cost = {}
+    costs = t("TraitCost")
+    currencies = {row["ID"]: num(row["CurrencyTypesID"]) or num(row["ID"]) for row in t("TraitCurrency").values()}
+    for row in t("TraitTreeXTraitCost").values():
+        price = costs.get(row["TraitCostID"])
+        if price and row["TraitTreeID"] in legacy:
+            cost[row["TraitTreeID"]] = (num(price["Amount"]), currencies.get(price["TraitCurrencyID"]))
+    nodes = {key: row for key, row in t("TraitNode").items() if row["TraitTreeID"] in class_of or row["TraitTreeID"] in legacy}
+    used = set()
+    staged = {}
+    for key, node in nodes.items():
+        made, name = [], None
+        for link in sorted(of_node.get(key, []), key=lambda link: num(link["Index"])):
+            entry = entries.get(link["TraitNodeEntryID"])
+            definition = definitions.get(entry["TraitDefinitionID"]) if entry else None
+            if not definition:
+                continue
+            spell = num(definition["SpellID"])
+            label = definition["OverrideName_lang"].strip() or (spells.name(spell) if spell else None)
+            if not label or test(label):
+                continue
+            name = name or label
+            made.append({"entry": num(entry["ID"]), "spell": spell or None, "ranks": max(num(entry["MaxRanks"]), 1)})
+        kind = NODE_KINDS.get(num(node["Type"]))
+        if not made or not kind:
+            w.leave("Talents", key, "no entry with a name" if not made else f"node type {node['Type']}")
+            continue
+        made = [{part: value for part, value in entry.items() if value is not None} for entry in made]
+        used |= {entry["spell"] for entry in made if "spell" in entry}
+        staged[key] = (node, kind, name, made)
+    for key, (node, kind, name, made) in sorted(staged.items(), key=lambda item: num(item[0])):
+        tree = node["TraitTreeID"]
+        links = sorted({num(e["RightTraitNodeID"]) for e in edges.get(key, []) if e["RightTraitNodeID"] in staged
+                        and staged[e["RightTraitNodeID"]][0]["TraitTreeID"] == tree})
+        if tree in legacy:
+            first = made[0]
+            definition = definitions[entries[str(first["entry"])]["TraitDefinitionID"]]
+            w.stage("Legacy", f"node:{key}", {
+                "kind": "node", "tree": num(tree), "name": name,
+                "description": plain(definition["OverrideDescription_lang"]) or spells.description(first.get("spell", 0)),
+                "x": num(node["PosX"]), "y": num(node["PosY"]),
+                "links": [f"node:{link}" for link in links], "entries": made,
+                "cost": cost[tree][0] if tree in cost else None,
+            })
+        else:
+            w.stage("Talents", num(key), {
+                "class": class_of[tree], "tree": num(tree), "name": name, "x": num(node["PosX"]), "y": num(node["PosY"]),
+                "kind": kind, "links": links, "entries": made,
+            })
+    points = {currency for amount, currency in cost.values()}
+    challenges = {}
+    for key, row in sorted(t("TraitCurrencySource").items(), key=lambda item: num(item[0])):
+        currency = currencies.get(row["TraitCurrencyID"])
+        name = row["Requirement_lang"].strip()
+        if currency not in points or not name:
+            continue
+        fields = {"kind": "challenge", "name": name,
+                  "rewards": [{"kind": "currency", "id": currency, "count": max(num(row["Amount"]), 1)}]}
+        same = json.dumps(fields, sort_keys=True)
+        if same in challenges:  # the same challenge again, for another set of realms (its SuperDistrictSetID)
+            w.leave("Legacy", f"challenge:{key}", f"the same as challenge:{challenges[same]}, for another set of realms")
+            continue
+        challenges[same] = key
+        w.stage("Legacy", f"challenge:{key}", fields)
+    track = defaultdict(list)
+    for row in t("RenownRewards").values():
+        if num(row["CovenantID"]) == LEGACY_RANK:
+            track[num(row["Level"])].append(row)
+    for level, rows in sorted(track.items()):
+        rewards = []
+        for row in rows:
+            for kind, column in (("item", "ItemID"), ("spell", "SpellID"), ("mount", "MountID"), ("title", "CharTitlesID")):
+                if num(row[column]) > 0:
+                    rewards.append({"kind": kind, "id": num(row[column]), "count": 1})
+        if len(rows) > 1:
+            w.leave("Legacy", f"reward:{level}", "more than one reward row at this level")
+            continue
+        row = rows[0]
+        w.stage("Legacy", f"reward:{level}", {
+            "kind": "reward", "name": row["Name_lang"].strip() or row["ToastDescription_lang"].strip() or None,
+            "description": plain(row["Description_lang"]), "level": level, "rewards": rewards,
+        })
+    return used
+
+
+def auras(t, spells, player, kept_items, w):
+    """Auras: what an item's use casts or sets off, where it puts an aura with a duration on."""
+    base, item_effects = t("Item"), t("ItemEffect")
+    sources = defaultdict(set)
+    for link in t("ItemXItemEffect").values():
+        effect = item_effects.get(link["ItemEffectID"])
+        if not effect or num(effect["TriggerType"]) != 0 or num(link["ItemID"]) not in kept_items:
+            continue
+        item = base[link["ItemID"]]
+        source = AURA_SOURCES.get(num(item["SubclassID"]), "item") if num(item["ClassID"]) == CONSUMABLE else "item"
+        spell = effect["SpellID"]
+        for one in [spell] + [e["EffectTriggerSpell"] for e in spells.effects.get(spell, []) if num(e["EffectTriggerSpell"]) > 0]:
+            sources[one].add(source)
+    for spell, found in sorted(sources.items(), key=lambda item: num(item[0])):
+        misc = spells.misc.get(spell)
+        if num(spell) in player or not spells.name(spell) or not spells.puts_aura(spell) or not spells.duration(misc):
+            continue
+        category = spells.categories.get(spell)
+        w.stage("Auras", num(spell), {
+            "name": spells.names[spell],
+            "description": spells.description(spell),
+            "icon": num(misc["SpellIconFileDataID"]) or None,
+            "school": num(misc["SchoolMask"]) or None,
+            "source": next(iter(found)) if len(found) == 1 else None,
+            "kind": DISPEL.get(num(category["DispelType"])) if category else None,
+            "castTime": spells.cast_time(misc),
+            "duration": spells.duration(misc),
+        })
+
+
+def currencies(t, w):
+    for key, row in sorted(t("CurrencyTypes").items(), key=lambda item: num(item[0])):
+        name = row["Name_lang"].strip()
+        if not name or test(name):
+            w.leave("Currencies", key, "test or placeholder")
+            continue
+        w.stage("Currencies", num(key), {
+            "name": name, "description": plain(row["Description_lang"]),
+            "icon": num(row["InventoryIconFileID"]) or None, "quality": num(row["Quality"]),
+            "cap": num(row["MaxQty"]) or None, "weeklyCap": num(row["MaxEarnablePerWeek"]) or None,
+        })
+
+
+def base(batch):
+    """Live's base: what the beta's staging has and live's lacks, as a batch of live's."""
+    def read(game):
+        with open(STAGING / f"game-{game}.jsonl", encoding="utf-8") as file:
+            return [json.loads(line) for line in file]
+    live = {(line["set"], line["key"]) for line in read("forever")}
+    out, counts = STAGING / "game-base.jsonl", defaultdict(int)
+    with open(out, "w", encoding="utf-8") as file:
+        for line in read("forever-beta"):
+            if (line["set"], line["key"]) in live:
+                continue
+            counts[line["set"]] += 1
+            line = {"set": line["set"], "key": line["key"], "game": "forever", "build": 0, "src": batch, "fields": line["fields"]}
+            file.write(json.dumps(line, ensure_ascii=False, separators=(",", ":")) + "\n")
+    print(f"{out.relative_to(ROOT)}: " + ", ".join(f"{name} {count}" for name, count in sorted(counts.items())))
+
+
+def main():
+    if len(sys.argv) == 3 and sys.argv[1] == "base":
+        return base(int(sys.argv[2]))
+    if len(sys.argv) not in (4, 6):
+        sys.exit(__doc__.split("Usage:")[1])
+    game, build, folder = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+    hotfixes, day = (sys.argv[4], sys.argv[5]) if len(sys.argv) == 6 else (None, None)
+    t = Tables(folder, hotfixes)
+    w = Writer(game, build, day)
+    spells = Spells(t)
+    kept_items = items(t, spells, w)
+    lines, of_spell = skill_lines(t, spells, w)
+    tree_spells = trees(t, spells, w)
+    player = set(of_spell) | {spell for spell in tree_spells if spells.name(spell)}
+    for spell in sorted(player):
+        w.stage("Spells", spell, spells.facts(spell))
+    professions(t, spells, lines, kept_items, w)
+    auras(t, spells, player, kept_items, w)
+    currencies(t, w)
+    STAGING.mkdir(parents=True, exist_ok=True)
+    out = STAGING / f"game-{game}.jsonl"
+    with open(out, "w", encoding="utf-8") as file:
+        for line in w.lines:
+            file.write(json.dumps(line, ensure_ascii=False, separators=(",", ":")) + "\n")
+    with open(STAGING / f"game-{game}-left.csv", "w", encoding="utf-8", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["set", "key", "why"])
+        writer.writerows(w.left)
+    left = defaultdict(int)
+    for set_name, _, _ in w.left:
+        left[set_name] += 1
+    print(f"{out.relative_to(ROOT)}: {len(w.lines)} lines")
+    for set_name in sorted(set(w.kept) | set(left)):
+        print(f"  {set_name}: {w.kept[set_name]} kept, {left[set_name]} left out")
+
+
+if __name__ == "__main__":
+    main()

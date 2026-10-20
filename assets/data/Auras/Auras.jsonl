@@ -1,0 +1,723 @@
+{"key":65,"since":70245,"src":["game"],"name":"Haste","icon":136047,"school":8,"source":"item","kind":"magic","duration":30000}
+{"key":430,"since":70245,"src":["game"],"name":"Drink","icon":132794,"school":1,"source":"food","duration":18000}
+{"key":431,"since":70245,"src":["game"],"name":"Drink","icon":132794,"school":1,"source":"food","duration":21000}
+{"key":432,"since":70245,"src":["game"],"name":"Drink","icon":132794,"school":1,"source":"food","duration":24000}
+{"key":433,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"duration":18000}
+{"key":434,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"duration":21000}
+{"key":435,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"duration":24000}
+{"key":673,"since":70245,"src":["game"],"name":"Elixir of Minor Defense","icon":134843,"school":1,"duration":3600000}
+{"key":700,"since":70245,"src":["game"],"name":"Sleep","icon":136090,"school":32,"source":"item","kind":"magic","castTime":1500,"duration":20000}
+{"key":746,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":6000}
+{"key":806,"since":70245,"src":["game"],"name":"Fervor","icon":136224,"school":1,"source":"potion","kind":"magic","duration":60000}
+{"key":833,"since":70245,"src":["game"],"name":"Green Tea","icon":132794,"school":1,"source":"food","duration":10000}
+{"key":835,"since":0,"src":[7],"name":"Tidal Charm","icon":135861,"school":8,"source":"item","kind":"magic","duration":3000}
+{"key":1090,"since":70245,"src":["game"],"name":"Sleep","icon":136090,"school":32,"source":"item","kind":"magic","castTime":1500,"duration":30000}
+{"key":1127,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"duration":27000}
+{"key":1129,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"duration":30000}
+{"key":1131,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"food","duration":30000}
+{"key":1133,"since":70245,"src":["game"],"name":"Drink","icon":132794,"school":1,"duration":27000}
+{"key":1135,"since":70245,"src":["game"],"name":"Drink","icon":132794,"school":1,"source":"food","duration":30000}
+{"key":1137,"since":70245,"src":["game"],"name":"Drink","icon":132794,"school":1,"source":"food","duration":30000}
+{"key":1138,"since":70245,"src":["game"],"name":"Crystal Protection","icon":136051,"school":8,"source":"item","kind":"magic","duration":60000}
+{"key":1139,"since":70245,"src":["game"],"name":"Cold Eye","icon":133884,"school":16,"source":"item","kind":"magic","duration":15000}
+{"key":1159,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":6000}
+{"key":2367,"since":70245,"src":["game"],"name":"Lesser Strength","icon":134836,"school":1,"source":"elixir","duration":3600000}
+{"key":2374,"since":70245,"src":["game"],"name":"Lesser Agility","icon":134871,"school":1,"source":"elixir","duration":3600000}
+{"key":2378,"since":70245,"src":["game"],"name":"Health","icon":134822,"school":1,"source":"elixir","duration":3600000}
+{"key":2379,"since":70245,"src":["game"],"name":"Speed","icon":132219,"school":1,"source":"potion","kind":"magic","duration":15000}
+{"key":2380,"since":70245,"src":["game"],"name":"Resistance","icon":134719,"school":1,"source":"potion","kind":"magic","duration":180000}
+{"key":2639,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"food","duration":21000}
+{"key":3160,"since":70245,"src":["game"],"name":"Agility","icon":134872,"school":1,"source":"elixir","duration":3600000}
+{"key":3164,"since":70245,"src":["game"],"name":"Strength","icon":134837,"school":1,"source":"elixir","duration":3600000}
+{"key":3166,"since":70245,"src":["game"],"name":"Lesser Intellect","icon":134717,"school":1,"source":"elixir","duration":3600000}
+{"key":3169,"since":70245,"src":["game"],"name":"Invulnerability","icon":135896,"school":1,"source":"potion","kind":"magic","duration":6000}
+{"key":3219,"since":70245,"src":["game"],"name":"Minor Troll's Blood Elixir","icon":134858,"school":1,"source":"elixir","duration":3600000}
+{"key":3220,"since":70245,"src":["game"],"name":"Armor","icon":134844,"school":1,"source":"elixir","duration":3600000}
+{"key":3222,"since":70245,"src":["game"],"name":"Lesser Troll's Blood Elixir","icon":134859,"school":1,"source":"elixir","duration":3600000}
+{"key":3223,"since":70245,"src":["game"],"name":"Troll's Blood Elixir","icon":134860,"school":1,"source":"elixir","duration":3600000}
+{"key":3267,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":7000}
+{"key":3268,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":7000}
+{"key":3593,"since":70245,"src":["game"],"name":"Health II","icon":134823,"school":1,"source":"elixir","duration":3600000}
+{"key":3680,"since":70245,"src":["game"],"name":"Lesser Invisibility","icon":134798,"school":8,"source":"potion","duration":15000}
+{"key":4057,"since":70245,"src":["game"],"name":"Fire Resistance","icon":135806,"school":4,"source":"item","kind":"magic","duration":60000}
+{"key":4060,"since":70245,"src":["game"],"name":"Discombobulate","icon":136203,"school":64,"source":"item","kind":"curse","duration":12000}
+{"key":4064,"since":70245,"src":["game"],"name":"Rough Copper Bomb","icon":135826,"school":4,"source":"item","castTime":1000,"duration":1000}
+{"key":4065,"since":70245,"src":["game"],"name":"Large Copper Bomb","icon":135826,"school":4,"source":"item","castTime":1000,"duration":1000}
+{"key":4066,"since":70245,"src":["game"],"name":"Small Bronze Bomb","icon":135826,"school":4,"source":"item","castTime":1000,"duration":2000}
+{"key":4067,"since":70245,"src":["game"],"name":"Big Bronze Bomb","icon":135826,"school":4,"source":"item","castTime":1000,"duration":2000}
+{"key":4068,"since":70245,"src":["game"],"name":"Iron Grenade","icon":135826,"school":4,"source":"item","castTime":1000,"duration":3000}
+{"key":4069,"since":70245,"src":["game"],"name":"Big Iron Bomb","icon":135826,"school":4,"source":"item","castTime":1000,"duration":3000}
+{"key":4077,"since":70245,"src":["game"],"name":"Frost Resistance","icon":135843,"school":16,"source":"item","kind":"magic","duration":60000}
+{"key":4079,"since":70245,"src":["game"],"name":"Cloaking","icon":136047,"school":8,"source":"item","duration":10000}
+{"key":4318,"since":70245,"src":["game"],"name":"Guile of the Raptor","icon":136063,"school":1,"source":"item","kind":"magic","duration":1800000}
+{"key":4941,"since":70245,"src":["game"],"name":"Stoneshield","icon":134847,"school":1,"source":"potion","duration":90000}
+{"key":5004,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"duration":18000}
+{"key":5006,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"food","duration":24000}
+{"key":5020,"since":70245,"src":["game"],"name":"Stormstout","icon":132800,"school":1,"source":"item","duration":300000}
+{"key":5021,"since":70245,"src":["game"],"name":"Trogg Ale","icon":132796,"school":1,"source":"item","duration":300000}
+{"key":5024,"since":70245,"src":["game"],"name":"Flee","icon":135996,"school":1,"source":"item","duration":10000}
+{"key":5134,"since":70245,"src":["game"],"name":"Flash Bomb","icon":136142,"school":1,"source":"item","duration":10000}
+{"key":5257,"since":70245,"src":["game"],"name":"Thunderbrew","icon":132792,"school":1,"source":"item","duration":300000}
+{"key":5579,"since":70245,"src":["game"],"name":"Immune Root/Snare/Stun","description":"Dispels all Immobilizing, Slowing and Stun effects.","icon":135894,"school":1,"source":"item","duration":100}
+{"key":5665,"since":70245,"src":["game"],"name":"Fury of the Bogling","icon":136101,"school":1,"source":"item","kind":"magic","duration":600000}
+{"key":5909,"since":70245,"src":["game"],"name":"Watered-down Beer","icon":132791,"school":1,"source":"food","duration":600000}
+{"key":5917,"since":70245,"src":["game"],"name":"Fumble","icon":136159,"school":1,"source":"item","kind":"magic","duration":10000}
+{"key":6114,"since":70245,"src":["game"],"name":"Raptor Punch","icon":132794,"school":1,"source":"food","duration":300000}
+{"key":6298,"since":0,"src":[7],"name":"Form of the Moonstalker","icon":132156,"school":64,"source":"item","duration":300000}
+{"key":6405,"since":70245,"src":["game"],"name":"Furbolg Form","icon":134297,"school":1,"source":"item","castTime":2000,"duration":180000}
+{"key":6410,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"food","duration":21000}
+{"key":6411,"since":70245,"src":["game"],"name":"Scorpid Poison","description":"Surprise!","icon":136016,"school":8,"source":"food","kind":"poison","duration":21000}
+{"key":6512,"since":70245,"src":["game"],"name":"Detect Lesser Invisibility","icon":136153,"school":1,"source":"elixir","duration":600000}
+{"key":6615,"since":70245,"src":["game"],"name":"Free Action","icon":134715,"school":1,"source":"potion","kind":"magic","duration":30000}
+{"key":6724,"since":70245,"src":["game"],"name":"Light of Elune","icon":135954,"school":2,"source":"item","duration":10000}
+{"key":6727,"since":70245,"src":["game"],"name":"Poison Mushroom","description":"Don't eat me.","icon":136016,"school":8,"source":"item","kind":"poison","duration":30000}
+{"key":6758,"since":70245,"src":["game"],"name":"Party Fever","description":"The ultimate party favor!","icon":136142,"school":1,"source":"item","castTime":1000,"duration":120000}
+{"key":6902,"since":70245,"src":["game"],"name":"Sneezing Fit","description":"Makes you sneeze!","icon":134374,"school":1,"source":"item","duration":120000}
+{"key":6955,"since":70245,"src":["game"],"name":"Gnome Car Camera","icon":136235,"school":1,"source":"item","duration":300000}
+{"key":6974,"since":70245,"src":["game"],"name":"Gnome Camera Connection","description":"Use on the Gnome Camera Terminal.","icon":136235,"school":1,"source":"item","castTime":3000,"duration":1000}
+{"key":7022,"since":70245,"src":["game"],"name":"Goblin Car Camera","icon":136235,"school":1,"source":"item","duration":300000}
+{"key":7023,"since":70245,"src":["game"],"name":"Goblin Camera Connection","icon":136235,"school":1,"source":"item","castTime":3000,"duration":1000}
+{"key":7178,"since":70245,"src":["game"],"name":"Water Breathing","icon":135859,"school":8,"source":"elixir","duration":1800000}
+{"key":7211,"since":70245,"src":["game"],"name":"Devilsaur Barb","description":"Stabs a devilsaur, inflicting a large dose of poison.","icon":135125,"school":1,"source":"item","duration":10000}
+{"key":7233,"since":70245,"src":["game"],"name":"Fire Protection","icon":135806,"school":4,"source":"potion","kind":"magic","duration":120000}
+{"key":7239,"since":70245,"src":["game"],"name":"Frost Protection","icon":135843,"school":16,"source":"potion","kind":"magic","duration":120000}
+{"key":7242,"since":70245,"src":["game"],"name":"Shadow Protection","icon":136185,"school":32,"source":"potion","kind":"magic","duration":120000}
+{"key":7245,"since":70245,"src":["game"],"name":"Holy Protection","icon":135880,"school":2,"source":"potion","kind":"magic","duration":120000}
+{"key":7254,"since":70245,"src":["game"],"name":"Nature Protection","icon":136094,"school":8,"source":"potion","kind":"magic","duration":120000}
+{"key":7396,"since":70245,"src":["game"],"name":"Fishliver Oil","icon":133892,"school":1,"source":"item","kind":"magic","duration":30000}
+{"key":7737,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"duration":15000}
+{"key":7840,"since":70245,"src":["game"],"name":"Swim Speed","icon":134754,"school":1,"source":"potion","kind":"magic","duration":20000}
+{"key":7844,"since":70245,"src":["game"],"name":"Fire Power","icon":134835,"school":4,"source":"elixir","duration":1800000}
+{"key":7914,"since":70245,"src":["game"],"name":"Capture Spirit","description":"Captures the spirit of the nearest Burning Blade member. If target dies while being drained, the caster gains 1 Infused Burning Gem.","icon":136163,"school":32,"source":"item","duration":9000}
+{"key":7926,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":7927,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":8070,"since":70245,"src":["game"],"name":"Rejuvenation","icon":136081,"school":8,"source":"item","kind":"magic","duration":12000}
+{"key":8091,"since":70245,"src":["game"],"name":"Armor","icon":132341,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8094,"since":70245,"src":["game"],"name":"Armor","icon":132341,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8095,"since":70245,"src":["game"],"name":"Armor","icon":132341,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8096,"since":70245,"src":["game"],"name":"Intellect","icon":135932,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8097,"since":70245,"src":["game"],"name":"Intellect","icon":135932,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8098,"since":70245,"src":["game"],"name":"Intellect","icon":135932,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8099,"since":70245,"src":["game"],"name":"Stamina","icon":136112,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8100,"since":70245,"src":["game"],"name":"Stamina","icon":136112,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8101,"since":70245,"src":["game"],"name":"Stamina","icon":136112,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8112,"since":70245,"src":["game"],"name":"Spirit","icon":136126,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8113,"since":70245,"src":["game"],"name":"Spirit","icon":136126,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8114,"since":70245,"src":["game"],"name":"Spirit","icon":136126,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8115,"since":70245,"src":["game"],"name":"Agility","icon":135879,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8116,"since":70245,"src":["game"],"name":"Agility","icon":135879,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8117,"since":70245,"src":["game"],"name":"Agility","icon":135879,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8118,"since":70245,"src":["game"],"name":"Strength","icon":136101,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8119,"since":70245,"src":["game"],"name":"Strength","icon":136101,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8120,"since":70245,"src":["game"],"name":"Strength","icon":136101,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":8202,"since":70245,"src":["game"],"name":"Sapta Sight","description":"Allows the shaman to see elemental spirits.","icon":132092,"school":1,"source":"item","kind":"magic","duration":1200000}
+{"key":8212,"since":70245,"src":["game"],"name":"Enlarge","icon":136101,"school":1,"source":"elixir","duration":120000}
+{"key":8213,"since":70245,"src":["game"],"name":"Savory Deviate Delight","description":"Eat me.","icon":134302,"school":1,"source":"food","duration":3600000}
+{"key":8277,"since":70245,"src":["game"],"name":"Voodoo Hex","icon":136138,"school":32,"source":"item","kind":"curse","castTime":1000,"duration":120000}
+{"key":8312,"since":70245,"src":["game"],"name":"Trap","icon":134325,"school":8,"source":"item","kind":"magic","duration":10000}
+{"key":8892,"since":70245,"src":["game"],"name":"Goblin Rocket Boots","icon":135805,"school":1,"source":"item","duration":20000}
+{"key":8898,"since":70245,"src":["game"],"name":"Sapta Sight","description":"Allows the shaman to see elemental spirits.","icon":132092,"school":1,"source":"item","kind":"magic","duration":1200000}
+{"key":8899,"since":70245,"src":["game"],"name":"Sapta Sight","description":"Allows the shaman to see elemental spirits.","icon":132092,"school":1,"source":"item","kind":"magic","duration":1200000}
+{"key":8900,"since":70245,"src":["game"],"name":"Sapta Sight","description":"Allows the shaman to see elemental spirits.","icon":132092,"school":1,"source":"item","kind":"magic","duration":1200000}
+{"key":9095,"since":70245,"src":["game"],"name":"Cantation of Manifestation","icon":135994,"school":1,"source":"item","castTime":2000,"duration":600000}
+{"key":9175,"since":70245,"src":["game"],"name":"Running Speed","icon":132307,"school":1,"source":"item","duration":15000}
+{"key":9176,"since":70245,"src":["game"],"name":"Holy Sunder","icon":136139,"school":2,"source":"item","kind":"magic","duration":60000}
+{"key":9712,"since":70245,"src":["game"],"name":"Thaumaturgy Channel","description":"Fills the empty thaumaturgy vessel when used on Scorched Guardians.","icon":136163,"school":32,"source":"item","duration":5000}
+{"key":9774,"since":70245,"src":["game"],"name":"Immune Root","icon":136115,"school":1,"source":"item","duration":5000}
+{"key":10256,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"food","duration":30000}
+{"key":10578,"since":70245,"src":["game"],"name":"Fireball","icon":135812,"school":4,"source":"item","duration":8000}
+{"key":10618,"since":70245,"src":["game"],"name":"Elemental Protection","icon":135880,"school":2,"source":"item","kind":"magic","duration":120000}
+{"key":10667,"since":70245,"src":["game"],"name":"Rage of Ages","icon":136101,"school":1,"source":"item","duration":3600000}
+{"key":10668,"since":70245,"src":["game"],"name":"Spirit of Boar","icon":136075,"school":1,"source":"item","duration":3600000}
+{"key":10669,"since":70245,"src":["game"],"name":"Strike of the Scorpok","icon":136036,"school":1,"source":"item","duration":3600000}
+{"key":10692,"since":70245,"src":["game"],"name":"Infallible Mind","icon":135988,"school":1,"source":"item","duration":3600000}
+{"key":10693,"since":70245,"src":["game"],"name":"Spiritual Domination","icon":135818,"school":1,"source":"item","duration":3600000}
+{"key":10838,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":10839,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":11319,"since":70245,"src":["game"],"name":"Water Walking","icon":134776,"school":1,"source":"elixir","duration":1800000}
+{"key":11328,"since":70245,"src":["game"],"name":"Agility","icon":134873,"school":1,"source":"elixir","duration":3600000}
+{"key":11334,"since":70245,"src":["game"],"name":"Greater Agility","icon":134874,"school":1,"source":"elixir","duration":3600000}
+{"key":11348,"since":70245,"src":["game"],"name":"Greater Armor","icon":134846,"school":1,"source":"elixir","duration":3600000}
+{"key":11349,"since":70245,"src":["game"],"name":"Armor","icon":134845,"school":1,"source":"elixir","duration":3600000}
+{"key":11350,"since":70245,"src":["game"],"name":"Fire Shield","icon":135817,"school":4,"source":"item","kind":"magic","duration":15000}
+{"key":11359,"since":70245,"src":["game"],"name":"Restoration","description":"Removes 1 magic, curse, poison or disease effect on you every 5 seconds for 30 seconds.","icon":135894,"school":2,"source":"potion","kind":"magic","duration":30000}
+{"key":11364,"since":70245,"src":["game"],"name":"Resistance","icon":134744,"school":1,"source":"potion","kind":"magic","duration":180000}
+{"key":11371,"since":70245,"src":["game"],"name":"Gift of Arthas","icon":134808,"school":8,"source":"elixir","kind":"magic","duration":1800000}
+{"key":11374,"since":70245,"src":["game"],"name":"Gift of Arthas","icon":136066,"school":8,"source":"elixir","kind":"disease","duration":180000}
+{"key":11389,"since":70245,"src":["game"],"name":"Detect Undead","icon":134179,"school":1,"source":"elixir","duration":3600000}
+{"key":11390,"since":70245,"src":["game"],"name":"Arcane Elixir","icon":134810,"school":1,"source":"elixir","duration":1800000}
+{"key":11392,"since":70245,"src":["game"],"name":"Invisibility","icon":134798,"school":8,"source":"potion","duration":18000}
+{"key":11396,"since":70245,"src":["game"],"name":"Greater Intellect","icon":134721,"school":1,"source":"elixir","duration":3600000}
+{"key":11403,"since":70245,"src":["game"],"name":"Dream Vision","description":"Gives you a dream vision that lets you explore areas that are too dangerous to explore in person.","icon":135994,"school":32,"source":"elixir","duration":120000}
+{"key":11405,"since":70245,"src":["game"],"name":"Greater Strength","icon":134839,"school":1,"source":"elixir","duration":3600000}
+{"key":11406,"since":70245,"src":["game"],"name":"Potion of Demon Slaying","icon":134807,"school":2,"source":"elixir","duration":300000}
+{"key":11407,"since":70245,"src":["game"],"name":"Detect Demon","icon":136219,"school":1,"source":"elixir","duration":3600000}
+{"key":11474,"since":70245,"src":["game"],"name":"Shadow Power","icon":134828,"school":4,"source":"elixir","duration":1800000}
+{"key":11638,"since":70245,"src":["game"],"name":"Radiation Poisoning","icon":136133,"school":8,"source":"item","kind":"poison","duration":25000}
+{"key":11826,"since":0,"src":[7],"name":"Electromagnetic Gigaflux Reactivator","icon":135990,"school":1,"source":"item","duration":3000}
+{"key":11841,"since":0,"src":[7],"name":"Static Barrier","icon":136051,"school":8,"source":"item","kind":"magic","duration":300000}
+{"key":12022,"since":70245,"src":["game"],"name":"Admiral's Hat","icon":134229,"school":64,"source":"item","kind":"magic","duration":600000}
+{"key":12174,"since":70245,"src":["game"],"name":"Agility","icon":135879,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":12175,"since":70245,"src":["game"],"name":"Armor","icon":132341,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":12176,"since":70245,"src":["game"],"name":"Intellect","icon":135932,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":12177,"since":70245,"src":["game"],"name":"Spirit","icon":136126,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":12178,"since":70245,"src":["game"],"name":"Stamina","icon":136112,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":12179,"since":70245,"src":["game"],"name":"Strength","icon":136101,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":12257,"since":70245,"src":["game"],"name":"Breath of Fire","icon":135818,"school":4,"source":"item","duration":5000}
+{"key":12421,"since":70245,"src":["game"],"name":"Mithril Frag Bomb","icon":135826,"school":4,"source":"item","castTime":1000,"duration":2000}
+{"key":12438,"since":70245,"src":["game"],"name":"Slow Fall","icon":135992,"school":1,"source":"item","duration":10000}
+{"key":12543,"since":70245,"src":["game"],"name":"Hi-Explosive Bomb","icon":135826,"school":4,"source":"item","castTime":1000,"duration":3000}
+{"key":12561,"since":70245,"src":["game"],"name":"Fire Protection","icon":135806,"school":4,"source":"item","kind":"magic","duration":60000}
+{"key":12562,"since":70245,"src":["game"],"name":"The Big One","icon":135826,"school":4,"source":"item","castTime":3000,"duration":5000}
+{"key":12608,"since":70245,"src":["game"],"name":"Stealth Detection","icon":132150,"school":2,"source":"elixir","duration":600000}
+{"key":12733,"since":70245,"src":["game"],"name":"Fearless","icon":133435,"school":1,"source":"item","duration":30000}
+{"key":13141,"since":70245,"src":["game"],"name":"Gnomish Rocket Boots","icon":135805,"school":1,"source":"item","duration":20000}
+{"key":13183,"since":70245,"src":["game"],"name":"Goblin Dragon Gun","icon":135818,"school":4,"source":"item","duration":10000}
+{"key":13234,"since":70245,"src":["game"],"name":"Harm Prevention Belt","icon":135940,"school":1,"source":"item","duration":600000}
+{"key":13237,"since":70245,"src":["game"],"name":"Goblin Mortar","icon":135826,"school":4,"source":"item","castTime":1000,"duration":3000}
+{"key":13278,"since":70245,"src":["game"],"name":"Gnomish Death Ray","icon":136197,"school":1,"source":"item","duration":4000}
+{"key":13327,"since":70245,"src":["game"],"name":"Reckless Charge","icon":136010,"school":1,"source":"item","kind":"magic","duration":30000}
+{"key":13424,"since":70245,"src":["game"],"name":"Faerie Fire","icon":136033,"school":8,"source":"item","kind":"magic","duration":30000}
+{"key":13494,"since":0,"src":[7],"name":"Haste","icon":136047,"school":1,"source":"item","duration":30000}
+{"key":13744,"since":0,"src":[7],"name":"Blazing Emblem","icon":135806,"school":4,"source":"item","duration":15000}
+{"key":13808,"since":70245,"src":["game"],"name":"M73 Frag Grenade","icon":135826,"school":4,"source":"item","duration":3000}
+{"key":14253,"since":0,"src":[7],"name":"Abolish Poison","icon":136068,"school":8,"source":"item","kind":"magic","duration":8000}
+{"key":14530,"since":70245,"src":["game"],"name":"Speed","icon":132307,"school":1,"source":"item","duration":10000}
+{"key":15229,"since":70245,"src":["game"],"name":"Crystal Restore","icon":134095,"school":2,"source":"item","kind":"magic","duration":15000}
+{"key":15231,"since":70245,"src":["game"],"name":"Crystal Force","icon":134088,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":15233,"since":70245,"src":["game"],"name":"Crystal Ward","icon":134129,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":15235,"since":70245,"src":["game"],"name":"Crystal Yield","icon":134074,"school":64,"source":"item","duration":120000}
+{"key":15279,"since":70245,"src":["game"],"name":"Crystal Spire","icon":134134,"school":8,"source":"item","kind":"magic","duration":600000}
+{"key":15366,"since":70245,"src":["game"],"name":"Songflower Serenade","icon":135934,"school":8,"source":"item","duration":3600000}
+{"key":15752,"since":70245,"src":["game"],"name":"Disarm","icon":132343,"school":1,"source":"item","duration":10000}
+{"key":15753,"since":70245,"src":["game"],"name":"Knockdown","description":"Stunned","icon":132154,"school":1,"source":"item","duration":2000}
+{"key":15822,"since":70245,"src":["game"],"name":"Dreamless Sleep","icon":136090,"school":32,"source":"potion","kind":"magic","duration":12000}
+{"key":15852,"since":70245,"src":["game"],"name":"Dragonbreath Chili","icon":135818,"school":1,"source":"food","kind":"poison","duration":600000}
+{"key":16053,"since":70245,"src":["game"],"name":"Dominion of Soul","description":"Controls Emberstrife's mind when his will falters.","icon":136206,"school":2,"source":"item","castTime":3000,"duration":60000}
+{"key":16321,"since":70245,"src":["game"],"name":"Juju Escape","icon":134319,"school":1,"source":"item","duration":10000}
+{"key":16322,"since":70245,"src":["game"],"name":"Juju Flurry","icon":134319,"school":8,"source":"item","kind":"magic","duration":20000}
+{"key":16323,"since":70245,"src":["game"],"name":"Juju Power","icon":134313,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":16325,"since":70245,"src":["game"],"name":"Juju Chill","icon":134311,"school":16,"source":"item","kind":"magic","duration":600000}
+{"key":16326,"since":70245,"src":["game"],"name":"Juju Ember","icon":134317,"school":4,"source":"item","kind":"magic","duration":600000}
+{"key":16327,"since":70245,"src":["game"],"name":"Juju Guile","icon":134315,"school":64,"source":"item","kind":"magic","duration":1800000}
+{"key":16329,"since":70245,"src":["game"],"name":"Juju Might","icon":134309,"school":2,"source":"item","kind":"magic","duration":600000}
+{"key":16627,"since":70245,"src":["game"],"name":"Capture Felhound Spirit","description":"Captures the spirit of a Felhound to be used in the creation of a warlockian orb.","icon":136163,"school":32,"source":"item","duration":9000}
+{"key":16628,"since":70245,"src":["game"],"name":"Capture Infernal Spirit","description":"Captures the spirit of an Infernal to be used in the creation of a warlockian orb.","icon":136163,"school":32,"source":"item","duration":9000}
+{"key":16629,"since":70245,"src":["game"],"name":"Attuned Dampener","icon":135972,"school":64,"source":"item","castTime":2000,"duration":30000}
+{"key":16739,"since":0,"src":[7],"name":"Orb of Deception","description":"Transforms caster to look like a member of the opposing faction.","icon":136121,"school":1,"source":"item","duration":300000}
+{"key":17038,"since":70245,"src":["game"],"name":"Winterfall Firewater","icon":134872,"school":1,"source":"elixir","kind":"magic","duration":1200000}
+{"key":17179,"since":70245,"src":["game"],"name":"Boon of Life","description":"Use on Ras Frostwhisper, the lich, to make him mortal.","icon":135903,"school":1,"source":"item","duration":20000}
+{"key":17275,"since":70245,"src":["game"],"name":"Heart of the Scale","icon":135817,"school":4,"source":"item","duration":300000}
+{"key":17368,"since":70245,"src":["game"],"name":"Egan's Blaster","description":"Use to free Spectral and Ghostly Citizens.","icon":135990,"school":1,"source":"item","duration":3000}
+{"key":17528,"since":70245,"src":["game"],"name":"Mighty Rage","icon":132347,"school":1,"source":"potion","kind":"magic","duration":20000}
+{"key":17535,"since":70245,"src":["game"],"name":"Elixir of the Sages","icon":134809,"school":1,"source":"elixir","duration":3600000}
+{"key":17537,"since":70245,"src":["game"],"name":"Elixir of Brute Force","icon":134820,"school":1,"source":"elixir","duration":3600000}
+{"key":17538,"since":70245,"src":["game"],"name":"Elixir of the Mongoose","icon":134812,"school":1,"source":"elixir","duration":1800000}
+{"key":17539,"since":70245,"src":["game"],"name":"Greater Arcane Elixir","icon":134731,"school":1,"source":"elixir","duration":3600000}
+{"key":17540,"since":70245,"src":["game"],"name":"Greater Stoneshield","icon":134849,"school":1,"source":"potion","duration":120000}
+{"key":17543,"since":70245,"src":["game"],"name":"Fire Protection","icon":135806,"school":4,"source":"potion","kind":"magic","duration":120000}
+{"key":17544,"since":70245,"src":["game"],"name":"Frost Protection","icon":135843,"school":16,"source":"potion","kind":"magic","duration":120000}
+{"key":17545,"since":70245,"src":["game"],"name":"Holy Protection","icon":135880,"school":2,"source":"potion","kind":"magic","duration":120000}
+{"key":17546,"since":70245,"src":["game"],"name":"Nature Protection","icon":136094,"school":8,"source":"potion","kind":"magic","duration":120000}
+{"key":17548,"since":70245,"src":["game"],"name":"Shadow Protection","icon":136185,"school":32,"source":"potion","kind":"magic","duration":120000}
+{"key":17549,"since":70245,"src":["game"],"name":"Arcane Protection","icon":135943,"school":4,"source":"potion","kind":"magic","duration":120000}
+{"key":17624,"since":70245,"src":["game"],"name":"Petrification","icon":134806,"school":8,"source":"elixir","duration":60000}
+{"key":17626,"since":70245,"src":["game"],"name":"Flask of the Titans","icon":134842,"school":1,"source":"elixir","duration":7200000}
+{"key":17627,"since":70245,"src":["game"],"name":"Distilled Wisdom","icon":134877,"school":1,"source":"elixir","duration":7200000}
+{"key":17628,"since":70245,"src":["game"],"name":"Supreme Power","icon":134821,"school":1,"source":"elixir","duration":7200000}
+{"key":17629,"since":70245,"src":["game"],"name":"Chromatic Resistance","icon":134828,"school":1,"source":"elixir","duration":7200000}
+{"key":18124,"since":70245,"src":["game"],"name":"Blessed Sunfruit","icon":134062,"school":1,"source":"food","duration":27000}
+{"key":18125,"since":70245,"src":["game"],"name":"Blessed Sunfruit","icon":135892,"school":1,"source":"food","duration":600000}
+{"key":18140,"since":70245,"src":["game"],"name":"Blessed Sunfruit Juice","icon":132794,"school":1,"source":"item","duration":30000}
+{"key":18141,"since":70245,"src":["game"],"name":"Blessed Sunfruit Juice","icon":135928,"school":1,"source":"item","duration":600000}
+{"key":18191,"since":70245,"src":["game"],"name":"Increased Stamina","icon":132584,"school":1,"source":"item","duration":600000}
+{"key":18364,"since":70245,"src":["game"],"name":"Cloak of Fire","icon":135806,"school":4,"source":"item","duration":15000}
+{"key":18608,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":18610,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":18826,"since":0,"src":[7],"name":"Savior's Sacrifice","icon":135893,"school":1,"source":"item","duration":20000}
+{"key":18956,"since":70245,"src":["game"],"name":"Restore Life","icon":134335,"school":32,"source":"item","kind":"magic","duration":30000}
+{"key":18957,"since":70245,"src":["game"],"name":"Restore Life","icon":134335,"school":32,"source":"item","kind":"magic","duration":30000}
+{"key":19548,"since":70245,"src":["game"],"name":"Tame Ice Claw Bear","description":"Begins taming an Ice Claw Bear to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":19634,"since":70245,"src":["game"],"name":"Mana Rejuvenation","icon":136077,"school":8,"source":"item","kind":"magic","duration":15000}
+{"key":19674,"since":70245,"src":["game"],"name":"Tame Large Crag Boar","description":"Begins taming a Large Crag Boar to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":19687,"since":70245,"src":["game"],"name":"Tame Snow Leopard","description":"Begins taming a Snow Leopard to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":19688,"since":70245,"src":["game"],"name":"Tame Adult Plainstrider","description":"Begins taming an Adult Plainstrider to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":19689,"since":70245,"src":["game"],"name":"Tame Prairie Stalker","description":"Begins taming a Prairie Stalker to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":19690,"since":70245,"src":["game"],"name":"Scarlet Illusion","description":"Use to disguise yourself as a member of the Scarlet Crusade.","icon":135942,"school":64,"source":"item","kind":"magic","duration":900000}
+{"key":19692,"since":70245,"src":["game"],"name":"Tame Swoop","description":"Begins taming a Swoop to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":19693,"since":70245,"src":["game"],"name":"Tame Webwood Lurker","description":"Begins taming a Webwood Lurker to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":19694,"since":70245,"src":["game"],"name":"Tame Dire Mottled Boar","description":"Begins taming a Dire Mottled Boar to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":19696,"since":70245,"src":["game"],"name":"Tame Surf Crawler","description":"Begins taming a Surf Crawler to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":19697,"since":70245,"src":["game"],"name":"Tame Armored Scorpid","description":"Begins taming an Armored Scorpid to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":19699,"since":70245,"src":["game"],"name":"Tame Nightsaber Stalker","description":"Begins taming a Nightsaber Stalker to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":19700,"since":70245,"src":["game"],"name":"Tame Strigid Screecher","description":"Begins taming a Strigid Screecher to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":19705,"since":70245,"src":["game"],"name":"Well Fed","icon":136000,"school":1,"duration":900000}
+{"key":19708,"since":70245,"src":["game"],"name":"Well Fed","icon":136000,"school":1,"source":"food","duration":900000}
+{"key":19710,"since":70245,"src":["game"],"name":"Well Fed","icon":136000,"school":1,"source":"food","duration":900000}
+{"key":19769,"since":70245,"src":["game"],"name":"Thorium Grenade","icon":135826,"school":4,"source":"item","castTime":1000,"duration":3000}
+{"key":19784,"since":70245,"src":["game"],"name":"Dark Iron Bomb","icon":135826,"school":4,"source":"item","castTime":1000,"duration":4000}
+{"key":19821,"since":70245,"src":["game"],"name":"Arcane Bomb","icon":135975,"school":64,"source":"item","kind":"magic","castTime":1500,"duration":5000}
+{"key":19937,"since":70245,"src":["game"],"name":"Illusion: Black Dragonkin","description":"Use to disguise yourself as a member of the Black Dragonflight.","icon":135942,"school":64,"source":"item","kind":"magic","duration":900000}
+{"key":20631,"since":70245,"src":["game"],"name":"Furbolg Medicine Pouch","icon":133644,"school":8,"source":"item","kind":"magic","duration":10000}
+{"key":20707,"since":70245,"src":["game"],"name":"Soulstone Resurrection","icon":136210,"school":32,"source":"item","castTime":3000,"duration":1800000}
+{"key":20762,"since":70245,"src":["game"],"name":"Soulstone Resurrection","icon":136210,"school":32,"source":"item","castTime":3000,"duration":1800000}
+{"key":20763,"since":70245,"src":["game"],"name":"Soulstone Resurrection","icon":136210,"school":32,"source":"item","castTime":3000,"duration":1800000}
+{"key":20764,"since":70245,"src":["game"],"name":"Soulstone Resurrection","icon":136210,"school":32,"source":"item","castTime":3000,"duration":1800000}
+{"key":20765,"since":70245,"src":["game"],"name":"Soulstone Resurrection","icon":136210,"school":32,"source":"item","castTime":3000,"duration":1800000}
+{"key":20875,"since":70245,"src":["game"],"name":"Rumsey Rum","icon":132790,"school":1,"source":"item","castTime":1000,"duration":900000}
+{"key":21149,"since":70245,"src":["game"],"name":"Egg Nog","icon":134062,"school":1,"source":"food","duration":18000}
+{"key":21171,"since":70245,"src":["game"],"name":"Ryson's Eye in the Sky","description":"Allows user to view the Alliance stronghold through Ryson's Eye in the Sky when used in conjunction with a Globe of Scrying.","icon":132172,"school":64,"source":"item","castTime":1000,"duration":120000}
+{"key":21425,"since":70245,"src":["game"],"name":"Ryson's Eye in the Sky","description":"Allows user to view the Horde stronghold through Ryson's Eye in the Sky when used in conjunction with a Globe of Scrying.","icon":132172,"school":64,"source":"item","castTime":1000,"duration":120000}
+{"key":21556,"since":70245,"src":["game"],"name":"Control Shredder","icon":133001,"school":1,"source":"item","duration":1800000}
+{"key":21566,"since":70245,"src":["game"],"name":"Control Shredder","icon":133001,"school":1,"source":"item","duration":1800000}
+{"key":21920,"since":70245,"src":["game"],"name":"Frost Power","icon":134856,"school":16,"source":"elixir","duration":1800000}
+{"key":21955,"since":70245,"src":["game"],"name":"Razorlash Root","icon":134187,"school":8,"source":"item","duration":10000}
+{"key":21956,"since":70245,"src":["game"],"name":"Physical Protection","icon":135893,"school":2,"source":"item","kind":"magic","duration":10000}
+{"key":22734,"since":70245,"src":["game"],"name":"Drink","icon":132805,"school":1,"source":"food","duration":30000}
+{"key":22736,"since":70245,"src":["game"],"name":"Gordok Ogre Suit","icon":132288,"school":1,"source":"item","duration":600000}
+{"key":22789,"since":70245,"src":["game"],"name":"Gordok Green Grog","icon":132790,"school":1,"source":"item","castTime":1000,"duration":900000}
+{"key":22790,"since":70245,"src":["game"],"name":"Kreeg's Stout Beatdown","icon":132792,"school":1,"source":"item","castTime":1000,"duration":900000}
+{"key":22807,"since":70245,"src":["game"],"name":"Greater Water Breathing","icon":135859,"school":8,"source":"elixir","duration":3600000}
+{"key":22817,"since":70245,"src":["game"],"name":"Fengus' Ferocity","icon":136109,"school":8,"source":"item","duration":7200000}
+{"key":22818,"since":70245,"src":["game"],"name":"Mol'dar's Moxie","icon":136054,"school":8,"source":"item","duration":7200000}
+{"key":22820,"since":70245,"src":["game"],"name":"Slip'kik's Savvy","icon":135930,"school":8,"source":"item","duration":7200000}
+{"key":23015,"since":70245,"src":["game"],"name":"Crystal Prison","description":"Imprisons a Doomguard Commander.","icon":134075,"school":32,"source":"item","duration":18000}
+{"key":23097,"since":70245,"src":["game"],"name":"Fire Reflector","icon":135824,"school":4,"source":"item","duration":5000}
+{"key":23126,"since":70245,"src":["game"],"name":"World Enlarger","icon":136121,"school":1,"source":"item","kind":"magic","duration":300000}
+{"key":23131,"since":70245,"src":["game"],"name":"Frost Reflector","icon":135850,"school":16,"source":"item","duration":5000}
+{"key":23132,"since":70245,"src":["game"],"name":"Shadow Reflector","icon":136121,"school":32,"source":"item","duration":5000}
+{"key":23179,"since":70245,"src":["game"],"name":"Taint of Shadow","icon":132288,"school":1,"source":"item","duration":1200000}
+{"key":23271,"since":70245,"src":["game"],"name":"Ephemeral Power","icon":135934,"school":64,"source":"item","duration":15000}
+{"key":23273,"since":70245,"src":["game"],"name":"Immune Charm/Fear/Polymorph","description":"Dispels all Charm, Fear and Polymorph effects.","icon":135894,"school":1,"source":"item","duration":100}
+{"key":23274,"since":70245,"src":["game"],"name":"Immune Fear/Polymorph/Snare","description":"Dispels all Fear, Polymorph and Slowing effects.","icon":135894,"school":1,"source":"item","duration":100}
+{"key":23276,"since":70245,"src":["game"],"name":"Immune Fear/Polymorph/Stun","description":"Dispels all Fear, Polymorph and Stun effects.","icon":135894,"school":1,"source":"item","duration":100}
+{"key":23277,"since":70245,"src":["game"],"name":"Immune Charm/Fear/Stun","description":"Dispels all Charm, Fear and Stun effects.","icon":135894,"school":1,"source":"item","duration":100}
+{"key":23506,"since":70245,"src":["game"],"name":"Aura of Protection","icon":135893,"school":2,"source":"item","kind":"magic","duration":20000}
+{"key":23567,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":23568,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":23569,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":23696,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":23697,"since":70245,"src":["game"],"name":"Alterac Spring Water","icon":135928,"school":1,"source":"item","duration":600000}
+{"key":23698,"since":70245,"src":["game"],"name":"Alterac Spring Water","icon":132794,"school":1,"source":"item","duration":30000}
+{"key":23720,"since":70245,"src":["game"],"name":"Blessing of the Black Book","icon":136224,"school":32,"source":"item","duration":30000}
+{"key":23721,"since":70245,"src":["game"],"name":"Arcane Infused","icon":136116,"school":1,"source":"item","duration":10000}
+{"key":23723,"since":70245,"src":["game"],"name":"Mind Quickening","icon":136115,"school":64,"source":"item","duration":20000}
+{"key":23724,"since":70245,"src":["game"],"name":"Metamorphosis Rune","icon":134419,"school":8,"source":"item","duration":20000}
+{"key":23726,"since":70245,"src":["game"],"name":"Venomous Totem","icon":136232,"school":1,"source":"item","duration":20000}
+{"key":23733,"since":70245,"src":["game"],"name":"Blinding Light","icon":135972,"school":2,"source":"item","duration":20000}
+{"key":23734,"since":70245,"src":["game"],"name":"Nature Aligned","icon":136094,"school":8,"source":"item","duration":20000}
+{"key":23768,"since":70245,"src":["game"],"name":"Sayge's Dark Fortune of Damage","icon":134334,"school":32,"source":"item","duration":7200000}
+{"key":23780,"since":70245,"src":["game"],"name":"Aegis of Preservation","icon":135880,"school":2,"source":"item","duration":20000}
+{"key":23991,"since":70245,"src":["game"],"name":"Damage Absorb","icon":135893,"school":2,"source":"item","kind":"magic","duration":15000}
+{"key":24005,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"food","duration":25000}
+{"key":24355,"since":70245,"src":["game"],"name":"Drink","icon":132794,"school":1,"source":"item","duration":30000}
+{"key":24360,"since":70245,"src":["game"],"name":"Greater Dreamless Sleep","icon":136090,"school":32,"source":"potion","kind":"magic","duration":12000}
+{"key":24361,"since":70245,"src":["game"],"name":"Major Troll's Blood Elixir","icon":134862,"school":1,"source":"elixir","duration":3600000}
+{"key":24363,"since":70245,"src":["game"],"name":"Mana Regeneration","icon":134762,"school":1,"source":"elixir","duration":3600000}
+{"key":24364,"since":70245,"src":["game"],"name":"Living Free Action","icon":134718,"school":1,"source":"potion","kind":"magic","duration":5000}
+{"key":24382,"since":70245,"src":["game"],"name":"Spirit of Zanza","icon":134810,"school":1,"source":"item","duration":7200000}
+{"key":24383,"since":70245,"src":["game"],"name":"Swiftness of Zanza","icon":134811,"school":1,"source":"item","duration":7200000}
+{"key":24412,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":24413,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":24414,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":24417,"since":70245,"src":["game"],"name":"Sheen of Zanza","icon":134809,"school":1,"source":"item","duration":7200000}
+{"key":24498,"since":70245,"src":["game"],"name":"Brilliant Light","icon":135934,"school":2,"source":"item","duration":15000}
+{"key":24499,"since":70245,"src":["game"],"name":"Energized Shield","icon":136014,"school":8,"source":"item","duration":20000}
+{"key":24542,"since":70245,"src":["game"],"name":"Nimble Healing Touch","icon":136077,"school":8,"source":"item","duration":15000}
+{"key":24543,"since":70245,"src":["game"],"name":"Massive Destruction","icon":135831,"school":4,"source":"item","duration":20000}
+{"key":24544,"since":70245,"src":["game"],"name":"Arcane Potency","icon":135753,"school":64,"source":"item","duration":20000}
+{"key":24546,"since":70245,"src":["game"],"name":"Rapid Healing","icon":135917,"school":8,"source":"item","duration":15000}
+{"key":24574,"since":70245,"src":["game"],"name":"Brittle Armor","icon":136235,"school":1,"source":"item","duration":20000}
+{"key":24658,"since":70245,"src":["game"],"name":"Unstable Power","icon":136235,"school":1,"source":"item","duration":20000}
+{"key":24661,"since":70245,"src":["game"],"name":"Restless Strength","icon":136235,"school":1,"source":"item","duration":20000}
+{"key":24707,"since":70245,"src":["game"],"name":"Food","icon":133984,"school":1,"source":"item","duration":25000}
+{"key":24723,"since":70245,"src":["game"],"name":"Skeleton Costume","icon":132288,"school":64,"source":"item","duration":3600000}
+{"key":24732,"since":70245,"src":["game"],"name":"Bat Costume","icon":132288,"school":64,"source":"item","duration":3600000}
+{"key":24740,"since":70245,"src":["game"],"name":"Wisp Costume","icon":132288,"school":64,"source":"item","duration":3600000}
+{"key":24828,"since":70245,"src":["game"],"name":"Shatter Soul Gem","icon":134076,"school":1,"source":"item","duration":3000}
+{"key":24833,"since":70245,"src":["game"],"name":"Holy Mightstone","icon":135871,"school":2,"source":"item","duration":600000}
+{"key":24869,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"food","duration":24000}
+{"key":24884,"since":70245,"src":["game"],"name":"Earthen Sigil","icon":136057,"school":8,"source":"item","kind":"magic","duration":10000}
+{"key":24998,"since":70245,"src":["game"],"name":"Healing of the Ages","icon":136042,"school":64,"source":"item","duration":15000}
+{"key":25037,"since":70245,"src":["game"],"name":"Rumsey Rum Light","icon":132795,"school":1,"source":"food","castTime":1000,"duration":900000}
+{"key":25660,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"food","duration":30000}
+{"key":25661,"since":70245,"src":["game"],"name":"Increased Stamina","icon":132584,"school":1,"source":"food","duration":900000}
+{"key":25688,"since":70245,"src":["game"],"name":"Narain!","description":"Transforms the appearance of the recipient to resemble Narain Soothfancy.","icon":134164,"school":1,"source":"item","castTime":3000,"duration":1800000}
+{"key":25695,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"duration":30000}
+{"key":25696,"since":70245,"src":["game"],"name":"Drink","icon":132794,"school":1,"duration":30000}
+{"key":25700,"since":70245,"src":["game"],"name":"Food","icon":133906,"school":1,"source":"item","duration":21000}
+{"key":25701,"since":70245,"src":["game"],"name":"Brain Food","icon":133906,"school":1,"source":"item","duration":21000}
+{"key":25722,"since":70245,"src":["game"],"name":"Rumsey Rum Dark","icon":132791,"school":1,"source":"food","castTime":1000,"duration":900000}
+{"key":25746,"since":70245,"src":["game"],"name":"Damage Absorb","icon":135893,"school":2,"source":"item","kind":"magic","duration":15000}
+{"key":25747,"since":70245,"src":["game"],"name":"Damage Absorb","icon":135893,"school":2,"source":"item","kind":"magic","duration":15000}
+{"key":25750,"since":70245,"src":["game"],"name":"Damage Absorb","icon":135893,"school":2,"source":"item","kind":"magic","duration":15000}
+{"key":25804,"since":70245,"src":["game"],"name":"Rumsey Rum Black Label","icon":132791,"school":1,"source":"food","castTime":1000,"duration":900000}
+{"key":25851,"since":70245,"src":["game"],"name":"Lightheaded","description":"Drink me.  I'm delicious!","icon":132792,"school":1,"source":"item","duration":30000}
+{"key":25886,"since":70245,"src":["game"],"name":"Food","icon":133907,"school":1,"source":"item","duration":21000}
+{"key":25887,"since":70245,"src":["game"],"name":"Brain Food","icon":133907,"school":1,"source":"item","duration":21000}
+{"key":25891,"since":70245,"src":["game"],"name":"Earthstrike","icon":136006,"school":1,"source":"item","duration":20000}
+{"key":25990,"since":70245,"src":["game"],"name":"Graccu's Mince Meat Fruitcake","icon":132934,"school":1,"source":"food","duration":20000}
+{"key":26004,"since":70245,"src":["game"],"name":"Mistletoe","description":"Wish a friend some Season's Greetings!","icon":136041,"school":1,"source":"item","duration":1800000}
+{"key":26008,"since":70245,"src":["game"],"name":"Toast","description":"Raise a toast to your friend!","icon":134376,"school":1,"source":"item","duration":1800000}
+{"key":26030,"since":70245,"src":["game"],"name":"Windblossom Berries","icon":134062,"school":1,"source":"item","duration":27000}
+{"key":26166,"since":70245,"src":["game"],"name":"Obsidian Insight","icon":133573,"school":64,"source":"item","duration":30000}
+{"key":26168,"since":70245,"src":["game"],"name":"Chitinous Spikes","icon":133571,"school":8,"source":"item","duration":30000}
+{"key":26260,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"food","duration":30000}
+{"key":26261,"since":70245,"src":["game"],"name":"Drink","icon":132794,"school":1,"source":"food","duration":30000}
+{"key":26263,"since":70245,"src":["game"],"name":"Dim Sum","icon":134056,"school":1,"source":"item","duration":25000}
+{"key":26390,"since":70245,"src":["game"],"name":"Glowy (NoColor)","icon":135741,"school":64,"source":"food","duration":10000}
+{"key":26400,"since":70245,"src":["game"],"name":"Arcane Shroud","icon":135994,"school":64,"source":"item","kind":"magic","duration":20000}
+{"key":26401,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"food","duration":30000}
+{"key":26402,"since":70245,"src":["game"],"name":"Drink","icon":132794,"school":1,"source":"food","duration":30000}
+{"key":26463,"since":70245,"src":["game"],"name":"Mercurial Shield","icon":136235,"school":1,"source":"item","duration":60000}
+{"key":26467,"since":70245,"src":["game"],"name":"Persistent Shield","icon":133575,"school":1,"source":"item","duration":30000}
+{"key":26472,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"item","duration":30000}
+{"key":26473,"since":70245,"src":["game"],"name":"Drink","icon":132794,"school":1,"source":"item","duration":30000}
+{"key":26474,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"item","duration":30000}
+{"key":26475,"since":70245,"src":["game"],"name":"Drink","icon":132794,"school":1,"source":"item","duration":30000}
+{"key":26480,"since":70245,"src":["game"],"name":"Badge of the Swarmguard","icon":133573,"school":1,"source":"item","duration":30000}
+{"key":26681,"since":70245,"src":["game"],"name":"Cologne","description":"Give yourself a pleasing scent.","icon":135446,"school":1,"source":"item","duration":3600000}
+{"key":26682,"since":70245,"src":["game"],"name":"Perfume","description":"Give yourself an alluring scent.","icon":135447,"school":1,"source":"item","duration":3600000}
+{"key":27571,"since":70245,"src":["game"],"name":"Cascade of Roses","description":"Shower a nearby target with a cascade of rose petals!","icon":133851,"school":1,"source":"item","castTime":500,"duration":120000}
+{"key":27616,"since":70245,"src":["game"],"name":"Extra-Dimensional Ghost Revealer","description":"Allows wielder to see ghosts of the recently deceased.","icon":135974,"school":1,"source":"item","duration":600000}
+{"key":27652,"since":70245,"src":["game"],"name":"Elixir of Resistance","icon":134801,"school":1,"source":"item","duration":1800000}
+{"key":27653,"since":70245,"src":["game"],"name":"Elixir of Dodging","icon":134832,"school":1,"source":"item","duration":1800000}
+{"key":27664,"since":70245,"src":["game"],"name":"Stormwind Gift of Friendship","description":"Combines a Bundle of Cards, a Sack of Homemade Bread and a Stormwind Pledge Collection into a Stormwind Gift Collection.","icon":134142,"school":1,"source":"item","duration":3600000}
+{"key":27665,"since":70245,"src":["game"],"name":"Ironforge Gift of Friendship","description":"Combines a Case of Homebrew, an Ironforge Pledge Collection and a Parcel of Cards into an Ironforge Gift Collection.","icon":134140,"school":1,"source":"item","duration":3600000}
+{"key":27666,"since":70245,"src":["game"],"name":"Darnassus Gift of Friendship","description":"Combines a Box of Woodcrafts, a Darnassus Pledge Collection and a Stack of Cards into a Darnassus Gift Collection.","icon":133203,"school":1,"source":"item","duration":3600000}
+{"key":27669,"since":70245,"src":["game"],"name":"Orgrimmar Gift of Friendship","description":"Combines a Box of Fresh Pies, an Orgrimmar Pledge Collection and a Package of Cards into an Orgrimmar Gift Collection.","icon":134140,"school":1,"source":"item","duration":3600000}
+{"key":27670,"since":70245,"src":["game"],"name":"Thunder Bluff Gift of Friendship","description":"Combines a Basket of Flowers, a Satchel of Cards and a Thunder Bluff Pledge Collection into a Thunder Bluff Gift Collection.","icon":134144,"school":1,"source":"item","duration":3600000}
+{"key":27671,"since":70245,"src":["game"],"name":"Undercity Gift of Friendship","description":"Combines a Book of Romantic Poetry, a Sheaf of Cards and an Undercity Pledge Collection into an Undercity Gift Collection.","icon":134143,"school":1,"source":"item","duration":3600000}
+{"key":27720,"since":70245,"src":["game"],"name":"Buttermilk Delight","icon":135457,"school":1,"source":"item","castTime":1000,"duration":3600000}
+{"key":27721,"since":70245,"src":["game"],"name":"Very Berry Cream","icon":135458,"school":1,"source":"item","castTime":1000,"duration":3600000}
+{"key":27722,"since":70245,"src":["game"],"name":"Sweet Surprise","icon":135459,"school":1,"source":"item","castTime":1000,"duration":3600000}
+{"key":27723,"since":70245,"src":["game"],"name":"Dark Desire","icon":135460,"school":1,"source":"item","castTime":1000,"duration":3600000}
+{"key":28200,"since":70245,"src":["game"],"name":"Ascendance","description":"Your next 5 damage or healing spells cast within 20 seconds will grant a bonus of up to 40 damage and up to 75 healing, stacking up to 5 times. Expires after 6 damage or healing spells or 20 seconds, whichever occurs first.","icon":134123,"school":1,"source":"item","duration":20000}
+{"key":28773,"since":70245,"src":["game"],"name":"Glyph of Deflection","icon":135443,"school":1,"source":"item","duration":20000}
+{"key":28777,"since":70245,"src":["game"],"name":"Slayer's Crest","icon":135441,"school":1,"source":"item","duration":20000}
+{"key":28778,"since":70245,"src":["game"],"name":"Loatheb's Reflection","icon":135443,"school":1,"source":"item","duration":20000}
+{"key":28779,"since":70245,"src":["game"],"name":"Essence of Sapphiron","icon":135444,"school":1,"source":"item","duration":20000}
+{"key":28780,"since":70245,"src":["game"],"name":"The Eye of the Dead","icon":135439,"school":1,"source":"item","kind":"magic","duration":30000}
+{"key":28862,"since":70245,"src":["game"],"name":"The Eye of Diminution","icon":135994,"school":64,"source":"item","kind":"magic","duration":20000}
+{"key":28866,"since":70245,"src":["game"],"name":"Kiss of the Spider","icon":135442,"school":1,"source":"item","kind":"magic","duration":15000}
+{"key":29006,"since":70245,"src":["game"],"name":"Bubbly Refreshment","description":"Raise a toast to your friend!","icon":132799,"school":1,"source":"item","duration":1800000}
+{"key":29007,"since":70245,"src":["game"],"name":"Drink","icon":132794,"school":1,"source":"item","duration":30000}
+{"key":29008,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"food","duration":30000}
+{"key":29038,"since":70245,"src":["game"],"name":"Fizzy Energy Drink","icon":133949,"school":1,"source":"item","duration":21000}
+{"key":29039,"since":70245,"src":["game"],"name":"Fizzy Energy Drink","icon":132800,"school":1,"source":"item","duration":21000}
+{"key":29041,"since":70245,"src":["game"],"name":"Tasty Summer Treat","description":"It's so good, you'll glow.","icon":133984,"school":1,"source":"item","duration":30000}
+{"key":29042,"since":70245,"src":["game"],"name":"Glowy (iCoke Promotion)","icon":135741,"school":64,"source":"item","duration":20000}
+{"key":29055,"since":70245,"src":["game"],"name":"Refreshing Red Apple","icon":133975,"school":1,"source":"food","duration":25000}
+{"key":29073,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"food","duration":30000}
+{"key":29332,"since":70245,"src":["game"],"name":"Fire-toasted Bun","icon":133964,"school":1,"source":"item","castTime":1000,"duration":3600000}
+{"key":29333,"since":70245,"src":["game"],"name":"Midsummer Sausage","icon":134009,"school":1,"source":"item","castTime":1000,"duration":3600000}
+{"key":29334,"since":70245,"src":["game"],"name":"Toasted Smorc","icon":135267,"school":1,"source":"item","castTime":1000,"duration":3600000}
+{"key":29335,"since":70245,"src":["game"],"name":"Elderberry Pie","icon":133952,"school":1,"source":"item","castTime":1000,"duration":3600000}
+{"key":29338,"since":70245,"src":["game"],"name":"Fire Festival Fury","icon":134468,"school":1,"source":"item","duration":3600000}
+{"key":29388,"since":70245,"src":["game"],"name":"Breath of Fire","description":"Sets your breath aflame!","icon":135818,"school":1,"source":"item","duration":12000}
+{"key":29432,"since":70245,"src":["game"],"name":"Fire Protection","icon":135820,"school":4,"source":"item","kind":"magic","duration":3600000}
+{"key":29506,"since":70245,"src":["game"],"name":"The Burrower's Shell","icon":135893,"school":2,"source":"item","duration":20000}
+{"key":29602,"since":70245,"src":["game"],"name":"Jom Gabbar","icon":133877,"school":1,"source":"item","duration":20000}
+{"key":30003,"since":70245,"src":["game"],"name":"Sheen of Zanza","icon":134809,"school":1,"source":"item","duration":7200000}
+{"key":30020,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":10000}
+{"key":30088,"since":70245,"src":["game"],"name":"Lesser Mark of the Dawn","description":"Increases Stamina for 1 hour.","icon":134499,"school":1,"source":"item","duration":3600000}
+{"key":30089,"since":70245,"src":["game"],"name":"Mark of the Dawn","description":"Increases Stamina for 1 hour.","icon":134500,"school":1,"source":"item","duration":3600000}
+{"key":30090,"since":70245,"src":["game"],"name":"Greater Mark of the Dawn","description":"Increases Stamina for 1 hour.","icon":134501,"school":1,"source":"item","duration":3600000}
+{"key":30167,"since":70245,"src":["game"],"name":"Purple Ogre Costume","icon":132288,"school":1,"source":"item","duration":600000}
+{"key":30331,"since":70245,"src":["game"],"name":"Permanent Sheen of Zanza","icon":134809,"school":1,"source":"item","duration":7200000}
+{"key":30336,"since":70245,"src":["game"],"name":"Permanent Spirit of Zanza","icon":134810,"school":1,"source":"item","duration":7200000}
+{"key":30338,"since":70245,"src":["game"],"name":"Permanent Swiftness of Zanza","icon":134811,"school":1,"source":"item","duration":7200000}
+{"key":45440,"since":70245,"src":["game"],"name":"Steam Tonk Controller","description":"Summon and control your steam tonk.","icon":133878,"school":1,"source":"item","duration":300000}
+{"key":355363,"since":70245,"src":["game"],"name":"Rallying Cry of the Dragonslayer","icon":134153,"school":1,"source":"item","duration":7200000}
+{"key":355365,"since":70245,"src":["game"],"name":"Spirit of Zandalar","description":"Increases movement speed by 10% and all stats by 15% for 2 hours.","icon":132107,"school":1,"source":"item","duration":7200000}
+{"key":355366,"since":70245,"src":["game"],"name":"Warchief's Blessing","description":"Increases hitpoints by 300. 15% haste to melee attacks. 10 mana regen every 5 seconds.","icon":135759,"school":1,"source":"item","duration":3600000}
+{"key":370303,"since":70245,"src":["game"],"name":"Orb of Corruption","icon":134120,"school":32,"source":"item","duration":1800000}
+{"key":370308,"since":70245,"src":["game"],"name":"Rod of Necromancy","icon":135474,"school":32,"source":"item","castTime":1500,"duration":300000}
+{"key":370336,"since":70245,"src":["game"],"name":"Fungal Spore Cluster","icon":134530,"school":8,"source":"item","duration":3600000}
+{"key":370831,"since":70245,"src":["game"],"name":"Thaddius' Lightning Bolts","icon":134068,"school":8,"source":"item","duration":3600000}
+{"key":370832,"since":70245,"src":["game"],"name":"Gift of the Spider","icon":135367,"school":8,"source":"item","duration":3600000}
+{"key":398117,"since":70245,"src":["game"],"name":"Pockets of Treats","icon":132165,"school":1,"source":"item","duration":120000}
+{"key":408755,"since":70245,"src":["game"],"name":"Blood Offering","description":"Offer your blood to power the artifact.","icon":136008,"school":1,"source":"item","castTime":3000,"duration":600000}
+{"key":411622,"since":70245,"src":["game"],"name":"Prairie Dog Musk","description":"Your Tame Beast ability also works on prairie dogs (as companion pet)","icon":134743,"school":1,"source":"item","duration":600000}
+{"key":412179,"since":70245,"src":["game"],"name":"Cunning Disguise?","icon":132288,"school":1,"source":"item","castTime":1500,"duration":900000}
+{"key":416861,"since":70245,"src":["game"],"name":"Adder Pheromone","description":"Your Tame Beast ability also works on adders (as companion pet)","icon":134743,"school":1,"source":"item","duration":600000}
+{"key":418236,"since":70245,"src":["game"],"name":"Rabbit Musk","description":"Your Tame Beast ability also works on rabbits (as companion pet)","icon":134743,"school":1,"source":"item","duration":600000}
+{"key":421262,"since":70245,"src":["game"],"name":"Hellish Indigestion","icon":132108,"school":32,"source":"item","duration":10000}
+{"key":421311,"since":70245,"src":["game"],"name":"Deer Musk","description":"Your Tame Beast ability also works on deer (as companion pet)","icon":134743,"school":1,"source":"item","duration":600000}
+{"key":424472,"since":70245,"src":["game"],"name":"Near Death Experience","icon":132331,"school":1,"source":"item","duration":300000}
+{"key":426019,"since":70245,"src":["game"],"name":"Marshroom","description":"Eat (at your own risk).","icon":134052,"school":1,"source":"item","duration":900000}
+{"key":426606,"since":70245,"src":["game"],"name":"Speak with the Dead?","description":"Allows the imbiber to speak with the corpse of an individual with unfinished business in the mortal world. Also may cure indigestion.","icon":134799,"school":1,"source":"item","duration":7200000}
+{"key":430352,"since":70245,"src":["game"],"name":"Ashenvale Rallying Cry","icon":136005,"school":1,"source":"item","duration":7200000}
+{"key":430948,"since":70245,"src":["game"],"name":"Arcane Recovery","icon":237551,"school":64,"source":"item","kind":"magic","duration":1800000}
+{"key":430949,"since":70245,"src":["game"],"name":"Arcane Accuracy","icon":136099,"school":64,"source":"item","kind":"magic","duration":1800000}
+{"key":430950,"since":70245,"src":["game"],"name":"Arcane Protection - Fire","icon":135806,"school":64,"source":"item","kind":"magic","duration":1800000}
+{"key":430951,"since":70245,"src":["game"],"name":"Arcane Protection - Frost","icon":135779,"school":64,"source":"item","kind":"magic","duration":1800000}
+{"key":430952,"since":70245,"src":["game"],"name":"Arcane Power","icon":136115,"school":64,"source":"item","kind":"magic","duration":1800000}
+{"key":433427,"since":0,"src":[7],"name":"Squall-breakers Potion","description":"Protect yourself against the elements as long as you survive.","icon":134800,"school":1,"source":"item","duration":1800000}
+{"key":433813,"since":70245,"src":["game"],"name":"Neverending Soul Vessel","description":"Your next Soul Shard consuming spell cost no Soul Shards to cast.","icon":133254,"school":32,"source":"item","kind":"magic","duration":20000}
+{"key":434488,"since":70245,"src":["game"],"name":"Spicy!","icon":136196,"school":1,"source":"item","duration":30000}
+{"key":434754,"since":70245,"src":["game"],"name":"Polymorph","description":"Polymorph the target into an Odd Melon.","icon":133978,"school":64,"source":"item","kind":"magic","castTime":2500,"duration":20000}
+{"key":434851,"since":70245,"src":["game"],"name":"Minor Evocation","icon":136075,"school":1,"source":"item","duration":4000}
+{"key":435218,"since":70245,"src":["game"],"name":"Offering to the Wind Spirit","description":"Make an Offering to the Wind Spirit and show your faith.","icon":133291,"school":1,"source":"item","castTime":2000,"duration":30000}
+{"key":435563,"since":70245,"src":["game"],"name":"Comprehension","icon":135933,"school":1,"source":"item","castTime":3000,"duration":3600000}
+{"key":435968,"since":0,"src":[7],"name":"Ez-Thro Radiation Bomb","icon":132100,"school":4,"source":"item","kind":"magic","castTime":1500,"duration":10000}
+{"key":436432,"since":70245,"src":["game"],"name":"Trail Snack","description":"Eat a handful and make up for lost time on the trail!","icon":136075,"school":1,"source":"item","duration":12000}
+{"key":438273,"since":70245,"src":["game"],"name":"PvP Trinket","description":"Removes all movement impairing effects and all effects which cause loss of control of your character.","icon":135894,"school":1,"source":"item","duration":100}
+{"key":439155,"since":70245,"src":["game"],"name":"Sigil of Innovation","icon":254884,"school":64,"source":"item","kind":"magic","castTime":3000,"duration":1800000}
+{"key":439959,"since":70245,"src":["game"],"name":"Lesser Arcane Elixir","icon":134730,"school":1,"source":"elixir","duration":1800000}
+{"key":440505,"since":70245,"src":["game"],"name":"Invisibility","icon":134798,"school":8,"source":"item","duration":30000}
+{"key":443265,"since":70245,"src":["game"],"name":"Infernal Lasso","icon":136091,"school":4,"source":"item","kind":"magic","duration":12000}
+{"key":445181,"since":70245,"src":["game"],"name":"Murky Sapta Sight","description":"Allows the shaman to see elemental spirits.","icon":132092,"school":1,"source":"item","kind":"magic","duration":1200000}
+{"key":446397,"since":70245,"src":["game"],"name":"Rainbow Generator","description":"Rainbow power!","icon":237185,"school":1,"source":"item","duration":25000}
+{"key":446398,"since":70245,"src":["game"],"name":"Perceive","description":"Focus.","icon":236709,"school":1,"source":"item","duration":2000}
+{"key":446580,"since":70245,"src":["game"],"name":"Murky Sapta Sight","description":"Allows the shaman to see elemental spirits.","icon":132092,"school":1,"source":"item","kind":"magic","duration":1200000}
+{"key":446581,"since":70245,"src":["game"],"name":"Murky Sapta Sight","description":"Allows the shaman to see elemental spirits.","icon":132092,"school":1,"source":"item","kind":"magic","duration":1200000}
+{"key":446582,"since":70245,"src":["game"],"name":"Murky Sapta Sight","description":"Allows the shaman to see elemental spirits.","icon":132092,"school":1,"source":"item","kind":"magic","duration":1200000}
+{"key":447590,"since":70245,"src":["game"],"name":"Infernal Lasso","description":"Weaken Calefactus the Unleashed.","icon":136091,"school":4,"source":"item","kind":"magic","castTime":1500,"duration":24000}
+{"key":459613,"since":70245,"src":["game"],"name":"Guided Buoyancy Accelerant","icon":134731,"school":1,"source":"item","kind":"magic","duration":240000}
+{"key":460332,"since":70245,"src":["game"],"name":"Warmed Rumsey with Cream","icon":132790,"school":1,"source":"item","duration":2700000}
+{"key":460940,"since":70245,"src":["game"],"name":"Might of Stormwind","description":"Increases hitpoints by 300. 15% haste to melee attacks. 10 mana regen every 5 seconds.","icon":135763,"school":1,"source":"item","duration":3600000}
+{"key":461318,"since":70245,"src":["game"],"name":"Gift of Gob","description":"Turns target party member into a friend.","icon":236685,"school":1,"source":"item","duration":3600000}
+{"key":461324,"since":70245,"src":["game"],"name":"Sleep","description":"Drink the Dreamjuice to enter a state of waking sleep, allowing you to see hidden enemies. Only usable in Thorium Point.","icon":132123,"school":1,"source":"item","duration":600000}
+{"key":461632,"since":0,"src":[7],"name":"Stratholme Holy Water","icon":236211,"school":1,"source":"item","duration":30000}
+{"key":463864,"since":70245,"src":["game"],"name":"Sigil of Flowing Waters","icon":254883,"school":16,"source":"item","kind":"magic","duration":3600000}
+{"key":468767,"since":70245,"src":["game"],"name":"Drink","icon":132805,"school":1,"source":"food","duration":30000}
+{"key":469647,"since":70245,"src":["game"],"name":"Consecrated Weapon","description":"Apply the Blood of the Lightbringer to consecrate your weapon.","icon":236262,"school":1,"source":"item","castTime":3000,"duration":3600000}
+{"key":470345,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":470361,"since":70245,"src":["game"],"name":"Increased Spell Damage","icon":133943,"school":1,"source":"item","duration":600000}
+{"key":470362,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"item","duration":30000}
+{"key":470367,"since":70245,"src":["game"],"name":"Increased Healing Power","icon":133943,"school":1,"source":"item","duration":600000}
+{"key":470369,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"item","duration":30000}
+{"key":473544,"since":0,"src":[7],"name":"Sneaking","icon":132320,"school":1,"source":"item","duration":60000}
+{"key":1225769,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"item","duration":30000}
+{"key":1225771,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"food","duration":30000}
+{"key":1225772,"since":70245,"src":["game"],"name":"Food","icon":134062,"school":1,"source":"item","duration":30000}
+{"key":1225778,"since":70245,"src":["game"],"name":"Well Fed","icon":133943,"school":1,"source":"item","duration":900000}
+{"key":1225779,"since":70245,"src":["game"],"name":"Well Fed","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1225780,"since":70245,"src":["game"],"name":"Well Fed","icon":133943,"school":1,"source":"item","duration":900000}
+{"key":1227022,"since":70245,"src":["game"],"name":"Demonic Shade Vision","description":"Allows the user to temporarily see demonic shades within Felwood.","icon":237561,"school":1,"source":"item","kind":"magic","duration":300000}
+{"key":1231091,"since":70245,"src":["game"],"name":"Prototype Nitro Boosts","description":"Insert a variable amount of gunpowder into the device and press the button.\r\n\r\nYour speed and likelihood of serious injury or death will increase based on the amount of gunpowder added.\r\n\r\nCan only be used in New Avalon.","icon":132996,"school":1,"source":"item","duration":5000}
+{"key":1231123,"since":70245,"src":["game"],"name":"Bird Whistle","description":"Summon Pepe to join you on your adventures!","icon":132161,"school":1,"source":"item","castTime":2000,"duration":3600000}
+{"key":1245244,"since":70245,"src":["game"],"name":"Minor Arcane Elixir","icon":134728,"school":1,"source":"elixir","duration":1800000}
+{"key":1245249,"since":70245,"src":["game"],"name":"Elixir of Minor Force","icon":134857,"school":1,"source":"elixir","duration":1800000}
+{"key":1246026,"since":70245,"src":["game"],"name":"Herbal Soil Poultice","description":"Aids in healing and growth of verdant vegetation.","icon":133690,"school":1,"source":"item","duration":6000}
+{"key":1246031,"since":70245,"src":["game"],"name":"Hunting Kobolds","description":"Causes nearby kobold tracks to appear on your map.","icon":134168,"school":1,"source":"item","duration":900000}
+{"key":1248377,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248378,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248379,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248380,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248381,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248382,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248383,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248384,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248386,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248387,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248388,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248389,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248390,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248391,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248392,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248393,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248394,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248395,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248396,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248397,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248398,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248399,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248400,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248401,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248406,"since":70245,"src":["game"],"name":"Well Fed","description":"A nutritious meal has made you Well Fed, increasing your Stamina.","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1248420,"since":70245,"src":["game"],"name":"Well Fed","description":"A nutritious meal has made you Well Fed, increasing your Agility.","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1248421,"since":70245,"src":["game"],"name":"Well Fed","description":"A nutritious meal has made you Well Fed, increasing your Intellect.","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1248422,"since":70245,"src":["game"],"name":"Well Fed","description":"A nutritious meal has made you Well Fed, increasing your Strength.","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1248687,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1248688,"since":70245,"src":["game"],"name":"Well Fed","description":"A nutritious meal has made you Well Fed, increasing your movement speed.","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1249110,"since":70245,"src":["game"],"name":"Chthonic Power","icon":134131,"school":64,"source":"item","duration":15000}
+{"key":1249113,"since":70245,"src":["game"],"name":"Molten Fury","icon":134128,"school":64,"source":"item","duration":15000}
+{"key":1249500,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249501,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249502,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249503,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249504,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249505,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249506,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249507,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249508,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249509,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249510,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249511,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249512,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249513,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249514,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249515,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249516,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249519,"since":70245,"src":["game"],"name":"Well Fed","description":"A nutritious meal has made you Well Fed, increasing your Attack Power.","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1249520,"since":70245,"src":["game"],"name":"Well Fed","description":"A nutritious meal has made you Well Fed, increasing your Spell Damage.","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1249521,"since":70245,"src":["game"],"name":"Well Fed","description":"A nutritious meal has made you Well Fed, increasing your Fishing Skill.","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1249522,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249523,"since":70245,"src":["game"],"name":"Well Fed","description":"A nutritious meal has made you Well Fed, increasing your chance to deal a critical strike.","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1249906,"since":70245,"src":["game"],"name":"Nutritious Drink","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249907,"since":70245,"src":["game"],"name":"Well Fed","description":"A tasty drink has made you Well Fed, increasing your herbalism skill.","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1249914,"since":70245,"src":["game"],"name":"Nutritious Drink","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249915,"since":70245,"src":["game"],"name":"Nutritious Drink","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249916,"since":70245,"src":["game"],"name":"Nutritious Drink","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249917,"since":70245,"src":["game"],"name":"Nutritious Drink","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249918,"since":70245,"src":["game"],"name":"Nutritious Drink","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249919,"since":70245,"src":["game"],"name":"Nutritious Drink","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249920,"since":70245,"src":["game"],"name":"Nutritious Drink","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249921,"since":70245,"src":["game"],"name":"Nutritious Drink","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249922,"since":70245,"src":["game"],"name":"Nutritious Drink","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249923,"since":70245,"src":["game"],"name":"Nutritious Drink","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249924,"since":70245,"src":["game"],"name":"Nutritious Drink","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249925,"since":70245,"src":["game"],"name":"Nutritious Drink","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1249926,"since":70245,"src":["game"],"name":"Well Fed","description":"A tasty drink has made you Well Fed, increasing your Spirit.","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1249927,"since":70245,"src":["game"],"name":"Well Fed","description":"A tasty drink has made you Well Fed, increasing your Healing Power.","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1250889,"since":70245,"src":["game"],"name":"Draught of Predatory Senses","icon":967555,"school":1,"source":"elixir","duration":1800000}
+{"key":1250918,"since":70245,"src":["game"],"name":"Elixir of Cunning","icon":134794,"school":1,"source":"elixir","duration":1800000}
+{"key":1250920,"since":70245,"src":["game"],"name":"Elixir of the Phalanx","icon":967529,"school":1,"source":"elixir","duration":1800000}
+{"key":1250922,"since":70245,"src":["game"],"name":"Minor Cleric's Elixir","icon":967524,"school":1,"source":"elixir","duration":1800000}
+{"key":1250924,"since":70245,"src":["game"],"name":"Lesser Cleric's Elixir","icon":134752,"school":1,"source":"elixir","duration":1800000}
+{"key":1250925,"since":70245,"src":["game"],"name":"Cleric's Elixir","icon":134764,"school":1,"source":"elixir","duration":1800000}
+{"key":1250926,"since":70245,"src":["game"],"name":"Greater Cleric's Elixir","icon":134777,"school":1,"source":"elixir","duration":1800000}
+{"key":1250928,"since":70245,"src":["game"],"name":"Elixir of Fortitude","icon":134824,"school":1,"source":"elixir","duration":1800000}
+{"key":1250931,"since":70245,"src":["game"],"name":"Elixir of Greater Fortitude","icon":134825,"school":1,"source":"elixir","duration":1800000}
+{"key":1250932,"since":70245,"src":["game"],"name":"Elixir of Wicked Regeneration","icon":967526,"school":1,"source":"elixir","duration":1800000}
+{"key":1250940,"since":70245,"src":["game"],"name":"Elixir of the Owl","icon":134792,"school":1,"source":"elixir","duration":1800000}
+{"key":1250941,"since":70245,"src":["game"],"name":"Elixir of Sages","icon":134793,"school":1,"source":"elixir","duration":1800000}
+{"key":1250942,"since":70245,"src":["game"],"name":"Minor Mageblood Elixir","icon":967519,"school":1,"source":"elixir","duration":1800000}
+{"key":1250944,"since":70245,"src":["game"],"name":"Lesser Mageblood Elixir","icon":134750,"school":1,"source":"elixir","duration":1800000}
+{"key":1250948,"since":70245,"src":["game"],"name":"Greater Mageblood Elixir","icon":134796,"school":1,"source":"elixir","duration":1800000}
+{"key":1250971,"since":70245,"src":["game"],"name":"Lesser Arcane Elixir","icon":134729,"school":1,"source":"elixir","duration":1800000}
+{"key":1250972,"since":70245,"src":["game"],"name":"Elixir of Nature Power","icon":134877,"school":1,"source":"elixir","duration":1800000}
+{"key":1250974,"since":70245,"src":["game"],"name":"Elixir of Minor Spirit","icon":134736,"school":1,"source":"elixir","duration":1800000}
+{"key":1250976,"since":70245,"src":["game"],"name":"Elixir of Lesser Spirit","icon":134737,"school":1,"source":"elixir","duration":1800000}
+{"key":1250978,"since":70245,"src":["game"],"name":"Elixir of Spirit","icon":134738,"school":1,"source":"elixir","duration":1800000}
+{"key":1250979,"since":70245,"src":["game"],"name":"Elixir of Greater Spirit","icon":134739,"school":1,"source":"elixir","duration":1800000}
+{"key":1250981,"since":70245,"src":["game"],"name":"Elixir of the Whale","icon":134791,"school":1,"source":"elixir","duration":1800000}
+{"key":1250984,"since":70245,"src":["game"],"name":"Elixir of Strength","icon":134838,"school":1,"source":"elixir","duration":1800000}
+{"key":1250985,"since":70245,"src":["game"],"name":"Elixir of Ferocity","icon":134789,"school":1,"source":"elixir","duration":1800000}
+{"key":1250986,"since":70245,"src":["game"],"name":"Elixir of the Grizzly","icon":134788,"school":1,"source":"elixir","duration":1800000}
+{"key":1250988,"since":70245,"src":["game"],"name":"Elixir of Lesser Intellect","icon":134823,"school":1,"source":"elixir","duration":1800000}
+{"key":1250989,"since":70245,"src":["game"],"name":"Elixir of Intellect","icon":134824,"school":1,"source":"elixir","duration":1800000}
+{"key":1251919,"since":70245,"src":["game"],"name":"Minor Spellblasting Potion","icon":967557,"school":1,"source":"potion","duration":30000}
+{"key":1251922,"since":70245,"src":["game"],"name":"Lesser Spellblasting Potion","icon":463545,"school":1,"source":"potion","duration":30000}
+{"key":1251923,"since":70245,"src":["game"],"name":"Spellblasting Potion","icon":463921,"school":1,"source":"potion","duration":30000}
+{"key":1251924,"since":70245,"src":["game"],"name":"Greater Spellblasting Potion","icon":464027,"school":1,"source":"potion","duration":30000}
+{"key":1251931,"since":70245,"src":["game"],"name":"Superior Spellblasting Potion","icon":463859,"school":1,"source":"potion","duration":30000}
+{"key":1251932,"since":70245,"src":["game"],"name":"Major Spellblasting Potion","icon":463929,"school":1,"source":"potion","duration":30000}
+{"key":1251933,"since":70245,"src":["game"],"name":"Minor Frenzy Potion","icon":967555,"school":1,"source":"potion","duration":30000}
+{"key":1251935,"since":70245,"src":["game"],"name":"Lesser Frenzy Potion","icon":463548,"school":1,"source":"potion","duration":30000}
+{"key":1251936,"since":70245,"src":["game"],"name":"Frenzy Potion","icon":463922,"school":1,"source":"potion","duration":30000}
+{"key":1251937,"since":70245,"src":["game"],"name":"Greater Frenzy Potion","icon":464024,"school":1,"source":"potion","duration":30000}
+{"key":1251938,"since":70245,"src":["game"],"name":"Superior Frenzy Potion","icon":463863,"school":1,"source":"potion","duration":30000}
+{"key":1251940,"since":70245,"src":["game"],"name":"Major Frenzy Potion","icon":463931,"school":1,"source":"potion","duration":30000}
+{"key":1251942,"since":70245,"src":["game"],"name":"Minor Mender's Potion","icon":967556,"school":1,"source":"potion","duration":30000}
+{"key":1251944,"since":70245,"src":["game"],"name":"Lesser Mender's Potion","icon":463547,"school":1,"source":"potion","duration":30000}
+{"key":1251945,"since":70245,"src":["game"],"name":"Mender's Potion","icon":463925,"school":1,"source":"potion","duration":30000}
+{"key":1251946,"since":70245,"src":["game"],"name":"Greater Mender's Potion","icon":464026,"school":1,"source":"potion","duration":30000}
+{"key":1251947,"since":70245,"src":["game"],"name":"Superior Mender's Potion","icon":463860,"school":1,"source":"potion","duration":30000}
+{"key":1251948,"since":70245,"src":["game"],"name":"Major Mender's Potion","icon":463927,"school":1,"source":"potion","duration":30000}
+{"key":1251986,"since":70245,"src":["game"],"name":"Venomous Blood","icon":134799,"school":1,"source":"potion","duration":20000}
+{"key":1252554,"since":70245,"src":["game"],"name":"Dragonfire Potion","icon":134813,"school":4,"source":"potion","kind":"magic","duration":8000}
+{"key":1252558,"since":70245,"src":["game"],"name":"Potion of Elemental Purging","icon":2057575,"school":64,"source":"potion","duration":300000}
+{"key":1252559,"since":70245,"src":["game"],"name":"Potion of Beast Slaying","icon":2057578,"school":64,"source":"potion","duration":300000}
+{"key":1252576,"since":70245,"src":["game"],"name":"Savory Whimsyfin Delight","description":"Eat me.","icon":237320,"school":1,"source":"item","duration":3600000}
+{"key":1255936,"since":70245,"src":["game"],"name":"Miniature Morphologic Mimic Encabulate","description":"Temporarily gives the user an enchantment disguising them as their target.","icon":319458,"school":1,"source":"item","castTime":3000,"duration":120000}
+{"key":1257010,"since":70245,"src":["game"],"name":"Smack Flutterfly","description":"Recently smacked!","icon":135860,"school":1,"source":"item","castTime":1300,"duration":60000}
+{"key":1257860,"since":70245,"src":["game"],"name":"Arcane-Infused Net","description":"Attempt to bring down one of the Manticores flying overhead in Shadowgale Forest.","icon":134325,"school":1,"source":"item","castTime":2100,"duration":5000}
+{"key":1265304,"since":70245,"src":["game"],"name":"Deep-Sea Waders","icon":134776,"school":1,"source":"item","castTime":1500,"duration":60000}
+{"key":1269161,"since":70245,"src":["game"],"name":"SAF-T Copper Bomb","icon":135826,"school":4,"source":"item","castTime":1000,"duration":1000}
+{"key":1269192,"since":70245,"src":["game"],"name":"EZ-Thro Copper Bomb XL","icon":135826,"school":4,"source":"item","castTime":1000,"duration":1000}
+{"key":1269216,"since":70245,"src":["game"],"name":"SAF-T Bronze Bomb","icon":135826,"school":4,"source":"item","castTime":1000,"duration":2000}
+{"key":1269268,"since":70245,"src":["game"],"name":"EZ-Thro Bronze Mortar","icon":135826,"school":4,"source":"item","castTime":1000,"duration":2000}
+{"key":1269272,"since":70245,"src":["game"],"name":"SAF-T Bomb","icon":135826,"school":4,"source":"item","castTime":1000,"duration":3000}
+{"key":1269278,"since":70245,"src":["game"],"name":"Tru-Trigger Frag Bomb","icon":135826,"school":4,"source":"item","castTime":1000,"duration":2000}
+{"key":1269330,"since":70245,"src":["game"],"name":"EZ-Thro Thorium Grenade","icon":135826,"school":4,"source":"item","castTime":1000,"duration":3000}
+{"key":1269334,"since":70245,"src":["game"],"name":"EZ-Thro Dark Bomb","icon":135826,"school":4,"source":"item","castTime":1000,"duration":4000}
+{"key":1269337,"since":70245,"src":["game"],"name":"EZ-Thro Mana Bomb","icon":135975,"school":64,"source":"item","kind":"magic","castTime":1500,"duration":5000}
+{"key":1269354,"since":70245,"src":["game"],"name":"Ketharas' Hyjal Stew","icon":134062,"school":1,"source":"food","duration":30000}
+{"key":1271103,"since":70245,"src":["game"],"name":"Tame Vuldren","description":"Begins taming a Vuldren Alpha to be your companion for 10 min. If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":1271266,"since":70245,"src":["game"],"name":"Stealth Field","icon":133862,"school":1,"source":"item","castTime":1000,"duration":60000}
+{"key":1271280,"since":70245,"src":["game"],"name":"Stealthman Tracker","icon":136243,"school":1,"source":"item","duration":60000}
+{"key":1277794,"since":70245,"src":["game"],"name":"Tame Beast","description":"Begins taming a Rockhide Boar to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":1278028,"since":70245,"src":["game"],"name":"Tame Beast","description":"Begins taming a Gray Forest Wolf to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":1278029,"since":70245,"src":["game"],"name":"Tame Beast","description":"Begins taming a Young Forest Bear to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":1280003,"since":70245,"src":["game"],"name":"Tame Crawler","description":"Begins taming a Windsong Crawler to be your companion for 10 minutes.  If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":1280046,"since":70245,"src":["game"],"name":"Tame Galestrider","description":"Begins taming an Ornery Galestrider to be your companion for 10 minutes. If you lose the beast's attention for any reason, the taming process will fail.","icon":132164,"school":8,"source":"item","duration":20000}
+{"key":1280481,"since":70245,"src":["game"],"name":"Fox-Catching Net","icon":132149,"school":1,"source":"item","castTime":500,"duration":10000}
+{"key":1286814,"since":70245,"src":["game"],"name":"Hoof-Shaped Foot Pedal","icon":1534178,"school":1,"source":"item","castTime":1000,"duration":1200000}
+{"key":1287571,"since":70245,"src":["game"],"name":"Monkey Business","icon":133980,"school":1,"source":"item","duration":15000}
+{"key":1287768,"since":70245,"src":["game"],"name":"Unholy Might","icon":134309,"school":2,"source":"item","kind":"magic","duration":600000}
+{"key":1287808,"since":70245,"src":["game"],"name":"Blood of the Broodmother","icon":136168,"school":1,"source":"item","duration":15000}
+{"key":1289250,"since":70245,"src":["game"],"name":"Impaled","icon":136168,"school":1,"source":"item","duration":30000}
+{"key":1289422,"since":70245,"src":["game"],"name":"Explorers' League Drawing Kit","description":"Use to sketch a location on the Shapers Terrace map.","icon":237382,"school":1,"source":"item","castTime":3500,"duration":1000}
+{"key":1289654,"since":70245,"src":["game"],"name":"Gift of Galloping","icon":136103,"school":1,"source":"item","duration":1296000000}
+{"key":1289714,"since":70245,"src":["game"],"name":"Power Sap","description":"Significantly reduces the target's power.","icon":136121,"school":1,"source":"item","castTime":3000,"duration":60000}
+{"key":1290863,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":1290865,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":1290867,"since":70245,"src":["game"],"name":"First Aid","icon":135915,"school":1,"source":"item","duration":8000}
+{"key":1291097,"since":70245,"src":["game"],"name":"Damage Sigmoid","icon":135893,"school":8,"source":"item","kind":"magic","duration":15000}
+{"key":1291101,"since":70245,"src":["game"],"name":"Analyzing Weaknesses","icon":135934,"school":1,"source":"item","duration":20000}
+{"key":1291103,"since":70245,"src":["game"],"name":"Serenity","icon":5771177,"school":8,"source":"item","kind":"magic","duration":15000}
+{"key":1291105,"since":70245,"src":["game"],"name":"Stabilized","icon":236307,"school":1,"source":"item","duration":15000}
+{"key":1291782,"since":0,"src":[7],"name":"Skum's Bucket","icon":1063033,"school":1,"source":"item","duration":24000}
+{"key":1292052,"since":70245,"src":["game"],"name":"Bag of Ashen Warlock Bones","description":"Throw the bloodied bones of the Ashen Reign leaders into the slime altar.","icon":133667,"school":1,"source":"item","castTime":1300,"duration":60000}
+{"key":1292139,"since":70245,"src":["game"],"name":"Slimy Pinecone","description":"Throw the pinecones at the workstation altars to let nature retake what has been lost.","icon":656444,"school":1,"source":"item","castTime":1300,"duration":30000}
+{"key":1292252,"since":0,"src":[7],"name":"Worgenbane","icon":133439,"school":2,"source":"item","kind":"magic","duration":4000}
+{"key":1292804,"since":70245,"src":["game"],"name":"Memory of the Mist","description":"Allow a wisp to rejoin its ancestral roots.","icon":135864,"school":1,"source":"item","duration":3000}
+{"key":1292997,"since":0,"src":[7],"name":"Archmagister's Wisdom","icon":135998,"school":64,"source":"item","kind":"magic","castTime":2000,"duration":300000}
+{"key":1293306,"since":0,"src":[7],"name":"Grim Fetish","icon":134172,"school":32,"source":"item","duration":5000}
+{"key":1293740,"since":70245,"src":["game"],"name":"Flask of Natural Accuracy","icon":463902,"school":1,"source":"elixir","duration":7200000}
+{"key":1293741,"since":70245,"src":["game"],"name":"Flask of Natural Aggression","icon":463898,"school":1,"source":"elixir","duration":7200000}
+{"key":1293742,"since":70245,"src":["game"],"name":"Flask of Natural Precision","icon":463900,"school":1,"source":"elixir","duration":7200000}
+{"key":1293743,"since":70245,"src":["game"],"name":"Flask of Natural Accuracy","icon":463901,"school":1,"source":"elixir","duration":7200000}
+{"key":1293820,"since":70245,"src":["game"],"name":"Toy Soldier","icon":458241,"school":64,"source":"item","kind":"magic","duration":20000}
+{"key":1293986,"since":70245,"src":["game"],"name":"Consuming Fel Energies","description":"Use the crystal to temporarily stun the Master of Vessels.","icon":133594,"school":1,"source":"item","castTime":1300,"duration":2000}
+{"key":1294006,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1294007,"since":70245,"src":["game"],"name":"Well Fed","description":"A nutritious meal has made you Well Fed, increasing your movement speed.","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1295271,"since":70245,"src":["game"],"name":"Everlook Delivery Bot","icon":133861,"school":1,"source":"item","duration":20000}
+{"key":1295661,"since":70245,"src":["game"],"name":"Parachute-Priest Pager","icon":133863,"school":1,"source":"item","duration":15000}
+{"key":1296202,"since":70245,"src":["game"],"name":"Rat Familiar","icon":647701,"school":1,"source":"item","castTime":3000,"duration":3600000}
+{"key":1296564,"since":70245,"src":["game"],"name":"Lichbane","icon":133439,"school":2,"source":"item","kind":"magic","duration":6000}
+{"key":1296664,"since":70245,"src":["game"],"name":"Irresistible Scent","icon":463480,"school":1,"source":"item","kind":"magic","duration":20000}
+{"key":1297109,"since":70245,"src":["game"],"name":"Foxtail Ward","icon":134322,"school":1,"source":"item","duration":10000}
+{"key":1297448,"since":70245,"src":["game"],"name":"Field Agent Beverage","icon":132150,"school":1,"source":"item","duration":10000}
+{"key":1297762,"since":70245,"src":["game"],"name":"Propellerstorm","icon":135355,"school":1,"source":"item","duration":15000}
+{"key":1297774,"since":70245,"src":["game"],"name":"Magical Awareness","description":"Suffuse yourself with magical energy, allowing the detection and acquisition of Motes of Unstable Magic from certain spellcasters and powerful enemies.","icon":4638533,"school":1,"source":"item","duration":7200000}
+{"key":1299351,"since":70245,"src":["game"],"name":"Water Walking","icon":132539,"school":1,"source":"item","duration":300000}
+{"key":1299440,"since":70245,"src":["game"],"name":"Demonbane","icon":133442,"school":32,"source":"item","duration":6000}
+{"key":1300752,"since":0,"src":[7],"name":"Heart of the Mountain","icon":134084,"school":1,"source":"item","kind":"magic","duration":20000}
+{"key":1301167,"since":70245,"src":["game"],"name":"Transformative Cocoon","icon":237431,"school":1,"source":"item","duration":5000}
+{"key":1301168,"since":70245,"src":["game"],"name":"Transformative Cocoon","icon":237431,"school":1,"source":"item","duration":8000}
+{"key":1301683,"since":70245,"src":["game"],"name":"Harvester Override Signalcaster","icon":132996,"school":1,"source":"item","castTime":3000,"duration":180000}
+{"key":1302112,"since":70245,"src":["game"],"name":"Bearing the Flame","description":"Hold forth the Torch of Eternal Flame.","icon":135432,"school":1,"source":"item","castTime":3000,"duration":300000}
+{"key":1302113,"since":70245,"src":["game"],"name":"Trail Snack","description":"Eat a handful and make up for lost time on the trail!","icon":132307,"school":1,"source":"item","duration":750}
+{"key":1302285,"since":70245,"src":["game"],"name":"Frog Familiar","icon":2399247,"school":1,"source":"item","castTime":3000,"duration":3600000}
+{"key":1302301,"since":70245,"src":["game"],"name":"Rebuke Elemental","icon":136027,"school":64,"source":"item","kind":"magic","castTime":2500,"duration":20000}
+{"key":1302303,"since":70245,"src":["game"],"name":"Cat Familiar","icon":656575,"school":1,"source":"item","castTime":3000,"duration":3600000}
+{"key":1302833,"since":70245,"src":["game"],"name":"Mirage Mirror","icon":458243,"school":1,"source":"item","duration":10000}
+{"key":1302834,"since":70245,"src":["game"],"name":"Mirror's Mirage","icon":458243,"school":1,"source":"item","duration":10000}
+{"key":1302874,"since":70245,"src":["game"],"name":"Mysticbloom Seed","icon":133436,"school":8,"source":"item","duration":8000}
+{"key":1302875,"since":70245,"src":["game"],"name":"Photosynthesized","icon":134205,"school":8,"source":"item","duration":600000}
+{"key":1302937,"since":70245,"src":["game"],"name":"Consuming Fel Energies","description":"Use the crystal to temporarily stun the Master of Vessels.","icon":133594,"school":1,"source":"item","duration":10000}
+{"key":1303869,"since":70245,"src":["game"],"name":"Toss Hearthstone","description":"Toss a Hearthstone to a wounded Slave Worker, after knocking some sense into them.","icon":1041860,"school":1,"source":"item","castTime":1500,"duration":15000}
+{"key":1307411,"since":70245,"src":["game"],"name":"Lightheaded","description":"Drink me. I'm delicious!","icon":132792,"school":1,"source":"item","duration":45000}
+{"key":1309410,"since":0,"src":[7],"name":"Night Watchman's Torch","description":"Light the Night Watchman's Torch.","icon":135432,"school":1,"source":"item","castTime":1000,"duration":300000}
+{"key":1309728,"since":70245,"src":["game"],"name":"Speed","icon":132219,"school":1,"source":"item","kind":"magic","duration":15000}
+{"key":1309788,"since":70245,"src":["game"],"name":"Confuse Beast","icon":1120424,"school":64,"source":"item","kind":"magic","castTime":2500,"duration":20000}
+{"key":1310077,"since":70245,"src":["game"],"name":"Greater Firepower","icon":134842,"school":2,"source":"elixir","duration":1800000}
+{"key":1310167,"since":70245,"src":["game"],"name":"Loose Clearcutter Blade","icon":134427,"school":1,"source":"item","duration":18000}
+{"key":1310655,"since":70245,"src":["game"],"name":"Winterspring Shroud","icon":134776,"school":8,"source":"potion","duration":600000}
+{"key":1312052,"since":70245,"src":["game"],"name":"Infernal Lasso","icon":136091,"school":4,"source":"item","kind":"magic","duration":6000}
+{"key":1312719,"since":70245,"src":["game"],"name":"Restorative Bread","icon":134062,"school":1,"source":"food","duration":20000}
+{"key":1314412,"since":0,"src":[7],"name":"Renewing Flame","icon":135806,"school":4,"source":"item","duration":10000}
+{"key":1316048,"since":70245,"src":["game"],"name":"Transformative Cocoon","icon":237431,"school":1,"source":"item","duration":5000}
+{"key":1319310,"since":70245,"src":["game"],"name":"Well Fed","description":"A nutritious meal has made you Well Fed, increasing your Armor.","icon":133943,"school":1,"source":"food","duration":900000}
+{"key":1319311,"since":70245,"src":["game"],"name":"Nutritious Food","icon":134062,"school":1,"source":"food","duration":10000}
+{"key":1319421,"since":70245,"src":["game"],"name":"Motivated","description":"Motivate a member of the Deathguard.","icon":133490,"school":1,"source":"item","duration":30000}
+{"key":1320579,"since":0,"src":[7],"name":"Desert Winds","icon":796638,"school":8,"source":"item","kind":"magic","duration":10000}
+{"key":1321323,"since":0,"src":[7],"name":"Shiny Silver Coin","icon":237282,"school":1,"source":"item","duration":1800000}
+{"key":1322587,"since":70245,"src":["game"],"name":"Yay","description":"Cheesecake makes you happy.","icon":237359,"school":1,"source":"food","duration":1200000}
+{"key":1325147,"since":0,"src":[7],"name":"Adventurer's Tent","icon":4624631,"school":1,"source":"item","duration":900000}
+{"key":1326056,"since":0,"src":[7],"name":"Blackthorne's Ward","icon":1769069,"school":8,"source":"item","kind":"magic","duration":1800000}
+{"key":1326475,"since":0,"src":[7],"name":"Flash Bundle","icon":133581,"school":4,"source":"item","castTime":3000,"duration":8000}

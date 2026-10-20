@@ -1,0 +1,421 @@
+{"key":40,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":43,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":47,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":51,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":55,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":59,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":121,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":129,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":140,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":763,"since":70450,"day":"2026-10-18","src":["game"],"quality":2,"bind":2}
+{"key":1127,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":1326475}]}
+{"key":2307,"since":70450,"day":"2026-10-18","src":["game"],"sell":195}
+{"key":2309,"since":70450,"day":"2026-10-18","src":["game"],"sell":217}
+{"key":2315,"since":70450,"day":"2026-10-18","src":["game"],"name":"Gray Leather Boots"}
+{"key":2546,"since":70450,"day":"2026-10-18","src":["game"],"quality":2,"bind":2}
+{"key":2678,"since":70450,"day":"2026-10-18","src":["game"],"sell":2}
+{"key":2776,"since":70450,"day":"2026-10-18","src":["game"],"icon":134571}
+{"key":2848,"since":70450,"day":"2026-10-18","src":["game"],"sell":898}
+{"key":2849,"since":70450,"day":"2026-10-18","src":["game"],"sell":917}
+{"key":2850,"since":70450,"day":"2026-10-18","src":["game"],"sell":1136}
+{"key":2865,"since":70450,"day":"2026-10-18","src":["game"],"sell":577}
+{"key":2866,"since":70450,"day":"2026-10-18","src":["game"],"sell":601}
+{"key":2867,"since":70450,"day":"2026-10-18","src":["game"],"sell":317}
+{"key":2868,"since":70450,"day":"2026-10-18","src":["game"],"sell":507}
+{"key":2946,"since":70450,"day":"2026-10-18","src":["game"],"sell":59}
+{"key":2947,"since":70450,"day":"2026-10-18","src":["game"],"sell":8}
+{"key":3008,"since":70450,"day":"2026-10-18","src":["game"],"quality":2,"bind":2}
+{"key":3107,"since":70450,"day":"2026-10-18","src":["game"],"sell":366}
+{"key":3108,"since":70450,"day":"2026-10-18","src":["game"],"sell":1518}
+{"key":3111,"since":70450,"day":"2026-10-18","src":["game"],"sell":8}
+{"key":3131,"since":70450,"day":"2026-10-18","src":["game"],"sell":59}
+{"key":3135,"since":70450,"day":"2026-10-18","src":["game"],"sell":366}
+{"key":3137,"since":70450,"day":"2026-10-18","src":["game"],"sell":1518}
+{"key":3322,"since":70450,"day":"2026-10-18","src":["game"],"quality":2,"itemLevel":10,"minLevel":5,"bind":2}
+{"key":3323,"since":70450,"day":"2026-10-18","src":["game"],"quality":2,"bind":2}
+{"key":3463,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":35,"sell":5426}
+{"key":3481,"since":70450,"day":"2026-10-18","src":["game"],"sell":916}
+{"key":3482,"since":70450,"day":"2026-10-18","src":["game"],"sell":918}
+{"key":3487,"since":70450,"day":"2026-10-18","src":["game"],"sell":1135}
+{"key":3488,"since":70450,"day":"2026-10-18","src":["game"],"sell":480}
+{"key":3489,"since":70450,"day":"2026-10-18","src":["game"],"sell":715}
+{"key":3490,"since":70450,"day":"2026-10-18","src":["game"],"sell":2044}
+{"key":3837,"since":70450,"day":"2026-10-18","src":["game"],"sell":3084}
+{"key":3848,"since":70450,"day":"2026-10-18","src":["game"],"sell":915}
+{"key":3853,"since":70450,"day":"2026-10-18","src":["game"],"sell":8615}
+{"key":3854,"since":70450,"day":"2026-10-18","src":["game"],"sell":8860}
+{"key":3856,"since":70450,"day":"2026-10-18","src":["game"],"sell":10386}
+{"key":4251,"since":70450,"day":"2026-10-18","src":["game"],"sell":659}
+{"key":4369,"since":70450,"day":"2026-10-18","src":["game"],"sell":790}
+{"key":5379,"since":70450,"day":"2026-10-18","src":["game"],"sell":39}
+{"key":5441,"since":70450,"day":"2026-10-18","src":["game"],"sell":25}
+{"key":6040,"since":70450,"day":"2026-10-18","src":["game"],"sell":1315}
+{"key":6122,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":6127,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":6138,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":6147,"since":70450,"day":"2026-10-18","src":["game"],"quality":2,"bind":2}
+{"key":6201,"since":70450,"day":"2026-10-18","src":["game"],"quality":2,"bind":2}
+{"key":6202,"since":70450,"day":"2026-10-18","src":["game"],"quality":2,"bind":2}
+{"key":6214,"since":70450,"day":"2026-10-18","src":["game"],"sell":466}
+{"key":6730,"since":70450,"day":"2026-10-18","src":["game"],"sell":298}
+{"key":6731,"since":70450,"day":"2026-10-18","src":["game"],"sell":690}
+{"key":6773,"since":70450,"day":"2026-10-18","src":["game"],"minLevel":35}
+{"key":6774,"since":70450,"day":"2026-10-18","src":["game"],"minLevel":35}
+{"key":6788,"since":70450,"day":"2026-10-18","src":["game"],"minLevel":35}
+{"key":6789,"since":70450,"day":"2026-10-18","src":["game"],"minLevel":35}
+{"key":7922,"since":70450,"day":"2026-10-18","src":["game"],"sell":1944}
+{"key":7944,"since":70450,"day":"2026-10-18","src":["game"],"sell":14671}
+{"key":7946,"since":70450,"day":"2026-10-18","src":["game"],"sell":14460}
+{"key":7956,"since":70450,"day":"2026-10-18","src":["game"],"sell":1544}
+{"key":7963,"since":70450,"day":"2026-10-18","src":["game"],"sell":5615}
+{"key":8051,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":10113,"text":"Shoots a flare into the air while Taskmaster Fizzule is nearby."}]}
+{"key":8175,"since":70450,"day":"2026-10-18","src":["game"],"sell":3881}
+{"key":8176,"since":70450,"day":"2026-10-18","src":["game"],"sell":2922}
+{"key":10008,"since":70450,"day":"2026-10-18","src":["game"],"sell":3492}
+{"key":10423,"since":70450,"day":"2026-10-18","src":["game"],"sell":2366}
+{"key":11287,"since":70450,"day":"2026-10-18","src":["game"],"sell":110}
+{"key":11288,"since":70450,"day":"2026-10-18","src":["game"],"sell":200}
+{"key":11289,"since":70450,"day":"2026-10-18","src":["game"],"sell":450}
+{"key":12260,"since":70450,"day":"2026-10-18","src":["game"],"sell":8165}
+{"key":12764,"since":70450,"day":"2026-10-18","src":["game"],"sell":23534}
+{"key":14894,"since":70450,"day":"2026-10-18","src":["game"],"unique":1}
+{"key":15053,"since":70450,"day":"2026-10-18","src":["game"],"sell":9501}
+{"key":15054,"since":70450,"day":"2026-10-18","src":["game"],"sell":8007}
+{"key":15326,"since":70450,"day":"2026-10-18","src":["game"],"sell":4962}
+{"key":15327,"since":70450,"day":"2026-10-18","src":["game"],"sell":4962}
+{"key":19218,"since":70450,"day":"2026-10-18","src":["game"],"quality":3}
+{"key":19308,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60,"minLevel":55}
+{"key":19309,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60,"minLevel":55}
+{"key":19310,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60,"minLevel":55}
+{"key":19311,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60,"minLevel":55}
+{"key":19312,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60,"minLevel":55}
+{"key":19315,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60,"minLevel":55}
+{"key":19321,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60}
+{"key":19323,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60,"minLevel":55}
+{"key":19324,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60,"minLevel":55}
+{"key":19325,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60,"minLevel":55}
+{"key":20069,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60,"minLevel":55}
+{"key":20070,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60,"minLevel":55}
+{"key":20086,"since":70450,"day":"2026-10-18","src":["game"],"sell":19878}
+{"key":20214,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60,"minLevel":55}
+{"key":20220,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60,"minLevel":55}
+{"key":20558,"since":70450,"day":"2026-10-18","src":["game"],"stack":30,"unique":30}
+{"key":20559,"since":70450,"day":"2026-10-18","src":["game"],"stack":30,"unique":30}
+{"key":20560,"since":70450,"day":"2026-10-18","src":["game"],"stack":30,"unique":30}
+{"key":20744,"since":70450,"day":"2026-10-18","src":["game"],"sell":100}
+{"key":20745,"since":70450,"day":"2026-10-18","src":["game"],"sell":500}
+{"key":20814,"since":70450,"day":"2026-10-18","src":["game"],"sell":23806}
+{"key":21135,"since":70450,"day":"2026-10-18","src":["game"],"sell":43186}
+{"key":21563,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":60}
+{"key":23324,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":210781,"since":70450,"day":"2026-10-18","src":["game"],"sell":744}
+{"key":211269,"since":70450,"day":"2026-10-18","src":["game"],"minLevel":26,"unique":1}
+{"key":217287,"since":70450,"day":"2026-10-18","src":["game"],"sell":600}
+{"key":221192,"since":70450,"day":"2026-10-18","src":["game"],"quality":2,"subclass":4}
+{"key":221518,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":53,"speed":3.4}
+{"key":227924,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":228980,"since":70450,"day":"2026-10-18","src":["game"],"sell":400}
+{"key":247238,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":1244625,"text":"Siphon magic from a Leyline Rift."}]}
+{"key":247789,"since":70450,"day":"2026-10-18","src":["game"],"sell":5}
+{"key":249144,"since":70450,"day":"2026-10-18","src":["game"],"sell":1000}
+{"key":249232,"since":70450,"day":"2026-10-18","src":["game"],"sell":2000}
+{"key":249234,"since":70450,"day":"2026-10-18","src":["game"],"sell":1500}
+{"key":249237,"since":70450,"day":"2026-10-18","src":["game"],"sell":2500}
+{"key":249394,"since":70450,"day":"2026-10-18","src":["game"],"sell":499}
+{"key":249395,"since":70450,"day":"2026-10-18","src":["game"],"sell":496}
+{"key":249396,"since":70450,"day":"2026-10-18","src":["game"],"sell":499}
+{"key":249397,"since":70450,"day":"2026-10-18","src":["game"],"sell":450}
+{"key":249398,"since":70450,"day":"2026-10-18","src":["game"],"sell":499}
+{"key":249409,"since":70450,"day":"2026-10-18","src":["game"],"sell":75,"description":"Crafted by alchemists."}
+{"key":249410,"since":70450,"day":"2026-10-18","src":["game"],"description":"Crafted by alchemists."}
+{"key":249430,"since":70450,"day":"2026-10-18","src":["game"],"description":"Crafted by alchemists."}
+{"key":249431,"since":70450,"day":"2026-10-18","src":["game"],"description":"Crafted by alchemists."}
+{"key":249441,"since":70450,"day":"2026-10-18","src":["game"],"sell":2001}
+{"key":249442,"since":70450,"day":"2026-10-18","src":["game"],"sell":2655}
+{"key":249443,"since":70450,"day":"2026-10-18","src":["game"],"sell":4752}
+{"key":249534,"since":70450,"day":"2026-10-18","src":["game"],"description":"Teaches you how to permanently enchant gloves to increase Arcane damage by up to 20."}
+{"key":249535,"since":70450,"day":"2026-10-18","src":["game"],"description":"Teaches you how to permanently enchant gloves to increase Nature damage by up to 20."}
+{"key":249536,"since":70450,"day":"2026-10-18","src":["game"],"description":"Teaches you how to permanently enchant gloves to increase Holy damage by up to 20."}
+{"key":249726,"since":70450,"day":"2026-10-18","src":["game"],"sell":3000}
+{"key":249879,"since":70450,"day":"2026-10-18","src":["game"],"sell":10}
+{"key":249895,"since":70450,"day":"2026-10-18","src":["game"],"bind":1,"effects":[{"trigger":"learn","spell":1250013},{"trigger":"use","spell":55884}],"description":"Teaches you how to summon this companion."}
+{"key":249896,"since":70450,"day":"2026-10-18","src":["game"],"bind":1,"effects":[{"trigger":"learn","spell":1250014},{"trigger":"use","spell":55884}],"description":"Teaches you how to summon this companion."}
+{"key":249897,"since":70450,"day":"2026-10-18","src":["game"],"bind":1,"effects":[{"trigger":"learn","spell":1250015},{"trigger":"use","spell":55884}],"description":"Teaches you how to summon this companion."}
+{"key":249898,"since":70450,"day":"2026-10-18","src":["game"],"bind":1,"effects":[{"trigger":"learn","spell":1250016},{"trigger":"use","spell":55884}],"description":"Teaches you how to summon this companion."}
+{"key":250173,"since":70450,"day":"2026-10-18","src":["game"],"sell":5000}
+{"key":250327,"since":70450,"day":"2026-10-18","src":["game"],"name":"Potion of Predatory Senses"}
+{"key":250363,"since":70450,"day":"2026-10-18","src":["game"],"name":"Recipe: Potion of Predatory Senses","description":"Teaches you how to craft Potion of Predatory Senses."}
+{"key":250482,"since":70450,"day":"2026-10-18","src":["game"],"sell":256}
+{"key":250486,"since":70450,"day":"2026-10-18","src":["game"],"sell":490}
+{"key":250487,"since":70450,"day":"2026-10-18","src":["game"],"sell":485}
+{"key":250490,"since":70450,"day":"2026-10-18","src":["game"],"sell":488}
+{"key":250491,"since":70450,"day":"2026-10-18","src":["game"],"sell":313}
+{"key":250492,"since":70450,"day":"2026-10-18","src":["game"],"sell":456}
+{"key":250495,"since":70450,"day":"2026-10-18","src":["game"],"sell":788}
+{"key":250496,"since":70450,"day":"2026-10-18","src":["game"],"sell":781}
+{"key":250497,"since":70450,"day":"2026-10-18","src":["game"],"sell":801}
+{"key":250500,"since":70450,"day":"2026-10-18","src":["game"],"sell":1101}
+{"key":250501,"since":70450,"day":"2026-10-18","src":["game"],"sell":1088}
+{"key":250502,"since":70450,"day":"2026-10-18","src":["game"],"sell":1024}
+{"key":250546,"since":70450,"day":"2026-10-18","src":["game"],"sell":3321}
+{"key":250547,"since":70450,"day":"2026-10-18","src":["game"],"sell":3351}
+{"key":250548,"since":70450,"day":"2026-10-18","src":["game"],"sell":3357}
+{"key":250550,"since":70450,"day":"2026-10-18","src":["game"],"sell":3388}
+{"key":250603,"since":70450,"day":"2026-10-18","src":["game"],"sell":488}
+{"key":250605,"since":70450,"day":"2026-10-18","src":["game"],"sell":2501}
+{"key":250608,"since":70450,"day":"2026-10-18","src":["game"],"sell":4356}
+{"key":250609,"since":70450,"day":"2026-10-18","src":["game"],"sell":4079}
+{"key":250611,"since":70450,"day":"2026-10-18","src":["game"],"sell":4133}
+{"key":250612,"since":70450,"day":"2026-10-18","src":["game"],"sell":10273}
+{"key":250616,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57,"minLevel":52}
+{"key":250621,"since":70450,"day":"2026-10-18","src":["game"],"sell":243}
+{"key":250999,"since":70450,"day":"2026-10-18","src":["game"],"bind":1,"sell":2500}
+{"key":251291,"since":70450,"day":"2026-10-18","src":["game"],"sell":1500}
+{"key":251468,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":252534,"since":70450,"day":"2026-10-18","src":["game"],"name":"Prowler's Leather Shoulders"}
+{"key":252536,"since":70450,"day":"2026-10-18","src":["game"],"name":"Warden's Leather Shoulders"}
+{"key":252537,"since":70450,"day":"2026-10-18","src":["game"],"name":"Skycaller's Leather Shoulders"}
+{"key":252538,"since":70450,"day":"2026-10-18","src":["game"],"name":"Mender's Leather Shoulders"}
+{"key":252554,"since":70450,"day":"2026-10-18","src":["game"],"name":"Blue Suede Shoulders"}
+{"key":252556,"since":70450,"day":"2026-10-18","src":["game"],"name":"Wicked Leather Shoulders"}
+{"key":252566,"since":70450,"day":"2026-10-18","src":["game"],"name":"Stalker's Mail Shoulders"}
+{"key":252567,"since":70450,"day":"2026-10-18","src":["game"],"name":"Skycaller's Mail Shoulders"}
+{"key":252568,"since":70450,"day":"2026-10-18","src":["game"],"name":"Skirmisher's Mail Shoulders"}
+{"key":252569,"since":70450,"day":"2026-10-18","src":["game"],"name":"Mender's Mail Shoulders"}
+{"key":252583,"since":70450,"day":"2026-10-18","src":["game"],"name":"Charged Scorpid Shoulders"}
+{"key":252592,"since":70450,"day":"2026-10-18","src":["game"],"name":"Supple Scorpid Shoulders"}
+{"key":252848,"since":70450,"day":"2026-10-18","src":["game"],"name":"Pattern: Prowler's Leather Shoulders","description":"Teaches you how to craft Prowler's Leather Shoulders."}
+{"key":252850,"since":70450,"day":"2026-10-18","src":["game"],"name":"Pattern: Warden's Leather Shoulders","description":"Teaches you how to craft Warden's Leather Shoulders."}
+{"key":252851,"since":70450,"day":"2026-10-18","src":["game"],"name":"Pattern: Skycaller's Leather Shoulders","description":"Teaches you how to craft Skycaller's Leather Shoulders."}
+{"key":252852,"since":70450,"day":"2026-10-18","src":["game"],"name":"Pattern: Mender's Leather Shoulders","description":"Teaches you how to craft Mender's Leather Shoulders."}
+{"key":252881,"since":70450,"day":"2026-10-18","src":["game"],"name":"Pattern: Blue Suede Shoulders","description":"Teaches you how to craft Blue Suede Shoulders."}
+{"key":252884,"since":70450,"day":"2026-10-18","src":["game"],"name":"Pattern: Wicked Leather Shoulders","description":"Teaches you how to craft Wicked Leather Shoulders."}
+{"key":252900,"since":70450,"day":"2026-10-18","src":["game"],"name":"Pattern: Stalker's Mail Shoulders","description":"Teaches you how to craft Stalker's Mail Shoulders."}
+{"key":252901,"since":70450,"day":"2026-10-18","src":["game"],"name":"Pattern: Skycaller's Mail Shoulders","description":"Teaches you how to craft Skycaller's Mail Shoulders."}
+{"key":252902,"since":70450,"day":"2026-10-18","src":["game"],"name":"Pattern: Skirmisher's Mail Shoulders","description":"Teaches you how to craft Skirmisher's Mail Shoulders."}
+{"key":252903,"since":70450,"day":"2026-10-18","src":["game"],"name":"Pattern: Mender's Mail Shoulders","description":"Teaches you how to craft Mender's Mail Shoulders."}
+{"key":252917,"since":70450,"day":"2026-10-18","src":["game"],"name":"Pattern: Charged Scorpid Shoulders","description":"Teaches you how to craft Charged Scorpid Shoulders."}
+{"key":252926,"since":70450,"day":"2026-10-18","src":["game"],"name":"Pattern: Supple Scorpid Shoulders","description":"Teaches you how to craft Supple Scorpid Shoulders."}
+{"key":253667,"since":70450,"day":"2026-10-18","src":["game"],"sell":1250}
+{"key":254123,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57,"minLevel":52}
+{"key":254124,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":254584,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":255010,"since":70450,"day":"2026-10-18","src":["game"],"class":12,"subclass":0,"bind":4}
+{"key":258530,"since":70450,"day":"2026-10-18","src":["game"],"bind":4}
+{"key":258771,"since":70450,"day":"2026-10-18","src":["game"],"name":"Al'Aketh Cultist's Ear","description":"You can't help but wonder what the Nightclaw plans to do with all these ears."}
+{"key":260307,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":58}
+{"key":260828,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":260829,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":260830,"since":70450,"day":"2026-10-18","src":["game"],"class":0}
+{"key":264239,"since":70450,"day":"2026-10-18","src":["game"],"description":"Teaches you how to make EZ-Thro Magnetic Displacer."}
+{"key":265359,"since":70450,"day":"2026-10-18","src":["game"],"quality":0}
+{"key":265360,"since":70450,"day":"2026-10-18","src":["game"],"quality":0}
+{"key":266158,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":1277794,"text":"Begins taming a Rockhide Boar to be your companion for 10 min. If you lose the beast's attention for any reason, the taming process will fail."}]}
+{"key":266253,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":1278028,"text":"Begins taming a Gray Forest Wolf to be your companion for 10 min. If you lose the beast's attention for any reason, the taming process will fail."}]}
+{"key":266254,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":1278029,"text":"Begins taming a Young Forest Bear to be your companion for 10 min. If you lose the beast's attention for any reason, the taming process will fail."}]}
+{"key":267079,"since":70450,"day":"2026-10-18","src":["game"],"name":"Staff of the Mountain","quality":2,"icon":135162,"effects":[{"trigger":"use","spell":1279523,"text":"Dispel the warding magic from a member of the Blackthorn Pact."}]}
+{"key":267272,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":1280003,"text":"Begins taming a Windsong Crawler to be your companion for 10 min. If you lose the beast's attention for any reason, the taming process will fail."}]}
+{"key":267298,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":1280046,"text":"Begins taming an Ornery Galestrider to be your companion for 10 min. If you lose the beast's attention for any reason, the taming process will fail."}]}
+{"key":268298,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":1279523,"text":"Dispel the warding magic from a member of the Blackthorn Pact."}]}
+{"key":268484,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"hit","spell":1282482,"text":"Sear certain enchanted targets with blazing light causing them to take additional damage from Holy attacks and spells."}]}
+{"key":268521,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":1289718,"text":"Swat a Young Paletusk, sending them back to Bolder'ok."}]}
+{"key":268580,"since":70450,"day":"2026-10-18","src":["game"],"stack":25,"unique":25}
+{"key":268582,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":1282953,"text":"Begins the final ritual summoning."}]}
+{"key":270106,"since":70450,"day":"2026-10-18","src":["game"],"sell":17526}
+{"key":271658,"since":70450,"day":"2026-10-18","src":["game"],"quality":0,"subclass":1}
+{"key":271659,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":271661,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":271662,"since":70450,"day":"2026-10-18","src":["game"],"quality":0,"subclass":1}
+{"key":271664,"since":70450,"day":"2026-10-18","src":["game"],"quality":2}
+{"key":271665,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":271666,"since":70450,"day":"2026-10-18","src":["game"],"quality":0,"subclass":1}
+{"key":271667,"since":70450,"day":"2026-10-18","src":["game"],"quality":2}
+{"key":271668,"since":70450,"day":"2026-10-18","src":["game"],"subclass":2}
+{"key":271670,"since":70450,"day":"2026-10-18","src":["game"],"quality":2}
+{"key":271671,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":271672,"since":70450,"day":"2026-10-18","src":["game"],"quality":0,"subclass":1}
+{"key":271673,"since":70450,"day":"2026-10-18","src":["game"],"subclass":1}
+{"key":271674,"since":70450,"day":"2026-10-18","src":["game"],"quality":0,"subclass":1}
+{"key":271722,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271723,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271724,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271725,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271726,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271727,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271728,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271729,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271730,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271731,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271732,"since":70450,"day":"2026-10-18","src":["game"],"quality":2}
+{"key":271733,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271734,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271735,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271736,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271737,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271738,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271739,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271740,"since":70450,"day":"2026-10-18","src":["game"],"quality":2}
+{"key":271742,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271743,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271744,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271746,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271747,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271748,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271749,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271750,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271751,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271752,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271753,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271754,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271755,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271756,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271757,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271758,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271759,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271760,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271761,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271762,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271763,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271764,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271765,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":271769,"since":70450,"day":"2026-10-18","src":["game"],"quality":2}
+{"key":271794,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":38,"minLevel":35,"sell":12329}
+{"key":271795,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":38,"minLevel":35,"sell":12373}
+{"key":271796,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":38,"minLevel":35,"sell":8987}
+{"key":271797,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":38,"minLevel":35,"sell":11276}
+{"key":271798,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":38,"minLevel":35,"sell":5796}
+{"key":271799,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":38,"minLevel":35,"sell":9091}
+{"key":271800,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":42,"minLevel":35,"sell":18624}
+{"key":271801,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":42,"minLevel":35,"sell":18693,"speed":3.2}
+{"key":271802,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":42,"minLevel":35,"sell":15012}
+{"key":271803,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":42,"minLevel":35,"sell":18836}
+{"key":271804,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":42,"minLevel":35,"sell":15126}
+{"key":271805,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":42,"minLevel":35,"sell":6072}
+{"key":272184,"since":70450,"day":"2026-10-18","src":["game"],"quality":2}
+{"key":272185,"since":70450,"day":"2026-10-18","src":["game"],"quality":2}
+{"key":272427,"since":70450,"day":"2026-10-18","src":["game"],"icon":134912}
+{"key":273496,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":13622}]}
+{"key":273499,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":13635}]}
+{"key":273518,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":13746}]}
+{"key":273552,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":20015}]}
+{"key":273654,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":29}
+{"key":273658,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":23,"minLevel":23}
+{"key":273845,"since":70450,"day":"2026-10-18","src":["game"],"name":"Faintly Glowing Staff","icon":4636981}
+{"key":274373,"since":70450,"day":"2026-10-18","src":["game"],"name":"Barkskin Purification Tonic"}
+{"key":274391,"since":70450,"day":"2026-10-18","src":["game"],"name":"Formula: Enchant Off Hand - Superior Intellect","description":"Teaches you how to permanently enchant an Off Hand to give +9 Intellect."}
+{"key":274392,"since":70450,"day":"2026-10-18","src":["game"],"name":"Formula: Enchant Off Hand - Excellent Spirit","description":"Teaches you how to permanently enchant an Off Hand to give +12 Spirit."}
+{"key":274393,"since":70450,"day":"2026-10-18","src":["game"],"name":"Formula: Enchant Off Hand - Wisdom","description":"Teaches you how to permanently enchant an Off Hand to give +6 Intellect and +5 Spirit."}
+{"key":274415,"since":70450,"day":"2026-10-18","src":["game"],"sell":1000}
+{"key":274718,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":274719,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":274720,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":274721,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":274895,"since":70450,"day":"2026-10-18","src":["game"],"stack":30,"unique":30}
+{"key":274915,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":38}
+{"key":274916,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":38}
+{"key":274918,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":38}
+{"key":274922,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":38}
+{"key":274928,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":39}
+{"key":274929,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":39}
+{"key":274938,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":40}
+{"key":274939,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":40}
+{"key":274940,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":40}
+{"key":274941,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":40}
+{"key":274942,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":40}
+{"key":274943,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":40}
+{"key":274944,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":40}
+{"key":274946,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":40}
+{"key":274955,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":42}
+{"key":274957,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":38}
+{"key":274958,"since":70450,"day":"2026-10-18","src":["game"],"bind":1}
+{"key":274961,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":39}
+{"key":274963,"since":70450,"day":"2026-10-18","src":["game"],"quality":2,"itemLevel":42}
+{"key":275347,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":59}
+{"key":275390,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":59}
+{"key":275434,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":59}
+{"key":275439,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":275441,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":275633,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":275669,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":59}
+{"key":275671,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":59}
+{"key":275685,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":59}
+{"key":275715,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":275729,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":275736,"since":70450,"day":"2026-10-18","src":["game"],"name":"Horn of Ve'han"}
+{"key":275737,"since":70450,"day":"2026-10-18","src":["game"],"name":"Hermit's Pauldron"}
+{"key":275738,"since":70450,"day":"2026-10-18","src":["game"],"name":"Jereman's Bauble"}
+{"key":275827,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":56}
+{"key":275832,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":275833,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":275957,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":1298392,"text":"Temporarily transforms a demon in Dae'gun."}]}
+{"key":276088,"since":70450,"day":"2026-10-18","src":["game"],"name":"Metal Bracket"}
+{"key":276105,"since":70450,"day":"2026-10-18","src":["game"],"quality":2}
+{"key":276204,"since":70450,"day":"2026-10-18","src":["game"],"subclass":6}
+{"key":276332,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":276333,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":276334,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":276337,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":59}
+{"key":276338,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":276339,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":57}
+{"key":276538,"since":70450,"day":"2026-10-18","src":["game"],"sell":40208,"classes":[7]}
+{"key":276539,"since":70450,"day":"2026-10-18","src":["game"],"sell":20181,"classes":[7]}
+{"key":276540,"since":70450,"day":"2026-10-18","src":["game"],"sell":30523,"classes":[7]}
+{"key":276541,"since":70450,"day":"2026-10-18","src":["game"],"sell":30639,"classes":[7]}
+{"key":276891,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":29}
+{"key":276892,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":29}
+{"key":276895,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":30}
+{"key":277200,"since":70450,"day":"2026-10-18","src":["game"],"sell":62}
+{"key":277215,"since":70450,"day":"2026-10-18","src":["game"],"name":"Plain Handwraps","itemLevel":58}
+{"key":277222,"since":70450,"day":"2026-10-18","src":["game"],"name":"War Painted Cuffs","itemLevel":58}
+{"key":277254,"since":70450,"day":"2026-10-18","src":["game"],"minLevel":40}
+{"key":277977,"since":70450,"day":"2026-10-18","src":["game"],"sell":62}
+{"key":279173,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":279174,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":279175,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":279176,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":279177,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":279178,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":279179,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":279180,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":279181,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":279182,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":279274,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":1}
+{"key":279450,"since":70450,"day":"2026-10-18","src":["game"],"quality":2}
+{"key":279936,"since":70450,"day":"2026-10-18","src":["game"],"sell":62}
+{"key":279939,"since":70450,"day":"2026-10-18","src":["game"],"sell":62}
+{"key":280088,"since":70450,"day":"2026-10-18","src":["game"],"sell":62}
+{"key":280308,"since":70450,"day":"2026-10-18","src":["game"],"sell":1033}
+{"key":280311,"since":70450,"day":"2026-10-18","src":["game"],"sell":3764}
+{"key":280312,"since":70450,"day":"2026-10-18","src":["game"],"sell":3784}
+{"key":280313,"since":70450,"day":"2026-10-18","src":["game"],"sell":2201}
+{"key":280331,"since":70450,"day":"2026-10-18","src":["game"],"effects":[{"trigger":"use","spell":1308246,"text":"Offer the flesh to Carnage, the Razormaw alpha."}]}
+{"key":280404,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":280417,"since":70450,"day":"2026-10-18","src":["game"],"bind":4}
+{"key":280604,"since":70450,"day":"2026-10-18","src":["game"],"speed":3.2}
+{"key":280614,"since":70450,"day":"2026-10-18","src":["game"],"quality":3}
+{"key":280623,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":280729,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":280740,"since":70450,"day":"2026-10-18","src":["game"],"quality":1}
+{"key":280766,"since":70450,"day":"2026-10-18","src":["game"],"quality":2}
+{"key":281031,"since":70450,"day":"2026-10-18","src":["game"],"minLevel":5}
+{"key":281142,"since":70450,"day":"2026-10-18","src":["game"],"minLevel":18}
+{"key":281143,"since":70450,"day":"2026-10-18","src":["game"],"minLevel":18}
+{"key":281145,"since":70450,"day":"2026-10-18","src":["game"],"minLevel":18}
+{"key":281147,"since":70450,"day":"2026-10-18","src":["game"],"minLevel":18}
+{"key":281282,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":47}
+{"key":281290,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":26}
+{"key":281295,"since":70450,"day":"2026-10-18","src":["game"],"itemLevel":29}
+{"key":281348,"since":70450,"day":"2026-10-18","src":["game"],"stack":1,"unique":1}
+{"key":281349,"since":70450,"day":"2026-10-18","src":["game"],"stack":1,"unique":1}
+{"key":281352,"since":70450,"day":"2026-10-18","src":["game"],"stack":1,"unique":1}
+{"key":281356,"since":70450,"day":"2026-10-18","src":["game"],"unique":1}
+{"key":281660,"since":70450,"day":"2026-10-18","src":["game"],"sell":2531}
+{"key":285275,"since":70450,"day":"2026-10-18","src":["game"],"sell":821}
+{"key":285276,"since":70450,"day":"2026-10-18","src":["game"],"sell":4484}
+{"key":285277,"since":70450,"day":"2026-10-18","src":["game"],"sell":13124}
+{"key":285278,"since":70450,"day":"2026-10-18","src":["game"],"sell":26602}
+{"key":285279,"since":70450,"day":"2026-10-18","src":["game"],"sell":1411}
+{"key":285280,"since":70450,"day":"2026-10-18","src":["game"],"sell":7658}
+{"key":285281,"since":70450,"day":"2026-10-18","src":["game"],"sell":26186}
+{"key":286724,"since":70450,"day":"2026-10-18","src":["game"],"icon":8517112}
+{"key":287090,"since":70450,"day":"2026-10-18","src":["game"],"name":"Letter Opener"}

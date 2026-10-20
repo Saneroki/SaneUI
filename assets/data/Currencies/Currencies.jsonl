@@ -1,0 +1,7 @@
+{"key":515,"since":70245,"src":["game"],"name":"Darkmoon Prize Ticket","description":"Awarded for winning games or doing favors at the Darkmoon Faire.","icon":134481,"quality":1}
+{"key":1792,"since":70245,"src":["game"],"name":"Honor Points","description":"Honor is gained by killing members of the opposite faction in PvP combat. You can use honor points to purchase special items.","quality":1,"cap":25000}
+{"key":3402,"since":70245,"src":["game"],"name":"Merchant's Favor","description":"Worth a considerable amount of gold and thus used as an interim currency among high-traffic merchant organizations. Members of the Durotar Supply and Logistics or Azeroth Commerce Authority would be willing to trade for this.","icon":135725,"quality":2}
+{"key":3468,"since":70245,"src":["game"],"name":"Rank Points","description":"Rank points are gained by completing tasks given in Gadgetzan or participating in battlegrounds. Rank points increase your PvP Rank which grants you access to purchase special items.","icon":2022762,"quality":1}
+{"key":3469,"since":70245,"src":["game"],"name":"Tarnished Undermine Real","description":"This currency is slowly being phased out of circulation, but it still enjoys a very favorable exchange rate at goblin towns throughout the Eastern Kingdoms and Kalimdor.","icon":133799,"quality":2,"cap":165}
+{"key":3473,"since":70245,"src":["game"],"name":"Renown - PvP Rank","description":"[DNT]","quality":0,"cap":14}
+{"key":3485,"since":70245,"src":["game"],"name":"Renown - Legacy Rank","quality":0,"cap":90}

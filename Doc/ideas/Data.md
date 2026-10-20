@@ -625,6 +625,11 @@ two differ, the difference is learned for the next release.
   last crawl becomes a new version by itself.
 - **After every patch** one crawl of each kind is enough to keep the history complete.
 - **Before our first crawl:** staged facts of older builds can fill in earlier versions (*Import*).
+- **From the client's files** (Saneroki, 2026-10-20): `dev/tools/game-data` reads a build's client tables, and
+  a beta's hotfixes, into staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy and
+  Currencies, so these sets are filled before the crawl is built. What the client works out itself (an item's
+  stats, armour and weapon damage; texts with `$` the game fills in) is left to the crawl. What only the beta's
+  server sent is live's base as a batch (decision 27), unverified there.
 
 ### The patch check: a new build at login
 
