@@ -653,6 +653,20 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   - Built from the game's data alone (the ground from its own textures, the tiling broken up, water by its real
     depth, the minimap's buildings and trees enlarged by an upscaling model): faithful by construction, but soft
     and game-like; kept as the way to fall back on.
+  - The game's own textures without their repeats (Saneroki's idea, 2026-10-20): each ground texture laid 8 by 8
+    times and painted by the edit model as one patch of the same ground (21 seconds each, all 421 in about two
+    and a half hours). The repeats go and the materials stay, except Darnassus' bark (painted as pebbles; its
+    planks are drawn by the blend maps, which keep them) and the game's two blank placeholder textures (left out).
+    The map built from them: the best fine layout and the game's colours, still game-like; painted over with the
+    edit words it drifts more than the chosen method (fine layout 0.82 against 0.90). Fixed on the way: texture
+    pieces placed by the continent, not the tile, and blend maps enlarged per tile, not per chunk (both drew
+    straight lines), heights interpolated smoothly and softened for the light (they drew stair steps).
+  - A blind check (2026-10-20): 24 squares drawn at random from the plan, both continents: every one faithful in
+    shape (layout on land 0.95, the hard places 0.98), 3 failing the water check (a lake painted dark teal; a
+    bluish forest and snow shadows taken for water), repainted by the run. One invention: on Loch Modan's blank
+    plateau beyond its mountains (one plain filler texture, out of the players' reach) a field and a row of pines
+    on a narrow ridge. A sentence that plain areas stay plain did not help. Next to try: where the game's data
+    says a chunk is that one plain filler, the map shows the game's own ground built from its data.
 - **Checked against the game:** every painting is compared with the game's water (its liquids, and the
   speckled blue-grey the minimap draws for a city's canals) and lava: broad sheets of water where the game has
   none, or of the game's water painted as land, fail it (a shore that strays a few yards does not), and the
