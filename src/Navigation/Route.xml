@@ -1,0 +1,10 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <!--
+        The glint's pulse along the route's lines (Route.lua): the engine moves the glint's art by one repeat,
+        towards the line's end (the way's next point), so nothing of ours runs every frame. The game makes a
+        TextureCoordTranslation only from XML: one made in Lua has no SetOffset.
+    -->
+    <AnimationGroup name="SaneUINavigationGlintTemplate" looping="REPEAT" virtual="true">
+        <TextureCoordTranslation duration="1.2" offsetU="-1" offsetV="0"/>
+    </AnimationGroup>
+</Ui>

@@ -37,7 +37,8 @@ Art.lua
 Painted.lua
 # A quest's areas, as the game shades them, over each zone in view
 Areas.lua
-# The golden line of the way to the map pin
+# The golden line of the way to the map pin: its pulse (the game makes that animation only from XML), its lines
+Route.xml
 Route.lua
 # The pins drawn: a button each, in the game's own looks
 PinView.lua

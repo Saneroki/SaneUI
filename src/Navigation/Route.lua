@@ -13,10 +13,10 @@ local _, ns = ...
 --  Each leg's points are joined by the game's Line widgets from a pool, only the
 --  parts in view: under them a dark edge, over them the game's dependency bar art
 --  tinted gold, and over that its glint, moved along the line by the engine (a
---  TextureCoordTranslation animation, as the game's talent lines move theirs), so
---  nothing of ours runs every frame for the pulse. A walk is golden; a flight
---  pale gold; a boat's or zeppelin's way red, as the plan has the ships' routes;
---  the hearthstone's pale blue, straight to its place.
+--  TextureCoordTranslation animation from Route.xml, as the game's talent lines
+--  move theirs), so nothing of ours runs every frame for the pulse. A walk is
+--  golden; a flight pale gold; a boat's or zeppelin's way red, as the plan has the
+--  ships' routes; the hearthstone's pale blue, straight to its place.
 -------------------------------------------------------------------------------
 local Coords = ns.Coords
 local Route = {}
@@ -27,7 +27,9 @@ Route.FILL = "Interface\\Artifacts\\_Artifacts-DependencyBar-Fill"
 Route.GLINT = "Interface\\Artifacts\\_Artifacts-DependencyBar-FillScroll1"
 Route.THICK = 6     -- the line's thickness in units; its edge a little thicker
 Route.PERIOD = 48   -- units along the line one repeat of the art takes
-Route.PULSE = 1.2   -- seconds the glint takes for one repeat
+-- The glint's pulse (Route.xml: one repeat in 1.2 seconds). The game makes this animation only from
+-- XML; until it has read the file (a restart after it came) the glint stands still.
+Route.GLINT_PULSE = "SaneUINavigationGlintTemplate"
 Route.COLOURS = {
     walk = { 1, 0.78, 0.25 }, flight = { 1, 0.92, 0.6 },
     boat = { 0.95, 0.3, 0.2 }, zeppelin = { 0.95, 0.3, 0.2 }, tram = { 0.95, 0.3, 0.2 },
@@ -39,6 +41,7 @@ local THICKNESS = { edge = Route.THICK + 3, fill = Route.THICK, glint = Route.TH
 local layer, holder
 local way
 local lines, used = {}, 0 -- the pool: { edge, fill, glint, group } each
+local pulse -- whether the game has the pulse's template, asked once
 
 function Route.Build(canvasHolder)
     holder = canvasHolder
@@ -62,12 +65,10 @@ local function Next()
     if entry then return entry end
     entry = { edge = Line(Route.EDGE, 0), fill = Line(Route.FILL, 1), glint = Line(Route.GLINT, 2, true) }
     entry.edge:SetVertexColor(0, 0, 0, 0.8)
-    local group = entry.glint:CreateAnimationGroup()
-    local move = group:CreateAnimation("TextureCoordTranslation")
-    move:SetOffset(-1, 0) -- towards the line's end: the way's next point
-    move:SetDuration(Route.PULSE)
-    group:SetLooping("REPEAT")
-    entry.group = group
+    if pulse == nil then
+        pulse = C_XMLUtil and C_XMLUtil.GetTemplateInfo and C_XMLUtil.GetTemplateInfo(Route.GLINT_PULSE) ~= nil or false
+    end
+    entry.group = pulse and entry.glint:CreateAnimationGroup(nil, Route.GLINT_PULSE) or nil
     lines[used] = entry
     return entry
 end
@@ -88,7 +89,7 @@ local function Segment(x1, y1, x2, y2, colour, faint)
     end
     entry.fill:SetVertexColor(colour[1], colour[2], colour[3], faint and 0.5 or 0.9)
     entry.glint:SetVertexColor(colour[1], colour[2], colour[3], faint and 0.4 or 1)
-    if not entry.group:IsPlaying() then entry.group:Play() end
+    if entry.group and not entry.group:IsPlaying() then entry.group:Play() end
 end
 
 -- Whether a segment of the view's plane may reach into the view (its box against the view's, with its margin).
@@ -121,7 +122,7 @@ function Route.Place(view)
         entry.edge:Hide()
         entry.fill:Hide()
         entry.glint:Hide()
-        entry.group:Stop()
+        if entry.group then entry.group:Stop() end
     end
 end
 
@@ -146,7 +147,7 @@ function Route.Clear()
         entry.edge:Hide()
         entry.fill:Hide()
         entry.glint:Hide()
-        entry.group:Stop()
+        if entry.group then entry.group:Stop() end
     end
     used = 0
 end

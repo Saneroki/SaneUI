@@ -59,17 +59,22 @@ function methods:GetChildren()
     end
     return unpack(list)
 end
--- An animation: the test moves its clock (as dev/tests/window.lua does).
+-- An animation: the test moves its clock (as dev/tests/window.lua does). As in the game, a group may come
+-- from an XML template (group.template), and a TextureCoordTranslation made in Lua has no SetOffset.
 local function noop() end
-function methods:CreateAnimationGroup()
-    local group = { scripts = {}, playing = false, progress = 0 }
+function methods:CreateAnimationGroup(_, template)
+    assert(template == nil or W.xmlTemplates[template] == "AnimationGroup", "no such animation template: " .. tostring(template))
+    local group = { scripts = {}, playing = false, progress = 0, template = template }
     function group:SetScript(name, fn) self.scripts[name] = fn end
     function group:Play() self.playing, self.progress = true, 0 end
     function group:Stop() self.playing = false end
     function group:IsPlaying() return self.playing end
     group.SetToFinalAlpha, group.SetLooping = noop, noop
-    function group:CreateAnimation()
-        local animation = setmetatable({ SetSmoothing = noop, SetToAlpha = noop }, { __index = function() return noop end })
+    function group:CreateAnimation(kind)
+        local animation = setmetatable({ SetSmoothing = noop, SetToAlpha = noop }, { __index = function(_, key)
+            if kind == "TextureCoordTranslation" and key == "SetOffset" then return nil end
+            return noop
+        end })
         function animation:SetDuration(seconds) group.duration = seconds end
         function animation:GetProgress() return group.progress end
         function animation:GetSmoothProgress() return group.progress end
@@ -1051,6 +1056,8 @@ check(#lines == 6 and lines[1]._start and near(lines[1]._end[1] - lines[1]._star
     "the way drawn: each leg's segments as lines (an edge, the gold, its glint), the second leg reaching into view too")
 check(lines[1]._parent._level == frame:GetFrameLevel() + Canvas.LEVELS.route and Canvas.LEVELS.route < Canvas.LEVELS.pins,
     "the line over the map, under the pins")
+check(lines[3]._group and lines[3]._group.template == ns.Route.GLINT_PULSE and lines[3]._group.playing
+    and not lines[1]._group, "the glint pulses by the template of Route.xml (the game makes that animation only from XML)")
 ns.Route.Show(nil)
 lines = 0
 for _, widget in ipairs(W.frames) do if widget._kind == "Line" and widget._shown then lines = lines + 1 end end

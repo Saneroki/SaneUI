@@ -164,7 +164,9 @@ party), always over the map, and the full map has the quest log at its left. The
   arrow leads to.
 - **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
   in view: a dark edge, the game's dependency bar art tinted gold, its glint moved along by a
-  `TextureCoordTranslation` animation (no code of ours each frame); walks gold, flights pale, ships red.
+  `TextureCoordTranslation` animation (no code of ours each frame); walks gold, flights pale, ships red. The
+  animation is the template of `Route.xml`: the game makes this kind only from XML (one made in Lua has no
+  `SetOffset`); where the game has not read the file yet, the glint stands still.
 - **QuestLog** (`QuestLog.lua`): a `WowScrollBoxList` of rows read from `C_QuestLog` (the game's headers, folded
   as the game keeps them; quests with level, state, watched; objectives), built again on `QUEST_LOG_UPDATE` once
   a frame and only while it shows; the chosen quest's text from `GetQuestLogQuestText` with its buttons; abandon
@@ -246,6 +248,7 @@ party), always over the map, and the full map has the quest log at its left. The
 | `Search.lua` | A walk between two points over the walking data, as a job of Core's scheduler. No frames |
 | `Planner.lua` | The way to the map pin: on foot, by the flights this character knows, by boat and zeppelin, by the hearthstone. No frames |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
+| `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
 | `Route.lua` | The golden line of a way, the parts in view: walks gold, flights pale, ships red |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks |
 | `Marks.lua` | The player's arrow, the map pin, the party |
@@ -263,6 +266,9 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, the golden line drawn:** the line's first segment stopped the module (the map window closed, the
+  game's own minimap and map back): the glint's pulse was made in Lua, and the game gives a `TextureCoordTranslation`
+  made there no `SetOffset`. The pulse is now a template in `Route.xml`, as the game's own lines have theirs.
 - **2026-10-20, Zephras Isle's terrain:** the isle has the continents' data: its tiles in Core's set *Tiles*, its
   overview, outline and stitched map (`dev/tools/terrain-art --maps 2991`, the open sky around it cut away), and
   its walking data (`dev/tools/walk-data --maps 2991`). *Scrying* and *Atlas* draw its terrain, *Parchment* its

@@ -3,8 +3,22 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 512 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 259 (Navigation), 21 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 512 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 260 (Navigation), 21 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Navigation: the golden line drawn again (Saneroki, 2026-10-20)
+- **The pulse from XML** (`Route.xml`, `Route.lua`): the first segment of a route stopped the module (the map
+  window closed, the game's own minimap and map back), because the glint's pulse was a `TextureCoordTranslation`
+  made in Lua, and this client gives one made there no `SetOffset`. The pulse is now the virtual animation group
+  `SaneUINavigationGlintTemplate` (one repeat in 1.2 seconds, towards the way's next point), each glint's group
+  made from it (`CreateAnimationGroup(nil, template)`), as the game's own dependency lines define theirs in XML.
+  Where the game has not read the file yet (`C_XMLUtil.GetTemplateInfo` knows no such template) the glint stands
+  still and the line is drawn all the same.
+- **Tests** (`dev/tests/wowstub.lua`, `dev/tests/navigation.lua`, 260 checks): the stub notes the virtual
+  templates of the XML files it loads and answers `C_XMLUtil.GetTemplateInfo` from them; an animation group asks
+  for a template that is there, and a `TextureCoordTranslation` made in Lua has no `SetOffset`, as in the game.
+  New check: the glint pulses by the template.
+- **Guide** (`Doc/guides/gui-development.md`, *Motion*): a `TextureCoordTranslation` comes from an XML template.
 
 ### Social: the conversations' list dragged to its width, no fading on the full screen (Saneroki, 2026-10-20)
 - **The list's width** (`Conversations.lua`, `Layout.lua`, `Board.lua`): the line between the conversations' list
@@ -404,7 +418,7 @@ A game restart takes it in (new addons, Navigation, Atlas and Inventory; new fil
   minimap textures softened a little, its liquids, its map chunks' zones) with its words put together from the
   zone briefs, `dev/imagegen/maps/atlas.toml` (new: the fixed words) and what the game has in it; each painting
   checked against the game's water, painted again with another seed when it fails, the best of three kept;
-  resumable (`state.json`, `words.jsonl` in `assets/generated/atlas/`). In a terminal a screen of its own: a
+  resumable (`state.json`, `words.jsonl` in `assets/generated/atlas/`). In a console window a screen of its own: a
   progress bar with the share done, the square and zone being painted with its steps, the time left and when it
   ends; `p` pauses after the picture being painted and frees the graphics card, `q` quits at once. `status`
   tells how far it is; `join` stitches painted squares into one picture, each overlap cut along the line where

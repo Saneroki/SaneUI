@@ -209,6 +209,9 @@ The old `UIDropDownMenu` is still in the client but is a known source of taint
 - Animation groups (`CreateAnimationGroup`) for the fade, pulse or slide of one frame. Where many
   recycled rows move at once (Chat's fading messages) one `OnUpdate` on their window, which stops
   itself as soon as nothing moves.
+- A `TextureCoordTranslation` (art scrolling inside its region) comes from an XML template,
+  `CreateAnimationGroup(nil, "SaneUI...Template")`, as the game's own UI defines it: one made in Lua with
+  `CreateAnimation` has no `SetOffset` in this client, and calling it is an error.
 - Short and rare. Motion means "look here" ([principle 2](blizzard-design-principles.md)). Nothing
   loops for ever.
 

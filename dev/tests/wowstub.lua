@@ -35,6 +35,7 @@ W.onDemand = {           -- [addon name] = function that reads it, for an addon 
 W.slotOfSpell = {}        -- [spell ID] = spellbook slot, for the game's "go to this spell"
 W.gamepad = false         -- a controller is in use
 W.templates = {}          -- [frame template] = function(widget) that gives it its parts
+W.xmlTemplates = {}       -- [template name] = its kind ("AnimationGroup", "Frame"): the virtual ones of the XML files loaded
 W.cvarInfo = {}           -- [CVar name] = { default, scope = "character" | "account" | nil (the computer),
                           -- locked, secure, readOnly, category, help }; its value is in W.cvars
 W.options = { pages = {} } -- the pages the addon put into the game's options (a page under another one has
@@ -66,7 +67,8 @@ end
 
 -- One file a TOC lists (or an XML file includes), as the game loads it: a .lua runs; a .xml has its
 -- <Script file="..."/> and <Include file="..."/> followed, relative to it (as dev/tests/lint reads
--- them). Anything else is an error: a file the game would load must never be skipped here unnoticed.
+-- them), and its virtual templates noted (W.xmlTemplates, which C_XMLUtil.GetTemplateInfo answers from).
+-- Anything else is an error: a file the game would load must never be skipped here unnoticed.
 -- path: the file's path inside the addon's folder in src, with either kind of slash.
 local function LoadListed(root, addon, folder, path, private)
     path = path:gsub("\\", "/")
@@ -79,6 +81,10 @@ local function LoadListed(root, addon, folder, path, private)
         local dir = path:match("^(.*/)") or ""
         for kind, included in xml:gmatch('<(%a+)%s+file="([^"]+)"') do
             if kind == "Script" or kind == "Include" then LoadListed(root, addon, folder, dir .. included, private) end
+        end
+        for kind, attributes in xml:gmatch("<(%a+)%s([^>]-)>") do
+            local name = attributes:match('name="([^"]+)"')
+            if name and attributes:match('virtual="true"') then W.xmlTemplates[name] = kind end
         end
     else
         error(("%s lists a file that is neither Lua nor XML: %s"):format(addon, path))
@@ -410,6 +416,9 @@ function W.Install(env)
     env.strtrim = function(text) return (text:gsub("^%s+", ""):gsub("%s+$", "")) end
     env.wipe = function(t) for key in pairs(t) do t[key] = nil end return t end
     env.GetTime = function() return W.clock end
+    env.C_XMLUtil = { GetTemplateInfo = function(name)
+        if W.xmlTemplates[name] then return { type = W.xmlTemplates[name], width = 0, height = 0 } end
+    end }
     env.date = function(format, at) return os.date(format, at) end
 
     -- The game's xpcall hands further arguments on to the function; plain Lua 5.1's does not.
