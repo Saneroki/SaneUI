@@ -16,7 +16,8 @@ local _, ns = ...
 --       │    ├─ route     the golden line (Route.lua)
 --       │    ├─ pins      the pins of the game and of Core's data (PinView.lua)
 --       │    └─ marks     the party, the player's arrow, the map pin (Marks.lua)
---       └─ the game's minimap, between the route and the pins, while it shows (Hybrid.lua)
+--       └─ the game's minimap, between the route and the pins, while it shows (Hybrid.lua): small, in the
+--          middle; full, around the player
 --  Whatever the view, what stands on the map (areas, route, pins, marks) is always over the map's own
 --  layers: their frame levels follow the canvas' at every layout (Canvas.LEVELS), so a window raised to the
 --  full screen and put back, which leaves its frames' levels as they come, never puts the map over them.
@@ -217,6 +218,7 @@ local function Keep()
     ns.Safe("route", ns.Route.Fit, edge)
     ns.Safe("pins", ns.PinView.Fit, edge)
     ns.Safe("marks", ns.Marks.Fit, edge)
+    ns.Guarded(ns.Hybrid.Keep)
 end
 
 -- Whether something at x, y (the holder's units) reaching half units each way lies wholly inside the canvas.
@@ -247,10 +249,18 @@ local function Draw()
     ns.Safe("marks", ns.Marks.Pin, view)
 end
 
--- The game's minimap for the view as it is now.
+-- The player's place in the holder's units while it is on the view's plane (map, u, v from Live.Player), else nil.
+local function Here(map, u, v)
+    if not u or map ~= view.map then return nil end
+    return (u - view.u) * view.k, (v - view.v) * view.k
+end
+
+-- The game's minimap for the view as it is now; on the full map, on the player at once.
 local function Native()
     local width, height = frame:GetSize()
     ns.Guarded(ns.Hybrid.Place, camera, width, height, known)
+    local map, u, v = Live.Player()
+    ns.Guarded(ns.Hybrid.Follow, holder, Here(map, u, v))
 end
 
 -- The layers' frame levels from the canvas' own.
@@ -339,6 +349,7 @@ local function Track()
         nextLook = 0
     end
     if was ~= known or followed ~= camera.follow then Native() end
+    ns.Hybrid.Follow(holder, Here(map, u, v))
     ns.Marks.Player(view, map, u, v, facing, ns.Hybrid.Shown())
     ns.Marks.Group(view, now)
     ns.Route.Track(map, u, v, now)

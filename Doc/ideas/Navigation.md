@@ -351,7 +351,7 @@ and its window guide, and against the data plan.
 | Docked window, resizing, full screen at the corner | Yes | None: Core does it for Social. |
 | Hiding the native minimap and map/quest log, toggles | Yes, with care | In a fight the game's map can only be closed in a way still to try (*The game's map and minimap*). |
 | One render for both views, drag and wheel zoom down to the world | Yes | Far out, terrain means many textures: Blizzard's art there. |
-| Live minimap dots (tracked herbs and ore, party, town tracking) | Yes, in the small view only | The engine draws them only on the native minimap, which follows the player at its own zoom steps. |
+| Live minimap dots (tracked herbs and ore, party, town tracking) | Yes, in both views (Saneroki, 2026-10-20: on the full map too, the native minimap around the player at the map's scale) | The engine draws them only on the native minimap, which follows the player at its own zoom steps. |
 | Map follows the player; separate zoom and position per view | Yes | Positions may be hidden in some places (*to try*). |
 | Quest log on the left in full screen | Yes | Our own list; Blizzard's is bound to its map window. |
 | Map selector for regions and dungeons | Yes | No terrain inside dungeons: Blizzard's map art only there. |

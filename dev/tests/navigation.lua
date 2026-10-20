@@ -872,6 +872,37 @@ clock:Run(1)
 check(holder:GetScale() == 1, "standing, it is laid out anew for the full view")
 local full = Window.full
 check(Canvas.camera == full and near(full.u, 500) and near(full.k, 868 / Camera.START), "full: its own camera, at the player the first time")
+-- Settings of before: the switch Route to the map pin is the pin filter's kind now, as the minimap's dots are.
+do
+    local settled = Core.Settle(ns.name, { route = false, pins = { quest = true } })
+    check(settled.pins.quest and not settled.pins.route and settled.pins.minimap and settled.route == nil,
+        "older settings: a route switched off stays off in the pin filter, the minimap's dots on")
+    settled = Core.Settle(ns.name, { pins = { quest = true } })
+    check(settled.pins.route and settled.pins.minimap, "a route that was on: on in the pin filter")
+end
+-- The game's minimap's dots on the full map too: around the player at the map's own zoom, its widest step whose
+-- square takes at most Hybrid.ROOM of the canvas' shorter side, kept on the player; the pin filter's Minimap dots.
+do
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    local step
+    for each = 0, 5 do
+        if 2 * radii[each] * full.k <= 868 * Hybrid.ROOM then step = each break end
+    end
+    local map, u, v = Live.Player()
+    check(step and minimap._shown and minimap._zoom == step and near(minimap._width, 2 * radii[step] * full.k)
+        and minimap._points[1][2] == holder and near(minimap._points[1][4], (u - Canvas.view.u) * full.k)
+        and near(minimap._points[1][5], (v - Canvas.view.v) * full.k) and minimap._mask == Hybrid.MASK,
+        "full: the game's minimap around the player at the map's zoom, at the widest step that fits, on the player")
+    local chosen = Core.Copy(ns.options.pins)
+    chosen.minimap = nil
+    Core.Set(ns.name, "pins", chosen)
+    check(not minimap._shown and not ns.Pins.Shows("minimap"), "the pin filter's Minimap dots off: not there")
+    chosen = Core.Copy(chosen)
+    chosen.minimap = true
+    Core.Set(ns.name, "pins", chosen)
+    check(minimap._shown, "on again: there")
+    check(not Hybrid.Ping(0, 0), "a click on the full map is no ping: the game's minimap is not in its middle there")
+end
 local bar
 for _, widget in ipairs(W.frames) do if widget.key == "terrain" then bar = widget._parent end end
 check(bar and bar._shown, "full: the view buttons")
@@ -1119,8 +1150,9 @@ do
     tracker._scripts.OnUpdate(tracker, 0.016)
     tracker._scripts.OnUpdate(tracker, 0.016)
     check(full.map == 2521 and full.level == "zone" and near(full.u, 0) and near(full.v, 0) and Canvas.view.map == 2521
-        and Canvas.view.continent == 2991 and Canvas.view.zone == 2521 and arrow._shown and near(arrow._points[1][4], 0),
-        "standing on the isle: the view follows the player into its plane, a zone, the arrow there")
+        and Canvas.view.continent == 2991 and Canvas.view.zone == 2521
+        and ((arrow._shown and near(arrow._points[1][4], 0)) or (minimap._shown and near(minimap._points[1][4], 0))),
+        "standing on the isle: the view follows the player into its plane, a zone, the arrow there (ours or the game's minimap's)")
     local onIsle = Drawn(true)
     local tower = onIsle["travel:4:2"]
     check(tower and tower.icon._atlas == "TaxiNode_Continent_Horde" and tower.pin.home == 2521 and tower.pin.to == 1429
@@ -1595,9 +1627,18 @@ check(home.map == 1415 and near(home.u, 0) and near(home.v, -9250) and home.name
     "the hearthstone's place: learnt where it brought the character")
 player.x, player.y = 0.75, 0.3
 -- The setting off, or the pin gone: no line.
-Core.Set(ns.name, "route", false)
-check(shownWay == nil, "the setting Route to the map pin off: no line")
-Core.Set(ns.name, "route", true)
+do
+    local chosen = Core.Copy(ns.options.pins)
+    chosen.route = nil
+    Core.Set(ns.name, "pins", chosen)
+    check(shownWay == nil, "the pin filter's Route to the map pin off: no line")
+    chosen = Core.Copy(chosen)
+    chosen.route = true
+    Core.Set(ns.name, "pins", chosen)
+    W.Wait(0)
+    Frames(8)
+    check(shownWay ~= nil, "on again: planned anew, the line again")
+end
 Live.ClearWaypoint()
 W.Fire("USER_WAYPOINT_UPDATED")
 W.Wait(0)

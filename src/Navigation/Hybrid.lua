@@ -6,7 +6,8 @@ local _, ns = ...
 --  (nearby players, the creatures and the herbs and ore it tracks, quest areas)
 --  and its tooltips over them. Our map is the ground: its own is switched off
 --  (C_Minimap.SetDrawGroundTextures), as Blizzard's hybrid minimap does under its
---  map canvas (Blizzard_HybridMinimap). Both views do the same (Window.lua):
+--  map canvas (Blizzard_HybridMinimap). Only while the pin filter lets its dots
+--  through (its kind Minimap dots). The small view (Window.lua):
 --
 --      shown        while the view follows the player and its zoom is one of the game's minimap's
 --                   steps (camera.native); square, as large as the view's longer side, in its middle,
@@ -23,6 +24,11 @@ local _, ns = ...
 --      indoors      a cave, a building: the game's minimap draws its own ground, which our map
 --                   cannot (the terrain is the outdoors)
 --
+--  The full map (Wide): around the player at the map's own scale, so its dots stand where they are
+--  on our map: square, at its widest step whose square takes at most Hybrid.ROOM of the canvas'
+--  shorter side (none at a zoom too close for its narrowest), kept on the player at each step of
+--  the canvas' tracker (Follow) and shown while it lies wholly inside the canvas (Keep), as the pins.
+--
 --  Taken out of combat (Minimap is the game's frame, and some of what is set
 --  here may not be set in a fight): its parent, place, size, level, mask, wheel
 --  and clicks, its border art and zoom buttons out of sight, rotation ignored
@@ -38,6 +44,7 @@ Hybrid.MASK = "Interface\\Buttons\\WHITE8X8" -- square: the corners of our map a
 Hybrid.BANDS = 32 -- the steps of the masks for a view that is not square (dev/tools/minimap-masks)
 Hybrid.MASKS = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Masks\\%s-%d"
 Hybrid.LEVEL = 10 -- over the canvas' layers, under its marks (Canvas.lua, Marks.lua)
+Hybrid.ROOM = 0.5 -- the full map: its square takes at most so much of the canvas' shorter side
 local WAIT = "navigation: minimap" -- what waits for the fight's end
 
 local taken, saved, canvas, hooked
@@ -45,6 +52,7 @@ local surveying -- the steps are being measured: what the game says meanwhile is
 local radii = { [true] = {}, [false] = {} } -- [indoors][zoom step] = the view's radius in yards
 local ground -- what the game's minimap draws of its own ground now (nil: not asked)
 local cut -- the mask it is cut by now
+local wide -- on the full map: { side, x, y (the player's place in the holder's units), holder }
 
 -- The game's minimap, its cluster and border, if this client has them.
 local function Parts()
@@ -246,20 +254,8 @@ function Hybrid.Fit(camera, width, height)
     if zoom then camera.k = zoom else camera.native = nil end
 end
 
--- The game's minimap for a view (camera, the view's size): shown in its middle at the camera's step while
--- it follows the player (known is false while the player's place is not), cut to the view's shape, out of
--- sight otherwise. The camera's zoom is the step's.
-function Hybrid.Place(camera, width, height, known)
-    if not taken then return end
-    local minimap = Parts()
-    local size = Hybrid.Side(width, height)
-    local step = camera.native
-    local zoom = step and camera.follow and known and Hybrid.Zoom(step, size)
-    local mask = Hybrid.Mask(width, height)
-    if not zoom or not mask then
-        minimap:Hide()
-        return
-    end
+-- Its size, layer, step and ground for a view (mask: the one it is cut by).
+local function Set(minimap, size, step, mask)
     if mask ~= cut then
         minimap:SetMaskTexture(mask)
         cut = mask
@@ -273,11 +269,72 @@ function Hybrid.Place(camera, width, height, known)
         C_Minimap.SetDrawGroundTextures(own)
         ground = own
     end
+end
+
+-- The full map (its camera, the canvas' size): the widest step whose square at the map's zoom fits in
+-- Hybrid.ROOM of the canvas' shorter side; placed on the player by Follow.
+local function Wide(minimap, camera, width, height, known)
+    local room, indoors = math.min(width, height) * Hybrid.ROOM, IsIndoors() and true or false
+    local step, side
+    for each = 0, minimap:GetZoomLevels() - 1 do
+        local radius = radii[indoors][each]
+        if radius and 2 * radius * camera.k <= room then
+            step, side = each, 2 * radius * camera.k
+            break
+        end
+    end
+    if not step or not known then
+        wide = nil
+        return minimap:Hide()
+    end
+    Set(minimap, side, step, Hybrid.MASK)
+    wide = { side = side }
+    minimap:Hide() -- until Follow knows where the player is
+end
+
+-- The game's minimap for a view (camera, the view's size): shown in its middle at the camera's step while
+-- it follows the player (known is false while the player's place is not), cut to the view's shape, out of
+-- sight otherwise. The camera's zoom is the step's. On the full map: Wide.
+function Hybrid.Place(camera, width, height, known)
+    if not taken then return end
+    local minimap = Parts()
+    wide = nil
+    if not ns.Pins.Shows("minimap") then return minimap:Hide() end
+    if camera == ns.Window.full then return Wide(minimap, camera, width, height, known) end
+    local size = Hybrid.Side(width, height)
+    local step = camera.native
+    local zoom = step and camera.follow and known and Hybrid.Zoom(step, size)
+    local mask = Hybrid.Mask(width, height)
+    if not zoom or not mask then
+        minimap:Hide()
+        return
+    end
+    minimap:ClearAllPoints()
+    minimap:SetPoint("CENTER", canvas, "CENTER")
+    Set(minimap, size, step, mask)
     minimap:Show()
+end
+
+-- The full map: kept on the player (x, y: the player's place in holder's units, nil while not known on the
+-- map's plane), shown while it lies wholly inside the canvas. Each step of the canvas' tracker.
+function Hybrid.Follow(holder, x, y)
+    if not wide then return end
+    local minimap = Parts()
+    wide.x, wide.y = x, y
+    if not x then return minimap:Hide() end
+    minimap:ClearAllPoints()
+    minimap:SetPoint("CENTER", holder, "CENTER", x, y)
+    minimap:SetShown(ns.Canvas.Inside(x, y, wide.side / 2))
+end
+
+-- The full map moved (Canvas.edge): shown while it still lies wholly inside the canvas.
+function Hybrid.Keep()
+    if wide and wide.x then Parts():SetShown(ns.Canvas.Inside(wide.x, wide.y, wide.side / 2)) end
 end
 
 -- Out of sight (the window on its way to the full screen and back).
 function Hybrid.Hide()
+    wide = nil
     if taken then Parts():Hide() end
 end
 
@@ -316,7 +373,7 @@ end
 
 -- A plain left click at x, y units from the view's middle: the game's ping, where its minimap shows.
 function Hybrid.Ping(x, y)
-    if not Hybrid.Shown() then return false end
+    if wide or not Hybrid.Shown() then return false end
     local minimap = Parts()
     local half = minimap:GetWidth() / 2
     if math.abs(x) > half or math.abs(y) > half then return false end

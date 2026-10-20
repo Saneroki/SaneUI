@@ -615,7 +615,7 @@ Planner.TEXT = {
 -- The pin moved, came or went: planned anew (or the line goes).
 function Planner.Update()
     Stop()
-    local wanted = ns.options.route and not ns.off
+    local wanted = ns.Pins.Shows("route") and not ns.off
     local map, x, y = Live.Waypoint()
     if not wanted or not map then
         target, plan = nil, nil

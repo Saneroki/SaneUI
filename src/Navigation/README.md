@@ -42,7 +42,10 @@ party), always over the map, and the full map has the quest log at its left. The
   arrow to it; on an entrance, a way or a dock with one destination, its map opens. A continent whole shows only
   travel and places; the minimap no books or treasures, services only near you. The party and raid in their class
   colours.
-- **The pin filter** (*Pins* on the full map's bar, or the setting *Pins on the map*): a checkmark per kind.
+- **The pin filter** (*Pins* on the full map's bar, or the setting *Pins on the map*): a checkmark per kind. Its
+  first two are no pins: *Route to the map pin* (the golden line) and *Minimap dots*: what the game's minimap
+  shows around you (players, tracked herbs and ore, quest areas), on the small map and on the full map too, there
+  around you at the full map's own scale (shown while it fits inside the map). Both are on at first.
 - **Quest areas:** the quest the arrow leads to, or the one under the mouse in the quest log, shaded as the game
   shades it on its map.
 - **The quest log** at the full map's left (*Quest Log* on the bar puts it in or out): your quests by zone with
@@ -61,7 +64,7 @@ party), always over the map, and the full map has the quest log at its left. The
   hearthstone is taken where it is quickest (the map learns its place where you bind it, or the first time you use
   it). Leave the line and it is planned again; after a flight it goes on from where you landed; aboard a ship it
   waits until you have landed. The ships' timetables are not in the game's data: how long one waits for a ship and
-  how long it sails are guessed from its way. The setting *Route to the map pin* switches it off.
+  how long it sails are guessed from its way. *Route to the map pin* in the pin filter switches it off.
 - **Map view** (the buttons on the full map's bar, or the setting on the page *Navigation*): *Parchment* or
   *Scrying* (the default), and *Atlas* while that module is switched on in the addon list; for both views and at
   every zoom (in the code `sketches`, `terrain`, `atlas`). A view not offered (the module switched off or
@@ -219,7 +222,11 @@ party), always over the map, and the full map has the quest log at its left. The
   live dots and their tooltips show; indoors it draws its own ground, which our terrain does not have. Its
   left and right clicks go through to our map; its border, zoom buttons and the rest of the game's minimap
   cluster are out of sight and take no clicks (Edit Mode's selection keeps its). Each step's radius is read
-  from the game. Taken out of combat, every part kept first and given back exactly.
+  from the game. Taken out of combat, every part kept first and given back exactly. On the full map it stands
+  around the player at the map's own zoom (`Hybrid.Follow`, each step of the canvas' tracker): square, at its
+  widest step whose square takes at most `Hybrid.ROOM` (half) of the canvas' shorter side (none at a zoom too
+  close for its narrowest), shown while wholly inside the canvas (`Hybrid.Keep`); a click there is no ping. Only
+  while the pin filter's *Minimap dots* is on, in both views.
 - **The game's map** (`Native.lua`): the keys bound to the game's map, quest log and minimap click a button
   of ours (override bindings, out of combat, again when the bindings change). Every other way to the game's
   map shows `WorldMapFrame`: a hook after its `OnShow` hides it at once and closes it on the next frame with
@@ -274,6 +281,9 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, the route and the minimap's dots in the pin filter:** the switch *Route to the map pin* became the
+  pin filter's first kind, and *Minimap dots* the second: the game's minimap shows on the full map too, around the
+  player at the map's scale. Settings of before are taken over (the module's settings version 1).
 - **2026-10-20, inside the window; the corner sizes it:** the route, the pins and the marks keep inside the canvas
   by themselves (`Canvas.edge`); they were drawn over the screen around the small window. The small window's
   corner away from the screen's edges sizes it outside Edit Mode too (Core's window option `grip = "hover"`).

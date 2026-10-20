@@ -3,8 +3,23 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 526 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 267 (Navigation), 21 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 526 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 274 (Navigation), 21 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Navigation: the route and the minimap's dots in the pin filter, the dots on the full map too (Saneroki, 2026-10-20)
+- **Two kinds first in the pin filter** (`Navigation.lua`, `ns.KINDS`): *Route to the map pin* (`route`, the setting
+  of that name gone: `Planner.Update` asks `Pins.Shows("route")`, and the filter's change plans anew only when that
+  kind changed) and *Minimap dots* (`minimap`), both on at first, in both views. The settings' version 1
+  (`Upgrade`): a saved filter gets both, the route as the old switch had it.
+- **The game's minimap on the full map** (`Hybrid.lua`, `Canvas.lua`): `Hybrid.Place` for the full camera is `Wide`:
+  square, at its widest step whose square at the map's zoom takes at most `Hybrid.ROOM` (0.5) of the canvas'
+  shorter side, none at a zoom too close for its narrowest; `Hybrid.Follow` keeps it on the player (the canvas'
+  `Here`, at each tracker step and after each layout), shown while wholly inside the canvas (`Canvas.Inside`, and
+  `Hybrid.Keep` when the map moves). Its size, layer, step and ground set in one place (`Set`); in the small view
+  it is anchored to the canvas' middle again. No ping on the full map. Off in both views with *Minimap dots*.
+- **Tests:** `dev/tests/navigation.lua` (274 checks): the full map's minimap at the widest step that fits, on the
+  player, off and on by the filter, no ping there; the route off and planned anew by the filter; older settings
+  taken over.
 
 ### Navigation: what stands on the map keeps inside the window; the small window sized by its corner (Saneroki, 2026-10-20)
 - **Inside the window** (`Canvas.lua`, `Route.lua`, `PinView.lua`, `Marks.lua`): in the small window the golden
