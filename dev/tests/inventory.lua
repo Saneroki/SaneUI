@@ -77,14 +77,21 @@ Leave()
 Push()
 check(not bags and not CharacterFrame:IsShown(), "back in the corner: both close")
 
--- One of the two opened by its key: a push opens the other; the next closes both.
+-- Either opened by its key: a push closes it; with neither open, the next opens both.
 Leave()
 OpenAllBags()
 Push()
-check(bags and CharacterFrame:IsShown() and opened == 2, "the bags open by their key: a push adds the sheet")
+check(not bags and not CharacterFrame:IsShown(), "the bags open by their key: a push closes them")
+Leave()
+ToggleCharacter("PaperDollFrame")
+Push()
+check(not bags and not CharacterFrame:IsShown(), "the sheet open by its key: a push closes it")
 Leave()
 Push()
-check(not bags and not CharacterFrame:IsShown(), "and the next push closes both")
+check(bags and CharacterFrame:IsShown() and opened == 3, "neither open: the next push opens both")
+Leave()
+Push()
+check(not bags and not CharacterFrame:IsShown(), "and the next closes both")
 
 -- In a fight the game keeps its panels to its own keys: only the bags come and go.
 Leave()
@@ -102,10 +109,7 @@ check(bags and not CharacterFrame:IsShown(), "in a fight, the sheet closed: the 
 W.combat = false
 Leave()
 Push()
-check(bags and CharacterFrame:IsShown(), "after the fight the sheet comes again")
-Leave()
-Push()
-check(not bags and not CharacterFrame:IsShown(), "and goes with the bags")
+check(not bags and not CharacterFrame:IsShown(), "after the fight, the bags open: a push closes them")
 
 -- No push during a drag, in Edit Mode, or while a window of Sane UI's fills the screen.
 Leave()

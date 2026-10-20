@@ -4,10 +4,10 @@ local _, ns = ...
 --  Sane UI - Inventory - Corner
 --  The mouse pushed into the screen's bottom right corner opens the game's own
 --  bags and character sheet, as their keys do (all bags, then the character);
---  pushed there again, it closes them. What of the two is not open yet is
---  opened; only once both are open does a push close them. In a fight the game
---  opens and closes its panels by its own keys only, so there the corner opens
---  and closes the bags alone and leaves the sheet as it is.
+--  pushed there again, it closes them: whenever either is open, a push closes
+--  what is open, and only when neither is does it open both. In a fight the
+--  game opens and closes its panels by its own keys only, so there the corner
+--  opens and closes the bags alone and leaves the sheet as it is.
 --
 --  The corner is a square of a few of the screen's pixels (Core's Edge.CORNER,
 --  as large as a docked window's corner), above the game's bars and windows,
@@ -39,13 +39,14 @@ local function Sheet()
     return rawget(_G, "CharacterFrame")
 end
 
--- Whether all the corner opens is open: the bags, and the sheet unless a fight keeps it as it is.
+-- Whether anything the corner opens is open: the bags, or the sheet unless a fight keeps it as it is.
 local function Open(fight)
+    if Game("IsAnyBagOpen") then return true end
     local sheet = Sheet()
-    return Game("IsAnyBagOpen") and (fight or not sheet or sheet:IsShown()) and true or false
+    return not fight and sheet and sheet:IsShown() or false
 end
 
--- Opens what is not open yet, or closes both once both are open.
+-- Closes what is open, or opens both when neither is.
 function Corner.Toggle()
     local fight, sheet = InCombatLockdown(), Sheet()
     if Open(fight) then
@@ -53,7 +54,7 @@ function Corner.Toggle()
         if not fight and sheet then Game("HideUIPanel", sheet) end
     else
         Game("OpenAllBags")
-        if not fight and sheet and not sheet:IsShown() then Game("ToggleCharacter", "PaperDollFrame") end
+        if not fight and sheet then Game("ToggleCharacter", "PaperDollFrame") end
     end
 end
 

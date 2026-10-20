@@ -9,11 +9,10 @@ they close. The game's bags and sheet stay as they are, and their keys work as b
 
 ## How to use
 - **Switch it on or off:** tick or untick *Inventory* under *Sane UI* in the game's addon list.
-- **Open:** push the mouse all the way into the bottom right corner of the screen. Whatever of the two is
-  not open yet opens: the bags (all of them, as their key does) and the character sheet (at its first tab,
-  the character, as its key does).
-- **Close:** take the mouse away from the corner and push it there again: once both are open, a push
-  closes both.
+- **Open:** push the mouse all the way into the bottom right corner of the screen: the bags (all of them,
+  as their key does) and the character sheet (at its first tab, the character, as its key does) open.
+- **Close:** take the mouse away from the corner and push it there again: whatever of the two is open
+  closes, however it was opened (its key, a vendor, the corner).
 - **In a fight** the game opens and closes its character sheet only by its own key, so there the corner
   opens and closes the bags alone and leaves the sheet as it is.
 - **Nothing happens** while a mouse button is held (a drag), in Edit Mode, while one of Sane UI's windows
@@ -30,10 +29,10 @@ they close. The game's bags and sheet stay as they are, and their keys work as b
   counts again only once the mouse has gone `Core.Edge.AWAY` of the screen's pixels from it, seen by a
   look every `Core.Edge.LOOK` seconds that stops once the mouse is gone. For `Core.Edge.QUIET` seconds
   after the square was shown (login, the interface back after Alt-Z) a push counts for nothing.
-- **What a push does** (`Corner.Toggle`): open are the bags (`IsAnyBagOpen`) and the sheet
-  (`CharacterFrame:IsShown()`; in a fight it does not count). All open: `CloseAllBags()` and
-  `HideUIPanel(CharacterFrame)`. Else `OpenAllBags()` and, if the sheet is closed,
-  `ToggleCharacter("PaperDollFrame")`, the game's own key's call. In a fight the sheet is not touched: the
+- **What a push does** (`Corner.Toggle`): either open, the bags (`IsAnyBagOpen`) or the sheet
+  (`CharacterFrame:IsShown()`; in a fight it does not count): `CloseAllBags()` and
+  `HideUIPanel(CharacterFrame)`. Neither open: `OpenAllBags()` and `ToggleCharacter("PaperDollFrame")`,
+  the game's own keys' calls. In a fight the sheet is not touched: the
   game's panel manager refuses addons there and says so. Each function of the game's is called only if
   this client has it.
 - **Standing down** (`ns.GiveBack`): the square is hidden; what is open stays open, and the game's keys

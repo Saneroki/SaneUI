@@ -8,8 +8,8 @@ The bigger changes of each version, newest first.
 ------------------
 - Inventory, a new module: push the mouse into the bottom right corner
   of the screen and your bags and character sheet open together; push
-  it there again and they close. In a fight only the bags open and
-  close there.
+  it there again and whatever is open closes. In a fight only the bags
+  open and close there.
 - Navigation: Sane UI's minimap and map in one window. Small in the top
   right corner it is your minimap; move the mouse into the corner and
   the same map fills the screen. Drag it, zoom it with the mouse wheel

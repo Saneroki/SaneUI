@@ -3,21 +3,21 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 258 (Navigation), 24 (Inventory), 37 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 258 (Navigation), 25 (Inventory), 37 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
 ### Inventory: a new module, the bags and the character sheet from the corner (Saneroki, 2026-10-20)
 - **The module** (`src/Inventory/`, addon `SaneUI_Inventory`, *Inventory* under Sane UI in the addon list): what the
   player carries and wears. It needs Core only and has no options page yet.
 - **The corner** (`Corner.lua`): the mouse pushed into the screen's bottom right corner opens the game's own bags
-  (`OpenAllBags`) and character sheet (`ToggleCharacter("PaperDollFrame")`, its key's call) together, what of the
-  two is not open yet; once both are open, a push closes both (`CloseAllBags`, `HideUIPanel`). In a fight the game
+  (`OpenAllBags`) and character sheet (`ToggleCharacter("PaperDollFrame")`, its key's call) together when neither is
+  open; whenever either is open, however it was opened, a push closes what is open (`CloseAllBags`, `HideUIPanel`). In a fight the game
   refuses its panels to addons, so there only the bags come and go and the sheet is left as it is. A square of
   `Edge.CORNER` screen pixels in the strata `DIALOG` that takes only the mouse's coming, one push one change as at a
   docked window's corner (`Edge.AWAY`, `Edge.LOOK`, `Edge.QUIET`); no push during a drag, in Edit Mode or while a
   window of Sane UI's fills the screen; a window docked in that corner keeps it (its square lies above).
 - **Standing down** (`ns.GiveBack`): the corner goes; what is open stays open.
-- Tests: `dev/tests/inventory.lua` (24 checks), in `dev/tests/run`.
+- Tests: `dev/tests/inventory.lua` (25 checks), in `dev/tests/run`.
 
 ### Navigation: the map on Zephras Isle (Saneroki, 2026-10-20)
 - **The canvas on the planes** (`Coords.lua`, `Camera.lua`, `Canvas.lua`): the views use the planes the routes use
