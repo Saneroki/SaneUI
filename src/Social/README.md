@@ -56,7 +56,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   - **At first** (the tab *Default*):
   - **Guild window** at the top right: the very window the guild key opens, held in its window there and
     working as always: the game's own guild and communities window, or the window of another addon that
-    answers the guild key instead. Its room is as large as the window is (it follows when the window is
+    answers the guild key instead. With the module Guild on, Guild's own guild window stands here instead (offered
+    to this board through Core, `Core.Board.Offer`), and the game's is left alone. Its room is as large as the window is (it follows when the window is
     sized or made small); in a smaller room it is made smaller, never larger. The full screen opens it and
     closes it again when it goes; one open already stays open, back at its place. Closed while the full
     screen stands (its close button, Esc), the others take its room; opened again with the guild key, it is

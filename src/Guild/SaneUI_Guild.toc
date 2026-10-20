@@ -1,0 +1,30 @@
+## Interface: 16001
+## Title: Guild
+## Notes: Your guild in one window, on Social's full screen (or a window of its own while Social is off): the roster, everybody's gear, quests and runs, loot, professions, the raid's plan and the officers' tools. What members share with the guild is kept on this computer only, per guild; each kind behind a switch. The guild key opens it.
+## Author: Saneroki
+## Version: 0.3.0
+## Category: Sane UI
+## Group: SaneUI
+## Dependencies: SaneUI
+## IconTexture: Interface\Icons\INV_Epicguildtabard
+## X-License: MIT
+
+# The module's own table, its words and settings, how it starts and stands down. First: the other files add to it.
+Guild.lua
+# Every size and spacing, and what follows from the room the window has. Knows no frames
+Layout.lua
+# The module's pictures: placeholders of the game's art until its own are drawn
+Art.lua
+# The parts its views are built from: insets, headings, small tabs, tables, the guild's crest, class icons
+Kit.lua
+# The page: the head with the crest, the tabs, the view's title and small tabs, the status line; the views behind them
+Page.lua
+# The views
+Views\Overview.lua
+Views\Roster.lua
+Views\Equipment.lua
+Views\Later.lua
+# Where the page stands: a window of Social's full screen, or a window of its own
+Window.lua
+# The guild key opens ours (the game's override bindings; our key: Bindings.xml)
+Keys.lua

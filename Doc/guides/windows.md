@@ -294,6 +294,11 @@ not by itself. The rules:
   module picks the game's own icon for what the window stands for.
 - **Kept** in `store[key]` (account-wide, as places are): `{ chosen, tabs = { { name, tree } } }`, a tree only once
   changed (`false`: emptied).
+- **A window of another module** (Saneroki, 2026-10-20): a module depends on Core only, so a window it puts on another
+  module's board is offered through Core (`Core.Board.Offer(label, spec)`, the board's label): the board lists it after its
+  own, or in place of its own of the same key (the module Guild's guild window on Social's full screen, where Social
+  otherwise holds the game's guild window); `Core.Board.Open(label, key)` fills that board's screen with it in the
+  layout; `Withdraw` takes it back when its module stands down.
 - **What is in a window is the module's**: a panel of Core's (`Core.Skin` plate, a head `Board.HEAD` high with its
   title and the X, a line, the body) holds the module's part, built the first time it is shown (`build`), told
   when it is shown and hidden (`show`), its size once a change stands (`size`), the search (`search`). A window

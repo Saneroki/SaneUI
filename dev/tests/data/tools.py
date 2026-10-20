@@ -544,7 +544,8 @@ with tempfile.TemporaryDirectory(prefix="saneui-staging-") as folder:
             "Guides": ["Guides"], "Spells": ["Spells", "Auras", "Trainers", "QuestSpells", "WeaponSkills", "SkillLines", "Professions"],
             "Talents": ["Talents", "Legacy"], "Market": ["Vendors"], "Game": ["CVarLabels", "Currencies", "Factions", "Holidays"],
             "Collections": ["Achievements", "Mounts", "TransmogSets"],
-            "Characters": []}  # saved data only (Doc/ideas/Data.md, *Characters*)
+            "Characters": [],  # saved data only (Doc/ideas/Data.md, *Characters*)
+            "Guild": []}  # saved data only: the guild's records (Doc/guides/data.md, *Guild records*)
     check("every set of the plan has its schema, in its pack",
           {pack: sorted(name for name, schema in real.schemas.items() if schema.pack == pack) for pack in real.packs},
           {pack: sorted(names) for pack, names in plan.items()})

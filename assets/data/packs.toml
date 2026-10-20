@@ -23,6 +23,11 @@ notes = "Sane UI's data from the game's own code: the names of the strings that 
 title = "Data: Guides"
 notes = "Sane UI's leveling guides: their steps, places, quests and checks. Loaded only when a guide is first shown."
 
+[Guild]
+title = "Data: Guild"
+notes = "Your guild's records: its roster's history and what its members share with the guild (gear, professions, ...). Nothing shipped; kept on this computer, per guild. Loaded when the module Guild starts."
+saved = true
+
 [Items]
 title = "Data: Items"
 notes = "Sane UI's data on every item players can have, with its history, the item sets and enchantments. Loaded when Sane UI first needs it."

@@ -65,6 +65,10 @@ Data\Ships.lua
 Data\Trips.lua
 # What each of the account's characters has (bags, bank, worn), kept in the pack Characters' saved variable
 Data\Characters.lua
+# Sane UI's addon messages: the prefix, messages and blocks, a queue that keeps to the game's budget, the inbox (Core.Wire)
+Data\Wire.lua
+# The guild's records: the roster and its history, every member's records, shared with the guild (Data.Guild)
+Data\Guild.lua
 # Aliases and notes the player gives other players, set in the game's menu of a player (personal, never shared)
 People.lua
 # Sync: the game's own settings kept with Sane UI's settings, a part per options page of the game

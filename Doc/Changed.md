@@ -3,8 +3,8 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 351 (Navigation), 85 (Inventory), 90 (sheet), 184 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
-A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 351 (Navigation), 85 (Inventory), 90 (sheet), 184 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
+A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
 ### Navigation: quest areas in place, nearer zoom, dungeon maps, the quest log a window that pins (Saneroki, 2026-10-20)
 - **Quest areas** (`Areas.lua`): stood where the zoom before had put them. The engine shades the area into the
@@ -30,6 +30,30 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory and Namepla
   own title bar buttons) and `button.picture` on them.
 - Tests: Navigation 375 checks (the area drawn on the next frame, the wheel past the narrowest step, the dungeons,
   the pinned log). A game restart takes it in (a new file in Navigation's TOC).
+
+### Guild: the guild window, the wire and the guild's records (Saneroki, 2026-10-20)
+- **New module Guild** (`src/Guild/`, `SaneUI_Guild`, plan `Doc/ideas/Guild.md`): one window for everything a guild
+  needs, on Social's full screen in place of the game's guild window there (offered to its board), or a window of its
+  own without Social; the guild key opens it (override bindings, `Keys.lua`, `Bindings.xml`), `/sane guild`. Its page:
+  the guild's crest in a ring, name, online, when last synced, the options' gear, *Sync*; the game's tabs Overview, Guild,
+  Quests, Dungeons, Loot, Professions, Raid, Officers (officers only), small tabs under those with several views; a
+  status line. Built views: the overview (who is where, the guild's news from the roster's history, guild chat with a
+  line to write, the race to the highest level), the roster (head with the message of the day and invite, a sortable
+  searchable table, online and offline folding, the member's page with rank up and down, notes, history, whisper,
+  invite), equipment (everybody's gear on a paper doll with model, item level, slots). The other views say they come.
+  Placeholders of the game's art stand where its own pictures go (`Art.lua`).
+- **Core's wire** (new `src/Core/Data/Wire.lua`, `Core.Wire`, in Core's TOC): Sane UI's addon messages, built ahead of
+  Data-build 1f.1: messages and packed blocks in parts, a queue that keeps to the game's budget, an inbox the scheduler
+  takes in, senders by key, the player's own and other game versions' dropped, 90 a minute from a sender.
+- **Core's guild records** (new `src/Core/Data/Guild.lua`, `Data.Guild`; the pack *Data: Guild*, saved data): the roster
+  and its history (joins, leaves, rank changes, levels; a partial roster believed in nothing), members' records (the card:
+  who a character is, what it wears, its professions), taken only from their owner, members only, newer only; hellos
+  and asks by whisper. CLAUDE.md's *Game facts, not people*: people information built locally, never shipped.
+- **Core's board** (`Board.lua`): a window of another module (`Core.Board.Offer`, `Withdraw`, `Offered`, `Open`,
+  `Standing`, `Close`); Social leaves the game's guild window alone while Guild offers its own.
+- **Sketches** of the guild window's look and parts (`dev/imagegen/sets/guild/`, Qwen 2.1 turbo; not shipped).
+- Tests: `dev/tests/guild.lua` (79 checks), in `dev/tests/run`. A game restart takes it in (a new addon and pack, new files
+  in Core's TOC).
 
 ### Navigation: your trip on screen, the flight's way on the map, the tram (Saneroki, 2026-10-20)
 - **Core's trip underway** (new `src/Core/Data/Trips.lua`, `Data.Trips()`, in Core's TOC): the trip the player is

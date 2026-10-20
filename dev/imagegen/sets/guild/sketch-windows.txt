@@ -1,0 +1,16 @@
+# Guild: quick sketches of how the guild window should look, before any art is made (Saneroki, 2026-10-20:
+# placeholders in the game, a few fast sketches to show the direction). Words alone, the house style, the
+# model ComfyUI had loaded (Qwen 2.1 turbo). Look at contact.png; the chosen one may become the set's concept.
+#   dev/tools/imagegen dev/imagegen/sets/guild/sketch-windows.txt
+include: dev/imagegen/style.txt
+workflow: qwen21-turbo-t2i
+set: aspect_ratio=16:9 (Widescreen), megapixels=1.0
+count: 2
+out: assets/generated/guild/sketch-windows
+before: Concept art of a high fantasy role-playing game user interface, a screenshot-like flat mockup of one large window filling the picture. Text shown only as thin pale placeholder lines. The window:
+dashboard: A guild hall overview. At the top left a round bronze crest ring holding a heraldic guild emblem, overlapping a slim header band and a row of tabs. Below, three columns of dark panels: on the left a list of quest requests and cards of planned dungeon runs with small round role icons; in the middle a row of three news cards each with a round emblem, and under them a chat log; on the right a list of zones with small round class icons, a short list of item icons, and a small three-step podium with gold, silver and bronze medals.
+roster: A guild member roster. A header plaque with the guild's name and a short message line. A large table of members with small round class icons, slim level bars, rank and zone columns, grouped under an online and an offline divider. On the right a detail panel with a round crest, two small arrow buttons beside a rank plate, a note field and a few lines of history.
+equipment: The gear of the guild's members. On the left a narrow list of characters with small round class icons and slim item level bars. On the right a paper doll: an armoured hero standing in the middle between two columns of square equipment slots with quality coloured edges, three weapon slots in a row below, a large item level number inside a bronze laurel wreath at the top right, and a small bar chart at the bottom.
+loot: A loot council. Across the top a strip of five item cards, each with an item icon and a coloured top edge. Below, a table of candidates grouped under small headers, each row with a round class icon, a slim bar and two small buttons. On the right a decision panel with three vote bars and one large button.
+handbook: A guild notice board. A row of small tag buttons along the top. Below, parchment note cards pinned with round bronze pins in a loose grid on a dark panel, one card glowing warm yellow for an important note.
+raidplan: A raid plan. Eight small boxes of five slots each in two rows, each slot with a round class icon. On the right a list of bosses. Along the bottom a timeline with lanes of small markers and a vertical line.

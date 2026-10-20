@@ -1,0 +1,21 @@
+# Guild: quick sketches of the parts the guild window needs (Doc/ideas/Guild.md, *Pictures*), each alone, before
+# the set's concept is chosen. Words alone, the house style, Qwen 2.1 turbo.
+#   dev/tools/imagegen dev/imagegen/sets/guild/sketch-parts.txt
+include: dev/imagegen/style.txt
+workflow: qwen21-turbo-t2i
+set: aspect_ratio=1:1 (Square), megapixels=0.6
+count: 2
+out: assets/generated/guild/sketch-parts
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background. One single game interface part, alone, straight on, centred and filling most of the picture:
+guild-icon: a heraldic shield of bronze and gold with a cloth banner draped across it and a small four-pointed star above, chunky and readable when small.
+banner: a wide charcoal plaque with slim bronze rims, the shield with the banner at its left end, the middle left empty.
+crest-ring: a round bronze ring with a soft bevel and a small four-pointed golden star at its top and at its bottom, the inside empty and transparent.
+laurel: a wreath of two bronze and gold laurel branches meeting at the bottom, open at the top, the inside empty.
+medals: three round medals side by side, gold, silver and bronze, each with a raised four-pointed star, no ribbons.
+emblem-ring: a slim round bronze frame for a small icon, the inside empty and transparent.
+bis-star: a single four-pointed star of gold with a glowing white-gold centre, crisp.
+ding-shield: a heraldic shield with a bronze rim, a fine gold inner line and a smooth charcoal field, empty inside.
+ding-star: a large four-pointed star in a bronze setting with a glowing golden centre.
+move-glyphs: four bold flat glyphs of light gold with bronze rims in a row: a block arrow pointing up, a zig-zag arrow, four arrows pointing out from a dot, four arrows pointing in at a dot.
+note-pin: a pin seen from the front: a round bronze head with a small four-pointed star, a soft shadow under it.
+pin-ring: a thin round bronze ring for a map pin, the inside empty and transparent.

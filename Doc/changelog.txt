@@ -6,6 +6,13 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Guild: a new window for your guild, on Social's full screen (or on
+  its own), opened with your guild key. An overview of who is where,
+  the guild's news and chat and the race to the highest level; the
+  roster with ranks, notes and history; everybody's gear on a paper
+  doll, shared only within your guild and only if you allow it.
+  Quests, dungeons, loot, professions, the raid's plan and the
+  officers' tools come next.
 - Navigation: the maps of the dungeons and raids, chosen on the full
   map's bar, floor by floor; the quest log a window of its own that
   you can move, dock and size, and pin to stay on the screen with the

@@ -58,6 +58,7 @@ player's own, which never leaves the computer but into the player's own backups 
 | Kind | What | Kept in | Goes |
 | --- | --- | --- | --- |
 | **Game facts** | The same for every player of a game version: items, quests, NPCs, objects, places, drops, vendors, trainers, travel; the markets per auction house | The master and the packs; learned ones in a pack's `learned` and series | Into the packs; learned ones by sharing and the harvest |
+| **Guild records** (Saneroki, 2026-10-20) | What a player shares about its own characters with its own guild (who they are, what they wear, their professions: the card; more kinds as the module Guild grows), the guild's roster and its history | The pack Guild's saved file, per guild | To the guild's Sane UI only (`Data.Guild`, below), never into the packs, the harvest or any service |
 | **Personal** | The account's characters (their bags, bank, money, gear, level, progress), the auction log and own auctions, mail, settings, profiles, layouts, notes and aliases of players (Core.People), players' names (sellers, senders, friends, guilds) | `SaneUIDB`, `SaneUICharDB`, the pack Characters' saved file, a module's own saved parts | Nowhere: shown to the player only |
 
 - **A set holds game facts only:** no field for a character, an account, a guild, a GUID or a player's name,
@@ -716,6 +717,14 @@ SaneUIData_Characters["forever"] = {
 
 ## Messages *(1f)*
 
+*The transport is built (2026-10-20, ahead of 1f, for the guild's records): `Core.Wire` (`src/Core/Data/Wire.lua`):
+`Wire.Listen(kind, fn)`, `Wire.Send(kind, fields, channel, target, urgent)`, `Wire.ListenBlock(kind, fn)`,
+`Wire.SendBlock(kind, text, channel, target)`. A block's part is the kind P (`P1\t<sign>\t<kind>\t<transfer>\t<part>\t<parts>\t<size>\t<text>`,
+200 Base64 characters a part); the sign of a game version: `f` Forever, `b` its beta, `p` its test realm.
+The queue: ten at once, then one a second, half that for 30 seconds after a throttle, nothing in a fight or a
+lockdown, at most 300 waiting (urgent for 10 minutes, bulk for an hour). Taken in: 90 messages a minute from a
+sender, more and it is not heard for ten minutes; at most 1,000 waiting in the inbox.*
+
 - **Prefix `SaneUI`;** the guild, party and raid channels only (decision 9).
 - **The sender** is the one the server names (`CHAT_MSG_ADDON`'s sender), by its key (*Players*); a message
   never names its own sender.
@@ -728,6 +737,39 @@ SaneUIData_Characters["forever"] = {
   also says the unpacked size, checked after unpacking; a packed block is at most 4 KB.
 - **A scan's messages** name its auction house (`eu/1234/horde`); a receiver takes only its own house's.
 - **Received text is read, never run:** no `loadstring` anywhere in the framework.
+
+## Guild records
+
+People information, built locally for each user and never shipped (CLAUDE.md, *Game facts, not people*):
+`src/Core/Data/Guild.lua`, quiet until the module Guild starts it (`Data.Guild.Start()`), kept in the saved variable
+of the pack Guild (`saved = true`, no sets), per guild (its name and realm).
+
+```lua
+SaneUIData_Guild["forever"] = { format = 1, guilds = { ["The Order-Realm"] = {
+    seen = 20744,                                          -- the server's day the roster was last read
+    members = { ["Droopy Fairwind"] = "rank\031level\031joined" },  -- what the history is compared with
+    history = "day\031what\031key\031from\031to\030...",       -- oldest first, the last 500: join, leave, up, down, level
+    records = { ["Droopy Fairwind"] = { card = "stamp\031text" } }, -- each member's records, newest by stamp
+} } }
+```
+
+- **The roster** is the game's (`GetGuildRosterInfo` after `GUILD_ROSTER_UPDATE`, asked for with
+  `C_GuildInfo.GuildRoster`), each member by its key (*Players*). The first read of a guild notes no history; a roster
+  that shrinks by more than a tenth at once, or that the game gives only in part, notes nobody leaving.
+- **Records**, by kind (`card`, and the kinds a module adds with `Data.Guild.Kind`), each with its largest size:
+  taken only from their owner (the sender the server names: a member publishes only its own), only from a member of
+  this guild (a whisper from anybody else is dropped), only newer than the one kept, never stamped more than a day
+  ahead of this client's clock.
+- **The card** (`Data.Guild.Card()`, `ReadCard`): `1`, class, race, sex, level, item level, worn (`slot:item:level`,
+  cut by commas), professions (`name:rank:most`), cut by `\031`. Made again a few seconds after the gear, the level
+  or the skills change, and published when it differs.
+- **The wire's kind G** (*Messages*): `h` (a hello: a newcomer flag, Sane UI's version, `kind=stamp` of each record
+  this character shares), `a` (asking its owner for a record, by a whisper); a record goes as a block of kind G
+  (`kind\031stamp\031text`): to the guild when it changes, whispered to the one who asked. A hello at login (a
+  quarter minute after), every 15 minutes, and, to a newcomer's, once after a random wait of up to six seconds.
+  Two asks wait for an answer at once; the same record of the same member is asked at most once a minute.
+- **Allowed by the player:** a kind is sent only while the module's switch for it is on (`Data.Guild.Allow`);
+  off, nobody who asks gets it.
 
 ## Players
 

@@ -341,11 +341,26 @@ local function Name(index, tab)
     return type(tab.name) == "string" and tab.name ~= "" and tab.name or (index == 1 and Board.TEXT.default or Board.TEXT.new:format(index))
 end
 
--- What can stand on the board now, by key.
+-- Windows other modules offer a module's board (Board.Offer): [label] = { spec, ... }.
+local offered = {}
+
+-- What can stand on the board now, by key: the module's own, then those offered to it; one offered with the key of
+-- one of the module's own stands in its place.
 local function Specs(board)
-    local list = Core.Safe(Label(board), board.options.windows) or {}
-    local byKey = {}
-    for _, spec in ipairs(list) do byKey[spec.key] = spec end
+    local own = Core.Safe(Label(board), board.options.windows) or {}
+    local extra = offered[board.options.label]
+    local list, byKey = {}, {}
+    for _, spec in ipairs(extra or {}) do byKey[spec.key] = spec end
+    for _, spec in ipairs(own) do
+        local instead = byKey[spec.key]
+        list[#list + 1] = instead or spec
+        if not instead then byKey[spec.key] = spec end
+    end
+    for _, spec in ipairs(extra or {}) do
+        local listed = false
+        for _, other in ipairs(list) do listed = listed or other == spec end
+        if not listed then list[#list + 1] = spec end
+    end
     return list, byKey
 end
 
@@ -827,10 +842,82 @@ end
 -------------------------------------------------------------------------------
 --  What a module calls
 -------------------------------------------------------------------------------
+local boards = {} -- [label] = the board made under that label
+
 function Board.New(window, options)
     local board = setmetatable({ window = window, options = options, panels = {}, rects = {}, lines = {} }, meta)
     window.board = board -- the title bar ends its search box left of the dropdown (Window.lua)
+    if type(options.label) == "string" then boards[options.label] = board end
     return board
+end
+
+-- A window of one module on another module's board (a module depends on Core only: the guild's window, the module
+-- Guild's, on Social's full screen). label: the board's (Board.New's label, "Social"); spec as a module's own. One
+-- with the key of a window of the board's module stands in its place: that module asks Offered and leaves its own
+-- be. Offered again with the same key, it is replaced.
+function Board.Offer(label, spec)
+    if type(label) ~= "string" or type(spec) ~= "table" or type(spec.key) ~= "string" then return end
+    local list = offered[label] or {}
+    offered[label] = list
+    for index, other in ipairs(list) do
+        if other.key == spec.key then
+            list[index] = spec
+            return
+        end
+    end
+    list[#list + 1] = spec
+end
+
+-- That window offered no more (its module stood down, or its window stands elsewhere now): the board's own of that
+-- key, if it has one, stands in its place again.
+function Board.Withdraw(label, key)
+    local list = offered[label]
+    if not list then return end
+    for index, spec in ipairs(list) do
+        if spec.key == key then
+            table.remove(list, index)
+            local board = boards[label]
+            if board and board.standing and board.options.changed then Core.Safe(Label(board), board.options.changed) end
+            return
+        end
+    end
+end
+
+-- The window another module offers that board under that key, or nil.
+function Board.Offered(label, key)
+    for _, spec in ipairs(offered[label] or {}) do
+        if spec.key == key then return spec end
+    end
+    return nil
+end
+
+-- That board's full screen, with that window in its layout: true when there is such a board. Its window fills the
+-- screen (its edge, Edge.lua); a window the layout chosen lacks is put in beside the largest once it stands.
+function Board.Open(label, key)
+    local board = boards[label]
+    if not board then return false end
+    board.wanted = key
+    local edge = board.window and board.window.edge
+    if board.standing then
+        if key and not board:Has(key) then board:Toggle(key) end
+        board.wanted = nil
+    elseif edge and edge.Fill then
+        Core.Safe(Label(board), edge.Fill, edge, true)
+    end
+    return true
+end
+
+-- Whether that board's full screen stands now.
+function Board.Standing(label)
+    local board = boards[label]
+    return board ~= nil and board.standing == true
+end
+
+-- That board's full screen goes back.
+function Board.Close(label)
+    local board = boards[label]
+    local edge = board and board.window and board.window.edge
+    if board and board.standing and edge and edge.Fill then Core.Safe(Label(board), edge.Fill, edge, false) end
 end
 
 -- The window stands full: what it holds (inside) is that wide and high. Each window of the layout chosen that has
@@ -870,6 +957,14 @@ function methods:Show(inside, width, height)
     Tabs(self, true)
     Menu(self, true)
     self.window:Refresh() -- the search box ends left of the dropdown
+    -- Opened for a window the layout lacks (Board.Open): put in, once this laying out is over.
+    local wanted = self.wanted
+    if wanted then
+        self.wanted = nil
+        if specs[wanted] and not Board.Holds(self.tree, wanted) then
+            Core.Later(function() if self.standing and not Board.Holds(self.tree, wanted) then self:Toggle(wanted) end end)()
+        end
+    end
     return self.rects
 end
 

@@ -218,6 +218,10 @@ at most the commit it was on, and the next session goes on from there.
 ## 1f Sharing, last
 
 - [ ] **1f.1 Its part and the transport.**
+  - *The transport built ahead (2026-10-20), for the guild's records (module Guild): `Core.Wire` (`Data/Wire.lua`): the
+    prefix, messages, blocks and parts, the queue, the inbox, every sender by its key, the player's own and another
+    game version's dropped, with its tests (`dev/tests/guild.lua`). Still to come here: the part, its switch, its saved
+    variable, and sharing game facts through it.*
   - Sharing's own load-on-demand part (decision 24), with its own saved variable.
   - The switch *Share data with my guild*.
   - The prefix, the inbox and the send queue.

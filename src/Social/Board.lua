@@ -117,7 +117,11 @@ end
 -- The first layout: the rooms the full screen has at first (Layout.Board), the conversations at the left, at the
 -- right the guild window over the friends list, each share as large as its room.
 local function Default(width, height)
-    local rooms = Layout.Board(width, height, { friends = true, talks = true, guild = Framed(ns.Guild.Size(inside)),
+    -- The guild's window: the module Guild's own, offered to this board (Core.Board.Offer), as large as it wants
+    -- to be; else the window the guild key opens, as large as it is.
+    local offered = Core.Board.Offered("Social", "guild")
+    local size = offered and offered.want and ns.Safe("board", offered.want, width, height) or (not offered and ns.Guild.Size(inside))
+    local rooms = Layout.Board(width, height, { friends = true, talks = true, guild = Framed(size or nil),
                                                 list = ns.store.talkList })
     local guild, friends, talks = rooms.guild, rooms.friends, rooms.talks
     local right
@@ -255,7 +259,8 @@ end
 function Board.Show(room, width, height)
     inside = room
     local rects = layouts:Show(room, width, height)
-    ns.Guild.Hold(rects.guild and Body(rects.guild))
+    -- The game's guild window is held only while no module offers a guild window of its own.
+    ns.Guild.Hold(rects.guild and not Core.Board.Offered("Social", "guild") and Body(rects.guild) or nil)
     local talks, board = rects.talks, { talks = rects.talks }
     local own = rects.chat
     if own then
