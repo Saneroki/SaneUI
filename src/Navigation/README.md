@@ -51,8 +51,9 @@ party), always over the map, and the full map has the quest log at its left. The
 - **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
 - **Zephras Isle** is on the map as a continent is, a zone of its own: the map follows you there, its pins and the
   map pin stand on it, a click on it at the world opens it, and a right click on it goes out to the world (there is
-  no continent between). *Parchment* shows the isle's own map; *Scrying* and *Atlas* show only the sea there, as
-  the terrain's data and the painted map cover the two continents.
+  no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* and *Atlas* its
+  terrain, the open sky around it cut away as the sea is, and routes there walk around what cannot be walked, as on
+  the continents. The painted map does not cover the isle yet: *Atlas* shows the terrain there.
 - **Routes:** put the game's map pin (Ctrl and a click) and a golden line leads you there, pulsing towards it,
   around what cannot be walked (mountains, walls, deep water is swum), through gates and doors, and by the flights
   your character knows where that is quicker (visit a flight master once for the map to know yours). A pin on
@@ -103,18 +104,20 @@ party), always over the map, and the full map has the quest log at its left. The
   views show, at the wider one's zoom, then only scaled and moved on each step from the view it leaves to the
   one it comes to (the middle straight, the zoom by equal factors). The layers' frame levels are set from the
   canvas' at every layout.
-- **Terrain** (`Terrain.lua`): the game's own minimap textures, one per tile of a continent's 64 x 64 grid
-  (Core's data, the set *Tiles* in the pack *World*, of the two continents; Zephras Isle has none yet), up to 400
-  at once; under them, and alone further out,
+- **Terrain** (`Terrain.lua`): the game's own minimap textures, one per tile of a plane's 64 x 64 grid (Core's
+  data, the set *Tiles* in the pack *World*, of the two continents and Zephras Isle, whose grid is its own map's,
+  2991), up to 400 at once; under them, and alone further out,
   the module's overview of the same tiles, 64 texels a tile, 8 x 8 tiles a texture (`Art/Terrain/`). At the
-  world, every continent's overview where the world map puts it, and at every zoom wherever it is in view. The
+  world, every plane's overview where the world map puts it, and at every zoom wherever it is in view. The
   water is cut away: the overview's alpha is
   the land (where the ground lies above the water's surface, read from the game's terrain files by
-  `dev/tools/terrain-art`), and the same file is the mask of the game's tiles of its block (`Canvas.Masks`), so
+  `dev/tools/terrain-art`; around the isle, which floats, the open sky: what the game's minimap leaves black, out
+  to its grid's edge), and the same file is the mask of the game's tiles of its block (`Canvas.Masks`), so
   the coast is cut alike at every zoom; under it the canvas' sea colour.
-- **Art** (`Art.lua`), the view *Parchment*: Blizzard's world and continent maps (`C_Map.GetMapArtLayers`,
-  `GetMapArtLayerTextures`) over their boxes, their paper frames faded off (`Art/Edge.blp`); over them the
-  stitched map of every continent in view (`Art/Sketches/`, in the terrain's blocks: every zone's full map cut
+- **Art** (`Art.lua`), the view *Parchment*: Blizzard's world map and every plane's (a continent's, the isle's
+  own; `C_Map.GetMapArtLayers`, `GetMapArtLayerTextures`) over their boxes, their paper frames faded off
+  (`Art/Edge.blp`), in textures of their own; over them the
+  stitched map of every plane in view (`Art/Sketches/`, in the terrain's blocks: every zone's full map cut
   to its outline, made by `dev/tools/terrain-art`); up close every zone's own map in view, cut to its outline
   (`Art/Zones/<uiMapID>.blp`, listed in `Outlines.lua`: the zone's land and a little shore, whole up to its
   border and fading out past it, so the one over its neighbour fades into it). A zone's map is always the full
@@ -194,7 +197,7 @@ party), always over the map, and the full map has the quest log at its left. The
   arrives; aboard a ship a new pin is planned from where it lands. The known flight points are read at the flight
   master, the hearthstone's place where it is bound (`HEARTHSTONE_BOUND`) or where it brought the character, both
   kept per character; the hearthstone counts while it is in the bags and bound there (`GetBindLocation`), its
-  cooldown as a wait. Without walking data (and on Zephras Isle, which it does not cover), straight lines.
+  cooldown as a wait. Without walking data, straight lines.
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
   pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second).
 - **The game's minimap** (`Hybrid.lua`): over our map while the view follows you at one of its zoom steps,
@@ -235,7 +238,7 @@ party), always over the map, and the full map has the quest log at its left. The
 | `Live.lua` | What the game tells while playing, read when it changes. No frames |
 | `Canvas.lua` | The frame the map is drawn in: holder, layers, pools, layout, the tracker, the mouse |
 | `Terrain.lua` | The terrain layer: the game's minimap textures from Core's set *Tiles*, and the overview |
-| `Outlines.lua` | The zones that have an outline, by continent: made by `dev/tools/terrain-art`, not by hand |
+| `Outlines.lua` | The zones that have an outline, by their plane's instance (the isle's too): made by `dev/tools/terrain-art`, not by hand |
 | `Art.lua` | The view Parchment: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
 | `Painted.lua` | The view Atlas: the module SaneUI_Atlas found at login, loaded when first drawn, its blocks at the level the zoom asks for |
 | `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, gathered. No frames |
@@ -253,13 +256,18 @@ party), always over the map, and the full map has the quest log at its left. The
 | `Window.lua` | Core's window: the top right corner, the full screen, the two cameras, the view buttons |
 | `Art/Terrain/*.blp` | The terrain's overview: the game's minimap textures, smaller, the water cut away, made by `dev/tools/terrain-art` from the game's files |
 | `Art/Zones/*.blp` | Each zone's outline over its map's box, made by `dev/tools/terrain-art` from the game's files |
-| `Art/Sketches/*.blp` | The stitched map: every zone's full map on its continent, in the terrain's blocks, made by `dev/tools/terrain-art` |
-| `Art/Edge.blp` | A map's box with its paper frame faded off, for Blizzard's world and continent maps |
+| `Art/Sketches/*.blp` | The stitched map: every zone's full map on its continent (or the isle), in the terrain's blocks, made by `dev/tools/terrain-art` |
+| `Art/Edge.blp` | A map's box with its paper frame faded off, for Blizzard's world, continent and isle maps |
 | `Art/Masks/*.blp` | The bands that cut the game's minimap to a window that is not square, made by `dev/tools/minimap-masks` |
 
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, Zephras Isle's terrain:** the isle has the continents' data: its tiles in Core's set *Tiles*, its
+  overview, outline and stitched map (`dev/tools/terrain-art --maps 2991`, the open sky around it cut away), and
+  its walking data (`dev/tools/walk-data --maps 2991`). *Scrying* and *Atlas* draw its terrain, *Parchment* its
+  own map under the stitched one, and routes there walk around what cannot be walked. Terrain, Art and Painted
+  draw every plane (`Coords.Planes`); Art's maps under the stitched map have textures of their own.
 - **2026-10-20, the map on Zephras Isle:** the views work on the isle as on a continent: they follow the player
   there, draw its pins (its zeppelins' tower) and the party, list it in the map selector and the quest log's search,
   open it from the world by a click and put the map pin on it. The isle is its own zone, with no continent's level

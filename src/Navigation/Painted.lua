@@ -177,12 +177,13 @@ function Painted.Build(holder)
     return layer
 end
 
--- The painted map in view (view: Canvas.view), if shown and loaded (Ready): every continent's blocks there.
+-- The painted map in view (view: Canvas.view), if shown and loaded (Ready): every plane's blocks there (the
+-- continents, and Zephras Isle once the art has it).
 function Painted.Place(view, shown)
     pool:Begin()
     if shown and atlas then
         local perYard = view.k * Pixels()
-        for _, map in ipairs(Coords.Continents()) do
+        for _, map in ipairs(Coords.Planes()) do
             local box, link = Coords.Box(map), Coords.Link(map, view.map)
             if box and link then Continent(view, box.continent, link, perYard) end
         end

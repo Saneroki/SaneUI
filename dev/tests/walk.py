@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Tests of dev/tools/walk-data and dev/tools/travel-data without the game's files: the block's encoding, floors
 joined into surfaces and rectangles on made-up ground (flat land, a steep speck, a hole, a cliff, a bridge, water),
-the openings the game is left to work out and those written, regions too small to keep, a flight's path made
-short, and a boat's way (its docks, on the zone maps too, its leaps, which way a newer one replaced). Run by
+the openings the game is left to work out and those written, regions too small to keep and their order, a flight's
+path made short, and a boat's way (its docks, on the zone maps too, its leaps, which way a newer one replaced). And
+dev/tools/terrain-art's open sky around an isle that floats (walk-data reads the terrain with it). Run by
 dev/tests/run."""
 import base64
 import importlib.machinery
 import importlib.util
 import os
 import sys
+import tempfile
 import zlib
 from pathlib import Path
 
@@ -169,6 +171,29 @@ check("a region smaller than SMALLEST is left out", (0, 0) in regions, False)
 check("a large one is kept", (0, 1) in regions, True)
 kept = walk.kept(tiles, regions)
 check("its rectangles numbered anew", len(kept[0][0]), 1)
+large = [[10, 10, 64, 64, 40, LAND, 0]]
+isle = 2991 * 4096 + 32 * 64 + 32  # a tile of another map (Zephras Isle): its region numbered after the continent's
+later_first = {isle: (large, {0: []}, {}), 0: (large, {0: []}, {})}
+check("regions numbered in the order of the tiles' keys, not as the tiles were read",
+      walk.regions(later_first), {(0, 0): 1, (isle, 0): 2})
+
+# --- The open sky around an isle that floats (dev/tools/terrain-art) --------------------------------
+art = walk.ART
+with tempfile.TemporaryDirectory() as folder:
+    textures = Path(folder)
+    image = art.Image
+    west = np.full((512, 512, 3), 90, np.uint8)
+    west[:, :200] = 0                          # nothing drawn: the void, out to the map's edge in the west
+    east = np.full((512, 512, 3), 90, np.uint8)
+    east[200:260, 200:260] = 0                 # a dark place within the land
+    image.fromarray(west).save(textures / "1.blp", "PNG")  # read by content: Pillow takes a PNG under that name
+    image.fromarray(east).save(textures / "2.blp", "PNG")
+    found = {(2991, 10, 10): 1, (2991, 10, 11): 2}
+    sky = art.sky(found, textures)
+    part = sky.get((2991, 10, 10))
+    check("the void joined to the map's edge is sky", part is not None and bool(part[:, :100].all()), True)
+    check("the land beside it is none", part is not None and bool(part[:, 100:].any()), False)
+    check("a dark place within the land is no sky", (2991, 10, 11) in sky, False)
 
 # --- A flight's path made short ---------------------------------------------------------------------
 line = [(0.0, 0.0), (10.0, 0.5), (20.0, 0.0), (30.0, 40.0)]
