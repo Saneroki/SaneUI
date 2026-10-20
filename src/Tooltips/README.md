@@ -54,8 +54,9 @@ only read.
 
   **Sections:** every part of a panel under its header is a section with its name on its divider, in small
   capitals in the middle with a rule at each side (*——— GOLD ———*), name and rules in one dark see-through
-  shade without a shadow, the same as the lines between a table's cells, so they look like grooves in the
-  ground rather than lines drawn on it: there is no divider without a name. A thing's own lines are *Info*: an item's numbers, what it
+  shade, the same as the lines between a table's cells, so they look like grooves in the ground rather than
+  lines drawn on it; the words with a faint light edge under them, as cut letters catch the light, so they
+  read on the dark ground: there is no divider without a name. A thing's own lines are *Info*: an item's numbers, what it
   does, its description and its durability; a spell's facts and its description; a buff's and a quest's
   text. An item's *Set*, *Creates* (a recipe's thing), *Quest*, *Professions* (also the node that gives it),
   *Inventory* (with Alt), *Gold*; a herb's or an ore's *Professions*; a unit's *Status* and *Quest*; a buff's
@@ -253,9 +254,10 @@ only read.
   of the way. The opacity setting is its alpha. Its shape has round corners and an edge that fades out
   softly: it reaches 8 past the panel's sides, and the panel's content stands on its solid part. No
   border, no band behind the name, no boxes. The only dividers are the sections' captions: a section's name
-  stands in the middle in small capitals, without a shadow, and a rule runs from each side of the panel to
-  it, one hairline each, 6 from the name; name and rules in the groove's shade (`COLOR.GROOVE`, black, seen
-  at `Pools.GROOVE`, 40 %), as are a table's captions and the lines between its cells; a hairline is one unit of
+  stands in the middle in small capitals, and a rule runs from each side of the panel to it, one hairline
+  each, 6 from the name; name and rules in the groove's shade (`COLOR.GROOVE`, black, seen at `Pools.GROOVE`,
+  60 %), as are a table's captions and the lines between its cells; the groove's words have a light edge one
+  dot of the screen under them (their shadow: white at `Pools.GROOVE_LIGHT`, 15 %, `Core.Pixels`); a hairline is one unit of
   the interface rounded to whole dots of the screen (`Core.Pixels`, by the game's `PixelUtil.GetNearestPixelSize`). An empty line of the
   game's inside a section is a small gap (a row's `space`).
 - **The icon** (or a unit's portrait) is 64 large and stands out over the panel's top right corner, 10 past
@@ -356,8 +358,9 @@ only read.
   followed; the size is set by us (`SetFont`), because it is the player's setting. Name and lines have
   that size, a weapon's number 4 more, subtitles and the strip's values 2 less; another addon's lines,
   captions and a unit's details 4 less (10 at the default size, as the game's own small font); the line that
-  Alt shows more 6 less (8 at the default size, never under 7). A section's name has no shadow (the font
-  kind `section`, `flat`: `Pools.lua` sets every other kind's shadow back to its font's own).
+  Alt shows more 6 less (8 at the default size, never under 7). The groove's kinds of text (`section`,
+  `caption`, `hint`: `groove`) have the light edge as their shadow; `Pools.lua` sets every other kind's shadow
+  back to its font's own (offset and colour).
 - **Colours.** The panel's colour is the game's own for the thing: `ITEM_QUALITY_COLORS`,
   `RAID_CLASS_COLORS`, the colour of what takes an aura away (`AuraUtil.GetDebuffDisplayInfoTable`, the
   game's for the borders of debuffs), the colours the game's combat log gives the spell schools,
@@ -506,7 +509,7 @@ only read.
   the account's bank, the total, bags and the bank read in steps, the bank only while open; only with Alt),
   the line that Alt shows more (tiny, between two rules, gone with Alt, none on a button's hint), a thing's own
   lines in one section Info, the durability bar with its words inside and round corners, a section's name in
-  the middle with a rule at each side, both in the groove's shade without a shadow, a spell's table (two rows
+  the middle with a rule at each side, both in the groove's shade, its words with their light edge, a spell's table (two rows
   of four, --- for what is not known, Melee, rage, Duration in place of Crit for one that lasts, one row for a
   utility spell), what a spell asks of you in its header (a stance in red while you lack it, a weapon,
   reagents, tools), a physical spell in red, other addons' lines only with Alt, in their own section after a buff's bar and a quest's objectives and from right after

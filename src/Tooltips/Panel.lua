@@ -143,11 +143,11 @@ local FONTS = {
     badge = { font = "GameTooltipHeaderText", add = -1, outline = true }, -- on its gold plaque, outlined
     -- At the default size the small ones are 10, as the game's own small font (GameFontNormalSmall)
     small = { font = "GameTooltipText", add = -4, least = 8 },   -- another addon's lines, the details with Alt
-    -- In the groove's shade, without a shadow (flat; alpha: Pools.GROOVE): a table's captions, a section's
-    -- name between its rules, the tiny line at the bottom that Alt shows more
-    caption = { font = "GameTooltipText", add = -4, least = 8, flat = true, groove = true },
-    section = { font = "GameTooltipText", add = -4, least = 8, flat = true, groove = true },
-    hint = { font = "GameTooltipText", add = -6, least = 7, flat = true, groove = true },
+    -- In the groove's shade (alpha: Pools.GROOVE) with a faint light edge under them (Pools.GROOVE_LIGHT): a
+    -- table's captions, a section's name between its rules, the tiny line at the bottom that Alt shows more
+    caption = { font = "GameTooltipText", add = -4, least = 8, groove = true },
+    section = { font = "GameTooltipText", add = -4, least = 8, groove = true },
+    hint = { font = "GameTooltipText", add = -6, least = 7, groove = true },
     detail = { font = "GameTooltipText", add = -4, least = 8 },  -- a unit's kind, PvP
     inside = { font = "GameTooltipText", add = -4, least = 8 },  -- the numbers inside a health bar
 }

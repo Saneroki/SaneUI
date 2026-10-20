@@ -25,7 +25,9 @@ local VALUE, HEALTH = COLOR.TITLE, COLOR.HEALTH
 local Pools = {}
 ns.Pools = Pools
 
-Pools.GROOVE = 0.4 -- how strongly the groove's shade is seen: a section's rules and name, a table's lines
+Pools.GROOVE = 0.6       -- how strongly the groove's shade is seen: a section's rules and name, a table's lines
+Pools.GROOVE_LIGHT = 0.15 -- the light edge one dot of the screen under a groove's words, as cut letters catch the
+                          -- light: dark words on a dark ground read by it
 Pools.BAR_HEIGHT = 6     -- a bar of our own: durability, a buff's time
 Pools.ICON_CROP = 4 / 64 -- the dark rim round the game's icons: four of their 64 texels each side
 local LIVE_ALPHA = 0.5   -- a unit's bars: a flat colour, half see-through
@@ -81,17 +83,17 @@ function Pools.Restyle()
 end
 
 -- A text's font: the game's font object (its shadow and spacing), then the file and size of the
--- kind of text (Panel.lua, FONTS). A font file that does not load leaves the game's own size. A flat
--- kind has no shadow (a section's name, as thin as its rule); every other kind has its font's own, also
--- on a text that was flat before.
+-- kind of text (Panel.lua, FONTS). A font file that does not load leaves the game's own size. A groove's
+-- words get their light edge in Pools.Text; every other kind has its font's own shadow, also on a text
+-- that was a groove's before.
 local function Dress(label, kind)
     if kind.object then label:SetFontObject(kind.object) end
     if kind.path then label:SetFont(kind.path, kind.size, kind.flags or "") end
-    if kind.flat then
-        label:SetShadowOffset(0, 0)
-    elseif kind.object and kind.object.GetShadowOffset then
+    if not kind.groove and kind.object and kind.object.GetShadowOffset then
         local x, y = kind.object:GetShadowOffset()
         if x then label:SetShadowOffset(x, y) end
+        local r, g, b, a = kind.object:GetShadowColor()
+        if r then label:SetShadowColor(r, g, b, a) end
     end
 end
 
@@ -113,6 +115,11 @@ function Pools.Text(panel, kind, text, r, g, b, align)
         Dress(label, kind)
     end
     label:SetTextColor(r or VALUE[1], g or VALUE[2], b or VALUE[3], kind.groove and Pools.GROOVE or 1)
+    if kind.groove then
+        -- In the groove's shade, with a faint light edge one dot of the screen below (the panel's scale)
+        label:SetShadowColor(1, 1, 1, Pools.GROOVE_LIGHT)
+        label:SetShadowOffset(0, -Core.Pixels(panel, 1))
+    end
     label:SetJustifyH(align or "LEFT")
     label:SetWordWrap(true)
     label:SetWidth(0) -- unbounded, so its natural width can be asked

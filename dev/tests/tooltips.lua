@@ -352,6 +352,7 @@ check(("Durability 61 / 120"):match(ns.PATTERN.DURABILITY) == "61" and ("(53.8 d
 
 -- A spell -----------------------------------------------------------------------------------
 W.methods.SetShadowOffset = function(self, x, y) self._shadowX, self._shadowY = x, y end
+W.methods.SetShadowColor = function(self, r, g, b, a) self._shadowColor = { r, g, b, a } end
 W.methods.SetTextColor = function(self, r, g, b, a) self._color, self._textAlpha = { r, g, b }, a end
 W.methods.SetVertexColor = function(self, r, g, b, a) self._color = { r, g, b, a } end
 local elune = {
@@ -395,16 +396,20 @@ check(shown[1] == "ELUNE'S LIGHT" and shown[3] == "|cff" .. DETAIL_HEX .. "Utili
     "drawn: the name in capitals, then the section's name, the table's captions, each over its value")
 local function color(label) local r, g, b = label:GetTextColor() return r .. " " .. g .. " " .. b end
 local GROOVE = table.concat(COLOR.GROOVE, " ")
-check(color(panel.texts[9]) == table.concat(COLOR.WHITE, " ") and color(panel.texts[8]) == GROOVE and panel.texts[8]._textAlpha == 0.4
-    and panel.texts[8].dressed.flat, "the table's values white; its captions the groove's dark see-through shade, without a shadow")
+local caption = panel.texts[8]
+check(color(panel.texts[9]) == table.concat(COLOR.WHITE, " ") and color(caption) == GROOVE and caption._textAlpha == ns.Pools.GROOVE
+    and ns.Pools.GROOVE == 0.6 and caption.dressed.groove,
+    "the table's values white; its captions the groove's dark see-through shade")
+check(caption._shadowX == 0 and caption._shadowY == -1 and caption._shadowColor[1] == 1 and caption._shadowColor[4] == ns.Pools.GROOVE_LIGHT,
+    "with a faint light edge one dot of the screen below them, as cut letters catch the light, so they read on a dark ground")
 local named = panel.texts[5]
-check(color(named) == GROOVE and named._textAlpha == 0.4 and named.dressed.flat
+check(color(named) == GROOVE and named._textAlpha == ns.Pools.GROOVE and named.dressed.groove and named._shadowY == -1
     and math.abs(named._points[1][4] + named._width / 2 - panel:GetWidth() / 2) <= 1 and panel.texts[3]._shadowX ~= 0,
     "a section's name in the same shade, in the middle; the texts that are no groove keep their font's shadow")
 local grooves, rules = 0, {}
 for index = 1, panel.lines.taken do
     local line = panel.lines[index]
-    if line._color and line._color[4] == 0.4 then grooves = grooves + 1 end
+    if line._color and line._color[4] == ns.Pools.GROOVE then grooves = grooves + 1 end
     if line._height == 1 and line._width > 1 then rules[#rules + 1] = line end
 end
 check(#rules == 4 and rules[1]._points[1][4] == 12 and rules[2]._points[1][4] + rules[2]._width == panel:GetWidth() - 12

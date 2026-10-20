@@ -1035,6 +1035,15 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory and Namepla
   every legible name into the picture.
 - `Doc/guides/image-generation.md`, *Maps*; `Doc/agent/development.md`, `navigation.md`.
 
+### Tooltips: grooves easier to read (Saneroki, 2026-10-20)
+- The groove's shade is stronger (`Pools.GROOVE` 0.6, was 0.4): a section's rules and name, a table's captions
+  and the lines between its cells.
+- Its words have a faint light edge one screen pixel under them, as cut letters catch the light, so the dark
+  words read on the dark ground (their shadow: white at `Pools.GROOVE_LIGHT` 0.15, offset by `Core.Pixels`). The
+  font kinds' `flat` is gone: `groove` says it; `Pools.lua` sets every other kind's shadow offset and colour
+  back to its font's own.
+- Tests: the stronger shade, the light edge under a table's captions and a section's name.
+
 ### Tooltips: grooves, a spell's table and its requirements (Saneroki, 2026-10-19)
 - **Grooves:** a section's name stands in the middle with a rule at each side, name and rules in one dark
   see-through shade (`COLOR.GROOVE`, black at `Pools.GROOVE` 0.4), as are a spell's table captions and the lines
