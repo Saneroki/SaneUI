@@ -923,11 +923,11 @@ ns.Terrain.CAP = tilesBefore
 --  Pins: the game's and Core's, one per thing, filtered, gathered; always over the map
 -------------------------------------------------------------------------------
 local Pins = ns.Pins
--- The pins drawn now, by key.
-local function Drawn()
+-- The pins drawn now, by key (laid: also those laid out past the canvas' edge, out of sight there).
+local function Drawn(laid)
     local list, count = {}, 0
     for _, widget in ipairs(W.frames) do
-        if widget._kind == "Button" and widget.pin and widget._shown then
+        if widget._kind == "Button" and widget.pin and (widget._shown or laid) then
             list[widget.pin.key] = widget
             count = count + 1
         end
@@ -1062,16 +1062,51 @@ ns.Route.Show(nil)
 lines = 0
 for _, widget in ipairs(W.frames) do if widget._kind == "Line" and widget._shown then lines = lines + 1 end end
 check(lines == 0, "no way: no line")
+-- What stands on the map keeps inside the canvas by itself: a segment reaching past its edge is cut there (its
+-- lines' thickness inside), pins past it are out of sight; the map moved a little (no layout), both follow.
+do
+    local view, half = Canvas.view, frame._width / 2
+    ns.Route.Show({ legs = { { kind = "walk", points = { { map = view.map, u = view.u, v = view.v },
+        { map = view.map, u = view.u + 2 * half / view.k, v = view.v } } } } })
+    local glint
+    for _, widget in ipairs(W.frames) do if widget._kind == "Line" and widget._shown and widget._group then glint = widget end end
+    local inset = (ns.Route.THICK + 3) / 2
+    check(glint and near(glint._start[1], 0) and near(glint._end[1], half - inset)
+        and near(glint._coords[2], (half - inset) / ns.Route.PERIOD), "a segment past the canvas' edge: cut at it")
+    local u = full.u
+    full.u = u + 20 / full.k
+    Canvas.Moved()
+    check(Canvas.view.u == view.u and near(glint._end[1], half + 20 - inset), "the map moved: the cut follows the edge")
+    local right, count = true, 0
+    for _, button in pairs(Drawn(true)) do
+        count = count + 1
+        if button._shown ~= Canvas.Inside(button.x, button.y, button.half) then right = false end
+    end
+    check(count > 0 and right, "and the pins: each shown while wholly inside")
+    full.u = u
+    Canvas.Moved()
+    ns.Route.Show(nil)
+end
+frame._mouseOver = true
+frame._scripts.OnEnter(frame)
+check(ns.Window.handle.options.grip == "hover" and ns.Window.handle.hovered,
+    "the mouse on the map: the grip that sizes the small window is seen (Core's grip, outside Edit Mode too)")
+frame._mouseOver = false
+for _, widget in ipairs(W.frames) do
+    if widget._parent == frame and widget._scripts.OnUpdate and widget ~= tracker then widget._scripts.OnUpdate(widget, 0.016) end
+end
+check(not ns.Window.handle.hovered, "off the map: unseen again")
 
 -- The party: the game's blip in the class' colour, where the game tells.
 IsInGroup = function() return true end
 ns.Marks.Group(Canvas.view, GetTime() + 10)
 local blip
-for _, widget in ipairs(W.frames) do if widget._atlas == ns.Marks.BLIP and widget._shown then blip = widget end end
+for _, widget in ipairs(W.frames) do if widget._atlas == ns.Marks.BLIP and widget.x then blip = widget end end
 check(blip and blip._vertex and near(blip._vertex[1], 0.78), "the party member on the map, in the class' colour")
+check(blip._shown == Canvas.Inside(blip.x, blip.y, ns.Marks.MEMBER / 2), "shown while wholly inside the canvas")
 IsInGroup = function() return false end
 ns.Marks.Group(Canvas.view, GetTime() + 20)
-check(not blip._shown, "out of the group: gone")
+check(not blip._shown and not blip.x, "out of the group: gone")
 
 -- Zephras Isle, drawn as a continent is, as a zone: standing on it the view follows the player into its plane; its
 -- pins, its map in the selector; out to the world and in again over it by a click; the map pin put on it.
@@ -1086,10 +1121,12 @@ do
     check(full.map == 2521 and full.level == "zone" and near(full.u, 0) and near(full.v, 0) and Canvas.view.map == 2521
         and Canvas.view.continent == 2991 and Canvas.view.zone == 2521 and arrow._shown and near(arrow._points[1][4], 0),
         "standing on the isle: the view follows the player into its plane, a zone, the arrow there")
-    local onIsle = Drawn()
+    local onIsle = Drawn(true)
     local tower = onIsle["travel:4:2"]
     check(tower and tower.icon._atlas == "TaxiNode_Continent_Horde" and tower.pin.home == 2521 and tower.pin.to == 1429
         and near(tower._points[1][5], -1000 * full.k), "its pins: the zeppelin's tower, opening the map it flies to")
+    check(not tower._shown and -1000 * full.k + tower.half < -frame._height / 2,
+        "laid out past the canvas' bottom edge, the tower is out of sight there")
     GameTooltip._lines = nil
     tower._scripts.OnEnter(tower)
     check(GameTooltip._lines and GameTooltip._lines[1] == "To Elwynn Forest", "its tooltip: where it flies to")
@@ -1509,7 +1546,7 @@ local up, down, walked = zeppelin.points[1], zeppelin.points[#zeppelin.points], 
 check(up.map == 1415 and near(up.u, 400) and near(up.v, -8650) and down.map == 2521 and near(down.u, 0)
     and near(down.v, -1000) and #walked == 2 and walked[2].map == 2521 and near(walked[2].u, 200) and near(walked[2].v, -1200),
     "the zeppelin from its tower onto the isle's plane, then straight to the pin")
-check(pin._shown, "the map pin's mark on the isle")
+check(pin.x and pin._shown == Canvas.Inside(pin.x, pin.y, ns.Marks.PIN / 2), "the map pin's mark on the isle, shown while inside")
 -- Standing on the isle: the canvas' tracker hands the planner the player's place in the isle's plane.
 player.map, player.x, player.y = 2521, 0.5, 0.4
 do

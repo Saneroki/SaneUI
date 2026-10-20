@@ -15,7 +15,9 @@ local Core = SaneUI.Core
 --  (window.box: Edit Mode's art, the window's title with the mouse on it), it is
 --  dragged by that box and docks where it is let go, and a sizable one has its
 --  grip in a corner; one that fills the screen when Edit Mode opens is back in
---  its zone at once. Sizing is only there.
+--  its zone at once. Sizing is only there, but for a window with grip = "hover"
+--  (the minimap's): its grip is there outside Edit Mode too, seen while the mouse
+--  is on the window (window:Hover, as its module tells) or on the grip.
 --
 --  A kind of window that has a title bar (titleBar; the small chat, a unit
 --  frame have none) shows it across its top: its title at the left (with
@@ -59,6 +61,8 @@ local Core = SaneUI.Core
 --                                       -- Without: Esc only brings a full window back to its size (Edge.lua)
 --          sizable = true,              -- a grip in Edit Mode (window.grip); its size is kept too
 --          minWidth = 180, minHeight = 130,
+--          grip = "hover",              -- with sizable: the grip outside Edit Mode too, while the window
+--                                       -- rests in its zone, seen while the mouse is on it (window:Hover)
 --          dock = true,                 -- it docks to the screen's edges (Dock.lua)
 --          skin = true,                 -- background and border (Skin.lua) with round corners (Shape.lua),
 --                                       -- one with an edge it is docked to
@@ -104,6 +108,7 @@ local Core = SaneUI.Core
 --      window:Remember(what, value)     -- kept with its place (full, native)
 --      window:Refresh()                 -- its title bar and buttons as the window is now
 --      window:SetTitle(text)            -- its name anew, on its title bar and its box in Edit Mode
+--      window:Hover(on)                 -- the mouse is on the window, or left it (grip = "hover")
 --      window.inside                    -- a frame for what it holds: below the title bar while there is one,
 --                                       -- the whole window while not; window.top: how far below its top that is
 --      window:Locked()                  -- it holds the game's protected frames and a fight is on: nothing of
@@ -336,6 +341,17 @@ local function Clear(window, x, y)
     return x, y
 end
 
+-- A grip = "hover" outside Edit Mode: there to size the window while it rests in its zone (Edge keeps it out
+-- of sight while it fills the screen), seen while the mouse is on the window or on the grip, or while it sizes.
+local function Grip(window)
+    local grip = window.grip
+    if not grip or window.options.grip ~= "hover" or Core.EditMode.active then return end
+    if window.edge and window.edge.away then return end
+    if window.options.usable and not window.options.usable() then return grip:Hide() end
+    grip:Show()
+    grip:SetAlpha((window.hovered or window.sizing or grip:IsMouseOver()) and 1 or 0)
+end
+
 -- Puts the window where it was left: docked, or at its place; at its first place if it never was moved
 -- (docked, with first.dock). One that fills the screen is back in its zone at once. Locked (a fight),
 -- once the fight is over.
@@ -391,8 +407,15 @@ function methods:Place()
         Window.Corner(self.grip, (zone and zone.bottom and "TOP" or "BOTTOM") .. (zone and zone.right and "LEFT" or "RIGHT"))
     end
     if self.edge then self.edge:Docked(name) end
+    Grip(self)
     self:Refresh()
     if options.docked then Core.Safe("window", options.docked, zone or nil) end
+end
+
+-- The mouse is on the window (on) or has left it, as its module tells: a grip = "hover" is seen while it is.
+function methods:Hover(on)
+    self.hovered = on and true or false
+    Grip(self)
 end
 
 -- Its first place and size again; what it was left as (full, native, its tab) stays.
@@ -849,7 +872,10 @@ local function Edit(window, on)
     if not on and window.sizing then Sized(window) end
     local box = on and Box(window) or window.box
     if box then box:SetShown(on) end
-    if window.grip then window.grip:SetShown(on) end
+    if window.grip then
+        window.grip:SetShown(on)
+        if on then window.grip:SetAlpha(1) else Grip(window) end
+    end
     window:Refresh()
 end
 
@@ -909,14 +935,25 @@ function Window.New(frame, options)
     if options.sizable then
         frame:SetResizable(true)
         if frame.SetResizeBounds then frame:SetResizeBounds(options.minWidth or 1, options.minHeight or 1) end
+        -- grip = "hover": outside Edit Mode too, while it rests in its zone and no fight holds it.
+        local function sizable()
+            if window.usable() then return true end
+            if options.grip ~= "hover" or (window.edge and window.edge.away) or window:Locked() then return false end
+            return not options.usable or options.usable()
+        end
         window.grip = Window.Sizer(frame, {
-            minWidth = options.minWidth, minHeight = options.minHeight, usable = window.usable,
+            minWidth = options.minWidth, minHeight = options.minHeight, usable = sizable,
             started = function() window.sizing = true end,
             -- A docked window stays docked: it hangs on its zone again at its new size.
             stopped = function() Sized(window) end,
         })
         window.grip:SetFrameLevel(frame:GetFrameLevel() + Window.BOX_LEVEL + 1) -- over the box
         window.grip:Hide()
+        if options.grip == "hover" then
+            local seen = Core.Guard("window", function() Grip(window) end)
+            window.grip:HookScript("OnEnter", seen)
+            window.grip:HookScript("OnLeave", seen)
+        end
     end
     windows[#windows + 1] = window
     -- Shown again in a zone another window holds now (it came first): it stands free this time.

@@ -93,6 +93,10 @@ A window's state is held in a few flags; Core keeps them, the module reads them.
 | selected | `Core.Selection.window` is it | a click on its box in Edit Mode | another chosen (ours or the game's), Edit Mode closing | its box in Edit Mode's selected look, Core's dialog names it |
 | the game's held | `window.holder.held` | ours chosen and the game's closed (`native.hold`) | the game's chosen (`Native(true)`), a failure, `GiveBack` | the game's window is under our hidden frame: opened by the game, it opens ours |
 
+A window with `grip = "hover"` (the minimap's) has its grip at rest outside Edit Mode too: unseen until the mouse
+is on the window (`window:Hover(on)`, which its module calls) or on the grip, hidden while its `usable()` says no
+and while it is away (Edge).
+
 **Invariants** (keep them when changing anything):
 
 1. **One mover at a time.** A window's size or place is changed by one part only: Edge while away, a drag

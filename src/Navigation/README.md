@@ -71,8 +71,10 @@ party), always over the map, and the full map has the quest log at its left. The
   the game's map* on the page. With the game's minimap our small window rests out of sight; with the game's map
   its keys open the game's. Either way the mouse pushed into the top right corner still fills the screen with
   our map. The game's key to show or hide the minimap (in its key bindings) shows or hides our window.
-- **Move and size it** in Edit Mode like every Sane UI window; the section *Expand window* on the page: whether
-  the corner fills the screen, the animation, the background.
+- **Size the small window** by its corner away from the screen's edges (at first the lower left): with the mouse
+  on the map the game's grip shows there; drag it. The size is kept. **Move and size it** in Edit Mode too, like
+  every Sane UI window; the section *Expand window* on the page: whether the corner fills the screen, the
+  animation, the background.
 - `/sane map reset`: the window's first place and size.
 
 ## How it works
@@ -141,6 +143,12 @@ party), always over the map, and the full map has the quest log at its left. The
 - **What stands on the map is always over it:** the canvas sets every layer's frame level from its own at each
   layout (`Canvas.LEVELS`): the map's own layers (terrain, Atlas, art, the highlight) up to `Canvas.MAP`, then the
   quest areas, the route, the game's minimap (`Hybrid.LEVEL`), the pins and the marks on top; the bar over all.
+- **And inside the canvas:** the game cuts the map's textures at the canvas' edge, but it drew the lines and
+  buttons laid out past the view (`Canvas.MARGIN`) over the screen around the small window. So `Canvas.edge`
+  is the canvas' rectangle in the holder's units, set at each layout, each step of the window's way and whenever
+  the holder has moved `Canvas.REFIT` units: the route's segments are cut at it (`Route.Fit`, the lines'
+  thickness inside; only a segment whose cut changed is placed anew), pins and marks show only while wholly
+  inside it (`PinView.Fit`, `Marks.Fit`, `Canvas.Inside`), so none is seen or clicked past the window.
 - **Pins** (`Pins.lua`, no frames): the pin records of each map in view, from what the game tells (`Live.lua`: its
   quests on the map and the next way of the quest the arrow leads to, flight points of the player's side, its
   vignettes, area points, map links, dungeon entrances where it has them) and from Core's data
@@ -266,6 +274,9 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, inside the window; the corner sizes it:** the route, the pins and the marks keep inside the canvas
+  by themselves (`Canvas.edge`); they were drawn over the screen around the small window. The small window's
+  corner away from the screen's edges sizes it outside Edit Mode too (Core's window option `grip = "hover"`).
 - **2026-10-20, the golden line drawn:** the line's first segment stopped the module (the map window closed, the
   game's own minimap and map back): the glint's pulse was made in Lua, and the game gives a `TextureCoordTranslation`
   made there no `SetOffset`. The pulse is now a template in `Route.xml`, as the game's own lines have theirs.

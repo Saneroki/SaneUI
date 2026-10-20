@@ -1358,6 +1358,37 @@ check(given.titleBar and given.dock and given.skin and given.edge and given.esca
     "a kind gives a window its options: a panel has a title bar, a skin, full screen, Esc closes it")
 check(given.sizable == false and kindWindow.grip == nil, "what the module gives itself wins")
 check(kindFrame._toplevel and kindFrame._mouse, "a panel comes to the front when clicked, as the game's own panels do, and takes the click")
+
+-- A grip that sizes the window outside Edit Mode too (grip = "hover", the minimap's): there while the window rests
+-- in its zone, seen while the mouse is on the window or on the grip, gone while its module says no.
+do
+    local miniFrame, miniStore, allowed = CreateFrame("Frame", nil, UIParent), {}, true
+    local mini = Window.New(miniFrame, { store = miniStore, kind = "screen", title = "Map", grip = "hover",
+        first = { dock = "TOPRIGHT", width = 200, height = 200 }, minWidth = 100, minHeight = 100,
+        usable = function() return allowed end })
+    mini:Place()
+    check(mini.grip:IsShown() and mini.grip._alpha == 0 and mini.grip.corner == "BOTTOMLEFT",
+        "outside Edit Mode its grip is there, unseen, in the corner away from the screen's")
+    mini:Hover(true)
+    check(mini.grip._alpha == 1, "the mouse on the window: the grip is seen")
+    mini:Hover(false)
+    mini.grip._mouseOver = true
+    mini.grip:GetScript("OnEnter")(mini.grip)
+    check(mini.grip._alpha == 1 and W.cursorArt == "UI_RESIZE_CURSOR", "on the grip itself: seen, the mouse shows what it does")
+    mini.grip:GetScript("OnMouseDown")(mini.grip)
+    check(miniFrame._sizing == "BOTTOMLEFT", "and it sizes the window outside Edit Mode")
+    miniFrame._width, miniFrame._height = 260, 240
+    mini.grip:GetScript("OnMouseUp")(mini.grip)
+    check(miniStore.place.width == 260 and miniStore.place.height == 240 and miniStore.place.dock == "TOPRIGHT"
+        and mini.zone == "TOPRIGHT", "the new size is kept, and it is still docked")
+    mini.grip._mouseOver = false
+    mini.grip:GetScript("OnLeave")(mini.grip)
+    check(mini.grip._alpha == 0, "the mouse gone: unseen again")
+    allowed = false
+    mini:Hover(true)
+    check(not mini.grip:IsShown(), "while its module says no (resting out of sight), no grip")
+    miniFrame:Hide()
+end
 traderWindow:SetTitle("Merchant")
 check(traderWindow.bar.title._text == "Merchant" and traderWindow.box.title._text == "Merchant" and traderWindow.options.title == "Merchant",
     "a window's name can be set anew: on its title bar and on its box in Edit Mode")

@@ -20,6 +20,8 @@ local _, ns = ...
 --  Whatever the view, what stands on the map (areas, route, pins, marks) is always over the map's own
 --  layers: their frame levels follow the canvas' at every layout (Canvas.LEVELS), so a window raised to the
 --  full screen and put back, which leaves its frames' levels as they come, never puts the map over them.
+--  It also keeps inside the canvas by itself (Canvas.edge): the game cut the map's textures at the canvas'
+--  edge, but drew the lines and buttons laid out past the view over the screen around the small window.
 --
 --  Laid out around an origin, the camera's middle when it last was: a texture
 --  stands at (its point - origin) * zoom from the holder's middle, and the
@@ -71,6 +73,12 @@ local morph       -- on the window's way: { a = where it comes from, b = where i
 -- own), its instance (continent), the level and the zone shown. One table, filled anew at each layout.
 local view = { u = 0, v = 0, k = 1, left = 0, right = 0, top = 0, bottom = 0, span = 0, level = "continent" }
 Canvas.view = view
+-- The canvas' own rectangle in the holder's units as the holder stands now (x, y: its offset from the canvas'
+-- middle in its own units; scale: on the window's way), left, right, bottom, top: the route is cut at it, pins
+-- and marks show only while wholly inside it (Route.Fit, PinView.Fit, Marks.Fit; Canvas.Inside).
+local edge = { left = 0, right = 0, bottom = 0, top = 0, x = 0, y = 0, scale = 1 }
+Canvas.edge = edge
+Canvas.REFIT = 0.5 -- the holder moves so many units before what stands on the map is kept inside anew
 local laid = false -- something is laid out
 local known = false -- the player's place is known in the view's plane
 local lastInput = 0 -- when the mouse last did something to the map
@@ -196,6 +204,26 @@ function Canvas.Put(texture, u, v, width, height, partX, partY)
     texture:SetTexCoord(0, partX, 0, partY)
 end
 
+-- The canvas' rectangle for the holder at x, y (its offset from the canvas' middle, in its own units) and scale.
+local function Bounds(x, y, scale)
+    local width, height = frame:GetSize()
+    edge.x, edge.y, edge.scale = x, y, scale
+    edge.left, edge.right = -width / 2 / scale - x, width / 2 / scale - x
+    edge.bottom, edge.top = -height / 2 / scale - y, height / 2 / scale - y
+end
+
+-- What stands on the map kept inside the canvas' rectangle as it is now.
+local function Keep()
+    ns.Safe("route", ns.Route.Fit, edge)
+    ns.Safe("pins", ns.PinView.Fit, edge)
+    ns.Safe("marks", ns.Marks.Fit, edge)
+end
+
+-- Whether something at x, y (the holder's units) reaching half units each way lies wholly inside the canvas.
+function Canvas.Inside(x, y, half)
+    return x - half >= edge.left and x + half <= edge.right and y - half >= edge.bottom and y + half <= edge.top
+end
+
 -- The zone in the middle of the view, at the zone's level.
 local function Zone()
     if camera.level ~= "zone" then return nil end
@@ -250,6 +278,7 @@ function Canvas.Layout()
     view.left, view.right, view.top, view.bottom = camera:View(math.max(width, height) * Canvas.MARGIN)
     holder:SetScale(1)
     holder:SetPoint("CENTER", 0, 0)
+    Bounds(0, 0, 1)
     laid = true
     overX = nil -- the highlight is placed anew around the new origin
     Stack()
@@ -270,6 +299,10 @@ function Canvas.Moved()
         return Canvas.Layout()
     end
     holder:SetPoint("CENTER", x, y)
+    if math.abs(x - edge.x) >= Canvas.REFIT or math.abs(y - edge.y) >= Canvas.REFIT then
+        Bounds(x, y, 1)
+        Keep()
+    end
 end
 
 -- Drawn anew as it is, if it is laid out (the view chosen changed, data arrived, the game's minimap's zoom).
@@ -462,10 +495,16 @@ local function Wheel(_, delta)
 end
 
 -- While the mouse is over the canvas: what a click would open lights up, looked at again when the mouse
--- moved. Off the canvas, a button held, the window on its way: out of sight, and the look stops.
+-- moved, and the window's grip is seen (Window.Hovered). A button held, the window on its way: nothing
+-- lights up. Off the canvas the look stops.
 local function Over()
-    if not frame:IsMouseOver() or pressed or held or not laid then
+    if not frame:IsMouseOver() then
         hover:SetScript("OnUpdate", nil)
+        overX = nil
+        ns.Window.Hovered(false)
+        return ns.Art.Unlight()
+    end
+    if pressed or held or not laid then
         overX = nil
         return ns.Art.Unlight()
     end
@@ -479,6 +518,7 @@ local hovering = ns.Guard(Over) -- made once: the look while the mouse is over t
 
 local function Entered()
     hover:SetScript("OnUpdate", hovering)
+    ns.Window.Hovered(true)
 end
 
 -- A drag ends when the canvas goes (the window on its way, hidden).
@@ -654,8 +694,11 @@ function Canvas.Step(share)
     now.width, now.height = frame:GetSize()
     now.map, now.level = b.map, b.level
     local scale = now.k / view.k
+    local x, y = (view.u - now.u) * now.k / scale, (view.v - now.v) * now.k / scale
     holder:SetScale(scale)
-    holder:SetPoint("CENTER", (view.u - now.u) * now.k / scale, (view.v - now.v) * now.k / scale)
+    holder:SetPoint("CENTER", x, y)
+    Bounds(x, y, scale)
+    Keep()
 end
 
 -- Hidden: every texture let go, nothing runs. Where the cameras looked is kept for the next time.

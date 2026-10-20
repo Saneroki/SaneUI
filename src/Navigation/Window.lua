@@ -18,6 +18,9 @@ local _, ns = ...
 --  choice (the switches Show the game's minimap, Show the game's map), ticked
 --  while chosen and chosen again to come back.
 --
+--  Small, its corner away from the screen's edges sizes it (Core's grip, there
+--  while the mouse is on the map, outside Edit Mode too); the size is kept.
+--
 --  With the game's own minimap chosen the small window rests out of sight (Rest):
 --  the game's minimap stands in its place and takes the mouse, and the corner
 --  still fills the screen with our map, which goes back out of sight when it
@@ -65,6 +68,7 @@ local function Rest(on)
     frame:SetAlpha(on and 0 or 1)
     ns.Canvas.Mouse(not on)
     if on then ns.Canvas.Close() end
+    handle:Hover(false) -- resting, its grip goes too
 end
 
 -- Whether the quest log stands at the map's left in the full screen (TopBar's button).
@@ -159,6 +163,7 @@ function Window.Build()
         kind = "screen", store = ns.store, title = ns.TEXT.title, edge = ns.options, content = inside, classic = CLASSIC,
         first = { dock = "TOPRIGHT", width = Window.WIDTH, height = Window.HEIGHT },
         minWidth = Window.WIDTH / 2, minHeight = Window.HEIGHT / 2,
+        grip = "hover", usable = function() return not resting end,
         docked = function() ns.Guarded(Placed) end,
         filled = function(on, width, height) ns.Guarded(Filled, on, width, height) end,
         moving = function(share) ns.Guarded(Moving, share) end,
@@ -181,6 +186,11 @@ end
 function Window.Update()
     if not frame or (handle.edge and handle.edge.away) then return end
     if Sleeping() ~= resting then Placed() end
+end
+
+-- The mouse is on the map, or has left it (Canvas.lua): the grip that sizes the small window is seen while it is.
+function Window.Hovered(on)
+    if handle then handle:Hover(on) end
 end
 
 -- The game's minimap is ours now (Hybrid.lua): the small view starts at its zoom step, as the player had it.

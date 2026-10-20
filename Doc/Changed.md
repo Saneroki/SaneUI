@@ -3,8 +3,33 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 526 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 260 (Navigation), 21 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 526 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 267 (Navigation), 21 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Navigation: what stands on the map keeps inside the window; the small window sized by its corner (Saneroki, 2026-10-20)
+- **Inside the window** (`Canvas.lua`, `Route.lua`, `PinView.lua`, `Marks.lua`): in the small window the golden
+  line and the pins reached past its edge over the screen (they are laid out past the view, `Canvas.MARGIN`, so a
+  drag shows no gap; the game cut the map's textures at the canvas' edge, but not those lines and buttons).
+  `Canvas.edge` is the canvas' rectangle in the holder's units, set at each layout (`Bounds`), at each step of the
+  window's way (`Step`, the holder scaled) and when the holder has moved `Canvas.REFIT` (0.5) units since
+  (`Moved`); then `Keep` has each layer fit itself. The route keeps its segments near the view (`parts`) and cuts
+  each at the edge (`Route.Fit`: the share of it inside, along each axis, `Between`; the lines' thickness inside;
+  the art keeps its place on the way, `SetTexCoord` from the share), placing anew only a segment whose cut
+  changed, so a step of following touches those at the edge alone. Pins (`PinView.Fit`, each button's place and
+  reach, the focused quest's glow included) and marks (`Marks.Fit`, `Put`: the arrow, the map pin, the party)
+  show only while wholly inside (`Canvas.Inside`), so none is seen or clicked past the window either.
+- **The corner sizes the small window** (Core `Window.lua`, Navigation `Window.lua`, `Canvas.lua`): Core's window
+  option `grip = "hover"` keeps a sizable window's grip outside Edit Mode too, while it rests in its zone: unseen
+  until the mouse is on the window (`window:Hover(on)`, its module's word) or on the grip, or while it sizes;
+  hidden while its `usable()` says no, and while it is away (Edge hides it as before). Sizing there is kept and
+  stays docked as in Edit Mode (`Sized`). Navigation's window has it (`usable`: not while it rests out of sight
+  for the game's own minimap); the canvas tells it the mouse is on the map (`Entered`, and its look `Over`,
+  which now runs on while a button is held, so it also sees the mouse leave after a drag).
+- **Tests:** `dev/tests/navigation.lua` (267 checks): a segment past the canvas' edge cut there and the cut
+  following a move; pins and marks shown only while inside (the isle's zeppelin tower laid out past the bottom
+  edge is out of sight there); the grip seen with the mouse on the map and not off it. `dev/tests/window.lua`
+  (366): the hover grip unseen at rest, seen on hover and on the grip, sizing outside Edit Mode kept docked, gone
+  while the module says no. **Guide:** `Doc/guides/windows.md`, after the states.
 
 ### Navigation: the golden line drawn again (Saneroki, 2026-10-20)
 - **The pulse from XML** (`Route.xml`, `Route.lua`): the first segment of a route stopped the module (the map

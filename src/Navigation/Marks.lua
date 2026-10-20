@@ -13,7 +13,8 @@ local _, ns = ...
 --
 --  Placed against the canvas' holder like the layers (Canvas.lua), so a drag moves
 --  them with the map; the arrow is moved again on every step of the canvas'
---  tracker. The map's other pins are PinView.lua's.
+--  tracker. Each shows only while it lies wholly inside the canvas (Fit), as the
+--  pins do. The map's other pins are PinView.lua's.
 -------------------------------------------------------------------------------
 local Marks = {}
 ns.Marks = Marks
@@ -95,17 +96,22 @@ local function Spot(view, map, u, v)
     return (link.du + link.su * u - view.u) * view.k, (link.dv + link.sv * v - view.v) * view.k
 end
 
+-- A mark at x, y (the holder's units, nil: none) reaching half units from its middle: placed there, and
+-- shown while it lies wholly inside the canvas.
+local function Put(mark, x, y, half)
+    mark.x, mark.y, mark.half = x, y, half
+    if not x then return mark:Hide() end
+    mark:ClearAllPoints()
+    mark:SetPoint("CENTER", holder, "CENTER", x, y)
+    mark:SetShown(ns.Canvas.Inside(x, y, half))
+end
+
 -- The player's arrow: where the player is (map, u, v, facing from Live.Player), hidden when hidden is true.
 function Marks.Player(view, map, u, v, facing, hidden)
     local x, y
     if not hidden and u then x, y = Spot(view, map, u, v) end
-    if not x then
-        arrow:Hide()
-        return
-    end
-    arrow:SetPoint("CENTER", holder, "CENTER", x, y)
-    if facing then arrow:SetRotation(facing) end
-    arrow:Show()
+    if x and facing then arrow:SetRotation(facing) end
+    Put(arrow, x, y, Marks.ARROW / 2)
 end
 
 -- The map pin, where the game has it.
@@ -115,14 +121,8 @@ function Marks.Pin(view)
     local u, v, px, py
     if home then u, v = Coords.MapToPlane(map, x, y, home) end
     if u then px, py = Spot(view, home, u, v) end
-    if not px then
-        pin:Hide()
-        return
-    end
-    pin.icon:SetAtlas(Live.Tracked() and "Waypoint-MapPin-Tracked" or "Waypoint-MapPin-Untracked")
-    pin:ClearAllPoints()
-    pin:SetPoint("CENTER", holder, "CENTER", px, py)
-    pin:Show()
+    if px then pin.icon:SetAtlas(Live.Tracked() and "Waypoint-MapPin-Tracked" or "Waypoint-MapPin-Untracked") end
+    Put(pin, px, py, Marks.PIN / 2)
 end
 
 -- The party or raid where the game tells their places (on the view's plane's map), a few times a second.
@@ -145,18 +145,29 @@ function Marks.Group(view, now)
             local _, class = UnitClass(member.unit)
             local color = class and rawget(_G, "RAID_CLASS_COLORS") and RAID_CLASS_COLORS[class]
             if color then texture:SetVertexColor(color.r, color.g, color.b) else texture:SetVertexColor(1, 1, 1) end
-            texture:SetPoint("CENTER", holder, "CENTER", (u - view.u) * view.k, (v - view.v) * view.k)
-            texture:Show()
+            Put(texture, (u - view.u) * view.k, (v - view.v) * view.k, Marks.MEMBER / 2)
         end
     end
-    for index = count + 1, #members do members[index]:Hide() end
+    for index = count + 1, #members do Put(members[index], nil) end
+end
+
+-- Each mark shown while it lies wholly inside the canvas' rectangle as it is now (Canvas.edge).
+function Marks.Fit()
+    if not arrow then return end
+    local Inside = ns.Canvas.Inside
+    for _, mark in ipairs({ arrow, pin }) do
+        if mark.x then mark:SetShown(Inside(mark.x, mark.y, mark.half)) end
+    end
+    for _, texture in ipairs(members) do
+        if texture.x then texture:SetShown(Inside(texture.x, texture.y, texture.half)) end
+    end
 end
 
 -- Out of sight, all of them.
 function Marks.Clear()
     if not arrow then return end
-    arrow:Hide()
-    pin:Hide()
-    for _, texture in ipairs(members) do texture:Hide() end
+    Put(arrow, nil)
+    Put(pin, nil)
+    for _, texture in ipairs(members) do Put(texture, nil) end
     nextGroup = 0
 end

@@ -11,7 +11,8 @@ local _, ns = ...
 --      Route.Show(nil)   no way: the line goes
 --
 --  Each leg's points are joined by the game's Line widgets from a pool, only the
---  parts in view: under them a dark edge, over them the game's dependency bar art
+--  parts in view, cut at the canvas' edge (Canvas.edge: the game does not cut a
+--  line there; Fit): under them a dark edge, over them the game's dependency bar art
 --  tinted gold, and over that its glint, moved along the line by the engine (a
 --  TextureCoordTranslation animation from Route.xml, as the game's talent lines
 --  move theirs), so nothing of ours runs every frame for the pulse. A walk is
@@ -41,6 +42,9 @@ local THICKNESS = { edge = Route.THICK + 3, fill = Route.THICK, glint = Route.TH
 local layer, holder
 local way
 local lines, used = {}, 0 -- the pool: { edge, fill, glint, group } each
+-- The segments near the view, in the holder's units: { x1, y1, x2, y2, length, entry (its lines), from, to (the
+-- share of it inside the canvas, as last placed) }
+local parts, count = {}, 0
 local pulse -- whether the game has the pulse's template, asked once
 
 function Route.Build(canvasHolder)
@@ -73,23 +77,74 @@ local function Next()
     return entry
 end
 
--- One segment, x, y units from the holder's middle, in a leg's colour.
+local function Hide(entry)
+    entry.edge:Hide()
+    entry.fill:Hide()
+    entry.glint:Hide()
+    if entry.group then entry.group:Stop() end
+end
+
+-- One segment, x, y units from the holder's middle, in a leg's colour: its lines from the pool, placed by Fit.
 local function Segment(x1, y1, x2, y2, colour, faint)
     local length = math.sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2)
     if length < 1 then return end
     local entry = Next()
-    local repeats = length / Route.PERIOD
+    entry.fill:SetVertexColor(colour[1], colour[2], colour[3], faint and 0.5 or 0.9)
+    entry.glint:SetVertexColor(colour[1], colour[2], colour[3], faint and 0.4 or 1)
+    count = count + 1
+    local part = parts[count] or {}
+    parts[count] = part
+    part.x1, part.y1, part.x2, part.y2, part.length, part.entry = x1, y1, x2, y2, length, entry
+    part.from, part.to = nil, nil
+end
+
+-- A segment's lines from the share from to the share to of it (the art stays where it is on the way when the
+-- segment is cut), or out of sight when nothing of it is inside.
+local function Draw(part)
+    local entry = part.entry
+    if part.to <= part.from then return Hide(entry) end
+    local dx, dy = part.x2 - part.x1, part.y2 - part.y1
+    local x1, y1 = part.x1 + dx * part.from, part.y1 + dy * part.from
+    local x2, y2 = part.x1 + dx * part.to, part.y1 + dy * part.to
+    local repeats = part.length / Route.PERIOD
     for name, thickness in pairs(THICKNESS) do
         local line = entry[name]
         line:SetStartPoint("CENTER", holder, x1, y1)
         line:SetEndPoint("CENTER", holder, x2, y2)
         line:SetThickness(thickness)
-        line:SetTexCoord(0, repeats, 0, 1)
+        line:SetTexCoord(part.from * repeats, part.to * repeats, 0, 1)
         line:Show()
     end
-    entry.fill:SetVertexColor(colour[1], colour[2], colour[3], faint and 0.5 or 0.9)
-    entry.glint:SetVertexColor(colour[1], colour[2], colour[3], faint and 0.4 or 1)
     if entry.group and not entry.group:IsPlaying() then entry.group:Play() end
+end
+
+-- The share of a segment between lo and hi along one axis (its start a, its way d there), within from..to.
+local function Between(a, d, lo, hi, from, to)
+    if d == 0 then
+        if a < lo or a > hi then return 1, 0 end
+        return from, to
+    end
+    local enter, leave = (lo - a) / d, (hi - a) / d
+    if enter > leave then enter, leave = leave, enter end
+    return math.max(from, enter), math.min(to, leave)
+end
+
+-- Every segment cut at the canvas' rectangle (Canvas.edge, in the holder's units), the lines' own thickness
+-- inside it. Only a segment whose share inside changed is placed anew: a step of following moves those at the
+-- edge alone.
+function Route.Fit(edge)
+    local inset = THICKNESS.edge / 2
+    local left, right, bottom, top = edge.left + inset, edge.right - inset, edge.bottom + inset, edge.top - inset
+    for index = 1, count do
+        local part = parts[index]
+        local from, to = Between(part.x1, part.x2 - part.x1, left, right, 0, 1)
+        from, to = Between(part.y1, part.y2 - part.y1, bottom, top, from, to)
+        if to <= from then from, to = 0, 0 end
+        if from ~= part.from or to ~= part.to then
+            part.from, part.to = from, to
+            Draw(part)
+        end
+    end
 end
 
 -- Whether a segment of the view's plane may reach into the view (its box against the view's, with its margin).
@@ -98,9 +153,9 @@ local function Near(view, u1, v1, u2, v2)
         and math.max(v1, v2) >= view.bottom and math.min(v1, v2) <= view.top
 end
 
--- Drawn for the view as the canvas laid it out; only the parts in view.
+-- Drawn for the view as the canvas laid it out; only the parts in view, cut at the canvas' edge.
 function Route.Place(view)
-    used = 0
+    used, count = 0, 0
     if way and view.map then
         for index, leg in ipairs(way.legs) do
             local colour = Route.COLOURS[leg.kind] or Route.COLOURS.walk
@@ -117,13 +172,8 @@ function Route.Place(view)
             end
         end
     end
-    for index = used + 1, #lines do
-        local entry = lines[index]
-        entry.edge:Hide()
-        entry.fill:Hide()
-        entry.glint:Hide()
-        if entry.group then entry.group:Stop() end
-    end
+    for index = used + 1, #lines do Hide(lines[index]) end
+    Route.Fit(ns.Canvas.edge)
 end
 
 -- The way to draw (Planner.lua), or none; drawn at once if the map is laid out.
@@ -143,11 +193,6 @@ end
 
 -- Out of sight (the window hidden): the lines go, the way is kept.
 function Route.Clear()
-    for _, entry in ipairs(lines) do
-        entry.edge:Hide()
-        entry.fill:Hide()
-        entry.glint:Hide()
-        if entry.group then entry.group:Stop() end
-    end
-    used = 0
+    for _, entry in ipairs(lines) do Hide(entry) end
+    used, count = 0, 0
 end

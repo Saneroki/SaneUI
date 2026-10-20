@@ -15,8 +15,10 @@ local _, ns = ...
 --      the rest    the game's atlas of each; a click on one that leads into another map opens that map
 --
 --  Placed against the canvas' holder like the map's layers, so a drag moves them
---  with the map; laid out again with the map. A press on a pin is the map's (a
---  drag that starts on a pin moves the map); a plain click is the pin's.
+--  with the map; laid out again with the map. A pin shows only while it lies
+--  wholly inside the canvas (Fit: the game does not cut a button at its edge, nor
+--  its clicks). A press on a pin is the map's (a drag that starts on a pin moves
+--  the map); a plain click is the pin's.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Pins = ns.Pins
@@ -119,6 +121,7 @@ local function Look(button, pin)
     local kind = pin.gathered and "gathered" or pin.kind
     local size = Pins.SIZE[kind] or 20
     button:SetSize(size, size)
+    button.half = size / 2 -- how far it reaches from its middle (Fit); the focused quest's glow farther
     local disc, icon, glow, count = button.disc, button.icon, button.glow, button.count
     icon:ClearAllPoints()
     icon:SetDesaturated(pin.dim and true or false)
@@ -137,6 +140,7 @@ local function Look(button, pin)
             glow:SetSize(size * 1.6, size * 1.6)
             glow:SetPoint("CENTER")
             glow:Show()
+            button.half = size * 0.8
         end
         button.light:SetAtlas(PinView.HIGHLIGHT)
     elseif kind == "gathered" then
@@ -194,9 +198,9 @@ function PinView.Place(laidView, small)
         button.pin = pin
         Look(button, pin)
         Level(button)
+        button.x, button.y = (pin.pu - view.u) * view.k, (pin.pv - view.v) * view.k
         button:ClearAllPoints()
-        button:SetPoint("CENTER", holder, "CENTER", (pin.pu - view.u) * view.k, (pin.pv - view.v) * view.k)
-        button:Show()
+        button:SetPoint("CENTER", holder, "CENTER", button.x, button.y)
     end
     for key, button in pairs(used) do
         if not seen[key] then
@@ -206,6 +210,13 @@ function PinView.Place(laidView, small)
             free[#free + 1] = button
         end
     end
+    PinView.Fit()
+end
+
+-- Each pin shown while it lies wholly inside the canvas' rectangle (Canvas.edge, in the holder's units).
+function PinView.Fit()
+    local Inside = ns.Canvas.Inside
+    for _, button in pairs(used) do button:SetShown(Inside(button.x, button.y, button.half)) end
 end
 
 -- Every pin out of sight (the window hidden).
