@@ -224,6 +224,73 @@ GetGlancingBlowChance = function() return 0.4 end
 GetGlancingBlowPenalty = function() return 0.35 end
 SKILLS, CHARACTER_FRAME_TAB_SKILLS = "Skills", "Skills"
 WEAPON_SKILL_DETAIL_BOSS = "Hit %s, crit %s, glancing %s at %s less"
+-- The game's PvP rank: the renown of its rank faction, its rewards, the season.
+local rankInfo = { renownLevel = 3, renownReputationEarned = 250, renownLevelThreshold = 1000, maxLevel = 10,
+                   currentWeekProgressiveMaxLevel = 6, previousWeekProgressiveMaxLevel = 5 }
+local ringShare
+C_MajorFactions = {
+    GetMajorFactionProgressionInfo = function(faction) return faction == 2800 and rankInfo or nil end,
+    GetTotalReputationForRenownLevel = function(_, level) return level * 1000 end,
+    GetRenownRewardsForLevel = function(_, level)
+        if level == 5 then return { { icon = "tabard", description = "A tabard of rank five." } } end
+        return {}
+    end,
+}
+-- The game's ticker: a function every so many seconds until cancelled.
+C_Timer.NewTicker = function(seconds, fn)
+    local ticker = {}
+    function ticker:Cancel() self.cancelled = true end
+    local function Tick()
+        if ticker.cancelled then return end
+        fn()
+        C_Timer.After(seconds, Tick)
+    end
+    C_Timer.After(seconds, Tick)
+    return ticker
+end
+GetCurrentArenaSeason = function() return 2 end
+CooldownFrame_SetDisplayAsPercentage = function(_, share) ringShare = share end
+UnitFactionGroup = function() return "Alliance", "Alliance" end
+Enum.PvPRanks = { Rank_1 = 5 }
+local gameText = GetText
+GetText = function(name, ...) if name == "PVP_RANK_7_1" then return "Knight" end return gameText(name, ...) end
+PVP, CHARACTER_FRAME_TAB_PVP = "PvP", "PvP"
+PVP_RANK_NUMBER_AND_TITLE, PVP_RANK_CURRENT_PROGRESS = "Rank %d: %s", "%d / %d"
+-- The game's currencies: a header, two currencies (one shown on the backpack, one you have none of).
+local currencyList = {
+    { name = "Miscellaneous", isHeader = true, isHeaderExpanded = true, currencyListDepth = 0 },
+    { name = "Honor", currencyID = 1901, quantity = 1500, iconFileID = 101, isShowInBackpack = true, currencyListDepth = 1,
+      maxQuantity = 15000, discovered = true },
+    { name = "Marks", currencyID = 1902, quantity = 0, iconFileID = 102, currencyListDepth = 1, maxQuantity = 0, discovered = true },
+}
+local currencyCalls = {}
+C_CurrencyInfo = {
+    GetCurrencyListSize = function() return #currencyList end,
+    GetCurrencyListInfo = function(index)
+        local data = currencyList[index]
+        if not data then return nil end
+        local copy = {}
+        for key, value in pairs(data) do copy[key] = value end
+        return copy
+    end,
+    ExpandCurrencyList = function(index, open) currencyCalls.expand = { index, open } end,
+    SetCurrencyBackpack = function(index, on) currencyCalls.backpack = { index, on } end,
+    SetCurrencyUnused = function(index, on) currencyCalls.unused = { index, on } end,
+    GetCurrencyListLink = function(index) return "currency:" .. index end,
+    GetCurrencyDescription = function(id) return "Currency " .. id end,
+}
+CreateSimpleTextureMarkup = function(icon) return "|T" .. icon .. "|t" end
+DISABLED_FONT_COLOR = { r = 0.5, g = 0.5, b = 0.5 }
+CURRENCY, CHARACTER_FRAME_TAB_CURRENCY = "Currency", "Currency"
+-- The game's statistics: a category with a statistic, a category under it with one that has none yet.
+local statCategories = { [1] = 130, [2] = 141 }
+local statisticRows = { [130] = { { "12", false, 1001 } }, [141] = { { "0", false, 1002 }, { "5", true, 1003 } } }
+GetStatisticsCategoryList = function() return statCategories end
+GetCategoryInfo = function(id) return ({ [130] = "Character", [141] = "Combat" })[id], (id == 141 and 130 or -1) end
+GetCategoryNumAchievements = function(id) return #(statisticRows[id] or {}) end
+GetStatistic = function(id, index) local row = statisticRows[id][index] return row[1], row[2], row[3] end
+GetAchievementInfo = function(id) return id, ({ [1001] = "Deaths", [1002] = "Hugs given" })[id] end
+STATISTICS, CHARACTER_FRAME_TAB_STATISTICS = "Statistics", "Statistics"
 ScrollUtil = { InitScrollBoxListWithScrollBar = function(box, _, view) box.view = view end }
 CreateDataProvider = function(elements) return { elements = elements } end
 ScrollBoxConstants = { RetainScrollPosition = true }
@@ -432,6 +499,80 @@ check(swords.bar._text:find("^150"), "the skills tab hidden, it does not listen 
 Pick("Skills")
 check(skillBox.rows[2].bar._text:find("^151"), "chosen again: drawn as the game has it now")
 
+-------------------------------------------------------------------------------
+--  PvP
+-------------------------------------------------------------------------------
+check(tabButtons.PvP and tabButtons.PvP.Icon._texture == "Interface/ICONS/INV_SideTab_Honor_Alliance_c60",
+    "the PvP tab with the faction's honour icon")
+Pick("PvP")
+check(panel.title._text == "PvP", "the PvP tab chosen")
+local function Shown(text)
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "FontString" and widget._text == text and widget:IsVisible() then return widget end
+    end
+end
+check(Shown("Rank 3: Knight") and Shown("250 / 1000") and near(ringShare, 0.25),
+    "the rank's number and title, the points toward the next, the ring's share")
+check(Shown("Knight") and Shown("A tabard of rank five."), "at the right the rank's title and the next reward, with its icon")
+rankInfo.renownLevel, rankInfo.renownReputationEarned = 4, 500
+W.Fire("MAJOR_FACTION_RENOWN_LEVEL_CHANGED")
+W.Wait(0)
+check(near(ringShare, 0.5), "a new rank: drawn anew")
+local seasonSet = 0
+C_SeasonInfo = { GetTimeUntilCurrentPVPSeasonEnd = function() seasonSet = seasonSet + 1 return 0 end }
+W.Wait(1.1)
+check(seasonSet >= 1, "while shown, the season's time is asked each second")
+Pick("Character")
+local before = seasonSet
+W.Wait(3)
+check(seasonSet == before, "hidden, no more")
+
+-------------------------------------------------------------------------------
+--  Currency
+-------------------------------------------------------------------------------
+Pick("Currency")
+check(panel.title._text == "Currency", "the currency tab chosen")
+local coinBox = Lists()[3]
+check(coinBox and #coinBox.rows == 3, "the currencies as the game lists them")
+local coinHeader, honor, marks = coinBox.rows[1], coinBox.rows[2], coinBox.rows[3]
+check(coinHeader.state:IsShown() and not coinHeader.coin:IsShown(), "a header: the game's art, no count")
+check(honor.count._text == "1500" and honor.coin._texture == 101 and honor.watched:IsShown() and not honor.bar:IsShown(),
+    "a currency: how many, its icon, the backpack's tick; no bar")
+check(marks.name._color[1] == 0.5 and not marks.watched:IsShown(), "one you have none of: greyed, no tick")
+check(Shown("Honor") and Shown("|T101|t 1500") and Shown("Currency 1901"), "the first chosen: its name, icon and count, its description at the right")
+coinBox.rows[3]:GetScript("OnClick")(coinBox.rows[3])
+check(Shown("Currency 1902"), "a click chooses another")
+W.modifier = "TOKENWATCHTOGGLE"
+coinBox.rows[2]:GetScript("OnClick")(coinBox.rows[2])
+W.modifier = false
+check(currencyCalls.backpack[1] == 2 and currencyCalls.backpack[2] == false, "the watch key and a click: off the backpack, by the game's call")
+coinBox.rows[1]:GetScript("OnClick")(coinBox.rows[1])
+check(currencyCalls.expand[1] == 1 and currencyCalls.expand[2] == false, "a click on a header folds it, by the game's call")
+
+-------------------------------------------------------------------------------
+--  Statistics
+-------------------------------------------------------------------------------
+Pick("Statistics")
+check(panel.title._text == "Statistics", "the statistics tab chosen")
+local statBox = Lists()[4]
+local function StatNames()
+    local names = {}
+    for index, row in ipairs(statBox.rows) do names[index] = row.name._text .. (row.value:IsShown() and ("=" .. row.value._text) or "") end
+    return table.concat(names, ", ")
+end
+check(StatNames() == "Character, Deaths=12, Combat, Hugs given=--", "the game's statistics as a tree, none yet as --, a skipped one left out: " .. StatNames())
+check(statBox.rows[3].toggle:IsShown() and statBox.rows[3].toggle._points[1][4] == 2 + ns.Statistics.INDENT,
+    "a category under another: a sub-header, set in")
+statBox.rows[1]:GetScript("OnClick")(statBox.rows[1])
+check(StatNames() == "Character", "a click on a category folds it and all under it")
+statBox.rows[1]:GetScript("OnClick")(statBox.rows[1])
+statisticRows[130][1][1] = "13"
+W.Fire("CRITERIA_UPDATE")
+W.Fire("CRITERIA_UPDATE")
+W.Wait(0)
+check(StatNames():find("Deaths=13", 1, true), "the game tells of a change: drawn anew")
+Pick("Character")
+
 -- The sheet hidden with the full screen: the tab shown no longer listens either.
 Push()
 Stand()
@@ -441,6 +582,6 @@ W.Wait(0)
 check(repList.rows[2].name._text == "Stormwind", "the full screen gone: the tabs do not listen")
 Push()
 Stand()
-check(tabButtons.Skills._checked and skillBox.rows[2]:IsVisible(), "back: the tab chosen before")
+check(tabButtons.Character._checked and head:IsVisible(), "back: the tab chosen before")
 
 io.write(("Sheet: all %d checks passed.\n"):format(passed))

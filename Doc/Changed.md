@@ -3,8 +3,35 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 460 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 290 (Navigation), 71 (Inventory), 38 (sheet), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 460 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 290 (Navigation), 71 (Inventory), 71 (sheet), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Inventory: the character sheet's PvP, currency and statistics tabs (Saneroki, 2026-10-20)
+- **PvP** (`Sheet/PvP.lua`): the season's rank (the game's renown of its PvP rank faction): season, rank and title,
+  the game's rank ring (a paused `Cooldown`, its badge and rank), points, the season's countdown (a ticker only while
+  shown); the side pane with the season's progress, the week's cap, the next reward (`Side.Icon`) and its vendor.
+- **Currency** (`Sheet/Currency.lua`): the game's currency list (headers, sub-headers, currencies with count, icon,
+  backpack tick, greyed at none), the choice kept by name, Shift-link, the watch key to the backpack; the side pane
+  with caps, description, transfer loss or account-wide, and the switches Unused and Show on Backpack. The transfer
+  button (a panel of the game's window manager) is left out.
+- **Statistics** (`Sheet/Statistics.lua`): the game's statistics as its tree, categories folded by a click (our own
+  fold state), each value or `--`, a cut-short name in a tooltip.
+- `Sheet/Side.lua`: icon rows, the switches (`Side.Check`, moved from the reputation tab), the foot's height, the
+  switches' sounds. `Sheet/Sheet.lua`: a side tab's icon may be a function (PvP's by the faction).
+- Tests: `dev/tests/sheet.lua` (71 checks): PvP's rank, ring, reward and countdown (only while shown); currency's
+  rows, choice, watch key and folding; statistics' tree, folding and redraw.
+
+### Inventory: the character sheet's skills tab (Saneroki, 2026-10-20)
+- **Skills** (`Sheet/Skills.lua`): the game's Camelot skills tab, ours: the top-level skill lines of `C_SkillInfo`
+  without the class's own, headers (fold), sub-headers (fold by a click, as the game's), skills set in under a
+  sub-header, the game's blue bar with rank, bonus in green, defense's bonus; the game's selection; the side pane
+  with name, rank bar, description and, for a weapon skill, the game's sums against a foe of your level and a raid
+  boss (hit, crit, glancing blows) under the game's category bands.
+- **Shared rows** (`Sheet/Rows.lua`): the reputation tab's row parts moved out, now used by both tabs (three looks,
+  light, indent). `Sheet/Side.lua`: category bands and spacers, as the game's side pane has them.
+- Tests: `dev/tests/sheet.lua` (50 checks): the skills listed and left out, the first choice, bar and bonus, the
+  indents, folding a sub-header, choosing, a trade's side without weapon lines, a weapon's boss line, deaf while
+  hidden.
 
 ### Inventory: the other characters' window (Saneroki, 2026-10-20)
 - **Characters** (`src/Inventory/Alts/`, the part `alts` on the module's full screen): what the account's characters

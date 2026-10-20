@@ -23,7 +23,6 @@ local Reputation = {}
 ns.Reputation = Reputation
 
 -- The game's sizes (ReputationFrame.xml; the rows' are Rows.lua's): the switches at the side's foot.
-Reputation.CHECK, Reputation.CHECK_GAP, Reputation.LABEL = 26, 2, 158
 -- How brightly a faction is lit (ReputationEntryMixin:RefreshBackgroundHighlightOpacity): chosen, under the mouse;
 -- at war: chosen, under the mouse, else.
 Reputation.LIT = { chosen = 0.20, over = 0.10 }
@@ -172,63 +171,21 @@ end
 -------------------------------------------------------------------------------
 --  The chosen faction, at the right
 -------------------------------------------------------------------------------
--- The game's tooltip for a switch: its words in the game's normal colour, wrapped.
-local function Tip(owner, text)
-    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
-    local add = rawget(_G, "GameTooltip_AddNormalLine")
-    if add then
-        add(GameTooltip, text, true)
-    else
-        local normal = Color("NORMAL_FONT_COLOR")
-        GameTooltip:AddLine(text, normal and normal.r or 1, normal and normal.g or 0.82, normal and normal.b or 0, true)
-    end
-    GameTooltip:Show()
-end
-
--- A switch of the game's look at the foot: a box, its label at its right, the game's tooltip.
-local function Check(parent, word, fallback, tip, checked, click)
-    local box = CreateFrame("CheckButton", nil, parent)
-    box:SetSize(Reputation.CHECK, Reputation.CHECK)
-    box:SetNormalAtlas("checkbox-minimal")
-    box:SetPushedAtlas("checkbox-minimal")
-    if checked then
-        box:SetCheckedTexture(checked)
-    else
-        box:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
-        local mark = box:GetCheckedTexture()
-        if mark and mark.SetAtlas then mark:SetAtlas("checkmark-minimal", true) end
-    end
-    box.label = box:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    box.label:SetWidth(Reputation.LABEL)
-    box.label:SetJustifyH("LEFT")
-    box.label:SetPoint("LEFT", box, "RIGHT", 2, 0)
-    box.label:SetText(Core.Word(word, fallback))
-    box:SetScript("OnClick", function(self) ns.Safe("character", click, self) end)
-    local words = Core.Word(tip, "")
-    box:SetScript("OnEnter", function(self) ns.Safe("character", Tip, self, words) end)
-    box:SetScript("OnLeave", GameTooltip_Hide)
-    return box
-end
-
-local function Sound(box)
-    Core.Sound(box:GetChecked() and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF")
-end
-
 local function War(box)
     Core.Ask(Rep().ToggleFactionAtWar, Selected())
-    Sound(box)
+    ns.Side.Sound(box)
     Reputation.Refresh()
 end
 
 local function Inactive(box)
     Core.Ask(Rep().SetFactionActive, Selected(), not box:GetChecked())
-    Sound(box)
+    ns.Side.Sound(box)
     Reputation.Refresh()
 end
 
 local function Watch(box)
     Core.Ask(Rep().SetWatchedFactionByIndex, box:GetChecked() and Selected() or 0)
-    Sound(box)
+    ns.Side.Sound(box)
 end
 
 -- The pane at the right: the chosen faction, or a word to choose one (ReputationDetailFrameMixin:Refresh).
@@ -300,7 +257,7 @@ end
 
 local function Build(left, right)
     list = ns.List.New(left, { extent = Extent, draw = Draw })
-    side = ns.Side.New(right, 3 * Reputation.CHECK + 2 * Reputation.CHECK_GAP)
+    side = ns.Side.New(right, ns.Side.Foot(3))
     side.bar = CreateFrame("Frame", nil, side.content, "ColoredProgressBarTemplate")
     side.bar:SetSize(ns.Rows.SIDE_BAR, ns.Rows.BAR_HEIGHT)
     side.bar:SetPoint("TOP", side.divider, "BOTTOM", 0, -6)
@@ -308,12 +265,15 @@ local function Build(left, right)
     side.description:SetPoint("TOP", side.bar, "BOTTOM", 0, -6)
     side.description:SetPoint("LEFT")
     side.description:SetPoint("RIGHT", -14, 0)
-    local war = Check(side.foot, "AT_WAR", "At War", "REPUTATION_AT_WAR_DESCRIPTION", "Interface\\Buttons\\UI-CheckBox-SwordCheck", War)
+    local war = ns.Side.Check(side.foot, Core.Word("AT_WAR", "At War"), Core.Word("REPUTATION_AT_WAR_DESCRIPTION", ""),
+        "Interface\\Buttons\\UI-CheckBox-SwordCheck", War)
     war:SetPoint("TOPLEFT", side.foot, "TOPLEFT", -4, 0)
-    local inactive = Check(side.foot, "MOVE_TO_INACTIVE", "Move to Inactive", "REPUTATION_MOVE_TO_INACTIVE", nil, Inactive)
-    inactive:SetPoint("TOPLEFT", war, "BOTTOMLEFT", 0, -Reputation.CHECK_GAP)
-    local watch = Check(side.foot, "SHOW_FACTION_ON_MAINSCREEN", "Show as Experience Bar", "REPUTATION_SHOW_AS_XP", nil, Watch)
-    watch:SetPoint("TOPLEFT", inactive, "BOTTOMLEFT", 0, -Reputation.CHECK_GAP)
+    local inactive = ns.Side.Check(side.foot, Core.Word("MOVE_TO_INACTIVE", "Move to Inactive"),
+        Core.Word("REPUTATION_MOVE_TO_INACTIVE", ""), nil, Inactive)
+    inactive:SetPoint("TOPLEFT", war, "BOTTOMLEFT", 0, -ns.Side.CHECK_GAP)
+    local watch = ns.Side.Check(side.foot, Core.Word("SHOW_FACTION_ON_MAINSCREEN", "Show as Experience Bar"),
+        Core.Word("REPUTATION_SHOW_AS_XP", ""), nil, Watch)
+    watch:SetPoint("TOPLEFT", inactive, "BOTTOMLEFT", 0, -ns.Side.CHECK_GAP)
     checks = { war, inactive, watch }
 end
 

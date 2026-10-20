@@ -24,7 +24,8 @@ local _, ns = ...
 --  game lets addon code call.
 --
 --  A tab is a table: key, tip (the side tab's tooltip), title (the head's words,
---  or a function giving them), icon (a texture) or portrait (the character's),
+--  or a function giving them), icon (a texture, or a function giving it) or
+--  portrait (the character's),
 --  Build(left, right) (its frames over the panes, made on first choice),
 --  Show(on) (shown or hidden, with the panel or by another tab chosen).
 -------------------------------------------------------------------------------
@@ -244,7 +245,9 @@ local function Buttons()
                 Game("SetPortraitTexture", button.Icon, "player")
                 button.Icon:SetTexCoord(0.03125, 0.96875, 0.03125, 0.96875)
             else
-                button.Icon:SetTexture(tab.icon)
+                local icon = tab.icon
+                if type(icon) == "function" then icon = icon() end
+                button.Icon:SetTexture(icon)
             end
             local mine = tab
             button:SetCustomOnMouseUpHandler(function(_, which, inside) ns.Safe("character", Clicked, mine, which, inside) end)

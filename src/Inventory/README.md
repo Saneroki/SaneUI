@@ -1,6 +1,6 @@
 # Sane UI: Inventory
 
-**Status:** its window and full screen built; the character sheet's paper doll, stats, side tabs, reputation and skills built; its other tabs and the bags are being built; the other characters' window built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
+**Status:** its window and full screen built; the character sheet's paper doll, stats, side tabs and all six tabs built; its other tabs and the bags are being built; the other characters' window built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 The module for what you carry and wear. Push the mouse into the screen's bottom right corner and the screen
@@ -28,7 +28,12 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   click on a faction chooses it (its standing in numbers under the mouse). At the right the chosen faction: its
   standing, its description, and the game's switches At War, Move to Inactive and Show as Experience Bar.
   Skills lists your skill lines with their ranks (the bonus in green); choose one to see its description, and for
-  a weapon skill what it means against a foe of your level and against a raid boss.
+  a weapon skill what it means against a foe of your level and against a raid boss. PvP shows the season, your
+  rank and the game's rank ring, your points, the time left of the season, and at the right the season's progress
+  and the next reward. Currency lists your currencies (choose one for its caps and description; Shift and a click
+  links it, the game's watch key puts it on the backpack), with the game's switches Unused and Show on Backpack;
+  its transfer between characters stays on the game's own sheet. Statistics lists the game's statistics by
+  category, each category folding by a click.
 - **Your other characters** (the window *Characters*): every character of the account down its left, you
   first, each in its class's colour with its gold, the gold of them all under them; the account's bank last
   where it holds something. A click shows that one's things as last seen: its bags, its bank (as it was when that
@@ -114,6 +119,26 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     your level and a raid boss (`Skills.BOSS_LEVEL`, `RANKS_PER_LEVEL`; glancing blows from the game's
     `GetGlancingBlowChance`, `GetGlancingBlowPenalty`) under the game's category bands (`Side.Category`). Drawn anew a
     frame after `SKILL_LINES_CHANGED`, while shown.
+  - **PvP** (`Sheet/PvP.lua`): the season's rank as the game keeps it, the renown of its PvP rank faction
+    (`C_MajorFactions`, `PvP.FACTION` 2800): the season (`GetCurrentArenaSeason`), the rank's number and title (the
+    game's `PVP_RANK_<n>_<faction>` in the character's gender, `Enum.PvPRanks`), the game's ring (a paused
+    `Cooldown` with its swipe, `CooldownFrame_SetDisplayAsPercentage`; glow, faction background, honour bar, the
+    rank's badge `UI-Character-Info-Honor-Icon-<n>`, the rank on a reward ring at its foot), the points, the time
+    left of the season (`C_SeasonInfo`, the game's seconds formatter) counted down by a ticker that runs only while
+    the tab shows. The side: title and number, the season's description, progress, this week's raised cap, the next
+    rank with a reward (`GetRenownRewardsForLevel`, icon rows `Side.Icon`) and the rewards' vendor.
+  - **Currency** (`Sheet/Currency.lua`): `C_CurrencyInfo`'s list: headers (`ExpandCurrencyList`), sub-headers, and
+    currencies as the game draws them (name, count, icon at the right, greyed at none, a tick while on the
+    backpack), set in by depth; the choice is ours, kept by name as the game's sheet keeps it, forgotten when the tab
+    hides. Shift and a click `HandleModifiedItemClick` its link, the watch key `SetCurrencyBackpack`. The side: name,
+    icon and count, description, total and weekly caps, the transfer loss or *account-wide*, the switches Unused
+    (`SetCurrencyUnused`) and Show on Backpack (`Side.Check`). The transfer button opens a panel of the game's
+    window manager and is left out; the backpack's room is the game's to judge (its token bar is not asked).
+  - **Statistics** (`Sheet/Statistics.lua`): `GetStatisticsCategoryList` as the game's tree (`GetCategoryInfo`'s
+    parents, children after their parent), top-level categories as headers, deeper ones as sub-headers set in by
+    `Statistics.INDENT` per depth, statistics (`GetStatistic`, `GetAchievementInfo`) with their value or `--`; our
+    own fold state (until a `/reload`); a cut-short name in a tooltip. Drawn a frame after `CRITERIA_UPDATE`, while
+    shown. The right pane shows only its art, as the game's.
   - **Events, while shown only** (`Sheet.Show`): `PLAYER_EQUIPMENT_CHANGED`, `ITEM_LOCK_CHANGED`,
     `UPDATE_INVENTORY_DURABILITY`, `UPDATE_INVENTORY_ALERTS`, `UNIT_INVENTORY_CHANGED` and `UNIT_MODEL_CHANGED`
     (the player's), `PLAYER_LEVEL_UP`, `UNIT_NAME_UPDATE`, `PLAYER_ENTERING_WORLD`. Every value read goes through
@@ -172,6 +197,9 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 | `Sheet/Rows.lua` | The rows the reputation and skills tabs list, in the game's three looks |
 | `Sheet/Reputation.lua` | The reputation tab |
 | `Sheet/Skills.lua` | The skills tab |
+| `Sheet/PvP.lua` | The PvP tab: the season's rank |
+| `Sheet/Currency.lua` | The currency tab |
+| `Sheet/Statistics.lua` | The statistics tab |
 | `Alts/Snapshot.lua` | The other characters' window, without frames: the roster, a character's places and items, the search |
 | `Alts/Roster.lua` | The other characters' window: the account's characters down its left, their gold |
 | `Alts/Items.lua` | The other characters' window: the chosen one's places and items, a grid and a list |
@@ -183,6 +211,6 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   the corner opened the bags only. Then (Saneroki) our own windows instead: the module's window docked in the
   bottom right corner, its corner filling the screen with the character sheet, the bags and the other
   characters' snapshots on Core's board (`Doc/ideas/Inventory.md`). The character sheet's paper doll: its slots,
-  the model, the level line; its stats; its side tabs, the reputation and the skills tabs.
+  the model, the level line; its stats; its side tabs and the six tabs of the game's sheet.
   The window of the other characters: the roster, each one's bags, bank and what it wears as last seen, the
   search across them all; Core's `Data.Items` for it.

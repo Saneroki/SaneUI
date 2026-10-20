@@ -15,7 +15,10 @@ local _, ns = ...
 --                                ns.Side.Line(side, text, color)
 --                                ns.Side.Category(side, text)   -- the game's title band
 --                                ns.Side.Spacer(side, height)
+--                                ns.Side.Icon(side, icon, text, color)  -- an icon on the game's slot, words beside
 --      ns.Side.Empty(side, text)   -- text: empty, saying it; nil: not empty
+--      ns.Side.Check(side.foot, label, tip, checkedTexture, click)  -- a switch of the game's look at the foot
+--      ns.Side.Foot(count)         -- a foot's height for so many switches; ns.Side.Sound(box) its click's sound
 --  side.foot is the foot's frame; side.content holds the title down to the rows.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -28,6 +31,8 @@ Side.WIDTH, Side.EMPTY_WIDTH, Side.EMPTY_Y = 195, 170, 30
 Side.DESCRIPTION = 90 -- a description's height unless a tab says
 Side.ROW, Side.GAP = 16, 2
 Side.CATEGORY, Side.SPACER = 40, 8
+Side.ICON_ROW, Side.ICON = 34, 32
+Side.CHECK, Side.CHECK_GAP, Side.LABEL = 26, 2, 158
 
 local function Colour(region, color)
     if color then region:SetTextColor(color.r, color.g, color.b) end
@@ -123,6 +128,10 @@ local function Next(side)
     row.label:ClearAllPoints()
     row.value:ClearAllPoints()
     row.back:Hide()
+    if row.slot then
+        row.slot:Hide()
+        row.icon:Hide()
+    end
     row.label:Show()
     row:Show()
     return row
@@ -181,6 +190,80 @@ function Side.Spacer(side, height)
     row.label:Hide()
     row.value:Hide()
     return row
+end
+
+-- A row of an icon on the game's gear slot and its words beside it (CharacterFrameSidePaneIconRowTemplate).
+function Side.Icon(side, icon, text, color)
+    local row = Next(side)
+    if not row.slot then
+        row.slot = row:CreateTexture(nil, "BACKGROUND")
+        row.slot:SetAtlas("UI-Character-Info-GearSlot", true)
+        row.slot:SetPoint("LEFT", 2, 0)
+        row.icon = row:CreateTexture(nil, "ARTWORK")
+        row.icon:SetSize(Side.ICON, Side.ICON)
+        row.icon:SetPoint("CENTER", row.slot)
+    end
+    row.slot:Show()
+    row.icon:Show()
+    row.icon:SetTexture(icon)
+    row.label:SetWidth(0)
+    row.label:SetWordWrap(true)
+    row.label:SetJustifyH("LEFT")
+    row.label:SetPoint("LEFT", row.slot, "RIGHT", 8, 0)
+    row.label:SetPoint("RIGHT", -2, 0)
+    row.label:SetText(text or "")
+    Colour(row.label, color or rawget(_G, "NORMAL_FONT_COLOR"))
+    row.value:Hide()
+    row:SetHeight(Side.ICON_ROW)
+    return row
+end
+
+-- The game's tooltip for a switch: its words in the game's normal colour, wrapped.
+local function Tip(owner, text)
+    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+    local add = rawget(_G, "GameTooltip_AddNormalLine")
+    if add then
+        add(GameTooltip, text, true)
+    else
+        local normal = rawget(_G, "NORMAL_FONT_COLOR")
+        GameTooltip:AddLine(text, normal and normal.r or 1, normal and normal.g or 0.82, normal and normal.b or 0, true)
+    end
+    GameTooltip:Show()
+end
+
+-- A switch of the game's look at a side's foot: the game's minimal box (or the checked texture given), its label at
+-- its right, its tooltip; click(box) after a click.
+function Side.Check(parent, label, tip, checked, click)
+    local box = CreateFrame("CheckButton", nil, parent)
+    box:SetSize(Side.CHECK, Side.CHECK)
+    box:SetNormalAtlas("checkbox-minimal")
+    box:SetPushedAtlas("checkbox-minimal")
+    if checked then
+        box:SetCheckedTexture(checked)
+    else
+        box:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
+        local mark = box:GetCheckedTexture()
+        if mark and mark.SetAtlas then mark:SetAtlas("checkmark-minimal", true) end
+    end
+    box.label = box:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    box.label:SetWidth(Side.LABEL)
+    box.label:SetJustifyH("LEFT")
+    box.label:SetPoint("LEFT", box, "RIGHT", 2, 0)
+    box.label:SetText(label or "")
+    box:SetScript("OnClick", function(self) ns.Safe("character", click, self) end)
+    box:SetScript("OnEnter", function(self) ns.Safe("character", Tip, self, tip) end)
+    box:SetScript("OnLeave", GameTooltip_Hide)
+    return box
+end
+
+-- A foot's height for so many switches, one under the other.
+function Side.Foot(count)
+    return count * Side.CHECK + (count - 1) * Side.CHECK_GAP
+end
+
+-- A switch's click sounds as the game's: on or off.
+function Side.Sound(box)
+    Core.Sound(box:GetChecked() and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF")
 end
 
 -- Empty (text: what to choose) or not (nil): the content goes, or comes back.
