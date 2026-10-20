@@ -36,3 +36,8 @@ about = "What Forever's beta servers sent about NPCs and the world's objects (bu
 kind = "batch"
 game = "forever"
 about = "The original game's NPCs and places (patch 1.12), only where every record of it agrees: NPCs with their titles, levels, ranks, kinds, families, factions, services, goods and a rare's respawn; the spawn points of NPCs with a service, rares, quest givers and takers, herb and ore nodes and treasure chests (none a holiday brings); mailboxes, meeting stones and spirit healers, but where Forever's beta showed the spot without one. Unverified: where an entry's points come from both batches, its version names both (batch 3's where Forever's beta showed the thing, this one's elsewhere)."
+
+[5]
+kind = "batch"
+game = "forever"
+about = "Quests, NPCs and places for Forever's client as our tool picked them, 2026-10-20: quests with their givers, takers, requirements, objectives (creatures to kill, objects to use, items to loot), starting items, reputation rewards and repeatability; NPCs with levels, ranks, factions, services and kinds of goods; what vendors sell (items only); which creatures and objects give quest items; spawn points of NPCs, quest objects and other creatures, herb and ore nodes and treasure chests, to a tenth of a percent of the zone map. Names are the game's wherever it gives them; only what agrees with the master or fills what it lacks. Unverified: the game's word or our own sightings replace it entry by entry."

@@ -6,6 +6,22 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 290 (Navigation), 85 (Inventory), 71 (sheet), 67 (bags), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
+### Data: batch 5, more quests, NPCs and places, unverified (Saneroki, 2026-10-20)
+- **Saneroki's decision:** the map showed too few quest givers, vendors, trainers and herb and ore nodes, so a batch
+  of its own takes in a wider record of them, every fact unverified, replaced entry by entry when the game or our
+  own sightings say so. `assets/data/sources.toml`: `[5]`.
+- **Taken in** (`dev/tools/data import --apply --take`): only what agrees with the master or fills what it lacks;
+  nothing the master had changed (each "taken" line fills a field it lacked, or joins a list keeping its entries):
+  Quests 421 new, 948 agreeing, 3848 filled (givers, objectives, sides, reputations, skills, tags); NPCs 6293 new,
+  3124 agreeing, 57 filled; Objects 823 new; Spawns 1905 new, 2861 agreeing, 248 joined (herb and ore nodes, quest
+  givers, services); CreatureSpawns 3954 new (its first entries); Drops 947 new, 2234 joined; Vendors 1106 new (its
+  first entries: what vendors sell, items only). Names are the game's wherever it gives them; points to a tenth of
+  a percent of their zone map. The check: all fit.
+- **Packs:** *Data: Spawns* grows from 374 KB to 1.6 MB (most of it herb and ore points), *Data: World* from 1.2 to
+  2 MB, *Data: Quests* from 0.9 to 1.2 MB; new *Data: Creature Spawns* (1.4 MB, on demand) and *Data: Market* (0.3 MB).
+- **A hand fix** (`assets/data/Quests/fixes.jsonl`, new): quest 92516 is *Hippogryph Harassment*, as Forever's server
+  sends it.
+
 ### Nameplates: a module of its own (Saneroki, 2026-10-20)
 - **The game's plates in our dress** (`src/Nameplates/`, the addon `SaneUI_Nameplates`; Saneroki: the nameplates
   are a module of their own, not Combat's): on each plate the game shows with a health bar, a frame of ours on the
