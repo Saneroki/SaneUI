@@ -35,7 +35,8 @@ Sheet\PvP.lua
 Sheet\Currency.lua
 Sheet\Statistics.lua
 # The bags, our own: what they hold, the categories as the player arranged them, what came in lately, what each
-# view shows and where it goes, the game's item buttons, the foot, the menus, the sidebar, the window
+# view shows and where it goes, the game's item buttons, the foot, the menus, choosing items by clicks, the sidebar,
+# the window
 Bags\Contents.lua
 Bags\Categories.lua
 Bags\Recent.lua
@@ -44,6 +45,7 @@ Bags\Layout.lua
 Bags\Cells.lua
 Bags\Foot.lua
 Bags\Menus.lua
+Bags\Select.lua
 Bags\Sidebar.lua
 Bags\Bags.lua
 # The other characters' things, as last seen: what is shown, the roster, the items, the window that holds them

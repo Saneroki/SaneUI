@@ -22,11 +22,13 @@ local _, ns = ...
 --  done here and now: Sell All Junk Items at a vendor while there is junk
 --  (asked first, in the game's words), Deposit All Reagents at a banker whose
 --  bank takes them (C_Bank.AutoDepositItemsIntoBank). The junk is what is
---  junk to us (Groups.lua: the game's grey items, the player's marks): where
---  that is just the game's junk, the game's own sell-all sells it
+--  junk to us (Categories.lua: the game's grey items, the player's marks):
+--  where that is just the game's junk, the game's own sell-all sells it
 --  (C_MerchantFrame.SellAllJunkItems); else each item is sold as a click on it
---  at the vendor sells it (C_Container.UseContainerItem), while the vendor is
---  there.
+--  at the vendor sells it (C_Container.UseContainerItem), one at a time, while
+--  the vendor is there, out of a fight and with nothing on the cursor; at the
+--  end the chat says how many were sold and for how much, and how many could
+--  not be.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Foot = {}
@@ -43,6 +45,7 @@ Foot.TOKEN_GAP = 5
 Foot.ACT = 18          -- the bar's button for what can be done here
 Foot.ACT_COLOR = { 0.85, 0.82, 0.55 }
 Foot.ACT_LIT = { 1, 0.96, 0.66 }
+Foot.STEP = 0.08       -- seconds between two items sold
 
 local Contents = ns.Contents
 local foot, strip, gold, act, tokens
@@ -265,9 +268,42 @@ function Foot.Act()
     act:SetShown(doing ~= nil)
 end
 
+-- The items still to sell, one at a time: { bag, slot, item, price } each; what was sold, for how much, and
+-- what could not be.
+local selling, sold, earned, unsold = {}, 0, 0, 0
+
+local function Finish()
+    for index = #selling, 1, -1 do selling[index] = nil end
+    if sold > 0 then Core.Print(ns.TEXT.bagsSold:format(sold, Core.Coins(earned) or tostring(earned))) end
+    if unsold > 0 then Core.Print(ns.TEXT.bagsUnsold:format(unsold)) end
+    sold, earned, unsold = 0, 0, 0
+end
+
+-- The next item sold, if it is still where it was and the vendor still there; then the next, a moment later.
+local Step
+local function Next()
+    local entry = table.remove(selling, 1)
+    if not entry then return Finish() end
+    if not Talking("Merchant") or InCombatLockdown() or Game("CursorHasItem") then
+        unsold = unsold + 1 + #selling
+        return Finish()
+    end
+    local api = Container()
+    local info = Core.Ask(api.GetContainerItemInfo, entry.bag, entry.slot)
+    if type(info) == "table" and Core.Plain(info.itemID) == entry.item and not Core.Plain(info.isLocked) then
+        api.UseContainerItem(entry.bag, entry.slot)
+        sold = sold + 1
+        earned = earned + entry.price * (Core.Plain(info.stackCount) or 1)
+    else
+        unsold = unsold + 1
+    end
+    C_Timer.After(Foot.STEP, Step)
+end
+Step = ns.Guard(Next)
+
 -- The junk sold, the bags read anew first (they may have changed while the question was open).
 local function Sell()
-    if not Talking("Merchant") then return end
+    if not Talking("Merchant") or #selling > 0 then return end
     local list, same = Contents.Junk(ns.Bags.Carried().slots, junk)
     local merchant = rawget(_G, "C_MerchantFrame")
     local game = merchant and merchant.SellAllJunkItems
@@ -279,8 +315,9 @@ local function Sell()
     local api = Container()
     if not api.UseContainerItem or Game("CursorHasItem") then return end
     for _, record in ipairs(list) do
-        if not record.locked then api.UseContainerItem(record.bag, record.slot) end
+        selling[#selling + 1] = { bag = record.bag, slot = record.slot, item = record.item, price = record.sell or 0 }
     end
+    Next()
 end
 
 local function Act()

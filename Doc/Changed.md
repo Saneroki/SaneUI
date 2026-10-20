@@ -3,8 +3,22 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 147 (bags), 35 (Combat), 35 (spellbook), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 35 (Combat), 35 (spellbook), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Inventory: a "+" to put items in, the junk marker, junk sold one by one (Saneroki, 2026-10-20)
+- **"+" cells** (`Views.lua`, `Layout.lua`, `Bags.lua`): after Pinned (shown when empty too) and every category
+  that takes items: an item brought to it goes in (`Menus.Drop`); clicked with nothing, the next item clicked does.
+- **Choosing by clicks** (`Bags/Select.lua`, new): a catcher over the items takes the mouse, the item under it lit
+  in Sane UI's colour, the rest of the window dimmed; a click puts the item in (and ends) or, in the junk marker's
+  mode, marks or unmarks it as junk (and stays); a right click, Esc, a click on the dimmed parts or a fight ends it.
+- **The junk marker** (`Bags.lua`): the coin on the bar, while the marker is on: a click begins or ends the mode,
+  an item brought to it is marked or unmarked at once. A grey item unmarked anywhere is kept out of Junk
+  (`Categories.MarkJunk` puts it into Miscellaneous).
+- **Selling junk** (`Foot.lua`): one item every `Foot.STEP` seconds, each checked to be still in its slot, while
+  the vendor is there, out of a fight, the cursor empty; the chat says how many were sold, for how much, and how
+  many could not be.
+- Tests: `dev/tests/bags.lua` (161 checks): the "+" cells, choosing by a click, the junk marker, selling one by one.
 
 ### Inventory: the bags made over (Saneroki, 2026-10-20)
 Saneroki asked for a much richer bag view, in features and looks.

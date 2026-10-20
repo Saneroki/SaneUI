@@ -433,13 +433,15 @@ function Categories.Assigned(item)
     return (kept.assigned or {})[item]
 end
 
--- Marked as junk, or unmarked: back into the category it was put into before, else where the rules put it.
-function Categories.MarkJunk(item, on)
+-- Marked as junk, or unmarked: back into the category it was put into before, else where the rules put it; a
+-- grey item (quality) unmarked is kept out of Junk by putting it into Miscellaneous.
+function Categories.MarkJunk(item, on, quality)
     if on then return Categories.Assign(item, Categories.JUNK) end
     kept.assigned = kept.assigned or {}
     local was = kept.before and kept.before[item]
     if kept.assigned[item] == Categories.JUNK then kept.assigned[item] = (was and Known(was)) and was or nil end
     if kept.before then kept.before[item] = nil end
+    if not kept.assigned[item] and quality == ns.Contents.POOR then kept.assigned[item] = Categories.CATCH_ALL end
 end
 
 -- Whether an item with this quality counts as junk now: marked, or grey and not put elsewhere.

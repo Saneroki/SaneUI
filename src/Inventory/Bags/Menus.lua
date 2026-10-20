@@ -79,11 +79,7 @@ local function TogglePin()
 end
 local function IsJunk() return Categories.Assigned(item.id) == Categories.JUNK or item.category == Categories.JUNK end
 local function ToggleJunk()
-    Categories.MarkJunk(item.id, not IsJunk())
-    if not IsJunk() and item.quality == ns.Contents.POOR then
-        -- A grey item unmarked: kept out of Junk by putting it where its kind goes.
-        Categories.Assign(item.id, Categories.CATCH_ALL)
-    end
+    Categories.MarkJunk(item.id, not IsJunk(), item.quality)
     Changed()
 end
 local function IsIn(key) return item.category == key end

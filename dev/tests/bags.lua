@@ -417,14 +417,22 @@ local function Words(blocks)
     return table.concat(list, ",")
 end
 local blocks = Views.Build("all", { section }, nil, "default", options)
-check(Words(blocks) == "The Armory=2,Adventure Prep=1,Trade Goods=1,Reagent Bag=1,Miscellaneous=1,Special Bags=2,Junk=1",
-    "All Items: a block per category, a group's members as one, the empty ones left out: " .. Words(blocks))
-local trade = blocks[3]
+check(Words(blocks) == "Pinned Items=0,The Armory=2,Adventure Prep=1,Trade Goods=1,Reagent Bag=1,Miscellaneous=1,Special Bags=2,Junk=1",
+    "All Items: Pinned (with its +, empty too), a block per category, a group's members as one, the empty ones left out: " .. Words(blocks))
+check(blocks[1].plus and blocks[4].plus and blocks[4].key == "trade" and not blocks[5].plus and not blocks[2].plus,
+    "a + after Pinned and after a category that takes items; not after the reagent bag's, not after a group")
+local function Named(list, word)
+    for index = 1, list.count do
+        if list[index].word == word then return list[index] end
+    end
+end
+local trade = Named(blocks, "Trade Goods")
 check(trade.entries[1].count == 27 and trade.number == 1, "the stacks of one item merged into one cell, the count of them all")
-check(blocks[1].entries[1].record.name == "Steel Sword" and blocks[1].group == "armory", "gear by item level first")
+check(Named(blocks, "The Armory").entries[1].record.name == "Steel Sword" and Named(blocks, "The Armory").group == "armory",
+    "gear by item level first")
 options.merge = false
 blocks = Views.Build("all", { section }, nil, "default", options)
-check(#blocks[3].entries == 2, "stacks not merged when the player says so")
+check(#Named(blocks, "Trade Goods").entries == 2, "stacks not merged when the player says so")
 options.merge = nil
 Categories.Pin(2589, true)
 Reclassify()
@@ -438,13 +446,14 @@ Recent.Clear()
 blocks = Views.Build("all", { section }, Core.Fuzzy.Query("linen"), "default", options)
 check(Words(blocks) == "Trade Goods=1", "the search: only what it finds")
 blocks = Views.Build("one", { section }, nil, "default", options)
-check(Words(blocks) == "Main Bags=24,Quiver=4,Reagent Bag=4,Keyring=4" and blocks[1].number == "7 / 24" and blocks[1].slots,
+check(Words(blocks) == "Pinned Items=0,Main Bags=24,Quiver=4,Reagent Bag=4,Keyring=4" and blocks[2].number == "7 / 24" and blocks[2].slots,
     "One Bag: every slot of the ordinary bags, the empty ones too; the special bags each by itself: " .. Words(blocks))
 blocks = Views.Build("one", { section }, Core.Fuzzy.Query("linen"), "default", options)
 check(blocks[1].entries[2].faded == false and blocks[1].entries[1].faded == true and blocks[1].entries[3].faded == true
-    and blocks[1].entries[6].faded == false, "searching in One Bag: what is not found is faded, empty slots not")
+    and blocks[1].entries[6].faded == false and blocks[1].word == "Main Bags",
+    "searching in One Bag: Pinned's + left out; what is not found is faded, empty slots not")
 blocks = Views.Build("each", { section }, nil, "default", options)
-check(Words(blocks) == "Backpack=16,Small Pouch=8,Quiver=4,Reagent Bag=4,Keyring=4", "Each Bag: every bag by itself: " .. Words(blocks))
+check(Words(blocks) == "Pinned Items=0,Backpack=16,Small Pouch=8,Quiver=4,Reagent Bag=4,Keyring=4", "Each Bag: every bag by itself: " .. Words(blocks))
 blocks = Views.Build("cat:trade", { section }, nil, "default", options)
 check(Words(blocks) == "Trade Goods=1", "a category by itself")
 blocks = Views.Build("group:armory", { section }, nil, "default", options)
@@ -462,16 +471,25 @@ blocks = Views.Build("all", { section }, nil, "default", options)
 local count, height = Layout.Lay("grid", blocks, width, places)
 local kinds = {}
 for index = 1, count do kinds[places[index].kind] = (kinds[places[index].kind] or 0) + 1 end
-check(kinds.head == 7 and kinds.cell == 9 and kinds.pad == 7 * 10 - 9, "grid: a head per block, its cells, every last line made whole with pads")
-check(places[1].kind == "head" and places[2].kind == "cell" and places[2].y == Layout.HEAD + Layout.HEAD_GAP
-    and places[3].x == Layout.SIZE + Layout.GAP and places[4].kind == "pad", "a block's cells under its head, side by side")
+check(kinds.head == 8 and kinds.cell == 9 and kinds.plus == 4 and kinds.pad == 8 * 10 - 9 - 4,
+    "grid: a head per block, its cells, its +, every last line made whole with pads")
+check(places[1].kind == "head" and places[2].kind == "plus" and places[2].x == 0 and places[3].kind == "pad",
+    "Pinned empty: its + first, then pads")
+local armory
+for index = 1, count do
+    if places[index].kind == "head" and places[index].block.word == "The Armory" then armory = index end
+end
+local top = places[armory].y + Layout.HEAD + Layout.HEAD_GAP
+check(places[armory + 1].kind == "cell" and places[armory + 1].y == top and places[armory + 2].x == Layout.SIZE + Layout.GAP
+    and places[armory + 3].kind == "pad", "a block's cells under its head, side by side")
 count = Layout.Lay("list", blocks, width, places)
-check(places[2].kind == "row" and places[2].size == Layout.ICON and places[2].width == width, "list: a line per cell")
+check(places[2].kind == "head" and places[3].kind == "row" and places[3].size == Layout.ICON and places[3].width == width,
+    "list: a line per cell (Pinned empty: its head only)")
 check(select(1, Layout.Shape(9, 10)) == 3 and select(1, Layout.Shape(2, 10)) == 2 and select(2, Layout.Shape(10, 10)) == 3,
     "compact: each block near square")
 count = Layout.Lay("compact", blocks, width, places)
-check(places[1].kind == "label" and places[2].kind == "cell" and places[4].kind == "label" and places[4].x > 0,
-    "compact: the blocks side by side, each with its name over it")
+check(places[1].kind == "label" and places[1].block.word == "The Armory" and places[2].kind == "cell" and places[4].kind == "label"
+    and places[4].x > 0, "compact: the blocks side by side, each with its name over it (an empty one left out)")
 
 -------------------------------------------------------------------------------
 --  The window
@@ -514,7 +532,8 @@ check(Text("7 / 24 Items"), "the bar: the slots of the bags taken, of how many")
 local swordButton = Cells.Button(0, 1)
 check(swordButton and swordButton:IsShown() and swordButton:GetParent():GetID() == 0 and swordButton:GetID() == 1,
     "the game's item button, its holder carrying the bag, the button the slot")
-check(drawn[swordButton].texture == "icon2001" and HeadNamed("The Armory") and Y(swordButton) == Layout.HEAD + Layout.HEAD_GAP,
+check(drawn[swordButton].texture == "icon2001" and HeadNamed("The Armory")
+    and Y(swordButton) == -HeadNamed("The Armory")._points[1][5] + Layout.HEAD + Layout.HEAD_GAP,
     "All Items at first: the sword under its group's head")
 check(Cells.Pads() > 0, "the blocks made whole with pads")
 local levelText
@@ -581,7 +600,7 @@ Choose(menu, "Pinned Items")
 check(kept.pinned[2001] and HeadNamed("Pinned Items") and HeadNamed("The Armory"), "pinned: shown under Pinned at the top, and in its own category")
 swordButton = Cells.Button(0, 1)
 swordButton:GetScript("OnMouseUp")(swordButton, "MiddleButton")
-check(not kept.pinned[2001] and not HeadNamed("Pinned Items"), "a middle click unpins it")
+check(not kept.pinned[2001] and HeadNamed("Pinned Items").number._text == "(0)", "a middle click unpins it; Pinned stays with its +")
 swordButton = Cells.Button(0, 1)
 swordButton:GetScript("OnMouseUp")(swordButton, "MiddleButton")
 check(kept.pinned[2001], "and pins it again")
@@ -628,6 +647,44 @@ check(holding == 2589 and kept.assigned[2589] == "own1", "the reagent bag's cate
 holding = nil
 Categories.Pin(2589, false)
 Categories.Assign(2589, nil)
+Bags.Refresh()
+
+-- A category's +: an item brought to it goes in; clicked with nothing, the next item clicked does.
+local function PlusOf(key)
+    for _, widget in ipairs(W.frames) do
+        if widget.sign and widget.key == key and widget:IsShown() then return widget end
+    end
+end
+local plus = PlusOf("trade")
+check(plus and PlusOf("pinned") and not PlusOf("reagent"), "a + after Pinned and Trade Goods, none after the reagent bag's")
+holding = 118
+plus:GetScript("OnClick")(plus)
+check(kept.assigned[118] == "trade" and holding == nil, "an item brought to a +: into that category")
+Categories.Assign(118, nil)
+Bags.Refresh()
+plus = PlusOf("pinned")
+plus:GetScript("OnClick")(plus)
+check(ns.Select.Mode() == "put", "a + clicked with nothing: choosing an item by a click")
+ns.Select.Click(Cells.Button(0, 3))
+check(kept.pinned[118] and ns.Select.Mode() == nil, "the next item clicked is pinned; the choosing ends")
+Categories.Pin(118, false)
+Bags.Refresh()
+-- The junk marker.
+local coinButton = Bags.bar.coin
+check(coinButton:IsShown(), "the junk marker on the bar")
+coinButton:GetScript("OnClick")(coinButton)
+check(ns.Select.Mode() == "junk" and coinButton._checked, "the coin: marking junk by clicks")
+ns.Select.Click(Cells.Button(0, 3))
+check(kept.assigned[118] == "junk" and ns.Select.Mode() == "junk", "an item clicked: junk; the mode stays")
+ns.Select.Click(Cells.Button(0, 3))
+check(kept.assigned[118] ~= "junk", "clicked again: unmarked")
+coinButton:GetScript("OnClick")(coinButton)
+check(ns.Select.Mode() == nil and not coinButton._checked, "the coin again: the mode ends")
+holding = 3001
+coinButton:GetScript("OnClick")(coinButton)
+check(kept.assigned[3001] == "misc" and not Categories.Junk(3001, 0) and holding == nil,
+    "a grey item brought to the coin: unmarked at once, kept out of Junk")
+Categories.Assign(3001, nil)
 Bags.Refresh()
 
 -- A category's menu.
@@ -742,10 +799,7 @@ check(calls.sortBags == 1, "not in a fight")
 --  The foot and the bags' strip
 -------------------------------------------------------------------------------
 check(not Bags.strip:IsShown(), "the bags' strip hidden at first")
-local toggle
-for _, widget in ipairs(W.frames) do
-    if widget._kind == "CheckButton" and widget._parent and widget._parent._parent == panel.body then toggle = widget end
-end
+local toggle = Bags.bar.bags
 toggle:GetScript("OnClick")(toggle)
 check(Bags.strip:IsShown() and kept.strip, "its button shows the strip, kept")
 local bagButtons = {}
@@ -801,7 +855,11 @@ calls.sold, calls.used = nil, {}
 C_Container.UseContainerItem = function(bag, slot) calls.used[#calls.used + 1] = bag .. ":" .. slot end
 act:GetParent():GetScript("OnClick")(act:GetParent())
 W.popups[#W.popups].data.callback()
+check(#calls.used == 1, "the player's junk: sold one item at a time")
+W.Wait(Foot.STEP)
+W.Wait(Foot.STEP)
 check(not calls.sold and table.concat(calls.used, ",") == "0:3,0:4", "the player's junk: each item sold, not the set's sword")
+check(W.printed[#W.printed]:find("Sold 2 junk items for 28c", 1, true), "the chat says how many, for how much: " .. W.printed[#W.printed])
 merchantOpen = false
 calls.used = {}
 act:GetParent():GetScript("OnClick")(act:GetParent())

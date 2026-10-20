@@ -10,8 +10,11 @@ local _, ns = ...
 --      the bar      a dark band at the top: how many slots of the bags are
 --                   taken of how many (every bag's in its tooltip); at the
 --                   right what can be done at a vendor or a banker
---                   (Foot.lua), the bags themselves (a click shows or hides
---                   them in a strip under the bar), the clean-up of the game
+--                   (Foot.lua), the junk marker (a click, then clicks on
+--                   items mark them as junk or not: Select.lua; an item
+--                   brought to it is marked at once), the bags themselves (a
+--                   click shows or hides them in a strip under the bar), the
+--                   clean-up of the game
 --                   (C_Container.SortBags, as the game's bag window's button
 --                   does), the dropdown View: the display (Layout.LOOKS),
 --                   what sorts the items (Contents.ORDERS), what is shown
@@ -30,7 +33,8 @@ local _, ns = ...
 --  An item: Alt and a right click opens its menu (Menus.lua); a middle click
 --  pins it or unpins it (an item put into a category is taken out of it
 --  instead). A category's head takes an item let go over it and opens the
---  category's menu at a right click.
+--  category's menu at a right click. A category's "+" (and Pinned's) takes an
+--  item brought to it; clicked with nothing, the next item clicked goes in.
 --
 --  The window opens with the view the player chose for that (All Items at
 --  first); the view chosen in the sidebar holds while the window is open. It
@@ -59,9 +63,9 @@ Bags.LEAST = { 560, 320 }
 Bags.SHOW = { pinned = "showPinned", recent = "showRecent" }
 
 local Contents, Layout, Cells, Foot = ns.Contents, ns.Layout, ns.Cells, ns.Foot
-local Categories, Views, Menus, Sidebar = ns.Categories, ns.Views, ns.Menus, ns.BagSidebar
+local Categories, Views, Menus, Sidebar, Select = ns.Categories, ns.Views, ns.Menus, ns.BagSidebar, ns.Select
 
-local panel, scroll, child, menu, sort, bar, strip, side
+local panel, scroll, child, menu, sort, bar, strip, side, coin
 local kept            -- store.bags: the display, the order, what is shown; the categories' choices
 local query           -- what the search found by (Core.Fuzzy.Query), nil: nothing typed
 local shown = false
@@ -73,7 +77,7 @@ local banked = {}     -- [kind] = a bank's section
 local bankList = {}
 local carriedBags = {}
 local places = {}
-local heads, rows, labels -- pools (Core.Pool)
+local heads, rows, labels, pluses -- pools (Core.Pool)
 
 -------------------------------------------------------------------------------
 --  Reading the bags
@@ -291,6 +295,53 @@ local function DrawLabel(place)
     label:Show()
 end
 
+-- A block's "+": an item brought to it (picked up and clicked here, or dragged here) goes into its category
+-- (Pinned's: pinned); clicked with nothing, the next item clicked does (Select.lua).
+local function PlusClick(plus)
+    if GetCursorInfo() == "item" then return Menus.Drop(plus.key) end
+    Select.Start("put", plus.key)
+end
+
+local function PlusEnter(plus)
+    plus.sign:SetAlpha(1)
+    GameTooltip:SetOwner(plus, "ANCHOR_TOP")
+    GameTooltip:SetText(Categories.Word(plus.key), 1, 0.82, 0)
+    Menus.Hint(GameTooltip, ns.TEXT.bagsPlusTip)
+    GameTooltip:Show()
+end
+
+local function PlusLeave(plus)
+    plus.sign:SetAlpha(0.5)
+    GameTooltip:Hide()
+end
+
+local function MakePlus()
+    local plus = CreateFrame("Button", nil, child)
+    local back = plus:CreateTexture(nil, "BACKGROUND")
+    back:SetAllPoints()
+    back:SetColorTexture(0, 0, 0, 0.4)
+    plus.sign = plus:CreateFontString(nil, "ARTWORK")
+    plus.sign:SetFontObject(Core.Font("SaneUIBagsPlus", "GameFontHighlightLarge", 18, "OUTLINE") or "GameFontHighlightLarge")
+    plus.sign:SetPoint("CENTER")
+    plus.sign:SetText("+")
+    plus.sign:SetAlpha(0.5)
+    plus:SetScript("OnClick", function(self) ns.Safe("bags", PlusClick, self) end)
+    plus:SetScript("OnReceiveDrag", function(self) ns.Safe("bags", PlusClick, self) end)
+    plus:SetScript("OnEnter", function(self) ns.Safe("bags", PlusEnter, self) end)
+    plus:SetScript("OnLeave", function(self) ns.Safe("bags", PlusLeave, self) end)
+    return plus
+end
+
+local function DrawPlus(place)
+    local plus = pluses:Take()
+    plus:ClearAllPoints()
+    plus:SetPoint("TOPLEFT", child, "TOPLEFT", place.x + Bags.INSET, -place.y)
+    plus:SetSize(place.size, place.size)
+    plus:SetFrameLevel(child:GetFrameLevel() + 3)
+    plus.key = place.block.key
+    plus:Show()
+end
+
 -- A list's line: behind its item button, which reaches over it; the item's name in its quality's colour, its
 -- item level, its count.
 local function MakeRow()
@@ -387,6 +438,7 @@ local function Draw()
     heads:Begin()
     rows:Begin()
     labels:Begin()
+    pluses:Begin()
     Cells.Begin()
     for button in pairs(rowOf) do rowOf[button] = nil end
     local x = Bags.INSET
@@ -399,6 +451,8 @@ local function Draw()
             DrawLabel(place)
         elseif place.kind == "pad" then
             Cells.Pad(place.x + x, place.y, place.size)
+        elseif place.kind == "plus" then
+            DrawPlus(place)
         else
             local entry = place.entry
             local button = Cells.Take()
@@ -420,8 +474,10 @@ local function Draw()
     heads:Done()
     rows:Done()
     labels:Done()
+    pluses:Done()
     child:SetHeight(math.max(1, height + Bags.INSET))
     Bags.Count()
+    coin:SetShown(Categories.Marker())
     Sidebar.Refresh(Views.Counts(carried), View())
     if Cells.short then Core.AfterCombat("inventory: bags", Bags.Refresh) end
 end
@@ -648,6 +704,36 @@ local function BagsTip(button)
     GameTooltip:Show()
 end
 
+-- The junk marker: an item brought to it is marked as junk (or unmarked) at once; else the mode where clicks
+-- mark items begins, or ends.
+local function CoinClick()
+    local kind, id = Core.Ask(rawget(_G, "GetCursorInfo"))
+    id = Core.Plain(id)
+    if kind == "item" and type(id) == "number" then
+        local record
+        for _, slot in ipairs(carried.slots) do
+            if slot.item == id then record = slot break end
+        end
+        Categories.MarkJunk(id, not Categories.Junk(id, record and record.quality), record and record.quality)
+        ClearCursor()
+        return Bags.Refresh()
+    end
+    if Select.Mode() == "junk" then return Select.Stop() end
+    Select.Start("junk")
+end
+
+local function CoinTip(button)
+    GameTooltip:SetOwner(button, "ANCHOR_TOP")
+    GameTooltip:SetText(ns.TEXT.bagsMarker, 1, 1, 1)
+    GameTooltip:AddLine(ns.TEXT.bagsMarkerTip, 1, 0.82, 0, true)
+    GameTooltip:Show()
+end
+
+-- The junk marker's mode on or off (Select.lua): its button checked while on.
+function Bags.Marked(on)
+    if coin then coin:SetChecked(on) end
+end
+
 local function Bar(body)
     bar = CreateFrame("Frame", nil, body)
     bar:SetPoint("TOPLEFT")
@@ -682,6 +768,30 @@ local function Bar(body)
     bags:SetScript("OnEnter", function(self) ns.Safe("bags", BagsTip, self) end)
     bags:SetScript("OnLeave", GameTooltip_Hide)
     bar.bags = bags
+    coin = CreateFrame("CheckButton", nil, bar)
+    coin:SetSize(Bags.BAR_BUTTON - 2, Bags.BAR_BUTTON - 2)
+    local icon = coin:CreateTexture(nil, "ARTWORK")
+    icon:SetPoint("CENTER")
+    icon:SetSize(Bags.BAR_BUTTON, Bags.BAR_BUTTON)
+    icon:SetTexture("Interface\\Icons\\INV_Misc_Coin_02")
+    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    if coin.CreateMaskTexture then
+        local round = coin:CreateMaskTexture()
+        round:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+        round:SetAllPoints(icon)
+        icon:AddMaskTexture(round)
+    end
+    coin:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+    coin:SetCheckedTexture("Interface\\Buttons\\CheckButtonHilight")
+    local lit = coin:GetCheckedTexture()
+    if lit then lit:SetBlendMode("ADD") end
+    coin:SetPoint("RIGHT", bags, "LEFT", -Bags.BAR_GAP, 0)
+    coin:SetScript("OnClick", function() ns.Safe("bags", CoinClick) end)
+    coin:SetScript("OnReceiveDrag", function() ns.Safe("bags", CoinClick) end)
+    coin:SetScript("OnEnter", function(self) ns.Safe("bags", CoinTip, self) end)
+    coin:SetScript("OnLeave", GameTooltip_Hide)
+    bar.coin = coin
+    Bags.bar = bar
     strip = CreateFrame("Frame", nil, body)
     strip:SetPoint("TOPLEFT", bar, "BOTTOMLEFT")
     strip:SetPoint("TOPRIGHT", bar, "BOTTOMRIGHT")
@@ -694,7 +804,7 @@ function Bags.Build(made)
     kept = Kept()
     local body = panel.body
     Bar(body)
-    Foot.Build(body, bar.bags, strip)
+    Foot.Build(body, coin, strip)
     side = Sidebar.Build(body, bar, Foot.frame, kept)
     scroll = CreateFrame("ScrollFrame", nil, body, "ScrollFrameTemplate")
     child = CreateFrame("Frame", nil, scroll)
@@ -704,6 +814,9 @@ function Bags.Build(made)
     heads = Core.Pool(MakeHead)
     rows = Core.Pool(MakeRow)
     labels = Core.Pool(MakeLabel)
+    pluses = Core.Pool(MakePlus)
+    Bags.scroll = scroll
+    Select.Build(scroll, { bar, strip, side, Foot.frame })
     Strip()
 end
 
@@ -722,6 +835,7 @@ function Bags.Show(on)
     else
         for item in pairs(Views.split) do Views.split[item] = nil end
         Cells.Light(nil)
+        Select.Stop()
     end
 end
 

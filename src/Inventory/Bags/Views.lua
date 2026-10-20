@@ -32,7 +32,9 @@ local _, ns = ...
 --          member), entries = { { record, count, faded } }, key (a
 --          category's: its head takes items), group (a group's), own (the
 --          player's own: shown when empty), slots (the bags as they are:
---          empty slots are cells too) }
+--          empty slots are cells too), plus (a "+" after its cells, to put
+--          an item in: Pinned, a category that takes items) }
+--  Pinned is shown with its "+" when it is empty too (not while searching).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Views = {}
@@ -63,6 +65,7 @@ local function Block(word, level)
     for index = #block.entries, 1, -1 do block.entries[index] = nil end
     block.word, block.level, block.number = word, level or 2, nil
     block.key, block.group, block.own, block.slots, block.section, block.spare = nil, nil, false, false, nil, false
+    block.plus = false
     return block
 end
 
@@ -152,7 +155,7 @@ local function Fixed(section, query, order, merge)
             if record.item and record.pinned then pinned[#pinned + 1] = record end
         end
         local block = Fill(Block(Categories.Word(Categories.PINNED)), pinned, query, order, merge)
-        block.key = Categories.PINNED
+        block.key, block.plus = Categories.PINNED, plus
         if #block.entries == 0 and (query or not plus) then used = used - 1 end
     end
     if showRecent then
@@ -199,6 +202,7 @@ local function ByCategories(section, query, order, merge)
                 local block = Fill(Block(Categories.Word(key)), lists[key] or {}, query, order, merge)
                 block.key = key
                 block.own = Categories.Own(key)
+                block.plus = plus and firstSection and Categories.Takes(key)
                 if #block.entries == 0 and not (block.own and not query and firstSection) then used = used - 1 end
             end
         end
@@ -262,13 +266,13 @@ end
 
 -- The blocks of the view chosen: sections are the bags' (first) and the bank's parts (Bags.lua); options (the
 -- window's settings, read only): { showPinned, showRecent (shown: not false), pinnedOne (Pinned in One Bag and Each
--- Bag: not false), recentOne (Recent there: true), merge (not false), plus (an empty Pinned still shown) }.
+-- Bag: not false), recentOne (Recent there: true), merge (not false), plus (the "+" cells: not false) }.
 function Views.Build(view, sections, query, order, options)
     used, taken = 0, 0
     local merge = Views.Merging(options)
     local single = type(view) == "string" and view:match("^cat:(.+)$")
     local group = type(view) == "string" and view:match("^group:(.+)$")
-    plus = options.plus == true
+    plus = options.plus ~= false
     for index, section in ipairs(sections) do
         local bags = index == 1
         if section.word and (bags or view ~= Views.ONE) then
@@ -289,12 +293,14 @@ function Views.Build(view, sections, query, order, options)
                 local block = Fill(Block(Categories.Word(single)), lists[single] or {}, query, order, merge)
                 block.key = single
                 block.own = Categories.Own(single)
+                block.plus = plus and bags and Categories.Takes(single)
             end
         elseif group then
             local lists = ByCategory(section)
             for _, member in ipairs(Categories.Members(group)) do
                 local block = Fill(Block(Categories.Word(member), 3), lists[member] or {}, query, order, merge)
                 block.key = member
+                block.plus = plus and bags and Categories.Takes(member)
                 if #block.entries == 0 then used = used - 1 end
             end
         elseif view == Views.ONE or view == Views.EACH then

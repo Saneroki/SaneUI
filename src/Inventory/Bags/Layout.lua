@@ -6,9 +6,9 @@ local _, ns = ...
 --  three looks: no frame here, the window (Bags.lua) puts its buttons and
 --  lines where these say.
 --      grid     each block under its head (its name, how many), its cells in
---               lines as wide as the room, the last line made whole with
---               pads (dark squares that take no mouse); an empty block of the
---               player's own a line of pads (to let items go over it)
+--               lines as wide as the room, then its "+" (to put an item in),
+--               the last line made whole with pads (dark squares that take no
+--               mouse); an empty block of the player's own a line of pads
 --      list     each block under its head, a line per cell: the item at the
 --               left, its words in columns
 --      compact  the blocks side by side in bands, each as near square as its
@@ -16,7 +16,7 @@ local _, ns = ...
 --  A part's head (the bags, the bank) goes over the whole width.
 --
 --      local count, height = Layout.Lay(look, blocks, width, out)
---      out: the places, used again: out[i] = { kind = "head" | "cell" | "pad" | "row" | "label", x, y,
+--      out: the places, used again: out[i] = { kind = "head" | "cell" | "plus" | "pad" | "row" | "label", x, y,
 --           width, height, size (a cell's, a row's item), entry (a cell's or row's), block (a head's,
 --           a label's, a cell's), level (a head's: 1 a part, 2 a block, 3 a group's member) }
 -------------------------------------------------------------------------------
@@ -80,6 +80,16 @@ local function Cells(block, x, columns, pads)
         place.size, place.entry, place.block = Layout.SIZE, entry, block
         column = column + 1
     end
+    if pads and block.plus then
+        if column >= columns then
+            column = 0
+            line = line + 1
+        end
+        local place = Place("plus")
+        place.x, place.y, place.width, place.height = x + column * step, y + line * step, Layout.SIZE, Layout.SIZE
+        place.size, place.block = Layout.SIZE, block
+        column = column + 1
+    end
     if pads then
         while column < columns do
             local place = Place("pad")
@@ -103,7 +113,7 @@ local function Grid(blocks, width)
         local block = blocks[index]
         Head(block, width)
         if block.level ~= 1 then
-            local lines = Cells(block, 0, columns, #block.entries > 0 or block.own)
+            local lines = Cells(block, 0, columns, #block.entries > 0 or block.own or block.plus)
             y = y + lines * step - (lines > 0 and Layout.GAP or 0) + Layout.APART
         end
     end

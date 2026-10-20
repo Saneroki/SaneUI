@@ -72,6 +72,12 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     *Take Out of* its group, *Hide in All Items*, *Switch Off*; on a group: *Rename*, *Move Up*, *Move Down*,
     *Hide in All Items*, *Disband Group*; on one of your own also *Icon* and *Delete*. *Add Category* at the
     sidebar's foot makes one of your own. All of it is kept for the account.
+  - **"+" and the junk marker:** a *+* follows Pinned and every category that takes items: bring an item to it
+    (picked up, or dragged) and it goes in; click it with nothing held, and the next item you click goes in (the
+    rest of the window dims meanwhile; a right click or Esc stops). The coin on the bar is the junk marker: click
+    it, then click items to mark them as junk or unmark them, and click it again to stop; an item brought to it
+    is marked at once. Junk is sold one item at a time at a vendor, never what is in a special bag, in an
+    equipment set or pinned, nor what the vendor would take back for its price; the chat says what it brought.
   - **The dropdown *View*:** *Grid* (each category under its head, its last line filled out), *List* (a line per
     item: name, item level, count) or *Compact* (the categories side by side, each as near square as it can be);
     *Sort By* (*Default*: gear by item level, then by kind, quality and name; or quality, name, item level);
@@ -311,6 +317,15 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     `UpdateCooldown`, …). In the list the button's hit rect reaches over its line. Hooks after its `OnEnter`,
     `OnClick` and `OnMouseUp` light a list's line, open the item's menu (Alt and the right button, which the
     template does nothing with) and pin it (the middle button: `Bags.Clicked`).
+  - **Choosing by clicks** (`Bags/Select.lua`): `Select.Start("put", key)` (a "+" clicked with nothing on the
+    cursor) or `"junk"` (the bar's coin): a catcher over the scroll area takes the mouse (the item under it lit:
+    a border of `Core.GOLD`, a pale veil; found by `IsMouseOver` when the cursor moved), the bar, strip, sidebar
+    and foot dimmed (a click there ends it); a click puts the item in (then the mode ends) or marks or unmarks it
+    as junk (the mode stays); a right click, Esc (`SetPropagateKeyboardInput` for every other key) or
+    `PLAYER_REGEN_DISABLED` ends it. The game's item buttons never see those clicks.
+  - **The "+" cells** (`Views.lua`'s `block.plus`, `Layout.lua`'s `plus` places, `Bags.lua`'s `DrawPlus`): after
+    Pinned (shown when empty too) and every category that takes items (`Categories.Takes`), in the grid; an item
+    on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`.
   - **The sidebar** (`Bags/Sidebar.lua`, `ns.BagSidebar`): rows of the game's look at Sane UI's size (the view
     shown with a bar of `Core.GOLD` at its left), a click `Bags.Choose`, an item on the cursor let go there
     `Menus.Drop`, a right click `Menus.Row`; folded to icons (kept: `narrow`), scrolled by the wheel.
@@ -330,8 +345,9 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     `PutItemInBackpack`, `PutKeyInKeyRing`, out of a fight); the bar's button for what can be done here (selling
     the junk after the game's `SELL_ALL_JUNK_ITEMS_POPUP` in `Core.Confirm`: the bags read anew, then
     `C_MerchantFrame.SellAllJunkItems` where the junk is just the game's, else `C_Container.UseContainerItem` on
-    each, while the vendor is there and the cursor is empty; `C_Bank.AutoDepositItemsIntoBank` where
-    `DoesBankTypeSupportAutoDeposit`).
+    each, one every `Foot.STEP` seconds while the vendor is there, out of a fight and with the cursor empty, the
+    item checked to be still in its slot; `Core.Print` says how many were sold for how much and how many could
+    not be; `C_Bank.AutoDepositItemsIntoBank` where `DoesBankTypeSupportAutoDeposit`).
   - **Events, while shown only** (`Bags.Show`): `BAG_UPDATE_DELAYED`, `BAG_NEW_ITEMS_UPDATED`,
     `BAG_CONTAINER_UPDATE`, the quest events, the vendor's, mailbox's, trade's and auction house's opening and
     closing, `EQUIPMENT_SETS_CHANGED`, `BANKFRAME_OPENED`/`CLOSED` and the bank's slot and tab events: everything
@@ -380,6 +396,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 | `Bags/Cells.lua` | The bags' item buttons: the game's own, a pool, in the flat look, drawn the game's way |
 | `Bags/Foot.lua` | The bags' foot: currencies, gold; the strip of the bags; selling junk or depositing reagents |
 | `Bags/Menus.lua` | The bags' menus for an item, a category and a group, items let go over a category, new categories |
+| `Bags/Select.lua` | The bags' choosing by clicks: an item into a category after its "+", junk marked by the coin |
 | `Bags/Sidebar.lua` | The bags' sidebar: the views, Pinned, Recent, the categories and groups with their counts |
 | `Bags/Bags.lua` | The bags' window: the bar, the strip, the scroll area, heads, labels and lines, the dropdown *View*, the events; registers the part `bags` |
 | `Alts/Snapshot.lua` | The other characters' window, without frames: the roster, a character's places and items, the search |

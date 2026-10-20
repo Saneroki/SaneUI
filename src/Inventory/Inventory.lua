@@ -80,6 +80,11 @@ ns.TEXT = {
     bagsRecentTip = "What came into your bags lately. These items stay in their own category too.",
     bagsDropTip = "Let an item go here to put it into this category.",
     bagsHeadTip = "Right-click: rename, move, group, hide or switch off this category.",
+    bagsPlusTip = "Bring an item here to put it in, or click here and then on an item.",
+    bagsMarker = "Junk Marker",
+    bagsMarkerTip = "Click here, then click items to mark them as junk or unmark them; click here again to stop. An item brought here is marked at once.",
+    bagsSold = "Sold %d junk items for %s.",
+    bagsUnsold = "%d junk items could not be sold.",
     -- The bags' dropdown View (Bags/Bags.lua)
     bagsLook = "Display",
     bagsShowPinned = "Show Pinned Items",
