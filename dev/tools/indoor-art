@@ -1,0 +1,587 @@
+#!/usr/bin/env python3
+"""Makes Navigation's indoor maps from the game's own files: the plan of every building and cave the continents
+place, as the game's own indoor minimap draws it, to lay over the world map while the player is inside.
+
+The game keeps an indoor minimap per part (group) of a building (WMO): its client table WMOMinimapTexture names,
+per building (its WMO ID, in the root file's header), part and block, one texture. A block is 128 yards of the
+part's own floor plan (the building's x and y, as its root file's part list boxes it), 2 texels a yard, from the
+part's box minimum: block column BlockX along x, block row BlockY along y. Each texture is the plan seen from
+above, x to the right and y upwards (its last row is the block's lowest y); a full block is 256 x 256, a part's
+only block (and some last ones) the smallest power of two from 32 that holds the rest. The game's alpha is on or
+off (DXT1); where it is off the texture is black.
+
+A part whose blocks do not fit its box (a block missing or too many, a texture of another size), or whose drawn
+texels do not lie on its own triangles seen from above (fewer than ON_SHAPE of them within two texels), has
+textures made for another shape of the building: it is left out, as is a part the table names that the building
+does not have, and one that draws fewer than SPECK texels.
+
+Per part, its blocks are laid into one picture, the game's black under its clear texels replaced by the colour of
+the edge near it, its edge softened (the alpha blurred a little, the darkest texels on the edge faded: DXT1 leaves
+a black rim) and cut to what is drawn, with two clear texels around. It is then resized, its proportions kept,
+into a texture of powers of two: of the sizes that keep at least SHARP of the game's texels a yard (and the sides
+at most WIDEST), the smallest, at the largest scale it allows. The picture lies at the texture's top left, the
+rest of the texture is clear. Every mipmap is made from the picture itself, in premultiplied alpha with Lanczos,
+a clear texel again taking the colour of the edge near it, so the game's filter never blends in black.
+
+  src/Navigation/Art/Indoors/<root file>-<part>.blp   BLP2, DXT5 with every mipmap (Doc/guides/images.md)
+
+Every placement of a building that has such a picture (the object files' MODF: its place, its turn and its scale;
+one tilted more than TILT degrees is left out, its plan would not lie flat), as staging for the set Indoors:
+
+  dev/data/staging/indoors.jsonl    one line per building: key its root file's ID, fields
+    groups   per part with a picture: group (its number in the building), file (the picture's name), left, bottom,
+             right, top (where the texture's corners lie, in the building's own x and y, yards), low and high (the
+             part's height, its box's z), outdoor (true for a part without the game's indoor flag)
+    placed   per placement: map (the continent's instance), x, y, z (where the building's origin stands, in world
+             yards: x grows to the north, y to the west), yaw (the game's turn about the up axis, degrees), scale
+    tiles    the terrain tiles its placements' boxes touch (keys of the set Tiles), for the index byTile
+
+A point (bx, by) of the building lies in the world at
+    x = X - scale * (bx * cos(yaw) - by * sin(yaw))
+    y = Y - scale * (bx * sin(yaw) + by * cos(yaw))
+so on a map with north up the picture is turned counterclockwise by yaw - 90 degrees about its building's origin.
+
+The input, as the game stores it:
+  game files      a folder with adt-obj0/ (the object files, <tile key>.adt), wmo/ (the root files <file ID>.wmo
+                  and their part files <file ID>_<part>.wmo, as for dev/tools/walk-data) and wmo-minimap/ (the
+                  indoor minimap textures, <file ID>.blp); its build.txt names the product and version
+  client tables   a folder of the game's client tables as CSV (WMOMinimapTexture)
+Options: --only <file>[,<file>...] those buildings only (their pictures and staging lines; the others' pictures
+stay), --processes N, --check <folder> <minimap textures> pictures to look at (not shipped): the game's outdoor
+minimap of some known places (the set Tiles' textures, <file ID>.blp) with the indoor maps laid over, as the
+staging places them.
+
+Needs Python with Pillow and NumPy, and ImageMagick 7 (magick).
+
+Usage:  dev/tools/indoor-art <game files> <client tables> [--only files] [--processes N] [--check folder textures]
+"""
+import csv
+import json
+import math
+import struct
+import sys
+from importlib.machinery import SourceFileLoader
+from importlib.util import module_from_spec, spec_from_loader
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[2]
+OUT = ROOT / "src" / "Navigation" / "Art" / "Indoors"
+STAGING = ROOT / "dev" / "data" / "staging" / "indoors.jsonl"
+GAMES = {"wowf": "forever", "wow_classic_beta": "forever-beta"}  # as dev/tools/data game names them
+
+BLOCK = 128            # yards of a part's plan in one block
+TEXELS = 2             # the game's texels a yard
+SMALLEST = 32          # the game's smallest texture side
+SHARP = 2 ** -0.5      # the least share of the game's texels a picture keeps: half a power of two
+WIDEST = 1024          # a texture's longest side (Doc/guides/images.md)
+LEAST = 4              # a texture's shortest side: one DXT block
+SOFT = 0.6             # the alpha's blur, in the game's texels (a Gaussian's width)
+DARK = 32 / 255        # an edge texel darker than this fades towards the game's black
+MARGIN = 2             # clear texels around the cut picture
+SPECK = 8              # texels: a part that draws fewer (two square yards) draws nothing
+ON_SHAPE = 0.9         # the least share of a part's drawn texels on its own triangles
+TILT = 10              # degrees: a placement tilted more is left out
+GRID = 64              # tiles along each side of a continent
+TILE = 1600 / 3        # a tile's side in yards
+HALF = GRID / 2 * TILE # yards from a continent's middle to its edges
+INDOOR = 0x2000        # a part's flag: indoors
+
+# Places to look at with --check: a name, the continent's instance, the middle (world x and y) and how far around.
+CHECKS = [
+    ("goldshire", 0, -9445, 30, 75),
+    ("northshire-abbey", 0, -8897, -178, 90),
+    ("echo-ridge-mine", 0, -8646, -132, 110),
+    ("stormwind", 0, -8740, 690, 330),
+    ("ironforge", 0, -4880, -1000, 420),
+    ("undercity", 0, 1600, 240, 330),
+    ("thunder-bluff", 1, -1220, 30, 260),
+    ("orgrimmar", 1, 1700, -4400, 650),
+]
+
+
+def module(name, path):
+    loader = SourceFileLoader(name, str(path))
+    found = module_from_spec(spec_from_loader(name, loader))
+    loader.exec_module(found)
+    return found
+
+
+WALK = module("walk_data", ROOT / "dev" / "tools" / "walk-data")  # the placements, and terrain-art's BLP writer
+ART = WALK.ART
+
+
+# -------------------------------------------------------------------------------------------------
+#  The game's files
+# -------------------------------------------------------------------------------------------------
+def build_of(folder):
+    """(game version, build) of a game files' folder, from its build.txt."""
+    info = dict(line.split("\t", 1) for line in (folder / "build.txt").read_text(encoding="utf-8").splitlines() if "\t" in line)
+    game = GAMES.get(info.get("product"))
+    if not game:
+        sys.exit(f"{folder}/build.txt names no product Sane UI knows ({info.get('product')})")
+    return game, int(info["version"].rsplit(".", 1)[1])
+
+
+def building(path):
+    """A root file's WMO ID and its parts: [(flags, box: min x, y, z, max x, y, z)]."""
+    data = path.read_bytes()
+    wmo, parts = None, []
+    for name, at, size in ART.pieces(data, 0, len(data)):
+        if name == b"MOHD":
+            wmo = struct.unpack_from("<I", data, at + 32)[0]
+        elif name == b"MOGI":
+            for start in range(at, at + size, 32):
+                flags, *box = struct.unpack_from("<I6f", data, start)
+                parts.append((flags, tuple(box)))
+    return wmo, parts
+
+
+def textures(tables):
+    """{WMO ID: {part: {(block column, block row): texture file ID}}} of the game's table."""
+    found = {}
+    with open(tables / "WMOMinimapTexture.csv", encoding="utf-8") as table:
+        for row in csv.DictReader(table):
+            if row["FileDataID"] not in ("", "0"):
+                found.setdefault(int(row["WMOID"]), {}).setdefault(int(row["GroupNum"]), {})[
+                    (int(row["BlockX"]), int(row["BlockY"]))] = int(row["FileDataID"])
+    return found
+
+
+def side(texels, least=SMALLEST, most=BLOCK * TEXELS):
+    """The smallest power of two from least that holds so many texels, at most most."""
+    size = least
+    while size < texels - 1e-6 and size < most:
+        size *= 2
+    return size
+
+
+def blocks_of(box):
+    """How many blocks a part's plan has along x and y."""
+    return (max(1, math.ceil((box[3] - box[0]) / BLOCK - 1e-6)), max(1, math.ceil((box[4] - box[1]) / BLOCK - 1e-6)))
+
+
+def fits(box, blocks, sizes):
+    """Whether a part's blocks fit its box: every block there, each texture of its size (a full block, or the
+    last one's rest)."""
+    across, up = blocks_of(box)
+    if set(blocks) != {(column, row) for column in range(across) for row in range(up)}:
+        return False
+    for (column, row), file in blocks.items():
+        rest = (side(TEXELS * (box[3] - box[0] - BLOCK * column)), side(TEXELS * (box[4] - box[1] - BLOCK * row)))
+        full = BLOCK * TEXELS
+        if not all(have in ((full, want) if more else (want,)) for have, want, more in
+                   zip(sizes[file], rest, (across > 1, up > 1))):
+            return False
+    return True
+
+
+def texture_size(path):
+    return struct.unpack_from("<2I", path.read_bytes()[:20], 12)
+
+
+# -------------------------------------------------------------------------------------------------
+#  A part's picture
+# -------------------------------------------------------------------------------------------------
+def blur(grid, sigma):
+    """A Gaussian blur of sigma texels, along both sides in turn (the edges clear)."""
+    reach = max(1, int(math.ceil(sigma * 3)))
+    kernel = np.exp(-0.5 * (np.arange(-reach, reach + 1) / sigma) ** 2)
+    kernel /= kernel.sum()
+    padded = np.pad(grid, reach)
+    rows = sum(weight * padded[:, k:k + grid.shape[1]] for k, weight in enumerate(kernel))
+    return sum(weight * rows[k:k + grid.shape[0], :] for k, weight in enumerate(kernel))
+
+
+def smoothstep(low, high, value):
+    t = np.clip((value - low) / (high - low), 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+def bleed(rgb, alpha):
+    """Colour where the picture is clear: the edge's near it, carried outwards (pulled down to coarser grids,
+    pushed back up)."""
+    levels, colour, weight = [], rgb * alpha[..., None], alpha
+    while True:
+        levels.append((colour, weight))
+        if colour.shape[0] == 1 and colour.shape[1] == 1:
+            break
+        high, wide = colour.shape[:2]
+        colour = np.pad(colour, ((0, high % 2), (0, wide % 2), (0, 0)))
+        weight = np.pad(weight, ((0, high % 2), (0, wide % 2)))
+        colour = colour.reshape(colour.shape[0] // 2, 2, colour.shape[1] // 2, 2, 3).sum(axis=(1, 3))
+        weight = weight.reshape(weight.shape[0] // 2, 2, weight.shape[1] // 2, 2).sum(axis=(1, 3))
+    shown = None
+    for colour, weight in reversed(levels):
+        own = colour / np.maximum(weight, 1e-6)[..., None]
+        if shown is not None:
+            up = np.repeat(np.repeat(shown, 2, 0), 2, 1)[:own.shape[0], :own.shape[1]]
+            own = np.where((weight > 0)[..., None], own, up)
+        shown = own
+    return shown
+
+
+def plan(blocks, folder):
+    """A part's blocks laid out as one picture: RGB and alpha (0 to 1), rows from its highest y."""
+    across = max(column for column, _ in blocks) + 1
+    up = max(row for _, row in blocks) + 1
+    full = BLOCK * TEXELS
+    picture = np.zeros((up * full, across * full, 4), np.float32)
+    for (column, row), file in blocks.items():
+        with Image.open(folder / f"{file}.blp") as image:
+            texels = np.asarray(image.convert("RGBA"), np.float32) / 255
+        high, wide = texels.shape[:2]
+        bottom = (up - row) * full  # the block's last row is its lowest y
+        picture[bottom - high:bottom, column * full:column * full + wide] = texels
+    return picture[..., :3], picture[..., 3]
+
+
+def softened(rgb, alpha):
+    """The alpha with its edge softened: the darkest texels on the edge faded, then blurred a little."""
+    solid = alpha > 0.5
+    clear = ~solid
+    near = np.zeros_like(solid)  # solid texels beside a clear one
+    near[1:, :] |= clear[:-1, :]
+    near[:-1, :] |= clear[1:, :]
+    near[:, 1:] |= clear[:, :-1]
+    near[:, :-1] |= clear[:, 1:]
+    near &= solid
+    alpha = np.where(near, alpha * smoothstep(0, DARK, rgb.max(axis=2)), np.where(solid, alpha, 0))
+    return blur(alpha, SOFT)
+
+
+def scale_of(wide, high):
+    """The texture's size and the picture's size in it, (W, H, w, h): of the scales that keep at least SHARP of the
+    game's texels (lower only where WIDEST needs it), the one with the smallest texture, and of those the largest."""
+    top = min(1.0, WIDEST / wide, WIDEST / high)
+    low = min(SHARP, top)
+    scales = {top, low}
+    for length in (wide, high):
+        size = LEAST
+        while size <= WIDEST:
+            if low <= size / length <= top:
+                scales.add(size / length)
+            size *= 2
+    best = None
+    for scale in scales:
+        w, h = max(1, math.ceil(scale * wide - 1e-6)), max(1, math.ceil(scale * high - 1e-6))
+        width, height = side(w, LEAST, WIDEST), side(h, LEAST, WIDEST)
+        if w > width or h > height:
+            continue
+        pick = (width * height, -scale)
+        if best is None or pick < best[0]:
+            best = (pick, (width, height, w, h))
+    return best[1]
+
+
+def levels(rgb, alpha, width, height, w, h):
+    """Every mipmap of the texture, largest first, as RGBA pictures: each from the cut picture itself (texels
+    rgb, alpha), resized in premultiplied alpha with Lanczos into its place at the top left."""
+    high, wide = alpha.shape
+    # The whole texture in the picture's own texels; what lies past the picture is clear.
+    across, down = width * wide / w, height * high / h
+    pad = ((0, max(0, math.ceil(down) + 1 - high)), (0, max(0, math.ceil(across) + 1 - wide)))
+    planes = [np.pad(rgb[..., k] * alpha, pad) for k in range(3)] + [np.pad(alpha, pad)]
+    images = [Image.fromarray(plane.astype(np.float32), "F") for plane in planes]
+    out, k = [], 0
+    while True:
+        size = (max(1, width >> k), max(1, height >> k))
+        made = [np.asarray(image.resize(size, Image.Resampling.LANCZOS, box=(0, 0, across, down)), np.float32)
+                for image in images]
+        a = np.clip(made[3], 0, 1)
+        colour = np.stack(made[:3], axis=-1) / np.maximum(a, 1e-6)[..., None]
+        colour = bleed(np.clip(colour, 0, 1), np.where(a > 1 / 255, a, 0))
+        a = np.where(a >= 250 / 255, 1, a)
+        out.append(Image.fromarray((np.dstack([np.clip(colour, 0, 1), a]) * 255).round().astype(np.uint8), "RGBA"))
+        if size == (1, 1):
+            break
+        k += 1
+    return out
+
+
+def blp(pictures):
+    """A BLP2 file of RGBA mipmaps, largest first: DXT5 (encoding 2, alpha depth 8, alpha encoding 7)."""
+    parts = [ART.dxt5(picture) for picture in pictures]
+    offsets, start = [], 148 + 1024  # the header, then a palette DXT does not use
+    for part in parts:
+        offsets.append(start)
+        start += len(part)
+    unused = [0] * (16 - len(parts))
+    header = b"BLP2" + struct.pack("<I4B2I", 1, 2, 8, 7, 1, pictures[0].width, pictures[0].height)
+    header += struct.pack("<16I", *offsets, *unused) + struct.pack("<16I", *(len(part) for part in parts), *unused)
+    return header + bytes(1024) + b"".join(parts)
+
+
+def triangles(path):
+    """Every triangle of a part's file in the building's own space: an (n, 3, 3) array of corners (x, y, z)."""
+    data = path.read_bytes()
+    top = WALK.chunks(data, 0, len(data))
+    if b"MOGP" not in top:
+        return np.zeros((0, 3, 3))
+    at, size = top[b"MOGP"]
+    inner = WALK.chunks(data, at + 68, at + size)
+    if b"MOVT" not in inner or not (b"MOVI" in inner or b"MOVX" in inner):
+        return np.zeros((0, 3, 3))
+    vat, vsize = inner[b"MOVT"]
+    vertices = np.frombuffer(data, np.float32, vsize // 4, vat).reshape(-1, 3)
+    kind, width = (b"MOVI", np.uint16) if b"MOVI" in inner else (b"MOVX", np.uint32)
+    iat, isize = inner[kind]
+    indices = np.frombuffer(data, width, isize // np.dtype(width).itemsize, iat).astype(np.int64)
+    indices = indices[:len(indices) // 3 * 3].reshape(-1, 3)
+    return vertices[indices[(indices < len(vertices)).all(axis=1)]]
+
+
+def on_shape(alpha, box, path):
+    """The share of the drawn texels (alpha, rows from the plan's highest y) that lie on the part's own triangles
+    seen from above (within two texels): about all of them when the textures were made for this shape."""
+    from PIL import ImageDraw
+    drawn = alpha > 0.5
+    if not drawn.any():
+        return 1.0
+    high, wide = alpha.shape
+    mask = Image.new("1", (wide, high), 0)
+    draw = ImageDraw.Draw(mask)
+    for corners in triangles(path):
+        draw.polygon([((x - box[0]) * TEXELS, high - (y - box[1]) * TEXELS) for x, y, _ in corners], fill=1)
+    shape = np.asarray(mask, bool)
+    for _ in range(2):
+        grown = shape.copy()
+        grown[1:, :] |= shape[:-1, :]
+        grown[:-1, :] |= shape[1:, :]
+        grown[:, 1:] |= shape[:, :-1]
+        grown[:, :-1] |= shape[:, 1:]
+        shape = grown
+    return float((drawn & shape).sum() / drawn.sum())
+
+
+def picture(job):
+    """One part's picture, written; gives (file, part, its rectangle (left, bottom, right, top), its bytes), or
+    (file, part, None, why) when it is left out."""
+    file, part, box, blocks, folder, shape = job
+    rgb, alpha = plan(blocks, folder)
+    if (alpha > 0.5).sum() < SPECK:
+        return file, part, None, "nothing drawn"
+    if not shape.exists():
+        return file, part, None, "no part file"
+    if on_shape(alpha, box, shape) < ON_SHAPE:
+        return file, part, None, "another shape"
+    pad = MARGIN + int(math.ceil(SOFT * 3)) + 1  # room for the blur and the margin at the plan's edges
+    rgb, alpha = np.pad(rgb, ((pad, pad), (pad, pad), (0, 0))), np.pad(alpha, pad)
+    rgb = bleed(rgb, (alpha > 0.5).astype(np.float32))  # the game's black under its clear texels never shows
+    alpha = softened(rgb, alpha)
+    rows, columns = np.nonzero((alpha > 2 / 255).any(axis=1))[0], np.nonzero((alpha > 2 / 255).any(axis=0))[0]
+    r0, r1, c0, c1 = rows[0] - MARGIN, rows[-1] + MARGIN + 1, columns[0] - MARGIN, columns[-1] + MARGIN + 1
+    rgb, alpha = rgb[r0:r1, c0:c1], alpha[r0:r1, c0:c1]
+    high, wide = alpha.shape
+    width, height, w, h = scale_of(wide, high)
+    # Where the texture's corners lie in the building's x and y: its top left is the cut's top left.
+    plan_high = (max(row for _, row in blocks) + 1) * BLOCK * TEXELS
+    left = box[0] + (c0 - pad) / TEXELS
+    top = box[1] + (plan_high - (r0 - pad)) / TEXELS
+    right = left + width * wide / w / TEXELS
+    bottom = top - height * high / h / TEXELS
+    data = blp(levels(rgb, alpha, width, height, w, h))
+    path = OUT / f"{file}-{part}.blp"
+    path.write_bytes(data)
+    with Image.open(path) as back:  # read back by Pillow's own BLP reader
+        assert back.size == (width, height), f"{path.name} reads back as {back.size}"
+    return file, part, (left, bottom, right, top), len(data)
+
+
+# -------------------------------------------------------------------------------------------------
+#  The placements
+# -------------------------------------------------------------------------------------------------
+def tilt(turn):
+    """How far a placement leans from upright, in degrees (its turns about the two level axes)."""
+    lean = math.cos(math.radians(turn[0])) * math.cos(math.radians(turn[2]))
+    return math.degrees(math.acos(max(-1.0, min(1.0, lean))))
+
+
+def tiles_of(continent, box):
+    """The keys of the terrain tiles a world box (north, south, west, east) touches."""
+    north, south, west, east = box
+    rows = range(max(0, int(32 - north / TILE)), min(GRID - 1, int(32 - south / TILE)) + 1)
+    columns = range(max(0, int(32 - west / TILE)), min(GRID - 1, int(32 - east / TILE)) + 1)
+    return [continent * GRID * GRID + row * GRID + column for row in rows for column in columns]
+
+
+def placed(where, continent):
+    px, py, pz = where["at"]
+    return {"map": continent, "x": round(HALF - pz, 2), "y": round(HALF - px, 2), "z": round(py, 2),
+            "yaw": round(where["turn"][1] % 360, 2), "scale": round(where["scale"], 4)}
+
+
+# -------------------------------------------------------------------------------------------------
+#  Pictures to look at (--check)
+# -------------------------------------------------------------------------------------------------
+def check(folder, minimap, lines):
+    """For each place of CHECKS: the game's outdoor minimap (2 texels a yard, north up), and beside it the same
+    with every indoor map laid over that the staging places there, lowest part first."""
+    from PIL import ImageDraw
+    found = ART.tiles()
+    folder.mkdir(parents=True, exist_ok=True)
+    cache = {}
+    for name, continent, middle_x, middle_y, reach in CHECKS:
+        side_texels = int(2 * reach * TEXELS)
+        north, west = middle_x + reach, middle_y + reach
+        xs = north - (np.arange(side_texels) + 0.5) / TEXELS   # world x of each row
+        ys = west - (np.arange(side_texels) + 0.5) / TEXELS    # world y of each column
+        ground = np.zeros((side_texels, side_texels, 3), np.float32)
+        rows, columns = np.floor(32 - xs / TILE).astype(int), np.floor(32 - ys / TILE).astype(int)
+        for row in np.unique(rows):
+            for column in np.unique(columns):
+                file = found.get((continent, row, column))
+                if not file or not (minimap / f"{file}.blp").exists():
+                    continue
+                with Image.open(minimap / f"{file}.blp") as image:
+                    texels = np.asarray(image.convert("RGB"), np.float32)
+                size = texels.shape[0]
+                at_rows, at_columns = np.nonzero(rows == row)[0], np.nonzero(columns == column)[0]
+                i = np.clip(((32 - row) * TILE - xs[at_rows]) / TILE * size, 0, size - 1).astype(int)
+                j = np.clip(((32 - column) * TILE - ys[at_columns]) / TILE * size, 0, size - 1).astype(int)
+                ground[np.ix_(at_rows, at_columns)] = texels[np.ix_(i, j)]
+        laid = ground.copy()
+        x, y = xs[:, None], ys[None, :]
+        drawn = []
+        for line in lines:
+            for where in line["fields"]["placed"]:
+                if where["map"] != continent or abs(where["x"] - middle_x) > reach + 1000 or abs(where["y"] - middle_y) > reach + 1000:
+                    continue
+                yaw, scale = math.radians(where["yaw"]), where["scale"]
+                dx, dy = (where["x"] - x) / scale, (where["y"] - y) / scale
+                bx = dx * math.cos(yaw) + dy * math.sin(yaw)    # the building's own x and y of each texel
+                by = -dx * math.sin(yaw) + dy * math.cos(yaw)
+                for part in sorted(line["fields"]["groups"], key=lambda part: part["low"]):
+                    left, bottom, right, top = part["left"], part["bottom"], part["right"], part["top"]
+                    u, v = (bx - left) / (right - left), (top - by) / (top - bottom)
+                    inside = (u >= 0) & (u < 1) & (v >= 0) & (v < 1)
+                    if not inside.any():
+                        continue
+                    if part["file"] not in cache:
+                        with Image.open(OUT / f"{part['file']}.blp") as image:
+                            cache[part["file"]] = np.asarray(image.convert("RGBA"), np.float32)
+                    texels = cache[part["file"]]
+                    th, tw = texels.shape[:2]
+                    i = np.clip((v * th).astype(int), 0, th - 1)
+                    j = np.clip((u * tw).astype(int), 0, tw - 1)
+                    sample = texels[i, j]
+                    a = sample[..., 3:4] / 255 * inside[..., None]
+                    laid = laid * (1 - a) + sample[..., :3] * a
+                drawn.append(where)
+        both = np.concatenate([ground, laid], axis=1)
+        image = Image.fromarray(np.clip(both, 0, 255).round().astype(np.uint8), "RGB")
+        draw = ImageDraw.Draw(image)
+        for where in drawn:  # each building's origin, on the right
+            i = (north - where["x"]) * TEXELS
+            j = (west - where["y"]) * TEXELS + side_texels
+            draw.ellipse([j - 2, i - 2, j + 2, i + 2], outline=(255, 0, 255))
+        image.save(folder / f"{name}.png")
+    print(f"Check pictures: {len(CHECKS)} in {folder}.")
+
+
+# -------------------------------------------------------------------------------------------------
+def main():
+    args = sys.argv[1:]
+    only, processes, checks = None, 24, None
+    if "--only" in args:
+        at = args.index("--only")
+        only = {int(file) for file in args[at + 1].split(",")}
+        del args[at:at + 2]
+    if "--processes" in args:
+        at = args.index("--processes")
+        processes = int(args[at + 1])
+        del args[at:at + 2]
+    if "--check" in args:
+        at = args.index("--check")
+        checks = (Path(args[at + 1]), Path(args[at + 2]))
+        del args[at:at + 3]
+    if len(args) != 2:
+        print(__doc__.strip().splitlines()[-1], file=sys.stderr)
+        return 2
+    folder, tables = Path(args[0]), Path(args[1])
+    game, build = build_of(folder)
+    minimaps = folder / "wmo-minimap"
+    table = textures(tables)
+    places = WALK.placements(folder)
+    by_file = {}
+    tilted = []  # the files of the placements left out
+    for continent, wheres in places.items():
+        for where in wheres:
+            if tilt(where["turn"]) > TILT:
+                tilted.append(where["file"])
+            else:
+                by_file.setdefault(where["file"], []).append((continent, where))
+    jobs, left_out, sizes = [], {"another shape": 0, "no such part": 0, "nothing drawn": 0, "no part file": 0}, {}
+    buildings = {}
+    for file in sorted(by_file):
+        if only and file not in only:
+            continue
+        wmo, parts = building(folder / "wmo" / f"{file}.wmo")
+        if wmo not in table:
+            continue
+        buildings[file] = parts
+        for part, blocks in sorted(table[wmo].items()):
+            if part >= len(parts):
+                left_out["no such part"] += 1
+                continue
+            for texture in blocks.values():
+                if texture not in sizes:
+                    sizes[texture] = texture_size(minimaps / f"{texture}.blp")
+            if not fits(parts[part][1], blocks, sizes):
+                left_out["another shape"] += 1
+                continue
+            jobs.append((file, part, parts[part][1], blocks, minimaps, folder / "wmo" / f"{file}_{part:03d}.wmo"))
+    OUT.mkdir(parents=True, exist_ok=True)
+    made, total = {}, 0
+    with Pool(processes) as pool:
+        for done, result in enumerate(pool.imap_unordered(picture, jobs, chunksize=4), 1):
+            file, part, rectangle, length = result
+            if rectangle:
+                made.setdefault(file, {})[part] = rectangle
+                total += length
+            else:
+                left_out[length] += 1
+            if done % 250 == 0 or done == len(jobs):
+                print(f"{done} of {len(jobs)} pictures made", file=sys.stderr, flush=True)
+    names = {f"{file}-{part}.blp" for file, parts in made.items() for part in parts}
+    for old in OUT.glob("*.blp"):
+        if old.name not in names and (not only or int(old.stem.split("-")[0]) in only):
+            old.unlink()
+    lines = []
+    for file in sorted(made):
+        groups = []
+        for part, (left, bottom, right, top) in sorted(made[file].items()):
+            flags, box = buildings[file][part]
+            group = {"group": part, "file": f"{file}-{part}", "left": round(left, 2), "bottom": round(bottom, 2),
+                     "right": round(right, 2), "top": round(top, 2), "low": round(box[2], 2), "high": round(box[5], 2)}
+            if not flags & INDOOR:
+                group["outdoor"] = True
+            groups.append(group)
+        wheres = sorted((placed(where, continent) for continent, where in by_file[file]),
+                        key=lambda where: (where["map"], where["x"], where["y"]))
+        tiles = sorted({key for continent, where in by_file[file] for key in tiles_of(continent, where["box"])})
+        lines.append({"set": "Indoors", "key": file, "game": game, "build": build, "src": "game",
+                      "fields": {"groups": groups, "placed": wheres, "tiles": tiles}})
+    STAGING.parent.mkdir(parents=True, exist_ok=True)
+    with open(STAGING, "w", encoding="utf-8") as out:
+        for line in lines:
+            out.write(json.dumps(line, separators=(",", ":")) + "\n")
+    pictures = sum(len(parts) for parts in made.values())
+    table_files = {file for file in set(tilted) if building(folder / "wmo" / f"{file}.wmo")[0] in table}
+    print(f"Indoor maps: {pictures} pictures of {len(made)} buildings in {OUT.relative_to(ROOT)}, {total / 1e6:.1f} MB; "
+          f"left out: {left_out['another shape']} parts whose textures were made for another shape, "
+          f"{left_out['no such part']} parts the building lacks, {left_out['nothing drawn']} that draw (almost) nothing, "
+          f"{left_out['no part file']} without their part file to check them by, "
+          f"{sum(1 for file in tilted if file in table_files)} placements of buildings with indoor maps tilted over {TILT} degrees.")
+    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines)} buildings, "
+          f"{sum(len(line['fields']['placed']) for line in lines)} placements.")
+    if checks:
+        check(checks[0], checks[1], lines)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

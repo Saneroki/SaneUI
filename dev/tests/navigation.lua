@@ -503,6 +503,19 @@ out = assert(io.open(questsPath .. "/SaneUI_Data_Quests.toc", "w"))
 out:write("## Title: Data: Quests\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Quests\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nQuests.lua\n")
 out:close()
 W.AddPack(questsPath)
+-- The indoor map of a building (the set Indoors): one at the player's place (world x -8950, y -500: plane u 500,
+-- v -8950, terrain tile 3104), turned 90 degrees so its own axes lie along the plane's, two floors one above the other.
+local indoorsPath = io.popen("mktemp -d -t saneui-indoors-XXXXXX"):read("*l") .. "/SaneUI_Data_Indoors" -- loaded late
+os.execute(("mkdir -p '%s'"):format(indoorsPath))
+Set(indoorsPath .. "/Indoors.lua", "Indoors", "0000000a", "int", '"groups", "placed", "tiles"',
+    '"list tuple(group:int,file:text,left:number,bottom:number,right:number,top:number,low:number,high:number,outdoor:bool)", '
+    .. '"list tuple(map:int,x:number,y:number,z:number,yaw:number,scale:number)", "list int"',
+    'R[500001] = "70245\t\t0\031500001-0\031-10\031-10\03110\03110\031-1\0315\031\0301\031500001-1\031-10\031-10\03110\03110\0315\03112\031'
+    .. '\t0\031-8950\031-500\0310\03190\0311\t3104"\nI.byTile = {}\nI.byTile[3104] = "500001"\n')
+out = assert(io.open(indoorsPath .. "/SaneUI_Data_Indoors.toc", "w"))
+out:write("## Title: Data: Indoors\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Indoors\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nIndoors.lua\n")
+out:close()
+W.AddPack(indoorsPath)
 -- The walking data (pack Routes): two tiles round the player, their blocks as the game unpacks them (the
 -- encoding stand-ins below hand back these tables). Tile 3104 (its north west corner at u 0, v -8533, 2.08 yards
 -- a sample): a west hall (1) and an east hall (3), a wall between them (columns 128 to 159) with a door (2, rows
@@ -842,6 +855,34 @@ IsIndoors = function() return true end
 W.Fire("ZONE_CHANGED_INDOORS")
 Canvas.Layout()
 check(minimap._shown and ground == false, "indoors: the game's minimap without its own ground (no indoor plan on black)")
+-- Our own indoor map instead: the building the player stands in, the floor at the player's height.
+do
+    local height, before = 3, UnitPosition
+    UnitPosition = function() return -8950, -500, height, 0 end
+    Core.Data.Prepare("Indoors")
+    Frames(8)
+    Canvas.Layout()
+    local function Picture(file)
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "Texture" and type(widget._texture) == "string" and widget._texture:find(file, 1, true) and widget._shown then
+                return widget
+            end
+        end
+    end
+    local ground = Picture("Indoors\\500001-0")
+    local c = ground and ground._coords
+    check(ground and not Picture("Indoors\\500001-1") and c and near(c[1], 0) and near(c[2], 0) and near(c[3], 0)
+        and near(c[4], 1) and near(c[5], 1) and near(c[6], 0) and near(c[7], 1) and near(c[8], 1)
+        and near(ground._width, 20 * Canvas.view.k), "indoors, the building the player stands in: its floor at the "
+        .. "player's height, its picture turned with the building, as large as it is")
+    height = 8
+    ns.Indoors.Track(Canvas.view, GetTime() + 10)
+    check(Picture("Indoors\\500001-1") and not Picture("Indoors\\500001-0"), "up the stairs: the floor above")
+    IsIndoors = function() return false end
+    Canvas.Layout()
+    check(not Picture("Indoors\\500001-1"), "outdoors: no indoor map")
+    UnitPosition = before
+end
 IsIndoors = function() return false end
 W.Fire("ZONE_CHANGED_INDOORS")
 Canvas.Layout()

@@ -6,6 +6,26 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 35 (Combat), 35 (spellbook), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
+### Navigation: indoor maps of our own, without the black (Saneroki, 2026-10-20)
+- **The pictures** (`dev/tools/indoor-art`, new; `src/Navigation/Art/Indoors/`, 2,785 pictures of 345 buildings,
+  47 MB): the game's own indoor minimap textures (its table WMOMinimapTexture: per building, part and block of 128
+  yards, 2 texels a yard), each part's blocks laid into one picture, the black under its clear texels replaced by
+  its edge's colour, its edge softened, resized to 1.4 to 2 texels a yard into a power of two (premultiplied, so no
+  black fringe); BLP2 DXT5 with mipmaps. Left out: parts whose textures were made for another shape of the building,
+  that the building lacks, or that draw almost nothing, and placements tilted more than 10 degrees.
+- **The data** (Core's new set *Indoors*, pack World; `assets/data/Indoors/`, source the game): per building (its root
+  file) its parts' pictures (where their corners lie in the building, their height, whether the game flags them
+  indoor), its placements (continent, place, height, turn, scale), its terrain tiles (`byTile`); 345 buildings,
+  1,054 placements.
+- **The layer** (`Indoors.lua`, new in the TOC; `Canvas.lua`: the layer `indoors` over the map's art, `Canvas.LEVELS`
+  and `Canvas.MAP` one up): indoors, the building the player stands in (its part holding the player's place,
+  `UnitPosition`, of those on the player's tile), its parts at the player's height (from `Indoors.BELOW`, a yard,
+  under their floor to their top; the floor nearest below on top; without a height every indoor part), each as the
+  square the canvas lays it out in, its texture coordinates turned to the building's turn inside it, clear around it
+  (`CLAMPTOBLACKADDITIVE`). Looked at again on the tracker's steps four times a second (`Indoors.Track`).
+- **Tests:** `dev/tests/navigation.lua`: a two-floored building at the player's place: the floor at the player's
+  height, its picture's corners, the floor above after the stairs, nothing outdoors.
+
 ### Navigation: herbs and ore found, sparkles, the finders in turn (Saneroki, 2026-10-20)
 Saneroki asked for the herbs and ore on the minimap in their own pictures, sparkles on them in the world, and Find
 Herbs and Find Minerals in turn, silently, all of it with switches in the pin filter and the settings.

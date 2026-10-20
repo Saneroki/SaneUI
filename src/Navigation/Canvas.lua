@@ -11,6 +11,7 @@ local _, ns = ...
 --       │    ├─ terrain   the game's minimap textures and the overview (Terrain.lua)
 --       │    ├─ atlas     the painted map, the view Atlas (Painted.lua)
 --       │    ├─ art       Blizzard's map art and its explored parts, the view Parchment (Art.lua)
+--       │    ├─ indoors   the indoor map of the building the player is in (Indoors.lua)
 --       │    ├─ light     the zone under the mouse (Art.lua)
 --       │    ├─ areas     the quest's areas (Areas.lua)
 --       │    ├─ route     the golden line (Route.lua)
@@ -63,8 +64,9 @@ Canvas.OVERLAP = 1   -- each texture so many units larger than its square, so no
 Canvas.DRAG = 4      -- the mouse moves so many units with the button held before it is a drag, not a click
 Canvas.LOOK = 0.1    -- seconds between two looks at the player's place while the view does not follow
 -- Above the canvas, in drawing order; the game's minimap at Hybrid.LEVEL (10), the full map's bars at 30.
-Canvas.LEVELS = { holder = 1, terrain = 2, atlas = 3, art = 4, light = 5, areas = 6, route = 7, pins = 12, marks = 20 }
-Canvas.MAP = 5 -- the highest level of the map itself: what stands on it is above this
+Canvas.LEVELS = { holder = 1, terrain = 2, atlas = 3, art = 4, indoors = 5, light = 6, areas = 7, route = 8, pins = 12,
+                  marks = 20 }
+Canvas.MAP = 6 -- the highest level of the map itself: what stands on it is above this
 
 local frame, holder, camera, tracker, layers, hover, ground
 local held = false -- on the window's way, or hidden: its size changes lay nothing out
@@ -243,6 +245,7 @@ local function Draw()
     ns.Safe("terrain", ns.Terrain.Place, view, chosen ~= "sketches")
     ns.Safe("atlas", ns.Painted.Place, view, chosen == "atlas")
     ns.Safe("map art", ns.Art.Place, view, chosen == "sketches")
+    ns.Safe("indoors", ns.Indoors.Place, view)
     ns.Safe("areas", ns.Areas.Place, view)
     ns.Safe("route", ns.Route.Place, view)
     ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small)
@@ -353,6 +356,7 @@ local function Track()
     ns.Marks.Player(view, map, u, v, facing, ns.Hybrid.Shown())
     ns.Marks.Group(view, now)
     ns.Route.Track(map, u, v, now)
+    if laid then ns.Indoors.Track(view, now) end
 end
 local tracking = ns.Guard(Track) -- made once
 
@@ -555,6 +559,7 @@ function Canvas.Build(parent)
     holder:SetPoint("CENTER")
     layers = { terrain = ns.Terrain.Build(holder), atlas = ns.Painted.Build(holder) }
     layers.art, layers.light = ns.Art.Build(holder)
+    layers.indoors = ns.Indoors.Build(holder)
     layers.areas, layers.route = ns.Areas.Build(holder), ns.Route.Build(holder)
     ns.PinView.Build(holder)
     ns.Marks.Build(holder)
@@ -720,6 +725,7 @@ function Canvas.Close()
     ns.Safe("terrain", ns.Terrain.Clear)
     ns.Safe("atlas", ns.Painted.Clear)
     ns.Safe("map art", ns.Art.Clear)
+    ns.Safe("indoors", ns.Indoors.Clear)
     ns.Safe("areas", ns.Areas.Clear)
     ns.Safe("route", ns.Route.Clear)
     ns.Safe("pins", ns.PinView.Clear)

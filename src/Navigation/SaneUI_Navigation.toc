@@ -37,6 +37,8 @@ Outlines.lua
 Art.lua
 # The view Atlas: the painted map of the module SaneUI_Atlas, found at login, loaded when the view is first drawn
 Painted.lua
+# The indoor map of the building you are in: the game's indoor pictures without their black, at your floor
+Indoors.lua
 # A quest's areas, as the game shades them, over each zone in view
 Areas.lua
 # The golden line of the way to the map pin: its pulse (the game makes that animation only from XML), its lines

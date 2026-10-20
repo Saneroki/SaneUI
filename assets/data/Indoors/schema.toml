@@ -1,0 +1,36 @@
+set = "Indoors"
+key = "int"              # the building's root file ID (a WMO, as the object files' MODF names it)
+pack = "World"
+learn = false
+about = "The game's indoor maps of every building and cave the continents place: each part's picture, where it lies in the building, and where the building stands."
+
+# A point (bx, by) of the building's own space lies in the world (Coords' world: x north, y west) at
+#   x = placed.x - placed.scale * (bx * cos(yaw) - by * sin(yaw))
+#   y = placed.y - placed.scale * (bx * sin(yaw) + by * cos(yaw))
+# so on a map with north up a picture is turned counterclockwise by yaw - 90 degrees about the building's origin.
+# Made by dev/tools/indoor-art from the game's files; the pictures are src/Navigation/Art/Indoors/<file>.blp.
+
+[fields]
+groups = { type = "list", of = "tuple", parts = [
+    { name = "group", type = "int", min = 0 },      # the part's number in the building (its root file's part list)
+    { name = "file", type = "text" },               # its picture's name
+    { name = "left", type = "number" },             # where the texture's corners lie in the building's own x and y,
+    { name = "bottom", type = "number" },           # yards: the texture's left and bottom edge at the lower x and y,
+    { name = "right", type = "number" },            # its right and top edge at the higher
+    { name = "top", type = "number" },
+    { name = "low", type = "number" },              # the part's height in the building's own z: its box's lowest
+    { name = "high", type = "number" },             # and highest
+    { name = "outdoor", type = "bool" },            # the part lacks the game's indoor flag
+] }
+placed = { type = "list", of = "tuple", parts = [
+    { name = "map", type = "int", min = 0 },        # the continent's instance (0, 1, 2991)
+    { name = "x", type = "number" },                # where the building's origin stands, world yards: north,
+    { name = "y", type = "number" },                # west
+    { name = "z", type = "number" },                # and height
+    { name = "yaw", type = "number", min = 0, max = 360 },  # the game's turn about the up axis, degrees
+    { name = "scale", type = "number", min = 0 },
+] }
+tiles = { type = "list", of = "int", min = 0 }      # the terrain tiles its placements touch: keys of the set Tiles
+
+[index]
+byTile = "tiles"

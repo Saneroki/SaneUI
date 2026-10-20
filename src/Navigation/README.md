@@ -249,6 +249,14 @@ party), always over the map, and the full map has the quest log at its left. The
   cooldown as a wait. Without walking data, straight lines.
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
   pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second).
+- **Indoors** (`Indoors.lua`): inside a building or a cave (the game's `IsIndoors`) the indoor map of the building
+  you stand in lies over the map: the game's own indoor pictures with their black taken out (`Art/Indoors/`, made
+  by `dev/tools/indoor-art` from the game's files), placed by Core's set *Indoors* (each part's picture, where it lies
+  in the building, the building's place, turn and scale). The building: the one whose part holds your place
+  (`UnitPosition`), of those on your terrain tile (`byTile`); its parts whose height reaches yours (from
+  `Indoors.BELOW` under their floor to their top), the floor nearest below you on top; without a height every part
+  with the game's indoor flag. A picture is the square any texture is laid out in, its texture coordinates turned to
+  the building's turn inside it and clear around it. Looked at again a few times a second (`Indoors.Track`).
 - **The game's minimap** (`Hybrid.lua`): over our map while the view follows you at one of its zoom steps,
   square, as large as the view's shorter side, in its middle, cut by the game's own white square (the game draws
   its dots inside its mask only, whatever cuts its parent, so nothing of it shows past the window; in a window
@@ -305,6 +313,8 @@ party), always over the map, and the full map has the quest log at its left. The
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks |
 | `Marks.lua` | The player's arrow, the map pin, the party |
 | `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders switched by the pin filter and in turn, silently. No frames |
+| `Indoors.lua` | The indoor map of the building you are in: the game's indoor pictures without their black, at your floor |
+| `Art/Indoors/*.blp` | The indoor pictures, one per part of a building, made by `dev/tools/indoor-art` |
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
 | `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures |
 | `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
@@ -321,6 +331,8 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, indoor maps:** inside a building or a cave, its indoor map over ours, from the game's indoor
+  pictures with their black taken out, the floor at your height (Core's set *Indoors*, `dev/tools/indoor-art`).
 - **2026-10-20, herbs and ore found:** the pin filter's herbs and ore of Core's data are *Possible herbs* and
   *Possible ore*; new are *Found herbs* and *Found ore* (`Found.lua`): what the game's minimap shows now, each in
   its own picture, the switches doubling as Find Herbs and Find Minerals, which take turns while you move, without a
