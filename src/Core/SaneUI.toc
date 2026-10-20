@@ -27,7 +27,7 @@ Profiles.lua
 # round corners, background and border, moving (by a title bar, or in Blizzard's Edit Mode, chosen there with its
 # dialog) and sizing (in Edit Mode), opening under the mouse, filling the screen from its screen edge, a title bar
 # with a fuzzy search, views behind tabs, the game's own window kept out of sight while ours is chosen (the
-# holder), and a progress bar
+# holder), a window not ours seated in a room of a full one (the seat), and a progress bar
 Dock.lua
 EditMode.lua
 Escape.lua
@@ -40,8 +40,11 @@ Window.lua
 Views.lua
 Selection.lua
 Holder.lua
+Seat.lua
 Expand.lua
 Bar.lua
+# The other addons Sane UI knows and adapts to when they are installed (the one file that names them)
+Neighbours.lua
 # The words of Sane UI's keys in the game's key bindings (what they do: Bindings.xml, read by the game itself)
 Bindings.lua
 # /sane window: a window to try them with

@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Combat
-## Notes: Sane UI's frames for the fight: your own, your target's and your pet's, party and raid, buffs and debuffs, nameplates. Being built: for now it changes nothing, the game's own frames stay as they are.
+## Notes: Sane UI's frames for the fight, being built. Docked at the screen's bottom middle: push the mouse against the middle of the bottom edge and your talents and spellbook fill the screen side by side; push there again, or Esc, and they go back.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -9,5 +9,9 @@
 ## IconTexture: Interface\Icons\Ability_DualWield
 ## X-License: MIT
 
-# The module's own table. First: the other files will add to that table.
+# The module's own table, its words and settings. First: the other files will add to that table.
 Combat.lua
+# Its window: docked at the bottom middle, filling the screen from the middle half of the bottom edge
+Window.lua
+# The full screen's panels: your talents and your spellbook, the windows that hold them seated there
+Board.lua

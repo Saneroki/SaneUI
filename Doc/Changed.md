@@ -3,8 +3,56 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 500 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 258 (Navigation), 21 (Inventory), 37 (walking data), 24 (map data), 208 (data tools).
-A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 500 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 258 (Navigation), 21 (Inventory), 40 (Combat), 37 (walking data), 24 (map data), 208 (data tools).
+A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Combat: its window at the bottom middle, your talents and spellbook on its full screen (Saneroki, 2026-10-20)
+- **The known addons** (Saneroki, 2026-10-20, the one exception to *No other addons*): Sane UI's code may see that
+  certain other addons are installed and adapt to them. Their names stand in one file only,
+  `src/Core/Neighbours.lua` (new, in Core's TOC before `Bindings.lua`): `Core.Neighbours.Window(key)` is a handle on
+  one while it is loaded and has what is used of it (`Frame`, `Shown`, `Open` and `Close` by its own functions behind
+  `Core.Safe`, `Follow(fn)`: one hook after its opening function), nil otherwise. The first is a talent planner
+  (`"talents"`).
+- **The seat** (`src/Core/Seat.lua`, new, in Core's TOC after `Holder.lua`): a window that is not ours seated in a
+  room of a full window, in UIParent's units (`Core.Seat.New(frame, { label, sized, gone })`,
+  `seat:Hold(left, top, width, height, strata, level)`, `Free`, `Size`): as large as fits and never larger than it
+  is, in the room's middle; only its place, scale and layer lent (`Core.Lend`), never its parent, so our code never
+  shows or hides it; hooks after its `SetPoint` and `SetScale` put it back when the game places or scales it anew,
+  `OnSizeChanged` fits it anew and tells `sized`, `OnHide` gives it back and tells `gone`; a protected window in a
+  fight is not seated; its level only raised (the game's spellbook stands at 5000). `Core.Lent(frame)` (`Kit.lua`):
+  whether a frame is lent now, to any module.
+- **Edge's strip of a share of the screen's side** (`Edge.lua`, the window option `strip`): docked at an edge's
+  middle, the strip that fills the screen is that share of the screen's side in its middle, anchored to UIParent,
+  whatever the window's width, and stays there while the window is full; its length again at
+  `DISPLAY_SIZE_CHANGED` and `UI_SCALE_CHANGED`.
+- **Combat's window** (`src/Combat/Window.lua`, new): a `Core.Window` of the kind `screen`, docked at `BOTTOM` at
+  first, empty and see-through while small (`Window.WIDTH` x `Window.HEIGHT`, not sizable, no mouse), with
+  `strip = 0.5`: the middle half of the bottom edge fills the screen, pushed again or Esc it goes back. The board is
+  laid out for the full screen as the motion begins (`filled`) and once it stands (`docked`).
+- **The board** (`src/Combat/Board.lua`, new): two panels, *Talents* and *Spellbook*, side by side (`Board.Layout`:
+  `MARGIN`, `GAP`, each as wide as its share of the widths both want; `Board.TALENTS`, `Board.SPELLBOOK` the game's
+  own sizes for an empty one). The game's talents and spellbook are one window (`PlayerSpellsFrame`), seated in the
+  panel of the tab it shows; with a talent planner Sane UI knows, the planner's window is the Talents panel (opened
+  with the full screen, closed when it goes) and the game's window takes the Spellbook panel whatever it shows.
+  Hooks after the game's window's `OnShow` (loaded on demand: `EventUtil.ContinueOnAddOnLoaded`) and its tabs'
+  `OnShow`, and after the planner's opening: whatever opens one brings the full screen, or its panel when full.
+  Our code never shows or hides the game's window (its `OnShow` and `OnHide` touch the action bars' protected
+  grids, and a panel shown by addon code runs the window manager tainted: `Doc/guides/addon-standards.md`, *Known
+  traps*). An empty panel shows a plate in Sane UI's look with its title, the game's key for it and an *Open*
+  button: for the game's window a `SecureActionButtonTemplate` (`type = "click"` on the game's `TalentMicroButton`
+  or `SpellbookMicroButton`, `useOnKeyDown = false`) on UIParent in `DIALOG`, not in our window (it would lock it
+  in a fight), made, placed, shown and hidden out of a fight only, hidden at `PLAYER_REGEN_DISABLED` and back
+  after; for the planner a button of ours. Going back gives the game's window back to its place, still open (Esc
+  closes it with the full screen).
+- **Settings:** the page *Combat* with Core's sections *Expand window* and *Window corners*.
+- **Standing down** (`ns.GiveBack`): everything seated is given back, the planner closes, the window hides; the
+  open buttons hide now or after the fight.
+- **Abilities** (`Book/Window.lua`): no placing of the game's spellbook while it is lent (`Core.Lent`).
+- **Docs:** `src/Combat/README.md`, `src/Core/README.md`, `Doc/guides/windows.md` (section 7, *Seated*; `strip`),
+  `Doc/ideas/Combat.md`, `Doc/ideas/Windows.md` (the bottom middle is Combat's now, was Abilities'),
+  `Doc/agent/` (README, core, abilities).
+- Tests: `dev/tests/combat.lua` (40 checks), in `dev/tests/run`.
+- A game restart takes it in (new files in Core's and Combat's TOCs).
 
 ### Social: the guild window on the full screen, the chats among the conversations (Saneroki, 2026-10-20)
 - **The guild window** (`src/Social/Guild.lua`, new, in the TOC after `Board.lua`): at the full screen's top right,

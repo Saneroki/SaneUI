@@ -60,7 +60,8 @@ providers or frame fields can taint casting and action bars. The workaround is d
   parks underlying entries with `SetHome`, covers selected native tab visually. Trainer-now total
   and quest rewards use shared row/layout helpers; overflow is counted, not paged here.
 - `Book/Window.lua` uses Core mover/sizer for `PlayerSpellsFrame`; reapplies saved dimensions only
-  while our book is armed and the spellbook is shown, outside combat. Talents keep native sizing.
+  while our book is armed and the spellbook is shown, outside combat, and not while the window is lent to
+  another module (`Core.Lent`: seated on Combat's full screen). Talents keep native sizing.
   `Book/Menu.lua` appends via `Menu.ModifyMenu("MENU_SPELL_BOOK_SETTINGS", ...)`.
 
 `Book.StandDown` restores column/pager, scales and placement as far as possible; Home/window hear

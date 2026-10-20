@@ -41,6 +41,9 @@ local Core = SaneUI.Core
 --                                           -- at each step, the share of the way (0 to 1; Swing goes a
 --                                           -- little past 1 and back)
 --      docked = function(zone) end          -- Window's hook, called once it has filled the screen too
+--      strip = 0.5                          -- docked at an edge's middle: the strip there is that share of
+--                                           -- the screen's side, in its middle, however wide the window is
+--                                           -- (Combat: half the bottom edge); without, the window's side
 --  A switch of the section changed (its options page, a profile, Core.Set):
 --  every window that reads that module's settings is updated at once
 --  (edge:Update()); the module need not pass it on.
@@ -73,7 +76,10 @@ local Core = SaneUI.Core
 --  The mouse at the edge is an event, not a look every frame: along the
 --  docked side lies a strip two of the screen's pixels wide, above everything,
 --  that only takes the mouse's coming (clicks and the wheel go on to what is
---  under it). Docked in a corner, only a square of four pixels in that corner:
+--  under it). With the option strip it is a share of the screen's side instead,
+--  in that side's middle, and stays there while the window fills the screen
+--  (its length follows the screen's size and the UI's scale). Docked in a
+--  corner, only a square of four pixels in that corner:
 --  the mouse has to go all the way into it. A strip that comes under a mouse
 --  that is there already (a window let go at the edge) does nothing: the mouse
 --  has to come anew. One push is one change: after it the strip counts again
@@ -175,7 +181,11 @@ local function Strip(edge, key)
     if strip.SetMouseMotionEnabled then strip:SetMouseMotionEnabled(true) else strip:EnableMouse(true) end
     strip:SetScript("OnEnter", function() Core.Safe("full screen", edge.Pushed, edge, key) end)
     local corners = SIDES[key]
-    if corners then
+    if corners and edge.window.options.strip then
+        -- A share of the screen's side, in its middle (its length: Strips).
+        local middle = key:upper()
+        strip:SetPoint(middle, UIParent, middle)
+    elseif corners then
         local out = Out(edge, key)
         strip:SetPoint(corners[1], corners[3] * out, corners[4] * out)
         strip:SetPoint(corners[2], corners[3] * out, corners[4] * out)
@@ -518,7 +528,12 @@ local function Strips(edge)
             if not on then
                 strip:Hide()
             else
-                if side == "left" or side == "right" then strip:SetWidth(width) else strip:SetHeight(width) end
+                local across = side == "left" or side == "right"
+                if across then strip:SetWidth(width) else strip:SetHeight(width) end
+                local share = edge.window.options.strip
+                if share then
+                    if across then strip:SetHeight(UIParent:GetHeight() * share) else strip:SetWidth(UIParent:GetWidth() * share) end
+                end
                 strip:Show()
             end
         end
@@ -568,6 +583,15 @@ Core.On("PLAYER_REGEN_DISABLED", function()
         end
     end
 end)
+
+-- The screen's size or the UI's scale changed: a strip that is a share of the screen's side takes its new length.
+local function Resized()
+    for edge in pairs(edges) do
+        if edge.window.options.strip then Core.Safe("full screen", Strips, edge) end
+    end
+end
+Core.On("DISPLAY_SIZE_CHANGED", Resized)
+Core.On("UI_SCALE_CHANGED", Resized)
 
 -- A switch of the section changed in a module's settings: every window that reads them is as set now.
 local function Changed(name)

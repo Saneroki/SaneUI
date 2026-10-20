@@ -71,6 +71,8 @@ local Core = SaneUI.Core
 --                                       -- that screen edge, and goes back when pushed there again (Edge.lua),
 --                                       -- as the module's section Expand window says (Edge.Options, with
 --                                       -- the corners' switches); true: as that section is by default
+--          strip = 0.5,                 -- with edge, docked at an edge's middle: the mouse fills the screen
+--                                       -- along that share of the screen's side, in its middle (Edge.lua)
 --          motion = function() end,     -- its kind of motion for that, instead of the section's (Motion.lua)
 --          content = region,            -- what it holds: out of sight while its size moves (Edge.lua)
 --          classic = { { text = "Friends list", show = function() end } },  -- the game's own windows it

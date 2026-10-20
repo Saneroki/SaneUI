@@ -290,7 +290,7 @@ but for a window to try those with (`/sane window`).
 | `Core.TITLE`, `Core.VERSION`, `Core.GOLD` | Name, version from the TOC, the addon's colour |
 
 - **Windows** (`Dock.lua`, `EditMode.lua`, `Escape.lua`, `Watch.lua`, `Fuzzy.lua`, `Shape.lua`, `Skin.lua`,
-  `Edge.lua`, `Window.lua`, `Views.lua`, `Selection.lua`, `Holder.lua`, `Expand.lua`, `Bar.lua`, `Motion.lua`):
+  `Edge.lua`, `Window.lua`, `Views.lua`, `Selection.lua`, `Holder.lua`, `Seat.lua`, `Expand.lua`, `Bar.lua`, `Motion.lua`):
   a library for the modules' windows. Each file's head says how to call it; `Doc/guides/windows.md` is the
   guide for a module that builds one.
 
@@ -313,12 +313,15 @@ but for a window to try those with (`/sane window`).
   | `Core.Skin.TILES`, `Skin.Tile(key)`, `Skin.Choices(solid)` | The game's quiet background tiles a window or a chat's bubbles can stand on (Marble, Rock, Slate, Iron, Night: `{ key, text, file, size }`); one by its key; the choices for a dropdown, `solid` (a colour of its own) first |
   | `Core.Expand.New(frame, options)` | Opens to `width` × `height` once the mouse has rested on it `Expand.DWELL` (0.2 s; anywhere, or only in `corner`; not with `hover = false`), closes once it has been away `Expand.LINGER` (0.5 s), on `Core.Hover`; `expand:Stay(on)` keeps it open (a control of the window's own; nothing watches the mouse meanwhile); `motion` its own kind, `still` while another part has its size. `expand:Open()`, `expand:Close()`, `expand:Stay(on)`, `expand.open`, `expand.stays` |
   | `Core.Bar.New(parent, options)` | A progress bar in the art of the game's experience bar (`Bar.ART`: background, fill, the part still to come, its pip, the dividers, the flare): `bar:SetValue(value, most, ahead)` (a gain rises in `Bar.RISE` to `Bar.RISE_WHOLE` seconds by its size, with the game's flare; a loss is there at once), `bar:SetSize(width, height)` (moves there); `width`, `height`, `segments` (nil: the game's own count), `fill`, `flare`, `motion`, `moved` (the value the fill stands for, on its way too); `bar.frame` |
-  | `Core.Edge.New(window)` | Made by `Window.New` with `edge`: docked, the window fills the screen when the mouse is pushed against that screen edge, and goes back when pushed there again; full, the dropdown *Classic windows* (`classic`) in its title bar. `edge:Fill(on)`, `edge.full`, `edge.away`, `edge.classic`. Not in Edit Mode |
+  | `Core.Edge.New(window)` | Made by `Window.New` with `edge`: docked, the window fills the screen when the mouse is pushed against that screen edge, and goes back when pushed there again; full, the dropdown *Classic windows* (`classic`) in its title bar. `edge:Fill(on)`, `edge.full`, `edge.away`, `edge.classic`. Not in Edit Mode. With the window's option `strip` (a share, 0.5: Combat) and docked at an edge's middle, the strip is that share of the screen's side, in its middle, whatever the window's width; its length follows the screen's size and the UI's scale |
   | `Core.Motion.Kind(key)`, `Motion.Share(kind, progress)`, `Motion.Ease(curve, progress)`, `Motion.Choices(own)`, `Motion.Clock(frame, step, failed)` | The kinds of motion (`Motion.KINDS`: glide, swing, even, off (*Instant*); each a `time` and the name of one of the game's easing curves, `EasingUtil`); the kind for a window's own setting (nil, `"global"` or unknown: the general one, `Core.general.motion`); the share of the way; a curve by name (straight without the game's); the choices for a dropdown; a clock that runs only while something moves (its frame hidden mid-way: at its end at once) |
   | `Core.Motion.Fade(region)`, `Core.Motion.Slide(region, seconds)` | A region's fade, one of the game's animations: `fade:To(alpha, seconds, from)`, `Stop()`, `IsPlaying()`; its slide to its place: `slide:From(x, y)` (put back by that much, it slides home; one on its way is taken into the new one), `SetTime(seconds)`, `Stop()`, `IsPlaying()`. Both at once with all animations off (`Core.general.animations`) or the region out of sight |
   | `Window.Views(window)` (`tabs`) | The views behind the game's tabs (`TabSystemTemplate`, `TabSystemTopButtonTemplate`, as wide as the spellbook's: `Window.TAB_WIDTHS` 100 to 150, `Window.TAB_INSET` 22, `Window.TABS` 32 high) at the top of `window.inside`; a view built when its tab is first chosen; `window:Tab(index)`, `window.views`, `window.view`, `window.tabs`; the tab last chosen kept (`tab`) |
   | `Core.Selection.Select(window)`, `Selection.Clear()`, `Selection.window` | In Edit Mode, the window chosen by a click on its box: the box in Edit Mode's selected look (`editmode-actionbar-selected`), and Core's dialog in Edit Mode's look (`DialogBorderTranslucentTemplate`, `Selection.WIDTH` 370, at `Selection.ANCHOR`, strata `DIALOG` level 200) with its name and *Reset To Default Position* (the game's `HUD_EDIT_MODE_RESET_POSITION`; `window:Reset()`, only for a window moved or sized). Taken off when one of the game's frames is selected or Edit Mode closes |
   | `Core.Holder.Take(window)` (`native.hold`) | Ours or the game's, never both: the game's window held out of sight under a frame of ours (`Core.Lend`) while it is closed and ours is chosen; opened by the game's own code, it opens ours. `holder:Native(on)` (from `window:Native`), `holder:GiveBack()`, `holder.held`, `holder.off`; `native.addon` (held once that addon is loaded), `native.unseen` (closed unseen before it is given back), `Holder.TINY` (0.001: made tiny, not hidden, while the game still has it open) |
+  | `Core.Seat.New(frame, options)` | A window that is not ours (the game's spellbook, a known addon's) seated in a room of a full window: `seat:Hold(left, top, width, height, strata, level)` (UIParent's units, from its bottom left; in that strata, at least at that level; false: closed, or protected in a fight), `seat:Free()`, `seat:Size()` (its own size, unseated), `seat.held`; `options.label`, `sized`, `gone`. As large as fits, never larger than it is, in the room's middle; only its place, scale and layer lent (`Core.Lend`), never its parent; hooks after its `SetPoint` and `SetScale` put it back, a new size fits it anew, closed it is given back |
+  | `Core.Lend(frame)`, `Core.Lent(frame)` | A frame of the game's changed for a while and given back exactly (`lent:SetParent`, `SetPoints(fn)`, `SetLayer`, `SetAlpha`, `SetScale`, `SetMouse`, `SetShown`, `Lent()`, `Return()`); whether a frame is lent now, to any module (Abilities leaves the spellbook's place alone while Combat holds it) |
+  | `Core.Neighbours.Window(key)` | The known addons (Saneroki, 2026-10-20), named in `Neighbours.lua` only: a handle on one while it is loaded (`"talents"`: a talent planner), nil otherwise: `handle.title`, `handle:Frame()`, `Shown()`, `Open()`, `Close()` (by its own functions), `Follow(fn)` (after each opening of it, a hook after its opening function, made once) |
 
   - **The title bar** (`Window.lua`, `Bar`, `Refresh`): with `titleBar` (a kind of window that has one; the
     small chat, unit frames have none), and on every window while it fills the screen. Across its top,
@@ -472,6 +475,8 @@ but for a window to try those with (`/sane window`).
 | `Views.lua` | A window's views behind the game's tabs |
 | `Selection.lua` | A window chosen in Edit Mode, and its dialog |
 | `Holder.lua` | The game's window kept out of sight while ours stands for it |
+| `Seat.lua` | A window not ours seated in a room of a full window: its place, scale and layer lent, followed, given back |
+| `Neighbours.lua` | The other addons Sane UI knows and adapts to when they are installed: the one file that names them |
 | `Expand.lua` | A window that opens while the mouse rests on it, and can be kept open |
 | `Bar.lua` | A progress bar whose value and size move |
 | `Bindings.lua`, `Bindings.xml` | Sane UI's section in the game's key bindings, and its key for the options |
@@ -484,6 +489,9 @@ but for a window to try those with (`/sane window`).
 | `Art/circle.blp`, `Art/circle-hole.blp` | The masks round corners are cut with: a white disc, and a white square with the disc taken out (256 × 256, DXT5 with mipmaps). Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
+- 2026-10-20 — The seat (`Seat.lua`, `Core.Seat`): a window not ours on a full screen, placed, never shown or hidden
+  by our code (Combat's talents and spellbook). `Core.Lent(frame)`. The known addons (`Neighbours.lua`,
+  `Core.Neighbours`). Edge's strip of a share of the screen's side (`strip`).
 - 2026-10-20 — What the data puts on a map (`Data/Map.lua`, `Data.Map()`): the places of Spawns, Places and Travel
   per map, for Navigation's pins. The dropdown *Classic windows* takes kept choices: a checkbox, ticked while the
   game's own window is the one chosen, chosen again to come back.

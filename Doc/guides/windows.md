@@ -30,7 +30,8 @@ with the file it was read in.
 ## 2. Kinds of window
 
 Windows are panels like the game's own (Saneroki, 2026-10-16): the chat, the spellbook, the talents, a vendor,
-the bank, the bags. What the Combat module shows (nameplates, unit frames, buffs, action bars) is no window
+the bank, the bags. Combat's window at the bottom middle (2026-10-20) is one of kind screen, whose full screen
+holds the talents and the spellbook. What the Combat module shows (nameplates, unit frames, buffs, action bars) is no window
 and does not use `Core.Window`. Pick the kind first: `kind = "screen" | "panel" | "talk"` gives the
 window its kind's options (`Window.KINDS`); what the module gives itself wins.
 
@@ -43,7 +44,7 @@ window its kind's options (`Window.KINDS`); what the module gives itself wins.
 | Option | screen | panel | talk |
 | --- | --- | --- | --- |
 | given by the kind | `dock`, `edge`, `sizable` | `titleBar`, `dock`, `skin`, `edge`, `sizable`, `escape = "close"`, `toplevel` (a click brings it to the front) | as panel, and `first = { dock = "CENTER" }` |
-| the module's | `store`, `first`, `title`, `search`, `content`, `docked`, `classic`, `native`, `close`, `minWidth`, `minHeight`, `insets`, `buttons`, `tabs` | the same | the same; `close` ends the talk |
+| the module's | `store`, `first`, `title`, `search`, `content`, `docked`, `classic`, `native`, `close`, `minWidth`, `minHeight`, `insets`, `buttons`, `tabs`, `strip` | the same | the same; `close` ends the talk |
 | left out | `skin` (see-through), `titleBar` (only while full) | | |
 
 A table the module gives where its kind has one (`first`) is merged: the module's keys win, the kind's fill
@@ -65,6 +66,7 @@ in the rest.
 | `Motion.lua` | The kinds of motion (Glide, Swing, Even, Instant), each a time and one of the game's easing curves (`EasingUtil`), a clock that runs only while something moves, a region's fade and slide (`Motion.Fade`, `Motion.Slide`). |
 | `Shape.lua`, `Skin.lua` | The plate: round corners (a share of the window, or a fixed radius; square at the screen's edges, always square in full screen), the trim, a round icon (`Shape.Round`); the skin, a window's background and border; the game's background tiles (`Skin.TILES`). |
 | `Expand.lua` | A window that opens larger once the mouse has rested on it, closes a moment after the mouse has gone, and can be kept open (`Stay`). |
+| `Seat.lua` | A window that is not ours (the game's spellbook, a known addon's: `Neighbours.lua`) seated in a room of a full window: its place, scale and layer lent, never its parent; followed after the game's `SetPoint` and `SetScale`; given back when it closes (section 7, *Seated*). |
 | `Fuzzy.lua` | Fuzzy finding for the search; a list ranked by it, a long one a part per frame (`Fuzzy.Filter`). |
 | `Bar.lua` | A progress bar in the art of the game's experience bar. |
 
@@ -240,6 +242,23 @@ Core's: a frame of ours that is never shown, and the game's windows held in it w
 - **Not for the chat:** the game's chat frames are never closed, so Social keeps them out of sight itself
   (`src/Social/Native.lua`, on `Core.Lend` as well).
 
+### Seated: a window not ours on a full screen (`Seat.lua`)
+
+A full window may hold windows that are not ours as panels (Combat: the game's talents and spellbook, a talent
+planner Sane UI knows). The rules:
+
+- **Placed, never shown or hidden.** Only its place, scale and layer are lent (`Core.Lend`); its parent stays
+  its own, so its `OnShow` and `OnHide` run from its own code only. The game's panels are opened by the game:
+  its keys, its micro menu buttons, or a secure button of ours that clicks the game's own micro menu button
+  (`SecureActionButtonTemplate`, `type = "click"`). That button stands on UIParent, not in our window: a
+  protected child makes our window protected, and it would be locked in a fight. It is made, placed, shown and
+  hidden out of a fight only.
+- **Followed:** hooks after its `SetPoint` and `SetScale` put it back in its room when the game places or
+  scales it anew; a new size fits it anew; closed, it is given back exactly. `Core.Lent(frame)` says that it is
+  lent, so another module leaves it alone meanwhile (Abilities does not place the spellbook then).
+- **Going back** from the full screen gives it back to its place, open: our code does not close the game's
+  window. Esc closes it with the full screen.
+
 ### Combat
 
 - A window that holds the game's protected frames (secure buttons that cast a spell or use an item) is
@@ -338,6 +357,8 @@ holds, one Esc stand-in (`Core.Escape`), tabs (`Views.lua`), to the front (`topl
 with *Reset To Default Position* and the grid's snap (`Selection.lua`), `Fuzzy.Filter`, `Core.Watch` and
 `Core.Hover`, `Motion.Fade` and `Motion.Slide`, `Skin.TILES`, a fixed radius and `Shape.Round`, key bindings
 (`Bindings.xml`).
+On 2026-10-20: the seat (section 7, *Seated*) and a strip of a share of the screen's side (`strip`, Combat's half
+of the bottom edge).
 
 ## 9. Facts checked in the references
 

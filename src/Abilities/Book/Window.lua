@@ -13,6 +13,8 @@ local _, ns = ...
 --  the game has put its own (Apply), and only
 --    - while the spellbook's pages are ours (Book.lua), the switch is on and the
 --      spellbook, not the talents, is the tab on show;
+--    - while no other module holds the window (Core.Lent: Combat's full screen
+--      seats it among its panels and places it itself);
 --    - out of a fight: the game forbids an addon to move or size this window in
 --      one. What a fight held up is done when it ends (Core.AfterCombat).
 --  Nothing is written into the window: its size, its place, and whether it may
@@ -59,8 +61,9 @@ local function Mode()
     return book.isMinimized and "small" or "large"
 end
 
+-- Not while the window is lent to another module (Core.Lent: seated on Combat's full screen), which places it.
 local function Usable()
-    return on and frame:IsShown() and book:IsShown() and not InCombatLockdown()
+    return on and frame:IsShown() and book:IsShown() and not InCombatLockdown() and not Core.Lent(frame)
 end
 
 -- The spellbook fills the window, as it does at the game's own sizes.

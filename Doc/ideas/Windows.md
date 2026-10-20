@@ -118,6 +118,8 @@ together, share the middle.
     skin, Esc closes it.
   - **talk:** an NPC's (vendor, trainer, auction house, bank): as a panel, at first in the middle; closing
     it ends the talk.
+- **Combat's window at the bottom middle is one** (Saneroki, 2026-10-20): docked there, its full screen holds
+  the talents and the spellbook as panels; the middle half of the bottom edge fills the screen with it.
 - **What the Combat module shows is no window:** nameplates, unit frames, buffs, action bars. The Combat
   module handles them its own way, not as Core's windows.
 
@@ -218,7 +220,7 @@ game's screen. These calls are fine on our own frames, which are not protected.
 | Left | to be decided | | |
 | Right | to be decided | | |
 | Bottom left | **Social** (was **Chat**) | Chat, more chat views, guild, group finder, friends list (`Doc/ideas/Social.md`) | Chat, Communities and guild, Group Finder, Friends list |
-| Bottom middle | **Abilities** (was Spellbook) | Spellbook, action bars, talents, legacy | `Blizzard_PlayerSpells` (spellbook and talents), action bars, `Blizzard_LegacySystem` |
+| Bottom middle | **Combat** (Saneroki, 2026-10-20; was Abilities) | Small: nothing yet; full screen: talents and spellbook (built), a talent planner Sane UI knows as the talents | `Blizzard_PlayerSpells` (spellbook and talents), action bars, `Blizzard_LegacySystem` |
 | Bottom right | Character and bags (working name) | Character sheet, bags | Character frame, bags |
 
 Small, docked, the window shows its everyday part (the minimap, the chat); full screen it shows all its

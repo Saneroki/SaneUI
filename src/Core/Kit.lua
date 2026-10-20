@@ -201,14 +201,22 @@ end
 --      lent:Return()   -- each thing back, each on its own (one that fails does not keep the
 --                      -- others); the parent only if it is still the one we gave (the game may have
 --                      -- taken it since). Raises the first failure once all are back.
+--      Core.Lent(frame) -- whether a frame of the game's is lent now, to any module (so another
+--                      -- leaves it alone meanwhile: Abilities does not place a spellbook Combat holds)
 --  A protected frame in a fight is not changed (each Set but SetAlpha returns false) and is given back
 --  once the fight is over; its alpha (the game allows that in a fight) at once.
 local lends = {}
+local lending = setmetatable({}, { __mode = "k" }) -- [frame] = the lend that has changed it now
 
 local function Note(self, what, ...)
     if self.notes[what] then return end
     self.notes[what] = { ... }
     self.order[#self.order + 1] = what
+    lending[self.frame] = self
+end
+
+function Core.Lent(frame)
+    return lending[frame] ~= nil
 end
 
 local function Free(self)
@@ -310,6 +318,7 @@ function lends:Return()
     wipe(self.notes)
     wipe(self.order)
     self.parent = nil
+    if lending[self.frame] == self then lending[self.frame] = nil end
     if first then error(first, 0) end
     return true
 end

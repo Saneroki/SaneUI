@@ -19,6 +19,11 @@ Decided (Saneroki, 2026-10-16):
 - **The look** is developed along the way and decided later.
 - **Also Combat's:** floating combat text, raid warnings, threat and the swing timers, each in a performant,
   on demand way that is developed further (*On demand* below).
+- **Its window at the bottom middle** (Saneroki, 2026-10-20; built, `src/Combat/README.md`): docked in the
+  screen's bottom middle; the mouse pushed against the middle half of the bottom edge fills the screen, and
+  full it holds the talents and the spellbook as panels. With a talent planner Sane UI knows installed (the
+  known addons, Core's `Neighbours.lua`), the planner's window is the Talents panel. What the window shows
+  while small (the action bars, a unit frame) is open.
 - **Party style** (the game's raid style or classic party frames) and **click casting** are decided during
   development.
 
