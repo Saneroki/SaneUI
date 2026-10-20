@@ -19,6 +19,9 @@ local _, ns = ...
 --  links them: a continent's rectangle on it (C_Map.GetMapRectOnMap) puts every
 --  continent, and the world map itself, into any continent's plane (Link,
 --  WorldBox), so the map zooms from a zone out to the whole world in one space.
+--  A map straight on the world map that is no continent but has a box and a
+--  place there (Zephras Isle) is a plane of its own, linked alike (PlaneOf,
+--  Planes); the planner uses those, the canvas keeps to the continents.
 --
 --  The terrain's grid: every continent is 64 x 64 tiles of 1600/3 yards, its
 --  middle at the world's 0, 0; a tile's key in Core's set Tiles is
@@ -39,6 +42,7 @@ Coords.WORLD, Coords.CONTINENT, Coords.ZONE = KINDS.World or 1, KINDS.Continent 
 
 local boxes = {}      -- [uiMapID] = its box, or false: asked once a session
 local continentOf = {} -- [uiMapID] = the continent it lies on, or false
+local planeOf = {}    -- [uiMapID] = the map of the plane it lies in, or false
 local onWorld = {}    -- [continent] = { x0, x1, y0, y1 } on the world map, or false
 local links = {}      -- [from] = { [to] = { su, sv, du, dv } or false }
 local worldBoxes = {} -- [continent] = the world map's box in that continent's plane, or false
@@ -236,6 +240,46 @@ function Coords.WorldBox(continent)
     return box or nil
 end
 
+-- The plane a map lies in: its continent's; on none, the map it lies in that sits straight on the world map, if that
+-- has a box and a place there (a zone of the world map's own, Zephras Isle); nil when it lies in none.
+function Coords.PlaneOf(map)
+    if not map then return nil end
+    local found = planeOf[map]
+    if found ~= nil then return found or nil end
+    found = Coords.ContinentOf(map) or false
+    local root = Coords.WorldMap()
+    local at, seen = map, 0
+    while not found and root and at and at > 0 and seen < 10 do
+        local info = Core.Ask(C_Map.GetMapInfo, at)
+        if type(info) ~= "table" then break end
+        if info.parentMapID == root then
+            if Coords.Box(at) and OnWorld(at) then found = at end
+            break
+        end
+        at, seen = info.parentMapID, seen + 1
+    end
+    planeOf[map] = found
+    return found or nil
+end
+
+-- Every plane: the continents (Coords.Continents), then the maps straight on the world map that are planes of
+-- their own (Coords.PlaneOf); asked once a session, the same list each time (not to be changed).
+local planes
+function Coords.Planes()
+    if planes then return planes end
+    local continents = Coords.Continents()
+    local list = {}
+    for index, continent in ipairs(continents) do list[index] = continent end
+    local root = Coords.WorldMap()
+    local children = root and Core.Ask(C_Map.GetMapChildrenInfo, root)
+    for _, info in ipairs(type(children) == "table" and children or {}) do
+        local map = info.mapID
+        if map and info.mapType ~= Coords.CONTINENT and Coords.PlaneOf(map) == map then list[#list + 1] = map end
+    end
+    if #continents > 0 then planes = list end
+    return list
+end
+
 -- The map of that kind under a point of a continent's plane, as the game's maps say: the continent
 -- under it on the world map, or the zone under it on the continent's map. nil when none is.
 local function At(map, x, y, kind)
@@ -259,11 +303,11 @@ function Coords.ZoneAt(continent, u, v)
     return At(continent, x, y, Coords.ZONE)
 end
 
--- A point of a map (0 to 1) in a continent's plane: the map's own box, linked to that continent. nil when
--- the map has no box or its continent is not linked.
+-- A point of a map (0 to 1) in a plane: the map's own box, linked from its plane (Coords.PlaneOf) to that one. nil
+-- when the map has no box or its plane is not linked.
 function Coords.MapToPlane(map, x, y, continent)
     local box = Coords.Box(map)
-    local home = box and Coords.ContinentOf(map)
+    local home = box and Coords.PlaneOf(map)
     local link = home and Coords.Link(home, continent)
     if not link then return nil end
     local u, v = Coords.ToPlane(box, x, y)
@@ -271,12 +315,14 @@ function Coords.MapToPlane(map, x, y, continent)
 end
 
 -- Where the player is: the continent's map, and the point in its plane. Only the map when the game does
--- not tell the position there (an instance), nil when it tells nothing. Asked every frame while the view
--- follows: the boxes and the tree are kept, so it costs two questions to the game.
-function Coords.Player()
+-- not tell the position there (an instance), nil when it tells nothing. anyPlane: on no continent, the plane
+-- of its own the player is in (Coords.PlaneOf; the planner's), else nothing (the canvas follows on the
+-- continents only). Asked every frame while the view follows: the boxes and the tree are kept, so it costs
+-- two questions to the game.
+function Coords.Player(anyPlane)
     local map = Core.Ask(C_Map.GetBestMapForUnit, "player")
     if not map then return nil end
-    local continent = Coords.ContinentOf(map)
+    local continent = Coords.ContinentOf(map) or (anyPlane and Coords.PlaneOf(map))
     local position = Core.Ask(C_Map.GetPlayerMapPosition, map, "player")
     local box, home = Coords.Box(map), continent and Coords.Box(continent)
     if not position or not box or not home or box.continent ~= home.continent then return continent end

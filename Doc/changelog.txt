@@ -20,9 +20,9 @@ The bigger changes of each version, newest first.
 - Navigation: routes. Put the map pin (Ctrl-click) and a golden line
   leads you there, around mountains and walls, through gates and
   doors, swimming where it must, and by the flights you know when they
-  are quicker. Across the sea it takes the boats and zeppelins, and
-  your hearthstone when that is quickest. Leave the line and it finds
-  the way again.
+  are quicker. Across the sea it takes the boats and zeppelins, to
+  Zephras Isle too, and your hearthstone when that is quickest. Leave
+  the line and it finds the way again.
 - Navigation: pins on the map in the game's own looks: your quests,
   flight points, rares and treasures nearby, places, ways into other
   maps, your party; and from Sane UI's own database, all over the

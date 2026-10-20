@@ -6,9 +6,10 @@ local _, ns = ...
 --  setting Route to the map pin is on. Knows no frames.
 --
 --      the journey   a small graph over the player, the pin, the flight points this character knows, the docks
---                    of the boats and zeppelins and the hearthstone's place, on the continents of the player and
---                    the pin; its ways: on foot between two places of one continent (guessed at Planner.DETOUR
---                    times the straight line, within one region of the walking data), the flights between known
+--                    of the boats and zeppelins and the hearthstone's place, on the planes of the player and the
+--                    pin (a continent, or a map of its own on the world map: Zephras Isle, Coords.PlaneOf); its
+--                    ways: on foot between two places of one plane (guessed at Planner.DETOUR times the straight
+--                    line, within one region of the walking data), the flights between known
 --                    flight points (the game's, Core's set Travel, as only its side flies them; each at its way's
 --                    length), the boats and zeppelins from dock to dock (Core's set Travel, the game's own ways of
 --                    them: the wait for one and the trip, Planner.Ship), the hearthstone from the player to its
@@ -16,7 +17,7 @@ local _, ns = ...
 --      the walks     then searched on the walking data (Search.lua, a job of Core's scheduler); a walk
 --                    found much longer than its guess is put in at its true length and the journey
 --                    chosen again, once
---      without data  (the pack Routes not installed): each walk a straight line
+--      without data  (the pack Routes not installed, or a plane it has nothing of): each walk a straight line
 --      planned again when the pin moves, when the player has left the line by Planner.OFF yards, or
 --                    when a flight has landed; never more often than every Planner.AGAIN seconds. Aboard a
 --                    boat or a zeppelin the line stays, and a new pin is planned from where it lands.
@@ -57,11 +58,11 @@ Planner.HEARTHSTONE, Planner.HOMEWARD = 6948, 8690 -- the hearthstone: its item,
 
 local SHIPS = { "boat", "zeppelin" }
 local Travel = Core.Data.Set("Travel")
-local target            -- { map, u, v }: the pin in its continent's plane
+local target            -- { map, u, v }: the pin in its plane
 local plan              -- the journey being planned or drawn: { legs, at, target }
 local jobs = {}         -- the walks being searched
 local docks             -- every dock, by name, while Core's set Travel stays as it is (Docks)
-local planes = {}       -- [the world's map] = the continent's map of its plane, or false
+local planes = {}       -- [the world's map] = the map of its plane (Coords.Planes), or false
 local lastPlan, nextLook = -math.huge, 0
 local onTaxi = false
 local homeward          -- when the hearthstone was used: its place is where the character is next
@@ -97,7 +98,7 @@ local function Learn()
         return
     end
     local count = rawget(_G, "NumTaxiNodes") and Core.Plain(Core.Ask(NumTaxiNodes)) or 0
-    local continent = Live.Player()
+    local continent = Live.Player(true)
     if count == 0 or not continent then return end
     local byName = {}
     for node, point in pairs(Points(continent)) do byName[point.name] = node end
@@ -108,7 +109,7 @@ local function Learn()
     end
 end
 
--- The flight points of a continent the player's side may use: { [node ID] = { map, u, v, name } }, in its plane.
+-- The flight points of a plane the player's side may use: { [node ID] = { map, u, v, name } }, in that plane.
 Points = function(continent)
     local found = {}
     local faction = Core.Plain(UnitFactionGroup("player"))
@@ -149,16 +150,16 @@ end
 -------------------------------------------------------------------------------
 --  Boats and zeppelins
 -------------------------------------------------------------------------------
--- The continent's map whose plane is the yards of one of the world's maps (0 the Eastern Kingdoms, 1 Kalimdor),
--- or nil: a map no continent of the game's world map has.
+-- The map whose plane is the yards of one of the world's maps (0 the Eastern Kingdoms, 1 Kalimdor, 2991 Zephras
+-- Isle), or nil: a map none of the planes on the game's world map has (Coords.Planes).
 local function Plane(world)
     local found = planes[world]
     if found ~= nil then return found or nil end
-    local continents = Coords.Continents()
-    for _, continent in ipairs(continents) do
-        if Coords.Box(continent).continent == world then found = continent break end
+    local list = Coords.Planes()
+    for _, map in ipairs(list) do
+        if Coords.Box(map).continent == world then found = map break end
     end
-    if #continents > 0 then planes[world] = found or false end
+    if #list > 0 then planes[world] = found or false end
     return found
 end
 
@@ -240,8 +241,8 @@ function Planner.Ship(way)
     return list
 end
 
--- Every dock of the boats and zeppelins on a continent of the world map, by name ("dock:<way>:<n>"): { name, map, u,
--- v (where it stops, in the continent's plane), kind, ways = { { to = name, seconds, from, till, kind, way } } }.
+-- Every dock of the boats and zeppelins on a plane of the world map, by name ("dock:<way>:<n>"): { name, map, u, v
+-- (where it stops, in that plane), kind, ways = { { to = name, seconds, from, till, kind, way } } }.
 -- Made once Core's set Travel is there, again when it changes.
 local function Docks()
     if docks then return docks end
@@ -270,7 +271,7 @@ local function Docks()
             end
         end
     end
-    if Travel:Ready() and #Coords.Continents() > 0 then docks = found end
+    if Travel:Ready() and #Coords.Planes() > 0 then docks = found end
     return found
 end
 
@@ -308,7 +309,7 @@ end
 -- The character's place now as the hearthstone's (where it was bound, or where it brought the character); false
 -- while the game does not tell it (a loading screen).
 local function Home()
-    local map, u, v = Live.Player()
+    local map, u, v = Live.Player(true)
     if not u then return false end
     local name = rawget(_G, "GetBindLocation") and Core.Ask(GetBindLocation)
     Core.Character(ns.name).hearth = { map = map, u = u, v = v, name = name }
@@ -343,7 +344,7 @@ end
 local function Journey(startMap, pu, pv, endMap, tu, tv, measured)
     local known = Known()
     local useData = Walk.Ready()
-    -- The places: the two ends, and on their continents the known flight points, the docks, the hearthstone's.
+    -- The places: the two ends, and on their planes the known flight points, the docks, the hearthstone's.
     local places = { start = { map = startMap, u = pu, v = pv }, ["end"] = { map = endMap, u = tu, v = tv } }
     local points = {}
     for _, continent in ipairs(startMap == endMap and { startMap } or { startMap, endMap }) do
@@ -391,7 +392,7 @@ local function Journey(startMap, pu, pv, endMap, tu, tv, measured)
         if not current or current == "end" then break end
         done[current] = true
         local here = places[current]
-        -- On foot: to every place of the same continent, within the same region.
+        -- On foot: to every place of the same plane, within the same region.
         local region = RegionOf(current)
         for name, place in pairs(places) do
             if not done[name] and place.map == here.map then
@@ -463,7 +464,7 @@ local function FlightPoints(step)
 end
 
 -- A boat's or zeppelin's points: from the pier it is boarded at along its way to the pier it is left at, each point
--- in its continent's plane (one on a map no continent has, left out).
+-- in its plane (one on a map no plane has, left out).
 local function ShipPoints(step)
     local ship = step.ship
     local path = ship.way.path
@@ -594,7 +595,7 @@ end
 local function Plan()
     lastPlan = GetTime()
     if not target then return ns.Route.Show(nil) end
-    local map, pu, pv = Live.Player()
+    local map, pu, pv = Live.Player(true)
     if not pu then return end
     local leg = Aboard(map, pu, pv)
     if leg then
@@ -620,23 +621,25 @@ function Planner.Update()
         target, plan = nil, nil
         return ns.Route.Show(nil)
     end
-    local continent = Coords.ContinentOf(map)
+    local plane = Coords.PlaneOf(map)
     local u, v
-    if continent then u, v = Coords.MapToPlane(map, x, y, continent) end
+    if plane then u, v = Coords.MapToPlane(map, x, y, plane) end
     if not u then
         target, plan = nil, nil
         return ns.Route.Show(nil)
     end
-    target = { map = continent, u = u, v = v }
+    target = { map = plane, u = u, v = v }
     Plan()
 end
 
--- A step of the canvas' tracker: the player's place (Route.Track). The line moves on to its next leg when the
--- player is nearer to that; planned again when the player left the line (aboard a boat or zeppelin: its way), and
--- after a flight landed.
+-- A step of the canvas' tracker: the player's place (Route.Track; on a plane the canvas does not follow, such as
+-- Zephras Isle, asked here). The line moves on to its next leg when the player is nearer to that; planned again
+-- when the player left the line (aboard a boat or zeppelin: its way), and after a flight landed.
 function Planner.Track(map, u, v, now)
-    if not target or not u or now < nextLook then return end
+    if not target or now < nextLook then return end
     nextLook = now + Planner.LOOK
+    if not u then map, u, v = Live.Player(true) end
+    if not u then return end
     local flying = rawget(_G, "UnitOnTaxi") and UnitOnTaxi("player") and true or false
     if flying then
         onTaxi = true

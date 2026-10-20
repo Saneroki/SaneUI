@@ -106,6 +106,9 @@ local MAPS = {
     [1429] = { kind = 3, parent = 1415, continent = 0, top = -8500, bottom = -10000, left = 1000, right = -1000 },
     [9999] = { kind = 3, parent = 1415, continent = 0, top = -8500, bottom = -10000, left = 1000, right = -1000, swapped = true },
     [500] = { kind = 4, parent = 1429 }, -- a dungeon: no box
+    -- An isle: a zone straight on the world map, on a world's map of its own (2991, as Zephras Isle), 2000 x 2500 yards
+    [2521] = { kind = 3, parent = 947, continent = 2991, top = 1000, bottom = -1500, left = 1000, right = -1000,
+               world = { 0.55, 0.59, 0.40, 0.44 } },
 }
 local player = { map = 1429, x = 0.75, y = 0.3 }
 local waypoint, tracked = nil, false
@@ -126,7 +129,7 @@ C_Map = {
     GetFallbackWorldMapID = function() return 947 end,
     GetMapChildrenInfo = function(map, kind)
         local list = {}
-        for _, id in ipairs({ 1415, 1414, 1429 }) do
+        for _, id in ipairs({ 1415, 1414, 1429, 2521 }) do
             if MAPS[id].parent == map and (not kind or MAPS[id].kind == kind) then list[#list + 1] = { mapID = id, mapType = MAPS[id].kind } end
         end
         return list
@@ -359,7 +362,9 @@ out:write('local S = SaneUI.Core.Data.Add(1, "Overlays", { game = "forever", has
 out:close()
 -- What the map shows of Core's data: an innkeeper who sells food, a rare, a creature that is neither, a herb; a
 -- dungeon's entrance and a mailbox; a boat from Elwynn to the other continent; a flight; a boat's way round (the
--- game's path: a dock in Elwynn's east hall, x -8600 and y -450, a leap onto Kalimdor, a dock there, a leap back).
+-- game's path: a dock in Elwynn's east hall, x -8600 and y -450, a leap onto Kalimdor, a dock there, a leap back); a
+-- zeppelin's way round to the isle (a tower in the east hall, x -8650 and y -400, a leap onto the isle's world map
+-- 2991, a tower there, x -1000 and y 0, a leap back).
 local function Set(file, name, hash, key, fields, types, body)
     local handle = assert(io.open(file, "w"))
     handle:write(('local S = SaneUI.Core.Data.Add(1, "%s", { game = "forever", hash = "%s", build = 70245, key = "%s", '
@@ -384,7 +389,10 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     .. 'R[2] = "70245\t\tflight\t\t\t\t2\t5\t6000"\n'
     .. 'R[3] = "70245\t\tboat\t\t\t\t\t\t3898.1\t-8600\031-450\0310\03160\030-8000\031-2000\0305000\031-9000\0311\031\0311'
     .. '\0306000\031-9500\031\03160\0305000\031-9000\030-8000\031-2000\0310\031\0311"\n'
-    .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byKind = {}\nI.byKind.boat = "1\0303"\nI.byKind.flight = "2"\n')
+    .. 'R[4] = "70245\t\tzeppelin\t\t\t\t\t\t\t-8650\031-400\0310\03130\030-8000\031500\030-500\0310\0312991\031\0311'
+    .. '\030-1000\0310\031\03130\030-500\0310\030-8000\031500\0310\031\0311"\n'
+    .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byKind = {}\nI.byKind.boat = "1\0303"\nI.byKind.flight = "2"\n'
+    .. 'I.byKind.zeppelin = "4"\n')
 out = assert(io.open(packPath .. "/SaneUI_Data_World.toc", "w"))
 out:write("## Title: Data: World\n## LoadOnDemand: 1\n## X-SaneUI-Sets: NPCs, Objects, Overlays, Places, Tiles, Travel\n## X-SaneUI-Format: 1\n"
     .. "## X-SaneUI-Game: forever\nNPCs.lua\nObjects.lua\nOverlays.lua\nPlaces.lua\nTiles.lua\nTravel.lua\n")
@@ -514,6 +522,25 @@ player.map = 500
 local inMap, inU = Coords.Player()
 check(inMap == 1415 and inU == nil, "in a dungeon without a box: its continent, no point")
 player.map = 1429
+-- The isle: on no continent, a plane of its own, linked through the world map like a continent; the canvas keeps
+-- to the continents.
+check(Coords.ContinentOf(2521) == nil and Coords.PlaneOf(2521) == 2521 and Coords.PlaneOf(1429) == 1415
+    and Coords.PlaneOf(500) == 1415 and Coords.PlaneOf(947) == nil, "the plane a map lies in: its continent's, else its own")
+local planeList = Coords.Planes()
+check(#planeList == 3 and planeList[1] == 1415 and planeList[2] == 1414 and planeList[3] == 2521
+    and #Coords.Continents() == 2, "the planes: the continents, then the isle; the continents as they were")
+local isleLink = Coords.Link(2521, 1415)
+local cornerU, cornerV = Coords.FromWorldMap(1415, 0.55, 0.40)
+check(isleLink and near(isleLink.du + isleLink.su * -1000, cornerU) and near(isleLink.dv + isleLink.sv * 1000, cornerV),
+    "the isle in a continent's plane, through the world map")
+local isleU, isleV = Coords.MapToPlane(2521, 0.6, 0.88, 2521)
+check(near(isleU, 200) and near(isleV, -1200), "a point of the isle in its own plane")
+player.map, player.x, player.y = 2521, 0.5, 0.4
+local canvasMap = Coords.Player()
+local isleMap, onU, onV = Coords.Player(true)
+check(canvasMap == nil and isleMap == 2521 and near(onU, 0) and near(onV, 0),
+    "on the isle: no continent for the canvas, its plane for the planner")
+player.map, player.x, player.y = 1429, 0.75, 0.3
 
 -------------------------------------------------------------------------------
 --  Camera
@@ -1318,6 +1345,29 @@ Frames(8)
 check(shownWay ~= before and #shownWay.legs == 2 and shownWay.legs[1] == boat and shownWay.legs[2].kind == "walk"
     and shownWay.legs[2].points[1].map == 1414 and near(shownWay.legs[2].points[1].u, 9500),
     "a new pin while aboard: planned from where the boat lands")
+-- A pin on the isle (u 200, v -1200; the canvas' map pin mark there too): on foot to the zeppelin's tower, the
+-- zeppelin, a straight walk to the pin (no walking data there).
+player.x, player.y = 0.75, 0.3
+waypoint = { uiMapID = 2521, position = CreateVector2D(0.6, 0.88) }
+W.Fire("USER_WAYPOINT_UPDATED")
+W.Wait(0)
+Frames(8)
+local zeppelin = shownWay and shownWay.legs[2]
+check(shownWay and #shownWay.legs == 3 and shownWay.legs[1].kind == "walk" and zeppelin.kind == "zeppelin"
+    and shownWay.legs[3].kind == "walk", "a pin on the isle: on foot to the tower, the zeppelin, on foot to the pin")
+local up, down, walked = zeppelin.points[1], zeppelin.points[#zeppelin.points], shownWay.legs[3].points
+check(up.map == 1415 and near(up.u, 400) and near(up.v, -8650) and down.map == 2521 and near(down.u, 0)
+    and near(down.v, -1000) and #walked == 2 and walked[2].map == 2521 and near(walked[2].u, 200) and near(walked[2].v, -1200),
+    "the zeppelin from its tower onto the isle's plane, then straight to the pin")
+check(pin._shown, "the map pin's mark on the isle")
+-- Standing on the isle (the canvas follows no continent there): the planner asks where the player is itself.
+player.map, player.x, player.y = 2521, 0.5, 0.4
+Planner.Track(nil, nil, nil, GetTime() + 20)
+Frames(8)
+check(shownWay and #shownWay.legs == 1 and shownWay.legs[1].kind == "walk" and shownWay.legs[1].points[1].map == 2521
+    and near(shownWay.legs[1].points[1].u, 0) and near(shownWay.legs[1].points[1].v, 0),
+    "on the isle: off the line, planned again from there, on foot")
+player.map, player.x, player.y = 1429, 0.75, 0.3
 -- The hearthstone: its place learnt where it is bound, with the game's name of it.
 local bindName = "Lakeside Inn"
 GetBindLocation = function() return bindName end

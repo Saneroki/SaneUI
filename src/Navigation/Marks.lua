@@ -111,7 +111,7 @@ end
 -- The map pin, where the game has it.
 function Marks.Pin(view)
     local map, x, y = Live.Waypoint()
-    local home = map and Coords.ContinentOf(map)
+    local home = map and Coords.PlaneOf(map)
     local u, v, px, py
     if home then u, v = Coords.MapToPlane(map, x, y, home) end
     if u then px, py = Spot(view, home, u, v) end

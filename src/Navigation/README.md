@@ -51,11 +51,11 @@ party), always over the map, and the full map has the quest log at its left. The
 - **Routes:** put the game's map pin (Ctrl and a click) and a golden line leads you there, pulsing towards it,
   around what cannot be walked (mountains, walls, deep water is swum), through gates and doors, and by the flights
   your character knows where that is quicker (visit a flight master once for the map to know yours). A pin on
-  the other continent is reached by boat or zeppelin, the line red from pier to pier, and the hearthstone is
-  taken where it is quickest (the map learns its place where you bind it, or the first time you use it). Leave the
-  line and it is planned again; after a flight it goes on from where you landed; aboard a ship it waits until
-  you have landed. The ships' timetables are not in the game's data: how long one waits for a ship and how long
-  it sails are guessed from its way. The setting *Route to the map pin* switches it off.
+  the other continent or on Zephras Isle is reached by boat or zeppelin, the line red from pier to pier, and the
+  hearthstone is taken where it is quickest (the map learns its place where you bind it, or the first time you use
+  it). Leave the line and it is planned again; after a flight it goes on from where you landed; aboard a ship it
+  waits until you have landed. The ships' timetables are not in the game's data: how long one waits for a ship and
+  how long it sails are guessed from its way. The setting *Route to the map pin* switches it off.
 - **Map view** (the buttons on the full map's bar, or the setting on the page *Navigation*): *Parchment* or
   *Scrying* (the default), and *Atlas* while that module is switched on in the addon list; for both views and at
   every zoom (in the code `sketches`, `terrain`, `atlas`). A view not offered (the module switched off or
@@ -75,7 +75,9 @@ party), always over the map, and the full map has the quest log at its left. The
   screen is the plane times a zoom. A map's box in the world comes from the game, asked once a session. The
   map tree is found at run time: the world map, its continents, their zones; a continent's rectangle on the
   world map puts the other continents and the world map itself into its plane, so one view zooms from a zone
-  out to the whole world.
+  out to the whole world. A map straight on the world map that is no continent but has a box and a place there
+  (Zephras Isle, a zone of the world map) is a plane of its own, linked alike (`Coords.PlaneOf`,
+  `Coords.Planes`): the routes use it; the views, their zoom levels and the pins keep to the continents.
 - **The camera** (`Camera.lua`), one for each view: the point in the middle, the zoom, whether it follows you,
   and the level the zoom shows (zone, continent, world), changing with some slack so it does not flicker. The
   wheel keeps the point under the mouse where it is; coming in over another continent at the world, the camera
@@ -163,7 +165,8 @@ party), always over the map, and the full map has the quest log at its left. The
   in different regions refused at once, then the line pulled straight through the openings (a funnel, each
   opening drawn in from its ends). `Search.Start` runs it as a job of Core's scheduler.
 - **Planner** (`Planner.lua`, no frames): the way to the map pin, a graph over the player, the pin, the known
-  flight points, the docks and the hearthstone's place on both their continents: walks within one region of the
+  flight points, the docks and the hearthstone's place on both their planes (a continent, or Zephras Isle; on the
+  isle, which the map does not follow, the planner asks where the player is itself): walks within one region of the
   walking data (guessed), the flights of Core's set *Travel* the player's side may take, the boats and zeppelins of
   *Travel* from dock to dock (both from the game's tables, by `dev/tools/travel-data`), the hearthstone from the
   player; the quickest chosen (Dijkstra), the walks then searched and the journey chosen once more when one is
@@ -175,7 +178,7 @@ party), always over the map, and the full map has the quest log at its left. The
   arrives; aboard a ship a new pin is planned from where it lands. The known flight points are read at the flight
   master, the hearthstone's place where it is bound (`HEARTHSTONE_BOUND`) or where it brought the character, both
   kept per character; the hearthstone counts while it is in the bags and bound there (`GetBindLocation`), its
-  cooldown as a wait. Without walking data, straight lines.
+  cooldown as a wait. Without walking data (and on Zephras Isle, which it does not cover), straight lines.
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
   pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second).
 - **The game's minimap** (`Hybrid.lua`): over our map while the view follows you at one of its zoom steps,
@@ -211,7 +214,7 @@ party), always over the map, and the full map has the quest log at its left. The
 |---|---|
 | `SaneUI_Navigation.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
 | `Navigation.lua` | The module's table (`ns`), its texts and settings, `/sane map`, `GiveBack` |
-| `Coords.lua` | Map, world and plane; a map's box; the map tree and the links between continents; the terrain's grid; the player's place. No frames |
+| `Coords.lua` | Map, world and plane; a map's box; the map tree, the planes (the continents, and a map of its own on the world map) and the links between them; the terrain's grid; the player's place. No frames |
 | `Camera.lua` | Where a view looks: middle, zoom, following, the level its zoom shows; drag, wheel, one map out. No frames |
 | `Live.lua` | What the game tells while playing, read when it changes. No frames |
 | `Canvas.lua` | The frame the map is drawn in: holder, layers, pools, layout, the tracker, the mouse |
@@ -241,6 +244,9 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, Zephras Isle:** the routes reach it: a map straight on the world map with a box of its own is a
+  plane for the planner (`Coords.PlaneOf`, `Coords.Planes`), so its two zeppelins carry the line there, and the
+  map pin's mark shows on it; walks there stay straight (no walking data of the isle).
 - **2026-10-20, across the sea:** routes by boat and zeppelin, from dock to dock on the game's own ways of them
   (`dev/tools/travel-data`, Core's set *Travel*: twelve ways, their docks and stays), the wait and the trip guessed
   from the way until learnt; the line stays while aboard; the hearthstone, its place learnt per character.

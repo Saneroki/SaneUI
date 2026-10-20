@@ -3,8 +3,22 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 224 (Navigation), 35 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 233 (Navigation), 35 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation and Atlas; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Navigation: routes to Zephras Isle (Saneroki, 2026-10-20)
+- **A plane of its own** (`Coords.lua`): a map straight on the world map that is no continent but has a box and a
+  place there (`C_Map.GetMapRectOnMap`), as Zephras Isle (uiMap 2521, the world's map 2991, a zone of the world
+  map), is a plane like a continent's, linked through the world map: `Coords.PlaneOf(map)` (its continent, else
+  such a map), `Coords.Planes()` (the continents, then those maps). `MapToPlane` places a map's point from its
+  plane; `Coords.Player(anyPlane)` (and `Live.Player`) gives such a plane only when asked. `ContinentOf` and
+  `Continents` are as they were, so the canvas, its zoom levels, the map selector and the pins keep to the
+  continents.
+- **The planner** (`Planner.lua`): the pin's plane, the player's and the docks' (`Plane` over `Coords.Planes`), so
+  the two zeppelins to the isle (*Travel* 11398 from the Eastern Kingdoms, 11457 from Kalimdor) join the journey; on
+  the isle, where the canvas does not follow, `Planner.Track` asks where the player is itself. The walking data has
+  nothing of the isle: walks there are straight. The map pin's mark shows on the isle (`Marks.lua`).
+- Tests: an isle straight on the test world map, a pin on it, a zeppelin way to it (`dev/tests/navigation.lua`).
 
 ### Map data: what Navigation's map shows, from the game and two picked batches (Saneroki, 2026-10-20)
 - **Saneroki's ask:** fill Core's map sets so that Navigation's pins of our own data show.

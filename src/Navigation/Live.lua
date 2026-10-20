@@ -4,7 +4,8 @@ local _, ns = ...
 --  Sane UI - Navigation - Live
 --  What the game tells while playing, read for the map. Knows no frames.
 --
---      Live.Player()           the continent's map, the point in its plane, the facing (nil: not known)
+--      Live.Player(anyPlane)   the continent's map, the point in its plane, the facing (nil: not known); anyPlane:
+--                              on no continent the plane of its own (Coords.Player)
 --      Live.Waypoint()         the game's map pin: its map, x, y (nil: none)
 --      Live.SetWaypoint(map, x, y), Live.ClearWaypoint(), Live.Tracked()
 --      Live.Group(map)         party and raid members on a map: { unit, x, y } each
@@ -63,8 +64,8 @@ end
 -------------------------------------------------------------------------------
 --  The player and the map pin
 -------------------------------------------------------------------------------
-function Live.Player()
-    local map, u, v = Coords.Player()
+function Live.Player(anyPlane)
+    local map, u, v = Coords.Player(anyPlane)
     if not u then return map end
     local facing = Core.Plain(Core.Ask(GetPlayerFacing))
     return map, u, v, facing

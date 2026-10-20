@@ -915,8 +915,9 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     `Planner.LEAP` seconds a leap; one waits half of that for a ship, then sails to the dock (the stays between
     included). With a learnt time once round, its speed follows from it. Nothing guessed is in the master.
   - **In the journey:** each dock a place of the graph, boarded and left at its pier (the floor of land nearest
-    where the ship stops), a way from every dock of a ship to every other; the graph spans the continents of the
-    player and the pin, each place in its own continent's plane, walks only within one continent. The ship's leg
+    where the ship stops), a way from every dock of a ship to every other; the graph spans the planes of the
+    player and the pin (a continent, or Zephras Isle: below), each place in its own plane, walks only within one
+    plane. The ship's leg
     is drawn red from pier to pier along its way, across its leap; the line moves on to the next leg when the player
     is nearer it, and aboard a ship (past its dock, within `Planner.ABOARD` yards of its way) it is not planned
     anew; a new pin is then planned from where the ship lands.
@@ -924,11 +925,20 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     brought the character, with the game's name of it (`GetBindLocation`, which tells when it was bound
     elsewhere since); a way from the player to it while it is in the bags, its cooldown and `Planner.HEARTH`
     seconds its cost; drawn pale blue, straight.
+  - **Zephras Isle (built 2026-10-20):** its map (uiMap 2521, the world's map 2991) is a zone straight on the
+    world map, not a continent. Every map straight on the world map that is no continent but has a box and a place
+    there (`C_Map.GetMapRectOnMap`) is a plane of its own, linked through the world map like a continent
+    (`Coords.PlaneOf`: a map's continent, else such a map; `Coords.Planes`: the continents, then those maps). The
+    planner's pin, docks and player use these planes, so the two zeppelins to the isle (from the Eastern Kingdoms
+    and from Kalimdor) are in the journey, and the map pin's mark shows there. The canvas keeps to the continents
+    (`Coords.ContinentOf`, `Coords.Continents`: its views, zoom levels, map selector and pins), so on the isle the
+    map does not follow the player; the planner asks where the player is itself there. The walking data
+    (`dev/tools/walk-data`) covers the two continents only: walks on the isle are straight lines.
   - **Not yet:** which side's town a dock stands in is not in the client's tables (a town's guards are the
-    server's), so a route may lead through the other side's harbour; Zephras Isle is a map of its own that the
-    game's world map has as a zone, not a continent, so its zeppelins wait until the map knows such islands;
-    trams, lifts and portals (the lifts' and the tram's motions are in the client, but not where they stand nor
-    where a portal leads); a new route kept only when clearly better.
+    server's), so a route may lead through the other side's harbour; the map's views on Zephras Isle (following
+    the player there, coming in over it from the world, the map selector) and its walking data; trams, lifts and
+    portals (the lifts' and the tram's motions are in the client, but not where they stand nor where a portal
+    leads); a new route kept only when clearly better.
 
 ### The walking data
 
