@@ -49,13 +49,13 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   dark look: each item in a thin border of its quality's colour (a quest item's in gold), its item level at the top
   left, its count at the bottom right, a quest's mark on an item that starts one, red when you cannot use it.
   - **The bar** at the top: how many of your bags' slots are taken (every bag's in its tooltip); at the right *Sell
-    All Junk Items* at a vendor, *Deposit All Reagents* at a banker, the bags themselves (a click shows them in a
-    strip under the bar: each with its free slots on it; point at one to light its items, drop a bag on a slot to
-    put it on, click one to pick it up), the game's *Clean Up Bags* and the dropdown *View*.
+    All Junk Items* at a vendor, the junk marker, the bags' button (your bags stand in a strip under the bar, at
+    first; a click hides it or shows it again: each bag with its free slots on it; point at one to light its items,
+    drop a bag on a slot to put it on, click one to pick it up), the game's *Clean Up Bags* and the dropdown *View*.
   - **The sidebar** at the left: *All Items* (every item by category; the free slots are not shown), *One Bag*
     (every slot of your bags in their order, the empty ones too) and *Each Bag* (every bag by itself), then
-    *Pinned Items* and *Recent Items*, then every category with how many items it holds. A click shows it; the
-    arrow at its top folds it to its icons.
+    *Pinned Items* and *Recent Items*, then every category switched on, by name, with how many items it holds
+    (empty ones too). A click shows it.
   - **Categories:** *Weapons / Trinkets*, *Armor* and *Item Set Gear* (gear of one of your equipment sets) are
     the group *The Armory*; *Consumables*, *Gear Enhancements* and *Camp Items* the group *Adventure Prep*; then
     *Trade Goods*, *Professions*, *Reagent Bag*, *Miscellaneous*, *Quest Items* (off at first: those items are in
@@ -86,7 +86,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   - **The dropdown *View*:** *Grid* (each category under its head, its last line filled out), *List* (a line per
     item, in columns) or *Compact* (the categories side by side in bands, planned to take the fewest lines);
     *Sort By* (*Default*: gear by item level, then by kind, quality and name; or quality, name, item level);
-    *Show Pinned Items*, *Show Recent Items*, *Hide Empty Categories*, *Merge Stacks*; *Open With* (the view the
+    *Show Pinned Items*, *Show Recent Items*, *Merge Stacks*; *Open With* (the view the
     window opens with); *Switched Off* lists what you switched off, to switch it on again.
   - **Splitting a stack:** Shift and a click on a stack opens a little splitter (in All Items and the categories
     always, as those show no empty slots; in One Bag and Each Bag with *Stack Splitter Everywhere*): how many
@@ -117,8 +117,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   *Grid*, *List* (in the bags' list columns) or *Compact*, and *Group by Category*.
 - **Settings:** *Sane UI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
   motion, the background's opacity and texture), *Window corners*, and *Bags*: *Open With*, *Show Pinned Items*,
-  *Pinned in One Bag and Each Bag*, *Show Recent Items*, *Recent in One Bag and Each Bag*, *Hide Empty
-  Categories*, *Show Add Category*, *Merge Stacks*, *Junk Marker* (off: no Junk, grey items stay in their
+  *Pinned in One Bag and Each Bag*, *Show Recent Items*, *Recent in One Bag and Each Bag*, *Show Add Category*, *Merge Stacks*, *Junk Marker* (off: no Junk, grey items stay in their
   categories), *Stack Splitter Everywhere*, *Show Item Level*, *Quality Borders*, *Show BoE*, *Show Set Name*, *Coin
   on Junk*, *Grey Junk*. The dropdown *View* switches some of them too.
 
@@ -282,7 +281,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   - **The window** (`Alts/Alts.lua`): the roster at the left, Storage beside it (`ns.Sidebars.New`: places and
     categories, the choice held while the window lives), the chosen character's head (name, gold, the level line as
     the sheet writes it, the day last seen, the dropdown *View*) and items at the right. Kept in `store.alts`:
-    `look`, `group`, `narrow`; the bags' store read for the categories and columns (`Bags.Store`). Shown at first: the first of the
+    `look`, `group`; the bags' store read for the categories and columns (`Bags.Store`). Shown at first: the first of the
     others; the choice holds until a `/reload`. While searching, if the chosen one has none of it, the first that
     has is shown until the search is cleared. Listens only while shown: `Core.Data.OnCharacters`,
     `GET_ITEM_INFO_RECEIVED`, `ITEM_DATA_LOAD_RESULT`, drawn a frame later (`Core.Later`); drawn anew when shown.
@@ -343,11 +342,11 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     other, each once the source slot is unlocked again (looked at every `Split.WAIT` seconds, at most
     `Split.LONGEST`); the item split goes into `Views.split`.
   - **The settings** (`Inventory.lua`'s `OPTIONS`, the section *Bags*, Core's options): `first`, `showPinned`,
-    `pinnedOne`, `showRecent`, `recentOne`, `hideEmpty`, `addCategory`, `merge`, `marker`, `splitter`, `itemLevel`,
+    `pinnedOne`, `showRecent`, `recentOne`, `addCategory`, `merge`, `marker`, `splitter`, `itemLevel`,
     `borders`, `bind`, `setName`, `coin`, `grey`; read by the views, the sidebar, the categories (`Categories.Marker`)
     and the cells; changed from the dropdown and menus by `Core.Set`; a change draws the bags anew
-    (`Bags.Settled`). What the window keeps of itself (the display, the order, the columns, the strip, the sidebar
-    folded, the folded blocks) and the categories' choices stay in `store.bags`.
+    (`Bags.Settled`). What the window keeps of itself (the display, the order, the columns, the strip, the folded
+    blocks) and the categories' choices stay in `store.bags`.
   - **The list's columns** (`Bags/Columns.lua`): `Columns.LIST` (icon, name, level, required, kind, bind, count,
     sell), the ones shown in order (`columns`), widths (`widths`), the sort (`listSort`, `listDown`), round icons
     (`round`), all kept in `store.bags`. `Columns.Place` gives each its place in a line (the name the room left,
@@ -381,10 +380,11 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     Pinned (shown when empty too) and every category that takes items (`Categories.Takes`), in the grid; an item
     on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`.
   - **The sidebar** (`Bags/Sidebar.lua`): `ns.Sidebars.New(body, top, bottom, options)` a window's (rows of the
-    game's look at Sane UI's size, the view shown with a bar of `Core.GOLD` at its left; folded to icons, kept in
-    the window's store; scrolled by the wheel; `Begin`, `Row`, `Divider`, `Done`; its `choose`, `drop`, `menu`, `add`
-    answer the clicks); `ns.BagSidebar` the bags' (a click `Bags.Choose`, an item on the cursor let go there
-    `Menus.Drop`, a right click `Menus.Row`).
+    game's look at Sane UI's size, `Sidebars.WIDTH` wide, the names always shown (one cut short whole in its
+    tooltip), the view shown with a bar of `Core.GOLD` at its left; scrolled by the wheel; `Begin`, `Row`,
+    `Divider`, `Done`; its `choose`, `drop`, `menu`, `add` answer the clicks); `ns.BagSidebar` the bags' (every
+    category switched on, empty ones too; a click `Bags.Choose`, an item on the cursor let go there `Menus.Drop`, a
+    right click `Menus.Row`).
   - **The drawing** (`Bags/Canvas.lua`): `ns.Canvas.New(child, owner)` a window's: the heads (a right click
     `Menus.Row`, an item let go `Menus.Drop`, in the list a click folds: `folded` in the owner's store), the compact
     display's labels, the "+" cells, the list's lines, the pads and the item buttons (the owner's pool), drawn as
@@ -396,11 +396,11 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     `group` the bags' *all* without Pinned, Recent and "+"), a canvas and a pool of its own, the bar (the count, the
     reagents' deposit: `Foot.Deposits`, `C_Bank.AutoDepositItemsIntoBank`; the clean-up of the bank shown:
     `C_Container.SortBank`; the dropdown *View*), the gold at its foot. Kept in `store.bank`: `look`, `order`,
-    `group`, `folded`, `narrow`. Listens while shown (bags, bank slots and tabs, locks, cooldowns, money).
+    `group`, `folded`. Listens while shown (bags, bank slots and tabs, locks, cooldowns, money).
   - **The window** (`Bags/Bags.lua`): the bar (`Bags.BAR`), the strip of the bags (kept: `strip`), the sidebar,
     the scroll area, the foot; the heads (a part's, a block's, a group member's) taking items and opening menus,
     the compact display's labels, the list's lines; the dropdown *View* (`WowStyle1DropdownTemplate`) with the
-    displays, the orders and the switches (`showPinned`, `showRecent`, `hideEmpty`, `merge`, `first`, the
+    displays, the orders and the switches (`showPinned`, `showRecent`, `merge`, `first`, the
     categories switched off). The view chosen holds while the window is open (`Bags.Choose`); it opens with
     `first`.
   - **The menus** (`Bags/Menus.lua`): the game's (`MenuUtil.CreateContextMenu`) for an item and for a category or

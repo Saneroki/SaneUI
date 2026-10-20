@@ -551,8 +551,11 @@ local function RowNamed(word)
     end
 end
 check(RowNamed("All Items") and RowNamed("One Bag") and RowNamed("Each Bag") and RowNamed("Pinned Items")
-    and RowNamed("The Armory") and RowNamed("Armor") and not RowNamed("Weapons / Trinkets") and RowNamed("Add Category"),
-    "the sidebar: the views, Pinned, the categories with something in them, a group's members, Add Category")
+    and RowNamed("The Armory") and RowNamed("Armor") and RowNamed("Weapons / Trinkets") and RowNamed("Professions")
+    and RowNamed("Add Category") and not RowNamed("Quest Items"),
+    "the sidebar: the views, Pinned, every category switched on (empty ones too), a group's members, Add Category")
+check(RowNamed("Professions").count._text == "0" and RowNamed("Professions").label._text == "Professions",
+    "an empty category by its name, its count 0")
 check(RowNamed("All Items").bar:IsShown() and not RowNamed("One Bag").bar:IsShown() and RowNamed("Junk").count._text == "1",
     "the view shown lit; each category's count")
 local row = RowNamed("One Bag")
@@ -873,10 +876,12 @@ check(calls.sortBags == 1, "not in a fight")
 -------------------------------------------------------------------------------
 --  The foot and the bags' strip
 -------------------------------------------------------------------------------
-check(not Bags.strip:IsShown(), "the bags' strip hidden at first")
+check(Bags.strip:IsShown(), "the bags' strip shown at first")
 local toggle = Bags.bar.bags
 toggle:GetScript("OnClick")(toggle)
-check(Bags.strip:IsShown() and kept.strip, "its button shows the strip, kept")
+check(not Bags.strip:IsShown() and kept.strip == false, "its button hides the strip, kept")
+toggle:GetScript("OnClick")(toggle)
+check(Bags.strip:IsShown() and kept.strip, "and shows it again")
 local bagButtons = {}
 for _, widget in ipairs(W.frames) do
     if widget._parent == Bags.strip and widget._kind == "ItemButton" and widget:IsShown() then bagButtons[#bagButtons + 1] = widget end
@@ -901,6 +906,7 @@ cursor = false
 check(calls.putBag == 32 and calls.putBackpack, "a bag let go over a slot is put there; an item over the backpack, into it")
 toggle:GetScript("OnClick")(toggle)
 check(not Bags.strip:IsShown(), "hidden again")
+toggle:GetScript("OnClick")(toggle)
 check(Text("12345c"), "the gold, in the game's coins")
 check(Text("12"), "a currency watched in the backpack")
 

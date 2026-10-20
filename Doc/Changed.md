@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 92 (Inventory), 90 (sheet), 184 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 92 (Inventory), 90 (sheet), 186 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
 ### Navigation: the tram in the routes (Saneroki, 2026-10-20)
@@ -197,6 +197,17 @@ Herbs and Find Minerals in turn, silently, all of it with switches in the pin fi
   all around), set out of combat where they reach less, kept per character and put back when switched off.
 - Tests: `dev/tests/navigation.lua`, 332 checks (the names and pictures, the filter switching the finders silently,
   the turns while moving, a herb found on its dot and gone again, the sparkles and the settings put back).
+
+### Inventory: every category and its name always in the sidebar, the bags' strip at first (Saneroki, 2026-10-20)
+Saneroki asked that the bag slots and categories work and that the categories and their names always show.
+- **Sidebars** (`Bags/Sidebar.lua`): never folded to icons any more (the arrow and the kept `narrow` gone): the
+  names always show, one cut short whole in its tooltip. The bags' lists every category switched on, empty ones too
+  (count 0); the setting *Hide Empty Categories* is gone. The alts' Storage lists every category too.
+- **The bags' strip** (`Bags/Bags.lua`): shown at first (`strip` not false); its button a bag of the game's classic
+  icons (an atlas Forever may lack is no longer used for it); the clean-up's atlas has a broom of the game's icons
+  where the client lacks it.
+- The alts' window at least four items wide (Storage stands wide now).
+- Tests: `dev/tests/bags.lua` (186 checks): empty categories by name with 0, the strip shown at first.
 
 ### Inventory: the alts in the bags' look, Storage, displays and categories (Saneroki, 2026-10-20)
 - **The look** (`Alts/Items.lua`): items 34 wide in the bags' flat look (the icon cut round its edge, a border in

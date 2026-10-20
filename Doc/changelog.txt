@@ -41,7 +41,9 @@ The bigger changes of each version, newest first.
   folds by category. Shift-click a stack to split it, or split it
   all at once. The bags have their own settings on the Inventory page.
   At a banker the bank comes as a window of its own beside the bags,
-  its tabs in a sidebar. Your alts' things look like your bags too:
+  its tabs in a sidebar (every category and its name always shown in
+  the bags' sidebar, your bags in a strip under the bar). Your alts'
+  things look like your bags too:
   grid, list or compact, grouped by category, with a Storage sidebar
   to show one place or one category.
 - Navigation: herbs and ore on the minimap in their own pictures

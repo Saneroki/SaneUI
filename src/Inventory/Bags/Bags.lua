@@ -12,8 +12,9 @@ local _, ns = ...
 --                   right what can be done at a vendor or a banker
 --                   (Foot.lua), the junk marker (a click, then clicks on
 --                   items mark them as junk or not: Select.lua; an item
---                   brought to it is marked at once), the bags themselves (a
---                   click shows or hides them in a strip under the bar), the
+--                   brought to it is marked at once), the bags themselves (in
+--                   a strip under the bar at first; a click hides or shows
+--                   it), the
 --                   clean-up of the game
 --                   (C_Container.SortBags, as the game's bag window's button
 --                   does), the dropdown View: the display (Layout.LOOKS),
@@ -121,12 +122,18 @@ end
 -------------------------------------------------------------------------------
 --  Drawing what the layout says
 -------------------------------------------------------------------------------
--- The game's clean-up button (its art and sound), for the bags or a bank (Bank.lua).
+-- The game's clean-up button (its art and sound), for the bags or a bank (Bank.lua); a broom of the game's icons
+-- where the client lacks that art.
 local function CleanButton(parent, click, enter)
     local button = CreateFrame("Button", nil, parent)
     button:SetSize(Bags.BAR_BUTTON, Bags.BAR_BUTTON)
-    button:SetNormalAtlas("bags-button-autosort-up")
-    button:SetPushedAtlas("bags-button-autosort-down")
+    local textures = rawget(_G, "C_Texture")
+    if not (textures and textures.GetAtlasInfo) or Core.Ask(textures.GetAtlasInfo, "bags-button-autosort-up") then
+        button:SetNormalAtlas("bags-button-autosort-up")
+        button:SetPushedAtlas("bags-button-autosort-down")
+    else
+        button:SetNormalTexture("Interface\\Icons\\INV_BroomMount2_Red")
+    end
     button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
     button:SetScript("OnClick", function(self) ns.Safe("bags", click, self) end)
     button:SetScript("OnEnter", function(self) ns.Safe("bags", enter, self) end)
@@ -332,7 +339,6 @@ local function Menu(_, root)
     root:CreateDivider()
     root:CreateCheckbox(ns.TEXT.bagsShowPinned, On, Switch, Bags.SHOW.pinned)
     root:CreateCheckbox(ns.TEXT.bagsShowRecent, On, Switch, Bags.SHOW.recent)
-    root:CreateCheckbox(ns.TEXT.bagsHideEmpty, On, Switch, "hideEmpty")
     root:CreateCheckbox(ns.TEXT.bagsMerge, On, Switch, "merge")
     local first = root:CreateButton(ns.TEXT.bagsFirst)
     for _, view in ipairs(Views.FIXED) do first:CreateRadio(view.word, Firsted, First, view.key) end
@@ -394,7 +400,7 @@ Bags.Band = Band
 -- The strip of the bags themselves under the bar, shown or hidden (kept); the sidebar and the scroll area under
 -- what shows.
 local function Strip()
-    local on = kept.strip == true
+    local on = kept.strip ~= false
     strip:SetShown(on)
     local above = on and strip or bar
     side:ClearAllPoints()
@@ -421,7 +427,7 @@ function Bags.Restrip()
 end
 
 local function ToggleStrip()
-    kept.strip = not kept.strip
+    kept.strip = kept.strip == false
     Core.Sound(kept.strip and "IG_BACKPACK_OPEN" or "IG_BACKPACK_CLOSE")
     Strip()
 end
@@ -486,7 +492,9 @@ local function Bar(body)
     sort:SetPoint("RIGHT", menu, "LEFT", -Bags.BAR_GAP, 0)
     local bags = CreateFrame("CheckButton", nil, bar)
     bags:SetSize(Bags.BAR_BUTTON, Bags.BAR_BUTTON)
-    bags:SetNormalAtlas("bag-main")
+    bags:SetNormalTexture("Interface\\Icons\\INV_Misc_Bag_08")
+    local picture = bags:GetNormalTexture()
+    if picture then picture:SetTexCoord(Cells.ZOOM, 1 - Cells.ZOOM, Cells.ZOOM, 1 - Cells.ZOOM) end
     bags:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
     bags:SetCheckedTexture("Interface\\Buttons\\CheckButtonHilight")
     local checked = bags:GetCheckedTexture()

@@ -3,9 +3,9 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Bags - Sidebar
 --  A window's sidebar, at its left under the bar: a dark column of rows
---  (an icon, a name, a count) under a little head with the arrow that folds
---  it to its icons (each with its name and count in its tooltip); it scrolls
---  with the wheel when its rows are more than its height. The row shown is
+--  (an icon, a name, a count) under a little head with its name; the names
+--  always show. It scrolls with the wheel when its rows are more than its
+--  height. The row shown is
 --  lit, with a bar at its left in Sane UI's colour. Sidebar.New makes one for
 --  a window; the window fills it (Begin, Row, Divider, Done) and answers its
 --  clicks (its choose, drop, menu, add).
@@ -14,9 +14,8 @@ local _, ns = ...
 --  Bag, Each Bag; the one the window opens with first), then Pinned and
 --  Recent, a line, every category in the categories' order with how many
 --  cells it holds (a group: its name with its members set in under it, each
---  with its own count), Add Category at the foot. A category with nothing in
---  it is left out, unless it is the player's own (the setting Hide Empty
---  Categories). A click shows that view, category or group; an item brought
+--  with its own count), Add Category at the foot. Every category switched
+--  on is listed, empty ones too. A click shows that view, category or group; an item brought
 --  over a row (picked up, or dragged) and let go there goes into that
 --  category (over Pinned: pinned); a right click opens the row's menu
 --  (Menus.lua).
@@ -27,7 +26,7 @@ ns.Sidebars = Sidebar
 local Bag = {}
 ns.BagSidebar = Bag
 
-Sidebar.WIDTH, Sidebar.NARROW = 160, 32
+Sidebar.WIDTH = 160
 Sidebar.HEAD = 24
 Sidebar.ROW, Sidebar.ROW_GAP = 26, 2
 Sidebar.ICON, Sidebar.ICON_SMALL = 18, 16
@@ -54,8 +53,9 @@ end
 -------------------------------------------------------------------------------
 --  A row
 -------------------------------------------------------------------------------
+-- A name cut short by the sidebar's width: whole in the tooltip.
 local function RowTip(row)
-    if row.rail.wide or not row.word then return end
+    if not (row.word and row.label:IsTruncated()) then return end
     GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
     GameTooltip:SetText(row.word .. (row.number and (" (" .. row.number .. ")") or ""), 1, 1, 1)
     GameTooltip:Show()
@@ -143,7 +143,7 @@ end
 --  A sidebar's rows, anew
 -------------------------------------------------------------------------------
 function Rail:Width()
-    return self.wide and Sidebar.WIDTH or Sidebar.NARROW
+    return Sidebar.WIDTH
 end
 
 function Rail:Begin()
@@ -164,12 +164,12 @@ function Rail:Row(word, number, file, atlas, depth, shown)
     local size = depth > 0 and Sidebar.ICON_SMALL or Sidebar.ICON
     row.icon:SetSize(size, size)
     row.icon:ClearAllPoints()
-    row.icon:SetPoint("LEFT", self.wide and (8 + depth * Sidebar.INDENT) or (width - size) / 2, 0)
+    row.icon:SetPoint("LEFT", 8 + depth * Sidebar.INDENT, 0)
     Icon(row.icon, file, atlas)
     row.icon:SetAlpha(1)
-    row.label:SetText(self.wide and word or "")
+    row.label:SetText(word)
     row.label:SetAlpha(shown and 1 or Sidebar.DIM)
-    row.count:SetText(self.wide and number and tostring(number) or "")
+    row.count:SetText(number and tostring(number) or "")
     local gold = Core.GOLD
     row.bar:SetColorTexture(gold[1], gold[2], gold[3], 1)
     row.bar:SetWidth(Core.Pixels(row, 2))
@@ -207,47 +207,17 @@ end
 -------------------------------------------------------------------------------
 --  A sidebar made
 -------------------------------------------------------------------------------
--- The sidebar as wide as it is now (wide, or folded to its icons).
-local function Apply(rail)
-    rail.frame:SetWidth(rail:Width())
-    rail.label:SetShown(rail.wide)
-    rail.arrow:ClearAllPoints()
-    if rail.wide then rail.arrow:SetPoint("RIGHT", rail.head, "RIGHT", -6, 0) else rail.arrow:SetPoint("CENTER", rail.head) end
-    rail.arrow.icon:SetRotation(rail.wide and 0 or math.pi)
-    rail.child:SetWidth(rail:Width())
-end
-
-local function Fold(rail)
-    rail.wide = not rail.wide
-    rail.store[rail.narrowKey] = not rail.wide
-    Apply(rail)
-    if rail.resized then rail.resized() end
-end
-
-local function ArrowEnter(button)
-    button.icon:SetAlpha(0.9)
-    GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
-    GameTooltip:SetText(button.rail.wide and ns.TEXT.bagsFold or ns.TEXT.bagsUnfold, 1, 1, 1)
-    GameTooltip:Show()
-end
-
-local function ArrowLeave(button)
-    button.icon:SetAlpha(0.4)
-    GameTooltip:Hide()
-end
-
 local function Wheel(rail, delta)
     local most = math.max(0, rail.child:GetHeight() - rail.scroll:GetHeight())
     rail.scroll:SetVerticalScroll(math.max(0, math.min(most, rail.scroll:GetVerticalScroll() - delta * Sidebar.STEP)))
 end
 
--- A sidebar in body, under top and above bottom. options: { store (where it keeps whether it is folded), narrow
--- (that key), word (its head's), choose(view), drop(row), menu(row), add(row), resized() }.
+-- A sidebar in body, under top and above bottom. options: { word (its head's), choose(view), drop(row), menu(row),
+-- add(row) }.
 function Sidebar.New(body, top, bottom, options)
-    local rail = setmetatable({ store = options.store, narrowKey = options.narrow or "narrow", choose = options.choose,
-        drop = options.drop, menu = options.menu, add = options.add, resized = options.resized }, Rail)
-    rail.wide = rail.store[rail.narrowKey] ~= true
+    local rail = setmetatable({ choose = options.choose, drop = options.drop, menu = options.menu, add = options.add }, Rail)
     local frame = CreateFrame("Frame", nil, body)
+    frame:SetWidth(Sidebar.WIDTH)
     frame:SetPoint("TOPLEFT", top, "BOTTOMLEFT")
     frame:SetPoint("BOTTOMLEFT", bottom, "TOPLEFT")
     rail.frame = frame
@@ -270,18 +240,6 @@ function Sidebar.New(body, top, bottom, options)
     label:SetPoint("LEFT", 8, 0)
     label:SetText(options.word or "")
     rail.label = label
-    local arrow = CreateFrame("Button", nil, head)
-    arrow.rail = rail
-    arrow:SetSize(12, 12)
-    arrow.icon = arrow:CreateTexture(nil, "ARTWORK")
-    arrow.icon:SetAllPoints()
-    arrow.icon:SetTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up")
-    arrow.icon:SetTexCoord(0.2, 0.8, 0.2, 0.8)
-    arrow.icon:SetAlpha(0.4)
-    arrow:SetScript("OnClick", function() ns.Safe("bags", Fold, rail) end)
-    arrow:SetScript("OnEnter", function(self) ns.Safe("bags", ArrowEnter, self) end)
-    arrow:SetScript("OnLeave", function(self) ns.Safe("bags", ArrowLeave, self) end)
-    rail.arrow = arrow
     local scroll = CreateFrame("ScrollFrame", nil, frame)
     scroll:SetPoint("TOPLEFT", head, "BOTTOMLEFT")
     scroll:SetPoint("BOTTOMRIGHT")
@@ -289,7 +247,7 @@ function Sidebar.New(body, top, bottom, options)
     scroll:SetScript("OnMouseWheel", function(_, delta) ns.Safe("bags", Wheel, rail, delta) end)
     rail.scroll = scroll
     local child = CreateFrame("Frame", nil, scroll)
-    child:SetSize(rail:Width(), 1)
+    child:SetSize(Sidebar.WIDTH, 1)
     scroll:SetScrollChild(child)
     rail.child = child
     rail.rows = Core.Pool(function() return MakeRow(rail) end)
@@ -298,7 +256,6 @@ function Sidebar.New(body, top, bottom, options)
         line:SetColorTexture(Sidebar.DIVIDER[1], Sidebar.DIVIDER[2], Sidebar.DIVIDER[3], Sidebar.DIVIDER[4])
         return line
     end)
-    Apply(rail)
     return rail
 end
 
@@ -331,37 +288,29 @@ function Bag.Refresh(counts, viewing, options)
     end
     if shownFixed then rail:Divider() end
     local done = {}
-    local hideEmpty = options.hideEmpty ~= false
     for _, key in ipairs(Categories.order) do
         local def = Categories.DEF[key]
         local group = Categories.GroupOf(key)
         if not (def and def.fixed) and not Categories.Off(key) then
             if group and not done[group] then
                 done[group] = true
-                local total = counts["group:" .. group] or 0
-                local own = false
-                for _, member in ipairs(Categories.Members(group)) do own = own or Categories.Own(member) end
-                if total > 0 or not hideEmpty or own then
-                    local first = Categories.Members(group)[1]
-                    local file, atlas = Categories.Icon(first)
-                    local row = rail:Row(Categories.GroupWord(group), total, file, atlas, 0, viewing == "group:" .. group)
-                    row.view, row.group = "group:" .. group, group
-                    for _, member in ipairs(Categories.Members(group)) do
-                        local number = counts[member] or 0
-                        if number > 0 or not hideEmpty or Categories.Own(member) then
-                            local mfile, matlas = Categories.Icon(member)
-                            local memberRow = rail:Row(Categories.Word(member), number, mfile, matlas, 1, viewing == "cat:" .. member)
-                            memberRow.view, memberRow.key, memberRow.takes = "cat:" .. member, member, Categories.Takes(member)
-                        end
+                local first = Categories.Members(group)[1]
+                local file, atlas = Categories.Icon(first)
+                local row = rail:Row(Categories.GroupWord(group), counts["group:" .. group] or 0, file, atlas, 0,
+                    viewing == "group:" .. group)
+                row.view, row.group = "group:" .. group, group
+                for _, member in ipairs(Categories.Members(group)) do
+                    if not Categories.Off(member) then
+                        local mfile, matlas = Categories.Icon(member)
+                        local memberRow = rail:Row(Categories.Word(member), counts[member] or 0, mfile, matlas, 1,
+                            viewing == "cat:" .. member)
+                        memberRow.view, memberRow.key, memberRow.takes = "cat:" .. member, member, Categories.Takes(member)
                     end
                 end
             elseif not group then
-                local number = counts[key] or 0
-                if number > 0 or not hideEmpty or Categories.Own(key) then
-                    local file, atlas = Categories.Icon(key)
-                    local row = rail:Row(Categories.Word(key), number, file, atlas, 0, viewing == "cat:" .. key)
-                    row.view, row.key, row.takes = "cat:" .. key, key, Categories.Takes(key)
-                end
+                local file, atlas = Categories.Icon(key)
+                local row = rail:Row(Categories.Word(key), counts[key] or 0, file, atlas, 0, viewing == "cat:" .. key)
+                row.view, row.key, row.takes = "cat:" .. key, key, Categories.Takes(key)
             end
         end
     end
@@ -381,12 +330,11 @@ end
 -- The bags' sidebar in the body, under top (the bar) and above bottom (the foot); bags: store.bags.
 function Bag.Build(body, top, bottom, bags)
     rail = Sidebar.New(body, top, bottom, {
-        store = bags, narrow = "narrow", word = ns.TEXT.bagsCategories,
+        word = ns.TEXT.bagsCategories,
         choose = function(view) ns.Bags.Choose(view) end,
         drop = function(row) ns.Menus.Drop(row.key) end,
         menu = function(row) if row.key or row.group then ns.Menus.Row(row, row.key, row.group) end end,
         add = function(row) ns.Menus.Add(row) end,
-        resized = function() ns.Bags.Resized() end,
     })
     Bag.frame = rail.frame
     return rail.frame

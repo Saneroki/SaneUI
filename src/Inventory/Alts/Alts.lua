@@ -10,11 +10,12 @@ local _, ns = ...
 --  last seen, then its bags, its bank and what it wears, as a paper doll where
 --  Core keeps it slot by slot (Items.lua), in the bags' look. Between the
 --  roster and the items a sidebar, Storage: All Places, Bags, Bank, Equipped,
---  then All Categories and each of the bags' categories with how many of the
---  character's items it holds; a click shows only that place or category.
+--  then All Categories and every one of the bags' categories switched on with
+--  how many of the character's items it holds; a click shows only that place
+--  or category.
 --  The dropdown View on the head: the display (Grid, List, Compact, as the
 --  bags'), Group by Category. Kept for the account in store.alts: look,
---  group, narrow (the sidebar folded).
+--  group.
 --
 --  Every character of the account is in the roster, the one logged in first
 --  (its bank as last seen is worth a look away from the bank too). Shown at
@@ -175,9 +176,10 @@ local function Storage(sections)
     local row = rail:Row(Alts.TEXT.categories, counts.total, Alts.ICONS.places, nil, 0, category == nil)
     row.view = "cat:"
     for _, key in ipairs(ns.Categories.order) do
-        if counts[key] then
+        local def = ns.Categories.DEF[key]
+        if not (def and def.fixed) and not ns.Categories.Off(key) then
             local file, atlas = ns.Categories.Icon(key)
-            rail:Row(ns.Categories.Word(key), counts[key], file, atlas, 0, category == key).view = "cat:" .. key
+            rail:Row(ns.Categories.Word(key), counts[key] or 0, file, atlas, 0, category == key).view = "cat:" .. key
         end
     end
     rail:Done()
@@ -295,9 +297,8 @@ function Alts.Build(made)
     foot:SetPoint("TOPLEFT", roster, "BOTTOMRIGHT", Alts.ROSTER_GAP, 0)
     foot:SetSize(1, 1)
     rail = ns.Sidebars.New(body, top, foot, {
-        store = kept, narrow = "narrow", word = Alts.TEXT.storage,
+        word = Alts.TEXT.storage,
         choose = function(view) Choose(view) end,
-        resized = function() Alts.Size(nil) end,
     })
     Alts.rail = rail
     local right = CreateFrame("Frame", nil, body)
@@ -366,10 +367,11 @@ function Alts.Search(text)
     if shown then Refresh(false) end
 end
 
--- The board's least: the roster, Storage folded, their gaps, a grid six items wide with its scroll bar, a few rows
+-- The board's least: the roster, Storage, their gaps, a grid four items wide with its scroll bar, a few rows
 -- of it under the head, the panel's head and edges.
+Alts.LEAST_ITEMS = 4
 local step = ns.Items.SIZE + ns.Items.GAP
 ns.Board.Part("alts", Alts.TEXT.title, {
-    ns.Roster.WIDTH + 2 * Alts.ROSTER_GAP + ns.Sidebars.NARROW + 6 * step + ns.Items.BAR + 2 * EDGE,
+    ns.Roster.WIDTH + 2 * Alts.ROSTER_GAP + ns.Sidebars.WIDTH + Alts.LEAST_ITEMS * step + ns.Items.BAR + 2 * EDGE,
     Alts.HEAD + ns.Items.HEAD + Alts.ROWS * step + Core.Board.HEAD + 2 * EDGE,
 }, Alts)

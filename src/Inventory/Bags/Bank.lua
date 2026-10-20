@@ -28,7 +28,7 @@ local _, ns = ...
 --  search box of the full window fades what it does not find (with Group by
 --  Category: leaves it out). The window opens with All Bank Tabs; the view
 --  chosen holds while it is open. Kept in store.bank: look, order, group,
---  folded, narrow.
+--  folded.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Bank = {}
@@ -388,9 +388,8 @@ function Bank.Build(made)
     if font then gold:SetFontObject(font) end
     gold:SetPoint("RIGHT", -(Bags.INSET + Bags.EDGE), 0)
     rail = ns.Sidebars.New(body, bar, foot, {
-        store = kept, narrow = "narrow", word = ns.TEXT.bankTabsHead,
+        word = ns.TEXT.bankTabsHead,
         choose = function(view) Bank.Choose(view) end,
-        resized = function() Bank.Size(width) end,
     })
     side = rail.frame
     scroll = CreateFrame("ScrollFrame", nil, body, "ScrollFrameTemplate")
