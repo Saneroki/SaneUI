@@ -538,9 +538,9 @@ function W.Install(env)
             list[#list + 1] = { text = text, checked = isSelected, fn = setSelected, data = data }
         end
         function description:CreateCheckbox(text, isSelected, setSelected, data)
-            local item = { text = text, checked = isSelected, fn = setSelected, data = data }
+            local item = { text = text, checked = isSelected, fn = setSelected, data = data, inits = {} }
             list[#list + 1] = item
-            return { SetTooltip = function() end }
+            return { SetTooltip = function() end, AddInitializer = function(_, init) item.inits[#item.inits + 1] = init end }
         end
         return description
     end

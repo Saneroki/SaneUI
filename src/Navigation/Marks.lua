@@ -145,7 +145,9 @@ function Marks.Group(view, now)
             local _, class = UnitClass(member.unit)
             local color = class and rawget(_G, "RAID_CLASS_COLORS") and RAID_CLASS_COLORS[class]
             if color then texture:SetVertexColor(color.r, color.g, color.b) else texture:SetVertexColor(1, 1, 1) end
-            Put(texture, (u - view.u) * view.k, (v - view.v) * view.k, Marks.MEMBER / 2)
+            local size = Marks.MEMBER * ns.PinScale("group") -- the pin filter's slider
+            texture:SetSize(size, size)
+            Put(texture, (u - view.u) * view.k, (v - view.v) * view.k, size / 2)
         end
     end
     for index = count + 1, #members do Put(members[index], nil) end

@@ -35,7 +35,8 @@ party), always over the map, and the full map has the quest log at its left. The
   has been off it for a while (*Follow again after*).
 - **Pins:** the game's own marks where it tells them (your quests on their discs, ready to turn in, the quest the
   arrow leads to on its brown disc; flight points of your side; rares and treasures nearby; the game's points and
-  ways into other maps), and what Core's data knows (quest givers with a quest you can take, services, entrances,
+  ways into other maps), and what Core's data knows (quest givers with a quest you can take, see-through so your
+  own quests stand out; givers of quests you have done, grey, under *Done quests* (off at first); services, entrances,
   the docks of the boats and zeppelins with where they go, herbs, ore, books: as far as the data holds them; a
   place the game has not confirmed says so). One pin per thing: the game's word hides the data's. Pins that would
   cover each other show as one disc with their number: a click zooms in. A click on a quest's pin leads the game's
@@ -45,7 +46,9 @@ party), always over the map, and the full map has the quest log at its left. The
 - **The pin filter** (*Pins* on the full map's bar, or the setting *Pins on the map*): a checkmark per kind. Its
   first two are no pins: *Route to the map pin* (the golden line) and *Minimap dots*: what the game's minimap
   shows around you (players, tracked herbs and ore, quest areas), on the small map and on the full map too, there
-  around you at the full map's own scale (shown while it fits inside the map). Both are on at first.
+  around you at the full map's own scale (shown while it fits inside the map). Both are on at first. At each kind's
+  right a slider sets its size on the map, 50 to 200 percent (the route: its line's thickness; the party: its
+  marks), kept with the settings.
 - **Quest areas:** the quest the arrow leads to, or the one under the mouse in the quest log, shaded as the game
   shades it on its map.
 - **The quest log** at the full map's left (*Quest Log* on the bar puts it in or out): your quests by zone with
@@ -281,6 +284,9 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, pin sizes and quests:** a size slider per kind in the pin filter (the setting `pinSizes`, per
+  profile), givers of quests you can take see-through, and the kind *Done quests* for givers of quests you have
+  done.
 - **2026-10-20, the route and the minimap's dots in the pin filter:** the switch *Route to the map pin* became the
   pin filter's first kind, and *Minimap dots* the second: the game's minimap shows on the full map too, around the
   player at the map's scale. Settings of before are taken over (the module's settings version 1).

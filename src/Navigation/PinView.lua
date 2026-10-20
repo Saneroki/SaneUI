@@ -35,6 +35,7 @@ PinView.HIGHLIGHT = "UI-QuestPoi-InnerGlow"
 PinView.MARK = 0.6 -- the mark on a disc, as a share of the disc
 
 PinView.LEVELS = 6 -- the pins' own levels over their layer: a pin of a higher order stands over a lower one
+PinView.OFFERED = 0.55 -- a quest you can take but have not: see-through, so the quests in your log stand out
 
 local layer, holder, view
 local used, free = {}, {} -- [key] = button while in view; buttons let go
@@ -119,8 +120,10 @@ end
 -- A button's look for its pin.
 local function Look(button, pin)
     local kind = pin.gathered and "gathered" or pin.kind
-    local size = Pins.SIZE[kind] or 20
+    -- At its kind's size from the pin filter's slider (a gathered marker: its first pin's kind).
+    local size = (Pins.SIZE[kind] or 20) * ns.PinScale(pin.gathered and pin.gathered[1].kind or pin.kind)
     button:SetSize(size, size)
+    button:SetAlpha(pin.offer and PinView.OFFERED or 1)
     button.half = size / 2 -- how far it reaches from its middle (Fit); the focused quest's glow farther
     local disc, icon, glow, count = button.disc, button.icon, button.glow, button.count
     icon:ClearAllPoints()

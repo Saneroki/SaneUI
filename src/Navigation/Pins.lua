@@ -30,12 +30,12 @@ Pins.KINDS = ns.KINDS
 Pins.CONTINENT = { flight = true, travel = true, entrance = true, place = true } -- kinds shown past a zone
 Pins.NEAR = 300       -- yards: services on the small view only so near the player
 Pins.GATHER = 18      -- units: pins nearer each other than this on the screen are gathered into one marker
-Pins.SIZE = { quest = 26, flight = 18, travel = 22, entrance = 22, place = 22, service = 18, rare = 18,
+Pins.SIZE = { quest = 26, done = 22, flight = 18, travel = 22, entrance = 22, place = 22, service = 18, rare = 18,
               treasure = 18, herb = 16, ore = 16, book = 18, gathered = 24 }
 
 -- The order pins are drawn in: a higher one over a lower one, and the first in a gathered marker.
 local ORDER = { quest = 9, rare = 8, entrance = 7, flight = 6, travel = 5, place = 4, treasure = 3, service = 2,
-                herb = 1, ore = 1, book = 0 }
+                done = 1, herb = 1, ore = 1, book = 0 }
 
 -- Core's services, as the game's town tracking draws them (Interface\Minimap\Tracking's atlases).
 local SERVICES = {
@@ -66,6 +66,7 @@ local OBJECTS = { herb = { "herb", "Professions_Tracking_Herb" }, ore = { "ore",
 Pins.TEXT = {
     turnIn = Core.Word("QUEST_WATCH_QUEST_READY", "Ready for turn-in"),
     offered = "A quest to take",
+    done = "Quests you have done",
     undiscovered = "Not discovered yet",
     open = "Click: show it in the quest log",
     openMap = "Click: open its map",
@@ -256,11 +257,14 @@ local function FromData(place)
     local what, kind = place.what, place.kind
     local pin = { key = place.key, name = place.name, unverified = true }
     if kind == "npc" then
-        local offered
+        local offered, done
         for _, quest in ipairs(type(what) == "table" and what.quests or {}) do
             if Pins.Offered(QUESTS:Get(quest), quest) then
                 offered = offered or {}
                 offered[#offered + 1] = QUESTS:Get(quest, "name") or ("#" .. quest)
+            elseif Core.Ask(C_QuestLog.IsQuestFlaggedCompleted, quest) then
+                done = done or {}
+                done[#done + 1] = QUESTS:Get(quest, "name") or ("#" .. quest)
             end
         end
         local services = what.services or {}
@@ -275,7 +279,14 @@ local function FromData(place)
             for _, each in ipairs(services) do
                 if SERVICES[each] then service = each break end
             end
-            if not service then return nil end
+            if not service then
+                if not done then return nil end
+                -- Only quests this character has done: a pin of the kind Done quests (off at first), grey.
+                pin.kind, pin.atlas, pin.dim, pin.lines = "done", "QuestNormal", true, { Pins.TEXT.done }
+                for _, name in ipairs(done) do pin.lines[#pin.lines + 1] = name end
+                pin.roles = services
+                return pin
+            end
             local atlas = SERVICES[service]
             if service == "vendor" and what.goods and what.goods[1] then atlas = GOODS[what.goods[1]] or atlas end
             pin.kind, pin.atlas, pin.service = "service", atlas, true

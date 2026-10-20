@@ -385,7 +385,9 @@ end
 Set(packPath .. "/NPCs.lua", "NPCs", "00000003", "int", '"name", "services", "rank", "goods"', '"text", "list text", "text", "list text"',
     'R[69] = "70245\t\tAn Innkeeper\tinnkeeper\030vendor\tnormal\tfood"\n'
     .. 'R[70] = "70245\t\tAn Old Rare\t\trare\t"\n'
-    .. 'R[71] = "70245\t\tA Wolf\t\tnormal\t"\n')
+    .. 'R[71] = "70245\t\tA Wolf\t\tnormal\t"\n'
+    .. 'R[72] = "70245\t\tA Quest Giver\t\tnormal\t"\n'
+    .. 'R[73] = "70245\t\tAn Old Friend\t\tnormal\t"\n')
 Set(packPath .. "/Objects.lua", "Objects", "00000004", "int", '"name", "kind"', '"text", "text"',
     'R[1617] = "70245\t\tSilverleaf\therb"\n')
 Set(packPath .. "/Places.lua", "Places", "00000005", "int", '"kind", "name", "point", "to", "levelMin", "levelMax"',
@@ -418,7 +420,19 @@ Set(spawnsPath .. "/Spawns.lua", "Spawns", "00000007", "text", '"points", "middl
     'R["npc:69"] = "70245\t\t1429\03150\03150\t"\n'
     .. 'R["npc:70"] = "70245\t\t1429\03160\03120\t"\n'
     .. 'R["npc:71"] = "70245\t\t1429\03110\03110\t"\n'
-    .. 'R["object:1617"] = "70245\t\t1429\03152\03150\t"\n')
+    .. 'R["object:1617"] = "70245\t\t1429\03152\03150\t"\n'
+    .. 'R["npc:72"] = "70245\t\t1429\03180\03140\t"\n'
+    .. 'R["npc:73"] = "70245\t\t1429\03185\03115\t"\n')
+-- The quests they give: one this character can take (100), one it has done (5, doneQuests below).
+local questsPath = folder .. "/SaneUI_Data_Quests"
+os.execute(("mkdir -p '%s'"):format(questsPath))
+Set(questsPath .. "/Quests.lua", "Quests", "00000009", "int", '"name", "minLevel", "startNPCs"', '"text", "int", "list int"',
+    'R[100] = "70245\t\tA Quest to Take\t1\t72"\nR[5] = "70245\t\tAn Old Quest\t1\t73"\n'
+    .. 'I.byStartNPC = {}\nI.byStartNPC[72] = "100"\nI.byStartNPC[73] = "5"\n')
+out = assert(io.open(questsPath .. "/SaneUI_Data_Quests.toc", "w"))
+out:write("## Title: Data: Quests\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Quests\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nQuests.lua\n")
+out:close()
+W.AddPack(questsPath)
 -- The walking data (pack Routes): two tiles round the player, their blocks as the game unpacks them (the
 -- encoding stand-ins below hand back these tables). Tile 3104 (its north west corner at u 0, v -8533, 2.08 yards
 -- a sample): a west hall (1) and an east hall (3), a wall between them (columns 128 to 159) with a door (2, rows
@@ -697,9 +711,11 @@ check(Tiles:Ready() and Tiles:Get(3104, "minimap") == 801, "the pack is loaded: 
 local places = Core.Data.Map():On(1429)
 local byKey = {}
 for _, place in ipairs(places or {}) do byKey[place.key] = place end
-check(places and #places == 8 and byKey["npc:69"] and byKey["npc:70"] and byKey["object:1617"] and byKey["place:1"]
-    and byKey["place:2"] and byKey["travel:1"] and byKey["travel:3:1"] and byKey["travel:4:1"] and not byKey["npc:71"],
-    "Core's places on a map: its NPCs with a service and rares, objects, places and ways; a creature that is neither is not")
+check(places and #places == 10 and byKey["npc:69"] and byKey["npc:70"] and byKey["object:1617"] and byKey["place:1"]
+    and byKey["place:2"] and byKey["travel:1"] and byKey["travel:3:1"] and byKey["travel:4:1"] and not byKey["npc:71"]
+    and byKey["npc:72"] and byKey["npc:72"].what.quests[1] == 100 and byKey["npc:73"],
+    "Core's places on a map: its NPCs with a service, rares and quest givers (with their quests), objects, places and "
+    .. "ways; a creature that is none of them is not")
 check(near(byKey["npc:69"].x, 0.5) and byKey["npc:69"].what.services[1] == "innkeeper" and byKey["npc:70"].what.rare
     and byKey["object:1617"].what == "herb" and byKey["place:1"].what == "dungeon" and byKey["place:1"].to == 500
     and byKey["travel:1"].what == "boat", "each at its point (0 to 1), with what it is")
@@ -969,7 +985,23 @@ end
 full:Show(1415, 0, -9250, 0.4)
 Canvas.Layout()
 local pins, count = Drawn()
-check(full.level == "zone" and count == 9, "the zone's pins: 10 things, two of them near each other gathered into one")
+check(full.level == "zone" and count == 10, "the zone's pins: 11 things, two of them near each other gathered into one")
+do
+    local giver = pins["npc:72"]
+    check(giver and giver.pin.kind == "quest" and giver.pin.offer and giver.icon._atlas == "QuestNormal"
+        and giver._alpha == ns.PinView.OFFERED and pins["quest:7"]._alpha == 1,
+        "a quest you can take but have not: its giver's pin see-through, the quests in your log not")
+    check(not pins["npc:73"], "a giver of quests you have done only: no pin while Done quests is off (the default)")
+    local chosen = Core.Copy(ns.options.pins)
+    chosen.done = true
+    Core.Set(ns.name, "pins", chosen)
+    local old = Drawn()["npc:73"]
+    check(old and old.pin.kind == "done" and old.pin.dim and old.pin.lines[1] == Pins.TEXT.done
+        and old.pin.lines[2] == "An Old Quest", "Done quests on: its pin, grey, its tooltip naming the quests you did")
+    chosen = Core.Copy(chosen)
+    chosen.done = nil
+    Core.Set(ns.name, "pins", chosen)
+end
 check(pins["quest:7"] and pins["quest:7"].pin.name == "Wolves Across the Border" and not pins["quest:7"].pin.complete
     and pins["quest:7"].disc._atlas == ns.PinView.DISC and pins["quest:7"].icon._atlas == ns.PinView.IN_PROGRESS,
     "the game's quest on its map, in the game's quest disc and mark")
@@ -1016,6 +1048,46 @@ pins = Drawn()
 check(not pins["npc:69"] and not pins["place:2"] and pins["object:1617"] and pins["quest:7"], "the filter: services off, the rest stays")
 chosen.service = true
 Core.Set(ns.name, "pins", chosen)
+-- Each kind's size: a slider at its right in the pin filter (the game's slider, lent to the row by the menu),
+-- kept in the setting pinSizes; the pins of that kind drawn at it.
+do
+    MinimalSliderWithSteppersMixin = { Label = { Right = 3 }, Event = { OnValueChanged = "OnValueChanged" } }
+    local filter
+    for _, widget in ipairs(W.frames) do
+        if widget._generator then
+            widget:GenerateMenu()
+            for _, item in ipairs(widget._items or {}) do if item.text == "Herbs" then filter = widget end end
+        end
+    end
+    local herbs, route, minimapRow
+    for _, item in ipairs(filter and filter._items or {}) do
+        if item.text == "Herbs" then herbs = item elseif item.text == ns.TEXT.route then route = item
+        elseif item.text == ns.TEXT.minimap then minimapRow = item end
+    end
+    local slider = { points = {} }
+    function slider:SetWidth(width) self.width = width end
+    function slider:ClearAllPoints() self.points = {} end
+    function slider:SetPoint(...) self.points[#self.points + 1] = { ... } end
+    function slider:Init(value, low, high, steps, labels) self.value, self.low, self.high, self.steps, self.labels = value, low, high, steps, labels end
+    function slider:RegisterCallback(event, fn, owner) self.event, self.fn, self.owner = event, fn, owner end
+    local row = { fontString = { GetUnboundedStringWidth = function() return 40 end } }
+    function row:AttachTemplate(template) self.template = template return slider end
+    local width, height
+    if herbs and herbs.inits[1] then width, height = herbs.inits[1](row) end
+    check(herbs and #herbs.inits == 1 and row.template == "MinimalSliderWithSteppersTemplate" and slider.value == 100
+        and slider.low == ns.PIN_SIZES.low and slider.high == ns.PIN_SIZES.high and slider.labels[3](150) == "150%"
+        and width > 40 + slider.width and height == ns.TopBar.ROW,
+        "the pin filter: a size slider at each kind's right, from its smallest to its largest size")
+    check(route and #route.inits == 1 and minimapRow and #minimapRow.inits == 0,
+        "the route's line has a size too; the game's minimap's dots none (the game draws them)")
+    slider.fn(nil, 151.2)
+    local herb = Drawn()["object:1617"]
+    check(ns.options.pinSizes.herb == 150 and ns.PinScale("herb") == 1.5 and herb and near(herb._width, Pins.SIZE.herb * 1.5),
+        "moved: kept in its steps (150 %), the herbs drawn at it")
+    slider.fn(nil, 100)
+    check(ns.options.pinSizes.herb == nil and near(Drawn()["object:1617"]._width, Pins.SIZE.herb), "back at 100 %: nothing kept")
+    MinimalSliderWithSteppersMixin = nil
+end
 -- A tooltip: the quest's objectives as the game tells them.
 pins = Drawn()
 GameTooltip._lines = nil

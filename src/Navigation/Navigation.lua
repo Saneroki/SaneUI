@@ -51,6 +51,7 @@ ns.TEXT = {
     pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar. Route to the map pin: a golden line leads from you to the game's map pin (Ctrl and a click on the map), around what cannot be walked, with the flights you know where they are quicker; planned again when you leave it. Minimap dots: what the game's minimap shows around you (players, tracked herbs and ore, quest areas), on the full map too. Books and treasures only full screen; services on the small map only near you.",
     route = "Route to the map pin",
     minimap = "Minimap dots",
+    done = "Done quests",
     followAgain = "Follow again after",
     followAgainTip = "After you dragged the map away, it centres on you again once the mouse has been off it for so long. 0: only when you zoom it with the mouse wheel close in.",
     seconds = "seconds",
@@ -72,6 +73,7 @@ ns.KINDS = {
     { "route", ns.TEXT.route, on = true, small = true },
     { "minimap", ns.TEXT.minimap, on = true, small = true },
     { "quest", "Quests", on = true, small = true },
+    { "done", ns.TEXT.done, on = false, small = true },
     { "area", "Quest areas", on = true, small = true },
     { "flight", "Flight points", on = true, small = true },
     { "travel", "Boats, zeppelins and portals", on = true, small = true },
@@ -85,6 +87,18 @@ ns.KINDS = {
     { "book", "Books", on = false },
     { "group", "Party and raid", on = true, small = true },
 }
+-- A kind's size, by its slider in the pin filter: from low to high percent in steps (100: as drawn at first).
+ns.PIN_SIZES = { low = 50, high = 200, step = 10 }
+function ns.PinPercent(kind)
+    local sizes = ns.options and ns.options.pinSizes
+    local percent = type(sizes) == "table" and tonumber(sizes[kind])
+    if not percent then return 100 end
+    return math.min(math.max(percent, ns.PIN_SIZES.low), ns.PIN_SIZES.high)
+end
+function ns.PinScale(kind)
+    return ns.PinPercent(kind) / 100
+end
+
 local PIN_CHOICES, PIN_DEFAULT = {}, {}
 for _, kind in ipairs(ns.KINDS) do
     PIN_CHOICES[#PIN_CHOICES + 1] = { kind[1], kind[2] }
@@ -103,6 +117,9 @@ local OPTIONS = {
     { key = "view", default = ns.FALLBACK, text = ns.TEXT.view, header = ns.TEXT.title, tip = ns.TEXT.viewTip,
       choices = { CHOICES[1], CHOICES[2], CHOICES[3] } },
     { key = "pins", default = PIN_DEFAULT, multi = true, choices = PIN_CHOICES, text = ns.TEXT.pins, tip = ns.TEXT.pinsTip },
+    -- Each kind's size in percent, [kind] = percent, set by its slider in the pin filter (TopBar.lua): no
+    -- control on the options page.
+    { key = "pinSizes", default = {} },
     { key = "followAgain", default = 10, min = 0, max = 60, step = 5, unit = ns.TEXT.seconds, text = ns.TEXT.followAgain,
       tip = ns.TEXT.followAgainTip },
     { key = "nativeMinimap", default = false, text = ns.TEXT.nativeMinimap, tip = ns.TEXT.nativeMinimapTip },
@@ -126,6 +143,7 @@ Core.Options(ns.name, OPTIONS, { version = 1, upgrade = Upgrade, changed = funct
     -- The section Expand window: Core's window takes it in by itself (Edge.lua).
     if Core.Edge.KEYS[key] then return end
     if key == "view" then return ns.Guarded(ns.Window.Restyle) end
+    if key == "pinSizes" then return ns.Guarded(ns.Canvas.Refresh) end
     if key == "pins" then
         -- The route planned anew (or let go) only when its own switch changed.
         local route = ns.Pins.Shows("route")

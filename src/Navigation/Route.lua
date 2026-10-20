@@ -37,6 +37,7 @@ Route.COLOURS = {
     lift = { 1, 0.78, 0.25 }, portal = { 0.7, 0.5, 1 }, hearth = { 0.6, 0.8, 1 },
 }
 
+-- The lines' thickness, at the size the pin filter's slider for the route asks (set at each layout, Place).
 local THICKNESS = { edge = Route.THICK + 3, fill = Route.THICK, glint = Route.THICK }
 
 local layer, holder
@@ -156,6 +157,8 @@ end
 -- Drawn for the view as the canvas laid it out; only the parts in view, cut at the canvas' edge.
 function Route.Place(view)
     used, count = 0, 0
+    local scale = ns.PinScale("route")
+    THICKNESS.edge, THICKNESS.fill, THICKNESS.glint = (Route.THICK + 3) * scale, Route.THICK * scale, Route.THICK * scale
     if way and view.map then
         for index, leg in ipairs(way.legs) do
             local colour = Route.COLOURS[leg.kind] or Route.COLOURS.walk

@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 274 (Navigation), 36 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 281 (Navigation), 36 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
 ### Inventory: the character sheet's paper doll (Saneroki, 2026-10-20)
@@ -37,6 +37,22 @@ A game restart takes it in (new addons, Navigation, Atlas and Inventory; new fil
 - **The corner of the game's bags is gone** (`Corner.lua` removed): the window's own corner takes its place.
 - Tests: `dev/tests/inventory.lua` (16 checks): the window and its corner, parts registered before and after the
   full screen, the search, a part that fails, standing down.
+
+### Navigation: a size per kind of pin, quests to take see-through, done quests on demand (Saneroki, 2026-10-20)
+- **Sizes** (`TopBar.lua`, `Navigation.lua`, `PinView.lua`, `Marks.lua`, `Route.lua`): each row of the pin filter
+  that has a size carries the game's slider at its right (`MinimalSliderWithSteppersTemplate`, lent to the row by
+  the game's menu, `AttachTemplate`, while it is open; `Sizer` gives the row's size), 50 to 200 % in steps of 10
+  (`ns.PIN_SIZES`). Kept in the setting `pinSizes` (`[kind] = percent`, 100 not kept; no control on the options
+  page, so it goes with the profile). `ns.PinPercent`, `ns.PinScale`; pins drawn at their kind's scale (a gathered
+  marker at its first pin's), the party's marks at *Party and raid*'s, the route's lines at *Route to the map
+  pin*'s. The game's minimap's dots have none (the game draws them).
+- **Quests to take see-through** (`PinView.OFFERED`, 0.55): a giver of a quest this character can take but has
+  not, so the quests in its log stand out.
+- **Done quests** (`Pins.lua`, the kind `done`, off at first): an NPC whose quests of Core's data this character has
+  all done (and that has no service) is a grey pin with the quests it did in its tooltip.
+- **Tests:** `dev/tests/navigation.lua` (281 checks; the data now with a pack Quests: a giver of a quest to take
+  and one of a quest done): the see-through giver, the done one shown only with its kind on, the slider row and a
+  size kept in its steps and drawn. `dev/tests/wowstub.lua`: a menu checkbox takes initializers.
 
 ### Navigation: the route and the minimap's dots in the pin filter, the dots on the full map too (Saneroki, 2026-10-20)
 - **Two kinds first in the pin filter** (`Navigation.lua`, `ns.KINDS`): *Route to the map pin* (`route`, the setting
