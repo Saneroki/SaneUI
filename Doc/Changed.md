@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 105 (Inventory), 90 (sheet), 220 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 105 (Inventory), 90 (sheet), 237 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
 ### Navigation: dungeon maps of Core's data, with their bosses (Saneroki, 2026-10-21)
@@ -25,6 +25,23 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   the set has opens it with Shift and a click (`Dungeons.Key`).
 - Tests: Navigation 390 checks (a dungeon of the set: its floors, tiles, boss marks and names, the arrow, the floor
   you are on). A game restart takes it in (the World pack's new set).
+
+### Inventory: the bank as a list, a tab's settings, buying a tab (Saneroki, 2026-10-21)
+- **The list** (`Bags/Bank.lua`, `Bags/Columns.lua`): the bank's dropdown *View* has *List*; a column head of its own
+  over the bank's list (`Columns.Build(parent, redraw)` makes one per window, `Columns.head` the bags'; the column
+  choices stay the bags', and a change refreshes every head and draws each window anew; `Columns.Rounded` for the
+  canvas's round icons).
+- **A tab's settings**: a tab's row by its own icon, its tooltip what it takes; a right click, where the client has
+  `C_Bank.UpdateBankTabSettings`, the game's menu: *Rename* (16 letters, as the game's box), *Assign To* the five kinds
+  of the game's tab settings (`Bank.TAKES`, `Enum.BagSlotFlags`, the game's `BAG_FILTER_*` words) and *Ignore in Clean
+  Up*; each change the game's call with the tab's name, icon and other flags as they are; drawn anew at
+  `BANK_TAB_SETTINGS_UPDATED`. The sidebar takes a `tip` for a row's own tooltip.
+- **Buying a tab**: *Buy Tab* after a bank's tabs where `C_Bank.CanPurchaseBankTab` says so (its cost in the
+  tooltip); over it, unseen, the game's `BankPanelPurchaseButtonScriptTemplate` (one per bank, `overrideBankType`),
+  so the click, the question and the purchase are the game's; our code never calls `PurchaseBankTab`.
+- Tests: `dev/tests/bags.lua` (237 checks): the bank's list under its own head sorting the bags' columns, back to the
+  grid; a tab's icon, tooltip, menu, a kind assigned and taken back, left out of the clean-up, renamed (cut to 16);
+  Buy Tab with the game's button over it, its cost, its click the game's. A `/reload` takes it in.
 
 ### Inventory: categories dragged in the bags' sidebar (Saneroki, 2026-10-21)
 - **The drag** (`Bags/Sidebar.lua`): a row a window marks (`row.drag`) is dragged with the left button (not while an

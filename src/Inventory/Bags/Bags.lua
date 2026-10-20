@@ -437,7 +437,7 @@ local function Strip()
     end
     scroll:SetPoint("BOTTOMRIGHT", Foot.frame, "TOPRIGHT", -Bags.SCROLL, Bags.EDGE)
     bar.bags:SetChecked(on)
-    if list then Columns.Refresh(math.max(1, (child:GetWidth() or 0) - Bags.INSET)) end
+    if list then columns:Refresh(math.max(1, (child:GetWidth() or 0) - Bags.INSET)) end
 end
 
 function Bags.Restrip()
@@ -560,7 +560,7 @@ function Bags.Build(made)
     Bar(body)
     Foot.Build(body, coin, strip)
     side = Sidebar.Build(body, bar, Foot.frame, kept)
-    columns = Columns.Build(body)
+    columns = Columns.Build(body, function() Bags.Redraw() end)
     scroll = CreateFrame("ScrollFrame", nil, body, "ScrollFrameTemplate")
     child = CreateFrame("Frame", nil, scroll)
     child:SetSize(1, 1)
@@ -598,7 +598,7 @@ function Bags.Size(newWidth)
     width = newWidth or width
     if not child then return end
     child:SetWidth(math.max(1, width - Sidebar.Width() - Bags.EDGE - Bags.SCROLL))
-    if kept.look == "list" then Columns.Refresh(math.max(1, child:GetWidth() - Bags.INSET)) end
+    if kept.look == "list" then columns:Refresh(math.max(1, child:GetWidth() - Bags.INSET)) end
     Bags.Redraw()
 end
 

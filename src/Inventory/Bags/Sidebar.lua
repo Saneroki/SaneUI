@@ -76,7 +76,7 @@ end
 
 local function RowEnter(row)
     row.hover:Show()
-    RowTip(row)
+    if not (row.rail.tip and row.rail.tip(row)) then RowTip(row) end
     if GetCursorInfo() == "item" and row.takes then row.hover:SetAlpha(2.5) else row.hover:SetAlpha(1) end
 end
 
@@ -379,10 +379,11 @@ local function Wheel(rail, delta)
 end
 
 -- A sidebar in body, under top and above bottom. options: { word (its head's), choose(view), drop(row), menu(row),
--- add(row), aim(held, over, part) and place(held, over, where) for rows dragged }.
+-- add(row), tip(row) (a row's own tooltip: true when it showed one), aim(held, over, part) and place(held, over,
+-- where) for rows dragged }.
 function Sidebar.New(body, top, bottom, options)
     local rail = setmetatable({ choose = options.choose, drop = options.drop, menu = options.menu, add = options.add,
-                                aim = options.aim, place = options.place }, Rail)
+                                tip = options.tip, aim = options.aim, place = options.place }, Rail)
     local frame = CreateFrame("Frame", nil, body)
     frame:SetWidth(Sidebar.WIDTH)
     frame:SetPoint("TOPLEFT", top, "BOTTOMLEFT")

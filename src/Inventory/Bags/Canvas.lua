@@ -347,7 +347,7 @@ function Sheet:Draw(blocks, room, how)
                     local inset = (place.height - place.size) / 2
                     local left = spot and spot.x + (spot.width - place.size) / 2 or inset
                     cells:Place(button, place.x + x + left, place.y + inset, place.size, place.width - left)
-                    Cells.Round(button, store.round == true)
+                    Cells.Round(button, Columns.Rounded())
                     self:Row(place, button)
                 else
                     cells:Place(button, place.x + x, place.y, place.size)
@@ -364,7 +364,7 @@ function Sheet:Draw(blocks, room, how)
     return height + Canvas.INSET
 end
 
--- A canvas in a scroll area's child; owner: { store (look, folded, round), redraw(), cells (its pool) }.
+-- A canvas in a scroll area's child; owner: { store (look, folded), redraw(), cells (its pool) }.
 function Canvas.New(child, owner)
     local canvas = setmetatable({ child = child, owner = owner, rowOf = {}, places = {} }, Sheet)
     canvas.cells = owner.cells

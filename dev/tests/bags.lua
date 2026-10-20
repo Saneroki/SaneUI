@@ -213,13 +213,30 @@ EquipmentManager_GetLocationData = function(location)
     end
     return {}
 end
+-- The character's bank: one tab, Ores; another for sale. Its settings changed by the game's call.
+local tabs = { [0] = { { ID = 6, name = "Ores", icon = "tab-icon", depositFlags = 0 } } }
 C_Bank = {
     FetchPurchasedBankTabIDs = function(kind) return kind == 0 and { 6 } or {} end,
-    FetchPurchasedBankTabData = function(kind) return kind == 0 and { { ID = 6, name = "Ores" } } or {} end,
+    FetchPurchasedBankTabData = function(kind) return tabs[kind] or {} end,
     CanViewBank = function() return true end,
     DoesBankTypeSupportAutoDeposit = function(kind) return kind == 0 end,
     AutoDepositItemsIntoBank = function(kind) calls.deposit = kind end,
+    UpdateBankTabSettings = function(kind, tab, name, icon, flags)
+        calls.tabSettings = { kind, tab, name, icon, flags }
+        local data = tabs[kind][1]
+        data.name, data.icon, data.depositFlags = name, icon, flags
+    end,
+    CanPurchaseBankTab = function(kind) return kind == 0 end,
+    HasMaxBankTabs = function() return false end,
+    FetchNextPurchasableBankTabData = function() return { tabCost = 50000, canAfford = false } end,
+    PurchaseBankTab = function() calls.bought = true end,
 }
+Enum.BagSlotFlags = { DisableAutoSort = 1, ClassEquipment = 2, ClassConsumables = 4, ClassProfessionGoods = 8,
+                      ClassJunk = 16, ClassReagents = 128 }
+-- The game's button for buying a tab: its own click opens the game's question (here: noted).
+W.templates.BankPanelPurchaseButtonScriptTemplate = function(widget)
+    widget._scripts.OnClick = function(self) calls.purchase = self:GetAttribute("overrideBankType") end
+end
 SIZES[6] = 8
 Put(6, 1, 6001, 3)
 C_PlayerInteractionManager = { IsInteractingWithNpcOfType = function(kind)
@@ -1195,6 +1212,71 @@ Choose(bankMenu._items, "Group by Category")
 check(ns.store.bank.group and HeadNamed("Trade Goods") and Bank.cells:Shown(6, 1), "Group by Category: the bank's items by the bags' categories")
 bankMenu:GenerateMenu()
 Choose(bankMenu._items, "Group by Category")
+-- The list, under a column head of its own with the bags' columns.
+bankMenu:GenerateMenu()
+Choose(bankMenu._items, "List")
+local bankRow = Bank.cells:Button(6, 1) and Bank.blocks and nil
+for _, widget in ipairs(W.frames) do
+    if widget.cells and widget.cells.name and widget.cells.name._text == "Silver Bar" and widget:IsShown() then bankRow = widget end
+end
+check(ns.store.bank.look == "list" and Bank.columns:IsShown() and ns.Columns.Cell("level", Bank.columns)
+    and ns.Columns.Cell("level", Bank.columns) ~= ns.Columns.Cell("level") and bankRow and bankRow.cells.count._text == "3",
+    "the bank as a list: a line per item under a column head of its own, the bags' columns")
+local bankLevel = ns.Columns.Cell("count", Bank.columns)
+bankLevel:GetScript("OnMouseDown")(bankLevel, "LeftButton")
+bankLevel:GetScript("OnMouseUp")(bankLevel, "LeftButton")
+check(kept.listSort == "count", "its head sorts as the bags' does (one choice for both)")
+kept.listSort, kept.listDown = nil, nil
+bankMenu:GenerateMenu()
+Choose(bankMenu._items, "Grid")
+check(not Bank.columns:IsShown() and Bank.cells:Shown(6, 1), "back to the grid: no head")
+-- A tab's settings: its tooltip says what it takes; a right click its name and what it takes, by the game's call.
+row = BankRow("Ores")
+check(row.icon._texture == "tab-icon", "a tab by its own icon")
+row:GetScript("OnEnter")(row)
+check(GameTooltip._text == "Ores", "a tab's tooltip")
+row:GetScript("OnLeave")(row)
+row:GetScript("OnClick")(row, "RightButton")
+local tabMenu = W.menus[#W.menus]
+check(tabMenu[1].title == "Ores" and Line(tabMenu, "Rename") and Line(tabMenu, "Equipment") and Line(tabMenu, "Ignore in Clean Up"),
+    "a right click on a tab: its settings")
+check(not Line(tabMenu, "Reagents").checked(Line(tabMenu, "Reagents").data), "nothing assigned at first")
+Choose(tabMenu, "Reagents")
+check(calls.tabSettings and calls.tabSettings[1] == 0 and calls.tabSettings[2] == 6 and calls.tabSettings[3] == "Ores"
+    and calls.tabSettings[4] == "tab-icon" and calls.tabSettings[5] == 128, "a kind of item assigned: the game's call, name and icon kept")
+W.Fire("BANK_TAB_SETTINGS_UPDATED", 0)
+W.Wait(0)
+row = BankRow("Ores")
+check(Line(tabMenu, "Reagents").checked(Line(tabMenu, "Reagents").data), "now ticked")
+Choose(tabMenu, "Ignore in Clean Up")
+check(calls.tabSettings[5] == 129, "left out of the clean-up as well")
+Choose(tabMenu, "Reagents")
+check(calls.tabSettings[5] == 1, "the kind taken back")
+Choose(tabMenu, "Rename")
+popup = W.popups[#W.popups]
+check(popup.which == "GENERIC_INPUT_BOX" and popup.box.text == "Ores", "renamed in the game's dialog")
+popup.data.callback("  Metals and more ore  ")
+check(calls.tabSettings[3] == "Metals and more", "its new name, at most as long as the game's box takes")
+W.Fire("BANK_TAB_SETTINGS_UPDATED", 0)
+W.Wait(0)
+check(BankRow("Metals and more"), "the tab by its new name")
+tabs[0][1].name, tabs[0][1].depositFlags = "Ores", 0
+W.Fire("BANK_TAB_SETTINGS_UPDATED", 0)
+W.Wait(0)
+-- Buying a tab: only the game's own button, laid over our row.
+local buyRow = BankRow("Buy Tab")
+local buyer
+for _, widget in ipairs(W.frames) do
+    if widget._attributes and widget._attributes.overrideBankType == 0 then buyer = widget end
+end
+check(buyRow and buyer and buyer:IsShown() and buyer._points[1][2] == buyRow, "Buy Tab: the game's button over our row")
+buyer:GetScript("OnEnter")(buyer)
+local costLine = false
+for _, line in ipairs(GameTooltip._lines or {}) do costLine = costLine or line == "Cost: 50000c" end
+check(buyRow.hover:IsShown() and GameTooltip._text == "Buy Tab" and costLine, "its tooltip: what it costs")
+buyer:GetScript("OnLeave")(buyer)
+buyer:GetScript("OnClick")(buyer)
+check(calls.purchase == 0 and not calls.bought, "a click is the game's own: our code buys nothing")
 local bankClean
 for _, widget in ipairs(W.frames) do
     if widget._parent and widget._parent._parent == bankPanel.body and widget._scripts.OnClick and widget._kind == "Button"

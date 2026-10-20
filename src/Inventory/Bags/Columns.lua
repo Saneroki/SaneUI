@@ -18,7 +18,10 @@ local _, ns = ...
 --  first), a second click the other way; a column dragged sideways moves
 --  among the others; the edge at a column's right makes it wider or
 --  narrower; a right click chooses the columns shown, moves one, makes the
---  icons round, or puts it all back as it was. Kept in store.bags:
+--  icons round, or puts it all back as it was. Each window with a list has a
+--  head of its own (Columns.Build: the bags', the bank's); what they arrange
+--  is one, the bags', and a change draws every window with a head anew.
+--  Kept in store.bags:
 --      columns { key, ... }   shown, in order (icon and name first at first)
 --      widths  { [key] = width }
 --      listSort, listDown     the column the list is sorted by, which way
@@ -84,6 +87,11 @@ end
 
 function Columns.Shown()
     return kept.columns or Columns.FIRST
+end
+
+-- Whether the list's icons are round.
+function Columns.Rounded()
+    return kept.round == true
 end
 
 -------------------------------------------------------------------------------
@@ -181,15 +189,18 @@ function Columns.Sort(entries)
 end
 
 -------------------------------------------------------------------------------
---  The head
+--  The heads
 -------------------------------------------------------------------------------
-local head, cells, grips -- the head over the list, its cells and grips ([key] = frame)
-local width = 0
-local dragging           -- { key, x } while a column is held
+-- A head: the frame over a window's list; its cells and grips ([key] = frame), its width, the column held
+-- (dragging: { key, x, moved, size, width }), its window's redraw.
+local heads = {}
+local Head = {}
 
 local function Changed()
-    Columns.Refresh(width)
-    ns.Bags.Redraw()
+    for _, head in ipairs(heads) do
+        head:Refresh()
+        head.redraw()
+    end
 end
 
 -- A click on a column: sorted by it, or the other way.
@@ -216,15 +227,17 @@ local function Move(key, step)
 end
 
 -- A held column moved to where the cursor is: past the middle of the next one, it takes that one's place.
-local function Drag()
+local function Drag(head)
+    local dragging = head.dragging
     if not dragging then return end
     local x = GetCursorPosition() / head:GetEffectiveScale()
     if not dragging.moved and math.abs(x - dragging.x) < Columns.DRAG then return end
     dragging.moved = true
     local left = head:GetLeft() or 0
     local list = kept.columns
+    local spots = Columns.Place(head.width)
     for index, key in ipairs(list) do
-        local spot = placed[key]
+        local spot = spots[key]
         if key ~= dragging.key and spot and math.abs(x - left - (spot.x + spot.width / 2)) < spot.width / 2 then
             for at, other in ipairs(list) do
                 if other == dragging.key then
@@ -241,20 +254,23 @@ local Dragged = ns.Guard(Drag)
 
 local function CellDown(cell, mouse)
     if mouse ~= "LeftButton" then return end
-    dragging = { key = cell.key, x = GetCursorPosition() / head:GetEffectiveScale() }
+    local head = cell.head
+    head.dragging = { key = cell.key, x = GetCursorPosition() / head:GetEffectiveScale() }
     head:SetScript("OnUpdate", Dragged)
 end
 
 local function CellUp(cell, mouse)
     if mouse == "RightButton" then return Columns.Menu(cell) end
-    local held = dragging
-    dragging = nil
+    local head = cell.head
+    local held = head.dragging
+    head.dragging = nil
     head:SetScript("OnUpdate", nil)
     if held and not held.moved then SortBy(cell.key) end
 end
 
 -- A column's right edge held: as wide as the cursor makes it.
-local function Size()
+local function Size(head)
+    local dragging = head.dragging
     if not dragging or not dragging.size then return end
     local x = GetCursorPosition() / head:GetEffectiveScale()
     local key = dragging.key
@@ -266,20 +282,22 @@ local Sized = ns.Guard(Size)
 
 local function GripDown(grip, mouse)
     if mouse ~= "LeftButton" then return end
-    local key = grip.key
-    dragging = { key = key, size = true, x = GetCursorPosition() / head:GetEffectiveScale(),
-                 width = kept.widths[key] or Columns.DEF[key].width }
+    local key, head = grip.key, grip.head
+    head.dragging = { key = key, size = true, x = GetCursorPosition() / head:GetEffectiveScale(),
+                      width = kept.widths[key] or Columns.DEF[key].width }
     head:SetScript("OnUpdate", Sized)
 end
 
-local function GripUp()
-    dragging = nil
+local function GripUp(grip)
+    local head = grip.head
+    head.dragging = nil
     head:SetScript("OnUpdate", nil)
 end
 
-local function MakeCell(key)
+local function MakeCell(head, key)
+    local cells, grips = head.cells, head.grips
     local cell = CreateFrame("Button", nil, head)
-    cell.key = key
+    cell.key, cell.head = key, head
     cell:SetHeight(Columns.HEAD)
     cell:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     cell.text = cell:CreateFontString(nil, "ARTWORK")
@@ -292,28 +310,28 @@ local function MakeCell(key)
     cells[key] = cell
     if not Columns.DEF[key].flex and key ~= "icon" then
         local grip = CreateFrame("Frame", nil, head)
-        grip.key = key
+        grip.key, grip.head = key, head
         grip:SetSize(Columns.GRIP, Columns.HEAD)
         grip:EnableMouse(true)
         grip:SetScript("OnMouseDown", function(self, mouse) ns.Safe("bags", GripDown, self, mouse) end)
-        grip:SetScript("OnMouseUp", function() ns.Safe("bags", GripUp) end)
+        grip:SetScript("OnMouseUp", function(self) ns.Safe("bags", GripUp, self) end)
         grips[key] = grip
     end
     return cell
 end
 
--- The head as the columns stand in a line so wide.
-function Columns.Refresh(newWidth)
-    if not head then return end
-    width = newWidth or width
-    Columns.Place(width)
+-- The head as the columns stand in a line so wide (nil: as wide as before).
+function Head:Refresh(newWidth)
+    self.width = newWidth or self.width
+    Columns.Place(self.width)
+    local cells, grips = self.cells, self.grips
     for _, cell in pairs(cells) do cell:Hide() end
     for _, grip in pairs(grips) do grip:Hide() end
     for _, key in ipairs(Columns.Shown()) do
-        local cell = cells[key] or MakeCell(key)
+        local cell = cells[key] or MakeCell(self, key)
         local spot = placed[key]
         cell:ClearAllPoints()
-        cell:SetPoint("LEFT", head, "LEFT", spot.x, 0)
+        cell:SetPoint("LEFT", self, "LEFT", spot.x, 0)
         cell:SetWidth(spot.width)
         local word = Columns.DEF[key].word
         if kept.listSort == key then word = word .. (kept.listDown and " v" or " ^") end
@@ -323,7 +341,7 @@ function Columns.Refresh(newWidth)
         local grip = grips[key]
         if grip then
             grip:ClearAllPoints()
-            grip:SetPoint("LEFT", head, "LEFT", spot.x + spot.width + (Columns.GAP - Columns.GRIP) / 2, 0)
+            grip:SetPoint("LEFT", self, "LEFT", spot.x + spot.width + (Columns.GAP - Columns.GRIP) / 2, 0)
             grip:Show()
         end
     end
@@ -386,20 +404,24 @@ local Menu = ns.Guard(Fill)
 function Columns.Menu(cell)
     if not rawget(_G, "MenuUtil") then return end
     about = cell and cell.key
-    MenuUtil.CreateContextMenu(cell or head, Menu)
+    MenuUtil.CreateContextMenu(cell, Menu)
 end
 
--- The head in the body, its place set by the window (Bags.lua).
-function Columns.Build(parent)
-    head = CreateFrame("Frame", nil, parent)
+-- A window's head in its body, its place set by the window (Bags.lua, Bank.lua); redraw: the window's, after a
+-- change of the columns. The bags' is Columns.head.
+function Columns.Build(parent, redraw)
+    local head = CreateFrame("Frame", nil, parent)
     head:SetHeight(Columns.HEAD)
-    cells, grips = {}, {}
+    head.cells, head.grips, head.width, head.redraw = {}, {}, 0, redraw
+    for name, fn in pairs(Head) do head[name] = fn end
     head:Hide()
-    Columns.head = head
+    heads[#heads + 1] = head
+    Columns.head = Columns.head or head
     return head
 end
 
--- For the tests: a column's cell on the head.
-function Columns.Cell(key)
-    return cells and cells[key]
+-- For the tests: a column's cell on a head (nil: the bags').
+function Columns.Cell(key, head)
+    head = head or Columns.head
+    return head and head.cells[key]
 end

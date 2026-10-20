@@ -113,9 +113,15 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     stays as it is.
 - **Your bank** (the window *Bank*): there while you are at a banker, in the bags' look: a sidebar with *All
   Bank Tabs* (each tab under its head, every slot), *One Bank* (the bank's slots together) and each tab by its
-  name with how many of its slots are taken; on the bar *Deposit All Reagents*, the game's *Clean Up Bank* and the
-  dropdown *View* (*Grid* or *Compact*, *Group by Category* to see the bank's items by the bags' categories, *Sort
-  By*). The items are the game's own: a right click puts one into your bags. Alt and a right click opens an item's
+  name and icon with how many of its slots are taken (its tooltip says what it takes); on the bar *Deposit All
+  Reagents*, the game's *Clean Up Bank* and the dropdown *View* (*Grid*, *List* or *Compact*, *Group by Category* to
+  see the bank's items by the bags' categories, *Sort By*). The list has the bags' columns, with a head of its own
+  (sorting, moving or sizing a column there does it for the bags too). A right click on a tab: *Rename* (at most 16
+  letters, as the game's), *Assign To* (*Equipment*, *Consumables*, *Profession Goods*, *Reagents*, *Junk*: what the
+  game puts into that tab) and *Ignore in Clean Up*, set by the game itself. Where the game sells another tab, *Buy
+  Tab* follows that bank's tabs (its cost in the tooltip, red when you cannot pay it): a click on it is the game's
+  own button for buying a tab, which asks first. The items are the game's own: a right click puts one into your
+  bags. Alt and a right click opens an item's
   menu, a middle click pins it, Shift and a click splits a stack (with *Stack Splitter Everywhere*). Your gold at
   the foot. Away from the banker the window is gone and the others share its room.
 - **Your alts** (the window *Alts*): every character of the account down its left, you
@@ -390,7 +396,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     sell), the ones shown in order (`columns`), widths (`widths`), the sort (`listSort`, `listDown`), round icons
     (`round`), all kept in `store.bags`. `Columns.Place` gives each its place in a line (the name the room left,
     the others narrower together where the name would keep less than `Columns.NAME_LEAST`), `Columns.Value` what
-    it shows, `Columns.Sort` a block's entries by it. The head (`Columns.Build`, `Refresh`): a click sorts, a drag
+    it shows, `Columns.Sort` a block's entries by it. A head per window (`Columns.Build(parent, redraw)`: the bags'
+    is `Columns.head`, the bank has one), all arranging the bags' columns; a change refreshes every head and draws
+    every window anew; round icons `Columns.Rounded`. The head (`head:Refresh`): a click sorts, a drag
     past `Columns.DRAG` moves the column where its neighbour's middle is crossed, a grip at its right edge sizes it
     (at least `Columns.LEAST`), a right click its menu (the game's). Folded blocks are kept in `folded`.
   - **The item buttons** (`Bags/Cells.lua`): a pool per window (`Cells.New(parent, owner)`; the bags' is `Cells.bags`,
@@ -441,8 +449,24 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     by `Contents.BagWord`, its slots taken), the views (`Views.Build` *each*, *one*, a tab's own section; with
     `group` the bags' *all* without Pinned, Recent and "+"), a canvas and a pool of its own, the bar (the count, the
     reagents' deposit: `Foot.Deposits`, `C_Bank.AutoDepositItemsIntoBank`; the clean-up of the bank shown:
-    `C_Container.SortBank`; the dropdown *View*), the gold at its foot. Kept in `store.bank`: `look`, `order`,
-    `group`, `folded`. Listens while shown (bags, bank slots and tabs, locks, cooldowns, money).
+    `C_Container.SortBank`; the dropdown *View*: grid, list, compact), the gold at its foot. Kept in `store.bank`:
+    `look`, `order`, `group`, `folded` (the list's columns are the bags'). Listens while shown (bags, bank slots and
+    tabs, a tab's settings, locks, cooldowns, money).
+    - **The list** (`Place`): a column head of its own (`Columns.Build`) over the scroll area while the display is
+      the list; the canvas draws the bags' columns.
+    - **A tab's settings** (the sidebar's `menu` and `tip`): a tab's row by its icon (`C_Bank.FetchPurchasedBankTabData`,
+      `Bank.TabData`), its tooltip what it takes (`Bank.TAKES`: the game's flags `Enum.BagSlotFlags` and words
+      `BAG_FILTER_*`, `Bank.Takes`). Its right click, where the client has `C_Bank.UpdateBankTabSettings`, the game's
+      menu: *Rename* (`Core.AskText`, `Bank.LETTERS` 16 as the game's box), *Assign To* the five kinds and *Ignore in
+      Clean Up* (`DisableAutoSort`), each a flag set or cleared in plain numbers (`Bank.Has`, `With`), the name, the
+      icon and the other flags as the tab has them; drawn anew at `BANK_TAB_SETTINGS_UPDATED`.
+    - **Buying a tab**: where `C_Bank.CanPurchaseBankTab` (and not `HasMaxBankTabs`) a row *Buy Tab* after that
+      bank's tabs (the character's even without a tab yet); its tooltip the cost
+      (`C_Bank.FetchNextPurchasableBankTabData`). Over it, unseen, lies the game's own button made for addons
+      (`BankPanelPurchaseButtonScriptTemplate`, one per bank, made once, `overrideBankType` set to the bank), so its
+      click is the game's: the game's question `CONFIRM_BUY_BANK_TAB`, then its purchase. Our code never buys and
+      never touches that button's click; only its `OnEnter`/`OnLeave` light our row. Without that template there is
+      no row.
   - **The window** (`Bags/Bags.lua`): the bar (`Bags.BAR`), the strip of the bags (kept: `strip`), the sidebar,
     the scroll area, the foot; the heads (a part's, a block's, a group member's) taking items and opening menus,
     the compact display's labels, the list's lines; the dropdown *View* (`WowStyle1DropdownTemplate`) with the
