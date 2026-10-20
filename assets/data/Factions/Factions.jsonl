@@ -1,0 +1,74 @@
+{"key":21,"since":70245,"src":["game"],"name":"Booty Bay","description":"This booming coastal city is run by Baron Revilgaz of the Blackwater Raiders.  Mortal enemies of the Bloodsail Buccaneers and part of the Steamwheedle Cartel.","parent":169}
+{"key":46,"since":70245,"src":["game"],"name":"Blacksmithing - Armorsmithing"}
+{"key":47,"since":70245,"src":["game"],"name":"Ironforge","description":"This Alliance capital is the pride of the Dun Morogh dwarves.  Home to King Magni.","parent":469}
+{"key":54,"since":70245,"src":["game"],"name":"Gnomeregan Exiles","description":"The former denizens of Gnomeregan, now living in exile in Ironforge and in league with the Alliance.","parent":469}
+{"key":59,"since":70245,"src":["game"],"name":"Thorium Brotherhood","description":"The dwarves of the Thorium Brotherhood epitomize excellence in craftsmanship and are bent on unlocking the secrets of Blackrock Mountain."}
+{"key":67,"since":70245,"src":["game"],"name":"Horde"}
+{"key":68,"since":70245,"src":["game"],"name":"Undercity","description":"Led by Sylvanas Windrunner, the Forsaken have joined a tenuous alliance with the Horde and established this capital in the vast depths under the Ruins of Lordaeron.","parent":67}
+{"key":69,"since":70245,"src":["game"],"name":"Darnassus","description":"The Alliance capital is populated by Night Elves and is located in the island of Teldrassil.  Ruled by the Priestess of the Moon, Tyrande Whisperwind.","parent":469}
+{"key":70,"since":70245,"src":["game"],"name":"Syndicate","description":"A primarily human criminal organization that operates mostly out of the Alterac Mountains and Hillsbrad Foothills."}
+{"key":72,"since":70245,"src":["game"],"name":"Stormwind","description":"One of the last bastions of human power, this Alliance capital is ruled by the child king, Anduin Wrynn.","parent":469}
+{"key":76,"since":70245,"src":["game"],"name":"Orgrimmar","description":"Founded by Thrall, this Horde capital city is home to many of the proud orc clans of Durotar.","parent":67}
+{"key":81,"since":70245,"src":["game"],"name":"Thunder Bluff","description":"Cairne Bloodhoof leads his people, the Proud Tauren, from this mighty Horde capital.","parent":67}
+{"key":83,"since":70245,"src":["game"],"name":"Leatherworking - Elemental"}
+{"key":86,"since":70245,"src":["game"],"name":"Leatherworking - Dragonscale"}
+{"key":87,"since":70245,"src":["game"],"name":"Bloodsail Buccaneers","description":"These bloodthirsty corsairs are the bane of many a merchant in the high seas.  Sworn enemies of Booty Bay."}
+{"key":92,"since":70245,"src":["game"],"name":"Gelkis Clan Centaur","description":"These centaur have made their home in the southern region of Desolace.  Mortal enemies of the Magram Centaur."}
+{"key":93,"since":70245,"src":["game"],"name":"Magram Clan Centaur","description":"These centaur have made their home in the eastern region of Desolace.  Mortal enemies of the Gelkis Centaur."}
+{"key":169,"since":70245,"src":["game"],"name":"Steamwheedle Cartel"}
+{"key":270,"since":70245,"src":["game"],"name":"Zandalar Tribe","description":"These trolls have come to Yojamba Isle in an effort to recruit help against the resurrected Blood God and his Atal'ai Priests in Zul'Gurub."}
+{"key":289,"since":70245,"src":["game"],"name":"Blacksmithing - Weaponsmithing"}
+{"key":349,"since":70245,"src":["game"],"name":"Ravenholdt","description":"This guild of thieves and assassins welcomes only those of extraordinary prowess into its fold.  Sworn rivals of the Syndicate."}
+{"key":369,"since":70245,"src":["game"],"name":"Gadgetzan","description":"Capital of the Steamwheedle Cartel and home to goblinhood's finest engineers, alchemists and merchants.","parent":169}
+{"key":469,"since":70245,"src":["game"],"name":"Alliance"}
+{"key":470,"since":70245,"src":["game"],"name":"Ratchet","description":"Part of the Steamwheedle Cartel, this goblin city provides a neutral haven for those that wish to trade goods and services in the Barrens.","parent":169}
+{"key":471,"since":70245,"src":["game"],"name":"Wildhammer Clan","description":"Though not a part of the Alliance, the dwarves of Aerie Peak have opened their doors to it and hold the Horde as enemies."}
+{"key":509,"since":70245,"src":["game"],"name":"The League of Arathor","description":"The League of Arathor seeks to reclaim lost land of Arathi Basin for their benefactors in Stormwind.","parent":891}
+{"key":510,"since":70245,"src":["game"],"name":"The Defilers","description":"The Defilers seek to claim Arathi Basin's valuable resources for the Horde.","parent":892}
+{"key":529,"since":70245,"src":["game"],"name":"Argent Dawn","description":"An organization focused on protecting Azeroth from the threat of the Scourge.  Strongholds of the Argent Dawn can be found in the Eastern and Western Plaguelands."}
+{"key":530,"since":70245,"src":["game"],"name":"Darkspear Trolls","description":"This tribe of exiled trolls has joined forces with Thrall and the Horde.  They now call Durotar their home, which they share with their orc allies.","parent":67}
+{"key":549,"since":70245,"src":["game"],"name":"Leatherworking - Tribal"}
+{"key":550,"since":70245,"src":["game"],"name":"Engineering - Goblin"}
+{"key":551,"since":70245,"src":["game"],"name":"Engineering - Gnome"}
+{"key":569,"since":70245,"src":["game"],"name":"Blacksmithing - Hammersmithing"}
+{"key":570,"since":70245,"src":["game"],"name":"Blacksmithing - Axesmithing"}
+{"key":571,"since":70245,"src":["game"],"name":"Blacksmithing - Swordsmithing"}
+{"key":574,"since":70245,"src":["game"],"name":"Caer Darrow"}
+{"key":576,"since":70245,"src":["game"],"name":"Timbermaw Hold","description":"As one of the last uncorrupted furbolg tribes, the Timbermaw seek to preserve their spiritual ways and end the suffering of their brethren."}
+{"key":577,"since":70245,"src":["game"],"name":"Everlook","description":"This trading post is run by the goblins of the Steamwheedle Cartel and it sits in the crossroads of Winterspring's main trade routes.","parent":169}
+{"key":589,"since":70245,"src":["game"],"name":"Wintersaber Trainers","description":"This small group of reclusive night elves raises and trains wintersabers in the Winterspring area."}
+{"key":609,"since":70245,"src":["game"],"name":"Cenarion Circle","description":"The druids of Cenarion Circle are guardians of nature and make their home in tranquil Moonglade."}
+{"key":629,"since":70245,"src":["game"],"name":"Shatterspear Trolls"}
+{"key":630,"since":70245,"src":["game"],"name":"Ravasaur Trainers","description":"The ravasaurs of Un'Goro Crater are incredibly deadly, but a few individuals have learned how to tame them."}
+{"key":709,"since":70245,"src":["game"],"name":"Battleground Neutral"}
+{"key":729,"since":70245,"src":["game"],"name":"Frostwolf Clan","description":"The Frostwolf Clan seeks to drive out the dwarves of the Stormpike Expedition from Alterac Valley.","parent":892}
+{"key":730,"since":70245,"src":["game"],"name":"Stormpike Guard","description":"The Stormpike Dwarves have set up residence in Alterac Valley, where they're locked in battle with the Frostwolf Orcs.","parent":891}
+{"key":749,"since":70245,"src":["game"],"name":"Hydraxian Waterlords","description":"These elementals have made their home on the islands east of Azshara.  Sworn enemies of the armies of Ragnaros."}
+{"key":789,"since":70245,"src":["game"],"name":"Moro'gai"}
+{"key":809,"since":70245,"src":["game"],"name":"Shen'dralar","description":"A remnant of the once powerful elves living in Dire Maul, yet still wise and knowledgeable about great secrets."}
+{"key":889,"since":70245,"src":["game"],"name":"Warsong Outriders","description":"Fierce orcs of the Warsong Clan, locked in battle against the Silverwing Sentinels in Warsong Gulch.","parent":892}
+{"key":890,"since":70245,"src":["game"],"name":"Silverwing Sentinels","description":"Staunch defenders of Ashenvale, locked in battle against the Warsong Outriders in Warsong Gulch.","parent":891}
+{"key":891,"since":70245,"src":["game"],"name":"Alliance Forces"}
+{"key":892,"since":70245,"src":["game"],"name":"Horde Forces"}
+{"key":909,"since":70245,"src":["game"],"name":"Darkmoon Faire","description":"A traveling fair that showcases the weird and the extraordinary.  Often spotted in Elwynn Forest and Mulgore."}
+{"key":910,"since":70245,"src":["game"],"name":"Brood of Nozdormu","description":"The descendants of the Bronze Dragonflight are the guardians of time and care little for the mortal races."}
+{"key":2586,"since":70245,"src":["game"],"name":"Azeroth Commerce Authority","description":"Originally commissioned to facilitate trade across the Eastern Kingdoms, the ACA now maintains supply routes to Alliance forces worldwide."}
+{"key":2587,"since":70245,"src":["game"],"name":"Durotar Supply and Logistics","description":"The Horde's robust supply network fuels its rapid expansion across Kalimdor and beyond."}
+{"key":2641,"since":70245,"src":["game"],"name":"Emerald Wardens","description":"A hastily-organized group of Druids, working with both the Alliance and the Horde to stop the Nightmare Incursions."}
+{"key":2719,"since":70245,"src":["game"],"name":"Cenarion Scouts","description":"The Cenarion Scouts are young nature enthusiasts dedicated to exploring and protecting the wilds of Azeroth."}
+{"key":2740,"since":70245,"src":["game"],"name":"Kirin Tor","description":"An elite cadre of the most powerful wizards in the world and the ruling conclave of magi that leads the magical nation of Dalaran."}
+{"key":2747,"since":70245,"src":["game"],"name":"Barkskin Burrow","description":"The Barkskin are among the few furbolg tribes untouched by corruption, and dedicate themselves to safeguarding their spiritual heritage to bring harmony back to Hyjal."}
+{"key":2758,"since":70245,"src":["game"],"name":"Nightclaw Druids","description":"The secretive druids of the Shadowgale Forest. They operate independently, apart from any other faction on Zephras Isle."}
+{"key":2765,"since":70245,"src":["game"],"name":"Guardians of Hyjal","description":"Charged with the protection and preservation of Mount Hyjal, this splinter faction of the Cenarion Circle welcome any who are willing to push back the forces of evil."}
+{"key":2778,"since":70245,"src":["game"],"name":"Windshapers","description":"The Windshapers are shamanistic spiritual leaders of the Skyborne people on Zephras Isle. They honor the elements and seek to gain a better understanding of the nature of the elemental plane to protect the shen'dorei way of life within Skywall."}
+{"key":2779,"since":70245,"src":["game"],"name":"High Order","description":"The High Order are the Skyborne descendants of the Highborne magisters of Eldre'Thalas. Having spent the past 10,000 years in the realm of Skywall, members of the High Order seek to reclaim the ancient arcane knowledge of their forebears."}
+{"key":2782,"since":70245,"src":["game"],"name":"Bolder'ok Clan","description":"Exiled for betraying their false prophets, these former members of the Twilight's Hammer seek to forge their own path."}
+{"key":2787,"since":70245,"src":["game"],"name":"Earthen Ring","description":"The Earthen Ring is a loose collective of Horde-aligned shamans and druids who seek to maintain and nurture the balance of nature on Azeroth."}
+{"key":2798,"since":70245,"src":["game"],"name":"Darkspear Raiders","description":"Loyal to the troll nation, the Darkspear Raiders battle the Theramore Expeditionary Force for control of their ancestral Darkspear Islands.","parent":892}
+{"key":2799,"since":70245,"src":["game"],"name":"Theramore Expeditionary Force","description":"Loyal partisans for their city, the Theramore Expeditionary Force battles the Darkspear Raiders for control of the so-called Darkspear Islands.","parent":891}
+{"key":2800,"since":70245,"src":["game"],"name":"PvP Rank Points"}
+{"key":2801,"since":70245,"src":["game"],"name":"Neutral Both But Alliance Can Attack"}
+{"key":2802,"since":70245,"src":["game"],"name":"Legacy Track"}
+{"key":2819,"since":70245,"src":["game"],"name":"The Watchers","description":"An order of powerful jailers and marshals of night elf society. They stand vigilant to ensure that no threat can ever escape their extensive underground network of prisons."}
+{"key":2826,"since":70245,"src":["game"],"name":"Brotherhood of the Horse","description":"Outcast members of Stormwind's cavalry, these former riders started anew in the unexplored lands along the eastern coast, establishing their home, new relationships, and trade routes."}
+{"key":2827,"since":70245,"src":["game"],"name":"Powderfuse","description":"A strong arm of the Steamwheedle Cartel, this port is home to seafaring sailors and back-alley dealers spanning the eastern sea trading routes.","parent":169}

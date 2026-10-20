@@ -1,0 +1,14 @@
+set = "Encounters"
+key = "int"              # the game's encounter ID (DungeonEncounter)
+pack = "World"
+learn = true             # ENCOUNTER_START names it
+about = "The bosses of the dungeons and raids: name, the instance they are in, their order there and the difficulty."
+
+[fields]
+name       = { type = "text" }
+instance   = { type = "int", min = 0 }       # the instance's map ID (Places' instance)
+order      = { type = "int", min = 0 }       # its place in the instance's list of bosses
+difficulty = { type = "int", min = 0 }       # the game's difficulty ID; none: every one
+
+[index]
+byInstance = "instance"

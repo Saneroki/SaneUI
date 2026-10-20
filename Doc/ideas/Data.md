@@ -80,17 +80,18 @@ the rest.
 
 | Pack (addon) | Sets | Asked for by | Loads |
 | --- | --- | --- | --- |
-| `SaneUI_Data_Items` | Items (with the game's stats and effects), ItemSets, Disenchants (per row of the game's table of disenchanting: the materials, how often, how many; Saneroki, 2026-10-19) | Tooltips, Economy, later the character sheet | first item looked at |
+| `SaneUI_Data_Items` | Items (with the game's stats and effects), ItemSets, Disenchants (per row of the game's table of disenchanting: the materials, how often, how many; Saneroki, 2026-10-19), Enchantments (what an item's enchantment is called) | Tooltips, Economy, later the character sheet | first item looked at |
 | `SaneUI_Data_Quests` | Quests (name, levels, requirements, giver and taker, objectives and stages, chain, breadcrumbs, rewards; givers, takers, drops, starters and chains as indexes; *Quests*) | Tooltips, Navigation | soon after login |
-| `SaneUI_Data_World` | NPCs (stats, abilities, buffs, services: *Creatures*), CreatureSpells, Objects, Zones, Travel, Places, Drops (counts: *Drop rates and gathering*) | Tooltips, Navigation | soon after login |
+| `SaneUI_Data_World` | NPCs (stats, abilities, buffs, services: *Creatures*), CreatureSpells, Objects, Zones, Travel, Places, Drops (counts: *Drop rates and gathering*), Encounters (the instances' bosses) | Tooltips, Navigation | soon after login |
 | `SaneUI_Data_Spawns` | Spawns (what a map shows: NPCs with a service, quest givers and objectives, rares, treasures, objects, herbs and ore), QuestAreas (*Quest areas*), PatrolPaths (the NPCs' paths, Saneroki 2026-10-16) | Navigation | first map opened; with Navigation on, soon after login (the minimap shows from login), so it stays lean |
 | `SaneUI_Data_CreatureSpawns` | CreatureSpawns (every other creature's spawn points and areas; Saneroki, decision 18) | Navigation, a creature's tooltip | first asked for: a creature's spawns, its area on the map |
 | `SaneUI_Data_Routes` | Walking (the walking data for Navigation's routes, made by our tool `dev/tools/walk-data` from the game's files: 1,724 tiles, 10.7 MB, measured 2026-10-20; Saneroki 2026-10-16: route data is on demand and Core's) | Navigation | first route asked for |
 | `SaneUI_Data_Guides` | Guides (the leveling guides, Saneroki 2026-10-16: per guide its side, levels and the guide after it; per step its places, quests, NPCs, creatures, items, checks and for whom; `Doc/ideas/Navigation.md`, *Leveling guide*) | Navigation | first guide shown |
 | `SaneUI_Data_Spells` | Spells (the players' spells and abilities, every rank), Auras (buffs that are no player spell: *Creatures*), Trainers, QuestSpells, WeaponSkills, SkillLines, Professions | Abilities, Tooltips, Economy's trainer window | Abilities' login |
 | `SaneUI_Data_Talents` | Talents (the class trees), Legacy (the three Legacy trees, their challenges and reward track) | Tooltips, later a talent window | first talent looked at |
+| `SaneUI_Data_Collections` | Achievements, Mounts (the journal's mounts, by their spells), TransmogSets (Saneroki, 2026-10-20) | Tooltips, later a collections window | first asked for |
 | `SaneUI_Data_Market` | Vendors; Prices (a series) | Economy, Tooltips | auction house, vendor, first price shown |
-| `SaneUI_Data_Game` | CVarLabels, Currencies, other tables from the game's own code | Settings | options first opened |
+| `SaneUI_Data_Game` | CVarLabels, Currencies, Factions, Holidays, other tables from the game's own code | Settings | options first opened |
 | `SaneUI_Data_Characters` | No shipped data: the characters' own data (*Characters*) | Tooltips (counts on alts), Economy, later bags and a character sheet | soon after every login |
 
 - A set's name is unique across packs: a module asks for `"Items"`, never for a pack.
@@ -626,8 +627,9 @@ two differ, the difference is learned for the next release.
 - **After every patch** one crawl of each kind is enough to keep the history complete.
 - **Before our first crawl:** staged facts of older builds can fill in earlier versions (*Import*).
 - **From the client's files** (Saneroki, 2026-10-20): `dev/tools/game-data` reads a build's client tables, and
-  a beta's hotfixes, into staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy and
-  Currencies, so these sets are filled before the crawl is built. What the client works out itself (an item's
+  a beta's hotfixes, into staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy,
+  Currencies, QuestAreas (the game's own areas), Achievements, Mounts, TransmogSets, Enchantments, Holidays,
+  Factions and Encounters, so these sets are filled before the crawl is built. What the client works out itself (an item's
   stats, armour and weapon damage; texts with `$` the game fills in) is left to the crawl. What only the beta's
   server sent is live's base as a batch (decision 27), unverified there.
 

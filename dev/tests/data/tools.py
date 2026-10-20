@@ -538,11 +538,12 @@ with tempfile.TemporaryDirectory(prefix="saneui-staging-") as folder:
     real = loaded(masters.MASTER)
     check("the real master fits", real.errors, [])
     # Every set of the plan (Doc/ideas/Data.md, *Sets by concern*), in its pack
-    plan = {"Items": ["Items", "ItemSets", "Disenchants"], "Quests": ["Quests"],
-            "World": ["NPCs", "CreatureSpells", "Objects", "Zones", "Travel", "Places", "Drops", "Tiles", "Overlays"],
+    plan = {"Items": ["Items", "ItemSets", "Disenchants", "Enchantments"], "Quests": ["Quests"],
+            "World": ["NPCs", "CreatureSpells", "Objects", "Zones", "Travel", "Places", "Drops", "Tiles", "Overlays", "Encounters"],
             "Spawns": ["Spawns", "QuestAreas", "PatrolPaths"], "CreatureSpawns": ["CreatureSpawns"], "Routes": ["Walking"],
             "Guides": ["Guides"], "Spells": ["Spells", "Auras", "Trainers", "QuestSpells", "WeaponSkills", "SkillLines", "Professions"],
-            "Talents": ["Talents", "Legacy"], "Market": ["Vendors"], "Game": ["CVarLabels", "Currencies"],
+            "Talents": ["Talents", "Legacy"], "Market": ["Vendors"], "Game": ["CVarLabels", "Currencies", "Factions", "Holidays"],
+            "Collections": ["Achievements", "Mounts", "TransmogSets"],
             "Characters": []}  # saved data only (Doc/ideas/Data.md, *Characters*)
     check("every set of the plan has its schema, in its pack",
           {pack: sorted(name for name, schema in real.schemas.items() if schema.pack == pack) for pack in real.packs},

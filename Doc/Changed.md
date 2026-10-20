@@ -26,6 +26,27 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory and Namepla
 - **Tests:** `dev/tests/navigation.lua`: a two-floored building at the player's place: the floor at the player's
   height, its picture's corners, the floor above after the stairs, nothing outdoors.
 
+### Data: quest areas, trainers, paths, and achievements, mounts, factions and more (Saneroki, 2026-10-20)
+- `dev/tools/game-data` reads more of the game's tables:
+  - QuestAreas: 6 areas of Forever's new quests, as the client draws them.
+  - New sets:
+    - Achievements 144 (not the statistics; one of each twin pair the client keeps per set of realms);
+    - Mounts 139 (by their spells; names stay the spells' in Spells);
+    - TransmogSets 7;
+    - Enchantments 2,132;
+    - Holidays 18 (their starts and lengths; not the weekly ones' starts);
+    - Factions 74 (those the reputation panel shows);
+    - Encounters 338 (the bosses, by instance).
+  - New pack Collections (Achievements, Mounts, TransmogSets).
+  - A toy is a field of Items (`toy`), not a set of its own.
+- Batch 8, what Forever's beta servers sent:
+  - Trainers 1,534 (one answer from every trainer only);
+  - PatrolPaths 16 (creatures with one path);
+  - 11 vendors whose list as sent holds more than batch 5's: taken, with stock limits. 44 more agree.
+- Left out: the 16 spells whose trainers disagree, and 12 whose skill is one of the professions' child tiers. Also
+  creatures with several paths (PatrolPaths holds one per creature), and vendors whose list as sent is shorter
+  (sold out, or for the other side).
+
 ### Navigation: herbs and ore found, sparkles, the finders in turn (Saneroki, 2026-10-20)
 Saneroki asked for the herbs and ore on the minimap in their own pictures, sparkles on them in the world, and Find
 Herbs and Find Minerals in turn, silently, all of it with switches in the pin filter and the settings.

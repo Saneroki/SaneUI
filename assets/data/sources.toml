@@ -53,3 +53,9 @@ game = "forever"
 seen = "forever-beta"
 build = 70450
 about = "What Forever's beta client and server held, 2026-10-18, that live's client does not hold yet: items, item sets, spells and Legacy entries the beta's server sent with its updates, read by dev/tools/game-data. Live's base until live's own client or server says it (decision 27). Unverified."
+
+[8]
+kind = "batch"
+game = "forever"
+seen = "forever-beta"
+about = "What Forever's beta servers sent (builds 70124 to 70374) about trainers, vendors and creatures' paths: each spell a trainer teaches with its level, cost and the skill it needs (one answer from every trainer only); vendors' lists where they hold every item already known and more, with each limited item's stock; the paths creatures walk, where a creature has one. Unverified."

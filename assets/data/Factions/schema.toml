@@ -1,0 +1,13 @@
+set = "Factions"
+key = "int"              # the game's faction ID
+pack = "Game"
+learn = true             # the reputation panel (C_Reputation)
+about = "The factions the reputation panel shows: their name, what they are, and the header they stand under."
+
+[fields]
+name        = { type = "text" }
+description = { type = "text" }
+parent      = { type = "ref", set = "Factions" }  # the header it stands under
+
+[index]
+byParent = "parent"

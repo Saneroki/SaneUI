@@ -1,0 +1,14 @@
+set = "Mounts"
+key = "int"              # the game's mount ID (the mount journal's)
+pack = "Collections"
+learn = true             # C_MountJournal
+about = "The mounts: the spell each is (its name, icon and description are the spell's, in Spells), how it is had, the item that teaches it."
+
+[fields]
+spell      = { type = "int" }
+sourceType = { type = "int", min = 0 }       # the game's source type (Enum.BattlePetSources)
+source     = { type = "text" }               # where it comes from, as the mount journal says
+item       = { type = "int", min = 0 }       # the item that teaches it, where one item alone does
+
+[index]
+bySpell = "spell"

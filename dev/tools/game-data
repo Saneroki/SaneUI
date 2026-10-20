@@ -33,6 +33,23 @@ Sets, and what each takes:
   legacy point a rank costs; the challenges that give legacy points (one of each: the client has most twice,
   once per set of realms); the rewards of the Legacy rank.
 - Currencies: name, description, icon, quality, caps.
+- Achievements: name, description, points, category, icon, side, the reward's line and item, the one it follows.
+  Not the game's statistics (flag 1) or its category Do Not Display; one of each (the client has many twice, once
+  per set of realms).
+- Mounts: the spell each is (its name is the spell's, in Spells), its source type and text, the item that teaches
+  it (where one item alone does). A toy is an item's field (toy), not a set: the client says nothing more of it.
+- TransmogSets: name, classes, the items whose looks make them (those Items keeps).
+- Enchantments: the name an item's tooltip shows (a plain one), the skill and level it needs.
+- Holidays: name, description, and each start the client holds (its packed time taken apart; year 31: every
+  year) with how many hours all its stages last. A start for any month or day (a weekly event) is left out: the
+  client's rule for those is not ours to guess.
+- Factions: those the reputation panel shows (a reputation index) and the headers they stand under.
+- Encounters: the bosses of the instances Forever's client has: name, instance, order, difficulty.
+- QuestAreas: the areas the client holds for quests' objectives (QuestPOIBlob with its points), for quests the
+  master has: each on its zone map as cells of a 100 x 100 grid in runs per row (a cell is in when its middle
+  is inside; an area of one or two points is the cells they lie in), its middle (the cells' mean) and size (the
+  radius of a circle as large), stage 1 (the client's areas have none), from game. Areas of one objective on one
+  map add their cells. Not the client's areas for handing a quest in (objective -1) or of index 32.
 
 A description or a bonus's text is taken only where it is plain: the client's own texts with $ in them are
 templates the game fills in, and a filled-in text of ours could be wrong.
@@ -55,9 +72,12 @@ Usage:  dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <
 """
 import csv
 import json
+import math
 import re
 import sys
 from collections import defaultdict
+from importlib.machinery import SourceFileLoader
+from importlib.util import module_from_spec, spec_from_loader
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -237,6 +257,7 @@ def items(t, spells, w):
     sparse, base = t("ItemSparse"), t("Item")
     slots = slot_names(t)
     playable = sorted(num(key) for key in t("ChrClasses"))
+    toys = {row["ItemID"] for row in t("Toy").values()}
     effects = defaultdict(list)
     item_effects = t("ItemEffect")
     for link in t("ItemXItemEffect").values():
@@ -279,6 +300,7 @@ def items(t, spells, w):
             "description": plain(row["Description_lang"]),
             "classes": allowed if len(allowed) < len(playable) else [],
             "unique": num(row["MaxCount"]) if num(row["MaxCount"]) > 0 else None,
+            "toy": True if key in toys else None,
         }
     sets = {}
     bonuses = t.by("ItemSetSpell", "ItemSetID")
@@ -527,6 +549,176 @@ def auras(t, spells, player, kept_items, w):
         })
 
 
+def map_data():
+    """dev/tools/map-data, whose Placer knows the zone maps' boxes, read without running the tool."""
+    loader = SourceFileLoader("map_data", str(ROOT / "dev" / "tools" / "map-data"))
+    module = module_from_spec(spec_from_loader("map_data", loader))
+    loader.exec_module(module)
+    return module
+
+
+def quest_keys(game):
+    """The quests the master has in a game version's files (live's, and the game version's own)."""
+    keys = set()
+    for name in ("Quests.jsonl", f"Quests.{game}.jsonl"):
+        path = ROOT / "assets" / "data" / "Quests" / name
+        if path.exists():
+            keys |= {json.loads(line)["key"] for line in open(path, encoding="utf-8")}
+    return keys
+
+
+def inside(x, y, polygon):
+    """Whether a point lies inside a polygon (even-odd rule)."""
+    found, last = False, polygon[-1]
+    for point in polygon:
+        if (point[1] > y) != (last[1] > y) and x < (last[0] - point[0]) * (y - point[1]) / (last[1] - point[1]) + point[0]:
+            found = not found
+        last = point
+    return found
+
+
+def quest_areas(t, folder, w):
+    placer = map_data().Placer(folder)
+    known = quest_keys(w.game)
+    points = t.by("QuestPOIPoint", "QuestPOIBlobID")
+    cells = defaultdict(set)
+    for key, blob in sorted(t("QuestPOIBlob").items(), key=lambda item: num(item[0])):
+        index, quest, uimap, map_id = num(blob["ObjectiveIndex"]), num(blob["QuestID"]), num(blob["UiMapID"]), num(blob["MapID"])
+        if not 0 <= index < 32:
+            w.leave("QuestAreas", key, "the place to hand the quest in" if index == -1 else f"objective index {index}")
+            continue
+        if quest not in known:
+            w.leave("QuestAreas", key, f"quest {quest} is not in the master")
+            continue
+        found = placer.regions.get((uimap, map_id))
+        corners = [row for row in sorted(points.get(key, []), key=lambda row: num(row["ID"]))]
+        if not found or not corners:
+            w.leave("QuestAreas", key, "no zone map box" if not found else "no points")
+            continue
+        region, ui = found
+        polygon = [(min(max(100 * (ui[0] + (region[4] - float(c["Y"])) / (region[4] - region[1]) * (ui[2] - ui[0])), 0), 99.999),
+                    min(max(100 * (ui[1] + (region[3] - float(c["X"])) / (region[3] - region[0]) * (ui[3] - ui[1])), 0), 99.999))
+                   for c in corners]
+        mine = cells[(quest, index + 1, uimap)]
+        if len(polygon) < 3:
+            mine |= {(int(y), int(x)) for x, y in polygon}
+        else:
+            mine |= {(row, column) for row in range(100) for column in range(100) if inside(column + 0.5, row + 0.5, polygon)}
+    for (quest, objective, uimap), found in sorted(cells.items()):
+        if not found:
+            continue
+        runs = []
+        for row, column in sorted(found):
+            if runs and runs[-1]["row"] == row and runs[-1]["last"] == column - 1:
+                runs[-1]["last"] = column
+            else:
+                runs.append({"row": row, "first": column, "last": column})
+        w.stage("QuestAreas", f"{quest}/{objective}/1/{uimap}", {
+            "quest": quest, "objective": objective, "stage": 1, "map": uimap, "runs": runs,
+            "x": round(sum(column + 0.5 for _, column in found) / len(found), 1),
+            "y": round(sum(row + 0.5 for row, _ in found) / len(found), 1),
+            "size": round(math.sqrt(len(found) / math.pi), 1), "from": "game",
+        })
+
+
+def collections(t, spells, kept_items, w):
+    """Achievements, Mounts, Toys, TransmogSets, Enchantments, Holidays, Factions, Encounters."""
+    hidden = {key for key, row in t("Achievement_Category").items() if row["Name_lang"].strip() == "Do Not Display"}
+    seen = {}
+    for key, row in sorted(t("Achievement").items(), key=lambda item: num(item[0])):
+        name = row["Title_lang"].strip()
+        if not name or test(name) or num(row["Flags"]) & 1 or row["Category"] in hidden:
+            w.leave("Achievements", key, "a statistic" if num(row["Flags"]) & 1 else "hidden or test")
+            continue
+        fields = {
+            "name": name, "description": plain(row["Description_lang"]), "points": num(row["Points"]),
+            "category": num(row["Category"]), "icon": num(row["IconFileID"]) or None,
+            "side": {0: "horde", 1: "alliance"}.get(num(row["Faction"])), "reward": plain(row["Reward_lang"]),
+            "rewardItem": num(row["RewardItemID"]) or None, "previous": num(row["Supercedes"]) or None,
+        }
+        same = json.dumps(fields, sort_keys=True)
+        if same in seen:  # the same achievement again, for another set of realms
+            w.leave("Achievements", key, f"the same as achievement {seen[same]}, for another set of realms")
+            continue
+        seen[same] = key
+        w.stage("Achievements", num(key), fields)
+    teachers = defaultdict(set)
+    item_effects = t("ItemEffect")
+    for link in t("ItemXItemEffect").values():
+        effect = item_effects.get(link["ItemEffectID"])
+        if effect and num(effect["TriggerType"]) == 6 and num(link["ItemID"]) in kept_items:
+            teachers[num(effect["SpellID"])].add(num(link["ItemID"]))
+    for key, row in sorted(t("Mount").items(), key=lambda item: num(item[0])):
+        spell = num(row["SourceSpellID"])
+        if test(row["Name_lang"]) or not spells.name(spell):
+            w.leave("Mounts", key, "test, or its spell is not in the client")
+            continue
+        teacher = teachers.get(spell, set())
+        w.stage("Mounts", num(key), {"spell": spell, "sourceType": num(row["SourceTypeEnum"]) if num(row["SourceTypeEnum"]) >= 0 else None,
+                                     "source": plain(row["SourceText_lang"]), "item": next(iter(teacher)) if len(teacher) == 1 else None})
+    playable = sorted(num(key) for key in t("ChrClasses"))
+    looks = t("ItemModifiedAppearance")
+    members = defaultdict(set)
+    for row in t("TransmogSetItem").values():
+        look = looks.get(row["ItemModifiedAppearanceID"])
+        if look and num(look["ItemID"]) in kept_items:
+            members[row["TransmogSetID"]].add(num(look["ItemID"]))
+    for key, row in sorted(t("TransmogSet").items(), key=lambda item: num(item[0])):
+        name, mask = row["Name_lang"].strip(), num(row["ClassMask"])
+        if not name or test(name) or not members.get(key):
+            w.leave("TransmogSets", key, "test, or no item kept")
+            continue
+        allowed = sorted(c for c in playable if mask >> (c - 1) & 1) if mask not in (-1, 0) else []
+        w.stage("TransmogSets", num(key), {"name": name, "classes": allowed if len(allowed) < len(playable) else [],
+                                           "items": sorted(members[key])})
+    for key, row in sorted(t("SpellItemEnchantment").items(), key=lambda item: num(item[0])):
+        name = plain(row["Name_lang"])
+        if not name or test(name):
+            w.leave("Enchantments", key, "no plain name" if not name else "test")
+            continue
+        w.stage("Enchantments", num(key), {"name": name, "skill": num(row["RequiredSkillID"]) or None,
+                                           "skillLevel": num(row["RequiredSkillRank"]) or None, "minLevel": num(row["MinLevel"]) or None})
+    names, texts = t("HolidayNames"), t("HolidayDescriptions")
+    for key, row in sorted(t("Holidays").items(), key=lambda item: num(item[0])):
+        name = names.get(row["HolidayNameID"], {}).get("Name_lang", "").strip()
+        if not name or test(name):
+            w.leave("Holidays", key, "no name")
+            continue
+        hours = sum(num(row[f"Duration[{i}]"]) for i in range(10))
+        dates = []
+        for i in range(26):
+            packed = num(row.get(f"Date[{i}]", "0") or 0)
+            if packed <= 0:
+                continue
+            # the game's packed time: minute, hour, weekday, day, month, year since 2000; all bits set: any
+            year, month, day = packed >> 24 & 0x1F, packed >> 20 & 0xF, packed >> 14 & 0x3F
+            if month == 0xF or day == 0x3F:
+                w.leave("Holidays", key, f"a start for any month or day ({packed})")
+                continue
+            dates.append({"year": 2000 + year if year != 0x1F else None, "month": month + 1, "day": day + 1,
+                          "hour": packed >> 6 & 0x1F, "minute": packed & 0x3F, "hours": hours or None})
+        w.stage("Holidays", num(key), {"name": name, "description": plain(texts.get(row["HolidayDescriptionID"], {}).get("Description_lang")),
+                                       "dates": [{part: value for part, value in date.items() if value is not None} for date in dates]})
+    factions = t("Faction")
+    shown = {key for key, row in factions.items() if num(row["ReputationIndex"]) >= 0 and row["Name_lang"].strip() and not test(row["Name_lang"])}
+    shown |= {factions[key]["ParentFactionID"] for key in shown if factions[key]["ParentFactionID"] in factions}
+    for key in sorted(shown, key=num):
+        row = factions[key]
+        if not row["Name_lang"].strip():
+            continue
+        parent = row["ParentFactionID"]
+        w.stage("Factions", num(key), {"name": row["Name_lang"].strip(), "description": plain(row["Description_lang"]),
+                                       "parent": num(parent) if parent in shown and factions[parent]["Name_lang"].strip() else None})
+    maps = t("Map")
+    for key, row in sorted(t("DungeonEncounter").items(), key=lambda item: num(item[0])):
+        name = row["Name_lang"].strip()
+        if not name or test(name) or row["MapID"] not in maps:
+            w.leave("Encounters", key, "test, or its instance is not in the client")
+            continue
+        w.stage("Encounters", num(key), {"name": name, "instance": num(row["MapID"]), "order": num(row["OrderIndex"]) if num(row["OrderIndex"]) >= 0 else None,
+                                         "difficulty": num(row["DifficultyID"]) or None})
+
+
 def currencies(t, w):
     for key, row in sorted(t("CurrencyTypes").items(), key=lambda item: num(item[0])):
         name = row["Name_lang"].strip()
@@ -576,6 +768,8 @@ def main():
     professions(t, spells, lines, kept_items, w)
     auras(t, spells, player, kept_items, w)
     currencies(t, w)
+    collections(t, spells, kept_items, w)
+    quest_areas(t, folder, w)
     STAGING.mkdir(parents=True, exist_ok=True)
     out = STAGING / f"game-{game}.jsonl"
     with open(out, "w", encoding="utf-8") as file:

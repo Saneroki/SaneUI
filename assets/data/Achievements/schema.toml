@@ -1,0 +1,19 @@
+set = "Achievements"
+key = "int"              # the game's achievement ID
+pack = "Collections"
+learn = true             # the achievement window (GetAchievementInfo)
+about = "The achievements: name, what they ask, their points, category and reward (not the game's statistics)."
+
+[fields]
+name        = { type = "text" }
+description = { type = "text" }
+points      = { type = "int", min = 0 }
+category    = { type = "int", min = 0 }      # the game's achievement category ID
+icon        = { type = "int", min = 0 }
+side        = { type = "enum", values = ["alliance", "horde"] }  # none: both
+reward      = { type = "text" }              # the reward's line, as the game words it
+rewardItem  = { type = "int", min = 0 }
+previous    = { type = "int", min = 0 }      # the achievement it follows (a series)
+
+[index]
+byCategory = "category"

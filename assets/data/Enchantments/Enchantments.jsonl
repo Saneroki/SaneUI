@@ -1,0 +1,2132 @@
+{"key":1,"since":70245,"src":["game"],"name":"Rockbiter 3"}
+{"key":2,"since":70245,"src":["game"],"name":"Frostbrand 1"}
+{"key":3,"since":70245,"src":["game"],"name":"Flametongue 3"}
+{"key":4,"since":70245,"src":["game"],"name":"Flametongue 2"}
+{"key":5,"since":70245,"src":["game"],"name":"Flametongue 1"}
+{"key":6,"since":70245,"src":["game"],"name":"Rockbiter 2"}
+{"key":7,"since":70245,"src":["game"],"name":"Deadly Poison"}
+{"key":8,"since":70245,"src":["game"],"name":"Deadly Poison II"}
+{"key":9,"since":70245,"src":["game"],"name":"Poison (15 Dmg)"}
+{"key":10,"since":70245,"src":["game"],"name":"Poison (20 Dmg)"}
+{"key":11,"since":70245,"src":["game"],"name":"Poison (25 Dmg)"}
+{"key":12,"since":70245,"src":["game"],"name":"Frostbrand 2"}
+{"key":13,"since":70245,"src":["game"],"name":"Sharpened +3"}
+{"key":14,"since":70245,"src":["game"],"name":"Sharpened +4"}
+{"key":19,"since":70245,"src":["game"],"name":"Weighted +2"}
+{"key":20,"since":70245,"src":["game"],"name":"Weighted +3"}
+{"key":21,"since":70245,"src":["game"],"name":"Weighted +4"}
+{"key":22,"since":70245,"src":["game"],"name":"Crippling Poison"}
+{"key":23,"since":70245,"src":["game"],"name":"Mind-numbing Poison II"}
+{"key":24,"since":70245,"src":["game"],"name":"Intellect +2"}
+{"key":25,"since":70245,"src":["game"],"name":"Shadow Oil"}
+{"key":26,"since":70245,"src":["game"],"name":"Frost Oil"}
+{"key":27,"since":70245,"src":["game"],"name":"Sundered"}
+{"key":28,"since":70245,"src":["game"],"name":"+4 All Resistances"}
+{"key":29,"since":70245,"src":["game"],"name":"Rockbiter 1"}
+{"key":30,"since":70245,"src":["game"],"name":"Scope (+1 Damage)"}
+{"key":31,"since":70245,"src":["game"],"name":"Beastslaying +4"}
+{"key":32,"since":70245,"src":["game"],"name":"Scope (+2 Damage)"}
+{"key":33,"since":70245,"src":["game"],"name":"Scope (+3 Damage)"}
+{"key":34,"since":70245,"src":["game"],"name":"Counterweight +3% Attack Speed"}
+{"key":35,"since":70245,"src":["game"],"name":"Mind Numbing Poison"}
+{"key":36,"since":70245,"src":["game"],"name":"Enchant: Fiery Blaze"}
+{"key":37,"since":70245,"src":["game"],"name":"Weapon Chain - Immune Disarm"}
+{"key":38,"since":70245,"src":["game"],"name":"Defense Skill +3"}
+{"key":39,"since":70245,"src":["game"],"name":"Sharpened +1"}
+{"key":40,"since":70245,"src":["game"],"name":"Sharpened +2"}
+{"key":41,"since":70245,"src":["game"],"name":"Stamina +2"}
+{"key":42,"since":70245,"src":["game"],"name":"Poison (Instant 20)"}
+{"key":43,"since":70245,"src":["game"],"name":"Iron Spike (8-12)"}
+{"key":44,"since":70245,"src":["game"],"name":"Minor Absorption"}
+{"key":63,"since":70245,"src":["game"],"name":"Lesser Absorption"}
+{"key":64,"since":70245,"src":["game"],"name":"Spirit +3"}
+{"key":65,"since":70245,"src":["game"],"name":"+2 All Resistances"}
+{"key":66,"since":70245,"src":["game"],"name":"Stamina +3"}
+{"key":67,"since":70245,"src":["game"],"name":"+1 Damage"}
+{"key":68,"since":70245,"src":["game"],"name":"+1 Strength"}
+{"key":69,"since":70245,"src":["game"],"name":"+2 Strength"}
+{"key":70,"since":70245,"src":["game"],"name":"+3 Strength"}
+{"key":71,"since":70245,"src":["game"],"name":"+1 Stamina"}
+{"key":72,"since":70245,"src":["game"],"name":"+2 Stamina"}
+{"key":73,"since":70245,"src":["game"],"name":"+3 Stamina"}
+{"key":74,"since":70245,"src":["game"],"name":"+1 Agility"}
+{"key":75,"since":70245,"src":["game"],"name":"+2 Agility"}
+{"key":76,"since":70245,"src":["game"],"name":"+3 Agility"}
+{"key":77,"since":70245,"src":["game"],"name":"+2 Damage"}
+{"key":78,"since":70245,"src":["game"],"name":"+3 Damage"}
+{"key":79,"since":70245,"src":["game"],"name":"+1 Intellect"}
+{"key":80,"since":70245,"src":["game"],"name":"+2 Intellect"}
+{"key":81,"since":70245,"src":["game"],"name":"+3 Intellect"}
+{"key":82,"since":70245,"src":["game"],"name":"+1 Spirit"}
+{"key":83,"since":70245,"src":["game"],"name":"+2 Spirit"}
+{"key":84,"since":70245,"src":["game"],"name":"+3 Spirit"}
+{"key":85,"since":70245,"src":["game"],"name":"+3 Armor"}
+{"key":86,"since":70245,"src":["game"],"name":"+8 Armor"}
+{"key":87,"since":70245,"src":["game"],"name":"+12 Armor"}
+{"key":89,"since":70245,"src":["game"],"name":"+16 Armor"}
+{"key":90,"since":70245,"src":["game"],"name":"+4 Agility"}
+{"key":91,"since":70245,"src":["game"],"name":"+5 Agility"}
+{"key":92,"since":70245,"src":["game"],"name":"+6 Agility"}
+{"key":93,"since":70245,"src":["game"],"name":"+7 Agility"}
+{"key":94,"since":70245,"src":["game"],"name":"+4 Intellect"}
+{"key":95,"since":70245,"src":["game"],"name":"+5 Intellect"}
+{"key":96,"since":70245,"src":["game"],"name":"+6 Intellect"}
+{"key":97,"since":70245,"src":["game"],"name":"+7 Intellect"}
+{"key":98,"since":70245,"src":["game"],"name":"+4 Spirit"}
+{"key":99,"since":70245,"src":["game"],"name":"+5 Spirit"}
+{"key":100,"since":70245,"src":["game"],"name":"+6 Spirit"}
+{"key":101,"since":70245,"src":["game"],"name":"+7 Spirit"}
+{"key":102,"since":70245,"src":["game"],"name":"+4 Stamina"}
+{"key":103,"since":70245,"src":["game"],"name":"+5 Stamina"}
+{"key":104,"since":70245,"src":["game"],"name":"+6 Stamina"}
+{"key":105,"since":70245,"src":["game"],"name":"+7 Stamina"}
+{"key":106,"since":70245,"src":["game"],"name":"+4 Strength"}
+{"key":107,"since":70245,"src":["game"],"name":"+5 Strength"}
+{"key":108,"since":70245,"src":["game"],"name":"+6 Strength"}
+{"key":109,"since":70245,"src":["game"],"name":"+7 Strength"}
+{"key":110,"since":70245,"src":["game"],"name":"+1 Defense"}
+{"key":111,"since":70245,"src":["game"],"name":"+1 Defense"}
+{"key":112,"since":70245,"src":["game"],"name":"+2 Defense"}
+{"key":113,"since":70245,"src":["game"],"name":"+3 Defense"}
+{"key":114,"since":70245,"src":["game"],"name":"+3 Defense"}
+{"key":115,"since":70245,"src":["game"],"name":"+4 Defense"}
+{"key":116,"since":70245,"src":["game"],"name":"+5 Defense"}
+{"key":117,"since":70245,"src":["game"],"name":"+4 Damage"}
+{"key":118,"since":70245,"src":["game"],"name":"+5 Damage"}
+{"key":119,"since":70245,"src":["game"],"name":"+6 Damage"}
+{"key":120,"since":70245,"src":["game"],"name":"+7 Damage"}
+{"key":121,"since":70245,"src":["game"],"name":"+20 Armor"}
+{"key":122,"since":70245,"src":["game"],"name":"+24 Armor"}
+{"key":123,"since":70245,"src":["game"],"name":"+28 Armor"}
+{"key":124,"since":70245,"src":["game"],"name":"Flametongue Totem 1"}
+{"key":125,"since":70245,"src":["game"],"name":"Sword Skill +1"}
+{"key":126,"since":70245,"src":["game"],"name":"Sword Skill +2"}
+{"key":127,"since":70245,"src":["game"],"name":"Sword Skill +3"}
+{"key":128,"since":70245,"src":["game"],"name":"Sword Skill +4"}
+{"key":129,"since":70245,"src":["game"],"name":"Sword Skill +5"}
+{"key":130,"since":70245,"src":["game"],"name":"Sword Skill +6"}
+{"key":131,"since":70245,"src":["game"],"name":"Sword Skill +7"}
+{"key":132,"since":70245,"src":["game"],"name":"Two-Handed Sword Skill +1"}
+{"key":133,"since":70245,"src":["game"],"name":"Two-Handed Sword Skill +2"}
+{"key":134,"since":70245,"src":["game"],"name":"Two-Handed Sword Skill +3"}
+{"key":135,"since":70245,"src":["game"],"name":"Two-Handed Sword Skill +4"}
+{"key":136,"since":70245,"src":["game"],"name":"Two-Handed Sword Skill +5"}
+{"key":137,"since":70245,"src":["game"],"name":"Two-Handed Sword Skill +6"}
+{"key":138,"since":70245,"src":["game"],"name":"Two-Handed Sword Skill +7"}
+{"key":139,"since":70245,"src":["game"],"name":"Mace Skill +1"}
+{"key":140,"since":70245,"src":["game"],"name":"Mace Skill +2"}
+{"key":141,"since":70245,"src":["game"],"name":"Mace Skill +3"}
+{"key":142,"since":70245,"src":["game"],"name":"Mace Skill +4"}
+{"key":143,"since":70245,"src":["game"],"name":"Mace Skill +5"}
+{"key":144,"since":70245,"src":["game"],"name":"Mace Skill +6"}
+{"key":145,"since":70245,"src":["game"],"name":"Mace Skill +7"}
+{"key":146,"since":70245,"src":["game"],"name":"Two-Handed Mace Skill +1"}
+{"key":147,"since":70245,"src":["game"],"name":"Two-Handed Mace Skill +2"}
+{"key":148,"since":70245,"src":["game"],"name":"Two-Handed Mace Skill +3"}
+{"key":149,"since":70245,"src":["game"],"name":"Two-Handed Mace Skill +4"}
+{"key":150,"since":70245,"src":["game"],"name":"Two-Handed Mace Skill +5"}
+{"key":151,"since":70245,"src":["game"],"name":"Two-Handed Mace Skill +6"}
+{"key":152,"since":70245,"src":["game"],"name":"Two-Handed Mace Skill +7"}
+{"key":153,"since":70245,"src":["game"],"name":"Axe Skill +1"}
+{"key":154,"since":70245,"src":["game"],"name":"Axe Skill +2"}
+{"key":155,"since":70245,"src":["game"],"name":"Axe Skill +3"}
+{"key":156,"since":70245,"src":["game"],"name":"Axe Skill +4"}
+{"key":157,"since":70245,"src":["game"],"name":"Axe Skill +5"}
+{"key":158,"since":70245,"src":["game"],"name":"Ase Skill +6"}
+{"key":159,"since":70245,"src":["game"],"name":"Axe Skill +7"}
+{"key":160,"since":70245,"src":["game"],"name":"Two-Handed Axe Skill +1"}
+{"key":161,"since":70245,"src":["game"],"name":"Two-Handed Axe Skill +2"}
+{"key":162,"since":70245,"src":["game"],"name":"Two-Handed Axe Skill +3"}
+{"key":163,"since":70245,"src":["game"],"name":"Two-Handed Axe Skill +4"}
+{"key":164,"since":70245,"src":["game"],"name":"Two-Handed Axe Skill +5"}
+{"key":165,"since":70245,"src":["game"],"name":"Two-Handed Axe Skill +6"}
+{"key":166,"since":70245,"src":["game"],"name":"Two-Handed Axe Skill +7"}
+{"key":167,"since":70245,"src":["game"],"name":"Dagger Skill +1"}
+{"key":168,"since":70245,"src":["game"],"name":"Dagger Skill +2"}
+{"key":169,"since":70245,"src":["game"],"name":"Dagger Skill +3"}
+{"key":170,"since":70245,"src":["game"],"name":"Dagger Skill +4"}
+{"key":171,"since":70245,"src":["game"],"name":"Dagger Skill +5"}
+{"key":172,"since":70245,"src":["game"],"name":"Dagger Skill +6"}
+{"key":173,"since":70245,"src":["game"],"name":"Dagger Skill +7"}
+{"key":174,"since":70245,"src":["game"],"name":"Gun Skill +1"}
+{"key":175,"since":70245,"src":["game"],"name":"Gun Skill +2"}
+{"key":176,"since":70245,"src":["game"],"name":"Gun Skill +3"}
+{"key":177,"since":70245,"src":["game"],"name":"Gun Skill +4"}
+{"key":178,"since":70245,"src":["game"],"name":"Gun Skill +5"}
+{"key":179,"since":70245,"src":["game"],"name":"Gun Skill +6"}
+{"key":180,"since":70245,"src":["game"],"name":"Gun Skill +7"}
+{"key":181,"since":70245,"src":["game"],"name":"Bow Skill +1"}
+{"key":182,"since":70245,"src":["game"],"name":"Bow Skill +2"}
+{"key":183,"since":70245,"src":["game"],"name":"Bow Skill +3"}
+{"key":184,"since":70245,"src":["game"],"name":"Bow Skill +4"}
+{"key":185,"since":70245,"src":["game"],"name":"Bow Skill +5"}
+{"key":186,"since":70245,"src":["game"],"name":"Bow Skill +6"}
+{"key":187,"since":70245,"src":["game"],"name":"Bow Skill +7"}
+{"key":188,"since":70245,"src":["game"],"name":"+2 Beast Slaying"}
+{"key":189,"since":70245,"src":["game"],"name":"+4 Beast Slaying"}
+{"key":190,"since":70245,"src":["game"],"name":"+6 Beast Slaying"}
+{"key":191,"since":70245,"src":["game"],"name":"+8 Beast Slaying"}
+{"key":192,"since":70245,"src":["game"],"name":"+10 Beast Slaying"}
+{"key":193,"since":70245,"src":["game"],"name":"+12 Beast Slaying"}
+{"key":194,"since":70245,"src":["game"],"name":"+14 Beast Slaying"}
+{"key":195,"since":70245,"src":["game"],"name":"Critical Hit +1%"}
+{"key":196,"since":70245,"src":["game"],"name":"Critical Hit +2%"}
+{"key":197,"since":70245,"src":["game"],"name":"Critical Hit +3%"}
+{"key":198,"since":70245,"src":["game"],"name":"Critical Hit +4%"}
+{"key":199,"since":70245,"src":["game"],"name":"10% On Get Hit: Shadow Bolt (10 Damage)"}
+{"key":200,"since":70245,"src":["game"],"name":"10% On Get Hit: Shadow Bolt (20 Damage)"}
+{"key":201,"since":70245,"src":["game"],"name":"10% On Get Hit: Shadow Bolt (30 Damage)"}
+{"key":202,"since":70245,"src":["game"],"name":"10% On Get Hit: Shadow Bolt (40 Damage)"}
+{"key":203,"since":70245,"src":["game"],"name":"10% On Get Hit: Shadow Bolt (50 Damage)"}
+{"key":204,"since":70245,"src":["game"],"name":"10% On Get Hit: Shadow Bolt (60 Damage)"}
+{"key":205,"since":70245,"src":["game"],"name":"10% On Get Hit: Shadow Bolt (70 Damage)"}
+{"key":206,"since":70245,"src":["game"],"name":"Increases Healing +2"}
+{"key":207,"since":70245,"src":["game"],"name":"Increases Healing +4"}
+{"key":208,"since":70245,"src":["game"],"name":"Increases Healing +7"}
+{"key":209,"since":70245,"src":["game"],"name":"Increases Healing +9"}
+{"key":210,"since":70245,"src":["game"],"name":"Increases Healing +11"}
+{"key":211,"since":70245,"src":["game"],"name":"Increases Healing +13"}
+{"key":212,"since":70245,"src":["game"],"name":"Increases Healing +15"}
+{"key":213,"since":70245,"src":["game"],"name":"Increase Fire Effects +1"}
+{"key":214,"since":70245,"src":["game"],"name":"Increases Fire Effects +3"}
+{"key":215,"since":70245,"src":["game"],"name":"Increases Fire Effects +4"}
+{"key":216,"since":70245,"src":["game"],"name":"Increases Fire Effects +6"}
+{"key":217,"since":70245,"src":["game"],"name":"Increases Fire Effects +7"}
+{"key":218,"since":70245,"src":["game"],"name":"Increases Fire Damage +9"}
+{"key":219,"since":70245,"src":["game"],"name":"Increases Fire Damage +10"}
+{"key":220,"since":70245,"src":["game"],"name":"Increases Nature Effects +1"}
+{"key":221,"since":70245,"src":["game"],"name":"Increases Nature Effects +3"}
+{"key":222,"since":70245,"src":["game"],"name":"Increases Nature Effects +4"}
+{"key":223,"since":70245,"src":["game"],"name":"Increases Nature Effects +6"}
+{"key":224,"since":70245,"src":["game"],"name":"Increases Nature Effects +7"}
+{"key":225,"since":70245,"src":["game"],"name":"Increases Nature Effects +9"}
+{"key":226,"since":70245,"src":["game"],"name":"Increases Nature Effects +10"}
+{"key":227,"since":70245,"src":["game"],"name":"Increases Frost Effects +1"}
+{"key":228,"since":70245,"src":["game"],"name":"Increases Frost Effects +3"}
+{"key":229,"since":70245,"src":["game"],"name":"Increases Frost Effects +4"}
+{"key":230,"since":70245,"src":["game"],"name":"Increases Frost Effects +6"}
+{"key":231,"since":70245,"src":["game"],"name":"Increases Frost Effects +7"}
+{"key":232,"since":70245,"src":["game"],"name":"Increases Frost Effects +9"}
+{"key":233,"since":70245,"src":["game"],"name":"Increases Frost Effects +10"}
+{"key":234,"since":70245,"src":["game"],"name":"Increases Shadow Effects +1"}
+{"key":235,"since":70245,"src":["game"],"name":"Increases Shadow Effects +3"}
+{"key":236,"since":70245,"src":["game"],"name":"Increases Shadow Effects +4"}
+{"key":237,"since":70245,"src":["game"],"name":"Increases Shadow Effects +6"}
+{"key":238,"since":70245,"src":["game"],"name":"Increases Shadow Effects +7"}
+{"key":239,"since":70245,"src":["game"],"name":"Increases Shadow Effects +9"}
+{"key":240,"since":70245,"src":["game"],"name":"Increases Shadow Effects +10"}
+{"key":241,"since":70245,"src":["game"],"name":"Weapon Damage +2"}
+{"key":242,"since":70245,"src":["game"],"name":"Stamina +3"}
+{"key":243,"since":70245,"src":["game"],"name":"Spirit +3"}
+{"key":244,"since":70245,"src":["game"],"name":"Intellect +4"}
+{"key":245,"since":70245,"src":["game"],"name":"Armor +5"}
+{"key":246,"since":70245,"src":["game"],"name":"Intellect +3"}
+{"key":247,"since":70245,"src":["game"],"name":"Agility +3"}
+{"key":248,"since":70245,"src":["game"],"name":"Strength +3"}
+{"key":249,"since":70245,"src":["game"],"name":"Beastslaying +2"}
+{"key":250,"since":70245,"src":["game"],"name":"Weapon Damage +1"}
+{"key":251,"since":70245,"src":["game"],"name":"Intellect +1"}
+{"key":252,"since":70245,"src":["game"],"name":"Spirit +6"}
+{"key":253,"since":70245,"src":["game"],"name":"Absorption (50)"}
+{"key":254,"since":70245,"src":["game"],"name":"Stamina +4"}
+{"key":255,"since":70245,"src":["game"],"name":"Spirit +3"}
+{"key":256,"since":70245,"src":["game"],"name":"+10 Fire Resistance"}
+{"key":257,"since":70245,"src":["game"],"name":"Armor +10"}
+{"key":263,"since":70245,"src":["game"],"name":"Fishing Lure +25"}
+{"key":264,"since":70245,"src":["game"],"name":"Fishing Lure +50"}
+{"key":265,"since":70245,"src":["game"],"name":"Fishing Lure +75"}
+{"key":266,"since":70245,"src":["game"],"name":"Fishing Lure +100"}
+{"key":283,"since":70245,"src":["game"],"name":"Windfury 1"}
+{"key":284,"since":70245,"src":["game"],"name":"Windfury 2"}
+{"key":285,"since":70245,"src":["game"],"name":"Flametongue Totem 2"}
+{"key":286,"since":70245,"src":["game"],"name":"+2 Weapon Fire Damage"}
+{"key":287,"since":70245,"src":["game"],"name":"+4 Weapon Fire Damage"}
+{"key":288,"since":70245,"src":["game"],"name":"+6 Weapon Fire Damage"}
+{"key":289,"since":70245,"src":["game"],"name":"+8 Weapon Fire Damage"}
+{"key":290,"since":70245,"src":["game"],"name":"+10 Weapon Fire Damage"}
+{"key":291,"since":70245,"src":["game"],"name":"+12 Weapon Fire Damage"}
+{"key":292,"since":70245,"src":["game"],"name":"+14 Weapon Fire Damage"}
+{"key":303,"since":70245,"src":["game"],"name":"Orb of Fire"}
+{"key":323,"since":70245,"src":["game"],"name":"Instant Poison"}
+{"key":324,"since":70245,"src":["game"],"name":"Instant Poison II"}
+{"key":325,"since":70245,"src":["game"],"name":"Instant Poison III"}
+{"key":343,"since":70245,"src":["game"],"name":"+8 Agility"}
+{"key":344,"since":70245,"src":["game"],"name":"+32 Armor"}
+{"key":345,"since":70245,"src":["game"],"name":"+40 Armor"}
+{"key":346,"since":70245,"src":["game"],"name":"+36 Armor"}
+{"key":347,"since":70245,"src":["game"],"name":"+44 Armor"}
+{"key":348,"since":70245,"src":["game"],"name":"+48 Armor"}
+{"key":349,"since":70245,"src":["game"],"name":"+9 Agility"}
+{"key":350,"since":70245,"src":["game"],"name":"+8 Intellect"}
+{"key":351,"since":70245,"src":["game"],"name":"+8 Spirit"}
+{"key":352,"since":70245,"src":["game"],"name":"+8 Strength"}
+{"key":353,"since":70245,"src":["game"],"name":"+8 Stamina"}
+{"key":354,"since":70245,"src":["game"],"name":"+9 Intellect"}
+{"key":355,"since":70245,"src":["game"],"name":"+9 Spirit"}
+{"key":356,"since":70245,"src":["game"],"name":"+9 Stamina"}
+{"key":357,"since":70245,"src":["game"],"name":"+9 Strength"}
+{"key":358,"since":70245,"src":["game"],"name":"+10 Agility"}
+{"key":359,"since":70245,"src":["game"],"name":"+10 Intellect"}
+{"key":360,"since":70245,"src":["game"],"name":"+10 Spirit"}
+{"key":361,"since":70245,"src":["game"],"name":"+10 Stamina"}
+{"key":362,"since":70245,"src":["game"],"name":"+10 Strength"}
+{"key":363,"since":70245,"src":["game"],"name":"+11 Agility"}
+{"key":364,"since":70245,"src":["game"],"name":"+11 Intellect"}
+{"key":365,"since":70245,"src":["game"],"name":"+11 Spirit"}
+{"key":366,"since":70245,"src":["game"],"name":"+11 Stamina"}
+{"key":367,"since":70245,"src":["game"],"name":"+11 Strength"}
+{"key":368,"since":70245,"src":["game"],"name":"+12 Agility"}
+{"key":369,"since":70245,"src":["game"],"name":"+12 Intellect"}
+{"key":370,"since":70245,"src":["game"],"name":"+12 Spirit"}
+{"key":371,"since":70245,"src":["game"],"name":"+12 Stamina"}
+{"key":372,"since":70245,"src":["game"],"name":"+12 Strength"}
+{"key":383,"since":70245,"src":["game"],"name":"+52 Armor"}
+{"key":384,"since":70245,"src":["game"],"name":"+56 Armor"}
+{"key":385,"since":70245,"src":["game"],"name":"+60 Armor"}
+{"key":386,"since":70245,"src":["game"],"name":"+16 Armor"}
+{"key":387,"since":70245,"src":["game"],"name":"+17 Armor"}
+{"key":388,"since":70245,"src":["game"],"name":"+18 Armor"}
+{"key":389,"since":70245,"src":["game"],"name":"+19 Armor"}
+{"key":403,"since":70245,"src":["game"],"name":"+13 Agility"}
+{"key":404,"since":70245,"src":["game"],"name":"+14 Agility"}
+{"key":405,"since":70245,"src":["game"],"name":"+13 Intellect"}
+{"key":406,"since":70245,"src":["game"],"name":"+14 Intellect"}
+{"key":407,"since":70245,"src":["game"],"name":"+13 Spirit"}
+{"key":408,"since":70245,"src":["game"],"name":"+14 Spirit"}
+{"key":409,"since":70245,"src":["game"],"name":"+13 Stamina"}
+{"key":410,"since":70245,"src":["game"],"name":"+13 Strength"}
+{"key":411,"since":70245,"src":["game"],"name":"+14 Stamina"}
+{"key":412,"since":70245,"src":["game"],"name":"+14 Strength"}
+{"key":423,"since":70245,"src":["game"],"name":"Increase Spell Damage +1"}
+{"key":424,"since":70245,"src":["game"],"name":"Increase Spell Damage +2"}
+{"key":425,"since":70245,"src":["game"],"name":"Increase Spell Damage +4"}
+{"key":426,"since":70245,"src":["game"],"name":"Increase Spell Damage +5"}
+{"key":427,"since":70245,"src":["game"],"name":"Increase Spell Damage +6"}
+{"key":428,"since":70245,"src":["game"],"name":"Increase Spell Damage +7"}
+{"key":429,"since":70245,"src":["game"],"name":"Increase Spell Damage +8"}
+{"key":430,"since":70245,"src":["game"],"name":"Increase Spell Damage +9"}
+{"key":431,"since":70245,"src":["game"],"name":"Increase Spell Damage +11"}
+{"key":432,"since":70245,"src":["game"],"name":"Increase Spell Damage +12"}
+{"key":433,"since":70245,"src":["game"],"name":"Increase Fire Damage +11"}
+{"key":434,"since":70245,"src":["game"],"name":"Increase Fire Damage +13"}
+{"key":435,"since":70245,"src":["game"],"name":"Increases Fire Damage +14"}
+{"key":436,"since":70245,"src":["game"],"name":"Critical Hit +5%"}
+{"key":437,"since":70245,"src":["game"],"name":"Increases Frost Effects +11"}
+{"key":438,"since":70245,"src":["game"],"name":"Increases Frost Effects +13"}
+{"key":439,"since":70245,"src":["game"],"name":"Increases Frost Effects +14"}
+{"key":440,"since":70245,"src":["game"],"name":"Increases Healing +12"}
+{"key":441,"since":70245,"src":["game"],"name":"Increases Healing +20"}
+{"key":442,"since":70245,"src":["game"],"name":"Increases Healing +22"}
+{"key":443,"since":70245,"src":["game"],"name":"Increases Nature Effects +11"}
+{"key":444,"since":70245,"src":["game"],"name":"Increases Nature Effects +13"}
+{"key":445,"since":70245,"src":["game"],"name":"Increases Nature Effects +14"}
+{"key":446,"since":70245,"src":["game"],"name":"Increases Shadow Effects +11"}
+{"key":447,"since":70245,"src":["game"],"name":"Increases Shadow Effects +13"}
+{"key":448,"since":70245,"src":["game"],"name":"Increases Shadow Effects +14"}
+{"key":463,"since":70245,"src":["game"],"name":"Mithril Spike (16-20)"}
+{"key":464,"since":70245,"src":["game"],"name":"Mithril Spurs"}
+{"key":483,"since":70245,"src":["game"],"name":"Sharpened +6"}
+{"key":484,"since":70245,"src":["game"],"name":"Weighted +6"}
+{"key":503,"since":70245,"src":["game"],"name":"Rockbiter 4"}
+{"key":504,"since":70245,"src":["game"],"name":"Rockbiter +80"}
+{"key":523,"since":70245,"src":["game"],"name":"Flametongue 4"}
+{"key":524,"since":70245,"src":["game"],"name":"Frostbrand 3"}
+{"key":525,"since":70245,"src":["game"],"name":"Windfury 3"}
+{"key":543,"since":70245,"src":["game"],"name":"Flametongue Totem 3"}
+{"key":563,"since":70245,"src":["game"],"name":"Windfury Totem 2"}
+{"key":564,"since":70245,"src":["game"],"name":"Windfury Totem 3"}
+{"key":583,"since":70245,"src":["game"],"name":"+1 Agility / +1 Spirit"}
+{"key":584,"since":70245,"src":["game"],"name":"+1 Agility / +1 Intellect"}
+{"key":585,"since":70245,"src":["game"],"name":"+1 Agility / +1 Stamina"}
+{"key":586,"since":70245,"src":["game"],"name":"+1 Agility / +1 Strength"}
+{"key":587,"since":70245,"src":["game"],"name":"+1 Intellect / +1 Spirit"}
+{"key":588,"since":70245,"src":["game"],"name":"+1 Intellect / +1 Stamina"}
+{"key":589,"since":70245,"src":["game"],"name":"+1 Intellect / +1 Strength"}
+{"key":590,"since":70245,"src":["game"],"name":"+1 Spirit / +1 Stamina"}
+{"key":591,"since":70245,"src":["game"],"name":"+1 Spirit / +1 Strength"}
+{"key":592,"since":70245,"src":["game"],"name":"+1 Stamina / +1 Strength"}
+{"key":603,"since":70245,"src":["game"],"name":"Crippling Poison II"}
+{"key":623,"since":70245,"src":["game"],"name":"Instant Poison IV"}
+{"key":624,"since":70245,"src":["game"],"name":"Instant Poison V"}
+{"key":625,"since":70245,"src":["game"],"name":"Instant Poison VI"}
+{"key":626,"since":70245,"src":["game"],"name":"Deadly Poison III"}
+{"key":627,"since":70245,"src":["game"],"name":"Deadly Poison IV"}
+{"key":643,"since":70245,"src":["game"],"name":"Mind-Numbing Poison III"}
+{"key":663,"since":70245,"src":["game"],"name":"Scope (+5 Damage)"}
+{"key":664,"since":70245,"src":["game"],"name":"Scope (+7 Damage)"}
+{"key":683,"since":70245,"src":["game"],"name":"Rockbiter 6"}
+{"key":684,"since":70245,"src":["game"],"name":"+15 Strength"}
+{"key":703,"since":70245,"src":["game"],"name":"Wound Poison"}
+{"key":704,"since":70245,"src":["game"],"name":"Wound Poison II"}
+{"key":705,"since":70245,"src":["game"],"name":"Wound Poison III"}
+{"key":706,"since":70245,"src":["game"],"name":"Wound Poison IV"}
+{"key":724,"since":70245,"src":["game"],"name":"Stamina +3"}
+{"key":743,"since":70245,"src":["game"],"name":"Stealth +2"}
+{"key":763,"since":70245,"src":["game"],"name":"Block +1%"}
+{"key":803,"since":70245,"src":["game"],"name":"Fiery Weapon"}
+{"key":804,"since":70245,"src":["game"],"name":"+10 Shadow Resistance"}
+{"key":805,"since":70245,"src":["game"],"name":"Weapon Damage +4"}
+{"key":843,"since":70245,"src":["game"],"name":"Intellect +4"}
+{"key":844,"since":70245,"src":["game"],"name":"Mining +2"}
+{"key":845,"since":70245,"src":["game"],"name":"Herbalism +2"}
+{"key":846,"since":70245,"src":["game"],"name":"Fishing +2"}
+{"key":847,"since":70245,"src":["game"],"name":"All Stats +2"}
+{"key":849,"since":70245,"src":["game"],"name":"Agility +3"}
+{"key":850,"since":70245,"src":["game"],"name":"Stamina +6"}
+{"key":851,"since":70245,"src":["game"],"name":"Spirit +5"}
+{"key":852,"since":70245,"src":["game"],"name":"Stamina +5"}
+{"key":853,"since":70245,"src":["game"],"name":"Beastslaying +6"}
+{"key":854,"since":70245,"src":["game"],"name":"Elemental Slayer +6"}
+{"key":855,"since":70245,"src":["game"],"name":"+5 Fire Resistance"}
+{"key":856,"since":70245,"src":["game"],"name":"Strength +5"}
+{"key":857,"since":70245,"src":["game"],"name":"Intellect +6"}
+{"key":863,"since":70245,"src":["game"],"name":"Blocking +2%"}
+{"key":864,"since":70245,"src":["game"],"name":"Weapon Damage +4"}
+{"key":865,"since":70245,"src":["game"],"name":"Skinning +5"}
+{"key":866,"since":70245,"src":["game"],"name":"All Stats +2"}
+{"key":883,"since":70245,"src":["game"],"name":"+15 Agility"}
+{"key":903,"since":70245,"src":["game"],"name":"+3 All Resistances"}
+{"key":904,"since":70245,"src":["game"],"name":"Agility +5"}
+{"key":905,"since":70245,"src":["game"],"name":"Intellect +5"}
+{"key":906,"since":70245,"src":["game"],"name":"Mining +5"}
+{"key":907,"since":70245,"src":["game"],"name":"Spirit +7"}
+{"key":908,"since":70245,"src":["game"],"name":"Stamina +8"}
+{"key":909,"since":70245,"src":["game"],"name":"Herbalism +5"}
+{"key":910,"since":70245,"src":["game"],"name":"Increased Stealth"}
+{"key":911,"since":70245,"src":["game"],"name":"Minor Speed Increase"}
+{"key":912,"since":70245,"src":["game"],"name":"Demonslaying"}
+{"key":913,"since":70245,"src":["game"],"name":"Intellect +8"}
+{"key":923,"since":70245,"src":["game"],"name":"Defense +7"}
+{"key":924,"since":70245,"src":["game"],"name":"Defense +3"}
+{"key":925,"since":70245,"src":["game"],"name":"Defense +5"}
+{"key":926,"since":70245,"src":["game"],"name":"+8 Frost Resistance"}
+{"key":927,"since":70245,"src":["game"],"name":"Strength +7"}
+{"key":928,"since":70245,"src":["game"],"name":"All Stats +3"}
+{"key":929,"since":70245,"src":["game"],"name":"Stamina +7"}
+{"key":930,"since":70245,"src":["game"],"name":"Minor Mount Speed Increase"}
+{"key":931,"since":70245,"src":["game"],"name":"Haste +1%"}
+{"key":943,"since":70245,"src":["game"],"name":"Weapon Damage +3"}
+{"key":963,"since":70245,"src":["game"],"name":"Weapon Damage +7"}
+{"key":983,"since":70245,"src":["game"],"name":"+16 Agility"}
+{"key":1003,"since":70245,"src":["game"],"name":"Venomhide Poison"}
+{"key":1023,"since":70245,"src":["game"],"name":"Feedback 1"}
+{"key":1043,"since":70245,"src":["game"],"name":"+16 Strength"}
+{"key":1044,"since":70245,"src":["game"],"name":"+17 Strength"}
+{"key":1045,"since":70245,"src":["game"],"name":"+18 Strength"}
+{"key":1046,"since":70245,"src":["game"],"name":"+19 Strength"}
+{"key":1047,"since":70245,"src":["game"],"name":"+20 Strength"}
+{"key":1048,"since":70245,"src":["game"],"name":"+21 Strength"}
+{"key":1049,"since":70245,"src":["game"],"name":"+22 Strength"}
+{"key":1050,"since":70245,"src":["game"],"name":"+23 Strength"}
+{"key":1051,"since":70245,"src":["game"],"name":"+24 Strength"}
+{"key":1052,"since":70245,"src":["game"],"name":"+25 Strength"}
+{"key":1053,"since":70245,"src":["game"],"name":"+26 Strength"}
+{"key":1054,"since":70245,"src":["game"],"name":"+27 Strength"}
+{"key":1055,"since":70245,"src":["game"],"name":"+28 Strength"}
+{"key":1056,"since":70245,"src":["game"],"name":"+29 Strength"}
+{"key":1057,"since":70245,"src":["game"],"name":"+30 Strength"}
+{"key":1058,"since":70245,"src":["game"],"name":"+31 Strength"}
+{"key":1059,"since":70245,"src":["game"],"name":"+32 Strength"}
+{"key":1060,"since":70245,"src":["game"],"name":"+33 Strength"}
+{"key":1061,"since":70245,"src":["game"],"name":"+34 Strength"}
+{"key":1062,"since":70245,"src":["game"],"name":"+35 Strength"}
+{"key":1063,"since":70245,"src":["game"],"name":"+36 Strength"}
+{"key":1064,"since":70245,"src":["game"],"name":"+37 Strength"}
+{"key":1065,"since":70245,"src":["game"],"name":"+38 Strength"}
+{"key":1066,"since":70245,"src":["game"],"name":"+39 Strength"}
+{"key":1067,"since":70245,"src":["game"],"name":"+40 Strength"}
+{"key":1068,"since":70245,"src":["game"],"name":"+15 Stamina"}
+{"key":1069,"since":70245,"src":["game"],"name":"+16 Stamina"}
+{"key":1070,"since":70245,"src":["game"],"name":"+17 Stamina"}
+{"key":1071,"since":70245,"src":["game"],"name":"+18 Stamina"}
+{"key":1072,"since":70245,"src":["game"],"name":"+19 Stamina"}
+{"key":1073,"since":70245,"src":["game"],"name":"+20 Stamina"}
+{"key":1074,"since":70245,"src":["game"],"name":"+21 Stamina"}
+{"key":1075,"since":70245,"src":["game"],"name":"+22 Stamina"}
+{"key":1076,"since":70245,"src":["game"],"name":"+23 Stamina"}
+{"key":1077,"since":70245,"src":["game"],"name":"+24 Stamina"}
+{"key":1078,"since":70245,"src":["game"],"name":"+25 Stamina"}
+{"key":1079,"since":70245,"src":["game"],"name":"+26 Stamina"}
+{"key":1080,"since":70245,"src":["game"],"name":"+27 Stamina"}
+{"key":1081,"since":70245,"src":["game"],"name":"+28 Stamina"}
+{"key":1082,"since":70245,"src":["game"],"name":"+29 Stamina"}
+{"key":1083,"since":70245,"src":["game"],"name":"+30 Stamina"}
+{"key":1084,"since":70245,"src":["game"],"name":"+31 Stamina"}
+{"key":1085,"since":70245,"src":["game"],"name":"+32 Stamina"}
+{"key":1086,"since":70245,"src":["game"],"name":"+33 Stamina"}
+{"key":1087,"since":70245,"src":["game"],"name":"+34 Stamina"}
+{"key":1088,"since":70245,"src":["game"],"name":"+35 Stamina"}
+{"key":1089,"since":70245,"src":["game"],"name":"+36 Stamina"}
+{"key":1090,"since":70245,"src":["game"],"name":"+37 Stamina"}
+{"key":1091,"since":70245,"src":["game"],"name":"+38 Stamina"}
+{"key":1092,"since":70245,"src":["game"],"name":"+39 Stamina"}
+{"key":1093,"since":70245,"src":["game"],"name":"+40 Stamina"}
+{"key":1094,"since":70245,"src":["game"],"name":"+17 Agility"}
+{"key":1095,"since":70245,"src":["game"],"name":"+18 Agility"}
+{"key":1096,"since":70245,"src":["game"],"name":"+19 Agility"}
+{"key":1097,"since":70245,"src":["game"],"name":"+20 Agility"}
+{"key":1098,"since":70245,"src":["game"],"name":"+21 Agility"}
+{"key":1099,"since":70245,"src":["game"],"name":"+22 Agility"}
+{"key":1100,"since":70245,"src":["game"],"name":"+23 Agility"}
+{"key":1101,"since":70245,"src":["game"],"name":"+24 Agility"}
+{"key":1102,"since":70245,"src":["game"],"name":"+25 Agility"}
+{"key":1103,"since":70245,"src":["game"],"name":"+26 Agility"}
+{"key":1104,"since":70245,"src":["game"],"name":"+27 Agility"}
+{"key":1105,"since":70245,"src":["game"],"name":"+28 Agility"}
+{"key":1106,"since":70245,"src":["game"],"name":"+29 Agility"}
+{"key":1107,"since":70245,"src":["game"],"name":"+30 Agility"}
+{"key":1108,"since":70245,"src":["game"],"name":"+31 Agility"}
+{"key":1109,"since":70245,"src":["game"],"name":"+32 Agility"}
+{"key":1110,"since":70245,"src":["game"],"name":"+33 Agility"}
+{"key":1111,"since":70245,"src":["game"],"name":"+34 Agility"}
+{"key":1112,"since":70245,"src":["game"],"name":"+35 Agility"}
+{"key":1113,"since":70245,"src":["game"],"name":"+36 Agility"}
+{"key":1114,"since":70245,"src":["game"],"name":"+37 Agility"}
+{"key":1115,"since":70245,"src":["game"],"name":"+38 Agility"}
+{"key":1116,"since":70245,"src":["game"],"name":"+39 Agility"}
+{"key":1117,"since":70245,"src":["game"],"name":"+40 Agility"}
+{"key":1118,"since":70245,"src":["game"],"name":"+15 Intellect"}
+{"key":1119,"since":70245,"src":["game"],"name":"+16 Intellect"}
+{"key":1120,"since":70245,"src":["game"],"name":"+17 Intellect"}
+{"key":1121,"since":70245,"src":["game"],"name":"+18 Intellect"}
+{"key":1122,"since":70245,"src":["game"],"name":"+19 Intellect"}
+{"key":1123,"since":70245,"src":["game"],"name":"+20 Intellect"}
+{"key":1124,"since":70245,"src":["game"],"name":"+21 Intellect"}
+{"key":1125,"since":70245,"src":["game"],"name":"+22 Intellect"}
+{"key":1126,"since":70245,"src":["game"],"name":"+23 Intellect"}
+{"key":1127,"since":70245,"src":["game"],"name":"+24 Intellect"}
+{"key":1128,"since":70245,"src":["game"],"name":"+25 Intellect"}
+{"key":1129,"since":70245,"src":["game"],"name":"+26 Intellect"}
+{"key":1130,"since":70245,"src":["game"],"name":"+27 Intellect"}
+{"key":1131,"since":70245,"src":["game"],"name":"+28 Intellect"}
+{"key":1132,"since":70245,"src":["game"],"name":"+29 Intellect"}
+{"key":1133,"since":70245,"src":["game"],"name":"+30 Intellect"}
+{"key":1134,"since":70245,"src":["game"],"name":"+31 Intellect"}
+{"key":1135,"since":70245,"src":["game"],"name":"+32 Intellect"}
+{"key":1136,"since":70245,"src":["game"],"name":"+33 Intellect"}
+{"key":1137,"since":70245,"src":["game"],"name":"+34 Intellect"}
+{"key":1138,"since":70245,"src":["game"],"name":"+35 Intellect"}
+{"key":1139,"since":70245,"src":["game"],"name":"+36 Intellect"}
+{"key":1140,"since":70245,"src":["game"],"name":"+37 Intellect"}
+{"key":1141,"since":70245,"src":["game"],"name":"+38 Intellect"}
+{"key":1142,"since":70245,"src":["game"],"name":"+39 Intellect"}
+{"key":1143,"since":70245,"src":["game"],"name":"+40 Intellect"}
+{"key":1144,"since":70245,"src":["game"],"name":"+15 Spirit"}
+{"key":1145,"since":70245,"src":["game"],"name":"+16 Spirit"}
+{"key":1146,"since":70245,"src":["game"],"name":"+17 Spirit"}
+{"key":1147,"since":70245,"src":["game"],"name":"+18 Spirit"}
+{"key":1148,"since":70245,"src":["game"],"name":"+19 Spirit"}
+{"key":1149,"since":70245,"src":["game"],"name":"+20 Spirit"}
+{"key":1150,"since":70245,"src":["game"],"name":"+21 Spirit"}
+{"key":1151,"since":70245,"src":["game"],"name":"+22 Spirit"}
+{"key":1152,"since":70245,"src":["game"],"name":"+23 Spirit"}
+{"key":1153,"since":70245,"src":["game"],"name":"+24 Spirit"}
+{"key":1154,"since":70245,"src":["game"],"name":"+25 Spirit"}
+{"key":1155,"since":70245,"src":["game"],"name":"+26 Spirit"}
+{"key":1156,"since":70245,"src":["game"],"name":"+27 Spirit"}
+{"key":1157,"since":70245,"src":["game"],"name":"+28 Spirit"}
+{"key":1158,"since":70245,"src":["game"],"name":"+29 Spirit"}
+{"key":1159,"since":70245,"src":["game"],"name":"+30 Spirit"}
+{"key":1160,"since":70245,"src":["game"],"name":"+31 Spirit"}
+{"key":1161,"since":70245,"src":["game"],"name":"+32 Spirit"}
+{"key":1162,"since":70245,"src":["game"],"name":"+33 Spirit"}
+{"key":1163,"since":70245,"src":["game"],"name":"+34 Spirit"}
+{"key":1164,"since":70245,"src":["game"],"name":"+36 Spirit"}
+{"key":1165,"since":70245,"src":["game"],"name":"+37 Spirit"}
+{"key":1166,"since":70245,"src":["game"],"name":"+38 Spirit"}
+{"key":1167,"since":70245,"src":["game"],"name":"+39 Spirit"}
+{"key":1168,"since":70245,"src":["game"],"name":"+40 Spirit"}
+{"key":1183,"since":70245,"src":["game"],"name":"+35 Spirit"}
+{"key":1203,"since":70245,"src":["game"],"name":"+41 Strength"}
+{"key":1204,"since":70245,"src":["game"],"name":"+42 Strength"}
+{"key":1205,"since":70245,"src":["game"],"name":"+43 Strength"}
+{"key":1206,"since":70245,"src":["game"],"name":"+44 Strength"}
+{"key":1207,"since":70245,"src":["game"],"name":"+45 Strength"}
+{"key":1208,"since":70245,"src":["game"],"name":"+46 Strength"}
+{"key":1209,"since":70245,"src":["game"],"name":"+41 Stamina"}
+{"key":1210,"since":70245,"src":["game"],"name":"+42 Stamina"}
+{"key":1211,"since":70245,"src":["game"],"name":"+43 Stamina"}
+{"key":1212,"since":70245,"src":["game"],"name":"+44 Stamina"}
+{"key":1213,"since":70245,"src":["game"],"name":"+45 Stamina"}
+{"key":1214,"since":70245,"src":["game"],"name":"+46 Stamina"}
+{"key":1215,"since":70245,"src":["game"],"name":"+41 Agility"}
+{"key":1216,"since":70245,"src":["game"],"name":"+42 Agility"}
+{"key":1217,"since":70245,"src":["game"],"name":"+43 Agility"}
+{"key":1218,"since":70245,"src":["game"],"name":"+44 Agility"}
+{"key":1219,"since":70245,"src":["game"],"name":"+45 Agility"}
+{"key":1220,"since":70245,"src":["game"],"name":"+46 Agility"}
+{"key":1221,"since":70245,"src":["game"],"name":"+41 Intellect"}
+{"key":1222,"since":70245,"src":["game"],"name":"+42 Intellect"}
+{"key":1223,"since":70245,"src":["game"],"name":"+43 Intellect"}
+{"key":1224,"since":70245,"src":["game"],"name":"+44 Intellect"}
+{"key":1225,"since":70245,"src":["game"],"name":"+45 Intellect"}
+{"key":1226,"since":70245,"src":["game"],"name":"+46 Intellect"}
+{"key":1227,"since":70245,"src":["game"],"name":"+41 Spirit"}
+{"key":1228,"since":70245,"src":["game"],"name":"+42 Spirit"}
+{"key":1229,"since":70245,"src":["game"],"name":"+43 Spirit"}
+{"key":1230,"since":70245,"src":["game"],"name":"+44 Spirit"}
+{"key":1231,"since":70245,"src":["game"],"name":"+45 Spirit"}
+{"key":1232,"since":70245,"src":["game"],"name":"+46 Spirit"}
+{"key":1243,"since":70245,"src":["game"],"name":"+1 Arcane Resistance"}
+{"key":1244,"since":70245,"src":["game"],"name":"+2 Arcane Resistance"}
+{"key":1245,"since":70245,"src":["game"],"name":"+3 Arcane Resistance"}
+{"key":1246,"since":70245,"src":["game"],"name":"+4 Arcane Resistance"}
+{"key":1247,"since":70245,"src":["game"],"name":"+5 Arcane Resistance"}
+{"key":1248,"since":70245,"src":["game"],"name":"+6 Arcane Resistance"}
+{"key":1249,"since":70245,"src":["game"],"name":"+7 Arcane Resistance"}
+{"key":1250,"since":70245,"src":["game"],"name":"+8 Arcane Resistance"}
+{"key":1251,"since":70245,"src":["game"],"name":"+9 Arcane Resistance"}
+{"key":1252,"since":70245,"src":["game"],"name":"+10 Arcane Resistance"}
+{"key":1253,"since":70245,"src":["game"],"name":"+11 Arcane Resistance"}
+{"key":1254,"since":70245,"src":["game"],"name":"+12 Arcane Resistance"}
+{"key":1255,"since":70245,"src":["game"],"name":"+13 Arcane Resistance"}
+{"key":1256,"since":70245,"src":["game"],"name":"+14 Arcane Resistance"}
+{"key":1257,"since":70245,"src":["game"],"name":"+15 Arcane Resistance"}
+{"key":1258,"since":70245,"src":["game"],"name":"+16 Arcane Resistance"}
+{"key":1259,"since":70245,"src":["game"],"name":"+17 Arcane Resistance"}
+{"key":1260,"since":70245,"src":["game"],"name":"+18 Arcane Resistance"}
+{"key":1261,"since":70245,"src":["game"],"name":"+19 Arcane Resistance"}
+{"key":1262,"since":70245,"src":["game"],"name":"+20 Arcane Resistance"}
+{"key":1263,"since":70245,"src":["game"],"name":"+21 Arcane Resistance"}
+{"key":1264,"since":70245,"src":["game"],"name":"+22 Arcane Resistance"}
+{"key":1265,"since":70245,"src":["game"],"name":"+23 Arcane Resistance"}
+{"key":1266,"since":70245,"src":["game"],"name":"+24 Arcane Resistance"}
+{"key":1267,"since":70245,"src":["game"],"name":"+25 Arcane Resistance"}
+{"key":1268,"since":70245,"src":["game"],"name":"+26 Arcane Resistance"}
+{"key":1269,"since":70245,"src":["game"],"name":"+27 Arcane Resistance"}
+{"key":1270,"since":70245,"src":["game"],"name":"+28 Arcane Resistance"}
+{"key":1271,"since":70245,"src":["game"],"name":"+29 Arcane Resistance"}
+{"key":1272,"since":70245,"src":["game"],"name":"+30 Arcane Resistance"}
+{"key":1273,"since":70245,"src":["game"],"name":"+31 Arcane Resistance"}
+{"key":1274,"since":70245,"src":["game"],"name":"+32 Arcane Resistance"}
+{"key":1275,"since":70245,"src":["game"],"name":"+33 Arcane Resistance"}
+{"key":1276,"since":70245,"src":["game"],"name":"+34 Arcane Resistance"}
+{"key":1277,"since":70245,"src":["game"],"name":"+35 Arcane Resistance"}
+{"key":1278,"since":70245,"src":["game"],"name":"+36 Arcane Resistance"}
+{"key":1279,"since":70245,"src":["game"],"name":"+37 Arcane Resistance"}
+{"key":1280,"since":70245,"src":["game"],"name":"+38 Arcane Resistance"}
+{"key":1281,"since":70245,"src":["game"],"name":"+39 Arcane Resistance"}
+{"key":1282,"since":70245,"src":["game"],"name":"+40 Arcane Resistance"}
+{"key":1283,"since":70245,"src":["game"],"name":"+41 Arcane Resistance"}
+{"key":1284,"since":70245,"src":["game"],"name":"+42 Arcane Resistance"}
+{"key":1285,"since":70245,"src":["game"],"name":"+43 Arcane Resistance"}
+{"key":1286,"since":70245,"src":["game"],"name":"+44 Arcane Resistance"}
+{"key":1287,"since":70245,"src":["game"],"name":"+45 Arcane Resistance"}
+{"key":1288,"since":70245,"src":["game"],"name":"+46 Arcane Resistance"}
+{"key":1289,"since":70245,"src":["game"],"name":"+1 Frost Resistance"}
+{"key":1290,"since":70245,"src":["game"],"name":"+2 Frost Resistance"}
+{"key":1291,"since":70245,"src":["game"],"name":"+3 Frost Resistance"}
+{"key":1292,"since":70245,"src":["game"],"name":"+4 Frost Resistance"}
+{"key":1293,"since":70245,"src":["game"],"name":"+5 Frost Resistance"}
+{"key":1294,"since":70245,"src":["game"],"name":"+6 Frost Resistance"}
+{"key":1295,"since":70245,"src":["game"],"name":"+7 Frost Resistance"}
+{"key":1296,"since":70245,"src":["game"],"name":"+8 Frost Resistance"}
+{"key":1297,"since":70245,"src":["game"],"name":"+9 Frost Resistance"}
+{"key":1298,"since":70245,"src":["game"],"name":"+10 Frost Resistance"}
+{"key":1299,"since":70245,"src":["game"],"name":"+11 Frost Resistance"}
+{"key":1300,"since":70245,"src":["game"],"name":"+12 Frost Resistance"}
+{"key":1301,"since":70245,"src":["game"],"name":"+13 Frost Resistance"}
+{"key":1302,"since":70245,"src":["game"],"name":"+14 Frost Resistance"}
+{"key":1303,"since":70245,"src":["game"],"name":"+15 Frost Resistance"}
+{"key":1304,"since":70245,"src":["game"],"name":"+16 Frost Resistance"}
+{"key":1305,"since":70245,"src":["game"],"name":"+17 Frost Resistance"}
+{"key":1306,"since":70245,"src":["game"],"name":"+18 Frost Resistance"}
+{"key":1307,"since":70245,"src":["game"],"name":"+19 Frost Resistance"}
+{"key":1308,"since":70245,"src":["game"],"name":"+20 Frost Resistance"}
+{"key":1309,"since":70245,"src":["game"],"name":"+21 Frost Resistance"}
+{"key":1310,"since":70245,"src":["game"],"name":"+22 Frost Resistance"}
+{"key":1311,"since":70245,"src":["game"],"name":"+23 Frost Resistance"}
+{"key":1312,"since":70245,"src":["game"],"name":"+24 Frost Resistance"}
+{"key":1313,"since":70245,"src":["game"],"name":"+25 Frost Resistance"}
+{"key":1314,"since":70245,"src":["game"],"name":"+26 Frost Resistance"}
+{"key":1315,"since":70245,"src":["game"],"name":"+27 Frost Resistance"}
+{"key":1316,"since":70245,"src":["game"],"name":"+28 Frost Resistance"}
+{"key":1317,"since":70245,"src":["game"],"name":"+29 Frost Resistance"}
+{"key":1318,"since":70245,"src":["game"],"name":"+30 Frost Resistance"}
+{"key":1319,"since":70245,"src":["game"],"name":"+31 Frost Resistance"}
+{"key":1320,"since":70245,"src":["game"],"name":"+32 Frost Resistance"}
+{"key":1321,"since":70245,"src":["game"],"name":"+33 Frost Resistance"}
+{"key":1322,"since":70245,"src":["game"],"name":"+34 Frost Resistance"}
+{"key":1323,"since":70245,"src":["game"],"name":"+35 Frost Resistance"}
+{"key":1324,"since":70245,"src":["game"],"name":"+36 Frost Resistance"}
+{"key":1325,"since":70245,"src":["game"],"name":"+37 Frost Resistance"}
+{"key":1326,"since":70245,"src":["game"],"name":"+38 Frost Resistance"}
+{"key":1327,"since":70245,"src":["game"],"name":"+39 Frost Resistance"}
+{"key":1328,"since":70245,"src":["game"],"name":"+40 Frost Resistance"}
+{"key":1329,"since":70245,"src":["game"],"name":"+41 Frost Resistance"}
+{"key":1330,"since":70245,"src":["game"],"name":"+42 Frost Resistance"}
+{"key":1331,"since":70245,"src":["game"],"name":"+43 Frost Resistance"}
+{"key":1332,"since":70245,"src":["game"],"name":"+44 Frost Resistance"}
+{"key":1333,"since":70245,"src":["game"],"name":"+45 Frost Resistance"}
+{"key":1334,"since":70245,"src":["game"],"name":"+46 Frost Resistance"}
+{"key":1335,"since":70245,"src":["game"],"name":"+1 Fire Resistance"}
+{"key":1336,"since":70245,"src":["game"],"name":"+2 Fire Resistance"}
+{"key":1337,"since":70245,"src":["game"],"name":"+3 Fire Resistance"}
+{"key":1338,"since":70245,"src":["game"],"name":"+4 Fire Resistance"}
+{"key":1339,"since":70245,"src":["game"],"name":"+5 Fire Resistance"}
+{"key":1340,"since":70245,"src":["game"],"name":"+6 Fire Resistance"}
+{"key":1341,"since":70245,"src":["game"],"name":"+7 Fire Resistance"}
+{"key":1342,"since":70245,"src":["game"],"name":"+8 Fire Resistance"}
+{"key":1343,"since":70245,"src":["game"],"name":"+9 Fire Resistance"}
+{"key":1344,"since":70245,"src":["game"],"name":"+10 Fire Resistance"}
+{"key":1345,"since":70245,"src":["game"],"name":"+11 Fire Resistance"}
+{"key":1346,"since":70245,"src":["game"],"name":"+12 Fire Resistance"}
+{"key":1347,"since":70245,"src":["game"],"name":"+13 Fire Resistance"}
+{"key":1348,"since":70245,"src":["game"],"name":"+14 Fire Resistance"}
+{"key":1349,"since":70245,"src":["game"],"name":"+15 Fire Resistance"}
+{"key":1350,"since":70245,"src":["game"],"name":"+16 Fire Resistance"}
+{"key":1351,"since":70245,"src":["game"],"name":"+17 Fire Resistance"}
+{"key":1352,"since":70245,"src":["game"],"name":"+18 Fire Resistance"}
+{"key":1353,"since":70245,"src":["game"],"name":"+19 Fire Resistance"}
+{"key":1354,"since":70245,"src":["game"],"name":"+20 Fire Resistance"}
+{"key":1355,"since":70245,"src":["game"],"name":"+21 Fire Resistance"}
+{"key":1356,"since":70245,"src":["game"],"name":"+22 Fire Resistance"}
+{"key":1357,"since":70245,"src":["game"],"name":"+23 Fire Resistance"}
+{"key":1358,"since":70245,"src":["game"],"name":"+24 Fire Resistance"}
+{"key":1359,"since":70245,"src":["game"],"name":"+25 Fire Resistance"}
+{"key":1360,"since":70245,"src":["game"],"name":"+26 Fire Resistance"}
+{"key":1361,"since":70245,"src":["game"],"name":"+27 Fire Resistance"}
+{"key":1362,"since":70245,"src":["game"],"name":"+28 Fire Resistance"}
+{"key":1363,"since":70245,"src":["game"],"name":"+29 Fire Resistance"}
+{"key":1364,"since":70245,"src":["game"],"name":"+30 Fire Resistance"}
+{"key":1365,"since":70245,"src":["game"],"name":"+31 Fire Resistance"}
+{"key":1366,"since":70245,"src":["game"],"name":"+32 Fire Resistance"}
+{"key":1367,"since":70245,"src":["game"],"name":"+33 Fire Resistance"}
+{"key":1368,"since":70245,"src":["game"],"name":"+34 Fire Resistance"}
+{"key":1369,"since":70245,"src":["game"],"name":"+35 Fire Resistance"}
+{"key":1370,"since":70245,"src":["game"],"name":"+36 Fire Resistance"}
+{"key":1371,"since":70245,"src":["game"],"name":"+37 Fire Resistance"}
+{"key":1372,"since":70245,"src":["game"],"name":"+38 Fire Resistance"}
+{"key":1373,"since":70245,"src":["game"],"name":"+39 Fire Resistance"}
+{"key":1374,"since":70245,"src":["game"],"name":"+40 Fire Resistance"}
+{"key":1375,"since":70245,"src":["game"],"name":"+41 Fire Resistance"}
+{"key":1376,"since":70245,"src":["game"],"name":"+42 Fire Resistance"}
+{"key":1377,"since":70245,"src":["game"],"name":"+43 Fire Resistance"}
+{"key":1378,"since":70245,"src":["game"],"name":"+44 Fire Resistance"}
+{"key":1379,"since":70245,"src":["game"],"name":"+45 Fire Resistance"}
+{"key":1380,"since":70245,"src":["game"],"name":"+46 Fire Resistance"}
+{"key":1381,"since":70245,"src":["game"],"name":"+1 Nature Resistance"}
+{"key":1382,"since":70245,"src":["game"],"name":"+2 Nature Resistance"}
+{"key":1383,"since":70245,"src":["game"],"name":"+3 Nature Resistance"}
+{"key":1384,"since":70245,"src":["game"],"name":"+4 Nature Resistance"}
+{"key":1385,"since":70245,"src":["game"],"name":"+5 Nature Resistance"}
+{"key":1386,"since":70245,"src":["game"],"name":"+6 Nature Resistance"}
+{"key":1387,"since":70245,"src":["game"],"name":"+7 Nature Resistance"}
+{"key":1388,"since":70245,"src":["game"],"name":"+8 Nature Resistance"}
+{"key":1389,"since":70245,"src":["game"],"name":"+9 Nature Resistance"}
+{"key":1390,"since":70245,"src":["game"],"name":"+10 Nature Resistance"}
+{"key":1391,"since":70245,"src":["game"],"name":"+11 Nature Resistance"}
+{"key":1392,"since":70245,"src":["game"],"name":"+12 Nature Resistance"}
+{"key":1393,"since":70245,"src":["game"],"name":"+13 Nature Resistance"}
+{"key":1394,"since":70245,"src":["game"],"name":"+14 Nature Resistance"}
+{"key":1395,"since":70245,"src":["game"],"name":"+15 Nature Resistance"}
+{"key":1396,"since":70245,"src":["game"],"name":"+16 Nature Resistance"}
+{"key":1397,"since":70245,"src":["game"],"name":"+17 Nature Resistance"}
+{"key":1398,"since":70245,"src":["game"],"name":"+18 Nature Resistance"}
+{"key":1399,"since":70245,"src":["game"],"name":"+19 Nature Resistance"}
+{"key":1400,"since":70245,"src":["game"],"name":"+20 Nature Resistance"}
+{"key":1401,"since":70245,"src":["game"],"name":"+21 Nature Resistance"}
+{"key":1402,"since":70245,"src":["game"],"name":"+22 Nature Resistance"}
+{"key":1403,"since":70245,"src":["game"],"name":"+23 Nature Resistance"}
+{"key":1404,"since":70245,"src":["game"],"name":"+24 Nature Resistance"}
+{"key":1405,"since":70245,"src":["game"],"name":"+25 Nature Resistance"}
+{"key":1406,"since":70245,"src":["game"],"name":"+26 Nature Resistance"}
+{"key":1407,"since":70245,"src":["game"],"name":"+27 Nature Resistance"}
+{"key":1408,"since":70245,"src":["game"],"name":"+28 Nature Resistance"}
+{"key":1409,"since":70245,"src":["game"],"name":"+29 Nature Resistance"}
+{"key":1410,"since":70245,"src":["game"],"name":"+30 Nature Resistance"}
+{"key":1411,"since":70245,"src":["game"],"name":"+31 Nature Resistance"}
+{"key":1412,"since":70245,"src":["game"],"name":"+32 Nature Resistance"}
+{"key":1413,"since":70245,"src":["game"],"name":"+33 Nature Resistance"}
+{"key":1414,"since":70245,"src":["game"],"name":"+34 Nature Resistance"}
+{"key":1415,"since":70245,"src":["game"],"name":"+35 Nature Resistance"}
+{"key":1416,"since":70245,"src":["game"],"name":"+36 Nature Resistance"}
+{"key":1417,"since":70245,"src":["game"],"name":"+37 Nature Resistance"}
+{"key":1418,"since":70245,"src":["game"],"name":"+38 Nature Resistance"}
+{"key":1419,"since":70245,"src":["game"],"name":"+39 Nature Resistance"}
+{"key":1420,"since":70245,"src":["game"],"name":"+40 Nature Resistance"}
+{"key":1421,"since":70245,"src":["game"],"name":"+41 Nature Resistance"}
+{"key":1422,"since":70245,"src":["game"],"name":"+42 Nature Resistance"}
+{"key":1423,"since":70245,"src":["game"],"name":"+43 Nature Resistance"}
+{"key":1424,"since":70245,"src":["game"],"name":"+44 Nature Resistance"}
+{"key":1425,"since":70245,"src":["game"],"name":"+45 Nature Resistance"}
+{"key":1426,"since":70245,"src":["game"],"name":"+46 Nature Resistance"}
+{"key":1427,"since":70245,"src":["game"],"name":"+1 Shadow Resistance"}
+{"key":1428,"since":70245,"src":["game"],"name":"+2 Shadow Resistance"}
+{"key":1429,"since":70245,"src":["game"],"name":"+3 Shadow Resistance"}
+{"key":1430,"since":70245,"src":["game"],"name":"+4 Shadow Resistance"}
+{"key":1431,"since":70245,"src":["game"],"name":"+5 Shadow Resistance"}
+{"key":1432,"since":70245,"src":["game"],"name":"+6 Shadow Resistance"}
+{"key":1433,"since":70245,"src":["game"],"name":"+7 Shadow Resistance"}
+{"key":1434,"since":70245,"src":["game"],"name":"+8 Shadow Resistance"}
+{"key":1435,"since":70245,"src":["game"],"name":"+9 Shadow Resistance"}
+{"key":1436,"since":70245,"src":["game"],"name":"+10 Shadow Resistance"}
+{"key":1437,"since":70245,"src":["game"],"name":"+11 Shadow Resistance"}
+{"key":1438,"since":70245,"src":["game"],"name":"+12 Shadow Resistance"}
+{"key":1439,"since":70245,"src":["game"],"name":"+13 Shadow Resistance"}
+{"key":1440,"since":70245,"src":["game"],"name":"+14 Shadow Resistance"}
+{"key":1441,"since":70245,"src":["game"],"name":"+15 Shadow Resistance"}
+{"key":1442,"since":70245,"src":["game"],"name":"+16 Shadow Resistance"}
+{"key":1443,"since":70245,"src":["game"],"name":"+17 Shadow Resistance"}
+{"key":1444,"since":70245,"src":["game"],"name":"+18 Shadow Resistance"}
+{"key":1445,"since":70245,"src":["game"],"name":"+19 Shadow Resistance"}
+{"key":1446,"since":70245,"src":["game"],"name":"+20 Shadow Resistance"}
+{"key":1447,"since":70245,"src":["game"],"name":"+21 Shadow Resistance"}
+{"key":1448,"since":70245,"src":["game"],"name":"+22 Shadow Resistance"}
+{"key":1449,"since":70245,"src":["game"],"name":"+23 Shadow Resistance"}
+{"key":1450,"since":70245,"src":["game"],"name":"+24 Shadow Resistance"}
+{"key":1451,"since":70245,"src":["game"],"name":"+25 Shadow Resistance"}
+{"key":1452,"since":70245,"src":["game"],"name":"+26 Resist Shadow"}
+{"key":1453,"since":70245,"src":["game"],"name":"+27 Shadow Resistance"}
+{"key":1454,"since":70245,"src":["game"],"name":"+28 Shadow Resistance"}
+{"key":1455,"since":70245,"src":["game"],"name":"+29 Shadow Resistance"}
+{"key":1456,"since":70245,"src":["game"],"name":"+30 Shadow Resistance"}
+{"key":1457,"since":70245,"src":["game"],"name":"+31 Shadow Resistance"}
+{"key":1458,"since":70245,"src":["game"],"name":"+32 Shadow Resistance"}
+{"key":1459,"since":70245,"src":["game"],"name":"+33 Shadow Resistance"}
+{"key":1460,"since":70245,"src":["game"],"name":"+34 Shadow Resistance"}
+{"key":1461,"since":70245,"src":["game"],"name":"+35 Shadow Resistance"}
+{"key":1462,"since":70245,"src":["game"],"name":"+36 Shadow Resistance"}
+{"key":1463,"since":70245,"src":["game"],"name":"+37 Shadow Resistance"}
+{"key":1464,"since":70245,"src":["game"],"name":"+38 Shadow Resistance"}
+{"key":1465,"since":70245,"src":["game"],"name":"+39 Shadow Resistance"}
+{"key":1466,"since":70245,"src":["game"],"name":"+40 Shadow Resistance"}
+{"key":1467,"since":70245,"src":["game"],"name":"+41 Shadow Resistance"}
+{"key":1468,"since":70245,"src":["game"],"name":"+42 Shadow Resistance"}
+{"key":1469,"since":70245,"src":["game"],"name":"+43 Shadow Resistance"}
+{"key":1470,"since":70245,"src":["game"],"name":"+44 Shadow Resistance"}
+{"key":1471,"since":70245,"src":["game"],"name":"+45 Shadow Resistance"}
+{"key":1472,"since":70245,"src":["game"],"name":"+46 Shadow Resistance"}
+{"key":1483,"since":70245,"src":["game"],"name":"Mana +150"}
+{"key":1503,"since":70245,"src":["game"],"name":"HP +100"}
+{"key":1504,"since":70245,"src":["game"],"name":"Armor +125"}
+{"key":1505,"since":70245,"src":["game"],"name":"+20 Fire Resistance"}
+{"key":1506,"since":70245,"src":["game"],"name":"Strength +8"}
+{"key":1507,"since":70245,"src":["game"],"name":"Stamina +8"}
+{"key":1508,"since":70245,"src":["game"],"name":"Agility +8"}
+{"key":1509,"since":70245,"src":["game"],"name":"Intellect +8"}
+{"key":1510,"since":70245,"src":["game"],"name":"Spirit +8"}
+{"key":1523,"since":70245,"src":["game"],"name":"MANA/FR +85/14"}
+{"key":1524,"since":70245,"src":["game"],"name":"HP/FR +75/14"}
+{"key":1525,"since":70245,"src":["game"],"name":"AC/FR +110/14"}
+{"key":1526,"since":70245,"src":["game"],"name":"STR/FR +10/14"}
+{"key":1527,"since":70245,"src":["game"],"name":"STA/FR +10/14"}
+{"key":1528,"since":70245,"src":["game"],"name":"AGI/FR +10/14"}
+{"key":1529,"since":70245,"src":["game"],"name":"INT/FR +10/14"}
+{"key":1530,"since":70245,"src":["game"],"name":"SPI/FR +10/14"}
+{"key":1531,"since":70245,"src":["game"],"name":"STR/STA +10/10"}
+{"key":1532,"since":70245,"src":["game"],"name":"STR/STA/AC/FR +10/10/110/15"}
+{"key":1543,"since":70245,"src":["game"],"name":"INT/SPI/MANA/FR +10/10/100/15"}
+{"key":1563,"since":70245,"src":["game"],"name":"+2 Attack Power"}
+{"key":1583,"since":70245,"src":["game"],"name":"+4 Attack Power"}
+{"key":1584,"since":70245,"src":["game"],"name":"+6 Attack Power"}
+{"key":1585,"since":70245,"src":["game"],"name":"+8 Attack Power"}
+{"key":1586,"since":70245,"src":["game"],"name":"+10 Attack Power"}
+{"key":1587,"since":70245,"src":["game"],"name":"+12 Attack Power"}
+{"key":1588,"since":70245,"src":["game"],"name":"+14 Attack Power"}
+{"key":1589,"since":70245,"src":["game"],"name":"+16 Attack Power"}
+{"key":1590,"since":70245,"src":["game"],"name":"+18 Attack Power"}
+{"key":1591,"since":70245,"src":["game"],"name":"+20 Attack Power"}
+{"key":1592,"since":70245,"src":["game"],"name":"+22 Attack Power"}
+{"key":1593,"since":70245,"src":["game"],"name":"+24 Attack Power"}
+{"key":1594,"since":70245,"src":["game"],"name":"+26 Attack Power"}
+{"key":1595,"since":70245,"src":["game"],"name":"+28 Attack Power"}
+{"key":1596,"since":70245,"src":["game"],"name":"+30 Attack Power"}
+{"key":1597,"since":70245,"src":["game"],"name":"+32 Attack Power"}
+{"key":1598,"since":70245,"src":["game"],"name":"+34 Attack Power"}
+{"key":1599,"since":70245,"src":["game"],"name":"+36 Attack Power"}
+{"key":1600,"since":70245,"src":["game"],"name":"+38 Attack Power"}
+{"key":1601,"since":70245,"src":["game"],"name":"+40 Attack Power"}
+{"key":1602,"since":70245,"src":["game"],"name":"+42 Attack Power"}
+{"key":1603,"since":70245,"src":["game"],"name":"+44 Attack Power"}
+{"key":1604,"since":70245,"src":["game"],"name":"+46 Attack Power"}
+{"key":1605,"since":70245,"src":["game"],"name":"+48 Attack Power"}
+{"key":1606,"since":70245,"src":["game"],"name":"+50 Attack Power"}
+{"key":1607,"since":70245,"src":["game"],"name":"+52 Attack Power"}
+{"key":1608,"since":70245,"src":["game"],"name":"+54 Attack Power"}
+{"key":1609,"since":70245,"src":["game"],"name":"+56 Attack Power"}
+{"key":1610,"since":70245,"src":["game"],"name":"+58 Attack Power"}
+{"key":1611,"since":70245,"src":["game"],"name":"+60 Attack Power"}
+{"key":1612,"since":70245,"src":["game"],"name":"+62 Attack Power"}
+{"key":1613,"since":70245,"src":["game"],"name":"+64 Attack Power"}
+{"key":1614,"since":70245,"src":["game"],"name":"+66 Attack Power"}
+{"key":1615,"since":70245,"src":["game"],"name":"+68 Attack Power"}
+{"key":1616,"since":70245,"src":["game"],"name":"+70 Attack Power"}
+{"key":1617,"since":70245,"src":["game"],"name":"+72 Attack Power"}
+{"key":1618,"since":70245,"src":["game"],"name":"+74 Attack Power"}
+{"key":1619,"since":70245,"src":["game"],"name":"+76 Attack Power"}
+{"key":1620,"since":70245,"src":["game"],"name":"+78 Attack Power"}
+{"key":1621,"since":70245,"src":["game"],"name":"+80 Attack Power"}
+{"key":1622,"since":70245,"src":["game"],"name":"+82 Attack Power"}
+{"key":1623,"since":70245,"src":["game"],"name":"+84 Attack Power"}
+{"key":1624,"since":70245,"src":["game"],"name":"+86 Attack Power"}
+{"key":1625,"since":70245,"src":["game"],"name":"+88 Attack Power"}
+{"key":1626,"since":70245,"src":["game"],"name":"+90 Attack Power"}
+{"key":1627,"since":70245,"src":["game"],"name":"+92 Attack Power"}
+{"key":1643,"since":70245,"src":["game"],"name":"Sharpened +8"}
+{"key":1663,"since":70245,"src":["game"],"name":"Rockbiter 5"}
+{"key":1664,"since":70245,"src":["game"],"name":"Rockbiter 7"}
+{"key":1665,"since":70245,"src":["game"],"name":"Flametongue 5"}
+{"key":1666,"since":70245,"src":["game"],"name":"Flametongue 6"}
+{"key":1667,"since":70245,"src":["game"],"name":"Frostbrand 4"}
+{"key":1668,"since":70245,"src":["game"],"name":"Frostbrand 5"}
+{"key":1669,"since":70245,"src":["game"],"name":"Windfury 4"}
+{"key":1683,"since":70245,"src":["game"],"name":"Flametongue Totem 4"}
+{"key":1703,"since":70245,"src":["game"],"name":"Weighted +8"}
+{"key":1704,"since":70245,"src":["game"],"name":"Thorium Spike (20-30)"}
+{"key":1723,"since":70245,"src":["game"],"name":"Omen of Clarity"}
+{"key":1743,"since":70245,"src":["game"],"name":"MHTest02"}
+{"key":1763,"since":70245,"src":["game"],"name":"Cold Blood"}
+{"key":1783,"since":70245,"src":["game"],"name":"Windfury Totem 1"}
+{"key":1803,"since":70245,"src":["game"],"name":"Firestone 1"}
+{"key":1823,"since":70245,"src":["game"],"name":"Firestone 2"}
+{"key":1824,"since":70245,"src":["game"],"name":"Firestone 3"}
+{"key":1825,"since":70245,"src":["game"],"name":"Firestone 4"}
+{"key":1863,"since":70245,"src":["game"],"name":"Feedback 2"}
+{"key":1864,"since":70245,"src":["game"],"name":"Feedback 3"}
+{"key":1865,"since":70245,"src":["game"],"name":"Feedback 4"}
+{"key":1866,"since":70245,"src":["game"],"name":"Feedback 5"}
+{"key":1883,"since":70245,"src":["game"],"name":"Intellect +7"}
+{"key":1884,"since":70245,"src":["game"],"name":"Spirit +9"}
+{"key":1885,"since":70245,"src":["game"],"name":"Strength +9"}
+{"key":1886,"since":70245,"src":["game"],"name":"Stamina +9"}
+{"key":1887,"since":70245,"src":["game"],"name":"Agility +7"}
+{"key":1888,"since":70245,"src":["game"],"name":"+5 All Resistances"}
+{"key":1890,"since":70245,"src":["game"],"name":"Spirit +9"}
+{"key":1891,"since":70245,"src":["game"],"name":"All Stats +4"}
+{"key":1893,"since":70245,"src":["game"],"name":"Intellect +10"}
+{"key":1894,"since":70245,"src":["game"],"name":"Icy Weapon"}
+{"key":1895,"since":70245,"src":["game"],"name":"Damage +9"}
+{"key":1896,"since":70245,"src":["game"],"name":"Weapon Damage +9"}
+{"key":1897,"since":70245,"src":["game"],"name":"Weapon Damage +5"}
+{"key":1898,"since":70245,"src":["game"],"name":"Lifestealing"}
+{"key":1899,"since":70245,"src":["game"],"name":"Unholy Weapon"}
+{"key":1900,"since":70245,"src":["game"],"name":"Crusader"}
+{"key":1901,"since":70245,"src":["game"],"name":"Intellect +9"}
+{"key":1903,"since":70245,"src":["game"],"name":"Spirit +9"}
+{"key":1904,"since":70245,"src":["game"],"name":"Intellect +9"}
+{"key":1923,"since":70245,"src":["game"],"name":"+3 Fire Resistance"}
+{"key":1943,"since":70245,"src":["game"],"name":"+8 Defense"}
+{"key":1944,"since":70245,"src":["game"],"name":"+5 Defense"}
+{"key":1945,"since":70245,"src":["game"],"name":"+6 Defense"}
+{"key":1946,"since":70245,"src":["game"],"name":"+7 Defense"}
+{"key":1947,"since":70245,"src":["game"],"name":"+7 Defense"}
+{"key":1948,"since":70245,"src":["game"],"name":"+9 Defense"}
+{"key":1949,"since":70245,"src":["game"],"name":"+9 Defense"}
+{"key":1950,"since":70245,"src":["game"],"name":"+10 Defense"}
+{"key":1951,"since":70245,"src":["game"],"name":"+11 Defense"}
+{"key":1952,"since":70245,"src":["game"],"name":"+13 Defense"}
+{"key":1953,"since":70245,"src":["game"],"name":"+15 Defense"}
+{"key":1954,"since":70245,"src":["game"],"name":"+17 Defense"}
+{"key":1955,"since":70245,"src":["game"],"name":"+21 Defense"}
+{"key":1956,"since":70245,"src":["game"],"name":"+11 Defense"}
+{"key":1957,"since":70245,"src":["game"],"name":"+12 Defense"}
+{"key":1958,"since":70245,"src":["game"],"name":"+13 Defense"}
+{"key":1959,"since":70245,"src":["game"],"name":"+14 Defense"}
+{"key":1960,"since":70245,"src":["game"],"name":"+15 Defense"}
+{"key":1961,"since":70245,"src":["game"],"name":"+16 Defense"}
+{"key":1962,"since":70245,"src":["game"],"name":"+17 Defense"}
+{"key":1963,"since":70245,"src":["game"],"name":"+18 Defense"}
+{"key":1964,"since":70245,"src":["game"],"name":"+19 Defense"}
+{"key":1965,"since":70245,"src":["game"],"name":"+19 Defense"}
+{"key":1966,"since":70245,"src":["game"],"name":"+20 Defense"}
+{"key":1967,"since":70245,"src":["game"],"name":"+21 Defense"}
+{"key":1968,"since":70245,"src":["game"],"name":"+22 Defense"}
+{"key":1969,"since":70245,"src":["game"],"name":"+23 Defense"}
+{"key":1970,"since":70245,"src":["game"],"name":"+23 Defense"}
+{"key":1971,"since":70245,"src":["game"],"name":"+24 Defense"}
+{"key":1972,"since":70245,"src":["game"],"name":"+25 Defense"}
+{"key":1973,"since":70245,"src":["game"],"name":"+25 Defense"}
+{"key":1983,"since":70245,"src":["game"],"name":"+1% Block"}
+{"key":1984,"since":70245,"src":["game"],"name":"+2% Block"}
+{"key":1985,"since":70245,"src":["game"],"name":"+3% Block"}
+{"key":1986,"since":70245,"src":["game"],"name":"+4% Block"}
+{"key":1987,"since":70245,"src":["game"],"name":"Block Level 14"}
+{"key":1988,"since":70245,"src":["game"],"name":"Block Level 15"}
+{"key":1989,"since":70245,"src":["game"],"name":"Block Level 16"}
+{"key":1990,"since":70245,"src":["game"],"name":"Block Level 17"}
+{"key":1991,"since":70245,"src":["game"],"name":"Block Level 18"}
+{"key":1992,"since":70245,"src":["game"],"name":"Block Level 19"}
+{"key":1993,"since":70245,"src":["game"],"name":"Block Level 20"}
+{"key":1994,"since":70245,"src":["game"],"name":"Block Level 21"}
+{"key":1995,"since":70245,"src":["game"],"name":"Block Level 22"}
+{"key":1996,"since":70245,"src":["game"],"name":"Block Level 23"}
+{"key":1997,"since":70245,"src":["game"],"name":"Block Level 24"}
+{"key":1998,"since":70245,"src":["game"],"name":"Block Level 25"}
+{"key":1999,"since":70245,"src":["game"],"name":"Block Level 26"}
+{"key":2000,"since":70245,"src":["game"],"name":"Block Level 27"}
+{"key":2001,"since":70245,"src":["game"],"name":"Block Level 28"}
+{"key":2002,"since":70245,"src":["game"],"name":"Block Level 29"}
+{"key":2003,"since":70245,"src":["game"],"name":"Block Level 30"}
+{"key":2004,"since":70245,"src":["game"],"name":"Block Level 31"}
+{"key":2005,"since":70245,"src":["game"],"name":"Block Level 32"}
+{"key":2006,"since":70245,"src":["game"],"name":"Block Level 33"}
+{"key":2007,"since":70245,"src":["game"],"name":"Block Level 34"}
+{"key":2008,"since":70245,"src":["game"],"name":"Block Level 35"}
+{"key":2009,"since":70245,"src":["game"],"name":"Block Level 36"}
+{"key":2010,"since":70245,"src":["game"],"name":"Block Level 37"}
+{"key":2011,"since":70245,"src":["game"],"name":"Block Level 38"}
+{"key":2012,"since":70245,"src":["game"],"name":"Block Level 39"}
+{"key":2013,"since":70245,"src":["game"],"name":"Block Level 40"}
+{"key":2014,"since":70245,"src":["game"],"name":"Block Level 41"}
+{"key":2015,"since":70245,"src":["game"],"name":"Block Level 42"}
+{"key":2016,"since":70245,"src":["game"],"name":"Block Level 43"}
+{"key":2017,"since":70245,"src":["game"],"name":"Block Level 44"}
+{"key":2018,"since":70245,"src":["game"],"name":"Block Level 45"}
+{"key":2019,"since":70245,"src":["game"],"name":"Block Level 46"}
+{"key":2020,"since":70245,"src":["game"],"name":"Block Level 47"}
+{"key":2021,"since":70245,"src":["game"],"name":"Block Level 48"}
+{"key":2022,"since":70245,"src":["game"],"name":"Block Level 49"}
+{"key":2023,"since":70245,"src":["game"],"name":"Block Level 50"}
+{"key":2024,"since":70245,"src":["game"],"name":"Block Level 51"}
+{"key":2025,"since":70245,"src":["game"],"name":"Block Level 52"}
+{"key":2026,"since":70245,"src":["game"],"name":"Block Level 53"}
+{"key":2027,"since":70245,"src":["game"],"name":"Block Level 54"}
+{"key":2028,"since":70245,"src":["game"],"name":"Block Level 55"}
+{"key":2029,"since":70245,"src":["game"],"name":"Block Level 56"}
+{"key":2030,"since":70245,"src":["game"],"name":"Block Level 57"}
+{"key":2031,"since":70245,"src":["game"],"name":"Block Level 58"}
+{"key":2032,"since":70245,"src":["game"],"name":"Block Level 59"}
+{"key":2033,"since":70245,"src":["game"],"name":"Block Level 60"}
+{"key":2034,"since":70245,"src":["game"],"name":"Block Level 61"}
+{"key":2035,"since":70245,"src":["game"],"name":"Block Level 62"}
+{"key":2036,"since":70245,"src":["game"],"name":"Block Level 63"}
+{"key":2037,"since":70245,"src":["game"],"name":"Block Level 64"}
+{"key":2038,"since":70245,"src":["game"],"name":"Block Level 65"}
+{"key":2039,"since":70245,"src":["game"],"name":"Block Level 66"}
+{"key":2040,"since":70245,"src":["game"],"name":"+2 Ranged Attack Power"}
+{"key":2041,"since":70245,"src":["game"],"name":"+5 Ranged Attack Power"}
+{"key":2042,"since":70245,"src":["game"],"name":"+7 Ranged Attack Power"}
+{"key":2043,"since":70245,"src":["game"],"name":"+10 Ranged Attack Power"}
+{"key":2044,"since":70245,"src":["game"],"name":"+12 Ranged Attack Power"}
+{"key":2045,"since":70245,"src":["game"],"name":"+14 Ranged Attack Power"}
+{"key":2046,"since":70245,"src":["game"],"name":"+17 Ranged Attack Power"}
+{"key":2047,"since":70245,"src":["game"],"name":"+19 Ranged Attack Power"}
+{"key":2048,"since":70245,"src":["game"],"name":"+22 Ranged Attack Power"}
+{"key":2049,"since":70245,"src":["game"],"name":"+24 Ranged Attack Power"}
+{"key":2050,"since":70245,"src":["game"],"name":"+26 Ranged Attack Power"}
+{"key":2051,"since":70245,"src":["game"],"name":"+29 Ranged Attack Power"}
+{"key":2052,"since":70245,"src":["game"],"name":"+31 Ranged Attack Power"}
+{"key":2053,"since":70245,"src":["game"],"name":"+34 Ranged Attack Power"}
+{"key":2054,"since":70245,"src":["game"],"name":"+36 Ranged Attack Power"}
+{"key":2055,"since":70245,"src":["game"],"name":"+38 Ranged Attack Power"}
+{"key":2056,"since":70245,"src":["game"],"name":"+41 Ranged Attack Power"}
+{"key":2057,"since":70245,"src":["game"],"name":"+43 Ranged Attack Power"}
+{"key":2058,"since":70245,"src":["game"],"name":"+46 Ranged Attack Power"}
+{"key":2059,"since":70245,"src":["game"],"name":"+48 Ranged Attack Power"}
+{"key":2060,"since":70245,"src":["game"],"name":"+50 Ranged Attack Power"}
+{"key":2061,"since":70245,"src":["game"],"name":"+53 Ranged Attack Power"}
+{"key":2062,"since":70245,"src":["game"],"name":"+55 Ranged Attack Power"}
+{"key":2063,"since":70245,"src":["game"],"name":"+58 Ranged Attack Power"}
+{"key":2064,"since":70245,"src":["game"],"name":"+60 Ranged Attack Power"}
+{"key":2065,"since":70245,"src":["game"],"name":"+62 Ranged Attack Power"}
+{"key":2066,"since":70245,"src":["game"],"name":"+65 Ranged Attack Power"}
+{"key":2067,"since":70245,"src":["game"],"name":"+67 Ranged Attack Power"}
+{"key":2068,"since":70245,"src":["game"],"name":"+70 Ranged Attack Power"}
+{"key":2069,"since":70245,"src":["game"],"name":"+72 Ranged Attack Power"}
+{"key":2070,"since":70245,"src":["game"],"name":"+74 Ranged Attack Power"}
+{"key":2071,"since":70245,"src":["game"],"name":"+77 Ranged Attack Power"}
+{"key":2072,"since":70245,"src":["game"],"name":"+79 Ranged Attack Power"}
+{"key":2073,"since":70245,"src":["game"],"name":"+82 Ranged Attack Power"}
+{"key":2074,"since":70245,"src":["game"],"name":"+84 Ranged Attack Power"}
+{"key":2075,"since":70245,"src":["game"],"name":"+86 Ranged Attack Power"}
+{"key":2076,"since":70245,"src":["game"],"name":"+89 Ranged Attack Power"}
+{"key":2077,"since":70245,"src":["game"],"name":"+91 Ranged Attack Power"}
+{"key":2078,"since":70245,"src":["game"],"name":"+1% Dodge"}
+{"key":2079,"since":70245,"src":["game"],"name":"+1 Arcane Spell Damage"}
+{"key":2080,"since":70245,"src":["game"],"name":"+3 Arcane Spell Damage"}
+{"key":2081,"since":70245,"src":["game"],"name":"+4 Arcane Spell Damage"}
+{"key":2082,"since":70245,"src":["game"],"name":"+6 Arcane Spell Damage"}
+{"key":2083,"since":70245,"src":["game"],"name":"+7 Arcane Spell Damage"}
+{"key":2084,"since":70245,"src":["game"],"name":"+9 Arcane Spell Damage"}
+{"key":2085,"since":70245,"src":["game"],"name":"+10 Arcane Spell Damage"}
+{"key":2086,"since":70245,"src":["game"],"name":"+11 Arcane Spell Damage"}
+{"key":2087,"since":70245,"src":["game"],"name":"+13 Arcane Spell Damage"}
+{"key":2088,"since":70245,"src":["game"],"name":"+14 Arcane Spell Damage"}
+{"key":2089,"since":70245,"src":["game"],"name":"+16 Arcane Spell Damage"}
+{"key":2090,"since":70245,"src":["game"],"name":"+17 Arcane Spell Damage"}
+{"key":2091,"since":70245,"src":["game"],"name":"+19 Arcane Spell Damage"}
+{"key":2092,"since":70245,"src":["game"],"name":"+20 Arcane Spell Damage"}
+{"key":2093,"since":70245,"src":["game"],"name":"+21 Arcane Spell Damage"}
+{"key":2094,"since":70245,"src":["game"],"name":"+23 Arcane Spell Damage"}
+{"key":2095,"since":70245,"src":["game"],"name":"+24 Arcane Spell Damage"}
+{"key":2096,"since":70245,"src":["game"],"name":"+26 Arcane Spell Damage"}
+{"key":2097,"since":70245,"src":["game"],"name":"+27 Arcane Spell Damage"}
+{"key":2098,"since":70245,"src":["game"],"name":"+29 Arcane Spell Damage"}
+{"key":2099,"since":70245,"src":["game"],"name":"+30 Arcane Spell Damage"}
+{"key":2100,"since":70245,"src":["game"],"name":"+31 Arcane Spell Damage"}
+{"key":2101,"since":70245,"src":["game"],"name":"+33 Arcane Spell Damage"}
+{"key":2102,"since":70245,"src":["game"],"name":"+34 Arcane Spell Damage"}
+{"key":2103,"since":70245,"src":["game"],"name":"+36 Arcane Spell Damage"}
+{"key":2104,"since":70245,"src":["game"],"name":"+37 Arcane Spell Damage"}
+{"key":2105,"since":70245,"src":["game"],"name":"+39 Arcane Spell Damage"}
+{"key":2106,"since":70245,"src":["game"],"name":"+40 Arcane Spell Damage"}
+{"key":2107,"since":70245,"src":["game"],"name":"+41 Arcane Spell Damage"}
+{"key":2108,"since":70245,"src":["game"],"name":"+43 Arcane Spell Damage"}
+{"key":2109,"since":70245,"src":["game"],"name":"+44 Arcane Spell Damage"}
+{"key":2110,"since":70245,"src":["game"],"name":"+46 Arcane Spell Damage"}
+{"key":2111,"since":70245,"src":["game"],"name":"+47 Arcane Spell Damage"}
+{"key":2112,"since":70245,"src":["game"],"name":"+49 Arcane Spell Damage"}
+{"key":2113,"since":70245,"src":["game"],"name":"+50 Arcane Spell Damage"}
+{"key":2114,"since":70245,"src":["game"],"name":"+51 Arcane Spell Damage"}
+{"key":2115,"since":70245,"src":["game"],"name":"+53 Arcane Spell Damage"}
+{"key":2116,"since":70245,"src":["game"],"name":"+54 Arcane Spell Damage"}
+{"key":2117,"since":70245,"src":["game"],"name":"+1 Shadow Spell Damage"}
+{"key":2118,"since":70245,"src":["game"],"name":"+3 Shadow Spell Damage"}
+{"key":2119,"since":70245,"src":["game"],"name":"+4 Shadow Spell Damage"}
+{"key":2120,"since":70245,"src":["game"],"name":"+6 Shadow Spell Damage"}
+{"key":2121,"since":70245,"src":["game"],"name":"+7 Shadow Spell Damage"}
+{"key":2122,"since":70245,"src":["game"],"name":"+9 Shadow Spell Damage"}
+{"key":2123,"since":70245,"src":["game"],"name":"+10 Shadow Spell Damage"}
+{"key":2124,"since":70245,"src":["game"],"name":"+11 Shadow Spell Damage"}
+{"key":2125,"since":70245,"src":["game"],"name":"+13 Shadow Spell Damage"}
+{"key":2126,"since":70245,"src":["game"],"name":"+14 Shadow Spell Damage"}
+{"key":2127,"since":70245,"src":["game"],"name":"+16 Shadow Spell Damage"}
+{"key":2128,"since":70245,"src":["game"],"name":"+17 Shadow Spell Damage"}
+{"key":2129,"since":70245,"src":["game"],"name":"+19 Shadow Spell Damage"}
+{"key":2130,"since":70245,"src":["game"],"name":"+20 Shadow Spell Damage"}
+{"key":2131,"since":70245,"src":["game"],"name":"+21 Shadow Spell Damage"}
+{"key":2132,"since":70245,"src":["game"],"name":"+23 Shadow Spell Damage"}
+{"key":2133,"since":70245,"src":["game"],"name":"+24 Shadow Spell Damage"}
+{"key":2134,"since":70245,"src":["game"],"name":"+26 Shadow Spell Damage"}
+{"key":2135,"since":70245,"src":["game"],"name":"+27 Shadow Spell Damage"}
+{"key":2136,"since":70245,"src":["game"],"name":"+29 Shadow Spell Damage"}
+{"key":2137,"since":70245,"src":["game"],"name":"+30 Shadow Spell Damage"}
+{"key":2138,"since":70245,"src":["game"],"name":"+31 Shadow Spell Damage"}
+{"key":2139,"since":70245,"src":["game"],"name":"+33 Shadow Spell Damage"}
+{"key":2140,"since":70245,"src":["game"],"name":"+34 Shadow Spell Damage"}
+{"key":2141,"since":70245,"src":["game"],"name":"+36 Shadow Spell Damage"}
+{"key":2142,"since":70245,"src":["game"],"name":"+37 Shadow Spell Damage"}
+{"key":2143,"since":70245,"src":["game"],"name":"+39 Shadow Spell Damage"}
+{"key":2144,"since":70245,"src":["game"],"name":"+40 Shadow Spell Damage"}
+{"key":2145,"since":70245,"src":["game"],"name":"+41 Shadow Spell Damage"}
+{"key":2146,"since":70245,"src":["game"],"name":"+43 Shadow Spell Damage"}
+{"key":2147,"since":70245,"src":["game"],"name":"+44 Shadow Spell Damage"}
+{"key":2148,"since":70245,"src":["game"],"name":"+46 Shadow Spell Damage"}
+{"key":2149,"since":70245,"src":["game"],"name":"+47 Shadow Spell Damage"}
+{"key":2150,"since":70245,"src":["game"],"name":"+49 Shadow Spell Damage"}
+{"key":2151,"since":70245,"src":["game"],"name":"+50 Shadow Spell Damage"}
+{"key":2152,"since":70245,"src":["game"],"name":"+51 Shadow Spell Damage"}
+{"key":2153,"since":70245,"src":["game"],"name":"+53 Shadow Spell Damage"}
+{"key":2154,"since":70245,"src":["game"],"name":"+54 Shadow Spell Damage"}
+{"key":2155,"since":70245,"src":["game"],"name":"+1 Fire Spell Damage"}
+{"key":2156,"since":70245,"src":["game"],"name":"+3 Fire Spell Damage"}
+{"key":2157,"since":70245,"src":["game"],"name":"+4 Fire Spell Damage"}
+{"key":2158,"since":70245,"src":["game"],"name":"+6 Fire Spell Damage"}
+{"key":2159,"since":70245,"src":["game"],"name":"+7 Fire Spell Damage"}
+{"key":2160,"since":70245,"src":["game"],"name":"+9 Fire Spell Damage"}
+{"key":2161,"since":70245,"src":["game"],"name":"+10 Fire Spell Damage"}
+{"key":2162,"since":70245,"src":["game"],"name":"+11 Fire Spell Damage"}
+{"key":2163,"since":70245,"src":["game"],"name":"+13 Fire Spell Damage"}
+{"key":2164,"since":70245,"src":["game"],"name":"+14 Fire Spell Damage"}
+{"key":2165,"since":70245,"src":["game"],"name":"+16 Fire Spell Damage"}
+{"key":2166,"since":70245,"src":["game"],"name":"+17 Fire Spell Damage"}
+{"key":2167,"since":70245,"src":["game"],"name":"+19 Fire Spell Damage"}
+{"key":2168,"since":70245,"src":["game"],"name":"+20 Fire Spell Damage"}
+{"key":2169,"since":70245,"src":["game"],"name":"+21 Fire Spell Damage"}
+{"key":2170,"since":70245,"src":["game"],"name":"+23 Fire Spell Damage"}
+{"key":2171,"since":70245,"src":["game"],"name":"+24 Fire Spell Damage"}
+{"key":2172,"since":70245,"src":["game"],"name":"+26 Fire Spell Damage"}
+{"key":2173,"since":70245,"src":["game"],"name":"+27 Fire Spell Damage"}
+{"key":2174,"since":70245,"src":["game"],"name":"+29 Fire Spell Damage"}
+{"key":2175,"since":70245,"src":["game"],"name":"+30 Fire Spell Damage"}
+{"key":2176,"since":70245,"src":["game"],"name":"+31 Fire Spell Damage"}
+{"key":2177,"since":70245,"src":["game"],"name":"+33 Fire Spell Damage"}
+{"key":2178,"since":70245,"src":["game"],"name":"+34 Fire Spell Damage"}
+{"key":2179,"since":70245,"src":["game"],"name":"+36 Fire Spell Damage"}
+{"key":2180,"since":70245,"src":["game"],"name":"+37 Fire Spell Damage"}
+{"key":2181,"since":70245,"src":["game"],"name":"+39 Fire Spell Damage"}
+{"key":2182,"since":70245,"src":["game"],"name":"+40 Fire Spell Damage"}
+{"key":2183,"since":70245,"src":["game"],"name":"+41 Fire Spell Damage"}
+{"key":2184,"since":70245,"src":["game"],"name":"+43 Fire Spell Damage"}
+{"key":2185,"since":70245,"src":["game"],"name":"+44 Fire Spell Damage"}
+{"key":2186,"since":70245,"src":["game"],"name":"+46 Fire Spell Damage"}
+{"key":2187,"since":70245,"src":["game"],"name":"+47 Fire Spell Damage"}
+{"key":2188,"since":70245,"src":["game"],"name":"+49 Fire Spell Damage"}
+{"key":2189,"since":70245,"src":["game"],"name":"+50 Fire Spell Damage"}
+{"key":2190,"since":70245,"src":["game"],"name":"+51 Fire Spell Damage"}
+{"key":2191,"since":70245,"src":["game"],"name":"+53 Fire Spell Damage"}
+{"key":2192,"since":70245,"src":["game"],"name":"+54 Fire Spell Damage"}
+{"key":2193,"since":70245,"src":["game"],"name":"+1 Holy Spell Damage"}
+{"key":2194,"since":70245,"src":["game"],"name":"+3 Holy Spell Damage"}
+{"key":2195,"since":70245,"src":["game"],"name":"+4 Holy Spell Damage"}
+{"key":2196,"since":70245,"src":["game"],"name":"+6 Holy Spell Damage"}
+{"key":2197,"since":70245,"src":["game"],"name":"+7 Holy Spell Damage"}
+{"key":2198,"since":70245,"src":["game"],"name":"+9 Holy Spell Damage"}
+{"key":2199,"since":70245,"src":["game"],"name":"+10 Holy Spell Damage"}
+{"key":2200,"since":70245,"src":["game"],"name":"+11 Holy Spell Damage"}
+{"key":2201,"since":70245,"src":["game"],"name":"+13 Holy Spell Damage"}
+{"key":2202,"since":70245,"src":["game"],"name":"+14 Holy Spell Damage"}
+{"key":2203,"since":70245,"src":["game"],"name":"+16 Holy Spell Damage"}
+{"key":2204,"since":70245,"src":["game"],"name":"+17 Holy Spell Damage"}
+{"key":2205,"since":70245,"src":["game"],"name":"+19 Holy Spell Damage"}
+{"key":2206,"since":70245,"src":["game"],"name":"+20 Holy Spell Damage"}
+{"key":2207,"since":70245,"src":["game"],"name":"+21 Holy Spell Damage"}
+{"key":2208,"since":70245,"src":["game"],"name":"+23 Holy Spell Damage"}
+{"key":2209,"since":70245,"src":["game"],"name":"+24 Holy Spell Damage"}
+{"key":2210,"since":70245,"src":["game"],"name":"+26 Holy Spell Damage"}
+{"key":2211,"since":70245,"src":["game"],"name":"+27 Holy Spell Damage"}
+{"key":2212,"since":70245,"src":["game"],"name":"+29 Holy Spell Damage"}
+{"key":2213,"since":70245,"src":["game"],"name":"+30 Holy Spell Damage"}
+{"key":2214,"since":70245,"src":["game"],"name":"+31 Holy Spell Damage"}
+{"key":2215,"since":70245,"src":["game"],"name":"+33 Holy Spell Damage"}
+{"key":2216,"since":70245,"src":["game"],"name":"+34 Holy Spell Damage"}
+{"key":2217,"since":70245,"src":["game"],"name":"+36 Holy Spell Damage"}
+{"key":2218,"since":70245,"src":["game"],"name":"+37 Holy Spell Damage"}
+{"key":2219,"since":70245,"src":["game"],"name":"+39 Holy Spell Damage"}
+{"key":2220,"since":70245,"src":["game"],"name":"+40 Holy Spell Damage"}
+{"key":2221,"since":70245,"src":["game"],"name":"+41 Holy Spell Damage"}
+{"key":2222,"since":70245,"src":["game"],"name":"+43 Holy Spell Damage"}
+{"key":2223,"since":70245,"src":["game"],"name":"+44 Holy Spell Damage"}
+{"key":2224,"since":70245,"src":["game"],"name":"+46 Holy Spell Damage"}
+{"key":2225,"since":70245,"src":["game"],"name":"+47 Holy Spell Damage"}
+{"key":2226,"since":70245,"src":["game"],"name":"+49 Holy Spell Damage"}
+{"key":2227,"since":70245,"src":["game"],"name":"+50 Holy Spell Damage"}
+{"key":2228,"since":70245,"src":["game"],"name":"+51 Holy Spell Damage"}
+{"key":2229,"since":70245,"src":["game"],"name":"+53 Holy Spell Damage"}
+{"key":2230,"since":70245,"src":["game"],"name":"+54 Holy Spell Damage"}
+{"key":2231,"since":70245,"src":["game"],"name":"+1 Frost Spell Damage"}
+{"key":2232,"since":70245,"src":["game"],"name":"+3 Frost Spell Damage"}
+{"key":2233,"since":70245,"src":["game"],"name":"+4 Frost Spell Damage"}
+{"key":2234,"since":70245,"src":["game"],"name":"+6 Frost Spell Damage"}
+{"key":2235,"since":70245,"src":["game"],"name":"+7 Frost Spell Damage"}
+{"key":2236,"since":70245,"src":["game"],"name":"+9 Frost Spell Damage"}
+{"key":2237,"since":70245,"src":["game"],"name":"+10 Frost Spell Damage"}
+{"key":2238,"since":70245,"src":["game"],"name":"+11 Frost Spell Damage"}
+{"key":2239,"since":70245,"src":["game"],"name":"+13 Frost Spell Damage"}
+{"key":2240,"since":70245,"src":["game"],"name":"+14 Frost Spell Damage"}
+{"key":2241,"since":70245,"src":["game"],"name":"+16 Frost Spell Damage"}
+{"key":2242,"since":70245,"src":["game"],"name":"+17 Frost Spell Damage"}
+{"key":2243,"since":70245,"src":["game"],"name":"+19 Frost Spell Damage"}
+{"key":2244,"since":70245,"src":["game"],"name":"+20 Frost Spell Damage"}
+{"key":2245,"since":70245,"src":["game"],"name":"+21 Frost Spell Damage"}
+{"key":2246,"since":70245,"src":["game"],"name":"+23 Frost Spell Damage"}
+{"key":2247,"since":70245,"src":["game"],"name":"+24 Frost Spell Damage"}
+{"key":2248,"since":70245,"src":["game"],"name":"+26 Frost Spell Damage"}
+{"key":2249,"since":70245,"src":["game"],"name":"+27 Frost Spell Damage"}
+{"key":2250,"since":70245,"src":["game"],"name":"+29 Frost Spell Damage"}
+{"key":2251,"since":70245,"src":["game"],"name":"+30 Frost Spell Damage"}
+{"key":2252,"since":70245,"src":["game"],"name":"+31 Frost Spell Damage"}
+{"key":2253,"since":70245,"src":["game"],"name":"+33 Frost Spell Damage"}
+{"key":2254,"since":70245,"src":["game"],"name":"+34 Frost Spell Damage"}
+{"key":2255,"since":70245,"src":["game"],"name":"+36 Frost Spell Damage"}
+{"key":2256,"since":70245,"src":["game"],"name":"+37 Frost Spell Damage"}
+{"key":2257,"since":70245,"src":["game"],"name":"+39 Frost Spell Damage"}
+{"key":2258,"since":70245,"src":["game"],"name":"+40 Frost Spell Damage"}
+{"key":2259,"since":70245,"src":["game"],"name":"+41 Frost Spell Damage"}
+{"key":2260,"since":70245,"src":["game"],"name":"+43 Frost Spell Damage"}
+{"key":2261,"since":70245,"src":["game"],"name":"+44 Frost Spell Damage"}
+{"key":2262,"since":70245,"src":["game"],"name":"+46 Frost Spell Damage"}
+{"key":2263,"since":70245,"src":["game"],"name":"+47 Frost Spell Damage"}
+{"key":2264,"since":70245,"src":["game"],"name":"+49 Frost Spell Damage"}
+{"key":2265,"since":70245,"src":["game"],"name":"+50 Frost Spell Damage"}
+{"key":2266,"since":70245,"src":["game"],"name":"+51 Frost Spell Damage"}
+{"key":2267,"since":70245,"src":["game"],"name":"+53 Frost Spell Damage"}
+{"key":2268,"since":70245,"src":["game"],"name":"+54 Frost Spell Damage"}
+{"key":2269,"since":70245,"src":["game"],"name":"+1 Nature Spell Damage"}
+{"key":2270,"since":70245,"src":["game"],"name":"+3 Nature Spell Damage"}
+{"key":2271,"since":70245,"src":["game"],"name":"+4 Nature Spell Damage"}
+{"key":2272,"since":70245,"src":["game"],"name":"+6 Nature Spell Damage"}
+{"key":2273,"since":70245,"src":["game"],"name":"+7 Nature Spell Damage"}
+{"key":2274,"since":70245,"src":["game"],"name":"+9 Nature Spell Damage"}
+{"key":2275,"since":70245,"src":["game"],"name":"+10 Nature Spell Damage"}
+{"key":2276,"since":70245,"src":["game"],"name":"+11 Nature Spell Damage"}
+{"key":2277,"since":70245,"src":["game"],"name":"+13 Nature Spell Damage"}
+{"key":2278,"since":70245,"src":["game"],"name":"+14 Nature Spell Damage"}
+{"key":2279,"since":70245,"src":["game"],"name":"+16 Nature Spell Damage"}
+{"key":2280,"since":70245,"src":["game"],"name":"+17 Nature Spell Damage"}
+{"key":2281,"since":70245,"src":["game"],"name":"+19 Nature Spell Damage"}
+{"key":2282,"since":70245,"src":["game"],"name":"+20 Nature Spell Damage"}
+{"key":2283,"since":70245,"src":["game"],"name":"+21 Nature Spell Damage"}
+{"key":2284,"since":70245,"src":["game"],"name":"+23 Nature Spell Damage"}
+{"key":2285,"since":70245,"src":["game"],"name":"+24 Nature Spell Damage"}
+{"key":2286,"since":70245,"src":["game"],"name":"+26 Nature Spell Damage"}
+{"key":2287,"since":70245,"src":["game"],"name":"+27 Nature Spell Damage"}
+{"key":2288,"since":70245,"src":["game"],"name":"+29 Nature Spell Damage"}
+{"key":2289,"since":70245,"src":["game"],"name":"+30 Nature Spell Damage"}
+{"key":2290,"since":70245,"src":["game"],"name":"+31 Nature Spell Damage"}
+{"key":2291,"since":70245,"src":["game"],"name":"+33 Nature Spell Damage"}
+{"key":2292,"since":70245,"src":["game"],"name":"+34 Nature Spell Damage"}
+{"key":2293,"since":70245,"src":["game"],"name":"+36 Nature Spell Damage"}
+{"key":2294,"since":70245,"src":["game"],"name":"+37 Nature Spell Damage"}
+{"key":2295,"since":70245,"src":["game"],"name":"+39 Nature Spell Damage"}
+{"key":2296,"since":70245,"src":["game"],"name":"+40 Nature Spell Damage"}
+{"key":2297,"since":70245,"src":["game"],"name":"+41 Nature Spell Damage"}
+{"key":2298,"since":70245,"src":["game"],"name":"+43 Nature Spell Damage"}
+{"key":2299,"since":70245,"src":["game"],"name":"+44 Nature Spell Damage"}
+{"key":2300,"since":70245,"src":["game"],"name":"+46 Nature Spell Damage"}
+{"key":2301,"since":70245,"src":["game"],"name":"+47 Nature Spell Damage"}
+{"key":2302,"since":70245,"src":["game"],"name":"+49 Nature Spell Damage"}
+{"key":2303,"since":70245,"src":["game"],"name":"+50 Nature Spell Damage"}
+{"key":2304,"since":70245,"src":["game"],"name":"+51 Nature Spell Damage"}
+{"key":2305,"since":70245,"src":["game"],"name":"+53 Nature Spell Damage"}
+{"key":2306,"since":70245,"src":["game"],"name":"+54 Nature Spell Damage"}
+{"key":2307,"since":70245,"src":["game"],"name":"+2 Healing Spells"}
+{"key":2308,"since":70245,"src":["game"],"name":"+4 Healing Spells"}
+{"key":2309,"since":70245,"src":["game"],"name":"+7 Healing Spells"}
+{"key":2310,"since":70245,"src":["game"],"name":"+9 Healing Spells"}
+{"key":2311,"since":70245,"src":["game"],"name":"+11 Healing Spells"}
+{"key":2312,"since":70245,"src":["game"],"name":"+13 Healing Spells"}
+{"key":2313,"since":70245,"src":["game"],"name":"+15 Healing Spells"}
+{"key":2314,"since":70245,"src":["game"],"name":"+18 Healing Spells"}
+{"key":2315,"since":70245,"src":["game"],"name":"+20 Healing Spells"}
+{"key":2316,"since":70245,"src":["game"],"name":"+22 Healing Spells"}
+{"key":2317,"since":70245,"src":["game"],"name":"+24 Healing Spells"}
+{"key":2318,"since":70245,"src":["game"],"name":"+26 Healing Spells"}
+{"key":2319,"since":70245,"src":["game"],"name":"+29 Healing Spells"}
+{"key":2320,"since":70245,"src":["game"],"name":"+31 Healing Spells"}
+{"key":2321,"since":70245,"src":["game"],"name":"+33 Healing Spells"}
+{"key":2322,"since":70245,"src":["game"],"name":"+35 Healing Spells"}
+{"key":2323,"since":70245,"src":["game"],"name":"+37 Healing Spells"}
+{"key":2324,"since":70245,"src":["game"],"name":"+40 Healing Spells"}
+{"key":2325,"since":70245,"src":["game"],"name":"+42 Healing Spells"}
+{"key":2326,"since":70245,"src":["game"],"name":"+44 Healing Spells"}
+{"key":2327,"since":70245,"src":["game"],"name":"+46 Healing Spells"}
+{"key":2328,"since":70245,"src":["game"],"name":"+48 Healing Spells"}
+{"key":2329,"since":70245,"src":["game"],"name":"+51 Healing Spells"}
+{"key":2330,"since":70245,"src":["game"],"name":"+53 Healing Spells"}
+{"key":2331,"since":70245,"src":["game"],"name":"+55 Healing Spells"}
+{"key":2332,"since":70245,"src":["game"],"name":"+57 Healing Spells"}
+{"key":2333,"since":70245,"src":["game"],"name":"+59 Healing Spells"}
+{"key":2334,"since":70245,"src":["game"],"name":"+62 Healing Spells"}
+{"key":2335,"since":70245,"src":["game"],"name":"+64 Healing Spells"}
+{"key":2336,"since":70245,"src":["game"],"name":"+66 Healing Spells"}
+{"key":2337,"since":70245,"src":["game"],"name":"+68 Healing Spells"}
+{"key":2338,"since":70245,"src":["game"],"name":"+70 Healing Spells"}
+{"key":2339,"since":70245,"src":["game"],"name":"+73 Healing Spells"}
+{"key":2340,"since":70245,"src":["game"],"name":"+75 Healing Spells"}
+{"key":2341,"since":70245,"src":["game"],"name":"+77 Healing Spells"}
+{"key":2342,"since":70245,"src":["game"],"name":"+79 Healing Spells"}
+{"key":2343,"since":70245,"src":["game"],"name":"+81 Healing Spells"}
+{"key":2344,"since":70245,"src":["game"],"name":"+84 Healing Spells"}
+{"key":2363,"since":70245,"src":["game"],"name":"+1 mana every 5 sec."}
+{"key":2364,"since":70245,"src":["game"],"name":"+1 mana every 5 sec."}
+{"key":2365,"since":70245,"src":["game"],"name":"+1 mana every 5 sec."}
+{"key":2366,"since":70245,"src":["game"],"name":"+2 mana every 5 sec."}
+{"key":2367,"since":70245,"src":["game"],"name":"+2 mana every 5 sec."}
+{"key":2368,"since":70245,"src":["game"],"name":"+2 mana every 5 sec."}
+{"key":2369,"since":70245,"src":["game"],"name":"+3 mana every 5 sec."}
+{"key":2370,"since":70245,"src":["game"],"name":"+3 mana every 5 sec."}
+{"key":2371,"since":70245,"src":["game"],"name":"+4 mana every 5 sec."}
+{"key":2372,"since":70245,"src":["game"],"name":"+4 mana every 5 sec."}
+{"key":2373,"since":70245,"src":["game"],"name":"+4 mana every 5 sec."}
+{"key":2374,"since":70245,"src":["game"],"name":"+5 mana every 5 sec."}
+{"key":2375,"since":70245,"src":["game"],"name":"+5 mana every 5 sec."}
+{"key":2376,"since":70245,"src":["game"],"name":"+6 mana every 5 sec."}
+{"key":2377,"since":70245,"src":["game"],"name":"+6 mana every 5 sec."}
+{"key":2378,"since":70245,"src":["game"],"name":"+6 mana every 5 sec."}
+{"key":2379,"since":70245,"src":["game"],"name":"+7 mana every 5 sec."}
+{"key":2380,"since":70245,"src":["game"],"name":"+7 mana every 5 sec."}
+{"key":2381,"since":70245,"src":["game"],"name":"+8 mana every 5 sec."}
+{"key":2382,"since":70245,"src":["game"],"name":"+8 mana every 5 sec."}
+{"key":2383,"since":70245,"src":["game"],"name":"+8 mana every 5 sec."}
+{"key":2384,"since":70245,"src":["game"],"name":"+9 mana every 5 sec."}
+{"key":2385,"since":70245,"src":["game"],"name":"+9 mana every 5 sec."}
+{"key":2386,"since":70245,"src":["game"],"name":"+10 mana every 5 sec."}
+{"key":2387,"since":70245,"src":["game"],"name":"+10 mana every 5 sec."}
+{"key":2388,"since":70245,"src":["game"],"name":"+10 mana every 5 sec."}
+{"key":2389,"since":70245,"src":["game"],"name":"+11 mana every 5 sec."}
+{"key":2390,"since":70245,"src":["game"],"name":"+11 mana every 5 sec."}
+{"key":2391,"since":70245,"src":["game"],"name":"+12 mana every 5 sec."}
+{"key":2392,"since":70245,"src":["game"],"name":"+12 mana every 5 sec."}
+{"key":2393,"since":70245,"src":["game"],"name":"+12 mana every 5 sec."}
+{"key":2394,"since":70245,"src":["game"],"name":"+13 mana every 5 sec."}
+{"key":2395,"since":70245,"src":["game"],"name":"+13 mana every 5 sec."}
+{"key":2396,"since":70245,"src":["game"],"name":"+14 mana every 5 sec."}
+{"key":2397,"since":70245,"src":["game"],"name":"+14 mana every 5 sec."}
+{"key":2398,"since":70245,"src":["game"],"name":"+14 mana every 5 sec."}
+{"key":2399,"since":70245,"src":["game"],"name":"+15 mana every 5 sec."}
+{"key":2400,"since":70245,"src":["game"],"name":"+15 mana every 5 sec."}
+{"key":2401,"since":70245,"src":["game"],"name":"+1 health every 5 sec."}
+{"key":2402,"since":70245,"src":["game"],"name":"+1 health every 5 sec."}
+{"key":2403,"since":70245,"src":["game"],"name":"+1 health every 5 sec."}
+{"key":2404,"since":70245,"src":["game"],"name":"+1 health every 5 sec."}
+{"key":2405,"since":70245,"src":["game"],"name":"+1 health every 5 sec."}
+{"key":2406,"since":70245,"src":["game"],"name":"+2 health every 5 sec."}
+{"key":2407,"since":70245,"src":["game"],"name":"+2 health every 5 sec."}
+{"key":2408,"since":70245,"src":["game"],"name":"+2 health every 5 sec."}
+{"key":2409,"since":70245,"src":["game"],"name":"+2 health every 5 sec."}
+{"key":2410,"since":70245,"src":["game"],"name":"+3 health every 5 sec."}
+{"key":2411,"since":70245,"src":["game"],"name":"+3 health every 5 sec."}
+{"key":2412,"since":70245,"src":["game"],"name":"+3 health every 5 sec."}
+{"key":2413,"since":70245,"src":["game"],"name":"+3 health every 5 sec."}
+{"key":2414,"since":70245,"src":["game"],"name":"+4 health every 5 sec."}
+{"key":2415,"since":70245,"src":["game"],"name":"+4 health every 5 sec."}
+{"key":2416,"since":70245,"src":["game"],"name":"+4 health every 5 sec."}
+{"key":2417,"since":70245,"src":["game"],"name":"+4 health every 5 sec."}
+{"key":2418,"since":70245,"src":["game"],"name":"+5 health every 5 sec."}
+{"key":2419,"since":70245,"src":["game"],"name":"+5 health every 5 sec."}
+{"key":2420,"since":70245,"src":["game"],"name":"+5 health every 5 sec."}
+{"key":2421,"since":70245,"src":["game"],"name":"+5 health every 5 sec."}
+{"key":2422,"since":70245,"src":["game"],"name":"+6 health every 5 sec."}
+{"key":2423,"since":70245,"src":["game"],"name":"+6 health every 5 sec."}
+{"key":2424,"since":70245,"src":["game"],"name":"+6 health every 5 sec."}
+{"key":2425,"since":70245,"src":["game"],"name":"+6 health every 5 sec."}
+{"key":2426,"since":70245,"src":["game"],"name":"+7 health every 5 sec."}
+{"key":2427,"since":70245,"src":["game"],"name":"+7 health every 5 sec."}
+{"key":2428,"since":70245,"src":["game"],"name":"+7 health every 5 sec."}
+{"key":2429,"since":70245,"src":["game"],"name":"+7 health every 5 sec."}
+{"key":2430,"since":70245,"src":["game"],"name":"+8 health every 5 sec."}
+{"key":2431,"since":70245,"src":["game"],"name":"+8 health every 5 sec."}
+{"key":2432,"since":70245,"src":["game"],"name":"+8 health every 5 sec."}
+{"key":2433,"since":70245,"src":["game"],"name":"+8 health every 5 sec."}
+{"key":2434,"since":70245,"src":["game"],"name":"+9 health every 5 sec."}
+{"key":2435,"since":70245,"src":["game"],"name":"+9 health every 5 sec."}
+{"key":2436,"since":70245,"src":["game"],"name":"+9 health every 5 sec."}
+{"key":2437,"since":70245,"src":["game"],"name":"+9 health every 5 sec."}
+{"key":2438,"since":70245,"src":["game"],"name":"+10 health every 5 sec."}
+{"key":2443,"since":70245,"src":["game"],"name":"Frost Spell Damage +15"}
+{"key":2483,"since":70245,"src":["game"],"name":"+5 Fire Resistance"}
+{"key":2484,"since":70245,"src":["game"],"name":"+5 Frost Resistance"}
+{"key":2485,"since":70245,"src":["game"],"name":"+5 Arcane Resistance"}
+{"key":2486,"since":70245,"src":["game"],"name":"+5 Nature Resistance"}
+{"key":2487,"since":70245,"src":["game"],"name":"+5 Shadow Resistance"}
+{"key":2488,"since":70245,"src":["game"],"name":"+5 All Resistances"}
+{"key":2503,"since":70245,"src":["game"],"name":"Defense +3"}
+{"key":2504,"since":70245,"src":["game"],"name":"Spell Power +30"}
+{"key":2505,"since":70245,"src":["game"],"name":"Healing Spells +55"}
+{"key":2506,"since":70245,"src":["game"],"name":"Critical +2%"}
+{"key":2523,"since":70245,"src":["game"],"name":"+3% Hit"}
+{"key":2543,"since":70245,"src":["game"],"name":"Attack Speed +1%"}
+{"key":2544,"since":70245,"src":["game"],"name":"Healing and Spell Damage +8"}
+{"key":2545,"since":70245,"src":["game"],"name":"Dodge +1%"}
+{"key":2563,"since":70245,"src":["game"],"name":"Strength +15"}
+{"key":2564,"since":70245,"src":["game"],"name":"Agility +15"}
+{"key":2565,"since":70245,"src":["game"],"name":"Mana Regen 4 per 5 sec."}
+{"key":2566,"since":70245,"src":["game"],"name":"Healing Spells +24"}
+{"key":2567,"since":70245,"src":["game"],"name":"Spirit +22"}
+{"key":2568,"since":70245,"src":["game"],"name":"Intellect +22"}
+{"key":2583,"since":70245,"src":["game"],"name":"Defense +7/Stamina +10/Block Value +15"}
+{"key":2584,"since":70245,"src":["game"],"name":"Defense +7/Stamina +10/Healing Spells +24"}
+{"key":2585,"since":70245,"src":["game"],"name":"Attack Power +28/Dodge +1%"}
+{"key":2586,"since":70245,"src":["game"],"name":"Ranged Attack Power +24/Stamina +10/Hit +1%"}
+{"key":2587,"since":70245,"src":["game"],"name":"Healing and Spell Damage +13/Intellect +15"}
+{"key":2588,"since":70245,"src":["game"],"name":"Healing and Spell Damage +18/Spell Hit +1%"}
+{"key":2589,"since":70245,"src":["game"],"name":"Healing and Spell Damage +18/Stamina +10"}
+{"key":2590,"since":70245,"src":["game"],"name":"Mana Regen +4/Stamina +10/Healing Spells +24"}
+{"key":2591,"since":70245,"src":["game"],"name":"Intellect +10/Stamina +10/Healing Spells +24"}
+{"key":2603,"since":70245,"src":["game"],"name":"Eternium Line"}
+{"key":2604,"since":70245,"src":["game"],"name":"+33 Healing Spells"}
+{"key":2605,"since":70245,"src":["game"],"name":"+18 Spell Damage and Healing"}
+{"key":2606,"since":70245,"src":["game"],"name":"+30 Attack Power"}
+{"key":2607,"since":70245,"src":["game"],"name":"+12 Damage and Healing Spells"}
+{"key":2608,"since":70245,"src":["game"],"name":"+13 Damage and Healing Spells"}
+{"key":2609,"since":70245,"src":["game"],"name":"+15 Damage and Healing Spells"}
+{"key":2610,"since":70245,"src":["game"],"name":"+14 Damage and Healing Spells"}
+{"key":2611,"since":70245,"src":["game"],"name":"REUSE Random - 15 Spells All"}
+{"key":2612,"since":70245,"src":["game"],"name":"+18 Damage and Healing Spells"}
+{"key":2613,"since":70245,"src":["game"],"name":"Threat +2%"}
+{"key":2614,"since":70245,"src":["game"],"name":"Shadow Damage +20"}
+{"key":2615,"since":70245,"src":["game"],"name":"Frost Damage +20"}
+{"key":2616,"since":70245,"src":["game"],"name":"Fire Damage +20"}
+{"key":2617,"since":70245,"src":["game"],"name":"Healing Spells +35/Damage Spells +12"}
+{"key":2618,"since":70245,"src":["game"],"name":"Agility +15"}
+{"key":2619,"since":70245,"src":["game"],"name":"+15 Fire Resistance"}
+{"key":2620,"since":70245,"src":["game"],"name":"+15 Nature Resistance"}
+{"key":2621,"since":70245,"src":["game"],"name":"Subtlety"}
+{"key":2622,"since":70245,"src":["game"],"name":"Dodge +1%"}
+{"key":2623,"since":70245,"src":["game"],"name":"Minor Wizard Oil"}
+{"key":2624,"since":70245,"src":["game"],"name":"Minor Mana Oil"}
+{"key":2625,"since":70245,"src":["game"],"name":"Lesser Mana Oil"}
+{"key":2626,"since":70245,"src":["game"],"name":"Lesser Wizard Oil"}
+{"key":2627,"since":70245,"src":["game"],"name":"Wizard Oil"}
+{"key":2628,"since":70245,"src":["game"],"name":"Brilliant Wizard Oil"}
+{"key":2629,"since":70245,"src":["game"],"name":"Brilliant Mana Oil"}
+{"key":2630,"since":70245,"src":["game"],"name":"Deadly Poison V"}
+{"key":2646,"since":70245,"src":["game"],"name":"Agility +25"}
+{"key":2681,"since":70245,"src":["game"],"name":"+10 Nature Resistance"}
+{"key":2682,"since":70245,"src":["game"],"name":"+10 Frost Resistance"}
+{"key":2683,"since":70245,"src":["game"],"name":"+10 Shadow Resistance"}
+{"key":2684,"since":70245,"src":["game"],"name":"+100 Attack Power vs Undead"}
+{"key":2685,"since":70245,"src":["game"],"name":"+60 Spell Damage vs Undead"}
+{"key":2715,"since":70245,"src":["game"],"name":"Healing +31 and 5 mana per 5 sec."}
+{"key":2716,"since":70245,"src":["game"],"name":"Stamina +16 and Armor +100"}
+{"key":2717,"since":70245,"src":["game"],"name":"Attack Power +26 and +1% Critical Strike"}
+{"key":2721,"since":70245,"src":["game"],"name":"Spell Damage +15 and +1% Spell Critical Strike"}
+{"key":6708,"since":70245,"src":["game"],"name":"Deadly Brew"}
+{"key":6709,"since":70245,"src":["game"],"name":"Between the Eyes"}
+{"key":6710,"since":70245,"src":["game"],"name":"Just a Flesh Wound"}
+{"key":6711,"since":70245,"src":["game"],"name":"Return to the Shadows"}
+{"key":6712,"since":70245,"src":["game"],"name":"Tricks of the Trade"}
+{"key":6713,"since":70245,"src":["game"],"name":"Cheat Death"}
+{"key":6714,"since":70245,"src":["game"],"name":"Rolling with the Punches"}
+{"key":6715,"since":70245,"src":["game"],"name":"Mutilate"}
+{"key":6716,"since":70245,"src":["game"],"name":"Quick Draw"}
+{"key":6717,"since":70245,"src":["game"],"name":"Shuriken Toss"}
+{"key":6718,"since":70245,"src":["game"],"name":"Blade Dance"}
+{"key":6719,"since":70245,"src":["game"],"name":"Shadowstep"}
+{"key":6720,"since":70245,"src":["game"],"name":"Shadowstrike"}
+{"key":6723,"since":70245,"src":["game"],"name":"Arcane Barrage"}
+{"key":6724,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":6725,"since":70245,"src":["game"],"name":"Brain Freeze"}
+{"key":6726,"since":70245,"src":["game"],"name":"Advanced Warding"}
+{"key":6727,"since":70245,"src":["game"],"name":"Spellfrost Orb"}
+{"key":6728,"since":70245,"src":["game"],"name":"Arcane Blast"}
+{"key":6729,"since":70245,"src":["game"],"name":"Burnout"}
+{"key":6730,"since":70245,"src":["game"],"name":"Ice Lance"}
+{"key":6731,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":6732,"since":70245,"src":["game"],"name":"Frostfire Bolt"}
+{"key":6733,"since":70245,"src":["game"],"name":"Missile Barrage"}
+{"key":6734,"since":70245,"src":["game"],"name":"Overheat"}
+{"key":6735,"since":70245,"src":["game"],"name":"Fingers of Frost"}
+{"key":6736,"since":70245,"src":["game"],"name":"Regeneration"}
+{"key":6737,"since":70245,"src":["game"],"name":"Living Flame"}
+{"key":6740,"since":70245,"src":["game"],"name":"Prayer of Mending"}
+{"key":6741,"since":70245,"src":["game"],"name":"Shadow Word: Death"}
+{"key":6742,"since":70245,"src":["game"],"name":"Soul Warding"}
+{"key":6743,"since":70245,"src":["game"],"name":"Light and Dark"}
+{"key":6744,"since":70245,"src":["game"],"name":"Homunculi"}
+{"key":6745,"since":70245,"src":["game"],"name":"Binding Heal"}
+{"key":6746,"since":70245,"src":["game"],"name":"Shared Pain"}
+{"key":6747,"since":70245,"src":["game"],"name":"Pain Suppression"}
+{"key":6748,"since":70245,"src":["game"],"name":"Atonement"}
+{"key":6749,"since":70245,"src":["game"],"name":"Vampiric Touch"}
+{"key":6750,"since":70245,"src":["game"],"name":"Circle of Healing"}
+{"key":6751,"since":70245,"src":["game"],"name":"Shadowfiend"}
+{"key":6752,"since":70245,"src":["game"],"name":"Penance"}
+{"key":6753,"since":70245,"src":["game"],"name":"Black and White"}
+{"key":6754,"since":70245,"src":["game"],"name":"Eye of the Void"}
+{"key":6785,"since":70245,"src":["game"],"name":"Shadowstep"}
+{"key":6787,"since":70245,"src":["game"],"name":"Envenom"}
+{"key":6788,"since":70245,"src":["game"],"name":"Commanding Shout"}
+{"key":6789,"since":70245,"src":["game"],"name":"Enraged Regeneration"}
+{"key":6790,"since":70245,"src":["game"],"name":"Victory Rush"}
+{"key":6791,"since":70245,"src":["game"],"name":"Meathook"}
+{"key":6792,"since":70245,"src":["game"],"name":"Intervene"}
+{"key":6793,"since":70245,"src":["game"],"name":"Flagellation"}
+{"key":6794,"since":70245,"src":["game"],"name":"Drill Master"}
+{"key":6795,"since":70245,"src":["game"],"name":"Nullification"}
+{"key":6796,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":6797,"since":70245,"src":["game"],"name":"Heroic Leap"}
+{"key":6798,"since":70245,"src":["game"],"name":"Annhilator"}
+{"key":6799,"since":70245,"src":["game"],"name":"Blood Frenzy"}
+{"key":6800,"since":70245,"src":["game"],"name":"Devastate"}
+{"key":6801,"since":70245,"src":["game"],"name":"Furious Thunder"}
+{"key":6802,"since":70245,"src":["game"],"name":"Heroic Throw"}
+{"key":6803,"since":70245,"src":["game"],"name":"Haunt"}
+{"key":6804,"since":70245,"src":["game"],"name":"Demonic Circle"}
+{"key":6805,"since":70245,"src":["game"],"name":"Chaos Bolt"}
+{"key":6806,"since":70245,"src":["game"],"name":"Clarity of Pain"}
+{"key":6807,"since":70245,"src":["game"],"name":"Amplification"}
+{"key":6808,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":6809,"since":70245,"src":["game"],"name":"Fel Armor"}
+{"key":6810,"since":70245,"src":["game"],"name":"Soul Leech"}
+{"key":6811,"since":70245,"src":["game"],"name":"Master Channeler"}
+{"key":6812,"since":70245,"src":["game"],"name":"Harvest of Souls"}
+{"key":6813,"since":70245,"src":["game"],"name":"Seed of Corruption"}
+{"key":6814,"since":70245,"src":["game"],"name":"Shadow Bolt Volley"}
+{"key":6815,"since":70245,"src":["game"],"name":"Lake of Fire"}
+{"key":6816,"since":70245,"src":["game"],"name":"Metamorphosis"}
+{"key":6817,"since":70245,"src":["game"],"name":"Grant Life"}
+{"key":6832,"since":70245,"src":["game"],"name":"Titan's Grip"}
+{"key":6833,"since":70245,"src":["game"],"name":"Shield Mastery"}
+{"key":6834,"since":70245,"src":["game"],"name":"Focused Rage"}
+{"key":6835,"since":70245,"src":["game"],"name":"Annihilator"}
+{"key":6843,"since":70245,"src":["game"],"name":"Beacon of Light"}
+{"key":6844,"since":70245,"src":["game"],"name":"Hand of Reckoning"}
+{"key":6845,"since":70245,"src":["game"],"name":"Crusader Strike"}
+{"key":6846,"since":70245,"src":["game"],"name":"Flagellant's Whip"}
+{"key":6847,"since":70245,"src":["game"],"name":"Death Strike"}
+{"key":6848,"since":70245,"src":["game"],"name":"Divine Plea"}
+{"key":6849,"since":70245,"src":["game"],"name":"Hammer of the Righteous"}
+{"key":6850,"since":70245,"src":["game"],"name":"Divine Storm"}
+{"key":6851,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":6852,"since":70245,"src":["game"],"name":"Desecration"}
+{"key":6853,"since":70245,"src":["game"],"name":"Aura Mastery"}
+{"key":6854,"since":70245,"src":["game"],"name":"Avenger's Shield"}
+{"key":6855,"since":70245,"src":["game"],"name":"Avenging Wrath"}
+{"key":6856,"since":70245,"src":["game"],"name":"Hand of Sacrifice"}
+{"key":6857,"since":70245,"src":["game"],"name":"Inspiration Exemplar"}
+{"key":6858,"since":70245,"src":["game"],"name":"Wild Strikes"}
+{"key":6859,"since":70245,"src":["game"],"name":"Survival Instincts"}
+{"key":6860,"since":70245,"src":["game"],"name":"Wild Growth"}
+{"key":6861,"since":70245,"src":["game"],"name":"Improved Frenzied Regeneration"}
+{"key":6862,"since":70245,"src":["game"],"name":"Nurturing Instinct"}
+{"key":6863,"since":70245,"src":["game"],"name":"Savage Roar"}
+{"key":6864,"since":70245,"src":["game"],"name":"Savage Defense"}
+{"key":6865,"since":70245,"src":["game"],"name":"Lifebloom"}
+{"key":6866,"since":70245,"src":["game"],"name":"Force of Nature"}
+{"key":6867,"since":70245,"src":["game"],"name":"Nature's Fury"}
+{"key":6868,"since":70245,"src":["game"],"name":"Mangle"}
+{"key":6869,"since":70245,"src":["game"],"name":"Grove Defender"}
+{"key":6870,"since":70245,"src":["game"],"name":"Nourish"}
+{"key":6871,"since":70245,"src":["game"],"name":"Dreamstate"}
+{"key":6872,"since":70245,"src":["game"],"name":"Fury of Stormrage"}
+{"key":6873,"since":70245,"src":["game"],"name":"Fire Nova"}
+{"key":6874,"since":70245,"src":["game"],"name":"Dual Wield Specialization"}
+{"key":6875,"since":70245,"src":["game"],"name":"Water Shield"}
+{"key":6876,"since":70245,"src":["game"],"name":"Shield Mastery"}
+{"key":6877,"since":70245,"src":["game"],"name":"Ancestral Guidance"}
+{"key":6878,"since":70245,"src":["game"],"name":"Overload"}
+{"key":6879,"since":70245,"src":["game"],"name":"Maelstrom Weapon"}
+{"key":6880,"since":70245,"src":["game"],"name":"Earth Shield"}
+{"key":6881,"since":70245,"src":["game"],"name":"Astral Shift"}
+{"key":6882,"since":70245,"src":["game"],"name":"Spirit of the Alpha"}
+{"key":6883,"since":70245,"src":["game"],"name":"Lava Burst"}
+{"key":6884,"since":70245,"src":["game"],"name":"Lava Lash"}
+{"key":6885,"since":70245,"src":["game"],"name":"Riptide"}
+{"key":6886,"since":70245,"src":["game"],"name":"Way of Earth"}
+{"key":6887,"since":70245,"src":["game"],"name":"Thunderstorm"}
+{"key":6888,"since":70245,"src":["game"],"name":"Steady Shot"}
+{"key":6889,"since":70245,"src":["game"],"name":"Master Marksman"}
+{"key":6890,"since":70245,"src":["game"],"name":"Expose Weakness"}
+{"key":6891,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":6892,"since":70245,"src":["game"],"name":"Dual Wield Specialization"}
+{"key":6893,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":6894,"since":70245,"src":["game"],"name":"Misdirection"}
+{"key":6895,"since":70245,"src":["game"],"name":"Trap Launcher"}
+{"key":6896,"since":70245,"src":["game"],"name":"Camouflage"}
+{"key":6897,"since":70245,"src":["game"],"name":"Harpoon"}
+{"key":6898,"since":70245,"src":["game"],"name":"Kill Shot"}
+{"key":6899,"since":70245,"src":["game"],"name":"Chimera Shot"}
+{"key":6900,"since":70245,"src":["game"],"name":"Explosive Shot"}
+{"key":6901,"since":70245,"src":["game"],"name":"Lone Wolf"}
+{"key":6902,"since":70245,"src":["game"],"name":"Long Reach"}
+{"key":6910,"since":70245,"src":["game"],"name":"Earthliving Weapon"}
+{"key":6911,"since":70245,"src":["game"],"name":"Crimson Tempest"}
+{"key":6912,"since":70245,"src":["game"],"name":"Leeching Poisons"}
+{"key":6913,"since":70245,"src":["game"],"name":"Black Powder"}
+{"key":6914,"since":70245,"src":["game"],"name":"Waylay"}
+{"key":6915,"since":70245,"src":["game"],"name":"Cannonball Barrage"}
+{"key":6916,"since":70245,"src":["game"],"name":"Swift Kick"}
+{"key":6917,"since":70245,"src":["game"],"name":"Fleet Footed"}
+{"key":6918,"since":70245,"src":["game"],"name":"Crimson Vial"}
+{"key":6919,"since":70245,"src":["game"],"name":"Blunderbuss"}
+{"key":6920,"since":70245,"src":["game"],"name":"Recuperate"}
+{"key":6921,"since":70245,"src":["game"],"name":"Spell Power"}
+{"key":6922,"since":70245,"src":["game"],"name":"Enlightenment"}
+{"key":6923,"since":70245,"src":["game"],"name":"Living Bomb"}
+{"key":6924,"since":70245,"src":["game"],"name":"Ignition"}
+{"key":6925,"since":70245,"src":["game"],"name":"Empowered Frostbolt"}
+{"key":6926,"since":70245,"src":["game"],"name":"Summon Water Elemental"}
+{"key":6927,"since":70245,"src":["game"],"name":"Mass Regeneration"}
+{"key":6928,"since":70245,"src":["game"],"name":"Temporal Echoes"}
+{"key":6929,"since":70245,"src":["game"],"name":"Melt"}
+{"key":6930,"since":70245,"src":["game"],"name":"Spellfrost Bolt"}
+{"key":6931,"since":70245,"src":["game"],"name":"Body and Soul"}
+{"key":6932,"since":70245,"src":["game"],"name":"Serendipity"}
+{"key":6933,"since":70245,"src":["game"],"name":"Pain and Suffering"}
+{"key":6934,"since":70245,"src":["game"],"name":"Mind Sear"}
+{"key":6935,"since":70245,"src":["game"],"name":"Rapture"}
+{"key":6936,"since":70245,"src":["game"],"name":"Strength of Soul"}
+{"key":6937,"since":70245,"src":["game"],"name":"Mastermind"}
+{"key":6938,"since":70245,"src":["game"],"name":"Shadow and Light"}
+{"key":6939,"since":70245,"src":["game"],"name":"Dark Ritual"}
+{"key":6940,"since":70245,"src":["game"],"name":"Corpse Explosion"}
+{"key":6941,"since":70245,"src":["game"],"name":"Blood Surge"}
+{"key":6942,"since":70245,"src":["game"],"name":"Two-Handed Specialist"}
+{"key":6943,"since":70245,"src":["game"],"name":"Precise Timing"}
+{"key":6944,"since":70245,"src":["game"],"name":"Shield Mastery"}
+{"key":6945,"since":70245,"src":["game"],"name":"Focused Rage"}
+{"key":6946,"since":70245,"src":["game"],"name":"Gladiator Stance"}
+{"key":6947,"since":70245,"src":["game"],"name":"Breakthrough"}
+{"key":6948,"since":70245,"src":["game"],"name":"Single-Minded Fury"}
+{"key":6949,"since":70245,"src":["game"],"name":"Longbowman"}
+{"key":6950,"since":70245,"src":["game"],"name":"Everlasting Affliction"}
+{"key":6951,"since":70245,"src":["game"],"name":"Power Bargain"}
+{"key":6952,"since":70245,"src":["game"],"name":"Demonic Tactics"}
+{"key":6953,"since":70245,"src":["game"],"name":"Demonic Knowledge"}
+{"key":6954,"since":70245,"src":["game"],"name":"Fire and Brimstone"}
+{"key":6955,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":6956,"since":70245,"src":["game"],"name":"Forbidden Knowledge"}
+{"key":6957,"since":70245,"src":["game"],"name":"Dance of the Wicked"}
+{"key":6958,"since":70245,"src":["game"],"name":"Font of Life"}
+{"key":6959,"since":70245,"src":["game"],"name":"Soul Sacrifice"}
+{"key":6960,"since":70245,"src":["game"],"name":"Sacred Shield"}
+{"key":6961,"since":70245,"src":["game"],"name":"Divine Illumination"}
+{"key":6962,"since":70245,"src":["game"],"name":"Ardent Defender"}
+{"key":6963,"since":70245,"src":["game"],"name":"Guarded by the Light"}
+{"key":6964,"since":70245,"src":["game"],"name":"Augmented Seals"}
+{"key":6965,"since":70245,"src":["game"],"name":"Aura Mastery"}
+{"key":6966,"since":70245,"src":["game"],"name":"The Art of War"}
+{"key":6967,"since":70245,"src":["game"],"name":"Fanaticism"}
+{"key":6968,"since":70245,"src":["game"],"name":"Howling Blast"}
+{"key":6969,"since":70245,"src":["game"],"name":"Horn of Winter"}
+{"key":6970,"since":70245,"src":["game"],"name":"Swipe (Cat)"}
+{"key":6971,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":6972,"since":70245,"src":["game"],"name":"Survival of the Fittest"}
+{"key":6973,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":6974,"since":70245,"src":["game"],"name":"Gift of the Earthmother"}
+{"key":6975,"since":70245,"src":["game"],"name":"Living Seed"}
+{"key":6976,"since":70245,"src":["game"],"name":"Sunfire"}
+{"key":6977,"since":70245,"src":["game"],"name":"Elune's Fires"}
+{"key":6978,"since":70245,"src":["game"],"name":"Predatory Swiftness"}
+{"key":6979,"since":70245,"src":["game"],"name":"Wild Charge"}
+{"key":6980,"since":70245,"src":["game"],"name":"Power Surge"}
+{"key":6981,"since":70245,"src":["game"],"name":"Empowered Flames"}
+{"key":6982,"since":70245,"src":["game"],"name":"Mental Dexterity"}
+{"key":6983,"since":70245,"src":["game"],"name":"Frozen Power"}
+{"key":6984,"since":70245,"src":["game"],"name":"Healing Rain"}
+{"key":6985,"since":70245,"src":["game"],"name":"Earthliving Weapon"}
+{"key":6986,"since":70245,"src":["game"],"name":"Resilient Earth"}
+{"key":6987,"since":70245,"src":["game"],"name":"Burn"}
+{"key":6988,"since":70245,"src":["game"],"name":"Master of the Elements"}
+{"key":6989,"since":70245,"src":["game"],"name":"Ghost World"}
+{"key":6990,"since":70245,"src":["game"],"name":"Catlike Reflexes"}
+{"key":6991,"since":70245,"src":["game"],"name":"Wyvern Strike"}
+{"key":6992,"since":70245,"src":["game"],"name":"Aspect of the Viper"}
+{"key":6993,"since":70245,"src":["game"],"name":"Rapid Killing"}
+{"key":6994,"since":70245,"src":["game"],"name":"Lock and Load"}
+{"key":6995,"since":70245,"src":["game"],"name":"Sniper Training"}
+{"key":6996,"since":70245,"src":["game"],"name":"Kill Shot"}
+{"key":6997,"since":70245,"src":["game"],"name":"Run and Gun"}
+{"key":6998,"since":70245,"src":["game"],"name":"Melee Specialist"}
+{"key":6999,"since":70245,"src":["game"],"name":"Raptor Fury"}
+{"key":7000,"since":70245,"src":["game"],"name":"Coherence"}
+{"key":7004,"since":70245,"src":["game"],"name":"Cyclone"}
+{"key":7005,"since":70245,"src":["game"],"name":"+7 Spirit"}
+{"key":7006,"since":70245,"src":["game"],"name":"+7 Stamina"}
+{"key":7007,"since":70245,"src":["game"],"name":"+18 to all attributes"}
+{"key":7008,"since":70245,"src":["game"],"name":"-15 Fire Resistance"}
+{"key":7011,"since":70245,"src":["game"],"name":"Starsurge"}
+{"key":7012,"since":70245,"src":["game"],"name":"Berserk"}
+{"key":7013,"since":70245,"src":["game"],"name":"King of the Jungle"}
+{"key":7014,"since":70245,"src":["game"],"name":"Saber Slash"}
+{"key":7015,"since":70245,"src":["game"],"name":"Cutthroat"}
+{"key":7016,"since":70245,"src":["game"],"name":"Main Gauche"}
+{"key":7017,"since":70245,"src":["game"],"name":"Slaughter from the Shadows"}
+{"key":7018,"since":70245,"src":["game"],"name":"Poisoned Knife"}
+{"key":7019,"since":70245,"src":["game"],"name":"Master of Subtlety"}
+{"key":7020,"since":70245,"src":["game"],"name":"Icy Veins"}
+{"key":7021,"since":70245,"src":["game"],"name":"Arcane Surge"}
+{"key":7022,"since":70245,"src":["game"],"name":"Chronostatic Preservation"}
+{"key":7023,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":7024,"since":70245,"src":["game"],"name":"Twisted Faith"}
+{"key":7025,"since":70245,"src":["game"],"name":"Faded Rune"}
+{"key":7026,"since":70245,"src":["game"],"name":"Empowered Renew"}
+{"key":7027,"since":70245,"src":["game"],"name":"Renewed Hope"}
+{"key":7028,"since":70245,"src":["game"],"name":"Spirit of the Redeemer"}
+{"key":7029,"since":70245,"src":["game"],"name":"Dispersion"}
+{"key":7030,"since":70245,"src":["game"],"name":"Greater Ghost Wolf"}
+{"key":7031,"since":70245,"src":["game"],"name":"Molten Blast"}
+{"key":7033,"since":70245,"src":["game"],"name":"Quick Strike"}
+{"key":7034,"since":70245,"src":["game"],"name":"Raging Blow"}
+{"key":7035,"since":70245,"src":["game"],"name":"Warbringer"}
+{"key":7036,"since":70245,"src":["game"],"name":"Consumed by Rage"}
+{"key":7037,"since":70245,"src":["game"],"name":"Frenzied Assault"}
+{"key":7038,"since":70245,"src":["game"],"name":"Demonic Pact"}
+{"key":7039,"since":70245,"src":["game"],"name":"Demonic Grace"}
+{"key":7040,"since":70245,"src":["game"],"name":"Hallowed Ground"}
+{"key":7041,"since":70245,"src":["game"],"name":"Aegis"}
+{"key":7042,"since":70245,"src":["game"],"name":"Rebuke"}
+{"key":7043,"since":70245,"src":["game"],"name":"Carve"}
+{"key":7044,"since":70245,"src":["game"],"name":"Cobra Strikes"}
+{"key":7045,"since":70245,"src":["game"],"name":"Serpent Spread"}
+{"key":7046,"since":70245,"src":["game"],"name":"Flanking Strike"}
+{"key":7047,"since":70245,"src":["game"],"name":"Decoy Totem"}
+{"key":7048,"since":70245,"src":["game"],"name":"Ancestral Awakening"}
+{"key":7049,"since":70245,"src":["game"],"name":"Malleable Protection"}
+{"key":7050,"since":70245,"src":["game"],"name":"Sheath of Light"}
+{"key":7051,"since":70245,"src":["game"],"name":"Infusion of Light"}
+{"key":7053,"since":70245,"src":["game"],"name":"Invocation"}
+{"key":7054,"since":70245,"src":["game"],"name":"Grimoire of Synergy"}
+{"key":7056,"since":70245,"src":["game"],"name":"Shadow and Flame"}
+{"key":7057,"since":70245,"src":["game"],"name":"Shadowflame"}
+{"key":7058,"since":70245,"src":["game"],"name":"Vengeance"}
+{"key":7059,"since":70245,"src":["game"],"name":"Rallying Cry"}
+{"key":7065,"since":70245,"src":["game"],"name":"Taste for Blood"}
+{"key":7066,"since":70245,"src":["game"],"name":"Vigilance"}
+{"key":7067,"since":70245,"src":["game"],"name":"Shield Mastery"}
+{"key":7068,"since":70245,"src":["game"],"name":"Rampage"}
+{"key":7069,"since":70245,"src":["game"],"name":"Sword and Board"}
+{"key":7070,"since":70245,"src":["game"],"name":"Wrecking Crew"}
+{"key":7087,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":7088,"since":70245,"src":["game"],"name":"Fanaticism"}
+{"key":7089,"since":70245,"src":["game"],"name":"Wrath"}
+{"key":7090,"since":70245,"src":["game"],"name":"Purifying Power"}
+{"key":7091,"since":70245,"src":["game"],"name":"Improved Hammer of Wrath"}
+{"key":7092,"since":70245,"src":["game"],"name":"Improved Sanctuary"}
+{"key":7093,"since":70245,"src":["game"],"name":"Deep Freeze"}
+{"key":7094,"since":70245,"src":["game"],"name":"Temporal Anomaly"}
+{"key":7095,"since":70245,"src":["game"],"name":"Molten Armor"}
+{"key":7096,"since":70245,"src":["game"],"name":"Displacement"}
+{"key":7097,"since":70245,"src":["game"],"name":"Balefire Bolt"}
+{"key":7098,"since":70245,"src":["game"],"name":"Hit +2%"}
+{"key":7099,"since":70245,"src":["game"],"name":"Blackfathom Mana Oil"}
+{"key":7102,"since":70245,"src":["game"],"name":"Gore"}
+{"key":7103,"since":70245,"src":["game"],"name":"Improved Barkskin"}
+{"key":7104,"since":70245,"src":["game"],"name":"Gale Winds"}
+{"key":7105,"since":70245,"src":["game"],"name":"Efflorescence"}
+{"key":7106,"since":70245,"src":["game"],"name":"Eclipse"}
+{"key":7107,"since":70245,"src":["game"],"name":"Focus Fire"}
+{"key":7108,"since":70245,"src":["game"],"name":"T.N.T."}
+{"key":7109,"since":70245,"src":["game"],"name":"Divine Aegis"}
+{"key":7110,"since":70245,"src":["game"],"name":"Mind Spike"}
+{"key":7111,"since":70245,"src":["game"],"name":"Surge of Light"}
+{"key":7112,"since":70245,"src":["game"],"name":"Despair"}
+{"key":7113,"since":70245,"src":["game"],"name":"Void Zone"}
+{"key":7114,"since":70245,"src":["game"],"name":"Pandemic"}
+{"key":7115,"since":70245,"src":["game"],"name":"Backdraft"}
+{"key":7116,"since":70245,"src":["game"],"name":"Unstable Affliction"}
+{"key":7117,"since":70245,"src":["game"],"name":"Summon Felguard"}
+{"key":7118,"since":70245,"src":["game"],"name":"Immolation Aura"}
+{"key":7123,"since":70245,"src":["game"],"name":"Automatic Crowd Pummeler"}
+{"key":7124,"since":70245,"src":["game"],"name":"Wolfshead Trophy"}
+{"key":7125,"since":70245,"src":["game"],"name":"Tidal Waves"}
+{"key":7126,"since":70245,"src":["game"],"name":"Rolling Thunder"}
+{"key":7127,"since":70245,"src":["game"],"name":"Static Shock"}
+{"key":7128,"since":70245,"src":["game"],"name":"Overcharged"}
+{"key":7129,"since":70245,"src":["game"],"name":"Focused Attacks"}
+{"key":7130,"since":70245,"src":["game"],"name":"Combat Potency"}
+{"key":7131,"since":70245,"src":["game"],"name":"Honor Among Thieves"}
+{"key":7132,"since":70245,"src":["game"],"name":"Cut to the Chase"}
+{"key":7133,"since":70245,"src":["game"],"name":"Carnage"}
+{"key":7134,"since":70245,"src":["game"],"name":"Unfair Advantage"}
+{"key":7141,"since":70245,"src":["game"],"name":"Wild Strikes"}
+{"key":7210,"since":70245,"src":["game"],"name":"Dismantle"}
+{"key":7223,"since":70245,"src":["game"],"name":"Retricutioner"}
+{"key":7224,"since":70245,"src":["game"],"name":"Two-Handed Mastery"}
+{"key":7242,"since":70245,"src":["game"],"name":"Fan of Knives"}
+{"key":7254,"since":70245,"src":["game"],"name":"Sebacious Poison"}
+{"key":7255,"since":70245,"src":["game"],"name":"Numbing Poison"}
+{"key":7256,"since":70245,"src":["game"],"name":"Atrophic Poison"}
+{"key":7257,"since":70245,"src":["game"],"name":"Improved Swipe"}
+{"key":7258,"since":70245,"src":["game"],"name":"Tree of Life"}
+{"key":7259,"since":70245,"src":["game"],"name":"Starfall"}
+{"key":7261,"since":70245,"src":["game"],"name":"Fresh Meat"}
+{"key":7262,"since":70245,"src":["game"],"name":"Sudden Death"}
+{"key":7263,"since":70245,"src":["game"],"name":"Shockwave"}
+{"key":7264,"since":70245,"src":["game"],"name":"Resourcefulness"}
+{"key":7265,"since":70245,"src":["game"],"name":"Improved Volley"}
+{"key":7266,"since":70245,"src":["game"],"name":"Hit and Run"}
+{"key":7267,"since":70245,"src":["game"],"name":"Feral Spirit"}
+{"key":7268,"since":70245,"src":["game"],"name":"Storm, Earth, and Fire"}
+{"key":7269,"since":70245,"src":["game"],"name":"Shield of Righteousness"}
+{"key":7270,"since":70245,"src":["game"],"name":"Shock and Awe"}
+{"key":7271,"since":70245,"src":["game"],"name":"Righteous Vengeance"}
+{"key":7272,"since":70245,"src":["game"],"name":"Frozen Orb"}
+{"key":7273,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":7274,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":7275,"since":70245,"src":["game"],"name":"Infernal Armor"}
+{"key":7324,"since":70245,"src":["game"],"name":"+20 Attack Power"}
+{"key":7325,"since":70245,"src":["game"],"name":"+9 Spell Damage and Healing"}
+{"key":7326,"since":70245,"src":["game"],"name":"+18 Healing Spells"}
+{"key":7327,"since":70245,"src":["game"],"name":"Cleaned"}
+{"key":7328,"since":70245,"src":["game"],"name":"+15 Attack Power"}
+{"key":7480,"since":70245,"src":["game"],"name":"+3 Stamina"}
+{"key":7481,"since":70245,"src":["game"],"name":"+3 Intellect"}
+{"key":7482,"since":70245,"src":["game"],"name":"+4 Damage and Healing Spells"}
+{"key":7483,"since":70245,"src":["game"],"name":"+7 Healing Spells"}
+{"key":7484,"since":70245,"src":["game"],"name":"+3 Strength"}
+{"key":7485,"since":70245,"src":["game"],"name":"+3 Agility"}
+{"key":7486,"since":70245,"src":["game"],"name":"+16 Damage and Healing Spells"}
+{"key":7487,"since":70245,"src":["game"],"name":"+14 Damage and Healing Spells"}
+{"key":7488,"since":70245,"src":["game"],"name":"+31 Healing Spells"}
+{"key":7489,"since":70245,"src":["game"],"name":"+19 Damage and Healing Spells"}
+{"key":7491,"since":70245,"src":["game"],"name":"Skull Bash"}
+{"key":7492,"since":70245,"src":["game"],"name":"Lacerate"}
+{"key":7499,"since":70245,"src":["game"],"name":"Light's Grace"}
+{"key":7507,"since":70245,"src":["game"],"name":"Sword Specialization"}
+{"key":7508,"since":70245,"src":["game"],"name":"Axe Specialization"}
+{"key":7509,"since":70245,"src":["game"],"name":"Mace Specialization"}
+{"key":7510,"since":70245,"src":["game"],"name":"Dagger Specialization"}
+{"key":7511,"since":70245,"src":["game"],"name":"Fist Weapon Specialization"}
+{"key":7512,"since":70245,"src":["game"],"name":"Ranged Weapon Specialization"}
+{"key":7513,"since":70245,"src":["game"],"name":"Pole Weapon Specialization"}
+{"key":7514,"since":70245,"src":["game"],"name":"Arcane Specialization"}
+{"key":7515,"since":70245,"src":["game"],"name":"Fire Specialization"}
+{"key":7516,"since":70245,"src":["game"],"name":"Frost Specialization"}
+{"key":7517,"since":70245,"src":["game"],"name":"Nature Specialization"}
+{"key":7518,"since":70245,"src":["game"],"name":"Shadow Specialization"}
+{"key":7519,"since":70245,"src":["game"],"name":"Holy Specialization"}
+{"key":7520,"since":70245,"src":["game"],"name":"Feral Combat Specialization"}
+{"key":7541,"since":70245,"src":["game"],"name":"Void Plague"}
+{"key":7542,"since":70245,"src":["game"],"name":"Occult Poison I"}
+{"key":7555,"since":70245,"src":["game"],"name":"Defense Specialization"}
+{"key":7560,"since":70245,"src":["game"],"name":"Hot Streak"}
+{"key":7561,"since":70245,"src":["game"],"name":"Rewind Time"}
+{"key":7562,"since":70245,"src":["game"],"name":"Divine Light"}
+{"key":7563,"since":70245,"src":["game"],"name":"+25 Fire Resistance"}
+{"key":7564,"since":70245,"src":["game"],"name":"+30 Fire Resistance"}
+{"key":7566,"since":70245,"src":["game"],"name":"Frostbrand 5"}
+{"key":7567,"since":70245,"src":["game"],"name":"Flametongue 6"}
+{"key":7568,"since":70245,"src":["game"],"name":"Rockbiter 7"}
+{"key":7569,"since":70245,"src":["game"],"name":"Windfury 4"}
+{"key":7588,"since":70245,"src":["game"],"name":"Endless Rage"}
+{"key":7589,"since":70245,"src":["game"],"name":"Power Word: Barrier"}
+{"key":7590,"since":70245,"src":["game"],"name":"Soul Siphon"}
+{"key":7591,"since":70245,"src":["game"],"name":"Incinerate"}
+{"key":7592,"since":70245,"src":["game"],"name":"Damaged Rune"}
+{"key":7602,"since":70245,"src":["game"],"name":"Conductive Shield Coating"}
+{"key":7603,"since":70245,"src":["game"],"name":"Law of Nature"}
+{"key":7613,"since":70245,"src":["game"],"name":"Stamina +20/Intellect +10/Healing Spells +24"}
+{"key":7614,"since":70245,"src":["game"],"name":"Stamina +20/Hit +1%/Healing and Spell Damage +12"}
+{"key":7615,"since":70245,"src":["game"],"name":"Stamina +20/Strength +10/Agility +10"}
+{"key":7616,"since":70245,"src":["game"],"name":"Stamina +20/Strength +10/Defense +7"}
+{"key":7617,"since":70245,"src":["game"],"name":"Stamina +20/Agility +10/Hit +1%"}
+{"key":7618,"since":70245,"src":["game"],"name":"Stamina +20/Defense +7/Healing and Spell Damage +12"}
+{"key":7619,"since":70245,"src":["game"],"name":"Stamina +20/Strength +10/Healing and Spell Damage +12"}
+{"key":7620,"since":70245,"src":["game"],"name":"Stamina +20/Intellect +10/Healing Spells +22"}
+{"key":7621,"since":70245,"src":["game"],"name":"Stamina +20/Intellect +10/Healing and Spell Damage +12"}
+{"key":7622,"since":70245,"src":["game"],"name":"Stamina +20/Intellect +10/Healing Spells +22"}
+{"key":7623,"since":70245,"src":["game"],"name":"Stamina +20/Intellect +10/Healing and Spell Damage +12"}
+{"key":7624,"since":70245,"src":["game"],"name":"Stamina +20/Agility +10/Defense +7"}
+{"key":7625,"since":70245,"src":["game"],"name":"Stamina +20/Agility +10/Hit +1%"}
+{"key":7626,"since":70245,"src":["game"],"name":"Stamina +20/Strength +10/Healing and Spell Damage +12"}
+{"key":7627,"since":70245,"src":["game"],"name":"Stamina +20/Hit +1%/Healing and Spell Damage +12"}
+{"key":7628,"since":70245,"src":["game"],"name":"Stamina +20/Intellect +10/Healing Spells +22"}
+{"key":7629,"since":70245,"src":["game"],"name":"Stamina +20/Defense +7/Block Chance +2%"}
+{"key":7630,"since":70245,"src":["game"],"name":"Stamina +20/Hit +1%/Healing and Spell Damage +12"}
+{"key":7631,"since":70245,"src":["game"],"name":"Stamina +20/Hit +1%/Defense +7"}
+{"key":7632,"since":70245,"src":["game"],"name":"Stamina +20/Strength +10/Agility +10"}
+{"key":7633,"since":70245,"src":["game"],"name":"Stamina +20/Defense +7/Block Value +15"}
+{"key":7634,"since":70245,"src":["game"],"name":"Stamina +20/Intellect +10/Healing and Spell Damage +12"}
+{"key":7635,"since":70245,"src":["game"],"name":"Stamina +20/Agility +10/Strength +10"}
+{"key":7636,"since":70245,"src":["game"],"name":"Beast Mastery"}
+{"key":7637,"since":70245,"src":["game"],"name":"Cobra Slayer"}
+{"key":7638,"since":70245,"src":["game"],"name":"Healing Specialization"}
+{"key":7639,"since":70245,"src":["game"],"name":"Meditation Specialization"}
+{"key":7642,"since":70245,"src":["game"],"name":"Mark of Chaos"}
+{"key":7643,"since":70245,"src":["game"],"name":"Decimation"}
+{"key":7644,"since":70245,"src":["game"],"name":"Magnificent Trollshine"}
+{"key":7645,"since":70245,"src":["game"],"name":"Living Stats"}
+{"key":7648,"since":70245,"src":["game"],"name":"Spell Damage and Healing +10"}
+{"key":7649,"since":70245,"src":["game"],"name":"Thorns +20"}
+{"key":7650,"since":70245,"src":["game"],"name":"Enchanted Repellent"}
+{"key":7651,"since":70245,"src":["game"],"name":"Occult Poison II"}
+{"key":7657,"since":70245,"src":["game"],"name":"Scope (+10 Damage)"}
+{"key":7668,"since":70245,"src":["game"],"name":"Tactician"}
+{"key":7669,"since":70245,"src":["game"],"name":"War Veteran"}
+{"key":7670,"since":70245,"src":["game"],"name":"Battle Forecaster"}
+{"key":7671,"since":70245,"src":["game"],"name":"Bloodseeker"}
+{"key":7672,"since":70245,"src":["game"],"name":"Titan"}
+{"key":7673,"since":70245,"src":["game"],"name":"Destroyer"}
+{"key":7674,"since":70245,"src":["game"],"name":"Deathbound"}
+{"key":7675,"since":70245,"src":["game"],"name":"Sanguinist"}
+{"key":7676,"since":70245,"src":["game"],"name":"Pristine Blocker"}
+{"key":7677,"since":70245,"src":["game"],"name":"Savage"}
+{"key":7678,"since":70245,"src":["game"],"name":"Pillar of Enmity"}
+{"key":7679,"since":70245,"src":["game"],"name":"Deflective Tendencies"}
+{"key":7680,"since":70245,"src":["game"],"name":"Swift Revenge"}
+{"key":7681,"since":70245,"src":["game"],"name":"Incessant Attacker"}
+{"key":7682,"since":70245,"src":["game"],"name":"Thunderbringer"}
+{"key":7683,"since":70245,"src":["game"],"name":"Sentinel"}
+{"key":7685,"since":70245,"src":["game"],"name":"Southpaw"}
+{"key":7686,"since":70245,"src":["game"],"name":"Gladiator"}
+{"key":7687,"since":70245,"src":["game"],"name":"Aftershock"}
+{"key":7688,"since":70245,"src":["game"],"name":"Avoidant"}
+{"key":7689,"since":70245,"src":["game"],"name":"Toxicologist"}
+{"key":7690,"since":70245,"src":["game"],"name":"Executioner"}
+{"key":7691,"since":70245,"src":["game"],"name":"Opportunist"}
+{"key":7692,"since":70245,"src":["game"],"name":"Butcher"}
+{"key":7693,"since":70245,"src":["game"],"name":"Phantom"}
+{"key":7694,"since":70245,"src":["game"],"name":"Scoundrel"}
+{"key":7695,"since":70245,"src":["game"],"name":"Thrill Seeker"}
+{"key":7696,"since":70245,"src":["game"],"name":"Shiv Savant"}
+{"key":7697,"since":70245,"src":["game"],"name":"Stalker"}
+{"key":7698,"since":70245,"src":["game"],"name":"Efficient Striking"}
+{"key":7699,"since":70245,"src":["game"],"name":"Knife Juggler"}
+{"key":7700,"since":70245,"src":["game"],"name":"Shadow Master"}
+{"key":7701,"since":70245,"src":["game"],"name":"Equilibrist"}
+{"key":7702,"since":70245,"src":["game"],"name":"Poised Brawler"}
+{"key":7703,"since":70245,"src":["game"],"name":"Black Belt"}
+{"key":7704,"since":70245,"src":["game"],"name":"Fencer"}
+{"key":7705,"since":70245,"src":["game"],"name":"Swashbuckler"}
+{"key":7706,"since":70245,"src":["game"],"name":"Bloodthirsty"}
+{"key":7707,"since":70245,"src":["game"],"name":"Transfusionist"}
+{"key":7708,"since":70245,"src":["game"],"name":"Refined Spells"}
+{"key":7709,"since":70245,"src":["game"],"name":"Decimator"}
+{"key":7710,"since":70245,"src":["game"],"name":"Rotbringer"}
+{"key":7711,"since":70245,"src":["game"],"name":"Malevolent"}
+{"key":7712,"since":70245,"src":["game"],"name":"Shadowmancer"}
+{"key":7713,"since":70245,"src":["game"],"name":"Chaos Harbinger"}
+{"key":7714,"since":70245,"src":["game"],"name":"Arsonist"}
+{"key":7715,"since":70245,"src":["game"],"name":"Infernal Shepherd"}
+{"key":7716,"since":70245,"src":["game"],"name":"Demonlord"}
+{"key":7717,"since":70245,"src":["game"],"name":"Demonic Exorcist"}
+{"key":7718,"since":70245,"src":["game"],"name":"Pain Siphon"}
+{"key":7719,"since":70245,"src":["game"],"name":"Flamewraith"}
+{"key":7720,"since":70245,"src":["game"],"name":"Fleshfeaster"}
+{"key":7721,"since":70245,"src":["game"],"name":"Abyssal Essence"}
+{"key":7722,"since":70245,"src":["game"],"name":"Voidborne"}
+{"key":7723,"since":70245,"src":["game"],"name":"Umbral Blade"}
+{"key":7724,"since":70245,"src":["game"],"name":"Ritualist"}
+{"key":7725,"since":70245,"src":["game"],"name":"Pain Spreader"}
+{"key":7726,"since":70245,"src":["game"],"name":"Misleader"}
+{"key":7727,"since":70245,"src":["game"],"name":"Preyseeker"}
+{"key":7728,"since":70245,"src":["game"],"name":"Sharpshooter"}
+{"key":7729,"since":70245,"src":["game"],"name":"Hazard Harrier"}
+{"key":7730,"since":70245,"src":["game"],"name":"Alternator"}
+{"key":7731,"since":70245,"src":["game"],"name":"Toxinologist"}
+{"key":7732,"since":70245,"src":["game"],"name":"Bounty Hunter"}
+{"key":7733,"since":70245,"src":["game"],"name":"Trick Shooter"}
+{"key":7734,"since":70245,"src":["game"],"name":"Beast Tender"}
+{"key":7735,"since":70245,"src":["game"],"name":"Hound Master"}
+{"key":7736,"since":70245,"src":["game"],"name":"Alpha Tamer"}
+{"key":7737,"since":70245,"src":["game"],"name":"Huntsman"}
+{"key":7738,"since":70245,"src":["game"],"name":"Preyseeker"}
+{"key":7739,"since":70245,"src":["game"],"name":"Retaliator"}
+{"key":7740,"since":70245,"src":["game"],"name":"Echoing Strikes"}
+{"key":7741,"since":70245,"src":["game"],"name":"Lethal Lasher"}
+{"key":7742,"since":70245,"src":["game"],"name":"Kineticist"}
+{"key":7743,"since":70245,"src":["game"],"name":"Strategist"}
+{"key":7744,"since":70245,"src":["game"],"name":"Deadly Striker"}
+{"key":7745,"since":70245,"src":["game"],"name":"Hastened Healer"}
+{"key":7746,"since":70245,"src":["game"],"name":"Refined Spells"}
+{"key":7747,"since":70245,"src":["game"],"name":"Celebrant"}
+{"key":7748,"since":70245,"src":["game"],"name":"Faithful"}
+{"key":7749,"since":70245,"src":["game"],"name":"Serendipitous"}
+{"key":7750,"since":70245,"src":["game"],"name":"Resonant"}
+{"key":7751,"since":70245,"src":["game"],"name":"Devotee"}
+{"key":7752,"since":70245,"src":["game"],"name":"Archbishop"}
+{"key":7753,"since":70245,"src":["game"],"name":"Penitent"}
+{"key":7754,"since":70245,"src":["game"],"name":"Soul Warder"}
+{"key":7755,"since":70245,"src":["game"],"name":"Twilight Walker"}
+{"key":7756,"since":70245,"src":["game"],"name":"Mind Breaker"}
+{"key":7757,"since":70245,"src":["game"],"name":"Deathdealer"}
+{"key":7758,"since":70245,"src":["game"],"name":"Spirit Font"}
+{"key":7759,"since":70245,"src":["game"],"name":"Zealot"}
+{"key":7760,"since":70245,"src":["game"],"name":"Unwavering Defiler"}
+{"key":7761,"since":70245,"src":["game"],"name":"Contemnor"}
+{"key":7762,"since":70245,"src":["game"],"name":"Plaguebringer"}
+{"key":7763,"since":70245,"src":["game"],"name":"Reverberant"}
+{"key":7764,"since":70245,"src":["game"],"name":"Chronohealer"}
+{"key":7765,"since":70245,"src":["game"],"name":"Temporal Longing"}
+{"key":7766,"since":70245,"src":["game"],"name":"Precognition"}
+{"key":7767,"since":70245,"src":["game"],"name":"Arcanist"}
+{"key":7768,"since":70245,"src":["game"],"name":"Eternal Caretaker"}
+{"key":7769,"since":70245,"src":["game"],"name":"Spellbider"}
+{"key":7770,"since":70245,"src":["game"],"name":"Wardshaper"}
+{"key":7771,"since":70245,"src":["game"],"name":"Winter's Grasp"}
+{"key":7772,"since":70245,"src":["game"],"name":"Cryomancer"}
+{"key":7773,"since":70245,"src":["game"],"name":"Evoker"}
+{"key":7774,"since":70245,"src":["game"],"name":"Elementalist"}
+{"key":7775,"since":70245,"src":["game"],"name":"Magical Armaments"}
+{"key":7776,"since":70245,"src":["game"],"name":"Kindler"}
+{"key":7777,"since":70245,"src":["game"],"name":"Fiery Convergence"}
+{"key":7778,"since":70245,"src":["game"],"name":"Perpetual Blaze"}
+{"key":7779,"since":70245,"src":["game"],"name":"Pyromaniac"}
+{"key":7780,"since":70245,"src":["game"],"name":"Igniter"}
+{"key":7781,"since":70245,"src":["game"],"name":"Agonizing Torcher"}
+{"key":7782,"since":70245,"src":["game"],"name":"Pristine Blocker"}
+{"key":7783,"since":70245,"src":["game"],"name":"Lightwarden"}
+{"key":7784,"since":70245,"src":["game"],"name":"Radiant Defender"}
+{"key":7785,"since":70245,"src":["game"],"name":"Shieldbearer"}
+{"key":7786,"since":70245,"src":["game"],"name":"Bastion"}
+{"key":7787,"since":70245,"src":["game"],"name":"Reckoner"}
+{"key":7788,"since":70245,"src":["game"],"name":"Ironclad"}
+{"key":7789,"since":70245,"src":["game"],"name":"Guardian"}
+{"key":7790,"since":70245,"src":["game"],"name":"Peacekeeper"}
+{"key":7791,"since":70245,"src":["game"],"name":"Refined Spells"}
+{"key":7792,"since":70245,"src":["game"],"name":"Exemplar"}
+{"key":7793,"since":70245,"src":["game"],"name":"Inquisitor"}
+{"key":7794,"since":70245,"src":["game"],"name":"Sovereign"}
+{"key":7795,"since":70245,"src":["game"],"name":"Dominus"}
+{"key":7796,"since":70245,"src":["game"],"name":"Vindicator"}
+{"key":7797,"since":70245,"src":["game"],"name":"Altruist"}
+{"key":7798,"since":70245,"src":["game"],"name":"Arbiter"}
+{"key":7799,"since":70245,"src":["game"],"name":"Sealbearer"}
+{"key":7800,"since":70245,"src":["game"],"name":"Justicar"}
+{"key":7801,"since":70245,"src":["game"],"name":"Judicator"}
+{"key":7802,"since":70245,"src":["game"],"name":"Ascendant"}
+{"key":7803,"since":70245,"src":["game"],"name":"Retributor"}
+{"key":7804,"since":70245,"src":["game"],"name":"Excommunicator"}
+{"key":7805,"since":70245,"src":["game"],"name":"Lightbringer"}
+{"key":7806,"since":70245,"src":["game"],"name":"Exile"}
+{"key":7807,"since":70245,"src":["game"],"name":"Templar"}
+{"key":7808,"since":70245,"src":["game"],"name":"Windwalker"}
+{"key":7809,"since":70245,"src":["game"],"name":"Shield Master"}
+{"key":7810,"since":70245,"src":["game"],"name":"Totemic Protector"}
+{"key":7811,"since":70245,"src":["game"],"name":"Shock-Absorber"}
+{"key":7812,"since":70245,"src":["game"],"name":"Spiritual Bulwark"}
+{"key":7813,"since":70245,"src":["game"],"name":"Maelstrombringer"}
+{"key":7814,"since":70245,"src":["game"],"name":"Lavawalker"}
+{"key":7815,"since":70245,"src":["game"],"name":"True Alpha"}
+{"key":7816,"since":70245,"src":["game"],"name":"Totemkeeper"}
+{"key":7817,"since":70245,"src":["game"],"name":"Ancestral Invigoration"}
+{"key":7818,"since":70245,"src":["game"],"name":"Spiritweaver"}
+{"key":7819,"since":70245,"src":["game"],"name":"Waterwalker"}
+{"key":7820,"since":70245,"src":["game"],"name":"Stormtender"}
+{"key":7821,"since":70245,"src":["game"],"name":"Elemental Seer"}
+{"key":7822,"since":70245,"src":["game"],"name":"Vitalist"}
+{"key":7823,"since":70245,"src":["game"],"name":"Spirithealer"}
+{"key":7824,"since":70245,"src":["game"],"name":"Refined Spells"}
+{"key":7825,"since":70245,"src":["game"],"name":"Chieftain"}
+{"key":7826,"since":70245,"src":["game"],"name":"Furycharged"}
+{"key":7827,"since":70245,"src":["game"],"name":"Stormbreaker"}
+{"key":7828,"since":70245,"src":["game"],"name":"Tempest"}
+{"key":7829,"since":70245,"src":["game"],"name":"Seismic Smasher"}
+{"key":7830,"since":70245,"src":["game"],"name":"Flamebringer"}
+{"key":7831,"since":70245,"src":["game"],"name":"Volcano"}
+{"key":7832,"since":70245,"src":["game"],"name":"Raging Flame"}
+{"key":7833,"since":70245,"src":["game"],"name":"Elemental Master"}
+{"key":7834,"since":70245,"src":["game"],"name":"Tribesman"}
+{"key":7835,"since":70245,"src":["game"],"name":"Spirit Guide"}
+{"key":7836,"since":70245,"src":["game"],"name":"Elder"}
+{"key":7837,"since":70245,"src":["game"],"name":"Heir of the Elements"}
+{"key":7838,"since":70245,"src":["game"],"name":"Lava Sage"}
+{"key":7839,"since":70245,"src":["game"],"name":"Ancestral Warden"}
+{"key":7840,"since":70245,"src":["game"],"name":"Power Corrupt"}
+{"key":7841,"since":70245,"src":["game"],"name":"Gentle Paw"}
+{"key":7842,"since":70245,"src":["game"],"name":"Ferocious Focus"}
+{"key":7843,"since":70245,"src":["game"],"name":"Paw and Claw"}
+{"key":7844,"since":70245,"src":["game"],"name":"Territorial"}
+{"key":7845,"since":70245,"src":["game"],"name":"Beastly"}
+{"key":7846,"since":70245,"src":["game"],"name":"Lacerator"}
+{"key":7847,"since":70245,"src":["game"],"name":"Furious"}
+{"key":7848,"since":70245,"src":["game"],"name":"Mangler"}
+{"key":7849,"since":70245,"src":["game"],"name":"Innervator"}
+{"key":7850,"since":70245,"src":["game"],"name":"Nurturer"}
+{"key":7851,"since":70245,"src":["game"],"name":"Tranquil"}
+{"key":7852,"since":70245,"src":["game"],"name":"Dreamwalker"}
+{"key":7853,"since":70245,"src":["game"],"name":"Grove Tender"}
+{"key":7854,"since":70245,"src":["game"],"name":"Feathered Sage"}
+{"key":7855,"since":70245,"src":["game"],"name":"Benevolent Seer"}
+{"key":7856,"since":70245,"src":["game"],"name":"Lifeweaver"}
+{"key":7857,"since":70245,"src":["game"],"name":"Illuminator"}
+{"key":7858,"since":70245,"src":["game"],"name":"Predatory Instincts"}
+{"key":7859,"since":70245,"src":["game"],"name":"Rip and Tear"}
+{"key":7860,"since":70245,"src":["game"],"name":"Mercy of the Claw"}
+{"key":7861,"since":70245,"src":["game"],"name":"Prideful"}
+{"key":7862,"since":70245,"src":["game"],"name":"Barbaric"}
+{"key":7863,"since":70245,"src":["game"],"name":"Frenetic"}
+{"key":7864,"since":70245,"src":["game"],"name":"Exsanguinator"}
+{"key":7865,"since":70245,"src":["game"],"name":"Thornkeeper"}
+{"key":7866,"since":70245,"src":["game"],"name":"Lunatic"}
+{"key":7867,"since":70245,"src":["game"],"name":"Starcaller"}
+{"key":7868,"since":70245,"src":["game"],"name":"Night"}
+{"key":7869,"since":70245,"src":["game"],"name":"Keeper of the Grove"}
+{"key":7870,"since":70245,"src":["game"],"name":"Wrathful"}
+{"key":7871,"since":70245,"src":["game"],"name":"Graceful"}
+{"key":7872,"since":70245,"src":["game"],"name":"Astral Ascendant"}
+{"key":7873,"since":70245,"src":["game"],"name":"Cometcaller"}
+{"key":7874,"since":70245,"src":["game"],"name":"Wrath of the Forest"}
+{"key":7875,"since":70245,"src":["game"],"name":"Animalistic Expertise"}
+{"key":7876,"since":70245,"src":["game"],"name":"Strangulate"}
+{"key":7877,"since":70245,"src":["game"],"name":"Death Grip"}
+{"key":7878,"since":70245,"src":["game"],"name":"Blood Plague"}
+{"key":7879,"since":70245,"src":["game"],"name":"Frost Fever"}
+{"key":7880,"since":70245,"src":["game"],"name":"Mark of Blood"}
+{"key":7881,"since":70245,"src":["game"],"name":"Obliterate"}
+{"key":7896,"since":70245,"src":["game"],"name":"+200 Attack Power vs Undead"}
+{"key":7940,"since":70245,"src":["game"],"name":"Grand Crusader"}
+{"key":7941,"since":70245,"src":["game"],"name":"Grand Arcanist"}
+{"key":7942,"since":70245,"src":["game"],"name":"Grand Sorcerer"}
+{"key":7943,"since":70245,"src":["game"],"name":"Grand Inquisitor"}
+{"key":7944,"since":70245,"src":["game"],"name":"Poultry Precision Scope (+10 Damage)"}
+{"key":8057,"since":70245,"src":["game"],"name":"Poultry Precision Scope (+3% Hit)"}
+{"key":8059,"since":70245,"src":["game"],"name":"Spellstone 1"}
+{"key":8060,"since":70245,"src":["game"],"name":"Spellstone 2"}
+{"key":8061,"since":70245,"src":["game"],"name":"Spellstone 3"}
+{"key":8216,"since":70245,"src":["game"],"name":"Insight"}
+{"key":8217,"since":70245,"src":["game"],"name":"Revelation"}
+{"key":8220,"since":70245,"src":["game"],"name":"Absorption"}
+{"key":8293,"since":70245,"src":["game"],"name":"Windwrath 1"}
+{"key":8695,"since":70245,"src":["game"],"name":"Lotus Claw"}
+{"key":8698,"since":70245,"src":["game"],"name":"Chillknife"}
+{"key":8700,"since":70245,"src":["game"],"name":"Lesser Flame"}
+{"key":8706,"since":70245,"src":["game"],"name":"Baleflame"}
+{"key":8707,"since":70245,"src":["game"],"name":"Spark"}
+{"key":8708,"since":70245,"src":["game"],"name":"Striking"}
+{"key":8709,"since":70245,"src":["game"],"name":"Frost"}
+{"key":8710,"since":70245,"src":["game"],"name":"Iceknife"}
+{"key":8711,"since":70245,"src":["game"],"name":"Accuracy"}
+{"key":8712,"since":70245,"src":["game"],"name":"Quickening"}
+{"key":8713,"since":70245,"src":["game"],"name":"Flame"}
+{"key":8714,"since":70245,"src":["game"],"name":"Balefrost"}
+{"key":8715,"since":70245,"src":["game"],"name":"Manablade"}
+{"key":8716,"since":70245,"src":["game"],"name":"Greater Flame"}
+{"key":8717,"since":70245,"src":["game"],"name":"Greater Frost"}
+{"key":8718,"since":70245,"src":["game"],"name":"Precision"}
+{"key":8720,"since":70245,"src":["game"],"name":"+2% Crit"}
+{"key":8721,"since":70245,"src":["game"],"name":"Recovery"}

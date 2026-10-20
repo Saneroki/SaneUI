@@ -7,13 +7,17 @@ title = "Data: Characters"
 notes = "What your own characters have: their bags, bank and what they wear, for the counts on your alts. Nothing shipped; kept on this computer only, never shared. Loaded soon after login."
 saved = true
 
+[Collections]
+title = "Data: Collections"
+notes = "Sane UI's data on achievements, mounts and appearance sets. Loaded only when Sane UI first needs it."
+
 [CreatureSpawns]
 title = "Data: Creature Spawns"
 notes = "Sane UI's data on where every creature without a service spawns. Loaded only when Sane UI first asks where a creature is."
 
 [Game]
 title = "Data: Game"
-notes = "Sane UI's data from the game's own code: the names of the strings that label the options' settings, currencies. Loaded only when Sane UI needs it."
+notes = "Sane UI's data from the game's own code: the names of the strings that label the options' settings, currencies, factions, holidays. Loaded only when Sane UI needs it."
 
 [Guides]
 title = "Data: Guides"
@@ -21,7 +25,7 @@ notes = "Sane UI's leveling guides: their steps, places, quests and checks. Load
 
 [Items]
 title = "Data: Items"
-notes = "Sane UI's data on every item players can have, with its history, and the item sets. Loaded when Sane UI first needs it."
+notes = "Sane UI's data on every item players can have, with its history, the item sets and enchantments. Loaded when Sane UI first needs it."
 
 [Market]
 title = "Data: Market"
@@ -49,4 +53,4 @@ notes = "Sane UI's data on the class talent trees and the Legacy trees. Loaded w
 
 [World]
 title = "Data: World"
-notes = "Sane UI's data on creatures, their spells, objects, zones, travel and places, and the terrain's pictures for the map. Loaded soon after login."
+notes = "Sane UI's data on creatures, their spells, objects, zones, travel, places and bosses, and the terrain's pictures for the map. Loaded soon after login."

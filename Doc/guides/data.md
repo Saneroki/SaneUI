@@ -211,9 +211,9 @@ prompt 2, which settles what the game gives.
 
 | Pack | Sets and their keys |
 | --- | --- |
-| Items | Items (item ID), ItemSets (item set ID), Disenchants (the game's row of disenchanting) |
+| Items | Items (item ID), ItemSets (item set ID), Disenchants (the game's row of disenchanting), Enchantments (enchantment ID) |
 | Quests | Quests (quest ID) |
-| World | NPCs (creature ID), CreatureSpells (spell ID), Objects (object ID), Zones (map ID), Travel (the game's TaxiPath ID; our own number for a way it has no path for), Places (our own numbers), Drops (`npc:<ID>`, `object:<ID>`, `zone:<map ID>`), Tiles (continent × 4096 + row × 64 + column), Overlays (the game's overlay ID), Indoors (the building's root file ID) |
+| World | NPCs (creature ID), CreatureSpells (spell ID), Objects (object ID), Zones (map ID), Travel (the game's TaxiPath ID; our own number for a way it has no path for), Places (our own numbers), Drops (`npc:<ID>`, `object:<ID>`, `zone:<map ID>`), Tiles (continent × 4096 + row × 64 + column), Overlays (the game's overlay ID), Indoors (the building's root file ID), Encounters (encounter ID) |
 | Spawns | Spawns (`npc:<ID>`, `object:<ID>`), QuestAreas (`<quest>/<objective>/<stage>/<map>`), PatrolPaths (creature ID) |
 | CreatureSpawns | CreatureSpawns (creature ID) |
 | Routes | Walking (a region, numbered by our tool) |
@@ -222,7 +222,8 @@ prompt 2, which settles what the game gives.
 | Characters | No sets: saved data only (*Characters*) |
 | Talents | Talents (trait node ID), Legacy (`node:<ID>`, `challenge:<ID>`, `reward:<level>`) |
 | Market | Vendors (the vendor's creature ID); the series *Prices* (step 1c.2) |
-| Game | CVarLabels (the CVar's name), Currencies (currency ID) |
+| Game | CVarLabels (the CVar's name), Currencies (currency ID), Factions (faction ID), Holidays (holiday ID) |
+| Collections | Achievements (achievement ID), Mounts (mount ID), TransmogSets (transmog set ID) |
 
 - **A text key `<kind>:<ID>`** where one set holds things whose IDs overlap (a creature and an object can have
   the same number); **a text key of parts** where an entry is one of several per thing (an area per
@@ -769,7 +770,7 @@ unique on its realm (`Thrall-Draenor`).
 | `dev/tools/data stats` | Per game version and set: entries, versions, entries that changed, gone ones, its own lines, its file's size in the pack; each pack's totals. |
 | `dev/tools/data harvest` *(1c)* | The packs' saved files into staging, accepted data only. |
 | `dev/tools/cvar-labels --staging` | The CVar labels as staging for the set *CVarLabels*. |
-| `dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]` | The game's own facts from a build's client tables (and a beta's hotfixes) as staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy and Currencies; `base <batch>` stages for live what only the beta holds (decision 27). What it leaves out and why: `dev/data/staging/game-<game version>-left.csv`. |
+| `dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]` | The game's own facts from a build's client tables (and a beta's hotfixes) as staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy, Currencies, QuestAreas, Achievements, Mounts, TransmogSets, Enchantments, Holidays, Factions and Encounters; `base <batch>` stages for live what only the beta holds (decision 27). What it leaves out and why: `dev/data/staging/game-<game version>-left.csv`. |
 
 ## Tests
 

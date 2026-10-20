@@ -1,0 +1,11 @@
+set = "Enchantments"
+key = "int"              # the game's enchantment ID (an item link's enchant)
+pack = "Items"
+learn = true             # an item's tooltip shows its enchantment
+about = "The enchantments an item can carry: their name as a tooltip shows it, and what they need."
+
+[fields]
+name       = { type = "text" }
+skill      = { type = "int", min = 0 }       # the skill it needs, and from which level
+skillLevel = { type = "int", min = 0 }
+minLevel   = { type = "int", min = 0 }       # the level a character needs

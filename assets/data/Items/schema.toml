@@ -30,6 +30,7 @@ set       = { type = "ref", set = "ItemSets" }
 description = { type = "text" }                # its line in quotes on the tooltip
 classes   = { type = "list", of = "int" }      # the classes that can use it (the game's class IDs); none: every class
 unique    = { type = "int", min = 1 }          # how many one character can have; none: no limit
+toy       = { type = "bool" }                  # a toy (the toy box)
 
 [index]
 bySlot = "slot"

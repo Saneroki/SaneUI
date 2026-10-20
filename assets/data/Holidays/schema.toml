@@ -1,0 +1,17 @@
+set = "Holidays"
+key = "int"              # the game's holiday ID
+pack = "Game"
+learn = true             # the calendar (C_Calendar)
+about = "The holidays and world events: their name, what they are, and when they start and how long they last, as the client holds it."
+
+[fields]
+name        = { type = "text" }
+description = { type = "text" }
+dates       = { type = "list", of = "tuple", parts = [
+    { name = "year", type = "int", min = 2000 },   # none: every year
+    { name = "month", type = "int", min = 1, max = 12 },
+    { name = "day", type = "int", min = 1, max = 31 },
+    { name = "hour", type = "int", min = 0, max = 23 },
+    { name = "minute", type = "int", min = 0, max = 59 },
+    { name = "hours", type = "int", min = 0 },     # how long it lasts from then
+] }
