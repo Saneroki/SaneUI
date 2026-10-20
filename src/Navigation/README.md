@@ -39,8 +39,8 @@ party), always over the map, and the full map has the quest log at its left. The
   and ways into other maps), and what Core's data knows: quest givers with a quest you can take (the yellow !,
   see-through so your own quests stand out), with a quest too low to give you experience or one you cannot take yet
   (its level, a quest first: a grey !), or with quests you have done only (grey, off at first); services, each its
-  own (the innkeeper's mug, the banker's bags, a class trainer's book, a profession trainer's scroll, a vendor by
-  its goods...), entrances, the docks of the boats (a boat) and zeppelins (an airship) with where they go, herbs,
+  own (the innkeeper's mug, the banker's bags, a class trainer's book, a profession trainer's scroll, a merchant
+  the game's anvil, one of food, reagents, poisons or ammunition the game's icon for those...), entrances, the docks of the boats (a boat) and zeppelins (an airship) with where they go, herbs,
   ore, books (an open book): as far as the data holds them; a place the game has not confirmed says so. A tooltip
   says what it is: an NPC's title (*Warrior Trainer*, *Weaponsmith*), its quests with their levels, and why a grey
   one is not for you yet. One pin per thing: the game's word hides the data's. Pins that would cover each other

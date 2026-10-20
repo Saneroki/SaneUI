@@ -6,6 +6,11 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 295 (Navigation), 85 (Inventory), 85 (sheet), 67 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
+### Navigation: merchants in the game's anvil (Saneroki, 2026-10-20)
+- `Pins.lua`: a merchant's pin is the game's anvil (`repair`, as the game's own minimap shows merchants), in place of
+  the work order scroll; a vendor of food, reagents, poisons, ammunition, potions or trade goods keeps that kind's
+  icon.
+
 ### Navigation: a click on a pin puts the map pin there (Saneroki, 2026-10-20)
 - **The click** (`PinView.lua`, `Act`, `Drop`): a plain click on any pin, on the small map and the full one, puts the
   game's map pin where it stands (its own map and place; a gathered marker's first pin's), with the game's sound,

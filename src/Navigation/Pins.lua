@@ -48,9 +48,10 @@ Pins.ICONS = {
 local SERVICES = {
     repair = "repair", innkeeper = "innkeeper", banker = "banker", auctioneer = "auctioneer",
     stablemaster = "stablemaster", battlemaster = "battlemaster", trainer = "profession", weaponmaster = "upgradeitem-32x32",
-    vendor = "poi-workorders", guildmaster = "crossedflags", tabard = "crossedflags", spirithealer = "poi-graveyard-neutral",
+    vendor = "repair", guildmaster = "crossedflags", tabard = "crossedflags", spirithealer = "poi-graveyard-neutral",
 }
--- A vendor by the first of its kinds of goods with an icon.
+-- A merchant: the game's anvil, as its own minimap shows merchants (Saneroki, 2026-10-20); one of a kind of goods
+-- the game's minimap tracks: by the first of them with an icon.
 local GOODS = { food = "food", reagents = "reagents", poisons = "poisons", ammunition = "ammunition", potions = "greencross",
                 tradegoods = "gear" }
 -- A trainer of a class (its title names one of the game's classes) is the class book; of a profession, the scroll.
