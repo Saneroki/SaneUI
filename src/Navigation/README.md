@@ -44,9 +44,11 @@ party), always over the map, and the full map has the quest log at its left. The
   ore, books (an open book): as far as the data holds them; a place the game has not confirmed says so. A tooltip
   says what it is: an NPC's title (*Warrior Trainer*, *Weaponsmith*), its quests with their levels, and why a grey
   one is not for you yet. One pin per thing: the game's word hides the data's. Pins that would cover each other
-  show as one, in the first one's icon, its tooltip what is there: a click zooms in. A click on a quest in your log
-  leads the game's arrow to it; on a quest giver, its quests show in the quest log (below); on an entrance, a way
-  or a dock with one destination, its map opens. A continent whole shows only travel and places; the minimap no
+  show as one, in the first one's icon, its tooltip what is there. **A click on any pin**, on the small map and the
+  full one, puts the game's map pin where it stands (the golden line leads there); a gathered one zooms in too; on
+  the full map a quest in your log also leads the game's arrow to it, and a quest giver's quests show in the quest
+  log (below). Shift and a click on an entrance, a way or a dock with one destination opens its map. A continent
+  whole shows only travel and places; the minimap no
   books or treasures, services only near you. The party and raid in their class colours.
 - **The pin filter** (*Pins* on the full map's bar, or the setting *Pins on the map*): a checkmark per kind, each
   with its icon. The quests each a row of their own: *Quests in your log*, *Quest offers*, *Low-level quests* (no
@@ -293,6 +295,8 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, a click on a pin:** the game's map pin where it stands, on both maps; on the full map a quest also in
+  the quest log; Shift and a click opens a pin's map.
 - **2026-10-20, the game's minimap square again:** in a window that is not square its band masks left the game's
   minimap empty (no dots, no arrow); it is now as large as the window's shorter side, cut by the game's own square.
   The masks and their tool are gone.

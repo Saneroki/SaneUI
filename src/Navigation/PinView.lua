@@ -16,7 +16,9 @@ local _, ns = ...
 --                  quest log as previews (QuestLog.Preview)
 --      gathered    pins that would cover each other: one marker in the icon of the first (drawn highest), its
 --                  tooltip what is there; a click zooms in
---      the rest    a click on one that leads into another map opens that map
+--      a click     the game's map pin where it stands, on the small map and the full one (Act); on the
+--                  full map a quest also shows in the quest log; Shift and a click on one that leads into
+--                  another map opens that map
 --
 --  Placed against the canvas' holder like the map's layers, so a drag moves them
 --  with the map; laid out again with the map. A pin shows only while it lies
@@ -70,22 +72,32 @@ local function Tip(button)
             else GameTooltip:AddLine(line, 1, 1, 1, true) end
         end
         if pin.unverified then GameTooltip:AddLine(Pins.TEXT.unverified, 0.5, 0.5, 0.5) end
+        if pin.click ~= "preview" then GameTooltip:AddLine(Pins.TEXT.drop, 0.5, 0.5, 0.5) end
     end
     GameTooltip:Show()
 end
 
--- A plain click: the pin's own action.
+-- The game's map pin where a pin stands (its own map and its place there; a gathered marker's first pin), as Ctrl
+-- and a click puts it on the map: the golden line leads there.
+local function Drop(pin)
+    local first = pin.gathered and pin.gathered[1] or pin
+    if first.map and first.x and ns.Live.SetWaypoint(first.map, first.x, first.y) then
+        ns.Marks.Sound("UI_MAP_WAYPOINT_CONTROL_CLICK")
+    else
+        UIErrorsFrame:AddMessage(ns.TEXT.noPin, 1, 0.1, 0.1)
+    end
+end
+
+-- A plain click, on the small map and the full one: the game's map pin there; a gathered marker zooms in too, and
+-- on the full map a quest shows in the quest log (in the log: the arrow leads to it; a giver's: its quests as
+-- previews). Shift and a click: a pin that leads into another map opens it.
 local function Act(pin)
-    if pin.gathered then
-        return ns.Canvas.ZoomTo(pin.pu, pin.pv, 3)
-    end
-    if pin.click == "quest" and pin.quest then
-        return ns.QuestLog.Focus(pin.quest)
-    end
-    if pin.click == "preview" and pin.quests then
-        return ns.QuestLog.Preview(pin.quests, pin.map, pin.x, pin.y)
-    end
-    if pin.to then return ns.Canvas.Show(pin.to) end
+    if IsShiftKeyDown() and pin.to then return ns.Canvas.Show(pin.to) end
+    Drop(pin)
+    if pin.gathered then return ns.Canvas.ZoomTo(pin.pu, pin.pv, 3) end
+    if ns.Canvas.camera ~= ns.Window.full then return end
+    if pin.click == "quest" and pin.quest then return ns.QuestLog.Focus(pin.quest) end
+    if pin.click == "preview" and pin.quests then return ns.QuestLog.Preview(pin.quests, pin.map, pin.x, pin.y) end
 end
 
 local function Down(button, mouse)

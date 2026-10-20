@@ -1048,7 +1048,7 @@ do
     GameTooltip._lines = nil
     dock._scripts.OnEnter(dock)
     local lines = GameTooltip._lines
-    check(lines and lines[1] == "To The Far Shore, Kalimdor" and lines[2] == Pins.TEXT.openMap and not lines[3],
+    check(lines and lines[1] == "To The Far Shore, Kalimdor" and lines[2] == Pins.TEXT.openMap and lines[3] == Pins.TEXT.drop and not lines[4],
         "its tooltip: where it sails to, the area and the zone in the game's words; the game's own way, not unconfirmed")
 end
 local marker = pins["gathered:npc:69"]
@@ -1216,6 +1216,52 @@ do
     shown = logBox:Draw()
     check(shown[1].row.kind == "header" and shown[1].text._text ~= QuestLog.TEXT.previews and #shown == 5,
         "its red X: out of the log again")
+    full:Show(was.map, was.u, was.v, was.k)
+    full.follow = was.follow
+    Canvas.Layout()
+end
+-- A click on any pin puts the game's map pin where it stands, on the full map and the small one; Shift and a click
+-- on one that leads into another map opens that map instead.
+do
+    local was = { map = full.map, u = full.u, v = full.v, k = full.k, follow = full.follow }
+    full:Show(1415, 0, -9250, 0.4)
+    Canvas.Layout()
+    local saved = waypoint
+    local mailbox = Drawn()["place:2"]
+    waypoint = nil
+    mailbox._scripts.OnMouseDown(mailbox, "LeftButton")
+    mailbox._scripts.OnMouseUp(mailbox, "LeftButton")
+    check(waypoint and waypoint.uiMapID == mailbox.pin.map and near(waypoint.position.x, mailbox.pin.x)
+        and near(waypoint.position.y, mailbox.pin.y), "a click on a pin: the game's map pin where it stands")
+    local opened
+    local show = ns.Canvas.Show
+    ns.Canvas.Show = function(map) opened = map return true end
+    local entrance = Drawn()["place:1"]
+    waypoint = nil
+    IsShiftKeyDown = function() return true end
+    entrance._scripts.OnMouseDown(entrance, "LeftButton")
+    entrance._scripts.OnMouseUp(entrance, "LeftButton")
+    IsShiftKeyDown = function() return false end
+    check(opened == 500 and not waypoint, "Shift and a click on an entrance: its map opens, no map pin")
+    entrance._scripts.OnMouseDown(entrance, "LeftButton")
+    entrance._scripts.OnMouseUp(entrance, "LeftButton")
+    check(waypoint and waypoint.uiMapID == 1429, "a plain click on it: the map pin there, as on every pin")
+    local previewed
+    local preview = ns.QuestLog.Preview
+    ns.QuestLog.Preview = function(quests) previewed = quests end
+    local giver = Drawn()["npc:72"]
+    Canvas.Use(ns.Window.small)
+    waypoint = nil
+    giver._scripts.OnMouseDown(giver, "LeftButton")
+    giver._scripts.OnMouseUp(giver, "LeftButton")
+    check(waypoint and not previewed, "on the small map a quest giver's pin: the map pin only, the quest log stays shut")
+    Canvas.Use(full)
+    giver._scripts.OnMouseDown(giver, "LeftButton")
+    giver._scripts.OnMouseUp(giver, "LeftButton")
+    check(previewed and previewed[1] == 100, "on the full map: the map pin, and its quests in the quest log")
+    ns.QuestLog.Preview = preview
+    ns.Canvas.Show = show
+    waypoint = saved
     full:Show(was.map, was.u, was.v, was.k)
     full.follow = was.follow
     Canvas.Layout()

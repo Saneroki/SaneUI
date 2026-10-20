@@ -3,8 +3,19 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 290 (Navigation), 85 (Inventory), 85 (sheet), 67 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 295 (Navigation), 85 (Inventory), 85 (sheet), 67 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Navigation: a click on a pin puts the map pin there (Saneroki, 2026-10-20)
+- **The click** (`PinView.lua`, `Act`, `Drop`): a plain click on any pin, on the small map and the full one, puts the
+  game's map pin where it stands (its own map and place; a gathered marker's first pin's), with the game's sound,
+  as Ctrl and a click on the map does; a gathered marker zooms in too. On the full map a quest in the log also leads
+  the game's arrow to it (`QuestLog.Focus`), a quest giver's quests show as previews (`QuestLog.Preview`); on the
+  small map nothing else opens. Shift and a click on a pin that leads into another map (an entrance, a way, a dock
+  with one destination) opens it, without a map pin. Every tooltip ends with what a click does (`Pins.TEXT.drop`,
+  `open`, `preview`, `openMap`).
+- **Tests:** `dev/tests/navigation.lua` (295 checks): the map pin at a pin's place, Shift and a click opening an
+  entrance's map, on the small map a giver's click the map pin only, on the full one its quests in the log.
 
 ### Inventory: the character sheet's parts windows of their own, the sidebar (Saneroki, 2026-10-20)
 - **Windows of their own** (Saneroki): the sheet's parts are each a window on the module's board, moved and sized
