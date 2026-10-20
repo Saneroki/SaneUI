@@ -3,8 +3,35 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 500 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 258 (Navigation), 21 (Inventory), 40 (Combat), 37 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 500 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 259 (Navigation), 21 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Navigation: Zephras Isle's terrain and walking data (Saneroki, 2026-10-20)
+- **The data** (Core's sets *Tiles* and *Walking*, from the game's own files of the isle's map, 2991, build
+  70245): the isle's 72 tiles (its WDT's minimap textures), and its walking data, 26 tiles with ground. Both the
+  game's, new keys only (`dev/tools/data import`: 72 and 26 new). The schemas say so (the instances 0, 1 and
+  2991); *Walking*'s now describes what it holds (a tile, its rectangles and openings, the tiles around it).
+- **`dev/tools/terrain-art`:** `--maps <instances>` draws only those maps and leaves the others' textures,
+  outlines and lines of `Outlines.lua` as they are. A zone straight on the world map is outlined as a continent's
+  zone. The open sky around an isle that floats is cut away as the sea is (`sky`, `blank`): a sample the game's
+  minimap texture leaves pure black is sky when black samples join it to a place of the grid with no tile (the
+  terrain's holes and the cliffs under the isle's rim; a dark place within the land and the zeppelins' tower
+  over the void stay; nothing on the continents, where no black reaches their grid's edge). Made with
+  `--maps 2991`: `Art/Terrain/2991-*.blp` and `Art/Sketches/2991-*.blp` (four blocks each), `Art/Zones/2521.blp`,
+  `Outlines.lua`'s line for 2991, from the Forever beta client's minimap textures (the newer build, 70450; the
+  isle's tiles and file IDs are the same as live's), as the continents' were; theirs are not made again.
+- **`dev/tools/walk-data`:** `--maps <instances>` makes only those maps' tiles; regions are numbered in the order of
+  the tiles' keys (before: the order the processes finished in), and hold within one map. Made with `--maps 2991`;
+  both zeppelins' docks lie by the island's own region.
+- **Drawn** (`Terrain.lua`, `Art.lua`, `Painted.lua`): the overview, the stitched map, the maps under it and the
+  painted map loop over every plane (`Coords.Planes`), so *Scrying* and *Atlas* draw the isle's terrain (its tiles
+  up close, `view.continent` 2991) and *Parchment* the isle's own map under its stitched map, its frame faded off.
+  Art's maps under the stitched map (`Under`) take pool keys of their own (`Draw`'s `under`), so the isle's map
+  drawn under it is not taken over by the same map drawn cut to its outline at the zone's level.
+- Tests: an isle tile in the test pack; *Scrying* on the isle (its tile cut by its block's overview, the overview),
+  *Parchment* there (the world's map, the isle's own framed, its stitched map, its map cut to its outline over
+  them) (`dev/tests/navigation.lua`); regions numbered by the keys' order, the open sky against a dark place
+  within the land (`dev/tests/walk.py`).
 
 ### Combat: its window at the bottom middle, your talents and spellbook on its full screen (Saneroki, 2026-10-20)
 - **The known addons** (Saneroki, 2026-10-20, the one exception to *No other addons*): Sane UI's code may see that

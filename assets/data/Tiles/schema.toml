@@ -1,5 +1,5 @@
 set = "Tiles"
-key = "int"              # continent * 4096 + row * 64 + column: the continent is the game's instance (0 Eastern Kingdoms, 1 Kalimdor), row and column its tile in the continent's grid of 64 x 64
+key = "int"              # continent * 4096 + row * 64 + column: the continent is the game's instance (0 Eastern Kingdoms, 1 Kalimdor, 2991 Zephras Isle), row and column its tile in the continent's grid of 64 x 64
 pack = "World"
 learn = false
 about = "The terrain's pictures for the map: for every tile of a continent's grid that has one, the game's own minimap texture."

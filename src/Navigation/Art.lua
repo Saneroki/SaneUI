@@ -3,10 +3,11 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - Art
 --  The map drawn by hand: Blizzard's zone maps made one map of the whole world,
---  both continents at every zoom (the view Parchment), from the bottom up:
+--  both continents and Zephras Isle at every zoom (the view Parchment), from the
+--  bottom up:
 --
---      the world map and each continent's, Blizzard's, their paper frames faded off
---                  (Art/Edge.blp): the sea between and around the zones
+--      the world map and each plane's (a continent's, the isle's own), Blizzard's, their paper frames
+--                  faded off (Art/Edge.blp): the sea between and around the zones
 --      the stitched map   every zone's full map cut to its outline, laid where it lies on its
 --                  continent (Art/Sketches/<continent>-<row>-<column>.blp, in the terrain's blocks,
 --                  Terrain.Overview): the whole world at once, far out
@@ -86,8 +87,9 @@ local function Of(map)
     return art
 end
 
--- One map's art over its box: the tiles that meet the view, at sublevel; cut by mask, if given.
-local function Draw(map, box, sublevel, view, mask)
+-- One map's art over its box: the tiles that meet the view, at sublevel; cut by mask, if given. under: drawn under
+-- the stitched map (Under), in textures of its own, so the same map can be drawn over it too (the isle, a zone).
+local function Draw(map, box, sublevel, view, mask, under)
     local art = Of(map)
     if not art or not box then return end
     local width, height = art.tileWidth / art.width * box.width, art.tileHeight / art.height * box.height
@@ -100,7 +102,8 @@ local function Draw(map, box, sublevel, view, mask)
                 local index = (row - 1) * art.across + column
                 local file = art.files[index]
                 if file and u < view.right and u + width > view.left then
-                    ns.Canvas.Put(pool:Get(map * 1000 + index, file, sublevel, mask), u, v, width, height,
+                    local key = map * 1000 + index
+                    ns.Canvas.Put(pool:Get(under and -key or key, file, sublevel, mask), u, v, width, height,
                         math.min(1, (right - u) / width), math.min(1, (v - bottom) / height))
                 end
             end
@@ -200,18 +203,18 @@ local function Linked(box, link)
              height = link.sv * box.height }
 end
 
--- Under the stitched map: the world map, and every continent's map that meets the view, their paper frames
--- faded off; the sea between the zones and around them.
+-- Under the stitched map: the world map, and every plane's map that meets the view (a continent's, the isle's
+-- own), their paper frames faded off; the sea between the zones and around them.
 local function Under(view)
     local world = Coords.WorldBox(view.map)
     if world and Meets(world, view) then
-        Draw(Coords.WorldMap(), world, 0, view, outlines:Get("world", Art.EDGE, world.u, world.v, world.width, world.height))
+        Draw(Coords.WorldMap(), world, 0, view, outlines:Get("world", Art.EDGE, world.u, world.v, world.width, world.height), true)
     end
-    for _, continent in ipairs(Coords.Continents()) do
-        local box, link = Coords.Box(continent), Coords.Link(continent, view.map)
+    for _, plane in ipairs(Coords.Planes()) do
+        local box, link = Coords.Box(plane), Coords.Link(plane, view.map)
         box = box and link and Linked(box, link)
         if box and Meets(box, view) then
-            Draw(continent, box, 1, view, outlines:Get(-continent, Art.EDGE, box.u, box.v, box.width, box.height))
+            Draw(plane, box, 1, view, outlines:Get(-plane, Art.EDGE, box.u, box.v, box.width, box.height), true)
         end
     end
 end

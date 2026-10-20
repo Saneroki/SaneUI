@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Makes Navigation's terrain overview, its zones' outlines and its stitched map from the game's own files.
 
+Every map the set Tiles has a grid for is drawn alike: the two continents and Zephras Isle, a zone straight on
+the world map with a grid of its own (its own instance, 2991; Navigation's Coords.Planes). Below, a continent
+is any of them.
+
 Up close the map draws the game's minimap textures themselves, one of 512 x 512 per tile of a continent's
 grid (Core's set Tiles names the file of each). Far out that would be hundreds of large textures at once,
 so there the map draws this overview instead: the same tiles at 64 x 64 texels each, eight by eight in one
@@ -8,14 +12,18 @@ texture of 512 x 512, so a whole continent is a few dozen textures (src/Navigati
 
 The water is cut away: each texel's alpha is how much of it is land, read from the game's terrain files,
 where the ground lies above the water's surface (its heights and the water of each map chunk; magma and
-slime stay). The land's colour is taken from land alone, so no dark water rims a coast; transparent
-texels carry the nearest land's colour, so filtering never draws a dark edge either. Up close the same
+slime stay). So is the open sky around an isle that floats (Zephras Isle), where there is no water: what the
+game's minimap textures leave pure black (it draws nothing there: the terrain's holes, the cliffs under the
+rim), as far as it reaches out to the edge of the map's tiles; a dark place within the land and a building
+over the sky (a dock) stay. The land's colour is taken from land alone, so no dark water rims a coast;
+transparent texels carry the nearest land's colour, so filtering never draws a dark edge either. Up close the same
 alpha is the mask of the game's own textures (Terrain.lua), so the coast is cut alike at every zoom.
 
   src/Navigation/Art/Terrain/<continent>-<row>-<column>.blp   row and column of the block of 8 x 8 tiles
                                                               (0 to 7), only blocks that hold a tile
 
-Each zone's outline, for Blizzard's map art cut to its zone's shape (src/Navigation/Art.lua): the map chunks
+Each zone's outline, for Blizzard's map art cut to its zone's shape (src/Navigation/Art.lua; a zone of a
+continent's map, or one straight on the world map, as the isle): the map chunks
 (a 16th of a tile, 33 1/3 yards) of the zone's areas, as the alpha of a mask over the zone map's box (the
 game's world position of its corners); of the open sea only what lies near its land, so a zone's painted sea
 does not reach out to its box's edge (a lake or a river is its zone's). Whole up to the border, it fades out past it into the neighbour (some
@@ -47,15 +55,17 @@ The input, all as the game stores them, for every tile the master of the set Til
                      WorldMapOverlayTile)
   map art            a folder of the game's map textures (every map's art and every part revealed once
                      explored), each named <file ID>.blp
-Run it again when the set or the game's build changes.
+Run it again when the set or the game's build changes. With --maps (instances, as 2991) only those maps are
+drawn: the other maps' textures, outlines and lines of Outlines.lua stay as they are.
 
 Needs Python with Pillow and NumPy, and ImageMagick 7 (magick).
 
-Usage:  dev/tools/terrain-art <minimap textures> <terrain files> <client tables> <map art>
+Usage:  dev/tools/terrain-art <minimap textures> <terrain files> <client tables> <map art> [--maps <id>[,<id>...]]
 """
 import csv
 import io
 import json
+import re
 import struct
 import subprocess
 import sys
@@ -86,16 +96,18 @@ FADED = 0.08       # the softened border's value where the outline has faded out
 FRAME = (0.015, 0.05)  # a map's paper frame, as a part of its box's side from each edge: gone, then whole
 SHORE = 2          # map chunks of open sea a zone's map keeps past its land, before its outline fades
 
-ZONE, CONTINENT = "3", "2"  # the game's kinds of map (UiMap's Type)
+ZONE, CONTINENT, WORLD = "3", "2", "1"  # the game's kinds of map (UiMap's Type)
 
 
-def tiles():
-    """{(continent, row, column): file ID} from the master's newest lines."""
+def tiles(maps=None):
+    """{(continent, row, column): file ID} from the master's newest lines; of those maps only, if given."""
     found = {}
     for line in TILES.read_text(encoding="utf-8").splitlines():
         row = json.loads(line)
         key, file = row["key"], row.get("minimap")
         place = (key // (GRID * GRID), key % (GRID * GRID) // GRID, key % GRID)
+        if maps and place[0] not in maps:
+            continue
         if row.get("gone"):
             found.pop(place, None)
         elif file:
@@ -105,6 +117,11 @@ def tiles():
 
 def table(folder, name):
     return list(csv.DictReader(open(folder / f"{name}.csv", encoding="utf-8")))
+
+
+def drawn(name, made, maps):
+    """Whether a texture left from before goes: one of the maps drawn now (all without --maps) not made again."""
+    return name not in made and (maps is None or int(name.split("-")[0]) in maps)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -210,6 +227,56 @@ def terrain(path, liquids):
     return (height >= surface).astype(np.float32), areas
 
 
+def blank(texture):
+    """A tile's samples its minimap texture leaves pure black (the game draws nothing there), or None."""
+    with Image.open(texture) as image:
+        shown = (np.asarray(image.convert("RGB")).max(axis=2) > 0).astype(np.uint8) * 255
+    per = CHUNKS * CELLS * SAMPLES
+    found = np.asarray(Image.fromarray(shown).resize((per, per), Image.Resampling.BOX)) == 0
+    return found if found.any() else None
+
+
+def sky(found, textures):
+    """The open sky of every map: {(continent, row, column): its samples that are sky}. A blank sample (blank) is
+    sky when blank ones join it to a place of the grid with no tile: the void around an isle that floats, its cliffs
+    under the rim too; never a dark place within the land, and none on the continents (no blank at their edges)."""
+    per = CHUNKS * CELLS * SAMPLES
+    blanks = {}
+    for place, file in found.items():
+        empty = blank(textures / f"{file}.blp")
+        if empty is not None:
+            blanks[place] = empty
+    open_sky = {}
+    for continent in sorted({c for c, _, _ in blanks}):
+        places = [(r, k) for c, r, k in blanks if c == continent]
+        r0, r1 = min(r for r, _ in places) - 1, max(r for r, _ in places) + 1
+        k0, k1 = min(k for _, k in places) - 1, max(k for _, k in places) + 1
+        way = np.zeros(((r1 - r0 + 1) * per, (k1 - k0 + 1) * per), bool)  # where the sky may spread
+        reached = np.zeros_like(way)
+        for r in range(r0, r1 + 1):
+            for k in range(k0, k1 + 1):
+                y, x = (r - r0) * per, (k - k0) * per
+                if (continent, r, k) in blanks:
+                    way[y:y + per, x:x + per] = blanks[(continent, r, k)]
+                elif (continent, r, k) not in found:  # no tile: outside the map
+                    way[y:y + per, x:x + per] = reached[y:y + per, x:x + per] = True
+        while True:  # spread through the blank samples, a sample a step
+            grown = reached.copy()
+            grown[1:, :] |= reached[:-1, :]
+            grown[:-1, :] |= reached[1:, :]
+            grown[:, 1:] |= reached[:, :-1]
+            grown[:, :-1] |= reached[:, 1:]
+            grown &= way
+            if (grown == reached).all():
+                break
+            reached = grown
+        for r, k in places:
+            part = reached[(r - r0) * per:(r - r0 + 1) * per, (k - k0) * per:(k - k0 + 1) * per]
+            if part.any():
+                open_sky[(continent, r, k)] = part.copy()
+    return open_sky
+
+
 # -------------------------------------------------------------------------------------------------
 #  BLP files
 # -------------------------------------------------------------------------------------------------
@@ -276,10 +343,11 @@ def bleed(rgb, alpha):
 # -------------------------------------------------------------------------------------------------
 #  The overview and the outlines
 # -------------------------------------------------------------------------------------------------
-def overview(found, textures, files, liquids):
+def overview(found, textures, files, liquids, maps):
     """Every block's overview texture; returns {continent: (the area of each map chunk of its grid, whether
     each map chunk holds land)}."""
     blocks = sorted({(c, r // BLOCK, k // BLOCK) for c, r, k in found})
+    void = sky(found, textures)
     grids = {c: np.zeros((GRID * CHUNKS, GRID * CHUNKS), np.int64) for c, _, _ in blocks}
     lands = {c: np.zeros((GRID * CHUNKS, GRID * CHUNKS), bool) for c, _, _ in blocks}
     TERRAIN.mkdir(parents=True, exist_ok=True)
@@ -303,6 +371,8 @@ def overview(found, textures, files, liquids):
                     grids[continent][row * CHUNKS:(row + 1) * CHUNKS, column * CHUNKS:(column + 1) * CHUNKS] = areas
                 else:
                     land = np.ones((per, per), np.float32)
+                if (continent, row, column) in void:
+                    land = np.where(void[(continent, row, column)], 0, land)
                 step = per // CHUNKS
                 lands[continent][row * CHUNKS:(row + 1) * CHUNKS, column * CHUNKS:(column + 1) * CHUNKS] = \
                     land.reshape(CHUNKS, step, CHUNKS, step).max(axis=(1, 3)) > 0
@@ -321,7 +391,7 @@ def overview(found, textures, files, liquids):
         total += write(TERRAIN / name, picture)
         made.add(name)
     for old in TERRAIN.glob("*.blp"):
-        if old.name not in made:
+        if drawn(old.name, made, maps):
             old.unlink()
     print(f"Terrain overview: {len(made)} textures of {side} x {side} in {TERRAIN.relative_to(ROOT)}, {total / 1e6:.1f} MB.")
     return grids, lands
@@ -358,14 +428,15 @@ def shore(land):
 
 def zones(tables, continents):
     """{uiMapID: (continent, its box: north, south, west, east in yards, its area IDs)} of every zone map on
-    the continents, from the game's tables: a zone's areas are its own area and those under it."""
+    the continents, and of every zone straight on the world map that lies on one of their grids (the isle),
+    from the game's tables: a zone's areas are its own area and those under it."""
     maps = {row["ID"]: row for row in table(tables, "UiMap")}
     parent = {int(row["ID"]): int(row["ParentAreaID"]) for row in table(tables, "AreaTable")}
     found = {}
     for row in table(tables, "UiMapAssignment"):
         info = maps.get(row["UiMapID"])
         mother = info and maps.get(info["ParentUiMapID"])
-        if not info or info["Type"] != ZONE or not mother or mother["Type"] != CONTINENT:
+        if not info or info["Type"] != ZONE or not mother or mother["Type"] not in (CONTINENT, WORLD):
             continue
         if (row["UiMin[0]"], row["UiMin[1]"], row["UiMax[0]"], row["UiMax[1]"]) != ("0", "0", "1", "1"):
             continue
@@ -394,7 +465,16 @@ def frame(side):
     return smoothstep(FRAME[0], FRAME[1], np.minimum(t, 1 - t))
 
 
-def outlines(grids, lands, tables):
+def listed_before():
+    """{continent: [uiMapID]} of Outlines.lua as it is: the zones of the maps not drawn now are kept."""
+    found = {}
+    if OUTLINES.exists():
+        for continent, ids in re.findall(r"^\s*\[(\d+)\] = \{(.*)\},\s*$", OUTLINES.read_text(encoding="utf-8"), re.M):
+            found[int(continent)] = [int(uimap) for uimap in re.findall(r"\[(\d+)\] = true", ids)]
+    return found
+
+
+def outlines(grids, lands, tables, maps):
     """Every zone's outline, and Outlines.lua. Returns {uiMapID: (continent, its box, its outline's alpha)}."""
     found, top = zones(tables, set(grids))
     kept = {continent: shore(land) for continent, land in lands.items()}
@@ -430,6 +510,11 @@ def outlines(grids, lands, tables):
         total += write(ZONES / name, picture)
         made.add(name)
         listed.setdefault(continent, []).append(uimap)
+    if maps is not None:  # the other maps' outlines as they were
+        for continent, ids in listed_before().items():
+            if continent not in maps:
+                listed[continent] = ids
+                made.update(f"{uimap}.blp" for uimap in ids)
     for old in ZONES.glob("*.blp"):
         if old.name not in made:
             old.unlink()
@@ -473,7 +558,7 @@ def full(uimap, tables, art):
     return picture.crop((0, 0, width, height))
 
 
-def sketches(found, shapes, folder, art):
+def sketches(found, shapes, folder, art, maps):
     """The stitched map's blocks: every zone's full map cut by its outline, on its continent's grid."""
     tables = {name: table(folder, name) for name in ("UiMapXMapArt", "UiMapArt", "UiMapArtStyleLayer", "UiMapArtTile", "WorldMapOverlay")}
     tables["parts"] = {}
@@ -516,7 +601,7 @@ def sketches(found, shapes, folder, art):
         total += write(SKETCHES / name, picture)
         made.add(name)
     for old in SKETCHES.glob("*.blp"):
-        if old.name not in made:
+        if drawn(old.name, made, maps):
             old.unlink()
     print(f"Stitched map: {len(made)} textures of {step} x {step} in {SKETCHES.relative_to(ROOT)}, {total / 1e6:.1f} MB.")
     edges = frame(OUTLINE)
@@ -549,19 +634,26 @@ def sample(grid, rows, columns):
 
 
 def main():
-    if len(sys.argv) != 5:
+    args, maps = sys.argv[1:], None
+    if "--maps" in args:
+        at = args.index("--maps")
+        maps = {int(map_id) for map_id in args[at + 1].split(",")}
+        del args[at:at + 2]
+    if len(args) != 4:
         sys.exit(__doc__)
-    textures, files, tables, art = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]), Path(sys.argv[4])
-    found = tiles()
+    textures, files, tables, art = (Path(arg) for arg in args)
+    found = tiles(maps)
+    if not found:
+        sys.exit("The set Tiles has no tile of " + (", ".join(map(str, sorted(maps))) if maps else "any map"))
     missing = [file for file in found.values() if not (textures / f"{file}.blp").exists()]
     if missing:
         sys.exit(f"{len(missing)} of the set's textures are not in {textures} (the first: {missing[0]}.blp)")
     lacking = [key for key in ((c * GRID + r) * GRID + k for c, r, k in found) if not (files / f"{key}.adt").exists()]
     if lacking:
         print(f"{len(lacking)} of the set's tiles have no terrain file in {files}: drawn without water cut away.")
-    grids, lands = overview(found, textures, files, waters(tables))
-    shapes = outlines(grids, lands, tables)
-    sketches(found, shapes, tables, art)
+    grids, lands = overview(found, textures, files, waters(tables), maps)
+    shapes = outlines(grids, lands, tables, maps)
+    sketches(found, shapes, tables, art, maps)
 
 
 if __name__ == "__main__":

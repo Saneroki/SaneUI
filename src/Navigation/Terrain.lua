@@ -17,8 +17,10 @@ local _, ns = ...
 --  same file is the mask of the game's own tiles of its block, so the coast is
 --  cut alike at every zoom.
 --
---  Every continent's overview is laid where the world map puts it (Coords.Link),
---  at every zoom: the other continent is there whenever it is in view. The
+--  Every plane's overview (the continents and Zephras Isle, Coords.Planes) is
+--  laid where the world map puts it (Coords.Link), at every zoom: the other
+--  continent and the isle are there whenever they are in view. Around the isle
+--  floats open sky, cut away as the sea is (the tool's alpha). The
 --  stitched map of Blizzard's zone maps (Art.lua) is cut into the same blocks
 --  and drawn by the same code (Terrain.Overview). Until the set Tiles is there
 --  the layer draws nothing, and draws once it arrives.
@@ -94,16 +96,16 @@ local function Range(left, right, top, bottom, side)
            math.max(0, math.floor(r0 / side)), math.min(last, math.floor(r1 / side))
 end
 
--- Every continent's blocks in view, laid by link into the view's plane, from a pool at sublevel: the files
--- of path (with the continent's instance, the block's row and column), the terrain's overview or the
--- stitched map's.
+-- Every plane's blocks in view (the continents and Zephras Isle), laid by link into the view's plane, from a pool
+-- at sublevel: the files of path (with the plane's instance, the block's row and column), the terrain's overview
+-- or the stitched map's.
 function Terrain.Overview(view, from, path, sublevel)
     local side = Coords.TILE * Terrain.BLOCK
-    for _, continentMap in ipairs(Coords.Continents()) do
-        local box, link = Coords.Box(continentMap), Coords.Link(continentMap, view.map)
+    for _, plane in ipairs(Coords.Planes()) do
+        local box, link = Coords.Box(plane), Coords.Link(plane, view.map)
         if box and link then
             local su, sv = link.su, link.sv
-            -- The view in that continent's own plane.
+            -- The view in that plane's own space.
             local left, right = (view.left - link.du) / su, (view.right - link.du) / su
             local top, bottom = (view.top - link.dv) / sv, (view.bottom - link.dv) / sv
             local c0, c1, r0, r1 = Range(left, right, top, bottom, Terrain.BLOCK)
@@ -154,8 +156,8 @@ local function Detail(view)
     return true
 end
 
--- The terrain in view (view: Canvas.view), if shown: every continent's overview in view, and, but at the
--- world, the view's continent's own tiles over it when close enough.
+-- The terrain in view (view: Canvas.view), if shown: every plane's overview in view, and, but at the world, the
+-- view's continent's (or isle's) own tiles over it when close enough.
 function Terrain.Place(view, shown)
     pool:Begin()
     masks:Begin()

@@ -1,10 +1,10 @@
 set = "Walking"
-key = "int"              # a region, numbered by our tool
+key = "int"              # a terrain tile, keyed as in the set Tiles: continent * 4096 + row * 64 + column
 pack = "Routes"
 learn = false
-about = "Where players can walk, for Navigation's routes: per region a graph of points and links, packed by our tool (Doc/ideas/Navigation.md, *Routes*)."
+about = "Where players can walk, for Navigation's routes: per terrain tile its floors as rectangles with their openings, packed by our tool (Doc/ideas/Navigation.md, *The walking data*)."
 
 [fields]
-map   = { type = "int", min = 0 }
-links = { type = "list", of = "ref", set = "Walking" }  # the regions it borders
-block = { type = "text" }                    # the region's graph, packed; its format comes with the tool
+map   = { type = "int", min = 0 }          # the game's instance (0 Eastern Kingdoms, 1 Kalimdor, 2991 Zephras Isle)
+links = { type = "list", of = "ref", set = "Walking" }  # the tiles around it that have ground
+block = { type = "text" }                    # the tile's rectangles and openings, packed; its format comes with the tool (dev/tools/walk-data)

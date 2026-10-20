@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Makes the walking data of Navigation's routes from the game's own files: where a player can walk on each terrain
-tile of the continents, as staging for Core's set Walking (pack Routes; Doc/ideas/Navigation.md, *The walking data*).
+tile of the continents and of Zephras Isle (its own map, 2991; around it open sky, the terrain's holes), as staging
+for Core's set Walking (pack Routes; Doc/ideas/Navigation.md, *The walking data*).
 
 What is walkable is read from what the game itself collides with, sampled every SAMPLE yards (256 samples along a
 tile's side):
@@ -21,7 +22,8 @@ The floors are joined into rectangles of floors that are all one way with each o
 at most WIDEST samples a side: few and large in open land, many and small in towns, caves and on mountains. Each
 rectangle keeps its height, its kind and the openings along its sides into its neighbours (on its own tile and the
 next), and every rectangle that can be walked to from another has the same region number, so the game can tell at
-once that a place cannot be reached on foot.
+once that a place cannot be reached on foot. A region's number holds within its map (the game compares them only
+there): numbered in the order of the tiles' keys, so a run gives the same numbers again.
 
   dev/data/staging/walking.jsonl    one line per tile with ground: set Walking, key the tile's key in the set Tiles
                                     (continent * 4096 + row * 64 + column), fields map (the continent), links (the
@@ -44,17 +46,18 @@ array of whole numbers:
                same tile, else 1 + the next tile's direction, as the sides). On its own tile an opening is written
                once, from the north or west of the two; into the next tile, from both.
 
-The input, as for dev/tools/map-meta, for both continents:
+The input, as for dev/tools/map-meta, for every map with terrain files (the continents, the isle):
   game files    a folder with adt/ (the root terrain files, <tile key>.adt), adt-obj0/ (the object files: where
                 buildings stand) and wmo/ (every placed building's root file <file ID>.wmo and its group files
                 <file ID>_<part>.wmo)
   client tables a folder of the game's client tables as CSV (LiquidType, LiquidMaterial)
-Options: --only <key>[,<key>...] some tiles only (with their neighbours' edges), --pictures <folder> a picture of
-each tile's rectangles, --processes N.
+Options: --maps <map>[,<map>...] those maps' tiles only (a map added, as 2991, leaves the others' lines alone), --only
+<key>[,<key>...] some tiles only (with their neighbours' edges), --pictures <folder> a picture of each tile's
+rectangles, --processes N.
 
 Needs Python with NumPy (and Pillow for the pictures). About the game's build of the set Tiles (BUILD).
 
-Usage:  dev/tools/walk-data <game files> <client tables> [--only keys] [--pictures folder] [--processes N]
+Usage:  dev/tools/walk-data <game files> <client tables> [--maps maps] [--only keys] [--pictures folder] [--processes N]
 """
 import base64
 import json
@@ -712,7 +715,8 @@ def regions(tiles):
             area[root] = area.get(root, 0) + rect[2] * rect[3]
     numbers = {}
     found = {}
-    for key, (rects, _, _) in tiles.items():
+    for key in sorted(tiles):  # in the keys' order, not the order the tiles were read in
+        rects = tiles[key][0]
         for number in range(len(rects)):
             root = find((key, number))
             if area[root] < SMALLEST:
@@ -852,10 +856,14 @@ def picture(folder, key, rects, links):
 # -------------------------------------------------------------------------------------------------
 def main():
     args = sys.argv[1:]
-    only, pictures, processes = None, None, 24
+    only, maps, pictures, processes = None, None, None, 24
     if "--only" in args:
         at = args.index("--only")
         only = {int(key) for key in args[at + 1].split(",")}
+        del args[at:at + 2]
+    if "--maps" in args:
+        at = args.index("--maps")
+        maps = {int(map_id) for map_id in args[at + 1].split(",")}
         del args[at:at + 2]
     if "--pictures" in args:
         at = args.index("--pictures")
@@ -874,6 +882,8 @@ def main():
     liquids = {int(row["ID"]): formats.get(row["MaterialID"], 0) for row in ART.table(tables, "LiquidType")}
     places = placements(folder)
     keys = sorted(int(path.stem) for path in (folder / "adt").glob("*.adt"))
+    if maps:
+        keys = [key for key in keys if key // (GRID * GRID) in maps]
     if only:
         wanted = set(only)
         for key in only:  # their neighbours too, for the openings across their edges

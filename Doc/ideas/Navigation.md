@@ -536,6 +536,12 @@ Three spaces, converted only in `Coords.lua`:
   the ground lies above the water's surface, sampled 2 yards apart, rivers and lakes too. The overview's colour
   comes from land alone (no dark rim at a coast). The same overview is the mask of the game's own tiles of its
   block (`Canvas.Masks`), so the coast is cut alike at every zoom; under it the canvas' sea colour.
+- **The open sky (built 2026-10-20):** Zephras Isle floats: around it lies no water but the void, the terrain's
+  holes and the cliffs under its rim, which the game's minimap leaves pure black. The tool cuts that away as it
+  cuts the sea: a sample the minimap texture leaves black is sky when black samples join it to a place of the
+  grid with no tile (spread a sample a step from there). A dark place within the land (a city's tunnels) and a
+  building over the void (the zeppelins' tower) stay; on the continents no black reaches their grid's edge, so
+  nothing there changes. The outlines then keep the isle's land and a little sky, as a coast's shore.
 - **Indoors, caves, dungeons:** the minimap tiles hold the outdoors only. There the small view lets the
   native minimap draw its own ground (`SetDrawGroundTextures(true)` while `IsIndoors()` or no tile lies
   under the player), and the full view shows Blizzard's map art of the place.
@@ -948,8 +954,8 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     there (`C_Map.GetMapRectOnMap`) is a plane of its own, linked through the world map like a continent
     (`Coords.PlaneOf`: a map's continent, else such a map; `Coords.Planes`: the continents, then those maps). The
     planner's pin, docks and player use these planes, so the two zeppelins to the isle (from the Eastern Kingdoms
-    and from Kalimdor) are in the journey, and the map pin's mark shows there. The walking data
-    (`dev/tools/walk-data`) covers the two continents only: walks on the isle are straight lines.
+    and from Kalimdor) are in the journey, and the map pin's mark shows there. The walking data covers the isle
+    too (below, *The isle's terrain*).
   - **The map on Zephras Isle (built 2026-10-20):** the canvas uses the planes too, so its views work on the isle
     as on a continent: they follow the player there (`Coords.Player` gives the isle's plane), come in over it from
     the world (`Coords.PlaneAt`, a continent or such a map under a point of the world map) and open it by a
@@ -958,13 +964,23 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     (`Coords.Alone`; `Coords.ZoneAt` and `Coords.Zones` give the isle itself): its zone's level reaches out to the
     world with no continent's between, and a right click on it goes to the world. At the world off the isle the
     camera goes into the plane under the middle at once, so over a continent the world is left at the
-    continent's own zoom, not at the isle's. The continents' levels and drawing are unchanged; *Parchment* draws
-    the isle's own map, *Scrying* and *Atlas* only the sea there (no tiles, overview or painting of the isle).
+    continent's own zoom, not at the isle's. The continents' levels and drawing are unchanged.
+  - **The isle's terrain (built 2026-10-20):** the isle has the continents' data, from the game's files of its own
+    map (2991): its 72 tiles in Core's set *Tiles* (the game's minimap textures), its overview and stitched map
+    (four blocks each) and its outline (`dev/tools/terrain-art --maps 2991`, the open sky around it cut away:
+    *The open sky*), and its walking data (`dev/tools/walk-data --maps 2991`: 26 tiles with ground, the docks of
+    both zeppelins on the island's own region). `Terrain.Overview`, Art's maps under the stitched map and
+    Painted draw every plane (`Coords.Planes`), so *Scrying* and *Atlas* show its terrain and *Parchment* its own
+    map, frame faded off, under its stitched map and, up close, its map cut to its outline over both (the maps
+    under the stitched map have pool keys of their own, so one map can be drawn under it and over it).
+    `--maps` leaves the other maps' files and lines as they are, so the continents' are not made again for the
+    isle. Its minimap textures are the Forever beta client's, as the continents' were: the newer build (70450 over
+    live's 70245, whose textures differ a little in many tiles; the isle's tiles and file IDs are the same in both),
+    and the client the build installs into.
   - **Not yet:** which side's town a dock stands in is not in the client's tables (a town's guards are the
-    server's), so a route may lead through the other side's harbour; Zephras Isle's walking data, its terrain (the
-    set *Tiles*, the overview and the stitched map of `dev/tools/terrain-art`) and its painting; trams, lifts and
-    portals (the lifts' and the tram's motions are in the client, but not where they stand nor where a portal
-    leads); a new route kept only when clearly better.
+    server's), so a route may lead through the other side's harbour; Zephras Isle's painting (the Atlas); trams,
+    lifts and portals (the lifts' and the tram's motions are in the client, but not where they stand nor where a
+    portal leads); a new route kept only when clearly better.
 
 ### The walking data
 
@@ -995,8 +1011,11 @@ judged on its heights smoothed over three samples, so its bumps make no specks.
   cannot work out itself: two rectangles of one surface that touch are open along all their edge (not
   written); every other opening is written (between surfaces, into the next tile, or only part of an edge), on
   its own tile once (`Walk.lua` adds the other way).
-- **Size:** 1,724 tiles of both continents, 1.43 million rectangles, 10.7 MB in the master (the pack *Data:
-  Routes*, loaded at the first route); about two minutes to make on this computer. Walks across a zone take
+- **Size:** 1,724 tiles of both continents and 26 of Zephras Isle, 1.46 million rectangles, 10.9 MB in the master
+  (the pack *Data: Routes*, loaded at the first route); about two minutes to make on this computer, the isle alone
+  (`--maps 2991`) a few seconds.
+- **Region numbers** are given in the order of the tiles' keys (a run gives the same numbers again) and hold within
+  one map: the planner and the search compare them only there, so the isle, made on its own, numbers from 1. Walks across a zone take
   20 to 65 ms of search, spread over frames by the scheduler.
 - **The search** (`Search.lua`): A* over the rectangles from the one under the start (or the nearest within 40
   yards) to the one under the end in the same region (different regions: no walk, known at once); a step costs

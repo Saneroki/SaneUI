@@ -100,7 +100,8 @@ window*, *Always on top*):
 - Classic windows kept (Core's Edge: entries with `checked`/`back`); with the game's minimap chosen the small
   window rests out of sight (`Window.lua`, `Rest`), the corner still fills the screen with ours.
 
-Routes (the same day): `dev/tools/walk-data` makes Core's set *Walking* (pack Routes, 1,724 tiles, 10.7 MB) from the
+Routes (the same day): `dev/tools/walk-data` makes Core's set *Walking* (pack Routes, 1,724 tiles of the continents
+and 26 of Zephras Isle, 10.9 MB) from the
 game's terrain, buildings' collision and water (2.08-yard samples, surfaces, rectangles, regions; block format in
 the tool's header and `Doc/ideas/Navigation.md`, *The walking data*); `dev/tools/travel-data` the flights of
 Core's set *Travel* (296, from the client's TaxiPath tables: nodes, cost, length, path); `Walk.lua` unpacks a tile,
@@ -122,7 +123,9 @@ checks), `dev/tests/walk.py` (28).
    facts), Spawns, Walking (`dev/tools/map-data`, `travel-data`, `walk-data` and picked batches, `sources.toml`);
    **still empty:** QuestAreas, PatrolPaths, CreatureSpawns, Guides.
 3. **Set *Tiles*:** built (2026-10-18), in the pack World: 736 tiles of the Eastern Kingdoms, 988 of Kalimdor,
-   read from the game's own continent files; key continent × 4096 + row × 64 + column.
+   72 of Zephras Isle (2026-10-20, its own map 2991), read from the game's own map files; key continent × 4096 +
+   row × 64 + column. The isle has its overview, outline, stitched map and walking data too (`--maps 2991` of
+   `dev/tools/terrain-art` and `dev/tools/walk-data`).
 4. **The walking data tool** (pack Routes): written (2026-10-20, `dev/tools/walk-data`), the set filled.
 5. **The guide tool** that writes *Guides* from Core's quest data: not written.
 6. **Core's windows:** click to expand (`Edge.lua` still fills on the mouse's coming), the holder, the board

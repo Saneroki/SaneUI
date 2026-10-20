@@ -341,11 +341,13 @@ local overrides = {}
 SetOverrideBindingClick = function(_, _, key, button, click) overrides[key] = button .. ":" .. click end
 ClearOverrideBindings = function() overrides = {} end
 
--- The terrain's data: a pack with four tiles round the player, and one on the other continent.
+-- The terrain's data: a pack with four tiles round the player, one on the other continent, and one on the isle (its
+-- middle: row and column 32 of its own grid, 2991).
 local folder = io.popen("mktemp -d -t saneui-navigation-XXXXXX"):read("*l")
 local packPath = folder .. "/SaneUI_Data_World"
 os.execute(("mkdir -p '%s'"):format(packPath))
-local TILES = { [3104] = 801, [3105] = 802, [3168] = 803, [3169] = 804, [4096 + 2080] = 900 }
+local ISLE_TILE = 2991 * 4096 + 32 * 64 + 32
+local TILES = { [3104] = 801, [3105] = 802, [3168] = 803, [3169] = 804, [4096 + 2080] = 900, [ISLE_TILE] = 950 }
 local rows = {}
 for key, file in pairs(TILES) do rows[#rows + 1] = ("R[%d] = \"70245\\t\\t%d\""):format(key, file) end
 table.sort(rows)
@@ -1084,10 +1086,25 @@ do
     GameTooltip._lines = nil
     tower._scripts.OnEnter(tower)
     check(GameTooltip._lines and GameTooltip._lines[1] == "To Elwynn Forest", "its tooltip: where it flies to")
+    shown = Shown()
+    local isleCut = shown[950] and shown[950]._mask
+    check(isleCut and isleCut._texture == ns.Terrain.PATH:format(2991, 4, 4) and Overviews(shown, 2991) > 0,
+        "Scrying on the isle: its own tiles, cut by its block's overview, over its overview")
+    ns.OUTLINES[2991] = { [2521] = true }
     Button("sketches")._scripts.OnClick(Button("sketches"))
     shown = Shown()
-    check(Count(shown, 252101, 252112) > 0 and Count(shown, 94701, 94712) > 0,
-        "Parchment on the isle: the isle's own map over the world's")
+    local framed, cut = 0, 0
+    for _, widget in ipairs(W.frames) do
+        local file = widget._kind == "Texture" and widget._shown and widget._texture
+        if type(file) == "number" and file >= 252101 and file <= 252112 and widget._mask then
+            if widget._mask._texture == ns.Art.EDGE then framed = framed + 1 end
+            if widget._mask._texture == ns.Art.OUTLINE:format(2521) then cut = cut + 1 end
+        end
+    end
+    check(framed > 0 and cut > 0 and Count(shown, 94701, 94712) > 0 and Overviews(shown, 2991, "Sketches") > 0,
+        "Parchment on the isle: the world's map, the isle's own with its paper frame faded off, its stitched map, "
+        .. "and its map cut to its outline over them")
+    ns.OUTLINES[2991] = nil
     Button("terrain")._scripts.OnClick(Button("terrain"))
     local selector, zones
     for _, widget in ipairs(W.frames) do
