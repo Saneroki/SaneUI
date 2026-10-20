@@ -682,8 +682,9 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   game's, keeping a share of the model's own (`MOOD`, 0.5 until Saneroki chooses: at 0.3 the zones look much like
   the game's colours, at 1 as painted); its brightness, fine detail and light are kept, so a dark zone stays dark
   (*Dark zones stay dark*; the game's minimap is drawn without the zone's light, and moving brightness too
-  lightened Duskwood); its water is pulled toward the open sea's blue whatever the mood
-  (the sea is one sea), its lava left as painted. The paintings on disk stay as painted, so the mood can be
+  lightened Duskwood); its water is pulled toward the open sea's colour whatever the mood (the sea is one sea),
+  and halfway toward its brightness, so a dark zone's river stays darker than its land; its lava is left as
+  painted. The paintings on disk stay as painted, so the mood can be
   changed without painting again (`join --mood`), and the same pull evens out neighbours painted a little apart,
   so far out no patchwork shows. About a second a square.
 - **Levels of detail** (*Close up and far out*, *Three times closer*): the finest level is painted at 2048

@@ -468,7 +468,9 @@ def colour_of(painting, square, mood=MOOD):
 
     shift = toward(game, land, BROAD // q) * land * (1 - mood)
     shift[..., 0] = 0      # the light, bright or dark, stays the zone's (Duskwood stays dark): only colours move
-    shift += toward(to_lab(np.broadcast_to(SEA.astype(np.uint8), paint.shape)), water * (1 - lava), BROAD) * water * 0.85
+    sea = toward(to_lab(np.broadcast_to(SEA.astype(np.uint8), paint.shape)), water * (1 - lava), BROAD) * water * 0.85
+    sea[..., 0] *= 0.5     # half the sea's brightness: in a dark zone the water stays darker than the land
+    shift += sea
     full = np.stack([np.asarray(Image.fromarray(shift[..., k]).resize(painting.shape[1::-1], Image.Resampling.BILINEAR))
                      for k in range(3)], -1)
     return to_rgb(to_lab(painting) + full)
