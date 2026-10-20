@@ -17,7 +17,8 @@ local _, ns = ...
 --        special, kind, place,
 --        boe (binds when equipped), bind (the game's bind type), sell (one's
 --        price at a vendor), required (the level it needs), kindName,
---        subName (the game's words for its class and subclass), unusable }
+--        subName (the game's words for its class and subclass), unusable,
+--        stack (how many make a full stack) }
 --  item nil: the slot is empty. place: "bags" (carried) or the bank's kind.
 --  unusable: the character cannot use or wear it (a line of its tooltip in
 --  the game's red), asked once per item link until the next level.
@@ -151,15 +152,15 @@ local function Level(link, class)
 end
 
 -- What the game says of an item beyond its slot (C_Item.GetItemInfo): its bind type, price, the level it needs,
--- its class's and subclass's words; nil while the game does not know it yet.
+-- its class's and subclass's words, how many make a full stack; nil while the game does not know it yet.
 local function Info(record)
     local items = rawget(_G, "C_Item")
     local fn = items and items.GetItemInfo or rawget(_G, "GetItemInfo")
     if not fn then return true end
-    local ok, name, _, _, _, required, kindName, subName, _, _, _, sell, _, _, bind = pcall(fn, record.link or record.item)
+    local ok, name, _, _, _, required, kindName, subName, stack, _, _, sell, _, _, bind = pcall(fn, record.link or record.item)
     if not ok or Plain(name) == nil then return end
     record.required, record.kindName, record.subName = Plain(required), Plain(kindName), Plain(subName)
-    record.sell, record.bind = Plain(sell), Plain(bind)
+    record.sell, record.bind, record.stack = Plain(sell), Plain(bind), Plain(stack)
     return true
 end
 
@@ -239,7 +240,7 @@ function Contents.Read(bag, slot, place)
         record.class, record.subclass, record.equip, record.level, record.category = nil, nil, nil, nil, nil
         record.junk, record.pinned, record.set = false, false, nil
         record.boe, record.bind, record.sell, record.required, record.kindName, record.subName = false, nil, nil, nil, nil, nil
-        record.unusable = false
+        record.unusable, record.stack = false, nil
         return record
     end
     local count = Plain(info.stackCount)
@@ -421,15 +422,22 @@ local TESTS = {
     level = { ByLevel, ByQuality, ByName },
 }
 
+-- Whether record a comes before record b by an order's tests; nil: they cannot tell (the sort of the bags goes on
+-- from there by its own tests, Sort.lua).
+function Contents.Before(a, b, order)
+    for _, test in ipairs(TESTS[order] or TESTS.default) do
+        local first = test(a, b)
+        if first ~= nil then return first end
+    end
+end
+
 -- One comparison per order; made once. A list holds records, or entries { record, count } (a merged stack).
 local COMPARE = {}
-for key, tests in pairs(TESTS) do
+for key in pairs(TESTS) do
     COMPARE[key] = function(a, b)
         a, b = a.record or a, b.record or b
-        for _, test in ipairs(tests) do
-            local first = test(a, b)
-            if first ~= nil then return first end
-        end
+        local first = Contents.Before(a, b, key)
+        if first ~= nil then return first end
         return ByPlace(a, b)
     end
 end

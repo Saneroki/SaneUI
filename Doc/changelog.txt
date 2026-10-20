@@ -51,6 +51,8 @@ The bigger changes of each version, newest first.
   grid, list or compact, grouped by category, with a Storage sidebar
   to show one place or one category. Your bag keys now open the
   inventory's full screen with your bags; the game's bags stay closed.
+  In One Bag the clean-up button sorts your bags: your items move into
+  the order of your categories, partial stacks joined.
 - Navigation: herbs and ore on the minimap in their own pictures
   (Found herbs, Found ore in the pin filter; where they can grow is
   Possible herbs and ore), gold sparkles on the herb or ore beside

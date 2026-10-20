@@ -3,8 +3,26 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 105 (Inventory), 90 (sheet), 186 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 105 (Inventory), 90 (sheet), 199 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
+
+### Inventory: our own sort of the bags in One Bag (Saneroki, 2026-10-21)
+- **The sort** (`Bags/Sort.lua`, new in the TOC): the bar's clean-up button in One Bag moves the items of the ordinary
+  bags (never the reagent bag, a bag for one kind of item or the keyring) into the categories' order: pinned items
+  first, then by category (`Categories.order`, the player's), inside one by the window's Sort By (`Contents.ORDERS`),
+  then by link, the larger stack first; the empty slots last. In passes, each slot touched once per pass
+  (`C_Container.PickupContainerItem` twice: the game swaps two items or joins two stacks): first the partial stacks of
+  an item joined (the smallest onto the largest, inwards), then each slot given the item the order wants there.
+  After a pass it waits for `BAG_UPDATE_DELAYED` and the slots unlocked (`Sort.WAIT`, at most `Sort.LONGEST`), then
+  plans anew from the bags. It stops when nothing is left, a pass changed nothing, after `Sort.PASSES`, at a fight
+  (never starts in one), with something on the cursor, or when the window hides; a move that left an item on the
+  cursor puts it back. The button is locked (greyed) while it runs (`Bags.Sorting`). The other views keep the game's
+  `C_Container.SortBags`. The planner (`Sort.Plan`) has no frames.
+- **Contents**: `record.stack` (a full stack, the game's item info), `Contents.Before` (an order's tests without the
+  slot, also used by the views' orders).
+- Tests: `dev/tests/bags.lua` (199 checks): partial stacks joined in the first pass, the final order, the special
+  bags untouched, nothing moved when sorted, no sort with the cursor full or in a fight, a fight stopping it, the
+  other views' game clean-up. A game restart takes it in (a new file in the TOC).
 
 ### Navigation: a map pin the game refuses no longer stops the map (Saneroki, 2026-10-20)
 - `Live.SetWaypoint`: a place off the map's edge (or no number) puts no map pin, and the game's

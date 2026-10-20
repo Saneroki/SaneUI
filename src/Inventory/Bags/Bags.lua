@@ -14,8 +14,9 @@ local _, ns = ...
 --                   items mark them as junk or not: Select.lua; an item
 --                   brought to it is marked at once), the bags themselves (in
 --                   a strip under the bar at first; a click hides or shows
---                   it), the
---                   clean-up of the game
+--                   it), the clean-up: in One Bag our own sort (Sort.lua:
+--                   the items moved into the categories' order, the button
+--                   locked while it runs), in the other views the game's
 --                   (C_Container.SortBags, as the game's bag window's button
 --                   does), the dropdown View: the display (Layout.LOOKS),
 --                   what sorts the items (Contents.ORDERS), what is shown
@@ -61,7 +62,7 @@ Bags.SHOW = { pinned = "showPinned", recent = "showRecent" }
 
 local Contents, Layout, Cells, Foot = ns.Contents, ns.Layout, ns.Cells, ns.Foot
 local Categories, Views, Menus, Sidebar, Select = ns.Categories, ns.Views, ns.Menus, ns.BagSidebar, ns.Select
-local Columns = ns.Columns
+local Columns, Sort = ns.Columns, ns.Sort
 
 local panel, scroll, child, menu, sort, bar, strip, side, coin, columns
 local kept            -- store.bags: the display, the order, what is shown; the categories' choices
@@ -352,19 +353,36 @@ local function Menu(_, root)
     end
 end
 
+-- The clean-up: in One Bag our own sort, by the categories and the window's order; else the game's.
 local function Clean()
+    if InCombatLockdown() then return end
+    if View() == Views.ONE then return Sort.Start(kept.order) end
     local api = rawget(_G, "C_Container")
-    if not (api and api.SortBags) or InCombatLockdown() then return end
+    if not (api and api.SortBags) then return end
     Core.Sound("UI_BAG_SORTING_01")
     api.SortBags()
 end
 
 local function CleanTip(button)
     GameTooltip:SetOwner(button, "ANCHOR_TOP")
+    if View() == Views.ONE then
+        GameTooltip:SetText(ns.TEXT.bagsSort, 1, 1, 1)
+        GameTooltip:AddLine(Sort.Running() and ns.TEXT.bagsSorting or ns.TEXT.bagsSortTip, 1, 0.82, 0, true)
+        return GameTooltip:Show()
+    end
     GameTooltip:SetText(Core.Word("BAG_CLEANUP_BAGS", "Clean Up Bags"), 1, 1, 1)
     local about = rawget(_G, "BAG_CLEANUP_BAGS_DESCRIPTION")
     if about then GameTooltip:AddLine(about, 1, 0.82, 0, true) end
     GameTooltip:Show()
+end
+
+-- Our sort running or done: the clean-up button locked (greyed) meanwhile; the bags drawn as they are then.
+function Bags.Sorting(on)
+    if sort then
+        sort:SetEnabled(not on)
+        sort:SetAlpha(on and 0.4 or 1)
+    end
+    if not on then Bags.Refresh() end
 end
 
 -- The bar's count: in the views of every item, how many slots of the ordinary bags hold something, of how many;
@@ -570,6 +588,7 @@ function Bags.Show(on)
         for item in pairs(Views.split) do Views.split[item] = nil end
         Cells.Light(nil)
         Select.Stop()
+        Sort.Stop()
     end
 end
 

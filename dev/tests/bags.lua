@@ -203,8 +203,14 @@ C_EquipmentSet = {
     GetEquipmentSetInfo = function() return "Tank" end,
     GetItemLocations = function() return { [16] = 1001 } end,
 }
+-- The set's sword where it is now (the game's locations follow the item).
 EquipmentManager_GetLocationData = function(location)
-    if location == 1001 then return { isBags = true, bag = 0, slot = 1 } end
+    if location ~= 1001 then return {} end
+    for bag, list in pairs(bags) do
+        for slot, entry in pairs(list) do
+            if entry.item == 2001 then return { isBags = true, bag = bag, slot = slot } end
+        end
+    end
     return {}
 end
 C_Bank = {
@@ -872,6 +878,107 @@ W.combat = true
 clean:GetScript("OnClick")(clean)
 W.combat = false
 check(calls.sortBags == 1, "not in a fight")
+
+-- Our sort, in One Bag: the items moved into the categories' order, partial stacks joined first. The stand-in's
+-- cursor picks an item up and puts it down: two items swap, two stacks of one item join (20 to a stack).
+local Sort = ns.Sort
+local hand
+C_Container.PickupContainerItem = function(bag, slot)
+    calls.pickups = (calls.pickups or 0) + 1
+    if not hand then
+        if Slot(bag, slot) then hand, cursor = { bag, slot }, true end
+        return
+    end
+    local from, to = Slot(hand[1], hand[2]), Slot(bag, slot)
+    if to and to.item == from.item then
+        local total = to.count + from.count
+        to.count = math.min(20, total)
+        from.count = total - to.count
+        if from.count == 0 then bags[hand[1]][hand[2]] = nil end
+    else
+        bags[bag] = bags[bag] or {}
+        bags[hand[1]][hand[2]], bags[bag][slot] = to, from
+    end
+    hand, cursor = nil, false
+end
+local before = {}
+for _, bag in ipairs({ 0, 1 }) do
+    before[bag] = {}
+    for slot, entry in pairs(bags[bag]) do before[bag][slot] = entry end
+end
+Put(1, 5, 2589, 5)
+Put(0, 12, 7001, 3)
+local function Arranged()
+    local list = {}
+    for _, bag in ipairs({ 0, 1 }) do
+        for slot = 1, SIZES[bag] do
+            local entry = Slot(bag, slot)
+            list[#list + 1] = entry and (entry.item .. "x" .. entry.count) or "-"
+        end
+    end
+    return table.concat(list, ",")
+end
+local function SortDone()
+    for _ = 1, 60 do
+        if not Sort.Running() then break end
+        W.Fire("BAG_UPDATE_DELAYED")
+        W.Wait(Sort.WAIT)
+    end
+end
+row = RowNamed("One Bag")
+row:GetScript("OnClick")(row, "LeftButton")
+clean:GetScript("OnClick")(clean)
+check(Sort.Running() and not clean:IsEnabled() and calls.sortBags == 1, "One Bag: our own sort runs, not the game's; its button locked")
+clean:GetScript("OnClick")(clean)
+check(select(2, Sort.Running()) == 1, "a click while it runs starts nothing more")
+check(Slot(1, 1).count == 12 and not Slot(1, 5) and Slot(0, 12).count == 5 and not Slot(1, 3),
+    "the first pass: the partial stacks of one item joined, the smallest onto the largest")
+SortDone()
+check(not Sort.Running() and clean:IsEnabled() and clean:GetAlpha() == 1, "done: the button unlocked")
+check(Arranged() == "4001x1,2001x1,118x5,7001x5,2589x20,2589x12,3002x1,3001x1" .. string.rep(",-", 16),
+    "the items in the categories' order (armor, the set's gear, consumables, trade goods, the rest, junk), "
+    .. "inside one by Sort By, the larger stack first, the empty slots last: " .. Arranged())
+check(Slot(2, 1).item == 2512 and Slot(5, 1).item == 2447 and Slot(-1, 1).item == 5001,
+    "the quiver, the reagent bag and the keyring as they were")
+check(Cells.Record(Cells.Button(0, 1)).item == 4001, "the bags drawn as they are now")
+local moved = calls.pickups
+clean:GetScript("OnClick")(clean)
+SortDone()
+check(calls.pickups == moved and not Sort.Running(), "sorted already: nothing moved")
+bags[0][1], bags[0][8] = bags[0][8], bags[0][1]
+cursor = true
+clean:GetScript("OnClick")(clean)
+check(not Sort.Running(), "something on the cursor: no sort")
+cursor = false
+W.combat = true
+clean:GetScript("OnClick")(clean)
+check(not Sort.Running(), "in a fight: no sort")
+W.combat = false
+clean:GetScript("OnClick")(clean)
+W.combat = true
+W.Fire("PLAYER_REGEN_DISABLED")
+check(not Sort.Running() and clean:IsEnabled(), "a fight stops it")
+W.combat = false
+clean:GetScript("OnClick")(clean)
+SortDone()
+check(Arranged():sub(1, 7) == "4001x1,", "begun again, it ends sorted")
+row = RowNamed("All Items")
+row:GetScript("OnClick")(row, "LeftButton")
+clean:GetScript("OnClick")(clean)
+check(calls.sortBags == 2 and not Sort.Running(), "the other views: the game's clean-up")
+-- The bags as they were, for what follows.
+for _, bag in ipairs({ 0, 1 }) do
+    bags[bag] = {}
+    for slot, entry in pairs(before[bag]) do
+        bags[bag][slot] = entry
+        entry.count = ({ [2001] = 1, [2589] = slot == 2 and 20 or 7, [118] = 5, [3001] = 1, [3002] = 1, [4001] = 1, [7001] = 2 })[entry.item]
+    end
+end
+W.Wait(0)
+Recent.Clear()
+Recent.list[1] = 7001
+Recent.Take(false)
+Bags.Refresh()
 
 -------------------------------------------------------------------------------
 --  The foot and the bags' strip

@@ -57,7 +57,12 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   - **The bar** at the top: how many of your bags' slots are taken (every bag's in its tooltip); at the right *Sell
     All Junk Items* at a vendor, the junk marker, the bags' button (your bags stand in a strip under the bar, at
     first; a click hides it or shows it again: each bag with its free slots on it; point at one to light its items,
-    drop a bag on a slot to put it on, click one to pick it up), the game's *Clean Up Bags* and the dropdown *View*.
+    drop a bag on a slot to put it on, click one to pick it up), the clean-up and the dropdown *View*. The clean-up
+    in *One Bag* is our own sort: your items move into the order of your categories (pinned ones first, then each
+    category in your order, inside one by *Sort By*, the larger stack first), partial stacks of one item joined
+    first, the empty slots last; the reagent bag, the keyring and bags for one kind of item stay as they are. The
+    button is greyed while it runs; it never starts in a fight and stops at one, or when you pick something up. In
+    the other views it is the game's *Clean Up Bags*.
   - **The sidebar** at the left: *All Items* (every item by category; the free slots are not shown), *One Bag*
     (every slot of your bags in their order, the empty ones too) and *Each Bag* (every bag by itself), then
     *Pinned Items* and *Recent Items*, then every category switched on, by name, with how many items it holds
@@ -358,6 +363,18 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     then `PickupContainerItem` into the first free slot of the ordinary bags; *Auto Split* one split after the
     other, each once the source slot is unlocked again (looked at every `Split.WAIT` seconds, at most
     `Split.LONGEST`); the item split goes into `Views.split`.
+  - **Our sort** (`Bags/Sort.lua`, the clean-up in *One Bag*: `Sort.Start` with the window's order): the slots of
+    the ordinary bags (`Sort.Ordinary`: a record's `kind` "bags"), planned without frames (`Sort.Plan`): first the
+    partial stacks of an item (`record.stack`, the game's full stack) joined, the smallest onto the largest, the next
+    onto the next; then each slot given the item the order wants there (pinned first, then `Categories.rank`, then
+    `Contents.Before` with the order, then the link, the larger stack first; empty slots last), from a slot that is
+    not right itself where there is one. In passes: each slot at most once in a pass, a move two
+    `C_Container.PickupContainerItem` (the game swaps or joins); then it waits for `BAG_UPDATE_DELAYED` and every
+    slot unlocked (`Sort.WAIT`; at most `Sort.LONGEST` without word from the game) and reads the bags anew
+    (`Bags.Carried`). It stops when nothing is left to move, when a pass changed nothing (what the slots held, as
+    words), after `Sort.PASSES`, at `PLAYER_REGEN_DISABLED`, with something on the cursor (a move that left one
+    there: `ClearCursor`) and when the window hides (`Bags.Show`). The clean-up button is locked and greyed meanwhile
+    (`Bags.Sorting`).
   - **The settings** (`Inventory.lua`'s `OPTIONS`, the section *Bags*, Core's options): `first`, `showPinned`,
     `pinnedOne`, `showRecent`, `recentOne`, `addCategory`, `merge`, `marker`, `splitter`, `itemLevel`,
     `borders`, `bind`, `setName`, `coin`, `grey`; read by the views, the sidebar, the categories (`Categories.Marker`)
@@ -484,6 +501,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 | `Bags/Foot.lua` | The bags' foot: currencies, gold; the strip of the bags; selling junk or depositing reagents |
 | `Bags/Menus.lua` | The bags' menus for an item, a category and a group, items let go over a category, new categories |
 | `Bags/Split.lua` | The bags' stack splitter: split into the first free slot, or the whole stack by turns |
+| `Bags/Sort.lua` | Our sort of the bags in One Bag: partial stacks joined, the items moved into the categories' order, in passes |
 | `Bags/Columns.lua` | The bags' list columns: their values, sorting, widths, the head over the list and its menu |
 | `Bags/Select.lua` | The bags' choosing by clicks: an item into a category after its "+", junk marked by the coin |
 | `Bags/Sidebar.lua` | The bags' sidebar: the views, Pinned, Recent, the categories and groups with their counts |
