@@ -1,0 +1,10 @@
+# UI style, the leather look (Saneroki liked iron's brown book, concept/book-iron-1 and -2): leather
+# binding, metal buckles and corner caps, parchment pages, in words alone. All views at 16:9.
+#   dev/tools/imagegen dev/imagegen/sets/ui-style/leather.txt
+workflow: qwen21-turbo-t2i
+set: aspect_ratio=16:9 (Widescreen), megapixels=1.6
+count: 4
+out: assets/generated/ui-style/leather
+before: Concept art of a high fantasy role-playing game user interface, a screenshot-like flat mockup:
+style: Subtle, elegant high fantasy style: window frames bound like an old book in dark brown tooled leather with fine stitched edges, small grey steel corner caps with brass rivets, short leather straps with small metal buckles and clasps, panels of pale grey-beige parchment with a faint grain, slim grey metal borders around the icon slots, muted earthy colours, the only strong colour coming from the item and spell icons. Restrained, calm and readable, crafted and tactile. Flat front view, no perspective, soft even light from the top left. Text shown only as thin grey placeholder lines, no letters, no numbers, no watermark.
+include: dev/imagegen/sets/ui-style/leather-views.txt

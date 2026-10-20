@@ -1,0 +1,12 @@
+# UI style, the leather look with the brown book itself as image 1, so its leather, buckles and metal
+# corners carry over. The book is a Z-Image draft, not committed (assets/generated/): if it is gone,
+# make it again with concept.txt --only book-iron --count 1.
+#   dev/tools/imagegen dev/imagegen/sets/ui-style/leather-ref.txt
+workflow: qwen21-turbo-edit-1ref
+set: width=1728, height=960
+count: 4
+out: assets/generated/ui-style/leather-ref
+ref: assets/generated/ui-style/concept/book-iron-1.png
+before: Use image 1 only as a reference for the style, materials, colours, leather, buckles, metal corners and borders. Create new concept art of a high fantasy role-playing game user interface, a screenshot-like flat mockup, with nothing else from image 1:
+style: Subtle, elegant high fantasy style: window frames bound like an old book in dark brown tooled leather with fine stitched edges, small grey steel corner caps with brass rivets, short leather straps with small metal buckles and clasps, panels of pale grey-beige parchment with a faint grain, slim grey metal borders around the icon slots, muted earthy colours, the only strong colour coming from the item and spell icons. Restrained, calm and readable, crafted and tactile. Flat front view, no perspective, soft even light from the top left. Text shown only as thin grey placeholder lines, no letters, no numbers, no watermark.
+include: dev/imagegen/sets/ui-style/leather-views.txt

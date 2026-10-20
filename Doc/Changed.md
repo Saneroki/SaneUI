@@ -210,6 +210,10 @@ Saneroki asked for a much richer bag view, in features and looks.
   from words alone (slate, moonsilver, iron): `concept.txt` (the character doll with its stats, the spellbook,
   Combat's full screen, a sheet of controls) and `fullscreen.txt` (Social's, Navigation's, Combat's and the
   character and bags' full screens and the docked windows, 16:9, moonsilver and iron).
+- The leather look (Saneroki liked the brown book): `leather.txt` (leather binding, metal buckles and corner caps,
+  parchment pages, every view), `leather-ref.txt` (the same with that book as image 1: it copied the book
+  into every view), both from `leather-views.txt`; `shapes.txt` (fancy silhouettes instead of rectangles,
+  and character dolls whose slots are shaped like their gear, laid out around the hero with their main stats).
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.
 
 ### Data: items, spells, talents and recipes from the game's own tables (Saneroki, 2026-10-20)
