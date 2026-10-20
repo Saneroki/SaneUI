@@ -7,7 +7,7 @@ local _, ns = ...
 --  the mouse's moves in its units, x to the right and y up, and draws what it
 --  says.
 --
---      map          the continent whose plane it looks in (Coords.lua)
+--      map          the plane it looks in (Coords.lua): a continent's, or a plane of its own (Zephras Isle)
 --      u, v, k      the point in the view's middle, and the zoom: the canvas' units per yard
 --      follow       it keeps the player in the middle; a drag turns it off, some time without the
 --                   mouse on the map on again (Canvas.lua)
@@ -18,7 +18,8 @@ local _, ns = ...
 --  plane (the world map's box in it, Coords.WorldBox); zoomed in again over
 --  another continent, it moves into that continent's plane (Settle). The levels
 --  change with some slack, so the view does not flicker between two at a
---  border.
+--  border. A plane of its own (Coords.Alone: Zephras Isle) is a zone: its
+--  zone's level reaches out to the world, with no continent's between.
 -------------------------------------------------------------------------------
 local Coords = ns.Coords
 local Camera = {}
@@ -49,7 +50,7 @@ end
 local function Limits(self)
     local box = self.map and Coords.Box(self.map)
     if not box then return end
-    self.box, self.world = box, Coords.WorldBox(self.map)
+    self.box, self.world, self.alone = box, Coords.WorldBox(self.map), Coords.Alone(self.map)
     self.fit = math.min(self.width / box.width, self.height / box.height) * Camera.FIT
     local whole = self.world
     self.far = whole and math.min(self.width / whole.width, self.height / whole.height) * Camera.FIT or self.fit
@@ -61,11 +62,13 @@ local function Level(self)
     if self.world and (self.k < self.fit * (1 - Camera.SLACK) or (self.level == "world" and self.k < self.fit)) then
         return "world"
     end
-    if span < Camera.ZONE or (self.level == "zone" and span < Camera.ZONE * (1 + Camera.SLACK)) then return "zone" end
+    if self.alone or span < Camera.ZONE or (self.level == "zone" and span < Camera.ZONE * (1 + Camera.SLACK)) then
+        return "zone"
+    end
     return "continent"
 end
 
--- The zoom within its bounds, the middle on the map shown (the continent, or the world).
+-- The zoom within its bounds, the middle on the map shown (the plane's, or the world).
 local function Clamp(self)
     local box = self.level == "world" and self.world or self.box
     if not box then return end
@@ -75,7 +78,7 @@ local function Clamp(self)
     self.v = math.min(box.v, math.max(box.v - box.height, self.v))
 end
 
--- Into another continent's plane, keeping the view's place and size on the screen.
+-- Into another plane, keeping the view's place and size on the screen.
 function methods:Move(map)
     local link = Coords.Link(self.map, map)
     if not link or not Coords.Box(map) then return false end
@@ -86,13 +89,21 @@ function methods:Move(map)
     return true
 end
 
--- After every change: the level, and coming in from the world over another continent, its plane.
+-- Whether a point of the plane lies in a box.
+local function Over(box, u, v)
+    return u >= box.u and u <= box.u + box.width and v <= box.v and v >= box.v - box.height
+end
+
+-- After every change: the level, and coming in from the world over another continent or a plane of its own, its
+-- plane. At the world off a plane of its own (not while following the player, who is on it), the plane under the
+-- middle at once: over a continent the world is left at that continent's zoom, not at the isle's.
 function methods:Settle()
     local level = Level(self)
-    if self.level == "world" and level ~= "world" then
-        local under = Coords.ContinentAt(self.map, self.u, self.v)
+    local away = self.alone and not self.follow and self.level == "world" and not Over(self.box, self.u, self.v)
+    if self.level == "world" and (level ~= "world" or away) then
+        local under = Coords.PlaneAt(self.map, self.u, self.v)
         if under and under ~= self.map and self:Move(under) then
-            self.level = nil -- its own level, as if come to anew
+            if not away then self.level = nil end -- coming in: its own level, as if come to anew
             level = Level(self)
         end
     end
@@ -107,14 +118,14 @@ function methods:Frame(width, height)
     self:Settle()
 end
 
--- Looks at a point of a continent's plane (k optional: as it is).
+-- Looks at a point of the plane (k optional: as it is).
 function methods:Look(u, v, k)
     self.u, self.v = u, v
     if k then self.k = k end
     self:Settle()
 end
 
--- Looks at a continent: there, at that zoom (default: as it is, or about a zone the first time).
+-- Looks at a plane: there, at that zoom (default: as it is, or about a zone the first time).
 function methods:Show(map, u, v, k)
     local box = Coords.Box(map)
     if not box then return false end
@@ -126,7 +137,7 @@ function methods:Show(map, u, v, k)
     return true
 end
 
--- Looks at a whole map: a continent or a zone fitted into the view, the world map fitted too.
+-- Looks at a whole map: a continent or a zone fitted into the view (in its plane), the world map fitted too.
 function methods:Fit(map)
     if map == Coords.WorldMap() then
         if not self.world then return false end
@@ -136,15 +147,15 @@ function methods:Fit(map)
         self:Look(box.u + box.width / 2, box.v - box.height / 2, self.far)
         return true
     end
-    local box, continent = Coords.Box(map), Coords.ContinentOf(map)
-    if not box or not continent then return false end
-    if continent ~= self.map then
-        self.map = continent
+    local box, plane = Coords.Box(map), Coords.PlaneOf(map)
+    if not box or not plane then return false end
+    if plane ~= self.map then
+        self.map = plane
         Limits(self)
     end
     local u, v = Coords.ToPlane(box, 0.5, 0.5)
     self.follow, self.native = false, nil
-    self.level = map == continent and "continent" or "zone"
+    self.level = map == plane and not self.alone and "continent" or "zone"
     self:Look(u, v, math.min(self.width / box.width, self.height / box.height) * Camera.FIT)
     return true
 end
@@ -168,17 +179,17 @@ function methods:ZoomAt(notches, dx, dy)
     self:Settle()
 end
 
--- One map out (the game's right click on its map): from a zone its continent whole, from a continent
--- the world whole. False at the world.
+-- One map out (the game's right click on its map): from a zone its continent whole, from a continent (or a
+-- plane of its own) the world whole. False at the world.
 function methods:StepOut()
-    if self.level == "zone" then
+    if self.level == "zone" and not self.alone then
         self.native = nil
         local box = self.box
         self.follow = false
         self.level = "continent"
         self:Look(box.u + box.width / 2, box.v - box.height / 2, self.fit)
         return true
-    elseif self.level == "continent" and self.world then
+    elseif self.level ~= "world" and self.world then
         self.native, self.follow = nil, false
         local box = self.world
         self.level = "world"

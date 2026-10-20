@@ -36,7 +36,8 @@ local _, ns = ...
 --  (zone, continent, world); Ctrl and a left click puts the game's map pin there;
 --  a plain left click on the game's minimap pings. Over a continent shown whole
 --  the zone under the mouse lights up, over the world the continent (Art.Light),
---  and a plain click opens it, as on the game's map.
+--  and a plain click opens it, as on the game's map. A plane of its own (Zephras
+--  Isle) is drawn as a continent is, as a zone (Camera.lua).
 --
 --  On the window's way to the full screen and back the map goes with it (Morph): laid
 --  out once, at the start, for the whole way, it is only scaled and moved on the
@@ -66,12 +67,12 @@ local frame, holder, camera, tracker, layers, hover, ground
 local held = false -- on the window's way, or hidden: its size changes lay nothing out
 local morph       -- on the window's way: { a = where it comes from, b = where it goes, now = where it is }
 -- Where the layers were laid out: the origin (u, v), the zoom (k), the view in the plane with its margin
--- (left, right, top, bottom), its height in yards (span); the continent's map whose plane it is (map), its
--- instance (continent), the level and the zone shown. One table, filled anew at each layout.
+-- (left, right, top, bottom), its height in yards (span); the plane's map (map: a continent's, or a plane of its
+-- own), its instance (continent), the level and the zone shown. One table, filled anew at each layout.
 local view = { u = 0, v = 0, k = 1, left = 0, right = 0, top = 0, bottom = 0, span = 0, level = "continent" }
 Canvas.view = view
 local laid = false -- something is laid out
-local known = false -- the player's place is known on the view's continent
+local known = false -- the player's place is known in the view's plane
 local lastInput = 0 -- when the mouse last did something to the map
 local overX, overY -- where the mouse was at the last look for the highlight (nil: look again)
 local nextLook = 0
@@ -355,17 +356,17 @@ local function Down(_, button)
 end
 
 -- The game's map pin where the mouse is: on the zone there, else the continent (as the game's map puts it
--- on the map it shows); at the world, on the continent under the mouse.
+-- on the map it shows); at the world, on the continent (or the plane of its own) under the mouse.
 local function Pin(x, y)
     local u, v = camera.u + x / camera.k, camera.v + y / camera.k
-    local continent = camera.map
+    local plane = camera.map
     if camera.level == "world" then
-        local under = Coords.ContinentAt(camera.map, u, v)
+        local under = Coords.PlaneAt(camera.map, u, v)
         local link = under and Coords.Link(camera.map, under)
         if not link then return UIErrorsFrame:AddMessage(ns.TEXT.noPin, 1, 0.1, 0.1) end
-        continent, u, v = under, link.du + link.su * u, link.dv + link.sv * v
+        plane, u, v = under, link.du + link.su * u, link.dv + link.sv * v
     end
-    local map = Coords.ZoneAt(continent, u, v) or continent
+    local map = Coords.ZoneAt(plane, u, v) or plane
     local mapX, mapY = Coords.ToMap(Coords.Box(map), u, v)
     if Live.SetWaypoint(map, mapX, mapY) then
         ns.Marks.Sound("UI_MAP_WAYPOINT_CONTROL_CLICK")
@@ -374,13 +375,14 @@ local function Pin(x, y)
     end
 end
 
--- A plain click on a map the view shows whole: the zone under the mouse at a continent, the continent at
--- the world, fills the view, as a click on the game's map opens it. False where nothing is opened.
+-- A plain click on a map the view shows whole: the zone under the mouse at a continent, the continent (or the
+-- plane of its own) at the world, fills the view, as a click on the game's map opens it. False where nothing is
+-- opened.
 local function Into(x, y)
     if camera.level == "zone" then return false end
     local u, v = camera.u + x / camera.k, camera.v + y / camera.k
     local map
-    if camera.level == "world" then map = Coords.ContinentAt(camera.map, u, v) else map = Coords.ZoneAt(camera.map, u, v) end
+    if camera.level == "world" then map = Coords.PlaneAt(camera.map, u, v) else map = Coords.ZoneAt(camera.map, u, v) end
     if not map or not camera:Fit(map) then return false end
     ns.Art.Unlight()
     Canvas.Layout()
@@ -575,7 +577,7 @@ end
 function Canvas.Fit(viewCamera, map, width, height)
     viewCamera.width, viewCamera.height = width, height
     if not viewCamera.map then
-        local home = Coords.ContinentOf(map) or Coords.Continents()[1]
+        local home = Coords.PlaneOf(map) or Coords.Continents()[1]
         if not home or not viewCamera:Show(home) then return false end
     end
     return viewCamera:Fit(map)
@@ -591,7 +593,7 @@ function Canvas.Hold()
     ns.Marks.Clear()
 end
 
--- Where a view looks, as plain numbers: its continent, middle, zoom, size and level.
+-- Where a view looks, as plain numbers: its plane, middle, zoom, size and level.
 local function Spot(from)
     return { map = from.map, u = from.u, v = from.v, k = from.k, width = from.width, height = from.height,
              level = from.level }

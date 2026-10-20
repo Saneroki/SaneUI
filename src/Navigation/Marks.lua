@@ -88,7 +88,7 @@ function Marks.Stack(level)
     pin:SetFrameLevel(level + 1)
 end
 
--- A point of a continent's plane, at the view's place (the canvas' origin and zoom); nil when not linked.
+-- A point of a plane, at the view's place (the canvas' origin and zoom); nil when not linked.
 local function Spot(view, map, u, v)
     local link = Coords.Link(map, view.map)
     if not link then return nil end
@@ -125,7 +125,7 @@ function Marks.Pin(view)
     pin:Show()
 end
 
--- The party or raid where the game tells their places (on the view's continent), a few times a second.
+-- The party or raid where the game tells their places (on the view's plane's map), a few times a second.
 function Marks.Group(view, now)
     if now < nextGroup then return end
     nextGroup = now + Marks.GROUP

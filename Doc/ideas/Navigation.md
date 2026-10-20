@@ -933,13 +933,21 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     there (`C_Map.GetMapRectOnMap`) is a plane of its own, linked through the world map like a continent
     (`Coords.PlaneOf`: a map's continent, else such a map; `Coords.Planes`: the continents, then those maps). The
     planner's pin, docks and player use these planes, so the two zeppelins to the isle (from the Eastern Kingdoms
-    and from Kalimdor) are in the journey, and the map pin's mark shows there. The canvas keeps to the continents
-    (`Coords.ContinentOf`, `Coords.Continents`: its views, zoom levels, map selector and pins), so on the isle the
-    map does not follow the player; the planner asks where the player is itself there. The walking data
+    and from Kalimdor) are in the journey, and the map pin's mark shows there. The walking data
     (`dev/tools/walk-data`) covers the two continents only: walks on the isle are straight lines.
+  - **The map on Zephras Isle (built 2026-10-20):** the canvas uses the planes too, so its views work on the isle
+    as on a continent: they follow the player there (`Coords.Player` gives the isle's plane), come in over it from
+    the world (`Coords.PlaneAt`, a continent or such a map under a point of the world map) and open it by a
+    click, list it in the map selector after the continents and in the quest log's search, and draw its pins (its
+    zeppelins' tower, the game's own) and the party there. A plane that is no continent is a zone, its own one
+    (`Coords.Alone`; `Coords.ZoneAt` and `Coords.Zones` give the isle itself): its zone's level reaches out to the
+    world with no continent's between, and a right click on it goes to the world. At the world off the isle the
+    camera goes into the plane under the middle at once, so over a continent the world is left at the
+    continent's own zoom, not at the isle's. The continents' levels and drawing are unchanged; *Parchment* draws
+    the isle's own map, *Scrying* and *Atlas* only the sea there (no tiles, overview or painting of the isle).
   - **Not yet:** which side's town a dock stands in is not in the client's tables (a town's guards are the
-    server's), so a route may lead through the other side's harbour; the map's views on Zephras Isle (following
-    the player there, coming in over it from the world, the map selector) and its walking data; trams, lifts and
+    server's), so a route may lead through the other side's harbour; Zephras Isle's walking data, its terrain (the
+    set *Tiles*, the overview and the stitched map of `dev/tools/terrain-art`) and its painting; trams, lifts and
     portals (the lifts' and the tram's motions are in the client, but not where they stand nor where a portal
     leads); a new route kept only when clearly better.
 

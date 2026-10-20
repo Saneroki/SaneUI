@@ -16,7 +16,8 @@ The bigger changes of each version, newest first.
   cut away for a clean coastline), at any zoom, both continents always
   in view. The game's minimap dots still show on
   it, and the map key opens it. Hover a zone to light it up, click it
-  to open it; the map grows and zooms smoothly with the window.
+  to open it; the map grows and zooms smoothly with the window. On
+  Zephras Isle the map follows you as anywhere else, with its pins.
 - Navigation: routes. Put the map pin (Ctrl-click) and a golden line
   leads you there, around mountains and walls, through gates and
   doors, swimming where it must, and by the flights you know when they

@@ -88,7 +88,7 @@ end
 --  Doing
 -------------------------------------------------------------------------------
 -- A place on a map where the quest is done or turned in: the player's own maps first, then the zones of
--- the continents, then the game's next way to it. nil when the game tells none.
+-- every plane (the continents, Zephras Isle), then the game's next way to it. nil when the game tells none.
 local function Where(quest)
     local function On(map)
         for _, info in ipairs(ns.Live.Quests(map)) do
@@ -100,8 +100,8 @@ local function Where(quest)
         local map, x, y = On(here)
         if map then return map, x, y end
     end
-    for _, continent in ipairs(ns.Coords.Continents()) do
-        for _, zone in ipairs(ns.Coords.Zones(continent)) do
+    for _, plane in ipairs(ns.Coords.Planes()) do
+        for _, zone in ipairs(ns.Coords.Zones(plane)) do
             local map, x, y = On(zone.map)
             if map then return map, x, y end
         end

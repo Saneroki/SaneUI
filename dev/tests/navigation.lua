@@ -51,6 +51,7 @@ function methods:SetFrameStrata(strata) self._strata = strata end
 function methods:GetFrameStrata() return self._strata or "MEDIUM" end
 function methods:SetRotation(angle) self._rotation = angle end
 function methods:SetDrawLayer(layer, sublevel) self._layer, self._sublevel = layer, sublevel end
+function methods:OverrideText(text) self._override = text end
 function methods:GetChildren()
     local list = {}
     for _, widget in ipairs(W.frames) do
@@ -124,7 +125,7 @@ C_Map = {
     end,
     GetMapInfo = function(map)
         local info = MAPS[map]
-        local name = ({ [1414] = "Kalimdor", [1429] = "Elwynn Forest" })[map]
+        local name = ({ [1414] = "Kalimdor", [1429] = "Elwynn Forest", [2521] = "Zephras Isle" })[map]
         return info and { mapID = map, mapType = info.kind, parentMapID = info.parent, name = name } or nil
     end,
     GetAreaInfo = function(area) return area == 12 and "The Far Shore" or nil end,
@@ -159,9 +160,9 @@ C_Map = {
         -- Elwynn's box on the continent's map: x from 0.375 to 0.625, y from 0.625 to 0.7
         if map == 1415 and x >= 0.375 and x <= 0.625 and y >= 0.625 and y <= 0.7 then return { mapID = 1429, mapType = 3 } end
         if map == 947 then
-            for _, id in ipairs({ 1415, 1414 }) do
+            for _, id in ipairs({ 1415, 1414, 2521 }) do
                 local r = MAPS[id].world
-                if x >= r[1] and x <= r[2] and y >= r[3] and y <= r[4] then return { mapID = id, mapType = 2 } end
+                if x >= r[1] and x <= r[2] and y >= r[3] and y <= r[4] then return { mapID = id, mapType = MAPS[id].kind } end
             end
         end
         return { mapID = map, mapType = MAPS[map].kind }
@@ -366,7 +367,7 @@ out:close()
 -- dungeon's entrance and a mailbox; a boat from Elwynn to the other continent; a flight; a boat's way round (the
 -- game's path: a dock in Elwynn's east hall, x -8600 and y -450, a leap onto Kalimdor, a dock there, a leap back); a
 -- zeppelin's way round to the isle (a tower in the east hall, x -8650 and y -400, a leap onto the isle's world map
--- 2991, a tower there, x -1000 and y 0, a leap back).
+-- 2991, a tower there, x -1000 and y 0, a leap back), its docks on the maps too.
 local function Set(file, name, hash, key, fields, types, body)
     local handle = assert(io.open(file, "w"))
     handle:write(('local S = SaneUI.Core.Data.Add(1, "%s", { game = "forever", hash = "%s", build = 70245, key = "%s", '
@@ -395,7 +396,7 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     .. '\0306000\031-9500\031\03160\0305000\031-9000\030-8000\031-2000\0310\031\0311'
     .. '\t1429\03172.5\0316.7\0301414\03189.6\03135\t0\03012"\n'
     .. 'R[4] = "70245\t\tzeppelin\t\t\t\t\t\t\t-8650\031-400\0310\03130\030-8000\031500\030-500\0310\0312991\031\0311'
-    .. '\030-1000\0310\031\03130\030-500\0310\030-8000\031500\0310\031\0311"\n'
+    .. '\030-1000\0310\031\03130\030-500\0310\030-8000\031500\0310\031\0311\t1429\03170\03110\0302521\03150\03180\t0\0300"\n'
     .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byKind = {}\nI.byKind.boat = "1\0303"\nI.byKind.flight = "2"\n'
     .. 'I.byKind.zeppelin = "4"\n')
 out = assert(io.open(packPath .. "/SaneUI_Data_World.toc", "w"))
@@ -517,7 +518,7 @@ local lu, lv = Coords.FromWorldMap(1415, wx, wy)
 check(link and near(link.du + link.su * -12000, lu) and near(link.dv + link.sv * 20000, lv) and near(wx, 0.06) and near(wy, 0.18)
     and near(link.su, 0.5) and near(link.sv, 0.5), "one continent's plane in another's, through the world map")
 check(Coords.Link(1415, 1415).su == 1 and Coords.Link(1415, 1415).du == 0, "a continent in its own plane: as it is")
-check(Coords.ContinentAt(1415, lu + 10, lv - 10) == 1414 and Coords.ZoneAt(1415, 500, -8950) == 1429
+check(Coords.PlaneAt(1415, lu + 10, lv - 10) == 1414 and Coords.ZoneAt(1415, 500, -8950) == 1429
     and Coords.ZoneAt(1415, 3000, 0) == nil, "the continent and the zone under a point, as the game's maps say")
 local mu, mv = Coords.MapToPlane(1429, 0.75, 0.3, 1415)
 check(near(mu, 500) and near(mv, -8950), "a point of a zone in its continent's plane")
@@ -527,8 +528,7 @@ player.map = 500
 local inMap, inU = Coords.Player()
 check(inMap == 1415 and inU == nil, "in a dungeon without a box: its continent, no point")
 player.map = 1429
--- The isle: on no continent, a plane of its own, linked through the world map like a continent; the canvas keeps
--- to the continents.
+-- The isle: on no continent, a plane of its own, linked through the world map like a continent; its own zone.
 check(Coords.ContinentOf(2521) == nil and Coords.PlaneOf(2521) == 2521 and Coords.PlaneOf(1429) == 1415
     and Coords.PlaneOf(500) == 1415 and Coords.PlaneOf(947) == nil, "the plane a map lies in: its continent's, else its own")
 local planeList = Coords.Planes()
@@ -540,12 +540,22 @@ check(isleLink and near(isleLink.du + isleLink.su * -1000, cornerU) and near(isl
     "the isle in a continent's plane, through the world map")
 local isleU, isleV = Coords.MapToPlane(2521, 0.6, 0.88, 2521)
 check(near(isleU, 200) and near(isleV, -1200), "a point of the isle in its own plane")
-player.map, player.x, player.y = 2521, 0.5, 0.4
-local canvasMap = Coords.Player()
-local isleMap, onU, onV = Coords.Player(true)
-check(canvasMap == nil and isleMap == 2521 and near(onU, 0) and near(onV, 0),
-    "on the isle: no continent for the canvas, its plane for the planner")
-player.map, player.x, player.y = 1429, 0.75, 0.3
+check(Coords.Alone(2521) and not Coords.Alone(1415) and not Coords.Alone(1429) and not Coords.Alone(947),
+    "the isle is a plane of its own that is no continent; a continent and its zone are not")
+do
+    local isleZones, elwynnZones = Coords.Zones(2521), Coords.Zones(1415)
+    check(#isleZones == 1 and isleZones[1].map == 2521 and isleZones[1].box.width == 2000 and #elwynnZones == 1
+        and elwynnZones[1].map == 1429, "the isle's zones: itself; a continent's as they were")
+    check(Coords.ZoneAt(2521, 0, 0) == 2521 and Coords.ZoneAt(2521, 5000, 0) == nil,
+        "the zone under a point of the isle: the isle itself, where it lies")
+    local overU, overV = Coords.FromWorldMap(1415, 0.57, 0.42)
+    check(Coords.PlaneAt(1415, overU, overV) == 2521 and Coords.PlaneAt(1415, Coords.FromWorldMap(1415, 0.6, 0.1)) == nil,
+        "on the world map over the isle: its plane; over the sea none")
+    player.map, player.x, player.y = 2521, 0.5, 0.4
+    local isleMap, onU, onV = Coords.Player()
+    check(isleMap == 2521 and near(onU, 0) and near(onV, 0), "on the isle: its plane and the point in it, as on a continent")
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+end
 
 -------------------------------------------------------------------------------
 --  Camera
@@ -592,6 +602,31 @@ camera:Pan(50, -100)
 check(near(camera.u, -100) and near(camera.v, -4800) and not camera.follow, "a drag moves the middle against the mouse and stops following")
 camera:Pan(-1e6, 0)
 check(camera.u == camera.box.u + camera.box.width, "the middle stays on the continent")
+-- The isle (2000 x 2500 yards, a yard of it half a yard of the Eastern Kingdoms' on the world map): a zone out to the
+-- world, no continent's level between; off it at the world, the world left over a continent at that one's zoom.
+do
+    local isleView = Camera.New()
+    isleView.width, isleView.height = 1600, 900
+    check(isleView:Show(2521, 0, 0, 2) and isleView.alone and isleView.level == "zone", "a camera on the isle: a zone")
+    isleView:Look(0, 0, isleView.fit)
+    check(isleView.level == "zone" and near(isleView.fit, 900 / 2500 * Camera.FIT), "the isle whole: still the zone's level")
+    check(isleView:StepOut() and isleView.level == "world", "right click on the isle: the world whole, no continent between")
+    isleView:Show(2521, 0, 0, 0.001)
+    isleView.follow = false
+    check(isleView.map == 2521 and isleView.level == "world", "far out on the isle: the world, in the isle's plane")
+    local toIsle = Coords.Link(1415, 2521)
+    isleView:Look(toIsle.du + toIsle.su * 500, toIsle.dv + toIsle.sv * -8950)
+    check(isleView.map == 1415 and isleView.level == "world", "at the world over the Eastern Kingdoms: their plane, still the world")
+    isleView:Look(500, -8950, isleView.fit * 1.2)
+    check(isleView.map == 1415 and isleView.level == "continent", "zoomed in: the continent's level, at the continent's own zoom")
+    isleView:StepOut()
+    isleView:Look(isleLink.du + isleLink.su * 0, isleLink.dv + isleLink.sv * -250, 0.7)
+    check(isleView.map == 2521 and isleView.level == "zone" and near(isleView.k, 0.35) and near(isleView.u, 0)
+        and near(isleView.v, -250), "in again over the isle from the world: its plane, at the same size on the screen")
+    check(camera:Fit(2521) and camera.map == 2521 and camera.level == "zone" and camera.alone, "the isle fitted into a view: its plane, a zone")
+    camera:Show(1415, 0, -5000, 0.5)
+    check(not camera.alone and camera.level == "zone", "and back on a continent: as ever")
+end
 
 -------------------------------------------------------------------------------
 --  Live
@@ -655,8 +690,8 @@ check(Tiles:Ready() and Tiles:Get(3104, "minimap") == 801, "the pack is loaded: 
 local places = Core.Data.Map():On(1429)
 local byKey = {}
 for _, place in ipairs(places or {}) do byKey[place.key] = place end
-check(places and #places == 7 and byKey["npc:69"] and byKey["npc:70"] and byKey["object:1617"] and byKey["place:1"]
-    and byKey["place:2"] and byKey["travel:1"] and byKey["travel:3:1"] and not byKey["npc:71"],
+check(places and #places == 8 and byKey["npc:69"] and byKey["npc:70"] and byKey["object:1617"] and byKey["place:1"]
+    and byKey["place:2"] and byKey["travel:1"] and byKey["travel:3:1"] and byKey["travel:4:1"] and not byKey["npc:71"],
     "Core's places on a map: its NPCs with a service and rares, objects, places and ways; a creature that is neither is not")
 check(near(byKey["npc:69"].x, 0.5) and byKey["npc:69"].what.services[1] == "innkeeper" and byKey["npc:70"].what.rare
     and byKey["object:1617"].what == "herb" and byKey["place:1"].what == "dungeon" and byKey["place:1"].to == 500
@@ -896,7 +931,7 @@ end
 full:Show(1415, 0, -9250, 0.4)
 Canvas.Layout()
 local pins, count = Drawn()
-check(full.level == "zone" and count == 8, "the zone's pins: 9 things, two of them near each other gathered into one")
+check(full.level == "zone" and count == 9, "the zone's pins: 10 things, two of them near each other gathered into one")
 check(pins["quest:7"] and pins["quest:7"].pin.name == "Wolves Across the Border" and not pins["quest:7"].pin.complete
     and pins["quest:7"].disc._atlas == ns.PinView.DISC and pins["quest:7"].icon._atlas == ns.PinView.IN_PROGRESS,
     "the game's quest on its map, in the game's quest disc and mark")
@@ -1028,6 +1063,72 @@ check(blip and blip._vertex and near(blip._vertex[1], 0.78), "the party member o
 IsInGroup = function() return false end
 ns.Marks.Group(Canvas.view, GetTime() + 20)
 check(not blip._shown, "out of the group: gone")
+
+-- Zephras Isle, drawn as a continent is, as a zone: standing on it the view follows the player into its plane; its
+-- pins, its map in the selector; out to the world and in again over it by a click; the map pin put on it.
+do
+    local was = { map = full.map, u = full.u, v = full.v, k = full.k }
+    player.map, player.x, player.y = 2521, 0.5, 0.4
+    full:Show(1415, 0, -9250, 0.5)
+    full.follow = true
+    Canvas.Layout()
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(full.map == 2521 and full.level == "zone" and near(full.u, 0) and near(full.v, 0) and Canvas.view.map == 2521
+        and Canvas.view.continent == 2991 and Canvas.view.zone == 2521 and arrow._shown and near(arrow._points[1][4], 0),
+        "standing on the isle: the view follows the player into its plane, a zone, the arrow there")
+    local onIsle = Drawn()
+    local tower = onIsle["travel:4:2"]
+    check(tower and tower.icon._atlas == "TaxiNode_Continent_Horde" and tower.pin.home == 2521 and tower.pin.to == 1429
+        and near(tower._points[1][5], -1000 * full.k), "its pins: the zeppelin's tower, opening the map it flies to")
+    GameTooltip._lines = nil
+    tower._scripts.OnEnter(tower)
+    check(GameTooltip._lines and GameTooltip._lines[1] == "To Elwynn Forest", "its tooltip: where it flies to")
+    Button("sketches")._scripts.OnClick(Button("sketches"))
+    shown = Shown()
+    check(Count(shown, 252101, 252112) > 0 and Count(shown, 94701, 94712) > 0,
+        "Parchment on the isle: the isle's own map over the world's")
+    Button("terrain")._scripts.OnClick(Button("terrain"))
+    local selector, zones
+    for _, widget in ipairs(W.frames) do
+        if widget._generator then
+            widget:GenerateMenu()
+            if widget._items[1] and widget._items[1].text == "#947" then selector = widget end
+        end
+    end
+    for _, widget in ipairs(W.frames) do
+        if widget._generator and widget._points[1] and widget._points[1][2] == selector then zones = widget end
+    end
+    local listed = selector and selector._items or {}
+    check(#listed == 4 and listed[2].text == "#1415" and listed[3].text == "Kalimdor" and listed[4].text == "Zephras Isle"
+        and listed[4].checked() and selector._override == "Zephras Isle",
+        "the map selector: the world, the continents, then the isle, which it says the map shows")
+    zones:GenerateMenu()
+    check(#zones._items == 1 and zones._items[1].text == "Zephras Isle" and zones._items[1].checked()
+        and zones._override == "Zephras Isle", "its zones: the isle itself")
+    frame._scripts.OnMouseDown(frame, "RightButton")
+    frame._scripts.OnMouseUp(frame, "RightButton")
+    check(full.level == "world" and not full.follow, "right click on the isle: the world whole")
+    local link = Coords.Link(2521, full.map)
+    cursorX = 800 + (link.du + link.su * 0 - full.u) * full.k
+    cursorY = 434 + (link.dv + link.sv * -250 - full.v) * full.k
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    check(full.map == 2521 and full.level == "zone" and near(full.u, 0) and near(full.v, -250),
+        "a click on the isle at the world opens it, as the game's map does")
+    ctrl = true
+    cursorX, cursorY = 800 + 100 * full.k, 434
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    ctrl = false
+    check(waypoint and waypoint.uiMapID == 2521 and near(waypoint.position.x, 0.55) and near(waypoint.position.y, 0.5),
+        "Ctrl-click on the isle: the map pin on it")
+    waypoint = nil
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    full:Show(was.map, was.u, was.v, was.k)
+    full.follow = false
+    Canvas.Layout()
+end
 
 -------------------------------------------------------------------------------
 --  The view Atlas: the module SaneUI_Atlas, found at login, loaded when first drawn
@@ -1385,9 +1486,12 @@ check(up.map == 1415 and near(up.u, 400) and near(up.v, -8650) and down.map == 2
     and near(down.v, -1000) and #walked == 2 and walked[2].map == 2521 and near(walked[2].u, 200) and near(walked[2].v, -1200),
     "the zeppelin from its tower onto the isle's plane, then straight to the pin")
 check(pin._shown, "the map pin's mark on the isle")
--- Standing on the isle (the canvas follows no continent there): the planner asks where the player is itself.
+-- Standing on the isle: the canvas' tracker hands the planner the player's place in the isle's plane.
 player.map, player.x, player.y = 2521, 0.5, 0.4
-Planner.Track(nil, nil, nil, GetTime() + 20)
+do
+    local isleMap, isleU, isleV = Live.Player()
+    Planner.Track(isleMap, isleU, isleV, GetTime() + 20)
+end
 Frames(8)
 check(shownWay and #shownWay.legs == 1 and shownWay.legs[1].kind == "walk" and shownWay.legs[1].points[1].map == 2521
     and near(shownWay.legs[1].points[1].u, 0) and near(shownWay.legs[1].points[1].v, 0),

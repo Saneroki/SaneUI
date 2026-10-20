@@ -3,8 +3,32 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 236 (Navigation), 37 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 258 (Navigation), 37 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation and Atlas; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Navigation: the map on Zephras Isle (Saneroki, 2026-10-20)
+- **The canvas on the planes** (`Coords.lua`, `Camera.lua`, `Canvas.lua`): the views use the planes the routes use
+  (`Coords.PlaneOf`, `Coords.Planes`), so Zephras Isle (uiMap 2521) is on the map as a continent is. Standing on
+  it the view follows the player there and the arrow shows (`Coords.Player`, `Live.Player`: the plane of the map
+  the player is on, the isle's too; the parameter `anyPlane` is gone, and the planner no longer asks for the
+  player itself, `Planner.Track`). Coming in over the isle at the world moves the camera into its plane, and a
+  click on it there opens it (`Coords.PlaneAt`, which replaces `Coords.ContinentAt`: a continent or such a map
+  under a point of the world map); Ctrl and a click puts the map pin on it.
+- **A zone of its own** (`Coords.Alone`): a plane that is no continent has no continent's level; its zone's level
+  reaches out to the world and a right click on it goes there. `Coords.ZoneAt` and `Coords.Zones` give the isle
+  itself, so its pins (the zeppelins' tower, the game's own) and quest areas are drawn and *Parchment* draws its
+  own map. At the world off the isle (not following) the camera goes into the plane under the middle at once, so
+  over a continent the world is left at that continent's own zoom, not at the isle's much nearer one.
+- **The bar and the quest log** (`TopBar.lua`, `QuestLog.lua`): the map selector lists the isle after the
+  continents, its zones the isle itself; the quest log looks for a quest's place on the isle too. A pin's place
+  (`Pins.lua`) and a map opened at a point (`Window.OpenTo`) are in the map's plane.
+- Unchanged: the continents' zoom levels and their drawing (Terrain, Painted, Art loop over the continents as
+  before); *Scrying* and *Atlas* show only the sea on the isle (no tiles, overview or painting of it yet).
+- Tests: the isle's zones, the zone and the plane under a point, the player there; a camera on the isle (a zone
+  out to the world, a right click to the world, the hand-over to a continent at the world, in again over it); the
+  canvas there (following, the arrow, the zeppelin's tower as a pin with its tooltip, its own map in Parchment,
+  the map selector, out to the world and in again by a click, the map pin); the test pack's zeppelin with its docks
+  (`dev/tests/navigation.lua`).
 
 ### Navigation: the docks of the boats and zeppelins on the map (Saneroki, 2026-10-20)
 - **Their map points** (`dev/tools/travel-data`, Core's set *Travel*): two new fields at the end of the schema,

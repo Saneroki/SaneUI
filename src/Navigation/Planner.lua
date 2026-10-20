@@ -98,7 +98,7 @@ local function Learn()
         return
     end
     local count = rawget(_G, "NumTaxiNodes") and Core.Plain(Core.Ask(NumTaxiNodes)) or 0
-    local continent = Live.Player(true)
+    local continent = Live.Player()
     if count == 0 or not continent then return end
     local byName = {}
     for node, point in pairs(Points(continent)) do byName[point.name] = node end
@@ -309,7 +309,7 @@ end
 -- The character's place now as the hearthstone's (where it was bound, or where it brought the character); false
 -- while the game does not tell it (a loading screen).
 local function Home()
-    local map, u, v = Live.Player(true)
+    local map, u, v = Live.Player()
     if not u then return false end
     local name = rawget(_G, "GetBindLocation") and Core.Ask(GetBindLocation)
     Core.Character(ns.name).hearth = { map = map, u = u, v = v, name = name }
@@ -595,7 +595,7 @@ end
 local function Plan()
     lastPlan = GetTime()
     if not target then return ns.Route.Show(nil) end
-    local map, pu, pv = Live.Player(true)
+    local map, pu, pv = Live.Player()
     if not pu then return end
     local leg = Aboard(map, pu, pv)
     if leg then
@@ -632,13 +632,12 @@ function Planner.Update()
     Plan()
 end
 
--- A step of the canvas' tracker: the player's place (Route.Track; on a plane the canvas does not follow, such as
--- Zephras Isle, asked here). The line moves on to its next leg when the player is nearer to that; planned again
--- when the player left the line (aboard a boat or zeppelin: its way), and after a flight landed.
+-- A step of the canvas' tracker: the player's place (Route.Track). The line moves on to its next leg when the player
+-- is nearer to that; planned again when the player left the line (aboard a boat or zeppelin: its way), and after a
+-- flight landed.
 function Planner.Track(map, u, v, now)
     if not target or now < nextLook then return end
     nextLook = now + Planner.LOOK
-    if not u then map, u, v = Live.Player(true) end
     if not u then return end
     local flying = rawget(_G, "UnitOnTaxi") and UnitOnTaxi("player") and true or false
     if flying then

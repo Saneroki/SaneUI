@@ -213,9 +213,9 @@ function Window.OpenTo(map, x, y)
     if map then
         local width, height = Window.FullSize()
         ns.Canvas.Fit(full, map, width, height)
-        local continent = x and ns.Coords.ContinentOf(map)
-        if continent and continent == full.map then
-            local u, v = ns.Coords.MapToPlane(map, x, y, continent)
+        local plane = x and ns.Coords.PlaneOf(map)
+        if plane and plane == full.map then
+            local u, v = ns.Coords.MapToPlane(map, x, y, plane)
             if u then full:Look(u, v) end
         end
     end

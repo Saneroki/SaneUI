@@ -7,8 +7,8 @@ local _, ns = ...
 --      Quest Log         the quest log at the map's left in or out (kept)
 --      the views         Parchment, Scrying and Atlas while its module is there: how the map is drawn
 --                        (the setting Map view; Navigation.lua, Offer)
---      the map selector  the world or a continent, then a zone of it (A to Z): the map shows it whole;
---                        each says what the map shows now
+--      the map selector  the world, a continent or a plane of its own (Zephras Isle), then a zone of it (A to
+--                        Z): the map shows it whole; each says what the map shows now
 --      Pins              the pin filter: a checkbox per kind of pin (the setting Pins on the map)
 --
 --  Only while the window fills the screen; the game's own menus (WowStyle1DropdownTemplate,
@@ -91,19 +91,19 @@ local function Radio(root, name, map)
     root:CreateRadio(name, ns.Guard(function() return shownMap == map or shownZone == map end), ns.Guard(function() Go(map) end))
 end
 
--- The world, then each continent.
+-- The world, then each continent and each plane of its own.
 local function Continents(_, root)
     local world = Coords.WorldMap()
     if world then Radio(root, Name(world), world) end
-    for _, continent in ipairs(Coords.Continents()) do Radio(root, Name(continent), continent) end
+    for _, plane in ipairs(Coords.Planes()) do Radio(root, Name(plane), plane) end
 end
 
--- The zones of the continent shown, A to Z.
+-- The zones of the plane shown, A to Z (a plane of its own is its own zone).
 local function Zones(_, root)
-    local continent = shownMap ~= Coords.WorldMap() and shownMap
-    if not continent then return end
+    local plane = shownMap ~= Coords.WorldMap() and shownMap
+    if not plane then return end
     local list = {}
-    for _, zone in ipairs(Coords.Zones(continent)) do list[#list + 1] = { map = zone.map, name = Name(zone.map) } end
+    for _, zone in ipairs(Coords.Zones(plane)) do list[#list + 1] = { map = zone.map, name = Name(zone.map) } end
     table.sort(list, function(a, b) return a.name < b.name end)
     for _, zone in ipairs(list) do Radio(root, zone.name, zone.map) end
 end

@@ -48,7 +48,11 @@ party), always over the map, and the full map has the quest log at its left. The
 - **The quest log** at the full map's left (*Quest Log* on the bar puts it in or out): your quests by zone with
   their level and state, their objectives under them. A click: the arrow leads to it, the map shows where it is,
   its text below with *Track*, *Share* and *Abandon*. Shift and a click tracks it; the right button opens a menu.
-- **The map selector** on the bar: the world or a continent, then a zone of it.
+- **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
+- **Zephras Isle** is on the map as a continent is, a zone of its own: the map follows you there, its pins and the
+  map pin stand on it, a click on it at the world opens it, and a right click on it goes out to the world (there is
+  no continent between). *Parchment* shows the isle's own map; *Scrying* and *Atlas* show only the sea there, as
+  the terrain's data and the painted map cover the two continents.
 - **Routes:** put the game's map pin (Ctrl and a click) and a golden line leads you there, pulsing towards it,
   around what cannot be walked (mountains, walls, deep water is swum), through gates and doors, and by the flights
   your character knows where that is quicker (visit a flight master once for the map to know yours). A pin on
@@ -78,11 +82,16 @@ party), always over the map, and the full map has the quest log at its left. The
   world map puts the other continents and the world map itself into its plane, so one view zooms from a zone
   out to the whole world. A map straight on the world map that is no continent but has a box and a place there
   (Zephras Isle, a zone of the world map) is a plane of its own, linked alike (`Coords.PlaneOf`,
-  `Coords.Planes`): the routes use it; the views, their zoom levels and the pins keep to the continents.
+  `Coords.Planes`), for the routes, the views and the pins alike; the map there is a zone, its own one
+  (`Coords.Alone`, `Coords.ZoneAt`, `Coords.Zones`), and `Coords.PlaneAt` finds a continent or the isle under a
+  point of the world map.
 - **The camera** (`Camera.lua`), one for each view: the point in the middle, the zoom, whether it follows you,
   and the level the zoom shows (zone, continent, world), changing with some slack so it does not flicker. The
-  wheel keeps the point under the mouse where it is; coming in over another continent at the world, the camera
-  moves into that continent's plane, at the same size on the screen.
+  wheel keeps the point under the mouse where it is; coming in over another continent (or Zephras Isle) at the
+  world, the camera moves into its plane, at the same size on the screen. On the isle the zone's level reaches
+  out to the world, with no continent's between; at the world off the isle (not following you) the camera goes
+  into the plane under the middle at once, so over a continent the world is left at that continent's own zoom,
+  as ever, not at the small isle's.
 - **The canvas** (`Canvas.lua`), the same for both views: its layers hang on one holder frame, laid out around
   an origin. A drag or a step of following moves the holder only; a layout happens when the zoom changes, the
   holder has moved past a margin, or another zone is in the middle. The layers' textures come from pools by
@@ -95,7 +104,8 @@ party), always over the map, and the full map has the quest log at its left. The
   one it comes to (the middle straight, the zoom by equal factors). The layers' frame levels are set from the
   canvas' at every layout.
 - **Terrain** (`Terrain.lua`): the game's own minimap textures, one per tile of a continent's 64 x 64 grid
-  (Core's data, the set *Tiles* in the pack *World*), up to 400 at once; under them, and alone further out,
+  (Core's data, the set *Tiles* in the pack *World*, of the two continents; Zephras Isle has none yet), up to 400
+  at once; under them, and alone further out,
   the module's overview of the same tiles, 64 texels a tile, 8 x 8 tiles a texture (`Art/Terrain/`). At the
   world, every continent's overview where the world map puts it, and at every zoom wherever it is in view. The
   water is cut away: the overview's alpha is
@@ -138,8 +148,9 @@ party), always over the map, and the full map has the quest log at its left. The
   other dock's area and zone, `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`), a click opening the map where it is the
   only one, not marked unconfirmed (the game's own ways). One pin per key: the game's hides the data's (a
   vignette's GUID names its creature). Kept per map until the game says it changed (the message `LIVE`), or Core's
-  places change; at a zone's level every zone in view, further out the continent and its zones for travel and
-  places only. `Pins.Gather`: pins nearer than `Pins.GATHER` units on the screen are one marker, a quest never.
+  places change; at a zone's level every zone in view (on Zephras Isle the isle itself), further out the continent
+  and its zones for travel and places only. A pin's place is in its map's plane (`Coords.PlaneOf`: a continent's,
+  or the isle's). `Pins.Gather`: pins nearer than `Pins.GATHER` units on the screen are one marker, a quest never.
   The filter is the multi-choice setting `pins`.
 - **PinView** (`PinView.lua`): a pooled button per pin, kept by its key while it stays in view, at a fixed size, in
   the game's looks (its quest disc and marks, `UI-QuestPoi-*`, `Quest-In-Progress-Icon-*`); a higher kind over a
@@ -156,7 +167,8 @@ party), always over the map, and the full map has the quest log at its left. The
   a frame and only while it shows; the chosen quest's text from `GetQuestLogQuestText` with its buttons; abandon
   after the game's own question (`GENERIC_CONFIRMATION`); never the quest panels of the game's map.
 - **TopBar** (`TopBar.lua`): over the full map's top: the quest log's button, the views, the map selector (the
-  game's dropdowns, radio entries of the world, its continents, the continent's zones A to Z) and the pin filter
+  game's dropdowns, radio entries of the world, its continents and Zephras Isle, the zones of the one shown A to
+  Z, the isle itself on the isle) and the pin filter
   (checkboxes); it says what the map shows after each layout.
 - **Walk** (`Walk.lua`, no frames): Core's set *Walking* (pack *Data: Routes*, asked for at the first route),
   made by `dev/tools/walk-data` from the game's terrain, buildings and water: per terrain tile a block (base64,
@@ -169,8 +181,8 @@ party), always over the map, and the full map has the quest log at its left. The
   in different regions refused at once, then the line pulled straight through the openings (a funnel, each
   opening drawn in from its ends). `Search.Start` runs it as a job of Core's scheduler.
 - **Planner** (`Planner.lua`, no frames): the way to the map pin, a graph over the player, the pin, the known
-  flight points, the docks and the hearthstone's place on both their planes (a continent, or Zephras Isle; on the
-  isle, which the map does not follow, the planner asks where the player is itself): walks within one region of the
+  flight points, the docks and the hearthstone's place on both their planes (a continent, or Zephras Isle; the
+  canvas' tracker hands it the player's place): walks within one region of the
   walking data (guessed), the flights of Core's set *Travel* the player's side may take, the boats and zeppelins of
   *Travel* from dock to dock (both from the game's tables, by `dev/tools/travel-data`), the hearthstone from the
   player; the quickest chosen (Dijkstra), the walks then searched and the journey chosen once more when one is
@@ -248,6 +260,11 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, the map on Zephras Isle:** the views work on the isle as on a continent: they follow the player
+  there, draw its pins (its zeppelins' tower) and the party, list it in the map selector and the quest log's search,
+  open it from the world by a click and put the map pin on it. The isle is its own zone, with no continent's level
+  (`Coords.Alone`); `Coords.PlaneAt` replaces `Coords.ContinentAt`, and `Live.Player` gives the isle's plane
+  without being asked (its `anyPlane` gone). The continents' zoom levels and drawing are as they were.
 - **2026-10-20, docks on the map:** each dock of the boats and zeppelins is a pin (`TaxiNode_Continent_*`), one per
   dock also where a ship stops twice, its tooltip where it goes from there; the docks' map points written by
   `dev/tools/travel-data` from the game's tables (Core's set *Travel*, `docks` and `dockAreas`).

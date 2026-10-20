@@ -12,7 +12,7 @@ local _, ns = ...
 --      Pins.Offered(quest)     whether this character can take a quest of Core's data now
 --
 --  A pin: kind (the filter's, Pins.KINDS), key (one per thing: the game's word hides Core's for the same
---  key, *One pin per thing*), home (the continent whose plane u, v are in), u, v, map, x, y (on its own
+--  key, *One pin per thing*), home (the plane u, v are in: Coords.PlaneOf), u, v, map, x, y (on its own
 --  map, 0 to 1), atlas or texture, size, name, lines (its tooltip's further lines), and by kind: quest
 --  (its ID), complete, focused (the quest the game's arrow leads to), to (a map it opens), dim (a flight
 --  point not yet found), order (drawn over a lower one).
@@ -86,9 +86,10 @@ local live = {}  -- [uiMapID] = its live pins, until the game says they changed
 local data = {}  -- [uiMapID] = its pins of Core's data, until the data changes
 local faction    -- the player's side, asked once
 
--- The pin's place in its continent's plane, from a point on its map (0 to 1); false when the map has none.
+-- The pin's place in its plane (a continent's, or Zephras Isle's), from a point on its map (0 to 1); false when the
+-- map has none.
 local function Placed(pin, map, x, y)
-    local home = Coords.ContinentOf(map)
+    local home = Coords.PlaneOf(map)
     if not home then return false end
     local u, v = Coords.MapToPlane(map, x, y, home)
     if not u then return false end
