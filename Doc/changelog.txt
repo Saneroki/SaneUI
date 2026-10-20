@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Nameplates, a new module: the game's nameplates with a clean health
+  bar with round corners, lit on your target. As a rogue or a druid in
+  cat form, your combo points show along the bottom of your target's
+  bar. Above the bar the name, above that your own debuffs and up to
+  three of a foe's buffs; right of it a mark on rares and the raid
+  marker. The game's cast bar, level and settings stay as they are.
 - Combat: its window sits at the bottom middle of the screen. Push the
   mouse against the middle of the bottom edge and your talents and your
   spellbook fill the screen side by side; push there again, or press

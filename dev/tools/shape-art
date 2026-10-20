@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Makes the two masks Core's round corners are cut with (src/Core/Shape.lua), in src/Core/Art.
+"""Makes the masks Core's round shapes are cut with (src/Core/Shape.lua), in src/Core/Art.
 
   circle.blp       white, its alpha a disc as large as the picture: what lies inside stays. A
                    window's corner is drawn by a square piece of its fill, this mask over the
@@ -8,24 +8,31 @@
   circle-hole.blp  the same disc taken out of a white square: what lies outside stays. The trim's
                    arc is the corner's piece in the trim's colour, cut by the circle and by this
                    hole, which is the trim's width smaller: a ring as wide as the trim, at any radius.
+  cap-left.blp     a bar's left end (Shape.CAP_LEFT), a quarter as wide as it is high: white, but
+  cap-right.blp    for its two corners, each cut round by a quarter circle as wide as the end. Laid
+                   over the first (or last) quarter of a bar's height at the bar's end, wrapped with
+                   white beyond it (CLAMPTOWHITE), it rounds that end of everything it masks: the
+                   bar's fill as far as it reaches, its background, a strip inside it. The radius is
+                   always a quarter of the bar's height, so the corners stay round at any size.
 
 A mask is stretched whole (Tooltips found it: no slice margins), so a circle stays a circle only
-in a square; the corners' pieces are squares. The game has a circle of its own
-(Interface\\CharacterFrame\\TempPortraitAlphaMask, 128 texels), but no hole, and the two must be
-cut alike so the trim's inner edge meets the fill's.
+in a square, and a bar's end only at its own proportion; the corners' pieces are squares. The game
+has a circle of its own (Interface\\CharacterFrame\\TempPortraitAlphaMask, 128 texels), but no hole,
+and the two must be cut alike so the trim's inner edge meets the fill's.
 
 Analytic shapes, so each mipmap is drawn anew at its size (16 samples a texel, the share of them
-inside the disc): the edge stays one texel soft at every level. BLP2 with DXT5, as Doc/guides/images.md
-says, made by ImageMagick as in dev/tools/art. 256 texels: sharp up to a radius of about 45 UI units on
-a 4K screen, softer above.
+inside the shape): the edge stays one texel soft at every level. BLP2 with DXT5, as Doc/guides/images.md
+says, made by ImageMagick as in dev/tools/art. The circle has 256 texels: sharp up to a radius of about
+45 UI units on a 4K screen, softer above; a bar's end 64 x 256, sharp up to a bar about 90 units high.
 
 Needs Python with Pillow and NumPy, and ImageMagick 7 (magick).
 
-Usage:  dev/tools/shape-art
+Usage:  dev/tools/shape-art [name ...]     the named masks only (cap-left.blp ...); all without
 """
 import io
 import struct
 import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -34,16 +41,34 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 ART = ROOT / "src" / "Core" / "Art"
 SIZE = 256
+CAP = (64, 256)  # a bar's end: width, height
 SAMPLES = 4  # a side's samples per texel
+
+
+def samples(count):
+    """Where each texel's samples lie along a side of that many texels: texel, sample."""
+    offsets = (np.arange(SAMPLES) + 0.5) / SAMPLES
+    return np.arange(count)[:, None] + offsets[None, :]
 
 
 def disc(size):
     """The share of each texel (size x size) that lies inside the disc as large as the picture."""
-    offsets = (np.arange(SAMPLES) + 0.5) / SAMPLES
-    centres = np.arange(size)[:, None] + offsets[None, :]          # texel, sample
-    axis = centres.reshape(-1) - size / 2
+    axis = samples(size).reshape(-1) - size / 2
     inside = (axis[:, None] ** 2 + axis[None, :] ** 2) <= (size / 2) ** 2
     return inside.reshape(size, SAMPLES, size, SAMPLES).mean(axis=(1, 3))
+
+
+def cap(width, height, right):
+    """The share of each texel (height rows x width) inside a bar's end that wide and high: its two
+    corners on the outer side cut by quarter circles as wide as the end, the rest whole."""
+    x = samples(width).reshape(-1)
+    y = samples(height).reshape(-1)[:, None]
+    away = x if right else width - x                    # from the end's inner side outwards
+    radius = width
+    top = np.maximum(radius - y, 0)                     # how far into the top corner's square
+    bottom = np.maximum(y - (height - radius), 0)
+    inside = (away[None, :] ** 2 + np.maximum(top, bottom) ** 2) <= radius ** 2
+    return inside.reshape(height, SAMPLES, width, SAMPLES).mean(axis=(1, 3))
 
 
 def dxt5(alpha):
@@ -60,33 +85,48 @@ def dxt5(alpha):
     return data[128:]
 
 
-def blp(levels, size):
+def blp(levels, width, height):
     """A BLP2 file: DXT5 (encoding 2, alpha depth 8, alpha encoding 7), mipmaps, largest first."""
     offsets, sizes, start = [], [], 148 + 1024  # header, then a palette DXT does not use
     for level in levels:
         offsets.append(start + sum(sizes))
         sizes.append(len(level))
     unused = [0] * (16 - len(levels))
-    header = b"BLP2" + struct.pack("<I4B2I", 1, 2, 8, 7, 1, size, size)
+    header = b"BLP2" + struct.pack("<I4B2I", 1, 2, 8, 7, 1, width, height)
     header += struct.pack("<16I", *offsets, *unused) + struct.pack("<16I", *sizes, *unused)
     return header + bytes(1024) + b"".join(levels)
 
 
-def make(name, hole):
-    levels, size = [], SIZE
-    while size >= 1:
-        shape = disc(size)
-        levels.append(dxt5(1 - shape if hole else shape))
-        size //= 2
+def make(name, width, height, draw, checks):
+    """Writes the mask name, drawn by draw(width, height) at every level, and reads it back: each of
+    checks, (row, column, alpha), as it should be."""
+    levels, level = [], 0
+    while True:
+        w, h = max(1, width >> level), max(1, height >> level)
+        levels.append(dxt5(draw(w, h)))
+        if w == 1 and h == 1:
+            break
+        level += 1
     out = ART / name
     ART.mkdir(parents=True, exist_ok=True)
-    out.write_bytes(blp(levels, SIZE))
-    with Image.open(out) as image:  # read back: the disc's centre and corner as they should be
+    out.write_bytes(blp(levels, width, height))
+    with Image.open(out) as image:
         back = np.asarray(image.convert("RGBA"))[..., 3]
-    centre, corner = back[SIZE // 2, SIZE // 2], back[0, 0]
-    assert (centre, corner) == ((0, 255) if hole else (255, 0)), f"{name} reads back wrong: {centre}, {corner}"
-    print(f"Wrote {out.relative_to(ROOT)} ({SIZE}x{SIZE}, {len(levels)} levels, {out.stat().st_size // 1024} KB).")
+    for row, column, alpha in checks:
+        assert back[row, column] == alpha, f"{name} reads back wrong at {row}, {column}: {back[row, column]}"
+    print(f"Wrote {out.relative_to(ROOT)} ({width}x{height}, {len(levels)} levels, {out.stat().st_size // 1024} KB).")
 
 
-make("circle.blp", hole=False)
-make("circle-hole.blp", hole=True)
+W, H = CAP
+MASKS = {
+    "circle.blp": (SIZE, SIZE, lambda w, h: disc(w), [(SIZE // 2, SIZE // 2, 255), (0, 0, 0)]),
+    "circle-hole.blp": (SIZE, SIZE, lambda w, h: 1 - disc(w), [(SIZE // 2, SIZE // 2, 0), (0, 0, 255)]),
+    # The middle and the inner side whole; the outer corners cut away.
+    "cap-left.blp": (W, H, lambda w, h: cap(w, h, right=False), [(H // 2, 0, 255), (0, W - 1, 255), (0, 0, 0), (H - 1, 0, 0)]),
+    "cap-right.blp": (W, H, lambda w, h: cap(w, h, right=True), [(H // 2, W - 1, 255), (0, 0, 255), (0, W - 1, 0), (H - 1, W - 1, 0)]),
+}
+
+wanted = sys.argv[1:] or list(MASKS)
+for name in wanted:
+    assert name in MASKS, f"no mask called {name}: {', '.join(MASKS)}"
+    make(name, *MASKS[name])

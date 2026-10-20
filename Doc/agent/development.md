@@ -96,8 +96,9 @@ module or data file has a licence of its own. Original art/name terms differ fro
 
 Observed on 2026-10-14, checked again on 2026-10-16; do not mistake older text for current behaviour:
 
-- Source has five addons: Core (`SaneUI`), Abilities, Tooltips, Social, Combat (2026-10-16). Older text saying three, four or
-  six (and an addon *Settings* or *Sync*) is stale.
+- Source has nine addons (2026-10-20): Core (`SaneUI`), Abilities, Tooltips, Social, Combat, Navigation, Atlas, Inventory,
+  Nameplates, besides the data packs `dev/tools/data` compiles. Older text saying fewer (or an addon *Settings* or *Sync*)
+  is stale.
 - Tooltips README's “Not there yet” sub-bullet on a player's specialisation (`src/Tooltips/README.md`,
   section *Not there yet*) conflicts with the spec its Player row and `Inspect.Talents` show; delete
   that sub-bullet there.

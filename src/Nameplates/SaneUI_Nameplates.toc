@@ -1,0 +1,23 @@
+## Interface: 16001
+## Title: Nameplates
+## Notes: The game's nameplates in Sane UI's dress: a health bar with round corners, in your target's your combo points along its bottom, the name above it, your own debuffs and up to three of a foe's buffs, a mark on rares and the raid marker. Everything else of the game's plates stays as it is.
+## Author: Saneroki
+## Version: 0.3.0
+## Category: Sane UI
+## Group: SaneUI
+## Dependencies: SaneUI
+## IconTexture: Interface\Icons\Ability_Hunter_SniperShot
+## X-License: MIT
+
+# The module's own table, its words and settings. First: the other files will add to that table.
+Nameplates.lua
+# The health bar: round at both ends, in the game's colours, its border lit on your target and focus
+Bar.lua
+# Your debuffs and a foe's buffs, in the game's own aura containers
+Auras.lua
+# The mark on rares and the raid marker, right of the bar
+Marks.lua
+# Your combo points along the bottom of your target's bar
+Resource.lua
+# Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it
+Plate.lua

@@ -17,7 +17,8 @@ Use current source and the user's instructions when they differ from a note.
 | Tooltip content, layout, live unit data, quests, prices | [tooltips.md](tooltips.md) |
 | Messages, bubbles, native chat, input, filtering/fading | [social.md](social.md) |
 | Navigation: minimap, world map, quest log, pins, routes, leveling guide (built: window, both views, canvas, terrain and art at every zoom, the game's minimap and map taken over; pins, quest log, top bar, routes, guide to come; handoff) | [navigation.md](navigation.md), then `Doc/ideas/Navigation.md` |
-| Combat: its window at the bottom middle, the full screen's talents and spellbook (built); unit frames, party, raid, buffs, nameplates, pets (not built yet) | `src/Combat/README.md`, `Doc/ideas/Combat.md` |
+| Combat: its window at the bottom middle, the full screen's talents and spellbook (built); unit frames, party, raid, buffs, pets (not built yet) | `src/Combat/README.md`, `Doc/ideas/Combat.md` |
+| Nameplates: the game's plates in our dress (built: round-cornered health bar, combo points in the target's, name, own debuffs and a foe's buffs in the game's aura containers, rare's mark, raid marker) | `src/Nameplates/README.md` |
 | Inventory: own character sheet, bags, alts' snapshots on its full screen (built: window in the bottom right corner, its full screen and board; the windows to come; never the game's panels, which taint the window manager) | `src/Inventory/README.md`, then `Doc/ideas/Inventory.md` |
 | NPC talks, books and letters as a scene, part of Social (not built yet) | `Doc/ideas/Dialogue.md` |
 | Lore: AI voice overs, a library of the world's lore, tidbits in tooltips (an idea, not built) | `Doc/ideas/Lore.md` |
@@ -29,13 +30,15 @@ Use current source and the user's instructions when they differ from a note.
 ## What exists
 
 Sane UI replaces or extends parts of WoW: Forever's UI. Version `0.3.0`, interface `16001` in all
-eight TOCs. Modules are independent addons under category/group Sane UI; only Core is required.
+nine TOCs. Modules are independent addons under category/group Sane UI; only Core is required.
 Core holds the options (`src/Core/Settings/`, `Core.Config`: pages put up at login, filled when first
 opened) and Sync (`src/Core/Sync/`, `Core.Sync`); neither is a module. Abilities extends the game's book with future spells and
 reserves action slots. Tooltips draws panels over native tooltips. Social supplies a messenger-style
 window and temporarily seats Blizzard's own chat edit boxes in it, and joins or leaves the game's chat
-channels as chosen on its page. Combat (2026-10-16) is set up for unit frames, party, raid, buffs,
-nameplates and pets; built (2026-10-20): its window at the bottom middle, whose full screen (the bottom edge's middle
+channels as chosen on its page. Nameplates (2026-10-20) dresses the game's own plates: a round-cornered
+health bar over the game's, combo points in the target's, the name, own debuffs and a foe's buffs in the game's
+aura containers, the rare's mark and the raid marker; the game's parts under it at alpha 0 (`src/Nameplates/README.md`).
+Combat (2026-10-16) is set up for unit frames, party, raid, buffs and pets; built (2026-10-20): its window at the bottom middle, whose full screen (the bottom edge's middle
 half) holds the talents and the spellbook, the game's window seated there (Core's `Seat.lua`) and a talent planner Sane UI
 knows as the talents (the known addons, Core's `Neighbours.lua`) (`src/Combat/README.md`, plan `Doc/ideas/Combat.md`). Inventory (2026-10-20) is a window in
 the bottom right corner whose corner fills the screen with its own character sheet, bags and alts' snapshots, being built (`src/Inventory/README.md`, plan `Doc/ideas/Inventory.md`). Navigation (2026-10-18) is the minimap and the map in one

@@ -6,6 +6,52 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 460 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 290 (Navigation), 71 (Inventory), 71 (sheet), 67 (bags), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
+### Nameplates: a module of its own (Saneroki, 2026-10-20)
+- **The game's plates in our dress** (`src/Nameplates/`, the addon `SaneUI_Nameplates`; Saneroki: the nameplates
+  are a module of their own, not Combat's): on each plate the game shows with a health bar, a frame of ours on the
+  plate, laid over its health bar row (`Plate.lua`); the game's bar row, name, auras, raid marker and
+  classification mark at alpha 0 under it (calls only, nothing of theirs written), at 1 again when the plate goes,
+  when the game hides its health bar (name only, widgets only: hooks after its `OnShow`/`OnHide`) and when the
+  module stands down. The rest of the game's plate stays: its size and style, stacking, cast bar, level box,
+  threat glow, widgets and what clicks it. One dress per plate, kept; each listens to its own unit's events.
+- **The bar** (`Bar.lua`): a rectangle with round corners and a one-pixel border, the fill and background masked
+  at both ends by Core's new caps, the border by caps of its own size; health as the game gives it (a secret value
+  in a fight, taken by the bar untouched); the game's colours (class colours by its nameplate CVars, grey when
+  tapped by others, `UnitSelectionColor`); the border lit in the game's colours on your target and focus.
+- **Combo points** (`Resource.lua`): along the bottom of your target's bar, a third of its height, one segment per
+  point: one status bar from none to the most (the count may be secret), lines between the segments; rogues and
+  druids in cat form, on a target you can attack; its corners the bar's own caps.
+- **The name and the auras** (`Plate.lua`, `Auras.lua`): the name centred above the bar in the game's nameplate
+  font; above it, in the game's own aura containers (`CustomAuraContainerTemplate`), your debuffs from the left
+  (`HARMFUL|PLAYER`) and up to three buffs of a foe from the right (the game's own plates' buff filter), icons
+  drawn once per frame the container makes, in the look of the game's nameplate auras; as many as fit over the bar.
+- **Marks** (`Marks.lua`): the game's marks for a rare and a rare elite, then the raid marker (its index may be
+  secret: given to `SetSpriteSheetCell` as it is), right of the bar or of the game's level box beside it.
+- **Settings:** *Your debuffs*, *Buffs on foes*, *Combo points in your target's bar*.
+- **Core:** `Shape.CAP_LEFT`, `CAP_RIGHT`: the masks `src/Core/Art/cap-left.blp` and `cap-right.blp` (64 × 256,
+  DXT5 with mipmaps), a bar's ends, round with a radius of a quarter of its height; `dev/tools/shape-art` makes
+  them next to the circles, and now takes the names of the masks to make.
+- Tests: `dev/tests/nameplates.lua` (52 checks, in `dev/tests/run`).
+
+### Inventory: an alt's gear on a paper doll (Saneroki, 2026-10-20)
+- **The paper doll** (`src/Inventory/Alts/Items.lua`): the place Equipped of the window *Characters* drawn as the
+  game's paper doll where Core keeps what the character wears slot by slot: the sheet's columns, sizes and slot
+  frames (`Sheet/Slots.lua`, read only), eight down each side as far apart as the grid is wide (at most as on the
+  sheet), the weapons' row in the middle below them; the ranged slot where the game shows one or something is in
+  it, the ammo beside it where some is worn; an empty slot its own picture, its name as its tooltip. The bags worn
+  in their slots follow as a row of the grid. Read only: the game's tooltip by item ID, a modified click links or
+  tries on. While searching the doll shows only if something in it is found, whole, what is not found dimmed as
+  the game's bags dim it. A character Core has not read slot by slot yet (it has not logged in since) keeps the
+  list.
+- **Core:** `Data.Worn(key)` (`src/Core/Data/Characters.lua`): what a character wears slot by slot, by the game's
+  inventory slot IDs (the gear, the ammo where the client has its slot, the bags' slots), kept as a packed string
+  `slots` beside the place `worn` (which stays as it was, for `Data.Count`; the ammo only in `slots`: it lies in
+  the bags and is counted there), read with it, kept even empty (read, wearing nothing), checked on load.
+  Documented in `Doc/guides/data.md` and Core's README.
+- Tests: `dev/tests/tooltips.lua` (`Data.Worn`: read in steps, packed, the ammo, a wrong shape set aside,
+  everything taken off), `dev/tests/inventory.lua` (the doll: slots and places, tooltips, clicks, the ammo, no
+  ranged slot, reused rows, the bags worn, the search).
+
 ### Inventory: the bags (Saneroki, 2026-10-20)
 - **Our own bags** (`src/Inventory/Bags/`, the part `bags` on the module's full screen): every slot of the
   backpack, the bags, the reagent bag and the keyring, and the bank's tabs while the bank is open, each item the
