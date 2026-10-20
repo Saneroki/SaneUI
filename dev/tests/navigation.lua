@@ -382,12 +382,15 @@ local function Set(file, name, hash, key, fields, types, body)
         .. "if not S then return end\nlocal R, I = S.rows, S.index\n" .. body)
     handle:close()
 end
-Set(packPath .. "/NPCs.lua", "NPCs", "00000003", "int", '"name", "services", "rank", "goods"', '"text", "list text", "text", "list text"',
-    'R[69] = "70245\t\tAn Innkeeper\tinnkeeper\030vendor\tnormal\tfood"\n'
-    .. 'R[70] = "70245\t\tAn Old Rare\t\trare\t"\n'
-    .. 'R[71] = "70245\t\tA Wolf\t\tnormal\t"\n'
-    .. 'R[72] = "70245\t\tA Quest Giver\t\tnormal\t"\n'
-    .. 'R[73] = "70245\t\tAn Old Friend\t\tnormal\t"\n')
+Set(packPath .. "/NPCs.lua", "NPCs", "00000003", "int", '"name", "services", "rank", "goods", "title"',
+    '"text", "list text", "text", "list text", "text"',
+    'R[69] = "70245\t\tAn Innkeeper\tinnkeeper\030vendor\tnormal\tfood\t"\n'
+    .. 'R[70] = "70245\t\tAn Old Rare\t\trare\t\t"\n'
+    .. 'R[71] = "70245\t\tA Wolf\t\tnormal\t\t"\n'
+    .. 'R[72] = "70245\t\tA Quest Giver\t\tnormal\t\t"\n'
+    .. 'R[73] = "70245\t\tAn Old Friend\t\tnormal\t\t"\n'
+    .. 'R[74] = "70245\t\tA Waiting Giver\t\tnormal\t\t"\n'
+    .. 'R[75] = "70245\t\tA Teacher\ttrainer\tnormal\t\tWarrior Trainer"\n')
 Set(packPath .. "/Objects.lua", "Objects", "00000004", "int", '"name", "kind"', '"text", "text"',
     'R[1617] = "70245\t\tSilverleaf\therb"\n')
 Set(packPath .. "/Places.lua", "Places", "00000005", "int", '"kind", "name", "point", "to", "levelMin", "levelMax"',
@@ -422,13 +425,19 @@ Set(spawnsPath .. "/Spawns.lua", "Spawns", "00000007", "text", '"points", "middl
     .. 'R["npc:71"] = "70245\t\t1429\03110\03110\t"\n'
     .. 'R["object:1617"] = "70245\t\t1429\03152\03150\t"\n'
     .. 'R["npc:72"] = "70245\t\t1429\03180\03140\t"\n'
-    .. 'R["npc:73"] = "70245\t\t1429\03185\03115\t"\n')
+    .. 'R["npc:73"] = "70245\t\t1429\03185\03115\t"\n'
+    .. 'R["npc:74"] = "70245\t\t1429\03150\03185\t"\n'
+    .. 'R["npc:75"] = "70245\t\t1429\03140\03160\t"\n')
 -- The quests they give: one this character can take (100), one it has done (5, doneQuests below).
 local questsPath = folder .. "/SaneUI_Data_Quests"
 os.execute(("mkdir -p '%s'"):format(questsPath))
-Set(questsPath .. "/Quests.lua", "Quests", "00000009", "int", '"name", "minLevel", "startNPCs"', '"text", "int", "list int"',
-    'R[100] = "70245\t\tA Quest to Take\t1\t72"\nR[5] = "70245\t\tAn Old Quest\t1\t73"\n'
-    .. 'I.byStartNPC = {}\nI.byStartNPC[72] = "100"\nI.byStartNPC[73] = "5"\n')
+Set(questsPath .. "/Quests.lua", "Quests", "00000009", "int", '"name", "minLevel", "startNPCs", "level"',
+    '"text", "int", "list int", "int"',
+    'R[100] = "70245\t\tA Quest to Take\t1\t72\t5"\nR[5] = "70245\t\tAn Old Quest\t1\t73\t"\n'
+    .. 'R[101] = "70245\t\tA Quest for Later\t60\t74\t30"\n'
+    .. 'I.byStartNPC = {}\nI.byStartNPC[72] = "100"\nI.byStartNPC[73] = "5"\nI.byStartNPC[74] = "101"\n')
+LOCALIZED_CLASS_NAMES_MALE = { WARRIOR = "Warrior", MAGE = "Mage" }
+GetQuestGreenRange = function() return 5 end
 out = assert(io.open(questsPath .. "/SaneUI_Data_Quests.toc", "w"))
 out:write("## Title: Data: Quests\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Quests\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nQuests.lua\n")
 out:close()
@@ -711,7 +720,7 @@ check(Tiles:Ready() and Tiles:Get(3104, "minimap") == 801, "the pack is loaded: 
 local places = Core.Data.Map():On(1429)
 local byKey = {}
 for _, place in ipairs(places or {}) do byKey[place.key] = place end
-check(places and #places == 10 and byKey["npc:69"] and byKey["npc:70"] and byKey["object:1617"] and byKey["place:1"]
+check(places and #places == 12 and byKey["npc:69"] and byKey["npc:70"] and byKey["object:1617"] and byKey["place:1"]
     and byKey["place:2"] and byKey["travel:1"] and byKey["travel:3:1"] and byKey["travel:4:1"] and not byKey["npc:71"]
     and byKey["npc:72"] and byKey["npc:72"].what.quests[1] == 100 and byKey["npc:73"],
     "Core's places on a map: its NPCs with a service, rares and quest givers (with their quests), objects, places and "
@@ -823,7 +832,7 @@ check(waypoint and waypoint.uiMapID == 1429 and near(waypoint.position.x, 0.75) 
 W.Fire("USER_WAYPOINT_UPDATED")
 W.Wait(0)
 local pin
-for _, widget in ipairs(W.frames) do if widget._kind == "Button" and widget.icon and not widget.disc then pin = widget end end
+for _, widget in ipairs(W.frames) do if widget._kind == "Button" and widget.icon and widget._scripts.OnClick then pin = widget end end
 check(pin and pin._shown and pin.icon._atlas == "Waypoint-MapPin-Untracked", "the pin shows, as the game's")
 pin._scripts.OnClick(pin, "LeftButton")
 check(tracked, "a click on it: the game's arrow leads there")
@@ -895,6 +904,8 @@ do
         "older settings: a route switched off stays off in the pin filter, the minimap's dots on")
     settled = Core.Settle(ns.name, { pins = { quest = true } })
     check(settled.pins.route and settled.pins.minimap, "a route that was on: on in the pin filter")
+    check(settled.pins.log and settled.pins.low and settled.pins.later and not settled.pins.done,
+        "the quests split: those in your log as Quests were, the low ones and those for later on")
 end
 -- The game's minimap's dots on the full map too: around the player at the map's own zoom, its widest step whose
 -- square takes at most Hybrid.ROOM of the canvas' shorter side, kept on the player; the pin filter's Minimap dots.
@@ -985,26 +996,43 @@ end
 full:Show(1415, 0, -9250, 0.4)
 Canvas.Layout()
 local pins, count = Drawn()
-check(full.level == "zone" and count == 10, "the zone's pins: 11 things, two of them near each other gathered into one")
+check(full.level == "zone" and count == 12, "the zone's pins: 13 things, two of them near each other gathered into one")
 do
     local giver = pins["npc:72"]
-    check(giver and giver.pin.kind == "quest" and giver.pin.offer and giver.icon._atlas == "QuestNormal"
-        and giver._alpha == ns.PinView.OFFERED and pins["quest:7"]._alpha == 1,
-        "a quest you can take but have not: its giver's pin see-through, the quests in your log not")
+    check(giver and giver.pin.kind == "quest" and giver.pin.offer and giver.icon._atlas == Pins.ICONS.offer
+        and giver._alpha == ns.PinView.OFFERED and pins["quest:7"]._alpha == 1 and giver.pin.click == "preview"
+        and giver.pin.lines[1][1] == "A Quest to Take (level 5)",
+        "a quest offer: the game's quest mark, see-through, the quests in your log not; its tooltip names it")
+    local waiting = pins["npc:74"]
+    check(waiting and waiting.pin.kind == "later" and waiting.pin.grey and waiting.icon._atlas == Pins.ICONS.grey
+        and waiting.pin.lines[1][1] == "A Quest for Later (level 30)"
+        and waiting.pin.lines[2][1]:find(Pins.TEXT.needsLevel:format(60), 1, true),
+        "a quest for later: a grey mark, its tooltip saying why (the level it asks)")
+    local teacher = pins["npc:75"]
+    check(teacher and teacher.pin.kind == "service" and teacher.icon._atlas == "class"
+        and teacher.pin.lines[1] == "Warrior Trainer" and not teacher.pin.lines[2],
+        "a trainer: its title says what it trains (no plain Trainer), a class's trainer the class book")
     check(not pins["npc:73"], "a giver of quests you have done only: no pin while Done quests is off (the default)")
     local chosen = Core.Copy(ns.options.pins)
     chosen.done = true
     Core.Set(ns.name, "pins", chosen)
     local old = Drawn()["npc:73"]
-    check(old and old.pin.kind == "done" and old.pin.dim and old.pin.lines[1] == Pins.TEXT.done
-        and old.pin.lines[2] == "An Old Quest", "Done quests on: its pin, grey, its tooltip naming the quests you did")
+    check(old and old.pin.kind == "done" and old.pin.grey and old.pin.lines[1] == Pins.TEXT.done
+        and old.pin.lines[2][1] == "An Old Quest", "Done quests on: its pin, grey, its tooltip naming the quests you did")
     chosen = Core.Copy(chosen)
     chosen.done = nil
     Core.Set(ns.name, "pins", chosen)
+    check(Pins.Standing({ level = 1 }, 999) == "offered", "a quest at your level gives experience")
+    UnitLevel = function() return 20 end
+    Canvas.Layout()
+    check(Pins.Standing({ level = 10 }, 999) == "low" and select(2, Pins.Standing({ level = 10 }, 999)) == Pins.TEXT.low,
+        "past the game's green range below you: too low, it gives no experience")
+    UnitLevel = function() return 6 end
+    Canvas.Layout()
 end
 check(pins["quest:7"] and pins["quest:7"].pin.name == "Wolves Across the Border" and not pins["quest:7"].pin.complete
-    and pins["quest:7"].disc._atlas == ns.PinView.DISC and pins["quest:7"].icon._atlas == ns.PinView.IN_PROGRESS,
-    "the game's quest on its map, in the game's quest disc and mark")
+    and pins["quest:7"].pin.kind == "log" and pins["quest:7"].icon._atlas == Pins.ICONS.progress,
+    "a quest in your log on the map where the game says, in progress: the target mark, no disc")
 local questPoint = pins["quest:7"]._points[1]
 check(near(questPoint[4], (-200 - 0) * 0.4) and near(questPoint[5], (-9100 + 9250) * 0.4),
     "placed where the game says, on the canvas' holder (a drag moves it with the map)")
@@ -1012,13 +1040,14 @@ check(pins["flight:2"] and pins["flight:2"].icon._atlas == "TaxiNode_Alliance" a
     "the flight points of the player's side, in the game's own atlas; the other side's not")
 check(pins["npc:70"] and pins["npc:70"].pin.live and pins["npc:70"].pin.name == "A rare",
     "the rare the game shows nearby: its own pin, hiding the one of Core's data for the same creature")
-check(pins["place:1"] and pins["place:1"].icon._atlas == "Dungeon" and pins["place:1"].pin.to == 500
-    and pins["place:2"] and pins["place:2"].icon._atlas == "Mailbox" and pins["travel:1"],
-    "Core's places: a dungeon's entrance that opens its map, a mailbox, a boat")
+check(pins["place:1"] and pins["place:1"].icon._atlas == "dungeon" and pins["place:1"].pin.to == 500
+    and pins["place:2"] and pins["place:2"].icon._atlas == "mailbox" and pins["travel:1"]
+    and pins["npc:70"].icon._atlas == Pins.ICONS.rare,
+    "Core's places: a dungeon's entrance that opens its map, a mailbox, a boat; the rare in its kind's icon (a skull)")
 do
     local dock = pins["travel:3:1"]
-    check(dock and dock.icon._atlas == "TaxiNode_Continent_Neutral" and dock.pin.name == Pins.WAY_WORDS.boat
-        and dock.pin.to == 1414 and dock.pin.click == "map", "a boat's dock, in the game's atlas, opening the map it sails to")
+    check(dock and dock.icon._atlas == "flightmasterferry" and dock.pin.name == Pins.WAY_WORDS.boat
+        and dock.pin.to == 1414 and dock.pin.click == "map", "a boat's dock, the game's boat icon, opening the map it sails to")
     GameTooltip._lines = nil
     dock._scripts.OnEnter(dock)
     local lines = GameTooltip._lines
@@ -1026,8 +1055,9 @@ do
         "its tooltip: where it sails to, the area and the zone in the game's words; the game's own way, not unconfirmed")
 end
 local marker = pins["gathered:npc:69"]
-check(marker and #marker.pin.gathered == 2 and marker.count._text == 2 and not pins["object:1617"],
-    "an innkeeper and a herb 40 yards apart cover each other at this zoom: one marker with their number")
+check(marker and #marker.pin.gathered == 2 and marker.icon._atlas == "innkeeper" and not marker.count
+    and not pins["object:1617"], "an innkeeper and a herb 40 yards apart cover each other at this zoom: one marker in the "
+    .. "first one's icon, no number")
 check(Canvas.LEVELS.pins > Hybrid.LEVEL and Hybrid.LEVEL > Canvas.MAP and Canvas.LEVELS.pins + ns.PinView.LEVELS + 1 < Canvas.LEVELS.marks
     and pins["quest:7"]._level > pins["place:2"]._level and pins["quest:7"]._level < frame:GetFrameLevel() + Canvas.LEVELS.marks
     and pins["place:2"]._level > frame:GetFrameLevel() + Hybrid.LEVEL,
@@ -1037,8 +1067,8 @@ local release = marker._scripts.OnMouseUp
 marker._scripts.OnMouseDown(marker, "LeftButton")
 release(marker, "LeftButton")
 pins, count = Drawn()
-check(full.k > 0.4 and pins["npc:69"] and pins["object:1617"] and pins["npc:69"].icon._atlas == "Innkeeper"
-    and pins["object:1617"].icon._atlas == "Professions_Tracking_Herb", "a click on it zooms in: they part, each in the game's look")
+check(full.k > 0.4 and pins["npc:69"] and pins["object:1617"] and pins["npc:69"].icon._atlas == "innkeeper"
+    and pins["object:1617"].icon._atlas == "professions_tracking_herb", "a click on it zooms in: they part, each in its own icon")
 -- The filter: services off.
 local chosen = {}
 for key, on in pairs(ns.options.pins) do chosen[key] = on end
@@ -1056,14 +1086,19 @@ do
     for _, widget in ipairs(W.frames) do
         if widget._generator then
             widget:GenerateMenu()
-            for _, item in ipairs(widget._items or {}) do if item.text == "Herbs" then filter = widget end end
+            for _, item in ipairs(widget._items or {}) do
+                if type(item.text) == "string" and item.text:find("Herbs", 1, true) then filter = widget end
+            end
         end
     end
-    local herbs, route, minimapRow
+    local rows = {}
     for _, item in ipairs(filter and filter._items or {}) do
-        if item.text == "Herbs" then herbs = item elseif item.text == ns.TEXT.route then route = item
-        elseif item.text == ns.TEXT.minimap then minimapRow = item end
+        for _, kind in ipairs(ns.KINDS) do if item.text == ns.KindLabel(kind) then rows[kind[1]] = item end end
     end
+    local herbs, route, minimapRow, area = rows.herb, rows.route, rows.minimap, rows.area
+    check(herbs and herbs.text == "|A:professions_tracking_herb:16:16|a Herbs" and rows.log and rows.quest and rows.low
+        and rows.later and rows.done, "the pin filter: each kind with its icon before its words; the quests in your log, "
+        .. "the quest offers, the low ones and those for later each a row of their own")
     local slider = { points = {} }
     function slider:SetWidth(width) self.width = width end
     function slider:ClearAllPoints() self.points = {} end
@@ -1078,8 +1113,17 @@ do
         and slider.low == ns.PIN_SIZES.low and slider.high == ns.PIN_SIZES.high and slider.labels[3](150) == "150%"
         and width > 40 + slider.width and height == ns.TopBar.ROW,
         "the pin filter: a size slider at each kind's right, from its smallest to its largest size")
-    check(route and #route.inits == 1 and minimapRow and #minimapRow.inits == 0,
-        "the route's line has a size too; the game's minimap's dots none (the game draws them)")
+    check(route and #route.inits == 1 and minimapRow and #minimapRow.inits == 0 and #rows.low.inits == 1,
+        "the route's line has a size too, as each quest row has; the game's minimap's dots none (the game draws them)")
+    local opacity = { points = {} }
+    for name, fn in pairs(slider) do if type(fn) == "function" then opacity[name] = fn end end
+    local areaRow = { fontString = row.fontString }
+    function areaRow:AttachTemplate() return opacity end
+    area.inits[1](areaRow)
+    check(opacity.low == ns.PIN_OPACITY.low and opacity.high == 100, "the quest areas' slider: their opacity, up to 100 %")
+    opacity.fn(nil, 40)
+    check(ns.options.pinSizes.area == 40 and ns.PinScale("area") == 0.4, "kept: the areas drawn so see-through")
+    opacity.fn(nil, 100)
     slider.fn(nil, 151.2)
     local herb = Drawn()["object:1617"]
     check(ns.options.pinSizes.herb == 150 and ns.PinScale("herb") == 1.5 and herb and near(herb._width, Pins.SIZE.herb * 1.5),
@@ -1126,9 +1170,9 @@ for _, widget in ipairs(areaFrames) do if widget._shown and widget._quest then b
 check(blob and blob._quest == 7 and blob._map == 1429 and near(blob._width, 2000 * full.k),
     "the mouse over it: its area as the game shades it, over its zone")
 rows[2]._scripts.OnLeave(rows[2])
--- The quest's pin now on the game's brown disc.
+-- The quest's pin now with the glow of the quest the arrow leads to.
 pins = Drawn()
-check(pins["quest:7"].pin.focused and pins["quest:7"].disc._atlas == ns.PinView.DISC_FOCUSED, "its pin on the disc of the quest the arrow leads to")
+check(pins["quest:7"].pin.focused and pins["quest:7"].glow._shown, "its pin glowing: the quest the arrow leads to")
 -- Shift and a click watches it; the right button's menu; abandoned only after a question.
 IsShiftKeyDown = function() return true end
 rows[2]._scripts.OnClick(rows[2], "LeftButton")
@@ -1149,6 +1193,36 @@ pins = Drawn()
 pins["quest:7"]._scripts.OnMouseDown(pins["quest:7"], "LeftButton")
 pins["quest:7"]._scripts.OnMouseUp(pins["quest:7"], "LeftButton")
 check(focused == 7, "a click on a quest's pin: the arrow leads to it")
+-- A click on a quest giver's pin: its quest in the log, greyed out under Not in your log, what the data knows of
+-- it below; its red X takes it out again.
+do
+    local was = { map = full.map, u = full.u, v = full.v, k = full.k, follow = full.follow }
+    full:Show(1415, 0, -9250, 0.4)
+    Canvas.Layout()
+    local giver = Drawn()["npc:74"]
+    giver._scripts.OnMouseDown(giver, "LeftButton")
+    giver._scripts.OnMouseUp(giver, "LeftButton")
+    local shown = logBox:Draw()
+    check(shown[1].row.kind == "header" and shown[1].text._text == QuestLog.TEXT.previews and shown[2].row.kind == "preview"
+        and shown[2].row.quest == 101 and shown[2].text._text == "[30] A Quest for Later" and shown[2].remove._shown
+        and not shown[4].remove._shown, "its quest in the log on top, greyed out, with the red X; the log's own below")
+    local said
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "FontString" and type(widget._text) == "string" and widget._text:find("A Quest for Later|r", 1, true) then
+            said = widget._text
+        end
+    end
+    check(said and said:find(Pins.TEXT.needsLevel:format(60), 1, true) and said:find(QuestLog.TEXT.level:format(30), 1, true)
+        and said:find(QuestLog.TEXT.givenBy:format("A Waiting Giver"), 1, true),
+        "below it what the data knows: why not yet (the level it asks), its level, who gives it")
+    shown[2].remove._scripts.OnClick(shown[2].remove)
+    shown = logBox:Draw()
+    check(shown[1].row.kind == "header" and shown[1].text._text ~= QuestLog.TEXT.previews and #shown == 5,
+        "its red X: out of the log again")
+    full:Show(was.map, was.u, was.v, was.k)
+    full.follow = was.follow
+    Canvas.Layout()
+end
 
 -- The route's golden line: the parts in view, under the pins.
 ns.Route.Show({ legs = { { kind = "walk", points = { { map = 1415, u = 500, v = -8950 }, { map = 1415, u = 0, v = -9250 } } },
@@ -1227,7 +1301,7 @@ do
         "standing on the isle: the view follows the player into its plane, a zone, the arrow there (ours or the game's minimap's)")
     local onIsle = Drawn(true)
     local tower = onIsle["travel:4:2"]
-    check(tower and tower.icon._atlas == "TaxiNode_Continent_Horde" and tower.pin.home == 2521 and tower.pin.to == 1429
+    check(tower and tower.icon._atlas == "vehicle-air-horde" and tower.pin.home == 2521 and tower.pin.to == 1429
         and near(tower._points[1][5], -1000 * full.k), "its pins: the zeppelin's tower, opening the map it flies to")
     check(not tower._shown and -1000 * full.k + tower.half < -frame._height / 2,
         "laid out past the canvas' bottom edge, the tower is out of sight there")
