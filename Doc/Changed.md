@@ -3,8 +3,32 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 290 (Navigation), 85 (Inventory), 71 (sheet), 67 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 290 (Navigation), 85 (Inventory), 85 (sheet), 67 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Inventory: the character sheet's parts windows of their own, the sidebar (Saneroki, 2026-10-20)
+- **Windows of their own** (Saneroki): the sheet's parts are each a window on the module's board, moved and sized
+  there like the bags and the characters; the side tabs are gone. `Board.ORDER`: `character`, `stats`, `reputation`,
+  `skills`, `pvp`, `currency`, `statistics`, `bags`, `alts`; the first layout holds `Board.FIRST` (character, stats,
+  bags, alts), the others come from the dropdown *Windows*.
+- **The character** (`Sheet/Sheet.lua`): the paper doll alone (the game's left pane, its strip and level line, the
+  model, the slots), scaled to fit its window and never larger than the game's (`Sheet.Size`), its least
+  `Sheet.LEAST` of it. `Sheet.LEFT` stays its width (the other characters' paper doll reads it).
+- **The pages** (`Sheet/Page.lua`): reputation, skills, PvP and currency stand on the game's right pane at the right
+  of their window (its art stretched to the window's height) with the list or the rank taking the rest; statistics
+  on its list alone. `Page.Part` registers them, `Page.Least` their least; `List.INSET` and `List.LEAST` the lists'.
+- **The stats and the sidebar** (`Sheet/Sidebar.lua`, the part `stats`): the game's right pane as a window, the
+  game's sidebar tabs on its stone as our own buttons in its art (Stats, Equipment Manager, Titles, Pet only with a
+  pet, the three centred without it, greyed with the game's reason), the tab chosen naming the head and alone
+  listening. `Sheet/Stats.lua` draws a list per unit (the player's, the pet's), only lists shown, and hears the pet's
+  events too.
+- **Gear sets** (`Sheet/Gear.lua`): the game's cards, Equip (as `EquipmentManager_EquipSet`), Save (asked first), New
+  Set (its name asked, the game's question mark as its icon), a right click to rename or delete.
+- **Titles** (`Sheet/Titles.lua`): None, then the titles you know by name; a click wears one.
+- Tests: `dev/tests/sheet.lua` (85 checks): the windows not on the board at first and not built, the paper doll
+  fitting its window, the sidebar's tabs, titles, gear sets and the pet's tab, each of the game's tabs put on and
+  taken off the board (deaf while off), back to the full screen. `dev/tests/inventory.lua`: the stats list found by
+  its unit, the board's first layout.
 
 ### Data: batch 5, more quests, NPCs and places, unverified (Saneroki, 2026-10-20)
 - **Saneroki's decision:** the map showed too few quest givers, vendors, trainers and herb and ore nodes, so a batch
