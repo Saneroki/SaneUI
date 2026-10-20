@@ -21,6 +21,8 @@ Links.lua
 Fade.lua
 # One message in the window
 Bubble.lua
+# Words picked out of the messages on the full screen, to copy with Ctrl+C
+Select.lua
 # Where you can write right now. Knows no frames
 Channels.lua
 # The conversations: every whisper, the party's, the raid's chat, each apart and kept. Knows no frames

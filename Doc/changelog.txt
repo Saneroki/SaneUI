@@ -19,7 +19,8 @@ The bigger changes of each version, newest first.
   choose one and it stands beside the list, as a whisper does. Press
   Enter while a conversation is chosen and you write to it. Drag the
   line beside the list to make it wider or narrower. On the full
-  screen no message fades.
+  screen no message fades, and you can copy messages: drag over the
+  words of one or more bubbles, anyone's, and press Ctrl+C.
 - Inventory, a new module: push the mouse into the bottom right corner
   of the screen and your bags open; push it there again and they close.
   In a fight too.

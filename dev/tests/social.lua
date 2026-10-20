@@ -1557,6 +1557,93 @@ do
         check(seen(old) == 1 and seen(#box.provider.list) == 1, "full, no message fades, wherever the mouse is")
         window._mouseOver = was
     end
+    do -- words picked out of the messages to copy: a drag over them, then Ctrl+C
+        local Select = ns.Select
+        check(box._mouse == true, "full, the chat's list takes the mouse: a drag over it picks words")
+        -- The game's text, as far as picking needs it: one line, every letter (codes too) 6 wide from its left.
+        function methods:FindCharacterIndexAtCoordinate(px, py)
+            if not self._text then return nil end
+            local left = self._left or 40
+            local index = math.max(1, math.min(math.floor((px - left) / 6) + 1, #self._text + 1))
+            return index, px >= left and px <= left + #self._text * 6 and py <= self:GetTop() and py >= (self._bottom or 0)
+        end
+        function methods:CalculateScreenAreaFromCharacterSpan(from, to)
+            return { { left = (from - 1) * 6, bottom = 0, width = (to - from) * 6, height = 14 } }
+        end
+        IsControlKeyDown, IsMetaKeyDown = function() return W.ctrl or false end, function() return false end
+        function methods:HighlightText() self.highlighted = true end
+        say("hello there")
+        say("the |cffff0000red|r door")
+        say("bye now")
+        local list, words = box.provider.list, {}
+        for back = 0, 2 do -- the three newest, one under the other: "bye now" lowest
+            words[3 - back] = text(box.rows[#list - back])
+            words[3 - back]._left, words[3 - back]._top, words[3 - back]._bottom = 100, 300 + back * 40, 286 + back * 40
+        end
+        local function lit(nth)
+            local count, shown = 0, 0
+            for _, widget in ipairs(W.frames) do
+                if widget._kind == "Texture" and widget._points[1] and widget._points[1][2] == words[nth] then
+                    count = count + 1
+                    if widget:IsShown() then shown = shown + 1 end
+                end
+            end
+            return shown
+        end
+        local function copied()
+            for _, widget in ipairs(W.frames) do
+                if widget._kind == "EditBox" and widget._parent == UIParent and widget._alpha == 0 then return widget end
+            end
+        end
+        local mouseX, mouseY = W.cursorX, W.cursorY
+        W.cursorX, W.cursorY = 100 + 6 * 6 + 1, 375 -- in "hello there", before "there"
+        box._scripts.OnMouseDown(box, "LeftButton")
+        local driver
+        for index = #W.frames, 1, -1 do
+            local widget = W.frames[index]
+            if not driver and widget._parent == nil and widget._scripts.OnUpdate and widget:IsShown() then driver = widget end
+        end
+        W.cursorX, W.cursorY = 100 + 6 * 3 + 1, 335 -- in "the red door", after "the"
+        driver._scripts.OnUpdate(driver, 0.01)
+        check(lit(1) == 1 and lit(2) == 1 and lit(3) == 0 and not copied(),
+            "pressed in one message and dragged into the next: what is between is lit as it follows the mouse")
+        box._scripts.OnMouseUp(box, "LeftButton")
+        local copy = copied()
+        check(copy and copy:IsShown() and copy.highlighted and copy._text == "Thrall: there\nThrall: the",
+            "let go, the words wait highlighted to be copied, each message's on its own line after its speaker")
+        W.ctrl = true
+        copy._scripts.OnKeyDown(copy, "LCTRL")
+        copy._scripts.OnKeyDown(copy, "C")
+        check(copy:IsShown(), "Ctrl+C: the edit box copies them itself")
+        W.Wait(0.1)
+        W.ctrl = false
+        check(not copy:IsShown() and lit(1) == 1 and lit(2) == 1, "and a frame later the keyboard is the game's again; they stay lit")
+        W.cursorX, W.cursorY = 100, 295 -- "bye now", before its first letter
+        box._scripts.OnMouseDown(box, "LeftButton")
+        check(lit(1) == 0 and lit(2) == 0, "the next press lets them go")
+        box._scripts.OnMouseUp(box, "LeftButton")
+        check(not copy:IsShown() and lit(3) == 0, "a press with no drag picks nothing")
+        W.cursorX, W.cursorY = 100, 335
+        box._scripts.OnMouseDown(box, "LeftButton")
+        W.cursorX = 900 -- past its end, beside the bubble
+        box._scripts.OnMouseUp(box, "LeftButton")
+        check(copy:IsShown() and copy._text == "the red door" and lit(2) == 1,
+            "from one message only its words, as they read: without the colour's codes, no name")
+        copy._scripts.OnKeyDown(copy, "W")
+        check(not copy:IsShown() and lit(2) == 0, "any other key lets them go, and the keyboard is the game's")
+        check(Select.Words("a |Hitem:19019:0|h[Thunderfury]|h b", 1, 40) == "a [Thunderfury] b"
+            and Select.Words("x |TInterface\\Icons\\Star:0|t y || z", 1, 40) == "x  y | z"
+            and Select.Words("über", 2, 6) == "über" and Select.Words("one|ntwo", 1, 9) == "one\ntwo",
+            "a link reads as its words, an icon as nothing, a bar as one; a letter of two bytes is taken whole")
+        box._scripts.OnMouseDown(box, "LeftButton")
+        W.cursorX, W.cursorY = 100, 375
+        box._scripts.OnMouseUp(box, "LeftButton")
+        ns.Window.Pick("feed")
+        check(not copy:IsShown() and lit(2) == 0 and lit(1) == 0, "another of the conversations' rows chosen: what was picked goes")
+        ns.Window.Pick("chat")
+        W.cursorX, W.cursorY = mouseX, mouseY
+        check(not Core.errors["Social: selection"], "(nothing went wrong in picking)")
+    end
     check(window._mouse == true and window._wheel == true and back._alpha == 0.5,
         "nothing behind it takes the mouse; its background is half see-through")
     opacity.setting:SetValue(100)
@@ -1569,6 +1656,7 @@ do
     W.Wait(Core.Edge.LOOK)
     strip:GetScript("OnEnter")(strip)
     check(not window._mouse and not window._wheel, "back, the mouse goes through it again")
+    check(box._mouse == false, "and through its list: at its size no words are picked, a click goes into the game")
     check(window._width == Layout.WIDTH and window._height == Layout.HEIGHT and window._points[1][1] == "LEFT" and window._strata == "MEDIUM",
         "pushed there again, it is back in its zone, at its size")
     options.motion = "global"
@@ -1970,7 +2058,7 @@ do
     do -- the line between the list and the one chosen, dragged: only the line follows; let go, the list is that wide
         local grip, mouseX = nil, W.cursorX
         for _, widget in ipairs(W.frames) do
-            if widget._scripts.OnMouseDown and within(widget, talks) then grip = widget end
+            if widget._scripts.OnMouseDown and widget._scripts.OnEnter and within(widget, talks) then grip = widget end
         end
         local chatWidth = column._width
         grip._scripts.OnEnter(grip)
@@ -2000,6 +2088,7 @@ do
         ns.Window.Reboard()
         check(column._width == chatWidth, "(back as at first)")
     end
+    check(messages._mouse == true, "a conversation's messages take the mouse too: their words are picked to copy as the chat's")
     -- The second chat: chosen, it stands in the chat's place, the chats ticked for it, apart from the chat's.
     click(rows.rows[2])
     local feed

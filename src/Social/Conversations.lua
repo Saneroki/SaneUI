@@ -54,6 +54,8 @@ local _, ns = ...
 --
 --  Every message is there to read: none fades, none slides; at the newest the
 --  list follows new ones, scrolled up it stays, as the second chat (Feed.lua).
+--  Its words are picked to copy as the chat's are (Select.lua), the days'
+--  pills aside.
 --  The search box of the full window finds conversations by name and by their
 --  messages; the one chosen then shows the messages found (all of them, if its
 --  name was found). Shown, the panel listens to the game's groups and to
@@ -123,7 +125,7 @@ local function Pill(stamp)
     local pill = pills[day]
     if not pill or pill.text ~= text then
         local grey = GRAY_FONT_COLOR
-        pill = { side = "center", text = text, r = grey.r, g = grey.g, b = grey.b, time = "", day = day }
+        pill = { side = "center", text = text, r = grey.r, g = grey.g, b = grey.b, time = "", day = day, pill = true }
         pills[day] = pill
     end
     return pill
@@ -438,6 +440,7 @@ end
 -- stands beside the list (Window.Pick). One of theirs chosen while the game's line is in use: that is closed.
 Choose = function(talk)
     open = talk
+    ns.Select.Clear()
     local pinned = talk and talk.pinned
     Talks.Read(not pinned and talk or nil)
     mine:SetShown(not pinned)
@@ -711,6 +714,8 @@ function Conversations.Build(holder)
     provider = CreateDataProvider()
     chat:SetDataProvider(provider)
     chat:RegisterCallback(BaseScrollBoxEvents.OnScroll, ns.Guard(Scrolled), Conversations)
+    ns.Select.Attach(chat, list) -- its words are picked to copy, the days' pills aside
+    ns.Select.Allow(chat, true)
     empty = mine:CreateFontString(nil, "ARTWORK", "GameFontDisable")
     empty:SetPoint("LEFT", chat, "LEFT", Layout.EDGE, 0)
     empty:SetPoint("RIGHT", chat, "RIGHT", -Layout.EDGE, 0)

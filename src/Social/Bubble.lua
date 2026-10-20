@@ -2,9 +2,10 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Social - Bubble
---  One message in the window: measured (Measure), drawn (Init) and taken out
---  of sight when the list's top edge cuts it (Cut). How much of it is seen is
---  the window's, from the message's own fade (Fade.lua), on the row's alpha.
+--  One message in the window: measured (Measure), drawn (Init), lit where
+--  words of it are picked to copy (Mark, Select.lua) and taken out of sight
+--  when the list's top edge cuts it (Cut). How much of it is seen is the
+--  window's, from the message's own fade (Fade.lua), on the row's alpha.
 --
 --  The list has to know a row's height before the row exists, and the height
 --  depends on where the text wraps. So every message is measured once per
@@ -224,6 +225,41 @@ function Bubble.Init(row, entry, rowWidth)
     part.text:SetWidth(entry.widest)
     part.text:SetText(entry.text)
     part.text:SetTextColor(entry.r, entry.g, entry.b)
+    Bubble.Mark(row, ns.Select.Span(entry)) -- the words of it picked to copy, if any (Select.lua)
+end
+
+-- The text of the message a row shows, while it shows one (Select.lua finds the letter under the mouse in it); nil:
+-- none, or the row is cut.
+function Bubble.Text(row)
+    local part = parts[row]
+    if part and part.body:IsShown() then return part.text end
+end
+
+-- The words of a row's message from caret from to caret to lit as picked, in the grey the game lights picked text
+-- with (Layout.PICKED), over the bubble's fill and under its text; nil: none lit. The game's text tells where a
+-- span stands, a piece per line it runs over.
+function Bubble.Mark(row, from, to)
+    local part = parts[row]
+    if not part or (not from and not part.marks) then return end
+    local marks, count = part.marks or {}, 0
+    part.marks = marks
+    local areas = from and part.text:CalculateScreenAreaFromCharacterSpan(from, to)
+    if areas then
+        for _, area in ipairs(areas) do
+            count = count + 1
+            local mark = marks[count]
+            if not mark then
+                mark = part.bubble:CreateTexture(nil, "BACKGROUND", nil, 1)
+                mark:SetColorTexture(Layout.PICKED[1], Layout.PICKED[2], Layout.PICKED[3])
+                marks[count] = mark
+            end
+            mark:ClearAllPoints()
+            mark:SetPoint("BOTTOMLEFT", part.text, "BOTTOMLEFT", area.left, area.bottom)
+            mark:SetPoint("TOPRIGHT", part.text, "BOTTOMLEFT", area.left + area.width, area.bottom + area.height)
+            mark:Show()
+        end
+    end
+    for index = count + 1, #marks do marks[index]:Hide() end
 end
 
 -- A row the list's top edge cuts through shows nothing: half a message is worse than none.

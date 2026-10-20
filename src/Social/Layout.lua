@@ -86,6 +86,10 @@ Layout.TIES = {
     party = { 0.30, 0.60, 1.00 },  -- blue
 }
 
+-- Words picked in a message to copy (Select.lua) are lit in the grey the game lights picked text with in its own
+-- scrolling lists (ScrollingMessageFrame).
+Layout.PICKED = { 0.37, 0.37, 0.37 }
+
 -- The width of a row in a window that wide.
 function Layout.RowWidth(windowWidth)
     return math.max(math.floor(windowWidth) - 2 * Layout.EDGE - Layout.SCROLL, Layout.MIN_TEXT)

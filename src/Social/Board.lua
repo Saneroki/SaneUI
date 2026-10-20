@@ -192,6 +192,7 @@ end
 
 -- The window is at its size, or on its way there: every panel out of sight, the guild window given back.
 function Board.Hide()
+    ns.Select.Clear()
     for _, spec in ipairs(Board.PANELS) do Put(nil, spec, nil) end
     ns.Guild.Leave()
 end

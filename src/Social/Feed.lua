@@ -18,6 +18,8 @@ local _, ns = ...
 --  the line's height (Feed.Room); out of sight it only notes that its list is
 --  stale. Search finds messages as the chat's does (Window.Found).
 --
+--  Its words are picked to copy as the chat's are (Select.lua).
+--
 --  Built from the game's parts, as the chat: its scrolling list and scroll bar.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -98,6 +100,8 @@ local function Build(parent)
     provider = CreateDataProvider()
     box:SetDataProvider(provider)
     box:RegisterCallback(BaseScrollBoxEvents.OnScroll, ns.Guard(Scrolled), Feed)
+    ns.Select.Attach(box, list) -- only on the full screen: its words are picked to copy
+    ns.Select.Allow(box, true)
 end
 
 -- The list ends above the line to write in while that is shown, at the chat's edge otherwise.

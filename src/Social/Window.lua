@@ -58,7 +58,8 @@ local _, ns = ...
 --  full, wherever the mouse is (on a panel, on the guild window). The
 --  messages stay in sight and at the list's bottom while the size moves, and
 --  are wrapped for the new width once it stands. Full, Core's dropdown Classic windows offers the game's own chat
---  (ours is put away), friends list and group finder (ns.CLASSIC, Social.lua).
+--  (ours is put away), friends list and group finder (ns.CLASSIC, Social.lua). Full, the list takes the
+--  mouse too: a drag over the messages picks their words to copy (Select.lua).
 --
 --  The chat stands in a frame of its own (column): all of what the window
 --  holds, but once the window stands full with panels around it (Board.lua: the
@@ -450,6 +451,7 @@ end
 -- Chosen in the full screen's conversations: the chat ("chat"), the second chat ("feed") or one of theirs (nil).
 function Window.Pick(what)
     picked = what
+    ns.Select.Clear() -- what was picked to copy stood in what the frame showed
     if not frame then return end
     Seat()
     if what == "chat" then Resettle() end
@@ -499,6 +501,7 @@ end
 -- meanwhile (it went over the guild window), those whose time is over fade on the way back. The panels go at
 -- once then, and the chat has the whole window again.
 local function Filled(full)
+    ns.Select.Allow(box, full) -- full, words are picked out of its messages to copy; at its size a click goes into the game
     ns.Input.Layer()
     Chrome()
     if full then Reveal(true) else Window.Refade() end
@@ -592,6 +595,7 @@ local function Build()
     Window.Animate()
     box:RegisterCallback(BaseScrollBoxEvents.OnScroll, ns.Guard(Scrolled), Window)
     box:RegisterCallback(BaseScrollBoxEvents.OnLayout, ns.Guard(Laid), Window)
+    ns.Select.Attach(box, list)
     Chrome()
     Bar()
 
@@ -640,6 +644,7 @@ end
 function Window.Hide()
     if not frame then return end
     frame:Hide()
+    ns.Select.Allow(box, false)
     board = nil
     ns.Board.Hide()
     Seat()

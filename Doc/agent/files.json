@@ -17,9 +17,9 @@
     },
     {
       "path": "Doc/Changed.md",
-      "bytes": 332916,
-      "sha256": "04d664a3cb23203e5d3eba00129ea907b007486f3f5a3511a11c9c4224d39600",
-      "lines": 3807,
+      "bytes": 336610,
+      "sha256": "13fa0e02d12421e355751b87b0dac0bc4fa882e40257a973c9966b450e03a769",
+      "lines": 3845,
       "headings": [
         {
           "title": "Sane UI: developer changelog",
@@ -30,852 +30,860 @@
           "line": 5
         },
         {
-          "title": "Social: the conversations' list dragged to its width, no fading on the full screen (Saneroki, 2026-10-20)",
+          "title": "Navigation: the golden line drawn again (Saneroki, 2026-10-20)",
           "line": 9
         },
         {
+          "title": "Social: words picked out of the messages on the full screen, copied with Ctrl+C (Saneroki, 2026-10-20)",
+          "line": 23
+        },
+        {
+          "title": "Social: the conversations' list dragged to its width, no fading on the full screen (Saneroki, 2026-10-20)",
+          "line": 47
+        },
+        {
           "title": "Navigation: Zephras Isle's terrain and walking data (Saneroki, 2026-10-20)",
-          "line": 26
+          "line": 64
         },
         {
           "title": "Social: the guild window held by Core's seat (Saneroki, 2026-10-20)",
-          "line": 53
+          "line": 91
         },
         {
           "title": "Combat: its window at the bottom middle, your talents and spellbook on its full screen (Saneroki, 2026-10-20)",
-          "line": 74
+          "line": 112
         },
         {
           "title": "Social: the guild window on the full screen, the chats among the conversations (Saneroki, 2026-10-20)",
-          "line": 122
+          "line": 160
         },
         {
           "title": "Inventory: a new module, the bags from the corner (Saneroki, 2026-10-20)",
-          "line": 163
+          "line": 201
         },
         {
           "title": "Navigation: the map on Zephras Isle (Saneroki, 2026-10-20)",
-          "line": 184
+          "line": 222
         },
         {
           "title": "Navigation: the docks of the boats and zeppelins on the map (Saneroki, 2026-10-20)",
-          "line": 208
+          "line": 246
         },
         {
           "title": "Navigation: routes to Zephras Isle (Saneroki, 2026-10-20)",
-          "line": 229
+          "line": 267
         },
         {
           "title": "Map data: what Navigation's map shows, from the game and two picked batches (Saneroki, 2026-10-20)",
-          "line": 243
+          "line": 281
         },
         {
           "title": "Navigation: routes across the sea, by boat and zeppelin, and by the hearthstone (Saneroki, 2026-10-20)",
-          "line": 278
+          "line": 316
         },
         {
           "title": "Navigation: routes to the map pin, on foot and by flight (Saneroki, 2026-10-20)",
-          "line": 297
+          "line": 335
         },
         {
           "title": "Navigation: pins, the quest log, the bar; classic windows kept (Saneroki, 2026-10-20)",
-          "line": 323
+          "line": 361
         },
         {
           "title": "The Atlas' colour pass and packing (Saneroki, 2026-10-20)",
-          "line": 362
+          "line": 400
         },
         {
           "title": "The Atlas faithful: words of an edit, what stands in water kept (Saneroki, 2026-10-19)",
-          "line": 378
+          "line": 416
         },
         {
           "title": "The Atlas' painting run: dev/tools/atlas (Saneroki, 2026-10-19)",
-          "line": 401
+          "line": 439
         },
         {
           "title": "Navigation: the Atlas a module of its own, the view Overlay gone (Saneroki, 2026-10-19)",
-          "line": 419
+          "line": 457
         },
         {
           "title": "Art and animation in Git LFS (Saneroki, 2026-10-19)",
-          "line": 443
+          "line": 481
         },
         {
           "title": "Navigation: the Atlas' look, each zone's atmosphere, painted only what the game has (Saneroki, 2026-10-19)",
-          "line": 451
+          "line": 489
         },
         {
           "title": "Navigation: the views Parchment and Scrying; the painted view's guides, briefs and pilots (Saneroki, 2026-10-19)",
-          "line": 471
+          "line": 509
         },
         {
           "title": "Tooltips: grooves, a spell's table and its requirements (Saneroki, 2026-10-19)",
-          "line": 506
+          "line": 544
         },
         {
           "title": "Tooltips: Info, Alt for more, disenchanting and the price to post; careful gathering data (Saneroki, 2026-10-19)",
-          "line": 525
+          "line": 563
         },
         {
           "title": "Navigation: Sketches, one stitched map of both continents, every zone's map in full (Saneroki, 2026-10-19)",
-          "line": 559
+          "line": 597
         },
         {
           "title": "Navigation: the water cut away, zone-shaped maps, undiscovered parts dark (Saneroki, 2026-10-19)",
-          "line": 580
+          "line": 618
         },
         {
           "title": "Navigation: zones open by a click, the map goes with its window; Core: one push a visit (Saneroki, 2026-10-19)",
-          "line": 598
+          "line": 636
         },
         {
           "title": "Navigation: the whole module but the map's data (Saneroki, 2026-10-19)",
-          "line": 622
+          "line": 660
         },
         {
           "title": "Navigation: the first proof, the full screen map (Saneroki, 2026-10-18)",
-          "line": 661
+          "line": 699
         },
         {
           "title": "Core's own doors guarded too; the lint covers all of src (Saneroki, 2026-10-18)",
-          "line": 682
+          "line": 720
         },
         {
           "title": "Social: conversations on the full screen (Saneroki, 2026-10-18)",
-          "line": 697
+          "line": 735
         },
         {
           "title": "Errors handled gracefully, a hard rule (Saneroki, 2026-10-18)",
-          "line": 718
+          "line": 756
         },
         {
           "title": "Sync and the CVar list made again from Blizzard's options code (Saneroki, 2026-10-18)",
-          "line": 762
+          "line": 800
         },
         {
           "title": "Development: Blizzard updates, the todo list of a new build (Saneroki, 2026-10-18)",
-          "line": 788
+          "line": 826
         },
         {
           "title": "Aliases and notes of players (Saneroki, 2026-10-18)",
-          "line": 804
-        },
-        {
-          "title": "Ideas: a verified fact keeps its day and times (Saneroki, 2026-10-18)",
-          "line": 824
-        },
-        {
-          "title": "Ideas: when in doubt, left out (Saneroki, 2026-10-18)",
-          "line": 832
-        },
-        {
-          "title": "Ideas: verified and unverified facts, gathering nodes (Saneroki, 2026-10-18)",
           "line": 842
         },
         {
+          "title": "Ideas: a verified fact keeps its day and times (Saneroki, 2026-10-18)",
+          "line": 862
+        },
+        {
+          "title": "Ideas: when in doubt, left out (Saneroki, 2026-10-18)",
+          "line": 870
+        },
+        {
+          "title": "Ideas: verified and unverified facts, gathering nodes (Saneroki, 2026-10-18)",
+          "line": 880
+        },
+        {
           "title": "Ideas: an auction house per game version, Forever's per ruleset (Saneroki, 2026-10-18)",
-          "line": 853
+          "line": 891
         },
         {
           "title": "Data: game facts apart from personal data (Saneroki, 2026-10-18)",
-          "line": 858
+          "line": 896
         },
         {
           "title": "Leveling: the plan for our own routes (Saneroki, 2026-10-18)",
-          "line": 864
+          "line": 902
         },
         {
           "title": "Tooltips: your character beside gear, Gathering, binding in Gold, Addons with Alt (Saneroki, 2026-10-18)",
-          "line": 868
+          "line": 906
         },
         {
           "title": "Social: panels on the full screen (Saneroki, 2026-10-17)",
-          "line": 894
+          "line": 932
         },
         {
           "title": "Profiles anew: Accountwide settings (Saneroki, 2026-10-17)",
-          "line": 927
-        },
-        {
-          "title": "Core's shared tools",
           "line": 965
         },
         {
+          "title": "Core's shared tools",
+          "line": 1003
+        },
+        {
           "title": "Windows (Core) and Social",
-          "line": 975
+          "line": 1013
         },
         {
           "title": "Settings: every kind of switch, a search on pages in tabs, pages built when first shown",
-          "line": 995
+          "line": 1033
         },
         {
           "title": "Core's data framework: listeners after the job, jobs with handles",
-          "line": 1005
+          "line": 1043
         },
         {
           "title": "Sync: guarded CVar writes, found in steps",
-          "line": 1009
+          "line": 1047
         },
         {
           "title": "Abilities and Tooltips on Core's shared tools",
-          "line": 1012
+          "line": 1050
         },
         {
           "title": "Tooltips: every section named, one section Addons, 3D models (Saneroki, 2026-10-17)",
-          "line": 1027
+          "line": 1065
         },
         {
           "title": "Tooltips on Core's data: quests, your characters' things, other addons' lines apart (Saneroki, 2026-10-17)",
-          "line": 1061
-        },
-        {
-          "title": "Scripts/update: GitHub's newest into the game in one go",
-          "line": 1088
-        },
-        {
-          "title": "Navigation",
           "line": 1099
         },
         {
+          "title": "Scripts/update: GitHub's newest into the game in one go",
+          "line": 1126
+        },
+        {
+          "title": "Navigation",
+          "line": 1137
+        },
+        {
           "title": "Core's data framework",
-          "line": 1104
+          "line": 1142
         },
         {
           "title": "New designs across the modules (Saneroki, 2026-10-17)",
-          "line": 1231
+          "line": 1269
         },
         {
           "title": "Images: one pipeline for concept art, interface parts and animations",
-          "line": 1330
+          "line": 1368
         },
         {
           "title": "Voices: the voice tool, and short sounds",
-          "line": 1357
+          "line": 1395
         },
         {
           "title": "Ideas: prices per auction house, the game's facts for every realm",
-          "line": 1383
+          "line": 1421
         },
         {
           "title": "Ideas: data of game versions kept apart",
-          "line": 1398
+          "line": 1436
         },
         {
           "title": "Ideas: Sane Sync: finding the game, several game versions",
-          "line": 1417
+          "line": 1455
         },
         {
           "title": "Voices: how lore names are said",
-          "line": 1431
+          "line": 1469
         },
         {
           "title": "Ideas: Sane Sync: the computer set up, measured, two processes",
-          "line": 1437
+          "line": 1475
         },
         {
           "title": "Voices: the voice database, the cast, the directions",
-          "line": 1450
+          "line": 1488
         },
         {
           "title": "Ideas: Sane Sync: built with Rust and Tauri 2",
-          "line": 1470
+          "line": 1508
         },
         {
           "title": "Ideas: Sane Sync: hear a sample of the voices",
-          "line": 1479
-        },
-        {
-          "title": "Ideas: Lore: the voices are downloads of their own",
-          "line": 1486
-        },
-        {
-          "title": "Ideas: Lore: what the voices cost and weigh",
-          "line": 1498
-        },
-        {
-          "title": "Ideas: Lore: where the texts come from, the voice service",
-          "line": 1504
-        },
-        {
-          "title": "Ideas: Lore",
           "line": 1517
         },
         {
+          "title": "Ideas: Lore: the voices are downloads of their own",
+          "line": 1524
+        },
+        {
+          "title": "Ideas: Lore: what the voices cost and weigh",
+          "line": 1536
+        },
+        {
+          "title": "Ideas: Lore: where the texts come from, the voice service",
+          "line": 1542
+        },
+        {
+          "title": "Ideas: Lore",
+          "line": 1555
+        },
+        {
           "title": "The page Sane UI: links and feedback",
-          "line": 1528
-        },
-        {
-          "title": "Social: the button Sane UI on the game's chat; no title on the small window",
-          "line": 1545
-        },
-        {
-          "title": "The name Sane Sync in the licence; licensing left to Saneroki",
-          "line": 1559
-        },
-        {
-          "title": "Ideas: the app is Sane Sync; Sane UI is open source",
           "line": 1566
         },
         {
+          "title": "Social: the button Sane UI on the game's chat; no title on the small window",
+          "line": 1583
+        },
+        {
+          "title": "The name Sane Sync in the licence; licensing left to Saneroki",
+          "line": 1597
+        },
+        {
+          "title": "Ideas: the app is Sane Sync; Sane UI is open source",
+          "line": 1604
+        },
+        {
           "title": "Ideas: Onboarding: the switch and the ?",
-          "line": 1574
+          "line": 1612
         },
         {
           "title": "Ideas: the Sane UI app",
-          "line": 1582
+          "line": 1620
         },
         {
           "title": "Windows: Saneroki's answers to the review",
-          "line": 1594
-        },
-        {
-          "title": "Windows reviewed: the guide, and what the review fixed",
-          "line": 1610
-        },
-        {
-          "title": "Ideas: Onboarding",
           "line": 1632
         },
         {
+          "title": "Windows reviewed: the guide, and what the review fixed",
+          "line": 1648
+        },
+        {
+          "title": "Ideas: Onboarding",
+          "line": 1670
+        },
+        {
           "title": "The Navigation plan reviewed, and how it is built",
-          "line": 1640
+          "line": 1678
         },
         {
           "title": "Ideas: the Tooltips redesign reviewed, and how it is built",
-          "line": 1657
+          "line": 1695
         },
         {
           "title": "Ideas: Economy reviewed: checked against the code, a plan for building it",
-          "line": 1674
+          "line": 1712
         },
         {
           "title": "The data plan: second pass, contracts and the build in commits",
-          "line": 1696
+          "line": 1734
         },
         {
           "title": "Ideas: Navigation: leveling guide",
-          "line": 1720
+          "line": 1758
         },
         {
           "title": "Dialogue planned",
-          "line": 1726
+          "line": 1764
         },
         {
           "title": "The data plan reviewed",
-          "line": 1745
+          "line": 1783
         },
         {
           "title": "Nine dock zones",
-          "line": 1761
+          "line": 1799
         },
         {
           "title": "No banners for Abilities and Social",
-          "line": 1767
+          "line": 1805
         },
         {
           "title": "Ideas: Economy: Hide Blizzard's window per window, Esc closes, mailbox, guild bank and bags",
-          "line": 1773
+          "line": 1811
         },
         {
           "title": "Ideas: quests, creatures and the map in the data plan",
-          "line": 1780
+          "line": 1818
         },
         {
           "title": "Ideas: Combat's first decisions",
-          "line": 1787
+          "line": 1825
         },
         {
           "title": "Windows: title bars with a fuzzy search; what a window was left as",
-          "line": 1795
+          "line": 1833
         },
         {
           "title": "Art: making pictures with image models",
-          "line": 1826
+          "line": 1864
         },
         {
           "title": "Combat: a new module, set up",
-          "line": 1839
+          "line": 1877
         },
         {
           "title": "Ideas: every look of a tooltip, from layers",
-          "line": 1854
-        },
-        {
-          "title": "Ideas: Economy's windows, Classic remembered, the history in Core's database",
-          "line": 1865
-        },
-        {
-          "title": "Tooltips: live 3D portraits",
-          "line": 1875
-        },
-        {
-          "title": "Ideas: every tooltip type and portrait type, for the redesign",
           "line": 1892
         },
         {
+          "title": "Ideas: Economy's windows, Classic remembered, the history in Core's database",
+          "line": 1903
+        },
+        {
+          "title": "Tooltips: live 3D portraits",
+          "line": 1913
+        },
+        {
+          "title": "Ideas: every tooltip type and portrait type, for the redesign",
+          "line": 1930
+        },
+        {
           "title": "Spellbook is Abilities",
-          "line": 1900
+          "line": 1938
         },
         {
           "title": "Windows: a dock place in the middle; buttons on free and centred windows",
-          "line": 1916
+          "line": 1954
         },
         {
           "title": "Windows: moved and sized only in Blizzard's Edit Mode",
-          "line": 1942
+          "line": 1980
         },
         {
           "title": "Ideas: the Economy module",
-          "line": 1966
+          "line": 2004
         },
         {
           "title": "Social: open points written down",
-          "line": 1976
+          "line": 2014
         },
         {
           "title": "Social: the messages stay in sight while the window fills the screen",
-          "line": 1982
+          "line": 2020
         },
         {
           "title": "Social: a smiley with icons and emotes",
-          "line": 1990
+          "line": 2028
         },
         {
           "title": "Full screen: the dropdown Classic windows; a full screen is square",
-          "line": 2011
+          "line": 2049
         },
         {
           "title": "One licence; data in Core; Actionbar Organizer gone",
-          "line": 2031
+          "line": 2069
         },
         {
           "title": "Tooltips: a lighter Gold section",
-          "line": 2046
+          "line": 2084
         },
         {
           "title": "Windows: round corners and a trim, opened by a click, a progress bar",
-          "line": 2059
+          "line": 2097
         },
         {
           "title": "Chat is Social",
-          "line": 2103
+          "line": 2141
         },
         {
           "title": "Navigation: our own data",
-          "line": 2117
-        },
-        {
-          "title": "Navigation: one pin per thing",
-          "line": 2121
-        },
-        {
-          "title": "Navigation: every kind of pin",
-          "line": 2127
-        },
-        {
-          "title": "Ideas: one toggle, Click required to expand window",
-          "line": 2131
-        },
-        {
-          "title": "Ideas: Expand on hover in Core's Hotcorners and in each module",
-          "line": 2137
-        },
-        {
-          "title": "Ideas: windows in Edit Mode's layouts; chat views as windows and tabs",
-          "line": 2144
-        },
-        {
-          "title": "Ideas: expand by a left click; Expand on hover",
           "line": 2155
         },
         {
+          "title": "Navigation: one pin per thing",
+          "line": 2159
+        },
+        {
+          "title": "Navigation: every kind of pin",
+          "line": 2165
+        },
+        {
+          "title": "Ideas: one toggle, Click required to expand window",
+          "line": 2169
+        },
+        {
+          "title": "Ideas: Expand on hover in Core's Hotcorners and in each module",
+          "line": 2175
+        },
+        {
+          "title": "Ideas: windows in Edit Mode's layouts; chat views as windows and tabs",
+          "line": 2182
+        },
+        {
+          "title": "Ideas: expand by a left click; Expand on hover",
+          "line": 2193
+        },
+        {
           "title": "Ideas: the screen layout of docked windows; Chat becomes Social",
-          "line": 2162
+          "line": 2200
         },
         {
           "title": "Navigation: feasibility, full screen, pins and routes",
-          "line": 2172
+          "line": 2210
         },
         {
           "title": "Navigation: planning notes",
-          "line": 2180
+          "line": 2218
         },
         {
           "title": "Tooltips: comparisons at absolute places; Press ALT for +N more",
-          "line": 2186
+          "line": 2224
         },
         {
           "title": "Tooltips: comparisons in one place, a gap apart; Questlog over the quests' standing",
-          "line": 2201
+          "line": 2239
         },
         {
           "title": "Tooltips: a Quest section with where you stand with each quest; the chart's words readable",
-          "line": 2214
+          "line": 2252
         },
         {
           "title": "Tooltips: gold for one item, the vendor price everywhere, captions Loot and Inventory",
-          "line": 2227
+          "line": 2265
         },
         {
           "title": "Tooltips: gold advice; item quests",
-          "line": 2238
+          "line": 2276
         },
         {
           "title": "Tooltips: drop chances on a creature's loot objectives",
-          "line": 2258
+          "line": 2296
         },
         {
           "title": "Spellbook: a reservation dragged off the bars is removed",
-          "line": 2266
+          "line": 2304
         },
         {
           "title": "Spellbook: a carried spell finds every action button",
-          "line": 2271
+          "line": 2309
         },
         {
           "title": "Spellbook: moving a reservation from button to button",
-          "line": 2283
+          "line": 2321
         },
         {
           "title": "Spellbook: hidden empty buttons, and the order in a tab",
-          "line": 2292
+          "line": 2330
         },
         {
           "title": "Spellbook: reserving on a bar addon's bars",
-          "line": 2305
+          "line": 2343
         },
         {
           "title": "Review: settings texts, bugs, performance and documentation across every module",
-          "line": 2314
+          "line": 2352
         },
         {
           "title": "Review: Spellbook, Tooltips and Chat bugs, hardening, performance",
-          "line": 2386
+          "line": 2424
         },
         {
           "title": "Review: Core and Sync bugs, hardening, performance",
-          "line": 2432
+          "line": 2470
         },
         {
           "title": "Windows: Expand window; the full window takes the mouse; a corner's square",
-          "line": 2466
+          "line": 2504
         },
         {
           "title": "Profiles: Empty; SaneUI Defaults only Sane UI's own settings",
-          "line": 2483
+          "line": 2521
         },
         {
           "title": "Sync: the Edit Mode layout is kept again",
-          "line": 2496
+          "line": 2534
         },
         {
           "title": "Chat: no white ghost of a message in the window's corner",
-          "line": 2510
+          "line": 2548
         },
         {
           "title": "Chat: an older history sorted anew, so the ticks hide it too",
-          "line": 2517
+          "line": 2555
         },
         {
           "title": "Chat: loot, skill ups and channel joins in their own groups in every client",
-          "line": 2525
+          "line": 2563
         },
         {
           "title": "Chat: a channel's tick hides all its messages",
-          "line": 2537
+          "line": 2575
         },
         {
           "title": "Chat: chat history; switches for system, creature, addon messages and channel joins; closer bubbles",
-          "line": 2544
+          "line": 2582
         },
         {
           "title": "Chat: all bubbles alike, on a color or a game texture; Settings: a color swatch",
-          "line": 2557
+          "line": 2595
         },
         {
           "title": "Chat: every line the game's chat shows; the line to write in is grey",
-          "line": 2571
+          "line": 2609
         },
         {
           "title": "Settings and Sync are part of Core",
-          "line": 2585
+          "line": 2623
         },
         {
           "title": "Profiles: New Characters",
-          "line": 2608
+          "line": 2646
         },
         {
           "title": "Profiles: SaneUI Defaults, always there and never changed",
-          "line": 2618
+          "line": 2656
         },
         {
           "title": "Core: a docked window fills the screen from its screen edge; the kinds of motion; Chat: full screen",
-          "line": 2636
+          "line": 2674
         },
         {
           "title": "Chat: the animation lines renamed; Settings: room between a checkbox and its words",
-          "line": 2661
+          "line": 2699
         },
         {
           "title": "Chat: its page in tabs, General and Appearance; Settings: a module's page in tabs",
-          "line": 2668
+          "line": 2706
         },
         {
           "title": "Chat: a page Appearance with the animations; Core: switches on a page under a module's, under another switch",
-          "line": 2682
+          "line": 2720
         },
         {
           "title": "Chat: gone messages stay gone when a new one comes; the fade-in shows",
-          "line": 2693
+          "line": 2731
         },
         {
           "title": "Chat: every message fades by itself, apart from the slide",
-          "line": 2701
+          "line": 2739
         },
         {
           "title": "Chat: faded messages stay faded under the mouse; fade in, slide up, smooth scrolling",
-          "line": 2712
-        },
-        {
-          "title": "Chat: notes in bubbles, achievements and the guild's message of the day",
-          "line": 2721
-        },
-        {
-          "title": "Chat: clicks go through, the scroll bar only scrolled up, a click on a name whispers",
-          "line": 2730
-        },
-        {
-          "title": "Player names: first name and surname",
-          "line": 2740
-        },
-        {
-          "title": "Game chat channels on the page Chat; Sync parts ticked in older saved settings",
           "line": 2750
         },
         {
+          "title": "Chat: notes in bubbles, achievements and the guild's message of the day",
+          "line": 2759
+        },
+        {
+          "title": "Chat: clicks go through, the scroll bar only scrolled up, a click on a name whispers",
+          "line": 2768
+        },
+        {
+          "title": "Player names: first name and surname",
+          "line": 2778
+        },
+        {
+          "title": "Game chat channels on the page Chat; Sync parts ticked in older saved settings",
+          "line": 2788
+        },
+        {
           "title": "Profiles: All settings accountwide, modules account wide or not, a profile per character",
-          "line": 2762
+          "line": 2800
         },
         {
           "title": "Profiles: a page with tabs and boxes; Sync in fine-grained parts",
-          "line": 2783
+          "line": 2821
         },
         {
           "title": "Options: Sane UI with only its logo, then Profiles, General, Appearance, the modules",
-          "line": 2801
+          "line": 2839
         },
         {
           "title": "Sync, the game's CVars, and profiles loaded and saved by themselves",
-          "line": 2815
+          "line": 2853
         },
         {
           "title": "Profiles: the account's settings or a character's own, and named copies of them",
-          "line": 2854
+          "line": 2892
         },
         {
           "title": "Images: a guide, and the textures sized for 4K",
-          "line": 2881
+          "line": 2919
         },
         {
           "title": "Art and banners in the options",
-          "line": 2896
+          "line": 2934
         },
         {
           "title": "Project: context for future coding chats",
-          "line": 2915
+          "line": 2953
         },
         {
           "title": "Tooltips: review fixes",
-          "line": 2923
+          "line": 2961
         },
         {
           "title": "Chat: review fixes",
-          "line": 2952
+          "line": 2990
         },
         {
           "title": "Spellbook: review fixes, lighter at login",
-          "line": 2981
+          "line": 3019
         },
         {
           "title": "Core: the options' AddOns tab, shared tools, hardening",
-          "line": 3014
+          "line": 3052
         },
         {
           "title": "Core: windows",
-          "line": 3036
+          "line": 3074
         },
         {
           "title": "Spellbook, evening",
-          "line": 3058
-        },
-        {
-          "title": "Tooltips: a chat link's tooltip in the middle of the screen, closed by a click, no X",
-          "line": 3075
-        },
-        {
-          "title": "Tooltips: gone at once when the mouse leaves",
-          "line": 3088
-        },
-        {
-          "title": "Tooltips: fixed: the comparison of what you wear jumped between two places again",
           "line": 3096
         },
         {
+          "title": "Tooltips: a chat link's tooltip in the middle of the screen, closed by a click, no X",
+          "line": 3113
+        },
+        {
+          "title": "Tooltips: gone at once when the mouse leaves",
+          "line": 3126
+        },
+        {
+          "title": "Tooltips: fixed: the comparison of what you wear jumped between two places again",
+          "line": 3134
+        },
+        {
           "title": "Tooltips: descriptions in the middle; done objectives left out",
-          "line": 3106
+          "line": 3144
         },
         {
           "title": "Tooltips: the mouse option a dropdown; Always and Default at first",
-          "line": 3115
+          "line": 3153
         },
         {
           "title": "Tooltips: seen only while a key is held; Settings: dropdowns",
-          "line": 3127
+          "line": 3165
         },
         {
           "title": "Tooltips: quest data by side; grey default panels; more tooltips hooked",
-          "line": 3139
-        },
-        {
-          "title": "Tooltips: a dead creature keeps its portrait and dragon",
-          "line": 3150
-        },
-        {
-          "title": "Tooltips: room under the name; no class for friendly NPCs",
-          "line": 3157
-        },
-        {
-          "title": "Tooltips: a larger quest database; grey panel for dead and offline units",
-          "line": 3163
-        },
-        {
-          "title": "Tooltips: auction prices of our own",
-          "line": 3170
-        },
-        {
-          "title": "Tooltips: our own quest database",
           "line": 3177
         },
         {
-          "title": "Tooltips: NPC title and faction in the header; a section for experience and quests",
-          "line": 3194
+          "title": "Tooltips: a dead creature keeps its portrait and dragon",
+          "line": 3188
         },
         {
-          "title": "Tooltips: spec, titles, tapped; spell columns, Healing/CC/Utility; health numbers centred",
+          "title": "Tooltips: room under the name; no class for friendly NPCs",
+          "line": 3195
+        },
+        {
+          "title": "Tooltips: a larger quest database; grey panel for dead and offline units",
+          "line": 3201
+        },
+        {
+          "title": "Tooltips: auction prices of our own",
           "line": 3208
         },
         {
+          "title": "Tooltips: our own quest database",
+          "line": 3215
+        },
+        {
+          "title": "Tooltips: NPC title and faction in the header; a section for experience and quests",
+          "line": 3232
+        },
+        {
+          "title": "Tooltips: spec, titles, tapped; spell columns, Healing/CC/Utility; health numbers centred",
+          "line": 3246
+        },
+        {
           "title": "Tooltips: unit header in four lines, a weapon's numbers in one, a small plaque",
-          "line": 3228
+          "line": 3266
         },
         {
           "title": "Tooltips: items short and clear, prices, spell numbers, experience, a plainer plaque",
-          "line": 3243
+          "line": 3281
         },
         {
           "title": "Tooltips: a unit's target above its health",
-          "line": 3272
+          "line": 3310
         },
         {
           "title": "Tooltips: dragons closer, none for creatures without a rank",
-          "line": 3276
+          "line": 3314
         },
         {
           "title": "Tooltips: the side's emblem in the top left corner",
-          "line": 3282
+          "line": 3320
         },
         {
           "title": "Tooltips: narrower soft edge, also on bars and buff icons",
-          "line": 3289
+          "line": 3327
         },
         {
           "title": "Tooltips: soft icons, silver dragon for every other creature",
-          "line": 3296
+          "line": 3334
         },
         {
           "title": "Tooltips: the target frame's dragons",
-          "line": 3305
+          "line": 3343
         },
         {
           "title": "Tooltips: the game's gold plaque, item level on it, power over health",
-          "line": 3315
+          "line": 3353
         },
         {
           "title": "Tooltips: fixes after a look at a buff",
-          "line": 3329
+          "line": 3367
         },
         {
           "title": "Tooltips: a player's item level",
-          "line": 3342
+          "line": 3380
         },
         {
           "title": "Tooltips: round icons, gold plaque",
-          "line": 3357
+          "line": 3395
         },
         {
           "title": "Tooltips, a third look",
-          "line": 3369
+          "line": 3407
         },
         {
           "title": "Core: the error log",
-          "line": 3417
+          "line": 3455
         },
         {
           "title": "Tooltips, later the same day",
-          "line": 3429
+          "line": 3467
         },
         {
           "title": "Spellbook, later the same day",
-          "line": 3513
+          "line": 3551
         },
         {
           "title": "Removed",
-          "line": 3533
+          "line": 3571
         },
         {
           "title": "Changed",
-          "line": 3540
+          "line": 3578
         },
         {
           "title": "Added",
-          "line": 3567
+          "line": 3605
         },
         {
           "title": "0.2.0 (2026-10-14)",
-          "line": 3677
+          "line": 3715
         },
         {
           "title": "Changed",
-          "line": 3681
+          "line": 3719
         },
         {
           "title": "Added",
-          "line": 3725
+          "line": 3763
         },
         {
           "title": "Project",
-          "line": 3730
+          "line": 3768
         },
         {
           "title": "0.1.0 (2026-10-14)",
-          "line": 3737
+          "line": 3775
         },
         {
           "title": "Added",
-          "line": 3740
+          "line": 3778
         },
         {
           "title": "Changed (against Actionbar Organizer 0.3.0)",
-          "line": 3766
+          "line": 3804
         },
         {
           "title": "Removed",
-          "line": 3783
+          "line": 3821
         },
         {
           "title": "Project",
-          "line": 3788
+          "line": 3826
         }
       ]
     },
@@ -1061,9 +1069,9 @@
     },
     {
       "path": "Doc/agent/social.md",
-      "bytes": 11777,
-      "sha256": "7aa94e6d808963e64e0ca994781f40771a053549b47fbbd96de8c389a499f32f",
-      "lines": 89,
+      "bytes": 12305,
+      "sha256": "e8416cb6d4fbf27d6de286d45896514ee280348a4a18ba6a94bb8a1005cb8f04",
+      "lines": 90,
       "headings": [
         {
           "title": "Social",
@@ -1075,7 +1083,7 @@
         },
         {
           "title": "View and input traps",
-          "line": 47
+          "line": 48
         }
       ]
     },
@@ -1125,9 +1133,9 @@
     },
     {
       "path": "Doc/changelog.txt",
-      "bytes": 25364,
-      "sha256": "b981f0a6a7264e51018839185706c3ab0a005419c930abafc690b3c6e6612d70",
-      "lines": 467
+      "bytes": 25465,
+      "sha256": "118e61f48dd0c460f598b1e4971613351ca9dbf9b77a03c9762ba5fe9ea35348",
+      "lines": 468
     },
     {
       "path": "Doc/guides/addon-standards.md",
@@ -1517,9 +1525,9 @@
     },
     {
       "path": "Doc/guides/gui-development.md",
-      "bytes": 17397,
-      "sha256": "deb0dbeb777e4b0805f1ab20f02c55e8b440d9ca98d89565a8b752d5eaf9d36e",
-      "lines": 253,
+      "bytes": 17678,
+      "sha256": "17581ca8b0729de9df4e0ff5de4504841f84eae0449c74d779394b9fe44203cb",
+      "lines": 256,
       "headings": [
         {
           "title": "GUI development",
@@ -1571,15 +1579,15 @@
         },
         {
           "title": "Structure of GUI code",
-          "line": 215
+          "line": 218
         },
         {
           "title": "Checklist for a new window or widget",
-          "line": 226
+          "line": 229
         },
         {
           "title": "Sources",
-          "line": 240
+          "line": 243
         }
       ]
     },
@@ -5226,9 +5234,9 @@
     },
     {
       "path": "dev/tests/navigation.lua",
-      "bytes": 97140,
-      "sha256": "543818ccd36115ccae93b760c85cf7fe60a64c9b84ec54372365e994a2ba92ab",
-      "lines": 1570,
+      "bytes": 97786,
+      "sha256": "9745caa9ff1ae62702dd43fffdfca8fb90380a99060531ed8a10a0bf53e0df83",
+      "lines": 1577,
       "declarations": [
         {
           "name": "check",
@@ -5340,171 +5348,171 @@
         },
         {
           "name": "noop",
-          "line": 63
-        },
-        {
-          "name": "methods:CreateAnimationGroup",
           "line": 64
         },
         {
+          "name": "methods:CreateAnimationGroup",
+          "line": 65
+        },
+        {
           "name": "group:SetScript",
-          "line": 66
-        },
-        {
-          "name": "group:Play",
-          "line": 67
-        },
-        {
-          "name": "group:Stop",
           "line": 68
         },
         {
-          "name": "group:IsPlaying",
+          "name": "group:Play",
           "line": 69
         },
         {
-          "name": "group:CreateAnimation",
+          "name": "group:Stop",
+          "line": 70
+        },
+        {
+          "name": "group:IsPlaying",
           "line": 71
         },
         {
-          "name": "animation:SetDuration",
+          "name": "group:CreateAnimation",
           "line": 73
         },
         {
-          "name": "animation:GetProgress",
-          "line": 74
-        },
-        {
-          "name": "animation:GetSmoothProgress",
-          "line": 75
-        },
-        {
-          "name": "group:Run",
+          "name": "animation:SetDuration",
           "line": 78
         },
         {
+          "name": "animation:GetProgress",
+          "line": 79
+        },
+        {
+          "name": "animation:GetSmoothProgress",
+          "line": 80
+        },
+        {
+          "name": "group:Run",
+          "line": 83
+        },
+        {
           "name": "box:SetDataProvider",
-          "line": 255
+          "line": 260
         },
         {
           "name": "box:Draw",
-          "line": 256
+          "line": 261
         },
         {
           "name": "view:SetElementExtentCalculator",
-          "line": 267
+          "line": 272
         },
         {
           "name": "view:SetElementInitializer",
-          "line": 268
+          "line": 273
         },
         {
           "name": "methods:CreateLine",
-          "line": 274
+          "line": 279
         },
         {
           "name": "methods:SetStartPoint",
-          "line": 275
+          "line": 280
         },
         {
           "name": "methods:SetEndPoint",
-          "line": 276
+          "line": 281
         },
         {
           "name": "methods:GetStringHeight",
-          "line": 277
+          "line": 282
         },
         {
           "name": "frame:SetMapID",
-          "line": 286
+          "line": 291
         },
         {
           "name": "frame:DrawBlob",
-          "line": 287
+          "line": 292
         },
         {
           "name": "frame:DrawNone",
-          "line": 288
+          "line": 293
         },
         {
           "name": "cluster:UpdateMinimapConfig",
-          "line": 300
+          "line": 305
         },
         {
           "name": "minimap:GetZoom",
-          "line": 310
-        },
-        {
-          "name": "minimap:SetZoom",
-          "line": 311
-        },
-        {
-          "name": "minimap:GetZoomLevels",
-          "line": 312
-        },
-        {
-          "name": "minimap:SetMaskTexture",
-          "line": 313
-        },
-        {
-          "name": "minimap:SetPassThroughButtons",
-          "line": 314
-        },
-        {
-          "name": "minimap:PingLocation",
           "line": 315
         },
         {
+          "name": "minimap:SetZoom",
+          "line": 316
+        },
+        {
+          "name": "minimap:GetZoomLevels",
+          "line": 317
+        },
+        {
+          "name": "minimap:SetMaskTexture",
+          "line": 318
+        },
+        {
+          "name": "minimap:SetPassThroughButtons",
+          "line": 319
+        },
+        {
+          "name": "minimap:PingLocation",
+          "line": 320
+        },
+        {
           "name": "worldMap:GetMapID",
-          "line": 332
+          "line": 337
         },
         {
           "name": "Run",
-          "line": 335
+          "line": 340
         },
         {
           "name": "Set",
-          "line": 373
+          "line": 378
         },
         {
           "name": "Shown",
-          "line": 467
+          "line": 472
         },
         {
           "name": "Count",
-          "line": 474
-        },
-        {
-          "name": "Overviews",
           "line": 479
         },
         {
+          "name": "Overviews",
+          "line": 484
+        },
+        {
           "name": "Frames",
-          "line": 678
+          "line": 683
         },
         {
           "name": "Button",
-          "line": 876
+          "line": 881
         },
         {
           "name": "Drawn",
-          "line": 922
+          "line": 927
         },
         {
           "name": "Has",
-          "line": 1213
+          "line": 1220
         },
         {
           "name": "Blocks",
-          "line": 1241
+          "line": 1248
         },
         {
           "name": "Size",
-          "line": 1249
+          "line": 1256
         },
         {
           "name": "Openings",
-          "line": 1386
+          "line": 1393
         }
       ]
     },
@@ -5516,9 +5524,9 @@
     },
     {
       "path": "dev/tests/social.lua",
-      "bytes": 163088,
-      "sha256": "ab433a66b27ac5d2e35f820987a3f3eae3d9f31899f80a09a6f386a8ffcea2df",
-      "lines": 2555,
+      "bytes": 168677,
+      "sha256": "64446d626b3377606f823bf5b9e2356641fe0ed649820872d3cc9bc19ebc04d6",
+      "lines": 2644,
       "declarations": [
         {
           "name": "check",
@@ -6001,76 +6009,96 @@
           "line": 1520
         },
         {
+          "name": "methods:FindCharacterIndexAtCoordinate",
+          "line": 1564
+        },
+        {
+          "name": "methods:CalculateScreenAreaFromCharacterSpan",
+          "line": 1570
+        },
+        {
+          "name": "methods:HighlightText",
+          "line": 1574
+        },
+        {
+          "name": "lit",
+          "line": 1583
+        },
+        {
+          "name": "copied",
+          "line": 1593
+        },
+        {
           "name": "within",
-          "line": 1644
+          "line": 1732
         },
         {
           "name": "list",
-          "line": 1651
+          "line": 1739
         },
         {
           "name": "foot",
-          "line": 1656
+          "line": 1744
         },
         {
           "name": "click",
-          "line": 1663
+          "line": 1751
         },
         {
           "name": "named",
-          "line": 1664
+          "line": 1752
         },
         {
           "name": "click",
-          "line": 1915
+          "line": 2003
         },
         {
           "name": "inside",
-          "line": 1916
+          "line": 2004
         },
         {
           "name": "texts",
-          "line": 1923
+          "line": 2011
         },
         {
           "name": "rowOf",
-          "line": 1929
+          "line": 2017
         },
         {
           "name": "edit:SetFocus",
-          "line": 1939
+          "line": 2027
         },
         {
           "name": "edit:ClearFocus",
-          "line": 1940
+          "line": 2028
         },
         {
           "name": "edit:HasFocus",
-          "line": 1941
+          "line": 2029
         },
         {
           "name": "write",
-          "line": 1942
+          "line": 2030
         },
         {
           "name": "editBox:GetTellTarget",
-          "line": 2073
+          "line": 2162
         },
         {
           "name": "game:GetName",
-          "line": 2228
+          "line": 2317
         },
         {
           "name": "anew",
-          "line": 2240
+          "line": 2329
         },
         {
           "name": "answer:GetName",
-          "line": 2288
+          "line": 2377
         },
         {
           "name": "Called",
-          "line": 2480
+          "line": 2569
         }
       ]
     },
@@ -6724,477 +6752,477 @@
     },
     {
       "path": "dev/tests/wowstub.lua",
-      "bytes": 46972,
-      "sha256": "d7ba6f4238a1c6d7f66fc955613989d74e2ec003d67155feada8b8b826a55920",
-      "lines": 923,
+      "bytes": 47599,
+      "sha256": "f413aa8fb641c76aaebefe1be77eec537663b35ec1063c7c776c8b54188a65bd",
+      "lines": 932,
       "declarations": [
         {
           "name": "W.Load",
-          "line": 62
+          "line": 63
         },
         {
           "name": "LoadListed",
-          "line": 71
+          "line": 73
         },
         {
           "name": "LoadToc",
-          "line": 90
+          "line": 96
         },
         {
           "name": "W.LoadCore",
-          "line": 99
-        },
-        {
-          "name": "W.LoadAddon",
           "line": 105
         },
         {
-          "name": "Listed",
+          "name": "W.LoadAddon",
           "line": 111
         },
         {
+          "name": "Listed",
+          "line": 117
+        },
+        {
           "name": "W.AddPack",
-          "line": 124
+          "line": 130
         },
         {
           "name": "W.RemoveAddon",
-          "line": 156
+          "line": 162
         },
         {
           "name": "NewWidget",
-          "line": 167
+          "line": 173
         },
         {
           "name": "widget:SetTitle",
-          "line": 184
+          "line": 190
         },
         {
           "name": "widget.Text:GetStringWidth",
-          "line": 193
+          "line": 199
         },
         {
           "name": "methods:CreateTexture",
-          "line": 196
+          "line": 202
         },
         {
           "name": "methods:CreateMaskTexture",
-          "line": 205
+          "line": 211
         },
         {
           "name": "methods:CreateFontString",
-          "line": 206
+          "line": 212
         },
         {
           "name": "methods:SetScript",
-          "line": 207
+          "line": 213
         },
         {
           "name": "methods:GetScript",
-          "line": 208
+          "line": 214
         },
         {
           "name": "methods:HookScript",
-          "line": 209
+          "line": 215
         },
         {
           "name": "methods:RegisterEvent",
-          "line": 216
+          "line": 222
         },
         {
           "name": "methods:RegisterUnitEvent",
-          "line": 220
-        },
-        {
-          "name": "methods:UnregisterEvent",
-          "line": 225
-        },
-        {
-          "name": "methods:IsEventRegistered",
           "line": 226
         },
         {
-          "name": "methods:Show",
-          "line": 227
+          "name": "methods:UnregisterEvent",
+          "line": 231
         },
         {
-          "name": "methods:Hide",
+          "name": "methods:IsEventRegistered",
           "line": 232
         },
         {
-          "name": "methods:SetShown",
-          "line": 237
+          "name": "methods:Show",
+          "line": 233
         },
         {
-          "name": "methods:IsShown",
+          "name": "methods:Hide",
           "line": 238
         },
         {
+          "name": "methods:SetShown",
+          "line": 243
+        },
+        {
+          "name": "methods:IsShown",
+          "line": 244
+        },
+        {
           "name": "methods:IsVisible",
-          "line": 239
+          "line": 245
         },
         {
           "name": "methods:IsMouseOver",
-          "line": 247
+          "line": 253
         },
         {
           "name": "methods:SetText",
-          "line": 248
+          "line": 254
         },
         {
           "name": "methods:SetEnabled",
-          "line": 249
+          "line": 255
         },
         {
           "name": "methods:IsEnabled",
-          "line": 250
-        },
-        {
-          "name": "methods:SetupMenu",
-          "line": 252
-        },
-        {
-          "name": "methods:GenerateMenu",
           "line": 256
         },
         {
-          "name": "methods:SetDefaultText",
-          "line": 260
+          "name": "methods:SetupMenu",
+          "line": 258
         },
         {
-          "name": "methods:SetScrollChild",
-          "line": 261
-        },
-        {
-          "name": "methods:GetText",
+          "name": "methods:GenerateMenu",
           "line": 262
         },
         {
-          "name": "methods:SetTexture",
-          "line": 263
-        },
-        {
-          "name": "methods:GetTexture",
-          "line": 264
-        },
-        {
-          "name": "methods:SetAtlas",
-          "line": 265
-        },
-        {
-          "name": "methods:SetChecked",
+          "name": "methods:SetDefaultText",
           "line": 266
         },
         {
-          "name": "methods:GetChecked",
+          "name": "methods:SetScrollChild",
           "line": 267
         },
         {
-          "name": "methods:GetParent",
+          "name": "methods:GetText",
           "line": 268
         },
         {
-          "name": "methods:SetParent",
+          "name": "methods:SetTexture",
           "line": 269
         },
         {
-          "name": "methods:ClearAllPoints",
+          "name": "methods:GetTexture",
           "line": 270
         },
         {
-          "name": "methods:SetPoint",
+          "name": "methods:SetAtlas",
           "line": 271
         },
         {
-          "name": "methods:SetAllPoints",
+          "name": "methods:SetChecked",
+          "line": 272
+        },
+        {
+          "name": "methods:GetChecked",
+          "line": 273
+        },
+        {
+          "name": "methods:GetParent",
+          "line": 274
+        },
+        {
+          "name": "methods:SetParent",
           "line": 275
         },
         {
-          "name": "methods:GetPoint",
+          "name": "methods:ClearAllPoints",
           "line": 276
         },
         {
-          "name": "methods:GetNumPoints",
-          "line": 280
+          "name": "methods:SetPoint",
+          "line": 277
         },
         {
-          "name": "methods:SetWidth",
+          "name": "methods:SetAllPoints",
           "line": 281
         },
         {
-          "name": "methods:SetScale",
+          "name": "methods:GetPoint",
           "line": 282
         },
         {
-          "name": "methods:GetObjectType",
-          "line": 283
-        },
-        {
-          "name": "methods:GetScale",
-          "line": 284
-        },
-        {
-          "name": "methods:GetSize",
-          "line": 285
-        },
-        {
-          "name": "methods:GetWidth",
+          "name": "methods:GetNumPoints",
           "line": 286
         },
         {
-          "name": "methods:SetHeight",
+          "name": "methods:SetWidth",
           "line": 287
         },
         {
-          "name": "methods:GetHeight",
+          "name": "methods:SetScale",
           "line": 288
         },
         {
-          "name": "methods:SetSize",
+          "name": "methods:GetObjectType",
           "line": 289
         },
         {
-          "name": "methods:SetAlpha",
+          "name": "methods:GetScale",
           "line": 290
         },
         {
-          "name": "methods:GetAlpha",
+          "name": "methods:GetSize",
           "line": 291
         },
         {
-          "name": "methods:SetTextColor",
+          "name": "methods:GetWidth",
           "line": 292
         },
         {
-          "name": "methods:GetTextColor",
+          "name": "methods:SetHeight",
           "line": 293
         },
         {
-          "name": "methods:SetOwner",
+          "name": "methods:GetHeight",
+          "line": 294
+        },
+        {
+          "name": "methods:SetSize",
+          "line": 295
+        },
+        {
+          "name": "methods:SetAlpha",
+          "line": 296
+        },
+        {
+          "name": "methods:GetAlpha",
           "line": 297
         },
         {
-          "name": "methods:GetOwner",
+          "name": "methods:SetTextColor",
           "line": 298
         },
         {
-          "name": "methods:AddLine",
+          "name": "methods:GetTextColor",
           "line": 299
         },
         {
-          "name": "methods:GetEffectiveScale",
-          "line": 300
-        },
-        {
-          "name": "methods:GetFrameLevel",
-          "line": 301
-        },
-        {
-          "name": "W.Fire",
+          "name": "methods:SetOwner",
           "line": 303
         },
         {
+          "name": "methods:GetOwner",
+          "line": 304
+        },
+        {
+          "name": "methods:AddLine",
+          "line": 305
+        },
+        {
+          "name": "methods:GetEffectiveScale",
+          "line": 306
+        },
+        {
+          "name": "methods:GetFrameLevel",
+          "line": 307
+        },
+        {
+          "name": "W.Fire",
+          "line": 309
+        },
+        {
           "name": "W.Wait",
-          "line": 317
+          "line": 323
         },
         {
           "name": "SlotChanged",
-          "line": 334
+          "line": 340
         },
         {
           "name": "W.PlayerPlaces",
-          "line": 339
+          "line": 345
         },
         {
           "name": "IsLearned",
-          "line": 344
+          "line": 350
         },
         {
           "name": "W.Learn",
-          "line": 353
+          "line": 359
         },
         {
           "name": "BookRows",
-          "line": 360
+          "line": 366
         },
         {
           "name": "W.Row",
-          "line": 378
-        },
-        {
-          "name": "row:SetParentInitializer",
-          "line": 380
-        },
-        {
-          "name": "row:AddModifyPredicate",
           "line": 384
         },
         {
-          "name": "row:AddShownPredicate",
-          "line": 385
-        },
-        {
-          "name": "row:AddEvaluateStateCVar",
+          "name": "row:SetParentInitializer",
           "line": 386
         },
         {
-          "name": "row:AddSearchTags",
-          "line": 387
+          "name": "row:AddModifyPredicate",
+          "line": 390
         },
         {
-          "name": "row:EvaluateModifyPredicates",
-          "line": 388
+          "name": "row:AddShownPredicate",
+          "line": 391
         },
         {
-          "name": "row:ShouldShow",
+          "name": "row:AddEvaluateStateCVar",
           "line": 392
         },
         {
+          "name": "row:AddSearchTags",
+          "line": 393
+        },
+        {
+          "name": "row:EvaluateModifyPredicates",
+          "line": 394
+        },
+        {
+          "name": "row:ShouldShow",
+          "line": 398
+        },
+        {
           "name": "row:GetOptions",
-          "line": 396
+          "line": 402
         },
         {
           "name": "row:GetSetting",
-          "line": 397
+          "line": 403
         },
         {
           "name": "W.Install",
-          "line": 404
+          "line": 410
         },
         {
           "name": "box:SetText",
-          "line": 449
+          "line": 458
         },
         {
           "name": "box:GetText",
-          "line": 450
+          "line": 459
         },
         {
           "name": "box:HighlightText",
-          "line": 451
+          "line": 460
         },
         {
           "name": "dialog:GetEditBox",
-          "line": 453
+          "line": 462
         },
         {
           "name": "group:AddButtons",
-          "line": 463
-        },
-        {
-          "name": "group:IndexOf",
-          "line": 469
-        },
-        {
-          "name": "group:RegisterCallback",
           "line": 472
         },
         {
+          "name": "group:IndexOf",
+          "line": 478
+        },
+        {
+          "name": "group:RegisterCallback",
+          "line": 481
+        },
+        {
           "name": "group:SelectAtIndex",
-          "line": 473
+          "line": 482
         },
         {
           "name": "Description",
-          "line": 510
-        },
-        {
-          "name": "description:CreateTitle",
-          "line": 512
-        },
-        {
-          "name": "description:CreateDivider",
-          "line": 513
-        },
-        {
-          "name": "description:CreateButton",
-          "line": 514
-        },
-        {
-          "name": "sub:SetEnabled",
-          "line": 518
-        },
-        {
-          "name": "sub:SetTooltip",
           "line": 519
         },
         {
-          "name": "description:CreateFrame",
+          "name": "description:CreateTitle",
+          "line": 521
+        },
+        {
+          "name": "description:CreateDivider",
+          "line": 522
+        },
+        {
+          "name": "description:CreateButton",
           "line": 523
         },
         {
-          "name": "description:CreateRadio",
+          "name": "sub:SetEnabled",
+          "line": 527
+        },
+        {
+          "name": "sub:SetTooltip",
           "line": 528
         },
         {
+          "name": "description:CreateFrame",
+          "line": 532
+        },
+        {
+          "name": "description:CreateRadio",
+          "line": 537
+        },
+        {
           "name": "description:CreateCheckbox",
-          "line": 531
+          "line": 540
         },
         {
           "name": "env.EventRegistry:RegisterCallback",
-          "line": 548
+          "line": 557
         },
         {
           "name": "env.EventRegistry:TriggerEvent",
-          "line": 552
+          "line": 561
         },
         {
           "name": "Page",
-          "line": 592
+          "line": 601
         },
         {
           "name": "page:GetID",
-          "line": 594
+          "line": 603
         },
         {
           "name": "setting:GetValue",
-          "line": 610
+          "line": 619
         },
         {
           "name": "setting:SetValue",
-          "line": 611
+          "line": 620
         },
         {
           "name": "setting:SetValueChangedCallback",
-          "line": 615
+          "line": 624
         },
         {
           "name": "setting:NotifyUpdate",
-          "line": 617
-        },
-        {
-          "name": "setting:GetValue",
           "line": 626
         },
         {
+          "name": "setting:GetValue",
+          "line": 635
+        },
+        {
           "name": "setting:SetValue",
-          "line": 627
+          "line": 636
         },
         {
           "name": "setting:SetValueChangedCallback",
-          "line": 631
+          "line": 640
         },
         {
           "name": "setting:NotifyUpdate",
-          "line": 632
+          "line": 641
         },
         {
           "name": "container:Add",
-          "line": 655
+          "line": 664
         },
         {
           "name": "container:AddCheckbox",
-          "line": 656
+          "line": 665
         },
         {
           "name": "container:GetData",
-          "line": 657
+          "line": 666
         },
         {
           "name": "Known",
-          "line": 699
+          "line": 708
         },
         {
           "name": "Rows",
-          "line": 788
+          "line": 797
         }
       ]
     },
@@ -16310,9 +16338,9 @@
     },
     {
       "path": "src/Navigation/README.md",
-      "bytes": 30244,
-      "sha256": "bb6713c1b874e457966dc97e7b82ea838f09aec23444e90fa3f34e3b7ac11c94",
-      "lines": 306,
+      "bytes": 30900,
+      "sha256": "4467f53c274099e89a197d7079ff3cf16c452344bc3e74c7cf863ae69e782ffc",
+      "lines": 312,
       "headings": [
         {
           "title": "Sane UI: Navigation",
@@ -16332,67 +16360,73 @@
         },
         {
           "title": "Files",
-          "line": 230
+          "line": 232
         },
         {
           "title": "History",
-          "line": 265
+          "line": 268
         }
       ]
     },
     {
       "path": "src/Navigation/Route.lua",
-      "bytes": 6182,
-      "sha256": "ec4d17d51f6f13b5d9bcb69c31ea0618be060191df3e541a748e51f144dd6270",
-      "lines": 152,
+      "bytes": 6470,
+      "sha256": "52db46536ce588e0ac72f0453b4a2ae23827a0eb1bd9095211822b8a3ac00677",
+      "lines": 153,
       "declarations": [
         {
           "name": "Route.Build",
-          "line": 43
+          "line": 46
         },
         {
           "name": "Line",
-          "line": 51
+          "line": 54
         },
         {
           "name": "Next",
-          "line": 59
+          "line": 62
         },
         {
           "name": "Segment",
-          "line": 76
+          "line": 77
         },
         {
           "name": "Near",
-          "line": 95
+          "line": 96
         },
         {
           "name": "Route.Place",
-          "line": 101
+          "line": 102
         },
         {
           "name": "Route.Show",
-          "line": 129
+          "line": 130
         },
         {
           "name": "Route.Way",
-          "line": 134
+          "line": 135
         },
         {
           "name": "Route.Track",
-          "line": 139
+          "line": 140
         },
         {
           "name": "Route.Clear",
-          "line": 144
+          "line": 145
         }
       ]
     },
     {
+      "path": "src/Navigation/Route.xml",
+      "bytes": 556,
+      "sha256": "060be2bf1d170ddf3ce1377c4b82dad81f206e22575d893aec1347d6eddde644",
+      "lines": 10
+    },
+    {
       "path": "src/Navigation/SaneUI_Navigation.toc",
-      "bytes": 3045,
-      "sha256": "82cdad9ebd6f1d8a185a37915293c7a2c177b2c7825cc969d627901433065a00",
-      "lines": 55,
+      "bytes": 3123,
+      "sha256": "fdacd1f7b4b3cc75ab36e7460057f6bc5b3bafc10345657e063df92541c0a0fd",
+      "lines": 56,
       "load_order": [
         "Navigation.lua",
         "Coords.lua",
@@ -16408,6 +16442,7 @@
         "Art.lua",
         "Painted.lua",
         "Areas.lua",
+        "Route.xml",
         "Route.lua",
         "PinView.lua",
         "Marks.lua",
@@ -16776,9 +16811,9 @@
     },
     {
       "path": "src/Social/Board.lua",
-      "bytes": 9837,
-      "sha256": "19733ce544dc610a65edef81b3b5e9cb91af24e5a939f710b4022a2c77123f7d",
-      "lines": 205,
+      "bytes": 9859,
+      "sha256": "dd6c759393f5a64a6d80678726505e77450fddfa280bd47c1bddc3e1a75bc0f9",
+      "lines": 206,
       "declarations": [
         {
           "name": "Make",
@@ -16818,71 +16853,79 @@
         },
         {
           "name": "Board.Search",
-          "line": 200
+          "line": 201
         }
       ]
     },
     {
       "path": "src/Social/Bubble.lua",
-      "bytes": 10213,
-      "sha256": "e2297c6072cb85509ab86d955959d8df127d997bf7cdc4590dc0cadc24a5988f",
-      "lines": 233,
+      "bytes": 11920,
+      "sha256": "b884c1aab05013cdd98bd7509b02851379030760cdc306ff6fd94a03fe0132c0",
+      "lines": 269,
       "declarations": [
         {
           "name": "Bubble.Speaker",
-          "line": 40
+          "line": 41
         },
         {
           "name": "Bubble.Size",
-          "line": 50
+          "line": 51
         },
         {
           "name": "Bubble.Opacity",
-          "line": 59
+          "line": 60
         },
         {
           "name": "Bubble.Brief",
-          "line": 71
+          "line": 72
         },
         {
           "name": "Bubble.Paint",
-          "line": 76
+          "line": 77
         },
         {
           "name": "ns.Ruler",
-          "line": 83
+          "line": 84
         },
         {
           "name": "Bubble.Ruler",
-          "line": 94
+          "line": 95
         },
         {
           "name": "Bubble.Known",
-          "line": 101
+          "line": 102
         },
         {
           "name": "Bubble.Measure",
-          "line": 106
+          "line": 107
         },
         {
           "name": "Meta",
-          "line": 120
+          "line": 121
         },
         {
           "name": "Build",
-          "line": 130
+          "line": 131
         },
         {
           "name": "Icon",
-          "line": 171
+          "line": 172
         },
         {
           "name": "Bubble.Init",
-          "line": 181
+          "line": 182
+        },
+        {
+          "name": "Bubble.Text",
+          "line": 233
+        },
+        {
+          "name": "Bubble.Mark",
+          "line": 241
         },
         {
           "name": "Bubble.Cut",
-          "line": 230
+          "line": 266
         }
       ]
     },
@@ -17692,229 +17735,229 @@
     },
     {
       "path": "src/Social/Conversations.lua",
-      "bytes": 33799,
-      "sha256": "a59e2a1896857dd266371510cd98a47d843c7d49c294c8b08e2c9201f9c17aff",
-      "lines": 772,
+      "bytes": 34046,
+      "sha256": "baa80551b2b57cf30d84a61d65e6c32ea940b4e09b4e6c21c5ef20b54e692359",
+      "lines": 777,
       "declarations": [
         {
           "name": "Day",
-          "line": 95
+          "line": 97
         },
         {
           "name": "DayText",
-          "line": 100
+          "line": 102
         },
         {
           "name": "When",
-          "line": 113
+          "line": 115
         },
         {
           "name": "Pill",
-          "line": 121
+          "line": 123
         },
         {
           "name": "Colour",
-          "line": 137
+          "line": 139
         },
         {
           "name": "Icon",
-          "line": 150
+          "line": 152
         },
         {
           "name": "Note",
-          "line": 162
+          "line": 164
         },
         {
           "name": "Name",
-          "line": 168
+          "line": 170
         },
         {
           "name": "Last",
-          "line": 175
+          "line": 177
         },
         {
           "name": "Preview",
-          "line": 182
+          "line": 184
         },
         {
           "name": "Time",
-          "line": 194
+          "line": 196
         },
         {
           "name": "Draw",
-          "line": 205
+          "line": 207
         },
         {
           "name": "Tip",
-          "line": 246
+          "line": 248
         },
         {
           "name": "Menu",
-          "line": 263
+          "line": 265
         },
         {
           "name": "Bar",
-          "line": 278
+          "line": 280
         },
         {
           "name": "ToEnd",
-          "line": 282
+          "line": 284
         },
         {
           "name": "Scrolled",
-          "line": 288
+          "line": 290
         },
         {
           "name": "Height",
-          "line": 293
+          "line": 295
         },
         {
           "name": "DrawMessage",
-          "line": 297
+          "line": 299
         },
         {
           "name": "Named",
-          "line": 302
+          "line": 304
         },
         {
           "name": "Visible",
-          "line": 307
+          "line": 309
         },
         {
           "name": "Listed",
-          "line": 313
+          "line": 315
         },
         {
           "name": "Heading",
-          "line": 323
+          "line": 325
         },
         {
           "name": "Hint",
-          "line": 335
+          "line": 337
         },
         {
           "name": "Line",
-          "line": 340
+          "line": 342
         },
         {
           "name": "Fill",
-          "line": 351
+          "line": 353
         },
         {
           "name": "Append",
-          "line": 375
+          "line": 377
         },
         {
           "name": "Title",
-          "line": 394
+          "line": 396
         },
         {
           "name": "Update",
-          "line": 403
+          "line": 405
         },
         {
           "name": "IsShown",
-          "line": 428
-        },
-        {
-          "name": "Switch",
-          "line": 429
-        },
-        {
-          "name": "Showing",
           "line": 430
         },
         {
+          "name": "Switch",
+          "line": 431
+        },
+        {
+          "name": "Showing",
+          "line": 432
+        },
+        {
           "name": "Click",
-          "line": 460
+          "line": 463
         },
         {
           "name": "Start",
-          "line": 469
+          "line": 472
         },
         {
           "name": "Remove",
-          "line": 474
+          "line": 477
         },
         {
           "name": "Locked",
-          "line": 484
+          "line": 487
         },
         {
           "name": "Send",
-          "line": 489
+          "line": 492
         },
         {
           "name": "Added",
-          "line": 507
+          "line": 510
         },
         {
           "name": "Conversations.Said",
-          "line": 524
+          "line": 527
         },
         {
           "name": "Opened",
-          "line": 532
+          "line": 535
         },
         {
           "name": "Conversations.Chat",
-          "line": 548
+          "line": 551
         },
         {
           "name": "Rule",
-          "line": 556
+          "line": 559
         },
         {
           "name": "Light",
-          "line": 562
+          "line": 565
         },
         {
           "name": "Divide",
-          "line": 567
+          "line": 570
         },
         {
           "name": "Pointer",
-          "line": 580
+          "line": 583
         },
         {
           "name": "Take",
-          "line": 589
+          "line": 592
         },
         {
           "name": "Let",
-          "line": 598
+          "line": 601
         },
         {
           "name": "Enter",
-          "line": 612
+          "line": 615
         },
         {
           "name": "Leave",
-          "line": 617
+          "line": 620
         },
         {
           "name": "Conversations.Build",
-          "line": 623
+          "line": 626
         },
         {
           "name": "Conversations.Size",
-          "line": 724
+          "line": 729
         },
         {
           "name": "Conversations.Show",
-          "line": 734
+          "line": 739
         },
         {
           "name": "Conversations.Relist",
-          "line": 749
+          "line": 754
         },
         {
           "name": "Conversations.Search",
-          "line": 753
+          "line": 758
         },
         {
           "name": "Conversations.Rewrap",
-          "line": 763
+          "line": 768
         }
       ]
     },
@@ -17948,85 +17991,85 @@
     },
     {
       "path": "src/Social/Feed.lua",
-      "bytes": 6289,
-      "sha256": "717a40ce98a7e4c5a4ab00758c402e47dedb8276d6d41185c0b246ba369f3fdf",
-      "lines": 174,
+      "bytes": 6477,
+      "sha256": "221c18a8f076c1f57903c3bf8ac1e9be7951899a550ba17ab753b57db49b49b3",
+      "lines": 178,
       "declarations": [
         {
           "name": "Visible",
-          "line": 35
+          "line": 37
         },
         {
           "name": "Bar",
-          "line": 39
+          "line": 41
         },
         {
           "name": "ToEnd",
-          "line": 43
+          "line": 45
         },
         {
           "name": "Scrolled",
-          "line": 49
+          "line": 51
         },
         {
           "name": "Height",
-          "line": 54
+          "line": 56
         },
         {
           "name": "Draw",
-          "line": 58
+          "line": 60
         },
         {
           "name": "Fill",
-          "line": 62
+          "line": 64
         },
         {
           "name": "IsTicked",
-          "line": 75
+          "line": 77
         },
         {
           "name": "Tick",
-          "line": 76
-        },
-        {
-          "name": "Feed.Menu",
           "line": 78
         },
         {
+          "name": "Feed.Menu",
+          "line": 80
+        },
+        {
           "name": "Build",
-          "line": 86
+          "line": 88
         },
         {
           "name": "Bottom",
-          "line": 105
+          "line": 109
         },
         {
           "name": "Feed.Room",
-          "line": 110
+          "line": 114
         },
         {
           "name": "Feed.Show",
-          "line": 119
+          "line": 123
         },
         {
           "name": "Feed.Last",
-          "line": 130
+          "line": 134
         },
         {
           "name": "Feed.Fit",
-          "line": 138
+          "line": 142
         },
         {
           "name": "Feed.Rewrap",
-          "line": 145
+          "line": 149
         },
         {
           "name": "Feed.Refill",
-          "line": 153
+          "line": 157
         },
         {
           "name": "Feed.Added",
-          "line": 158
+          "line": 162
         }
       ]
     },
@@ -18348,45 +18391,45 @@
     },
     {
       "path": "src/Social/Layout.lua",
-      "bytes": 11422,
-      "sha256": "6cd8f483f1873cd0c193ef139d4a093f5793aec82d639dfb0d0e5af81308759a",
-      "lines": 180,
+      "bytes": 11618,
+      "sha256": "21d81492d9982b060867b600dc0f3c7d2a2adc4f91061b946605611d0ec45316",
+      "lines": 184,
       "declarations": [
         {
           "name": "Layout.RowWidth",
-          "line": 90
+          "line": 94
         },
         {
           "name": "Layout.Input",
-          "line": 95
+          "line": 99
         },
         {
           "name": "Layout.InputHeight",
-          "line": 101
+          "line": 105
         },
         {
           "name": "Layout.ListHeight",
-          "line": 109
+          "line": 113
         },
         {
           "name": "Layout.TalkList",
-          "line": 115
+          "line": 119
         },
         {
           "name": "Layout.Board",
-          "line": 126
+          "line": 130
         },
         {
           "name": "Layout.TextWidth",
-          "line": 164
+          "line": 168
         },
         {
           "name": "Layout.Bubble",
-          "line": 171
+          "line": 175
         },
         {
           "name": "Layout.RowHeight",
-          "line": 176
+          "line": 180
         }
       ]
     },
@@ -18664,9 +18707,9 @@
     },
     {
       "path": "src/Social/README.md",
-      "bytes": 70006,
-      "sha256": "343889cbc4ecf2c721f070a2eb7dcbdfe9956cc1a1088b05168346b3cf185443",
-      "lines": 713,
+      "bytes": 73410,
+      "sha256": "f451a84d01ea00bb26f7614d51c03afbdc1ed4c04d8ddf278f8faa5ae4091516",
+      "lines": 745,
       "headings": [
         {
           "title": "Sane UI: Social",
@@ -18682,27 +18725,27 @@
         },
         {
           "title": "Technical details",
-          "line": 223
+          "line": 229
         },
         {
           "title": "Files",
-          "line": 591
+          "line": 620
         },
         {
           "title": "Not there yet",
-          "line": 617
+          "line": 647
         },
         {
           "title": "History",
-          "line": 621
+          "line": 651
         }
       ]
     },
     {
       "path": "src/Social/SaneUI_Social.toc",
-      "bytes": 2648,
-      "sha256": "74b453a57e8b51e8a438a2f373e9775956f9a7d893d27ca6de7d7b36cef7165e",
-      "lines": 59,
+      "bytes": 2734,
+      "sha256": "eeb26be3a701904a431833bf97f8059453c9296fa1b4f7e52e9373a0187b4769",
+      "lines": 61,
       "load_order": [
         "Social.lua",
         "Log.lua",
@@ -18710,6 +18753,7 @@
         "Links.lua",
         "Fade.lua",
         "Bubble.lua",
+        "Select.lua",
         "Channels.lua",
         "Talks.lua",
         "Native.lua",
@@ -18732,6 +18776,98 @@
         "Friends.lua",
         "Conversations.lua",
         "Window.lua"
+      ]
+    },
+    {
+      "path": "src/Social/Select.lua",
+      "bytes": 12831,
+      "sha256": "7bfd8f1f9451cdcc347f3b6212b897cb3d59d4bbcf282f25ad7ea9c208ddfb77",
+      "lines": 293,
+      "declarations": [
+        {
+          "name": "Nearest",
+          "line": 57
+        },
+        {
+          "name": "Under",
+          "line": 68
+        },
+        {
+          "name": "Ends",
+          "line": 80
+        },
+        {
+          "name": "Select.Span",
+          "line": 89
+        },
+        {
+          "name": "Continues",
+          "line": 103
+        },
+        {
+          "name": "Words",
+          "line": 110
+        },
+        {
+          "name": "Whose",
+          "line": 144
+        },
+        {
+          "name": "Gather",
+          "line": 153
+        },
+        {
+          "name": "Remark",
+          "line": 168
+        },
+        {
+          "name": "Redraw",
+          "line": 172
+        },
+        {
+          "name": "Free",
+          "line": 180
+        },
+        {
+          "name": "Drop",
+          "line": 189
+        },
+        {
+          "name": "Key",
+          "line": 202
+        },
+        {
+          "name": "Lost",
+          "line": 209
+        },
+        {
+          "name": "Hold",
+          "line": 213
+        },
+        {
+          "name": "Follow",
+          "line": 238
+        },
+        {
+          "name": "Take",
+          "line": 246
+        },
+        {
+          "name": "Let",
+          "line": 264
+        },
+        {
+          "name": "Select.Attach",
+          "line": 276
+        },
+        {
+          "name": "Select.Allow",
+          "line": 284
+        },
+        {
+          "name": "Select.Clear",
+          "line": 291
+        }
       ]
     },
     {
@@ -18908,253 +19044,253 @@
     },
     {
       "path": "src/Social/Window.lua",
-      "bytes": 30114,
-      "sha256": "c5ea6c62840c5fc233462502f1afbfed8b0f8a4953a098c9e90bcb4e4e5ffb32",
-      "lines": 719,
+      "bytes": 30488,
+      "sha256": "b5550e7d821d5ddc81d3894e04f49b40fa2244ced02241d4f3ee958a24ca13ac",
+      "lines": 724,
       "declarations": [
         {
           "name": "Bar",
-          "line": 100
+          "line": 101
         },
         {
           "name": "ToEnd",
-          "line": 104
+          "line": 105
         },
         {
           "name": "TrimRow",
-          "line": 112
+          "line": 113
         },
         {
           "name": "Trim",
-          "line": 117
+          "line": 118
         },
         {
           "name": "Laid",
-          "line": 129
+          "line": 130
         },
         {
           "name": "Reveal",
-          "line": 135
+          "line": 136
         },
         {
           "name": "Revealed",
-          "line": 141
+          "line": 142
         },
         {
           "name": "Slide",
-          "line": 148
+          "line": 149
         },
         {
           "name": "Scrolled",
-          "line": 156
+          "line": 157
         },
         {
           "name": "Area",
-          "line": 165
+          "line": 166
         },
         {
           "name": "Shows",
-          "line": 173
+          "line": 174
         },
         {
           "name": "Seat",
-          "line": 179
+          "line": 180
         },
         {
           "name": "Settle",
-          "line": 199
+          "line": 200
         },
         {
           "name": "Window.Found",
-          "line": 221
+          "line": 222
         },
         {
           "name": "Visible",
-          "line": 226
+          "line": 227
         },
         {
           "name": "Fill",
-          "line": 230
+          "line": 231
         },
         {
           "name": "FadeAfter",
-          "line": 246
+          "line": 247
         },
         {
           "name": "Faded",
-          "line": 253
+          "line": 254
         },
         {
           "name": "Wanted",
-          "line": 259
+          "line": 260
         },
         {
           "name": "PaintRow",
-          "line": 266
+          "line": 267
         },
         {
           "name": "Paint",
-          "line": 271
+          "line": 272
         },
         {
           "name": "Run",
-          "line": 281
+          "line": 282
         },
         {
           "name": "Next",
-          "line": 294
+          "line": 295
         },
         {
           "name": "Due",
-          "line": 300
+          "line": 301
         },
         {
           "name": "Window.Animate",
-          "line": 321
+          "line": 322
         },
         {
           "name": "Window.Refade",
-          "line": 334
+          "line": 335
         },
         {
           "name": "Chrome",
-          "line": 350
+          "line": 351
         },
         {
           "name": "Asleep",
-          "line": 354
+          "line": 355
         },
         {
           "name": "Wake",
-          "line": 360
+          "line": 361
         },
         {
           "name": "Left",
-          "line": 366
+          "line": 367
         },
         {
           "name": "Height",
-          "line": 373
+          "line": 374
         },
         {
           "name": "DrawRow",
-          "line": 377
+          "line": 378
         },
         {
           "name": "Draw",
-          "line": 383
+          "line": 384
         },
         {
           "name": "Rewrap",
-          "line": 388
+          "line": 389
         },
         {
           "name": "Window.Resize",
-          "line": 396
+          "line": 397
         },
         {
           "name": "Window.Repaint",
-          "line": 406
+          "line": 407
         },
         {
           "name": "Resettle",
-          "line": 417
+          "line": 418
         },
         {
           "name": "Bottom",
-          "line": 423
+          "line": 424
         },
         {
           "name": "Room",
-          "line": 429
+          "line": 430
         },
         {
           "name": "Window.Writing",
-          "line": 441
+          "line": 442
         },
         {
           "name": "Window.Last",
-          "line": 446
+          "line": 447
         },
         {
           "name": "Window.Pick",
-          "line": 451
+          "line": 452
         },
         {
           "name": "Fit",
-          "line": 459
+          "line": 461
         },
         {
           "name": "Refit",
-          "line": 472
+          "line": 474
         },
         {
           "name": "Lay",
-          "line": 478
+          "line": 480
         },
         {
           "name": "Placed",
-          "line": 485
+          "line": 487
         },
         {
           "name": "Window.Reboard",
-          "line": 493
+          "line": 495
         },
         {
           "name": "Filled",
-          "line": 501
+          "line": 503
         },
         {
           "name": "Kind",
-          "line": 513
+          "line": 516
         },
         {
           "name": "Window.Search",
-          "line": 519
+          "line": 522
         },
         {
           "name": "Sized",
-          "line": 530
+          "line": 533
         },
         {
           "name": "Window.Reset",
-          "line": 536
+          "line": 539
         },
         {
           "name": "Build",
-          "line": 540
+          "line": 543
         },
         {
           "name": "Locked",
-          "line": 605
+          "line": 609
         },
         {
           "name": "Window.Native",
-          "line": 611
+          "line": 615
         },
         {
           "name": "Back",
-          "line": 620
+          "line": 624
         },
         {
           "name": "Window.Show",
-          "line": 627
+          "line": 631
         },
         {
           "name": "Window.Hide",
-          "line": 640
+          "line": 644
         },
         {
           "name": "Window.Away",
-          "line": 657
+          "line": 662
         },
         {
           "name": "Window.Follow",
-          "line": 665
+          "line": 670
         },
         {
           "name": "Window.Refill",
-          "line": 717
+          "line": 722
         }
       ]
     },

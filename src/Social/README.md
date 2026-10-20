@@ -35,6 +35,12 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   flatten as it grows: full, it is square. Move the mouse away and push it against that edge again: it
   springs back to its size and place. The section *Expand window* (below) says whether it can, how it
   moves, its background and how round its corners start.
+- **Copy messages:** on the full screen, press the mouse on the words of a bubble and drag over as many
+  messages as you like, yours and everybody else's, in the chat, the second chat or a conversation (the
+  mouse wheel scrolls on while you drag). What you picked is lit grey; press Ctrl+C (Cmd+C on a Mac) to copy
+  it. From one message you get just the words picked; from several, each message on its own line after the
+  name of whoever said it. The next click, Esc or any other key lets the words go. A click on a link or a
+  name still does what it did.
 - **Full screen panels:** standing full, the window holds more than the chat (each can be switched off,
   section *Full screen* of the settings):
   - **Guild window** at the top right: the very window the guild key opens, held there and working as
@@ -381,6 +387,27 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **Newest at the bottom** (`Window` `Settle`): the scrolling list starts at its top, so the view gets
   a top padding of whatever the messages leave free (list height minus their heights), none once they
   fill it. Set anew for a message, a new size and the line to write in.
+- **Picking words to copy** (`Select.lua`): the chat's list (only while the window stands full: `Select.Allow`
+  from `Filled`; at its size it takes no click), the second chat's and a conversation's take the mouse
+  (`Select.Attach`: `HookScript` `OnMouseDown`/`OnMouseUp` on the scrolling list, a frame of its own runs
+  `OnUpdate` while the mouse holds). The letter under the mouse is the game's text's own answer
+  (`FindCharacterIndexAtCoordinate`, the cursor over the list's effective scale, as the game's
+  `ScrollingMessageFrame` asks it; beside a bubble the nearest line by height), a caret into the text with its
+  codes. What is picked is two ends, `{ message, caret }`, and each message's place in its list when the press
+  came (`pick.at`, a copy of the list's order): `Select.Span(entry)` says what of a message is picked, and
+  `Bubble.Init` lights it on every draw (`Bubble.Mark`: textures from `CalculateScreenAreaFromCharacterSpan`, a
+  piece per line, on the bubble's `BACKGROUND` sublevel 1 between its fill and its text, the game's grey
+  `Layout.PICKED`, 0.37), so the list's rows, handed from message to message by a scroll, stay right. Days'
+  pills (`pill`) are skipped. The words (`Select.Words`): the span's letters without `|c` colours, `|r`,
+  a link's `|H…|h` part, `|T`/`|A` icons and `|K` names; `||` reads as a bar, `|n` as a new line; a caret
+  inside a UTF-8 letter takes the whole letter. Several messages: one line each, after `Bubble.Speaker` (or
+  `Core.FullName("player")` for yours). The game's `CopyToClipboard` is for its secure code only, so the
+  words wait in an `EditBox` of ours (`UIParent`'s, alpha 0, multi-line, no letter limit), highlighted
+  (`HighlightText`) and focused: the edit box copies on Ctrl+C itself, and a frame later (`Core.Later`) the
+  keyboard is let go (the words stay lit). Any other key (`OnKeyDown`, modifiers alone aside), Esc, focus taken
+  elsewhere (`OnEditFocusLost`), the next press, another row of the conversations chosen (`Window.Pick`,
+  `Choose`) or the full screen going (`Board.Hide`) drops it. Every step runs in `ns.Safe("selection", …)`:
+  one that fails is noted and the chat goes on.
 - **Fading** (`Fade.lua`, no frames): a message's fade is its own, kept on the message (`from`, `to`,
   `since`, `span`), never on a row: the list hands its rows from one message to another whenever it
   lays them out, and a fade kept on a row was cut off or begun anew by a new message, a scroll or a
@@ -572,11 +599,12 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **Taint.** Our code still changes the game's edit box in two ways:
   a choice in the list of chats calls its `SetChatType` / `SetStickyType` / `SetChannelTarget`
   (frame attributes, then written by addon code), and the window's button calls `ChatFrameUtil.OpenChat`
-  and the edit box's `ClearChat`. The game reads the chat type when it sends (`SendText`, then
+  and the edit box's `ClearChat`; words picked to copy take the keyboard from it, and the game closes it
+  then if it is empty (its `OnEditFocusLost`), as `ClearChat` would. The game reads the chat type when it sends (`SendText`, then
   `C_ChatInfo.SendChatMessage`, which has restrictions). The taint log shows whether a message sent, or a
   `/cast` typed, after such a choice is blocked (`/console taintLog 1`, `Logs/taint.log`; switch it off
   afterwards). Enter, `/`, Esc and sending themselves stay the game's code.
-- **Tests:** `lua5.1 dev/tests/social.lua` (500 checks): what an event says, the layout arithmetic, sides and
+- **Tests:** `lua5.1 dev/tests/social.lua` (526 checks): what an event says, the layout arithmetic, sides and
   bubbles, wrapping anew once a sizing is over, following the newest message, place and size, the game's
   chat out of sight and back (also a minimised window's button, a frame the game moved meanwhile, chat
   lockdown), printed lines, the line to write in and its button, the line at rest in both chat styles
@@ -585,7 +613,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   cut rows, the oldest messages going in batches, a message that cannot be read, the fall-back, the
   game's channels and their wishes (the list, once a zone, only where offered, not in lockdown, a profile's
   wishes, with the window closed), the switch *Chat window*, Core's window and the game's chat agreeing
-  whichever way it changed, and the key.
+  whichever way it changed, the key, the full screen's panels and the conversations' list dragged to its
+  width, and words picked to copy (lit while dragged, waiting for Ctrl+C, let go by the next press or key).
   They cannot judge the look.
 
 ## Files
@@ -596,7 +625,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Log.lua` | What an event says; the list of messages. Knows no frames |
 | `Layout.lua` | Sizes, distances, fills; the arithmetic from the window's width. Knows no frames |
 | `Links.lua` | The links in a message: tooltip on the mouse, the game's click |
-| `Bubble.lua` | One message: measured and drawn |
+| `Bubble.lua` | One message: measured and drawn, lit where words of it are picked |
+| `Select.lua` | Words picked out of the messages on the full screen by a drag, waiting highlighted in a hidden edit box for Ctrl+C |
 | `Channels.lua` | The chats you can write in right now. Knows no frames |
 | `Native.lua` | The game's own chat: out of sight, and back |
 | `Input.lua` | The line to write in: the game's edit box in our window, at rest, given back |
@@ -619,6 +649,8 @@ Tabs of chat views in the small window (`Doc/ideas/Social.md`), messages of one 
 a group, a close button, a sign besides colour for what a speaker is to you.
 
 ## History
+- 2026-10-20 — Words picked out of the messages on the full screen by a drag, over as many messages as wished,
+  lit grey, copied with Ctrl+C (`Select.lua`, new in the TOC; Saneroki).
 - 2026-10-20 — The conversations' list dragged wider or narrower by the line beside it, its width kept
   (`store.talkList`, `Layout.TalkList`); full, no message of the chat fades, wherever the mouse is (Saneroki).
 - 2026-10-20 — The guild window held by Core's seat (`Core.Seat`, as Combat's panels are): `Guild.lua` keeps only

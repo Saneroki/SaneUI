@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 512 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 260 (Navigation), 21 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 526 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 260 (Navigation), 21 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
 ### Navigation: the golden line drawn again (Saneroki, 2026-10-20)
@@ -19,6 +19,30 @@ A game restart takes it in (new addons, Navigation, Atlas and Inventory; new fil
   for a template that is there, and a `TextureCoordTranslation` made in Lua has no `SetOffset`, as in the game.
   New check: the glint pulses by the template.
 - **Guide** (`Doc/guides/gui-development.md`, *Motion*): a `TextureCoordTranslation` comes from an XML template.
+
+### Social: words picked out of the messages on the full screen, copied with Ctrl+C (Saneroki, 2026-10-20)
+- **Picking** (`Select.lua`, new in Social's TOC after `Bubble.lua`): a press on a bubble's words and a drag
+  over as many messages as wished picks them, in the chat (its list takes the mouse only while the window
+  stands full: `Select.Allow` from `Window`'s `Filled`, off at `Hide`), the second chat and a conversation
+  (`Select.Attach` in `Feed`'s and `Conversations`' builds). The letter under the mouse is the game's text's
+  answer (`FindCharacterIndexAtCoordinate`, the cursor over the list's effective scale, as the game's
+  `ScrollingMessageFrame` asks it), beside a bubble the nearest line by height. The two ends are
+  `{ message, caret }` with each message's place in its list when the press came, so a message that comes
+  later is never picked; `Select.Span(entry)` gives a message's picked part.
+- **Lit** (`Bubble.lua`): `Bubble.Init` asks `Select.Span` and `Bubble.Mark` lights it (pieces from
+  `CalculateScreenAreaFromCharacterSpan`, between the bubble's fill and its text, in the game's grey for picked
+  text, `Layout.PICKED`), so rows handed to other messages by a scroll stay right; `Bubble.Text(row)` gives the
+  text to ask. The days' pills of a conversation are marked `pill` and skipped.
+- **Copied**: the game's `CopyToClipboard` is for its secure code only, so the words wait in a hidden `EditBox`
+  of ours, highlighted and focused; Ctrl+C (Cmd+C) copies them as any edit box does, and a frame later the
+  keyboard goes back (the words stay lit). The words as they read (`Select.Words`: no colours, a link's code,
+  icons; `||` a bar, `|n` a new line, UTF-8 letters whole); several messages a line each after the speaker's
+  name (`Bubble.Speaker`, yours `Core.FullName("player")`). Any other key, Esc, focus taken elsewhere, the next
+  press, another row of the conversations chosen or the full screen going lets them go. A line in use loses the
+  keyboard meanwhile; the game closes it only while it is empty (the README's *Taint* says so).
+- Tests: `dev/tests/social.lua` (526 checks): the chat's list takes the mouse only while full, a drag lit as it
+  follows, the words waiting highlighted with the speakers' names, Ctrl+C and the keyboard given back, a press
+  without a drag, one message without its colour codes, another key, another row chosen, `Select.Words`.
 
 ### Social: the conversations' list dragged to its width, no fading on the full screen (Saneroki, 2026-10-20)
 - **The list's width** (`Conversations.lua`, `Layout.lua`, `Board.lua`): the line between the conversations' list
