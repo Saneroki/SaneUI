@@ -42,8 +42,8 @@ local function Step(key, part, name)
     end
 end
 
--- A part's file registers it: its window's key (one of Board.ORDER), title, least size (width, height) and
--- the part itself.
+-- A part's file registers it: its window's key (one of Board.ORDER), title, least size ({ width, height }, or
+-- a function giving it) and the part itself.
 function Board.Part(key, title, least, part)
     parts[key] = { part = part, spec = {
         key = key, title = title, least = least,
@@ -71,9 +71,11 @@ local function Default(width)
     local rest = width - pad * (#list + 1)
     local nodes, shares = {}, {}
     for index, spec in ipairs(list) do
+        local least = spec.least
+        if type(least) == "function" then least = least() end
         nodes[index] = { key = spec.key }
-        shares[index] = spec.least[1]
-        if index < #list then rest = rest - spec.least[1] end
+        shares[index] = least[1]
+        if index < #list then rest = rest - least[1] end
     end
     shares[#list] = math.max(shares[#list], rest)
     return { split = "x", parts = nodes, shares = shares }

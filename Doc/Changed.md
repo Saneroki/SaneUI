@@ -3,8 +3,25 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 281 (Navigation), 44 (Inventory), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 281 (Navigation), 44 (Inventory), 38 (sheet), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Inventory: the character sheet's side tabs and reputation (Saneroki, 2026-10-20)
+- **Side tabs** (`Sheet/Sheet.lua`): the game's `LargeSideTabButtonTemplate` right of the sheet, the Character tab with
+  the portrait, each further tab a table its file registers (`Sheet.Tab`), built when first chosen and listening to
+  the game only while shown; the head says the tab's title; the panel's least counts the tabs' width. The Character
+  tab is the paper doll and stats as before, now as a tab.
+- **Shared by the tabs:** a list in the game's look (`Sheet/List.lua`) and the side pane as the game lays out its
+  `CharacterFrameSidePaneTemplate` (`Sheet/Side.lua`; the game's template registers into its own sheet, so not used).
+- **Reputation** (`Sheet/Reputation.lua`): the factions of `C_Reputation` with the game's headers (fold by a click),
+  headers with a standing (fold button), factions with its coloured bar (standing word and colour, friendships,
+  renown, progress under the mouse) and its light (chosen, under the mouse, at war); the game's selection; the side
+  pane with name, standing, description, bar and the switches At War, Move to Inactive, Show as Experience Bar. Our
+  own rows: the game's are wired to its sheet (event registry, side pane).
+- `Board.lua`: the first layout reads a least given as a function.
+- Tests: `dev/tests/sheet.lua` (38 checks), in `dev/tests/run`: the side tabs, built when chosen, the left button
+  only, the reputation list's looks and heights, the progress, folding, choosing, the switches, the empty side, the
+  game's events while shown only, back and forth. `dev/tests/inventory.lua`: the side tab's stand-in, the width.
 
 ### Inventory: the character sheet's stats (Saneroki, 2026-10-20)
 - **The stats** (`Sheet/Stats.lua`) in the sheet's right pane, as the game's Camelot sheet lists them: the game's

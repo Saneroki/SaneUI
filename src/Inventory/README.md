@@ -1,6 +1,6 @@
 # Sane UI: Inventory
 
-**Status:** its window and full screen built; the character sheet's paper doll and stats built, its tabs, the bags and the other characters are being built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
+**Status:** its window and full screen built; the character sheet's paper doll, stats, side tabs and reputation built; its other tabs, the bags and the other characters are being built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 The module for what you carry and wear. Push the mouse into the screen's bottom right corner and the screen
@@ -23,6 +23,10 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   equipped item with a right click stays on the game's own sheet and the action bars. At the right, your stats
   as the game lists them, with its tooltips; in a fight they show what they were before it, and are brought up
   to date when it is over.
+- **The sheet's tabs:** right of the sheet, as on the game's: Character (the paper doll), Reputation, and the
+  others to come. Reputation lists your factions as the game does: a click on a header folds or unfolds it, a
+  click on a faction chooses it (its standing in numbers under the mouse). At the right the chosen faction: its
+  standing, its description, and the game's switches At War, Move to Inactive and Show as Experience Bar.
 - **Settings:** *Sane UI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
   motion, the background's opacity and texture) and *Window corners*.
 
@@ -67,6 +71,28 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     (`Core.Restricted`) the stats are secret to addon code (`SecretWhenUnitStatsRestricted`; the player's health
     always is), so the list is not drawn then: it waits (`Stats.Owed`) and is drawn after `PLAYER_REGEN_ENABLED` or
     `ADDON_RESTRICTION_STATE_CHANGED`. Drawn when shown and a frame after the game's stat events (`Core.Later`).
+  - **Side tabs** (`Sheet.lua`): the game's `LargeSideTabButtonTemplate` right of the sheet (`Sheet.TABS_Y`,
+    `TAB_GAP`), the Character tab with the character's portrait, the others with the game's icons; the template's
+    left button handler chooses (`Sheet.Choose`), guarded. A tab is a table a file registers (`Sheet.Tab`: `key`,
+    `tip`, `title`, `icon` or `portrait`, `Build(left, right)`, `Show(on)`): its frames over the two panes are made
+    when it is first chosen; it is told when it shows and hides (another tab chosen, the panel shown or hidden), so
+    it listens to the game only while shown. The panel's head says the tab's title. The board's least is the sheet
+    and the side tabs' width (the game's tab art, `SidePanelTabButtonMixin.CalculateTabSizeBasedOnTabArt`).
+  - **Lists and side pane** (`Sheet/List.lua`, `Sheet/Side.lua`): what the tabs share. A list in the game's look
+    (`WowScrollBoxList`, `MinimalScrollBar`, the long lines) whose rows (plain buttons) the tab draws, every call of
+    the game's list into our code `ns.Safe`; the side pane over the right pane as the game's
+    `CharacterFrameSidePaneTemplate` lays it out (title, subtitle, line, description, rows, foot, the empty word).
+    The game's template itself registers into the game's sheet when made, so it is not used.
+  - **Reputation** (`Sheet/Reputation.lua`): the factions of `C_Reputation` in the game's three looks (a header with
+    `common-button-list-collapseExpand` and its fold sign; a header with a standing, its `campaign_headericon` fold
+    button; a faction), the game's heights (`Reputation.HEADER`, `SUBHEADER`, `ENTRY`), its coloured bar
+    (`ColoredProgressBarTemplate`: the standing's word and colour, `FACTION_BAR_COLORS`, friendships green, renown
+    blue; the progress under the mouse), its light (`Reputation.LIT`, `WAR`: brighter chosen or under the mouse,
+    red at war). The choice is the game's (`C_Reputation.SetSelectedFaction`), the first faction chosen when none
+    is. The side: name, standing, description, bar, the account-wide line, and the switches
+    (`ToggleFactionAtWar`, `SetFactionActive`, `SetWatchedFactionByIndex`, the game's tooltips and sounds). The
+    game's own rows are wired to its sheet (its frame, the event registry's selection, its side pane), so ours are
+    our own. Drawn anew a frame after `UPDATE_FACTION` and the game's other reputation events, while shown.
   - **Events, while shown only** (`Sheet.Show`): `PLAYER_EQUIPMENT_CHANGED`, `ITEM_LOCK_CHANGED`,
     `UPDATE_INVENTORY_DURABILITY`, `UPDATE_INVENTORY_ALERTS`, `UNIT_INVENTORY_CHANGED` and `UNIT_MODEL_CHANGED`
     (the player's), `PLAYER_LEVEL_UP`, `UNIT_NAME_UPDATE`, `PLAYER_ENTERING_WORLD`. Every value read goes through
@@ -79,7 +105,8 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   windows.
 - **Standing down** (`ns.GiveBack`): the board's windows go and the window with them. A `/reload` starts the
   module afresh.
-- Tests: `dev/tests/inventory.lua`.
+- Tests: `dev/tests/inventory.lua` (the window, the board, the paper doll, the stats), `dev/tests/sheet.lua` (the
+  side tabs and the tabs).
 
 ## Files
 
@@ -92,7 +119,10 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 | `Sheet/Slots.lua` | The character sheet's equipment slots |
 | `Sheet/Model.lua` | The character sheet's model, its background and buttons |
 | `Sheet/Stats.lua` | The character sheet's stats: the game's list and rows, put together by our code |
-| `Sheet/Sheet.lua` | The character sheet: its panes, the level line, the head, the game's events; registers the part `character` |
+| `Sheet/Sheet.lua` | The character sheet: its panes, the side tabs and the tab chosen, the Character tab (paper doll, level line, stats); registers the part `character` |
+| `Sheet/List.lua` | A tab's scrolling list in the game's look |
+| `Sheet/Side.lua` | The side pane at the sheet's right, as the game lays it out |
+| `Sheet/Reputation.lua` | The reputation tab |
 
 ## History
 - **2026-10-20:** set up as a module of its own. First the bottom right corner opened the game's own bags and
@@ -100,4 +130,4 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   the corner opened the bags only. Then (Saneroki) our own windows instead: the module's window docked in the
   bottom right corner, its corner filling the screen with the character sheet, the bags and the other
   characters' snapshots on Core's board (`Doc/ideas/Inventory.md`). The character sheet's paper doll: its slots,
-  the model, the level line; its stats.
+  the model, the level line; its stats; its side tabs and the reputation tab.

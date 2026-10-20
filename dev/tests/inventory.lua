@@ -117,6 +117,11 @@ DressUpTexturePath = function(race) return "bg-" .. race end
 local scenes = 0
 ModelSceneUtil = { SetUpCharacterSheetScene = function() scenes = scenes + 1 end }
 
+-- The game's side tabs (LargeSideTabButtonTemplate): an icon, checked or not, a handler for the left button let go.
+W.templates.LargeSideTabButtonTemplate = function(widget)
+    widget.Icon = W.NewWidget("Texture", nil, widget)
+    function widget:SetCustomOnMouseUpHandler(fn) self._mouseUp = fn end
+end
 -- The game's stats list (the right pane): its scrolling list and rows, its table of stats, the resistances.
 W.templates.CharacterStatsPaneScrollBoxTemplate = function(widget)
     widget.ScrollBox = W.NewWidget("Frame", nil, widget)
@@ -130,6 +135,7 @@ end
 CreateScrollBoxListLinearView = function()
     local view = {}
     function view:SetElementFactory(fn) self.factory = fn end
+    function view:SetElementExtentCalculator(fn) self.extent = fn end
     return view
 end
 ScrollUtil = { InitScrollBoxListWithScrollBar = function(box, _, view) box.view = view end }
@@ -333,8 +339,8 @@ ns.Window.Reboard()
 check(bags.built == 1 and bags.shown == true and bags.size and Board.layouts:Has("bags"), "a part that registers later is laid out too")
 local rects = Board.layouts.rects
 check(rects.character and rects.bags and rects.character[1] < rects.bags[1]
-    and rects.character[3] == ns.Sheet.LEFT + ns.Sheet.RIGHT + 2 * Core.Board.EDGE,
-    "side by side, in the board's order, the sheet as wide as the game's sheet and its panel's edges")
+    and rects.character[3] == ns.Sheet.LEFT + ns.Sheet.RIGHT + ns.Sheet.TAB_WIDTH + 2 * Core.Board.EDGE,
+    "side by side, in the board's order, the sheet as wide as the game's sheet, its side tabs and its panel's edges")
 
 -- The search box: every part hears it.
 Board.Search("linen")

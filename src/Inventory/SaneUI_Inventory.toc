@@ -16,7 +16,11 @@ Window.lua
 # The full screen's windows on Core's board; the parts after it register theirs
 Board.lua
 # The character sheet, our own: the equipment slots, the character's model, the stats, the sheet that holds them
+# and its side tabs; then the tabs, on the lists and the side pane the tabs share
 Sheet\Slots.lua
 Sheet\Model.lua
 Sheet\Stats.lua
 Sheet\Sheet.lua
+Sheet\List.lua
+Sheet\Side.lua
+Sheet\Reputation.lua
