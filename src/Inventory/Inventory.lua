@@ -34,6 +34,26 @@ ns.TEXT = {
     bagsCompact = "Compact",
     bagsFree = "%d free",
     bagsGold = "Gold on this account",
+    -- The bags' groups (Bags/Groups.lua, Bags/Menus.lua)
+    bagsPinned = "Pinned",
+    bagsGroup = "Group",
+    bagsGroupsMenu = "Groups",
+    bagsPutInto = "Put Into",
+    bagsTakeOut = "Take Out of %s",
+    bagsNew = "New Group",
+    bagsNewAsk = "Name of the new group:",
+    bagsRename = "Rename",
+    bagsRenameAsk = "New name for %s:",
+    bagsRenameGameAsk = "New name for %s (none: its own again):",
+    bagsUp = "Move Up",
+    bagsDown = "Move Down",
+    bagsJoin = "Join With",
+    bagsJoined = "Joined Here",
+    bagsApart = "Show %s by Itself",
+    bagsDeleteAsk = "Delete the group %s? Its items go back to their own groups.",
+    bagsDropTip = "Let an item go here to put it into this group.",
+    bagsHeadTip = "Right-click: rename, move, join or hide this group.",
+    bagsItemTip = "Alt and right-click an item: pin it, mark it as junk, put it into a group.",
 }
 
 -- What is told when the module stands down (Core's StandDown).

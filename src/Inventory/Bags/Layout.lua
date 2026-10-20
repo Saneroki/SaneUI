@@ -12,21 +12,26 @@ local _, ns = ...
 --               own order, at the game's size; a bag for one kind of item
 --               (a quiver, the reagent bag, the keyring) a part of its own;
 --               an item the search does not find is dimmed
---      groups   the items in their groups (Contents.GROUPS), each under a
---               head with its name and how many, sorted inside; the free
---               slots last, a cell for each kind of bag with how many
+--      groups   the items in their groups (Groups.lua: the player's order,
+--               names and own groups), each under a head with its name and
+--               how many, sorted inside; a group of the player's own shows
+--               its head when empty too, under the bags (to drop items on);
+--               the free slots last, a cell for each kind of bag with how
+--               many
 --      list     the same as lines: the item, its name in its quality's
 --               colour, its item level, its count
 --      compact  the items in their groups' order without heads, smaller,
 --               the free slots last
---  In every view but slots, what the search does not find is left out. The
+--  In every view but slots, what the search does not find is left out, and
+--  so are the groups the player hid, unless a search finds their items. The
 --  bank, while it is open, follows the bags, each of its parts under a head.
 --
 --      local count, height = Layout.Lay(view, sections, width, query, order, out)
 --      sections: { { word, place, slots = { record, ... }, free = tally }, ... } (Contents.Scan)
 --      out: the places, used again: out[i] = { kind = "cell" | "row" | "head", x, y, width, height,
 --           record, free (a free slots' tally entry), scale, dim, word, number, spare (the number is of
---           free slots), level (1 a part, 2 a group), section (a part's head: its section) }
+--           free slots), level (1 a part, 2 a group), section (a part's head: its section), group (a
+--           group's head: its key) }
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Layout = {}
@@ -51,7 +56,7 @@ Layout.VIEWS = {
 Layout.VIEW = {}
 for _, view in ipairs(Layout.VIEWS) do Layout.VIEW[view.key] = view end
 
-local Contents = ns.Contents
+local Contents, Groups = ns.Contents, ns.Groups
 
 -------------------------------------------------------------------------------
 --  Flowing cells into lines
@@ -70,7 +75,7 @@ local function Place(kind)
     end
     place.kind, place.record, place.free, place.dim, place.word, place.number, place.spare, place.level =
         kind, nil, nil, false, nil, nil, false, nil
-    place.scale, place.section = 1, nil
+    place.scale, place.section, place.group = 1, nil, nil
     return place
 end
 
@@ -177,22 +182,32 @@ local function Free(section, query, how)
     end
 end
 
-local function Groups(section, query, order, rows)
-    local group
-    for _, record in ipairs(Found(section, query, order)) do
-        if record.group ~= group then
-            group = record.group
-            Head(Contents.GROUP[group].word, inGroup[group], 2)
+-- The groups in their order, each under its head; first: the first section (the bags), where the player's own
+-- groups show when empty too.
+local function ByGroup(section, query, order, rows, first)
+    local list, index = Found(section, query, order), 1
+    for _, key in ipairs(Groups.list) do
+        local count = inGroup[key] or 0
+        local shown = query ~= nil or not Groups.Hidden(key)
+        if shown and (count > 0 or first and not query and Groups.Own(key)) then
+            Head(Groups.Word(key), count, 2).group = key
             if not rows then Cells(Layout.SIZE, Layout.GAP) end
         end
-        if rows then Row(record) else Cell(record) end
+        while list[index] and list[index].group == key do
+            if shown then
+                if rows then Row(list[index]) else Cell(list[index]) end
+            end
+            index = index + 1
+        end
     end
     Free(section, query, rows and "rows" or "cells")
 end
 
 local function Compact(section, query, order)
     Cells(Layout.SMALL, Layout.SMALL_GAP)
-    for _, record in ipairs(Found(section, query, order)) do Cell(record) end
+    for _, record in ipairs(Found(section, query, order)) do
+        if query or not Groups.Hidden(record.group) then Cell(record) end
+    end
     Free(section, query, "flow")
 end
 
@@ -201,10 +216,10 @@ end
 function Layout.Lay(view, sections, room, query, order, places)
     out, count, width, y, column, started = places, 0, math.max(room, Layout.SIZE), 0, 0, false
     size, gap, columns = Layout.SIZE, Layout.GAP, 1
-    for _, section in ipairs(sections) do
+    for index, section in ipairs(sections) do
         if section.word then Head(section.word, Spare(section), 1, true).section = section end
-        if view == "groups" then Groups(section, query, order, false)
-        elseif view == "list" then Groups(section, query, order, true)
+        if view == "groups" then ByGroup(section, query, order, false, index == 1)
+        elseif view == "list" then ByGroup(section, query, order, true, index == 1)
         elseif view == "compact" then Compact(section, query, order)
         else Slots(section, query) end
     end

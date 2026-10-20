@@ -21,9 +21,13 @@ local _, ns = ...
 --                   data (Core.Data.Characters)
 --  And on the window's head, left of the clean-up, a button for what can be
 --  done here and now: Sell All Junk Items at a vendor while there is junk
---  (asked first, in the game's words: C_MerchantFrame.SellAllJunkItems),
---  Deposit All Reagents at a banker whose bank takes them
---  (C_Bank.AutoDepositItemsIntoBank).
+--  (asked first, in the game's words), Deposit All Reagents at a banker whose
+--  bank takes them (C_Bank.AutoDepositItemsIntoBank). The junk is what is
+--  junk to us (Groups.lua: the game's grey items, the player's marks): where
+--  that is just the game's junk, the game's own sell-all sells it
+--  (C_MerchantFrame.SellAllJunkItems); else each item is sold as a click on it
+--  at the vendor sells it (C_Container.UseContainerItem), while the vendor is
+--  there.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Foot = {}
@@ -40,6 +44,8 @@ local foot, free, gold, act, tokens
 local bags = {}        -- [index] = a bag's button; bagOf[button] = its container
 local bagOf = {}
 local doing            -- what the button does now: "junk", "deposit" or nil
+local carried          -- the bags' section (Bags.lua: its slots, its free slots)
+local junk = {}        -- the records of junk to sell (Contents.Junk), used again
 
 local function Game(name, ...)
     local fn = rawget(_G, name)
@@ -202,11 +208,8 @@ Foot.Talking = Talking
 
 -- Whether there is junk to sell at the vendor now.
 local function Junk()
-    local merchant = rawget(_G, "C_MerchantFrame")
-    if not (merchant and merchant.SellAllJunkItems and Talking("Merchant")) then return false end
-    if merchant.IsSellAllJunkEnabled and Core.Ask(merchant.IsSellAllJunkEnabled) == false then return false end
-    local count = merchant.GetNumJunkItems and Core.Plain(Core.Ask(merchant.GetNumJunkItems))
-    return type(count) == "number" and count > 0
+    if not (carried and Talking("Merchant")) then return false end
+    return #Contents.Junk(carried.slots, junk) > 0
 end
 
 -- Whether the bank open now takes the reagents.
@@ -228,9 +231,22 @@ function Foot.Act()
     act:SetShown(doing ~= nil)
 end
 
+-- The junk sold, the bags read anew first (they may have changed while the question was open).
 local function Sell()
+    if not Talking("Merchant") then return end
+    local list, same = Contents.Junk(ns.Bags.Carried().slots, junk)
     local merchant = rawget(_G, "C_MerchantFrame")
-    if merchant and merchant.SellAllJunkItems then merchant.SellAllJunkItems() end
+    local game = merchant and merchant.SellAllJunkItems
+        and not (merchant.IsSellAllJunkEnabled and Core.Ask(merchant.IsSellAllJunkEnabled) == false)
+    if same and game then
+        merchant.SellAllJunkItems()
+        return
+    end
+    local api = Container()
+    if not api.UseContainerItem or Game("CursorHasItem") then return end
+    for _, record in ipairs(list) do
+        if not record.locked then api.UseContainerItem(record.bag, record.slot) end
+    end
 end
 
 local function Act()
@@ -346,10 +362,11 @@ function Foot.Build(body, beside)
     act:Hide()
 end
 
--- Everything in the foot as it is now.
-function Foot.Refresh(tally)
+-- Everything in the foot as it is now; section: the bags' (Bags.lua).
+function Foot.Refresh(section)
+    carried = section
     Foot.Bags()
-    Foot.Free(tally)
+    Foot.Free(section.free)
     Foot.Act()
     Foot.Gold()
     Foot.Tokens()

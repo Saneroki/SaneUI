@@ -1,8 +1,10 @@
 -- Runs the Inventory module's bags against the stand-in client (wowstub.lua): what the bags hold, read from a
 -- stand-in of the game's containers; the views (every slot, the groups, the list, the compact one) laid out as
--- plain numbers and drawn with the game's item buttons; the search; the game's events while shown; the bank while
--- it is open; the foot (the bags, the free slots, selling junk, the gold). The window, the board and the other
--- parts are tried in dev/tests/inventory.lua. The look can only be judged in the game.
+-- plain numbers and drawn with the game's item buttons; the search; the player's groups (pinned items, own groups,
+-- the game's renamed, moved, hidden and joined, junk marked and unmarked) without a frame and by the window's menus
+-- and drops; the game's events while shown; the bank while it is open; the foot (the bags, the free slots, selling
+-- junk, the gold). The window, the board and the other parts are tried in dev/tests/inventory.lua. The look can
+-- only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/bags.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -87,6 +89,7 @@ W.templates.ContainerFrameItemButtonTemplate = function(widget)
     function widget:SetMatchesSearch(on) self._matches = on end
     function widget:UpdateNewItem(quality) self._newDrawn = quality end
     function widget:SetHasItem(texture) self._has = texture end
+    function widget:UpdateJunkItem(quality, noValue) self._junk = quality == 0 and not noValue end
 end
 W.templates.ScrollFrameTemplate = function(widget) widget.ScrollBar = W.NewWidget("Frame", nil, widget) end
 function methods:OverrideText(text) self._override = text end
@@ -189,6 +192,8 @@ C_CurrencyInfo = { GetCoinTextureString = function(copper) return copper .. "c" 
 GetMoney = function() return 12345 end
 local cursor = false
 CursorHasItem = function() return cursor end
+local alt = false
+IsAltKeyDown = function() return alt end
 PickupBagFromSlot = function(slot) calls.pickedBag = slot end
 PutItemInBag = function(slot) calls.putBag = slot end
 PutItemInBackpack = function() calls.putBackpack = true end
@@ -256,6 +261,164 @@ end
 check(tenth.x == 9 * (Layout.SIZE + Layout.GAP) and eleventh.x == 0 and eleventh.y == tenth.y + Layout.SIZE + Layout.GAP,
     "ten to a line where ten fit, the next line under it")
 check(height > 0, "the layout's height")
+
+-------------------------------------------------------------------------------
+--  The player's groups, without a frame
+-------------------------------------------------------------------------------
+local Groups = ns.Groups
+local chosen = {}
+Groups.Use(chosen)
+check(Groups.list[1] == "pinned" and Groups.list[2] == "new" and Groups.list[3] == "weapons" and Groups.list[#Groups.list] == "junk",
+    "the groups in the game's order, Pinned and New first, Junk last")
+-- Each record placed anew, as the window reads the bags after a choice.
+local function Again()
+    for _, record in ipairs(slots) do
+        if record.item then Contents.Place(record, record.new) end
+    end
+end
+local function HeadOf(key)
+    for index = 1, count do
+        if places[index].kind == "head" and places[index].group == key then return places[index] end
+    end
+end
+local function CellOf(record)
+    for index = 1, count do
+        if places[index].kind == "cell" and places[index].record == record then return places[index] end
+    end
+end
+local linen, potion, fang, pelt, herb = slots[2], slots[3], slots[4], slots[5], slots[29]
+check(herb.item == 2447 and slots[17].item == 2589, "the records the checks use")
+
+-- Pinned.
+Groups.Pin(2589, true)
+Again()
+check(linen.group == "pinned" and slots[17].group == "pinned" and linen.home == "trade" and chosen.pinned[2589],
+    "a pinned item: in Pinned, every stack of it, its own group kept")
+Contents.Sort(list, "quality", true)
+check(list[1].group == "pinned" and list[2].group == "pinned" and list[3].group == "new", "Pinned first, above New")
+count = Layout.Lay("groups", sections, 400, nil, "quality", places)
+check(places[1].group == "pinned" and places[1].word == "Pinned" and places[1].number == 2, "its head at the top, with how many")
+Groups.Pin(2589, false)
+Again()
+check(linen.group == "trade" and chosen.pinned[2589] == nil, "unpinned: back in its group, nothing kept")
+
+-- Junk marked and unmarked.
+Groups.MarkJunk(118, true, potion.natural, Contents.Classed(potion))
+Again()
+check(potion.group == "junk" and potion.junk and chosen.put[118] == "junk", "an item marked as junk: in Junk, junk to sell")
+local junk, same = Contents.Junk(slots, {})
+check(#junk == 2 and junk[1] == potion and junk[2] == fang and not same, "the junk: the marked item and the grey one; not just the game's")
+Groups.MarkJunk(118, false, potion.natural, Contents.Classed(potion))
+Again()
+check(potion.group == "consumables" and not potion.junk and chosen.put[118] == nil, "unmarked: back in its own group, nothing kept")
+Groups.MarkJunk(3001, false, fang.natural, Contents.Classed(fang))
+Again()
+check(fang.group == "other" and not fang.junk and chosen.put[3001] == "other", "a grey item unmarked: in the group of its kind, no junk")
+junk, same = Contents.Junk(slots, {})
+check(#junk == 0 and not same, "no junk; the game would still sell the grey one")
+Groups.MarkJunk(3001, true, fang.natural, Contents.Classed(fang))
+Again()
+junk, same = Contents.Junk(slots, {})
+check(fang.junk and chosen.put[3001] == nil and #junk == 1 and same, "marked again: just the game's junk, nothing kept")
+Groups.Pin(3001, true)
+Again()
+check(not fang.junk and fang.home == "junk", "a pinned item is never junk to sell")
+Groups.Pin(3001, false)
+Again()
+
+-- The player's own groups.
+local herbs = Groups.New("  Herbs  ")
+check(herbs == "own1" and Groups.Word(herbs) == "Herbs" and Groups.Own(herbs) and Groups.list[3] == herbs,
+    "a group of the player's own: named, at the top under New")
+check(Groups.New("   ") == nil and Groups.New("Bones") == "own2", "none without a name; the next its own key")
+count = Layout.Lay("groups", sections, 400, nil, "quality", places)
+check(HeadOf(herbs) and HeadOf(herbs).number == 0 and HeadOf(herbs).word == "Herbs" and HeadOf("own2"),
+    "an empty group of the player's own shows its head, to drop items on")
+count = Layout.Lay("groups", sections, 400, Core.Fuzzy.Query("linen"), "quality", places)
+check(not HeadOf(herbs), "not while searching")
+count = Layout.Lay("compact", sections, 400, nil, "quality", places)
+check(not HeadOf(herbs), "nor in the compact view, which has no heads")
+check(Groups.PutInto(2447, herbs, herb.natural) and Groups.PutInto(2589, herbs, linen.natural), "items put into it")
+Again()
+check(herb.group == herbs and linen.group == herbs and slots[17].group == herbs and chosen.put[2447] == herbs, "they show in it, kept")
+count = Layout.Lay("groups", sections, 400, nil, "quality", places)
+check(HeadOf(herbs).number == 3 and not HeadOf("trade") and CellOf(herb).y > HeadOf(herbs).y, "under its head; Trade Goods empty, gone")
+check(Groups.PutInto(2447, "trade", herb.natural) and chosen.put[2447] == nil, "put into its own group: taken out, nothing kept")
+Groups.PutInto(2447, herbs, herb.natural)
+check(Groups.PutInto(2447, "pinned", herb.natural) and chosen.pinned[2447] and chosen.put[2447] == herbs, "put into Pinned: pinned, its group kept")
+Groups.PutInto(2447, herbs, herb.natural)
+check(not chosen.pinned[2447], "put into a group: pinned no more")
+check(not Groups.PutInto(2447, "new", herb.natural) and not Groups.PutInto(2447, "own9", herb.natural), "not into New, nor a group there is not")
+Again()
+
+-- Hidden.
+check(Groups.Hide(herbs, true), "a group hidden")
+count = Layout.Lay("groups", sections, 400, nil, "quality", places)
+check(not HeadOf(herbs) and not CellOf(linen), "its head and items left out")
+count = Layout.Lay("list", sections, 400, nil, "quality", places)
+check(not HeadOf(herbs), "in the list too")
+count = Layout.Lay("groups", sections, 400, Core.Fuzzy.Query("linen"), "quality", places)
+check(HeadOf(herbs) and CellOf(linen), "found by a search all the same")
+count = Layout.Lay("compact", sections, 400, nil, "quality", places)
+check(not CellOf(linen) and CellOf(slots[1]), "left out of the compact view")
+count = Layout.Lay("slots", sections, 400, nil, "quality", places)
+check(CellOf(linen), "the view of every slot shows every slot")
+Groups.Hide(herbs, false)
+check(not chosen.groups[herbs].hidden, "shown again")
+
+-- Renamed.
+check(Groups.Rename("weapons", " Blades ") and Groups.Word("weapons") == "Blades" and chosen.groups.weapons.word == "Blades",
+    "a group of the game's renamed")
+check(Contents.Found(slots[1], Core.Fuzzy.Query("blades")), "its items found by its new name")
+check(Groups.Rename("weapons", "") and Groups.Word("weapons") == "Weapons" and chosen.groups.weapons == nil,
+    "no name: the game's again, nothing kept")
+check(not Groups.Rename(herbs, "  ") and Groups.Word(herbs) == "Herbs" and Groups.Rename(herbs, "Plants") and Groups.Word(herbs) == "Plants",
+    "the player's own keeps its name when given none")
+check(not Groups.Rename("pinned", "Top") and not Groups.Hide("new", true), "Pinned and New stay as they are")
+
+-- Joined.
+check(Groups.Join("quest", "other"), "a group of the game's joined into another")
+Again()
+check(pelt.group == "other" and pelt.home == "quest", "its items show in that one")
+count = Layout.Lay("groups", sections, 400, nil, "quality", places)
+check(not HeadOf("quest") and HeadOf("other").number == 2, "its head gone, the other's counting them")
+check(not Groups.Join("junk", "other") and not Groups.Join("weapons", "junk") and not Groups.Join("armor", "quest")
+    and not Groups.Join(herbs, "other") and not Groups.Join("weapons", "weapons"),
+    "Junk never joins nor takes in; nor does a joined group, nor joins one of the player's own, nor itself")
+check(not Groups.Takes("quest") and Groups.Takes("other") and not Groups.Takes("junk"), "items go into no joined group")
+check(Groups.Join("quest", nil) and chosen.groups.quest == nil, "shown by itself again, nothing kept")
+Again()
+check(pelt.group == "quest", "its items back under its head")
+
+-- Moved.
+local shown = { weapons = true, consumables = true, [herbs] = true }
+check(not Groups.Move(herbs, -1, shown, true) and Groups.Move(herbs, 1, shown, true), "the first under New does not move up")
+check(Groups.Move("consumables", -1, shown), "moved up")
+check(Groups.rank.consumables == Groups.rank.weapons - 1 and Groups.rank[herbs] < Groups.rank.consumables and chosen.ranks[3] == "consumables",
+    "past the group shown above it, in the player's order, kept")
+check(Groups.Move("consumables", 1, nil) and Groups.rank.consumables == Groups.rank.weapons + 1, "down past the next")
+check(not Groups.Move("junk", 1, nil, true) and not Groups.Move("pinned", 1, nil), "nothing moves below the last; Pinned stays")
+
+-- Deleted.
+Groups.Join("trade", herbs)
+check(Groups.Delete(herbs) and not Groups.Delete("trade"), "a group of the player's own deleted; none of the game's")
+Again()
+check(linen.group == "trade" and chosen.put[2589] == nil and chosen.groups.trade == nil and Groups.rank[herbs] == nil
+    and chosen.ranks[1] == "own2", "its items back in their own groups, the group joined into it by itself again")
+Groups.Delete("own2")
+
+-- What is kept is never trusted.
+local messy = { pinned = { [1] = true, x = true, [2] = "yes" }, put = { [3] = "trade", [4] = 5 }, ranks = { "armor", 5 },
+                groups = { pinned = { word = "Top" }, own7 = { own = true }, armor = { into = 3, hidden = "yes" }, made = { word = "x" } } }
+Groups.Check(messy)
+check(messy.pinned[1] and messy.pinned.x == nil and messy.pinned[2] == nil and messy.put[3] == "trade" and messy.put[4] == nil,
+    "kept pins and groups of items: only those of the right kind")
+check(messy.groups.pinned == nil and messy.groups.own7.word == "Group" and messy.groups.armor.into == nil
+    and messy.groups.armor.hidden == nil and messy.groups.made == nil and #messy.ranks == 1,
+    "kept groups: no Pinned, an own one named, wrong values gone, none that is not there")
+check(Groups.Check({ ranks = "no" }).ranks == nil, "an order that is no list: the game's")
+Groups.Use({})
+Again()
 
 -------------------------------------------------------------------------------
 --  The window
@@ -347,6 +510,158 @@ check(Pick("Name") and ns.store.bags.order == "name", "sorted by name, kept")
 Pick("Quality")
 
 -------------------------------------------------------------------------------
+--  Pinned items, the player's groups, junk: on the window
+-------------------------------------------------------------------------------
+local function Line(menu, text)
+    for _, line in ipairs(menu or {}) do
+        if line.text == text then return line end
+    end
+end
+local function Choose(menu, text) -- a line of a menu clicked
+    local line = Line(menu, text)
+    line.fn(line.data)
+    return line
+end
+local function HeadNamed(word)
+    for _, widget in ipairs(W.frames) do
+        if widget.clean and widget.word._text == word and widget:IsShown() then return widget end
+    end
+end
+local function ItemMenu(button)
+    alt = true
+    button:GetScript("OnClick")(button, "RightButton")
+    alt = false
+    return W.menus[#W.menus]
+end
+local function HeadMenu(word)
+    local head = HeadNamed(word)
+    head:GetScript("OnMouseUp")(head, "RightButton")
+    return W.menus[#W.menus]
+end
+local kept = ns.store.bags
+
+local menus = #W.menus
+sword:GetScript("OnClick")(sword, "RightButton")
+check(#W.menus == menus, "a right click on an item: the game's own, no menu of ours")
+local menu = ItemMenu(sword)
+check(menu[1].title == "Steel Sword" and Line(menu, "Pinned") and Line(menu, "Junk") and Line(menu, "Put Into"),
+    "Alt and a right click on an item: its menu")
+check(not Line(menu, "Pinned").checked(), "not pinned yet")
+Choose(menu, "Pinned")
+check(kept.pinned[2001] and Y(sword) == Layout.HEAD and Y(ring) > Y(sword) and HeadNamed("Pinned"),
+    "pinned, kept: at the top under Pinned, above New")
+menu = ItemMenu(sword)
+check(Line(menu, "Pinned").checked(), "its menu says so")
+Choose(menu, "Pinned")
+check(not kept.pinned[2001] and not HeadNamed("Pinned") and Y(ring) == Layout.HEAD, "unpinned: back in its group")
+
+-- Junk.
+local flask = Cells.Button(0, 3)
+check(not flask._junk and Cells.Button(0, 4)._junk, "the vendor's coin on the grey item only")
+menu = ItemMenu(flask)
+Choose(menu, "Junk")
+check(kept.put[118] == "junk" and flask._junk, "marked as junk, kept; the vendor's coin on it")
+check(Line(ItemMenu(flask), "Junk").checked(), "its menu says so")
+Choose(ItemMenu(flask), "Junk")
+check(kept.put[118] == nil and not flask._junk, "unmarked")
+menus = #W.menus
+ItemMenu(Cells.Button(0, 7))
+check(#W.menus == menus, "an empty slot has no menu")
+
+-- Put into a group, a new one, taken out.
+menu = ItemMenu(flask)
+local into = Line(menu, "Put Into")
+check(Line(into.sub, "Weapons") and Line(into.sub, "Consumables").checked("consumables") and not Line(into.sub, "Junk")
+    and not Line(into.sub, "Pinned") and not Line(into.sub, "New"), "Put Into: the groups items go in, its own ticked")
+Choose(into.sub, "New Group")
+local popup = W.popups[#W.popups]
+check(popup.which == "GENERIC_INPUT_BOX", "a new group named in the game's dialog")
+popup.data.callback("Potions")
+check(kept.groups.own1.word == "Potions" and kept.put[118] == "own1" and HeadNamed("Potions") and flask:IsShown(),
+    "made, the item put into it, under its head")
+menu = ItemMenu(flask)
+check(Line(Line(menu, "Put Into").sub, "Potions").checked("own1"), "its menu ticks it")
+Choose(menu, "Take Out of Potions")
+check(kept.put[118] == nil and HeadNamed("Potions") and HeadNamed("Potions").number._text == "0",
+    "taken out; the empty group keeps its head")
+
+-- Let go over a group's head.
+local holding
+GetCursorInfo = function() if holding then return "item", holding, "link" end end
+ClearCursor = function() holding = nil end
+local head = HeadNamed("Potions")
+head:GetScript("OnEnter")(head)
+check(not head.lit:IsShown(), "nothing held: the head is not lit")
+head:GetScript("OnLeave")(head)
+holding = 118
+head:GetScript("OnEnter")(head)
+check(head.lit:IsShown(), "an item brought over a group's head: lit")
+head:GetScript("OnReceiveDrag")(head)
+check(kept.put[118] == "own1" and holding == nil, "let go there: put into that group, the item back in its slot")
+head:GetScript("OnLeave")(head)
+holding = 118
+head = HeadNamed("Weapons")
+head:GetScript("OnMouseUp")(head, "LeftButton")
+check(kept.put[118] == "weapons" and holding == nil, "picked up and clicked on a head: the same")
+holding = 118
+head = HeadNamed("New")
+head:GetScript("OnReceiveDrag")(head)
+check(holding == 118 and kept.put[118] == "weapons", "New takes nothing: the item stays held")
+holding = nil
+GetCursorInfo = function() return nil end
+
+-- A group's menu.
+menu = HeadMenu("Potions")
+check(menu[1].title == "Potions" and Line(menu, "Rename") and Line(menu, "Delete") and Line(menu, "Hide") and not Line(menu, "Join With"),
+    "a right click on a head of the player's own group: its menu")
+check(Line(menu, "Move Up").disabled and not Line(menu, "Move Down").disabled, "the top one moves down only")
+Choose(menu, "Rename")
+popup = W.popups[#W.popups]
+check(popup.box.text == "Potions", "renamed in the game's dialog, the name in it")
+popup.data.callback("Flasks")
+check(HeadNamed("Flasks") and not HeadNamed("Potions"), "renamed")
+Choose(HeadMenu("Flasks"), "Move Down")
+check(Groups.rank.own1 > Groups.rank.weapons, "moved down past the next group shown")
+menu = HeadMenu("Weapons")
+local join = Line(menu, "Join With")
+check(join and Line(join.sub, "Armor") and Line(join.sub, "Flasks") and not Line(join.sub, "Junk") and not Line(join.sub, "Weapons"),
+    "a group of the game's joins another, not Junk, not itself")
+Choose(join.sub, "Armor")
+check(not HeadNamed("Weapons") and HeadNamed("Armor") and sword:IsShown() and kept.groups.weapons.into == "armor",
+    "joined: its items under the other's head, kept")
+Choose(HeadMenu("Armor"), "Show Weapons by Itself")
+check(HeadNamed("Weapons") and kept.groups.weapons == nil, "shown by itself again")
+Choose(HeadMenu("Flasks"), "Hide")
+check(not HeadNamed("Flasks") and kept.groups.own1.hidden, "hidden")
+menu = {}
+for _, widget in ipairs(W.frames) do
+    if widget._generator and widget._override == "View" then menu = widget end
+end
+menu:GenerateMenu()
+local groupsMenu = Line(menu._items, "Groups")
+check(groupsMenu and not Line(groupsMenu.sub, "Flasks").checked("own1") and Line(groupsMenu.sub, "Junk").checked("junk"),
+    "the dropdown View: every group, ticked while shown")
+Choose(groupsMenu.sub, "Flasks")
+check(HeadNamed("Flasks") and not kept.groups.own1.hidden, "shown again from there")
+check(Pick("New Group"), "a new group from the dropdown too")
+W.popups[#W.popups].data.callback("Keys")
+check(HeadNamed("Keys") and kept.groups.own2.word == "Keys", "made")
+Choose(HeadMenu("Keys"), "Delete")
+popup = W.popups[#W.popups]
+check(popup.which == "GENERIC_CONFIRMATION" and HeadNamed("Keys"), "deleting asks first")
+popup.data.callback()
+check(not HeadNamed("Keys") and kept.groups.own2 == nil, "deleted")
+menu = HeadMenu("New")
+check(menu[1].title == "New" and not Line(menu, "Rename") and Line(menu, "New Group"), "New's head: only a new group")
+
+-- Back to the game's groups for the checks that follow.
+for _, key in ipairs({ "pinned", "put", "groups" }) do kept[key] = {} end
+kept.ranks = nil
+Groups.Use(kept)
+Bags.Refresh()
+check(not HeadNamed("Flasks") and Y(ring) == Layout.HEAD, "the game's groups again")
+
+-------------------------------------------------------------------------------
 --  The game's events while shown
 -------------------------------------------------------------------------------
 Put(1, 3, 7001, 2)
@@ -424,6 +739,22 @@ local popup = W.popups[#W.popups]
 check(popup and popup.which == "GENERIC_CONFIRMATION" and not calls.sold, "asked first")
 popup.data.callback()
 check(calls.sold, "then sold, by the game")
+-- Junk marked by the player: each item sold as a click on it at the vendor sells it.
+Groups.MarkJunk(118, true, "consumables", "consumables")
+Bags.Refresh()
+calls.sold, calls.used = nil, {}
+C_Container.UseContainerItem = function(bag, slot) calls.used[#calls.used + 1] = bag .. ":" .. slot end
+act:GetScript("OnClick")(act)
+W.popups[#W.popups].data.callback()
+check(not calls.sold and table.concat(calls.used, ",") == "0:3,0:4", "the player's junk: each item sold, the marked one and the grey one")
+merchantOpen = false
+calls.used = {}
+act:GetScript("OnClick")(act)
+W.popups[#W.popups].data.callback()
+check(#calls.used == 0, "the vendor gone before the answer: nothing used")
+merchantOpen = true
+Groups.MarkJunk(118, false, "consumables", "consumables")
+Bags.Refresh()
 merchantOpen = false
 W.Fire("MERCHANT_CLOSED")
 W.Wait(0)

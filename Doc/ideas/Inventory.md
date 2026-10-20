@@ -86,10 +86,13 @@ open; the free slots by kind of bag; the bag bar (a bag's items lit, bags put on
 at a vendor and depositing the reagents at a banker by the game's own calls; the watched currencies; the gold with
 every character's (`src/Inventory/README.md`, *The bags*).
 
+**Built (2026-10-20), the next step:** pinned items (a group of their own at the top, set and unset in the item's
+menu: Alt and a right click on it); the player's own groups and the game's renamed, moved, hidden or joined into
+another (a right click on a group's head); items put into a group by letting them go over its head or from their
+menu, taken out again; items marked as junk and sold with it (the game's own sell-all where the junk is just the
+game's, else item by item), a grey item unmarked and kept. Kept for the account by item ID, in the module's store.
+
 **Next, each its own step:**
-- Pinned items: a group of their own at the top, set and unset on the item.
-- The player's own groups: rename, reorder, hide or join the game's; items put into one by dropping them on its
-  head, taken out again; an item marked as junk (sold with the junk), and unmarked.
 - Several stacks of one item as one cell with their total, where nothing takes one stack at a time (not at a
   vendor, the bank, the mail, a trade).
 - Gear by its slot inside Weapons and Armor; gear of an equipment set; a mark on unbound gear that binds when
@@ -125,7 +128,7 @@ character Core has not read slot by slot yet (it has not logged in since) shows 
 2. **The character sheet** (built 2026-10-20): the paper doll (slots and model), the stats with the sidebar (gear
    sets, titles, the pet), reputation, skills, PvP, currency and statistics, each a window on the board.
 3. **The bags** (built 2026-10-20): the bags and the bank, the game's item buttons, four views, sorting, the
-   search; next, the steps under *The bags*.
+   search; then pins, the player's own groups and junk marks; next, the steps under *The bags*.
 4. **The other characters** (built 2026-10-20): the snapshot window from `Core.Data.Characters`, an alt's gear
    on a paper doll.
 5. **The game's keys:** whether C and B open ours (Core's holder, `Holder.lua`, keeps the game's window out

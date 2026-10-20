@@ -65,6 +65,12 @@ The bigger changes of each version, newest first.
   your bags (point at one to light its items), the free slots, your
   currencies and your gold (all your characters' in its tooltip). At
   the bank, its items follow yours.
+- Inventory: arrange your bags' groups. Alt and a right click on an
+  item pins it at the very top, marks it as junk (sold with the junk at
+  a vendor; a grey item you untick is kept) or puts it into another
+  group. Make groups of your own and drop items on a group's head to
+  put them in. A right click on a head renames, moves, hides or joins
+  a group into another.
 - Inventory: your other characters' things, on the inventory's full
   screen in the window Characters. Every character of your account down
   its left with its gold, and the gold of them all; click one to see

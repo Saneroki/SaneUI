@@ -5,21 +5,24 @@ local _, ns = ...
 --  What the player's bags hold, as the game tells it, without a frame: the
 --  containers (the backpack, the bags, the reagent bag, the keyring; the
 --  bank's tabs while the bank is open), what is in each slot, the free slots
---  by kind of bag, the groups items are put in and the orders they are
---  sorted by. The bag window (Bags.lua) reads it and draws; the tests run it
---  without the game.
+--  by kind of bag, the group each item is in, what is junk, and the orders
+--  items are sorted by. The bag window (Bags.lua) reads it and draws; the
+--  tests run it without the game.
 --
 --  A slot's record is kept and filled anew at each reading, never made again
 --  while the bags change:
 --      { bag, slot, item, count, quality, link, name, icon, locked, bound,
 --        worthless, readable, quest, questID, questActive, new, class,
---        subclass, equip, level, group, place }
+--        subclass, equip, level, natural, home, junk, group, place }
 --  item nil: the slot is empty. place: "bags" (carried) or the bank's kind.
 --
 --  The groups are the game's own (its auction house's categories, as
---  Camelot lists them, in their order), with what is new first and the junk
---  last; an item goes by its class (C_Item.GetItemInfoInstant), a quest item
---  by what the game says of it (C_Container.GetContainerItemQuestInfo).
+--  Camelot lists them, in their order), with what is pinned and what is new
+--  first and the junk last; an item goes by its class
+--  (C_Item.GetItemInfoInstant), a quest item by what the game says of it
+--  (C_Container.GetContainerItemQuestInfo): its natural group. The player may
+--  put it into another (home), pin it, rename, move, hide or join the groups
+--  (Groups.lua); group is the one it shows in.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Contents = {}
@@ -35,8 +38,9 @@ Contents.KEYRING = INDEX.Keyring or -1
 Contents.BACKPACK = INDEX.Backpack or 0
 Contents.POOR = QUALITY.Poor or 0
 
--- The groups in the order they are shown.
+-- The groups in the order they are shown at first (Groups.lua: in the player's order).
 Contents.GROUPS = {
+    { key = "pinned", word = ns.TEXT.bagsPinned },
     { key = "new", word = Core.Word("NEW", "New") },
     { key = "weapons", word = Core.Word("AUCTION_CATEGORY_WEAPONS", "Weapons") },
     { key = "armor", word = Core.Word("AUCTION_CATEGORY_ARMOR", "Armor") },
@@ -49,11 +53,8 @@ Contents.GROUPS = {
     { key = "other", word = Core.Word("AUCTION_CATEGORY_MISCELLANEOUS", "Miscellaneous") },
     { key = "junk", word = Core.Word("BAG_FILTER_JUNK", "Junk") },
 }
-Contents.GROUP = {} -- [key] = { key, word, rank }
-for rank, group in ipairs(Contents.GROUPS) do
-    group.rank = rank
-    Contents.GROUP[group.key] = group
-end
+Contents.GROUP = {} -- [key] = { key, word }
+for _, group in ipairs(Contents.GROUPS) do Contents.GROUP[group.key] = group end
 
 -- An item's class to its group, as the game's auction house sorts them; a class not named is "other".
 Contents.CLASSES = {
@@ -171,12 +172,34 @@ local function Level(link, class)
     return type(level) == "number" and level > 0 and level or nil
 end
 
--- The group of a record with an item.
-function Contents.Group(record)
-    if record.new then return "new" end
-    if record.quality == Contents.POOR and not record.worthless then return "junk" end
+-- The group of its kind a record with an item goes in: a quest's, else its class's.
+function Contents.Classed(record)
     if record.quest or record.questID then return "quest" end
     return Contents.CLASSES[record.class] or "other"
+end
+
+-- The game's group for a record with an item: junk (grey with a price), else the group of its kind.
+function Contents.Natural(record)
+    if record.quality == Contents.POOR and not record.worthless then return "junk" end
+    return Contents.Classed(record)
+end
+
+-- Where a record with an item goes, anew: home (the player's group for it, else its natural one); whether it
+-- is junk (in Junk with a price, not pinned); the group it shows in: Pinned, else New while new, else its
+-- home's (or the group that one is joined into).
+function Contents.Place(record, new)
+    local Groups = ns.Groups
+    local pinned = Groups.Pinned(record.item)
+    record.home = Groups.Home(record.item, record.natural)
+    record.junk = record.home == Groups.JUNK and not record.worthless and not pinned
+    if pinned then
+        record.group = Groups.PINNED
+    elseif new then
+        record.group = Groups.NEW
+    else
+        record.group = Groups.Shown(record.home)
+    end
+    return record
 end
 
 local function Bool(value)
@@ -196,6 +219,7 @@ function Contents.Read(bag, slot, place)
         record.locked, record.bound, record.worthless, record.readable, record.quest = false, false, false, false, false
         record.questID, record.questActive, record.new = nil, false, false
         record.class, record.subclass, record.equip, record.level, record.group = nil, nil, nil, nil, nil
+        record.natural, record.home, record.junk = nil, nil, false
         return record
     end
     local count = Plain(info.stackCount)
@@ -218,8 +242,8 @@ function Contents.Read(bag, slot, place)
     record.class, record.subclass, record.equip = Instant(record.item)
     record.level = Level(record.link, record.class)
     if record.name == "" or Contents.GEAR[record.class] and not record.level then Contents.waiting[record.item] = true end
-    record.group = Contents.Group(record)
-    return record
+    record.natural = Contents.Natural(record)
+    return Contents.Place(record, record.new)
 end
 
 -------------------------------------------------------------------------------
@@ -331,8 +355,9 @@ local TESTS = {
     level = { ByLevel, ByQuality, ByName },
 }
 
--- One comparison per order, grouped (the group's rank first) or not; made once.
+-- One comparison per order, grouped (the group's place in the player's order first) or not; made once.
 local COMPARE = {}
+local rank -- the groups' places (Groups.rank; Groups.lua comes later in the TOC): taken at each sort
 for key, tests in pairs(TESTS) do
     local function Compare(a, b)
         for _, test in ipairs(tests) do
@@ -343,7 +368,7 @@ for key, tests in pairs(TESTS) do
     end
     COMPARE[key] = Compare
     COMPARE[key .. "+group"] = function(a, b)
-        local ra, rb = Contents.GROUP[a.group].rank, Contents.GROUP[b.group].rank
+        local ra, rb = rank[a.group] or math.huge, rank[b.group] or math.huge
         if ra ~= rb then return ra < rb end
         return Compare(a, b)
     end
@@ -352,6 +377,7 @@ end
 -- A list of records with items sorted by order ("quality", "name", "level"), by group first if grouped.
 function Contents.Sort(list, order, grouped)
     local compare = COMPARE[(TESTS[order] and order or "quality") .. (grouped and "+group" or "")]
+    rank = ns.Groups.rank
     table.sort(list, compare)
     return list
 end
@@ -364,6 +390,22 @@ end
 function Contents.Found(record, query)
     if not query then return true end
     if not record.item then return false end
-    local group = Contents.GROUP[record.group]
-    return Core.Fuzzy.Match(query, record.name, group and group.word, record.level and tostring(record.level)) ~= nil
+    return Core.Fuzzy.Match(query, record.name, ns.Groups.Word(record.group), record.level and tostring(record.level)) ~= nil
+end
+
+-------------------------------------------------------------------------------
+--  Junk
+-------------------------------------------------------------------------------
+-- The records of these slots that are junk, into a list (emptied first); and whether they are just what the
+-- game sells as junk (its grey items with a price), so that the game's own sell-all does it.
+function Contents.Junk(slots, into)
+    for index = #into, 1, -1 do into[index] = nil end
+    local same = true
+    for _, record in ipairs(slots) do
+        if record.item then
+            if record.junk then into[#into + 1] = record end
+            if record.junk ~= (record.quality == Contents.POOR and not record.worthless) then same = false end
+        end
+    end
+    return into, same
 end

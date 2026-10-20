@@ -23,6 +23,12 @@ local _, ns = ...
 --  group or their item level; what it does not find is dimmed in the view
 --  of every slot and left out of the others.
 --
+--  The groups are the player's to arrange (Groups.lua keeps it, Menus.lua
+--  asks): items pinned to the top, the player's own groups, the game's
+--  renamed, moved, hidden or joined, items marked as junk. A group's head
+--  takes an item let go over it and opens its menu at a right click; Alt and
+--  a right click on an item opens the item's menu.
+--
 --  New items: what the game marks as new comes first, in the group New, and
 --  stays there while the window is open, even after the mouse took the
 --  game's mark off it; the next time it opens they are in their own groups.
@@ -40,7 +46,7 @@ Bags.HEAD_BUTTON = 26 -- the clean-up's button, as the game's
 Bags.MENU_WIDTH = 120
 Bags.LEAST = { 420, 320 }
 
-local Contents, Layout, Cells, Foot = ns.Contents, ns.Layout, ns.Cells, ns.Foot
+local Contents, Layout, Cells, Foot, Groups, Menus = ns.Contents, ns.Layout, ns.Cells, ns.Foot, ns.Groups, ns.Menus
 
 local panel, scroll, child, menu, sort
 local kept            -- store.bags: { view, order }
@@ -54,6 +60,8 @@ local carriedBags = {}
 local places = {}
 local fresh = {}      -- [record] = the item that was new in it while the window is open
 local heads, rows     -- pools (Core.Pool)
+local groupOf = {}    -- [head] = the group a group's head is of (nil: a part's head)
+Bags.drawn = {}       -- [group] = true: its head is drawn now (Groups.Move passes over the others)
 
 -------------------------------------------------------------------------------
 --  Reading the bags
@@ -72,23 +80,30 @@ local function Clear(section)
     Contents.ClearFree(section.free)
 end
 
--- What was new while the window is open stays new until it closes.
+-- What was new while the window is open stays new until it closes (unless it is pinned).
 local function Fresh(slots)
     for _, record in ipairs(slots) do
         if record.item and record.new then fresh[record] = record.item end
         if record.item and fresh[record] == record.item then
-            record.group = "new"
+            if not record.new then Contents.Place(record, true) end
         elseif fresh[record] then
             fresh[record] = nil
         end
     end
 end
 
-local function Read()
-    for index = #sections, 2, -1 do sections[index] = nil end
+-- The bags carried, read anew; their section (also for selling the junk: the bags may have changed since they
+-- were drawn).
+function Bags.Carried()
     Clear(carried)
     Contents.Scan(Contents.Carried(carriedBags), "bags", carried.slots, carried.free)
     Fresh(carried.slots)
+    return carried
+end
+
+local function Read()
+    for index = #sections, 2, -1 do sections[index] = nil end
+    Bags.Carried()
     for _, kind in ipairs(Contents.Banks(bankList)) do
         local section = Section(kind)
         Clear(section)
@@ -131,10 +146,41 @@ local function CleanButton(parent, click, enter)
     return button
 end
 
+-- A group's head: a right click opens its menu, an item let go over it is put into that group (Menus.lua); lit
+-- while the mouse brings an item it takes.
+local function HeadUp(head, mouse)
+    local key = groupOf[head]
+    if mouse == "RightButton" then
+        Menus.Head(head, key)
+    elseif mouse == "LeftButton" and GetCursorInfo() then
+        Menus.Drop(key)
+    end
+end
+
+local function HeadDrop(head)
+    Menus.Drop(groupOf[head])
+end
+
+local function HeadEnter(head)
+    local key = groupOf[head]
+    if not key then return end
+    head.lit:SetShown(GetCursorInfo() == "item" and Menus.Takes(key))
+    Menus.Tip(head, key)
+end
+
+local function HeadLeave(head)
+    head.lit:Hide()
+    GameTooltip:Hide()
+end
+
 -- A head over a part (level 1: the bags, a bank) or a group (level 2): its words at the left, its number at the
 -- right, a thin line under a part's.
 local function MakeHead()
     local head = CreateFrame("Frame", nil, child)
+    head.lit = head:CreateTexture(nil, "BACKGROUND")
+    head.lit:SetAllPoints()
+    head.lit:SetColorTexture(1, 1, 1, 0.08)
+    head.lit:Hide()
     head.word = head:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     head.word:SetPoint("LEFT")
     head.number = head:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
@@ -147,6 +193,10 @@ local function MakeHead()
     head.clean = CleanButton(head, CleanBank, CleanBankTip)
     head.clean:SetScale(0.75)
     head.clean:SetPoint("RIGHT", head.number, "LEFT", -6, 0)
+    head:SetScript("OnMouseUp", function(self, mouse) ns.Safe("bags", HeadUp, self, mouse) end)
+    head:SetScript("OnReceiveDrag", function(self) ns.Safe("bags", HeadDrop, self) end)
+    head:SetScript("OnEnter", function(self) ns.Safe("bags", HeadEnter, self) end)
+    head:SetScript("OnLeave", function(self) ns.Safe("bags", HeadLeave, self) end)
     return head
 end
 
@@ -164,6 +214,10 @@ local function DrawHead(place)
     Bags.headOf = Bags.headOf or {}
     Bags.headOf[head.clean] = bank
     head.clean:SetShown(bank ~= nil)
+    groupOf[head] = place.group
+    if place.group then Bags.drawn[place.group] = true end
+    head:EnableMouse(place.group ~= nil)
+    head.lit:Hide()
     head:Show()
 end
 
@@ -228,6 +282,13 @@ function Bags.Hover(button, on)
     if row and row:IsShown() then row.lit:SetShown(on) end
 end
 
+-- A click on an item button, after the game's own: Alt and the right button (which the game's button does
+-- nothing with) open the item's menu.
+function Bags.Clicked(button, mouse)
+    local alt = rawget(_G, "IsAltKeyDown")
+    if mouse == "RightButton" and alt and alt() then Menus.Item(button) end
+end
+
 local function Draw()
     if not child then return end
     local width = child:GetWidth()
@@ -237,6 +298,7 @@ local function Draw()
     rows:Begin()
     Cells.Begin()
     for button in pairs(rowOf) do rowOf[button] = nil end
+    for key in pairs(Bags.drawn) do Bags.drawn[key] = nil end
     for index = 1, count do
         local place = places[index]
         if place.kind == "head" then
@@ -269,7 +331,7 @@ function Bags.Refresh()
     if not shown then return end
     ns.Safe("bags", Read)
     ns.Safe("bags", Draw)
-    ns.Safe("bags", Foot.Refresh, carried.free)
+    ns.Safe("bags", Foot.Refresh, carried)
 end
 
 -- Drawn anew as it was read (the view, the order, the search or the width changed).
@@ -322,7 +384,8 @@ local UNIT_EVENTS = { UNIT_QUEST_LOG_CHANGED = Soon }
 -------------------------------------------------------------------------------
 --  The part (Board.lua)
 -------------------------------------------------------------------------------
--- What is kept of the window: its view and its order, each one of those there are.
+-- What is kept of the window: its view and its order, each one of those there are; the player's groups, pins
+-- and junk marks (Groups.lua checks them).
 local function Kept()
     local store = ns.store
     if type(store.bags) ~= "table" then store.bags = {} end
@@ -331,6 +394,7 @@ local function Kept()
     local known = false
     for _, order in ipairs(Contents.ORDERS) do known = known or order.key == bags.order end
     if not known then bags.order = "quality" end
+    Groups.Use(bags)
     return bags
 end
 
@@ -355,6 +419,7 @@ local function Menu(_, root)
     root:CreateDivider()
     root:CreateTitle(ns.TEXT.bagsOrder)
     for _, order in ipairs(Contents.ORDERS) do root:CreateRadio(order.word, Ordered, Order, order.key) end
+    ns.Safe("bags", Menus.View, root)
 end
 
 local function Clean()

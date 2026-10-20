@@ -17,10 +17,13 @@ local _, ns = ...
 --  What a button shows is drawn as the game's bag window draws it
 --  (ContainerFrameMixin:UpdateItems), by the template's own functions: icon,
 --  count, quality border, grey while locked, the quest mark, the glow of a new
---  item, the junk coin at a vendor, the cooldown; the search's dimming is the
---  game's too (SetMatchesSearch). Ours on it: the item level of gear, in its
---  top right corner; in the list, a line behind it that the button's click
---  reaches over (its hit rect), so the whole line is the item.
+--  item, the junk coin at a vendor (on what is junk to us: Groups.lua), the
+--  cooldown; the search's dimming is the game's too (SetMatchesSearch). Ours
+--  on it: the item level of gear, in its top right corner; in the list, a
+--  line behind it that the button's click reaches over (its hit rect), so the
+--  whole line is the item. A click the game's button does nothing with (Alt
+--  and the right button) opens our menu for the item (Bags.Clicked), by a
+--  hook after the button's own click.
 --
 --  Made out of a fight only: a slot first shown in a fight waits for its end
 --  (Cells.short tells the window).
@@ -42,6 +45,11 @@ local parent       -- the frame the holders fill (the scroll area's child)
 -- The mouse on a button, or off it: the window lights a list's line (Bags.Hover).
 local function Hovered(button, on)
     if ns.Bags and ns.Bags.Hover then ns.Bags.Hover(button, on) end
+end
+
+-- A click on a button, after the game's own: the window may answer it (Bags.Clicked).
+local function Clicked(button, mouse)
+    if ns.Bags and ns.Bags.Clicked then ns.Bags.Clicked(button, mouse) end
 end
 
 local function Game(name, ...)
@@ -92,6 +100,7 @@ function Cells.Button(bag, slot)
     button:SetFrameLevel(parent:GetFrameLevel() + 3) -- above a list's line (the template sets a level of its own)
     button:HookScript("OnEnter", function(self) ns.Safe("bags", Hovered, self, true) end)
     button:HookScript("OnLeave", function(self) ns.Safe("bags", Hovered, self, false) end)
+    button:HookScript("OnClick", function(self, mouse) ns.Safe("bags", Clicked, self, mouse) end)
     slots[slot] = button
     return button
 end
@@ -111,7 +120,8 @@ function Cells.Draw(button, record, dim)
     Call(button, "UpdateExtended")
     Call(button, "UpdateQuestItem", record.quest, record.questID, record.questActive)
     Call(button, "UpdateNewItem", record.quality)
-    Call(button, "UpdateJunkItem", record.quality, record.worthless)
+    -- The vendor's coin on what is junk to us (marked, or grey and not unmarked), not on every grey item.
+    Call(button, "UpdateJunkItem", record.junk and ns.Contents.POOR or nil, record.worthless)
     Call(button, "UpdateItemContextMatching")
     Call(button, "UpdateCooldown", texture)
     Call(button, "SetReadable", record.readable)

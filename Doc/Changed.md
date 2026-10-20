@@ -3,8 +3,39 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 295 (Navigation), 85 (Inventory), 85 (sheet), 67 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 295 (Navigation), 85 (Inventory), 85 (sheet), 161 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Inventory: pinned items, the player's own groups, junk marks in the bags (Saneroki, 2026-10-20)
+- **The item's menu** (`Bags/Menus.lua`, `Bags.Clicked`): Alt and a right click on an item in our bags, which the
+  game's item button does nothing with (`OnModifiedClick`), opens the game's menu (`MenuUtil.CreateContextMenu`) by a
+  hook after the button's own click (`Cells.lua`: nothing written into the button): *Pinned*, *Junk* (an item with a
+  price), *Put Into* (the groups items go in, its own ticked; *New Group*), *Take Out of* a group of the player's own.
+- **A group's head** (`Bags.lua`): takes an item let go over it (`OnReceiveDrag`, or a left click with an item on
+  the cursor; `ClearCursor` puts it back in its slot): into Pinned pinned, into Junk marked, into its own group
+  taken out; lit while an item it takes is over it, its tooltip says what can be done. A right click opens its menu:
+  *Rename*, *Move Up*/*Move Down* past the groups shown (`Bags.drawn`), *Join With* (a group of the game's but Junk),
+  *Hide*, *Delete* (the player's own, asked first), *Show … by Itself* for each group joined into it, *New Group*.
+  The dropdown *View* ends with *Groups* (each ticked while shown) and *New Group*.
+- **The groups** (`Bags/Groups.lua`, no frames): the order shown (`Groups.list`, `rank`: Pinned and New first, the
+  player's `ranks`, then the rest), names, hidden and joined groups, the player's own (`own1`, …, made at the top
+  under New), an item's home (`Groups.Home`), pins, `PutInto`, `MarkJunk`. Kept for the account by item ID in
+  `store.bags` (`pinned`, `put`, `groups`, `ranks`), checked when read (`Groups.Check`).
+- **Contents** (`Bags/Contents.lua`): the group `pinned` first in `Contents.GROUPS`; a record's `natural` (the game's
+  group), `home` (the player's or that), `junk` (in Junk with a price, not pinned) and `group` (Pinned, New, or its
+  home's through joins: `Contents.Place`); sorting by the player's order; the search by the player's names;
+  `Contents.Junk` (the junk, and whether it is just the game's).
+- **The views** (`Bags/Layout.lua`): heads in the player's order with the player's names, a group's head carrying its
+  key; hidden groups left out unless a search finds their items; an empty group of the player's own shows its head
+  under the bags (not while searching, not in the compact view).
+- **Junk sold** (`Bags/Foot.lua`): the button shows while there is junk to us; the bags read anew at the answer
+  (`Bags.Carried`), the game's `C_MerchantFrame.SellAllJunkItems` where the junk is just the game's, else
+  `C_Container.UseContainerItem` on each item, only while the vendor is there and the cursor is empty. The game's
+  junk coin goes on what is junk to us (`UpdateJunkItem`).
+- Tests: `dev/tests/bags.lua` (161 checks): pins, junk marked and unmarked (a grey item kept), own groups made,
+  filled, taken out of, hidden (found by a search), renamed, joined and shown by themselves, moved past the shown
+  ones, deleted, bad saved data cleaned; on the window the item's menu, the heads' menus, drops on a head, the
+  dropdown's groups, and the player's junk sold item by item.
 
 ### Navigation: merchants in the game's anvil (Saneroki, 2026-10-20)
 - `Pins.lua`: a merchant's pin is the game's anvil (`repair`, as the game's own minimap shows merchants), in place of
