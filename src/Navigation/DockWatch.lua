@@ -2,19 +2,20 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - DockWatch
---  At a dock, under the game's own widgets at the top of the screen: each boat
---  and zeppelin that stops there, where it goes, and when it comes and leaves,
---  once a ride taught its times on this realm (Core's Data.Ships); until then how
---  often it sails; nothing on a trip (TripView.lua shows that). While the
---  setting Ship times at a dock is on, and not while the map fills the screen.
+--  At a dock of a boat or a zeppelin, or a station of the tram: each that stops
+--  there, where it goes, and when it comes and leaves, once a ride taught its
+--  times on this realm (Core's Data.Ships, Data.Trips); until then how often it
+--  sails. Nothing on a trip. While the setting Ship times at a dock is on. The
+--  overlay draws it (TripView.lua); this knows no frames.
 --
---      DockWatch.Rows()     what it shows now: a list of { icon, name, status, known } (knows no frames)
---      DockWatch.Update()   looked at again now (the setting changed)
+--      DockWatch.Rows()     the ways waiting here, soonest first: { { kind, icon, name, status, known, arrive,
+--                           -- leave, here, last (when it last left here), every (seconds between two departures) } }
+--                           -- (server times)
+--      DockWatch.Update()   drawn again now (the setting changed)
 --      DockWatch.Clock(s)   seconds as the game's clock writes them (1:05)
 --
---  Shown within DockWatch.NEAR yards of where one stops, kept up to DockWatch.FAR
---  (so it does not blink at the edge); looked at every DockWatch.LOOK seconds,
---  every second while shown, the times counting down. No mouse, no clicks.
+--  Within DockWatch.NEAR yards of where one stops (a tram's station:
+--  DockWatch.STATION), kept up to DockWatch.FAR (so it does not blink at the edge).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local DockWatch = {}
@@ -22,25 +23,22 @@ ns.DockWatch = DockWatch
 
 DockWatch.NEAR = 60      -- yards from where a boat or zeppelin stops within which its times show
 DockWatch.FAR = 90       -- yards beyond which they go again
-DockWatch.LOOK = 2       -- seconds between two looks while nothing shows
+DockWatch.STATION = 200  -- yards along the tram's line from a station within which its times show
 DockWatch.ROWS = 4       -- rows at most
-DockWatch.GAP = 6        -- pixels under the game's widgets at the top of the screen
-DockWatch.LINE = 2       -- pixels between two rows
 
 DockWatch.TEXT = {
     here = "In port, leaves in %s",
     coming = "Arrives in %s, leaves in %s",
     every = "Sails every %s (ride it once for its times)",
     about = "Sails about every %s (ride it once for its times)",
+    trams = "A train about every %s (ride it once for its times)",
     to = "To %s",
 }
 
 local Travel = Core.Data.Set("Travel")
 local Ships = Core.Data.Ships()
 local Trips = Core.Data.Trips()
-local frame, lines
-local shown = false      -- whether the last look showed rows (then kept up to DockWatch.FAR yards)
-local looking = false
+local shown = false      -- whether the last look found rows (then kept up to DockWatch.FAR yards)
 
 -- Seconds as the game's clock writes them (1:05).
 local function Clock(seconds)
@@ -76,122 +74,67 @@ local function Icon(timetable)
     return ns.Pins.WAY_ICONS[timetable.kind] or ns.Pins.WAY_ICONS.boat
 end
 
+-- A row's words: when it comes and leaves, or how often (now: server time).
+local function Status(row, now, every, known)
+    if not row.leave then return (known and DockWatch.TEXT.every or DockWatch.TEXT.about):format(Clock(every)) end
+    if row.here then return DockWatch.TEXT.here:format(Clock(row.leave - now)) end
+    return DockWatch.TEXT.coming:format(Clock(row.arrive - now), Clock(row.leave - now))
+end
+
+-- The tram, waiting at one of its stations: its next train, to the other station.
+local function Tram(rows, now)
+    local key, station = Trips:NearTram(DockWatch.STATION)
+    local record = key and Travel:Get(key)
+    if not record or not record.wait then return end
+    local docks = type(record.docks) == "table" and record.docks or {}
+    local areas = type(record.dockAreas) == "table" and record.dockAreas or {}
+    local other = station == 1 and 2 or 1
+    local dock, area = docks[other], areas[other]
+    local name = dock and ns.Pins.Towards({ map = dock.map, area = area and area > 0 and area or nil })
+    local arrive, leave, here = Trips:TramNext(key, now)
+    local row = { kind = "tram", icon = ns.Pins.WAY_ICONS.tram, name = name and DockWatch.TEXT.to:format(name) or record.name,
+                  arrive = arrive, leave = leave, here = here, known = leave ~= nil, every = record.wait,
+                  last = leave and leave - record.wait }
+    row.status = leave and Status(row, now) or DockWatch.TEXT.trams:format(Clock(record.wait))
+    rows[#rows + 1] = row
+end
+
 -- Each way that stops near: the stop of it there that it leaves soonest, and when, known first and soonest
 -- first; nothing on a trip.
 function DockWatch.Rows()
     local rows = {}
-    if Trips:Now() then return rows end
-    local timetable
+    if Trips:Now() or (ns.options and ns.options.dockTimes == false) then
+        shown = false
+        return rows
+    end
+    local now = Ships.Now()
     local best = {}
     for _, near in ipairs(Ships:Near(shown and DockWatch.FAR or DockWatch.NEAR)) do
-        timetable = Ships:Table(near.key)
+        local timetable = Ships:Table(near.key)
         local arrive, leave, here = Ships:Next(near.key, near.stop)
         local row = best[near.key]
         if timetable and (not row or (leave and (not row.leave or leave < row.leave))) then
             local name = Onward(near.key, timetable, near.stop)
-            row = { icon = Icon(timetable), name = name and DockWatch.TEXT.to:format(name) or ns.Pins.WAY_WORDS[timetable.kind],
-                    leave = leave, known = leave ~= nil }
-            local now = Ships.Now()
-            if not leave then
-                row.status = (timetable.known and DockWatch.TEXT.every or DockWatch.TEXT.about):format(Clock(timetable.round))
-            elseif here then
-                row.status = DockWatch.TEXT.here:format(Clock(leave - now))
-            else
-                row.status = DockWatch.TEXT.coming:format(Clock(arrive - now), Clock(leave - now))
-            end
+            row = { kind = timetable.kind, icon = Icon(timetable),
+                    name = name and DockWatch.TEXT.to:format(name) or ns.Pins.WAY_WORDS[timetable.kind],
+                    arrive = arrive, leave = leave, here = here, known = leave ~= nil, every = timetable.round,
+                    last = leave and leave - timetable.round }
+            row.status = Status(row, now, timetable.round, timetable.known)
             best[near.key] = row
         end
     end
     for _, row in pairs(best) do rows[#rows + 1] = row end
+    Tram(rows, now)
     table.sort(rows, function(a, b)
         if a.known ~= b.known then return a.known end
-        if a.leave and b.leave and a.leave ~= b.leave then return a.leave < b.leave end
+        if a.arrive and b.arrive and a.arrive ~= b.arrive then return a.arrive < b.arrive end
         return a.name < b.name
     end)
     while #rows > DockWatch.ROWS do table.remove(rows) end
+    shown = #rows > 0
     return rows
 end
 
--- Under the game's widgets at the top of the screen (its zone's states), where the game shows what goes on around.
-local function Build()
-    frame = CreateFrame("Frame", nil, UIParent)
-    DockWatch.frame = frame
-    frame:SetFrameStrata("LOW")
-    frame:SetSize(1, 1)
-    frame:EnableMouse(false)
-    local widgets = rawget(_G, "UIWidgetTopCenterContainerFrame")
-    if widgets then
-        frame:SetPoint("TOP", widgets, "BOTTOM", 0, -DockWatch.GAP)
-    else
-        frame:SetPoint("TOP", UIParent, "TOP", 0, -40)
-    end
-    lines = {}
-    for index = 1, DockWatch.ROWS do
-        local line = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        if index == 1 then
-            line:SetPoint("TOP", frame, "TOP", 0, 0)
-        else
-            line:SetPoint("TOP", lines[index - 1], "BOTTOM", 0, -DockWatch.LINE)
-        end
-        lines[index] = line
-    end
-    frame:Hide()
-end
-
--- Words in one of the game's colours (as they are where the game has no such colour).
-local function Paint(color, text)
-    if type(color) == "table" and color.WrapTextInColorCode then return color:WrapTextInColorCode(text) end
-    return text
-end
-
--- The rows drawn: the icon and where it goes in gold, the times in white (grey while not known).
-local function Draw(rows)
-    if #rows == 0 then
-        if frame then frame:Hide() end
-        return
-    end
-    if not frame then Build() end
-    for index, line in ipairs(lines) do
-        local row = rows[index]
-        if row then
-            local color = rawget(_G, row.known and "HIGHLIGHT_FONT_COLOR" or "DISABLED_FONT_COLOR")
-            line:SetText(("|A:%s:16:16|a %s  %s"):format(row.icon, row.name, Paint(color, row.status)))
-            line:Show()
-        else
-            line:Hide()
-        end
-    end
-    frame:Show()
-end
-
-local function Wanted()
-    if ns.off or not ns.options or ns.options.dockTimes == false then return false end
-    local handle = ns.Window.handle
-    return not (handle and handle.edge and handle.edge.full)
-end
-
--- The module stood down (GiveBack): out of sight, and no more looks.
-function DockWatch.Hide()
-    if frame then frame:Hide() end
-end
-
 function DockWatch.Update()
-    local rows = Wanted() and DockWatch.Rows() or {}
-    shown = #rows > 0
-    Draw(rows)
+    if ns.TripView then ns.TripView.Update() end
 end
-
--- The looks, one after the other: every second while it shows, else seldom.
-local Tick
-Tick = ns.Guard(function()
-    if ns.off then return DockWatch.Hide() end
-    DockWatch.Update()
-    C_Timer.After(shown and 1 or DockWatch.LOOK, Tick) -- unguarded: Tick is the guard (ns.Guard)
-end)
-
--- Started once the world is there, unless the set Travel is missing.
-ns.On("PLAYER_ENTERING_WORLD", function()
-    if looking or Travel:State() == "missing" then return end
-    looking = true
-    C_Timer.After(DockWatch.LOOK, Tick) -- unguarded: Tick is the guard (ns.Guard)
-end)

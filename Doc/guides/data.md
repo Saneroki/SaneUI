@@ -552,7 +552,12 @@ local trip = Trips:Now()   -- nil, or { kind, stops = { { name or map and area, 
                            --   landing, canLand, points = { { world, x, y } } }
 Trips:Land()               -- a flight lands at its next flight point (only from a click)
 Trips:OnChange(fn)         -- fn() after a trip began, ended, or a flight's end changed
+Trips:NearTram(200)        -- waiting at a station of the tram: its key and the station's number
+Trips:TramNext(key)        -- when its next train arrives at a station, leaves, whether one stands there (server times)
 ```
+
+A trip's `pace` (yards a second) and `t` (the `GetTime()` of Core's look) let a view move it on between two looks:
+`at + pace * (GetTime() - t)`.
 
 - **A flight** is read at the flight master (`TakeTaxiNode`: its hops by the game's flight point IDs, each the
   set's flight with its path); kept per character (`Core.Character`) until it lands, so a `/reload` in the air
@@ -562,6 +567,9 @@ Trips:OnChange(fn)         -- fn() after a trip began, ended, or a flight's end 
   or the game's button), its end is the next flight point and nothing is learnt from it.
 - **A boat or a zeppelin** as `Data.Ships` finds the player aboard; **the tram** (the set's way of kind `tram`):
   a place in its map moving along its stations' line at `Trips.SHARE` of its speed (its run's `time`) or more.
+  When its train left its station, `Trips.SAMPLES` looks that agree within `Trips.AGREE` seconds, are its times on
+  this realm, kept as the ships' are (`trams[realm][key] = { epoch, seen }`, on this computer only, trusted
+  `Data.Ships`' `TRUST`); a train leaves each station every `wait` seconds and stands there `wait` less `time`.
 
 ### Loading
 

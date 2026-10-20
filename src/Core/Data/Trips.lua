@@ -12,11 +12,18 @@ local Core = SaneUI.Core
 --                           -- where it ends last; at: yards along the way), yards (the way's), at (yards along it
 --                           -- now), next (the number of the next stop), left and nextLeft (seconds to the end and
 --                           -- to the next stop; nil while not known), landing (a flight asked to land at its next
---                           -- stop), points = { { world, x, y } } (the way on from where the player is) }
+--                           -- stop), points = { { world, x, y } } (the way on from where the player is), pace
+--                           -- (yards a second now) and t (the GetTime() of that look: at + pace * (GetTime() - t)
+--                           -- is where it is between two looks) }
 --      Trips:CanLand()      -- a flight with a flight point before its end, not yet asked to land
 --      Trips:Land()         -- that flight lands at its next flight point (the game's TaxiRequestEarlyLanding);
 --                           -- only from a click
 --      Trips:OnChange(fn)   -- fn() on the frame after a trip began, ended, or a flight's end changed
+--      Trips:NearTram(yards)    -- waiting at a station of the tram, within so many yards of it: the tram's key in
+--                               -- the set and the station's number (1 or 2, as its path); nil else
+--      Trips:TramNext(key, at)  -- at server time at (default: now): when the next train arrives at a station, when
+--                               -- it leaves, and whether one stands there now (both stations alike: a train sets
+--                               -- out from each together); nil while its times on this realm are not known
 --
 --  A flight: the game tells its route only at the flight master, when one is
 --  taken (TakeTaxiNode): its hops then, each the set's flight between two flight
@@ -26,7 +33,11 @@ local Core = SaneUI.Core
 --  (after Trips.MEASURE seconds), before that the median of this character's last
 --  Trips.KEEP flights' paces, Trips.PACE before its first. A boat or a zeppelin:
 --  as Data.Ships finds it aboard. The tram: a place in its map moving along its
---  stations' line at least Trips.SHARE of its speed (the set's time for a run).
+--  stations' line at least Trips.SHARE of its speed (the set's time for a run);
+--  Trips.SAMPLES looks of a ride that agree within Trips.AGREE seconds on when it
+--  left its station are its times on this realm (kept as the ships' are, in
+--  Core's saved data, trusted Data.Ships' TRUST seconds); a train leaves each
+--  station every wait seconds (the set's), and stands there wait less time.
 --  Looked at every Trips.LOOK seconds, every Trips.CLOSE on a trip or in the
 --  tram's map.
 -------------------------------------------------------------------------------
@@ -42,6 +53,8 @@ Trips.SHARE = 0.6        -- the share of the tram's speed that is riding it
 Trips.TAKEN = 15         -- seconds after a flight is taken within which it starts
 Trips.STALE = 3600       -- seconds a kept flight is looked for after a /reload
 Trips.LOOK, Trips.CLOSE = 2, 1
+Trips.SAMPLES = 3        -- looks on a tram ride that agree on when it left make its times
+Trips.AGREE = 2          -- seconds they agree within
 
 local Travel = Data.Set("Travel")
 local Ships = Data.Ships()
@@ -242,6 +255,7 @@ local function Flying(now)
     for index = 1, last do shown[index] = stops[index] end
     local yards = shown[last].at
     return { kind = "flight", stops = shown, yards = yards, at = at, next = next, landing = f.landing and true or nil,
+             pace = pace, t = now,
              left = yards and math.max(0, (yards - at) / pace) or nil,
              nextLeft = shown[next].at and math.max(0, (shown[next].at - at) / pace) or nil,
              points = #f.way >= 2 and Onward(f.way, f.world, at) or {}, canLand = not f.landing and next < last }
@@ -282,7 +296,8 @@ local function Sailing()
         end
     end
     return { kind = timetable.kind, key = key, stops = { Stop(run, 0), Stop(stop, leg.yards) }, yards = leg.yards, at = s,
-             next = 2, left = left, nextLeft = left, points = points }
+             next = 2, left = left, nextLeft = left, points = points,
+             pace = left > 0 and (leg.yards - s) / left or 0, t = GetTime() }
 end
 
 -- The tram of a world's map: its key and record in the set (looked up once while the set stays as it is).
@@ -304,6 +319,43 @@ local function Tram(world)
 end
 Travel:OnStamp(function() trams = nil end)
 
+-- Where a place lies by the tram's stations' line: yards along it from its first station, yards off it, its length.
+local function ByLine(record, x, y)
+    local a, b = record.path[1], record.path[2]
+    local dx, dy = b.x - a.x, b.y - a.y
+    local length = sqrt(dx * dx + dy * dy)
+    if length == 0 then return nil end
+    return ((x - a.x) * dx + (y - a.y) * dy) / length, math.abs((x - a.x) * dy - (y - a.y) * dx) / length, length
+end
+
+local function TramLearnt(key)
+    local store = Core.Store(Core.name)
+    store.trams = store.trams or {}
+    local realm = Core.realm or "?"
+    store.trams[realm] = store.trams[realm] or {}
+    if key == nil then return store.trams[realm] end
+    return store.trams[realm][key]
+end
+
+-- A look on a tram ride: when it left its station (server time); enough that agree, its times on this realm.
+local function Sample(ride, key, left)
+    if ride.kept then return end
+    local list = ride.samples or {}
+    ride.samples = list
+    list[#list + 1] = left
+    while #list > Trips.SAMPLES do table.remove(list, 1) end -- the last looks of the ride
+    if #list < Trips.SAMPLES then return end
+    local sorted = {}
+    for index, value in ipairs(list) do sorted[index] = value end
+    table.sort(sorted)
+    local middle = sorted[math.floor(#sorted / 2) + 1]
+    for _, value in ipairs(list) do
+        if math.abs(value - middle) > Trips.AGREE then return end
+    end
+    TramLearnt()[key] = { epoch = middle, seen = Ships.Now() }
+    ride.kept = true
+end
+
 local function Tramming(now)
     local x, y, world = Place()
     local key, record
@@ -312,24 +364,24 @@ local function Tramming(now)
         tram = nil
         return nil
     end
-    local a, b = record.path[1], record.path[2]
-    local dx, dy = b.x - a.x, b.y - a.y
-    local length = sqrt(dx * dx + dy * dy)
-    local along = ((x - a.x) * dx + (y - a.y) * dy) / length
-    local gap = math.abs((x - a.x) * dy - (y - a.y) * dx) / length
+    local along, gap, length = ByLine(record, x, y)
+    if not along then return nil end
     local before = tram
-    tram = { key = key, along = along, t = now, toward = before and before.toward }
+    tram = { key = key, along = along, t = now, toward = before and before.toward,
+             samples = before and before.samples, kept = before and before.kept }
     if gap > Trips.TUNNEL then
-        tram.toward = nil
+        tram.toward, tram.samples, tram.kept = nil, nil, nil
         return nil
     end
     local speed = length / record.time
+    local moving = false
     if before and before.key == key and now > before.t then
         local pace = (along - before.along) / (now - before.t)
         if math.abs(pace) >= speed * Trips.SHARE then
-            tram.toward = pace > 0 and 2 or 1
+            tram.toward, moving = pace > 0 and 2 or 1, true
         elseif math.abs(pace) < 1 and (along <= Trips.NEAR or along >= length - Trips.NEAR) then
-            tram.toward = nil -- standing at a station: off it, or waiting there
+            -- standing at a station: off it, or waiting there; the next ride learns anew
+            tram.toward, tram.samples, tram.kept = nil, nil, nil
         end
     end
     if not tram.toward then return nil end
@@ -342,9 +394,34 @@ local function Tramming(now)
         local area = areas[number]
         return { map = dock and dock.map, area = area and area > 0 and area or nil, at = yards }
     end
+    if moving then Sample(tram, key, Ships.Now() - at / speed) end
     local left = (length - at) / speed
     return { kind = "tram", key = key, name = record.name, stops = { Stop(from, 0), Stop(to, length) }, yards = length,
-             at = at, next = 2, left = left, nextLeft = left, points = {} }
+             at = at, next = 2, left = left, nextLeft = left, points = {}, pace = speed, t = now }
+end
+
+function Trips:NearTram(yards)
+    local x, y, world = Place()
+    local key, record
+    if x then key, record = Tram(world) end
+    if not key or not record then return nil end
+    local along, gap, length = ByLine(record, x, y)
+    if not along or gap > Trips.TUNNEL then return nil end
+    if along <= yards then return key, 1 end
+    if along >= length - yards then return key, 2 end
+    return nil
+end
+
+function Trips:TramNext(key, at)
+    local learnt = TramLearnt(key)
+    local record = Travel:Get(key)
+    if not learnt or not learnt.epoch or not record or not record.wait or not record.time then return nil end
+    at = at or Ships.Now()
+    if at - (learnt.seen or 0) > Ships.TRUST then return nil end
+    local wait = record.wait
+    local stay = math.max(0, wait - record.time)
+    local leave = learnt.epoch + math.ceil((at - learnt.epoch) / wait) * wait
+    return leave - stay, leave, leave - at <= stay
 end
 
 -------------------------------------------------------------------------------

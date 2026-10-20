@@ -3,8 +3,27 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 105 (Inventory), 90 (sheet), 237 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 386 (Navigation), 105 (Inventory), 90 (sheet), 237 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
+
+### Navigation: the travel overlay lower and golden, smooth, and while waiting at a dock (Saneroki, 2026-10-21)
+- **The overlay** (`TripView.lua`, at Saneroki's ask): centred two thirds up the screen (placed again when the
+  screen's height changes), a fine golden line in the map route's art (Route.lua's edge, fill and glint, its pulse
+  from Route.xml) in place of Core's bar, the start's and the end's names above its ends, the vehicle's icon riding
+  at its tip, a flight point's mark at each stop; under it the time to the end (large), the next stop and its time,
+  the zone. The line moves smoothly: every frame while shown (OnUpdate) it eases towards where the trip is between
+  Core's looks (`TripView.EASE`), the time to the end counting down with it.
+- **Waiting at a dock or the tram's station:** the same overlay shows the next to come there, the line filling from
+  when it last left there to when it arrives, then *Board now* and when it leaves; how often it comes while its
+  times are not known; the other ways there in a line each below. `DockWatch.lua` only finds the rows now (with
+  `kind`, `arrive`, `leave`, `last`, `every`; the tram's at its stations, within `DockWatch.STATION` yards); its own
+  frame is gone, the overlay draws them. The settings' tips say so.
+- **Core's trips** (`Data/Trips.lua`): each trip's `pace` and `t` (to move it on between looks); the tram's times
+  learnt on a ride (three looks that agree within two seconds on when its train left its station, kept per realm
+  in Core's saved data, trusted as the ships' times), `Trips:NearTram(yards)` and `Trips:TramNext(key, at)`: a train
+  leaves each station every `wait` seconds and stands there `wait` less its run.
+- Tests: `dev/tests/navigation.lua` (386 checks: the overlay two thirds up, the wait's line from the last
+  departure, a tram ride learnt, waiting at the tram's station).
 
 ### Navigation: dungeon maps of Core's data, with their bosses (Saneroki, 2026-10-21)
 - **Core's new set *Dungeons*** (pack World; `assets/data/Dungeons/`, source batch 9, unverified): Forever's client

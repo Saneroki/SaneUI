@@ -948,15 +948,21 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     arrives and leaves, counting down (grey, how often it sails, until a ride taught its times); aboard, when
     it lands. The setting *Ship times at a dock* (on); not while the map fills the screen.
   - **The trip on screen (built 2026-10-20, `TripView.lua`, Core's `Data.Trips`):** on a flight, a ship or the
-    tram, under the game's widgets at the top of the screen: from where to where, Core's bar (the experience bar's
-    art) of the way behind with a flight point's mark at each stop, the next stop and its time, the time to the
-    end, the zone below; on a flight with a stop before its end the game's own *Request Stop* button
+    tram, two thirds up the screen (2026-10-21, Saneroki): the start and the end named above the ends of a fine
+    golden line in the map route's art, filling smoothly (eased every frame between Core's looks), the vehicle's
+    icon at its tip, a flight point's mark at each stop, the time to the end, the next stop and its time, the zone
+    below; on a flight with a stop before its end the game's own *Request Stop* button
     (`TaxiRequestEarlyLanding`, its art and words). A flight's route is read at the flight master
     (`TakeTaxiNode`: its hops, each the set's flight), kept per character for a `/reload` in the air; how far
     along from the player's place on the hops' points, how long at the pace measured on this flight, before that
     the median of the character's last five. The setting *Your trip on screen* (on). While flying the planner
     draws the flight's way on as the line's first leg and plans from where it lands; without a pin, the flight's
     way alone.
+  - **Waiting (built 2026-10-21):** at a dock or the tram's station the same overlay shows the next to come: the
+    line filling from when it last left there to when it arrives, *Board now* while it is in, when it leaves, the
+    others there below; how often it comes while its times on this realm are not known. The tram's times are
+    learnt on a ride as the ships' are (Core's `Data.Trips`: when its train left its station, three looks that
+    agree; a train leaves each station every `wait` seconds and stands there `wait` less its run).
   - **The tram (2026-10-20):** the Deeprun Tram is a way of Core's set *Travel* (kind `tram`), from the game's own
     tables (`dev/tools/travel-data`): its two stations (the triggers in its map where one leaves it), the run's
     seconds (its cars' motion, the same for every car), the time between two trains from a station (`wait`: its

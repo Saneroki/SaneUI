@@ -2225,14 +2225,22 @@ local function Rides()
     check(#rows == 1 and rows[1].name:find("To The Far Shore", 1, true) and rows[1].known
         and rows[1].status == DockWatch.TEXT.coming:format(Clock(comes), Clock(comes + 60)),
         "at its dock: where it goes, when it arrives and leaves")
+    check(rows[1].last and near(rows[1].leave - rows[1].last, Ships:Table(3).round),
+        "the wait drawn from when it last left this dock to when it comes again")
+    local width, height = UIParent._width, UIParent._height
+    UIParent:SetSize(1600, 900)
     DockWatch.Update()
-    check(DockWatch.frame and DockWatch.frame:IsShown(), "shown at the top of the screen")
+    local overlay = ns.TripView.frame
+    local point = overlay and overlay._points[1]
+    check(overlay and overlay:IsShown() and point and point[1] == "CENTER" and point[3] == "BOTTOM" and near(point[5], 600),
+        "waiting at its dock: the overlay, two thirds up the screen")
+    UIParent:SetSize(width, height)
     Core.Set(ns.name, "dockTimes", false)
-    check(not DockWatch.frame:IsShown(), "not while its setting is off")
+    check(not overlay:IsShown(), "not while its setting is off")
     Core.Set(ns.name, "dockTimes", true)
     W.place = { -8000, 2000, 5, 0 }
     DockWatch.Update()
-    check(#DockWatch.Rows() == 0 and not DockWatch.frame:IsShown(), "away from every dock: nothing")
+    check(#DockWatch.Rows() == 0 and not overlay:IsShown(), "away from every dock: nothing")
     store["Stub Realm"][3] = nil
     W.place = { -8580, -470, 5, 0 }
     rows = DockWatch.Rows()
@@ -2282,8 +2290,8 @@ local function Flights()
         and trip.canLand and Trips:CanLand(), "on its way: how far along, the time to the next stop and to the end at its own pace")
     Frames(2)
     local lines = TripView.Lines(trip)
-    check(TripView.frame and TripView.frame:IsShown() and lines.title == "Alpha to Gamma" and lines.next == "Next: Beta, 0:20"
-        and lines.left == "1:00" and TripView.exit:IsShown(), "its view at the top of the screen, with the game's Request Stop")
+    check(TripView.frame and TripView.frame:IsShown() and lines.title == "Alpha to Gamma" and lines.next == "Next: Beta in 0:20"
+        and lines.left == "1:00" and TripView.exit:IsShown(), "its overlay, with the game's Request Stop")
     Planner.Track(1415, 0, 500, GetTime() + 100)
     Frames(2)
     local leg = shownWay and shownWay.legs[1]
@@ -2317,9 +2325,25 @@ local function Flights()
     check(trip and trip.kind == "tram" and trip.next == 2 and math.abs(trip.at - 400) < 41 and math.abs(trip.left - 40) < 1.1
         and TripView.Lines(trip).title == "Deeprun Tram: Stormwind City to Ironforge",
         "on the tram: how far along, how long to the station")
+    local trams = Core.Store(Core.name).trams
+    local learnt = trams and trams["Stub Realm"] and trams["Stub Realm"][7]
+    check(learnt and math.abs(learnt.epoch - (W.serverStart + start)) < 1.5,
+        "a tram ride: when its train left the station, kept for this realm")
     W.place = nil
     W.Wait(3)
     check(Trips:Now() == nil, "off the tram: no trip")
+    -- Waiting at its first station: the next train, to the other station; it stands there its wait less its run.
+    W.place = { 30, 0, -4, 369 }
+    W.Wait(3)
+    local rows = ns.DockWatch.Rows()
+    local now = W.serverStart + W.clock
+    check(Trips:Now() == nil and #rows == 1 and rows[1].kind == "tram" and rows[1].known and near(rows[1].leave - rows[1].arrive, 70)
+        and rows[1].leave > now and rows[1].leave - now <= 120 and rows[1].name:find("Ironforge", 1, true),
+        "waiting at the tram's station: when the next train comes and leaves, to the other station")
+    TripView.Update()
+    check(TripView.frame:IsShown(), "the overlay while waiting for the tram")
+    W.place = nil
+    W.Wait(3)
 end
 Flights()
 -- A pin far in the north (u 0, v -200): on foot to the tram's entrance by the player, the tram (the walks inside and

@@ -109,13 +109,15 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   transports' speed, and once you have ridden a ship on your realm the map knows when it really sails there and
   counts the wait for the next one (until then half its time once round). *Route to the map pin* in the pin
   filter switches it off.
-- **Ship times at a dock:** at the dock of a boat or a zeppelin, under the game's own notes at the top of the
-  screen, each that stops there: where it goes, when it arrives and when it leaves, counting down. A ship you have
-  not ridden on this realm yet shows how often it sails; one ride teaches its times (kept on this computer for the
-  realm, half a day). *Ship times at a dock* in the settings switches it off.
-- **Your trip on screen:** on a flight, a boat, a zeppelin or the Deeprun Tram, at the top of the screen: from
-  where to where, a bar of the way behind you with a flight point's mark at each stop on it (dim once passed), the
-  next stop and the time to it, the time to the end, and the zone below you. On a flight with a stop before its
+- **Ship times at a dock:** at the dock of a boat or a zeppelin, or a station of the Deeprun Tram, the travel
+  overlay (below) shows the next to come there: where it goes, the golden line filling as it nears, when it
+  arrives (*Board now* while it is in) and when it leaves; the others that stop there in a line each below. A ship
+  or the tram you have not ridden on this realm yet shows how often it comes; one ride teaches its times (kept on
+  this computer for the realm, half a day). *Ship times at a dock* in the settings switches it off.
+- **Your trip on screen:** on a flight, a boat, a zeppelin or the Deeprun Tram, the travel overlay two thirds up
+  the screen: where it began and where it goes at the ends of a fine golden line (the map route's art, its glint
+  pulsing along) that fills smoothly as you go, the vehicle's icon riding at its tip, a flight point's mark at each
+  stop on it (dim once passed); below it the time to the end, the next stop and the time to it, and the zone. On a flight with a stop before its
   end, the game's own *Request Stop* button: you land at the next flight point, and the trip ends there. A flight's
   time comes from your own pace on it, before that from your character's last flights; a ship's from its
   timetable; the tram's from the game's own. A `/reload` in the air finds the flight again. *Your trip on screen*
@@ -374,8 +376,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too |
-| `DockWatch.lua` | At a dock, at the top of the screen: where its boats and zeppelins go and when they arrive and leave |
-| `TripView.lua` | The trip you are on (Core's `Data.Trips`), at the top of the screen: the way, its stops, the times; *Request Stop* on a flight |
+| `DockWatch.lua` | At a dock or the tram's station: the ways waiting there, when each arrives and leaves (no frames) |
+| `TripView.lua` | The travel overlay, two thirds up the screen: the trip you are on (Core's `Data.Trips`), or the wait at a dock; a fine golden line moving smoothly, *Request Stop* on a flight |
 | `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the dungeons, the pin filter |
 | `Window.lua` | Core's window: the top right corner, the full screen, the two cameras, the view buttons |
 | `Art/Terrain/*.blp` | The terrain's overview: the game's minimap textures, smaller, the water cut away, made by `dev/tools/terrain-art` from the game's files |
@@ -406,6 +408,12 @@ Tests: `dev/tests/navigation.lua`.
   *Possible ore*; new are *Found herbs* and *Found ore* (`Found.lua`): what the game's minimap shows now, each in
   its own picture, the switches doubling as Find Herbs and Find Minerals, which take turns while you move, without a
   sound (`Nodes.lua`); and sparkles on the herb or ore your interact key would gather (`Sparkles.lua`).
+- **2026-10-21, the travel overlay:** at Saneroki's ask the trip view stands two thirds up the screen, a fine
+  golden line in the map route's art (its glint pulsing along) in place of Core's bar, eased every frame between
+  Core's looks (`TripView.EASE`; Data.Trips gives each trip's `pace` and `t`), the vehicle's icon at its tip, the
+  ends' names above the line's ends. Waiting at a dock or the tram's station it shows the next to come there
+  (DockWatch.lua now only finds the rows, with `arrive`, `leave`, `last`, `every`); the tram's times are learnt on
+  a ride (Core's `Trips:NearTram`, `Trips:TramNext`).
 - **2026-10-20, the trip on screen:** `TripView.lua` (setting *Your trip on screen*) shows the trip Core's
   `Data.Trips` finds: a flight (its route read at the flight master), a boat or a zeppelin, the Deeprun Tram (Core's
   set *Travel*, from the game's tables); the game's *Request Stop* button on a flight. While flying, the planner

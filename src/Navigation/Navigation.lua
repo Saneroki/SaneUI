@@ -58,9 +58,9 @@ ns.TEXT = {
     later = "Quests for later",
     done = "Done quests",
     tripView = "Your trip on screen",
-    tripViewTip = "On a flight, a boat, a zeppelin or the tram, at the top of the screen: where it goes, a bar of the way behind you with each flight point on it, the next stop and the time to it, the time to the end, and the zone below you. On a flight with a stop before its end, the game's Request Stop button lands you at the next flight point.",
+    tripViewTip = "On a flight, a boat, a zeppelin or the tram, two thirds up the screen: where it began and where it goes at the ends of a golden line that fills as you go, each flight point on it, the time to the end, the next stop and the time to it, and the zone below you. On a flight with a stop before its end, the game's Request Stop button lands you at the next flight point.",
     dockTimes = "Ship times at a dock",
-    dockTimesTip = "At the dock of a boat or a zeppelin, at the top of the screen: where each that stops there goes, and when it arrives and leaves; aboard, when it lands. Its times show once you have ridden it on this realm (the game tells no timetable: Sane UI learns it on the ride), until then how often it sails.",
+    dockTimesTip = "At the dock of a boat or a zeppelin and at a station of the tram, two thirds up the screen: where the next to come goes, a golden line that fills as it nears, when it arrives (board now) and when it leaves; the others there below. Its times show once you have ridden it on this realm (the game tells no timetable: Sane UI learns it on the ride), until then how often it sails.",
     nodes = "Herbs and ore",
     nodeSparkles = "Sparkles on herbs and ore",
     nodeSparklesTip = "Gold sparkles in the world on the herb or ore your interact key would gather, so you see it among the grass and rocks. Sets the game's Enable Interact Key on and lets it find herbs and ore all around you up to 20 yards; switched off, those settings are as they were.",
@@ -278,7 +278,6 @@ function ns.GiveBack()
     Back(ns.Native.GiveBack)
     Back(ns.Hybrid.GiveBack)
     Back(ns.Window.Hide)
-    Back(ns.DockWatch.Hide)
     Back(ns.TripView.Hide)
     Back(ns.Found.Hide)
     Back(ns.Nodes.GiveBack)
