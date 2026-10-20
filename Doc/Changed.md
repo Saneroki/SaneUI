@@ -6,6 +6,16 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 142 (Navigation), 208 (data tools).
 A game restart takes it in (new addons, Navigation and Atlas; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
 
+### The Atlas' colour pass (Saneroki, 2026-10-20)
+- **The colour pass** (`Doc/ideas/Navigation.md`, *The colour pass*): `dev/tools/atlas join` moves each painting's
+  broad colours toward the game's before joining, keeping half of the model's own (`--mood`, default 0.5;
+  `--as-painted` skips it), and pulls its water toward the open sea's blue; lava stays as painted. The paintings
+  on disk stay as painted, so the mood can change without painting again. Badlands' orange, Teldrassil's pink bark
+  and green forest and Burning Steppes' grey ash come back, and neighbours painted a little apart meet evenly.
+- **Lava glows, it does not smoke:** `atlas.toml`'s lava sentence drew a cloud of smoke over Burning Steppes.
+- **Tests:** `dev/tests/atlas.py`: the colour pass (the game's broad colour back, the fine detail kept, the mood,
+  water toward the sea, lava kept).
+
 ### The Atlas faithful: words of an edit, what stands in water kept (Saneroki, 2026-10-19)
 - **Decided** (`Doc/ideas/Navigation.md`, *Faithful above all*): the painted view adds nothing the game does not
   have; ground too steep to walk is painted as bare rock and cliffs, so a player sees the way is closed.

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Tests of dev/tools/atlas without ComfyUI and without the game's files: the phrases a square keeps of its
-zone's brief, the words put together, the check against the game's water on made-up pictures, the cut where
-two squares meet, the grid of squares, ComfyUI's websocket frames and the screen's numbers. Run by
-dev/tests/run."""
+zone's brief, the words put together, the check against the game's water on made-up pictures, the colour
+pass, the cut where two squares meet, the grid of squares, ComfyUI's websocket frames and the screen's
+numbers. Run by dev/tests/run."""
 import importlib.machinery
 import importlib.util
 import os
@@ -10,6 +10,8 @@ import struct
 import sys
 import tomllib
 from pathlib import Path
+
+from PIL import Image
 
 sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
@@ -120,6 +122,42 @@ check("open water: the dome is not water", int(open_[5, 5]), 0)
 check("open water: the water stays water", int(open_[20, 5]), 255)
 muddy = np.zeros((10, 10, 3), np.uint8); muddy[:] = (70, 60, 55)          # a muddy river, a little warm
 check("open water: muddy water stays water", int(at.open_water(muddy, np.full((10, 10), 255, np.uint8))[5, 5]), 255)
+
+# --- The colour pass ----------------------------------------------------------------------------------
+
+rgb = rng.integers(0, 255, (64, 64, 3)).astype(np.uint8)
+check("lab: there and back", int(np.abs(at.to_rgb(at.to_lab(rgb)).astype(int) - rgb).max()) <= 1, True)
+side = 256
+orange = (np.array([190, 95, 40]) + rng.integers(-12, 12, (side, side, 1))).clip(0, 255).astype(np.uint8)  # the game's ground
+tan = (orange.astype(np.int16) + (25, 45, 60)).clip(0, 255).astype(np.uint8)                              # painted paler
+detail = rng.integers(-20, 20, (side, side, 1))
+painted = (tan.astype(np.int16) + detail).clip(0, 255).astype(np.uint8)
+none = np.zeros((side, side), np.uint8)
+ground = {"rgb": orange, "water": none, "lava": none}
+
+
+def broad_gap(a, b):
+    small_lab = lambda x: at.to_lab(np.asarray(Image.fromarray(x).resize((8, 8), Image.Resampling.BOX)))  # noqa: E731
+    return float(np.sqrt(((small_lab(a) - small_lab(b)) ** 2).sum(-1)).mean())
+
+
+back = at.colour_of(painted, ground, 0.0)
+check("colour pass: the game's broad colour back", broad_gap(back, orange) < broad_gap(painted, orange) / 3, True)
+fine = lambda x: x.astype(np.float32).mean(-1) - at.broad(x.astype(np.float32).mean(-1)[..., None], 6)[..., 0]  # noqa: E731
+check("colour pass: the fine detail kept", float(np.corrcoef(fine(back).ravel(), fine(painted).ravel())[0, 1]) > 0.95, True)
+check("colour pass: mood 1 keeps land as painted", int(np.abs(at.colour_of(painted, ground, 1.0).astype(int) - painted).max()) <= 2, True)
+half = at.colour_of(painted, ground, 0.5)
+check("colour pass: mood 0.5 halfway", broad_gap(back, orange) < broad_gap(half, orange) < broad_gap(painted, orange), True)
+lake = {"rgb": orange.copy(), "water": none.copy(), "lava": none.copy()}
+lake["water"][:, :128] = 255
+lake["rgb"][:, :128] = at.NAVY
+royal = painted.copy(); royal[:, :128] = (30, 60, 200)       # the model's water, too bright a blue
+toward_sea = at.colour_of(royal, lake, 1.0)
+gap = lambda x: float(np.abs(x[40:216, 20:100].reshape(-1, 3).mean(0) - at.SEA).sum())  # noqa: E731
+check("colour pass: water toward the sea's blue at any mood", gap(toward_sea) < gap(royal) / 2, True)
+hot = {"rgb": orange.copy(), "water": none.copy(), "lava": none.copy()}
+hot["lava"][:, :128] = 255
+check("colour pass: lava kept", int(np.abs(at.colour_of(painted, hot, 0.0)[40:216, 20:90].astype(int) - painted[40:216, 20:90]).max()) <= 2, True)
 
 # --- Joining ----------------------------------------------------------------------------------------
 

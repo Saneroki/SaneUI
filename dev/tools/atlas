@@ -8,13 +8,14 @@ rows from the north-west, on its own (with painted neighbours pasted into its ed
 strip along the opposite edge): its words put together from the zone briefs and from what the game has in it
 (dev/imagegen/maps/zones.toml, atlas.toml), the same light and look for all. Each painting is checked against
 the game's water; one that fails is painted again with another seed, and the best of three is kept. The
-squares are joined later, cut along the line where neighbours differ least.
+squares are joined later, cut along the line where neighbours differ least, each first brought back toward the
+game's broad colours by the colour pass (the model's own colours drift with the zone's light).
 
 Usage:
   dev/tools/atlas paint [--adt DIR --tables DIR --minimap DIR] [--continent 0|1] [--near ...] [--limit N]
                         [--out DIR] [--keep-comfyui] [--dry]
   dev/tools/atlas status [--out DIR]
-  dev/tools/atlas join --to FILE [--near ...] [--continent 0|1] [--cut] [--out DIR]
+  dev/tools/atlas join --to FILE [--near ...] [--continent 0|1] [--cut] [--mood M | --as-painted] [--out DIR]
 
   --adt, --tables, --minimap   the game's terrain files (<key>.adt), its client tables as CSV and its minimap
                                textures (<file id>.blp), as dev/tools/map-meta reads them; needed the first
@@ -28,7 +29,10 @@ Usage:
                                percent as on the game's map), ACROSS by DOWN of them (to try a city first)
   join                         the painted squares (of --near, or all of a continent) as one picture, FILE: each
                                overlap cut along the line where the two paintings differ least, softened a few
-                               pixels to either side (--cut: cut in the overlap's middle instead, to compare)
+                               pixels to either side (--cut: cut in the overlap's middle instead, to compare);
+                               each square first through the colour pass: its broad colours moved toward the
+                               game's, keeping M of the model's own (--mood, default 0.5), its water toward the
+                               open sea's blue (--as-painted: the paintings as they are)
 
 While it runs in a terminal:
   p   pause after the picture being painted, and free the graphics card; p again goes on
@@ -400,6 +404,67 @@ def around(guides, uimap, x, y, across, down):
     return zone["continent"], i0, j0, i0 + across, j0 + down
 
 
+# --- The colour pass -----------------------------------------------------------------------------
+# The model paints each zone in its own light, and with it its own colours: Badlands' orange came out pale tan,
+# Teldrassil violet. When the squares are joined, each painting's broad colour (averaged over BROAD pixels) is
+# moved toward the game's by 1 - MOOD, its fine detail and light kept; the paintings on disk stay as painted, so
+# the mood can be changed without painting again. The same pull evens out neighbours painted a little apart.
+
+MOOD = 0.5     # how much of the model's own colour a square keeps (1: all of it; 0: the game's broad colours)
+BROAD = 48     # pixels (12 yards): broader than a tree, finer than a hill
+SEA = np.array([18, 52, 86])   # the open sea's blue: the water of every square is pulled toward it, whatever the mood
+WHITE = np.array([0.95047, 1.0, 1.08883])   # CIE D65, the white of sRGB
+
+
+def to_lab(rgb):
+    c = rgb.astype(np.float32) / 255
+    c = np.where(c > 0.04045, ((c + 0.055) / 1.055) ** 2.4, c / 12.92)
+    xyz = c @ np.array([[0.4124, 0.3576, 0.1805], [0.2126, 0.7152, 0.0722], [0.0193, 0.1192, 0.9505]], np.float32).T / WHITE
+    f = np.where(xyz > 0.008856, np.cbrt(xyz), 7.787 * xyz + 16 / 116)
+    return np.stack([116 * f[..., 1] - 16, 500 * (f[..., 0] - f[..., 1]), 200 * (f[..., 1] - f[..., 2])], -1)
+
+
+def to_rgb(lab):
+    fy = (lab[..., 0] + 16) / 116
+    f = np.stack([fy + lab[..., 1] / 500, fy, fy - lab[..., 2] / 200], -1)
+    xyz = np.where(f > 0.2069, f ** 3, (f - 16 / 116) / 7.787) * WHITE
+    c = xyz @ np.array([[3.2406, -1.5372, -0.4986], [-0.9689, 1.8758, 0.0415], [0.0557, -0.2040, 1.0570]], np.float32).T
+    c = np.where(c > 0.0031308, 1.055 * np.clip(c, 0, None) ** (1 / 2.4) - 0.055, 12.92 * c)
+    return (c * 255).clip(0, 255).round().astype(np.uint8)
+
+
+def broad(a, r):
+    """Each channel averaged over about r pixels (three box means: close to a Gaussian)."""
+    a = a.astype(np.float32)
+    for _ in range(3):
+        a = np.stack([box_mean(a[..., k], max(1, r // 3)) for k in range(a.shape[-1])], -1)
+    return a
+
+
+def colour_of(painting, square, mood=MOOD):
+    """A painting with its broad colours moved toward the square's terrain (land) and the open sea's blue (water,
+    over a broader area, so the painted shallows keep their gradient); lava kept as painted. Worked out at a
+    quarter of the size, where only broad colour lives, and laid back on at full size."""
+    q = 4
+    side = painting.shape[0] // q
+    shrunk = lambda a: np.asarray(Image.fromarray(a).resize((side, side), Image.Resampling.BOX))  # noqa: E731
+    water = shrunk(square["water"]).astype(np.float32)[..., None] / 255
+    lava = shrunk(square["lava"]).astype(np.float32)[..., None] / 255
+    land = (1 - np.maximum(water, lava)) ** 2
+    paint, game = to_lab(shrunk(painting)), to_lab(shrunk(square["rgb"]))
+
+    def toward(target, w, r):
+        weight = broad(w, r) + 1e-4
+        return broad(target * w, r) / weight - broad(paint * w, r) / weight
+
+    shift = toward(game, land, BROAD // q) * land * (1 - mood)
+    shift[..., 0] *= 0.6   # the light's brightness kept more than its colour
+    shift += toward(to_lab(np.broadcast_to(SEA.astype(np.uint8), paint.shape)), water * (1 - lava), BROAD) * water * 0.85
+    full = np.stack([np.asarray(Image.fromarray(shift[..., k]).resize(painting.shape[1::-1], Image.Resampling.BILINEAR))
+                     for k in range(3)], -1)
+    return to_rgb(to_lab(painting) + full)
+
+
 # --- Joining the squares -------------------------------------------------------------------------
 
 FEATHER = 12   # pixels softened to either side of a cut
@@ -438,14 +503,16 @@ def join_two(left, right, cut):
     return np.concatenate([left[:, :-over], middle, right[:, over:]], axis=1)
 
 
-def join(out, continent, block, cut=False):
-    """The squares of a block (i0, j0, i1, j1) as one picture; a square not painted is the flat sea."""
+def join(out, continent, block, cut=False, game=None, mood=MOOD):
+    """The squares of a block (i0, j0, i1, j1) as one picture, each through the colour pass when the game's files
+    are given (game); a square not painted is the flat sea."""
     i0, j0, i1, j1 = block
 
     def picture(i, j):
         path = out / str(continent) / f"sq-{i}-{j}.png"
         if path.is_file():
-            return np.asarray(Image.open(path).convert("RGB"))
+            painting = np.asarray(Image.open(path).convert("RGB"))
+            return colour_of(painting, game.square(continent, i, j), mood) if game else painting
         filled = np.empty((SQ, SQ, 3), np.uint8)
         filled[:] = NAVY
         return filled
@@ -858,6 +925,8 @@ def main():
     parser.add_argument("--near", nargs=5, type=float, metavar=("UIMAP", "X", "Y", "ACROSS", "DOWN"))
     parser.add_argument("--to")
     parser.add_argument("--cut", action="store_true")
+    parser.add_argument("--mood", type=float, default=MOOD)
+    parser.add_argument("--as-painted", action="store_true")
     parser.add_argument("--adt")
     parser.add_argument("--tables")
     parser.add_argument("--minimap")
@@ -904,7 +973,7 @@ def main():
         mine = [s for s in painted if s[0] == continent]
         block = near[1:] if near else (min(s[1] for s in mine), min(s[2] for s in mine),
                                         max(s[1] for s in mine) + 1, max(s[2] for s in mine) + 1)
-        Image.fromarray(join(out, continent, block, args.cut)).save(args.to)
+        Image.fromarray(join(out, continent, block, args.cut, None if args.as_painted else game, args.mood)).save(args.to)
         print(f"{args.to}: {block[2] - block[0]} x {block[3] - block[1]} squares of {CONTINENTS[continent]}")
         return
 

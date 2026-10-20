@@ -243,7 +243,11 @@ lists, from inputs of its own:
 - **Words of an edit keep a picture faithful:** "make image 1 look like a photograph of exactly the same
   place; change only how things look, never where or what anything is" kept the layout of 8 of 8 hard places,
   where "repaint image 1 as …" kept 2 (the Atlas lab, Navigation.md, *The lab*). Words that name features,
-  props or buildings bring them into the picture; give colours and light instead.
+  props or buildings bring them into the picture; give colours and light instead. Words of motion bring their
+  traces too: lava "smoking" drew a cloud of smoke over it.
+- **Colours drift with the light:** a zone's light words shift its colours (orange ground painted tan), more for
+  a whole zone in one picture than for a close square. Fix them after the painting, not in the words: the
+  Atlas' colour pass moves the painting's broad colour back toward the game's and keeps its detail.
 - **Straight from above:** "like an orthographic satellite image: no perspective, no tilt, no horizon" keeps
   mountains from turning into cones seen at an angle.
 - The pilots: `dev/imagegen/sets/maps-pilot/looks.txt` (five looks on two squares, 20 pictures in 9 minutes with
@@ -252,7 +256,7 @@ lists, from inputs of its own:
   square of ten zones at 2048, each in its zone's atmosphere; about two and a half minutes a picture).
 - **The Atlas' run:** `dev/tools/atlas` paints every square of both continents from these, checks it against the
   game's water and keeps the best of three seeds; `--near` paints a few squares around a place first, `join`
-  stitches them; in a terminal it shows its progress, `p` pauses (and frees the graphics card), `q` quits.
+  stitches them, each through the colour pass (`--mood`); in a terminal it shows its progress, `p` pauses (and frees the graphics card), `q` quits.
 - **Upscaling models** (`models/upscale_models/` of ImageGen: 4x-UltraSharpV2 and 4xNomos2, both DAT2, as
   safetensors, 17 s for 1024 to 4096): they sharpen what is there, the faults too, and add no detail; the
   painting is made at the size it is shown.

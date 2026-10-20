@@ -25,7 +25,8 @@ water = "The flat dark navy areas of image 1 are water: paint them as water, eve
 # A square with only a few puddles of water (under 1 %): told the water sentence, the model dug channels.
 little = "There is only a little water in image 1: its few small flat dark navy patches, nowhere else."
 dry = "There is no water anywhere in this picture: dark ground, hollows, furrows and shadows are dry land, never water, lakes or rivers."
-lava = "The flat bright orange areas of image 1 are molten lava, glowing and smoking; the red glowing cracks in the rock are lava too."
+# Glowing, never smoking: "smoking" drew a cloud of smoke over Burning Steppes' lava fields.
+lava = "The flat bright orange areas of image 1 are molten lava, glowing hot; the red glowing cracks in the rock are lava too."
 slime = "The flat green pools of image 1 are thick toxic slime."
 # After the zone's light (its quality only: its clauses about colour or haze are left out, they bleached Badlands
 # beige, turned Felwood's sea green and Teldrassil's violet, and drew steam clouds over Stranglethorn).

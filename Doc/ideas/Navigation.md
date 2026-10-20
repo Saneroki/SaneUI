@@ -603,7 +603,8 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   photorealistic satellite photograph of exactly the same place; change only how things look; never where or what
   anything is, rock stays rock, bark stays bark; then its liquids as the game has them ("the flat dark navy areas
   are water, nowhere else"; under 1 % "only a little water, its few small patches"; or "there is no water anywhere
-  in this picture"; "the flat bright orange areas are molten lava"), its main zone's colours and the quality of its
+  in this picture"; "the flat bright orange areas are molten lava, glowing hot", never smoking: that drew a cloud
+  of smoke over Burning Steppes), its main zone's colours and the quality of its
   light (the first sentence of its atmosphere without its clauses about colour or haze: those bleached Badlands
   beige, turned Felwood's sea green and Teldrassil's violet and drew steam clouds over Stranglethorn), "keep the
   colours of image 1; no clouds, fog, mist or smoke over the ground", and "add nothing and remove nothing". No
@@ -660,9 +661,17 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   along the line where the two paintings differ least, softened a few pixels to either side: a cut, not a
   cross-fade, which would show two paintings of the same trees at once. A square with its painted neighbours
   pasted into its edges (tried 2026-10-19, to carry their colours on) came back with a garish strip of flowers
-  at the wrong scale along the opposite edge, with or without words about it. Left for the packing: a colour
-  pass that evens out the squares' light where they meet, so far out no patchwork shows. Where the pilot shows
+  at the wrong scale along the opposite edge, with or without words about it. Where the pilot shows
   the model losing roads, the guide's roads are drawn back over the painting in its colours.
+- **The colour pass** (2026-10-20, `colour_of` in `dev/tools/atlas`): with the zone's light the model also paints
+  the zone's own colours, more in some zones than others (the whole zones painted as one: Badlands' orange pale
+  tan, Teldrassil's bark and forest violet, Burning Steppes' grey ash dark red). When the squares are joined,
+  each painting's broad colour (averaged over 48 pixels, 12 yards) is moved toward the game's, keeping a share of
+  the model's own (`MOOD`, 0.5 until Saneroki chooses: at 0.3 the zones look much like the game's colours, at 1
+  as painted), its fine detail and light kept; its water is pulled toward the open sea's blue whatever the mood
+  (the sea is one sea), its lava left as painted. The paintings on disk stay as painted, so the mood can be
+  changed without painting again (`join --mood`), and the same pull evens out neighbours painted a little apart,
+  so far out no patchwork shows. About a second a square.
 - **Levels of detail** (*Close up and far out*, *Three times closer*): the finest level is painted at 2048
   pixels a tile (a quarter of a yard a pixel, four times the minimap textures), with the full model, one
   square of one tile a picture (about two and a half minutes each): the model adds detail the terrain does not
