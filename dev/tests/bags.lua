@@ -782,11 +782,58 @@ dropdown:GenerateMenu()
 Choose(dropdown._items, "Default")
 dropdown:GenerateMenu()
 Choose(dropdown._items, "Show Pinned Items")
-check(kept.showPinned == false, "Pinned hidden from the dropdown")
+check(ns.options.showPinned == false, "Pinned hidden from the dropdown, in the module's settings")
 check(not RowNamed("Pinned Items"), "not in the sidebar then")
 dropdown:GenerateMenu()
 Choose(dropdown._items, "Show Pinned Items")
 check(RowNamed("Pinned Items"), "shown again")
+
+-- The settings (Core's options page): each switch draws the bags anew.
+Core.Set(ns.name, "itemLevel", false)
+local levelShown = false
+for _, widget in ipairs(W.frames) do
+    if widget._kind == "FontString" and (widget._text == 20 or widget._text == "20") and widget:IsVisible() then levelShown = true end
+end
+check(not levelShown, "Show Item Level off: no item level on gear")
+Core.Set(ns.name, "itemLevel", true)
+Core.Set(ns.name, "marker", false)
+check(not HeadNamed("Junk") and not Bags.bar.coin:IsShown() and Cells.Record(Cells.Button(0, 4)).category == "misc",
+    "the junk marker off: no Junk, no coin; grey items in their categories")
+Core.Set(ns.name, "marker", true)
+check(HeadNamed("Junk") and Bags.bar.coin:IsShown(), "on again")
+Core.Set(ns.name, "first", "one")
+Push()
+Stand()
+Push()
+Stand()
+check(HeadNamed("Main Bags") and Bags.Viewing() == "one", "Open With One Bag: the window opens with it")
+Core.Set(ns.name, "first", "all")
+Push()
+Stand()
+Push()
+Stand()
+
+-- The stack splitter: Shift and a click on a stack, in a view without empty slots.
+W.modifier = "SPLITSTACK"
+local clothButton = Cells.Button(0, 2)
+clothButton:GetScript("OnClick")(clothButton, "LeftButton")
+W.modifier = nil
+local open, amount = ns.Split.Shown()
+check(open and amount == "10", "our splitter opens, half the stack in it")
+C_Container.SplitContainerItem = function(bag, slot, amount) calls.split = bag .. ":" .. slot .. "x" .. amount end
+C_Container.PickupContainerItem = function(bag, slot) calls.placed = bag .. ":" .. slot end
+local splitButton
+for _, widget in ipairs(W.frames) do
+    if widget._parent == ns.Split.dialog and widget._kind == "Button" and widget._scripts.OnClick then
+        for _, child in ipairs(W.frames) do
+            if child._parent == widget and child._kind == "FontString" and child._text == "Split" then splitButton = widget end
+        end
+    end
+end
+splitButton:GetScript("OnClick")(splitButton)
+check(calls.split == "0:2x10" and calls.placed == "0:6" and Views.split[2589], "split: that many into the first free slot; kept apart from then on")
+check(not ns.Split.Shown(), "the splitter closed")
+Views.split[2589] = nil
 
 -------------------------------------------------------------------------------
 --  The game's events while shown

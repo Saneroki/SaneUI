@@ -121,13 +121,18 @@ end
 -------------------------------------------------------------------------------
 --  The view
 -------------------------------------------------------------------------------
+-- The module's settings (Core's), the bags' among them; an empty table before they are there.
+local function Options()
+    return type(ns.options) == "table" and ns.options or {}
+end
+
 -- The view shown: the one chosen in the sidebar, else the one the window opens with; one whose category is
 -- off or gone, or whose group is no more, gives way to All Items.
 local function View()
-    local view = viewing or kept.first or Views.ALL
+    local view = viewing or Options().first or Views.ALL
     local key = view:match("^cat:(.+)$")
     if key and (not Categories.rank[key] or Categories.Off(key)) then return Views.ALL end
-    if key and Bags.SHOW[key] and kept[Bags.SHOW[key]] == false then return Views.ALL end
+    if key and Bags.SHOW[key] and Options()[Bags.SHOW[key]] == false then return Views.ALL end
     local group = view:match("^group:(.+)$")
     if group and #Categories.Members(group) < 2 then return Views.ALL end
     return view
@@ -442,12 +447,29 @@ function Bags.Hover(button, on)
     if row and row:IsShown() then row.lit:SetShown(on) end
 end
 
+-- Shift and a click on a stack: our splitter in place of the game's, in the views without empty slots (always)
+-- or everywhere (the setting).
+local function Splits(button, mouse)
+    if mouse ~= "LeftButton" then return false end
+    local modified = rawget(_G, "IsModifiedClick")
+    if not (modified and modified("SPLITSTACK")) then return false end
+    local record = Cells.Record(button)
+    if not (record and record.item and (record.count or 1) > 1) then return false end
+    local view = View()
+    if (view == Views.ONE or view == Views.EACH) and not Options().splitter then return false end
+    local game = rawget(_G, "StackSplitFrame")
+    if type(game) == "table" and game.IsShown and game:IsShown() then game:Hide() end
+    ns.Split.Open(button, record)
+    return true
+end
+
 -- A click on an item button, after the game's own: Alt and the right button (which the game's button does
--- nothing with) open the item's menu; the middle one pins it, unpins it, or takes it out of the category it
--- was put into.
+-- nothing with) open the item's menu; Shift and the left one our splitter; the middle one pins it, unpins it,
+-- or takes it out of the category it was put into.
 function Bags.Clicked(button, mouse)
     local alt = rawget(_G, "IsAltKeyDown")
     if mouse == "RightButton" and alt and alt() then return Menus.Item(button) end
+    if Splits(button, mouse) then return end
     if mouse ~= "MiddleButton" then return end
     local record = Cells.Record(button)
     if not (record and record.item) then return end
@@ -466,7 +488,8 @@ local function Draw()
     if not child then return end
     local room = child:GetWidth()
     if not room or room <= 0 then return end
-    local blocks = Views.Build(View(), sections, query, kept.order, kept)
+    local options = Options()
+    local blocks = Views.Build(View(), sections, query, kept.order, options)
     Bags.blocks = blocks
     local list = kept.look == "list"
     local folded = type(kept.folded) == "table" and kept.folded or {}
@@ -483,7 +506,8 @@ local function Draw()
     Cells.Begin()
     for button in pairs(rowOf) do rowOf[button] = nil end
     local x = Bags.INSET
-    how.bind, how.coin, how.grey, how.set = kept.bind == true, kept.coin == true, kept.grey == true, kept.setName == true
+    how.bind, how.coin, how.grey, how.set = options.bind == true, options.coin == true, options.grey == true, options.setName == true
+    how.level, how.plain = options.itemLevel ~= false, options.borders == false
     for index = 1, count do
         local place = places[index]
         if place.kind == "head" then
@@ -523,7 +547,7 @@ local function Draw()
     child:SetHeight(math.max(1, height + Bags.INSET))
     Bags.Count()
     coin:SetShown(Categories.Marker())
-    Sidebar.Refresh(Views.Counts(carried), View())
+    Sidebar.Refresh(Views.Counts(carried), View(), options)
     if Cells.short then Core.AfterCombat("inventory: bags", Bags.Refresh) end
 end
 
@@ -547,9 +571,10 @@ function Bags.Choose(view)
     Bags.Redraw()
 end
 
--- One of the window's settings changed (store.bags), the window drawn anew.
-function Bags.SetOption(key, value)
-    kept[key] = value
+-- One of the bags' settings changed (Core's options page, the dropdown, a menu): the categories as the junk
+-- marker has them, the window drawn anew.
+function Bags.Settled()
+    if not kept then return end
     Categories.Use(kept)
     Bags.Refresh()
 end
@@ -612,12 +637,8 @@ local function Kept()
     local known = false
     for _, order in ipairs(Contents.ORDERS) do known = known or order.key == bags.order end
     if not known then bags.order = "default" end
-    local first = false
-    for _, view in ipairs(Views.FIXED) do first = first or view.key == bags.first end
-    if not first then bags.first = nil end
     Categories.Use(bags)
     Columns.Use(bags)
-    Bags.options = bags
     return bags
 end
 
@@ -632,15 +653,13 @@ local function SetOrder(key)
     kept.order = key
     Bags.Redraw()
 end
-local function IsOn(key) return kept[key] ~= false end
+local function IsOn(key) return Options()[key] ~= false end
 local function Toggle(key)
-    kept[key] = not IsOn(key)
-    Bags.Refresh()
+    Core.Set(ns.name, key, not IsOn(key))
 end
-local function IsFirst(key) return (kept.first or Views.ALL) == key end
+local function IsFirst(key) return (Options().first or Views.ALL) == key end
 local function SetFirst(key)
-    kept.first = key ~= Views.ALL and key or nil
-    Bags.Redraw()
+    Core.Set(ns.name, "first", key)
 end
 local function SwitchOn(key)
     Categories.SwitchOff(key, false)

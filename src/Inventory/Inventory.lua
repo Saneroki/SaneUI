@@ -96,6 +96,35 @@ ns.TEXT = {
     bagsMoveRight = "Move Right",
     bagsRound = "Round Icons",
     bagsResetColumns = "Reset Columns",
+    bagsFirstTip = "The view the bags open with: every item by category, every slot of your bags together, or each bag by itself.",
+    bagsShowPinnedTip = "Pinned Items at the top of the bags: the items you pinned with a middle click.",
+    bagsPinnedOne = "Pinned in One Bag and Each Bag",
+    bagsPinnedOneTip = "Pinned Items also above the bags as they are.",
+    bagsShowRecentTip = "Recent Items at the top of the bags: what came into them lately.",
+    bagsRecentOne = "Recent in One Bag and Each Bag",
+    bagsRecentOneTip = "Recent Items also above the bags as they are.",
+    bagsHideEmptyTip = "Categories with nothing in them are left out of the sidebar (your own stay).",
+    bagsShowAdd = "Show Add Category",
+    bagsShowAddTip = "Add Category at the foot of the sidebar, to make a category of your own.",
+    bagsMergeTip = "Stacks of one item show as one with their count added up (never gear; not at a vendor, the bank, the mail, a trade or the auction house).",
+    bagsMarkerOptionTip = "The category Junk and the coin on the bar that marks junk by clicks. Off: grey items stay in their categories.",
+    bagsSplitter = "Stack Splitter Everywhere",
+    bagsSplitterTip = "Shift and a click on a stack opens our splitter in every view (in the views without empty slots it always does).",
+    bagsItemLevel = "Show Item Level",
+    bagsItemLevelTip = "The item level of gear at the top left of its square.",
+    bagsBorders = "Quality Borders",
+    bagsBordersTip = "Each item's border in its quality's colour.",
+    bagsShowBind = "Show BoE",
+    bagsShowBindTip = "BoE at the bottom left of gear that binds when equipped and is not bound yet.",
+    bagsSetName = "Show Set Name",
+    bagsSetNameTip = "The name of the equipment set an item is in, at the bottom of its square.",
+    bagsCoin = "Coin on Junk",
+    bagsCoinTip = "The game's coin at the corner of every junk item.",
+    bagsGrey = "Grey Junk",
+    bagsGreyTip = "Junk items shown in grey.",
+    bagsSplit = "Split Stack",
+    bagsSplitOne = "Split",
+    bagsSplitAll = "Auto Split",
     bagsSold = "Sold %d junk items for %s.",
     bagsUnsold = "%d junk items could not be sold.",
     -- The bags' dropdown View (Bags/Bags.lua)
@@ -112,11 +141,34 @@ ns.TEXT = {
 -- What is told when the module stands down (Core's StandDown).
 ns.GIVEN_BACK = "the bottom right corner no longer fills the screen with your inventory"
 
-local OPTIONS = {}
+-- The bags' settings (Bags/): what they show, how items look on them.
+local OPENS = { { "all", ns.TEXT.bagsAllItems }, { "one", ns.TEXT.bagsOneBag }, { "each", ns.TEXT.bagsEachBag } }
+local OPTIONS = {
+    { key = "first", default = "all", choices = OPENS, text = ns.TEXT.bagsFirst, tip = ns.TEXT.bagsFirstTip,
+      header = ns.TEXT.bags },
+    { key = "showPinned", default = true, text = ns.TEXT.bagsShowPinned, tip = ns.TEXT.bagsShowPinnedTip },
+    { key = "pinnedOne", default = true, text = ns.TEXT.bagsPinnedOne, tip = ns.TEXT.bagsPinnedOneTip },
+    { key = "showRecent", default = true, text = ns.TEXT.bagsShowRecent, tip = ns.TEXT.bagsShowRecentTip },
+    { key = "recentOne", default = false, text = ns.TEXT.bagsRecentOne, tip = ns.TEXT.bagsRecentOneTip },
+    { key = "hideEmpty", default = true, text = ns.TEXT.bagsHideEmpty, tip = ns.TEXT.bagsHideEmptyTip },
+    { key = "addCategory", default = true, text = ns.TEXT.bagsShowAdd, tip = ns.TEXT.bagsShowAddTip },
+    { key = "merge", default = true, text = ns.TEXT.bagsMerge, tip = ns.TEXT.bagsMergeTip },
+    { key = "marker", default = true, text = ns.TEXT.bagsMarker, tip = ns.TEXT.bagsMarkerOptionTip },
+    { key = "splitter", default = false, text = ns.TEXT.bagsSplitter, tip = ns.TEXT.bagsSplitterTip },
+    { key = "itemLevel", default = true, text = ns.TEXT.bagsItemLevel, tip = ns.TEXT.bagsItemLevelTip },
+    { key = "borders", default = true, text = ns.TEXT.bagsBorders, tip = ns.TEXT.bagsBordersTip },
+    { key = "bind", default = false, text = ns.TEXT.bagsShowBind, tip = ns.TEXT.bagsShowBindTip },
+    { key = "setName", default = false, text = ns.TEXT.bagsSetName, tip = ns.TEXT.bagsSetNameTip },
+    { key = "coin", default = false, text = ns.TEXT.bagsCoin, tip = ns.TEXT.bagsCoinTip },
+    { key = "grey", default = false, text = ns.TEXT.bagsGrey, tip = ns.TEXT.bagsGreyTip },
+}
 -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
 Core.Edge.Options(OPTIONS, 1)
--- Core's window takes the section in by itself (Edge.lua): nothing more to do here.
-Core.Options(ns.name, OPTIONS)
+-- Core's window takes the section Expand window in by itself (Edge.lua); a bags' setting draws the bags anew.
+Core.Options(ns.name, OPTIONS, { changed = function(key)
+    if Core.Edge.KEYS[key] then return end
+    if ns.Bags then ns.Guarded(ns.Bags.Settled) end
+end })
 
 -- Standing down, the full screen's windows go and the window with them.
 function ns.GiveBack()

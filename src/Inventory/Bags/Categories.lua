@@ -244,9 +244,10 @@ function Categories.Off(key)
     return Categories.OFF[key] == true
 end
 
--- Whether the junk marker is on (Junk exists, marks count); the settings say (Bags' options).
+-- Whether the junk marker is on (Junk exists, marks count); the module's settings say (marker).
 function Categories.Marker()
-    return kept.marker ~= false
+    local options = ns.options
+    return not (type(options) == "table" and options.marker == false)
 end
 
 -- A category's group now: the player's choice, else its first one while that group stands.

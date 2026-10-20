@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 169 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 176 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
 ### Navigation: the coast keeps its docks; the view Blended (Saneroki, 2026-10-20)
@@ -103,6 +103,18 @@ Herbs and Find Minerals in turn, silently, all of it with switches in the pin fi
   all around), set out of combat where they reach less, kept per character and put back when switched off.
 - Tests: `dev/tests/navigation.lua`, 332 checks (the names and pictures, the filter switching the finders silently,
   the turns while moving, a herb found on its dot and gone again, the sparkles and the settings put back).
+
+### Inventory: the stack splitter, the bags' settings (Saneroki, 2026-10-20)
+- **The splitter** (`Bags/Split.lua`, new): Shift and a click on a stack (in All Items and the categories always, in
+  One Bag and Each Bag with *Stack Splitter Everywhere*): how many (typed, - and +, the wheel), *Split* (Enter) into
+  the first free slot, *Auto Split* (Alt and Enter) the whole stack in turns, each split after the one before is
+  done (at most 2 seconds); the game's `StackSplitFrame` hidden when it opened.
+- **The settings** (`Inventory.lua`, the section *Bags* on the page Inventory): Open With, Show Pinned Items, Pinned
+  in One Bag and Each Bag, Show Recent Items, Recent in One Bag and Each Bag, Hide Empty Categories, Show Add
+  Category, Merge Stacks, Junk Marker, Stack Splitter Everywhere, Show Item Level, Quality Borders, Show BoE, Show
+  Set Name, Coin on Junk, Grey Junk. The dropdown *View* and the menus set them by `Core.Set`; they moved there from
+  `store.bags` (`Bags.Settled` draws the bags anew).
+- Tests: `dev/tests/bags.lua` (176 checks): the settings, the splitter.
 
 ### Inventory: the list's columns, the compact display planned (Saneroki, 2026-10-20)
 - **The list's columns** (`Bags/Columns.lua`, new): icon, name, item level, required level, type, bind (BoP, BoE,

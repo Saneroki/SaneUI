@@ -191,7 +191,7 @@ local function DeleteIt()
     end, true)
 end
 local function HideFixed()
-    ns.Bags.SetOption(ns.Bags.SHOW[about.key], false)
+    Core.Set(ns.name, ns.Bags.SHOW[about.key], false)
 end
 local function ClearRecent()
     ns.Recent.Clear()

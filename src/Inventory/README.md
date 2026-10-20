@@ -88,6 +88,10 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     *Sort By* (*Default*: gear by item level, then by kind, quality and name; or quality, name, item level);
     *Show Pinned Items*, *Show Recent Items*, *Hide Empty Categories*, *Merge Stacks*; *Open With* (the view the
     window opens with); *Switched Off* lists what you switched off, to switch it on again.
+  - **Splitting a stack:** Shift and a click on a stack opens a little splitter (in All Items and the categories
+    always, as those show no empty slots; in One Bag and Each Bag with *Stack Splitter Everywhere*): how many
+    (typed, - and +, the wheel), *Split* puts that many into the first free slot (Enter), *Auto Split* splits the
+    whole stack into stacks of that many (Alt and Enter).
   - Every item is the game's own button: click or drag it, right click to use it (in a fight too), to sell it at
     a vendor or to put it into the bank, Shift-click to link it; the tooltip is the game's. The search box finds
     items by name, category or item level: One Bag and Each Bag fade what is not found, the others show only what
@@ -101,7 +105,11 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   number: each character says how many it has, and the window lists only what was found. A character's things are as Core last read
   them while it was logged in; its bank, while it had it open.
 - **Settings:** *Sane UI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
-  motion, the background's opacity and texture) and *Window corners*.
+  motion, the background's opacity and texture), *Window corners*, and *Bags*: *Open With*, *Show Pinned Items*,
+  *Pinned in One Bag and Each Bag*, *Show Recent Items*, *Recent in One Bag and Each Bag*, *Hide Empty
+  Categories*, *Show Add Category*, *Merge Stacks*, *Junk Marker* (off: no Junk, grey items stay in their
+  categories), *Stack Splitter Everywhere*, *Show Item Level*, *Quality Borders*, *Show BoE*, *Show Set Name*, *Coin
+  on Junk*, *Grey Junk*. The dropdown *View* switches some of them too.
 
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOMRIGHT` at first,
@@ -310,6 +318,17 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     takes planned by dynamic programming for the least height, `Plan`; a block that is not the last of its band at
     least three wide; on a tie the fuller band first). The display and the order are kept (`store.bags`: `look`,
     `order`).
+  - **The splitter** (`Bags/Split.lua`): a dialog of ours in the flat look, opened by `Bags.Clicked` after the
+    template's own Shift-click (the game's `StackSplitFrame` hidden when it opened); `C_Container.SplitContainerItem`
+    then `PickupContainerItem` into the first free slot of the ordinary bags; *Auto Split* one split after the
+    other, each once the source slot is unlocked again (looked at every `Split.WAIT` seconds, at most
+    `Split.LONGEST`); the item split goes into `Views.split`.
+  - **The settings** (`Inventory.lua`'s `OPTIONS`, the section *Bags*, Core's options): `first`, `showPinned`,
+    `pinnedOne`, `showRecent`, `recentOne`, `hideEmpty`, `addCategory`, `merge`, `marker`, `splitter`, `itemLevel`,
+    `borders`, `bind`, `setName`, `coin`, `grey`; read by the views, the sidebar, the categories (`Categories.Marker`)
+    and the cells; changed from the dropdown and menus by `Core.Set`; a change draws the bags anew
+    (`Bags.Settled`). What the window keeps of itself (the display, the order, the columns, the strip, the sidebar
+    folded, the folded blocks) and the categories' choices stay in `store.bags`.
   - **The list's columns** (`Bags/Columns.lua`): `Columns.LIST` (icon, name, level, required, kind, bind, count,
     sell), the ones shown in order (`columns`), widths (`widths`), the sort (`listSort`, `listDown`), round icons
     (`round`), all kept in `store.bags`. `Columns.Place` gives each its place in a line (the name the room left,
@@ -410,6 +429,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 | `Bags/Cells.lua` | The bags' item buttons: the game's own, a pool, in the flat look, drawn the game's way |
 | `Bags/Foot.lua` | The bags' foot: currencies, gold; the strip of the bags; selling junk or depositing reagents |
 | `Bags/Menus.lua` | The bags' menus for an item, a category and a group, items let go over a category, new categories |
+| `Bags/Split.lua` | The bags' stack splitter: split into the first free slot, or the whole stack by turns |
 | `Bags/Columns.lua` | The bags' list columns: their values, sorting, widths, the head over the list and its menu |
 | `Bags/Select.lua` | The bags' choosing by clicks: an item into a category after its "+", junk marked by the coin |
 | `Bags/Sidebar.lua` | The bags' sidebar: the views, Pinned, Recent, the categories and groups with their counts |

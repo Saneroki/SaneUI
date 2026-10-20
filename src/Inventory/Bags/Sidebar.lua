@@ -178,13 +178,14 @@ local function Divider()
     y = y + 6
 end
 
--- The rows as they are now: counts are Views.Counts', viewing the view shown.
-function Sidebar.Refresh(counts, viewing)
+-- The rows as they are now: counts are Views.Counts', viewing the view shown, options the module's settings.
+function Sidebar.Refresh(counts, viewing, options)
     if not frame then return end
+    options = options or {}
     rows:Begin()
     dividers:Begin()
     y = 2
-    local default = kept.first or "all"
+    local default = options.first or "all"
     local fixed = {}
     for _, view in ipairs(ns.Views.FIXED) do
         if view.key == default then table.insert(fixed, 1, view) else fixed[#fixed + 1] = view end
@@ -192,7 +193,6 @@ function Sidebar.Refresh(counts, viewing)
     for _, view in ipairs(fixed) do
         Row(view.word, nil, view.icon, nil, 0, viewing == view.key).view = view.key
     end
-    local options = ns.Bags.options or {}
     local shownFixed = false
     for _, key in ipairs({ Categories.PINNED, Categories.RECENT }) do
         if options[ns.Bags.SHOW[key]] ~= false then

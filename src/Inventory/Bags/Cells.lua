@@ -267,7 +267,8 @@ local function Empty(button, mine)
 end
 
 -- A button as the record says; how: { faded (a search did not find it), count (a merged stack's), coin (the
--- junk coin shown), grey (junk greyed), bind (BoE shown), set (the set's name shown) }.
+-- junk coin shown), grey (junk greyed), bind (BoE shown), set (the set's name shown), level (the item level
+-- shown), plain (no quality's colour on the border) }.
 function Cells.Draw(button, record, how)
     local mine = look[button]
     local holder = mine.holder
@@ -303,12 +304,12 @@ function Cells.Draw(button, record, how)
     local color = rawget(_G, "ITEM_QUALITY_COLORS") and record.quality and ITEM_QUALITY_COLORS[record.quality]
     if quest then
         Cells.Edge(mine.border, Cells.QUEST[1], Cells.QUEST[2], Cells.QUEST[3], 1, pixel * 2)
-    elseif color then
+    elseif color and not (how and how.plain) then
         Cells.Edge(mine.border, color.r, color.g, color.b, 1, pixel)
     else
         Cells.Edge(mine.border, Cells.NEUTRAL[1], Cells.NEUTRAL[2], Cells.NEUTRAL[3], 1, pixel)
     end
-    if record.level then
+    if record.level and not (how and how.level == false) then
         mine.level:SetText(record.level)
         if color then mine.level:SetTextColor(color.r, color.g, color.b) else mine.level:SetTextColor(1, 1, 1) end
     else
