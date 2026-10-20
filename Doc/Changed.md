@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 377 (Navigation), 105 (Inventory), 90 (sheet), 186 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### Navigation: a map pin the game refuses no longer stops the map (Saneroki, 2026-10-20)
+- `Live.SetWaypoint`: a place off the map's edge (or no number) puts no map pin, and the game's
+  `C_Map.SetUserWaypoint` is asked in a protected call: where it refuses the point, the bar says that no map pin can
+  go there, instead of an error that made the module stand down (the error log, 2026-10-20 23:28).
+- Tests: Navigation 382 checks. A `/reload` takes it in.
+
 ### Navigation: quest marks as the game's, the pin filter in sections (Saneroki, 2026-10-20)
 - **Quest marks** (`Pins.lua`, `PinView.lua`): quests in your log the game's yellow question mark (`Pins.ICONS.log`;
   the target mark for one in progress is gone), quests to take the yellow exclamation mark at full opacity

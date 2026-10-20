@@ -2004,6 +2004,16 @@ Core.Character(ns.name).flights = { [2] = true, [5] = true }
 local shownWay
 local show = ns.Route.Show
 ns.Route.Show = function(way) shownWay = way return show(way) end
+do
+    -- Off the map's edge, or refused by the game: no map pin, and no error.
+    local before = waypoint
+    local set = C_Map.SetUserWaypoint
+    check(Live.SetWaypoint(1429, 1.2, 0.5) == false and Live.SetWaypoint(1429, 0 / 0, 0.5) == false and waypoint == before,
+        "a map pin off the map's edge (or at no number): none, and nothing asked of the game")
+    C_Map.SetUserWaypoint = function() error("Usage: local wasSet = C_Map.SetUserWaypoint(point)") end
+    check(Live.SetWaypoint(1429, 0.5, 0.5) == false and waypoint == before, "one the game refuses: none, no error")
+    C_Map.SetUserWaypoint = set
+end
 Live.SetWaypoint(1429, 0.05, 0.99)
 W.Fire("USER_WAYPOINT_UPDATED")
 W.Wait(0)

@@ -83,11 +83,18 @@ function Live.Tracked()
     return Core.Ask(C_SuperTrack.IsSuperTrackingUserWaypoint) and true or false
 end
 
+-- Whether a map's coordinate is one the game takes for its map pin: a number from 0 to 1 (not NaN).
+local function OnMap(value)
+    return type(value) == "number" and value >= 0 and value <= 1
+end
+
 -- Puts the game's map pin on a map, not yet followed by the game's arrow, as its map does; false where the
--- game allows none (an instance, the world map).
+-- game allows none (an instance, the world map), off the map's edge, or where the game refused it.
 function Live.SetWaypoint(map, x, y)
+    if not OnMap(x) or not OnMap(y) then return false end
     if not Core.Ask(C_Map.CanSetUserWaypointOnMap, map) then return false end
-    C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(map, x, y))
+    local point = Core.Ask(UiMapPoint.CreateFromCoordinates, map, x, y)
+    if not point or not pcall(C_Map.SetUserWaypoint, point) then return false end
     C_SuperTrack.SetSuperTrackedUserWaypoint(false)
     return true
 end
