@@ -1,0 +1,9 @@
+# UI style, the character sheet emptied: assets/Concept art/UI style/sheet.png without its slots, labels and
+# diamonds, its frame and hero kept, as the ground the sheet's own parts are laid out on.
+#   dev/tools/imagegen dev/imagegen/sets/ui-style/sheet-clean.txt
+workflow: qwen21-turbo-edit-1ref
+set: width=1728, height=960
+count: 4
+out: assets/generated/ui-style/sheet-clean
+ref: assets/Concept art/UI style/sheet.png
+empty: Edit image 1: remove all the equipment slots, all their small text labels and stat lines, and the row of diamonds in the plaque at the bottom, so the pale parchment is plain and empty there. Keep the leather and steel frame with its straps and corners, the hero in the middle and everything else exactly as it is.

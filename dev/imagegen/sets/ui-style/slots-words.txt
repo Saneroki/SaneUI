@@ -1,0 +1,11 @@
+# UI style, the slots that came out as plain plaques with the sheet as image 1 (the helmet, the pauldron):
+# from words alone, so image 1's plaques do not pull them back. The same materials in words.
+#   dev/tools/imagegen dev/imagegen/sets/ui-style/slots-words.txt
+workflow: qwen21-turbo-t2i
+set: aspect_ratio=1:1 (Square), megapixels=1
+count: 4
+out: assets/generated/ui-style/slots-words
+before: One single game interface part, a fantasy equipment slot backplate, large, centred and filling most of the picture, on a plain flat light grey background:
+style: Made of dark brown stitched leather with a slim grey steel border and small brass rivets, like a leather-bound book. Flat front view, no perspective, soft even light from the top left, symmetrical. Chunky, readable silhouette that stays clear when small. No text, no watermark.
+head: a backplate cut exactly in the silhouette of a knight's closed great helm seen straight from the front: a rounded dome top, a horizontal eye slit, flared cheek guards and a pointed chin; the outer rim leather with the steel border, and inside it a plain, clean, flat dark area in the same helmet shape, empty, for an item icon.
+shoulder: a backplate cut exactly in the silhouette of a single pauldron seen from the front, a rounded shoulder plate with three overlapping curved lames fanning down like a shell, its top rounded and its bottom edge scalloped; the outer rim leather with the steel border, and inside a plain, clean, flat dark area in the same shape, empty, for an item icon.

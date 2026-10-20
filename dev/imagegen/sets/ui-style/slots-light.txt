@@ -1,0 +1,29 @@
+# UI style, the slot frames, light (Saneroki, 2026-10-21): the dark backplates of slots.txt left too little room
+# for the item's icon and were too heavy. Each kind of slot our sheet has (src/Inventory/Sheet/Slots.lua) as a
+# light frame in its gear's silhouette around a large, plain inner area that holds the whole item icon, from
+# words alone (the sheet as image 1 pulled the helmet and the pauldron back to plain plaques).
+#   dev/tools/imagegen dev/imagegen/sets/ui-style/slots-light.txt
+workflow: qwen21-turbo-t2i
+set: aspect_ratio=1:1 (Square), megapixels=1
+count: 4
+out: assets/generated/ui-style/slots-light
+before: One single game interface part, large, centred and filling most of the picture, on a plain flat light grey background: an empty equipment slot frame in the silhouette of
+style: The frame is light and slim: a thin border of polished light grey steel with a fine dark outline, a narrow edge of light tan stitched leather inside it, and a few tiny brass rivets. Inside the frame a large, plain, clean, flat area of pale cream parchment fills almost the whole shape, roomy enough to hold a whole square item icon; nothing drawn in it. Light, airy and readable, crafted like a leather-bound book. Flat front view, no perspective, soft even light from the top left, symmetrical where the shape allows. No text, no watermark.
+head: a knight's closed great helm seen from the front, a rounded dome top and flared cheek guards.
+neck: an amulet, a wide teardrop pendant hanging from a short chain.
+shoulder: a pauldron: a shield-shaped inner panel with three curved steel shoulder lames fanning out over its top and down its sides, so the whole outline reads clearly as shoulder armour.
+back: a cloak hanging from a round clasp, widening towards its bottom.
+chest: a breastplate seen from the front, with a neckline and shoulder openings.
+shirt: a simple shirt with short sleeves.
+tabard: a tabard, a long hanging banner with a pointed bottom.
+wrist: a bracer: a broad armoured cuff seen from the front, two leather straps with small buckles across its top and bottom, flaring at its upper edge, so the whole outline reads clearly as a wrist guard.
+hands: a gauntlet: a broad armoured hand seen from the back, its wide back of the hand as the inner panel, with short spread steel fingers and a thumb around its top and a flared cuff below, so the whole outline reads clearly as a gauntlet.
+waist: a belt: a short piece of a wide leather belt running out to the left and the right of a very large square buckle in the middle, the buckle's frame being the inner panel, so the whole outline reads clearly as a belt.
+legs: a pair of leggings, wide at the hips.
+feet: a tall boot with a broad shaft.
+finger: a ring with a large round setting, the setting as the inside.
+trinket: a round charm with a small loop on top.
+mainhand: a sword: a large rounded shield-shaped inner panel set in the middle of an upright sword, its pommel and grip sticking out above the panel, its crossguard spreading out to both sides, its blade tip pointing out below the panel, so the whole outline reads clearly as a sword.
+offhand: a heater shield, flat top with rounded corners, its sides curving to a sharp point at the bottom, so the whole outline reads clearly as a shield.
+ranged: an upright recurve bow with its string, with a large round plate on its grip as the inside.
+ammo: a quiver: a tall rounded leather case as the inner panel, with three arrow shafts and fletchings sticking out of its top and a strap across it, so the whole outline reads clearly as a quiver of arrows.

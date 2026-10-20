@@ -463,6 +463,12 @@ Saneroki asked for a much richer bag view, in features and looks.
   parchment pages, every view), `leather-ref.txt` (the same with that book as image 1: it copied the book
   into every view), both from `leather-views.txt`; `shapes.txt` (fancy silhouettes instead of rectangles,
   and character dolls whose slots are shaped like their gear, laid out around the hero with their main stats).
+- The character sheet (Saneroki chose `shapes`' doll-arc-2, now `assets/Concept art/UI style/sheet.png`): our sheet's
+  twenty slots, each a light frame in its gear's silhouette with a plain inside for the item's icon
+  (`slots-light.txt`, `slots-words.txt`; the dark backplates of `slots.txt` left too little room), the sheet's
+  four tabs (equipment, skills, reputation, currency; `slots.txt`), the sheet emptied (`sheet-clean.txt`), and
+  `compose.py`, which lays them out on it exactly with the game's icons; `sheet.txt` (the picture edited) did
+  not keep the slots' number.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.
 
 ### Data: items, spells, talents and recipes from the game's own tables (Saneroki, 2026-10-20)
