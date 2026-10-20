@@ -17,7 +17,7 @@ Use current source and the user's instructions when they differ from a note.
 | Tooltip content, layout, live unit data, quests, prices | [tooltips.md](tooltips.md) |
 | Messages, bubbles, native chat, input, filtering/fading | [social.md](social.md) |
 | Navigation: minimap, world map, quest log, pins, routes, leveling guide (built: window, both views, canvas, terrain and art at every zoom, the game's minimap and map taken over; pins, quest log, top bar, routes, guide to come; handoff) | [navigation.md](navigation.md), then `Doc/ideas/Navigation.md` |
-| Combat: its window at the bottom middle, the full screen's talents and spellbook (built); unit frames, party, raid, buffs, pets (not built yet) | `src/Combat/README.md`, `Doc/ideas/Combat.md` |
+| Combat: its window at the bottom middle, its full screen with our own spellbook (built) and talents (being built), as the game's; your spellbook and talents keys open them; unit frames, party, raid, buffs, pets (not built yet) | `src/Combat/README.md`, `Doc/ideas/Combat.md` |
 | Nameplates: the game's plates in our dress (built: round-cornered health bar, combo points in the target's, name, own debuffs and a foe's buffs in the game's aura containers, rare's mark, raid marker) | `src/Nameplates/README.md` |
 | Inventory: own character sheet, bags, alts' snapshots on its full screen (built: window in the bottom right corner, its full screen and board; the windows to come; never the game's panels, which taint the window manager) | `src/Inventory/README.md`, then `Doc/ideas/Inventory.md` |
 | NPC talks, books and letters as a scene, part of Social (not built yet) | `Doc/ideas/Dialogue.md` |
@@ -39,8 +39,8 @@ channels as chosen on its page. Nameplates (2026-10-20) dresses the game's own p
 health bar over the game's, combo points in the target's, the name, own debuffs and a foe's buffs in the game's
 aura containers, the rare's mark and the raid marker; the game's parts under it at alpha 0 (`src/Nameplates/README.md`).
 Combat (2026-10-16) is set up for unit frames, party, raid, buffs and pets; built (2026-10-20): its window at the bottom middle, whose full screen (the bottom edge's middle
-half) holds the talents and the spellbook, the game's window seated there (Core's `Seat.lua`) and a talent planner Sane UI
-knows as the talents (the known addons, Core's `Neighbours.lua`) (`src/Combat/README.md`, plan `Doc/ideas/Combat.md`). Inventory (2026-10-20) is a window in
+half, or your spellbook and talents keys) holds our own spellbook and talents, as the game's, and a talent planner Sane UI
+knows as a window of its own (the known addons, Core's `Neighbours.lua`) (`src/Combat/README.md`, plan `Doc/ideas/Combat.md`). Inventory (2026-10-20) is a window in
 the bottom right corner whose corner fills the screen with its own character sheet, bags and alts' snapshots, being built (`src/Inventory/README.md`, plan `Doc/ideas/Inventory.md`). Navigation (2026-10-18) is the minimap and the map in one
 window, without the map's data yet (`src/Navigation/README.md`, plan `Doc/ideas/Navigation.md`); its painted view
 is the module Atlas (`src/Atlas/`, load on demand; its art and index made into `assets/optimized/Atlas/`, built only

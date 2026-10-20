@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Combat
-## Notes: Sane UI's frames for the fight, being built. Docked at the screen's bottom middle: push the mouse against the middle of the bottom edge and your talents and spellbook fill the screen side by side; push there again, or Esc, and they go back.
+## Notes: Sane UI's frames for the fight, being built. Docked at the screen's bottom middle: push the mouse against the middle of the bottom edge, or press your spellbook or talents key, and our own talents and spellbook fill the screen side by side, as the game's; push there again, or Esc, and they go back.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -13,7 +13,21 @@
 Combat.lua
 # Its window: docked at the bottom middle, filling the screen from the middle half of the bottom edge
 Window.lua
-# The full screen's panels: your talents and your spellbook, the windows that hold them seated there
+# The full screen's windows on Core's board: each registers itself (Board.Part); the talent planner seated
 Board.lua
+# Talents: our own window of your talents, as the game's (Talents/)
+# Spellbook: our own window of your spells, as the game's (Book/)
+# Where each entry stands on the pages, by the game's rules (lists in, lists out)
+Book\Layout.lua
+# What the book holds: the game's tabs, their spells as its book shows them, the search
+Book\Data.lua
+# One entry, as the game's: its icon and frame, name, rank, cooldown, the glow of a spell on no bar
+Book\Item.lua
+# The game's secure buttons over the icons, which cast out of a fight
+Book\Casts.lua
+# The book itself: its pages, tabs, the game's paging controls and settings
+Book\Book.lua
+# Your spellbook, pet book and talents keys opening ours (the game's override bindings; our keys: Bindings.xml)
+Keys.lua
 # A mark beside a creature's nameplate while it belongs to an objective of your quests still to do
 QuestMarks.lua

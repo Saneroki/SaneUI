@@ -33,6 +33,24 @@ Decided (Saneroki, 2026-10-16):
   button): opened from our code, its `OnShow` (the action bars' grids) and its spellbook's (which spell each
   entry casts) would run tainted (`src/Combat/README.md`, *Technical details*). So pushing against the edge
   brings it only if it is open already; otherwise its window is one click away.
+- **Our own spellbook and talents** (Saneroki, 2026-10-20; being built): two windows of Combat's own on its
+  full screen that look, feel and work as the game's (`PlayerSpellsFrame`, Camelot's), as Inventory's character
+  sheet does for the game's: the game's sizes, art, words and behaviour, rewritten in our code, the game's
+  templates used where they do not touch its own window. Both are Combat's (this replaces the plan of a
+  spellbook window in Abilities, `Doc/ideas/Windows.md`); Abilities' future spells and reservations come into
+  this book later, through Core. The game's own window goes back to the game, untouched: not seated, not
+  hidden; the game's spellbook and talents keys open ours.
+  - **The spellbook casts out of fights only** (Saneroki, 2026-10-20): a click casts through a secure button of
+    the game's (`SecureActionButtonTemplate`), which stands on UIParent over the entry, not in our window (a
+    window holding one is locked in a fight). These go as a fight begins and come back after it; in a fight the
+    book still shows, pages, searches and drags spells to the bars, but a click does not cast. So the full
+    screen opens, closes and changes in a fight as always.
+  - **The talents** are the game's trait tree (`C_Traits`, `C_ClassTalents`: three trees, the primary and
+    secondary specialization), drawn by the game's shared talent frame (`Blizzard_SharedTalentUI`) in our
+    window; buying, undoing, resetting and applying are not protected, so they work as in the game's window
+    (out of a fight, as the game allows).
+  - **The talent planner** Sane UI knows becomes a window of its own on the board (in the dropdown Windows),
+    no longer the Talents panel.
 - **Party style** (the game's raid style or classic party frames) and **click casting** are decided during
   development.
 

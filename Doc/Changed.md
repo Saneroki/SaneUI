@@ -3,8 +3,39 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 296 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 60 (Combat), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 296 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 35 (Combat), 35 (spellbook), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Combat: our own spellbook, your keys opening it, the planner a window of its own (Saneroki, 2026-10-20)
+- **Decided** (Saneroki, `Doc/ideas/Combat.md`, *Our own spellbook and talents*; `Doc/ideas/Windows.md`): the
+  spellbook and the talents are Combat's own windows that look, feel and work as the game's, built as
+  Inventory's character sheet is; the game's own window goes back to the game, untouched (no longer seated);
+  the book casts out of a fight only.
+- **The board** (`Board.lua`) is a registry of parts, as Inventory's (`Board.Part`, `Board.Present`,
+  `Board.Add`): `talents`, `spellbook`, `planner`; the first layout the talents and the spellbook side by side,
+  shared by the game's sizes. The game's window, its seat, the empty panels' secure clicks and their words are
+  gone.
+- **The spellbook** (new `Book/`): `Book.lua` (the part: the open book at the game's 1612 x 702, scaled to fit,
+  one page where the panel is narrow; the game's square icon tabs per skill line and the pet's; the game's
+  paging controls and mouse wheel; the game's settings Hide passives and Show all ranks, its CVars; the full
+  window's search), `Data.lua` (the Camelot book's tabs and filter, flyouts loose, the search), `Layout.lua` (the
+  game's paging rules with Camelot's numbers), `Item.lua` (an entry as `SpellBookItemTemplate` draws it: frames,
+  rank, level or Trainable, the cooldown by the game's duration object, the glow of a spell on no bar, autocast,
+  the level-link lock, the sheen; tooltip, drag, link), `Casts.lua` (the game's `SecureActionButtonTemplate`
+  over each castable icon, on UIParent, out of a fight only: a spell by its ID, a pet ability by name and its
+  autocast on a right click, no cast on Shift; away at `PLAYER_REGEN_DISABLED`, back after the fight).
+- **Your keys** (new `Keys.lua`, `Bindings.xml`): Combat's keys under Sane UI in the game's key bindings, put on
+  the keys of the game's spellbook, pet book and talents by override bindings (out of a fight; anew when those
+  keys change; cleared with the switch *Your spellbook and talents keys open ours* off and at standing down):
+  the full screen with that window, pressed again back (`Window.Open`, `Window.Toggle`).
+- **The talent planner** is a window of its own on the board (in the dropdown *Windows* while its addon is
+  there), seated in its panel, opened and closed with it; its opening brings the full screen while its window
+  is on the layout.
+- **Classic windows** (Core's, `Window.lua`): while our keys are on the game's, the game's spellbook and talents
+  are said to open from the micro menu (`Classic.Press` without a binding); the Sane UI button on the game's
+  window opens ours with the spellbook or talents on it (`ours = Window.Open`).
+- Tests: `dev/tests/book.lua` (35 checks, new, in `dev/tests/run`), `dev/tests/combat.lua` (35: the board, the
+  keys, the planner, the quest marks; the seat's and clicks' checks gone with them).
 
 ### Windows: layouts deleted, Classic windows across modules and back (Saneroki, 2026-10-20)
 - **Layouts** (`Core/Board.lua`): every layout can be deleted from its tab's right-click menu while another is

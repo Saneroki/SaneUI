@@ -10,7 +10,8 @@
 #   inventory.lua   the Inventory module: its window in the corner, its full screen, the character sheet's paper doll and stats
 #   sheet.lua       the Inventory module's character sheet: its side tabs and the tabs behind them
 #   bags.lua        the Inventory module's bags: what they hold, the views, the game's item buttons, the bank, the foot
-#   combat.lua      the Combat module: its window at the bottom middle, the full screen's talents and spellbook
+#   combat.lua      the Combat module: its window at the bottom middle, its board, your keys, the talent planner
+#   book.lua        the Combat module's own spellbook: its pages, tabs, entries, the casts out of a fight
 #   nameplates.lua  the Nameplates module: our dress on the game's plates, the bar, auras, marks, combo points
 #   sync.lua        Core's Sync: the game's own settings kept with Sane UI's
 #   window.lua      what Core gives every window: moving, sizing, docking, opening under the mouse
@@ -42,6 +43,7 @@ lua5.1 dev/tests/inventory.lua
 lua5.1 dev/tests/sheet.lua
 lua5.1 dev/tests/bags.lua
 lua5.1 dev/tests/combat.lua
+lua5.1 dev/tests/book.lua
 lua5.1 dev/tests/nameplates.lua
 lua5.1 dev/tests/sync.lua
 lua5.1 dev/tests/window.lua

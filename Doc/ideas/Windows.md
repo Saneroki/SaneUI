@@ -152,7 +152,9 @@ together, share the middle.
 - **The spellbook (Saneroki):** the Abilities module changes the game's own spellbook today. It goes back to
   the game's spellbook as it is, untouched, and Abilities gets a spellbook window of its own on Core's
   window system (title bar, buttons, search, Edit Mode, the game's key opening it), with the functions it
-  has today.
+  has today. Changed (Saneroki, 2026-10-20): the spellbook window of our own, and the talents window, are
+  Combat's, on its full screen (`Doc/ideas/Combat.md`, *Our own spellbook and talents*); Abilities' functions
+  come into that book through Core.
 
 ## Full screen only where a window is docked
 

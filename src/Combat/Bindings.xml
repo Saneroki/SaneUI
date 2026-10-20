@@ -1,0 +1,14 @@
+<Bindings>
+	<!-- Combat's keys, in the game's key bindings under Sane UI (BINDING_HEADER_SANEUI, Core's Bindings.lua; their
+	     words in Keys.lua); the game reads this file from the addon's folder by itself. Keys.lua also puts them on
+	     the keys of the game's own spellbook, pet book and talents (override bindings). -->
+	<Binding name="SANEUI_COMBAT_SPELLBOOK" category="BINDING_HEADER_SANEUI">
+		SaneUI.Combat.Safe("keys", SaneUI.Combat.Keys.Press, "spellbook")
+	</Binding>
+	<Binding name="SANEUI_COMBAT_PETBOOK" category="BINDING_HEADER_SANEUI">
+		SaneUI.Combat.Safe("keys", SaneUI.Combat.Keys.Press, "pet")
+	</Binding>
+	<Binding name="SANEUI_COMBAT_TALENTS" category="BINDING_HEADER_SANEUI">
+		SaneUI.Combat.Safe("keys", SaneUI.Combat.Keys.Press, "talents")
+	</Binding>
+</Bindings>
