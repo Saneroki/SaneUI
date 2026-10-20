@@ -12,15 +12,20 @@ texture of 512 x 512, so a whole continent is a few dozen textures (src/Navigati
 
 The water is cut away: each texel's alpha is how much of it is land, read from the game's terrain files,
 where the ground lies above the water's surface (its heights and the water of each map chunk; magma and
-slime stay). So is the open sky around an isle that floats (Zephras Isle), where there is no water: what the
+slime stay), fading out in the first yard under it, so a beach one wades on stays. What stands on the water
+stays too (a dock, a pier, a bridge, a ship at its mooring: the ground under it is the sea's floor): where the
+minimap shows something brighter or warmer than the water around it. So is the open sky around an isle that floats (Zephras Isle), where there is no water: what the
 game's minimap textures leave pure black (it draws nothing there: the terrain's holes, the cliffs under the
 rim), as far as it reaches out to the edge of the map's tiles; a dark place within the land and a building
 over the sky (a dock) stay. The land's colour is taken from land alone, so no dark water rims a coast;
 transparent texels carry the nearest land's colour, so filtering never draws a dark edge either. Up close the same
-alpha is the mask of the game's own textures (Terrain.lua), so the coast is cut alike at every zoom.
+alpha is the mask of the game's own textures (Terrain.lua), so the coast is cut alike at every zoom; a tile on a
+coast has a mask of its own, at four times the overview's detail, so a pier a few yards wide is not lost.
 
   src/Navigation/Art/Terrain/<continent>-<row>-<column>.blp   row and column of the block of 8 x 8 tiles
                                                               (0 to 7), only blocks that hold a tile
+  src/Navigation/Art/Coasts/<key>.blp                          128 x 128, a tile on a coast (its key in the set Tiles)
+  src/Navigation/Coasts.lua                                    the tiles that have one, by continent (ns.COASTS)
 
 Each zone's outline, for Blizzard's map art cut to its zone's shape (src/Navigation/Art.lua; a zone of a
 continent's map, or one straight on the world map, as the isle): the map chunks
@@ -81,7 +86,9 @@ TERRAIN = NAVIGATION / "Art" / "Terrain"
 ZONES = NAVIGATION / "Art" / "Zones"
 SKETCHES = NAVIGATION / "Art" / "Sketches"
 EDGE = NAVIGATION / "Art" / "Edge.blp"
+COASTS = NAVIGATION / "Art" / "Coasts"
 OUTLINES = NAVIGATION / "Outlines.lua"
+COASTLIST = NAVIGATION / "Coasts.lua"
 
 GRID = 64          # tiles along each side of a continent's grid
 BLOCK = 8          # tiles along each side of one overview texture
@@ -95,6 +102,10 @@ SOFT = 2.5         # how far a zone's border is softened, in map chunks (a Gauss
 FADED = 0.08       # the softened border's value where the outline has faded out (0.5: at the border)
 FRAME = (0.015, 0.05)  # a map's paper frame, as a part of its box's side from each edge: gone, then whole
 SHORE = 2          # map chunks of open sea a zone's map keeps past its land, before its outline fades
+SHALLOW = 1.0      # yards of water over the ground in which the land fades out: a beach a wader stands on stays
+BUILT = 20         # how much brighter or warmer than its water a sample of the minimap is where something stands on it
+WATERS = 8         # samples (some 17 yards) each way around a sample its water's colour is taken from
+COAST = 128        # a tile's own mask on a coast, texels a side: four times the overview's detail
 
 ZONE, CONTINENT, WORLD = "3", "2", "1"  # the game's kinds of map (UiMap's Type)
 
@@ -172,6 +183,13 @@ def ground(outer, inner):
 def terrain(path, liquids):
     """A terrain file's land at every sample (a tile's side: CHUNKS * CELLS * SAMPLES; 1 land, 0 water) and
     each map chunk's area (CHUNKS x CHUNKS)."""
+    height, surface, areas = levels(path, liquids)
+    return (height >= surface).astype(np.float32), areas
+
+
+def levels(path, liquids):
+    """A terrain file's ground and water at every sample (a tile's side: CHUNKS * CELLS * SAMPLES): the ground's
+    height, the water's surface (-inf where there is none) and each map chunk's area (CHUNKS x CHUNKS)."""
     data = path.read_bytes()
     chunks, water_at = [], None
     for name, at, size in pieces(data, 0, len(data)):
@@ -224,7 +242,58 @@ def terrain(path, liquids):
                 y0, x0 = cy * n + top * SAMPLES, cx * n + left * SAMPLES
                 region = surface[y0:y0 + high * SAMPLES, x0:x0 + wide * SAMPLES]
                 np.maximum(region, level, out=region)
-    return (height >= surface).astype(np.float32), areas
+    return height, surface, areas
+
+
+def box(grid, reach):
+    """The mean of every sample's square of reach samples each way (the grid's edge repeated), along both sides."""
+    for axis in (0, 1):
+        pad = [(reach + 1, reach) if a == axis else (0, 0) for a in range(grid.ndim)]
+        summed = np.cumsum(np.pad(grid, pad, mode="edge"), axis=axis)
+        size = summed.shape[axis]
+        grid = (np.take(summed, range(2 * reach + 1, size), axis=axis)
+                - np.take(summed, range(0, size - 2 * reach - 1), axis=axis)) / (2 * reach + 1)
+    return grid
+
+
+def tones(colour):
+    """Brightness, red over green, and red and green over blue: water is dark and blue or green, wood and stone
+    over it brighter or warmer."""
+    r, g, b = colour[..., 0], colour[..., 1], colour[..., 2]
+    return np.stack([(r + g + b) / 3, 2 * (r - g), (r + g) - 2 * b], -1)
+
+
+def standing(colour, water):
+    """The samples of the water where the minimap shows something standing on it (a dock, a pier, a bridge, a
+    ship): brighter or warmer than the water around them. The water's colour is the mean of its samples nearby,
+    taken twice, the second time without what the first found standing out."""
+    tone, kept = tones(colour), water.astype(np.float32)
+    for _ in range(2):
+        weight = box(box(kept, WATERS), WATERS)
+        around = box(box(tone * kept[..., None], WATERS), WATERS) / np.maximum(weight, 1e-6)[..., None]
+        above = np.sqrt((np.maximum(tone - around, 0) ** 2).sum(-1)) > BUILT
+        kept = (water & ~above).astype(np.float32)
+    found = water & above
+    edge = lambda grid: np.pad(grid, 1, mode="edge")  # noqa: E731
+    shifted = lambda grid, dy, dx: edge(grid)[1 + dy:1 + dy + grid.shape[0], 1 + dx:1 + dx + grid.shape[1]]  # noqa: E731
+    near = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+    alone = found.copy()
+    for dy, dx in near:  # a lone speck goes, what is a few samples wide stays (and is widened by one again)
+        alone &= shifted(found, dy, dx)
+    found = alone.copy()
+    for dy, dx in near:
+        found |= shifted(alone, dy, dx)
+    for dy, dx in near:  # and one sample more, so its edge is not cut
+        found |= shifted(found, dy, dx)
+    return found & water
+
+
+def coast(height, surface, colour):
+    """How much of each sample is land (0 to 1): the ground above the water, fading out in the first SHALLOW yards
+    under it, and whatever stands on the water as the minimap shows it."""
+    depth = np.where(np.isfinite(surface), surface - height, -1.0)
+    land = np.clip(1 - depth / SHALLOW, 0, 1).astype(np.float32)
+    return np.where(standing(colour, depth > 0), 1, land)
 
 
 def blank(texture):
@@ -351,7 +420,9 @@ def overview(found, textures, files, liquids, maps):
     grids = {c: np.zeros((GRID * CHUNKS, GRID * CHUNKS), np.int64) for c, _, _ in blocks}
     lands = {c: np.zeros((GRID * CHUNKS, GRID * CHUNKS), bool) for c, _, _ in blocks}
     TERRAIN.mkdir(parents=True, exist_ok=True)
+    COASTS.mkdir(parents=True, exist_ok=True)
     made, total, side, per = set(), 0, BLOCK * TEXELS, CHUNKS * CELLS * SAMPLES
+    coasts, total_coast = {}, 0
     for continent, block_row, block_column in blocks:
         rgb = np.zeros((side, side, 3), np.float32)
         alpha = np.zeros((side, side), np.float32)
@@ -367,15 +438,24 @@ def overview(found, textures, files, liquids, maps):
                                         np.float32)
                 place = files / f"{key}.adt"
                 if place.exists():
-                    land, areas = terrain(place, liquids)
+                    height, surface, areas = levels(place, liquids)
                     grids[continent][row * CHUNKS:(row + 1) * CHUNKS, column * CHUNKS:(column + 1) * CHUNKS] = areas
+                    ground, land = height >= surface, coast(height, surface, colour)
                 else:
-                    land = np.ones((per, per), np.float32)
+                    ground, land = np.ones((per, per), bool), np.ones((per, per), np.float32)
                 if (continent, row, column) in void:
+                    ground = ground & ~void[(continent, row, column)]
                     land = np.where(void[(continent, row, column)], 0, land)
                 step = per // CHUNKS
                 lands[continent][row * CHUNKS:(row + 1) * CHUNKS, column * CHUNKS:(column + 1) * CHUNKS] = \
-                    land.reshape(CHUNKS, step, CHUNKS, step).max(axis=(1, 3)) > 0
+                    ground.reshape(CHUNKS, step, CHUNKS, step).max(axis=(1, 3))
+                if land.min() < 1 and land.max() > 0:  # on a coast: a mask of its own for the game's tile
+                    step = per // COAST
+                    cut = land.reshape(COAST, step, COAST, step).mean(axis=(1, 3))
+                    white = np.full((COAST, COAST, 3), 255, np.uint8)
+                    mask = Image.fromarray(np.dstack([white, (cut * 255).round().astype(np.uint8)]), "RGBA")
+                    total_coast += write(COASTS / f"{key}.blp", mask)
+                    coasts.setdefault(continent, []).append(key)
                 # Each texel: how much of it is land, and the colour of its land alone.
                 step = per // TEXELS
                 share = land.reshape(TEXELS, step, TEXELS, step).mean(axis=(1, 3))
@@ -394,7 +474,38 @@ def overview(found, textures, files, liquids, maps):
         if drawn(old.name, made, maps):
             old.unlink()
     print(f"Terrain overview: {len(made)} textures of {side} x {side} in {TERRAIN.relative_to(ROOT)}, {total / 1e6:.1f} MB.")
+    write_coasts(coasts, maps)
+    print(f"Coasts: {sum(map(len, coasts.values()))} masks of {COAST} x {COAST} in {COASTS.relative_to(ROOT)}, "
+          f"{total_coast / 1e6:.1f} MB.")
     return grids, lands
+
+
+def write_coasts(coasts, maps):
+    """Coasts.lua: the tiles with a coast's mask of their own, by continent; with --maps the other maps' lines and
+    masks stay as they were."""
+    listed = {}
+    if COASTLIST.exists():
+        for line in COASTLIST.read_text(encoding="utf-8").splitlines():
+            found = re.match(r"    \[(\d+)\] = \{(.*)\},$", line)
+            if found:
+                listed[int(found.group(1))] = [int(key) for key in re.findall(r"\[(\d+)\]", found.group(2))]
+    for continent in list(listed):
+        if maps is None or continent in maps:
+            del listed[continent]
+    listed.update(coasts)
+    keep = {key for keys in listed.values() for key in keys}
+    for old in COASTS.glob("*.blp"):
+        if int(old.stem) not in keep:
+            old.unlink()
+    lines = ["local _, ns = ...", "",
+             "-- Made by dev/tools/terrain-art, not by hand: the tiles on a coast, whose own mask (Art/Coasts/<key>.blp)",
+             "-- cuts the game's minimap texture up close, by the continent's instance. Run the tool again when the",
+             "-- game's build changes.", "ns.COASTS = {"]
+    for continent in sorted(listed):
+        keys = ", ".join(f"[{key}] = true" for key in sorted(listed[continent]))
+        lines.append(f"    [{continent}] = {{ {keys} }},")
+    lines.append("}")
+    COASTLIST.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def shore(land):

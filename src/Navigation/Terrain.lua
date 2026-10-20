@@ -13,9 +13,12 @@ local _, ns = ...
 --                 land never goes black while the tiles load; far out it is the terrain alone.
 --
 --  The water is cut away, to the canvas' sea: the overview's alpha is the land
---  (the tool reads where the ground lies above the water's surface), and the
---  same file is the mask of the game's own tiles of its block, so the coast is
---  cut alike at every zoom.
+--  (the tool reads where the ground lies above the water's surface, fading out
+--  in the first yard under it, and keeps what the minimap shows standing on the
+--  water: docks, piers, bridges, ships), and the same file is the mask of the
+--  game's own tiles of its block, so the coast is cut alike at every zoom. A
+--  tile on a coast (Coasts.lua) has a mask of its own at four times that detail
+--  (Art/Coasts/<key>.blp), so a pier a few yards wide is not lost up close.
 --
 --  Every plane's overview (the continents and Zephras Isle, Coords.Planes) is
 --  laid where the world map puts it (Coords.Link), at every zoom: the other
@@ -32,6 +35,7 @@ ns.Terrain = Terrain
 Terrain.CAP = 400  -- the most tiles drawn at once (each a texture of 512 x 512, loaded while in view)
 Terrain.BLOCK = 8  -- tiles along each side of one texture of the overview
 Terrain.PATH = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Terrain\\%d-%d-%d"
+Terrain.COAST = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Coasts\\%d"
 local OVERVIEW = 100000 -- the overview's keys in the pool, past every tile's
 
 local Coords = ns.Coords
@@ -134,21 +138,27 @@ local function Detail(view)
         if count > Terrain.CAP then return false end
     end
     local side, size = Coords.TILE, Terrain.BLOCK
+    local coasts = ns.COASTS and ns.COASTS[view.continent] or {}
     for row = r0, r1 do
         for column = c0, c1 do
             local key = Coords.TileKey(view.continent, column, row)
             local file = File(key)
             if file then
-                -- Cut at the coast by its block's overview, laid over the whole block.
-                local blockRow, blockColumn = math.floor(row / size), math.floor(column / size)
-                local held, blockKey = Block(view.continent, blockRow, blockColumn)
-                local mask
-                if held then
-                    local u, v = Coords.Corner(blockColumn * size, blockRow * size)
-                    mask = masks:Get(blockKey, Terrain.PATH:format(view.continent, blockRow, blockColumn), u, v,
-                        side * size, side * size)
-                end
                 local u, v = Coords.Corner(column, row)
+                local mask
+                if coasts[key] then
+                    -- On a coast: cut by its own mask, over the tile alone.
+                    mask = masks:Get(key, Terrain.COAST:format(key), u, v, side, side)
+                else
+                    -- Else by its block's overview (wholly land or sea), laid over the whole block.
+                    local blockRow, blockColumn = math.floor(row / size), math.floor(column / size)
+                    local held, blockKey = Block(view.continent, blockRow, blockColumn)
+                    if held then
+                        local bu, bv = Coords.Corner(blockColumn * size, blockRow * size)
+                        mask = masks:Get(blockKey, Terrain.PATH:format(view.continent, blockRow, blockColumn), bu, bv,
+                            side * size, side * size)
+                    end
+                end
                 ns.Canvas.Put(pool:Get(key, file, 1, mask), u, v, side, side)
             end
         end

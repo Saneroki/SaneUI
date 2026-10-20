@@ -8,7 +8,8 @@ move the mouse into that corner and it fills the screen as the map. Both are the
 the same way, only larger, as the chat window is the same chat when it fills the screen. Each keeps its own
 zoom and place. The map is drawn two ways at every zoom, from close up out to the whole world, both
 continents always: *Parchment*, the world drawn by hand, Blizzard's zone maps in full joined into one map that
-fades softly from zone to zone; or *Scrying*, the land as the minimap shows it, its water cut away to a calm sea.
+fades softly from zone to zone; or *Scrying*, the land as the minimap shows it, its water cut away to a calm sea
+(the docks, piers and bridges standing on it kept); or *Blended*, the one far out fading into the other close in.
 With the module *Atlas* (`SaneUI_Atlas`, `src/Atlas/`) switched on there is a third, *Atlas*: the whole world
 painted as one map, three times closer. The game's own minimap lies over it for its live dots; the game's map stays closed, and its keys open ours.
 On the map stand pins in the game's own looks (quests, flight points, rares, entrances, places, services, the
@@ -98,10 +99,11 @@ party), always over the map, and the full map has the quest log at its left. The
   screen, each that stops there: where it goes, when it arrives and when it leaves, counting down; aboard, when
   it lands. A ship you have not ridden on this realm yet shows how often it sails; one ride teaches its times
   (kept on this computer for the realm, half a day). *Ship times at a dock* in the settings switches it off.
-- **Map view** (the buttons on the full map's bar, or the setting on the page *Navigation*): *Parchment* or
-  *Scrying* (the default), and *Atlas* while that module is switched on in the addon list; for both views and at
-  every zoom (in the code `sketches`, `terrain`, `atlas`). A view not offered (the module switched off or
-  failed, or *Overlay*, which is gone) falls back to Scrying.
+- **Map view** (the buttons on the full map's bar, or the setting on the page *Navigation*): *Parchment*,
+  *Blended* or *Scrying* (the default), and *Atlas* while that module is switched on in the addon list; for both
+  views and at every zoom (in the code `sketches`, `blend`, `terrain`, `atlas`). *Blended* is Parchment out to a
+  zone's level and Scrying close in, the maps fading out over the land in between. A view not offered (the module
+  switched off or failed, or *Overlay*, which is gone) falls back to Scrying.
 - **The game's own windows:** the full map's dropdown *Classic windows* offers the game's minimap and map, each
   kept once chosen (ticked; chosen again, ours comes back), as the switches *Show the game's minimap* and *Show
   the game's map* on the page. With the game's minimap our small window rests out of sight; with the game's map
@@ -151,9 +153,17 @@ party), always over the map, and the full map has the quest log at its left. The
   world, every plane's overview where the world map puts it, and at every zoom wherever it is in view. The
   water is cut away: the overview's alpha is
   the land (where the ground lies above the water's surface, read from the game's terrain files by
-  `dev/tools/terrain-art`; around the isle, which floats, the open sky: what the game's minimap leaves black, out
+  `dev/tools/terrain-art`, fading out in the first yard under it so a beach one wades on stays; what stands on the
+  water, a dock, a pier, a bridge, a ship, kept: where the minimap shows something brighter or warmer than the
+  water around it; around the isle, which floats, the open sky: what the game's minimap leaves black, out
   to its grid's edge), and the same file is the mask of the game's tiles of its block (`Canvas.Masks`), so
-  the coast is cut alike at every zoom; under it the canvas' sea colour.
+  the coast is cut alike at every zoom; a tile on a coast (`Coasts.lua`) is cut by a mask of its own instead, at
+  four times the overview's detail (`Art/Coasts/<key>.blp`, 128 x 128), so a pier a few yards wide is not lost up
+  close; under it the canvas' sea colour.
+- **Blended** (`Canvas.lua`): the art of Parchment over the terrain of Scrying, its alpha by the view's height in
+  yards (`Canvas.Blend`: whole from `Canvas.BLEND[1]` up, gone at `Canvas.BLEND[2]` and below, by the zoom's
+  factor between), the sea's colour between Parchment's and Scrying's alike. Only a layer that shows is drawn:
+  far out the art alone, close in the terrain alone.
 - **Art** (`Art.lua`), the view *Parchment*: Blizzard's world map and every plane's (a continent's, the isle's
   own; `C_Map.GetMapArtLayers`, `GetMapArtLayerTextures`) over their boxes, their paper frames faded off
   (`Art/Edge.blp`), in textures of their own; over them the
@@ -301,6 +311,7 @@ party), always over the map, and the full map has the quest log at its left. The
 | `Canvas.lua` | The frame the map is drawn in: holder, layers, pools, layout, the tracker, the mouse |
 | `Terrain.lua` | The terrain layer: the game's minimap textures from Core's set *Tiles*, and the overview |
 | `Outlines.lua` | The zones that have an outline, by their plane's instance (the isle's too): made by `dev/tools/terrain-art`, not by hand |
+| `Coasts.lua` | The tiles on a coast, which have a finer mask of their own, by their plane's instance: made by `dev/tools/terrain-art`, not by hand |
 | `Art.lua` | The view Parchment: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
 | `Painted.lua` | The view Atlas: the module SaneUI_Atlas found at login, loaded when first drawn, its blocks at the level the zoom asks for |
 | `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, gathered. No frames |
@@ -331,6 +342,9 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, coasts and Blended:** the coast keeps what stands on the water (docks, piers, bridges, ships, as the
+  minimap shows them) and the shallows of a beach, and a tile on a coast is cut by a finer mask of its own
+  (`Art/Coasts/`, `Coasts.lua`); the new view *Blended* fades Parchment far out into Scrying close in.
 - **2026-10-20, indoor maps:** inside a building or a cave, its indoor map over ours, from the game's indoor
   pictures with their black taken out, the floor at your height (Core's set *Indoors*, `dev/tools/indoor-art`).
 - **2026-10-20, herbs and ore found:** the pin filter's herbs and ore of Core's data are *Possible herbs* and

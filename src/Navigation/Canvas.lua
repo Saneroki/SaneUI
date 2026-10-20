@@ -59,6 +59,9 @@ ns.Canvas = Canvas
 Canvas.GROUND = { 22 / 255, 38 / 255, 50 / 255 } -- the sea: where neither land nor art is (the terrain's water
                                                 -- is cut away to it, dev/tools/terrain-art)
 Canvas.PAPER = { 0.33, 0.29, 0.21 }             -- the sketches' sea past the world map: its paper, darker
+-- The view Blended: Blizzard's map art over the terrain whole while the view is BLEND[1] yards high or more, gone at
+-- BLEND[2] or less; between, faded by the zoom's own steps (each a factor), so every step changes it alike.
+Canvas.BLEND = { 9000, 1200 }
 Canvas.MARGIN = 0.15 -- what is laid out reaches so far past the view, as a part of its larger side
 Canvas.OVERLAP = 1   -- each texture so many units larger than its square, so no seam shows between two
 Canvas.DRAG = 4      -- the mouse moves so many units with the button held before it is a drag, not a click
@@ -234,17 +237,30 @@ local function Zone()
     return Coords.ZoneAt(camera.map, camera.u, camera.v)
 end
 
--- The layers, as the view chosen draws them, at every zoom: Parchment (the art), Scrying (the land), Atlas (the
--- land, the painted map over it); the ground is the sea of the one or the other. The Atlas' module is loaded
--- the first time its view is drawn; if it cannot be, Scrying (Painted.lua).
+-- How much of Blizzard's map art the view Blended draws over the terrain when the view is span yards high (0 to 1).
+function Canvas.Blend(span)
+    local whole, gone = Canvas.BLEND[1], Canvas.BLEND[2]
+    if span >= whole then return 1 end
+    if span <= gone then return 0 end
+    local x = math.log(span / gone) / math.log(whole / gone)
+    return x * x * (3 - 2 * x)
+end
+
+-- The layers, as the view chosen draws them, at every zoom: Parchment (the art), Scrying (the land), Blended (the
+-- art over the land, faded out as the view comes close: Canvas.Blend), Atlas (the land, the painted map over it);
+-- the ground is the sea of the one or the other, or between them. Only a layer that shows is drawn. The Atlas'
+-- module is loaded the first time its view is drawn; if it cannot be, Scrying (Painted.lua).
 local function Draw()
     local chosen = ns.View()
     if chosen == "atlas" and not ns.Painted.Ready() then chosen = ns.FALLBACK end
-    local sea = chosen == "sketches" and Canvas.PAPER or Canvas.GROUND
-    ground:SetColorTexture(sea[1], sea[2], sea[3])
-    ns.Safe("terrain", ns.Terrain.Place, view, chosen ~= "sketches")
+    local art = chosen == "sketches" and 1 or chosen == "blend" and Canvas.Blend(view.span) or 0
+    local sea, paper = Canvas.GROUND, Canvas.PAPER
+    ground:SetColorTexture(sea[1] + (paper[1] - sea[1]) * art, sea[2] + (paper[2] - sea[2]) * art,
+        sea[3] + (paper[3] - sea[3]) * art)
+    layers.art:SetAlpha(art)
+    ns.Safe("terrain", ns.Terrain.Place, view, art < 1)
     ns.Safe("atlas", ns.Painted.Place, view, chosen == "atlas")
-    ns.Safe("map art", ns.Art.Place, view, chosen == "sketches")
+    ns.Safe("map art", ns.Art.Place, view, art > 0)
     ns.Safe("indoors", ns.Indoors.Place, view)
     ns.Safe("areas", ns.Areas.Place, view)
     ns.Safe("route", ns.Route.Place, view)

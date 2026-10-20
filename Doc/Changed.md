@@ -6,6 +6,21 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 169 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
+### Navigation: the coast keeps its docks; the view Blended (Saneroki, 2026-10-20)
+- `dev/tools/terrain-art`: the land's alpha fades out over the first yard of water (`SHALLOW`), so a beach one wades
+  on stays; what stands on the water is kept as land (`standing`): where the minimap is brighter or warmer than the
+  water around it (its mean colour nearby, taken twice; a lone speck dropped, the rest widened by a sample), so docks,
+  piers, bridges and ships at their moorings are no longer cut away. `levels` reads a terrain file's ground and water
+  surface; `terrain` (used by the other tools) is unchanged.
+- A tile on a coast gets a mask of its own, 128 x 128 (`Art/Coasts/<key>.blp`, listed in the new `Coasts.lua`):
+  `Terrain.lua` cuts the game's tile by it up close instead of by its block's overview, which has a quarter of the
+  detail.
+- The view *Blended* (`blend`, between Parchment and Scrying): Parchment's art over Scrying's terrain, its alpha by the
+  view's height (`Canvas.Blend`, `Canvas.BLEND`: whole at 9,000 yards and up, gone at 1,200, faded by the zoom's
+  factor between), the sea's colour between the two; a layer at alpha 0 or under art at 1 is not drawn.
+- Tests: the coast tile's own mask, Blended at the world, between and close in; the views' count is three without
+  Atlas.
+
 ### Combat: our own talents (Saneroki, 2026-10-20)
 - **The talents** (new `Talents/`, 9 files in the TOC): the game's shared talent frame (`TalentFrameBaseTemplate`,
   `Blizzard_SharedTalentUI`) inherited, with the Camelot class layer the game's window adds ported (that layer is in

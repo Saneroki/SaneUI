@@ -33,10 +33,11 @@ Core.NewModule(ADDON, "Navigation", ns)
 ns.TEXT = {
     title = Core.Word("WORLD_MAP", "World Map"),
     view = "Map view",
-    viewTip = "How the map is drawn, small and full screen, at every zoom. Parchment: the old maps, drawn by hand. Scrying: the land as it truly lies. Atlas: the whole world painted as one map (while the module Atlas is switched on in the addon list).",
-    views = { sketches = "Parchment", terrain = "Scrying", atlas = "Atlas" },
+    viewTip = "How the map is drawn, small and full screen, at every zoom. Parchment: the old maps, drawn by hand. Blended: the old maps far out, the land as it truly lies up close. Scrying: the land as it truly lies. Atlas: the whole world painted as one map (while the module Atlas is switched on in the addon list).",
+    views = { sketches = "Parchment", blend = "Blended", terrain = "Scrying", atlas = "Atlas" },
     viewTips = {
         sketches = "The old maps, drawn by hand on parchment: every zone's map, in full, joined into one map of both continents.",
+        blend = "The old maps far out, the land as it truly lies up close: the one fades into the other as you zoom in.",
         terrain = "The land as it truly lies, as a scrying glass shows it: both continents, from close up out to the whole world.",
         atlas = "The whole world painted as one map, every road and building where it stands: from a single house up close out to both continents.",
     },
@@ -138,17 +139,18 @@ for _, kind in ipairs(ns.KINDS) do
     if kind.on then PIN_DEFAULT[kind[1]] = true end
 end
 
--- The ways to draw the map, in the order of their buttons (shown as Parchment, Scrying, Atlas). Atlas only while
--- the module Atlas is there (Painted.lua); a view not offered falls back to Scrying, the default.
-ns.VIEWS = { "sketches", "terrain", "atlas" }
+-- The ways to draw the map, in the order of their buttons (shown as Parchment, Blended, Scrying, Atlas). Atlas only
+-- while the module Atlas is there (Painted.lua); a view not offered falls back to Scrying, the default.
+ns.VIEWS = { "sketches", "blend", "terrain", "atlas" }
 ns.FALLBACK = "terrain"
-local CHOICES = { { "sketches", ns.TEXT.views.sketches }, { "terrain", ns.TEXT.views.terrain }, { "atlas", ns.TEXT.views.atlas } }
+local CHOICES = { { "sketches", ns.TEXT.views.sketches }, { "blend", ns.TEXT.views.blend },
+                  { "terrain", ns.TEXT.views.terrain }, { "atlas", ns.TEXT.views.atlas } }
 
 local OPTIONS = {
     -- Every view a choice while the settings are first read, so a saved Atlas is kept; at login only those
     -- offered (Offer).
     { key = "view", default = ns.FALLBACK, text = ns.TEXT.view, header = ns.TEXT.title, tip = ns.TEXT.viewTip,
-      choices = { CHOICES[1], CHOICES[2], CHOICES[3] } },
+      choices = { CHOICES[1], CHOICES[2], CHOICES[3], CHOICES[4] } },
     { key = "pins", default = PIN_DEFAULT, multi = true, choices = PIN_CHOICES, text = ns.TEXT.pins, tip = ns.TEXT.pinsTip },
     -- Each kind's size in percent, [kind] = percent, set by its slider in the pin filter (TopBar.lua): no
     -- control on the options page.
@@ -222,7 +224,7 @@ end })
 -- Whether a view can be drawn: Atlas only while its module is there and has not failed.
 function ns.Offered(key)
     if key == "atlas" then return ns.Painted.Offered() end
-    return key == "sketches" or key == "terrain"
+    return key == "sketches" or key == "blend" or key == "terrain"
 end
 
 -- The view the map is drawn in: the one chosen, if it is offered, else Scrying.

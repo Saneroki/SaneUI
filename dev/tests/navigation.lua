@@ -555,15 +555,18 @@ W.Fire("ADDON_LOADED", "SaneUI_Navigation")
 W.Fire("PLAYER_LOGIN")
 check(SaneUI.Navigation == ns and not ns.off, "the module is made and started")
 check(type(ns.OUTLINES) == "table", "the zones that have an outline are listed (Outlines.lua)")
+check(type(ns.COASTS) == "table", "the tiles on a coast are listed (Coasts.lua)")
 check(ns.options.view == "terrain" and ns.View() == "terrain", "a saved view that is gone (Overlay) falls back to Scrying")
 local viewOption = Core.Described(ns.name, "view")
-check(#viewOption.choices == 2 and viewOption.choices[1][1] == "sketches" and viewOption.choices[2][1] == "terrain"
-    and not ns.Offered("atlas"), "without the module Atlas two views are offered: Parchment and Scrying")
+check(#viewOption.choices == 3 and viewOption.choices[1][1] == "sketches" and viewOption.choices[2][1] == "blend"
+    and viewOption.choices[3][1] == "terrain" and not ns.Offered("atlas"),
+    "without the module Atlas three views are offered: Parchment, Blended and Scrying")
 ns.options.view = "atlas" -- saved while the module was there
 check(ns.View() == "terrain", "a saved Atlas without its module: the map is drawn as Scrying")
 ns.Offer()
 check(ns.options.view == "terrain", "and the setting falls back to Scrying")
 ns.OUTLINES = { [0] = { [1429] = true } } -- the made-up world's zone has one
+ns.COASTS = {} -- and none of its tiles lies on a coast, but where a check says so
 
 -- The textures shown, by file.
 local function Shown()
@@ -890,6 +893,18 @@ check(Count(shown, 801, 804) > 0 and Overviews(shown, 0) > 0, "Scrying under it:
 local cut = shown[801] and shown[801]._mask
 check(cut and cut._kind == "MaskTexture" and cut._texture == ns.Terrain.PATH:format(0, 6, 4) and near(cut._width, 8 * 1600 / 3 * small.k),
     "each tile cut at the coast by its block's overview, laid over the whole block: the water cut away alike at every zoom")
+do
+    local coastsBefore = ns.COASTS
+    ns.COASTS = { [0] = { [3105] = true } }
+    Canvas.Layout()
+    shown = Shown()
+    local own = shown[802] and shown[802]._mask
+    check(own and own._texture == ns.Terrain.COAST:format(3105) and near(own._width, 1600 / 3 * small.k)
+        and shown[801]._mask._texture == ns.Terrain.PATH:format(0, 6, 4),
+        "a tile on a coast cut by its own finer mask, over the tile alone; the others by their block's")
+    ns.COASTS = coastsBefore
+    Canvas.Layout()
+end
 
 -- The wheel walks the game's steps, then our map goes on alone.
 frame._scripts.OnMouseWheel(frame, 1)
@@ -1046,8 +1061,9 @@ local function Button(key)
     for _, widget in ipairs(W.frames) do if widget.key == key and widget._scripts.OnClick then return widget end end
 end
 check(Button("terrain")._lit and not Button("sketches")._lit, "the view chosen is lit")
-check(Button("sketches")._shown and Button("terrain")._shown and not Button("atlas")._shown
-    and Button("terrain")._points[1][2] == Button("sketches"), "two buttons in a row: no Atlas without its module")
+check(Button("sketches")._shown and Button("blend")._shown and Button("terrain")._shown and not Button("atlas")._shown
+    and Button("blend")._points[1][2] == Button("sketches") and Button("terrain")._points[1][2] == Button("blend"),
+    "three buttons in a row: no Atlas without its module")
 Button("sketches")._scripts.OnClick(Button("sketches"))
 shown = Shown()
 check(ns.options.view == "sketches" and Button("sketches")._lit and Count(shown, 801, 804) == 0
@@ -1070,6 +1086,29 @@ Button("terrain")._scripts.OnClick(Button("terrain"))
 shown = Shown()
 check(Overviews(shown, 0) > 0 and Overviews(shown, 1) > 0 and Count(shown, 94701, 94712) == 0,
     "Terrain at the world: every continent's overview, no art")
+-- Blended: the art over the terrain, faded by the zoom.
+check(Canvas.Blend(Canvas.BLEND[1]) == 1 and Canvas.Blend(Canvas.BLEND[2]) == 0
+    and near(Canvas.Blend(math.sqrt(Canvas.BLEND[1] * Canvas.BLEND[2])), 0.5),
+    "Blended: the art whole far out, gone close in, half at the zoom's middle step between")
+do
+    Button("blend")._scripts.OnClick(Button("blend"))
+    shown = Shown()
+    local artLayer = shown[94701] and shown[94701]._parent
+    check(ns.options.view == "blend" and Button("blend")._lit and artLayer and artLayer._alpha == 1
+        and Overviews(shown, 0) == 0, "Blended at the world: the art alone, as Parchment")
+    local high = Canvas.view.span * full.k
+    full:Show(1415, 500, -8950, high / 3000)
+    Canvas.Layout()
+    shown = Shown()
+    local faded = Canvas.Blend(Canvas.view.span)
+    check(faded > 0 and faded < 1 and near(artLayer._alpha, faded) and Count(shown, 141501, 141512) > 0
+        and Overviews(shown, 0) > 0, "Blended between: the terrain under, the art over it, faded")
+    full:Show(1415, 500, -8950, high / 800)
+    Canvas.Layout()
+    shown = Shown()
+    check(artLayer._alpha == 0 and Count(shown, 141501, 141512) == 0 and Count(shown, 801, 804) > 0,
+        "Blended close in: the terrain alone, the art not drawn")
+end
 full:Fit(1415)
 Button("terrain")._scripts.OnClick(Button("terrain"))
 shown = Shown()
@@ -1554,9 +1593,9 @@ check(not Painted.Find() and not ns.Offered("atlas"), "the module Atlas switched
 atlasAddon.enabled = 2
 check(Painted.Find() and ns.Offered("atlas"), "the module Atlas in the addon list, switched on: found without loading it")
 ns.Offer()
-check(#viewOption.choices == 3 and viewOption.choices[3][1] == "atlas" and Button("atlas")._shown
+check(#viewOption.choices == 4 and viewOption.choices[4][1] == "atlas" and Button("atlas")._shown
     and Button("atlas")._points[1][2] == Button("terrain") and not W.loaded.SaneUI_Atlas,
-    "with the module three views are offered: its button after Scrying's, its choice; nothing loaded yet")
+    "with the module four views are offered: its button after Scrying's, its choice; nothing loaded yet")
 Button("atlas")._scripts.OnClick(Button("atlas"))
 shown = Shown()
 check(ns.options.view == "atlas" and not Painted.Offered() and ns.View() == "terrain" and Count(shown, 801, 804) == 4,
@@ -1564,7 +1603,7 @@ check(ns.options.view == "atlas" and not Painted.Offered() and ns.View() == "ter
 check(Core.errors["Navigation: atlas"] and Core.errors["Navigation: atlas"].text:find("could not be loaded (CORRUPT)", 1, true),
     "the problem is kept and told")
 W.Wait(0)
-check(ns.options.view == "terrain" and not Button("atlas")._shown and #viewOption.choices == 2 and Button("terrain")._lit,
+check(ns.options.view == "terrain" and not Button("atlas")._shown and #viewOption.choices == 3 and Button("terrain")._lit,
     "on the next frame its button and choice go, the setting is Scrying again")
 -- The game can load it: drawn over the terrain.
 W.onDemand.SaneUI_Atlas = function()
@@ -1651,7 +1690,7 @@ Atlas.off = true
 Canvas.Refresh()
 check(ns.View() == "terrain" and Size(Blocks(Shown(), 0)) == 0, "the module stood down: the map shows Scrying")
 W.Wait(0)
-check(ns.options.view == "terrain" and not Button("atlas")._shown and #viewOption.choices == 2,
+check(ns.options.view == "terrain" and not Button("atlas")._shown and #viewOption.choices == 3,
     "and its button and choice go")
 
 -- Back to the corner: the small view as it was left.

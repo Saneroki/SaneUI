@@ -33,6 +33,8 @@ Canvas.lua
 Terrain.lua
 # The zones that have an outline to cut their map art to (made by dev/tools/terrain-art, not by hand)
 Outlines.lua
+# The tiles on a coast, cut by a finer mask of their own up close (made by dev/tools/terrain-art, not by hand)
+Coasts.lua
 # Blizzard's map art: the world's, the continent's, the zones' cut to their outlines, and the explored parts
 Art.lua
 # The view Atlas: the painted map of the module SaneUI_Atlas, found at login, loaded when the view is first drawn

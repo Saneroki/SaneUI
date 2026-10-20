@@ -5,7 +5,7 @@ local _, ns = ...
 --  The bar over the full map's top edge, left to right:
 --
 --      Quest Log         the quest log at the map's left in or out (kept)
---      the views         Parchment, Scrying and Atlas while its module is there: how the map is drawn
+--      the views         Parchment, Blended, Scrying and Atlas while its module is there: how the map is drawn
 --                        (the setting Map view; Navigation.lua, Offer)
 --      the map selector  the world, a continent or a plane of its own (Zephras Isle), then a zone of it (A to
 --                        Z): the map shows it whole; each says what the map shows now
