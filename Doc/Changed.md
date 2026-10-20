@@ -3,8 +3,24 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 35 (Combat), 35 (spellbook), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Combat: our own talents (Saneroki, 2026-10-20)
+- **The talents** (new `Talents/`, 9 files in the TOC): the game's shared talent frame (`TalentFrameBaseTemplate`,
+  `Blizzard_SharedTalentUI`) inherited, with the Camelot class layer the game's window adds ported (that layer is in
+  `Blizzard_PlayerSpells`, never loaded): the class's art, clouds and lights (`Art.lua`), the trees' heads with
+  their points and the unspent points (`Headers.lua`), the node templates with the class glow, tooltip and sounds
+  (`Nodes.lua`), the primary and secondary specialization on the game's tabs with Activate (`Specs.lua`), Apply,
+  Undo and the Reset menu (`Foot.lua`, `Changes.lua`), the commit's cast on a cast bar of ours from the game's
+  `CastingBarFrameTemplate` (`Commit.lua`; no casting bar of the game's touched), the frame, its search marks and
+  events while shown (`Tree.lua`). Every method of ours and every script the templates gave our frames behind the
+  module's guard. Changes only on the active specialization and out of a fight; Apply as the game allows.
+  Registered as the board part `talents`, scaled to fit its panel.
+- **The spellbook** fits its panel's body: Core's board gives a window the panel's size, its head and edges
+  are taken off now (`Book_.Size`).
+- Tests: `dev/tests/talents.lua` (64 checks, new, in `dev/tests/run`); `dev/tests/combat.lua` 36 (the first
+  layout's shares with the talents there).
 
 ### Navigation: indoor maps of our own, without the black (Saneroki, 2026-10-20)
 - **The pictures** (`dev/tools/indoor-art`, new; `src/Navigation/Art/Indoors/`, 2,785 pictures of 345 buildings,

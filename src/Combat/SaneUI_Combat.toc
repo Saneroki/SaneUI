@@ -16,6 +16,24 @@ Window.lua
 # The full screen's windows on Core's board: each registers itself (Board.Part); the talent planner seated
 Board.lua
 # Talents: our own window of your talents, as the game's (Talents/)
+# The part on the board: the game's shared talent frame loaded, fitted into its panel, its words
+Talents\Talents.lua
+# The nodes: the game's shared node buttons with the class talents' glow, tooltip and sounds; the arrows
+Talents\Nodes.lua
+# What the trees stand on: the class's picture, its clouds and lights, the frame and dividers, the commit's flash
+Talents\Art.lua
+# Each tree's head with the points spent in it, and the unspent points
+Talents\Headers.lua
+# The primary and secondary specialization: the game's tabs, Active or Activate
+Talents\Specs.lua
+# Apply Changes, Undo and the Reset menu at the foot
+Talents\Foot.lua
+# The commit's and the switch's cast over the trees, on a cast bar of ours from the game's template
+Talents\Commit.lua
+# Buying, refunding, applying, undoing and resetting, where the game allows it
+Talents\Changes.lua
+# The frame: the game's shared talent frame with the class layer over it, its events while shown
+Talents\Tree.lua
 # Spellbook: our own window of your spells, as the game's (Book/)
 # Where each entry stands on the pages, by the game's rules (lists in, lists out)
 Book\Layout.lua

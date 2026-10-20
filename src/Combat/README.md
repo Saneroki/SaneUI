@@ -1,6 +1,6 @@
 # Sane UI: Combat
 
-**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents, as the game's, on Core's board; quest marks beside nameplates · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever (interface 16001)
+**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 The module for everything about the fight: your own frame, your target's (and its target's), your
@@ -38,7 +38,14 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
   - At the top right the game's own settings for its book: *Hide passives*, and *Show all ranks* (not for
     rogues and warriors); they change the game's book too. The full screen's search box finds spells of every
     tab. Flyouts are shown as their spells, one by one (as the game's book with *Use flyouts* off).
-- **The talents:** our own talents window (`Talents/`).
+- **The talents:** your three talent trees as the game's window shows them in this client, at its size and in
+  its art, scaled to fit. Each tree's head shows the points spent in it, the box at the top right your unspent
+  points. **Click** a talent to learn a rank, **right click** to take one back (**Shift**: with the talents that
+  need it); a choice opens its options. Changes wait: **Apply Changes** applies them (a short cast, shown over
+  the trees), the round button beside it undoes them, and with nothing waiting it is **Reset** (class,
+  specialization or all). The tabs *Primary* and *Secondary* show either specialization; the inactive one is
+  only to look at, with **Activate** to switch. Not in a fight. The full screen's search box marks the talents
+  it finds. Before your first talent point it says from which level.
 - **The talent planner:** with a talent planner Sane UI knows installed, the dropdown *Windows* has it: ticked,
   it gets a window of its own on the board, opens with it and closes when it goes. Opened any way of its own
   while its window is on the layout, it brings the full screen.
@@ -116,6 +123,24 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
     Shift (`shift-type*` empty: `PostClick` links or picks it up). Made, set, placed, shown and hidden out of a
     fight only; all hidden at `PLAYER_REGEN_DISABLED` (the game locks them after it), set again after
     `PLAYER_REGEN_ENABLED`. Not in our window, so the full screen never becomes protected.
+- **The talents** (`Talents/`): the game's shared talent frame (`TalentFrameBaseTemplate`,
+  `Blizzard_SharedTalentUI`, loaded with `C_AddOns.LoadAddOn` in a `pcall` where it is not yet) inherited, as the
+  game's class frame inherits it; the class layer the game's window adds lives in `Blizzard_PlayerSpells`, which
+  is never loaded, so it is ported: the frame's keys, layers, gates, events and the game's talent search
+  (`ClassTalentSearchMixin`, `Tree.lua`), the nodes' templates and the class glow, tooltip and sounds
+  (`Nodes.lua`), the class's background, clouds, lights, frame and dividers (`Art.lua`), the trees' heads
+  (x = 140 + 400 (i - 1), y = -100; `C_Traits.GetGroupCurrencyInfo`) and the unspent points (`Headers.lua`), the
+  dual-spec tabs (the game's `TabSystemTemplate`, `GetCombatConfigIDForSpecGroup`, `SetActiveSpecGroup`;
+  `Specs.lua`), Apply, Undo and Reset (`Foot.lua`; `C_ClassTalents.CommitConfig`, `C_Traits.RollbackConfig`,
+  `ResetTreeByCurrency`, `PurchaseRank`, `RefundRank`, `SetSelection`; `Changes.lua`), the commit's cast on a cast
+  bar of ours from the game's `CastingBarFrameTemplate` (`ApplyingTalents`, run with your casts only while a
+  commit or switch is under way; the game's spinner after half a second without one; `Commit.lua`). The art
+  (1212 x 701) scaled to fit the panel's body, centred (`Talents.lua`). Every method of ours on the frame and
+  every script the game's templates gave our frames is behind the module's guard (`Talents.Wrap`); nothing of
+  the game's window, casting bars or tables is written. Changes only on the active specialization and out of a
+  fight; Apply as `C_ClassTalents.CanChangeTalents` says. Zoom and pan off; events only while shown. Left out
+  as the Camelot window has them not: loadouts, starter builds, hero talents, inspecting; also the node sheen,
+  the purchase effects and the action bars' marks (they write the game's bars).
 - **The keys** (`Keys.lua`, `Bindings.xml`): Combat's keys `SANEUI_COMBAT_SPELLBOOK`, `_PETBOOK`, `_TALENTS`
   (Sane UI's section in the game's key bindings) run `Keys.Press` (`Window.Toggle`). `SetOverrideBinding` on a
   frame of ours puts them on the keys of `TOGGLESPELLBOOK`, `TOGGLEPETBOOK`, `TOGGLETALENTS`
@@ -139,7 +164,7 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
   (the book's secure buttons, now or after the fight), the keys are the game's again, the window hides, the
   quest marks hide.
 - Tests: `dev/tests/combat.lua` (the window, the board, the keys, the planner, the quest marks),
-  `dev/tests/book.lua` (the spellbook).
+  `dev/tests/book.lua` (the spellbook), `dev/tests/talents.lua` (the talents).
 
 ## Files
 
@@ -155,6 +180,15 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
 | `Book/Item.lua` | One entry, as the game's |
 | `Book/Casts.lua` | The game's secure buttons over the icons, which cast out of a fight |
 | `Book/Book.lua` | The spellbook: pages, tabs, the game's paging controls and settings |
+| `Talents/Talents.lua` | The talents: the part on the board, the game's shared talent frame loaded and fitted into its panel, its words |
+| `Talents/Nodes.lua` | The nodes: the game's shared node buttons with the class talents' glow, tooltip and sounds; the arrows |
+| `Talents/Art.lua` | What the trees stand on: the class's picture, its clouds and lights, the frame and dividers, the commit's flash |
+| `Talents/Headers.lua` | Each tree's head with the points spent in it, and the unspent points |
+| `Talents/Specs.lua` | The primary and secondary specialization: the game's tabs, Active or Activate |
+| `Talents/Foot.lua` | Apply Changes, Undo and the Reset menu |
+| `Talents/Commit.lua` | The commit's and the switch's cast over the trees, on a cast bar of ours from the game's template |
+| `Talents/Changes.lua` | Buying, refunding, applying, undoing and resetting, where the game allows it |
+| `Talents/Tree.lua` | The frame: the game's shared talent frame with the class layer over it, its events while shown |
 | `Keys.lua` | Your spellbook, pet book and talents keys opening ours |
 | `QuestMarks.lua` | A mark beside a creature's nameplate while it belongs to an objective of your quests still to do |
 
@@ -168,3 +202,4 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
 - **2026-10-20:** our own spellbook (Saneroki: the spellbook and talents are Combat's own windows, as the game's;
   the book casts out of a fight only); your spellbook and talents keys open ours; the talent planner a window
   of its own; the game's window no longer seated.
+- **2026-10-20:** our own talents (the game's shared talent frame with the Camelot class layer ported).

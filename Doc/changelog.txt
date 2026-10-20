@@ -30,8 +30,10 @@ The bigger changes of each version, newest first.
   pages, tabs, ranks and cooldowns, click to cast, drag to your bars.
   Your spellbook and talents keys open it there (switch it off in
   Combat's options). In a fight it still shows and pages; cast from
-  your bars until the fight is over. A talent planner addon Sane UI
-  knows is a window of its own there.
+  your bars until the fight is over. Your own talents beside it, as the
+  game's: the three trees, learning and Apply, Reset, both
+  specializations. A talent planner addon Sane UI knows is a window of
+  its own there.
 - Full screen layouts can all be deleted now (right-click a layout's
   tab), as long as one is left.
 - The dropdown Classic windows lists the game's own windows of every

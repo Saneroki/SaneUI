@@ -33,7 +33,7 @@ Decided (Saneroki, 2026-10-16):
   button): opened from our code, its `OnShow` (the action bars' grids) and its spellbook's (which spell each
   entry casts) would run tainted (`src/Combat/README.md`, *Technical details*). So pushing against the edge
   brings it only if it is open already; otherwise its window is one click away.
-- **Our own spellbook and talents** (Saneroki, 2026-10-20; being built): two windows of Combat's own on its
+- **Our own spellbook and talents** (Saneroki, 2026-10-20; built): two windows of Combat's own on its
   full screen that look, feel and work as the game's (`PlayerSpellsFrame`, Camelot's), as Inventory's character
   sheet does for the game's: the game's sizes, art, words and behaviour, rewritten in our code, the game's
   templates used where they do not touch its own window. Both are Combat's (this replaces the plan of a

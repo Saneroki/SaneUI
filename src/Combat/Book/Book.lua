@@ -368,10 +368,13 @@ function Book_.Build(panel)
     buttons = Core.Pool(Tab)
 end
 
--- One page or both: both while they can be at least Book.TWO of one page's size; then scaled to fit.
+-- One page or both: both while they can be at least Book.TWO of one page's size; then scaled to fit the body
+-- (Core's board gives the panel's size: its head and edges taken off).
 function Book_.Size(width, height)
     if not holder then return end
-    width, height = Plain(width) or 0, Plain(height) or 0
+    local edge = Core.Board.EDGE
+    width = (Plain(width) or 0) - 2 * edge
+    height = (Plain(height) or 0) - Core.Board.HEAD - 2 * edge
     local one = math.min(1, width / Book.NARROW, height / Book.HIGH)
     local both = math.min(1, width / Book.WIDE, height / Book.HIGH)
     local wasTwo = two

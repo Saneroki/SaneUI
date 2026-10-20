@@ -17,7 +17,7 @@ Use current source and the user's instructions when they differ from a note.
 | Tooltip content, layout, live unit data, quests, prices | [tooltips.md](tooltips.md) |
 | Messages, bubbles, native chat, input, filtering/fading | [social.md](social.md) |
 | Navigation: minimap, world map, quest log, pins, routes, leveling guide (built: window, both views, canvas, terrain and art at every zoom, the game's minimap and map taken over; pins, quest log, top bar, routes, guide to come; handoff) | [navigation.md](navigation.md), then `Doc/ideas/Navigation.md` |
-| Combat: its window at the bottom middle, its full screen with our own spellbook (built) and talents (being built), as the game's; your spellbook and talents keys open them; unit frames, party, raid, buffs, pets (not built yet) | `src/Combat/README.md`, `Doc/ideas/Combat.md` |
+| Combat: its window at the bottom middle, its full screen with our own spellbook and talents (built), as the game's; your spellbook and talents keys open them; unit frames, party, raid, buffs, pets (not built yet) | `src/Combat/README.md`, `Doc/ideas/Combat.md` |
 | Nameplates: the game's plates in our dress (built: round-cornered health bar, combo points in the target's, name, own debuffs and a foe's buffs in the game's aura containers, rare's mark, raid marker) | `src/Nameplates/README.md` |
 | Inventory: own character sheet, bags, alts' snapshots on its full screen (built: window in the bottom right corner, its full screen and board; the windows to come; never the game's panels, which taint the window manager) | `src/Inventory/README.md`, then `Doc/ideas/Inventory.md` |
 | NPC talks, books and letters as a scene, part of Social (not built yet) | `Doc/ideas/Dialogue.md` |
