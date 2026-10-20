@@ -72,6 +72,11 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     *Take Out of* its group, *Hide in All Items*, *Switch Off*; on a group: *Rename*, *Move Up*, *Move Down*,
     *Hide in All Items*, *Disband Group*; on one of your own also *Icon* and *Delete*. *Add Category* at the
     sidebar's foot makes one of your own. All of it is kept for the account.
+  - **The list's columns:** the icon, the name, item level, required level, type, how it binds (BoP, BoE, BoU,
+    Quest; SB once bound), the count and what the vendor pays for it. Click a column's head to sort by it (again
+    for the other way), drag it sideways to move it, drag its right edge to size it; a right click on the head
+    chooses the columns, moves one, makes the icons round or puts it all back. A click on a category's head folds
+    it, Shift and a click folds or unfolds them all.
   - **"+" and the junk marker:** a *+* follows Pinned and every category that takes items: bring an item to it
     (picked up, or dragged) and it goes in; click it with nothing held, and the next item you click goes in (the
     rest of the window dims meanwhile; a right click or Esc stops). The coin on the bar is the junk marker: click
@@ -79,7 +84,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     is marked at once. Junk is sold one item at a time at a vendor, never what is in a special bag, in an
     equipment set or pinned, nor what the vendor would take back for its price; the chat says what it brought.
   - **The dropdown *View*:** *Grid* (each category under its head, its last line filled out), *List* (a line per
-    item: name, item level, count) or *Compact* (the categories side by side, each as near square as it can be);
+    item, in columns) or *Compact* (the categories side by side in bands, planned to take the fewest lines);
     *Sort By* (*Default*: gear by item level, then by kind, quality and name; or quality, name, item level);
     *Show Pinned Items*, *Show Recent Items*, *Hide Empty Categories*, *Merge Stacks*; *Open With* (the view the
     window opens with); *Switched Off* lists what you switched off, to switch it on again.
@@ -299,10 +304,19 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     (`Views.split`). What the search does not find is left out, or faded in *one* and *each*. `Views.Counts`: how
     many cells each category and group shows, for the sidebar.
   - **The displays** (`Bags/Layout.lua`, plain numbers: `Layout.Lay`): *grid* (a head per block, its cells
-    `Layout.SIZE` 34 and `GAP` 4 apart, the last line filled with pads; the player's own empty category a line of
-    pads to drop items on), *list* (a line `Layout.ROW` high per cell, its item button `Layout.ICON` at the left),
-    *compact* (the blocks side by side in bands, each `Layout.Shape` wide: near square, at least three wide, a
-    name over it). The display and the order are kept (`store.bags`: `look`, `order`).
+    `Layout.SIZE` 34 and `GAP` 4 apart, the "+", the last line filled with pads; the player's own empty category a
+    line of pads to drop items on), *list* (a line `Layout.ROW` high per cell, a folded block its head only),
+    *compact* (the blocks side by side in bands, a name over each: which blocks share a band and how many lines it
+    takes planned by dynamic programming for the least height, `Plan`; a block that is not the last of its band at
+    least three wide; on a tie the fuller band first). The display and the order are kept (`store.bags`: `look`,
+    `order`).
+  - **The list's columns** (`Bags/Columns.lua`): `Columns.LIST` (icon, name, level, required, kind, bind, count,
+    sell), the ones shown in order (`columns`), widths (`widths`), the sort (`listSort`, `listDown`), round icons
+    (`round`), all kept in `store.bags`. `Columns.Place` gives each its place in a line (the name the room left,
+    the others narrower together where the name would keep less than `Columns.NAME_LEAST`), `Columns.Value` what
+    it shows, `Columns.Sort` a block's entries by it. The head (`Columns.Build`, `Refresh`): a click sorts, a drag
+    past `Columns.DRAG` moves the column where its neighbour's middle is crossed, a grip at its right edge sizes it
+    (at least `Columns.LEAST`), a right click its menu (the game's). Folded blocks are kept in `folded`.
   - **The item buttons** (`Bags/Cells.lua`): the game's `ContainerFrameItemButtonTemplate`, a pool taken in the
     order of the cells drawn (`Cells.Take`), each in a holder of ours that carries the bag's ID (`SetID`): the
     template's `GetBagID` asks its parent, so nothing of ours is written into the button and its click (use,
@@ -396,6 +410,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 | `Bags/Cells.lua` | The bags' item buttons: the game's own, a pool, in the flat look, drawn the game's way |
 | `Bags/Foot.lua` | The bags' foot: currencies, gold; the strip of the bags; selling junk or depositing reagents |
 | `Bags/Menus.lua` | The bags' menus for an item, a category and a group, items let go over a category, new categories |
+| `Bags/Columns.lua` | The bags' list columns: their values, sorting, widths, the head over the list and its menu |
 | `Bags/Select.lua` | The bags' choosing by clicks: an item into a category after its "+", junk marked by the coin |
 | `Bags/Sidebar.lua` | The bags' sidebar: the views, Pinned, Recent, the categories and groups with their counts |
 | `Bags/Bags.lua` | The bags' window: the bar, the strip, the scroll area, heads, labels and lines, the dropdown *View*, the events; registers the part `bags` |

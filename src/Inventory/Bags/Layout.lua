@@ -11,8 +11,10 @@ local _, ns = ...
 --               mouse); an empty block of the player's own a line of pads
 --      list     each block under its head, a line per cell: the item at the
 --               left, its words in columns
---      compact  the blocks side by side in bands, each as near square as its
---               cells make it, its name over it
+--      compact  the blocks side by side in bands, its name over each: which
+--               blocks share a band, and how wide each is, planned so that
+--               the whole takes the fewest lines (a block that is not the
+--               last of its band at least three cells wide)
 --  A part's head (the bags, the bank) goes over the whole width.
 --
 --      local count, height = Layout.Lay(look, blocks, width, out)
@@ -44,6 +46,7 @@ Layout.LOOK = {}
 for _, look in ipairs(Layout.LOOKS) do Layout.LOOK[look.key] = look end
 
 local out, count, y
+local NONE = {}
 
 local function Place(kind)
     count = count + 1
@@ -123,7 +126,7 @@ local function List(blocks, width)
     for index = 1, blocks.count do
         local block = blocks[index]
         Head(block, width)
-        for _, entry in ipairs(block.entries) do
+        for _, entry in ipairs(block.folded and NONE or block.entries) do
             local place = Place("row")
             place.x, place.y, place.width, place.height, place.size = 0, y, width, Layout.ROW, Layout.ICON
             place.entry, place.block = entry, block
@@ -142,38 +145,81 @@ function Layout.Shape(n, columns)
     return wide, math.ceil(n / wide)
 end
 
-local function Compact(blocks, width)
-    local columns = Columns(width)
+-- A block's width in cells for so many lines; not the last of its band: at least three (when it has three).
+local function Wide(n, lines, last)
+    local wide = math.ceil(n / lines)
+    if not last then wide = math.max(wide, math.min(3, n)) end
+    return wide
+end
+
+-- The fewest lines the blocks run[first..last] take side by side in a room so wide (nil: they do not fit).
+local function Lines(run, first, last, width)
     local step = Layout.SIZE + Layout.GAP
-    local x, tallest, band = 0, 0, {}
-    local function Flush()
-        if #band == 0 then return end
-        local top = y
-        for _, item in ipairs(band) do
-            local label = Place("label")
-            label.x, label.y, label.width, label.height, label.block = item.x, top, item.width, Layout.LABEL, item.block
-            y = top + Layout.LABEL + Layout.LABEL_GAP
-            Cells(item.block, item.x, item.wide, false)
+    local most = 0
+    for index = first, last do most = math.max(most, #run[index].entries) end
+    for lines = 1, most do
+        local total = Layout.BAND_GAP * (last - first)
+        for index = first, last do
+            total = total + Wide(#run[index].entries, lines, index == last) * step - Layout.GAP
         end
-        y = top + Layout.LABEL + Layout.LABEL_GAP + tallest * step - Layout.GAP + Layout.APART
-        for index = #band, 1, -1 do band[index] = nil end
-        x, tallest = 0, 0
+        if total <= width then return lines end
     end
+    return nil
+end
+
+-- A run of blocks (no part's head among them) planned into bands: best[i] the least height from block i on,
+-- cut[i] where its band ends, lines[i] that band's lines.
+local best, cut, lined = {}, {}, {}
+local function Plan(run, width)
+    local step = Layout.SIZE + Layout.GAP
+    local n = #run
+    best[n + 1] = 0
+    for first = n, 1, -1 do
+        best[first], cut[first], lined[first] = math.huge, first, 1
+        for last = first, n do
+            local lines = Lines(run, first, last, width)
+            if not lines then break end
+            local height = Layout.LABEL + Layout.LABEL_GAP + lines * step - Layout.GAP + Layout.APART + best[last + 1]
+            if height <= best[first] then best[first], cut[first], lined[first] = height, last, lines end
+        end
+    end
+end
+
+local run = {}
+local function Bands(width)
+    if #run == 0 then return end
+    Plan(run, width)
+    local step = Layout.SIZE + Layout.GAP
+    local first = 1
+    while first <= #run do
+        local last, lines = cut[first], lined[first]
+        local top, x = y, 0
+        for index = first, last do
+            local block = run[index]
+            local wide = Wide(#block.entries, lines, index == last)
+            local label = Place("label")
+            label.x, label.y, label.width, label.height, label.block = x, top, wide * step - Layout.GAP, Layout.LABEL, block
+            y = top + Layout.LABEL + Layout.LABEL_GAP
+            Cells(block, x, wide, false)
+            x = x + wide * step - Layout.GAP + Layout.BAND_GAP
+        end
+        y = top + Layout.LABEL + Layout.LABEL_GAP + lines * step - Layout.GAP + Layout.APART
+        first = last + 1
+    end
+    for index = #run, 1, -1 do run[index] = nil end
+end
+
+local function Compact(blocks, width)
     for index = 1, blocks.count do
         local block = blocks[index]
         if block.level == 1 then
-            Flush()
+            Bands(width)
             Head(block, width)
         elseif #block.entries > 0 then
-            local wide, high = Layout.Shape(#block.entries, columns)
-            local blockWidth = wide * step - Layout.GAP
-            if x > 0 and x + blockWidth > width then Flush() end
-            band[#band + 1] = { block = block, x = x, wide = wide, width = blockWidth }
-            tallest = math.max(tallest, high)
-            x = x + blockWidth + Layout.BAND_GAP
+            run[#run + 1] = block
         end
     end
-    Flush()
+    Bands(width)
 end
 
 -- The places of the blocks in a look ("grid", "list", "compact") in a room so wide; how many and how high.

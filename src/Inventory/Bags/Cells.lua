@@ -433,6 +433,30 @@ function Cells.Shown(bag, slot)
     return button ~= nil and button:IsShown()
 end
 
+-- A button's icon round (the list's setting) or square again.
+local round = {} -- [button] = its round mask, once made
+function Cells.Round(button, on)
+    local icon = Part(button, "icon")
+    if not (icon and icon.AddMaskTexture) then return end
+    local mine = look[button]
+    if on and not mine.round then
+        local mask = round[button]
+        if not mask then
+            mask = button:CreateMaskTexture()
+            mask:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+            mask:SetAllPoints(icon)
+            round[button] = mask
+        end
+        icon:AddMaskTexture(mask)
+        for index = 1, 4 do mine.border[index]:Hide() end
+        mine.round = true
+    elseif not on and mine.round then
+        icon:RemoveMaskTexture(round[button])
+        for index = 1, 4 do mine.border[index]:Show() end
+        mine.round = false
+    end
+end
+
 -- How many pads stand now (the tests).
 function Cells.Pads()
     return padded

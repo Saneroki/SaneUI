@@ -16,7 +16,9 @@ The bigger changes of each version, newest first.
   Grid, list or compact. Your bags in a strip under the bar. A "+"
   after each category takes an item brought to it, or the next one you
   click; the coin on the bar marks junk by clicks. Junk is sold one
-  item at a time, never what is in a set or pinned.
+  item at a time, never what is in a set or pinned. The list has
+  columns to sort, move and size (price, level, type, bind...), and
+  folds by category.
 - Navigation: herbs and ore on the minimap in their own pictures
   (Found herbs, Found ore in the pin filter; where they can grow is
   Possible herbs and ore), gold sparkles on the herb or ore beside

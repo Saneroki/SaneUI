@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 169 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
 ### Combat: our own talents (Saneroki, 2026-10-20)
@@ -88,6 +88,15 @@ Herbs and Find Minerals in turn, silently, all of it with switches in the pin fi
   all around), set out of combat where they reach less, kept per character and put back when switched off.
 - Tests: `dev/tests/navigation.lua`, 332 checks (the names and pictures, the filter switching the finders silently,
   the turns while moving, a herb found on its dot and gone again, the sparkles and the settings put back).
+
+### Inventory: the list's columns, the compact display planned (Saneroki, 2026-10-20)
+- **The list's columns** (`Bags/Columns.lua`, new): icon, name, item level, required level, type, bind (BoP, BoE,
+  BoU, Quest, SB once bound), count, sell price; a head over the list: a click sorts by a column (numbers high first,
+  again the other way), a drag moves it, its right edge sizes it, a right click chooses the columns, moves one, makes
+  the icons round (`Cells.Round`, a round mask) or puts it all back; a category's head folds its lines (Shift: all).
+- **Compact** (`Layout.lua`): which categories share a band and how wide each is, planned for the fewest lines
+  (`Plan`, dynamic programming); a block not last in its band at least three wide.
+- Tests: `dev/tests/bags.lua` (169 checks): the columns' values, sorting, menu, moving, resetting, folding.
 
 ### Inventory: a "+" to put items in, the junk marker, junk sold one by one (Saneroki, 2026-10-20)
 - **"+" cells** (`Views.lua`, `Layout.lua`, `Bags.lua`): after Pinned (shown when empty too) and every category

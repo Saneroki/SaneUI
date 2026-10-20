@@ -740,8 +740,36 @@ check(Line(menu, "Hide") and not Line(menu, "Rename"), "Pinned's menu: only Hide
 -- The dropdown View.
 dropdown:GenerateMenu()
 Choose(dropdown._items, "List")
-check(kept.look == "list" and Bags.rowOf[Cells.Button(0, 1)] and Bags.rowOf[Cells.Button(0, 1)].name._text == "Steel Sword",
-    "the list: a line per item with its name")
+local function RowOf(bag, slot) return Bags.rowOf[Cells.Button(bag, slot)] end
+check(kept.look == "list" and RowOf(0, 1) and RowOf(0, 1).cells.name._text == "Steel Sword" and RowOf(0, 1).cells.level._text == "20"
+    and RowOf(0, 1).cells.sell._text == "500c" and RowOf(0, 2).cells.count._text == "27",
+    "the list: a line per item, its name, item level, what the vendor pays, the count")
+local columnsHead = ns.Columns.head
+check(columnsHead:IsShown() and ns.Columns.Cell("level"):IsShown() and not ns.Columns.Cell("bind"), "the columns' head over the list")
+local levelCell = ns.Columns.Cell("level")
+levelCell:GetScript("OnMouseDown")(levelCell, "LeftButton")
+levelCell:GetScript("OnMouseUp")(levelCell, "LeftButton")
+check(kept.listSort == "level" and kept.listDown == true and levelCell.text._text == "iLvl v", "a click on a column: sorted by it, high first")
+levelCell:GetScript("OnMouseDown")(levelCell, "LeftButton")
+levelCell:GetScript("OnMouseUp")(levelCell, "LeftButton")
+check(kept.listDown == false, "clicked again: the other way")
+levelCell:GetScript("OnMouseUp")(levelCell, "RightButton")
+local columnsMenu = W.menus[#W.menus]
+Choose(columnsMenu, "Bind")
+check(ns.Columns.Cell("bind"):IsShown() and RowOf(0, 1).cells.bind._text == "BoE", "a column chosen in the head's menu: how the sword binds")
+columnsMenu = W.menus[#W.menus]
+levelCell:GetScript("OnMouseUp")(levelCell, "RightButton")
+Choose(W.menus[#W.menus], "Move Right")
+check(kept.columns[3] == "count" and kept.columns[4] == "level", "a column moved right")
+levelCell:GetScript("OnMouseUp")(levelCell, "RightButton")
+Choose(W.menus[#W.menus], "Reset Columns")
+check(table.concat(kept.columns, ",") == "icon,name,level,count,sell" and not kept.listSort, "the columns as they were")
+local armoryHead = HeadNamed("The Armory")
+armoryHead:GetScript("OnMouseUp")(armoryHead, "LeftButton")
+check(kept.folded and kept.folded["group:armory"] and not Cells.Shown(0, 1), "a head clicked in the list: folded")
+armoryHead = HeadNamed("The Armory")
+armoryHead:GetScript("OnMouseUp")(armoryHead, "LeftButton")
+check(Cells.Shown(0, 1), "clicked again: unfolded")
 dropdown:GenerateMenu()
 Choose(dropdown._items, "Compact")
 check(kept.look == "compact" and Cells.Shown(0, 1), "compact")

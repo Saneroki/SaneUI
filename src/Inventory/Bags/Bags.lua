@@ -64,8 +64,9 @@ Bags.SHOW = { pinned = "showPinned", recent = "showRecent" }
 
 local Contents, Layout, Cells, Foot = ns.Contents, ns.Layout, ns.Cells, ns.Foot
 local Categories, Views, Menus, Sidebar, Select = ns.Categories, ns.Views, ns.Menus, ns.BagSidebar, ns.Select
+local Columns = ns.Columns
 
-local panel, scroll, child, menu, sort, bar, strip, side, coin
+local panel, scroll, child, menu, sort, bar, strip, side, coin, columns
 local kept            -- store.bags: the display, the order, what is shown; the categories' choices
 local query           -- what the search found by (Core.Fuzzy.Query), nil: nothing typed
 local shown = false
@@ -184,11 +185,35 @@ Bags.Fonts = Fonts
 
 -- A category's head: a right click opens its menu, an item let go over it is put into it (Menus.lua); lit while
 -- the mouse brings an item it takes.
+-- What a block folds by in the list (its category, its group, else its name).
+local function Fold(block)
+    return block.key or block.group and ("group:" .. block.group) or block.word
+end
+
+-- A head clicked in the list: its block folded or unfolded; with Shift every block.
+local function Folded(head)
+    local key = head.fold
+    if not key then return end
+    kept.folded = type(kept.folded) == "table" and kept.folded or {}
+    local fold = not kept.folded[key]
+    local shift = rawget(_G, "IsShiftKeyDown")
+    if shift and shift() then
+        local blocks = Bags.blocks
+        for index = 1, blocks and blocks.count or 0 do kept.folded[Fold(blocks[index])] = fold or nil end
+    else
+        kept.folded[key] = fold or nil
+    end
+    Core.Sound(fold and "IG_MAINMENU_OPTION_CHECKBOX_OFF" or "IG_MAINMENU_OPTION_CHECKBOX_ON")
+    Bags.Redraw()
+end
+
 local function HeadUp(head, mouse)
     if mouse == "RightButton" then
         Menus.Row(head, head.key, head.group)
     elseif mouse == "LeftButton" and GetCursorInfo() then
         Menus.Drop(head.key)
+    elseif mouse == "LeftButton" and kept.look == "list" then
+        Folded(head)
     end
 end
 
@@ -214,6 +239,10 @@ local function MakeHead()
     head.lit:SetAllPoints()
     head.lit:SetColorTexture(1, 1, 1, 0.08)
     head.lit:Hide()
+    head.arrow = head:CreateTexture(nil, "ARTWORK")
+    head.arrow:SetSize(12, 12)
+    head.arrow:SetPoint("LEFT")
+    head.arrow:SetAlpha(0.6)
     head.word = head:CreateFontString(nil, "ARTWORK")
     head.word:SetPoint("LEFT")
     head.word:SetJustifyH("LEFT")
@@ -254,7 +283,15 @@ local function DrawHead(place)
     head.clean:SetShown(bank ~= nil)
     head.line:SetPoint("RIGHT", bank ~= nil and head.clean or head, bank ~= nil and "LEFT" or "RIGHT", -Layout.GAP, 0)
     head.key, head.group = block.key, block.group
-    head:EnableMouse(block.key ~= nil or block.group ~= nil)
+    local list = kept.look == "list" and place.level ~= 1
+    head.fold = list and Fold(block) or nil
+    head.arrow:SetShown(list)
+    if list then
+        head.arrow:SetTexture(block.folded and "Interface\\Buttons\\UI-PlusButton-Up" or "Interface\\Buttons\\UI-MinusButton-Up")
+    end
+    head.word:ClearAllPoints()
+    head.word:SetPoint("LEFT", list and 16 or 0, 0)
+    head:EnableMouse(block.key ~= nil or block.group ~= nil or list)
     head.lit:Hide()
     head:Show()
 end
@@ -342,8 +379,7 @@ local function DrawPlus(place)
     plus:Show()
 end
 
--- A list's line: behind its item button, which reaches over it; the item's name in its quality's colour, its
--- item level, its count.
+-- A list's line: behind its item button, which reaches over it; a word for each column shown (Columns.lua).
 local function MakeRow()
     local row = CreateFrame("Frame", nil, child)
     row.back = row:CreateTexture(nil, "BACKGROUND")
@@ -353,20 +389,20 @@ local function MakeRow()
     row.lit:SetAllPoints()
     row.lit:SetColorTexture(1, 1, 1, 0.08)
     row.lit:Hide()
-    row.name = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    row.name:SetPoint("LEFT", Layout.ICON + 8, 0)
-    row.name:SetJustifyH("LEFT")
-    row.name:SetWordWrap(false)
-    row.count = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    row.count:SetPoint("RIGHT", -6, 0)
-    row.count:SetWidth(40)
-    row.count:SetJustifyH("RIGHT")
-    row.level = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    row.level:SetPoint("RIGHT", row.count, "LEFT", -6, 0)
-    row.level:SetWidth(36)
-    row.level:SetJustifyH("RIGHT")
-    row.name:SetPoint("RIGHT", row.level, "LEFT", -6, 0)
+    row.cells = {}
     return row
+end
+
+local function Cell(row, key)
+    local cell = row.cells[key]
+    if not cell then
+        cell = row:CreateFontString(nil, "ARTWORK")
+        cell:SetFontObject(Core.Font("SaneUIBagsRow", "GameFontHighlightSmall", 11) or "GameFontHighlightSmall")
+        cell:SetWordWrap(false)
+        cell:SetJustifyH(Columns.DEF[key].number and "RIGHT" or "LEFT")
+        row.cells[key] = cell
+    end
+    return cell
 end
 
 local rowOf = {} -- [button] = the row it stands on now
@@ -381,22 +417,20 @@ local function DrawRow(place, button)
     row.back:SetShown(rows.taken % 2 == 0)
     row.lit:Hide()
     local entry = place.entry
-    local record = entry.record
-    if record.item then
-        local color = rawget(_G, "ITEM_QUALITY_COLORS") and ITEM_QUALITY_COLORS[record.quality]
-        row.name:SetText(record.name or "")
-        if color then row.name:SetTextColor(color.r, color.g, color.b) else row.name:SetTextColor(1, 1, 1) end
-        row.level:SetText(record.level or "")
-        local count = entry.count or record.count
-        row.count:SetText(count and count > 1 and count or "")
-    else
-        row.name:SetText(Core.Word("EMPTY", "Empty"))
-        row.name:SetTextColor(0.4, 0.4, 0.4)
-        row.level:SetText("")
-        row.count:SetText("")
+    local spots = Columns.Place(place.width)
+    for _, cell in pairs(row.cells) do cell:Hide() end
+    for _, key in ipairs(Columns.Shown()) do
+        if key ~= "icon" then
+            local cell, spot = Cell(row, key), spots[key]
+            cell:ClearAllPoints()
+            cell:SetPoint("LEFT", spot.x, 0)
+            cell:SetWidth(spot.width)
+            local text, r, g, b = Columns.Value(key, entry)
+            cell:SetText(text)
+            cell:SetTextColor(r or 1, g or 1, b or 1)
+            cell:Show()
+        end
     end
-    row.level:SetTextColor(0.85, 0.85, 0.85)
-    row.count:SetTextColor(0.85, 0.85, 0.85)
     row:SetAlpha(entry.faded and Cells.FADED or 1)
     rowOf[button] = row
     row:Show()
@@ -434,6 +468,13 @@ local function Draw()
     if not room or room <= 0 then return end
     local blocks = Views.Build(View(), sections, query, kept.order, kept)
     Bags.blocks = blocks
+    local list = kept.look == "list"
+    local folded = type(kept.folded) == "table" and kept.folded or {}
+    for index = 1, blocks.count do
+        local block = blocks[index]
+        block.folded = list and folded[Fold(block)] == true
+        if list then Columns.Sort(block.entries) end
+    end
     local count, height = Layout.Lay(kept.look, blocks, room - Bags.INSET, places)
     heads:Begin()
     rows:Begin()
@@ -460,12 +501,16 @@ local function Draw()
                 how.faded, how.count = entry.faded, entry.count
                 Cells.Draw(button, entry.record, how)
                 if place.kind == "row" then
-                    -- The button at the line's left, in its middle; its click over the rest of the line.
+                    -- The button in the icon's column, in the line's middle; its click over the rest of the line.
+                    local spot = Columns.Place(place.width).icon
                     local inset = (place.height - place.size) / 2
-                    Cells.Place(button, place.x + x + inset, place.y + inset, place.size, place.width - inset)
+                    local left = spot and spot.x + (spot.width - place.size) / 2 or inset
+                    Cells.Place(button, place.x + x + left, place.y + inset, place.size, place.width - left)
+                    Cells.Round(button, kept.round == true)
                     DrawRow(place, button)
                 else
                     Cells.Place(button, place.x + x, place.y, place.size)
+                    Cells.Round(button, false)
                 end
             end
         end
@@ -571,6 +616,7 @@ local function Kept()
     for _, view in ipairs(Views.FIXED) do first = first or view.key == bags.first end
     if not first then bags.first = nil end
     Categories.Use(bags)
+    Columns.Use(bags)
     Bags.options = bags
     return bags
 end
@@ -578,6 +624,7 @@ end
 local function IsLook(key) return kept.look == key end
 local function SetLook(key)
     kept.look = key
+    Bags.Restrip()
     Bags.Redraw()
 end
 local function IsOrder(key) return kept.order == key end
@@ -686,10 +733,24 @@ local function Strip()
     side:ClearAllPoints()
     side:SetPoint("TOPLEFT", above, "BOTTOMLEFT")
     side:SetPoint("BOTTOMLEFT", Foot.frame, "TOPLEFT")
+    local list = kept.look == "list"
+    columns:ClearAllPoints()
+    columns:SetPoint("TOPLEFT", side, "TOPRIGHT", Bags.INSET, -Bags.EDGE)
+    columns:SetPoint("RIGHT", bar, "RIGHT", -(Bags.SCROLL + Bags.INSET), 0)
+    columns:SetShown(list)
     scroll:ClearAllPoints()
-    scroll:SetPoint("TOPLEFT", side, "TOPRIGHT", 0, -Bags.EDGE)
+    if list then
+        scroll:SetPoint("TOPLEFT", side, "TOPRIGHT", 0, -(Bags.EDGE + Columns.HEAD + 2))
+    else
+        scroll:SetPoint("TOPLEFT", side, "TOPRIGHT", 0, -Bags.EDGE)
+    end
     scroll:SetPoint("BOTTOMRIGHT", Foot.frame, "TOPRIGHT", -Bags.SCROLL, Bags.EDGE)
     bar.bags:SetChecked(on)
+    if list then Columns.Refresh(math.max(1, (child:GetWidth() or 0) - Bags.INSET)) end
+end
+
+function Bags.Restrip()
+    Strip()
 end
 
 local function ToggleStrip()
@@ -806,6 +867,7 @@ function Bags.Build(made)
     Bar(body)
     Foot.Build(body, coin, strip)
     side = Sidebar.Build(body, bar, Foot.frame, kept)
+    columns = Columns.Build(body)
     scroll = CreateFrame("ScrollFrame", nil, body, "ScrollFrameTemplate")
     child = CreateFrame("Frame", nil, scroll)
     child:SetSize(1, 1)
@@ -844,6 +906,7 @@ function Bags.Size(newWidth)
     width = newWidth or width
     if not child then return end
     child:SetWidth(math.max(1, width - Sidebar.Width() - Bags.EDGE - Bags.SCROLL))
+    if kept.look == "list" then Columns.Refresh(math.max(1, child:GetWidth() - Bags.INSET)) end
     Bags.Redraw()
 end
 
