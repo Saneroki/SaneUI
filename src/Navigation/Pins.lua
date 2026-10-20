@@ -48,7 +48,7 @@ Pins.ICONS = {
 local SERVICES = {
     repair = "repair", innkeeper = "innkeeper", banker = "banker", auctioneer = "auctioneer",
     stablemaster = "stablemaster", battlemaster = "battlemaster", trainer = "profession", weaponmaster = "upgradeitem-32x32",
-    vendor = "repair", guildmaster = "crossedflags", tabard = "crossedflags", spirithealer = "poi-graveyard-neutral",
+    vendor = "repair", guildmaster = "crossedflags", tabard = "crossedflags", spirithealer = "poi-soulspiritghost",
 }
 -- A merchant: the game's anvil, as its own minimap shows merchants (Saneroki, 2026-10-20); one of a kind of goods
 -- the game's minimap tracks: by the first of them with an icon.
@@ -68,7 +68,7 @@ local PLACES = {
     crossing = { "place", "poi-door-arrow-up" }, cave = { "place", "caveunderground-down" },
     dungeon = { "entrance", "dungeon" }, raid = { "entrance", "raid" }, pier = { "travel", "flightmasterferry" },
     mailbox = { "service", "mailbox" }, meetingstone = { "place", "teleportationnetwork-32x32" },
-    spirithealer = { "service", "poi-graveyard-neutral" },
+    spirithealer = { "service", "poi-soulspiritghost" },
 }
 local WAYS = { boat = "flightmasterferry", zeppelin = "vehicle-air-horde", tram = "vehicle-alliancecart",
                lift = "poi-door-up", portal = "mageportalalliance" }
