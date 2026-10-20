@@ -17,6 +17,18 @@ The bigger changes of each version, newest first.
   in view. The game's minimap dots still show on
   it, and the map key opens it. Hover a zone to light it up, click it
   to open it; the map grows and zooms smoothly with the window.
+- Navigation: pins on the map in the game's own looks: your quests,
+  flight points, rares and treasures nearby, places, ways into other
+  maps, your party; and what Sane UI's database knows as it fills.
+  Pins that would cover each other gather into one; click it to zoom
+  in. Choose which kinds show with Pins on the map's bar. The quest
+  you follow is shaded where its objectives are.
+- Navigation: the quest log at the left of the full map. Click a quest
+  to follow it: the map shows where it is and its text. Track, share
+  and abandon it there.
+- Navigation: choose the game's own minimap or map in Classic windows
+  and it stays chosen; the top right corner always opens Sane UI's map.
+  The minimap now fills its whole window, whatever its shape.
 - Navigation: the Overlay view is gone. The painted map, Atlas, comes
   as a module of its own: switch Atlas on in the addon list and the
   map gets a third view, the whole world painted as one map, which

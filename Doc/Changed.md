@@ -3,8 +3,47 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 356 (windows), 183 (data in the game), 142 (Navigation), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 195 (Navigation), 208 (data tools).
 A game restart takes it in (new addons, Navigation and Atlas; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data pack *Data: Items*).
+
+### Navigation: pins, the quest log, the bar; classic windows kept (Saneroki, 2026-10-20)
+- **Saneroki's asks** (`Doc/ideas/Navigation.md`): a classic window chosen is kept and the top right corner always
+  fills the screen with our map; the minimap shows the map over its whole window, not a square in it; pins and
+  every notation stand over the map, never behind it.
+- **Classic windows kept:** Core's Edge takes entries with `checked` and `back` (a checkbox, ticked while the game's
+  own is the one kept; chosen again, ours is the one again and the window stays). Navigation's two are the switches
+  *Show the game's minimap* and *Show the game's map*; the game's map chosen opens at once. With the game's
+  minimap chosen the small window rests out of sight (alpha 0, no mouse, no textures) and the corner still fills
+  the screen with our map; Edit Mode shows it.
+- **The minimap fills its window:** the game's minimap, square and as large as the window's longer side, is cut to
+  the window's shape by a mask, a band as tall (or wide) as the shorter side in 32nds (`Hybrid.Mask`; 62 masks in
+  `src/Navigation/Art/Masks/` by the new `dev/tools/minimap-masks`, 195 KB): the game draws its dots inside its
+  mask only, so they cover the whole window and nothing past it.
+- **Always on top:** `Canvas.LEVELS` stacks every layer from the canvas' level at each layout: the map's own up
+  to `Canvas.MAP`, then quest areas, the route, the game's minimap, the pins, the marks; the bar over all.
+- **Pins** (`Pins.lua`, `PinView.lua`): the game's per map (quests on its discs and marks, the arrow's quest's next
+  way, flight points of the player's side, vignettes, area points, map links, entrances where it has them) and
+  Core's (`Data.Map`), one per key (the game's hides the data's), filtered by the new multi setting *Pins on the
+  map* and the bar's *Pins*, gathered when they would cover each other (a click zooms in), in the game's atlases;
+  a press on a pin is the map's drag, a click the pin's (a quest's: the arrow leads to it; an entrance's: its map).
+  Quest givers only with a quest this character can take (`Pins.Offered`). The party and raid in class colours
+  (`Marks.Group`). Quest areas by the game's `QuestPOIFrame` over each zone in view (`Areas.lua`).
+- **Core's map reader** (`Core/Data/Map.lua`, `Data.Map()`: `On`, `Spawns`, `OnChange`; data build step 1d.5's list
+  per map, built ahead): the places of Spawns, Places and Travel per map, each with what it is; sets no pack holds
+  passed over without a word. The three hold no entries yet: the database's pins come with the import.
+- **The quest log** (`QuestLog.lua`) at the full map's left, coming in with the window's motion: the game's headers
+  (folded as the game keeps them), quests with level, state and watch, their objectives; a click leads the arrow
+  to the quest and shows its place and text (*Track*, *Share*, *Abandon* after the game's own question); Shift-click
+  watches; the right button's menu; the mouse over it shades its area.
+- **The bar** (`TopBar.lua`) over the full map: the quest log in or out (kept), the views (moved from `Window.lua`),
+  the map selector (the world or a continent, a zone A to Z), the pin filter.
+- **The golden line** (`Route.lua`): a way drawn with pooled `Line`s, the game's dependency bar art tinted gold, its
+  glint moved by a `TextureCoordTranslation` animation; the planner comes next.
+- `Live.lua`: map links, entrances, `TAXI_NODE_STATUS_CHANGED`, `PLAYER_LEVEL_UP`, `QUEST_WATCH_LIST_CHANGED`;
+  `Coords.Zones(continent)`.
+- Tests: Navigation 195 checks (the pins of both sources, one per thing, the filter, gathering and its click, the
+  stacking, tooltips, the continent's pins, the quest log's rows and actions, the area, the line, the party, the
+  resting window, the kept classic windows, the masks), windows 359 (kept choices).
 
 ### The Atlas' colour pass and packing (Saneroki, 2026-10-20)
 - **The colour pass** (`Doc/ideas/Navigation.md`, *The colour pass*): `dev/tools/atlas join` moves each painting's

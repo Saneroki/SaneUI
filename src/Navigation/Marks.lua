@@ -8,19 +8,26 @@ local _, ns = ...
 --                           out of sight while the game's minimap shows its own (Hybrid.lua)
 --      the map pin          the game's own (Waypoint-MapPin-Tracked / -Untracked, as its map's);
 --                           a click leads the game's arrow to it or not, Ctrl-click takes it away
+--      the party, the raid  the game's party blip in each member's class colour, a few times a
+--                           second while the map is shown (the pin filter's Party and raid)
 --
 --  Placed against the canvas' holder like the layers (Canvas.lua), so a drag moves
 --  them with the map; the arrow is moved again on every step of the canvas'
---  tracker. The map's pins of the game's data and Core's come later, here.
+--  tracker. The map's other pins are PinView.lua's.
 -------------------------------------------------------------------------------
 local Marks = {}
 ns.Marks = Marks
 
 Marks.ARROW = 27  -- the player's arrow, as Blizzard's map draws it (GroupMembersDataProvider)
 Marks.PIN = 30    -- the map pin, as Blizzard's (WaypointLocationDataProvider)
+Marks.MEMBER = 14 -- a member of the party or raid
+Marks.BLIP = "PlayerPartyBlip"
+Marks.GROUP = 0.25 -- seconds between two looks at where the party is
 
 local Coords, Live = ns.Coords, ns.Live
 local layer, holder, arrow, pin
+local members = {} -- the members' textures, made as many as needed
+local nextGroup = 0
 
 -- The game's own words for its map pin.
 local function Tip(button)
@@ -118,9 +125,38 @@ function Marks.Pin(view)
     pin:Show()
 end
 
--- Out of sight, both.
+-- The party or raid where the game tells their places (on the view's continent), a few times a second.
+function Marks.Group(view, now)
+    if now < nextGroup then return end
+    nextGroup = now + Marks.GROUP
+    local count = 0
+    local box = view.map and Coords.Box(view.map)
+    if box and ns.Pins.Shows("group") and IsInGroup() then
+        for _, member in ipairs(Live.Group(view.map)) do
+            local u, v = Coords.ToPlane(box, member.x, member.y)
+            count = count + 1
+            local texture = members[count]
+            if not texture then
+                texture = layer:CreateTexture(nil, "ARTWORK")
+                texture:SetAtlas(Marks.BLIP)
+                texture:SetSize(Marks.MEMBER, Marks.MEMBER)
+                members[count] = texture
+            end
+            local _, class = UnitClass(member.unit)
+            local color = class and rawget(_G, "RAID_CLASS_COLORS") and RAID_CLASS_COLORS[class]
+            if color then texture:SetVertexColor(color.r, color.g, color.b) else texture:SetVertexColor(1, 1, 1) end
+            texture:SetPoint("CENTER", holder, "CENTER", (u - view.u) * view.k, (v - view.v) * view.k)
+            texture:Show()
+        end
+    end
+    for index = count + 1, #members do members[index]:Hide() end
+end
+
+-- Out of sight, all of them.
 function Marks.Clear()
     if not arrow then return end
     arrow:Hide()
     pin:Hide()
+    for _, texture in ipairs(members) do texture:Hide() end
+    nextGroup = 0
 end

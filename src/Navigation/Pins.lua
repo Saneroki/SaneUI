@@ -1,0 +1,452 @@
+local _, ns = ...
+
+-------------------------------------------------------------------------------
+--  Sane UI - Navigation - Pins
+--  The map's pins as plain records, from what the game tells (Live.lua) and from
+--  Core's data (Data.Map), one pin per thing, as the pin filter lets them through.
+--  Knows no frames: PinView.lua draws what For gives.
+--
+--      Pins.For(view, small)   the pins in view: every zone the view shows at a zone's level, the
+--                              continents' travel and places further out, none at the world
+--      Pins.Gather(list, k)    pins that would cover each other on the screen, gathered (Gather below)
+--      Pins.Offered(quest)     whether this character can take a quest of Core's data now
+--
+--  A pin: kind (the filter's, Pins.KINDS), key (one per thing: the game's word hides Core's for the same
+--  key, *One pin per thing*), home (the continent whose plane u, v are in), u, v, map, x, y (on its own
+--  map, 0 to 1), atlas or texture, size, name, lines (its tooltip's further lines), and by kind: quest
+--  (its ID), complete, focused (the quest the game's arrow leads to), to (a map it opens), dim (a flight
+--  point not yet found), order (drawn over a lower one).
+--
+--  What the game tells is read per map when it said it changed (the message LIVE), Core's places when they
+--  change (Data.Map's OnChange); each map's pins are kept until then, so a layout only places them.
+-------------------------------------------------------------------------------
+local Core = SaneUI.Core
+local Coords, Live = ns.Coords, ns.Live
+local Pins = {}
+ns.Pins = Pins
+
+-- The filter's kinds (Navigation.lua: they are its setting's choices).
+Pins.KINDS = ns.KINDS
+Pins.CONTINENT = { flight = true, travel = true, entrance = true, place = true } -- kinds shown past a zone
+Pins.NEAR = 300       -- yards: services on the small view only so near the player
+Pins.GATHER = 18      -- units: pins nearer each other than this on the screen are gathered into one marker
+Pins.SIZE = { quest = 26, flight = 18, travel = 22, entrance = 22, place = 22, service = 18, rare = 18,
+              treasure = 18, herb = 16, ore = 16, book = 18, gathered = 24 }
+
+-- The order pins are drawn in: a higher one over a lower one, and the first in a gathered marker.
+local ORDER = { quest = 9, rare = 8, entrance = 7, flight = 6, travel = 5, place = 4, treasure = 3, service = 2,
+                herb = 1, ore = 1, book = 0 }
+
+-- Core's services, as the game's town tracking draws them (Interface\Minimap\Tracking's atlases).
+local SERVICES = {
+    repair = "Repair", innkeeper = "Innkeeper", banker = "Banker", auctioneer = "Auctioneer",
+    stablemaster = "StableMaster", battlemaster = "Battlemaster", trainer = "Class", weaponmaster = "Class",
+    vendor = "Food", guildmaster = "Banker", tabard = "Banker", spirithealer = "poi-graveyard-neutral",
+}
+local GOODS = { food = "Food", reagents = "Reagents", poisons = "Poisons", ammunition = "Ammunition" }
+-- A service's words in the tooltip.
+Pins.SERVICE_WORDS = {
+    repair = "Repairs", innkeeper = "Innkeeper", banker = "Banker", auctioneer = "Auctioneer",
+    stablemaster = "Stable master", battlemaster = "Battlemaster", trainer = "Trainer", weaponmaster = "Weapon master",
+    vendor = "Vendor", guildmaster = "Guild master", tabard = "Tabard vendor", spirithealer = "Spirit healer",
+    flightmaster = "Flight master", questgiver = "Quests", guard = "Guard",
+}
+-- Core's places and ways: the filter's kind and the game's atlas for each.
+local PLACES = {
+    crossing = { "place", "poi-door-arrow-up" }, cave = { "place", "CaveUnderground-Down" },
+    dungeon = { "entrance", "Dungeon" }, raid = { "entrance", "Raid" }, pier = { "travel", "TaxiNode_Continent_Neutral" },
+    mailbox = { "service", "Mailbox" }, meetingstone = { "place", "Ping_Map_Whole_NonThreat" },
+    spirithealer = { "service", "poi-graveyard-neutral" },
+}
+local WAYS = { boat = "TaxiNode_Continent_Neutral", zeppelin = "TaxiNode_Continent_Horde", tram = "TaxiNode_Continent_Neutral",
+               lift = "poi-door-arrow-up", portal = "TaxiNode_Continent_Neutral" }
+local OBJECTS = { herb = { "herb", "Professions_Tracking_Herb" }, ore = { "ore", "Professions_Tracking_Ore" },
+                  chest = { "treasure", "VignetteLoot" }, mailbox = { "service", "Mailbox" },
+                  book = { "book", nil, "Interface\\Icons\\INV_Misc_Book_09" } }
+Pins.TEXT = {
+    turnIn = Core.Word("QUEST_WATCH_QUEST_READY", "Ready for turn-in"),
+    offered = "A quest to take",
+    undiscovered = "Not discovered yet",
+    open = "Click: show it in the quest log",
+    openMap = "Click: open its map",
+    gathered = "%d here: click to zoom in",
+    unverified = "Not yet confirmed by the game",
+    level = "Level %d to %d",
+}
+
+local Map = Core.Data.Map()
+
+-------------------------------------------------------------------------------
+--  What the game tells, per map
+-------------------------------------------------------------------------------
+local live = {}  -- [uiMapID] = its live pins, until the game says they changed
+local data = {}  -- [uiMapID] = its pins of Core's data, until the data changes
+local faction    -- the player's side, asked once
+
+-- The pin's place in its continent's plane, from a point on its map (0 to 1); false when the map has none.
+local function Placed(pin, map, x, y)
+    local home = Coords.ContinentOf(map)
+    if not home then return false end
+    local u, v = Coords.MapToPlane(map, x, y, home)
+    if not u then return false end
+    pin.home, pin.u, pin.v, pin.map, pin.x, pin.y = home, u, v, map, x, y
+    return true
+end
+
+local function Add(list, pin, map, x, y)
+    if type(x) == "number" and type(y) == "number" and Placed(pin, map, x, y) then list[#list + 1] = pin end
+end
+
+local function Vector(position)
+    if type(position) ~= "table" then return nil end
+    return Core.Plain(position.x), Core.Plain(position.y)
+end
+
+-- The creature or object a game's GUID names: "npc:<id>" or "object:<id>", as Core's keys are.
+local function Thing(guid)
+    if type(guid) ~= "string" then return nil end
+    local kind, id = guid:match("^(%a+)%-%d+%-%d+%-%d+%-%d+%-(%d+)%-")
+    if kind == "Creature" or kind == "Vehicle" then return "npc:" .. id end
+    if kind == "GameObject" then return "object:" .. id end
+    return nil
+end
+
+-- The quests the game puts on a map: in progress, ready to turn in, and the next way of the quest it leads to.
+local function Quests(list, map)
+    local focused = Core.Plain(Core.Ask(C_SuperTrack.GetSuperTrackedQuestID))
+    local seen = {}
+    for _, info in ipairs(Live.Quests(map)) do
+        local quest = info.questID
+        if quest and not info.isMapIndicatorQuest and not seen[quest] then
+            seen[quest] = true
+            local complete = Core.Ask(C_QuestLog.IsComplete, quest) and true or false
+            Add(list, { kind = "quest", key = "quest:" .. quest, quest = quest, complete = complete, focused = quest == focused,
+                        name = Core.Ask(C_QuestLog.GetTitleForQuestID, quest), click = "quest" }, map, info.x, info.y)
+        end
+    end
+    if focused and focused > 0 and not seen[focused] then
+        local x, y = Core.Ask(C_QuestLog.GetNextWaypointForMap, focused, map)
+        if x then
+            Add(list, { kind = "quest", key = "quest:" .. focused, quest = focused, focused = true, way = true,
+                        complete = Core.Ask(C_QuestLog.IsComplete, focused) and true or false,
+                        name = Core.Ask(C_QuestLog.GetTitleForQuestID, focused), click = "quest" }, map, x, y)
+        end
+    end
+end
+
+-- The flight points of the player's side and the neutral ones, as the game's map shows them.
+local function Flights(list, map)
+    faction = faction or Core.Plain(UnitFactionGroup("player"))
+    local sides = rawget(_G, "Enum") and Enum.FlightPathFaction or {}
+    for _, info in ipairs(Live.Flights(map)) do
+        local side = info.faction
+        if not ((side == sides.Horde and faction ~= "Horde") or (side == sides.Alliance and faction ~= "Alliance")) then
+            local atlas = info.atlasName
+            if atlas and info.textureKit then atlas = info.textureKit .. "-" .. atlas end
+            local x, y = Vector(info.position)
+            Add(list, { kind = "flight", key = "flight:" .. tostring(info.nodeID), id = info.nodeID, name = info.name,
+                        atlas = atlas or "TaxiNode_Neutral", dim = info.isUndiscovered,
+                        lines = info.isUndiscovered and { Pins.TEXT.undiscovered } or nil }, map, x, y)
+        end
+    end
+end
+
+-- Rares, treasures and the game's other marks nearby: the game's own atlas for each.
+local function Vignettes(list, map)
+    for _, entry in ipairs(Live.Vignettes(map)) do
+        local info = entry.info
+        if info.onWorldMap ~= false or info.onMinimap then
+            local atlas = info.atlasName or "VignetteKill"
+            local kind = atlas:find("Loot") and "treasure" or (atlas:find("Kill") and "rare") or "place"
+            local key = Thing(info.objectGUID) or ("vignette:" .. tostring(entry.guid))
+            Add(list, { kind = kind, key = key, name = info.name, atlas = atlas, live = true }, map, entry.x, entry.y)
+        end
+    end
+end
+
+-- The game's own points (towns, events), the ways into another map, and dungeon entrances where it has them.
+local function Points(list, map)
+    for _, info in ipairs(Live.Points(map)) do
+        local x, y = Vector(info.position)
+        local atlas = info.atlasName
+        if atlas and info.textureKit then atlas = info.textureKit .. "-" .. atlas end
+        Add(list, { kind = "place", key = "poi:" .. tostring(info.areaPoiID), name = info.name, atlas = atlas or "poi-town",
+                    lines = info.description and info.description ~= "" and { info.description } or nil }, map, x, y)
+    end
+    for _, info in ipairs(Live.Links(map)) do
+        local x, y = Vector(info.position)
+        Add(list, { kind = "travel", key = "link:" .. tostring(info.linkedUiMapID), name = info.name,
+                    atlas = info.atlasName or "poi-door-arrow-up", to = info.linkedUiMapID, click = "map",
+                    lines = { Pins.TEXT.openMap } }, map, x, y)
+    end
+    for _, info in ipairs(Live.Entrances(map)) do
+        local x, y = Vector(info.position)
+        Add(list, { kind = "entrance", key = "entrance:" .. tostring(info.journalInstanceID or info.name), name = info.name,
+                    atlas = info.atlasName or "Dungeon",
+                    lines = info.description and info.description ~= "" and { info.description } or nil }, map, x, y)
+    end
+end
+
+local function LiveOn(map)
+    local list = live[map]
+    if list then return list end
+    list = {}
+    Quests(list, map)
+    Flights(list, map)
+    Vignettes(list, map)
+    Points(list, map)
+    live[map] = list
+    return list
+end
+
+-------------------------------------------------------------------------------
+--  Core's data, per map
+-------------------------------------------------------------------------------
+-- Whether this character can take a quest of Core's data now: not done and not in its log, its level, side,
+-- race and class, the quests it needs first done and none that closes it.
+local me -- { level, side, race, class }: asked at each layout's first question
+function Pins.Offered(quest, id)
+    if type(quest) ~= "table" or quest.retired then return false end
+    if Core.Ask(C_QuestLog.IsQuestFlaggedCompleted, id) then return false end
+    local index = Core.Ask(C_QuestLog.GetLogIndexForQuestID, id)
+    if index and index > 0 then return false end
+    if (quest.minLevel or 0) > me.level or (quest.maxLevel and quest.maxLevel > 0 and me.level > quest.maxLevel) then return false end
+    if quest.side and quest.side ~= me.side then return false end
+    local function Has(list, value)
+        if not list then return true end
+        for _, entry in ipairs(list) do if entry == value then return true end end
+        return false
+    end
+    if not Has(quest.races, me.race) or not Has(quest.classes, me.class) then return false end
+    local one, oneDone = false, false
+    for _, need in ipairs(quest.requires or {}) do
+        if not need.side or need.side == me.side then
+            local done = Core.Ask(C_QuestLog.IsQuestFlaggedCompleted, need.quest) and true or false
+            if need.kind == "done" and not done then return false end
+            if need.kind == "closed" and done then return false end
+            if need.kind == "one" then one, oneDone = true, oneDone or done end
+        end
+    end
+    return not one or oneDone
+end
+
+local function Me()
+    local side = Core.Plain(UnitFactionGroup("player"))
+    me = { level = Core.Plain(UnitLevel("player")) or 1, side = side and side:lower(),
+           race = select(3, UnitRace("player")), class = select(3, UnitClass("player")) }
+end
+
+-- A place of Core's data as a pin: what it is says its kind and its look; nil for what the map does not show.
+local QUESTS = Core.Data.Set("Quests")
+local function FromData(place)
+    local what, kind = place.what, place.kind
+    local pin = { key = place.key, name = place.name, unverified = true }
+    if kind == "npc" then
+        local offered
+        for _, quest in ipairs(type(what) == "table" and what.quests or {}) do
+            if Pins.Offered(QUESTS:Get(quest), quest) then
+                offered = offered or {}
+                offered[#offered + 1] = QUESTS:Get(quest, "name") or ("#" .. quest)
+            end
+        end
+        local services = what.services or {}
+        if offered then
+            pin.kind, pin.atlas, pin.lines = "quest", "QuestNormal", offered
+            pin.offer = true
+        elseif what.rare then
+            pin.kind, pin.atlas = "rare", "VignetteKill"
+        else
+            -- The game's flight points stand for the flight masters (One pin per thing, point 6).
+            local service
+            for _, each in ipairs(services) do
+                if SERVICES[each] then service = each break end
+            end
+            if not service then return nil end
+            local atlas = SERVICES[service]
+            if service == "vendor" and what.goods and what.goods[1] then atlas = GOODS[what.goods[1]] or atlas end
+            pin.kind, pin.atlas, pin.service = "service", atlas, true
+            pin.lines = {}
+            for _, each in ipairs(services) do pin.lines[#pin.lines + 1] = Pins.SERVICE_WORDS[each] end
+        end
+        pin.roles = services
+    elseif kind == "object" then
+        local look = OBJECTS[what]
+        if not look then return nil end
+        pin.kind, pin.atlas, pin.texture = look[1], look[2], look[3]
+    elseif kind == "place" then
+        local look = PLACES[what]
+        if not look then return nil end
+        pin.kind, pin.atlas = look[1], look[2]
+        pin.service = look[1] == "service"
+        if place.to then pin.to, pin.click = place.to, "map" end
+        if place.levelMin and place.levelMax then pin.lines = { Pins.TEXT.level:format(place.levelMin, place.levelMax) } end
+    elseif kind == "travel" then
+        pin.kind, pin.atlas = "travel", WAYS[what] or "TaxiNode_Continent_Neutral"
+    else
+        return nil
+    end
+    return pin
+end
+
+local function DataOn(map)
+    local list = data[map]
+    if list then return list end
+    local places = Map:On(map)
+    if not places then return {} end -- being read: asked again once they are (OnChange)
+    list = {}
+    for _, place in ipairs(places) do
+        local pin = FromData(place)
+        if pin then Add(list, pin, map, place.x, place.y) end
+    end
+    data[map] = list
+    return list
+end
+
+-------------------------------------------------------------------------------
+--  The pins in view
+-------------------------------------------------------------------------------
+local found = {}    -- For's answer, made anew each time
+local hidden = {}   -- keys the game's own pins hide (scratch)
+local taken = {}    -- keys drawn already: a thing two maps tell of is drawn once (scratch)
+
+-- Whether a point of the view's plane lies in it.
+local function Inside(view, u, v)
+    return u >= view.left and u <= view.right and v <= view.top and v >= view.bottom
+end
+
+-- The maps whose pins the view shows: each zone in view (and the zone in the middle, should it have none of
+-- its own), further out the continent itself too (its flight points, as the game's continent map has them);
+-- at the world none.
+local function Maps(view)
+    local maps = {}
+    if view.level == "world" then return maps end
+    if view.level ~= "zone" then maps[1] = view.map end
+    for _, zone in ipairs(Coords.Zones(view.map)) do
+        local box = zone.box
+        if box.u <= view.right and box.u + box.width >= view.left and box.v >= view.bottom and box.v - box.height <= view.top then
+            maps[#maps + 1] = zone.map
+        end
+    end
+    if #maps == 0 and view.zone then maps[1] = view.zone end
+    return maps
+end
+
+-- The filter's switches: on unless switched off (a kind added later is on as it is at first).
+local function Shows(kind)
+    local chosen = ns.options and ns.options.pins
+    if type(chosen) ~= "table" then return true end
+    return chosen[kind] and true or false
+end
+Pins.Shows = Shows
+
+local SMALL = {}
+for _, entry in ipairs(Pins.KINDS) do SMALL[entry[1]] = entry.small end
+
+-- The pins in view, as the filter lets them through, for the view as the canvas laid it out (Canvas.view);
+-- small: the small window (its fewer kinds, services only near the player at pu, pv).
+function Pins.For(view, small, pu, pv)
+    wipe(found)
+    wipe(hidden)
+    wipe(taken)
+    Me()
+    local continentLevel = view.level ~= "zone"
+    local maps = Maps(view)
+    for _, map in ipairs(maps) do
+        for _, pin in ipairs(LiveOn(map)) do hidden[pin.key] = true end
+    end
+    for _, map in ipairs(maps) do
+        for pass = 1, 2 do
+            for _, pin in ipairs(pass == 1 and LiveOn(map) or DataOn(map)) do
+                local kind = pin.kind
+                local link = Coords.Link(pin.home, view.map)
+                if link and not taken[pin.key] and Shows(kind) and (not small or SMALL[kind])
+                    and (not continentLevel or Pins.CONTINENT[kind]) and (pass == 1 or not hidden[pin.key]) then
+                    local u, v = link.du + link.su * pin.u, link.dv + link.sv * pin.v
+                    local near = not (small and pin.service) or (pu and (u - pu) ^ 2 + (v - pv) ^ 2 <= Pins.NEAR ^ 2)
+                    if near and Inside(view, u, v) then
+                        taken[pin.key] = true
+                        pin.pu, pin.pv = u, v -- in the view's plane, for this layout
+                        pin.order = ORDER[kind] or 0
+                        found[#found + 1] = pin
+                    end
+                end
+            end
+        end
+    end
+    table.sort(found, function(a, b)
+        if a.order ~= b.order then return a.order > b.order end
+        return a.key < b.key
+    end)
+    return found
+end
+
+-- Pins nearer each other on the screen than Pins.GATHER units become one marker, at the first one (the one
+-- drawn highest) with the number it holds; quests are never gathered, nor what the game tells is near.
+-- list: For's, sorted; k: the zoom (units a yard). Gives a list of pins and markers ({ gathered = { pins },
+-- pu, pv, key }).
+local cells = {}
+function Pins.Gather(list, k)
+    wipe(cells)
+    local out = {}
+    local size = Pins.GATHER
+    for _, pin in ipairs(list) do
+        if pin.kind == "quest" or pin.live then
+            out[#out + 1] = pin
+        else
+            local x, y = pin.pu * k, pin.pv * k
+            local cx, cy = math.floor(x / size), math.floor(y / size)
+            local into
+            for dx = -1, 1 do
+                for dy = -1, 1 do
+                    local cell = cells[(cx + dx) .. ":" .. (cy + dy)]
+                    if cell and not into then
+                        for _, marker in ipairs(cell) do
+                            if (marker.x - x) ^ 2 + (marker.y - y) ^ 2 < size * size then into = marker break end
+                        end
+                    end
+                end
+            end
+            if into then
+                local first = into.pin
+                if not into.gathered then
+                    into.gathered = { first }
+                    into.marker = { gathered = into.gathered, pu = first.pu, pv = first.pv, key = "gathered:" .. first.key,
+                                    kind = "gathered", order = first.order }
+                    out[into.index] = into.marker
+                end
+                into.gathered[#into.gathered + 1] = pin
+            else
+                local key = cx .. ":" .. cy
+                cells[key] = cells[key] or {}
+                out[#out + 1] = pin
+                local cell = cells[key]
+                cell[#cell + 1] = { x = x, y = y, pin = pin, index = #out }
+            end
+        end
+    end
+    return out
+end
+
+-------------------------------------------------------------------------------
+--  Kept until the game or the data says they changed
+-------------------------------------------------------------------------------
+local LIVE = { quests = true, flights = true, vignettes = true, points = true, zone = true, level = true }
+
+-- What the game tells changed: every map's live pins are read again at the next layout; the quests changed,
+-- the data's too (what this character can take follows its quests and level).
+function Pins.Changed(what)
+    if what and not LIVE[what] then return false end
+    wipe(live)
+    if what == nil or what == "quests" or what == "level" then wipe(data) end
+    return true
+end
+
+-- Core's places changed: every map's data pins are read again.
+function Pins.DataChanged()
+    wipe(data)
+end
+
+Map:OnChange(function()
+    Pins.DataChanged()
+    if ns.Canvas and ns.Canvas.Refresh then ns.Guarded(ns.Canvas.Refresh) end
+end)

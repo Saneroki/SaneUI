@@ -81,9 +81,28 @@ view is first drawn and reads it as `SaneUI.Atlas`; on a failure the view falls 
 and choice go (`ns.Offer`). The view: the terrain as Scrying, the blocks over it at the coarsest level with
 enough pixels a yard for the screen, the next coarser one under them; `Camera.Near()` 6 units a yard there.
 
-Not yet: pins of Live and of Core's data, the quest log, the top bar (selector, filter), search, routes, the
-guide, dungeon maps and floors, the minimap's small parts (zone text, clock, mail, tracking). Tests:
-`dev/tests/navigation.lua` (142 checks).
+## Built (2026-10-20): pins, the quest log, the bar
+
+Saneroki's asks of 2026-10-20 (`Doc/ideas/Navigation.md`, *A classic window is kept*, *The minimap fills its
+window*, *Always on top*):
+
+- `Pins.lua` (no frames) and `PinView.lua`: the game's pins per map (quests, the arrow's quest's next way, flight
+  points of the player's side, vignettes, area points, map links, entrances) and Core's (`Data.Map():On`, new in
+  `Core/Data/Map.lua`: Spawns, Places, Travel; all three hold no entries yet), one per key, filtered (setting
+  `pins`, multi), gathered (`Pins.Gather`), in the game's atlases; `Canvas.Press`/`Release` share drags and clicks.
+- `Areas.lua`: the game's `QuestPOIFrame` per zone in view (the quest under the mouse in the log, else the arrow's).
+- `Marks.Group`: the party and raid. `Route.lua`: the golden line's drawing (`Route.Show(way)`); no planner yet.
+- `QuestLog.lua` at the full map's left, `TopBar.lua` over the map (log button, views, map selector, pin filter);
+  `Window.lua` lays them out (the log comes in with the motion; `Window.FullSize`).
+- Stacking: `Canvas.LEVELS` (map up to `Canvas.MAP` 5, areas 6, route 7, the game's minimap 10, pins 12, marks 20,
+  the bar 30), set at every layout.
+- The game's minimap cut to the window's shape (`Hybrid.Mask`, `Art/Masks/`, `dev/tools/minimap-masks`).
+- Classic windows kept (Core's Edge: entries with `checked`/`back`); with the game's minimap chosen the small
+  window rests out of sight (`Window.lua`, `Rest`), the corner still fills the screen with ours.
+
+Not yet: the route planner, the walking data and its tool, search, the guide, dungeon maps and floors, the
+minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests:
+`dev/tests/navigation.lua` (195 checks).
 
 ## What is not there yet
 

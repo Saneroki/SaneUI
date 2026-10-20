@@ -198,7 +198,9 @@ at most the commit it was on, and the next session goes on from there.
   - Tests.
 - [ ] **1d.5 Areas and the map,** with the Spawns pack.
   - Cells and runs, merging, and the point test.
-  - The list per map and `Near`.
+  - The list per map and `Near`. *The list per map built ahead for Navigation's pins (Saneroki, 2026-10-20):
+    `Core/Data/Map.lua`, `Data.Map():On`, `Spawns`, `OnChange` (`Doc/guides/data.md`, *What a map shows*);
+    `Near` and the areas still to come.*
   - The area test, behind its check in the game.
   - Tests.
 

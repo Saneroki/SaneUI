@@ -638,9 +638,12 @@ local wide = CreateFrame("Frame", nil, UIParent)
 local wideBar, list = CreateFrame("Frame", nil, wide), CreateFrame("Frame", nil, wide)
 wide:SetFrameStrata("MEDIUM")
 local wideStore, fills, placed, own, native = {}, {}, 0, nil, 0
+local kept, keptShown = false, 0 -- a kept choice of the game's own window (its checkbox)
 local wideWindow = Window.New(wide, {
     store = wideStore, sizable = true, dock = true, edge = true, content = list,
-    classic = { { text = "Friends list", show = function() native = native + 1 end } },
+    classic = { { text = "Friends list", show = function() native = native + 1 end },
+                { text = "Guild", show = function() kept, keptShown = true, keptShown + 1 end,
+                  checked = function() return kept end, back = function() kept = false end } },
     first = { point = "CENTER", x = 0, y = 0, width = 380, height = 260 }, minWidth = 180, minHeight = 130,
     motion = function() return own end,
     filled = function(full) fills[#fills + 1] = full end,
@@ -726,8 +729,10 @@ check(wideBar and wideBar:IsShown() and wideBar._points[1][1] == "TOPLEFT" and w
     and wideWindow.buttons:IsShown() and #wideWindow.buttons.list == 2 and wideWindow.full.isMinimized == false,
     "full, a window without a title bar of its own has one at its top: its buttons there, full screen offering the way back")
 check(menu and menu:IsShown() and menu._override == Edge.CLASSIC and menu._parent == wide and menu._points[1][1] == "RIGHT"
-    and menu._points[1][2] == wideWindow.buttons.first and #menu._items == 1 and menu._items[1].text == "Friends list",
+    and menu._points[1][2] == wideWindow.buttons.first and #menu._items == 2 and menu._items[1].text == "Friends list",
     "and the dropdown Classic windows in the title bar, left of the buttons, with the game's windows it stands for")
+check(menu._items[1].checked == nil and type(menu._items[2].checked) == "function" and menu._items[2].checked() == false,
+    "a kept choice is a checkbox, not ticked while ours is the one")
 
 at(wide, 0, 0)
 strip:GetScript("OnEnter")(strip)
@@ -784,6 +789,16 @@ strip:GetScript("OnEnter")(strip)
 check(not menu:IsShown(), "on its way to full the dropdown is not there")
 clock:Run(1)
 check(menu:IsShown(), "it comes when the window stands")
+menu._items[2].fn()
+check(kept and keptShown == 1 and not edge.full and menu._items[2].checked() == true,
+    "a kept choice chosen: the window goes back, the game's own comes and is ticked")
+clock:Run(1)
+W.Wait(1)
+strip:GetScript("OnEnter")(strip)
+clock:Run(1)
+menu._items[2].fn()
+check(not kept and keptShown == 1 and edge.full and menu:IsShown(),
+    "chosen again while ticked: ours is the one again, and the window stays full")
 menu._items[1].fn()
 check(not edge.full and clock.playing and native == 1 and not menu:IsShown(),
     "one chosen: the window goes back to its zone, and the game's own window comes")

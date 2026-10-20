@@ -66,7 +66,7 @@ function methods:CreateAnimationGroup()
     function group:Play() self.playing, self.progress = true, 0 end
     function group:Stop() self.playing = false end
     function group:IsPlaying() return self.playing end
-    group.SetToFinalAlpha = noop
+    group.SetToFinalAlpha, group.SetLooping = noop, noop
     function group:CreateAnimation()
         local animation = setmetatable({ SetSmoothing = noop, SetToAlpha = noop }, { __index = function() return noop end })
         function animation:SetDuration(seconds) group.duration = seconds end
@@ -137,7 +137,7 @@ C_Map = {
     end,
     GetBestMapForUnit = function() return player.map end,
     GetPlayerMapPosition = function(map, unit)
-        if unit == "party1" and map == 1429 then return CreateVector2D(0.5, 0.5) end
+        if unit == "party1" and (map == 1429 or map == 1415) then return CreateVector2D(0.5, 0.5) end
         if unit ~= "player" or map ~= player.map or not MAPS[map].top then return nil end
         return CreateVector2D(player.x, player.y)
     end,
@@ -178,10 +178,16 @@ C_Map = {
 C_SuperTrack = { IsSuperTrackingUserWaypoint = function() return tracked end,
                  SetSuperTrackedUserWaypoint = function(on) tracked = on end }
 C_QuestLog = { GetQuestsOnMap = function(map) return map == 1429 and { { questID = 7, x = 0.4, y = 0.4 } } or nil end }
-C_TaxiMap = { GetTaxiNodesForMap = function(map) return map == 1429 and { { nodeID = 2, name = "Goldshire" } } or {} end }
+C_TaxiMap = { GetTaxiNodesForMap = function(map)
+    if map ~= 1429 then return {} end
+    return { { nodeID = 2, name = "Goldshire", position = CreateVector2D(0.2, 0.8), faction = 2, atlasName = "TaxiNode_Alliance" },
+             { nodeID = 3, name = "Crossroads", position = CreateVector2D(0.8, 0.8), faction = 1, atlasName = "TaxiNode_Horde" } }
+end }
 C_VignetteInfo = {
     GetVignettes = function() return { "v1", "v2" } end,
-    GetVignetteInfo = function(guid) return guid == "v1" and { name = "A rare" } or nil end,
+    GetVignetteInfo = function(guid)
+        return guid == "v1" and { name = "A rare", atlasName = "VignetteKill", objectGUID = "Creature-0-1-2-3-70-0000AB" } or nil
+    end,
     GetVignettePosition = function(guid, map) return guid == "v1" and map == 1429 and CreateVector2D(0.6, 0.2) or nil end,
 }
 C_AreaPoiInfo = { GetAreaPOIForMap = function() return { 11 } end,
@@ -189,6 +195,95 @@ C_AreaPoiInfo = { GetAreaPOIForMap = function() return { 11 } end,
 local exploredParts = { { textureWidth = 300, textureHeight = 200, offsetX = 100, offsetY = 50, fileDataIDs = { 701, 702 } },
                         { textureWidth = 64, textureHeight = 64, offsetX = 0, offsetY = 0, fileDataIDs = { 703 }, isShownByMouseOver = true } }
 C_MapExplorationInfo = { GetExploredMapTextures = function(map) return map == 1429 and exploredParts or {} end }
+
+-- The quest log: two quests in Elwynn, one of them done; the game's arrow on none at first.
+local questLog = {
+    { title = "Elwynn Forest", isHeader = true },
+    { title = "Wolves Across the Border", questID = 7, level = 6 },
+    { title = "Kobold Camp Cleanup", questID = 8, level = 4 },
+}
+local complete, watched, focused, abandoned = { [8] = true }, {}, 0, nil
+local doneQuests = { [5] = true }
+C_QuestLog.GetNumQuestLogEntries = function() return #questLog end
+C_QuestLog.GetInfo = function(index)
+    local entry = questLog[index]
+    return entry and { title = entry.title, isHeader = entry.isHeader, questID = entry.questID, level = entry.level,
+                       questLogIndex = index } or nil
+end
+C_QuestLog.IsComplete = function(quest) return complete[quest] or false end
+C_QuestLog.IsFailed = function() return false end
+C_QuestLog.GetQuestObjectives = function(quest)
+    return { { text = "Wolf meat: " .. (complete[quest] and "8/8" or "3/8"), finished = complete[quest] or false } }
+end
+C_QuestLog.GetQuestWatchType = function(quest) return watched[quest] and 0 or nil end
+C_QuestLog.AddQuestWatch = function(quest) watched[quest] = true end
+C_QuestLog.RemoveQuestWatch = function(quest) watched[quest] = nil end
+C_QuestLog.GetTitleForQuestID = function(quest)
+    for _, entry in ipairs(questLog) do if entry.questID == quest then return entry.title end end
+end
+C_QuestLog.GetLogIndexForQuestID = function(quest)
+    for index, entry in ipairs(questLog) do if entry.questID == quest then return index end end
+end
+C_QuestLog.IsPushableQuest = function() return true end
+C_QuestLog.GetMaxNumQuestsCanAccept = function() return 25 end
+C_QuestLog.IsQuestFlaggedCompleted = function(quest) return doneQuests[quest] or false end
+C_QuestLog.GetNextWaypointForMap = function() return nil end
+C_QuestLog.GetNextWaypoint = function() return nil end
+C_QuestLog.SetSelectedQuest = function(quest) abandoned = quest end
+C_QuestLog.SetAbandonQuest = function() end
+C_QuestLog.AbandonQuest = function() abandoned = "gone:" .. tostring(abandoned) end
+GetQuestLogQuestText = function(index) return "The story of quest " .. index, "Kill eight wolves." end
+C_SuperTrack.GetSuperTrackedQuestID = function() return focused end
+C_SuperTrack.SetSuperTrackedQuestID = function(quest) focused = quest end
+C_Map.GetMapLinksForMap = function() return {} end
+Enum.FlightPathFaction = { Neutral = 0, Horde = 1, Alliance = 2 }
+UnitFactionGroup = function() return "Alliance" end
+UnitLevel = function() return 6 end
+UnitRace = function() return "Human", "Human", 1 end
+UnitClass = function(unit) return "Warrior", "WARRIOR", 1 end
+IsInGroup = function() return false end
+IsShiftKeyDown = function() return false end
+RAID_CLASS_COLORS = { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
+-- The game's scrolling list, as far as the quest log uses it: what it was given to show, drawn on demand.
+W.templates.WowScrollBoxList = function(box)
+    function box:SetDataProvider(provider) self.provider = provider end
+    function box:Draw()
+        self.rows = {}
+        for index, entry in ipairs(self.provider.list) do
+            self.rows[index] = W.NewWidget("Button", nil, self)
+            self.view.draw(self.rows[index], entry)
+        end
+        return self.rows
+    end
+end
+CreateScrollBoxListLinearView = function()
+    local view = {}
+    function view:SetElementExtentCalculator(fn) self.height = fn end
+    function view:SetElementInitializer(kind, fn) self.kind, self.draw = kind, fn end
+    return view
+end
+ScrollUtil = { InitScrollBoxListWithScrollBar = function(box, _, view) box.view = view end }
+CreateDataProvider = function(list) return { list = list or {} } end
+ScrollBoxConstants = { RetainScrollPosition = true }
+function methods:CreateLine() return W.NewWidget("Line", nil, self) end
+function methods:SetStartPoint(_, _, x, y) self._start = { x, y } end
+function methods:SetEndPoint(_, _, x, y) self._end = { x, y } end
+function methods:GetStringHeight() return 40 end
+-- The game's quest area frame: what it was asked to draw.
+local areaFrames = {}
+do
+    local made = CreateFrame
+    CreateFrame = function(kind, ...)
+        local frame = made(kind, ...)
+        if kind == "QuestPOIFrame" then
+            areaFrames[#areaFrames + 1] = frame
+            function frame:SetMapID(map) self._map = map end
+            function frame:DrawBlob(quest) self._quest = quest end
+            function frame:DrawNone() self._quest = nil end
+        end
+        return frame
+    end
+end
 
 -- The game's minimap: its cluster (an Edit Mode system with a selection box), the container, the minimap with
 -- its zoom buttons and border.
@@ -262,10 +357,44 @@ out:write('local S = SaneUI.Core.Data.Add(1, "Overlays", { game = "forever", has
     .. 'R[13] = "70245\\t\\t1429\\t0\\t0\\t64\\t64\\t703"\n'
     .. 'I.byMap = {}\nI.byMap[1429] = "11\\03012\\03013"\n')
 out:close()
+-- What the map shows of Core's data: an innkeeper who sells food, a rare, a creature that is neither, a herb; a
+-- dungeon's entrance and a mailbox; a boat from Elwynn to the other continent.
+local function Set(file, name, hash, key, fields, types, body)
+    local handle = assert(io.open(file, "w"))
+    handle:write(('local S = SaneUI.Core.Data.Add(1, "%s", { game = "forever", hash = "%s", build = 70245, key = "%s", '
+        .. 'fields = { %s }, types = { %s }, patches = {} })\n'):format(name, hash, key, fields, types)
+        .. "if not S then return end\nlocal R, I = S.rows, S.index\n" .. body)
+    handle:close()
+end
+Set(packPath .. "/NPCs.lua", "NPCs", "00000003", "int", '"name", "services", "rank", "goods"', '"text", "list text", "text", "list text"',
+    'R[69] = "70245\t\tAn Innkeeper\tinnkeeper\030vendor\tnormal\tfood"\n'
+    .. 'R[70] = "70245\t\tAn Old Rare\t\trare\t"\n'
+    .. 'R[71] = "70245\t\tA Wolf\t\tnormal\t"\n')
+Set(packPath .. "/Objects.lua", "Objects", "00000004", "int", '"name", "kind"', '"text", "text"',
+    'R[1617] = "70245\t\tSilverleaf\therb"\n')
+Set(packPath .. "/Places.lua", "Places", "00000005", "int", '"kind", "name", "point", "to", "levelMin", "levelMax"',
+    '"text", "text", "point", "int", "int", "int"',
+    'R[1] = "70245\t\tdungeon\tThe Mines\t1429\03130\03130\t500\t18\t23"\n'
+    .. 'R[2] = "70245\t\tmailbox\t\t1429\03170\03170\t\t\t"\n')
+Set(packPath .. "/Travel.lua", "Travel", "00000006", "int", '"kind", "name", "from", "to"', '"text", "text", "point", "point"',
+    'R[1] = "70245\t\tboat\tTo the west\t1429\03190\03190\t1414\03150\03150"\n')
 out = assert(io.open(packPath .. "/SaneUI_Data_World.toc", "w"))
-out:write("## Title: Data: World\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Overlays, Tiles\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nOverlays.lua\nTiles.lua\n")
+out:write("## Title: Data: World\n## LoadOnDemand: 1\n## X-SaneUI-Sets: NPCs, Objects, Overlays, Places, Tiles, Travel\n## X-SaneUI-Format: 1\n"
+    .. "## X-SaneUI-Game: forever\nNPCs.lua\nObjects.lua\nOverlays.lua\nPlaces.lua\nTiles.lua\nTravel.lua\n")
 out:close()
 W.AddPack(packPath)
+local spawnsPath = folder .. "/SaneUI_Data_Spawns"
+os.execute(("mkdir -p '%s'"):format(spawnsPath))
+Set(spawnsPath .. "/Spawns.lua", "Spawns", "00000007", "text", '"points", "middles"',
+    '"list point", "list tuple(map:int,x:number,y:number,size:number)"',
+    'R["npc:69"] = "70245\t\t1429\03150\03150\t"\n'
+    .. 'R["npc:70"] = "70245\t\t1429\03160\03120\t"\n'
+    .. 'R["npc:71"] = "70245\t\t1429\03110\03110\t"\n'
+    .. 'R["object:1617"] = "70245\t\t1429\03152\03150\t"\n')
+out = assert(io.open(spawnsPath .. "/SaneUI_Data_Spawns.toc", "w"))
+out:write("## Title: Data: Spawns\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Spawns\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nSpawns.lua\n")
+out:close()
+W.AddPack(spawnsPath)
 
 W.LoadCore(root)
 local Core = SaneUI.Core
@@ -446,13 +575,32 @@ W.Fire("PLAYER_ENTERING_WORLD")
 local Tiles = Core.Data.Set("Tiles")
 W.Fire("LOADING_SCREEN_DISABLED")
 local steps = Core.Steps.frame
-for _ = 1, 4 do
-    W.Wait(0)
-    if steps:IsShown() and steps._scripts.OnUpdate then steps._scripts.OnUpdate(steps, 0.016) end
+local function Frames(count)
+    for _ = 1, count do
+        W.Wait(0)
+        if steps:IsShown() and steps._scripts.OnUpdate then steps._scripts.OnUpdate(steps, 0.016) end
+    end
 end
+local before = Core.Data.Map():On(1429)
+check(before and #before == 0, "Core's places asked for before their packs are there: none yet, the packs asked for")
+Frames(16)
 os.execute(("rm -rf '%s'"):format(folder))
 check(#W.fileErrors == 0, "the pack's file ran" .. (W.fileErrors[1] and ": " .. W.fileErrors[1] or ""))
 check(Tiles:Ready() and Tiles:Get(3104, "minimap") == 801, "the pack is loaded: the set Tiles answers")
+
+-- Core's places on the map (Data.Map), read once their packs are there: by map, what each is.
+local places = Core.Data.Map():On(1429)
+local byKey = {}
+for _, place in ipairs(places or {}) do byKey[place.key] = place end
+check(places and #places == 6 and byKey["npc:69"] and byKey["npc:70"] and byKey["object:1617"] and byKey["place:1"]
+    and byKey["place:2"] and byKey["travel:1"] and not byKey["npc:71"],
+    "Core's places on a map: its NPCs with a service and rares, objects, places and ways; a creature that is neither is not")
+check(near(byKey["npc:69"].x, 0.5) and byKey["npc:69"].what.services[1] == "innkeeper" and byKey["npc:70"].what.rare
+    and byKey["object:1617"].what == "herb" and byKey["place:1"].what == "dungeon" and byKey["place:1"].to == 500
+    and byKey["travel:1"].what == "boat", "each at its point (0 to 1), with what it is")
+check(#Core.Data.Map():On(1414) == 1 and Core.Data.Map():On(1414)[1].key == "travel:1" and #Core.Data.Map():On(12345) == 0,
+    "a way between two maps stands at both ends; a map without places has none")
+check(Core.Data.Map():Spawns("npc:69")[1429][1][1] == 0.5, "a thing's points by map")
 
 -- Small: 200 x 200, following the player at the game's step 2 (radius 160 yards).
 local frame = Canvas.frame
@@ -476,12 +624,22 @@ check(minimap._level == frame:GetFrameLevel() + Hybrid.LEVEL and minimap._strata
     and arrow._parent._level == frame:GetFrameLevel() + Canvas.LEVELS.marks and Hybrid.LEVEL < Canvas.LEVELS.marks
     and Hybrid.LEVEL > Canvas.LEVELS.art,
     "the game's minimap above the map's layers, in the canvas' layer, under our marks: set each time it is placed")
+check(minimap._mask == Hybrid.MASK, "a square view: the game's minimap square")
 frame._width = 240
 Canvas.Layout()
 check(minimap._width == 240 and minimap._height == 240 and near(small.k, 120 / 160),
     "a view wider than high: the game's minimap as large as its longer side, so it covers all of it")
-frame._width = 200
+check(minimap._mask == Hybrid.MASKS:format("wide", 26),
+    "cut to a band as high as the view (200 of 240: 26 of 32 steps), so nothing of it shows past the window")
+check(Hybrid.Mask(100, 300) == Hybrid.MASKS:format("tall", 10) and Hybrid.Mask(300, 300) == Hybrid.MASK
+    and Hybrid.Mask(1000, 20) == nil and Hybrid.Mask(320, 10) == Hybrid.MASKS:format("wide", 1),
+    "a tall view a band down it; never a band larger than the view; too thin for the narrowest band, none")
+frame._width, frame._height = 1000, 20
 Canvas.Layout()
+check(not minimap._shown, "a view too thin for any band: the game's minimap out of sight, our map alone")
+frame._width, frame._height = 200, 200
+Canvas.Layout()
+check(minimap._shown and minimap._mask == Hybrid.MASK, "square again: shown, square")
 check(Count(shown, 801, 804) > 0 and Overviews(shown, 0) > 0, "Scrying under it: the terrain's tiles over its overview")
 local cut = shown[801] and shown[801]._mask
 check(cut and cut._kind == "MaskTexture" and cut._texture == ns.Terrain.PATH:format(0, 6, 4) and near(cut._width, 8 * 1600 / 3 * small.k),
@@ -534,7 +692,7 @@ check(waypoint and waypoint.uiMapID == 1429 and near(waypoint.position.x, 0.75) 
 W.Fire("USER_WAYPOINT_UPDATED")
 W.Wait(0)
 local pin
-for _, widget in ipairs(W.frames) do if widget._kind == "Button" and widget.icon then pin = widget end end
+for _, widget in ipairs(W.frames) do if widget._kind == "Button" and widget.icon and not widget.disc then pin = widget end end
 check(pin and pin._shown and pin.icon._atlas == "Waypoint-MapPin-Untracked", "the pin shows, as the game's")
 pin._scripts.OnClick(pin, "LeftButton")
 check(tracked, "a click on it: the game's arrow leads there")
@@ -645,6 +803,148 @@ Canvas.Layout()
 shown = Shown()
 check(Count(shown, 801, 804) == 0 and Overviews(shown, 0) > 0, "too many tiles in view: the overview alone, still terrain")
 ns.Terrain.CAP = tilesBefore
+
+-------------------------------------------------------------------------------
+--  Pins: the game's and Core's, one per thing, filtered, gathered; always over the map
+-------------------------------------------------------------------------------
+local Pins = ns.Pins
+-- The pins drawn now, by key.
+local function Drawn()
+    local list, count = {}, 0
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Button" and widget.pin and widget._shown then
+            list[widget.pin.key] = widget
+            count = count + 1
+        end
+    end
+    return list, count
+end
+-- Elwynn whole (2000 x 1500 yards round u 0, v -9250), 0.4 units a yard: the zone's level.
+full:Show(1415, 0, -9250, 0.4)
+Canvas.Layout()
+local pins, count = Drawn()
+check(full.level == "zone" and count == 7, "the zone's pins: 8 things, two of them near each other gathered into one")
+check(pins["quest:7"] and pins["quest:7"].pin.name == "Wolves Across the Border" and not pins["quest:7"].pin.complete
+    and pins["quest:7"].disc._atlas == ns.PinView.DISC and pins["quest:7"].icon._atlas == ns.PinView.IN_PROGRESS,
+    "the game's quest on its map, in the game's quest disc and mark")
+local questPoint = pins["quest:7"]._points[1]
+check(near(questPoint[4], (-200 - 0) * 0.4) and near(questPoint[5], (-9100 + 9250) * 0.4),
+    "placed where the game says, on the canvas' holder (a drag moves it with the map)")
+check(pins["flight:2"] and pins["flight:2"].icon._atlas == "TaxiNode_Alliance" and not pins["flight:3"],
+    "the flight points of the player's side, in the game's own atlas; the other side's not")
+check(pins["npc:70"] and pins["npc:70"].pin.live and pins["npc:70"].pin.name == "A rare",
+    "the rare the game shows nearby: its own pin, hiding the one of Core's data for the same creature")
+check(pins["place:1"] and pins["place:1"].icon._atlas == "Dungeon" and pins["place:1"].pin.to == 500
+    and pins["place:2"] and pins["place:2"].icon._atlas == "Mailbox" and pins["travel:1"],
+    "Core's places: a dungeon's entrance that opens its map, a mailbox, a boat")
+local marker = pins["gathered:npc:69"]
+check(marker and #marker.pin.gathered == 2 and marker.count._text == 2 and not pins["object:1617"],
+    "an innkeeper and a herb 40 yards apart cover each other at this zoom: one marker with their number")
+check(Canvas.LEVELS.pins > Hybrid.LEVEL and Hybrid.LEVEL > Canvas.MAP and Canvas.LEVELS.pins + ns.PinView.LEVELS + 1 < Canvas.LEVELS.marks
+    and pins["quest:7"]._level > pins["place:2"]._level and pins["quest:7"]._level < frame:GetFrameLevel() + Canvas.LEVELS.marks
+    and pins["place:2"]._level > frame:GetFrameLevel() + Hybrid.LEVEL,
+    "every pin over the map and the game's minimap, a quest over a service, all under the player's arrow")
+-- A click on the marker zooms in until they part.
+local release = marker._scripts.OnMouseUp
+marker._scripts.OnMouseDown(marker, "LeftButton")
+release(marker, "LeftButton")
+pins, count = Drawn()
+check(full.k > 0.4 and pins["npc:69"] and pins["object:1617"] and pins["npc:69"].icon._atlas == "Innkeeper"
+    and pins["object:1617"].icon._atlas == "Professions_Tracking_Herb", "a click on it zooms in: they part, each in the game's look")
+-- The filter: services off.
+local chosen = {}
+for key, on in pairs(ns.options.pins) do chosen[key] = on end
+chosen.service = nil
+Core.Set(ns.name, "pins", chosen)
+pins = Drawn()
+check(not pins["npc:69"] and not pins["place:2"] and pins["object:1617"] and pins["quest:7"], "the filter: services off, the rest stays")
+chosen.service = true
+Core.Set(ns.name, "pins", chosen)
+-- A tooltip: the quest's objectives as the game tells them.
+pins = Drawn()
+GameTooltip._lines = nil
+pins["quest:7"]._scripts.OnEnter(pins["quest:7"])
+check(GameTooltip._lines and GameTooltip._lines[1] == "- Wolf meat: 3/8" and GameTooltip._lines[2] == Pins.TEXT.open,
+    "a quest's tooltip: its objectives as the game tells them, and what a click does")
+GameTooltip._lines = nil
+pins["place:1"]._scripts.OnEnter(pins["place:1"])
+check(GameTooltip._lines and GameTooltip._lines[1] == "Level 18 to 23" and GameTooltip._lines[2] == Pins.TEXT.unverified,
+    "a place of Core's data: its facts, marked as not yet confirmed by the game")
+-- Further out than a zone: only travel and places.
+full:Show(1415, 0, -9250, 0.05)
+Canvas.Layout()
+pins = Drawn()
+check(full.level == "continent" and pins["flight:2"] and pins["place:1"] and not pins["quest:7"] and not pins["npc:69"],
+    "a continent whole: its flight points, entrances, ways and places; no quests or services")
+
+-- The quest log at the full map's left: zones, quests, objectives; a quest chosen.
+local QuestLog = ns.QuestLog
+check(QuestLog.Shown(), "full, the quest log stands at the map's left")
+local logBox
+for _, widget in ipairs(W.frames) do if widget.provider and widget.view and widget.Draw then logBox = widget end end
+local rows = logBox:Draw()
+check(#rows == 5 and rows[1].row.kind == "header" and rows[2].row.quest == 7 and rows[3].row.kind == "objective"
+    and rows[4].row.quest == 8 and rows[4].row.complete and rows[4].state._text == QuestLog.TEXT.complete,
+    "its zone, each quest with its objectives; a quest done says so")
+check(rows[2].text._text == "[6] Wolves Across the Border", "a quest with its level")
+rows[2]._scripts.OnClick(rows[2], "LeftButton")
+check(focused == 7 and Canvas.camera == full and full.level == "zone" and near(full.u, -200) and near(full.v, -9100),
+    "a click: the game's arrow leads to it, the map shows its place in the middle")
+rows = logBox:Draw()
+check(rows[2]._lit and not rows[4]._lit, "the chosen quest lit in the list")
+rows[2]._scripts.OnEnter(rows[2])
+local blob
+for _, widget in ipairs(areaFrames) do if widget._shown and widget._quest then blob = widget end end
+check(blob and blob._quest == 7 and blob._map == 1429 and near(blob._width, 2000 * full.k),
+    "the mouse over it: its area as the game shades it, over its zone")
+rows[2]._scripts.OnLeave(rows[2])
+-- The quest's pin now on the game's brown disc.
+pins = Drawn()
+check(pins["quest:7"].pin.focused and pins["quest:7"].disc._atlas == ns.PinView.DISC_FOCUSED, "its pin on the disc of the quest the arrow leads to")
+-- Shift and a click watches it; the right button's menu; abandoned only after a question.
+IsShiftKeyDown = function() return true end
+rows[2]._scripts.OnClick(rows[2], "LeftButton")
+IsShiftKeyDown = function() return false end
+check(watched[7], "Shift and a click: watched")
+local popups = #W.popups
+rows[4]._scripts.OnClick(rows[4], "RightButton")
+local menu = W.menus[#W.menus]
+local abandonItem
+for _, item in ipairs(menu or {}) do if item.text == QuestLog.TEXT.abandon then abandonItem = item end end
+abandonItem.fn()
+check(#W.popups == popups + 1 and abandoned == nil, "the right button's menu: Abandon asks first")
+W.popups[#W.popups].data.callback()
+check(abandoned == "gone:8", "and abandons once it is answered")
+-- Its pin chosen likewise: a click on a quest's pin leads the arrow to it.
+focused = 0
+pins = Drawn()
+pins["quest:7"]._scripts.OnMouseDown(pins["quest:7"], "LeftButton")
+pins["quest:7"]._scripts.OnMouseUp(pins["quest:7"], "LeftButton")
+check(focused == 7, "a click on a quest's pin: the arrow leads to it")
+
+-- The route's golden line: the parts in view, under the pins.
+ns.Route.Show({ legs = { { kind = "walk", points = { { map = 1415, u = 500, v = -8950 }, { map = 1415, u = 0, v = -9250 } } },
+                         { kind = "boat", points = { { map = 1415, u = 0, v = -9250 }, { map = 1415, u = 50000, v = 0 } } } } })
+local lines = {}
+for _, widget in ipairs(W.frames) do if widget._kind == "Line" and widget._shown then lines[#lines + 1] = widget end end
+check(#lines == 6 and lines[1]._start and near(lines[1]._end[1] - lines[1]._start[1], -500 * full.k),
+    "the way drawn: each leg's segments as lines (an edge, the gold, its glint), the second leg reaching into view too")
+check(lines[1]._parent._level == frame:GetFrameLevel() + Canvas.LEVELS.route and Canvas.LEVELS.route < Canvas.LEVELS.pins,
+    "the line over the map, under the pins")
+ns.Route.Show(nil)
+lines = 0
+for _, widget in ipairs(W.frames) do if widget._kind == "Line" and widget._shown then lines = lines + 1 end end
+check(lines == 0, "no way: no line")
+
+-- The party: the game's blip in the class' colour, where the game tells.
+IsInGroup = function() return true end
+ns.Marks.Group(Canvas.view, GetTime() + 10)
+local blip
+for _, widget in ipairs(W.frames) do if widget._atlas == ns.Marks.BLIP and widget._shown then blip = widget end end
+check(blip and blip._vertex and near(blip._vertex[1], 0.78), "the party member on the map, in the class' colour")
+IsInGroup = function() return false end
+ns.Marks.Group(Canvas.view, GetTime() + 20)
+check(not blip._shown, "out of the group: gone")
 
 -------------------------------------------------------------------------------
 --  The view Atlas: the module SaneUI_Atlas, found at login, loaded when first drawn
@@ -820,15 +1120,57 @@ check(worldMap._shown, "and it opens as the game's")
 HideUIPanel(worldMap)
 Core.Set(ns.name, "nativeMap", false)
 
--- The switch Show the game's minimap: given back, exactly.
+-- The switch Show the game's minimap: given back, exactly (the map back in its corner first).
+Window.Toggle()
+Window.frame._group:Run(1)
+check(not Window.handle.edge.away, "back in its corner")
 Core.Set(ns.name, "nativeMinimap", true)
 check(not Hybrid.Taken() and minimap:GetParent() == container and minimap._wheel and #minimap._through == 0
     and ground == true and ignoreRotation == false and configs > 0, "Show the game's minimap: its place, wheel, clicks, ground, rotation and mask back")
 check(cluster._alpha == 1 and cluster._mouse and cluster.ZoneTextButton._mouse and backdrop._alpha == 1 and minimap.ZoomIn._mouse,
     "its cluster, border and buttons back")
 check(overrides["CTRL-R"] == nil, "and its key")
+check(Window.frame._shown and Window.frame._alpha == 0 and not Canvas.frame._mouse and not Canvas.frame._wheel and not Canvas.Laid(),
+    "the small window rests out of sight, lets the mouse through to the game's minimap and holds no texture")
+key._scripts.OnClick(key, "minimap", true)
+check(Window.frame._shown, "the game's minimap key is the game's: our resting window stays")
+-- The corner still fills the screen with our map, and it rests again once it is back.
+Window.Toggle()
+check(Window.frame._alpha == 1 and Canvas.frame._mouse, "the corner: our map comes into sight on its way to the full screen")
+Window.frame._group:Run(1)
+check(Canvas.camera == full and Canvas.Laid() and Window.frame._alpha == 1, "and stands full, laid out")
+Window.Toggle()
+Window.frame._group:Run(1)
+check(Window.frame._alpha == 0 and not Canvas.frame._mouse and not Canvas.Laid(), "back in its corner it rests again")
+-- Edit Mode shows it, to be arranged.
+EventRegistry:TriggerEvent("EditMode.Enter")
+check(Window.frame._alpha == 1 and Canvas.Laid(), "in Edit Mode it is in sight")
+EventRegistry:TriggerEvent("EditMode.Exit")
+check(Window.frame._alpha == 0 and not Canvas.Laid(), "and rests again once Edit Mode closes")
 Core.Set(ns.name, "nativeMinimap", false)
-check(Hybrid.Taken(), "off again: taken again")
+check(Hybrid.Taken() and Window.frame._alpha == 1 and Canvas.frame._mouse and Canvas.Laid(), "off again: taken again, our small window back")
+
+-- The dropdown Classic windows: both kept choices, ticked while chosen, chosen again to come back.
+Window.Toggle()
+Window.frame._group:Run(1)
+local classicMenu = Window.handle.edge.classic
+check(classicMenu and classicMenu:IsShown() and #classicMenu._items == 2 and classicMenu._items[1].checked() == false
+    and classicMenu._items[2].checked() == false, "full, the dropdown Classic windows: the game's minimap and map, neither chosen")
+classicMenu._items[2].fn()
+check(ns.options.nativeMap and worldMap._shown and Window.handle.edge.away, "the game's map chosen: kept, opened at once, ours goes back")
+Window.frame._group:Run(1)
+HideUIPanel(worldMap)
+check(overrides.M == nil and Window.frame._alpha == 1, "its key is the game's now; our small window stays the minimap")
+Window.Toggle()
+Window.frame._group:Run(1)
+check(classicMenu._items[2].checked() == true, "the corner still fills the screen with ours, the game's map ticked")
+classicMenu._items[2].fn()
+check(not ns.options.nativeMap and overrides.M == "SaneUINavigationKey:map" and Window.handle.edge.full,
+    "chosen again: ours is the map again, the window stays full")
+classicMenu._items[1].fn()
+Window.frame._group:Run(1)
+check(ns.options.nativeMinimap and not Hybrid.Taken() and Window.frame._alpha == 0, "the game's minimap chosen: kept, ours rests")
+Core.Set(ns.name, "nativeMinimap", false)
 
 -- A failure stands the module down: everything given back.
 ns.StandDown("a test")

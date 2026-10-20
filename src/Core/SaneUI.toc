@@ -51,6 +51,8 @@ Demo.lua
 Data\Steps.lua
 Data\Codec.lua
 Data\Data.lua
+# What the data puts on a map: the places of Spawns, Places and Travel, per map (Data.Map)
+Data\Map.lua
 # What each of the account's characters has (bags, bank, worn), kept in the pack Characters' saved variable
 Data\Characters.lua
 # Aliases and notes the player gives other players, set in the game's menu of a player (personal, never shared)

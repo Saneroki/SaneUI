@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""Makes the masks that cut the game's minimap to the shape of Navigation's small window (src/Navigation/Hybrid.lua).
+
+The game's minimap is square: over our map it is as large as the window's longer side, so its live dots cover the
+whole window. In a window that is not square the rest of that square lies outside the window, and the game draws
+the minimap's dots inside its mask only, whatever its parent cuts. So the mask is a band through the square's
+middle, as tall as the window's shorter side (for a wide window; as wide, for a tall one), and nothing of the
+minimap shows past the window.
+
+A mask is stretched over the whole minimap, and a band changes along one axis only, so each is a strip of four
+texels across and STRIP along: white, its alpha the band, hard-edged on whole texels. Its height is a step of
+BANDS of the square; the window takes the largest step that still fits in it (Hybrid.Mask), so at most a sliver
+of a 32nd of its longer side, along its edges, shows our map without the game's dots. The square itself is the
+game's own white texture.
+
+  src/Navigation/Art/Masks/wide-<n>.blp   a band n / BANDS of the square tall, across it (a wide window)
+  src/Navigation/Art/Masks/tall-<n>.blp   a band n / BANDS of the square wide, down it (a tall window)
+
+BLP2 with DXT5 and mipmaps, made by ImageMagick as dev/tools/shape-art makes the round corners' masks.
+
+Needs Python with Pillow and NumPy, and ImageMagick 7 (magick).
+
+Usage:  dev/tools/minimap-masks
+"""
+import struct
+from importlib.machinery import SourceFileLoader
+from importlib.util import module_from_spec, spec_from_loader
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[2]
+MASKS = ROOT / "src" / "Navigation" / "Art" / "Masks"
+BANDS = 32   # the steps of a band's height, as parts of the square (Hybrid.BANDS)
+STRIP = 256  # texels along the strip: 8 a step
+ACROSS = 4   # texels across it: one DXT block
+
+
+def shapes():
+    """dev/tools/shape-art's DXT5 encoder, read without running the tool."""
+    loader = SourceFileLoader("shape_art", str(ROOT / "dev" / "tools" / "shape-art"))
+    source = loader.get_source("shape_art")
+    module = module_from_spec(spec_from_loader("shape_art", loader))
+    # Only its functions: the lines that make its own masks are left out.
+    exec(compile(source.split('\nmake("circle.blp"')[0], "shape-art", "exec"), module.__dict__)
+    return module
+
+
+def band(step, length):
+    """The share of each texel along a strip of that length that lies inside the band (step / BANDS, centred)."""
+    half = step / BANDS / 2
+    edges = np.arange(length + 1) / length - 0.5  # each texel's two edges, from the middle
+    inside = np.clip(np.minimum(edges[1:], half) - np.maximum(edges[:-1], -half), 0, None)
+    return inside * length
+
+
+def blp(levels, width, height):
+    """A BLP2 file: DXT5 (encoding 2, alpha depth 8, alpha encoding 7), mipmaps, largest first."""
+    offsets, sizes, start = [], [], 148 + 1024  # header, then a palette DXT does not use
+    for level in levels:
+        offsets.append(start + sum(sizes))
+        sizes.append(len(level))
+    unused = [0] * (16 - len(levels))
+    header = b"BLP2" + struct.pack("<I4B2I", 1, 2, 8, 7, 1, width, height)
+    header += struct.pack("<16I", *offsets, *unused) + struct.pack("<16I", *sizes, *unused)
+    return header + bytes(1024) + b"".join(levels)
+
+
+def make(art, kind, step):
+    levels, length, across = [], STRIP, ACROSS
+    while length >= 1:
+        alpha = np.repeat(band(step, length)[:, None], across, axis=1)  # rows along the strip
+        if kind == "tall":
+            alpha = alpha.T
+        levels.append(art.dxt5(alpha))
+        length, across = length // 2, max(across // 2, 1)
+    width, height = (ACROSS, STRIP) if kind == "wide" else (STRIP, ACROSS)
+    out = MASKS / f"{kind}-{step}.blp"
+    out.write_bytes(blp(levels, width, height))
+    with Image.open(out) as image:  # read back: inside the band at its middle, outside at its end
+        back = np.asarray(image.convert("RGBA"))[..., 3]
+    line = back[:, 0] if kind == "wide" else back[0, :]
+    assert line[STRIP // 2] == 255 and line[0] == 0, f"{out.name} reads back wrong"
+    return out
+
+
+def main():
+    art = shapes()
+    MASKS.mkdir(parents=True, exist_ok=True)
+    for old in MASKS.glob("*.blp"):
+        old.unlink()
+    total = 0
+    for kind in ("wide", "tall"):
+        for step in range(1, BANDS):
+            total += make(art, kind, step).stat().st_size
+    print(f"Wrote {2 * (BANDS - 1)} masks to {MASKS.relative_to(ROOT)} ({total // 1024} KB).")
+
+
+if __name__ == "__main__":
+    main()

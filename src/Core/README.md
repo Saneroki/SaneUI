@@ -266,6 +266,7 @@ but for a window to try those with (`/sane window`).
 | `Core.PlayerKey(unit)`, `Core.PlayerKeyOf(text)` | A player's key, the one name that tells players apart: on Forever first name and surname as one (`Droopy Fairwind`, any realm dropped: the whole name is unique across the region), elsewhere `Name-Realm`; nil for a name that is not whole (a first name alone). Use it wherever a player is kept, counted, compared or shared ([Doc/guides/data.md](../../Doc/guides/data.md), *Players*) |
 | `Core.Surnames()` | Whether this client names players by first name and surname (Forever, or `RegionalUniqueNamesEnabled`) |
 | `Core.Data.Set(name)` and its handle | Sane UI's databases, loaded on demand from the data packs; a module only reads ([Doc/guides/data.md](../../Doc/guides/data.md)) |
+| `Core.Data.Map()`: `On(map)`, `Spawns(key)`, `OnChange(fn)` | What the data puts on a map: the places of Spawns, Places and Travel per map, each with what it is ([Doc/guides/data.md](../../Doc/guides/data.md), *What a map shows*) |
 | `Core.Data.Characters()`, `Character(key)`, `Count(item)`, `OnCharacters(fn)` | What the account's characters have: each by its GUID with its whole name, its bags, bank and what it wears; where the account has an item and how many ([Doc/guides/data.md](../../Doc/guides/data.md), *Characters*) |
 | `Core.People.Alias(key)`, `Note(key)`, `Shown(name)`, `Set(key, what, value)`, `Watch(fn)` | The alias and the note the player gave a player (by `Core.PlayerKeyOf`); what to show for a name; `Watch` tells a view to draw its names anew |
 | `Core.Coins(copper)` | Money as the game writes it, with coin icons; nil if it cannot |
@@ -476,13 +477,16 @@ but for a window to try those with (`/sane window`).
 | `Bindings.lua`, `Bindings.xml` | Sane UI's section in the game's key bindings, and its key for the options |
 | `Demo.lua` | `/sane window` |
 | `People.lua` | Aliases and notes of players: *Set Alias* and *Set Note* in the game's menu of a player (`Menu.ModifyMenu` on its `MENU_UNIT_*` tags), kept in `SaneUIDB.modules.SaneUI.people` by the player's key |
-| `Data/` | The data framework: `Steps.lua` (the scheduler), `Codec.lua` (a pack's row into a record), `Data.lua` (the packs, the answers, the saved parts of packs), `Characters.lua` (what the account's characters have) ([Doc/guides/data.md](../../Doc/guides/data.md)) |
+| `Data/` | The data framework: `Steps.lua` (the scheduler), `Codec.lua` (a pack's row into a record), `Data.lua` (the packs, the answers, the saved parts of packs), `Map.lua` (what the data puts on a map), `Characters.lua` (what the account's characters have) ([Doc/guides/data.md](../../Doc/guides/data.md)) |
 | `Sync/` | Sync: the game's own per-character settings kept with Sane UI's ([README](Sync/README.md)) |
 | `Settings/` | The options: the pages, their controls, `/sane options` ([README](Settings/README.md)) |
 | `Art/banner.blp` | Sane UI's banner, at the top of the options' page *Sane UI*. Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/SaneUI-banner.png` |
 | `Art/circle.blp`, `Art/circle-hole.blp` | The masks round corners are cut with: a white disc, and a white square with the disc taken out (256 × 256, DXT5 with mipmaps). Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
+- 2026-10-20 — What the data puts on a map (`Data/Map.lua`, `Data.Map()`): the places of Spawns, Places and Travel
+  per map, for Navigation's pins. The dropdown *Classic windows* takes kept choices: a checkbox, ticked while the
+  game's own window is the one chosen, chosen again to come back.
 - 2026-10-18 — Aliases and notes of players (`People.lua`): *Set Alias* and *Set Note* in the game's menu of
   a player, wherever it opens; kept for the account by the player's key, personal, never shared. Social's
   chat and friends list and the Tooltips' player tooltip show them.

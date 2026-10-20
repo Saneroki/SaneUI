@@ -12,11 +12,13 @@ local _, ns = ...
 --      Live.Flights(map)       the flight points of a map (C_TaxiMap.GetTaxiNodesForMap)
 --      Live.Vignettes(map)     rares, chests and the like nearby: { guid, x, y, info } each
 --      Live.Points(map)        the game's own points on a map: its area POIs, with their info
+--      Live.Links(map)         the ways from a map into another (C_Map.GetMapLinksForMap)
+--      Live.Entrances(map)     dungeon entrances, where the game has them (C_EncounterJournal)
 --      Live.Explored(map)      the explored parts of a map's art (C_MapExplorationInfo)
 --
 --  When something changes the game says so by an event; a burst of them is told
---  once on the next frame, as the message LIVE with what changed ("waypoint",
---  "explored", "quests", "group", "vignettes", "points", "flights", "zone"):
+--  once on the next frame, as the message LIVE with what changed ("waypoint", also for the quest the
+--  game's arrow leads to; "explored", "quests", "group", "vignettes", "points", "flights", "zone", "level"):
 --      ns.Listen("LIVE", function(what) ... end)
 --  The views ask again then; nothing here asks the game on its own. The player is
 --  asked by the canvas every frame while a view follows (two questions to the
@@ -35,7 +37,8 @@ Live.EVENTS = {
     GROUP_ROSTER_UPDATE = "group",
     VIGNETTES_UPDATED = "vignettes", VIGNETTE_MINIMAP_UPDATED = "vignettes",
     AREA_POIS_UPDATED = "points",
-    TAXIMAP_OPENED = "flights",
+    TAXIMAP_OPENED = "flights", TAXI_NODE_STATUS_CHANGED = "flights",
+    PLAYER_LEVEL_UP = "level", QUEST_WATCH_LIST_CHANGED = "quests",
     ZONE_CHANGED = "zone", ZONE_CHANGED_INDOORS = "zone", ZONE_CHANGED_NEW_AREA = "zone", NEW_WMO_CHUNK = "zone",
 }
 
@@ -142,6 +145,17 @@ function Live.Points(map)
         if type(info) == "table" then list[#list + 1] = info end
     end
     return list
+end
+
+function Live.Links(map)
+    return List(Core.Ask(C_Map.GetMapLinksForMap, map))
+end
+
+-- This client may leave the game's dungeon entrances out (its encounter journal is not loaded): none then.
+function Live.Entrances(map)
+    local journal = rawget(_G, "C_EncounterJournal")
+    if not journal or not journal.GetDungeonEntrancesForMap then return {} end
+    return List(Core.Ask(journal.GetDungeonEntrancesForMap, map))
 end
 
 function Live.Explored(map)

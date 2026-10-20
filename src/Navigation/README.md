@@ -1,6 +1,6 @@
 # Sane UI: Navigation
 
-**Status:** the minimap and the map in one window, without the map's data yet (pins, quest log, top bar, routes and the leveling guide come later) · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
+**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log and the bar over the full map; routes and the leveling guide come later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 Sane UI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
@@ -10,7 +10,9 @@ zoom and place. The map is drawn two ways at every zoom, from close up out to th
 continents always: *Parchment*, the world drawn by hand, Blizzard's zone maps in full joined into one map that
 fades softly from zone to zone; or *Scrying*, the land as the minimap shows it, its water cut away to a calm sea.
 With the module *Atlas* (`SaneUI_Atlas`, `src/Atlas/`) switched on there is a third, *Atlas*: the whole world
-painted as one map, three times closer. The game's own minimap lies over it for its live dots; the game's map stays closed, and its keys open ours. The plan is in
+painted as one map, three times closer. The game's own minimap lies over it for its live dots; the game's map stays closed, and its keys open ours.
+On the map stand pins in the game's own looks (quests, flight points, rares, entrances, places, services, the
+party), always over the map, and the full map has the quest log at its left. The plan is in
 `Doc/ideas/Navigation.md`.
 
 ## How to use
@@ -31,13 +33,30 @@ painted as one map, three times closer. The game's own minimap lies over it for 
   - **a click** on the game's minimap (while it shows) pings, as there.
 - **Following you:** both views follow you at first; after a drag the map comes back to you once the mouse
   has been off it for a while (*Follow again after*).
-- **Map view** (the buttons at the full map's top left, or the setting on the page *Navigation*): *Parchment* or
+- **Pins:** the game's own marks where it tells them (your quests on their discs, ready to turn in, the quest the
+  arrow leads to on its brown disc; flight points of your side; rares and treasures nearby; the game's points and
+  ways into other maps), and what Core's data knows (quest givers with a quest you can take, services, entrances,
+  boats, herbs, ore, books: as far as the data holds them; a place the game has not confirmed says so). One pin
+  per thing: the game's word hides the data's. Pins that would cover each other show as one disc with their
+  number: a click zooms in. A click on a quest's pin leads the game's arrow to it; on an entrance or a way, its
+  map opens. A continent whole shows only travel and places; the minimap no books or treasures, services only
+  near you. The party and raid in their class colours.
+- **The pin filter** (*Pins* on the full map's bar, or the setting *Pins on the map*): a checkmark per kind.
+- **Quest areas:** the quest the arrow leads to, or the one under the mouse in the quest log, shaded as the game
+  shades it on its map.
+- **The quest log** at the full map's left (*Quest Log* on the bar puts it in or out): your quests by zone with
+  their level and state, their objectives under them. A click: the arrow leads to it, the map shows where it is,
+  its text below with *Track*, *Share* and *Abandon*. Shift and a click tracks it; the right button opens a menu.
+- **The map selector** on the bar: the world or a continent, then a zone of it.
+- **Map view** (the buttons on the full map's bar, or the setting on the page *Navigation*): *Parchment* or
   *Scrying* (the default), and *Atlas* while that module is switched on in the addon list; for both views and at
   every zoom (in the code `sketches`, `terrain`, `atlas`). A view not offered (the module switched off or
   failed, or *Overlay*, which is gone) falls back to Scrying.
-- **The game's own windows:** the switches *Show the game's minimap* and *Show the game's map* on the page
-  bring them back next to ours; the full map's dropdown *Classic windows* offers them too. The game's key to
-  show or hide the minimap (in its key bindings) shows or hides our window.
+- **The game's own windows:** the full map's dropdown *Classic windows* offers the game's minimap and map, each
+  kept once chosen (ticked; chosen again, ours comes back), as the switches *Show the game's minimap* and *Show
+  the game's map* on the page. With the game's minimap our small window rests out of sight; with the game's map
+  its keys open the game's. Either way the mouse pushed into the top right corner still fills the screen with
+  our map. The game's key to show or hide the minimap (in its key bindings) shows or hides our window.
 - **Move and size it** in Edit Mode like every Sane UI window; the section *Expand window* on the page: whether
   the corner fills the screen, the animation, the background.
 - `/sane map reset`: the window's first place and size.
@@ -95,10 +114,43 @@ painted as one map, three times closer. The game's own minimap lies over it for 
   has none (sea, not painted yet) the terrain shows. At most `Painted.CAP` (400) blocks of a level a continent:
   past it a coarser level (the window on its way). The nearest zoom is three times the others'
   (`Camera.Near`: 6 units a yard, else 2).
-- **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing) and the
-  game's map pin, at a fixed size.
+- **What stands on the map is always over it:** the canvas sets every layer's frame level from its own at each
+  layout (`Canvas.LEVELS`): the map's own layers (terrain, Atlas, art, the highlight) up to `Canvas.MAP`, then the
+  quest areas, the route, the game's minimap (`Hybrid.LEVEL`), the pins and the marks on top; the bar over all.
+- **Pins** (`Pins.lua`, no frames): the pin records of each map in view, from what the game tells (`Live.lua`: its
+  quests on the map and the next way of the quest the arrow leads to, flight points of the player's side, its
+  vignettes, area points, map links, dungeon entrances where it has them) and from Core's data
+  (`Data.Map():On`, `Core/Data/Map.lua`): an NPC with quests this character can take (`Pins.Offered`: not done,
+  not in the log, level, side, race, class, the quests before) is a quest giver, else a rare, else its service in
+  the game's town tracking atlas; objects, places and ways in the game's atlases. One pin per key: the game's
+  hides the data's (a vignette's GUID names its creature). Kept per map until the game says it changed (the
+  message `LIVE`), or Core's places change; at a zone's level every zone in view, further out the continent and
+  its zones for travel and places only. `Pins.Gather`: pins nearer than `Pins.GATHER` units on the screen are one
+  marker, a quest never. The filter is the multi-choice setting `pins`.
+- **PinView** (`PinView.lua`): a pooled button per pin, kept by its key while it stays in view, at a fixed size, in
+  the game's looks (its quest disc and marks, `UI-QuestPoi-*`, `Quest-In-Progress-Icon-*`); a higher kind over a
+  lower one by its frame level, all under the marks. A press on a pin is the map's (a drag moves the map,
+  `Canvas.Press`/`Release`); a plain click is the pin's. Tooltips with a quest's objectives as the game tells them.
+- **Areas** (`Areas.lua`): the game's quest area frame (`QuestPOIFrame`, which the engine draws a quest's area
+  into) over each zone in view, as large as its box, for the quest under the mouse in the log or the one the
+  arrow leads to.
+- **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
+  in view: a dark edge, the game's dependency bar art tinted gold, its glint moved along by a
+  `TextureCoordTranslation` animation (no code of ours each frame); walks gold, flights pale, ships red.
+- **QuestLog** (`QuestLog.lua`): a `WowScrollBoxList` of rows read from `C_QuestLog` (the game's headers, folded
+  as the game keeps them; quests with level, state, watched; objectives), built again on `QUEST_LOG_UPDATE` once
+  a frame and only while it shows; the chosen quest's text from `GetQuestLogQuestText` with its buttons; abandon
+  after the game's own question (`GENERIC_CONFIRMATION`); never the quest panels of the game's map.
+- **TopBar** (`TopBar.lua`): over the full map's top: the quest log's button, the views, the map selector (the
+  game's dropdowns, radio entries of the world, its continents, the continent's zones A to Z) and the pin filter
+  (checkboxes); it says what the map shows after each layout.
+- **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
+  pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second).
 - **The game's minimap** (`Hybrid.lua`): over our map while the view follows you at one of its zoom steps,
-  square, as large as the view's longer side so it covers all of it (the canvas cuts the rest), above the map's
+  square, as large as the view's longer side so it covers all of it, cut to the window's shape by a mask (the game
+  draws its dots inside its mask only, whatever cuts its parent): a band through the square as tall (or wide) as
+  the window's shorter side, rounded down to a 32nd (`Hybrid.Mask`, `Art/Masks/`, made by
+  `dev/tools/minimap-masks`), so its dots cover the whole window and nothing past it; above the map's
   layers and under our marks (its layer and level set again each time it is placed), its ground off (as Blizzard's hybrid minimap does), so only its
   live dots and their tooltips show; indoors it draws its own ground, which our terrain does not have. Its
   left and right clicks go through to our map; its border, zoom buttons and the rest of the game's minimap
@@ -113,7 +165,11 @@ painted as one map, three times closer. The game's own minimap lies over it for 
   rares and chests nearby, the game's own points and the explored parts of a map, each read when the game says
   it changed (one message `LIVE` a frame). The player and the pin are drawn now; the rest is for the pins.
 - **The window** (`Window.lua`): one of Core's (kind `screen`, docked `TOPRIGHT`, in the layer of the game's
-  minimap), Edge fills the screen; laid out in its `docked` hook once it stands.
+  minimap), Edge fills the screen; laid out in its `docked` hook once it stands. Full, the quest log at the left
+  (its width comes in with the window's motion), the canvas to its right, the bar over it. With the game's
+  minimap chosen the small window rests (alpha 0, the canvas takes no mouse and holds no texture) while the
+  corner's push still fills the screen; Edit Mode shows it. The Classic windows are kept choices (Core's
+  `checked`, `back`).
 - **When something fails:** the module stands down: the keys go back to the game, its minimap back where it
   was, our window goes (`ns.GiveBack`); what may not be done in a fight waits for its end.
 
@@ -131,18 +187,29 @@ painted as one map, three times closer. The game's own minimap lies over it for 
 | `Outlines.lua` | The zones that have an outline, by continent: made by `dev/tools/terrain-art`, not by hand |
 | `Art.lua` | The view Parchment: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
 | `Painted.lua` | The view Atlas: the module SaneUI_Atlas found at login, loaded when first drawn, its blocks at the level the zoom asks for |
-| `Marks.lua` | The player's arrow and the map pin |
+| `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, gathered. No frames |
+| `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
+| `Route.lua` | The golden line of a way, the parts in view |
+| `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks |
+| `Marks.lua` | The player's arrow, the map pin, the party |
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
 | `Native.lua` | The game's map kept closed; its keys |
+| `QuestLog.lua` | The quest log at the full map's left |
+| `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the pin filter |
 | `Window.lua` | Core's window: the top right corner, the full screen, the two cameras, the view buttons |
 | `Art/Terrain/*.blp` | The terrain's overview: the game's minimap textures, smaller, the water cut away, made by `dev/tools/terrain-art` from the game's files |
 | `Art/Zones/*.blp` | Each zone's outline over its map's box, made by `dev/tools/terrain-art` from the game's files |
 | `Art/Sketches/*.blp` | The stitched map: every zone's full map on its continent, in the terrain's blocks, made by `dev/tools/terrain-art` |
 | `Art/Edge.blp` | A map's box with its paper frame faded off, for Blizzard's world and continent maps |
+| `Art/Masks/*.blp` | The bands that cut the game's minimap to a window that is not square, made by `dev/tools/minimap-masks` |
 
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, pins and the quest log:** the pins of the game and of Core's data (`Data.Map`), one per thing,
+  filtered and gathered, always over the map; quest areas; the party; the quest log at the full map's left and the
+  bar over the full map (views, map selector, pin filter); the golden line's drawing. The Classic windows are kept
+  choices and the corner always opens our map; the game's minimap cut to the window's shape.
 - **2026-10-19, the Atlas:** the view *Overlay* is gone (the default view is Scrying; a saved Overlay falls back to
   it); the painted map *Atlas* is a module of its own, `SaneUI_Atlas`, found at login and loaded when its view is
   first drawn, three times closer; without it the map offers two views.

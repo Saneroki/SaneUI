@@ -11,10 +11,15 @@ local _, ns = ...
 --       │    ├─ terrain   the game's minimap textures and the overview (Terrain.lua)
 --       │    ├─ atlas     the painted map, the view Atlas (Painted.lua)
 --       │    ├─ art       Blizzard's map art and its explored parts, the view Parchment (Art.lua)
---       │    └─ marks     the player's arrow, the map pin (Marks.lua)
---       └─ the game's minimap, between the art and the marks, while it shows (Hybrid.lua)
---  Their frame levels follow the canvas' at every layout (Canvas.LEVELS): a window raised to the full
---  screen and put back leaves its frames' levels as they come.
+--       │    ├─ light     the zone under the mouse (Art.lua)
+--       │    ├─ areas     the quest's areas (Areas.lua)
+--       │    ├─ route     the golden line (Route.lua)
+--       │    ├─ pins      the pins of the game and of Core's data (PinView.lua)
+--       │    └─ marks     the party, the player's arrow, the map pin (Marks.lua)
+--       └─ the game's minimap, between the route and the pins, while it shows (Hybrid.lua)
+--  Whatever the view, what stands on the map (areas, route, pins, marks) is always over the map's own
+--  layers: their frame levels follow the canvas' at every layout (Canvas.LEVELS), so a window raised to the
+--  full screen and put back, which leaves its frames' levels as they come, never puts the map over them.
 --
 --  Laid out around an origin, the camera's middle when it last was: a texture
 --  stands at (its point - origin) * zoom from the holder's middle, and the
@@ -53,8 +58,9 @@ Canvas.MARGIN = 0.15 -- what is laid out reaches so far past the view, as a part
 Canvas.OVERLAP = 1   -- each texture so many units larger than its square, so no seam shows between two
 Canvas.DRAG = 4      -- the mouse moves so many units with the button held before it is a drag, not a click
 Canvas.LOOK = 0.1    -- seconds between two looks at the player's place while the view does not follow
-Canvas.LEVELS = { holder = 1, terrain = 2, atlas = 3, art = 4, light = 5, marks = 20 } -- above the canvas; the game's
-                                                         -- minimap at Hybrid.LEVEL, the full map's buttons at 30
+-- Above the canvas, in drawing order; the game's minimap at Hybrid.LEVEL (10), the full map's bars at 30.
+Canvas.LEVELS = { holder = 1, terrain = 2, atlas = 3, art = 4, light = 5, areas = 6, route = 7, pins = 12, marks = 20 }
+Canvas.MAP = 5 -- the highest level of the map itself: what stands on it is above this
 
 local frame, holder, camera, tracker, layers, hover, ground
 local held = false -- on the window's way, or hidden: its size changes lay nothing out
@@ -206,6 +212,9 @@ local function Draw()
     ns.Safe("terrain", ns.Terrain.Place, view, chosen ~= "sketches")
     ns.Safe("atlas", ns.Painted.Place, view, chosen == "atlas")
     ns.Safe("map art", ns.Art.Place, view, chosen == "sketches")
+    ns.Safe("areas", ns.Areas.Place, view)
+    ns.Safe("route", ns.Route.Place, view)
+    ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small)
     ns.Safe("marks", ns.Marks.Pin, view)
 end
 
@@ -219,10 +228,8 @@ end
 local function Stack()
     local base = frame:GetFrameLevel()
     holder:SetFrameLevel(base + Canvas.LEVELS.holder)
-    layers.terrain:SetFrameLevel(base + Canvas.LEVELS.terrain)
-    layers.atlas:SetFrameLevel(base + Canvas.LEVELS.atlas)
-    layers.art:SetFrameLevel(base + Canvas.LEVELS.art)
-    layers.light:SetFrameLevel(base + Canvas.LEVELS.light)
+    for name, layer in pairs(layers) do layer:SetFrameLevel(base + Canvas.LEVELS[name]) end
+    ns.PinView.Stack(base + Canvas.LEVELS.pins)
     ns.Marks.Stack(base + Canvas.LEVELS.marks)
 end
 
@@ -247,6 +254,7 @@ function Canvas.Layout()
     Stack()
     Draw()
     Native()
+    ns.Safe("bar", ns.TopBar.Update)
 end
 
 -- The camera moved without zooming: the holder follows; past the margin, or over another zone, a layout.
@@ -266,6 +274,11 @@ end
 -- Drawn anew as it is, if it is laid out (the view chosen changed, data arrived, the game's minimap's zoom).
 function Canvas.Refresh()
     if laid then Canvas.Layout() end
+end
+
+-- Whether something is laid out (shown, not let go).
+function Canvas.Laid()
+    return laid
 end
 
 -------------------------------------------------------------------------------
@@ -293,6 +306,8 @@ local function Track()
     end
     if was ~= known or followed ~= camera.follow then Native() end
     ns.Marks.Player(view, map, u, v, facing, ns.Hybrid.Shown())
+    ns.Marks.Group(view, now)
+    ns.Route.Track(map, u, v, now)
 end
 local tracking = ns.Guard(Track) -- made once
 
@@ -372,15 +387,22 @@ local function Into(x, y)
     return true
 end
 
-local function Up(_, button)
+-- The press is over: true when it was a click (not a drag, the button that was pressed).
+local function Finish(button)
     frame:SetScript("OnUpdate", nil)
-    if button ~= pressed then return end
+    if button ~= pressed then return false end
     pressed = nil
     lastInput = GetTime()
     if moved then
         moved = false
-        return
+        return false
     end
+    return true
+end
+
+-- A click on the map itself: Ctrl puts the map pin there, else the game's minimap pings or the map under the
+-- mouse opens; the right button steps one map out.
+local function Clicked(button)
     local x, y = FromMiddle()
     if not x then return end
     if button == "LeftButton" then
@@ -388,6 +410,40 @@ local function Up(_, button)
     elseif button == "RightButton" and camera:StepOut() then
         Canvas.Layout()
     end
+end
+
+local function Up(_, button)
+    if Finish(button) then Clicked(button) end
+end
+
+-- A pin was pressed (PinView.lua): the map takes the press as its own, so a drag that starts on a pin moves
+-- the map. Let go: true for a plain left click, the pin's own; a drag is the map's, and so are a right click
+-- and Ctrl and a click, as anywhere on the map.
+function Canvas.Press(button)
+    Down(nil, button)
+end
+
+function Canvas.Release(button)
+    if not Finish(button) then return false end
+    if button == "LeftButton" and not IsControlKeyDown() then return true end
+    Clicked(button)
+    return false
+end
+
+-- Zooms in around a point of the view's plane (a gathered marker clicked), by notches of the wheel.
+function Canvas.ZoomTo(u, v, notches)
+    if not laid then return end
+    camera.follow = false
+    camera:Look(u, v)
+    camera:ZoomAt(notches, 0, 0)
+    Canvas.Layout()
+end
+
+-- Shows a map whole (a pin that leads into another map), as a click on a zone does.
+function Canvas.Show(map)
+    if not laid or not camera:Fit(map) then return false end
+    Canvas.Layout()
+    return true
 end
 
 local function Wheel(_, delta)
@@ -446,6 +502,8 @@ function Canvas.Build(parent)
     holder:SetPoint("CENTER")
     layers = { terrain = ns.Terrain.Build(holder), atlas = ns.Painted.Build(holder) }
     layers.art, layers.light = ns.Art.Build(holder)
+    layers.areas, layers.route = ns.Areas.Build(holder), ns.Route.Build(holder)
+    ns.PinView.Build(holder)
     ns.Marks.Build(holder)
     Stack()
     tracker = CreateFrame("Frame", nil, frame)
@@ -462,11 +520,27 @@ function Canvas.Build(parent)
     ns.Listen("LIVE", function(what)
         if what == "waypoint" then
             if laid then ns.Marks.Pin(view) end
+            -- The game's arrow may lead to another quest now: its pins and area.
+            ns.Pins.Changed("quests")
+            if laid then ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small) end
+            if laid then ns.Safe("areas", ns.Areas.Place, view) end
         elseif what == "explored" or what == "zone" then
+            ns.Pins.Changed(what)
             Canvas.Refresh()
+        elseif ns.Pins.Changed(what) and laid then
+            ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small)
+            if what == "quests" then ns.Safe("areas", ns.Areas.Place, view) end
         end
     end)
     return frame
+end
+
+-- Whether the map takes the mouse: off while the window rests out of sight, so the game's own minimap under it
+-- takes it (Window.lua).
+function Canvas.Mouse(on)
+    if not frame then return end
+    frame:EnableMouse(on)
+    frame:EnableMouseWheel(on)
 end
 
 -- The view whose camera the canvas uses now (Window.lua: the small one, or the full screen's).
@@ -590,4 +664,7 @@ function Canvas.Close()
     ns.Safe("terrain", ns.Terrain.Clear)
     ns.Safe("atlas", ns.Painted.Clear)
     ns.Safe("map art", ns.Art.Clear)
+    ns.Safe("areas", ns.Areas.Clear)
+    ns.Safe("route", ns.Route.Clear)
+    ns.Safe("pins", ns.PinView.Clear)
 end

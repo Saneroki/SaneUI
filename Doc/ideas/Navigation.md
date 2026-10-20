@@ -1,11 +1,12 @@
 # Navigation
 
 The plan for the **Navigation** module (`SaneUI_Navigation`): the window, the map, the quest log, the pins,
-the waypoint, the routes and the leveling guide. Built so far (2026-10-19): the module without the map's data
-(pins, quest log, top bar, routes, guide): the window, both views, the canvas and its controls, the terrain and
-the art at every zoom (the water cut away, the zones' maps cut to their outlines, undiscovered parts dark), zones
-that light up and open by a click, the map moving with its window, the game's minimap over ours, the game's map
-kept closed (`src/Navigation/README.md`).
+the waypoint, the routes and the leveling guide. Built so far (2026-10-20): the window, both views, the canvas and
+its controls, the terrain and the art at every zoom (the water cut away, the zones' maps cut to their outlines),
+zones that light up and open by a click, the map moving with its window, the game's minimap over ours (cut to the
+window's shape), the game's map kept closed; the pins of the game and of Core's data, quest areas, the party, the
+quest log and the bar over the full map, the golden line's drawing (`src/Navigation/README.md`). Not yet: the
+planner and the walking data, the leveling guide, dungeon maps, search, the minimap's small parts.
 
 How to read this page:
 
@@ -141,6 +142,9 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **The map moves with its window (Saneroki, 2026-10-19):** on the way to the full screen and back the map grows
   and zooms with the window, not hidden and shown; Core's windows let what they hold go with the motion.
 - **Follows the player:** when the player moves, the map centres on the player.
+- **The minimap fills its window (Saneroki, 2026-10-20):** the small window shows the map over its whole shape,
+  not a square in it: our map fills it, and the game's minimap over it (for its live dots) is cut to the window's
+  shape, so it covers all of it and nothing past it.
 
 ## Full screen
 
@@ -149,6 +153,10 @@ When the window fills the screen:
 - **Classic windows** (Saneroki, 2026-10-16): Core's dropdown in the full screen's title bar lists the
   **native minimap** and the **native map and quest log** window. One chosen, the window goes back to the
   minimap and the native one is shown.
+- **A classic window is kept, ours always in the corner (Saneroki, 2026-10-20):** a classic window chosen is kept
+  (the game's map opens by its keys from then on, the game's minimap stands in the top right corner), ticked in the
+  dropdown and chosen again to come back; whatever is chosen, the mouse pushed into the top right corner, where
+  the minimap is docked, always fills the screen with our map.
 - **Quest log on the left side** of the screen; the map takes the rest.
 - **A bar on top** of the map with:
   - **Map selector:** pick a region or a dungeon, and the map shows it (*Map selector*). Dungeons are
@@ -175,6 +183,9 @@ When the window fills the screen:
   (our shipped data, learned in play, shared by the guild, the game live). One pin is kept for it, not
   several (*One pin per thing*).
 - Every pin type can be switched on and off with the pin filter (see *Full screen*).
+- **Always on top (Saneroki, 2026-10-20):** pins, quest areas, the route and every other notation on the map
+  stand over the map in every view and at every zoom, never behind it (the painted Atlas, the art, the terrain,
+  the game's minimap all lie under them).
 
 ## Our own data
 
@@ -1017,6 +1028,12 @@ Each step ends in something tried in the game, and in the module's README markin
 | **6. Routes** | Planner, search, the golden line | Core's data: World, Routes | a route across a continent with a flight, in steps, no hitch |
 | **7. Leveling guide** | The step, its checks, its view, the item button | Core's data: Guides; step 6 | a starting area played through by the guide |
 | **8. Dungeons and the rest** | Dungeon maps, floors, the minimap's own parts, polish | | |
+
+**Where it stands (2026-10-20):** steps 1 and 2 built (2026-10-19); 3 and 4 built, the live pins and the quest log;
+5 built as far as Core's data goes: the pins, gathered overlaps, tooltips and the quest areas the game shades are
+there, and `Data.Map` reads Spawns, Places and Travel, which hold no entries yet, so the database's pins come with
+the import; rares' spawn areas and patrol paths wait for their data. Step 0's points are answered in play as each
+step is tried.
 
 The hardest parts, in order: the walking data (its tool and size); keeping the game's map closed in a
 fight; the small view's dots with our ground; the overlay's cut; the pin data (Core's).

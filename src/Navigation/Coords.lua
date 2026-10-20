@@ -145,6 +145,22 @@ function Coords.Continents()
     return list
 end
 
+-- A continent's zones that have a box, each { map, box }, as the game lists them (the zones within zones
+-- too); asked once a session per continent, the same list each time (not to be changed).
+local zonesOf = {}
+function Coords.Zones(continent)
+    local list = zonesOf[continent]
+    if list then return list end
+    list = {}
+    local children = Core.Ask(C_Map.GetMapChildrenInfo, continent, Coords.ZONE, true)
+    for _, info in ipairs(type(children) == "table" and children or {}) do
+        local box = info.mapID and Coords.Box(info.mapID)
+        if box and Coords.ContinentOf(info.mapID) == continent then list[#list + 1] = { map = info.mapID, box = box } end
+    end
+    zonesOf[continent] = list
+    return list
+end
+
 -- A continent's rectangle on the world map (0 to 1), or nil.
 local function OnWorld(continent)
     local rect = onWorld[continent]

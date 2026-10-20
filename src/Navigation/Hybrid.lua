@@ -10,8 +10,10 @@ local _, ns = ...
 --
 --      shown        while the view follows the player and its zoom is one of the game's minimap's
 --                   steps (camera.native); square, as large as the view's longer side, in its middle,
---                   so it covers the whole view (the canvas cuts what reaches past the shorter side);
---                   above the map's layers and under its marks, set again each time it is placed (a
+--                   so it covers the whole view; cut to the view's shape by its mask, a band as tall
+--                   (or wide) as the view's shorter side (Mask: the game draws its dots inside its mask
+--                   only, whatever its parent cuts, so nothing of it shows past the window); above the
+--                   map's layers and under its pins and marks, set again each time it is placed (a
 --                   window raised and put back leaves the levels of its frames as they come)
 --      the wheel    walks the game's steps first; out past the widest our map goes on alone, and
 --                   in again it takes the widest step (Wheel)
@@ -33,6 +35,8 @@ local Hybrid = {}
 ns.Hybrid = Hybrid
 
 Hybrid.MASK = "Interface\\Buttons\\WHITE8X8" -- square: the corners of our map are the minimap's too
+Hybrid.BANDS = 32 -- the steps of the masks for a view that is not square (dev/tools/minimap-masks)
+Hybrid.MASKS = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Masks\\%s-%d"
 Hybrid.LEVEL = 10 -- over the canvas' layers, under its marks (Canvas.lua, Marks.lua)
 local WAIT = "navigation: minimap" -- what waits for the fight's end
 
@@ -40,6 +44,7 @@ local taken, saved, canvas, hooked
 local surveying -- the steps are being measured: what the game says meanwhile is ours
 local radii = { [true] = {}, [false] = {} } -- [indoors][zoom step] = the view's radius in yards
 local ground -- what the game's minimap draws of its own ground now (nil: not asked)
+local cut -- the mask it is cut by now
 
 -- The game's minimap, its cluster and border, if this client has them.
 local function Parts()
@@ -69,6 +74,18 @@ end
 -- The side of the game's minimap in a view of that size: the longer side, so it covers the whole view.
 function Hybrid.Side(width, height)
     return math.max(width, height)
+end
+
+-- The mask that cuts the game's minimap (square, as large as the view's longer side) to a view of that size:
+-- the square itself, or a band through its middle as tall (wide) as the view's shorter side, rounded down to the
+-- masks' steps, so it never reaches past the view. nil for a view too thin for the narrowest band.
+function Hybrid.Mask(width, height)
+    local long, short = math.max(width, height), math.min(width, height)
+    if long <= 0 then return nil end
+    local step = math.floor(short / long * Hybrid.BANDS + 1e-6)
+    if step >= Hybrid.BANDS then return Hybrid.MASK end
+    if step < 1 then return nil end
+    return Hybrid.MASKS:format(width > height and "wide" or "tall", step)
 end
 
 -- The zoom a step gives a view of that size (units per yard), or nil while its radius is not known.
@@ -103,6 +120,7 @@ local function Take()
     minimap:SetPoint("CENTER")
     minimap:SetFrameLevel(canvas:GetFrameLevel() + Hybrid.LEVEL)
     minimap:SetMaskTexture(Hybrid.MASK)
+    cut = Hybrid.MASK
     minimap:EnableMouseWheel(false)
     if minimap.SetPassThroughButtons then minimap:SetPassThroughButtons("LeftButton", "RightButton") end
     for _, key in ipairs({ "ZoomIn", "ZoomOut" }) do
@@ -136,7 +154,7 @@ local function Give()
     minimap:SetZoom(saved.zoom)
     C_Minimap.SetDrawGroundTextures(true)
     C_Minimap.SetIgnoreRotateMinimap(false)
-    ground = nil
+    ground, cut = nil, nil
     for button, was in pairs(saved.buttons) do
         button:SetAlpha(was[1])
         button:EnableMouse(was[2])
@@ -175,7 +193,7 @@ end
 local function Reset()
     if not taken then return end
     local minimap, _, backdrop = Parts()
-    minimap:SetMaskTexture(Hybrid.MASK)
+    minimap:SetMaskTexture(cut or Hybrid.MASK)
     if backdrop then backdrop:SetAlpha(0) end
 end
 
@@ -229,17 +247,22 @@ function Hybrid.Fit(camera, width, height)
 end
 
 -- The game's minimap for a view (camera, the view's size): shown in its middle at the camera's step while
--- it follows the player (known is false while the player's place is not), out of sight otherwise. The
--- camera's zoom is the step's.
+-- it follows the player (known is false while the player's place is not), cut to the view's shape, out of
+-- sight otherwise. The camera's zoom is the step's.
 function Hybrid.Place(camera, width, height, known)
     if not taken then return end
     local minimap = Parts()
     local size = Hybrid.Side(width, height)
     local step = camera.native
     local zoom = step and camera.follow and known and Hybrid.Zoom(step, size)
-    if not zoom then
+    local mask = Hybrid.Mask(width, height)
+    if not zoom or not mask then
         minimap:Hide()
         return
+    end
+    if mask ~= cut then
+        minimap:SetMaskTexture(mask)
+        cut = mask
     end
     minimap:SetSize(size, size)
     minimap:SetFrameStrata(canvas:GetFrameStrata())

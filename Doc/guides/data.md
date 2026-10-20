@@ -487,6 +487,26 @@ Data.Prepare("Items")               -- load soon: after the loading screen, out 
 - A module that draws often (Tooltips) calls `Prepare` in its `OnLogin`, so its packs are there before the
   first tooltip.
 
+### What a map shows (`Data.Map`)
+
+```lua
+local Map = SaneUI.Core.Data.Map()
+local places = Map:On(1429)          -- the places on that map, or nil while they are first read
+Map:OnChange(Redraw)                 -- fn() on the frame after they changed (OffChange)
+Map:Spawns("npc:69")                 -- a thing's points: { [map] = { { x, y }, ... } }, 0 to 1
+```
+
+- **A place** (read-only, `x` and `y` 0 to 1 on its map): `kind` (`npc`, `object`, `place`, `travel`: the set it
+  came from), `key` (one per thing: `npc:69`, `object:1617`, `place:12`, `travel:3`), `id`, `what` (an NPC's
+  `{ services, rare, quests, goods }`, an object's, a place's or a way's kind), `name`, `to`, `levelMin`,
+  `levelMax`, `side`.
+- **From** the sets Spawns (NPCs with a service, rares, quest givers, the objects players use; a creature that
+  is none of these is the creatures' spawns' business, not the map's), Places and Travel (a way between two
+  places at both ends; flights not: the game knows its flight points). An NPC with more than
+  `MapReader.MANY` points on a map stands at its areas' middles there.
+- **Read** as walks of the scheduler (`Each`), one set after the other, when a set it reads arrives or changes;
+  a set that no pack holds (empty in the master) or that is switched off is passed over without a word.
+
 ### Loading
 
 - **Packs are found at first need,** by their TOC lines (`C_AddOns.GetAddOnMetadata`, without loading them):

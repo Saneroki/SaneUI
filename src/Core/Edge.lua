@@ -17,6 +17,9 @@ local Core = SaneUI.Core
 --  own windows this one stands for (the window's option classic). One chosen,
 --  the window goes back to its zone and the game's own comes instead (the
 --  entry's show: the game's friends list, or the game's chat with ours put away).
+--  An entry that is a kept choice (checked) is a checkbox, ticked while the
+--  game's own is the one kept; chosen again, ours is the one again (back) and the
+--  window stays as it is.
 --
 --  Each window has a section Expand window in its options (Edge.Options):
 --  whether it fills the screen at all, its kind of motion, the background's
@@ -29,7 +32,9 @@ local Core = SaneUI.Core
 --      motion = function() return key end  -- its kind of motion, instead of the section's (Motion.lua)
 --      content = region                     -- what the window holds (a chat's list)
 --      classic = { { text = "Friends list", show = function() end }, ... }  -- the game's windows it stands
---                                           -- for, in the dropdown Classic windows (or a function giving them)
+--                                           -- for, in the dropdown Classic windows (or a function giving them);
+--                                           -- checked = function() end: a kept choice, ticked while true;
+--                                           -- back = function() end: ours again, when chosen while ticked
 --      filled = function(full, width, height) end  -- it has begun to fill the screen (true) or to go back,
 --                                           -- to that size
 --      moving = function(share) end         -- what it holds goes with the motion instead of fading out:
@@ -262,8 +267,18 @@ local function Entries(edge)
     return type(list) == "table" and #list > 0 and list or nil
 end
 
--- One chosen: the window goes back to its zone, and the game's own comes instead.
+-- Whether an entry is a kept choice that is ticked now.
+local function Ticked(entry)
+    return entry.checked and Core.Safe("full screen", entry.checked) and true or false
+end
+
+-- One chosen: the window goes back to its zone, and the game's own comes instead. A kept choice chosen while
+-- ticked: ours is the one again, and the window stays as it is.
 local function Pick(edge, entry)
+    if Ticked(entry) then
+        if entry.back then entry.back() end
+        return
+    end
     edge:Fill(false)
     entry.show()
 end
@@ -280,7 +295,12 @@ local function Classic(edge)
     menu:OverrideText(Edge.CLASSIC)
     menu:SetupMenu(function(_, root)
         for _, entry in ipairs(Entries(edge) or {}) do
-            root:CreateButton(entry.text, function() Core.Safe("full screen", Pick, edge, entry) end)
+            local chosen = Core.Guard("full screen", function() Pick(edge, entry) end)
+            if entry.checked then
+                root:CreateCheckbox(entry.text, Core.Guard("full screen", function() return Ticked(entry) end), chosen)
+            else
+                root:CreateButton(entry.text, chosen)
+            end
         end
     end)
     menu:Hide()
@@ -293,6 +313,7 @@ end
 local function Menu(edge, on)
     local menu = on and Classic(edge) or edge.classic
     if not menu then return end
+    if not on and menu.CloseMenu then menu:CloseMenu() end -- its list goes with it
     if on then
         menu:GenerateMenu() -- the list as the window gives it now
         local buttons = edge.window.buttons

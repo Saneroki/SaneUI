@@ -75,7 +75,8 @@ local Core = SaneUI.Core
 --          content = region,            -- what it holds: out of sight while its size moves (Edge.lua)
 --          classic = { { text = "Friends list", show = function() end } },  -- the game's own windows it
 --                                       -- stands for: full, it lists them in the dropdown Classic windows;
---                                       -- one chosen, it goes back to its zone and show() brings the game's
+--                                       -- one chosen, it goes back to its zone and show() brings the game's;
+--                                       -- with checked() and back(): a kept choice, ticked (Edge.lua)
 --          filled = function(full, width, height) end, -- it has begun to fill the screen (true) or to go
 --                                       -- back (false), to that size
 --          moving = function(share) end, -- with edge: what it holds goes with the motion, in sight, placed at

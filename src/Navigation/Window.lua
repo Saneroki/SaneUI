@@ -10,11 +10,18 @@ local _, ns = ...
 --  is the same chat when it fills the screen.
 --
 --  Each view keeps its own camera: its zoom, its place, whether it follows the
---  player. Going full screen and back returns each to where it was. Full, a row
---  of buttons at the map's top left chooses how it is drawn (the setting Map
---  view; both views draw it so): Parchment, Scrying, and Atlas while its module
---  is there (Painted.lua); the dropdown Classic windows offers the game's own
---  minimap and map.
+--  player. Going full screen and back returns each to where it was. Full, the
+--  quest log stands at the left (QuestLog.lua; in or out by the bar's button,
+--  kept), the map takes the rest, and a bar over the map's top edge holds the
+--  views, the map selector and the pin filter (TopBar.lua); the dropdown Classic
+--  windows in the title bar offers the game's own minimap and map, each a kept
+--  choice (the switches Show the game's minimap, Show the game's map), ticked
+--  while chosen and chosen again to come back.
+--
+--  With the game's own minimap chosen the small window rests out of sight (Rest):
+--  the game's minimap stands in its place and takes the mouse, and the corner
+--  still fills the screen with our map, which goes back out of sight when it
+--  comes back. In Edit Mode it is in sight, to be arranged.
 --
 --  On its way to the full screen and back the map goes with the window (Core's
 --  option moving): laid out once at the start for the view it comes to, scaled
@@ -26,78 +33,100 @@ local Window = {}
 ns.Window = Window
 
 Window.WIDTH, Window.HEIGHT = 200, 200 -- small, about as large as the game's minimap
-Window.BUTTON_WIDTH, Window.BUTTON_HEIGHT = 120, 24
-Window.INSET = 12 -- the buttons' row from the map's top left corner
-Window.GAP = 4    -- between two buttons
 
-local frame, handle, inside, bar, buttons
+local frame, handle, inside, canvas
+local resting = false -- out of sight: the game's own minimap is chosen (Rest)
+local going           -- on the way: true to the full screen, false back, nil standing
 local small, full = ns.Camera.New(), ns.Camera.New() -- each view's camera
 Window.small, Window.full = small, full
 
--- The buttons as the settings say: the view drawn lit.
-local function Light()
-    local drawn = ns.View()
-    for key, button in pairs(buttons) do
-        if key == drawn then button:LockHighlight() else button:UnlockHighlight() end
-    end
-end
-
--- The buttons of the views offered (Navigation.lua, Offer), in a row from the map's top left corner.
+-- The views' buttons (TopBar.lua) as the views offered say (Navigation.lua, Offer).
 function Window.Arrange()
-    if not buttons then return end
-    local previous
-    for _, key in ipairs(ns.VIEWS) do
-        local button, offered = buttons[key], ns.Offered(key)
-        button:SetShown(offered)
-        if offered then
-            button:ClearAllPoints()
-            if previous then
-                button:SetPoint("LEFT", previous, "RIGHT", Window.GAP, 0)
-            else
-                button:SetPoint("TOPLEFT", Window.INSET, -Window.INSET)
-            end
-            previous = button
-        end
-    end
-    Light()
+    ns.TopBar.Arrange()
 end
 
 -- The view chosen changed (its button, or the settings): the buttons, and the map drawn anew.
 function Window.Restyle()
     if not frame then return end
-    Light()
+    ns.TopBar.Arrange()
     ns.Canvas.Refresh()
 end
 
--- Kept in the settings, so profiles keep it; Core tells the module of the change (Restyle).
-local function Choose(button)
-    if button.key ~= ns.options.view then Core.Set(ns.name, "view", button.key) end
+-- Whether the small window rests out of sight: the game's own minimap is chosen, the window is in its zone
+-- (not full, nor on its way) and Edit Mode is closed.
+local function Sleeping()
+    local edge = handle.edge
+    return ns.options.nativeMinimap and not (edge and edge.away) and not Core.EditMode.active or false
 end
 
-local function Tip(button)
-    GameTooltip:SetOwner(button, "ANCHOR_BOTTOM")
-    GameTooltip:SetText(ns.TEXT.views[button.key], 1, 1, 1)
-    GameTooltip:AddLine(ns.TEXT.viewTips[button.key], nil, nil, nil, true)
-    GameTooltip:Show()
+-- Out of sight and letting the mouse through to the game's minimap (on), or in sight and taking it.
+local function Rest(on)
+    resting = on
+    frame:SetAlpha(on and 0 or 1)
+    ns.Canvas.Mouse(not on)
+    if on then ns.Canvas.Close() end
 end
 
--- The window stands, small or full: that view's camera, and the map at its size.
+-- Whether the quest log stands at the map's left in the full screen (TopBar's button).
+local function Logged()
+    return ns.TopBar.LogShown()
+end
+
+-- The quest log's share of its width (0: out, 1: in), the map to its right: full and standing 1 with the log
+-- shown, small 0, on the way between.
+local function Lay(share)
+    local log = Logged() and share > 0
+    local width = log and ns.QuestLog.WIDTH * share or 0
+    canvas:ClearAllPoints()
+    canvas:SetPoint("TOPLEFT", width, 0)
+    canvas:SetPoint("BOTTOMRIGHT")
+    ns.QuestLog.SetShown(log)
+    ns.QuestLog.Fade(log and share or 0)
+end
+
+-- The canvas' size once the window fills the screen: the screen but the title bar, and the quest log.
+function Window.FullSize()
+    local width = UIParent:GetWidth() - (Logged() and ns.QuestLog.WIDTH or 0)
+    return width, UIParent:GetHeight() - Core.Window.BAR
+end
+
+-- The window stands, small or full: that view's camera, and the map at its size; small with the game's own
+-- minimap chosen, out of sight. Full, the quest log at the left and the bar over the map.
 local function Placed()
+    going = nil
     local filled = handle.edge and handle.edge.full or false
     ns.Canvas.Use(filled and full or small)
-    bar:SetShown(filled)
+    Lay(filled and 1 or 0)
+    ns.TopBar.SetShown(filled, canvas)
+    if Sleeping() then return Rest(true) end
+    if resting then Rest(false) end
     ns.Canvas.Open()
 end
 
+-- The quest log in or out while the window stands full (TopBar's button): the map laid out for its new size.
+function Window.Lay()
+    if not frame or going ~= nil or not (handle.edge and handle.edge.full) then return end
+    Lay(1)
+    ns.TopBar.Update()
+end
+
 -- On its way to the full screen (full) or back, the window to be width x height: the map goes with it,
--- into the other view's camera; its buttons wait until it stands.
+-- into the other view's camera; the quest log comes in from the left as it goes, the bar waits until it
+-- stands. Resting, it comes into sight first.
 local function Filled(on, width, height)
-    bar:Hide()
+    if resting then Rest(false) end
+    going = on
+    ns.TopBar.SetShown(false)
     local top = on and Core.Window.BAR or 0 -- full, the title bar is over the map
-    ns.Canvas.Morph(on and full or small, width or 0, (height or 0) - top)
+    local log = on and Logged() and ns.QuestLog.WIDTH or 0
+    ns.Canvas.Morph(on and full or small, (width or 0) - log, (height or 0) - top)
 end
 
 local function Moving(share)
+    if going ~= nil then
+        local t = math.min(math.max(share, 0), 1)
+        Lay(going and t or 1 - t)
+    end
     ns.Canvas.Step(share)
 end
 
@@ -105,10 +134,20 @@ local function Back()
     if handle.edge then handle.edge:Fill(false) end
 end
 
--- The dropdown Classic windows: the game's own minimap (the switch, kept) and map (once).
+-- The dropdown Classic windows: the game's own minimap and map, each kept (its switch), ticked while chosen;
+-- chosen again, ours is the one again. The game's map chosen opens at once.
+local function Keep(key, on)
+    ns.Safe("classic window", Core.Set, ns.name, key, on)
+end
 local CLASSIC = {
-    { text = ns.TEXT.classicMinimap, show = function() ns.Safe("classic minimap", Core.Set, ns.name, "nativeMinimap", true) end },
-    { text = ns.TEXT.classicMap, show = function() ns.Safe("classic map", ns.Native.ShowMap) end },
+    { text = ns.TEXT.classicMinimap, checked = function() return ns.options.nativeMinimap end,
+      show = function() Keep("nativeMinimap", true) end, back = function() Keep("nativeMinimap", false) end },
+    { text = ns.TEXT.classicMap, checked = function() return ns.options.nativeMap end,
+      show = function()
+          Keep("nativeMap", true)
+          ns.Safe("classic map", ns.Native.ShowMap)
+      end,
+      back = function() Keep("nativeMap", false) end },
 }
 
 function Window.Build()
@@ -125,26 +164,23 @@ function Window.Build()
         moving = function(share) ns.Guarded(Moving, share) end,
         close = function() ns.Guarded(Back) end, -- back to its corner: closed, the corner could not bring it again
     })
+    Window.handle = handle
     inside:SetAllPoints(handle.inside)
-    local canvas = ns.Canvas.Build(inside)
-
-    bar = CreateFrame("Frame", nil, inside)
-    bar:SetAllPoints()
-    bar:SetFrameLevel(canvas:GetFrameLevel() + 30) -- over the map, its marks and the game's minimap
-    bar:Hide()
-    buttons = {}
-    for _, key in ipairs(ns.VIEWS) do
-        local button = CreateFrame("Button", nil, bar, "UIPanelButtonTemplate")
-        button:SetSize(Window.BUTTON_WIDTH, Window.BUTTON_HEIGHT)
-        button:SetText(ns.TEXT.views[key])
-        button.key = key
-        button:SetScript("OnClick", ns.Guard(Choose))
-        button:SetScript("OnEnter", ns.Guard(Tip))
-        button:SetScript("OnLeave", GameTooltip_Hide)
-        buttons[key] = button
-    end
+    ns.QuestLog.Build(inside)
+    canvas = ns.Canvas.Build(inside)
+    Lay(0)
+    ns.TopBar.Build(canvas)
     Window.Arrange()
     handle:Place() -- where it was left; at its first place and size if it never was moved
+    -- Edit Mode shows a resting window, to be arranged, and lets it rest again once it closes.
+    Core.EditMode.Watch(function() ns.Guarded(Window.Update) end)
+end
+
+-- The switch Show the game's minimap changed, or Edit Mode opened or closed: the small window rests out of
+-- sight or comes back, as they say now (full, it is as it is: it rests once it is back).
+function Window.Update()
+    if not frame or (handle.edge and handle.edge.away) then return end
+    if Sleeping() ~= resting then Placed() end
 end
 
 -- The game's minimap is ours now (Hybrid.lua): the small view starts at its zoom step, as the player had it.
@@ -166,14 +202,23 @@ function Window.Toggle()
     handle.edge:Fill(not handle.edge.full)
 end
 
--- Our map at a map the game was asked for (Native.lua): full screen, the map whole in it.
-function Window.OpenTo(map)
+-- Our map at a map the game was asked for (Native.lua): full screen, the map whole in it; x, y (0 to 1 on
+-- it): that point in the middle (a quest's place, QuestLog.lua).
+function Window.OpenTo(map, x, y)
     if not handle or not handle.edge then return end
     if not frame:IsShown() then
         frame:Show()
         handle:Place()
     end
-    if map then ns.Canvas.Fit(full, map, UIParent:GetWidth(), UIParent:GetHeight() - Core.Window.BAR) end
+    if map then
+        local width, height = Window.FullSize()
+        ns.Canvas.Fit(full, map, width, height)
+        local continent = x and ns.Coords.ContinentOf(map)
+        if continent and continent == full.map then
+            local u, v = ns.Coords.MapToPlane(map, x, y, continent)
+            if u then full:Look(u, v) end
+        end
+    end
     if handle.edge.full then
         ns.Canvas.Use(full)
         ns.Canvas.Refresh()
@@ -184,7 +229,7 @@ end
 
 -- The game's minimap key: the window shown or hidden (hidden, it lets go of every texture).
 function Window.ToggleShown()
-    if not frame then return end
+    if not frame or resting then return end
     if frame:IsShown() then
         ns.Canvas.Close()
         frame:Hide()
