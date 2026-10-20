@@ -413,9 +413,11 @@ def around(guides, uimap, x, y, across, down):
 
 # --- The colour pass -----------------------------------------------------------------------------
 # The model paints each zone in its own light, and with it its own colours: Badlands' orange came out pale tan,
-# Teldrassil violet. When the squares are joined, each painting's broad colour (averaged over BROAD pixels) is
-# moved toward the game's by 1 - MOOD, its fine detail and light kept; the paintings on disk stay as painted, so
-# the mood can be changed without painting again. The same pull evens out neighbours painted a little apart.
+# Teldrassil violet. When the squares are joined, each painting's broad colour (its hue and saturation averaged
+# over BROAD pixels) is moved toward the game's by 1 - MOOD; its brightness, its fine detail and light are kept
+# (a dark zone stays dark: the game's minimap is drawn without the zone's light). The paintings on disk stay as
+# painted, so the mood can be changed without painting again. The same pull evens out neighbours painted a
+# little apart.
 
 MOOD = 0.5     # how much of the model's own colour a square keeps (1: all of it; 0: the game's broad colours)
 BROAD = 48     # pixels (12 yards): broader than a tree, finer than a hill
@@ -465,7 +467,7 @@ def colour_of(painting, square, mood=MOOD):
         return broad(target * w, r) / weight - broad(paint * w, r) / weight
 
     shift = toward(game, land, BROAD // q) * land * (1 - mood)
-    shift[..., 0] *= 0.6   # the light's brightness kept more than its colour
+    shift[..., 0] = 0      # the light, bright or dark, stays the zone's (Duskwood stays dark): only colours move
     shift += toward(to_lab(np.broadcast_to(SEA.astype(np.uint8), paint.shape)), water * (1 - lava), BROAD) * water * 0.85
     full = np.stack([np.asarray(Image.fromarray(shift[..., k]).resize(painting.shape[1::-1], Image.Resampling.BILINEAR))
                      for k in range(3)], -1)

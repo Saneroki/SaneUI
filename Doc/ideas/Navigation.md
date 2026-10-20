@@ -677,9 +677,11 @@ blocks like the terrain's, so the map draws it the way it draws the others.
 - **The colour pass** (2026-10-20, `colour_of` in `dev/tools/atlas`): with the zone's light the model also paints
   the zone's own colours, more in some zones than others (the whole zones painted as one: Badlands' orange pale
   tan, Teldrassil's bark and forest violet, Burning Steppes' grey ash dark red). When the squares are joined,
-  each painting's broad colour (averaged over 48 pixels, 12 yards) is moved toward the game's, keeping a share of
-  the model's own (`MOOD`, 0.5 until Saneroki chooses: at 0.3 the zones look much like the game's colours, at 1
-  as painted), its fine detail and light kept; its water is pulled toward the open sea's blue whatever the mood
+  each painting's broad colour (its hue and saturation averaged over 48 pixels, 12 yards) is moved toward the
+  game's, keeping a share of the model's own (`MOOD`, 0.5 until Saneroki chooses: at 0.3 the zones look much like
+  the game's colours, at 1 as painted); its brightness, fine detail and light are kept, so a dark zone stays dark
+  (*Dark zones stay dark*; the game's minimap is drawn without the zone's light, and moving brightness too
+  lightened Duskwood); its water is pulled toward the open sea's blue whatever the mood
   (the sea is one sea), its lava left as painted. The paintings on disk stay as painted, so the mood can be
   changed without painting again (`join --mood`), and the same pull evens out neighbours painted a little apart,
   so far out no patchwork shows. About a second a square.

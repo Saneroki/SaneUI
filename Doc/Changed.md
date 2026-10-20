@@ -47,7 +47,8 @@ A game restart takes it in (new addons, Navigation and Atlas; new files in Navig
 
 ### The Atlas' colour pass and packing (Saneroki, 2026-10-20)
 - **The colour pass** (`Doc/ideas/Navigation.md`, *The colour pass*): `dev/tools/atlas join` moves each painting's
-  broad colours toward the game's before joining, keeping half of the model's own (`--mood`, default 0.5;
+  broad hue and saturation toward the game's before joining (its brightness stays: Duskwood stays dark), keeping
+  half of the model's own (`--mood`, default 0.5;
   `--as-painted` skips it), and pulls its water toward the open sea's blue; lava stays as painted. The paintings
   on disk stay as painted, so the mood can change without painting again. Badlands' orange, Teldrassil's pink bark
   and green forest and Burning Steppes' grey ash come back, and neighbours painted a little apart meet evenly.

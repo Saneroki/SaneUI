@@ -136,13 +136,17 @@ none = np.zeros((side, side), np.uint8)
 ground = {"rgb": orange, "water": none, "lava": none}
 
 
-def broad_gap(a, b):
-    small_lab = lambda x: at.to_lab(np.asarray(Image.fromarray(x).resize((8, 8), Image.Resampling.BOX)))  # noqa: E731
-    return float(np.sqrt(((small_lab(a) - small_lab(b)) ** 2).sum(-1)).mean())
+def small_lab(x):
+    return at.to_lab(np.asarray(Image.fromarray(x).resize((8, 8), Image.Resampling.BOX)))
+
+
+def broad_gap(a, b):   # in hue and saturation (a and b of CIELAB)
+    return float(np.sqrt(((small_lab(a) - small_lab(b))[..., 1:] ** 2).sum(-1)).mean())
 
 
 back = at.colour_of(painted, ground, 0.0)
 check("colour pass: the game's broad colour back", broad_gap(back, orange) < broad_gap(painted, orange) / 3, True)
+check("colour pass: the painting's brightness kept", float(np.abs(small_lab(back)[..., 0] - small_lab(painted)[..., 0]).mean()) < 1.5, True)
 fine = lambda x: x.astype(np.float32).mean(-1) - at.broad(x.astype(np.float32).mean(-1)[..., None], 6)[..., 0]  # noqa: E731
 check("colour pass: the fine detail kept", float(np.corrcoef(fine(back).ravel(), fine(painted).ravel())[0, 1]) > 0.95, True)
 check("colour pass: mood 1 keeps land as painted", int(np.abs(at.colour_of(painted, ground, 1.0).astype(int) - painted).max()) <= 2, True)
