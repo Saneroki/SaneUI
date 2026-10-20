@@ -117,6 +117,43 @@ DressUpTexturePath = function(race) return "bg-" .. race end
 local scenes = 0
 ModelSceneUtil = { SetUpCharacterSheetScene = function() scenes = scenes + 1 end }
 
+-- The game's stats list (the right pane): its scrolling list and rows, its table of stats, the resistances.
+W.templates.CharacterStatsPaneScrollBoxTemplate = function(widget)
+    widget.ScrollBox = W.NewWidget("Frame", nil, widget)
+    widget.ScrollBox.sets = 0
+    function widget.ScrollBox:SetDataProvider(provider) self.provider, self.sets = provider, self.sets + 1 end
+    widget.ScrollBar = W.NewWidget("Frame", nil, widget)
+end
+W.templates.CharacterStatFrameTemplate = function(widget)
+    widget.Label, widget.Value = W.NewWidget("FontString", nil, widget), W.NewWidget("FontString", nil, widget)
+end
+CreateScrollBoxListLinearView = function()
+    local view = {}
+    function view:SetElementFactory(fn) self.factory = fn end
+    return view
+end
+ScrollUtil = { InitScrollBoxListWithScrollBar = function(box, _, view) box.view = view end }
+CreateDataProvider = function(elements) return { elements = elements } end
+ScrollBoxConstants = { RetainScrollPosition = true }
+local statValues, shield = { HEALTH = 120, MOVESPEED = 100, CRITCHANCE = 5, HASTE = 0, BLOCK = 4 }, false
+local function Fill(name) return { updateFunc = function(frame) frame.Value:SetText(tostring(statValues[name])) return statValues[name] end } end
+PAPERDOLL_STATINFO = { HEALTH = Fill("HEALTH"), MOVESPEED = Fill("MOVESPEED"), CRITCHANCE = Fill("CRITCHANCE"),
+                       HASTE = Fill("HASTE"), BLOCK = Fill("BLOCK") }
+PAPERDOLL_STATCATEGORIES = {
+    { categoryName = "General", unit = "player", stats = { { stat = "HEALTH" }, { stat = "MOVESPEED" } } },
+    { categoryName = "Modifiers", unit = "player", stats = { { stat = "CRITCHANCE", hideAt = 0 }, { stat = "HASTE", hideAt = 0 } } },
+    { categoryName = "Defense", unit = "player", stats = { { stat = "BLOCK", hideAt = 0, showFunc = function() return shield end } } },
+    { categoryName = "Pet", unit = "pet", stats = { { stat = "HEALTH" } } },
+}
+rawset(_G, "Enum", rawget(_G, "Enum") or {})
+Enum.Damageclass = { Fire = 2, Nature = 3, Frost = 4, Shadow = 5, Arcane = 6 }
+local resists = { [2] = 15 }
+UnitResistance = function(_, class) return 0, 0, resists[class] or 0, 0 end
+PaperDollFrame_SetResistanceTooltips = function(tips, name, value) tips.tooltip = name .. " " .. value end
+BreakUpLargeNumbers = function(value) return tostring(value) end
+PaperDollFrame_FormatBonusValue = function(text) return text end
+STAT_CATEGORY_RESISTANCE, DAMAGE_SCHOOL3 = "Resistance", "Fire"
+
 W.LoadCore(root)
 local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
@@ -223,6 +260,60 @@ ammoUser = false
 Slots.Place()
 
 -------------------------------------------------------------------------------
+--  The stats
+-------------------------------------------------------------------------------
+local list
+for _, widget in ipairs(W.frames) do
+    local box = rawget(widget, "ScrollBox")
+    if type(box) == "table" and box.view then list = widget end
+end
+check(list and list._points[1][1] == "TOPLEFT" and list._points[1][2] == ns.Sheet.stone, "the game's stats list under the right pane's stone")
+local function Names()
+    local names = {}
+    for _, element in ipairs(list.ScrollBox.provider.elements) do
+        names[#names + 1] = element.isHeader and ("[" .. element.name .. "]") or (element.name or element.labelText)
+    end
+    return table.concat(names, " ")
+end
+check(Names() == "[General] HEALTH MOVESPEED [Modifiers] CRITCHANCE [Resistance] Arcane Fire Frost Nature Shadow",
+    "the game's categories for the player, a stat at the value it hides at left out, a category with none shown left out, then the resistances: " .. Names())
+local fire = list.ScrollBox.provider.elements[8]
+check(fire.atlas == "UI-Character-Info-Resistance-Fire" and fire.valueText == "15" and fire.tooltip == "Fire 15",
+    "a resistance: the game's atlas, value and tooltip")
+-- The rows are the game's: the list makes each with the game's template for it, and the game's Init fills it.
+local made = {}
+local function Factory(template, init)
+    local row = { inits = 0 }
+    function row:Init(element) self.inits, self.element = self.inits + 1, element end
+    init(row, list.ScrollBox.provider.elements[#made + 1])
+    made[#made + 1] = { template = template, row = row }
+end
+for _, element in ipairs(list.ScrollBox.provider.elements) do list.ScrollBox.view.factory(Factory, element) end
+check(made[1].template == "CharacterStatFrameCategoryScrollBoxElementTemplate" and made[2].template == "CharacterStatFrameScrollBoxLabelElementTemplate"
+    and made[7].template == "CharacterStatFrameScrollBoxIconElementTemplate" and made[2].row.inits == 1,
+    "each row the game's template for it: a category's head, a stat, a resistance with its icon; filled by the game's Init")
+
+-- A stat changes: drawn anew a frame later, once however many events come.
+local sets = list.ScrollBox.sets
+statValues.HASTE, shield = 3, true
+W.Fire("UNIT_STATS", "player")
+W.Fire("COMBAT_RATING_UPDATE")
+W.Wait(0)
+check(list.ScrollBox.sets == sets + 1 and Names():find("HASTE") and Names():find("%[Defense%] BLOCK"),
+    "a stat changed: the list drawn anew, once, a frame later")
+-- Under a restriction the stats are secret to addon code: the list waits, and is drawn once it is over.
+sets = list.ScrollBox.sets
+W.combat = true
+statValues.CRITCHANCE = 0
+W.Fire("UNIT_STATS", "player")
+W.Wait(0)
+check(list.ScrollBox.sets == sets and ns.Stats.Owed(), "in a fight the list stays as it was")
+W.combat = false
+W.Fire("PLAYER_REGEN_ENABLED")
+W.Wait(0)
+check(list.ScrollBox.sets == sets + 1 and not ns.Stats.Owed() and not Names():find("CRITCHANCE"), "the fight over: drawn anew")
+
+-------------------------------------------------------------------------------
 --  The board: more parts
 -------------------------------------------------------------------------------
 -- A part as a part's file registers it: what the board asks of it is noted.
@@ -256,6 +347,10 @@ Stand()
 worn[2].texture = "other"
 W.Fire("PLAYER_EQUIPMENT_CHANGED", 2, false)
 check(drawn[neck].texture == "amulet", "hidden, the sheet does not listen to the game")
+sets = list.ScrollBox.sets
+W.Fire("UNIT_STATS", "player")
+W.Wait(0)
+check(list.ScrollBox.sets == sets, "hidden, the stats do not listen either")
 
 -- A part that fails is noted; the others and the module go on.
 local broken = { Build = function() error("a broken part") end }

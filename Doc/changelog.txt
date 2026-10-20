@@ -39,8 +39,9 @@ The bigger changes of each version, newest first.
   of the screen and it fills with your inventory's windows; push it
   there again, or press Esc, and they go. First there: Sane UI's own
   character sheet, your model with your gear round it as on the game's
-  sheet (click, drag and link your items there). Its stats and tabs,
-  your bags and your other characters' things are being built.
+  sheet (click, drag and link your items there), and your stats as the
+  game lists them. Its tabs, your bags and your other characters'
+  things are being built.
 - Navigation: Sane UI's minimap and map in one window. Small in the top
   right corner it is your minimap; move the mouse into the corner and
   the same map fills the screen. Drag it, zoom it with the mouse wheel

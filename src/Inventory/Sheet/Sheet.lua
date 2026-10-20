@@ -10,7 +10,7 @@ local _, ns = ...
 --      the left pane (398 wide)   the paper doll: a strip at the top with the
 --                                 level line, the character's model (Model.lua),
 --                                 the equipment slots round it (Slots.lua)
---      the right pane (233 wide)  the stats, on the game's stone (to come)
+--      the right pane (233 wide)  the stats, under the game's stone (Stats.lua)
 --  The panel's head says the character's name with its title, as the game's
 --  window does. The tabs (reputation, skills, honor, currency, statistics)
 --  come later (Doc/ideas/Inventory.md).
@@ -141,6 +141,7 @@ function Sheet.Build(made)
     divider:SetPoint("TOPLEFT", -6, -1)
     divider:SetPoint("BOTTOMLEFT", -6, 0)
     Sheet.left, Sheet.right, Sheet.stone = left, right, stone
+    ns.Stats.Build(right, stone)
 
     -- The strip at the top of the left pane, the game's rock with its edge, the level line in it.
     local strip = CreateFrame("Frame", nil, left)
@@ -174,6 +175,7 @@ function Sheet.Show(on)
     for event, fn in pairs(UNIT_EVENTS) do
         if on then Core.OnUnit(event, "player", fn) else Core.OffUnit(event, "player", fn) end
     end
+    ns.Stats.Show(on)
     if on then Refresh() end
 end
 

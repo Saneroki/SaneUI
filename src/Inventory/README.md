@@ -1,6 +1,6 @@
 # Sane UI: Inventory
 
-**Status:** its window and full screen built; the character sheet's paper doll built (slots, model, level), its stats and tabs, the bags and the other characters are being built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
+**Status:** its window and full screen built; the character sheet's paper doll and stats built, its tabs, the bags and the other characters are being built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 The module for what you carry and wear. Push the mouse into the screen's bottom right corner and the screen
@@ -20,7 +20,9 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   wheel or the buttons over it to zoom), your gear round it in the game's places, your level and class above.
   A click on a slot picks the item up or puts the one you hold there (a drag the same), Shift or Ctrl and a
   click links it or tries it on, the tooltip is the game's; an item let go over the model is put on. Using an
-  equipped item with a right click stays on the game's own sheet and the action bars.
+  equipped item with a right click stays on the game's own sheet and the action bars. At the right, your stats
+  as the game lists them, with its tooltips; in a fight they show what they were before it, and are brought up
+  to date when it is over.
 - **Settings:** *Sane UI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
   motion, the background's opacity and texture) and *Window corners*.
 
@@ -42,7 +44,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   edges), at the top of its panel's body. The left pane on the game's `UI-Character-Info-General-BG`, its top strip
   (the game's rock and edge) with the level line (`PaperDollFrame_SetLevel`: the effective level, the
   specialization where the game has one, the class in its colour); the right pane on the game's stat background and
-  stone (`UI-Character-Info-Stat-BG`, `…-StoneBG3`, the divider), empty until the stats come. The panel's head is
+  stone (`UI-Character-Info-Stat-BG`, `…-StoneBG3`, the divider) with the stats under it. The panel's head is
   `UnitPVPName`.
   - **Slots** (`Sheet/Slots.lua`): the game's `ItemButton` on its slot frame (`UI-Character-Info-GearSlot`), in
     its places (`Slots.TOP`, `LEFT`, `RIGHT`, `BOTTOM`, `SIZE`, `GAP`); the ranged slot only where
@@ -55,6 +57,16 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     `ModelSceneUtil.SetUpCharacterSheetScene` when shown and at `UNIT_MODEL_CHANGED`, the game's turn and zoom
     buttons (`ModelSceneControlFrameTemplate`), the race's background in four parts (`DressUpTexturePath`, greyed)
     under `UI-Character-Info-RaceBG-Overlay`; an item let go over it: `AutoEquipCursorItem`.
+  - **Stats** (`Sheet/Stats.lua`): the game's `CharacterStatsPaneScrollBoxTemplate` under the stone, its rows the
+    game's element templates (a category's head, a stat, a stat with an icon) filled by the game's `Init`, which
+    calls the game's function for that stat (`PAPERDOLL_STATINFO`). The list is put together by our code as
+    `CharacterStatsPaneScrollBoxMixin:UpdateStats` does (the player's categories of `PAPERDOLL_STATCATEGORIES`,
+    `primary`, `roles`, `showFunc`, a stat left out at its `hideAt`, a scratch row of ours for the values; then the
+    resistances, `Stats.RESISTANCES`, with `UnitResistance` and the game's tooltip and bonus formatting): the game's
+    list builder borrows the game's own sheet's frame pool, which our code must not touch. Under a restriction
+    (`Core.Restricted`) the stats are secret to addon code (`SecretWhenUnitStatsRestricted`; the player's health
+    always is), so the list is not drawn then: it waits (`Stats.Owed`) and is drawn after `PLAYER_REGEN_ENABLED` or
+    `ADDON_RESTRICTION_STATE_CHANGED`. Drawn when shown and a frame after the game's stat events (`Core.Later`).
   - **Events, while shown only** (`Sheet.Show`): `PLAYER_EQUIPMENT_CHANGED`, `ITEM_LOCK_CHANGED`,
     `UPDATE_INVENTORY_DURABILITY`, `UPDATE_INVENTORY_ALERTS`, `UNIT_INVENTORY_CHANGED` and `UNIT_MODEL_CHANGED`
     (the player's), `PLAYER_LEVEL_UP`, `UNIT_NAME_UPDATE`, `PLAYER_ENTERING_WORLD`. Every value read goes through
@@ -79,6 +91,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 | `Board.lua` | The full screen's windows on Core's board; the parts register theirs |
 | `Sheet/Slots.lua` | The character sheet's equipment slots |
 | `Sheet/Model.lua` | The character sheet's model, its background and buttons |
+| `Sheet/Stats.lua` | The character sheet's stats: the game's list and rows, put together by our code |
 | `Sheet/Sheet.lua` | The character sheet: its panes, the level line, the head, the game's events; registers the part `character` |
 
 ## History
@@ -87,4 +100,4 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   the corner opened the bags only. Then (Saneroki) our own windows instead: the module's window docked in the
   bottom right corner, its corner filling the screen with the character sheet, the bags and the other
   characters' snapshots on Core's board (`Doc/ideas/Inventory.md`). The character sheet's paper doll: its slots,
-  the model, the level line.
+  the model, the level line; its stats.

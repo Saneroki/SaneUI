@@ -3,8 +3,21 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 281 (Navigation), 36 (Inventory), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 561 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 281 (Navigation), 44 (Inventory), 49 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Inventory: the character sheet's stats (Saneroki, 2026-10-20)
+- **The stats** (`Sheet/Stats.lua`) in the sheet's right pane, as the game's Camelot sheet lists them: the game's
+  `CharacterStatsPaneScrollBoxTemplate` under the stone, the game's rows (`CharacterStatFrame…ScrollBox…ElementTemplate`)
+  filled by the game's functions for each stat (`PAPERDOLL_STATINFO`); the list put together by our code as the game's
+  `UpdateStats` does it (categories, `primary`, `roles`, `showFunc`, `hideAt`; then the resistances with the game's
+  atlases and tooltips), because the game's own builder borrows its sheet's frame pool.
+- **Secret stats:** under a restriction (`Core.Restricted`) the stats are secret to addon code (the API's
+  `SecretWhenUnitStatsRestricted`; the player's health always), and the game's functions do sums on them: the list is
+  not drawn then and is drawn once the restriction ends (`PLAYER_REGEN_ENABLED`, `ADDON_RESTRICTION_STATE_CHANGED`).
+- **Drawn** when shown and a frame after the game's stat events (`Core.Later`), only while shown.
+- Tests: `dev/tests/inventory.lua` (44 checks): the list's elements, the rows' templates, a change drawn once, the
+  wait under a fight, deaf while hidden.
 
 ### Inventory: the character sheet's paper doll (Saneroki, 2026-10-20)
 - **Our own character sheet** (`Sheet/`, the part `character` on the module's full screen): the game's Camelot

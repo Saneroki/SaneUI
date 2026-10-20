@@ -15,7 +15,8 @@ Inventory.lua
 Window.lua
 # The full screen's windows on Core's board; the parts after it register theirs
 Board.lua
-# The character sheet, our own: the equipment slots, the character's model, the sheet that holds them
+# The character sheet, our own: the equipment slots, the character's model, the stats, the sheet that holds them
 Sheet\Slots.lua
 Sheet\Model.lua
+Sheet\Stats.lua
 Sheet\Sheet.lua
