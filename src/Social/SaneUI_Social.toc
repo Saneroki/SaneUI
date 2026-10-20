@@ -35,9 +35,11 @@ Menu.lua
 Picker.lua
 # The game's own chat channels, the same on every character as wished. Knows no frames
 Join.lua
-# The full screen's panels around the chat: where they stand, their look
+# The full screen's parts: where they stand, the panels' look
 Board.lua
-# The second chat of the full screen, above the chat, with its own choice of chats
+# The guild window on the full screen: the one the guild key opens, held at its top right
+Guild.lua
+# The second chat of the full screen, in the conversations' list, with its own choice of chats
 Feed.lua
 # The friends list's panel of the full screen: what its lists share, you on Battle.net, then each list
 Contacts\Contacts.lua
@@ -51,7 +53,7 @@ Contacts\Quick.lua
 Contacts\Finder.lua
 # The friends list's panel: everything the game's friends list holds, and the group finder, its lists under tabs
 Friends.lua
-# The conversations' panel of the full screen: the list of them, and the one chosen to read and write in
+# The conversations' panel of the full screen: the chat, the second chat and the conversations, the one chosen beside them
 Conversations.lua
 # The window: moved, sized, scrolled
 Window.lua

@@ -1,6 +1,6 @@
 # Sane UI: Social
 
-**Status:** a prototype, written and tested outside the game; the input line and the hiding of the game's chat are **not yet tried in the game** · **Since:** 2026-10-14 · **Addon:** `SaneUI_Social` (was `SaneUI_Chat` until 2026-10-16)
+**Status:** a prototype · **Since:** 2026-10-14 · **Addon:** `SaneUI_Social` (was `SaneUI_Chat` until 2026-10-16)
 
 ## TL;DR
 A chat window in the style of a messenger: every message in a bubble, yours at the right edge,
@@ -36,7 +36,16 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   moves, its background and how round its corners start.
 - **Full screen panels:** standing full, the window holds more than the chat (each can be switched off,
   section *Full screen* of the settings):
-  - **Friends list** at the right, as the game's: online Battle.net friends, online characters, a divider,
+  - **Guild window** at the top right: the very window the guild key opens, held there and working as
+    always: the game's own guild and communities window, or the window of another addon that answers the
+    guild key instead. Its room is as large as the window is (it follows when the window is sized or made
+    small); on a smaller screen it is made smaller, and left out where it would be too small. The full screen
+    opens it and closes it again when it goes; one open already stays open, back at its place. Closed while
+    the full screen stands (its close button, Esc), the friends list takes its room. In a fight the game
+    opens no window for an addon: one that closes in a fight comes back after it. Only while you are in a
+    guild.
+  - **Friends list** at the right, under the guild window and as wide (the game's friends list's width at
+    least), as the game's: online Battle.net friends, online characters, a divider,
     then the offline ones; each with the game's status icon (online, away, busy, offline), the name (a
     Battle.net friend with the character they play in brackets), where they are or what they play, and the
     icon of the game they are in. The head says how many are online. Click a friend to choose them, then
@@ -48,25 +57,31 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     (alone: their level and class icon), the activity and the comment, how many are in it. Choose one, then
     *Send Message* to its leader, or *Invite* a player who is alone. *List yourself* opens the game's own
     finder (its comment can only be typed there). Nothing is searched by itself: only a click of yours does.
-  - **Conversations** at the left: every whisper, and the chat of your party, your raid and your instance
-    group, each a conversation of its own, the last spoken in first. A row shows the class icon (a Battle.net
+  - **Conversations** at the left, all the room the right leaves: first the **chat** itself and the **second
+    chat**, then every whisper, and the chat of your party, your raid and your instance group, each a
+    conversation of its own, the newest message first. The one chosen stands beside the list: the chat with
+    its line to write in, as the window has it small; the second chat, the same bubbles but only the chats
+    ticked in its list (at first whispers, party, raid, instance, guild and officer), whatever the chat shows,
+    every message in it to read, over the chat's line; or a conversation. The chat's and the second chat's
+    name line has *Chats*, the list of the chats each shows (the chat's are the same ticks as in the list on
+    its line's name). A conversation's row shows the class icon (a Battle.net
     friend: the game's Battle.net portrait; a group: the game's conversation icon), the name (your alias for
     them), the last message, its time and how many messages wait to be read; the panel's title counts them
     all. Click one to read it: its messages in the chat's bubbles, a pill for each day, the name and your note
     about them above. Write in the line under them and press Enter: it goes to that conversation (a line
-    starting with `/` goes to the game's line, where Enter runs it). A right click on a whisper opens the
+    starting with `/` goes to the game's line, where Enter runs it). Enter while a conversation is chosen puts
+    the cursor into its line; a reply (or *Whisper* on a name) to somebody with a conversation chooses
+    theirs; anything else the game's line opens with (`/`, a whisper to somebody new) chooses the chat, whose
+    line it is. A right click on a whisper opens the
     game's menu of that player. *Whisper* opens the game's line with `/w` to name whom; your first message
     chooses the new conversation. *Remove* takes the one chosen away, with its messages, once confirmed. A
     group you are in is listed though nobody spoke yet. Each keeps its last messages (a setting), for each
     character, also over a logout.
-  - **Second chat** above the chat: the same bubbles, but only the chats ticked in its list (*Chats* on its
-    head; at first whispers, party, raid, instance, guild and officer), whatever the chat shows. Every
-    message in it stays to read; scrolled up, it stays where you are.
-  - The chat stands between the conversations and the friends list, under the second chat, with its line to
-    write in. A screen too narrow makes the conversations narrower, then leaves them out, then the friends
-    list; too low, the second chat. The search in the title bar finds in all of them: messages, friends
-    (name, where, note), groups (leader, activity, comment) and conversations (by name or by their messages).
-    Going back, the panels go at once and the chat has the whole window.
+  - With the conversations switched off, the chat stands in their place, with its line to write in. A screen
+    too narrow makes the guild window smaller, then leaves it out, then the friends list. The search in the
+    title bar finds in all of them: messages (in the chat and the second chat), friends (name, where, note),
+    groups (leader, activity, comment) and conversations (by name or by their messages). Going back, the
+    panels go at once, the guild window with them, and the chat has the whole window.
 - **Classic windows:** full, the dropdown *Classic windows* in the top right corner offers the game's own
   windows instead: *Chat* puts this window away (the switch *Chat window* goes off) and the game's chat is
   back; its button *Sane UI* (the game's square button with circling arrows, just above its chat menu
@@ -108,10 +123,10 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   - *General:* *Chat window*: *Chat window* (on: the window itself), *Show the game's chat too* (on), *Save chat history* (on) with *Messages kept* (slider
     0 to 500, at first 100). *Messages to show*: *System messages*, *Creature messages*, *Addon messages*
     (on), *Channel joins and leaves* (off: somebody joined or left a channel, also the hidden channels addons
-    use, such as FGLayer). The same four ticks are in the list on the chat's name. *Full screen*: *Friends
-    list*, under it *Group finder* (its tab), *Second chat* (all on) with *Height of the second chat* (20 to 70 % of the full
-    screen, at first 40 %), *Conversations* (on) with *Messages kept per conversation* (20 to 500, at first 100).
-    The second chat's ticks are kept with the settings too (`split`), no control.
+    use). The same four ticks are in the list on the chat's name. *Full screen* (all on):
+    *Conversations* with *Messages kept per conversation* (20 to 500, at first 100) and *Second chat*, *Guild
+    window*, *Friends list* with *Group finder* (its tab). The second chat's ticks are kept with the settings too
+    (`split`), no control.
   - *Appearance:* *Expand window* (Core's, the same for every window that can fill the screen):
 
     | Line | At first |
@@ -481,11 +496,43 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   chat lockdown (`InChatMessagingLockdown`) nothing is sent. Saved at `PLAYER_LOGOUT` in
   `chars[character].talks` (`talksVersion` 1): a Battle.net friend's messages without their name and link
   (`|K…|k` is this session's), links without line numbers; restored at the login, checked field by field.
-  The panel is a part of `Board.lua` (its new `Part.Size` tells it its width); `Layout.Board` gives it
-  `TALKS_WIDTH` (600), narrower down to `TALKS_MIN` (460) to keep `CHAT_MIN`. Its list is `Board.List`, its
+  The panel is a part of `Board.lua` (`Part.Size` tells it its width); `Layout.Board` gives it all the room
+  the right part leaves, `TALKS_MIN` (460) at least. First in its list stand two rows of its own, the chat and
+  the second chat (`pinned`: `"chat"`, `"feed"`; the second chat while `boardFeed`), their last message
+  from `Window.Last` and `Feed.Last` (redrawn a frame after a message, `Conversations.Said`). Chosen, one of
+  them stands where a conversation's messages and line do: `Layout.Board`'s `chat` is that part of the panel
+  (beside the list, under the line with the name, `TALK_HEAD`), and the window seats its frame for the chat
+  (`column`) there; `Window.Pick` says what that frame shows: the chat's own list and line, the second
+  chat's list (`Feed.Show`, made in the frame the first time, over the chat's line: `Feed.Room`), or nothing
+  (a conversation chosen: the frame is hidden, with the list, its scroll bar and the button on it). The name
+  line's dropdown (`WowStyle1FilterDropdownTemplate`) holds the ticks of the one chosen (`Channels.Shown`, as
+  the line's own list; `Feed.Menu`). The game's line opened while a conversation is chosen (`Window`'s
+  `Room`, then `Conversations.Chat`, a frame later): empty and not a whisper, it is closed
+  (`Input.Close`: its `ClearChat`, as Esc) and the conversation's line takes the cursor; a whisper whose
+  target has a conversation (`Talks.Whisper`, by `GetTellTarget`) chooses that one, the same; anything else
+  chooses the chat. A conversation chosen while the game's line is in use (`Window.Writing`) closes it; one
+  you began is chosen only once the line is out of use. Its list is `Board.List`, its
   messages a list like the second chat's (`Bubble.Init`, no fade, no slide), a pill per day (`CALENDAR_WEEKDAY_NAMES`,
   `FormatShortDate`). The search uses `Window.Found` for messages. Shown, it listens to group and Battle.net
   events; `Window.Repaint` and `Resize` redraw it (an alias, the bubbles' look, the text size).
+- **The guild window** (`Guild.lua`): not built anew but held. `Board.Show` asks `Guild.Size` for its own size
+  (in the full window's units: its width and height times its effective scale over ours) before
+  `Layout.Board`, which gives it a room at the top right as large (smaller where the conversations would lack
+  `TALKS_MIN` or the friends list under it `FRIENDS_LOW`, none below `GUILD_LEAST`), then `Guild.Hold` puts it
+  there. Which window: the one open after the guild key's work (`ToggleGuildFrame`, the game's way, out of a
+  fight once per full screen), found among the windows the game knows by name, those Esc closes
+  (`UISpecialFrames`) and its panels (`UIPanelWindows`): the largest that was not open before, `Guild.LOOK`
+  (0.2 s) later. So it is the game's `CommunitiesFrame`, or the window another addon shows when it answers
+  the key, with no name of it in our code; its name is kept (`store.guildWindow`) to know it when it is open
+  already. Held by `Core.Lend`: its scale (`SetScale`, when it is made smaller), layer (the full window's
+  strata, `GUILD_LEVEL` above what it holds) and points; its parent is never changed, and it is placed at the
+  screen's place of its room against `UIParent` (`BOTTOMLEFT`), not anchored to our window: a window with
+  protected buttons would otherwise tie ours to the fight's rules, and a drag still moves it as its own.
+  Hooks after its `SetPoint` (the game's panels place it anew), its `OnHide` (closed: given back, and not
+  opened again while the full screen stands; in a fight it comes back after it, `PLAYER_REGEN_ENABLED`) and
+  its `OnSizeChanged` (its room anew). `Guild.Leave` (the full screen gone) gives it back and closes one it
+  opened as Esc does (`HideUIPanel` for a panel of the game's, else its `Hide`). A step that fails gives it
+  back and holds it no more until a `/reload` (`Social: guild window` in the error log).
 - **Cost.** Per chat event: one table for the message, one measurement, one update of the list (and
   every 25 messages one more, for the oldest that go). A speaker is asked about once. No `OnUpdate` at
   rest: the fades' runs only while a message in view fades, Core's watch of the mouse only from its coming
@@ -504,14 +551,14 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   session: the edit boxes are given back first (each by itself, its anchors before its look), the
   module stops listening to them, the window goes and the game's chat is back. Each of those steps
   runs by itself; one that fails is noted (`Social: giving back`) and does not stop the next.
-- **Taint** (not yet checked in the game). Our code still changes the game's edit box in two ways:
+- **Taint.** Our code still changes the game's edit box in two ways:
   a choice in the list of chats calls its `SetChatType` / `SetStickyType` / `SetChannelTarget`
   (frame attributes, then written by addon code), and the window's button calls `ChatFrameUtil.OpenChat`
   and the edit box's `ClearChat`. The game reads the chat type when it sends (`SendText`, then
-  `C_ChatInfo.SendChatMessage`, which has restrictions). Whether a message sent, or a `/cast` typed,
-  after such a choice is blocked must be tried in the game with `/console taintLog 1` (`Logs/taint.log`;
-  switch it off afterwards). Enter, `/`, Esc and sending themselves stay the game's code.
-- **Tests:** `lua5.1 dev/tests/social.lua` (349 checks): what an event says, the layout arithmetic, sides and
+  `C_ChatInfo.SendChatMessage`, which has restrictions). The taint log shows whether a message sent, or a
+  `/cast` typed, after such a choice is blocked (`/console taintLog 1`, `Logs/taint.log`; switch it off
+  afterwards). Enter, `/`, Esc and sending themselves stay the game's code.
+- **Tests:** `lua5.1 dev/tests/social.lua` (500 checks): what an event says, the layout arithmetic, sides and
   bubbles, wrapping anew once a sizing is over, following the newest message, place and size, the game's
   chat out of sight and back (also a minimised window's button, a frame the game moved meanwhile, chat
   lockdown), printed lines, the line to write in and its button, the line at rest in both chat styles
@@ -539,106 +586,27 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Picker.lua` | The smiley beside the line and its list: raid marks to write, emotes to do |
 | `Art/smiley.blp` | The smiley (24 x 24). Original art of Sane UI (see the project's `LICENSE`), drawn by `dev/tools/smiley-art` into `assets/SaneSocial-Smiley.png`, made by `dev/tools/art`; the game has no smiley of its own |
 | `Join.lua` | The game's chat channels, the same on every character as wished. Knows no frames |
-| `Board.lua` | The full screen's panels around the chat: where each stands (`Layout.Board`), their plate and head, the search to all; the list, row and buttons the friends list's tabs share |
-| `Feed.lua` | The second chat above the chat: its own ticks (`split`), the same bubbles |
+| `Board.lua` | The full screen's parts: where each stands (`Layout.Board`), the panels' plate and head, the search to all; the list, row and buttons the friends list's tabs share |
+| `Guild.lua` | The guild window on the full screen: the one the guild key opens (the game's, or the one that answers the key instead), held at its top right |
+| `Feed.lua` | The second chat, a row of the conversations' list: its own ticks (`split`), the same bubbles, in the chat's place |
 | `Talks.lua` | The conversations: whispers, the party's, raid's and instance group's chat, each apart, kept per character. Knows no frames |
-| `Conversations.lua` | The conversations' panel at the full screen's left: their list, the one chosen, the line to write in it |
+| `Conversations.lua` | The conversations' panel at the full screen's left: the chat, the second chat and the conversations in a list, the one chosen beside it, a conversation's line to write in |
 | `Friends.lua` | The friends list, as the game's (`C_FriendList`, `C_BattleNet`); the game's own menu, whisper and invite |
 | `Contacts/Finder.lua` | The group finder, the friends list's last tab, as the game's browse view (`C_LFGList`); searches only on a click |
 | `Window.lua` | The window: moved, sized, scrolled, kept |
 | `Bindings.xml` | Its key in the game's key bindings (section *Sane UI*, Core's): the chat window shown or hidden |
 
-## To check in the game
-- The smiley stands right of the line while you write and goes with it. Its list: a click on a mark puts
-  `{rt1}` ... into the line, the cursor stays there, and the sent message shows the icon (say, guild,
-  party, a whisper); in Trade the list offers no marks. A click on an emote does it (also during a fight;
-  in an instance while chat is locked down). The menu row of marks is as wide as the list, each with its
-  name as tooltip. In a channel of your own (not the game's) the marks are offered: check that they show
-  there too (only the game's *Zone* channels are taken to hide them).
-- With the mouse over the window, a unit of the world behind it still shows its tooltip and highlight, and
-  a click goes through (the window takes only the mouse's motion, for `Core.Hover`); the chat button comes
-  as the mouse does and goes a moment after it has left.
-- At the first login the window stands docked in the lower left corner, over the game's chat there.
-- Filling the screen and going back, the bubbles stay in sight and at the bottom all the way, and are
-  wrapped for the new width once the window stands.
-- Joins and leaves of channels (FGLayer) stay hidden with *Channel joins and leaves* off, also those
-  restored from the saved history after `/reload`.
-- With our window put away (*Chat* in *Classic windows*, its close button, or the switch off before a
-  login), the game's chat has the button *Sane UI* just above its chat menu button, fading with the
-  game's buttons there; a click brings our window back and the button goes. Not there while ours is.
-- The small window's bar has no title *Social* any more.
-- The window appears at the left edge, moves by its bar, sizes by its grip, and is back in place after `/reload`.
-- Bubbles wrap anew once the window has been sized narrower or wider (not during the drag); no text leaves its bubble; nothing overlaps.
-- A very narrow window (180 wide) is still readable; the line above a bubble is cut with an ellipsis.
-- Sizing with a full log (200 messages) does not stutter.
-- The class icons show (`classicon-...` exists in this client), and the tooltip border looks right as a bubble.
-- The scroll bar ends above the grip; the window follows new messages only when it is at the newest one.
-- A click on a bubble is a click into the world (target, turn the camera); the links and names in it still show their tooltip and answer a click with the window taking no mouse.
-- The mouse wheel over the list scrolls it; the scroll bar shows only while scrolled up.
-- A click on a name opens a whisper to them in the line; a right click their menu.
-- A very long word without spaces (a link) wraps inside its bubble.
-- Enter and `/` open the line at the bottom of the window; the messages move up and the newest stays in view.
-- The game's edit box art fits the window's bottom and ends before the grip.
-- `/cast`, `/target` and a macro's slash commands typed there are not blocked ("action blocked by an addon").
-- A click on *Say:* opens the list and the line keeps the cursor; the choice is still there after sending.
-- Nothing of the game's chat is left on screen (tabs, the buttons beside it, an undocked window, the
-  combat log), also after a loading screen and after Edit Mode; `/sane social` brings all of it back in place.
-- In both chat styles (Options > Social > Chat style) the line is gone when you are not writing, and
-  shows the chat's name whenever it is there. In IM style: Enter, `/`, a click on the window's button
-  and a click on a chat tab bring it back; a click where the invisible line is does nothing; after
-  `/sane social` the game's faded line is back at its place, clickable.
-- `/console taintLog 1`, then write in the window, choose a chat in the list, send, type `/cast ...`, fight:
-  no "action blocked", and nothing of Sane UI Social in `Logs/taint.log`.
-- In a fight or a dungeon with *Show the game's chat too* off: the game's own chat comes back while chat is
-  locked down, and goes again afterwards.
-- A minimised undocked chat window's button is out of sight with *Show the game's chat too* off, and back after.
-- Community channels show the community's name, not `Community:…`; party and raid rings show.
-- The bubbles' corners are round and clean (no seam or darker line between the pieces, also half
-  see-through) at every size; the text reads well over a bright and a dark world at 50 %.
-- The ring around an icon is thin and even.
-- **The line to write in, set to several lines** (the riskiest part, untried): Enter still sends and
-  adds no line break; the chat's name and the first line of text stand level; a long text wraps and
-  the line grows; arrow keys, the history (Alt + up), name completion and `/cast` work as before;
-  after `/sane social` the game's own edit box is as it was.
-- The mouse over an item, spell or quest link in a bubble shows its tooltip; a click opens it as in the
-  game's chat; Shift+click puts it into the line; clicks elsewhere in the window still reach the world.
-- The short names read well; the list is not too long with many channels; a tick keeps the list
-  open and changes the window at once.
-- The button opens the line and the list of chats together; the list does not take the cursor away.
-- The button in the lower left corner appears with the mouse over the window, opens and closes the
-  line, and sits well beside it.
-- The window is drawn over the action bars, and so is the line to write in (not over open windows).
-- Without a background: the messages read well over the world; the handles appear on mouse-over of
-  the list too, not only of the top strip; a drag by the bar or the grip is not lost outside the window.
-- The top message is hidden while the edge cuts it, also right after scrolling stops.
-- The class icons are round, the rings even and in the right colours; the name is as large as the text.
-- The text size slider changes messages and names at once, and nothing overlaps at 10 and at 24.
-- One message alone stands at the bottom of the window, also while the line is open.
-- A message fades after its seconds; the mouse over the window leaves them faded, the mouse wheel
-  brings all back, and they fade again when the mouse leaves. The slider and the switch count at once.
-- A new message fades in and the others slide up smoothly, without a flicker in the first frame; many
-  messages at once (a busy trade channel) do not stutter. The wheel scrolls smoothly.
-- `/sane` and an error line are readable as notes, in a bubble in the middle.
-- A guild member's achievement and the guild's message of the day at login come in, once each (not again from the game's own chat).
-- The list on the chat's name ends with *On every character* and the game's channels; *Never in it* leaves
-  at once, *Always in it* joins where the game offers it (a city's channels only in a city: check that
-  `EnumerateServerChannels` leaves them out elsewhere), also after a zone change, and the channel numbers
-  stay the game's at login.
-
-- Full screen panels: the friends list fills at once and follows a friend coming online; *Send Message*,
-  *Invite* (a Battle.net friend in this game: invite or request to join), the right click menu, *Add
-  Friend*. The friends list at the full screen's right. The group finder, its tab *Group Finder*: a category chosen searches (`C_LFGList.Search` is restricted: from our click it
-  should be allowed, check for *Interface action failed*), the refresh button, results of the game's own
-  finder shown when the tab opens, *Invite* a player alone, *List yourself*; the switch *Group finder* off
-  takes the tab away. The second chat's ticks, its
-  scrolling, its width the chat's. The panels' look next to the full screen's background, at 1920 × 1080
-  and on a smaller screen (panels left out).
-
 ## Not there yet
-Tabs of chat views in the small window (`Doc/ideas/Social.md`), the guild in the full screen, messages of one speaker in a row drawn as
+Tabs of chat views in the small window (`Doc/ideas/Social.md`), messages of one speaker in a row drawn as
 a group, a close button, a sign besides colour for what a speaker is to you.
 
 ## History
+- 2026-10-20 — The full screen anew (Saneroki): the guild window at its top right (`Guild.lua`: the one the
+  guild key opens, held there as large as it is; setting `boardGuild`), the friends list under it and as wide
+  (`Friends.Size`); the conversations take the rest, and the chat and the second chat are two rows of their
+  list, standing beside it when chosen (`Window.Pick`; the second chat in the chat's frame, `Feed.Show`), not
+  apart in the middle any more. The game's line opened while a conversation is chosen goes to that
+  conversation's line, or chooses the chat. `feedShare` is gone; `Layout.Board` takes no share.
 - 2026-10-18 — Conversations at the full screen's left (`Talks.lua`, `Conversations.lua`): every whisper (a
   Battle.net friend by BattleTag), the party's, raid's and instance group's chat, each apart, with its own line
   to write in; kept per character. Settings `boardTalks`, `talkSize`; `Log.KEPT`, a whisper's `with` and
@@ -666,28 +634,27 @@ a group, a close button, a sign besides colour for what a speaker is to you.
 - 2026-10-16 — The button *Sane UI* on the game's chat (Core's `Attach`, placed by `ns.NATIVE.anchor` above
   `ChatFrameMenuButton` in `ChatFrame1ButtonFrame`), there only while our window is away (`Back` in
   `Window.lua`); off at login, the window is made out of sight for it (`Window.Away`). The small window's bar
-  lost its title *Social* (Saneroki). Not yet tried in the game.
+  lost its title *Social* (Saneroki).
 - 2026-10-16 — No title bar while small (Core's buttons left the small window); filling the screen, Core's
-  title bar at its top with the search over the messages (fuzzy), the dropdown and the buttons. Not yet
-  tried in the game.
+  title bar at its top with the search over the messages (fuzzy), the dropdown and the buttons.
 - 2026-10-16 — Free or docked in the screen's middle, Core's three buttons in the top right corner (with the
   bar): the game's chat (`ns.NATIVE`), full screen, close (`ns.Close`: both put our window away); the list
-  starts under them then (`Top`). Not yet tried in the game.
+  starts under them then (`Top`).
 - 2026-10-16 — Moved and sized only in Blizzard's Edit Mode (Core's box and grip); outside it no grip on the
-  mouse's coming, and the bar is only the title, taking no click. Not yet tried in the game.
+  mouse's coming, and the bar is only the title, taking no click.
 - 2026-10-16 — Fixed: the messages went out of sight and came in again whenever the window filled the screen
   or went back. They stay in sight and at the bottom all the way now, and are wrapped for the new width once
   it stands.
 - 2026-10-16 — A smiley right of the line to write in: its list puts the game's raid marks (`{rt1}` to
   `{rt8}`) into the line, except in the game's public channels, which show none, and does emotes played
-  most (`/hello`, `/cheer`, `/thank`, ...). Not yet tried in the game.
+  most (`/hello`, `/cheer`, `/thank`, ...).
 - 2026-10-16 — Full, the dropdown *Classic windows* (Core's): *Chat* puts our window away and the game's chat
   is back, *Friends list* opens the game's friends list; the list starts under the dropdown. The full screen
-  background is always square. Not yet tried in the game.
+  background is always square.
 - 2026-10-16 — The section *Expand window* is first in the tab *Appearance* again (it had come after
   *Animations*), with *Corner radius* (10 %) and *Don't round corners on screen edges* (on): the full screen
   background has round corners and a bronze trim on its way, square where it meets the screen's edge.
-  Not yet tried in the game.
+ 
 - 2026-10-16 — Renamed from Chat to Social (`src/Social`, `SaneUI_Social`, page and title *Social*), the
   module that is to hold everything social (`Doc/ideas/Social.md`). Core moves the saved settings from
   `modules.Chat` to `modules.Social` once; `/sane chat` still works next to `/sane social`. The banner
@@ -704,14 +671,14 @@ a group, a close button, a sign besides colour for what a speaker is to you.
 - 2026-10-15 — Fixed: a history saved before lines went by their event had loot, skill ups, joins and leaves among the addons' messages, so their ticks left them in the window; such a history is sorted anew when it is loaded (`Log.HISTORY`, `Guess`). A line with a channel's link that the game told nothing of is a channel's notice.
 - 2026-10-15 — Fixed (seen in the game, in the saved history): loot, skill ups and channel joins went with the addons' messages, because this client's chat writes them without the number of their kind; now their event, told by the game's chat filters, says where they belong. The guild's message of the day is there once. The game's time in front of a line is taken off.
 - 2026-10-15 — Fixed: a channel's message the game's chat writes with an event we do not read (a community's channel) goes with its channel, so its tick hides it; it went with the channels' joins and leaves. Every tick of the list is tested to hide its messages and only those.
-- 2026-10-15 — *Save chat history* (the last 100 at first, up to 500); *Messages to show*: the system's, creatures', addons' messages and the channels' joins and leaves as switches (joins and leaves hidden at first); less room between the bubbles (3, was 8). Not yet tried in the game.
-- 2026-10-15 — All bubbles alike, yours too: *Bubble background* (a solid color, or Marble, Rock, Slate, Iron, Night from the game's art) and *Bubble color* (the game's color picker) in the tab *Appearance*. Not yet tried in the game.
-- 2026-10-15 — Every line the game's chat shows is in the window: the system's (also those without an event), pings, loot, money, experience, battlegrounds, channel notices, friends online, ... (`Log.Line`, a hook on every chat window); new kinds to show or hide. The line to write in is grey, as the bubbles. Not yet tried in the game.
-- 2026-10-15 — Full screen: docked in a corner, only that very corner sets it off; nothing behind the window takes the mouse; the section *Expand window* at the top of the tab *Appearance*: *Can expand to fullscreen*, *Animation type* (moved here), *Background opacity* (half at first, was solid), *Background texture*. Not yet tried in the game.
-- 2026-10-15 — Full screen: docked, the window fills the screen when the mouse is pushed against that screen edge, and goes back when pushed there again (Core's `Edge.lua`); *Animation type* in the tab *Appearance*. Not yet tried in the game.
+- 2026-10-15 — *Save chat history* (the last 100 at first, up to 500); *Messages to show*: the system's, creatures', addons' messages and the channels' joins and leaves as switches (joins and leaves hidden at first); less room between the bubbles (3, was 8).
+- 2026-10-15 — All bubbles alike, yours too: *Bubble background* (a solid color, or Marble, Rock, Slate, Iron, Night from the game's art) and *Bubble color* (the game's color picker) in the tab *Appearance*.
+- 2026-10-15 — Every line the game's chat shows is in the window: the system's (also those without an event), pings, loot, money, experience, battlegrounds, channel notices, friends online, ... (`Log.Line`, a hook on every chat window); new kinds to show or hide. The line to write in is grey, as the bubbles.
+- 2026-10-15 — Full screen: docked in a corner, only that very corner sets it off; nothing behind the window takes the mouse; the section *Expand window* at the top of the tab *Appearance*: *Can expand to fullscreen*, *Animation type* (moved here), *Background opacity* (half at first, was solid), *Background texture*.
+- 2026-10-15 — Full screen: docked, the window fills the screen when the mouse is pushed against that screen edge, and goes back when pushed there again (Core's `Edge.lua`); *Animation type* in the tab *Appearance*.
 - 2026-10-14 — The game's chat channels (As the game does, Always join, Always leave) are here now, on the page *Chat*; they were on the page *Profiles* (Sync module).
 - 2026-10-14 — After a review: party and raid rings show again (`C_PartyInfo`); community channels by their names; the game's chat comes back during chat lockdown and stays complete (a minimised window's button; frames the game moved); the line at rest is made invisible instead of hidden by our code and given back as it was; one unreadable message no longer closes the window; failing safer (`Guarded`, `GiveBack`); cheaper: the oldest messages go in batches, a speaker is asked about once, the window rewraps once a sizing is over; the list of chats in `Menu.lua`.
-- 2026-10-14 — Moved, sized and kept by Core's window code; docks to the screen's edges. Docking is not yet tried in the game.
+- 2026-10-14 — Moved, sized and kept by Core's window code; docks to the screen's edges.
 - 2026-10-14 — Links in messages show their tooltip on the mouse and answer a click as in the game's chat.
 - 2026-10-14 — Fixed: the bubbles' corners (seen in the game); a channel's tick in the list now counts by the channel's number. New setting *Show native chat*, on.
 - 2026-10-14 — Chat names in short (a setting); ticks in the list for what the window shows.

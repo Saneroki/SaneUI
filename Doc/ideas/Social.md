@@ -19,8 +19,11 @@ by default and fills the screen from there (`Doc/ideas/Windows.md`).
   alone or sit as tabs in the general chat, each with its own choice of chats and channels.
 - **Dialogue** (Saneroki, 2026-10-16): talking to an NPC, and reading a book or a letter, as a scene in
   the middle of the screen instead of the game's gossip, quest and book windows (`Doc/ideas/Dialogue.md`).
-- **Guild:** the guild (Blizzard: Communities and guild, `Blizzard_Communities`). Its names show the aliases
-  the player gave (Core's `Core.People.Shown`), as the chat and the friends list do.
+- **Guild:** the guild (Blizzard: Communities and guild, `Blizzard_Communities`). *Held 2026-10-20*
+  (Saneroki) at the full screen's top right (`Guild.lua`): the very window the guild key opens, the game's or
+  the one that answers the key instead, as large as it is, the friends list under it. A guild view of our own,
+  whose names show the aliases the player gave (Core's `Core.People.Shown`) as the chat and the friends list
+  do, is still to come.
 - **Group finder** (Blizzard: `Blizzard_GroupFinder_VanillaStyle` in this client). *Built 2026-10-17* as a
   panel of the full screen (`Finder.lua`): browse and whisper/invite; listing yourself stays the game's.
 - **Friends list** (Blizzard: `Blizzard_FriendsFrame`). *Built 2026-10-17* as a panel of the full screen
@@ -28,9 +31,12 @@ by default and fills the screen from there (`Doc/ideas/Windows.md`).
 - **Conversations** (Saneroki, 2026-10-18) *built 2026-10-18* as a panel at the full screen's left
   (`Conversations.lua`, `Talks.lua`): every whisper and the party's, raid's and instance group's chat, each a
   conversation of its own, listed by the last message; the one chosen in the chat's bubbles with a line to
-  write in it; kept per character.
-- **A second chat with its own filter** *built 2026-10-17* on the full screen, above the chat (`Feed.lua`).
-  The small window's tabs of chat views are still to come.
+  write in it; kept per character. Since 2026-10-20 (Saneroki) the chat and the second chat are the first
+  two rows of its list and stand beside it when chosen; the panel takes all the room left of the guild
+  window and the friends list.
+- **A second chat with its own filter** *built 2026-10-17* on the full screen (`Feed.lua`), above the chat
+  until 2026-10-20, a row of the conversations' list since. The small window's tabs of chat views are still
+  to come.
 - **Classic windows** (Saneroki, 2026-10-16, done): full screen, Core's dropdown *Classic windows* lists the
   game's own windows Social stands for. *Chat* puts our chat window away (the switch *Chat window* off)
   and shows the game's chat; *Friends list* brings our window back to its zone and opens the game's

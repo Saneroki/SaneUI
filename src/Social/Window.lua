@@ -60,10 +60,16 @@ local _, ns = ...
 --
 --  The chat stands in a frame of its own (column): all of what the window
 --  holds, but once the window stands full with panels around it (Board.lua: the
---  friends list with the group finder as a tab, the conversations, a second chat above), its part
---  of the full screen. The list, the button for the line to write in, the line and its
---  smiley hang on that frame; what is measured for them is its size (Area).
---  The panels go when the window starts back, and the chat has the whole window.
+--  guild window with the friends list under it, the conversations), its part
+--  of the full screen: beside the conversations' list, while the chat is the
+--  one chosen there. The second chat chosen there stands in the same frame,
+--  in the chat's place (Feed.lua); a conversation of theirs chosen, the frame
+--  is out of sight, and the conversation's own line is the one to write in.
+--  The game's line opened then (Enter, /, a reply) belongs to the chat: the
+--  chat is chosen (Room). The list, the button for the line to write in, the
+--  line and its smiley hang on that frame; what is measured for them is its
+--  size (Area). The panels go when the window starts back, and the chat has
+--  the whole window.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Layout, Bubble, Fade = ns.Layout, ns.Bubble, ns.Fade
@@ -74,6 +80,7 @@ local frame, box, view, provider
 local handle         -- Core's part of the window: moves, sizes and docks it, keeps its place
 local column         -- where the chat stands: all of what the window holds, or its part of the full screen
 local board          -- the full screen's parts as they stand (Layout.Board); nil: the chat has the whole window
+local picked = "chat" -- chosen in the full screen's conversations: "chat", "feed" (the second chat), nil (one of theirs)
 local rowWidth       -- of the list, from the window's width
 local writing        -- the height of the line to write in while it is shown
 local awake, hover   -- the mouse is over the window; what sees it come and leave (Core.Hover)
@@ -89,7 +96,7 @@ local follow = true
 
 -- The scroll bar, while the list is scrolled up: at the newest message it is of no use.
 local function Bar()
-    scroll:SetShown(not follow)
+    scroll:SetShown(not follow and box:IsShown())
 end
 
 local function ToEnd()
@@ -159,7 +166,14 @@ local function Area()
     return frame:GetWidth(), frame:GetHeight() - (handle.top or 0)
 end
 
--- The chat's frame where Area says.
+-- What the chat's frame shows: the chat, or with the full screen's conversations the one chosen there: the chat,
+-- the second chat ("feed"), or one of theirs (nil: the frame is out of sight).
+local function Shows()
+    if not (board and board.talks) then return "chat" end
+    return picked
+end
+
+-- The chat's frame where Area says, with what it shows.
 local function Seat()
     local chat = board and board.chat
     column:ClearAllPoints()
@@ -170,6 +184,12 @@ local function Seat()
         column:SetPoint("TOPLEFT", handle.inside, "TOPLEFT")
         column:SetPoint("BOTTOMRIGHT", handle.inside, "BOTTOMRIGHT")
     end
+    if not box then return end
+    local shows = Shows()
+    column:SetShown(shows ~= nil)
+    box:SetShown(shows == "chat")
+    Bar()
+    ns.Feed.Show(shows == "feed", column)
 end
 
 -- The room above the messages that puts them at the list's bottom; none once they fill it.
@@ -216,6 +236,7 @@ local function Fill()
     provider:InsertTable(list)
     ToEnd()
     Window.Refade() -- a message the list did not have before is as it is now, at once
+    ns.Conversations.Said() -- the chat's row in the full screen's conversations shows the last anew
 end
 
 -- After how many seconds a message fades right now; nil: it does not (fading out is off, or every
@@ -401,14 +422,35 @@ local function Bottom(input)
     box:SetPoint("BOTTOMRIGHT", column, "BOTTOMRIGHT", -Layout.EDGE - Layout.SCROLL, Layout.EDGE + (input and Layout.Input(input) or 0))
 end
 
--- input: the height of the line to write in; false: it is gone. It grows with its text.
+-- input: the height of the line to write in; false: it is gone. It grows with its text. The second chat ends
+-- above it too. Opened while a conversation is chosen on the full screen, the line is the chat's: the chat is chosen.
 local function Room(input)
     local was, stick = writing, follow
     writing = input
     Bottom(input)
+    ns.Feed.Room(input)
     Resettle()
     if stick then Slide((input and Layout.Input(input) or 0) - (was and Layout.Input(was) or 0)) end
     if not was ~= not input then Window.Refade() end
+    if input and not Shows() then ns.Safe("conversations", ns.Conversations.Chat) end
+end
+
+-- The game's line is in use in the window now (not closed, not at rest).
+function Window.Writing()
+    return writing and true or false
+end
+
+-- The last message on show: for the chat's row in the conversations' list.
+function Window.Last()
+    return list[#list]
+end
+
+-- Chosen in the full screen's conversations: the chat ("chat"), the second chat ("feed") or one of theirs (nil).
+function Window.Pick(what)
+    picked = what
+    if not frame then return end
+    Seat()
+    if what == "chat" then Resettle() end
 end
 
 -- The chat is that wide now; the second chat above it is as wide (Board.lua), and its messages wrap the same.
@@ -474,6 +516,7 @@ end
 function Window.Search(text)
     query = Core.Fuzzy.Query(text)
     Window.Refill()
+    ns.Feed.Refill()
     ns.Board.Search(text)
 end
 
@@ -513,8 +556,8 @@ local function Build()
     Seat()
 
     -- Opens and closes the line to write in, in the corner where that line starts and as high as it.
-    -- The art is the game's own chat button's.
-    write = CreateFrame("Button", nil, frame)
+    -- The art is the game's own chat button's. It and the list are the chat frame's: out of sight with it.
+    write = CreateFrame("Button", nil, column)
     write:SetSize(Layout.INPUT_HEIGHT, Layout.INPUT_HEIGHT)
     write:SetPoint("BOTTOMLEFT", column, "BOTTOMLEFT", 0, Layout.INPUT_BOTTOM)
     write:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-Chat-Up")
@@ -522,10 +565,10 @@ local function Build()
     write:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
     write:SetScript("OnClick", function(self) ns.Guarded(ns.Input.Toggle, self) end)
 
-    box = CreateFrame("Frame", nil, frame, "WowScrollBoxList")
+    box = CreateFrame("Frame", nil, column, "WowScrollBoxList")
     box:SetPoint("TOPLEFT", column, "TOPLEFT", Layout.EDGE, -Layout.EDGE)
     Bottom(false)
-    scroll = CreateFrame("EventFrame", nil, frame, "MinimalScrollBar")
+    scroll = CreateFrame("EventFrame", nil, column, "MinimalScrollBar")
     scroll:SetPoint("TOPLEFT", box, "TOPRIGHT", 4, -2)
     scroll:SetPoint("BOTTOMLEFT", box, "BOTTOMRIGHT", 4, 14) -- ends above the grip
 
@@ -621,9 +664,11 @@ function Window.Follow()
 end
 
 -- A new message. The log lets its oldest go a batch at a time (Log.Add): those leave the list
--- together, in one update of it. The second chat of the full screen hears of it first (Feed.lua).
+-- together, in one update of it. The second chat of the full screen hears of it first (Feed.lua), and the
+-- conversations' list, whose rows of the chat and the second chat show the last message.
 ns.Log.added = function(entry)
     ns.Feed.Added(entry)
+    ns.Conversations.Said()
     if not frame or not frame:IsShown() then
         stale = true
         return

@@ -36,7 +36,7 @@ local _, ns = ...
 --  Personal data (Doc/guides/data.md): never shared.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-local Talks = { list = {}, by = {} } -- the conversations, the last spoken in first; [key] = the conversation
+local Talks = { list = {}, by = {} } -- the conversations, the newest message first; [key] = the conversation
 ns.Talks = Talks
 
 -- Talks.added(talk, message, new): set by the panel that shows them, told of every message (new: the
@@ -89,6 +89,12 @@ local function Whose(entry)
     return "W:" .. (Core.PlayerKeyOf(with) or with), "WHISPER", with
 end
 
+-- The conversation with a character, by the name the game gives (a whisper's target); nil: none yet.
+function Talks.Whisper(name)
+    if type(name) ~= "string" or name == "" then return nil end
+    return Talks.by["W:" .. (Core.PlayerKeyOf(name) or name)]
+end
+
 local function Make(key, kind, with, last)
     local talk = { key = key, kind = kind, with = with, messages = {}, unread = 0, last = 0 }
     Talks.by[key] = talk
@@ -100,7 +106,7 @@ local function Make(key, kind, with, last)
     return talk
 end
 
--- The conversation spoken in last stands first.
+-- The conversation with the newest message stands first.
 local function Front(talk)
     local list = Talks.list
     if list[1] == talk then return end
@@ -322,7 +328,7 @@ local function Taken(kept, last)
     return message
 end
 
--- The conversations saved before, back at the login, the last spoken in first.
+-- The conversations saved before, back at the login, the newest message first.
 function Talks.Restore(saved)
     if type(saved) ~= "table" then return end
     for _, kept in ipairs(saved) do

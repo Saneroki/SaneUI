@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Social: the full screen holds your guild window at the top right,
+  as large as it is (the game's own, or the one your guild key opens
+  instead), with the friends list under it. The chat and the second
+  chat are now the first two rows of the conversations at the left:
+  choose one and it stands beside the list, as a whisper does. Press
+  Enter while a conversation is chosen and you write to it.
 - Inventory, a new module: push the mouse into the bottom right corner
   of the screen and your bags open; push it there again and they close.
   In a fight too.

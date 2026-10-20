@@ -3,11 +3,16 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Social - Conversations
 --  The conversations' panel of the full screen (Board.lua), at its left: the
---  list of conversations (Talks.lua), the last spoken in first, and beside it
+--  list of conversations (Talks.lua), the newest message first, and beside it
 --  the one chosen, its messages in the chat's bubbles (Bubble.lua) and a line
---  to write in it under them.
+--  to write in it under them. First in the list stand the chat and the second
+--  chat (Feed.lua; while its switch is on): chosen, they stand beside the list
+--  where a conversation's messages do, in the window's frame for the chat
+--  (Window.Pick), over the chat's own line to write in, the game's.
 --
---      list      a row for each: the class icon of the one whispered with (the
+--      list      the chat and the second chat, each with the game's chat icon,
+--                its name, its last message and that one's time; then a row for
+--                each conversation: the class icon of the one whispered with (the
 --                game's Battle.net portrait for a Battle.net friend, the game's
 --                conversation icon for a group), the name (the alias the player
 --                gave, Core.People), the last message, its time, and how many
@@ -16,7 +21,10 @@ local _, ns = ...
 --                name completion helps) and Remove (the conversation chosen,
 --                with all its messages, once confirmed)
 --      the one chosen: its name and the note about them on a line of their
---                own, its messages with a pill for each day, the line to write in
+--                own, its messages with a pill for each day, the line to write in;
+--                the chat's and the second chat's line has the list of the chats
+--                each shows, with their ticks (the chat's are those of the list
+--                on its line's name too)
 --
 --  A click chooses a conversation: its messages are read. A right click on a
 --  whisper opens the game's own menu of that player, as the friends list's does
@@ -31,6 +39,11 @@ local _, ns = ...
 --  that starts with / is a command: it goes to the game's line, where Enter
 --  runs it as the game runs commands. While chat is locked down (a fight, a
 --  dungeon) only the game's own line sends: the words stay, and that is said.
+--  The game's line opened while a conversation is chosen (Opened): by Enter
+--  alone, the conversation's line takes the cursor instead; a reply or a
+--  whisper to somebody with a conversation chooses theirs, the same; anything
+--  else (a command, a whisper to somebody new) chooses the chat, whose line
+--  it is. A conversation chosen while the game's line is in use closes that.
 --
 --  Every message is there to read: none fades, none slides; at the newest the
 --  list follows new ones, scrolled up it stays, as the second chat (Feed.lua).
@@ -45,12 +58,17 @@ local Conversations = {}
 ns.Conversations = Conversations
 
 local GROUP = "Interface\\ChatFrame\\UI-ChatConversationIcon" -- the game's icon of a conversation
-local BNET = "Interface\\FriendsFrame\\Battlenet-Portrait"    -- the game's portrait of Battle.net
-local UNKNOWN = "Interface\\Icons\\INV_Misc_QuestionMark"     -- a character whose class is not known yet
 local DAY = 86400
 
+-- The chat and the second chat in the list: chosen, they stand in the window's frame for the chat (Window.Pick).
+local CHAT = { pinned = "chat", icon = "Interface\\ChatFrame\\UI-ChatIcon-Chat-Up" }
+local FEED = { pinned = "feed", icon = "Interface\\ChatFrame\\UI-ChatWhisperIcon" }
+local BNET = "Interface\\FriendsFrame\\Battlenet-Portrait"    -- the game's portrait of Battle.net
+local UNKNOWN = "Interface\\Icons\\INV_Misc_QuestionMark"     -- a character whose class is not known yet
+
 local panel, side, box, remove     -- the panel; the list's part ({ body, label }), its list, the button Remove
-local page, heading                 -- the part of the one chosen, and the line with its name over its messages
+local page, heading, filter         -- the part of the one chosen, the line with its name, the chats the chat shows
+local mine                          -- what of that part is a conversation's own: its messages and its line
 local chat, scroll, view, provider, empty -- its messages, and what is said where there are none
 local edit, hint, fill              -- the line to write in, what it says while empty, its plate (Core's Shape)
 local rowWidth                      -- of its messages
@@ -106,6 +124,7 @@ end
 -- The colour of a conversation's name: a character's class (the game's friends list's yellow while not
 -- known), a Battle.net friend's blue, a group's chat colour.
 local function Colour(talk)
+    if talk.pinned then return { NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b } end
     if talk.kind == "WHISPER" then
         local class = talk.class and RAID_CLASS_COLORS[talk.class]
         if class then return { class.r, class.g, class.b } end
@@ -118,6 +137,7 @@ local function Colour(talk)
 end
 
 local function Icon(texture, talk)
+    if talk.pinned then return texture:SetTexture(talk.icon) end
     if talk.kind == "BN_WHISPER" then return texture:SetTexture(BNET) end
     if talk.kind ~= "WHISPER" then return texture:SetTexture(GROUP) end
     if talk.class and GetClassAtlas then
@@ -133,16 +153,37 @@ local function Note(talk)
     return Core.People.Note(Core.People.Key(talk.with))
 end
 
--- A conversation's last message, in short, under its name: whose (yours, or a speaker's in a group) and its words.
+-- The name in the list and over the messages: the chat's, the second chat's, a conversation's.
+local function Name(talk)
+    if talk == CHAT then return Core.Word("CHAT", "Chat") end
+    if talk == FEED then return ns.TEXT.feed end
+    return Talks.Name(talk)
+end
+
+-- Its last message: the chat's last on show (Window.lua), the second chat's (Feed.lua), a conversation's.
+local function Last(talk)
+    if talk == CHAT then return ns.Window.Last() end
+    if talk == FEED then return ns.Feed.Last() end
+    return talk.messages[#talk.messages]
+end
+
+-- The last message, in short, under its name: whose (yours, or a speaker's where many speak) and its words.
 local function Preview(talk)
-    local last = talk.messages[#talk.messages]
+    local last = Last(talk)
     if not last then return "" end
     local text = Core.Fuzzy.Plain(last.text or "")
     if last.side == "right" then return ns.TEXT.you .. ": " .. text end
-    if Talks.GROUPS[talk.kind] and last.name then
+    if (talk.pinned or Talks.GROUPS[talk.kind]) and last.name then
         return (Core.People and Core.People.Shown(last.name) or last.name) .. ": " .. text
     end
     return text
+end
+
+-- When its last message came, at its row: the chat's by the time the chat gives it.
+local function Time(talk)
+    if not talk.pinned then return When(talk.last) end
+    local last = Last(talk)
+    return last and last.time or ""
 end
 
 -------------------------------------------------------------------------------
@@ -172,18 +213,18 @@ local function Draw(row, talk)
     row.top:SetPoint("TOPLEFT", left, -4)
     row.top:SetPoint("TOPRIGHT", -44, -4)
     local colour = Colour(talk)
-    row.top:SetText(Talks.Name(talk))
+    row.top:SetText(Name(talk))
     row.top:SetTextColor(colour[1], colour[2], colour[3])
     row.bottom:ClearAllPoints()
     row.bottom:SetPoint("TOPLEFT", row.top, "BOTTOMLEFT", 0, -3)
     row.bottom:SetPoint("TOPRIGHT", row.top, "BOTTOMRIGHT", 0, -3)
     row.bottom:SetText(Preview(talk))
-    local unread = talk.unread > 0
+    local unread = (talk.unread or 0) > 0
     local words = unread and HIGHLIGHT_FONT_COLOR or GRAY_FONT_COLOR
     row.bottom:SetTextColor(words.r, words.g, words.b)
     row.right:ClearAllPoints()
     row.right:SetPoint("TOPRIGHT", -6, -5)
-    row.right:SetText(When(talk.last))
+    row.right:SetText(Time(talk))
     row.right:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
     row.count:SetText(unread and tostring(talk.unread) or "")
     if talk == open then row:LockHighlight() else row:UnlockHighlight() end
@@ -193,7 +234,7 @@ end
 -- under it, the note about them.
 local function Tip(row)
     local talk = row.talk
-    if not talk or Talks.GROUPS[talk.kind] then return end
+    if not talk or talk.pinned or Talks.GROUPS[talk.kind] then return end
     local tip, shown = GameTooltip, Talks.Name(talk)
     tip:SetOwner(row, "ANCHOR_RIGHT", 4, 0)
     local colour = Colour(talk)
@@ -248,7 +289,7 @@ end
 
 -- The search found the one chosen by its name: all its messages are on show.
 local function Named(talk)
-    return not query or Core.Fuzzy.Match(query, Talks.Name(talk), talk.with) ~= nil
+    return not query or Core.Fuzzy.Match(query, Name(talk), talk.with) ~= nil
 end
 
 -- A message of the one chosen is on show: no search, its name found, or the message (Window.Found, as the chat).
@@ -256,9 +297,10 @@ local function Visible(talk, message)
     return Named(talk) or ns.Window.Found(message)
 end
 
--- A conversation is in the list: no search, or its name or one of its messages found.
+-- A conversation is in the list: no search, or its name or one of its messages found. The chat and the second
+-- chat always are: they find their messages themselves (Window.Found).
 local function Listed(talk)
-    if Named(talk) then return true end
+    if talk.pinned or Named(talk) then return true end
     for _, message in ipairs(talk.messages) do
         if ns.Window.Found(message) then return true end
     end
@@ -266,11 +308,14 @@ local function Listed(talk)
 end
 
 -- The line with the name of the one chosen, and the note about them (or a Battle.net friend's BattleTag).
+-- The chat's and the second chat's line has the list of the chats each shows at its right.
 local function Heading()
+    filter:SetShown(open ~= nil and open.pinned ~= nil)
+    heading:SetPoint("TOPRIGHT", open and open.pinned and -(2 * Layout.EDGE + filter:GetWidth()) or -Layout.EDGE, -8)
     if not open then return heading:SetText("") end
     local colour = Colour(open)
     local about = Note(open) or (open.kind == "BN_WHISPER" and open.with) or nil
-    heading:SetText(Talks.Name(open) .. (about and ("  |cff" .. Core.Hex(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
+    heading:SetText(Name(open) .. (about and ("  |cff" .. Core.Hex(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
         .. about:gsub("|", "||") .. "|r") or ""))
     heading:SetTextColor(colour[1], colour[2], colour[3])
 end
@@ -283,7 +328,7 @@ end
 -- The line can be written in while the one chosen can be (a group you are in, a friend Battle.net knows).
 local function Line()
     local ok, why = false, nil
-    if open then ok, why = Talks.Writable(open) end
+    if open and not open.pinned then ok, why = Talks.Writable(open) end
     edit:SetEnabled(ok and true or false)
     if not ok and edit:HasFocus() then edit:ClearFocus() end
     hint:SetText(not open and "" or ok and ns.TEXT.talkHint:format(Talks.Name(open)) or why or "")
@@ -294,7 +339,7 @@ end
 -- kept messages get the name the friend has in this session (Talks.lua).
 local function Fill()
     wipe(list)
-    if open then
+    if open and not open.pinned then
         local day
         for _, message in ipairs(open.messages) do
             if Visible(open, message) then
@@ -317,7 +362,7 @@ end
 
 -- A new message of the one chosen: at the end, after a pill if a new day began.
 local function Append(message)
-    if list[#list] == message or not Visible(open, message) then return end
+    if open.pinned or list[#list] == message or not Visible(open, message) then return end
     local stick = follow
     message.day = message.day or Day(message.stamp)
     local last = list[#list]
@@ -349,30 +394,50 @@ local function Update()
     for _, kind in ipairs(Talks.GROUP_ORDER) do
         if Talks.Writable({ kind = kind }) then Talks.Group(kind) end
     end
-    local elements, listed = {}, false
+    local elements, listed = { CHAT }, open == CHAT
+    if ns.options.boardFeed then
+        elements[2] = FEED
+        listed = listed or open == FEED
+    end
     for _, talk in ipairs(Talks.list) do
         if (#talk.messages > 0 or Talks.Writable(talk)) and Listed(talk) then
             elements[#elements + 1] = talk
             listed = listed or talk == open
         end
     end
-    Board.Fill(box, elements, query and ns.TEXT.noTalkFound or ns.TEXT.noTalks)
+    Board.Fill(box, elements) -- never empty: the chat is always there
     if not listed then return Choose(elements[1]) end
     Title()
     Heading()
     Line()
-    remove:SetEnabled(open ~= nil and #open.messages > 0)
+    remove:SetEnabled(open ~= nil and not open.pinned and #open.messages > 0)
 end
 
--- A conversation chosen: its messages read and on show, its row marked.
+-- The list of the chats the chat shows, ticked as in the list on its line's name (Menu.lua).
+local function IsShown(chat) return ns.Guarded(ns.Channels.Shown, chat.group) end
+local function Switch(chat) ns.Guarded(ns.Channels.Flip, chat.group) end
+local function Showing(_, root)
+    root:CreateTitle(ns.TEXT.showing)
+    for _, chat in ipairs(ns.Channels.Showable()) do
+        root:CreateCheckbox(chat.text, IsShown, Switch, chat)
+    end
+end
+
+-- A conversation chosen: its messages read and on show, its row marked. The chat or the second chat chosen: it
+-- stands beside the list (Window.Pick). One of theirs chosen while the game's line is in use: that is closed.
 Choose = function(talk)
     open = talk
-    Talks.Read(talk)
+    local pinned = talk and talk.pinned
+    Talks.Read(not pinned and talk or nil)
+    mine:SetShown(not pinned)
+    if pinned then filter:SetupMenu(talk == FEED and ns.Feed.Menu or Showing) end
+    if not pinned and ns.Window.Writing() then ns.Input.Close() end
+    ns.Window.Pick(pinned or nil)
     box:ForEachFrame(Draw)
     Title()
     Heading()
     Line()
-    remove:SetEnabled(talk ~= nil and #talk.messages > 0)
+    remove:SetEnabled(talk ~= nil and not pinned and #talk.messages > 0)
     Fill()
 end
 
@@ -397,7 +462,7 @@ end
 -- Remove: the one chosen and all its messages, once confirmed.
 local function Remove()
     local talk = open
-    if not talk then return end
+    if not talk or talk.pinned then return end
     Core.Confirm(ns.TEXT.talkRemove, Talks.Name(talk), function()
         Talks.Remove(talk)
         Update()
@@ -430,7 +495,7 @@ end
 -- A message came into a conversation (Talks.Add). Hidden, the panel lists them anew once it is shown.
 local function Added(talk, message, new)
     if not panel or not shown then return end
-    if new and message.side == "right" then
+    if new and message.side == "right" and not ns.Window.Writing() then
         open = talk
         Talks.Read(talk)
         Update()
@@ -440,6 +505,38 @@ local function Added(talk, message, new)
     if talk == open then Append(message) end
 end
 Talks.added = function(...) ns.Safe("conversations", Added, ...) end
+
+-- A message came into the chat's log (Window.lua): the rows of the chat and the second chat show it, once a frame.
+local Redraw = Core.Later(function()
+    if shown then ns.Safe("conversations", box.ForEachFrame, box, Draw) end
+end)
+function Conversations.Said()
+    if shown then Redraw() end
+end
+
+-- The game's line was opened while a conversation is chosen (Window.lua). A frame later, when the game has given it
+-- the cursor: opened by Enter alone (empty, not a whisper), the conversation's own line takes over, if it can be
+-- written in; a whisper to somebody with a conversation (a reply, a name's Whisper) chooses theirs, the same;
+-- anything else chooses the chat, whose line it is.
+local function Opened()
+    local line = ns.Input.Line()
+    if not shown or not line or (open and open.pinned) then return end
+    local text, kind = line:GetText() or "", line:GetChatType()
+    local talk = open
+    if text == "" and kind == "WHISPER" then
+        talk = Talks.Whisper(line:GetTellTarget())
+    elseif text ~= "" or kind == "BN_WHISPER" then
+        talk = nil
+    end
+    if not talk or not Talks.Writable(talk) then return Choose(CHAT) end
+    ns.Input.Close()
+    if talk ~= open then Choose(talk) end
+    edit:SetFocus()
+end
+local Open = Core.Later(function() ns.Safe("conversations", Opened) end)
+function Conversations.Chat()
+    if shown and open and not open.pinned then Open() end
+end
 
 function Conversations.Build(holder)
     panel = holder
@@ -465,17 +562,24 @@ function Conversations.Build(holder)
     divider:SetPoint("BOTTOMLEFT", Layout.TALK_LIST, Layout.EDGE)
     divider:SetWidth(1)
 
-    -- The one chosen: its name on a line, its messages, the line to write in.
+    -- The one chosen: its name on a line, its messages, the line to write in. The chat and the second chat stand
+    -- under that line where a conversation's messages and line do (Layout.Board: board.chat).
     page = CreateFrame("Frame", nil, panel.body)
     page:SetPoint("TOPLEFT", Layout.TALK_LIST + 1, 0)
     page:SetPoint("BOTTOMRIGHT")
     heading = page:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     heading:SetPoint("TOPLEFT", Layout.EDGE + 4, -8)
-    heading:SetPoint("TOPRIGHT", -Layout.EDGE, -8)
     heading:SetJustifyH("LEFT")
     heading:SetWordWrap(false)
+    filter = CreateFrame("DropdownButton", nil, page, "WowStyle1FilterDropdownTemplate")
+    filter:SetPoint("TOPRIGHT", -Layout.EDGE, -(Layout.TALK_HEAD - 22) / 2)
+    filter:SetWidth(100)
+    filter:SetText(ns.TEXT.feedFilter)
+    filter:Hide()
+    mine = CreateFrame("Frame", nil, page)
+    mine:SetAllPoints()
 
-    local plate = CreateFrame("Frame", nil, page)
+    local plate = CreateFrame("Frame", nil, mine)
     plate:SetPoint("BOTTOMLEFT", Layout.EDGE, Layout.EDGE)
     plate:SetPoint("BOTTOMRIGHT", -Layout.EDGE, Layout.EDGE)
     plate:SetHeight(Layout.INPUT_HEIGHT - 2 * Layout.INPUT_INSET)
@@ -500,10 +604,10 @@ function Conversations.Build(holder)
     hint:SetJustifyH("LEFT")
     hint:SetWordWrap(false)
 
-    chat = CreateFrame("Frame", nil, page, "WowScrollBoxList")
-    chat:SetPoint("TOPLEFT", Layout.EDGE, -Layout.LINE)
+    chat = CreateFrame("Frame", nil, mine, "WowScrollBoxList")
+    chat:SetPoint("TOPLEFT", Layout.EDGE, -Layout.TALK_HEAD)
     chat:SetPoint("BOTTOMRIGHT", -Layout.EDGE - Layout.SCROLL, 2 * Layout.EDGE + Layout.INPUT_HEIGHT - 2 * Layout.INPUT_INSET)
-    scroll = CreateFrame("EventFrame", nil, page, "MinimalScrollBar")
+    scroll = CreateFrame("EventFrame", nil, mine, "MinimalScrollBar")
     scroll:SetPoint("TOPLEFT", chat, "TOPRIGHT", 4, -2)
     scroll:SetPoint("BOTTOMLEFT", chat, "BOTTOMRIGHT", 4, 2)
     view = CreateScrollBoxListLinearView(0, 0, 0, 0, Layout.SPACING)
@@ -515,7 +619,7 @@ function Conversations.Build(holder)
     provider = CreateDataProvider()
     chat:SetDataProvider(provider)
     chat:RegisterCallback(BaseScrollBoxEvents.OnScroll, ns.Guard(Scrolled), Conversations)
-    empty = page:CreateFontString(nil, "ARTWORK", "GameFontDisable")
+    empty = mine:CreateFontString(nil, "ARTWORK", "GameFontDisable")
     empty:SetPoint("LEFT", chat, "LEFT", Layout.EDGE, 0)
     empty:SetPoint("RIGHT", chat, "RIGHT", -Layout.EDGE, 0)
     empty:SetWordWrap(true)
@@ -534,7 +638,7 @@ end
 -- Shown, the one chosen is read and the list follows the game; hidden, nothing is read, nothing listens.
 function Conversations.Show(on)
     shown = on
-    Talks.Read(on and open or nil)
+    Talks.Read(on and open and not open.pinned and open or nil)
     for _, event in ipairs(EVENTS) do
         if on then Core.On(event, Changed) else Core.Off(event, Changed) end
     end
@@ -544,6 +648,11 @@ function Conversations.Show(on)
     end
     Update()
     Fill()
+end
+
+-- The second chat switched on or off: the list anew.
+function Conversations.Relist()
+    if shown then Update() end
 end
 
 function Conversations.Search(text)

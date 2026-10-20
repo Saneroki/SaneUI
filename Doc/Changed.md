@@ -3,8 +3,49 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 464 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 258 (Navigation), 21 (Inventory), 37 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 500 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 258 (Navigation), 21 (Inventory), 37 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Social: the guild window on the full screen, the chats among the conversations (Saneroki, 2026-10-20)
+- **The guild window** (`src/Social/Guild.lua`, new, in the TOC after `Board.lua`): at the full screen's top right,
+  the very window the guild key opens, held there and working as always: the game's guild and communities window, or
+  the window another addon shows when it answers the guild key instead. Found by what the key does, never by a name:
+  `ToggleGuildFrame` (out of a fight, once per full screen), then among the windows the game knows by name (Esc's
+  `UISpecialFrames`, its `UIPanelWindows`) the largest that was not open before; its name kept
+  (`store.guildWindow`) to know it when it is open already. Its scale, layer and points lent (`Core.Lend`), placed
+  at its room's screen position against `UIParent`, its parent never changed; hooks after its `SetPoint`, `OnHide`
+  and `OnSizeChanged`. Opened for the full screen, it is closed with it as Esc closes it; one open already stays.
+  Closed by the player, the friends list takes its room until the full screen comes anew; closed in a fight, it
+  comes back after it. Setting *Guild window* (`boardGuild`, on), only while in a guild.
+- **Layout** (`Layout.Board(width, height, want)`, no share any more): the guild window as large as it is, made
+  smaller where the conversations would be narrower than `TALKS_MIN` or the friends list under it lower than
+  `FRIENDS_LOW` (220), left out below `GUILD_LEAST` (0.6); the friends list under it and as wide
+  (`FRIENDS_WIDTH` at least; `Friends.Size` lays its tabs out anew); the conversations take the rest
+  (`TALKS_WIDTH`, `CHAT_LOW`, `FEED_LOW` gone). Without the conversations the chat stands in their place.
+- **The chats among the conversations:** the chat and the second chat are the first two rows of the conversations'
+  list (`Conversations.lua`: `CHAT`, `FEED`, the second chat while *Second chat* is on, now under
+  *Conversations*), not apart in the middle any more. Chosen, one stands beside the list where a conversation does:
+  `board.chat` is that part of the panel, the window's chat frame (`column`; the list, scroll bar and button are its
+  children now) is seated there, and `Window.Pick` says whether it shows the chat, the second chat (`Feed.lua`: no
+  panel of its own, its list made in that frame, over the chat's line, `Feed.Room`) or nothing (a conversation).
+  The name line has *Chats*, the ticks of the one chosen. Rows show the last message (`Window.Last`, `Feed.Last`,
+  redrawn a frame later, `Conversations.Said`).
+- **The game's line and a conversation:** opened while a conversation is chosen, a frame later: by Enter alone the
+  game's line closes again (`Input.Close`, its `ClearChat`) and the conversation's own line takes the cursor; a
+  whisper to somebody with a conversation (a reply) chooses theirs; anything else chooses the chat, whose line it
+  is. A conversation chosen while the game's line is in use closes it; one you began is chosen once the line is out
+  of use (`Window.Writing`). `Talks.Whisper`, `Input.Line`.
+- **Settings:** *Full screen* now *Conversations* (with *Messages kept per conversation* and *Second chat*),
+  *Guild window*, *Friends list* (with *Group finder*); *Height of the second chat* (`feedShare`) is gone. The texts
+  for an empty conversations' list went (the chat is always in it).
+- **Docs:** the Social README's status line, its *To check in the game* section and its history's notes on trying
+  in the game went; the tests' hidden channel has a name of its own. `Doc/agent/social.md`, `Doc/ideas/Social.md`
+  and `Doc/ideas/Dialogue.md` follow.
+- Tests: `dev/tests/social.lua` (500 checks): the layout with and without a guild window, the chats' rows, the
+  second chat in the chat's place, the game's line and a conversation, the guild window held, put back, sized,
+  closed, opened anew, closed with the full screen, one open already, another addon's that answers the key, out of
+  a guild, switched off, in a fight and after it.
+- A game restart takes it in (a new file in Social's TOC).
 
 ### Inventory: a new module, the bags from the corner (Saneroki, 2026-10-20)
 - **The module** (`src/Inventory/`, addon `SaneUI_Inventory`, *Inventory* under Sane UI in the addon list): what the
@@ -542,7 +583,7 @@ A game restart takes it in (new addons, Navigation, Atlas and Inventory; new fil
 
 ### Social: conversations on the full screen (Saneroki, 2026-10-18)
 - A panel at the full screen's left (`Conversations.lua`, a part of `Board.lua`): the list of conversations, the
-  last spoken in first (class icon, alias or name, last message, time, unread count; the title counts all), and
+  newest message first (class icon, alias or name, last message, time, unread count; the title counts all), and
   the one chosen in the chat's bubbles with a pill per day, its name and note above, an edit box of ours under
   it that sends to it (`/` lines go to the game's line; nothing sent in chat lockdown). Right click: the game's
   menu of the player. Foot: *Whisper* (the game's line with `/w`), *Remove* (confirmed). The full window's
@@ -1821,7 +1862,7 @@ Tests: 322 checks (Social), 158 checks (windows). Not tried in the game. New fil
 
 ### Social: open points written down
 - `src/Social/README.md`: *To check in the game* has the full screen without the bubbles going, marks in a
-  channel of your own, and joins and leaves (FGLayer) hidden also from the saved history; *Not there yet* no
+  channel of your own, and joins and leaves hidden also from the saved history; *Not there yet* no
   longer names the saved history, which is there. `Doc/ideas/Social.md`: what Saneroki is to decide (banner,
   smiley art, wrapping at full screen, a player's old `SaneUI_Chat` folder).
 

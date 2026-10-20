@@ -363,6 +363,17 @@ function Input.Toggle(owner)
     end
 end
 
+-- The line in our window while it is in use (not closed, not at rest); nil: none.
+function Input.Line()
+    if seated and seated:IsShown() and not resting[seated] then return seated end
+end
+
+-- The line in use is closed, as Esc closes it: a conversation of the full screen has its own (Conversations.lua).
+function Input.Close()
+    local line = Input.Line()
+    if line then line:ClearChat() end
+end
+
 -- One step of Release; the first failure is kept, and raised when all steps are done.
 local problem
 local function Try(step, ...)

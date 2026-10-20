@@ -31,11 +31,12 @@ last messages are saved per character at logout and put back at login (`Log.Save
 | `Native.lua` | Native chat parts lent (`Core.Lend`: layer noted, then parent) to a hidden frame; given back only if still ours. Not Core's holder: the chat is never closed |
 | `Input.lua` | Seat/style/restore **Blizzard's own** edit boxes (place, art, layer, rest each a `Core.Lend`), growing input, callbacks; its plate a `Core.Shape` that follows |
 | `Join.lua` | Game channels by wish (`options.presence[name]` true/false/nil; `ns.Safe`, not Guarded): joins only where `EnumerateServerChannels` offers it, once per zone (`GetRealZoneText`), leaves when false; looks 8 s after each PEW, 2 s after `CHAT_MSG_CHANNEL_NOTICE`, after lockdown if owed, at once on a wish; `Join.List` (joined Zone channels by number, then on offer, then wished) |
-| `Board.lua` | Full screen panels (stand full only, built on first show, `ns.Safe` per part): `Board.Show(inside, w, h)` → `Layout.Board` rects, `Board.Hide`, `Board.Search`; shared `Board.List`/`Fill`/`Row`/`Button`. Part API: `Build(panel)`, `Show(on)`, `Search(text)` |
+| `Board.lua` | Full screen parts (stand full only, built on first show, `ns.Safe` per part): `Board.Show(inside, w, h)` → `Guild.Size` → `Layout.Board(w, h, { friends, talks, guild })` rects → panels → `Guild.Hold`; `Board.Hide` (→ `Guild.Leave`), `Board.Search`; shared `Board.List`/`Fill`/`Row`/`Button`. Part API: `Build(panel)`, `Show(on)`, `Search(text)`, `Size(w, h)` |
+| `Guild.lua` | The guild window held at the full screen's top right (`boardGuild`, in a guild): whichever `ToggleGuildFrame` opens, found generically (newly shown among `UISpecialFrames` + `UIPanelWindows`, largest, `Guild.LOOK` 0.2 s later; name kept in `store.guildWindow`), never named; `Core.Lend` scale/layer/points, placed against `UIParent` at its room's screen position (no anchor to ours, no reparent); hooks `SetPoint`/`OnHide`/`OnSizeChanged`; closes what it opened (`HideUIPanel` for a game panel, else `Hide`); out of a fight only; `Try` gives it back on failure |
 | `Talks.lua` | Conversations, no frames: `Talks.Add(entry)` from `Heard` (`ns.Safe`) for `entry.with` (whispers; `account` for BN) or `Talks.GROUPS` (PARTY/RAID/INSTANCE_CHAT); keys `W:<PlayerKeyOf>`, `B:<BattleTag>`, the group; copies of `Log.KEPT` + `stamp`; `talkSize` trim except `Talks.reading`; `MOST` 50; `Send` (SendChatMessage / `C_BattleNet.SendWhisper`), `Writable`, `Account` (by BattleTag), `Save`/`Restore` in `chars[key].talks` (BN messages without name/link) |
-| `Conversations.lua` | Full screen panel at the left (`Board.PANELS` talks, `boardTalks`; `Layout.TALKS_WIDTH`/`TALKS_MIN`/`TALK_LIST`): `Board.List` of talks, bubbles list like Feed with day pills, own `EditBox` (not the game's; `/` lines to `OpenChat`; nothing sent in lockdown); `Part.Size(w,h)` from `Board.Put`; `Talks.added` hook; redrawn by `Window.Repaint`/`Resize` |
-| `Feed.lua` | Second chat above the chat: `options.split` ticks (`Channels.Split/FlipSplit`), same `rowWidth` as the chat (`Feed.Fit`), told by `Log.added`; no fade/slide |
-| `Friends.lua` | Friends panel: `BNGetNumFriends`/`C_BattleNet.GetFriendAccountInfo`, `C_FriendList`; game order; click selects, `ChatFrameUtil.SendTell/SendBNetTell`, `FriendsFrame_ShowDropdown/ShowBNDropdown`, `FriendsFrame_InviteOrRequestToJoin` |
+| `Conversations.lua` | Full screen panel at the left, all the room the right leaves (`Board.PANELS` talks, `boardTalks`; `Layout.TALKS_MIN`/`TALK_LIST`/`TALK_HEAD`): `Board.List` with two pinned rows first (`CHAT`, `FEED` while `boardFeed`; `pinned` field, never a talk), then talks; choosing a pinned row hides `mine` (own list + `EditBox`) and calls `Window.Pick("chat"/"feed")`, a talk `Window.Pick(nil)`; the name line's filter dropdown (`Channels.Shown` ticks or `Feed.Menu`); `Conversations.Chat` (the game's line opened while a talk is chosen, a frame later: empty non-whisper → `Input.Close` + own line focused; whisper to a known talk → that talk; else `CHAT`); `Said` (pinned rows' previews, `Core.Later`); `Relist`; `Part.Size(w,h)` from `Board.Put`; `Talks.added` hook; redrawn by `Window.Repaint`/`Resize` |
+| `Feed.lua` | Second chat, a pinned row of the conversations: `options.split` ticks (`Channels.Split/FlipSplit`, `Feed.Menu`), its list made in the window's `column` on first `Feed.Show(on, column)`, bottom over the chat's line (`Feed.Room`), same `rowWidth` as the chat (`Feed.Fit`), told by `Log.added`; `Feed.Last`; no fade/slide |
+| `Friends.lua` | Friends panel (as wide as the guild window above it, `Friends.Size` → tabs anew): `BNGetNumFriends`/`C_BattleNet.GetFriendAccountInfo`, `C_FriendList`; game order; click selects, `ChatFrameUtil.SendTell/SendBNetTell`, `FriendsFrame_ShowDropdown/ShowBNDropdown`, `FriendsFrame_InviteOrRequestToJoin` |
 | `Contacts/Finder.lua` | Group finder, the friends panel's last tab (vanilla style, Camelot): `C_LFGList.Search` only on a click (restricted), reads `GetFilteredSearchResults`; whisper leader, invite solo; listing stays the game's (`ns.OpenFinder(1)`) |
 | `Window.lua` | A Core window of kind `screen` (`first.dock = "BOTTOMLEFT"`), list in `handle.inside` (no top bar), scroll provider, bottom alignment, follow state, `Core.Hover` for the mouse, slide by `Core.Motion.Slide`; `Window.Follow` (ours or away as `options.window` says), `Show` opens through `handle:Open()` |
 
@@ -45,9 +46,13 @@ hides it from the provider, so unmuting restores earlier messages. Channels use 
 
 ## View and input traps
 
-The chat stands in `column` (child of the window): all of `handle.inside`, or `board.chat` while standing full
-(`Lay` in `Placed`; panels go in `Filled(false)`). Measure with `Area()`, never the window's size. Tests:
-the stand-in makes one list per `WowScrollBoxList` (`boxes`; `box` is the chat's, the first).
+The chat stands in `column` (child of the window; the list, its scroll bar and the write button are its
+children): all of `handle.inside`, or `board.chat` while standing full (`Lay` in `Placed`; panels go in
+`Filled(false)`); with the conversations `board.chat` is their part beside the list, and `Shows()` (`picked`,
+set by `Window.Pick`) hides the column for a talk or shows the feed's list in it. `Window.Room` tells
+`Feed.Room` and, while a talk is chosen, `Conversations.Chat`. Measure with `Area()`, never the window's
+size. Tests: the stand-in makes one list per `WowScrollBoxList` (`boxes`; `box` is the chat's, the first;
+`window` is `box._parent._parent`).
 Use Core Window for movement/sizing/docking; default 380×260 docked bottom left, minimum 180×130, MEDIUM level 100.
 Rows need height before creation: one invisible ruler measures wrapping, caches by width/font epoch,
 and rendering uses that same width. Rewrap after resizing ends, not every drag tick. Bottom padding
@@ -66,7 +71,7 @@ resting alpha/mouse. It grows to six lines and replaces pasted newlines before s
 Listen to `ChatFrame.OnEditBoxShow/Hide/FocusGained/PreSendText`. For IM style, after native
 `Deactivate`, rest via alpha 0 and mouse disabled. **Do not call native edit box Hide:** its OnHide
 mutates secure chat state under addon taint. Chat picker still calls native SetChatType/StickyType/
-ChannelTarget and ActivateChat; actual taint/secure behaviour needs client QA.
+ChannelTarget and ActivateChat; the taint log (`/console taintLog 1`) shows its effect.
 
 `Native.Hide` reparents windows/dock/tabs/minimized buttons but keeps logging active. On restoration,
 only return a frame if its parent is still ours: Blizzard may move it meanwhile. Temporary whisper
@@ -81,5 +86,4 @@ after 60 s (5..300), out 1 s, in 0.4 s, floor off (30%); slide 0.3 s; text 14 (1
 transparency 50% (0..100), solid 26262B or a game tile; every game channel left to the game (no wish);
 short names on; **native chat shown alongside ours by default**.
 `/sane social` (or `/sane chat`) and the key toggle; `reset` shows it and puts it back at its first place and size.
-Tests: `dev/tests/social.lua`. Pending QA includes native input/slash commands, IM rest/focus,
-picker taint, lockdown, hyperlinks, actual rendering/fade/docking, and other chat addons.
+Tests: `dev/tests/social.lua`.

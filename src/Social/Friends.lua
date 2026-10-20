@@ -37,6 +37,7 @@ local pages = {} -- [key] = the list's part of the panel ({ body, label }), once
 local current    -- the key of the list shown
 local shown
 local typed = "" -- what is in the search box
+local wide = Layout.FRIENDS_WIDTH -- the panel's width: as wide as the guild window above it, at least the game's list's
 
 -- The tabs this client has, side by side, each as wide as its words and a little room; where they do not
 -- fit, narrower, their words cut short (the whole of them in the tab's tooltip).
@@ -54,7 +55,7 @@ local function Arrange()
             words = words + (button.Text:GetStringWidth() or 0)
         end
     end
-    local room = Layout.FRIENDS_WIDTH - 2 * Layout.EDGE - 2 * (#visible - 1)
+    local room = wide - 2 * Layout.EDGE - 2 * (#visible - 1)
     local pad = math.max(8, math.min(2 * Layout.TAB_PAD, math.floor((room - words) / math.max(#visible, 1))))
     local scale = math.min(room / math.max(words + pad * #visible, 1), 1)
     local previous
@@ -192,6 +193,14 @@ function Friends.Build(holder)
     end))
     Arrange()
     group:SelectAtIndex(1)
+end
+
+-- The panel is that wide now (under a guild window wider than the game's friends list): the tabs anew.
+function Friends.Size(width)
+    width = math.floor(width)
+    if width == wide then return end
+    wide = width
+    if panel then Arrange() end
 end
 
 -- Shown, the head and the list shown listen to the game, and the tabs follow their counts; hidden, nothing does.

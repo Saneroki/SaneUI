@@ -114,7 +114,7 @@ The game's windows stay where they are and come back at once whenever ours steps
   - Between talks they get a hidden parent of ours. The game shows them as always, but they never come
     into sight, so their `OnShow` and `OnHide` do not run.
   - The quest window checks after `ShowUIPanel` that it is shown (`QuestFrame:IsShown()`), else it ends
-    the quest. A held window still counts as shown, so this holds. *To check in the game.*
+    the quest. A held window still counts as shown, so this holds.
   - Parent, scale and alpha are noted before they are changed and put back exactly.
   - No events of the game's windows are taken away, no global is replaced, and `UIPanelWindows` is left
     alone.

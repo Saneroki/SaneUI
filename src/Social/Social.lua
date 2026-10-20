@@ -58,7 +58,7 @@ ns.TEXT = {
     classicFinder = "Group finder",
     friendsInFight = "in a fight the game's friends list opens only by its own key.",
     finderInFight = "in a fight the game's group finder opens only by its own key.",
-    -- The full screen's panels (Board.lua): the second chat above the chat, and its list of chats.
+    -- The full screen's second chat (Feed.lua), and the list of chats on the line with its name.
     feed = "Second chat",
     feedFilter = "Chats",
     friends = Core.Word("FRIENDS", "Friends"),
@@ -99,8 +99,6 @@ ns.TEXT = {
     -- The conversations' panel of the full screen (Conversations.lua, Talks.lua).
     talks = "Conversations",
     talksCount = "Conversations (%d)",
-    noTalks = "No conversations yet. Your whispers, and the chat of your party and your raid, come here.",
-    noTalkFound = "No conversation found.",
     talkEmpty = "Nothing said here yet.",
     talkHint = "Message %s",
     talkGone = "Not among your Battle.net friends.",
@@ -152,20 +150,20 @@ local OPTIONS = {
     -- kept with the settings, so profiles and a character's own settings carry them; no control.
     { key = "mute", default = {} },
 
-    -- The full screen's panels around the chat (Board.lua).
-    { key = "boardFriends", default = true, text = "Friends list", header = "Full screen",
-      headerTip = "What stands around the chat while the window fills the screen.",
-      tip = "The friends list at the right of the full screen, as the game's: who is online and where. Click a friend, then Send Message or Invite; a right click opens their menu." },
-    { key = "boardFinder", default = true, text = "Group finder", parent = "boardFriends",
-      tip = "The group finder as a tab of the friends list, as the game's: the groups and players looking for others in a category. Whisper a leader, or invite a player who is alone." },
-    { key = "boardFeed", default = true, text = "Second chat",
-      tip = "A second chat above the chat, with its own choice of chats in the list on its head: your whispers, groups and guild at first." },
-    { key = "feedShare", default = 40, min = 20, max = 70, step = 5, unit = "%", text = "Height of the second chat", parent = "boardFeed", inline = true,
-      tip = "How much of the full screen's height the second chat takes." },
-    { key = "boardTalks", default = true, text = "Conversations",
-      tip = "At the left of the full screen, your whispers, your party's and your raid's chat, each a conversation of its own, the last spoken in first. Choose one to read it and write in it. Kept for each character." },
+    -- The full screen's parts (Board.lua).
+    { key = "boardTalks", default = true, text = "Conversations", header = "Full screen",
+      headerTip = "What the window holds while it fills the screen.",
+      tip = "At the left of the full screen: the chat, then your whispers, your party's and your raid's chat, each a conversation of its own, the newest message first. Choose one to read it and write in it beside the list. Kept for each character. Off: the chat stands there alone." },
     { key = "talkSize", default = 100, min = 20, max = 500, step = 10, unit = "messages", text = "Messages kept per conversation", parent = "boardTalks", inline = true,
       tip = "How many of the last messages each conversation keeps, also for the next login." },
+    { key = "boardFeed", default = true, text = "Second chat", parent = "boardTalks",
+      tip = "A second chat in the conversations' list, under the chat, with its own choice of chats in the list on the line with its name: your whispers, groups and guild at first." },
+    { key = "boardGuild", default = true, text = "Guild window",
+      tip = "The guild window at the top right of the full screen, as large as it is: the one the guild key opens, the game's own or another addon's that answers the key. Opened with the full screen and closed with it; one open already stays open. While you are in a guild." },
+    { key = "boardFriends", default = true, text = "Friends list",
+      tip = "The friends list at the right of the full screen, under the guild window and as wide, as the game's: who is online and where. Click a friend, then Send Message or Invite; a right click opens their menu." },
+    { key = "boardFinder", default = true, text = "Group finder", parent = "boardFriends",
+      tip = "The group finder as a tab of the friends list, as the game's: the groups and players looking for others in a category. Whisper a leader, or invite a player who is alone." },
     -- The second chat's ticks ([group] = true: shown there), set in the list on its head; no control.
     { key = "split", default = { WHISPER = true, PARTY = true, RAID = true, INSTANCE_CHAT = true, GUILD = true, OFFICER = true } },
 
@@ -212,7 +210,7 @@ for index, option in ipairs(OPTIONS) do
 end
 Core.Edge.Options(OPTIONS, (last or #OPTIONS) + 1, LOOK, { motion = "animations" })
 -- The switches of the full screen's panels: a change lays the full screen out anew (Window.Reboard).
-local BOARD = { boardFriends = true, boardTalks = true, boardFeed = true, feedShare = true }
+local BOARD = { boardFriends = true, boardTalks = true, boardGuild = true }
 -- The switches of fading and sliding: a change of one sets every fade and slide anew (Window.Animate).
 local MOVES = { animations = true, fadeInOn = true, fadeInTime = true, fadeOutTime = true, slide = true, slideTime = true,
                 fadeFloorOn = true, fadeFloor = true, fade = true, fadeAfter = true }
@@ -241,6 +239,7 @@ Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = funct
     -- The group finder is a tab of the friends list: its switch offers the tab or takes it away.
     if key == "boardFinder" then return ns.Safe("friends tabs", ns.Friends.Relabel) end
     if key == "talkSize" then return ns.Safe("conversations", ns.Talks.Trim) end
+    if key == "boardFeed" then return ns.Safe("conversations", ns.Conversations.Relist) end
     if BOARD[key] then return ns.Guarded(ns.Window.Reboard) end
     if key == "history" or key == "historySize" then return ns.Keep() end
     local Window = ns.Window

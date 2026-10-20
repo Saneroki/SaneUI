@@ -40,17 +40,19 @@ Layout.GRIP_ROOM = 18                          -- the room the grip takes at the
 Layout.FACE = 24                               -- the smiley beside the line, before the grip (Picker.lua)
 Layout.INPUT_RIGHT = Layout.GRIP_ROOM + Layout.FACE + 2 -- it ends before the smiley
 
--- The full screen holds panels beside and above the chat (Board.lua): the friends list at the right (the
--- group finder is one of its tabs), the conversations at the left, a second chat with its own choice of chats
--- above the chat, all within PAD of the screen and of each other. The friends list is left out where it would
--- leave the chat narrower than CHAT_MIN; the conversations are TALKS_WIDTH wide, narrower where the chat would
--- be narrower than CHAT_MIN, and left out below TALKS_MIN; the second chat takes SPLIT of the height (a
--- setting), and is left out where the chat under it would be lower than CHAT_LOW.
+-- The full screen (Board.lua): at its right the guild window (Guild.lua) with the friends list under it (the group
+-- finder one of its tabs), at its left the conversations (Conversations.lua), whose part beside their list holds the
+-- chat chosen there: a conversation, the chat or the second chat. All within PAD of the screen and of each other.
+-- The guild window is as large as it is, made smaller where the conversations would be narrower than TALKS_MIN or
+-- the friends list under it lower than FRIENDS_LOW, and left out below GUILD_LEAST of its size; the friends list is
+-- as wide as the guild window, FRIENDS_WIDTH at least, and left out where the conversations would lack their room.
+-- With the conversations switched off the chat stands in their place, CHAT_MIN wide at least.
 Layout.PAD = 12
 Layout.FRIENDS_WIDTH = 340                     -- the game's friends list is as wide (Blizzard_FriendsFrame)
+Layout.FRIENDS_LOW = 220                       -- the friends list under the guild window, at its lowest
+Layout.GUILD_LEAST = 0.6                       -- the guild window made smaller to this much of its size at most
+Layout.GUILD_LEVEL = 10                        -- the guild window drawn so far above what the full window holds
 Layout.CHAT_MIN = 420
-Layout.CHAT_LOW = 160
-Layout.FEED_LOW = 120                          -- the second chat at its lowest
 Layout.HEADER = 30                             -- a panel's head: its title and its buttons
 Layout.ROW = 34                                -- a row of the friends list and of the group finder
 Layout.FOOT = 30                               -- a panel's foot: its buttons
@@ -62,10 +64,12 @@ Layout.TAB_PAD = 20                            -- a tab's room around its words,
 Layout.TOOLS = 28                              -- the search box and the filter
 Layout.LINE = 28                               -- a list's own line above it
 Layout.INVITE = 24                             -- the button at a row's right to ask a friend into your group
--- The conversations' panel (Conversations.lua): the list of them at its left, the one chosen beside it.
-Layout.TALKS_WIDTH, Layout.TALKS_MIN = 600, 460
+-- The conversations' panel (Conversations.lua): the list of them at its left, the one chosen beside it, under a
+-- line with its name.
+Layout.TALKS_MIN = 460
 Layout.TALK_LIST = 190                         -- the list of conversations
 Layout.TALK_ICON = 24                          -- a conversation's icon in that list
+Layout.TALK_HEAD = 28                          -- the line with the name of the one chosen
 
 -- The only colours of our own: the ring around the icon of somebody who is something to you. The
 -- bubbles' fill is a setting (bubbleBack, bubbleColor: Bubble.Clear), the same for all; yours differ by
@@ -104,33 +108,44 @@ function Layout.ListHeight(windowHeight, input, top)
 end
 
 -- Where each part of the full screen stands, in a room that wide and high (what the window holds, under its
--- title bar): { left, top, width, height } from the room's top left corner, whole pixels. want: which
--- panels are wished (friends, talks, feed); share: the second chat's part of the height, 0..1. A panel not
--- wished, or without room, is nil; chat is always there.
-function Layout.Board(width, height, want, share)
+-- title bar): { left, top, width, height } from the room's top left corner, whole pixels. want: which parts are
+-- wished: friends, talks (true), guild ({ width, height }: the guild window's own size). The guild window's rect
+-- has a fifth number, how much smaller it is made (1: not). A part not wished, or without room, is nil; chat is
+-- always there: the conversations' part beside their list and under the line with its name, or their place.
+function Layout.Board(width, height, want)
     local pad = Layout.PAD
     local left, right = pad, math.floor(width) - pad
     local top, bottom = pad, math.floor(height) - pad
-    local friends = want.friends and Layout.FRIENDS_WIDTH + pad or 0
-    if right - left - friends < Layout.CHAT_MIN then friends = 0 end
-    local board = {}
-    if friends > 0 then
-        board.friends = { right - Layout.FRIENDS_WIDTH, top, Layout.FRIENDS_WIDTH, bottom - top }
-        right = right - friends
+    local least = want.talks and Layout.TALKS_MIN or Layout.CHAT_MIN -- what stays at the left at least
+    local board, column = {}, 0 -- column: the width of the right part
+    local guild = want.guild
+    if guild and guild[1] > 0 and guild[2] > 0 then
+        local wide = right - left - pad - least
+        local high = bottom - top - (want.friends and pad + Layout.FRIENDS_LOW or 0)
+        local scale = math.min(1, wide / guild[1], high / guild[2])
+        if scale >= Layout.GUILD_LEAST then
+            local w, h = math.floor(guild[1] * scale + 0.5), math.floor(guild[2] * scale + 0.5)
+            board.guild = { right - w, top, w, h, scale }
+            column = w
+        end
     end
-    local talks = want.talks and math.min(Layout.TALKS_WIDTH, right - left - pad - Layout.CHAT_MIN) or 0
-    if talks >= Layout.TALKS_MIN then
-        board.talks = { left, top, talks, bottom - top }
-        left = left + talks + pad
+    if want.friends then
+        local w = math.max(column, Layout.FRIENDS_WIDTH)
+        if right - left - pad - w >= least then
+            local y = board.guild and top + board.guild[4] + pad or top
+            board.friends = { right - w, y, w, bottom - y }
+            column = w
+        end
     end
-    local tall = bottom - top
-    local feed = want.feed and math.max(math.floor(tall * math.min(math.max(share or 0, 0), 1)), Layout.FEED_LOW) or 0
-    if feed > 0 and tall - feed - pad < Layout.CHAT_LOW then feed = 0 end
-    if feed > 0 then
-        board.feed = { left, top, right - left, feed }
-        top = top + feed + pad
+    if column > 0 then right = right - column - pad end
+    local room = { left, top, right - left, bottom - top }
+    if want.talks and room[3] >= Layout.TALKS_MIN then
+        board.talks = room
+        local beside, under = Layout.TALK_LIST + 1, Layout.HEADER + Layout.TALK_HEAD
+        board.chat = { left + beside, top + under, room[3] - beside, room[4] - under }
+    else
+        board.chat = room
     end
-    board.chat = { left, top, right - left, bottom - top }
     return board
 end
 

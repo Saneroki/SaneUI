@@ -2,12 +2,15 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Social - Board
---  The full screen's panels around the chat: while the window stands full,
---  the friends list at its right (Friends.lua, the group finder one of its
---  tabs), the conversations at its left (Conversations.lua) and a second chat
---  above the chat (Feed.lua), as the settings wish (the section Full screen)
---  and as the screen has room (Layout.Board).
---  The chat itself is the window's (Window.lua): it stands in the room left.
+--  The full screen's parts, while the window stands full, as the settings
+--  wish (the section Full screen) and as the screen has room (Layout.Board):
+--  at its right the guild window (Guild.lua: the guild key's own, held there)
+--  and the friends list under it (Friends.lua, the group finder one of its
+--  tabs), at its left the conversations (Conversations.lua). The part of those
+--  beside their list holds the one chosen: a conversation of theirs, or the
+--  chat itself, the window's (Window.lua), or the second chat (Feed.lua);
+--  those two stand in the window's own frame for the chat, placed there.
+--  With the conversations switched off the chat stands in their place.
 --
 --  A panel is a frame of ours on a plate in Sane UI's look (Core.Skin: the
 --  dark tile of the game's dialogs, a thin bronze trim, round corners), with a
@@ -22,9 +25,9 @@ local _, ns = ...
 --  and the chat goes on; only the window's own work stands the module down.
 --
 --  What is typed into the full window's search box goes to every panel
---  (Board.Search): the second chat finds messages as the chat does, the
---  friends list what its tab shown lists (friends, groups, ...), the
---  conversations those with the words in their name or their messages.
+--  (Board.Search): the friends list finds what its tab shown lists (friends,
+--  groups, ...), the conversations those with the words in their name or
+--  their messages (the chat and the second chat find messages themselves).
 --
 --  A part is a table with:
 --      Part.Build(panel)      makes what it holds; panel.title, panel.head, panel.body are there
@@ -43,7 +46,6 @@ Board.FADE = 0.3 -- seconds a panel takes to come in
 Board.PANELS = {
     { key = "friends", wish = "boardFriends", part = "Friends" },
     { key = "talks", wish = "boardTalks", part = "Conversations" },
-    { key = "feed", wish = "boardFeed", part = "Feed" },
 }
 Board.panels = {} -- [key] = the panel, once made
 local search = "" -- what is in the search box now
@@ -176,21 +178,21 @@ local function Put(inside, spec, rect)
 end
 
 -- The window stands full: what the window holds (inside) is that wide and high. Each panel wished and with room
--- is put at its place; returns the board (Layout.Board), whose chat is the room left for the chat.
+-- is put at its place, the guild window in its room; returns the board (Layout.Board), whose chat is where the
+-- chat stands.
 function Board.Show(inside, width, height)
     local options = ns.options
-    local want = { friends = options.boardFriends, talks = options.boardTalks, feed = options.boardFeed }
-    local board = Layout.Board(width, height, want, options.feedShare / 100)
-    -- The second chat is as wide as the chat (Window.lua tells it so too): its messages are measured once,
-    -- for that width, when it first fills its list.
-    ns.Feed.Fit(Layout.RowWidth(board.chat[3]))
+    local want = { friends = options.boardFriends, talks = options.boardTalks, guild = ns.Guild.Size(inside) }
+    local board = Layout.Board(width, height, want)
     for _, spec in ipairs(Board.PANELS) do Put(inside, spec, board[spec.key]) end
+    ns.Guild.Hold(board.guild)
     return board
 end
 
--- The window is at its size, or on its way there: every panel out of sight.
+-- The window is at its size, or on its way there: every panel out of sight, the guild window given back.
 function Board.Hide()
     for _, spec in ipairs(Board.PANELS) do Put(nil, spec, nil) end
+    ns.Guild.Leave()
 end
 
 -- The search box of the full window: to every panel that is shown; one shown later finds it then (Put).
