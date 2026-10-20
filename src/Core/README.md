@@ -267,7 +267,7 @@ but for a window to try those with (`/sane window`).
 | `Core.Surnames()` | Whether this client names players by first name and surname (Forever, or `RegionalUniqueNamesEnabled`) |
 | `Core.Data.Set(name)` and its handle | Sane UI's databases, loaded on demand from the data packs; a module only reads ([Doc/guides/data.md](../../Doc/guides/data.md)) |
 | `Core.Data.Map()`: `On(map)`, `Spawns(key)`, `OnChange(fn)` | What the data puts on a map: the places of Spawns, Places and Travel per map, each with what it is ([Doc/guides/data.md](../../Doc/guides/data.md), *What a map shows*) |
-| `Core.Data.Characters()`, `Character(key)`, `Items(key, place)`, `Count(item)`, `OnCharacters(fn)` | What the account's characters have: each by its GUID with its whole name, its bags, bank and what it wears (item by item, `Items`); where the account has an item and how many ([Doc/guides/data.md](../../Doc/guides/data.md), *Characters*) |
+| `Core.Data.Characters()`, `Character(key)`, `Count(item)`, `OnCharacters(fn)` | What the account's characters have: each by its GUID with its whole name, its bags, bank and what it wears; where the account has an item and how many ([Doc/guides/data.md](../../Doc/guides/data.md), *Characters*) |
 | `Core.People.Alias(key)`, `Note(key)`, `Shown(name)`, `Set(key, what, value)`, `Watch(fn)` | The alias and the note the player gave a player (by `Core.PlayerKeyOf`); what to show for a name; `Watch` tells a view to draw its names anew |
 | `Core.Coins(copper)` | Money as the game writes it, with coin icons; nil if it cannot |
 | `Core.Points(region)`, `Core.Repoint(region, points)` | Keep a region's anchors and put them back |
@@ -491,8 +491,6 @@ but for a window to try those with (`/sane window`).
 | `Art/circle.blp`, `Art/circle-hole.blp` | The masks round corners are cut with: a white disc, and a white square with the disc taken out (256 × 256, DXT5 with mipmaps). Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
-- 2026-10-20 — `Data.Items(key, place)` (`Data/Characters.lua`): what a character keeps in a place, or the account's
-  bank, item by item in the order kept; for Inventory's window of the other characters (Saneroki).
 - 2026-10-20 — The board (`Board.lua`, `Core.Board`): a module's full screen of windows that share it as the player
   arranges them, in layouts behind tabs in the title bar; the title bar's search box ends left of its dropdown
   *Windows* (Saneroki).

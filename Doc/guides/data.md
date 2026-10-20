@@ -641,7 +641,6 @@ SaneUIData_Characters["forever"] = {
 | --- | --- |
 | `Data.Characters()` | Every character of the account, by name: `{ key, name, realm, class, race, level, side, seen, money, bankSeen }`. nil until the pack is loaded. |
 | `Data.Character(key)` | One of them, or nil. |
-| `Data.Items(key, place)` | What one of them keeps in a place (`bags`, `bank`, `worn`; the key `account` with `bank`: the account's bank), item by item in the order kept (by item ID): `{ { item = 4500, count = 12 }, ... }`. nil: no such character or place, or not loaded yet. |
 | `Data.Count(item)` | `{ total = 40, [key] = { bags = 12, bank = 8, worn = 1 } }`, the key `account` for the account's bank (`{ bank = 5 }`); nil: none of them has it, or not counted yet. |
 | `Data.CharactersStamp()`, `Data.OnCharacters(fn)` | A number that moves, and `fn()` called, when any of it changes: a view redraws then. |
 

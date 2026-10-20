@@ -84,11 +84,6 @@ a grid (in the order the place keeps them), and the gear as a list. Gear by slot
 alt) needs Core's Characters to keep what is worn per slot: a change to Core's data framework, decided when
 that part is built.
 
-Built 2026-10-20 (`src/Inventory/Alts/`, the window *Characters*): **one window that switches between
-characters**, a roster of them all down its left (the one logged in first, its bank as last seen is worth a look
-too; the account's own bank last), the chosen one's places in one scrolling list. Core gives a character's places
-item by item (`Data.Items`). Gear by slot is still the next step.
-
 ## Order
 
 1. **The window and the board** (built 2026-10-20): docked in the bottom right corner, its corner fills the
@@ -96,13 +91,12 @@ item by item (`Data.Items`). Gear by slot is still the next step.
 2. **The character sheet:** the paper doll (slots and model), then the stats, then the tabs one by one.
 3. **The bags:** the grid of all bags, the game's item buttons; then sorting, categories, the other views,
    the bank.
-4. **The other characters** (built 2026-10-20): the snapshot window from `Core.Data.Characters`; next, gear by
-   slot for an alt's paper doll.
+4. **The other characters:** the snapshot window from `Core.Data.Characters`.
 5. **The game's keys:** whether C and B open ours (Core's holder, `Holder.lua`, keeps the game's window out
    of sight while ours is chosen), and *Classic windows* in the full window's dropdown for the game's own.
 
 ## Open questions
 
 - What the small window shows while docked (nothing yet: only its corner works).
-- ~~Whether the snapshots are one window that switches between characters, or a window per character on the
-  board.~~ One window with a roster (2026-10-20).
+- Whether the snapshots are one window that switches between characters, or a window per character on the
+  board.

@@ -10,10 +10,7 @@ local Core = SaneUI.Core
 --      Data.Characters()     every character of the account, by name: { key, name, realm, class, race,
 --                            level, side, seen, money, bankSeen }; nil until the pack is loaded
 --      Data.Character(key)   one of them, or nil
---      Data.Items(key, place)  what one of them keeps in a place ("bags", "bank", "worn"; the key "account"
---                            with "bank": the account's own bank), in the order kept: { { item = 4500,
---                            count = 12 }, ... }; nil: no such character or place, or not loaded yet
---      Data.Count(item)    { total = 40, [key] = { bags = 12, bank = 8, worn = 1 } }: where the account
+--      Data.Count(item)      { total = 40, [key] = { bags = 12, bank = 8, worn = 1 } }: where the account
 --                            has the item (the key "account": the account's own bank), or nil: none, or
 --                            not known yet
 --      Data.CharactersStamp(), Data.OnCharacters(fn)   moves (fn() is called) when any of it changes
@@ -46,7 +43,6 @@ local parsed = {} -- [key] = { [place] = { [item] = count } }: the packed string
 local counted = false -- every place taken apart: Count answers
 local counts = {} -- [item] = the count handed out, or false: none
 local views, list = {}, nil -- what Character and Characters hand out, made anew after a change
-local held = {}  -- [key][place] = what Items handed out, made anew after a change
 local listeners = {}
 local stamp = 0
 
@@ -101,7 +97,6 @@ local function Changed()
     stamp = stamp + 1
     wipe(counts)
     wipe(views)
-    wipe(held)
     list = nil
     for _, fn in ipairs(listeners) do Core.Safe("data: characters", fn) end
 end
@@ -350,24 +345,6 @@ function Data.Characters()
     for key in pairs(part.characters) do list[#list + 1] = View(key) end
     table.sort(list, function(a, b) return a.name < b.name end)
     return list
-end
-
--- A place's items in the order a packed place keeps them: by item ID
-local function Kept(map)
-    local items = {}
-    for item, count in pairs(map) do items[#items + 1] = { item = item, count = count } end
-    table.sort(items, function(a, b) return a.item < b.item end)
-    return items
-end
-
-function Data.Items(key, place)
-    if not (part and (place == "bags" or place == "bank" or place == "worn")) then return nil end
-    local entry
-    if key == ACCOUNT then entry = place == "bank" and part.account else entry = part.characters[key] end
-    if type(entry) ~= "table" then return nil end
-    held[key] = held[key] or {}
-    held[key][place] = held[key][place] or Kept(Map(key, place))
-    return held[key][place]
 end
 
 function Data.Count(item)

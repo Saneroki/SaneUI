@@ -8,11 +8,15 @@ local _, ns = ...
 --  above the map and the game's minimap (Canvas.LEVELS), so they can be seen and
 --  clicked in both views.
 --
---      quest       the game's quest disc with its mark: in progress, ready to turn in (the quest the game's
---                  arrow leads to on its brown disc), a quest of Core's data to take; a click shows it in
---                  the quest log and lets the game's arrow lead to it (QuestLog.lua)
---      gathered    pins that would cover each other, one disc with their number; a click zooms in
---      the rest    the game's atlas of each; a click on one that leads into another map opens that map
+--      every pin   its own icon from the game's map icons (Pins.ICONS and the kinds' tables): no discs, no
+--                  numbers. A quest in your log: the turn-in mark when ready, the target while in progress (the
+--                  one the game's arrow leads to with a glow); a click shows it in the quest log and lets the
+--                  arrow lead to it (QuestLog.lua). A quest giver of Core's data: the quest mark, see-through
+--                  (grey, without colour, for a quest too low or for later); a click shows its quests in the
+--                  quest log as previews (QuestLog.Preview)
+--      gathered    pins that would cover each other: one marker in the icon of the first (drawn highest), its
+--                  tooltip what is there; a click zooms in
+--      the rest    a click on one that leads into another map opens that map
 --
 --  Placed against the canvas' holder like the map's layers, so a drag moves them
 --  with the map; laid out again with the map. A pin shows only while it lies
@@ -25,14 +29,8 @@ local Pins = ns.Pins
 local PinView = {}
 ns.PinView = PinView
 
-PinView.DISC = "UI-QuestPoi-QuestNumber"            -- the game's quest disc
-PinView.DISC_FOCUSED = "UI-QuestPoi-QuestNumber-SuperTracked"
-PinView.IN_PROGRESS = "Quest-In-Progress-Icon-yellow"
-PinView.IN_PROGRESS_FOCUSED = "Quest-In-Progress-Icon-Brown"
-PinView.TURN_IN = "UI-QuestIcon-TurnIn-Normal"
-PinView.GLOW = "UI-QuestPoi-OuterGlow"
-PinView.HIGHLIGHT = "UI-QuestPoi-InnerGlow"
-PinView.MARK = 0.6 -- the mark on a disc, as a share of the disc
+PinView.GLOW = "UI-QuestPoi-OuterGlow" -- behind the quest the game's arrow leads to
+PinView.GREY = 0.8 -- a grey quest's icon: so opaque, its colour taken away
 
 PinView.LEVELS = 6 -- the pins' own levels over their layer: a pin of a higher order stands over a lower one
 PinView.OFFERED = 0.55 -- a quest you can take but have not: see-through, so the quests in your log stand out
@@ -54,7 +52,7 @@ local function Tip(button)
         return GameTooltip:Show()
     end
     GameTooltip:SetText(pin.name or "?", 1, 1, 1)
-    if pin.kind == "quest" and pin.quest and not pin.offer then
+    if pin.kind == "log" and pin.quest then
         if pin.complete then GameTooltip:AddLine(Pins.TEXT.turnIn, 0.2, 1, 0.2) end
         local objectives = Core.Ask(C_QuestLog.GetQuestObjectives, pin.quest)
         for _, objective in ipairs(type(objectives) == "table" and objectives or {}) do
@@ -66,7 +64,11 @@ local function Tip(button)
         GameTooltip:AddLine(Pins.TEXT.open, 0.5, 0.5, 0.5)
     else
         if pin.offer then GameTooltip:AddLine(Pins.TEXT.offered, 1, 0.82, 0) end
-        for _, line in ipairs(pin.lines or {}) do GameTooltip:AddLine(line, 1, 1, 1, true) end
+        for _, line in ipairs(pin.lines or {}) do
+            -- A line in its own colour: { words, r, g, b }.
+            if type(line) == "table" then GameTooltip:AddLine(line[1], line[2], line[3], line[4], true)
+            else GameTooltip:AddLine(line, 1, 1, 1, true) end
+        end
         if pin.unverified then GameTooltip:AddLine(Pins.TEXT.unverified, 0.5, 0.5, 0.5) end
     end
     GameTooltip:Show()
@@ -79,6 +81,9 @@ local function Act(pin)
     end
     if pin.click == "quest" and pin.quest then
         return ns.QuestLog.Focus(pin.quest)
+    end
+    if pin.click == "preview" and pin.quests then
+        return ns.QuestLog.Preview(pin.quests, pin.map, pin.x, pin.y)
     end
     if pin.to then return ns.Canvas.Show(pin.to) end
 end
@@ -101,10 +106,8 @@ local function Make()
     local button = CreateFrame("Button", nil, layer)
     button.glow = button:CreateTexture(nil, "BACKGROUND")
     button.glow:SetAtlas(PinView.GLOW)
-    button.disc = button:CreateTexture(nil, "BORDER")
     button.icon = button:CreateTexture(nil, "ARTWORK")
-    button.count = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    button.count:SetPoint("CENTER", 0, 1)
+    button.icon:SetAllPoints()
     button.light = button:CreateTexture(nil, "HIGHLIGHT")
     button.light:SetAllPoints()
     button.light:SetBlendMode("ADD")
@@ -117,48 +120,27 @@ local function Make()
     return button
 end
 
--- A button's look for its pin.
+-- A button's look for its pin: its icon, whatever its kind (a gathered marker: its first pin's, the one drawn
+-- highest), at its kind's size from the pin filter's slider. A grey quest (and a flight point not found yet) without
+-- its colour, a quest offered see-through, the quest the game's arrow leads to with a glow behind it.
 local function Look(button, pin)
-    local kind = pin.gathered and "gathered" or pin.kind
-    -- At its kind's size from the pin filter's slider (a gathered marker: its first pin's kind).
-    local size = (Pins.SIZE[kind] or 20) * ns.PinScale(pin.gathered and pin.gathered[1].kind or pin.kind)
+    local first = pin.gathered and pin.gathered[1] or pin
+    local size = (Pins.SIZE[first.kind] or 20) * ns.PinScale(first.kind)
     button:SetSize(size, size)
-    button:SetAlpha(pin.offer and PinView.OFFERED or 1)
+    button:SetAlpha(first.offer and PinView.OFFERED or 1)
     button.half = size / 2 -- how far it reaches from its middle (Fit); the focused quest's glow farther
-    local disc, icon, glow, count = button.disc, button.icon, button.glow, button.count
-    icon:ClearAllPoints()
-    icon:SetDesaturated(pin.dim and true or false)
-    icon:SetVertexColor(1, 1, 1, pin.dim and 0.7 or 1)
-    count:Hide()
+    local icon, glow = button.icon, button.glow
+    local grey = first.grey or first.dim
+    icon:SetDesaturated(grey and true or false)
+    icon:SetVertexColor(1, 1, 1, grey and PinView.GREY or 1)
+    icon:SetAtlas(first.atlas or Pins.ICONS.offer)
+    button.light:SetAtlas(first.atlas or Pins.ICONS.offer)
     glow:Hide()
-    if kind == "quest" and not pin.offer then
-        disc:SetAtlas(pin.focused and PinView.DISC_FOCUSED or PinView.DISC)
-        disc:SetAllPoints()
-        disc:Show()
-        local mark = pin.complete and PinView.TURN_IN or (pin.focused and PinView.IN_PROGRESS_FOCUSED or PinView.IN_PROGRESS)
-        icon:SetAtlas(mark)
-        icon:SetSize(size * PinView.MARK, size * PinView.MARK)
-        icon:SetPoint("CENTER")
-        if pin.focused then
-            glow:SetSize(size * 1.6, size * 1.6)
-            glow:SetPoint("CENTER")
-            glow:Show()
-            button.half = size * 0.8
-        end
-        button.light:SetAtlas(PinView.HIGHLIGHT)
-    elseif kind == "gathered" then
-        disc:SetAtlas(PinView.DISC)
-        disc:SetAllPoints()
-        disc:Show()
-        icon:SetTexture(nil)
-        count:SetText(#pin.gathered)
-        count:Show()
-        button.light:SetAtlas(PinView.HIGHLIGHT)
-    else
-        disc:Hide()
-        if pin.atlas then icon:SetAtlas(pin.atlas) else icon:SetTexture(pin.texture) end
-        icon:SetAllPoints()
-        if pin.atlas then button.light:SetAtlas(pin.atlas) else button.light:SetTexture(pin.texture) end
+    if first.focused and not pin.gathered then
+        glow:SetSize(size * 1.6, size * 1.6)
+        glow:SetPoint("CENTER")
+        glow:Show()
+        button.half = size * 0.8
     end
 end
 
