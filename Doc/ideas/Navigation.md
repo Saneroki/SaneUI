@@ -693,6 +693,13 @@ blocks like the terrain's, so the map draws it the way it draws the others.
   and paving. 4x only where things are built saves little: 61 % of the land tiles hold buildings. Chosen: 4x
   (*Full detail, 4x*); the art may come as two addons, the view up to 2x and the finest level as an addon of
   its own, used when installed.
+- **Packed** (2026-10-20, `dev/tools/atlas pack`): each continent joined in strips of squares from the north (cut
+  where neighbours differ least, through the colour pass) and handed down the nine levels as it goes, a band of
+  512 rows at a time, so it is never whole in memory; each level halves the one below. A pixel is painted, open
+  sea (no square of the plan: the sea's one blue, made by code) or missing (land not painted yet); a block is
+  written where it holds painted ground and nothing is missing, so a map painted in part has no holes and open
+  sea alone makes no block. BLP2 DXT1 with mipmaps by ImageMagick (0.03 s a block), the index as `Index.lua`, in
+  `assets/optimized/Atlas/`, where `dev/build` takes them from.
 - **Light in the game at every zoom:** only the blocks in view are drawn (512 pixels, 128 KB each), from the
   level the zoom asks for, so a 4K screen needs some 40 to 60 blocks at any zoom, a few MB of video memory,
   whatever the package's size: the size costs disk, not frames. What costs frames is loading new blocks, so the

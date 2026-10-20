@@ -174,6 +174,50 @@ check("join_two: width", at.join_two(left, right, True).shape, (32, at.SQ + at.S
 check("join_two: hard cut in the middle", (int(at.join_two(left, right, True)[0, at.STEP + over // 2 - 1, 0]),
                                            int(at.join_two(left, right, True)[0, at.STEP + over // 2, 0])), (0, 255))
 
+# --- Packing ------------------------------------------------------------------------------------------
+
+check("ranges", at.ranges([3, 5, 6, 7, 9, 12, 13]), "3,5-7,9,12-13")
+check("ranges: one", at.ranges([4]), "4")
+lua = at.index_lua({0: {0: {10: [3, 4, 5]}, 1: {5: [1]}}, 1: {0: {2: [7, 9]}}})
+check("index: levels", f"levels = {at.LEVELS}," in lua, True)
+check("index: a row", '[10] = "3-5",' in lua and '[2] = "7,9",' in lua, True)
+check("index: the addon's table", "local _, ns = ..." in lua and "ns.INDEX = {" in lua, True)
+P, O, M = at.PAINTED, at.OPEN, at.MISSING
+quad = np.array([[P, O, O, O], [O, O, O, O], [M, P, O, O], [O, O, O, O]], np.uint8)
+colours = np.zeros((4, 4, 3), np.uint8); colours[:2, :2] = 200
+small_rgb, small_kind = at.halved(colours, quad)
+check("halved: missing wins, then painted", small_kind.tolist(), [[P, O], [M, O]])
+check("halved: colours averaged", int(small_rgb[0, 0, 0]), 200)
+check("halved: open sea is the sea's blue", small_rgb[0, 1].tolist(), at.SEA.tolist())
+top = np.full((8, 12, 3), 50, np.uint8); bottom = np.full((8, 12, 3), 150, np.uint8)
+tk = np.full((8, 12), O, np.uint8); bk = np.full((8, 12), O, np.uint8)
+tk[:, :4] = P; bk[:, 4:8] = P; tk[:, 8:] = M
+rgb_, kind_ = at.blend_rows(top, bottom, tk, bk)
+check("blend rows: painted over sea", (int(rgb_[0, 1, 0]), int(rgb_[0, 5, 0])), (50, 150))
+check("blend rows: missing over sea", int(kind_[0, 10]), M)
+both_t = rng.integers(20, 80, (64, 6, 3)).astype(np.uint8)
+both_b = np.full((64, 6, 3), 220, np.uint8); both_b[24:40] = both_t[24:40]   # the two agree in the middle rows
+rgb_, kind_ = at.blend_rows(both_t, both_b, np.full((64, 6), P, np.uint8), np.full((64, 6), P, np.uint8))
+check("blend rows: both painted, cut where they agree", (rgb_[0].tolist() == both_t[0].tolist(), int(rgb_[-1, 3, 0])), (True, 220))
+blocks = []
+pyramid = at.Pyramid(8, lambda level, row, column, rgb: blocks.append((level, row, column, rgb.shape)), block=4, levels=2)
+band_rgb = np.zeros((8, 8, 3), np.uint8)
+band_kind = np.full((8, 8), O, np.uint8)
+band_kind[0:4, 0:4] = P                    # a block of painted ground
+band_kind[4:8, 4:8] = P; band_kind[7, 7] = M   # painted, but not whole
+pyramid.add(band_rgb[:5], band_kind[:5]); pyramid.add(band_rgb[5:], band_kind[5:])
+check("pyramid: whole painted blocks only; a level up, missing ground keeps it out", blocks, [(0, 0, 0, (4, 4, 3))])
+blocks.clear()
+band_kind[7, 7] = O
+pyramid = at.Pyramid(8, lambda level, row, column, rgb: blocks.append((level, row, column, rgb.shape)), block=4, levels=2)
+pyramid.add(band_rgb, band_kind)
+check("pyramid: then the level up", blocks, [(0, 0, 0, (4, 4, 3)), (0, 1, 1, (4, 4, 3)), (1, 0, 0, (4, 4, 3))])
+fake = [b"\x01" * 8 * 16, b"\x02" * 8 * 4, b"\x03" * 8]
+blp = at.blp_of(fake, 16)
+check("blp: DXT1, no alpha, mipmaps", (blp[:4], blp[8:12]), (b"BLP2", bytes([2, 0, 0, 1])))
+offsets = struct.unpack_from("<3I", blp, 20)
+check("blp: mipmaps where the header says", [blp[o:o + 1] for o in offsets], [b"\x01", b"\x02", b"\x03"])
+
 # --- The grid, the websocket, the screen --------------------------------------------------------------
 
 check("squares start on chunks", at.STEP % at.CHUNK, 0)

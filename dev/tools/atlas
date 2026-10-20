@@ -16,6 +16,7 @@ Usage:
                         [--out DIR] [--keep-comfyui] [--dry]
   dev/tools/atlas status [--out DIR]
   dev/tools/atlas join --to FILE [--near ...] [--continent 0|1] [--cut] [--mood M | --as-painted] [--out DIR]
+  dev/tools/atlas pack [--to DIR] [--continent 0|1] [--mood M | --as-painted] [--out DIR]
 
   --adt, --tables, --minimap   the game's terrain files (<key>.adt), its client tables as CSV and its minimap
                                textures (<file id>.blp), as dev/tools/map-meta reads them; needed the first
@@ -33,6 +34,11 @@ Usage:
                                each square first through the colour pass: its broad colours moved toward the
                                game's, keeping M of the model's own (--mood, default 0.5), its water toward the
                                open sea's blue (--as-painted: the paintings as they are)
+  pack                         the painted squares, joined and through the colour pass as for join, as the
+                               Atlas module's art: blocks of 512 pixels in nine levels, BLP2 DXT1 with
+                               mipmaps, and their index (src/Atlas/Atlas.lua), in DIR (default
+                               assets/optimized/Atlas, where dev/build takes them from); a block is written
+                               where it holds painted ground and no land of the plan is still unpainted
 
 While it runs in a terminal:
   p   pause after the picture being painted, and free the graphics card; p again goes on
@@ -47,6 +53,7 @@ one kept, its zone and its seconds; words.jsonl, the words each square was paint
 import argparse
 import base64
 import collections
+import concurrent.futures
 import importlib.machinery
 import importlib.util
 import io
@@ -529,6 +536,228 @@ def join(out, continent, block, cut=False, game=None, mood=MOOD):
     return whole
 
 
+# --- Packing: the blocks the game draws ----------------------------------------------------------
+# The Atlas module's art (src/Atlas/Atlas.lua): blocks of BLOCK pixels, level 0 a quarter tile, each level up
+# twice the yards, LEVELS levels, the last one block for the whole grid; BLP2 DXT1 with mipmaps, and Index.lua,
+# the blocks there are. A continent is joined in strips of squares from the north and handed down the levels as
+# it goes, a band of BLOCK rows at a time, so it is never whole in memory (a level-0 band of the whole grid's
+# width is 200 MB). Each pixel is painted, open sea (no square of the plan: made by code, the sea's one blue) or
+# missing (a square of the plan not painted yet); a block is written when it holds painted ground and nothing is
+# missing, so a map painted in part has no holes, and a block of open sea alone is not written.
+
+BLOCK = 512    # a block's side in pixels (Atlas.lua's PIXELS)
+LEVELS = 9     # 0 to 8: at level 8 one block spans the grid's 64 tiles
+MISSING, OPEN, PAINTED = 0, 1, 2
+PACKED = ROOT / "assets" / "optimized" / "Atlas"
+
+
+def busy(*kinds):
+    """The columns (from the first to the last, an even number) where some pixel is not open sea, or None: most of
+    the grid is open sea, and there the work is skipped."""
+    found = np.zeros(kinds[0].shape[1], bool)
+    for kind in kinds:
+        found |= (kind != OPEN).any(0)
+    found = np.flatnonzero(found)
+    return None if not len(found) else (int(found[0]) & ~1, min(kinds[0].shape[1], (int(found[-1]) + 2) & ~1))
+
+
+def blend_rows(top, bottom, top_kind, bottom_kind):
+    """Two strips' overlapping rows (top's last, bottom's first) as one: where both are painted, cut along the
+    line where they differ least (seam, turned); painted wins over sea and missing, missing over sea."""
+    rgb, kind = bottom.copy(), bottom_kind.copy()
+    span = busy(top_kind, bottom_kind)
+    if span is None:
+        return rgb, kind
+    part = slice(*span)
+    top, bottom, top_kind, bottom_kind = top[:, part], bottom[:, part], top_kind[:, part], bottom_kind[:, part]
+    both = (top_kind == PAINTED) & (bottom_kind == PAINTED)
+    w = np.zeros(top.shape[:2] + (1,), np.float32)
+    columns = np.flatnonzero(both.any(0))
+    if len(columns):
+        a, b = columns[0], columns[-1] + 1
+        w[:, a:b] = seam(top[:, a:b].transpose(1, 0, 2).astype(np.float32),
+                         bottom[:, a:b].transpose(1, 0, 2).astype(np.float32)).transpose(1, 0, 2)
+    w[(top_kind == PAINTED) & (bottom_kind != PAINTED)] = 1
+    w[(bottom_kind == PAINTED) & (top_kind != PAINTED)] = 0
+    rgb[:, part] = (top * w + bottom * (1 - w)).clip(0, 255).astype(np.uint8)
+    kind[:, part] = np.where(both | (top_kind == PAINTED) | (bottom_kind == PAINTED),
+                             np.where(w[..., 0] >= 0.5, top_kind, bottom_kind), np.minimum(top_kind, bottom_kind))
+    return rgb, kind
+
+
+def halved(rgb, kind):
+    """A band at half the size: colours averaged by fours; a pixel is missing when any of its four is, else
+    painted when any is."""
+    h, w = kind.shape
+    out_rgb = np.empty((h // 2, w // 2, 3), np.uint8)
+    out_rgb[:] = SEA
+    out_kind = np.full((h // 2, w // 2), OPEN, np.uint8)
+    span = busy(kind)
+    if span is not None:
+        a, b = span
+        part = rgb[:, a:b].reshape(h // 2, 2, (b - a) // 2, 2, 3).astype(np.uint16).sum((1, 3)) // 4
+        quad = kind[:, a:b].reshape(h // 2, 2, (b - a) // 2, 2)
+        out_rgb[:, a // 2:b // 2] = part
+        out_kind[:, a // 2:b // 2] = np.where((quad == MISSING).any((1, 3)), MISSING,
+                                              np.where((quad == PAINTED).any((1, 3)), PAINTED, OPEN))
+    return out_rgb, out_kind
+
+
+class Pyramid:
+    """Bands of rows handed down the levels: each full band of `block` rows is cut into blocks (written by
+    write(level, row, column, rgb) when they hold painted ground and nothing missing), then halved into the
+    next level."""
+
+    def __init__(self, width, write, block=BLOCK, levels=LEVELS):
+        self.block, self.levels, self.write = block, levels, write
+        self.rgb = [np.empty((block, width >> level, 3), np.uint8) for level in range(levels)]
+        self.kind = [np.empty((block, width >> level), np.uint8) for level in range(levels)]
+        self.filled = [0] * levels
+        self.rows = [0] * levels
+
+    def add(self, rgb, kind, level=0):
+        while len(kind):
+            take = min(self.block - self.filled[level], len(kind))
+            self.rgb[level][self.filled[level]:self.filled[level] + take] = rgb[:take]
+            self.kind[level][self.filled[level]:self.filled[level] + take] = kind[:take]
+            self.filled[level] += take
+            rgb, kind = rgb[take:], kind[take:]
+            if self.filled[level] == self.block:
+                self.cut(level)
+
+    def cut(self, level):
+        band, kinds, b = self.rgb[level], self.kind[level], self.block
+        span = busy(kinds) or (0, 0)
+        for column in range(span[0] // b, -(-span[1] // b)):
+            k = kinds[:, column * b:(column + 1) * b]
+            if not (k == MISSING).any() and (k == PAINTED).any():
+                self.write(level, self.rows[level], column, band[:, column * b:(column + 1) * b].copy())
+        self.rows[level] += 1
+        self.filled[level] = 0
+        if level + 1 < self.levels:
+            self.add(*halved(band, kinds), level + 1)
+
+
+def dxt1(picture):
+    """A picture's DXT1 blocks with every mipmap down to 1 x 1, largest first: ImageMagick writes them as a DDS
+    file (header of 128 bytes)."""
+    side = picture.shape[0]
+    mips = side.bit_length() - 1
+    ppm = b"P6\n%d %d\n255\n" % (side, side) + picture.tobytes()
+    data = subprocess.run(["magick", "ppm:-", "-define", "dds:compression=dxt1", "-define", f"dds:mipmaps={mips}", "dds:-"],
+                          input=ppm, capture_output=True, check=True).stdout
+    sizes = [max(1, (side >> k) // 4) ** 2 * 8 for k in range(mips + 1)]
+    assert data[:4] == b"DDS " and data[84:88] == b"DXT1" and len(data) == 128 + sum(sizes), "no DXT1 from magick"
+    parts, at = [], 128
+    for size in sizes:
+        parts.append(data[at:at + size])
+        at += size
+    return parts
+
+
+def blp_of(parts, side):
+    """A BLP2 file of DXT1 mipmaps (encoding 2, no alpha, alpha encoding 0), largest first."""
+    offsets, start = [], 148 + 1024   # the header, then a palette DXT does not use
+    for part in parts:
+        offsets.append(start)
+        start += len(part)
+    unused = [0] * (16 - len(parts))
+    header = b"BLP2" + struct.pack("<I4B2I", 1, 2, 0, 0, 1, side, side)
+    header += struct.pack("<16I", *offsets, *unused) + struct.pack("<16I", *(len(p) for p in parts), *unused)
+    return header + bytes(1024) + b"".join(parts)
+
+
+def ranges(columns):
+    """Sorted columns as Index.lua's text: single ones and runs ("3,5-9,12")."""
+    out, start = [], None
+    for k, column in enumerate(columns):
+        if start is None:
+            start = column
+        if k + 1 == len(columns) or columns[k + 1] != column + 1:
+            out.append(str(start) if start == column else f"{start}-{column}")
+            start = None
+    return ",".join(out)
+
+
+def index_lua(index):
+    """Index.lua for Atlas.lua: index[continent][level][row] = sorted columns."""
+    lines = ["-- The blocks of the Atlas' art, made by dev/tools/atlas pack (read by Atlas.lua).",
+             "local _, ns = ...", "", "ns.INDEX = {", f"    levels = {LEVELS},"]
+    for continent in sorted(index):
+        lines.append(f"    [{continent}] = {{")
+        for level in sorted(index[continent]):
+            rows = index[continent][level]
+            lines.append(f"        [{level}] = {{")
+            lines += [f'            [{row}] = "{ranges(rows[row])}",' for row in sorted(rows)]
+            lines.append("        },")
+        lines.append("    },")
+    return "\n".join(lines + ["}", ""])
+
+
+def pack(out, game, guides, continent, mood, to, painted_only=False):
+    """One continent's squares as blocks in to/Art/<continent>/<level>/<row>_<column>.blp; returns its index
+    (level: row: columns) and the number of blocks."""
+    width = ta.GRID * PX
+    count = -(-(width - SQ) // STEP) + 1
+    planned = set(plan(guides, [continent]))
+    over = SQ - STEP
+    art = to / "Art" / str(continent)
+    index, written = {}, set()
+    pool = concurrent.futures.ThreadPoolExecutor(max(1, (os.cpu_count() or 2) // 2))
+    jobs = collections.deque()
+
+    def write(level, row, column, rgb):
+        path = art / str(level) / f"{row}_{column}.blp"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        jobs.append(pool.submit(lambda: path.write_bytes(blp_of(dxt1(rgb), BLOCK))))
+        while len(jobs) > 64:   # the encoders keep up, or the blocks waiting would fill the memory
+            jobs.popleft().result()
+        index.setdefault(level, {}).setdefault(row, []).append(column)
+        written.add(path)
+
+    pyramid = Pyramid(width, write)
+
+    def strip(j):
+        rgb = np.empty((SQ, width, 3), np.uint8)
+        rgb[:] = SEA
+        kind = np.full((SQ, width), OPEN, np.uint8)
+        last = None
+        for i in range(count):
+            x0 = i * STEP
+            path = out / str(continent) / f"sq-{i}-{j}.png"
+            if path.is_file():
+                painting = np.asarray(Image.open(path).convert("RGB"))
+                if not painted_only:
+                    painting = colour_of(painting, game.square(continent, i, j), mood)
+                if last is not None and last == i - 1:   # cut against the painted square on its left
+                    w = seam(rgb[:, x0:x0 + over].astype(np.float32), painting[:, :over].astype(np.float32))
+                    painting = painting.copy()
+                    painting[:, :over] = (rgb[:, x0:x0 + over] * w + painting[:, :over] * (1 - w)).clip(0, 255)
+                rgb[:, x0:x0 + SQ] = painting
+                kind[:, x0:x0 + SQ] = PAINTED
+                last = i
+            elif (continent, i, j) in planned:   # land, not painted yet: missing, except where painted
+                region = kind[:, x0:x0 + SQ]
+                region[region != PAINTED] = MISSING
+        return rgb, kind
+
+    before = None
+    for j in range(count):
+        rgb, kind = strip(j)
+        if before is not None:
+            rgb[:over], kind[:over] = blend_rows(before[0][STEP:], rgb[:over], before[1][STEP:], kind[:over])
+            pyramid.add(before[0][:STEP], before[1][:STEP])
+        before = (rgb, kind)
+    pyramid.add(*before)
+    for job in jobs:
+        job.result()
+    pool.shutdown()
+    for stale in art.glob("*/*.blp"):   # blocks of an earlier pack that this one did not write
+        if stale not in written:
+            stale.unlink()
+    return {level: {row: sorted(cols) for row, cols in rows.items()} for level, rows in index.items()}, len(written)
+
+
 def name_of(continent, i, j):
     return f"{continent}:{i}:{j}"
 
@@ -921,7 +1150,7 @@ def run_lines(shared, worker, history):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=("paint", "status", "join"))
+    parser.add_argument("command", choices=("paint", "status", "join", "pack"))
     parser.add_argument("--near", nargs=5, type=float, metavar=("UIMAP", "X", "Y", "ACROSS", "DOWN"))
     parser.add_argument("--to")
     parser.add_argument("--cut", action="store_true")
@@ -975,6 +1204,21 @@ def main():
                                         max(s[1] for s in mine) + 1, max(s[2] for s in mine) + 1)
         Image.fromarray(join(out, continent, block, args.cut, None if args.as_painted else game, args.mood)).save(args.to)
         print(f"{args.to}: {block[2] - block[0]} x {block[3] - block[1]} squares of {CONTINENTS[continent]}")
+        return
+
+    if args.command == "pack":
+        to = Path(args.to) if args.to else PACKED
+        sidecar = out / "pack.json"   # the index of every continent packed so far
+        known = {int(c): {int(lv): {int(r): cols for r, cols in rows.items()} for lv, rows in levels.items()}
+                 for c, levels in (json.loads(sidecar.read_text()) if sidecar.is_file() else {}).items()}
+        for c in continents:
+            started = time.time()
+            known[c], blocks = pack(out, game, guides, c, args.mood, to, args.as_painted)
+            print(f"{CONTINENTS[c]}: {blocks} blocks in {clock(time.time() - started)}", flush=True)
+        sidecar.write_text(json.dumps(known))
+        (to / "Index.lua").write_text(index_lua(known))
+        size = sum(f.stat().st_size for f in (to / "Art").rglob("*.blp"))
+        print(f"{to}: {size / 2 ** 30:.2f} GB. dev/build puts it into the addon SaneUI_Atlas.")
         return
 
     if args.command == "status":
