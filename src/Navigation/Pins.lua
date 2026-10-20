@@ -72,6 +72,7 @@ local PLACES = {
 }
 local WAYS = { boat = "flightmasterferry", zeppelin = "vehicle-air-horde", tram = "vehicle-alliancecart",
                lift = "poi-door-up", portal = "mageportalalliance" }
+Pins.WAY_ICONS = WAYS
 local OBJECTS = { herb = { "herb", "professions_tracking_herb" }, ore = { "ore", "professions_tracking_ore" },
                   chest = { "treasure", Pins.ICONS.treasure }, mailbox = { "service", "mailbox" },
                   book = { "book", "lorewalking-map-icon" } }
@@ -306,6 +307,7 @@ local function Towards(there)
     if area and zone and area ~= zone then return area .. ", " .. zone end
     return area or zone or "?"
 end
+Pins.Towards = Towards
 
 -- A trainer's icon: the class book where its title names one of the game's classes, else the profession's scroll.
 local classNames -- the game's class names, asked once

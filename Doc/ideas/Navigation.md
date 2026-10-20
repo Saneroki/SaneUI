@@ -427,6 +427,7 @@ guide), and these for Navigation in particular:
 | `Hybrid.lua` | The native `Minimap` in the small view, and back | yes |
 | `Native.lua` | The game's world map kept closed, its openers caught, and back | yes |
 | `QuestLog.lua` | The quest list on the left | yes |
+| `DockWatch.lua` | At a dock: its ships' destinations and times; aboard, when it lands | yes |
 | `TopBar.lua` | Map selector, pin filter, the three views | yes |
 | `Planner.lua` | The journey: walking, flights, ships, hearthstone | no |
 | `Search.lua` | The path search on Core's walking data, in steps | no |
@@ -933,11 +934,18 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
   - **On the map (2026-10-20):** each dock a pin of its own (*Pin catalogue*, *Travel*), also where a ship stops
     twice: the tool places the docks on their zone maps as every map point (`docks`, with the game's area each lies
     in, `dockAreas`, which names it in the other docks' tooltips).
-  - **Not in the tables:** the ships' speed and timetable. So their times are estimates in code until they are
-    learnt in play (Core's learned data, `Doc/ideas/Data.md`; the set's `wait`, a transport's time once round,
-    is where they go): once round is the sailing at `Planner.SAIL` yards a second, the stays, and
-    `Planner.LEAP` seconds a leap; one waits half of that for a ship, then sails to the dock (the stays between
-    included). With a learnt time once round, its speed follows from it. Nothing guessed is in the master.
+  - **Not in the tables:** the ships' speed and timetable. **Built (2026-10-20): Core's timetables**
+    (`Data.Ships`, `Doc/guides/data.md`, *The ships' times*): between two stops a ship sails at the game's
+    transports' speed (speeding up and slowing down into a stop), a leap takes no time; the time once round is
+    the set's `wait` where Forever has the original game's way (a batch, unverified), else the sailing and the
+    stays, corrected by a second ride. When a ship really sails on a realm is learnt on a ride: the player's
+    place in the world moving along its way at its speed says when it left its last stop; kept for the realm on
+    this computer, trusted half a day. The planner's wait for a ship is the time to its next departure where
+    that is known, else half its round; nothing guessed is in the master.
+  - **At a dock (built 2026-10-20, `DockWatch.lua`):** within 60 yards of where a ship stops, under the game's
+    widgets at the top of the screen, a row for each ship that stops there: its icon, where it goes, and when it
+    arrives and leaves, counting down (grey, how often it sails, until a ride taught its times); aboard, when
+    it lands. The setting *Ship times at a dock* (on); not while the map fills the screen.
   - **In the journey:** each dock a place of the graph, boarded and left at its pier (the floor of land nearest
     where the ship stops), a way from every dock of a ship to every other; the graph spans the planes of the
     player and the pin (a continent, or Zephras Isle: below), each place in its own plane, walks only within one

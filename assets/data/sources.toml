@@ -41,3 +41,8 @@ about = "The original game's NPCs and places (patch 1.12), only where every reco
 kind = "batch"
 game = "forever"
 about = "Quests, NPCs and places for Forever's client as our tool picked them, 2026-10-20: quests with their givers, takers, requirements, objectives (creatures to kill, objects to use, items to loot), starting items, reputation rewards and repeatability; NPCs with levels, ranks, factions, services and kinds of goods; what vendors sell (items only); which creatures and objects give quest items; spawn points of NPCs, quest objects and other creatures, herb and ore nodes and treasure chests, to a tenth of a percent of the zone map. Names are the game's wherever it gives them; only what agrees with the master or fills what it lacks. Unverified: the game's word or our own sightings replace it entry by entry."
+
+[6]
+kind = "batch"
+game = "forever"
+about = "The original game's boats and zeppelins (patch 1.12): the time each takes once round its way, where every record of it agrees to the millisecond and Forever's client has the same way, its points and stays alike. Unverified: a ride in play confirms it."

@@ -267,6 +267,7 @@ but for a window to try those with (`/sane window`).
 | `Core.Surnames()` | Whether this client names players by first name and surname (Forever, or `RegionalUniqueNamesEnabled`) |
 | `Core.Data.Set(name)` and its handle | Sane UI's databases, loaded on demand from the data packs; a module only reads ([Doc/guides/data.md](../../Doc/guides/data.md)) |
 | `Core.Data.Map()`: `On(map)`, `Spawns(key)`, `OnChange(fn)` | What the data puts on a map: the places of Spawns, Places and Travel per map, each with what it is ([Doc/guides/data.md](../../Doc/guides/data.md), *What a map shows*) |
+| `Core.Data.Ships()`: `Table(key)`, `Next(key, stop, at)`, `Aboard()`, `Near(yards)`, `Seen(key)`, `OnLearn(fn)` | The boats' and zeppelins' timetables, when they sail on this realm (learnt on a ride, kept on this computer per realm), aboard one, the stops near the player ([Doc/guides/data.md](../../Doc/guides/data.md), *The ships' times*) |
 | `Core.Data.Characters()`, `Character(key)`, `Items(key, place)`, `Worn(key)`, `Count(item)`, `OnCharacters(fn)` | What the account's characters have: each by its GUID with its whole name, its bags, bank and what it wears (item by item, `Items`; slot by slot, `Worn`); where the account has an item and how many ([Doc/guides/data.md](../../Doc/guides/data.md), *Characters*) |
 | `Core.People.Alias(key)`, `Note(key)`, `Shown(name)`, `Set(key, what, value)`, `Watch(fn)` | The alias and the note the player gave a player (by `Core.PlayerKeyOf`); what to show for a name; `Watch` tells a view to draw its names anew |
 | `Core.Coins(copper)` | Money as the game writes it, with coin icons; nil if it cannot |
@@ -497,7 +498,7 @@ but for a window to try those with (`/sane window`).
 | `Bindings.lua`, `Bindings.xml` | Sane UI's section in the game's key bindings, and its key for the options |
 | `Demo.lua` | `/sane window` |
 | `People.lua` | Aliases and notes of players: *Set Alias* and *Set Note* in the game's menu of a player (`Menu.ModifyMenu` on its `MENU_UNIT_*` tags), kept in `SaneUIDB.modules.SaneUI.people` by the player's key |
-| `Data/` | The data framework: `Steps.lua` (the scheduler), `Codec.lua` (a pack's row into a record), `Data.lua` (the packs, the answers, the saved parts of packs), `Map.lua` (what the data puts on a map), `Characters.lua` (what the account's characters have) ([Doc/guides/data.md](../../Doc/guides/data.md)) |
+| `Data/` | The data framework: `Steps.lua` (the scheduler), `Codec.lua` (a pack's row into a record), `Data.lua` (the packs, the answers, the saved parts of packs), `Map.lua` (what the data puts on a map), `Ships.lua` (the ships' timetables and times), `Characters.lua` (what the account's characters have) ([Doc/guides/data.md](../../Doc/guides/data.md)) |
 | `Sync/` | Sync: the game's own per-character settings kept with Sane UI's ([README](Sync/README.md)) |
 | `Settings/` | The options: the pages, their controls, `/sane options` ([README](Settings/README.md)) |
 | `Art/banner.blp` | Sane UI's banner, at the top of the options' page *Sane UI*. Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/SaneUI-banner.png` |
@@ -518,6 +519,9 @@ but for a window to try those with (`/sane window`).
 - 2026-10-20 — The seat (`Seat.lua`, `Core.Seat`): a window not ours on a full screen, placed, never shown or hidden
   by our code (Combat's talents and spellbook). `Core.Lent(frame)`. The known addons (`Neighbours.lua`,
   `Core.Neighbours`). Edge's strip of a share of the screen's side (`strip`).
+- 2026-10-20 — The ships' times (`Data/Ships.lua`, `Data.Ships()`): the boats' and zeppelins' timetables from *Travel*
+  (the game's transports' speed, the set's `wait`), and when each sails on this realm, learnt on a ride and kept
+  per realm on this computer; for Navigation's routes and its dock watch.
 - 2026-10-20 — What the data puts on a map (`Data/Map.lua`, `Data.Map()`): the places of Spawns, Places and Travel
   per map, for Navigation's pins. The dropdown *Classic windows* takes kept choices: a checkbox, ticked while the
   game's own window is the one chosen, chosen again to come back.

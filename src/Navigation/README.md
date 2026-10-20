@@ -78,8 +78,14 @@ party), always over the map, and the full map has the quest log at its left. The
   the other continent or on Zephras Isle is reached by boat or zeppelin, the line red from pier to pier, and the
   hearthstone is taken where it is quickest (the map learns its place where you bind it, or the first time you use
   it). Leave the line and it is planned again; after a flight it goes on from where you landed; aboard a ship it
-  waits until you have landed. The ships' timetables are not in the game's data: how long one waits for a ship and
-  how long it sails are guessed from its way. *Route to the map pin* in the pin filter switches it off.
+  waits until you have landed. The game tells no ship's timetable: its sailing comes from its way at the game's
+  transports' speed, and once you have ridden a ship on your realm the map knows when it really sails there and
+  counts the wait for the next one (until then half its time once round). *Route to the map pin* in the pin
+  filter switches it off.
+- **Ship times at a dock:** at the dock of a boat or a zeppelin, under the game's own notes at the top of the
+  screen, each that stops there: where it goes, when it arrives and when it leaves, counting down; aboard, when
+  it lands. A ship you have not ridden on this realm yet shows how often it sails; one ride teaches its times
+  (kept on this computer for the realm, half a day). *Ship times at a dock* in the settings switches it off.
 - **Map view** (the buttons on the full map's bar, or the setting on the page *Navigation*): *Parchment* or
   *Scrying* (the default), and *Atlas* while that module is switched on in the addon list; for both views and at
   every zoom (in the code `sketches`, `terrain`, `atlas`). A view not offered (the module switched off or
@@ -219,10 +225,11 @@ party), always over the map, and the full map has the quest log at its left. The
   walking data (guessed), the flights of Core's set *Travel* the player's side may take, the boats and zeppelins of
   *Travel* from dock to dock (both from the game's tables, by `dev/tools/travel-data`), the hearthstone from the
   player; the quickest chosen (Dijkstra), the walks then searched and the journey chosen once more when one is
-  much longer than guessed. A ship (`Planner.Ship`): its way once round is its sailing at `Planner.SAIL` yards a
-  second, its stays at the docks (the game's) and `Planner.LEAP` seconds a leap, or its time once round when
-  *Travel* has it learnt (`wait`); one waits half of that for it, then sails to the dock (the stays between
-  included). One boards and leaves at the pier, the land nearest where it stops. Planned again when the pin
+  much longer than guessed. A ship (`Planner.Ship`): its docks and trips from Core's timetable of it (`Data.Ships`:
+  the game's way and stays, its sailing at the game's transports' speed, stretched to its time once round where
+  *Travel* has it, `wait`, or a ride taught it); the wait for it the time to its next departure where a ride on this
+  realm taught its times, else half its round; then it sails to the dock (the stays between included). One boards
+  and leaves at the pier, the land nearest where it stops. Planned again when the pin
   changes, after a landing, when the player is 40 yards off the line (150 off a ship's way), and when the data
   arrives; aboard a ship a new pin is planned from where it lands. The known flight points are read at the flight
   master, the hearthstone's place where it is bound (`HEARTHSTONE_BOUND`) or where it brought the character, both
@@ -288,6 +295,7 @@ party), always over the map, and the full map has the quest log at its left. The
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log at the full map's left |
+| `DockWatch.lua` | At a dock, at the top of the screen: where its boats and zeppelins go and when they arrive and leave; aboard, when it lands |
 | `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the pin filter |
 | `Window.lua` | Core's window: the top right corner, the full screen, the two cameras, the view buttons |
 | `Art/Terrain/*.blp` | The terrain's overview: the game's minimap textures, smaller, the water cut away, made by `dev/tools/terrain-art` from the game's files |
@@ -298,6 +306,11 @@ party), always over the map, and the full map has the quest log at its left. The
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-20, ship times:** the planner takes its ships from Core's timetables (`Data.Ships`, `Planner.SAIL` and
+  `Planner.LEAP` gone): the game's transports' speed, the time once round of the ways Forever has as the original
+  game's, and when each really sails on this realm, learnt on a ride; the wait for a ship is then the time to its
+  next departure. The dock watch (`DockWatch.lua`, setting *Ship times at a dock*) shows at a dock where its ships
+  go and when they arrive and leave, and aboard when it lands.
 - **2026-10-20, indoors without black:** the game's minimap keeps its own ground off indoors too (it drew the indoor
   plan on black over our map); the spirit healers in the game's spirit icon.
 - **2026-10-20, a click on a pin:** the game's map pin where it stands, on both maps; on the full map a quest also in

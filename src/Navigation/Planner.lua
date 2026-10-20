@@ -28,11 +28,9 @@ local _, ns = ...
 --  (HEARTHSTONE_BOUND) and where it brings the character, and kept for the character with the
 --  game's name of it (GetBindLocation), which tells when it was bound elsewhere since.
 --
---  A boat or zeppelin: the game's tables have its way, its docks and how long it stands at each, but
---  neither its speed nor its timetable. Until its time once round is learnt in play (the set's wait),
---  it is guessed to move at Planner.SAIL yards a second and to take Planner.LEAP seconds a leap (onto
---  another continent: a loading screen); once round is then its sailing, its stays and its leaps, and
---  half of that the wait for it.
+--  A boat or zeppelin: its timetable is Core's (Data.Ships): the game's way and stays, its sailing at the
+--  game's transports' speed, its round where the set or a ride knows it. The wait for one is the time to its
+--  next departure where a ride on this realm taught its times, else half its round.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords, Live, Walk, Search = ns.Coords, ns.Live, ns.Walk, ns.Search
@@ -42,8 +40,6 @@ ns.Planner = Planner
 Planner.RUN = 7          -- yards a second on foot, the game's run speed
 Planner.FLY = 30         -- yards a second on a flight, about the game's flights
 Planner.BOARD = 8        -- seconds a flight takes besides its way: taking off, landing
-Planner.SAIL = 25        -- yards a second a boat or zeppelin is guessed to move, until its times are learnt
-Planner.LEAP = 10        -- seconds a boat's or zeppelin's leap is guessed to take
 Planner.HEARTH = 15      -- seconds the hearthstone takes besides its cooldown: the cast, the loading screen
 Planner.DETOUR = 1.3     -- a walk not searched yet is guessed at so many times the straight line
 Planner.WORSE = 1.6      -- a walk found this much longer than its guess makes the journey be chosen again
@@ -51,13 +47,13 @@ Planner.OFF = 40         -- yards off the line that make a new plan
 Planner.ABOARD = 150     -- yards off a boat's or zeppelin's way the player may be and still be aboard
 Planner.DOCK = 30        -- yards from the dock it was boarded at, beyond which the player is aboard
 Planner.PIER = 40        -- yards from where a boat stops to the floor one boards it from, at most
-Planner.SAME = 20        -- yards between two stops at one dock
 Planner.AGAIN = 3        -- seconds at least between two plans
 Planner.LOOK = 1         -- seconds between two looks whether the player left the line
 Planner.HEARTHSTONE, Planner.HOMEWARD = 6948, 8690 -- the hearthstone: its item, its spell
 
 local SHIPS = { "boat", "zeppelin" }
 local Travel = Core.Data.Set("Travel")
+local Ships = Core.Data.Ships()
 local target            -- { map, u, v }: the pin in its plane
 local plan              -- the journey being planned or drawn: { legs, at, target }
 local jobs = {}         -- the walks being searched
@@ -173,68 +169,35 @@ local function Worlds(path)
     return worlds
 end
 
--- A boat's or zeppelin's docks and the ways between them, from its record of Core's set Travel: a list of docks
--- { world, x, y, ways = { [other dock] = { seconds, from, till } } }, one for each place it stops at; from and
--- till the indexes of its way's points where one boards and leaves it. seconds: the wait for it (half its way once
--- round) and the trip, its stays at the docks in between included.
-function Planner.Ship(way)
-    local path = type(way) == "table" and way.path
-    if type(path) ~= "table" or #path < 2 then return {} end
-    local worlds = Worlds(path)
-    -- Along the way to each point: the yards sailed, the leaps, the seconds stood at docks before it.
-    local at, leaps, stays = {}, {}, {}
-    local yards, leapt, stood = 0, 0, 0
-    for index, point in ipairs(path) do
-        if index > 1 then
-            if point.jump then
-                leapt = leapt + 1
-            else
-                local before = path[index - 1]
-                yards = yards + Distance(before.x, before.y, point.x, point.y)
-            end
+-- A boat's or zeppelin's docks and the ways between them, from its timetable (Core's, Data.Ships: the game's way and
+-- stays, its sailing, its round where known): a list of docks { world, x, y, ways = { [other dock] = { seconds, trip,
+-- stop, from, till } } }, one for each place it stops at; from and till the indexes of its way's points where one
+-- boards and leaves it, stop that stop's number in the timetable; trip the seconds from leaving there to arriving;
+-- seconds the trip and the wait for it while its times on this realm are not known (half its round). key: its
+-- record's in the set (its timetable kept, and its learnt round); without, a record of its own.
+function Planner.Ship(way, key)
+    local timetable = key and Ships:Table(key) or Ships.Timetable(way)
+    if not timetable then return {} end
+    local list, of = {}, {}
+    for number, stop in ipairs(timetable.stops) do
+        local dock = list[stop.dock]
+        if not dock then
+            dock = { world = stop.world, x = stop.x, y = stop.y, ways = {} }
+            list[stop.dock] = dock
         end
-        at[index], leaps[index], stays[index] = yards, leapt, stood
-        stood = stood + (point.stay or 0)
+        of[number] = dock
     end
-    leapt = leapt + 1 -- after its last point it starts again from its first
-    -- Its speed: guessed, or the one its time once round makes, learnt in play.
-    local speed = Planner.SAIL
-    local moving = way.wait and way.wait - stood - leapt * Planner.LEAP
-    if moving and moving > 0 and yards > 0 then speed = yards / moving end
-    local round = way.wait or yards / speed + stood + leapt * Planner.LEAP
-    local function Trip(i, j)
-        local sailed, leaping, standing
-        if j > i then
-            sailed, leaping, standing = at[j] - at[i], leaps[j] - leaps[i], stays[j] - stays[i]
-        else
-            sailed, leaping, standing = yards - at[i] + at[j], leapt - leaps[i] + leaps[j], stood - stays[i] + stays[j]
-        end
-        -- Its stay where one boards is part of the wait.
-        return sailed / speed + standing - path[i].stay + leaping * Planner.LEAP
-    end
-    local list, visits, dockOf = {}, {}, {}
-    for index, point in ipairs(path) do
-        if point.stay then
-            local dock
-            for _, other in ipairs(list) do
-                if other.world == worlds[index] and Distance(other.x, other.y, point.x, point.y) <= Planner.SAME then
-                    dock = other
-                    break
+    local round = timetable.round
+    for i, a in ipairs(timetable.stops) do
+        for j, b in ipairs(timetable.stops) do
+            local from, to = of[i], of[j]
+            if from ~= to then
+                local trip = (b.arrive - a.leave) % round
+                local seconds = round / 2 + trip
+                -- A dock stopped at twice: left from the stop that sails soonest.
+                if not from.ways[to] or seconds < from.ways[to].seconds then
+                    from.ways[to] = { seconds = seconds, trip = trip, stop = i, from = a.index, till = b.index }
                 end
-            end
-            if not dock then
-                dock = { world = worlds[index], x = point.x, y = point.y, ways = {} }
-                list[#list + 1] = dock
-            end
-            visits[#visits + 1], dockOf[index] = index, dock
-        end
-    end
-    for _, i in ipairs(visits) do
-        for _, j in ipairs(visits) do
-            local a, b = dockOf[i], dockOf[j]
-            if a ~= b then
-                local seconds = round / 2 + Trip(i, j)
-                if not a.ways[b] or seconds < a.ways[b].seconds then a.ways[b] = { seconds = seconds, from = i, till = j } end
             end
         end
     end
@@ -250,7 +213,7 @@ local function Docks()
     for _, kind in ipairs(SHIPS) do
         for _, key in ipairs(Travel:Keys("byKind", kind)) do
             local way = Travel:Get(key)
-            local list = way and Planner.Ship(way) or {}
+            local list = way and Planner.Ship(way, key) or {}
             local names = {}
             for index, dock in ipairs(list) do
                 local map = Plane(dock.world)
@@ -264,8 +227,8 @@ local function Docks()
                 local ways = names[dock] and found[names[dock]].ways
                 for other, trip in pairs(dock.ways) do
                     if ways and names[other] then
-                        ways[#ways + 1] = { to = names[other], seconds = trip.seconds, from = trip.from, till = trip.till,
-                                            kind = kind, way = way }
+                        ways[#ways + 1] = { to = names[other], seconds = trip.seconds, trip = trip.trip, stop = trip.stop,
+                                            from = trip.from, till = trip.till, kind = kind, way = way, key = key }
                     end
                 end
             end
@@ -343,6 +306,7 @@ end
 -- measured: { ["from:to"] = seconds } walks searched already, in place of their guesses.
 local function Journey(startMap, pu, pv, endMap, tu, tv, measured)
     local known = Known()
+    local now = Ships.Now()
     local useData = Walk.Ready()
     -- The places: the two ends, and on their planes the known flight points, the docks, the hearthstone's.
     local places = { start = { map = startMap, u = pu, v = pv }, ["end"] = { map = endMap, u = tu, v = tv } }
@@ -406,10 +370,16 @@ local function Journey(startMap, pu, pv, endMap, tu, tv, measured)
         if points[current] then
             for _, flight in ipairs(Flights(current, points, known)) do Reach(flight.to, low + flight.seconds, flight.flight) end
         end
-        -- By sea or air: the boats and zeppelins from a dock.
+        -- By sea or air: the boats and zeppelins from a dock; the wait for the next one where its times on this
+        -- realm are known (a ride taught them, Data.Ships), else half its round.
         if here.dock then
             for _, ship in ipairs(here.dock.ways) do
-                if places[ship.to] then Reach(ship.to, low + ship.seconds, ship) end
+                if places[ship.to] then
+                    local seconds, at = ship.seconds, now + low
+                    local _, leaves = Ships:Next(ship.key, ship.stop, at)
+                    if leaves then seconds = leaves - at + ship.trip end
+                    Reach(ship.to, low + seconds, ship)
+                end
             end
         end
         -- Home: the hearthstone from where the player is.
@@ -680,6 +650,8 @@ Travel:OnStamp(function()
     docks = nil
     Changed()
 end)
+-- A ride taught a boat's round: its trips made anew.
+Ships:OnLearn(ns.Guard(function() docks = nil end))
 ns.Listen("LIVE", function(what)
     if what == "waypoint" then ns.Guarded(Planner.Update) end
 end)

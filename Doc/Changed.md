@@ -3,8 +3,37 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 296 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 35 (Combat), 35 (spellbook), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 312 (Navigation), 85 (Inventory), 90 (sheet), 161 (bags), 35 (Combat), 35 (spellbook), 52 (Nameplates), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory and Nameplates; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Navigation: ship times, learnt on a ride, and the dock watch (Saneroki, 2026-10-20)
+- **Core's timetables** (new `src/Core/Data/Ships.lua`, `Data.Ships()`, in Core's TOC): a boat's or zeppelin's
+  timetable from its record in *Travel* (the game's way and stays): between two stops it sails at the game's
+  transports' speed (30 yards a second, speeding up and slowing down at 1 yard a second each second), a leap
+  onto another map takes no time; its round is the set's `wait`, else one learnt from two rides, else its sailing
+  and stays, and a known round stretches the sailing to it. `Table`, `Next` (when it next arrives at a stop and
+  leaves), `Aboard`, `Near`, `Seen`, `OnLearn`, `Now` (the server's time to a part of a second).
+- **Learnt on a ride:** the player's place in the world (`UnitPosition`, its fourth answer the map) moving along a
+  way at the ship's full speed says when it left its last stop; five looks that agree within four seconds are a
+  ride, kept for the realm in Core's saved data (`ships[realm][key]`, on this computer only, trusted twelve
+  hours); a second ride corrects an estimated round. Looked at every 3 seconds, every second near a stop or
+  aboard; nothing in a taxi's flight or while *Travel* is not loaded.
+- **The ships' time once round** (set *Travel*, `wait`, batch 6 in `sources.toml`, unverified): the original
+  game's for the five ways Forever's client has unchanged, point for point and stay for stay (Booty Bay and
+  Ratchet, Menethil Harbor and Theramore, the three zeppelins between Orgrimmar, Grom'gol and the Undercity),
+  only where every record agrees to the millisecond.
+- **The planner** (`Planner.lua`): `Planner.Ship(way, key)` from Core's timetable (`Planner.SAIL`, `Planner.LEAP`
+  and `Planner.SAME` gone), each way with its trip and stop; the wait for a ship the time to its next departure
+  where a ride taught its times on this realm, else half its round; the docks made anew when a ride taught a
+  round (`Ships:OnLearn`).
+- **The dock watch** (new `DockWatch.lua`, in Navigation's TOC; setting *Ship times at a dock*, on): within 60
+  yards of where a ship stops (kept to 90), under the game's widgets at the top of the screen, a row for each
+  ship there: its icon, where it goes (the game's area and zone, `Pins.Towards`), when it arrives and leaves,
+  counting down (grey, how often it sails, until a ride taught its times); aboard, when it lands. Not while the
+  map fills the screen; gone when the module stands down.
+- Tests: `dev/tests/navigation.lua` (312 checks: the runs and timetables, a ride learnt, its next times, aboard,
+  a second ride correcting the round, the dock watch's rows, its setting); `wowstub.lua` has `GetServerTime` and
+  `UnitPosition` (`W.serverStart`, `W.place`).
 
 ### Combat: our own spellbook, your keys opening it, the planner a window of its own (Saneroki, 2026-10-20)
 - **Decided** (Saneroki, `Doc/ideas/Combat.md`, *Our own spellbook and talents*; `Doc/ideas/Windows.md`): the

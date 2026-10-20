@@ -6,6 +6,7 @@
 local W = {}
 
 W.clock = 100
+W.serverStart = 1800000000
 W.combat = false
 W.cursor = nil            -- { kind = , id = } on the simulated cursor
 W.actions = {}            -- [slot] = { kind = , id = , text = }
@@ -417,6 +418,14 @@ function W.Install(env)
     env.strtrim = function(text) return (text:gsub("^%s+", ""):gsub("%s+$", "")) end
     env.wipe = function(t) for key in pairs(t) do t[key] = nil end return t end
     env.GetTime = function() return W.clock end
+    -- The server's time, whole seconds, W.serverStart ahead of the client's clock.
+    env.GetServerTime = function() return math.floor(W.serverStart + W.clock) end
+    -- The player's place in the world (W.place = { x, y, z, map }, or a function giving it); nothing by default.
+    env.UnitPosition = function(unit)
+        local place = unit == "player" and W.place
+        if type(place) == "function" then place = place() end
+        if place then return place[1], place[2], place[3], place[4] end
+    end
     env.C_XMLUtil = { GetTemplateInfo = function(name)
         if W.xmlTemplates[name] then return { type = W.xmlTemplates[name], width = 0, height = 0 } end
     end }

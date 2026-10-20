@@ -109,8 +109,12 @@ Core's set *Travel* (296, from the client's TaxiPath tables: nodes, cost, length
 (known flight points per character, `Core.Character`), `Route.lua` draws. Inputs of the tools: the extracted game
 files of the private baseline (`adt/`, `adt-obj0/`, `wmo/` with every group file, the client tables as CSV).
 
-Not yet: ships, zeppelins, portals, lifts and the hearthstone in routes (no timetables in the game's tables),
-doodads in the walking data (fences, trees), search, the guide, dungeon maps and floors, the minimap's small parts
+Ships (2026-10-20): `Planner.Ship(way, key)` from Core's timetables (`Data.Ships`), the wait for a ship the time to
+its next departure once a ride on the realm taught its times (`Ships:Next`), else half its round; `DockWatch.lua`
+(setting `dockTimes`) shows at a dock where its ships go and when they arrive and leave, aboard when it lands
+(under `UIWidgetTopCenterContainerFrame`, a guarded 1-2 s chain). Ship periods: Travel's `wait` from batch 6.
+
+Not yet: portals and lifts in routes, doodads in the walking data (fences, trees), search, the guide, dungeon maps and floors, the minimap's small parts
 (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (210
 checks), `dev/tests/walk.py` (28).
 

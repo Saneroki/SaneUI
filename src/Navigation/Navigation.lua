@@ -56,6 +56,8 @@ ns.TEXT = {
     low = "Low-level quests",
     later = "Quests for later",
     done = "Done quests",
+    dockTimes = "Ship times at a dock",
+    dockTimesTip = "At the dock of a boat or a zeppelin, at the top of the screen: where each that stops there goes, and when it arrives and leaves; aboard, when it lands. Its times show once you have ridden it on this realm (the game tells no timetable: Sane UI learns it on the ride), until then how often it sails.",
     followAgain = "Follow again after",
     followAgainTip = "After you dragged the map away, it centres on you again once the mouse has been off it for so long. 0: only when you zoom it with the mouse wheel close in.",
     seconds = "seconds",
@@ -143,6 +145,7 @@ local OPTIONS = {
     { key = "pinSizes", default = {} },
     { key = "followAgain", default = 10, min = 0, max = 60, step = 5, unit = ns.TEXT.seconds, text = ns.TEXT.followAgain,
       tip = ns.TEXT.followAgainTip },
+    { key = "dockTimes", default = true, text = ns.TEXT.dockTimes, tip = ns.TEXT.dockTimesTip },
     { key = "nativeMinimap", default = false, text = ns.TEXT.nativeMinimap, tip = ns.TEXT.nativeMinimapTip },
     { key = "nativeMap", default = false, text = ns.TEXT.nativeMap, tip = ns.TEXT.nativeMapTip },
 }
@@ -187,6 +190,7 @@ Core.Options(ns.name, OPTIONS, { version = 2, upgrade = Upgrade, changed = funct
         return ns.Guarded(ns.Native.Update)
     end
     if key == "nativeMap" then return ns.Guarded(ns.Native.Update) end
+    if key == "dockTimes" then return ns.Guarded(ns.DockWatch.Update) end
 end })
 
 -- Whether a view can be drawn: Atlas only while its module is there and has not failed.
@@ -226,6 +230,7 @@ function ns.GiveBack()
     Back(ns.Native.GiveBack)
     Back(ns.Hybrid.GiveBack)
     Back(ns.Window.Hide)
+    Back(ns.DockWatch.Hide)
 end
 
 function ns.OnLoad()

@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: at the dock of a boat or a zeppelin the top of the screen
+  shows where each goes and when it arrives and leaves; aboard, when
+  it lands. Ride a ship once on your realm and it knows its times, and
+  routes to the map pin count the real wait for the next ship.
 - Combat: your own spellbook on its full screen, as the game's: its
   pages, tabs, ranks and cooldowns, click to cast, drag to your bars.
   Your spellbook and talents keys open it there (switch it off in

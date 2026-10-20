@@ -515,6 +515,33 @@ Map:Spawns("npc:69")                 -- a thing's points: { [map] = { { x, y }, 
 - **Read** as walks of the scheduler (`Each`), one set after the other, when a set it reads arrives or changes;
   a set that no pack holds (empty in the master) or that is switched off is passed over without a word.
 
+### The ships' times (`Data.Ships`)
+
+```lua
+local Ships = SaneUI.Core.Data.Ships()
+Ships:Table(3)        -- a boat's or zeppelin's timetable: { round, known, stops = { { arrive, leave, stay, dock, area, ... } } }
+Ships:Next(3, 2)      -- when it next arrives at its second stop and leaves (server times), whether it stands there now
+Ships:Aboard()        -- aboard one: its key, the stop it comes to next, the seconds until it arrives
+Ships:Near(60)        -- the stops within 60 yards of the player: { { key, stop } }
+Ships:OnLearn(fn)     -- fn(key) on the frame after a ride taught its times
+```
+
+- **The timetable** is made from *Travel*'s record of the way (the game's points and stays): between two stops it
+  sails at `Ships.SPEED` yards a second, speeding up and slowing down at `Ships.ACCEL` (the game's transports'
+  own), and a leap onto another map takes no time. Its round is the record's `wait` where the set has it, else one
+  learnt from two rides, else its sailing and stays (`known` false); a known round stretches the sailing to it.
+- **`wait`** (seconds once round) is the original game's for the ways Forever's client has unchanged, point for
+  point and stay for stay: a batch (`sources.toml`, 6), only where every record of it agrees to the millisecond;
+  unverified until a ride confirms it. Forever's own ways have none.
+- **When it sails** belongs to the realm, not to the game: no call tells where a transport is, and each realm's
+  ships run from its own start. It is learnt on a ride: the player's place in the world (`UnitPosition`) moving
+  along a way at its full speed says when the ship left its last stop; `Ships.SAMPLES` looks that agree within
+  `Ships.AGREE` seconds are a ride. Kept in Core's saved data per realm (`ships[realm][key] = { epoch, seen,
+  rides, round }`), on this computer only, never shared or harvested; trusted `Ships.TRUST` seconds (a restart of
+  the realm starts its ships anew). Without a ride, `Next` gives nil.
+- **Looked at** every `Ships.LOOK` seconds, every `Ships.CLOSE` near a stop or aboard; not in a taxi's flight,
+  and nothing while *Travel* is not loaded (Navigation asks for it at login).
+
 ### Loading
 
 - **Packs are found at first need,** by their TOC lines (`C_AddOns.GetAddOnMetadata`, without loading them):

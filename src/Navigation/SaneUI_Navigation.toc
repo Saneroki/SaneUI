@@ -50,6 +50,8 @@ Hybrid.lua
 Native.lua
 # The quest log at the full map's left
 QuestLog.lua
+# At a dock: where its boats and zeppelins go and when they come, at the top of the screen; aboard, when it lands
+DockWatch.lua
 # The bar over the full map: the quest log, the views, the map selector, the pin filter
 TopBar.lua
 # The window: the minimap in the top right corner, the map when it fills the screen

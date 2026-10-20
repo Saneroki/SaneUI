@@ -1712,27 +1712,32 @@ ns.Planner.Update()
 Frames(8)
 check(shownWay and #shownWay.legs == 1 and shownWay.legs[1].kind == "walk", "without the flight points known: on foot")
 -- A boat's way (Core's set Travel, 3): a dock on each continent; each way between them the wait for it (half its
--- way once round: its sailing at the guessed speed, its stays, its leaps, the one from its last point back to its
--- first) and the trip.
-local ship = Planner.Ship(Core.Data.Set("Travel"):Get(3))
-local sail, leap = Planner.SAIL, Planner.LEAP
+-- round: its runs at the game's transports' speed, its stays; its leaps take no time, the one from its last point
+-- back to its first too) and the trip.
+local Ships = Core.Data.Ships()
+local run = Ships.Run
 local d12, d34 = math.sqrt(600 ^ 2 + 1550 ^ 2), math.sqrt(1000 ^ 2 + 500 ^ 2)
-local round = (d12 + 2 * d34) / sail + 120 + 3 * leap
+local round = run(d12 + d34) + run(d34) + 120
+do
+local ship = Planner.Ship(Core.Data.Set("Travel"):Get(3))
+check(near(run(2000), 60 + 1100 / 30) and near(run(400), 40), "a run: speeding up, at full speed, slowing down")
 check(#ship == 2 and ship[1].world == 0 and ship[2].world == 1 and ship[1].ways[ship[2]] and ship[2].ways[ship[1]],
     "a boat's way: a dock on each continent, a way from each to the other")
-check(near(ship[1].ways[ship[2]].seconds, round / 2 + (d12 + d34) / sail + leap)
-    and near(ship[2].ways[ship[1]].seconds, round / 2 + d34 / sail + 2 * leap),
+check(near(ship[1].ways[ship[2]].seconds, round / 2 + run(d12 + d34))
+    and near(ship[2].ways[ship[1]].seconds, round / 2 + run(d34)) and near(ship[2].ways[ship[1]].trip, run(d34)),
     "each the wait for it and the trip; back by the leap to its first point")
-local three = Planner.Ship({ wait = 600, path = { { x = 0, y = 0, map = 0, stay = 60 }, { x = 1000, y = 0, stay = 60 },
-    { x = 2000, y = 0, stay = 60 }, { x = 1000, y = 100 } } })
-local speed = (2000 + math.sqrt(1000 ^ 2 + 100 ^ 2)) / (600 - 180 - leap)
-check(#three == 3 and near(three[1].ways[three[3]].seconds, 300 + 2000 / speed + 60)
-    and near(three[1].ways[three[2]].seconds, 300 + 1000 / speed),
-    "three docks: past the one between, its stay counted; its time once round, learnt, sets its speed")
-local twice = Planner.Ship({ path = { { x = 0, y = 0, map = 0, stay = 30 }, { x = 500, y = 0 }, { x = 1000, y = 0, stay = 60 },
-    { x = 500, y = 50 }, { x = 0, y = 0, stay = 30 } } })
+local three = Planner.Ship({ kind = "boat", wait = 600, path = { { x = 0, y = 0, map = 0, stay = 60 },
+    { x = 1000, y = 0, stay = 60 }, { x = 2000, y = 0, stay = 60 }, { x = 1000, y = 100 } } })
+local stretch = (600 - 180) / (2 * run(1000) + run(math.sqrt(1000 ^ 2 + 100 ^ 2)))
+check(#three == 3 and near(three[1].ways[three[3]].seconds, 300 + 2 * run(1000) * stretch + 60)
+    and near(three[1].ways[three[2]].seconds, 300 + run(1000) * stretch),
+    "three docks: past the one between, its stay counted; its time once round, known, stretches its runs")
+local twice = Planner.Ship({ kind = "boat", path = { { x = 0, y = 0, map = 0, stay = 30 }, { x = 500, y = 0 },
+    { x = 1000, y = 0, stay = 60 }, { x = 500, y = 50 }, { x = 0, y = 0, stay = 30 } } })
 check(#twice == 2 and near(twice[1].ways[twice[2]].seconds - twice[2].ways[twice[1]].seconds,
-    (1000 - 2 * math.sqrt(500 ^ 2 + 50 ^ 2)) / sail), "a dock stopped at twice is one dock, left from the stop that sails soonest")
+    (1000 - 2 * math.sqrt(500 ^ 2 + 50 ^ 2)) / Ships.SPEED), "a dock stopped at twice is one dock, left from the stop that sails soonest")
+check(#Planner.Ship({ kind = "flight", path = { { x = 0, y = 0, stay = 1 }, { x = 9, y = 9 } } }) == 0, "a flight has no docks")
+end
 -- A pin on the other continent (Kalimdor, u 9500, v 6500): on foot to the dock, the boat, on foot to the pin.
 waypoint = { uiMapID = 1414, position = CreateVector2D(21500 / 24000, 0.3375) }
 W.Fire("USER_WAYPOINT_UPDATED")
@@ -1786,6 +1791,108 @@ check(shownWay and #shownWay.legs == 1 and shownWay.legs[1].kind == "walk" and s
     and near(shownWay.legs[1].points[1].u, 0) and near(shownWay.legs[1].points[1].v, 0),
     "on the isle: off the line, planned again from there, on foot")
 player.map, player.x, player.y = 1429, 0.75, 0.3
+-- The boat's times on this realm, learnt on a ride (Core's Data.Ships): it leaves its first dock at server time
+-- leaves; the player stands on it, its place in the world moving with it along its first run (at the game's
+-- transports' speed: speeding up, at full speed, slowing down). A function of its own: the test's main chunk has
+-- room for no more locals.
+local function Rides()
+    local timetable = Ships:Table(3)
+    check(timetable and #timetable.stops == 2 and not timetable.known and near(timetable.round, round)
+        and near(timetable.stops[1].leave, 0) and near(timetable.stops[2].arrive, run(d12 + d34))
+        and timetable.stops[2].area == 12, "the boat's timetable: when it comes to each dock and leaves it, its round estimated")
+    check(Ships:Next(3, 1) == nil, "its times here not known before a ride")
+    local yards = d12 + d34
+    local function At(seconds) -- yards sailed so many seconds after leaving
+        local ramp = Ships.SPEED / Ships.ACCEL
+        if seconds <= 0 then return 0 end
+        if seconds < ramp then return Ships.ACCEL * seconds ^ 2 / 2 end
+        local left = run(yards) - seconds
+        if left > ramp then return Ships.SPEED ^ 2 / (2 * Ships.ACCEL) + Ships.SPEED * (seconds - ramp) end
+        return yards - Ships.ACCEL * math.max(0, left) ^ 2 / 2
+    end
+    local leaves = W.serverStart + W.clock + 20.4
+    local function Ride(start)
+        return function()
+            local s = At(W.serverStart + W.clock - start)
+            if s <= d12 then
+                local f = s / d12
+                return { -8600 + 600 * f, -450 - 1550 * f, 5, 0 }
+            end
+            local f = (s - d12) / d34
+            return { 5000 + 1000 * f, -9000 - 500 * f, 5, 1 }
+        end
+    end
+    W.place = Ride(leaves)
+    local learnt, aboardKey, aboardStop, aboardLeft
+    Ships:OnLearn(function(key) learnt = key end)
+    for _ = 1, 60 do
+        W.Wait(1)
+        Ships.Now()
+    end
+    aboardKey, aboardStop, aboardLeft = Ships:Aboard()
+    local now = W.serverStart + W.clock
+    check(aboardKey == 3 and aboardStop == 2 and math.abs(aboardLeft - (leaves + run(yards) - now)) < 1.5,
+        "aboard: the boat, its next dock and the seconds until it arrives")
+    W.Wait(0)
+    local store = Core.Store(Core.name).ships
+    local kept = store and store["Stub Realm"] and store["Stub Realm"][3]
+    check(learnt == 3 and kept and math.abs(kept.epoch - leaves) < 1 and kept.rides == 1 and kept.seen,
+        "a ride: when the boat left its first dock, kept for this realm")
+    local arrive, leave, here = Ships:Next(3, 2)
+    check(arrive and math.abs(arrive - (leaves + run(yards))) < 1 and near(leave - arrive, 60) and not here,
+        "then when it comes to the next dock, and leaves it")
+    arrive, leave, here = Ships:Next(3, 1, leaves + 10 * round - 30)
+    check(arrive and math.abs(arrive - (leaves + 10 * round - 60)) < 1 and here, "ten rounds later: standing at its first dock")
+    check(Ships:Next(3, 1, now + Ships.TRUST + 1) == nil, "a ride's times not trusted after a while")
+    -- Three rounds later, a ride again, the boat 10 seconds a round slower than estimated: its round corrected.
+    W.place = nil
+    W.Wait(20)
+    local again = leaves + 3 * (round + 10)
+    W.place = Ride(again)
+    W.Wait(again - 1 - (W.serverStart + W.clock))
+    for _ = 1, 60 do
+        W.Wait(1)
+        Ships.Now()
+    end
+    W.Wait(0)
+    kept = store["Stub Realm"][3]
+    check(kept.rides == 2 and math.abs(kept.round - (round + 10)) < 1 and Ships:Table(3).known
+        and math.abs(Ships:Table(3).round - (round + 10)) < 1, "a second ride corrects the estimated round")
+    -- The dock watch (DockWatch.lua): aboard, where it lands and when; at its dock, where it goes and when it comes.
+    local DockWatch = ns.DockWatch
+    local function Clock(seconds)
+        seconds = math.floor(seconds + 0.5)
+        return ("%d:%02d"):format(math.floor(seconds / 60), seconds % 60)
+    end
+    local rows = DockWatch.Rows()
+    now = W.serverStart + W.clock
+    check(#rows == 1 and rows[1].name:find("The Far Shore", 1, true) and rows[1].status:find("Lands in", 1, true)
+        and rows[1].icon == ns.Pins.WAY_ICONS.boat, "aboard: where the boat lands, and in how long")
+    W.place = { -8580, -470, 5, 0 }
+    W.Wait(5)
+    rows = DockWatch.Rows()
+    now = W.serverStart + W.clock
+    local comes = again + Ships:Table(3).round - 60 - now
+    check(#rows == 1 and rows[1].name:find("To The Far Shore", 1, true) and rows[1].known
+        and rows[1].status == DockWatch.TEXT.coming:format(Clock(comes), Clock(comes + 60)),
+        "at its dock: where it goes, when it arrives and leaves")
+    DockWatch.Update()
+    check(DockWatch.frame and DockWatch.frame:IsShown(), "shown at the top of the screen")
+    Core.Set(ns.name, "dockTimes", false)
+    check(not DockWatch.frame:IsShown(), "not while its setting is off")
+    Core.Set(ns.name, "dockTimes", true)
+    W.place = { -8000, 2000, 5, 0 }
+    DockWatch.Update()
+    check(#DockWatch.Rows() == 0 and not DockWatch.frame:IsShown(), "away from every dock: nothing")
+    store["Stub Realm"][3] = nil
+    W.place = { -8580, -470, 5, 0 }
+    rows = DockWatch.Rows()
+    check(#rows == 1 and not rows[1].known and rows[1].status:find("ride it once", 1, true),
+        "its times not known: how often it sails")
+    W.place = nil
+    DockWatch.Update()
+end
+Rides()
 -- The hearthstone: its place learnt where it is bound, with the game's name of it.
 local bindName = "Lakeside Inn"
 GetBindLocation = function() return bindName end
