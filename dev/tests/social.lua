@@ -2209,12 +2209,20 @@ do
     game:GetScript("OnSizeChanged")(game)
     W.Wait(0.1)
     check(panels.friends._width == 600, "a new size makes its room anew")
-    game._width = 814
+    game._height = tall -- too high for the screen
+    game:GetScript("OnSizeChanged")(game)
+    W.Wait(0.1)
+    local smaller, scale = Layout.Board(1920, tall, { friends = true, talks = true, guild = { 600, tall } }).guild, game._scale
+    check(smaller[5] < 1 and math.abs(scale - smaller[5]) < 1e-9 and math.abs(game._points[1][5] * scale - (500 - smaller[2])) < 1e-9
+        and math.abs((game._points[1][4] + 600) * scale - (40 + smaller[1] + smaller[3])) < 1e-9, -- offsets in its own units
+        "made smaller where the screen lacks room: at the layout's scale, its top right corner at its room's")
+    game._width, game._height = 814, 426
     game:Hide()
     W.Wait(0.1)
     check(game._points[1][3] == "TOPLEFT" and game._points[1][4] == 16 and panels.friends._points[1][5] == -Layout.PAD
         and panels.friends._width == Layout.FRIENDS_WIDTH and toggles == 1,
         "closed by the player: its place back as it was, the friends list takes the room, it is not opened again")
+    check(game._scale == 1 and game._level == 1 and game._strata == "MEDIUM", "and its scale and layer")
     anew()
     check(toggles == 2 and game:IsShown() and game._points[1][3] == "BOTTOMLEFT", "the full screen anew opens it anew")
     ns.Board.Hide()

@@ -3,8 +3,29 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 500 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 258 (Navigation), 21 (Inventory), 40 (Combat), 37 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 502 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 258 (Navigation), 21 (Inventory), 40 (Combat), 37 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Social: the guild window held by Core's seat (Saneroki, 2026-10-20)
+- **`Guild.lua` on `Core.Seat`**: the holding is the seat's, as for Combat's panels (one seat per window, label
+  `Social: guild window`): lending its scale, layer and points, placing it against `UIParent` at its room's screen
+  place, the hooks after its `SetPoint`, `SetScale`, `OnHide` and `OnSizeChanged`, and giving it back. Gone from
+  Guild: its own `Core.Lend` per frame, `Place`, `Moved`, `Closed`, `Sized`, `Follow`, `held`, `slot`, `placing`,
+  `base`. What stays its own: which window (the generic finding, `store.guildWindow`), opening it once per full
+  screen out of a fight, closing what it opened as Esc does, `dismissed` (the seat's `gone`, out of a fight) and
+  after the fight, and its size for the layout (`Measure`: `seat:Size()` in the full screen's units).
+- **Its room exactly its size**: a seat fits a window into its room, centred and as large as fits. The layout's
+  room (`Layout.Board`) is in whole units, so the window would come out up to half a unit smaller than the
+  layout's scale and centred in it. `Guild.Hold` hands the seat its own size at the layout's scale (`rect[5]`), at
+  the top right of the layout's room: it stands exactly at that scale, its top right corner at the room's. Seat is
+  unchanged; Combat's use of it too.
+- **Closed when it has no room**: a window opened for the full screen that the layout leaves no room (a small
+  screen, the switch turned off) is closed as Esc closes it, also when it was never seated (before, only once it
+  had been held).
+- **In a fight**: the seat does not seat a protected window in a fight (before, Guild counted it as held while its
+  lend refused); the full screen seats it once the fight is over (`PLAYER_REGEN_ENABLED`), as before.
+- Tests: `dev/tests/social.lua` (502 checks): the window made smaller where the screen lacks room stands at the
+  layout's scale with its top right corner at its room's; closed, its scale and layer are back too.
 
 ### Combat: its window at the bottom middle, your talents and spellbook on its full screen (Saneroki, 2026-10-20)
 - **The known addons** (Saneroki, 2026-10-20, the one exception to *No other addons*): Sane UI's code may see that

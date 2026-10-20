@@ -516,23 +516,30 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   `FormatShortDate`). The search uses `Window.Found` for messages. Shown, it listens to group and Battle.net
   events; `Window.Repaint` and `Resize` redraw it (an alias, the bubbles' look, the text size).
 - **The guild window** (`Guild.lua`): not built anew but held. `Board.Show` asks `Guild.Size` for its own size
-  (in the full window's units: its width and height times its effective scale over ours) before
-  `Layout.Board`, which gives it a room at the top right as large (smaller where the conversations would lack
-  `TALKS_MIN` or the friends list under it `FRIENDS_LOW`, none below `GUILD_LEAST`), then `Guild.Hold` puts it
-  there. Which window: the one open after the guild key's work (`ToggleGuildFrame`, the game's way, out of a
-  fight once per full screen), found among the windows the game knows by name, those Esc closes
-  (`UISpecialFrames`) and its panels (`UIPanelWindows`): the largest that was not open before, `Guild.LOOK`
-  (0.2 s) later. So it is the game's `CommunitiesFrame`, or the window another addon shows when it answers
-  the key, with no name of it in our code; its name is kept (`store.guildWindow`) to know it when it is open
-  already. Held by `Core.Lend`: its scale (`SetScale`, when it is made smaller), layer (the full window's
-  strata, `GUILD_LEVEL` above what it holds) and points; its parent is never changed, and it is placed at the
-  screen's place of its room against `UIParent` (`BOTTOMLEFT`), not anchored to our window: a window with
-  protected buttons would otherwise tie ours to the fight's rules, and a drag still moves it as its own.
-  Hooks after its `SetPoint` (the game's panels place it anew), its `OnHide` (closed: given back, and not
-  opened again while the full screen stands; in a fight it comes back after it, `PLAYER_REGEN_ENABLED`) and
-  its `OnSizeChanged` (its room anew). `Guild.Leave` (the full screen gone) gives it back and closes one it
-  opened as Esc does (`HideUIPanel` for a panel of the game's, else its `Hide`). A step that fails gives it
-  back and holds it no more until a `/reload` (`Social: guild window` in the error log).
+  (in the full window's units: its seat's `Size`, the size it has when not seated, times `UIParent`'s effective
+  scale over ours) before `Layout.Board`, which gives it a room at the top right as large (smaller where the
+  conversations would lack `TALKS_MIN` or the friends list under it `FRIENDS_LOW`, none below `GUILD_LEAST`),
+  then `Guild.Hold` seats it there. Which window: the one open after the guild key's work (`ToggleGuildFrame`,
+  the game's way, out of a fight once per full screen), found among the windows the game knows by name, those
+  Esc closes (`UISpecialFrames`) and its panels (`UIPanelWindows`): the largest that was not open before,
+  `Guild.LOOK` (0.2 s) later. So it is the game's `CommunitiesFrame`, or the window another addon shows when it
+  answers the key, with no name of it in our code; its name is kept (`store.guildWindow`) to know it when it is
+  open already. Held by Core's seat (`Core.Seat`, one per window, label `Social: guild window`): its scale,
+  layer (the full window's strata, at least `GUILD_LEVEL` above what it holds) and points lent and given back,
+  its parent never changed, placed at the screen's place of its room against `UIParent` (`BOTTOMLEFT`), not
+  anchored to our window: a window with protected buttons would otherwise tie ours to the fight's rules, and a
+  drag still moves it as its own. The room `Guild.Hold` hands the seat is the window's own size at the layout's
+  scale (`rect[5]`), at the top right of the layout's room: that room is in whole units, and a seat fits a
+  window into its room (centred, as large as fits), so a room even half a unit smaller would make it a hair
+  smaller than the layout's scale and centre it; this one leaves nothing round it, and it stands exactly at
+  that scale with its top right corner at the room's. The seat's hooks put it back when the game places or
+  scales it anew (`SetPoint`, `SetScale`), fit it anew and tell `sized` when its size changes (its room anew:
+  `Reboard`), and give it back and tell `gone` when it closes (not opened again while the full screen stands;
+  closed in a fight it comes back after it, `PLAYER_REGEN_ENABLED`). Guild's own: which window, opening it
+  once per full screen, `opened`, `dismissed`, the fights. `Guild.Leave` (the full screen gone) gives it back
+  and closes one it opened as Esc does (`HideUIPanel` for a panel of the game's, else its `Hide`); so does a
+  full screen that leaves it no room. A step that fails gives it back and holds it no more until a `/reload`
+  (`Social: guild window` in the error log).
 - **Cost.** Per chat event: one table for the message, one measurement, one update of the list (and
   every 25 messages one more, for the oldest that go). A speaker is asked about once. No `OnUpdate` at
   rest: the fades' runs only while a message in view fades, Core's watch of the mouse only from its coming
@@ -601,6 +608,9 @@ Tabs of chat views in the small window (`Doc/ideas/Social.md`), messages of one 
 a group, a close button, a sign besides colour for what a speaker is to you.
 
 ## History
+- 2026-10-20 — The guild window held by Core's seat (`Core.Seat`, as Combat's panels are): `Guild.lua` keeps only
+  which window, its opening and closing and its room; the seat lends, places, follows and gives back. Its room
+  is its own size at the layout's scale, so it stands exactly at that scale, its top right at the room's.
 - 2026-10-20 — The full screen anew (Saneroki): the guild window at its top right (`Guild.lua`: the one the
   guild key opens, held there as large as it is; setting `boardGuild`), the friends list under it and as wide
   (`Friends.Size`); the conversations take the rest, and the chat and the second chat are two rows of their

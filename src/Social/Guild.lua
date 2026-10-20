@@ -18,17 +18,21 @@ local _, ns = ...
 --  too. One open already is left open when the full screen goes; one opened
 --  for it is closed then, as Esc closes it.
 --
---  Held: its place, layer and scale are lent (Core.Lend) and given back
---  exactly. Its parent stays its own, and it stands at the screen's place of
+--  Held: seated in its room (Core.Seat), which lends its place, layer and
+--  scale and gives them back exactly, puts it back when the game places it
+--  anew (its panels make room for each other), and gives it back when it
+--  closes. Its parent stays its own, and it stands at the screen's place of
 --  its room (not anchored to our window): a drag moves it out as always, and a
---  window with protected buttons never ties ours to the fight's rules. The
---  game may place it anew (its panels make room for each other): a hook after
---  its SetPoint puts it back. A new size (sized, made small) makes the room
---  anew. Closed (its close button, Esc), the friends list takes its room, and
---  it stays closed while the full screen stands.
+--  window with protected buttons never ties ours to the fight's rules. Its
+--  room is its own size at the layout's scale, at the top right of the one
+--  Layout.Board gives (that one is in whole units): so the seat's fitting
+--  keeps it exactly at that scale, with no room left round it. A new size
+--  (another tab, made small) makes the room anew. Closed (its close button,
+--  Esc), the friends list takes its room, and it stays closed while the full
+--  screen stands.
 --
 --  Out of a fight only: the game opens its panels for an addon only then, and
---  a window holding protected buttons cannot be moved in one (Lend waits).
+--  a window holding protected buttons cannot be moved in one (its seat waits).
 --  One that closes in a fight comes back once the fight is over. Only while
 --  you are in a guild and its switch is on (boardGuild). A step that fails
 --  gives the window back and holds it no more until the next /reload.
@@ -43,16 +47,11 @@ Guild.LOOK = 0.2 -- seconds after the guild key's work until the window that cam
 local window   -- the guild window, once found
 local size     -- its own size, the last time it was measured: { width, height } in the full screen's units
 local inside   -- what the full window holds, while the full screen stands
-local slot     -- its room there now (Layout.Board): left, top, width, height, how much smaller
-local held     -- it stands in its room now
 local opened   -- opened for the full screen: closed again when that goes
 local tried    -- its key was used once while the full screen stands (again after a fight)
 local dismissed -- closed while the full screen stands: not opened again until it comes anew
-local placing  -- our own SetPoint on it is running
 local off      -- a step failed: the window is left to itself
-local base     -- its own scale before it was lent
-local lends = {}  -- [frame] = what of it is lent (Core.Lend)
-local hooked = {} -- [frame] = true: its SetPoint, its hiding and its size are followed
+local seats = {} -- [frame] = its seat in its room (Core.Seat)
 
 -- A step that fails gives the window back, and holds it no more.
 local Free
@@ -62,7 +61,7 @@ local function Try(fn, ...)
     if ok then return result end
     off = true
     ns.Report("guild window", result)
-    if held then pcall(Free, false) end
+    pcall(Free, false)
     return nil
 end
 
@@ -98,34 +97,35 @@ local function Current()
     if game and game:IsShown() then return game end
 end
 
--- Its size in the full screen's units, without what we made it smaller.
-local function Measure(frame)
-    local ratio = frame:GetEffectiveScale() / inside:GetEffectiveScale()
-    local smaller = held and slot and slot[5] or 1
-    return { (Core.Plain(frame:GetWidth()) or 0) * ratio / smaller, (Core.Plain(frame:GetHeight()) or 0) * ratio / smaller }
-end
-
 -------------------------------------------------------------------------------
 --  Held in its room
 -------------------------------------------------------------------------------
--- At the screen's place of its room: its top left corner where the room's is.
-local function Place(frame)
-    local left, top = inside:GetLeft(), inside:GetTop()
-    if not (left and top) then return end
-    local scale, own = inside:GetEffectiveScale(), frame:GetEffectiveScale()
-    placing = true
-    frame:ClearAllPoints()
-    frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", (left + slot[1]) * scale / own, (top - slot[2]) * scale / own)
-    placing = false
+-- Closed while seated (given back already): its room goes to the friends list. Closed by the player, it stays
+-- closed while the full screen stands; closed in a fight (the game hides a window with protected buttons), it
+-- comes back after it.
+local function Gone(frame)
+    if frame ~= window then return end
+    if not (InCombatLockdown() or UnitAffectingCombat("player")) then dismissed = true end
+    opened = false
+    Reboard()
 end
 
-local function Seat()
-    local lent = lends[window]
-    if not lent:Lent() then base = window:GetScale() end
-    held = true
-    if not lent:SetScale(base * slot[5]) then return end -- protected in a fight: once it is over
-    lent:SetLayer(inside:GetFrameStrata(), inside:GetFrameLevel() + Layout.GUILD_LEVEL)
-    lent:SetPoints(Place)
+-- Its seat, made once per window: a new size makes its room anew (sized).
+local function SeatOf(frame)
+    local seat = seats[frame]
+    if not seat then
+        seat = Core.Seat.New(frame, { label = "Social: guild window", sized = Reboard,
+                                      gone = function() Try(Gone, frame) end })
+        seats[frame] = seat
+    end
+    return seat
+end
+
+-- Its own size in the full screen's units, as it is when not seated.
+local function Measure(frame)
+    local width, height = SeatOf(frame):Size()
+    local ratio = UIParent:GetEffectiveScale() / inside:GetEffectiveScale()
+    return { width * ratio, height * ratio }
 end
 
 -- Closed as Esc closes it: a panel of the game's by the game's panels, any other window by itself.
@@ -137,52 +137,36 @@ end
 -- Out of its room: its place, layer and scale back as they were (in a fight once it is over); close: one
 -- opened for the full screen is closed too.
 Free = function(close)
-    slot = nil
-    if not held then return end
-    held = false
     local frame = window
-    lends[frame]:Return()
+    if not frame then return end
+    if seats[frame] then seats[frame]:Free() end
     if close and opened and frame:IsShown() and not InCombatLockdown() then Close(frame) end
     opened = false
 end
 
+-- Seated in its room (a rect of Layout.Board: left, top, width, height in the full screen's units from its top
+-- left, how much smaller): its own size at that scale, at the room's top right. In a fight not now (Seat says
+-- no), once it is over.
+local function Place(rect)
+    local left, top = inside:GetLeft(), inside:GetTop()
+    if not (left and top) then return end
+    local seat = SeatOf(window)
+    local ratio = inside:GetEffectiveScale() / UIParent:GetEffectiveScale() -- the full screen's units, in UIParent's
+    local width, height = seat:Size()
+    width, height = width * rect[5], height * rect[5]
+    seat:Hold((left + rect[1] + rect[3]) * ratio - width, (top - rect[2]) * ratio, width, height,
+        inside:GetFrameStrata(), inside:GetFrameLevel() + Layout.GUILD_LEVEL)
+end
+
 -------------------------------------------------------------------------------
---  Followed
+--  Found by its key
 -------------------------------------------------------------------------------
--- The game placed it anew: back in its room.
-local function Moved(frame)
-    if frame ~= window or not held or placing or not slot or Core.Locked(frame) then return end
-    Place(frame)
-end
-
--- It closed: its room goes to the friends list. Closed by the player, it stays closed while the full screen
--- stands; closed in a fight (the game hides a window with protected buttons), it comes back after it.
-local function Closed(frame)
-    if frame ~= window or not held then return end
-    if not (InCombatLockdown() or UnitAffectingCombat("player")) then dismissed = true end
-    Free(false)
-    Reboard()
-end
-
-local function Sized(frame)
-    if frame == window and held then Reboard() end
-end
-
-local function Follow(frame)
-    lends[frame] = lends[frame] or Core.Lend(frame)
-    if hooked[frame] then return end
-    hooked[frame] = true
-    hooksecurefunc(frame, "SetPoint", ns.Guard(function(self) Try(Moved, self) end))
-    frame:HookScript("OnHide", ns.Guard(function(self) Try(Closed, self) end))
-    frame:HookScript("OnSizeChanged", ns.Guard(function(self) Try(Sized, self) end))
-end
-
 -- The window that is open now is the guild window: known by its name from now on.
 local function Take(frame)
-    if frame ~= window and held then Free(false) end
+    if frame ~= window then Free(false) end
     window = frame
     ns.store.guildWindow = frame:GetName()
-    Follow(frame)
+    SeatOf(frame)
 end
 
 -- A while after the guild key's work: the window that came. The full screen gone meanwhile, it goes too.
@@ -255,8 +239,7 @@ end
 
 local function Hold(rect)
     if not rect or not (window and window:IsShown()) then return Free(rect == nil) end
-    slot = rect
-    Seat()
+    Place(rect)
 end
 
 -- Its room on the full screen (a rect of Layout.Board), or none: then it is given back, and closed if it was
