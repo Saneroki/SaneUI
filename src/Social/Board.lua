@@ -2,27 +2,32 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Social - Board
---  The full screen's parts, while the window stands full, as the settings
---  wish (the section Full screen) and as the screen has room (Layout.Board):
---  at its right the guild window (Guild.lua: the guild key's own, held there)
---  and the friends list under it (Friends.lua, the group finder one of its
---  tabs), at its left the conversations (Conversations.lua). The part of those
---  beside their list holds the one chosen: a conversation of theirs, or the
---  chat itself, the window's (Window.lua), or the second chat (Feed.lua);
---  those two stand in the window's own frame for the chat, placed there.
---  With the conversations switched off the chat stands in their place.
+--  The full screen's windows, while the window stands full: on Core's board
+--  (Core.Board), so they share the screen as you arrange them, in layouts
+--  behind tabs in the full window's title bar (drag a window's head to move
+--  it, the gap between two to share their room anew, its X to take it off;
+--  the dropdown Windows adds one). Social's windows:
+--      talks    the conversations (Conversations.lua), whose part beside their
+--               list holds the one chosen: a conversation of theirs, or the
+--               chat itself, the window's (Window.lua), or the second chat
+--               (Feed.lua); those two stand in the window's own frame for the
+--               chat, placed there (Board.Show: chat)
+--      friends  the friends list (Friends.lua), the group finder one of its tabs
+--      guild    the guild window (Guild.lua: the guild key's own), held in its
+--               panel as large as fits there, at most its own size; left out of
+--               the laying out while there is none (out of a guild, closed)
+--  The first layout is the arrangement the full screen has at first: the
+--  guild window at the top right as large as it is, the friends list under it
+--  and as wide, the conversations at the left (Layout.Board gives the rooms,
+--  Default makes a layout of them), laid out for the screen as it is until
+--  you change it. A layout without the conversations has no chat in it.
 --
---  A panel is a frame of ours on a plate in Sane UI's look (Core.Skin: the
---  dark tile of the game's dialogs, a thin bronze trim, round corners), with a
---  head: its title at the left, its buttons at the right (panel.head). What is
---  under the head (panel.body) is its part's. Made the first time it is shown,
---  then kept. Out of sight while the window is at its size; a part listens to
---  the game only while its panel is shown (Part.Show). The panels come in with
---  a short fade once the window stands full, and go at once when it starts
---  back: they are never sized on the way.
---
---  A panel's part runs apart from the chat (ns.Safe): one that fails is noted
---  and the chat goes on; only the window's own work stands the module down.
+--  A panel is Core's (Board.lua: a plate in Sane UI's look, a head with its
+--  title at the left, its buttons and the X at its right, its body under the
+--  head); what is in it is its part's. A part listens to the game only while
+--  its panel is shown (Part.Show). A part runs apart from the chat (ns.Safe):
+--  one that fails is noted and the chat goes on; only the window's own work
+--  stands the module down.
 --
 --  What is typed into the full window's search box goes to every panel
 --  (Board.Search): the friends list finds what its tab shown lists (friends,
@@ -40,39 +45,78 @@ local Layout = ns.Layout
 local Board = {}
 ns.Board = Board
 
-Board.FADE = 0.3 -- seconds a panel takes to come in
+local layouts -- Core's board, once the window is there (Board.Take)
+local inside  -- what the window holds while it stands full
+Board.panels = {} -- [key] = the panel, once made (Core's board's)
 
--- The panels by their key in Layout.Board, with the switch that wishes each and its part.
-Board.PANELS = {
-    { key = "friends", wish = "boardFriends", part = "Friends" },
-    { key = "talks", wish = "boardTalks", part = "Conversations" },
+-- A part's steps, each by itself under the part's name.
+local function Step(key, part, name)
+    return function(_, ...)
+        local own = ns[part]
+        if own[name] then ns.Safe(key, own[name], ...) end
+    end
+end
+
+local function Part(key, part, title, least)
+    return { key = key, title = title, least = least,
+             build = function(panel) ns.Safe(key, ns[part].Build, panel) end,
+             show = Step(key, part, "Show"), size = Step(key, part, "Size"), search = Step(key, part, "Search") }
+end
+
+-- Social's windows, in the dropdown's order.
+local WINDOWS = {
+    Part("talks", "Conversations", ns.TEXT.talks, { Layout.TALKS_MIN, 240 }),
+    Part("friends", "Friends", Core.Word("FRIENDS_LIST", "Friends List"), { Layout.FRIENDS_WIDTH, Layout.FRIENDS_LOW }),
+    { key = "guild", title = Core.Word("GUILD", "Guild"),
+      least = function() return ns.Guild.Least() end,
+      present = function() return ns.Guild.Size(inside) ~= nil end },
 }
-Board.panels = {} -- [key] = the panel, once made
-local search = "" -- what is in the search box now
 
--- A panel in what the window holds (inside): its plate, a head with its title, a body under the head.
-local function Make(inside, spec)
-    local panel = CreateFrame("Frame", nil, inside)
-    panel.skin = Core.Skin.New(panel, { radius = Layout.RADIUS })
-    panel.head = CreateFrame("Frame", nil, panel)
-    panel.head:SetPoint("TOPLEFT")
-    panel.head:SetPoint("TOPRIGHT")
-    panel.head:SetHeight(Layout.HEADER)
-    panel.title = panel.head:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    panel.title:SetPoint("LEFT", Layout.EDGE + 4, 0)
-    local line = panel.head:CreateTexture(nil, "ARTWORK")
-    line:SetColorTexture(Core.GOLD[1], Core.GOLD[2], Core.GOLD[3], 0.35)
-    line:SetPoint("BOTTOMLEFT", Layout.EDGE, 0)
-    line:SetPoint("BOTTOMRIGHT", -Layout.EDGE, 0)
-    line:SetHeight(1)
-    panel.body = CreateFrame("Frame", nil, panel)
-    panel.body:SetPoint("TOPLEFT", 0, -Layout.HEADER)
-    panel.body:SetPoint("BOTTOMRIGHT")
-    panel.fade = Core.Motion.Fade(panel)
-    panel.part = ns[spec.part]
-    panel:Hide()
-    ns.Safe(spec.key, panel.part.Build, panel)
-    return panel
+-- The guild window's panel as large as the window and its panel's head and edges round it (Body).
+local function Framed(size)
+    if not size then return nil end
+    return { size[1] + 2 * Layout.EDGE, size[2] + Core.Board.HEAD + 2 * Layout.EDGE }
+end
+
+-- The first layout: the rooms the full screen has at first (Layout.Board), the conversations at the left, at the
+-- right the guild window over the friends list, each share as large as its room.
+local function Default(width, height)
+    local rooms = Layout.Board(width, height, { friends = true, talks = true, guild = Framed(ns.Guild.Size(inside)),
+                                                list = ns.store.talkList })
+    local guild, friends, talks = rooms.guild, rooms.friends, rooms.talks
+    local right
+    if guild and friends then
+        right = { split = "y", parts = { { key = "guild" }, { key = "friends" } }, shares = { guild[4], friends[4] } }
+    elseif guild or friends then
+        right = { key = guild and "guild" or "friends" }
+    end
+    if not talks then return right end
+    if not right then return { key = "talks" } end
+    local column = (friends or guild)[3]
+    return { split = "x", parts = { { key = "talks" }, right }, shares = { talks[3], column } }
+end
+
+-- Core's window is made (Window.lua): its full screen is Core's board.
+function Board.Take(window)
+    layouts = Core.Board.New(window, {
+        store = ns.store, key = "board", label = "Social",
+        windows = function() return WINDOWS end,
+        default = function(width, height) return ns.Safe("board", Default, width, height) end,
+        changed = function() ns.Guarded(ns.Window.Reboard) end,
+    })
+    Board.panels = layouts.panels
+    Board.layouts = layouts
+end
+
+-- A panel's body in what the window holds: under its head.
+local function Body(rect)
+    local head = Core.Board.HEAD
+    return { rect[1] + Layout.EDGE, rect[2] + head + Layout.EDGE, rect[3] - 2 * Layout.EDGE, rect[4] - head - 2 * Layout.EDGE }
+end
+
+-- Whether the layout laid out last holds a window.
+function Board.Has(key)
+    return layouts ~= nil and layouts:Has(key)
 end
 
 -- What the lists of the friends list's tabs are built from, as the game builds its own: a list of rows
@@ -153,54 +197,31 @@ function Board.Row(row)
     return row
 end
 
--- One panel at its place (a rect of Layout.Board), shown; or hidden (nil).
-local function Put(inside, spec, rect)
-    local panel = Board.panels[spec.key]
-    if not rect then
-        if panel and panel:IsShown() then
-            panel:Hide()
-            ns.Safe(spec.key, panel.part.Show, false)
-        end
-        return
+-- The window stands full: what the window holds (inside) is that wide and high. The windows of the layout chosen
+-- are put at their places (Core's board), the guild window held in its panel; returns where the chat stands: the
+-- part of the conversations beside their list and under the line with the name of the one chosen (chat; none
+-- without the conversations), and their rect (talks).
+function Board.Show(room, width, height)
+    inside = room
+    local rects = layouts:Show(room, width, height)
+    ns.Guild.Hold(rects.guild and Body(rects.guild))
+    local talks, board = rects.talks, { talks = rects.talks }
+    if talks then
+        local list = Layout.TalkList(ns.store.talkList, talks[3])
+        local beside, under = list + 1, Core.Board.HEAD + Layout.TALK_HEAD
+        board.chat = { talks[1] + beside, talks[2] + under, talks[3] - beside, talks[4] - under }
     end
-    panel = panel or Make(inside, spec)
-    Board.panels[spec.key] = panel
-    panel:ClearAllPoints()
-    panel:SetPoint("TOPLEFT", inside, "TOPLEFT", rect[1], -rect[2])
-    panel:SetSize(rect[3], rect[4])
-    panel.skin:Rest()
-    if panel.part.Size then ns.Safe(spec.key, panel.part.Size, rect[3], rect[4]) end
-    if panel:IsShown() then return end
-    panel:Show()
-    panel.fade:To(1, ns.options.animations and Board.FADE or 0, 0)
-    ns.Safe(spec.key, panel.part.Show, true)
-    ns.Safe(spec.key, panel.part.Search, search)
-end
-
--- The window stands full: what the window holds (inside) is that wide and high. Each panel wished and with room
--- is put at its place, the guild window in its room; returns the board (Layout.Board), whose chat is where the
--- chat stands.
-function Board.Show(inside, width, height)
-    local options = ns.options
-    local want = { friends = options.boardFriends, talks = options.boardTalks, guild = ns.Guild.Size(inside),
-                   list = ns.store.talkList }
-    local board = Layout.Board(width, height, want)
-    for _, spec in ipairs(Board.PANELS) do Put(inside, spec, board[spec.key]) end
-    ns.Guild.Hold(board.guild)
     return board
 end
 
 -- The window is at its size, or on its way there: every panel out of sight, the guild window given back.
 function Board.Hide()
     ns.Select.Clear()
-    for _, spec in ipairs(Board.PANELS) do Put(nil, spec, nil) end
+    if layouts then layouts:Hide() end
     ns.Guild.Leave()
 end
 
--- The search box of the full window: to every panel that is shown; one shown later finds it then (Put).
+-- The search box of the full window: to every panel that is shown; one shown later finds it then.
 function Board.Search(text)
-    search = text or ""
-    for _, panel in pairs(Board.panels) do
-        if panel:IsShown() then ns.Safe("search", panel.part.Search, search) end
-    end
+    if layouts then layouts:Search(text or "") end
 end

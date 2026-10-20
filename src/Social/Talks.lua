@@ -160,7 +160,6 @@ end
 
 -- A message of the log (Log.Add) that belongs into a conversation: a copy of it goes there.
 function Talks.Add(entry)
-    if not ns.options.boardTalks then return end
     local key, kind, with = Whose(entry)
     if not key then return end
     local talk = Talks.by[key]

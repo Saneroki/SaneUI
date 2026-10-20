@@ -290,7 +290,7 @@ but for a window to try those with (`/sane window`).
 | `Core.TITLE`, `Core.VERSION`, `Core.GOLD` | Name, version from the TOC, the addon's colour |
 
 - **Windows** (`Dock.lua`, `EditMode.lua`, `Escape.lua`, `Watch.lua`, `Fuzzy.lua`, `Shape.lua`, `Skin.lua`,
-  `Edge.lua`, `Window.lua`, `Views.lua`, `Selection.lua`, `Holder.lua`, `Seat.lua`, `Expand.lua`, `Bar.lua`, `Motion.lua`):
+  `Edge.lua`, `Window.lua`, `Views.lua`, `Selection.lua`, `Holder.lua`, `Seat.lua`, `Board.lua`, `Expand.lua`, `Bar.lua`, `Motion.lua`):
   a library for the modules' windows. Each file's head says how to call it; `Doc/guides/windows.md` is the
   guide for a module that builds one.
 
@@ -298,6 +298,7 @@ but for a window to try those with (`/sane window`).
   |---|---|
   | `Core.Window.New(frame, options)` | A window of our own, of a kind (`kind` = `"screen"`, `"panel"`, `"talk"`: `Window.KINDS` gives its options, the module's own win, a table such as `first` merged): in Blizzard's Edit Mode dragged by its box (`window.box`, `title` on it) and sized by a grip (`sizable`); a title bar (`titleBar`, `title`, `search`, `dragDocked`) with its buttons (`close`, `buttons` = the module's own `{ atlas, tip, text, click }` (or `texture`) left of Core's, `native = { frame, show, back, hold, addon, unseen }`); docking (`dock`, `insets`: docked, the room it keeps from the screen's edges), with a skin (`skin`, its corners as `corners` says, else as `edge`), filling the screen from its screen edge or its button (`edge`, with `motion`, `content`, `filled`); `first = { point, x, y, width, height, dock }` (`dock`: docked in that zone at first; the talk kind's `CENTER`); `toplevel` (a click brings it to the front: panel, talk); `tabs` (`Views.lua`). Its place and what it was left as are kept in `options.store.place` as `{ x, y, width, height, dock, full, native, tab }`. `window:Place()`, `window:Reset()`, `window:Open()` (the game asked for it), `window:Native(on)`, `window:Remember(what, value)`, `window:Recall(what)`, `window:Refresh()` (bar and buttons as the window is now), `window:SetTitle(text)`, `window:Draggable()`, `window:Attach()` (our button onto the game's window, once it is there), `window:GiveBack()` (the holder's game window back for good), `window:Selected(on)` (its box in Edit Mode's selected look), `window.inside` (what the window holds stands in it: under the title bar while there is one; `window.top` its height), `window.zone`, `window.grip`, `window.skin`, `window.edge`, `window.bar`, `window.buttons`, `window.holder` |
   | `Core.Window.All()`, `Core.Window.ResetAll()` | Every window made by `New`, in the order made; each at its first place and size (`/sane window reset all`) |
+  | `Core.Board.New(window, options)` | A module's full screen of windows (`Board.lua`): `options = { store, key, label, windows = fn → { { key, title, least, build, show, size, search, present } }, default = fn(width, height) → layout, changed = fn }`. `board:Show(inside, width, height)` lays out the layout chosen and returns each window's rect (`[key] = { left, top, width, height }`); `board:Hide()`, `board:Search(text)`, `board:Has(key)`, `board:Forget(key)`, `board.panels[key]`. The player arranges it on the full screen: tabs for layouts after the title (`+`, a right click renames, resets, deletes), the dropdown *Windows*, a window's head dragged, the lines between windows dragged, its X. Plain functions for layouts: `Board.Lay`, `Beside`, `Without`, `Swap`, `Move`, `Present`, `Least`, `Holds`, `Keys`, `Copy` |
   | `Core.Fuzzy.Query(text)`, `Fuzzy.Match(query, ...)`, `Fuzzy.Rank(word, text, lower, spots)`, `Fuzzy.Highlight(text, spots)`, `Fuzzy.Plain(text)` | Forgiving search: the typed words; whether every word is in one of the texts (the sum of their ranks); one word's rank in one text, a whole number whose hundreds say how it was found (600 the whole text, 500 its beginning, 400 a word's beginning, 300 its words' first letters, 200 inside, 100 letters spread out in order) and up to 90 more for a close fit, and the bytes it took; the text with those letters in the game's gold (`NORMAL_FONT_COLOR`); a text of the game's as it reads (no colour, link or icon codes). One pass through a text per look, no table without spots, each text lowered once per `Match` |
   | `Core.Fuzzy.Filter(rows, query, fields, done)` | The rows every word is found in (`fields`: keys of a row, or functions of it), ranked best first: `done(found, ranks)`. Up to `Fuzzy.AT_ONCE` (200) rows at once; a longer list a part per frame on `Core.Steps`, a newer search stopping an older one (a counter); a row's texts lowered once while they stay the same |
   | `Core.Escape(owner, close)` | Esc runs `close(owner)` from now on (nil: no more): one stand-in of ours, `SaneUIEscape`, the only entry of Sane UI's in the game's `UISpecialFrames`, for every window, Edge's full screen and the feedback window |
@@ -476,6 +477,7 @@ but for a window to try those with (`/sane window`).
 | `Selection.lua` | A window chosen in Edit Mode, and its dialog |
 | `Holder.lua` | The game's window kept out of sight while ours stands for it |
 | `Seat.lua` | A window not ours seated in a room of a full window: its place, scale and layer lent, followed, given back |
+| `Board.lua` | A module's full screen of windows, laid out as the player arranges them, in layouts behind tabs |
 | `Neighbours.lua` | The other addons Sane UI knows and adapts to when they are installed: the one file that names them |
 | `Expand.lua` | A window that opens while the mouse rests on it, and can be kept open |
 | `Bar.lua` | A progress bar whose value and size move |
@@ -489,6 +491,9 @@ but for a window to try those with (`/sane window`).
 | `Art/circle.blp`, `Art/circle-hole.blp` | The masks round corners are cut with: a white disc, and a white square with the disc taken out (256 × 256, DXT5 with mipmaps). Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
+- 2026-10-20 — The board (`Board.lua`, `Core.Board`): a module's full screen of windows that share it as the player
+  arranges them, in layouts behind tabs in the title bar; the title bar's search box ends left of its dropdown
+  *Windows* (Saneroki).
 - 2026-10-20 — The seat (`Seat.lua`, `Core.Seat`): a window not ours on a full screen, placed, never shown or hidden
   by our code (Combat's talents and spellbook). `Core.Lent(frame)`. The known addons (`Neighbours.lua`,
   `Core.Neighbours`). Edge's strip of a share of the screen's side (`strip`).

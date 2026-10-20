@@ -41,6 +41,8 @@ Views.lua
 Selection.lua
 Holder.lua
 Seat.lua
+# A module's full screen of windows, laid out as the player arranges them, in layouts behind tabs
+Board.lua
 Expand.lua
 Bar.lua
 # The other addons Sane UI knows and adapts to when they are installed (the one file that names them)

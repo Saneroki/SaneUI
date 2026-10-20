@@ -756,6 +756,8 @@ function methods:Refresh()
     buttons.first = right
     local menu = edge and edge.classic
     local stop = menu and menu:IsShown() and menu or right
+    local windows = self.board and self.board.menu -- the board's dropdown Windows, left of Classic windows (Board.lua)
+    if windows and windows:IsShown() then stop = windows end
     bar.box:ClearAllPoints()
     bar.box:SetPoint("LEFT", Window.TEXT_INSET + Window.BOX_INSET, 0)
     if stop then bar.box:SetPoint("RIGHT", stop, "LEFT", -Window.BOX_INSET, 0) else bar.box:SetPoint("RIGHT", -Window.BOX_INSET, 0) end

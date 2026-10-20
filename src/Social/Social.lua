@@ -150,19 +150,13 @@ local OPTIONS = {
     -- kept with the settings, so profiles and a character's own settings carry them; no control.
     { key = "mute", default = {} },
 
-    -- The full screen's parts (Board.lua).
-    { key = "boardTalks", default = true, text = "Conversations", header = "Full screen",
-      headerTip = "What the window holds while it fills the screen.",
-      tip = "At the left of the full screen: the chat, then your whispers, your party's and your raid's chat, each a conversation of its own, the newest message first. Choose one to read it and write in it beside the list. Kept for each character. Off: the chat stands there alone." },
-    { key = "talkSize", default = 100, min = 20, max = 500, step = 10, unit = "messages", text = "Messages kept per conversation", parent = "boardTalks", inline = true,
+    -- The full screen's windows (Board.lua): which stand there is the layouts' (the dropdown Windows in its title bar).
+    { key = "talkSize", default = 100, min = 20, max = 500, step = 10, unit = "messages", text = "Messages kept per conversation", header = "Full screen",
+      headerTip = "What the full screen's windows hold. Which windows stand there, and where, you arrange on the full screen itself: drag a window's head to move it, the gap between two to share their room, add one from the dropdown Windows, take one off with its X; each layout behind a tab of its own.",
       tip = "How many of the last messages each conversation keeps, also for the next login." },
-    { key = "boardFeed", default = true, text = "Second chat", parent = "boardTalks",
+    { key = "boardFeed", default = true, text = "Second chat",
       tip = "A second chat in the conversations' list, under the chat, with its own choice of chats in the list on the line with its name: your whispers, groups and guild at first." },
-    { key = "boardGuild", default = true, text = "Guild window",
-      tip = "The guild window at the top right of the full screen, as large as it is: the one the guild key opens, the game's own or another addon's that answers the key. Opened with the full screen and closed with it; one open already stays open. While you are in a guild." },
-    { key = "boardFriends", default = true, text = "Friends list",
-      tip = "The friends list at the right of the full screen, under the guild window and as wide, as the game's: who is online and where. Click a friend, then Send Message or Invite; a right click opens their menu." },
-    { key = "boardFinder", default = true, text = "Group finder", parent = "boardFriends",
+    { key = "boardFinder", default = true, text = "Group finder",
       tip = "The group finder as a tab of the friends list, as the game's: the groups and players looking for others in a category. Whisper a leader, or invite a player who is alone." },
     -- The second chat's ticks ([group] = true: shown there), set in the list on its head; no control.
     { key = "split", default = { WHISPER = true, PARTY = true, RAID = true, INSTANCE_CHAT = true, GUILD = true, OFFICER = true } },
@@ -209,8 +203,6 @@ for index, option in ipairs(OPTIONS) do
     if option.tab == LOOK then last = index end
 end
 Core.Edge.Options(OPTIONS, (last or #OPTIONS) + 1, LOOK, { motion = "animations" })
--- The switches of the full screen's panels: a change lays the full screen out anew (Window.Reboard).
-local BOARD = { boardFriends = true, boardTalks = true, boardGuild = true }
 -- The switches of fading and sliding: a change of one sets every fade and slide anew (Window.Animate).
 local MOVES = { animations = true, fadeInOn = true, fadeInTime = true, fadeOutTime = true, slide = true, slideTime = true,
                 fadeFloorOn = true, fadeFloor = true, fade = true, fadeAfter = true }
@@ -240,7 +232,6 @@ Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = funct
     if key == "boardFinder" then return ns.Safe("friends tabs", ns.Friends.Relabel) end
     if key == "talkSize" then return ns.Safe("conversations", ns.Talks.Trim) end
     if key == "boardFeed" then return ns.Safe("conversations", ns.Conversations.Relist) end
-    if BOARD[key] then return ns.Guarded(ns.Window.Reboard) end
     if key == "history" or key == "historySize" then return ns.Keep() end
     local Window = ns.Window
     ns.Guarded(key == "textSize" and Window.Resize or key == "showNative" and Window.Native or MOVES[key] and Window.Animate

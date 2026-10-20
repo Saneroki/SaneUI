@@ -62,10 +62,11 @@ local _, ns = ...
 --  mouse too: a drag over the messages picks their words to copy (Select.lua).
 --
 --  The chat stands in a frame of its own (column): all of what the window
---  holds, but once the window stands full with panels around it (Board.lua: the
---  guild window with the friends list under it, the conversations), its part
---  of the full screen: beside the conversations' list, while the chat is the
---  one chosen there. The second chat chosen there stands in the same frame,
+--  holds, but once the window stands full with its windows on Core's board
+--  (Board.lua: the conversations, the friends list, the guild window, as the
+--  layout chosen has them), its part of the full screen: beside the
+--  conversations' list, while the chat is the one chosen there; a layout
+--  without the conversations has it out of sight. The second chat chosen there stands in the same frame,
 --  in the chat's place (Feed.lua); a conversation of theirs chosen, the frame
 --  is out of sight, and the conversation's own line is the one to write in.
 --  The game's line opened then (Enter, /, a reply) belongs to the chat: the
@@ -170,9 +171,11 @@ local function Area()
 end
 
 -- What the chat's frame shows: the chat, or with the full screen's conversations the one chosen there: the chat,
--- the second chat ("feed"), or one of theirs (nil: the frame is out of sight).
+-- the second chat ("feed"), or one of theirs (nil: the frame is out of sight). A full screen laid out without the
+-- conversations has no place for it: out of sight.
 local function Shows()
-    if not (board and board.talks) then return "chat" end
+    if not board then return "chat" end
+    if not board.talks then return nil end
     return picked
 end
 
@@ -554,6 +557,7 @@ local function Build()
         docked = Placed, motion = Kind,
         filled = function(full) ns.Guarded(Filled, full) end,
     })
+    ns.Board.Take(handle) -- its full screen: Social's windows on Core's board
     -- Only the mouse's coming: a click on the window still goes into the game.
     hover = Core.Hover(frame, { every = 0.2, label = ns.name .. ": mouse",
         enter = function() ns.Guarded(Wake) end, leave = function() ns.Guarded(Left) end })

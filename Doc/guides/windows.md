@@ -67,6 +67,7 @@ in the rest.
 | `Shape.lua`, `Skin.lua` | The plate: round corners (a share of the window, or a fixed radius; square at the screen's edges, always square in full screen), the trim, a round icon (`Shape.Round`); the skin, a window's background and border; the game's background tiles (`Skin.TILES`). |
 | `Expand.lua` | A window that opens larger once the mouse has rested on it, closes a moment after the mouse has gone, and can be kept open (`Stay`). |
 | `Seat.lua` | A window that is not ours (the game's spellbook, a known addon's: `Neighbours.lua`) seated in a room of a full window: its place, scale and layer lent, never its parent; followed after the game's `SetPoint` and `SetScale`; given back when it closes (section 7, *Seated*). |
+| `Board.lua` | A module's full screen of windows (section 7, *The board*): layouts the player arranges, behind tabs in the full window's title bar; the windows share the screen and never overlap (a tree of splits), a line between two dragged to share their room, a head dragged onto another to go beside it or swap, an X to take one off, the dropdown *Windows* to add one; each window a panel of Core's (plate, head, body) holding the module's part. |
 | `Fuzzy.lua` | Fuzzy finding for the search; a list ranked by it, a long one a part per frame (`Fuzzy.Filter`). |
 | `Bar.lua` | A progress bar in the art of the game's experience bar. |
 
@@ -263,6 +264,35 @@ planner Sane UI knows). The rules:
 - **Going back** from the full screen gives it back to its place, open: our code does not close the game's
   window. Esc closes it with the full screen.
 
+### The board: a module's full screen of windows (`Board.lua`)
+
+A full window that holds several of the module's windows (Social: the conversations, the friends list, the guild
+window) lays them out on Core's board (`Core.Board.New(window, { store, key, label, windows, default, changed })`),
+not by itself. The rules:
+
+- **They share the screen, never overlap.** A layout is a tree of splits (side by side, `"x"`, or one over the
+  other, `"y"`), each part a share of its room; `Board.Lay` gives each window its rect, whole pixels, `PAD`
+  between neighbours and from the screen's edges. A window that has nothing to show now (`present` false: the
+  guild window out of a guild, closed) stays in the layout and is left out of the laying out; the others share its
+  room until it is back.
+- **Arranged on the full screen itself, laid out once.** The gap between two neighbours is a strip that takes the
+  mouse (the game's sizing cursor): held, only a line follows; let go, the two share their room anew, neither
+  under its `least`. A window's head is dragged: held, it is see-through and a tinted shape shows where it would
+  go (near a side of another: the two share that one's room; its middle: they swap; near a side of the screen: a
+  strip along it); let go, the layout is kept and laid out once. Nothing runs at rest: one watcher, only while
+  something is held. The X takes a window off; the dropdown *Windows* (left of *Classic windows*) ticks those in
+  the layout, a tick adds one beside the largest.
+- **Layouts behind tabs** after the title in the title bar (the game's `MinimalTabTemplate`): the first is the
+  module's (`default(width, height)`, laid out for the screen as it is until it is changed, then kept as changed;
+  *Reset* makes it the module's again), `+` makes an empty one, a right click renames, resets the first, deletes
+  another (confirmed). Out of sight while the search box lies over the bar.
+- **Kept** in `store[key]` (account-wide, as places are): `{ chosen, tabs = { { name, tree } } }`, a tree only once
+  changed (`false`: emptied).
+- **What is in a window is the module's**: a panel of Core's (`Core.Skin` plate, a head `Board.HEAD` high with its
+  title and the X, a line, the body) holds the module's part, built the first time it is shown (`build`), told
+  when it is shown and hidden (`show`), its size once a change stands (`size`), the search (`search`). A window
+  not ours stands in its panel by the module's seat (section *Seated*).
+
 ### Combat
 
 - A window that holds the game's protected frames (secure buttons that cast a spell or use an item) is
@@ -351,6 +381,9 @@ Each with what is decided and what it needs; the plan has the decisions in full.
    in; the search goes to every window's `search`; back, each returns to its place. What a window holds
    stays its own, so a window looks the same alone and on the board. Core: `Core.Board.New(module,
    { windows, layout })`; Edge's motion generalised from one window to a set.
+   Built on 2026-10-20 within one full window (section 7, *The board*; Saneroki asked for layouts the player
+   arranges, behind tabs): Social's windows stand on it; what is still to come is the windows' own motion
+   from their places (today the board comes with the full window, its panels faded in).
 6. **Opening and closing** with the game's sounds for a panel and a talk window, and the proposal of an
    opening motion (`window:Appear()`, Economy's plan; Blizzard's panels do not animate: open for Saneroki).
 

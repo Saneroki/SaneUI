@@ -40,20 +40,21 @@ Layout.GRIP_ROOM = 18                          -- the room the grip takes at the
 Layout.FACE = 24                               -- the smiley beside the line, before the grip (Picker.lua)
 Layout.INPUT_RIGHT = Layout.GRIP_ROOM + Layout.FACE + 2 -- it ends before the smiley
 
--- The full screen (Board.lua): at its right the guild window (Guild.lua) with the friends list under it (the group
--- finder one of its tabs), at its left the conversations (Conversations.lua), whose part beside their list holds the
--- chat chosen there: a conversation, the chat or the second chat. All within PAD of the screen and of each other.
+-- The full screen's first layout (Board.lua, Default: Core's board lays out the others): at its right the guild window
+-- (Guild.lua) with the friends list under it (the group finder one of its tabs), at its left the conversations
+-- (Conversations.lua), whose part beside their list holds the chat chosen there: a conversation, the chat or the
+-- second chat. All within PAD of the screen and of each other.
 -- The guild window is as large as it is, made smaller where the conversations would be narrower than TALKS_MIN or
 -- the friends list under it lower than FRIENDS_LOW, and left out below GUILD_LEAST of its size; the friends list is
 -- as wide as the guild window, FRIENDS_WIDTH at least, and left out where the conversations would lack their room.
--- With the conversations switched off the chat stands in their place, CHAT_MIN wide at least.
-Layout.PAD = 12
+-- Without the conversations (want.talks) the chat stands in their place, CHAT_MIN wide at least.
+Layout.PAD = SaneUI.Core.Board.PAD                -- (Core's board's)
 Layout.FRIENDS_WIDTH = 340                     -- the game's friends list is as wide (Blizzard_FriendsFrame)
 Layout.FRIENDS_LOW = 220                       -- the friends list under the guild window, at its lowest
 Layout.GUILD_LEAST = 0.6                       -- the guild window made smaller to this much of its size at most
 Layout.GUILD_LEVEL = 10                        -- the guild window drawn so far above what the full window holds
 Layout.CHAT_MIN = 420
-Layout.HEADER = 30                             -- a panel's head: its title and its buttons
+Layout.HEADER = SaneUI.Core.Board.HEAD        -- a panel's head: its title and its buttons (Core's board's)
 Layout.ROW = 34                                -- a row of the friends list and of the group finder
 Layout.FOOT = 30                               -- a panel's foot: its buttons
 -- The friends list's panel (Friends.lua) holds more than one list: tabs under its head, a line with the search

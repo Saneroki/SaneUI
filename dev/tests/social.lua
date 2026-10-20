@@ -1666,7 +1666,7 @@ do
     check(window._width == 1920, "with all animations off it fills the screen at once, whatever its type")
     local classic -- Core's dropdown Classic windows, in the window's top right corner
     for _, widget in ipairs(W.frames) do
-        if widget._kind == "DropdownButton" and widget._parent == window then classic = widget end
+        if widget._kind == "DropdownButton" and widget._parent == window and widget ~= ns.Board.layouts.menu then classic = widget end
     end
     check(classic and classic:IsShown() and #classic._items == 3 and classic._items[1].text == "Chat"
         and classic._items[2].text == "Friends list" and classic._items[3].text == "Group finder",
@@ -2303,11 +2303,6 @@ do
     check(#rows.provider.list == 4 and rows.provider.list[2].pinned == nil, "the second chat switched off is out of the list")
     Core.Set(ns.name, "boardFeed", true)
     check(rows.provider.list[2].pinned == "feed", "and back")
-    -- Switched off, nothing more is gathered.
-    options.boardTalks = false
-    W.Fire("CHAT_MSG_WHISPER", "anyone?", "Garrosh-Stub", "", "", "", "", 0, 0, "", 0, 70, nil)
-    check(Talks.by["W:Garrosh-Stub"] == nil, "with the panel switched off, whispers go into no conversation")
-    options.boardTalks = true
     check(not Core.errors["Social: conversations"] and not Core.errors["Social: talks"] and not ns.off, "nothing went wrong in the conversations")
     grouped, W.raiding = wasGrouped, wasRaiding
     end)()
@@ -2331,35 +2326,55 @@ do
         ns.Window.Reboard()
         W.Wait(0.5)
     end
+    -- Where a window is held: in the guild panel's body at the scale that fits there (at most its own), at the body's
+    -- top in its middle; offsets in its own units from UIParent's lower left (40, 500: the stand-in's corner).
+    local HEAD, EDGE = Core.Board.HEAD, Layout.EDGE
+    local function heldAt(frame)
+        local panel = panels.guild
+        local left, top = panel._points[1][4], -panel._points[1][5]
+        local bodyW, bodyH = panel._width - 2 * EDGE, panel._height - HEAD - 2 * EDGE
+        local scale = math.min(1, bodyW / frame._width, bodyH / frame._height)
+        return scale, 40 + left + EDGE + (bodyW - frame._width * scale) / 2, 500 - (top + HEAD + EDGE)
+    end
+    local function held(frame)
+        local scale, x, y = heldAt(frame)
+        local own = frame._scale or 1
+        return #frame._points == 1 and frame._points[1][2] == UIParent and frame._points[1][3] == "BOTTOMLEFT"
+            and math.abs(own - scale) < 1e-9 and math.abs(frame._points[1][4] * own - x) < 1e-6
+            and math.abs(frame._points[1][5] * own - y) < 1e-6
+    end
     anew()
-    local guild = Layout.Board(1920, tall, { friends = true, talks = true, guild = { 814, 426 } })
-    check(toggles == 1 and game:IsShown() and #game._points == 1 and game._points[1][2] == UIParent
-        and game._points[1][3] == "BOTTOMLEFT" and game._points[1][4] == 40 + guild.guild[1]
-        and game._points[1][5] == 500 - guild.guild[2] and game._level == 1 + Layout.GUILD_LEVEL,
-        "the full screen opens the guild window by the guild key's work and holds it at its top right")
-    check(panels.friends._points[1][5] == -guild.friends[2] and panels.friends._width == 814 and column._width == guild.chat[3]
-        and panels.talks._width == guild.talks[3], "its room as large as it is, the friends list under it and as wide")
+    local framed = { 814 + 2 * EDGE, 426 + HEAD + 2 * EDGE }
+    local guild = Layout.Board(1920, tall, { friends = true, talks = true, guild = framed })
+    check(toggles == 1 and game:IsShown() and panels.guild and panels.guild:IsShown() and held(game)
+        and game._scale == 1 and game._level == 1 + Layout.GUILD_LEVEL,
+        "the full screen opens the guild window by the guild key's work and holds it in its panel at the top right, its own size")
+    check(panels.guild._points[1][4] == guild.guild[1] and panels.friends._points[1][5] == -guild.friends[2]
+        and panels.friends._width == framed[1] and column._width == guild.chat[3] and panels.talks._width == guild.talks[3],
+        "its panel as large as it is with its head, the friends list under it and as wide")
     game:ClearAllPoints()
     game:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 16, -116)
     check(#game._points == 1 and game._points[1][3] == "BOTTOMLEFT", "placed anew by the game, it is put back in its room")
     game._width = 600
     game:GetScript("OnSizeChanged")(game)
     W.Wait(0.1)
-    check(panels.friends._width == 600, "a new size makes its room anew")
+    check(panels.friends._width == 600 + 2 * EDGE and held(game), "a new size makes its room anew")
     game._height = tall -- too high for the screen
     game:GetScript("OnSizeChanged")(game)
     W.Wait(0.1)
-    local smaller, scale = Layout.Board(1920, tall, { friends = true, talks = true, guild = { 600, tall } }).guild, game._scale
-    check(smaller[5] < 1 and math.abs(scale - smaller[5]) < 1e-9 and math.abs(game._points[1][5] * scale - (500 - smaller[2])) < 1e-9
-        and math.abs((game._points[1][4] + 600) * scale - (40 + smaller[1] + smaller[3])) < 1e-9, -- offsets in its own units
-        "made smaller where the screen lacks room: at the layout's scale, its top right corner at its room's")
+    check(game._scale < 1 and held(game), "made smaller where its panel lacks room: at the scale that fits its body")
     game._width, game._height = 814, 426
     game:Hide()
     W.Wait(0.1)
     check(game._points[1][3] == "TOPLEFT" and game._points[1][4] == 16 and panels.friends._points[1][5] == -Layout.PAD
-        and panels.friends._width == Layout.FRIENDS_WIDTH and toggles == 1,
+        and panels.friends._width == Layout.FRIENDS_WIDTH and not panels.guild:IsShown() and toggles == 1,
         "closed by the player: its place back as it was, the friends list takes the room, it is not opened again")
     check(game._scale == 1 and game._level == 1 and game._strata == "MEDIUM", "and its scale and layer")
+    game:Show()
+    W.Wait(0.1)
+    check(panels.guild:IsShown() and held(game) and toggles == 1, "opened again by you (the guild key), it is back in its panel")
+    game:Hide()
+    W.Wait(0.1)
     anew()
     check(toggles == 2 and game:IsShown() and game._points[1][3] == "BOTTOMLEFT", "the full screen anew opens it anew")
     ns.Board.Hide()
@@ -2377,7 +2392,7 @@ do
     function answer:GetName() return "SomeGuildWindow" end
     UISpecialFrames[#UISpecialFrames + 1] = "SomeGuildWindow"
     anew()
-    check(answer:IsShown() and not game:IsShown() and answer._points[1][3] == "BOTTOMLEFT" and panels.friends._width == 900
+    check(answer:IsShown() and not game:IsShown() and held(answer) and panels.friends._width == 900 + 2 * EDGE
         and ns.store.guildWindow == "SomeGuildWindow",
         "a window that answers the guild key instead is the one held, as large as it is, and known by its name")
     ns.Board.Hide()
@@ -2393,10 +2408,10 @@ do
     anew()
     check(toggles == 0 and not answer:IsShown() and panels.friends._width == Layout.FRIENDS_WIDTH, "out of a guild there is none")
     guilded = true
-    options.boardGuild = false
+    ns.store.board.tabs[1].tree = { split = "x", parts = { { key = "talks" }, { key = "friends" } }, shares = { 0.7, 0.3 } }
     anew()
-    check(toggles == 0 and not answer:IsShown(), "switched off neither")
-    options.boardGuild = true
+    check(toggles == 0 and not answer:IsShown(), "a layout without the guild window opens none")
+    ns.store.board.tabs[1].tree = nil
     W.combat = true
     anew()
     check(toggles == 0, "in a fight the game opens no panel for an addon: none is asked for")
@@ -2410,6 +2425,127 @@ do
     ns.Window.Reboard()
     end)()
     end
+    ;(function() -- Core's board: the layouts behind tabs, the windows sharing the screen as they are arranged
+        local Board, layouts, PAD = Core.Board, ns.Board.layouts, Core.Board.PAD
+        -- A layout, plainly.
+        local pair = { split = "x", parts = { { key = "a" }, { key = "b" } }, shares = { 0.5, 0.5 } }
+        local rects, lines = Board.Lay(Board.Copy(pair), 12, 12, 1000, 600, 12)
+        check(rects.a[3] + rects.b[3] + 12 == 1000 and rects.b[1] == 12 + rects.a[3] + 12 and rects.a[4] == 600
+            and #lines == 1 and lines[1][3] == 12 + rects.a[3] and lines[1][5] == 12,
+            "two windows side by side share the room, the gap between them a line to drag")
+        local three = Board.Beside(Board.Copy(pair), "c", "b", "bottom")
+        check(three.split == "x" and three.parts[2].split == "y" and three.parts[2].parts[1].key == "b"
+            and three.parts[2].parts[2].key == "c", "dropped near the bottom of one, the two share its room, one over the other")
+        local row = Board.Beside(Board.Copy(pair), "c", "b", "right")
+        check(#row.parts == 3 and row.parts[3].key == "c" and math.abs(row.shares[2] - 0.25) < 1e-9,
+            "beside one the way its split goes, it joins that split")
+        local back = Board.Without(Board.Copy(three), "c")
+        check(back.split == "x" and #back.parts == 2 and back.parts[2].key == "b", "taken off, its neighbour has its room again")
+        check(Board.Without({ key = "a" }, "a") == nil, "the last one taken off: an empty layout")
+        local swapped = Board.Swap(Board.Copy(pair), "a", "b")
+        check(swapped.parts[1].key == "b" and swapped.parts[2].key == "a", "dropped in another's middle, the two swap places")
+        local side = Board.Beside(Board.Copy(pair), "c", nil, "left")
+        check(side.parts[1].key == "c" and math.abs(side.shares[1] - Board.STRIP) < 1e-9, "near a side of the screen: a strip along it")
+        local moved = Board.Move(lines[1], 5000, 100, 300)
+        check(moved == rects.b[3] - 300, "a line dragged far: the window on its other side keeps its least")
+        local kept = { split = "x", parts = { { key = "a" }, { key = "b" }, { key = "c" } }, shares = { 0.5, 0.25, 0.25 } }
+        local present = Board.Present(kept, function(key) return key ~= "b" end)
+        check(#present.parts == 2 and math.abs(present.shares[1] - 2 / 3) < 1e-9,
+            "a window with nothing to show now is left out, the others share its room")
+        local _, gaps = Board.Lay(present, 0, 0, 900, 300, 0)
+        Board.Move(gaps[1], -150, 0, 0)
+        check(math.abs(kept.shares[1] - 0.375) < 1e-9 and math.abs(kept.shares[3] - 0.375) < 1e-9 and kept.shares[2] == 0.25,
+            "a line moved there is written back to the kept layout, the one left out keeping its share")
+
+        -- On the full screen: the tabs after the title, the dropdown Windows.
+        local strip = layouts.strip
+        local function tabs()
+            local list = {}
+            for index = 1, strip.tabs.taken do list[index] = strip.tabs[index] end
+            return list
+        end
+        local function watcher()
+            for index = #W.frames, 1, -1 do
+                local widget = W.frames[index]
+                if widget._parent == nil and widget._scripts.OnUpdate and widget:IsShown() then return widget end
+            end
+        end
+        local function item(text)
+            layouts.menu:GenerateMenu()
+            for _, entry in ipairs(layouts.menu._items) do
+                if entry.text == text then return entry end
+            end
+        end
+        local listed = tabs()
+        check(strip:IsShown() and #listed == 2 and listed[1].Text._text == "Default" and listed[2].Text._text == "+"
+            and layouts.menu:IsShown() and item("Conversations") and item("Conversations").checked() and item("Guild"),
+            "full, a tab for each layout after the title, + to make one; the dropdown Windows ticks those in the layout")
+        listed[2]._scripts.OnClick(listed[2], "LeftButton")
+        listed = tabs()
+        check(#listed == 3 and listed[2].Text._text == "Layout 2" and ns.store.board.chosen == 2 and layouts.hint:IsShown()
+            and not panels.talks:IsShown() and not panels.friends:IsShown() and not column:IsShown(),
+            "+ makes an empty layout and chooses it: no window, a word on how to add one, no chat")
+        item("Friends List").fn()
+        check(panels.friends:IsShown() and panels.friends._width == 1920 - 2 * PAD and not layouts.hint:IsShown()
+            and item("Friends List").checked(), "ticked in the dropdown, a window comes into the layout: alone, it has the whole")
+        item("Conversations").fn()
+        local friendsWidth = panels.friends._width
+        check(panels.talks:IsShown() and panels.talks._points[1][4] > panels.friends._points[1][4]
+            and friendsWidth + panels.talks._width + 3 * PAD == 1920 and column:IsShown(),
+            "the next shares the room of the largest there, side by side; the chat stands in the conversations again")
+        -- The line between them, dragged: only the line follows; let go, the two share their room anew.
+        local line = layouts.strips[1]
+        local mouseX, mouseY = W.cursorX, W.cursorY
+        W.cursorX, W.cursorY = 40 + line.of[3] + PAD / 2 + 100, 300
+        line._scripts.OnEnter(line)
+        check(W.cursorArt == "UI_RESIZE_CURSOR", "the mouse on the gap between two: the game's cursor for sizing")
+        line._scripts.OnMouseDown(line, "LeftButton")
+        local hand = watcher()
+        hand._scripts.OnUpdate(hand, 0.01)
+        check(panels.friends._width == friendsWidth, "held, only the line follows")
+        line._scripts.OnMouseUp(line, "LeftButton")
+        check(panels.friends._width == friendsWidth + 100 and panels.friends._width + panels.talks._width + 3 * PAD == 1920,
+            "let go, the one at its left is that much wider, the other that much narrower")
+        line._scripts.OnLeave(line)
+        -- A head dragged onto the left side of the other: there it goes.
+        local talks = panels.talks
+        talks.head._scripts.OnDragStart(talks.head)
+        W.cursorX, W.cursorY = 40 + panels.friends._points[1][4] + 10, 300
+        hand = watcher()
+        hand._scripts.OnUpdate(hand, 0.01)
+        check(talks._alpha == 0.6, "held by its head, the window is lifted, and a shape shows where it would go")
+        talks.head._scripts.OnDragStop(talks.head)
+        check(talks._alpha == 1 and talks._points[1][4] < panels.friends._points[1][4], "let go at the left side of the other, it stands there")
+        -- Its X: off the layout; the other has the whole.
+        talks.close._scripts.OnClick(talks.close)
+        check(not talks:IsShown() and panels.friends._width == 1920 - 2 * PAD and not item("Conversations").checked(),
+            "its X takes it off the layout, the other takes its room")
+        W.cursorX, W.cursorY = mouseX, mouseY
+        -- A right click on a tab: rename it, delete it.
+        listed = tabs()
+        listed[2]._scripts.OnClick(listed[2], "RightButton")
+        local menu = W.menus[#W.menus]
+        local function entry(text)
+            for _, each in ipairs(menu) do
+                if each.text == text then return each end
+            end
+        end
+        entry("Rename").fn()
+        W.popups[#W.popups].data.callback("Raid night")
+        check(tabs()[2].Text._text == "Raid night" and ns.store.board.tabs[2].name == "Raid night", "renamed, the tab says so")
+        listed = tabs()
+        listed[2]._scripts.OnClick(listed[2], "RightButton")
+        menu = W.menus[#W.menus]
+        entry("Delete").fn()
+        W.popups[#W.popups].data.callback()
+        check(#tabs() == 2 and ns.store.board.chosen == 1 and panels.talks:IsShown() and panels.friends:IsShown(),
+            "deleted once confirmed, and the first layout is chosen")
+        listed = tabs()
+        listed[1]._scripts.OnClick(listed[1], "RightButton")
+        menu = W.menus[#W.menus]
+        check(entry("Reset") and not entry("Delete"), "the first can be reset, never deleted")
+        check(not Core.errors["board"] and not Core.errors["Social"] and not ns.off, "(nothing went wrong on the board)")
+    end)()
     local shown = #box.provider.list
     coreBar.find:GetScript("OnMouseDown")(coreBar.find)
     coreBar.find:GetScript("OnClick")(coreBar.find)

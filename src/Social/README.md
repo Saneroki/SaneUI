@@ -41,16 +41,27 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   it. From one message you get just the words picked; from several, each message on its own line after the
   name of whoever said it. The next click, Esc or any other key lets the words go. A click on a link or a
   name still does what it did.
-- **Full screen panels:** standing full, the window holds more than the chat (each can be switched off,
-  section *Full screen* of the settings):
-  - **Guild window** at the top right: the very window the guild key opens, held there and working as
-    always: the game's own guild and communities window, or the window of another addon that answers the
-    guild key instead. Its room is as large as the window is (it follows when the window is sized or made
-    small); on a smaller screen it is made smaller, and left out where it would be too small. The full screen
-    opens it and closes it again when it goes; one open already stays open, back at its place. Closed while
-    the full screen stands (its close button, Esc), the friends list takes its room. In a fight the game
-    opens no window for an addon: one that closes in a fight comes back after it. Only while you are in a
-    guild.
+- **Full screen windows and layouts:** standing full, the window holds more than the chat: windows that share
+  the screen and never overlap, arranged as you like.
+  - **Arrange them** on the full screen itself: drag the gap between two windows to share their room anew
+    (the mouse shows the game's sizing cursor there); drag a window by its head onto another, near one of
+    its sides to stand there beside it, in its middle to swap the two, or near a side of the screen for a
+    strip along it (a gold shape shows where it would go); its X takes it off and the others take its room.
+    The dropdown *Windows* in the title bar ticks the windows in the layout: tick one to add it, untick it to
+    take it off.
+  - **Layouts behind tabs** in the title bar, after *Social*: the first (*Default*) is the arrangement below,
+    fitted to your screen until you change it; then it is kept as you left it. *+* makes an empty layout. A
+    right click on a tab renames it, resets the first to the arrangement below, or deletes another. The
+    layouts are the same on all your characters.
+  - **At first** (the tab *Default*):
+  - **Guild window** at the top right: the very window the guild key opens, held in its window there and
+    working as always: the game's own guild and communities window, or the window of another addon that
+    answers the guild key instead. Its room is as large as the window is (it follows when the window is
+    sized or made small); in a smaller room it is made smaller, never larger. The full screen opens it and
+    closes it again when it goes; one open already stays open, back at its place. Closed while the full
+    screen stands (its close button, Esc), the others take its room; opened again with the guild key, it is
+    back. In a fight the game opens no window for an addon: one that closes in a fight comes back after it.
+    Only while you are in a guild.
   - **Friends list** at the right, under the guild window and as wide (the game's friends list's width at
     least), as the game's: online Battle.net friends, online characters, a divider,
     then the offline ones; each with the game's status icon (online, away, busy, offline), the name (a
@@ -86,8 +97,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     character, also over a logout. Drag the line between the list and the one chosen to make the list
     wider or narrower (the mouse shows the game's sizing cursor on it); let go, the one chosen takes the rest,
     and the width is kept.
-  - With the conversations switched off, the chat stands in their place, with its line to write in. A screen
-    too narrow makes the guild window smaller, then leaves it out, then the friends list. The search in the
+  - A layout without the conversations has no chat in it (the line to write in still opens, at the screen's
+    bottom). On a narrow screen the first layout makes the guild window smaller, then leaves it out, then the
+    friends list. The search in the
     title bar finds in all of them: messages (in the chat and the second chat), friends (name, where, note),
     groups (leader, activity, comment) and conversations (by name or by their messages). Going back, the
     panels go at once, the guild window with them, and the chat has the whole window.
@@ -132,10 +144,10 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   - *General:* *Chat window*: *Chat window* (on: the window itself), *Show the game's chat too* (on), *Save chat history* (on) with *Messages kept* (slider
     0 to 500, at first 100). *Messages to show*: *System messages*, *Creature messages*, *Addon messages*
     (on), *Channel joins and leaves* (off: somebody joined or left a channel, also the hidden channels addons
-    use). The same four ticks are in the list on the chat's name. *Full screen* (all on):
-    *Conversations* with *Messages kept per conversation* (20 to 500, at first 100) and *Second chat*, *Guild
-    window*, *Friends list* with *Group finder* (its tab). The second chat's ticks are kept with the settings too
-    (`split`), no control.
+    use). The same four ticks are in the list on the chat's name. *Full screen*: *Messages kept per
+    conversation* (20 to 500, at first 100), *Second chat* (on), *Group finder* (on: its tab in the friends
+    list). Which windows stand on the full screen, and where, is arranged there (its layouts). The second
+    chat's ticks are kept with the settings too (`split`), no control.
   - *Appearance:* *Expand window* (Core's, the same for every window that can fill the screen):
 
     | Line | At first |
@@ -553,11 +565,20 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   messages a list like the second chat's (`Bubble.Init`, no fade, no slide), a pill per day (`CALENDAR_WEEKDAY_NAMES`,
   `FormatShortDate`). The search uses `Window.Found` for messages. Shown, it listens to group and Battle.net
   events; `Window.Repaint` and `Resize` redraw it (an alias, the bubbles' look, the text size).
+- **The full screen's windows** (`Board.lua` on Core's board, `Core.Board`, Doc/guides/windows.md section 7, *The
+  board*): Social gives Core its windows (`talks`, `friends`, `guild`: each a part's `Build`, `Show`, `Size`,
+  `Search` behind `ns.Safe`, and its `least`; the guild window's `present` asks `Guild.Size`) and the first
+  layout (`Default`: the rooms of `Layout.Board`, the guild window's framed with its panel's head and edges, made
+  a layout: the conversations beside a column of the guild window over the friends list, shares as large as the
+  rooms). Core lays the layout chosen out, makes and places the panels (`Board.panels` is its table) and gives
+  back each window's rect; `Board.Show` holds the guild window in its panel's body (`Guild.Hold`) and returns
+  the chat's place (`chat`: the conversations' part beside their list and under the line with the name), none
+  without the conversations (then `Window`'s `Shows` is nil and the chat is out of sight). A change on the
+  board (a tab, a drag, a window added or taken off) calls `Window.Reboard`. The layouts are kept in
+  `store.board`. `Layout.HEADER` and `Layout.PAD` are Core's board's `HEAD` and `PAD`.
 - **The guild window** (`Guild.lua`): not built anew but held. `Board.Show` asks `Guild.Size` for its own size
   (in the full window's units: its seat's `Size`, the size it has when not seated, times `UIParent`'s effective
-  scale over ours) before `Layout.Board`, which gives it a room at the top right as large (smaller where the
-  conversations would lack `TALKS_MIN` or the friends list under it `FRIENDS_LOW`, none below `GUILD_LEAST`),
-  then `Guild.Hold` seats it there. Which window: the one open after the guild key's work (`ToggleGuildFrame`,
+  scale over ours) for the first layout, then `Guild.Hold` seats it in its panel's body. Which window: the one open after the guild key's work (`ToggleGuildFrame`,
   the game's way, out of a fight once per full screen), found among the windows the game knows by name, those
   Esc closes (`UISpecialFrames`) and its panels (`UIPanelWindows`): the largest that was not open before,
   `Guild.LOOK` (0.2 s) later. So it is the game's `CommunitiesFrame`, or the window another addon shows when it
@@ -566,11 +587,11 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   layer (the full window's strata, at least `GUILD_LEVEL` above what it holds) and points lent and given back,
   its parent never changed, placed at the screen's place of its room against `UIParent` (`BOTTOMLEFT`), not
   anchored to our window: a window with protected buttons would otherwise tie ours to the fight's rules, and a
-  drag still moves it as its own. The room `Guild.Hold` hands the seat is the window's own size at the layout's
-  scale (`rect[5]`), at the top right of the layout's room: that room is in whole units, and a seat fits a
-  window into its room (centred, as large as fits), so a room even half a unit smaller would make it a hair
-  smaller than the layout's scale and centre it; this one leaves nothing round it, and it stands exactly at
-  that scale with its top right corner at the room's. The seat's hooks put it back when the game places or
+  drag still moves it as its own. The room `Guild.Hold` hands the seat is the window's own size at the scale that
+  fits the body (at most 1), at the body's top in its middle: a seat fits a window into its room (centred, as
+  large as fits), so a room exactly that size leaves nothing round it. A window you open again yourself while
+  the full screen stands (its `OnShow`, hooked once) is back in its panel; `Guild.Least` gives its panel's least
+  (`GUILD_LEAST` of its size). The seat's hooks put it back when the game places or
   scales it anew (`SetPoint`, `SetScale`), fit it anew and tell `sized` when its size changes (its room anew:
   `Reboard`), and give it back and tell `gone` when it closes (not opened again while the full screen stands;
   closed in a fight it comes back after it, `PLAYER_REGEN_ENABLED`). Guild's own: which window, opening it
@@ -634,7 +655,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Picker.lua` | The smiley beside the line and its list: raid marks to write, emotes to do |
 | `Art/smiley.blp` | The smiley (24 x 24). Original art of Sane UI (see the project's `LICENSE`), drawn by `dev/tools/smiley-art` into `assets/SaneSocial-Smiley.png`, made by `dev/tools/art`; the game has no smiley of its own |
 | `Join.lua` | The game's chat channels, the same on every character as wished. Knows no frames |
-| `Board.lua` | The full screen's parts: where each stands (`Layout.Board`), the panels' plate and head, the search to all; the list, row and buttons the friends list's tabs share |
+| `Board.lua` | The full screen's windows on Core's board, its first layout, the guild window held in its panel, the search to all; the list, row and buttons the friends list's tabs share |
 | `Guild.lua` | The guild window on the full screen: the one the guild key opens (the game's, or the one that answers the key instead), held at its top right |
 | `Feed.lua` | The second chat, a row of the conversations' list: its own ticks (`split`), the same bubbles, in the chat's place |
 | `Talks.lua` | The conversations: whispers, the party's, raid's and instance group's chat, each apart, kept per character. Knows no frames |
@@ -649,6 +670,9 @@ Tabs of chat views in the small window (`Doc/ideas/Social.md`), messages of one 
 a group, a close button, a sign besides colour for what a speaker is to you.
 
 ## History
+- 2026-10-20 — The full screen's windows on Core's board (Saneroki): layouts behind tabs, the windows sharing the
+  screen as you arrange them (drag a gap, a head; the X; the dropdown *Windows*); the switches *Conversations*,
+  *Guild window* and *Friends list* are gone (a layout has the windows or not); the guild window held in a panel.
 - 2026-10-20 — Words picked out of the messages on the full screen by a drag, over as many messages as wished,
   lit grey, copied with Ctrl+C (`Select.lua`, new in the TOC; Saneroki).
 - 2026-10-20 — The conversations' list dragged wider or narrower by the line beside it, its width kept

@@ -2,10 +2,11 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Social - Guild
---  The guild window on the full screen (Board.lua), at its top right, the
---  friends list under it. Not built anew: the guild window itself is held
---  there and works as always, as large as it is (smaller where the screen
---  lacks room: Layout.Board), and the full screen makes its room that size.
+--  The guild window on the full screen (Board.lua): one of its windows, at
+--  its top right at first, the friends list under it. Not built anew: the
+--  guild window itself is held in its panel and works as always, as large as
+--  it is, smaller where its panel is smaller (never larger), and the first
+--  layout makes its room that size.
 --
 --  Which window: the one the game's guild key opens (ToggleGuildFrame). That
 --  is the game's own (its guild and communities window, Blizzard_Communities),
@@ -18,23 +19,23 @@ local _, ns = ...
 --  too. One open already is left open when the full screen goes; one opened
 --  for it is closed then, as Esc closes it.
 --
---  Held: seated in its room (Core.Seat), which lends its place, layer and
---  scale and gives them back exactly, puts it back when the game places it
+--  Held: seated in its panel's body (Core.Seat), which lends its place, layer
+--  and scale and gives them back exactly, puts it back when the game places it
 --  anew (its panels make room for each other), and gives it back when it
 --  closes. Its parent stays its own, and it stands at the screen's place of
 --  its room (not anchored to our window): a drag moves it out as always, and a
 --  window with protected buttons never ties ours to the fight's rules. Its
---  room is its own size at the layout's scale, at the top right of the one
---  Layout.Board gives (that one is in whole units): so the seat's fitting
---  keeps it exactly at that scale, with no room left round it. A new size
---  (another tab, made small) makes the room anew. Closed (its close button,
---  Esc), the friends list takes its room, and it stays closed while the full
---  screen stands.
+--  room is its own size at the scale that fits the body (at most its own), at
+--  the body's top, in its middle: so the seat's fitting keeps it exactly at
+--  that scale. A new size (another tab, made small) makes the room anew.
+--  Closed (its close button, Esc), the others take its room, and it stays
+--  closed while the full screen stands, unless you open it again yourself (the
+--  guild key): then it is back in its panel.
 --
 --  Out of a fight only: the game opens its panels for an addon only then, and
 --  a window holding protected buttons cannot be moved in one (its seat waits).
 --  One that closes in a fight comes back once the fight is over. Only while
---  you are in a guild and its switch is on (boardGuild). A step that fails
+--  you are in a guild and the layout holds it. A step that fails
 --  gives the window back and holds it no more until the next /reload.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -110,6 +111,13 @@ local function Gone(frame)
     Reboard()
 end
 
+-- Opened again by you while the full screen stands (the guild key): it is in its panel again.
+local function Back(frame)
+    if frame ~= window or not inside then return end
+    dismissed = false
+    Reboard()
+end
+
 -- Its seat, made once per window: a new size makes its room anew (sized).
 local function SeatOf(frame)
     local seat = seats[frame]
@@ -117,6 +125,7 @@ local function SeatOf(frame)
         seat = Core.Seat.New(frame, { label = "Social: guild window", sized = Reboard,
                                       gone = function() Try(Gone, frame) end })
         seats[frame] = seat
+        frame:HookScript("OnShow", ns.Guard(function(self) Try(Back, self) end))
     end
     return seat
 end
@@ -144,17 +153,19 @@ Free = function(close)
     opened = false
 end
 
--- Seated in its room (a rect of Layout.Board: left, top, width, height in the full screen's units from its top
--- left, how much smaller): its own size at that scale, at the room's top right. In a fight not now (Seat says
--- no), once it is over.
+-- Seated in its room (its panel's body: left, top, width, height in the full screen's units from its top left):
+-- its own size at the scale that fits there, at most its own, at the room's top in its middle. In a fight not now
+-- (Seat says no), once it is over.
 local function Place(rect)
     local left, top = inside:GetLeft(), inside:GetTop()
     if not (left and top) then return end
     local seat = SeatOf(window)
     local ratio = inside:GetEffectiveScale() / UIParent:GetEffectiveScale() -- the full screen's units, in UIParent's
     local width, height = seat:Size()
-    width, height = width * rect[5], height * rect[5]
-    seat:Hold((left + rect[1] + rect[3]) * ratio - width, (top - rect[2]) * ratio, width, height,
+    if not (width and height and width > 0 and height > 0) then return end
+    local scale = math.min(1, rect[3] * ratio / width, rect[4] * ratio / height)
+    width, height = width * scale, height * scale
+    seat:Hold((left + rect[1]) * ratio + (rect[3] * ratio - width) / 2, (top - rect[2]) * ratio, width, height,
         inside:GetFrameStrata(), inside:GetFrameLevel() + Layout.GUILD_LEVEL)
 end
 
@@ -219,7 +230,7 @@ end
 local function Ask(room)
     inside = room
     Listen(true)
-    if not ns.options.boardGuild or not IsInGuild() then return nil end
+    if not IsInGuild() then return nil end
     local frame = Current()
     if frame then
         Take(frame)
@@ -232,9 +243,15 @@ local function Ask(room)
 end
 
 -- The full screen lays itself out in what the window holds (room): the guild window's own size, to make its room
--- that large; nil: none (not wished, not in a guild, closed, or none answers the key). Asked first, it opens.
+-- that large; nil: none (not in a guild, closed, or none answers the key). Asked first, it opens.
 function Guild.Size(room)
     return Try(Ask, room)
+end
+
+-- Its least size in the full screen's units, made smaller as far as Layout.GUILD_LEAST: the least of its panel's body.
+function Guild.Least()
+    if not size then return nil end
+    return { math.ceil(size[1] * Layout.GUILD_LEAST) + 2 * Layout.EDGE, math.ceil(size[2] * Layout.GUILD_LEAST) + 2 * Layout.EDGE }
 end
 
 local function Hold(rect)
@@ -242,8 +259,8 @@ local function Hold(rect)
     Place(rect)
 end
 
--- Its room on the full screen (a rect of Layout.Board), or none: then it is given back, and closed if it was
--- opened for the full screen.
+-- Its room on the full screen (its panel's body), or none: then it is given back, and closed if it was opened for
+-- the full screen.
 function Guild.Hold(rect)
     Try(Hold, rect)
 end

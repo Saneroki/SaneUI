@@ -3,7 +3,7 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 526 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 274 (Navigation), 21 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 550 (Social), 90 (Sync), 366 (windows), 183 (data in the game), 274 (Navigation), 21 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
 
 ### Navigation: the route and the minimap's dots in the pin filter, the dots on the full map too (Saneroki, 2026-10-20)
@@ -59,6 +59,38 @@ A game restart takes it in (new addons, Navigation, Atlas and Inventory; new fil
   for a template that is there, and a `TextureCoordTranslation` made in Lua has no `SetOffset`, as in the game.
   New check: the glint pulses by the template.
 - **Guide** (`Doc/guides/gui-development.md`, *Motion*): a `TextureCoordTranslation` comes from an XML template.
+
+### Core and Social: the full screen's windows on Core's board, layouts behind tabs (Saneroki, 2026-10-20)
+- **Core's board** (`src/Core/Board.lua`, new in Core's TOC after `Seat.lua`; `Core.Board.New(window, options)`):
+  a module's full screen of windows that share it and never overlap, as the player arranges them. A layout is a
+  tree of splits (`{ key }`, `{ split = "x"/"y", parts, shares }`, `Board.Lay` gives whole-pixel rects, `PAD` 12
+  between and round). The gap between two neighbours is a strip with the game's sizing cursor: held, only a line
+  follows; let go, `Board.Move` shares their room anew (neither under its `least`; through a layout that left a
+  window out, written back to the kept split). A window's head is dragged: see-through, a gold shape where it would
+  go; let go near a side of another, `Board.Beside` (a split the same way takes it in, `Tidy`), in its middle
+  `Board.Swap`, near a side of the screen a strip of `STRIP` along it. The X takes it off (`Board.Without`); the
+  dropdown *Windows* (left of *Classic windows*; `Window.Refresh` now ends the search box left of it) ticks those
+  in the layout and adds one beside the largest. Layouts behind tabs after the title (`MinimalTabTemplate`, out of
+  sight under the search box): the first is the module's `default` until changed, `+` an empty one, a right
+  click renames, resets the first, deletes another (confirmed). A window with nothing to show now (`present`
+  false) is left out of the laying out (`Board.Present`), its share kept. Kept in `store[key]`
+  (`{ chosen, tabs = { { name, tree } } }`, account-wide as places are). One watcher runs only while a line or a
+  head is held; the layout is laid out once when let go. Panels: Core's plate, head (`HEAD` 30) with title and X,
+  a line, the body; the module's part built in it (`build`, `show`, `size`, `search`).
+- **Social on it** (`Board.lua`, `Window.lua`, `Guild.lua`, `Layout.lua`, `Social.lua`, `Talks.lua`): its windows
+  `talks`, `friends`, `guild`; the first layout made from `Layout.Board`'s rooms (`Default`, the guild window's
+  room framed with its panel's head and edges); `Board.Show` returns the chat's place in the conversations, none
+  in a layout without them (the chat out of sight: `Window`'s `Shows`). The guild window is held in its panel's
+  body at the scale that fits (at most its own, at the body's top in its middle), `Guild.Least` its panel's least;
+  opened again by the player while the full screen stands, it is back in its panel (an `OnShow` hook). The
+  switches *Conversations* (`boardTalks`), *Guild window* (`boardGuild`) and *Friends list* (`boardFriends`) are
+  gone: a layout holds a window or not; `talkSize` heads the section *Full screen*, *Group finder* has no parent.
+  `Layout.HEADER` and `Layout.PAD` are the board's.
+- **Docs:** `Doc/guides/windows.md` (section 3's table, section 7 *The board*, section 8 item 5 built), Core's and
+  Social's READMEs, `Doc/agent/core.md`, `Doc/agent/social.md`.
+- Tests: `dev/tests/social.lua` (550 checks): the layout functions (`Lay`, `Beside`, `Without`, `Swap`, `Move`,
+  `Present` and its writing back), the tabs and `+`, the dropdown, a line dragged, a head dragged, the X, renaming
+  and deleting a tab, the first's *Reset*; the guild window held in its panel, reopened, a layout without it.
 
 ### Social: words picked out of the messages on the full screen, copied with Ctrl+C (Saneroki, 2026-10-20)
 - **Picking** (`Select.lua`, new in Social's TOC after `Bubble.lua`): a press on a bubble's words and a drag
