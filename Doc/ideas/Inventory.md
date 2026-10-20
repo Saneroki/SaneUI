@@ -103,14 +103,16 @@ renamed, moved, hidden from All Items or switched off; pins by a middle click, a
 (what came in lately); stacks of one item merged; three displays (grid, list, compact); a foot with the currencies
 and the gold.
 
+**Built (2026-10-21):** our own sort in One Bag (the items moved into the categories' order in passes, partial
+stacks joined first; the other views keep the game's clean-up); categories and groups dragged to another place in
+the bags' sidebar, or onto another to group them; the bank as a list under its own column head, a tab's settings
+(its name, what it takes, left out of the clean-up) by the game's call, and Buy Tab with the game's own purchase
+button over it (`src/Inventory/README.md`, *The bags*).
+
 **Next, each its own step:**
 - Spells that work on an item (disenchanting, picking a lock) right from the window: a secure button of the
   game's over the item, out of a fight.
-- A splitter for stacks; the list's columns (price, required level, type) sorted by a click on their head, and
-  its groups folded; a "+" at a category's end to put an item in; a mode that marks junk by clicks.
-- Our own sort that moves the items in the bags by our groups (until then the game's clean-up).
-- The bank: buying a tab, a tab's settings, depositing account-bound items, moving gold; the bank as a window of
-  its own on the full screen.
+- The bank: depositing account-bound items, moving gold; a tab's icon chosen.
 - Gold over time and every character's currencies, from Core's data.
 
 ## The other characters
