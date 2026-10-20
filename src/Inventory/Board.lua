@@ -7,13 +7,19 @@ local _, ns = ...
 --  behind tabs in the full window's title bar (drag a window's head to move
 --  it, the gap between two to share their room anew, its X to take it off;
 --  the dropdown Windows adds one). The module's windows, in this order:
---      character  the character sheet
---      bags       the bags
---      alts       the other characters' snapshots
+--      character   the character: the paper doll (Sheet/Sheet.lua)
+--      stats       the stats and the game's sidebar beside them: gear sets,
+--                  titles, the pet's stats (Sheet/Sidebar.lua)
+--      reputation, skills, pvp, currency, statistics
+--                  what the game's character sheet has behind its tabs, each a
+--                  window of its own (Sheet/)
+--      bags        the bags
+--      alts        the other characters' snapshots
 --  Each is a part in files of its own, listed after this one in the TOC, that
 --  registers itself (Board.Part); the board lists the parts that are there.
---  The first layout puts them side by side, left to right, each as wide as it
---  asks (its least width), the last one taking what is left.
+--  The first layout puts the windows of Board.FIRST side by side, left to
+--  right, each as wide as it asks (its least width), the last one taking what
+--  is left; the others are added from the dropdown Windows.
 --
 --  A panel is Core's (Board.lua: a plate in Sane UI's look, a head with its
 --  title and the X, the body under it); what is in it is its part's. A part
@@ -30,7 +36,9 @@ local Core = SaneUI.Core
 local Board = {}
 ns.Board = Board
 
-Board.ORDER = { "character", "bags", "alts" } -- the windows in the dropdown's order and the first layout's
+-- The windows in the dropdown's order; those the first layout holds.
+Board.ORDER = { "character", "stats", "reputation", "skills", "pvp", "currency", "statistics", "bags", "alts" }
+Board.FIRST = { character = true, stats = true, bags = true, alts = true }
 
 local layouts  -- Core's board, once the window is there (Board.Take)
 local parts = {} -- [key] = { part, spec }: registered by the parts' files
@@ -61,10 +69,13 @@ local function Windows()
     return list
 end
 
--- The first layout: the windows side by side, each as wide as its least width, the last taking the rest of
--- the room the board lays out in (the screen less Core's pads round and between the windows).
+-- The first layout: the windows of Board.FIRST side by side, each as wide as its least width, the last taking
+-- the rest of the room the board lays out in (the screen less Core's pads round and between the windows).
 local function Default(width)
-    local list = Windows()
+    local list = {}
+    for _, spec in ipairs(Windows()) do
+        if Board.FIRST[spec.key] then list[#list + 1] = spec end
+    end
     if #list == 0 then return nil end
     if #list == 1 then return { key = list[1].key } end
     local pad = Core.Board.PAD

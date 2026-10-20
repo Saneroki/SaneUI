@@ -249,8 +249,6 @@ local function Show(on)
     end
 end
 
-ns.Sheet.Tab({
-    key = "currency", icon = "Interface/ICONS/INV_SideTab_Currency_c60",
-    tip = Core.Word("CHARACTER_FRAME_TAB_CURRENCY", "Currency"), title = Core.Word("CURRENCY", "Currency"),
-    Build = Build, Show = Show,
-})
+-- A window of its own on the board: the currencies at the left, the chosen one at the right.
+ns.Page.Part("currency", Core.Word("CURRENCY", "Currency"), ns.Page.Least(ns.List.LEAST + ns.Page.SIDE, ns.List.LEAST_HEIGHT),
+    { side = true, Build = Build, Show = Show })

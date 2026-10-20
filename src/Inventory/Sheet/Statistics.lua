@@ -184,8 +184,6 @@ local function Show(on)
     if on then Statistics.Refresh() end
 end
 
-ns.Sheet.Tab({
-    key = "statistics", icon = "Interface/ICONS/INV_SideTab_Stats_c60",
-    tip = Core.Word("CHARACTER_FRAME_TAB_STATISTICS", "Statistics"), title = Core.Word("STATISTICS", "Statistics"),
-    Build = Build, Show = Show,
-})
+-- A window of its own on the board: the statistics' tree alone, as the game's tab has no side pane.
+ns.Page.Part("statistics", Core.Word("STATISTICS", "Statistics"), ns.Page.Least(ns.List.LEAST, ns.List.LEAST_HEIGHT),
+    { Build = Build, Show = Show })

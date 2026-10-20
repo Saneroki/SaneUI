@@ -313,10 +313,10 @@ Slots.Place()
 -------------------------------------------------------------------------------
 local list
 for _, widget in ipairs(W.frames) do
-    local box = rawget(widget, "ScrollBox")
-    if type(box) == "table" and box.view then list = widget end
+    if rawget(widget, "unit") == "player" and type(rawget(widget, "ScrollBox")) == "table" then list = widget end
 end
-check(list and list._points[1][1] == "TOPLEFT" and list._points[1][2] == ns.Sheet.stone, "the game's stats list under the right pane's stone")
+check(list and list._points[1][1] == "TOPLEFT" and list._points[1][2]._atlas == "UI-Character-Info-Stat-StoneBG3",
+    "the game's stats list under the stone of the stats' window")
 local function Names()
     local names = {}
     for _, element in ipairs(list.ScrollBox.provider.elements) do
@@ -574,13 +574,14 @@ end
 -- A part comes later (one more key in the board's order: the module's own parts are all there): side by side,
 -- the sheet as wide as it asks.
 Board.ORDER[#Board.ORDER + 1] = "later"
+Board.FIRST.later = true -- and in the first layout, as the module's first windows are
 local bags = Part("later", { 160, 160 })
 ns.Window.Reboard()
 check(bags.built == 1 and bags.shown == true and bags.size and Board.layouts:Has("later"), "a part that registers later is laid out too")
 local rects = Board.layouts.rects
 check(rects.character and rects.bags and rects.character[1] < rects.bags[1]
-    and rects.character[3] == ns.Sheet.LEFT + ns.Sheet.RIGHT + ns.Sheet.TAB_WIDTH + 2 * Core.Board.EDGE,
-    "side by side, in the board's order, the sheet as wide as the game's sheet, its side tabs and its panel's edges")
+    and rects.character[3] == ns.Page.Least(math.floor(ns.Sheet.WIDTH * ns.Sheet.LEAST), 0)[1],
+    "side by side, in the board's order, the paper doll's window as wide as it asks")
 
 -- The search box: every part hears it.
 Board.Search("linen")

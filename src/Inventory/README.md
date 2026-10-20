@@ -1,6 +1,6 @@
 # Sane UI: Inventory
 
-**Status:** its window and full screen built; the character sheet's paper doll, stats, side tabs and all six tabs built; its other tabs are being built; the bags built; the other characters' window built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
+**Status:** its window and full screen built; the character sheet built, its parts windows of their own (the paper doll; the stats with the game's sidebar: gear sets, titles, the pet; reputation, skills, PvP, currency, statistics); the bags built; the other characters' window built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 The module for what you carry and wear. Push the mouse into the screen's bottom right corner and the screen
@@ -16,24 +16,29 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 - **Arranging the windows:** as on every Sane UI full screen (Core's board): drag a window's head to move it,
   the gap between two to share their room anew, its X to take it off; the dropdown *Windows* adds one; layouts
   behind tabs in the title bar.
-- **The character sheet:** the game's sheet, Sane UI's own: your model in the middle (drag to turn it, the
-  wheel or the buttons over it to zoom), your gear round it in the game's places, your level and class above.
-  A click on a slot picks the item up or puts the one you hold there (a drag the same), Shift or Ctrl and a
-  click links it or tries it on, the tooltip is the game's; an item let go over the model is put on. Using an
-  equipped item with a right click stays on the game's own sheet and the action bars. At the right, your stats
-  as the game lists them, with its tooltips; in a fight they show what they were before it, and are brought up
-  to date when it is over.
-- **The sheet's tabs:** right of the sheet, as on the game's: Character (the paper doll), Reputation, and the
-  others to come. Reputation lists your factions as the game does: a click on a header folds or unfolds it, a
-  click on a faction chooses it (its standing in numbers under the mouse). At the right the chosen faction: its
-  standing, its description, and the game's switches At War, Move to Inactive and Show as Experience Bar.
-  Skills lists your skill lines with their ranks (the bonus in green); choose one to see its description, and for
-  a weapon skill what it means against a foe of your level and against a raid boss. PvP shows the season, your
-  rank and the game's rank ring, your points, the time left of the season, and at the right the season's progress
-  and the next reward. Currency lists your currencies (choose one for its caps and description; Shift and a click
-  links it, the game's watch key puts it on the backpack), with the game's switches Unused and Show on Backpack;
-  its transfer between characters stays on the game's own sheet. Statistics lists the game's statistics by
-  category, each category folding by a click.
+- **The character sheet**, Sane UI's own, in windows of their own that you move and size on the full screen like
+  every other (the dropdown *Windows* adds the ones that are not there; at first the character and the stats):
+  - *Character*: your model in the middle (drag to turn it, the wheel or the buttons over it to zoom), your gear
+    round it in the game's places, your level and class above; as large as its window lets it be, never larger
+    than the game's. A click on a slot picks the item up or puts the one you hold there (a drag the same), Shift or
+    Ctrl and a click links it or tries it on, the tooltip is the game's; an item let go over the model is put on.
+    Using an equipped item with a right click stays on the game's own sheet and the action bars.
+  - *Character Stats*: your stats as the game lists them, with its tooltips (in a fight they show what they were
+    before it, and are brought up to date when it is over). On the stone at its top the game's sidebar tabs:
+    Stats; Equipment Manager (your gear sets: a click chooses one, a double click or Equip puts it on, Save stores
+    what you wear in it after a question, New Set asks a name, a right click renames or deletes; a new set's icon is
+    changed on the game's own sheet); Titles (a click wears one); Pet (your pet's stats, while you have one).
+  - *Reputation*: your factions as the game lists them: a click on a header folds or unfolds it, a click on a
+    faction chooses it (its standing in numbers under the mouse); at the right the chosen faction, its standing,
+    its description and the game's switches At War, Move to Inactive and Show as Experience Bar.
+  - *Skills*: your skill lines with their ranks (the bonus in green); choose one to see its description, and for a
+    weapon skill what it means against a foe of your level and against a raid boss.
+  - *PvP*: the season, your rank and the game's rank ring, your points, the time left of the season, and at the
+    right the season's progress and the next reward.
+  - *Currency*: your currencies (choose one for its caps and description; Shift and a click links it, the game's
+    watch key puts it on the backpack), with the game's switches Unused and Show on Backpack; the transfer between
+    characters stays on the game's own sheet.
+  - *Statistics*: the game's statistics by category, each category folding by a click.
 - **Your bags** (the window *Bags*): everything you carry, and the bank too while you are at a banker. The
   dropdown *View* on its head chooses how they show: *All* (every slot in your bags' order, the empty ones too; a
   quiver, the reagent bag and the keyring each a part of its own), *Categories* (your items in the game's groups:
@@ -66,19 +71,22 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   strata `DIALOG`): its push fills the screen. `docked` lays the board out once the full window stands,
   `filled` takes it away as soon as the window starts back; the search box goes to every part.
 - **The board** (`Board.lua`): Core's (`Core.Board`), the module's windows in the order `Board.ORDER`
-  (`character`, `bags`, `alts`). Each window is a part in files of its own, listed after `Board.lua` in the TOC,
+  (`character`, `stats`, `reputation`, `skills`, `pvp`, `currency`, `statistics`, `bags`, `alts`). Each window is a part in files of its own, listed after `Board.lua` in the TOC,
   that registers itself: `Board.Part(key, title, least, part)`, `part.Build(panel)`, `part.Show(on)`,
   `part.Size(width, height)`, `part.Search(text)`; each step runs `ns.Safe`, so a part that fails is noted and
-  the others go on. The first layout puts the parts side by side, each as wide as its least width, the last
-  taking the rest; later the layout is the player's (kept in the module's store, `board`).
-- **The character sheet** (`Sheet/`, the part `character`): the game's Camelot character window rebuilt from
-  Blizzard's code (`CharacterFrame.xml`, `PaperDollFrame.xml`, `PaperDollFrame.lua`), at its size (`Sheet.LEFT`
-  398 + `Sheet.RIGHT` 233 by `Sheet.HEIGHT` 464 under the panel's head; the board's least is that and the panel's
-  edges), at the top of its panel's body. The left pane on the game's `UI-Character-Info-General-BG`, its top strip
-  (the game's rock and edge) with the level line (`PaperDollFrame_SetLevel`: the effective level, the
-  specialization where the game has one, the class in its colour); the right pane on the game's stat background and
-  stone (`UI-Character-Info-Stat-BG`, `…-StoneBG3`, the divider) with the stats under it. The panel's head is
-  `UnitPVPName`.
+  the others go on. The first layout puts the parts of `Board.FIRST` (the character, the stats, the bags, the other
+  characters) side by side, each as wide as its least width, the last taking the rest; the others come from the
+  dropdown *Windows*; later the layout is the player's (kept in the module's store, `board`).
+- **The character sheet** (`Sheet/`): the game's Camelot character window rebuilt from Blizzard's code
+  (`CharacterFrame.xml`, `PaperDollFrame.xml`, `PaperDollFrame.lua`, `ReputationFrame`, `SkillsFrame`, `PVPRankFrame`,
+  `TokenFrame`, `StatisticsFrame`), its parts windows of their own on the board (Saneroki, 2026-10-20), each moved
+  and sized there; what is in a window follows its size.
+  - **The character** (`Sheet/Sheet.lua`, the part `character`): the game's left pane (`Sheet.WIDTH` 398 by
+    `Sheet.HEIGHT` 464, on `UI-Character-Info-General-BG`), its top strip (the game's rock and edge) with the level
+    line (`PaperDollFrame_SetLevel`: the effective level, the specialization where the game has one, the class in its
+    colour), the model and the slots; scaled to fit its window's body and never larger than the game's
+    (`Sheet.Size`), the board's least `Sheet.LEAST` of it. The panel's head is `UnitPVPName`. `Sheet.LEFT` is its width
+    too (the other characters' paper doll reads it).
   - **Slots** (`Sheet/Slots.lua`): the game's `ItemButton` on its slot frame (`UI-Character-Info-GearSlot`), in
     its places (`Slots.TOP`, `LEFT`, `RIGHT`, `BOTTOM`, `SIZE`, `GAP`); the ranged slot only where
     `C_PaperDollInfo.IsRangedSlotShown`, the ammo slot (`…GearSlotSmall`) and the weapons moved left while
@@ -90,24 +98,42 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
     `ModelSceneUtil.SetUpCharacterSheetScene` when shown and at `UNIT_MODEL_CHANGED`, the game's turn and zoom
     buttons (`ModelSceneControlFrameTemplate`), the race's background in four parts (`DressUpTexturePath`, greyed)
     under `UI-Character-Info-RaceBG-Overlay`; an item let go over it: `AutoEquipCursorItem`.
-  - **Stats** (`Sheet/Stats.lua`): the game's `CharacterStatsPaneScrollBoxTemplate` under the stone, its rows the
+  - **The stats and the sidebar** (`Sheet/Sidebar.lua`, the part `stats`): the game's right pane as a window, at the
+    game's width (`Sidebar.WIDTH`) and the window's height, in its middle: the game's stat background stretched, its
+    stone at the top, and on it the game's sidebar tabs as our own buttons in its art (42 square,
+    `UI-Character-Info-StatTab`, checked `…-StatTab-Selected`; the game's own tabs show its sheet's panes): Stats with
+    the portrait, Equipment Manager and Titles (`PaperDollSidebarTabs`' icons and coordinates), Pet (`paw-icon`), shown
+    only with `HasPetUI`, the three centred without it as `PaperDollFrame_UpdateSidebarTabLayout` does; a tab the
+    game has nothing for greyed (half seen, desaturated) with its reason in the tooltip. The tab chosen shows its
+    pane under the stone and names the window's head; only it listens to the game. `UNIT_PET` lays the tabs out
+    anew (the pet's tab without a pet goes back to the stats).
+  - **Gear sets** (`Sheet/Gear.lua`): `C_EquipmentSet`'s sets by name in the game's cards (`UI-Character-Info-OutfitCard`
+    and its hover and selected art, the icon in `…-OutfitIcon-Frame`, `…-Icon-Tick` on the set worn, the name red with
+    an item lost); the game's Equip and Save (`SharedButtonSmallTemplate`) and New Set (`PaperDollTertiaryButtonTemplate`
+    with `UI-Character-Info-Icon-Add`). Equip as `EquipmentManager_EquipSet` (not with locked items or while casting:
+    the game's error), Save after `Core.Confirm`, New Set's name by `Core.AskText` (the icon the game's question mark:
+    the game's icon picker is a frame of its own we do not show), a right click's menu to rename or delete. Drawn anew
+    after `EQUIPMENT_SETS_CHANGED`, `EQUIPMENT_SWAP_FINISHED`, `PLAYER_EQUIPMENT_CHANGED`.
+  - **Titles** (`Sheet/Titles.lua`): None, then the titles you know by name, in the game's rows (the stripe, the tick
+    and bar on the one worn, the blue light); a click `SetCurrentTitle`. Drawn anew after `KNOWN_TITLES_UPDATE` and the
+    player's `UNIT_NAME_UPDATE`.
+  - **Stats** (`Sheet/Stats.lua`): for the player and for the pet, the game's `CharacterStatsPaneScrollBoxTemplate`
+    under the stone, its rows the
     game's element templates (a category's head, a stat, a stat with an icon) filled by the game's `Init`, which
     calls the game's function for that stat (`PAPERDOLL_STATINFO`). The list is put together by our code as
     `CharacterStatsPaneScrollBoxMixin:UpdateStats` does (the player's categories of `PAPERDOLL_STATCATEGORIES`,
-    `primary`, `roles`, `showFunc`, a stat left out at its `hideAt`, a scratch row of ours for the values; then the
+    `primary`, `roles`, `showFunc`, the unit's categories, a stat left out at its `hideAt`, a scratch row of ours for
+    the values; then the
     resistances, `Stats.RESISTANCES`, with `UnitResistance` and the game's tooltip and bonus formatting): the game's
     list builder borrows the game's own sheet's frame pool, which our code must not touch. Under a restriction
     (`Core.Restricted`) the stats are secret to addon code (`SecretWhenUnitStatsRestricted`; the player's health
     always is), so the list is not drawn then: it waits (`Stats.Owed`) and is drawn after `PLAYER_REGEN_ENABLED` or
     `ADDON_RESTRICTION_STATE_CHANGED`. Drawn when shown and a frame after the game's stat events (`Core.Later`).
-  - **Side tabs** (`Sheet.lua`): the game's `LargeSideTabButtonTemplate` right of the sheet (`Sheet.TABS_Y`,
-    `TAB_GAP`), the Character tab with the character's portrait, the others with the game's icons; the template's
-    left button handler chooses (`Sheet.Choose`), guarded. A tab is a table a file registers (`Sheet.Tab`: `key`,
-    `tip`, `title`, `icon` or `portrait`, `Build(left, right)`, `Show(on)`): its frames over the two panes are made
-    when it is first chosen; it is told when it shows and hides (another tab chosen, the panel shown or hidden), so
-    it listens to the game only while shown. The panel's head says the tab's title. The board's least is the sheet
-    and the side tabs' width (the game's tab art, `SidePanelTabButtonMixin.CalculateTabSizeBasedOnTabArt`).
-  - **Lists and side pane** (`Sheet/List.lua`, `Sheet/Side.lua`): what the tabs share. A list in the game's look
+  - **The pages** (`Sheet/Page.lua`): the windows of the game's tabs are each a page: its panel's body cut into a
+    left part that takes the room (`Page.New`) and, for those that tell of what is chosen, the game's right pane at
+    its right (`Page.SIDE` wide, the window's height, its art and stone); `Page.Part` registers it with the board,
+    `Page.Least` its least size (a list's `List.LEAST`, `LEAST_HEIGHT`, and the right pane).
+  - **Lists and side pane** (`Sheet/List.lua`, `Sheet/Side.lua`): what the windows share. A list in the game's look
     (`WowScrollBoxList`, `MinimalScrollBar`, the long lines) whose rows (plain buttons) the tab draws, every call of
     the game's list into our code `ns.Safe`; the side pane over the right pane as the game's
     `CharacterFrameSidePaneTemplate` lays it out (title, subtitle, line, description, rows, foot, the empty word).
@@ -253,7 +279,7 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 - **Standing down** (`ns.GiveBack`): the board's windows go and the window with them. A `/reload` starts the
   module afresh.
 - Tests: `dev/tests/inventory.lua` (the window, the board, the paper doll, the stats, the other characters' window
-  and an alt's paper doll), `dev/tests/sheet.lua` (the side tabs and the tabs), `dev/tests/bags.lua` (the bags).
+  and an alt's paper doll), `dev/tests/sheet.lua` (the sheet's windows on the board, the sidebar with its gear sets and titles, the game's tabs as windows), `dev/tests/bags.lua` (the bags).
 
 ## Files
 
@@ -265,16 +291,20 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
 | `Board.lua` | The full screen's windows on Core's board; the parts register theirs |
 | `Sheet/Slots.lua` | The character sheet's equipment slots |
 | `Sheet/Model.lua` | The character sheet's model, its background and buttons |
-| `Sheet/Stats.lua` | The character sheet's stats: the game's list and rows, put together by our code |
-| `Sheet/Sheet.lua` | The character sheet: its panes, the side tabs and the tab chosen, the Character tab (paper doll, level line, stats); registers the part `character` |
-| `Sheet/List.lua` | A tab's scrolling list in the game's look |
-| `Sheet/Side.lua` | The side pane at the sheet's right, as the game lays it out |
-| `Sheet/Rows.lua` | The rows the reputation and skills tabs list, in the game's three looks |
-| `Sheet/Reputation.lua` | The reputation tab |
-| `Sheet/Skills.lua` | The skills tab |
-| `Sheet/PvP.lua` | The PvP tab: the season's rank |
-| `Sheet/Currency.lua` | The currency tab |
-| `Sheet/Statistics.lua` | The statistics tab |
+| `Sheet/Stats.lua` | The stats, the player's and the pet's: the game's list and rows, put together by our code |
+| `Sheet/List.lua` | A window's scrolling list in the game's look |
+| `Sheet/Side.lua` | The side pane at a window's right, as the game lays it out |
+| `Sheet/Rows.lua` | The rows the reputation, skills, currency and statistics windows list, in the game's three looks |
+| `Sheet/Page.lua` | What a window of the game's tabs stands on: the left part and the game's right pane; registers it |
+| `Sheet/Sheet.lua` | The character: the paper doll, the level line, scaled to its window; registers the part `character` |
+| `Sheet/Gear.lua` | The sidebar's equipment manager: the gear sets, Equip, Save, New Set |
+| `Sheet/Titles.lua` | The sidebar's titles |
+| `Sheet/Sidebar.lua` | The stats' window: the right pane, the game's sidebar tabs, their panes; registers the part `stats` |
+| `Sheet/Reputation.lua` | The reputation window |
+| `Sheet/Skills.lua` | The skills window |
+| `Sheet/PvP.lua` | The PvP window: the season's rank |
+| `Sheet/Currency.lua` | The currency window |
+| `Sheet/Statistics.lua` | The statistics window |
 | `Bags/Contents.lua` | The bags, without frames: the containers, a record per slot, the groups, free slots, orders, the search |
 | `Bags/Layout.lua` | The bags' views: where each cell, line and head goes, as plain numbers |
 | `Bags/Cells.lua` | The bags' item buttons: the game's own, one per slot, drawn the game's way |
@@ -291,7 +321,9 @@ bags stay as they are, and their keys open them as before. The plan is in `Doc/i
   the corner opened the bags only. Then (Saneroki) our own windows instead: the module's window docked in the
   bottom right corner, its corner filling the screen with the character sheet, the bags and the other
   characters' snapshots on Core's board (`Doc/ideas/Inventory.md`). The character sheet's paper doll: its slots,
-  the model, the level line; its stats; its side tabs and the six tabs of the game's sheet.
+  the model, the level line; its stats; its side tabs and the six tabs of the game's sheet. Then (Saneroki) each part
+  a window of its own on the board, the side tabs gone, and the game's sidebar in the stats' window: gear sets,
+  titles, the pet's stats.
   The window of the other characters: the roster, each one's bags, bank and what it wears as last seen, the
   search across them all; Core's `Data.Items` for it. Then an alt's gear on a paper doll, slot by slot, from Core's
   new `Data.Worn`.

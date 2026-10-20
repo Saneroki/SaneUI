@@ -247,8 +247,6 @@ local function Show(on)
     if on then Skills.Refresh() end
 end
 
-ns.Sheet.Tab({
-    key = "skills", icon = "Interface/ICONS/Ability_Racial_JackofAllTrades",
-    tip = Core.Word("CHARACTER_FRAME_TAB_SKILLS", "Skills"), title = Core.Word("SKILLS", "Skills"),
-    Build = Build, Show = Show,
-})
+-- A window of its own on the board: the skill lines at the left, the chosen one at the right.
+ns.Page.Part("skills", Core.Word("SKILLS", "Skills"), ns.Page.Least(ns.List.LEAST + ns.Page.SIDE, ns.List.LEAST_HEIGHT),
+    { side = true, Build = Build, Show = Show })

@@ -287,8 +287,6 @@ local function Show(on)
     if on then Reputation.Refresh() end
 end
 
-ns.Sheet.Tab({
-    key = "reputation", icon = "Interface/ICONS/INV_SideTab_Reputation2_c60",
-    tip = Core.Word("CHARACTER_FRAME_TAB_REPUTATION", "Reputation"), title = Core.Word("REPUTATION", "Reputation"),
-    Build = Build, Show = Show,
-})
+-- A window of its own on the board: the factions at the left, the chosen one at the right.
+ns.Page.Part("reputation", Core.Word("REPUTATION", "Reputation"), ns.Page.Least(ns.List.LEAST + ns.Page.SIDE, ns.List.LEAST_HEIGHT),
+    { side = true, Build = Build, Show = Show })

@@ -34,12 +34,14 @@ Full, it holds the module's windows on **Core's board** (`Core.Board`, `Doc/guid
 
 | Window | Key | What it holds |
 |---|---|---|
-| Character | `character` | Our character sheet (*The character sheet*) |
+| Character | `character` | The paper doll (*The character sheet*) |
+| Character Stats | `stats` | The stats, with the game's sidebar: gear sets, titles, the pet's stats |
+| Reputation, Skills, PvP, Currency, Statistics | `reputation` … `statistics` | What the game's sheet has behind its tabs, each a window |
 | Bags | `bags` | Our bags (*The bags*) |
 | Characters | `alts` | The other characters' snapshots (*The other characters*) |
 
-The first layout: the character sheet at the left as wide as the game's, the bags beside it, the snapshots at
-the right. Each part is a file (or folder) of its own that registers its window with the module's board; the
+The first layout: the paper doll, the stats, the bags and the snapshots side by side; the windows of the game's
+tabs come from the dropdown *Windows*. Each part is a file (or folder) of its own that registers its window with the module's board; the
 board lists only the parts that are there.
 
 The game's own sheet and bags stay as they are: their keys (C, B) and buttons open them as always. Whether those
@@ -57,6 +59,9 @@ Everything the game's (Camelot) character window has, in our panel:
   tooltips.
 - **Its tabs:** Reputation, Skills, Honor (PvP rank), and what else Camelot's `CHARACTER_FRAME_TAB` lists, each
   as the game draws it.
+- **Windows of their own (Saneroki, 2026-10-20):** not one sheet with side tabs, but each part a window on the
+  module's board, moved and sized there like every other: the paper doll (scaled to fit), the stats with the
+  game's sidebar (gear sets, titles, the pet), and each of the game's tabs; what is in a window follows its size.
 - **Built from Blizzard's code,** its layout, sizes, art (atlases and textures by path), the game's words
   (`GlobalStrings`) and behaviour, rewritten for our panel where it must be:
   - no frame named like one of Blizzard's (`CharacterFrame`, `PaperDollFrame`, `Character…Slot`): ours carry
@@ -117,7 +122,8 @@ character Core has not read slot by slot yet (it has not logged in since) shows 
 
 1. **The window and the board** (built 2026-10-20): docked in the bottom right corner, its corner fills the
    screen with the parts there are.
-2. **The character sheet:** the paper doll (slots and model), then the stats, then the tabs one by one.
+2. **The character sheet** (built 2026-10-20): the paper doll (slots and model), the stats with the sidebar (gear
+   sets, titles, the pet), reputation, skills, PvP, currency and statistics, each a window on the board.
 3. **The bags** (built 2026-10-20): the bags and the bank, the game's item buttons, four views, sorting, the
    search; next, the steps under *The bags*.
 4. **The other characters** (built 2026-10-20): the snapshot window from `Core.Data.Characters`, an alt's gear

@@ -1,6 +1,7 @@
--- Runs the Inventory module's character sheet against the stand-in client (wowstub.lua): its side tabs and the
--- tabs behind them (reputation, ...), each built when first chosen and listening to the game only while shown.
--- The window, the board, the paper doll and the stats are tried in dev/tests/inventory.lua. The look can only
+-- Runs the Inventory module's character sheet against the stand-in client (wowstub.lua): its parts as windows of
+-- their own on the module's board (the paper doll fitting its window; the stats with the game's sidebar: gear sets,
+-- titles, the pet; reputation, skills, PvP, currency, statistics), each built when first shown and listening to
+-- the game only while shown. The window, the board, the paper doll and the stats are tried in dev/tests/inventory.lua. The look can only
 -- be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/sheet.lua
 
@@ -291,6 +292,28 @@ GetCategoryNumAchievements = function(id) return #(statisticRows[id] or {}) end
 GetStatistic = function(id, index) local row = statisticRows[id][index] return row[1], row[2], row[3] end
 GetAchievementInfo = function(id) return id, ({ [1001] = "Deaths", [1002] = "Hugs given" })[id] end
 STATISTICS, CHARACTER_FRAME_TAB_STATISTICS = "Statistics", "Statistics"
+-- The game's titles, gear sets and pet, for the sidebar.
+local titleWorn, titleCalls = 0, {}
+GetNumTitles = function() return 3 end
+IsTitleKnown = function(index) return index ~= 2 end
+GetTitleName = function(index) return ({ " the Patient", "Private", "Jenkins " })[index] end
+GetCurrentTitle = function() return titleWorn end
+SetCurrentTitle = function(index) titleCalls.worn = index end
+local gearSets = { [7] = { "Tank", 101, 7, true, 0 }, [9] = { "Heal", 102, 9, false, 1 } }
+local gearCalls = {}
+C_EquipmentSet = {
+    GetEquipmentSetIDs = function() return { 7, 9 } end,
+    GetEquipmentSetInfo = function(id) local set = gearSets[id] return set[1], set[2], set[3], set[4], 0, 0, 0, set[5] end,
+    GetNumEquipmentSets = function() return 2 end,
+    UseEquipmentSet = function(id) gearCalls.used = id end,
+    EquipmentSetContainsLockedItems = function() return false end,
+}
+UnitCastingInfo = function() return nil end
+RED_FONT_COLOR = { r = 1, g = 0.125, b = 0.125 }
+rawset(_G, "NORMAL_FONT_COLOR", rawget(_G, "NORMAL_FONT_COLOR") or { r = 1, g = 0.82, b = 0 })
+local hasPet = false
+HasPetUI = function() return hasPet end
+UnitExists = function(unit) return unit == "player" or (unit == "pet" and hasPet) end
 ScrollUtil = { InitScrollBoxListWithScrollBar = function(box, _, view) box.view = view end }
 CreateDataProvider = function(elements) return { elements = elements } end
 ScrollBoxConstants = { RetainScrollPosition = true }
@@ -360,40 +383,95 @@ local head = Slots.Button(1)
 check(panel and panel:IsShown() and head and head:IsVisible(), "the character sheet on the full screen, the paper doll shown")
 
 -------------------------------------------------------------------------------
---  The side tabs
+--  The windows on the board
 -------------------------------------------------------------------------------
-local tabButtons = {}
-for _, widget in ipairs(W.frames) do
-    if rawget(widget, "_mouseUp") then tabButtons[widget.tooltipText] = widget end
+-- A window of the module's put on the board from the dropdown Windows (Core's board), or taken off it.
+local function Open(key)
+    if not Board.layouts:Has(key) then Board.layouts:Toggle(key) end
+    return Board.Panel(key)
 end
-check(tabButtons.Character and tabButtons.Reputation and tabButtons.Character._checked and not tabButtons.Reputation._checked,
-    "the side tabs, the game's: Character chosen at first")
-check(tabButtons.Character._points[1][2] == ns.Sheet.left:GetParent() and tabButtons.Character._points[1][3] == "TOPRIGHT",
-    "right of the sheet, as the game's")
-local function Pick(name)
-    local button = tabButtons[name]
-    button._mouseUp(button, "LeftButton", true)
+local function Close(key)
+    if Board.layouts:Has(key) then Board.layouts:Toggle(key) end
 end
-local function Lists()
-    local found = {}
+-- The game's list a window shows (the stand-in's rows), found by the panel that holds it.
+local function Inside(widget, panel)
+    while widget do
+        if widget == panel then return true end
+        widget = widget._parent
+    end
+end
+local function ListIn(panel)
     for _, widget in ipairs(W.frames) do
         local rows = rawget(widget, "rows")
-        if type(rows) == "table" and widget.provider then found[#found + 1] = widget end
+        if type(rows) == "table" and widget.provider and Inside(widget, panel) then return widget end
     end
-    return found
 end
-check(#Lists() == 0, "a tab is built only when first chosen")
-tabButtons.Reputation._mouseUp(tabButtons.Reputation, "RightButton", true)
-check(tabButtons.Character._checked, "only the left button chooses a tab")
+for _, key in ipairs({ "reputation", "skills", "pvp", "currency", "statistics" }) do
+    check(not Board.layouts:Has(key) and not Board.Panel(key), "at first " .. key .. " is not on the board, and not built")
+end
+check(Board.layouts:Has("character") and Board.layouts:Has("stats"), "the first layout holds the paper doll and the stats")
+check(ns.Sheet.pane:GetScale() < 1 and near(ns.Sheet.pane:GetScale(),
+    (Board.layouts.rects.character[3] - 2 * Core.Board.EDGE) / ns.Sheet.WIDTH),
+    "the paper doll as large as fits in its window")
+
+-------------------------------------------------------------------------------
+--  The stats and the sidebar
+-------------------------------------------------------------------------------
+local stats = Board.Panel("stats")
+local Sidebar = ns.Sidebar
+check(stats and stats:IsShown() and Sidebar.Chosen() == "stats" and stats.title._text == "Character Stats",
+    "the stats' window, the stats tab chosen, the head says so")
+local statsTab, gearTab, titlesTab, petTab = Sidebar.Button("stats"), Sidebar.Button("gear"), Sidebar.Button("titles"), Sidebar.Button("pet")
+check(statsTab._checked and not petTab:IsShown() and gearTab:IsEnabled() and titlesTab:IsEnabled(),
+    "the game's sidebar tabs: Stats chosen, no pet's tab without a pet, gear sets and titles to choose")
+check(gearTab._points[1][1] == "TOP", "three tabs centred without a pet's, as the game centres them")
+titlesTab:GetScript("OnClick")(titlesTab)
+check(Sidebar.Chosen() == "titles" and stats.title._text == "Titles" and titlesTab._checked and not statsTab._checked,
+    "Titles chosen: its tab checked, the head says Titles")
+local titleList = ListIn(stats)
+local function TitleNames()
+    local names = {}
+    for index, row in ipairs(titleList.rows) do names[index] = row.text._text .. (row.check:IsShown() and "*" or "") end
+    return table.concat(names, ", ")
+end
+check(TitleNames() == "None*, Jenkins, the Patient", "None first and worn, then the titles you know by name: " .. TitleNames())
+titleList.rows[3]:GetScript("OnClick")(titleList.rows[3])
+check(titleCalls.worn == 1, "a click wears the title, by the game's own call")
+titleWorn = 1
+W.Fire("KNOWN_TITLES_UPDATE")
+W.Wait(0)
+check(TitleNames() == "None, Jenkins, the Patient*", "the game tells of the change: the title worn ticked")
+gearTab:GetScript("OnClick")(gearTab)
+check(Sidebar.Chosen() == "gear", "the equipment manager chosen")
+local gearList
+for _, widget in ipairs(W.frames) do
+    local rows = rawget(widget, "rows")
+    if type(rows) == "table" and widget.provider and rows[1] and rows[1].data and rows[1].data.name == "Heal" then gearList = widget end
+end
+check(gearList and gearList.rows[2].check:IsShown() and gearList.rows[1].text._color[1] == 1,
+    "the sets by name, a tick on the one worn, red with an item lost")
+gearList.rows[1]:GetScript("OnClick")(gearList.rows[1], "LeftButton")
+check(gearList.rows[1].chosen:IsShown(), "a click chooses a set")
+gearList.rows[1]:GetScript("OnDoubleClick")(gearList.rows[1])
+check(gearCalls.used == 9, "a double click puts it on, by the game's own call")
+hasPet = true
+W.Fire("UNIT_PET", "player")
+W.Wait(0)
+check(petTab:IsShown() and gearTab._points[1][1] == "TOPRIGHT", "a pet: its tab comes, the four as the game sets them")
+petTab:GetScript("OnClick")(petTab)
+check(Sidebar.Chosen() == "pet" and stats.title._text == "Pet", "the pet's tab chosen")
+hasPet = false
+W.Fire("UNIT_PET", "player")
+W.Wait(0)
+check(Sidebar.Chosen() == "stats" and not petTab:IsShown(), "the pet gone: back to the stats")
 
 -------------------------------------------------------------------------------
 --  Reputation
 -------------------------------------------------------------------------------
-Pick("Reputation")
-check(tabButtons.Reputation._checked and not tabButtons.Character._checked and panel.title._text == "Reputation",
-    "the reputation tab chosen: its side tab lit, the head says Reputation")
-check(not head:IsVisible(), "the paper doll goes while another tab shows")
-local repList = Lists()[1]
+local repPanel = Open("reputation")
+check(repPanel and repPanel:IsShown() and repPanel.title._text == "Reputation" and head:IsVisible(),
+    "the reputation window put on the board beside the paper doll")
+local repList = ListIn(repPanel)
 check(repList and #repList.rows == 3, "the factions as the game lists them")
 check(selectedFaction == 2, "none chosen: the first faction that can be is chosen, as the game does")
 local header, faction, withRep = repList.rows[1], repList.rows[2], repList.rows[3]
@@ -422,7 +500,7 @@ withRep:GetScript("OnClick")(withRep)
 check(selectedFaction == 3, "a click on a faction chooses it, by the game's own call")
 local boxes = {}
 for _, widget in ipairs(W.frames) do
-    if widget._kind == "CheckButton" and widget.label then boxes[widget.label._text] = widget end
+    if widget._kind == "CheckButton" and widget.label and Inside(widget, repPanel) then boxes[widget.label._text] = widget end
 end
 selectedFaction = 2
 W.Fire("UPDATE_FACTION")
@@ -447,23 +525,23 @@ W.Wait(0)
 check(not boxes["At War"]:IsShown(), "nothing to choose: the side says so, the switches go")
 factionList[2].isHeader, factionList[3].isHeaderWithRep = nil, true
 
--- Back to the paper doll; the reputation tab no longer listens.
-Pick("Character")
-check(head:IsVisible() and panel.title._text == "Tester Stub, the Patient", "the Character tab again: the paper doll and the name")
+-- Taken off the board, the reputation window no longer listens.
+Close("reputation")
+check(not repPanel:IsShown(), "taken off the board: the reputation window goes")
 factionList[2].name = "Stormwind"
 W.Fire("UPDATE_FACTION")
 W.Wait(0)
-check(repList.rows[2].name._text == "Stormwind City", "the reputation tab hidden, it does not listen to the game")
-Pick("Reputation")
-check(repList.rows[2].name._text == "Stormwind", "chosen again: drawn as the game has it now, built only once")
-check(#Lists() == 1, "one list: the tab is built once")
+check(repList.rows[2].name._text == "Stormwind City", "off the board, it does not listen to the game")
+check(Open("reputation") == repPanel and ListIn(repPanel) == repList and repList.rows[2].name._text == "Stormwind",
+    "put on again: drawn as the game has it now, built only once")
+Close("reputation")
 
 -------------------------------------------------------------------------------
 --  Skills
 -------------------------------------------------------------------------------
-Pick("Skills")
-check(tabButtons.Skills._checked and panel.title._text == "Skills", "the skills tab chosen")
-local skillBox = Lists()[2]
+local skillPanel = Open("skills")
+check(skillPanel and skillPanel.title._text == "Skills", "the skills window on the board")
+local skillBox = ListIn(skillPanel)
 check(skillBox and #skillBox.rows == 4, "the skill lines as the game lists them: the class's own and the ones under another left out")
 check(selectedSkill == 2, "none chosen: the first skill the game lists")
 local skillHeader, swords, professions, smithing = skillBox.rows[1], skillBox.rows[2], skillBox.rows[3], skillBox.rows[4]
@@ -492,20 +570,19 @@ end
 check(glancing and glancing._text == "Hit -6.40%, crit -6.40%, glancing 40% at 35% less",
     "a weapon skill: against a raid boss as the game works it out: " .. tostring(glancing and glancing._text))
 skillList[2].rank = 151
-Pick("Reputation")
+Close("skills")
 W.Fire("SKILL_LINES_CHANGED")
 W.Wait(0)
-check(swords.bar._text:find("^150"), "the skills tab hidden, it does not listen to the game")
-Pick("Skills")
-check(skillBox.rows[2].bar._text:find("^151"), "chosen again: drawn as the game has it now")
+check(swords.bar._text:find("^150"), "off the board, the skills window does not listen to the game")
+Open("skills")
+check(skillBox.rows[2].bar._text:find("^151"), "put on again: drawn as the game has it now")
+Close("skills")
 
 -------------------------------------------------------------------------------
 --  PvP
 -------------------------------------------------------------------------------
-check(tabButtons.PvP and tabButtons.PvP.Icon._texture == "Interface/ICONS/INV_SideTab_Honor_Alliance_c60",
-    "the PvP tab with the faction's honour icon")
-Pick("PvP")
-check(panel.title._text == "PvP", "the PvP tab chosen")
+local pvpPanel = Open("pvp")
+check(pvpPanel and pvpPanel.title._text == "PvP", "the PvP window on the board")
 local function Shown(text)
     for _, widget in ipairs(W.frames) do
         if widget._kind == "FontString" and widget._text == text and widget:IsVisible() then return widget end
@@ -522,7 +599,7 @@ local seasonSet = 0
 C_SeasonInfo = { GetTimeUntilCurrentPVPSeasonEnd = function() seasonSet = seasonSet + 1 return 0 end }
 W.Wait(1.1)
 check(seasonSet >= 1, "while shown, the season's time is asked each second")
-Pick("Character")
+Close("pvp")
 local before = seasonSet
 W.Wait(3)
 check(seasonSet == before, "hidden, no more")
@@ -530,9 +607,9 @@ check(seasonSet == before, "hidden, no more")
 -------------------------------------------------------------------------------
 --  Currency
 -------------------------------------------------------------------------------
-Pick("Currency")
-check(panel.title._text == "Currency", "the currency tab chosen")
-local coinBox = Lists()[3]
+local coinPanel = Open("currency")
+check(coinPanel and coinPanel.title._text == "Currency", "the currency window on the board")
+local coinBox = ListIn(coinPanel)
 check(coinBox and #coinBox.rows == 3, "the currencies as the game lists them")
 local coinHeader, honor, marks = coinBox.rows[1], coinBox.rows[2], coinBox.rows[3]
 check(coinHeader.state:IsShown() and not coinHeader.coin:IsShown(), "a header: the game's art, no count")
@@ -552,9 +629,10 @@ check(currencyCalls.expand[1] == 1 and currencyCalls.expand[2] == false, "a clic
 -------------------------------------------------------------------------------
 --  Statistics
 -------------------------------------------------------------------------------
-Pick("Statistics")
-check(panel.title._text == "Statistics", "the statistics tab chosen")
-local statBox = Lists()[4]
+Close("currency")
+local statPanel = Open("statistics")
+check(statPanel and statPanel.title._text == "Statistics", "the statistics window on the board")
+local statBox = ListIn(statPanel)
 local function StatNames()
     local names = {}
     for index, row in ipairs(statBox.rows) do names[index] = row.name._text .. (row.value:IsShown() and ("=" .. row.value._text) or "") end
@@ -571,17 +649,18 @@ W.Fire("CRITERIA_UPDATE")
 W.Fire("CRITERIA_UPDATE")
 W.Wait(0)
 check(StatNames():find("Deaths=13", 1, true), "the game tells of a change: drawn anew")
-Pick("Character")
 
--- The sheet hidden with the full screen: the tab shown no longer listens either.
+-- The full screen gone: the windows on it no longer listen; back, they are where they were.
+Open("reputation")
 Push()
 Stand()
 factionList[2].name = "Stormwind Keep"
 W.Fire("UPDATE_FACTION")
 W.Wait(0)
-check(repList.rows[2].name._text == "Stormwind", "the full screen gone: the tabs do not listen")
+check(repList.rows[2].name._text == "Stormwind", "the full screen gone: the windows do not listen")
 Push()
 Stand()
-check(tabButtons.Character._checked and head:IsVisible(), "back: the tab chosen before")
+check(repPanel:IsShown() and statPanel:IsShown() and head:IsVisible() and repList.rows[2].name._text == "Stormwind Keep",
+    "back: the windows of the layout as they were, drawn as the game has it now")
 
 io.write(("Sheet: all %d checks passed.\n"):format(passed))

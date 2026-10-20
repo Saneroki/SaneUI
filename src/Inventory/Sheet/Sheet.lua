@@ -2,77 +2,49 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Sheet
---  The character sheet, our own: what the game's character window holds
---  (Camelot's CharacterFrame), in a window on the module's full screen
---  (Board.lua, the key "character"). Built from Blizzard's code for it: its
---  panes, sizes, art, words and side tabs, rewritten for our panel.
+--  The character: the paper doll of the game's character sheet (Camelot's
+--  CharacterFrame and PaperDollFrame), ours, a window of its own on the
+--  module's full screen (Board.lua, the key "character"). The game's left pane
+--  at the game's size (398 by 464), on its art: a strip at the top with the
+--  level line, the character's model (Model.lua), the equipment slots round it
+--  (Slots.lua). The panel's head says the character's name with its title, as
+--  the game's window is headed. The rest of the game's sheet stands in windows
+--  of its own beside it: the stats and the sidebar (Sidebar.lua), and what the
+--  game's sheet has behind its tabs (Reputation.lua, Skills.lua, PvP.lua,
+--  Currency.lua, Statistics.lua).
 --
---      the left pane (398 wide)   the game's art; what the tab chosen shows there
---      the right pane (233 wide)  the game's art and stone; the tab's side
---      the side tabs              right of the sheet, as the game's: Character,
---                                 then each tab a file registers (Sheet.Tab)
---  The Character tab is the paper doll: a strip at the top with the level line,
---  the character's model (Model.lua) and the equipment slots round it
---  (Slots.lua), the stats at the right (Stats.lua). The panel's head says what
---  the tab says: the character's name with its title, or the tab's word.
---
---  The sheet stands at its own size, the game's (631 by 464 under the head),
---  with its side tabs, at the top of its panel's body, in its middle; the board
---  never makes the panel smaller than that (least). A tab is built the first
---  time it is chosen, and listens to the game only while it is shown. Nothing
---  of the game's sheet is touched: ours reads the game and calls only what the
---  game lets addon code call.
---
---  A tab is a table: key, tip (the side tab's tooltip), title (the head's words,
---  or a function giving them), icon (a texture, or a function giving it) or
---  portrait (the character's),
---  Build(left, right) (its frames over the panes, made on first choice),
---  Show(on) (shown or hidden, with the panel or by another tab chosen).
+--  The window is moved and sized on Core's board: the paper doll stands in its
+--  middle at the top, as large as fits and never larger than the game's. It
+--  listens to the game only while shown. Nothing of the game's sheet is
+--  touched: ours reads the game and calls only what the game lets addon code
+--  call.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Sheet = {}
 ns.Sheet = Sheet
 
--- The game's sizes (CharacterFrameConstants.lua, CharacterFrame.xml): the whole window and its panes under its
--- title, the strip at the top of the left pane, the side tabs below the window's top right corner.
-Sheet.LEFT, Sheet.RIGHT, Sheet.HEIGHT = 398, 233, 464
+-- The game's sizes (CharacterFrame.xml, PaperDollFrame.xml): its left pane, the strip at its top, the level line
+-- in the strip's middle a little low; how small the paper doll may be made on the board.
+Sheet.WIDTH, Sheet.HEIGHT = 398, 464
+Sheet.LEFT = Sheet.WIDTH -- the game's left pane, the paper doll's width (the other characters' window reads it)
 Sheet.STRIP = 36
-Sheet.LEVEL_Y = -2 -- the level line in the strip's middle, a little low
-Sheet.TABS_Y, Sheet.TAB_GAP = -30, 2
-Sheet.TAB_WIDTH = 46 -- the side tabs' width where the game cannot say it (its tab art's width)
+Sheet.LEVEL_Y = -2
+Sheet.LEAST = 0.6
 
 local holder, level, panel
-local tabs = {}  -- in their order, the Character tab first
-local chosen     -- the tab shown
-local shown = false
 
 local function Game(name, ...)
     local fn = rawget(_G, name)
     if type(fn) == "function" then return fn(...) end
 end
 
--- A tab's file registers it (see the head of this file).
-function Sheet.Tab(tab)
-    tabs[#tabs + 1] = tab
-end
-
--- The side tabs' width: the game's tab art's (SidePanelTabButtonMixin).
-local function TabWidth()
-    local mixin = rawget(_G, "SidePanelTabButtonMixin")
-    local width = mixin and mixin.CalculateTabSizeBasedOnTabArt and Core.Ask(mixin.CalculateTabSizeBasedOnTabArt)
-    return width or Sheet.TAB_WIDTH
-end
-
--------------------------------------------------------------------------------
---  The Character tab: the paper doll and the stats
--------------------------------------------------------------------------------
 -- The level line as the game writes it (PaperDollFrame_SetLevel): the level (the effective one with the real one
 -- beside it while they differ), then the specialization and class in the class's colour.
 local function Level()
     local now = Core.Plain(UnitLevel("player"))
     local effective = Core.Plain(Game("UnitEffectiveLevel", "player"))
-    local shownLevel = now
-    if now and effective and effective ~= now then shownLevel = Core.Word("EFFECTIVE_LEVEL_FORMAT", "%d (%d)"):format(effective, now) end
+    local shown = now
+    if now and effective and effective ~= now then shown = Core.Word("EFFECTIVE_LEVEL_FORMAT", "%d (%d)"):format(effective, now) end
     local className, class, classID = UnitClass("player")
     local colors = rawget(_G, "RAID_CLASS_COLORS")
     local color = colors and class and colors[class]
@@ -86,20 +58,29 @@ local function Level()
         end
     end
     if spec and spec ~= "" then
-        level:SetFormattedText(Core.Word("PLAYER_LEVEL", "Level %s |c%s%s %s|r"), shownLevel or "", colour, spec, className or "")
+        level:SetFormattedText(Core.Word("PLAYER_LEVEL", "Level %s |c%s%s %s|r"), shown or "", colour, spec, className or "")
     else
-        level:SetFormattedText(Core.Word("PLAYER_LEVEL_NO_SPEC", "Level %s |c%s%s|r"), shownLevel or "", colour, className or "")
+        level:SetFormattedText(Core.Word("PLAYER_LEVEL_NO_SPEC", "Level %s |c%s%s|r"), shown or "", colour, className or "")
     end
 end
 
+-- The panel's head: the character's name with its title.
+local function Title()
+    if panel and panel.title then panel.title:SetText(Game("UnitPVPName", "player") or Core.charName or "") end
+end
+
 -- The paper doll as it is now.
-local function Doll()
+local function Refresh()
+    Title()
     ns.Safe("character", Level)
     ns.Safe("character", ns.Slots.Place)
     ns.Slots.Update()
     ns.Safe("character", ns.Model.Refresh)
 end
 
+-------------------------------------------------------------------------------
+--  The game's events, while the panel is shown
+-------------------------------------------------------------------------------
 local function Equipped(slot)
     ns.Slots.Update(Core.Plain(slot))
 end
@@ -121,16 +102,28 @@ local function Remodeled()
     ns.Safe("character", ns.Model.Refresh)
 end
 
-local DOLL_EVENTS = {
+local EVENTS = {
     PLAYER_EQUIPMENT_CHANGED = Equipped, ITEM_LOCK_CHANGED = Locked,
     UPDATE_INVENTORY_DURABILITY = Items, UPDATE_INVENTORY_ALERTS = Items,
-    PLAYER_LEVEL_UP = Leveled, PLAYER_ENTERING_WORLD = Doll,
+    PLAYER_LEVEL_UP = Leveled, PLAYER_ENTERING_WORLD = Refresh, UNIT_NAME_UPDATE = Title,
 }
-local DOLL_UNIT_EVENTS = { UNIT_MODEL_CHANGED = Remodeled, UNIT_INVENTORY_CHANGED = Items }
+local UNIT_EVENTS = { UNIT_MODEL_CHANGED = Remodeled, UNIT_INVENTORY_CHANGED = Items }
 
--- Its frames: the strip with the level line, the model and the slots over the left pane; the stats at the right.
-local function BuildDoll(left, right)
-    local strip = CreateFrame("Frame", nil, left)
+-------------------------------------------------------------------------------
+--  The part (Board.lua)
+-------------------------------------------------------------------------------
+function Sheet.Build(made)
+    panel = made
+    holder = CreateFrame("Frame", nil, panel.body)
+    holder:SetSize(Sheet.WIDTH, Sheet.HEIGHT)
+    holder:SetPoint("TOP", panel.body, "TOP")
+    local back = holder:CreateTexture(nil, "BACKGROUND")
+    back:SetAtlas("UI-Character-Info-General-BG", true)
+    back:SetPoint("TOPLEFT")
+    Sheet.pane = holder
+
+    -- The strip at the top, the game's rock with its edge, the level line in it.
+    local strip = CreateFrame("Frame", nil, holder)
     strip:SetPoint("TOPLEFT")
     strip:SetPoint("TOPRIGHT")
     strip:SetHeight(Sheet.STRIP)
@@ -147,169 +140,29 @@ local function BuildDoll(left, right)
     level = strip:CreateFontString(nil, "OVERLAY", "GameFontNormalMed2Outline")
     level:SetPoint("CENTER", 0, Sheet.LEVEL_Y)
 
-    ns.Model.Build(left, strip)
-    local items = CreateFrame("Frame", nil, left)
+    ns.Model.Build(holder, strip)
+    local items = CreateFrame("Frame", nil, holder)
     items:SetAllPoints()
-    items:SetFrameLevel(left:GetFrameLevel() + 10) -- above the model, as the game's items frame
+    items:SetFrameLevel(holder:GetFrameLevel() + 10) -- above the model, as the game's items frame
     ns.Slots.Build(items)
-    ns.Stats.Build(right, Sheet.stone)
-end
-
-local function ShowDoll(on)
-    for event, fn in pairs(DOLL_EVENTS) do
-        if on then Core.On(event, fn) else Core.Off(event, fn) end
-    end
-    for event, fn in pairs(DOLL_UNIT_EVENTS) do
-        if on then Core.OnUnit(event, "player", fn) else Core.OffUnit(event, "player", fn) end
-    end
-    ns.Stats.Show(on)
-    if on then Doll() end
-end
-
-Sheet.Tab({
-    key = "character", portrait = true, tip = Core.Word("CHARACTER_FRAME_TAB_CHARACTER", "Character"),
-    title = function() return Game("UnitPVPName", "player") or Core.charName or "" end,
-    Build = BuildDoll, Show = ShowDoll,
-})
-
--------------------------------------------------------------------------------
---  The tabs
--------------------------------------------------------------------------------
-local function Find(key)
-    for _, tab in ipairs(tabs) do
-        if tab.key == key then return tab end
-    end
-end
-
--- The panel's head: what the tab chosen says.
-local function Title()
-    local tab = Find(chosen)
-    if not (tab and panel and panel.title) then return end
-    local title = tab.title
-    if type(title) == "function" then title = title() end
-    panel.title:SetText(title or "")
-end
-
--- Shown (on) or hidden: the tab's own step, alone.
-local function Tell(tab, on)
-    if tab and tab.built and tab.Show then ns.Safe("character", tab.Show, on) end
-end
-
--- A tab chosen (by its key): the one before goes, this one is built if it is not yet, and shows.
-function Sheet.Choose(key)
-    local tab = Find(key) or tabs[1]
-    if not holder or not tab then return end
-    local before = Find(chosen)
-    if before and before ~= tab and before.built then
-        before.left:Hide()
-        before.right:Hide()
-        if shown then Tell(before, false) end
-    end
-    chosen = tab.key
-    if not tab.built then
-        tab.built = true
-        tab.left = CreateFrame("Frame", nil, Sheet.left)
-        tab.left:SetAllPoints()
-        tab.right = CreateFrame("Frame", nil, Sheet.right)
-        tab.right:SetAllPoints()
-        ns.Safe("character", tab.Build, tab.left, tab.right)
-    end
-    tab.left:Show()
-    tab.right:Show()
-    for _, other in ipairs(tabs) do
-        if other.button then other.button:SetChecked(other == tab) end
-    end
-    Title()
-    if shown and before ~= tab then Tell(tab, true) end
-end
-
--- The tab shown now.
-function Sheet.Chosen()
-    return chosen
-end
-
--- A side tab let go over with the left button: its tab.
-local function Clicked(tab, which, inside)
-    if which == "LeftButton" and inside then Sheet.Choose(tab.key) end
-end
-
--- The side tabs right of the sheet, the game's (LargeSideTabButtonTemplate), one under the other.
-local function Buttons()
-    local before
-    for _, tab in ipairs(tabs) do
-        local made, button = pcall(CreateFrame, "Frame", nil, holder, "LargeSideTabButtonTemplate")
-        if made then
-            button.tooltipText = tab.tip
-            if button.SetFillToInterior then button:SetFillToInterior(true) end
-            if tab.portrait then
-                Game("SetPortraitTexture", button.Icon, "player")
-                button.Icon:SetTexCoord(0.03125, 0.96875, 0.03125, 0.96875)
-            else
-                local icon = tab.icon
-                if type(icon) == "function" then icon = icon() end
-                button.Icon:SetTexture(icon)
-            end
-            local mine = tab
-            button:SetCustomOnMouseUpHandler(function(_, which, inside) ns.Safe("character", Clicked, mine, which, inside) end)
-            if before then
-                button:SetPoint("TOPLEFT", before, "BOTTOMLEFT", 0, -Sheet.TAB_GAP)
-            else
-                button:SetPoint("TOPLEFT", holder, "TOPRIGHT", 0, Sheet.TABS_Y)
-            end
-            tab.button, before = button, button
-        end
-    end
-end
-
--------------------------------------------------------------------------------
---  The part (Board.lua)
--------------------------------------------------------------------------------
--- The game's art for one pane: a frame of that width and the sheet's height.
-local function Pane(width, atlas)
-    local pane = CreateFrame("Frame", nil, holder)
-    pane:SetSize(width, Sheet.HEIGHT)
-    local back = pane:CreateTexture(nil, "BACKGROUND")
-    back:SetAtlas(atlas, true)
-    back:SetPoint("TOPLEFT")
-    return pane
-end
-
-function Sheet.Build(made)
-    panel = made
-    holder = CreateFrame("Frame", nil, panel.body)
-    holder:SetSize(Sheet.LEFT + Sheet.RIGHT, Sheet.HEIGHT)
-    holder:SetPoint("TOP", panel.body, "TOP", -TabWidth() / 2, 0) -- the sheet and its side tabs in the middle
-
-    local left = Pane(Sheet.LEFT, "UI-Character-Info-General-BG")
-    left:SetPoint("TOPLEFT")
-    local right = Pane(Sheet.RIGHT, "UI-Character-Info-Stat-BG")
-    right:SetPoint("TOPLEFT", left, "TOPRIGHT")
-    local stone = right:CreateTexture(nil, "ARTWORK")
-    stone:SetAtlas("UI-Character-Info-Stat-StoneBG3", true)
-    stone:SetPoint("TOPLEFT")
-    local divider = right:CreateTexture(nil, "OVERLAY")
-    divider:SetAtlas("common-framedivider", true)
-    divider:SetPoint("TOPLEFT", -6, -1)
-    divider:SetPoint("BOTTOMLEFT", -6, 0)
-    Sheet.left, Sheet.right, Sheet.stone = left, right, stone
-
-    Buttons()
-    Sheet.Choose("character")
-end
-
-local function Named()
-    Title()
 end
 
 function Sheet.Show(on)
-    shown = on
-    if on then Core.On("UNIT_NAME_UPDATE", Named) else Core.Off("UNIT_NAME_UPDATE", Named) end
-    Tell(Find(chosen), on)
-    if on then Title() end
+    for event, fn in pairs(EVENTS) do
+        if on then Core.On(event, fn) else Core.Off(event, fn) end
+    end
+    for event, fn in pairs(UNIT_EVENTS) do
+        if on then Core.OnUnit(event, "player", fn) else Core.OffUnit(event, "player", fn) end
+    end
+    if on then Refresh() end
 end
 
--- The board's least: the sheet with its side tabs, and the panel's head and edges round it.
-ns.Board.Part("character", Core.Word("CHARACTER", "Character"), function()
-    local edge, head = Core.Board.EDGE, Core.Board.HEAD
-    return { Sheet.LEFT + Sheet.RIGHT + TabWidth() + 2 * edge, Sheet.HEIGHT + head + 2 * edge }
-end, Sheet)
+-- The panel placed that large: the paper doll as large as fits in its body, never larger than the game's.
+function Sheet.Size(width, height)
+    if not holder then return end
+    local bodyWidth, bodyHeight = ns.Page.Body(width, height)
+    holder:SetScale(math.max(0.1, math.min(1, bodyWidth / Sheet.WIDTH, bodyHeight / Sheet.HEIGHT)))
+end
+
+ns.Board.Part("character", Core.Word("CHARACTER", "Character"),
+    ns.Page.Least(math.floor(Sheet.WIDTH * Sheet.LEAST), math.floor(Sheet.HEIGHT * Sheet.LEAST)), Sheet)

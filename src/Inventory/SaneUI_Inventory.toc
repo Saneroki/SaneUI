@@ -15,15 +15,20 @@ Inventory.lua
 Window.lua
 # The full screen's windows on Core's board; the parts after it register theirs
 Board.lua
-# The character sheet, our own: the equipment slots, the character's model, the stats, the sheet that holds them
-# and its side tabs; then the tabs, on the lists and the side pane the tabs share
+# The character sheet, our own, its parts windows of their own on the board: what they share first (the slots, the
+# model, the stats list, a list, the side pane, the rows, the page), then the windows: the character (the paper
+# doll), the stats with the sidebar (gear sets, titles), and what the game's sheet has behind its tabs
 Sheet\Slots.lua
 Sheet\Model.lua
 Sheet\Stats.lua
-Sheet\Sheet.lua
 Sheet\List.lua
 Sheet\Side.lua
 Sheet\Rows.lua
+Sheet\Page.lua
+Sheet\Sheet.lua
+Sheet\Gear.lua
+Sheet\Titles.lua
+Sheet\Sidebar.lua
 Sheet\Reputation.lua
 Sheet\Skills.lua
 Sheet\PvP.lua

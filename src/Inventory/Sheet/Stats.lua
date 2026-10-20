@@ -2,8 +2,8 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Sheet - Stats
---  The stats in the character sheet's right pane, as the game's sheet lists
---  them (Camelot's CharacterStatsPaneScrollBox): under the pane's stone, the
+--  The stats in the stats' window (Sidebar.lua), as the game's sheet lists
+--  them (Camelot's CharacterStatsPaneScrollBox, and its pet's): under the stone, the
 --  game's scrolling list (CharacterStatsPaneScrollBoxTemplate) of its
 --  categories (PAPERDOLL_STATCATEGORIES: general, attributes, weapons,
 --  modifiers, defense) and then the resistances. Every row is the game's
@@ -34,8 +34,8 @@ Stats.RESISTANCES = {
     { word = "DAMAGE_SCHOOL6", class = "Shadow", atlas = "UI-Character-Info-Resistance-Shadow" },
 }
 
-local list    -- the game's scrolling list, ours
-local scratch -- a row of ours the game's functions fill to tell whether a stat shows (its value)
+local lists = {} -- [unit] = the game's scrolling list, ours: the player's, the pet's
+local scratch    -- a row of ours the game's functions fill to tell whether a stat shows (its value)
 local owed = false -- a refresh was asked for under a restriction
 
 local function Game(name, ...)
@@ -70,8 +70,8 @@ local function Spec()
     return spec, Core.Ask(rawget(_G, "GetSpecializationRoleEnum"), spec)
 end
 
--- Whether a stat of the game's list shows for this character, as the game decides it.
-local function Shown(stat, spec, role)
+-- Whether a stat of the game's list shows for this unit (the player, or the pet), as the game decides it.
+local function Shown(stat, spec, role, unit)
     if stat.primary and spec then
         local specs = rawget(_G, "C_SpecializationInfo")
         local primary = select(6, specs.GetSpecializationInfo(spec, false, false, nil, UnitSex("player")))
@@ -82,32 +82,33 @@ local function Shown(stat, spec, role)
         for _, wanted in pairs(stat.roles) do found = found or wanted == role end
         if not found then return false end
     end
-    if stat.unit and stat.unit ~= "player" then return false end
+    if stat.unit and stat.unit ~= unit then return false end
     if stat.showFunc then return stat.showFunc() and true or false end
     return true
 end
 
--- The list's elements, as the game makes its own: each category's head once a stat of it shows, then its stats
--- whose value is not the one they hide at; then the resistances.
-local function Elements()
+-- The list's elements for a unit, as the game makes its own: each category of that unit's (the player's, or the
+-- pet's) with its head once a stat of it shows, then its stats whose value is not the one they hide at; then the
+-- resistances.
+local function Elements(unit)
     local elements = {}
     local categories, info = rawget(_G, "PAPERDOLL_STATCATEGORIES"), rawget(_G, "PAPERDOLL_STATINFO")
     if type(categories) ~= "table" or type(info) ~= "table" then return elements end
     local spec, role = Spec()
     for _, category in ipairs(categories) do
-        if not category.unit or category.unit == "player" then
+        if (category.unit or "player") == unit then
             local stats = {}
             for _, stat in ipairs(category.stats or {}) do
-                if info[stat.stat] and Shown(stat, spec, role) then stats[#stats + 1] = stat end
+                if info[stat.stat] and Shown(stat, spec, role, unit) then stats[#stats + 1] = stat end
             end
             if #stats > 0 then
                 elements[#elements + 1] = { isHeader = true, name = category.categoryName }
                 local index = 1
                 for _, stat in ipairs(stats) do
-                    local value = Core.Plain(info[stat.stat].updateFunc(scratch, "player", stat.id))
+                    local value = Core.Plain(info[stat.stat].updateFunc(scratch, unit, stat.id))
                     if value == nil or value ~= stat.hideAt then
                         elements[#elements + 1] = {
-                            isHeader = false, unit = "player", name = stat.stat, id = stat.id, statIndex = index,
+                            isHeader = false, unit = unit, name = stat.stat, id = stat.id, statIndex = index,
                             texture = stat.texture, textureCoordL = stat.textureCoordL, textureCoordR = stat.textureCoordR,
                             textureCoordT = stat.textureCoordT, textureCoordB = stat.textureCoordB, hideAt = stat.hideAt,
                         }
@@ -121,10 +122,10 @@ local function Elements()
     local classes = Enum and Enum.Damageclass or {}
     for index, school in ipairs(Stats.RESISTANCES) do
         local class = classes[school.class]
-        local _, _, effective, bonus = UnitResistance("player", class)
+        local _, _, effective, bonus = UnitResistance(unit, class)
         local name = Core.Word(school.word, school.class)
         local tips = {}
-        Game("PaperDollFrame_SetResistanceTooltips", tips, name, effective, "player", class)
+        Game("PaperDollFrame_SetResistanceTooltips", tips, name, effective, unit, class)
         local text = Game("BreakUpLargeNumbers", effective) or tostring(effective or "")
         text = Game("PaperDollFrame_FormatBonusValue", text, bonus) or text
         elements[#elements + 1] = {
@@ -135,29 +136,37 @@ local function Elements()
     return elements
 end
 
--- The game's list under the pane's stone, to the pane's bottom right; the rows the game's.
-function Stats.Build(pane, stone)
+-- The game's list for a unit (the player's, or the pet's) under the pane's stone, to the pane's bottom right; the
+-- rows the game's. Returns it.
+function Stats.Build(pane, stone, unit)
     local made, frame = pcall(CreateFrame, "Frame", nil, pane, "CharacterStatsPaneScrollBoxTemplate")
     if not made then return ns.Report("character", "this client has no stats list: " .. tostring(frame)) end
-    list = frame
-    list:SetPoint("TOPLEFT", stone, "BOTTOMLEFT")
-    list:SetPoint("BOTTOMRIGHT", pane, "BOTTOMRIGHT")
+    frame:SetPoint("TOPLEFT", stone, "BOTTOMLEFT")
+    frame:SetPoint("BOTTOMRIGHT", pane, "BOTTOMRIGHT")
     local view = CreateScrollBoxListLinearView(0, Stats.BOTTOM, 0, 0, 0)
     view:SetElementFactory(function(factory, element) ns.Safe("character", Make, factory, element) end)
-    ScrollUtil.InitScrollBoxListWithScrollBar(list.ScrollBox, list.ScrollBar, view)
-    scratch = CreateFrame("Frame", nil, pane, "CharacterStatFrameTemplate")
-    scratch:Hide()
+    ScrollUtil.InitScrollBoxListWithScrollBar(frame.ScrollBox, frame.ScrollBar, view)
+    if not scratch then
+        scratch = CreateFrame("Frame", nil, pane, "CharacterStatFrameTemplate")
+        scratch:Hide()
+    end
+    frame.unit = unit or "player"
+    lists[frame.unit] = frame
+    return frame
 end
 
--- The list drawn as the stats are now, unless the game restricts addons: then once it no longer does.
+-- The lists shown drawn as the stats are now, unless the game restricts addons: then once it no longer does.
 function Stats.Refresh()
-    if not list then return end
     if Core.Restricted() then
         owed = true
         return
     end
     owed = false
-    list.ScrollBox:SetDataProvider(CreateDataProvider(Elements()), ScrollBoxConstants.RetainScrollPosition)
+    for unit, list in pairs(lists) do
+        if list:IsVisible() and (unit == "player" or UnitExists(unit)) then
+            list.ScrollBox:SetDataProvider(CreateDataProvider(Elements(unit)), ScrollBoxConstants.RetainScrollPosition)
+        end
+    end
 end
 
 -- Whether a refresh waits for a restriction to end.
@@ -174,14 +183,24 @@ local EVENTS = { "COMBAT_RATING_UPDATE", "SPEED_UPDATE", "SKILL_LINES_CHANGED", 
 local UNIT_EVENTS = { "UNIT_STATS", "UNIT_RANGEDDAMAGE", "UNIT_RANGED_ATTACK_POWER", "UNIT_ATTACK", "UNIT_SPELL_HASTE",
                       "UNIT_RESISTANCES", "UNIT_ATTACK_POWER", "UNIT_ATTACK_SPEED", "UNIT_DAMAGE", "UNIT_MAXHEALTH",
                       "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER", "UNIT_LEVEL" }
+local PET_EVENTS = { "UNIT_PET", "PET_STATS_UPDATE" }
 
--- The character sheet's panel is shown (on) or hidden: the game listened to only while it is shown.
+-- The stats' window is shown (on) or hidden: the game listened to only while it is shown, the pet's too.
 function Stats.Show(on)
     for _, event in ipairs(EVENTS) do
         if on then Core.On(event, later) else Core.Off(event, later) end
     end
+    for _, event in ipairs(PET_EVENTS) do
+        if on then Core.On(event, later) else Core.Off(event, later) end
+    end
     for _, event in ipairs(UNIT_EVENTS) do
-        if on then Core.OnUnit(event, "player", later) else Core.OffUnit(event, "player", later) end
+        if on then
+            Core.OnUnit(event, "player", later)
+            Core.OnUnit(event, "pet", later)
+        else
+            Core.OffUnit(event, "player", later)
+            Core.OffUnit(event, "pet", later)
+        end
     end
     if on then ns.Safe("character", Stats.Refresh) end
 end

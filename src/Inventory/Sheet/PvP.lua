@@ -29,6 +29,7 @@ PvP.BAR = { 235, 209 }
 PvP.BADGE = { 72, 84 }
 PvP.REWARD = 36
 PvP.PROGRESS_Y = -210
+PvP.LEAST = { 320, 420 } -- the rank's part as small as it may be made: its ring and words whole
 
 local main, timer, season, rank, progress, ring, side
 local ticker
@@ -246,11 +247,6 @@ local function Show(on)
     end
 end
 
--- The tab's icon: the faction's honour.
-ns.Sheet.Tab({
-    key = "pvp", tip = Core.Word("CHARACTER_FRAME_TAB_PVP", "PvP"), title = Core.Word("PVP", "PvP"),
-    icon = function()
-        return Horde() and "Interface/ICONS/INV_SideTab_Honor_Horde_c60" or "Interface/ICONS/INV_SideTab_Honor_Alliance_c60"
-    end,
-    Build = Build, Show = Show,
-})
+-- A window of its own on the board: the rank at the left, the season's details at the right.
+ns.Page.Part("pvp", Core.Word("PVP", "PvP"), ns.Page.Least(PvP.LEAST[1] + ns.Page.SIDE, PvP.LEAST[2]),
+    { side = true, Build = Build, Show = Show })

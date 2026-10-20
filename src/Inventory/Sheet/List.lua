@@ -9,7 +9,7 @@ local _, ns = ...
 --  last, so a tab's draw sets up every part it uses.
 --
 --      local list = ns.List.New(parent, {
---          inset = { left, top, right, bottom },  -- from the parent's sides (the game's: 10, 40, 25, 15)
+--          inset = { left, top, right, bottom },  -- from the parent's sides (List.INSET without)
 --          extent = function(element) return 30 end,  -- a row's height
 --          draw = function(row, element) end,         -- a row drawn for its element
 --      })
@@ -22,6 +22,8 @@ local List = {}
 ns.List = List
 
 List.ROW = 30 -- a row's height when its tab cannot say
+List.INSET = { 10, 10, 25, 15 } -- from its holder's sides: left, top, right (its scroll bar), bottom
+List.LEAST, List.LEAST_HEIGHT = 300, 300 -- the least room a list's window gives it
 
 local function Line(box, point)
     local holder = CreateFrame("Frame", nil, box)
@@ -39,7 +41,7 @@ end
 
 function List.New(parent, options)
     local list = { options = options }
-    local inset = options.inset or { 10, 40, 25, 15 }
+    local inset = options.inset or List.INSET
     local box = CreateFrame("Frame", nil, parent, "WowScrollBoxList")
     box:SetPoint("TOPLEFT", parent, "TOPLEFT", inset[1], -inset[2])
     box:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -inset[3], inset[4])
