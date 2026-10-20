@@ -29,7 +29,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   message, the speaker's name or the chat's name. Esc empties it and every message is back.
 - **Full screen:** docked, push the mouse against that screen edge (the game window's very edge, where the
   chat window touches it; docked in a corner, all the way into that corner): the window springs open to fill the whole screen, above the game's bars, on a
-  background that hides the game as much as set, every message there to read. Nothing behind it takes the
+  background that hides the game as much as set, every message there to read: while it stands full, none
+  fades, wherever the mouse is. Nothing behind it takes the
   mouse: no click, no turn of the camera. On the way its corners start round, with a thin bronze trim, and
   flatten as it grows: full, it is square. Move the mouse away and push it against that edge again: it
   springs back to its size and place. The section *Expand window* (below) says whether it can, how it
@@ -76,7 +77,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     game's menu of that player. *Whisper* opens the game's line with `/w` to name whom; your first message
     chooses the new conversation. *Remove* takes the one chosen away, with its messages, once confirmed. A
     group you are in is listed though nobody spoke yet. Each keeps its last messages (a setting), for each
-    character, also over a logout.
+    character, also over a logout. Drag the line between the list and the one chosen to make the list
+    wider or narrower (the mouse shows the game's sizing cursor on it); let go, the one chosen takes the rest,
+    and the width is kept.
   - With the conversations switched off, the chat stands in their place, with its line to write in. A screen
     too narrow makes the guild window smaller, then leaves it out, then the friends list. The search in the
     title bar finds in all of them: messages (in the chat and the second chat), friends (name, where, note),
@@ -246,7 +249,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   they keep, so nothing is measured), and once the window stands, `docked` (`Placed`) wraps them for the new
   width once. The window is in the layer `HIGH` while it fills the screen: the line to write
   in follows it (`Input.Layer`, at the start and at the end). Full, every message is there to read (`Reveal`, as
-  after a turn of the wheel). Its kind of motion is `options.motion`; `off` while all animations are off.
+  after a turn of the wheel), and none fades while it stands full (`FadeAfter` asks `edge.full`): the mouse on
+  a panel or on the guild window, which is not ours, ends the reveal but fades nothing. On the way back
+  (`Filled(false)`) the messages are told anew (`Refade`). Its kind of motion is `options.motion`; `off` while all animations are off.
   The list stands in what Core lays out for what a window holds (`window.inside`): the whole window while it
   is small (it has no bar of its own), under Core's title bar while it is full (`Top`: `handle.top`;
   `Layout.ListHeight`'s `top`). The title bar's search goes to
@@ -497,7 +502,13 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   `chars[character].talks` (`talksVersion` 1): a Battle.net friend's messages without their name and link
   (`|K…|k` is this session's), links without line numbers; restored at the login, checked field by field.
   The panel is a part of `Board.lua` (`Part.Size` tells it its width); `Layout.Board` gives it all the room
-  the right part leaves, `TALKS_MIN` (460) at least. First in its list stand two rows of its own, the chat and
+  the right part leaves, `TALKS_MIN` (460) at least. Its list is `TALK_LIST` (190) wide at first; the line
+  beside it is dragged by a strip over it (`TALK_GRIP`, 8 wide, `OnMouseDown`/`OnUpdate`/`OnMouseUp`, the
+  cursor `UI_RESIZE_CURSOR` as Core's grip): only the line follows (`GetCursorPosition` over the panel's
+  effective scale), and once let go the width is kept (`store.talkList`) and `Window.Reboard` lays the full
+  screen out once, so the messages are measured once for the new width. `Layout.TalkList` keeps it between
+  `TALK_LIST_LEAST` (150) and what leaves the one chosen `TALK_PAGE` (269); `Layout.Board` (`want.list`) and
+  `Conversations.Size` both count it so, the chat's frame and the panel's parts at one width. First in its list stand two rows of its own, the chat and
   the second chat (`pinned`: `"chat"`, `"feed"`; the second chat while `boardFeed`), their last message
   from `Window.Last` and `Feed.Last` (redrawn a frame after a message, `Conversations.Said`). Chosen, one of
   them stands where a conversation's messages and line do: `Layout.Board`'s `chat` is that part of the panel
@@ -608,6 +619,8 @@ Tabs of chat views in the small window (`Doc/ideas/Social.md`), messages of one 
 a group, a close button, a sign besides colour for what a speaker is to you.
 
 ## History
+- 2026-10-20 — The conversations' list dragged wider or narrower by the line beside it, its width kept
+  (`store.talkList`, `Layout.TalkList`); full, no message of the chat fades, wherever the mouse is (Saneroki).
 - 2026-10-20 — The guild window held by Core's seat (`Core.Seat`, as Combat's panels are): `Guild.lua` keeps only
   which window, its opening and closing and its room; the seat lends, places, follows and gives back. Its room
   is its own size at the layout's scale, so it stands exactly at that scale, its top right at the room's.

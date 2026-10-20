@@ -3,8 +3,25 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 502 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 259 (Navigation), 21 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 458 (Tooltips), 512 (Social), 90 (Sync), 359 (windows), 183 (data in the game), 259 (Navigation), 21 (Inventory), 40 (Combat), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas and Inventory; new files in Navigation's, Core's, Social's, Combat's and Tooltips' TOCs, key bindings; the new data packs *Data: Items* and *Data: Spawns*).
+
+### Social: the conversations' list dragged to its width, no fading on the full screen (Saneroki, 2026-10-20)
+- **The list's width** (`Conversations.lua`, `Layout.lua`, `Board.lua`): the line between the conversations' list
+  and the one chosen is dragged by a strip over it (`Layout.TALK_GRIP`, 8 wide, above the list and the one
+  chosen), the game's sizing cursor on it (`UI_RESIZE_CURSOR`, as Core's grip) and the line bright while the mouse
+  is on it or holds it. Held, only the line follows the mouse; let go, the width is kept (`store.talkList`) and the
+  full screen is laid out anew once (`Window.Reboard`), so the messages beside it are measured once for their new
+  width, not at every step. `Layout.TalkList(wished, panelWidth)` keeps it between `TALK_LIST_LEAST` (150) and
+  what leaves the one chosen `TALK_PAGE` (269, so a panel at `TALKS_MIN` has the list at `TALK_LIST`, 190, as
+  before); `Layout.Board` takes it as `want.list` for the chat's frame, `Conversations.Size` for the list, its
+  buttons, the line and the one chosen. The full screen gone while the line is held lets it go (`OnHide`).
+- **No fading while full** (`Window.lua`): a message of the chat faded on the full screen once the mouse went
+  over something not ours (the guild window) and the reveal ended. `FadeAfter` now gives none while the window
+  fills the screen (`edge.full`), and `Filled(false)` tells every message anew on the way back.
+- Tests: `dev/tests/social.lua` (512 checks): the list's bounds and the board with a dragged width; the line
+  dragged, held and let go, at its least, let go when the full screen goes, the cursor; no fading while full
+  with the mouse away.
 
 ### Navigation: Zephras Isle's terrain and walking data (Saneroki, 2026-10-20)
 - **The data** (Core's sets *Tiles* and *Walking*, from the game's own files of the isle's map, 2991, build

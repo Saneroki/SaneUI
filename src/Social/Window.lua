@@ -36,7 +36,8 @@ local _, ns = ...
 --  A message fades a while after it came, each by itself (Fade.lua). The
 --  mouse over the window does not bring them back; the wheel does (Reveal), and
 --  so does the line to write in: then all are there to read, until the mouse
---  leaves the window at the newest message, or the line closes.
+--  leaves the window at the newest message, or the line closes. While the
+--  window fills the screen none fades at all (FadeAfter).
 --
 --  Nothing jumps: a new message fades in, and when the messages move up, for a
 --  new one or for the line to write in, they slide there (Slide). A scroll with
@@ -53,9 +54,10 @@ local _, ns = ...
 --  pushed against that edge, on a background that hides the game as much as
 --  set, and goes back when it is pushed there again (Core's Edge.lua, as the
 --  section Expand window of our settings says). Full, nothing behind it takes
---  the mouse, and every message is there to read. The messages stay in sight
---  and at the list's bottom while the size moves, and are wrapped for the new
---  width once it stands. Full, Core's dropdown Classic windows offers the game's own chat
+--  the mouse, and every message is there to read for as long as it stands
+--  full, wherever the mouse is (on a panel, on the guild window). The
+--  messages stay in sight and at the list's bottom while the size moves, and
+--  are wrapped for the new width once it stands. Full, Core's dropdown Classic windows offers the game's own chat
 --  (ours is put away), friends list and group finder (ns.CLASSIC, Social.lua).
 --
 --  The chat stands in a frame of its own (column): all of what the window
@@ -240,10 +242,10 @@ local function Fill()
 end
 
 -- After how many seconds a message fades right now; nil: it does not (fading out is off, or every
--- animation, or the messages are there to read).
+-- animation, or the messages are there to read: revealed, written to, or the window fills the screen).
 local function FadeAfter()
     local options = ns.options
-    if revealed or writing or not (options.animations and options.fade) then return nil end
+    if revealed or writing or (handle.edge and handle.edge.full) or not (options.animations and options.fade) then return nil end
     return options.fadeAfter
 end
 
@@ -492,13 +494,14 @@ function Window.Reboard()
     if frame and handle.edge and handle.edge.full and not (handle.edge.clock and handle.edge.clock:IsRunning()) then Placed() end
 end
 
--- It has begun to fill the screen (full) or to go back: its layer has changed. Full, it is there to
--- read every message, until the mouse leaves it at the newest one (Watch). On the way back the panels go
--- at once, and the chat has the whole window again.
+-- It has begun to fill the screen (full) or to go back: its layer has changed. Full, every message is there to
+-- read (FadeAfter), and back at its size still, until the mouse leaves it at the newest one; if the mouse left
+-- meanwhile (it went over the guild window), those whose time is over fade on the way back. The panels go at
+-- once then, and the chat has the whole window again.
 local function Filled(full)
     ns.Input.Layer()
     Chrome()
-    if full then Reveal(true) end
+    if full then Reveal(true) else Window.Refade() end
     if not full and board then
         board = nil
         ns.Board.Hide()

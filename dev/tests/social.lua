@@ -1548,6 +1548,15 @@ do
     end
     check(window._width == 1920 and window._height == 1080 and window._strata == "HIGH" and seen(old) == 1,
         "pushed against the screen's edge there, it fills the screen, above the game's bars, every message there to read")
+    do
+        local was = window._mouseOver
+        come()
+        window._mouseOver = false -- the mouse goes over the guild window, which is not ours
+        look()
+        step(options.fadeAfter + 2)
+        check(seen(old) == 1 and seen(#box.provider.list) == 1, "full, no message fades, wherever the mouse is")
+        window._mouseOver = was
+    end
     check(window._mouse == true and window._wheel == true and back._alpha == 0.5,
         "nothing behind it takes the mouse; its background is half see-through")
     opacity.setting:SetValue(100)
@@ -1609,6 +1618,12 @@ do
     local alone = Layout.Board(1920, tall, { friends = true })
     check(not alone.talks and alone.chat[1] == Layout.PAD and alone.chat[3] == 1920 - 3 * Layout.PAD - Layout.FRIENDS_WIDTH
         and alone.chat[2] == Layout.PAD, "without the conversations the chat stands in their place")
+    local dragged = Layout.Board(1920, tall, { friends = true, talks = true, list = 300 })
+    check(dragged.chat[1] == Layout.PAD + 300 + 1 and dragged.chat[3] == dragged.talks[3] - 300 - 1,
+        "the conversations' list as wide as it was dragged, the chat beside it")
+    check(Layout.TalkList(nil, 800) == Layout.TALK_LIST and Layout.TalkList(20, 800) == Layout.TALK_LIST_LEAST
+        and Layout.TalkList(5000, 800) == 800 - Layout.TALK_PAGE - 1 and Layout.TalkList(5000, Layout.TALKS_MIN) == Layout.TALK_LIST,
+        "never narrower than its least, and the one chosen beside it keeps its least")
     end
     check(coreBar and coreBar:IsShown() and coreBar.title._text == "Social" and coreBar.glass:IsShown()
         and listTop() == -(Core.Window.BAR + board.chat[2] + Layout.EDGE) and column._width == board.chat[3],
@@ -1952,6 +1967,39 @@ do
         "first in the list the chat and the second chat, the chat's last message under its name")
     check(column:IsVisible() and box:IsVisible() and not messages:IsVisible() and not edit:IsVisible() and filter:IsShown(),
         "the chat is chosen at first: it stands beside the list, the conversations' own messages and line are away")
+    do -- the line between the list and the one chosen, dragged: only the line follows; let go, the list is that wide
+        local grip, mouseX = nil, W.cursorX
+        for _, widget in ipairs(W.frames) do
+            if widget._scripts.OnMouseDown and within(widget, talks) then grip = widget end
+        end
+        local chatWidth = column._width
+        grip._scripts.OnEnter(grip)
+        check(W.cursorArt == "UI_RESIZE_CURSOR", "the mouse on the line between the list and the one chosen: the game's cursor for sizing")
+        W.cursorX = 900
+        grip._scripts.OnMouseDown(grip, "LeftButton")
+        W.cursorX = 980
+        grip._scripts.OnUpdate(grip, 0.01)
+        check(column._width == chatWidth and ns.store.talkList == nil, "held, only the line follows the mouse")
+        grip._scripts.OnMouseUp(grip, "LeftButton")
+        check(ns.store.talkList == Layout.TALK_LIST + 80 and column._width == chatWidth - 80
+            and column._width == talks._width - (Layout.TALK_LIST + 80) - 1,
+            "let go, the list is that much wider, and kept; the chat beside it that much narrower")
+        grip._scripts.OnMouseDown(grip, "LeftButton")
+        W.cursorX = 500
+        grip._scripts.OnUpdate(grip, 0.01)
+        grip._scripts.OnMouseUp(grip, "LeftButton")
+        check(ns.store.talkList == Layout.TALK_LIST_LEAST and column._width == chatWidth + Layout.TALK_LIST - Layout.TALK_LIST_LEAST,
+            "never narrower than its least")
+        grip._scripts.OnMouseDown(grip, "LeftButton")
+        grip:Hide() -- the full screen went while the line was held
+        grip:Show()
+        check(grip._scripts.OnUpdate == nil, "the full screen gone meanwhile, the line is let go")
+        grip._scripts.OnLeave(grip)
+        check(W.cursorArt == nil, "the mouse gone, the cursor is the game's again")
+        ns.store.talkList, W.cursorX = nil, mouseX
+        ns.Window.Reboard()
+        check(column._width == chatWidth, "(back as at first)")
+    end
     -- The second chat: chosen, it stands in the chat's place, the chats ticked for it, apart from the chat's.
     click(rows.rows[2])
     local feed

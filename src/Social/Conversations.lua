@@ -45,6 +45,13 @@ local _, ns = ...
 --  else (a command, a whisper to somebody new) chooses the chat, whose line
 --  it is. A conversation chosen while the game's line is in use closes that.
 --
+--  The line between the list and the one chosen can be dragged, the list
+--  made wider or narrower (Layout.TalkList: its least, and the least of the
+--  one chosen). While it is held only the line follows the mouse; let go, the
+--  list is that wide, kept (store.talkList), and the full screen is laid out
+--  anew once: the messages beside it are wrapped once for their new width,
+--  not at every step, as the window does when it is sized.
+--
 --  Every message is there to read: none fades, none slides; at the newest the
 --  list follows new ones, scrolled up it stays, as the second chat (Feed.lua).
 --  The search box of the full window finds conversations by name and by their
@@ -67,6 +74,10 @@ local BNET = "Interface\\FriendsFrame\\Battlenet-Portrait"    -- the game's port
 local UNKNOWN = "Interface\\Icons\\INV_Misc_QuestionMark"     -- a character whose class is not known yet
 
 local panel, side, box, remove     -- the panel; the list's part ({ body, label }), its list, the button Remove
+local start                         -- the button Whisper
+local divider, grip                 -- the line between the list and the one chosen, the strip over it to drag it
+local listWidth = Layout.TALK_LIST  -- the list's width now (Layout.TalkList)
+local panelWidth                    -- the panel's, once it is known (Size)
 local page, heading, filter         -- the part of the one chosen, the line with its name, the chats the chat shows
 local mine                          -- what of that part is a conversation's own: its messages and its line
 local chat, scroll, view, provider, empty -- its messages, and what is said where there are none
@@ -538,6 +549,77 @@ function Conversations.Chat()
     if shown and open and not open.pinned then Open() end
 end
 
+-------------------------------------------------------------------------------
+--  The line between the list and the one chosen
+-------------------------------------------------------------------------------
+-- The line that far from the panel's left; bright while the mouse is on it or holds it.
+local function Rule(x)
+    divider:ClearAllPoints()
+    divider:SetPoint("TOPLEFT", x, -Layout.EDGE)
+    divider:SetPoint("BOTTOMLEFT", x, Layout.EDGE)
+end
+
+local function Light(on)
+    divider:SetColorTexture(Core.GOLD[1], Core.GOLD[2], Core.GOLD[3], on and 0.9 or 0.35)
+end
+
+-- The list that wide, its two buttons sharing it, the line and the one chosen beside it.
+local function Divide(width)
+    listWidth = width
+    side.body:SetWidth(width)
+    local half = math.floor((width - 2 * Layout.EDGE - 4) / 2)
+    start:SetWidth(half)
+    remove:SetWidth(half)
+    Rule(width)
+    page:SetPoint("TOPLEFT", width + 1, 0)
+end
+
+-- While the line is held: where the mouse and the list's width were when it was taken, and the width it is at.
+local held
+
+local function Pointer()
+    return (GetCursorPosition()) / panel.body:GetEffectiveScale()
+end
+
+local Follow = ns.Guard(function()
+    held.width = Layout.TalkList(held.from + Pointer() - held.x, panelWidth)
+    Rule(held.width)
+end)
+
+local function Take(_, button)
+    if button ~= "LeftButton" or not panelWidth or held then return end
+    held = { x = Pointer(), from = listWidth, width = listWidth }
+    Light(true)
+    grip:SetScript("OnUpdate", Follow)
+end
+
+-- Let go (or the full screen went meanwhile: hidden): the list as wide as it was left, kept, and the full screen
+-- laid out anew once.
+local function Let()
+    if not held then return end
+    local width = held.width
+    held = nil
+    grip:SetScript("OnUpdate", nil)
+    if not (grip:IsVisible() and grip:IsMouseOver()) then
+        SetCursor(nil)
+        Light(false)
+    end
+    if width == listWidth then return end
+    ns.store.talkList = width
+    if grip:IsVisible() then ns.Window.Reboard() else Rule(listWidth) end
+end
+
+local function Enter()
+    SetCursor("UI_RESIZE_CURSOR")
+    Light(true)
+end
+
+local function Leave()
+    if held then return end
+    SetCursor(nil)
+    Light(false)
+end
+
 function Conversations.Build(holder)
     panel = holder
     panel.title:SetText(ns.TEXT.talks)
@@ -553,20 +635,30 @@ function Conversations.Build(holder)
         row:SetScript("OnEnter", function(self) ns.Safe("conversations", Tip, self) end)
         row:SetScript("OnLeave", GameTooltip_Hide) -- unguarded: the game's own
     end)
-    local width = math.floor((Layout.TALK_LIST - 2 * Layout.EDGE - 4) / 2)
-    local start = Board.Button(side, Core.Word("WHISPER", "Whisper"), width, Start)
-    remove = Board.Button(side, Core.Word("REMOVE", "Remove"), width, Remove, start)
-    local divider = panel.body:CreateTexture(nil, "ARTWORK")
-    divider:SetColorTexture(Core.GOLD[1], Core.GOLD[2], Core.GOLD[3], 0.35)
-    divider:SetPoint("TOPLEFT", Layout.TALK_LIST, -Layout.EDGE)
-    divider:SetPoint("BOTTOMLEFT", Layout.TALK_LIST, Layout.EDGE)
+    start = Board.Button(side, Core.Word("WHISPER", "Whisper"), 1, Start)
+    remove = Board.Button(side, Core.Word("REMOVE", "Remove"), 1, Remove, start)
+    divider = panel.body:CreateTexture(nil, "ARTWORK")
     divider:SetWidth(1)
+    Light(false)
 
     -- The one chosen: its name on a line, its messages, the line to write in. The chat and the second chat stand
     -- under that line where a conversation's messages and line do (Layout.Board: board.chat).
     page = CreateFrame("Frame", nil, panel.body)
-    page:SetPoint("TOPLEFT", Layout.TALK_LIST + 1, 0)
     page:SetPoint("BOTTOMRIGHT")
+    Divide(listWidth)
+
+    -- The strip over the line that takes the mouse: above the list and the one chosen, whose edges it overlaps.
+    grip = CreateFrame("Frame", nil, panel.body)
+    grip:SetPoint("TOP", divider, "TOP")
+    grip:SetPoint("BOTTOM", divider, "BOTTOM")
+    grip:SetWidth(Layout.TALK_GRIP)
+    grip:SetFrameLevel(panel.body:GetFrameLevel() + 20)
+    grip:EnableMouse(true)
+    grip:SetScript("OnMouseDown", ns.Guard(Take))
+    grip:SetScript("OnMouseUp", ns.Guard(Let))
+    grip:SetScript("OnHide", ns.Guard(Let))
+    grip:SetScript("OnEnter", ns.Guard(Enter))
+    grip:SetScript("OnLeave", ns.Guard(Leave))
     heading = page:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     heading:SetPoint("TOPLEFT", Layout.EDGE + 4, -8)
     heading:SetJustifyH("LEFT")
@@ -627,9 +719,12 @@ function Conversations.Build(holder)
     Line()
 end
 
--- Its panel is that wide: the messages are wrapped for the part beside the list.
+-- Its panel is that wide: the list as wide as it was left (Layout.TalkList, as Layout.Board counts it for the
+-- chat beside it), the messages wrapped for the part beside it.
 function Conversations.Size(width)
-    local now = Layout.RowWidth(width - Layout.TALK_LIST - 1)
+    panelWidth = width
+    if not held then Divide(Layout.TalkList(ns.store.talkList, width)) end
+    local now = Layout.RowWidth(width - listWidth - 1)
     if now == rowWidth then return end
     rowWidth = now
     Conversations.Rewrap()

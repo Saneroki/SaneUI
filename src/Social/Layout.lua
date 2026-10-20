@@ -65,9 +65,12 @@ Layout.TOOLS = 28                              -- the search box and the filter
 Layout.LINE = 28                               -- a list's own line above it
 Layout.INVITE = 24                             -- the button at a row's right to ask a friend into your group
 -- The conversations' panel (Conversations.lua): the list of them at its left, the one chosen beside it, under a
--- line with its name.
+-- line with its name. The line between the two can be dragged: the list as wide as you leave it (Layout.TalkList).
 Layout.TALKS_MIN = 460
-Layout.TALK_LIST = 190                         -- the list of conversations
+Layout.TALK_LIST = 190                         -- the list of conversations, at first
+Layout.TALK_LIST_LEAST = 150                   -- the list at its narrowest
+Layout.TALK_PAGE = Layout.TALKS_MIN - Layout.TALK_LIST - 1 -- the one chosen beside it, at its narrowest
+Layout.TALK_GRIP = 8                           -- the strip over the line between them that the mouse takes
 Layout.TALK_ICON = 24                          -- a conversation's icon in that list
 Layout.TALK_HEAD = 28                          -- the line with the name of the one chosen
 
@@ -107,11 +110,19 @@ function Layout.ListHeight(windowHeight, input, top)
     return math.floor(windowHeight) - (top or Layout.EDGE) - Layout.EDGE - (input and Layout.Input(input) or 0)
 end
 
+-- The width of the conversations' list in their panel that wide, as wished (the width it was dragged to; nil: as at
+-- first): never narrower than TALK_LIST_LEAST, and the one chosen beside it keeps TALK_PAGE. Whole pixels.
+function Layout.TalkList(wished, panelWidth)
+    local width = math.floor((tonumber(wished) or Layout.TALK_LIST) + 0.5)
+    return math.max(math.min(width, math.floor(panelWidth) - Layout.TALK_PAGE - 1), Layout.TALK_LIST_LEAST)
+end
+
 -- Where each part of the full screen stands, in a room that wide and high (what the window holds, under its
 -- title bar): { left, top, width, height } from the room's top left corner, whole pixels. want: which parts are
--- wished: friends, talks (true), guild ({ width, height }: the guild window's own size). The guild window's rect
--- has a fifth number, how much smaller it is made (1: not). A part not wished, or without room, is nil; chat is
--- always there: the conversations' part beside their list and under the line with its name, or their place.
+-- wished: friends, talks (true), guild ({ width, height }: the guild window's own size), list (the width the
+-- conversations' list was dragged to). The guild window's rect has a fifth number, how much smaller it is made
+-- (1: not). A part not wished, or without room, is nil; chat is always there: the conversations' part beside their
+-- list and under the line with its name, or their place.
 function Layout.Board(width, height, want)
     local pad = Layout.PAD
     local left, right = pad, math.floor(width) - pad
@@ -141,7 +152,7 @@ function Layout.Board(width, height, want)
     local room = { left, top, right - left, bottom - top }
     if want.talks and room[3] >= Layout.TALKS_MIN then
         board.talks = room
-        local beside, under = Layout.TALK_LIST + 1, Layout.HEADER + Layout.TALK_HEAD
+        local beside, under = Layout.TalkList(want.list, room[3]) + 1, Layout.HEADER + Layout.TALK_HEAD
         board.chat = { left + beside, top + under, room[3] - beside, room[4] - under }
     else
         board.chat = room

@@ -182,7 +182,8 @@ end
 -- chat stands.
 function Board.Show(inside, width, height)
     local options = ns.options
-    local want = { friends = options.boardFriends, talks = options.boardTalks, guild = ns.Guild.Size(inside) }
+    local want = { friends = options.boardFriends, talks = options.boardTalks, guild = ns.Guild.Size(inside),
+                   list = ns.store.talkList }
     local board = Layout.Board(width, height, want)
     for _, spec in ipairs(Board.PANELS) do Put(inside, spec, board[spec.key]) end
     ns.Guild.Hold(board.guild)
