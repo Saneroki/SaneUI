@@ -203,35 +203,48 @@ moves to its own heading here once it is decided, with its picture.
 ## The harness
 
 How the parts and views of this style are made (`dev/imagegen/sets/interface/`, Saneroki, 2026-10-21). It is
-strict on purpose: nothing is painted from words alone, so nothing can drift from the picks.
+strict on purpose: only what Saneroki decided may go in, and a model never gets the chance to fall back on looks
+of its own or on earlier renders.
 
-1. **Crops** (`refs.py`): each decided part is cut out of the picture it was picked in (*Parts*), and that crop is
-   the only thing the part is made from. A crop's box names the part's place in its picture.
-2. **Elements** (`elements-wide.txt`, `elements-tall.txt`, `elements-square.txt`): Qwen's edit with the crop as
-   its only picture. The words (`elements-before.txt`) ask only for a clean copy: the same material, colour,
-   stitching and shape, alone on transparency, without letters, numbers or icons. Grouped by shape, so no crop
-   is squeezed. Three seeds each.
-3. **Checked against the brief** (`compose.py`, `CHOSEN`): the first seed that follows its brief is used: no label
-   left in, the part whole. A part no seed delivers cleanly is made from its crop with the label covered in
-   code (`refs.py`, `CLEAN`). Marks the edit left in are covered in code (`compose.py`, `COVER`).
-4. **Views** (`compose.py`): laid out in code the way the game will draw them:
-   - the leather parts sliced, their ends kept and their middles repeated;
+1. **Decided pixels first.** Where a pick shows the part itself, the harness cuts it out of the pick and uses
+   those pixels; no model repaints it:
+   - the window's frame from `edges-and-buttons.png` (#12): corners with their metal caps, edges repeated with
+     cross-faded joins, the clasp, the page stack and the bottom strap (`compose.py`, `FRAME_CUT`);
+   - the title bar from `title-bar.png` (#61) at its own height, its title covered and pressed in again by code;
+   - the character doll: `doll.png` itself, its rows moved outward into arcs, the gaps filled with its own paper.
+2. **Crops** (`refs.py`): each decided part is cut out of the picture it was picked in. A crop is the only thing
+   a part may be made from.
+3. **Elements** (`elements-*.txt`): only for parts no pick shows ready to use, Qwen's edit makes them from their
+   crop alone. The words ask for a clean copy (the same material and shape, transparent, no letters or icons).
+   Where code can prepare the crop (marks smoothed, a shape cut, `refs.py`, `shape.py`), it does, so the model
+   only finishes. Saneroki approves each element by number; approved ones are copied to
+   `assets/Concept art/UI style/elements/`.
+4. **Only decided parts** (`compose.py`, `SOURCE`): a view takes its parts from this list alone and refuses any
+   other. A part Saneroki did not name is archived, never an input.
+5. **Views** (`compose.py`): laid out in code the way the game will draw them:
+   - the decided parts and pixels;
    - the paper from `paper.py`;
-   - pencil lines drawn by code;
-   - text in Kalam with the paper's grain;
-   - titles and labels pressed into the leather;
-   - game icons from `references/`, and class icons turned into pencil sketches.
+   - pencil lines, Kalam text and titles pressed into the leather;
+   - the game's icons.
 
-   A view with a decided picture is that picture with its content put in by code (the character doll).
-5. **Polish** (`polish.txt`, `polish.py`): one light pass of Qwen's edit over each view, which may only make the
-   parts sit together (light, soft shadows). The layout, the parts and the writing are the code's.
-6. **Gallery** (`gallery.py`): every element, view and polished view, numbered from #1, at
+   No model pass runs over a finished view: a global pass repaints everything and brings back looks of its own.
+6. **Gallery** (`gallery.py`): the elements in use, the elements to pick and the views, numbered from #1, at
    `assets/generated/interface/index.html`.
+
+Tools for when a model must touch a finished picture (ComfyUI has them built in):
+
+- **Masked inpainting** (`SetLatentNoiseMask` or `InpaintModelConditioning`, with `DifferentialDiffusion`): the
+  model repaints only inside a mask (a label to remove, a seam to join), and every other pixel stays as it was.
+- **Low strength:** an image-to-image pass at a low denoise (about 0.2) keeps the model close to its input.
+- **Negative words:** the discarded looks named in the negative prompt (coloured tabs, bronze and gold, leather
+  bars on paper).
+- **Training:** a small LoRA trained only on the approved pictures (`TrainLoraNode`) teaches a model this style
+  and nothing else. It is for later, when there are enough approved pictures.
 
 Rules:
 
-- Parts come from their crops, never from words alone or from a second picture. A second picture takes over the
-  layout.
+- Parts come from their picks' pixels or their crops, never from words alone or from a second picture. A second
+  picture takes over the layout.
 - A layout with exact counts (gear slots, rows) is never left to the model.
 - No stains, sketches or text are painted into parts; code lays them over.
 - New decisions go into this guide first, then into the harness's crops, lists and views.

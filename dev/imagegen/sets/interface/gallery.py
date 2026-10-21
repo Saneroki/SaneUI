@@ -17,8 +17,7 @@ SECTIONS = [   # folder, the pictures in it, title, what it shows
     ("elements", "dropdown-band-*.png top-tab-arrow-*.png", "New elements to pick",
      "dropdown bands with an empty inside for code inlays; the patch tab as an arrow with worn, stitched ends"),
     ("views", "*.png", "Views laid out in code",
-     "compose.py: the elements sliced and repeated, the paper, pencil lines, Kalam, pressed leather titles, game icons"),
-    ("polished", "*.png", "Views polished", "polish.txt: one light pass by Qwen's edit over each laid-out view"),
+     "compose.py: #12's frame and #61's title bar cut from the picks, the decided elements, the paper, pencil, Kalam, game icons"),
 ]
 
 

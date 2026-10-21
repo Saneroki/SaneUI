@@ -1202,6 +1202,11 @@ Saneroki asked for a much richer bag view, in features and looks.
   `elements-arrow.txt`), bubbles drawn in code as one piece of paper with the class icon's round in their
   silhouette, the doll's slots in arcs, a darker, browner paper (`paper.py`, `TONE`), the gallery split into parts
   in use and parts to pick.
+- The harness made strict (Saneroki: the windows had lost their decided borders and title bar): the frame is cut
+  from the pick (#12) at its own scale, corners and all, its edges repeated with cross-faded joins; the title bar
+  is the pick (#61) at its own height; the polish pass (a global model pass) is gone; `compose.py` refuses any part
+  not in its list of decided parts. The guide's *The harness* lists ComfyUI's tools for strict edits (masked
+  inpainting, differential diffusion, low strength, negative words, a LoRA of the approved pictures).
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.
