@@ -410,6 +410,11 @@ marked, so an older game's fact is never taken for one of Forever's.
 - **Unverified:** everything else that passed *When in doubt*: a version taken in from a batch (the older
   games' facts kept as the baseline, any batch a tool read). A place seen only once or a chance from too
   few loots or gathers is no fact yet: a candidate, not taken in.
+- **An import never joins the game's version** (Saneroki, 2026-10-21): what a batch says of an entry the game wrote
+  (a boss's abilities and loot of studied records, an item's stats from elsewhere) goes into versions or a set of its
+  own (the set *Bosses* beside the game's *Encounters*), never as fields of the game's version: that version names
+  the game among its sources and would read as verified. Such facts are used at once and shown as not yet
+  confirmed until the client's tables or the server confirm them.
 - **Verified later without a new version:** when the game agrees with an unverified version, the import's
   *agreeing* case adds `game` to its sources, and it is verified. When the game says otherwise, a new
   version replaces it (*Changed*).
@@ -1233,6 +1238,7 @@ rares, herbs and ore, quests, trainers, repair, inns and every other NPC with a 
 | *NPCs* | creature ID | `services`: which NPCs are trainers, repair, inns, ...; where they stand is their *Spawns* | World |
 | *Tiles* | continent × 4096 + row × 64 + column | The terrain's picture of each tile of a continent's grid: the game's own minimap texture, for Navigation's map (2026-10-18) | World |
 | *Overlays* | the game's overlay ID | Every part of a map's art the game reveals once explored (its map, place and size in the art, textures, flags), so Navigation's map keeps those not yet explored dark (2026-10-19) | World |
+| *Bosses* | the game's encounter ID | What a boss casts and drops (spell and item IDs), apart from the game's *Encounters* so it stays unverified until the game confirms it (2026-10-21) | World |
 | *Dungeons* | the instance's map ID | Each dungeon's and raid's floors (name, size, world box), the tiles of its map art, and its bosses (encounter, floor, place, look) and enemies (creature, floor, place), for Navigation's dungeon maps; Forever's client has none (2026-10-21) | World |
 
 - **One shape for every area:** quest areas, spawn areas and herb or ore areas all use the same cells

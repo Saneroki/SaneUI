@@ -190,7 +190,8 @@ Saneroki's asks (`Doc/ideas/Navigation.md`, *Map pins*, *Full screen*, *Dungeon 
 - **Instance maps without players** (2026-10-21, Forever tells no place inside): `Dungeons.lua` has no arrow, no
   group, `Dungeons.Here` gives the lowest floor; the drag's step runs only while dragging.
 - **Boss tooltips with abilities and loot; enemies** (2026-10-21, batch 11 of `sources.toml`): `Dungeons.lua`'s
-  `BossTip` lists Core's set *Encounters*' `abilities` and `loot` (the game's names and icons, items asked for and
+  `BossTip` lists Core's set *Bosses*' `abilities` and `loot` (kept apart from the game's *Encounters*: unverified
+  until the game confirms them) (the game's names and icons, items asked for and
   drawn again on `ITEM_DATA_LOAD_RESULT`); `PlaceEnemies` draws the set *Dungeons*' `enemies` (six dungeons).
 - **A rare's model with Alt** (`PinView.lua`, `Model`, `Stage`): a `PlayerModel` by `SetCreature(npc)` beside
   `GameTooltip`, following `MODIFIER_STATE_CHANGED`.

@@ -154,7 +154,8 @@ minimap) and the full-screen window (the world map) show the same map with the s
   art files are in Forever's install), each boss's icon where it stands, and the boss's 3D game model standing on
   that spot.
 - **A boss's tooltip on its map (Saneroki, 2026-10-21):** its abilities and the items it drops, with their names
-  and icons, from what is known of the dungeons (built: the set *Encounters*' `abilities` and `loot`, batch 11; the
+  and icons, from what is known of the dungeons (built: the set *Bosses*' `abilities` and `loot`, batch 11, used at once and shown as not yet confirmed until the
+  client or the server confirms them (Saneroki, 2026-10-21); the
   names, icons and qualities the game's).
 - **Instance maps keep rules of their own (Saneroki, 2026-10-21),** apart from the world map's and its indoor maps':
   - **No players on them:** Forever tells no player's place inside an instance (not in its current versions), so an
@@ -1630,7 +1631,7 @@ What a dungeon map shows:
   and no group (2026-10-21: the game tells no place inside an instance); the floors' world boxes stay in the set for
   the enemies' places to come; Core's spawns are keyed by the game's zone maps, which Forever lacks inside. Batch 11
   (2026-10-21) added 100 bosses (the rebuilt dungeons' too: their places agree across the records on the newest
-  map art), each boss's abilities and loot (set *Encounters*), and the enemies of six dungeons (set *Dungeons*'
+  map art), each boss's abilities and loot (set *Bosses*), and the enemies of six dungeons (set *Dungeons*'
   `enemies`, on the floors' maps).
 - Bosses, entrances, floor links and quest items from Core's data.
 - Drawn as *Maps without a world box* where the game gives none.

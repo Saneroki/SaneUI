@@ -1,0 +1,11 @@
+set = "Bosses"
+key = "int"              # the game's encounter ID (DungeonEncounter: the set Encounters' key)
+learn = false
+about = "What the bosses of the dungeons and raids cast and drop, until the game confirms it: kept apart from the game's own Encounters, so a fact stays unverified until the client's tables or the server confirm it (Saneroki, 2026-10-21)."
+
+# Used as it is, shown as not yet confirmed: a version of this set becomes verified when the game says the same (a
+# boss's spells seen cast in play, its loot seen dropping: the set Drops' counts), as Doc/ideas/Data.md says.
+
+[fields]
+abilities = { type = "list", of = "int", min = 1 }  # the spells it casts: the game's spell IDs (names, icons: the game's)
+loot      = { type = "list", of = "int", min = 1 }  # what it drops: the game's item IDs (names, icons, quality: the game's)

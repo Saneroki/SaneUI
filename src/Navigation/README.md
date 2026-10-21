@@ -303,7 +303,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   game's guild news shows a boss; `Dungeons.MODEL_WIDTH` x `MODEL_HEIGHT`, turned `Dungeons.FACING`), one lower on
   the screen in front (`Dungeons.SPREAD` levels, all under the bar), hidden while it would reach past the view's
   edge (models are not cut there), let go (`ClearModel`) when the view closes. A boss's tooltip (`BossTip`) lists the
-  set *Encounters*' `abilities` and `loot` (`Listed`, at most `Dungeons.LINES` each): a spell by `C_Spell.GetSpellInfo`,
+  set *Bosses*' `abilities` and `loot` (`Listed`, at most `Dungeons.LINES` each; a set of their own, apart from the
+  game's *Encounters*, so they stay unverified until the game confirms them): a spell by `C_Spell.GetSpellInfo`,
   an item by `C_Item.GetItemInfo` (asked for with `RequestLoadItemDataByID` while not loaded; drawn again once on
   `ITEM_DATA_LOAD_RESULT`), each with its icon (`Dungeons.ICON`).
 - **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
@@ -514,8 +515,8 @@ Tests: `dev/tests/navigation.lua`.
   region still joins two levels where they lie one over the other (`Lifts.Levels`, told apart by height), so routes
   from the ruins into the city still take the lift.
 - **2026-10-21, bosses with their abilities and loot; enemies:** the dungeon maps' boss tooltips list what the boss
-  casts and drops, with their icons, from the game; Core's sets gained them (batch 11: *Encounters* `abilities`,
-  `loot`; *Dungeons* 100 more bosses, in the dungeons Blizzard rebuilt too, and `enemies` in six dungeons), and the
+  casts and drops, with their icons, from the game; Core's sets gained them (batch 11: the new set *Bosses*,
+  `abilities` and `loot`, apart from the game's *Encounters*; *Dungeons* 100 more bosses, in the dungeons Blizzard rebuilt too, and `enemies` in six dungeons), and the
   enemies stand on the maps as small red dots.
 - **2026-10-21, indoor maps off the streets; instance maps without players; a rare's model:** as Saneroki decided,
   the indoor maps only inside buildings and caves (Core's set *Indoors* marks the open parts, `open`, from the game's

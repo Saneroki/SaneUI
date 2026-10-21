@@ -1,147 +1,147 @@
-{"key":227,"since":70245,"src":["game",11],"name":"High Interrogator Gerstahn","instance":230,"order":0,"abilities":[12040,13704,14032,14033],"loot":[11140]}
-{"key":228,"since":70245,"src":["game",11],"name":"Lord Roccor","instance":230,"order":1000,"abilities":[13728,13729,6524],"loot":[11813]}
-{"key":229,"since":70245,"src":["game",11],"name":"Houndmaster Grebmar","instance":230,"order":2000,"abilities":[13730,15615,21049],"loot":[11446]}
-{"key":230,"since":70245,"src":["game",11],"name":"Ring of Law","instance":230,"order":3000,"abilities":[3609,6524,7121,8269,12493,13728,13747,13787,14621,15470,15471,15472,15474,15475,15589,15708,16095,16874,21049,25055,26192,28599],"loot":[11610]}
-{"key":231,"since":70245,"src":["game",11],"name":"Pyromancer Loregrain","instance":230,"order":4000,"abilities":[15038,15041,15095,15616],"loot":[11207]}
-{"key":232,"since":70245,"src":["game",11],"name":"Lord Incendius","instance":230,"order":5000,"abilities":[13899,13900,14099,26977],"loot":[19268]}
-{"key":233,"since":70245,"src":["game",11],"name":"Warder Stilgiss","instance":230,"order":6000,"abilities":[12674,12675,15044,12556],"loot":[11446]}
-{"key":234,"since":70245,"src":["game",11],"name":"Fineous Darkvire","instance":230,"order":7000,"abilities":[11978,13953,15346,15493,8258],"loot":[11840]}
-{"key":235,"since":70245,"src":["game",11],"name":"Bael'Gar","instance":230,"order":8000,"abilities":[13895,23378],"loot":[11446]}
-{"key":236,"since":70245,"src":["game",11],"name":"General Angerforge","instance":230,"order":9000,"abilities":[15572],"loot":[11446]}
-{"key":237,"since":70245,"src":["game",11],"name":"Golem Lord Argelmach","instance":230,"order":10000,"abilities":[15305,15507,15605],"loot":[11446]}
-{"key":238,"since":70245,"src":["game",11],"name":"Hurley Blackbreath","instance":230,"order":11000,"abilities":[9573,14872]}
-{"key":239,"since":70245,"src":["game",11],"name":"Phalanx","instance":230,"order":12000,"abilities":[14099,15285,15588],"loot":[11446]}
-{"key":240,"since":70245,"src":["game",11],"name":"Ribbly Screwspigot","instance":230,"order":13000,"abilities":[9080,12540],"loot":[11446]}
-{"key":241,"since":70245,"src":["game",11],"name":"Plugger Spazzring","instance":230,"order":14000,"abilities":[8994,12739,12742,13338,13787],"loot":[11446]}
-{"key":242,"since":70245,"src":["game",11],"name":"Ambassador Flamelash","instance":230,"order":15000,"abilities":[13489,14744],"loot":[23320]}
-{"key":243,"since":70245,"src":["game",11],"name":"The Seven","instance":230,"order":16000,"abilities":[11971,12040,12169,14033,15062,15232,15580,15585]}
-{"key":244,"since":70245,"src":["game",11],"name":"Magmus","instance":230,"order":17000,"abilities":[15593,15668],"loot":[11446]}
-{"key":267,"since":70245,"src":["game",11],"name":"Highlord Omokk","instance":229,"order":0,"abilities":[8269,10101],"loot":[16670,12336,12534]}
-{"key":268,"since":70245,"src":["game",11],"name":"Shadow Hunter Vosh'gajin","instance":229,"order":1000,"abilities":[16098,16097],"loot":[16712]}
-{"key":269,"since":70245,"src":["game",11],"name":"War Master Voone","instance":229,"order":2000,"abilities":[10966,15284,15615,15618,15708,16075],"loot":[16676,12335]}
-{"key":270,"since":70245,"src":["game",11],"name":"Mother Smolderweb","instance":229,"order":3000,"abilities":[16104,16468],"loot":[16715]}
-{"key":271,"since":70245,"src":["game",11],"name":"Urok Doomhowl","instance":229,"order":4000,"abilities":[16508,15580,16509,16473],"loot":[18784]}
-{"key":272,"since":70245,"src":["game",11],"name":"Quartermaster Zigris","instance":229,"order":5000,"abilities":[15504,15609,16497],"loot":[12835,13247]}
-{"key":273,"since":70245,"src":["game",11],"name":"Gizrul the Slavener","instance":229,"order":6000,"abilities":[8269,16128,16495],"loot":[16718]}
-{"key":274,"since":70245,"src":["game",11],"name":"Halycon","instance":229,"order":5500,"abilities":[8876,13738]}
-{"key":275,"since":70245,"src":["game",11],"name":"Overlord Wyrmthalak","instance":229,"order":8000,"abilities":[23511],"loot":[16679,13164,12337,12780]}
-{"key":343,"since":70245,"src":["game",11],"name":"Zevrim Thornhoof","instance":429,"order":0,"abilities":[22478,22651]}
-{"key":344,"since":70245,"src":["game",11],"name":"Hydrospawn","instance":429,"order":1000,"abilities":[22420,22419,22421,22714],"loot":[19268]}
-{"key":345,"since":70245,"src":["game",11],"name":"Lethtendris","instance":429,"order":2000,"abilities":[13338,16247,22709,14887,22710,11668]}
-{"key":346,"since":70245,"src":["game",11],"name":"Alzzin the Wildshaper","instance":429,"order":3000,"abilities":[7948,19319,22128,22689,22691,22660,22662,10101,22661,22688]}
-{"key":347,"since":70245,"src":["game",11],"name":"Illyanna Ravenoak","instance":429,"order":4000,"abilities":[20904,22910,5116,14295,20735,22908,22914],"loot":[22206]}
-{"key":348,"since":70245,"src":["game",11],"name":"Magister Kalendris","instance":429,"order":5000,"abilities":[7645,22917,22919,17146,17287],"loot":[22309]}
-{"key":349,"since":70245,"src":["game",11],"name":"Immol'thar","instance":429,"order":6000,"abilities":[8269,16128,22899,22950,5568,15550]}
-{"key":350,"since":70245,"src":["game",11],"name":"Tendris Warpwood","instance":429,"order":3500,"abilities":[5568,22916,22924,22994]}
-{"key":361,"since":70245,"src":["game",11],"name":"Prince Tortheldrin","instance":429,"order":7000,"abilities":[20537,22920,8876,15589,20691,22995],"loot":[21525]}
-{"key":362,"since":70245,"src":["game",11],"name":"Guard Mol'dar","instance":429,"order":8000,"abilities":[8269,11972,15749,10101,15580,15655,20691],"loot":[18250,18268]}
-{"key":363,"since":70245,"src":["game",11],"name":"Stomper Kreeg","instance":429,"order":9000,"abilities":[8269,16740,15577,22833,22835],"loot":[9260,18269,18284,18287,18288]}
-{"key":364,"since":70245,"src":["game",11],"name":"Guard Fengus","instance":429,"order":10000,"abilities":[8269,11972,15749,10101,15580,22572,15655,20691],"loot":[18250,18266]}
-{"key":365,"since":70245,"src":["game",11],"name":"Guard Slip'kik","instance":429,"order":11000,"abilities":[8269,11972,15749,10101,15580,17307,20691],"loot":[18250]}
-{"key":366,"since":70245,"src":["game",11],"name":"Captain Kromcrush","instance":429,"order":12000,"abilities":[22857,22859,8599,22860,5246,19134],"loot":[18250]}
-{"key":367,"since":70245,"src":["game",11],"name":"Cho'Rush the Observer","instance":429,"order":13000,"abilities":[17139,22884,15305,15982,8376,10947,13745,15531,16170]}
-{"key":368,"since":70245,"src":["game",11],"name":"King Gordok","instance":429,"order":14000,"abilities":[15572,15708,16727,22886],"loot":[18780,19258]}
-{"key":422,"since":70245,"src":["game",11],"name":"Noxxion","instance":349,"order":0,"abilities":[21687,21547]}
-{"key":423,"since":70245,"src":["game",11],"name":"Razorlash","instance":349,"order":1000,"abilities":[15584,15976,12787]}
-{"key":424,"since":70245,"src":["game",11],"name":"Lord Vyletongue","instance":349,"order":2000,"abilities":[21080,21390,21655,7964,8817]}
-{"key":425,"since":70245,"src":["game",11],"name":"Celebras the Cursed","instance":349,"order":3000,"abilities":[12747,21793,21807,21968]}
-{"key":426,"since":70245,"src":["game",11],"name":"Landslide","instance":349,"order":4000,"abilities":[5568,18670,21808]}
-{"key":427,"since":70245,"src":["game",11],"name":"Tinkerer Gizlock","instance":349,"order":1500,"abilities":[9143,21833,29419]}
-{"key":428,"since":70245,"src":["game",11],"name":"Rotgrip","instance":349,"order":6000,"abilities":[16495,15978]}
-{"key":429,"since":70245,"src":["game",11],"name":"Princess Theradras","instance":349,"order":7000,"abilities":[21869,8876,21832,21909]}
-{"key":444,"since":70245,"src":["game",11],"name":"Interrogator Vishas","instance":189,"order":0,"abilities":[14032,2767,8981,9034],"loot":[7682,7683,274290,252822,252513,252455]}
-{"key":446,"since":70245,"src":["game",11],"name":"Houndmaster Loksey","instance":189,"order":2000,"abilities":[6742,6192],"loot":[7710,3456,7756,274292]}
-{"key":447,"since":70245,"src":["game",11],"name":"Arcanist Doan","instance":189,"order":3000,"abilities":[8988,9433,13323,9435,9438],"loot":[7713,7714,7711,7712,274293,274294]}
-{"key":448,"since":70245,"src":["game",11],"name":"Herod","instance":189,"order":4000,"abilities":[8989,6268,8269,15579,22540,8260,8599],"loot":[7717,7719,7718,10330]}
-{"key":449,"since":70245,"src":["game",11],"name":"High Inquisitor Fairbanks","instance":189,"order":5000,"abilities":[8399,12039,8282,11647,12096,15090],"loot":[19507,19508]}
-{"key":450,"since":70245,"src":["game",11],"name":"High Inquisitor Whitemane","instance":189,"order":6000,"abilities":[9481,12039,22187,9256,9232,14515],"loot":[7721,7720,7722]}
-{"key":472,"since":70245,"src":["game",11],"name":"The Unforgiven","instance":329,"order":6500,"abilities":[14907,8822,22766],"loot":[16717]}
-{"key":473,"since":70245,"src":["game",11],"name":"Hearthsinger Forresten","instance":329,"order":1000,"abilities":[14443,16798,16244,16331],"loot":[16682]}
-{"key":474,"since":70245,"src":["game",11],"name":"Timmy the Cruel","instance":329,"order":2000,"abilities":[17470,8599,12787],"loot":[16724]}
-{"key":475,"since":70245,"src":["game",11],"name":"Cannon Master Willey","instance":329,"order":3000,"abilities":[10101,11729,16615,15615],"loot":[16708,12839]}
-{"key":476,"since":70245,"src":["game",11],"name":"Malor the Zealous","instance":329,"order":2500,"abilities":[12734,15493,16172,17233],"loot":[12845]}
-{"key":477,"since":70245,"src":["game",11],"name":"Archivist Galford","instance":329,"order":5000,"abilities":[17293,17274,17366,23462],"loot":[16692,12811,22897]}
-{"key":478,"since":70245,"src":["game",11],"name":"Balnazzar","instance":329,"order":6000,"abilities":[9256,15398,20603,20741,17286],"loot":[16725,13250,13520,14512]}
-{"key":479,"since":70245,"src":["game",11],"name":"Baroness Anastari","instance":329,"order":7000,"abilities":[16867,17244,18327,16565],"loot":[16704]}
-{"key":480,"since":70245,"src":["game",11],"name":"Nerub'enkan","instance":329,"order":8000,"abilities":[4962,6016,16418,17235],"loot":[16675]}
-{"key":481,"since":70245,"src":["game",11],"name":"Maleki the Pallid","instance":329,"order":9000,"abilities":[16869,17238,17243,17503],"loot":[16691,13509,12833]}
-{"key":482,"since":70245,"src":["game",11],"name":"Magistrate Barthilas","instance":329,"order":10000,"abilities":[10887,14099,16793,16791],"loot":[12382]}
-{"key":483,"since":70245,"src":["game",11],"name":"Ramstein the Gorger","instance":329,"order":11000,"abilities":[5568,17307,6788],"loot":[16737]}
-{"key":484,"since":70245,"src":["game",11],"name":"Baron Rivendare","instance":329,"order":12000,"abilities":[17393,15284,15708,17467,17473],"loot":[16668,16678,16687,16694,16699,16709,16719,16728,16732,13335]}
+{"key":227,"since":70245,"src":["game"],"name":"High Interrogator Gerstahn","instance":230,"order":0}
+{"key":228,"since":70245,"src":["game"],"name":"Lord Roccor","instance":230,"order":1000}
+{"key":229,"since":70245,"src":["game"],"name":"Houndmaster Grebmar","instance":230,"order":2000}
+{"key":230,"since":70245,"src":["game"],"name":"Ring of Law","instance":230,"order":3000}
+{"key":231,"since":70245,"src":["game"],"name":"Pyromancer Loregrain","instance":230,"order":4000}
+{"key":232,"since":70245,"src":["game"],"name":"Lord Incendius","instance":230,"order":5000}
+{"key":233,"since":70245,"src":["game"],"name":"Warder Stilgiss","instance":230,"order":6000}
+{"key":234,"since":70245,"src":["game"],"name":"Fineous Darkvire","instance":230,"order":7000}
+{"key":235,"since":70245,"src":["game"],"name":"Bael'Gar","instance":230,"order":8000}
+{"key":236,"since":70245,"src":["game"],"name":"General Angerforge","instance":230,"order":9000}
+{"key":237,"since":70245,"src":["game"],"name":"Golem Lord Argelmach","instance":230,"order":10000}
+{"key":238,"since":70245,"src":["game"],"name":"Hurley Blackbreath","instance":230,"order":11000}
+{"key":239,"since":70245,"src":["game"],"name":"Phalanx","instance":230,"order":12000}
+{"key":240,"since":70245,"src":["game"],"name":"Ribbly Screwspigot","instance":230,"order":13000}
+{"key":241,"since":70245,"src":["game"],"name":"Plugger Spazzring","instance":230,"order":14000}
+{"key":242,"since":70245,"src":["game"],"name":"Ambassador Flamelash","instance":230,"order":15000}
+{"key":243,"since":70245,"src":["game"],"name":"The Seven","instance":230,"order":16000}
+{"key":244,"since":70245,"src":["game"],"name":"Magmus","instance":230,"order":17000}
+{"key":267,"since":70245,"src":["game"],"name":"Highlord Omokk","instance":229,"order":0}
+{"key":268,"since":70245,"src":["game"],"name":"Shadow Hunter Vosh'gajin","instance":229,"order":1000}
+{"key":269,"since":70245,"src":["game"],"name":"War Master Voone","instance":229,"order":2000}
+{"key":270,"since":70245,"src":["game"],"name":"Mother Smolderweb","instance":229,"order":3000}
+{"key":271,"since":70245,"src":["game"],"name":"Urok Doomhowl","instance":229,"order":4000}
+{"key":272,"since":70245,"src":["game"],"name":"Quartermaster Zigris","instance":229,"order":5000}
+{"key":273,"since":70245,"src":["game"],"name":"Gizrul the Slavener","instance":229,"order":6000}
+{"key":274,"since":70245,"src":["game"],"name":"Halycon","instance":229,"order":5500}
+{"key":275,"since":70245,"src":["game"],"name":"Overlord Wyrmthalak","instance":229,"order":8000}
+{"key":343,"since":70245,"src":["game"],"name":"Zevrim Thornhoof","instance":429,"order":0}
+{"key":344,"since":70245,"src":["game"],"name":"Hydrospawn","instance":429,"order":1000}
+{"key":345,"since":70245,"src":["game"],"name":"Lethtendris","instance":429,"order":2000}
+{"key":346,"since":70245,"src":["game"],"name":"Alzzin the Wildshaper","instance":429,"order":3000}
+{"key":347,"since":70245,"src":["game"],"name":"Illyanna Ravenoak","instance":429,"order":4000}
+{"key":348,"since":70245,"src":["game"],"name":"Magister Kalendris","instance":429,"order":5000}
+{"key":349,"since":70245,"src":["game"],"name":"Immol'thar","instance":429,"order":6000}
+{"key":350,"since":70245,"src":["game"],"name":"Tendris Warpwood","instance":429,"order":3500}
+{"key":361,"since":70245,"src":["game"],"name":"Prince Tortheldrin","instance":429,"order":7000}
+{"key":362,"since":70245,"src":["game"],"name":"Guard Mol'dar","instance":429,"order":8000}
+{"key":363,"since":70245,"src":["game"],"name":"Stomper Kreeg","instance":429,"order":9000}
+{"key":364,"since":70245,"src":["game"],"name":"Guard Fengus","instance":429,"order":10000}
+{"key":365,"since":70245,"src":["game"],"name":"Guard Slip'kik","instance":429,"order":11000}
+{"key":366,"since":70245,"src":["game"],"name":"Captain Kromcrush","instance":429,"order":12000}
+{"key":367,"since":70245,"src":["game"],"name":"Cho'Rush the Observer","instance":429,"order":13000}
+{"key":368,"since":70245,"src":["game"],"name":"King Gordok","instance":429,"order":14000}
+{"key":422,"since":70245,"src":["game"],"name":"Noxxion","instance":349,"order":0}
+{"key":423,"since":70245,"src":["game"],"name":"Razorlash","instance":349,"order":1000}
+{"key":424,"since":70245,"src":["game"],"name":"Lord Vyletongue","instance":349,"order":2000}
+{"key":425,"since":70245,"src":["game"],"name":"Celebras the Cursed","instance":349,"order":3000}
+{"key":426,"since":70245,"src":["game"],"name":"Landslide","instance":349,"order":4000}
+{"key":427,"since":70245,"src":["game"],"name":"Tinkerer Gizlock","instance":349,"order":1500}
+{"key":428,"since":70245,"src":["game"],"name":"Rotgrip","instance":349,"order":6000}
+{"key":429,"since":70245,"src":["game"],"name":"Princess Theradras","instance":349,"order":7000}
+{"key":444,"since":70245,"src":["game"],"name":"Interrogator Vishas","instance":189,"order":0}
+{"key":446,"since":70245,"src":["game"],"name":"Houndmaster Loksey","instance":189,"order":2000}
+{"key":447,"since":70245,"src":["game"],"name":"Arcanist Doan","instance":189,"order":3000}
+{"key":448,"since":70245,"src":["game"],"name":"Herod","instance":189,"order":4000}
+{"key":449,"since":70245,"src":["game"],"name":"High Inquisitor Fairbanks","instance":189,"order":5000}
+{"key":450,"since":70245,"src":["game"],"name":"High Inquisitor Whitemane","instance":189,"order":6000}
+{"key":472,"since":70245,"src":["game"],"name":"The Unforgiven","instance":329,"order":6500}
+{"key":473,"since":70245,"src":["game"],"name":"Hearthsinger Forresten","instance":329,"order":1000}
+{"key":474,"since":70245,"src":["game"],"name":"Timmy the Cruel","instance":329,"order":2000}
+{"key":475,"since":70245,"src":["game"],"name":"Cannon Master Willey","instance":329,"order":3000}
+{"key":476,"since":70245,"src":["game"],"name":"Malor the Zealous","instance":329,"order":2500}
+{"key":477,"since":70245,"src":["game"],"name":"Archivist Galford","instance":329,"order":5000}
+{"key":478,"since":70245,"src":["game"],"name":"Balnazzar","instance":329,"order":6000}
+{"key":479,"since":70245,"src":["game"],"name":"Baroness Anastari","instance":329,"order":7000}
+{"key":480,"since":70245,"src":["game"],"name":"Nerub'enkan","instance":329,"order":8000}
+{"key":481,"since":70245,"src":["game"],"name":"Maleki the Pallid","instance":329,"order":9000}
+{"key":482,"since":70245,"src":["game"],"name":"Magistrate Barthilas","instance":329,"order":10000}
+{"key":483,"since":70245,"src":["game"],"name":"Ramstein the Gorger","instance":329,"order":11000}
+{"key":484,"since":70245,"src":["game"],"name":"Baron Rivendare","instance":329,"order":12000}
 {"key":486,"since":70245,"src":["game"],"name":"Dreamscythe","instance":109,"order":1000,"difficulty":201}
 {"key":487,"since":70245,"src":["game"],"name":"Weaver","instance":109,"order":2000,"difficulty":201}
-{"key":488,"since":70245,"src":["game",11],"name":"Jammal'an the Prophet","instance":109,"order":500,"difficulty":201,"abilities":[8376,10893,12468,12492,13540]}
+{"key":488,"since":70245,"src":["game"],"name":"Jammal'an the Prophet","instance":109,"order":500,"difficulty":201}
 {"key":490,"since":70245,"src":["game"],"name":"Morphaz","instance":109,"order":5000,"difficulty":201}
 {"key":491,"since":70245,"src":["game"],"name":"Hazzas","instance":109,"order":6000,"difficulty":201}
-{"key":492,"since":70245,"src":["game",11],"name":"Avatar of Hakkar","instance":109,"difficulty":201,"abilities":[12888,12889,6607,10893]}
-{"key":493,"since":70245,"src":["game",11],"name":"Shade of Eranikus","instance":109,"order":8000,"difficulty":201,"abilities":[12890,8876,11876,12891]}
-{"key":547,"since":70245,"src":["game",11],"name":"Revelosh","instance":70,"order":0,"abilities":[15801,15117],"loot":[9389,9390,9387,9388,7741]}
-{"key":548,"since":70245,"src":["game",11],"name":"The Lost Dwarves","instance":70,"order":1000,"abilities":[8242,14516],"loot":[9401,9404]}
-{"key":549,"since":70245,"src":["game",11],"name":"Ironaya","instance":70,"order":2000,"abilities":[8374,10101,11876],"loot":[9407,9408,9409]}
-{"key":551,"since":70245,"src":["game",11],"name":"Ancient Stone Keeper","instance":70,"order":4000,"abilities":[10094],"loot":[9411,9410]}
-{"key":552,"since":70245,"src":["game",11],"name":"Galgann Firehammer","instance":70,"order":5000,"abilities":[3356,9482,8053,11969],"loot":[9412,9419,11310,11311]}
-{"key":553,"since":70245,"src":["game",11],"name":"Grimlok","instance":70,"order":6000,"abilities":[6742,8292,9532,8143,11892],"loot":[9414,9415,9416,7670]}
-{"key":554,"since":70245,"src":["game",11],"name":"Archaedas","instance":70,"order":7000,"abilities":[6524,10252,10258],"loot":[11118]}
-{"key":585,"since":70245,"src":["game",11],"name":"Lady Anacondra","instance":43,"order":0,"abilities":[8148,700,5187,9532],"loot":[10412,273088,5404,6446,273098]}
-{"key":586,"since":70245,"src":["game",11],"name":"Lord Cobrahn","instance":43,"order":1000,"abilities":[7965,9532,5188,8040,744,3616],"loot":[10410,6460,6465]}
-{"key":587,"since":70245,"src":["game",11],"name":"Kresh","instance":43,"order":2000,"abilities":[26064],"loot":[13245,273084,6447]}
-{"key":588,"since":70245,"src":["game",11],"name":"Lord Pythas","instance":43,"order":3000,"abilities":[8147,700,5187,9532],"loot":[6473,273089,6472]}
-{"key":589,"since":70245,"src":["game",11],"name":"Skum","instance":43,"order":4000,"abilities":[6254],"loot":[6448,273137,6449]}
-{"key":590,"since":70245,"src":["game",11],"name":"Lord Serpentis","instance":43,"order":5000,"abilities":[9532,700,6778],"loot":[6459,5970,6469,10411,273087]}
-{"key":591,"since":70245,"src":["game",11],"name":"Verdan the Everliving","instance":43,"order":6000,"abilities":[8142],"loot":[6630,6631,6629,253938]}
-{"key":592,"since":70245,"src":["game",11],"name":"Mutanus the Devourer","instance":43,"order":7000,"abilities":[7399,7967,8150],"loot":[6461,6463,6627,10441]}
-{"key":593,"since":70245,"src":["game",11],"name":"Hydromancer Velratha","instance":209,"order":0,"abilities":[11086,12491,12739,15245],"loot":[9234,10661]}
-{"key":594,"since":70245,"src":["game",11],"name":"Gahz'rilla","instance":209,"order":1000,"abilities":[11131,11836,11902]}
-{"key":595,"since":70245,"src":["game",11],"name":"Antu'sul","instance":209,"order":2000,"abilities":[8376,11899,11894,11895]}
-{"key":596,"since":70245,"src":["game",11],"name":"Theka the Martyr","instance":209,"order":3000,"abilities":[8600,11089],"loot":[10660]}
-{"key":597,"since":70245,"src":["game",11],"name":"Witch Doctor Zum'rah","instance":209,"order":4000,"abilities":[11086,12491,12739,15245]}
-{"key":598,"since":70245,"src":["game",11],"name":"Nekrum Gutchewer","instance":209,"order":5000,"abilities":[8600],"loot":[9471]}
-{"key":599,"since":70245,"src":["game",11],"name":"Shadowpriest Sezz'ziz","instance":209,"order":6000,"abilities":[8362,12039,13704,15537]}
-{"key":600,"since":70245,"src":["game",11],"name":"Chief Ukorz Sandscalp","instance":209,"order":7000,"abilities":[11837,15496,8269,7366,11838]}
-{"key":610,"since":70245,"src":["game",11],"name":"Razorgore the Untamed","instance":469,"order":0,"abilities":[19632,19872,19873,22425],"loot":[19336,19337]}
-{"key":611,"since":70245,"src":["game",11],"name":"Vaelastrasz the Corrupt","instance":469,"order":1000,"abilities":[15847,18173,19983,23461],"loot":[19339,19340,19371]}
-{"key":612,"since":70245,"src":["game",11],"name":"Broodlord Lashlayer","instance":469,"order":2000,"abilities":[15284,18670,23331,24573],"loot":[19341,19342,20383]}
-{"key":613,"since":70245,"src":["game",11],"name":"Firemaw","instance":469,"order":3000,"abilities":[22539,23339,23341],"loot":[19343,19344,19395,19397]}
-{"key":614,"since":70245,"src":["game",11],"name":"Ebonroc","instance":469,"order":4000,"abilities":[22539,23339,23340],"loot":[19345,19395,19397,19403,19406]}
-{"key":615,"since":70245,"src":["game",11],"name":"Flamegor","instance":469,"order":5000,"abilities":[22539,23339,23342],"loot":[19395,19397,19431,19432]}
-{"key":616,"since":70245,"src":["game",11],"name":"Chromaggus","instance":469,"order":6000,"loot":[19392]}
-{"key":617,"since":70245,"src":["game",11],"name":"Nefarian","instance":469,"order":7000,"loot":[11938,17962,17963,17964,17965,17969,19376,19377,19379,19382]}
-{"key":663,"since":70245,"src":["game",11],"name":"Lucifron","instance":409,"order":0,"loot":[16665,18879,19147]}
-{"key":664,"since":70245,"src":["game",11],"name":"Magmadar","instance":409,"order":1000,"abilities":[19272,19408,19411,19451],"loot":[17073,18820,18821]}
-{"key":665,"since":70245,"src":["game",11],"name":"Gehennas","instance":409,"order":2000,"loot":[18879,19147]}
-{"key":666,"since":70245,"src":["game",11],"name":"Garr","instance":409,"order":3000,"loot":[18564,18820,18821]}
-{"key":667,"since":70245,"src":["game",11],"name":"Shazzrah","instance":409,"order":4000,"abilities":[19712,19713,19714,19715],"loot":[18879,19147]}
-{"key":668,"since":70245,"src":["game",11],"name":"Baron Geddon","instance":409,"order":5000,"abilities":[19659,19695,20475,20478],"loot":[18563,18820,18821]}
-{"key":669,"since":70245,"src":["game",11],"name":"Sulfuron Harbinger","instance":409,"order":6000,"abilities":[19778,19779,19780,19781],"loot":[18879,19147]}
-{"key":670,"since":70245,"src":["game",11],"name":"Golemagg the Incinerator","instance":409,"order":7000,"loot":[17203,18820,18821]}
-{"key":671,"since":70245,"src":["game",11],"name":"Majordomo Executus","instance":409,"order":8000,"abilities":[20618,20619,20620,21075],"loot":[18646,18703,19140]}
-{"key":672,"since":70245,"src":["game",11],"name":"Ragnaros","instance":409,"order":9000,"abilities":[19773,19780,20565,20566],"loot":[17204,18814,18815,19017,19138]}
-{"key":709,"since":70245,"src":["game",11],"name":"The Prophet Skeram","instance":531,"order":0,"abilities":[26192,26194],"loot":[21232,21237,21700,21702,21707,22222]}
+{"key":492,"since":70245,"src":["game"],"name":"Avatar of Hakkar","instance":109,"difficulty":201}
+{"key":493,"since":70245,"src":["game"],"name":"Shade of Eranikus","instance":109,"order":8000,"difficulty":201}
+{"key":547,"since":70245,"src":["game"],"name":"Revelosh","instance":70,"order":0}
+{"key":548,"since":70245,"src":["game"],"name":"The Lost Dwarves","instance":70,"order":1000}
+{"key":549,"since":70245,"src":["game"],"name":"Ironaya","instance":70,"order":2000}
+{"key":551,"since":70245,"src":["game"],"name":"Ancient Stone Keeper","instance":70,"order":4000}
+{"key":552,"since":70245,"src":["game"],"name":"Galgann Firehammer","instance":70,"order":5000}
+{"key":553,"since":70245,"src":["game"],"name":"Grimlok","instance":70,"order":6000}
+{"key":554,"since":70245,"src":["game"],"name":"Archaedas","instance":70,"order":7000}
+{"key":585,"since":70245,"src":["game"],"name":"Lady Anacondra","instance":43,"order":0}
+{"key":586,"since":70245,"src":["game"],"name":"Lord Cobrahn","instance":43,"order":1000}
+{"key":587,"since":70245,"src":["game"],"name":"Kresh","instance":43,"order":2000}
+{"key":588,"since":70245,"src":["game"],"name":"Lord Pythas","instance":43,"order":3000}
+{"key":589,"since":70245,"src":["game"],"name":"Skum","instance":43,"order":4000}
+{"key":590,"since":70245,"src":["game"],"name":"Lord Serpentis","instance":43,"order":5000}
+{"key":591,"since":70245,"src":["game"],"name":"Verdan the Everliving","instance":43,"order":6000}
+{"key":592,"since":70245,"src":["game"],"name":"Mutanus the Devourer","instance":43,"order":7000}
+{"key":593,"since":70245,"src":["game"],"name":"Hydromancer Velratha","instance":209,"order":0}
+{"key":594,"since":70245,"src":["game"],"name":"Gahz'rilla","instance":209,"order":1000}
+{"key":595,"since":70245,"src":["game"],"name":"Antu'sul","instance":209,"order":2000}
+{"key":596,"since":70245,"src":["game"],"name":"Theka the Martyr","instance":209,"order":3000}
+{"key":597,"since":70245,"src":["game"],"name":"Witch Doctor Zum'rah","instance":209,"order":4000}
+{"key":598,"since":70245,"src":["game"],"name":"Nekrum Gutchewer","instance":209,"order":5000}
+{"key":599,"since":70245,"src":["game"],"name":"Shadowpriest Sezz'ziz","instance":209,"order":6000}
+{"key":600,"since":70245,"src":["game"],"name":"Chief Ukorz Sandscalp","instance":209,"order":7000}
+{"key":610,"since":70245,"src":["game"],"name":"Razorgore the Untamed","instance":469,"order":0}
+{"key":611,"since":70245,"src":["game"],"name":"Vaelastrasz the Corrupt","instance":469,"order":1000}
+{"key":612,"since":70245,"src":["game"],"name":"Broodlord Lashlayer","instance":469,"order":2000}
+{"key":613,"since":70245,"src":["game"],"name":"Firemaw","instance":469,"order":3000}
+{"key":614,"since":70245,"src":["game"],"name":"Ebonroc","instance":469,"order":4000}
+{"key":615,"since":70245,"src":["game"],"name":"Flamegor","instance":469,"order":5000}
+{"key":616,"since":70245,"src":["game"],"name":"Chromaggus","instance":469,"order":6000}
+{"key":617,"since":70245,"src":["game"],"name":"Nefarian","instance":469,"order":7000}
+{"key":663,"since":70245,"src":["game"],"name":"Lucifron","instance":409,"order":0}
+{"key":664,"since":70245,"src":["game"],"name":"Magmadar","instance":409,"order":1000}
+{"key":665,"since":70245,"src":["game"],"name":"Gehennas","instance":409,"order":2000}
+{"key":666,"since":70245,"src":["game"],"name":"Garr","instance":409,"order":3000}
+{"key":667,"since":70245,"src":["game"],"name":"Shazzrah","instance":409,"order":4000}
+{"key":668,"since":70245,"src":["game"],"name":"Baron Geddon","instance":409,"order":5000}
+{"key":669,"since":70245,"src":["game"],"name":"Sulfuron Harbinger","instance":409,"order":6000}
+{"key":670,"since":70245,"src":["game"],"name":"Golemagg the Incinerator","instance":409,"order":7000}
+{"key":671,"since":70245,"src":["game"],"name":"Majordomo Executus","instance":409,"order":8000}
+{"key":672,"since":70245,"src":["game"],"name":"Ragnaros","instance":409,"order":9000}
+{"key":709,"since":70245,"src":["game"],"name":"The Prophet Skeram","instance":531,"order":0}
 {"key":710,"since":70245,"src":["game"],"name":"Silithid Royalty","instance":531,"order":1000}
-{"key":711,"since":70245,"src":["game",11],"name":"Battleguard Sartura","instance":531,"order":2000,"abilities":[8269,25174,26084,27680],"loot":[21232,21237,21648,21667,21669,21670,21672,21674,21678]}
-{"key":712,"since":70245,"src":["game",11],"name":"Fankriss the Unyielding","instance":531,"order":3000,"abilities":[22994,25646],"loot":[21232,21237,21639,21645,21647,21650,21663,21664,21665,22396,22402]}
-{"key":713,"since":70245,"src":["game",11],"name":"Viscidus","instance":531,"order":4000,"abilities":[25991,25993],"loot":[20928,20932,21232,21237,21622,21623,21624,21625,21677,22399]}
-{"key":714,"since":70245,"src":["game",11],"name":"Princess Huhuran","instance":531,"order":5000,"abilities":[26050,26051,26053,26180],"loot":[20928,20932,21232,21237,21616,21618,21619,21620]}
-{"key":715,"since":70245,"src":["game",11],"name":"Twin Emperors","instance":531,"order":6000,"abilities":[568,7393,26006,26007,26607,26613,27680],"loot":[20726,20735,20926,20930,21232,21237,21597,21598,21600,21601,21602,21604,21605,21606,21607,21608,21609]}
-{"key":716,"since":70245,"src":["game",11],"name":"Ouro","instance":531,"order":7000,"loot":[20927,20931,21232,21237,21610,21611,21615,23557,23558,23570]}
-{"key":717,"since":70245,"src":["game",11],"name":"C'thun","instance":531,"order":8000,"loot":[20929,20933,21126,21134,21221,21579,21581,21582,21583,21585,21586,21596,21839,22732,22734]}
-{"key":718,"since":70245,"src":["game",11],"name":"Kurinnaxx","instance":509,"order":0,"loot":[20884,20885,20888,20889]}
-{"key":719,"since":70245,"src":["game",11],"name":"General Rajaxx","instance":509,"order":1000,"abilities":[6713,8269,18943,25599],"loot":[20884,20885,20888,20889,21809]}
-{"key":720,"since":70245,"src":["game",11],"name":"Moam","instance":509,"order":2000,"abilities":[15550,25672,25685],"loot":[20884,20886,20888,20890,21473,21477,22220]}
-{"key":721,"since":70245,"src":["game",11],"name":"Buru the Gorger","instance":509,"order":3000,"abilities":[96,1557,20512,25640],"loot":[20884,20885,20886,20888,20889,20890,21488]}
-{"key":722,"since":70245,"src":["game",11],"name":"Ayamiss the Hunter","instance":509,"order":4000,"loot":[20884,20885,20886,20888,20889,20890,21483]}
-{"key":723,"since":70245,"src":["game",11],"name":"Ossirian the Unscarred","instance":509,"order":5000,"loot":[20884,20886,20888,20890,21220]}
-{"key":784,"since":70245,"src":["game",11],"name":"High Priest Venoxis","instance":309,"order":0,"abilities":[23858,23859,23860,23895],"loot":[19716,19717,19718,19719,19720,19721,19722,19723,19724]}
-{"key":785,"since":70245,"src":["game",11],"name":"High Priestess Jeklik","instance":309,"loot":[19716,19717,19718,19719,19720,19721,19722,19723,19724]}
-{"key":786,"since":70245,"src":["game",11],"name":"High Priestess Mar'li","instance":309,"order":2000,"abilities":[24099,24109,24110,24300],"loot":[19716,19717,19718,19719,19720,19721,19722,19723,19724]}
-{"key":787,"since":70245,"src":["game",11],"name":"Bloodlord Mandokir","instance":309,"order":3000,"abilities":[16856,24314,24407,24408],"loot":[19716,19717,19718,19719,19720,19721,19722,19723,19724,19872,22637]}
+{"key":711,"since":70245,"src":["game"],"name":"Battleguard Sartura","instance":531,"order":2000}
+{"key":712,"since":70245,"src":["game"],"name":"Fankriss the Unyielding","instance":531,"order":3000}
+{"key":713,"since":70245,"src":["game"],"name":"Viscidus","instance":531,"order":4000}
+{"key":714,"since":70245,"src":["game"],"name":"Princess Huhuran","instance":531,"order":5000}
+{"key":715,"since":70245,"src":["game"],"name":"Twin Emperors","instance":531,"order":6000}
+{"key":716,"since":70245,"src":["game"],"name":"Ouro","instance":531,"order":7000}
+{"key":717,"since":70245,"src":["game"],"name":"C'thun","instance":531,"order":8000}
+{"key":718,"since":70245,"src":["game"],"name":"Kurinnaxx","instance":509,"order":0}
+{"key":719,"since":70245,"src":["game"],"name":"General Rajaxx","instance":509,"order":1000}
+{"key":720,"since":70245,"src":["game"],"name":"Moam","instance":509,"order":2000}
+{"key":721,"since":70245,"src":["game"],"name":"Buru the Gorger","instance":509,"order":3000}
+{"key":722,"since":70245,"src":["game"],"name":"Ayamiss the Hunter","instance":509,"order":4000}
+{"key":723,"since":70245,"src":["game"],"name":"Ossirian the Unscarred","instance":509,"order":5000}
+{"key":784,"since":70245,"src":["game"],"name":"High Priest Venoxis","instance":309,"order":0}
+{"key":785,"since":70245,"src":["game"],"name":"High Priestess Jeklik","instance":309}
+{"key":786,"since":70245,"src":["game"],"name":"High Priestess Mar'li","instance":309,"order":2000}
+{"key":787,"since":70245,"src":["game"],"name":"Bloodlord Mandokir","instance":309,"order":3000}
 {"key":788,"since":70245,"src":["game"],"name":"Edge of Madness","instance":309,"order":4000}
-{"key":789,"since":70245,"src":["game",11],"name":"High Priest Thekal","instance":309,"order":5000,"abilities":[22666,22859,24185,24189],"loot":[19716,19717,19718,19719,19720,19721,19722,19723,19724,19902]}
-{"key":790,"since":70245,"src":["game",11],"name":"Gahz'ranka","instance":309,"order":6000,"abilities":[16099,22421,24326],"loot":[22739]}
-{"key":791,"since":70245,"src":["game",11],"name":"High Priestess Arlokk","instance":309,"order":7000,"loot":[19716,19717,19718,19719,19720,19721,19722,19723,19724,19914]}
-{"key":792,"since":70245,"src":["game",11],"name":"Jin'do the Hexxer","instance":309,"order":8000,"loot":[19716,19717,19718,19719,19720,19721,19722,19723,19724,19884,22637]}
-{"key":793,"since":70245,"src":["game",11],"name":"Hakkar","instance":309,"order":9000,"abilities":[24324,24327,24328],"loot":[19802]}
-{"key":1084,"since":70245,"src":["game",11],"name":"Onyxia","instance":249,"order":0,"abilities":[15847,18392,18435,18500],"loot":[11938,15410,17962,17963,17964,17965,17966,17969,18705]}
+{"key":789,"since":70245,"src":["game"],"name":"High Priest Thekal","instance":309,"order":5000}
+{"key":790,"since":70245,"src":["game"],"name":"Gahz'ranka","instance":309,"order":6000}
+{"key":791,"since":70245,"src":["game"],"name":"High Priestess Arlokk","instance":309,"order":7000}
+{"key":792,"since":70245,"src":["game"],"name":"Jin'do the Hexxer","instance":309,"order":8000}
+{"key":793,"since":70245,"src":["game"],"name":"Hakkar","instance":309,"order":9000}
+{"key":1084,"since":70245,"src":["game"],"name":"Onyxia","instance":249,"order":0}
 {"key":1107,"since":70245,"src":["game"],"name":"Anub'Rekhan","instance":533,"order":0}
 {"key":1108,"since":70245,"src":["game"],"name":"Gluth","instance":533,"order":1000}
 {"key":1109,"since":70245,"src":["game"],"name":"Gothik the Harvester","instance":533,"order":500}
@@ -157,107 +157,107 @@
 {"key":1119,"since":70245,"src":["game"],"name":"Sapphiron","instance":533,"order":1500}
 {"key":1120,"since":70245,"src":["game"],"name":"Thaddius","instance":533,"order":1250}
 {"key":1121,"since":70245,"src":["game"],"name":"The Four Horsemen","instance":533,"order":562}
-{"key":1887,"since":70245,"src":["game",11],"name":"Obsidian Sentinel","instance":70,"order":3000,"abilities":[10072,10061],"loot":[8053]}
-{"key":2694,"since":70245,"src":["game",11],"name":"Baron Aquanis","instance":48,"order":0,"difficulty":198,"abilities":[15043,15531,14907],"loot":[252822,16782]}
+{"key":1887,"since":70245,"src":["game"],"name":"Obsidian Sentinel","instance":70,"order":3000}
+{"key":2694,"since":70245,"src":["game"],"name":"Baron Aquanis","instance":48,"order":0,"difficulty":198}
 {"key":2697,"since":70245,"src":["game"],"name":"Ghamoo-ra","instance":48,"order":1000,"difficulty":198}
 {"key":2699,"since":70245,"src":["game"],"name":"Lady Sarevess","instance":48,"order":2000,"difficulty":198}
-{"key":2704,"since":70245,"src":["game",11],"name":"Gelihast","instance":48,"order":3000,"difficulty":198,"abilities":[6533],"loot":[273840,1470,6905,6906]}
+{"key":2704,"since":70245,"src":["game"],"name":"Gelihast","instance":48,"order":3000,"difficulty":198}
 {"key":2710,"since":70245,"src":["game"],"name":"Lorgus Jett","instance":48,"order":4000,"difficulty":198}
-{"key":2732,"since":70245,"src":["game",11],"name":"Oggleflint","instance":389,"order":0,"abilities":[5532,15584],"loot":[272999,272998,272996,252782,252781,252778,251363]}
-{"key":2733,"since":70245,"src":["game",11],"name":"Taragaman the Hungerer","instance":389,"order":1000,"abilities":[11970,18072],"loot":[14145,14148,14149,251363,252782,252778,251362,251361]}
-{"key":2734,"since":70245,"src":["game",11],"name":"Jergosh the Invoker","instance":389,"order":2000,"abilities":[18267,20800],"loot":[14150,14147,14151,253906,252778,251363,251360]}
-{"key":2735,"since":70245,"src":["game",11],"name":"Bazzalan","instance":389,"order":3000,"abilities":[14873,744,3616],"loot":[273007,273005,273003,253908,253910,252782,252780,252778,251363]}
-{"key":2741,"since":70245,"src":["game",11],"name":"Rhahk'Zor","instance":36,"order":0,"abilities":[6304],"loot":[273289,872,5187,251363,253908,253906,251364,251362]}
-{"key":2742,"since":70245,"src":["game",11],"name":"Sneed","instance":36,"order":1000,"abilities":[6713,3603,7399,5141],"loot":[273293,5194,5195,285292,273092,1937,2169,253902,251364,251363,251360]}
-{"key":2743,"since":70245,"src":["game",11],"name":"Gilnid","instance":36,"order":2000,"abilities":[5213],"loot":[1156,273297,5199,273086,252782,252778,253906,253904,252780,252777,251363]}
-{"key":2744,"since":70245,"src":["game",11],"name":"Captain Greenskin","instance":36,"order":3000,"abilities":[5208,5532],"loot":[5200,5201,10403,253906]}
-{"key":2745,"since":70245,"src":["game",11],"name":"Mr. Smite","instance":36,"order":4000,"abilities":[6432,6435,6264,3391,12787],"loot":[284715,5192,5196,7230,252782,252781,252780,252779,252778,251362]}
-{"key":2746,"since":70245,"src":["game",11],"name":"Cookie","instance":36,"order":5000,"abilities":[5174,6306],"loot":[5198,273298,5197,273102,252778,8490,253912,253910,253908,252779,251360]}
-{"key":2747,"since":70245,"src":["game",11],"name":"Edwin VanCleef","instance":36,"order":6000,"abilities":[5200,12787,3391],"loot":[5202,10399,5191,5193,2874,253938,253948,253940,252803,252801,252800,252799]}
-{"key":2748,"since":70245,"src":["game",11],"name":"Rethilgore","instance":33,"order":0,"abilities":[7295],"loot":[273457,273456,5254]}
-{"key":2749,"since":70245,"src":["game",11],"name":"Razorclaw the Butcher","instance":33,"order":1000,"abilities":[7485],"loot":[1292,6226,6633,273096]}
-{"key":2750,"since":70245,"src":["game",11],"name":"Baron Silverlaine","instance":33,"order":2000,"abilities":[7068],"loot":[273637,6321,6323]}
-{"key":2751,"since":70245,"src":["game",11],"name":"Commander Springvale","instance":33,"order":3000,"abilities":[1026,5588,642],"loot":[273643,3191,6320,273105,6341]}
-{"key":2752,"since":70245,"src":["game",11],"name":"Odo the Blindwatcher","instance":33,"order":4000,"abilities":[7481],"loot":[273645,6318,6319]}
-{"key":2753,"since":70245,"src":["game",11],"name":"Fenrus the Devourer","instance":33,"order":5000,"abilities":[7125],"loot":[273646,3230,6340]}
-{"key":2754,"since":70245,"src":["game",11],"name":"Wolf Master Nandos","instance":33,"order":6000,"abilities":[7487,7488,7489],"loot":[273647,3748,6314]}
-{"key":2755,"since":70245,"src":["game",11],"name":"Archmage Arugal","instance":33,"order":7000,"abilities":[7803,7621,7587,7588,22709],"loot":[6220,6324,6392]}
-{"key":2756,"since":70245,"src":["game",11],"name":"Targorr the Dread","instance":34,"order":0,"abilities":[8599,8876,3391],"loot":[273806,273805,273804,273820,253944,253942,251382,251380]}
-{"key":2757,"since":70245,"src":["game",11],"name":"Kam Deepfury","instance":34,"order":1000,"abilities":[8242,7164,3419],"loot":[2280,273808,273807,252825,252822,252515,252513,252512,252455,251379]}
-{"key":2758,"since":70245,"src":["game",11],"name":"Hamhock","instance":34,"order":2000,"abilities":[421,6742],"loot":[273810,273809,273811,252822,252513,251377]}
-{"key":2759,"since":70245,"src":["game",11],"name":"Dextren Ward","instance":34,"order":3000,"abilities":[11976,5246,19134],"loot":[273820,273819,273817,252820,252515,252514,252512,252456]}
-{"key":2760,"since":70245,"src":["game",11],"name":"Bazil Thredd","instance":34,"order":4000,"abilities":[7964,9128],"loot":[273829,273827,273825,273824,252822,253986,253976,252824,252820,252515,252456,252455]}
+{"key":2732,"since":70245,"src":["game"],"name":"Oggleflint","instance":389,"order":0}
+{"key":2733,"since":70245,"src":["game"],"name":"Taragaman the Hungerer","instance":389,"order":1000}
+{"key":2734,"since":70245,"src":["game"],"name":"Jergosh the Invoker","instance":389,"order":2000}
+{"key":2735,"since":70245,"src":["game"],"name":"Bazzalan","instance":389,"order":3000}
+{"key":2741,"since":70245,"src":["game"],"name":"Rhahk'Zor","instance":36,"order":0}
+{"key":2742,"since":70245,"src":["game"],"name":"Sneed","instance":36,"order":1000}
+{"key":2743,"since":70245,"src":["game"],"name":"Gilnid","instance":36,"order":2000}
+{"key":2744,"since":70245,"src":["game"],"name":"Captain Greenskin","instance":36,"order":3000}
+{"key":2745,"since":70245,"src":["game"],"name":"Mr. Smite","instance":36,"order":4000}
+{"key":2746,"since":70245,"src":["game"],"name":"Cookie","instance":36,"order":5000}
+{"key":2747,"since":70245,"src":["game"],"name":"Edwin VanCleef","instance":36,"order":6000}
+{"key":2748,"since":70245,"src":["game"],"name":"Rethilgore","instance":33,"order":0}
+{"key":2749,"since":70245,"src":["game"],"name":"Razorclaw the Butcher","instance":33,"order":1000}
+{"key":2750,"since":70245,"src":["game"],"name":"Baron Silverlaine","instance":33,"order":2000}
+{"key":2751,"since":70245,"src":["game"],"name":"Commander Springvale","instance":33,"order":3000}
+{"key":2752,"since":70245,"src":["game"],"name":"Odo the Blindwatcher","instance":33,"order":4000}
+{"key":2753,"since":70245,"src":["game"],"name":"Fenrus the Devourer","instance":33,"order":5000}
+{"key":2754,"since":70245,"src":["game"],"name":"Wolf Master Nandos","instance":33,"order":6000}
+{"key":2755,"since":70245,"src":["game"],"name":"Archmage Arugal","instance":33,"order":7000}
+{"key":2756,"since":70245,"src":["game"],"name":"Targorr the Dread","instance":34,"order":0}
+{"key":2757,"since":70245,"src":["game"],"name":"Kam Deepfury","instance":34,"order":1000}
+{"key":2758,"since":70245,"src":["game"],"name":"Hamhock","instance":34,"order":2000}
+{"key":2759,"since":70245,"src":["game"],"name":"Dextren Ward","instance":34,"order":3000}
+{"key":2760,"since":70245,"src":["game"],"name":"Bazil Thredd","instance":34,"order":4000}
 {"key":2761,"since":70245,"src":["game"],"name":"Ghamoo-ra","instance":48,"order":0,"difficulty":201}
 {"key":2762,"since":70245,"src":["game"],"name":"Lady Sarevess","instance":48,"order":1000,"difficulty":201}
 {"key":2763,"since":70245,"src":["game"],"name":"Geilhast","instance":48,"order":2000,"difficulty":201}
 {"key":2764,"since":70245,"src":["game"],"name":"Lorgus Jett","instance":48,"order":3000,"difficulty":201}
 {"key":2766,"since":70245,"src":["game"],"name":"Twilight Lord Kelris","instance":48,"order":5000,"difficulty":201}
 {"key":2767,"since":70245,"src":["game"],"name":"Aku'mai","instance":48,"order":6000,"difficulty":201}
-{"key":2768,"since":70245,"src":["game",11],"name":"Grubbis","instance":90,"order":0,"difficulty":201,"loot":[9445,274043,274042]}
-{"key":2769,"since":70245,"src":["game",11],"name":"Viscous Fallout","instance":90,"order":1000,"difficulty":201,"loot":[9452,9453,9454]}
-{"key":2770,"since":70245,"src":["game",11],"name":"Electrocutioner 6000","instance":90,"order":2000,"difficulty":201,"abilities":[11082,11085,11084],"loot":[9446,9447,9448,6893,252822]}
-{"key":2771,"since":70245,"src":["game",11],"name":"Crowd Pummeler 9-60","instance":90,"order":3000,"difficulty":201,"abilities":[5568,10887,8374,16169],"loot":[9449,9450,274068,274049]}
-{"key":2772,"since":70245,"src":["game",11],"name":"Mekgineer Thermaplugg","instance":90,"order":4000,"difficulty":201,"abilities":[10101],"loot":[9458,9461,9459,9492,4411,4413,4415,7742,11828]}
-{"key":2773,"since":70245,"src":["game",11],"name":"Roogug","instance":47,"order":0,"abilities":[9532,8270],"loot":[274152,274155,274149,252820,252512]}
-{"key":2774,"since":70245,"src":["game",11],"name":"Aggem Thorncurse","instance":47,"order":1000,"abilities":[8286,14900,6192],"loot":[6681,274159,274158,252820,252822,252512,252455]}
-{"key":2775,"since":70245,"src":["game",11],"name":"Death Speaker Jargba","instance":47,"order":2000,"abilities":[9613,14515],"loot":[2816,6682,6685,252822,252515,252512]}
-{"key":2776,"since":70245,"src":["game",11],"name":"Overlord Ramtusk","instance":47,"order":3000,"abilities":[15548,9128],"loot":[6686,6687,274161,252822,252821,252515,252513,252512,251379]}
-{"key":2777,"since":70245,"src":["game",11],"name":"Agathelos the Raging","instance":47,"order":4000,"abilities":[8269,8260,8285,8555],"loot":[6690,6691,274160,252820,252513,252512,252455,251378]}
-{"key":2778,"since":70245,"src":["game",11],"name":"Charlga Razorflank","instance":47,"order":5000,"abilities":[6077,8292,8361,8358],"loot":[6692,6693,6694,17008,273103,252515,252512,252456,252455]}
-{"key":2779,"since":70245,"src":["game",11],"name":"Bloodmage Thalnos","instance":189,"order":1000,"abilities":[8814,9613,12470,8053],"loot":[7684,7685,274291,252822,252513,252455]}
-{"key":2780,"since":70245,"src":["game",11],"name":"Tuten'kash","instance":129,"order":0,"abilities":[12252,12255,12254],"loot":[10775,10776,10777]}
-{"key":2781,"since":70245,"src":["game",11],"name":"Plaguemaw the Rotting","instance":129,"order":1000,"abilities":[12946,12947]}
-{"key":2782,"since":70245,"src":["game",11],"name":"Mordresh Fire Eye","instance":129,"order":2000,"abilities":[12466,12470],"loot":[10771,10769,10770]}
-{"key":2783,"since":70245,"src":["game",11],"name":"Ragglesnout","instance":129,"order":3000,"abilities":[7645,12039,10892,11659]}
-{"key":2784,"since":70245,"src":["game",11],"name":"Glutton","instance":129,"order":4000,"abilities":[8876,12795,12627],"loot":[10772,10774]}
-{"key":2785,"since":70245,"src":["game",11],"name":"Amnennar the Coldbringer","instance":129,"order":5000,"abilities":[13009,15530,15531,12642],"loot":[10762,10763]}
-{"key":2789,"since":70245,"src":["game",11],"name":"Princess Moira Bronzebeard","instance":230,"order":18000,"abilities":[8362,15586,15587,15654],"loot":[11446,22206]}
-{"key":2790,"since":70245,"src":["game",11],"name":"Emperor Dagran Thaurissan","instance":230,"order":19000,"abilities":[15636,17492],"loot":[12033]}
+{"key":2768,"since":70245,"src":["game"],"name":"Grubbis","instance":90,"order":0,"difficulty":201}
+{"key":2769,"since":70245,"src":["game"],"name":"Viscous Fallout","instance":90,"order":1000,"difficulty":201}
+{"key":2770,"since":70245,"src":["game"],"name":"Electrocutioner 6000","instance":90,"order":2000,"difficulty":201}
+{"key":2771,"since":70245,"src":["game"],"name":"Crowd Pummeler 9-60","instance":90,"order":3000,"difficulty":201}
+{"key":2772,"since":70245,"src":["game"],"name":"Mekgineer Thermaplugg","instance":90,"order":4000,"difficulty":201}
+{"key":2773,"since":70245,"src":["game"],"name":"Roogug","instance":47,"order":0}
+{"key":2774,"since":70245,"src":["game"],"name":"Aggem Thorncurse","instance":47,"order":1000}
+{"key":2775,"since":70245,"src":["game"],"name":"Death Speaker Jargba","instance":47,"order":2000}
+{"key":2776,"since":70245,"src":["game"],"name":"Overlord Ramtusk","instance":47,"order":3000}
+{"key":2777,"since":70245,"src":["game"],"name":"Agathelos the Raging","instance":47,"order":4000}
+{"key":2778,"since":70245,"src":["game"],"name":"Charlga Razorflank","instance":47,"order":5000}
+{"key":2779,"since":70245,"src":["game"],"name":"Bloodmage Thalnos","instance":189,"order":1000}
+{"key":2780,"since":70245,"src":["game"],"name":"Tuten'kash","instance":129,"order":0}
+{"key":2781,"since":70245,"src":["game"],"name":"Plaguemaw the Rotting","instance":129,"order":1000}
+{"key":2782,"since":70245,"src":["game"],"name":"Mordresh Fire Eye","instance":129,"order":2000}
+{"key":2783,"since":70245,"src":["game"],"name":"Ragglesnout","instance":129,"order":3000}
+{"key":2784,"since":70245,"src":["game"],"name":"Glutton","instance":129,"order":4000}
+{"key":2785,"since":70245,"src":["game"],"name":"Amnennar the Coldbringer","instance":129,"order":5000}
+{"key":2789,"since":70245,"src":["game"],"name":"Princess Moira Bronzebeard","instance":230,"order":18000}
+{"key":2790,"since":70245,"src":["game"],"name":"Emperor Dagran Thaurissan","instance":230,"order":19000}
 {"key":2791,"since":70245,"src":["game"],"name":"The Vault","instance":230,"order":14500}
-{"key":2792,"since":70245,"src":["game",11],"name":"Pusillin","instance":429,"order":2500,"abilities":[14145,15228,15242,17145,22424],"loot":[18249,18267]}
-{"key":2793,"since":70245,"src":["game",11],"name":"Lord Hel'nurath","instance":429,"order":15000,"abilities":[17146,18670,20989,23224]}
-{"key":2794,"since":70245,"src":["game",11],"name":"Tsu'zee","instance":429,"order":16000,"abilities":[12540,21060,14873]}
-{"key":2795,"since":70245,"src":["game",11],"name":"Black Guard Swordsmith","instance":329,"order":13000,"loot":[18783]}
-{"key":2796,"since":70245,"src":["game",11],"name":"Crimson Hammersmith","instance":329,"order":14000,"abilities":[17445],"loot":[18781]}
-{"key":2797,"since":70245,"src":["game",11],"name":"Ezra Grimm","instance":329,"order":15000,"abilities":[7964,20712,23511]}
-{"key":2798,"since":70245,"src":["game",11],"name":"Postmaster Malown","instance":329,"order":16000,"abilities":[6253,12542,12741,13338,3417],"loot":[12843]}
-{"key":2799,"since":70245,"src":["game",11],"name":"Skul","instance":329,"order":17000,"abilities":[15230,15499,16799,12544],"loot":[12843]}
-{"key":2800,"since":70245,"src":["game",11],"name":"Stonespine","instance":329,"order":18000,"abilities":[14331],"loot":[12843]}
-{"key":2801,"since":70245,"src":["game",11],"name":"Darkmaster Gandling","instance":289,"order":12000,"abilities":[18702,10212,12040],"loot":[16667,16677,16686,16693,16698,16707,16720,16727,16731,19276,13501,14514]}
-{"key":2802,"since":70245,"src":["game",11],"name":"Doctor Theolen Krastinov","instance":289,"abilities":[8269,16509,18103],"loot":[16684,14617]}
-{"key":2803,"since":70245,"src":["game",11],"name":"Instructor Malicia","instance":289,"abilities":[8362,13747,15586,17843,11672],"loot":[16710]}
-{"key":2804,"since":70245,"src":["game",11],"name":"Jandice Barov","instance":289,"abilities":[18270,24673],"loot":[16701,13523]}
-{"key":2805,"since":70245,"src":["game",11],"name":"Kirtonos","instance":289,"abilities":[3609,18144,22371],"loot":[16734]}
-{"key":2806,"since":70245,"src":["game",11],"name":"Lady Illucia Barov","instance":289,"order":11500,"abilities":[14515,6215,18671,12528,15487,17289,19460],"loot":[12753,12808,12843,18335]}
-{"key":2807,"since":70245,"src":["game",11],"name":"Lord Alexei Barov","instance":289,"order":11250,"abilities":[11668,11700,17820,17467],"loot":[16722]}
-{"key":2808,"since":70245,"src":["game",11],"name":"Lorekeeper Polkelt","instance":289,"order":7000,"abilities":[8245,16359,18151,3584],"loot":[16705]}
-{"key":2809,"since":70245,"src":["game",11],"name":"Marduk Blackpool","instance":289,"abilities":[12040,15284,17228,17695],"loot":[12843]}
-{"key":2810,"since":70245,"src":["game",11],"name":"Ras Frostwhisperer","instance":289,"abilities":[8398,18099,11130,12096,18100,18763],"loot":[16689,13521]}
-{"key":2811,"since":70245,"src":["game",11],"name":"Rattlegore","instance":289,"abilities":[10101,16727,18368],"loot":[16711,18782,13873]}
-{"key":2812,"since":70245,"src":["game",11],"name":"The Ravenian","instance":289,"order":11000,"abilities":[15550,17963,18670,15584],"loot":[16716]}
-{"key":2813,"since":70245,"src":["game",11],"name":"Vectus","instance":289,"abilities":[16046,18399],"loot":[12843]}
+{"key":2792,"since":70245,"src":["game"],"name":"Pusillin","instance":429,"order":2500}
+{"key":2793,"since":70245,"src":["game"],"name":"Lord Hel'nurath","instance":429,"order":15000}
+{"key":2794,"since":70245,"src":["game"],"name":"Tsu'zee","instance":429,"order":16000}
+{"key":2795,"since":70245,"src":["game"],"name":"Black Guard Swordsmith","instance":329,"order":13000}
+{"key":2796,"since":70245,"src":["game"],"name":"Crimson Hammersmith","instance":329,"order":14000}
+{"key":2797,"since":70245,"src":["game"],"name":"Ezra Grimm","instance":329,"order":15000}
+{"key":2798,"since":70245,"src":["game"],"name":"Postmaster Malown","instance":329,"order":16000}
+{"key":2799,"since":70245,"src":["game"],"name":"Skul","instance":329,"order":17000}
+{"key":2800,"since":70245,"src":["game"],"name":"Stonespine","instance":329,"order":18000}
+{"key":2801,"since":70245,"src":["game"],"name":"Darkmaster Gandling","instance":289,"order":12000}
+{"key":2802,"since":70245,"src":["game"],"name":"Doctor Theolen Krastinov","instance":289}
+{"key":2803,"since":70245,"src":["game"],"name":"Instructor Malicia","instance":289}
+{"key":2804,"since":70245,"src":["game"],"name":"Jandice Barov","instance":289}
+{"key":2805,"since":70245,"src":["game"],"name":"Kirtonos","instance":289}
+{"key":2806,"since":70245,"src":["game"],"name":"Lady Illucia Barov","instance":289,"order":11500}
+{"key":2807,"since":70245,"src":["game"],"name":"Lord Alexei Barov","instance":289,"order":11250}
+{"key":2808,"since":70245,"src":["game"],"name":"Lorekeeper Polkelt","instance":289,"order":7000}
+{"key":2809,"since":70245,"src":["game"],"name":"Marduk Blackpool","instance":289}
+{"key":2810,"since":70245,"src":["game"],"name":"Ras Frostwhisperer","instance":289}
+{"key":2811,"since":70245,"src":["game"],"name":"Rattlegore","instance":289}
+{"key":2812,"since":70245,"src":["game"],"name":"The Ravenian","instance":289,"order":11000}
+{"key":2813,"since":70245,"src":["game"],"name":"Vectus","instance":289}
 {"key":2814,"since":70245,"src":["game"],"name":"Atal'alarion","instance":109,"order":9000,"difficulty":201}
 {"key":2825,"since":70245,"src":["game"],"name":"Twilight Lord Kelris","instance":48,"order":7000,"difficulty":198}
 {"key":2891,"since":70245,"src":["game"],"name":"Aku'mai","instance":48,"order":8000,"difficulty":198}
 {"key":2899,"since":70245,"src":["game"],"name":"Crowd Pummeler 9-60","instance":90,"order":5000,"difficulty":198}
-{"key":2910,"since":70245,"src":["game",11],"name":"Aku'mai","instance":48,"order":0,"difficulty":1,"abilities":[3815,3490],"loot":[6909,6910,6911,252820,251376,253984,253980,252824,252821,252515,252514,252512,252456,252455,251378,251377]}
-{"key":2911,"since":70245,"src":["game",11],"name":"Twilight Lord Kelris","instance":48,"difficulty":1,"abilities":[8399,15587],"loot":[273846,1155,6903,252822,252820,252456,253982,252825,252823,252821,252515,252513,252455]}
-{"key":2913,"since":70245,"src":["game",11],"name":"Lorgus Jett","instance":48,"difficulty":1,"abilities":[12167,12550],"loot":[273843,273842,273841,252820,253982,253978,252822,252513,252512,252455]}
-{"key":2914,"since":70245,"src":["game",11],"name":"Geilhast","instance":48,"difficulty":1,"abilities":[6533],"loot":[6905,6906,273840,252820,1470,273141,253980,253978,252825,252821,251377,251375]}
-{"key":2915,"since":70245,"src":["game",11],"name":"Lady Sarevess","instance":48,"difficulty":1,"abilities":[8435,246,865,6660],"loot":[888,3078,11121,253944,252798,253942,253940,251383,251382,251381]}
-{"key":2916,"since":70245,"src":["game",11],"name":"Ghamoo-ra","instance":48,"difficulty":1,"abilities":[5568],"loot":[6907,6908,273839,253940,253944,253942,253938,252801,251382,251381]}
+{"key":2910,"since":70245,"src":["game"],"name":"Aku'mai","instance":48,"order":0,"difficulty":1}
+{"key":2911,"since":70245,"src":["game"],"name":"Twilight Lord Kelris","instance":48,"difficulty":1}
+{"key":2913,"since":70245,"src":["game"],"name":"Lorgus Jett","instance":48,"difficulty":1}
+{"key":2914,"since":70245,"src":["game"],"name":"Geilhast","instance":48,"difficulty":1}
+{"key":2915,"since":70245,"src":["game"],"name":"Lady Sarevess","instance":48,"difficulty":1}
+{"key":2916,"since":70245,"src":["game"],"name":"Ghamoo-ra","instance":48,"difficulty":1}
 {"key":2925,"since":70245,"src":["game"],"name":"Grubbis","instance":90,"order":4000,"difficulty":198}
 {"key":2927,"since":70245,"src":["game"],"name":"Electrocutioner 6000","instance":90,"order":6000,"difficulty":198}
 {"key":2928,"since":70245,"src":["game"],"name":"Viscous Fallout","instance":90,"order":4500,"difficulty":198}
 {"key":2935,"since":70245,"src":["game"],"name":"Mechanical Menagerie","instance":90,"order":7000,"difficulty":198}
 {"key":2940,"since":70245,"src":["game"],"name":"Mekgineer Thermaplugg","instance":90,"order":8000,"difficulty":198}
 {"key":2952,"since":70245,"src":["game"],"name":"Atal'alarion","instance":109,"order":0,"difficulty":215}
-{"key":2953,"since":70245,"src":["game",11],"name":"Festering Rotslime","instance":109,"order":1000,"difficulty":215,"abilities":[8148,8362,11899,12058,12506,12530,13540,15584],"loot":[20606,20607,20608]}
-{"key":2954,"since":70245,"src":["game",11],"name":"Atal'ai Defenders","instance":109,"order":2000,"difficulty":215,"abilities":[8148,8362,11899,12058,12506,12530,13540,15584],"loot":[20606,20607,20608]}
-{"key":2955,"since":70245,"src":["game",11],"name":"Dreamscythe and Weaver","instance":109,"order":3000,"difficulty":215,"abilities":[12882,12884,16359]}
+{"key":2953,"since":70245,"src":["game"],"name":"Festering Rotslime","instance":109,"order":1000,"difficulty":215}
+{"key":2954,"since":70245,"src":["game"],"name":"Atal'ai Defenders","instance":109,"order":2000,"difficulty":215}
+{"key":2955,"since":70245,"src":["game"],"name":"Dreamscythe and Weaver","instance":109,"order":3000,"difficulty":215}
 {"key":2956,"since":70245,"src":["game"],"name":"Avatar of Hakkar","instance":109,"order":4000,"difficulty":215}
-{"key":2957,"since":70245,"src":["game",11],"name":"Jammal'an and Ogom","instance":109,"order":5000,"difficulty":215,"abilities":[8376,10893,12468,12471,12479,12492,12493,13540]}
-{"key":2958,"since":70245,"src":["game",11],"name":"Morphaz and Hazzas","instance":109,"order":6000,"difficulty":215,"abilities":[12882,12884]}
+{"key":2957,"since":70245,"src":["game"],"name":"Jammal'an and Ogom","instance":109,"order":5000,"difficulty":215}
+{"key":2958,"since":70245,"src":["game"],"name":"Morphaz and Hazzas","instance":109,"order":6000,"difficulty":215}
 {"key":2959,"since":70245,"src":["game"],"name":"Shade of Eranikus","instance":109,"order":7000,"difficulty":215}
 {"key":3018,"since":70245,"src":["game"],"name":"The Molten Core","instance":409,"order":10000}
 {"key":3023,"since":70245,"src":["game"],"name":"Grimroot","instance":2784,"order":0}
@@ -269,13 +269,13 @@
 {"key":3029,"since":70245,"src":["game"],"name":"Zilbagob","instance":2784,"order":750}
 {"key":3030,"since":70245,"src":["game"],"name":"Pyranis","instance":2784,"order":875}
 {"key":3031,"since":70245,"src":["game"],"name":"Hellscream's Phantom","instance":2784,"order":2000}
-{"key":3055,"since":70245,"src":["game",11],"name":"Kormok","instance":289,"abilities":[8269,20741]}
+{"key":3055,"since":70245,"src":["game"],"name":"Kormok","instance":289}
 {"key":3061,"since":70245,"src":["game"],"name":"No Longer in Use","instance":0,"order":0}
-{"key":3062,"since":70245,"src":["game",11],"name":"Pyroguard Emberseer","instance":229,"order":9000,"abilities":[16079,16536],"loot":[16672,23320]}
-{"key":3063,"since":70245,"src":["game",11],"name":"Warchief Rend Blackhand","instance":229,"order":10000,"abilities":[8269,15708,23931,20691],"loot":[16733]}
-{"key":3068,"since":70245,"src":["game",11],"name":"The Beast","instance":229,"order":11000,"abilities":[14100,16144,16636,16785,16788,15506],"loot":[16729,19227,24101]}
-{"key":3069,"since":70245,"src":["game",11],"name":"General Drakkisath","instance":229,"order":12000,"abilities":[12097,16419,16789,20691,23023,23462,23931],"loot":[16666,16674,16688,16690,16700,16706,16721,16726,16730,13519,15730]}
-{"key":3070,"since":70245,"src":["game",11],"name":"Lord Valthalak","instance":229,"order":13000,"abilities":[8269]}
+{"key":3062,"since":70245,"src":["game"],"name":"Pyroguard Emberseer","instance":229,"order":9000}
+{"key":3063,"since":70245,"src":["game"],"name":"Warchief Rend Blackhand","instance":229,"order":10000}
+{"key":3068,"since":70245,"src":["game"],"name":"The Beast","instance":229,"order":11000}
+{"key":3069,"since":70245,"src":["game"],"name":"General Drakkisath","instance":229,"order":12000}
+{"key":3070,"since":70245,"src":["game"],"name":"Lord Valthalak","instance":229,"order":13000}
 {"key":3078,"since":70245,"src":["game"],"name":"Rahuz","instance":13,"order":0}
 {"key":3079,"since":70245,"src":["game"],"name":"Prince Thunderaan","instance":2804,"order":0}
 {"key":3080,"since":70245,"src":["game"],"name":"Azgaloth","instance":2784,"order":3000}
@@ -303,36 +303,36 @@
 {"key":3196,"since":70245,"src":["game"],"name":"Beastmaster","instance":2856,"order":875}
 {"key":3197,"since":70245,"src":["game"],"name":"Mason","instance":2856,"order":937}
 {"key":3296,"since":70245,"src":["game"],"name":"Spirit of Mograine","instance":2921,"order":0}
-{"key":3298,"since":70245,"src":["game",11],"name":"Arcane Anomaly","instance":2959,"order":0,"abilities":[1241501],"loot":[273035,273034,273031]}
-{"key":3299,"since":70245,"src":["game",11],"name":"Fel Ancient","instance":2959,"order":1000,"abilities":[1240687,1240688,1240692],"loot":[273039,273038,273037]}
-{"key":3300,"since":70245,"src":["game",11],"name":"Mana Devourer","instance":2959,"order":2000,"abilities":[1240738,1240750],"loot":[273042,273041,273040]}
-{"key":3301,"since":70245,"src":["game",11],"name":"Mana Elemental","instance":2959,"order":3000,"abilities":[22356]}
-{"key":3302,"since":70245,"src":["game",11],"name":"Unstable Sentinel","instance":2959,"order":4000,"abilities":[1241329],"loot":[273048,273047,273046,273099]}
-{"key":3303,"since":70245,"src":["game",11],"name":"Shade of the Archmage","instance":2959,"order":5000,"abilities":[1303598,1241515,1303350,1303599],"loot":[273052,273051,273049,273103]}
-{"key":3310,"since":70245,"src":["game",11],"name":"Lyn the Ignored","instance":2959,"order":6000,"abilities":[17228,1304473,1303266],"loot":[273055,273054,273053]}
-{"key":3311,"since":70245,"src":["game",11],"name":"Atrexis the Grave Knight","instance":2959,"order":7000,"abilities":[3391,1303264,1303266,6713,12057],"loot":[273036,273033,273032]}
+{"key":3298,"since":70245,"src":["game"],"name":"Arcane Anomaly","instance":2959,"order":0}
+{"key":3299,"since":70245,"src":["game"],"name":"Fel Ancient","instance":2959,"order":1000}
+{"key":3300,"since":70245,"src":["game"],"name":"Mana Devourer","instance":2959,"order":2000}
+{"key":3301,"since":70245,"src":["game"],"name":"Mana Elemental","instance":2959,"order":3000}
+{"key":3302,"since":70245,"src":["game"],"name":"Unstable Sentinel","instance":2959,"order":4000}
+{"key":3303,"since":70245,"src":["game"],"name":"Shade of the Archmage","instance":2959,"order":5000}
+{"key":3310,"since":70245,"src":["game"],"name":"Lyn the Ignored","instance":2959,"order":6000}
+{"key":3311,"since":70245,"src":["game"],"name":"Atrexis the Grave Knight","instance":2959,"order":7000}
 {"key":3312,"since":70245,"src":["game"],"name":"Mana Wraith","instance":2959,"order":8000}
-{"key":3353,"since":70245,"src":["game",11],"name":"Witherfang","instance":2999,"order":0,"abilities":[3358],"loot":[271203,271202,271201]}
-{"key":3354,"since":70245,"src":["game",11],"name":"Rath'mael","instance":2999,"order":1000,"abilities":[1279983],"loot":[271215,271214,271213,273103,273085]}
-{"key":3355,"since":70245,"src":["game",11],"name":"The Butcher","instance":2999,"order":500,"loot":[271206,271205,271204]}
-{"key":3357,"since":70245,"src":["game",11],"name":"The Abandoned","instance":2999,"order":250,"abilities":[1266011,1220855],"loot":[271216,271208,271207]}
-{"key":3408,"since":70245,"src":["game",11],"name":"Lordaeron Captain","instance":2999,"order":2000,"loot":[6641,6642]}
-{"key":3411,"since":70245,"src":["game",11],"name":"Viktor the Vile","instance":2999,"order":3000,"abilities":[3358],"loot":[271218,271212,271211]}
-{"key":3412,"since":70245,"src":["game",11],"name":"Bjork","instance":2999,"order":4000,"abilities":[1301635],"loot":[271217,271210,271209]}
-{"key":3480,"since":70245,"src":["game",11],"name":"Saltspine","instance":2998,"order":0,"abilities":[3604,1316382],"loot":[273024,273023,273022]}
-{"key":3481,"since":70245,"src":["game",11],"name":"Shadetooth","instance":2998,"order":1000,"abilities":[14100,13445,1284435],"loot":[273027,273025,273026,273106]}
-{"key":3482,"since":70245,"src":["game",11],"name":"Relic Guardian","instance":2998,"order":2000,"abilities":[8078,8374,10101],"loot":[273030,273029,273028,273097,270866]}
-{"key":3493,"since":70245,"src":["game",11],"name":"Faldrim Anvilmar","instance":3065,"order":0,"abilities":[1292602,26048,13860],"loot":[271097,271096,270227]}
-{"key":3494,"since":70245,"src":["game",11],"name":"Plunder","instance":3065,"order":2500,"abilities":[10101,11130,21055,22911],"loot":[271098,270229,270228]}
-{"key":3495,"since":70245,"src":["game",11],"name":"Infurnus","instance":3065,"order":2000,"abilities":[11970,1293228]}
-{"key":3496,"since":70245,"src":["game",11],"name":"Durgen Dirgehammer","instance":3065,"order":3000,"abilities":[12054,26070,11977,19134,25710],"loot":[270261,270260,270256,274286]}
-{"key":3582,"since":70245,"src":["game",11],"name":"Atal'alarion","instance":109,"order":0,"difficulty":1,"abilities":[6524,12887]}
+{"key":3353,"since":70245,"src":["game"],"name":"Witherfang","instance":2999,"order":0}
+{"key":3354,"since":70245,"src":["game"],"name":"Rath'mael","instance":2999,"order":1000}
+{"key":3355,"since":70245,"src":["game"],"name":"The Butcher","instance":2999,"order":500}
+{"key":3357,"since":70245,"src":["game"],"name":"The Abandoned","instance":2999,"order":250}
+{"key":3408,"since":70245,"src":["game"],"name":"Lordaeron Captain","instance":2999,"order":2000}
+{"key":3411,"since":70245,"src":["game"],"name":"Viktor the Vile","instance":2999,"order":3000}
+{"key":3412,"since":70245,"src":["game"],"name":"Bjork","instance":2999,"order":4000}
+{"key":3480,"since":70245,"src":["game"],"name":"Saltspine","instance":2998,"order":0}
+{"key":3481,"since":70245,"src":["game"],"name":"Shadetooth","instance":2998,"order":1000}
+{"key":3482,"since":70245,"src":["game"],"name":"Relic Guardian","instance":2998,"order":2000}
+{"key":3493,"since":70245,"src":["game"],"name":"Faldrim Anvilmar","instance":3065,"order":0}
+{"key":3494,"since":70245,"src":["game"],"name":"Plunder","instance":3065,"order":2500}
+{"key":3495,"since":70245,"src":["game"],"name":"Infurnus","instance":3065,"order":2000}
+{"key":3496,"since":70245,"src":["game"],"name":"Durgen Dirgehammer","instance":3065,"order":3000}
+{"key":3582,"since":70245,"src":["game"],"name":"Atal'alarion","instance":109,"order":0,"difficulty":1}
 {"key":3583,"since":70245,"src":["game"],"name":"Avatar of Hakkar","instance":109,"order":1000,"difficulty":1}
 {"key":3584,"since":70245,"src":["game"],"name":"Shade of Eranikus","instance":109,"order":2000,"difficulty":1}
-{"key":3585,"since":70245,"src":["game",11],"name":"Hazzas","instance":109,"order":3000,"difficulty":1,"abilities":[12882,12884]}
-{"key":3586,"since":70245,"src":["game",11],"name":"Morphaz","instance":109,"order":4000,"difficulty":1,"abilities":[12882,12884]}
-{"key":3587,"since":70245,"src":["game",11],"name":"Weaver","instance":109,"order":5000,"difficulty":1,"abilities":[12882,12884,16359]}
-{"key":3588,"since":70245,"src":["game",11],"name":"Dreamscythe","instance":109,"order":6000,"difficulty":1,"abilities":[12882,12884,16359]}
+{"key":3585,"since":70245,"src":["game"],"name":"Hazzas","instance":109,"order":3000,"difficulty":1}
+{"key":3586,"since":70245,"src":["game"],"name":"Morphaz","instance":109,"order":4000,"difficulty":1}
+{"key":3587,"since":70245,"src":["game"],"name":"Weaver","instance":109,"order":5000,"difficulty":1}
+{"key":3588,"since":70245,"src":["game"],"name":"Dreamscythe","instance":109,"order":6000,"difficulty":1}
 {"key":3589,"since":70245,"src":["game"],"name":"Jammal'an the Prophet","instance":109,"order":7000,"difficulty":1}
-{"key":3644,"since":70245,"src":["game",11],"name":"Highland Horror","instance":2998,"order":1500,"abilities":[1316480],"loot":[270180]}
-{"key":3676,"since":70245,"src":["game",11],"name":"Miner Johnson","instance":36,"order":1500,"abilities":[12097],"loot":[5443,5444]}
+{"key":3644,"since":70245,"src":["game"],"name":"Highland Horror","instance":2998,"order":1500}
+{"key":3676,"since":70245,"src":["game"],"name":"Miner Johnson","instance":36,"order":1500}

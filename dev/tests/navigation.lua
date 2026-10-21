@@ -553,9 +553,11 @@ Set(dungeonsPath .. "/Dungeons.lua", "Dungeons", "0000000b", "int", '"name", "fl
     .. table.concat(upper, "\030") .. '\0302\0310\0310\0319101\0302\0310\0311\0319102'
     .. '\t700\0311\0310.25\0310.5\0314203\030701\0312\0310.5\0310.5'
     .. '\t71\0311\0310.75\0310.25\03071\0312\0310.1\0310.9"\n')
-Set(dungeonsPath .. "/Encounters.lua", "Encounters", "0000000c", "int", '"name", "instance", "order", "abilities", "loot"',
-    '"text", "int", "int", "list int", "list int"',
-    'R[700] = "70245\t\tThe First Boss\t90\t0\t801\030802\t901\030902"\nR[701] = "70245\t\tThe Second Boss\t90\t1"\n')
+Set(dungeonsPath .. "/Encounters.lua", "Encounters", "0000000c", "int", '"name", "instance", "order"', '"text", "int", "int"',
+    'R[700] = "70245\t\tThe First Boss\t90\t0"\nR[701] = "70245\t\tThe Second Boss\t90\t1"\n')
+-- What the first boss casts and drops (the set Bosses, apart from the game's encounters: not yet confirmed).
+Set(dungeonsPath .. "/Bosses.lua", "Bosses", "0000000d", "int", '"abilities", "loot"', '"list int", "list int"',
+    'R[700] = "70245\t\t801\030802\t901\030902"\n')
 W.AddSets(dungeonsPath)
 end
 -- The walking data (the set Walking): two tiles round the player, their blocks as the game unpacks them (the

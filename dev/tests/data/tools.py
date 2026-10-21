@@ -535,7 +535,7 @@ with tempfile.TemporaryDirectory(prefix="saneui-staging-") as folder:
     check("the real master fits", real.errors, [])
     # Every set of the plan (Doc/ideas/Data.md, *Sets by concern*)
     plan = ["Items", "ItemSets", "Disenchants", "Enchantments", "Quests", "NPCs", "CreatureSpells", "Objects", "Zones", "Travel",
-            "Places", "Drops", "Tiles", "Overlays", "Encounters", "Indoors", "Dungeons", "Spawns", "QuestAreas", "PatrolPaths",
+            "Places", "Drops", "Tiles", "Overlays", "Encounters", "Bosses", "Indoors", "Dungeons", "Spawns", "QuestAreas", "PatrolPaths",
             "CreatureSpawns", "Walking", "Guides", "Spells", "Auras", "Trainers", "QuestSpells", "WeaponSkills", "SkillLines",
             "Professions", "Talents", "Legacy", "Vendors", "CVarLabels", "Currencies", "Factions", "Holidays", "Achievements",
             "Mounts", "TransmogSets"]

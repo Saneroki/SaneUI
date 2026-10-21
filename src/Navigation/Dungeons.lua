@@ -19,8 +19,9 @@ local _, ns = ...
 --                   boss's own 3D model standing on it (the game's model of its display), the same size at
 --                   every zoom; a model that would reach past the view's edge is hidden (the engine does not
 --                   cut it there), its mark stays. The tooltip: its name, its abilities and what it drops
---                   (the set Encounters: the game's spell and item IDs), each with its icon and name as the
---                   game has them, an item in its quality's colour
+--                   (the set Bosses: the game's spell and item IDs, kept apart from the game's own encounters
+--                   until the game confirms them), each with its icon and name as the game has them, an item
+--                   in its quality's colour; and that it is not yet confirmed by the game
 --      enemies      where the set has them, each enemy as a small red dot where it stands (under the bosses),
 --                   its name in the tooltip
 --      the mouse    the wheel zooms around the mouse (from the whole map up to Dungeons.NEAR times
@@ -67,6 +68,7 @@ local DUNGEON = KINDS.Dungeon or 4
 local SET = Core.Data.Set("Dungeons")
 local ENCOUNTERS = Core.Data.Set("Encounters")
 local NPCS = Core.Data.Set("NPCs")
+local BOSSES = Core.Data.Set("Bosses")
 
 local frame, content, over, canvas
 local tiles = {}  -- the art's textures, made as many as needed
@@ -379,8 +381,8 @@ local function BossTip(part)
     GameTooltip:SetText(mark.name or "?", 1, 1, 1)
     local encounter = mark.encounter
     if encounter then
-        Listed(Dungeons.TEXT.abilities, ENCOUNTERS:Get(encounter, "abilities"), SpellLine)
-        Listed(Dungeons.TEXT.loot, ENCOUNTERS:Get(encounter, "loot"), ItemLine)
+        Listed(Dungeons.TEXT.abilities, BOSSES:Get(encounter, "abilities"), SpellLine)
+        Listed(Dungeons.TEXT.loot, BOSSES:Get(encounter, "loot"), ItemLine)
     end
     GameTooltip:AddLine(Dungeons.TEXT.unverified, 0.5, 0.5, 0.5)
     GameTooltip:Show()

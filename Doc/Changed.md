@@ -6,6 +6,18 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 491 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 71 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Data: bosses' abilities and loot in a set of their own, unconfirmed until the game says so (Saneroki, 2026-10-21)
+- **Saneroki:** boss abilities, drop tables and item stats are used at once but marked unconfirmed until the client or
+  the server sends them and our own local data confirms them.
+- **The fix:** batch 11's abilities and loot had been taken (`--take`) into the game's own versions of *Encounters*,
+  which name the game among their sources and so would read as verified. They move to the new set *Bosses* (keyed by
+  encounter, `abilities`, `loot`; every version batch 11's alone: unverified); *Encounters* is again what the game
+  said, line for line. `Dungeons.lua` reads *Bosses*; its tooltips say "Not yet confirmed by the game".
+- **The rule** in `Doc/ideas/Data.md` (*Verified and unverified*: an import never joins the game's version) and
+  `CLAUDE.md` (*Unverified is marked*).
+- Tests: Navigation 491 checks, data tools 198 (the set Bosses in the plan). A game restart takes it in (a new set
+  file in Core's TOC).
+
 ### Navigation: the walking data joins what players walk between (Saneroki, 2026-10-21)
 - **Found on the real data** (while adding the lifts): the Undercity's ring, lower parts, quarters and sewers were
   regions apart; its lifts' upper landings, Freewind Post's mesa and Gnomeregan's lift's landings were left out as
