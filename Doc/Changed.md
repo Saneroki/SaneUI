@@ -10,7 +10,8 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
 - Plan only (`Doc/ideas/Navigation.md`, *Zones and continents reimagined*, *Dungeon maps reimagined*): the close
   zooms stay the accurate terrain repainted; the zone and continent zooms become free, realistic fantasy
   paintings of each zone's mood, layout and major places, perspective allowed, borders fitting together; the
-  dungeon maps get a painted reimagination that keeps their outlines and room sizes.
+  dungeon, instance and raid maps get three zooms too: the accurate terrain close up, a clean Blizzard-style
+  plan of rooms and corridors in between, a free realistic reimagination zoomed out fully.
 
 ### Navigation: routes from the player, on their floor, over every plane (Saneroki, 2026-10-21)
 - At Saneroki's ask: a route into a building or a cave and out again did not work, routes across the continents by

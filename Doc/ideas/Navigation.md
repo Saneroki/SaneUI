@@ -114,8 +114,14 @@ minimap) and the full-screen window (the world map) show the same map with the s
   their own views unchanged. Open: the switch-over zoom between the close squares and the zone paintings, and
   how the angled paintings meet at the borders (painted per zone and blended, or each continent painted as a
   whole and cut by the zones' outlines).
-- **Dungeon maps reimagined (Saneroki, 2026-10-21):** a full reimagination of the dungeon maps in the painted
-  look, still precise in outlines and room sizes, so they are useful in the game. Painted after the zones.
+- **Dungeon, instance and raid maps in three zooms (Saneroki, 2026-10-21), as the world map:**
+  - **close up:** the accurate terrain of the instance repainted, as the Atlas' close squares;
+  - **in between:** a clean, simple map in Blizzard's style that outlines the rooms, corridors and walls, exact
+    in their shapes and sizes, so it is useful in the game;
+  - **zoomed out fully:** a full reimagination of the instance, its layout, the mood of its rooms and a realistic
+    render, free like the zones' paintings (*Zones and continents reimagined*).
+
+  Made after the zones.
 - **Entrances and ways out are pins (Saneroki, 2026-10-19, replacing the same day's ask to paint them):** caves,
   mines, the entrances of dungeons and raids and the ways from one zone into the next are shown by map pins, not
   painted into the view.
