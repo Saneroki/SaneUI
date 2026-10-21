@@ -47,6 +47,11 @@ Then `/reload` in the game (a new file or a first install needs a game restart).
   release branch; the tag `current` names the newest. It is built from git's copy of the tag, never from the
   working tree, so nothing unfinished goes in, and it goes into the game whole: a module of the dev build it
   does not have leaves the game until the next `installdev`. Its TOCs say `release <tag> <commit>`.
+- **Making a release:** `saneui snapshot 0.4.0` (`dev/snapshot`, `--dry` to see first) sets the version in
+  every TOC and commits it on main, runs the tests on that commit, then names it: the tag `v0.4.0`, the
+  branch `release/0.4`, and `current` moved to it. Only what is committed goes in. Nothing is pushed.
+- **A new script** gets its command in `dev/saneui` (its name, what it does, and its words on the greeting
+  card if it is in daily use); the tests fail on a script without one.
 - **Background work** has verbs: `saneui start|pause|resume|stop|status gpujobs` (ComfyUI jobs while the
   graphics card is idle), `saneui start|stop|status comfyui`.
 
@@ -88,6 +93,7 @@ started anew is taken as it is there; commits only on this computer are first ke
 | `dev/saneui` | The one command of all scripts (`saneui`), by expressive names |
 | `dev/build` | Tests and builds into `BUILD` (`--install`: into the game too; `--release TAG`: a release) |
 | `dev/installdev`, `dev/installrelease` | The dev build or a release, tested, built and copied into the game |
+| `dev/snapshot` | A release: the version in every TOC, the tag, the release branch, `current` |
 | `Scripts/update` | Fetches and pulls from GitHub (the branch you are on, one named, or the newest cloud session's), then `dev/installdev` |
 | `assets/` | The original art (banners, icons, logo); `assets/optimized/` the game's textures made from it by `dev/tools/art` |
 | `dev/tests/` | `run` (everything), `lint`, `core.lua`, `sync.lua`, `abilities.lua`, `tooltips.lua`, `social.lua`, `window.lua`, `voices.py`, `wowstub.lua` (the stand-in client) |

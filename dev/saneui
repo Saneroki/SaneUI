@@ -26,6 +26,7 @@ GROUPS = {
         "installrelease": (["dev/installrelease"], "the release (tag current, or one named) into the game", 'release (tag current) to game'),
         "build": (["dev/build"], "test and build into BUILD, not into the game (--release TAG)", 'test and build, not the game'),
         "checkbuild": (["dev/build", "--check"], "what a build would change; writes nothing", None),
+        "snapshot": (["dev/snapshot"], "a release: version, tag, release branch, current", "release: version, tag, branch"),
         "installed": (["@installed"], "which build the game has: dev or release, its version", 'which build the game has'),
         "test": (["dev/tests/run"], "every check and test", 'every check and test'),
         "lint": (["dev/tests/lint"], "the checks of the addons' files alone", None),

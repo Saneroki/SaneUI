@@ -224,6 +224,9 @@ only while the card is idle and gives the card back the moment something else wa
   stopped (it skips the squares it has painted); `dev/tools/imagegen` makes its whole list again, so give the
   runner short lists. Long runs go into the file only on Saneroki's word; the Atlas' close squares are in it
   (Saneroki, 2026-10-21).
+- **New GPU work goes here:** a tool that runs long on the card is added as a job (with `status` and `done`
+  when it can tell how far it is, and skipping what it has made when run again), never started by itself
+  next to the runner. Its command also gets its name in `dev/saneui` (README.md, *Building*).
 - **Wanted elsewhere:** the game (`Wow*.exe`; WoW Forever is `WowB.exe` under Proton); another program on the
   card holding more than 1.5 GB of it, or using more than 40 % at three looks in a row (the desktop's own
   programs never count); pictures of another session or tool in ComfyUI's queue (the runner gives its jobs an

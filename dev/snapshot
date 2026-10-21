@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+"""Makes a release of Sane UI: a snapshot of the dev build as it is committed (README.md, *Building*).
+
+  1. Takes main's newest commit: what is committed, never the working tree (changes not yet committed stay out,
+     and are listed).
+  2. Sets the version in every module's TOC (## Version) and commits that on main: "Version X.Y.Z".
+  3. Runs the tests on that commit (git's copy of it, with its art), before anything is named. A failure stops
+     everything; main is moved only after they pass.
+  4. Names it: the tag vX.Y.Z, the release branch release/X.Y (made, or moved forward to it), and the tag
+     current, which saneui installrelease takes, moved to it.
+Nothing is pushed: git push origin main release/X.Y vX.Y.Z, and git push --force origin current (the tag
+moves), when the release goes out.
+
+Usage:  dev/snapshot X.Y.Z [--dry]      (saneui snapshot X.Y.Z)
+  --dry   show what it would do; change nothing
+"""
+import argparse
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+VERSION = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
+LINE = re.compile(r"^## Version:.*$", re.MULTILINE)
+
+
+def git(*args, env=None, text=True, check=True, input=None):
+    found = subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=text, env=env, input=input)
+    if check and found.returncode:
+        sys.exit(f"git {' '.join(args)}: {found.stderr.strip() if text else found.stderr.decode().strip()}")
+    return found.stdout.strip() if text else found.stdout
+
+
+def exists(ref):
+    return subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--verify", "--quiet", ref],
+                          capture_output=True).returncode == 0
+
+
+def key(version):
+    return tuple(int(n) for n in VERSION.match(version).groups())
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0],
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("version", help="X.Y.Z, newer than every release before")
+    parser.add_argument("--dry", action="store_true")
+    args = parser.parse_args()
+    version = args.version.removeprefix("v")
+    if not VERSION.match(version):
+        sys.exit("A version is X.Y.Z: 0.4.0")
+    tag, branch = f"v{version}", "release/" + ".".join(version.split(".")[:2])
+    if exists(f"refs/tags/{tag}"):
+        sys.exit(f"{tag} is there already: a release is never made twice")
+    older = [t[1:] for t in git("tag", "--list", "v*").split() if VERSION.match(t[1:])]
+    newer = [v for v in older if key(v) >= key(version)]
+    if newer:
+        sys.exit(f"{version} is not newer than v{max(newer, key=key)}")
+    base = git("rev-parse", "refs/heads/main")
+    if exists(f"refs/heads/{branch}") and subprocess.run(
+            ["git", "-C", str(ROOT), "merge-base", "--is-ancestor", f"refs/heads/{branch}", base]).returncode:
+        sys.exit(f"{branch} has commits main has not: it cannot be moved forward to the snapshot")
+
+    tocs = [path for path in git("ls-tree", "-r", "--name-only", base, "--", "src").splitlines()
+            if re.fullmatch(r"src/[^/]+/[^/]+\.toc", path)]
+    changed = {}
+    for path in tocs:
+        text = git("show", f"{base}:{path}")
+        if not LINE.search(text):
+            sys.exit(f"{path} has no ## Version line")
+        changed[path] = LINE.sub(f"## Version: {version}", text) + "\n"
+    left_out = git("diff", "--name-only", base, "--", "src", "assets").splitlines()
+    print(f"Release {tag} of main's {git('rev-parse', '--short', base)}: {len(tocs)} TOCs to {version}, branch "
+          f"{branch} ({'moved forward' if exists(f'refs/heads/{branch}') else 'new'}), tag current moved to it.")
+    if left_out:
+        print(f"Not in it, not committed: {len(left_out)} files of src and assets "
+              f"({', '.join(left_out[:5])}{' ...' if len(left_out) > 5 else ''}).")
+    if args.dry:
+        print("Nothing changed (--dry).")
+        return 0
+
+    # The commit "Version X.Y.Z", made in an index of its own, so nobody's staged work comes along.
+    with tempfile.TemporaryDirectory() as scratch:
+        env = {**os.environ, "GIT_INDEX_FILE": str(Path(scratch) / "index")}
+        git("read-tree", base, env=env)
+        for path, text in changed.items():
+            mode = git("ls-tree", base, "--", path).split()[0]
+            blob = git("hash-object", "-w", "--stdin", input=text)
+            git("update-index", "--cacheinfo", f"{mode},{blob},{path}", env=env)
+        tree = git("write-tree", env=env)
+        commit = git("commit-tree", tree, "-p", base, "-m", f"Version {version}")
+
+        # The tests on that commit, as installrelease will build it.
+        copy = Path(scratch) / "copy"
+        copy.mkdir()
+        archive = subprocess.run(["git", "-C", str(ROOT), "archive", commit], capture_output=True, check=True).stdout
+        subprocess.run(["tar", "-x", "-C", str(copy)], input=archive, check=True)
+        print("Testing it ...", flush=True)
+        if subprocess.run([str(copy / "dev" / "tests" / "run")], cwd=copy).returncode:
+            sys.exit(f"The tests failed: no release made, main as it was ({git('rev-parse', '--short', base)}).")
+
+    # main moves only if nobody committed meanwhile (compare and swap); then the names.
+    if subprocess.run(["git", "-C", str(ROOT), "update-ref", "refs/heads/main", commit, base]).returncode:
+        sys.exit("main moved while the tests ran: no release made; run it again")
+    git("tag", "-a", tag, "-m", f"Sane UI {version}", commit)
+    git("update-ref", f"refs/heads/{branch}", commit)
+    git("tag", "-f", "current", commit)
+    # The working tree: each TOC's version line too, keeping whatever else is not committed in it; the shared
+    # index takes the commit's TOCs, so nothing shows as changed back.
+    for path in tocs:
+        file = ROOT / path
+        if file.is_file():
+            file.write_text(LINE.sub(f"## Version: {version}", file.read_text()))
+    git("reset", "-q", commit, "--", *tocs)
+    short = git("rev-parse", "--short", commit)
+    print(f"Released {tag}: commit {short} on main, branch {branch}, tags {tag} and current.\n"
+          f"saneui installrelease puts it into the game. Nothing is pushed: git push origin main {branch} {tag}; "
+          f"git push --force origin current")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

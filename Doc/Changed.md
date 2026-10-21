@@ -6,6 +6,17 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 215 (data in the game), 468 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### Releases: saneui snapshot; every script in saneui (Saneroki, 2026-10-21)
+- `dev/snapshot X.Y.Z [--dry]` (`saneui snapshot`): a release from main's newest commit. The version in every
+  module's TOC is committed on main ("Version X.Y.Z", in an index of its own, main moved only if nobody
+  committed meanwhile), the tests run on git's copy of that commit first, then the tag `vX.Y.Z`, the release
+  branch `release/X.Y` (made, or moved forward) and the tag `current` are set. Changes not committed stay out
+  (listed); in the working tree a TOC gets only its version line. Refused: a version made already or not newer,
+  a release branch with commits main lacks. Nothing is pushed.
+- Every executable in `dev/`, `dev/tools/` and `Scripts/` must have its `saneui` command:
+  `dev/tests/saneui.py` fails on one without (CLAUDE.md, AGENTS.md and README.md say so for new scripts; new
+  GPU work goes to the GPU runner's job list).
+
 ### Scripts: one command, saneui; dev and release builds (Saneroki, 2026-10-21)
 - At Saneroki's ask: the scripts run from the terminal by names that say what they do, listed in the Konsole
   greeting, and a build kind for the game: the dev build day to day, a release from time to time.

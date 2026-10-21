@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Tests of dev/saneui, the one command of Sane UI's scripts: every command runs a script that is there, the names
-are one word of small letters, the greeting card's words fit its column, completion offers what may follow.
+are one word of small letters, every script in dev/, dev/tools/ and Scripts/ has one, the greeting card's words fit
+its column, completion offers what may follow.
 Run by dev/tests/run."""
 import contextlib
 import importlib.machinery
 import importlib.util
 import io
+import os
 import sys
 from pathlib import Path
 
@@ -42,6 +44,13 @@ for name, (argv, what, card) in su.COMMANDS.items():
     check(f"{name}: says what it does", len(what) > 10, True)
     if card:
         check(f"{name}: its card words fit (30)", len(card) <= 30, True)
+# Every script one runs has its command: a new script in dev/, dev/tools/ or Scripts/ gets its entry in dev/saneui.
+run_by = {argv[0] for argv, _, _ in su.COMMANDS.values()}
+for folder in ("dev", "dev/tools", "Scripts"):
+    for path in sorted((ROOT / folder).iterdir()):
+        if path.is_file() and os.access(path, os.X_OK) and path.name != "saneui":
+            script = str(path.relative_to(ROOT))
+            check(f"{script} has a saneui command (add it to dev/saneui's GROUPS)", script in run_by, True)
 for name, verbs in su.BACKGROUND.items():
     check(f"{name}: background is a command", name in su.COMMANDS, True)
     check(f"{name}: verbs known", set(verbs) <= set(su.VERBS), True)
