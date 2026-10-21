@@ -223,9 +223,16 @@ Flight points (2026-10-21): only those the character has found are flown (`fligh
 flight master from its flight map's states and the maps' `isUndiscovered`; `Planner.Knows`); the map's others are red
 (`Pins.lua`, `Pins.RED`).
 
+Routes on the real data (2026-10-21): the planner, its search and Core's timetables can be run outside the game over
+every walking tile, the game's flight points and Core's set *Travel* (a harness of the session's own, not in the
+project); 200 journeys between NPCs' places found two faults fixed here: aboard a ship by standing in the town at its
+dock (`Aboard`: now within `Planner.DECK` yards of its way, past `Planner.DOCK` yards along it), and the player's floor
+guessed (outdoors the highest: Orgrimmar's rock overhangs, a roof) with no walk leaving it (`Footing`'s `guess`, the
+search's other floors at `Search.ASIDE`, a leap of `Planner.LEAP` yards chooses it anew).
+
 Not yet: portals in routes, a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
 minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
-checks; 498 with the 2026-10-21 changes), `dev/tests/walk.py` (117).
+checks; 502 with the 2026-10-21 changes), `dev/tests/walk.py` (117).
 
 ## What is not there yet
 

@@ -3,8 +3,31 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 498 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 117 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 502 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 117 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: routes from the floor the player is on, not aboard in a dock town (Saneroki, 2026-10-21)
+- **Checked on the real data:** the planner, its search and Core's timetables run outside the game over every walking
+  tile, the game's flight points and Core's set *Travel*: the journeys through the cities (indoors and out, the tram,
+  the lifts, boats and zeppelins over the sea, few flight points known) and 200 between NPCs' places on both
+  continents and Zephras Isle, both sides. Every line ran from the player to the pin; these faults were found.
+- **Aboard** (`Planner.lua`, `Aboard`): within `Planner.DECK` (40) yards of the plan's boat's or zeppelin's way, where
+  it lies more than `Planner.DOCK` yards along it from where it was boarded (`Along`). Standing in the town at its dock,
+  within `Planner.ABOARD` yards of the way it comes in or leaves by, took the player aboard, and a new pin was planned
+  from where the ship lands (Grom'gol, the Riverglades' port).
+- **The player's floor** (`Footing`): one chosen among others under the player (outdoors the highest: the rock
+  overhangs over Orgrimmar's streets, a rock's top, a roof) is a guess (`guess`), so are those followed from it, until
+  the player stands where one floor alone lies under them; for a guess the journey counts the regions of every floor
+  around the player as theirs (no false gap between regions). Chosen anew after a leap of `Planner.LEAP` (50) yards
+  between two looks (a portal: the height from before chose the floor at the far end); none on a flight, a boat or a
+  zeppelin (`Trips:Now`, `UnitOnTaxi`), chosen anew where the player comes down. The plan's job gets a copy of it.
+- **The search** (`Search.lua`): from a floor known at the start, the other floors there too, `Search.ASIDE` (500)
+  yards more and not counted in the walk's cost, so a walk is found where none leaves that floor (a wrong guess, a
+  floor the walking data closes in); a start with no floor within `Search.REACH` yards takes the nearest within
+  `Search.FAR` (a gap in the walking data), straight onto it.
+- Tests: Navigation 502 checks (in the dock town, not aboard: planned from the player; from a floor no way leaves:
+  from the floor under it, at its own cost; the player outdoors over it: the line from the floor under it; after a
+  leap: the floor chosen anew), each failing on the code before.
 
 ### Navigation: the dungeons' and raids' paintings planned and queued (Saneroki, 2026-10-21)
 - **The plan** (`dev/imagegen/maps/dungeons.toml`, new): the far zoom of the instance maps, one free realistic painting

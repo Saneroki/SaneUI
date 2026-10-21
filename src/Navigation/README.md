@@ -351,9 +351,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   (from where a rectangle was entered to the nearest point of the next opening, swimming twice the cost, and each
   yard up `Search.CLIMB` yards more, a little: the game runs as fast up a hill as on the flat, and the data holds no
   slope over 50 degrees, so a shorter way over a hill or a pass is taken, and Ironforge's mountain, steeper, is
-  none), from the floor the start stands on (the player's, followed), else from every floor under it and within
+  none), from the floor the start stands on (the player's, followed; the other floors there too, `Search.ASIDE`
+  yards more and not counted in its cost, so a walk is found where no way leaves that one: a guess that was wrong, a
+  floor the walking data closes in), else from every floor under it and within
   `Walk.ROOF` yards, each over the lowest at the cost of the climb up to it (a place
-  stands on its lowest floor rather than on the mountain over it; none: the nearest within `Search.REACH`), to any
+  stands on its lowest floor rather than on the mountain over it; none: the nearest within `Search.REACH`, else
+  within `Search.FAR`, a gap in the walking data), to any
   floor of the regions it starts in under the end or within `Search.NEAR` yards of it (its own floor may be missing
   there: Ironforge's city under its mountain), else the nearest within `Search.FAR` (a tower, a plateau no lift
   reaches). What lies off the walking data is drawn straight and costs `Search.STRAIGHT` times its yards,
@@ -370,7 +373,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   *Travel* from dock to dock and its tram from entrance to entrance (all from the game's tables, by
   `dev/tools/travel-data`), the hearthstone from the player; the quickest chosen (Dijkstra), the walks then searched
   (the first from the floor the player stands on: followed every `Planner.FOOT` seconds while there is a pin,
-  `Walk.Follow`, else chosen, `Walk.Floor`) and the journey chosen once more when one is much longer than guessed:
+  `Walk.Follow`, else chosen, `Walk.Floor`, and chosen anew after a leap of `Planner.LEAP` yards between two looks,
+  a portal; none on a flight, a boat or a zeppelin; one chosen among others under the player a guess, for which the
+  journey counts the regions of every floor around them, until they stand where one floor alone lies under them)
+  and the journey chosen once more when one is much longer than guessed:
   all one job of Core's scheduler, which a new pin stops; the line of the pin before goes at once. Where along the
   line the player is (the cut): at every step of the tracker, of the next `Planner.AHEAD` parts of it the first
   within `Planner.SLACK` yards of the nearest, never back on the part they are on; the line drawn from there
@@ -405,7 +411,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   a landing (a flight's or a ship's), when the player is 40
   yards off the line (150 off a ship's way), and when the data arrives; aboard a ship a new pin is planned from
   where it lands (the ship of the plan, or the one Core's `Data.Trips` finds the player on, to the pier of its next
-  dock). The flight points the character has found are learnt at a flight master (`TAXIMAP_OPENED`, then
+  dock): aboard the plan's ship within `Planner.DECK` yards of its way, where that lies more than `Planner.DOCK`
+  yards along it from where it was boarded (`Along`; the town at its dock, by the way it comes in, is not aboard). The flight points the character has found are learnt at a flight master (`TAXIMAP_OPENED`, then
   `TAXI_NODE_STATUS_CHANGED`): its flight map's states (`Current`, `Reachable`; `Unreachable` not found, the game's
   flight map leaves those out) and every plane's as the game's maps mark them (`isUndiscovered`, which the game knows
   once a flight master was opened this session); kept per character as `flightPoints` (the older `flights` held every

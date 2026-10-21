@@ -80,12 +80,14 @@ Planner.APART = 60       -- seconds more a walk between two places that share no
                          -- (and no lift joins: then there is no walk)
 Planner.REGION = 20      -- yards around a place whose floors' regions are its own too (a tower's foot, a shore)
 Planner.OFF = 40         -- yards off the line that make a new plan
-Planner.ABOARD = 150     -- yards off a boat's or zeppelin's way the player may be and still be aboard
-Planner.DOCK = 30        -- yards from the dock it was boarded at, beyond which the player is aboard
+Planner.ABOARD = 150     -- yards off a boat's or zeppelin's way the player may be while the line stays
+Planner.DECK = 40        -- yards off its way the player may be and be aboard (Core's Ships.NEAR)
+Planner.DOCK = 30        -- yards along its way from where it was boarded, beyond which the player is aboard
 Planner.PIER = 60        -- yards from where a boat stops to the floor one boards it from, at most
 Planner.AGAIN = 3        -- seconds at least between two plans
 Planner.LOOK = 1         -- seconds between two looks whether the player left the line
 Planner.FOOT = 0.25      -- seconds between two looks at the floor the player stands on
+Planner.LEAP = 50        -- yards the player may move between two looks and their floor still be followed
 Planner.AHEAD = 60       -- parts of the line ahead of where the player was, looked at for where they are now
 Planner.SLACK = 5        -- yards a part further on must be nearer than the first ones to be where the player is
 Planner.HEARTHSTONE, Planner.HOMEWARD = 6948, 8690 -- the hearthstone: its item, its spell
@@ -391,26 +393,36 @@ local arriving = Core.Later(Arrived, 2)
 -------------------------------------------------------------------------------
 --  The floor the player stands on
 -------------------------------------------------------------------------------
--- The floor under the player now, as { key, index } for the search (nil while the walking data has none there):
--- followed from the one before (Walk.Follow); where it cannot be followed, the floor near them at about the height
--- they had (Walk.Floor), else the one before while they are within Walk.STRIDE yards of it (a gap in the walking
--- data, a rock or a cart it does not hold); else chosen anew (Walk.Floor: outdoors the highest, indoors the lowest).
+-- The floor under the player now, as { key, index, z, guess } for the search (nil while the walking data has none
+-- there): followed from the one before (Walk.Follow); where it cannot be followed, the floor near them at about the
+-- height they had (Walk.Floor), else the one before while they are within Walk.STRIDE yards of it (a gap in the walking
+-- data, a rock or a cart it does not hold); else chosen anew (Walk.Floor: outdoors the highest, indoors the lowest),
+-- so too after a leap of more than Planner.LEAP yards (a portal, a summons: the height before tells nothing there). A
+-- floor chosen among others under the player is a guess (a rock's top over a street may be the highest), and so are
+-- those followed from it, until the player stands where only one floor lies under them.
 local function Footing(map, u, v)
     if not Walk.Ready() then return nil end
+    if footing and (footing.map ~= map or Distance(u, v, footing.u, footing.v) > Planner.LEAP) then footing = nil end
     local tile, index
-    if footing and footing.map == map then
+    if footing then
         local key, followed = Walk.Follow(map, u, v, footing[1], footing[2], footing.u, footing.v)
         if key then
             footing[1], footing[2], footing.u, footing.v = key, followed, u, v
             footing.z = select(5, Walk.Rect(Walk.Tile(key), followed))
+            if footing.guess and #Walk.Under(map, u, v) == 1 then footing.guess = nil end
             return footing
         end
         tile, index = Walk.Floor(map, u, v, false, Search.REACH, footing.z)
         local before = not tile and Walk.Tile(footing[1])
         if before and footing[2] <= before.count and Walk.Gap(before, footing[2], u, v) <= Walk.STRIDE then return footing end
     end
-    if not tile then tile, index = Walk.Floor(map, u, v, Core.Ask(IsIndoors) == true, Search.REACH) end
-    footing = tile and { tile.key, index, map = map, u = u, v = v, z = select(5, Walk.Rect(tile, index)) } or nil
+    local guess = footing and footing.guess or nil
+    if not tile then
+        tile, index = Walk.Floor(map, u, v, Core.Ask(IsIndoors) == true, Search.REACH)
+        guess = #Walk.Under(map, u, v) ~= 1 or nil
+    end
+    footing = tile and { tile.key, index, map = map, u = u, v = v, z = select(5, Walk.Rect(tile, index)), guess = guess }
+        or nil
     return footing
 end
 
@@ -514,8 +526,9 @@ local function Journey(start, goal, measured)
     -- The regions of the walking data a place stands in (nil: not known; walks are then not ruled out), and the
     -- lifts' upper levels it stands below (Lifts.Stand): a flight point's, a dock's and a lift's end's kept from plan
     -- to plan (regions), the ends' and the hearthstone's (they move) for this one. A place's floor known (the
-    -- player's, a lift's landing): its region; the pin's those of the floors under it, where there are any (on a
-    -- mesa, not the land at its foot); any other's those of the floors under it and within Planner.REGION yards.
+    -- player's, a lift's landing): its region (the player's a guess: those of the floors around them too); the pin's
+    -- those of the floors under it, where there are any (on a mesa, not the land at its foot); any other's those of
+    -- the floors under it and within Planner.REGION yards.
     local moving = {}
     local function RegionsOf(name)
         if not useData then return nil end
@@ -527,7 +540,9 @@ local function Journey(start, goal, measured)
             local tile = floor and Walk.Tile(floor[1])
             local set
             if tile and floor[2] <= tile.count then
-                set = { [tile.region[floor[2]]] = true }
+                -- A floor that is a guess (Footing): the regions of every floor at the place as well.
+                set = floor.guess and Walk.Regions(place.map, place.u, place.v, Walk.ROOF) or {}
+                set[tile.region[floor[2]]] = true
             else
                 floor = nil
                 set = name == "end" and Walk.Regions(place.map, place.u, place.v, 0)
@@ -810,40 +825,43 @@ local function Make(start)
     end)
 end
 
--- How far a point of a continent's plane is from a leg of the line; nil when no part of it lies on that continent.
-local function Gap(leg, map, u, v)
-    if not leg then return nil end
-    local best
+-- How far a point of a continent's plane is from a leg of the line, and how far along the leg its nearest point lies
+-- (the yards of the leg's parts on that continent before it); nil when no part of it lies on that continent.
+local function Along(leg, map, u, v)
+    local best, at, walked = nil, nil, 0
     local points = leg.points
     for index = 1, #points do
         local a, b = points[index], points[index + 1]
         if a.map == map then
-            local gap
+            local gap, t, length = nil, 0, 0
             if b and b.map == map then
                 local du, dv = b.u - a.u, b.v - a.v
-                local length = du * du + dv * dv
-                local t = length > 0 and math.max(0, math.min(1, ((u - a.u) * du + (v - a.v) * dv) / length)) or 0
+                length = du * du + dv * dv
+                t = length > 0 and math.max(0, math.min(1, ((u - a.u) * du + (v - a.v) * dv) / length)) or 0
+                length = math.sqrt(length)
                 gap = Distance(u, v, a.u + du * t, a.v + dv * t)
             else
                 gap = Distance(u, v, a.u, a.v)
             end
-            if not best or gap < best then best = gap end
+            if not best or gap < best then best, at = gap, walked + t * length end
+            walked = walked + length
         end
     end
-    return best
+    return best, at
 end
 
 -- The boat's or zeppelin's leg of a plan (the one drawn, or the one before a new pin) the player is aboard: the leg
--- the line is at, or the next, is one; the player is more than Planner.DOCK yards from where it was boarded, within
--- Planner.ABOARD yards of its way, not swimming.
+-- the line is at, or the next, is one; the player is within Planner.DECK yards of its way where it lies more than
+-- Planner.DOCK yards along it from where it was boarded (or on another continent than that), not swimming. Standing
+-- in the town at its dock (by the way it comes in or leaves by) is not aboard.
 local function Aboard(drawn, map, u, v)
     if not drawn or (rawget(_G, "IsSwimming") and IsSwimming()) then return nil end
     for index = drawn.at, drawn.at + 1 do
         local leg = drawn.legs[index]
         local first = leg and leg.ship and leg.points[1]
-        if first and (first.map ~= map or Distance(u, v, first.u, first.v) > Planner.DOCK) then
-            local gap = Gap(leg, map, u, v)
-            if gap and gap <= Planner.ABOARD then return leg, index end
+        if first then
+            local gap, along = Along(leg, map, u, v)
+            if gap and gap <= Planner.DECK and (first.map ~= map or along > Planner.DOCK) then return leg, index end
         end
     end
     return nil
@@ -908,7 +926,8 @@ local function Plan(before)
         local last = leg.points[#leg.points]
         return Make({ map = last.map, u = last.u, v = last.v, keep = leg })
     end
-    Make({ map = map, u = pu, v = pv, from = Footing(map, pu, pv) })
+    local floor = Footing(map, pu, pv)
+    Make({ map = map, u = pu, v = pv, from = floor and { floor[1], floor[2], z = floor.z, guess = floor.guess } })
 end
 
 -------------------------------------------------------------------------------
@@ -1023,7 +1042,8 @@ local function Follow(map, u, v)
 end
 
 -- A step of the canvas' tracker: the player's place (Route.Track). Every step: where along the line the player is,
--- the line drawn from there; every Planner.FOOT seconds the floor they stand on (a lift of the line ridden, Rode);
+-- the line drawn from there; every Planner.FOOT seconds the floor they stand on (a lift of the line ridden, Rode; on
+-- a trip none);
 -- every Planner.LOOK seconds whether to plan again: off the line (aboard a boat or zeppelin: off its way), after a
 -- flight landed.
 function Planner.Track(map, u, v, now)
@@ -1031,8 +1051,13 @@ function Planner.Track(map, u, v, now)
     if now >= nextFoot then
         nextFoot = now + Planner.FOOT
         if u and target and not ns.off then
-            Rode(map, u, v, now)
-            Footing(map, u, v)
+            -- On a flight, a boat or a zeppelin no floor is under the player: chosen anew where they come down.
+            if Trips:Now() or (rawget(_G, "UnitOnTaxi") and Core.Plain(UnitOnTaxi("player"))) then
+                footing = nil
+            else
+                Rode(map, u, v, now)
+                Footing(map, u, v)
+            end
         end
     end
     if now < nextLook then return end

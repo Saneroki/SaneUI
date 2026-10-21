@@ -2586,6 +2586,16 @@ Frames(8)
 check(shownWay ~= before and #shownWay.legs == 2 and shownWay.legs[1] == boat and shownWay.legs[2].kind == "walk"
     and shownWay.legs[2].points[1].map == 1414 and near(shownWay.legs[2].points[1].u, 9500),
     "a new pin while aboard: planned from where the boat lands")
+-- Back in the town at the dock (100 yards south of the pier, by the way the boat leaves by): not aboard, a new pin is
+-- planned from the player, on foot to the pier.
+player.x, player.y = 0.725, 0.2 / 1.5
+waypoint = { uiMapID = 1414, position = CreateVector2D(21500 / 24000, 0.3375) }
+W.Fire("USER_WAYPOINT_UPDATED")
+W.Wait(0)
+Frames(8)
+check(shownWay and #shownWay.legs == 3 and shownWay.legs[1].kind == "walk" and shownWay.legs[2].kind == "boat"
+    and near(shownWay.legs[1].points[1].u, 450) and near(shownWay.legs[1].points[1].v, -8700),
+    "in the town at the dock, not on the boat: planned from the player, on foot to the pier")
 -- A pin on the isle (u 200, v -1200; the canvas' map pin mark there too): on foot to the zeppelin's tower, the
 -- zeppelin, a straight walk to the pin (no walking data there).
 player.x, player.y = 0.75, 0.3
@@ -2999,6 +3009,59 @@ check(shownWay == nil, "the pin taken away: no line")
     check(shownWay ~= before and shownWay and near(shownWay.legs[1].points[1].v, wv - 60),
         "off the line by more than Planner.OFF yards: planned again from where the player is")
     IsIndoors = indoors
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
+-- A floor no way leaves (the mesa of tile 6176): a walk from it goes from the floor under it (Search.ASIDE more, not
+-- counted); the player over it outdoors stands on it by the guess (the highest) and gets the same line; after a leap
+-- (a portal) the floor is chosen anew, not followed from the one before.
+;(function()
+    local s = Walk.SAMPLE
+    local function At(column, row) return column * s, -row * s end
+    local function Over(points, step)
+        for index = 1, points and #points or 0, step do
+            if -points[index + 1] / s <= 8.5 then return true end
+        end
+        return false
+    end
+    local mu, mv = At(176, 48) -- on the mesa, over the field east of the hill
+    local wu, wv = At(30, 64) -- the field west of the hill
+    local points, cost = Search.Walk(1414, mu, mv, wu, wv, { 6176, 5 })
+    check(points and #points > 4 and Over(points, 2) and near(points[1], mu) and near(points[#points - 1], wu)
+        and cost < Search.ASIDE, "from a floor no way leaves (the mesa): from the field under it, over the hill's path, "
+        .. "at its own cost")
+    local function Pin(u, v)
+        waypoint = { uiMapID = 1414, position = CreateVector2D((u + 12000) / 24000, (20000 - v) / 40000) }
+        W.Fire("USER_WAYPOINT_UPDATED")
+        W.Wait(0)
+        Frames(8)
+        return shownWay and shownWay.legs[1]
+    end
+    local function Stand(u, v)
+        player.map, player.x, player.y = 1414, (u + 12000) / 24000, (20000 - v) / 40000
+    end
+    Stand(mu, mv)
+    local leg = Pin(wu, wv)
+    local line = {}
+    for index, point in ipairs(leg and leg.points or {}) do line[index * 2 - 1], line[index * 2] = point.u, point.v end
+    check(leg and #shownWay.legs == 1 and leg.kind == "walk" and #leg.points > 2 and Over(line, 2),
+        "the player outdoors over the mesa (its floor the guess): the line from the field under it, over the hill's path")
+    -- On the west field (one floor), then 137 yards on in a moment, to the cave's place under the hill: the floor there
+    -- chosen anew (outdoors the hill: east to the pin straight), not followed into the cave by its mouth.
+    local cu, cv = At(96, 64)
+    local eu, ev = At(200, 64)
+    Stand(wu, wv)
+    Pin(eu, ev)
+    Planner.Track(1414, wu, wv, GetTime() + 600)
+    Stand(cu, cv)
+    Planner.Track(1414, cu, cv, GetTime() + 601)
+    Planner.Update()
+    Frames(8)
+    leg = shownWay and shownWay.legs[1]
+    check(leg and leg.kind == "walk" and #leg.points == 2 and near(leg.points[1].u, cu) and near(leg.points[2].u, eu),
+        "after a leap: the floor chosen anew there (the hill), not followed into the cave")
     player.map, player.x, player.y = 1429, 0.75, 0.3
     waypoint = nil
     W.Fire("USER_WAYPOINT_UPDATED")
