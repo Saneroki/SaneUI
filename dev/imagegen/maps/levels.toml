@@ -23,14 +23,25 @@ last = "Remove every label, name, letter and number, every icon, skull and symbo
 # The far level: a photograph of the landscape from a plane high above, at an angle (Saneroki, 2026-10-21: "a
 # perspective plane view on the landscape"), its layout kept roughly, with some leeway: coasts, lakes, rivers,
 # mountains, cliffs and the ground nobody can cross, towns and landmarks where the terrain has them, so it fits the
-# middle and close levels. Image 1 the terrain plan of the frame and around it, warped into that view
-# (dev/tools/map-layers' plane_view), image 2 a piece of the close level's painting; painted from image 1 itself, a
-# little under full strength. Not the middle level's drawing: given as a picture it was copied, symbols and all.
-# A whole edit from nothing kept the look but not the frame (Westfall came out a closer view of its coast alone).
-# Words: images, look, open (instances), "This place is <biome>.", the brief's buildings and places (zones also land,
-# plants and roads), its colours and light, last.
+# middle and close levels.
+# A zone (images_relief, look_relief; workflow qwen21-edit-2ref-i2i-cn2): image 1 the game's terrain around the frame
+# seen from the plane, its heights standing up (dev/tools/map-layers' relief), its water a sea's blue, blurred and
+# toned down to where each land lies; image 2 a piece of the close level; two controls the layout: the relief's depth
+# (mountains, hills, the plane's angle) and the lines where the walking data's water meets land. Learned on
+# Westfall: the sharp relief as image 1 came back as the game's own terrain (the edit model copies its picture);
+# the walking data's barriers as lines came back as lakes; without the controls the model painted a closer view.
+# An instance (images, look; workflow qwen21-edit-2ref-i2i-cn): image 1 its plan in a view from a plane (plane_view:
+# its halls lie under rock, which a relief would show), blurred and toned down as a zone's; image 2 a piece of the
+# close level; one control the layout: the plan's clear edges (an instance has no walking data). Not the middle
+# level's drawing: it was copied.
+# Words: images and look, open (instances), "This place is <biome>.", the brief's buildings and places (zones also
+# land, plants and roads), its colours and light, around (zones: the lands around it, by the zones' briefs; else the
+# model painted the zone's own land over them), last.
 [far]
-images = "Image 1 is this place seen from a plane high above, at an angle: its terrain as the game draws it, the land ahead widening towards the top. Image 2 shows its ground up close."
-look = "Make image 1 look like a photograph taken from a plane high above this place: a realistic fantasy landscape in natural light, seen at the same angle. Keep its layout: every coast, sea, lake, river, mountain, cliff, forest, road, town and landmark stays roughly where image 1 has it, at its size; a little leeway is fine, but nothing moves far, nothing new stands where image 1 has none, and mountains and cliffs stay where they bar the way. The darkest areas of image 1 beyond the coasts are the open sea. Take the look of the ground, its materials and colours from image 2."
+images_relief = "Image 1 is this place seen from a plane high above, at an angle, blurred: it shows only where its lands, forests, fields, mountains, rivers and seas lie and their colours, the land ahead widening towards the top. Image 2 shows its ground up close."
+look_relief = "Make image 1 a sharp, highly detailed photograph taken from a plane high above this place: a realistic fantasy landscape in natural light, seen at the same angle, every land, forest, field, mountain, river, coast and sea where image 1 has it, with its colours. Real trees, rocks, grass, fields, roads and houses in fine detail, as a real aerial photograph shows them; the materials of the ground as image 2 has them."
+images = "Image 1 is this place seen from a plane high above, at an angle, blurred: it shows only where its halls, caves, rooms, walls, water and rock lie and their colours, the ground ahead widening towards the top. Image 2 shows its ground up close."
+look = "Make image 1 a sharp, highly detailed photograph taken from a plane high above this place: a realistic fantasy place in natural light, seen at the same angle, every hall, cave, room, wall, shore, water and rock where image 1 has it, with its colours. Real stone, timber, earth, water and props in fine detail, as a real aerial photograph shows them; the materials of the ground as image 2 has them."
 open = "Over halls, caves and rooms under the ground or under a roof, the rock and the roofs are cut away so they lie open to view from above."
+around = "Around it lie other lands, each where image 1 has it, never this place's land painted over them:"
 last = "Nothing added that the images do not show. No text, no labels, no map symbols, no frame, no border, no parchment."

@@ -351,14 +351,24 @@ lists, from inputs of its own:
     code (`dev/tools/atlas`'s `Game`, `words`, `check`, `colour_of`), an instance's map in place of a continent.
   - **Middle** (`qwen21-edit-3ref-i2i`: image to image, starting from image 1 itself): image 1 the game's map
     art, image 2 the terrain plan, image 3 a piece of the house parchment (where the game has no map, image 1 the
-    plan and image 2 another place's map for its manner); edit words, no brief; strength 0.94, then 0.96, 0.98
-    (at 0.8 and 0.88 the Deadmines' map stayed the game's coloured map, labels and all).
-  - **Far** (`qwen21-edit-2ref-i2i`, strength 0.95, 0.97, 0.985): image 1 the terrain plan of the frame and around
-    it warped into a view from a plane at an angle (`plane_view`), image 2 a piece of the close level; a photograph
-    of the landscape, its layout kept roughly. Learned on Westfall: given the middle drawing as a picture, the model
-    stamped its pencil symbols on the land; from the straight-down plan at 0.9 and 0.95 it stayed that plan; as a
-    whole edit from nothing it painted a fine coast but a closer view than the frame. Its outlines must share FAR
-    (0.3) with the plane view.
+    plan and image 2 another place's map for its manner); edit words, no brief; strength 0.94, 0.96 (one step
+    skipped, two seeds), then 0.98 (none) (at 0.8 and 0.88, six and three skipped, the Deadmines' map stayed the
+    game's coloured map, labels and all).
+  - **Far** (from noise, its layout held by controls: the Fun ControlNet Union, `QwenImageDiffsynthControlnet`):
+    image 1 the place seen from a plane at an angle, blurred and toned down to where each land lies, image 2 a piece
+    of the close level; a photograph of the landscape, its layout kept roughly. A zone (`qwen21-edit-2ref-i2i-cn2`):
+    image 1 the game's terrain with its heights standing up (`relief`: the terrain files' heights under the minimap
+    textures, drawn as the voxel spaces of old drew land, 6 s a zone), its water a sea's blue; the controls its depth
+    (0.7 to 60 % of the steps) and the lines where the walking data's water meets land (0.6 to 50 %); its words name
+    the zones around it. An instance (`qwen21-edit-2ref-i2i-cn`): image 1 its plan warped into the view
+    (`plane_view`; its halls lie under rock, which a relief would show), the control its clear edges. Learned on
+    Westfall: the middle drawing as a picture had its pencil symbols stamped on the land; the sharp view as image 1
+    came back as the game's own terrain, read at 512 pixels too; the walking data's barriers as lines came back as
+    lakes; without controls the model painted a closer view than the frame. Its outlines must share FAR (0.3) with
+    the sharp view, a zone's water agree with the walking data's.
+  - **Strength is in steps:** ComfyUI's KSampler runs int(steps / denoise) steps and skips the first ones beyond
+    `steps`: with 25 steps a denoise from 0.927 to 0.961 skips one, above it none, so 0.93 and 0.96 make the same
+    picture and 0.97 is a painting from noise. Choose a denoise by the steps it skips.
   - **Memory:** the pictures are read for the words at about 1024 pixels (`resolution`); the painting keeps image
     1's 2048. Three pictures read at 2048 by the vision-language encoder took ComfyUI past the computer's memory.
   - **Checks**, a painting that fails painted again, three tries at most: its outlines against image 1's (the

@@ -316,19 +316,21 @@ def water_of(square):
     return (small(square["water"]) > 127) | (np.abs(terrain - NAVY).sum(-1) < 30) | drawn
 
 
-def check(square, painting):
+def check(square, painting, game=None, unknown=None, stray=SLACK):
     """How much of the painting is water where the game has none (added), and land where it has water (lost):
     broad sheets only, a shore may stray a little. Painted water is bluish, smooth, in sheets and bluer than the
-    painting's own land, so a zone graded blue (Duskwood's dusk) and the blue shadows of snow are not water."""
+    painting's own land, so a zone graded blue (Duskwood's dusk) and the blue shadows of snow are not water.
+    game: the game's water at CHECK known otherwise (the maps' far level: the walking data's), unknown: where the
+    game tells nothing (counted neither way), stray: how far a shore may stray then."""
     out = small(np.asarray(painting))
-    game = water_of(square)
+    game = water_of(square) if game is None else game
     hsv = np.asarray(Image.fromarray(out).convert("HSV"), np.float32)
     h, s, v = hsv[..., 0] * 360 / 255, hsv[..., 1] / 255, hsv[..., 2] / 255
     grey = out.astype(np.float32).mean(-1)
     rough = np.sqrt(np.maximum(box_mean(grey ** 2, 2) - box_mean(grey, 2) ** 2, 0))
-    slack = max(1, round(CHECK * SLACK))
+    slack = max(1, round(CHECK * stray))
     blue = out[..., 2].astype(np.float32) - (out[..., 0].astype(np.float32) + out[..., 1]) / 2
-    land = ~grow(game, slack)
+    land = ~grow(game, slack) if unknown is None else ~grow(game | unknown, slack)
     bar = np.percentile(blue[land], 30) + 12 if land.any() else -255.0
     # (from teal-green on: a tropical lagoon is emerald; meadows are yellower, forests rough)
     painted = (h >= 125) & (h <= 250) & (s >= 0.22) & (v >= 0.18) & (rough < 9) & ~((v > 0.65) & (s < 0.6)) & (blue > bar)

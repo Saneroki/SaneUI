@@ -6,6 +6,26 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 209 (data in the game), 524 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 130 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the maps' far level a view of the terrain standing up, its layout held by controls (Saneroki, 2026-10-22)
+- `dev/tools/map-layers`, the far level painted anew (Saneroki: rough places for lakes, rivers, landmarks, mountains
+  and the ground nobody crosses, some leeway, a perspective view from a plane):
+  - **A zone:** `relief` draws the terrain around the frame from a plane, its heights standing up (the terrain files'
+    heights, `Ground.heights`, under the minimap textures, as the voxel spaces of old drew land; `far_box` widens the
+    plan so no corner of the view lies beyond it; the open sea where there is no terrain); its water a sea's blue,
+    blurred and toned down (`far_colours`) as image 1; two controls of the Fun ControlNet Union (new workflow
+    `qwen21-edit-2ref-i2i-cn2`): its depth and the lines where Core's set *Walking*'s water meets land (`Walking`,
+    `guide_of`); its words name the zones around it by direction (`around_of`, `levels.toml`'s `around`).
+  - **An instance:** its plan warped into the view (`plane_view`; its halls lie under rock), blurred, its clear
+    edges the control (`edges_of`, new workflow `qwen21-edit-2ref-i2i-cn`).
+  - Painted from noise (`STRENGTH` far 1.0), a try another seed; a zone's water checked against the walking data's
+    (`water_check`: `atlas`'s `check` takes the game's water, what it does not know and how far a shore may stray).
+  - Learned on Westfall: ComfyUI's strength is in steps (25 steps: 0.927 to 0.961 skip one, above it none; the
+    earlier "0.97 loses the frame" was that); the sharp view as image 1 came back as the game's own terrain; the
+    walking data's barriers as lines came back as lakes.
+- Docs: `map-style.md`, `image-generation.md` (*Far*, *Strength is in steps*), `levels.toml`, `Navigation.md`.
+- Tests: `dev/tests/map_layers.py` (60 checks: the walking blocks read, the relief's view, depth and far box, the
+  water guide and check, the lands around a zone, the words).
+
 ### Navigation, Core: the teleports a character has in the routes; what Core learns in play; Frequent Flier (Saneroki, 2026-10-21)
 - **The teleports** (Core's set *Travel*, kind `teleport`, key 3000000 + the spell's ID; new fields `spell`, `items`,
   `reagent`; `dev/tools/travel-data --teleports <places> <batch>`, `teleports`, `race_side`, `teleport_places`): from

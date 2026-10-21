@@ -172,8 +172,9 @@ minimap) and the full-screen window (the world map) show the same map with the s
   Made after the zones. **The pipeline (2026-10-21):** `dev/tools/map-layers`, for zones and instances alike: an
   instance's terrain is its own map's tiles with the indoor maps of the buildings they place (extracted from the
   install into a folder of its own), painted at the close level by the Atlas' own code; its floors' middle maps
-  from that terrain and the game's map art in the same frame; its far render from the terrain, the middle maps and
-  the close painting; each middle and far painting checked for its outlines and by a vision model. The briefs are
+  from that terrain and the game's map art in the same frame; its far render from the terrain seen from a plane
+  (a zone's with its heights standing up and the walking data's water, held by controls; 2026-10-22), and the
+  close painting; each middle and far painting checked for its outlines and by a vision model. The briefs are
   `dev/imagegen/maps/dungeons.toml` (30 instances, researched from the game's lore texts and pictures and from
   play) and `zones.toml`; the shared words `levels.toml`. Samples painted (2026-10-21): Westfall and Tanaris, the
   Deadmines, Zul'Farrak and the Hall of Thanes, all three levels; the whole run is queued once Saneroki has seen

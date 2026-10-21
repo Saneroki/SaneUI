@@ -12,6 +12,7 @@ import sys
 import tomllib
 from pathlib import Path
 
+import numpy as np
 from PIL import Image, ImageChops, ImageDraw
 
 sys.dont_write_bytecode = True
@@ -56,14 +57,15 @@ check("indoors: a building's point placed and found again (the drawing's inverse
 words = tomllib.loads(ml.LEVELS.read_text())
 check("words: the levels", sorted(words), ["far", "middle"])
 check("words: the middle level's parts", sorted(words["middle"]), ["images", "images_plan", "last", "look", "look_plan"])
-check("words: the far level's parts", sorted(words["far"]), ["images", "last", "look", "open"])
+check("words: the far level's parts", sorted(words["far"]), ["around", "images", "images_relief", "last", "look", "look_relief", "open"])
 check("words: the middle level is pencil on parchment, straight from above",
       all(w in words["middle"]["look"] for w in ("pencil", "parchment", "straight from above")), True)
 check("words: both levels are edits of image 1 (they keep its layout)",
-      all("Make image 1 look like" in words[level]["look"] for level in ("middle", "far")), True)
+      all(w in words[level]["look"] for level, w in (("middle", "Make image 1 look like"), ("far", "Make image 1 a"))), True)
 check("words: the middle level keeps its layout exactly", "never where or what anything is" in words["middle"]["look"], True)
-check("words: the far level a photograph from a plane, its layout kept roughly",
-      all(w in words["far"]["look"] for w in ("photograph", "plane", "Keep its layout", "roughly", "image 2")), True)
+check("words: the far level a photograph from a plane of where image 1's places lie, a zone's and an instance's",
+      all(w in words["far"][look] for w in ("photograph", "plane", "where image 1 has it", "image 2")
+          for look in ("look", "look_relief")), True)
 plan = Image.new("RGB", (900, 600), (90, 90, 90))
 ImageDraw.Draw(plan).rectangle((0, 0, 899, 59), fill=(255, 0, 0))       # the padding's north edge: the view's top
 ImageDraw.Draw(plan).rectangle((150, 470, 749, 499), fill=(0, 0, 255))  # just inside the frame's south edge
@@ -72,6 +74,30 @@ check("plane view: its size", view.size, (400, 300))
 check("plane view: the far edge is the plan's north", view.getpixel((200, 2))[0] > 200, True)
 check("plane view: the frame's south edge is near its bottom", view.getpixel((200, 295))[2] > 150, True)
 check("padded: a box grown on each side", ml.padded((100, 0, 100, 0), 0.25), (125.0, -25.0, 125.0, -25.0))
+plan = Image.new("RGB", (600, 400), (90, 90, 90))
+ImageDraw.Draw(plan).rectangle((0, 0, 599, 30), fill=(255, 0, 0))       # the plan's north edge: the view's top
+ImageDraw.Draw(plan).rectangle((120, 300, 479, 330), fill=(0, 0, 255))  # just inside the frame's south edge
+flat = np.zeros((400, 600), np.float32)
+view = ml.relief(plan, flat, 1.0, (400, 300), (0.25, 0.25))
+check("relief: its size", view.size, (400, 300))
+check("relief: the far edge is the plan's north", view.getpixel((200, 3))[0] > 200, True)
+check("relief: the frame's south edge is near its bottom", view.getpixel((200, 296))[2] > 150, True)
+ImageDraw.Draw(plan).rectangle((0, 120, 599, 140), fill=(0, 200, 0))   # a green field north of the middle
+hill = flat.copy()
+hill[150:200, :] = 60                                                   # a ridge south of it, 60 yards high
+green = lambda picture: sum(picture.getpixel((200, y)) == (0, 200, 0) for y in range(300))  # noqa: E731
+check("relief: a ridge hides the land behind it",
+      green(ml.relief(plan, hill, 1.0, (400, 300), (0.25, 0.25))) < green(ml.relief(plan, flat, 1.0, (400, 300), (0.25, 0.25))), True)
+near = ml.relief(None, flat, 1.0, (400, 300), (0.25, 0.25), depth=True)
+check("relief: its depth near white, far dark", near.getpixel((200, 296))[0] > 200 > near.getpixel((200, 3))[0], True)
+for box in ((300, 0, 450, 0), (600, 0, 450, 0)):   # a wide frame and a tall one
+    wide, pads = ml.far_box(box)
+    across = 300
+    field = np.zeros((round(across * (wide[0] - wide[1]) / (wide[2] - wide[3])), across), np.float32)
+    seen = ml.relief(Image.new("RGB", field.shape[::-1], (90, 90, 90)), field, 1.0, (120, 80), pads)
+    check(f"far box: the view's far corners lie on the plan ({box[0]} by {box[2]})",
+          seen.getpixel((1, 1)) == seen.getpixel((118, 1)) == (90, 90, 90), True)
+check("relief: no terrain is the background", ml.relief(plan, np.full((400, 600), np.nan, np.float32), 1.0, (40, 30), (0.25, 0.25)).getpixel((20, 15)), (14, 22, 34))
 brief = {"biome": "An old gold mine", "buildings": "Timber.", "places": "Tunnels.", "colours": "brown",
          "atmosphere": "Warm lantern light. Dust."}
 middle = ml.words_of("middle", words, brief, True)
@@ -81,6 +107,16 @@ check("words: the middle level takes no brief", brief["places"] in middle or "Th
 check("words: no cut-away in the middle level", words["far"]["open"] in middle, False)
 check("words: an instance's far level cuts away its roofs", words["far"]["open"] in far, True)
 check("words: a zone's far level does not", words["far"]["open"] in ml.words_of("far", words, brief, False), False)
+check("words: a zone's far level starts from its blurred relief",
+      ml.words_of("far", words, brief, False).startswith(words["far"]["images_relief"]), True)
+check("words: the lands around a zone, by direction, before the last sentence",
+      "to the east, a dark forest; to the north, hills." in ml.words_of("far", words, brief, False,
+                                                                      [("east", "A dark forest"), ("north", "hills")]), True)
+zone = {"box": (100.0, 0.0, 100.0, 0.0), "map": 0, "key": 1}
+found = {1: (0, (100.0, 0.0, 100.0, 0.0), 0), 2: (0, (100.0, 0.0, 0.0, -100.0), 0), 3: (0, (200.0, 100.0, 100.0, 0.0), 0),
+         4: (1, (100.0, 0.0, 0.0, -100.0), 0), 5: (0, (500.0, 400.0, 100.0, 0.0), 0)}
+check("around: the zones beside a zone, east and north; not itself, another continent's or one out of view",
+      sorted(ml.around_of(zone, found, {"1": {}, "2": {}, "3": {}, "4": {}, "5": {}})), [("east", 2), ("north", 3)])
 check("words: the kind of place, in lower case", "This place is an old gold mine." in far, True)
 check("words: the light is the atmosphere's first sentence", "Its light: Warm lantern light." in far, True)
 check("words: the last sentence last", far.endswith(words["far"]["last"]), True)
@@ -125,6 +161,57 @@ check("verdict: a far render that is a drawing fails",
       False)
 check("verdict: an answer that cannot be read fails", ml.verdict("far", "no idea")[0], False)
 check("look: the far level asks for the brief's kind of place", brief["biome"] in ml.look_words("far", brief), True)
+
+# --- The walking data -----------------------------------------------------------------------------
+
+import base64  # noqa: E402
+import zlib  # noqa: E402
+
+
+def encoded(value):
+    """CBOR of whole numbers and arrays, as the walking blocks are written."""
+    if isinstance(value, list):
+        head, body = 4, b"".join(encoded(item) for item in value)
+        size = len(value)
+    else:
+        head, body, size = (0, b"", value) if value >= 0 else (1, b"", -1 - value)
+    if size < 24:
+        return bytes([head << 5 | size]) + body
+    width = next(n for n in (1, 2, 4, 8) if size < 1 << (8 * n))
+    return bytes([head << 5 | {1: 24, 2: 25, 4: 26, 8: 27}[width]]) + size.to_bytes(width, "big") + body
+
+
+check("cbor: numbers, a negative one and arrays read back",
+      ml.cbor(encoded([1, [200, -3, 70000], []]))[0], [1, [200, -3, 70000], []])
+packed = zlib.compressobj(9, zlib.DEFLATED, -15)
+# one tile: its north half a floor of land, its south half water, a strip at its east edge where nobody walks
+data = packed.compress(encoded([1, [1, 1, 0, 1, 2, 0], [0, 0, 240, 128, 0, 0, 128, 240, 128, 0], []])) + packed.flush()
+walking = ml.Walking(Path("/nonexistent"))
+row, column = 30, 31
+walking.blocks[row * ml.GRID + column] = base64.b64encode(data).decode("ascii")
+north, west = ml.CENTRE - row * ml.TILE, ml.CENTRE - column * ml.TILE
+tile = walking.picture(0, (north, north - ml.TILE, west, west - ml.TILE), 256)
+check("walking: a floor of land", tile.getpixel((60, 60)), ml.WALKED)
+check("walking: water", tile.getpixel((60, 200)), ml.SWIM)
+check("walking: where nobody walks", tile.getpixel((250, 60)), ml.BARRED)
+around = walking.picture(0, (north + ml.TILE / 2, north - ml.TILE, west, west - ml.TILE), 256)
+check("walking: no data beyond its tiles", around.getpixel((60, 20)), ml.NOWHERE)
+shades = np.full((300, 400), ml.WALKED, np.uint8)
+shades[150:] = ml.SWIM          # water in the south
+shades[30:120, 250:400] = ml.BARRED  # a mountain
+shades[200:300, 0:40] = ml.NOWHERE   # beyond the data
+guide = np.asarray(ml.guide_of(Image.fromarray(shades)).convert("L")) > 127
+check("guide: the shore drawn", guide[146:154, 50:60].any(), True)
+check("guide: not the mountain's foot (it came out a lake; the relief holds it)", guide[115:125, 300].any(), False)
+check("guide: open land and open water plain", guide[80, 50] or guide[250, 100], False)
+check("guide: nothing along the edge of the data", guide[220:280, 36:46].any(), False)
+walk = Image.fromarray(shades)
+wet = Image.new("RGB", (400, 300), (196, 170, 110))
+ImageDraw.Draw(wet).rectangle((0, 150, 399, 299), fill=(40, 90, 150))
+dry = Image.new("RGB", (400, 300), (196, 170, 110))
+check("water check: the walking data's water painted where it is passes",
+      ml.water_check(walk, wet)["lost"] <= ml.FAR_WATER[1] and ml.water_check(walk, wet)["added"] <= ml.FAR_WATER[0], True)
+check("water check: its water painted as land fails", ml.water_check(walk, dry)["lost"] > ml.FAR_WATER[1], True)
 
 # --- An instance floor's map art ------------------------------------------------------------------
 

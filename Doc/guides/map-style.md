@@ -26,7 +26,7 @@ world, that all three share, so they lie over each other exactly.
 | --- | --- | --- | --- |
 | **Close** | the terrain, pixel-exact: every rock, wall, building, shore and walkable spot where the game has it | a photorealistic satellite photograph of exactly that ground, seen straight down | the game's terrain (an instance's own, with its buildings' indoor maps laid over it), repainted with the Atlas' words (`dev/imagegen/maps/atlas.toml`) |
 | **Middle** | a zone, or one floor of an instance: a top-down map in the manner of the game's own maps, exactly over the terrain | drawn by hand in graphite pencil on the interface's parchment, straight from above | the terrain plan of the frame and the game's map art of it in the same frame (`levels.toml`, `[middle]`) |
-| **Far** | a zone or an instance as a whole, its layout kept roughly, its major places where they lie | a photograph of the landscape from a plane high above, at an angle, realistic fantasy | the terrain plan warped into that view and a piece of the close level (`levels.toml`, `[far]`) |
+| **Far** | a zone or an instance as a whole, its layout kept roughly, its major places where they lie | a photograph of the landscape from a plane high above, at an angle, realistic fantasy | the place seen from the plane, blurred, a piece of the close level, and controls for its layout (`levels.toml`, `[far]`) |
 
 ### Close: pixel-exact
 
@@ -69,10 +69,19 @@ world, that all three share, so they lie over each other exactly.
 - **Its layout kept roughly, with some leeway,** so it fits the middle and close levels: lakes, rivers, coasts,
   mountains, cliffs and the ground nobody can cross, roads, towns and landmarks where the terrain has them, at their
   sizes; the biome, mood, atmosphere and lore of its brief; the borders of zones and the walls of an instance.
-- **Its pictures:** image 1 the terrain plan of the frame and around it, warped into the plane's view (its near
-  edge the frame's south edge, the land ahead widening), so the places keep their rough positions; image 2 a piece
-  of the close level's painting (how the ground looks). Painted from image 1 a little under full strength. Not the
-  middle level's drawing: given as a picture, its pencil symbols were stamped on the land.
+- **Its pictures:** image 1 the place seen from the plane (its near edge the frame's south edge, the land ahead
+  widening), blurred and toned down to where each land, forest, field, mountain and sea lies, so the model paints
+  the detail as a photograph shows it and not the game's textures; image 2 a piece of the close level's painting
+  (how the ground looks). Its layout is held by controls, not by image 1:
+  - **A zone:** image 1 is the game's terrain with its heights standing up (the terrain files' heights under the
+    minimap textures, its water a sea's blue); the controls are its depth (mountains, hills, the plane's angle) and
+    the lines where the walking data's water meets land (coasts, lakes, rivers). Its words name the lands around it,
+    each by its direction (else the zone's own land was painted over them).
+  - **An instance:** image 1 is its plan warped into the plane's view (its halls lie under rock, which the terrain's
+    heights would show); the control is the plan's clear edges.
+- **Learned on Westfall (2026-10-22):** the sharp view as image 1 came back as the game's own terrain; the walking
+  data's barriers as lines came back as lakes; without the controls the model painted a closer view than the frame.
+  Not the middle level's drawing either: given as a picture, its pencil symbols were stamped on the land.
 - **The world:** both continents always together (no view of one continent alone); each zone clearly sectioned from
   the next, the borders softened where nobody walks. What stands there in the lore is shown, not the game's open
   view: Teldrassil the world tree itself, Ironforge the full mountain.
@@ -93,7 +102,8 @@ more strict"). So:
   - its outlines against image 1's: how well its edges agree with the terrain's, measured against how well the
     game's own map agrees with it (a middle level must come close to the game's map, a far one less);
   - by a vision model: no writing, a pencil map seen from above (middle); a real place, not a map or panels, seen
-    from above, of the brief's kind (far).
+    from above, of the brief's kind (far);
+  - a zone's far level: its water against the walking data's, a shore straying a little.
 
 ## What is drawn over them, never painted
 

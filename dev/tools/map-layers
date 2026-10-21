@@ -16,14 +16,25 @@ other exactly.
            its title banner painted over; where the game has none, another place's map for its manner only),
            image 3 the parchment. A zone in one picture, an instance floor by floor.
   far      a photograph of the landscape from a plane high above, at an angle, its layout kept roughly
-           (levels.toml, [far]): image 1 the terrain plan of the frame and around it warped into that view
-           (plane_view), image 2 a piece of the close level's painting; painted from image 1 a little under full
-           strength. A zone or an instance in one picture. (Not the middle level's drawing: it was copied.)
+           (levels.toml, [far]), a zone or an instance in one picture, painted from noise, two controls (the
+           Fun ControlNet Union) keeping its layout:
+             a zone      image 1 the game's terrain around the frame seen from the plane, its heights standing
+                         up (relief: the terrain files' heights under the minimap textures), its water a sea's
+                         blue, blurred and toned down to where each land lies (far_colours); image 2 a piece of
+                         the close level; the controls the relief's depth and the lines where the walking data's
+                         water meets land (Core's set Walking); its words name the zones around it
+             an instance image 1 its plan warped into that view (plane_view: its halls lie under rock, which a
+                         relief would show), blurred and toned down; image 2 a piece of the close level; the
+                         control the plan's clear edges (an instance has no walking data)
+           (Not the middle level's drawing: it was copied. The sharp relief as image 1 came back as the game's
+           own terrain; the walking data's barriers as lines came back as lakes.)
 
 Each middle and far painting is checked twice and painted again with the next seed until one passes, TRIES at most:
   outlines  how well its edges agree with the terrain's (their normalised correlation at OUTLINE pixels): a middle
-            level against how well the game's own map agrees with it (MIDDLE of that), a far one with its plane view
-            (FAR, rough);
+            level against how well the game's own map agrees with it (MIDDLE of that), a far one with its sharp
+            relief or plane view (FAR, rough);
+  water     a zone's far painting: its broad water against the walking data's in its view (atlas' check, a shore
+            straying up to FAR_STRAY, FAR_WATER at most added or lost);
   looks     the vision model (qwen3vl-look) answers in JSON: writing in it; a pencil map on paper seen from above
             (middle); a real place, not a map or panels, seen from above, of the brief's kind (far).
 
@@ -46,6 +57,10 @@ It writes, in the run's folder (default assets/generated/map-layers, never commi
 (zone-<uimap>, instance-<map> and its floors instance-<map>-<floor>):
   <name>/ground.png, art.png          the terrain plan and the game's map art in the frame (images 1 and 2)
   <name>/close/<i>-<j>.png, close.png the close squares, painted, and joined
+  <name>/far-plan.png                 the far level's sharp relief (a zone) or plane view (an instance): the outlines'
+                                      measure; far-colours.png its image 1; far-depth.png, far-water.png (a zone) or
+                                      far-edges.png (an instance) its controls; far-walk.png the walking data in its
+                                      view (a zone); far-close.png its image 2
   <name>/middle-<try>.png, far-<try>.png and checks.json (each try's outline agreement and the vision model's answer)
   state.json                          the paths and subjects
 Needs Python with Pillow and NumPy, and ComfyUI; the game's files as dev/tools/atlas, dev/tools/indoor-art and
@@ -53,6 +68,7 @@ the private baseline extract them (an instance's terrain in a folder of its own:
 wmo/, wmo-minimap/, tiles.jsonl).
 """
 import argparse
+import base64
 import importlib.machinery
 import importlib.util
 import io
@@ -67,6 +83,7 @@ import sys
 import time
 import tomllib
 import urllib.request
+import zlib
 from pathlib import Path
 
 import numpy as np
@@ -91,6 +108,7 @@ MAPS = ROOT / "dev" / "imagegen" / "maps"
 LEVELS, ATLAS = MAPS / "levels.toml", MAPS / "atlas.toml"
 ZONES, DUNGEONS = MAPS / "zones.toml", MAPS / "dungeons.toml"
 SET = ROOT / "assets" / "data" / "Dungeons" / "Dungeons.jsonl"
+WALK = ROOT / "assets" / "data" / "Walking" / "Walking.jsonl"     # where a player can walk, swim, or nowhere
 META = ROOT / "assets" / "generated" / "maps" / "meta" / "places.json"
 PAPER = ROOT / "assets" / "Concept art" / "UI style" / "paper.png"
 OUT = ROOT / "assets" / "generated" / "map-layers"
@@ -100,13 +118,16 @@ ADDRESS = "127.0.0.1:8188"
 TILE, GRID = ta.TILE, ta.GRID
 CENTRE = GRID / 2 * TILE        # yards from a map's middle to its edges
 PER_YARD = at.PX / TILE         # the close level's pixels a yard (the Atlas')
+RELIEF = "qwen21-edit-2ref-i2i-cn2"   # a zone's far level: two pictures and two controls (the relief's depth, the water)
+GUIDED = "qwen21-edit-2ref-i2i-cn"    # an instance's: two pictures and one control (its plan's edges)
 LAYERS = {"middle": "qwen21-edit-3ref-i2i",   # three pictures, the full model, from image 1 itself
-          "far": "qwen21-edit-2ref-i2i"}    # two pictures, from the plane view of the plan itself
-STRENGTH = {"middle": (0.94, 0.96, 0.98), "far": (0.95, 0.97, 0.985)}   # the denoise of each try: the middle level
-                                # from image 1 itself, a try that still shows writing going further from it (the
-                                # Deadmines' map at 0.8 and 0.88 stayed the game's coloured map, labels and all); the far
-                                # level a whole edit, its layout kept by its words (started from the terrain plan at 0.9
-                                # and 0.95, Westfall stayed that plan)
+          "far": GUIDED}
+STRENGTH = {"middle": (0.94, 0.96, 0.98), "far": (1.0, 1.0, 1.0)}   # the denoise of each try. ComfyUI runs int(25 /
+                                # denoise) steps and skips the first ones beyond 25: 0.927 to 0.961 skip one, above it
+                                # none (0.94 and 0.96 differ by their seed only). The middle level from image 1 itself,
+                                # one step skipped, then none (the Deadmines' map at 0.8 and 0.88, six and three
+                                # skipped, stayed the game's coloured map, labels and all); the far level from noise,
+                                # its controls keeping the layout, a try another seed
 LOOK = "qwen3vl-look"           # the vision model's answers
 SIDE = 2048                     # a middle or far painting's longer side
 PAPER_SIDE = 768                # image 3 of the middle level: a piece of the parchment, this large
@@ -120,6 +141,8 @@ OUTLINE = 256                   # pixels across at which outlines are compared
 MIDDLE = 0.8                    # of the game's own map's agreement with the terrain: what a middle painting must
                                 # reach (a faithful pencil copy of the Deadmines' map reached 0.84 of it)
 FAR = 0.3                       # what a far painting's outlines must share with its plane view: rough, some leeway
+FAR_WATER = (0.01, 0.02)        # a zone's far painting: broad water added, or the walking data's water lost, past these
+FAR_STRAY = 0.04                # fails (shares of the picture); a shore may stray so far (of the side)
 FLOOR_FRAME = (0.05, 0.10, 0.95, 0.95)  # the map in an instance floor's art: around it its frame, title banner
 ZONE_FRAME = (0.025, 0.04, 0.975, 0.96)  # and ornaments, a zone's its border: made parchment (they stayed as a strip)
 STYLE_OF = {3065: (70, 1)}      # an instance without map art: whose map shows the manner (Uldaman's halls)
@@ -130,6 +153,15 @@ STYLE_OF = {3065: (70, 1)}      # an instance without map art: whose map shows t
 def pixel(x, y, k):
     """Where a world point (x north, y west, yards) lies at k pixels a yard: (column, row) from the map's corner."""
     return (CENTRE - y) * k, (CENTRE - x) * k
+
+
+def frame_of(box, width):
+    """A box (north, south, west, east) drawn width pixels across, north up: its pixels a yard, the map pixel of
+    its top left corner and its height in pixels."""
+    north, south, west, east = box
+    k = width / (west - east)
+    left, top = pixel(north, west, k)
+    return k, left, top, max(1, round((north - south) * k))
 
 
 def affine(fn):
@@ -233,17 +265,16 @@ class Indoors:
 
 
 class Ground:
-    """A map's terrain from above: its minimap textures, with an instance's indoor maps over them."""
+    """A map's terrain from above: its minimap textures, with an instance's indoor maps over them, and its heights
+    (its terrain files in adt, the liquids' types as atlas.Game has them)."""
 
-    def __init__(self, minimap, tiles, indoors=None):
+    def __init__(self, minimap, tiles, indoors=None, adt=None, liquids=None):
         self.minimap, self.tiles, self.indoors = Path(minimap), tiles, indoors
+        self.adt, self.liquids = (Path(adt) if adt else None), liquids or {}
 
     def picture(self, map_id, box, width, within=None):
         """The terrain of a box (north, south, west, east), width pixels across, north up."""
-        north, south, west, east = box
-        k = width / (west - east)
-        left, top = pixel(north, west, k)
-        height = max(1, round((north - south) * k))
+        k, left, top, height = frame_of(box, width)
         canvas = Image.new("RGBA", (width, height), (0, 0, 0, 255))
         size = TILE * k
         for row in range(int(top // size), int((top + height) // size) + 1):
@@ -259,6 +290,26 @@ class Ground:
             self.indoors.draw(canvas, left, top, k, within)
         return canvas.convert("RGB")
 
+    def heights(self, map_id, box, width):
+        """The height in yards of the ground, or of the water over it, where picture draws it; NaN where the game
+        has no terrain."""
+        k, left, top, height = frame_of(box, width)
+        out = np.full((height, width), np.nan, np.float32)
+        size = TILE * k
+        for row in range(int(top // size), int((top + height) // size) + 1):
+            for column in range(int(left // size), int((left + width) // size) + 1):
+                path = self.adt / f"{map_id * GRID * GRID + row * GRID + column}.adt" if self.adt else None
+                if not path or not path.is_file():
+                    continue
+                ground, surface, _ = ta.levels(path, self.liquids)
+                x0, y0 = round(column * size - left), round(row * size - top)
+                x1, y1 = round((column + 1) * size - left), round((row + 1) * size - top)
+                level = Image.fromarray(np.maximum(ground, surface)).resize((x1 - x0, y1 - y0), Image.Resampling.BILINEAR)
+                ax, ay, bx, by = max(0, x0), max(0, y0), min(width, x1), min(height, y1)
+                if ax < bx and ay < by:
+                    out[ay:by, ax:bx] = np.asarray(level)[ay - y0:by - y0, ax - x0:bx - x0]
+        return out
+
 
 def framed(picture):
     """A frame's picture at SIDE across, its height on a multiple of 32: all of a frame's pictures the same size."""
@@ -271,7 +322,7 @@ PLANE_FAR = 1.0                 # its far (north) edge spans the plan's whole wi
                                 # edge the frame's own width: a view from a plane, the land ahead widening
 
 
-def plane_view(plan, size):
+def plane_view(plan, size, resample=Image.Resampling.BICUBIC):
     """A top-down plan of the frame padded by PLANE_PAD seen from a plane at an angle (Saneroki, 2026-10-21: the far
     level a perspective view of the landscape): its near edge is the frame's south edge across the picture's bottom,
     its far edge the padded plan's north edge across its top, the ground between foreshortened as a perspective
@@ -287,7 +338,80 @@ def plane_view(plan, size):
         rows.append([u, v, 1, 0, 0, 0, -x * u, -x * v])
         rows.append([0, 0, 0, u, v, 1, -y * u, -y * v])
     data = np.linalg.solve(np.array(rows, float), np.array([c for point in source for c in point], float))
-    return plan.transform(size, Image.Transform.PERSPECTIVE, tuple(data), Image.Resampling.BICUBIC)
+    return plan.transform(size, Image.Transform.PERSPECTIVE, tuple(data), resample)
+
+
+FOV = 40.0                      # the far view's camera: its field of view across, degrees
+LIFT = 1.5                      # its heights raised so much, so hills still stand out from high above
+
+
+SEA = (40, 86, 122)             # the far level's water in its image 1: a sea seen from a plane (the game's navy came
+                                # out nearly black)
+FAR_BLUR = 12                   # pixels at SIDE: a zone's far image 1 blurred so, its colours only where each land lies
+FAR_COLOUR = 0.8                # and its colours toned down so: the model copied the game's textures and saturation
+
+
+def far_colours(view):
+    """A zone's far image 1: its relief blurred to where each land, forest, field, mountain and sea lies and its
+    colours toned down; the controls (the relief's depth, the water's lines) keep the layout, the model paints the
+    detail as a photograph shows it."""
+    from PIL import ImageEnhance
+    soft = view.convert("RGB").filter(ImageFilter.GaussianBlur(FAR_BLUR * view.width / SIDE))
+    return ImageEnhance.Color(soft).enhance(FAR_COLOUR)
+
+
+def far_box(box):
+    """The box the far level's relief is drawn from: the frame and PLANE_PAD beyond it to the north and south, and
+    to the west and east as far as the view widens towards its far edge (a tall frame's widens most), so no corner
+    of the view lies beyond it. (box, (its side pad, its north and south pad))."""
+    north, south, west, east = box
+    widening = (1 + PLANE_PAD) * (north - south) * 2 * math.tan(math.radians(FOV) / 2) / (west - east)
+    side = max(PLANE_PAD, widening / 2 + 0.02)
+    across, down = (west - east) * side, (north - south) * PLANE_PAD
+    return (north + down, south - down, west + across, east - across), (side, PLANE_PAD)
+
+
+def relief(plan, height, k, size, pads, background=(14, 22, 34), depth=False):
+    """The terrain around a frame seen from a plane at an angle, as the voxel spaces of old drew it (Saneroki,
+    2026-10-21: the far level a perspective view of the landscape): the plan's colours (RGB or one shade, north
+    up, the frame and pads (side, north and south) of its size beyond it, as far_box) laid over its heights
+    (yards, NaN where there is no terrain, k pixels a yard), the camera south of the frame and above it, looking
+    north, so the frame's south edge lies across the picture's bottom and the plan's north edge across its top;
+    nearer ground hides what stands behind it. size: the picture's. depth: its depth map instead, no plan needed
+    (a control's: near white, far dark, the sky black)."""
+    width, rows = size
+    down, across = height.shape
+    side, ends = pads
+    south = down * (1 + ends) / (1 + 2 * ends)
+    tan = math.tan(math.radians(FOV) / 2)
+    focal, near = width / 2 / tan, across / (1 + 2 * side) / (2 * tan)   # the frame fills the bottom edge
+    far = south + near                                                   # the camera to the plan's north edge
+    known = ~np.isnan(height)
+    lifted = np.where(known, height - (np.percentile(height[known], 5) if known.any() else 0), 0) * k * LIFT
+    altitude = rows / (focal * (1 / near - 1 / far))
+    horizon = -altitude * focal / far
+    steps = np.geomspace(near * 0.6, far * 1.15, 2400)
+    if depth:   # each step's nearness, from the frame's south edge (white) to the plan's north edge (dark grey)
+        shade = (40 + 215 * ((1 / steps - 1 / far) / (1 / near - 1 / far)).clip(0, 1)).astype(np.uint8)
+        colours, background = None, 0
+        out = np.zeros((rows, width), np.uint8)
+    else:
+        colours = np.asarray(plan)
+        out = np.empty((rows, width) + colours.shape[2:], np.uint8)
+        out[:] = background
+    for u in range(width):
+        x, y = across / 2 + tan * (2 * (u + 0.5) / width - 1) * steps, south + near - steps
+        inside = (x >= 0) & (x < across) & (y >= 0) & (y < down)
+        ix, iy = np.clip(x.astype(int), 0, across - 1), np.clip(y.astype(int), 0, down - 1)
+        inside &= known[iy, ix]
+        top = np.minimum.accumulate(horizon + (altitude - np.where(inside, lifted[iy, ix], 0)) * focal / steps)
+        low = np.clip(np.ceil(top), 0, rows).astype(int)
+        lengths = np.where(inside, np.concatenate([[rows], low[:-1]]) - low, 0).clip(0)
+        if lengths.sum():   # each step's span of rows, near to far: what it shows above what is nearer
+            ends_ = np.cumsum(lengths)
+            index = np.arange(ends_[-1]) - np.repeat(ends_ - lengths, lengths) + np.repeat(low, lengths)
+            out[index, u] = np.repeat(shade if depth else colours[iy, ix], lengths, axis=0)
+    return Image.fromarray(out).convert("RGB") if depth else Image.fromarray(out)
 
 
 def padded(box, pad):
@@ -304,6 +428,97 @@ def tiles_of(path):
         if row.get("minimap"):
             found[row["key"]] = row["minimap"]
     return found
+
+
+# --- The walking data ----------------------------------------------------------------------------
+# A zone's far painting keeps its lakes, rivers and seas roughly where the game has them: the walking data of
+# Core's set Walking (dev/tools/walk-data: per terrain tile of the continents, the rectangles of floors a player
+# can walk or swim on, from what the game collides with) drawn in the far level's view. Instances have none.
+
+NOWHERE, BARRED, SWIM, WALKED = 0, 85, 170, 255   # a walking picture's shades: no data, nobody walks, water, floors
+
+
+def cbor(data, at=0):
+    """One item of a walking block (CBOR of whole numbers and arrays only) and where the next begins."""
+    major, info = data[at] >> 5, data[at] & 31
+    at += 1
+    if info >= 24:
+        size = 1 << (info - 24)
+        info, at = int.from_bytes(data[at:at + size], "big"), at + size
+    if major == 4:
+        items = []
+        for _ in range(info):
+            item, at = cbor(data, at)
+            items.append(item)
+        return items, at
+    return (info if major == 0 else -1 - info), at
+
+
+class Walking:
+    """The set Walking's blocks by tile key: [format, surfaces (count, kind, region), rectangles (column, row,
+    width, height, z), openings]."""
+
+    def __init__(self, path=WALK):
+        self.blocks = {}
+        if Path(path).is_file():
+            for line in open(path, encoding="utf-8"):
+                row = json.loads(line)
+                if row.get("block"):
+                    self.blocks[row["key"]] = row["block"]
+
+    def picture(self, map_id, box, width):
+        """Where a player walks (WALKED), swims (SWIM) or cannot be (BARRED) in a box, width pixels across, as
+        Ground.picture draws the terrain; NOWHERE where the data has no tile."""
+        from PIL import ImageDraw
+        k, left, top, height = frame_of(box, width)
+        canvas = Image.new("L", (width, height), NOWHERE)
+        draw, size = ImageDraw.Draw(canvas), TILE * k
+        for row in range(int(top // size), int((top + canvas.height) // size) + 1):
+            for column in range(int(left // size), int((left + width) // size) + 1):
+                text = self.blocks.get(map_id * GRID * GRID + row * GRID + column)
+                if not text:
+                    continue
+                _, surfaces, rects, _ = cbor(zlib.decompress(base64.b64decode(text), -15))[0]
+                x0, y0, step = column * size - left, row * size - top, size / 256
+                draw.rectangle([x0, y0, x0 + size, y0 + size], fill=BARRED)
+                n = 0
+                for count, kind in zip(surfaces[0::3], surfaces[1::3]):
+                    for c, r, w, h, _ in zip(*[iter(rects[n * 5:(n + count) * 5])] * 5):
+                        u, v = x0 + c * step, y0 + r * step
+                        draw.rectangle([u, v, max(u, u + w * step - 1), max(v, v + h * step - 1)],
+                                       fill=SWIM if kind == 2 else WALKED)
+                    n += count
+        return canvas
+
+
+def guide_of(walk):
+    """The far level's water guide (a control's lines): white lines on black where water meets land (coasts,
+    lakes and rivers), as the walking data in the far view has them, nothing along the edge of what the data
+    covers. Only the water: drawn around them too, mountains came out as lakes; the relief's depth holds them."""
+    shades = np.asarray(walk.convert("L")).astype(int)
+    known = at.shrink(shades >= BARRED // 2, 2)
+    water = at.grow(at.shrink(np.abs(shades - SWIM) < 20, 1), 1)
+    lines = (water ^ at.shrink(water, 1)) & known
+    return Image.fromarray((at.grow(lines, 1) * 255).astype(np.uint8)).convert("RGB")
+
+
+EDGES = 0.92                    # an instance's far guide: the plan's edges stronger than so many of its pixels'
+
+
+def edges_of(view):
+    """An instance's far guide (a control's lines; it has no walking data): white lines on black along the plan's
+    clear edges, its walls, halls, shores and cliffs, the textures' fine edges left out."""
+    grey = np.asarray(view.convert("L").filter(ImageFilter.GaussianBlur(3 * view.width / SIDE))).astype(np.float32)
+    strength = np.hypot(np.diff(grey, axis=1, append=grey[:, -1:]), np.diff(grey, axis=0, append=grey[-1:]))
+    return Image.fromarray(((strength > np.quantile(strength, EDGES)) * 255).astype(np.uint8)).convert("RGB")
+
+
+def water_check(walk, painting):
+    """A far painting's water against the walking data's in the same view: at.check's added and lost."""
+    shades = np.asarray(walk.convert("L"))
+    sheet = lambda mask: at.small(mask.astype(np.uint8) * 255) > 127
+    return at.check(None, painting, game=sheet(np.abs(shades.astype(int) - SWIM) < 20),
+                    unknown=sheet(shades < BARRED // 2), stray=FAR_STRAY)
 
 
 # --- The game's map art ---------------------------------------------------------------------------
@@ -366,22 +581,46 @@ def light(brief):
     return brief["atmosphere"].split(". ")[0].rstrip(".")
 
 
-def words_of(level, words, brief, instance):
+COMPASS = ("east", "north-east", "north", "north-west", "west", "south-west", "south", "south-east")
+AROUND = 0.05                   # a neighbouring zone is named in a far painting's words where its box covers so much of
+NEIGHBOURS = 4                  # the view, the largest so many: else the model paints the zone's own land all over it
+
+
+def around_of(subject, found, briefs):
+    """The zones around a zone in its far view, the largest first: [(direction from it, uiMapID)]."""
+    north, south, west, east = padded(subject["box"], PLANE_PAD)
+    middle = ((subject["box"][0] + subject["box"][1]) / 2, (subject["box"][2] + subject["box"][3]) / 2)
+    near = []
+    for uimap, (continent, box, _) in found.items():
+        if continent != subject["map"] or uimap == subject["key"] or str(uimap) not in briefs:
+            continue
+        share = (max(0, min(north, box[0]) - max(south, box[1])) * max(0, min(west, box[2]) - max(east, box[3]))
+                 / ((north - south) * (west - east)))
+        if share >= AROUND:
+            angle = math.atan2((box[0] + box[1]) / 2 - middle[0], middle[1] - (box[2] + box[3]) / 2)
+            near.append((share, COMPASS[round(math.degrees(angle) / 45) % 8], uimap))
+    return [(direction, uimap) for _, direction, uimap in sorted(near, reverse=True)[:NEIGHBOURS]]
+
+
+def words_of(level, words, brief, instance, around=()):
     """A painting's words. The middle level: its pictures, look and last sentence, no brief (its words drew what
     the brief names, a ship on a mine's floor). The far level: its pictures and look, open (instances), the brief,
-    its last sentence."""
+    the lands around it (around: [(direction, their kind of place)]), its last sentence."""
     said = words[level]
     if level == "middle":
         plan = brief.get("_style_only")
         return " ".join([said["images_plan" if plan else "images"], said["look_plan" if plan else "look"], said["last"]])
-    parts = [said["images"], said["look"]]
+    parts = [said["images"], said["look"]] if instance else [said["images_relief"], said["look_relief"]]
     if instance:
         parts.append(said["open"])
     parts.append(f"This place is {brief['biome'][0].lower() + brief['biome'][1:]}.")
     for field in ("land", "plants", "buildings", "roads", "places"):
         if brief.get(field):
             parts.append(brief[field])
-    parts += [f"Its colours: {brief['colours']}.", f"Its light: {light(brief)}.", said["last"]]
+    parts += [f"Its colours: {brief['colours']}.", f"Its light: {light(brief)}."]
+    if around:
+        parts.append(said["around"] + " " + "; ".join(f"to the {d}, {kind[0].lower() + kind[1:]}" for d, kind in around) + ".")
+    parts.append(said["last"])
     return " ".join(part.strip() for part in parts)
 
 
@@ -504,7 +743,10 @@ def inputs(args):
     if args.zones:
         found, _ = ta.zones(tables, (0, 1))
         places = json.loads(META.read_text())["zones"]
-        world = Ground(paths["minimap"], tiles_of(ROOT / "assets" / "data" / "Tiles" / "Tiles.jsonl"))
+        game = at.Game({"adt": paths["continents"], "minimap": paths["minimap"], "tables": paths["tables"]})
+        world = Ground(paths["minimap"], tiles_of(ROOT / "assets" / "data" / "Tiles" / "Tiles.jsonl"),
+                       adt=paths["continents"], liquids={t: f for kinds in game.liquids.values() for t, f in kinds.items()})
+        walking = Walking()
         for uimap in args.zones:
             continent, box, _ = found[uimap]
             zone = places[str(uimap)]
@@ -517,10 +759,22 @@ def inputs(args):
             framed(world.picture(continent, box, SIDE)).save(folder / "ground.png")
             art = zone_art(uimap, tables, mapart)
             art.resize(Image.open(folder / "ground.png").size, Image.Resampling.LANCZOS).save(folder / "art.png")
-            plane_view(world.picture(continent, padded(box, PLANE_PAD), round(SIDE * 1.5)),
-                       Image.open(folder / "ground.png").size).save(folder / "far-plan.png")
-            subjects.append({"name": name, "kind": "zone", "key": uimap, "map": continent, "box": box,
-                             "centre": centre, "title": zone_briefs[str(uimap)]["name"]})
+            (wide, pads), size = far_box(box), Image.open(folder / "ground.png").size
+            across = round(SIDE * (1 + 2 * pads[0]))   # the frame SIDE pixels across in it
+            height, k = world.heights(continent, wide, across), frame_of(wide, across)[0]
+            plan, sea = np.asarray(world.picture(continent, wide, across)).copy(), np.isnan(height)
+            plan[sea], height[sea] = at.NAVY, 0.0   # no terrain: the open sea, as the close level paints it
+            walks = walking.picture(continent, wide, across)
+            relief(Image.fromarray(plan), height, k, size, pads).save(folder / "far-plan.png")   # the outlines' measure
+            plan[sea | (np.asarray(walks) == SWIM)] = SEA
+            far_colours(relief(Image.fromarray(plan), height, k, size, pads)).save(folder / "far-colours.png")
+            relief(None, height, k, size, pads, depth=True).save(folder / "far-depth.png")
+            walk = relief(walks, height, k, size, pads, background=NOWHERE)
+            walk.save(folder / "far-walk.png")
+            guide_of(walk).save(folder / "far-water.png")
+            subject = {"name": name, "kind": "zone", "key": uimap, "map": continent, "box": box, "centre": centre,
+                       "title": zone_briefs[str(uimap)]["name"]}
+            subjects.append(dict(subject, around=around_of(subject, found, zone_briefs)))
             print(f"{name}: {zone_briefs[str(uimap)]['name']}, frame {[round(v) for v in box]}")
     if args.instances:
         folder_files = Path(paths["instance_files"])
@@ -563,8 +817,11 @@ def inputs(args):
             folder = out / name
             folder.mkdir(parents=True, exist_ok=True)
             framed(ground.picture(key, union, SIDE)).save(folder / "ground.png")
-            plane_view(ground.picture(key, padded(union, PLANE_PAD), round(SIDE * 1.5)),
-                       Image.open(folder / "ground.png").size).save(folder / "far-plan.png")
+            view = plane_view(ground.picture(key, padded(union, PLANE_PAD), round(SIDE * 1.5)),
+                              Image.open(folder / "ground.png").size)
+            view.save(folder / "far-plan.png")   # the outlines' measure
+            far_colours(view).save(folder / "far-colours.png")
+            edges_of(view).save(folder / "far-edges.png")
             subjects.append({"name": name, "kind": "instance", "key": key, "map": key, "box": union,
                              "floors": records, "title": dungeon_briefs[str(key)]["name"]})
             print(f"{name}: {dungeon_briefs[str(key)]['name']}, {len(records)} floors, {len(indoors.parts)} indoor parts")
@@ -666,9 +923,10 @@ def join_close(folder):
     Image.fromarray(whole.transpose(1, 0, 2)).save(folder / "close.png")
 
 
-def paint_level(server, level, folder, refs, prompt, brief, reference, compare=None):
-    """A middle or far painting: tries until one passes both checks; the best kept as <level>.png. Its outlines
-    are compared with the terrain plan (compare, else image 1)."""
+def paint_level(server, level, folder, refs, prompt, brief, reference, compare=None, walk=None, workflow=None):
+    """A middle or far painting: tries until one passes its checks; the best kept as <level>.png. Its outlines
+    are compared with the terrain plan (compare, else image 1); a zone's far painting's water with the walking
+    data's in its view (walk)."""
     checks = checks_of(folder)
     ground = Image.open(compare or refs[0])
     best = None
@@ -679,17 +937,20 @@ def paint_level(server, level, folder, refs, prompt, brief, reference, compare=N
         if target.is_file() and f"{level}-{seed}" in checks:
             painting = Image.open(target).convert("RGB")
         else:
-            painting, _ = run_one(server, LAYERS[level], refs, prompt, f"{level}-{folder.name}", seed, settings)
+            painting, _ = run_one(server, workflow or LAYERS[level], refs, prompt, f"{level}-{folder.name}", seed, settings)
             painting.save(target)
             match = agreement(painting, ground)
             _, text = run_one(server, LOOK, [target], look_words(level, brief), f"look-{folder.name}", 1, {})
             seen_ok, seen = verdict(level, text)
             bar = MIDDLE * reference if level == "middle" else FAR
+            water = water_check(Image.open(walk), painting) if walk else None
+            wet_ok = water is None or (water["added"] <= FAR_WATER[0] and water["lost"] <= FAR_WATER[1])
             checks[f"{level}-{seed}"] = {"outlines": round(match, 3), "bar": round(bar, 3), "seen": seen,
-                                         "strength": settings["denoise"], "passes": bool(seen_ok and match >= bar),
-                                         "words": prompt}
+                                         **({"water": water} if water else {}), "strength": settings["denoise"],
+                                         "passes": bool(seen_ok and match >= bar and wet_ok), "words": prompt}
             save_checks(folder, checks)
-            print(f"{folder.name} {level} {seed}: outlines {match:.3f} (bar {bar:.3f}), {seen}", flush=True)
+            print(f"{folder.name} {level} {seed}: outlines {match:.3f} (bar {bar:.3f}), {seen}"
+                  + (f", water {water}" if water else ""), flush=True)
         mark = checks[f"{level}-{seed}"]
         rank = (mark["passes"], mark["outlines"])
         if best is None or rank > best[0]:
@@ -736,8 +997,15 @@ def paint(args):
                 w, h = joined.size
                 side = min(CLOSE_SIDE, w, h)
                 joined.crop(((w - side) // 2, (h - side) // 2, (w + side) // 2, (h + side) // 2)).save(close_piece)
-            paint_level(server, "far", folder, [folder / "far-plan.png", close_piece],
-                        words_of("far", words, brief, instance), brief, 1.0)
+            if instance:   # its plan from a plane, blurred, image 2 the close level's ground, its edges the control
+                paint_level(server, "far", folder, [folder / f"far-{part}.png" for part in ("colours", "close", "edges")],
+                            words_of("far", words, brief, True), brief, 1.0, compare=folder / "far-plan.png",
+                            workflow=GUIDED)
+            else:          # the relief, image 2 the close level's ground, its depth and its water lines the controls
+                around = [(direction, zone_briefs[str(uimap)]["biome"]) for direction, uimap in subject.get("around", [])]
+                paint_level(server, "far", folder, [folder / f"far-{part}.png" for part in ("colours", "close", "depth", "water")],
+                            words_of("far", words, brief, False, around), brief, 1.0, compare=folder / "far-plan.png",
+                            walk=folder / "far-walk.png", workflow=RELIEF)
 
 
 def join(args):
