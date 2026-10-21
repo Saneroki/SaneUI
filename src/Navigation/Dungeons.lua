@@ -17,8 +17,12 @@ local _, ns = ...
 --                   files), fitted into the view whole
 --      the bosses   where Core's set Dungeons has them: the game's boss mark at each one's place and the
 --                   boss's own 3D model standing on it (the game's model of its display), the same size at
---                   every zoom, its name (the set Encounters) in the tooltip; a model that would reach past
---                   the view's edge is hidden (the engine does not cut it there), its mark stays
+--                   every zoom; a model that would reach past the view's edge is hidden (the engine does not
+--                   cut it there), its mark stays. The tooltip: its name, its abilities and what it drops
+--                   (the set Encounters: the game's spell and item IDs), each with its icon and name as the
+--                   game has them, an item in its quality's colour
+--      enemies      where the set has them, each enemy as a small red dot where it stands (under the bosses),
+--                   its name in the tooltip
 --      the mouse    the wheel zooms around the mouse (from the whole map up to Dungeons.NEAR times
 --                   nearer), a drag moves it, a right click goes back to the map it was opened from
 --                   (the map stays under the dungeon's view, as it was)
@@ -46,18 +50,28 @@ Dungeons.FACING = 0.35 -- radians: the models turned a little from facing the vi
 Dungeons.TEXT = {
     dungeons = Core.Word("DUNGEONS", "Dungeons"),
     floor = "Floor",
-    unverified = "Its place not yet confirmed by the game",
+    unverified = "Not yet confirmed by the game",
+    enemy = "An enemy",
+    abilities = Core.Word("ABILITIES", "Abilities"),
+    loot = Core.Word("LOOT", "Loot"),
+    more = "and %d more",
 }
+Dungeons.LINES = 10 -- abilities, and items, a boss's tooltip lists at most
+Dungeons.ENEMY = "Interface\\COMMON\\Indicator-Red" -- an enemy's mark: the game's small red dot
+Dungeons.ENEMY_SIZE = 10
+Dungeons.ICON = 16  -- their icons' size in it
 
 local KINDS = rawget(_G, "Enum") and Enum.UIMapType or {}
 local DUNGEON = KINDS.Dungeon or 4
 
 local SET = Core.Data.Set("Dungeons")
 local ENCOUNTERS = Core.Data.Set("Encounters")
+local NPCS = Core.Data.Set("NPCs")
 
 local frame, content, over, canvas
 local tiles = {}  -- the art's textures, made as many as needed
 local marks = {}  -- the bosses' marks, made as many as needed
+local foes = {}   -- the enemies' marks, likewise
 local fromData    -- the dungeons of the set, once walked (Walk); nil until then
 local told        -- the game has told of a dungeon's map: the list is kept; else the game is asked again
 local walking     -- the walk's job while it runs
@@ -225,6 +239,7 @@ local function Place()
     content:SetScale(scale)
     content:ClearAllPoints()
     content:SetPoint("CENTER", frame, "CENTER", panX / scale, panY / scale)
+    Dungeons.PlaceEnemies(art, scale)
     Dungeons.PlaceBosses(art, scale)
 end
 
@@ -310,13 +325,79 @@ end
 -------------------------------------------------------------------------------
 --  The bosses
 -------------------------------------------------------------------------------
+local tipped -- the mark or model whose tooltip shows, to draw it again once the game has loaded its items
+
+-- An icon before words, in a tooltip's line.
+local function Iconed(icon, words)
+    if not icon then return words end
+    return ("|T%s:%d:%d:0:0:64:64:5:59:5:59|t %s"):format(tostring(icon), Dungeons.ICON, Dungeons.ICON, words)
+end
+
+-- A spell's line: its icon and name as the game has them; nil where the game does not know it.
+local function SpellLine(id)
+    local info = Core.Ask(C_Spell.GetSpellInfo, id)
+    if type(info) ~= "table" or not info.name then return nil end
+    return Iconed(info.iconID, info.name)
+end
+
+-- An item's line, its words and colour: its icon and its name in its quality's colour; asked of the game while it
+-- has not loaded it (nil meanwhile: the tooltip is drawn again once it has).
+local function ItemLine(id)
+    local name, _, quality = Core.Ask(C_Item.GetItemInfo, id)
+    if not name then
+        Core.Ask(C_Item.RequestLoadItemDataByID, id)
+        return nil
+    end
+    local r, g, b = 1, 1, 1
+    local colour = rawget(_G, "ITEM_QUALITY_COLORS") and ITEM_QUALITY_COLORS[quality]
+    if type(colour) == "table" then r, g, b = colour.r or r, colour.g or g, colour.b or b end
+    return Iconed(Core.Ask(C_Item.GetItemIconByID, id), name), r, g, b
+end
+
+-- Up to Dungeons.LINES lines of a list under its title, and how many more there are.
+local function Listed(title, ids, line)
+    local shown, more = 0, 0
+    for _, id in ipairs(ids or {}) do
+        if shown >= Dungeons.LINES then
+            more = more + 1
+        else
+            local words, r, g, b = line(id)
+            if words then
+                if shown == 0 then GameTooltip:AddLine(title, 1, 0.82, 0) end
+                shown = shown + 1
+                GameTooltip:AddLine(words, r or 1, g or 1, b or 1)
+            end
+        end
+    end
+    if more > 0 and shown > 0 then GameTooltip:AddLine(Dungeons.TEXT.more:format(more), 0.6, 0.6, 0.6) end
+end
+
 local function BossTip(part)
     local mark = part.mark or part
+    tipped = part
     GameTooltip:SetOwner(part, "ANCHOR_RIGHT")
     GameTooltip:SetText(mark.name or "?", 1, 1, 1)
+    local encounter = mark.encounter
+    if encounter then
+        Listed(Dungeons.TEXT.abilities, ENCOUNTERS:Get(encounter, "abilities"), SpellLine)
+        Listed(Dungeons.TEXT.loot, ENCOUNTERS:Get(encounter, "loot"), ItemLine)
+    end
     GameTooltip:AddLine(Dungeons.TEXT.unverified, 0.5, 0.5, 0.5)
     GameTooltip:Show()
 end
+
+local function TipGone()
+    tipped = nil
+    GameTooltip_Hide()
+end
+
+-- An item the tooltip asked for has come from the game: the tooltip drawn again, once on the next frame.
+local Again = Core.Later(function()
+    if tipped and tipped:IsMouseOver() and GameTooltip:GetOwner() == tipped then BossTip(tipped) end
+end)
+ns.On("ITEM_DATA_LOAD_RESULT", function()
+    if tipped then Again() end
+end)
 
 -- A boss's mark, and the frame for its model above it (made when a boss with a look first needs it).
 local function Mark()
@@ -327,7 +408,7 @@ local function Mark()
     mark.icon:SetAtlas(Dungeons.BOSS)
     mark:EnableMouse(true)
     mark:SetScript("OnEnter", ns.Guard(BossTip))
-    mark:SetScript("OnLeave", GameTooltip_Hide)
+    mark:SetScript("OnLeave", ns.Guard(TipGone))
     return mark
 end
 
@@ -337,7 +418,7 @@ local function Model(mark)
     model.mark = mark
     model:EnableMouse(true)
     model:SetScript("OnEnter", ns.Guard(BossTip))
-    model:SetScript("OnLeave", GameTooltip_Hide)
+    model:SetScript("OnLeave", ns.Guard(TipGone))
     mark.model = model
     return model
 end
@@ -380,6 +461,53 @@ function Dungeons.Bosses(map)
     return found
 end
 
+-- The enemies of the floor shown, as the set has them: { npc, x, y } (0 to 1 on the floor's map).
+function Dungeons.Enemies(map)
+    local _, floor = Entry(map)
+    if not floor or not floor.data then return {} end
+    local found = {}
+    for _, enemy in ipairs(SET:Get(floor.instance, "enemies") or {}) do
+        if enemy.floor == floor.data.floor and enemy.x and enemy.y then found[#found + 1] = enemy end
+    end
+    return found
+end
+
+local function FoeTip(foe)
+    GameTooltip:SetOwner(foe, "ANCHOR_RIGHT")
+    GameTooltip:SetText(foe.npc and NPCS:Get(foe.npc, "name") or Dungeons.TEXT.enemy, 1, 0.3, 0.25)
+    GameTooltip:AddLine(Dungeons.TEXT.unverified, 0.5, 0.5, 0.5)
+    GameTooltip:Show()
+end
+
+local function Foe()
+    local foe = CreateFrame("Frame", nil, over)
+    foe:SetSize(Dungeons.ENEMY_SIZE, Dungeons.ENEMY_SIZE)
+    foe.icon = foe:CreateTexture(nil, "ARTWORK")
+    foe.icon:SetAllPoints()
+    foe.icon:SetTexture(Dungeons.ENEMY)
+    foe:EnableMouse(true)
+    foe:SetScript("OnEnter", ns.Guard(FoeTip))
+    foe:SetScript("OnLeave", GameTooltip_Hide)
+    return foe
+end
+
+-- Each enemy's mark where it stands, as the bosses' are placed, under them; those of no enemy hidden.
+function Dungeons.PlaceEnemies(art, scale)
+    local enemies = shown and Dungeons.Enemies(shown) or {}
+    local base = over:GetFrameLevel()
+    for index, enemy in ipairs(enemies) do
+        local foe = foes[index] or Foe()
+        foes[index] = foe
+        foe.npc = enemy.npc
+        foe:ClearAllPoints()
+        foe:SetPoint("CENTER", frame, "CENTER", panX + (enemy.x - 0.5) * art.width * scale,
+            panY - (enemy.y - 0.5) * art.height * scale)
+        foe:SetFrameLevel(base)
+        foe:Show()
+    end
+    for index = #enemies + 1, #foes do foes[index]:Hide() end
+end
+
 -- Each boss's mark where it stands on the art as the zoom and the drag put it (scale: the art's), its model on
 -- it, the same size at every zoom; one lower on the screen in front of one behind it; the marks of no boss hidden.
 function Dungeons.PlaceBosses(art, scale)
@@ -388,7 +516,7 @@ function Dungeons.PlaceBosses(art, scale)
     for index, boss in ipairs(bosses) do
         local mark = marks[index] or Mark()
         marks[index] = mark
-        mark.name = boss.name
+        mark.name, mark.encounter = boss.name, boss.encounter
         local x, y = panX + (boss.x - 0.5) * art.width * scale, panY - (boss.y - 0.5) * art.height * scale
         mark:ClearAllPoints()
         mark:SetPoint("CENTER", frame, "CENTER", x, y)
@@ -460,6 +588,7 @@ function Dungeons.Close()
     frame:SetScript("OnUpdate", nil)
     frame:Hide()
     for _, texture in ipairs(tiles) do texture:SetTexture(nil) end -- its files let go
+    for _, foe in ipairs(foes) do foe:Hide() end
     for _, mark in ipairs(marks) do
         mark:Hide()
         if mark.model then

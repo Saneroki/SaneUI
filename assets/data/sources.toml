@@ -71,3 +71,9 @@ kind = "batch"
 game = "forever"
 build = 70245
 about = "The lifts: where each car of the original game (patch 1.12) stands at the start of its motion, where every record of it agrees, Forever's client moves it as the original game's does (its TransportAnimation, keyframe for keyframe) and Forever's own world has a floor at both ends of its way; their ends, rides and rounds read from Forever's client by dev/tools/travel-data. Unverified: the place the game's server sends for a car confirms it."
+
+[11]
+kind = "batch"
+game = "forever"
+build = 70245
+about = "The dungeons' and raids' bosses and enemies as our tool picked them, 2026-10-21: where each boss stands on its floor's map, where two records or more agree (the set Dungeons' own places stay); the spells each boss casts that two records or more name, or that Forever's own runs recorded, and that Forever's client has; the items each drops that two or more name and the set Items has, without chances; where the enemies of six dungeons stand. A boss the game lists under several encounters (its dungeon's other modes) is taken as the one its own dungeon has. Unverified: the game's word or our own sightings replace it."

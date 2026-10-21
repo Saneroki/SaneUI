@@ -153,10 +153,15 @@ minimap) and the full-screen window (the world map) show the same map with the s
   floor by floor (Forever's client has none, so Core's set *Dungeons* holds them, from Blizzard's own tables; the
   art files are in Forever's install), each boss's icon where it stands, and the boss's 3D game model standing on
   that spot.
+- **A boss's tooltip on its map (Saneroki, 2026-10-21):** its abilities and the items it drops, with their names
+  and icons, from what is known of the dungeons (built: the set *Encounters*' `abilities` and `loot`, batch 11; the
+  names, icons and qualities the game's).
 - **Instance maps keep rules of their own (Saneroki, 2026-10-21),** apart from the world map's and its indoor maps':
   - **No players on them:** Forever tells no player's place inside an instance (not in its current versions), so an
     instance's map shows neither the player nor the party or raid, and its floor is not chosen by where one stands.
-  - **What stands still is shown:** the enemies' and the bosses' places are fixed, so they can stand on the map.
+  - **What stands still is shown:** the enemies' and the bosses' places are fixed, so they can stand on the map. Built
+    2026-10-21: the bosses of 23 dungeons and raids, and the enemies of six (Ragefire Chasm, Wailing Caverns, the
+    Deadmines, Shadowfang Keep, the Stockade, Blackfathom Deeps) as small red dots.
   - **The bosses in full 3D:** each boss as its 3D game model where it stands, in every zoom of the instance maps
     (the three zooms to come too).
 - **Indoor maps only inside buildings and caves (Saneroki, 2026-10-21):** the world map's indoor maps lie over the
@@ -1586,8 +1591,10 @@ What a dungeon map shows:
   each boss's mark (the game's `vignettekillboss`) and its model (`PlayerModel`, `SetDisplayInfo`); the reworked
   dungeons (Deadmines, Shadowfang Keep, Gnomeregan and others) have their map without bosses. No player's arrow
   and no group (2026-10-21: the game tells no place inside an instance); the floors' world boxes stay in the set for
-  the enemies' places to come (from a source that passes *Careful data*, the server databases' spawns where they
-  agree, placed by those boxes; Core's spawns are keyed by the game's zone maps, which Forever lacks inside).
+  the enemies' places to come; Core's spawns are keyed by the game's zone maps, which Forever lacks inside. Batch 11
+  (2026-10-21) added 100 bosses (the rebuilt dungeons' too: their places agree across the records on the newest
+  map art), each boss's abilities and loot (set *Encounters*), and the enemies of six dungeons (set *Dungeons*'
+  `enemies`, on the floors' maps).
 - Bosses, entrances, floor links and quest items from Core's data.
 - Drawn as *Maps without a world box* where the game gives none.
 

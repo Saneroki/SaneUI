@@ -105,8 +105,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 - **Dungeons** on the bar: every dungeon and raid the game has a map of, and those Core's data has a map of
   (26 of Forever's: the classic dungeons and raids, each floor in the game's own map art), A to Z; chosen, its map
   over the map, and beside it its floors. Where the data knows them, each boss in the game's boss mark where it
-  stands, and its own 3D model standing on the mark (the game's model of the boss's look), its name in the tooltip
-  (not yet confirmed by the game). The wheel zooms it, a drag moves it, a right
+  stands, and its own 3D model standing on the mark (the game's model of the boss's look). Its tooltip: its name,
+  its abilities and what it drops, each with its icon and name as the game has them (an item in its quality's
+  colour; at most ten of each, then how many more), not yet confirmed by the game. Where the data knows them, the
+  enemies stand there too, each a small red dot under the bosses, its name in its tooltip (six dungeons so far). The wheel zooms it, a drag moves it, a right
   click goes back to the map it was opened from. Shift and a click on a dungeon's entrance opens it too, and inside a
   dungeon the full map opens on its map, at its lowest floor. Instance maps keep rules of their own, apart from the
   world map's and its indoor maps': Forever tells nobody's place inside an instance, so they show no arrow for you
@@ -293,13 +295,17 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   stays as it was). The list is kept once the game told of a dungeon map or the set was read. Core's set *Dungeons* (pack World)
   adds the dungeons the game has no map of: walked once it is there (`Each`), each floor keyed `"<instance>:<floor>"`
   (`Dungeons.Key(instance)` gives the lowest; an entrance's pin takes it as its `to`), its art from the set's tiles
-  (the game's files), inside one its lowest floor (`Dungeons.Here`, the instance from `GetInstanceInfo`; the floors'
-  world boxes are kept for the enemies' places to come), the bosses (`Dungeons.Bosses`) in
+  (the game's files), inside one its lowest floor (`Dungeons.Here`, the instance from `GetInstanceInfo`), the
+  enemies (the set's `enemies`, `Dungeons.Enemies`, `Dungeons.PlaceEnemies`: `Dungeons.ENEMY` at `ENEMY_SIZE`, a
+  level under the bosses' marks, named by the set *NPCs*), the bosses (`Dungeons.Bosses`) in
   `Dungeons.BOSS` over the art, the same size at every zoom (`Dungeons.PlaceBosses`), named by the set *Encounters*;
   a boss with a look (the set's `display`) gets a `PlayerModel` of it standing on its mark (`SetDisplayInfo`, as the
   game's guild news shows a boss; `Dungeons.MODEL_WIDTH` x `MODEL_HEIGHT`, turned `Dungeons.FACING`), one lower on
   the screen in front (`Dungeons.SPREAD` levels, all under the bar), hidden while it would reach past the view's
-  edge (models are not cut there), let go (`ClearModel`) when the view closes.
+  edge (models are not cut there), let go (`ClearModel`) when the view closes. A boss's tooltip (`BossTip`) lists the
+  set *Encounters*' `abilities` and `loot` (`Listed`, at most `Dungeons.LINES` each): a spell by `C_Spell.GetSpellInfo`,
+  an item by `C_Item.GetItemInfo` (asked for with `RequestLoadItemDataByID` while not loaded; drawn again once on
+  `ITEM_DATA_LOAD_RESULT`), each with its icon (`Dungeons.ICON`).
 - **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
   in view, and from where the player is on (the way's cut, `Route.Cut`): the parts behind are not drawn, the one the
   player is on only from there, and a line of its own (the head) runs from the player's arrow to that point; the
@@ -492,6 +498,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-21, bosses with their abilities and loot; enemies:** the dungeon maps' boss tooltips list what the boss
+  casts and drops, with their icons, from the game; Core's sets gained them (batch 11: *Encounters* `abilities`,
+  `loot`; *Dungeons* 100 more bosses, in the dungeons Blizzard rebuilt too, and `enemies` in six dungeons), and the
+  enemies stand on the maps as small red dots.
 - **2026-10-21, indoor maps off the streets; instance maps without players; a rare's model:** as Saneroki decided,
   the indoor maps only inside buildings and caves (Core's set *Indoors* marks the open parts, `open`, from the game's
   part flags and its `WMOAreaTable`); instance maps keep rules of their own: no arrow, no group, no floor by place

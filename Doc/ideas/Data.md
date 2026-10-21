@@ -1233,7 +1233,7 @@ rares, herbs and ore, quests, trainers, repair, inns and every other NPC with a 
 | *NPCs* | creature ID | `services`: which NPCs are trainers, repair, inns, ...; where they stand is their *Spawns* | World |
 | *Tiles* | continent × 4096 + row × 64 + column | The terrain's picture of each tile of a continent's grid: the game's own minimap texture, for Navigation's map (2026-10-18) | World |
 | *Overlays* | the game's overlay ID | Every part of a map's art the game reveals once explored (its map, place and size in the art, textures, flags), so Navigation's map keeps those not yet explored dark (2026-10-19) | World |
-| *Dungeons* | the instance's map ID | Each dungeon's and raid's floors (name, size, world box), the tiles of its map art, and its bosses (encounter, floor, place, look), for Navigation's dungeon maps; Forever's client has none (2026-10-21) | World |
+| *Dungeons* | the instance's map ID | Each dungeon's and raid's floors (name, size, world box), the tiles of its map art, and its bosses (encounter, floor, place, look) and enemies (creature, floor, place), for Navigation's dungeon maps; Forever's client has none (2026-10-21) | World |
 
 - **One shape for every area:** quest areas, spawn areas and herb or ore areas all use the same cells
   (*Quest areas*), the same merging and the same point test (`Areas.lua`).

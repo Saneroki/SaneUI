@@ -1,7 +1,7 @@
 set = "Dungeons"
 key = "int"              # the instance's map ID (the game's Map table; Encounters' instance)
 learn = false
-about = "The maps of the dungeons and raids: each floor's map art from the game's files, the part of the world it shows, and where the bosses stand on it, with their looks."
+about = "The maps of the dungeons and raids: each floor's map art from the game's files, the part of the world it shows, and where the bosses stand on it, with their looks, and the enemies."
 
 # A floor's map is the game's own map art: its tiles (tiles, by floor) laid row by row, each `tile` units square,
 # cut at `width` x `height`. A point of the world (x north, y west, yards) lies on a floor's map, 0 to 1 across
@@ -34,6 +34,12 @@ bosses = { type = "list", of = "tuple", parts = [
     { name = "x", type = "number", min = 0, max = 1 }, # where it stands on that floor's map, 0 to 1 from the left
     { name = "y", type = "number", min = 0, max = 1 }, # and from the top
     { name = "display", type = "int", min = 1 },    # its look: the game's creature display, for its model
+] }
+enemies = { type = "list", of = "tuple", parts = [
+    { name = "npc", type = "int", min = 1 },        # the creature (its name: the set NPCs, or the game's)
+    { name = "floor", type = "int", min = 1 },
+    { name = "x", type = "number", min = 0, max = 1 }, # where it stands on that floor's map, as a boss
+    { name = "y", type = "number", min = 0, max = 1 },
 ] }
 
 [index]

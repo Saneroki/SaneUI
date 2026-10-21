@@ -1,13 +1,15 @@
 set = "Encounters"
 key = "int"              # the game's encounter ID (DungeonEncounter)
 learn = true             # ENCOUNTER_START names it
-about = "The bosses of the dungeons and raids: name, the instance they are in, their order there and the difficulty."
+about = "The bosses of the dungeons and raids: name, the instance they are in, their order there and the difficulty; the spells they cast and the items they drop."
 
 [fields]
 name       = { type = "text" }
 instance   = { type = "int", min = 0 }       # the instance's map ID (Places' instance)
 order      = { type = "int", min = 0 }       # its place in the instance's list of bosses
 difficulty = { type = "int", min = 0 }       # the game's difficulty ID; none: every one
+abilities  = { type = "list", of = "int", min = 1 }  # the spells it casts: the game's spell IDs (names, icons: the game's)
+loot       = { type = "list", of = "int", min = 1 }  # what it drops: the game's item IDs (names, icons, quality: the game's)
 
 [index]
 byInstance = "instance"

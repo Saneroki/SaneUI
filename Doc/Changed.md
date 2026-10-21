@@ -6,6 +6,23 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 478 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 50 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation, data: bosses' abilities and loot in their tooltips, more bosses, enemies (Saneroki, 2026-10-21)
+- **Batch 11** (`sources.toml`, "the dungeons' and raids' bosses and enemies as our tool picked them"): taken in with
+  `--take` after a dry run showed only fills (new fields, longer lists with every boss of the set unchanged).
+  - *Encounters*: `abilities` (the game's spell IDs Forever's client has: 234 bosses, 809 spells) and `loot` (item IDs
+    the set *Items* has, no chances: 211 bosses, 886 items).
+  - *Dungeons*: 100 more bosses in 23 dungeons and raids (the rebuilt dungeons too, where the records agree on the
+    floors' maps), each with its look where both Forever clients have it; `enemies` (creature, floor, x, y): 961 in
+    Ragefire Chasm, Wailing Caverns, the Deadmines, Shadowfang Keep, the Stockade and Blackfathom Deeps. A boss the
+    game lists under several encounters (its dungeon's other modes) is the one its own dungeon has.
+- **The dungeon view** (`Dungeons.lua`): a boss's tooltip lists its abilities and loot, each with its icon and name
+  as the game has them (an item in its quality's colour, asked for while not loaded and drawn again once it is; at
+  most `Dungeons.LINES` of each, then how many more); the enemies stand as small red dots (`Dungeons.ENEMY`) under
+  the bosses, their names in their tooltips; the tooltips say "Not yet confirmed by the game".
+- Tests: Navigation 487 checks (the tooltip's abilities and loot with their icons, a spell the game does not know left
+  out, an item loaded later drawn again; an enemy where it stands, under the boss, with its name). A `/reload` takes
+  it in.
+
 ### Core: every data set part of Core, the data packs gone (Saneroki, 2026-10-21)
 - **The data packs are gone** (Saneroki: they filled the addon list and hid the modules one chooses; a second of
   loading screen and a few hundred megabytes of memory are acceptable): `dev/tools/data compile <dir>` writes every

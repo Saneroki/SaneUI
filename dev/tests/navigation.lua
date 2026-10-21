@@ -540,13 +540,15 @@ local upper = {}
 for row = 0, 2 do
     for column = 0, 3 do upper[#upper + 1] = ("1\031%d\031%d\031%d"):format(row, column, 9001 + row * 4 + column) end
 end
-Set(dungeonsPath .. "/Dungeons.lua", "Dungeons", "0000000b", "int", '"name", "floors", "tiles", "bosses"',
+Set(dungeonsPath .. "/Dungeons.lua", "Dungeons", "0000000b", "int", '"name", "floors", "tiles", "bosses", "enemies"',
     '"text", "list tuple(floor:int,name:text,width:int,height:int,tile:int,north:number,south:number,west:number,east:number)", '
-    .. '"list tuple(floor:int,row:int,column:int,file:int)", "list tuple(encounter:int,floor:int,x:number,y:number,display:int)"',
+    .. '"list tuple(floor:int,row:int,column:int,file:int)", "list tuple(encounter:int,floor:int,x:number,y:number,display:int)", '
+    .. '"list tuple(npc:int,floor:int,x:number,y:number)"',
     'R[90] = "70245\t\tDeep Halls\t1\031Upper\0311002\031668\031256\031100\031-100\031150\031-150'
     .. '\0302\031Lower\0311002\031668\031256\03150\031-50\03175\031-75\t'
     .. table.concat(upper, "\030") .. '\0302\0310\0310\0319101\0302\0310\0311\0319102'
-    .. '\t700\0311\0310.25\0310.5\0314203\030701\0312\0310.5\0310.5"\n')
+    .. '\t700\0311\0310.25\0310.5\0314203\030701\0312\0310.5\0310.5'
+    .. '\t71\0311\0310.75\0310.25\03071\0312\0310.1\0310.9"\n')
 Set(dungeonsPath .. "/Encounters.lua", "Encounters", "0000000c", "int", '"name", "instance", "order", "abilities", "loot"',
     '"text", "int", "int", "list int", "list int"',
     'R[700] = "70245\t\tThe First Boss\t90\t0\t801\030802\t901\030902"\nR[701] = "70245\t\tThe Second Boss\t90\t1"\n')
@@ -3364,10 +3366,46 @@ end)()
     local marks = Marks()
     check(#marks == 1 and marks[1]._points[1][4] < 0 and near(marks[1]._points[1][5], 0),
         "its boss's mark where it stands: a quarter across, half down")
+    -- The game's spells and items: one spell it does not know; one item loaded, one it loads on asking.
+    local loaded, asked = { [901] = true }, {}
+    local spellInfo, itemInfo, itemIcon, request = C_Spell.GetSpellInfo, C_Item.GetItemInfo, C_Item.GetItemIconByID,
+        C_Item.RequestLoadItemDataByID
+    C_Spell.GetSpellInfo = function(id) return id == 801 and { name = "Cleave", iconID = 132338 } or nil end
+    C_Item.GetItemInfo = function(id) if loaded[id] then return "Item " .. id, nil, 4 end end
+    C_Item.GetItemIconByID = function(id) return 1000 + id end
+    C_Item.RequestLoadItemDataByID = function(id) asked[#asked + 1] = id end
+    ITEM_QUALITY_COLORS = { [4] = { r = 0.64, g = 0.21, b = 0.93 } }
     GameTooltip._lines = nil
+    marks[1]._mouseOver = true
     marks[1]._scripts.OnEnter(marks[1])
-    check(GameTooltip._text == "The First Boss" and GameTooltip._lines and GameTooltip._lines[1] == Dungeons.TEXT.unverified,
-        "its tooltip: the boss's name as the game's encounters have it, not yet confirmed")
+    local lines = GameTooltip._lines or {}
+    check(GameTooltip._text == "The First Boss" and lines[1] == Dungeons.TEXT.abilities and lines[2]:find("Cleave", 1, true)
+        and lines[2]:find("132338", 1, true) and lines[3] == Dungeons.TEXT.loot and lines[4]:find("Item 901", 1, true)
+        and lines[4]:find("1901", 1, true) and lines[5] == Dungeons.TEXT.unverified and asked[1] == 902,
+        "its tooltip: the boss's name as the game's encounters have it, its abilities and loot with their icons as the "
+        .. "game has them (a spell it does not know left out, an item not loaded asked for), not yet confirmed")
+    loaded[902] = true
+    GameTooltip._lines = nil -- (the stand-in keeps its lines; the game's tooltip starts anew at SetOwner)
+    W.Fire("ITEM_DATA_LOAD_RESULT", 902, true)
+    Frames(1)
+    lines = GameTooltip._lines or {}
+    check(lines[5] and lines[5]:find("Item 902", 1, true), "the item come: the tooltip drawn again with it")
+    marks[1]._mouseOver = false
+    C_Spell.GetSpellInfo, C_Item.GetItemInfo, C_Item.GetItemIconByID, C_Item.RequestLoadItemDataByID =
+        spellInfo, itemInfo, itemIcon, request
+    -- Its enemies where they stand, each a small red dot under the bosses, its name in its tooltip.
+    do
+        local foes = {}
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "Texture" and widget._texture == Dungeons.ENEMY and widget._parent._shown then
+                foes[#foes + 1] = widget._parent
+            end
+        end
+        check(#foes == 1 and foes[1]._points[1][4] > 0 and foes[1]._points[1][5] > 0 and foes[1]._level < marks[1]._level,
+            "its enemy on this floor where it stands (three quarters across, a quarter down), under the boss's mark")
+        foes[1]._scripts.OnEnter(foes[1])
+        check(GameTooltip._text == "A Wolf", "its tooltip: the creature's name")
+    end
     local model = marks[1].model
     check(model and model._kind == "PlayerModel" and model._display == 4203 and model._shown
         and model._points[1][1] == "BOTTOM" and near(model._points[1][4], marks[1]._points[1][4])
