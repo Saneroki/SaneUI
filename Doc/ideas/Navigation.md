@@ -122,6 +122,13 @@ minimap) and the full-screen window (the world map) show the same map with the s
     render, free like the zones' paintings (*Zones and continents reimagined*).
 
   Made after the zones.
+- **Indoor maps are clear around, never black (Saneroki, 2026-10-21), very important:** every indoor map (the
+  buildings and caves of the continents, Stormwind's districts and canals, Ironforge's halls, the dungeons'
+  close-up and in-between maps) has a transparent background and is as accurate as the terrain views, in the
+  same place and scale, so it lies seamlessly over the terrain view when the player goes inside. That holds for
+  the painted versions too: a painting of an indoor map is cut to the game's own outline of it and keeps its
+  alpha (`dev/tools/indoor-art` already makes the game's indoor maps so). Only the fully zoomed-out
+  reimagination of an instance (above) is a picture of its own.
 - **Entrances and ways out are pins (Saneroki, 2026-10-19, replacing the same day's ask to paint them):** caves,
   mines, the entrances of dungeons and raids and the ways from one zone into the next are shown by map pins, not
   painted into the view.
