@@ -41,8 +41,9 @@ status = ["dev/tools/atlas", "status"]
 done = '^(\d+) of \1 squares painted'
 rebuild = ["dev/tools/atlas", "rebuild"]
 
-# The dungeons' and raids' far zoom: one painting of each instance, three seeds (Saneroki, 2026-10-21: queued, not
-# urgent). Its plan: dev/imagegen/maps/dungeons.toml.
+# The dungeons' and raids' far level: one painting of each instance, three seeds (Saneroki, 2026-10-21: queued, not
+# urgent). Its plan: dev/imagegen/maps/dungeons.toml and levels.toml (Doc/guides/map-style.md); the close and
+# middle levels join with the instances' terrain.
 [[job]]
 name = "dungeons"
 priority = 2

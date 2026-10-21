@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""Paints the far zoom of Navigation's dungeon and raid maps (Doc/ideas/Navigation.md, *Dungeon, instance and raid
-maps in three zooms*): one free, realistic painting of each instance as a whole, its mood and how its rooms lie, from
-its layout and its brief (dev/imagegen/maps/dungeons.toml), by the local image model in ComfyUI.
+"""Paints the far level of Navigation's instance maps, the dungeons and raids (Doc/guides/map-style.md;
+Doc/ideas/Navigation.md, *Instance maps as the world map, apart from it*): one free, realistic reimagination of each
+instance as a whole, seen at an angle, by the local image model in ComfyUI, with the words the world map's painted
+levels share (dev/imagegen/maps/levels.toml, [far]) and each instance's brief (dev/imagegen/maps/dungeons.toml). The
+close and middle levels wait for the instances' terrain (dungeons.toml says how they are made).
 
-The layout is image 1: every floor of the instance side by side in the game's order, from the game's own map art of
-it (Core's set Dungeons: its floors' tiles, read from a folder of the game's map art, <file ID>.blp) or, for an
-instance the game has no map art of, the pictures given in --layouts (<map ID>-<floor>.png). It is blurred until only
-the shapes of halls, rooms, corridors and water are left (BLUR), so no line, drawing style or writing carries over:
-the game's art is cut free of its frame and the title banner at its top (CUT), and the faint drawing made stronger.
-Each instance is painted with SEEDS seeds, the first seed of every instance before the second of any, so a run that
-stops early has some of each. A painting already made is not made again: the GPU runner can stop and start it.
+Image 1 is the instance's layout: every floor cut to its drawing (FRAME: the game's frame and title banner off) and
+laid side by side in the game's order, the faint drawing made stronger, blurred until only the shapes of halls,
+rooms, corridors and water are left (BLUR), so no line, drawing style or writing carries over. The floors' maps are
+the game's own map art (Core's set Dungeons: its floors' tiles, from a folder of the game's map art, <file ID>.blp)
+or, for an instance the game has no map art of, the pictures given in --layouts (<map ID>-<floor>.png). Each
+instance is painted with SEEDS seeds, the first seed of every instance before the second of any, so a run that
+stops early has some of each. A painting already made is not made again: the GPU runner can stop and start it. A
+run paints with the plan it began with (its copy in plan/, as the Atlas keeps one): a change to the words shows in
+its status and takes effect with rebuild.
 
 Usage:
   dev/tools/dungeon-paint paint [--mapart DIR] [--layouts DIR] [--only KEYS] [--limit N] [--out DIR] [--dry]
@@ -19,17 +23,18 @@ Usage:
 
   paint      paints what is missing; --mapart and --layouts are needed the first time, then remembered in the run's
              state.json; --only 33,36 those instances only; --limit N stops after N paintings; --dry makes the
-             layouts and prints the words, without ComfyUI
-  status     its first line: "<made> of <all> paintings made"; then what has no layout or no brief, and whether the
-             plan (dungeons.toml, the workflow) changed since the run began
-  contact    contact.jpg: a row per instance, its layout and its paintings, to choose from
+             inputs and prints the words, without ComfyUI
+  status     its first line: "<made> of <all> paintings made"; then what has no map or no brief, and whether the
+             plan (dungeons.toml, levels.toml, the workflow) changed since the run began
+  contact    contact-far.jpg: a row per instance, its image 1 and its paintings, to choose from
   rebuild    the run so far put aside whole in <out>-runs/<date>, a new run with the plans as they are
 
 It writes, in the run's folder (default assets/generated/dungeons, never committed):
-  layout/<key>.png          image 1 as the model gets it
-  <key>-<seed>.png          a painting
-  paintings.jsonl           a line per painting: key, seed, words, workflow, settings, time
-  state.json                the paths given, the plan's fingerprint at the run's first painting
+  input/far-<key>.png       image 1 as the model gets it
+  far/<key>-<seed>.png      the paintings
+  paintings.jsonl           a line per painting: what, key, seed, words, workflow, settings, time
+  plan/                     the plan the run paints with: dungeons.toml, levels.toml, workflow.json
+  state.json                the paths given, when the run began and its plan's fingerprint
 Needs Python with Pillow and ComfyUI (comfyui start; the GPU runner starts it for its job).
 """
 import argparse
@@ -63,7 +68,8 @@ def module(name, path):
 
 ig = module("imagegen", ROOT / "dev" / "tools" / "imagegen")   # ComfyUI and its workflows
 
-PLAN = ROOT / "dev" / "imagegen" / "maps" / "dungeons.toml"
+MAPS = ROOT / "dev" / "imagegen" / "maps"
+PLAN = {"dungeons.toml": MAPS / "dungeons.toml", "levels.toml": MAPS / "levels.toml"}
 SET = ROOT / "assets" / "data" / "Dungeons" / "Dungeons.jsonl"
 OUT = ROOT / "assets" / "generated" / "dungeons"
 COMFY = Path(os.environ.get("IMAGEGEN_HOME", "/data/Projects/ImageGen"))   # ComfyUI's folders (input, output)
@@ -73,19 +79,23 @@ WORKFLOW = "qwen21-edit-1ref"   # the full model, as the Atlas: these are finish
 WIDTH, HEIGHT = 2048, 1360      # the game's map art is 3:2
 SETTINGS = {"width": WIDTH, "height": HEIGHT, "resolution": WIDTH}
 SEEDS = 3                       # paintings of an instance, seeds 1 to 3: one is chosen
+FRAME = (0.05, 0.10, 0.95, 0.95)  # the drawn part of a floor's map art: outside it its frame and the title banner
 BLUR = 10                       # pixels of blur at WIDTH: the shapes stay, lines and writing go
-GAP = 24                        # pixels between floors in the layout
-CUT = (0.05, 0.09, 0.95, 0.95)  # the part of a floor's map art kept: its frame and the title banner at its top cut off
+GAP = 24                        # pixels between floors in image 1
 START = 120                     # seconds ComfyUI may take to start
 
 
-# --- The plan and the layouts --------------------------------------------------------------------
+# --- The plan and the floors' maps ---------------------------------------------------------------
 
-def plan():
-    with PLAN.open("rb") as handle:
+def plan(folder=None):
+    """The words and the briefs: the run's copy of the plan (folder), or the plan as it is."""
+    paths = {name: (folder / name if folder else path) for name, path in PLAN.items()}
+    with paths["dungeons.toml"].open("rb") as handle:
         data = tomllib.load(handle)
+    with paths["levels.toml"].open("rb") as handle:
+        shared = tomllib.load(handle)
     words = data.pop("words")
-    return words, {int(key): brief for key, brief in data.items()}
+    return words, shared, {int(key): brief for key, brief in data.items()}
 
 
 def floors_of_set():
@@ -101,8 +111,12 @@ def floors_of_set():
     return found
 
 
+def frame_box(picture):
+    return tuple(round(f * picture.size[i % 2]) for i, f in enumerate(FRAME))
+
+
 def floor_picture(floor, mapart):
-    """A floor's map art: its tiles laid row by row at its size, then CUT; None when a tile is missing."""
+    """A floor's map art in its full frame: its tiles laid row by row at its size; None when a tile is missing."""
     _, width, height, tile, tiles = floor
     picture = Image.new("RGBA", (width, height))
     for row, column, file in tiles:
@@ -111,34 +125,34 @@ def floor_picture(floor, mapart):
             return None
         with Image.open(path) as texture:
             picture.paste(texture.convert("RGBA").resize((tile, tile)), (column * tile, row * tile))
-    return picture.crop(tuple(round(f * (width, height)[i % 2]) for i, f in enumerate(CUT)))
+    return picture
 
 
-def levels_of(key, sets, paths):
-    """How many floors the instance's layout has from what is on disk (no picture read); 0 when it has none."""
-    if key in sets and paths.get("mapart"):
-        mapart = Path(paths["mapart"])
-        if sets[key] and all((mapart / f"{file}.blp").is_file() for floor in sets[key] for _, _, file in floor[4]):
-            return len(sets[key])
-    if paths.get("layouts"):
-        return len(list(Path(paths["layouts"]).glob(f"{key}-*.png")))
-    return 0
-
-
-def floor_pictures(key, sets, paths):
-    """The instance's floors as pictures, from the set's map art or else the given layouts; [] when it has none."""
+def floors_of(key, sets, paths):
+    """The instance's floors [(floor, picture, from the game's art)], or [] when it has none."""
     if key in sets and paths.get("mapart"):
         pictures = [floor_picture(floor, Path(paths["mapart"])) for floor in sets[key]]
         if pictures and all(pictures):
-            return pictures
+            return [(floor[0], picture, True) for floor, picture in zip(sets[key], pictures)]
     if paths.get("layouts"):
         given = sorted(Path(paths["layouts"]).glob(f"{key}-*.png"), key=lambda p: int(p.stem.split("-")[-1]))
-        return [Image.open(p).convert("RGBA") for p in given]
+        return [(int(p.stem.split("-")[-1]), Image.open(p).convert("RGBA"), False) for p in given]
+    return []
+
+
+def floor_numbers(key, sets, paths):
+    """The instance's floor numbers from what is on disk (no picture read); [] when it has none."""
+    if key in sets and paths.get("mapart"):
+        mapart = Path(paths["mapart"])
+        if sets[key] and all((mapart / f"{file}.blp").is_file() for floor in sets[key] for _, _, file in floor[4]):
+            return [floor[0] for floor in sets[key]]
+    if paths.get("layouts"):
+        return sorted(int(p.stem.split("-")[-1]) for p in Path(paths["layouts"]).glob(f"{key}-*.png"))
     return []
 
 
 def ground_of(pictures):
-    """The colour under the floors: the median of their opaque pixels, channel by channel."""
+    """The colour of the maps' paper: the median of their opaque pixels, channel by channel."""
     histograms = [[0] * 256 for _ in range(3)]
     for picture in pictures:
         small = picture.copy()
@@ -158,8 +172,17 @@ def ground_of(pictures):
     return tuple(ground) if len(ground) == 3 else (128, 110, 80)
 
 
-def layout(pictures):
-    """Image 1: the floors in a grid from the top left on their ground colour, at WIDTH x HEIGHT, blurred."""
+def flat(picture, ground):
+    """The picture on its paper's colour, without alpha."""
+    under = Image.new("RGBA", picture.size, ground + (255,))
+    under.alpha_composite(picture)
+    return under.convert("RGB")
+
+
+def far_input(floors):
+    """Image 1: the floors cut to their drawing, in a grid from the top left on their paper's colour,
+    at WIDTH x HEIGHT, the faint drawing made stronger, blurred to shapes."""
+    pictures = [picture.crop(frame_box(picture)) if game_art else picture for _, picture, game_art in floors]
     ground = ground_of(pictures)
     columns = math.ceil(math.sqrt(len(pictures)))
     rows = math.ceil(len(pictures) / columns)
@@ -171,18 +194,17 @@ def layout(pictures):
         size = (max(1, round(picture.width * scale)), max(1, round(picture.height * scale)))
         x = GAP + (i % columns) * (cell_w + GAP) + (cell_w - size[0]) / 2
         y = GAP + (i // columns) * (cell_h + GAP) + (cell_h - size[1]) / 2
-        under = Image.new("RGBA", picture.size, ground + (255,))
-        under.alpha_composite(picture)
-        sheet.paste(under.convert("RGB").resize(size, Image.LANCZOS), (round(x), round(y)))
-    sheet = ImageOps.autocontrast(sheet, cutoff=1, preserve_tone=True)   # the game's faint drawing made stronger
+        sheet.paste(flat(picture, ground).resize(size, Image.LANCZOS), (round(x), round(y)))
+    sheet = ImageOps.autocontrast(sheet, cutoff=1, preserve_tone=True)
     return sheet.filter(ImageFilter.GaussianBlur(BLUR))
 
 
-def words(fixed, brief, levels):
-    parts = [fixed["edit"], brief["setting"]]
+def words_of(fixed, shared, brief, levels=1):
+    """The words of a painting: its image 1, the far level's shared look, the brief, the shared last sentence."""
+    parts = [fixed["far"], shared["far"]["look"], fixed["open"], brief["mood"]]
     if levels > 1:
         parts.append(fixed["levels"].replace("{n}", str(levels)))
-    parts += [brief["layout"], f"Its colours: {brief['colours']}.", brief["atmosphere"], fixed["last"]]
+    parts += [brief["places"], f"Its colours: {brief['colours']}.", brief["atmosphere"], shared["far"]["last"]]
     return " ".join(part.strip() for part in parts)
 
 
@@ -200,15 +222,31 @@ def save_state(out, state):
     os.replace(temp, out / "state.json")
 
 
-def fingerprint():
-    digest = hashlib.sha1(PLAN.read_bytes())
-    digest.update(ig.find_workflow(WORKFLOW).read_bytes())
+def fingerprint(paths=None):
+    paths = paths or [*PLAN.values(), ig.find_workflow(WORKFLOW)]
+    digest = hashlib.sha1()
+    for path in paths:
+        digest.update(Path(path).read_bytes())
     return digest.hexdigest()[:12]
+
+
+def plan_of(out, state):
+    """The run's own copy of the plan, made at its first painting from the plan as it is then."""
+    folder = out / "plan"
+    if not (folder / "workflow.json").is_file():
+        folder.mkdir(parents=True, exist_ok=True)
+        for name, path in PLAN.items():
+            shutil.copyfile(path, folder / name)
+        shutil.copyfile(ig.find_workflow(WORKFLOW), folder / "workflow.json")
+        state["plan"] = {"began": time.strftime("%Y-%m-%d %H:%M"), "fingerprint": fingerprint(), "workflow": WORKFLOW}
+        save_state(out, state)
+    return folder
 
 
 def todo(out, keys, seeds=SEEDS):
     """The paintings still to make, (key, seed), the first seed of every instance first."""
-    return [(key, seed) for seed in range(1, seeds + 1) for key in keys if not (out / f"{key}-{seed}.png").is_file()]
+    return [(key, seed) for seed in range(1, seeds + 1) for key in keys
+            if not (out / "far" / f"{key}-{seed}.png").is_file()]
 
 
 def reachable():
@@ -249,6 +287,15 @@ def paint_one(server, graph, picture_path, prompt, name, seed):
     return Image.open(io.BytesIO(data)).convert("RGB")
 
 
+def make_inputs(out, keys, sets, paths):
+    """Every image 1 not made yet: cheap, and the run can be looked at before it is painted."""
+    (out / "input").mkdir(parents=True, exist_ok=True)
+    for key in keys:
+        target = out / "input" / f"far-{key}.png"
+        if not target.is_file():
+            far_input(floors_of(key, sets, paths)).save(target)
+
+
 def paint(args):
     out = Path(args.out)
     state = load_state(out)
@@ -259,45 +306,39 @@ def paint(args):
                 sys.exit(f"No folder {given}")
             state["paths"][name] = str(Path(given).resolve())
     save_state(out, state)
-    fixed, briefs = plan()
     sets = floors_of_set()
-    keys = [key for key in briefs if not args.only or key in args.only]
-    (out / "layout").mkdir(parents=True, exist_ok=True)
-    levels = {key: levels_of(key, sets, state["paths"]) for key in keys}
-    keys = [key for key in keys if levels[key]]
+    fixed, shared, briefs = plan(None if args.dry else plan_of(out, state))
+    keys = [key for key in briefs if (not args.only or key in args.only) and floor_numbers(key, sets, state["paths"])]
     if not keys:
-        sys.exit("No instance has a layout: give --mapart (the game's map art) and --layouts the first time.")
-    for key in keys:   # every layout first: cheap, and the run can be looked at before it is painted
-        target = out / "layout" / f"{key}.png"
-        if not target.is_file():
-            layout(floor_pictures(key, sets, state["paths"])).save(target)
+        sys.exit("No instance has a map: give --mapart (the game's map art) and --layouts the first time.")
+    make_inputs(out, keys, sets, state["paths"])
+    levels = {key: len(floor_numbers(key, sets, state["paths"])) for key in keys}
     left = todo(out, keys)
     if args.limit:
         left = left[:args.limit]
     if args.dry:
-        for key, seed in left[:len(keys)]:
-            print(f"{key} ({briefs[key]['name']}, {levels[key]} levels):\n  {words(fixed, briefs[key], levels[key])}\n")
-        print(f"{len(left)} paintings to make; the layouts are in {out / 'layout'}")
+        for key, _ in left[:len(keys)]:
+            print(f"{key} ({briefs[key]['name']}, {levels[key]} levels):\n  {words_of(fixed, shared, briefs[key], levels[key])}\n")
+        print(f"{len(left)} paintings to make; their image 1 is in {out / 'input'}")
         return
     if not left:
         print("Every painting is made.")
         return
-    if "plan" not in state:
-        state["plan"] = {"began": time.strftime("%Y-%m-%d %H:%M"), "fingerprint": fingerprint(), "workflow": WORKFLOW}
-        save_state(out, state)
     start_comfyui()
     server = ig.Server(ADDRESS)
-    graph = json.loads(ig.find_workflow(WORKFLOW).read_text())
+    graph = json.loads((out / "plan" / "workflow.json").read_text())
     for n, (key, seed) in enumerate(left, 1):
-        prompt = words(fixed, briefs[key], levels[key])
+        prompt = words_of(fixed, shared, briefs[key], levels[key])
         began = time.time()
-        painting = paint_one(server, graph, out / "layout" / f"{key}.png", prompt, str(key), seed)
-        temp = out / f"{key}-{seed}.tmp.png"
+        painting = paint_one(server, graph, out / "input" / f"far-{key}.png", prompt, f"far-{key}", seed)
+        path = out / "far" / f"{key}-{seed}.png"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temp = path.with_suffix(".tmp.png")
         painting.save(temp)
-        os.replace(temp, out / f"{key}-{seed}.png")
+        os.replace(temp, path)
         with (out / "paintings.jsonl").open("a", encoding="utf-8") as log:
-            log.write(json.dumps({"key": key, "seed": seed, "words": prompt, "workflow": WORKFLOW,
-                                  "settings": SETTINGS, "seconds": round(time.time() - began),
+            log.write(json.dumps({"what": "far", "key": key, "seed": seed, "words": prompt,
+                                  "workflow": WORKFLOW, "settings": SETTINGS, "seconds": round(time.time() - began),
                                   "made": time.strftime("%Y-%m-%d %H:%M")}) + "\n")
         print(f"{n} of {len(left)}: {briefs[key]['name']}, seed {seed} ({round(time.time() - began)} s)", flush=True)
 
@@ -305,15 +346,15 @@ def paint(args):
 def status(args):
     out = Path(args.out)
     state = load_state(out)
-    fixed, briefs = plan()
+    fixed, shared, briefs = plan()
     sets = floors_of_set()
-    painted = [key for key in briefs if levels_of(key, sets, state["paths"])]
-    all_ = len(painted or briefs) * SEEDS   # never "0 of 0": without inputs it is not finished
-    made = len(painted) * SEEDS - len(todo(out, painted))
-    print(f"{made} of {all_} paintings made ({len(painted)} instances, {SEEDS} seeds each)")
-    no_layout = [briefs[key]["name"] for key in briefs if key not in painted]
-    if no_layout:
-        print(f"No layout (the game's map art in --mapart, or pictures in --layouts): {', '.join(no_layout)}")
+    keys = [key for key in briefs if floor_numbers(key, sets, state["paths"])]
+    all_ = (len(keys) or len(briefs)) * SEEDS   # never "0 of 0": without inputs it is not finished
+    made = len(keys) * SEEDS - len(todo(out, keys))
+    print(f"{made} of {all_} paintings made ({len(keys)} instances, {SEEDS} seeds each)")
+    no_map = [briefs[key]["name"] for key in briefs if key not in keys]
+    if no_map:
+        print(f"No map (the game's map art in --mapart, or pictures in --layouts): {', '.join(no_map)}")
     no_brief = [str(key) for key in sets if key not in briefs]
     if no_brief:
         print(f"In the set Dungeons without a brief in dungeons.toml: {', '.join(no_brief)}")
@@ -323,19 +364,23 @@ def status(args):
 
 def contact(args):
     out = Path(args.out)
-    fixed, briefs = plan()
-    rows = [key for key in briefs if (out / "layout" / f"{key}.png").is_file()]
+    state = load_state(out)
+    fixed, shared, briefs = plan()
+    sets = floors_of_set()
+    keys = [key for key in briefs if floor_numbers(key, sets, state["paths"])]
+    rows = [key for key in keys if (out / "input" / f"far-{key}.png").is_file()]
     if not rows:
-        sys.exit("Nothing painted yet.")
+        sys.exit("Nothing made yet.")
     w, h = 384, 255
     sheet = Image.new("RGB", (w * (SEEDS + 1), h * len(rows)), (40, 40, 40))
     for r, key in enumerate(rows):
-        for c, path in enumerate([out / "layout" / f"{key}.png"] + [out / f"{key}-{s}.png" for s in range(1, SEEDS + 1)]):
+        paths = [out / "input" / f"far-{key}.png"] + [out / "far" / f"{key}-{s}.png" for s in range(1, SEEDS + 1)]
+        for c, path in enumerate(paths):
             if path.is_file():
                 with Image.open(path) as picture:
                     sheet.paste(picture.convert("RGB").resize((w, h)), (c * w, r * h))
-    sheet.save(out / "contact.jpg", quality=85)
-    print(f"{out / 'contact.jpg'}: {len(rows)} instances, their layout and seeds 1 to {SEEDS}")
+    sheet.save(out / "contact-far.jpg", quality=85)
+    print(f"{out / 'contact-far.jpg'}: {len(rows)} instances, their image 1 and seeds 1 to {SEEDS}")
 
 
 def rebuild(args):
@@ -348,11 +393,11 @@ def rebuild(args):
             shutil.move(str(path), aside / path.name)
         print(f"The run so far is kept in {aside}.")
     save_state(out, {"paths": state["paths"]})
-    print("A new run: its first painting takes the plan as it is then (dungeons.toml, the workflow).")
+    print("A new run: its first painting takes the plan as it is then (dungeons.toml, levels.toml, the workflow).")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="The far zoom of Navigation's dungeon and raid maps.")
+    parser = argparse.ArgumentParser(description="The far level of Navigation's instance maps.")
     parser.add_argument("command", choices=("paint", "status", "contact", "rebuild"))
     parser.add_argument("--mapart")
     parser.add_argument("--layouts")

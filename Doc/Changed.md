@@ -6,6 +6,22 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 502 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 117 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the maps' three looks, the instance maps made as the world's (Saneroki, 2026-10-21)
+- **The map style guide** (`Doc/guides/map-style.md`, new; in CLAUDE.md's guides): the Atlas and the instance maps in
+  three levels, alike: close the terrain pixel-exact (the Atlas' words), middle a beautiful pencil drawing on paper
+  in the interface's paper and pencil, traced exactly along the terrain's walls and walkable ground and lying under
+  the close level wherever the terrain has nothing to show, far a free realistic reimagination; text, pins and the
+  bosses' 3D models are overlays drawn by code, never painted.
+- **`Doc/ideas/Navigation.md`:** *The three levels' looks* (the middle zoom no longer a free painting, the instances'
+  no longer drawn by code); *Instance maps as the world map, apart from it* (their own view, data and jobs, the
+  world's pipeline, words, tools and cleanups).
+- **The shared words** (`dev/imagegen/maps/levels.toml`, new): the middle and far levels' look and last sentence,
+  for the world and the instances. `dungeons.toml`: the briefs take the zone briefs' fields (mood, places, colours,
+  atmosphere), each atmosphere's first sentence a light the Atlas keeps whole for the close level.
+- **`dev/tools/dungeon-paint`:** the far level with the shared words; a run keeps its own copy of the plan, as the
+  Atlas does. The close and middle levels wait for the instances' terrain. Tests: `dev/tests/dungeon_paint.py`
+  (268 checks).
+
 ### Navigation: routes from the floor the player is on, not aboard in a dock town (Saneroki, 2026-10-21)
 - **Checked on the real data:** the planner, its search and Core's timetables run outside the game over every walking
   tile, the game's flight points and Core's set *Travel*: the journeys through the cities (indoors and out, the tram,

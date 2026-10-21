@@ -338,16 +338,21 @@ lists, from inputs of its own:
   game's water and keeps the best of three seeds; `--near` paints a few squares around a place first, `join`
   stitches them, each through the colour pass (`--mood`); in a terminal it shows its progress, `p` pauses (and frees the graphics card), `q` quits; the whole run goes
   to the GPU runner (*The GPU runner*), which paints only while the card is idle.
-- **The dungeons' and raids' far zoom** (`dev/tools/dungeon-paint`, `saneui makedungeonmaps`; the GPU runner's job
-  `dungeons`): one free painting of each instance as a whole, from its layout and its brief
-  (`dev/imagegen/maps/dungeons.toml`: setting, layout, colours, atmosphere, without names). Image 1 is the layout:
-  every floor side by side in the game's order, from the game's map art of it (Core's set *Dungeons*: the floors'
-  tiles in a folder of the game's map art, `--mapart`; frame and title banner cut off) or, where the game has no
-  map art (Forever's new dungeons), the pictures given with `--layouts` (`<map ID>-<floor>.png`); contrast
-  stretched, then blurred until only the shapes are left, so no lines, drawing style or writing carry over. Three
-  seeds an instance, the first of every instance before the second of any; `contact` makes a sheet to choose from.
-  The close zoom (the instance's own indoor maps repainted with the Atlas' words) waits for its inputs; the
-  middle zoom is drawn by code.
+- **The three levels, the world's and the instances' alike** ([map-style.md](map-style.md), Saneroki, 2026-10-21):
+  close, the terrain repainted pixel-exact with the Atlas' words (`atlas.toml`); middle, a strict pencil drawing on
+  paper traced along that terrain; far, a free realistic reimagination. The middle and far levels share their words
+  (`dev/imagegen/maps/levels.toml`), and every brief has the zone briefs' fields (`zones.toml`, `dungeons.toml`), so
+  the instance maps come out of the world's pipeline, words and tools. The middle levels wait for the Atlas' zone
+  level and the instances' terrain.
+- **The instances' far level** (`dev/tools/dungeon-paint`, `saneui makedungeonmaps`; the GPU runner's job
+  `dungeons`): one painting of each instance as a whole, from its layout and its brief (`dungeons.toml`: mood,
+  places, colours, atmosphere, without names). Image 1 is the layout: every floor side by side in the game's order,
+  from the game's map art of it (Core's set *Dungeons*: the floors' tiles in a folder of the game's map art,
+  `--mapart`; frame and title banner cut off) or, where the game has no map art (Forever's new dungeons), the
+  pictures given with `--layouts` (`<map ID>-<floor>.png`); contrast stretched, then blurred until only the shapes
+  are left, so no lines, drawing style or writing carry over. Three seeds an instance, the first of every instance
+  before the second of any; a run keeps its own copy of the plan, as the Atlas does; `contact` makes a sheet to
+  choose from.
 - **Upscaling models** (`models/upscale_models/` of ImageGen: 4x-UltraSharpV2 and 4xNomos2, both DAT2, as
   safetensors, 17 s for 1024 to 4096): they sharpen what is there, the faults too, and add no detail; the
   painting is made at the size it is shown.

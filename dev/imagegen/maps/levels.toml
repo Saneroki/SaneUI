@@ -1,0 +1,18 @@
+# The words of the maps' painted middle and far levels, shared by the world (the Atlas) and the instance maps, so
+# they are one look (Saneroki, 2026-10-21; Doc/guides/map-style.md). The close level is the Atlas' own words
+# (atlas.toml), for both too. Each plan says what its image 1 is; then come these words, the brief (the zone
+# briefs' fields, zones.toml; the instances' the same, dungeons.toml) and the level's last sentence. A change here
+# changes every painting of that level: their runs show it in their status and are painted anew.
+
+# The middle level: a hand-drawn map in pencil on paper, in the interface's own paper and pencil
+# (Doc/guides/interface-style.md, *Paper*, *Pencil*), drawn exactly along the terrain: image 1 is the close level's
+# terrain, and this drawing lies under it wherever the terrain has nothing to show. Its plan is to come, with the
+# terrain of the instances; the world's with the Atlas' zone level.
+[middle]
+look = "Draw it anew as a beautiful hand-drawn map in pencil on paper, seen straight from above: loose, clean graphite pencil lines on cream parchment with soft faint clouds and an extremely subtle grain. Trace every wall, cliff, shore, edge of water and outline of every hall, room, corridor and walkable ground exactly where image 1 has it, with the same shape and size; the walkable ground stays clean paper, solid rock and ground nobody walks are shaded lightly with pencil hatching, water is drawn with fine pencil ripples. Graphite grey only."
+last = "Plain calm paper: no stains, no sketches, no frame, no border, no legend, no labels, no text, no letters, no numbers, no symbols, no icons, no compass."
+
+# The far level: a free, realistic reimagination, the place as a whole, its mood first, seen at an angle.
+[far]
+look = "Paint a new picture of that place: a realistic fantasy render like cinematic concept art, the whole place in one view, seen from high above at a steep angle like a detailed model on a table."
+last = "This is not a map and not a drawing: no parchment, no paper, no outlines, no ink lines, no frame, no border, no legend, no labels, no text, no letters, no numbers, no symbols, no icons, no compass. Nothing of image 1's colours or drawing style is kept."

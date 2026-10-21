@@ -1,269 +1,281 @@
-# The dungeons' and raids' paintings for Navigation's instance maps (Doc/ideas/Navigation.md, *Dungeon, instance and
-# raid maps in three zooms*; Doc/guides/image-generation.md, *Maps*).
+# The paintings of Navigation's instance maps: the dungeons and raids (Doc/guides/map-style.md; Doc/ideas/
+# Navigation.md, *Instance maps as the world map, apart from it*; Doc/guides/image-generation.md, *Maps*).
 #
-# The far zoom (dev/tools/dungeon-paint, the GPU runner's job "dungeons"): one free, realistic painting of each
-# instance as a whole. Image 1 is its layout: every floor's map of the instance, side by side in the game's order,
-# blurred until only the shapes of its halls, rooms, corridors and water are left (no line, no drawing style, no
-# writing can be read in it). The words are the edit below, its brief's setting, the levels sentence where it has
-# several floors, the brief's layout, colours and atmosphere, and the last sentence. The painting need not be
-# exact: it is the instance's mood, its rooms and how they lie, seen from above at a steep angle.
-#
-# The close zoom (to come): the instance's own indoor maps (the game's indoor minimap textures of its buildings and
-# caves, as dev/tools/indoor-art makes the continents' buildings', and its terrain where it has open ground)
-# repainted with the Atlas' words (atlas.toml), exact and clear around like every indoor map. Its inputs are not
-# made yet; its job joins the queue with them. The middle zoom is drawn by code (no painting).
+# The instance maps are apart from the world map (their own view, data, pictures and jobs), but their three levels
+# are made as the world map's are: the same pipeline, words, ComfyUI tools and terrain cleanups, so the two are one
+# look and one precision (Saneroki, 2026-10-21). Text, pins, the bosses' 3D models and every other mark are drawn
+# over them by code, never painted.
+#   close    each floor's own terrain and indoor maps, pixel-exact: repainted by the Atlas' code with the Atlas'
+#            words (atlas.toml), its softening, its check against the game's water and lava and its colour pass, at
+#            the Atlas' pixels a yard, cut to the game's outline; from this file it takes a brief's colours and the
+#            light of its atmosphere (its first sentence), as a zone's.
+#   middle   each floor drawn anew in pencil on paper, exactly along that terrain's walls and walkable ground
+#            (levels.toml's [middle]), the ground the close level lies over.
+#   far      one free, realistic reimagination of each instance as a whole, seen at an angle (levels.toml's [far]).
+# The close and middle levels wait for the instances' terrain, which the world's tools (dev/tools/terrain-art,
+# indoor-art) do not make yet; their jobs join the queue with it. The far level is painted now
+# (dev/tools/dungeon-paint, the GPU runner's job "dungeons"): its image 1 is the instance's layout, every floor's
+# map side by side in the game's order, blurred until only the shapes of its halls, rooms, corridors and water are
+# left (no line, no drawing style, no writing can be read in it). Its words: far below, the shared [far] look, open,
+# the brief's mood, the levels sentence where it has several floors, the brief's places, colours and atmosphere,
+# and the shared [far] last sentence.
 #
 # One table per instance, keyed by its map ID (the game's Map table; the set Dungeons' key). name and kind are for
-# people reading the file and never go into a prompt. The other fields are prompt words and name nothing: a proper
-# name in the words comes back as garbled letters in the picture, so places, peoples and creatures are described,
-# never named. Kinds of people are common nouns in lower case (orcs, trolls, dwarves). Limits in words: setting 15
-# to 40, layout 20 to 60, colours 6 to 15, atmosphere 15 to 40.
+# people reading the file and never go into a prompt. The other fields are the zone briefs' (zones.toml), meant
+# alike, and are prompt words that name nothing: a proper name in the words comes back as garbled letters in the
+# picture, so places, peoples and creatures are described, never named. Kinds of people are common nouns in lower
+# case (orcs, trolls, dwarves).
+#   mood        what the place is and how it feels                                          8 to 40 words
+#   places      how its parts lie and join, as a zone's major places                        12 to 60
+#   colours     its colours                                                                  4 to 15
+#   atmosphere  its light first, a sentence the Atlas' close level takes whole (no words of colour, haze, mist,
+#               smoke, fog, cloud, dust, glow, cast: its filter drops such clauses), then its air and state  15 to 55
 
 [words]
-edit = "Image 1 is a rough, blurred plan of one place seen from straight above. Use image 1 only for the layout: where its halls, rooms, corridors, stairs, courtyards, water and open ground lie, how large they are and how they join. Paint a new picture of that place: a realistic fantasy render like cinematic concept art, the whole place in one view, seen from high above at a steep angle like a detailed model on a table. Roofs, ceilings and the rock above are cut away, so every hall and room lies open to view."
+far = "Image 1 is a rough, blurred plan of one place seen from straight above. Use image 1 only for the layout: where its halls, rooms, corridors, stairs, courtyards, water and open ground lie, how large they are and how they join."
+open = "Roofs, ceilings and the rock above are cut away, so every hall and room lies open to view."
 levels = "Image 1 shows the place's {n} levels side by side in order from the top left; they are one place, its levels joined as follows."
-last = "This is not a map and not a drawing: no parchment, no paper, no outlines, no ink lines, no frame, no border, no legend, no labels, no text, no letters, no numbers, no symbols, no icons, no compass. Nothing of image 1's colours or drawing style is kept."
 
 # Dungeons and raids with the game's own map art (the set Dungeons)
 
 ["33"]
 name = "Shadowfang Keep"
 kind = "dungeon"
-setting = "A haunted castle of grey stone on a forested hill, cursed and overrun by werewolves and the ghosts of its nobles."
-layout = "One castle rising level by level: a walled courtyard inside the gate, a great dining hall and kennels around it, two round observatory towers climbing above, the lord's chamber near the top, and a long wall walk along the battlements joining them."
+mood = "A haunted castle of grey stone on a forested hill, cursed and overrun by werewolves and the ghosts of its nobles."
+places = "One castle rising level by level: a walled courtyard inside the gate, a great dining hall and kennels around it, two round observatory towers climbing above, the lord's chamber near the top, and a long wall walk along the battlements joining them."
 colours = "cold blue-grey stone, dark slate roofs, black pine green, ghostly violet"
-atmosphere = "Night under a full moon behind thin clouds; cold blue moonlight on wet stone, warm torchlight in a few windows, mist drifting through the courtyard."
+atmosphere = "Cold blue moonlight from a full moon, deep black shadows, a few warm torches in the windows. Wet stone, wind in the pines, mist drifting through the courtyard."
 
 ["34"]
 name = "Stormwind Stockade"
 kind = "dungeon"
-setting = "A prison under a great human capital, its dank cell blocks taken over by rioting prisoners."
-layout = "One level: long vaulted corridors lined with barred cells, meeting in a central guard hall, with a few larger rooms at their ends."
+mood = "A prison under a great human capital, its dank cell blocks taken over by rioting prisoners."
+places = "One level: long vaulted corridors lined with barred cells, meeting in a central guard hall, with a few larger rooms at their ends."
 colours = "grey granite, rusted iron, dirty straw yellow, torch orange"
-atmosphere = "Dim and damp; torchlight flickering on wet stone, smoke from small fires the prisoners lit, water dripping from the vaults."
+atmosphere = "Dim, flickering torchlight in low vaults, deep shadows between the cells. Smoke from small fires the prisoners lit, water dripping from the vaults, damp air."
 
 ["36"]
 name = "Deadmines"
 kind = "dungeon"
-setting = "A gang of pirates' hideout in an old gold mine under coastal hills, its tunnels leading down to a hidden sea cave where a great warship is being built."
-layout = "Winding mine tunnels, timbered shafts and a smoky foundry descend through the rock and open into a huge sea cave with a dock, the warship at anchor in its water."
+mood = "A gang of pirates' hideout in an old gold mine under coastal hills, its tunnels leading down to a hidden sea cave where a great warship is being built."
+places = "Winding mine tunnels, timbered shafts and a smoky foundry descend through the rock and open into a huge sea cave with a dock, the warship at anchor in its water."
 colours = "brown earth and timber, lantern gold, rusted iron, dark green sea water, red sails"
-atmosphere = "Dusty lantern light in the tunnels, sparks and smoke from the forges, then the cool cavern with grey daylight falling through a gap in the rock onto the water."
+atmosphere = "Warm lantern light in the tunnels, cool grey daylight falling into the sea cave. Sparks and smoke from the forges, rock dust in the air, quiet water under the ship."
 
 ["43"]
 name = "Wailing Caverns"
 kind = "dungeon"
-setting = "A vast cave system under a dry savanna, overgrown with giant ferns and roots, its pools and streams fouled, where druids sleep in a nightmare."
-layout = "One level of winding caverns and tunnels branching around a deep central chasm, with pools, little waterfalls and a raised mound at its heart."
+mood = "A vast cave system under a dry savanna, overgrown with giant ferns and roots, its pools and streams fouled, where druids sleep in a nightmare."
+places = "One level of winding caverns and tunnels branching around a deep central chasm, with pools, little waterfalls and a raised mound at its heart."
 colours = "moss green, earthy brown, murky teal water, pale glowing green"
-atmosphere = "Humid and dim; green light from glowing fungus, mist rising off still pools, the roots of the savanna hanging from the cave roof."
+atmosphere = "Dim, humid green light from fungus on the walls, pale daylight through cracks in the roof. Mist rising off still pools, the roots of the savanna hanging from the cave roof, the air heavy and damp."
 
 ["47"]
 name = "Razorfen Kraul"
 kind = "dungeon"
-setting = "A warren of giant thorny brambles in a dry savanna, home of a boar people and their shamans."
-layout = "One level: paths walled and roofed by huge twisted thorn vines wind through the dry earth in loops and spirals, opening into small clearings and a sunken pit at the heart."
+mood = "A warren of giant thorny brambles in a dry savanna, home of a boar people and their shamans."
+places = "One level: paths walled and roofed by huge twisted thorn vines wind through the dry earth in loops and spirals, opening into small clearings and a sunken pit at the heart."
 colours = "dusty ochre earth, dark red-brown thorns, bone white, dry yellow grass"
-atmosphere = "Hot and dusty; hard sunlight broken into stripes by the thorny roof, campfires and bone totems smoking in the clearings."
+atmosphere = "Hard, hot sunlight broken into stripes by the thorny roof, sharp shadows. Dust in the air, campfires and bone totems smoking in the clearings."
 
 ["48"]
 name = "Blackfathom Deeps"
 kind = "dungeon"
-setting = "A sunken temple of an ancient elven people on a dark sea shore, half drowned and taken over by a cult of the deep."
-layout = "Three levels as one ruin: a flooded hall of pools at the entrance, a moonlit shrine of broken pillars in the middle, and deep water caverns sinking below to a drowned altar."
+mood = "A sunken temple of an ancient elven people on a dark sea shore, half drowned and taken over by a cult of the deep."
+places = "Three levels as one ruin: a flooded hall of pools at the entrance, a moonlit shrine of broken pillars in the middle, and deep water caverns sinking below to a drowned altar."
 colours = "deep teal water, pale moonstone grey, violet glints, dark algae green"
-atmosphere = "Cold and wet; blue-green light rippling over the walls from the water, a pale glow from the shrine, a drowned silence."
+atmosphere = "Cold blue-green light rippling over the walls from the water, pale moonlight over the shrine. A drowned silence, wet stone, dark water lapping at broken pillars."
 
 ["70"]
 name = "Uldaman"
 kind = "dungeon"
-setting = "An excavated vault of an ancient race of giant makers deep under red badlands, with dwarven dig works and old stone guardians."
-layout = "Rough dig tunnels with scaffolding and mine carts lead down into vast symmetrical halls of carved stone, rows of guardian statues, and a deep chamber with a great altar at the end."
+mood = "An excavated vault of an ancient race of giant makers deep under red badlands, with dwarven dig works and old stone guardians."
+places = "Rough dig tunnels with scaffolding and mine carts lead down into vast symmetrical halls of carved stone, rows of guardian statues, and a deep chamber with a great altar at the end."
 colours = "rust red rock, sandstone, bronze, pale turquoise rune light"
-atmosphere = "Dry and dusty; lamplight in the dig tunnels, then cool blue rune light in the still, enormous halls."
+atmosphere = "Warm lamplight in the dig tunnels, cool blue rune light in the great halls. Dry and dusty, the still air of a vault closed for ages."
 
 ["90"]
 name = "Gnomeregan"
 kind = "dungeon"
-setting = "A once great city of gnomish machines inside a snowy mountain, flooded with glowing waste and overrun by its own robots."
-layout = "Four levels as one city: a giant hall of turning gears, sleeping quarters along long ramps, a rocket launch bay, and the inventors' court at the bottom, joined by ramps, lifts and pipes."
+mood = "A once great city of gnomish machines inside a snowy mountain, flooded with glowing waste and overrun by its own robots."
+places = "Four levels as one city: a giant hall of turning gears, sleeping quarters along long ramps, a rocket launch bay, and the inventors' court at the bottom, joined by ramps, lifts and pipes."
 colours = "steel grey, copper and brass, toxic green, warning yellow"
-atmosphere = "Flickering electric light and sparks, a green glow of waste on the floors, steam venting from broken pipes."
+atmosphere = "Flickering electric light and sparks, harsh and cold, dark corners between the machines. Green waste on the floors, steam venting from broken pipes, oil and rust everywhere."
 
 ["109"]
 name = "Sunken Temple"
 kind = "dungeon"
-setting = "A great stepped jungle temple sunk into a swamp lake, home of green dragons and of trolls who worship a blood god."
-layout = "One sunken stepped pyramid: rings of galleries and stairs descend around a deep central pit, its upper tiers flooded, a sanctum at the bottom."
+mood = "A great stepped jungle temple sunk into a swamp lake, home of green dragons and of trolls who worship a blood god."
+places = "One sunken stepped pyramid: rings of galleries and stairs descend around a deep central pit, its upper tiers flooded, a sanctum at the bottom."
 colours = "mossy green stone, murky swamp water, old gold, blood red"
-atmosphere = "Hot and humid; hazy green light through the water above, braziers burning, vines dripping, the air thick with mist."
+atmosphere = "Soft green light filtering down through the water above, warm firelight from braziers on the tiers. Hot and humid, vines dripping, the air thick with mist over the flooded steps."
 
 ["129"]
 name = "Razorfen Downs"
 kind = "dungeon"
-setting = "A hill of giant thorny brambles turned into a plagued burial ground, its boar people serving undead masters."
-layout = "One level: a spiral of thorn-walled paths winding down the hill to a central crypt, with tunnels and a field of bones."
+mood = "A hill of giant thorny brambles turned into a plagued burial ground, its boar people serving undead masters."
+places = "One level: a spiral of thorn-walled paths winding down the hill to a central crypt, with tunnels and a field of bones."
 colours = "dead grey thorns, pale bone, sickly plague green, dark earth"
-atmosphere = "Overcast and cold; a sickly green glow over everything, ghostly fog drifting over the bones."
+atmosphere = "Cold, dull grey daylight, a sickly green light rising from the plague. Ghostly fog drifting over the bones, a dead silence."
 
 ["189"]
 name = "Scarlet Monastery"
 kind = "dungeon"
-setting = "A fortified monastery of fanatical crusaders in a gloomy northern forest."
-layout = "Four wings as one walled monastery around a central courtyard: a graveyard with crypts, a great library hall, an armory with training yards, and a tall cathedral with its nave and high altar."
+mood = "A fortified monastery of fanatical crusaders in a gloomy northern forest."
+places = "Four wings as one walled monastery around a central courtyard: a graveyard with crypts, a great library hall, an armory with training yards, and a tall cathedral with its nave and high altar."
 colours = "white stone, scarlet banners and roofs, gold trim, dark green forest"
-atmosphere = "Grey overcast daylight outside; candles and stained glass glowing red and gold inside, mist over the graveyard."
+atmosphere = "Dim grey daylight outside, warm candlelight and red and gold light through stained glass inside. Mist over the graveyard, incense in the halls, a cold wind in the courtyard."
 
 ["209"]
 name = "Zul'Farrak"
 kind = "dungeon"
-setting = "A sun-baked city of desert trolls built of sandstone."
-layout = "One level: walled courts and terraces around a great stepped pyramid, a sacred pool in a sunken court, and a field of old tombs."
+mood = "A sun-baked city of desert trolls built of sandstone."
+places = "One level: walled courts and terraces around a great stepped pyramid, a sacred pool in a sunken court, and a field of old tombs."
 colours = "sandstone yellow, terracotta, turquoise, sun-bleached bone"
-atmosphere = "Blazing midday sun, harsh short shadows, heat shimmer, sand blowing over the stairs."
+atmosphere = "Blazing midday sun, harsh short shadows. Heat shimmer over the stone, sand blowing over the stairs."
 
 ["229"]
 name = "Blackrock Spire"
 kind = "raid"
-setting = "A fortress of an orc war horde and a black dragon flight carved into a volcanic mountain."
-layout = "Six levels stacked in one mountain: rough tunnels hung with spider webs at the bottom, an orc town of huts and bridges, great halls and an arena higher up, a dragon's roost at the top, joined by ramps and bridges over a lava abyss."
+mood = "A fortress of an orc war horde and a black dragon flight carved into a volcanic mountain."
+places = "Six levels stacked in one mountain: rough tunnels hung with spider webs at the bottom, an orc town of huts and bridges, great halls and an arena higher up, a dragon's roost at the top, joined by ramps and bridges over a lava abyss."
 colours = "black volcanic rock, glowing orange lava, dark iron, red war banners"
-atmosphere = "Hot and dark, everything lit from below by lava; smoke and ash in the air, sparks drifting upwards."
+atmosphere = "Hot red-orange light from the lava below, deep black shadows above. Smoke and ash in the air, sparks drifting upwards."
 
 ["230"]
 name = "Blackrock Depths"
 kind = "dungeon"
-setting = "The vast underground city of dark iron dwarves in the heart of a volcano."
-layout = "A prison block near the entrance, then a huge city carved into the rock: halls, an arena ringed by stands, a tavern, forges over lava rivers and a throne room, joined by bridges over a molten lake."
+mood = "The vast underground city of dark iron dwarves in the heart of a volcano."
+places = "A prison block near the entrance, then a huge city carved into the rock: halls, an arena ringed by stands, a tavern, forges over lava rivers and a throne room, joined by bridges over a molten lake."
 colours = "black and dark grey stone, molten orange, bronze, deep red"
-atmosphere = "Hot red-orange light from lava and forges, heavy smoke, glowing runes, the air shimmering with heat."
+atmosphere = "Hot red-orange light from lava rivers and forges, deep shadows in the vaults. Heavy smoke, glowing runes, the air shimmering with heat."
 
 ["249"]
 name = "Onyxia's Lair"
 kind = "raid"
-setting = "The volcanic cave lair of a great black dragon."
-layout = "One level: a long tunnel lined with nests of dragon whelps leads down into a single vast round cavern with lava vents in its floor."
+mood = "The volcanic cave lair of a great black dragon."
+places = "One level: a long tunnel lined with nests of dragon whelps leads down into a single vast round cavern with lava vents in its floor."
 colours = "black rock, deep red, molten orange, egg-shell grey"
-atmosphere = "Dark and hot; lava light from below, smoke curling up, bones and treasure scattered over the floor."
+atmosphere = "Dark and hot, deep red light from the lava vents below. Smoke curling up, bones and treasure scattered over the floor."
 
 ["289"]
 name = "Scholomance"
 kind = "dungeon"
-setting = "A school of necromancy in the crypts under an old manor on an island."
-layout = "Four levels as one keep around a central stair: crypts and ossuaries at the bottom, summoning chambers and laboratories, lecture halls and a library above, the headmaster's study at the top."
+mood = "A school of necromancy in the crypts under an old manor on an island."
+places = "Four levels as one keep around a central stair: crypts and ossuaries at the bottom, summoning chambers and laboratories, lecture halls and a library above, the headmaster's study at the top."
 colours = "grey-green stone, violet necromantic light, bone white, dark wood"
-atmosphere = "Cold and dark; candlelight and violet glows, green mist creeping over the floors."
+atmosphere = "Cold and dark, candlelight and violet light from necromantic circles. Green mist creeping over the floors, the stillness of crypts."
 
 ["309"]
 name = "Zul'Gurub"
 kind = "raid"
-setting = "The capital of jungle trolls, overgrown by rainforest around a lake."
-layout = "One level: temples and altars of carved stone around a central lake and its island, joined by paths, bridges and stairs through dense jungle over hills."
+mood = "The capital of jungle trolls, overgrown by rainforest around a lake."
+places = "One level: temples and altars of carved stone around a central lake and its island, joined by paths, bridges and stairs through dense jungle over hills."
 colours = "jungle green, mossy grey stone, blood red, old gold"
-atmosphere = "Hot, humid daylight filtered through the canopy; mist and steam over the water, torches burning at the altars."
+atmosphere = "Hot, humid daylight filtered through the canopy, dappled shadows. Mist and steam over the water, torches burning at the altars."
 
 ["329"]
 name = "Stratholme"
 kind = "dungeon"
-setting = "A once proud human city, burned and overrun by the plagued dead."
-layout = "Two halves of one walled city: a square and streets held by crusaders on one side, and on the other the plagued quarter with stepped towers of the dead and a long street to a slaughterhouse."
+mood = "A once proud human city, burned and overrun by the plagued dead."
+places = "Two halves of one walled city: a square and streets held by crusaders on one side, and on the other the plagued quarter with stepped towers of the dead and a long street to a slaughterhouse."
 colours = "charred stone, ash grey, plague green, crusader red"
-atmosphere = "Cold dusk; smoke and embers from burning houses, a sickly green light, ash falling like snow."
+atmosphere = "Cold dusk light, firelight from burning houses, a sickly green light over the plagued quarter. Smoke and embers in the air, ash falling like snow."
 
 ["349"]
 name = "Maraudon"
 kind = "dungeon"
-setting = "A vast cave under a desert, holy to the centaurs and overgrown by a corrupted forest of earth spirits."
-layout = "Caverns of crystal on one side and fouled waters on the other lead down into an enormous cavern with a waterfall and a giant tree, a grave at its heart."
+mood = "A vast cave under a desert, holy to the centaurs and overgrown by a corrupted forest of earth spirits."
+places = "Caverns of crystal on one side and fouled waters on the other lead down into an enormous cavern with a waterfall and a giant tree, a grave at its heart."
 colours = "purple crystal, poison green, earth brown, waterfall blue"
-atmosphere = "Glowing crystals and fungi, falling water, misty green light under a high cave roof."
+atmosphere = "Soft light from crystals and fungi, a pale shaft of daylight on the waterfall. Falling water, misty green air under a high cave roof."
 
 ["389"]
 name = "Ragefire Chasm"
 kind = "dungeon"
-setting = "A volcanic cave under an orc capital, where cultists and fire creatures hide."
-layout = "One level: a tight loop of narrow tunnels and ledges around a pool of lava."
+mood = "A volcanic cave under an orc capital, where cultists and fire creatures hide."
+places = "One level: a tight loop of narrow tunnels and ledges around a pool of lava."
 colours = "black and red rock, molten orange"
-atmosphere = "Hot red light from the lava, smoke and heat haze in the narrow tunnels."
+atmosphere = "Hot red light from the lava, dark rock all around. Smoke and heat in the narrow tunnels."
 
 ["409"]
 name = "Molten Core"
 kind = "raid"
-setting = "The deepest fire pits of a volcano, home of a fire lord and his elementals."
-layout = "One level: a ring of great caverns and lava rivers around a central lake of fire, rock bridges between them."
+mood = "The deepest fire pits of a volcano, home of a fire lord and his elementals."
+places = "One level: a ring of great caverns and lava rivers around a central lake of fire, rock bridges between them."
 colours = "black rock, molten orange and yellow, deep red"
-atmosphere = "Infernal heat; everything glowing from below, the air shimmering, ash and sparks rising."
+atmosphere = "Infernal orange light from below, black shadows overhead. The air trembling with heat, ash and sparks rising."
 
 ["429"]
 name = "Dire Maul"
 kind = "dungeon"
-setting = "A vast ruined capital of high elves in a forest, its wings held by ogres, haunted by ghosts and twisted by wild magic."
-layout = "Six parts as one ruined city: the commons' courtyard and gates, the overgrown gardens of one wing with a library and a demon's prison, the twisted woods of the other wing, and a shrine."
+mood = "A vast ruined capital of high elves in a forest, its wings held by ogres, haunted by ghosts and twisted by wild magic."
+places = "Six parts as one ruined city: the commons' courtyard and gates, the overgrown gardens of one wing with a library and a demon's prison, the twisted woods of the other wing, and a shrine."
 colours = "pale violet stone, moss green, arcane purple light, ogre brown"
-atmosphere = "Dappled forest light through broken roofs, faint arcane glows, ghostly mist drifting in the gardens."
+atmosphere = "Dappled forest light through broken roofs, faint violet arcane light in the halls. Ghostly mist drifting in the gardens, ogre campfires in the commons."
 
 ["469"]
 name = "Blackwing Lair"
 kind = "raid"
-setting = "A black dragon lord's lair at the top of a volcanic mountain, with laboratories of cruel dragon experiments."
-layout = "Four levels as one fortress: a garrison hall, halls and bridges over lava, crimson laboratories full of eggs, and the dragon lord's throne lair at the top."
+mood = "A black dragon lord's lair at the top of a volcanic mountain, with laboratories of cruel dragon experiments."
+places = "Four levels as one fortress: a garrison hall, halls and bridges over lava, crimson laboratories full of eggs, and the dragon lord's throne lair at the top."
 colours = "black stone, dark crimson, glowing orange, dark iron"
-atmosphere = "Hot red and orange light, steam rising from the vats, smoke under the high vaults."
+atmosphere = "Hot red and orange light from lava and furnaces, dark vaults above. Steam rising from the vats, smoke under the high ceilings."
 
 ["509"]
 name = "Ruins of Ahn'Qiraj"
 kind = "raid"
-setting = "The outer ruins of a buried insect empire's city in the desert."
-layout = "One level: a basin of sand with broken obelisks, ruined walls and pillars, hive mounds and an arena at the far end."
+mood = "The outer ruins of a buried insect empire's city in the desert."
+places = "One level: a basin of sand with broken obelisks, ruined walls and pillars, hive mounds and an arena at the far end."
 colours = "golden sand, sandstone, dark blue-green chitin, violet"
-atmosphere = "Harsh desert sun, sand blowing between the ruins, heat haze over the basin."
+atmosphere = "Harsh desert sun, short black shadows. Sand blowing between the ruins, heat over the basin."
 
 ["531"]
 name = "Ahn'Qiraj Temple"
 kind = "raid"
-setting = "The vast temple of an insect empire under the desert, where an ancient god sleeps."
-layout = "Three levels as one temple: great gates and halls lead down into hive tunnels and at last to a vast chamber of the sleeping god, deep under the sand."
+mood = "The vast temple of an insect empire under the desert, where an ancient god sleeps."
+places = "Three levels as one temple: great gates and halls lead down into hive tunnels and at last to a vast chamber of the sleeping god, deep under the sand."
 colours = "sandstone, deep purple, sickly green, chitin black"
-atmosphere = "Eerie purple and green light, a sense of something enormous and alive below."
+atmosphere = "Eerie purple and green light in the dark, deep shadows. The sense of something enormous and alive below, the air close and still."
 
 ["533"]
 name = "Naxxramas"
 kind = "raid"
-setting = "A floating necropolis of the undead high in the sky."
-layout = "Six parts as one floating fortress: four quarters (of spiders, of constructs, of soldiers, of plague) around a central hall, and an upper sanctum."
+mood = "A floating necropolis of the undead high in the sky."
+places = "Six parts as one floating fortress: four quarters (of spiders, of constructs, of soldiers, of plague) around a central hall, and an upper sanctum."
 colours = "dark iron, green plague glow, frost blue, bone"
-atmosphere = "Cold and eerie; green and blue light, frost and fog, the clouds far below."
+atmosphere = "Cold, eerie green and blue light, frost on every edge. Fog and frost, the clouds far below."
 
 # Forever's new dungeons: the game has no map art of them, so their layouts are given (dungeon-paint --layouts)
 
 ["2959"]
 name = "City of Dalaran"
 kind = "dungeon"
-setting = "A walled city of mages on a plateau among forested mountains, and the sewers beneath it."
-layout = "Two levels: below, a network of sewers with round cisterns and canals; above, the city of white stone and violet roofs with a citadel at its top and squares in its middle."
+mood = "A walled city of mages on a plateau among forested mountains, and the sewers beneath it."
+places = "Two levels: below, a network of sewers with round cisterns and canals; above, the city of white stone and violet roofs with a citadel at its top and squares in its middle."
 colours = "white stone, violet roofs, gold, forest green, mossy sewer teal"
-atmosphere = "Bright magical daylight and sparkling arcane glows over the city; dim green-teal light in the sewers below."
+atmosphere = "Bright magical daylight over the city, dim green-teal light in the sewers below. Sparkling arcane lights over the spires, damp air and still water in the cisterns."
 
 ["2998"]
 name = "Excavation Site: Wetlands"
 kind = "dungeon"
-setting = "A dig site in wet green highlands, with ancient ruins uncovered among grassy valleys, rocky hills and a marshy lake."
-layout = "Green valleys and winding paths in the west with the dig site and the ruins, a large marshy lake in the middle and north, steep rocky mountains in the south and east."
+mood = "A dig site in wet green highlands, with ancient ruins uncovered among grassy valleys, rocky hills and a marshy lake."
+places = "Green valleys and winding paths in the west with the dig site and the ruins, a large marshy lake in the middle and north, steep rocky mountains in the south and east."
 colours = "moss green, wet brown earth, grey rock, murky blue-grey lake"
-atmosphere = "Overcast and damp, mist hanging over the marsh, the grass wet with rain."
+atmosphere = "Soft grey daylight under a heavy sky, wet surfaces catching the light. Mist hanging over the marsh, the grass wet with rain."
 
 ["2999"]
 name = "Ruins of Lordaeron"
 kind = "dungeon"
-setting = "The walled capital of a fallen human kingdom, ruined and haunted, on a lake shore."
-layout = "A shield-shaped city wall with towers encloses streets, gardens and a graveyard, a grand palace with a domed throne room in the middle, and the lake below its southern wall."
+mood = "The walled capital of a fallen human kingdom, ruined and haunted, on a lake shore."
+places = "A shield-shaped city wall with towers encloses streets, gardens and a graveyard, a grand palace with a domed throne room in the middle, and the lake below its southern wall."
 colours = "pale grey stone, teal domes, dark green, dead brown"
-atmosphere = "Grey dusk; the ruins wrapped in mist, cold and silent."
+atmosphere = "Grey dusk light, cold and dim, long soft shadows over the stones. The ruins wrapped in mist, crows on the broken towers, cold and silent."
 
 ["3065"]
 name = "The Hall of Thanes"
 kind = "dungeon"
-setting = "An ancient dwarven tomb of kings deep inside a mountain."
-layout = "A long processional hall runs from the entrance up to a reliquary, with side halls of tombs, a central chamber, crystal-lined caverns at the far end and a side cave."
+mood = "An ancient dwarven tomb of kings deep inside a mountain."
+places = "A long processional hall runs from the entrance up to a reliquary, with side halls of tombs, a central chamber, crystal-lined caverns at the far end and a side cave."
 colours = "warm grey stone, gold, bronze, blue crystal"
-atmosphere = "Solemn and torchlit; warm gold light on carved stone, a glimmer of blue crystals in the dark."
+atmosphere = "Warm torchlight on carved stone, deep shadows in the side halls. A solemn stillness, a glimmer of blue crystals in the dark."
