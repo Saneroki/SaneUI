@@ -74,6 +74,7 @@ Planner.HEARTH = 15      -- seconds the hearthstone takes besides its cooldown: 
 Planner.STATION = 30     -- seconds the tram takes besides the wait and its run, a guess: the walks between the
                          -- cities' entrances and its platforms, the loading screens into its map and out
 Planner.DETOUR = 1.3     -- a walk not searched yet is guessed at so many times the straight line
+Planner.SLOPE = math.tan(math.rad(50)) -- yards up a yard on foot, at most: the steepest floor (dev/tools/walk-data)
 Planner.WORSE = 1.6      -- a walk found this much longer than its guess makes the journey be chosen again
 Planner.APART = 60       -- seconds more a walk between two places that share no region of the walking data costs
                          -- (and no lift joins: then there is no walk)
@@ -499,14 +500,16 @@ local function Journey(start, goal, measured)
     end
     local hearth, homeSeconds = Hearth()
     if hearth then places.hearth = { map = hearth.map, u = hearth.u, v = hearth.v } end
-    -- A walk's seconds: as found, else guessed (between two places of known heights, the climb too, as the search
-    -- counts it: a lift's two ends are no walk apart); and whether it was found.
+    -- A walk's seconds: as found, else guessed (between two places of known heights the climb too, as the search
+    -- counts it, and at least the way the steepest floor needs to climb it: a lift's two ends are no walk apart);
+    -- and whether it was found.
     local function Walking(fromName, a, toName, b)
         local found = measured[fromName]
         found = found and found[toName]
         if found then return found, true end
-        local climb = a.z and b.z and math.abs(a.z - b.z) * Search.CLIMB or 0
-        return (Distance(a.u, a.v, b.u, b.v) + climb) * Planner.DETOUR / Planner.RUN, false
+        local rise = a.z and b.z and math.abs(a.z - b.z) or 0
+        local way = math.max(Distance(a.u, a.v, b.u, b.v), rise / Planner.SLOPE)
+        return (way + rise * Search.CLIMB) * Planner.DETOUR / Planner.RUN, false
     end
     -- The regions of the walking data a place stands in (nil: not known; walks are then not ruled out), and the
     -- lifts' upper levels it stands below (Lifts.Stand): a flight point's, a dock's and a lift's end's kept from plan

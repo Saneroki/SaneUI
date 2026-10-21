@@ -3,8 +3,49 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 495 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 87 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 498 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 117 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: the ground as the game draws it; water in buildings; indoors on a building's floor (Saneroki, 2026-10-21)
+- **The ground's triangles** (`dev/tools/walk-data`: `steepness`, from `ground`): a sample's ground is too steep where
+  the game's triangle under it is steeper than `SLOPE` (each cell four triangles meeting at its inner height; a
+  sample's middle lies where two meet, it takes the one terrain-art's ground draws its height from), no longer by its
+  heights smoothed over three samples, whose slopes walked up Ironforge's mountain and into the ground under
+  Stormwind. Held against the gentlest way over the triangles themselves where regions part: the ground under
+  Stormwind (55.6 degrees at its gentlest) and the plateau east of Ironforge (53.6) are no walk; Feralas' hills
+  (47.9), Searing Gorge (48.3) and Silithus' hives (16), cut off before, are joined.
+- **Stairs** (`roomy`, `STAIR` a yard): the next piece of a stair or a ramp passing up through a sample within a yard
+  over a floor is no ceiling (inns' upper storeys, narrow stairwells). **`CORE`** 0.3 of a sample (a half): Thunder
+  Bluff's Spirit Rise and Hunter Rise join the mesa by their bridge heads.
+- **The buildings' water** (`pools`, `liquid`): their parts' liquids (MLIQ), the liquid type as the game takes it (the
+  table's where the building says so, MOHD 0x4; else the old numbers, of the first twenty every fourth water, ocean,
+  magma, slime), joined to the ground's: Stormwind's canals swum, the Undercity's slime and Ironforge's lava closing
+  what lies under them. Water drowns a floor only where nothing solid stands between them (`overs`: a tunnel under a
+  river, the ground under a city's pool stay dry).
+- **A building's floor** (`BUILT`, kind 3 in the block; the format the same): a floor on a building or a doodad. Each
+  floor's sky (`SKY`, `COVERED`, `BURIED`: the ground `DEPTH`, 10 yards, and more under a building); `regions` leaves
+  out a region with the sky over none of its floors (a cellar the data closes) or most of them buried (the ground
+  under Stormwind's streets, open only between its districts). `tile` gives the rectangles with the sky over a floor
+  and the buried counts.
+- **Navigation:** `Walk.Floor` indoors (the game's `IsIndoors`: a building's or a cave's) takes the lowest of a
+  building's floors near the player before the ground or water under it (`Walk.BUILT`; from inside Stormwind's
+  buildings walks started on the ground forty yards under the streets); `Walk.Under` and `Walk.Nearest` take a
+  building's floor as on foot (the docks' piers); `Walk.Landing` counts a yard up or down `Walk.LEVEL` (3) times, as
+  the tool's `LEVEL`; `Search.CLIMB` 0.25 (2): the game runs as fast up a hill as on the flat, so the shorter way over
+  a hill or a pass is taken; the planner's walk guess at least the way the steepest floor needs to climb between its
+  ends (`Planner.SLOPE`).
+- **The set made again** with the doodads (the same day's tool) and these rules: 2.83 million rectangles, 23.0 MB of
+  blocks, the master 23.7 MB (1.65 million, 12.1 and 12.6 before the day's changes), Core's sets 33 MB in all; about
+  six minutes to make. Regions: 160 on the Eastern Kingdoms, 240 on Kalimdor, 8 on the isle. Checked offline on the
+  whole data: of 53,000 creatures' spawn points 71 % stand on a floor at their height (66 %), a start indoors
+  without a height lands within 3 yards of its floor for 82 % of those under a ceiling (80 %), all 14 lifts land and
+  their routes ride them, walks across hilly zones are as long at `CLIMB` 2 as at 0 within 2 % on the mean, Thousand
+  Needles is walked to from Tanaris, Feralas and the Barrens. Apart: the plateau east of Ironforge, and Blackfathom's
+  lower ruins, reached only under water.
+- Tests: walking data 117 checks (the ground's triangles, a stair's pieces, a narrower `CORE`, a building's floor, the
+  sky and the buried ground, water kept off a floor by a roof, slime, a building's water and its liquid types, regions
+  without sky or mostly buried); Navigation 498 (indoors a building's floor before the ground under a city, on foot a
+  building's floor too, a lift's end landing beside its shaft, not on the roof over it).
 
 ### Navigation: the doodads in the walking data's tool (Saneroki, 2026-10-21)
 - **`dev/tools/walk-data`** reads the doodads' collision (the game's models, M2: the collision triangles their header

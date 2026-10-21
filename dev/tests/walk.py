@@ -34,7 +34,7 @@ def load(name, path):
 walk = load("walk_data", ROOT / "dev" / "tools" / "walk-data")
 travel = load("travel_data", ROOT / "dev" / "tools" / "travel-data")
 np = walk.np
-SIDE, LAND, WATER = walk.SIDE, walk.LAND, walk.WATER
+SIDE, LAND, WATER, BUILT = walk.SIDE, walk.LAND, walk.WATER, walk.BUILT
 checks = failed = 0
 
 
@@ -357,6 +357,103 @@ built = walk.floors(ground_at, np.zeros((SIDE, SIDE), bool), none, none,
 check("a canopy high over the ground leaves the ground's rules to its columns, a trunk at the ground does not",
       (bool(built[5, 5]), bool(built[8, 8]), bool(built[6, 6])), (False, False, True))
 
+
+# --- The ground's own triangles ---------------------------------------------------------------------
+# The game draws each cell (4.17 yards) as four triangles meeting at its inner height: a bump in a cell's middle 3 yards
+# over its corners rises at 55 degrees, too steep however gentle the slopes around it; 1.5 yards, 36 degrees.
+cells = walk.ART.CHUNKS * walk.ART.CELLS
+side = walk.TILE / cells
+outer, inner = np.zeros((cells + 1, cells + 1)), np.zeros((cells, cells))
+inner[10, 10] = 3.0
+spike = walk.steepness(outer, inner)
+per = SIDE // cells  # samples along a cell's side
+check("a cell whose triangles rise over 50 degrees is steep under all its samples",
+      bool(spike[10 * per:11 * per, 10 * per:11 * per].all()), True)
+check("and only there", int(spike.sum()), per * per)
+inner[10, 10] = 1.5
+check("one whose triangles rise 36 degrees is not", bool(walk.steepness(outer, inner).any()), False)
+for degrees, steep in ((45, False), (55, True)):
+    rise = math.tan(math.radians(degrees)) * side
+    columns_ = np.arange(cells + 1, dtype=float)
+    hill = walk.steepness(np.tile(columns_ * rise, (cells + 1, 1)), np.tile((columns_[:-1] + 0.5) * rise, (cells, 1)))
+    check(f"a hillside of {degrees} degrees is {'too steep' if steep else 'walked'}", bool(hill.all() if steep else hill.any()),
+          steep)
+
+# --- A stair's pieces, a ceiling ---------------------------------------------------------------------
+check("the highest span has room", walk.roomy([[9.5, 10.0, True]], 0), True)
+check("a floor with ROOM over it has room", walk.roomy([[9.5, 10.0, True], [12.5, 13.0, True]], 0), True)
+check("a stair's next piece close over a sloped one is no ceiling",
+      walk.roomy([[9.0, 10.0, True], [10.5, 11.5, True]], 0), True)
+check("a flat slab close over a flat floor is", walk.roomy([[9.9, 10.0, True], [10.5, 10.6, True]], 0), False)
+check("so is a wall's piece close over a ramp", walk.roomy([[9.0, 10.0, True], [10.5, 11.5, False]], 0), False)
+
+# A wall a fifth of a sample off a sample's middle: a narrow stairwell's side, the sample keeps its floor.
+check("a wall a fifth of a sample off the middle takes no floor",
+      bool(built_tile(quad((10.7, 0, 10), (10.7, 256, 10), (10.7, 256, 15), (10.7, 0, 15)))[2][5][10]), True)
+
+# --- A building's floor, the sky over a floor ------------------------------------------------------------
+deck = built_tile(quad((60, 40, 18), (100, 40, 18), (100, 60, 18), (60, 60, 18)))
+check("the ground under a deck and the deck: the ground's kind and a building's",
+      [(floor[0], floor[1]) for floor in deck[2][50][70]], [(10.0, LAND), (18.0, BUILT)])
+check("the sky over the deck, none over the ground under it", [floor[2] for floor in deck[2][50][70]],
+      [walk.COVERED, walk.SKY])
+city = built_tile(quad((60, 40, 30), (100, 40, 30), (100, 60, 30), (60, 60, 30)))
+check("the ground deep under a building is buried", [floor[2] for floor in city[2][50][70]], [walk.BURIED, walk.SKY])
+check("the ground beside it under the sky", deck[2][50][20], [(10.0, LAND, True)])
+
+# --- Water: what stands between a floor and the surface keeps it dry ------------------------------------------
+flat10 = np.full((SIDE, SIDE), 10.0, np.float32)
+none = np.full((SIDE, SIDE), -np.inf, np.float32)
+lake = np.full((SIDE, SIDE), 20.0, np.float32)
+spans = {(5, 5): [(13.0, 14.0, True)]}  # a tunnel's roof 3 yards over the ground, under the lake
+_, found, _, _ = walk.floors(flat10, np.zeros((SIDE, SIDE), bool), lake, none, spans, {})
+check("the ground under a tunnel's roof under a lake stays a floor, the lake over the roof is swum",
+      [(floor[0], floor[1]) for floor in found[(5, 5)]], [(10.0, LAND), (20.0, WATER)])
+check("the ground under the lake alone is swum over", [(floor[0], floor[1]) for floor in found[(6, 6)]], [(20.0, WATER)])
+slime = np.full((SIDE, SIDE), 12.0, np.float32)
+_, found, _, _ = walk.floors(flat10, np.zeros((SIDE, SIDE), bool), none, slime, {(5, 5): [(15.0, 15.2, True)]}, {})
+check("slime closes the ground under it, not a floor over it", [floor[0] for floor in found[(5, 5)]], [15.2])
+check("nor the ground around", found[(6, 6)], [])
+
+# --- A building's water, magma and slime -----------------------------------------------------------
+check("an old building's liquids: its number plus one, every fourth water, ocean, magma, slime",
+      [walk.liquid(number, 0, 0) for number in (0, 1, 2, 3)], [13, 14, 19, 20])
+check("an old building's 15: its first tile's", walk.liquid(15, 0, 3), 20)
+check("water of a part marked ocean", walk.liquid(0, 0x80000, 0), 14)
+check("the table's own number where the building says so; of the first twenty as the game reads them",
+      [walk.liquid(number, 0, None) for number in (1344, 5, 7)], [1344, 13, 19])
+
+
+def chunk(name, payload):
+    return name[::-1] + struct.pack("<I", len(payload)) + payload
+
+
+with tempfile.TemporaryDirectory() as folder:
+    folder = Path(folder)
+    (folder / "7.wmo").write_bytes(chunk(b"MOHD", bytes(60) + struct.pack("<HH", 0x4, 0)))
+    liquid_ = (struct.pack("<4i3fH", 3, 2, 2, 1, 1.0, 2.0, 0.0, 0)
+               + b"".join(struct.pack("<4Bf", 0, 0, 0, 0, 5.0) for _ in range(6)) + bytes([0x00, 0x0F]))
+    header = bytes(8) + struct.pack("<I", 0x1000) + bytes(40) + struct.pack("<I", 1344) + bytes(12)
+    (folder / "7_000.wmo").write_bytes(chunk(b"MOGP", header + chunk(b"MLIQ", liquid_)))
+    pooled = walk.pools(folder, 7)
+    unit = walk.TILE / cells
+    check("a building's water: its tiles that hold it, each at points over it, of its part's liquid type",
+          [(len(points), kind) for points, kind in pooled], [(walk.POURED ** 2, 1344)])
+    points = pooled[0][0] if pooled else np.zeros((0, 3))
+    check("at the water's height, inside its first tile", (bool((points[:, 2] == 5.0).all()),
+          bool((points[:, 0] > 1.0).all() and (points[:, 0] < 1.0 + unit).all())), (True, True))
+
+# --- Regions with no sky over them ----------------------------------------------------------------
+covered = [[10, 10, 64, 64, 40, LAND, 0]]
+check("a region with the sky over none of its floors is left out (the ground under a city, a closed cellar)",
+      (0, 0) in walk.regions({0: (covered, {0: []}, {}, set())}), False)
+check("one with the sky over some is kept", (0, 0) in walk.regions({0: (covered, {0: []}, {}, {0})}), True)
+check("one a lift lands on is kept all the same", (0, 0) in walk.regions({0: (covered, {0: []}, {}, set())}, {(0, 0)}),
+      True)
+check("one most of whose floors are buried is left out (the ground under a city, open only between its buildings)",
+      (0, 0) in walk.regions({0: (covered, {0: []}, {}, {0}, {0: 64 * 64 // 2 + 1})}), False)
+check("one less than half buried is kept", (0, 0) in walk.regions({0: (covered, {0: []}, {}, {0}, {0: 64 * 64 // 2})}),
+      True)
 
 # --- The block -------------------------------------------------------------------------------------
 def blocked(rects, links):

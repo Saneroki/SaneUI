@@ -573,7 +573,9 @@ end
 -- across): a field (1, 10 yards high, region 3) and a courtyard (2, the same surface) south east of it; a mesa (3,
 -- 80 yards, region 4) beside the field, north of the courtyard; a hall (4, region 5) 20 yards under the courtyard.
 -- Tile 6178 east of it: a courtyard (1, 10 yards, region 6) over a hall (2, -20 yards) of the same region (joined to
--- it far off, as the Undercity is to the ruins by its sewers).
+-- it far off, as the Undercity is to the ruins by its sewers). Tile 6179 east of that: the ground (1, 10 yards, region
+-- 7) deep under a city's building, its floor (2, 50 yards, region 8), its roof (3, 65 yards, region 9) and a deck east
+-- of the roof (4, 59 yards, region 10) a building's.
 local routesFolder = io.popen("mktemp -d -t saneui-routes-XXXXXX"):read("*l") -- kept until the end
 local routesPath = routesFolder .. "/Routes"
 os.execute(("mkdir -p '%s'"):format(routesPath))
@@ -592,10 +594,12 @@ local walkBlocks = {
         { 0, 0, 128, 256, 40,   128, 128, 128, 128, 40,   128, 0, 128, 128, 320,   144, 144, 96, 96, -80 },
         { 0, 0, 0, 0 } },
     [6178] = { 1, { 1, 1, 6,   1, 1, 6 }, { 0, 0, 256, 128, 40,   64, 32, 128, 64, -80 }, { 0, 0 } },
+    [6179] = { 1, { 1, 1, 7,   1, 3, 8,   1, 3, 9,   1, 3, 10 },
+               { 0, 0, 256, 256, 40,   0, 0, 64, 64, 200,   16, 16, 32, 32, 260,   52, 16, 8, 32, 236 }, { 0, 0, 0, 0 } },
 }
 Set(routesPath .. "/Walking.lua", "Walking", "00000008", "int", '"map", "links", "block"', '"int", "list int", "text"',
     'R[3104] = "70245\t\t0\t3105\tblock:3104"\nR[3105] = "70245\t\t0\t3104\tblock:3105"\nR[6176] = "70245\t\t1\t\tblock:6176"\n'
-    .. 'R[6177] = "70245\t\t1\t\tblock:6177"\nR[6178] = "70245\t\t1\t\tblock:6178"\n')
+    .. 'R[6177] = "70245\t\t1\t\tblock:6177"\nR[6178] = "70245\t\t1\t\tblock:6178"\nR[6179] = "70245\t\t1\t\tblock:6179"\n')
 W.AddSets(routesPath)
 C_EncodingUtil = { DecodeBase64 = function(text) return text end, DecompressString = function(text) return text end,
                    DeserializeCBOR = function(text) return walkBlocks[tonumber(text:match("%d+"))] end }
@@ -2900,6 +2904,12 @@ check(shownWay == nil, "the pin taken away: no line")
     check(#Walk.Under(1414, cu, cv) == 2, "two floors under a point of the cave: the cave's and the hill's")
     check(select(2, Walk.Floor(1414, cu, cv, false, 40)) == 3 and select(2, Walk.Floor(1414, cu, cv, true, 40)) == 2,
         "nothing known of before: outdoors the highest floor (the hill), indoors the lowest (the cave)")
+    local bu, bv = 3 * Coords.TILE + 32 * s, -32 * s -- under a city's building (tile 6179)
+    check(select(2, Walk.Floor(1414, bu, bv, true, 40)) == 2 and select(2, Walk.Floor(1414, bu, bv, false, 40)) == 3,
+        "indoors the lowest of a building's floors (its own, not the ground deep under the city), outdoors its roof")
+    check(select(2, Walk.Nearest(1414, bu, bv, 10, 8, Walk.LAND)) == 2, "on foot: a building's floor too")
+    check(select(2, Walk.Landing(1414, 3 * Coords.TILE + 47.5 * s, -32 * s, 59, 20)) == 4,
+        "a lift's end lands beside its shaft at its height (the deck), not on the roof just over it")
     local gu, gv = At(176, 70)
     check(select(2, Walk.Floor(1414, cu, cv, false, 40, 8)) == 2 and Walk.Floor(1414, gu, gv, false, 40, 80) == nil,
         "not followed: the floor near the height the walker had (the cave's), none so near (off the mesa): none")

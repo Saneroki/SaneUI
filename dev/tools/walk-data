@@ -7,7 +7,8 @@ What is walkable is read from what the game itself collides with, sampled every 
 tile's side):
 
   the ground      each map chunk's heights (the game's four triangles a cell), but where the terrain has a hole (a
-                  cave's mouth, a building's cellar); too steep (over SLOPE degrees) it is no floor, only a surface
+                  cave's mouth, a building's cellar); where the game's triangle under a sample is too steep (over
+                  SLOPE degrees) it is no floor, only a surface
   the buildings   every collision triangle of every building the object files place (WMO group files: their
                   vertices, indices and each triangle's flags), turned, tilted and moved where the game places it;
                   a triangle cut by each column of samples gives a span of height there (as a voxel field is made),
@@ -17,11 +18,15 @@ tile's side):
                   where the building puts it: fences, rocks and tree trunks are walls, piers, decks and their stairs
                   floors. A doodad no wider than SMALL (a torch, a barrel) is left out, one walks round it; what a
                   doodad of the object files holds wholly under the ground is inside the earth (a tree's roots)
-  the water       where water stands deeper than DEEP over a floor, that floor is under water, and the water's
-                  surface is a floor to swim on; magma and slime close what lies under them
+  the water       where water stands deeper than DEEP over a floor with nothing between them, that floor is under
+                  water, and the water's surface is a floor to swim on; magma and slime close what lies under them.
+                  The buildings' own water, magma and slime (their parts' liquids) are the ground's: the canals of
+                  Stormwind, the Undercity's slime, Ironforge's forge
 
 In each column the spans are joined where they touch; the top of a span is a floor when what made it is not too
-steep and nothing stands within ROOM yards above it (a floor under a low roof or inside a wall is none). A wall takes
+steep and nothing stands within ROOM yards above it (a floor under a low roof or inside a wall is none) but the next
+piece of the same stair or ramp passing up through the sample (within STAIR yards). A floor on the ground is land, one
+on a building or a doodad a building's (BUILT: where the game's indoors is, Navigation looks for the player). A wall takes
 a sample's floor only where it comes into the middle of its square (CORE); off the middle it stands between the
 sample and the next one on each side whose way it crosses (from the sample's middle to that side's), so a door or a
 bridge narrower than two samples stays open. Two floors side by side are one way when their heights differ by at
@@ -34,8 +39,10 @@ rectangle keeps its height, its kind and the openings along its sides into its n
 next), and every rectangle that can be walked to from another has the same region number, so the game can tell at
 once that a place cannot be reached on foot. A region's number holds within its map (the game compares them only
 there): numbered in the order of the tiles' keys, so a run gives the same numbers again. A region smaller than
-SMALLEST samples (a roof, a ledge) is left out, but one a lift lands on (the floor nearest a lift's end within LANDING
-yards, its height within RISE, as Navigation finds its landing: Freewind Post's mesa).
+SMALLEST samples (a roof, a ledge) is left out, and one with the sky over none of its floors (a cellar the data closes:
+nobody gets in or out) or with most of its floors buried (the ground DEPTH yards and more under a building: Stormwind's
+streets over the ground), but one a lift lands on (the floor nearest a lift's end within LANDING yards, its height
+within RISE, as Navigation finds its landing: Freewind Post's mesa).
 
   dev/data/staging/walking.jsonl    one line per tile with ground: set Walking, key the tile's key in the set Tiles
                                     (continent * 4096 + row * 64 + column), fields map (the continent), links (the
@@ -46,7 +53,7 @@ A block is CBOR (the game reads it with C_EncodingUtil.DeserializeCBOR), deflate
 array of whole numbers:
 
   surfaces     per surface (its rectangles come one after the other, in this order) 3 numbers: how many rectangles
-               it has, its kind (1 land, 2 water) and its region
+               it has, its kind (1 land, 2 water, 3 a building's floor) and its region
   rectangles   per rectangle 5 numbers: its column and row on the tile (0 to 255, from the north west), its width
                and height in samples, and its height in quarter yards
   openings     per rectangle, in order: how many numbers follow, then its openings that the game cannot work out
@@ -99,11 +106,13 @@ HALF = GRID / 2 * TILE # yards from a continent's middle to its edges
 SLOPE = 50             # degrees: steeper ground or building floor is no floor
 ROOM = 2.0             # yards a floor needs free above it
 CLIMB = 2.6            # yards two floors side by side may differ and still be one way (a little over the slope)
-CORE = 0.5             # samples: a wall in the square of this side round a sample's middle leaves it no floor
+CORE = 0.3             # samples: a wall in the square of this side round a sample's middle leaves it no floor
 STEP = 0.5             # yards a wall between two floors side by side may rise over the higher (a sill, a curb)
 LEDGE = 1.5            # yards a wall between two floors side by side may rise between them (a stair's step)
 DEEP = 1.6             # yards of water over a floor that make it one to swim over
 JOIN = 0.25            # yards: spans of a column nearer than this are one
+STAIR = 1.0            # yards: a sloped walkable piece this near over a floor is the same stair or ramp going on
+DEPTH = 10             # yards: the ground with a building this far over it is buried (the ground under a city)
 WIDEST = 32            # samples: a rectangle's longest side
 SMALLEST = 3000        # samples: a region smaller than this (a roof, a ledge) is left out, but one a lift lands on
 SMALL = 2.0            # yards: a doodad no wider than this either way (a torch, a barrel, a thin trunk) is left out:
@@ -119,7 +128,8 @@ THIN = 0.5             # yards: the ground's surface is a span this thick
 UP = math.cos(math.radians(SLOPE))
 STEEP = math.tan(math.radians(SLOPE)) * SAMPLE  # height over one sample past which the ground is too steep
 YARDS = np.array([SAMPLE, SAMPLE, 1.0])          # the samples' space (columns, rows, height) in yards
-LAND, WATER = 1, 2
+LAND, WATER, BUILT = 1, 2, 3  # a floor's kind: the ground, a water's surface, a building's or a doodad's floor
+SKY, COVERED, BURIED = 1, 0, -1  # what is over a floor: the sky, something, a building DEPTH yards or more (the ground)
 FORMAT = 1             # the blocks' format, as Navigation's Walk.lua reads it
 
 
@@ -182,6 +192,7 @@ def ground(path, waters, liquids):
                 inner[y * 8:y * 8 + 8, x * 8:x * 8 + 8] = rows[:8, 9:]
                 break
     height = ART.ground(outer, inner)
+    steep = steepness(outer, inner)
     hole = np.repeat(np.repeat(hole, ART.SAMPLES, 0), ART.SAMPLES, 1)
     water = np.full(height.shape, -np.inf, np.float32)
     closed = np.full(height.shape, -np.inf, np.float32)
@@ -217,7 +228,32 @@ def ground(path, waters, liquids):
                 target = water if kind in waters else closed
                 region = target[y0:y0 + high * ART.SAMPLES, x0:x0 + wide * ART.SAMPLES]
                 np.maximum(region, level, out=region)
-    return height, hole, water, closed
+    return height, hole, water, closed, steep
+
+
+def steepness(outer, inner):
+    """Whether the ground's own triangle under each sample is steeper than SLOPE (SIDE x SIDE, rows from the north):
+    the game draws a cell as four triangles meeting at its inner height (terrain-art's ground), and nobody walks up
+    one steeper than that, whatever the slopes around it. A sample's middle lies on the edge between two of them; it
+    takes the one terrain-art's ground takes its height from (the west or the east one)."""
+    side = TILE / (ART.CHUNKS * ART.CELLS)  # a cell's side in yards
+    a, b, c, d, m = outer[:-1, :-1], outer[:-1, 1:], outer[1:, :-1], outer[1:, 1:], inner
+
+    def steep(p, q, r):
+        (px, py, pz), (qx, qy, qz), (rx, ry, rz) = p, q, r
+        ux, uy, uz, vx, vy, vz = qx - px, qy - py, qz - pz, rx - px, ry - py, rz - pz
+        nx, ny, nz = uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx
+        return np.abs(nz) < UP * np.sqrt(nx * nx + ny * ny + nz * nz)
+
+    corners = (0, 0, a), (side, 0, b), (0, side, c), (side, side, d)
+    middle = (side / 2, side / 2, m)
+    north, east = steep(corners[0], corners[1], middle), steep(corners[1], corners[3], middle)
+    south, west = steep(corners[2], corners[3], middle), steep(corners[0], corners[2], middle)
+    cells = ART.CHUNKS * ART.CELLS
+    big = lambda grid: np.repeat(np.repeat(grid, ART.SAMPLES, 0), ART.SAMPLES, 1)  # noqa: E731
+    found = np.where(np.tile(ART.WEST, (cells, cells)), big(west), big(east))
+    found = np.where(np.tile(ART.SOUTH, (cells, cells)), big(south), found)
+    return np.where(np.tile(ART.NORTH, (cells, cells)), big(north), found)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -414,6 +450,73 @@ OWN = np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]])     # its own axes (x, y, z u
 WORLD = np.array([[0, 0, -1], [-1, 0, 0], [0, 1, 0]])  # the object files' axes (x, height, z) as the world's
 
 
+POURED = 4             # points along each side of a building's water tile (4.17 yards): a sample's every corner wet
+
+
+def liquid(kind, flags, first):
+    """The liquid type (LiquidType) of a building's part, as the game takes it: its own number (MOGP), the table's
+    where the building's flags say so (MOHD 0x4; first None), else one more than it (15: one more than its first
+    tile's own); of the table's first twenty each fourth is water (the part's flag 0x80000: ocean), ocean, magma,
+    slime."""
+    if first is not None:
+        kind = first + 1 if kind == 15 else kind + 1
+    if 0 < kind < 21:
+        kind = (14 if flags & 0x80000 else 13, 14, 19, 20)[(kind - 1) & 3]
+    return kind
+
+
+_pools = {}
+
+
+def pools(folder, file):
+    """A building's water, magma and slime in its own space (kept per process): a list of (points (n, 3): its
+    surface at POURED x POURED points of every tile its parts' liquids (MLIQ) cover, its liquid type)."""
+    if file not in _pools:
+        found = []
+        root = folder / f"{file}.wmo"
+        data = root.read_bytes() if root.exists() else b""
+        top = chunks(data, 0, len(data))
+        legacy = not (b"MOHD" in top and struct.unpack_from("<H", data, top[b"MOHD"][0] + 60)[0] & 0x4)
+        for path in sorted(folder.glob(f"{file}_*.wmo")):
+            data = path.read_bytes()
+            top = chunks(data, 0, len(data))
+            if b"MOGP" not in top:
+                continue
+            at, size = top[b"MOGP"]
+            inner = chunks(data, at + 68, at + size)
+            if b"MLIQ" not in inner:
+                continue
+            flags, kind = struct.unpack_from("<I", data, at + 8)[0], struct.unpack_from("<I", data, at + 0x34)[0]
+            lat, _ = inner[b"MLIQ"]
+            xverts, yverts, xtiles, ytiles = struct.unpack_from("<4i", data, lat)
+            bx, by, _ = struct.unpack_from("<3f", data, lat + 16)
+            count = xverts * yverts
+            if xtiles <= 0 or ytiles <= 0 or xverts != xtiles + 1 or yverts != ytiles + 1:
+                continue
+            heights = np.frombuffer(data, "<f4", count * 2, lat + 30).reshape(yverts, xverts, 2)[..., 1]
+            tiles = np.frombuffer(data, np.uint8, xtiles * ytiles, lat + 30 + 8 * count).reshape(ytiles, xtiles)
+            wet = (tiles & 0x0F) != 0x0F
+            if not wet.any():
+                continue
+            kind = liquid(kind, flags, int(tiles[wet][0] & 0x0F) if legacy else None)
+            if kind <= 0:
+                continue
+            rows, cols = np.nonzero(wet)
+            step = (np.arange(POURED) + 0.5) / POURED
+            fy, fx = np.meshgrid(step, step, indexing="ij")
+            fy, fx = fy.ravel(), fx.ravel()
+            j, i = rows[:, None], cols[:, None]
+            level = (heights[j, i] * (1 - fx) * (1 - fy) + heights[j, i + 1] * fx * (1 - fy)
+                     + heights[j + 1, i] * (1 - fx) * fy + heights[j + 1, i + 1] * fx * fy)
+            unit = TILE / (ART.CHUNKS * ART.CELLS)  # a water tile's side: a terrain cell's
+            points = np.stack([bx + (i + fx) * unit, by + (j + fy) * unit, level], axis=-1).reshape(-1, 3)
+            found.append((points.astype(np.float64), kind))
+        _pools[file] = found
+        if len(_pools) > 200:
+            _pools.pop(next(iter(_pools)))
+    return _pools[file]
+
+
 def placed(where, corners):
     """A building's or a doodad's corners (n, 3, 3: its own x, y, z) where the game places it: (north, west, height)
     in yards. On the object files' axes (x, the height, z) the game tilts it about x by its turn's third angle, then
@@ -517,19 +620,38 @@ def smooth(grid):
     return total / 9
 
 
-def floors(height, hole, water, closed, spans, walls=()):
-    """Every column's floors, lowest first: {(row, column): [(height, kind)]}; the columns with only the ground as
+def roomy(joined, index):
+    """Whether a column's span (joined: its spans, lowest first) has room for a floor on top: ROOM free over it, or
+    over it only the next piece of the same stair or ramp passing up through the sample (walkable, within STAIR yards
+    over it, one of the two sloped: taller than JOIN), which is no ceiling."""
+    if index + 1 == len(joined):
+        return True
+    below, top, _ = joined[index]
+    low, high, walkable = joined[index + 1]
+    if low - top >= ROOM:
+        return True
+    return walkable and low - top <= STAIR and (top - below > JOIN or high - low > JOIN)
+
+
+def floors(height, hole, water, closed, spans, walls=(), steep=None):
+    """Every column's floors, lowest first: {(row, column): [(height, kind, open)]}, open where nothing stands over the
+    floor (the sky over it: the ground alone, a column's highest span, a water's surface with nothing over it); the
+    columns with only the ground as
     one floor array (NaN where none) for speed; and where the ground is only too steep (no hole, no building, no
     water): a speck of it may be walked over (rectangles)."""
     # The ground over three samples a side: its small bumps make no steep specks, and the slope it is judged by
     # and the heights its floors are joined by are the same.
     height = smooth(height.astype(np.float64))
-    gy, gx = np.gradient(height, edge_order=1)
-    steep = np.maximum(np.abs(gy), np.abs(gx)) > STEEP
+    if steep is None:  # no triangles given (made-up ground): its slope between the samples
+        gy, gx = np.gradient(height, edge_order=1)
+        steep = np.maximum(np.abs(gy), np.abs(gx)) > STEEP
     plain = np.where(~hole, height, np.nan)
     walk = ~hole & ~steep
-    found = {}
+    # ceiling: the top of a column's highest span; overs: under each floor's column, where the next span over it
+    # begins (none: inf), which keeps the water over it off it (a tunnel under a river).
+    found, ceiling, overs = {}, {}, {}
     for (row, column), column_spans in spans.items():
+        g = math.nan
         if not hole[row, column]:
             g = float(height[row, column])
             column_spans = column_spans + [(g - THIN, g, bool(walk[row, column]))]
@@ -544,8 +666,17 @@ def floors(height, hole, water, closed, spans, walls=()):
                     joined[-1] = [last[0], max(high, last[1]), last[2] or walkable]
             else:
                 joined.append([low, high, walkable])
-        found[(row, column)] = [(top, LAND, False) for index, (_, top, ok) in enumerate(joined)
-                                if ok and (index + 1 == len(joined) or joined[index + 1][0] - top >= ROOM)]
+        # A floor on the ground is land; one on a building, a building's (BUILT).
+        here, over = [], []
+        for index, (_, top, ok) in enumerate(joined):
+            if ok and roomy(joined, index):
+                land = abs(top - g) <= JOIN
+                above = joined[index + 1][0] if index + 1 < len(joined) else math.inf
+                here.append((top, LAND if land else BUILT,
+                             SKY if above == math.inf else BURIED if land and above - top > DEPTH else COVERED))
+                over.append(above)
+        found[(row, column)], overs[(row, column)] = here, over
+        ceiling[(row, column)] = joined[-1][1]
     # The ground alone where no building is.
     alone = np.where(walk, plain, np.nan)
     speck = steep & ~hole
@@ -553,21 +684,25 @@ def floors(height, hole, water, closed, spans, walls=()):
         alone[key] = np.nan
         speck[key] = False
     # The water: a floor under deep water is one to swim over, at the water's surface; what lies under magma
-    # or slime is closed.
+    # or slime is closed. Only where nothing stands between the floor and the surface: under a floor of its own
+    # (a building's pool over the ground under the city) a floor stays dry.
     rows, columns = np.nonzero(np.isfinite(water) | np.isfinite(closed))
     for row, column in zip(rows.tolist(), columns.tolist()):
         key = (row, column)
-        here = found.get(key)
+        here, over = found.get(key), overs.get(key)
         if here is None:
             g = alone[row, column]
             here = [(float(g), LAND, True)] if np.isfinite(g) else []
+            over = [math.inf] * len(here)
             alone[row, column] = np.nan
         surface, shut = float(water[row, column]), float(closed[row, column])
-        kept = [floor for floor in here if floor[0] >= shut and floor[0] >= surface - DEEP]
-        swum = any(floor[0] < surface - DEEP and floor[0] >= shut for floor in here) or (not here and math.isfinite(surface))
+        shut_in = [floor[0] < shut and ceiling_at >= shut - JOIN for floor, ceiling_at in zip(here, over)]
+        deep = [floor[0] < surface - DEEP and ceiling_at >= surface - JOIN for floor, ceiling_at in zip(here, over)]
+        kept = [floor for floor, a, b in zip(here, shut_in, deep) if not a and not b]
+        swum = any(b and not a for a, b in zip(shut_in, deep)) or (not here and math.isfinite(surface))
         if math.isfinite(surface) and surface > shut and (swum or hole[row, column] or not here):
             if not any(abs(floor[0] - surface) < ROOM for floor in kept):
-                kept.append((surface, WATER, False))
+                kept.append((surface, WATER, SKY if surface >= ceiling.get(key, -math.inf) - JOIN else COVERED))
         kept.sort()
         found[key] = kept
         speck[row, column] = False
@@ -823,12 +958,13 @@ def sunken(triangles, height, hole):
 
 
 def tile(job):
-    """Everything of one tile: (key, rects, openings, borders), or (key, None, None, None) without ground."""
+    """Everything of one tile: (key, rects, openings, borders, open: the rectangles with the sky over some of their
+    floors, buried: {rectangle: how many of its floors are buried}), or (key, None, ...) without ground."""
     key, folder, waters, liquids, near_places = job
     path = folder / "adt" / f"{key}.adt"
     if not path.exists():
-        return key, None, None, None
-    height, hole, water, closed = ground(path, waters, liquids)
+        return key, None, None, None, None, None
+    height, hole, water, closed, steep = ground(path, waters, liquids)
     row0, col0 = key % (GRID * GRID) // GRID, key % GRID
     north0, west0 = HALF - row0 * TILE, HALF - col0 * TILE
     spans, walls = {}, {}
@@ -847,13 +983,27 @@ def tile(job):
         if where["kind"] == DOODAD:
             inside &= ~sunken(samples, height, hole)
         rasterize(samples[inside], spans, walls)
-    alone, found, specks, built = floors(height, hole, water, closed, spans, walls)
+        # A building's water, magma and slime join the ground's (the higher where both are).
+        for points, kind in pools(folder / "wmo", where["file"]) if where["kind"] == BUILDING else ():
+            world = placed(where, points)
+            column = np.floor((west0 - world[:, 1]) / SAMPLE).astype(np.int64)
+            row = np.floor((north0 - world[:, 0]) / SAMPLE).astype(np.int64)
+            inside = (row >= 0) & (row < SIDE) & (column >= 0) & (column < SIDE)
+            np.maximum.at(water if kind in waters else closed, (row[inside], column[inside]),
+                          world[inside, 2].astype(np.float32))
+    alone, found, specks, built = floors(height, hole, water, closed, spans, walls, steep)
     rects, owner, columns = rectangles(alone, found, specks, built, walls)
     borders = {}
     links = openings(rects, owner, columns, borders, walls)
     if not rects:
-        return key, None, None, None
-    return key, rects, links, borders
+        return key, None, None, None, None, None
+    opened, buried = set(), {}
+    for (r, c, i), number in owner.items():
+        if columns[r][c][i][2] == SKY:
+            opened.add(number)
+        elif columns[r][c][i][2] == BURIED:
+            buried[number] = buried.get(number, 0) + 1
+    return key, rects, links, borders, opened, buried
 
 
 # -------------------------------------------------------------------------------------------------
@@ -865,7 +1015,7 @@ NEXT = {0: (-1, 0, 2), 1: (0, 1, 3), 2: (1, 0, 0), 3: (0, -1, 1)}  # side: row s
 def across(tiles):
     """The openings between tiles: for each edge, floors at the same place along it one way with each other, no
     wall on the way between them on either tile."""
-    for key, (rects, links, borders) in tiles.items():
+    for key, (rects, links, borders, *_) in tiles.items():
         continent, rest = divmod(key, GRID * GRID)
         row, column = divmod(rest, GRID)
         for side, (dr, dc, opposite) in NEXT.items():
@@ -936,8 +1086,10 @@ def landings(tiles, ends):
 
 def regions(tiles, keep=()):
     """A region number for every rectangle: one for all that can be walked to from each other; regions smaller
-    than SMALLEST samples get none (nobody walks onto a roof or a ledge from the ground), but those of the
-    rectangles in keep (the lifts' landings: Freewind Post's mesa)."""
+    than SMALLEST samples get none (nobody walks onto a roof or a ledge from the ground), nor those with the sky over
+    none of their floors (a cellar the walking data closes: nobody gets in or out) or most of them buried (the ground
+    under Stormwind's buildings, open only to the gaps between them), but those of the rectangles in keep (the lifts'
+    landings: Freewind Post's mesa, the Undercity)."""
     parent = {}
 
     def find(node):
@@ -946,7 +1098,7 @@ def regions(tiles, keep=()):
             node = parent[node]
         return node
 
-    for key, (rects, links, _) in tiles.items():
+    for key, (rects, links, *_) in tiles.items():
         continent, rest = divmod(key, GRID * GRID)
         row, column = divmod(rest, GRID)
         for number, list_ in links.items():
@@ -959,11 +1111,17 @@ def regions(tiles, keep=()):
                 a, b = find((key, number)), find((other, index))
                 if a != b:
                     parent[a] = b
-    area = {}
-    for key, (rects, _, _) in tiles.items():
+    area, sky, deep = {}, set(), {}
+    for key, (rects, _, _, *rest) in tiles.items():
+        opened = rest[0] if rest else range(len(rects))  # made-up tiles: all open, none buried
         for number, rect in enumerate(rects):
             root = find((key, number))
             area[root] = area.get(root, 0) + rect[2] * rect[3]
+        for number in opened:
+            sky.add(find((key, number)))
+        for number, count in (rest[1] if len(rest) > 1 else {}).items():
+            root = find((key, number))
+            deep[root] = deep.get(root, 0) + count
     landed = {find(node) for node in keep}
     numbers = {}
     found = {}
@@ -971,7 +1129,7 @@ def regions(tiles, keep=()):
         rects = tiles[key][0]
         for number in range(len(rects)):
             root = find((key, number))
-            if area[root] < SMALLEST and root not in landed:
+            if (area[root] < SMALLEST or root not in sky or 2 * deep.get(root, 0) > area[root]) and root not in landed:
                 continue
             if root not in numbers:
                 numbers[root] = len(numbers) + 1
@@ -982,14 +1140,14 @@ def regions(tiles, keep=()):
 def kept(tiles, region_of):
     """Each tile's rectangles of the regions kept, numbered anew, their openings pointing at the new numbers."""
     renumber = {}
-    for key, (rects, _, _) in tiles.items():
+    for key, (rects, *_) in tiles.items():
         count = 0
         for number in range(len(rects)):
             if (key, number) in region_of:
                 renumber[(key, number)] = count
                 count += 1
     out = {}
-    for key, (rects, links, borders) in tiles.items():
+    for key, (rects, links, *_) in tiles.items():
         continent, rest = divmod(key, GRID * GRID)
         row, column = divmod(rest, GRID)
         new_rects, new_links = [], {}
@@ -1155,9 +1313,9 @@ def main():
         jobs.append((key, folder, waters, liquids, near_places))
     tiles = {}
     with Pool(processes) as pool:
-        for done, (key, rects, links, borders) in enumerate(pool.imap_unordered(tile, jobs, chunksize=1), 1):
+        for done, (key, rects, links, borders, opened, buried) in enumerate(pool.imap_unordered(tile, jobs, chunksize=1), 1):
             if rects:
-                tiles[key] = (rects, links, borders)
+                tiles[key] = (rects, links, borders, opened, buried)
             if done % 50 == 0 or done == len(jobs):
                 print(f"{done} of {len(jobs)} tiles read", file=sys.stderr, flush=True)
     across(tiles)

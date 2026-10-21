@@ -37,8 +37,9 @@ Search.NEAR = 50        -- yards from the end a floor of the walk's regions may 
 Search.FAR = 500        -- yards from the end the nearest such floor may be, at most, where none is that near
 Search.STRAIGHT = 6     -- what lies off the walking data, straight, costs so many times its yards
 Search.WATER = 2        -- swimming costs so many times walking
-Search.CLIMB = 2        -- each yard up costs so many yards more: along the valleys and the roads, through the gate,
-                        -- not over the mountain (the data holds steep slopes as floors: Ironforge's mountain)
+Search.CLIMB = 0.25     -- each yard up costs so many yards more: the game runs as fast up a hill as on the flat
+                        -- (no slope over 50 degrees is a floor at all), so the shorter way over a hill or a pass is
+                        -- taken; of two ways about as long the flatter
 Search.EDGE = 0.8       -- yards an opening is drawn in from its ends
 Search.MOST = 200000    -- rectangles looked at, at most, before a search gives up
 Search.EVERY = 64       -- rectangles looked at between two looks at the frame's time

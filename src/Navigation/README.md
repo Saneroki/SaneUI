@@ -334,23 +334,26 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   game's dropdowns, radio entries of the world, its continents and Zephras Isle, the zones of the one shown A to
   Z, the isle itself on the isle), the dungeons and the floors of the one shown, and the pin filter
   (checkboxes); it says what the map shows after each layout.
-- **Walk** (`Walk.lua`, no frames): Core's set *Walking* (pack *Data: Routes*, asked for at the first route),
+- **Walk** (`Walk.lua`, no frames): Core's set *Walking* (read with Core at the login, as all its sets),
   made by `dev/tools/walk-data` from the game's terrain, buildings and water: per terrain tile a block (base64,
   deflate, CBOR, read by the game's `C_EncodingUtil`) of surfaces and rectangles of floors, 2.08 yards a sample,
-  each with its height, kind (land, water) and region, and the openings into its neighbours. Unpacked when first
-  needed, the `Walk.KEEP` asked for last kept (in a job of Core's scheduler an unpacking may end the job's frame);
+  each with its height, kind (the ground, water, a building's floor) and region, and the openings into its
+  neighbours. Unpacked when first needed, the `Walk.KEEP` asked for last kept (in a job of Core's scheduler an
+  unpacking may end the job's frame);
   the openings of two rectangles of one surface that touch are worked out from the rectangles, written ones once on
   their tile get their other way. `Under`, `Around`, `Nearest`, `Regions`, `Opening`, `Openings`, `Portal`, `Gap`.
   Floors lie one over the other, and the game tells no height of the player (`UnitPosition`'s is always 0): the
   floor a walker stands on is followed from the rectangle they stood on through the openings nearest the way they
   went (`Walk.Follow`: a cave's mouth, not the path up the hill over it), and chosen where it cannot be
   (`Walk.Floor`): near the height they had (within `Walk.RISE`), else outdoors the highest under them, indoors the
-  lowest within `Walk.ROOF` yards.
+  lowest within `Walk.ROOF` yards, a building's floor before the ground (the game's indoors is inside a building or
+  a cave: not the ground deep under Stormwind's buildings).
 - **Search** (`Search.lua`, no frames): a walk between two points: A* over the rectangles through their openings
   (from where a rectangle was entered to the nearest point of the next opening, swimming twice the cost, and each
-  yard up `Search.CLIMB` yards more: the valleys and the roads, through Ironforge's gate, not over its mountain,
-  whose slopes the data holds as floors), from the floor the start stands on (the player's, followed), else from
-  every floor under it and within `Walk.ROOF` yards, each over the lowest at the cost of the climb up to it (a place
+  yard up `Search.CLIMB` yards more, a little: the game runs as fast up a hill as on the flat, and the data holds no
+  slope over 50 degrees, so a shorter way over a hill or a pass is taken, and Ironforge's mountain, steeper, is
+  none), from the floor the start stands on (the player's, followed), else from every floor under it and within
+  `Walk.ROOF` yards, each over the lowest at the cost of the climb up to it (a place
   stands on its lowest floor rather than on the mountain over it; none: the nearest within `Search.REACH`), to any
   floor of the regions it starts in under the end or within `Search.NEAR` yards of it (its own floor may be missing
   there: Ironforge's city under its mountain), else the nearest within `Search.FAR` (a tower, a plateau no lift
@@ -359,8 +362,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   each opening drawn in from its ends); the heap keeps each node's f as it was put in.
 - **Planner** (`Planner.lua`, no frames): the way to the map pin, a graph over the player, the pin, the known
   flight points, the docks, the tram's entrances and the hearthstone's place on every plane (the continents and
-  Zephras Isle, so a journey may cross a third; the canvas' tracker hands it the player's place): walks (guessed)
-  between the places of one plane, `Planner.APART` seconds more between two that share no region of the walking
+  Zephras Isle, so a journey may cross a third; the canvas' tracker hands it the player's place): walks (guessed,
+  at least as long as the steepest floor needs to climb between them, `Planner.SLOPE`) between the places of one
+  plane, `Planner.APART` seconds more between two that share no region of the walking
   data (a place's: those of the floors under it and within `Planner.REGION` yards), the flights of Core's set
   *Travel* the player's side may take (a flight point twice, on the ground and in the air, so a flight over many
   takes off and lands once, `Planner.BOARD`, and is one leg), the boats and zeppelins of
@@ -381,7 +385,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   time to its next train where a ride on this realm taught its times, `Trips:TramNext`) and its run (`time`); drawn
   red, straight from entrance to entrance (its tunnel's map has no plane; in it the line stays
   as it is). A lift (`Lifts.lua`, Core's set *Travel*): each end of its car at its landing (`Walk.Landing`: the
-  floor within `Lifts.LANDING` yards of the end nearest its height), only where both ends have one; its cost half
+  floor within `Lifts.LANDING` yards of the end nearest it, a yard up or down `Walk.LEVEL` times one across: beside
+  its shaft, not on the roof over it), only where both ends have one; its cost half
   the time between two departures from an end (`wait`) and its ride (`time`); drawn gold, straight from landing to
   landing. Between two levels a lift joins (its landings' regions), or a level and a place below it, no walk: the
   lift is the way. A place stands below a lift's upper level (`Lifts.Stand`) where its levels are stacked (on a ring
@@ -511,6 +516,14 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-21, the ground as the game draws it; water in buildings; indoors on a building's floor:** the walking
+  data judges the ground by the game's own triangles (it smoothed the heights, so walks went up Ironforge's mountain
+  and into the ground under Stormwind), so a hill or a pass a player walks up is taken where it is shorter
+  (`Search.CLIMB` a quarter, it was two) and a steeper one never; the buildings' water, slime and lava count
+  (Stormwind's canals are swum), stairs and narrow stairwells join their storeys (Thunder Bluff's rises join the
+  mesa), the ground buried under Stormwind's streets is left out, and a floor on a building is of its own kind:
+  indoors a route whose floor is not known starts on the lowest of a building's floors near you, not on the ground
+  under the city. With the doodads the set is 23.7 MB (12.6 before).
 - **2026-10-21, only the flight points found:** at a flight master the planner took every flight point the game's
   flight map listed as one the character knew, also those it leaves out as not found (`Unreachable`), so routes flew
   from and to flight points the character had never found. Now only those found count (its flight map's states, and

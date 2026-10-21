@@ -172,6 +172,19 @@ ground (`sunken`), counts a column as built only where something comes near the 
 with the rise counted `LEVEL` (3) times, as `Walk.Landing` must too. The models are the game's own, in `m2/` beside
 `wmo/` in the game files' folder. Doodads alone: 2.41 million rectangles, 17.9 MB of blocks.
 
+The ground as the game draws it (2026-10-21): `dev/tools/walk-data` judges the ground by the game's triangle under each
+sample (`steepness`, from `ground`; it was the heights smoothed over three samples, which walked up Ironforge's
+mountain), reads the buildings' own liquids (`pools`, `liquid`: MLIQ; the canals of Stormwind swum, slime and lava
+closed), drowns a floor only with nothing solid between it and the surface (`overs`), lets the next piece of a stair
+pass over a floor (`roomy`, `STAIR`), takes a floor by a wall only within `CORE` 0.3, marks a floor on a building or a
+doodad `BUILT` (kind 3) and each floor's sky (`SKY`, `COVERED`, `BURIED`: the ground `DEPTH` yards under a building),
+and leaves out regions with no sky or mostly buried (the ground under Stormwind). The set made with the doodads: 2.83
+million rectangles, 23.7 MB in the master. Navigation: `Walk.Floor` indoors takes a building's floor before the
+ground under it, `Walk.Landing` the rise `Walk.LEVEL` times, `Search.CLIMB` 0.25, the planner's walk guess at least
+the way the steepest floor needs (`Planner.SLOPE`). Checked offline on the whole data: 53,000 creatures'
+spawn points (71 % on a floor at their height), the lifts, walks into the cities and across hilly zones, and the gentlest
+way over the game's triangles where regions part.
+
 ## Built (2026-10-20, 21): quest marks, the filter's sections, dungeon maps, the quest log's clicks
 
 Saneroki's asks (`Doc/ideas/Navigation.md`, *Map pins*, *Full screen*, *Dungeon maps now*; README *History*):
@@ -212,7 +225,7 @@ flight master from its flight map's states and the maps' `isUndiscovered`; `Plan
 
 Not yet: portals in routes, search, the guide, the dungeons' three zooms, the minimap's small parts
 (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
-checks; 491 with the 2026-10-21 changes), `dev/tests/walk.py` (87).
+checks; 498 with the 2026-10-21 changes), `dev/tests/walk.py` (117).
 
 ## What is not there yet
 

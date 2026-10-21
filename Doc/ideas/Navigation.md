@@ -1251,7 +1251,8 @@ group files, turned and moved as the game places them, cut into columns as a vox
 2026-10-21, of every doodad (*The doodads*, below), and the water (deeper than `DEEP` a floor to swim on; magma and slime close what lies under them). Sampled every 2.08
 yards (256 a tile): a floor is the top of a column's span made by something not too steep (`SLOPE` 50°) with
 `ROOM` (2 yards) free above it; two floors side by side are one way within `CLIMB` (2.6 yards); the ground is
-judged on its heights smoothed over three samples, so its bumps make no specks.
+judged by the game's own triangle under each sample (since 2026-10-21; before, on its heights smoothed over three
+samples, *The ground as the game draws it*, below).
 
 - **Surfaces, then rectangles:** a flood joins floors into surfaces (one kind, at most one floor a column, every
   two neighbours one way), and each surface is cut by a quadtree into squares of up to `WIDEST` (32 samples, 67
@@ -1260,15 +1261,17 @@ judged on its heights smoothed over three samples, so its bumps make no specks.
   walked over at the square's height; a lone sample among steep ground is left out. So the land is a few large
   rectangles, towns, caves and mountainsides many small ones.
 - **Regions:** all rectangles one can walk or swim between share a number; a region under `SMALLEST` (3,000
-  samples, rooftops, ledges, plateaus nobody walks onto) is left out, but one a lift lands on (2026-10-21).
+  samples, rooftops, ledges, plateaus nobody walks onto) is left out, and one with the sky over none of its floors or
+  most of them buried (2026-10-21, below), but one a lift lands on (2026-10-21).
 - **The block** of a tile (CBOR, deflated, base64; the game's `C_EncodingUtil` reads it): its surfaces (count,
   kind, region), its rectangles (column, row, width, height, height in quarter yards) and the openings the game
   cannot work out itself: two rectangles of one surface that touch are open along all their edge (not
   written); every other opening is written (between surfaces, into the next tile, or only part of an edge), on
   its own tile once (`Walk.lua` adds the other way).
-- **Size:** 1,724 tiles of both continents and 26 of Zephras Isle, 1.65 million rectangles (1.45 million before
-  2026-10-21), 12.6 MB in the master (12.1 MB of blocks; 10.9 and 10.5 before); about three minutes to make on this
-  computer, the isle alone (`--maps 2991`) a few seconds.
+- **Size:** 1,724 tiles of both continents and 26 of Zephras Isle, 2.83 million rectangles (2026-10-21 with the
+  doodads and the ground's triangles; 1.65 million before, 1.45 million the day before), 23.7 MB in the master (23.0
+  MB of blocks; 12.6 and 12.1 before; the master's sets 33 MB in all); about six minutes to make on this computer, the
+  isle alone (`--maps 2991`) a few seconds.
 - **Region numbers** are given in the order of the tiles' keys (a run gives the same numbers again) and hold within
   one map: the planner and the search compare them only there, so the isle, made on its own, numbers from 1. Walks across a zone take
   20 to 65 ms of search, spread over frames by the scheduler.
@@ -1277,9 +1280,10 @@ judged on its heights smoothed over three samples, so its bumps make no specks.
   or the nearest within 40 yards) to any floor of the regions it starts in under the end or within 50 yards of it,
   else the nearest within 500, what lies off the walking data drawn straight at six times its yards (2026-10-21;
   before, the first floor under each end, and ends in different regions no walk at all); a step costs the way from
-  where a rectangle was entered to the nearest point of the opening, swimming twice, and each yard up two more
-  (the valleys and the roads: the data holds steep slopes as floors, so a walk into Ironforge went over its
-  mountain); the line then pulled straight through the openings passed, each drawn in 0.8 yards from its ends.
+  where a rectangle was entered to the nearest point of the opening, swimming twice, and each yard up a quarter more
+  (2026-10-21: the game runs as fast up a hill as on the flat, so the shorter way over a hill or a pass is taken; two
+  more before, while the data held steep slopes as floors and a walk into Ironforge went over its mountain); the line
+  then pulled straight through the openings passed, each drawn in 0.8 yards from its ends.
 - **Built (2026-10-21): what players walk between, joined.** Found on the real data while adding the lifts: the
   Undercity's levels were regions apart, and the lifts' landings there, Freewind Post's and Gnomeregan's were left
   out.
@@ -1333,9 +1337,43 @@ judged on its heights smoothed over three samples, so its bumps make no specks.
     giant tree's roots, four yards high across a steep slope, cut Thousand Needles off Feralas (its only walking way
     in the data; Tanaris only round by Feralas). Thunder Bluff's rises: their bridge heads are the buildings' own
     stairs and posts, which the same day's stair rule and narrower `CORE` join.
+- **Built (2026-10-21): the ground as the game draws it, the buildings' water, a building's floor.** Checked on the
+  whole data outside the game: 53,000 creatures' spawn points, the lifts, walks across the zones and into the
+  cities.
+  - **The ground's triangles:** a sample's ground is too steep where the game's triangle under it is steeper than
+    `SLOPE` (each cell four triangles meeting at its inner height; a sample's middle lies where two meet, it takes
+    the one the ground's height is drawn from). The heights smoothed over three samples made a slope gentler than
+    the game's: walks went up Ironforge's mountain and into the ground under Stormwind. A slope the game walks up
+    is a floor, one it does not none, so routes take a hill or a pass where it is shorter (`Search.CLIMB` 0.25). Held
+    against the gentlest way over the triangles themselves: the ground under Stormwind (55.6 degrees at its
+    gentlest) and the plateau east of Ironforge (53.6) are no walk; Feralas' hills (47.9), Searing Gorge (48.3) and
+    Silithus' hives (16), cut off before, are.
+  - **Stairs and narrow stairwells:** the next piece of a stair or a ramp passing up through a sample within `STAIR`
+    (a yard) over a floor is no ceiling (inns' upper storeys); a wall takes a floor only within `CORE` (0.3 of a
+    sample, half before) of its sample's middle. Thunder Bluff's Spirit Rise and Hunter Rise are joined to the mesa
+    by their bridge heads.
+  - **The buildings' water:** their parts' liquids (MLIQ), the liquid type as the game takes it: Stormwind's canals
+    are swum, the Undercity's slime and Ironforge's lava close what lies under them. Water drowns a floor only where
+    nothing solid stands between them: a tunnel under a river stays dry, and so does the ground under a city's pool.
+  - **A building's floor:** a floor on a building or a doodad is of a kind of its own (3, `BUILT`; the ground's land
+    1, water 2; the block's format is the same). Indoors (the game's `IsIndoors`: a building's or a cave's) a walk
+    whose floor is not followed starts on the lowest of a building's floors near the player before the ground or
+    water under it (`Walk.Floor`): from inside Stormwind's buildings walks started on the ground forty yards under the
+    streets.
+  - **Regions left out** besides the small ones: one with the sky over none of its floors (a cellar the data closes:
+    nobody gets in or out) and one most of whose floors are buried (the ground `DEPTH`, 10 yards, and more under a
+    building: under Stormwind's streets, open only between its districts).
+  - **Measured** (with the doodads): 160 regions on the Eastern Kingdoms, 240 on Kalimdor, 8 on the isle; of 53,000
+    creatures' spawn points 71 % stand on a floor at their height (66 % before); indoors without a height the
+    start lands within 3 yards of its floor for 82 % of those under a ceiling (80 %); all 14 lifts land (a landing's
+    rise counted `LEVEL` times in `Walk.Landing` too); walks across hilly zones are as long at `CLIMB` 2 as at 0
+    within 2 % on the mean, a walk across a zone 5 to 30 ms of search, across a continent up to half a second.
+  - **Not joined:** the plateau east of Ironforge (with the area behind the city) and the lower halls of
+    Blackfathom's ruins, reached only under water (diving is no walk).
 - **Not yet:** one-way drops (a ledge one can jump down but not climb) are no way; an instance's portal or a closed
   gate is no collision (the walking data goes through Zul'Gurub's gate); a doodad the game shows only at times (a
-  door, a gate) is a wall all the time; the giant trees' roots are walls where they lie on steep ground.
+  door, a gate) is a wall all the time; the giant trees' roots are walls where they lie on steep ground; diving (a
+  way under water); indoors without a height the lowest of a building's floors is taken, not its upper storeys.
 
 ### The golden line
 

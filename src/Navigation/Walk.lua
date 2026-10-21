@@ -4,7 +4,7 @@ local _, ns = ...
 --  Sane UI - Navigation - Walk
 --  Where a player can walk: Core's set Walking, made from the game's own files
 --  by dev/tools/walk-data. Per terrain tile a block: its floors joined into rectangles, each with
---  its height, its kind (land or water), its region (all a player can walk
+--  its height, its kind (the ground, water, a building's floor), its region (all a player can walk
 --  between) and its openings into its neighbours. Knows no frames.
 --
 --      Walk.Ready()            the set is there
@@ -31,7 +31,7 @@ local _, ns = ...
 --  rectangle they stood on through the openings nearest the way they went to the
 --  one that holds them now (Follow); where it cannot be, it is chosen (Floor): near
 --  the height they had, else outdoors the highest floor under them, indoors the
---  lowest near them.
+--  lowest of a building's floors near them.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords = ns.Coords
@@ -42,13 +42,15 @@ Walk.FORMAT = 1
 Walk.SIDE = 256                    -- samples along a tile's side
 Walk.SAMPLE = Coords.TILE / Walk.SIDE
 Walk.KEEP = 48                     -- tiles kept unpacked: the one asked for longest ago let go
-Walk.LAND, Walk.WATER = 1, 2
+Walk.LAND, Walk.WATER, Walk.BUILT = 1, 2, 3 -- a floor's kind: the ground, a water's surface, a building's floor
 Walk.FOLLOW = 64                   -- rectangles looked at, at most, for the floor a walker has come to
 Walk.STRIDE = 30                   -- yards from the walker those may lie
 Walk.ROOF = 6                      -- yards around a walker indoors whose floors may be theirs (their own may
                                    -- be missing right under them: a storey above, a mountain over a city)
 Walk.RISE = 12                     -- yards a floor the walker cannot be followed onto may lie over or under the
                                    -- one they stood on and still be theirs
+Walk.LEVEL = 3                     -- a yard up or down counts as so many across where a lift's end lands
+                                   -- (dev/tools/walk-data's LEVEL): beside its shaft, not on the roof over it
 
 local Walking = Core.Data.Set("Walking")
 local open = {}   -- [tile key] = its tile, or false: no ground there
@@ -235,7 +237,7 @@ function Walk.Key(continent, u, v)
     return Coords.TileKey(box.continent, column, row)
 end
 
--- The rectangles under a point: { { tile, index }, ... }, land first.
+-- The rectangles under a point: { { tile, index }, ... }, the ones on foot (the ground, a building's floor) first.
 function Walk.Under(continent, u, v)
     local found = {}
     local key = Walk.Key(continent, u, v)
@@ -250,7 +252,7 @@ function Walk.Under(continent, u, v)
         if column >= c and column < c + w then
             local top, h = r[base + 2], r[base + 4]
             if row >= top and row < top + h then
-                if tile.kind[index] == Walk.LAND then table.insert(found, 1, { tile, index }) else found[#found + 1] = { tile, index } end
+                if tile.kind[index] ~= Walk.WATER then table.insert(found, 1, { tile, index }) else found[#found + 1] = { tile, index } end
             end
         end
     end
@@ -284,11 +286,12 @@ function Walk.Around(continent, u, v, reach, fn)
 end
 
 -- The nearest rectangle within reach yards of a point, and the nearest point of it; nil when none. region: only of
--- that region; kind: only of that kind.
+-- that region; kind: only of that kind (Walk.LAND: on foot, a building's floor too).
 function Walk.Nearest(continent, u, v, reach, region, kind)
     local best, bestTile, bestIndex, bu, bv
     Walk.Around(continent, u, v, reach, function(tile, index, nu, nv, gap)
-        if (not region or tile.region[index] == region) and (not kind or tile.kind[index] == kind)
+        local own = tile.kind[index]
+        if (not region or tile.region[index] == region) and (not kind or own == kind or (kind == Walk.LAND and own == Walk.BUILT))
             and (not best or gap < best) then
             best, bestTile, bestIndex, bu, bv = gap, tile, index, nu, nv
         end
@@ -466,33 +469,38 @@ end
 -- Walk.RISE yards from it (none: nil; a gap in the data, likely, the walker cannot have left their height). Nothing
 -- known of before: of the floors under it, outdoors the highest (nothing over the walker but the sky); indoors the
 -- lowest within Walk.ROOF yards (inside a building or a cave: over the walker its upper storeys, the ground or the
--- mountain); none there, the nearest within reach yards. Gives its tile, its index and the point of it nearest to the
--- walker; nil when none.
+-- mountain), a building's floor before any other (the game's indoors is a building's or a cave's: the ground deep
+-- under a city's buildings is nobody's); none there, the nearest within reach yards. Gives its tile, its index and the
+-- point of it nearest to the walker; nil when none.
 function Walk.Floor(continent, u, v, indoors, reach, height)
-    local best, bestIndex, bestZ, bu, bv
+    local best, bestIndex, bestZ, bu, bv, built
     Walk.Around(continent, u, v, (indoors or height) and Walk.ROOF or 0, function(tile, index, nu, nv)
         local z = tile.rects[index * 5] / 4
+        local own = tile.kind[index] == Walk.BUILT
         local better
         if height then
             better = math.abs(z - height) <= Walk.RISE and (not bestZ or math.abs(z - height) < math.abs(bestZ - height))
+        elseif indoors then
+            better = not bestZ or (own and not built) or (own == built and z < bestZ)
         else
-            better = not bestZ or (indoors and z < bestZ) or (not indoors and z > bestZ)
+            better = not bestZ or z > bestZ
         end
-        if better then best, bestIndex, bestZ, bu, bv = tile, index, z, nu, nv end
+        if better then best, bestIndex, bestZ, bu, bv, built = tile, index, z, nu, nv, own end
     end)
     if best or height then return best, bestIndex, bu, bv end
     return Walk.Nearest(continent, u, v, reach)
 end
 
 -- The floor nearest a point at a height (a lift's end, beside its shaft): of the floors within reach yards whose
--- height is no more than Walk.RISE yards from it, the nearest counting both; its tile, its index and its point nearest
--- the point. nil when none.
+-- height is no more than Walk.RISE yards from it, the nearest counting both, the height Walk.LEVEL times; its tile, its
+-- index and its point nearest the point. nil when none.
 function Walk.Landing(continent, u, v, z, reach)
     local best, bestTile, bestIndex, bu, bv
     Walk.Around(continent, u, v, reach, function(tile, index, nu, nv, gap)
         local rise = tile.rects[index * 5] / 4 - z
-        if math.abs(rise) <= Walk.RISE and (not best or gap * gap + rise * rise < best) then
-            best, bestTile, bestIndex, bu, bv = gap * gap + rise * rise, tile, index, nu, nv
+        local cost = gap * gap + (Walk.LEVEL * rise) ^ 2
+        if math.abs(rise) <= Walk.RISE and (not best or cost < best) then
+            best, bestTile, bestIndex, bu, bv = cost, tile, index, nu, nv
         end
     end)
     if not best then return nil end
