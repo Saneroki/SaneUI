@@ -104,24 +104,28 @@ minimap) and the full-screen window (the world map) show the same map with the s
   game's own tiles, with coarser levels for the far views, so it stays sharp up close and light on the whole world.
 - **Zones and continents reimagined (Saneroki, 2026-10-21, replacing for the middle and far zooms "the far
   levels are made from the close ones" below):** the close zooms are unchanged: the accurate terrain
-  repainted, square by square, as built (*The lab*, *The whole run*). The middle zoom (a whole zone) and the far zoom (the continents, the world) are a
+  repainted, square by square, as built (*The lab*, *The whole run*). The middle zoom (a whole zone) and the far zoom (the world) are a
   free, realistic fantasy painting of each zone by the image model: very cool to look at, the zone's mood and
   lore, its general layout and its major places (cities, landmarks, the great mountains, lakes and forests)
   where they lie, the game's own buildings and looks of the zone fed to the model as reference pictures of its
   3D world. They need not be accurate or useful for finding one's way, and need not be seen from straight
   above: a perspective angle is welcome, for the full freedom of the render. The zones' borders fit together,
-  each zone clearly sectioned from the next, so the continents read as one picture. Parchment and Scrying keep
+  each zone clearly sectioned from the next, so the world reads as one picture. Parchment and Scrying keep
   their own views unchanged. Open: the switch-over zoom between the close squares and the zone paintings, and
   how the angled paintings meet at the borders (painted per zone and blended, or each continent painted as a
   whole and cut by the zones' outlines).
+  - **Three levels, no continent view (Saneroki, 2026-10-21):** the Atlas has only the terrain (close), the
+    zone (middle) and the world (far); the world always shows both continents together, never one continent on
+    its own. Only Scrying and Parchment have Blizzard's zone and continent maps and controls (the breadcrumb's
+    continent and zone menus, a right-click out one map).
   - **Middle and far differ (Saneroki, 2026-10-21):** the middle zoom (a whole zone) is the reimagined view of
     the zone's major places: each city, landmark and great feature clearly shown where it lies. The far zoom
-    (the continents, the world) is a realistic render of each zone with only a loose idea of its major places,
+    (the world) is a realistic render of each zone with only a loose idea of its major places,
     the land and its mood first.
   - **No pins far out (Saneroki, 2026-10-21):** the middle and far zooms show no pins; pins are the close,
     accurate terrain view's.
   - **No names in the paintings:** the renders show no text. Names are an interactive overlay drawn by code,
-    each kind its own switch: the zones' names and their major places' names on the zone and continent views;
+    each kind its own switch: the zones' names and their major places' names on the zone and world views;
     on the world view, per zone, its level range (its enemies and its quests) and the skill it is meant for in
     fishing, herbalism and mining.
   - **Soft borders:** a zone's outline follows the game's only in general, never pixel by pixel, with natural

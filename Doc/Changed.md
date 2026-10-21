@@ -40,7 +40,9 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   dungeons' room plans are drawn by code; the close terrain blends only a zone's outermost edge; a review queue
   takes or sends back each painting. Only borders the player cannot reach are blended (coasts, piers and passes
   stay exact); a size budget comes before the big runs; a game update repaints only what it changed. Scrying
-  and Parchment stay the game's own files, pixel for pixel, cut not to overlap.
+  and Parchment stay the game's own files, pixel for pixel, cut not to overlap. The Atlas has three levels only
+  (terrain, zone, world with both continents), no single continent; continent and zone maps and controls are
+  Scrying's and Parchment's.
 
 ### Navigation: routes from the player, on their floor, over every plane (Saneroki, 2026-10-21)
 - At Saneroki's ask: a route into a building or a cave and out again did not work, routes across the continents by
