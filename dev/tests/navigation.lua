@@ -498,7 +498,7 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     -- A portal (12): its trigger on the west field of tile 6176 (world x -208.33, y -62.5, 10 yards), where it brings
     -- one on the city's building floor of tile 6179 (x -66.67, y -1666.67, 50 yards), on no zone map.
     .. 'R[12] = "70245\t\tportal\t\t\t\t\t\t1606'
-    .. '\t-208.33\031-62.5\0311\031\031\03110\030-66.67\031-1666.67\031\031\031\03150"\n'
+    .. '\t-208.33\031-62.5\0311\031\031\03110\030-66.67\031-1666.67\031\031\031\03150\t\t\t\t\talliance"\n'
     .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byFromNode[20] = "5"\nI.byFromNode[21] = "6"\nI.byKind = {}\n'
     .. 'I.byKind.boat = "1\0303"\nI.byKind.flight = "2\0305\0306"\nI.byKind.tram = "7"\nI.byKind.zeppelin = "4"\n'
     .. 'I.byKind.lift = "8\0309\03010\03011"\nI.byKind.portal = "12"\n')
@@ -3121,6 +3121,14 @@ end)()
     check(table.concat(kinds, " ") == "walk portal walk",
         "a walk between regions not found: none, the journey chosen again goes through the portal")
     Planner.PORTAL = portalTime
+    -- The portal is the Alliance's (its ends' guards): a Horde character goes without it.
+    UnitFactionGroup = function() return "Horde" end
+    Planner.Update()
+    Frames(8)
+    local through = false
+    for _, leg in ipairs(shownWay and shownWay.legs or {}) do through = through or leg.kind == "portal" end
+    check(shownWay and not through, "the portal the other side's: a Horde character's line goes without it")
+    UnitFactionGroup = function() return "Alliance" end
     player.map, player.x, player.y = 1429, 0.75, 0.3
     waypoint = nil
     W.Fire("USER_WAYPOINT_UPDATED")

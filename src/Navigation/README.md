@@ -135,7 +135,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   Undercity are reached by their lifts, and the Great Lift is taken where it is quicker: on foot to the lift, up or
   down it, on foot on (and out again the same way); a pin over the Undercity is taken to be in the city (a pin put on
   Tirisfal Glades' map there, on the ruins). Darnassus and Rut'theran Village are reached through Teldrassil's portal
-  between them (the line violet through it). A pin where nobody can walk (a tower, a plateau) gets its line as near
+  between them (the line violet through it), Zephras Isle by its airships (the Alliance's from Dalaran, the Horde's
+  from Mulgore), and Forever's portals (Stormwind's to Dalaran and back, Dalaran's Violet Citadel) where the walking
+  data holds their rooms. A pin where nobody can walk (a tower, a plateau) gets its line as near
   as one walks, then straight to it. The lifts and portals are on the map too (not yet confirmed by the game). On a flight
   the line shows the flight's way on from where you are, pin or none, and from where it lands on to the pin; aboard
   a ship it waits until you have landed, and a pin set aboard is planned from the pier it comes to. The game tells
@@ -376,7 +378,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   takes off and lands once, `Planner.BOARD`, and is one leg), the boats and zeppelins of
   *Travel* from dock to dock and its tram from entrance to entrance, those of the player's side or of both (*Travel*'s
   `side`: their towns', by the flight masters near their docks) (all from the game's tables, by
-  `dev/tools/travel-data`), its portals from their trigger to where they bring one (`Planner.PORTAL` seconds; with
+  `dev/tools/travel-data`), its portals (the game's area triggers, and its portal objects one uses: batch 13, their
+  places as Forever's servers sent them) from their trigger to where they bring one, those of the player's side or
+  of both (`Planner.PORTAL` seconds; with
   walking data only one with a floor at both ends, within `Planner.ARRIVE` yards at their height), the hearthstone
   from the player; the quickest chosen (Dijkstra; a place reached on foot is a node of its own, from which no walk
   goes on: the walk straight on is a way of its own), the walks then searched

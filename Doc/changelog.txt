@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: routes to Zephras Isle take your own side's airship:
+  the Alliance's from Dalaran, the Horde's from Mulgore. Forever's
+  portals between Stormwind and Dalaran show on the map.
 - Navigation: routes to and from Darnassus take Teldrassil's portal,
   and the map shows the portals. Routes are surer too: standing in a
   dock town no longer counts as being aboard, a route from under

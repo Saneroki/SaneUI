@@ -1304,8 +1304,31 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
   - **A ship's side** (Core's set *Travel*, `side` of a boat, zeppelin or the tram; `dev/tools/travel-data`,
     `side`): alliance or horde where its docks lie within `DOCKSIDE` (600) yards of that side's flight masters alone
     (its towns: Grom'gol's and the Horde's towers, Menethil, Theramore, Auberdine, Rut'theran, Feathermoon, Stormwind's
-    harbour, the tram), none for both (Booty Bay and Ratchet, the goblins' ports, Dalaran's zeppelin); the planner
-    takes only its own side's and both sides' (routes went through the other side's harbours and zeppelin towers).
+    harbour, the tram), none for both (Booty Bay and Ratchet, the goblins' ports; Dalaran's airship the Alliance's by
+    batch 13, below); the planner takes only its own side's and both sides' (routes went through the other side's
+    harbours and zeppelin towers).
+  - **Forever's own ways** (2026-10-21: what its client holds and its beta servers sent, against Classic Era's):
+    - **Ships:** Classic's five boats and three Horde zeppelins are all in Forever's client. Forever adds a boat from
+      Menethil by Southshore to Auberdine, one from Auberdine to Stormwind's harbour (the *Mistbound*, which its
+      servers sent), one from Tanaris' Steamwheedle Port to the Riverglades, and two airships to Zephras Isle, the
+      Skycutters (both sent): Dalaran's from Lordamere Lake, the Alliance's (the Kirin Tor's and High Order's guards),
+      and Mulgore's, the Horde's (the Windshapers'). Classic's older boat from Menethil to Auberdine is still in the
+      client; the travel tool leaves it out as the one the three-stop boat replaced (the servers have shown neither).
+    - **Portals:** Classic's area triggers (Teldrassil's, Stormwind's Wizard's Sanctum) are in the client. Forever adds
+      portal objects (spellcasters one uses), as its servers placed them: Stormwind's Skyborne Portal to Dalaran (under
+      the Mage Quarter) and Dalaran's back, Dalaran's Violet Citadel up and down, and on Zephras Isle portals to
+      Valanaar and the Rohashi Spires (where those bring one is not known: left out). The mage's teleports and portals
+      to the six capitals, a new Teleport: Dalaran, and the druid's Teleport: Moonglade are spells, not ways of the
+      routes yet.
+    - **The tram and lifts:** the Deeprun Tram with a second set of cars (the same run, 58.6 seconds, and round); the
+      lifts as Classic's, the Undercity's three cars under new IDs (sent by its servers).
+    - **Flights:** 74 flight masters (Classic's 67): Mount Hyjal's two, the Riverglades' Rog'mar and Farholde Keep.
+  - **Batch 13** (`sources.toml`, unverified): the portal objects where a pair stands at both places as the servers
+    placed them and each one's target lies beside the other (Stormwind and Dalaran; Dalaran's Citadel), keys 2000000 +
+    the object's entry, with their side; and the sides of the ways whose ends show only one side's NPCs (Dalaran's
+    Skycutter the Alliance's, Stormwind's Sanctum portals too; the Horde's zeppelins and Mulgore's Skycutter agree with
+    the flight masters). The planner takes a portal only of the player's side or both; Stormwind's Skyborne room is not
+    in the walking data yet, so that pair waits for it.
   - **Still found:** a few NPCs' places of Stormwind that Forever's rebuilt city has no floor near; small islands in
     the walking data where its tool writes an opening between two floors one way only (0.1 % of the ground; a start
     there falls back).

@@ -3,8 +3,28 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 507 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 125 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 508 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 125 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation, data: Forever's own ways of travel; Dalaran's airship the Alliance's (Saneroki, 2026-10-21)
+- **Which ways Forever has** (its client and what its beta servers sent, against Classic Era's): Classic's five boats,
+  three Horde zeppelins, the Deeprun Tram (a second set of cars, the same run) and its lifts (the Undercity's cars
+  under new IDs); new: three boats (Menethil by Southshore to Auberdine; Auberdine to Stormwind's harbour, the
+  *Mistbound*; Tanaris to the Riverglades), two airships to Zephras Isle (the Skycutters, from Dalaran and from
+  Mulgore), portal objects (Stormwind to Dalaran and back, Dalaran's Violet Citadel, Zephras Isle's), a mage's
+  Teleport: Dalaran, four flight masters (Mount Hyjal, the Riverglades). `Doc/ideas/Navigation.md`, *Forever's own
+  ways*.
+- **Batch 13** (`sources.toml`; picked from what Forever's beta servers sent, unverified): the portal objects where a
+  pair stands at both places and each one's target lies beside the other (Stormwind's Skyborne Portal to Dalaran and
+  Dalaran's back; Dalaran's Violet Citadel up and down), set *Travel*, kind `portal`, keys 2000000 + the object's
+  entry; and `side` where the NPCs at a way's ends are hostile to one side only (Forever's faction table): Dalaran's
+  Skycutter the Alliance's (the flight-master rule had none near), Stormwind's Wizard's Sanctum portals and the new
+  portals too; the Horde's zeppelins and Mulgore's Skycutter agree.
+- **The planner** (`Portals`, `Journey`): a portal of the other side is no way (its `side`); Stormwind's Skyborne room
+  is not in the walking data yet, so that pair is no way until it is (`Ends`).
+- Checked on the real data: both sides to Zephras Isle by their own airship (the Horde no longer by Dalaran); the
+  city journeys as before.
+- Tests: Navigation 508 checks (the portal the other side's: a Horde character's line goes without it).
 
 ### Navigation: the dungeons' paintings researched and held to their words and pictures (Saneroki, 2026-10-21)
 - **The briefs** (`dev/imagegen/maps/dungeons.toml`): all 30 instances researched from the game's own lore texts and

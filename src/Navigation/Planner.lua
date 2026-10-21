@@ -363,8 +363,9 @@ end
 --  Portals
 -------------------------------------------------------------------------------
 -- Every portal of Core's set Travel (a trigger of the game's that brings one elsewhere on its continent the moment one
--- steps into it: Darnassus and Rut'theran Village), on a plane of the world map: { key, kind ("portal"), map, u, v, z
--- (the trigger), tu, tv, tz (where it brings one) }. Made once Core's set Travel is there, again when it changes.
+-- steps into it: Darnassus and Rut'theran Village; or a portal object one uses: Stormwind's and Dalaran's), on a plane
+-- of the world map: { key, kind ("portal"), map, u, v, z (the trigger), tu, tv, tz (where it brings one), side (one
+-- side's only, else nil) }. Made once Core's set Travel is there, again when it changes.
 local function Portals()
     if portals then return portals end
     local found = {}
@@ -375,7 +376,7 @@ local function Portals()
         local map = a and a.map and Plane(a.map)
         if map and b and a.x and a.y and b.x and b.y then
             found[#found + 1] = { key = key, kind = "portal", map = map, u = -a.y, v = a.x, z = a.z, tu = -b.y,
-                                  tv = b.x, tz = b.z }
+                                  tv = b.x, tz = b.z, side = way.side }
         end
     end
     if Travel:Ready() and #Coords.Planes() > 0 then portals = found end
@@ -752,8 +753,9 @@ local function Journey(start, goal, measured, cut)
                 local other = lift[here.lift == lift[1] and 2 or 1]
                 if places[other.name] then Reach(other.name, low + lift.wait / 2 + lift.time, lift) end
             end
-            -- Through a portal: from its trigger to where it brings one.
-            if here.portal then Reach(here.out, low + Planner.PORTAL, here.portal) end
+            -- Through a portal (one of the player's side or of both): from its trigger to where it brings one.
+            local portal = here.portal
+            if portal and (not portal.side or portal.side == faction) then Reach(here.out, low + Planner.PORTAL, portal) end
             -- Home: the hearthstone from where the player is.
             if current == "start" and places.hearth then Reach("hearth", low + homeSeconds, "hearth") end
         end
