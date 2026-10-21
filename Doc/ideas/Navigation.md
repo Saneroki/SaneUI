@@ -114,6 +114,10 @@ minimap) and the full-screen window (the world map) show the same map with the s
   their own views unchanged. Open: the switch-over zoom between the close squares and the zone paintings, and
   how the angled paintings meet at the borders (painted per zone and blended, or each continent painted as a
   whole and cut by the zones' outlines).
+  - **Middle and far differ (Saneroki, 2026-10-21):** the middle zoom (a whole zone) is the reimagined view of
+    the zone's major places: each city, landmark and great feature clearly shown where it lies. The far zoom
+    (the continents, the world) is a realistic render of each zone with only a loose idea of its major places,
+    the land and its mood first.
   - **No pins far out (Saneroki, 2026-10-21):** the middle and far zooms show no pins; pins are the close,
     accurate terrain view's.
   - **No names in the paintings:** the renders show no text. Names are an interactive overlay drawn by code,
