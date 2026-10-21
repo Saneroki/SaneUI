@@ -70,7 +70,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   Find Minerals in its place, while *Found ore* is on), and so on, without a sound. With both on and both spells
   known they take turns while you move (the setting *Find Herbs and Find Minerals in turn*: every 6 seconds of
   moving at first, 0 never), silently too, and the ones of the finder that is off meanwhile stay on the map until
-  you gather one, go far from it or it is five minutes old.
+  you gather one, go far from it or it is five minutes old. As the pins do, each takes the mouse: its tooltip
+  names it, and a click puts the game's map pin where it is, so the game's arrow leads there.
 - **Sparkles** (the setting *Sparkles on herbs and ore*, on at first): gold sparkles in the world on the herb or
   ore your interact key would gather now, hanging from the game's plate on it, so you see it among the grass and
   the rocks. They need the game's interact key: while they are on, *Enable Interact Key* is on and it looks all
@@ -81,11 +82,18 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   move it, dock it at a screen edge, size it by its corner): the pin on its title bar keeps it on the screen while
   the map is small too, there without a background, a border or a line under its title, only the list over the
   game; its close button takes it out of both. Your quests by zone with
-  their level and state, their objectives under them. A click: the arrow leads to it, the map shows where it is,
-  its text below with *Track*, *Share* and *Abandon*. Shift and a click tracks it; the right button opens a menu.
-  A quest giver's pin clicked: its quests on top, under *Not in your log*, greyed out, each with a red X that takes
-  it out again; chosen, below it what the data knows of it: why it is not for you yet, its level, who gives and
-  takes it, its objectives and rewards. They stay until the next `/reload`.
+  their level and state, each with its mark at the left as its pin on the map has it (the yellow question mark),
+  their objectives under them. No scroll bar: the mouse wheel scrolls it, and while the mouse is on a list longer
+  than its room the game's thin scroll bar shows at the side the window stands at (docked at the left edge: its
+  left). A click puts the game's map pin on the quest's objective (its question mark on the map, or the middle of
+  the area where its foes are) and the arrow leads to it; the map stays as it is. Shift and a click tracks it. The
+  right button: *Quest Details* (its objectives and story below the list, with *Track*, *Share* and *Abandon*; its
+  X closes it), *Show Map* (the map at its objective), *Track*, *Share* and *Abandon*. A click on a quest's pin on
+  the map shows its text too. A quest giver's pin clicked: its quests on top, under *Not in your log*, greyed out,
+  each with its giver's mark (the yellow exclamation mark, grey for a quest too low, the red question mark for one
+  for later) and a red X that takes it out again; below what the data knows of it: why it is not for you yet,
+  its level, who gives and takes it, its objectives and rewards. A click on one puts the map pin at its giver.
+  They stay until the next `/reload`.
 - **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
 - **Dungeons** on the bar: every dungeon and raid the game has a map of, and those Core's data has a map of
   (26 of Forever's: the classic dungeons and raids, each floor in the game's own map art), A to Z; chosen, its map
@@ -268,8 +276,13 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   and pinned (`store.questLogPinned`, its title bar's pin) on the screen alone in the layer `LOW` without one (no
   skin, `barLine = false`); a `WowScrollBoxList` of rows read from `C_QuestLog` (the game's headers, folded
   as the game keeps them; quests with level, state, watched; objectives), built again on `QUEST_LOG_UPDATE` once
-  a frame and only while it shows; the chosen quest's text from `GetQuestLogQuestText` with its buttons; abandon
-  after the game's own question (`GENERIC_CONFIRMATION`); never the quest panels of the game's map.
+  a frame and only while it shows; its `MinimalScrollBar` hidden but while the mouse is on the window and the list
+  has more than its room (`HasScrollableExtent`), then at the docked side (`Side`: the window's dock zone, else the
+  screen's half its middle is in); a click: the map pin at `Where` (the game's quest on a map, `GetQuestsOnMap`; a
+  preview's giver) through `PinView.Drop`, and the quest super-tracked; a quest's text from `GetQuestLogQuestText`
+  with its buttons, shown only once asked for (`open`: the menu's *Quest Details*, a click on its pin); abandon
+  after the game's own question (`GENERIC_CONFIRMATION`); never the quest panels of the game's map (their
+  details window is opened by the game's panel manager, which our call would leave tainted).
 - **TopBar** (`TopBar.lua`): over the full map's top: the quest log's button, the views, the map selector (the
   game's dropdowns, radio entries of the world, its continents and Zephras Isle, the zones of the one shown A to
   Z, the isle itself on the isle), the dungeons and the floors of the one shown, and the pin filter
@@ -377,7 +390,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Indoors.lua` | The indoor map of the building you are in: the game's indoor pictures without their black, at your floor |
 | `Art/Indoors/*.blp` | The indoor pictures, one per part of a building, made by `dev/tools/indoor-art` |
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
-| `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures |
+| `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures, each a button (tooltip; a click: the map pin there) |
 | `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too |
@@ -393,6 +406,11 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-21, the quest log as Saneroki asked; found herbs clicked:** no scroll bar at rest (the wheel scrolls;
+  the bar shows while the mouse is on a list longer than its room, at the window's docked side); each quest's mark at
+  its row's left as on the map; a click puts the game's map pin on its objective (`QuestLog.Pin`, `PinView.Drop`)
+  and leaves the map as it is; the right button's menu has *Quest Details* (the text below, closed by its X) and
+  *Show Map*. The found herbs and ore on the minimap take the mouse: a tooltip and the map pin on a click.
 - **2026-10-20, the tram in the routes:** the planner takes the Deeprun Tram between Stormwind and Ironforge where
   it is quicker: from one city's entrance to it to the other's, its cost the walks down and up and the loading
   screens (`Planner.STATION`), half the time between two trains and the run (Core's set *Travel*: `wait`, `time`);

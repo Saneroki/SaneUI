@@ -76,8 +76,9 @@ local function Tip(button)
 end
 
 -- The game's map pin where a pin stands (its own map and its place there; a gathered marker's first pin), as Ctrl
--- and a click puts it on the map: the golden line leads there.
-local function Drop(pin)
+-- and a click puts it on the map: the golden line leads there. Also for what else is clicked to put it somewhere
+-- (a quest in the quest log, a herb found on the minimap): { map, x, y }; where the game takes none, it says so.
+function PinView.Drop(pin)
     local first = pin.gathered and pin.gathered[1] or pin
     if first.map and first.x and ns.Live.SetWaypoint(first.map, first.x, first.y) then
         ns.Marks.Sound("UI_MAP_WAYPOINT_CONTROL_CLICK")
@@ -91,7 +92,7 @@ end
 -- previews). Shift and a click: a pin that leads into another map opens it.
 local function Act(pin)
     if IsShiftKeyDown() and pin.to then return ns.Canvas.Show(pin.to) end
-    Drop(pin)
+    PinView.Drop(pin)
     if pin.gathered then return ns.Canvas.ZoomTo(pin.pu, pin.pv, 3) end
     if ns.Canvas.camera ~= ns.Window.full then return end
     if pin.click == "quest" and pin.quest then return ns.QuestLog.Focus(pin.quest) end

@@ -261,6 +261,7 @@ RAID_CLASS_COLORS = { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
 -- The game's scrolling list, as far as the quest log uses it: what it was given to show, drawn on demand.
 W.templates.WowScrollBoxList = function(box)
     function box:SetDataProvider(provider) self.provider = provider end
+    function box:HasScrollableExtent() return self._long or false end -- longer than its room (the test says)
     function box:Draw()
         self.rows = {}
         for index, entry in ipairs(self.provider.list) do
@@ -1388,11 +1389,74 @@ check(#rows == 5 and rows[1].row.kind == "header" and rows[2].row.quest == 7 and
     and rows[4].row.quest == 8 and rows[4].row.complete and rows[4].state._text == QuestLog.TEXT.complete,
     "its zone, each quest with its objectives; a quest done says so")
 check(rows[2].text._text == "[6] Wolves Across the Border", "a quest with its level")
-rows[2]._scripts.OnClick(rows[2], "LeftButton")
-check(focused == 7 and Canvas.camera == full and full.level == "zone" and near(full.u, -200) and near(full.v, -9100),
-    "a click: the game's arrow leads to it, the map shows its place in the middle")
+check(rows[2].icon._shown and rows[2].icon._atlas == Pins.ICONS.log and rows[4].icon._atlas == Pins.ICONS.log
+    and not rows[1].icon._shown and not rows[3].icon._shown,
+    "each quest with its mark at the left, as its pin on the map has it: the yellow question mark")
+do
+    local was, saved = { map = full.map, u = full.u, v = full.v, k = full.k }, waypoint
+    waypoint = nil
+    rows[2]._scripts.OnClick(rows[2], "LeftButton")
+    check(focused == 7 and waypoint and waypoint.uiMapID == 1429 and near(waypoint.position.x, 0.4) and near(waypoint.position.y, 0.4)
+        and full.map == was.map and full.u == was.u and full.v == was.v and full.k == was.k,
+        "a click: the game's map pin on its objective, the game's arrow leads to it; the map stays as it is")
+    waypoint = saved
+end
 rows = logBox:Draw()
-check(rows[2]._lit and not rows[4]._lit, "the chosen quest lit in the list")
+check(rows[2]._lit and not rows[4]._lit, "the quest clicked lit in the list")
+-- The right button: its text below the list, the map at its objective; the text's X closes it.
+do
+    local function Story()
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "FontString" and type(widget._text) == "string" and widget._text:find("The story of quest", 1, true) then
+                return widget
+            end
+        end
+    end
+    local said = Story()
+    local details = said and said._parent._parent._parent
+    check(not (details and details._shown), "a click shows no text below the list")
+    rows[2]._scripts.OnClick(rows[2], "RightButton")
+    local items = {}
+    for _, item in ipairs(W.menus[#W.menus]) do if item.text then items[item.text] = item end end
+    check(W.menus[#W.menus][1].title == "Wolves Across the Border" and items[QuestLog.TEXT.details] and items[QuestLog.TEXT.showMap]
+        and items[QuestLog.TEXT.watch] and items[QuestLog.TEXT.share] and items[QuestLog.TEXT.abandon],
+        "the right button's menu: its text, the map at it, and the game's watch, share and abandon")
+    items[QuestLog.TEXT.showMap].fn()
+    check(Canvas.camera == full and full.level == "zone" and near(full.u, -200) and near(full.v, -9100),
+        "Show Map: the map at its objective, in the middle")
+    items[QuestLog.TEXT.details].fn()
+    said = Story()
+    details = said and said._parent._parent._parent
+    check(details and details._shown and said._text:find("Kill eight wolves.", 1, true), "Quest Details: its objectives and story below the list")
+    local close
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == details and widget._kind == "Button" and not widget._text then close = widget end
+    end
+    close._scripts.OnClick(close)
+    check(not details._shown, "its X: the text away again")
+end
+-- No scroll bar at rest; the mouse on a list longer than its room: at the side the window stands at.
+do
+    local log, bar = QuestLog.handle.frame, nil
+    for _, widget in ipairs(W.frames) do if widget._kind == "EventFrame" and widget._parent == logBox._parent then bar = widget end end
+    check(bar and not bar._shown, "no scroll bar at rest")
+    log._mouseOver = true
+    log._scripts.OnEnter(log)
+    check(not bar._shown, "the mouse on it, the list short: none still")
+    logBox._long = true
+    log._scripts.OnUpdate(log)
+    log._scripts.OnEnter(log)
+    check(bar._shown and bar._points[1][1] == "TOPRIGHT" and bar._points[1][2] == logBox and bar._points[1][3] == "TOPLEFT",
+        "the list longer than its room: the scroll bar, at the left of the list (the window stands at the screen's left)")
+    QuestLog.handle.zone = "RIGHT"
+    log._scripts.OnEnter(log)
+    check(bar._shown and bar._points[1][1] == "TOPLEFT" and bar._points[1][3] == "TOPRIGHT", "docked at the right edge: at its right")
+    QuestLog.handle.zone = nil
+    log._mouseOver = false
+    log._scripts.OnUpdate(log)
+    check(not bar._shown and not log._scripts.OnUpdate, "the mouse gone: the scroll bar too")
+    logBox._long = nil
+end
 rows[2]._scripts.OnEnter(rows[2])
 local blob
 for _, widget in ipairs(areaFrames) do if widget._shown and widget._map == 1429 then blob = widget end end
@@ -2493,6 +2557,21 @@ local herbs = Pictures()
 local point = herbs[1] and herbs[1]._points[1]
 check(#herbs == 1 and point and math.abs(point[4] - 20) < 1.5 and math.abs(point[5] - 30) < 1.5 and minimap._soft == false,
     "the herb on its dot, in its picture; the minimap's soft cursor off again")
+do
+    local spot
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == gather.overlay and widget._kind == "Button" and widget._shown then spot = widget end
+    end
+    check(spot and spot._points[1][1] == "TOPLEFT" and spot._points[1][2] == herbs[1], "the picture takes the mouse, as a pin does")
+    spot._scripts.OnEnter(spot)
+    check(GameTooltip._text == "Silverleaf", "its tooltip names the herb")
+    local saved = waypoint
+    waypoint = nil
+    spot._scripts.OnClick(spot)
+    check(waypoint and waypoint.uiMapID == 1429 and waypoint.position.x > 0 and waypoint.position.x < 1
+        and waypoint.position.y > 0 and waypoint.position.y < 1, "a click: the game's map pin where it is, on its zone's map")
+    waypoint = saved
+end
 gather.dots[1] = nil
 Sweeps(40)
 check(#Pictures() == 0, "gathered (no dot any more): gone")

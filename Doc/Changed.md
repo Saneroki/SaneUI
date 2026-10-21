@@ -6,6 +6,24 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 386 (Navigation), 105 (Inventory), 90 (sheet), 237 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### Navigation: the quest log without a scroll bar, a click pins the objective; found herbs clicked (Saneroki, 2026-10-21)
+- **The quest log** (`QuestLog.lua`, at Saneroki's ask): no scroll bar at rest, the wheel scrolls the list; while
+  the mouse is on the window and the list is longer than its room, the game's thin scroll bar shows at the side the
+  window stands at (its dock zone, else the screen's half its middle is in), in the room of its edge, and goes with
+  the mouse. Each quest has its mark at its row's left as its pin on the map has it (the yellow question mark; a
+  preview its giver's: the yellow !, grey for too low, the red ? for later); the watched tick moved right of its
+  words. A click puts the game's map pin on the quest's objective (the game's quest on a map, `GetQuestsOnMap`; a
+  preview's at its giver) and the arrow leads to it; the map no longer moves. The right button's menu: *Quest
+  Details* (its text below the list, with its buttons, closed by its new X), *Show Map*, then *Track*, *Share* and
+  *Abandon* (a preview: its way out of the log); *Lead the arrow here* went, the click does it. A click on a quest's
+  pin on the map shows its text without moving the map.
+- **Found herbs and ore** (`Found.lua`): each picture on the minimap is a button: its tooltip names it (grey while
+  your skill is too low), a click puts the game's map pin where it is, on its zone's map.
+- `PinView.Drop` is shared (the quest log, the found herbs).
+- Tests: Navigation 413 checks (the marks, a click's map pin and the map left as it is, the menu, the text and its
+  X, the scroll bar at rest, with the mouse, at either side; a found herb's tooltip and map pin). A `/reload` takes
+  it in.
+
 ### Core: Sane UI's options on every full screen (Saneroki, 2026-10-21)
 - **The title bar of a full window** (`Window.lua`): two buttons more, left of the others, only while it fills the
   screen: the game's cog (`questlog-icon-setting`, Sane UI's options over the full screen) and a question mark in

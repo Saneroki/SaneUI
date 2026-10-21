@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: the quest log has no scroll bar any more (scroll with the
+  mouse wheel), each quest has its mark, and a click puts a map pin on
+  its objective. Right-click for its details or to show it on the map.
+  Herbs and ore found on the minimap can be clicked for a map pin too.
 - Every full screen has a cog in its title bar: Sane UI's options right
   there, page by page, as in the game's options. A question mark beside
   it will hold a tour of that screen.

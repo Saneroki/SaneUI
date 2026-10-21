@@ -30,6 +30,10 @@ local _, ns = ...
 --  move; drawn at their distance from you (the minimap's middle) times the
 --  minimap's units per yard, turned with it where the game's own minimap turns,
 --  each frame you or its zoom moved.
+--
+--  Each picture takes the mouse, as the pins do: its tooltip names the herb or
+--  ore, and a click puts the game's map pin where it is (its zone's map), so the
+--  game's arrow leads there.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords, Nodes = ns.Coords, ns.Nodes
@@ -285,6 +289,33 @@ end
 -------------------------------------------------------------------------------
 --  The pictures
 -------------------------------------------------------------------------------
+-- Where a found one is on its zone's map (0 to 1), for the game's map pin; nil where the game knows no zone there.
+local function OnMap(entry)
+    local zone = Coords.ZoneAt(entry.plane, entry.u, entry.v)
+    local box = zone and Coords.Box(zone)
+    if not box then return nil end
+    local x, y = Coords.ToMap(box, entry.u, entry.v)
+    return zone, x, y
+end
+
+-- A click on a picture: the game's map pin where it is (PinView.Drop says so where the game takes none).
+local function Clicked(button)
+    local entry = button.entry
+    if not entry then return end
+    local map, x, y = OnMap(entry)
+    ns.PinView.Drop({ map = map, x = x, y = y })
+end
+
+-- Its tooltip: the herb's or ore's name, grey while your skill is too low for it (as its picture is).
+local function Tip(button)
+    local entry = button.entry
+    if not entry then return end
+    local low = Nodes.TooHard(entry.node)
+    GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+    GameTooltip:SetText(entry.node.name or "", low and 0.6 or 1, low and 0.6 or 1, low and 0.6 or 1)
+    GameTooltip:Show()
+end
+
 local function Picture(index)
     local picture = pictures[index]
     if picture then return picture end
@@ -295,7 +326,12 @@ local function Picture(index)
     icon:AddMaskTexture(mask)
     local ring = overlay:CreateTexture(nil, "OVERLAY")
     ring:SetTexture(RING)
-    picture = { icon = icon, mask = mask, ring = ring }
+    local button = CreateFrame("Button", nil, overlay)
+    button:SetAllPoints(icon)
+    button:SetScript("OnClick", ns.Guard(Clicked))
+    button:SetScript("OnEnter", ns.Guard(Tip))
+    button:SetScript("OnLeave", GameTooltip_Hide)
+    picture = { icon = icon, mask = mask, ring = ring, button = button }
     pictures[index] = picture
     return picture
 end
@@ -303,6 +339,8 @@ end
 local function Hide(picture)
     picture.icon:Hide()
     picture.ring:Hide()
+    picture.button:Hide()
+    picture.button.entry = nil
 end
 
 local function Draw(plane, pu, pv, scale, facing)
@@ -331,6 +369,8 @@ local function Draw(plane, pu, pv, scale, facing)
                 ring:SetPoint("TOPLEFT", icon, "CENTER", RING_X * share, RING_Y * share)
                 icon:Show()
                 ring:Show()
+                picture.button.entry = entry
+                picture.button:Show()
             end
         end
     end
