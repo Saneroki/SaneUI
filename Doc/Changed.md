@@ -1285,6 +1285,14 @@ Saneroki asked for a much richer bag view, in features and looks.
   the rectangle behind the hero, a stony ground under him, by masked inpainting (new workflow
   `dev/imagegen/workflows/qwen21-inpaint.json`: only the mask is repainted, guidance 3 with negative words). The
   harness's lists and crops keep only decided sources; the discarded band and arrow lists are gone.
+- The style locked in (Saneroki): the arrow tabs back as a second leather tab style, the pointed tabs dropped; the
+  paper a dark brown close to the leather (`paper.py`, `TONE`), the frame's and the doll's paper moved to it with
+  their leather kept; everything on the paper made of clean, sharp pencil lines on transparency (`pencil.py`
+  keeps only line-thin marks of #14's box; boxes, tabs, slots, buttons and rules are built from them); the podium
+  an artist's pencil line sketch in perspective, the class icons in crisp lines. New `catalog.py`: every decided
+  part at 4K scale (a gentle Qwen pass over the part upscaled twice, transparency put back) and variants of
+  #14's pencil pieces and five kit parts to pick from; the GPU runner's new job `interface`. The guide gains
+  *Pencil pieces* and *High resolution*.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.

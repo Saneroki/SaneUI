@@ -28,10 +28,11 @@ LEATHER_FONT = "/usr/share/fonts/noto/NotoSerif-Regular.ttf"   # a stand-in: no 
 # assets/Concept art/UI style/ (only the liked section of a pick, cut by Saneroki's rule); a number: that seed of a
 # harness element Saneroki approved; ("clean", seed, box): that seed with its label covered in code
 SOURCE = {"patch": ("decided", "patch.png"),                      # paper #183: every leather patch and button
-          "tab-pointed": ("decided", "tab-pointed-1.png"),        # heraldry-sheet-1: leather top tabs, pointed sides
+          "top-tab-arrow": ("decided", "elements/top-tab-arrow-3.png"),  # the interlocking leather arrow tab
+          "pencil-box": ("pencil", "top-tab-drawn-1"),            # #14's pencil lines alone: boxes, tabs, rules
           "band": ("decided", "kit/kit3-09.png"),                 # kit-3: the band with its buckle, for dropdowns
           "top-tab-drawn": ("clean", 1, (0.08, 0.12, 0.92, 0.88))}  # round 1 #34: its pencil lines; text by code
-LEAD = (58, 52, 46)            # pencil grey
+LEAD = (30, 23, 17)            # pencil grey
 BG = (24, 21, 18)              # behind the windows
 CLASS = {"Warrior": (199, 156, 110), "Mage": (63, 199, 235), "Priest": (230, 230, 230), "Rogue": (255, 244, 104),
          "Druid": (255, 124, 10), "Hunter": (170, 211, 114), "Paladin": (244, 140, 186), "Warlock": (135, 136, 238),
@@ -48,6 +49,8 @@ def part(name):
     src = SOURCE[name]
     if isinstance(src, tuple) and src[0] == "decided":
         img = Image.open(os.path.join(REFS, src[1])).convert("RGBA")
+    elif isinstance(src, tuple) and src[0] == "pencil":
+        img = Image.open(os.path.join(ROOT, "assets/generated/interface/pencil", src[1] + ".png")).convert("RGBA")
     else:
         seed = src[1] if isinstance(src, tuple) else src
         f = os.path.join(ELEMENTS, f"{name}-{seed}.png")
@@ -122,9 +125,9 @@ def sketch(img, size, disc=None, ring=True):
     """A game icon drawn as a pencil sketch: its edges as grey strokes in a round, on nothing or on a disc of
     paper of the colour disc."""
     g = ImageOps.grayscale(img.convert("RGB")).resize((size * 2, size * 2), Image.LANCZOS)
-    edges = g.filter(ImageFilter.FIND_EDGES).point(lambda v: min(255, int(v * 2.4)))
-    shade = ImageOps.invert(g).point(lambda v: int(v * 0.35))
-    a = ImageChops.lighter(edges, shade).resize((size, size), Image.LANCZOS)
+    # crisp lines only (Saneroki: clean, sharp pencil lines, no shading): the icon's strongest edges, thresholded
+    edges = g.filter(ImageFilter.GaussianBlur(1.2)).filter(ImageFilter.FIND_EDGES)
+    a = edges.point(lambda v: 0 if v < 18 else min(255, (v - 18) * 9)).resize((size, size), Image.LANCZOS)
     mask = Image.new("L", (size, size))
     ImageDraw.Draw(mask).ellipse((1, 1, size - 2, size - 2), fill=255)
     a = ImageChops.multiply(a, mask)
@@ -190,10 +193,66 @@ def box(canvas, rect, alpha=150, width=2, seed=0):
         line(canvas, a, b, alpha, width, seed * 7 + i + 1)
 
 
+def stroke(canvas, a, b, alpha, width, rnd, over=0):
+    """One sharp pencil stroke from a to b as an artist draws it: a slight bow, the ends running a little past the
+    corner (over), the pressure lighter at the ends."""
+    ax, ay = a
+    bx, by = b
+    length = math.dist(a, b) or 1
+    ux, uy = (bx - ax) / length, (by - ay) / length
+    ax, ay, bx, by = ax - ux * over, ay - uy * over, bx + ux * over, by + uy * over
+    bow = rnd.uniform(-1, 1) * min(2.0, length / 120)
+    n = max(4, int(length / 6))
+    layer = Image.new("RGBA", canvas.size)
+    d = ImageDraw.Draw(layer)
+    pts = []
+    for i in range(n + 1):
+        t = i / n
+        off = bow * math.sin(math.pi * t)
+        pts.append((ax + (bx - ax) * t - uy * off, ay + (by - ay) * t + ux * off))
+    for i in range(n):
+        t = (i + 0.5) / n
+        press_ = 0.55 + 0.45 * math.sin(math.pi * t)            # lighter where the pencil lands and lifts
+        d.line([pts[i], pts[i + 1]], fill=LEAD + (int(alpha * press_),), width=width)
+    canvas.alpha_composite(layer)
+
+
+def block(canvas, x, base, w, h, depth, seed=0):
+    """A podium step as an artist's pencil sketch of a real block in perspective (Saneroki, 2026-10-21: clean
+    pencil lines only, no shading): its front, its top face going back up to the right, its right side, each edge
+    a sharp stroke running a little past its corners, a faint construction line or two, nothing filled in. The
+    faces only hide what lies behind them (the paper's own tone), so a step in front covers the one behind."""
+    dx, dy = depth, -depth * 0.55
+    tone = tuple(int(v) for v in np.median(np.asarray(canvas.crop((x, base - h, x + w, base)).convert("RGB")).reshape(-1, 3), axis=0))
+    front = [(x, base - h), (x + w, base - h), (x + w, base), (x, base)]
+    top = [(x, base - h), (x + dx, base - h + dy), (x + w + dx, base - h + dy), (x + w, base - h)]
+    side = [(x + w, base - h), (x + w + dx, base - h + dy), (x + w + dx, base + dy), (x + w, base)]
+    hide = Image.new("RGBA", canvas.size)
+    for face in (side, top, front):
+        ImageDraw.Draw(hide).polygon(face, fill=tone + (255,))
+    canvas.alpha_composite(hide)
+    rnd = random.Random(seed)
+    # faint construction lines first: the vanishing direction of the top edges, a little beyond the block
+    for p in ((x + w + dx, base - h + dy), (x + w + dx, base + dy)):
+        stroke(canvas, p, (p[0] + depth * 1.6, p[1] - depth * 0.9), 40, 1, rnd)
+    # the edges: the outline firm, the inner edges lighter
+    outline = [(front[3], front[0]), (front[0], top[1]), (top[1], top[2]), (top[2], side[2]), (side[2], front[2]),
+               (front[2], front[3])]
+    inner = [(front[0], front[1]), (front[1], front[2]), (front[1], top[2])]
+    for a, b in outline:
+        stroke(canvas, a, b, 215, 2, rnd, over=rnd.uniform(3, 7))
+    for a, b in inner:
+        stroke(canvas, a, b, 165, 1, rnd, over=rnd.uniform(2, 5))
+    # a second, lighter pass over the outline, a hair off, as a sketch has
+    for a, b in outline[:3]:
+        stroke(canvas, (a[0] + rnd.uniform(-1, 1), a[1] + rnd.uniform(-1, 1)), (b[0] + rnd.uniform(-1, 1), b[1] + rnd.uniform(-1, 1)),
+               70, 1, rnd, over=rnd.uniform(4, 9))
+
+
 def slot(canvas, x, y, s, img):
-    """A gear or item slot on paper: a pencil square, the icon inside."""
+    """A gear or item slot on paper: the icon in a pencil box."""
     canvas.alpha_composite(img.resize((s - 8, s - 8), Image.LANCZOS), (x + 4, y + 4))
-    box(canvas, (x, y, x + s, y + s), 170, 2, x * 31 + y)
+    pbox(canvas, (x - 1, y - 1, x + s + 1, y + s + 1))
 
 
 # ---- the window -------------------------------------------------------------------------------------------
@@ -216,11 +275,15 @@ TITLE_AT = (372, 182)                  # where the title label's writing starts,
 CLOSE_AT = (770, 124)                  # the middle of the corner patch on the strap: the close button
 
 
-def tone_shift(img):
-    """The frame's colours moved toward the paper's decided tone, so its paper meets the page without a step."""
+def tone_shift(img, sample=(300, 200, 560, 240)):
+    """The frame's paper moved to the page's decided tone, so it meets the page without a step; its leather and
+    metal (the dark pixels) keep their own colours, the light ones move fully, those between in part."""
     a = np.asarray(img.convert("RGB"), dtype=np.float32)
-    ref = np.median(a[200:240, 300:560].reshape(-1, 3), axis=0)
-    a = a * (np.array(paper.TONE, dtype=np.float32) / ref)
+    x0, y0, x1, y1 = sample                                   # a stretch of the picture's plain paper
+    ref = np.median(a[y0:y1, x0:x1].reshape(-1, 3), axis=0)
+    lum = a.mean(axis=2, keepdims=True)
+    weight = np.clip((lum - 90) / 80, 0, 1)                  # 0 for leather, 1 for paper
+    a = a * (1 - weight) + a * (np.array(paper.TONE, dtype=np.float32) / ref) * weight
     out = Image.fromarray(a.clip(0, 255).astype(np.uint8)).convert("RGBA")
     return out
 
@@ -371,22 +434,48 @@ class Window:
             write(self.canvas, (x0 + 10, y0 + 6 + i * (size + 1)), text, size)
 
 
+PENCIL_H = 58      # #14's pencil box is drawn at this height (its lines' weight); bigger boxes stretch its sides
+
+
+def pbox(canvas, rect, active=False):
+    """A box drawn on the paper from #14's pencil lines (pencil-box), corners kept, sides stretched: transparent
+    inside, so it takes the page's colour. Boxes, buttons and tabs on paper are made of it."""
+    x0, y0, x1, y1 = rect
+    p = part("pencil-box")
+    k = min(PENCIL_H, y1 - y0) / p.height              # one line weight for every box, whatever its size
+    p = p.resize((max(8, round(p.width * k)), max(8, round(p.height * k))), Image.LANCZOS)
+    m = 0.3                                            # the corners and both lines of #14 kept whole
+    piece = nine(p, x1 - x0, y1 - y0, m * p.height / p.width, m, m * p.height / p.width, m)
+    if active:   # the chosen one: its lines a little stronger
+        piece.putalpha(piece.getchannel("A").point(lambda v: min(255, int(v * 1.5))))
+    canvas.alpha_composite(piece, (x0, y0))
+
+
+def prule(canvas, a, b):
+    """A pencil rule from a to b: the top line of #14's pencil, stretched (horizontal rules)."""
+    p = part("pencil-box")
+    strip = p.crop((p.width // 6, 0, p.width * 5 // 6, max(4, p.height // 9)))
+    length = int(abs(b[0] - a[0]))
+    t = max(3, round(strip.height * PENCIL_H / p.height))     # at the boxes' scale: the same line weight
+    canvas.alpha_composite(strip.resize((max(1, length), t), Image.LANCZOS), (int(min(a[0], b[0])), int(a[1] - t // 2)))
+
+
 def top_tabs(canvas, x, y, labels, style, active=0, height=34):
-    """The row of tabs under the top: 'leather' (the pointed leather tabs of heraldry-sheet-1, their labels pressed
-    in) or 'drawn' (pencil on the paper, round 1 #34, labels in Kalam)."""
+    """The row of tabs under the top (Saneroki, 2026-10-21): 'arrow' (the interlocking leather arrow tabs, each tip
+    in the next one's cut, labels pressed in) or 'drawn' (#14's pencil lines on the paper, labels in Kalam)."""
     for i, label in enumerate(labels):
-        if style == "leather":
-            tab = part("tab-pointed")
-            width = 60 + len(label) * 9
-            canvas.alpha_composite(three(tab, width, height, cap=0.2), (x, y))
-            press(canvas, (x + width // 2, y + height // 2), label, 14)
-            x += width - 6
+        if style == "arrow":
+            tab = part("top-tab-arrow")
+            d = round(height * tab.width / tab.height * 0.115)          # the point's length at this height
+            width = 50 + len(label) * 9 + d
+            canvas.alpha_composite(three(tab, width, height, cap=min(0.3, (d + 12) / (tab.width * height / tab.height))), (x, y))
+            press(canvas, (x + (width + d // 2) // 2, y + height // 2), label, 14)
+            x += width - d + 1
         else:
             width = 30 + len(label) * 10
-            t = three(part("top-tab-drawn"), width, height + (4 if i == active else 0), cap=0.18)
-            canvas.alpha_composite(t, (x, y - (4 if i == active else 0)))
-            write(canvas, (x + width // 2, y + height // 2 + 2), label, 18, "Bold" if i == active else "Regular", anchor="mm")
-            x += width + 2
+            pbox(canvas, (x, y - (3 if i == active else 0), x + width, y + height), i == active)
+            write(canvas, (x + width // 2, y + height // 2 + 1), label, 18, "Bold" if i == active else "Regular", anchor="mm")
+            x += width + 3
     return x
 
 
@@ -460,7 +549,9 @@ def clean(canvas, rect, seed):
     x0, y0, x1, y1 = rect
     w, h = x1 - x0, y1 - y0
     region = canvas.crop(rect).convert("RGB")
-    light = region.convert("L").point(lambda v: 255 if v > 150 else 0)
+    lum = np.asarray(region.convert("L"))
+    cut = float(np.percentile(lum, 60)) - 22            # the strip's paper, whatever the page's tone
+    light = region.convert("L").point(lambda v: 255 if v > cut else 0)
     # the paper is what the light pixels enclose; small dark marks (the writing) inside it count as paper
     paper_mask = light.filter(ImageFilter.MaxFilter(9)).filter(ImageFilter.MinFilter(15))
     tone = np.median(np.asarray(region)[np.asarray(light) > 0].reshape(-1, 3), axis=0)
@@ -493,7 +584,7 @@ def view_character():
     """The character doll: Saneroki's pick itself (doll.png, #3), its frame, the slots in their arcs and the paper
     strips over the leather kept as painted; code puts the live content in: game icons in the slots, each
     strip's writing replaced by the item's stats in Kalam. The hero stands in for the game's live model."""
-    c = Image.open(os.path.join(ROOT, "assets/generated/interface/clean/doll.png")).convert("RGBA")   # #3 cleaned
+    c = tone_shift(Image.open(os.path.join(ROOT, "assets/generated/interface/clean/doll.png")), (430, 720, 600, 760))   # #3 cleaned, on the page's tone
     # the arcs (Saneroki, 2026-10-21: the slots in a rounded layout, not straight under each other): each row of
     # slot and strip moves outward, most in the middle rows, so the columns bow round the hero; the gap a moved
     # row leaves next to the hero's frame is filled with the paper of that spot
@@ -551,7 +642,7 @@ def view_bags():
     for title, pattern, n in sections:
         write(c, (x0 + 18, y), title, 18, "Bold")
         write(c, (x1 - 18, y + 3), f"{n} items", 13, "Light", anchor="ra")
-        line(c, (x0 + 16, y + 26), (x1 - 16, y + 26), 120, 1)
+        prule(c, (x0 + 16, y + 26), (x1 - 16, y + 26))
         y += 32
         for i in range(n):
             x = x0 + 18 + (i % cols) * (s + 3)
@@ -571,7 +662,7 @@ def view_chat():
     win = Window(W, H, "Chat", buttons=["Send"], seed="chat")
     c, M = win.canvas, win.MARGIN
     x0, y0, x1, y1 = win.content
-    top_tabs(c, x0 + 6, y0 + 4, ["General", "Guild", "Party", "Whispers", "Trade"], "leather", 1)
+    top_tabs(c, x0 + 6, y0 + 4, ["General", "Guild", "Party", "Whispers", "Trade"], "arrow", 1)
     msgs = [("left", "Elowen", "Druid", "Guild", "20:41", "Anyone up for the Deadmines in ten?"),
             ("left", "Brannoc", "Warrior", "Guild", "20:42", "I can tank. Need a healer too."),
             ("right", "Saneroki", "Mage", "Guild", "20:42", "Count me in, bringing water."),
@@ -586,7 +677,7 @@ def view_chat():
         x = {"left": x0 + 26, "right": x1 - 26 - w, "middle": (x0 + x1) // 2 - w // 2}[side]
         bubble(c, x, y, w, name, cls, ch, t, text, flip=(side == "right"))
         y += 70
-    line(c, (x0 + 18, y1 - 50), (x1 - 120, y1 - 50), 130, 1)
+    prule(c, (x0 + 18, y1 - 50), (x1 - 120, y1 - 50))
     write(c, (x0 + 22, y1 - 76), "Say something to the guild ...", 16, "Light", alpha=140)
     return win.finish()
 
@@ -602,16 +693,17 @@ def view_guild():
     c.alpha_composite(em, (x0 + 18, y0 + 10))
     write(c, (x0 + 100, y0 + 12), "The Grey Wardens", 30, "Bold")
     write(c, (x0 + 102, y0 + 52), "48 members, 12 online", 17)
-    line(c, (x0 + 14, y0 + 90), (x1 - 14, y0 + 90), 120, 1)
+    prule(c, (x0 + 14, y0 + 90), (x1 - 14, y0 + 90))
     top_tabs(c, x0 + 100, y0 + 92, ["Board", "Members", "Armory", "Loot", "Crafting", "Raids", "Officers"], "drawn", 0)
     py = y0 + 142
     cols = [(x0 + 14, x0 + 470), (x0 + 482, x0 + 900), (x0 + 912, x1 - 14)]
 
     def panel(rect, title):
-        box(c, rect, 140, 2, rect[0] + rect[1])
-        write(c, (rect[0] + 12, rect[1] + 8), title, 19, "Bold")
-        line(c, (rect[0] + 10, rect[1] + 36), (rect[2] - 10, rect[1] + 36), 110, 1)
-        return rect[0] + 14, rect[1] + 44
+        pbox(c, rect)
+        write(c, (rect[0] + 22, rect[1] + 12), title, 19, "Bold")
+        y = rect[1] + 12 + font(19, "Bold").getbbox(title)[3] + 6    # under the title's letters (Kalam sits low)
+        prule(c, (rect[0] + 18, y), (rect[2] - 18, y))
+        return rect[0] + 22, y + 8
 
     x, y = panel((cols[0][0], py, cols[0][1], py + 300), "Looking for help")
     for i, (n, cls, q, lv) in enumerate([("Elowen", "Druid", "The Defias Brotherhood", 18), ("Tolvar", "Hunter", "Wanted: Hogger", 11),
@@ -632,11 +724,13 @@ def view_guild():
         bubble(c, x + 14 + (60 if i % 2 else 0), y + 8 + i * 74, None, n, cls, "Guild", f"20:4{i}", text, flip=bool(i % 2))
     x, y = panel((cols[2][0], py, cols[2][1], py + 330), "Race to level 60")
     base = py + 290
+    cw = (cols[2][1] - cols[2][0] - 40) // 3
+    for px, h in ((0, 90), (1, 120), (2, 66)):              # left to right, so each step covers the side behind it
+        block(c, cols[2][0] + 20 + px * cw, base, cw - 22, h, 22, px)
     for rank, (n, cls, lv, h, px) in enumerate([("Brannoc", "Warrior", 58, 120, 1), ("Elowen", "Druid", 57, 90, 0), ("Mira", "Priest", 55, 66, 2)]):
         cw = (cols[2][1] - cols[2][0] - 40) // 3        # three steps across the panel's width
         bx = cols[2][0] + 20 + px * cw
-        box(c, (bx, base - h, bx + cw - 8, base), 160, 2, rank + 40)
-        mx = bx + (cw - 8) // 2
+        mx = bx + (cw - 30) // 2
         write(c, (mx, base - h + 8), str(rank + 1), 30, "Bold", anchor="ma")
         c.alpha_composite(sketch(icon(f"ClassIcon_{cls}.blp", 64), 52), (mx - 26, base - h - 112))
         write(c, (mx, base - h - 56), n, 18, "Bold", CLASS[cls], anchor="ma", outline=True)
@@ -692,7 +786,7 @@ def view_stats():
     y = y0 + 64
     for title, rows in groups:
         write(c, (x0 + 22, y), title, 19, "Bold")
-        line(c, (x0 + 20, y + 28), (x1 - 20, y + 28), 120, 1)
+        prule(c, (x0 + 20, y + 28), (x1 - 20, y + 28))
         y += 36
         for n, v in rows:
             write(c, (x0 + 30, y), n, 17)

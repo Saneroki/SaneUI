@@ -10,8 +10,8 @@ from PIL import Image, ImageFilter
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../..")
 REFS = os.path.join(ROOT, "assets/Concept art/UI style")
-TONE = (226, 200, 156)     # the page's mean colour: darker and browner than the parchment as painted (Saneroki:
-                           # the paper too bright; #57 of round 1, about (238, 211, 162), closer, and darker still)
+TONE = (150, 114, 80)      # the page's mean colour (Saneroki, 2026-10-21): a dark brown, not yellow, close to the
+                           # leather (#12's strap is about (77, 48, 31)) but brighter
 EDGE = 0.20                # the soft darker edge round a page
 STAIN_EVERY = 700 * 700    # paper per stain
 STAIN_ALPHA = 0.30

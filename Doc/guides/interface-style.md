@@ -41,8 +41,10 @@ with as little room for frame and ornament as the look allows.
 ### Paper
 
 - **Texture:** `paper.png`: parchment with soft, large, faint clouds and an extremely subtle grain.
-- **Tone:** darker and browner than `paper.png` as painted (Saneroki, 2026-10-21: the paper was too bright). The
-  page's mean colour is about (226, 200, 156); the harness sets it (`paper.py`, `TONE`).
+- **Tone:** a dark brown, not yellow: close to the leather but brighter (Saneroki, 2026-10-21). The page's mean
+  colour is (150, 114, 80); #12's strap is about (77, 48, 31). The harness sets it (`paper.py`, `TONE`). The
+  paper of the window (#12) and of the doll (#3) is moved to the same tone, their leather and metal keeping
+  their own colours (`compose.py`, `tone_shift`).
 - **Made of layers in code**, so a window can be any size and scroll without repeats:
   - `paper.png` scaled to cover the page and cut to it (never stretched or repeated);
   - a soft darker edge;
@@ -51,7 +53,7 @@ with as little room for frame and ornament as the look allows.
 - **Stains** (coffee rings, blots, drops: `stain-*.png`, `stains-*.png`) are separate pieces with transparency.
   Code places a few at seeded random spots, faint, and they scroll with the page. They are never painted into a
   part.
-- **Sketches:** the pencil drawings in `sketches/` (paper #201–212: a wolf's head, landscapes with a ruin, a
+- **Sketches:** the elaborate pencil line drawings in `sketches/` (paper #201–212: a wolf's head, landscapes with a ruin, a
   coastline map, trees; Saneroki, 2026-10-21) are the decorations of the paper, with the coffee stains. They are
   separate pieces in graphite with their own transparency, placed by code, very faint, never painted into a part.
 - **Overhangs** (`doll.png`): paper strips and pieces may hang out over the leather border or cross it, where a
@@ -78,8 +80,8 @@ with as little room for frame and ornament as the look allows.
 
 ## Text
 
-- **On paper: Kalam** (a hand-printed, non-cursive font), in pencil grey with the paper grain over it (Saneroki,
-  2026-10-21). Its files are in `assets/fonts/Kalam/` (Light, Regular, Bold).
+- **On paper: Kalam** (a hand-printed, non-cursive font), in dark graphite (30, 23, 17) with the paper grain over
+  it, readable on the dark brown paper (Saneroki, 2026-10-21). Its files are in `assets/fonts/Kalam/` (Light, Regular, Bold).
 - **Colours that are hard to read on paper** (class colours on names in bubbles, lists, the podium; light quality
   colours): the game's own colour, unchanged, with a thin dark outline round the letters, made in code with the
   text (Saneroki, 2026-10-21). Light colours like the priest's white would vanish on the paper without it.
@@ -120,25 +122,61 @@ with as little room for frame and ornament as the look allows.
 - The parts of `kit/` (cut from style shapes/kit-3 and kit-4, Saneroki, 2026-10-21: "look great"): framed paper
   panels, hanging leather banners, a band with a buckle, check and close marks, sliders, shields. They are the
   look of these parts wherever a view needs them.
+- The framed panel (#17, `kit3-01`), the hanging banner (#18, `kit3-02`), the slider (#24, `kit3-08`), the
+  blade-shaped bar (#27, `kit3-11`) and the three banners (#28, `kit4-01`) get variations to pick from, keeping
+  their light inset lines (`catalog.py`, *variants*).
 
 ### Tabs
 
-- **Top tabs:** a row of tabs right under the top, across the page (Saneroki, 2026-10-21). Two styles:
-  - **leather tabs with pointed sides:** `tab-pointed-1.png`, `tab-pointed-2.png` (explore sdxl/heraldry-sheet-1),
-    their labels pressed in by code;
-  - **drawn tabs:** pencil on the paper, as in the row of `guild-top.png` (paper #120), their lines as
-    `elements/top-tab-drawn-1.png`; labels in Kalam by code.
-  - `top-tabs-patch-row.png`: the row of tabs of paper #78, the only part of #78 that is kept, as a reference.
+- **Top tabs:** a row of tabs right under the top, across the page (Saneroki, 2026-10-21). Three styles:
+  - **leather arrow tabs:** `elements/top-tab-arrow-3.png` (and `-4`), the patch tab of paper #78's row shaped as
+    an arrow pointing right:
+    - the top and bottom are straight;
+    - the left end is cut in as a V, and the right end runs out into a point;
+    - side by side they form a strip, each tip in the next one's cut;
+    - their slanted ends are worn and stitched like the top and bottom;
+    - labels are pressed in by code.
+  - **leather patch tabs:** `elements/top-tab-patch-3.png`, from paper #78's row (`top-tabs-patch-row.png`, the
+    only part of #78 that is kept), with straight ends.
+  - **drawn tabs:** pencil lines on the paper (*Pencil pieces*), labels in Kalam by code.
 - **Side tabs:** the leather patch (`patch.png`) sticking out of the window's left edge with a small icon pressed
   in. Never coloured (*No colour in the design*).
 - **Tabs that change the page's content** may stand down the left side of the page, as in `bags-page.png`.
+- **Not wanted:** the leather tabs with pointed sides (explore sdxl/heraldry-sheet-1), dropped by Saneroki on
+  2026-10-21.
+
+### Pencil pieces
+
+Everything drawn on the paper is made of pencil lines on transparency, never of separate paper pieces in another
+colour (Saneroki, 2026-10-21): the page shows through, so boxes, buttons, tabs and lines are always the page's own
+colour.
+
+- **Clean, sharp lines** (Saneroki, 2026-10-21). The pencil is crisp lines, or elaborate line drawings for the
+  decorations (the sketches). It is never smudged, shaded or a soft graphite drawing. `pencil.py` keeps only
+  lines as thin as a pencil line and drops broader shading and shadows. The class icons on bubbles and the
+  podium are drawn in crisp lines too.
+
+- **The box:** paper #14's double pencil line with its rounded corners (`elements/top-tab-drawn-1.png`, "very
+  clean"). Its lines alone, with the paper taken out, are the box (`pencil.py`).
+  - Code stretches its sides and keeps its corners whole, at one line weight for every size (a box of any size
+    has the same pencil).
+  - Boxes are used for section frames, drawn tabs, buttons on the paper and item and gear slots.
+  - The chosen tab or button has stronger lines.
+- **The rule:** the box's top line, stretched: a section's header underline and dividers.
+- **More pieces** drawn like #14 come from variants to pick from (`catalog.py`, *variants*): a wide section frame,
+  a long divider with small flourishes, a corner piece.
+- **The podium** (the guild's race): steps drawn as an artist's pencil sketch of real blocks in perspective (each
+  with its front, its top face and its side), in clean pencil lines only: firm outer edges, lighter inner edges,
+  strokes running a little past their corners, a light second pass and a faint construction line. Nothing is
+  filled, shaded or hatched; a step in front only hides the lines behind it. Drawn by code, so it fits any number
+  and height of steps.
 
 ### Panels and sections on a page
 
-- **Sections:** a page is divided by pencil lines and paper pieces. A section's header is pencil writing on the
-  paper with a pencil rule, never a leather bar.
-- **Breaking the rectangles:** small details break up the straight edges: a folded paper tab at the end of a row,
-  a curled corner, a note in the margin.
+- **Sections:** a page is divided by pencil pieces. A section's header is pencil writing on the paper with a
+  pencil rule under its letters, never a leather bar.
+- **Breaking the rectangles:** small details break up the straight edges: a folded corner, a note in the margin,
+  a sketch.
 
 ### Chat bubbles
 
@@ -207,6 +245,32 @@ moves to its own heading here once it is decided, with its picture.
 - Page-turning and book-opening animations.
 - Stains, sketches and text painted into parts.
 
+## High resolution
+
+Sane UI is drawn for 4K screens too (Saneroki, 2026-10-21: "clean high quality renders" of every part the code
+needs, for responsive, flexible designs).
+
+- **Scale:** every painted part exists at twice the size it was picked at. The picks were painted for windows of
+  about 600 pixels at 1080p, so twice is a 4K screen's scale. The game draws them smaller on smaller screens,
+  never larger than this.
+- **How:** `catalog.py hires`.
+  1. Each decided part is upscaled in code (Lanczos).
+  2. One gentle pass of Qwen goes over the whole part: `qwen21-inpaint.json` with a full mask, denoise 0.3, guidance
+     2.5 and negative words. It sharpens texture, stitches and pencil, and keeps every shape where it is.
+  3. The part's transparency comes back from the upscaled source.
+  4. The results go to `assets/generated/interface/hires/`.
+- **Parts, not pictures:** the code gets parts it can lay out at any size:
+  - the window pieces cut from the hires #12 (its top, bottom, edges, corners, clasp), whose middles stretch or
+    repeat seamlessly;
+  - buttons and tabs whose middles repeat;
+  - pencil boxes that keep their corners;
+  - paper laid in layers;
+  - stains and sketches placed by code.
+
+  Text is always the code's, so it is sharp at any size.
+- **For the game:** the hires parts become textures by `Doc/guides/images.md` (format, mipmaps, sizes). Margins
+  for slicing are taken at the hires scale.
+
 ## The harness
 
 How the parts and views of this style are made (`dev/imagegen/sets/interface/`, Saneroki, 2026-10-21). It is
@@ -236,8 +300,10 @@ of its own or on earlier renders.
    - the game's icons.
 
    No model pass runs over a finished view: a global pass repaints everything and brings back looks of its own.
-6. **Gallery** (`gallery.py`): the elements in use, the elements to pick and the views, numbered from #1, at
-   `assets/generated/interface/index.html`.
+6. **High resolution and variants** (`catalog.py`; the GPU runner's job `interface`): every decided part at 4K
+   scale, and variants to pick from (*High resolution*).
+7. **Gallery** (`gallery.py`): the decided references, the cleaned picks, the views, the hires parts and the
+   variants, numbered from #1, at `assets/generated/interface/index.html`.
 
 Tools for when a model must touch a finished picture (ComfyUI has them built in; `clean.py` uses the first three
 through `dev/imagegen/workflows/qwen21-inpaint.json`):

@@ -88,15 +88,22 @@ def run(name):
         mask(size, boxes).save(os.path.join(ROOT, mpath))
         lst = os.path.join(ROOT, OUT, "steps", f"{name}-{i}.txt")
         open(lst, "w").write(f"workflow: dev/imagegen/workflows/qwen21-inpaint.json\ncount: 1\nout: {OUT}/steps\n"
-
                              f"ref: {current}, {mpath}\n{name}-{i}-{step}: {words}\n")
         subprocess.run(["dev/tools/imagegen", os.path.relpath(lst, ROOT), "--set", f"cfg={CFG}",
                         "--set", f"negative_prompt={NEGATIVE}"], cwd=ROOT, check=True)
         current = f"{OUT}/steps/{name}-{i}-{step}-1.png"
     img = Image.open(os.path.join(ROOT, current)).convert("RGB")
+    for kind, box in CODE.get(name, []):
+        img = apply(img, kind, box)
+    img.save(os.path.join(ROOT, OUT, name + ".png"))
+    print(name, "->", f"{OUT}/{name}.png")
+
+
+def apply(img, kind, box):
+    """One pass in code (CODE) on img; boxes in img's own pixels."""
     sys.path.insert(0, HERE)
     import refs
-    for kind, box in CODE.get(name, []):
+    if True:   # one kind per call
         if kind == "cut-rows":
             y0, y1 = box
             w, h = img.size
@@ -125,8 +132,7 @@ def run(name):
             img = refs.clean(img, (box[0] / w, box[1] / h, box[2] / w, box[3] / h))
         else:
             img = bridge(img, box, kind[-1])
-    img.save(os.path.join(ROOT, OUT, name + ".png"))
-    print(name, "->", f"{OUT}/{name}.png")
+    return img
 
 
 if __name__ == "__main__":
