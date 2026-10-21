@@ -9,6 +9,12 @@ Navigation's map has a third view, *Atlas*, next to *Parchment* and *Scrying*; w
 large (about 3 GB of art), so it is an addon of its own, loaded only when the view is first shown. The plan is
 `Doc/ideas/Navigation.md`, *The painted view*.
 
+**Planned (2026-10-21):** one smooth world in three levels, its style blending with the wheel: the terrain
+repainted up close (built), every zone a free realistic painting of its mood and major places in the middle, and
+the world (both continents, never one alone) a realistic render far out; no pins and no names in the paintings
+(names are an overlay with switches); zone edges soft only where the player cannot go; dungeons in three zooms
+(*Zones and continents reimagined*, *Dungeon, instance and raid maps in three zooms*).
+
 ## How to use
 - **Switch it on or off:** tick or untick *Atlas* under *Sane UI* in the game's addon list; Navigation shows it.
   Switched off, the map offers Parchment and Scrying, and a map left in Atlas shows Scrying.

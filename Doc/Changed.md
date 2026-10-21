@@ -86,7 +86,8 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   and Parchment stay the game's own files, pixel for pixel, cut not to overlap. The Atlas has three levels only
   (terrain, zone, world with both continents), no single continent; continent and zone maps and controls are
   Scrying's and Parchment's. The Atlas is one smooth world, its style blending with the wheel; no right-click
-  steps out a level (open question 8 answered; the canvas' right-click is to be taken out).
+  steps out a level (open question 8 answered; the canvas' right-click is to be taken out). The Atlas' README
+  and Navigation's project map (`Doc/agent/navigation.md`) say what is planned.
 
 ### Navigation: routes from the player, on their floor, over every plane (Saneroki, 2026-10-21)
 - At Saneroki's ask: a route into a building or a cave and out again did not work, routes across the continents by

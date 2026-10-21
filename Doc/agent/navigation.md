@@ -81,6 +81,18 @@ view is first drawn and reads it as `SaneUI.Atlas`; on a failure the view falls 
 and choice go (`ns.Offer`). The view: the terrain as Scrying, the blocks over it at the coarsest level with
 enough pixels a yard for the screen, the next coarser one under them; `Camera.Near()` 6 units a yard there.
 
+Decided 2026-10-21, not built (`Doc/ideas/Navigation.md`, *Zones and continents reimagined* and the points after
+it): the Atlas is one smooth world of three levels, terrain (the close squares, as built), zone and world (both
+continents, no continent level), its style blending as the wheel zooms, no right-click step out (`Canvas.lua`
+still has one). Zone and world are free realistic paintings by the image model (the zone's major places in the
+middle, only loosely far out; the lore's view where the game's zone is cut open: Teldrassil's tree, Ironforge's
+mountain), with no pins and no names (an overlay drawn by code: names, level ranges, gathering skills, each its
+switch). Close up, only edges the player cannot reach are blended; coasts, piers and passes stay exact. Scrying
+and Parchment stay the game's files, pixel for pixel. Dungeons, instances and raids get three zooms (terrain,
+a room plan drawn by code, a free reimagination), picked in the map selector; indoor maps are clear around,
+never black, to lie over the terrain. Around the paintings: a review queue, a size budget, repainting only what
+a game update changed; the paintings run on `dev/tools/gpu-runner`.
+
 ## Built (2026-10-20): pins, the quest log, the bar
 
 Saneroki's asks of 2026-10-20 (`Doc/ideas/Navigation.md`, *A classic window is kept*, *The minimap fills its
@@ -157,7 +169,8 @@ checks), `dev/tests/walk.py` (28).
 6. **Core's windows:** click to expand (`Edge.lua` still fills on the mouse's coming), the holder, the board
    and Edit Mode layouts are not built. Navigation does not need the holder or the board: it catches the
    game's map itself (plan, *The game's map and minimap*) and lays out its full screen in `docked`.
-7. **Art of our own** where the game has none (dungeon maps it lacks): not made.
+7. **Art of our own** where the game has none (dungeon maps it lacks): not made; planned as the dungeons' three
+   zooms (2026-10-21, above).
 
 ## Open questions without a proposal
 
