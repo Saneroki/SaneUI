@@ -452,8 +452,13 @@ and its window guide, and against the data plan.
 6. **Values that may be hidden:** the API documentation marks none of the position functions secret, but
    positions, view radius and facing can come hidden on this client. Everything is read through
    `Core.Plain`, and the map has a state for *position unknown* (*Design*).
-7. **Known flight points:** the map's taxi list calls every node known on this client; only the flight
-   master's map is reliable (`TAXIMAP_OPENED`, `C_TaxiMap.GetAllTaxiNodes`), kept per character.
+7. **Known flight points:** the map's taxi list holds every node on this client, found or not; only the flight
+   master's map is reliable (`TAXIMAP_OPENED`, `C_TaxiMap.GetAllTaxiNodes`), kept per character. Its nodes the
+   character has not found are `Unreachable` (the game's flight map leaves them out), and the map's list marks each
+   node `isUndiscovered` once a flight master was opened this session (the game knows them only then). Until
+   2026-10-21 every node a flight master listed was taken as found, so routes flew from and to flight points the
+   character never had: now only the found ones (`flightPoints`, `Planner.Knows`), and the map shows the others red
+   (Saneroki, 2026-10-21).
 8. **The window** follows Core as it is now: nine zones, the kind `screen` (no title bar while small,
    Esc brings it back from full screen), a click into the corner by default (Core's *Click to expand*, not
    built yet: today the mouse's coming alone fills the screen).

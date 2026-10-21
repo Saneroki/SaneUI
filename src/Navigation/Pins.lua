@@ -19,7 +19,8 @@ local _, ns = ...
 --  pin per thing*), home (the plane u, v are in: Coords.PlaneOf), u, v, map, x, y (on its own map, 0 to 1),
 --  atlas or texture, size, name, lines (its tooltip's further lines), and by kind: quest (its ID), complete,
 --  focused (the quest the game's arrow leads to), to (a map it opens), dim (a flight point not yet found), grey
---  (a quest too low), tint (its icon's colour: a quest for later), order (drawn over a lower one).
+--  (a quest too low), tint (its icon's colour: a quest for later, a flight point not yet found), order (drawn over
+--  a lower one).
 --
 --  What the game tells is read per map when it said it changed (the message LIVE), Core's places when they
 --  change (Data.Map's OnChange); each map's pins are kept until then, so a layout only places them. Core's
@@ -172,7 +173,8 @@ local function Quests(list, map)
     end
 end
 
--- The flight points of the player's side and the neutral ones, as the game's map shows them.
+-- The flight points of the player's side and the neutral ones, as the game's map shows them; one this character has
+-- not found (Planner.Knows: learnt at a flight master, as the routes fly) red, and its tooltip says so.
 local function Flights(list, map)
     faction = faction or Core.Plain(UnitFactionGroup("player"))
     local sides = rawget(_G, "Enum") and Enum.FlightPathFaction or {}
@@ -182,9 +184,10 @@ local function Flights(list, map)
             local atlas = info.atlasName
             if atlas and info.textureKit then atlas = info.textureKit .. "-" .. atlas end
             local x, y = Vector(info.position)
+            local found = ns.Planner and ns.Planner.Knows(info.nodeID)
             Add(list, { kind = "flight", key = "flight:" .. tostring(info.nodeID), id = info.nodeID, name = info.name,
-                        atlas = atlas or "TaxiNode_Neutral", dim = info.isUndiscovered,
-                        lines = info.isUndiscovered and { Pins.TEXT.undiscovered } or nil }, map, x, y)
+                        atlas = atlas or "TaxiNode_Neutral", dim = not found or nil, tint = not found and Pins.RED or nil,
+                        lines = not found and { Pins.TEXT.undiscovered } or nil }, map, x, y)
         end
     end
 end

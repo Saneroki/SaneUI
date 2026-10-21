@@ -3,8 +3,25 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 491 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 71 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 495 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 71 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: only the flight points the character has found (Saneroki, 2026-10-21)
+- At Saneroki's ask: a character may not have found every flight point, and the game tells which ones it has once a
+  flight master is opened. The routes now fly only those, and the map's flight points it has not found are red.
+- **The bug** (`Planner.lua`, `Learn`): at a flight master every flight point its map listed was kept as found, also
+  those the game's flight map leaves out as not found (`Unreachable`), so a route could fly from and to flight points
+  the character never had. Now its flight map's states count (`Current` and `Reachable` found, `Unreachable` not; on
+  the older window `NONE` not), and every plane's points as the game's maps mark them (`isUndiscovered`, which the game
+  knows once a flight master was opened this session); learnt again at `TAXI_NODE_STATUS_CHANGED` once one was, and a
+  pin set before is planned again when they changed. Kept per character as `flightPoints`: the older `flights` held the
+  wrong ones and goes, so until the first flight master the routes fly none. `Planner.Knows(node)` tells the others.
+- **The map** (`Pins.lua`): a flight point not found has its colour taken out and `Pins.RED` over it (as a quest for
+  later), its tooltip *Not discovered yet*. It followed the game's own `isUndiscovered` before, which the game does not
+  know before a flight master is opened.
+- Tests: Navigation 495 checks (a flight point not found red before any flight master; at one, the found one and the
+  one its map leaves out, the old list gone, the route then on foot; the map's pins found and not). A `/reload` takes it
+  in.
 
 ### Data: bosses' abilities and loot in a set of their own, unconfirmed until the game says so (Saneroki, 2026-10-21)
 - **Saneroki:** boss abilities, drop tables and item stats are used at once but marked unconfirmed until the client or

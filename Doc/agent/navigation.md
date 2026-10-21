@@ -198,6 +198,10 @@ Saneroki's asks (`Doc/ideas/Navigation.md`, *Map pins*, *Full screen*, *Dungeon 
 - **Core's options on the full screen** (Core, `Settings/Screen.lua`): the title bar's cog and question mark stand
   on the map's full screen too; the view covers the map and the quest log (layer `DIALOG`).
 
+Flight points (2026-10-21): only those the character has found are flown (`flightPoints` per character, learnt at a
+flight master from its flight map's states and the maps' `isUndiscovered`; `Planner.Knows`); the map's others are red
+(`Pins.lua`, `Pins.RED`).
+
 Not yet: portals and lifts in routes, doodads in the walking data
  (fences, trees), search, the guide, the dungeons' three zooms, the minimap's small parts
 (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468

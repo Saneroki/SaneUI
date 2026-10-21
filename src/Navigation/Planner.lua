@@ -50,9 +50,11 @@ local _, ns = ...
 --                    seconds, the plan from where it lands to the pin after it; without a pin, the flight's
 --                    way alone
 --
---  The flight points this character knows are read at the flight master (the game's flight map
---  tells them, TAXIMAP_OPENED) and kept for the character: the world map's own list calls every
---  point known on this client. The hearthstone's place is learnt where the character binds it
+--  The flight points this character has found are learnt at a flight master (TAXIMAP_OPENED: its
+--  flight map's states, and every plane's points as the game's maps mark them then; before a flight
+--  master was opened this session the game does not know them) and kept for the character
+--  (Planner.Knows): only those are flown, and the map shows the others red. The world map's own list
+--  holds every point on this client, found or not. The hearthstone's place is learnt where the character binds it
 --  (HEARTHSTONE_BOUND) and where it brings the character, and kept for the character with the
 --  game's name of it (GetBindLocation), which tells when it was bound elsewhere since.
 --
@@ -114,38 +116,64 @@ end
 -------------------------------------------------------------------------------
 --  Flight points
 -------------------------------------------------------------------------------
--- The flight points this character knows, kept for it ({ [node ID] = true }; anything else saved there: none).
+-- The flight points this character has found, kept for it ({ [node ID] = true }; anything else saved there: none),
+-- as flightPoints: the earlier flights held every flight point a flight master listed, found or not, and goes.
 local function Known()
     local char = Core.Character(ns.name)
-    if type(char.flights) ~= "table" then char.flights = {} end
-    return char.flights
+    if char.flights ~= nil then char.flights = nil end
+    if type(char.flightPoints) ~= "table" then char.flightPoints = {} end
+    return char.flightPoints
+end
+
+-- Whether this character has found a flight point: the routes fly only from and to those, and the map shows the
+-- others red (Pins.lua).
+function Planner.Knows(node)
+    return node ~= nil and Known()[node] == true
 end
 
 local Points -- (below)
+local opened = false -- a flight master was opened this session: the game's maps tell which flight points are found
 
--- At the flight master: every flight point the game's flight map lists is one this character knows (by its
--- ID; on the game's older flight master window by its name, among the flight points of the player's continent).
+-- At a flight master (and when the game says a flight point's state changed, once one was opened): what the game
+-- tells of the flight points then. Every plane's as the game's maps mark them (isUndiscovered): the game knows which
+-- ones the character has found only once it opened a flight master this session. Then the flight master's own map
+-- (C_TaxiMap.GetAllTaxiNodes): Current and Reachable found, Unreachable not (the game's flight map leaves those out);
+-- on its older window by name, among the flight points of the player's continent (NONE: not found). True when what
+-- this character has found changed.
 local function Learn()
-    local known = Known()
+    opened = true
+    local known, changed = Known(), false
+    local function Mark(node, found)
+        found = found or nil
+        if known[node] ~= found then known[node], changed = found, true end
+    end
+    for _, plane in ipairs(Coords.Planes()) do
+        for _, info in ipairs(Live.Flights(plane)) do
+            local undiscovered = Core.Plain(info.isUndiscovered)
+            if info.nodeID and type(undiscovered) == "boolean" then Mark(info.nodeID, not undiscovered) end
+        end
+    end
     local get = C_TaxiMap and C_TaxiMap.GetAllTaxiNodes
     local map = rawget(_G, "GetTaxiMapID") and Core.Plain(Core.Ask(GetTaxiMapID))
     local listed = get and map and Core.Ask(get, map)
+    local states = rawget(_G, "Enum") and Enum.FlightPathState or {}
     if type(listed) == "table" and #listed > 0 then
         for _, info in ipairs(listed) do
-            if info.nodeID then known[info.nodeID] = true end
+            if info.nodeID then Mark(info.nodeID, Core.Plain(info.state) ~= (states.Unreachable or 2)) end
         end
-        return
+        return changed
     end
     local count = rawget(_G, "NumTaxiNodes") and Core.Plain(Core.Ask(NumTaxiNodes)) or 0
     local continent = Live.Player()
-    if count == 0 or not continent then return end
+    if count == 0 or not continent then return changed end
     local byName = {}
     for node, point in pairs(Points(continent)) do byName[point.name] = node end
     for index = 1, count do
         local kind = Core.Ask(TaxiNodeGetType, index)
-        local node = kind and kind ~= "NONE" and byName[Core.Ask(TaxiNodeName, index)]
-        if node then known[node] = true end
+        local node = kind and byName[Core.Ask(TaxiNodeName, index)]
+        if node then Mark(node, kind ~= "NONE") end
     end
+    return changed
 end
 
 -- The flight points of a plane the player's side may use: { [node ID] = { map, u, v, name } }, in that plane.
@@ -1030,7 +1058,15 @@ function Planner.Track(map, u, v, now)
     if not gap or gap > Planner.OFF then Plan() end
 end
 
-ns.On("TAXIMAP_OPENED", function() ns.Safe("flight points", Learn) end)
+-- At a flight master: what this character has found, learnt; a pin set before, planned again when that changed.
+local function Taxi()
+    if Learn() and target then ns.Guarded(Plan) end
+end
+ns.On("TAXIMAP_OPENED", function() ns.Safe("flight points", Taxi) end)
+-- The game says a flight point's state changed (one found): learnt again, once a flight master was opened.
+ns.On("TAXI_NODE_STATUS_CHANGED", function()
+    if opened then ns.Safe("flight points", Taxi) end
+end)
 ns.On("HEARTHSTONE_BOUND", function() ns.Safe("hearthstone", Home) end)
 Core.OnUnit("UNIT_SPELLCAST_SUCCEEDED", "player", function(_, _, spell)
     if Core.Plain(spell) == Planner.HOMEWARD and not ns.off then

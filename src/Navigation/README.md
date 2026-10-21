@@ -39,7 +39,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   shows the game's own minimap alone, with its own ground and dots, as the game's would; the wheel walks its zoom
   steps. Out of it, our map is back.
 - **Pins:** every kind of thing in its own icon, the game's map icons: no discs, no numbers. The game's own marks
-  where it tells them (your quests: the yellow ?, the quest the arrow leads to glowing; flight points of your side;
+  where it tells them (your quests: the yellow ?, the quest the arrow leads to glowing; flight points of your side,
+  red while your character has not found them (the routes fly only the found ones);
   rares (a skull; hold Alt over one and its 3D model stands beside the tooltip) and treasures (a chest) nearby; the
   game's points and ways into other maps), and what Core's data
   knows: quest givers with a quest you can take (the yellow !), with a quest too low to give you experience (a grey
@@ -121,8 +122,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 - **Routes:** put the game's map pin (Ctrl and a click) and a golden line leads you there from where you stand,
   pulsing towards it: around what cannot be walked (mountains, walls, deep water is swum), through gates and doors,
   into and out of caves, buildings and the cities in the mountains, on the floor you are on (a cave under a hill, a
-  city in a mountain, a building's storeys), and by the flights your character knows where that is quicker (visit
-  a flight master once for the map to know yours; a flight over many flight points is one, taking off once). The
+  city in a mountain, a building's storeys), and by the flights your character has found where that is quicker:
+  only those, as the game tells them at a flight master (it tells them once you have opened one, each session;
+  until your first, the ones found before; a flight over many flight points is one, taking off once). The
   line always begins at your arrow: as you go, what lies behind you is gone, a short line runs from you to it, and
   leave it and it is planned again. A pin on another continent or on Zephras Isle is reached by boat or zeppelin,
   over as many seas as it takes (by way of the other continent, or the hearthstone home first, where that is
@@ -258,8 +260,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   thickness inside; only a segment whose cut changed is placed anew), pins and marks show only while wholly
   inside it (`PinView.Fit`, `Marks.Fit`, `Canvas.Inside`), so none is seen or clicked past the window.
 - **Pins** (`Pins.lua`, no frames): the pin records of each map in view, from what the game tells (`Live.lua`: its
-  quests on the map and the next way of the quest the arrow leads to, flight points of the player's side, its
-  vignettes, area points, map links, dungeon entrances where it has them) and from Core's data
+  quests on the map and the next way of the quest the arrow leads to, flight points of the player's side (one the
+  character has not found red, `Pins.RED` over its colour taken out: `Planner.Knows`), its vignettes, area points,
+  map links, dungeon entrances where it has them) and from Core's data
   (`Data.Map():On`, `Core/Data/Map.lua`): an NPC with quests this character can take (`Pins.Offered`: not done,
   not in the log, level, side, race, class, the quests before) is a quest giver, else a rare, else its service in
   the game's town tracking atlas; objects, places and ways in the game's atlases; a boat's or zeppelin's dock
@@ -398,9 +401,13 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   a landing (a flight's or a ship's), when the player is 40
   yards off the line (150 off a ship's way), and when the data arrives; aboard a ship a new pin is planned from
   where it lands (the ship of the plan, or the one Core's `Data.Trips` finds the player on, to the pier of its next
-  dock). The known flight points are read at the flight
-  master, the hearthstone's place where it is bound (`HEARTHSTONE_BOUND`) or where it brought the character, both
-  kept per character; the hearthstone counts while it is in the bags and bound there (`GetBindLocation`), its
+  dock). The flight points the character has found are learnt at a flight master (`TAXIMAP_OPENED`, then
+  `TAXI_NODE_STATUS_CHANGED`): its flight map's states (`Current`, `Reachable`; `Unreachable` not found, the game's
+  flight map leaves those out) and every plane's as the game's maps mark them (`isUndiscovered`, which the game knows
+  once a flight master was opened this session); kept per character as `flightPoints` (the older `flights` held every
+  point a flight master listed, found or not, and goes), `Planner.Knows`; only those are flown, and the map's pins of
+  the others are red (`Pins.lua`); a pin set before is planned again when they changed. The hearthstone's place is
+  learnt where it is bound (`HEARTHSTONE_BOUND`) or where it brought the character, kept per character; the hearthstone counts while it is in the bags and bound there (`GetBindLocation`), its
   cooldown as a wait. Without walking data, straight lines. On a flight (Core's `Data.Trips`) its way on is the
   line's first leg, drawn anew from the player every `Planner.AGAIN` seconds, the plan from where it lands after
   it; without a pin that leg alone.
@@ -504,6 +511,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-21, only the flight points found:** at a flight master the planner took every flight point the game's
+  flight map listed as one the character knew, also those it leaves out as not found (`Unreachable`), so routes flew
+  from and to flight points the character had never found. Now only those found count (its flight map's states, and
+  every plane's as the game's maps mark them once a flight master was opened this session), kept anew per character
+  (`flightPoints`; the older list goes), and the map shows the others red, their tooltip saying so; a pin set before is
+  planned again when they change.
 - **2026-10-21, the walking data joins what players walk between:** the Undercity is one city: its ring, lower
   parts, quarters and sewers, and the lifts' upper landings with the throne room (`dev/tools/walk-data` judged the
   buildings' slopes too steep from 30 degrees on, and closed doors and bridges narrower than two samples by their

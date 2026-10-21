@@ -1483,6 +1483,9 @@ check(near(questPoint[4], (-200 - 0) * 0.4) and near(questPoint[5], (-9100 + 925
     "placed where the game says, on the canvas' holder (a drag moves it with the map)")
 check(pins["flight:2"] and pins["flight:2"].icon._atlas == "TaxiNode_Alliance" and not pins["flight:3"],
     "the flight points of the player's side, in the game's own atlas; the other side's not")
+check(pins["flight:2"].pin.tint == Pins.RED and pins["flight:2"].icon._vertex[2] == Pins.RED[2]
+    and pins["flight:2"].pin.lines[1] == Pins.TEXT.undiscovered,
+    "one this character has not found (no flight master opened yet): red, its tooltip says so")
 check(pins["npc:70"] and pins["npc:70"].pin.live and pins["npc:70"].pin.name == "A rare",
     "the rare the game shows nearby: its own pin, hiding the one of Core's data for the same creature")
 check(pins["place:1"] and pins["place:1"].icon._atlas == "dungeon" and pins["place:1"].pin.to == 500
@@ -2469,7 +2472,7 @@ C_TaxiMap.GetTaxiNodesForMap = function(map)
     return { { nodeID = 2, name = "Near", position = CreateVector2D(0.575, 0.6445), faction = 2, atlasName = "TaxiNode_Alliance" },
              { nodeID = 5, name = "Far", position = CreateVector2D(0.39, 0.699), faction = 0, atlasName = "TaxiNode_Neutral" } }
 end
-Core.Character(ns.name).flights = { [2] = true, [5] = true }
+Core.Character(ns.name).flightPoints = { [2] = true, [5] = true }
 local shownWay
 local show = ns.Route.Show
 ns.Route.Show = function(way) shownWay = way return show(way) end
@@ -2491,8 +2494,37 @@ check(shownWay and #shownWay.legs == 3 and shownWay.legs[1].kind == "walk" and s
     and shownWay.legs[3].kind == "walk", "a pin far away: on foot to a known flight point, the flight, on foot to the pin")
 check(#shownWay.legs[1].points >= 2 and near(shownWay.legs[2].points[1].u, 600) and near(shownWay.legs[3].points[2].u, -900),
     "each leg from where it starts to where it ends")
+-- At a flight master (TAXIMAP_OPENED) what this character has found is what the game tells then: its flight map's
+-- (Current and Reachable; Unreachable not, the game's flight map leaves those out) and every plane's, as the game's maps
+-- mark them; the earlier list, which held every flight point a flight master listed, goes. Only the found are flown;
+-- on the map the found one as the game draws it.
+;(function()
+    Core.Character(ns.name).flights = { [2] = true, [5] = true }
+    local nodes, all, mapID = C_TaxiMap.GetTaxiNodesForMap, C_TaxiMap.GetAllTaxiNodes, rawget(_G, "GetTaxiMapID")
+    C_TaxiMap.GetTaxiNodesForMap = function(map)
+        local list = nodes(map)
+        for _, info in ipairs(list) do info.isUndiscovered = info.nodeID ~= 2 end
+        return list
+    end
+    GetTaxiMapID = function() return 1415 end
+    C_TaxiMap.GetAllTaxiNodes = function() return { { nodeID = 2, state = 0 }, { nodeID = 5, state = 2 } } end
+    W.Fire("TAXIMAP_OPENED", 1)
+    W.Wait(0)
+    Frames(8)
+    check(Planner.Knows(2) and not Planner.Knows(5) and Core.Character(ns.name).flights == nil,
+        "at a flight master: the one it stands at found, one its flight map leaves out not; the old list gone")
+    check(shownWay and #shownWay.legs == 1 and shownWay.legs[1].kind == "walk",
+        "a flight point not found is not flown to: on foot, planned again at once")
+    -- The continent's flight points on the map (Near found, Far not), the pins made anew as the game said.
+    local pins = {}
+    for _, pin in ipairs(Pins.For({ map = 1415, level = "continent", k = 0.01, left = -4000, right = 4000, top = 4000,
+                                    bottom = -16000 }, false)) do pins[pin.key] = pin end
+    check(pins["flight:2"] and not pins["flight:2"].tint and not pins["flight:2"].lines and pins["flight:5"]
+        and pins["flight:5"].tint == Pins.RED, "on the map the flight point found as the game draws it, the other red")
+    C_TaxiMap.GetTaxiNodesForMap, C_TaxiMap.GetAllTaxiNodes, GetTaxiMapID = nodes, all, mapID
+end)()
 -- Unknown flight points are not flown from: on foot all the way.
-Core.Character(ns.name).flights = {}
+Core.Character(ns.name).flightPoints = {}
 ns.Planner.Update()
 Frames(8)
 check(shownWay and #shownWay.legs == 1 and shownWay.legs[1].kind == "walk", "without the flight points known: on foot")
@@ -3019,14 +3051,14 @@ end)()
                  { nodeID = 21, name = "Beta", position = CreateVector2D(0.5, 0.15), faction = 0 },
                  { nodeID = 22, name = "Gamma", position = CreateVector2D(0.375, 0.15), faction = 0 } }
     end
-    local known = Core.Character(ns.name).flights
-    Core.Character(ns.name).flights = { [20] = true, [21] = true, [22] = true }
+    local known = Core.Character(ns.name).flightPoints
+    Core.Character(ns.name).flightPoints = { [20] = true, [21] = true, [22] = true }
     player.map, player.x, player.y = 1415, 0.5, 0.205
     legs = Pin(1415, 0.375, 0.145)
     local flight = legs[2]
     check(Kinds(legs) == "walk flight walk" and #flight.points == 3 and near(flight.points[2].v, 1000) and near(flight.points[3].u, -1000),
         "two flights one after the other: one leg along both their ways, taking off and landing once")
-    C_TaxiMap.GetTaxiNodesForMap, Core.Character(ns.name).flights = nodes, known
+    C_TaxiMap.GetTaxiNodesForMap, Core.Character(ns.name).flightPoints = nodes, known
     -- Aboard the boat (Core's Data.Trips found the ride), the plan without it: a pin on Kalimdor is planned from the
     -- pier the boat comes to, its way on in front.
     waypoint = nil

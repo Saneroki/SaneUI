@@ -206,8 +206,9 @@ local function Make()
 end
 
 -- A button's look for its pin: its icon, whatever its kind (a gathered marker: its first pin's, the one drawn
--- highest), at its kind's size from the pin filter's slider. A grey quest (and a flight point not found yet) without
--- its colour, a tinted one in its colour (a quest for later: red), the quest the game's arrow leads to with a glow
+-- highest), at its kind's size from the pin filter's slider. A grey quest without its colour, a tinted one in its
+-- colour (a quest for later: red; a flight point not found yet: its colour taken out first, then red), the quest the
+-- game's arrow leads to with a glow
 -- behind it. Not made again while it is the same (the same first pin, size and glow: a pin's record is made anew
 -- whenever what it shows changes).
 local function Look(button, pin)
