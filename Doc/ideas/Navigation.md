@@ -1448,6 +1448,10 @@ What a dungeon map shows:
 - **Continents:** found at run time (in this client: Kalimdor, Eastern Kingdoms, Zephras), then Dungeons
   and Raids, PvP.
 - **Zones** A–Z; the **dungeon list** with a search box.
+- **Dungeon maps chosen here (Saneroki, 2026-10-21):** the selector picks every dungeon, instance and raid
+  (built: the bar's Dungeons menu, A to Z, and its floors), and the chosen one opens in its three zooms
+  (*Dungeon, instance and raid maps in three zooms*): the wheel goes from its accurate close-up through the clean
+  plan of its rooms out to its reimagined picture, the floor menu choosing the floor of the first two.
 - A **back button** that remembers the last 30 maps.
 
 # Open questions
@@ -1459,8 +1463,9 @@ Each with a proposal; what is not answered when its step comes is built as propo
    decided on the tool's first output and measured, in Core's pack format.
 2. Answered (Saneroki, 2026-10-19: the views at every zoom): terrain everywhere, by the overview far out.
    **Far zoom:** Blizzard's art when zoomed far out (fast), or terrain everywhere (slower)?
-3. **Dungeons:** Blizzard's map only in all three views, or a tool for the instances' own minimap tiles?
-   *Proposal:* Blizzard's map only; the tool later if wanted.
+3. Answered (Saneroki, 2026-10-21: *Dungeon, instance and raid maps in three zooms*, picked in the *Map
+   selector*). **Dungeons:** Blizzard's map only in all three views, or a tool for the instances' own minimap
+   tiles?
 4. **Spawn areas:** per rare by a click, or also a switch in the pin filter that outlines every rare's area
    at once? *Proposal:* by a click; the switch later.
 5. **Small view pins:** which kinds show on the minimap at all, and how near? *Proposal:* quests (givers,
