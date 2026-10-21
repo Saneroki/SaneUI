@@ -283,6 +283,9 @@ When the window fills the screen:
 - **Our own database of map icons,** in Core's database system: quests, NPCs and objects, services,
   travel, places, rares, treasures and books. Shown on both views. The pin types and their data: *Pin
   catalogue*.
+- **Our own pin icons, to come (Saneroki, 2026-10-21):** the pins' icons get redesigns of our own in Sane UI's
+  style (`Doc/guides/interface-style.md`, *To redesign*): coloured renders of our own pins, developed soon. Until
+  they come, the game's icons below stay.
 - **Herb and ore icons** are Blizzard's own profession tracking icons.
 - **Quest marks as the game's (Saneroki, 2026-10-20):** a quest in the log the yellow question mark; one the
   character can take the standard yellow exclamation mark, opaque (no longer see-through); one too low to give
@@ -316,7 +319,8 @@ the game's own art and the game's own API.
 - **Route data on demand, by Core (Saneroki, 2026-10-16):** the walking data for routes is Core's data too,
   in a pack of its own that Core loads when the first route is asked for, never at login.
 - **Art:** the game's own art first, loaded by path, atlas or file ID: its map legend's atlases for quests,
-  rares and travel, its vignette atlases, its tracking icons. A picture of our own only where the game has
+  rares and travel, its vignette atlases, its tracking icons, until our own pin icons replace them (*Map pins*,
+  Saneroki, 2026-10-21). A picture of our own only where the game has
   none (a dungeon without a map, perhaps the meeting stone), drawn for Sane UI, kept in the module's own
   `Art/` folder and converted as `Doc/guides/images.md` says.
 - **Living alongside:** other addons a player has installed keep working, and we leave their frames alone.
@@ -329,6 +333,8 @@ the game's own art and the game's own API.
 - **Route to the pin:** a path that correctly goes around obstacles such as mountains, and that uses
   **flight paths and ships**.
 - **Look:** instead of a dotted line, a **thin golden line pulsing towards the pin**.
+- **Leather stitches, to come (Saneroki, 2026-10-21):** the route line is to look like leather stitches, in Sane
+  UI's style (`Doc/guides/interface-style.md`, *To redesign*), and replaces the golden line.
 
 ## Leveling guide
 
@@ -1384,6 +1390,7 @@ samples, *The ground as the game draws it*, below).
   moved by a `TextureCoordTranslation` animation (*verified* to exist; Blizzard moves lines this way in
   `PowerDependencyLine`). The animation runs in the game's engine; no `OnUpdate` of ours.
 - The same line in both views; the canvas clips it.
+- **To come:** leather stitches in place of the gold (Saneroki, 2026-10-21; *Waypoint and route*).
 
 ## Leveling guide
 

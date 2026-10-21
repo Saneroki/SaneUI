@@ -144,6 +144,18 @@ Built on `chat-bubble.png` (its top bubble), made more compact. Each bubble is:
 - **Guild window:** `guild-board.png`. Its paper top area (the guild's emblem, name and member count on the paper)
   and its row of tabs fit the guild window. Its leather panel headers on the paper do not (*The idea*).
 
+## To redesign
+
+Parts that still show the game's art and get a redesign of our own in this style (Saneroki, 2026-10-21). Each
+moves to its own heading here once it is decided, with its picture.
+
+- **Map pins:** our own icons for every pin Sane UI draws on the map and the minimap, in place of the game's.
+  They are coloured renders, not pencil, and are being developed soon (`Doc/ideas/Navigation.md`, *Map pins*).
+- **The route line:** leather stitches across the map, in place of today's golden line (`Doc/ideas/Navigation.md`,
+  *Waypoint and route*).
+- **Raid markers:** the eight markers in our own style, wherever Sane UI shows them (the nameplates, the marks in
+  the chat's picker).
+
 ## Animation
 
 - Windows and panels appear out of nothing and disappear the same way (the appearing played backwards): a quick,

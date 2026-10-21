@@ -103,6 +103,10 @@ own again.
 | `Resource.lua` | Your combo points along the bottom of your target's bar |
 | `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it |
 
+## Not there yet
+The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`,
+*To redesign*).
+
 ## History
 - **2026-10-20:** made a module of its own (Saneroki: nameplates are not Combat's): the game's plates with a
   round-cornered health bar, combo points inside your target's, the name, your debuffs and three buffs of a foe,

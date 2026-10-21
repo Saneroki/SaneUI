@@ -739,7 +739,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 
 ## Not there yet
 Tabs of chat views in the small window (`Doc/ideas/Social.md`), messages of one speaker in a row drawn as
-a group, a close button, a sign besides colour for what a speaker is to you.
+a group, a close button, a sign besides colour for what a speaker is to you. The picker's marks in our own
+style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`, *To redesign*).
 
 ## History
 - 2026-10-20 — Recent Allies asks the game for them no more (an addon may not); it waits until the game has read them.

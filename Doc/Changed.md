@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 498 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 117 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Doc: what gets redesigned in our own style (Saneroki, 2026-10-21)
+- `Doc/guides/interface-style.md`, *To redesign* (new): our own map pin icons (coloured renders, being developed
+  soon), the route line as leather stitches in place of the golden line, the raid markers in our own style.
+- Noted where they stand: `Doc/ideas/Navigation.md` (*Map pins*, *Our own data*, *Waypoint and route*, *The golden
+  line*), `Doc/agent/navigation.md` (*What is not there yet*), the Nameplates and Social READMEs (*Not there yet*).
+
 ### Navigation: the ground as the game draws it; water in buildings; indoors on a building's floor (Saneroki, 2026-10-21)
 - **The ground's triangles** (`dev/tools/walk-data`: `steepness`, from `ground`): a sample's ground is too steep where
   the game's triangle under it is steeper than `SLOPE` (each cell four triangles meeting at its inner height; a
