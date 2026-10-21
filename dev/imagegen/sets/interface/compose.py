@@ -24,16 +24,13 @@ OUT = os.path.join(ROOT, "assets/generated/interface/views")
 KALAM = os.path.join(ROOT, "assets/fonts/Kalam/Kalam-{}.ttf")
 LEATHER_FONT = "/usr/share/fonts/noto/NotoSerif-Regular.ttf"   # a stand-in: no leather font is decided yet
 
-# Where each part comes from (Saneroki's review of round 1, 2026-10-21; the elements he did not name are archived):
-#   a number: that seed of the element; ("crop", file): a crop of a pick from refs.py (cleaned there);
-#   ("clean", seed, box): that seed with its label covered in code (box as fractions of the part)
-SOURCE = {"edge-left": 3, "edge-right": 1,                   # #13-18 all fine
-          "patch-wide": 2,                                   # #23: every leather patch and button
-          "top-tab-drawn": ("clean", 1, (0.08, 0.12, 0.92, 0.88)),   # #34: its pencil lines; text by code
-          "top-tab-arrow": 1,                                # #39 shaped as an arrow (shape.py, elements-arrow.txt)
-          "dropdown-band": 1,                                # a plain band (elements-band.txt)
-          "title-bar": ("crop", "title-bar-clean")}          # the pick (#61) itself, its title covered
-FALLBACK = {"top-tab-arrow": "top-tab-arrow", "dropdown-band": "dropdown-band-plain"}   # crops until rendered
+# Where each part comes from: only decided ones (Doc/guides/interface-style.md). ("decided", file): a cut-out in
+# assets/Concept art/UI style/ (only the liked section of a pick, cut by Saneroki's rule); a number: that seed of a
+# harness element Saneroki approved; ("clean", seed, box): that seed with its label covered in code
+SOURCE = {"patch": ("decided", "patch.png"),                      # paper #183: every leather patch and button
+          "tab-pointed": ("decided", "tab-pointed-1.png"),        # heraldry-sheet-1: leather top tabs, pointed sides
+          "band": ("decided", "kit/kit3-09.png"),                 # kit-3: the band with its buckle, for dropdowns
+          "top-tab-drawn": ("clean", 1, (0.08, 0.12, 0.92, 0.88))}  # round 1 #34: its pencil lines; text by code
 LEAD = (58, 52, 46)            # pencil grey
 BG = (24, 21, 18)              # behind the windows
 CLASS = {"Warrior": (199, 156, 110), "Mage": (63, 199, 235), "Priest": (230, 230, 230), "Rogue": (255, 244, 104),
@@ -49,13 +46,13 @@ def part(name):
     if name not in SOURCE:
         raise ValueError(f"{name} is not a decided part (Doc/guides/interface-style.md); add it to SOURCE first")
     src = SOURCE[name]
-    if isinstance(src, tuple) and src[0] == "crop":
-        img = Image.open(os.path.join(CROPS, src[1] + ".png")).convert("RGBA")
+    if isinstance(src, tuple) and src[0] == "decided":
+        img = Image.open(os.path.join(REFS, src[1])).convert("RGBA")
     else:
         seed = src[1] if isinstance(src, tuple) else src
         f = os.path.join(ELEMENTS, f"{name}-{seed}.png")
         if not os.path.exists(f):
-            f = os.path.join(CROPS, FALLBACK.get(name, name) + ".png")
+            raise FileNotFoundError(f)
         img = Image.open(f).convert("RGBA")
     box = img.getchannel("A").point(lambda v: 255 if v > 24 else 0).getbbox()
     img = img.crop(box) if box else img
@@ -201,103 +198,167 @@ def slot(canvas, x, y, s, img):
 
 # ---- the window -------------------------------------------------------------------------------------------
 
-# The window's frame is the decided border itself (edges-and-buttons.png, #12; Saneroki: the borders were decided),
-# cut out of it at its own scale, never re-painted: its corners with their metal caps as they are, its edges
-# repeated from plain stretches of them, the clasp on the right edge, the page stack and the strap along the
-# bottom. Boxes in the picture's pixels.
-FRAME = "edges-and-buttons.png"
-FRAME_CUT = {"tl": (196, 88, 262, 138), "top": (360, 88, 520, 138), "tr": (744, 88, 816, 138),
-             "left": (196, 300, 226, 600), "right": (768, 160, 814, 380), "clasp": (768, 384, 836, 506),
-             "bl": (196, 826, 262, 928), "bottom": (450, 826, 640, 928), "br": (744, 826, 816, 928)}
-TITLE_BAR = ("title-bar.png", (272, 60, 754, 124))     # #61: the title bar, at its own height
+# The window is the decided window itself: #12 (edges-and-buttons.png) cleaned of the strap over its paper and of
+# its title label's writing (clean.py), cut at its own scale into three-part bands that share their cut lines: the
+# top (its leather strap with the ribbon bookmark, the corner patch and the paper title label), the bottom (the
+# page's end and the stack of pages, the corners with their caps), the left and right edges (the right with its
+# clasp). Middles repeat with cross-faded joins and run into the end pieces through a fade; the leather of the
+# edges runs on under the top and bottom, whose paper fades into the page. Boxes in #12's pixels.
+FRAME = os.path.join(ROOT, "assets/generated/interface/clean/frame.png")
+FRAME_X = (196, 380, 530, 836)         # left end | middle (no rivet, stretched) | right end of the top and bottom
+FRAME_TOP = (86, 210)                  # the top band: strap, corner patch, title label, a little paper
+FRAME_BOTTOM = (820, 876)              # the bottom band: the page's end, the page stack, the corners (the strap's
+                                       # 54 rows cut out by clean.py)
+FRAME_LEFT = (196, 240, 300, 600)      # the left edge: x from-to, the plain stretch it repeats (y)
+FRAME_RIGHT = (764, 836, 230, 370)     # the right edge, above its clasp
+CLASP = (764, 380, 836, 510)
+TITLE_AT = (372, 182)                  # where the title label's writing starts, in #12's pixels
+CLOSE_AT = (770, 124)                  # the middle of the corner patch on the strap: the close button
+
+
+def tone_shift(img):
+    """The frame's colours moved toward the paper's decided tone, so its paper meets the page without a step."""
+    a = np.asarray(img.convert("RGB"), dtype=np.float32)
+    ref = np.median(a[200:240, 300:560].reshape(-1, 3), axis=0)
+    a = a * (np.array(paper.TONE, dtype=np.float32) / ref)
+    out = Image.fromarray(a.clip(0, 255).astype(np.uint8)).convert("RGBA")
+    return out
+
+
+def fade(img, side, length):
+    """img with its alpha faded to nothing toward a side ('top', 'bottom', 'left', 'right') over length pixels."""
+    w, h = img.size
+    g = Image.linear_gradient("L")                       # 0 at the top, 255 at the bottom
+    if side in ("left", "right"):
+        g = g.rotate(90, expand=True)                    # 0 at the right, 255 at the left
+        g = g.resize((length, h))
+        if side == "left":
+            g = g.transpose(Image.FLIP_LEFT_RIGHT)
+        ramp = Image.new("L", (w, h), 255)
+        ramp.paste(g, (0, 0) if side == "left" else (w - length, 0))
+    else:
+        g = g.resize((w, length))
+        if side == "bottom":
+            g = g.transpose(Image.FLIP_TOP_BOTTOM)
+        ramp = Image.new("L", (w, h), 255)
+        ramp.paste(g, (0, 0) if side == "top" else (0, h - length))
+    out = img.copy()
+    out.putalpha(ImageChops.multiply(img.getchannel("A"), ramp))
+    return out
+
+
+def seamless_x(tile):
+    """The tile blended with itself shifted by half across, the shifted copy ruling at its ends: its right end then
+    runs on into its left, so repeats join without a seam."""
+    w, h = tile.size
+    ramp = Image.linear_gradient("L").rotate(90, expand=True).resize((w, h))
+    ramp = ramp.point(lambda v: int(255 * min(1, (1 - abs(v - 127.5) / 127.5) * 2.2) ** 1.5))
+    return Image.composite(tile, ImageChops.offset(tile, w // 2, 0), ramp)
+
+
+def band(left, mid, right, length, blend=48, stretch=False):
+    """A band of any length: the left end, the middle made seamless and repeated, the right end; the middle fades
+    in over the left end's last pixels and the right end over the middle's, so no join shows."""
+    h = left.height
+    whole = Image.new("RGBA", (left.width + mid.width + right.width, h))
+    for piece, x in ((left, 0), (mid, left.width), (right, left.width + mid.width)):
+        whole.alpha_composite(piece, (x, 0))
+    if length <= whole.width:
+        # no wider than the pick: its own two ends, met in one blended join in the middle
+        half = (length + blend) // 2
+        out = Image.new("RGBA", (length, h))
+        out.alpha_composite(whole.crop((0, 0, half, h)), (0, 0))
+        out.alpha_composite(fade(whole.crop((whole.width - (length - half + blend), 0, whole.width, h)), "left", blend),
+                            (half - blend, 0))
+        return out
+    out = Image.new("RGBA", (length, h))
+    if stretch:
+        # lines that run along the band (a page stack, a strap's edges) stretch without a seam; nothing repeats
+        mid_w = length - left.width - right.width + 2 * blend
+        out.alpha_composite(mid.resize((mid_w, h), Image.LANCZOS), (left.width - blend, 0))
+        out.alpha_composite(fade(left, "right", blend), (0, 0))
+        out.alpha_composite(fade(right, "left", blend), (length - right.width, 0))
+        return out
+    tile = seamless_x(mid)
+    x = left.width - blend
+    while x < length - right.width + blend:          # under the right end's fade too
+        out.alpha_composite(tile, (x, 0))
+        x += tile.width
+    out.alpha_composite(fade(left, "right", blend), (0, 0))
+    out.alpha_composite(fade(right, "left", blend), (length - right.width, 0))
+    return out
+
+
+def column(tile, length):
+    """A vertical edge of any length from a plain stretch, made seamless and repeated."""
+    t = seamless_x(tile.rotate(90, expand=True)).rotate(-90, expand=True)
+    out = Image.new("RGBA", (tile.width, length))
+    for y in range(0, length, t.height):
+        out.alpha_composite(t, (0, y))
+    return out
 
 
 class Window:
-    """A window of the journal look: #12's frame round the paper (its corners, edges, clasp, page stack and bottom
-    strap), #61's title bar laid over its top edge with the title pressed in, brown leather patches (#23) as the
-    side tabs and buttons, plain bands hanging from the top. The content goes on the page, from self.inner."""
+    """A window of the journal look: #12 itself round the page (*FRAME*), its title in Kalam on #12's paper label,
+    the close button on #12's corner patch, buttons of #183's patch on the page's foot, bands with a buckle (kit-3)
+    hanging from the top for dropdowns, side tabs of #183's patch. The content goes on the page, from self.inner."""
 
     MARGIN = 64
 
     def __init__(self, w, h, title, side_tabs=(), buttons=(), bands=(), seed="window", margin=None):
         self.w, self.h, self.title = w, h, title
         self.MARGIN = M = margin or self.MARGIN
-        src = Image.open(os.path.join(REFS, FRAME)).convert("RGBA")
-        self.cut = {k: src.crop(v) for k, v in FRAME_CUT.items()}
-        # the paper reaches each edge's inner side; the corners, wider than the edges, lie over it
-        L, R = self.cut["left"].width, self.cut["right"].width
-        T, B = self.cut["top"].height, self.cut["bottom"].height
-        self.L, self.T, self.R, self.B = L, T, R, B
+        f = tone_shift(Image.open(FRAME))
+        x0, x1, x2, x3 = FRAME_X
+        t0, t1 = FRAME_TOP
+        b0, b1 = FRAME_BOTTOM
+        self.top = [f.crop((x0, t0, x1, t1)), f.crop((x1, t0, x2, t1)), f.crop((x2, t0, x3, t1))]
+        self.bottom = [f.crop((x0, b0, x1, b1)), f.crop((x1, b0, x2, b1)), f.crop((x2, b0, x3, b1))]
+        lx0, lx1, ly0, ly1 = FRAME_LEFT
+        rx0, rx1, ry0, ry1 = FRAME_RIGHT
+        self.left, self.right, self.clasp = f.crop((lx0, ly0, lx1, ly1)), f.crop((rx0, ry0, rx1, ry1)), f.crop(CLASP)
+        self.T, self.B = t1 - t0, b1 - b0
+        self.L, self.R = lx1 - lx0, rx1 - rx0
         self.canvas = Image.new("RGBA", (w + 2 * M, h + 2 * M), BG + (255,))
-        self.inner = (M + L - 4, M + T - 4, M + w - R + 4, M + h - B + 4)
-        x0, y0, x1, y1 = self.inner
-        self.canvas.alpha_composite(paper.page(x1 - x0, y1 - y0, seed), (x0, y0))
+        # the page: from the edges' inner sides, under the top and bottom bands' paper
+        self.inner = (M + self.L - 6, M + self.T - 30, M + w - self.R + 6, M + h - self.B + 40)
+        x0_, y0_, x1_, y1_ = self.inner
+        self.canvas.alpha_composite(paper.page(x1_ - x0_, y1_ - y0_, seed, edge=0), (x0_, y0_))
+        self.content = (M + self.L + 8, M + self.T + 2, M + w - self.R - 8, M + h - self.B - (48 if buttons else 8))
         self.side_tabs, self.buttons, self.bands = side_tabs, buttons, bands
-
-    def frame(self):
-        c, M, w, h, k = self.canvas, self.MARGIN, self.w, self.h, self.cut
-        L, T, R, B = self.L, self.T, self.R, self.B
-
-        def run(tile, length, horizontal, blend=0.3):
-            """The tile repeated over length, each repeat fading into the last over a share of the tile, so
-            no seam shows."""
-            if not horizontal:
-                return run(tile.rotate(90, expand=True), length, True, blend).rotate(-90, expand=True)
-            tw, th = tile.size
-            o = max(2, int(tw * blend))
-            ramp = Image.linear_gradient("L").rotate(90, expand=True).resize((o, th))   # 0 at left, 255 at right
-            fade = tile.copy()
-            fade.putalpha(ImageChops.multiply(tile.getchannel("A"), Image.new("L", tile.size, 255).copy()))
-            a = fade.getchannel("A")
-            a.paste(ImageChops.multiply(a.crop((0, 0, o, th)), ramp), (0, 0))
-            fade.putalpha(a)
-            out = Image.new("RGBA", (length, th))
-            out.alpha_composite(tile, (0, 0))
-            p = tw - o
-            while p < length:
-                out.alpha_composite(fade, (p, 0))
-                p += tw - o
-            return out
-
-        c.alpha_composite(run(k["top"], w, True), (M, M))
-        c.alpha_composite(run(k["bottom"], w, True), (M, M + h - B))
-        c.alpha_composite(run(k["left"], h - T - B, False), (M, M + T))
-        c.alpha_composite(run(k["right"], h - T - B, False), (M + w - R, M + T))
-        c.alpha_composite(k["clasp"], (M + w - R, M + (h - k["clasp"].height) // 2))
-        c.alpha_composite(k["tl"], (M, M))
-        c.alpha_composite(k["tr"], (M + w - k["tr"].width, M))
-        c.alpha_composite(k["bl"], (M, M + h - k["bl"].height))
-        c.alpha_composite(k["br"], (M + w - k["br"].width, M + h - k["br"].height))
 
     def finish(self):
         c, M, w, h = self.canvas, self.MARGIN, self.w, self.h
         for i, ico in enumerate(self.side_tabs):
-            y = M + self.T + 30 + i * 50
-            c.alpha_composite(three(part("patch-wide"), 50, 42, cap=0.2), (M - 32, y))
+            y = M + self.T + 10 + i * 50
+            c.alpha_composite(part("patch").resize((44, 44), Image.LANCZOS), (M - 30, y))
             if ico is not None:
                 g = ImageOps.grayscale(ico.convert("RGB")).resize((22, 22), Image.LANCZOS)
                 mark = Image.new("RGBA", (22, 22), (30, 18, 10, 0))
                 mark.putalpha(ImageOps.invert(g).point(lambda v: int(v * 0.6)))
-                c.alpha_composite(mark, (M - 25, y + 10))
-        self.frame()
-        pic, box = TITLE_BAR
-        bar = Image.open(os.path.join(REFS, pic)).convert("RGBA").crop(box)
-        bar_rgb = __import__("refs").clean(bar.convert("RGB"), (0.3, 0.15, 0.7, 0.85))
-        bar_rgb.putalpha(bar.getchannel("A"))
-        bw = min(w - 60, max(320, len(self.title) * 26 + 220))
-        c.alpha_composite(three(bar_rgb, bw, bar.height, cap=0.16), (M + (w - bw) // 2, M - 12))
-        press(c, (M + w // 2, M - 12 + bar.height // 2), self.title.upper(), 22)
-        c.alpha_composite(three(part("patch-wide"), 34, 30, cap=0.3), (M + w - 54, M + 4))
-        press(c, (M + w - 37, M + 18), "x", 17)
+                c.alpha_composite(mark, (M - 19, y + 11))
+        # the edges first, the whole height, so their leather runs on under the bands' fades
+        c.alpha_composite(column(self.left, h), (M, M))
+        c.alpha_composite(column(self.right, h), (M + w - self.R, M))
+        c.alpha_composite(self.clasp, (M + w - self.R, M + (h - self.clasp.height) // 2))
+        top = fade(band(*self.top, w, stretch=True), "bottom", 26)
+        bottom = fade(band(*self.bottom, w, stretch=True), "top", 8)
+        c.alpha_composite(top, (M, M))
+        c.alpha_composite(bottom, (M, M + h - self.B))
+        # the title on the label, in Kalam; the close button on the corner patch, pressed in
+        x0 = FRAME_X[0]
+        write(c, (M + TITLE_AT[0] - x0, M + TITLE_AT[1] - FRAME_TOP[0]), self.title, 22, "Bold", anchor="lm")
+        press(c, (M + w - (FRAME_X[3] - CLOSE_AT[0]), M + CLOSE_AT[1] - FRAME_TOP[0]), "x", 17)
         for x, label in self.bands:
-            band = three(part("dropdown-band"), 100, 38, horizontal=False, cap=0.12)
-            c.alpha_composite(band, (M + x, M + self.T - 16))
-            press(c, (M + x + 19, M + self.T + 32), label, 12)
-        x = M + self.L + 40
+            b = part("band")
+            b = b.resize((44, round(b.height * 44 / b.width)), Image.LANCZOS)
+            c.alpha_composite(b, (M + x, M + 12))
+            press(c, (M + x + 22, M + 12 + b.height - 26), label, 11)
+        x = M + self.L + 30
         for label in self.buttons:
-            width = 34 + len(label) * 11
-            c.alpha_composite(three(part("patch-wide"), width, 32, cap=0.2), (x, M + h - self.B + 6))
-            press(c, (x + width // 2, M + h - self.B + 22), label, 14)
+            width = 40 + len(label) * 10
+            c.alpha_composite(three(part("patch"), width, 34, cap=0.25), (x, M + h - self.B - 38))
+            press(c, (x + width // 2, M + h - self.B - 21), label, 14)
             x += width + 8
         return c
 
@@ -311,21 +372,19 @@ class Window:
 
 
 def top_tabs(canvas, x, y, labels, style, active=0, height=34):
-    """The row of tabs under the title bar: 'patch' (the arrow patches, #39, each tip in the next one's cut) or
-    'drawn' (pencil on the paper, #34); the labels by code (pressed into the patches, Kalam on the paper)."""
+    """The row of tabs under the top: 'leather' (the pointed leather tabs of heraldry-sheet-1, their labels pressed
+    in) or 'drawn' (pencil on the paper, round 1 #34, labels in Kalam)."""
     for i, label in enumerate(labels):
-        if style == "patch":
-            arrow = part("top-tab-arrow")
-            d = round(height * 0.5)
-            width = 44 + len(label) * 9 + d
-            tab = three(arrow, width, height, cap=min(0.3, (d + 10) / (arrow.width * height / arrow.height)))
-            canvas.alpha_composite(tab, (x, y))
-            press(canvas, (x + (width + d // 2) // 2, y + height // 2), label, 14)
-            x += width - d + 1
+        if style == "leather":
+            tab = part("tab-pointed")
+            width = 60 + len(label) * 9
+            canvas.alpha_composite(three(tab, width, height, cap=0.2), (x, y))
+            press(canvas, (x + width // 2, y + height // 2), label, 14)
+            x += width - 6
         else:
             width = 30 + len(label) * 10
-            tab = three(part("top-tab-drawn"), width, height + (4 if i == active else 0), cap=0.18)
-            canvas.alpha_composite(tab, (x, y - (4 if i == active else 0)))
+            t = three(part("top-tab-drawn"), width, height + (4 if i == active else 0), cap=0.18)
+            canvas.alpha_composite(t, (x, y - (4 if i == active else 0)))
             write(canvas, (x + width // 2, y + height // 2 + 2), label, 18, "Bold" if i == active else "Regular", anchor="mm")
             x += width + 2
     return x
@@ -434,7 +493,7 @@ def view_character():
     """The character doll: Saneroki's pick itself (doll.png, #3), its frame, the slots in their arcs and the paper
     strips over the leather kept as painted; code puts the live content in: game icons in the slots, each
     strip's writing replaced by the item's stats in Kalam. The hero stands in for the game's live model."""
-    c = Image.open(os.path.join(REFS, "doll.png")).convert("RGBA")
+    c = Image.open(os.path.join(ROOT, "assets/generated/interface/clean/doll.png")).convert("RGBA")   # #3 cleaned
     # the arcs (Saneroki, 2026-10-21: the slots in a rounded layout, not straight under each other): each row of
     # slot and strip moves outward, most in the middle rows, so the columns bow round the hero; the gap a moved
     # row leaves next to the hero's frame is filled with the paper of that spot
@@ -479,12 +538,12 @@ def view_character():
 def view_bags():
     """Bags and bank (bags-page.png): a condensed page cut into close sections, a pencil-ruled header each, dense
     grids of item icons; tabs down the left change the content."""
-    W, H = 900, 760
+    W, H = 900, 900
     win = Window(W, H, "Bags", side_tabs=[icon("INV_Misc_Bag_0*", 32), icon("INV_Misc_Herb_0*", 32),
                                            icon("INV_Misc_Coin_0[1-9]*", 32), icon("INV_Misc_Key_0*", 32)],
                  buttons=["Sort", "Bank", "Junk"], seed="bags")
     c, M = win.canvas, win.MARGIN
-    x0, y0, x1, y1 = win.inner
+    x0, y0, x1, y1 = win.content
     sections = [("Consumables", "INV_Potion_*", 22), ("Trade goods", "INV_Fabric_*", 15), ("Armour", "INV_Chest_*", 11),
                 ("Weapons", "INV_Sword_*", 9), ("Quest items", "INV_Misc_Note_*", 6), ("Junk", "INV_Misc_Bone_*", 8)]
     y, s, cols = y0 + 14, 42, 18
@@ -508,11 +567,11 @@ def view_bags():
 def view_chat():
     """A chat window (top tabs as patches, top-tabs.png): bubbles on the page, others' at the left, the player's
     own at the right, a few short ones in the middle."""
-    W, H = 760, 860
+    W, H = 760, 980
     win = Window(W, H, "Chat", buttons=["Send"], seed="chat")
     c, M = win.canvas, win.MARGIN
-    x0, y0, x1, y1 = win.inner
-    top_tabs(c, x0 + 6, y0 + 4, ["General", "Guild", "Party", "Whispers", "Trade"], "patch", 1)
+    x0, y0, x1, y1 = win.content
+    top_tabs(c, x0 + 6, y0 + 4, ["General", "Guild", "Party", "Whispers", "Trade"], "leather", 1)
     msgs = [("left", "Elowen", "Druid", "Guild", "20:41", "Anyone up for the Deadmines in ten?"),
             ("left", "Brannoc", "Warrior", "Guild", "20:42", "I can tank. Need a healer too."),
             ("right", "Saneroki", "Mage", "Guild", "20:42", "Count me in, bringing water."),
@@ -535,10 +594,10 @@ def view_chat():
 def view_guild():
     """The guild window (guild-board.png): the paper top with the emblem, name and member count, the row of drawn
     tabs, the board's panels as pencil frames on the paper (no leather on it), patch buttons at the top right."""
-    W, H = 1500, 860
+    W, H = 1500, 1000
     win = Window(W, H, "Guild", seed="guild")
     c, M = win.canvas, win.MARGIN
-    x0, y0, x1, y1 = win.inner
+    x0, y0, x1, y1 = win.content
     em = sketch(icon("INV_Shirt_GuildTabard*", 64), 70)
     c.alpha_composite(em, (x0 + 18, y0 + 10))
     write(c, (x0 + 100, y0 + 12), "The Grey Wardens", 30, "Bold")
@@ -574,12 +633,14 @@ def view_guild():
     x, y = panel((cols[2][0], py, cols[2][1], py + 330), "Race to level 60")
     base = py + 290
     for rank, (n, cls, lv, h, px) in enumerate([("Brannoc", "Warrior", 58, 120, 1), ("Elowen", "Druid", 57, 90, 0), ("Mira", "Priest", 55, 66, 2)]):
-        bx = cols[2][0] + 70 + px * 150
-        box(c, (bx, base - h, bx + 130, base), 160, 2, rank + 40)
-        write(c, (bx + 65, base - h + 8), str(rank + 1), 30, "Bold", anchor="ma")
-        c.alpha_composite(sketch(icon(f"ClassIcon_{cls}.blp", 64), 52), (bx + 39, base - h - 112))
-        write(c, (bx + 65, base - h - 56), n, 18, "Bold", CLASS[cls], anchor="ma", outline=True)
-        write(c, (bx + 65, base - h - 34), f"level {lv}", 14, anchor="ma")
+        cw = (cols[2][1] - cols[2][0] - 40) // 3        # three steps across the panel's width
+        bx = cols[2][0] + 20 + px * cw
+        box(c, (bx, base - h, bx + cw - 8, base), 160, 2, rank + 40)
+        mx = bx + (cw - 8) // 2
+        write(c, (mx, base - h + 8), str(rank + 1), 30, "Bold", anchor="ma")
+        c.alpha_composite(sketch(icon(f"ClassIcon_{cls}.blp", 64), 52), (mx - 26, base - h - 112))
+        write(c, (mx, base - h - 56), n, 18, "Bold", CLASS[cls], anchor="ma", outline=True)
+        write(c, (mx, base - h - 34), f"level {lv}", 14, anchor="ma")
     x, y = panel((cols[2][0], py + 342, cols[2][1], y1 - 14), "Offered to the guild")
     for i, (pattern, name, who) in enumerate([("INV_Sword_0*", "Blade of the March", "Brannoc"), ("INV_Misc_Cape_0*", "Cloak of Dusk", "Mira"),
                                               ("INV_Jewelry_Ring_0*", "Band of the Tide", "Kestrel")]):
@@ -592,13 +653,13 @@ def view_guild():
 def view_spellbook():
     """A spellbook: the schools as side tabs, two pages of spells (icon, name, rank) divided by a pencil fold,
     a band hanging from the top for the filter overlay."""
-    W, H = 900, 760
+    W, H = 900, 900
     schools = [((150, 52, 40), "Spell_Fire_FlameBolt"), ((70, 90, 130), "Spell_Frost_FrostBolt02"), ((110, 70, 130), "Spell_Nature_StarFall"),
                ((176, 130, 60), "Spell_Holy_*")]
     win = Window(W, H, "Spellbook", side_tabs=[icon(p + ("" if "*" in p else ".blp"), 32) for _, p in schools],
                  buttons=["Previous", "Next"], bands=[(W - 150, "Filter")], seed="spellbook")
     c, M = win.canvas, win.MARGIN
-    x0, y0, x1, y1 = win.inner
+    x0, y0, x1, y1 = win.content
     mid = (x0 + x1) // 2
     line(c, (mid, y0 + 16), (mid, y1 - 16), 90, 2)
     names = ["Fireball", "Fire Blast", "Flamestrike", "Scorch", "Pyroblast", "Blast Wave", "Frostbolt", "Frost Nova",
@@ -619,11 +680,11 @@ def view_spellbook():
 
 def view_stats():
     """Character stats, with the drawn top tabs: rows of names and values under pencil-ruled headers."""
-    W, H = 560, 780
+    W, H = 560, 900
     win = Window(W, H, "Character", side_tabs=[icon("INV_Chest_Plate0*", 32), icon("Spell_Nature_*", 32)],
                  seed="stats")
     c, M = win.canvas, win.MARGIN
-    x0, y0, x1, y1 = win.inner
+    x0, y0, x1, y1 = win.content
     top_tabs(c, x0 + 10, y0 + 6, ["Stats", "Skills", "Reputation", "Currency"], "drawn", 0)
     groups = [("Attributes", [("Strength", "142"), ("Agility", "87"), ("Stamina", "215"), ("Intellect", "41"), ("Spirit", "58")]),
               ("Melee", [("Damage", "88 – 131"), ("Speed", "2.60"), ("Power", "396"), ("Hit", "+3 %"), ("Crit chance", "6.48 %")]),

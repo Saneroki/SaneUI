@@ -1276,6 +1276,15 @@ Saneroki asked for a much richer bag view, in features and looks.
   is the pick (#61) at its own height; the polish pass (a global model pass) is gone; `compose.py` refuses any part
   not in its list of decided parts. The guide's *The harness* lists ComfyUI's tools for strict edits (masked
   inpainting, differential diffusion, low strength, negative words, a LoRA of the approved pictures).
+- Only the liked sections (Saneroki: everything he names is cut out of its picture and only that is used): the
+  decided references are now cut-outs (the top tab row of #78, #69's letters, #120's paper top, #133's bubble, the
+  leather tabs with pointed sides, the patch of #183 for every button, the parts of two kit sheets in `kit/`, the
+  pencil sketches in `sketches/`); the whole pictures and the dropped patch are gone. The window is #12 itself,
+  cleaned in code (`clean.py`: the strap's rows over the paper cut out, the title label's writing covered by its own
+  paper) and cut at its own scale so its parts fit exactly; the title is written on #12's label. The doll without
+  the rectangle behind the hero, a stony ground under him, by masked inpainting (new workflow
+  `dev/imagegen/workflows/qwen21-inpaint.json`: only the mask is repainted, guidance 3 with negative words). The
+  harness's lists and crops keep only decided sources; the discarded band and arrow lists are gone.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.

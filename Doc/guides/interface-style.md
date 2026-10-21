@@ -6,9 +6,11 @@ is written here, with the picture it came from, the moment it is taken. The harn
 views (`dev/imagegen/sets/interface/`, *The harness* below) and the house style's words (`dev/imagegen/style.txt`)
 are made from this guide. When they disagree, this guide wins and the harness gets corrected.
 
-The pictures named here are in `assets/Concept art/UI style/`. They show the part the decision is about. The rest of
-a picture (its other parts, its text, its colours elsewhere) is not part of the style unless a line here says
-so. Pictures that are not named here are not part of the style at all, nor are the words that made them.
+The pictures named here are in `assets/Concept art/UI style/`. **Only what Saneroki explicitly likes is there, cut
+out of its picture** (Saneroki, 2026-10-21): a picture he liked part of is cut down to that part, and only the cut
+is a reference or an input for image models; the rest of the picture is excluded, as is every picture and part
+he did not name, with the words that made them. The cut boxes and where each cut came from are recorded with the
+cutting tool, outside the project.
 
 ## Scope
 
@@ -49,8 +51,9 @@ with as little room for frame and ornament as the look allows.
 - **Stains** (coffee rings, blots, drops: `stain-*.png`, `stains-*.png`) are separate pieces with transparency.
   Code places a few at seeded random spots, faint, and they scroll with the page. They are never painted into a
   part.
-- **Sketches** (a loose landscape, a ruin, a creature study) are separate pieces too, placed by code, very faint:
-  few light, quick strokes that never fight the text over them.
+- **Sketches:** the pencil drawings in `sketches/` (paper #201–212: a wolf's head, landscapes with a ruin, a
+  coastline map, trees; Saneroki, 2026-10-21) are the decorations of the paper, with the coffee stains. They are
+  separate pieces in graphite with their own transparency, placed by code, very faint, never painted into a part.
 - **Overhangs** (`doll.png`): paper strips and pieces may hang out over the leather border or cross it, where a
   strip belongs to content at the edge (a slot's stat strip, a note, a tab). Saneroki wants more of them, where
   they make sense.
@@ -80,51 +83,54 @@ with as little room for frame and ornament as the look allows.
 - **Colours that are hard to read on paper** (class colours on names in bubbles, lists, the podium; light quality
   colours): the game's own colour, unchanged, with a thin dark outline round the letters, made in code with the
   text (Saneroki, 2026-10-21). Light colours like the priest's white would vanish on the paper without it.
-- **On leather** (titles, button labels): letters pressed or burned into the leather, as in `title-text.png`
+- **The window's title** stands on the paper label of #12's top, in Kalam (*The window's top, edges and bottom*).
+- **On leather** (button and tab labels): letters pressed or burned into the leather, as in `title-text.png`
   ("WANTED"). Code makes them from the text, so they stay dynamic: they are never painted into a part. Their font
   is not decided yet; the harness uses a serif as a stand-in.
 - Image models paint no text into parts. Concept art may show placeholder writing.
 
 ## Parts
 
-### Title bar
+### The window's top, edges and bottom
 
-- **Look:** `title-bar.png`. A slim stitched leather strip across the top of the window, joined to its leather
-  border, with a small metal fitting at each end. The title sits in its middle, pressed into the leather (*Text*).
-- **Buttons:** room at its right end for small leather patch buttons (close, settings).
+- **The window is `edges-and-buttons.png` (#12) itself** (Saneroki, 2026-10-21), as a book with many pages:
+  - **the top:** its leather strap with the ribbon bookmark hanging from it, the hinge, and the small patch in
+    the right corner (the close button); under it the pencil-drawn paper label that holds the window's title,
+    written in Kalam by code;
+  - **the edges:** the thin stitched leather binding, the clasp on the right, the pages' edges showing;
+  - **the corners:** the metal caps and the page corners of the stacked pages;
+  - **the bottom:** the page running down to its own stack of pages. No leather strap or patches lie over the
+    paper at the bottom.
+- The harness uses #12's own pixels for all of it (*The harness*): its parts fit together exactly at their own
+  scale. Repeats are joined without seams; where #12 has things that are not wanted, code cuts them out (the
+  strap's rows) or covers them with #12's own paper (the label's writing).
+- **Not wanted** (Saneroki, 2026-10-21): the title bars and borders of paper #61, #69 and #78. They are no
+  reference and no input.
 
 ### Buttons
 
-- **Hard buttons:** leather patches as `elements/patch-wide-2.png` (Saneroki, 2026-10-21): every leather patch and
-  button has this look. They are stitched and set into the leather border, along the title bar or along the
-  bottom edge. Their labels are made in code.
-- **Patch pieces for any width:** the square leather patches in the top right corner of `guild-board.png` are the
-  pieces buttons are built from. Code places them and repeats their middle to make a button as wide as it needs
-  (a left end, a middle that repeats, a right end). So the patch is painted as separate pieces:
-  - edges that join seamlessly;
-  - the stitching running on along the repeated middle;
-  - no icon or text in it.
-- **Dropdown buttons:** leather bands hanging down from the top border, with a buckle, as in `dropdown-bands.png`
-  (only its bands and buckle). A band opens an overlay (a dropdown, a menu). Its inside is an empty field of
-  plain, textured leather, without marks or designs: code lays its inlay into it (Saneroki, 2026-10-21).
+- **Buttons:** the leather patch `patch.png` (paper #183) is every button (Saneroki, 2026-10-21). Code sizes it,
+  repeating its middle for wider buttons, and presses the label in. The earlier patch (round 1 #23) is dropped.
+- **Dropdown buttons:** a leather band hanging down from the top, with a buckle: the band of the kit
+  (`kit/kit3-09.png`). Its inside is plain leather for the code's inlay. A band opens an overlay.
 - **On the paper:** pencil-outlined paper pieces, never leather.
+
+### Kit parts
+
+- The parts of `kit/` (cut from style shapes/kit-3 and kit-4, Saneroki, 2026-10-21: "look great"): framed paper
+  panels, hanging leather banners, a band with a buckle, check and close marks, sliders, shields. They are the
+  look of these parts wherever a view needs them.
 
 ### Tabs
 
-- **Top tabs:** a row of tabs right under the title bar, across the top of the page (Saneroki, 2026-10-21). There
-  are two styles:
-  - **patch tabs:** darker, patchy tabs, as in the row under the title bar in `top-tabs.png`, their look
-    `elements/top-tab-patch-3.png`, shaped as arrows pointing right (Saneroki, 2026-10-21):
-    - the top and bottom stay straight;
-    - the left end is cut in as a V, and the right end runs out into a point;
-    - tabs side by side form a strip, each tip in the next one's cut;
-    - the slanted ends are soft, worn, stitched leather edges like the top and bottom, never sharp straight
-      cuts;
-    - their labels are pressed in by code.
-  - **drawn tabs:** tabs drawn on the paper in pencil, as in the row under the paper top of `guild-board.png`, their
-    lines as `elements/top-tab-drawn-1.png`; their labels in Kalam by code, never painted.
-- **Side tabs:** leather tabs sticking out of the window's left edge, in the brown leather of the patches with a
-  small icon pressed in. Never coloured (*No colour in the design*).
+- **Top tabs:** a row of tabs right under the top, across the page (Saneroki, 2026-10-21). Two styles:
+  - **leather tabs with pointed sides:** `tab-pointed-1.png`, `tab-pointed-2.png` (explore sdxl/heraldry-sheet-1),
+    their labels pressed in by code;
+  - **drawn tabs:** pencil on the paper, as in the row of `guild-top.png` (paper #120), their lines as
+    `elements/top-tab-drawn-1.png`; labels in Kalam by code.
+  - `top-tabs-patch-row.png`: the row of tabs of paper #78, the only part of #78 that is kept, as a reference.
+- **Side tabs:** the leather patch (`patch.png`) sticking out of the window's left edge with a small icon pressed
+  in. Never coloured (*No colour in the design*).
 - **Tabs that change the page's content** may stand down the left side of the page, as in `bags-page.png`.
 
 ### Panels and sections on a page
@@ -141,7 +147,7 @@ Bubbles appear in two places:
 - **On a chat window's paper:** a column of bubbles, each anchored left, right or in the middle of the page.
 - **Floating:** over the game world.
 
-Built on `chat-bubble.png` (its top bubble), made more compact. Each bubble is:
+Built on `chat-bubble.png` (paper #133's top bubble), made more compact. Each bubble is:
 
 - one piece of paper, drawn in code, in this silhouette:
   - a low rounded body;
@@ -158,7 +164,8 @@ Built on `chat-bubble.png` (its top bubble), made more compact. Each bubble is:
 
 - **Character doll:** `doll.png` is the layout and the look, to be copied, not redrawn (Saneroki, 2026-10-21):
   - its shaped leather frame;
-  - the hero in the middle: the game's live 3D model in the game;
+  - the hero in the middle: the game's live 3D model in the game. No pencil rectangle behind him; a loose pencil
+    sketch of stony ground fills the bottom of his place, under his feet (Saneroki, 2026-10-21);
   - the gear slots in a rounded layout, eight a side: each row shifted outward a little more toward the middle
     rows, so the slots form an arc round the hero, not a straight column (Saneroki, 2026-10-21);
   - the top slot of each side has no strip; each of the seven below has its paper stat strip outside it,
@@ -171,7 +178,7 @@ Built on `chat-bubble.png` (its top bubble), made more compact. Each bubble is:
   and a dense grid of item icons. Tabs down the left change the content.
 - **Choosing a class or specialisation:** `class-fan.png`. Its layout and look (cards fanned out over the page)
   are kept for a view such as a spellbook's class choice.
-- **Guild window:** `guild-board.png`. Its paper top area (the guild's emblem, name and member count on the paper)
+- **Guild window:** `guild-top.png` (paper #120). Its paper top area (the guild's emblem, name and member count on the paper)
   and its row of tabs fit the guild window. Its leather panel headers on the paper do not (*The idea*).
 
 ## To redesign
@@ -206,12 +213,13 @@ How the parts and views of this style are made (`dev/imagegen/sets/interface/`, 
 strict on purpose: only what Saneroki decided may go in, and a model never gets the chance to fall back on looks
 of its own or on earlier renders.
 
-1. **Decided pixels first.** Where a pick shows the part itself, the harness cuts it out of the pick and uses
-   those pixels; no model repaints it:
-   - the window's frame from `edges-and-buttons.png` (#12): corners with their metal caps, edges repeated with
-     cross-faded joins, the clasp, the page stack and the bottom strap (`compose.py`, `FRAME_CUT`);
-   - the title bar from `title-bar.png` (#61) at its own height, its title covered and pressed in again by code;
-   - the character doll: `doll.png` itself, its rows moved outward into arcs, the gaps filled with its own paper.
+1. **Decided pixels first.** Where a pick shows the part itself, the harness uses those pixels; no model repaints
+   it:
+   - the window from #12, cleaned in code by `clean.py`. The strap's rows are cut out and the label's writing is
+     covered by the label's own paper. It is cut into a top, a bottom and two edges at #12's own scale
+     (`compose.py`, `FRAME_*`); middles are stretched where their lines run lengthwise, or repeated seamlessly;
+   - the character doll: `doll.png` itself, its rows moved outward into arcs. `clean.py` inpaints it twice: the
+     rectangle behind the hero becomes paper, and the stony ground fills the bottom of his place.
 2. **Crops** (`refs.py`): each decided part is cut out of the picture it was picked in. A crop is the only thing
    a part may be made from.
 3. **Elements** (`elements-*.txt`): only for parts no pick shows ready to use, Qwen's edit makes them from their
@@ -231,13 +239,16 @@ of its own or on earlier renders.
 6. **Gallery** (`gallery.py`): the elements in use, the elements to pick and the views, numbered from #1, at
    `assets/generated/interface/index.html`.
 
-Tools for when a model must touch a finished picture (ComfyUI has them built in):
+Tools for when a model must touch a finished picture (ComfyUI has them built in; `clean.py` uses the first three
+through `dev/imagegen/workflows/qwen21-inpaint.json`):
 
 - **Masked inpainting** (`SetLatentNoiseMask` or `InpaintModelConditioning`, with `DifferentialDiffusion`): the
   model repaints only inside a mask (a label to remove, a seam to join), and every other pixel stays as it was.
+- **Negative words with guidance:** the discarded looks named in the negative prompt. They only count with a
+  guidance (cfg) above 1; `clean.py` runs at 3.
+- **Code where the model fails:** when the model keeps writing letters or invents parts (a new stack of pages),
+  code does it with the pick's own pixels (cut rows, copy the pick's own empty paper).
 - **Low strength:** an image-to-image pass at a low denoise (about 0.2) keeps the model close to its input.
-- **Negative words:** the discarded looks named in the negative prompt (coloured tabs, bronze and gold, leather
-  bars on paper).
 - **Training:** a small LoRA trained only on the approved pictures (`TrainLoraNode`) teaches a model this style
   and nothing else. It is for later, when there are enough approved pictures.
 

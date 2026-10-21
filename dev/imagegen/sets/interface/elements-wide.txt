@@ -4,14 +4,7 @@ workflow: qwen21-edit-1ref
 count: 3
 out: assets/generated/interface/elements
 include: dev/imagegen/sets/interface/elements-before.txt
-set: width=1536, height=512
-ref: assets/generated/interface/crops/title-bar.png
-title-bar: the slim stitched leather title bar with a small metal fitting at each end, filling the picture's width; its middle plain, even and long, the title removed.
-ref: assets/generated/interface/crops/patch-wide.png
-patch-wide: the stitched leather patch button, filling the picture's width; its middle plain and even, so it can be repeated to any width.
 ref: assets/generated/interface/crops/top-tab-patch.png
 top-tab-patch: one darker patch tab of a row of tabs, filling the picture's width; its label removed, plain inside.
 ref: assets/generated/interface/crops/top-tab-drawn.png
 top-tab-drawn: one tab drawn on the paper with a pencil outline, filling the picture's width; its label removed, plain paper inside.
-ref: assets/generated/interface/crops/chat-bubble.png
-chat-bubble: the chat bubble of paper with its pencil outline and its small tail at the bottom left, filling the picture's width; made more compact, with a tiny, minimal pencil outline and room for exactly two lines; the round portrait at its top left becomes an empty pencil circle sitting over the bubble's top left corner and overlapping it a little; all writing removed, plain paper inside.

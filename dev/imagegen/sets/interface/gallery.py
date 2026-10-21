@@ -11,13 +11,14 @@ from PIL import Image
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../..")
 OUT = os.path.join(ROOT, "assets/generated/interface")
 # folder: title, what it shows
-SECTIONS = [   # folder, the pictures in it, title, what it shows
-    ("elements", "edge-*.png patch-wide-*.png top-tab-drawn-*.png top-tab-patch-*.png", "Elements in use",
-     "approved by Saneroki: the edges, the patch for every button, the drawn tab's lines, the patch tab"),
-    ("elements", "dropdown-band-*.png top-tab-arrow-*.png", "New elements to pick",
-     "dropdown bands with an empty inside for code inlays; the patch tab as an arrow with worn, stitched ends"),
+DECIDED = os.path.join(ROOT, "assets/Concept art/UI style")   # reached through the link OUT/decided
+SECTIONS = [   # folder (in OUT, or DECIDED for "decided:"), the pictures in it, title, what it shows
+    ("decided:", "*.png kit/*.png sketches/*.png elements/*.png", "Decided references",
+     "only the sections Saneroki liked, cut out of their picks: the only pictures the harness may use"),
+    ("clean", "*.png", "Picks cleaned",
+     "clean.py: #12 without the strap over its paper and its label's writing; #3 without the rectangle, with stony ground"),
     ("views", "*.png", "Views laid out in code",
-     "compose.py: #12's frame and #61's title bar cut from the picks, the decided elements, the paper, pencil, Kalam, game icons"),
+     "compose.py: #12 as the window, the decided parts, the paper, pencil, Kalam, game icons"),
 ]
 
 
@@ -42,9 +43,13 @@ def thumb(path):
 
 
 def main():
+    link = os.path.join(OUT, "decided")
+    if not os.path.islink(link):
+        os.symlink(os.path.relpath(DECIDED, OUT), link)
     number, body, items = 0, [], []
     for folder, patterns, title, about in SECTIONS:
-        files = sorted(f for p in patterns.split() for f in glob.glob(os.path.join(OUT, folder, p)) if not f.endswith("contact.png"))
+        base = os.path.join(OUT, "decided" if folder == "decided:" else folder)
+        files = sorted(f for p in patterns.split() for f in glob.glob(os.path.join(base, p)) if not f.endswith("contact.png"))
         if not files:
             continue
         cards = []

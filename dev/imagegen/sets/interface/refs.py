@@ -12,31 +12,20 @@ REFS = os.path.join(ROOT, "assets/Concept art/UI style")
 OUT = os.path.join(ROOT, "assets/generated/interface/crops")
 
 # part: (picture, box, what the guide says it is)
-CROPS = {
-    "title-bar": ("title-bar.png", (272, 60, 754, 124), "the title bar: a slim stitched leather strip, a metal fitting at each end"),
+CROPS = {   # only parts of decided references (Doc/guides/interface-style.md); the approved elements were made from them
     "edge-left": ("edges-and-buttons.png", (196, 90, 246, 920), "the window's left edge: thin stitched leather binding"),
     "edge-right": ("edges-and-buttons.png", (768, 90, 834, 925), "the window's right edge: the book's edge, a clasp at the side"),
-    "corner": ("edges-and-buttons.png", (194, 86, 264, 154), "a top corner of the binding with its metal cap"),
-    "patch-wide": ("edges-and-buttons.png", (255, 826, 348, 872), "a hard button: a stitched leather patch"),
-    "patch-square": ("guild-board.png", (1438, 30, 1508, 100), "a square leather patch, a piece for buttons of any width"),
-    "dropdown-band": ("dropdown-bands.png", (398, 80, 466, 224), "a leather band hanging from the top border"),
-    "buckle": ("dropdown-bands.png", (792, 466, 878, 548), "the buckle on the binding"),
-    "top-tab-patch": ("top-tabs.png", (352, 101, 472, 137), "a top tab: darker patch style"),
-    "top-tabs-patch": ("top-tabs.png", (70, 98, 950, 139), "the row of patch tabs under the title bar"),
-    "top-tab-drawn": ("guild-board.png", (420, 122, 522, 167), "a top tab: drawn on the paper"),
-    "top-tabs-drawn": ("guild-board.png", (192, 120, 1014, 169), "the row of drawn tabs"),
-    "side-tab": ("side-tabs.png", (106, 333, 172, 394), "a side tab: a leather bookmark out of the left edge"),
-    "chat-bubble": ("chat-bubble.png", (188, 70, 774, 226), "a chat bubble: paper, pencil outline, the tail"),
-    "stat-strip": ("title-bar.png", (226, 203, 338, 280), "a paper strip hanging over the border (a slot's stats)"),
+    "top-tab-patch": ("top-tabs-patch-row.png", (282, 3, 402, 39), "a top tab of paper #78's row"),
+    "top-tab-drawn": ("guild-top.png", (360, 97, 462, 142), "a top tab drawn on the paper (paper #120)"),
 }
 
 
 # crops whose label is covered in code (the paper of its own tone over the dark letters inside this box,
 # fractions of the crop), for parts no seed of the edit painted without it
-CLEAN = {"top-tab-patch": (0.12, 0.18, 0.88, 0.82), "title-bar": (0.3, 0.15, 0.7, 0.85)}
+CLEAN = {"top-tab-patch": (0.12, 0.18, 0.88, 0.82)}
 # crops whose inside is smoothed in code before the edit paints it anew (marks that the edit kept otherwise):
 # the inside blurred to its own leather and a fine grain laid over it
-SMOOTH = {"dropdown-band": (0.16, 0.06, 0.84, 0.8)}
+SMOOTH = {}
 
 
 def clean(img, inner):

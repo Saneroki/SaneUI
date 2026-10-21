@@ -4,10 +4,7 @@ workflow: qwen21-edit-1ref
 count: 3
 out: assets/generated/interface/elements
 include: dev/imagegen/sets/interface/elements-before.txt
-set: width=512, height=1536
 ref: assets/generated/interface/crops/edge-left.png
 edge-left: the thin stitched leather binding of the window's left edge, a vertical strip filling the picture's height, even along its length so its middle can be repeated.
 ref: assets/generated/interface/crops/edge-right.png
 edge-right: the window's right edge, the book's edge with its thin leather binding and the small metal clasp at its side, a vertical strip filling the picture's height, even along its length above and below the clasp.
-ref: assets/generated/interface/crops/dropdown-band.png
-dropdown-band: the leather band hanging straight down from the top, with its pointed end, filling the picture's height; its marks removed, plain leather.
