@@ -117,7 +117,10 @@ minimap) and the full-screen window (the world map) show the same map with the s
   - **Three levels, no continent view (Saneroki, 2026-10-21):** the Atlas has only the terrain (close), the
     zone (middle) and the world (far); the world always shows both continents together, never one continent on
     its own. Only Scrying and Parchment have Blizzard's zone and continent maps and controls (the breadcrumb's
-    continent and zone menus, a right-click out one map).
+    continent and zone menus).
+  - **One smooth world (Saneroki, 2026-10-21):** the Atlas is one continuous world; the wheel zooms smoothly
+    from the terrain through the zone paintings out to the world, the map's style blending from one level into
+    the next as it goes, never a step or a jump. No right-click steps out a level (*Open questions*, 8).
   - **Middle and far differ (Saneroki, 2026-10-21):** the middle zoom (a whole zone) is the reimagined view of
     the zone's major places: each city, landmark and great feature clearly shown where it lies. The far zoom
     (the world) is a realistic render of each zone with only a loose idea of its major places,
@@ -334,7 +337,7 @@ is the newer decision:
 - **Hot corner:** moving the mouse to the top centre and holding it there for a few ms makes the minimap
   fill the screen (now: Core's corner of the top right, like Social).
 - In that full-screen view a **right-click zooms out** from the minimap view to the zone map, a second
-  right-click to the world map (now: the scroll wheel zooms; right-click as well: *Open questions*).
+  right-click to the world map (now: the scroll wheel zooms; no right-click, *Open questions*, 8).
 - **Black minimap:** if the map cannot show (no terrain or map for the place), the minimap is black.
 
 # Review (2026-10-16)
@@ -582,8 +585,8 @@ Three spaces, converted only in `Coords.lua`:
 
 ### Input
 
-- **Drag** with the left button pans (and stops following). **Wheel** zooms. **Right-click** steps out
-  one map, as Blizzard's map does (proposal, *Open questions*). **Ctrl-click** sets or clears the map pin,
+- **Drag** with the left button pans (and stops following). **Wheel** zooms. No right-click to step
+  out a map (Saneroki, 2026-10-21; built: `Canvas.lua` still steps out on a right-click, to be taken out). **Ctrl-click** sets or clears the map pin,
   as on Blizzard's map. A click on a pin does the pin's thing.
 - **Small view and the native minimap:** the native `Minimap` must keep the mouse's movement for its own
   tooltips over its dots, and our canvas needs the wheel and the drag. An overlay of our own above the
@@ -1520,8 +1523,8 @@ Each with a proposal; what is not answered when its step comes is built as propo
    difficulty as small parts of our own around the small view; no addon buttons.
 7. **Window shape:** square (fits the docking window and the native minimap) or round? *Proposal:* square,
    with Core's round corners.
-8. **Right-click** as well as the wheel? *Proposal:* yes: right-click steps out one map (zone, continent,
-   world), as on Blizzard's map and in the earlier notes.
+8. Answered (Saneroki, 2026-10-21): no right-click to zoom out a level; the wheel alone zooms, and the Atlas is
+   one smooth world (*One smooth world*). **Right-click** as well as the wheel?
 9. **The game's own window button:** Navigation stands for two of the game's windows, but a window has one
    such button (window guide). *Proposal:* no button on the small window; in full screen the dropdown
    *Classic windows* lists both; the switches *Minimap* and *Map* on the page.
