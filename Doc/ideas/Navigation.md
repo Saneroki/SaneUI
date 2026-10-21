@@ -141,9 +141,20 @@ minimap) and the full-screen window (the world map) show the same map with the s
 
   Made after the zones.
 - **Soft zone edges, exact inside (Saneroki, 2026-10-21):** the close terrain view stays as accurate as planned,
-  down to the tiniest walkable places. Only the outermost outline of a zone, where it meets the next zone or the
-  sea, is blended into a natural transition instead of the game's pixel-exact edge of the zone's terrain;
+  down to the tiniest walkable places. Only the outermost outline of a zone, and only where the player cannot
+  go (the mountains between zones, the edge of the world), is blended into a natural transition instead of the
+  game's pixel-exact edge of the zone's terrain. Everything the player can walk or swim stays pixel-exact:
+  every coast and shore into the water, piers, docks and bridges, and every pass from one zone into the next;
   nothing inside the zone is softened or moved.
+- **A size budget (Saneroki, 2026-10-21):** before the big runs, each map pack's size is reckoned (the Atlas'
+  close squares, the zone and continent paintings, the three zooms of every dungeon), for the player's disk, its
+  memory and loading in the game, and Git LFS's space. That decides each level's pixels a tile, what loads only
+  on demand and in which pack, and what is committed (only the chosen art, *Workflow*).
+- **Stale paintings after a game update (Saneroki, 2026-10-21):** when a new Forever build changes the land
+  (a new building, a moved road, a reworked zone), a comparison of its terrain and indoor files with the ones
+  painted from (to be built: today `dev/tools/blizzard` compares only the interface) names the tiles and indoor
+  maps that changed; the paintings made from them are marked stale and only those go to the GPU
+  runner to be painted again (and into the review queue), never the whole map.
 - **A review queue (Saneroki, 2026-10-21):** finished paintings (the Atlas' squares, the zones', the dungeons')
   go into a queue to review: a contact sheet where each is taken or sent back to be painted again, after the
   automatic checks (the game's water and lava). The GPU runner (`dev/tools/gpu-runner`) paints what is sent

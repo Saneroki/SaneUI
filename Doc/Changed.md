@@ -38,7 +38,8 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   view (Teldrassil's world tree, Ironforge's mountain) where the game's zone is cut open. The middle zoom shows
   each zone's major places clearly, the far zoom a realistic render with only a loose idea of them. The
   dungeons' room plans are drawn by code; the close terrain blends only a zone's outermost edge; a review queue
-  takes or sends back each painting.
+  takes or sends back each painting. Only borders the player cannot reach are blended (coasts, piers and passes
+  stay exact); a size budget comes before the big runs; a game update repaints only what it changed.
 
 ### Navigation: routes from the player, on their floor, over every plane (Saneroki, 2026-10-21)
 - At Saneroki's ask: a route into a building or a cave and out again did not work, routes across the continents by
