@@ -33,7 +33,9 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   selector picks the dungeon maps, opening in their three zooms. Far out: no pins and no names in the paintings
   (names, level ranges and gathering skills are an overlay with switches), soft zone borders, and the lore's
   view (Teldrassil's world tree, Ironforge's mountain) where the game's zone is cut open. The middle zoom shows
-  each zone's major places clearly, the far zoom a realistic render with only a loose idea of them.
+  each zone's major places clearly, the far zoom a realistic render with only a loose idea of them. The
+  dungeons' room plans are drawn by code; the close terrain blends only a zone's outermost edge; a review queue
+  takes or sends back each painting.
 
 ### Navigation: routes from the player, on their floor, over every plane (Saneroki, 2026-10-21)
 - At Saneroki's ask: a route into a building or a cave and out again did not work, routes across the continents by

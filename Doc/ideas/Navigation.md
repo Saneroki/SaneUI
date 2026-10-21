@@ -134,11 +134,20 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **Dungeon, instance and raid maps in three zooms (Saneroki, 2026-10-21), as the world map:**
   - **close up:** the accurate terrain of the instance repainted, as the Atlas' close squares;
   - **in between:** a clean, simple map in Blizzard's style that outlines the rooms, corridors and walls, exact
-    in their shapes and sizes, so it is useful in the game;
+    in their shapes and sizes, so it is useful in the game. Drawn by code from the game's own indoor data
+    (Saneroki, 2026-10-21), not painted by the image model: exact every time, without the graphics card;
   - **zoomed out fully:** a full reimagination of the instance, its layout, the mood of its rooms and a realistic
     render, free like the zones' paintings (*Zones and continents reimagined*).
 
   Made after the zones.
+- **Soft zone edges, exact inside (Saneroki, 2026-10-21):** the close terrain view stays as accurate as planned,
+  down to the tiniest walkable places. Only the outermost outline of a zone, where it meets the next zone or the
+  sea, is blended into a natural transition instead of the game's pixel-exact edge of the zone's terrain;
+  nothing inside the zone is softened or moved.
+- **A review queue (Saneroki, 2026-10-21):** finished paintings (the Atlas' squares, the zones', the dungeons')
+  go into a queue to review: a contact sheet where each is taken or sent back to be painted again, after the
+  automatic checks (the game's water and lava). The GPU runner (`dev/tools/gpu-runner`) paints what is sent
+  back; only what is taken goes into the packs and, once chosen, into Git.
 - **Indoor maps are clear around, never black (Saneroki, 2026-10-21), very important:** every indoor map (the
   buildings and caves of the continents, Stormwind's districts and canals, Ironforge's halls, the dungeons'
   close-up and in-between maps) has a transparent background and is as accurate as the terrain views, in the
