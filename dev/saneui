@@ -35,6 +35,10 @@ GROUPS = {
     },
     "Background": {
         "gpujobs": (["dev/tools/gpu-runner"], "ComfyUI jobs (the Atlas) while the graphics card is idle", 'ComfyUI jobs when GPU idle'),
+        "rebuild": (["dev/tools/gpu-runner", "rebuild"], "a GPU job anew with the plans as they are (rebuild atlas)",
+                    "a GPU job anew, plans of now"),
+        "hold": (["dev/tools/gpu-runner", "hold"], "keep a GPU job from running, across restarts (--why TEXT)", None),
+        "unhold": (["dev/tools/gpu-runner", "unhold"], "let a held GPU job run again", None),
         "comfyui": (["comfyui"], "the image generator; saneui comfyui log follows it", 'the image generator'),
     },
     "Art": {

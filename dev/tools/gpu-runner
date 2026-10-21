@@ -37,6 +37,12 @@ Usage:
                                         with a command: for as long as the command runs, then released
   dev/tools/gpu-runner release NAME     ends the claim NAME
   dev/tools/gpu-runner reset NAME       forgets that the job NAME finished or failed, so it runs again
+  dev/tools/gpu-runner hold NAME [--why TEXT] | unhold NAME
+                                        keeps the job NAME from running (stopped if it runs), across restarts,
+                                        while the others go on | lets it run again
+  dev/tools/gpu-runner rebuild NAME     starts the job anew with the plans as they are: its rebuild command
+                                        (the Atlas: dev/tools/atlas rebuild, the run so far put aside), run
+                                        while the job is stopped; without it the job goes on where it stopped
   --jobs FILE                           another job list (default dev/imagegen/jobs.toml)
 
 Its log: ~/.local/state/saneui/gpu-runner/runner.log, each job's output beside it in <job>.log; what is
@@ -65,6 +71,8 @@ STATE = Path(os.environ.get("GPU_RUNNER_STATE") or Path.home() / ".local" / "sta
 RUNTIME = Path(os.environ.get("GPU_RUNNER_DIR") or Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "saneui-gpu")
 ADDRESS = "127.0.0.1:8188"
 UNIT = "saneui-gpu-runner"
+PAUSED = STATE / "paused"        # kept across restarts, as the holds are
+HOLDS = STATE / "holds.json"     # job name: why it is held
 SERVICE = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "systemd" / "user" / f"{UNIT}.service"
 DEFAULTS = {
     "hold": 180,           # seconds the card must be free before a job (re)starts
@@ -133,7 +141,7 @@ def load_jobs(path):
             raise SystemExit(f"{path}: every [[job]] needs a name and a command")
         if job["name"] in {j["name"] for j in jobs}:
             raise SystemExit(f"{path}: two jobs are called {job['name']}")
-        jobs.append({"priority": 0, "status": None, "done": None, **job, "at": at})
+        jobs.append({"priority": 0, "status": None, "done": None, "rebuild": None, **job, "at": at})
     jobs.sort(key=lambda j: (-j["priority"], j["at"]))
     return settings, jobs
 
@@ -150,10 +158,10 @@ def progress(job):
     return first, bool(job["done"] and re.search(job["done"], out, re.MULTILINE))
 
 
-def next_job(jobs, state, tries):
+def next_job(jobs, state, tries, holds=None):
     for job in jobs:
         mine = state.get(job["name"], {})
-        if mine.get("finished") or mine.get("failures", 0) >= tries:
+        if mine.get("finished") or mine.get("failures", 0) >= tries or job["name"] in (holds or {}):
             continue
         if progress(job)[1]:
             state[job["name"]] = {**mine, "finished": time.strftime("%Y-%m-%d %H:%M")}
@@ -245,7 +253,7 @@ class Watch:
 
     def reasons(self, own_pids):
         s = self.settings
-        reasons = ["paused by hand"] if (RUNTIME / "paused").exists() else []
+        reasons = ["paused by hand"] if PAUSED.exists() else []
         reasons += [f"claimed by {name}" for name in claims()]
         reasons += playing(s["games"])
         comfy = comfyui_pid()
@@ -417,9 +425,14 @@ class Runner:
                 if str(error) != self.bad_list:
                     say(f"the job list is not readable, the last one stays: {error}")
                     self.bad_list = str(error)
+            self.state = read_json(STATE / "state.json", {})   # reset and rebuild write it from outside
+            self.holds = read_json(HOLDS, {})
             if self.proc and self.proc.poll() is not None:
                 self.ended()
                 self.since = time.time()
+            if self.proc and self.job["name"] in self.holds:
+                self.stop_job(f"held: {self.holds[self.job['name']]}")
+                self.free()
             own = tree(self.proc.pid) if self.proc else set()
             reasons = self.watch.reasons(own)
             now = time.time()
@@ -445,7 +458,7 @@ class Runner:
                         say(f"the card is free: going on in {int(left)} s if it stays so")
                     self.write_status("holding", note=f"going on in {int(left)} s")
                 else:
-                    job = next_job(self.jobs, self.state, self.settings["tries"])
+                    job = next_job(self.jobs, self.state, self.settings["tries"], self.holds)
                     write_json(STATE / "state.json", self.state)
                     if job:
                         self.start_job(job)
@@ -519,15 +532,51 @@ def show_status(jobs_path):
         print("Claims: " + ", ".join(names))
     settings, jobs = load_jobs(jobs_path)
     state = read_json(STATE / "state.json", {})
+    holds = read_json(HOLDS, {})
+    if PAUSED.exists():
+        print("Paused by hand: gpu-runner resume")
     print(f"Jobs ({jobs_path.relative_to(ROOT) if jobs_path.is_relative_to(ROOT) else jobs_path}):"
           + ("" if jobs else " none"))
     for job in jobs:
         mine = state.get(job["name"], {})
-        how = ("finished " + mine["finished"] if mine.get("finished")
+        how = (f"held ({holds[job['name']]}; gpu-runner unhold {job['name']})" if job["name"] in holds
+               else "finished " + mine["finished"] if mine.get("finished")
                else f"left after {mine['failures']} failures (gpu-runner reset {job['name']})"
                if mine.get("failures", 0) >= settings["tries"] else "to do")
         line, _ = progress(job)
         print(f"  {job['priority']:>3}  {job['name']}: {how}" + (f"; {line}" if line else ""))
+
+
+def rebuild(jobs_path, name):
+    """The job anew: held while its rebuild command runs (the runner stops it first), then forgotten as done."""
+    job = next(j for j in load_jobs(jobs_path)[1] if j["name"] == name)
+    if not job["rebuild"]:
+        print(f"{name} has no rebuild command in {jobs_path.name}: gpu-runner reset {name} runs it again as it is")
+        return 1
+    holds = read_json(HOLDS, {})
+    before = holds.get(name)
+    write_json(HOLDS, {**holds, name: "being rebuilt"})
+    code = 1
+    try:
+        while (status := running()) and status["job"] == name:
+            time.sleep(1)
+        print(f"{name}: {' '.join(job['rebuild'])}", flush=True)
+        code = subprocess.run(job["rebuild"], cwd=ROOT).returncode
+        if code == 0:
+            state = read_json(STATE / "state.json", {})
+            state.pop(name, None)
+            write_json(STATE / "state.json", state)
+    finally:
+        holds = read_json(HOLDS, {})
+        if before is None:
+            holds.pop(name, None)
+        else:
+            holds[name] = before
+        write_json(HOLDS, holds)
+    if code == 0:
+        print(f"{name} is new" + (f"; still held ({before}): gpu-runner unhold {name}" if before
+                                  else ": it runs when its turn comes"))
+    return code
 
 
 def claim(name, wait, command):
@@ -552,7 +601,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0],
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("command", choices=("run", "install", "uninstall", "start", "stop", "pause", "resume", "status", "claim",
-                                            "release", "reset"))
+                                            "release", "reset", "hold", "unhold", "rebuild"))
+    parser.add_argument("--why", default="held by hand")
     parser.add_argument("name", nargs="?")
     parser.add_argument("--wait", action="store_true")
     parser.add_argument("--jobs", default=str(JOBS))
@@ -617,13 +667,27 @@ WantedBy=default.target
             time.sleep(0.5)
         print("The runner stopped; the card is free.")
     elif args.command == "pause":
-        (RUNTIME / "paused").touch()
+        STATE.mkdir(parents=True, exist_ok=True)
+        PAUSED.touch()
         print("Paused: the job stops and the card is freed. Go on: gpu-runner resume")
     elif args.command == "resume":
-        (RUNTIME / "paused").unlink(missing_ok=True)
+        PAUSED.unlink(missing_ok=True)
         print("Resumed: the runner goes on once the card has been free for its hold time.")
     elif args.command == "status":
         show_status(jobs_path)
+    elif args.command in ("hold", "unhold", "rebuild"):
+        if not args.name or args.name not in {j["name"] for j in load_jobs(jobs_path)[1]}:
+            parser.error(f"{args.command} needs the name of a job in {jobs_path.name}")
+        holds = read_json(HOLDS, {})
+        if args.command == "hold":
+            write_json(HOLDS, {**holds, args.name: args.why})
+            print(f"{args.name} is held ({args.why}): stopped if it runs, kept so across restarts. Go on: gpu-runner unhold {args.name}")
+        elif args.command == "unhold":
+            holds.pop(args.name, None)
+            write_json(HOLDS, holds)
+            print(f"{args.name} runs again when its turn comes.")
+        else:
+            sys.exit(rebuild(jobs_path, args.name))
     elif args.command in ("claim", "release", "reset"):
         if not args.name:
             parser.error(f"{args.command} needs a NAME")

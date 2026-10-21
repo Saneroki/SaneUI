@@ -10,6 +10,8 @@
 #   status = ["dev/tools/atlas", "status"]           # optional: its first line shows in gpu-runner status
 #   done = '^(\d+) of \1 squares painted'            # optional: finished when status's output matches this
 #   comfyui = true                                   # false: the job needs no ComfyUI (the runner leaves it off)
+#   rebuild = ["dev/tools/atlas", "rebuild"]         # optional: what gpu-runner rebuild runs to start it anew
+#                                                    # with the plans as they are; without it, it goes on
 #
 # The runner's settings (these are the defaults):
 #   hold = 180          seconds the card must stay free before a job starts again
@@ -30,3 +32,4 @@ priority = 10
 command = ["dev/tools/atlas", "paint"]
 status = ["dev/tools/atlas", "status"]
 done = '^(\d+) of \1 squares painted'
+rebuild = ["dev/tools/atlas", "rebuild"]

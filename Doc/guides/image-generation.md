@@ -256,6 +256,13 @@ only while the card is idle and gives the card back the moment something else wa
 | `dev/tools/gpu-runner pause` / `resume` | held by hand (the job stopped, the card freed) / going on after the hold |
 | `dev/tools/gpu-runner status` | what it does or why it waits, the claims, each job and how far it is |
 | `dev/tools/gpu-runner reset NAME` | a job finished or left after three failures runs again |
+| `saneui hold NAME` / `unhold NAME` | a job kept from running (stopped if it runs), across restarts, the others going on (`--why TEXT`) |
+| `saneui rebuild NAME` | the job anew with the plans as they are (its `rebuild` command; the Atlas: the run so far put aside in `assets/generated/atlas-runs/`); without it the job goes on with its own plan |
+
+A pause by hand and the holds are kept there too, so they last over a restart. **The Atlas' plan:** a run
+paints with the words, zone briefs and workflow it began with (a copy in the run's `plan/`, made at its first
+paint; `dev/tools/atlas status` says when the plans have changed since), so new rules never mix into a run under
+way: they take effect with `saneui rebuild atlas`.
 
 Its log is `~/.local/state/saneui/gpu-runner/runner.log`, each job's output `<name>.log` beside it. The limits
 and the hold are set at the head of `jobs.toml`.

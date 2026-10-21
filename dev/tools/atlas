@@ -15,6 +15,7 @@ Usage:
   dev/tools/atlas paint [--adt DIR --tables DIR --minimap DIR] [--continent 0|1] [--near ...] [--limit N]
                         [--out DIR] [--keep-comfyui] [--dry]
   dev/tools/atlas status [--out DIR]
+  dev/tools/atlas rebuild [--out DIR]
   dev/tools/atlas join --to FILE [--near ...] [--continent 0|1] [--cut] [--mood M | --as-painted] [--out DIR]
   dev/tools/atlas pack [--to DIR] [--continent 0|1] [--mood M | --as-painted] [--out DIR]
 
@@ -39,6 +40,16 @@ Usage:
                                mipmaps, and their index (src/Atlas/Atlas.lua), in DIR (default
                                assets/optimized/Atlas, where dev/build takes them from); a block is written
                                where it holds painted ground and no land of the plan is still unpainted
+
+The plan: a run paints with the words, zone briefs and workflow it began with. Its first paint keeps a copy of
+them in the run's plan/ (dev/imagegen/maps/atlas.toml and zones.toml, the workflow), and every later paint of the
+run, a resumed one too, takes them from there: a change of the plans does not reach a run under way, so its
+squares stay alike (status says when the plans have changed since). The tool's own code is not kept: a change of
+it reaches the squares still to paint.
+  rebuild                      a new run with the plans as they are: the run so far (its paintings, state.json,
+                               words.jsonl, plan/) is put aside in <out>-runs/<day and time>/, kept whole, and
+                               the run's folder starts empty but for the game's paths; its first paint keeps the
+                               plans of that moment. Without rebuild, paint goes on with the run's own plan.
 
 While it runs in a terminal:
   p   pause after the picture being painted, and free the graphics card; p again goes on
@@ -775,10 +786,10 @@ class Quit(Exception):
 class Painter:
     """Paints a square's picture in ComfyUI, or with --dry hands the picture back as it is."""
 
-    def __init__(self, shared, dry):
+    def __init__(self, shared, dry, workflow=None):
         self.shared, self.dry = shared, dry
         self.server = ig.Server(ADDRESS)
-        self.graph = json.loads(ig.find_workflow(WORKFLOW).read_text())
+        self.graph = json.loads((workflow or ig.find_workflow(WORKFLOW)).read_text())
         self.prompt_id = None
 
     def reachable(self):
@@ -960,6 +971,46 @@ def load_state(out):
     if path.is_file():
         return json.loads(path.read_text())
     return {"paths": {}, "squares": {}}
+
+
+PLAN = {"words": WORDS, "briefs": BRIEFS}   # the plan's files a run keeps, and its workflow (plan/<workflow>.json)
+
+
+def plan_of(out, state):
+    """The run's plan: its own copy, made at its first paint from the plans as they are then."""
+    folder = out / "plan"
+    if not (folder / "words.toml").is_file():
+        folder.mkdir(parents=True, exist_ok=True)
+        for key, path in PLAN.items():
+            shutil.copyfile(path, folder / f"{key}.toml")
+        shutil.copyfile(ig.find_workflow(WORKFLOW), folder / "workflow.json")
+        commit = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--short", "HEAD"], capture_output=True, text=True)
+        state["plan"] = {"began": time.strftime("%Y-%m-%d %H:%M"), "commit": commit.stdout.strip() or None,
+                         "workflow": WORKFLOW}
+        save_state(out, state)
+    return {key: folder / f"{key}.toml" for key in PLAN} | {"workflow": folder / "workflow.json"}
+
+
+def plan_changed(out):
+    """The plan's files whose present version differs from the run's copy."""
+    folder = out / "plan"
+    if not (folder / "words.toml").is_file():
+        return []
+    now = {**{f"{key}.toml": path for key, path in PLAN.items()}, "workflow.json": ig.find_workflow(WORKFLOW)}
+    return [name for name, path in now.items() if (folder / name).read_bytes() != path.read_bytes()]
+
+
+def rebuild(out, state):
+    """Puts the run so far aside, whole, and starts a new one that keeps only the game's paths."""
+    kept = [p for p in out.iterdir() if p.name not in ("state.json",)] if out.is_dir() else []
+    if state["squares"] or kept:
+        aside = out.parent / f"{out.name}-runs" / time.strftime("%Y-%m-%d-%H%M")
+        aside.mkdir(parents=True)
+        for path in out.iterdir():
+            shutil.move(str(path), aside / path.name)
+        print(f"The run so far ({len(state['squares'])} squares) is kept in {aside}.")
+    save_state(out, {"paths": state["paths"], "squares": {}})
+    print("A new run: its first paint takes the plans as they are then (dev/imagegen/maps, the workflow).")
 
 
 def save_state(out, state):
@@ -1151,7 +1202,7 @@ def run_lines(shared, worker, history):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=("paint", "status", "join", "pack"))
+    parser.add_argument("command", choices=("paint", "status", "join", "pack", "rebuild"))
     parser.add_argument("--near", nargs=5, type=float, metavar=("UIMAP", "X", "Y", "ACROSS", "DOWN"))
     parser.add_argument("--to")
     parser.add_argument("--cut", action="store_true")
@@ -1176,6 +1227,9 @@ def main():
     if missing:
         ig.fail("The first run needs the game's files: " + ", ".join(f"--{key}" for key in missing) + ". See --help.")
     save_state(out, state)
+    if args.command == "rebuild":
+        rebuild(out, state)
+        return
     continents = [args.continent] if args.continent is not None else sorted(CONTINENTS)
     game = Game(state["paths"])
     guides = Guides(game)
@@ -1233,14 +1287,21 @@ def main():
         below = [k for k, s in done.items() if not s["ok"]]
         print(f"  painted again: {sum(len(s['tries']) > 1 for s in done.values())}, below the bar: {len(below)}"
               + (f" ({', '.join(below[:10])}{' ...' if len(below) > 10 else ''})" if below else ""))
+        own = state.get("plan")
+        changed = plan_changed(out)
+        print(f"  plan: of {own['began']} (commit {own['commit']})" if own else "  plan: taken at the first paint")
+        if changed:
+            print(f"  the plans have changed since ({', '.join(changed)}): this run goes on with its own;"
+                  " dev/tools/atlas rebuild starts a new run with them")
         return
 
-    fixed = tomllib.loads(WORDS.read_text())
-    briefs = tomllib.loads(BRIEFS.read_text())
+    own = plan_of(out, state)
+    fixed = tomllib.loads(own["words"].read_text())
+    briefs = tomllib.loads(own["briefs"].read_text())
     todo = [s for s in squares if name_of(*s) not in done]
     shared = Shared()
     shared.total, shared.done = len(squares), len(squares) - len(todo)
-    painter = Painter(shared, args.dry)
+    painter = Painter(shared, args.dry, own["workflow"])
     started = False
     if not args.dry and not painter.reachable():
         print("Starting ComfyUI ...", flush=True)

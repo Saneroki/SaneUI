@@ -6,6 +6,22 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 215 (data in the game), 468 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### GPU runner and Atlas: rebuild, holds, a run's own plan (Saneroki, 2026-10-21)
+- At Saneroki's ask: the Atlas waits for new notes and rules; then a rebuild starts it anew with the plans of
+  that moment, and without one it goes on with the plan it began with.
+- `dev/tools/atlas`: a run keeps its plan, a copy of `dev/imagegen/maps/atlas.toml`, `zones.toml` and the
+  workflow in its `plan/`, made at its first paint (with the day and the commit in `state.json`); every later
+  paint of the run takes them from there, `status` says when the plans have changed since. `rebuild` puts the
+  run so far aside, whole, in `assets/generated/atlas-runs/<day and time>/` and starts a new one with only the
+  game's paths. The run of 14 squares got its plan as it was painted with (unchanged since 2026-10-20), then
+  was put aside by the first rebuild. The new run is held (`saneui hold atlas`) while Saneroki writes the new
+  notes; it takes the plans of the moment it is let go (`saneui unhold atlas`).
+- `dev/tools/gpu-runner`: `rebuild NAME` (the job's `rebuild` command, run while the job is held and stopped,
+  then its finished mark forgotten), `hold NAME [--why]` / `unhold NAME` (kept across restarts, the other jobs
+  go on); the hand pause is kept in `~/.local/state/saneui/gpu-runner/` too, so it lasts over a reboot; the
+  runner reads its state at each look, so `reset` and `rebuild` from outside are not overwritten. `saneui
+  rebuild`, `hold`, `unhold`.
+
 ### Releases: saneui snapshot; every script in saneui (Saneroki, 2026-10-21)
 - `dev/snapshot X.Y.Z [--dry]` (`saneui snapshot`): a release from main's newest commit. The version in every
   module's TOC is committed on main ("Version X.Y.Z", in an index of its own, main moved only if nobody

@@ -61,6 +61,7 @@ check("next: the most important", runner.next_job(jobs, {}, 3)["name"], "high")
 check("next: finished ones are left", runner.next_job(jobs, {"high": {"finished": "x"}}, 3)["name"], "also-high")
 check("next: failed too often", runner.next_job(jobs, {"high": {"failures": 3}, "also-high": {"failures": 2}}, 3)["name"],
       "also-high")
+check("next: a held one is left", runner.next_job(jobs, {}, 3, {"high": "waiting"})["name"], "also-high")
 check("next: none left", runner.next_job(jobs, {j["name"]: {"finished": "x"} for j in jobs}, 3), None)
 
 done = {"name": "d", "command": ["true"], "priority": 0, "at": 0,
@@ -129,10 +130,11 @@ check("ComfyUI not there", watch.reasons(set()), [])
 looks["games"] = ["the game (WowB.exe, 7)"]
 check("the game", watch.reasons(set()), ["the game (WowB.exe, 7)"])
 looks["games"] = []
-(runner.RUNTIME / "paused").touch()
+runner.STATE.mkdir(parents=True, exist_ok=True)
+runner.PAUSED.touch()
 (claims / "voice").write_text("")
 check("paused and claimed", watch.reasons(set()), ["paused by hand", "claimed by voice"])
-(runner.RUNTIME / "paused").unlink()
+runner.PAUSED.unlink()
 (claims / "voice").unlink()
 
 check("the game's name under Proton", fnmatch.fnmatch("WowB.exe".lower(), "Wow*.exe".lower()), True)
