@@ -1023,6 +1023,7 @@ Saneroki asked for a much richer bag view, in features and looks.
   buttons (`windows.txt`). `appear.py`: windows appearing from nothing in a few hundred milliseconds, by Wan and
   made in code (pencil lines drawn in, then the window faded in), each ending on its still. `ui-panels/anim.py`
   plays only a clip's motion, quickly, and its `clear()` copes with busier backgrounds.
+  `gallery.py`: a page of the set's pictures, numbered, each opening full screen.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.
