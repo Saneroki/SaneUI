@@ -9,8 +9,11 @@ The bigger changes of each version, newest first.
 - Navigation: routes know the land as the game builds it. Hills and
   passes you can walk up are taken where they are shorter, slopes too
   steep to climb never; water inside buildings, like Stormwind's
-  canals, stairs and fences count, and a route started inside a
-  building begins on its floor.
+  canals, and stairs count, and a route started inside a building
+  begins on its floor.
+- Navigation: routes go round fences, rocks, trees and walls the game
+  places, and over piers and decks, and tilted ruins and tunnels lie
+  as they stand in the world.
 - Navigation: routes fly only from and to the flight points your
   character has found (the game tells them at a flight master), and
   the map shows the flight points you have not found yet in red.
