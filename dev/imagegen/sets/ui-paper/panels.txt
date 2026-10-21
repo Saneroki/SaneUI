@@ -1,0 +1,16 @@
+# Small panels in the narrowed look, each alone over a dark blurred world.
+#   dev/tools/imagegen dev/imagegen/sets/ui-paper/panels.txt
+workflow: qwen21-t2i
+set: aspect_ratio=1:1 (Square), megapixels=1
+count: 2
+out: assets/generated/ui-paper/panels
+include: dev/imagegen/sets/ui-paper/style.txt
+before: Concept art of one single small, compact panel of a high fantasy role-playing game interface, the panel alone in the middle over a plain, dark, softly blurred game world:
+bags: a bag panel: many small categories (consumables, trade goods, armour, weapons, quest items, junk), each a slim header line and a dense grid of small item icons with stack counts, almost no space between them; the categories as ribbon bookmarks along one edge.
+stats: a narrow character stats panel: short rows of stat names and numbers on paper, grouped under small headers, a tiny ink sketch in a margin.
+book-fan: a spellbook panel with a dynamic silhouette: the spell icons in a curved fan on paper, the spell schools as ribbon bookmarks along the curved edge, the chosen spell's name and cost in a slim line below.
+book-folio: a narrow spellbook folio: two columns of spell icons with their names on paper, the schools as ribbon bookmarks hanging from its top edge.
+chat: a chat pane: many lines of chat history on paper, a row of small channel tabs as ribbon bookmarks along its top, a slim input line at the bottom.
+friends: a friends list: rows of names with class icons, levels and small online dots on paper, a slim search line at the top.
+roster: a guild roster: rank groups as ribbon bookmarks down the left edge, rows of members with small portraits, levels and notes.
+boss: a boss page of an adventure guide: a small ink sketch of the boss, a short list of his abilities with icons, his loot as a row of item icons.

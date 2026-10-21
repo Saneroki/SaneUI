@@ -16,7 +16,7 @@ def outline(shapes, pad):
     """The panel round its shapes: their union grown by pad, as a line."""
     mask = Image.new("L", (S, S), 0)
     d = ImageDraw.Draw(mask)
-    for kind, box in shapes:
+    for kind, box in shapes:  # "fill": a shape that only widens the outline
         (d.ellipse if kind == "ellipse" else d.polygon if kind == "polygon" else d.rounded_rectangle)(box, fill=255) \
             if kind != "rect" else d.rounded_rectangle(box, radius=10, fill=255)
     grown = mask.filter(ImageFilter.MaxFilter(pad * 2 + 1)).filter(ImageFilter.GaussianBlur(6)).point(lambda v: 255 if v > 128 else 0)
@@ -50,11 +50,46 @@ def figure():
     return [("rect", (440, 150, 584, 800))]
 
 
+def weapons(y, x0=512):
+    """The bottom row: main hand, off hand and ranged weapon, and the smaller ammo slot after them."""
+    return [slot(x0 - 100, y, 70), slot(x0 - 20, y, 70), slot(x0 + 60, y, 70), slot(x0 + 122, y + 8, 46)]
+
+
 def doll_hug():
-    slots = [(512, 70), (412, 170), (612, 170), (370, 270), (654, 270), (362, 370), (662, 370),
-             (370, 470), (654, 470), (395, 570), (629, 570), (400, 670), (624, 670), (405, 770), (619, 770),
-             (420, 870), (512, 890), (604, 870), (512, 970 - 40)]
-    draw("doll-hug", figure() + [slot(x, y, 66) for x, y in slots], pad=18)
+    """Twenty slots as the game has them: eight left, eight right, the three weapons and the ammo below."""
+    reach = [124, 146, 154, 148, 136, 126, 120, 118]  # out from the middle: wide at the shoulders, close at the legs
+    sides = [(512 - r, 190 + i * 80) for i, r in enumerate(reach)] + [(512 + r, 190 + i * 80) for i, r in enumerate(reach)]
+    draw("doll-hug", figure() + [slot(x, y, 66) for x, y in sides] + weapons(845), pad=14)
+
+
+def doll_quick():
+    """doll-hug with room outside it: a strip beside each slot, on its outer side, for the item's quick stats
+    (name, item level, main stats), and one under each weapon."""
+    reach = [124, 146, 154, 148, 136, 126, 120, 118]
+    shapes, lines = figure(), []
+    for i, r in enumerate(reach):
+        y = 190 + i * 80
+        for side in (-1, 1):
+            x = 512 + side * r
+            shapes.append(slot(x, y, 66))
+            edge = x + side * 41
+            lines.append(("rect", (min(edge, edge + side * 190), y - 30, max(edge, edge + side * 190), y + 30)))
+    for dx in (-170, 0, 170):  # the weapons spread out, each with its strip below it, the ammo after the ranged
+        shapes.append(slot(512 + dx, 850, 70))
+        lines.append(("rect", (512 + dx - 80, 892, 512 + dx + 80, 942)))
+    shapes.append(slot(512 + 240, 858, 46))
+    joins = [("fill", (380, 150, 644, 800)), ("fill", (330, 800, 694, 890))]  # outline only: no gaps between the pieces
+    draw("doll-quick", shapes + lines + joins, pad=12)
+
+
+def doll_arcs():
+    """The hero standing full size in the middle, the slots in two arcs bowing out to his sides."""
+    hero = [("rect", (392, 110, 632, 820))]
+    sides = []
+    for i in range(8):
+        bow = 205 + 60 * math.sin(i / 7 * math.pi)
+        sides += [(512 - bow, 150 + i * 88), (512 + bow, 150 + i * 88)]
+    draw("doll-arcs", hero + [slot(x, y, 70) for x, y in sides] + weapons(868), pad=12)
 
 
 def doll_shield():
@@ -69,8 +104,7 @@ def doll_wings():
     arch = [("rect", (420, 160, 604, 760)), ("ellipse", (420, 70, 604, 254))]
     left = [(512 - 190 - 40 * math.sin(i / 7 * math.pi), 200 + i * 80) for i in range(8)]
     right = [(512 + 190 + 40 * math.sin(i / 7 * math.pi), 200 + i * 80) for i in range(8)]
-    weapons = [(430, 850), (512, 870), (594, 850)]
-    draw("doll-wings", arch + [slot(x, y, 70) for x, y in left + right + weapons], pad=16)
+    draw("doll-wings", arch + [slot(x, y, 70) for x, y in left + right] + weapons(812), pad=14)
 
 
 def doll_hex():
@@ -116,6 +150,6 @@ def bags():
 
 
 if __name__ == "__main__":
-    for f in (doll_hug, doll_shield, doll_wings, doll_hex, doll_strip, book_fan, bags):
+    for f in (doll_hug, doll_quick, doll_arcs, doll_shield, doll_wings, doll_hex, doll_strip, book_fan, bags):
         f()
     print(sorted(os.listdir(OUT)))

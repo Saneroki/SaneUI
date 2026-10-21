@@ -1,0 +1,12 @@
+# The picked doll (dolls/doll-hug-2, Saneroki) as a full panel: beside each slot, on its outer side, a strip of
+# the item's quick stats; the weapons spread below the hero with their stats under them (ui-panels/guides.py,
+# doll-quick). Image 2 is the picked doll, for its look.
+#   python3 dev/imagegen/sets/ui-panels/guides.py && dev/tools/imagegen dev/imagegen/sets/ui-paper/quick.txt
+workflow: qwen21-edit-2ref
+set: width=1024, height=1024
+count: 4
+out: assets/generated/ui-paper/quick
+include: dev/imagegen/sets/ui-paper/style.txt
+before: Image 1 is a rough layout sketch of a game interface panel: white lines on black. Image 2 is the same character panel without the stat strips, in the wanted look; keep its hero, its slots and its materials. Paint image 1 as finished concept art in the look of image 2, one compact panel over a plain, dark, softly blurred game world, keeping the panel's outline and the places of its slots and strips exactly as in the sketch:
+ref: assets/generated/ui-panels/guides/doll-quick.png, assets/generated/ui-paper/dolls/doll-hug-2.png
+doll-quick: a character equipment panel: the hero standing full size in the middle, eight equipment slots with item icons along each side of him, and outside each slot a slim strip of paper with the item's quick stats in small handwritten-looking lines (its name, item level, two main stats); below the hero the main hand, off hand and ranged weapon slots and a smaller ammo slot, a stat strip under each weapon. The slots' and strips' borders are loose pencil strokes on the paper.

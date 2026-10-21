@@ -1,0 +1,13 @@
+# Windows in the split look: leather bindings and belts outside, pencil-drawn borders on the paper inside, a slim
+# leather title bar and leather patch buttons.
+#   dev/tools/imagegen dev/imagegen/sets/ui-paper/windows.txt
+workflow: qwen21-t2i
+set: aspect_ratio=1:1 (Square), megapixels=1
+count: 2
+out: assets/generated/ui-paper/windows
+include: dev/imagegen/sets/ui-paper/style.txt
+before: Concept art of one single small, compact window of a high fantasy role-playing game interface, alone in the middle over a plain, dark, softly blurred game world:
+window: a general window like a small open book: a slim leather title bar with the title and a small leather patch close button, two paper pages with lists of entries divided by pencil lines, a row of small leather patch buttons at the bottom.
+bags: a bag window: a slim leather title bar, a dense grid of item icons on paper in pencil-drawn cells grouped by category, ribbon bookmark tabs along the side, the money in a small line at the bottom.
+chat: a chat window: a slim leather strap along its top with ribbon bookmark channel tabs, many lines of chat history on paper, a pencil-ruled input line and a small leather patch send button.
+character: a character window: a slim leather title bar with ribbon bookmark tabs (equipment, skills, reputations, currencies), the hero standing in the middle of the paper between two columns of pencil-drawn equipment slots with item icons, the weapon slots below.

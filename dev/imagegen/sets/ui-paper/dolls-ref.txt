@@ -1,0 +1,15 @@
+# The same dolls with a second picture for the materials: the full screen journal Saneroki liked
+# (ui-fullscreen, Z-Image's journal-2), only its paper, leather and light taken, not its layout.
+#   dev/tools/imagegen dev/imagegen/sets/ui-paper/dolls-ref.txt
+workflow: qwen21-edit-2ref
+set: width=1024, height=1024
+count: 3
+out: assets/generated/ui-paper/dolls-ref
+include: dev/imagegen/sets/ui-paper/style.txt
+before: Image 1 is a rough layout sketch of a game interface panel: white lines on black. Image 2 shows the wanted materials (parchment, dark leather, light); take only its materials and mood, not its layout or content. Paint image 1 as finished concept art of one small, compact panel of a high fantasy role-playing game interface over a plain, dark, softly blurred game world, keeping the panel's outline and the places of its slots exactly as in the sketch:
+ref: assets/generated/ui-panels/guides/doll-hug.png, assets/generated/ui-fullscreen/zimage/journal-2.png
+doll-hug: a character equipment panel whose outline hugs the hero: the hero standing full size in the middle, eight equipment slots close along his left side (head, neck, shoulders, back, chest, shirt, tabard, wrists) and eight along his right (hands, waist, legs, feet, two rings, two trinkets), and below him the main hand, off hand and ranged weapon slots with a smaller ammo slot, each slot holding its item icon.
+ref: assets/generated/ui-panels/guides/doll-arcs.png, assets/generated/ui-fullscreen/zimage/journal-2.png
+doll-arcs: a character equipment panel: the hero standing full size in the middle, the equipment slots in two arcs bowing out to his left (head, neck, shoulders, back, chest, shirt, tabard, wrists) and right (hands, waist, legs, feet, two rings, two trinkets), and below him the main hand, off hand and ranged weapon slots with a smaller ammo slot, each slot holding its item icon.
+ref: assets/generated/ui-panels/guides/doll-wings.png, assets/generated/ui-fullscreen/zimage/journal-2.png
+doll-wings: a character equipment panel: the hero standing in a tall narrow arch, eight equipment slots along a curved wing on each side, and below the arch the main hand, off hand and ranged weapon slots with a smaller ammo slot, each slot holding its item icon.

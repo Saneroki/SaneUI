@@ -1013,6 +1013,16 @@ Saneroki asked for a much richer bag view, in features and looks.
   outline round them) which `guided.txt` has Qwen's edit paint; `anim.py` takes a panel out of its picture in
   code and has Wan 2.2 paint it appearing, played backwards for leaving. Qwen's ControlNet
   (`qwen21-cn-t2i.json`) painted the guide's lines themselves, so the edit took its place.
+- Narrowed (`dev/imagegen/sets/ui-paper/`, Saneroki: Qwen as the model; leather, paper, cloth bookmarks, small
+  metal accents and ink sketches, but thin and quiet behind the content): `style.txt` shared by the dolls on
+  their layouts (`dolls.txt`, and `dolls-ref.txt` with a liked journal screen for the materials), small panels and
+  full screens through the prompt enhancer. The doll's layouts in `ui-panels/guides.py` now have all twenty
+  slots (the three weapons and the ammo below the hero), a third layout (the hero between two arcs) and
+  `doll-quick`, the picked doll with a strip of quick stats outside each slot (`quick.txt`). Then the split look:
+  leather and metal only for bindings and belts, pencil strokes for every border on the paper, leather patch
+  buttons (`windows.txt`). `appear.py`: windows appearing from nothing in a few hundred milliseconds, by Wan and
+  made in code (pencil lines drawn in, then the window faded in), each ending on its still. `ui-panels/anim.py`
+  plays only a clip's motion, quickly, and its `clear()` copes with busier backgrounds.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.
