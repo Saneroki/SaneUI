@@ -15,7 +15,7 @@ The tool is a development tool only: Python in `dev/blizzard/`, run by `dev/tool
    writes the art, which the tool does not need).
 2. **Check.** `dev/tools/blizzard check` compares that export with `references/` and writes the todo list to
    `dev/blizzard/reports/<old build>-to-<new build>.md`, with the same as JSON beside it (not committed),
-   and a summary on the screen. Without a path it reads the game folder `dev/build` installs into
+   and a summary on the screen. Without a path it reads the game folder `dev/installdev` installs into
    (`$WOW_FOREVER`); a path may be the game folder, its `BlizzardInterfaceCode` folder or that one's `Interface`.
    It takes about ten seconds.
 3. **Work the list from the top**, ticking each item. `dev/tools/blizzard show <name>` shows a symbol in both
@@ -23,7 +23,7 @@ The tool is a development tool only: Python in `dev/blizzard/`, run by `dev/tool
    `show lua:ChatFrameMixin:AddMessage`).
 4. **Adopt.** `dev/tools/blizzard adopt` makes the new export `references/BlizzardInterfaceCode` (byte for byte,
    with a note `.build` of its build), and makes the files that come from it again (`dev/tools/cvar-labels`,
-   `dev/tools/sync-pages`). Then `dev/build`, try it in the game, and commit `references/BlizzardInterfaceCode`
+   `dev/tools/sync-pages`). Then `saneui installdev`, try it in the game, and commit `references/BlizzardInterfaceCode`
    with the made files and the fixes. Until the commit, `dev/tools/blizzard check references/BlizzardInterfaceCode
    --old git:HEAD` gives the list again.
 

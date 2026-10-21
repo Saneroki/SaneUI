@@ -6,6 +6,22 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 215 (data in the game), 468 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### Scripts: one command, saneui; dev and release builds (Saneroki, 2026-10-21)
+- At Saneroki's ask: the scripts run from the terminal by names that say what they do, listed in the Konsole
+  greeting, and a build kind for the game: the dev build day to day, a release from time to time.
+- `dev/saneui` (`saneui`, linked to `~/bin/saneui` by `saneui --link`): every script by an expressive name
+  (`installdev`, `installrelease`, `build`, `installed`, `test`, `showerrors`, `atlas`, `makeimages`, `data`,
+  `makevoices`, ...); `saneui start|pause|resume|stop|status gpujobs` (the GPU runner) and `comfyui`; `saneui`
+  alone lists them by group, `saneui help <command>` gives the script's own help. `--card` gives the main ones
+  for the Konsole greeting (a Sane UI block under the Toolbox), `--names` the names for fish's completion.
+- `dev/build` now only tests and builds (`--install` copies into the game too; `--no-install` is still
+  taken). `dev/installdev` is the old `dev/build`: the working tree, tested, built, into the game.
+  `--release [TAG]` (default `current`) builds a release from git's copy of its tag, LFS art included, into
+  `BUILD/release/<tag>`, with the tag's own tests; `dev/installrelease [TAG]` puts it into the game and takes
+  out our modules it lacks. Each built TOC says which build it is (`## X-SaneUI-Build: dev <commit>[ +changes]`
+  or `release <tag> <commit>`); `saneui installed` reads the game's. No release is tagged yet.
+- `Scripts/update` ends with `dev/build --install`. README.md, *Building*; tests: `dev/tests/saneui.py`.
+
 ### Image generation: the GPU runner (Saneroki, 2026-10-21)
 - At Saneroki's ask: the long ComfyUI work (the Atlas, the rerenders of its middle and far zooms, dungeon maps)
   should use the graphics card only while it is idle, since the game uses it too.

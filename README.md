@@ -28,12 +28,27 @@ them, and you see what you can train and what it costs.
 | Social | `SaneUI_Social` | A chat window in the style of a messenger, in place of the game's chat: bubbles, yours on the right, a line to write in. Also joins or leaves the game's chat channels on every character. A prototype | [README](src/Social/README.md) |
 | Combat | `SaneUI_Combat` | Frames for the fight: your own, target, pet, party, raid, buffs, nameplates. Set up, nothing built yet | [README](src/Combat/README.md) |
 
-## After changing the code
+## Building
+Every script is under one command, `saneui`, by a name that says what it does (`dev/saneui`; `saneui` alone
+lists them all, the Konsole greeting shows the main ones). Once on a computer: `dev/saneui --link` makes
+`~/bin/saneui`.
+
 ```bash
-dev/build
+saneui installdev          # the dev build into the game: the working tree, tested and built
+saneui installrelease      # the release into the game: the tag current, or one named (installrelease v0.3.0)
+saneui build               # test and build into BUILD only (--release TAG: a release, into BUILD/release/TAG)
+saneui installed           # which build the game has
 ```
-It runs the tests, builds the addon folders in `BUILD` and copies them into the game. Then `/reload` in
-the game (a new file or a first install needs a game restart). `dev/build --no-install` only tests and builds.
+Then `/reload` in the game (a new file or a first install needs a game restart).
+
+- **The dev build** is the default: the working tree as it is, with every change not yet committed. Its TOCs
+  say `## X-SaneUI-Build: dev <commit>` (`+changes` when the tree differs from the commit).
+- **A release** is a snapshot of the dev build that git keeps under a version tag (`v0.3.0`, ...), on its
+  release branch; the tag `current` names the newest. It is built from git's copy of the tag, never from the
+  working tree, so nothing unfinished goes in, and it goes into the game whole: a module of the dev build it
+  does not have leaves the game until the next `installdev`. Its TOCs say `release <tag> <commit>`.
+- **Background work** has verbs: `saneui start|pause|resume|stop|status gpujobs` (ComfyUI jobs while the
+  graphics card is idle), `saneui start|stop|status comfyui`.
 
 ## Trying what is on GitHub, such as a Claude cloud session's work
 ```bash
@@ -41,7 +56,7 @@ Scripts/update                      # the branch you are on
 Scripts/update --latest             # the cloud session's branch (claude/...) pushed to last
 Scripts/update claude/<name>        # that branch; Scripts/update main goes back
 ```
-It fetches from GitHub, switches to the branch, pulls it, then runs `dev/build`: the game has it after a
+It fetches from GitHub, switches to the branch, pulls it, then runs `dev/installdev`: the game has it after a
 `/reload`. It never merges and stops on changes not committed. A cloud session's branch that GitHub has
 started anew is taken as it is there; commits only on this computer are first kept on a branch `saved/...`.
 `Scripts/update --list` lists GitHub's branches, newest first.
@@ -53,7 +68,7 @@ started anew is taken as it is there; commits only on this computer are first ke
   The options (`src/Core/Settings/`) and Sync (`src/Core/Sync/`) are folders of Core, in its TOC: no modules.
 - **The build** (`BUILD`) has one addon folder per module, named after its TOC (`src/Core` becomes
   `BUILD/SaneUI`): the module's folder without the READMEs, plus the licence. It is made by `dev/build`
-  and never edited by hand.
+  (a release's in `BUILD/release/<tag>`) and never edited by hand.
 - **Copy, not symlink:** the game runs in Steam's container, which cannot see `/data`.
 - **Tests** (`dev/tests/run`) run without the game, against a small stand-in for the client:
   a lint (TOCs, syntax, stray globals), Core with its options, Sync, Abilities, Tooltips, Social and the
@@ -70,8 +85,10 @@ started anew is taken as it is there; commits only on this computer are first ke
 | `src/` | The modules: `Core/` (with `Settings/` and `Sync/` inside), `Abilities/`, `Tooltips/`, `Social/`, `Combat/`, each with a TOC and a README |
 | `references/BlizzardInterfaceCode/` | Blizzard's interface code as the client ships it: the API and templates the addon builds on |
 | `BUILD/` | The build to hand out, one addon folder per module; also what is copied into the game |
-| `dev/build` | Tests, builds, copies into the game |
-| `Scripts/update` | Fetches and pulls from GitHub (the branch you are on, one named, or the newest cloud session's), then `dev/build` |
+| `dev/saneui` | The one command of all scripts (`saneui`), by expressive names |
+| `dev/build` | Tests and builds into `BUILD` (`--install`: into the game too; `--release TAG`: a release) |
+| `dev/installdev`, `dev/installrelease` | The dev build or a release, tested, built and copied into the game |
+| `Scripts/update` | Fetches and pulls from GitHub (the branch you are on, one named, or the newest cloud session's), then `dev/installdev` |
 | `assets/` | The original art (banners, icons, logo); `assets/optimized/` the game's textures made from it by `dev/tools/art` |
 | `dev/tests/` | `run` (everything), `lint`, `core.lua`, `sync.lua`, `abilities.lua`, `tooltips.lua`, `social.lua`, `window.lua`, `voices.py`, `wowstub.lua` (the stand-in client) |
 | `dev/tools/` | `art` and `tooltip-art` (the game's textures), `errors` (prints the error log), `cvar-labels` (the shipped CVar names), `sync-pages` (what each of the game's options pages sets, for Sync), `project-index` (the index in `Doc/agent/`) |

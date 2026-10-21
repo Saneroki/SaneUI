@@ -10,8 +10,8 @@
 #      (claude/...), which GitHub's session may start anew or rewrite: there GitHub's is taken, and
 #      commits only this copy had are first kept on a branch saved/claude/.... Changes not committed
 #      stop it before anything is touched.
-#   4. Runs dev/build: the tests, BUILD, and the copy into the game's AddOns folder (WOW_FOREVER
-#      sets where the game is, as for dev/build).
+#   4. Runs dev/installdev (dev/build --install): the tests, BUILD, and the copy into the game's AddOns
+#      folder (WOW_FOREVER sets where the game is, as for dev/build).
 #
 # Usage:  Scripts/update                the branch checked out: pull, build, install
 #         Scripts/update <branch>       switch to <branch> (main, claude/...), then the same
@@ -127,4 +127,4 @@ fi
 echo "Building $branch at $(git log -1 --format='%h, %s (%cr)')."
 echo
 
-exec "$here/dev/build" ${mode:+"$mode"}
+exec "$here/dev/build" ${mode:-"--install"}

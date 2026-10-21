@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# The dev build into the game: the working tree as it is, tested, built into BUILD and copied into
+# WoW: Forever's AddOns folder (dev/build --install). saneui installdev runs it.
+#
+# Usage:  dev/installdev
+exec "$(dirname "$(readlink -f "$0")")/build" --install "$@"

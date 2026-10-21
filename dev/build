@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
-# Builds Sane UI and puts it into the game.
+# Builds Sane UI, and with --install puts it into the game. The commands in daily use are
+# saneui build, saneui installdev and saneui installrelease (dev/saneui, README.md *Building*).
 #
-#   1. Runs the checks and tests (dev/tests/run). A failure stops everything.
+# Two kinds of build, told apart in each built TOC by ## X-SaneUI-Build:
+#   dev       the working tree as it is (every session's changes not yet committed too): the default,
+#             what is tried in the game day to day. Marked "dev <commit>", with "+changes" when the
+#             tree holds changes not committed.
+#   release   a snapshot of the dev build kept in git under a version tag; the tag current names the
+#             newest. Built from git's copy of that tag (git archive, with its art from Git LFS), never
+#             from the working tree, in a folder of its own (BUILD/release/<tag>). Marked
+#             "release <tag> <commit>".
+#
+#   1. Runs the checks and tests (dev/tests/run; a release's own). A failure stops everything.
 #   2. Builds the addons into BUILD, one folder each: a folder of src becomes the addon its TOC
 #      names (src/Core -> BUILD/SaneUI, src/Abilities -> BUILD/SaneUI_Abilities), without what
 #      only development needs (the READMEs), plus the project's licence, which covers every
@@ -10,48 +20,88 @@
 #      takes its index from there too, and is built only once dev/tools/atlas has made it. Then the data packs
 #      (BUILD/SaneUI_Data_*), compiled from the master in assets/data by dev/tools/data: Forever
 #      live's (Doc/guides/data.md).
-#   3. Copies them into WoW: Forever's AddOns folder, and removes a module's folder there under its
+#   3. With --install: copies them into WoW: Forever's AddOns folder, and removes a module's folder there under its
 #      old name (SaneUI_Chat, now SaneUI_Social; SaneUI_Spellbook, now SaneUI_Abilities). The data
 #      packs go in as the game folder's product says (.flavor.info): live's into live's folder; into
 #      a beta's or PTR's folder that game version's, compiled into a scratch folder; none into a
-#      folder of a product not known.
+#      folder of a product not known. A module of ours that this build does not have (one the
+#      release predates) is taken out of the game, so a release never runs with newer modules.
 #
 # Why a copy and not a symlink: the game runs inside Steam's container, which
 # cannot see /data. A link from the AddOns folder to this project would be dead there.
 #
-# Usage:  dev/build                test, build, copy into the game
-#         dev/build --no-install   test and build only
-#         dev/build --check        test, then only show what would change
+# Usage:  dev/build                        test and build the dev build into BUILD
+#         dev/build --install              the same, then copy it into the game (saneui installdev)
+#         dev/build --release [TAG]        test and build the release TAG (default current)
+#         dev/build --release [TAG] --install                        (saneui installrelease)
+#         dev/build --check                test, then only show what would change
+#         --no-install is the default, kept for the old way of calling it.
 set -euo pipefail
 
 here="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 wow="${WOW_FOREVER:-$HOME/.local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c/Program Files (x86)/World of Warcraft/_classic_beta_}"
 addons="$wow/Interface/AddOns"
-build="$here/BUILD"
 
-mode="${1:-}"
-case "$mode" in
-    ""|--no-install|--check) ;;
-    *) sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
-esac
+mode="" install="" release=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --install) install=1 ;;
+        --no-install) ;;
+        --check) mode=--check ;;
+        --release) release=current; case "${2:-}" in ""|--*) ;; *) release="$2"; shift ;; esac ;;
+        *) sed -n '2,38p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+    esac
+    shift
+done
 
-"$here/dev/tests/run"
+# root: the tree the build is made from. The dev build: this folder. A release: git's copy of its tag.
+if [ -n "$release" ]; then
+    commit="$(git -C "$here" rev-parse --verify --quiet "refs/tags/$release^{commit}" || true)"
+    if [ -z "$commit" ]; then
+        echo "No release tagged $release in git. Releases are version tags (v0.3.0, ...); the tag current" >&2
+        echo "names the newest. There is none yet: the dev build is saneui installdev." >&2
+        exit 1
+    fi
+    root="$(mktemp -d)"
+    trap 'rm -rf "$root"' EXIT
+    git -C "$here" archive "$commit" | tar -x -C "$root"
+    if [ "$release" = current ]; then
+        named="$(git -C "$here" tag --points-at "$commit" | grep -v '^current$' | sort -V | tail -n1 || true)"
+        release="${named:-current}"
+    fi
+    build="$here/BUILD/release/$release"
+    mark="release $release $(git -C "$here" rev-parse --short "$commit")"
+    echo "Release $release (commit $(git -C "$here" rev-parse --short "$commit")), from git's copy of it."
+else
+    root="$here"
+    build="$here/BUILD"
+    # "+": the code, the data or the committed art differs from the commit (the Atlas' local art does not count)
+    if commit="$(git -C "$here" rev-parse --short HEAD 2>/dev/null)"; then
+        changed="$(git -C "$here" status --porcelain -- src assets/data; git -C "$here" diff --name-only HEAD -- assets/optimized)"
+        mark="dev $commit${changed:+ +changes}"
+    else
+        mark="dev (not a git checkout)"
+    fi
+fi
+[ -n "$install" ] && [ -n "$mode" ] && { echo "--check shows only; it does not install." >&2; exit 1; }
+
+"$root/dev/tests/run"
 
 # The addons: [name of the TOC] = its folder in src; [name] = a folder of art put in with it. src holds no
 # pictures or sounds: a module's art is in assets/optimized/<its folder> (Art/, made by dev/tools/art and the
 # other art tools), put together with its code here.
 declare -A source assets
-for toc in "$here"/src/*/*.toc; do
+for toc in "$root"/src/*/*.toc; do
     name="$(basename "$toc" .toc)"
     source[$name]="$(dirname "$toc")"
-    art="$here/assets/optimized/$(basename "$(dirname "$toc")")"
+    art="$root/assets/optimized/$(basename "$(dirname "$toc")")"
     if [ -d "$art" ]; then assets[$name]="$art"; fi
 done
 # The Atlas' art (Art/) and its index (Index.lua) are made by dev/tools/atlas into assets/optimized/Atlas (about
 # 3 GB), never into src: the addon is src/Atlas with them. Without them there is no Atlas to build, and the
 # map shows two views; its folder in BUILD then goes as a stale one, and a copy in the game stays (stale only
 # names it there).
-if [ ! -f "$here/assets/optimized/Atlas/Index.lua" ]; then
+if [ ! -f "$root/assets/optimized/Atlas/Index.lua" ]; then
     unset 'source[SaneUI_Atlas]'
     echo "Not built: SaneUI_Atlas, its art is not made yet (dev/tools/atlas, into assets/optimized/Atlas)."
 fi
@@ -91,7 +141,7 @@ if [ "$mode" = "--check" ]; then
     done
     stale "$build" | sed 's/^/Would be removed from the build: /'
     scratch="$(mktemp -d)"
-    "$here/dev/tools/data" compile "$scratch" >/dev/null
+    "$root/dev/tools/data" compile "$scratch" >/dev/null
     for pack in $(packs "$scratch"); do
         echo "BUILD/$pack would change like this:"
         rsync -a --delete --dry-run --itemize-changes "$scratch/$pack/" "$build/$pack/"
@@ -111,13 +161,18 @@ done
 for name in $names; do
     mkdir -p "$build/$name"
     to_build "$name"
-    cp "$here/LICENSE" "$build/$name/LICENSE.txt"
-    echo "Built: BUILD/$name ($(find "$build/$name" -type f | wc -l) files)"
+    cp "$root/LICENSE" "$build/$name/LICENSE.txt"
+    # Which build this is, under the version: saneui installed reads it in the game's copy.
+    sed -i "/^## Version:/a ## X-SaneUI-Build: $mark" "$build/$name/$name.toc"
+    echo "Built: ${build#"$here"/}/$name ($(find "$build/$name" -type f | wc -l) files)"
 done
-"$here/dev/tools/data" compile "$build" | sed "s|$here/||"
-echo "Version $(sed -n 's/^## Version: //p' "$build/SaneUI/SaneUI.toc")."
+"$root/dev/tools/data" compile "$build" | sed "s|$root/||; s|$here/||"
+echo "Version $(sed -n 's/^## Version: //p' "$build/SaneUI/SaneUI.toc"), $mark."
 
-[ "$mode" = "--no-install" ] && exit 0
+if [ -z "$install" ]; then
+    echo "Not put into the game: saneui installdev (or installrelease) does that."
+    exit 0
+fi
 
 if [ ! -d "$addons" ]; then
     echo "AddOns folder not found: $addons" >&2
@@ -135,6 +190,17 @@ for name in $names; do
     to_game "$name"
     echo "Installed: $addons/$name"
 done
+# A release goes in whole: a module of the dev build it does not have (newer than the release) leaves the game,
+# and installdev brings it back. The dev build leaves the Atlas' copy when its art is not made here (above).
+if [ "$build" != "$here/BUILD" ]; then
+    for toc in "$here"/src/*/*.toc; do
+        name="$(basename "$toc" .toc)"
+        if [ -z "${source[$name]:-}" ] && [ -d "$addons/$name" ]; then
+            rm -rf "${addons:?}/$name"
+            echo "Removed from the game, not in release $release: $addons/$name"
+        fi
+    done
+fi
 # Our own old names (a module renamed): those folders are ours, and would load next to the new one.
 for old in SaneUI_Chat SaneUI_Spellbook; do
     if [ -d "$addons/$old" ] && [ -z "${source[$old]:-}" ]; then
@@ -143,7 +209,7 @@ for old in SaneUI_Chat SaneUI_Spellbook; do
     fi
 done
 # The data packs of the game folder's own game version (Doc/guides/data.md, *Game versions*).
-game="$("$here/dev/tools/data" game "$wow" || true)"
+game="$("$root/dev/tools/data" game "$wow" || true)"
 if [ -z "$game" ]; then
     echo "No data packs installed: the game folder's product (.flavor.info) is not one Sane UI knows." >&2
     from=""
@@ -151,7 +217,7 @@ elif [ "$game" = "forever" ]; then
     from="$build"
 else
     from="$(mktemp -d)"
-    "$here/dev/tools/data" compile "$from" --game "$game" >/dev/null
+    "$root/dev/tools/data" compile "$from" --game "$game" >/dev/null
 fi
 if [ -n "$from" ]; then
     for pack in $(packs "$from"); do

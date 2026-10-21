@@ -5,8 +5,9 @@
 | Command | Effect |
 | --- | --- |
 | `dev/tests/run` | Lua 5.1 syntax/global/TOC lint, then all offline tests |
-| `dev/build` | Tests, rsync source into the `BUILD/` addon folders (one per `src/*/*.toc`; `SaneUI_Atlas` with `assets/optimized/Atlas/`, only once its `Index.lua` is there), compile the data packs (`BUILD/SaneUI_Data_*`, Forever live's), install copies in game (the packs of the game folder's own game version, by its `.flavor.info`) |
-| `dev/build --no-install` | Tests/build only |
+| `dev/saneui` (`saneui`) | One command for every script by expressive names (`saneui` lists them; `--card` feeds the Konsole greeting, `--names` fish's completion, `--link` makes `~/bin/saneui`); `start\|pause\|resume\|stop\|status gpujobs\|comfyui` |
+| `dev/build [--install] [--release [TAG]]` | Tests (a release: its own), rsync source into the `BUILD/` addon folders (one per `src/*/*.toc`; `SaneUI_Atlas` with `assets/optimized/Atlas/`, only once its `Index.lua` is there), compile the data packs (`BUILD/SaneUI_Data_*`, Forever live's); with `--install` copies into the game (the packs of the game folder's own game version, by its `.flavor.info`); without it nothing goes into the game. Each built TOC gets `## X-SaneUI-Build: dev <commit>[ +changes]` or `release <tag> <commit>`. `--release TAG` (default `current`) builds git's copy of the tag (`git archive`, LFS art smudged) into `BUILD/release/<tag>`; installed, it takes our modules it lacks out of the game. |
+| `dev/installdev` / `dev/installrelease [TAG]` | `dev/build --install` / `dev/build --release TAG --install` (`saneui installdev`, `saneui installrelease`) |
 | `dev/build --check` | Tests and rsync dry-run; writes nothing |
 | `Scripts/update [branch\|--latest\|--list] [--no-install\|--check]` | `git fetch --prune`, switch to the branch (a `claude/` one only on GitHub is made tracking; `--latest` = newest `claude/`), fast-forward only, then `exec dev/build`. Stops on tracked changes and on a non-`claude/` branch that has diverged; a diverged `claude/` branch is reset to GitHub's after its commits never seen on GitHub (remote branches before the fetch, the remote ref's reflog) go to `saved/<branch>-<hash>` |
 | `dev/tools/errors [10\|30\|all\|short]` | Read client's saved error log after reload/logout |

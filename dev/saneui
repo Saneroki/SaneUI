@@ -1,0 +1,181 @@
+#!/usr/bin/env python3
+"""saneui: every script of Sane UI under one command, by a name that says what it does (README.md, *Building*).
+
+  saneui                          the commands, by group
+  saneui <command> [args ...]     runs one: saneui installdev, saneui showerrors, saneui atlas status
+  saneui start|pause|resume|stop|status <command>
+                                  the ones that run in the background: saneui start gpujobs, saneui stop comfyui
+  saneui help <command>           a command's own help
+
+In the terminal: ~/bin/saneui is a link to this file (made once: saneui --link); the Konsole greeting shows the
+main commands (saneui --card), fish completes the names (saneui --names).
+"""
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+# name: (what it runs, what it does, its words on the greeting card or None). The names say what a command does; the files keep
+# theirs, which the docs and the other tools use.
+GROUPS = {
+    "Build and the game": {
+        "installdev": (["dev/installdev"], "test, build the working tree, put it into the game", 'working tree: test, into game'),
+        "installrelease": (["dev/installrelease"], "the release (tag current, or one named) into the game", 'release (tag current) to game'),
+        "build": (["dev/build"], "test and build into BUILD, not into the game (--release TAG)", 'test and build, not the game'),
+        "checkbuild": (["dev/build", "--check"], "what a build would change; writes nothing", None),
+        "installed": (["@installed"], "which build the game has: dev or release, its version", 'which build the game has'),
+        "test": (["dev/tests/run"], "every check and test", 'every check and test'),
+        "lint": (["dev/tests/lint"], "the checks of the addons' files alone", None),
+        "update": (["Scripts/update"], "pull from GitHub, then installdev", None),
+        "showerrors": (["dev/tools/errors"], "the errors the game logged", "the game's error log"),
+    },
+    "Background": {
+        "gpujobs": (["dev/tools/gpu-runner"], "ComfyUI jobs (the Atlas) while the graphics card is idle", 'ComfyUI jobs when GPU idle'),
+        "comfyui": (["comfyui"], "the image generator; saneui comfyui log follows it", 'the image generator'),
+    },
+    "Art": {
+        "atlas": (["dev/tools/atlas"], "the Atlas' painting: paint status join pack", 'paint · status · join · pack'),
+        "makeimages": (["dev/tools/imagegen"], "a list of prompts through ComfyUI", 'prompts through ComfyUI'),
+        "makeart": (["dev/tools/art"], "the game's textures from the drawings", None),
+        "measureart": (["dev/tools/art-measure"], "how sharp the game draws a picture", None),
+        "makeflipbook": (["dev/tools/flipbook"], "a clip's frames as a flipbook", None),
+        "makeshapes": (["dev/tools/shape-art"], "the masks of Core's round shapes", None),
+        "makesmiley": (["dev/tools/smiley-art"], "Social's smiley", None),
+        "maketooltipart": (["dev/tools/tooltip-art"], "the Tooltips module's pictures", None),
+        "maketerrain": (["dev/tools/terrain-art"], "Navigation's terrain, outlines and stitched map", None),
+        "makeindoormaps": (["dev/tools/indoor-art"], "Navigation's indoor maps", None),
+        "makemapguides": (["dev/tools/map-meta"], "the guides the painted map is made from", None),
+    },
+    "Data": {
+        "data": (["dev/tools/data"], "Core's data framework: check, compile, import", 'check · compile · import'),
+        "readgamedata": (["dev/tools/game-data"], "the game's facts from its client tables", None),
+        "readmapdata": (["dev/tools/map-data"], "the facts of Navigation's map", None),
+        "readtraveldata": (["dev/tools/travel-data"], "flights, boats and zeppelins", None),
+        "makewalkdata": (["dev/tools/walk-data"], "the walking data of Navigation's routes", None),
+        "makecvarlabels": (["dev/tools/cvar-labels"], "the names of the game's settings", None),
+        "makesyncpages": (["dev/tools/sync-pages"], "what each of the game's options pages sets", None),
+        "compareblizzard": (["dev/tools/blizzard"], "a new game build's interface code against ours", None),
+        "indexproject": (["dev/tools/project-index"], "the project map in Doc/agent", None),
+    },
+    "Voices": {
+        "voicedb": (["dev/tools/voicedb"], "the texts of the game that get a voice", None),
+        "makevoices": (["dev/tools/voicegen"], "voice overs and window sounds", None),
+    },
+}
+COMMANDS = {name: entry for group in GROUPS.values() for name, entry in group.items()}
+VERBS = ("start", "pause", "resume", "stop", "status")
+# what each background command does with them; a verb missing here is not there
+BACKGROUND = {
+    "gpujobs": {"start": ["start"], "pause": ["pause"], "resume": ["resume"], "stop": ["stop"], "status": ["status"]},
+    "comfyui": {"start": ["start"], "stop": ["stop"], "status": ["status"]},
+}
+LINK = Path.home() / "bin" / "saneui"
+GAME = Path(os.environ.get("WOW_FOREVER", Path.home() / ".local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c"
+                           "/Program Files (x86)/World of Warcraft/_classic_beta_"))
+
+
+def run(argv):
+    program = argv[0]
+    path = ROOT / program
+    argv = [str(path)] + argv[1:] if path.exists() else argv
+    if not path.exists() and not shutil.which(program):
+        sys.exit(f"saneui: {program} is not there")
+    return subprocess.run(argv, cwd=ROOT).returncode
+
+
+def installed():
+    """The build in the game: Core's TOC there."""
+    toc = GAME / "Interface" / "AddOns" / "SaneUI" / "SaneUI.toc"
+    if not toc.is_file():
+        print(f"No Sane UI in the game ({toc.parent.parent}).")
+        return 1
+    fields = {}
+    for line in toc.read_text(errors="replace").splitlines():
+        if line.startswith("## ") and ":" in line:
+            key, value = line[3:].split(":", 1)
+            fields[key.strip()] = value.strip()
+    build = fields.get("X-SaneUI-Build", "dev (built before builds were marked)")
+    print(f"In the game: Sane UI {fields.get('Version', '?')}, {build}.")
+    return 0
+
+
+def overview():
+    print("saneui <command> [args]  ·  saneui start|pause|resume|stop|status <command>  ·  saneui help <command>\n")
+    width = max(map(len, COMMANDS)) + 2
+    for group, entries in GROUPS.items():
+        print(group)
+        for name, (_, what, _) in entries.items():
+            verbs = " · " + " ".join(BACKGROUND[name]) if name in BACKGROUND else ""
+            print(f"  {name:<{width}}{what}{verbs}")
+        print()
+
+
+def card():
+    """The Konsole greeting's Sane UI block (fish_greeting.fish draws it): a line each, side (L or R), kind (h a
+    group's name, r a command and its words, b a gap), text. The first group stands left, the others right."""
+    lines = [("L", "h", "Commands"), ("L", "r", "saneui\tevery command, by group"),
+             ("L", "r", "start/stop <name>\tpause · resume · status"), ("L", "b", "")]
+    for at, (group, entries) in enumerate(GROUPS.items()):
+        shown = [(name, words) for name, (_, _, words) in entries.items() if words]
+        side = "L" if at == 0 else "R"
+        if shown:
+            if side == "R" and any(s == "R" for s, _, _ in lines):
+                lines.append(("R", "b", ""))
+            lines.append((side, "h", group))
+            lines += [(side, "r", f"{name}\t{words}") for name, words in shown]
+    for line in lines:
+        print("\t".join(line))
+
+
+def main():
+    args = sys.argv[1:]
+    if not args or args[0] in ("-h", "--help"):
+        overview()
+        return 0
+    first, rest = args[0], args[1:]
+    if first == "--card":
+        card()
+        return 0
+    if first == "--names":   # the shell's completion, given the words so far: what may come next
+        names = ([*COMMANDS, *VERBS, "help"] if not rest else BACKGROUND if rest[0] in VERBS and len(rest) == 1
+                 else COMMANDS if rest == ["help"] else [])
+        if names:
+            print("\n".join(names))
+        return 0
+    if first == "--link":
+        LINK.parent.mkdir(parents=True, exist_ok=True)
+        if LINK.is_symlink() or not LINK.exists():
+            LINK.unlink(missing_ok=True)
+            LINK.symlink_to(Path(__file__).resolve())
+            print(f"{LINK} -> {Path(__file__).resolve()}")
+            return 0
+        sys.exit(f"saneui: {LINK} is a file of its own, not a link: left as it is")
+    if first == "help":
+        if not rest or rest[0] not in COMMANDS:
+            overview()
+            return 0
+        argv = COMMANDS[rest[0]][0]
+        if argv[0] == "@installed":
+            print(COMMANDS[rest[0]][1])
+            return 0
+        return run(argv + ["--help"])
+    if first in VERBS:
+        if not rest or rest[0] not in BACKGROUND:
+            sys.exit(f"saneui: {first} what? One of: {', '.join(BACKGROUND)}")
+        verb = BACKGROUND[rest[0]].get(first)
+        if not verb:
+            sys.exit(f"saneui: {rest[0]} cannot {first}; it can: {', '.join(BACKGROUND[rest[0]])}")
+        return run(COMMANDS[rest[0]][0] + verb + rest[1:])
+    if first not in COMMANDS:
+        sys.exit(f"saneui: no command {first}; saneui alone lists them")
+    argv = COMMANDS[first][0]
+    if argv[0] == "@installed":
+        return installed()
+    return run(argv + rest)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -29,7 +29,7 @@ far below its size.
    own filter, and a fall-back when `SetTexture` reports the file missing.
 6. List the file in the module's README (*Files*): what it is, that it is original art of Sane UI (the
    project's `LICENSE`, point 3), made by `dev/tools/art` from which PNG.
-7. `dev/build`, then **restart** the game: the client only finds files that were there when it started.
+7. `saneui installdev` (`dev/installdev`), then **restart** the game: the client only finds files that were there when it started.
    A changed file needs only `/reload`.
 
 Needs Python with Pillow and NumPy, and ImageMagick 7 (`magick`).
