@@ -706,6 +706,13 @@ Saneroki asked for a much richer bag view, in features and looks.
   four tabs (equipment, skills, reputation, currency; `slots.txt`), the sheet emptied (`sheet-clean.txt`), and
   `compose.py`, which lays them out on it exactly with the game's icons; `sheet.txt` (the picture edited) did
   not keep the slots' number.
+- A wide exploration (`dev/imagegen/sets/ui-explore/`, Saneroki found the sheet too airy): eighteen directions
+  (leather, metal bars, castle stone, oak and iron, elven silver, gothic, dwarven, scrolls, arcane slate, druid,
+  minimal, heraldry, knotwork, marble, stained glass, plate armour, mapmaker, notice board), each as a compact
+  character sheet, a window with an unusual outline, a sheet of loose pieces, a spellbook and a frame made for
+  stretching, with four models (`klein.txt`, `zimage.txt`, `qwen.txt`, `sdxl.txt`; `frame.txt` with FLUX.2 [dev]);
+  `slice.py` cuts each frame into nine and draws it at four sizes as the game stretches it, `gallery.py` makes
+  a page to look through them all (filters, liked ones).
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.
 
 ### Data: items, spells, talents and recipes from the game's own tables (Saneroki, 2026-10-20)

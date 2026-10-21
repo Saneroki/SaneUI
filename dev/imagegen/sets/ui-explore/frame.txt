@@ -1,0 +1,8 @@
+# UI exploration: the stretchable frames with FLUX.2 [dev] (a minute a picture; the guide found it puts the
+# ornament into the corners best). Only with no game running: it fills the memory.
+#   dev/tools/imagegen dev/imagegen/sets/ui-explore/frame.txt
+workflow: flux2dev-turbo-t2i
+count: 1
+out: assets/generated/ui-explore/flux2dev
+style: Flat front view, no perspective, soft light from the top left, muted colours, the strong colours only in the icons. Text shown only as thin placeholder lines, no letters, no words, no watermark.
+include: dev/imagegen/sets/ui-explore/frame-prompts.txt
