@@ -64,6 +64,7 @@ Alts.ICONS = {
 Alts.ROSTER_GAP = 16 -- between the roster and the items, its scroll bar in it
 Alts.HEAD = 46       -- the head over the items: the name, the level line
 Alts.ROWS = 5        -- the grid's rows the window has room for at least
+Alts.NAMES = 0.2     -- names the game tells (by the hundred at a search's first look): drawn together, this much later
 local EDGE = Core.Board.EDGE -- from the panel's edge to what is in it
 
 local body, head, menu, rail
@@ -82,16 +83,19 @@ local function Seen(day)
     return Alts.TEXT.ago:format(DAYS:format(ago))
 end
 
--- A class's name in the player's language.
+-- A class's name in the player's language. Core checks only a character's name and places: its class, level and
+-- realm are read as what they should be, and left out when they are not (a hand edit, an older version).
 local function ClassName(class)
+    if type(class) ~= "string" then return "" end
     local names = rawget(_G, "LOCALIZED_CLASS_NAMES_MALE")
-    return names and class and names[class] or class or ""
+    return names and names[class] or class
 end
 
 local function Level(who)
     local colours = rawget(_G, "RAID_CLASS_COLORS")
-    local colour = colours and who.class and colours[who.class]
-    return Alts.TEXT.level:format(who.level or "?", colour and colour.colorStr or "ffffffff", ClassName(who.class))
+    local colour = colours and type(who.class) == "string" and colours[who.class]
+    local level = type(who.level) == "number" and who.level or "?"
+    return Alts.TEXT.level:format(level, colour and colour.colorStr or "ffffffff", ClassName(who.class))
 end
 
 -- The lines of a character's tooltip in the roster: { text, r, g, b }.
@@ -99,7 +103,7 @@ function Alts.About(who)
     if who.key == ns.Snapshot.ACCOUNT then return { { Alts.TEXT.account, 1, 1, 1 } } end
     local r, g, b = ns.Roster.Colour(who.class)
     local lines = { { who.name or "?", r, g, b }, { Level(who), 1, 1, 1 } }
-    if who.realm then lines[#lines + 1] = { who.realm, 0.5, 0.5, 0.5 } end
+    if type(who.realm) == "string" then lines[#lines + 1] = { who.realm, 0.5, 0.5, 0.5 } end
     local seen = who.key == Core.charKey and Alts.TEXT.now or Seen(who.seen)
     if seen then lines[#lines + 1] = { seen, 0.5, 0.5, 0.5 } end
     if type(who.money) == "number" then lines[#lines + 1] = { Core.Coins(who.money) or "", 1, 1, 1 } end
@@ -226,15 +230,16 @@ local function Refresh(keep)
 end
 Alts.Refresh = Refresh
 
--- Core's data changed, or the game told a name the window waits for: drawn anew a frame later, once
--- however many come at once; while hidden, nothing (it is drawn when shown).
+-- Core's data changed, or the game told a name the window waits for: drawn anew a frame later (names Alts.NAMES
+-- later), once however many come at once; while hidden, nothing (it is drawn when shown).
 local Later = Core.Later(function() ns.Safe("alts", Refresh, true) end)
+local Named = Core.Later(function() ns.Safe("alts", Refresh, true) end, Alts.NAMES)
 local function Changed()
     if shown then Later() end
 end
 
 local function Learned(item)
-    if ns.Snapshot.Learned(Core.Plain(item)) then Changed() end
+    if ns.Snapshot.Learned(Core.Plain(item)) and shown then Named() end
 end
 
 -- The player chose whose things to show (a click in the roster).
@@ -257,15 +262,16 @@ local function ToggleGroup()
     Refresh(false)
 end
 local Looked = ns.Guard(IsLook)
-local Look = ns.Guard(SetLook)
 local Grouped = ns.Guard(IsGrouped)
-local Group = ns.Guard(ToggleGroup)
+-- A choice drawn anew apart from the module's other windows: an error in it is noted, nothing more.
+local function Look(key) ns.Safe("alts", SetLook, key) end
+local function Group() ns.Safe("alts", ToggleGroup) end
 
-local function Menu(_, root)
+local Menu = ns.Guard(function(_, root)
     root:CreateTitle(ns.TEXT.bagsLook)
     for _, look in ipairs(ns.Layout.LOOKS) do root:CreateRadio(look.word, Looked, Look, look.key) end
     root:CreateCheckbox(ns.TEXT.bankGroup, Grouped, Group)
-end
+end)
 
 local function Kept()
     local stored = ns.store

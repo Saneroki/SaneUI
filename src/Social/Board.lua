@@ -88,7 +88,7 @@ local function View(view)
             filter:SetPoint("RIGHT", -Layout.EDGE, 0)
             filter:SetWidth(100)
             filter:SetText(ns.TEXT.feedFilter)
-            filter:SetupMenu(ns.Feed.Menu(view))
+            filter:SetupMenu(ns.Feed.Menu(view)) -- guarded: Feed.Menu hands out ns.Guard(fn), made once per view
             panel.filter = filter
         end,
         show = function(panel, on) ns.Safe(key, panel.list.Show, panel.list, on) end,
@@ -188,7 +188,10 @@ function Board.List(holder, init, top)
     scroll:SetPoint("BOTTOMLEFT", box, "BOTTOMRIGHT", 4, 2)
     local view = CreateScrollBoxListLinearView(0, 0, 0, 0, 0)
     view:SetElementExtent(Layout.ROW)
-    view:SetElementInitializer("Button", function(row, element) ns.Safe(Board.Label(holder), init, row, element) end)
+    -- The list draws its rows outside our own guard: nothing but the guard there (the name for the error log made
+    -- here, once: a holder's name stays).
+    local label = Board.Label(holder)
+    view:SetElementInitializer("Button", function(row, element) ns.Safe(label, init, row, element) end)
     ScrollUtil.InitScrollBoxListWithScrollBar(box, scroll, view)
     box.provider = CreateDataProvider()
     box:SetDataProvider(box.provider)

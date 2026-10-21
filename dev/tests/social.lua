@@ -127,8 +127,10 @@ C_BattleNet.SetAFK = function(on) me.afk = on; asks[#asks + 1] = "afk " .. tostr
 C_BattleNet.SetDND = function(on) me.dnd = on; asks[#asks + 1] = "dnd " .. tostring(on) end
 C_BattleNet.SetCustomMessage = function(text) me.broadcast = text; asks[#asks + 1] = "broadcast " .. text end
 -- Two friend requests, the older first; adding a friend and blocking one are told.
-local REQUESTS = { { inviteID = 31, accountName = "Sylvanas", creationTimestamp = 1000 },
-                   { inviteID = 32, accountName = "Tyrande", creationTimestamp = 2000 } }
+-- Sylvanas asks over Battle.net (by BattleTag), Tyrande for a character only (Title).
+Enum.BattleNetFriendLevel = { BattleTag = 1, RealID = 2, Title = 3 }
+local REQUESTS = { { inviteID = 31, accountName = "Sylvanas", creationTimestamp = 1000, friendLevel = 1 },
+                   { inviteID = 32, accountName = "Tyrande", creationTimestamp = 2000, friendLevel = 3 } }
 BNGetNumFriendInvites = function() return #REQUESTS end
 C_BattleNet.GetFriendInviteInfo = function(index) return REQUESTS[index] end
 BNAcceptFriendInvite = function(id) asks[#asks + 1] = "accept " .. id end
@@ -751,6 +753,14 @@ check(#marks == 8 and width > 8 * 20 and height >= 20, "eight marks, the row as 
 marks[8]._scripts.OnClick(marks[8])
 check(typed == "{rt8}" and closed == 1, "a mark goes into the line as the game writes it in every language, and the list closes")
 editBox.target = 2
+;(function()
+    W.locked = true
+    smiley._scripts.OnClick(smiley)
+    local list = W.menus[#W.menus]
+    W.locked = false
+    check(list[3].title == "Emotes" and list[4].disabled and list[4].text:find("locked down") and #list == 4,
+        "while chat is locked down the list offers no emotes (the game refuses them to an addon then), and says why")
+end)()
 
 -- The window's width: the messages are wrapped anew once the sizing is over, not on every step of it
 local function size(width, height)
@@ -1226,6 +1236,47 @@ over._scripts.OnHyperlinkClick(over, lockbox, "[Strong Iron Lockbox]", "LeftButt
 check(clicked[1] == lockbox and clicked[3] == "LeftButton" and clicked[4] == native, "a click is the game's own click on a chat link")
 body(rows[1])._scripts.OnHyperlinkClick(body(rows[1]), "player:Thrall-Stub:1:SAY", "Thrall", "LeftButton")
 check(clicked[1] == "player:Thrall-Stub:1:SAY", "the speaker's name is the game's link to them: a click on it whispers to them, with the realm")
+-- Only clicks that open none of the game's panels go to the game: shown from our code, a panel runs its manager tainted.
+;(function()
+    local down = rawget(_G, "IsModifierKeyDown")
+    clicked, W.modifier = nil, "DRESSUP"
+    over._scripts.OnHyperlinkClick(over, lockbox, "[Strong Iron Lockbox]", "LeftButton")
+    check(clicked == nil, "a click on an item's link with the dressing room's key does nothing: the dressing room is a panel of the game's")
+    W.modifier = nil
+    over._scripts.OnHyperlinkClick(over, "calendarEvent:0:1:2", "[Raid night]", "LeftButton")
+    check(clicked == nil, "nor does a click on a kind of link that opens a panel of the game's (a calendar event)")
+    IsModifierKeyDown, W.modifier = function() return true end, "CHATLINK"
+    over._scripts.OnHyperlinkClick(over, lockbox, "[Strong Iron Lockbox]", "LeftButton")
+    check(clicked and clicked[1] == lockbox, "the key that puts a link into the line still does, the game's way")
+    clicked = nil
+    over._scripts.OnHyperlinkClick(over, "channel:CHANNEL:2", "[2. Trade]", "LeftButton")
+    check(clicked == nil, "but not on a channel's link, where that key opens the game's list of channels")
+    IsModifierKeyDown, W.modifier = down, nil
+    over._scripts.OnHyperlinkClick(over, lockbox, "[Strong Iron Lockbox]", "LeftButton")
+    check(clicked and clicked[1] == lockbox and not ns.off, "a plain click is the game's own click again")
+    -- In a fight the game's link tooltip is refused to our code: the tooltip on the mouse shows the link already.
+    clicked, W.combat = nil, true
+    over._scripts.OnHyperlinkClick(over, lockbox, "[Strong Iron Lockbox]", "LeftButton")
+    check(clicked == nil, "in a fight a plain click on an item's link does nothing: no line that an action failed")
+    over._scripts.OnHyperlinkClick(over, "player:Thrall-Stub:1:SAY", "Thrall", "LeftButton")
+    check(clicked and clicked[1] == "player:Thrall-Stub:1:SAY", "a speaker's name still whispers to them in a fight")
+    clicked, IsModifierKeyDown, W.modifier = nil, function() return true end, "CHATLINK"
+    over._scripts.OnHyperlinkClick(over, lockbox, "[Strong Iron Lockbox]", "LeftButton")
+    check(clicked and clicked[1] == lockbox, "and the key that puts a link into the line still does")
+    IsModifierKeyDown, W.modifier, W.combat = down, nil, false
+end)()
+-- A creature's name is no link and nothing is asked about it, as in the game's chat; a message's words as they read
+-- are made once (a search walks them all).
+;(function()
+    rawset(_G, "CHAT_MSG_MONSTER_SAY", "Monster Say")
+    local said = Log.Read("CHAT_MSG_MONSTER_SAY", "You no take candle!", "Kobold Miner", "", "", "", "", 0, 0, "", 0, 3,
+        "Creature-0-1-2-3-4-5")
+    rawset(_G, "CHAT_MSG_MONSTER_SAY", nil)
+    check(said and said.side == "left" and said.name == "Kobold Miner" and said.link == nil and said.tie == nil
+        and said.class == nil, "a creature's name is no link to whisper to, and nothing is asked about it")
+    local note = { text = "|cffff0000the red door|r" }
+    check(Log.Readable(note) == "the red door" and note.plain == "the red door", "a message's words as they read, kept on it")
+end)()
 
 -- The chats' names in short
 check(Log.list[1].label == "Say" and Log.list[1].short == "S" and Log.list[1].group == "SAY", "a message knows its chat's name, whole and in short")
@@ -1497,6 +1548,13 @@ do
     switch.setting:SetValue(true)
 end
 
+-- The switch Group finder changed before the full screen's friends list was ever made: nothing to lay out yet.
+;(function()
+    Core.described[ns.name].changed("boardFinder")
+    W.Wait(0.1)
+    check(not Core.errors["Social: friends tabs"], "the switch Group finder changed before the friends list was made: nothing goes wrong")
+end)()
+
 -- Docked to a screen edge, it fills the screen when the mouse is pushed against that edge -------------
 do
     local headers = {}
@@ -1635,6 +1693,9 @@ do
             and Select.Words("x |TInterface\\Icons\\Star:0|t y || z", 1, 40) == "x  y | z"
             and Select.Words("über", 2, 6) == "über" and Select.Words("one|ntwo", 1, 9) == "one\ntwo",
             "a link reads as its words, an icon as nothing, a bar as one; a letter of two bytes is taken whole")
+        check(Select.Words("WTS |cnIQ5:|Hitem:19019::::::::60:::::::::|h[Thunderfury]|h|r cheap", 1, 70) == "WTS [Thunderfury] cheap"
+            and Select.Words("150 |cnPURE_GREEN_COLOR:(+5)|r / 300", 1, 40) == "150 (+5) / 300",
+            "a colour by its name (|cn, the name, a colon) reads as nothing, as one of eight digits does")
         box._scripts.OnMouseDown(box, "LeftButton")
         W.cursorX, W.cursorY = 100, 375
         box._scripts.OnMouseUp(box, "LeftButton")
@@ -1833,12 +1894,15 @@ do
     filter:GenerateMenu()
     check(filter and filter:IsShown() and filter._items[1].title == "Status" and #filter._items == 8, "the filter: four statuses, two kinds")
     filter._items[5].fn(filter._items[5].data) -- Offline
+    W.Wait(0.1) -- a tick asks for the list anew a frame later
     check(named(friends) == "Anduin, Garrosh", "ticked Offline, the friends offline only")
     filter._items[5].fn(filter._items[5].data)
     filter:GenerateMenu()
     filter._items[8].fn(filter._items[8].data) -- Characters
+    W.Wait(0.1)
     check(named(friends) == "Rexxar, Level 60 Hunter, -, Garrosh", "ticked Characters, the characters only")
     filter._items[8].fn(filter._items[8].data)
+    W.Wait(0.1)
     check(#friends.provider.list == 6, "unticked, all again")
     -- The ignore list, from the contacts menu, in the friends list's place.
     contacts:GenerateMenu()
@@ -1897,8 +1961,10 @@ do
     check(#filter._items == 7 and filter._items[6].title == "Activities" and filter._items[7].text == "Raiding",
         "its filter: the statuses and the kinds of activity this client has")
     filter._items[7].fn(filter._items[7].data)
+    W.Wait(0.1)
     check(asks.allySearch.interactionCategoryFilters[1] == 3 and named(allies) == "Magatha", "an activity ticked: the game finds the allies")
     filter._items[7].fn(filter._items[7].data)
+    W.Wait(0.1)
     -- Raid: not in one, Convert to Raid; in one, its groups, to be arranged by dragging.
     click(tabs.Raid)
     local raid = list(panels.friends)
@@ -1928,8 +1994,43 @@ do
     raid.rows[3]:GetScript("OnDragStop")(raid.rows[3])
     check(asks[#asks] == "move 2 3", "onto another group's line: moved there")
     raid.rows[6]._mouseOver = nil
+    ;(function() -- a right click: a menu of its own, what the game's offers for that member at your rank that an addon may do
+    local leads, assists, named = UnitIsGroupLeader, UnitIsGroupAssistant, UnitName
+    local NAMES = { raid1 = { "Tester", "Stub" }, raid2 = { "Thrall", "Earthfury" }, raid3 = { "Rexxar", "Wildheart" } }
+    UnitIsGroupLeader = function(unit) return unit == "player" or unit == "raid1" end -- you lead; Rexxar assists
+    UnitIsGroupAssistant = function(unit) return unit == "raid3" end
+    UnitIsUnit = function(a, b) return a == b or (a == "raid1" and b == "player") end
+    UnitName = function(unit) if NAMES[unit] then return unpack(NAMES[unit]) end return named(unit) end
+    for _, call in ipairs({ "PromoteToLeader", "PromoteToAssistant", "DemoteAssistant", "UninviteUnit" }) do
+        C_PartyInfo[call] = function(name) asks[#asks + 1] = call .. " " .. name end
+    end
+    local function entries()
+        local texts = {}
+        for index, item in ipairs(W.menus[#W.menus]) do texts[index] = item.title or item.disabled and "(" .. item.text .. ")" or item.text end
+        return table.concat(texts, ", ")
+    end
+    local before = #asks
+    click(raid.rows[3], "RightButton")
+    check(entries() == "Thrall, Whisper, Promote to Leader, Promote to Assistant, Remove" and #asks == before,
+        "a right click: a menu of its own, what the game's offers its leader for a member, none of the game's opened")
+    local thrall = W.menus[#W.menus]
+    thrall[3].fn()
+    check(asks[#asks] == "PromoteToLeader Thrall Earthfury", "Promote to Leader: the member by first name and surname")
+    thrall[2].fn()
+    check(asks[#asks] == "tell Thrall Earthfury", "Whisper: the line to write in opens with the whisper")
+    click(raid.rows[5], "RightButton")
+    check(entries() == "Rexxar, (Whisper), Promote to Leader, Demote, Remove", "an assistant, offline: demoted rather than promoted, no whisper")
     click(raid.rows[2], "RightButton")
-    check(asks[#asks] == "menu RAID Tester", "a right click: the game's menu of a raid member")
+    check(entries() == "Tester", "yourself: nothing to do")
+    UnitIsGroupLeader = function(unit) return unit == "raid2" end -- Thrall leads, you assist
+    UnitIsGroupAssistant = function(unit) return unit == "player" or unit == "raid1" end
+    click(raid.rows[3], "RightButton")
+    check(entries() == "Thrall, Whisper", "an assistant may not touch the leader")
+    click(raid.rows[5], "RightButton")
+    check(entries() == "Rexxar, (Whisper), Remove", "but removes a member who is neither")
+    UnitIsGroupLeader, UnitIsGroupAssistant, UnitName, UnitIsUnit = leads, assists, named, nil
+    for _, call in ipairs({ "PromoteToLeader", "PromoteToAssistant", "DemoteAssistant", "UninviteUnit" }) do C_PartyInfo[call] = nil end
+    end)()
     click(foot(panels.friends, "Raid Info"))
     local locks = list(panels.friends)
     check(asks.raidInfo and locks ~= raid and named(locks) == "Molten Core" and locks.rows[1].right._text == "3600 s",
@@ -1964,6 +2065,38 @@ do
     click(tabs.Friends)
     check(list(panels.friends) == friends, "back to the friends list")
     end)()
+    ;(function() -- a player targeted, by first name and surname; a request of a character only; away and busy; the rows
+    local function click(widget, button) widget:GetScript("OnClick")(widget, button or "LeftButton") end
+    local exists, named = UnitExists, UnitName
+    UnitExists = function(unit) return unit == "target" end
+    UnitName = function(unit) if unit == "target" then return "Droopy", "Fairwind" end return named(unit) end
+    ns.Friends.Open("Ignored")
+    click(foot(panels.friends, "Ignore Player"))
+    check(asks[#asks] == "ignore Droopy Fairwind", "Ignore Player: the friendly player targeted, by first name and surname (no realm)")
+    ns.Friends.Open("Requests", true)
+    local line
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "EditBox" and within(widget, panels.friends) and widget:IsVisible() and widget._scripts.OnEnterPressed then line = widget end
+    end
+    check(line and line._text == "Droopy Fairwind", "Add Friend: the line holds them by that whole name")
+    line._text = ""
+    UnitExists, UnitName = exists, named
+    local requests = list(panels.friends)
+    click(requests.rows[1].decline) -- Tyrande's, of a character only
+    local declined = W.menus[#W.menus]
+    check(#declined == 1 and declined[1].text == "Decline", "a request of a character only is declined, not blocked: as the game's")
+    declined[1].fn()
+    check(asks[#asks] == "decline 32", "(declined)")
+    check(ns.Contacts.Status(true, true, true) == "Away" and ns.Contacts.Status(true, false, true) == "DnD",
+        "away and busy at once: away, as the game's lists say")
+    ns.Friends.Open("Friends")
+    local scripted, relays = friends.rows[1]:GetScript("OnClick"), friends.relays
+    W.Fire("BN_FRIEND_INFO_CHANGED")
+    W.Wait(0.1)
+    check(friends.relays > relays and friends.rows[1]:GetScript("OnClick") == scripted, "a row drawn anew keeps its scripts, made once")
+    check(not Core.errors["Social: friends"] and not Core.errors["Social: requests"] and not Core.errors["Social: ignore list"],
+        "(nothing went wrong in the friends list)")
+    end)()
     -- The group finder, a tab of the friends list: nothing searched until a category is chosen.
     finderTab:GetScript("OnClick")(finderTab, "LeftButton")
     finder = list(panels.friends)
@@ -1990,6 +2123,45 @@ do
     check(not invite:IsEnabled() and asks[#asks] == "invite Baine", "a group not: its leader gets a message")
     send:GetScript("OnClick")(send)
     check(asks[#asks] == "tell Cairne", "(the leader whispered)")
+    ;(function() -- the finder in chat lockdown, a listing with hidden parts, a search the tab was away for
+    local function paused()
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "FontString" and within(widget, panels.friends) and widget:IsVisible()
+                and (widget._text or ""):find("lockdown") then return widget end
+        end
+    end
+    -- The game hides a listing's parts from addons: every part while chat is locked down, else those named here.
+    local info, hiding = C_LFGList.GetSearchResultInfo, {} -- [id] = { [part] = true }
+    C_LFGList.GetSearchResultInfo = function(id)
+        local listing, seen = info(id), {}
+        if not listing or not (W.locked or hiding[id]) then return listing end
+        for key, value in pairs(listing) do seen[key] = (W.locked or hiding[id][key]) and "hidden" or value end
+        return seen
+    end
+    issecretvalue = function(value) return value == "hidden" end
+    W.locked = true
+    W.Fire("LFG_LIST_SEARCH_RESULT_UPDATED", 11)
+    W.Wait(0.1)
+    check(#finder.provider.list == 2 and finder.provider.list[1].leader == "Baine" and paused(),
+        "in chat lockdown the rows read last stay (the game hides the listings now), and its line says so")
+    W.locked = false
+    W.Fire("ADDON_RESTRICTION_STATE_CHANGED")
+    W.Wait(0.1)
+    check(#finder.provider.list == 2 and not paused(), "once it ends they are read anew")
+    hiding[12] = { age = true }
+    W.Fire("LFG_LIST_SEARCH_RESULT_UPDATED", 12)
+    W.Wait(0.1)
+    check(#finder.provider.list == 1 and finder.provider.list[1].leader == "Cairne", "a listing the game hides a needed part of is left out")
+    issecretvalue, C_LFGList.GetSearchResultInfo = nil, info
+    categories._items[1].fn(categories._items[1].data)
+    check(finder.empty._text == "Searching...", "(searching)")
+    friendsTab:GetScript("OnClick")(friendsTab, "LeftButton")
+    W.Fire("LFG_LIST_SEARCH_RESULTS_RECEIVED") -- unheard: the tab is away
+    W.Wait(0.1)
+    finderTab:GetScript("OnClick")(finderTab, "LeftButton")
+    check(#finder.provider.list == 2 and finder.empty._text ~= "Searching...", "a search the tab was away for is read when it is back")
+    check(not Core.errors["Social: group finder"], "(nothing went wrong in the group finder)")
+    end)()
     options.boardFinder = false
     Core.described[ns.name].changed("boardFinder")
     W.Wait(0.1)
@@ -2121,11 +2293,20 @@ do
         "the chat chosen again is back in its place, and seen")
     W.Fire("CHAT_MSG_GUILD", "anyone up?", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 3, THRALL)
     W.Wait(0.1)
-    check(rows.rows[2].glow:IsShown() and rows.rows[2].count._text == "1" and second.unread == 1,
+    check(rows.rows[2].glow:IsShown() and rows.rows[2].count._text == "1" and ns.Feed.Unread(second) == 1,
         "a message the second chat shows comes while it is out of sight: its row is lit")
+    check(second.unread == nil, "counted for this session only: nothing of it is kept with the view")
+    ;(function()
+        local _, tint = ns.Feed.Unread(second)
+        ns.Feed.Added({ group = "GUILD", text = "", r = 0.5, g = 0.6, b = 0.7 }) -- no list of it on show: only counted
+        local count, again = ns.Feed.Unread(second)
+        check(tint and again == tint and tint[1] == 0.5 and count == 2,
+            "the colour of the last message not seen: one table for each view, used again for the next")
+        check(ns.Feed.Menu(second) == ns.Feed.Menu(second), "a view's list of chats is made once")
+    end)()
     click(rows.rows[2])
     W.Wait(0.1)
-    check(not rows.rows[2].glow:IsShown() and second.unread == nil, "chosen, it is seen")
+    check(not rows.rows[2].glow:IsShown() and ns.Feed.Unread(second) == 0, "chosen, it is seen")
     -- New chat view: one more, chosen, showing nothing until its chats are ticked; renamed, removed.
     click(foot(talks, "New chat view"))
     local made = ns.Feed.Views()[2]
@@ -2147,6 +2328,7 @@ do
     click(rows.rows[1])
     -- A whisper: a conversation of its own, read once it is chosen.
     W.Fire("CHAT_MSG_WHISPER", "are you coming?", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 5, THRALL)
+    W.Wait(0.1) -- the list anew a frame later
     local thrall = Talks.by["W:Thrall-Stub"]
     check(thrall and thrall.kind == "WHISPER" and thrall.with == "Thrall-Stub" and thrall.class == "SHAMAN" and thrall.unread == 1
         and #rows.provider.list == 3 and rows.provider.list[3] == thrall and rows.rows[3].top._text == "Thrall"
@@ -2163,6 +2345,7 @@ do
     check(sent[#sent] == "WHISPER Thrall-Stub on my way" and told == "WHISPER Thrall-Stub" and edit._text == "",
         "Enter sends the words as a whisper to them, as the game's line does (they are the one told last), and empties the line")
     W.Fire("CHAT_MSG_WHISPER_INFORM", "on my way", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 6, THRALL)
+    W.Wait(0.1)
     check(texts(messages) == "Today | are you coming? | on my way" and messages.provider.list[3].side == "right"
         and rowOf(thrall).bottom._text == "You: on my way",
         "the whisper comes back from the game and joins the conversation on your side")
@@ -2182,6 +2365,7 @@ do
     check(not editBox:IsShown() and not column:IsVisible(), "a conversation chosen while the game's line is open closes it")
     -- A Battle.net friend: by their BattleTag; the newest first, waiting to be read.
     W.Fire("CHAT_MSG_BN_WHISPER", "raid at 8?", "|Kq7|k", "", "", "", "", 0, 0, "", 0, 7, nil, 7)
+    W.Wait(0.1)
     local jaina = Talks.by["B:Jaina#1234"]
     check(jaina and jaina.kind == "BN_WHISPER" and jaina.name == "|Kq7|k" and jaina.unread == 1
         and rows.provider.list[3] == jaina and rows.rows[3].icon._texture == "Interface\\FriendsFrame\\Battlenet-Portrait"
@@ -2216,6 +2400,7 @@ do
     check(party and party.kind == "PARTY" and rows.provider.list[5] == party and rows.rows[5].top._text == "Party: Thrall, Jaina"
         and #party.messages == 0, "a party joined: a conversation of its own, named by the others in it, to write in though nobody spoke yet")
     W.Fire("CHAT_MSG_PARTY", "pull now", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 8, THRALL)
+    W.Wait(0.1)
     check(rows.provider.list[3] == party and rows.rows[3].bottom._text == "Thrall: pull now" and party.unread == 1,
         "the party's chat comes into its conversation, the speaker named in the list")
     click(rowOf(party))
@@ -2267,7 +2452,9 @@ do
         "while chat is locked down nothing is sent: the words stay, and that is said")
     W.locked = false
     edit._text = ""
-    -- Whisper: the game's line opens, to name whom; your first message to them chooses their conversation.
+    -- Whisper: the game's line opens, to name whom; your first message to them chooses their conversation, whole,
+    -- also while the chat is the one chosen.
+    click(rows.rows[1])
     click(foot(talks, "Whisper"))
     check(opened == "/w ", "Whisper opens the game's line with /w")
     ChatFrameUtil.OpenChat = openChat
@@ -2275,6 +2462,8 @@ do
     local rexxar = Talks.by["W:Rexxar-Stub"]
     check(rexxar and rows.provider.list[3] == rexxar and texts(messages) == "Today | hey" and rows.rows[3].icon._texture:find("QuestionMark"),
         "a conversation you began is chosen; whose class is not known yet shows the game's question mark")
+    check(messages:IsVisible() and edit:IsVisible() and not column:IsVisible() and Talks.reading == rexxar,
+        "begun while the chat was chosen, it is chosen whole: its messages and its line beside the list, the chat out of sight")
     -- A right click: the game's own menu of that player, as the friends list opens it.
     local menu
     FriendsFrame_ShowDropdown = function(name, connected, _, kind) menu = name .. " " .. tostring(connected) .. " " .. kind end
@@ -2285,6 +2474,7 @@ do
     check(menu == nil, "the chat has none")
     -- An alias: in the list and above the conversation, the whole name and the note in the tooltip.
     W.Fire("CHAT_MSG_WHISPER", "hi there", "Droopy Fairwind", "", "", "", "", 0, 0, "", 0, 9, nil)
+    W.Wait(0.1)
     local droopy = Talks.by["W:Droopy Fairwind"]
     click(rowOf(droopy))
     Core.People.Set("Droopy Fairwind", "alias", "Saneroki")
@@ -2318,16 +2508,19 @@ do
         return set
     end
     ns.Window.Search("raid at")
+    W.Wait(0.5) -- the lists are searched a moment after the typing
     local hits = found()
     check(hits[jaina] and not hits[rexxar] and not hits[thrall] and rows.provider.list[1].pinned == "chat"
         and rows.provider.list[2].view ~= nil, "the full window's search finds a conversation by its messages; the chats stay, to find in")
     click(rowOf(jaina))
     check(texts(messages) == "Today | raid at 8?", "and shows them")
     ns.Window.Search("thrall")
+    W.Wait(0.5)
     hits = found()
     check(hits[party] and hits[again] and hits[thrall] and not hits[jaina] and not hits[rexxar],
         "by its name, or a speaker's in a group")
     ns.Window.Search("")
+    W.Wait(0.5)
     local all = 2
     for _, talk in ipairs(Talks.list) do
         if #talk.messages > 0 then all = all + 1 end
@@ -2349,7 +2542,7 @@ do
     Talks.Save(char)
     local kept = {}
     for _, talk in ipairs(char.talks) do kept[talk.key] = talk end
-    check(char.talksVersion == 1 and kept["B:Jaina#1234"] and kept["B:Jaina#1234"].messages[1].name == nil
+    check(char.talksVersion == 2 and kept["B:Jaina#1234"] and kept["B:Jaina#1234"].messages[1].name == nil
         and kept["B:Jaina#1234"].messages[1].text == "raid at 8?" and kept["W:Thrall-Stub"].messages[1].name == "Thrall"
         and kept["G:Party-1"] and kept["G:Party-1"].members[1] == "Thrall" and kept["G:Party-1"].ended
         and kept["G:Party-2"] and #char.talks == 5,
@@ -2362,6 +2555,32 @@ do
         and Talks.by["B:Jaina#1234"] and Talks.by["B:Jaina#1234"].messages[1].name == nil
         and Talks.Name(Talks.by["B:Jaina#1234"]) == "Jaina" and Talks.Account(Talks.by["B:Jaina#1234"]) == 7,
         "back at the login, a Battle.net friend found anew by their BattleTag")
+    ;(function()
+        local list, by, inform, out = Talks.list, Talks.by, ChatTypeInfo.WHISPER_INFORM, {}
+        Talks.list = {
+            { key = "W:Probe", kind = "WHISPER", with = "Probe", last = 2, unread = 0, messages = {
+                { side = "right", text = "hi", r = inform.r, g = inform.g, b = inform.b, group = "WHISPER", time = "", stamp = 2 } } },
+            { key = "G:Probe", kind = "PARTY", category = LE_PARTY_CATEGORY_HOME, members = {}, last = 1, unread = 0, messages = {
+                { side = "left", text = "go", name = "Thrall", label = "Party", short = "P", group = "PARTY", r = 0.6, g = 0.7, b = 1,
+                  time = "", stamp = 1 } } },
+        }
+        Talks.Save(out)
+        local whisper, group = out.talks[1].messages[1], out.talks[2].messages[1]
+        Talks.list, Talks.by = {}, {}
+        Talks.Restore(out.talks)
+        local back, again = Talks.by["W:Probe"].messages[1], Talks.by["G:Probe"].messages[1]
+        Talks.list, Talks.by = list, by
+        check(whisper.r == nil and group.short == nil and group.r == 0.6 and back.r == inform.r and back.g == inform.g
+            and back.b == inform.b and again.short == "P" and again.r == 0.6,
+            "a whisper's colour and a chat's name in short are not kept: they come back from its kind and its name")
+        local most, few, count = Talks.SAVED, {}, 0
+        Talks.SAVED = 3
+        Talks.Save(few)
+        Talks.SAVED = most
+        for _, talk in ipairs(few.talks) do count = count + #talk.messages end
+        check(count == 3 and few.talks[1].key == Talks.list[1].key,
+            "over a logout so many messages of all conversations together at most, the newest conversations' first")
+    end)()
     Talks.Restore({ { key = "W:X", kind = "WHISPER", messages = { { text = "no with" } } }, "junk", { key = "Y", kind = "NOPE" } })
     check(#Talks.list == 5, "a saved conversation of the wrong shape is left out")
     Talks.list, Talks.by = saved, {}
@@ -2504,7 +2723,15 @@ do
     W.Fire("PLAYER_REGEN_ENABLED")
     W.Wait(0.5)
     check(toggles == 1 and answer:IsShown() and answer._points[1][3] == "BOTTOMLEFT", "after the fight it comes")
-    ns.Board.Hide()
+    do -- the full screen gone in a fight: the window opened for it is closed once the fight is over
+        W.combat = true
+        ns.Board.Hide()
+        check(answer:IsShown(), "the full screen gone in a fight: the window it opened stays while the fight lasts")
+        W.combat = false
+        W.Fire("PLAYER_REGEN_ENABLED")
+        W.Wait(0.1)
+        check(not answer:IsShown(), "and is closed once it is over")
+    end
     check(not Core.errors["Social: guild window"] and not ns.off, "nothing went wrong with the guild window")
     ToggleGuildFrame, UIPanelWindows = nil, nil
     ns.Window.Reboard()
@@ -2654,16 +2881,20 @@ do
     local search = coreBar.box
     search._text = "zzqqxx"
     search:GetScript("OnTextChanged")(search)
+    W.Wait(0.5) -- the lists are searched a moment after the typing
     check(search:IsShown() and #box.provider.list == 0, "a search for letters no message has leaves none on show")
     search._text = ns.Log.list[#ns.Log.list].name or "number"
     search:GetScript("OnTextChanged")(search)
+    W.Wait(0.5)
     check(#box.provider.list > 0 and #box.provider.list <= shown, "a search for a speaker's name shows their messages")
     search._text = "theramore"
     search:GetScript("OnTextChanged")(search)
+    W.Wait(0.5)
     check(#friends.provider.list == 1 and friends.provider.list[1].name == "Jaina",
         "the search goes to the panels too: friends by where they are")
     search:GetScript("OnEscapePressed")(search)
     search:GetScript("OnTextChanged")(search) -- the game tells of the box emptied (the stand-in does not)
+    W.Wait(0.5)
     check(not search:IsShown() and #box.provider.list == shown and #friends.provider.list == 6,
         "closed, all of them are on show again")
     local coreButtons

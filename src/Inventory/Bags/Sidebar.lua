@@ -47,6 +47,7 @@ Sidebar.DIVIDER = { 0.2, 0.2, 0.2, 1 }
 Sidebar.DIM = 0.75         -- a row's words while not shown
 Sidebar.LIT = 0.1          -- the row shown, in Sane UI's colour
 Sidebar.HOVER = 0.06
+Sidebar.TAKES = 0.15       -- the light of a row under the mouse that takes the item held
 Sidebar.EDGE = 0.25        -- a row's top and foot quarter: before or after it; between: into it
 Sidebar.GHOST = 0.85       -- the dragged row's ghost
 Sidebar.LIFTED = 0.35      -- the dragged row itself meanwhile
@@ -77,7 +78,9 @@ end
 local function RowEnter(row)
     row.hover:Show()
     if not (row.rail.tip and row.rail.tip(row)) then RowTip(row) end
-    if GetCursorInfo() == "item" and row.takes then row.hover:SetAlpha(2.5) else row.hover:SetAlpha(1) end
+    -- Brighter by its colour's alpha (a region's own alpha goes no higher than 1).
+    local takes = GetCursorInfo() == "item" and row.takes
+    row.hover:SetColorTexture(1, 1, 1, takes and Sidebar.TAKES or Sidebar.HOVER)
 end
 
 local function RowLeave(row)

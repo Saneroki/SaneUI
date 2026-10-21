@@ -95,6 +95,15 @@ SetOverrideBinding = function(owner, _, key, command)
     W.overrides[owner][key] = command
 end
 
+-- The game's paging controls in our spellbook (dev/tests/book.lua tries them): a page of so many.
+W.templates.PagingControlsHorizontalTemplate = function(controls)
+    controls.PageText = W.NewWidget("FontString", nil, controls)
+    controls.currentPage, controls.maxPages = 1, 1
+    function controls:GetCurrentPage() return self.currentPage end
+    function controls:SetMaxPages(count) self.maxPages = math.max(count, 1) end
+    function controls:UpdateControls() end
+end
+
 W.LoadCore(root)
 local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
@@ -206,6 +215,35 @@ Core.Set(ns.name, "keys", false)
 check(W.overrides[owner] == nil and not ns.Keys.Taken(), "the switch off: the game's keys open the game's windows")
 Core.Set(ns.name, "keys", true)
 check(W.overrides[owner] and W.overrides[owner].P == ns.Keys.COMMANDS.spellbook, "on again: ours")
+ns.Keys.Press("pet")
+check(not handle.edge.full, "without a pet's spellbook the pet book's key does nothing, as the game's")
+-- A key while the screen may not fill (Edit Mode): what it asked for does not wait for a full screen that comes
+-- another way.
+C_SpellBook.HasPetSpells = function() return 1 end -- a pet with its spellbook from here on
+PetHasSpellbook = function() return true end
+Core.EditMode.active = true
+ns.Keys.Press("pet")
+Core.EditMode.active = false
+check(not handle.edge.full, "in Edit Mode a key fills no screen")
+Push()
+Stand()
+check(handle.edge.full and ns.Book.Chosen() == "line1", "the next full screen comes as it is: the book not at the pet's tab")
+-- The full screen's search box: what is typed reaches its windows (the book shows what it finds).
+local box = handle.bar.box
+handle.bar.find:GetScript("OnClick")(handle.bar.find) -- the search opened over the title bar
+box:SetText("frost")
+box:GetScript("OnTextChanged")(box)
+check(Board.layouts.search == "frost" and ns.Book.Chosen() == nil, "what is typed into the full screen's search box reaches its windows")
+-- The pet book's key: the book at the pet's tab, the search left and its box emptied, the screen staying full
+-- where it showed another; pressed again at the pet's tab, back to its size.
+ns.Keys.Press("pet")
+box:GetScript("OnTextChanged")(box) -- the game's box tells its change by itself
+check(handle.edge.full and ns.Book.Chosen() == "pet" and box:GetText() == "" and Board.layouts.search == "",
+    "the pet book's key: the book at the pet's tab, the search box emptied")
+check(not box:IsShown() and handle.bar.find:IsShown(), "and closed as Esc closes it: the title and the layouts' tabs back")
+ns.Keys.Press("pet")
+check(not handle.edge.full, "pressed again there: back to its size, as the game's key toggles its window")
+Back()
 
 -------------------------------------------------------------------------------
 --  A talent planner Sane UI knows: a window of its own
@@ -257,6 +295,7 @@ Stand()
 -------------------------------------------------------------------------------
 --  Quest marks beside nameplates: as the game says it in the creature's tooltip data
 -------------------------------------------------------------------------------
+local questMark -- a mark shown at the end, looked at again after standing down
 do
     local QuestMarks = ns.QuestMarks
     Enum.TooltipDataLineType = { QuestTitle = 17, QuestObjective = 8 }
@@ -303,8 +342,15 @@ do
     check(kobold._shown, "shown again on the plate the game hands out again")
     Core.Set(ns.name, "questMarks", false)
     check(not kobold._shown, "the setting Quest marks on nameplates off: none")
+    local reads = 0
+    C_TooltipInfo.GetUnit = function(unit) reads = reads + 1 return { lines = lines[unit] or {} } end
+    W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")
+    W.Fire("QUEST_LOG_UPDATE")
+    W.Wait(0)
+    check(reads == 0, "and nothing of the game's tooltip data is read meanwhile")
     Core.Set(ns.name, "questMarks", true)
     check(kobold._shown, "on again: there")
+    questMark = kobold
 end
 
 
@@ -315,9 +361,14 @@ end
 ns.Window.Reboard()
 W.Wait(0)
 check(Core.Lent(planner), "seated before the module fails")
+-- A step of the giving back fails (here the board's own): the others give back all the same, the keys first.
+Board.layouts.Hide = function() error("the board failed") end
 ns.StandDown("a test")
 check(ns.off and not Core.Lent(planner) and not frame:IsShown(),
-    "standing down, all is given back and the window goes")
+    "standing down, all is given back and the window goes, though a step of it failed")
 check(W.overrides[owner] == nil, "and the game's keys open the game's windows again")
+W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate2")
+W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate2")
+check(not questMark._shown, "a plate the game shows after it gets no quest mark")
 
 io.write(("Combat: all %d checks passed.\n"):format(passed))

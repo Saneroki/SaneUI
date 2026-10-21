@@ -53,7 +53,8 @@ ns.Talks = Talks
 -- conversation began with it). Talks.reading: the conversation read right now (Read).
 
 Talks.MOST = 50   -- conversations kept at most: one more, and the one quiet the longest goes
-Talks.VERSION = 1 -- the shape Save writes
+Talks.SAVED = 1000 -- messages kept over a logout, of all conversations together: the newest conversations' first
+Talks.VERSION = 2 -- the shape Save writes; 2: what follows from the rest is not kept (a whisper's colour, a chat's short name)
 
 -- The kinds of group whose chat is a conversation of its own, by the group of their messages (Log.GROUPS),
 -- in the order they come when you are in them and nobody spoke yet.
@@ -297,14 +298,15 @@ end
 local function Of(category) return category == INSTANCE and INSTANCE or HOME end
 Core.On("GROUP_JOINED", function(category, guid) ns.Safe("talks", Begin, Of(category), guid) end)
 Core.On("GROUP_LEFT", function(category) ns.Safe("talks", End, Of(category)) end)
-Core.On("GROUP_ROSTER_UPDATE", function()
-    ns.Safe("talks", function()
-        for category in pairs(Talks.current) do
-            local talk = Current(category)
-            if talk then Roster(talk) end
-        end
-    end)
-end)
+-- Who is in them is asked anew a frame later, once for a run of the game's word on it (a raid forming tells it many
+-- times in a row).
+local function Rosters()
+    for category in pairs(Talks.current) do
+        local talk = Current(category)
+        if talk then Roster(talk) end
+    end
+end
+Core.On("GROUP_ROSTER_UPDATE", Core.Later(function() ns.Safe("talks", Rosters) end))
 
 -- The panel reads that conversation now (nil: none, the panel is hidden): its messages are read, and the one
 -- left keeps its last talkSize again.
@@ -400,11 +402,14 @@ local function OfSession(value)
 end
 
 -- What of a message is kept; nil for one of this session only. A player's link keeps no line number, as the
--- chat's history (Log.Saved). A Battle.net friend's own messages go without the friend's name and link.
-local function Kept(message, bnet)
+-- chat's history (Log.Saved). A Battle.net friend's own messages go without the friend's name and link. What follows
+-- from the rest is not kept (Taken makes it anew): a whisper's colour (its kind and side), a chat's short name (its name).
+local function Kept(message, bnet, whisper)
     local copy = { stamp = message.stamp }
     for _, field in ipairs(ns.Log.KEPT) do copy[field] = message[field] end
     if bnet then copy.name, copy.link = nil, nil end
+    if whisper then copy.r, copy.g, copy.b = nil, nil, nil end
+    if copy.label then copy.short = nil end
     for _, field in ipairs({ "text", "name", "label", "link" }) do
         if OfSession(copy[field]) then return nil end
     end
@@ -412,18 +417,22 @@ local function Kept(message, bnet)
     return copy
 end
 
--- Every conversation with messages, each with its last talkSize, into the character's saved settings.
+-- Every conversation with messages, each with its last talkSize, into the character's saved settings: the newest
+-- first, Talks.SAVED messages of them all at most (the saved settings are read at every login, of every character).
 function Talks.Save(char)
-    local saved, most = {}, ns.options.talkSize or 100
+    local saved, most, left = {}, ns.options.talkSize or 100, Talks.SAVED
     for _, talk in ipairs(Talks.list) do
+        if left <= 0 then break end
         if not talk.session and #talk.messages > 0 then
             local kept = { key = talk.key, kind = talk.kind, with = talk.with, class = talk.class, last = talk.last,
                            unread = talk.unread, category = talk.category, members = talk.members,
                            started = talk.started, ended = talk.ended, messages = {} }
             local bnet = talk.kind == "BN_WHISPER"
-            for index = math.max(#talk.messages - most + 1, 1), #talk.messages do
-                kept.messages[#kept.messages + 1] = Kept(talk.messages[index], bnet)
+            local whisper = bnet or talk.kind == "WHISPER"
+            for index = math.max(#talk.messages - math.min(most, left) + 1, 1), #talk.messages do
+                kept.messages[#kept.messages + 1] = Kept(talk.messages[index], bnet, whisper)
             end
+            left = left - #kept.messages
             if #kept.messages > 0 then saved[#saved + 1] = kept end
         end
     end
@@ -433,16 +442,28 @@ function Talks.Save(char)
 end
 
 local SIDES = { left = true, right = true, center = true }
+local WHISPERED = { WHISPER = true, BN_WHISPER = true }
 
--- One message as it was kept, of the right kinds only (a hand edit may have changed it); nil: none.
-local function Taken(kept, last)
+-- The colour the game gives a whisper of that kind, sent (right) or come: a whisper's messages keep none (Kept).
+local function Colour(kind, side)
+    local info = WHISPERED[kind] and ChatTypeInfo and ChatTypeInfo[kind .. (side == "right" and "_INFORM" or "")]
+    if type(info) == "table" and info.r then return info.r, info.g, info.b end
+end
+
+-- One message as it was kept in a conversation of that kind, of the right kinds only (a hand edit may have changed
+-- it); nil: none.
+local function Taken(kept, last, kind)
     if type(kept) ~= "table" or type(kept.text) ~= "string" or not SIDES[kept.side] then return nil end
     local message = { stamp = tonumber(kept.stamp) or last }
     for _, field in ipairs(ns.Log.KEPT) do
         local value = kept[field]
         if type(value) == "string" or type(value) == "number" then message[field] = value end
     end
-    message.r, message.g, message.b = tonumber(message.r) or 1, tonumber(message.g) or 1, tonumber(message.b) or 1
+    local r, g, b = tonumber(message.r), tonumber(message.g), tonumber(message.b)
+    if not (r and g and b) then r, g, b = Colour(kind, message.side) end
+    message.r, message.g, message.b = r or 1, g or 1, b or 1
+    -- A group's chat in short follows from its name, as the log makes it (Log.Read); a whisper's copies have neither.
+    if type(message.label) == "string" and not message.short then message.short = ns.Channels.Brief(message.label) end
     message.time = message.time and tostring(message.time) or ""
     if type(message.class) ~= "string" then message.class = nil end
     if message.tie and not ns.Layout.TIES[message.tie] then message.tie = nil end
@@ -468,7 +489,7 @@ function Talks.Restore(saved, current)
                     if type(name) == "string" and #talk.members < Talks.MEMBERS then talk.members[#talk.members + 1] = name end
                 end
             end
-            for _, message in ipairs(kept.messages) do talk.messages[#talk.messages + 1] = Taken(message, talk.last) end
+            for _, message in ipairs(kept.messages) do talk.messages[#talk.messages + 1] = Taken(message, talk.last, talk.kind) end
             if #talk.messages == 0 then Drop(talk) end
         end
     end

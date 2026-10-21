@@ -157,20 +157,15 @@ function Bags.Hover(button, on)
     if Bags.canvas then Bags.canvas:Hover(button, on) end
 end
 
--- Shift and a click on a stack: our splitter in place of the game's, in the views without empty slots (always)
--- or everywhere (the setting).
+-- Shift and a click on a stack: our splitter in place of the game's (where the template opened its own: not when
+-- the click linked the item into the chat), in the views without empty slots (always) or everywhere (the setting).
 local function Splits(button, mouse)
     if mouse ~= "LeftButton" then return false end
-    local modified = rawget(_G, "IsModifiedClick")
-    if not (modified and modified("SPLITSTACK")) then return false end
     local record = Cells.Record(button)
-    if not (record and record.item and (record.count or 1) > 1) then return false end
+    if not (record and record.item) then return false end
     local view = View()
     if (view == Views.ONE or view == Views.EACH) and not Options().splitter then return false end
-    local game = rawget(_G, "StackSplitFrame")
-    if type(game) == "table" and game.IsShown and game:IsShown() then game:Hide() end
-    ns.Split.Open(button, record)
-    return true
+    return ns.Split.Replace(button, record)
 end
 
 -- A click on an item button, after the game's own: Alt and the right button (which the game's button does
@@ -190,6 +185,7 @@ function Bags.Clicked(button, mouse)
         Categories.Pin(record.item, not Categories.Pinned(record.item))
     end
     Bags.Refresh()
+    if ns.Bank then ns.Bank.Refresh() end -- the bank's items by category may hold it too
 end
 
 local how = {} -- how a cell is drawn (Cells.Draw), used again
@@ -199,14 +195,14 @@ local function Draw()
     local room = child:GetWidth()
     if not room or room <= 0 then return end
     local options = Options()
-    local blocks = Views.Build(View(), sections, query, kept.order, options)
+    local blocks = Views.Build(View(), sections, query, kept.sort, options)
     Bags.blocks = blocks
     how.bind, how.coin, how.grey, how.set = options.bind == true, options.coin == true, options.grey == true, options.setName == true
     how.level, how.plain = options.itemLevel ~= false, options.borders == false
     child:SetHeight(math.max(1, Bags.canvas:Draw(blocks, room, how)))
     Bags.Count()
     coin:SetShown(Categories.Marker())
-    Sidebar.Refresh(Views.Counts(carried), View(), options)
+    Sidebar.Refresh(Views.Counts(carried, options), View(), options)
     if Cells.short then Core.AfterCombat("inventory: bags", Bags.Refresh) end
 end
 
@@ -255,13 +251,11 @@ local function Locked(bag, slot)
     Cells.Lock(record)
 end
 
--- An item's data came from the server: drawn anew if one of ours waited for it (its name, its item level).
+-- An item's data came from the server: drawn anew if one of ours waited for it (its name, its item level). The
+-- reading anew takes it off the list (Contents.Read), so the bank hears of it too.
 local function Arrived(item)
     item = Core.Plain(item)
-    if item and Contents.waiting[item] then
-        Contents.waiting[item] = nil
-        Soon()
-    end
+    if item and Contents.waiting[item] then Soon() end
 end
 
 local EVENTS = {
@@ -280,16 +274,16 @@ local UNIT_EVENTS = { UNIT_QUEST_LOG_CHANGED = Soon }
 -------------------------------------------------------------------------------
 --  The part (Board.lua)
 -------------------------------------------------------------------------------
--- What is kept of the window: its display and order, each one of those there are; the categories' choices
--- (Categories.lua checks them).
+-- What is kept of the window: its display and Sort By (sort; the categories' own order is theirs, order), each one
+-- of those there are; the categories' choices (Categories.lua checks them).
 local function Kept()
     local store = ns.store
     if type(store.bags) ~= "table" then store.bags = {} end
     local bags = store.bags
     if not Layout.LOOK[bags.look] then bags.look = "grid" end
     local known = false
-    for _, order in ipairs(Contents.ORDERS) do known = known or order.key == bags.order end
-    if not known then bags.order = "default" end
+    for _, order in ipairs(Contents.ORDERS) do known = known or order.key == bags.sort end
+    if not known then bags.sort = "default" end
     Categories.Use(bags)
     Columns.Use(bags)
     return bags
@@ -304,9 +298,9 @@ local function SetLook(key)
     Bags.Restrip()
     Bags.Redraw()
 end
-local function IsOrder(key) return kept.order == key end
+local function IsOrder(key) return kept.sort == key end
 local function SetOrder(key)
-    kept.order = key
+    kept.sort = key
     Bags.Redraw()
 end
 local function IsOn(key) return Options()[key] ~= false end
@@ -352,11 +346,12 @@ local function Menu(_, root)
         for _, key in ipairs(off) do list:CreateButton(ns.TEXT.bagsSwitchOn:format(Categories.Word(key)), Unoff, key) end
     end
 end
+local ViewMenu = ns.Guard(Menu)
 
 -- The clean-up: in One Bag our own sort, by the categories and the window's order; else the game's.
 local function Clean()
     if InCombatLockdown() then return end
-    if View() == Views.ONE then return Sort.Start(kept.order) end
+    if View() == Views.ONE then return Sort.Start(kept.sort) end
     local api = rawget(_G, "C_Container")
     if not (api and api.SortBags) then return end
     Core.Sound("UI_BAG_SORTING_01")
@@ -468,7 +463,9 @@ local function CoinClick()
         end
         Categories.MarkJunk(id, not Categories.Junk(id, record and record.quality), record and record.quality)
         ClearCursor()
-        return Bags.Refresh()
+        Bags.Refresh()
+        if ns.Bank then ns.Bank.Refresh() end -- the bank's items by category may hold it too
+        return
     end
     if Select.Mode() == "junk" then return Select.Stop() end
     Select.Start("junk")
@@ -505,7 +502,7 @@ local function Bar(body)
     menu:SetPoint("RIGHT", -Bags.EDGE, 0)
     menu:SetWidth(Bags.MENU_WIDTH)
     menu:OverrideText(ns.TEXT.bagsView)
-    menu:SetupMenu(Menu)
+    menu:SetupMenu(ViewMenu)
     sort = CleanButton(bar, Clean, CleanTip)
     sort:SetPoint("RIGHT", menu, "LEFT", -Bags.BAR_GAP, 0)
     local bags = CreateFrame("CheckButton", nil, bar)
@@ -586,10 +583,8 @@ function Bags.Show(on)
         Bags.Refresh()
     else
         for item in pairs(Views.split) do Views.split[item] = nil end
-        Cells.Light(nil)
-        Select.Stop()
-        Sort.Stop()
-        Sidebar.Cancel()
+        -- What runs stops, each on its own: one that fails keeps none of the others going.
+        for _, stop in ipairs({ Cells.Light, Select.Stop, Sort.Stop, Sidebar.Cancel, ns.Split.Stop }) do ns.Safe("bags", stop) end
     end
 end
 

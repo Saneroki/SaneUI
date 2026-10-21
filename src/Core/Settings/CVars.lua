@@ -138,13 +138,13 @@ function CVars.Shown()
     return list
 end
 
--- Gives a CVar a value. Returns the value the game holds then, and a line why it is not the one
--- asked for (nil if it is).
+-- Gives a CVar a value, if the game lets us (Sync's checks). Returns the value the game holds then, and a
+-- line why it is not the one asked for (nil if it is). Unlike Sync's, one the game did not take is tried
+-- again when asked again: the player may type a value it takes.
 function CVars.Set(name, value)
-    local now, _, _, _, locked, secure, readOnly = CVars.Info(name)
+    local now, free, why = Core.Sync.Settable(name)
     if now == nil then return nil end
-    if locked or readOnly then return now, TEXT.fixed end
-    if secure and InCombatLockdown() then return now, TEXT.inCombat end
+    if not free then return now, why == "fight" and TEXT.inCombat or TEXT.fixed end
     pcall(C_CVar.SetCVar, name, value)
     now = Plain(C_CVar.GetCVar(name))
     if now ~= value and not (tonumber(now) and tonumber(now) == tonumber(value)) then
@@ -172,25 +172,43 @@ Core.On("CVAR_UPDATE", function()
     if shown then Reread() end
 end)
 
--- The filter button's menu: two checkboxes, then the kinds.
-local function FilterMenu(_, root)
-    local function Flip(key) return function() filters[key] = not filters[key]; Refilter() end end
-    root:CreateCheckbox(TEXT.notDefault, Core.Guard("options", function() return filters.notDefault end), Core.Guard("options", Flip("notDefault")))
-    root:CreateCheckbox(TEXT.kept, Core.Guard("options", function() return filters.kept end), Core.Guard("options", Flip("kept")))
+-- The filter button's menu: two checkboxes, then the kinds. Its functions are made once: the game builds
+-- the menu anew each time it opens.
+local function Flip(key) return function() filters[key] = not filters[key]; Refilter() end end
+local function IsKind(value) return filters.kind == (value ~= "" and value or nil) end
+local function SetKind(value)
+    filters.kind = value ~= "" and value or nil
+    Refilter()
+end
+local notDefaultOn = Core.Guard("options", function() return filters.notDefault end)
+local flipNotDefault = Core.Guard("options", Flip("notDefault"))
+local keptOn = Core.Guard("options", function() return filters.kept end)
+local flipKept = Core.Guard("options", Flip("kept"))
+local isKind = Core.Guard("options", IsKind)
+local setKind = Core.Guard("options", SetKind)
+
+local FilterMenu = Core.Guard("options", function(_, root)
+    root:CreateCheckbox(TEXT.notDefault, notDefaultOn, flipNotDefault)
+    root:CreateCheckbox(TEXT.kept, keptOn, flipKept)
     root:CreateDivider()
     root:CreateTitle(TEXT.kind)
-    local function IsKind(value) return filters.kind == (value ~= "" and value or nil) end
-    local function SetKind(value)
-        filters.kind = value ~= "" and value or nil
-        Refilter()
-    end
-    root:CreateRadio(TEXT.everyKind, Core.Guard("options", IsKind), Core.Guard("options", SetKind), "")
-    for _, value in ipairs(ORDER) do root:CreateRadio(TEXT.kinds[value], Core.Guard("options", IsKind), Core.Guard("options", SetKind), value) end
-end
+    root:CreateRadio(TEXT.everyKind, isKind, setKind, "")
+    for _, value in ipairs(ORDER) do root:CreateRadio(TEXT.kinds[value], isKind, setKind, value) end
+end)
+
+-- What else the game calls of the list, made once: whether the filters are as at first (else the filter
+-- button shows its red cross), the cross, which sets them so again, and a row given its CVar.
+local atFirst = Core.Guard("options", function() return not Filtered() end)
+local clearFilters = Core.Guard("options", function()
+    filters.notDefault, filters.kept, filters.kind = false, false, nil
+    Refilter()
+end)
+local initRow = Core.Guard("options", function(row, entry) row:Init(entry) end)
 
 SaneUISettingsCVarsMixin = {}
 
-function SaneUISettingsCVarsMixin:OnLoad()
+-- The list's parts, made when the game makes its frame (its OnLoad in CVars.xml, below).
+local function MakeList(self)
     local search = CreateFrame("EditBox", nil, self, "SearchBoxTemplate")
     search:SetSize(210, 20)
     search:SetPoint("TOPLEFT", 6, -4)
@@ -208,11 +226,8 @@ function SaneUISettingsCVarsMixin:OnLoad()
     filter:SetPoint("LEFT", search, "RIGHT", 12, 0)
     filter:SetupMenu(FilterMenu)
     if filter.SetIsDefaultCallback then
-        filter:SetIsDefaultCallback(function() return not Filtered() end)
-        filter:SetDefaultCallback(function()
-            filters.notDefault, filters.kept, filters.kind = false, false, nil
-            Refilter()
-        end)
+        filter:SetIsDefaultCallback(atFirst)
+        filter:SetDefaultCallback(clearFilters)
     end
     self.Filter = filter
 
@@ -227,7 +242,7 @@ function SaneUISettingsCVarsMixin:OnLoad()
     bar:SetPoint("TOPLEFT", box, "TOPRIGHT", 4, 0)
     bar:SetPoint("BOTTOMLEFT", box, "BOTTOMRIGHT", 4, 0)
     local view = CreateScrollBoxListLinearView()
-    view:SetElementInitializer("SaneUISettingsCVarRowTemplate", function(row, entry) row:Init(entry) end)
+    view:SetElementInitializer("SaneUISettingsCVarRowTemplate", initRow)
     ScrollUtil.InitScrollBoxListWithScrollBar(box, bar, view)
     self.List = box
 
@@ -239,6 +254,9 @@ function SaneUISettingsCVarsMixin:OnLoad()
     self.Status:SetPoint("RIGHT", self.Count, "LEFT", -12, 0)
     self.Status:SetJustifyH("LEFT")
 end
+
+-- The game calls the template's scripts (CVars.xml): each behind Core.Safe.
+function SaneUISettingsCVarsMixin:OnLoad() Core.Safe("Settings: CVars", MakeList, self) end
 
 -- The game shows the tab: what was searched and filtered before is back.
 function SaneUISettingsCVarsMixin:Init()
@@ -280,7 +298,8 @@ end
 
 SaneUISettingsCVarRowMixin = {}
 
-function SaneUISettingsCVarRowMixin:OnLoad()
+-- A row's parts, wired when the game makes its frame (its OnLoad in CVars.xml, below).
+local function MakeRow(self)
     self.Keep:SetScript("OnClick", Core.Guard("options", function(box)
         if self.entry then CVars.Keep(self.entry.name, box:GetChecked()) end
         if filters.kept then Refilter() end
@@ -313,6 +332,10 @@ function SaneUISettingsCVarRowMixin:OnLoad()
     self.Reset:SetScript("OnLeave", GameTooltip_Hide)
 end
 
+-- The game calls the template's scripts (CVars.xml): each behind Core.Safe (OnLeave only hides the game's
+-- tooltip).
+function SaneUISettingsCVarRowMixin:OnLoad() Core.Safe("Settings: CVars", MakeRow, self) end
+
 -- Every field is set: rows are used again for other CVars. What is being typed stays while the row
 -- shows the same CVar.
 function SaneUISettingsCVarRowMixin:Init(entry)
@@ -342,11 +365,13 @@ function SaneUISettingsCVarRowMixin:Give(value)
 end
 
 -- A click on the row is a click into its value.
-function SaneUISettingsCVarRowMixin:OnClick()
+local function Clicked(self)
     if self.Value:IsEnabled() then self.Value:SetFocus() end
 end
+function SaneUISettingsCVarRowMixin:OnClick() Core.Safe("Settings: CVars", Clicked, self) end
 
-function SaneUISettingsCVarRowMixin:OnEnter()
+-- The mouse on a row: what its CVar does, and the details (Details).
+local function Tip(self)
     local entry = self.entry
     if not entry then return end
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -357,6 +382,7 @@ function SaneUISettingsCVarRowMixin:OnEnter()
     for _, line in ipairs(Details(entry.name)) do GameTooltip_AddNormalLine(GameTooltip, line, true) end
     GameTooltip:Show()
 end
+function SaneUISettingsCVarRowMixin:OnEnter() Core.Safe("Settings: CVars", Tip, self) end
 
 function SaneUISettingsCVarRowMixin:OnLeave()
     GameTooltip_Hide()

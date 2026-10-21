@@ -69,9 +69,9 @@ end
 function Panel.Page(page)
     if pages[page] then return end
     pages[page] = {}
-    page.OnRefresh = function(self)
+    page.OnRefresh = Core.Guard("options", function(self)
         if self:IsShown() then Panel.Refresh(self) end
-    end
+    end)
     page:HookScript("OnShow", Core.Guard("options", function(self)
         if stale[self] then Panel.Refresh(self) end
     end))
@@ -357,35 +357,49 @@ function Panel.Dropdown(parent, text, tip, option, get, set, enabled)
     menu:SetWidth(220)
     local multi = option.multi
     if multi then menu:SetDefaultText(Core.Word("NONE", "None")) end
-    menu:SetupMenu(function(_, root)
-        local function IsChosen(value)
-            if not multi then return get() == value end
+    local function IsChosen(value)
+        if not multi then return get() == value end
+        local chosen = get()
+        return type(chosen) == "table" and chosen[value] == true
+    end
+    local function Choose(value)
+        if multi then
+            -- A new table: what is kept compares it with the one before.
             local chosen = get()
-            return type(chosen) == "table" and chosen[value] == true
+            chosen = Core.Copy(type(chosen) == "table" and chosen or {})
+            chosen[value] = not chosen[value] or nil
+            value = chosen
         end
-        local function Choose(value)
+        Core.Safe("Settings: " .. text, set, value)
+        Panel.Refresh(owner[menu])
+    end
+    -- Made once: the game builds the menu anew each time it opens, not its choices' functions.
+    local isChosen = Core.Guard("options", IsChosen)
+    local choose = Core.Guard("options", Choose)
+    local built = {} -- the choices the menu was built with: a module may change them (Navigation's views)
+    menu:SetupMenu(Core.Guard("options", function(_, root)
+        built = {}
+        for index, choice in ipairs(option.choices) do
+            built[index] = choice
             if multi then
-                -- A new table: what is kept compares it with the one before.
-                local chosen = get()
-                chosen = Core.Copy(type(chosen) == "table" and chosen or {})
-                chosen[value] = not chosen[value] or nil
-                value = chosen
-            end
-            Core.Safe("Settings: " .. text, set, value)
-            Panel.Refresh(owner[menu])
-        end
-        for _, choice in ipairs(option.choices) do
-            if multi then
-                root:CreateCheckbox(choice[2], Core.Guard("options", IsChosen), Core.Guard("options", Choose), choice[1])
+                root:CreateCheckbox(choice[2], isChosen, choose, choice[1])
             else
-                root:CreateRadio(choice[2], Core.Guard("options", IsChosen), Core.Guard("options", Choose), choice[1])
+                root:CreateRadio(choice[2], isChosen, choose, choice[1])
             end
         end
-    end)
+    end))
+    local function Built()
+        if #built ~= #option.choices then return false end
+        for index, choice in ipairs(option.choices) do
+            if built[index] ~= choice then return false end
+        end
+        return true
+    end
     menu.label, menu.get, menu.set = text, get, set
     Tooltip(menu, text, tip)
     function menu:Refresh()
-        self:GenerateMenu()
+        -- The same choices: only which is ticked is read again (the game's Update), the menu is not built anew.
+        if Built() then self:Update() else self:GenerateMenu() end
         if enabled then self:SetEnabled(enabled() and true or false) end
     end
     Keep(menu)
@@ -441,16 +455,21 @@ function Panel.Color(parent, text, tip, get, set, enabled)
     local swatch = CreateFrame("Button", nil, parent, "ColorSwatchTemplate")
     swatch:SetSize(22, 22)
     swatch.label, swatch.get, swatch.set = text, get, set
+    local label = "Settings: " .. text
+    local before -- the colour when the picker was opened: its Cancel sets it back
     local function Set(hex)
-        Core.Safe("Settings: " .. text, set, hex)
+        Core.Safe(label, set, hex)
         swatch:Refresh()
     end
+    local function Picked() Set(Panel.Hex(ColorPickerFrame:GetColorRGB())) end
+    local function Cancelled() Set(before) end
+    -- The picker calls these at every move and at Cancel: made once, each one step behind Core.Safe.
+    local picker = { swatchFunc = function() Core.Safe(label, Picked) end,
+        cancelFunc = function() Core.Safe(label, Cancelled) end }
     swatch:SetScript("OnClick", Core.Guard("options", function()
-        local before = get()
-        local r, g, b = Panel.RGB(before)
-        ColorPickerFrame:SetupColorPickerAndShow({ r = r, g = g, b = b,
-            swatchFunc = function() Set(Panel.Hex(ColorPickerFrame:GetColorRGB())) end,
-            cancelFunc = function() Set(before) end })
+        before = get()
+        picker.r, picker.g, picker.b = Panel.RGB(before)
+        ColorPickerFrame:SetupColorPickerAndShow(picker)
     end))
     Tooltip(swatch, text, tip)
     function swatch:Refresh()

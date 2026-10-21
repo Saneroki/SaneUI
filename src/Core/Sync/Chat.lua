@@ -167,39 +167,134 @@ local function WriteTab(id, want)
     return changed
 end
 
--- The colours of the kinds of chat ("SAY", "CHANNEL1", ...), and whether names in them are in their
--- class colour.
+-- The channels this character is in: their names by their numbers here, and their numbers by their names
+-- in lower case.
+local function Joined()
+    local names, numbers = {}, {}
+    local get = rawget(_G, "GetChannelList")
+    local list = get and { get() } or {} -- number, name, disabled; and so on
+    for index = 1, #list, 3 do
+        local number, name = Plain(list[index]), Plain(list[index + 1])
+        if type(number) == "number" and type(name) == "string" then names[number], numbers[name:lower()] = name, number end
+    end
+    return names, numbers
+end
+
+-- The number of a channel's kind of chat ("CHANNEL5"); nil for any other kind.
+local function Channel(kind)
+    return tonumber(kind:match("^CHANNEL(%d+)$"))
+end
+
+-- A kind of chat's colour as it is kept, and whether names in it are in their class colour; name: a channel's.
+local function Entry(info, name)
+    return { name = name, r = info.r, g = info.g, b = info.b, byClass = info.colorNameByClass and true or false }
+end
+
+-- Gives one kind of chat its kept colour; true if it differed: the frames take it from the game's event,
+-- which runs in our call.
+local function WriteColour(kind, want)
+    local info = ChatTypeInfo[kind]
+    if type(info) ~= "table" or type(want) ~= "table" then return false end
+    local changed = false
+    local colour = type(want.r) == "number" and type(want.g) == "number" and type(want.b) == "number"
+    if colour and (Apart(want.r, info.r) or Apart(want.g, info.g) or Apart(want.b, info.b)) then
+        ChangeChatColor(kind, want.r, want.g, want.b)
+        changed = true
+    end
+    if type(want.byClass) == "boolean" and want.byClass ~= (info.colorNameByClass and true or false) then
+        SetChatColorNameByClass(kind, want.byClass)
+        changed = true
+    end
+    return changed
+end
+
+-- The colours of the kinds of chat ("SAY", "YELL", ...), the channels' apart (below).
 local function Colours()
     local colours = {}
     if type(ChatTypeInfo) ~= "table" then return colours end
     for kind, info in pairs(ChatTypeInfo) do
-        if type(kind) == "string" and type(info) == "table" and type(info.r) == "number" then
-            colours[kind] = { r = info.r, g = info.g, b = info.b, byClass = info.colorNameByClass and true or false }
+        if type(kind) == "string" and not Channel(kind) and type(info) == "table" and type(info.r) == "number" then
+            colours[kind] = Entry(info)
         end
     end
     return colours
 end
 
--- True if any differed: the frames take a colour from the game's event, which runs in our call.
+-- True if any differed. A channel's kept by its number (an older shape) is not written: that number may be
+-- another channel here.
 local function WriteColours(colours)
     if type(ChatTypeInfo) ~= "table" then return false end
     local changed = false
     for kind, want in pairs(colours) do
-        local info = ChatTypeInfo[kind]
-        if type(info) == "table" and type(want) == "table" then
-            local colour = type(want.r) == "number" and type(want.g) == "number" and type(want.b) == "number"
-            if colour and (Apart(want.r, info.r) or Apart(want.g, info.g) or Apart(want.b, info.b)) then
-                ChangeChatColor(kind, want.r, want.g, want.b)
-                changed = true
-            end
-            if type(want.byClass) == "boolean" and want.byClass ~= (info.colorNameByClass and true or false) then
-                SetChatColorNameByClass(kind, want.byClass)
+        if type(kind) == "string" and not Channel(kind) and WriteColour(kind, want) then changed = true end
+    end
+    return changed
+end
+
+-------------------------------------------------------------------------------
+--  The channels' colours
+-------------------------------------------------------------------------------
+-- The game keeps a channel's colour by the channel's number here ("CHANNEL5"), which another character may
+-- give another channel: they are kept by the channel's name (in lower case) instead, and each is given to
+-- this character's channel of that name. One this character is not in waits for it: Sync's own channels are
+-- joined in the same writing, and the server answers a join later. Until it is given, and for a channel this
+-- character is not in at all, what was kept stays kept.
+local waiting = {} -- [lower-case name] = its kept colour, for a channel not joined here yet
+
+local function Channels()
+    local channels = {}
+    if type(ChatTypeInfo) ~= "table" then return channels end
+    for number, name in pairs(Joined()) do
+        local info, key = ChatTypeInfo["CHANNEL" .. number], name:lower()
+        if not waiting[key] and type(info) == "table" and type(info.r) == "number" then channels[key] = Entry(info, name) end
+    end
+    local taken = Sync.Taken("chatFrames")
+    for key, want in pairs(type(taken) == "table" and type(taken.channels) == "table" and taken.channels or {}) do
+        if type(key) == "string" and type(want) == "table" and channels[key:lower()] == nil then channels[key:lower()] = want end
+    end
+    return channels
+end
+
+-- Each kept colour at this character's number for its channel; one not joined here waits. True if any differed.
+local function WriteChannels(channels)
+    if type(ChatTypeInfo) ~= "table" then return false end
+    local _, numbers = Joined()
+    local changed = false
+    for key, want in pairs(channels) do
+        if type(key) == "string" and type(want) == "table" then
+            local number = numbers[key:lower()]
+            if not number then
+                waiting[key:lower()] = want
+            elseif WriteColour("CHANNEL" .. number, want) then
                 changed = true
             end
         end
     end
     return changed
 end
+
+-- The game's list of channels changed (a join answered): a channel joined since takes the colour that waited
+-- for it, once; not in a fight, and only while Sync keeps the chat windows.
+local function Answered()
+    if not (Core.Profiles.On() and Sync.PartKept("chatFrames")) or type(ChatTypeInfo) ~= "table" then
+        wipe(waiting)
+        return
+    end
+    local _, numbers = Joined()
+    local changed = false
+    for key, want in pairs(waiting) do
+        local number = numbers[key]
+        if number then
+            waiting[key] = nil
+            if WriteColour("CHANNEL" .. number, want) then changed = true end
+        end
+    end
+    if changed then Sync.OfferReload({ RELOAD }) end
+end
+local AnsweredSoon = Core.Later(function() Core.AfterCombat("Sync: channel colours", Answered) end)
+Core.On("CHANNEL_UI_UPDATE", function()
+    if next(waiting) then AnsweredSoon() end
+end)
 
 Sync.Part("chatFrames", "elsewhere", {
     text = "Chat windows",
@@ -208,10 +303,11 @@ Sync.Part("chatFrames", "elsewhere", {
     Read = function()
         local tabs = {}
         for id = 1, WINDOWS do tabs[id] = Tab(id) end
-        return { tabs = tabs, colours = Colours() }
+        return { tabs = tabs, colours = Colours(), channels = Channels() }
     end,
     Write = function(data)
         local changed = false
+        wipe(waiting) -- from now on only these settings' channels wait, not those given before
         if type(data.tabs) == "table" then
             for id = 1, WINDOWS do
                 local want = data.tabs[id]
@@ -219,6 +315,7 @@ Sync.Part("chatFrames", "elsewhere", {
             end
         end
         if type(data.colours) == "table" and WriteColours(data.colours) then changed = true end
+        if type(data.channels) == "table" and WriteChannels(data.channels) then changed = true end
         return changed
     end,
 })

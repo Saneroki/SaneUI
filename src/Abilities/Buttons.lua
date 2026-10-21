@@ -20,11 +20,14 @@ local list -- the buttons found, once there has been a search
 
 local KINDS = { Button = true, CheckButton = true }
 
+-- Asked through pcall, of every frame there is: made once, so a search makes no closure per frame.
+local function CarriesSlot(frame)
+    if frame.IsForbidden and frame:IsForbidden() then return false end
+    return KINDS[frame:GetObjectType()] and ns.ActionOf(frame) ~= nil
+end
+
 local function IsButton(frame)
-    local ok, yes = pcall(function()
-        if frame.IsForbidden and frame:IsForbidden() then return false end
-        return KINDS[frame:GetObjectType()] and ns.ActionOf(frame) ~= nil
-    end)
+    local ok, yes = pcall(CarriesSlot, frame)
     return ok and yes or false
 end
 

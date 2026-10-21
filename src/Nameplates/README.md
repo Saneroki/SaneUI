@@ -85,8 +85,10 @@ own again.
   the most, its value `GetComboPoints("player", "target")` as the game gives it (secret or not), in the game's
   `PowerBarColor.COMBO_POINTS`; lines between the segments and along its top in the border's dark. Its fill and
   background take the bar's inner caps (masks of another frame, as the game's own bars do).
-- **Standing down** (`ns.GiveBack`): every dress off, the game's parts at alpha 1; the hooks and events do
-  nothing after it, until a `/reload`.
+- **Standing down** (`ns.GiveBack`): the game's parts at alpha 1 on every unit frame ours ever lay over (the game
+  hands them out again from its pool), then every dress off, each by itself; a dress taken off gives the game's
+  parts back first, its bar as made, and only then lets its auras and strip go (each step by itself, so one that
+  fails keeps no plate dressed). The hooks and events do nothing after it, until a `/reload`.
 - Tests: `dev/tests/nameplates.lua`.
 
 ## Files

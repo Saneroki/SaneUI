@@ -168,6 +168,9 @@ local function Sizer(button, key)
     slider:SetWidth(TopBar.SIZER)
     slider:ClearAllPoints()
     slider:SetPoint("RIGHT", -TopBar.SIZE_LABEL, 0)
+    -- The menu's sliders are its pool's: one that showed another kind's size still has our callback for that kind,
+    -- which its Init would tell this kind's size. Let go first.
+    slider:UnregisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, OWNER)
     slider:Init(ns.PinPercent(key), sizes.low, sizes.high, (sizes.high - sizes.low) / sizes.step,
         { [labels.Right] = function(value) return ("%d%%"):format(value) end })
     slider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged,
@@ -227,7 +230,7 @@ local function Dropdown(width, generator, text)
     local menu = CreateFrame("DropdownButton", nil, bar, "WowStyle1DropdownTemplate")
     menu:SetWidth(width)
     if text then menu:OverrideText(text) end
-    menu:SetupMenu(generator)
+    menu:SetupMenu(ns.Guard(generator)) -- made once: each dropdown is made once
     return menu
 end
 

@@ -152,11 +152,12 @@ function Fuzzy.Rank(word, text, low, spots)
     return nil
 end
 
--- A text of the game's as it reads, for finding: without colour codes, the codes of its links (their
--- words stay), icons and atlases.
+-- A text of the game's as it reads, for finding: without colour codes (|cAARRGGBB, and the named ones,
+-- |cnPURE_GREEN_COLOR:), the codes of its links (their words stay), icons and atlases.
 function Fuzzy.Plain(text)
     if type(text) ~= "string" then return text end
-    return (text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|H.-|h(.-)|h", "%1"):gsub("|T.-|t", ""):gsub("|A.-|a", ""))
+    return (text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|cn[%w_]+:", ""):gsub("|r", ""):gsub("|H.-|h(.-)|h", "%1")
+        :gsub("|T.-|t", ""):gsub("|A.-|a", ""))
 end
 
 function Fuzzy.Query(text)
@@ -205,7 +206,7 @@ local function Text(row, field)
 end
 
 -- A row's rank, every word found in one of its fields; nil if one is in none. Its texts lowered only when new.
-local function Ranked(row, query, fields)
+local function RowRank(row, query, fields)
     local own = kept[row]
     if not own then
         own = { texts = {}, lows = {} }
@@ -237,7 +238,7 @@ local function Sift(rows, query, fields, mine)
     for _, row in ipairs(rows) do
         if mine and mine ~= generation then return nil end
         local rank = 0
-        if query then rank = Ranked(row, query, fields) end
+        if query then rank = RowRank(row, query, fields) end
         if rank then
             found[#found + 1] = row
             ranks[#found] = rank

@@ -184,9 +184,19 @@ local function Place(list, row)
     row.icon:SetPoint("LEFT", row, "LEFT", laid[1].x, 0)
 end
 
+-- A row drawn for its element: its cells made once, placed by the columns, filled by the list's init.
+local function Draw(list, row, element)
+    Cells(list, row)
+    Place(list, row)
+    row.element = element
+    list.init(row, element)
+end
+
+-- The rows anew, the list left where it was scrolled to, as the game's own lists are refilled (a flush would
+-- scroll it back to the top: ScrollBox's full update of an empty list).
 function table_:Fill(elements, emptyText)
-    self.provider:Flush()
-    if #elements > 0 then self.provider:InsertTable(elements) end
+    self.provider = CreateDataProvider(elements)
+    self.box:SetDataProvider(self.provider, ScrollBoxConstants.RetainScrollPosition)
     self.empty:SetText(emptyText or "")
     self.empty:SetShown(#elements == 0)
 end
@@ -220,7 +230,8 @@ end
 function Kit.Table(parent, options)
     local list = CreateFrame("Frame", nil, parent)
     for name, fn in pairs(table_) do list[name] = fn end
-    list.columns, list.click, list.iconRoom = options.columns, options.click, options.icon and (Layout.ICON + 4) or 0
+    list.columns, list.click, list.init = options.columns, options.click, options.init
+    list.iconRoom = options.icon and (Layout.ICON + 4) or 0
     list.head = CreateFrame("Frame", nil, list)
     list.head:SetPoint("TOPLEFT")
     list.head:SetPoint("TOPRIGHT", -16, 0)
@@ -247,14 +258,7 @@ function Kit.Table(parent, options)
     bar:SetPoint("BOTTOMLEFT", box, "BOTTOMRIGHT", 4, 2)
     local view = CreateScrollBoxListLinearView(0, 0, 0, 0, 0)
     view:SetElementExtent(options.row or Layout.ROW)
-    view:SetElementInitializer("Button", function(row, element)
-        ns.Safe("list", function()
-            Cells(list, row)
-            Place(list, row)
-            row.element = element
-            options.init(row, element)
-        end)
-    end)
+    view:SetElementInitializer("Button", function(row, element) ns.Safe("list", Draw, list, row, element) end)
     ScrollUtil.InitScrollBoxListWithScrollBar(box, bar, view)
     list.box, list.bar = box, bar
     list.provider = CreateDataProvider()

@@ -44,14 +44,15 @@ local function Note(results, anew)
     end
 end
 
--- Forgets the prices not seen for KEEP days, and any without a day (a hand-edited store).
+-- Forgets the prices not seen for KEEP days, and any without a day or that is no number (a
+-- hand-edited store).
 local function Forget()
     local today = Today()
     for item, day in pairs(seen) do
         if type(day) ~= "number" or today - day > KEEP then seen[item] = nil end
     end
-    for item in pairs(prices) do
-        if not seen[item] then prices[item] = nil end
+    for item, price in pairs(prices) do
+        if not seen[item] or type(price) ~= "number" then prices[item] = nil end
     end
 end
 
@@ -69,5 +70,6 @@ end
 
 -- The lowest buyout last seen for an item, in copper; nil when never seen.
 function Auction.Price(item)
-    return prices and item and prices[item] or nil
+    local price = prices and item and prices[item]
+    return type(price) == "number" and price or nil
 end

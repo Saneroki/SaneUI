@@ -116,16 +116,20 @@ local function Contents(_, root)
     root:CreateButton(Core.Word("CONTACTS_MENU_IGNORE_BUTTON_NAME", "Ignore List"), ns.Guard(function() ns.Friends.Open("Ignored") end))
 end
 
+-- The dropdown shows the icon of the status chosen, as the game's; a choice that is no status of ours shows none.
+-- It cannot fail: the game asks it for the dropdown's text.
+local function StatusIcon(selection)
+    local key = type(selection) == "table" and selection.data
+    return type(key) == "string" and ("|T%s%s:16:16:0:0|t"):format(Contacts.STATUS, key) or ""
+end
+
 function Account.Build(holder)
     panel = holder
     status = CreateFrame("DropdownButton", nil, panel.head, "WowStyle1DropdownTemplate")
     status:SetPoint("LEFT", Layout.EDGE, 0)
     status:SetWidth(51)
-    status:SetupMenu(Statuses)
-    -- The dropdown shows the icon of the status chosen, as the game's.
-    if status.SetSelectionTranslator then
-        status:SetSelectionTranslator(function(selection) return ("|T%s%s:16:16:0:0|t"):format(Contacts.STATUS, selection.data) end)
-    end
+    status:SetupMenu(ns.Guard(Statuses))
+    if status.SetSelectionTranslator then status:SetSelectionTranslator(ns.Guard(StatusIcon)) end
     Core.Tip(status, function()
         local me = Me()
         local words = me and Contacts.StatusText(me.status) or ""
@@ -143,7 +147,7 @@ function Account.Build(holder)
     arrow:SetTexCoord(0.453125, 0.640625, 0.203125, 0.015625)
     arrow:SetSize(12, 12)
     arrow:SetPoint("CENTER")
-    menu:SetupMenu(Contents)
+    menu:SetupMenu(ns.Guard(Contents))
     Core.Tip(menu, Core.Word("CONTACTS_MENU_NAME", "Contacts Menu"), nil, "ANCHOR_TOP")
     count = panel.head:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     count:SetPoint("RIGHT", menu, "LEFT", -6, 0)

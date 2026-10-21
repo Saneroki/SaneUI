@@ -30,9 +30,10 @@ local _, ns = ...
 --  (grey), Item Set Gear, then by its class in the categories' order, else
 --  Miscellaneous. A category switched off sends its items to Miscellaneous.
 --
---  The player may move a category up or down (or drag it to another place
---  in the sidebar: Categories.Place, a group's members together:
---  PlaceGroup), rename it (no name: its own again), switch it off, hide it from All Items, put categories together
+--  The player may move a category up or down (Categories.Move: past a
+--  whole group, a group's member among its members; MoveGroup: a group as
+--  one) or drag it to another place in the sidebar (Categories.Place, a
+--  group's members together: PlaceGroup), rename it (no name: its own again), switch it off, hide it from All Items, put categories together
 --  under a group (a group's items show as one part in All Items, the group
 --  named by its members, "A & B", until the player names it; a group left
 --  with one member is no more), make categories of their own (a name and an
@@ -267,7 +268,9 @@ function Categories.Order()
     for key in pairs(rank) do rank[key] = nil end
     for key in pairs(groupOf) do groupOf[key] = nil end
     local movable, seen = {}, {}
-    for _, key in ipairs(kept.order or {}) do
+    -- Only a list is the player's order (anything else in the store is not read).
+    local list = type(kept.order) == "table" and kept.order or nil
+    for _, key in ipairs(list or {}) do
         if Known(key) and not seen[key] then
             movable[#movable + 1] = key
             seen[key] = true
@@ -284,7 +287,7 @@ function Categories.Order()
     end
     for _, def in ipairs(Categories.LIST) do
         if not (def.fixed or def.last or seen[def.key]) then
-            if not kept.order or def.late then movable[#movable + 1] = def.key else Before(def.key, Categories.CATCH_ALL) end
+            if not list or def.late then movable[#movable + 1] = def.key else Before(def.key, Categories.CATCH_ALL) end
             seen[def.key] = true
         end
     end
@@ -491,18 +494,77 @@ function Categories.RenameGroup(group, word)
     kept.groups[group].word = word ~= "" and word:sub(1, Categories.LETTERS) or nil
 end
 
--- Moved one place up (-1) or down (1) past the next movable category (a group moves as one).
-function Categories.Move(key, step)
-    local movable = Keep()
-    local index
-    for at, other in ipairs(movable) do
-        if other == key then index = at end
+-- The movable categories as they stand, as units: a group's members together (where its first one stands, as the
+-- sidebar shows them), every other category alone; laid back as the player's order.
+local function Units()
+    local units, of = {}, {}
+    for _, key in ipairs(Keep()) do
+        local group = groupOf[key]
+        local unit = group and of[group]
+        if unit then
+            unit[#unit + 1] = key
+        else
+            unit = { key, group = group }
+            units[#units + 1] = unit
+            if group then of[group] = unit end
+        end
     end
-    if not index then return end
-    local target = index + step
-    if target < 1 or target > #movable then return end
-    movable[index], movable[target] = movable[target], movable[index]
+    return units
+end
+
+local function Lay(units)
+    local movable = {}
+    for _, unit in ipairs(units) do
+        for _, key in ipairs(unit) do movable[#movable + 1] = key end
+    end
+    kept.order = movable
     Changed()
+end
+
+-- Whether a unit (or a group's member, a key) is seen: one of its categories switched on, as the sidebar shows them.
+local function Seen(entry)
+    if type(entry) == "string" then return not Categories.Off(entry) end
+    for _, key in ipairs(entry) do
+        if not Categories.Off(key) then return true end
+    end
+    return false
+end
+
+-- Whether list[index] swapped places with the next one a step away that is seen (those switched off are stepped
+-- over: every move moves something the player sees).
+local function Swap(list, index, step)
+    local target = index + step
+    while list[target] ~= nil and not Seen(list[target]) do target = target + step end
+    if list[target] == nil then return false end
+    list[index], list[target] = list[target], list[index]
+    return true
+end
+
+-- Moved one place up (-1) or down (1): a category in no group past the next category or group (a group counts as
+-- one, those switched off do not), a group's member among its members.
+function Categories.Move(key, step)
+    local units = Units()
+    for index, unit in ipairs(units) do
+        for place, other in ipairs(unit) do
+            if other == key then
+                local moved
+                if unit.group then moved = Swap(unit, place, step) else moved = Swap(units, index, step) end
+                if moved then Lay(units) end
+                return
+            end
+        end
+    end
+end
+
+-- A group moved one place up or down as one, past the next category or group.
+function Categories.MoveGroup(group, step)
+    local units = Units()
+    for index, unit in ipairs(units) do
+        if unit.group == group then
+            if Swap(units, index, step) then Lay(units) end
+            return
+        end
+    end
 end
 
 function Categories.SwitchOff(key, off)
@@ -656,7 +718,7 @@ function Categories.Delete(key)
     if kept.member then kept.member[key] = nil end
     if kept.words then kept.words[key] = nil end
     if kept.hidden then kept.hidden[key] = nil end
-    if kept.order then
+    if type(kept.order) == "table" then
         for index = #kept.order, 1, -1 do
             if kept.order[index] == key then table.remove(kept.order, index) end
         end

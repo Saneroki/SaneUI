@@ -14,7 +14,8 @@ local _, ns = ...
 --
 --  The emotes are done as the game's chat menu does them (PerformEmote), at
 --  your target if you have one, as the typed command would be; each named by
---  its command in the game's language (/hello).
+--  its command in the game's language (/hello). None while chat is locked
+--  down: the game refuses them to an addon then.
 --
 --  The list is the game's menu (MenuUtil), as the one on the chat's name; the
 --  marks stand in one row in it, as small buttons (MenuTemplates).
@@ -104,6 +105,11 @@ local function Fill(_, root)
     end
     root:CreateDivider()
     root:CreateTitle(ns.TEXT.emotes)
+    -- While chat is locked down (a fight, a dungeon) the game refuses emotes to our code, as it does messages.
+    if ns.ChatLocked() then
+        root:CreateButton(ns.TEXT.noEmotes):SetEnabled(false)
+        return
+    end
     for _, token in ipairs(Picker.EMOTES) do root:CreateButton(Picker.Command(token), ns.Guard(Do), token) end
 end
 

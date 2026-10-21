@@ -212,10 +212,10 @@ ticked), colours, buttons, and a list of the CVars. A module's page in tabs has 
     shows the same CVar (a CVar changed elsewhere does not overwrite it).
   - The CVars come from the game (`ConsoleGetAllCommands`, those of `Enum.ConsoleCommandType.Cvar`, once each
     whatever the case of their letters; their kind from `Enum.ConsoleCategory`), when the list is first shown; their values from `C_CVar.GetCVarInfo`, which also says the
-    default, where the game keeps it, and whether it is locked, secure or read-only. Search waits 0.15 s after
-    the last key. A CVar changed elsewhere (`CVAR_UPDATE`) is shown anew.
+    default, where the game keeps it, and whether it is locked, secure or read-only. While words are typed, the
+    list is filtered anew at most every 0.15 s. A CVar changed elsewhere (`CVAR_UPDATE`) is shown anew.
   - Setting one: `C_CVar.SetCVar`, then read back; not when it is read-only or locked, nor a secure one in a
-    fight.
+    fight (Sync's checks, `Core.Sync.Settable`). One the game did not take can be tried again.
   - **Labels** (`Data/CVarLabels.lua`, written by `dev/tools/cvar-labels`; `--check` says whether it is up to
     date): for the CVars the game's own options show, `{ label = , tip = }` with the *names* of the game's
     strings, read from Blizzard's options code in `references/` (`Settings.SetupCVarCheckbox/Slider/Dropdown`,
@@ -236,7 +236,7 @@ ticked), colours, buttons, and a list of the CVars. A module's page in tabs has 
 - **Globals:** `SaneUI_OnAddonCompartmentClick`, `SaneUISettingsBannerMixin`, `SaneUISettingsEntryMixin`, `SaneUIFeedbackFrame`,
   `SaneUISettingsCVarsMixin`, `SaneUISettingsCVarRowMixin` (the templates' mixins: XML
   finds it by name).
-- **Tests:** `lua5.1 dev/tests/core.lua` (Core with its options, 355 checks; two modules only its options
+- **Tests:** `lua5.1 dev/tests/core.lua` (Core with its options; two modules only its options
   tests see, one with a switch of every kind on a list page, one in tabs); Sync's sections in
   `dev/tests/sync.lua`, the page Social in `dev/tests/social.lua`.
 

@@ -6,13 +6,14 @@ local Core = SaneUI.Core
 --  choosing that Sane UI shows in place of a character's name (five alts of one
 --  friend can all be "Saneroki"), and a note. Kept for the account, by the
 --  player's key (Core.PlayerKeyOf: the whole name on Forever, Name-Realm
---  elsewhere), in SaneUIDB.modules.SaneUI.people; personal data, never shared
+--  elsewhere), in SaneUIDB.modules.Core.people; personal data, never shared
 --  (Doc/guides/data.md, *Game facts and personal data*).
 --
 --  Written from the game's own menu of a player (a name in a chat, the friends
 --  list, the guild, the target, the group), which every one of those opens:
---  Menu.ModifyMenu appends two lines to it, Set Alias and Set Note, each asking
---  in the game's input dialog. Empty text takes the alias or note away.
+--  Menu.ModifyMenu appends its lines to it, Set Alias and Set Note, each asking
+--  in the game's input dialog, and Remove Alias or Remove Note for one that is
+--  there (that dialog takes no empty text).
 --
 --      Core.People.Key(text)          the key of a player named by text; nil if it is no whole name
 --      Core.People.Alias(key)         the alias, or nil
@@ -27,8 +28,10 @@ Core.People = People
 local TEXT = {
     alias = "Set Alias",
     note = Core.Word("SET_NOTE", "Set Note"),
-    askAlias = "The name Sane UI shows for %s (empty: their own name):",
-    askNote = "A note about %s (empty: none):",
+    removeAlias = "Remove Alias",
+    removeNote = "Remove Note",
+    askAlias = "The name Sane UI shows for %s:",
+    askNote = "A note about %s:",
 }
 People.TEXT = TEXT
 People.LETTERS = { alias = 24, note = 80 }
@@ -102,16 +105,24 @@ local function Ask(key, shown, what)
         function(value) People.Set(key, what, value) end, People.LETTERS[what])
 end
 
--- The two lines under the game's own, after a divider; the alias and the note there now in their tooltips.
+-- A line's tooltip: the alias or note there now, which the line carries as its data (made once).
+local Tip = Core.Guard("aliases", function(tooltip, line)
+    GameTooltip_SetTitle(tooltip, line:GetData())
+end)
+
+-- The lines under the game's own, after a divider: Set Alias and Set Note, the alias and the note there now
+-- in their tooltips, each followed by its Remove line while there is one.
 local function Extend(_, root, data)
     local key, shown = Whom(data)
     if not key then return end
     root:CreateDivider()
     for _, what in ipairs({ "alias", "note" }) do
-        local button = root:CreateButton(TEXT[what], function() Core.Safe("people", Ask, key, shown, what) end)
         local now = Field(key, what)
-        if now and button.SetTooltip then
-            button:SetTooltip(function(tooltip) GameTooltip_SetTitle(tooltip, now) end)
+        local button = root:CreateButton(TEXT[what], function() Core.Safe("people", Ask, key, shown, what) end, now)
+        if now and button.SetTooltip then button:SetTooltip(Tip) end
+        if now then
+            root:CreateButton(what == "alias" and TEXT.removeAlias or TEXT.removeNote,
+                function() Core.Safe("people", People.Set, key, what, nil) end)
         end
     end
 end

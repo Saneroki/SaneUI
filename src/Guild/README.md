@@ -17,10 +17,11 @@ is on. The other views say they come later.
   screen with the guild window in it (in the layout chosen; if that layout lacks it, it is put in beside the largest
   window there). Without Social, or with the switch *On Social's Full Screen* off, it is a window of its own: moved
   by its title bar, sized in Edit Mode, closed by Esc, its place and size kept. The game's micro menu button still
-  opens the game's own guild window, and so does *The Game's Guild Window* on the roster.
+  opens the game's own guild window, and so does *The Game's Guild Window* on the roster. Outside a guild nothing
+  opens (`/sane guild` says so; the guild key opens the game's own window, where a guild is found).
 - **The head:** the guild's own emblem in its ring (the game's tabard), the guild's name and realm, how many are
   online, when the guild last answered (*Synced 2 min*); the gear opens the options page *Guild*; *Sync* asks the
-  guild for what is newer and the game for the roster.
+  guild for what is newer (once a minute at most) and the game for the roster.
 - **The tabs:** *Overview*, *Guild* (*Roster*, *Equipment*, *Guild Bank*, *Handbook*), *Quests*, *Dungeons* (*Runs*,
   *Together*), *Loot* (*Session*, *History*, *Wishlist*, *Rules*), *Professions*, *Raid* (*Plan*, *Numbers*),
   *Officers* (*Mains and Alts*, *Promotions*, *Notices*; only for the guild's officers). The tab and view last chosen
@@ -36,27 +37,31 @@ is on. The other views say they come later.
   name over class and rank, level, rank, zone (*here* where you are), note, when last online; online and offline
   under rows that fold them (a click). A click on a column's head sorts by it, again the other way, a third time
   back to online first by rank. The search box finds every word in name, notes, zone and rank. Click a member: at
-  the right its name, level, class, where it is, since when in the guild, its rank with *-* and *+* (demote and
-  promote, where your rank may: the next rank down and up are named under them), its note and the officer's note
-  (click to change, where your rank may), its last four events in the guild, *Whisper* and *Invite*. A right click
-  on a member: *Whisper*, *Invite*.
+  the right its name, level, class, where it is, since when in the guild (for those who joined after Sane UI first
+  read the roster), its rank with *-* and *+* (demote and promote, where your rank may: the next rank down and up are
+  named under them), its note and the officer's note (click to change, where your rank may), its last four events in
+  the guild, *Whisper* and *Invite*. A right click on a member: *Whisper*, *Invite*.
 - **Equipment:** at the left every member, those who share their gear with their item level, highest first (click a
   column's head to sort by another), searched by name. At the right the one chosen: name, level, class, rank, when
   it was shared (*not live*) or *Your own, live*, its item level large, its slots (the game's empty-slot pictures, the
-  item's icon in its quality's colour, its item level; the item's tooltip under the mouse) around its model: yours
-  as you stand, another dressed in what it shared. A member that shares nothing yet says so.
+  item's icon in its quality's colour, its item level; the item's tooltip under the mouse) around a figure: yours as
+  you stand; another member's gear is dressed on your own figure, as in the game's dressing room (this client cannot
+  show another's race). A member that shares nothing yet says so.
 - **Sharing** (options page *Guild*, section *Sharing with the Guild*): *Share My Gear and Professions* (on): your
   guild's Sane UI sees who your characters are, what they wear and their professions. Nothing goes to anybody outside
   your guild, and nothing into the data Sane UI ships. Off: nothing of it is sent, and nobody who asks gets it.
 - **Settings:** *On Social's Full Screen* (on), *The Guild Key Opens It* (on), *Share My Gear and Professions* (on).
 - **Keys:** in the game's key bindings, section *Sane UI*: *Open or close the guild window*. The guild key itself
-  runs it while *The Guild Key Opens It* is on.
+  runs it while *The Guild Key Opens It* is on and you are in a guild; outside one it opens the game's own window,
+  where a guild is found.
 
 ## Technical details
 - **The page** (`Page.lua`) is one frame, made the first time the window opens, that moves between its two homes
   (`Page.Into`): the body of Social's board panel, or `window.inside` of the window of its own. It listens to Core's
   guild data (`Core.Data.Guild.OnChange`) once shown; a change redraws the head and the view on show once a frame at
-  most (`Core.Later`). A view (`Views/`) is a table: `Build(frame)` the first time it is shown, `Show(on)`,
+  most (`Core.Later`), a hello heard only the head. While it shows, the game is asked for the roster anew whenever it
+  lets (`Guild.Watch`, as the game's own guild window does). Lists are refilled where they were scrolled to. A view
+  (`Views/`) is a table: `Build(frame)` the first time it is shown, `Show(on)`,
   `Refresh()`, `Title()` (the line beside its title), `Search(text)`. `Views.Later(name)` makes a view still to come.
 - **Its sections** (`Page.lua` `Sections`): each a tab of the game's tab system (`TabSystemTemplate` with
   `TabSystemTopButtonTemplate`, as Core's windows), its views under the game's small tabs (`MinimalTabTemplate`) where
@@ -65,11 +70,11 @@ is on. The other views say they come later.
   spec)` with the key `guild`): Social's board lists it in place of its own guild window and Social then leaves the
   game's guild window alone (`Core.Board.Offered`). `Window.Toggle` opens Social's full screen with it
   (`Core.Board.Open`), closes it when it shows (`Core.Board.Close`), and falls back to the window of its own
-  (`Core.Window.New`, kind `panel`) where no board answers. The switch *On Social's Full Screen* withdraws the offer
-  (`Core.Board.Withdraw`).
+  (`Core.Window.New`, kind `panel`) where no board answers; outside a guild it opens nothing and says so (a window of
+  its own still open closes). The switch *On Social's Full Screen* withdraws the offer (`Core.Board.Withdraw`).
 - **The guild key** (`Keys.lua`, `Bindings.xml`): override bindings on the keys of the game's `TOGGLEGUILDTAB` run our
-  `SANEUI_GUILD_TOGGLE`, set out of a fight (or after it), again when the bindings change, taken away when the
-  switch is off or the module stands down.
+  `SANEUI_GUILD_TOGGLE` while the player is in a guild, set out of a fight (or after it), again when the bindings
+  change or the player joins or leaves a guild, taken away when the switch is off or the module stands down.
 - **The data** is Core's (`src/Core/Data/Guild.lua`, `Doc/guides/data.md` *Guild records*): the roster, its history,
   members' records (`card`), this character's card (`Guild.Card()`), what the player may do (`Guild.Rights()`). The
   module tells Core what the player allows (`Guild.Allow("card", on)`) and starts it (`Guild.Start()` at the login).
@@ -82,12 +87,15 @@ is on. The other views say they come later.
   (`InsetFrameTemplate`), buttons (`UIPanelButtonTemplate`), search boxes (`SearchBoxTemplate`), lists
   (`WowScrollBoxList`, `MinimalScrollBar`), class circles, paper-doll slots, `DressUpModel`, the gear, status icons.
 - **Words** are in `ns.TEXT` (`Guild.lua`), the game's own strings where it has one (`Core.Word`).
-- **Cost:** nothing at rest. The page and its views are made when first opened; a view redraws only while on show;
-  the overview keeps the guild's chat since login (100 lines) whether shown or not.
-- **Falling back** (`ns.GiveBack`): the guild key back to the game's, the window closed, the offer withdrawn (Social
-  holds the game's guild window again).
-- **Tests:** `lua5.1 dev/tests/guild.lua` (79 checks): the wire, the guild's records, a window offered to a board,
-  what the views show, the page with every tab, the guild key, standing down.
+- **Cost:** at rest only Core's reading of the roster after the game says it changed (by the scheduler: never in a
+  fight or while the game restricts addons). The page and its views are made when first opened; a view redraws only
+  while on show; the overview keeps the guild's chat since login (100 lines) whether shown or not.
+- **Falling back** (`ns.GiveBack`): the guild key back to the game's first, the window closed, the offer withdrawn
+  (Social holds the game's guild window again), the roster no more asked for; each step on its own.
+- **Tests:** `lua5.1 dev/tests/guild.lua`: the wire (parts numbered wrongly, a block that does not fit), the guild's
+  records (a roster that shrinks, a fight, asks and answers, a switch turned off, Sync), a window offered to a board,
+  what the views show, the page with every tab, the guild key (in a guild and outside one), Esc on the window of its
+  own, standing down.
 
 ## Files
 | File | What |

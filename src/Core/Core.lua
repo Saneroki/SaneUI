@@ -367,6 +367,13 @@ local function Named(names)
     return RELOAD.both:format(table.concat(names, ", ", 1, count - 1), names[count])
 end
 
+-- The dialog's Reload: the game's own /reload (made once).
+local Reload = Core.Guard("reload", function()
+    local ui = rawget(_G, "C_UI")
+    local reload = ui and ui.Reload or ReloadUI
+    if reload then reload() end
+end)
+
 -- Offers a /reload in the game's own dialog (Reload / Later), for a change the game shows only after
 -- one; names: what changed, a few words each. Nothing happens if the game's dialog is gone (noted
 -- once). Whoever asks says it only once per change: nothing is throttled here.
@@ -377,12 +384,7 @@ function Core.AskReload(names)
         return
     end
     StaticPopup_Show("GENERIC_CONFIRMATION", nil, nil, { text = RELOAD.text, text_arg1 = Named(names),
-        acceptText = RELOAD.reload, cancelText = RELOAD.later,
-        callback = function()
-            local ui = rawget(_G, "C_UI")
-            local reload = ui and ui.Reload or ReloadUI
-            if reload then reload() end
-        end })
+        acceptText = RELOAD.reload, cancelText = RELOAD.later, callback = Reload })
 end
 
 -------------------------------------------------------------------------------
@@ -664,21 +666,14 @@ function Core.NewModule(addon, name, module)
 end
 
 -- addon: only the modules of that addon; nil: all of them. A step that fails stands its module
--- down. A module whose OnLoad failed, or that stood down before it (an error in one of its files),
--- is not started further: its OnLogin would only fail on what OnLoad did not make.
-local unstarted = {}
+-- down. A module that stood down, in whichever step or at whichever door (its OnLoad, an error in
+-- one of its files, a listener before the login), gets no further step: its OnLogin would take back
+-- what it gave back, with every guard of it shut.
 local function Start(step, addon)
     for _, module in ipairs(Core.modules) do
-        if module[step] and not unstarted[module] and (not addon or module.addon == addon) then
-            if step == "OnLoad" and module.off then
-                unstarted[module] = true
-            else
-                local ok, problem = xpcall(module[step], Trace)
-                if not ok then
-                    if step == "OnLoad" then unstarted[module] = true end
-                    Failed(module, step, problem)
-                end
-            end
+        if module[step] and not module.off and (not addon or module.addon == addon) then
+            local ok, problem = xpcall(module[step], Trace)
+            if not ok then Failed(module, step, problem) end
         end
     end
 end
@@ -750,7 +745,7 @@ end)
 
 SLASH_SANEUI1 = "/sane"
 SLASH_SANEUI2 = "/saneui"
-SlashCmdList.SANEUI = function(text)
+SlashCmdList.SANEUI = Core.Guard("/sane", function(text)
     text = strtrim(text or "")
     local word, rest = text:match("^(%S+)%s*(.-)$")
     local command = word and commands[word:lower()]
@@ -767,4 +762,4 @@ SlashCmdList.SANEUI = function(text)
     for _, known in ipairs(listed) do
         Core.Print(("/sane %s - %s"):format(known.word, known.about))
     end
-end
+end)

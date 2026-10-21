@@ -34,7 +34,12 @@ ns.PinView = PinView
 PinView.GLOW = "UI-QuestPoi-OuterGlow" -- behind the quest the game's arrow leads to
 PinView.GREY = 0.8 -- a grey quest's icon: so opaque, its colour taken away
 
-PinView.LEVELS = 6 -- the pins' own levels over their layer: a pin of a higher order stands over a lower one
+-- The pins' own levels over their layer, by kind (a gathered marker: its first pin's), in Pins' order: a higher kind
+-- stands over a lower one. Kinds that share a level are those Pins.Gather gathers where they would cover each other
+-- (the game's own marks nearby aside); at most PinView.LEVELS, all under the marks (Canvas.LEVELS).
+PinView.TIERS = { log = 6, quest = 5, rare = 4, entrance = 3, flight = 3, travel = 3, place = 3, treasure = 2,
+                  service = 1 }
+PinView.LEVELS = 6
 
 local layer, holder, view
 local used, free = {}, {} -- [key] = button while in view; buttons let go
@@ -107,10 +112,12 @@ local function Up(button, mouse)
     if ns.Canvas.Release(mouse) and button.pin then Act(button.pin) end
 end
 
--- A pin's level: over the layer, a higher order over a lower one, and still under the marks (Canvas.LEVELS).
+-- A pin's level: over the layer, a higher kind over a lower one, and still under the marks (Canvas.LEVELS).
 local function Level(button)
-    local order = button.pin and button.pin.order or 0
-    button:SetFrameLevel(layer:GetFrameLevel() + 1 + math.min(order, PinView.LEVELS))
+    local pin = button.pin
+    local first = pin and (pin.gathered and pin.gathered[1] or pin)
+    local tier = first and PinView.TIERS[first.kind] or 0
+    button:SetFrameLevel(layer:GetFrameLevel() + 1 + math.min(tier, PinView.LEVELS))
 end
 
 local function Make()
@@ -134,10 +141,14 @@ end
 -- A button's look for its pin: its icon, whatever its kind (a gathered marker: its first pin's, the one drawn
 -- highest), at its kind's size from the pin filter's slider. A grey quest (and a flight point not found yet) without
 -- its colour, a tinted one in its colour (a quest for later: red), the quest the game's arrow leads to with a glow
--- behind it.
+-- behind it. Not made again while it is the same (the same first pin, size and glow: a pin's record is made anew
+-- whenever what it shows changes).
 local function Look(button, pin)
     local first = pin.gathered and pin.gathered[1] or pin
     local size = (Pins.SIZE[first.kind] or 20) * ns.PinScale(first.kind)
+    local glowing = first.focused and not pin.gathered and true or false
+    if button.first == first and button.size == size and button.glowing == glowing then return end
+    button.first, button.size, button.glowing = first, size, glowing
     button:SetSize(size, size)
     button.half = size / 2 -- how far it reaches from its middle (Fit); the focused quest's glow farther
     local icon, glow = button.icon, button.glow
@@ -148,7 +159,7 @@ local function Look(button, pin)
     icon:SetAtlas(first.atlas or Pins.ICONS.offer)
     button.light:SetAtlas(first.atlas or Pins.ICONS.offer)
     glow:Hide()
-    if first.focused and not pin.gathered then
+    if glowing then
         glow:SetSize(size * 1.6, size * 1.6)
         glow:SetPoint("CENTER")
         glow:Show()
@@ -202,7 +213,7 @@ function PinView.Place(laidView, small)
     for key, button in pairs(used) do
         if not seen[key] then
             button:Hide()
-            button.pin = nil
+            button.pin, button.inside = nil, false
             used[key] = nil
             free[#free + 1] = button
         end
@@ -210,17 +221,24 @@ function PinView.Place(laidView, small)
     PinView.Fit()
 end
 
--- Each pin shown while it lies wholly inside the canvas' rectangle (Canvas.edge, in the holder's units).
+-- Each pin shown while it lies wholly inside the canvas' rectangle (Canvas.edge, in the holder's units); told the
+-- game only when that changed.
 function PinView.Fit()
     local Inside = ns.Canvas.Inside
-    for _, button in pairs(used) do button:SetShown(Inside(button.x, button.y, button.half)) end
+    for _, button in pairs(used) do
+        local inside = Inside(button.x, button.y, button.half)
+        if inside ~= button.inside then
+            button.inside = inside
+            button:SetShown(inside)
+        end
+    end
 end
 
 -- Every pin out of sight (the window hidden).
 function PinView.Clear()
     for key, button in pairs(used) do
         button:Hide()
-        button.pin = nil
+        button.pin, button.inside = nil, false
         used[key] = nil
         free[#free + 1] = button
     end

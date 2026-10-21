@@ -11,7 +11,8 @@ local Core = SaneUI.Core
 --      local Map = SaneUI.Core.Data.Map()
 --      local list = Map:On(1429)    -- the places on that map, or nil while they are being read
 --      Map:OnChange(Redraw)         -- fn() on the frame after the places changed (OffChange)
---      Map:Spawns("npc:69")         -- an NPC's or object's points: { [map] = { { x, y }, ... } }
+--      Map:Spawns("npc:69")         -- a thing's points: { [map] = { { x, y }, ... } }, of what goes on the map
+--                                   -- only (an NPC with a service, a rare, a quest giver; an object)
 --
 --  A place is a plain table, read-only like a record, x and y from 0 to 1 on its map:
 --      kind      "npc", "object", "place" or "travel": which set it came from
@@ -47,7 +48,7 @@ for _, name in ipairs(MapReader.PLACES) do handles[name] = Data.Set(name) end
 for _, name in ipairs(MapReader.FACTS) do handles[name] = Data.Set(name) end
 
 local byMap        -- [uiMapID] = its places, once read; nil while reading or not yet asked
-local spawns = {}  -- [Spawns key] = { [map] = { { x, y }, ... } }
+local spawns = {}  -- [Spawns key] = { [map] = { { x, y }, ... } } of what goes on the map, of the same read as byMap
 local listeners = {}
 local job, stale -- a walk is running; a set changed while it ran
 local FROZEN = { __newindex = function() error("a place of Sane UI's data is read-only", 2) end }
@@ -100,8 +101,9 @@ local function Creature(id)
         npc and npc.name, npc and npc.levelMin, npc and npc.levelMax
 end
 
--- One entry of Spawns: its points, each on its map; a creature with many points on a map at its areas' middles.
-local function Spawn(found, key, record)
+-- One entry of Spawns: its points, each on its map (into spawned); a creature with many points on a map at its
+-- areas' middles.
+local function Spawn(found, key, record, spawned)
     local kind, id = tostring(key):match("^(%a+):(%d+)$")
     id = tonumber(id)
     if not id or (kind ~= "npc" and kind ~= "object") then return end
@@ -122,7 +124,7 @@ local function Spawn(found, key, record)
         list[#list + 1] = { point.x / 100, point.y / 100 }
         count[map] = (count[map] or 0) + 1
     end
-    spawns[place.key] = points
+    spawned[place.key] = points
     local middles = {}
     if kind == "npc" then
         for _, middle in ipairs(record.middles or {}) do
@@ -183,10 +185,10 @@ end)
 
 -- Every place read anew, a walk over each set that is there (Each: a job of the scheduler), one after
 -- the other; told on the next frame once all are read. A set changed meanwhile: read again after it.
+-- The places and the points come in together: the last read's stay in use until the new one is done.
 local function Read()
     stale = false
-    local found, names = {}, {}
-    wipe(spawns)
+    local found, spawned, names = {}, {}, {}
     for _, name in ipairs(MapReader.PLACES) do
         if handles[name]:Ready() then names[#names + 1] = name end
     end
@@ -195,13 +197,13 @@ local function Read()
         if not name then
             job = nil
             if stale then return Read() end
-            byMap = found
+            byMap, spawns = found, spawned
             return tell()
         end
         local read = READERS[name]
-        job = handles[name]:Each(function(key, record) read(found, key, record) end, function(problem)
+        job = handles[name]:Each(function(key, record) read(found, key, record, spawned) end, function(problem)
             if problem then
-                job, byMap = nil, found -- what was read stays; the failure is noted by the walk
+                job, byMap, spawns = nil, found, spawned -- what was read stays; the failure is noted by the walk
                 return tell()
             end
             Next(index + 1)
@@ -211,13 +213,18 @@ local function Read()
     Next(1)
 end
 
--- A set changed or arrived: read again (after the job running now, if one is).
+-- A set changed or arrived: read again on the next frame, once for all the sets told together (those of
+-- one pack arrive at once); after the walk running now, if one is.
+local Reread = Core.Later(function()
+    if job then stale = true else Read() end
+end)
+
 local function Changed()
     if job then
         stale = true
         return
     end
-    Read()
+    Reread()
 end
 
 local started = false
@@ -240,7 +247,8 @@ function reader:On(map)
     return byMap[map] or Hand({})
 end
 
--- An NPC's or object's points by map ({ [map] = { { x, y }, ... } }, x and y 0 to 1), or nil.
+-- A thing's points by map ({ [map] = { { x, y }, ... } }, x and y 0 to 1): of an object, or of an NPC that goes
+-- on the map (with a service, a rare, a quest giver); nil for any other creature, or while first read.
 function reader:Spawns(key)
     Start()
     return byMap and spawns[key] or nil

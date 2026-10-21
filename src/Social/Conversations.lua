@@ -193,7 +193,7 @@ end
 local function Preview(talk)
     local last = Last(talk)
     if not last then return "" end
-    local text = Core.Fuzzy.Plain(last.text or "")
+    local text = ns.Log.Readable(last)
     if last.side == "right" then return ns.TEXT.you .. ": " .. text end
     if (talk.pinned or Talks.GROUPS[talk.kind]) and last.name then
         return (Core.People and Core.People.Shown(last.name) or last.name) .. ": " .. text
@@ -326,8 +326,13 @@ local function Scrolled()
     Bar()
 end
 
+-- The list asks outside our own guard: behind one of ours, and never a height of nothing (it would stop the list).
+local function Measured(entry)
+    return Bubble.Known(entry, rowWidth) or Bubble.Measure(entry, rowWidth)
+end
+
 local function Height(_, entry)
-    return Bubble.Known(entry, rowWidth) or ns.Safe("conversations", Bubble.Measure, entry, rowWidth) or 1
+    return ns.Safe("conversations", Measured, entry) or 1
 end
 
 local function DrawMessage(row, entry)
@@ -472,12 +477,13 @@ end
 -- The list of the chats the chat shows, ticked as in the list on its line's name (Menu.lua).
 local function IsShown(chat) return ns.Guarded(ns.Channels.Shown, chat.group) end
 local function Switch(chat) ns.Guarded(ns.Channels.Flip, chat.group) end
-local function Showing(_, root)
+-- The game asks for the list when it opens, outside our own guard.
+local Showing = ns.Guard(function(_, root)
     root:CreateTitle(ns.TEXT.showing)
     for _, chat in ipairs(ns.Channels.Showable()) do
         root:CreateCheckbox(chat.text, IsShown, Switch, chat)
     end
-end
+end)
 
 -- A conversation chosen: its messages read and on show, its row marked. The chat chosen: it stands beside the list
 -- (Window.Pick); a chat view: its list there (views). Another than the chat chosen while the game's line is in use
@@ -490,7 +496,7 @@ Choose = function(talk)
     mine:SetShown(not pinned)
     views:Point(talk and talk.view or nil)
     views:Show(talk ~= nil and talk.view ~= nil)
-    if pinned then filter:SetupMenu(talk.view and ns.Feed.Menu(talk.view) or Showing) end
+    if pinned then filter:SetupMenu(talk.view and ns.Feed.Menu(talk.view) or Showing) end -- guarded: Feed.Menu's and Showing are ns.Guard(fn)
     if pinned ~= "chat" and ns.Window.Writing() and not Board.Has("chat") then ns.Input.Close() end
     ns.Window.Pick(pinned == "chat" and "chat" or nil)
     box:ForEachFrame(Draw)
@@ -564,11 +570,6 @@ local function Remove()
     end)
 end
 
--- While chat is locked down (a fight, a dungeon) the game sends only from its own line.
-local function Locked()
-    return C_ChatInfo and Core.Ask(C_ChatInfo.InChatMessagingLockdown) or false
-end
-
 -- Enter in the line: the words to the one chosen; a command to the game's line, where Enter runs it.
 local function Send()
     local text = ((edit:GetText() or ""):gsub("[\r\n]+", " ")):match("^%s*(.-)%s*$")
@@ -578,7 +579,8 @@ local function Send()
         edit:ClearFocus()
         return ChatFrameUtil.OpenChat(text)
     end
-    if Locked() then return ns.Print(ns.TEXT.talkLocked) end
+    -- While chat is locked down (a fight, a dungeon) the game sends only from its own line.
+    if ns.ChatLocked() then return ns.Print(ns.TEXT.talkLocked) end
     local sent, why = Talks.Send(open, text)
     if sent then
         edit:SetText("")
@@ -590,13 +592,13 @@ end
 -- A message came into a conversation (Talks.Add). Hidden, the panel lists them anew once it is shown.
 local function Added(talk, message, new)
     if not panel or not shown then return end
+    -- Your own first message to somebody new: their conversation is chosen, whole (the chat or a chat view out of sight).
     if new and message.side == "right" and not ns.Window.Writing() then
-        open = talk
-        Talks.Read(talk)
         Update()
-        return Fill()
+        return Choose(talk)
     end
-    Update()
+    -- The list anew once a frame (Changed), not for each message of a busy group; the one chosen shows it at once.
+    Changed()
     if talk == open then Append(message) end
 end
 Talks.added = function(...) ns.Safe("conversations", Added, ...) end
@@ -621,7 +623,8 @@ local function Opened()
     local text, kind = line:GetText() or "", line:GetChatType()
     local talk = open
     if text == "" and kind == "WHISPER" then
-        talk = Talks.Whisper(line:GetTellTarget())
+        -- In chat lockdown the one to reply to may be a name the game hides: then none is known.
+        talk = Talks.Whisper(Core.Plain(line:GetTellTarget()))
     elseif text ~= "" or kind == "BN_WHISPER" then
         talk = nil
     end

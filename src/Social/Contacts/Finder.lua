@@ -22,6 +22,11 @@ local _, ns = ...
 --  finder's too, and follows its results while it is shown. The panel's search
 --  box finds listings by their leader, activity and comment. Its tab is there
 --  while the switch Group finder is on.
+--
+--  While chat is locked down (a fight, a dungeon) the game hides the listings
+--  from addons: the rows read last stay, its line says so, and they are read
+--  anew once it ends. Every part of a listing is read plain; one the game hides
+--  a needed part of is left out.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Board, Contacts, Layout = ns.Board, ns.Contacts, ns.Layout
@@ -30,7 +35,7 @@ Contacts.Finder = View
 
 local REFRESH = "Interface\\Buttons\\UI-RefreshButton"
 
-local box, categories, send, invite
+local box, categories, send, invite, status
 local shown
 local category -- the category looked in (its id), once chosen
 local state    -- "searching", "failed", or nil
@@ -47,25 +52,33 @@ end
 
 -- An activity's name, short if it has one.
 local function Activity(info)
-    local ids = info.activityIDs or {}
+    local ids = Core.Plain(info.activityIDs)
+    if type(ids) ~= "table" then return "" end
     if #ids > 1 then return ns.TEXT.activities:format(#ids) end
-    local activity = ids[1] and C_LFGList.GetActivityInfoTable(ids[1])
+    local id = Core.Plain(ids[1])
+    local activity = id and C_LFGList.GetActivityInfoTable(id)
     return activity and (activity.shortName ~= "" and activity.shortName or activity.fullName) or "", activity
 end
 
--- One listing as the game's browse view reads it.
+-- One listing as the game's browse view reads it, every part plain. The game hides them from addons while chat is
+-- locked down: one whose state, size or age is hidden is left out, a part only shown (a name, a class) is none.
 local function Listing(id)
-    local info = C_LFGList.GetSearchResultInfo(id)
-    if not info or info.isDelisted then return nil end
+    local info = Core.Plain(C_LFGList.GetSearchResultInfo(id))
+    if type(info) ~= "table" or Core.Secret(info.isDelisted) or Core.Secret(info.numMembers) or Core.Secret(info.age) then
+        return nil
+    end
+    if info.isDelisted then return nil end
     local activity, data = Activity(info)
-    local leader = C_LFGList.GetSearchResultLeaderInfo and C_LFGList.GetSearchResultLeaderInfo(id)
+    local leader = Core.Plain(C_LFGList.GetSearchResultLeaderInfo and C_LFGList.GetSearchResultLeaderInfo(id))
     local solo = (info.numMembers or 1) <= 1
-    local player = solo and C_LFGList.GetSearchResultPlayerInfo and C_LFGList.GetSearchResultPlayerInfo(id, 1)
+    local player = solo and Core.Plain(C_LFGList.GetSearchResultPlayerInfo and C_LFGList.GetSearchResultPlayerInfo(id, 1))
+    local class = type(leader) == "table" and Core.Plain(leader.classFilename) or nil
+    if not class and type(player) == "table" then class = Core.Plain(player.classFilename) end
     return {
         id = id, leader = Core.Plain(info.leaderName), solo = solo, members = info.numMembers or 1,
         most = data and data.maxNumPlayers or 0, activity = activity, comment = Core.Plain(info.comment) or "",
-        class = (leader and leader.classFilename) or (player and player.classFilename), level = player and player.level,
-        mine = info.hasSelf, age = info.age or 0,
+        class = type(class) == "string" and class or nil, level = type(player) == "table" and Core.Plain(player.level) or nil,
+        mine = Core.Plain(info.hasSelf) == true, age = info.age or 0,
     }
 end
 
@@ -76,7 +89,7 @@ local function Read()
     local read = C_LFGList.GetFilteredSearchResults or C_LFGList.GetSearchResults
     local _, results = read()
     for _, id in ipairs(results or {}) do
-        local listing = Listing(id)
+        local listing = Core.Plain(id) and Listing(id)
         if listing then found[#found + 1] = listing end
     end
     table.sort(found, function(a, b)
@@ -118,6 +131,10 @@ end
 
 local function Update()
     if not shown then return end
+    -- Hidden from addons now (chat lockdown: a fight, a dungeon): the rows read last stay, the line says so.
+    local locked = ns.ChatLocked()
+    status:SetText(locked and ns.TEXT.finderLocked or "")
+    if locked then return Buttons() end
     wipe(listings)
     local elements = {}
     for _, listing in ipairs(state == "searching" and {} or Read()) do
@@ -140,13 +157,14 @@ local function Failed()
     Changed()
 end
 
--- A search of the category chosen, in every activity the game offers in it, as the game's browse view
--- searches when none is ticked. Only on a click.
+-- A search of the category chosen, in every activity the game offers in it (the game's browse view leaves out
+-- those far from your level, unless told otherwise; this one searches them all). Only on a click. Searching only
+-- once the game took it: a search it refuses (an error) leaves the list as it was.
 local function Search()
     if not category or not Usable() then return end
     local activities = C_LFGList.GetAvailableActivities and C_LFGList.GetAvailableActivities(category) or nil
-    state, chosen = "searching", nil
     C_LFGList.Search(category, 0, 0, nil, false, nil, activities)
+    state, chosen = "searching", nil
     Update()
 end
 
@@ -244,9 +262,17 @@ function View.Build(page)
     categories:SetPoint("RIGHT", refresh, "LEFT", -4, 0)
     categories:SetWidth(150)
     categories:SetDefaultText(ns.TEXT.category)
-    categories:SetupMenu(Categories)
+    categories:SetupMenu(ns.Guard(Categories))
+    -- At its left what it says while the game hides the listings (chat lockdown).
+    status = line:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    status:SetPoint("LEFT", Layout.EDGE + 6, 0)
+    status:SetPoint("RIGHT", categories, "LEFT", -6, 0)
+    status:SetJustifyH("LEFT")
+    status:SetWordWrap(false)
     box = Board.List(page, function(row, listing)
         Draw(row, listing)
+        if row.wired then return end -- its script once: the list hands its rows from one listing to another
+        row.wired = true
         row:SetScript("OnClick", function(self) ns.Safe("group finder", Click, self) end)
     end, Layout.LINE + Layout.EDGE)
     -- Three buttons share the foot, as wide as the panel lets them be.
@@ -256,16 +282,22 @@ function View.Build(page)
     Board.Button(page, ns.TEXT.listYourself, width, function() ns.OpenFinder(1) end, invite)
 end
 
--- Shown, it reads what was found last and follows the game's results; hidden, it hears nothing.
+-- Shown, it reads what was found last and follows the game's results, and chat's lockdown beginning or ending (the
+-- game tells of it before and after, so it is asked a frame later: Changed); hidden, it hears nothing.
 local EVENTS = { LFG_LIST_SEARCH_RESULTS_RECEIVED = Received, LFG_LIST_SEARCH_RESULT_UPDATED = Changed,
-                 LFG_LIST_SEARCH_FAILED = Failed, LFG_LIST_AVAILABILITY_UPDATE = Changed, GROUP_ROSTER_UPDATE = Changed }
+                 LFG_LIST_SEARCH_FAILED = Failed, LFG_LIST_AVAILABILITY_UPDATE = Changed, GROUP_ROSTER_UPDATE = Changed,
+                 ADDON_RESTRICTION_STATE_CHANGED = Changed }
 
 function View.Show(on)
     shown = on
     for event, fn in pairs(EVENTS) do
         if on then Core.On(event, fn) else Core.Off(event, fn) end
     end
-    if on then Update() end
+    if not on then return end
+    -- A search the tab was away for is waited for no more (its end went unheard): what the game has is read, and a
+    -- later answer is heard again.
+    if state == "searching" then state = nil end
+    Update()
 end
 
 function View.Search(found)

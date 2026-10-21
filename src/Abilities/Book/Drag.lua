@@ -132,9 +132,12 @@ function D.StartMove(slot)
     if held then from = slot end
 end
 
+-- Also when the module stood down (ns.GiveBack): the gold frame goes here too, not only by the
+-- icon's OnHide, a guarded script that does nothing then.
 function D.Cancel()
     held, from = nil, nil
     if holder then holder:Hide() end
+    if hint then hint:Hide() end
 end
 
 -- Let go: reserve the button under the mouse. Anywhere else nothing happens.

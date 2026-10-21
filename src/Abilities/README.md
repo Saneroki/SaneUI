@@ -1,6 +1,6 @@
 # Sane UI: Abilities
 
-**Status:** written and tested offline · **Since:** 2026-10-08 (as the addon *Actionbar Organizer*), a Sane UI module since 2026-10-14 · **Addon:** `SaneUI_Abilities` · **Game:** WoW: Forever (interface 16001)
+**Status:** working · **Since:** 2026-10-08 (as the addon *Actionbar Organizer*), a Sane UI module since 2026-10-14 · **Addon:** `SaneUI_Abilities` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 The module for your spells and abilities (it was called *Spellbook*; it will do more than the spellbook).
@@ -44,10 +44,10 @@ trainer can teach you right now and which spells you get from quests.
   dragged carries the clock; while the ranks are folded into one entry, that entry carries it.
 - **The small arrow at the top right of the spellbook** has the options:
   - *Show unlearned spells*: the grey entries on or off.
-  - *Open the spellbook on its Home page* (options page only): off = the spellbook opens on the tab you
-    last looked at.
   - *Show all spell ranks*: off = one icon per spell; on = one icon for every rank, learned or not.
     (The game's own option; the module adds the line for warriors and rogues, who do not get it.)
+  - *Open the spellbook on its Home page*: off = the spellbook opens on the tab you last looked at.
+  - *Compact spellbook pages* and *Move and resize the spellbook* (both above).
   - *Show reservations on the action bars*, *Say in chat when a reserved button is filled*.
   - *Action bar layouts*: save all your bars under a name, load them again later (per class).
 
@@ -118,9 +118,11 @@ trainer can teach you right now and which spells you get from quests.
   the row of tabs, an entry's own size, the window's size) is given back when it ends. The page buttons
   and the row of tabs are lent (`Core.Lend`): their place is noted once and given back exactly.
 - **When the whole module stands down** (an error that no step of its own caught, at one of its doors:
-  the update's timer, the watcher, the drag, an event; Core's error guard): `ns.GiveBack` leaves the
-  spellbook to the game (`Book.StandDown`), drops a drag in hand and takes the ghosts off the bars. The
-  reservations stay saved; after the next `/reload` the module starts afresh.
+  the update's timer, the watcher, the drag, an event; Core's error guard): `ns.GiveBack` takes the
+  ghosts off the bars, drops a drag in hand, puts the class trainer's filter back and leaves the
+  spellbook to the game (`Book.StandDown`), each step on its own, so one that fails keeps none of the
+  others. From then on the trainer's window is the game's alone. The reservations stay saved; after
+  the next `/reload` the module starts afresh.
 - **Keeping the entries in place** (`Book.lua`, `Watch`): the game lays its entries out again now and
   then, sometimes a frame after it said it drew. For ten frames after each layout of the module every
   frame is looked at, then five times a second while the spellbook is open; closed, nothing runs.
@@ -237,34 +239,10 @@ trainer can teach you right now and which spells you get from quests.
 - **Names in the game:** frames `SaneUISpellbook`, `SaneUISpellbookPager`, `SaneUISpellbookHome`,
   `SaneUISpellbookShowHidden` (the checkbox), `SaneUISpellbookDragBar`, `SaneUISpellbookSizeGrip`.
 - **Tests:** `lua5.1 dev/tests/abilities.lua` runs the module against a small stand-in for the game client,
-  with a stand-in spellbook (339 checks). It proves the rules, not the look. A few made-up rows stand in for
+  with a stand-in spellbook. It proves the rules, not the look. A few made-up rows stand in for
   `Data/Classes/`, whose files are only checked for their format.
   The page rule in `Book/Layout.lua` was also run against Blizzard's own paging code: same result in
   42,000 generated cases.
-- **Not verified in the game yet:** all of the spellbook part. To check first:
-  1. clicking a learned spell in the spellbook still casts it, also after ticking one of the game's own
-     lines in the options menu, and in a fight (no "blocked by an AddOn" message);
-  2. the pages look like the game's own with *Show unlearned spells* off;
-  3. the look next to a skin;
-  4. `/sane ab debug`: how many tabs came from "asked from the game" (the skill-line table);
-  5. the Home tab: that it is no longer under the book's round icon, that the search box still has
-     room next to the moved tabs, that the tab under it looks
-     unselected while Home is open, and that the page is empty paper behind Home's rows;
-  6. the yellow mark and the clock on the icons: their size and place, also on the action bar;
-  7. that a weapon skill you have is not listed under *Skills to learn* (the game may not report
-     weapon skills as known spells), and that the **+** on a folded spell can be clicked;
-  8. the place of the checkbox next to the page buttons;
-  9. moving and resizing: that the window stays where you put it when another window opens next to
-     it, that the page art stretches well, that the talents tab still has its own size, that making
-     the spellbook small and large still works, and that nothing is blocked after a fight;
-  10. compact pages: that the smaller text is readable and the game's own entries shrink with ours.
-  11. A bar addon: a grey spell drops on every bar (9 and 10 too) and on empty spots it hides
-      ("always show buttons" off); the gold frame sits on the button; the reservation's grey icon
-      shows there; a carried real spell still drops on those buttons;
-  12. moving a reservation (bars unlocked or Shift held), swapping two, dropping one on a real action
-      (that action comes onto the cursor), and dragging one off the bars to remove it;
-  13. the order in a tab: known spells, then what you can learn now, then by level;
-  14. after the rename to Abilities: settings, reservations and layouts carried over from Spellbook.
 - **References:** `references/` is Blizzard's interface source and art for this build
   (`Blizzard_PlayerSpells`, `Blizzard_PagedContent`, `Blizzard_Menu`).
 

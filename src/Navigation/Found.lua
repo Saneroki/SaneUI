@@ -22,9 +22,10 @@ local _, ns = ...
 --  those edges, and the sweep's step follows it.
 --
 --  A sweep done, the dots of the kind whose finder is on are what the game
---  shows now: one it covered and found no more is gone. Those of the other kind
---  (the finders take turns, Nodes.lua) are kept, until you loot a node beside
---  one, go far from it, or it is Found.KEEP seconds old.
+--  shows now: one it covered and found no more is gone. Those it did not cover,
+--  and those of the other kind (the finders take turns, Nodes.lua), are kept,
+--  until you loot a node beside one, go far from it, or it is Found.KEEP
+--  seconds old.
 --
 --  Kept in yards in the player's plane (Coords.lua), so they stay put while you
 --  move; drawn at their distance from you (the minimap's middle) times the
@@ -198,16 +199,17 @@ local function Covered(entry, pu, pv, half, round)
     return math.abs(du) < half and math.abs(dv) < half
 end
 
--- A sweep done: of its kind, what it covered and did not find is gone; of the other kind, what is too old or
--- too far.
+-- A sweep done: of its kind, what it covered and did not find is gone; the rest, of either kind, once it is too
+-- old or too far (what it found now is neither).
 local function Settle(plane, pu, pv, scale)
     local now, half = GetTime(), (Minimap():GetWidth() / 2) / scale
     for index = #found, 1, -1 do
         local entry = found[index]
         if entry.plane ~= plane then
             Remove(index)
-        elseif entry.kind == sweep.kind then
-            if entry.swept ~= sweep.number and Covered(entry, pu, pv, half * 0.9, sweep.round) then Remove(index) end
+        elseif entry.kind == sweep.kind and entry.swept ~= sweep.number
+            and Covered(entry, pu, pv, half * 0.9, sweep.round) then
+            Remove(index)
         elseif now - entry.seen > Found.KEEP or not Covered(entry, pu, pv, half * Found.FAR, true) then
             Remove(index)
         end
@@ -395,7 +397,8 @@ local function Update()
     if overlay:GetFrameLevel() <= minimap:GetFrameLevel() then overlay:SetFrameLevel(minimap:GetFrameLevel() + 2) end
     if not sweep and GetTime() >= nextSweep then
         local kind = SweepKind(minimap)
-        if kind then Begin(kind, plane, Minimap():GetWidth() / 2, Round()) end
+        -- None now (no finder on, a fight, the mouse on the minimap): looked at again after a rest, not each frame.
+        if kind then Begin(kind, plane, Minimap():GetWidth() / 2, Round()) else nextSweep = GetTime() + Found.REST end
     end
     if sweep then Sweep(minimap, plane, pu, pv, scale, facing) end
     if drawn.count == #found and drawn.plane == plane and drawn.u == pu and drawn.v == pv and drawn.scale == scale

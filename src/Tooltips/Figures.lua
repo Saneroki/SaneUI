@@ -40,8 +40,18 @@ local CREATURE_TURN = -0.5 -- a mount or a pet, a little from the side
 local NONE, DRESS = false, "dress"
 
 -- What each thing has, as asked once: [item] or [spell] = { kind, display, zoom, turn }, DRESS (gear,
--- for the character beside the panel) or NONE
-local items, spells = {}, {}
+-- for the character beside the panel) or NONE. At most HELD of each (n: how many), then they are
+-- forgotten together.
+local HELD = 400
+local items, spells = { n = 0 }, { n = 0 }
+
+local function Keep(cache, id, known)
+    if cache.n >= HELD then
+        wipe(cache)
+        cache.n = 0
+    end
+    cache[id], cache.n = known, cache.n + 1
+end
 
 -- A mount's model: its display (GetMountInfoExtraByID), or the first of its displays where it has
 -- several (GetMountAllCreatureDisplayInfoByID).
@@ -96,7 +106,7 @@ function Figures.Item(head, id, tooltip, pictured)
     if known == nil then
         known = Item(id)
         if known == nil then return end
-        items[id] = known
+        Keep(items, id, known)
     end
     if not known then return end
     if known == DRESS then
@@ -115,7 +125,7 @@ function Figures.Spell(head, id)
         local journal = rawget(_G, "C_MountJournal")
         local display = journal and MountDisplay(Ask(journal.GetMountFromSpell, id))
         known = display and Creature(display) or NONE
-        spells[id] = known
+        Keep(spells, id, known)
     end
     if not known then return end
     head.model, head.modelKind, head.modelZoom, head.modelTurn = known[2], known[1], known[3], known[4]

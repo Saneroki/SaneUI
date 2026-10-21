@@ -110,9 +110,11 @@ local function Layout()
     end
 end
 
--- A tab chosen: the one before hidden and deaf, this one shown and drawn, the head says its name.
+-- A tab chosen: the one before hidden and deaf, this one shown and drawn, the head says its name. The one shown
+-- already stays as it is (its button, which unchecked itself, checked again).
 function Sidebar.Choose(key)
     local tab = Find(key) or tabs[1]
+    if tab.key == chosen then return Layout() end
     local before = Find(chosen)
     if before and before ~= tab then
         before.pane:Hide()
@@ -126,7 +128,7 @@ function Sidebar.Choose(key)
 end
 
 local function Clicked(tab)
-    Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_OFF")
+    if tab.key ~= chosen then Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_OFF") end
     Sidebar.Choose(tab.key)
 end
 
@@ -208,11 +210,14 @@ end
 
 local later = Core.Later(function() ns.Safe("character", Petted) end)
 
+-- Shown or hidden: the player's pet listened to while shown (UNIT_PET names the pet's owner); the pet gone while
+-- hidden, shown again with the stats, as when it goes while shown (Petted).
 function Sidebar.Show(on)
     shown = on
-    if on then Core.On("UNIT_PET", later) else Core.Off("UNIT_PET", later) end
+    if on then Core.OnUnit("UNIT_PET", "player", later) else Core.OffUnit("UNIT_PET", "player", later) end
     local tab = Find(chosen)
     if not tab then return end
+    if on and chosen == "pet" and not Pet() then return Sidebar.Choose("stats") end
     if on then Layout() end
     ns.Safe("character", tab.show, on)
 end

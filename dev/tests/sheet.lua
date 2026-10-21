@@ -137,8 +137,10 @@ CreateScrollBoxListLinearView = function()
     local view = {}
     function view:SetElementFactory(fn) self.factory = fn end
     function view:SetElementExtentCalculator(fn) self.extent = fn end
+    function view:SetElementExtent(extent) self.extent = extent end -- the other characters' roster: one height
     return view
 end
+GetMoney = function() return 0 end -- the bags' foot: the gold
 -- The game's scrolling list a tab shows (WowScrollBoxList): its data made into rows by the view's factory, as the
 -- game's list does for the rows on screen.
 W.templates.WowScrollBoxList = function(box)
@@ -458,6 +460,11 @@ local function TitleNames()
     return table.concat(names, ", ")
 end
 check(TitleNames() == "None*, Jenkins, the Patient", "None first and worn, then the titles you know by name: " .. TitleNames())
+local titlesDrawn = titleList.provider
+titlesTab:SetChecked(false) -- the game's button unchecks itself when clicked
+titlesTab:GetScript("OnClick")(titlesTab)
+check(Sidebar.Chosen() == "titles" and titlesTab._checked and titleList.provider == titlesDrawn,
+    "the tab chosen clicked again: all stays as it is, its button checked")
 titleList.rows[3]:GetScript("OnClick")(titleList.rows[3])
 check(titleCalls.worn == 1, "a click wears the title, by the game's own call")
 titleWorn = 1
@@ -477,6 +484,34 @@ gearList.rows[1]:GetScript("OnClick")(gearList.rows[1], "LeftButton")
 check(gearList.rows[1].chosen:IsShown(), "a click chooses a set")
 gearList.rows[1]:GetScript("OnDoubleClick")(gearList.rows[1])
 check(gearCalls.used == 9, "a double click puts it on, by the game's own call")
+-- Save and New Set as the game's sheet saves: the slots the set leaves out left out first, a new set without the
+-- shirt and the tabard; the game's note of them cleared after.
+do
+    local calls = {}
+    local function Note(text) calls[#calls + 1] = text end
+    C_EquipmentSet.GetIgnoredSlots = function(id) return id == 9 and { [4] = true, [1] = false } or {} end
+    C_EquipmentSet.IgnoreSlotForSave = function(slot) Note("ignore " .. slot) end
+    C_EquipmentSet.UnignoreSlotForSave = function(slot) Note("unignore " .. slot) end
+    C_EquipmentSet.ClearIgnoredSlotsForSave = function() Note("clear") end
+    C_EquipmentSet.SaveEquipmentSet = function(id) Note("save " .. id) end
+    C_EquipmentSet.CreateEquipmentSet = function(name) Note("create " .. name) end
+    local saveButton, newButton
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Button" and Inside(widget, stats) then
+            if widget._text == "Save" then saveButton = widget elseif widget._text == "New Set" then newButton = widget end
+        end
+    end
+    saveButton:GetScript("OnClick")(saveButton)
+    W.popups[#W.popups].data.callback()
+    local pair = tostring(calls[2]) .. ", " .. tostring(calls[3])
+    check(calls[1] == "clear" and (pair == "ignore 4, unignore 1" or pair == "unignore 1, ignore 4") and calls[4] == "save 9"
+        and calls[5] == "clear", "Save: the set's own slots left out first, as the game's sheet does: " .. table.concat(calls, ", "))
+    calls = {}
+    newButton:GetScript("OnClick")(newButton)
+    W.popups[#W.popups].data.callback("Raid")
+    check(table.concat(calls, ", ") == "clear, ignore 4, ignore 19, create Raid, clear",
+        "New Set: made without the shirt and the tabard, as the game's sheet makes one: " .. table.concat(calls, ", "))
+end
 hasPet = true
 W.Fire("UNIT_PET", "player")
 W.Wait(0)
@@ -484,9 +519,23 @@ check(petTab:IsShown() and gearTab._points[1][1] == "TOPRIGHT", "a pet: its tab 
 petTab:GetScript("OnClick")(petTab)
 check(Sidebar.Chosen() == "pet" and stats.title._text == "Pet", "the pet's tab chosen")
 hasPet = false
+W.Fire("UNIT_PET", "party1")
+W.Wait(0)
+check(Sidebar.Chosen() == "pet", "another's pet came or went: nothing to do, the player's pet only is listened to")
 W.Fire("UNIT_PET", "player")
 W.Wait(0)
 check(Sidebar.Chosen() == "stats" and not petTab:IsShown(), "the pet gone: back to the stats")
+-- The pet gone while the window is hidden: shown again with the stats.
+hasPet = true
+W.Fire("UNIT_PET", "player")
+W.Wait(0)
+petTab:GetScript("OnClick")(petTab)
+Close("stats")
+hasPet = false
+W.Fire("UNIT_PET", "player")
+W.Wait(0)
+check(Open("stats") == stats and Sidebar.Chosen() == "stats" and stats.title._text == "Character Stats" and not petTab:IsShown(),
+    "the pet gone while the window was hidden: shown again with the stats")
 
 -------------------------------------------------------------------------------
 --  Reputation
@@ -531,9 +580,20 @@ W.Wait(0)
 check(boxes["At War"]:IsShown() and boxes["At War"]._checked == false, "the chosen faction's switches, as the game has them")
 boxes["At War"]:GetScript("OnClick")(boxes["At War"])
 check(repCalls.war == 2, "At War: the game's toggle for the chosen faction")
+-- Made inactive, the faction goes to the end of the game's list: chosen again there, by its ID, as the game's sheet does.
+local setActive = C_Reputation.SetFactionActive
+C_Reputation.SetFactionActive = function(index, on)
+    setActive(index, on)
+    local moved = table.remove(factionList, index)
+    factionList[#factionList + 1] = moved
+end
 boxes["Move to Inactive"]:SetChecked(true)
 boxes["Move to Inactive"]:GetScript("OnClick")(boxes["Move to Inactive"])
-check(repCalls.active[1] == 2 and repCalls.active[2] == false, "Move to Inactive: the game's call, the faction made inactive")
+check(repCalls.active[1] == 2 and repCalls.active[2] == false and selectedFaction == 3 and factionList[3].factionID == 72,
+    "Move to Inactive: the game's call, the faction made inactive and still the one chosen where it went")
+C_Reputation.SetFactionActive = setActive
+table.insert(factionList, 2, table.remove(factionList))
+selectedFaction = 2
 boxes["Show as Experience Bar"]:SetChecked(true)
 boxes["Show as Experience Bar"]:GetScript("OnClick")(boxes["Show as Experience Bar"])
 check(repCalls.watch == 2, "Show as Experience Bar: the game's watched faction")
@@ -685,5 +745,6 @@ Push()
 Stand()
 check(repPanel:IsShown() and statPanel:IsShown() and head:IsVisible() and repList.rows[2].name._text == "Stormwind Keep",
     "back: the windows of the layout as they were, drawn as the game has it now")
+for label, problem in pairs(Core.errors) do check(false, "no step failed on the way: " .. label .. ": " .. tostring(problem.text)) end
 
 io.write(("Sheet: all %d checks passed.\n"):format(passed))

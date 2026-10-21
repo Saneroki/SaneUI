@@ -223,13 +223,14 @@ end
 
 -- Not of a chat that is switched off in the list of what to show (Menu.lua).
 -- What is typed into the search box of the full window's title bar (Core's): every word must be in the
--- message's text as it reads (Core.Fuzzy.Plain: without colours, links' codes and icons), its speaker's name
--- or its chat's, as Core's fuzzy finding finds letters; nil: no search. The list is at most a few hundred
--- messages: it is searched at once (Fuzzy.Filter is for longer ones). The chat views (Feed.lua) find by it too.
+-- message's text as it reads (Log.Readable, made once per message: without colours, links' codes and icons), its
+-- speaker's name or its chat's, as Core's fuzzy finding finds letters; nil: no search. The chat views (Feed.lua)
+-- and the conversations (thousands of messages) find by it too: the lists are searched a moment after the typing,
+-- once for a run of keys (Window.Search), not at every key.
 local query
 
 function Window.Found(entry)
-    return not query or Core.Fuzzy.Match(query, Core.Fuzzy.Plain(entry.text or ""), entry.name, entry.label,
+    return not query or Core.Fuzzy.Match(query, ns.Log.Readable(entry), entry.name, entry.label,
         entry.name and Core.People and Core.People.Shown(entry.name)) ~= nil
 end
 
@@ -379,9 +380,13 @@ local function Left()
 end
 
 -- The list calls these while it scrolls, outside our own guard, and for every message whenever one
--- comes. A height of nothing would stop it. One measured already is known without a guard.
+-- comes: each behind a guard of ours. A height of nothing would stop it: 1 at the worst.
+local function Measured(entry)
+    return Bubble.Known(entry, rowWidth) or Bubble.Measure(entry, rowWidth)
+end
+
 local function Height(_, entry)
-    return Bubble.Known(entry, rowWidth) or ns.Guarded(Bubble.Measure, entry, rowWidth) or 1
+    return ns.Guarded(Measured, entry) or 1
 end
 
 local function DrawRow(row, entry)
@@ -532,12 +537,23 @@ local function Kind()
 end
 
 -- The search box in the full window's title bar was typed into (Core's, "" when emptied): only the
--- messages that match are on show, all of them again once it is empty.
-function Window.Search(text)
-    query = Core.Fuzzy.Query(text)
+-- messages that match are on show, all of them again once it is empty. The words count at once for what comes;
+-- the lists (the chat's, the chat views', the panels') are filtered anew SEARCH seconds after a key, once for the
+-- keys typed meanwhile.
+local SEARCH = 0.15
+local searched = "" -- the words typed last
+
+local function Refilter()
     Window.Refill()
     ns.Feed.Refill()
-    ns.Board.Search(text)
+    ns.Board.Search(searched)
+end
+
+local Searched = Core.Later(function() ns.Guarded(Refilter) end, SEARCH)
+
+function Window.Search(text)
+    query, searched = Core.Fuzzy.Query(text), text or ""
+    Searched()
 end
 
 -- While the window is sized the messages keep their wrapping (Refit wraps them when it is over) and
@@ -619,16 +635,11 @@ local function Build()
     handle:Place() -- where it was left; at its first place and size if it never was moved
 end
 
--- While chat is locked down (a fight, a dungeon) the game hands addons no messages (Log.Read leaves
--- them out); then only its own chat can show them.
-local function Locked()
-    return C_ChatInfo and Core.Ask(C_ChatInfo.InChatMessagingLockdown) or false
-end
-
 -- The game's own chat next to our window, or out of sight while ours is open: a setting. Always on
--- show while chat is locked down; the game tells when that begins and ends (Social.lua).
+-- show while chat is locked down: the game hands addons no messages then (Log.Read leaves them out), only its own
+-- chat can show them; the game tells when that begins and ends (Social.lua).
 function Window.Native()
-    if frame and frame:IsShown() and not ns.options.showNative and not Locked() then
+    if frame and frame:IsShown() and not ns.options.showNative and not ns.ChatLocked() then
         ns.Native.Hide()
     else
         ns.Native.Show()

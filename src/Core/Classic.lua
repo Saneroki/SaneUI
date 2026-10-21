@@ -145,14 +145,17 @@ local function Ours(window, entry, game, secure)
 end
 
 -- Shown while the game's window is and the entry is ready; a secure one is shown, hidden and raised out of a
--- fight only (in a fight it waits for the fight's end).
+-- fight only (in a fight it waits for the fight's end). Meanwhile it is only made clear while the game's window
+-- is gone (its alpha may change in a fight), and a press on it then does nothing of ours.
 local pending = {} -- [button] = { game, entry }
 local function Follow(button, game, entry)
     if button.secure and InCombatLockdown() then
         pending[button] = { game, entry }
+        button:SetAlpha(game:IsVisible() and Ready(entry) and 1 or 0)
         return
     end
     pending[button] = nil
+    button:SetAlpha(1)
     local on = game:IsVisible() and Ready(entry)
     if on and button.over then button:SetFrameLevel(button.over:GetFrameLevel() + 2) end
     button:SetShown(on and true or false)
@@ -180,8 +183,14 @@ function Classic.Attach(window)
                 if not buttons[game] then
                     local secure = not entry.plain and Core.Window.CloseOf(game) ~= nil
                     local anchor = entry.anchor and function(button) entry.anchor(button, game) end
-                    local button = Core.Window.Beside(game, function() Ours(window, entry, game, secure) end, anchor, secure)
+                    local button = Core.Window.Beside(game, function(self)
+                        if not self.unseen then Ours(window, entry, game, secure) end
+                    end, anchor, secure)
                     button.secure = secure
+                    if secure then
+                        -- Seen or clear as it is pressed: the game's window it closes is gone before ours comes.
+                        button:SetScript("PreClick", Core.Guard("classic window", function(self) self.unseen = self:GetAlpha() <= 0 end))
+                    end
                     buttons[game] = button
                     Follow(button, game, entry)
                     local follow = Core.Guard("classic window", function() Follow(button, game, entry) end)

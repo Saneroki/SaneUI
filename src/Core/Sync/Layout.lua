@@ -12,10 +12,11 @@
 --  first preset), so the layout is read only while the character is in the
 --  world, and the last one seen is kept. One that cannot be set yet (the
 --  manager has no layouts yet, Edit Mode is open, a fight) waits and counts as
---  the one in use meanwhile. One that is not there (deleted, another
---  character's own) leaves the layout in use as it is, and still counts as the
---  one kept until the layout in use changes this session (the player picks
---  one): this character's own does not take its place at the logout.
+--  the one in use meanwhile; one the player picks meanwhile wins over it. One
+--  that is not there (deleted, another character's own) leaves the layout in
+--  use as it is, and still counts as the one kept until the layout in use
+--  changes this session (the player picks one): this character's own does not
+--  take its place at the logout.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Sync = Core.Sync -- Sync.lua
@@ -44,13 +45,13 @@ local function InUse()
 end
 
 -- The layout in use, as the manager says it in the world. Another one than seen last, which we did not set
--- (we note one as seen before we set it): the player picked it, or the game did for a specialization, and a
--- missing one counts no longer.
+-- (we note one as seen before we set it): the player picked it, or the game did for a specialization. That
+-- one wins: a missing one counts no longer, nor one still waiting to be set (Edit Mode was open).
 local function See()
     if not inWorld then return end
     local now = InUse()
     if not now then return end
-    if seen and (now.name ~= seen.name or now.kind ~= seen.kind) then missing = nil end
+    if seen and (now.name ~= seen.name or now.kind ~= seen.kind) then missing, waiting = nil, nil end
     seen = now
 end
 

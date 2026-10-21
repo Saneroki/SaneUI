@@ -34,7 +34,8 @@ local _, ns = ...
 --
 --  Out of a fight only: the game opens its panels for an addon only then, and
 --  a window holding protected buttons cannot be moved in one (its seat waits).
---  One that closes in a fight comes back once the fight is over. Only while
+--  One that closes in a fight comes back once the fight is over; one opened
+--  for a full screen that goes in a fight is closed then. Only while
 --  you are in a guild and the layout holds it. A step that fails
 --  gives the window back and holds it no more until the next /reload.
 -------------------------------------------------------------------------------
@@ -143,13 +144,23 @@ local function Close(frame)
     if name and panels and panels[name] then HideUIPanel(frame) else frame:Hide() end
 end
 
+-- One opened for the full screen and held no more, after a fight in which it could not be closed: closed now,
+-- unless it is held again meanwhile (then it is closed when its room goes).
+local function Shut()
+    local frame = window
+    if not (frame and opened) or (seats[frame] and seats[frame].held) then return end
+    opened = false
+    if frame:IsShown() then Close(frame) end
+end
+
 -- Out of its room: its place, layer and scale back as they were (in a fight once it is over); close: one
--- opened for the full screen is closed too.
+-- opened for the full screen is closed too; in a fight it stays marked, and goes once the fight is over.
 Free = function(close)
     local frame = window
     if not frame then return end
     if seats[frame] then seats[frame]:Free() end
-    if close and opened and frame:IsShown() and not InCombatLockdown() then Close(frame) end
+    if close and opened and InCombatLockdown() then return Core.AfterCombat("Social: guild window", Shut) end
+    if close and opened and frame:IsShown() then Close(frame) end
     opened = false
 end
 

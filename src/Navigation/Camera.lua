@@ -148,8 +148,9 @@ function methods:Fit(map)
         self:Look(box.u + box.width / 2, box.v - box.height / 2, self.far)
         return true
     end
+    -- A map whose box lies in another instance than its plane (a battleground's) has no place there.
     local box, plane = Coords.Box(map), Coords.PlaneOf(map)
-    if not box or not plane then return false end
+    if not box or not plane or not Coords.InPlane(map) then return false end
     if plane ~= self.map then
         self.map = plane
         Limits(self)

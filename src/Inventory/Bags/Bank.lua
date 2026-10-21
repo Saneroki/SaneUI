@@ -361,7 +361,7 @@ local buyRows = {} -- [bank type] = its Buy Tab row now
 local function BuyRow(kind)
     if not (kind and Buyable(kind)) or Buyer(kind) == nil then return end
     local row = rail:Row(ns.TEXT.bankBuy, nil, "Interface\\Buttons\\UI-PlusButton-Up", nil, 0, false)
-    row.buy = kind
+    row.buy, row.tab, row.bank = kind, nil, nil -- a row used again: no tab of what it showed before
     row.label:SetAlpha(0.6)
     buyRows[kind] = row
 end
@@ -377,21 +377,22 @@ local function Sidebar()
     for _, section in ipairs(sections) do
         rail:Divider()
         own = own or section.bank == character
-        local seen = {}
+        -- The section's tabs in their order, and each one's slots taken: two tables, as tab IDs are small numbers
+        -- that a list's places would meet.
+        local tabs, taken = {}, {}
         for _, record in ipairs(section.slots) do
             local tab = record.bag
-            if not seen[tab] then
-                seen[tab] = { taken = 0, all = 0, order = #seen + 1 }
-                seen[#seen + 1] = tab
+            if not taken[tab] then
+                taken[tab] = 0
+                tabs[#tabs + 1] = tab
             end
-            seen[tab].all = seen[tab].all + 1
-            if record.item then seen[tab].taken = seen[tab].taken + 1 end
+            if record.item then taken[tab] = taken[tab] + 1 end
         end
-        for _, tab in ipairs(seen) do
+        for _, tab in ipairs(tabs) do
             local data = TabData(section.bank, tab)
             local icon = data and Core.Plain(data.icon) or Bank.ICON
-            local row = rail:Row(Contents.BagWord(tab, section.place), seen[tab].taken, icon, nil, 0, view == "tab:" .. tab)
-            row.view, row.tab, row.bank = "tab:" .. tab, tab, section.bank
+            local row = rail:Row(Contents.BagWord(tab, section.place), taken[tab], icon, nil, 0, view == "tab:" .. tab)
+            row.view, row.tab, row.bank, row.buy = "tab:" .. tab, tab, section.bank, nil
         end
         BuyRow(section.bank)
     end
@@ -419,11 +420,16 @@ local function Draw()
     if cells.short then Core.AfterCombat("inventory: bank", Bank.Refresh) end
 end
 
+-- The character's gold at the foot.
+local function Gold()
+    if gold then gold:SetText(Core.Coins(Core.Plain(Core.Ask(GetMoney)) or 0) or "") end
+end
+
 function Bank.Refresh()
     if not shown then return end
     ns.Safe("bank", Read)
     ns.Safe("bank", Draw)
-    if gold then gold:SetText(Core.Coins(Core.Plain(Core.Ask(GetMoney)) or 0) or "") end
+    Gold()
 end
 
 function Bank.Redraw()
@@ -447,12 +453,7 @@ function Bank.Clicked(button, mouse)
     if mouse == "RightButton" and alt and alt() then return Menus.Item(button) end
     local record = Cells.Record(button)
     if not (record and record.item) then return end
-    local modified = rawget(_G, "IsModifiedClick")
-    if mouse == "LeftButton" and modified and modified("SPLITSTACK") and Options().splitter and (record.count or 1) > 1 then
-        local game = rawget(_G, "StackSplitFrame")
-        if type(game) == "table" and game.IsShown and game:IsShown() then game:Hide() end
-        return ns.Split.Open(button, record)
-    end
+    if mouse == "LeftButton" and Options().splitter and ns.Split.Replace(button, record) then return end
     if mouse ~= "MiddleButton" then return end
     Categories.Pin(record.item, not Categories.Pinned(record.item))
     Bank.Refresh()
@@ -475,10 +476,17 @@ local function Locked(bag, slot)
     cells:Lock(record)
 end
 
+-- An item's data came from the server: drawn anew only if one of ours waited for it (Contents.waiting), not for
+-- every item another window asked about.
+local function Arrived(item)
+    item = Core.Plain(item)
+    if item and Contents.waiting[item] then Soon() end
+end
+
 local EVENTS = {
     BAG_UPDATE_DELAYED = Soon, PLAYERBANKSLOTS_CHANGED = Soon, BANK_TABS_CHANGED = Soon, BANK_TAB_SETTINGS_UPDATED = Soon,
-    PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED = Soon, GET_ITEM_INFO_RECEIVED = Soon, EQUIPMENT_SETS_CHANGED = Soon,
-    ITEM_LOCK_CHANGED = Locked, BAG_UPDATE_COOLDOWN = function() cells:Cooldowns() end, PLAYER_MONEY = Soon,
+    PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED = Soon, GET_ITEM_INFO_RECEIVED = Arrived, EQUIPMENT_SETS_CHANGED = Soon,
+    ITEM_LOCK_CHANGED = Locked, BAG_UPDATE_COOLDOWN = function() cells:Cooldowns() end, PLAYER_MONEY = Gold,
 }
 
 -- At a banker or away from one, from the login on: the full screen lays its windows out anew, with the bank
@@ -488,10 +496,15 @@ local function Banker(open)
     ns.Window.Reboard()
 end
 
+-- The game's kinds of banker: its bank opens for each (one this client lacks is not asked).
+Bank.BANKERS = { "Banker", "CharacterBanker", "AccountBanker" }
+
 function Bank.Start()
     Core.On("BANKFRAME_OPENED", function() Banker(true) end)
     Core.On("BANKFRAME_CLOSED", function() Banker(false) end)
-    Contents.bankOpen = Foot.Talking("Banker")
+    local open = false
+    for _, kind in ipairs(Bank.BANKERS) do open = open or Foot.Talking(kind) end
+    Contents.bankOpen = open
 end
 
 -------------------------------------------------------------------------------
@@ -553,6 +566,7 @@ local function Menu(_, root)
     root:CreateTitle(ns.TEXT.bagsOrder)
     for _, order in ipairs(Contents.ORDERS) do root:CreateRadio(order.word, Ordered, Order, order.key) end
 end
+local ViewMenu = ns.Guard(Menu)
 
 -- The bank shown now: the tab's, else the character's own.
 local function Kind()
@@ -603,7 +617,7 @@ function Bank.Build(made)
     menu:SetPoint("RIGHT", -Bags.EDGE, 0)
     menu:SetWidth(Bags.MENU_WIDTH)
     menu:OverrideText(ns.TEXT.bagsView)
-    menu:SetupMenu(Menu)
+    menu:SetupMenu(ViewMenu)
     sort = Bags.CleanButton(bar, Clean, CleanTip)
     sort:SetPoint("RIGHT", menu, "LEFT", -Bags.BAR_GAP, 0)
     deposit = CreateFrame("Button", nil, bar)
@@ -656,7 +670,9 @@ function Bank.Show(on)
         viewing = nil
         Bank.Refresh()
     else
-        cells:HideAll()
+        -- Each on its own: the splitter stops even if the buttons could not be hidden.
+        ns.Safe("bank", cells.HideAll, cells)
+        ns.Safe("bank", ns.Split.Stop)
     end
 end
 

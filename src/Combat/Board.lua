@@ -139,9 +139,10 @@ function Board.Add(key)
     if layouts and layouts.standing and Board.Present(key) and not layouts:Has(key) then layouts:Toggle(key) end
 end
 
--- The module stood down (GiveBack): every panel goes, and each part gives back what it lent or made.
+-- The module stood down (GiveBack): every panel goes, and each part gives back what it lent or made, the board
+-- failing or not.
 function Board.Leave()
-    Board.Hide()
+    ns.Safe("board", Board.Hide)
     for key, entry in pairs(parts) do
         if entry.part.Leave then ns.Safe(key, entry.part.Leave) end
     end

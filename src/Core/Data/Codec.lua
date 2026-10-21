@@ -94,7 +94,9 @@ local function Field(spec)
                 local value = stop and sub(item, stop + 1)
                 if value and value ~= "" then
                     local key = sub(item, 1, stop - 1)
-                    map[number and tonumber(key) or key] = decode(value)
+                    -- a whole number only: tonumber also reads "nan" (no table key at all), "inf", "0x10"
+                    if number then key = match(key, "^%-?%d+$") and tonumber(key) end
+                    if key then map[key] = decode(value) end
                 end
             end
             return map

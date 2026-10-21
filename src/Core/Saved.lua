@@ -217,10 +217,11 @@ function Core.Settings(name)
     return Core.Profiles and Core.Profiles.Live(name) or nil
 end
 
--- The options page shows what changed elsewhere, a frame later (Settings.lua).
-local Shown = Core.Later(function()
-    if Core.Config and Core.Config.Refresh then Core.Config.Refresh() end
-end)
+-- The options page shows what changed elsewhere, a frame later: one refresh however many ask in that
+-- frame (Settings.lua, read after this file; before it there is no page to show it).
+local function Shown()
+    if Core.Config and Core.Config.RefreshSoon then Core.Config.RefreshSoon() end
+end
 
 -- Sets one of a module's switches from elsewhere than its options page (a menu, a command, a button):
 -- written, made right as at the load (Check), the module told (changed) if it changed, a /reload

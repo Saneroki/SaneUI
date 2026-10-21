@@ -72,6 +72,7 @@ function Window.Build()
         strip = Window.STRIP,
         filled = function(full) ns.Guarded(Filled, full) end,
         docked = function() ns.Guarded(Placed) end,
+        search = function(text) ns.Guarded(ns.Board.Search, text) end, -- typed into the full screen's search box
     })
     Window.handle = handle
     ns.Board.Take(handle) -- its full screen: the talents and the spellbook on Core's board
@@ -102,17 +103,25 @@ function Window.Open(key, bookTab)
         return
     end
     wanted, tab = key, bookTab
-    Window.Fill()
+    -- Refused (Edit Mode, or the screen may not fill): nothing waits for a full screen that comes another way.
+    if not Window.Fill() then wanted, tab = nil, nil end
 end
 
--- One of Combat's keys (Keys.lua): as Open, or, pressed again while the screen stands full with that window,
--- back to its size, as the game's keys toggle its window.
+-- One of Combat's keys (Keys.lua): as Open, or, pressed again while the screen stands full with that window (the
+-- pet book's: with the book at the pet's tab, no search on), back to its size, as the game's keys toggle its window.
 function Window.Toggle(key, bookTab)
     local edge = handle and handle.edge
-    if edge and edge.full and not (edge.clock and edge.clock:IsRunning()) and ns.Board.Has(key) and not bookTab then
+    if edge and edge.full and not (edge.clock and edge.clock:IsRunning()) and ns.Board.Has(key)
+        and (not bookTab or (ns.Book and ns.Book.Chosen() == bookTab)) then
         return edge:Fill(false)
     end
     Window.Open(key, bookTab)
+end
+
+-- The full screen's search closed (a tab of the book chosen leaves the search, as the game's book does), as Core
+-- closes it: the box emptied, which tells the board, and the title and the layouts' tabs back (Core's Window.lua).
+function Window.ClearSearch()
+    if handle then handle:EndSearch() end
 end
 
 -- What the board holds changed (a layout, a window that opened, closed or took another size): laid out anew,

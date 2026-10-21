@@ -239,6 +239,7 @@ local function Fade()
         page.statusFrame:Hide()
     end
 end
+local fading = ns.Guard(Fade)
 
 function Page.Status(text)
     if not (page and page:IsVisible()) then return false end
@@ -246,7 +247,7 @@ function Page.Status(text)
     page.status:SetAlpha(1)
     page.statusFrame:Show()
     fadeAt = (Core.Ask(GetTime) or 0) + Layout.STATUS_TIME
-    page.statusFrame:SetScript("OnUpdate", ns.Guard(Fade))
+    page.statusFrame:SetScript("OnUpdate", fading)
     return true
 end
 
@@ -261,7 +262,14 @@ local Redraw = Core.Later(function()
     Context()
 end)
 
-local function Changed() Redraw() end
+-- Who was heard lately shows only in the head: a hello heard redraws the head alone.
+local Rehead = Core.Later(function()
+    if page and page:IsVisible() then Head() end
+end)
+
+local function Changed(what)
+    if what == "peers" then Rehead() else Redraw() end
+end
 
 function Page.Build(parent)
     if page then return page end
@@ -328,6 +336,7 @@ function Page.Into(parent)
     return page
 end
 
+-- While on show the roster is asked of the game anew, whenever it lets (Core.Data.Guild.Watch).
 function Page.Show(on)
     if not page then return end
     if on and not listening then
@@ -335,6 +344,7 @@ function Page.Show(on)
         Core.Data.Guild.OnChange(Changed)
         Core.Data.Guild.Sync()
     end
+    Core.Data.Guild.Watch(on)
     page.active = on
     if on then
         Head()

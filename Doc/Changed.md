@@ -3,8 +3,137 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 386 (Navigation), 105 (Inventory), 90 (sheet), 237 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 215 (data in the game), 446 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
+
+### A review of the whole addon: bugs, hardening, speed (Saneroki, 2026-10-21)
+Every module and Core read through for bugs, the error doors, secret values, taint, fights, saved shapes and work done
+for nothing; what held up was fixed, each with checks that fail on the old code. No new files: a `/reload` takes it in.
+- **Core:**
+  - *Start* (`Core.lua`): a module that stood down, in whichever step or at whichever door, gets no further step (its
+    OnLogin no longer takes back what its GiveBack gave back).
+  - *Esc* (`Escape.lua`): the stand-in hidden with its parent (the game hides its whole interface for a movie) is no
+    Esc; a protected window whose close waits for the fight's end takes its Esc entry out meanwhile (`Window.lua`), so
+    the game's Esc and its menu work in that fight.
+  - *People* (`People.lua`): *Remove Alias* and *Remove Note* (the game's text dialog takes no empty text, so neither
+    could be taken away); kept in `SaneUIDB.modules.Core.people`, as the docs now say.
+  - *Profiles* (`Profiles.lua`): *Forget* also forgets the character's bags, bank, gear and gold (`Data.Forget`); an
+    imported profile keeps only the single CVars the game's options have (Sync's `named`); `Serial.Read` refuses NaN,
+    endless numbers and table keys; `Profiles.Copies` and `Exists` went (unused); one shared refresh of the options after
+    a profile action (`Config.RefreshSoon`). `Fuzzy.Plain` drops named colour codes (`|cnIQ5:`); its second `Ranked` is
+    `RowRank`.
+  - *Windows* (`Window.lua`, `Board.lua`, `Edge.lua`, `Classic.lua`): the secure *Sane UI* button clicks the game's close
+    button also with *Action button use key down* on (`useOnKeyDown` false); in a fight it follows the game's window by
+    its alpha and does nothing while unseen; `Board.Open` fills only a shown window and says false when no full screen
+    comes; a panel whose key another spec takes is built anew for it (`Offer` tells a standing board too); kept layouts
+    are checked (parts, shares, tabs); a window hidden mid-drag or mid-size is let go; shown windows are placed anew when
+    the screen size or UI scale changes (a full one gets `docked`); `window:Escapes(on)`, which the options screen uses;
+    a cancelled held line only redraws its strip. Seat has checks of its own now.
+  - *Options* (`Settings/`): the feedback window keeps the draft of the kind shown when another opens; the *New* button's
+    tooltip is its own (two keys were one); *New*, *Rename* and a forgotten character's dropdown say and do what happened;
+    dropdowns make their functions once and only update while their choices stay the same; the compartment, the colour
+    picker, the CVar list's callbacks and the XML scripts run behind Core's guards; `Sync.Settable` holds the checks
+    `Sync.SetCVar` and the CVars tab share; `Config.Getter`/`Setter`/`Enabled` shared by both kinds of page.
+  - *Sync* (`Sync/`): a channel's chat colour is kept with the channel's name and written to this character's channel of
+    that name (never by its number alone); a layout waiting while Edit Mode is open gives way to the player's pick.
+  - *Data* (`Data/`): gold and the bank's day move the characters' stamp; a bank is read whole in one step, and the place
+    a read was cut off in is read again at logout; `Data.Forget(key)`; listeners told once, on a later frame; ships learn
+    a round from the longest span and take a realm's new run (a restart) as a new epoch (`span`, `doubt`); ships' and
+    trips' looks start only once *Travel* is there or a module asks (`Data.Trips()`); a job stopped from inside ends at
+    its next `Check`; the map reads its sets once when several arrive together, its spawns swapped in whole; every saved
+    shape of ships, trips and characters is checked; int map keys only from digits (no NaN keys).
+  - *Wire and guild records* (`Data/Wire.lua`, `Data/Guild.lua`): a block's part numbers are digits only (a whisper with
+    `nan` or `2.5` raised in the inbox); a block is queued only when all its parts fit, and a kind switched off drops what
+    still waits of it (`Wire.Drop`); professions from `C_SkillInfo` (the old globals are not on this client: the cards had
+    none), re-carded a minute after a skill-up; a roster that shrank by more than a tenth is believed once a read a minute
+    later agrees; a leaving member's records go; no join day at a guild's first read; the roster read by the scheduler,
+    never in a fight, its events added in one go; asked for while a view shows it (`Data.Guild.Watch`); fresh hellos
+    answered by whisper, asks once a minute per member and kind; Sync sends a fresh hello, once a minute; the guild data's
+    format under `guildFormat`.
+- **Abilities:** the fallback gives every book entry the game's size, also those back in the game's pool; the book's size
+  is given back when it is hidden too (refit at its next showing); the headings are this client's 60 high (rows under
+  them line up across pages); the trainer's listeners do nothing once stood down, and its filter is put back; GiveBack's
+  steps each on their own (ghosts, drag, the trainer's filter, the book); a stand-down mid-drag hides the gold frame too;
+  the menu's tooltip and enabled functions behind guards, made once; no closures per button read.
+- **Combat:** GiveBack gives the keys back first, each step on its own; quest marks do nothing once stood down, and read
+  nothing with the setting off; the full screen's search box is wired (spells, talents); a tab chosen ends a search; the
+  pet key closes the screen again from the pet's tab, and does nothing without a pet; a dragged spell's glow comes back
+  when the cursor changes; a pet ability with a rank casts that rank; a refused fill forgets what was wanted; the
+  fallback cooldown reads plain values only.
+- **Nameplates:** a stand-down gives every plate its parts back first (also plates the game hands out again), then the
+  auras and combo points, each on its own; a plate taken back has its bar as made.
+- **Guild:** lists keep their scroll position; your own model shows again after another member; another member is dressed
+  on your own figure (said so); the guild key and `/sane guild` work only in a guild (outside, the game's guild finder);
+  the window of its own hooks its scripts (Core's Esc and drag stay); the head alone redraws for peers; item levels kept
+  per member and stamp; no closure per row; GiveBack's steps each on their own.
+- **Inventory:**
+  - *Bags:* the Sort By choice under a key of its own, `sort` (it and the categories' order wiped each other, and a
+    category switched off after a Sort By stood the module down); the bank's sidebar with several tabs (its tally was a
+    map and a list in one); Move Up/Down moves whole groups and steps over switched-off categories; a Shift-click links an
+    item again (our splitter only where the game's opened); the red "cannot use" follows level-ups and unknown items; the
+    bank redraws only for its own item data, the gold alone for money; a reused slot keeps nothing of the item before;
+    Auto Split stops when another stack opens, the splitter closes with the bags; column sizing redraws only on a change
+    and stops when the button is up; the sidebar's counts as the views show them; menus, the junk marker and the middle
+    click redraw the bank too; the take highlight by its colour's alpha; every banker kind; pooled bank rows forget their
+    last use.
+  - *Sheet, alts, keys:* with *Can expand to fullscreen* off, or in Edit Mode, the bag keys, the bag buttons and the
+    *Sane UI* button leave the game's bags to the game; GiveBack's steps each on their own, the keys first; equipment sets
+    keep their ignored slots (shirt and tabard); a faction moved to Inactive stays chosen; stats rows are left alone in a
+    fight; a tab clicked again does nothing, the pet tab falls back to stats without a pet; the player's unit events only;
+    the alts' items follow their category, their menu steps fail alone, their saved facts are type-checked; a drop on the
+    model equips only with the left button and when the game allows it; names that arrive redraw after a pause.
+- **Navigation:**
+  - *The game's map and minimap:* a caught map is hidden by its own `Hide`, never by the game's panel function from our
+    code (that left the panel manager tainted, and the character sheet then broke on C until a `/reload`); choosing the
+    game's map in *Classic windows* only sets the switch, its key or button opens it next; inside an instance the small
+    window shows the game's minimap with its ground (our map has no place for you there), ours again once there is one;
+    no *Sane UI* button on the game's minimap inside ours; GiveBack's steps each on their own, the map and keys first; a
+    fight's deferred minimap update runs guarded.
+  - *The map:* a map in another instance than its continent's plane is not placed on it (a battleground's coordinates
+    read as the continent's); the zone in the middle asked at most every `Canvas.LOOK`; a zone change re-places only the
+    pins; nothing laid out while the window moves between small and full; the dungeon list kept once read; boss models
+    stay under the top bar; a right click on a dungeon shows the map under it; indoors looked at again only when you
+    moved, and only in your own instance; closures made once.
+  - *Pins:* every point of a thing is its own pin (one herb per view showed before), its thing's key kept apart; Core's
+    pins kept per map in parts (NPCs, objects, places), so a quest or waypoint change rebuilds only its part; the finder
+    asked once, again on the game's tracking news; folded quest log headers list nothing; the pin filter's pooled slider
+    no longer resizes another kind; low-level quests by the game's own grey range; found herbs left far behind are
+    forgotten; object mailboxes count as services; pin levels by kind (`PinView.TIERS`); Abandon through `Core.Confirm`.
+  - *Cheaper pins:* possible herbs and ore give one pin per cell of the gather's grid and kind (the others ride with it:
+    its tooltip still names every place); Gather's cells are numbers and its tables reused; a kept button is redrawn
+    only when it changed. A full-map layout in the densest zones went from about 7–11 ms to about 2 ms (measured
+    offline, on Core's data).
+  - *Planner* (committed before, see below): regions and walks kept, a plan kept while the pin stays.
+- **Social:**
+  - *Chat:* a link click opens no panel of the game's (a Ctrl-click's dressing room, a calendar or channel link ran the
+    game's panel manager from our code, which then broke the character sheet), and fails alone; a conversation begun by
+    your first message is chosen whole; the search waits for the keys and keeps each message's plain text; copying skips
+    named colour codes; at most 1,000 conversation messages saved per character, without what follows from the rest;
+    creatures' names are no player links; the raid roster rebuilt once per burst; one colour table per view; the reply
+    target read plainly; the menus and list callbacks behind guards; a chat view's unseen count lasts the session only
+    (it was saved); in a fight a click on a link the game shows in its link tooltip does nothing (the game refuses that
+    window to our code then; the tooltip under the mouse shows it); no emotes offered in chat lockdown; one shared
+    `ns.ChatLocked()`.
+  - *Contacts:* *Ignore* and *Add Friend* on a target use the whole Forever name (the surname was taken for a realm);
+    the group finder pauses in chat lockdown and leaves out hidden listings; a search the tab was away for is read when
+    it comes back; the raid tab's right click opens a menu of our own (the game's offers Set Focus, which our code cannot
+    call); Away before Busy; *Block Invites* only where the game offers it; the guild window left open in a fight closes
+    after it; row scripts set once; the filter ticks and Decline fail alone.
+- **Tooltips:** the 3D portrait stays when the same thing is shown again; comparisons are placed after their main tooltip
+  (the probable cause of the auction house's flicker), the queue settled without holes; *Buy if under* on the auction
+  house's list links; saved prices are numbers only; the caches capped; GiveBack hides the driver; dead bar code and an
+  unused text went.
+- **The lint** (`dev/tests/lint`) also checks the callbacks the game calls later that it could not see: dropdown menus
+  (`SetupMenu`), list callbacks (`SetElementInitializer`, `Factory`, `ExtentCalculator`), menu tooltips, selection
+  translators, default callbacks, settings predicates and getters/setters, chat filters, tooltip post-calls, and the
+  function fields (`callback`, `swatchFunc`, `OnRefresh`, `SlashCmdList`, ...); a callback that answers a value passes
+  as a one-step guard with a fallback of its kind (`return ns.Safe(...) or 1`), a guard it cannot follow by its
+  `-- guarded: <how>` mark. The 20 places it then found are guarded (addon-standards.md §10 says which forms pass).
+- **Docs:** the module READMEs, `Doc/agent/*` and the guides (`addon-standards.md`, `windows.md`, `data.md`) follow
+  the fixes; check counts went from the READMEs (each change makes them stale).
+- **Tests:** checks added in every suite (Core, windows, Sync, data, Guild, Abilities, Combat, spellbook, Nameplates,
+  Inventory, sheet, bags, Navigation, Social, Tooltips); stubs for the game's `C_SkillInfo`, `ScrollBoxConstants`, the
+  stack splitter and more.
 
 ### Art: every picture in assets, none in src (Saneroki, 2026-10-21)
 - The modules' textures moved from `src/<Module>/Art/` to `assets/optimized/<Module>/Art/` (Core, Navigation,

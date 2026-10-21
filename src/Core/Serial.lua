@@ -105,7 +105,8 @@ function Read(text, at, depth)
     if char == "n" then
         local from, to = find(text, "^[%-%+%.%deE]+", at + 1)
         local number = from and tonumber(sub(text, from, to))
-        if not number then return nil, at end
+        -- None that Write would not make: no number that is none, nor an endless one (n1e999).
+        if not number or number ~= number or number == math.huge or number == -math.huge then return nil, at end
         return number, to + 1
     end
     if char == "s" then
@@ -129,8 +130,9 @@ function Read(text, at, depth)
         local result, next = {}, at + 1
         if sub(text, next, next) == "}" then return result, next + 1 end
         while true do
+            -- A key as Write makes them: a string, a number, true or false, never a table.
             local key, after, why = Read(text, next, depth + 1)
-            if key == nil or sub(text, after, after) ~= "=" then return nil, after, why end
+            if key == nil or type(key) == "table" or sub(text, after, after) ~= "=" then return nil, after, why end
             local value, rest
             value, rest, why = Read(text, after + 1, depth + 1)
             if value == nil then return nil, rest, why end

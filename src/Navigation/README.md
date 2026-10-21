@@ -35,6 +35,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   - **a click** on the game's minimap (while it shows) pings, as there.
 - **Following you:** both views follow you at first; after a drag the map comes back to you once the mouse
   has been off it for a while (*Follow again after*).
+- **In a dungeon, a raid or a battleground,** where the game tells no place of yours on our map, the small window
+  shows the game's own minimap alone, with its own ground and dots, as the game's would; the wheel walks its zoom
+  steps. Out of it, our map is back.
 - **Pins:** every kind of thing in its own icon, the game's map icons: no discs, no numbers. The game's own marks
   where it tells them (your quests: the yellow ?, the quest the arrow leads to glowing; flight points of your side;
   rares (a skull) and treasures (a chest) nearby; the game's points and ways into other maps), and what Core's data
@@ -45,7 +48,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   the game's anvil, one of food, reagents, poisons or ammunition the game's icon for those...), entrances, the docks of the boats (a boat) and zeppelins (an airship) with where they go, where
   herbs and ore grow (*Possible herbs*, *Possible ore*), books (an open book): as far as the data holds them; a place the game has not confirmed says so. A tooltip
   says what it is: an NPC's title (*Warrior Trainer*, *Weaponsmith*), its quests with their levels, and why a grey
-  one is not for you yet. One pin per thing: the game's word hides the data's. Pins that would cover each other
+  one is not for you yet. One pin per thing at each place it stands: the game's word hides the data's. Pins that would cover each other
   show as one, in the first one's icon, its tooltip what is there. **A click on any pin**, on the small map and the
   full one, puts the game's map pin where it stands (the golden line leads there; the tooltips do not say so); a
   gathered one zooms in too; on
@@ -100,7 +103,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   over the map, and beside it its floors. Where the data knows them, each boss in the game's boss mark where it
   stands, and its own 3D model standing on the mark (the game's model of the boss's look), its name in the tooltip
   (not yet confirmed by the game). The wheel zooms it, a drag moves it, a right
-  click goes back to the map at its zone. Shift and a click on a dungeon's entrance opens it too, and inside a
+  click goes back to the map it was opened from. Shift and a click on a dungeon's entrance opens it too, and inside a
   dungeon the full map opens on its map, at the floor you stand on where the game tells your place.
 - **Zephras Isle** is on the map as a continent is, a zone of its own: the map follows you there, its pins and the
   map pin stand on it, a click on it at the world opens it, and a right click on it goes out to the world (there is
@@ -139,7 +142,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 - **The game's own windows:** the full map's dropdown *Classic windows* offers the game's minimap and map, each
   kept once chosen (ticked; chosen again, ours comes back), as the switches *Show the game's minimap* and *Show
   the game's map* on the page. With the game's minimap our small window rests out of sight; with the game's map
-  its keys open the game's. Either way the mouse pushed into the top right corner still fills the screen with
+  its keys and buttons open the game's (chosen there, it is not opened at once: its key opens it, and the chat
+  says which key). Either way the
+  mouse pushed into the top right corner still fills the screen with
   our map. The game's key to show or hide the minimap (in its key bindings) shows or hides our window. The
   game's map has the button *Sane UI* beside its close button, and the game's minimap one at its top right:
   ours is the one again (unticked), the map filling the screen.
@@ -169,15 +174,20 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   as ever, not at the small isle's.
 - **The canvas** (`Canvas.lua`), the same for both views: its layers hang on one holder frame, laid out around
   an origin. A drag or a step of following moves the holder only; a layout happens when the zoom changes, the
-  holder has moved past a margin, or another zone is in the middle. The layers' textures come from pools by
-  key, so what stays in view is not loaded again. The zoom changes at once, as on the game's map. Nothing runs
-  at rest but the tracker: every frame while the view follows you (two questions to the game and one
-  `SetPoint`), else a few times a second, and, while the mouse is over the map, a look at what is under it
-  when it moved (the game's highlight, `C_Map.GetMapHighlightInfoAtPosition`). On the window's way to the full
-  screen and back the map goes with it (Core's option `moving`): laid out once at the start over what both
-  views show, at the wider one's zoom, then only scaled and moved on each step from the view it leaves to the
-  one it comes to (the middle straight, the zoom by equal factors). The layers' frame levels are set from the
-  canvas' at every layout.
+  holder has moved past a margin, or another zone is in the middle (asked of the game every `Canvas.LOOK` while
+  the view moves, and once more a `Canvas.LOOK` after it stopped). The layers' textures come from pools by key, so
+  what stays in view is not loaded again. The
+  zoom changes at once, as on the game's map. Nothing runs at rest but the tracker: every frame while the view
+  follows you (three questions to the game and one `SetPoint`), else a few times a second, and, while the mouse
+  is over the map, a look at what is under it when it moved (the game's highlight,
+  `C_Map.GetMapHighlightInfoAtPosition`). What the game tells of the pins (`LIVE`, a zone entered too) places
+  the pins anew, not the whole map. On the window's way to the full screen and back the map goes with it
+  (Core's option `moving`): laid out once at the start over what both views show, at the wider one's zoom, then
+  only scaled and moved on each step from the view it leaves to the one it comes to (the middle straight, the
+  zoom by equal factors); meanwhile nothing lays it out again (a refresh waits for the window to stand, the wheel
+  and a press do nothing). The layers' frame levels are set from the canvas' at every layout. Where the game
+  tells no place of yours (an instance), the small view draws nothing of ours but the sea (`Canvas.Laid` says
+  no): the game's minimap is the map there (`Hybrid.lua`).
 - **Terrain** (`Terrain.lua`): the game's own minimap textures, one per tile of a plane's 64 x 64 grid (Core's
   data, the set *Tiles* in the pack *World*, of the two continents and Zephras Isle, whose grid is its own map's,
   2991), up to 400 at once; under them, and alone further out,
@@ -237,15 +247,22 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   the game's town tracking atlas; objects, places and ways in the game's atlases; a boat's or zeppelin's dock
   (Core's set *Travel*, its `docks`) its own pin, its tooltip where it goes from there (the game's names of each
   other dock's area and zone, `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`), a click opening the map where it is the
-  only one, not marked unconfirmed (the game's own ways). One pin per key: the game's hides the data's (a
-  vignette's GUID names its creature). Kept per map until the game says it changed (the message `LIVE`), or Core's
-  places change; at a zone's level every zone in view (on Zephras Isle the isle itself), further out the continent
-  and its zones for travel and places only. A pin's place is in its map's plane (`Coords.PlaneOf`: a continent's,
-  or the isle's). `Pins.Gather`: pins nearer than `Pins.GATHER` units on the screen are one marker, a quest never.
+  only one, not marked unconfirmed (the game's own ways). A pin at each of a thing's points (a herb's every spawn:
+  its key the thing's and the point's, its `thing` the thing's); the game's pin hides every one of the data's for
+  the same thing (a vignette's GUID names its creature). Kept per map until the game says it changed (the message
+  `LIVE`; the arrow's quest: the game's alone), Core's in parts: the NPCs' read again when the log or the level
+  changed, the objects', places' and ways' when Core's places change; at a zone's level every zone in view (on
+  Zephras Isle the isle itself), further out the continent and its zones for travel and places only (only the
+  places' and ways' part read). A pin's place is in its map's plane (`Coords.PlaneOf`: a continent's,
+  or the isle's). `Pins.Gather`: pins nearer than `Pins.GATHER` units on the screen are one marker, a quest never
+  (its grid's cells by number). Herbs and ore, a zone's thousands of places: of each kind at most one in a cell of
+  that grid is sorted and gathered, the others there ride with it (its `with`), counted and named in its marker.
   The filter is the multi-choice setting `pins`.
 - **PinView** (`PinView.lua`): a pooled button per pin, kept by its key while it stays in view, at a fixed size, in
   the game's looks (its quest disc and marks, `UI-QuestPoi-*`, `Quest-In-Progress-Icon-*`); a higher kind over a
-  lower one by its frame level, all under the marks. A press on a pin is the map's (a drag moves the map,
+  lower one by its frame level (`PinView.TIERS`: kinds that share one are gathered where they would cover each
+  other), all under the marks; a kept button's look made again only when its pin's changed, its shown state told the
+  game only when it changed. A press on a pin is the map's (a drag moves the map,
   `Canvas.Press`/`Release`); a plain click is the pin's. Tooltips with a quest's objectives as the game tells them.
 - **Areas** (`Areas.lua`): the game's quest area frame (`QuestPOIFrame`, which the engine draws a quest's area
   into) over each zone in view, as large as its box, for the quest under the mouse in the log or the one the
@@ -256,7 +273,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   entry per map group (`C_Map.GetMapGroupMembersInfo`: its floors, lowest first), drawn in a view of their own over
   the canvas, under the bar: the floor's art (`Art.Of`) fitted whole in a frame that is scaled to zoom (up to
   `Dungeons.NEAR` times) and moved by a drag; the player's arrow where `C_Map.GetPlayerMapPosition` tells it on the
-  floor shown. `Canvas.Show` of a dungeon's map opens it; going small closes it. Core's set *Dungeons* (pack World)
+  floor shown. `Canvas.Show` of a dungeon's map opens it; going small or a right click closes it (the map under it
+  stays as it was). The list is kept once the game told of a dungeon map or the set was read. Core's set *Dungeons* (pack World)
   adds the dungeons the game has no map of: walked once it is there (`Each`), each floor keyed `"<instance>:<floor>"`
   (`Dungeons.Key(instance)` gives the lowest; an entrance's pin takes it as its `to`), its art from the set's tiles
   (the game's files), the player's arrow by `UnitPosition` in the floor's box, the floor you are on by the smallest
@@ -264,8 +282,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   `Dungeons.BOSS` over the art, the same size at every zoom (`Dungeons.PlaceBosses`), named by the set *Encounters*;
   a boss with a look (the set's `display`) gets a `PlayerModel` of it standing on its mark (`SetDisplayInfo`, as the
   game's guild news shows a boss; `Dungeons.MODEL_WIDTH` x `MODEL_HEIGHT`, turned `Dungeons.FACING`), one lower on
-  the screen in front, hidden while it would reach past the view's edge (models are not cut there), let go
-  (`ClearModel`) when the view closes.
+  the screen in front (`Dungeons.SPREAD` levels, all under the bar), hidden while it would reach past the view's
+  edge (models are not cut there), let go (`ClearModel`) when the view closes.
 - **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
   in view: a dark edge, the game's dependency bar art tinted gold, its glint moved along by a
   `TextureCoordTranslation` animation (no code of ours each frame); walks gold, flights pale, ships red. The
@@ -275,7 +293,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   on it; place and size in `store.questLogPlace`), over the full map in the layer `DIALOG` with its dark background,
   and pinned (`store.questLogPinned`, its title bar's pin) on the screen alone in the layer `LOW` without one (no
   skin, `barLine = false`); a `WowScrollBoxList` of rows read from `C_QuestLog` (the game's headers, folded
-  as the game keeps them; quests with level, state, watched; objectives), built again on `QUEST_LOG_UPDATE` once
+  as the game keeps them: a folded one's quests, which the game still lists, left out; quests with level, state,
+  watched; objectives), built again on `QUEST_LOG_UPDATE` once
   a frame and only while it shows; its `MinimalScrollBar` hidden but while the mouse is on the window and the list
   has more than its room (`HasScrollableExtent`), then at the docked side (`Side`: the window's dock zone, else the
   screen's half its middle is in); a click: the map pin at `Where` (the game's quest on a map, `GetQuestsOnMap`; a
@@ -343,12 +362,21 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   around the player at the map's own zoom (`Hybrid.Follow`, each step of the canvas' tracker): square, at its
   widest step whose square takes at most `Hybrid.ROOM` (half) of the canvas' shorter side (none at a zoom too
   close for its narrowest), shown while wholly inside the canvas (`Hybrid.Keep`); a click there is no ping. Only
-  while the pin filter's *Minimap dots* is on, in both views.
+  while the pin filter's *Minimap dots* is on, in both views. In an instance, where the game tells no place of
+  yours, the small view's game minimap is the map alone: in its middle at the view's step (the game's own while
+  the view has none), its ground on (`C_Minimap.SetDrawGroundTextures`), whatever the pin filter says; off again
+  once your place is known, and on, as the game has it, when given back.
 - **The game's map** (`Native.lua`): the keys bound to the game's map, quest log and minimap click a button
   of ours (override bindings, out of combat, again when the bindings change). Every other way to the game's
-  map shows `WorldMapFrame`: a hook after its `OnShow` hides it at once and closes it on the next frame with
-  the game's `HideUIPanel`, and ours opens at the map it was asked for. In a fight the game refuses an addon
-  that closes a panel, so there the game's map stays open as the game's.
+  map shows `WorldMapFrame`: a hook after its `OnShow` makes it unseen at once and hides it on the next frame
+  by its own `Hide`, and ours opens at the map it was asked for. Never the game's `ShowUIPanel` or `HideUIPanel`:
+  their manager keeps the open panels in slots of its own, which our call would leave written by our code until
+  a `/reload`, and the game's next panel there (the character sheet) would open as ours and fail on a secret
+  value; a panel hidden by its own `Hide` the manager mends by itself before it shows the next one
+  (`RepairUIPanelState`). In a fight the game's map stays open as the game's (hidden by our code then, its
+  `OnHide` would run as ours in the fight). To see it in the game: `/console taintLog 1`, `/reload`, a click on a
+  quest in the objective tracker (our map opens), then C (the character sheet): `Logs/taint.log` has no line of
+  Sane UI's for it.
 - **What the game tells** (`Live.lua`): the player, the map pin, the group, the quests, the flight points,
   rares and chests nearby, the game's own points and the explored parts of a map, each read when the game says
   it changed (one message `LIVE` a frame). The player and the pin are drawn now; the rest is for the pins.
@@ -406,6 +434,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-21, the game's map hidden, never closed; instances:** a map the game opened is hidden by its own `Hide`,
+  not the game's panel functions (which left the character sheet to open as ours); the game's map chosen in
+  *Classic windows* opens by its key. In an instance the small window shows the game's minimap with its own ground.
+  The button *Sane UI* only on the game's own minimap and map; dungeon lists kept, boss models under the bar, a
+  right click back to the map it was opened from; the canvas asks for the zone a few times a second, places only
+  the pins on what the game tells, and lays nothing out on the window's way.
 - **2026-10-21, the quest log as Saneroki asked; found herbs clicked:** no scroll bar at rest (the wheel scrolls;
   the bar shows while the mouse is on a list longer than its room, at the window's docked side); each quest's mark at
   its row's left as on the map; a click puts the game's map pin on its objective (`QuestLog.Pin`, `PinView.Drop`)

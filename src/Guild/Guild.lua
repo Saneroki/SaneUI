@@ -152,10 +152,12 @@ Core.Options(ns.name, OPTIONS, {
     end,
 })
 
--- Standing down: the window closed, the guild key the game's again, the guild window Social's own again.
+-- Standing down: the guild key the game's again (first: it is the game's own), the window closed, the guild
+-- window Social's own again, the roster no more asked for. Each step on its own: one failing stops no other.
 function ns.GiveBack()
-    if ns.Keys then ns.Keys.Leave() end
-    if ns.Window then ns.Window.Leave() end
+    if ns.Keys then ns.Safe("giving back", ns.Keys.Leave) end
+    if ns.Window then ns.Safe("giving back", ns.Window.Leave) end
+    ns.Safe("giving back", Core.Data.Guild.Watch, false)
 end
 
 -- A line in the page's status line (Page.lua), or in chat while it is not on show.

@@ -38,7 +38,7 @@ local Plain, Ask = Core.Plain, Core.Ask
 -- leaves the tooltips to the game and asks for a restart. Until then nothing here is called.)
 local Pools = ns.Pools or {}
 local Text, LiveText, Width, Place = Pools.Text, Pools.LiveText, Pools.Width, Pools.Place
-local Line, Rule, Icon, BarText, LiveBar, Bar = Pools.Line, Pools.Rule, Pools.Icon, Pools.BarText, Pools.LiveBar, Pools.Bar
+local Line, Rule, Icon, BarText, LiveBar = Pools.Line, Pools.Rule, Pools.Icon, Pools.BarText, Pools.LiveBar
 local COLOR, Mix = ns.COLOR, ns.Mix
 local Panel = {}
 ns.Panel = Panel
@@ -64,10 +64,8 @@ local CAPTION_ABOVE, CAPTION_BELOW = 6, 5 -- round a section's name
 local CAPTION_GAP = 6           -- between a section's name and the rule at each side of it
 local CAPTION_RULE = 12         -- the shortest rule beside a section's name; less room, no rules
 local CELL_INSET = 6            -- at each side of a strip's cell, at least
-local BAR_HEIGHT = Pools.BAR_HEIGHT -- a bar of our own: durability, a buff's time
 local HEALTH_HEIGHT, POWER_HEIGHT = 18, 5 -- a unit's bars: its health (written inside) and, over
                                           -- the health bar's lower part, its mana, rage or energy
-local SHORT_BAR = 100           -- an item's durability
 local SMALL_ICON = 16           -- beside a row's text
 local LIVE_ROOM = 80            -- for a text Live.lua writes (a unit's target's name)
 local NAME_GAP = 6              -- between the word Target and that name
@@ -234,14 +232,13 @@ end
 -- SetDisplayInfo). Which one, and how near and turned, is the reader's (head.model, Figures.lua). The
 -- frame is made for the first model a panel shows (a client without it: the picture, always).
 -- A frame is given its model only when that changes, as giving it again would load it anew and start
--- its moves over, and a panel is drawn many times while it is shown; once hidden it forgets it.
+-- its moves over, and a panel is drawn many times while it is shown. It keeps it while hidden: a panel
+-- shown again with the same thing is not drawn anew (Tooltips.lua), so the model must still be there.
 -- The picture stands until the model is there: a unit's as soon as the game takes the unit; a
 -- creature's and a piece of gear when the game has loaded it (OnModelLoaded). Where the game cannot
 -- draw it (a unit out of sight, its identity hidden, a model it does not load), the picture stays.
 local FRAMES = { figure = "PlayerModel" } -- [the panel's field] = the kind of frame
 local TRIED = Enum.ItemTryOnReason and Enum.ItemTryOnReason.Success or 0
-
-local function Forget(figure) figure.key, figure.ready = nil, false end
 
 -- The model has come: it stands in the picture's place from now.
 local function Loaded(figure)
@@ -262,9 +259,9 @@ local function Made(panel, field)
     if figure then
         figure.panel = panel
         figure:SetAllPoints(panel.icon)
-        figure:SetScript("OnHide", ns.Guard(Forget))
+        pcall(figure.SetKeepModelOnHide, figure, true) -- (see above: kept while hidden)
         pcall(figure.SetScript, figure, "OnModelLoaded", ns.Guard(Loaded))
-        Forget(figure)
+        figure.ready = false
     end
     panel[field] = figure
     return figure
@@ -310,7 +307,8 @@ local function Figure(panel, head)
         figure.key, figure.ready = key, false
         local taken, ready = LOAD[kind](figure, head)
         if not taken then
-            figure:Hide() -- (it forgets the key)
+            figure.key = nil -- asked again at the next draw
+            figure:Hide()
             return false
         end
         if kind ~= "unit" then pcall(figure.SetPortraitZoom, figure, head.modelZoom or 0) end
@@ -545,14 +543,14 @@ local function Measure(panel, head, rows, count, r, g, b, iconRoom)
             wanted = math.max(wanted, Width(time) + Width(caster) + AURA_WORDS)
             time:Hide()
             caster:Hide()
-        elseif kind == "text" or (kind == "bar" and row.short) then
+        elseif kind == "text" then
             local font = FONTS[row.font] or FONTS.row
             -- A description stands in the middle, each of its lines
             local left = Text(panel, font, Words(row, head, r, g, b), row.lr, row.lg, row.lb, row.prose and "CENTER" or nil)
             local right = Text(panel, font, row.right, row.rr, row.rg, row.rb, "RIGHT")
             panel.left[index], panel.right[index] = left, right
             local wide = Width(left) + (row.indent or 0) + (row.icon and SMALL_ICON + 4 or 0)
-                + (row.iconRight and SMALL_ICON + 4 or 0) + (kind == "bar" and SHORT_BAR + 8 or 0)
+                + (row.iconRight and SMALL_ICON + 4 or 0)
             if row.label then
                 local after = Text(panel, FONTS[row.labelFont] or font, row.label, LABEL[1], LABEL[2], LABEL[3])
                 panel.after[index] = after
@@ -682,8 +680,8 @@ local function StripRow(panel, row, index, y, inner, hairline)
 end
 
 -- A unit's health or a buff's time, as Live.lua keeps them (power lies over health: no place of
--- its own), an item's durability with its words inside, or a small bar of ours. Returns the y under it.
-local function BarRow(panel, row, index, y, inner, block)
+-- its own), or an item's durability with its words inside. Returns the y under it.
+local function BarRow(panel, row, y, inner, block)
     local live = panel.live
     if row.live == "power" then
         -- A unit's mana, rage or energy: over the lower part of its health bar
@@ -728,21 +726,7 @@ local function BarRow(panel, row, index, y, inner, block)
         BarText(bar, "RIGHT", FONTS.inside):SetText(row.right)
         return y + HEALTH_HEIGHT + ROW_GAP
     end
-    local bar = Bar(panel, row.br, row.bg, row.bb)
-    bar:SetMinMaxValues(0, row.max or 1)
-    bar:SetValue(row.value or 0)
-    if row.short then
-        -- A small bar with its numbers beside it, and something at the right (a price)
-        local left, right = panel.left[index], panel.right[index]
-        local height = math.max(Place(panel, left, SIDE + SHORT_BAR + 8, y, inner - SHORT_BAR - 8),
-            Place(panel, right, SIDE, y, inner))
-        bar:SetPoint("LEFT", panel, "TOPLEFT", SIDE, -(y + height / 2))
-        bar:SetWidth(SHORT_BAR)
-        return y + height + ROW_GAP
-    end
-    bar:SetPoint("TOPLEFT", panel, "TOPLEFT", SIDE, -y)
-    bar:SetWidth(inner)
-    return y + BAR_HEIGHT + ROW_GAP
+    return y
 end
 
 local block = {} -- the stretch of a unit's bars, for their round corners, for one draw
@@ -778,7 +762,7 @@ local function Lay(panel, rows, count, y, width, iconRoom, iconBottom, plaqueLef
         elseif kind == "strip" then
             y = y + StripRow(panel, row, index, y, inner, hairline) + ROW_GAP
         elseif kind == "bar" then
-            y = BarRow(panel, row, index, y, inner, block)
+            y = BarRow(panel, row, y, inner, block)
         elseif kind == "caption" then
             -- A section's name in the middle, and a rule from each side to it
             local caption = panel.left[index]

@@ -468,15 +468,17 @@ local function group(count, header)
 end
 local pages = L.Paginate({ group(10, true) }, 200)
 check(#pages == 1 and #pages[1] == 11 and pages[1][1].header and pages[1][1].y == 0, "a heading, then its spells")
-check(pages[1][2].x == 0 and pages[1][2].y == 61 and pages[1][5].y == 271, "ten spells need four rows: the first column takes four")
-check(pages[1][6].x == 215 and pages[1][6].y == 61 and pages[1][10].x == 430 and pages[1][11].y == 131, "the second four, the third the last two")
+check(pages[1][2].x == 0 and pages[1][2].y == 70 and pages[1][5].y == 280, "ten spells need four rows: the first column takes four")
+check(pages[1][6].x == 215 and pages[1][6].y == 70 and pages[1][10].x == 430 and pages[1][11].y == 140, "the second four, the third the last two")
+check(L.Paginate({ group(3, true) }, 200)[1][2].y == L.Paginate({ group(6, false) }, 200)[1][2].y,
+    "a heading is as high as a row (this client's template): the rows under it line up with those of a page without one")
 pages = L.Paginate({ group(30, true) }, 200)
 check(#pages == 2 and #pages[1] == 22 and #pages[2] == 9, "under a heading a page holds seven rows; the rest goes on")
 check(pages[2][1].y == 0 and pages[2][4].x == 215 and pages[2][9].y == 140, "and is spread over as few rows as it needs")
 pages = L.Paginate({ group(24, false) }, 200)
 check(#pages == 1 and pages[1][24].y == 490, "without a heading a page holds eight rows")
 pages = L.Paginate({ group(3, true), group(3, true) }, 200)
-check(#pages == 1 and pages[1][5].header and pages[1][5].y == 161 and pages[1][6].y == 222, "a second group follows after a gap")
+check(#pages == 1 and pages[1][5].header and pages[1][5].y == 170 and pages[1][6].y == 240, "a second group follows after a gap")
 pages = L.Paginate({ group(18, true), group(3, true) }, 200)
 check(#pages == 2 and pages[2][1].header and pages[2][1].y == 0, "a heading is never left alone at the foot of a page")
 check(#L.Paginate({}, 200) == 1, "an empty tab is one empty page")
@@ -507,8 +509,8 @@ check(view1:GetHeight() > 10000, "the game's first column is made tall, so the g
 check(at(nativePager) == UIParent and SaneUISpellbookPager, "the game's page buttons step aside for the addon's")
 
 local made, heading = DrawTab("Fire", { "Fireball" })
-check(stands(heading, view1, 0, 0) and stands(made[1], view1, 0, -61), "the game's own entries are put where they belong, first")
-check(ghost("Combustion") and stands(ghost("Combustion"), view1, 231, -61) and stands(ghost("Pyroblast"), view1, 462, -61),
+check(stands(heading, view1, 0, 0) and stands(made[1], view1, 0, -70), "the game's own entries are put where they belong, first")
+check(ghost("Combustion") and stands(ghost("Combustion"), view1, 231, -70) and stands(ghost("Pyroblast"), view1, 462, -70),
     "with the spells to come in grey after them")
 check(ghostCount() == 2, "one grey icon per spell")
 local pyro = ghost("Pyroblast")
@@ -526,10 +528,10 @@ local function fold(name, heading)
 end
 W.cvars.ShowAllSpellRanks = "1"
 made = DrawTab("Fire", { "Fireball", "Fireball" })
-check(ghostCount() == 2 and at(made[1]) == UIParent and stands(made[2], view1, 0, -61),
+check(ghostCount() == 2 and at(made[1]) == UIParent and stands(made[2], view1, 0, -70),
     "with ranks shown, the ranks of a spell are folded into the highest one you have")
 local plus = fold("Fireball")
-check(plus and plus.more == 3 and stands(plus, view1, 216 - 18, -63) and not fold("Pyroblast"), "it carries a + that says how many more there are; a spell of one rank has none")
+check(plus and plus.more == 3 and stands(plus, view1, 216 - 18, -72) and not fold("Pyroblast"), "it carries a + that says how many more there are; a spell of one rank has none")
 plus:GetScript("OnEnter")(plus)
 check(GameTooltip:GetOwner() == plus and GameTooltip._text == "Show all ranks of Fireball (3 more)", "pointed at, it says so")
 plus:GetScript("OnLeave")(plus)
@@ -539,9 +541,9 @@ PlaySound = function(id) sounds[#sounds + 1] = id end
 plus:GetScript("OnClick")(plus)
 PlaySound = play
 check(sounds[1] == SOUNDKIT.IG_ABILITY_PAGE_TURN, "a page turns, with the game's sound for it")
-check(fold("Fireball", true) and stands(fold("Fireball", true), view1, 0, -141) and not fold("Fireball"), "a click on it unfolds the ranks into a section of their own, under the tab's spells")
-check(ghostCount() == 4 and stands(made[1], view1, 0, -173) and stands(made[2], view1, 0, -243), "the ranks you have first")
-check(stands(ghost("Fireball", "Rank 3"), view1, 231, -173) and stands(ghost("Fireball", "Rank 4"), view1, 231, -243), "the ranks to come right after them")
+check(fold("Fireball", true) and stands(fold("Fireball", true), view1, 0, -150) and not fold("Fireball"), "a click on it unfolds the ranks into a section of their own, under the tab's spells")
+check(ghostCount() == 4 and stands(made[1], view1, 0, -182) and stands(made[2], view1, 0, -252), "the ranks you have first")
+check(stands(ghost("Fireball", "Rank 3"), view1, 231, -182) and stands(ghost("Fireball", "Rank 4"), view1, 231, -252), "the ranks to come right after them")
 check(ghost("Fireball", "Rank 3").SubName:GetText() == "Rank 3" and ghost("Fireball", "Rank 3").RequiredLevel:GetText() == "Available at level 12", "each with its rank and level")
 made = DrawTab("Fire", { "Fireball", "Fireball" })
 check(fold("Fireball", true) and ghostCount() == 4, "they stay unfolded when the game draws the tab again")
@@ -552,7 +554,7 @@ W.cvars.ShowAllSpellRanks = nil
 made = DrawTab("Fire", { "Fireball" })
 ns.options.showHidden = false
 ns.Fire("REFRESH")
-check(ghostCount() == 0 and stands(made[1], view1, 0, -61), "'Show hidden spells' off: the spellbook as the game draws it")
+check(ghostCount() == 0 and stands(made[1], view1, 0, -70), "'Show hidden spells' off: the spellbook as the game draws it")
 ns.options.showHidden = true
 ns.Fire("REFRESH")
 check(ghostCount() == 2, "and on again")
@@ -561,14 +563,14 @@ check(ghostCount() == 2, "and on again")
 made[1]:ClearAllPoints()
 made[1]:SetPoint("TOPLEFT", view1, "TOPLEFT", 0, -999)
 SaneUISpellbook:GetScript("OnUpdate")(SaneUISpellbook)
-check(stands(made[1], view1, 0, -61), "an entry the game moved is put back at once")
+check(stands(made[1], view1, 0, -70), "an entry the game moved is put back at once")
 local silent = W.NewWidget("Frame", nil, view1)
 silent.spellBookItemInfo = { name = "Scorch" }
 silent.GetElementData = function() return { isHeader = false } end
 silent:SetPoint("TOPLEFT", view1, "TOPLEFT", 0, -140)
 paged.frames[#paged.frames + 1] = silent
 SaneUISpellbook:GetScript("OnUpdate")(SaneUISpellbook)
-check(stands(silent, view1, 0, -131) and stands(ghost("Pyroblast"), view1, 231, -131), "and so is an entry the game added without saying so")
+check(stands(silent, view1, 0, -140) and stands(ghost("Pyroblast"), view1, 231, -140), "and so is an entry the game added without saying so")
 local watch = SaneUISpellbook:GetScript("OnUpdate")
 for _ = 1, 10 do watch(SaneUISpellbook, 0.01) end -- the frames right after a layout are over
 local _, _, _, homeX, homeY = made[1]:GetPoint(1)
@@ -584,15 +586,15 @@ S.AddExtra(LATE)
 W.Wait(1)
 activeTab = tabs[2]
 made = DrawTab("Arcane", { "Arcane Intellect" })
-check(stands(made[1], view1, 0, -61) and stands(ghost("Polymorph"), view1, 0, -131) and stands(ghost("Arcane Explosion"), view1, 231, -61)
-    and stands(ghost("Blink"), view1, 231, -131) and stands(ghost("Counterspell"), view1, 462, -131),
+check(stands(made[1], view1, 0, -70) and stands(ghost("Polymorph"), view1, 0, -140) and stands(ghost("Arcane Explosion"), view1, 231, -70)
+    and stands(ghost("Blink"), view1, 231, -140) and stands(ghost("Counterspell"), view1, 462, -140),
     "the Arcane tab: the spell you have, then what you can learn now, then the rest by level")
 check(ghost("Mana Shield") and not ghost("Arcane Mind"), "the trainer-only spell among them, the passive one not")
 local ourHeader
 for _, widget in ipairs(W.frames) do
     if widget.isOurHeader and widget._parent == SaneUISpellbook and widget:IsShown() then ourHeader = widget end
 end
-check(ourHeader:IsShown() and ourHeader.Text:GetText() == "Other spells to learn" and stands(ourHeader, view1, 0, -231) and stands(ghost("Late Spell"), view1, 0, -292),
+check(ourHeader:IsShown() and ourHeader.Text:GetText() == "Other spells to learn" and stands(ourHeader, view1, 0, -240) and stands(ghost("Late Spell"), view1, 0, -310),
     "spells without a known tab get a group of their own at the end of the first class tab")
 activeTab = tabs[4]
 DrawTab("Frost", {})
@@ -602,7 +604,7 @@ local tabHeader
 for _, widget in ipairs(W.frames) do
     if widget.isOurHeader and widget._parent == SaneUISpellbook and widget:IsShown() then tabHeader = widget end
 end
-check(tabHeader and tabHeader.Text:GetText() == "Frost" and stands(tabHeader, view1, 0, 0) and stands(ghost("Frost Nova"), view1, 0, -61),
+check(tabHeader and tabHeader.Text:GetText() == "Frost" and stands(tabHeader, view1, 0, 0) and stands(ghost("Frost Nova"), view1, 0, -70),
     "a tab the game drew nothing for (all its spells hidden) still gets its heading")
 S.RemoveExtra(entry("Late Spell"))
 W.Wait(1)
@@ -617,14 +619,14 @@ local many = {}
 for index = 1, 40 do many[index] = ("Zz%02d"):format(index) end
 made = DrawTab("Arcane", many)
 check(SaneUISpellbookPager.maxPages == 2 and SaneUISpellbookPager.currentPage == 1, "46 entries are two pages of two columns")
-check(stands(made[1], view1, 0, -61) and stands(made[22], view2, 0, 0), "the second column of the book is the game's second view")
+check(stands(made[1], view1, 0, -70) and stands(made[22], view2, 0, 0), "the second column of the book is the game's second view")
 check(not ghost("Counterspell"), "a grey entry of the next page is not on this one")
 paged:GetScript("OnMouseWheel")(paged, -1)
 check(SaneUISpellbookPager.currentPage == 2 and stands(ghost("Counterspell"), view1, 0, 0), "the mouse wheel turns the page")
 check(at(made[1]) == UIParent and select(2, at(made[1])) < -5000, "entries of another page wait far off the screen")
 check(ghostCount() == 1, "and the grey entries of the first page are gone from the second")
 paged:GetScript("OnMouseWheel")(paged, 1)
-check(stands(made[1], view1, 0, -61) and not ghost("Counterspell"), "and back")
+check(stands(made[1], view1, 0, -70) and not ghost("Counterspell"), "and back")
 paged.viewsPerPage = 1
 EventRegistry:TriggerEvent("PlayerSpellsFrame.SpellBookFrame.DisplayedSpellsChanged")
 check(SaneUISpellbookPager.maxPages == 3 and at(made[22]) == UIParent, "the small spellbook shows one column per page")
@@ -633,7 +635,7 @@ EventRegistry:TriggerEvent("PlayerSpellsFrame.SpellBookFrame.DisplayedSpellsChan
 paged:GetScript("OnMouseWheel")(paged, -1)
 W.slotOfSpell[4001] = 1              -- the game's slot of the first entry
 book:GoToSpell(4001, true)
-check(SaneUISpellbookPager.currentPage == 1 and stands(made[1], view1, 0, -61), "when the game jumps to a spell, our page follows")
+check(SaneUISpellbookPager.currentPage == 1 and stands(made[1], view1, 0, -70), "when the game jumps to a spell, our page follows")
 paged:GetScript("OnMouseWheel")(paged, -1)
 paged.viewsPerPage = 1
 EventRegistry:TriggerEvent("PlayerSpellsFrame.SpellBookFrame.DisplayedSpellsChanged")
@@ -643,7 +645,7 @@ EventRegistry:TriggerEvent("PlayerSpellsFrame.SpellBookFrame.DisplayedSpellsChan
 check(SaneUISpellbookPager.currentPage == 2, "and large again")
 activeTab = tabs[3]
 made = DrawTab("Fire", { "Fireball" })
-check(SaneUISpellbookPager.currentPage == 1 and stands(made[1], view1, 0, -61), "another tab starts on its first page")
+check(SaneUISpellbookPager.currentPage == 1 and stands(made[1], view1, 0, -70), "another tab starts on its first page")
 
 -- In a fight the game forbids moving an entry that holds one of its protected frames
 -- (an entry whose spell flyout you opened). It waits for the fight's end.
@@ -656,7 +658,7 @@ for _ = 1, 60 do SaneUISpellbook:GetScript("OnUpdate")(SaneUISpellbook) end
 check(stands(made[1], view1, 0, -999) and #W.printed == 0 and SaneUISpellbook:IsShown(), "such an entry is left alone in a fight, without a fuss")
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
-check(stands(made[1], view1, 0, -61), "and put right when the fight is over")
+check(stands(made[1], view1, 0, -70), "and put right when the fight is over")
 made[1].IsProtected = nil
 
 -- Search results and the pet tab get no grey entries
@@ -668,7 +670,7 @@ paged:GetScript("OnMouseWheel")(paged, -1)
 check(SaneUISpellbookPager.currentPage == 2, "search results have pages too")
 made = DrawTab("Results", { "Fireball", "Blink" })
 check(SaneUISpellbookPager.currentPage == 1, "a new search starts on its first page")
-check(ghostCount() == 0 and stands(made[2], view1, 231, -61), "search results are laid out as the game would")
+check(ghostCount() == 0 and stands(made[2], view1, 231, -70), "search results are laid out as the game would")
 searching, activeTab = false, tabs[5]
 DrawTab("Pet", { "Growl" })
 check(ghostCount() == 0, "the pet's tab is the pet's")
@@ -1061,6 +1063,30 @@ ns.Presets.AskDelete("Raid")
 StaticPopup_Show = show
 check(printedMatch("type /sane ab delete Raid"), "without the game's dialog the command to type is said")
 check(lines[1].title == "Sane UI", "under the addon's name")
+do
+    -- The game's menu asks a line whether it is enabled, and for its tooltip, while it is open.
+    local function Opened()
+        local seen = {}
+        local function Sub() return { CreateButton = function() return Sub() end } end
+        local root = { CreateDivider = function() end, CreateTitle = function() end, CreateButton = function() return Sub() end }
+        function root:CreateCheckbox(text)
+            local item = {}
+            seen[text] = item
+            return { SetEnabled = function(_, fn) item.enabled = fn end, SetTooltip = function(_, fn) item.tooltip = fn end }
+        end
+        W.menuModifiers.MENU_SPELL_BOOK_SETTINGS(nil, root)
+        return seen["Compact spellbook pages"]
+    end
+    local first, again = Opened(), Opened()
+    local title
+    local setTitle = GameTooltip_SetTitle
+    GameTooltip_SetTitle = function(_, text) title = text end
+    first.tooltip(GameTooltip) -- guarded: an error in it would stand the module down
+    GameTooltip_SetTitle = setTitle
+    check(first.enabled() == true and first.tooltip == again.tooltip and first.enabled == again.enabled
+        and title == "Compact spellbook pages" and not ns.off,
+        "a line's tooltip and whether it is enabled are asked of functions of ours made once, not at every opening")
+end
 
 -- Sane UI, its own pages Profiles, General and Appearance, then the module's
 check(#W.options.pages == 5 and #W.options.pages[5].items == 0,
@@ -1185,9 +1211,9 @@ local function section(text)
 end
 searching, activeTab = false, tabs[1]
 made = DrawTab("General", { "Attack" })
-check(stands(made[1], view1, 0, -61) and section("Passive spells to learn") and stands(section("Passive spells to learn"), view1, 0, -161)
-    and stands(ghost("Arcane Mind"), view1, 0, -222), "General lists the passive spells to come in a section under its active spells")
-check(section("Skills to learn") and stands(section("Skills to learn"), view1, 0, -322) and stands(ghost("Staves"), view1, 0, -383), "and the skills to learn in another")
+check(stands(made[1], view1, 0, -70) and section("Passive spells to learn") and stands(section("Passive spells to learn"), view1, 0, -170)
+    and stands(ghost("Arcane Mind"), view1, 0, -240), "General lists the passive spells to come in a section under its active spells")
+check(section("Skills to learn") and stands(section("Skills to learn"), view1, 0, -340) and stands(ghost("Staves"), view1, 0, -410), "and the skills to learn in another")
 W.cvars.spellBookHidePassives = "1"
 DrawTab("General", { "Attack" })
 check(not section("Passive spells to learn") and not ghost("Arcane Mind") and ghost("Staves"), "the spellbook's own 'hide passives' hides that section")
@@ -1284,13 +1310,13 @@ local trainHeader
 for _, widget in ipairs(W.frames) do
     if widget.isOurHeader and widget._parent == SaneUISpellbookHome and widget:IsShown() and widget.Text:GetText():find("trainer") then trainHeader = widget end
 end
-check(trainHeader and trainHeader.Text:GetText() == "At your trainer now: 1000 copper" and stands(trainHeader, view1, 0, 0) and stands(wand, view2, 0, -103),
+check(trainHeader and trainHeader.Text:GetText() == "At your trainer now: 1000 copper" and stands(trainHeader, view1, 0, 0) and stands(wand, view2, 0, -112),
     "the trainer's spells on the left page under their total, the quests on the right")
 local levelLine
 for _, widget in ipairs(W.frames) do
     if widget._parent == SaneUISpellbookHome and widget._kind == "FontString" and widget:IsShown() and widget:GetText() == "Level 8" then levelLine = widget end
 end
-check(levelLine and stands(levelLine, view2, 8, -71), "the quest rewards stand under the level you get them at")
+check(levelLine and stands(levelLine, view2, 8, -80), "the quest rewards stand under the level you get them at")
 W.level = 2
 ns.QueueUpdate(true, 0)
 W.Wait(1)
@@ -1346,22 +1372,22 @@ made = DrawTab("Arcane", many)
 -- Where an entry stands in the page's own measure: an entry drawn smaller counts in its own.
 local function small(frame, relativeTo, x, y) return stands(frame, relativeTo, x / 0.75, y / 0.75) end
 check(made[1]:GetScale() == 0.75 and ghost("Arcane Explosion"):GetScale() == 0.75, "compact: every entry is drawn smaller")
-check(small(made[1], view1, 0, -55) and small(made[11], view1, 170, -55) and small(made[40], view1, 510, -496),
+check(small(made[1], view1, 0, -64) and small(made[11], view1, 170, -64) and small(made[40], view1, 510, -505),
     "and stands closer: four columns of ten on a page")
 check(SaneUISpellbookPager.maxPages == 1 and small(ghost("Arcane Explosion"), view1, 797, 0) and small(ghost("Blink"), view1, 967, 0), "43 entries are one open book now; the right page starts right of the middle")
 paged:SetSize(900, 500) -- the window dragged small
 ns.Fire("REFRESH")
-check(SaneUISpellbookPager.maxPages == 3 and small(made[7], view1, 0, -349) and small(made[8], view1, 441, 0) and small(made[15], view1, 441, -343),
+check(SaneUISpellbookPager.maxPages == 3 and small(made[7], view1, 0, -358) and small(made[8], view1, 441, 0) and small(made[15], view1, 441, -343),
     "a smaller window: one column of seven, then eight, to a page, and more pages")
 paged.viewsPerPage = 1
 ns.Fire("REFRESH")
-check(SaneUISpellbookPager.maxPages == 2 and small(made[8], view1, 170, -55) and small(made[22], view1, 510, -55) and at(made[30]) == UIParent,
+check(SaneUISpellbookPager.maxPages == 2 and small(made[8], view1, 170, -64) and small(made[22], view1, 510, -64) and at(made[30]) == UIParent,
     "the small spellbook of that width: one page as wide as the window, four columns again")
 paged.viewsPerPage = 2
 ns.options.compact = false
 paged:SetSize(0, 0)
 ns.Fire("REFRESH")
-check(made[1]:GetScale() == 1 and stands(made[1], view1, 0, -61) and at(made[40]) == view2, "switched off, the pages are the game's again")
+check(made[1]:GetScale() == 1 and stands(made[1], view1, 0, -70) and at(made[40]) == view2, "switched off, the pages are the game's again")
 
 -- Moving and sizing the window --------------------------------------------------------------------
 check(not rawget(_G, "SaneUISpellbookDragBar"), "with the switch off the window is left alone")
@@ -1426,15 +1452,31 @@ W.printed = {}
 sane("window reset")
 check(ns.DB.window == nil and PlayerSpellsFrame:GetWidth() == 809 and book:GetWidth() == 806 and printedMatch("its own size again"), "/sane ab window reset gives it the game's size back")
 book.isMinimized = nil
+PlayerSpellsFrame:SetSize(1618, 720) -- large again, as the game sizes it
+book:SetWidth(1612)
+grip:GetScript("OnMouseDown")(grip)
+PlayerSpellsFrame:SetSize(1000, 600)
+PlayerSpellsFrame:GetScript("OnSizeChanged")(PlayerSpellsFrame)
+grip:GetScript("OnMouseUp")(grip)
+book:Hide() -- the spellbook is closed when the switch goes off
 ns.options.window = false
 ns.Fire("REFRESH")
 check(not bar:IsShown() and not grip:IsShown(), "switched off, the bar and the grip go")
+PlayerSpellsFrame:SetSize(1618, 720) -- the game sizes the window when it opens the spellbook, never the book in it
+book:Show()
+check(book:GetWidth() == 1612 and book:GetHeight() == 702, "switched off while the spellbook was closed, the book takes the game's size when it opens next")
 
 -- Giving the pages back --------------------------------------------------------------------
 W.printed = {}
 searching, activeTab = false, tabs[3]
-made = DrawTab("Fire", { "Fireball" })
-check(ghostCount() == 2 and stands(made[1], view1, 0, -61), "the Fire tab once more, with its grey entries")
+-- An entry drawn smaller (compact) that the game has taken back into its pool since: it is no longer
+-- among the tab's entries, and the game draws its next tabs from that pool.
+ns.options.compact = true
+local pooled = DrawTab("Fire", { "Fireball", "Scorch", "Fire Blast" })[3]
+ns.options.compact = false
+made = DrawTab("Fire", { "Fireball", "Scorch", "Fire Blast" })
+check(pooled:GetScale() == 0.75 and ghostCount() == 2 and stands(made[1], view1, 0, -70) and stands(made[3], view1, 231, -70),
+    "the Fire tab once more, with its grey entries")
 -- It happens in a fight, where the game locks its frames: the column, the page buttons, the row of
 -- tabs, and an entry drawn small (one whose flyout was opened).
 local function locked() return true end
@@ -1447,6 +1489,7 @@ W.gamepad = true                      -- a controller is switched on: the game p
 H.Open()                              -- Home empties the page underneath, and that redraw notices it
 check(view1:GetHeight() == 60000 and not stands(nativePager, paged, -75, 40) and stands(tabSystem, book, 116, -26) and held:GetScale() == 0.75,
     "in a fight what the game locks is left as it is")
+check(pooled:GetScale() == 1, "an entry the game took back into its pool after we drew it smaller gets its own size back too")
 W.combat = false
 view1.IsProtected, nativePager.IsProtected, tabSystem.IsProtected, held.IsProtected = nil, nil, nil, nil
 W.Fire("PLAYER_REGEN_ENABLED")
@@ -1457,9 +1500,9 @@ H.Open()
 check(not ns.Home.IsOpen() and not SaneUISpellbookHome:IsShown() and stands(tabSystem, book, 70, -26),
     "Home goes with them, also when it was opening: it needs the pages. The row of tabs gets its place back")
 check(book.SearchBox:GetWidth() == 290, "and the search box its room")
-check(stands(made[1], view1, 0, -61), "what is on screen is tidied one last time")
-made = DrawTab("Fire", { "Fireball" })
-check(stands(made[1], view1, 0, -70), "and the game's layout is left alone from then on")
+check(stands(made[3], view1, 462, -70), "what is on screen is tidied one last time: the game's entries, without the grey ones")
+made = DrawTab("Fire", { "Fireball", "Scorch", "Fire Blast" })
+check(stands(made[3], view1, 0, -210), "and the game's layout is left alone from then on")
 
 -- The class files: edited by hand, so their format is checked here ------------------------
 local FIELDS = { talent = "number", after = "number", alone = "boolean", side = "string", raceIDs = "table" }
@@ -1502,11 +1545,45 @@ W.actions[1] = nil
 E.Reserve(1, entry("Blink"))
 ns.Fire("REFRESH")
 check(barGhost:IsShown(), "(a ghost on the bars)")
+W.trainerFilter.unavailable = false
+W.trainer = { { kind = "available", name = "Frost Nova", icon = 301, level = 10, sub = "Rank 1", category = "Frost", id = FROSTNOVA, cost = 400 } }
+W.Fire("TRAINER_SHOW")
+ns.Drag.Start(entry("Blink"))
+local carried, gold -- the icon that follows the mouse, and the gold frame on the button under it
+for _, widget in ipairs(W.frames) do
+    if widget._parent == UIParent and widget.icon and widget:GetScript("OnUpdate") then carried = widget end
+    if widget.glow then gold = widget end
+end
+GetCursorPosition = function() return 120, 130 end -- over the hidden button of the bar further up
+carried:GetScript("OnUpdate")(carried)
+GetCursorPosition = cursorAt
+check(W.trainerFilter.unavailable == true and ns.Drag.Held() and gold:IsShown(),
+    "(a class trainer's window, its hidden rows switched on to be read; a grey spell carried, its gold frame on a button)")
+-- A step of giving back that fails (the first one, the ghosts', here, after it took them off) keeps none
+-- of the others: the carried spell, the trainer's filter and the spellbook are given back all the same.
+-- (The pages went back to the game further up already: whether the book's step ran is noted here.)
+local hideGhosts, standDown, bookGiven = ns.Ghosts.Hide, ns.Book.StandDown, false
+ns.Ghosts.Hide = function(...)
+    hideGhosts(...)
+    error("the ghosts could not give everything back")
+end
+ns.Book.StandDown = function(...)
+    bookGiven = true
+    return standDown(...)
+end
 W.printed, W.caught = {}, {}
 ns.Guard(function() error("a script broke") end)()
+ns.Ghosts.Hide, ns.Book.StandDown = hideGhosts, standDown
 check(#W.caught == 1, "(the game's error window gets it too: the stand-in shows Lua errors)")
 W.caught = nil
 check(ns.off and not ns.Book.Armed() and not barGhost:IsShown(), "an error no step caught leaves the spellbook to the game and takes the ghosts off the bars")
+check(bookGiven and not ns.Drag.Held() and not carried:IsShown() and not gold:IsShown() and W.trainerFilter.unavailable == false
+    and printedMatch("problem in Abilities: giving back"),
+    "also when one step of giving back fails: the carried spell is let go (its gold frame too), the trainer's filter put back, the book given back")
+W.Fire("TRAINER_SHOW")
+W.Wait(1)
+check(W.trainerFilter.unavailable == false, "and from then on the trainer's window is the game's alone")
+W.trainer = nil
 check(Core.errors["Abilities: " .. ns.GIVEN_BACK] and printedMatch("problem in Abilities: " .. ns.GIVEN_BACK), "it is kept and told")
 ns.QueueUpdate(true, 0)
 W.Wait(1)

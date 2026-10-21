@@ -6,6 +6,13 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- A review of the whole of Sane UI, with many fixes: the bags keep
+  your category order and Sort By again, the bank's sidebar works with
+  several bank tabs, guild professions show and guild lists keep their
+  place when you click, tooltips keep their 3D portraits, Ignore and
+  Add Friend work with Forever's surnames, and neither a chat link nor
+  the world map can break the character sheet any more. Inside
+  dungeons the small map shows the game's own minimap.
 - Navigation: the quest log has no scroll bar any more (scroll with the
   mouse wheel), each quest has its mark, and a click puts a map pin on
   its objective. Right-click for its details or to show it on the map.

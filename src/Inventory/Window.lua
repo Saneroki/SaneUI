@@ -61,7 +61,8 @@ local function CloseBags()
     if close then close() end
     ns.Keys.GameBags(false)
 end
-local function Running() return not ns.off end
+-- The button Sane UI is there only while ours can come: the module running, Can expand to fullscreen on.
+local function Running() return not ns.off and (ns.options or {}).expand ~= false end
 local CLASSIC = {
     { text = CHARACTER, show = function() Core.Classic.Press(CHARACTER, "TOGGLECHARACTER0") end,
       frame = "CharacterFrame", full = true, ready = Running },
@@ -98,6 +99,8 @@ function Window.Open(key)
     if edge.full and not (edge.clock and edge.clock:IsRunning()) then return ns.Board.Add(key) end
     wanted = key
     if not edge.full then edge:Fill(true) end
+    -- It did not fill after all (Edit Mode, Can expand to fullscreen off): nothing waits to be put on later.
+    if not edge.full then wanted = nil end
 end
 
 -- A key (Keys.lua): as Open, or, pressed again while the screen stands full with that window, back to its size, as

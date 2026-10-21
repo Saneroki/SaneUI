@@ -72,7 +72,6 @@ ns.TEXT = {
     classicMinimap = "Minimap",
     classicMap = Core.Word("WORLD_MAP", "World Map"),
     noPin = Core.Word("MAP_PIN_INVALID_MAP", "A map pin cannot be placed here."),
-    mapInFight = "the game's map opens only by its own key in a fight.",
     about = "the map full screen and back (/sane map reset: the window's first place and size)",
     stopped = "the map is closed until the next /reload; the game's own minimap and map are back.",
     reset = "the map window is back at its first place and size.",
@@ -266,22 +265,17 @@ function ns.Offer()
     ns.Window.Arrange()
 end
 
--- One step of giving back. Each runs by itself, so one that fails does not keep the next from its work.
-local function Back(step)
-    local ok, problem = xpcall(step, Core.Trace)
-    if not ok then Core.NoteError(ns.name .. ": giving back", problem) end
-end
-
--- Something failed (Core's StandDown calls this once): the keys back to the game's, the game's minimap back
--- where it was, the window gone. What must wait for the end of a fight waits for it.
+-- Something failed (Core's StandDown calls this once): the game's map and its keys, and the game's minimap,
+-- back first, where they were; then the window gone. Each step runs by itself (Safe), so one that fails does
+-- not keep the next from its work. What must wait for the end of a fight waits for it.
 function ns.GiveBack()
-    Back(ns.Native.GiveBack)
-    Back(ns.Hybrid.GiveBack)
-    Back(ns.Window.Hide)
-    Back(ns.TripView.Hide)
-    Back(ns.Found.Hide)
-    Back(ns.Nodes.GiveBack)
-    Back(ns.Sparkles.GiveBack)
+    ns.Safe("giving back", ns.Native.GiveBack)
+    ns.Safe("giving back", ns.Hybrid.GiveBack)
+    ns.Safe("giving back", ns.Window.Hide)
+    ns.Safe("giving back", ns.TripView.Hide)
+    ns.Safe("giving back", ns.Found.Hide)
+    ns.Safe("giving back", ns.Nodes.GiveBack)
+    ns.Safe("giving back", ns.Sparkles.GiveBack)
 end
 
 function ns.OnLoad()

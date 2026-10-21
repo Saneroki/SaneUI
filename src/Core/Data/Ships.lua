@@ -9,7 +9,8 @@ local Core = SaneUI.Core
 --
 --      local Ships = SaneUI.Core.Data.Ships()
 --      Ships:Table(key)        -- its timetable: { round, known (the round is the set's or learnt, not
---                              -- estimated), stops = { { index, world, x, y, stay, arrive, leave, dock, area } } },
+--                              -- estimated), given (the set's own), stops = { { index, world, x, y, stay, arrive,
+--                              -- leave, dock, area } } },
 --                              -- the seconds into its round it arrives at each stop and leaves it (the first
 --                              -- stop leaves at 0; dock: its number among the way's docks, stops within
 --                              -- Ships.SAME yards one dock, as the set's docks; area: the game's area it lies in,
@@ -40,10 +41,10 @@ local Core = SaneUI.Core
 --  while it sails at full speed, says when the boat left its last stop, and so the
 --  start of its round (its epoch); Ships.SAMPLES of them that agree within
 --  Ships.AGREE seconds are a ride, kept for this realm in Core's saved data
---  (Core.Store), on this computer only. Where the round is estimated, a later ride
---  corrects it by the rounds between the two. Nothing in a taxi's flight, and
---  nothing while the set Travel is not loaded (a module that shows the ways asks
---  for it: Navigation, at login).
+--  (Core.Store), on this computer only. Where the set has no round, the rides learn
+--  it from the rounds between them, and correct it while they agree with it (Keep,
+--  below). Nothing in a taxi's flight, and nothing while the set Travel is not
+--  loaded (a module that shows the ways asks for it: Navigation, at login).
 -------------------------------------------------------------------------------
 local Data = Core.Data
 
@@ -59,7 +60,7 @@ Ships.SAMPLES = 5        -- samples at full speed that make a ride
 Ships.AGREE = 4          -- seconds they agree within
 Ships.PACE = 0.3         -- a share the player's pace along the way may differ from the boat's
 Ships.TRUST = 12 * 3600  -- seconds a ride's times are trusted
-Ships.ROUNDS = 40        -- at most so many rounds between two rides that correct an estimated round
+Ships.ROUNDS = 40        -- at most so many rounds between two rides that give a round not confirmed yet
 Ships.KINDS = { boat = true, zeppelin = true }
 
 local Travel = Data.Set("Travel")
@@ -111,13 +112,23 @@ local function Cruising(yards, s)
     return s > ramp and s < yards - ramp
 end
 
+-- This realm's learnt times of a way (key nil: of all, their table). The saved file may hold anything: a part
+-- that is no table is made anew, a record without a number for its epoch is none, a value of the wrong kind goes.
+local NUMBERS = { "seen", "rides", "round", "span" }
 local function Learnt(key)
     local store = Core.Store(Core.name)
-    store.ships = store.ships or {}
+    if type(store.ships) ~= "table" then store.ships = {} end
     local realm = Core.realm or "?"
-    store.ships[realm] = store.ships[realm] or {}
-    if key == nil then return store.ships[realm] end
-    return store.ships[realm][key]
+    if type(store.ships[realm]) ~= "table" then store.ships[realm] = {} end
+    local all = store.ships[realm]
+    if key == nil then return all end
+    local learnt = all[key]
+    if type(learnt) ~= "table" or type(learnt.epoch) ~= "number" then return nil end
+    for _, field in ipairs(NUMBERS) do
+        if type(learnt[field]) ~= "number" then learnt[field] = nil end
+    end
+    if learnt.doubt ~= true then learnt.doubt = nil end
+    return learnt
 end
 
 -- A way's timetable from its record: its stops in its way's order from its first stop round, the runs between them
@@ -168,8 +179,9 @@ local function Make(key, way)
     local sailing, standing = 0, 0
     for _, each in ipairs(runs) do sailing = sailing + Run(each.yards) end
     for _, stop in ipairs(stops) do standing = standing + stop.stay end
-    local learnt = Learnt(key)
-    local round = way.wait or (learnt and learnt.round)
+    local learnt = key ~= nil and Learnt(key) or nil -- a record not of the set (Ships.Timetable) has no times here
+    local given = way.wait ~= nil and way.wait > standing -- the set's own round: rides never change it
+    local round = given and way.wait or (learnt and learnt.round)
     local known = round ~= nil and round > standing
     if not known then round = sailing + standing end
     local stretch = sailing > 0 and (round - standing) / sailing or 1
@@ -199,7 +211,8 @@ local function Make(key, way)
         local area = type(way.dockAreas) == "table" and way.dockAreas[stop.dock]
         stop.area = area and area > 0 and area or nil
     end
-    return { key = key, kind = way.kind, round = round, known = known, stretch = stretch, stops = stops, runs = runs }
+    return { key = key, kind = way.kind, round = round, known = known, given = given, stretch = stretch, stops = stops,
+             runs = runs }
 end
 
 function Ships.Timetable(record)
@@ -280,23 +293,34 @@ local told = Core.Later(function()
     end
 end)
 
--- A ride's epochs agree: kept for this realm; where the round was estimated, an earlier ride corrects it.
+-- A ride's epochs agree: kept for this realm. Where the set has no round of its own, the rides learn it, each
+-- from the rounds since the ride before. A ride that agrees with the round learnt (within twice AGREE) is of the
+-- same run of the realm: it confirms the round, and corrects it when it spans more rounds than the round was
+-- learnt from. One that does not is of a new run (a restart of the realm starts its ships anew), or the round is
+-- wrong: its time is taken, the round kept but doubted, and the next one that does not agree gives the round. A
+-- round worked out from the estimate is doubted too, until a ride agrees with it.
 local function Keep(key, epoch, now)
     local timetable = Ships:Table(key)
-    local all = Learnt()
-    local before = all[key]
-    local entry = { epoch = epoch, seen = now, rides = (before and before.rides or 0) + 1, round = before and before.round }
-    if before and before.epoch and timetable and not timetable.known then
-        local rounds = floor((epoch - before.epoch) / timetable.round + 0.5)
-        if rounds >= 1 and rounds <= Ships.ROUNDS then
-            local round = (epoch - before.epoch) / rounds
-            if math.abs(round - timetable.round) < timetable.round * 0.25 then
-                entry.round = round
-                tables[key] = nil -- made anew with the learnt round
+    local before = Learnt(key)
+    local entry = { epoch = epoch, seen = now, rides = (before and before.rides or 0) + 1,
+                    round = before and before.round, span = before and before.span, doubt = before and before.doubt }
+    if before and timetable and not timetable.given then
+        local gap = epoch - before.epoch
+        local rounds = floor(gap / timetable.round + 0.5)
+        local round = rounds >= 1 and gap / rounds or nil
+        if before.round and math.abs(gap - rounds * timetable.round) <= 2 * Ships.AGREE then
+            if round then
+                entry.doubt = nil
+                if rounds > (before.span or 0) then entry.round, entry.span = round, rounds end
             end
+        elseif before.round and not before.doubt then
+            entry.doubt = true
+        elseif round and rounds <= Ships.ROUNDS and math.abs(round - timetable.round) < timetable.round * 0.25 then
+            entry.round, entry.span, entry.doubt = round, rounds, true
         end
+        if entry.round ~= before.round then tables[key] = nil end -- made anew with the learnt round
     end
-    all[key] = entry
+    Learnt()[key] = entry
     tell[key] = true
     told()
 end
@@ -363,7 +387,7 @@ local last -- the sample before: { key, run, s, t }
 
 -- One look at the player's place: aboard a boat at full speed, when it left its last stop; enough that agree, a ride.
 local function Look()
-    if rawget(_G, "UnitOnTaxi") and UnitOnTaxi("player") then
+    if rawget(_G, "UnitOnTaxi") and Core.Plain(UnitOnTaxi("player")) then
         last, ride = nil, nil
         return false
     end
@@ -415,21 +439,23 @@ local function Look()
     return true
 end
 
--- The looks, one after the other while the world is there: often near a stop or aboard, else seldom.
+-- The looks, one after the other: often near a stop or aboard, else seldom.
 local looking = false
 local Tick
 Tick = Core.Guard("data: ships", function()
     local close = Look()
     C_Timer.After(close and Ships.CLOSE or Ships.LOOK, Tick) -- unguarded: Tick is the guard (Core.Guard)
 end)
--- Watched once the world is there; not while the set Travel is missing.
-Core.On("PLAYER_ENTERING_WORLD", function()
-    last, ride = nil, nil
-    if looking or Travel:State() == "missing" then return end
+-- A loading screen: the samples before it were of another place.
+Core.On("PLAYER_ENTERING_WORLD", function() last, ride = nil, nil end)
+-- The set Travel arrived (a module that shows the ways asked for it; Core never does): the looks begin then, and
+-- never before, so nothing is looked at for a set that is not loaded. It changed: its timetables are made anew.
+Travel:OnStamp(function()
+    wipe(tables)
+    if looking then return end
     looking = true
     C_Timer.After(Ships.LOOK, Tick) -- unguarded: Tick is the guard (Core.Guard)
 end)
-Travel:OnStamp(function() wipe(tables) end)
 
 function Data.Ships()
     return Ships

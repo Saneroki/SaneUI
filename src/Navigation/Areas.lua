@@ -88,6 +88,7 @@ local function Redraw()
         end
     end
 end
+local redrawing = ns.Guard(Redraw) -- made once: the next frame's drawing after a placing
 
 -- The quest whose area is drawn: the one under the mouse in the log, else the one the game's arrow leads to.
 local function Quest()
@@ -123,7 +124,7 @@ function Areas.Place(view)
         end
     end
     pending = quest
-    layer:SetScript("OnUpdate", ns.Guard(Redraw))
+    layer:SetScript("OnUpdate", redrawing)
 end
 
 -- The quest log's mouse over a quest (nil: off it): its area drawn while it is there.

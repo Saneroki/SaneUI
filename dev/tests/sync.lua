@@ -338,6 +338,51 @@ check(Sync.part.chatFrames.Write({ colours = colours }) == true and game.colours
 colours.SAY.r = 0.5
 Sync.part.chatFrames.Write({ colours = colours })
 
+-- A channel's colour: the game keeps it by the channel's number, which another character may give another
+-- channel. Kept by the channel's name, it goes to that channel whatever its number there; to one whose join
+-- the server answers later, once it is answered, and meanwhile the profile keeps it.
+do
+    local channelsWere, coloursWere, joinWas, keptWas = game.channels, game.colours, JoinPermanentChannel, options.taken.chatFrames
+    game.channels = { { 1, "General" }, { 2, "Trade" }, { 3, "World" } }
+    game.colours = { SAY = { r = 1, g = 1, b = 1 }, CHANNEL1 = { r = 1, g = 0.75, b = 0.75 }, CHANNEL3 = { r = 1, g = 0.5, b = 0 },
+        CHANNEL4 = { r = 1, g = 1, b = 1 } }
+    ChatTypeInfo = game.colours
+    local kept = Sync.part.chatFrames.Read()
+    check(kept.channels.world.g == 0.5 and kept.channels.world.name == "World" and kept.channels.general and kept.colours.SAY
+        and kept.colours.CHANNEL3 == nil and kept.colours.CHANNEL4 == nil,
+        "a channel's colour is kept by the channel's name, not its number; a number no channel has keeps none")
+    options.taken.chatFrames = kept -- the profile's, as this character leaves it
+    -- Another character: LookingForGroup is its third channel, and World it joins in this writing; the server
+    -- answers the join later.
+    local asked = {}
+    JoinPermanentChannel = function(name) asked[#asked + 1] = name end
+    game.channels = { { 1, "General" }, { 2, "Trade" }, { 3, "LookingForGroup" } }
+    game.colours = { SAY = { r = 1, g = 1, b = 1 }, CHANNEL1 = { r = 1, g = 0.75, b = 0.75 }, CHANNEL3 = { r = 1, g = 1, b = 1 },
+        CHANNEL4 = { r = 1, g = 1, b = 1 } }
+    ChatTypeInfo = game.colours
+    Sync.part.ownChannels.Write({ "World" })
+    Sync.part.chatFrames.Write(kept)
+    check(asked[1] == "World" and game.colours.CHANNEL3.g == 1 and game.colours.CHANNEL4.g == 1,
+        "not joined yet: the colour goes to no channel, not to the number it had")
+    check(Sync.part.chatFrames.Read().channels.world.g == 0.5, "read meanwhile (a logout), the profile keeps the channel's colour")
+    game.channels[4] = { 4, "World" } -- the join answered: World is this character's fourth channel
+    check(Sync.part.chatFrames.Read().channels.world.g == 0.5, "joined, but its colour not given yet: the profile's stays")
+    W.Fire("CHANNEL_UI_UPDATE")
+    W.Wait(0.1)
+    check(game.colours.CHANNEL4.g == 0.5 and game.colours.CHANNEL3.g == 1, "once joined, the channel takes its colour, at its own number")
+    check(Sync.part.chatFrames.Read().channels.world.g == 0.5, "and keeps it")
+    game.channels[4] = nil -- left again
+    check(Sync.part.chatFrames.Read().channels.world.g == 0.5, "a channel this character is not in keeps its colour in the profile")
+    -- Kept by a number alone (an older shape), or for a channel this character is not in: given to no channel.
+    game.channels[4], game.colours.CHANNEL4 = { 4, "Services" }, { r = 1, g = 1, b = 1 }
+    Sync.part.chatFrames.Write({ colours = { CHANNEL4 = { r = 0, g = 0, b = 1 } }, channels = { raiders = { name = "Raiders", r = 0, g = 0, b = 1 } } })
+    check(game.colours.CHANNEL4.r == 1 and game.colours.CHANNEL4.b == 1,
+        "one kept by its number alone, or of a channel not joined here, is given to none (not to this one's fourth)")
+    JoinPermanentChannel, options.taken.chatFrames = joinWas, keptWas
+    game.channels, game.colours = channelsWere, coloursWere
+    ChatTypeInfo = game.colours
+end
+
 -- Again: nothing differs, so nothing is set, and no dialog -----------------------------------------
 game.calls, W.cvarSets = {}, 0
 local popups = #W.popups
@@ -403,6 +448,21 @@ game.editMode = false
 EventRegistry:TriggerEvent("EditMode.Exit")
 W.Wait(0.1)
 check(game.active == 3, "it is set when Edit Mode closes")
+-- One that waits while Edit Mode is open, and the player picks another there: the player's wins.
+game.editMode = true
+EventRegistry:TriggerEvent("EditMode.Enter")
+taken.hudLayout = { name = "Classic", kind = 0 }
+Sync.Give()
+C_EditMode.SetActiveLayout(1) -- the player picks Modern in Edit Mode
+W.Wait(0.1)
+game.editMode = false
+EventRegistry:TriggerEvent("EditMode.Exit")
+W.Wait(0.1)
+Sync.Capture()
+taken = options.taken
+check(game.active == 1 and taken.hudLayout.name == "Modern", "one waiting gives way to the layout the player picks meanwhile")
+C_EditMode.SetActiveLayout(3) -- back as it was
+W.Wait(0.1)
 -- A fight.
 game.layouts = nil
 taken.hudLayout = { name = "Classic", kind = 0 }

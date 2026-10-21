@@ -10,16 +10,21 @@ local _, ns = ...
 --                   with our map and back; the minimap's shows or hides our window
 --      every other  way to the game's map (the minimap's zone text, the quest log's button, the objective
 --                   tracker, a chat link, an event of the game) ends in WorldMapFrame showing: seen by
---                   a hook after its OnShow, out of sight at once, closed on the next frame
---                   (HideUIPanel, out of combat) and ours opened at the map it was asked for
---      in a fight   the game's panel manager refuses to close a panel for an addon: the game's map
---                   then stays open as the game's, and ours does not open
+--                   a hook after its OnShow, out of sight at once, hidden on the next frame (its own
+--                   Hide, out of combat) and ours opened at the map it was asked for
+--      in a fight   the game's map stays open as the game's, and ours does not open: hidden by our
+--                   code then, its OnHide would run as ours in the fight
 --
---  Nothing is written into the game's map: its own methods only (SetAlpha,
---  GetMapID), a hook after its OnShow and OnHide, the game's panel functions.
---  The switches Show the game's map and Show the game's minimap stop the keys and
---  the catching for that window; the dropdown Classic windows opens the game's map
---  once, not caught.
+--  Nothing is written into the game's map: its own methods only (SetAlpha, Hide,
+--  GetMapID), a hook after its OnShow and OnHide. Never the game's panel functions
+--  (ShowUIPanel, HideUIPanel): their manager keeps the open panels in slots of its
+--  own, and our call would leave them written by our code until a /reload, so the
+--  game's next panel there (the character sheet) would open as ours and fail on a
+--  secret value. A panel hidden by its own Hide the manager mends by itself, in its
+--  own code, before it shows the next one (UIParentPanelManager.lua,
+--  RepairUIPanelState). The switches Show the game's map and Show the game's
+--  minimap stop the keys and the catching for that window; the game's map chosen
+--  in the dropdown Classic windows opens by its own key or button.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Native = {}
@@ -32,7 +37,6 @@ local WAIT = "navigation: keys"
 
 local button, hooked
 local bound = "" -- the keys as last set: one text, to set them again only when they changed
-local passing    -- the game's map was asked for from Classic windows: this showing is not caught
 local pressed    -- a key's press was acted on: its release is not
 
 -- Whether Navigation takes that window's key now.
@@ -81,38 +85,28 @@ local function Map()
     return rawget(_G, "WorldMapFrame")
 end
 
--- The frame after the game's map showed: closed, and ours opened at its map. In a fight it stays.
+-- The frame after the game's map showed: hidden by its own Hide (never the game's HideUIPanel: the header
+-- says why), and ours opened at its map. In a fight it stays.
 local function Close()
     local map = Map()
     if not map:IsShown() then return map:SetAlpha(1) end
     if InCombatLockdown() then return map:SetAlpha(1) end
     local asked = map:GetMapID()
-    HideUIPanel(map)
+    map:Hide()
     map:SetAlpha(1)
     ns.Window.OpenTo(asked)
 end
 local closing = ns.Guard(Close)
 
 local function Shown()
-    if passing or not Takes("map") then return end
-    if InCombatLockdown() then return end -- the panel manager would refuse to close it: the game's map it is
-    Map():SetAlpha(0) -- out of sight for the one frame until it is closed
+    if not Takes("map") then return end
+    if InCombatLockdown() then return end -- hidden by our code now, its OnHide would run as ours in the fight
+    Map():SetAlpha(0) -- out of sight for the one frame until it is hidden
     C_Timer.After(0, closing)
 end
 
 local function Hidden()
-    passing = false
     Map():SetAlpha(1)
-end
-
--- The game's map once, not caught (the dropdown Classic windows); in a fight the game refuses.
-function Native.ShowMap()
-    local map = Map()
-    if not map then return end
-    if InCombatLockdown() then return ns.Print(ns.TEXT.mapInFight) end
-    passing = true
-    ShowUIPanel(map)
-    if not map:IsShown() then passing = false end
 end
 
 -- Hooks after the game's map's OnShow and OnHide, once it exists (it comes with the game's map addon).

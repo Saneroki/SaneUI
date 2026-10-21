@@ -105,9 +105,10 @@ end
 local EVENTS = {
     PLAYER_EQUIPMENT_CHANGED = Equipped, ITEM_LOCK_CHANGED = Locked,
     UPDATE_INVENTORY_DURABILITY = Items, UPDATE_INVENTORY_ALERTS = Items,
-    PLAYER_LEVEL_UP = Leveled, PLAYER_ENTERING_WORLD = Refresh, UNIT_NAME_UPDATE = Title,
+    PLAYER_LEVEL_UP = Leveled, PLAYER_ENTERING_WORLD = Refresh,
 }
-local UNIT_EVENTS = { UNIT_MODEL_CHANGED = Remodeled, UNIT_INVENTORY_CHANGED = Items }
+-- The player's only (Core.OnUnit): the game sends these for every unit about.
+local UNIT_EVENTS = { UNIT_MODEL_CHANGED = Remodeled, UNIT_INVENTORY_CHANGED = Items, UNIT_NAME_UPDATE = Title }
 
 -------------------------------------------------------------------------------
 --  The part (Board.lua)

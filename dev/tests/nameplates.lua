@@ -279,6 +279,7 @@ W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate2")
 check(not friend:IsShown() and Faded(plates.nameplate2, 1) and friend.unit == nil and next(friend._events) == nil,
     "the plate taken back: ours off, the game's parts in sight again, nothing listened to")
 check(friend.own._unit == "none", "its containers let go of the unit")
+check(friend.health._max == 1 and friend.health._value == 1, "its bar as made again: nothing of that unit's health is left on it")
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate3") -- a plate the game keeps from addons: none for us
 check(units.nameplate3 == nil and plates.nameplate3 == nil, "a plate the game does not give: nothing made")
 units.nameplate4 = { name = "Kobold", health = 5, most = 5 }
@@ -286,9 +287,15 @@ plates.nameplate4 = plates.nameplate2 -- the game hands the plate out again, for
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate4")
 check(DressOf(plates.nameplate2) == friend and friend:IsShown() and friend.name._text == "Kobold", "a plate handed out again keeps its dress")
 
+-- Standing down while a step of ours fails (here the game's aura container, which a client update may change): the
+-- game's parts come back first all the same, on every plate, and on every unit frame of the game's ours lay over.
+W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate4")
+plates.nameplate2.UnitFrame.name:SetAlpha(0) -- a unit frame of the game's pool, left out of sight
+dress.own.SetUnit = function() error("the game's container changed") end
 ns.StandDown("a test")
 check(ns.off and not dress:IsShown() and not friend:IsShown() and Faded(plates.nameplate1, 1) and Faded(plates.nameplate2, 1),
-    "standing down, every plate is the game's own again")
+    "standing down, every plate is the game's own again, though a step of ours failed")
+check(Core.errors["Nameplates: auras"] ~= nil, "the step that failed is noted")
 bar:Hide()
 bar:Show()
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")

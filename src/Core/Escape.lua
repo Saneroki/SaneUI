@@ -23,8 +23,10 @@ local function Again()
 end
 local AgainLater = Core.Guard("window", Again) -- for the timer: made once
 
--- The game hid the stand-in (Esc). The owners are taken first: closing one may tell of another.
+-- The game hid the stand-in (Esc). The owners are taken first: closing one may tell of another. Still
+-- shown itself, it was hidden with its parent (the game hides its whole interface for a movie): no Esc.
 local function Closed()
+    if stand:IsShown() then return end
     closing = true -- what is closed now does not show the stand-in again in the middle of this
     local owners = {}
     for owner, close in pairs(closes) do owners[#owners + 1] = { owner, close } end

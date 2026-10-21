@@ -69,13 +69,19 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     Battle.net friend with the character they play in brackets), where they are or what they play, and the
     icon of the game they are in. The head says how many are online. Click a friend to choose them, then
     *Send Message* (the line to write in opens with the whisper) or *Invite*; a right click opens the game's
-    own menu of a friend; *Add Friend* opens the game's own dialog.
+    own menu of a friend; *Add Friend* opens the tab *Requests*, whose line adds a friend as the game's dialog
+    does (a BattleTag, an e-mail address or a character's name; a friendly player you have targeted is in it
+    already, by first name and surname). On the tab *Raid* a right click on a member opens a short menu of
+    its own: *Whisper*, and as the game allows it you *Promote to Leader*, *Promote to Assistant*, *Demote*
+    and *Remove*. The game's own raid menu is not opened there: opened by an addon, its *Set Focus* is refused.
   - **Group finder**, the last tab of the friends list (*Group Finder*), as the game's browse view: on its
     line under the tabs choose a *Category* (it is searched then), the
     refresh button searches again. A row for every group or player listed: the leader in their class colour
     (alone: their level and class icon), the activity and the comment, how many are in it. Choose one, then
     *Send Message* to its leader, or *Invite* a player who is alone. *List yourself* opens the game's own
     finder (its comment can only be typed there). Nothing is searched by itself: only a click of yours does.
+    In a fight or a dungeon (chat lockdown) the game hides the listings from addons: the list stays as it was,
+    its line says so, and it is read anew once that ends.
   - **Conversations** at the left, all the room the right leaves: first the **chat** itself (unless the layout
     has it as a window of its own), then your **chat views**, then every whisper, and the chat of each group
     you join, each a conversation of its own, the newest message first. Every party or raid you join (and
@@ -105,7 +111,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     chooses the new conversation. *Remove* takes the one chosen away (a conversation with its messages, or a
     chat view), once confirmed. A
     group you are in is listed though nobody spoke yet. Each keeps its last messages (a setting), for each
-    character, also over a logout. Drag the line between the list and the one chosen to make the list
+    character, also over a logout (then 1,000 of them all together at most, the newest conversations' first).
+    Drag the line between the list and the one chosen to make the list
     wider or narrower (the mouse shows the game's sizing cursor on it); let go, the one chosen takes the rest,
     and the width is kept.
   - A layout without the conversations has no chat in it (the line to write in still opens, at the screen's
@@ -142,7 +149,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   a player writes; it shows none in its public channels (General, Trade, ...), so while you write in one
   the list says so instead. Under them emotes played most (`/hello`, `/wave`, `/bye`, `/thank`,
   `/welcome`, `/cheer`, `/applaud`, `/congratulate`, `/laugh`, `/dance`, `/bow`, `/hug`): a click does it
-  at once, at your target if you have one, as typing it would.
+  at once, at your target if you have one, as typing it would. While chat is locked down (a fight, a
+  dungeon) the list offers no emotes and says so: the game refuses them to an addon then.
 - **The newest message is at the bottom.** A few messages stand at the bottom of the window, not at its top.
 - **Messages fade out,** each by itself, 60 seconds after it came. The mouse over the window leaves them
   out of sight; turn the mouse wheel over it, or open the line to write in, and all of them fade back in
@@ -211,7 +219,10 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   the same list.
 - **Links in messages** (an item, a spell, a quest, an achievement): the mouse over one shows its
   tooltip; a click does what it does in the game's chat (the item's window, Shift+click puts the link
-  into the line you write in, a player's link opens the player's menu).
+  into the line you write in, a player's link opens the player's menu), but only where that opens none of
+  the game's panels: a click with the dressing room's key (Ctrl), on a calendar event and the like does
+  nothing here (a panel of the game's opened by Sane UI's code can break the game's own panels until a
+  `/reload`).
 - **Short chat names:** above a message the chat is named by the first letter of each word of its
   name: G for Guild, P for Party, R for Raid, RW for Raid Warning, S for Say, T for a trade channel,
   G for General. Guild and General share the G; their colours differ. A setting, on at first.
@@ -256,8 +267,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   → `Window` (shows it, if the window is open). `Log.Read` touches nothing: an error in it leaves that
   one message out and is noted (`ns.Report`); an error after it stands the module down.
 - **Log** (`Log.lua`) knows no frames. A message is a plain table (`side`, `text`, `name`, `class`,
-  `label`, `r g b`, `time`). At most 200 are kept (`Log.MAX`), in memory only: a `/reload` empties the
-  window. The oldest go 25 at a time (`Log.PRUNE`, marked `gone`), so the window's list drops them in
+  `label`, `r g b`, `time`). At most 200 are kept (`Log.MAX`, more for a longer history), and with *Save
+  chat history* on the last of them come back after a `/reload` or the next login (*The history*, below).
+  The oldest go 25 at a time (`Log.PRUNE`, marked `gone`), so the window's list drops them in
   one update (`RemoveIndexRange`) instead of one per message. Which events are read, and on which side
   they land, is the table `Log.EVENTS`.
 - **Yours or not** is decided by the sender's GUID, not the name (a Forever name is two words and the
@@ -287,9 +299,11 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   is small (it has no bar of its own), under Core's title bar while it is full (`Top`: `handle.top`;
   `Layout.ListHeight`'s `top`). The title bar's search goes to
   `Window.Search`: `Core.Fuzzy.Query`, and `Visible` keeps a message only if `Core.Fuzzy.Match` finds every
-  word in its readable text (colours, links' codes and icons taken out: `Core.Fuzzy.Plain`), its `name` or its
-  `label`. The log is at most a few hundred messages, so it is searched at once (`Core.Fuzzy.Filter` is for
-  longer lists).
+  word in its readable text (colours, links' codes and icons taken out: `Core.Fuzzy.Plain`, made once per
+  message and kept on it: `Log.Readable`, `plain`), its `name` or its `label`. The chat views and the
+  conversations find by it too, thousands of messages with all conversations full (`Talks.MOST` × *Messages kept
+  per conversation*): the lists are filtered anew 0.15 s after a key (`Core.Later`), once for the keys typed
+  meanwhile, not at every key.
   The title bar holds Core's dropdown *Classic windows*, whose list is `ns.CLASSIC` (`Social.lua`): *Chat* (`Choose(false)`, a
   line in chat says how to bring the window back), *Friends list* (`ToggleFriendsFrame(FRIEND_TAB_FRIENDS)`,
   as the game's key opens it, only if `FriendsFrame` is not shown; nothing if the game has no such function). The
@@ -336,7 +350,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **Names are links** (`Log` `Link`): a speaker's name is the game's own link to them, `GetPlayerLink`
   (name with realm, line ID, kind of chat), or `GetBNPlayerLink` for a Battle.net whisper (by account),
   so a click goes the game's way through `SetItemRef`: left whispers, right opens their menu, Shift puts
-  the name into the line.
+  the name into the line. A creature's name (`MONSTER_*`, `RAID_BOSS_*`) is no link, and nothing is asked
+  about it, as in the game's chat.
 - **Cut rows** (`Window` `Trim`, `Bubble.Cut`): after the list has laid out or scrolled (`OnLayout`,
   `OnScroll`, and once more a frame later), a row whose top is above the list's top edge has its
   content hidden. The content is one frame inside the row, so the row's alpha stays the fading's.
@@ -357,7 +372,14 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **Links** (`Links.lua`): a bubble's frame and a row's body have links enabled
   (`SetHyperlinksEnabled`), so only the links take the mouse. Over a link of a kind the game's tooltip
   shows by itself, `GameTooltip:SetHyperlink` (in a `pcall`: a link the game cannot show shows
-  nothing); a click is the game's own `SetItemRef`, with the main chat window as the chat frame.
+  nothing); a click is the game's own `SetItemRef`, with the main chat window as the chat frame (`ns.Safe`:
+  one the game fails on is noted, the window stays), but only for the kinds whose handling opens none of the
+  game's panels (`CLICKED`: players, items, spells, quests, achievements, channels, ...), with no key held or the
+  one that puts a link into the line (`CHATLINK`; not on a channel's link, where it opens the game's list of
+  channels): a panel shown by our code runs the game's panel manager tainted (Doc/guides/addon-standards.md,
+  section 5; the dressing room of a Ctrl+click is one). In a fight a plain click on a kind the game answers with
+  its link tooltip (an item, a spell, a quest, ...) does nothing: the game refuses that window to our code then
+  ("Interface action failed"), and the tooltip on the mouse shows the link already.
 - **Short names** (`Channels.Brief`): the first letter (UTF-8) of each word of the chat's name, the
   game's own word or the channel's name before its " - " (`Channels.Base`); made once per name and
   kept, chosen when a message is drawn. Not for *To Thrall*.
@@ -407,8 +429,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   those are the game's public channels, whose messages come with `suppressRaidIcons`. An emote by the
   game's token (`Picker.EMOTES`) is done with `C_ChatInfo.PerformEmote` (`DoEmote` where that is all the
   client has), as the game's chat menu does; its name is its command `EMOTE<n>_CMD1`, found once among
-  the game's emotes (`EMOTE<n>_TOKEN`, up to `MAXEMOTEINDEX`). The art is our own (the game has no
-  smiley); missing, the button falls back to the game's chat button art.
+  the game's emotes (`EMOTE<n>_TOKEN`, up to `MAXEMOTEINDEX`). None while chat is locked down
+  (`C_ChatInfo.InChatMessagingLockdown`; `PerformEmote` has restrictions): one line says so instead. The art is
+  our own (the game has no smiley); missing, the button falls back to the game's chat button art.
 - **Newest at the bottom** (`Window` `Settle`): the scrolling list starts at its top, so the view gets
   a top padding of whatever the messages leave free (list height minus their heights), none once they
   fill it. Set anew for a message, a new size and the line to write in.
@@ -559,8 +582,11 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   `C_BattleNet.SendWhisper`, the account found anew by BattleTag); the message joins from its `_INFORM` or
   group event. The line is an `EditBox` of ours, not the game's; `/` lines go to `ChatFrameUtil.OpenChat`; in
   chat lockdown (`InChatMessagingLockdown`) nothing is sent. Saved at `PLAYER_LOGOUT` in
-  `chars[character].talks` (`talksVersion` 1): a Battle.net friend's messages without their name and link
-  (`|K…|k` is this session's), links without line numbers; restored at the login, checked field by field.
+  `chars[character].talks` (`talksVersion` 2): `Talks.SAVED` (1,000) messages of all conversations together at
+  most, the newest conversations' first (the saved settings are read at every login, of every character); a
+  Battle.net friend's messages without their name and link (`|K…|k` is this session's), links without line numbers,
+  without what follows from the rest (a whisper's colour, from its kind and side; a group's chat in short, from its
+  name); restored at the login, checked field by field.
   The panel is a part of `Board.lua` (`Part.Size` tells it its width); `Layout.Board` gives it all the room
   the right part leaves, `TALKS_MIN` (460) at least. Its list is `TALK_LIST` (190) wide at first; the line
   beside it is dragged by a strip over it (`TALK_GRIP`, 8 wide, `OnMouseDown`/`OnUpdate`/`OnMouseUp`, the
@@ -599,7 +625,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   the conversations' page (one list, pointed at the view chosen) and each of its windows on the board (its panel's
   body; a `WowStyle1FilterDropdownTemplate` with `Feed.Menu(view)` on its head). The window hands every new
   message to every list (`Feed.Added`, before its own); one out of sight notes it is stale. A view none of whose
-  lists is on show counts a message it shows as not seen (`view.unread`, `view.colour`; not kept); a list of it
+  lists is on show counts a message it shows as not seen, for this session only, not kept with the view (`unseen`,
+  and the last one's colour in a table made once for each view, `tints`, both by view); a list of it
   shown clears that (`Conversations.Said` redraws the rows). The chat's own unseen are counted by the window
   (`Window.Unread`: its messages that come while it stands out of sight on the full screen).
 - **The full screen's windows** (`Board.lua` on Core's board, `Core.Board`, Doc/guides/windows.md section 7, *The
@@ -662,7 +689,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   `C_ChatInfo.SendChatMessage`, which has restrictions). The taint log shows whether a message sent, or a
   `/cast` typed, after such a choice is blocked (`/console taintLog 1`, `Logs/taint.log`; switch it off
   afterwards). Enter, `/`, Esc and sending themselves stay the game's code.
-- **Tests:** `lua5.1 dev/tests/social.lua` (526 checks): what an event says, the layout arithmetic, sides and
+- **Tests:** `lua5.1 dev/tests/social.lua`: what an event says, the layout arithmetic, sides and
   bubbles, wrapping anew once a sizing is over, following the newest message, place and size, the game's
   chat out of sight and back (also a minimised window's button, a frame the game moved meanwhile, chat
   lockdown), printed lines, the line to write in and its button, the line at rest in both chat styles
@@ -697,8 +724,16 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Feed.lua` | The chat views: as many as you make, each its own ticks, rows of the conversations' list and windows of the layouts, a list of its own wherever one stands, their messages not seen counted |
 | `Talks.lua` | The conversations: whispers, and each group you join (its chat apart, named by its members, ended when you leave), kept per character. Knows no frames |
 | `Conversations.lua` | The conversations' panel at the full screen's left: the chat, the chat views and the conversations in a list (rows with messages not seen lit), the one chosen beside it, a conversation's line to write in, *New chat view* |
-| `Friends.lua` | The friends list, as the game's (`C_FriendList`, `C_BattleNet`); the game's own menu, whisper and invite |
-| `Contacts/Finder.lua` | The group finder, the friends list's last tab, as the game's browse view (`C_LFGList`); searches only on a click |
+| `Friends.lua` | The friends list's panel: you on Battle.net at its head, its tabs, the search box and the filter, the list of the tab chosen |
+| `Contacts/Contacts.lua` | What the lists share: the game's colours and status icons, a status, how long ago, the filter by status, a whisper, a player's name to add, ignore or group |
+| `Contacts/Account.lua` | The head: your status, your BattleTag, how many friends are online, the contacts menu (broadcast, ignore list) |
+| `Contacts/Friends.lua` | The friends list, as the game's (`C_FriendList`, `C_BattleNet`); the game's own menu, whisper and invite |
+| `Contacts/Requests.lua` | Friend requests (Accept, Decline, Block Invites where the game offers it) and the line to add a friend |
+| `Contacts/Ignored.lua` | The players ignored and the accounts whose invites are blocked, in the friends list's place |
+| `Contacts/Allies.lua` | Recent allies (`C_RecentAllies`), once the game has read them |
+| `Contacts/Raid.lua` | The raid's groups, arranged by dragging, a menu of its own on a member; Raid Info |
+| `Contacts/Quick.lua` | Quick Join (`C_SocialQueue`): the groups of your friends and guild you may ask to join |
+| `Contacts/Finder.lua` | The group finder, the friends list's last tab, as the game's browse view (`C_LFGList`); searches only on a click, paused in chat lockdown |
 | `Window.lua` | The window: moved, sized, scrolled, kept |
 | `Bindings.xml` | Its key in the game's key bindings (section *Sane UI*, Core's): the chat window shown or hidden |
 

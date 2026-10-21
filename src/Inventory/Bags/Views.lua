@@ -83,8 +83,9 @@ local function Entry(block, record, faded)
     return entry
 end
 
--- Whether stacks merge now: not at a vendor, the bank, the mail, a trade, the auction house (its window open).
-local TALKING = { "Merchant", "Banker", "MailInfo", "TradePartner", "GuildBanker" }
+-- Whether stacks merge now: not at a vendor, the bank (each kind of banker the game has), the mail, a trade, the
+-- auction house (its window open). A kind this client lacks is not asked (Foot.Talking).
+local TALKING = { "Merchant", "Banker", "CharacterBanker", "AccountBanker", "MailInfo", "TradePartner", "GuildBanker" }
 function Views.Merging(options)
     if options and options.merge == false then return false end
     local house = rawget(_G, "AuctionHouseFrame")
@@ -324,32 +325,39 @@ function Views.Build(view, sections, query, order, options, store)
     return blocks
 end
 
--- How many cells each category would show in All Items (for the sidebar), groups summed: [key] = count.
-local counts = {}
-function Views.Counts(section)
+-- How many cells each category would show in All Items (for the sidebar), groups summed, Pinned and Recent too:
+-- [key] = count; stacks merged as Views.Build merges them (options: the window's settings, Merge Stacks).
+local counts, seen, recentItems = {}, {}, {} -- seen: [key] = { [link] = true } the stacks counted there
+local function Count(key, link)
+    if link then
+        local links = seen[key]
+        if not links then
+            links = {}
+            seen[key] = links
+        end
+        if links[link] then return end
+        links[link] = true
+    end
+    counts[key] = (counts[key] or 0) + 1
+end
+function Views.Counts(section, options)
     Clear(counts)
-    local merge = Views.Merging()
-    local seen = {}
+    for _, links in pairs(seen) do Clear(links) end
+    Clear(recentItems)
+    for _, item in ipairs(ns.Recent.list) do recentItems[item] = true end
+    local merge = Views.Merging(options)
     for _, record in ipairs(section.slots) do
         if record.item then
-            local mergeKey = merge and record.link and not Contents.GEAR[record.class] and not split[record.item] and record.link
+            local link = merge and record.link and not Contents.GEAR[record.class] and not split[record.item] and record.link or nil
             local key = record.category
-            if not (mergeKey and seen[key .. "|" .. mergeKey]) then
-                counts[key] = (counts[key] or 0) + 1
-                local group = Categories.GroupOf(key)
-                if group then counts["group:" .. group] = (counts["group:" .. group] or 0) + 1 end
-                if mergeKey then seen[key .. "|" .. mergeKey] = true end
-            end
-            if record.pinned then counts[Categories.PINNED] = (counts[Categories.PINNED] or 0) + 1 end
+            Count(key, link)
+            local group = Categories.GroupOf(key)
+            if group then Count("group:" .. group, link) end
+            if record.pinned then Count(Categories.PINNED, link) end
+            if recentItems[record.item] then Count(Categories.RECENT, link) end
         end
     end
-    local recentCount = 0
-    for _, item in ipairs(ns.Recent.list) do
-        for _, record in ipairs(section.slots) do
-            if record.item == item then recentCount = recentCount + 1 break end
-        end
-    end
-    counts[Categories.RECENT] = recentCount
+    counts[Categories.RECENT] = counts[Categories.RECENT] or 0
     counts[Categories.PINNED] = counts[Categories.PINNED] or 0
     return counts
 end

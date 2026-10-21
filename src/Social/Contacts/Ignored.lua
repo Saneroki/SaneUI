@@ -98,12 +98,11 @@ local function Remove()
     end
 end
 
--- The friendly player targeted is ignored at once (as the game's button does); else a name is asked for.
+-- The friendly player targeted is ignored at once (as the game's button does), by the name the game ignores
+-- them by (Contacts.NameOf); else a name is asked for.
 local function Ignore()
-    if UnitExists("target") and UnitIsPlayer("target") and UnitCanCooperate("player", "target") then
-        local name, realm = UnitName("target")
-        if name then return C_FriendList.AddIgnore(realm and realm ~= "" and name .. "-" .. realm or name) end
-    end
+    local name = Contacts.Targeted()
+    if name then return C_FriendList.AddIgnore(name) end
     Core.AskText(Core.Word("ADD_IGNORE_LABEL", "Enter the name of the player you want to ignore:"), nil,
         Core.Word("ACCEPT", "Accept"), nil, function(text)
             text = strtrim(text or "")
@@ -114,6 +113,8 @@ end
 function View.Build(page)
     box = Board.List(page, function(row, entry)
         Draw(row, entry)
+        if row.wired then return end -- its script once: the list hands its rows from one to another
+        row.wired = true
         row:SetScript("OnClick", function(self) ns.Safe("ignore list", Click, self) end)
     end)
     local back = Board.Button(page, Core.Word("BACK", "Back"), 70, function() ns.Friends.Open("Friends") end)

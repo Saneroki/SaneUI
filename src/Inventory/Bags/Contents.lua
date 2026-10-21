@@ -152,21 +152,26 @@ local function Level(link, class)
 end
 
 -- What the game says of an item beyond its slot (C_Item.GetItemInfo): its bind type, price, the level it needs,
--- its class's and subclass's words, how many make a full stack; nil while the game does not know it yet.
+-- its class's and subclass's words, how many make a full stack; nil while the game does not know it yet (then none
+-- of these: the record may still hold what the item before it in that slot had).
 local function Info(record)
     local items = rawget(_G, "C_Item")
     local fn = items and items.GetItemInfo or rawget(_G, "GetItemInfo")
     if not fn then return true end
     local ok, name, _, _, _, required, kindName, subName, stack, _, _, sell, _, _, bind = pcall(fn, record.link or record.item)
-    if not ok or Plain(name) == nil then return end
+    if not ok or Plain(name) == nil then
+        record.required, record.kindName, record.subName, record.sell, record.bind, record.stack = nil, nil, nil, nil, nil, nil
+        return
+    end
     record.required, record.kindName, record.subName = Plain(required), Plain(kindName), Plain(subName)
     record.sell, record.bind, record.stack = Plain(sell), Plain(bind), Plain(stack)
     return true
 end
 
 -- Whether the character cannot use an item: a line of its tooltip in the game's red (a recipe: the game's own
--- answer); kept per link until the next level (Contents.Leveled).
-local unusable = {}
+-- answer); kept per link until the next level (Contents.Leveled; Contents.Scan sees a new level too, the bags
+-- shown or not), never asked while the game does not know the item yet (its tooltip lacks the red lines then).
+local unusable, leveled = {}, nil -- leveled: the character's level the answers were asked at
 local function Red(color)
     return type(color) == "table" and (color.r or 0) > 0.9 and (color.g or 1) < 0.2 and (color.b or 1) < 0.2
 end
@@ -264,8 +269,14 @@ function Contents.Read(bag, slot, place)
     record.level = Level(record.link, record.class)
     local known = Info(record)
     record.boe = Contents.GEAR[record.class] and (record.bind == (Enum and Enum.ItemBind and Enum.ItemBind.OnEquip or 2)) or false
-    record.unusable = Unusable(record)
-    if not known or record.name == "" or Contents.GEAR[record.class] and not record.level then Contents.waiting[record.item] = true end
+    record.unusable = known and Unusable(record) or false
+    -- Waiting for the game's word on it (GET_ITEM_INFO_RECEIVED), or no more once known: the bags and the bank both
+    -- look here when it comes.
+    if not known or record.name == "" or Contents.GEAR[record.class] and not record.level then
+        Contents.waiting[record.item] = true
+    else
+        Contents.waiting[record.item] = nil
+    end
     record.set = Contents.setAt[bag .. ":" .. slot]
     ns.Categories.Classify(record)
     return record
@@ -358,6 +369,12 @@ end
 -- Every slot of these containers read (in their order) and added to slots, the free ones tallied in free;
 -- place: "bags" (carried) or a bank's kind.
 function Contents.Scan(bags, place, slots, free)
+    -- A new level since the answers of who can use what were asked: asked anew (a level-up while the bags were hidden).
+    local level = Plain(Ask(rawget(_G, "UnitLevel"), "player"))
+    if level ~= leveled then
+        Contents.Leveled()
+        leveled = level
+    end
     for _, bag in ipairs(bags) do
         local kind = Contents.Kind(bag, place)
         local carried = not place or place == "bags"

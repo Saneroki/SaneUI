@@ -138,6 +138,13 @@ function Bar.Health(dress, unit)
     health:SetValue(now)
 end
 
+-- The bar as made, full: a plate the game hands out again never shows the last unit's health, even where the
+-- next unit's cannot be read.
+function Bar.Clear(dress)
+    dress.health:SetMinMaxValues(0, 1)
+    dress.health:SetValue(1)
+end
+
 -- The border: "target", "focus" or nil (dark).
 function Bar.Border(dress, lit)
     local colour = lit == "target" and Bar.TARGET or lit == "focus" and Bar.FOCUS or Bar.BORDER

@@ -13,8 +13,12 @@ local _, ns = ...
 --
 --  As the game's: the leader and the assistants drag a member onto another
 --  member to swap the two (SwapRaidSubgroup), or onto a group's line to move
---  them there (SetRaidSubgroup); a right click opens the game's own menu of a
---  raid member; the mouse on one shows the game's tooltip of them.
+--  them there (SetRaidSubgroup); the mouse on one shows the game's tooltip of
+--  them. A right click opens a menu of our own with what the game's menu of a
+--  raid member offers that an addon may do, as the game allows it you: Whisper;
+--  for the leader Promote to Leader, Promote to Assistant, Demote; Remove for
+--  the leader and the assistants (the game's menu, opened by an addon, offers
+--  Set Focus too, which the game refuses then).
 --
 --  Raid Info shows the instances and world bosses you are saved to, with the
 --  difficulty and the time left, as the game's window of it: shift-click links
@@ -168,11 +172,44 @@ local function MemberTip(row)
     GameTooltip:Show()
 end
 
+-- A right click: a menu of our own with what the game's menu of a raid member offers that an addon may do, as
+-- the game checks it for that member and your rank, in its words. Its own menu is not opened from here: there it
+-- offers Set Focus too, which the game refuses to an addon.
+local function MemberMenu(row, member)
+    local name, unit, party = Contacts.NameOf(member.unit), member.unit, C_PartyInfo
+    if not name then return end
+    local me = Core.Ask(rawget(_G, "UnitIsUnit"), unit, "player") == true
+    local leading, assisting = UnitIsGroupLeader("player"), UnitIsGroupAssistant("player")
+    local leader, assistant = UnitIsGroupLeader(unit), UnitIsGroupAssistant(unit)
+    local everyone = Core.Ask(rawget(_G, "IsEveryoneAssistant")) == true
+    -- The leader removes anybody but themselves, an assistant those who are neither leader nor assistant.
+    local removes = ((leading and not me) or (assisting and not leading and not leader and not assistant))
+        and Core.Ask(rawget(_G, "HasLFGRestrictions")) ~= true
+    MenuUtil.CreateContextMenu(row, ns.Guard(function(_, root)
+        root:CreateTitle(member.name)
+        if not me then
+            local whisper = root:CreateButton(Core.Word("WHISPER", "Whisper"), function() ns.Safe("raid", Contacts.Tell, name) end)
+            whisper:SetEnabled(member.online)
+        end
+        if leading and not leader and party.PromoteToLeader then
+            root:CreateButton(Core.Word("SET_RAID_LEADER", "Promote to Leader"), function() ns.Safe("raid", party.PromoteToLeader, name, true) end)
+        end
+        if leading and not me and not assistant and not everyone and party.PromoteToAssistant then
+            root:CreateButton(Core.Word("SET_RAID_ASSISTANT", "Promote to Assistant"), function() ns.Safe("raid", party.PromoteToAssistant, name, true) end)
+        end
+        if leading and assistant and not leader and not everyone and party.DemoteAssistant then
+            root:CreateButton(Core.Word("DEMOTE", "Demote"), function() ns.Safe("raid", party.DemoteAssistant, name, true) end)
+        end
+        if removes and party.UninviteUnit then
+            root:CreateButton(Core.Word("REMOVE", "Remove"), function() ns.Safe("raid", party.UninviteUnit, name, nil, true) end)
+        end
+    end))
+end
+
 local function MemberClick(row, button)
     local member = row.element
     if button ~= "RightButton" or not member or member.kind ~= "member" then return end
-    local open = rawget(_G, "UnitPopup_OpenMenu")
-    if open then open("RAID", { unit = member.unit, name = member.name, ownerFrame = row }) end
+    MemberMenu(row, member)
 end
 
 -------------------------------------------------------------------------------
@@ -306,6 +343,21 @@ local function Part(page, name)
     return { body = body, label = name }
 end
 
+-- A member dragged by the leader or an assistant: lifted while held, let go onto another member or a group's line.
+local Lift = ns.Guard(function(self)
+    local member = self.element
+    if member and member.kind == "member" and MayArrange() then
+        moving = member
+        self:SetAlpha(0.5)
+    end
+end)
+local Let = ns.Guard(function(self)
+    self:SetAlpha(1)
+    local member = moving
+    moving = nil
+    if member then ns.Safe("raid", Drop, member) end
+end)
+
 function View.Build(page)
     roster, info = Part(page, "raid"), Part(page, "raid info")
     -- The line above the groups: Everyone is Assistant, how many of each role.
@@ -325,28 +377,21 @@ function View.Build(page)
     roster.roles:SetPoint("RIGHT", -4, 0)
     roster.box = Board.List(roster, function(row, element)
         Draw(row, element)
+        if row.wired then return end -- its scripts once: the list hands its rows from one member to another
+        row.wired = true
         row:RegisterForDrag("LeftButton")
         row:SetScript("OnClick", function(self, button) ns.Safe("raid", MemberClick, self, button) end)
         row:SetScript("OnEnter", function(self) ns.Safe("raid", MemberTip, self) end)
         row:SetScript("OnLeave", GameTooltip_Hide)
-        row:SetScript("OnDragStart", ns.Guard(function(self)
-            local member = self.element
-            if member and member.kind == "member" and MayArrange() then
-                moving = member
-                self:SetAlpha(0.5)
-            end
-        end))
-        row:SetScript("OnDragStop", ns.Guard(function(self)
-            self:SetAlpha(1)
-            local member = moving
-            moving = nil
-            if member then ns.Safe("raid", Drop, member) end
-        end))
+        row:SetScript("OnDragStart", Lift)
+        row:SetScript("OnDragStop", Let)
     end, Layout.LINE + Layout.EDGE)
     roster.infoButton = Board.Button(roster, Core.Word("RAID_INFO", "Raid Info"), 100, function() Showing("info") end)
     roster.convert = Board.Button(roster, Core.Word("CONVERT_TO_RAID", "Convert to Raid"), 130, function() C_PartyInfo.ConvertToRaid() end, roster.infoButton)
     info.box = Board.List(info, function(row, lock)
         DrawLock(row, lock)
+        if row.wired then return end -- its scripts once
+        row.wired = true
         row:SetScript("OnClick", function(self) ns.Safe("raid info", LockClick, self) end)
         row:SetScript("OnEnter", function(self) ns.Safe("raid info", LockTip, self) end)
         row:SetScript("OnLeave", GameTooltip_Hide)

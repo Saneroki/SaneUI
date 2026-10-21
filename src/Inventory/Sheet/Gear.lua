@@ -9,7 +9,9 @@ local _, ns = ...
 --  chosen or under the mouse). A click chooses a set, a double click puts it
 --  on; under the list the game's buttons Equip and Save (the chosen set, Save
 --  after a question) and New Set (its name asked; the game's question mark as
---  its icon). A right click on a set offers to rename or delete it.
+--  its icon). As on the game's sheet, a save leaves out the slots the set
+--  leaves out, and a new set the shirt and the tabard. A right click on a set
+--  offers to rename or delete it.
 --
 --  The game's own sheet opens its icon picker for a new set (a frame of the
 --  game's that our code must not show); here a new set takes the game's
@@ -27,6 +29,7 @@ Gear.INSET = { 5, 8, 20, 105 }
 Gear.BUTTON = { 99, 28 }
 Gear.NEW = { 180, 34 }
 Gear.QUESTION = 134400 -- the game's question mark (Interface\Icons\INV_Misc_QuestionMark)
+Gear.LEFT_OUT = { 4, 19 } -- the slots a new set leaves out, as the game's sheet has it: the shirt, the tabard
 
 local list, equip, save, new
 local chosen -- the chosen set's ID
@@ -47,25 +50,49 @@ end
 -- The chosen set put on, as the game's Equip does (not with a locked item in it, nor while casting).
 local function Wear(id)
     if not id then return end
-    if Core.Ask(Sets().EquipmentSetContainsLockedItems, id) or UnitCastingInfo("player") then
+    if Core.Ask(Sets().EquipmentSetContainsLockedItems, id) or Core.Ask(UnitCastingInfo, "player") then
         return Errors(Core.Word("ERR_CLIENT_LOCKED_OUT", "You can't do that right now."))
     end
     Core.Sound("IG_CHARACTER_INFO_TAB")
     Core.Ask(Sets().UseEquipmentSet, id)
 end
 
+-- The slots the save to come leaves out (the game notes them for its next save), as the game's sheet sets them: a
+-- set's own (id), or for a new set (nil) the shirt and the tabard. The note is cleared again once saved (Saved).
+local function LeaveOut(id)
+    local sets = Sets()
+    Core.Ask(sets.ClearIgnoredSlotsForSave)
+    if not id then
+        for _, slot in ipairs(Gear.LEFT_OUT) do Core.Ask(sets.IgnoreSlotForSave, slot) end
+        return
+    end
+    local slots = Core.Ask(sets.GetIgnoredSlots, id)
+    for slot, ignored in pairs(type(slots) == "table" and slots or {}) do
+        if ignored then Core.Ask(sets.IgnoreSlotForSave, slot) else Core.Ask(sets.UnignoreSlotForSave, slot) end
+    end
+end
+
+local function Saved()
+    Core.Ask(Sets().ClearIgnoredSlotsForSave)
+end
+
 local function Save()
     if not chosen then return end
     local id = chosen
     Core.Confirm(Core.Word("CONFIRM_SAVE_EQUIPMENT_SET", "Save %s with the items you wear now?"), (Info(id)), function()
+        LeaveOut(id)
         Core.Ask(Sets().SaveEquipmentSet, id)
+        Saved()
     end)
 end
 
 local function New()
     Core.AskText(Core.Word("GEARSETS_POPUP_TEXT", "Name of the new set:"), nil, Core.Word("ACCEPT", "Accept"), nil, function(name)
         name = strtrim(name or "")
-        if name ~= "" then Core.Ask(Sets().CreateEquipmentSet, name, Gear.QUESTION) end
+        if name == "" then return end
+        LeaveOut(nil)
+        Core.Ask(Sets().CreateEquipmentSet, name, Gear.QUESTION)
+        Saved()
     end, 16)
 end
 

@@ -71,14 +71,25 @@ end
 
 local refused = {} -- [lower-case name] = true: the game did not take it this session; not tried again
 
--- Sets a CVar this client has to a value (text) that differs, if the game lets us: not one it locked or
--- made read only, a secure one not in a fight (SetCVar refuses those). One the game does not take (an error,
--- or it holds its old value) is noted once, quietly, and left alone for the session. True when it was set.
-function Sync.SetCVar(name, value)
-    if type(name) ~= "string" or type(value) ~= "string" or refused[name:lower()] then return false end
+-- Whether the game lets us set a CVar now: not one it locked or made read only, a secure one not in a fight
+-- (SetCVar refuses those). Its value (text), true or false, and why not ("fixed", "fight"); nil for a CVar
+-- this client does not have. Also the options' CVar list's (Settings/CVars.lua).
+function Sync.Settable(name)
     local ok, now, _, _, _, locked, secure, readOnly = pcall(C_CVar.GetCVarInfo, name)
     now = ok and Plain(now)
-    if type(now) ~= "string" or now == value or locked or readOnly or (secure and InCombatLockdown()) then return false end
+    if type(now) ~= "string" then return nil end
+    if locked or readOnly then return now, false, "fixed" end
+    if secure and InCombatLockdown() then return now, false, "fight" end
+    return now, true
+end
+
+-- Sets a CVar this client has to a value (text) that differs, if the game lets us (Settable). One the game
+-- does not take (an error, or it holds its old value) is noted once, quietly, and left alone for the session.
+-- True when it was set.
+function Sync.SetCVar(name, value)
+    if type(name) ~= "string" or type(value) ~= "string" or refused[name:lower()] then return false end
+    local now, free = Sync.Settable(name)
+    if not free or now == value then return false end
     local done, set = pcall(C_CVar.SetCVar, name, value)
     if done and (set == true or Core.Ask(C_CVar.GetCVar, name) == value) then return true end
     refused[name:lower()] = true

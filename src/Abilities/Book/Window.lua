@@ -41,8 +41,11 @@ local frame, book   -- the game's window and the spellbook in it
 local bar, grip     -- ours: what you drag to move, what you drag to size
 local on = false    -- we look after the window's size and place
 local native = {}   -- [large or small] = { width, height } the game gave it, to give back
--- What a fight held up, each done once it is over: our size and place put on, the game's given back.
-local AFTER_APPLY, AFTER_GIVE = "Abilities: spellbook window", "Abilities: spellbook window given back"
+local refit = false -- given back while the spellbook was closed: the book in the window still has our size
+-- What a fight held up, each done once it is over: our size and place put on, the game's given back,
+-- the book fitted to the game's window.
+local AFTER_APPLY, AFTER_GIVE, AFTER_REFIT =
+    "Abilities: spellbook window", "Abilities: spellbook window given back", "Abilities: spellbook fitted"
 
 local function Saved()
     if type(ns.DB.window) ~= "table" then ns.DB.window = {} end
@@ -74,6 +77,7 @@ local function FitBook()
     if math.abs((isWidth or 0) - width) > 0.5 or math.abs((isHeight or 0) - height) > 0.5 then
         book:SetSize(width, height)
     end
+    refit = false
 end
 
 local Later -- below
@@ -123,6 +127,19 @@ local function OnSize()
     Redraw()
 end
 
+-- The game gives the window its size whenever it opens the spellbook, but never the book in it. A
+-- size given back while the book was closed is put on the book here, after the game's own: at the
+-- book's next showing. Also after the module stood down (a step of its own, no guarded one); in a
+-- fight once it is over.
+local function Refit()
+    if not refit or on or not book:IsShown() then return end
+    if InCombatLockdown() then
+        Core.AfterCombat(AFTER_REFIT, Refit)
+        return
+    end
+    FitBook()
+end
+
 local function Setup()
     frame = PlayerSpellsFrame
     book = frame.SpellBookFrame
@@ -166,6 +183,7 @@ local function Setup()
     frame:HookScript("OnShow", Later)
     frame:HookScript("OnSizeChanged", function() ns.Safe("window", OnSize) end)
     book:HookScript("OnShow", Later)
+    book:HookScript("OnShow", function() ns.Safe("window", Refit) end)
     if frame.UpdateSize then pcall(hooksecurefunc, frame, "UpdateSize", Later) end
     if UpdateUIPanelPositions then pcall(hooksecurefunc, "UpdateUIPanelPositions", Later) end
 end
@@ -174,9 +192,14 @@ end
 -- fight: then when it ends (GiveBackNow).
 local function GiveBack()
     if not frame then return end
+    -- Closed, or the talents on show (the window has their size): the game gives the window the
+    -- book's size when it opens the spellbook next, and the book follows it then (Refit).
+    if not book:IsShown() then
+        refit = true
+        return
+    end
     local size = native[Mode()]
-    -- With the talents on show the window has their size: the game gives it the book's at the next tab.
-    if size and book:IsShown() then
+    if size then
         frame:SetSize(size[1], size[2])
         FitBook()
     end

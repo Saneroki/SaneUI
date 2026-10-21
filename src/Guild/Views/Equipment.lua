@@ -7,9 +7,9 @@ local _, ns = ...
 --  (a click on a column's head sorts by another), searched by name. At the
 --  right the one chosen as a paper doll: its name, level, class and rank, its
 --  item level large, eight slots down each side and the three weapons under
---  them, around its model (the game's model of the character: your own as it
---  stands, another dressed in what it shared), and when it was shared (not
---  live, but your own).
+--  them, around a figure (your own as it stands; another's gear dressed on
+--  your own figure, as in the game's dressing room: this client cannot show
+--  another's race), and when it was shared (not live, but your own).
 --
 --  The gear is Core's (Core.Data.Guild): each member's card, which that member
 --  shares with the guild while its switch is on; your own is read live.
@@ -37,6 +37,17 @@ local function Guild() return Core.Data.Guild end
 -------------------------------------------------------------------------------
 --  What the list shows (no frames: tested)
 -------------------------------------------------------------------------------
+local levels = {} -- [member key] = { stamp, level }: a card's item level, read once for each stamp
+
+-- A card's item level: its text taken apart only when its stamp is new.
+local function ItemLevel(key, card)
+    local known = levels[key]
+    if known and known.stamp == card.stamp then return known.level end
+    local read = Guild().ReadCard(card.text)
+    levels[key] = { stamp = card.stamp, level = read and read.itemLevel }
+    return levels[key].level
+end
+
 -- Every member with what its card says: { key, name, class, level, itemLevel (nil: not shared), stamp }.
 function Equipment.Characters(members, cards, text)
     local rows = {}
@@ -44,9 +55,8 @@ function Equipment.Characters(members, cards, text)
         local name = member.name or ""
         if not text or text == "" or name:lower():find(text:lower(), 1, true) then
             local card = cards[member.key]
-            local read = card and Guild().ReadCard(card.text)
             rows[#rows + 1] = { key = member.key, name = name, class = member.class, level = member.level,
-                                online = member.online, itemLevel = read and read.itemLevel, stamp = card and card.stamp }
+                                online = member.online, itemLevel = card and ItemLevel(member.key, card), stamp = card and card.stamp }
         end
     end
     return rows
@@ -149,6 +159,7 @@ local function Model(card, member, own)
     local model = doll.model
     if not model then return end
     if own then
+        model:Show() -- hidden for a member who shared nothing
         Core.Safe("doll", model.SetUnit, model, "player")
         return
     end

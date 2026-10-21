@@ -18,8 +18,10 @@ local _, ns = ...
 --                       what lies outside the picture clear (the texture's wrap)
 --
 --  Laid out with the map (Place); the tracker's steps (Track) look again a few
---  times a second whether the player has gone to another building or floor.
---  Outdoors nothing is drawn. Knows the canvas' view, as the other layers do.
+--  times a second whether the player has gone to another building or floor (not
+--  while the player stands still). Outdoors nothing is drawn, nor on the view of
+--  another continent than the one the player is on. Knows the canvas' view, as
+--  the other layers do.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords = ns.Coords
@@ -37,6 +39,7 @@ local used, free = {}, {} -- [key] = texture while drawn; textures let go
 local seen = {}
 local shown          -- what is drawn: the building's key and placement, and the parts, as one word (Track)
 local nextLook = 0
+local lastX, lastY, lastZ, lastInstance -- where the player was at the tracker's last look: no look while still there
 
 function Indoors.Build(canvasHolder)
     holder = canvasHolder
@@ -47,15 +50,17 @@ function Indoors.Build(canvasHolder)
     return layer
 end
 
--- The player in the world: x (north), y (west) and the height, from the game; the height nil where it tells none.
+-- The player in the world: x (north), y (west), the height and the instance (the continent's), from the game; the
+-- height nil where it tells none, the instance nil where it does not say.
 local function Here()
     local position = rawget(_G, "UnitPosition")
     if not position then return nil end
-    local x, y, z = Core.Ask(position, "player")
-    x, y, z = Core.Plain(x), Core.Plain(y), Core.Plain(z)
+    local ok, x, y, z, instance = pcall(position, "player") -- four answers: Core.Ask hands on three
+    if not ok then return nil end
+    x, y, z, instance = Core.Plain(x), Core.Plain(y), Core.Plain(z), Core.Plain(instance)
     if type(x) ~= "number" or type(y) ~= "number" then return nil end
     if type(z) ~= "number" or z == 0 then z = nil end
-    return x, y, z
+    return x, y, z, type(instance) == "number" and instance or nil
 end
 
 -- A world point (x, y, z) in a placed building's own space: bx, by, and bz when z is known.
@@ -79,12 +84,17 @@ local function Within(part, bx, by)
     return bx >= part.left and bx <= part.right and by >= part.bottom and by <= part.top
 end
 
+-- The floor nearest below the player last, so it is drawn over the others.
+local function Lower(one, other)
+    return one.low < other.low
+end
+
 -- The building the player stands in on the view's continent, and the parts to draw: placed, parts (in drawing
--- order, the one on top last), or nil outdoors, off the data, or in none of its buildings.
+-- order, the one on top last), or nil outdoors, off the data, on another continent, or in none of its buildings.
 function Indoors.Inside(continent)
     if not Core.Ask(IsIndoors) or not SET:Ready() then return nil end
-    local x, y, z = Here()
-    if not x then return nil end
+    local x, y, z, instance = Here()
+    if not x or (instance and instance ~= continent) then return nil end
     local column, row = Coords.Tile(-y, x)
     for _, key in ipairs(SET:Keys("byTile", Coords.TileKey(continent, column, row))) do
         local record = SET:Get(key)
@@ -104,8 +114,7 @@ function Indoors.Inside(continent)
                             parts[#parts + 1] = part
                         end
                     end
-                    -- The floor nearest below the player last, so it is drawn over the others.
-                    table.sort(parts, function(one, other) return one.low < other.low end)
+                    table.sort(parts, Lower)
                     return placed, parts, key
                 end
             end
@@ -181,10 +190,13 @@ function Indoors.Place(view)
 end
 
 -- A step of the canvas' tracker: whether the player went into another building or onto another floor, a few
--- times a second; then drawn anew.
+-- times a second while the player moves; then drawn anew.
 function Indoors.Track(view, now)
     if now < nextLook or not view.continent then return end
     nextLook = now + Indoors.LOOK
+    local x, y, z, instance = Here()
+    if x == lastX and y == lastY and z == lastZ and instance == lastInstance then return end
+    lastX, lastY, lastZ, lastInstance = x, y, z, instance
     local placed, parts, building = Indoors.Inside(view.continent)
     local words
     if placed then

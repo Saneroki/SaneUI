@@ -21,8 +21,8 @@ local _, ns = ...
 --                   every zoom, its name (the set Encounters) in the tooltip; a model that would reach past
 --                   the view's edge is hidden (the engine does not cut it there), its mark stays
 --      the mouse    the wheel zooms around the mouse (from the whole map up to Dungeons.NEAR times
---                   nearer), a drag moves it, a right click goes back to the map, at the zone the
---                   dungeon lies in where the map can show it
+--                   nearer), a drag moves it, a right click goes back to the map it was opened from
+--                   (the map stays under the dungeon's view, as it was)
 --      also         a pin that leads into a dungeon (Shift and a click on its entrance) opens its map here
 --                   (Canvas.Show)
 --      the player   the game's arrow where the game tells the player's place on the floor shown (a floor
@@ -36,7 +36,8 @@ ns.Dungeons = Dungeons
 
 Dungeons.NEAR = 4   -- the nearest zoom: so many times the whole map's
 Dungeons.LOOK = 0.2 -- seconds between two looks at the player's place
-Dungeons.LEVEL = 25 -- over the canvas' layers, under the bar (TopBar: 30)
+Dungeons.LEVEL = 22 -- over the canvas' layers and marks (Canvas.LEVELS: up to 21), under the bar (TopBar: 30)
+Dungeons.SPREAD = 3 -- the models' levels over their marks, by how far down each stands: all of them under the bar
 Dungeons.BOSS = "vignettekillboss" -- a boss's mark: the game's own
 Dungeons.BOSS_SIZE = 26
 Dungeons.MODEL_WIDTH, Dungeons.MODEL_HEIGHT = 72, 88 -- a boss's model standing on its mark, in screen units
@@ -114,10 +115,11 @@ local function Walk()
 end
 
 -- Every dungeon and raid the game has a map of, one entry each, and those of the set the game has none of, A to
--- Z; asked again while neither has told any.
+-- Z; kept once the game told of one or the set was read (Forever's client has none of its own), asked again while
+-- neither has.
 function Dungeons.List()
     Walk()
-    if list and told then return list end
+    if list and (told or fromData) then return list end
     list = {}
     local root = ns.Coords.WorldMap()
     local children = root and Core.Ask(C_Map.GetMapChildrenInfo, root, DUNGEON, true)
@@ -326,6 +328,7 @@ local function Update(_, elapsed)
         Look()
     end
 end
+local updating = ns.Guard(Update) -- made once: the view's step while it shows
 
 -- The wheel: nearer or farther around the point under the mouse, which stays where it is.
 local function Wheel(_, delta)
@@ -444,8 +447,9 @@ function Dungeons.PlaceBosses(art, scale)
         mark:SetFrameLevel(base + 1)
         mark:Show()
         Stand(mark, boss.display, x, y)
-        -- In front by how far down it stands (the top of the art behind), over the marks.
-        if mark.model then mark.model:SetFrameLevel(base + 2 + math.floor(boss.y * 100)) end
+        -- In front by how far down it stands (the top of the art behind), over the marks; a few levels only, so
+        -- none comes over the bar above the map (and takes its clicks).
+        if mark.model then mark.model:SetFrameLevel(base + 2 + math.floor(boss.y * Dungeons.SPREAD)) end
     end
     for index = #bosses + 1, #marks do
         marks[index]:Hide()
@@ -500,7 +504,7 @@ function Dungeons.Show(map)
     zoom, panX, panY, dragX = 1, 0, 0, nil
     frame:SetFrameLevel(canvas:GetFrameLevel() + Dungeons.LEVEL)
     frame:Show()
-    frame:SetScript("OnUpdate", ns.Guard(Update))
+    frame:SetScript("OnUpdate", updating)
     nextLook = 0
     Draw()
     ns.Safe("bar", ns.TopBar.Update)
@@ -525,12 +529,10 @@ function Dungeons.Close()
     ns.Safe("bar", ns.TopBar.Update)
 end
 
--- A right click: back to the map, at the zone the dungeon lies in where the map can show it.
+-- A right click: back to the map it was opened from. That map stays under the dungeon's view as it was (from the
+-- bar, a pin's entrance, or the full map opened inside), so the view only goes.
 function Dungeons.Out()
-    local info = shown and Core.Ask(C_Map.GetMapInfo, shown)
     Dungeons.Close()
-    local parent = type(info) == "table" and info.parentMapID
-    if parent and parent > 0 then ns.Canvas.Show(parent) end
 end
 
 -- The floor shown (nil: none), and the floors of its dungeon.

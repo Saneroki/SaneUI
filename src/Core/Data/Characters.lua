@@ -20,7 +20,10 @@ local Core = SaneUI.Core
 --      Data.Count(item)    { total = 40, [key] = { bags = 12, bank = 8, worn = 1 } }: where the account
 --                            has the item (the key "account": the account's own bank), or nil: none, or
 --                            not known yet
---      Data.CharactersStamp(), Data.OnCharacters(fn)   moves (fn() is called) when any of it changes
+--      Data.CharactersStamp(), Data.OnCharacters(fn)   moves when any of it changes (fn() is called on a later
+--                            frame, once for what changed together)
+--      Data.Forget(key)      one of them forgotten (a deleted character, one moved to another account:
+--                            Profiles' Forget): its entry and every answer made from it; never the one played
 --
 --  A character is kept by its GUID (Core.charKey), never by a name: two of them can share a first name.
 --  Its whole name, first name and surname ("Sane Lunatic"), is kept beside it for showing; a first name
@@ -28,12 +31,12 @@ local Core = SaneUI.Core
 --
 --  Mark, then read: an event only marks what changed (the bags, the bank, what is worn, the gold); the
 --  reading follows as a job of the scheduler (Steps.lua), out of combat and within the frame's budget, a
---  bag at a time. The bank is read only while it is open (the game knows it only then); at the logout
---  what is still marked is read at once. What things are is not kept, only their IDs and counts, one
---  packed string per place: "item\031count\030item\031count", items in order. What is worn is kept a
---  second time, slot by slot, for a paper doll: "slot\031item\030slot\031item", slots in order (slots;
---  "" when nothing is worn, so that it is told from not read yet). Counts across characters are worked
---  out once, in steps, when the pack has loaded, and kept up to date from then on.
+--  bag at a time. The bank is read only while it is open (the game knows it only then), all of it in one
+--  step; at the logout what is still marked is read at once. What things are is not kept, only their IDs
+--  and counts, one packed string per place: "item\031count\030item\031count", items in order. What is
+--  worn is kept a second time, slot by slot, for a paper doll: "slot\031item\030slot\031item", slots in
+--  order (slots; "" when nothing is worn, so that it is told from not read yet). Counts across characters
+--  are worked out once, in steps, when the pack has loaded, and kept up to date from then on.
 -------------------------------------------------------------------------------
 local Data, Steps, Codec = Core.Data, Core.Steps, Core.Data.Codec
 local Plain, Ask = Core.Plain, Core.Ask
@@ -43,6 +46,8 @@ local JOB, COUNTING = "characters", "characters: counts"
 local PLACES = { "bags", "bank", "worn" } -- a character's places, in the order a count names them
 local SLOTS = "slots"                     -- what is worn, slot by slot: no place, never counted
 local PACKED = { "bags", "bank", "worn", SLOTS } -- what an entry keeps packed
+local KINDS = { realm = "string", class = "string", race = "number", level = "number", side = "string",
+                seen = "number", money = "number", bankSeen = "number" } -- the kind of each plain value it keeps
 local ACCOUNT = "account"                 -- the key of the account's own bank in a count
 local LIST, PART = "\030", "\031"
 
@@ -55,6 +60,7 @@ local counted = false -- every place taken apart: Count answers
 local counts = {} -- [item] = the count handed out, or false: none
 local views, list = {}, nil -- what Character and Characters hand out, made anew after a change
 local held = {}  -- [key][place] = what Items handed out ([key].slots: Worn), made anew after a change
+local forgotten = {} -- [key] = true: forgotten before the pack had loaded, dropped once it has
 local listeners = {}
 local stamp = 0
 
@@ -105,13 +111,19 @@ end
 -------------------------------------------------------------------------------
 --  Changes: the answers made anew, and those who listen told
 -------------------------------------------------------------------------------
+-- Those who listen are told on a later frame, once for all the places a read stored, never inside the job (a
+-- listener may draw, or ask for a job's Check, which could not yield there).
+local Tell = Core.Later(function()
+    for _, fn in ipairs(listeners) do Core.Safe("data: characters", fn) end
+end)
+
 local function Changed()
     stamp = stamp + 1
     wipe(counts)
     wipe(views)
     wipe(held)
     list = nil
-    for _, fn in ipairs(listeners) do Core.Safe("data: characters", fn) end
+    Tell()
 end
 
 -------------------------------------------------------------------------------
@@ -139,7 +151,10 @@ end
 
 local function Money()
     local money = Ask(rawget(_G, "GetMoney"))
-    if type(money) == "number" then mine.money = money end
+    if type(money) == "number" and money ~= mine.money then
+        mine.money = money
+        Changed()
+    end
 end
 
 -- The game's containers, or nil on a client without them: then nothing is read (and nothing kept is
@@ -214,14 +229,12 @@ local function Tabs(kind)
     return type(ids) == "table" and ids or nil
 end
 
+-- One step, never cut by a Check: a bank closed between two of its tabs reads empty, and would be kept half read.
 local function Bank(kind)
     local tabs, api = Tabs(kind), Containers()
     if not (tabs and api) then return nil end
     local map = {}
-    for _, bag in ipairs(tabs) do
-        Container(api, bag, map)
-        Steps.Check()
-    end
+    for _, bag in ipairs(tabs) do Container(api, bag, map) end
     return map
 end
 
@@ -255,7 +268,11 @@ local READ = {
         local map = Bank(BANK_TYPE.Character)
         if map then
             Store(Core.charKey, mine, "bank", map)
-            mine.bankSeen = Day()
+            local day = Day()
+            if day ~= mine.bankSeen then
+                mine.bankSeen = day
+                Changed()
+            end
         end
     end,
     account = function()
@@ -269,13 +286,16 @@ local READ = {
     end,
 }
 
--- The job: every mark read, one after the other, within the frame's budget
+-- The job: every mark read, one after the other, within the frame's budget. The place it reads counts as
+-- marked until its read is stored (reading): the logout reads it again if the job is cut off in it.
+local reading
 local function Read()
     while part do
         local what = next(marks)
         if not what then return end
-        marks[what] = nil
+        marks[what], reading = nil, what
         READ[what]()
+        reading = nil
         Steps.Check()
     end
 end
@@ -322,6 +342,12 @@ local function Check()
                     entry[place] = nil
                 end
             end
+            for field, kind in pairs(KINDS) do
+                if entry[field] ~= nil and type(entry[field]) ~= kind then
+                    Aside(key .. " " .. field, entry[field])
+                    entry[field] = nil
+                end
+            end
         end
     end
     if part.account ~= nil and (type(part.account) ~= "table" or (part.account.bank ~= nil and type(part.account.bank) ~= "string")) then
@@ -335,6 +361,9 @@ end
 local function Opened(saved)
     part = saved
     Check()
+    for key in pairs(forgotten) do
+        if key ~= Core.charKey then part.characters[key] = nil end
+    end
     mine = part.characters[Core.charKey]
     if not mine then
         mine = { name = Named(nil) or "?" }
@@ -438,6 +467,22 @@ function Data.OnCharacters(fn)
     listeners[#listeners + 1] = fn
 end
 
+-- Forgets one of the account's characters: its entry in the pack's saved file and every answer made from it,
+-- and those who listen are told. Not the one played. Asked before the pack has loaded, it is forgotten once it
+-- has. True when there is one to forget (before the pack has loaded: when it is not the one played).
+function Data.Forget(key)
+    if type(key) ~= "string" or key == Core.charKey then return false end
+    if not part then
+        forgotten[key] = true
+        return true
+    end
+    if part.characters[key] == nil then return false end
+    part.characters[key] = nil
+    parsed[key] = nil
+    Changed()
+    return true
+end
+
 -------------------------------------------------------------------------------
 --  Events: marks only
 -------------------------------------------------------------------------------
@@ -484,9 +529,10 @@ Core.On("BANKFRAME_CLOSED", function()
     end
     bankOpen = false
 end)
--- The logout: what is still marked is read at once, and the day is noted.
+-- The logout: what is still marked is read at once (the place the job was reading too), and the day is noted.
 Core.On("PLAYER_LOGOUT", function()
     if not (part and mine) then return end
+    if reading then marks[reading] = true end
     for what in pairs(marks) do Core.Safe("data: characters", READ[what]) end
     wipe(marks)
     mine.seen = Day() or mine.seen

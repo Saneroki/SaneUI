@@ -4,8 +4,9 @@ local _, ns = ...
 --  Sane UI - Social - Contacts
 --  What the lists of the friends list's panel (Friends.lua) share: the game's
 --  colours and status icons of its friends list, a status read, how long ago
---  something was, the filter by status, a whisper, and the highlight of the
---  row chosen. Knows no panel; the lists are in the files after it.
+--  something was, the filter by status, a whisper, a player's name to add,
+--  ignore or group, and the highlight of the row chosen. Knows no panel; the
+--  lists are in the files after it.
 --
 --  Each list is a view of the panel, a table in Contacts:
 --      View.name             the words on its tab (View.Label(): with a count, asked anew)
@@ -49,11 +50,12 @@ Contacts.STATUSES = {
     { key = "Offline", text = Core.Word("FRIENDS_LIST_OFFLINE", "Offline") },
 }
 
--- Where somebody is: online, away or busy (the game's status icons), or offline.
+-- Where somebody is: online, away or busy (the game's status icons), or offline. Away and busy both: away, as
+-- the game's lists say.
 function Contacts.Status(online, afk, dnd)
     if not online then return "Offline" end
-    if dnd then return "DnD" end
     if afk then return "Away" end
+    if dnd then return "DnD" end
     return "Online"
 end
 
@@ -109,6 +111,27 @@ end
 function Contacts.Tell(name, bnet)
     if not name or name == "" then return end
     if bnet then ChatFrameUtil.SendBNetTell(name) else ChatFrameUtil.SendTell(name) end
+end
+
+-- A player unit's name as the game adds, ignores, whispers or groups a player by: where players have a first
+-- name and a surname the two together, the game's own form (Core.FullName: "Droopy Fairwind"; UnitName's second
+-- answer is the surname there, never a realm); elsewhere "Name-Realm" for one of another realm. Read plain: nil
+-- while the game hides it.
+function Contacts.NameOf(unit)
+    if Core.Surnames() then return Core.FullName(unit) end
+    local name, realm = Core.Ask(UnitName, unit)
+    if type(name) ~= "string" or name == "" then return nil end
+    if type(realm) == "string" and realm ~= "" then return name .. "-" .. realm end
+    return name
+end
+
+-- The friendly player you have targeted, by that name; nil without one.
+function Contacts.Targeted()
+    if Core.Ask(UnitExists, "target") ~= true or Core.Ask(UnitIsPlayer, "target") ~= true
+        or Core.Ask(UnitCanCooperate, "player", "target") ~= true then
+        return nil
+    end
+    return Contacts.NameOf("target")
 end
 
 -- The row of the element whose field is key keeps its highlight (it is the one chosen); the others lose it.

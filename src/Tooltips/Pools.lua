@@ -2,8 +2,8 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Tooltips - Pools
---  The parts a panel is drawn with (Panel.lua): texts, thin lines, small
---  pictures and bars. Each kind is a pool of the panel's own (Core.Pool): a
+--  The parts a panel is drawn with (Panel.lua): texts, thin lines and small
+--  pictures. Each kind is a pool of the panel's own (Core.Pool): a
 --  list of the parts made so far, and how many of them the draw has taken
 --  (taken). A draw begins with every pool given back (Reset) and takes what it
 --  needs again. And how large a text is (Width, Place).
@@ -28,11 +28,9 @@ ns.Pools = Pools
 Pools.GROOVE = 0.6       -- how strongly the groove's shade is seen: a section's rules and name, a table's lines
 Pools.GROOVE_LIGHT = 0.15 -- the light edge one dot of the screen under a groove's words, as cut letters catch the
                           -- light: dark words on a dark ground read by it
-Pools.BAR_HEIGHT = 6     -- a bar of our own: durability, a buff's time
 Pools.ICON_CROP = 4 / 64 -- the dark rim round the game's icons: four of their 64 texels each side
 local LIVE_ALPHA = 0.5   -- a unit's bars: a flat colour, half see-through
 local WHITE = "Interface\\Buttons\\WHITE8X8"
-local BAR = "Interface\\TargetingFrame\\UI-StatusBar"
 -- The game's art for the small pictures a row can carry
 local PICTURE = {
     check = "Interface\\Buttons\\UI-CheckBox-Check",
@@ -42,8 +40,8 @@ local PICTURE = {
     available = "Interface\\GossipFrame\\AvailableQuestIcon", -- a quest to take: the yellow !
     active = "Interface\\GossipFrame\\ActiveQuestIcon",       -- a quest in the log: the ?
 }
-local POOLS = { "texts", "lines", "icons", "bars" }
-local NewText, NewLine, NewIcon, NewBar -- below: how each kind of part is made
+local POOLS = { "texts", "lines", "icons" }
+local NewText, NewLine, NewIcon -- below: how each kind of part is made
 
 local spoilt = false -- a size of this draw was hidden
 local style = 0      -- counts the changes of the fonts' files and sizes (Restyle)
@@ -53,7 +51,6 @@ function Pools.Prepare(panel)
     panel.texts = Core.Pool(function() return NewText(panel) end)
     panel.lines = Core.Pool(function() return NewLine(panel) end)
     panel.icons = Core.Pool(function() return NewIcon(panel) end)
-    panel.bars = Core.Pool(function() return NewBar(panel) end)
     panel.liveTexts, panel.liveBars = {}, {} -- [use] = its own text or bar (LiveText, LiveBar)
 end
 
@@ -262,24 +259,6 @@ function Pools.LiveBar(panel, key, height, r, g, b)
     end
     bar:SetStatusBarColor(r or HEALTH[1], g or HEALTH[2], b or HEALTH[3], LIVE_ALPHA)
     bar:SetHeight(height)
-    bar:ClearAllPoints()
-    bar:Show()
-    return bar
-end
-
-function NewBar(panel)
-    local bar = CreateFrame("StatusBar", nil, panel)
-    bar:SetStatusBarTexture(BAR)
-    local track = bar:CreateTexture(nil, "BACKGROUND")
-    track:SetAllPoints()
-    track:SetColorTexture(0, 0, 0, 0.5)
-    return bar
-end
-
-function Pools.Bar(panel, r, g, b)
-    local bar = panel.bars:Take()
-    bar:SetStatusBarColor(r or HEALTH[1], g or HEALTH[2], b or HEALTH[3])
-    bar:SetHeight(Pools.BAR_HEIGHT)
     bar:ClearAllPoints()
     bar:Show()
     return bar

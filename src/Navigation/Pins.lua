@@ -13,15 +13,18 @@ local _, ns = ...
 --                              later, log, done, never)
 --      Pins.Offered(quest)     whether this character can take a quest of Core's data now
 --
---  A pin: kind (the filter's, Pins.KINDS), key (one per thing: the game's word hides Core's for the same
---  key, *One pin per thing*), home (the plane u, v are in: Coords.PlaneOf), u, v, map, x, y (on its own
---  map, 0 to 1), atlas or texture, size, name, lines (its tooltip's further lines), and by kind: quest
---  (its ID), complete, focused (the quest the game's arrow leads to), to (a map it opens), dim (a flight
---  point not yet found), grey (a quest too low), tint (its icon's colour: a quest for later), order (drawn over a
---  lower one).
+--  A pin: kind (the filter's, Pins.KINDS), key (one per pin: a thing of Core's data with several points on a
+--  map has a pin at each, its key the thing's and the point's), thing (a pin of Core's data: the thing's key,
+--  "npc:69", as the game's pins are keyed: the game's word hides every one of Core's for the same thing, *One
+--  pin per thing*), home (the plane u, v are in: Coords.PlaneOf), u, v, map, x, y (on its own map, 0 to 1),
+--  atlas or texture, size, name, lines (its tooltip's further lines), and by kind: quest (its ID), complete,
+--  focused (the quest the game's arrow leads to), to (a map it opens), dim (a flight point not yet found), grey
+--  (a quest too low), tint (its icon's colour: a quest for later), order (drawn over a lower one).
 --
 --  What the game tells is read per map when it said it changed (the message LIVE), Core's places when they
---  change (Data.Map's OnChange); each map's pins are kept until then, so a layout only places them.
+--  change (Data.Map's OnChange); each map's pins are kept until then, so a layout only places them. Core's
+--  are kept in parts: the NPCs' are read again when the log or the level changed (what this character can
+--  take), the objects' and the places' and ways' only when Core's places change.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords, Live = ns.Coords, ns.Live
@@ -109,7 +112,10 @@ local Map = Core.Data.Map()
 --  What the game tells, per map
 -------------------------------------------------------------------------------
 local live = {}  -- [uiMapID] = its live pins, until the game says they changed
-local data = {}  -- [uiMapID] = its pins of Core's data, until the data changes
+-- [part][uiMapID] = its pins of Core's data of that part, until what they follow changes: the NPCs' (their quests),
+-- the objects' (herbs, ore, chests...), the places' and ways'.
+local data = { npc = {}, object = {}, way = {} }
+local PARTS = { npc = "npc", object = "object", place = "way", travel = "way" } -- a place's part, by its kind
 local faction    -- the player's side, asked once
 
 -- The pin's place in its plane (a continent's, or Zephras Isle's), from a point on its map (0 to 1); false when the
@@ -256,12 +262,14 @@ local function Has(list, value)
 end
 
 -- Whether a quest is too low to give this character experience: the game's quest colour grey (its level more than
--- the game's green range below the character's).
+-- the game's trivial range below the character's, as its own quest colours ask it; the older green range where
+-- the client has only that).
 local function Trivial(quest)
     local level = quest.level
     if not level or level <= 0 then return false end
-    local green = rawget(_G, "GetQuestGreenRange")
-    local range = green and Core.Plain(Core.Ask(green)) or 8
+    local range = Core.Plain(Core.Ask(rawget(_G, "UnitQuestTrivialLevelRange"), "player"))
+    if type(range) ~= "number" then range = Core.Plain(Core.Ask(rawget(_G, "GetQuestGreenRange"), "player")) end
+    if type(range) ~= "number" then range = 8 end
     return me.level - level > range
 end
 
@@ -416,6 +424,7 @@ local function FromData(place)
         local look = OBJECTS[what]
         if not look then return nil end
         pin.kind, pin.atlas = look[1], look[2]
+        pin.service = look[1] == "service" -- a mailbox: on the small map only near the player, as every service
     elseif kind == "place" then
         local look = PLACES[what]
         if not look then return nil end
@@ -449,17 +458,22 @@ local function FromData(place)
     return pin
 end
 
-local function DataOn(map)
-    local list = data[map]
+-- A map's pins of Core's data of one part (PARTS). A thing with several points there (a herb's every spawn, a
+-- wanderer's places) has a pin at each: its key the thing's and its point's, the thing's own kept as its thing.
+local function DataOn(map, part)
+    local list = data[part][map]
     if list then return list end
     local places = Map:On(map)
     if not places then return {} end -- being read: asked again once they are (OnChange)
     list = {}
-    for _, place in ipairs(places) do
-        local pin = FromData(place)
-        if pin then Add(list, pin, map, place.x, place.y) end
+    for index, place in ipairs(places) do
+        local pin = PARTS[place.kind] == part and FromData(place)
+        if pin then
+            pin.thing, pin.key = pin.key, pin.key .. "@" .. map .. ":" .. index
+            Add(list, pin, map, place.x, place.y)
+        end
     end
-    data[map] = list
+    data[part][map] = list
     return list
 end
 
@@ -467,13 +481,10 @@ end
 --  The pins in view
 -------------------------------------------------------------------------------
 local found = {}    -- For's answer, made anew each time
-local hidden = {}   -- keys the game's own pins hide (scratch)
+local hidden = {}   -- things the game's own pins hide, by their keys (scratch)
 local taken = {}    -- keys drawn already: a thing two maps tell of is drawn once (scratch)
-
--- Whether a point of the view's plane lies in it.
-local function Inside(view, u, v)
-    return u >= view.left and u <= view.right and v <= view.top and v >= view.bottom
-end
+local shown = {}    -- [kind] = whether the view shows it, as the filter says (scratch)
+local NONE = {}
 
 -- The maps whose pins the view shows: each zone in view (and the zone in the middle, should it have none of
 -- its own), further out the continent itself too (its flight points, as the game's continent map has them);
@@ -503,32 +514,74 @@ Pins.Shows = Shows
 local SMALL = {}
 for _, entry in ipairs(Pins.KINDS) do SMALL[entry[1]] = entry.small end
 
+-- The parts of Core's pins a view reads: at a zone's level all, further out the places' and ways' alone (no NPC or
+-- object is of a kind shown past a zone, Pins.CONTINENT).
+local ZONE_PARTS, FAR_PARTS = { "npc", "object", "way" }, { "way" }
+
+-- The gather's grid (Gather): a cell's number, its column times ROW plus its row (no plane's rows reach ROW at any
+-- zoom). Herbs and ore are a zone's thousands of places: of each kind, at most one in a cell of it goes on to be
+-- sorted and gathered, the others there ride with it (its with), so its marker still counts and names them all.
+local ROW = 2 ^ 20
+local MANY = { herb = 1, ore = 2 }
+local firsts = {}           -- [cell and kind] = the first herb or ore in it (scratch)
+local rides, rode = {}, 0   -- the lists of those that ride with one, used again
+
 -- The pins in view, as the filter lets them through, for the view as the canvas laid it out (Canvas.view);
 -- small: the small window (its fewer kinds, services only near the player at pu, pv).
 function Pins.For(view, small, pu, pv)
     wipe(found)
     wipe(hidden)
     wipe(taken)
+    wipe(firsts)
+    wipe(shown)
+    rode = 0
     Me()
     local continentLevel = view.level ~= "zone"
+    local parts = continentLevel and FAR_PARTS or ZONE_PARTS
+    local floor, k, size = math.floor, view.k, Pins.GATHER
+    local left, right, top, bottom = view.left, view.right, view.top, view.bottom
     local maps = Maps(view)
     for _, map in ipairs(maps) do
         for _, pin in ipairs(LiveOn(map)) do hidden[pin.key] = true end
     end
     for _, map in ipairs(maps) do
-        for pass = 1, 2 do
-            for _, pin in ipairs(pass == 1 and LiveOn(map) or DataOn(map)) do
+        for pass = 0, #parts do
+            local list = pass == 0 and LiveOn(map) or DataOn(map, parts[pass])
+            -- A map's pins all stand in its plane: one link into the view's for them all.
+            local link = list[1] and Coords.Link(list[1].home, view.map)
+            for _, pin in ipairs(link and list or NONE) do
                 local kind = pin.kind
-                local link = Coords.Link(pin.home, view.map)
-                if link and not taken[pin.key] and Shows(kind) and (not small or SMALL[kind])
-                    and (not continentLevel or Pins.CONTINENT[kind]) and (pass == 1 or not hidden[pin.key]) then
+                local wanted = shown[kind]
+                if wanted == nil then
+                    wanted = Shows(kind) and (not small or SMALL[kind]) and (not continentLevel or Pins.CONTINENT[kind])
+                        and true or false
+                    shown[kind] = wanted
+                end
+                -- (a pin of Core's data stands on one map's list alone: only the game's may come twice)
+                if wanted and (pass == 0 and not taken[pin.key] or pass > 0 and not hidden[pin.thing]) then
                     local u, v = link.du + link.su * pin.u, link.dv + link.sv * pin.v
                     local near = not (small and pin.service) or (pu and (u - pu) ^ 2 + (v - pv) ^ 2 <= Pins.NEAR ^ 2)
-                    if near and Inside(view, u, v) then
-                        taken[pin.key] = true
+                    if near and u >= left and u <= right and v <= top and v >= bottom then
+                        if pass == 0 then taken[pin.key] = true end
                         pin.pu, pin.pv = u, v -- in the view's plane, for this layout
                         pin.order = ORDER[kind] or 0
-                        found[#found + 1] = pin
+                        local many = pass > 0 and MANY[kind]
+                        local cell = many and (floor(u * k / size) * ROW + floor(v * k / size)) * 4 + many
+                        local first = cell and firsts[cell]
+                        if first then
+                            local with = first.with
+                            if not with then
+                                rode = rode + 1
+                                with = rides[rode] or {}
+                                wipe(with)
+                                rides[rode], first.with = with, with
+                            end
+                            with[#with + 1] = pin
+                        else
+                            if cell then firsts[cell] = pin end
+                            pin.with = nil
+                            found[#found + 1] = pin
+                        end
                     end
                 end
             end
@@ -544,11 +597,31 @@ end
 -- Pins nearer each other on the screen than Pins.GATHER units become one marker, at the first one (the one
 -- drawn highest), in its icon; quests in the log and offered are never gathered, nor what the game tells is near.
 -- list: For's, sorted; k: the zoom (units a yard). Gives a list of pins and markers ({ gathered = { pins },
--- pu, pv, key }).
-local cells = {}
+-- pu, pv, key }); a herb or ore with others riding with it (For) is a marker of them all.
+-- The grid's cells by number (ROW), each a list of the spots { x, y, pin, index } that stand in it, n of them; the
+-- lists and the spots are kept to be used again.
+local cells, lists, spots = {}, {}, {}
+
+-- A pin into a spot's marker, made at the spot's first pin, each with what rides with it.
+local function Join(spot, pin, out)
+    local gathered = spot.gathered
+    if not gathered then
+        local first = spot.pin
+        gathered = { first }
+        for _, rider in ipairs(first.with or NONE) do gathered[#gathered + 1] = rider end
+        spot.gathered = gathered
+        spot.marker = { gathered = gathered, pu = first.pu, pv = first.pv, key = "gathered:" .. first.key,
+                        kind = "gathered", order = first.order }
+        out[spot.index] = spot.marker
+    end
+    if pin == spot.pin then return end
+    gathered[#gathered + 1] = pin
+    for _, rider in ipairs(pin.with or NONE) do gathered[#gathered + 1] = rider end
+end
+
 function Pins.Gather(list, k)
     wipe(cells)
-    local out = {}
+    local out, used, made = {}, 0, 0
     local size = Pins.GATHER
     for _, pin in ipairs(list) do
         if pin.kind == "log" or pin.kind == "quest" or pin.live then
@@ -559,29 +632,34 @@ function Pins.Gather(list, k)
             local into
             for dx = -1, 1 do
                 for dy = -1, 1 do
-                    local cell = cells[(cx + dx) .. ":" .. (cy + dy)]
-                    if cell and not into then
-                        for _, marker in ipairs(cell) do
-                            if (marker.x - x) ^ 2 + (marker.y - y) ^ 2 < size * size then into = marker break end
+                    local cell = not into and cells[(cx + dx) * ROW + cy + dy]
+                    if cell then
+                        for index = 1, cell.n do
+                            local spot = cell[index]
+                            if (spot.x - x) ^ 2 + (spot.y - y) ^ 2 < size * size then into = spot break end
                         end
                     end
                 end
             end
             if into then
-                local first = into.pin
-                if not into.gathered then
-                    into.gathered = { first }
-                    into.marker = { gathered = into.gathered, pu = first.pu, pv = first.pv, key = "gathered:" .. first.key,
-                                    kind = "gathered", order = first.order }
-                    out[into.index] = into.marker
-                end
-                into.gathered[#into.gathered + 1] = pin
+                Join(into, pin, out)
             else
-                local key = cx .. ":" .. cy
-                cells[key] = cells[key] or {}
                 out[#out + 1] = pin
+                local key = cx * ROW + cy
                 local cell = cells[key]
-                cell[#cell + 1] = { x = x, y = y, pin = pin, index = #out }
+                if not cell then
+                    used = used + 1
+                    cell = lists[used] or {}
+                    lists[used], cell.n = cell, 0
+                    cells[key] = cell
+                end
+                made = made + 1
+                local spot = spots[made] or {}
+                spots[made] = spot
+                spot.x, spot.y, spot.pin, spot.index, spot.gathered, spot.marker = x, y, pin, #out, nil, nil
+                cell.n = cell.n + 1
+                cell[cell.n] = spot
+                if pin.with then Join(spot, pin, out) end -- others ride with it: they cover each other already
             end
         end
     end
@@ -591,20 +669,26 @@ end
 -------------------------------------------------------------------------------
 --  Kept until the game or the data says they changed
 -------------------------------------------------------------------------------
-local LIVE = { quests = true, flights = true, vignettes = true, points = true, zone = true, level = true }
+local LIVE = { quests = true, flights = true, vignettes = true, points = true, zone = true, level = true,
+               waypoint = true }
 
--- What the game tells changed: every map's live pins are read again at the next layout; the quests changed,
--- the data's too (what this character can take follows its quests and level).
+-- What the game tells changed: every map's live pins are read again at the next layout ("waypoint": the quest the
+-- game's arrow leads to, theirs alone); the quests or the level changed, the NPCs' of Core's data too (what this
+-- character can take follows its quests and level), not its objects', places' and ways'.
 function Pins.Changed(what)
     if what and not LIVE[what] then return false end
     wipe(live)
-    if what == nil or what == "quests" or what == "level" then wipe(data) end
+    if what == nil then
+        for _, part in pairs(data) do wipe(part) end
+    elseif what == "quests" or what == "level" then
+        wipe(data.npc)
+    end
     return true
 end
 
 -- Core's places changed: every map's data pins are read again.
 function Pins.DataChanged()
-    wipe(data)
+    for _, part in pairs(data) do wipe(part) end
 end
 
 Map:OnChange(function()

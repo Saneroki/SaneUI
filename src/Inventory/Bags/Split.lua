@@ -176,12 +176,14 @@ local function Build()
     Split.dialog = dialog
 end
 
--- The dialog for the stack a button of ours draws, by that button.
+-- The dialog for the stack a button of ours draws, by that button; an Auto Split still under way ends (it would go
+-- on with this stack).
 function Split.Open(button, record)
     if InCombatLockdown() or not (record and record.item) then return end
     local count = record.count or 1
     if count < 2 then return end
     if not dialog then Build() end
+    auto = nil
     source = { bag = record.bag, slot = record.slot, item = record.item }
     most = count
     dialog:ClearAllPoints()
@@ -195,6 +197,25 @@ end
 
 function Split.Close()
     if dialog then dialog:Hide() end
+end
+
+-- The dialog closed and an Auto Split under way stopped (the bags or the bank hid).
+function Split.Stop()
+    auto = nil
+    Split.Close()
+end
+
+-- Ours in place of the game's splitter, only where the template opened its own for this button just now (a Shift-click
+-- that linked the item into the chat, or found something on the cursor or the stack locked, opened none); in a fight
+-- the game's stays. Whether ours opened.
+function Split.Replace(button, record)
+    local modified = rawget(_G, "IsModifiedClick")
+    local game = rawget(_G, "StackSplitFrame")
+    if InCombatLockdown() or not (modified and modified("SPLITSTACK")) then return false end
+    if not (type(game) == "table" and game.IsShown and game:IsShown() and game.owner == button) then return false end
+    game:Hide()
+    Split.Open(button, record)
+    return true
 end
 
 -- Whether the dialog is open now (the tests); the amount in it.

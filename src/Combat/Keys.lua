@@ -73,10 +73,14 @@ local function Changed()
     Keys.Bind()
 end
 
--- One of our keys was pressed (Bindings.xml): the full screen with that window, or back from it.
+-- One of our keys was pressed (Bindings.xml): the full screen with that window, or back from it. The pet book's
+-- does nothing while your pet has no spellbook, as the game's key (it opens its book only at the pet's tab).
 function Keys.Press(what)
     if ns.off then return end
-    if what == "pet" then return ns.Window.Toggle("spellbook", "pet") end
+    if what == "pet" then
+        if not ns.BookData.HasPet() then return end
+        return ns.Window.Toggle("spellbook", "pet")
+    end
     ns.Window.Toggle(what)
 end
 

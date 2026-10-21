@@ -130,27 +130,30 @@ local function Back()
 end
 
 -- The dropdown Classic windows: the game's own minimap and map, each kept (its switch), ticked while chosen;
--- chosen again, ours is the one again. The game's map chosen opens at once.
+-- chosen again, ours is the one again. The game's map chosen opens by its own key or button (never by our
+-- code: Native.lua), and its key is told (Core.Classic.Press), as the other modules' windows of the game's are.
 local function Keep(key, on)
     ns.Safe("classic window", Core.Set, ns.name, key, on)
 end
--- The button Sane UI on the game's minimap (at its top right; the switch hides it) and on its map (beside the
--- close button on its border, a secure button that clicks it): ours again, the map filling the screen (Core's
--- Classic.lua).
-local function Running() return not ns.off end
+-- The button Sane UI on the game's minimap (at its top right) and on its map (beside the close button on its
+-- border, a secure button that clicks it): ours again, the map filling the screen (Core's Classic.lua). Only
+-- while that window is the game's own (its switch) and the module runs: on the game's minimap inside our map,
+-- or on the game's map caught for the frame before it is hidden, it would only be in the way.
+local function GameMinimap() return not ns.off and ns.options.nativeMinimap end
+local function GameMap() return not ns.off and ns.options.nativeMap end
 local function Border() local map = rawget(_G, "WorldMapFrame") return map and map.BorderFrame end
 local CLASSIC = {
     { text = ns.TEXT.classicMinimap, checked = function() return ns.options.nativeMinimap end,
       show = function() Keep("nativeMinimap", true) end, back = function() Keep("nativeMinimap", false) end,
-      frame = "Minimap", plain = true, ready = Running, hide = function() end,
+      frame = "Minimap", plain = true, ready = GameMinimap, hide = function() end,
       anchor = function(button, minimap) button:SetPoint("TOPRIGHT", minimap, "TOPRIGHT") end },
     { text = ns.TEXT.classicMap, checked = function() return ns.options.nativeMap end,
       show = function()
           Keep("nativeMap", true)
-          ns.Safe("classic map", ns.Native.ShowMap)
+          Core.Classic.Press(ns.TEXT.classicMap, "TOGGLEWORLDMAP") -- its key, now the game's again, opens it
       end,
       back = function() Keep("nativeMap", false) end,
-      frame = Border, full = true, ready = Running },
+      frame = Border, full = true, ready = GameMap },
 }
 
 function Window.Build()

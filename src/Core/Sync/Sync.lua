@@ -48,8 +48,8 @@ local TEXT = {
 -- A word of the game's own (the name of one of its strings), or ours where this client has none (Kit.lua).
 Sync.Word = Core.Word
 
--- The boxes of the tab Accountwide, in order: the game's own groups of options pages, named in its
--- words, then what is on none of its pages.
+-- The boxes of the tab Game settings (page Profiles), in order: the game's own groups of options pages,
+-- named in its words, then what is on none of its pages.
 Sync.GROUPS = {
     { id = "SETTING_GROUP_GAMEPLAY", fallback = "Gameplay" },
     { id = "SETTING_GROUP_ACCESSIBILITY", fallback = "Accessibility" },
@@ -77,7 +77,7 @@ function Sync.Taken(id)
     return Sync.options.taken[id]
 end
 
--- Whether a part is kept, and keeping it or leaving it to the game (the tab Accountwide).
+-- Whether a part is kept, and keeping it or leaving it to the game (the tab Game settings).
 function Sync.PartKept(id)
     return Sync.options.off[id] == nil
 end

@@ -29,18 +29,24 @@ local Core = SaneUI.Core
 --      Guild.Peers()                 [key] = { seen, version }: who in the guild runs Sane UI, as heard
 --      Guild.Rights()                what the player may do in the guild: invite, remove, promote, demote, notes,
 --                                    officerNotes, viewOfficerNotes, motd, info, officer
---      Guild.Sync()                  ask the guild for what is newer now, and the roster
+--      Guild.Sync()                  ask the guild for what is newer (once a minute at most), and the game for
+--                                    the roster
+--      Guild.Request()               ask the game for the roster anew (it answers with GUILD_ROSTER_UPDATE)
+--      Guild.Watch(on)               a view shows the roster: while it does, it is asked for whenever the game lets
 --      Guild.Stamp(), Guild.OnChange(fn)   moves (fn(what) is called) when any of it changes:
 --                                    "roster", "history", "records", "peers"
 --
 --  The wire's kind G. A member says now and then which records it has (a hello: kind and stamp of each); a
---  record changes: its owner sends it to the guild as a block. Who has an older one, or none, asks the owner
---  by a whisper, two at a time, the same record of the same member at most once a minute; the owner answers
---  with the block by a whisper. A record is taken only from its owner (the server names the sender: a
---  member publishes only its own), only from a member of this guild, only a kind the guild keeps, only
---  newer than the one kept, never from more than a day ahead.
+--  newcomer's hello (and Sync's) is answered by each member's own, whispered to the one who asked, once a
+--  minute at most. A record changes: its owner sends it to the guild as a block. Who has an older one, or
+--  none, asks the owner by a whisper, two at a time, the same record of the same member at most once a
+--  minute; the owner answers with the block by a whisper, to each member once a minute at most. A record is
+--  taken only from its owner (the server names the sender: a member publishes only its own), only from a
+--  member of this guild, only a kind the guild keeps, only newer than the one kept, never from more than a
+--  day ahead; a member's records go when it leaves the guild. The roster is read anew after the game says
+--  it changed, never in a fight or while the game restricts addons (then once it lifts).
 --
---      SaneUIData_Guild["forever"] = { format = 1, guilds = { ["Name-Realm"] = {
+--      SaneUIData_Guild["forever"] = { format = 1, guildFormat = 1, guilds = { ["Name-Realm"] = {
 --          seen = 20744,                                      the server's day it was last read
 --          members = { ["Droopy Fairwind"] = "rank\031level\031joined" },   what the history compares with
 --          history = "day\031what\031key\031from\031to\030...",  oldest first, the last 500
@@ -55,14 +61,18 @@ Data.Guild = Guild
 
 local PACK, KIND = "Guild", "G"
 local LIST, PART = "\030", "\031"
-Guild.FORMAT = 1
+local READ = "guild: roster" -- the scheduler's job that reads the roster
+Guild.FORMAT = 1         -- of the guilds' part (part.guildFormat; Data keeps its own in part.format)
 Guild.HISTORY = 500      -- events kept per guild
 Guild.HELLO = 900        -- seconds between hellos
 Guild.ANSWER = 6         -- seconds at most a member waits before it answers a newcomer's hello
-Guild.ASK_GAP = 60       -- seconds before the same record of the same member is asked again
+Guild.ASK_GAP = 60       -- seconds before the same record of the same member is asked again, or given again
 Guild.ASKING = 2         -- asks waiting for an answer at once
 Guild.AHEAD = 86400      -- seconds a record's stamp may be ahead of this client's clock
-Guild.SHRINK = 0.1       -- a roster that shrinks by more than this share at once is not believed
+Guild.SHRINK = 0.1       -- a roster that shrinks by more than this share at once is not believed at once
+Guild.SHRINK_WAIT = 60   -- seconds after which a later read that says the same is believed
+Guild.SYNC = 60          -- seconds between two asks of the guild (Sync), and between two answers to one member
+Guild.SKILLS = 60        -- seconds a skill-up waits before the card is made anew (skills rise in runs)
 
 local kinds = { card = 4096 } -- [kind] = its largest text: the kinds the guild keeps
 local started = false
@@ -72,8 +82,12 @@ local info = {}
 local allowed, own = {}, {} -- [kind] = true: sent; [kind] = { text, stamp }: this character's records
 local peers = {}
 local asking, asked, pending = 0, {}, {} -- asks in flight; [member \t kind] = when; the asks waiting
+local given = {}           -- [member \t kind] = { at, stamp }: a record of ours whispered to a member who asked
+local answered = {}        -- [member] = when its fresh hello was answered last
 local listeners, stamp = {}, 0
-local helloAt = 0
+local freshAt              -- when this character last asked the guild (a fresh hello)
+local shrunk, shrunkAt     -- a roster that shrank a lot at once: how many it had, and when it was read
+local watched = false      -- a view shows the roster (Guild.Watch)
 
 local function Now() return Ask(rawget(_G, "GetServerTime")) or 0 end
 
@@ -140,9 +154,10 @@ end
 
 local function Opened(saved)
     part = saved
-    if part.format ~= Guild.FORMAT or type(part.guilds) ~= "table" then
-        part.format, part.guilds = Guild.FORMAT, type(part.guilds) == "table" and part.guilds or {}
-    end
+    if type(part.guilds) ~= "table" then part.guilds = {} end
+    -- The guilds' own format, apart from Data's (part.format, which Data checks): a part without one is of the
+    -- first.
+    part.guildFormat = tonumber(part.guildFormat) or 1
     here, key = Entry()
     Changed("records")
     Guild.Read()
@@ -151,15 +166,28 @@ end
 -------------------------------------------------------------------------------
 --  The roster
 -------------------------------------------------------------------------------
+-- One event of the history, as it is kept.
 local function Event(day, what, member, from, to)
-    if not here then return end
-    local line = table.concat({ day, what, member, from or "", to or "" }, PART)
-    local text = here.history == "" and line or here.history .. LIST .. line
-    local events = Split(text, LIST)
-    if #events > Guild.HISTORY then
-        text = table.concat(events, LIST, #events - Guild.HISTORY + 1)
-    end
+    return table.concat({ day, what, member, from or "", to or "" }, PART)
+end
+
+-- A read's events into the history at once, the oldest beyond Guild.HISTORY dropped.
+local function Note(events)
+    local text = table.concat(events, LIST)
+    if here.history ~= "" then text = here.history .. LIST .. text end
+    local lines = Split(text, LIST)
+    if #lines > Guild.HISTORY then text = table.concat(lines, LIST, #lines - Guild.HISTORY + 1) end
     here.history = text
+end
+
+-- A roster that shrank a lot at once may be the game's partial answer, not members leaving: believed when a
+-- read a while later still has as many.
+local function Shrank(count)
+    if shrunk ~= count then
+        shrunk, shrunkAt = count, Clock()
+        return false
+    end
+    return Clock() - shrunkAt >= Guild.SHRINK_WAIT
 end
 
 -- Days since a member was online, as the game tells it; nil while online or not told.
@@ -201,43 +229,48 @@ function Guild.Read()
     info.text = util and Ask(util.GetInfoText) or Ask(rawget(_G, "GetGuildInfoText"))
     if guildKey ~= key then here, key = Entry() end
     if here then
-        local day, before, noted = Day(), here.members, false
+        local day, before, events = Day(), here.members, {}
         local first = next(before) == nil
         local kept = 0
         for _ in pairs(before) do kept = kept + 1 end
-        -- A roster that shrinks a lot at once is the game's partial answer, not members leaving.
-        local whole = #list >= total and (kept == 0 or #list >= kept * (1 - Guild.SHRINK))
+        local full = #list >= total
+        local large = kept > 0 and #list < kept * (1 - Guild.SHRINK)
+        local whole = full and (not large or Shrank(#list))
+        if not (full and large) then shrunk = nil end
         for member, entry in pairs(map) do
-            local old = before[member]
+            local old, joined = before[member], nil
             if not old then
-                before[member] = entry.rankIndex .. PART .. entry.level .. PART .. day
-                if not first then Event(day, "join", member) noted = true end
+                -- Joined today; at the first read of a guild nobody's day is known.
+                joined = first and "" or day
+                if not first then events[#events + 1] = Event(day, "join", member) end
             else
                 local fields = Split(old, PART)
                 local rankBefore, levelBefore = tonumber(fields[1]), tonumber(fields[2])
                 if rankBefore and rankBefore ~= entry.rankIndex then
-                    Event(day, entry.rankIndex < rankBefore and "up" or "down", member, rankBefore, entry.rankIndex)
-                    noted = true
+                    events[#events + 1] = Event(day, entry.rankIndex < rankBefore and "up" or "down", member, rankBefore, entry.rankIndex)
                 end
                 if levelBefore and entry.level > levelBefore then
-                    Event(day, "level", member, levelBefore, entry.level)
-                    noted = true
+                    events[#events + 1] = Event(day, "level", member, levelBefore, entry.level)
                 end
-                before[member] = entry.rankIndex .. PART .. entry.level .. PART .. (fields[3] or "")
+                joined = fields[3] or ""
             end
-            entry.joined = tonumber(Split(before[member], PART)[3])
+            before[member] = entry.rankIndex .. PART .. entry.level .. PART .. joined
+            entry.joined = tonumber(joined)
         end
         if whole then
             for member in pairs(before) do
                 if not map[member] then
                     before[member] = nil
-                    Event(day, "leave", member)
-                    noted = true
+                    here.records[member] = nil -- what it shared goes with it
+                    events[#events + 1] = Event(day, "leave", member)
                 end
             end
         end
         here.seen = day
-        if noted then Changed("history") end
+        if #events > 0 then
+            Note(events)
+            Changed("history")
+        end
     end
     Changed("roster")
 end
@@ -266,15 +299,17 @@ local function Keep(member, kind, text, when)
     return true
 end
 
-local function Hello(fresh)
+-- Our hello: the records we share, by kind and stamp; fresh: every member is asked for its own (a newcomer,
+-- Sync). To the guild, or whispered to one member (to: its name) in answer to its fresh one.
+local function Hello(fresh, to)
     if not key then return end
     local fields = { "h", fresh and "1" or "0", Guild.Version() }
     for kind, mine in pairs(own) do
         if allowed[kind] then fields[#fields + 1] = kind .. "=" .. mine.stamp end
     end
     fields.n = #fields
-    Wire.Send(KIND, fields, "GUILD")
-    helloAt = Clock()
+    if to then Wire.Send(KIND, fields, "WHISPER", to) else Wire.Send(KIND, fields, "GUILD") end
+    if fresh then freshAt = Clock() end
 end
 
 local function AskNext()
@@ -315,16 +350,25 @@ local function Heard(sender, fields, channel, name)
             local kind, when = (fields[index] or ""):match("^(%a+)=(%d+)$")
             if kind and kinds[kind] then Want(sender, kind, tonumber(when), name) end
         end
-        -- A newcomer: answered with our own hello, a moment later, unless one went out lately.
-        if fields[2] == "1" and Clock() - helloAt > 30 then
-            Core.Later(function() if Clock() - helloAt > 30 then Hello(false) end end, math.random() * Guild.ANSWER)()
+        -- A newcomer, or a member asking with Sync: answered with our own hello, whispered to it alone a moment
+        -- later, once a minute at most.
+        local last = answered[sender]
+        if fields[2] == "1" and not (last and Clock() - last < Guild.SYNC) then
+            answered[sender] = Clock()
+            Core.Later(function() Hello(false, name) end, math.random() * Guild.ANSWER)()
         end
         Changed("peers")
     elseif what == "a" then
         local kind = fields[2]
         local mine = kind and own[kind]
         if mine and allowed[kind] and byKey[sender] then
-            Wire.SendBlock(KIND, kind .. PART .. mine.stamp .. PART .. mine.text, "WHISPER", name)
+            -- Each member gets each record of ours once a minute at most however often it asks; a newer one at once.
+            local asker = sender .. "\t" .. kind
+            local last = given[asker]
+            if last and last.stamp == mine.stamp and Clock() - last.at < Guild.ASK_GAP then return end
+            if Wire.SendBlock(KIND, kind .. PART .. mine.stamp .. PART .. mine.text, "WHISPER", name, kind) then
+                given[asker] = { at = Clock(), stamp = mine.stamp }
+            end
         end
     end
 end
@@ -351,18 +395,19 @@ local function ItemLevel(link)
     return tonumber(level)
 end
 
+-- The game's skill line categories of the professions (11) and the secondary skills (9).
+local PROFESSIONS = { [11] = true, [9] = true }
+
+-- The professions and secondary skills, from the game's skill lines (C_SkillInfo: a table per line).
 local function Professions()
     local list = {}
-    local count = Ask(rawget(_G, "GetNumSkillLines")) or 0
-    local header
-    for index = 1, count do
-        local a = Answers(rawget(_G, "GetSkillLineInfo"), index)
-        local name, isHeader, rank, most = a[1], a[2], a[4], a[7]
-        if isHeader then
-            header = name
-        elseif type(name) == "string" and header and (header == Core.Word("TRADE_SKILLS", "Professions")
-            or header == Core.Word("SECONDARY_SKILLS", "Secondary Skills")) then
-            list[#list + 1] = name:gsub("[,:\030\031]", " ") .. ":" .. (tonumber(rank) or 0) .. ":" .. (tonumber(most) or 0)
+    local info = rawget(_G, "C_SkillInfo")
+    if not (info and info.GetNumSkillLines and info.GetSkillLineInfo) then return "" end
+    for index = 1, tonumber(Ask(info.GetNumSkillLines)) or 0 do
+        local line = Ask(info.GetSkillLineInfo, index)
+        if type(line) == "table" and not line.isHeader and PROFESSIONS[line.skillLineCategoryID]
+            and (line.parentSkillLineID or 0) == 0 and type(line.name) == "string" then
+            list[#list + 1] = line.name:gsub("[,:\030\031]", " ") .. ":" .. (tonumber(line.rank) or 0) .. ":" .. (tonumber(line.maxRank) or 0)
         end
     end
     return table.concat(list, ",")
@@ -405,10 +450,13 @@ function Guild.ReadCard(text)
     return card
 end
 
-local Recard = Core.Later(function()
+local function Recarded()
     if not started then return end
     Guild.Publish("card", Guild.Card())
-end, 3)
+end
+local Recard = Core.Later(Recarded, 3)
+-- Skills rise in runs (crafting, gathering, fishing): a card for them a while later, not one for each skill-up.
+local RecardSkills = Core.Later(Recarded, Guild.SKILLS)
 
 -------------------------------------------------------------------------------
 --  What a module calls
@@ -470,15 +518,18 @@ function Guild.Publish(kind, text)
     local me = Core.PlayerKey("player")
     if me and Keep(me, kind, text, own[kind].stamp) then Changed("records") end
     if allowed[kind] and key then
-        Wire.SendBlock(KIND, kind .. PART .. own[kind].stamp .. PART .. text, "GUILD")
+        Wire.SendBlock(KIND, kind .. PART .. own[kind].stamp .. PART .. text, "GUILD", nil, kind)
     end
 end
 
+-- Switched off, what still waits to be sent of that kind is dropped as well: nothing of it goes.
 function Guild.Allow(kind, on)
     local was = allowed[kind]
     allowed[kind] = on and true or nil
     if on and not was and own[kind] and key and started then
-        Wire.SendBlock(KIND, kind .. PART .. own[kind].stamp .. PART .. own[kind].text, "GUILD")
+        Wire.SendBlock(KIND, kind .. PART .. own[kind].stamp .. PART .. own[kind].text, "GUILD", nil, kind)
+    elseif not on and was then
+        Wire.Drop(KIND, kind)
     end
 end
 
@@ -500,19 +551,35 @@ function Guild.Rights()
     }
 end
 
--- The game asked for the roster anew (it answers with GUILD_ROSTER_UPDATE).
+-- The game asked for the roster anew (it answers with GUILD_ROSTER_UPDATE; it lets that be asked only so often).
 local function Request()
     local util = rawget(_G, "C_GuildInfo")
     if util and util.GuildRoster then Ask(util.GuildRoster) else Ask(rawget(_G, "GuildRoster")) end
 end
+Guild.Request = Request
 
+-- A view shows the roster (on), or no more: while it does, it is asked for again whenever the game says it may
+-- be, as the game's own guild window does. Never on a timer.
+function Guild.Watch(on)
+    watched = on and true or false
+    if watched then Request() end
+end
+
+-- Asks the guild for what is newer (a fresh hello: each member answers with its own), once a minute at most.
 function Guild.Sync()
     if not started then return end
     Request()
-    Hello(false)
+    if not freshAt or Clock() - freshAt >= Guild.SYNC then Hello(true) end
 end
 
-local Reread = Core.Later(function() Guild.Read() end, 0.5)
+-- The game said the roster changed: read anew once it settled, by the scheduler, which waits while the game
+-- restricts addons (a fight, an encounter); one read however often it was told meanwhile.
+local Reread = Core.Later(function() Core.Steps.Run(READ, Guild.Read) end, 0.5)
+
+local function RosterChanged(canRequest)
+    if watched and Plain(canRequest) == true then Request() end
+    Reread()
+end
 
 function Guild.Start()
     if started then return end
@@ -520,14 +587,14 @@ function Guild.Start()
     Data.Saved(PACK, Opened)
     Wire.Listen(KIND, Heard)
     Wire.ListenBlock(KIND, HeardBlock)
-    Core.On("GUILD_ROSTER_UPDATE", Reread)
+    Core.On("GUILD_ROSTER_UPDATE", RosterChanged)
     Core.On("PLAYER_GUILD_UPDATE", function()
         here, key = Entry()
         Reread()
     end)
     Core.On("PLAYER_EQUIPMENT_CHANGED", Recard)
     Core.On("PLAYER_LEVEL_UP", Recard)
-    Core.On("SKILL_LINES_CHANGED", Recard)
+    Core.On("SKILL_LINES_CHANGED", RecardSkills)
     Request()
     Recard()
     -- The first hello once the game has settled, then now and then.

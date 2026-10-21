@@ -38,7 +38,7 @@ local _, ns = ...
 --  caption all the same.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-local Plain, Data = Core.Plain, Core.Data
+local Plain, Ask, Data = Core.Plain, Core.Ask, Core.Data
 local DISENCHANTS = Data.Set("Disenchants")
 local Read, TEXT = ns.Reader, ns.TEXT
 local Gold = {}
@@ -85,12 +85,32 @@ local function Sale(price)
 end
 Gold.Sale = Sale
 
+-- Whether the auction house shows what it sells (its Buy views), not your own auctions or what you post.
+-- Where the client does not say (no such frame or views), its lists alone tell, as before.
+local function BuyView()
+    local house, modes = rawget(_G, "AuctionHouseFrame"), rawget(_G, "AuctionHouseFrameDisplayMode")
+    if not (type(house) == "table" and type(house.GetDisplayMode) == "function" and type(modes) == "table"
+        and (modes.Buy or modes.ItemBuy or modes.CommoditiesBuy)) then
+        return true
+    end
+    local mode = Ask(house.GetDisplayMode, house)
+    return mode ~= nil and (mode == modes.Buy or mode == modes.ItemBuy or mode == modes.CommoditiesBuy)
+end
+
 -- Whether the panel's item is one the auction house lists to you (to buy), by how the game filled
--- the tooltip (its getter: GetItemKey for the house's lists).
+-- the tooltip: by its item key (GetItemKey), or by its link without the vendor's price, which only the
+-- house's lists leave out (GetHyperlink's fourth argument, hideVendorPrice); and only while it shows
+-- what it sells (its lists of your own auctions are filled the same way).
 local function Buying(tooltip)
     local info = tooltip and tooltip.GetPrimaryTooltipInfo and Plain(tooltip:GetPrimaryTooltipInfo())
     local getter = type(info) == "table" and Plain(info.getterName)
-    return type(getter) == "string" and (getter:find("ItemKey", 1, true) or getter:find("Auction", 1, true)) ~= nil
+    if type(getter) ~= "string" then return false end
+    local listed = getter:find("ItemKey", 1, true) or getter:find("Auction", 1, true)
+    if not listed and getter == "GetHyperlink" then
+        local args = Plain(info.getterArgs)
+        listed = type(args) == "table" and Plain(args[4]) == true
+    end
+    return listed and BuyView() or false
 end
 
 -- What is known of the item at the auction house, for one read

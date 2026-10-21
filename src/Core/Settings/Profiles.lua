@@ -66,7 +66,7 @@ local TEXT = {
     character = "Character",
     you = "(this character)",
     newCharacters = "New Characters",
-    newTip = "The profile a character Sane UI has not seen yet (a new one, or one that has not logged in since Sane UI was installed) starts with at its first login. Its own line here can change it afterwards.",
+    newCharactersTip = "The profile a character Sane UI has not seen yet (a new one, or one that has not logged in since Sane UI was installed) starts with at its first login. Its own line here can change it afterwards.",
     useTip = "The profile this character uses. For the character you are playing it counts at once, for the others at their next login.",
     forget = "Forget",
     forgetTip = "Forgets the character: its line here and what Sane UI keeps for it. For a character deleted, or moved to another account.",
@@ -84,8 +84,8 @@ local TEXT = {
 }
 local Panel = Config.Panel
 
--- The controls show what changed, a frame later: the setting whose change started it has finished first.
-local Refresh = Core.Later(function() Config.Refresh() end)
+-- The controls show what changed, a frame later (Settings.lua): once, however many ask in that frame.
+local function Refresh() Config.RefreshSoon() end
 
 -- Says how a step went in chat: done (with a name) or why not.
 local function Tell(ok, why, done, name)
@@ -207,15 +207,16 @@ local ACTIONS = {
         Core.AskText(TEXT.askNew, nil, TEXT.new, nil, function(name)
             local ok, made = Profiles.Create(name)
             if not Tell(ok, made) then return end
-            Tell(Profiles.Use(made))
-            Core.Print(TEXT.created:format(made))
+            -- Made, but not in use (Accountwide switched off while the name was asked): chat says why, not "uses it".
+            if Tell(Profiles.Use(made)) then Core.Print(TEXT.created:format(made)) end
         end, Profiles.MAX_NAME)
     end },
     { button = TEXT.rename, tip = TEXT.renameTip, needs = Changeable, run = function()
         local name = InUse()
         Core.AskText(TEXT.askRename, name, TEXT.rename, name, function(as)
             local ok, why = Profiles.Rename(name, as)
-            Tell(ok, why, TEXT.renamed, InUse())
+            -- Its new name (as Profiles keeps it), not the one in use: another may have been chosen meanwhile.
+            Tell(ok, why, TEXT.renamed, strtrim(tostring(as)))
         end, Profiles.MAX_NAME)
     end },
     { button = TEXT.delete, tip = TEXT.deleteTip, needs = Changeable, run = function()
@@ -256,16 +257,26 @@ end
 local function Menu(parent, width, tip, title, chosen, choose, enabled, skip)
     local menu = CreateFrame("DropdownButton", nil, parent, "WowStyle1DropdownTemplate")
     menu:SetWidth(width)
-    menu:SetupMenu(function(_, root)
+    -- The profiles it lists now; the menu is built anew only when they are other than those it lists.
+    local function Names()
+        local names = {}
         for _, name in ipairs(Profiles.List()) do
-            if not (skip and skip(name)) then
-                root:CreateRadio(name, Core.Guard("options", chosen), Core.Guard("options", function(value) Run(choose, value) end), name)
-            end
+            if not (skip and skip(name)) then names[#names + 1] = name end
         end
-    end)
+        return names
+    end
+    -- Made once: the game builds the menu anew each time it opens, not its choices' functions.
+    local isChosen = Core.Guard("options", chosen)
+    local pick = Core.Guard("options", function(value) Run(choose, value) end)
+    local listed = {}
+    menu:SetupMenu(Core.Guard("options", function(_, root)
+        listed = Names()
+        for _, name in ipairs(listed) do root:CreateRadio(name, isChosen, pick, name) end
+    end))
     Panel.Tooltip(menu, title, tip)
     Panel.Watch({ label = title, widget = menu, Refresh = function()
-        menu:GenerateMenu()
+        -- The same profiles: only which is ticked is read again (the game's Update).
+        if Core.Same(listed, Names()) then menu:Update() else menu:GenerateMenu() end
         if menu.SetEnabled then menu:SetEnabled(enabled() and true or false) end
     end })
     return menu
@@ -344,9 +355,10 @@ local function ProfilesTab(child)
             name:SetText(character.current and text .. " " .. you or text)
         end
         local row = { name = name }
-        row.menu = Menu(box, 180, character.new and TEXT.newTip or TEXT.useTip,
+        -- A character forgotten has no profile to choose any more.
+        row.menu = Menu(box, 180, character.new and TEXT.newCharactersTip or TEXT.useTip,
             character.new and TEXT.newCharacters or character.name, function(value) return Line().profile == value end,
-            function(value) Tell(Profiles.SetCharacter(key, value)) end, Usable)
+            function(value) Tell(Profiles.SetCharacter(key, value)) end, function() return Usable() and not row.gone end)
         row.menu:SetPoint("TOPLEFT", 220, y)
         if not character.new and not character.current then
             row.forget = Panel.Button(box, TEXT.forget, TEXT.forgetTip, function()

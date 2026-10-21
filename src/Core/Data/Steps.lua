@@ -203,9 +203,10 @@ function Steps.Stop(name)
 end
 
 -- In a job, between pieces of work: yields when the frame's time is spent, else returns at once.
--- Outside a job it does nothing.
+-- Outside a job it does nothing. A job stopped from inside yields here at once, and is never resumed.
 function Steps.Check()
     if not current or coroutine.running() ~= current.thread then return end
+    if current.over then return coroutine.yield() end
     if debugprofilestop() - started >= limit then
         spent = true
         coroutine.yield()
@@ -215,6 +216,7 @@ end
 -- In a job: waits for a frame of its own, in which no other job ran before it.
 function Steps.Fresh()
     if not current or coroutine.running() ~= current.thread then return end
+    if current.over then return coroutine.yield() end
     if alone and debugprofilestop() - started < Steps.ALONE then return end
     current.fresh = true
     coroutine.yield()

@@ -82,6 +82,14 @@ local function Fill(dress)
     ns.Auras.Set(dress, unit)
 end
 
+-- The game's parts of a unit frame ours stand in for at that alpha: 0 out of sight under ours, 1 as the game has them.
+local function Parts(frame, alpha)
+    for _, key in ipairs(Plate.HIDDEN) do
+        local part = rawget(frame, key)
+        if type(part) == "table" and part.SetAlpha then part:SetAlpha(alpha) end
+    end
+end
+
 -- Ours shown and the game's parts out of sight while the game shows its health bar on the plate; the game's
 -- own plate as it is otherwise.
 local function Wear(dress)
@@ -89,10 +97,7 @@ local function Wear(dress)
     local row = frame and rawget(frame, "HealthBarsContainer")
     local bar = type(row) == "table" and rawget(row, "healthBar")
     local on = not ns.off and dress.unit ~= nil and type(bar) == "table" and Plain(bar:IsShown()) == true
-    for _, key in ipairs(Plate.HIDDEN) do
-        local part = rawget(frame, key)
-        if type(part) == "table" and part.SetAlpha then part:SetAlpha(on and 0 or 1) end
-    end
+    Parts(frame, on and 0 or 1)
     dress:SetShown(on)
 end
 
@@ -156,20 +161,22 @@ local function Follow(frame, bar)
     bar:HookScript("OnHide", OnTurned)
 end
 
--- The dress taken off its unit: its events, auras and strip off, the game's parts back in sight.
+-- The dress taken off its unit: its events off, the game's parts back in sight and ours hidden first, its bar as
+-- made (a plate handed out again shows nothing of this unit); then its auras and strip, each by itself, so a step
+-- of ours that fails (the game's aura containers) still leaves the game's plate as it is.
 local function Off(dress)
     if dress.unit and shown[dress.unit] == dress then shown[dress.unit] = nil end
     dress:UnregisterAllEvents()
     local frame = dress.frame
-    dress.unit = nil
-    ns.Auras.Set(dress, nil)
-    ns.Resource.Leave(dress)
+    dress.unit, dress.frame = nil, nil
+    dress:Hide()
     if frame then
-        Wear(dress) -- with no unit: the game's parts at full alpha, ours hidden
+        Parts(frame, 1)
         if owners[frame] == dress then owners[frame] = nil end
     end
-    dress.frame = nil
-    dress:Hide()
+    ns.Bar.Clear(dress)
+    ns.Safe("auras", ns.Auras.Set, dress, nil)
+    ns.Safe("combo points", ns.Resource.Leave, dress)
 end
 
 local function Added(unit)
@@ -226,10 +233,12 @@ function Plate.Refresh()
     for _, dress in pairs(shown) do Fill(dress) end
 end
 
--- The game's plates as they were: every dress off.
+-- The game's plates as they were: the parts of every unit frame ours ever lay over in sight again (the game hands
+-- them out again from its pool, and sets their alpha nowhere), then every dress off, each by itself.
 function Plate.GiveBack()
+    for _, frame in pairs(bars) do ns.Safe("give back", Parts, frame, 1) end
     for _, dress in pairs(dresses) do
-        if dress.unit then Off(dress) end
+        if dress.unit then ns.Safe("give back", Off, dress) end
     end
 end
 

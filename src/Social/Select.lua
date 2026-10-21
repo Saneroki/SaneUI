@@ -124,6 +124,9 @@ local function Words(text, from, to)
         elseif code == "n" then -- a new line
             if within then out[#out + 1] = "\n" end
             index = bar + 2
+        elseif code == "c" and text:sub(bar + 2, bar + 2) == "n" then -- a colour by its name: |cn, the name, a colon
+            local close = text:find(":", bar + 3, true)
+            index = close and close + 1 or size + 1
         elseif code == "c" then -- a colour: |c and eight digits
             index = bar + 10
         elseif code == "H" then -- a link: its hidden part, up to the |h before its words

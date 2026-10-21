@@ -64,6 +64,13 @@ local function Entry(slot, bank, status)
     return { slot = slot, bank = bank, status = status }
 end
 
+-- How many spells your pet's book holds while it has one (HasPetSpells, PetHasSpellbook); nil without.
+local function PetSpells()
+    local count = Ask("HasPetSpells")
+    if type(count) == "number" and count > 0 and Core.Ask(rawget(_G, "PetHasSpellbook")) then return count end
+    return nil
+end
+
 -- The tabs there are now, each { key, name, icon, bank, first, count }: the skill lines', then the pet's.
 function Data.Tabs()
     local tabs = {}
@@ -81,12 +88,17 @@ function Data.Tabs()
                                 first = (line.itemIndexOffset or 0) + 1, count = line.numSpellBookItems or 0 }
         end
     end
-    local count = Ask("HasPetSpells")
-    if type(count) == "number" and count > 0 and Core.Ask(rawget(_G, "PetHasSpellbook")) then
+    local count = PetSpells()
+    if count then
         local icon = Core.Ask(rawget(_G, "GetPetIcon"))
         tabs[#tabs + 1] = { key = "pet", name = Core.Word("PET", "Pet"), icon = icon, bank = pet, first = 1, count = count }
     end
     return tabs
+end
+
+-- Whether your pet has a spellbook now (its tab is there): without one the pet book's key opens nothing (Keys.lua).
+function Data.HasPet()
+    return PetSpells() ~= nil
 end
 
 -- A tab's entries the game's book would show.

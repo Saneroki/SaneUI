@@ -69,7 +69,7 @@ providers or frame fields can taint casting and action bars. The workaround is d
 give back, take over, entries' size, window, Home's tab row); no file listens for `PLAYER_REGEN_ENABLED`.
 The game's page buttons and tab row are `Core.Lend`-ed; `Locked` is `Core.Locked`. Controller mode,
 failed setup or repeated conflicting placement cause fallback. After fallback, changing tabs lets Blizzard redraw.
-A module-level stand-down (Core's door guard) runs `ns.GiveBack`: `Book.StandDown`, `Drag.Cancel`, `Ghosts.Hide`;
+A module-level stand-down (Core's door guard) runs `ns.GiveBack`, each step in `ns.Safe`: `Ghosts.Hide`, `Drag.Cancel`, the trainer's filter back (`Sources.TrainerClosed`), `Book.StandDown`; the TRAINER_* listeners do nothing once `off`;
 `RunUpdate`, the login timers and the book/drag `OnUpdate`s are `ns.Guard`ed, `Ghosts.Refresh` is a no-op once `off`.
 Watcher runs 10 frames after layout, then every 0.2 s only while visible.
 
@@ -80,5 +80,3 @@ via `Core.Described`. Every word shown is in `ns.TEXT` (`Abilities.lua`), the ga
 Pools (`Core.Pool`): Book's grey entries/folds/fold headings, Home's rows/level headings.
 Commands: `list/clear/debug/add/item/save/load/delete/layouts/pages/window reset`.
 Tests: `dev/tests/abilities.lua`; made-up families stand in for class tables, real class files are format-checked.
-Pending QA: learned-spell casting/taint, combat/flyouts, skins, Home tabs/search, resize/minimise,
-weapon-skill recognition and compact readability. See module README for exact checks.

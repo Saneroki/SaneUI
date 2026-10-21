@@ -55,6 +55,12 @@ local function Watch()
     Light(Under())
 end
 
+-- A choice kept: the bags drawn anew, and the bank (its items by category hold this item too, perhaps).
+local function Changed()
+    ns.Bags.Refresh()
+    if ns.Bank then ns.Bank.Refresh() end
+end
+
 -- A click on an item while choosing: put it into the category, or mark or unmark it as junk.
 local function Act(button)
     local record = button and ns.Cells.Record(button)
@@ -62,7 +68,7 @@ local function Act(button)
     if mode == "junk" then
         Categories.MarkJunk(record.item, not Categories.Junk(record.item, record.quality), record.quality)
         Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
-        ns.Bags.Refresh()
+        Changed()
         return
     end
     local key = target
@@ -75,7 +81,7 @@ local function Act(button)
         Categories.Assign(record.item, key)
     end
     Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
-    ns.Bags.Refresh()
+    Changed()
 end
 
 local function Clicked(_, mouse)

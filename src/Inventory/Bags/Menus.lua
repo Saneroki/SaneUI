@@ -32,8 +32,10 @@ local Categories = ns.Categories
 local TEXT = ns.TEXT
 local ACCEPT = Core.Word("ACCEPT", "Accept")
 
+-- A choice kept: the bags drawn anew, and the bank (its items by category, a bank item's choice).
 local function Changed()
     if ns.Bags then ns.Bags.Refresh() end
+    if ns.Bank then ns.Bank.Refresh() end
 end
 
 -- The game's green line for what a click does.
@@ -146,9 +148,7 @@ local function Rename()
     end, Categories.LETTERS)
 end
 local function MoveBy(step)
-    local key = about.key
-    if about.group then key = Categories.Members(about.group)[step < 0 and 1 or #Categories.Members(about.group)] end
-    Categories.Move(key, step)
+    if about.group then Categories.MoveGroup(about.group, step) else Categories.Move(about.key, step) end
     Changed()
 end
 local function With(other)
@@ -174,7 +174,6 @@ local function ToggleHidden()
 end
 local function Off()
     Categories.SwitchOff(about.key, true)
-    if ns.Bags.Viewing() == "cat:" .. about.key then ns.Bags.Choose(nil) end
     Changed()
 end
 local function SetIcon(file)
@@ -186,7 +185,6 @@ local function DeleteIt()
     local key = about.key
     Core.Confirm(TEXT.bagsDeleteAsk, Categories.Word(key), function()
         Categories.Delete(key)
-        if ns.Bags.Viewing() == "cat:" .. key then ns.Bags.Choose(nil) end
         Changed()
     end, true)
 end

@@ -16,7 +16,7 @@ ns.TEXT = {
     -- A spell's facts in its strip (Kinds/Spell.lua), and the units after their numbers
     CAST = "Cast", RANGE = "Range",
     SECONDS = "%s sec", MINUTES = "%s min", HOURS = "%s hr", YARDS = "%s yd",
-    VENDOR = "Vendor", AUCTION = "Auction", USED_IN = "Used in",
+    VENDOR = "Vendor", USED_IN = "Used in",
     -- The names of a panel's sections (Read.Section). Info: a thing's own lines (an item's numbers,
     -- what it does, its description, its durability; a spell's facts and description; a buff's, a
     -- quest's text); an item's set; the sections from data (Kinds/Item.lua, Kinds/Gold.lua)

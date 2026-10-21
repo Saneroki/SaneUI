@@ -210,7 +210,11 @@ local queue, driver = {}, nil -- the tooltips that wait, and the frame whose OnU
 function Filled(tooltip, data)
     local panel = PanelOf(tooltip)
     panel.data, panel.stale = data, false
-    if panel.drawn and not panel:IsShown() and panel.hiddenAt == GetTime() then
+    local refreshed = panel.drawn and not panel:IsShown() and panel.hiddenAt == GetTime()
+    -- Shown again after it was gone, not just refreshed: a main tooltip's comparisons are laid out
+    -- anew (Host.lua); a refresh keeps their places
+    if not (refreshed or panel:IsShown()) then ns.Host.Forget(tooltip) end
+    if refreshed then
         -- Hidden and filled again in one go, as the game does to refresh: the old picture stays,
         -- where it stood, until the new one is drawn, so nothing blinks or jumps (Host.Hold).
         panel:Show()
@@ -236,6 +240,31 @@ local function Settle(tooltip)
         Draw(tooltip, panel.data)
     else
         ns.Host.Free(tooltip, panel)
+    end
+end
+
+-- Every tooltip that waits, those with comparisons first (GameTooltip, the chat link's). The game fills
+-- a tooltip's comparisons before it tells us of the tooltip itself, and a comparison's place is worked
+-- out from its tooltip's panel (Host.lua): drawn first, that panel stands where it does for this thing,
+-- as large as it is for it, not where and as large as it was for the last one.
+-- What waits is taken out of the queue first: a tooltip filled while these are drawn goes into a queue
+-- of its own, whole, and is drawn the next frame (Filled shows the driver again).
+local settling = {} -- the queue being drawn; empty again when it is done, and the next one to fill
+local function SettleAll()
+    local list = queue
+    queue, settling = settling, list
+    local count = #list
+    for index = 1, count do
+        local tooltip = list[index]
+        if tooltip and type(rawget(tooltip, "shoppingTooltips")) == "table" then
+            list[index] = false
+            Guarded(Settle, tooltip)
+        end
+    end
+    for index = 1, count do
+        local tooltip = list[index]
+        list[index] = nil
+        if tooltip then Guarded(Settle, tooltip) end
     end
 end
 
@@ -326,12 +355,17 @@ function Gate()
 end
 
 -- Something failed (a step run by Guarded): Core's StandDown sets ns.off, calls this and tells it
--- once. The tooltips are the game's own again, until the next /reload. Each is given back by
--- itself, so one that fails keeps none of the others.
+-- once. The tooltips are the game's own again, until the next /reload. Nothing waits to be drawn
+-- any more, and each tooltip is given back by itself: a step that fails keeps none of the others.
 ns.GIVEN_BACK = "the game's own tooltips are back"
+local function Unqueue()
+    if driver then driver:Hide() end -- its OnUpdate would only do nothing, every frame
+    wipe(queue)
+end
 function ns.GiveBack()
+    ns.Safe("giving back", Unqueue)
     if not (ns.Panel and ns.Host) then return end
-    for tooltip, panel in pairs(ns.Panel.All()) do pcall(ns.Host.Free, tooltip, panel) end
+    for tooltip, panel in pairs(ns.Panel.All()) do ns.Safe("giving back", ns.Host.Free, tooltip, panel) end
 end
 
 -- The option for the mouse (cursor). The game puts a tooltip without a place of its own into the
@@ -450,11 +484,7 @@ function ns.OnLogin()
     driver:Hide() -- it only runs while a tooltip waits to be drawn
     driver:SetScript("OnUpdate", ns.Guard(function()
         driver:Hide()
-        for index = 1, #queue do
-            local tooltip = queue[index]
-            queue[index] = nil
-            Guarded(Settle, tooltip)
-        end
+        SettleAll()
     end))
     ns.driver = driver
     processor.AddTooltipPostCall(processor.AllTypes, function(tooltip, data)

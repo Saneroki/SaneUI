@@ -18,7 +18,9 @@ local _, ns = ...
 --  and nothing of them shows. Chosen in the full window's dropdown Classic
 --  windows (Window.lua: Keys.GameBags), they show again until they are all
 --  closed. The setting Bag Keys Open Our Bags (bagKeys) switches all of it;
---  standing down gives it all back.
+--  so does Can expand to fullscreen (expand), without which the full screen
+--  never comes, and Edit Mode while it is open (Core.EditMode); standing
+--  down gives it all back.
 --
 --  Override bindings change out of a fight only: set at the login, anew when
 --  your key bindings change (UPDATE_BINDINGS, only when the keys of those
@@ -45,10 +47,13 @@ local gameBags = false -- the player chose the game's bags (Classic windows): th
 local pressing = false -- our key is being answered: the hooks leave it alone
 local held = false     -- the cursor held an item as a bag button was pressed: it went into that bag
 
--- Whether our bags are the bags now: the setting on, the module running.
+-- Whether our bags are the bags now: the setting on, the module running, and the full screen able to come (with
+-- Can expand to fullscreen off it never does, in Edit Mode not until it closes: the game's keys and bags are the
+-- game's then).
 function Keys.Taken()
     local options = ns.options or {}
-    return owner ~= nil and not ns.off and options.bagKeys ~= false
+    local editing = Core.EditMode and Core.EditMode.active
+    return owner ~= nil and not ns.off and options.bagKeys ~= false and options.expand ~= false and not editing
 end
 
 -- The game's binding functions, where this client has them.
@@ -177,6 +182,8 @@ function Keys.Start()
         end
     end
     for _, frame in ipairs(Frames()) do frame:HookScript("OnHide", ns.Guard(Closed)) end
+    -- Edit Mode opened or closed: the bag keys are the game's while it is open (Keys.Taken).
+    if Core.EditMode and Core.EditMode.Watch then Core.EditMode.Watch(ns.Guard(Keys.Apply)) end
     Keys.Apply()
 end
 

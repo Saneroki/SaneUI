@@ -60,8 +60,9 @@ local UTILITY = { TEXT.UTILITY } -- no colour of its own
 
 -- What a spell is, from its description: the first school it names; else healing (or a shield),
 -- crowd control (a stun, a fear, ...), physical (it hurts), or utility. Found once for each spell
--- and kept.
-local known = {} -- [spell] = one of the above
+-- and kept, for at most HELD spells: then they are forgotten together.
+local HELD = 400
+local known, knownCount = {}, 0 -- [spell] = one of the above
 local function School(id, description)
     local found = known[id]
     if found then return found end
@@ -85,7 +86,13 @@ local function School(id, description)
         end
     end
     -- Not kept without a description: the game's spell data may still be on its way.
-    if description then known[id] = found end
+    if description then
+        if knownCount >= HELD then
+            wipe(known)
+            knownCount = 0
+        end
+        known[id], knownCount = found, knownCount + 1
+    end
     return found
 end
 

@@ -242,11 +242,26 @@ bar[2]:GetScript("OnClick")(bar[2])
 for _, item in ipairs(Entries()) do if item.Name._text == "Blizzard" then blizzard = item end end
 check(blizzard.RequiredLevel._text == Item.TEXT.trainable and blizzard.Button.TrainableShadow:IsShown(), "at that level: trainable")
 check(nova.Button.Cooldown._cooldown == "nova's cooldown", "the cooldown by the game's duration object")
+-- Without it, the cooldown's numbers, only where they are plain: the game's swirl takes no hidden value from us.
+C_SpellBook.GetSpellBookItemCooldown = function() return { isEnabled = true, startTime = 1234.5, duration = 8, modRate = 1 } end
+issecretvalue = function(value) return value == 1234.5 end -- that start hidden from addons
+Item.Cooldown(bolt)
+check(bolt.Button.Cooldown._cooldown == nil, "without the duration object, a hidden start: no swirl")
+issecretvalue = nil
+Item.Cooldown(bolt)
+check(bolt.Button.Cooldown._cooldown and bolt.Button.Cooldown._cooldown[1] == 1234.5, "a plain one: the swirl from its numbers")
+C_SpellBook.GetSpellBookItemCooldown = function() return nil end
+Item.Cooldown(bolt)
 onBars[122] = nil
 W.Fire("ACTIONBAR_SLOT_CHANGED")
 W.Wait(0)
 check(nova.missing and nova.Button.ActionBarHighlight:IsShown() and not bolt.Button.ActionBarHighlight:IsShown(),
     "a spell on none of your action bars glows, as in the game's book")
+nova.Button:GetScript("OnDragStart")(nova.Button)
+check(not nova.Button.ActionBarHighlight:IsShown(), "picked up for a bar: no glow while it is on the cursor")
+W.Fire("CURSOR_CHANGED") -- dropped where no bar is
+W.Wait(0)
+check(nova.Button.ActionBarHighlight:IsShown(), "let go: it glows again, as in the game's book")
 onBars[122] = true
 
 -- Casting: the game's secure buttons over the icons, out of a fight.
@@ -291,12 +306,25 @@ covers = Covers()
 check(#covers == 1 and covers[1]._attributes.type1 == "macro" and covers[1]._attributes.macrotext1 == "/cast Bite"
     and covers[1]._attributes.macrotext2 == "/petautocasttoggle Bite", "a pet's ability: cast by its name, autocast on a right click")
 check(Entries()[1].Button.AutoCastOverlay:IsShown() and Entries()[1].Button.Ants:IsShown(), "its autocast shown, as in the game's book")
+spells[1][1].subName = "Rank 2" -- the game's Show all ranks shows each rank of a pet's ability: each casts its own
+W.Fire("SPELLS_CHANGED")
+W.Wait(0)
+covers = Covers()
+check(covers[1]._attributes.macrotext1 == "/cast Bite(Rank 2)" and covers[1]._attributes.macrotext2 == "/petautocasttoggle Bite",
+    "a pet's ability with a rank casts that rank")
+spells[1][1].subName = nil
 
 -- The search: every tab's finds; the tabs unlit meanwhile.
 Part.Search("nova")
 check(#Entries() == 1 and Entries()[1].Name._text == "Frost Nova" and not Tabs()[2].Lit:IsShown(), "the search finds spells of every tab")
 Part.Search("")
 check(#Entries() == 1 and Tabs()[3].Lit:IsShown(), "cleared: the tab chosen before")
+Part.Search("frost")
+local searching = Book.Chosen()
+local general = Tabs()[1]
+general:GetScript("OnClick")(general)
+check(searching == nil and Book.Chosen() == "line1" and #Entries() == 2 and Entries()[1].Name._text == "Attack"
+    and Tabs()[1].Lit:IsShown(), "a tab chosen while searching: its spells, the search left, as the game's book does")
 
 -- Hidden: no secure buttons, nothing listened to.
 Part.Show(false)

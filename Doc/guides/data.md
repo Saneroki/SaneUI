@@ -521,7 +521,7 @@ Map:Spawns("npc:69")                 -- a thing's points: { [map] = { { x, y }, 
 
 ```lua
 local Ships = SaneUI.Core.Data.Ships()
-Ships:Table(3)        -- a boat's or zeppelin's timetable: { round, known, stops = { { arrive, leave, stay, dock, area, ... } } }
+Ships:Table(3)        -- a boat's or zeppelin's timetable: { round, known, given, stops = { { arrive, leave, stay, dock, area, ... } } }
 Ships:Next(3, 2)      -- when it next arrives at its second stop and leaves (server times), whether it stands there now
 Ships:Aboard()        -- aboard one: its key, the stop it comes to next, the seconds until it arrives
 Ships:Near(60)        -- the stops within 60 yards of the player: { { key, stop } }
@@ -530,8 +530,9 @@ Ships:OnLearn(fn)     -- fn(key) on the frame after a ride taught its times
 
 - **The timetable** is made from *Travel*'s record of the way (the game's points and stays): between two stops it
   sails at `Ships.SPEED` yards a second, speeding up and slowing down at `Ships.ACCEL` (the game's transports'
-  own), and a leap onto another map takes no time. Its round is the record's `wait` where the set has it, else one
-  learnt from two rides, else its sailing and stays (`known` false); a known round stretches the sailing to it.
+  own), and a leap onto another map takes no time. Its round is the record's `wait` where the set has it (`given`:
+  no ride changes it), else one learnt from the rides, else its sailing and stays (`known` false); a known round
+  stretches the sailing to it.
 - **`wait`** (seconds once round) is the original game's for the ways Forever's client has unchanged, point for
   point and stay for stay: a batch (`sources.toml`, 6), only where every record of it agrees to the millisecond;
   unverified until a ride confirms it. Forever's own ways have none.
@@ -539,10 +540,18 @@ Ships:OnLearn(fn)     -- fn(key) on the frame after a ride taught its times
   ships run from its own start. It is learnt on a ride: the player's place in the world (`UnitPosition`) moving
   along a way at its full speed says when the ship left its last stop; `Ships.SAMPLES` looks that agree within
   `Ships.AGREE` seconds are a ride. Kept in Core's saved data per realm (`ships[realm][key] = { epoch, seen,
-  rides, round }`), on this computer only, never shared or harvested; trusted `Ships.TRUST` seconds (a restart of
-  the realm starts its ships anew). Without a ride, `Next` gives nil.
-- **Looked at** every `Ships.LOOK` seconds, every `Ships.CLOSE` near a stop or aboard; not in a taxi's flight,
-  and nothing while *Travel* is not loaded (Navigation asks for it at login).
+  rides, round, span, doubt }`; a record of the wrong shape is none), on this computer only, never shared or
+  harvested; trusted `Ships.TRUST` seconds (a restart of the realm starts its ships anew). Without a ride, `Next`
+  gives nil.
+- **The round learnt** (where the set gives none): each ride is compared with the round kept, by the rounds since
+  the ride before. One that agrees with it (within twice `Ships.AGREE`) is of the same run of the realm: it
+  confirms the round, and corrects it when it spans more rounds than the one the round was learnt from (`span`).
+  One that does not is of a new run (a restart) or the round is wrong: its time is taken, the round kept but
+  doubted (`doubt`), and the next ride that does not agree either gives the round from those two (at most
+  `Ships.ROUNDS` rounds apart, within a quarter of the round kept). A round worked out from the estimate starts
+  doubted.
+- **Looked at** every `Ships.LOOK` seconds, every `Ships.CLOSE` near a stop or aboard; not in a taxi's flight. The
+  looks begin when *Travel* arrives (Navigation asks for it at login; Core never does), never before.
 
 ### The trip underway (`Data.Trips`)
 
@@ -570,6 +579,9 @@ A trip's `pace` (yards a second) and `t` (the `GetTime()` of Core's look) let a 
   When its train left its station, `Trips.SAMPLES` looks that agree within `Trips.AGREE` seconds, are its times on
   this realm, kept as the ships' are (`trams[realm][key] = { epoch, seen }`, on this computer only, trusted
   `Data.Ships`' `TRUST`); a train leaves each station every `wait` seconds and stands there `wait` less `time`.
+- **Watched** once a module asks for the trips (`Data.Trips()`: Navigation, as its files are read) and the world is
+  there: the flight master's hooks and the looks, every `Trips.LOOK` seconds, every `Trips.CLOSE` on a trip or in
+  the tram's map. Before, nothing. A kept flight, pace or tram time of the wrong shape is none.
 
 ### Loading
 
@@ -701,7 +713,8 @@ SaneUIData_Characters["forever"] = {
 | `Data.Items(key, place)` | What one of them keeps in a place (`bags`, `bank`, `worn`; the key `account` with `bank`: the account's bank), item by item in the order kept (by item ID): `{ { item = 4500, count = 12 }, ... }`. nil: no such character or place, or not loaded yet. |
 | `Data.Worn(key)` | What one of them wears, slot by slot, by the game's inventory slot IDs: `{ [1] = 16854, [16] = 2139, ... }` (the gear, the ammo, the bags' slots), for a paper doll. nil: no such character, not loaded yet, or its slots not read yet (it has not logged in since Sane UI keeps them). |
 | `Data.Count(item)` | `{ total = 40, [key] = { bags = 12, bank = 8, worn = 1 } }`, the key `account` for the account's bank (`{ bank = 5 }`); nil: none of them has it, or not counted yet. |
-| `Data.CharactersStamp()`, `Data.OnCharacters(fn)` | A number that moves, and `fn()` called, when any of it changes: a view redraws then. |
+| `Data.CharactersStamp()`, `Data.OnCharacters(fn)` | A number that moves when any of it changes (the gold and the day the bank was seen too), and `fn()` called on a later frame, once for what changed together (never inside the job): a view redraws then. |
+| `Data.Forget(key)` | Forgets one of the account's characters (a deleted one, one moved to another account: `Profiles.Forget` calls it): its entry in the saved file and every answer made from it, and those who listen are told. Never the one played; asked before the pack has loaded, done once it has. true when there is one to forget. |
 
 - **Places:** `bags` (the backpack, the bags, the reagent bag, the keyring where there is one), `worn` (the
   gear and the bags in their slots), `bank` (the character's bank tabs, `C_Bank.FetchPurchasedBankTabIDs`),
@@ -713,23 +726,29 @@ SaneUIData_Characters["forever"] = {
 - **Mark, then read:** an event marks a place (`BAG_UPDATE`, `PLAYER_EQUIPMENT_CHANGED`, `PLAYER_MONEY`,
   `PLAYER_LEVEL_UP`, the bank's events); the reading is a job of the scheduler (out of combat, within the
   budget, a bag at a time), started at `BAG_UPDATE_DELAYED` for the bags. **The bank only while it is open**
-  (`BANKFRAME_OPENED`, read again when it closes if still marked): read when closed it would be empty, and
-  what was seen of it stays. At the logout what is still marked is read at once.
+  (`BANKFRAME_OPENED`, read again when it closes if still marked), and whole, in one step: read when closed it
+  would be empty, and what was seen of it stays (a read cut between two of its tabs would keep it half read). At
+  the logout what is still marked is read at once, and the place the job was reading too.
+- **The saved part is checked** when the pack loads: an entry that is no table or has no name, a packed place
+  that is no text, and a plain value of the wrong kind (`class`, `level`, `money`, ...) are set aside under
+  `broken`, never handed out.
 - **Nothing read is nothing written:** a client without the container functions reads nothing, and what is
   kept stays.
 - **The whole name:** a name without its surname (the game not knowing it yet) never takes the place of a
   whole one; two characters with one first name are two characters (their keys).
 - **Counts** are worked out once, in steps, after the pack has loaded (every place taken apart), and kept up
   to date from then on: an item's tooltip asks one table.
-- *Not built yet (1c.4):* the auction log and own auctions, the mailbox, a character deleted in *Profiles*.
+- *Not built yet (1c.4):* the auction log and own auctions, the mailbox.
 
 ## Messages *(1f)*
 
 *The transport is built (2026-10-20, ahead of 1f, for the guild's records): `Core.Wire` (`src/Core/Data/Wire.lua`):
 `Wire.Listen(kind, fn)`, `Wire.Send(kind, fields, channel, target, urgent)`, `Wire.ListenBlock(kind, fn)`,
-`Wire.SendBlock(kind, text, channel, target)`. A block's part is the kind P (`P1\t<sign>\t<kind>\t<transfer>\t<part>\t<parts>\t<size>\t<text>`,
-200 Base64 characters a part); the sign of a game version: `f` Forever, `b` its beta, `p` its test realm.
-The queue: ten at once, then one a second, half that for 30 seconds after a throttle, nothing in a fight or a
+`Wire.SendBlock(kind, text, channel, target, tag)`, `Wire.Drop(kind, tag)`. A block's part is the kind P (`P1\t<sign>\t<kind>\t<transfer>\t<part>\t<parts>\t<size>\t<text>`,
+200 Base64 characters a part; its numbers are taken only as digits); the sign of a game version: `f` Forever, `b` its
+beta, `p` its test realm. A block is queued only when all its parts fit in the queue (a block in part is of no use),
+each part with the sender's tag (a record's kind), so that `Wire.Drop` takes out what still waits of it (a switch
+turned off). The queue: ten at once, then one a second, half that for 30 seconds after a throttle, nothing in a fight or a
 lockdown, at most 300 waiting (urgent for 10 minutes, bulk for an hour). Taken in: 90 messages a minute from a
 sender, more and it is not heard for ten minutes; at most 1,000 waiting in the inbox.*
 
@@ -753,7 +772,7 @@ People information, built locally for each user and never shipped (CLAUDE.md, *G
 of the pack Guild (`saved = true`, no sets), per guild (its name and realm).
 
 ```lua
-SaneUIData_Guild["forever"] = { format = 1, guilds = { ["The Order-Realm"] = {
+SaneUIData_Guild["forever"] = { format = 1, guildFormat = 1, guilds = { ["The Order-Realm"] = {
     seen = 20744,                                          -- the server's day the roster was last read
     members = { ["Droopy Fairwind"] = "rank\031level\031joined" },  -- what the history is compared with
     history = "day\031what\031key\031from\031to\030...",       -- oldest first, the last 500: join, leave, up, down, level
@@ -761,23 +780,31 @@ SaneUIData_Guild["forever"] = { format = 1, guilds = { ["The Order-Realm"] = {
 } } }
 ```
 
-- **The roster** is the game's (`GetGuildRosterInfo` after `GUILD_ROSTER_UPDATE`, asked for with
-  `C_GuildInfo.GuildRoster`), each member by its key (*Players*). The first read of a guild notes no history; a roster
-  that shrinks by more than a tenth at once, or that the game gives only in part, notes nobody leaving.
+- **Its format:** `guildFormat` is the guilds' own, apart from the framework's `format` (*Saved variables*); a part
+  without it is of the first.
+- **The roster** is the game's (`GetGuildRosterInfo`), read after `GUILD_ROSTER_UPDATE` by the scheduler (the job
+  *guild: roster*: never in a fight or while the game restricts addons, then once it lifts, one read however often the
+  game said it changed). It is asked for with `C_GuildInfo.GuildRoster` at the start, by Sync, and while a view shows
+  it whenever the game lets (`Data.Guild.Watch`); never on a timer. Each member by its key (*Players*). The first
+  read of a guild notes no history and nobody's day of joining; a roster the game gives only in part notes nobody
+  leaving, and one that shrinks by more than a tenth at once is believed only when a read a minute later still says it.
 - **Records**, by kind (`card`, and the kinds a module adds with `Data.Guild.Kind`), each with its largest size:
   taken only from their owner (the sender the server names: a member publishes only its own), only from a member of
   this guild (a whisper from anybody else is dropped), only newer than the one kept, never stamped more than a day
-  ahead of this client's clock.
+  ahead of this client's clock. A member's records go when its leaving is noted.
 - **The card** (`Data.Guild.Card()`, `ReadCard`): `1`, class, race, sex, level, item level, worn (`slot:item:level`,
-  cut by commas), professions (`name:rank:most`), cut by `\031`. Made again a few seconds after the gear, the level
-  or the skills change, and published when it differs.
-- **The wire's kind G** (*Messages*): `h` (a hello: a newcomer flag, Sane UI's version, `kind=stamp` of each record
+  cut by commas), professions (`name:rank:most`, from the game's skill lines of the professions and secondary
+  skills), cut by `\031`. Made again 3 seconds after the gear or the level change and a minute after the skills (they
+  rise in runs), and published when it differs.
+- **The wire's kind G** (*Messages*): `h` (a hello: a fresh flag, Sane UI's version, `kind=stamp` of each record
   this character shares), `a` (asking its owner for a record, by a whisper); a record goes as a block of kind G
-  (`kind\031stamp\031text`): to the guild when it changes, whispered to the one who asked. A hello at login (a
-  quarter minute after), every 15 minutes, and, to a newcomer's, once after a random wait of up to six seconds.
-  Two asks wait for an answer at once; the same record of the same member is asked at most once a minute.
+  (`kind\031stamp\031text`): to the guild when it changes, whispered to the one who asked (to each member each kind
+  once a minute at most; a newer one at once). A hello to the guild at login (a quarter minute after, fresh) and
+  every 15 minutes; a fresh one (a newcomer's, or Sync's, once a minute at most) is answered by each member's own,
+  whispered to the one who asked, once a minute per member, after a random wait of up to six seconds. Two asks wait
+  for an answer at once; the same record of the same member is asked at most once a minute.
 - **Allowed by the player:** a kind is sent only while the module's switch for it is on (`Data.Guild.Allow`);
-  off, nobody who asks gets it.
+  off, nobody who asks gets it, and what still waits to be sent of it is dropped (`Wire.Drop`).
 
 ## Players
 

@@ -188,12 +188,16 @@ local function Flight(hops, world)
     return { hops = hops, world = world, way = way, yards = whole and at or nil, stops = stops }
 end
 
--- This character's pace: the median of its last flights', else Trips.PACE.
+-- This character's pace: the median of its last flights', else Trips.PACE. The saved file may hold anything: only
+-- a pace that is a number above 0 counts.
 local function Pace()
-    local list = Character().flightPaces
-    if type(list) ~= "table" or #list == 0 then return Trips.PACE end
-    local sorted = {}
-    for index, pace in ipairs(list) do sorted[index] = pace end
+    local list, sorted = Character().flightPaces, {}
+    if type(list) == "table" then
+        for _, pace in ipairs(list) do
+            if type(pace) == "number" and pace > 0 then sorted[#sorted + 1] = pace end
+        end
+    end
+    if #sorted == 0 then return Trips.PACE end
     table.sort(sorted)
     return sorted[math.floor((#sorted + 1) / 2)]
 end
@@ -328,13 +332,19 @@ local function ByLine(record, x, y)
     return ((x - a.x) * dx + (y - a.y) * dy) / length, math.abs((x - a.x) * dy - (y - a.y) * dx) / length, length
 end
 
+-- This realm's learnt times of a tram (key nil: of all, their table). The saved file may hold anything: a part
+-- that is no table is made anew, a record without a number for its epoch is none.
 local function TramLearnt(key)
     local store = Core.Store(Core.name)
-    store.trams = store.trams or {}
+    if type(store.trams) ~= "table" then store.trams = {} end
     local realm = Core.realm or "?"
-    store.trams[realm] = store.trams[realm] or {}
-    if key == nil then return store.trams[realm] end
-    return store.trams[realm][key]
+    if type(store.trams[realm]) ~= "table" then store.trams[realm] = {} end
+    local all = store.trams[realm]
+    if key == nil then return all end
+    local learnt = all[key]
+    if type(learnt) ~= "table" or type(learnt.epoch) ~= "number" then return nil end
+    if type(learnt.seen) ~= "number" then learnt.seen = nil end
+    return learnt
 end
 
 -- A look on a tram ride: when it left its station (server time); enough that agree, its times on this realm.
@@ -427,6 +437,20 @@ end
 -------------------------------------------------------------------------------
 --  The looks
 -------------------------------------------------------------------------------
+-- The flight kept for this character (a /reload in the air), if the saved file holds it whole: when it began,
+-- and its hops as Route made them (tables, their names text); else none.
+local function Kept()
+    local kept = Character().trip
+    if type(kept) ~= "table" or type(kept.at) ~= "number" or type(kept.hops) ~= "table" or not kept.hops[1] then
+        return nil
+    end
+    for _, hop in ipairs(kept.hops) do
+        if type(hop) ~= "table" or (hop.fromName ~= nil and type(hop.fromName) ~= "string")
+            or (hop.toName ~= nil and type(hop.toName) ~= "string") then return nil end
+    end
+    return kept
+end
+
 local function Look()
     local now = GetTime()
     local flying = OnTaxi()
@@ -437,10 +461,9 @@ local function Look()
             taken = nil
         else
             -- On a flight not seen taken (a /reload in the air): the one kept, while the player is on its way.
-            local kept = Character().trip
+            local kept = Kept()
             local server = Core.Plain(Core.Ask(GetServerTime))
-            if type(kept) == "table" and type(kept.hops) == "table" and #kept.hops > 0 and server and kept.at
-                and server - kept.at < Trips.STALE then
+            if kept and server and server - kept.at < Trips.STALE then
                 flight = Flight(kept.hops, kept.world)
                 flight.start = now - Trips.MEASURE
             end
@@ -493,23 +516,33 @@ local function Hook()
     end
 end
 
-local looking = false
+local wanted, entered, looking = false, false, false -- a module asked for the trips; the world is there; the looks run
 local Tick
 Tick = Core.Guard("data: trips", function()
     local close = Look()
     C_Timer.After(close and Trips.CLOSE or Trips.LOOK, Tick) -- unguarded: Tick is the guard (Core.Guard)
 end)
-Core.On("PLAYER_ENTERING_WORLD", function()
-    Hook()
-    tram = nil
-    if looking then return end
+-- The hooks and the looks begin once a module asked for the trips (Data.Trips: Navigation, as its files are read)
+-- and the world is there; before, nothing is watched (nobody would show it).
+local function Begin()
+    if looking or not (wanted and entered) then return end
     looking = true
+    Hook()
     C_Timer.After(Trips.CLOSE, Tick) -- unguarded: Tick is the guard (Core.Guard)
+end
+Core.On("PLAYER_ENTERING_WORLD", function()
+    tram = nil
+    entered = true
+    Begin()
 end)
 -- Taking off and landing: looked at at once.
-Core.On("PLAYER_CONTROL_LOST", function() Look() end)
-Core.On("PLAYER_CONTROL_GAINED", function() Look() end)
+Core.On("PLAYER_CONTROL_LOST", function() if looking then Look() end end)
+Core.On("PLAYER_CONTROL_GAINED", function() if looking then Look() end end)
 
 function Data.Trips()
+    if not wanted then
+        wanted = true
+        Begin()
+    end
     return Trips
 end

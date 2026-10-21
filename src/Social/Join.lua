@@ -61,8 +61,7 @@ end
 
 -- Brings the channels in line with the wishes.
 function Join.Settle()
-    local chat = rawget(_G, "C_ChatInfo")
-    if chat and Core.Ask(chat.InChatMessagingLockdown) then
+    if ns.ChatLocked() then
         owed = true
         return
     end

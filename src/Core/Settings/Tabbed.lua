@@ -96,19 +96,10 @@ end
 -- drawn is also a setting the search finds (state.entries).
 local function Build(state)
     local name, byKey = state.name, state.byKey
-    local function Get(option) -- the default if the module keeps none: a slider fails on none
-        return function()
-            local settings = Core.Settings(name)
-            local value = settings and settings[option.key]
-            if value == nil then return option.default end
-            return value
-        end
-    end
-    local function Set(option) return function(value) Core.Set(name, option.key, value) end end
-    local function Enabled(option)
-        if not option.parent then return nil end
-        return function() return Config.Free(Core.Settings(name) or {}, byKey, option) end
-    end
+    -- A control's value, its setting and whether it can be changed, as on the game's lists (Settings.lua).
+    local function Get(option) return Config.Getter(name, option) end
+    local function Set(option) return Config.Setter(name, option) end
+    local function Enabled(option) return Config.Enabled(name, byKey, option) end
     -- The control right of a line's words, by its kind (Config.Kind).
     local function Control(box, option)
         local kind = Config.Kind(option)

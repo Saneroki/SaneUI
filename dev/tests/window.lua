@@ -1020,6 +1020,12 @@ find:GetScript("OnMouseDown")(find)
 find:GetScript("OnClick")(find)
 box:ClearFocus()
 check(not box:IsShown() and find:IsShown(), "left empty, it closes when the cursor leaves it")
+find:GetScript("OnMouseDown")(find)
+find:GetScript("OnClick")(find)
+box:SetText("tra")
+traderWindow:EndSearch()
+check(not box:IsShown() and find:IsShown() and searched[#searched] == "" and box._text == "" and not box._focus,
+    "a module that leaves the search itself closes it as Esc does: emptied, the module told, the title back")
 
 -- Moved by the title bar
 check(traderWindow:Draggable(), "free, its title bar moves it at any time")
@@ -1165,18 +1171,19 @@ guarded._protected = true
 guarded:HookScript("OnHide", function() guardedClosed = guardedClosed + 1 end)
 local guardStand = SaneUIEscape
 W.combat = true
+check(guardStand:IsShown(), "shown, Esc is ours for it")
+guardStand:Hide()
+check(guarded:IsShown() and guardedClosed == 0, "in a fight Esc does not hide it: nothing of ours hides it then")
+W.Wait(0.1)
+check(not guardStand:IsShown(), "and Esc is the game's again meanwhile: the stand-in would take every Esc of the fight")
 local guardClose = guardedWindow.buttons.list[1]
 guardClose:GetScript("OnClick")(guardClose)
-check(guarded:IsShown() and guardedClosed == 0, "in a fight its close button does not hide it: nothing of ours hides it then")
-guardStand:Hide()
-check(guarded:IsShown(), "nor does Esc")
-W.Wait(0.1)
-check(guardStand:IsShown(), "and Esc stays ours while it is shown: the stand-in is back a moment later")
+check(guarded:IsShown() and guardedClosed == 0, "nor does its close button")
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 check(not guarded:IsShown() and guardedClosed == 1, "the fight over, it closes, once")
 W.Wait(0.1)
-check(not guardStand:IsShown(), "and Esc is the game's again")
+check(not guardStand:IsShown(), "and Esc stays the game's")
 end
 
 -- Esc closes a window made so, small or full, as the game's panels close
@@ -1823,12 +1830,35 @@ do
     check(button and button:IsShown() and button._points[1][2] == gameMap.CloseButton and button._parent == UIParent
         and button._attributes.type == "click" and button._attributes.clickbutton == gameMap.CloseButton,
         "the game's panel has the button Sane UI beside its close button: a secure one on UIParent that clicks that close button")
+    check(button._attributes.useOnKeyDown == false,
+        "on its release, as it is registered, whatever the game's key-down setting says (else it would click nothing)")
     W.Wait(1)
     gameMap:Hide() -- the game's close button, clicked by the secure button: the game closes its own window
     check(not button:IsShown(), "the game's window closed, the button goes with it")
     button:GetScript("PostClick")(button)
     check(atlas.frame:IsShown() and atlas.edge.full, "then ours fills the screen")
     atlas.edge:Fill(false)
+    W.Wait(1)
+    -- In a fight the secure button is neither shown nor hidden: clear while the game's window is gone, and a press
+    -- on it then brings nothing of ours.
+    atlas.frame:Hide()
+    gameMap:Show()
+    W.combat = true
+    gameMap:Hide()
+    check(button:IsShown() and button:GetAlpha() == 0, "in a fight the game's window closed: its button stays, clear")
+    button:GetScript("PreClick")(button)
+    button:GetScript("PostClick")(button)
+    check(not atlas.frame:IsShown(), "and a press on it then brings nothing of ours")
+    gameMap:Show()
+    check(button:GetAlpha() == 1, "the game's window back in the fight: its button is seen again")
+    button:GetScript("PreClick")(button)
+    gameMap:Hide() -- the secure click closes the game's window before ours comes
+    button:GetScript("PostClick")(button)
+    check(atlas.frame:IsShown(), "pressed while seen, ours comes, though the game's window is gone by then")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    check(not button:IsShown() and button:GetAlpha() == 1, "the fight over, it goes with the game's window, seen when it comes")
+    atlas.frame:Hide()
     W.Wait(1)
     running = false
     gameMap:Show()
@@ -1837,6 +1867,193 @@ do
     chat.frame:Hide()
     atlas.frame:Hide()
 end
+
+-- The board (Board.lua): its full screen opens only on a shown window that may fill the screen; a key another
+-- window takes gets a panel of its own; a line let go unchanged lays nothing out; a kept layout a hand spoiled is
+-- mended, not trusted (in a function of its own: the main chunk is at Lua's 200 locals) -------------------------
+;(function()
+    local frame = CreateFrame("Frame", nil, UIParent)
+    local store, built, told, sized = {}, {}, {}, 0
+    local settings = { expand = false, motion = "off", expandOpacity = 50, expandTexture = "solid", corners = 10, squareEdges = true }
+    local function Spec(title)
+        return { key = "guild", title = title, build = function() built[#built + 1] = title end,
+                 show = function(_, on) told[#told + 1] = title .. (on and " shown" or " hidden") end,
+                 size = function() sized = sized + 1 end }
+    end
+    local own, guest = Spec("own"), Spec("guest")
+    local talks = { key = "talks", title = "Talks", size = function() sized = sized + 1 end }
+    local board, handle
+    local function Lay() if handle.edge.full then board:Show(handle.inside, 1920, 1048) else board:Hide() end end
+    handle = Window.New(frame, { store = store, key = "boarded", title = "Boarded", dock = true, edge = settings,
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 }, docked = function() if board then Lay() end end })
+    board = Core.Board.New(handle, { store = store, key = "layouts", label = "Boarded",
+        windows = function() return { own, talks } end, changed = Lay,
+        default = function() return { split = "x", parts = { { key = "guild" }, { key = "talks" } }, shares = { 1, 1 } } end })
+    handle:Place()
+    at(frame, 810, 440)
+    frame:Hide()
+    check(Core.Board.Open("Boarded", "guild") == false and not handle.edge.full and board.wanted == nil,
+        "a board whose window is closed opens nothing: the caller shows that window elsewhere")
+    frame:Show()
+    check(Core.Board.Open("Boarded", "guild") == false and not handle.edge.full and board.wanted == nil,
+        "nor one whose window may not fill the screen now (Can expand to fullscreen off)")
+    settings.expand = true
+    check(Core.Board.Open("Boarded", "guild") == true and handle.edge.full and Core.Board.Standing("Boarded")
+        and built[1] == "own" and told[#told] == "own shown", "else its full screen comes, with its windows")
+
+    local first = board.panels.guild
+    Core.Board.Offer("Boarded", guest)
+    local second = board.panels.guild
+    check(second ~= first and second.spec == guest and not first:IsShown() and second:IsShown() and built[#built] == "guest"
+        and told[#told - 1] == "own hidden" and told[#told] == "guest shown",
+        "another window offered under that key: the one before is told it is hidden, the new one has a panel of its own")
+    Core.Board.Withdraw("Boarded", "guild")
+    check(board.panels.guild.spec == own and board.panels.guild ~= second and not second:IsShown() and built[#built] == "own"
+        and told[#told - 1] == "guest hidden" and told[#told] == "own shown",
+        "withdrawn, the board's own stands there again, in a panel built for it")
+
+    local strip, line = board.strips[1], board.strips[1].of
+    local before, watching = #W.frames, nil
+    strip:GetScript("OnMouseDown")(strip, "LeftButton")
+    for index = before + 1, #W.frames do
+        if W.frames[index]._parent == nil and W.frames[index]._scripts.OnUpdate then watching = W.frames[index] end
+    end
+    local laid = sized
+    W.cursorX, W.cursorY = line[3] + 100, 0
+    watching:GetScript("OnUpdate")(watching) -- the one watcher, made when something was first held
+    local dragged = strip._points[1][4]
+    Core.Board.Release(true)
+    check(dragged ~= line[3] and strip._points[1][4] == line[3] and sized == laid,
+        "a line let go as it was: only its strip goes back over the gap, nothing is laid out anew")
+    W.cursorX, W.cursorY = 0, 0
+
+    store.layouts = { chosen = 2, tabs = { true, { name = 5, tree = { split = "x", parts = { "junk", { key = 7 }, { key = "guild" } } } } } }
+    Lay()
+    check(type(store.layouts.tabs[1]) == "table" and board.rects.guild and board.rects.guild[3] == 1920 - 2 * Core.Board.PAD
+        and board.strip.tabs[2].Text._text == "Layout 2",
+        "a kept layout a hand spoiled (a tab that is no table, parts that are none, no shares, a name that is no word) is mended")
+    handle.edge:Fill(false)
+    frame:Hide()
+end)()
+
+-- Let go when hidden mid-drag, Esc given up and taken again, the screen's size changed, a window not ours seated
+-- (in a function of its own: the main chunk is at Lua's 200 locals) ------------------------------------------------
+;(function()
+    -- Hidden in the middle of a drag or a sizing (closed by its module, the game, Esc), a window is let go where it is.
+    local dragged, dragStore = CreateFrame("Frame", nil, UIParent), {}
+    local dragWindow = Window.New(dragged, { store = dragStore, key = "dragged", title = "Dragged", titleBar = true,
+        dock = true, dragDocked = true, sizable = true, grip = "hover",
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
+    dragWindow:Place()
+    local zone
+    for name in pairs(Dock.ZONES) do if not zone and not Dock.Holder(name, dragged) then zone = name end end
+    at(dragged, Dock.Rect(zone, 300, 200, 1920, 1080))
+    dragWindow.bar:GetScript("OnDragStart")(dragWindow.bar)
+    watcher:GetScript("OnUpdate")(watcher)
+    check(dragged._moving and dragWindow.moving and watcher:IsShown() and ghost:IsShown(), "(dragged by its title bar to a zone)")
+    dragged:Hide()
+    check(not dragged._moving and not dragWindow.moving and not watcher:IsShown() and not ghost:IsShown()
+        and dragStore.dragged.dock == zone, "hidden in the middle of a drag, it is let go where it is: the dock's shape goes")
+    dragged:Show()
+    dragWindow.grip:GetScript("OnMouseDown")(dragWindow.grip)
+    check(dragged._sizing and dragWindow.sizing, "(sized by its grip)")
+    dragged:Hide()
+    check(not dragged._sizing and not dragWindow.sizing and dragStore.dragged.width == 300,
+        "and hidden in the middle of a sizing, it is let go at its size")
+
+    -- Esc given up while a view lies over a window (Core's options on a full screen), and taken again after it.
+    local escaped = CreateFrame("Frame", nil, UIParent)
+    local escapedWindow = Window.New(escaped, { store = {}, key = "escaped", title = "Escaped", titleBar = true,
+        escape = "close", first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
+    escapedWindow:Place()
+    escapedWindow:Escapes(false)
+    SaneUIEscape:Hide()
+    check(escaped:IsShown(), "a window Esc closes is not closed by it while a view over it takes Esc for itself")
+    escapedWindow:Escapes(true)
+    check(SaneUIEscape:IsShown(), "the view gone, Esc is the window's again")
+    SaneUIEscape:Hide()
+    check(not escaped:IsShown(), "and closes it")
+    escapedWindow:Escapes(true)
+    W.Wait(0.1)
+    check(not SaneUIEscape:IsShown(), "a window that is closed takes no Esc again")
+
+    -- A protected window closed in a fight that its module closes later (a talk): Esc's again after the fight.
+    local talk = CreateFrame("Frame", nil, UIParent)
+    local talkWindow = Window.New(talk, { store = {}, key = "talk", title = "Talk", titleBar = true, escape = "close",
+        close = function() end, first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
+    talkWindow:Place()
+    talk._protected = true
+    W.combat = true
+    SaneUIEscape:Hide()
+    W.Wait(0.1)
+    check(talk:IsShown() and not SaneUIEscape:IsShown(), "(in a fight Esc waits for its end, and is the game's meanwhile)")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    check(talk:IsShown() and SaneUIEscape:IsShown(), "the fight over, one its module closes later is Esc's again while it is shown")
+    talk._protected = nil
+    talk:Hide()
+
+    -- The screen's size or the UI's scale changed: a shown window at rest is placed anew, no larger than the screen;
+    -- one that stands full lays out what it holds anew, once.
+    local big = CreateFrame("Frame", nil, UIParent)
+    local bigWindow = Window.New(big, { store = {}, key = "big", title = "Big", sizable = true,
+        first = { point = "CENTER", x = 0, y = 0, width = 1800, height = 1000 } })
+    bigWindow:Place()
+    local laid, full = 0, CreateFrame("Frame", nil, UIParent)
+    local fullWindow = Window.New(full, { store = {}, key = "fully", title = "Fully", dock = true,
+        edge = { expand = true, motion = "off", expandOpacity = 50, expandTexture = "solid", corners = 10, squareEdges = true },
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 }, docked = function() laid = laid + 1 end })
+    fullWindow:Place()
+    at(full, 810, 440)
+    fullWindow.edge:Fill(true)
+    local was = laid
+    UIParent._width, UIParent._height = 1280, 720
+    W.Fire("DISPLAY_SIZE_CHANGED")
+    W.Fire("UI_SCALE_CHANGED")
+    W.Wait(0.1)
+    check(big._width == 1280 and big._height == 720, "the screen smaller: a shown window at rest is placed anew, no larger than it")
+    check(fullWindow.edge.full and laid == was + 1, "and one that stands full lays out what it holds anew, once for both changes")
+    UIParent._width, UIParent._height = 1920, 1080
+    W.Fire("UI_SCALE_CHANGED")
+    W.Wait(0.1)
+    fullWindow.edge:Fill(false)
+    big:Hide()
+    full:Hide()
+
+    -- A window not ours seated in a room of a full window (Seat.lua): its place, scale and layer lent and followed,
+    -- given back exactly; closed, given back and told.
+    local game = CreateFrame("Frame", "SaneTestSeated", UIParent)
+    game:SetSize(400, 300)
+    game:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 16, -116)
+    game:SetFrameStrata("MEDIUM")
+    game:SetFrameLevel(10)
+    local gone = 0
+    local seat = Core.Seat.New(game, { label = "test: seat", gone = function() gone = gone + 1 end })
+    check(seat:Hold(100, 900, 200, 600, "HIGH", 50) and seat.held and Core.Lent(game), "a shown window is seated")
+    local point = game._points[1]
+    check(game:GetScale() == 0.5 and #game._points == 1 and point[1] == "TOPLEFT" and point[2] == UIParent and point[3] == "BOTTOMLEFT"
+        and point[4] == 200 and point[5] == 1350 and game._strata == "HIGH" and game._level == 50,
+        "as large as fits there and never larger than it is, in the room's middle, in that layer")
+    game:SetPoint("CENTER")
+    check(#game._points == 1 and game._points[1][1] == "TOPLEFT" and game._points[1][4] == 200,
+        "placed anew by the game, it is put back in its room at once (its own placing passes the hook)")
+    game:SetScale(1)
+    check(game:GetScale() == 0.5, "scaled anew by the game, likewise")
+    seat:Free()
+    point = game._points[1]
+    check(not seat.held and not Core.Lent(game) and game:GetScale() == 1 and #game._points == 1 and point[1] == "TOPLEFT"
+        and point[3] == "TOPLEFT" and point[4] == 16 and point[5] == -116 and game._strata == "MEDIUM" and game._level == 10,
+        "freed, it is given back exactly: its place, scale and layer as they were")
+    game:SetPoint("CENTER")
+    check(#game._points == 2, "and left alone then: the game places it as it likes")
+    game:ClearAllPoints()
+    game:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 16, -116)
+    seat:Hold(100, 900, 200, 600, "HIGH", 50)
+    game:Hide()
+    check(gone == 1 and not seat.held and game:GetScale() == 1 and game._strata == "MEDIUM" and game._points[1][4] == 16,
+        "closed while seated, it is given back, and that is told")
+    check(seat:Hold(100, 900, 200, 600, "HIGH", 50) == false, "a closed window is not seated")
+end)()
 
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Windows: all %d checks passed.\n"):format(passed))

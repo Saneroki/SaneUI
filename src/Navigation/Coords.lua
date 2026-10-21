@@ -317,10 +317,20 @@ function Coords.ZoneAt(plane, u, v)
     return nil
 end
 
+-- Whether a map's box lies in its plane (Coords.PlaneOf), in the same instance: a battleground's map, or an isle of
+-- its own instance that the game's map tree hangs under a continent, has a box of its own world and no place in
+-- that continent's plane.
+function Coords.InPlane(map)
+    local box, plane = Coords.Box(map), Coords.PlaneOf(map)
+    local home = plane and Coords.Box(plane)
+    return box and home and box.continent == home.continent or false
+end
+
 -- A point of a map (0 to 1) in a plane: the map's own box, linked from its plane (Coords.PlaneOf) to that one. nil
--- when the map has no box or its plane is not linked.
+-- when the map has no box, its box lies in another instance than its plane's (Coords.InPlane), or its plane is not
+-- linked.
 function Coords.MapToPlane(map, x, y, continent)
-    local box = Coords.Box(map)
+    local box = Coords.InPlane(map) and Coords.Box(map)
     local home = box and Coords.PlaneOf(map)
     local link = home and Coords.Link(home, continent)
     if not link then return nil end

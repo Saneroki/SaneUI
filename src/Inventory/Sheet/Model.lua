@@ -57,9 +57,16 @@ local function Background()
     overlay:SetAllPoints()
 end
 
--- An item on the cursor let go over the model: put on, as the game's sheet does.
+-- An item on the cursor let go over the model: put on where the game says it can be, as the game's sheet does
+-- (CharacterModelSceneMixin: a drop, or the left button let go).
 local function Dropped()
-    if Game("CursorHasItem") then Game("AutoEquipCursorItem") end
+    local paperDoll = rawget(_G, "C_PaperDollInfo")
+    if not (Game("CursorHasItem") and paperDoll and Core.Ask(paperDoll.CanAutoEquipCursorItem)) then return end
+    Game("AutoEquipCursorItem")
+end
+
+local function Released(_, button)
+    if button == "LeftButton" then Dropped() end
 end
 
 -- The scene below the pane's top strip, filling the rest of the left pane.
@@ -71,7 +78,7 @@ function Model.Build(pane, strip)
     scene:SetPoint("TOPRIGHT", strip, "BOTTOMRIGHT")
     scene:SetPoint("BOTTOMRIGHT", pane, "BOTTOMRIGHT")
     Background()
-    scene:HookScript("OnMouseUp", function() ns.Safe("character", Dropped) end)
+    scene:HookScript("OnMouseUp", function(self, button) ns.Safe("character", Released, self, button) end)
     scene:HookScript("OnReceiveDrag", function() ns.Safe("character", Dropped) end)
     local controls = select(2, pcall(CreateFrame, "Frame", nil, scene, "ModelSceneControlFrameTemplate"))
     if type(controls) == "table" and controls.SetModelScene then

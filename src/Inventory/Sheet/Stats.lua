@@ -50,7 +50,10 @@ local function Template(element)
     return "CharacterStatFrameScrollBoxLabelElementTemplate"
 end
 
+-- A row drawn by the game's Init, which works its stat out anew: while the game restricts addons the stats are
+-- secret to addon code (as Stats.Refresh waits), so a row the list lays out again then is left as it is.
 local function Draw(row, element)
+    if Core.Restricted() then return end
     row:Init(element)
 end
 
@@ -183,9 +186,10 @@ local EVENTS = { "COMBAT_RATING_UPDATE", "SPEED_UPDATE", "SKILL_LINES_CHANGED", 
 local UNIT_EVENTS = { "UNIT_STATS", "UNIT_RANGEDDAMAGE", "UNIT_RANGED_ATTACK_POWER", "UNIT_ATTACK", "UNIT_SPELL_HASTE",
                       "UNIT_RESISTANCES", "UNIT_ATTACK_POWER", "UNIT_ATTACK_SPEED", "UNIT_DAMAGE", "UNIT_MAXHEALTH",
                       "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER", "UNIT_LEVEL" }
-local PET_EVENTS = { "UNIT_PET", "PET_STATS_UPDATE" }
+local PET_EVENTS = { "PET_STATS_UPDATE" }
 
--- The stats' window is shown (on) or hidden: the game listened to only while it is shown, the pet's too.
+-- The stats' window is shown (on) or hidden: the game listened to only while it is shown, the pet's too (UNIT_PET
+-- names the pet's owner: the player's only).
 function Stats.Show(on)
     for _, event in ipairs(EVENTS) do
         if on then Core.On(event, later) else Core.Off(event, later) end
@@ -193,6 +197,7 @@ function Stats.Show(on)
     for _, event in ipairs(PET_EVENTS) do
         if on then Core.On(event, later) else Core.Off(event, later) end
     end
+    if on then Core.OnUnit("UNIT_PET", "player", later) else Core.OffUnit("UNIT_PET", "player", later) end
     for _, event in ipairs(UNIT_EVENTS) do
         if on then
             Core.OnUnit(event, "player", later)

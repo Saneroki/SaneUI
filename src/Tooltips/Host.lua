@@ -101,8 +101,10 @@ end
 -- So these panels stand at places of the module's own, points on UIParent, worked out from what
 -- holds still:
 --   - the main panel's place (the panel of the tooltip they belong to), taken when it shows a new
---     thing (another owner or item), and afterwards only once it has rested in a new place for
---     REST seconds (Host.Track, every frame of the main panel): a wobble is never followed, a move is;
+--     thing (another owner or item) or shows again after it was gone, once it is drawn for it (the
+--     main tooltip is drawn before its comparisons: Tooltips.lua), and afterwards only once it has
+--     rested in a new place for REST seconds (Host.Track, every frame of the main panel): a wobble is
+--     never followed, a move is;
 --   - a side, chosen once for that thing: right where all of them fit, else left, else the side with
 --     more room (the game's own side where nothing can be measured);
 --   - for each comparison a slot as wide as the widest its panel has been for that thing, so the
@@ -232,6 +234,12 @@ local function Compare(tooltip, panel)
     if not layout then return false end
     Lay(main, layout)
     return (Plain(panel:GetNumPoints()) or 0) > 0
+end
+
+-- A main tooltip shown again after it was gone (not hidden and filled again in one go, as the game
+-- refreshes it: Tooltips.lua): its comparisons are laid out anew, from where its panel stands now.
+function Host.Forget(main)
+    layouts[main] = nil
 end
 
 -- The side the comparisons of main stand on while one of them is shown, else nil: the stage of your

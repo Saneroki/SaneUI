@@ -295,6 +295,22 @@ for _, widget in ipairs(W.frames) do
     if widget._kind == "ModelScene" then scene = widget end
 end
 check(scene, "the character's model scene stands in the left pane")
+-- An item let go over the model is put on, as on the game's sheet: by the left button or a drop, where it can be.
+do
+    local equipped = 0
+    AutoEquipCursorItem = function() equipped = equipped + 1 end
+    C_PaperDollInfo.CanAutoEquipCursorItem = function() return true end
+    cursorItem = true
+    scene:GetScript("OnMouseUp")(scene, "RightButton")
+    check(equipped == 0, "the right button let go over the model puts nothing on")
+    scene:GetScript("OnMouseUp")(scene, "LeftButton")
+    scene:GetScript("OnReceiveDrag")(scene)
+    check(equipped == 2, "the left button let go over the model, or a drop: the item on the cursor put on")
+    C_PaperDollInfo.CanAutoEquipCursorItem = function() return false end
+    scene:GetScript("OnMouseUp")(scene, "LeftButton")
+    check(equipped == 2, "an item the game says cannot be put on is not")
+    cursorItem, C_PaperDollInfo.CanAutoEquipCursorItem = false, nil
+end
 
 -- The game tells of changes while it is shown.
 worn[2] = { texture = "amulet", count = 1, quality = 4, id = 1002, link = "|Hitem:1002|h[Amulet]|h" }
@@ -308,6 +324,13 @@ W.Fire("UPDATE_INVENTORY_DURABILITY")
 check(drawn[head].tint[1] == Slots.RED[1] and drawn[head].tint[2] == 0 and drawn[head].grey == false, "a broken item: red, as the game tints it")
 W.Fire("UNIT_MODEL_CHANGED", "player")
 check(scenes == 2, "the character's model changed: set up anew")
+UnitPVPName = function() return "Tester Stub, the Bold" end
+W.Fire("UNIT_NAME_UPDATE", "target")
+check(panel.title._text == "Tester Stub, the Patient", "another unit's name changed: the head as it was (the player's only)")
+W.Fire("UNIT_NAME_UPDATE", "player")
+check(panel.title._text == "Tester Stub, the Bold", "the player's: the head with the new title")
+UnitPVPName = function() return "Tester Stub, the Patient" end
+W.Fire("UNIT_NAME_UPDATE", "player")
 
 -- Clicks and the tooltip, as on the game's sheet.
 head:GetScript("OnClick")(head, "LeftButton")
@@ -379,6 +402,9 @@ statValues.CRITCHANCE = 0
 W.Fire("UNIT_STATS", "player")
 W.Wait(0)
 check(list.ScrollBox.sets == sets and ns.Stats.Owed(), "in a fight the list stays as it was")
+local laidOut = made[2].row.inits
+list.ScrollBox.view.factory(function(_, init) init(made[2].row, made[2].row.element) end, made[2].row.element)
+check(made[2].row.inits == laidOut, "a row the list lays out again in a fight is left as it is: its stat is secret then")
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 W.Wait(0)
@@ -440,6 +466,8 @@ check(GameTooltip._itemID == 2589, "its tooltip is the game's for the item")
 W.items[1001] = { name = "Helm", quality = 3 }
 W.Fire("GET_ITEM_INFO_RECEIVED", 1001, true)
 W.Wait(0)
+check(ns.Items.box.rows == things, "a name that comes waits a moment for the others that come with it")
+W.Wait(Alts.NAMES)
 things = ns.Items.box.rows
 check(things[6].line.text._text == "Helm" and things[6].line.text._color[3] == 0.87 and requested[1001] == 1,
     "the name comes: drawn anew, in its quality's colour; asked once only")
@@ -523,6 +551,12 @@ check(Elements()[2].kind == "compact" and #Elements()[2].places > 0, "compact: t
 AltsPick("Grid")
 AltsPick("Group by Category")
 check(Elements()[2].kind == "sub" and Elements()[2].text == "Miscellaneous" and Elements()[3].kind == "grid", "grouped by the bags' categories")
+ns.Categories.Assign(2589, "trade") -- the player puts an item into another category in the bags
+Alts.Refresh(false)
+check(Items.Record(2589).category == "trade" and Elements()[2].text == ns.Categories.Word("trade"),
+    "an item put into another category in the bags: shown under that one at once")
+ns.Categories.Assign(2589, nil)
+Alts.Refresh(false)
 AltsPick("Group by Category")
 check(Elements()[2].kind == "grid", "not grouped again")
 
@@ -542,6 +576,17 @@ check(Alts.head.line._text:find("Logged in now", 1, true) and Elements()[2].text
     and Elements()[6].slots[3] == 1003, "shown again: drawn as it is now; you too, what you wear as Core last read it")
 people[3]:GetScript("OnEnter")(people[3])
 check(GameTooltip._lines and GameTooltip._lines[#GameTooltip._lines] == "1234567c", "a character's tooltip: the rest of what is known of it")
+-- A character's facts of a wrong kind (a hand edit, an older version) are left out; nothing fails.
+do
+    local odd, line = { key = "odd", name = "Odd Entry", class = 7, level = {}, realm = true, money = "lots" }, nil
+    Roster.box.view.factory(function(kind, init)
+        line = W.NewWidget(kind, nil, Roster.box)
+        init(line, odd)
+    end)
+    local about = Alts.About(odd)
+    check(line.name._text == "Odd Entry" and #about == 2 and about[2][1] == "Level ? |cffffffff|r" and not Core.errors["Inventory: alts"],
+        "a character's class, level and realm of a wrong kind: left out of its line and its tooltip, nothing fails")
+end
 
 -- What you wear, read by Core slot by slot (Core.Data.Worn): the game's paper doll, its slots as our sheet has
 -- them, as wide as the grid (here six items), the weapons' row in the middle below.
@@ -714,15 +759,58 @@ Core.Set(ns.name, "bagKeys", false)
 check(next(Overrides()) == nil and ContainerFrameCombinedBags:GetParent() == UIParent, "the setting off: the game's keys and bags are the game's")
 Core.Set(ns.name, "bagKeys", true)
 check(Overrides().B == Keys.COMMAND and ContainerFrameCombinedBags:GetParent() ~= UIParent, "on again")
+-- Can expand to fullscreen off: the full screen never comes, so the bag keys and bags are the game's, and a key
+-- pressed then wishes for nothing later (the bags taken off the layout first, to see that they stay off).
+Push()
+Stand()
+Board.layouts:Toggle("bags")
+Push()
+Stand()
+Core.Set(ns.name, "expand", false)
+OpenAllBags()
+check(next(Overrides()) == nil and ContainerFrameCombinedBags:GetParent() == UIParent and ContainerFrameCombinedBags:IsVisible(),
+    "Can expand to fullscreen off: your bag keys are the game's, and the game's bags show")
+local classic = handle.options.classic
+check(not classic[1].ready() and not classic[2].ready(), "nor is there the button Sane UI on the game's sheet and bags then")
+CloseAllBags()
+MainMenuBarBackpackButton:GetScript("PreClick")(MainMenuBarBackpackButton, "LeftButton")
+MainMenuBarBackpackButton:GetScript("OnClick")(MainMenuBarBackpackButton, "LeftButton")
+Keys.Press()
+Stand()
+check(not handle.edge.full, "nor does ours come by the game's bag button or our own key")
+Core.Set(ns.name, "expand", true)
+check(Overrides().B == Keys.COMMAND and ContainerFrameCombinedBags:GetParent() ~= UIParent and classic[1].ready()
+    and classic[2].ready(), "on again: ours, and the button Sane UI on the game's sheet and bags")
+Push()
+Stand()
+check(handle.edge.full and not Board.Has("bags"), "a key pressed while the full screen could not come wishes for nothing later")
+Board.layouts:Toggle("bags")
+Push()
+Stand()
+-- Edit Mode open: the full screen cannot come until it closes, so the bag keys and bags are the game's meanwhile.
+EventRegistry:TriggerEvent("EditMode.Enter")
+OpenAllBags()
+check(next(Overrides()) == nil and ContainerFrameCombinedBags:GetParent() == UIParent and ContainerFrameCombinedBags:IsVisible(),
+    "Edit Mode open: your bag keys are the game's, and the game's bags show")
+CloseAllBags()
+EventRegistry:TriggerEvent("EditMode.Exit")
+check(Overrides().B == Keys.COMMAND and ContainerFrameCombinedBags:GetParent() ~= UIParent, "Edit Mode closed: ours again")
 
 -------------------------------------------------------------------------------
 --  Standing down
 -------------------------------------------------------------------------------
 Push()
 Stand()
+-- Each step of giving back by itself: one that fails stops none of the others.
+local hide = ns.Board.Hide
+ns.Board.Hide = function()
+    hide()
+    error("a step that fails")
+end
 ns.StandDown("a test")
+ns.Board.Hide = hide
 check(ns.off and not frame:IsShown() and not handle.edge.full and bags.shown == false and not panel:IsShown(),
-    "standing down: the windows go and the window with them")
+    "standing down: the windows go and the window with them, a step that fails stopping none of the others")
 check(next(Overrides()) == nil and ContainerFrameCombinedBags:GetParent() == UIParent and ContainerFrame1:GetParent() == UIParent,
     "and the bag keys and the game's bag windows are the game's again")
 

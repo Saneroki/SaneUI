@@ -30,7 +30,7 @@ local _, ns = ...
 --  own under the caption Addons (Others), and only while Alt is held.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-local Plain, Secret = Core.Plain, Core.Secret
+local Plain, Secret, Ask = Core.Plain, Core.Secret, Core.Ask
 local Model = ns.Model
 local LINE = Enum.TooltipDataLineType or {}
 local TEXT, COLOR, Like = ns.TEXT, ns.COLOR, ns.Like
@@ -438,7 +438,8 @@ local function Details()
         end
     elseif id then
         left = Read.Memo("detailLeft", TEXT.ID, SPELLS[kind] and TEXT.SPELL or KIND_NAMES[kind] or "?", id)
-        local icon = (SPELLS[kind] and Plain(C_Spell.GetSpellTexture(id))) or (ITEMS[kind] and Plain(C_Item.GetItemIconByID(id)))
+        -- Asked by Core.Ask: this runs after the kind's reader, outside its xpcall (ns.Read)
+        local icon = (SPELLS[kind] and Ask(C_Spell.GetSpellTexture, id)) or (ITEMS[kind] and Ask(C_Item.GetItemIconByID, id))
         if icon then right = Read.Memo("detailRight", TEXT.ID, TEXT.ICON, icon) end
     end
     if left == "" and right == "" then return end

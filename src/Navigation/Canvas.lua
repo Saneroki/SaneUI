@@ -45,13 +45,18 @@ local _, ns = ...
 --
 --  On the window's way to the full screen and back the map goes with it (Morph): laid
 --  out once, at the start, for the whole way, it is only scaled and moved on the
---  steps, from where the view it leaves looks to where the view it comes to looks.
+--  steps, from where the view it leaves looks to where the view it comes to looks;
+--  meanwhile nothing lays it out again (a refresh, the wheel, a press).
 --
 --  The tracker asks where the player is: every frame while the view follows
---  (two questions to the game and one SetPoint), else a few times a second; and
---  after some time without the mouse on the map (the setting Follow again
---  after) the view follows again. Nothing else runs while nothing moves.
+--  (three questions to the game and one SetPoint; the zone in the middle a few
+--  times a second), else a few times a second; and after some time without the
+--  mouse on the map (the setting Follow again after) the view follows again.
+--  Nothing else runs while nothing moves. Where the game tells no place of the
+--  player (an instance) the small view draws nothing of ours but the sea: the
+--  game's minimap, with its own ground, is the map there (Hybrid.lua).
 -------------------------------------------------------------------------------
+local Core = SaneUI.Core
 local Coords, Live = ns.Coords, ns.Live
 local Canvas = {}
 ns.Canvas = Canvas
@@ -87,9 +92,15 @@ Canvas.edge = edge
 Canvas.REFIT = 0.5 -- the holder moves so many units before what stands on the map is kept inside anew
 local laid = false -- something is laid out
 local known = false -- the player's place is known in the view's plane
+-- The small view follows the player where the game tells no place of the player (an instance): the game's
+-- minimap alone is the map there, and nothing of ours is drawn but the sea (Lost; Hybrid.Place).
+local lost = false
 local lastInput = 0 -- when the mouse last did something to the map
 local overX, overY -- where the mouse was at the last look for the highlight (nil: look again)
 local nextLook = 0
+local nextZone = 0 -- while the view moves, when the zone in its middle is next asked of the game (Moved)
+local zoneOwed = false -- the view moved without that ask (within a Canvas.LOOK of the last): Track asks it later
+local spun = false -- notches of the wheel added up in the camera and not laid out yet (Zoomed): a layout takes them
 
 -------------------------------------------------------------------------------
 --  Pools: a layer's textures, by key; masks that cut them to a shape
@@ -246,11 +257,34 @@ function Canvas.Blend(span)
     return x * x * (3 - 2 * x)
 end
 
+-- Every layer's textures let go: nothing of ours drawn but the sea (the canvas' ground).
+local function Empty()
+    ns.Safe("terrain", ns.Terrain.Clear)
+    ns.Safe("atlas", ns.Painted.Clear)
+    ns.Safe("map art", ns.Art.Clear)
+    ns.Safe("indoors", ns.Indoors.Clear)
+    ns.Safe("areas", ns.Areas.Clear)
+    ns.Safe("route", ns.Route.Clear)
+    ns.Safe("pins", ns.PinView.Clear)
+end
+
+-- Whether the small view follows the player where the game tells no place of the player (u nil: an instance)
+-- while the game's minimap is ours to stand in for our map there.
+local function Lost(u)
+    return u == nil and camera == ns.Window.small and camera.follow and ns.Hybrid.Taken() or false
+end
+
 -- The layers, as the view chosen draws them, at every zoom: Parchment (the art), Scrying (the land), Blended (the
 -- art over the land, faded out as the view comes close: Canvas.Blend), Atlas (the land, the painted map over it);
 -- the ground is the sea of the one or the other, or between them. Only a layer that shows is drawn. The Atlas'
--- module is loaded the first time its view is drawn; if it cannot be, Scrying (Painted.lua).
+-- module is loaded the first time its view is drawn; if it cannot be, Scrying (Painted.lua). In an instance
+-- (lost) none: the game's minimap is the map there.
 local function Draw()
+    if lost then
+        ground:SetColorTexture(Canvas.GROUND[1], Canvas.GROUND[2], Canvas.GROUND[3])
+        Empty()
+        return ns.Safe("marks", ns.Marks.Clear)
+    end
     local chosen = ns.View()
     if chosen == "atlas" and not ns.Painted.Ready() then chosen = ns.FALLBACK end
     local art = chosen == "sketches" and 1 or chosen == "blend" and Canvas.Blend(view.span) or 0
@@ -277,7 +311,7 @@ end
 -- The game's minimap for the view as it is now; on the full map, on the player at once.
 local function Native()
     local width, height = frame:GetSize()
-    ns.Guarded(ns.Hybrid.Place, camera, width, height, known)
+    ns.Guarded(ns.Hybrid.Place, camera, width, height, known, lost)
     local map, u, v = Live.Player()
     ns.Guarded(ns.Hybrid.Follow, holder, Here(map, u, v))
 end
@@ -308,15 +342,19 @@ function Canvas.Layout()
     holder:SetScale(1)
     holder:SetPoint("CENTER", 0, 0)
     Bounds(0, 0, 1)
-    laid = true
+    laid, spun = true, false
     overX = nil -- the highlight is placed anew around the new origin
+    nextZone, zoneOwed = GetTime() + Canvas.LOOK, false -- the zone in the middle was just asked
+    local _, u = Live.Player()
+    lost = Lost(u)
     Stack()
     Draw()
     Native()
     ns.Safe("bar", ns.TopBar.Update)
 end
 
--- The camera moved without zooming: the holder follows; past the margin, or over another zone, a layout.
+-- The camera moved without zooming: the holder follows; past the margin, or over another zone, a layout. The
+-- zone in the middle is asked of the game every Canvas.LOOK while the view moves, not at each of its steps.
 function Canvas.Moved()
     if not laid or camera.k ~= view.k or camera.map ~= view.map or camera.level ~= view.level then
         return Canvas.Layout()
@@ -324,8 +362,15 @@ function Canvas.Moved()
     local x, y = (view.u - camera.u) * view.k, (view.v - camera.v) * view.k
     local width, height = frame:GetSize()
     local margin = math.max(width, height) * Canvas.MARGIN
-    if math.abs(x) > margin or math.abs(y) > margin or (view.level == "zone" and Zone() ~= view.zone) then
-        return Canvas.Layout()
+    if math.abs(x) > margin or math.abs(y) > margin then return Canvas.Layout() end
+    if view.level == "zone" then
+        local now = GetTime()
+        if now >= nextZone then
+            nextZone, zoneOwed = now + Canvas.LOOK, false
+            if Zone() ~= view.zone then return Canvas.Layout() end
+        else
+            zoneOwed = true -- asked once the Canvas.LOOK has passed, should the view stop meanwhile (Track)
+        end
     end
     holder:SetPoint("CENTER", x, y)
     if math.abs(x - edge.x) >= Canvas.REFIT or math.abs(y - edge.y) >= Canvas.REFIT then
@@ -334,14 +379,18 @@ function Canvas.Moved()
     end
 end
 
--- Drawn anew as it is, if it is laid out (the view chosen changed, data arrived, the game's minimap's zoom).
+-- Drawn anew as it is, if it is laid out (the view chosen changed, data arrived, the game's minimap's zoom). Not
+-- on the window's way, nor while hidden (held): the camera then is the one of the view it leaves (Morph), and a
+-- layout would end the map's way with the window. Nothing asked for is lost: the hold ends only where the window
+-- stands, and that lays the map out anew (Open).
 function Canvas.Refresh()
-    if laid then Canvas.Layout() end
+    if laid and not held then Canvas.Layout() end
 end
 
--- Whether something is laid out (shown, not let go).
+-- Whether our map is drawn: laid out (shown, not let go), and not standing aside for the game's minimap in an
+-- instance (lost).
 function Canvas.Laid()
-    return laid
+    return laid and not lost
 end
 
 -------------------------------------------------------------------------------
@@ -351,9 +400,16 @@ local function Track()
     local now = GetTime()
     if not camera.follow and now < nextLook then return end
     nextLook = now + Canvas.LOOK
+    -- A zone the view's last moves owe (Moved): asked now that the Canvas.LOOK has passed, so a drag or a walk that
+    -- ended within it does not leave the zone shown stale.
+    if zoneOwed and now >= nextZone then
+        nextZone, zoneOwed = now + Canvas.LOOK, false
+        if laid and view.level == "zone" and Zone() ~= view.zone then return Canvas.Layout() end
+    end
     local map, u, v, facing = Live.Player()
     local was, followed = known, camera.follow
     known = u ~= nil and map == camera.map
+    if Lost(u) ~= lost then return Canvas.Layout() end -- into an instance or out of it: drawn anew (Draw, Hybrid)
     if camera.follow and u then
         if map ~= camera.map then
             camera:Show(map, u, v)
@@ -362,17 +418,18 @@ local function Track()
             camera:Look(u, v)
             Canvas.Moved()
         end
-    elseif not camera.follow and u and ns.options.followAgain > 0 and now - lastInput > ns.options.followAgain
+    elseif not camera.follow and ns.options.followAgain > 0 and now - lastInput > ns.options.followAgain
         and not frame:IsMouseOver() then
-        camera.follow = true -- the next look puts the player in the middle
+        -- The next look puts the player in the middle; in an instance (no place) the game's minimap comes back.
+        camera.follow = true
         nextLook = 0
     end
     if was ~= known or followed ~= camera.follow then Native() end
     ns.Hybrid.Follow(holder, Here(map, u, v))
     ns.Marks.Player(view, map, u, v, facing, ns.Hybrid.Shown())
-    ns.Marks.Group(view, now)
+    if not lost then ns.Marks.Group(view, now) end -- in an instance the game's minimap shows the party itself
     ns.Route.Track(map, u, v, now)
-    if laid then ns.Indoors.Track(view, now) end
+    if laid and not lost then ns.Indoors.Track(view, now) end
 end
 local tracking = ns.Guard(Track) -- made once
 
@@ -413,6 +470,7 @@ end
 local dragging = ns.Guard(Drag) -- made once: the per-frame step while the left button is held
 
 local function Down(_, button)
+    if held then return end -- on the window's way: its camera is not the one shown (Morph), no drag nor click
     lastInput = GetTime()
     pressed, moved = button, false
     pressX, pressY = Cursor()
@@ -472,7 +530,11 @@ local function Clicked(button)
     local x, y = FromMiddle()
     if not x then return end
     if button == "LeftButton" then
-        if IsControlKeyDown() then Pin(x, y) elseif not ns.Hybrid.Ping(x, y) then Into(x, y) end
+        if IsControlKeyDown() then
+            if not lost then Pin(x, y) end -- in an instance our map is not drawn: no place to pin
+        elseif not ns.Hybrid.Ping(x, y) then
+            Into(x, y)
+        end
     elseif button == "RightButton" and camera:StepOut() then
         Canvas.Layout()
     end
@@ -514,17 +576,41 @@ function Canvas.Show(map)
     return true
 end
 
+-- The wheel's notches, at most one layout a frame however fast it spins: the first notch of a frame is laid out at
+-- once (a single notch is never later), the others of that frame are only added up in the camera and laid out once,
+-- on the next frame (Spin); a layout meanwhile for another reason takes them along.
+local wheeling = false -- a frame's layout of the notches was done: the next notches wait for Spin
+local Spin
+Spin = Core.Later(function()
+    if spun and laid and not held then
+        Canvas.Layout() -- the notches added up; it clears spun
+        return Spin() -- this frame had its layout: a notch now waits for the next
+    end
+    wheeling = false
+end)
+
+local function Zoomed()
+    if wheeling then
+        spun = true
+        return
+    end
+    wheeling = true
+    Spin()
+    Canvas.Layout()
+end
+
 local function Wheel(_, delta)
+    if held then return end -- on the window's way: its camera is not the one shown (Morph)
     lastInput = GetTime()
     local width, height = frame:GetSize()
-    if known and ns.Hybrid.Wheel(camera, delta, ns.Hybrid.Side(width, height)) then
+    if (known or lost) and ns.Hybrid.Wheel(camera, delta, ns.Hybrid.Side(width, height)) then
         camera:Settle()
-        return Canvas.Layout()
+        return Zoomed()
     end
     local x, y = FromMiddle()
     if not x then return end
     camera:ZoomAt(delta, x, y)
-    Canvas.Layout()
+    Zoomed()
 end
 
 -- While the mouse is over the canvas: what a click would open lights up, looked at again when the mouse
@@ -537,7 +623,7 @@ local function Over()
         ns.Window.Hovered(false)
         return ns.Art.Unlight()
     end
-    if pressed or held or not laid then
+    if pressed or held or lost or not laid then
         overX = nil
         return ns.Art.Unlight()
     end
@@ -594,16 +680,18 @@ function Canvas.Build(parent)
     -- Sized while it stands (Edit Mode): laid out for the new size; not on the window's way, nor hidden.
     frame:SetScript("OnSizeChanged", ns.Guard(function() if laid and not held then Canvas.Layout() end end))
     ns.Listen("LIVE", function(what)
+        local drawn = Canvas.Laid() -- laid out, and not standing aside for the game's minimap (an instance)
         if what == "waypoint" then
-            if laid then ns.Marks.Pin(view) end
-            -- The game's arrow may lead to another quest now: its pins and area.
-            ns.Pins.Changed("quests")
-            if laid then ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small) end
-            if laid then ns.Safe("areas", ns.Areas.Place, view) end
-        elseif what == "explored" or what == "zone" then
+            if drawn then ns.Marks.Pin(view) end
+            -- The game's arrow may lead to another quest now: its pins (the game's alone) and area.
+            ns.Pins.Changed("waypoint")
+            if drawn then ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small) end
+            if drawn then ns.Safe("areas", ns.Areas.Place, view) end
+        elseif what == "explored" then
             ns.Pins.Changed(what)
-            Canvas.Refresh()
-        elseif ns.Pins.Changed(what) and laid then
+            Canvas.Refresh() -- the map's art shows what is explored
+        elseif ns.Pins.Changed(what) and drawn then
+            -- The pins only ("zone" too: a burst of them comes at each new part of a building), not the whole map.
             ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small)
             if what == "quests" then ns.Safe("areas", ns.Areas.Place, view) end
         end
@@ -710,7 +798,7 @@ function Canvas.Morph(target, width, height)
     view.span = wide.height / wide.k
     view.left, view.right = math.min(l1, l2), math.max(r1, r2)
     view.top, view.bottom = math.max(t1, t2), math.min(b1, b2)
-    laid = true
+    laid, lost = true, false -- on the way our map goes with the window; where it stands, Layout looks again
     Stack()
     Draw()
     morph = { a = a, b = b, now = Spot(a) }
@@ -740,11 +828,5 @@ function Canvas.Close()
     if not frame then return end
     Canvas.Hold()
     laid, morph = false, nil
-    ns.Safe("terrain", ns.Terrain.Clear)
-    ns.Safe("atlas", ns.Painted.Clear)
-    ns.Safe("map art", ns.Art.Clear)
-    ns.Safe("indoors", ns.Indoors.Clear)
-    ns.Safe("areas", ns.Areas.Clear)
-    ns.Safe("route", ns.Route.Clear)
-    ns.Safe("pins", ns.PinView.Clear)
+    Empty()
 end

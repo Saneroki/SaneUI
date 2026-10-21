@@ -18,11 +18,13 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   and a click on the game's own bag buttons open the full screen with your bags on it; pressed again, it goes
   back. The game's own bags stay closed meanwhile (at a vendor or the bank too); the dropdown *Classic windows*
   still opens them, until you close them. Sane UI's key *Open the bags on Inventory's full screen* is in the
-  game's key bindings under Sane UI. *Sane UI > Inventory > Bags > Bag Keys Open Our Bags* switches it off.
+  game's key bindings under Sane UI. *Sane UI > Inventory > Bags > Bag Keys Open Our Bags* switches it off; with
+  *Can expand to fullscreen* off the full screen never comes, so your bag keys and bags are the game's then too, and
+  so they are while Edit Mode is open.
 - **The game's own windows:** the full screen's dropdown *Classic windows* has *Character* (the full screen
   goes back and the game's key for its character sheet is said: our code never opens it) and *Bags* (the
   game's bags open). The game's character sheet and bags have the button *Sane UI* beside their close button:
-  the game's closes and this full screen comes.
+  the game's closes and this full screen comes (not with *Can expand to fullscreen* off).
 - **Arranging the windows:** as on every Sane UI full screen (Core's board): drag a window's head to move it,
   the gap between two to share their room anew, its X to take it off; the dropdown *Windows* adds one; layouts
   behind tabs in the title bar. Right of those tabs, a tab with an icon for each window (your portrait for the
@@ -38,8 +40,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   - *Character Stats*: your stats as the game lists them, with its tooltips (in a fight they show what they were
     before it, and are brought up to date when it is over). On the stone at its top the game's sidebar tabs:
     Stats; Equipment Manager (your gear sets: a click chooses one, a double click or Equip puts it on, Save stores
-    what you wear in it after a question, New Set asks a name, a right click renames or deletes; a new set's icon is
-    changed on the game's own sheet); Titles (a click wears one); Pet (your pet's stats, while you have one).
+    what you wear in it after a question, leaving out the slots the set leaves out, New Set asks a name and leaves out
+    your shirt and tabard, a right click renames or deletes; a new set's icon is changed on the game's own sheet);
+    Titles (a click wears one); Pet (your pet's stats, while you have one).
   - *Reputation*: your factions as the game lists them: a click on a header folds or unfolds it, a click on a
     faction chooses it (its standing in numbers under the mouse); at the right the chosen faction, its standing,
     its description and the game's switches At War, Move to Inactive and Show as Experience Bar.
@@ -105,7 +108,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   - **Splitting a stack:** Shift and a click on a stack opens a little splitter (in All Items and the categories
     always, as those show no empty slots; in One Bag and Each Bag with *Stack Splitter Everywhere*): how many
     (typed, - and +, the wheel), *Split* puts that many into the first free slot (Enter), *Auto Split* splits the
-    whole stack into stacks of that many (Alt and Enter).
+    whole stack into stacks of that many (Alt and Enter). A Shift-click while you write in the chat links the item
+    instead; in a fight the game's own splitter opens.
   - Every item is the game's own button: click or drag it, right click to use it (in a fight too), to sell it at
     a vendor or to put it into the bank, Shift-click to link it; the tooltip is the game's. The search box finds
     items by name, category or item level: One Bag and Each Bag fade what is not found, the others show only what
@@ -157,7 +161,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   windows (`ContainerFrameCombinedBags`, `ContainerFrame1` to `NUM_CONTAINER_FRAMES`) lent to a hidden frame of
   ours (`Core.Lend`'s `SetParent`): the game opens and closes them as always, unseen; Classic windows' *Bags*
   (`Window.lua`) gives them back (`Keys.GameBags(true)`) until a hook after their `OnHide` finds none shown. The
-  setting `bagKeys` (`Keys.Apply`), standing down (`Keys.Leave`) give everything back.
+  setting `bagKeys` and `expand` off (the full screen never comes: `Keys.Taken`, `Keys.Apply`; then no button *Sane
+  UI* either, the Classic entries' `ready`), Edit Mode while open (`Core.EditMode.Watch`), standing down
+  (`Keys.Leave`) give everything back; a key pressed while the full screen cannot come wishes for nothing later.
 - **The board** (`Board.lua`): Core's (`Core.Board`), the module's windows in the order `Board.ORDER`
   (`character`, `stats`, `reputation`, `skills`, `pvp`, `currency`, `statistics`, `bags`, `bank`, `alts`). Each window is a part in files of its own, listed after `Board.lua` in the TOC,
   that registers itself: `Board.Part(key, title, least, part)`, `part.Build(panel)`, `part.Show(on)`,
@@ -187,7 +193,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   - **Model** (`Sheet/Model.lua`): a `ModelScene` of the game's `PanningModelSceneMixinTemplate` set up by
     `ModelSceneUtil.SetUpCharacterSheetScene` when shown and at `UNIT_MODEL_CHANGED`, the game's turn and zoom
     buttons (`ModelSceneControlFrameTemplate`), the race's background in four parts (`DressUpTexturePath`, greyed)
-    under `UI-Character-Info-RaceBG-Overlay`; an item let go over it: `AutoEquipCursorItem`.
+    under `UI-Character-Info-RaceBG-Overlay`; an item let go over it (a drop, or the left button) where
+    `C_PaperDollInfo.CanAutoEquipCursorItem` says it can be: `AutoEquipCursorItem`.
   - **The stats and the sidebar** (`Sheet/Sidebar.lua`, the part `stats`): the game's right pane as a window, at the
     game's width (`Sidebar.WIDTH`) and the window's height, in its middle: the game's stat background stretched, its
     stone at the top, and on it the game's sidebar tabs as our own buttons in its art (42 square,
@@ -195,15 +202,18 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     the portrait, Equipment Manager and Titles (`PaperDollSidebarTabs`' icons and coordinates), Pet (`paw-icon`), shown
     only with `HasPetUI`, the three centred without it as `PaperDollFrame_UpdateSidebarTabLayout` does; a tab the
     game has nothing for greyed (half seen, desaturated) with its reason in the tooltip. The tab chosen shows its
-    pane under the stone and names the window's head; only it listens to the game. `UNIT_PET` lays the tabs out
-    anew (the pet's tab without a pet goes back to the stats).
+    pane under the stone and names the window's head; only it listens to the game; clicked again it stays as it is.
+    The player's `UNIT_PET` lays the tabs out anew (the pet's tab without a pet goes back to the stats, also when the
+    window shows again after the pet went).
   - **Gear sets** (`Sheet/Gear.lua`): `C_EquipmentSet`'s sets by name in the game's cards (`UI-Character-Info-OutfitCard`
     and its hover and selected art, the icon in `…-OutfitIcon-Frame`, `…-Icon-Tick` on the set worn, the name red with
     an item lost); the game's Equip and Save (`SharedButtonSmallTemplate`) and New Set (`PaperDollTertiaryButtonTemplate`
     with `UI-Character-Info-Icon-Add`). Equip as `EquipmentManager_EquipSet` (not with locked items or while casting:
-    the game's error), Save after `Core.Confirm`, New Set's name by `Core.AskText` (the icon the game's question mark:
-    the game's icon picker is a frame of its own we do not show), a right click's menu to rename or delete. Drawn anew
-    after `EQUIPMENT_SETS_CHANGED`, `EQUIPMENT_SWAP_FINISHED`, `PLAYER_EQUIPMENT_CHANGED`.
+    the game's error), Save after `Core.Confirm` (the set's left-out slots set first: `GetIgnoredSlots`,
+    `IgnoreSlotForSave`, `UnignoreSlotForSave`; a new set without the shirt and the tabard, `Gear.LEFT_OUT`; the game's
+    note of them cleared after either, `ClearIgnoredSlotsForSave`), New Set's name by `Core.AskText` (the icon the
+    game's question mark: the game's icon picker is a frame of its own we do not show), a right click's menu to rename
+    or delete. Drawn anew after `EQUIPMENT_SETS_CHANGED`, `EQUIPMENT_SWAP_FINISHED`, `PLAYER_EQUIPMENT_CHANGED`.
   - **Titles** (`Sheet/Titles.lua`): None, then the titles you know by name, in the game's rows (the stripe, the tick
     and bar on the one worn, the blue light); a click `SetCurrentTitle`. Drawn anew after `KNOWN_TITLES_UPDATE` and the
     player's `UNIT_NAME_UPDATE`.
@@ -218,7 +228,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     list builder borrows the game's own sheet's frame pool, which our code must not touch. Under a restriction
     (`Core.Restricted`) the stats are secret to addon code (`SecretWhenUnitStatsRestricted`; the player's health
     always is), so the list is not drawn then: it waits (`Stats.Owed`) and is drawn after `PLAYER_REGEN_ENABLED` or
-    `ADDON_RESTRICTION_STATE_CHANGED`. Drawn when shown and a frame after the game's stat events (`Core.Later`).
+    `ADDON_RESTRICTION_STATE_CHANGED`; a row the list lays out again meanwhile is left as it is. Drawn when shown and
+    a frame after the game's stat events (`Core.Later`).
   - **The pages** (`Sheet/Page.lua`): the windows of the game's tabs are each a page: its panel's body cut into a
     left part that takes the room (`Page.New`) and, for those that tell of what is chosen, the game's right pane at
     its right (`Page.SIDE` wide, the window's height, its art and stone); `Page.Part` registers it with the board,
@@ -238,7 +249,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     blue; the progress under the mouse), its light (`Reputation.LIT`, `WAR`: brighter chosen or under the mouse,
     red at war). The choice is the game's (`C_Reputation.SetSelectedFaction`), the first faction chosen when none
     is. The side: name, standing, description, bar, the account-wide line, and the switches
-    (`ToggleFactionAtWar`, `SetFactionActive`, `SetWatchedFactionByIndex`, the game's tooltips and sounds). The
+    (`ToggleFactionAtWar`, `SetFactionActive`, `SetWatchedFactionByIndex`, the game's tooltips and sounds; a faction
+    made inactive, or active again, moves in the list and is chosen again by its ID, as the game's sheet does). The
     game's own rows are wired to its sheet (its frame, the event registry's selection, its side pane), so ours are
     our own. Drawn anew a frame after `UPDATE_FACTION` and the game's other reputation events, while shown.
   - **Skills** (`Sheet/Skills.lua`): the top-level skill lines of `C_SkillInfo` (`parentSkillLineID` 0) without the
@@ -271,8 +283,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     own fold state (until a `/reload`); a cut-short name in a tooltip. Drawn a frame after `CRITERIA_UPDATE`, while
     shown. The right pane shows only its art, as the game's.
   - **Events, while shown only** (`Sheet.Show`): `PLAYER_EQUIPMENT_CHANGED`, `ITEM_LOCK_CHANGED`,
-    `UPDATE_INVENTORY_DURABILITY`, `UPDATE_INVENTORY_ALERTS`, `UNIT_INVENTORY_CHANGED` and `UNIT_MODEL_CHANGED`
-    (the player's), `PLAYER_LEVEL_UP`, `UNIT_NAME_UPDATE`, `PLAYER_ENTERING_WORLD`. Every value read goes through
+    `UPDATE_INVENTORY_DURABILITY`, `UPDATE_INVENTORY_ALERTS`, `UNIT_INVENTORY_CHANGED`, `UNIT_MODEL_CHANGED` and
+    `UNIT_NAME_UPDATE` (the player's), `PLAYER_LEVEL_UP`, `PLAYER_ENTERING_WORLD`. Every value read goes through
     `Core.Plain` or `Core.Ask`; every function of the game's is called only if this client has it.
 - **The other characters** (`Alts/`, the part `alts`): what the account's characters have, read only from Core's
   data framework (`Core.Data.Characters`, `Character`, `Items`, `Worn`, `OnCharacters`; `Doc/guides/data.md`,
@@ -296,7 +308,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     row as fit, `Items.Fit`), with Group by Category a head per category (the bags' order and names); lines in the
     bags' list columns (`Columns.Place`, `Value`, `Sort`); or one compact piece (`Layout.Lay` *compact* over the
     categories). An item's record as the bags' (`Items.Record`: `C_Item.GetItemInfoInstant`, `GetItemInfo`,
-    `GetDetailedItemLevelInfo`, `Categories.Classify`; kept once the game knows the item). What is worn as the
+    `GetDetailedItemLevelInfo`, `Categories.Classify`; what the game told kept once it knows the item, the category
+    worked out anew each time, as the player may have moved the item). What is worn as the
     paper doll (below), or as a list (icon, name in its quality's colour) for a character Core has not read slot
     by slot yet (it has not logged in since). Read only: the tooltip is `GameTooltip:SetItemByID`, a modified
     click `HandleModifiedItemClick`; nothing picks an item up. `Items.Counts`: each category's count for Storage.
@@ -315,10 +328,13 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     `look`, `group`; the bags' store read for the categories and columns (`Bags.Store`). Shown at first: the first of the
     others; the choice holds until a `/reload`. While searching, if the chosen one has none of it, the first that
     has is shown until the search is cleared. Listens only while shown: `Core.Data.OnCharacters`,
-    `GET_ITEM_INFO_RECEIVED`, `ITEM_DATA_LOAD_RESULT`, drawn a frame later (`Core.Later`); drawn anew when shown.
+    `GET_ITEM_INFO_RECEIVED`, `ITEM_DATA_LOAD_RESULT`, drawn a frame later (`Core.Later`; the names the game tells
+    together, `Alts.NAMES` later); drawn anew when shown. A character's class, level and realm of a wrong kind (Core
+    checks only its name and places) are left out.
 - **The bags** (`Bags/`, the parts `bags` and `bank`): the backpack, the bags, the reagent bag and the keyring
   (`Contents.Carried`: those with slots) in the window *Bags*; while the bank is open (`BANKFRAME_OPENED`, at the
-  login `C_PlayerInteractionManager.IsInteractingWithNpcOfType`: `Bank.Start`, `Contents.bankOpen`) the tabs of
+  login `C_PlayerInteractionManager.IsInteractingWithNpcOfType` for each of `Bank.BANKERS`: `Bank.Start`,
+  `Contents.bankOpen`) the tabs of
   each bank the game lets the player see (`Contents.Banks`: `C_Bank.FetchPurchasedBankTabIDs` of
   `Enum.BankType.Character`, then `.Account`) in the window *Bank*. The game's bag and bank windows are never
   opened, closed or touched.
@@ -327,8 +343,10 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     `C_NewItems.IsNewItem`, the class from `C_Item.GetItemInfoInstant`, the bind type, price, level needed and
     the class's and subclass's words from `C_Item.GetItemInfo`, the item level of gear from
     `GetDetailedItemLevelInfo`; an item the game does not know yet waits for `GET_ITEM_INFO_RECEIVED`,
-    `Contents.waiting`). Whether the character can use it: a line of its tooltip in the game's red
-    (`C_TooltipInfo.GetBagItem`; a recipe: `C_Item.IsUsableItem`), kept per link until `PLAYER_LEVEL_UP`. The
+    `Contents.waiting`, the bags' and the bank's, left once a reading knows it; meanwhile its record holds none of
+    the words of the item there before). Whether the character can use it: a line of its tooltip in the game's red
+    (`C_TooltipInfo.GetBagItem`; a recipe: `C_Item.IsUsableItem`), not asked while the game does not know the item,
+    kept per link while the character's level stays (`Contents.Scan` sees a new one, the bags shown or not). The
     equipment set a slot is in (`Contents.Sets`: `C_EquipmentSet.GetItemLocations`, the game's
     `EquipmentManager_GetLocationData`; the first set wins). The bag it is in: the reagent bag (`reagentBag`) or a
     bag for one kind of item (`special`: the game's bag family, the keyring). The free slots by kind of bag
@@ -347,7 +365,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     class in order, else Miscellaneous; a category switched off sends its items to Miscellaneous). Kept by item
     ID in `store.bags` (account-wide, the player's own settings, never shared): `assigned`, `before` (where a
     junk-marked item was), `pinned`, `own`, `order`, `words`, `member`, `groups`, `off`, `hidden`; checked when
-    read (`Categories.Check`). Moved by the menus (`Move`, one place) and by the sidebar's drag (`Place`: before or
+    read (`Categories.Check`). Moved by the menus (`Move`: one place, past a whole group; a group's member among its
+    members; `MoveGroup`: a group as one; what is switched off stepped over) and by the sidebar's drag (`Place`: before or
     after another, then in a group or none; `PlaceGroup`: a group's members together; `Movable`: not Pinned,
     Recent, Junk; a target that does not move: the end, before Junk).
   - **What came in lately** (`Bags/Recent.lua`, no frames): from the login on, a frame after a burst of bag
@@ -359,21 +378,23 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     player's own), *one* (Pinned, *Main Bags* with every slot of the ordinary bags, then each special bag and the
     reagent bag), *each* (every bag), `cat:<key>`, `group:<group>` (its members each a block). Stacks of an item
     that is no gear merge into one entry with their counts added (`Views.Merging`: not while talking to a vendor,
-    a banker, the mailbox, a trade partner, nor while the auction house is open); a split item stays apart while the window is open
+    a banker of any kind the client has, the mailbox, a trade partner, nor while the auction house is open); a split item stays apart while the window is open
     (`Views.split`). What the search does not find is left out, or faded in *one* and *each*. `Views.Counts`: how
-    many cells each category and group shows, for the sidebar.
+    many cells each category and group shows (Pinned and Recent too, stacks merged as they are shown), for the sidebar.
   - **The displays** (`Bags/Layout.lua`, plain numbers: `Layout.Lay`): *grid* (a head per block, its cells
     `Layout.SIZE` 34 and `GAP` 4 apart, the "+", the last line filled with pads; the player's own empty category a
     line of pads to drop items on), *list* (a line `Layout.ROW` high per cell, a folded block its head only),
     *compact* (the blocks side by side in bands, a name over each: which blocks share a band and how many lines it
     takes planned by dynamic programming for the least height, `Plan`; a block that is not the last of its band at
-    least three wide; on a tie the fuller band first). The display and the order are kept (`store.bags`: `look`,
-    `order`).
+    least three wide; on a tie the fuller band first). The display and the window's Sort By are kept (`store.bags`:
+    `look`, `sort`; `order` is the categories').
   - **The splitter** (`Bags/Split.lua`): a dialog of ours in the flat look, opened by `Bags.Clicked` after the
-    template's own Shift-click (the game's `StackSplitFrame` hidden when it opened); `C_Container.SplitContainerItem`
-    then `PickupContainerItem` into the first free slot of the ordinary bags; *Auto Split* one split after the
-    other, each once the source slot is unlocked again (looked at every `Split.WAIT` seconds, at most
-    `Split.LONGEST`); the item split goes into `Views.split`.
+    template's own Shift-click, only where that opened the game's `StackSplitFrame` for that button (then hidden:
+    `Split.Replace`; a Shift-click that linked the item into the chat opened none; in a fight the game's stays);
+    `C_Container.SplitContainerItem` then `PickupContainerItem` into the first free slot of the ordinary bags; *Auto
+    Split* one split after the other, each once the source slot is unlocked again (looked at every `Split.WAIT`
+    seconds, at most `Split.LONGEST`), stopped when another stack is chosen and, with the dialog, when the bags or the
+    bank hide (`Split.Stop`); the item split goes into `Views.split`.
   - **Our sort** (`Bags/Sort.lua`, the clean-up in *One Bag*: `Sort.Start` with the window's order): the slots of
     the ordinary bags (`Sort.Ordinary`: a record's `kind` "bags"), planned without frames (`Sort.Plan`): first the
     partial stacks of an item (`record.stack`, the game's full stack) joined, the smallest onto the largest, the next
@@ -451,7 +472,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     reagents' deposit: `Foot.Deposits`, `C_Bank.AutoDepositItemsIntoBank`; the clean-up of the bank shown:
     `C_Container.SortBank`; the dropdown *View*: grid, list, compact), the gold at its foot. Kept in `store.bank`:
     `look`, `order`, `group`, `folded` (the list's columns are the bags'). Listens while shown (bags, bank slots and
-    tabs, a tab's settings, locks, cooldowns, money).
+    tabs, a tab's settings, locks, cooldowns, money: the gold only; an item's data only for one it waits for).
     - **The list** (`Place`): a column head of its own (`Columns.Build`) over the scroll area while the display is
       the list; the canvas draws the bags' columns.
     - **A tab's settings** (the sidebar's `menu` and `tip`): a tab's row by its icon (`C_Bank.FetchPurchasedBankTabData`,
@@ -497,8 +518,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   (`ShowStatusBarText`, `TextStatusBar.lua`); the manager's slots, written by our call, made the game's own
   close button fail too until a `/reload` (`Doc/guides/addon-standards.md`, *Known traps*). Hence our own
   windows.
-- **Standing down** (`ns.GiveBack`): the board's windows go and the window with them. A `/reload` starts the
-  module afresh.
+- **Standing down** (`ns.GiveBack`): the bag keys and the game's bag windows are the game's again first, then the
+  board's windows go and the window with them, each step by itself (`ns.Safe`). A `/reload` starts the module afresh.
 - Tests: `dev/tests/inventory.lua` (the window, the board, the paper doll, the stats, the other characters' window
   and an alt's paper doll), `dev/tests/sheet.lua` (the sheet's windows on the board, the sidebar with its gear sets and titles, the game's tabs as windows), `dev/tests/bags.lua` (the bags).
 

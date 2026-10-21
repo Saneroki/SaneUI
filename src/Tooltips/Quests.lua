@@ -284,8 +284,10 @@ local function FillItem(list, item)
 end
 
 -- The lists made so far, each with the change it was made after; a list made before the last
--- change of your quest log, your level or the data is made anew
-local made = { npc = {}, item = {} }
+-- change of your quest log, your level or the data is made anew. At most HELD of each kind (each
+-- creature or item pointed at), then they are forgotten together.
+local HELD = 400
+local made, held = { npc = {}, item = {} }, { npc = 0, item = 0 }
 local changes = 0
 
 -- The list of the NPC or item with this ID, made anew when it is out of date. A failure ends the
@@ -294,8 +296,12 @@ local function List(kind, id, fill)
     local list = made[kind][id]
     if list and list.change == changes then return list end
     if not list then
+        if held[kind] >= HELD then
+            wipe(made[kind])
+            held[kind] = 0
+        end
         list = {}
-        made[kind][id] = list
+        made[kind][id], held[kind] = list, held[kind] + 1
     end
     list.n, list.change = 0, changes
     if not QUESTS:Ready() then return list end -- not loaded yet (Start asked for it), or not there

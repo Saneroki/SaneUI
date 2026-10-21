@@ -25,6 +25,10 @@ local _, ns = ...
 --                   the game's, for its tooltips
 --      indoors      a cave, a building: its own ground stays off as outdoors (it would draw the
 --                   indoor plan on black over our map, Saneroki 2026-10-20); our map and its dots show
+--      an instance  a dungeon, a raid, a battleground: the game tells no place of the player in our
+--                   planes, so its minimap alone is the map there, with its own ground, at the view's
+--                   step (the game's own while the view has none), whatever the pin filter says; our
+--                   layers hold nothing meanwhile (Canvas.lua); its ground off again once a place is known
 --
 --  The full map (Wide): around the player at the map's own scale, so its dots stand where they are
 --  on our map: square, at its widest step whose square takes at most Hybrid.ROOM of the canvas'
@@ -52,10 +56,20 @@ local surveying -- the steps are being measured: what the game says meanwhile is
 local radii = { [true] = {}, [false] = {} } -- [indoors][zoom step] = the view's radius in yards
 local cut -- the mask it is cut by now
 local wide -- on the full map: { side, x, y (the player's place in the holder's units), holder }
+local ground -- whether the game's minimap draws its own ground now, as last set (nil: not set by us yet)
 
 -- The game's minimap, its cluster and border, if this client has them.
 local function Parts()
     return rawget(_G, "Minimap"), rawget(_G, "MinimapCluster"), rawget(_G, "MinimapBackdrop")
+end
+
+-- Its own ground drawn (on) or not, where this client lets us say so; asked of the game only when it changes.
+local function Ground(on)
+    on = on and true or false
+    if on == ground then return end
+    ground = on
+    local draw = rawget(_G, "C_Minimap") and C_Minimap.SetDrawGroundTextures
+    if draw then draw(on) end
 end
 
 -- The radius of a zoom step, read from the game while the minimap stands at that step.
@@ -132,7 +146,7 @@ local function Take()
     cluster:SetAlpha(0)
     Quiet(cluster, saved.mice)
     C_Minimap.SetIgnoreRotateMinimap(true)
-    C_Minimap.SetDrawGroundTextures(false) -- outdoors and in: its dots only, our map under them
+    Ground(false) -- outdoors and in: its dots only, our map under them (but in an instance: Place)
     Survey()
     minimap:Hide() -- shown by Place, when a view follows at one of its steps
 end
@@ -148,7 +162,7 @@ local function Give()
     minimap:SetFrameStrata(saved.strata)
     minimap:SetFrameLevel(saved.level)
     minimap:SetZoom(saved.zoom)
-    C_Minimap.SetDrawGroundTextures(true)
+    Ground(true)
     C_Minimap.SetIgnoreRotateMinimap(false)
     cut = nil
     for button, was in pairs(saved.buttons) do
@@ -161,16 +175,19 @@ local function Give()
     cluster:EnableMouse(saved.clusterMouse)
     -- Its mask, frame art and sizes as the game sets them for the minimap's settings.
     if cluster.UpdateMinimapConfig then Core.Ask(cluster.UpdateMinimapConfig, cluster) end
+    -- Hidden first, so what follows its showing (Core's button Sane UI on it, Classic.lua) looks again.
+    minimap:Hide()
     minimap:SetShown(saved.shown)
     saved = nil
 end
 
 -- Taken or given back as the switch says (Show the game's minimap), and given back once the module stood
--- down. Out of combat; asked in a fight, it waits for its end.
+-- down. Out of combat; asked in a fight, it waits for its end, guarded then too (it changes the game's own:
+-- a failure stands the module down, which gives back whatever was taken).
 function Hybrid.Update()
     local wanted = not ns.off and not ns.options.nativeMinimap and canvas ~= nil
     if wanted == (taken and true or false) then return end
-    if InCombatLockdown() then return Core.AfterCombat(WAIT, Hybrid.Update) end
+    if InCombatLockdown() then return Core.AfterCombat(WAIT, ns.Guarded, Hybrid.Update) end
     if not wanted then return Give() end
     Take()
     -- The small view starts at the step the player had the game's minimap at.
@@ -277,16 +294,21 @@ end
 
 -- The game's minimap for a view (camera, the view's size): shown in its middle at the camera's step while
 -- it follows the player (known is false while the player's place is not), square in its middle, out of
--- sight otherwise. The camera's zoom is the step's. On the full map: Wide.
-function Hybrid.Place(camera, width, height, known)
+-- sight otherwise. The camera's zoom is the step's. On the full map: Wide. lost: the small view follows the
+-- player where the game tells no place of the player (an instance, Canvas.lua): the game's minimap alone is
+-- the map, with its own ground, at the view's step (the game's own while the view has none), whatever the
+-- pin filter says.
+function Hybrid.Place(camera, width, height, known, lost)
     if not taken then return end
     local minimap = Parts()
     wide = nil
-    if not ns.Pins.Shows("minimap") then return minimap:Hide() end
+    Ground(lost)
+    if not lost and not ns.Pins.Shows("minimap") then return minimap:Hide() end
     if camera == ns.Window.full then return Wide(minimap, camera, width, height, known) end
+    if lost and not camera.native then camera.native = minimap:GetZoom() end
     local size = Hybrid.Side(width, height)
     local step = camera.native
-    local zoom = size > 0 and step and camera.follow and known and Hybrid.Zoom(step, size)
+    local zoom = size > 0 and step and camera.follow and (lost or known and Hybrid.Zoom(step, size))
     if not zoom then
         minimap:Hide()
         return

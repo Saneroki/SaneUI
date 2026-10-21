@@ -13,6 +13,9 @@ local Core = SaneUI.Core
 --      Wire.Send("G", { ... }, "GUILD", nil, true)  urgent: before what waits in bulk
 --      Wire.ListenBlock("G", fn)       fn(sender, text, channel, name): a block of kind G came whole
 --      Wire.SendBlock("G", text, "GUILD")        packed, cut into parts, queued in bulk; false when too large
+--                                      or when its parts do not all fit in the queue
+--      Wire.SendBlock("G", text, "GUILD", nil, tag)   with a tag of the sender's own (a record's kind), so that
+--      Wire.Drop("G", tag)             what still waits of it can be dropped (a switch turned off)
 --
 --  A message is its kind (letters) with the protocol number, the game version's sign, then its fields, all
 --  cut by tabs: "G1\tf\thello\t...". A kind, protocol or game version not this client's is ignored, and so
@@ -134,12 +137,12 @@ end
 -------------------------------------------------------------------------------
 local Pump
 
-local function Queue(text, channel, target, hurry)
+local function Queue(text, channel, target, hurry, kind, tag)
     local list = hurry and urgent or bulk
     if #urgent + #bulk >= Wire.QUEUE then
         if hurry and #bulk > 0 then table.remove(bulk, 1) else return false end
     end
-    list[#list + 1] = { text = text, channel = channel, target = target, at = Now() }
+    list[#list + 1] = { text = text, channel = channel, target = target, at = Now(), kind = kind, tag = tag }
     Pump()
     return true
 end
@@ -156,8 +159,9 @@ function Wire.Send(kind, fields, channel, target, hurry)
     return Queue(text, channel, target, hurry)
 end
 
--- Sends a block of text, packed, in parts, in bulk. false: not sent (the game cannot pack, too large).
-function Wire.SendBlock(kind, text, channel, target)
+-- Sends a block of text, packed, in parts, in bulk. false: not sent (the game cannot pack, too large, the
+-- queue has no room for all its parts: a block in part is of no use to anybody).
+function Wire.SendBlock(kind, text, channel, target, tag)
     if type(text) ~= "string" or not Wire.CHANNELS[channel] then return false end
     if channel == "WHISPER" and type(target) ~= "string" then return false end
     local util = rawget(_G, "C_EncodingUtil")
@@ -171,14 +175,30 @@ function Wire.SendBlock(kind, text, channel, target)
     end
     local encoded = Core.Ask(util.EncodeBase64, packed)
     if type(encoded) ~= "string" then return false end
-    nextTransfer = nextTransfer % 9999 + 1
     local parts = math.max(1, math.ceil(#encoded / Wire.PART))
+    if #urgent + #bulk + parts > Wire.QUEUE then return false end
+    nextTransfer = nextTransfer % 9999 + 1
     for part = 1, parts do
         local piece = encoded:sub((part - 1) * Wire.PART + 1, part * Wire.PART)
         local fields = { kind, nextTransfer, part, parts, part == 1 and #text or "", piece, n = 6 }
-        if not Queue(Wire.Text(BLOCK_KIND, fields), channel, target, false) then return false end
+        if not Queue(Wire.Text(BLOCK_KIND, fields), channel, target, false, kind, tag) then return false end
     end
     return true
+end
+
+-- What waits of that kind with that tag is not sent after all (Wire.SendBlock's tag): how many were dropped.
+function Wire.Drop(kind, tag)
+    local dropped = 0
+    if tag == nil then return dropped end
+    for _, list in ipairs({ urgent, bulk }) do
+        for index = #list, 1, -1 do
+            if list[index].kind == kind and list[index].tag == tag then
+                table.remove(list, index)
+                dropped = dropped + 1
+            end
+        end
+    end
+    return dropped
 end
 
 -- Whether the game lets addon messages go now.
@@ -273,9 +293,14 @@ local function Allowed(sender, now)
     return true
 end
 
+-- A number in a message: digits only, so never NaN, a fraction or a sign (tonumber takes "nan" and "2.5").
+local function Whole(text)
+    return type(text) == "string" and text:match("^%d+$") and tonumber(text) or nil
+end
+
 -- A block's part: put with the others of its transfer; the whole block told once its last part is there.
 local function Part(sender, fields, channel, name, now)
-    local kind, id, part, parts, size, piece = fields[1], fields[2], tonumber(fields[3]), tonumber(fields[4]), fields[5], fields[6]
+    local kind, id, part, parts, size, piece = fields[1], fields[2], Whole(fields[3]), Whole(fields[4]), fields[5], fields[6]
     if not (kind and kind:match("^%a+$") and id and part and parts and piece) then return end
     if parts < 1 or parts > math.ceil(Wire.BLOCK * 4 / 3 / Wire.PART) + 1 or part < 1 or part > parts then return end
     for key, transfer in pairs(transfers) do
@@ -288,7 +313,7 @@ local function Part(sender, fields, channel, name, now)
         transfers[key] = transfer
     end
     transfer.seen = now
-    if part == 1 then transfer.size = tonumber(size) end
+    if part == 1 then transfer.size = Whole(size) end
     if not transfer.pieces[part] then
         transfer.pieces[part] = piece
         transfer.got = transfer.got + 1

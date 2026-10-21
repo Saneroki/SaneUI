@@ -106,12 +106,18 @@ Board.TEXT = {
 -------------------------------------------------------------------------------
 --  A layout: plain tables, no frames
 -------------------------------------------------------------------------------
--- A copy, to change: the kept one is changed only by being replaced.
+-- A copy, to change: the kept one is changed only by being replaced. What a hand or an old version left
+-- unusable in it is left out (a part that is no table, a key that is no word) or none (a share that is no number).
 local function Copy(node)
     if type(node) ~= "table" then return nil end
-    if node.key then return { key = node.key } end
+    if node.key ~= nil then return type(node.key) == "string" and { key = node.key } or nil end
+    local given = type(node.parts) == "table" and node.parts or {}
+    local kept = type(node.shares) == "table" and node.shares or {}
     local parts, shares = {}, {}
-    for index, part in ipairs(node.parts or {}) do parts[index], shares[index] = Copy(part), node.shares[index] end
+    for index, part in ipairs(given) do
+        local copy = Copy(part)
+        if copy then parts[#parts + 1], shares[#shares + 1] = copy, tonumber(kept[index]) or 0 end
+    end
     return { split = node.split, parts = parts, shares = shares }
 end
 Board.Copy = Copy
@@ -333,6 +339,9 @@ local function Kept(board)
         kept = { chosen = 1, tabs = { {} } }
         options.store[options.key or "board"] = kept
     end
+    for index, tab in ipairs(kept.tabs) do
+        if type(tab) ~= "table" then kept.tabs[index] = {} end -- the first: the module's own again; another: empty
+    end
     if type(kept.chosen) ~= "number" or not kept.tabs[kept.chosen] then kept.chosen = 1 end
     return kept
 end
@@ -493,8 +502,13 @@ local function Release(cancel)
         strip.lit = false
         strip.line:SetAlpha(strip:IsMouseOver() and 0.9 or 0)
         if strip:IsMouseOver() then SetCursor("UI_RESIZE_CURSOR") else SetCursor(nil) end
-        if cancel or not hand.by or hand.by == 0 or not board.standing then return board:Show(board.inside, board.width, board.height) end
         local line = hand.line
+        if cancel or not hand.by or hand.by == 0 or not board.standing then
+            -- Nothing changes: only the strip followed the mouse, and it goes back over its gap.
+            strip:ClearAllPoints()
+            strip:SetPoint("TOPLEFT", board.inside, "TOPLEFT", line[3], -line[4])
+            return
+        end
         local across = line[1].split == "x"
         local before, after = line[1].parts[line[2]], line[1].parts[line[2] + 1]
         local function least(key) return Least(board, key) end
@@ -522,9 +536,12 @@ Board.Release = Release
 -- left, the module's buttons and the X at its right, a thin line under it; under that, its body.
 local function Panel(board, spec)
     local panel = board.panels[spec.key]
-    if panel then
-        panel.spec = spec
-        return panel
+    if panel and panel.spec == spec then return panel end
+    -- Another window took that key (Board.Offer, Withdraw): the one before is told it is hidden, and what it built
+    -- goes out of sight with its panel; the new one gets a panel of its own, built for it.
+    if panel and panel:IsShown() then
+        panel:Hide()
+        if panel.spec.show then Core.Safe(Label(board), panel.spec.show, panel, false) end
     end
     local inside = board.inside
     panel = CreateFrame("Frame", nil, inside)
@@ -851,21 +868,29 @@ function Board.New(window, options)
     return board
 end
 
+-- What a board is offered changed: one that stands lays out anew.
+local function Told(label)
+    local board = boards[label]
+    if board and board.standing and board.options.changed then Core.Safe(Label(board), board.options.changed) end
+end
+
 -- A window of one module on another module's board (a module depends on Core only: the guild's window, the module
 -- Guild's, on Social's full screen). label: the board's (Board.New's label, "Social"); spec as a module's own. One
 -- with the key of a window of the board's module stands in its place: that module asks Offered and leaves its own
--- be. Offered again with the same key, it is replaced.
+-- be. Offered again with the same key, it is replaced. A board that stands lays out anew.
 function Board.Offer(label, spec)
     if type(label) ~= "string" or type(spec) ~= "table" or type(spec.key) ~= "string" then return end
     local list = offered[label] or {}
     offered[label] = list
     for index, other in ipairs(list) do
         if other.key == spec.key then
+            if other == spec then return end
             list[index] = spec
-            return
+            return Told(label)
         end
     end
     list[#list + 1] = spec
+    Told(label)
 end
 
 -- That window offered no more (its module stood down, or its window stands elsewhere now): the board's own of that
@@ -876,9 +901,7 @@ function Board.Withdraw(label, key)
     for index, spec in ipairs(list) do
         if spec.key == key then
             table.remove(list, index)
-            local board = boards[label]
-            if board and board.standing and board.options.changed then Core.Safe(Label(board), board.options.changed) end
-            return
+            return Told(label)
         end
     end
 end
@@ -891,20 +914,25 @@ function Board.Offered(label, key)
     return nil
 end
 
--- That board's full screen, with that window in its layout: true when there is such a board. Its window fills the
--- screen (its edge, Edge.lua); a window the layout chosen lacks is put in beside the largest once it stands.
+-- That board's full screen, with that window in its layout: true when it stands or is on its way. Its window fills
+-- the screen (its edge, Edge.lua), only while it is shown; a window the layout chosen lacks is put in beside the
+-- largest once it stands. False when there is no such board, or its full screen cannot come now (its window
+-- closed, Edit Mode, Can expand to fullscreen off): the caller shows that window elsewhere.
 function Board.Open(label, key)
     local board = boards[label]
     if not board then return false end
-    board.wanted = key
-    local edge = board.window and board.window.edge
     if board.standing then
         if key and not board:Has(key) then board:Toggle(key) end
-        board.wanted = nil
-    elseif edge and edge.Fill then
-        Core.Safe(Label(board), edge.Fill, edge, true)
+        return true
     end
-    return true
+    local window = board.window
+    local edge, frame = window and window.edge, window and window.frame
+    if not (edge and edge.Fill) or (frame and not frame:IsShown()) then return false end
+    board.wanted = key
+    Core.Safe(Label(board), edge.Fill, edge, true)
+    if edge.full then return true end
+    board.wanted = nil
+    return false
 end
 
 -- Whether that board's full screen stands now.

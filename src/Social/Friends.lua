@@ -22,7 +22,7 @@ local _, ns = ...
 --  the full window's search box (Board.Search) is typed into this one too.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-local Board, Layout, Contacts = ns.Board, ns.Layout, ns.Contacts
+local Layout, Contacts = ns.Layout, ns.Contacts
 local Friends = {}
 ns.Friends = Friends
 
@@ -128,6 +128,7 @@ function Friends.Open(key, focus)
 end
 
 local Relabel = Core.Later(function()
+    if not panel then return end -- not made yet (its switch changed before it was ever shown): laid out when it is
     ns.Safe("friends tabs", function()
         Arrange()
         -- A tab the game no longer has here (the system turned off): back to Friends.
@@ -167,19 +168,19 @@ function Friends.Build(holder)
     tools:SetHeight(Layout.TOOLS)
     filter = CreateFrame("DropdownButton", nil, tools, "WowStyle1FilterDropdownTemplate")
     filter:SetPoint("RIGHT", -Layout.EDGE, 0)
-    filter:SetupMenu(function(_, root)
+    filter:SetupMenu(ns.Guard(function(_, root)
         local view = Contacts[current]
         if view and view.Filter then ns.Safe(current:lower(), view.Filter, root) end
-    end)
+    end))
     if filter.SetIsDefaultCallback then
-        filter:SetIsDefaultCallback(function()
+        filter:SetIsDefaultCallback(ns.Guard(function()
             local view = Contacts[current]
             return not (view and view.Filtered and view.Filtered())
-        end)
-        filter:SetDefaultCallback(function()
+        end))
+        filter:SetDefaultCallback(ns.Guard(function()
             local view = Contacts[current]
             if view and view.Unfilter then ns.Safe(current:lower(), view.Unfilter) end
-        end)
+        end))
     end
     search = CreateFrame("EditBox", nil, tools, "SearchBoxTemplate")
     search:SetHeight(20)

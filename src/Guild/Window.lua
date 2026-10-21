@@ -65,22 +65,34 @@ local function Build()
         search = function(text) ns.Guarded(ns.Page.Search, text) end,
         close = function() frame:Hide() end,
     })
-    frame:SetScript("OnShow", ns.Guard(function()
+    -- Hooked, not set: Core's window hooked its own on these (Esc, its zone, letting go of a drag), which a set
+    -- script would drop.
+    frame:HookScript("OnShow", ns.Guard(function()
         ns.Page.Into(window.inside)
         ns.Page.Show(true)
         Core.Sound("IG_CHARACTER_INFO_OPEN")
     end))
-    frame:SetScript("OnHide", ns.Guard(function()
+    frame:HookScript("OnHide", ns.Guard(function()
         ns.Page.Show(false)
         Core.Sound("IG_CHARACTER_INFO_CLOSE")
     end))
     window:Place()
 end
 
+local function InGuild()
+    return Core.Ask(rawget(_G, "IsInGuild")) == true
+end
+
 -- Open it where it stands, or close it: on Social's full screen (opened with the guild window in its layout, or
--- back from it), else the window of its own.
+-- back from it), else the window of its own. Outside a guild nothing opens (there is nothing to show, and the
+-- game's guild key opens the game's own window, where a guild is found): it is said; a window of its own still
+-- open closes.
 function Window.Toggle()
     if ns.off then return end
+    if not InGuild() then
+        if frame and frame:IsShown() then frame:Hide() else ns.Say(TEXT.noGuild) end
+        return
+    end
     if OnSocial() and Core.Board.Offered(BOARD, KEY) then
         if Core.Board.Standing(BOARD) and ns.Page.Shown() then return Core.Board.Close(BOARD) end
         if Core.Board.Open(BOARD, KEY) then return end

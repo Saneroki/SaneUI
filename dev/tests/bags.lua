@@ -43,6 +43,7 @@ function methods:EnableMouseWheel(on) self._wheel = on end
 function methods:IsMouseWheelEnabled() return self._wheel or false end
 function methods:SetTexture(texture, wrap) self._texture, self._wrap = texture, wrap return true end
 function methods:SetVertexColor(r, g, b, a) self._vertex = { r, g, b, a } end
+function methods:SetColorTexture(r, g, b, a) self._colorTexture = { r, g, b, a } end
 function methods:SetAttribute(name, value) self._attributes = self._attributes or {}; self._attributes[name] = value end
 function methods:GetAttribute(name) return self._attributes and self._attributes[name] end
 function methods:RegisterForClicks(...) self._clicks = { ... } end
@@ -83,6 +84,12 @@ function methods:SetID(id) self._id = id end
 function methods:GetID() return self._id end
 function methods:SetFormattedText(format, ...) self._text = format:format(...) end
 
+-- The game's splitter: its item button opens it for a Shift-click on a stack, but not where that click linked the
+-- item into the chat (chatOpen) or something is on the cursor.
+StackSplitFrame = W.NewWidget("Frame", "StackSplitFrame", UIParent)
+StackSplitFrame._shown = false
+local chatOpen = false
+
 -- The game's item button for a bag's slot (ContainerFrameItemButtonTemplate): its marks and parts, and what its
 -- own functions were told.
 W.templates.ContainerFrameItemButtonTemplate = function(widget)
@@ -92,6 +99,18 @@ W.templates.ContainerFrameItemButtonTemplate = function(widget)
     widget.Count = W.NewWidget("FontString", nil, widget)
     widget._template = "ContainerFrameItemButtonTemplate"
     widget._shown = false -- hidden="true", as the game's template is
+    widget._scripts.OnClick = function(self, mouse)
+        if mouse ~= "LeftButton" or not IsModifiedClick("SPLITSTACK") then return end
+        if chatOpen then
+            W.links[#W.links + 1] = "item"
+            return
+        end
+        local info = C_Container.GetContainerItemInfo(self:GetParent():GetID(), self:GetID())
+        if info and info.stackCount > 1 and not CursorHasItem() then
+            StackSplitFrame.owner = self
+            StackSplitFrame:Show()
+        end
+    end
     function widget:SetHasItem(texture) self._has = texture end
     function widget:UpdateQuestItem(quest, id) self._questDrawn = quest or id or false end
 end
@@ -216,7 +235,11 @@ end
 -- The character's bank: one tab, Ores; another for sale. Its settings changed by the game's call.
 local tabs = { [0] = { { ID = 6, name = "Ores", icon = "tab-icon", depositFlags = 0 } } }
 C_Bank = {
-    FetchPurchasedBankTabIDs = function(kind) return kind == 0 and { 6 } or {} end,
+    FetchPurchasedBankTabIDs = function(kind)
+        local ids = {}
+        for index, data in ipairs(tabs[kind] or {}) do ids[index] = data.ID end
+        return ids
+    end,
     FetchPurchasedBankTabData = function(kind) return tabs[kind] or {} end,
     CanViewBank = function() return true end,
     DoesBankTypeSupportAutoDeposit = function(kind) return kind == 0 end,
@@ -325,6 +348,28 @@ check(charm.category == "weapons" and tent.category == "camp", "a trinket with t
 bags[0][6], bags[0][7] = nil, nil
 Contents.Read(0, 6, "bags")
 Contents.Read(0, 7, "bags")
+-- An item the game does not know yet: its record keeps nothing of the one that lay there before, and who can use it
+-- is not asked; once known it is. After a level-up (the bags hidden or not) that is asked anew.
+local GetItemInfo = C_Item.GetItemInfo
+Put(0, 8, 8001, 1, { unusable = true })
+local helm = Contents.Scan({ 0 }, "bags", {}, Contents.ClearFree({}))[8]
+check(helm.unusable and helm.sell == 120 and helm.bind == 1, "plate the character cannot wear: marked")
+W.level = 2
+C_Item.GetItemInfo = function(item) if ID(item) ~= 4002 then return GetItemInfo(item) end end
+Put(0, 8, 4002, 1, { unusable = true })
+Contents.Scan({ 0 }, "bags", {}, Contents.ClearFree({}))
+check(not helm.unusable and helm.sell == nil and helm.bind == nil and helm.stack == nil and helm.subName == nil
+    and Contents.waiting[4002], "another item there, not known yet: nothing of the one before, nothing asked, waited for")
+C_Item.GetItemInfo = GetItemInfo
+Contents.Read(0, 8, "bags")
+check(helm.unusable and helm.sell == 70 and not Contents.waiting[4002], "known now: asked, marked, no longer waited for")
+bags[0][8].unusable = false
+W.level = 3
+Contents.Scan({ 0 }, "bags", {}, Contents.ClearFree({}))
+check(not helm.unusable, "a level later, the bags hidden meanwhile: asked anew")
+W.level = 1
+bags[0][8] = nil
+Contents.Scan({ 0 }, "bags", {}, Contents.ClearFree({}))
 Categories.SwitchOff("quest", false)
 Reclassify()
 check(pelt.category == "quest", "Quest Items switched on: the quest item there")
@@ -368,6 +413,29 @@ local before = Categories.rank.trade
 Categories.Move("trade", 1)
 check(Categories.rank.trade == before + 1 and kept.order[1] == "weapons", "moved down one, the order kept")
 Categories.Move("trade", -1)
+-- A group moves as one; a category passes a whole group in one step; a group's member moves among its members.
+Categories.MoveGroup("armory", 1)
+check(table.concat(kept.order, ",", 1, 6) == "consumables,enhance,camp,weapons,armor,sets",
+    "a group moved down: past the next group, its members together")
+Categories.Move("trade", -1)
+check(table.concat(kept.order, ",", 1, 7) == "consumables,enhance,camp,trade,weapons,armor,sets",
+    "a category moved up: past a whole group at once")
+Categories.Move("armor", -1)
+Categories.Move("armor", -1)
+check(table.concat(kept.order, ",", 4, 7) == "trade,armor,weapons,sets" and Categories.GroupOf("armor") == "armory",
+    "a group's member moved among its members, never out of its group")
+-- What is switched off (not in the sidebar) is stepped over: every move moves something seen.
+Categories.SwitchOff("professions", true)
+Categories.Move("reagent", -1)
+check(table.concat(kept.order, ",", 4, 7) == "trade,reagent,professions,armor",
+    "a category moved up past one switched off: past the group before that at once")
+Categories.SwitchOff("weapons", true)
+Categories.Move("armor", 1)
+check(table.concat(kept.order, ",", 7, 9) == "sets,weapons,armor", "a group's member past a member switched off")
+Categories.SwitchOff("professions", false)
+Categories.SwitchOff("weapons", false)
+kept.order = nil
+Categories.Order()
 local group = Categories.GroupWith("trade", own)
 check(Categories.GroupOf("trade") == group and Categories.GroupOf(own) == group and Categories.GroupWord(group) == "Trade Goods & Potions",
     "two categories made a group, named by its members")
@@ -504,6 +572,25 @@ blocks = Views.Build("group:armory", { section }, nil, "default", options)
 check(Words(blocks) == "Armor=1,Item Set Gear=1" and blocks[1].level == 3, "a group: its members each a block")
 local counts = Views.Counts(section)
 check(counts.trade == 1 and counts["group:armory"] == 2 and counts.junk == 1 and counts.pinned == 0, "how many each category holds")
+counts = Views.Counts(section, { merge = false })
+check(counts.trade == 2, "Merge Stacks off: each stack counted, as each is shown")
+Categories.Pin(2589, true)
+Reclassify()
+Recent.list[1] = 2589
+counts = Views.Counts(section)
+local merged = counts.pinned == 1 and counts.recent == 1
+counts = Views.Counts(section, { merge = false })
+check(merged and counts.pinned == 2 and counts.recent == 2, "Pinned and Recent counted as they show: merged one cell, else each stack")
+Categories.Pin(2589, false)
+Reclassify()
+Recent.Clear()
+-- At any kind of banker this client has, stacks do not merge.
+Enum.PlayerInteractionType.AccountBanker = 68
+local talking = C_PlayerInteractionManager.IsInteractingWithNpcOfType
+C_PlayerInteractionManager.IsInteractingWithNpcOfType = function(kind) return kind == 68 end
+check(not Views.Merging({}), "at the account's banker: no stacks merged")
+C_PlayerInteractionManager.IsInteractingWithNpcOfType = talking
+check(Views.Merging({}), "away from it: merged again")
 
 -------------------------------------------------------------------------------
 --  The displays, without a frame
@@ -684,6 +771,16 @@ check(head.lit:IsShown(), "an item brought over a category's head: lit")
 head:GetScript("OnReceiveDrag")(head)
 check(kept.assigned[2589] == "own1" and holding == nil, "let go there: put into that category, the item back in its slot")
 holding = 2589
+row = RowNamed("Trade Goods")
+row:GetScript("OnEnter")(row)
+local takesLight = row.hover._colorTexture[4]
+row:GetScript("OnLeave")(row)
+holding = nil
+row:GetScript("OnEnter")(row)
+check(takesLight == ns.Sidebars.TAKES and row.hover._colorTexture[4] == ns.Sidebars.HOVER and row.hover:GetAlpha() == 1,
+    "a row that takes the item held: lit brighter under the mouse, by its colour")
+row:GetScript("OnLeave")(row)
+holding = 2589
 row = RowNamed("Pinned Items")
 row:GetScript("OnClick")(row, "LeftButton")
 check(kept.pinned[2589] and holding == nil, "an item clicked on Pinned in the sidebar: pinned")
@@ -760,6 +857,11 @@ menu = RowMenu("Trade Goods & Flasks")
 check(Line(menu, "Disband Group") and Line(menu, "Hide in All Items"), "the group's menu")
 Choose(menu, "Disband Group")
 check(not Categories.GroupOf("own1"), "disbanded")
+Choose(RowMenu("The Armory"), "Move Down")
+check(RowNamed("Adventure Prep").top < RowNamed("The Armory").top and RowNamed("Camp Items").top < RowNamed("Weapons / Trinkets").top,
+    "a group's Move Down: past the next group at once, its members with it")
+Choose(RowMenu("The Armory"), "Move Up")
+check(RowNamed("The Armory").top < RowNamed("Adventure Prep").top, "and up again")
 menu = RowMenu("Trade Goods")
 Choose(menu, "Hide in All Items")
 check(not HeadNamed("Trade Goods") and kept.hidden.trade, "hidden from All Items")
@@ -881,6 +983,33 @@ check(kept.columns[3] == "count" and kept.columns[4] == "level", "a column moved
 levelCell:GetScript("OnMouseUp")(levelCell, "RightButton")
 Choose(W.menus[#W.menus], "Reset Columns")
 check(table.concat(kept.columns, ",") == "icon,name,level,count,sell" and not kept.listSort, "the columns as they were")
+-- A column's edge held: drawn anew only when its width changes; the button let go unheard (the head hidden
+-- meanwhile), the sizing stops; a column held so stops too, and its own let-go still sorts.
+local grip = columnsHead.grips.level
+local redraws, redraw = 0, columnsHead.redraw
+columnsHead.redraw = function() redraws = redraws + 1 redraw() end
+IsMouseButtonDown = function() return true end
+W.cursorX = 100
+grip:GetScript("OnMouseDown")(grip, "LeftButton")
+local tick = columnsHead:GetScript("OnUpdate")
+tick(columnsHead)
+tick(columnsHead)
+check(redraws == 0 and kept.widths.level == nil, "a column's edge held still: nothing drawn anew")
+W.cursorX = 130
+tick(columnsHead)
+tick(columnsHead)
+check(redraws == 1 and kept.widths.level == 66, "moved: wider, drawn anew once")
+IsMouseButtonDown = function() return false end
+tick(columnsHead)
+check(not columnsHead:GetScript("OnUpdate"), "the button let go where the head did not hear it: the sizing stops")
+levelCell:GetScript("OnMouseDown")(levelCell, "LeftButton")
+columnsHead:GetScript("OnUpdate")(columnsHead)
+local stopped = not columnsHead:GetScript("OnUpdate")
+levelCell:GetScript("OnMouseUp")(levelCell, "LeftButton")
+check(stopped and kept.listSort == "level", "a column held so: its drag stops, its click still sorts")
+columnsHead.redraw = redraw
+kept.widths.level, kept.listSort, kept.listDown, W.cursorX = nil, nil, nil, 960
+Bags.Redraw()
 local armoryHead = HeadNamed("The Armory")
 armoryHead:GetScript("OnMouseUp")(armoryHead, "LeftButton")
 check(kept.folded and kept.folded["group:armory"] and not Cells.Shown(0, 1), "a head clicked in the list: folded")
@@ -894,7 +1023,21 @@ dropdown:GenerateMenu()
 Choose(dropdown._items, "Grid")
 dropdown:GenerateMenu()
 Choose(dropdown._items, "Name")
-check(kept.order == "name", "sorted by name, kept")
+check(kept.sort == "name" and Line(dropdown._items, "Name").checked("name"), "sorted by name, kept (sort: a key of its own)")
+-- Sort By and the categories' own order never take each other's place in the store.
+Choose(RowMenu("Professions"), "Switch Off")
+check(not ns.off and Categories.Off("professions") and #Categories.order > 0 and kept.sort == "name",
+    "a category switched off after Sort By: the module goes on, both orders kept")
+dropdown:GenerateMenu()
+Choose(Line(dropdown._items, "Switched Off").sub, "Switch On Professions")
+check(not ns.off and not Categories.Off("professions") and kept.sort == "name", "switched on again from the dropdown")
+local tradeRank = Categories.rank.trade
+Choose(RowMenu("Trade Goods"), "Move Down")
+check(Categories.rank.trade == tradeRank + 1, "a category moved down")
+Bags.Store()
+check(Categories.rank.trade == tradeRank + 1 and type(kept.order) == "table" and kept.sort == "name",
+    "the store read again (as after a /reload): the category where it was put, Sort By kept")
+Choose(RowMenu("Trade Goods"), "Move Up")
 dropdown:GenerateMenu()
 Choose(dropdown._items, "Default")
 dropdown:GenerateMenu()
@@ -936,7 +1079,7 @@ local clothButton = Cells.Button(0, 2)
 clothButton:GetScript("OnClick")(clothButton, "LeftButton")
 W.modifier = nil
 local open, amount = ns.Split.Shown()
-check(open and amount == "10", "our splitter opens, half the stack in it")
+check(open and amount == "10" and not StackSplitFrame:IsShown(), "our splitter opens in place of the game's, half the stack in it")
 C_Container.SplitContainerItem = function(bag, slot, amount) calls.split = bag .. ":" .. slot .. "x" .. amount end
 C_Container.PickupContainerItem = function(bag, slot) calls.placed = bag .. ":" .. slot end
 local splitButton
@@ -950,6 +1093,43 @@ end
 splitButton:GetScript("OnClick")(splitButton)
 check(calls.split == "0:2x10" and calls.placed == "0:6" and Views.split[2589], "split: that many into the first free slot; kept apart from then on")
 check(not ns.Split.Shown(), "the splitter closed")
+Views.split[2589] = nil
+-- A Shift-click that links the stack into the chat (the game opened no splitter): none of ours either.
+chatOpen, W.modifier = true, "SPLITSTACK"
+clothButton = Cells.Button(0, 2)
+clothButton:GetScript("OnClick")(clothButton, "LeftButton")
+chatOpen, W.modifier = false, nil
+check(W.links[#W.links] == "item" and not ns.Split.Shown(), "a Shift-click while writing in the chat: the item linked, no splitter")
+-- An Auto Split under way stops when another stack is chosen, and the splitter goes when the bags do.
+local function SplitButton(word)
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == ns.Split.dialog and widget._kind == "Button" and widget._scripts.OnClick then
+            for _, child in ipairs(W.frames) do
+                if child._parent == widget and child._kind == "FontString" and child._text == word then return widget end
+            end
+        end
+    end
+end
+local splits = 0
+C_Container.SplitContainerItem = function() splits = splits + 1 end
+ns.Split.Open(clothButton, Cells.Record(clothButton))
+for _, widget in ipairs(W.frames) do
+    if widget._parent == ns.Split.dialog and widget._kind == "EditBox" then widget:SetText("2") end -- less than either stack
+end
+local autoSplit = SplitButton("Auto Split")
+autoSplit:GetScript("OnClick")(autoSplit)
+W.Wait(ns.Split.WAIT)
+check(splits >= 2, "Auto Split: one split after the other")
+local potionStack = Cells.Button(0, 3)
+ns.Split.Open(potionStack, Cells.Record(potionStack))
+local splitsThen = splits
+W.Wait(ns.Split.WAIT * 4)
+check(splits == splitsThen and ns.Split.Shown(), "another stack chosen: the Auto Split under way stops")
+Push()
+Stand()
+check(not ns.Split.Shown(), "the bags gone: the splitter with them")
+Push()
+Stand()
 Views.split[2589] = nil
 
 -------------------------------------------------------------------------------
@@ -1197,6 +1377,40 @@ end
 check(BankRow("All Bank Tabs").bar:IsShown() and BankRow("One Bank") and BankRow("Ores") and BankRow("Ores").count._text == "1",
     "its sidebar: All Bank Tabs (shown), One Bank, each tab with its slots taken")
 check(Text("1 / 8 Items"), "its bar: the bank's slots taken of how many")
+-- Several tabs (the game's tab IDs follow on from 6): each in the sidebar, in its order, with its slots taken.
+for id = 7, 10 do
+    tabs[0][#tabs[0] + 1] = { ID = id, name = "Tab " .. id, icon = "tab-icon", depositFlags = 0 }
+    SIZES[id] = 4
+end
+Put(9, 2, 7001, 1)
+Bank.Refresh()
+local listed = {}
+for _, bankRow in ipairs(Bank.rail:Rows()) do
+    if bankRow.tab and bankRow:IsShown() then listed[#listed + 1] = bankRow.tab end
+end
+check(table.concat(listed, ",") == "6,7,8,9,10" and BankRow("Tab 9").count._text == "1",
+    "several tabs: each in the sidebar in its order, with its slots taken: " .. table.concat(listed, ","))
+for id = 7, 10 do
+    tabs[0][#tabs[0]] = nil
+    SIZES[id] = nil
+end
+bags[9] = nil
+Bank.Refresh()
+-- Item data the bank did not wait for draws nothing anew, money only the gold; the data of one it waited for does.
+Put(6, 2, 7001, 2)
+local money = GetMoney
+GetMoney = function() return 54321 end
+W.Fire("GET_ITEM_INFO_RECEIVED", 2589)
+W.Fire("PLAYER_MONEY")
+W.Wait(0)
+check(Contents.records[6][2].item == nil and Text("54321c"), "another item's data and money: only the gold anew")
+Contents.waiting[7001] = true
+W.Fire("GET_ITEM_INFO_RECEIVED", 7001)
+W.Wait(0)
+check(Contents.records[6][2].item == 7001 and not Contents.waiting[7001], "the data of an item it waited for: read and drawn anew")
+GetMoney = money
+bags[6][2] = nil
+Bank.Refresh()
 row = BankRow("One Bank")
 row:GetScript("OnClick")(row, "LeftButton")
 check(HeadNamed("Bank") and HeadNamed("Bank").number._text == "(1 / 8)", "One Bank: the bank's slots together")
@@ -1210,6 +1424,42 @@ end
 bankMenu:GenerateMenu()
 Choose(bankMenu._items, "Group by Category")
 check(ns.store.bank.group and HeadNamed("Trade Goods") and Bank.cells:Shown(6, 1), "Group by Category: the bank's items by the bags' categories")
+Choose(Line(ItemMenu(Bank.cells:Button(6, 1)), "Put Into").sub, "Professions")
+check(kept.assigned[6001] == "professions" and HeadNamed("Professions"), "a bank item put into a category from its menu: the bank drawn anew")
+Categories.Assign(6001, nil)
+Bank.Refresh()
+-- The bags' own choices about an item the bank holds too draw the bank anew: the middle click, the junk marker.
+local function BankHolds(word, item)
+    local blocks = Bank.blocks
+    for index = 1, blocks and blocks.count or 0 do
+        if blocks[index].word == word then
+            for _, entry in ipairs(blocks[index].entries) do
+                if entry.record.item == item then return true end
+            end
+        end
+    end
+    return false
+end
+Put(0, 6, 6001, 1)
+Categories.Assign(6001, "professions")
+Bags.Refresh()
+Bank.Refresh()
+local barInBags = Cells.Button(0, 6)
+barInBags:GetScript("OnMouseUp")(barInBags, "MiddleButton")
+check(kept.assigned[6001] == nil and BankHolds("Trade Goods", 6001) and not BankHolds("Professions", 6001),
+    "a middle click in the bags takes the item out of its category: the bank drawn anew")
+coinButton:GetScript("OnClick")(coinButton)
+ns.Select.Click(Cells.Button(0, 6))
+coinButton:GetScript("OnClick")(coinButton)
+check(kept.assigned[6001] == "junk" and BankHolds("Junk", 6001), "marked as junk by the coin's clicks: in the bank's Junk too")
+holding = 6001
+coinButton:GetScript("OnClick")(coinButton)
+check(holding == nil and kept.assigned[6001] == nil and BankHolds("Trade Goods", 6001) and not BankHolds("Junk", 6001),
+    "brought to the coin, unmarked at once: the bank drawn anew too")
+Categories.MarkJunk(6001, false, 2)
+bags[0][6] = nil
+Bags.Refresh()
+Bank.Refresh()
 bankMenu:GenerateMenu()
 Choose(bankMenu._items, "Group by Category")
 -- The list, under a column head of its own with the bags' columns.

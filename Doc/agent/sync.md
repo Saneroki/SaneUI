@@ -43,6 +43,11 @@
 - Saved data is checked for its kind before use: a chat window's switches (boolean), dock (number or false),
   tint and place (numbers), kinds and channels (text), a colour's `r`/`g`/`b`; the bars per entry (one the
   list lacks or not boolean stays as the game has it). A value of another shape leaves that setting alone.
+- Channel colours (the game's `CHANNEL<n>`, by the number here) are kept apart, `chatFrames.channels[lower-case
+  name] = { name, r, g, b, byClass }` (`GetChannelList`), and written to this character's channel of that name
+  at its own number; `CHANNEL<n>` in `colours` (an older shape) is never written. One not joined yet (a join
+  the server answers later) waits and is written at `CHANNEL_UI_UPDATE` (`Core.Later`, after a fight, Accountwide
+  on and the part kept); Read keeps the taken entry for a channel not joined here or still waiting.
 - Never touch Blizzard chat/action/Edit Mode frames: only stored-setting APIs (`SetChatWindow*`,
   `Add/RemoveChatWindow*`, `ChangeChatColor`, `SetActionBarToggles`, `C_EditMode.SetActiveLayout`,
   `SetModifiedClick` + `SaveBindings`).
@@ -53,7 +58,8 @@ while in the world: PEW → PLAYER_LEAVING_WORLD), `waiting` (not set yet: no ma
 (`Core.EditMode.active`), combat; retried on those events and when `Core.EditMode.Watch` says closed) and
 `missing` (kept, but not in this character's list: kept until the layout in use changes while in the world
 and not by us, the player's pick; so a character without another's own layout does not overwrite the choice
-at its logout). Read = waiting or missing or seen or what was taken.
+at its logout). Such a pick clears `waiting` too: the player's layout wins. Read = waiting or missing or seen
+or what was taken.
 
 Regenerate `Data/Pages.lua` after a client update: `dev/tools/sync-pages` (reads `references/`, camelot game type
 with the load group mainline as `dev/blizzard/export.py` has them, Mainline family; Gameplay order from

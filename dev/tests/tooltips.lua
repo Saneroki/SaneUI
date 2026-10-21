@@ -139,6 +139,7 @@ UnitXP, UnitXPMax, MAX_PLAYER_LEVEL = function() return 100 end, function() retu
 UnitHealthPercent, CurveConstants = function() return 83 end, { ScaleTo100 = 1 }
 BreakUpLargeNumbers = function(number) return tostring(number) end
 SetPortraitTexture = function(texture, unit) texture.portrait = unit end
+W.methods.SetKeepModelOnHide = function(self, keep) self._keep = keep end -- a model frame keeps its model while hidden
 GetCreatureDifficultyColor = function() return { r = 1, g = 1, b = 0 } end
 GetQuestDifficultyColor = GetCreatureDifficultyColor
 PowerBarColor = { MANA = { r = 0, g = 0, b = 1 } }
@@ -333,8 +334,9 @@ ItemRefTooltip = pinned
 pinned.CloseButton = W.NewWidget("Button", nil, pinned)
 pinned:EnableMouse(true)
 pinned.CloseButton:EnableMouse(true)
--- Prices seen at the auction house a month ago and more (and one without a day) are forgotten at the login
-ns.store.prices, ns.store.seen = { [1] = 5, [2] = 6, [3] = 7 }, { [1] = 100 - 31, [2] = 100 - 30 }
+-- Prices seen at the auction house a month ago and more (and one without a day, one that is no number) are
+-- forgotten at the login
+ns.store.prices, ns.store.seen = { [1] = 5, [2] = 6, [3] = 7, [4] = "lots" }, { [1] = 100 - 31, [2] = 100 - 30, [4] = 100 }
 W.Fire("PLAYER_LOGIN")
 check(#postCalls == 1 and postCalls[1].kind == "ALL", "one listener for every kind of tooltip data")
 check(Data.Set("Quests"):State() == "loading" and Data.Set("Drops"):State() == "loading" and Data.Set("Disenchants"):State() == "loading",
@@ -344,6 +346,9 @@ check(tip._scripts.OnTooltipCleared and tip._scripts.OnShow and ns.Panel.All()[t
     "the tooltips that also show hints are hooked at login; their panels are only made when first needed")
 check(ns.store.prices[1] == nil and ns.store.prices[2] == 6 and ns.store.prices[3] == nil and ns.store.seen[1] == nil,
     "an auction price not seen for more than 30 days is forgotten at the login: the saved prices do not only grow")
+ns.store.prices[5] = "dear" -- written in by hand
+check(ns.store.prices[4] == nil and ns.Auction.Price(5) == nil, "a saved price that is no number (a hand edit) is never a price")
+ns.store.prices[5] = nil
 
 -- Sentences of the game with gaps
 check(("Durability 61 / 120"):match(ns.PATTERN.DURABILITY) == "61" and ("(53.8 damage per second)"):match(ns.PATTERN.DPS) == "53.8"
@@ -695,6 +700,25 @@ check(ns.store.prices[19019] == 98765 and count(panel) == 6 and row(panel, 2).ki
     .. "there brings, after the house's cut of 5%")
 check(row(panel, 6).left == "Sell on the AH for 98765c" and row(panel, 6).icon == nil and row(panel, 6).font == "row" and row(panel, 6).lg == COLOR.DONE[2],
     "and in one line, in green, what to do: it brings more there than at a vendor")
+-- A row of the auction house's lists: the game fills the tooltip by the item's link without the vendor's price
+-- (GetHyperlink's fourth argument, hideVendorPrice), which nothing else leaves out
+tip.info = { getterName = "GetHyperlink", getterArgs = { "item:19019", nil, nil, true, n = 4 } }
+tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
+check(row(panel, 6).left == "Buy if under 93826c" and row(panel, 6).right == "now 98765c" and row(panel, 6).lr == COLOR.RED[1],
+    "an item the auction house lists to you: the most it is worth paying, red while the lowest price is over it")
+-- The house fills its list of your own auctions the same way: the advice to buy only while it shows what it sells
+AuctionHouseFrameDisplayMode = { Buy = {}, ItemBuy = {}, CommoditiesBuy = {}, Auctions = {} }
+AuctionHouseFrame = { GetDisplayMode = function(self) return self.mode end, mode = AuctionHouseFrameDisplayMode.Auctions }
+tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
+check(row(panel, 6).left == "Sell on the AH for 98765c", "in the house's list of your own auctions: what to do with it, no advice to buy")
+AuctionHouseFrame.mode = AuctionHouseFrameDisplayMode.ItemBuy
+tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
+check(row(panel, 6).left == "Buy if under 93826c", "in its list of what it sells: the advice to buy")
+AuctionHouseFrame, AuctionHouseFrameDisplayMode = nil, nil
+tip.info = { getterName = "GetHyperlink", getterArgs = { "item:19019", n = 1 } }
+tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
+check(row(panel, 6).left == "Sell on the AH for 98765c", "the same item by its link anywhere else: what to do with it for gold")
+tip.info = nil
 W.alt = true
 tip:Fill({ type = TYPE.Item, id = 19019 }, hatchet)
 check(row(panel, 6).left == "Sell at" and row(panel, 6).right == "98764c" and row(panel, 7).left == "Sell on the AH for 98765c",
@@ -885,7 +909,11 @@ for _, label in ipairs(hidden) do
     end
     for index = 1, #panel.texts do check(panel.texts[index] ~= label, "a text for a unit's numbers is not one of the texts that are measured") end
 end
-for _, bar in ipairs(panel.bars) do check(bar ~= panel.live.health and bar ~= panel.live.power, "a unit's bars are not the bars used for other things") end
+for use, bar in pairs(panel.liveBars) do
+    if use ~= "health" and use ~= "power" then
+        check(bar ~= panel.live.health and bar ~= panel.live.power, "a unit's bars are not the bars used for other things (an item's durability)")
+    end
+end
 check(#panel.auraIcons == 3 and panel.auraIcons[1]._texture == 11 and panel.auraIcons[3]._texture == 13 and panel.auraIcons[3]:IsShown(), "its buffs, then its debuffs, as small icons")
 check(panel.auraIcons[1].mask._texture == "Interface\\AddOns\\SaneUI_Tooltips\\Art\\aura-mask", "each with a soft edge")
 world.mouseover.target = false
@@ -1058,6 +1086,10 @@ UnitQuestTrivialLevelRange = nil
 -- How often, below 1 % (NPC 2 drops the candle that rarely)
 check(ns.Quests.Of(2).n == 1 and ns.Quests.Of(2)[1].kind == "drop" and ns.Quests.Of(2)[1].extra == "<1", "a chance below 1 % is shown as <1")
 check(ns.Quests.Of(999).n == 0 and ns.Quests.Item(999).n == 0, "a creature or an item Core's data does not know has no quest list")
+local unknown = ns.Quests.Item(999)
+for id = 900001, 900400 do ns.Quests.Item(id) end
+check(ns.Quests.Item(999) ~= unknown and ns.Quests.Item(999).n == 0,
+    "what is kept of the lists has an end: past 400 items they are forgotten together, each made anew when asked")
 -- A reader of the data that fails: noted and told once, what was found before it stays
 local keys = Data.Set("Quests").Keys
 Data.Set("Quests").Keys = function(self, index, value)
@@ -1109,7 +1141,12 @@ world.target.kind = "elite"
 
 -- A live 3D portrait (the option models): the game's model of the unit, in the portrait's place --
 local given = {} -- the units a model was given
-W.methods.SetUnit = function(self, unit) given[#given + 1] = unit; return not unitOf(unit).far end
+W.methods.SetUnit = function(self, unit)
+    given[#given + 1] = unit
+    if not unitOf(unit).far then self._model = unit end
+    return not unitOf(unit).far
+end
+W.methods.ClearModel = function(self) self._model = nil end
 W.methods.SetPortraitZoom = function(self, zoom) self._zoom = zoom end
 W.methods.SetParent = function(self, parent) self._parent = parent end
 W.methods.SetFrameLevel = function(self, level) self._level = level end
@@ -1130,16 +1167,30 @@ local asked = #given
 panel.drawn = false
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, kobold)
 check(#given == asked and figure:IsShown(), "drawn again for the same unit, the model is not given it again (it would load anew)")
-figure:Hide() -- with its panel
-panel.drawn = false
+-- Hidden with its panel (the game hides the model frame with it) and filled again for the same unit, as when
+-- the mouse comes back to it: the panel is not drawn anew, and the model still stands in the portrait's place.
+-- (A model frame that does not keep its model loses it when hidden.)
+tip:Hide()
+if figure._scripts.OnHide then figure._scripts.OnHide(figure) end
+if not figure._keep then figure._model = nil end
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, kobold)
-check(#given == asked + 1 and figure:IsShown(), "once hidden, it forgets the unit, and is given it again when shown")
+W.Fire("MODIFIER_STATE_CHANGED", "LCTRL", 1) -- a key: the shown panels seen or not anew (Gate)
+check(figure._model == "target" and #given == asked and figure:IsShown() and figure:GetAlpha() == 1 and not panel.icon:IsShown(),
+    "hidden and shown again for the same unit: its model stands at once, kept while hidden, not given anew")
 tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury" }, { "Epic" } })
 check(not figure:IsShown() and panel.icon:IsShown(), "an item has its icon, no model")
-world.target.far = true -- out of sight: the game cannot draw its model
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, kobold)
-check(not figure:IsShown() and panel.icon:IsShown() and panel.icon.portrait == "target", "where the game cannot draw the model, the flat picture")
-world.target.far = nil
+check(#given == asked and figure:IsShown() and not panel.icon:IsShown(), "the same unit after an item: its kept model, at once")
+world.target.far = true -- out of sight: the game cannot draw its model
+local sameGuid = UnitGUID
+UnitGUID = function(unit) return unit == "target" and "Creature-0-0-0-0-9999-0" or sameGuid(unit) end -- another creature
+tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, kobold)
+check(not figure:IsShown() and panel.icon:IsShown() and panel.icon.portrait == "target" and #given == asked + 1,
+    "where the game cannot draw the model, the flat picture")
+panel.drawn = false
+tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, kobold)
+check(not figure:IsShown() and #given == asked + 2, "and the game is asked again at the next draw")
+world.target.far, UnitGUID = nil, sameGuid
 options.models = false
 panel.drawn = false
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, kobold)
@@ -1153,7 +1204,7 @@ W.Fire("MODIFIER_STATE_CHANGED", "LSHIFT", 1)
 check(figure:GetAlpha() == 1 and panel:GetAlpha() == 1, "and seen with its panel")
 W.shift, options.show = false, "always"
 W.Fire("MODIFIER_STATE_CHANGED", "LSHIFT", 0)
-W.methods.SetUnit = nil -- the units below have the flat picture again
+W.methods.SetUnit, W.methods.ClearModel = nil, nil -- the units below have the flat picture again
 figure:Hide()
 
 -- A thing's 3D model in its icon's place (the option models, Figures.lua): a mount's and a pet's by the
@@ -1875,6 +1926,67 @@ shopping:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury", nil, { 0.64, 
 fixed, point = placed(worn)
 check(fixed and point[1] == "TOPRIGHT" and point[4] == 700 - GAP and select(2, placed(secondWorn))[1] == "TOPRIGHT"
     and select(2, placed(secondWorn))[4] == 700 - GAP - WIDE - GAP, "another thing near the right edge: on the left, where they fit")
+-- The game fills the comparisons before it tells of the item they belong to: the item's panel is drawn first
+-- all the same, so they stand beside where it stands for this item, not where it stood for the last one (here
+-- the item's panel stands where what it shows puts it)
+function panel:GetLeft() return row(panel, 1).left == "Linen Cloth" and 700 or 300 end
+function panel:GetRight() return row(panel, 1).left == "Linen Cloth" and 920 or 520 end
+shopping:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury", nil, { 0.64, 0.21, 0.93 } }, { "Epic" } }, true)
+tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury", nil, { 0.64, 0.21, 0.93 } }, { "Epic" } }, true)
+frame()
+fixed, point = placed(worn)
+check(fixed and point[1] == "TOPLEFT" and point[4] == 520 + GAP,
+    "filled before the item they belong to, its comparisons stand beside its panel as drawn for that item, at once")
+-- A tooltip the game fills while the end of the frame draws the others waits in a queue of its own and is
+-- drawn the next frame: never left waiting, unseen
+local seat, meanwhile = ns.Host.Seat, false
+ns.Host.Seat = function(tooltip, which)
+    seat(tooltip, which)
+    if tooltip == tip and not meanwhile then
+        meanwhile = true
+        second:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury", nil, { 0.64, 0.21, 0.93 } }, { "Epic" } }, true)
+    end
+end
+shopping:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury", nil, { 0.64, 0.21, 0.93 } }, { "Epic" } }, true)
+tip:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury", nil, { 0.64, 0.21, 0.93 } }, { "Epic" } }, true)
+frame()
+ns.Host.Seat = seat
+check(meanwhile and secondWorn.pending and ns.driver:IsShown(), "a tooltip filled while the others are drawn waits for the next frame")
+frame()
+check(not secondWorn.pending and secondWorn:IsShown() and second:GetAlpha() == 0, "and is drawn then, not left waiting unseen")
+-- The game refreshes the item's tooltip as a bag's button does several times a second: it hides it (and so its
+-- comparisons) and fills it again in one go. The comparisons keep their layout: the second stays where it was
+-- while the first is a little narrower for a moment
+local thunderfury = { { "Thunderfury", nil, { 0.64, 0.21, 0.93 } }, { "Epic" } }
+local function refresh(main, rows)
+    tip:Hide()
+    shopping:Hide()
+    second:Hide()
+    shopping:Fill({ type = TYPE.Item, id = 19019 }, thunderfury, true)
+    second:Fill({ type = TYPE.Item, id = 19019 }, thunderfury, true)
+    tip:Fill({ type = TYPE.Item, id = main }, rows, true)
+    frame()
+end
+worn.GetWidth = function() return 200 end
+refresh(19019, thunderfury)
+worn.GetWidth = wide
+check(select(2, placed(worn))[4] == 520 + GAP and select(2, placed(secondWorn))[4] == 520 + GAP + WIDE + GAP,
+    "the item's tooltip refreshed (hidden and filled again in one go): its comparisons keep their places")
+-- A piece of gear with Alt held, its comparisons on the left: refreshed, the item's panel is drawn before them,
+-- and the stage of your character already keeps to the other side, where it stood
+function panel:GetLeft() return row(panel, 1).left == "Helm" and 700 or 300 end
+function panel:GetRight() return row(panel, 1).left == "Helm" and 920 or 520 end
+W.alt = true
+shopping:Fill({ type = TYPE.Item, id = 19019 }, thunderfury, true)
+second:Fill({ type = TYPE.Item, id = 19019 }, thunderfury, true)
+tip:Fill({ type = TYPE.Item, id = 6003 }, { { "Helm" } }, true)
+frame()
+tick(panel)
+local right = stage._points[1] and stage._points[1][1]
+refresh(6003, { { "Helm" } })
+check(right == "TOPLEFT" and stage:IsShown() and stage._points[1][1] == "TOPLEFT" and stage._points[1][3] == "TOPRIGHT",
+    "with Alt over gear whose comparisons stand at the left, refreshed: your character stays at the panel's right")
+W.alt = false
 panel.GetLeft, panel.GetRight, panel.GetTop, UIParent.GetWidth = nil, nil, nil, nil
 second:Hide()
 tip.shoppingTooltips = nil
@@ -2039,6 +2151,14 @@ check(not panel:IsShown() and tip:GetAlpha() == 1 and #W.printed == 2, "after th
 options.cursor = "always"
 GameTooltip_SetDefaultAnchor(tip, UIParent)
 check(tip.anchor == "ANCHOR_CURSOR_RIGHT", "the switch for the mouse still works")
+-- Standing down while a tooltip waits to be drawn: nothing waits any more, and the frame that would draw it
+-- stops (its OnUpdate would only do nothing, every frame)
+ns.off = nil
+shopping:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury", nil, { 0.64, 0.21, 0.93 } }, { "Epic" } }, true)
+local waited = ns.driver:IsShown()
+ns.StandDown("a test")
+check(waited and ns.off and not ns.driver:IsShown() and not worn:IsShown(),
+    "standing down while a tooltip waits to be drawn: the frame that would draw it stops, the tooltip is the game's")
 
 -- An update with new files and only a /reload: part of the module is missing ---------------------
 local whole = ns.Model

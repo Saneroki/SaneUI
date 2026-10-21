@@ -21,10 +21,11 @@ local _, ns = ...
 --      store.views = { next = 3, list = { { id = 1, name = "Second chat", shows = { WHISPER = true, ... } }, ... } }
 --  At first one, the second chat, showing whispers, your groups and guild.
 --
---  Messages that came while none of a view's lists was on show are counted
---  (view.unread, view.colour: the last one's chat colour; not kept): its row
---  in the conversations' list is lit as the game's chat tabs light a new
---  message, until a list of it is shown.
+--  Messages that came while none of a view's lists was on show are counted,
+--  for this session only, not kept with the view (unseen; the last one's chat
+--  colour in a table of the view's own, made once: tints): its row in the
+--  conversations' list is lit as the game's chat tabs light a new message,
+--  until a list of it is shown.
 --
 --  Built from the game's parts, as the chat: its scrolling list and scroll bar.
 -------------------------------------------------------------------------------
@@ -36,6 +37,9 @@ ns.Feed = Feed
 Feed.FIRST = { WHISPER = true, PARTY = true, RAID = true, INSTANCE_CHAT = true, GUILD = true, OFFICER = true } -- the first view's
 
 local lists = {} -- every list made, in the order made
+local unseen = setmetatable({}, { __mode = "k" }) -- [view] = its messages not seen yet, this session
+local tints = setmetatable({}, { __mode = "k" }) -- [view] = { r, g, b } of its last message not seen, reused
+local menus = setmetatable({}, { __mode = "k" }) -- [view] = its list of chats (Feed.Menu), made once
 
 -------------------------------------------------------------------------------
 --  The views
@@ -115,15 +119,20 @@ function Feed.Flip(view, group)
 end
 
 -- The list of chats on the line with a view's name: everything the chat can show (Channels.Showable), each with
--- its tick for this view.
+-- its tick for this view. The game asks for it when it opens, outside our own guard: behind one, made once a view.
 function Feed.Menu(view)
-    return function(_, root)
-        root:CreateTitle(ns.TEXT.showing)
-        for _, chat in ipairs(ns.Channels.Showable()) do
-            root:CreateCheckbox(chat.text, ns.Guard(function() return Feed.Shows(view, chat.group) end),
-                ns.Guard(function() Feed.Flip(view, chat.group) end))
-        end
+    local menu = menus[view]
+    if not menu then
+        menu = ns.Guard(function(_, root)
+            root:CreateTitle(ns.TEXT.showing)
+            for _, chat in ipairs(ns.Channels.Showable()) do
+                root:CreateCheckbox(chat.text, ns.Guard(function() return Feed.Shows(view, chat.group) end),
+                    ns.Guard(function() Feed.Flip(view, chat.group) end))
+            end
+        end)
+        menus[view] = menu
     end
+    return menu
 end
 
 -- The last message a view shows, or would: for its row in the conversations' list.
@@ -144,7 +153,7 @@ end
 
 -- A view's new messages not seen, and the chat colour of the last; 0 once a list of it is on show.
 function Feed.Unread(view)
-    return view.unread or 0, view.colour
+    return unseen[view] or 0, tints[view]
 end
 
 -------------------------------------------------------------------------------
@@ -185,13 +194,16 @@ local function Build(list)
     local scroll = CreateFrame("EventFrame", nil, parent, "MinimalScrollBar")
     scroll:SetPoint("TOPLEFT", box, "TOPRIGHT", 4, -2)
     scroll:SetPoint("BOTTOMLEFT", box, "BOTTOMRIGHT", 4, 2)
+    -- The list asks these outside our own guard: behind one of ours, and never a height of nothing, which would stop it.
+    local function Measured(entry)
+        return list.width and (Bubble.Known(entry, list.width) or Bubble.Measure(entry, list.width)) or 1
+    end
+    local function Drawn(row, entry)
+        if list.width then Bubble.Init(row, entry, list.width) end
+    end
     local view = CreateScrollBoxListLinearView(0, 0, 0, 0, Layout.SPACING)
-    view:SetElementExtentCalculator(function(_, entry)
-        return list.width and (Bubble.Known(entry, list.width) or ns.Guarded(Bubble.Measure, entry, list.width)) or 1
-    end)
-    view:SetElementInitializer("Frame", function(row, entry)
-        if list.width then ns.Guarded(Bubble.Init, row, entry, list.width) end
-    end)
+    view:SetElementExtentCalculator(function(_, entry) return ns.Guarded(Measured, entry) or 1 end)
+    view:SetElementInitializer("Frame", function(row, entry) ns.Guarded(Drawn, row, entry) end)
     ScrollUtil.InitScrollBoxListWithScrollBar(box, scroll, view)
     box:SetInterpolateScroll(true)
     scroll:SetInterpolateScroll(true)
@@ -223,8 +235,8 @@ function methods:Show(on)
     Bar(self)
     if not self.shown then return end
     if self.stale then Fill(self) end
-    if self.view.unread then
-        self.view.unread, self.view.colour = nil, nil
+    if unseen[self.view] then
+        unseen[self.view] = nil
         ns.Conversations.Said()
     end
 end
@@ -282,8 +294,10 @@ function Feed.Added(entry)
     for _, list in ipairs(lists) do list:Added(entry) end
     for _, view in ipairs(Kept().list) do
         if Feed.Shows(view, entry.group) and not Seen(view) then
-            view.unread = (view.unread or 0) + 1
-            view.colour = { entry.r or 1, entry.g or 1, entry.b or 1 }
+            unseen[view] = (unseen[view] or 0) + 1
+            local tint = tints[view] or {} -- one table for each view: this comes with nearly every message
+            tint[1], tint[2], tint[3] = entry.r or 1, entry.g or 1, entry.b or 1
+            tints[view] = tint
         end
     end
 end

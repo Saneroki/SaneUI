@@ -198,6 +198,8 @@ end
 function View.Build(page)
     box = Board.List(page, function(row, group)
         Draw(row, group)
+        if row.wired then return end -- its script once: the list hands its rows from one group to another
+        row.wired = true
         row:SetScript("OnClick", function(self, button) ns.Safe("quick join", Click, self, button) end)
     end)
     join = Board.Button(page, Core.Word("JOIN_QUEUE", "Join Queue"), 110, Join)

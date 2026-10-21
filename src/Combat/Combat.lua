@@ -55,13 +55,14 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "questMarks" then ns.Guarded(ns.QuestMarks.Update) end
 end })
 
--- Standing down, every window on the full screen gives back what it lent, the game's keys open the game's
--- windows again, and the window goes.
+-- Standing down, the game's keys open the game's windows again first (ours do nothing now), every window on the
+-- full screen gives back what it lent, and the window goes: each step by itself, so one that fails keeps none of
+-- the others from giving back.
 function ns.GiveBack()
-    ns.Board.Leave()
-    ns.Keys.Leave()
-    ns.Window.Hide()
-    ns.QuestMarks.Hide()
+    ns.Safe("keys", ns.Keys.Leave)
+    ns.Safe("board", ns.Board.Leave)
+    ns.Safe("window", ns.Window.Hide)
+    ns.Safe("quest marks", ns.QuestMarks.Hide)
 end
 
 function ns.OnLoad()

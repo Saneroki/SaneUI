@@ -101,7 +101,12 @@ the game's own chat channels on every character is the Social module's.)
     `Add/RemoveChatWindowMessages`, `Add/RemoveChatWindowChannel`, the places of the free ones (not the
     first's, which Edit Mode places) with `SetChatWindowSavedPosition/Dimensions`. The game's chat frames read
     these when the interface loads (`UPDATE_CHAT_WINDOWS`), hence the reload. Colours with `ChangeChatColor`
-    and `SetChatColorNameByClass`, which the frames take at once from the game's own events, in our call.
+    and `SetChatColorNameByClass`, which the frames take at once from the game's own events, in our call. The
+    game keeps a channel's colour by the channel's number, which differs between characters: it is kept by
+    the channel's name and given to this character's channel of that name, whatever its number here. One the
+    character is not in yet (its own channel joined in the same writing: the server answers a join later) gets
+    it once the join is answered (`CHANNEL_UI_UPDATE`); until then, and for a channel the character is not in
+    at all, the profile keeps the colour it had.
   - Your own channels with `JoinPermanentChannel` (into the first chat window, as `/join` does): those whose
     kind is *Custom* (`C_ChatInfo.GetChannelInfoFromIdentifier`), or, without that, not on offer from the
     game (`EnumerateServerChannels`); not a community's.
@@ -114,7 +119,8 @@ the game's own chat channels on every character is the Social module's.)
       between `PLAYER_ENTERING_WORLD` and `PLAYER_LEAVING_WORLD`; after that the last one seen is read.
     - **Set when the game lets us:** not before the manager has its layouts (early in a login), not while
       Edit Mode is open (`Core.EditMode`), not in a fight. Such a layout waits and is set when the manager
-      has its layouts, Edit Mode closes or the fight is over; meanwhile it counts as the one in use. One
+      has its layouts, Edit Mode closes or the fight is over; meanwhile it counts as the one in use, and one
+      the player picks meanwhile wins over it. One
       that is not there (deleted, another character's own) leaves the layout in use, and is still the one
       kept until a layout is picked in this session: a character that does not have it does not give its
       own to the others at its logout, and the character that has it finds it again.
@@ -124,7 +130,7 @@ the game's own chat channels on every character is the Social module's.)
   - The zone map's place, the damage meter's windows, chat tab protection: they write into the game's own
     frames or saved tables, which taints them.
 - **Globals:** none.
-- **Tests:** `lua5.1 dev/tests/sync.lua` (81 checks), with a small model of the game's settings and the real
+- **Tests:** `lua5.1 dev/tests/sync.lua`, with a small model of the game's settings and the real
   `Data/Pages.lua`.
 
 ## Files

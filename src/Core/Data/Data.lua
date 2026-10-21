@@ -216,7 +216,7 @@ end
 -- The listeners of the sets whose stamps moved: told on the next frame, outside the loader's job and the
 -- game's ADDON_LOADED (a listener may start a job, or run a job's Check, which could not yield there).
 -- Those that wait for a set to be ready (WhenReady) are told first, once.
-local function Tell()
+local function TellListeners()
     local moved = owed
     owed = {}
     for _, set in ipairs(moved) do
@@ -230,7 +230,7 @@ local function Tell()
         for _, fn in ipairs(listeners[set.name] or NONE) do Core.Safe(label, fn, handle) end
     end
 end
-local TellSoon = Core.Later(Tell)
+local TellSoon = Core.Later(TellListeners)
 
 local function Moved(set)
     stamps = stamps + 1

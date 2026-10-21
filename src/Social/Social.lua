@@ -39,6 +39,7 @@ ns.TEXT = {
     marks = "Icons",
     noMarks = "No icons in the game's public channels",
     emotes = "Emotes",
+    noEmotes = "No emotes while chat is locked down",
     -- Kinds of chat the game has no word of its own for, or may not have. The four with a switch of
     -- their own (ns.SHOWS) are named so on the options page too: the same words in both places.
     kinds = { SAY = "Say", YELL = "Yell", EMOTE = "Emote", WHISPER = "Whisper", PARTY = "Party", RAID = "Raid",
@@ -89,7 +90,6 @@ ns.TEXT = {
     quickCount = "%s (%d)",
     noQuick = "None of your friends or guild is in a group you can join.",
     chooseRole = "Choose a role first.",
-    finder = "Group finder",
     category = "Category",
     refreshTip = "Looks again for groups in the category chosen.",
     listYourself = "List yourself",
@@ -101,6 +101,7 @@ ns.TEXT = {
     noGroups = "No groups found. Refresh to look again.",
     noGroupsFound = "No group found.",
     finderOff = "The group finder is not open to you here.",
+    finderLocked = "Paused in chat lockdown", -- the group finder's line while the game hides the listings
     nativeChat = "the chat window is off, the game's own chat is back (its button Sane UI, /sane social, or the switch Chat window, brings it again).",
     -- The conversations' panel of the full screen (Conversations.lua, Talks.lua).
     talks = "Conversations",
@@ -161,7 +162,7 @@ local OPTIONS = {
     -- The full screen's windows (Board.lua): which stand there is the layouts' (the dropdown Windows in its title bar).
     { key = "talkSize", default = 100, min = 20, max = 500, step = 10, unit = "messages", text = "Messages kept per conversation", header = "Full screen",
       headerTip = "What the full screen's windows hold. Which windows stand there, and where, you arrange on the full screen itself: drag a window's head to move it, the gap between two to share their room, add one from the dropdown Windows, take one off with its X; each layout behind a tab of its own.",
-      tip = "How many of the last messages each conversation keeps, also for the next login." },
+      tip = "How many of the last messages each conversation keeps, also for the next login (then 1,000 of all conversations together at most, the newest first)." },
     { key = "boardFinder", default = true, text = "Group finder",
       tip = "The group finder as a tab of the friends list, as the game's: the groups and players looking for others in a category. Whisper a leader, or invite a player who is alone." },
 
@@ -302,16 +303,24 @@ end
 -- Every line one of the game's chat windows writes (AddMessage): what none of our events told
 -- (Log.Line).
 -- A filter of the game's chat (ChatFrame_AddMessageEventFilter): asked right before a window writes
--- the line of a chat event, so that line is known by its event (Log.Before). It filters nothing.
+-- the line of a chat event, so that line is known by its event (Log.Before). It filters nothing, also
+-- after a failure (false: the game writes the line).
 local function Before(window, event)
-    ns.Log.Before(window, event)
-    return false
+    return ns.Safe("chat filter", ns.Log.Before, window, event) or false
 end
 
 local Printed = ns.Guard(function(window, text, r, g, b, id, _, _, event)
     if Core.Secret(id) or Core.Secret(event) then return end
     ns.Log.Line(window, text, r, g, b, id, event)
 end)
+
+-- Whether the game has chat locked down now (a fight, a dungeon): then it hands addons no messages, hides the
+-- group finder's listings from them and takes no message or emote from their code (Window, Conversations,
+-- Picker, the group finder).
+function ns.ChatLocked()
+    local chat = rawget(_G, "C_ChatInfo")
+    return chat ~= nil and Core.Ask(chat.InChatMessagingLockdown) == true
+end
 
 -- While chat is locked down (a fight, a dungeon) addons get no messages to show: the game's own
 -- chat comes back for that time. The game tells before a lockdown begins and after it ended; it

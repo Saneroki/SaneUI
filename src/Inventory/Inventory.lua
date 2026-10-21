@@ -173,18 +173,20 @@ local OPTIONS = {
 }
 -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
 Core.Edge.Options(OPTIONS, 1)
--- Core's window takes the section Expand window in by itself (Edge.lua); a bags' setting draws the bags anew.
+-- Core's window takes the section Expand window in by itself (Edge.lua); without Can expand to fullscreen the bag
+-- keys are the game's again (Keys.Taken); a bags' setting draws the bags anew.
 Core.Options(ns.name, OPTIONS, { changed = function(key)
+    if key == "bagKeys" or key == "expand" then return ns.Guarded(ns.Keys.Apply) end
     if Core.Edge.KEYS[key] then return end
-    if key == "bagKeys" then return ns.Guarded(ns.Keys.Apply) end
     if ns.Bags then ns.Guarded(ns.Bags.Settled) end
 end })
 
--- Standing down, the full screen's windows go and the window with them.
+-- Standing down, the game's bag keys and bag windows are the game's again first, then the full screen's windows go
+-- and the window with them; each step by itself, so one that fails keeps none of the others from it.
 function ns.GiveBack()
-    ns.Board.Hide()
-    ns.Window.Hide()
-    ns.Keys.Leave()
+    ns.Safe("giving back", ns.Keys.Leave)
+    ns.Safe("giving back", ns.Board.Hide)
+    ns.Safe("giving back", ns.Window.Hide)
 end
 
 function ns.OnLoad()

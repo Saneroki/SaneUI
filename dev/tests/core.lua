@@ -228,6 +228,15 @@ About.Open(idea)
 check(window.Box:GetText() == "" and window._title == "Suggest a feature", "each kind keeps its own writing")
 About.Open(bug)
 check(window.Box:GetText() == "The bar vanished.", "kept while the session lasts")
+-- Opened again while it is shown, for another kind or the same once more: what is being written is kept first.
+window.Box:SetText("It vanished again.")
+About.Open(idea)
+check(window.Box:GetText() == "" and window._title == "Suggest a feature", "another kind while it is open starts that kind's own writing")
+About.Open(bug)
+check(window.Box:GetText() == "It vanished again.", "and the kind shown before keeps what was being written")
+window.Box:SetText("It vanished at once.")
+About.Open(bug)
+check(window.Box:GetText() == "It vanished at once.", "the same kind once more keeps it too")
 window:Hide()
 table.remove(Core.log)
 check(profilesPage.name == "Profiles" and general.name == "General" and appearance.name == "Appearance"
@@ -556,8 +565,8 @@ do
     local escapes, lit = {}, nil
     local frame = CreateFrame("Frame", nil, UIParent)
     local window = { frame = frame, inside = CreateFrame("Frame", nil, frame), options = { edge = Core.Settings("Tabbed") },
-                     settings = CreateFrame("Button", nil, frame),
-                     edge = { full = true, Escapes = function(_, on) escapes[#escapes + 1] = on end } }
+                     settings = CreateFrame("Button", nil, frame), edge = { full = true },
+                     Escapes = function(_, on) escapes[#escapes + 1] = on end } -- Window.lua's: Esc given up, taken again
     window.settings.LockHighlight = function() lit = true end
     window.settings.UnlockHighlight = function() lit = false end
     local before = #W.frames
@@ -601,6 +610,21 @@ do
     Screen.Toggle(window)
     frame:Hide()
     check(not Screen.Shown(window), "the window closed: the view goes with it")
+end
+
+-- Esc's stand-in (Escape.lua): hidden with its parent (the game hides its whole interface for a movie) it is
+-- still shown itself, and that is no Esc; an owner taken out and put in again has it shown again.
+do
+    local owner, closed = {}, 0
+    local function Close() closed = closed + 1 end
+    Core.Escape(owner, Close)
+    local stand = SaneUIEscape
+    stand:GetScript("OnHide")(stand) -- as the game calls it when it hides UIParent: the frame's own flag stays on
+    check(closed == 0 and stand:IsShown(), "Esc's stand-in hidden with its parent closes nothing")
+    Core.Escape(owner, nil)
+    Core.Escape(owner, Close)
+    check(stand:IsShown() and closed == 0, "an owner taken out and put in again has the stand-in shown again")
+    Core.Escape(owner, nil)
 end
 
 -- The test modules go; the page Profiles is built the first time the game shows it
@@ -674,6 +698,31 @@ check(onCheck and onCheck:GetChecked() and Profiles.On() and Shows("every charac
 check(Names(profileMenu) == "Accountwide" and Ticked(profileMenu) == "Accountwide" and Profiles.InUse() == "Accountwide",
     "this character's profile: at first the only one there is, Accountwide")
 for _, name in ipairs({ "New", "Rename", "Delete", "Defaults", "Export", "Import" }) do check(buttons[name], "a button " .. name) end
+-- The button New and the line New Characters each have their own tip.
+do
+    local addLine, said = GameTooltip_AddNormalLine, {}
+    GameTooltip_AddNormalLine = function(_, text) said[#said + 1] = text end
+    buttons.New:GetScript("OnEnter")(buttons.New)
+    local newMenu = Config.characters[Profiles.NEW].menu
+    newMenu:GetScript("OnEnter")(newMenu)
+    GameTooltip_AddNormalLine = addLine
+    check(said[1] and said[1]:find("A new profile", 1, true) and said[2] and said[2]:find("not seen yet", 1, true),
+        "the button New tells what it makes; the line New Characters keeps its own tip")
+end
+-- Shown anew, a dropdown of profiles is built anew only when the profiles it lists changed.
+do
+    local watch, generate, builds, updates = Control("Profile"), profileMenu.GenerateMenu, 0, 0
+    profileMenu.GenerateMenu = function(self) builds = builds + 1; return generate(self) end
+    profileMenu.Update = function() updates = updates + 1 end
+    watch:Refresh()
+    check(updates == 1 and builds == 0, "the same profiles: a dropdown of them only reads which is ticked")
+    Profiles.Create("Spare")
+    watch:Refresh()
+    check(builds == 1 and Names(profileMenu) == "Accountwide, Spare", "another one made: its menu is built anew")
+    Profiles.Delete("Spare")
+    watch:Refresh()
+    profileMenu.GenerateMenu, profileMenu.Update = nil, nil
+end
 check(buttons.New:IsEnabled() and not buttons.Rename:IsEnabled() and not buttons.Delete:IsEnabled() and buttons.Defaults:IsEnabled(),
     "Accountwide is always there: it cannot be renamed or deleted")
 local me, alt = Config.characters["Player-70-0000ABCD"], Config.characters["Player-70-00000002"]
@@ -714,6 +763,19 @@ check(Ticked(profileMenu) == "Quiet" and Names(profileMenu) == "Accountwide, Qui
     "a moment later the page shows it: chosen, listed after Accountwide; it can be renamed and deleted")
 check(Profiles.Create("quiet") == false and Profiles.Create("  ") == false and Profiles.Create("Quiet") == false,
     "a name needs letters, and one that is taken is refused, in any letter case")
+-- Made, but not taken into use (as with Accountwide switched off while the name was asked): chat says why,
+-- not that this character uses it.
+do
+    local use = Profiles.Use
+    Profiles.Use = function() return false, "not now." end
+    Click(buttons.New)
+    W.printed = {}
+    Dialog().data.callback("Later")
+    Profiles.Use = use
+    check(SaneUIDB.profiles.Later and printedMatch("not now") and not printedMatch("is made"),
+        "a new profile not taken into use: chat says why, and not that this character uses it")
+    Profiles.Delete("Later")
+end
 
 -- A change goes into the profile in use, and only there
 loud.setting:SetValue(true)
@@ -738,6 +800,18 @@ check(SaneUIDB.profiles.Solo == quiet and SaneUIDB.profiles.Quiet == nil and Pro
     and Profiles.Character(Core.charKey).profile == "Solo", "renamed, it stays in use, every character that had it keeps it")
 check(Profiles.Rename("Solo", "Accountwide") == false and Profiles.Rename("Accountwide", "Mine") == false and SaneUIDB.profiles.Accountwide,
     "a name taken is refused; Accountwide keeps its name")
+-- Renamed while another profile came into use meanwhile: chat names it by its new name, not the one in use.
+do
+    Click(buttons.Rename)
+    local asked = Dialog()
+    Pick(profileMenu, "Accountwide")
+    W.printed = {}
+    asked.data.callback("Duo")
+    check(SaneUIDB.profiles.Duo and Profiles.InUse() == "Accountwide" and printedMatch("the profile is called Duo now"),
+        "a profile renamed while another came into use: chat names it by its new name")
+    Profiles.Rename("Duo", "Solo")
+    Pick(profileMenu, "Solo")
+end
 
 -- Copy from another profile
 local copyMenu = Menu("Copy from")
@@ -777,6 +851,34 @@ check(SaneUIDB.profiles.Shared and SaneUIDB.profiles.Shared.Demo.loud == true an
     and printedMatch("the profile Shared is imported"), "and keeps it under that name")
 check(Profiles.Import("nonsense") == false and Profiles.Import(Core.Serial.Write({ kind = "other" })) == false
     and Profiles.Import(text, "Shared") == false, "a text that is no profile, or a name that is taken, is refused")
+-- A profile from another player keeps of its single CVars (Sync's named) only those the game's options set.
+do
+    local theirs = Core.Serial.Write({ kind = "Sane UI profile", version = 2, name = "Theirs",
+        settings = { Sync = { named = { autoLootDefault = "1", scriptErrors = "1" } } } })
+    local named = Profiles.Import(theirs) and SaneUIDB.profiles.Theirs.Sync.named
+    check(named and named.autoLootDefault == "1" and named.scriptErrors == nil,
+        "an imported profile keeps only the single CVars of the game's options")
+    SaneUIDB.profiles.Theirs = nil
+end
+
+-- Serial reads only what Write makes: a text from another player never errors, never runs, and is capped.
+do
+    local Serial = Core.Serial
+    local function Deep(count) return ("{n1="):rep(count) .. "t" .. ("}"):rep(count) end
+    check(type(Serial.Read(Deep(Serial.DEPTH))) == "table" and Serial.Read(Deep(Serial.DEPTH + 1)) == nil,
+        "Serial: tables inside tables up to its depth, none deeper")
+    check(Serial.Read('s"\\124cff\\032"') == "|cff " and Serial.Read('s"\\999"') == nil and Serial.Read('s"\\12"') == nil
+        and Serial.Read('s"a\\"') == nil, "a byte is a backslash and three digits up to 255; any other backslash is no text")
+    check(Serial.Read("n12.5") == 12.5 and Serial.Read("n1e999") == nil and Serial.Read("n-1e999") == nil
+        and Serial.Read('{s"x"=n1e999}') == nil, "an endless number is none: Write never makes one")
+    local keyed = Serial.Read("{t=n1,n2=f}")
+    check(keyed[true] == 1 and keyed[2] == false and Serial.Read("{{}=t}") == nil, "true, false and numbers are keys, a table is none")
+    check(Serial.Read("tt") == nil and Serial.Read("{}x") == nil and Serial.Read("") == nil and Serial.Read(5) == nil,
+        "nothing may follow the end; no text is no value")
+    check(Serial.Read(("t"):rep(Serial.LENGTH + 1)) == nil, "a text longer than Serial.LENGTH is not read")
+    local back = Serial.Read(Serial.Write({ [true] = "a|b", [2] = { "x y", n = -0.5 }, name = 's"\\' }))
+    check(back[true] == "a|b" and back[2][1] == "x y" and back[2].n == -0.5 and back.name == 's"\\', "what Write makes, Read gives back")
+end
 
 -- The characters' profiles
 Pick(alt.menu, "Solo")
@@ -796,12 +898,20 @@ check(SaneUIDB.profiles.Solo == nil and Profiles.InUse() == "Accountwide" and Sa
     and Core.Settings("Demo") == held, "deleted, the characters that had it use Accountwide, this one at once")
 check(Profiles.Delete("Accountwide") == false, "Accountwide cannot be deleted")
 
--- Forget a character: its line and what every module kept for it
+-- Forget a character: its line, what every module kept for it, and what Core's data keeps of it
 demo.DB.chars["Player-70-00000002"] = { note = "theirs" }
-Click(alt.forget)
-Dialog().data.callback()
+do
+    local dataForget, forgotten = Core.Data.Forget, nil
+    Core.Data.Forget = function(key) forgotten = key end -- a stand-in for the data's own (Data/Characters.lua)
+    Click(alt.forget)
+    Dialog().data.callback()
+    Core.Data.Forget = dataForget
+    check(forgotten == "Player-70-00000002", "Forget: the data forgets the character too (its bags, bank, gear and gold)")
+end
 check(SaneUIDB.characters["Player-70-00000002"] == nil and demo.DB.chars["Player-70-00000002"] == nil, "forgotten, nothing of it is kept")
 check(Profiles.Forget(Core.charKey) == false, "not the one played")
+W.Wait(0.1)
+check(not alt.menu:IsEnabled() and me.menu:IsEnabled(), "a character forgotten has no profile to choose any more")
 
 -- Accountwide off: each character keeps its own settings
 local loudWas = held.loud
@@ -964,6 +1074,40 @@ row.Reset:GetScript("OnClick")(row.Reset)
 check(W.cvars.cameraSavedDistance == "15" and not row.Reset:IsShown(), "which gives it the game's default")
 list.Release(frame)
 W.cvarInfo, W.cvars = {}, {}
+
+-- A dropdown and a colour of a page of our own: what the game calls of them is made once; shown anew, a
+-- dropdown only reads which choice is ticked, its menu is not built anew.
+do
+    local Panel, holder = Config.Panel, CreateFrame("Frame")
+    local side, option = "left", { choices = { { "left", "Left" }, { "right", "Right" } } }
+    local menu = Panel.Dropdown(holder, "Which side", nil, option, function() return side end, function(value) side = value end)
+    local isChosen, choose = menu._items[1].checked, menu._items[1].fn
+    menu:GenerateMenu()
+    check(menu._items[1].checked == isChosen and menu._items[2].checked == isChosen and menu._items[2].fn == choose,
+        "a dropdown's choices share their functions, made once, not each time its menu is built")
+    local generate, builds, updates = menu.GenerateMenu, 0, 0
+    menu.GenerateMenu = function(self) builds = builds + 1; return generate(self) end
+    menu.Update = function() updates = updates + 1 end
+    menu:Refresh()
+    check(updates == 1 and builds == 0, "shown anew, a dropdown only reads which is ticked (the game's Update)")
+    option.choices[3] = { "both", "Both" } -- a module changes its choices (as Navigation offers its views)
+    menu:Refresh()
+    check(builds == 1 and #menu._items == 3, "choices changed since: its menu is built anew")
+    menu.GenerateMenu, menu.Update = nil, nil
+    local picker, opened, tint = rawget(_G, "ColorPickerFrame"), {}, "26262B"
+    ColorPickerFrame = { SetupColorPickerAndShow = function(_, info) opened[#opened + 1] = info end,
+        GetColorRGB = function() return 1, 0, 0 end }
+    local swatch = Panel.Color(holder, "Its colour", nil, function() return tint end, function(hex) tint = hex end)
+    swatch:GetScript("OnClick")(swatch)
+    opened[1].swatchFunc()
+    check(tint == "FF0000", "a move in the game's colour picker is set at once")
+    opened[1].cancelFunc()
+    check(tint == "26262B", "and its Cancel sets back the colour the swatch had when the picker opened")
+    swatch:GetScript("OnClick")(swatch)
+    check(opened[2].swatchFunc == opened[1].swatchFunc and opened[2].cancelFunc == opened[1].cancelFunc,
+        "the picker's functions are made once")
+    ColorPickerFrame = picker
+end
 
 -- /sane -------------------------------------------------------------------------------
 local said
@@ -1136,6 +1280,21 @@ local lent = Core.NewModule("SaneUI_Lent", "Lent")
 Core.Guard("a window", function() error("Interface/AddOns/SaneUI_Lent/Lent.lua:4: a hook of the module broke", 0) end)()
 check(lent.off and Core.errors["Lent: it stopped"], "an error that ran into a module's code stands that module down")
 Core.errors["a window"], Core.errors["Lent: it stopped"] = nil, nil
+-- A module that stood down while it started (a guarded step of its OnLoad failed) gets no further step: its
+-- OnLogin would take back what it gave back, with every guard of it shut.
+do
+    local half, steps = Core.NewModule("SaneUI_Half", "Half"), {}
+    function half.OnLoad()
+        steps[#steps + 1] = "load"
+        half.Guarded(function() error("half made") end)
+    end
+    function half.OnLogin() steps[#steps + 1] = "login" end
+    function half.OnLogout() steps[#steps + 1] = "logout" end
+    half.steps = steps
+    W.Fire("ADDON_LOADED", "SaneUI_Half") -- read after the login: its OnLoad, then its OnLogin at once
+    check(half.off and #steps == 1 and steps[1] == "load", "a module that stood down while it started is not started further")
+    Core.errors["Half: it stopped"] = nil
+end
 
 -- Later: once, a moment later, however often it is asked for
 local runs = 0
@@ -1295,6 +1454,7 @@ W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 check(borrowed:GetParent() == other and not lent:Lent(), "and the fight over, the rest")
 check(Core.Fuzzy.Plain("|cffff0000Red|r |Hitem:1|h[Sword]|h |TInterface\\Icons\\X:0|t") == "Red [Sword] ", "a text of the game's without its codes, for finding")
+check(Core.Fuzzy.Plain("|cnIQ5:Ashbringer|r (+|cnPURE_GREEN_COLOR:5|r)") == "Ashbringer (+5)", "and without its named colour codes (|cnNAME:)")
 
 -- Messages inside a module ----------------------------------------------------------------
 local got
@@ -1346,6 +1506,7 @@ before = captured
 W.Fire("PLAYER_LOGOUT")
 check(captured == before + 1 and Core.Settings("Demo") == held and SaneUIDB.profiles.Accountwide.Demo == held,
     "at logout the game's settings are brought up to date; everything stays where it lives")
+check(#SaneUI.Half.steps == 1, "a module that stood down is not told of the logout either")
 Profiles.Create("Raid")
 Profiles.Use("Raid")
 Core.Set("Demo", "loud", false)
@@ -1516,12 +1677,16 @@ W.popups[#W.popups].data.callback("Met in Goldshire")
 check(People.Note("Ama Fairwind") == "Met in Goldshire" and People.Note("Droopy Fairwind") == nil, "a note of its own")
 lines = {}
 W.menuModifiers.MENU_UNIT_GUILD(nil, W.Description(lines), { name = "Ama Fairwind" })
-check(lines[1].tooltip and lines[2].tooltip, "set, the menu's lines show what is there in their tooltips")
+check(#lines == 4 and lines[1].tooltip and lines[3].tooltip and lines[2].text == "Remove Alias" and lines[4].text == "Remove Note",
+    "set, the menu's lines show what is there in their tooltips, each followed by its Remove line")
 lines[1].fn()
-W.popups[#W.popups].data.callback("")
-check(People.Alias("Ama Fairwind") == nil and People.Note("Ama Fairwind") == "Met in Goldshire", "empty, the alias is taken away, the note stays")
-People.Set("Ama Fairwind", "note", nil)
-check(Core.Store(Core.name).people["Ama Fairwind"] == nil, "with nothing left, nothing is kept for the player")
+dialog = W.popups[#W.popups]
+check(dialog.box.text == "Saneroki" and dialog.box.highlighted and not dialog.data.text:find("empty"),
+    "Set Alias offers the alias there now to type over; the game's dialog takes no empty text, so it promises none")
+lines[2].fn()
+check(People.Alias("Ama Fairwind") == nil and People.Note("Ama Fairwind") == "Met in Goldshire", "Remove Alias takes the alias away, the note stays")
+lines[4].fn()
+check(Core.Store(Core.name).people["Ama Fairwind"] == nil, "Remove Note too: with nothing left, nothing is kept for the player")
 lines = {}
 W.menuModifiers.MENU_UNIT_FRIEND(nil, W.Description(lines), { name = "Droopy" })
 check(#lines == 0, "a name without its surname gets no lines: no player is guessed")

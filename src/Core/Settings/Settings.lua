@@ -67,6 +67,10 @@ function Config.Refresh()
     Config.Panel.Refresh()
 end
 
+-- The same a frame later, once however many ask in that frame: the step that changed the settings has
+-- finished first.
+Config.RefreshSoon = Core.Later(function() Config.Refresh() end)
+
 -------------------------------------------------------------------------------
 --  The pages, put up at login, empty
 -------------------------------------------------------------------------------
@@ -205,7 +209,8 @@ local Mixins = rawget(_G, "CreateFromMixins")
 SaneUISettingsEntryMixin = Base and Mixins and Mixins(Base) or {}
 local Entry = SaneUISettingsEntryMixin
 
-function Entry:OnLoad()
+-- The row's parts, made when the game makes its frame: its OnLoad (Banner.xml), behind Core.Safe.
+local function MakeEntry(self)
     Base.OnLoad(self)
     local box = CreateFrame("EditBox", nil, self, "InputBoxTemplate")
     box:SetAutoFocus(false)
@@ -220,6 +225,7 @@ function Entry:OnLoad()
     self.Unit = self:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     self.Unit:SetPoint("LEFT", box, "RIGHT", 8, 0)
 end
+function Entry:OnLoad() Core.Safe("Settings: a row to type into", MakeEntry, self) end
 
 -- The switch's description is the row's options (Switch below); the row keeps it while it shows it.
 function Entry:Init(initializer)
@@ -316,6 +322,27 @@ function Config.Free(options, byKey, option)
     return true
 end
 
+-- A switch's control on either kind of page (here and Tabbed.lua): its value, the default if the module
+-- keeps none (the game's controls, a slider most of all, fail on none); set through Core.Set; and whether it
+-- can be changed now (Config.Free; nil for a switch under none).
+function Config.Getter(name, option)
+    return function()
+        local settings = Core.Settings(name)
+        local value = settings and settings[option.key]
+        if value == nil then return option.default end
+        return value
+    end
+end
+
+function Config.Setter(name, option)
+    return function(value) Core.Set(name, option.key, value) end
+end
+
+function Config.Enabled(name, byKey, option)
+    if option.parent == nil then return nil end
+    return function() return Config.Free(Core.Settings(name) or {}, byKey, option) end
+end
+
 -- The keys a switch is directly under: its parent, or each of its list.
 local function Parents(option)
     local up = option.parent
@@ -373,16 +400,10 @@ end
 -- through Core.Set.
 local function Switch(page, name, option)
     local kind, Panel = Config.Kind(option), Config.Panel
-    -- The game's controls need a value (a slider fails on none): the default if the module keeps none.
-    local function Get()
-        local settings = Core.Settings(name)
-        local value = settings and settings[option.key]
-        if value == nil then return option.default end
-        return value
-    end
-    local function Set(value) Core.Set(name, option.key, value) end
+    local Get, Set = Config.Getter(name, option), Config.Setter(name, option)
     local function Setting(variableKind, default, get, set)
-        local setting = Settings.RegisterProxySetting(page, Variable(name, option.key), variableKind, option.text, default, get, set)
+        local setting = Settings.RegisterProxySetting(page, Variable(name, option.key), variableKind, option.text, default,
+            Core.Guard("options", get), Core.Guard("options", set))
         Config.Show(setting)
         return setting
     end
@@ -445,10 +466,10 @@ end
 -- change, and closes the gap).
 local function Wire(row, name, option, byKey, rows)
     if option.hidden and row.AddShownPredicate then
-        row:AddShownPredicate(function() return not Config.Hidden(name, option) end)
+        row:AddShownPredicate(Core.Guard("options", function() return not Config.Hidden(name, option) end))
     end
     if option.parent == nil or not row.AddModifyPredicate then return end
-    local function Free() return Config.Free(Core.Settings(name) or {}, byKey, option) end
+    local Free = Core.Guard("options", Config.Enabled(name, byKey, option))
     local under, underKey
     for _, key in ipairs(Parents(option)) do
         if rows[key] then
@@ -530,7 +551,8 @@ end
 
 Core.Command("options", TEXT.open, Config.Open, "config", "settings")
 
--- The minimap's addon list (## AddonCompartmentFunc in the TOC).
+-- The minimap's addon list (## AddonCompartmentFunc in the TOC): the game calls it, so behind Core's guard
+-- as the key binding is (Bindings.xml).
 function SaneUI_OnAddonCompartmentClick()
-    Config.Open()
+    Core.Safe("options", Config.Open)
 end

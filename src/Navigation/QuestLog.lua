@@ -111,7 +111,8 @@ end
 -------------------------------------------------------------------------------
 --  Reading the game's log
 -------------------------------------------------------------------------------
--- The log as rows: each header, its quests (not the hidden ones), each quest's objectives.
+-- The log as rows: each header, its quests (not the hidden ones), each quest's objectives. The game lists a folded
+-- header's quests all the same (its own log leaves them out): not shown, but counted.
 local function Read()
     wipe(rows)
     if #previews > 0 then
@@ -122,24 +123,28 @@ local function Read()
         end
     end
     local count = Plain(Core.Ask(C_QuestLog.GetNumQuestLogEntries)) or 0
-    local quests = 0
+    local quests, folded = 0, false
     for index = 1, count do
         local info = Core.Ask(C_QuestLog.GetInfo, index)
         if type(info) == "table" then
             if info.isHeader then
+                folded = info.isCollapsed and true or false
                 rows[#rows + 1] = { kind = "header", text = info.title, index = index, collapsed = info.isCollapsed }
             elseif not info.isHidden and info.questID then
                 quests = quests + 1
-                local quest = info.questID
-                local complete = Core.Ask(C_QuestLog.IsComplete, quest) and true or false
-                local failed = Core.Ask(C_QuestLog.IsFailed, quest) and true or false
-                rows[#rows + 1] = { kind = "quest", quest = quest, text = info.title, level = info.level, index = index,
-                                    complete = complete, failed = failed, scaling = info.isScaling,
-                                    watched = (Core.Ask(C_QuestLog.GetQuestWatchType, quest)) ~= nil }
-                local objectives = Core.Ask(C_QuestLog.GetQuestObjectives, quest)
-                for _, objective in ipairs(type(objectives) == "table" and objectives or {}) do
-                    if objective.text and objective.text ~= "" then
-                        rows[#rows + 1] = { kind = "objective", quest = quest, text = objective.text, done = objective.finished }
+                if not folded then
+                    local quest = info.questID
+                    local complete = Core.Ask(C_QuestLog.IsComplete, quest) and true or false
+                    local failed = Core.Ask(C_QuestLog.IsFailed, quest) and true or false
+                    rows[#rows + 1] = { kind = "quest", quest = quest, text = info.title, level = info.level,
+                                        index = index, complete = complete, failed = failed, scaling = info.isScaling,
+                                        watched = (Core.Ask(C_QuestLog.GetQuestWatchType, quest)) ~= nil }
+                    local objectives = Core.Ask(C_QuestLog.GetQuestObjectives, quest)
+                    for _, objective in ipairs(type(objectives) == "table" and objectives or {}) do
+                        if objective.text and objective.text ~= "" then
+                            rows[#rows + 1] = { kind = "objective", quest = quest, text = objective.text,
+                                                done = objective.finished }
+                        end
                     end
                 end
             end
@@ -186,16 +191,14 @@ local function Share(quest)
     end
 end
 
--- Abandoned only after a question, in the game's own dialog.
+-- Abandoned only after a question, in the game's own dialog (Core's).
 local function Abandon(quest)
-    if not rawget(_G, "StaticPopup_Show") then return end
     local title = Core.Ask(C_QuestLog.GetTitleForQuestID, quest) or ""
-    StaticPopup_Show("GENERIC_CONFIRMATION", nil, nil, { text = QuestLog.TEXT.abandonAsk, text_arg1 = title,
-        callback = ns.Guard(function()
-            C_QuestLog.SetSelectedQuest(quest)
-            C_QuestLog.SetAbandonQuest()
-            C_QuestLog.AbandonQuest()
-        end) })
+    Core.Confirm(QuestLog.TEXT.abandonAsk, title, ns.Guard(function()
+        C_QuestLog.SetSelectedQuest(quest)
+        C_QuestLog.SetAbandonQuest()
+        C_QuestLog.AbandonQuest()
+    end))
 end
 
 -- Where a quest's objective is (Where), or a preview's giver.
@@ -218,11 +221,12 @@ function QuestLog.Text(quest)
     QuestLog.Refresh()
 end
 
--- The game's arrow leads to a quest in the log; its pin on the arrow's disc at once, not only once the game tells.
+-- The game's arrow leads to a quest in the log; its pin on the arrow's disc at once, not only once the game tells
+-- (the game's own pins read again, those of Core's data stay as they are).
 local function Lead(quest)
     if not Previewed(quest) then
         C_SuperTrack.SetSuperTrackedQuestID(quest)
-        ns.Pins.Changed("quests")
+        ns.Pins.Changed("waypoint")
     end
 end
 
@@ -639,11 +643,12 @@ local function Watching()
     handle:Hover(false)
     Scroller()
 end
+local watching = ns.Guard(Watching) -- made once: set at every coming of the mouse
 
 function Hover()
     handle:Hover(true)
     Scroller()
-    if not frame:GetScript("OnUpdate") then frame:SetScript("OnUpdate", ns.Guard(Watching)) end
+    if not frame:GetScript("OnUpdate") then frame:SetScript("OnUpdate", watching) end
 end
 
 -- The window, built at login with the map's (Window.lua); hidden until the full map or its pin shows it.
@@ -684,8 +689,9 @@ function QuestLog.Build()
     bar = CreateFrame("EventFrame", nil, panel, "MinimalScrollBar")
     bar:Hide()
     view = CreateScrollBoxListLinearView()
-    view:SetElementExtentCalculator(Height)
-    view:SetElementInitializer("Button", Draw)
+    -- The game's list asks these of every row: always a number (also after a failure), each row drawn apart.
+    view:SetElementExtentCalculator(function(_, row) return ns.Safe("quest log", Height, nil, row) or QuestLog.OBJECTIVE end)
+    view:SetElementInitializer("Button", function(element, row) ns.Safe("quest log", Draw, element, row) end)
     ScrollUtil.InitScrollBoxListWithScrollBar(box, bar, view)
 
     -- The chosen quest's words and buttons.
@@ -804,7 +810,10 @@ ns.Listen("LIVE", function(what)
     if what == "quests" or what == "waypoint" then QuestLog.Refresh() end
 end)
 
--- An item a preview names arrived from the game: its name in the words.
-ns.On("ITEM_DATA_LOAD_RESULT", function()
+-- An item a preview names arrived from the game: its name in the words, once on the next frame however many came.
+local named = Core.Later(function()
     if chosen and Previewed(chosen) and QuestLog.Shown() then QuestLog.Details() end
+end)
+ns.On("ITEM_DATA_LOAD_RESULT", function()
+    if chosen and Previewed(chosen) then named() end
 end)

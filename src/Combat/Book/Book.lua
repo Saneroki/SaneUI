@@ -194,9 +194,17 @@ local AutoCasts = Core.Later(function() ns.Safe("spellbook", Touch, "autocast") 
 -------------------------------------------------------------------------------
 --  The tabs
 -------------------------------------------------------------------------------
+-- The search left, as the game's book leaves it when a tab is chosen: the full screen's search box emptied too.
+local function Unsearch()
+    if search == "" then return end
+    search = ""
+    ns.Window.ClearSearch()
+end
+
 local function Choose(key)
     if key == chosen and search == "" then return end
     chosen = key
+    Unsearch()
     local sound = rawget(_G, "SOUNDKIT")
     if sound and sound.IG_SPELLBOOK_OPEN then PlaySound(sound.IG_SPELLBOOK_OPEN) end
     Fill(false)
@@ -204,9 +212,15 @@ end
 
 -- The book at that tab ("pet", or a skill line's key), from elsewhere (the pet book's key): the search cleared.
 function Book.Choose(key)
-    search = ""
+    Unsearch()
     chosen = key
     if holder and shown then Fill(false) end
+end
+
+-- The tab the book shows ("pet", or a skill line's key); nil while it shows what a search found.
+function Book.Chosen()
+    if search ~= "" then return nil end
+    return chosen
 end
 
 local TabClick = ns.Guard(function(tab) if tab.key then Choose(tab.key) end end)
@@ -398,6 +412,12 @@ local function Spells() Refill() end
 local function Pet(unit) if unit == "player" then Refill() end end
 local function Cooldown() Cooldowns() end
 local function Bars() Statuses() end
+-- The cursor changed: what a drag held is let go, then the glows anew. The event comes inside the game's pickup
+-- itself, before a drag marks its entry held (Item.Drag), as the game's book has it.
+local function Cursor()
+    for index = 1, items and items.taken or 0 do items[index].grabbed = false end
+    Statuses()
+end
 local function Forms() Icons() end
 local function PetBar() AutoCasts() Statuses() end
 local function Fight() Casts.Fight() end
@@ -408,7 +428,7 @@ end
 
 local EVENTS = {
     SPELLS_CHANGED = Spells, LEARNED_SPELL_IN_SKILL_LINE = Spells, PLAYER_SPECIALIZATION_CHANGED = Spells,
-    UNIT_PET = Pet, SPELL_UPDATE_COOLDOWN = Cooldown, ACTIONBAR_SLOT_CHANGED = Bars, CURSOR_CHANGED = Bars,
+    UNIT_PET = Pet, SPELL_UPDATE_COOLDOWN = Cooldown, ACTIONBAR_SLOT_CHANGED = Bars, CURSOR_CHANGED = Cursor,
     UPDATE_SHAPESHIFT_FORM = Forms, PET_BAR_UPDATE = PetBar, PLAYER_REGEN_DISABLED = Fight, PLAYER_REGEN_ENABLED = Peace,
 }
 

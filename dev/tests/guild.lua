@@ -87,12 +87,15 @@ GetInventoryItemID = function(_, slot) return worn[slot] end
 GetInventoryItemLink = function(_, slot) return worn[slot] and ("|Hitem:" .. worn[slot] .. "|h[x]|h") end
 C_Item = rawget(_G, "C_Item") or {}
 C_Item.GetDetailedItemLevelInfo = function(link) local id = tonumber(link:match("item:(%d+)")) return id and (id % 40) + 10 end
-GetNumSkillLines = function() return 3 end
-GetSkillLineInfo = function(index)
-    if index == 1 then return "Professions", true end
-    if index == 2 then return "Leatherworking", false, nil, 138, nil, nil, 225 end
-    if index == 3 then return "Skinning", false, nil, 150, nil, nil, 225 end
-end
+-- The skill lines as this client gives them (C_SkillInfo, a table each): a header, two professions (category 11), a
+-- weapon (category 6).
+local skills = {
+    { skillID = 11, name = "Professions", isHeader = true, rank = 0, maxRank = 0, skillLineCategoryID = 0, parentSkillLineID = 0 },
+    { skillID = 165, name = "Leatherworking", isHeader = false, rank = 138, maxRank = 225, skillLineCategoryID = 11, parentSkillLineID = 0 },
+    { skillID = 393, name = "Skinning", isHeader = false, rank = 150, maxRank = 225, skillLineCategoryID = 11, parentSkillLineID = 0 },
+    { skillID = 43, name = "Swords", isHeader = false, rank = 140, maxRank = 150, skillLineCategoryID = 6, parentSkillLineID = 0 },
+}
+C_SkillInfo = { GetNumSkillLines = function() return #skills end, GetSkillLineInfo = function(index) return skills[index] end }
 TRADE_SKILLS = "Professions"
 GetBindingKey = function(action) if action == "TOGGLEGUILDTAB" then return "J" end end
 local overrides = {}
@@ -119,14 +122,20 @@ CreateScrollBoxListLinearView = function()
     return view
 end
 ScrollUtil = { InitScrollBoxListWithScrollBar = function(box, _, view) box.view = view end }
-CreateDataProvider = function()
+ScrollBoxConstants = { RetainScrollPosition = true, NoScrollInterpolation = true }
+CreateDataProvider = function(list)
     local provider = { list = {} }
     function provider:Flush() self.list = {} Relay(self.box) end
-    function provider:InsertTable(list) for _, entry in ipairs(list) do self.list[#self.list + 1] = entry end Relay(self.box) end
+    function provider:InsertTable(more) for _, entry in ipairs(more) do self.list[#self.list + 1] = entry end Relay(self.box) end
+    for _, entry in ipairs(list or {}) do provider.list[#provider.list + 1] = entry end
     return provider
 end
+local retained = {} -- each list's last SetDataProvider: whether it kept where it was scrolled to
 W.templates.WowScrollBoxList = function(box)
-    function box:SetDataProvider(provider) self.provider, provider.box = provider, self Relay(self) end
+    function box:SetDataProvider(provider, retain)
+        self.provider, provider.box, retained[self] = provider, self, retain
+        Relay(self)
+    end
 end
 
 -- The pack of the guild's records, as dev/build makes it: a TOC with its saved variable and no files.
@@ -227,6 +236,22 @@ Deliver("Droopy Fairwind", { parts[1], parts[2] })
 Frames(2)
 check(#blocks == 0, "a block with parts missing is not told")
 check(Wire.SendBlock("T", ("x"):rep(5000), "GUILD") == false, "a block larger than 4 KB packed is not sent (the stand-in packs nothing)")
+-- A block whose parts do not all fit in the queue is not queued at all: a block in part is of no use.
+Wire.QUEUE = 3
+Wire.Send("T", { "a", n = 1 }, "GUILD")
+Wire.Send("T", { "b", n = 1 }, "GUILD")
+check(Wire.SendBlock("T", long, "GUILD") == false and Wire.Waiting() == 2, "a block whose parts do not all fit in the queue is not queued")
+Wire.QUEUE = 300
+for _ = 1, 5 do Frame(1) end
+sent = {}
+-- Part numbers that are no whole numbers (tonumber takes "nan" and "2.5") are dropped, from anybody, never an error.
+blocks = {}
+W.Fire("CHAT_MSG_ADDON", "SaneUI", "P1\tf\tT\t7\tnan\t2\t\t5a", "WHISPER", "Evil Stranger")
+for _, number in ipairs({ "1", "3", "4", "2.5" }) do
+    W.Fire("CHAT_MSG_ADDON", "SaneUI", "P1\tf\tT\t8\t" .. number .. "\t4\t" .. (number == "1" and "1" or "") .. "\t5a", "WHISPER", "Evil Other")
+end
+Frames(3)
+check(#blocks == 0 and Core.errors["data job wire: inbox"] == nil, "parts numbered NaN or 2.5 are dropped, without an error")
 
 -- A sender of too many is not heard for a while.
 heard = {}
@@ -252,6 +277,9 @@ check(#Guild.Roster() == 4 and Guild.Member("Ann Brook").level == 18 and Guild.M
     "the roster as the game gives it: every member by key, the days since an offline one was online")
 check(Guild.Info().motd == "Raid at eight" and Guild.Info().online == 3 and Guild.Info().total == 4, "the guild's message of the day and counts")
 check(#Guild.History() == 0, "the first read of a guild notes no history: it is where the history starts")
+check(Guild.Member("Droopy Fairwind").joined == nil, "nor anybody's day of joining: it is not known")
+check(SaneUIData_Guild.forever.guildFormat == 1 and SaneUIData_Guild.forever.format == 1,
+    "the guilds' format is kept apart from the data framework's")
 
 -- The roster changes.
 roster[3][4] = 20                                 -- Ann reached level 20
@@ -264,6 +292,7 @@ for _, event in ipairs(Guild.History()) do whats[event.what .. ":" .. event.key]
 check(whats["level:Ann Brook"] and whats["level:Ann Brook"].from == 18 and whats["level:Ann Brook"].to == 20, "a level reached is noted, from and to")
 check(whats["up:Sly Rook"] and whats["up:Sly Rook"].to == 1, "a promotion is noted with the new rank")
 check(whats["leave:Droopy Fairwind"] and whats["join:Mel Stone"], "who left and who joined are noted")
+check(Guild.Member("Mel Stone").joined == math.floor(GetServerTime() / 86400), "who joined later has its day")
 check(#Guild.History("Ann Brook") == 1, "a member's own history")
 -- A roster the game gives only in part is no reason to think members left.
 local function Leaves()
@@ -284,8 +313,8 @@ Guild.Read()
 local card = Guild.ReadCard(Guild.Card())
 check(card and card.class == "SHAMAN" and card.race == 6 and card.level == 30, "the card says who the character is")
 check(card.worn[1].item == 16854 and card.worn[16].item == 1001 and card.worn[5].level == 2139 % 40 + 10, "what it wears, slot by slot, with item levels")
-check(card.professions[1].name == "Leatherworking" and card.professions[1].rank == 138 and card.professions[2].name == "Skinning",
-    "its professions with their ranks")
+check(card.professions[1].name == "Leatherworking" and card.professions[1].rank == 138 and card.professions[2].name == "Skinning"
+    and #card.professions == 2, "its professions with their ranks, from the game's skill lines (no weapon skill)")
 check(math.abs(card.itemLevel - ((16854 % 40 + 10) + (2139 % 40 + 10) + (1001 % 40 + 10)) / 3) < 0.06, "its item level: the average of what it wears")
 
 -- Published: kept as our own and sent to the guild; another member's taken from it only when newer.
@@ -335,17 +364,113 @@ for _, message in ipairs(sent) do
 end
 check(asked, "a member that says it has a card we lack is asked for it, by a whisper")
 check(Guild.Peers()["Mel Stone"] and Guild.Peers()["Mel Stone"].version == "9.9", "and is known to run Sane UI, with its version")
--- Asked ourselves: we answer the one who asked with our own.
+-- Asked ourselves: we answer the one who asked with our own, once a minute at most however often it asks.
+local function Given(name)
+    local count = 0
+    for _, message in ipairs(sent) do
+        if message.channel == "WHISPER" and message.target == name and message.text:find("^P1") then count = count + 1 end
+    end
+    return count
+end
 sent = {}
-W.Fire("CHAT_MSG_ADDON", "SaneUI", "G1\tf\ta\tcard", "WHISPER", "Ann Brook")
+W.Fire("CHAT_MSG_ADDON", "SaneUI", "G1\tf\ta\tcard", "WHISPER", "Droopy Fairwind")
 for _ = 1, 5 do Frame(1) end
-check(sent[1] and sent[1].channel == "WHISPER" and sent[1].target == "Ann Brook", "a member that asks for our card gets it, whispered")
+check(Given("Droopy Fairwind") > 0, "a member that asks for our card gets it, whispered")
+sent = {}
+W.Fire("CHAT_MSG_ADDON", "SaneUI", "G1\tf\ta\tcard", "WHISPER", "Droopy Fairwind")
+for _ = 1, 5 do Frame(1) end
+check(Given("Droopy Fairwind") == 0, "asked again at once, it does not go again")
+Frame(Guild.ASK_GAP)
+W.Fire("CHAT_MSG_ADDON", "SaneUI", "G1\tf\ta\tcard", "WHISPER", "Droopy Fairwind")
+for _ = 1, 5 do Frame(1) end
+check(Given("Droopy Fairwind") > 0, "a minute later it does")
 Guild.Allow("card", false)
 sent = {}
-W.Fire("CHAT_MSG_ADDON", "SaneUI", "G1\tf\ta\tcard", "WHISPER", "Ann Brook")
+W.Fire("CHAT_MSG_ADDON", "SaneUI", "G1\tf\ta\tcard", "WHISPER", "Mel Stone")
 for _ = 1, 5 do Frame(1) end
 check(#sent == 0, "with sharing off, nobody gets it")
 Guild.Allow("card", true)
+for _ = 1, 10 do Frame(1) end
+sent = {}
+-- Switched off before it went, what waits of a kind is dropped: nothing of it is sent.
+Guild.Kind("note", 200)
+Guild.Allow("note", true)
+Guild.Publish("note", "the raid is at eight")
+check(Wire.Waiting() > 0, "a record published waits to be sent")
+Guild.Allow("note", false)
+for _ = 1, 5 do Frame(1) end
+check(Wire.Waiting() == 0 and #sent == 0, "switched off before it went, it is dropped")
+
+-- Sync asks the guild (a fresh hello), once a minute at most; a member's fresh hello is answered by a whisper to it.
+local function Hellos(fresh, channel, target)
+    local count = 0
+    for _, message in ipairs(sent) do
+        if message.text:find("^G1\tf\th\t" .. fresh) and message.channel == channel and message.target == target then count = count + 1 end
+    end
+    return count
+end
+Frame(Guild.SYNC)
+sent = {}
+Guild.Sync()
+Guild.Sync()
+for _ = 1, 3 do Frame(1) end
+check(Hellos("1", "GUILD") == 1, "Sync asks the guild by a fresh hello, once however often it is pressed")
+sent = {}
+W.Fire("CHAT_MSG_ADDON", "SaneUI", "G1\tf\th\t1\t9.9", "GUILD", "Mel Stone")
+W.Fire("CHAT_MSG_ADDON", "SaneUI", "G1\tf\th\t1\t9.9", "GUILD", "Mel Stone")
+for _ = 1, 8 do Frame(1) end
+check(Hellos("0", "WHISPER", "Mel Stone") == 1 and Hellos("0", "GUILD") == 0, "a fresh hello is answered once, whispered to the one who asked")
+
+-- A skill-up makes the card anew a while later, not at once: skills rise in runs.
+local function Published()
+    local count = 0
+    for _, message in ipairs(sent) do if message.channel == "GUILD" and message.text:find("^P1") then count = count + 1 end end
+    return count
+end
+sent = {}
+skills[2].rank = 139
+W.Fire("SKILL_LINES_CHANGED")
+for _ = 1, 10 do Frame(1) end
+check(Published() == 0, "a skill-up is not sent at once")
+for _ = 1, Guild.SKILLS do Frame(1) end
+check(Published() > 0, "but a while later, in the card made anew")
+
+-- A roster a fifth smaller at once is believed only when a read a while later still says it; who left takes what
+-- it shared along.
+local droopyRow
+for index, member in ipairs(roster) do
+    if member[1] == "Droopy Fairwind" then droopyRow = table.remove(roster, index) break end
+end
+Guild.Read()
+check(Leaves() == 1 and Guild.Record("Droopy Fairwind", "card") ~= nil, "a roster a fifth smaller at once is not believed yet")
+Frame(Guild.SHRINK_WAIT)
+Guild.Read()
+check(Leaves() == 2 and Guild.Record("Droopy Fairwind", "card") == nil, "a while later it is: the member left, and its card with it")
+roster[#roster + 1] = droopyRow
+Guild.Read()
+
+-- In a fight the roster is not read: once the fight is over, however often the game said it changed.
+InCombatLockdown = function() return true end
+W.Fire("PLAYER_REGEN_DISABLED")
+for _, member in ipairs(roster) do if member[1] == "Ann Brook" then member[4] = 21 end end
+W.Fire("GUILD_ROSTER_UPDATE", false)
+W.Fire("GUILD_ROSTER_UPDATE", false)
+for _ = 1, 3 do Frame(1) end
+check(Guild.Member("Ann Brook").level == 20, "in a fight the roster is not read")
+InCombatLockdown = function() return false end
+W.Fire("PLAYER_REGEN_ENABLED")
+Frames(3)
+check(Guild.Member("Ann Brook").level == 21, "once it is over, it is")
+-- A view that shows the roster has it asked of the game whenever the game lets again; never on a timer.
+local askedBefore = C_GuildInfo.asked or 0
+Guild.Watch(true)
+W.Fire("GUILD_ROSTER_UPDATE", true)
+W.Fire("GUILD_ROSTER_UPDATE", false)
+check(C_GuildInfo.asked == askedBefore + 2, "while a view shows the roster, it is asked for at once and when the game lets")
+Guild.Watch(false)
+W.Fire("GUILD_ROSTER_UPDATE", true)
+check(C_GuildInfo.asked == askedBefore + 2, "else not")
+Frames(3)
 
 -------------------------------------------------------------------------------
 --  A window offered to another module's board
@@ -373,6 +498,17 @@ W.Fire("PLAYER_LOGIN")
 Frames(3)
 check(Board.Offered("Social", "guild") ~= nil, "its window is offered to Social's board as the guild window")
 check(overrides.J == "SANEUI_GUILD_TOGGLE", "the guild key opens ours (an override binding on the game's own key)")
+IsInGuild = function() return false end
+W.Fire("PLAYER_GUILD_UPDATE", "player")
+check(next(overrides) == nil, "outside a guild the guild key opens the game's window, where a guild is found")
+local told = #W.printed
+ns.Window.Toggle()
+check(ns.Page.Frame() == nil and #W.printed == told + 1 and tostring(W.printed[#W.printed]):find(ns.TEXT.noGuild, 1, true),
+    "and ours (/sane guild, our key elsewhere) opens nothing there: it says so")
+IsInGuild = function() return true end
+W.Fire("PLAYER_GUILD_UPDATE", "player")
+check(overrides.J == "SANEUI_GUILD_TOGGLE", "in a guild again, ours")
+Frames(3)
 
 -- What its views show, without frames.
 local Layout = ns.Layout
@@ -413,21 +549,35 @@ ns.Window.Toggle()
 Frames(3)
 check(#caught == 0, "opened without an error: " .. tostring(caught[1]))
 check(ns.Page.Frame() ~= nil, "its page is built")
+local escape = rawget(_G, "SaneUIEscape")
+check(escape and escape:IsShown(), "Esc closes it while it shows: Core's window keeps its own scripts on it")
 ns.Page.Choose(2, 1)
 Frames(2)
 check(#caught == 0, "the roster shown without an error: " .. tostring(caught[1]))
+local kept = false
+for _, retain in pairs(retained) do kept = kept or retain == true end
+check(kept, "its lists are filled anew where they were scrolled to")
 ns.Page.Choose(2, 2)
 Frames(2)
 check(#caught == 0, "the equipment shown without an error: " .. tostring(caught[1]))
 for index = 3, 8 do ns.Page.Choose(index, 1) end
 Frames(2)
 check(#caught == 0, "every tab shown without an error: " .. tostring(caught[1]))
+check(Core.errors["Guild: list"] == nil, "and their rows drawn without one")
+ns.Window.Toggle()
+check(not escape:IsShown(), "closed, Esc has nothing of it any more")
+ns.Window.Toggle()
+Frames(2)
+check(escape:IsShown(), "opened again, Esc closes it again")
 check(not ns.off, "the module did not stand down")
 W.caught = nil
 
--- Standing down: the guild key is the game's again, the window offered no more.
+-- Standing down: the guild key is the game's again, the window offered no more, the roster no more asked for.
 ns.StandDown("a test")
 check(next(overrides) == nil, "the guild key opens the game's window again")
 check(Board.Offered("Social", "guild") == nil, "Social's own guild window is back")
+local askedThen = C_GuildInfo.asked
+W.Fire("GUILD_ROSTER_UPDATE", true)
+check(C_GuildInfo.asked == askedThen, "and the roster is no more asked for")
 
 io.write(("Guild: all %d checks passed.\n"):format(passed))

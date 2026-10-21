@@ -204,15 +204,25 @@ function ns.RealEntry(slot)
     return { kind = "other", icon = icon }
 end
 
+-- The two places a button keeps its slot, each read through pcall (a frame addons may not read
+-- raises). Made once: ActionOf runs for every button at each redraw and every frame of a search.
+local function ActionAttribute(frame)
+    return frame.GetAttribute and frame:GetAttribute("action")
+end
+
+local function ActionField(frame)
+    return frame.action
+end
+
 -- The action slot a button shows right now, or nil. A secure action button keeps it in its
 -- attribute "action"; bar addons that make buttons of their own may keep it only
 -- there. Blizzard's own buttons also have it as a field. A frame addons may not read gives nil.
 function ns.ActionOf(frame)
     if type(frame) ~= "table" then return nil end
-    local ok, action = pcall(function() return frame.GetAttribute and frame:GetAttribute("action") end)
+    local ok, action = pcall(ActionAttribute, frame)
     action = ok and ns.Plain(action) or nil
     if type(action) ~= "number" then
-        ok, action = pcall(function() return frame.action end)
+        ok, action = pcall(ActionField, frame)
         action = ok and ns.Plain(action) or nil
     end
     if type(action) == "number" and action >= 1 and action <= 180 then return action end
@@ -402,10 +412,16 @@ function ns.OnLogin()
         spellID = ns.Plain(spellID)
         if spellID and ns.Sources.Loaded(spellID) then ns.QueueUpdate(false, 0.5) end
     end)
-    -- The class trainer's window says which spellbook tab each spell belongs to.
-    ns.On("TRAINER_SHOW", function() ns.Safe("trainer", ns.Sources.TrainerShown) end)
-    ns.On("TRAINER_UPDATE", function() ns.Safe("trainer", ns.Sources.TrainerUpdated) end)
-    ns.On("TRAINER_CLOSED", function() ns.Safe("trainer", ns.Sources.TrainerClosed) end)
+    -- The class trainer's window says which spellbook tab each spell belongs to. Once the module
+    -- stood down the window is the game's alone: its filter was put back then (ns.GiveBack).
+    local function AtTrainer(step)
+        return function()
+            if not ns.off then ns.Safe("trainer", step) end
+        end
+    end
+    ns.On("TRAINER_SHOW", AtTrainer(ns.Sources.TrainerShown))
+    ns.On("TRAINER_UPDATE", AtTrainer(ns.Sources.TrainerUpdated))
+    ns.On("TRAINER_CLOSED", AtTrainer(ns.Sources.TrainerClosed))
 end
 
 -- The buttons' contents arrive with the login data. Nothing is placed before
@@ -424,13 +440,15 @@ ns.On("PLAYER_ENTERING_WORLD", function()
 end)
 
 -- An error that no step caught stands the module down (Core's StandDown): the spellbook's pages
--- and its window go back to the game, and the reservations' marks leave the bars. The
--- reservations themselves stay saved for the next session.
+-- and its window go back to the game, the reservations' marks leave the bars and the class
+-- trainer's filter is put back. The reservations themselves stay saved for the next session.
+-- Each step on its own, the quick ones first, so one that fails keeps none of the others.
 ns.GIVEN_BACK = "the game's own spellbook and buttons are back"
 function ns.GiveBack()
-    if ns.Book then ns.Book.StandDown(TEXT.why.problem) end
-    if ns.Drag then ns.Drag.Cancel() end
-    if ns.Ghosts then ns.Ghosts.Hide() end
+    if ns.Ghosts then ns.Safe("giving back", ns.Ghosts.Hide) end
+    if ns.Drag then ns.Safe("giving back", ns.Drag.Cancel) end
+    if ns.Sources then ns.Safe("giving back", ns.Sources.TrainerClosed) end
+    if ns.Book then ns.Safe("giving back", ns.Book.StandDown, TEXT.why.problem) end
 end
 
 -------------------------------------------------------------------------------

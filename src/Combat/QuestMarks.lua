@@ -71,20 +71,23 @@ local function Make(plate)
     return mark
 end
 
--- A creature's mark as the game says now; hidden when there is nothing to do, kept while the game hides it.
+-- A creature's mark as the game says now; hidden when there is nothing to do, kept while the game hides it. With
+-- the setting off nothing of the game's is read.
 local function Mark(unit)
     local mark = shown[unit]
     if not mark then return end
+    if not ns.options.questMarks then return mark:Hide() end
     local kind, count = QuestMarks.Read(unit)
     if kind == false then return end
-    if not kind or not ns.options.questMarks then return mark:Hide() end
+    if not kind then return mark:Hide() end
     mark.icon:SetTexture(QuestMarks.ICONS[kind])
     mark.count:SetText(count)
     mark:Show()
 end
 
+-- Plates come and go after the module stood down too (the events still come): then nothing is marked.
 local function Added(unit)
-    if not unit or Plain(UnitIsPlayer(unit)) then return end
+    if ns.off or not unit or Plain(UnitIsPlayer(unit)) then return end
     local plate = Core.Ask(C_NamePlate.GetNamePlateForUnit, unit)
     if type(plate) ~= "table" then return end -- a plate the game forbids to addons
     local mark = byPlate[plate] or Make(plate)
@@ -100,6 +103,7 @@ local function Added(unit)
 end
 
 local function Removed(unit)
+    if ns.off then return end
     local mark = unit and shown[unit]
     if mark then mark:Hide() end
     if unit then shown[unit] = nil end

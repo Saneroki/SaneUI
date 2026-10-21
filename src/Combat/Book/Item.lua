@@ -451,9 +451,13 @@ function Item.Cooldown(item)
             return
         end
     end
+    -- A hidden number is a number to type() too: only what Plain lets through goes to the swirl, which takes no
+    -- hidden value from addon code.
     local info = Data.Ask("GetSpellBookItemCooldown", item.entry.slot, item.entry.bank)
-    if type(info) == "table" and info.isEnabled and type(info.startTime) == "number" and type(info.duration) == "number" then
-        cooldown:SetCooldown(info.startTime, info.duration, info.modRate)
+    local start = type(info) == "table" and info.isEnabled and Plain(info.startTime)
+    local duration = start and Plain(info.duration)
+    if type(start) == "number" and type(duration) == "number" then
+        cooldown:SetCooldown(start, duration, Plain(info.modRate))
     else
         cooldown:Clear()
     end

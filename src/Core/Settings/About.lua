@@ -206,9 +206,11 @@ function About.Toggle()
     window.Box:HighlightText()
 end
 
--- Opens the window for a kind of feedback, with what was written for it before.
+-- Opens the window for a kind of feedback, with what was written for it before. Open already (another kind,
+-- or the same again), what is being written is kept first: only hiding the window keeps it otherwise.
 function About.Open(kind)
     window = window or Build()
+    if window:IsShown() and window.kind and not window.made then drafts[window.kind.key] = window.Box:GetText() end
     window.kind = kind
     if window.SetTitle then window:SetTitle(kind.name) end
     window:Show()

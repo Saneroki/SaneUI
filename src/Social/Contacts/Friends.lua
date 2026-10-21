@@ -442,6 +442,8 @@ end
 function View.Build(page)
     box = Board.List(page, function(row, friend)
         Draw(row, friend)
+        if row.wired then return end -- its scripts once: the list hands its rows from one friend to another
+        row.wired = true
         row:SetScript("OnClick", function(self, button) ns.Safe("friends", Click, self, button) end)
         row:SetScript("OnEnter", function(self) ns.Safe("friends", Tip, self) end)
         row:SetScript("OnLeave", GameTooltip_Hide)
@@ -471,14 +473,15 @@ end
 
 local KINDS = { { key = "bnet", text = ns.TEXT.bnetFriends }, { key = "wow", text = ns.TEXT.characterFriends } }
 
+-- A tick asks for the list anew a frame later (Changed): a failure there is the list's alone, never the menu's.
 function View.Filter(root)
     root:CreateTitle(ns.TEXT.status)
-    Contacts.StatusMenu(root, wanted, Update)
+    Contacts.StatusMenu(root, wanted, Changed)
     root:CreateTitle(ns.TEXT.kind)
     local function IsTicked(key) return kinds[key] == true end
     local function Tick(key)
         kinds[key] = not kinds[key] or nil
-        Update()
+        Changed()
     end
     for _, kind in ipairs(KINDS) do root:CreateCheckbox(kind.text, ns.Guard(IsTicked), ns.Guard(Tick), kind.key) end
 end

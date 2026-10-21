@@ -26,10 +26,10 @@ local BANK_ICON = "Interface\\Icons\\INV_Misc_Bag_08"
 local box, foot
 local chosen, found -- the key shown; [key] = how many the search finds (nil: no search)
 
--- The class's colour (RAID_CLASS_COLORS), or the game's white.
+-- The class's colour (RAID_CLASS_COLORS), or the game's white (also for a saved class of a wrong kind).
 function Roster.Colour(class)
     local colours = rawget(_G, "RAID_CLASS_COLORS")
-    local colour = colours and class and colours[class]
+    local colour = colours and type(class) == "string" and colours[class]
     if colour then return colour.r, colour.g, colour.b end
     return 1, 1, 1
 end
@@ -83,7 +83,7 @@ local function Draw(row, who)
     else
         local atlas = rawget(_G, "GetClassAtlas")
         row.icon:SetTexture(nil)
-        if atlas and who.class then row.icon:SetAtlas(atlas(who.class:lower())) end
+        if atlas and type(who.class) == "string" then row.icon:SetAtlas(atlas(who.class:lower())) end
         row.name:SetText(who.name or "?")
         row.name:SetTextColor(Roster.Colour(who.class))
     end
@@ -103,7 +103,7 @@ local function Init(row, who)
     ns.Safe("alts", Draw, row, who)
 end
 local function Factory(factory)
-    factory("Button", Init)
+    ns.Safe("alts", factory, "Button", Init)
 end
 
 function Roster.Build(parent)

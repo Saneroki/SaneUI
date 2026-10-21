@@ -139,9 +139,16 @@ local function Finders()
     return places, on
 end
 
+-- The kind whose finder is on, as the game told it last: asked once, then again only after the game says its
+-- tracking changed (or a switch of ours), not each time Found.lua looks (every frame the game's minimap shows).
+local active, told = nil, false
 function Nodes.Active()
-    local _, on = Finders()
-    return on
+    if not told then active, told = select(2, Finders()), true end
+    return active
+end
+
+local function Changed()
+    told = false
 end
 
 -- The effect sounds as they were before the switch.
@@ -174,6 +181,7 @@ end
 local function Switch(index, on)
     Quiet()
     Core.Ask(C_Minimap.SetTracking, index, on)
+    Changed()
     if not on then LoudSoon(Nodes.AFTER) end -- (no cast comes to wait for)
     moving = 0
 end
@@ -251,6 +259,10 @@ function Nodes.Start()
     Loud()
     Core.OnUnit("UNIT_SPELLCAST_SUCCEEDED", "player", Cast)
     Core.OnUnit("UNIT_SPELLCAST_FAILED", "player", Cast)
+    -- The finder that is on asked again after the game's tracking changed: its list, a spell learnt, a loading screen.
+    ns.On("MINIMAP_UPDATE_TRACKING", Changed)
+    ns.On("SPELLS_CHANGED", Changed)
+    ns.On("PLAYER_ENTERING_WORLD", Changed)
     ns.On("SPELLS_CHANGED", Nodes.Update)
     ns.On("SKILL_LINES_CHANGED", function() wipe(skills) end)
     ns.On("GET_ITEM_INFO_RECEIVED", function() wipe(pictures) end)

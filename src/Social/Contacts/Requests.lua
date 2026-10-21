@@ -14,7 +14,8 @@ local _, ns = ...
 --
 --  Under it every request somebody sent you, the newest first, with when it
 --  came and the game's two buttons: Accept, and Decline, which opens a menu as
---  the game's (Decline, Block Invites: no more requests from them, asked once).
+--  the game's (Decline, Block Invites: no more requests from them, asked once;
+--  only where the game offers it, not for a request of a character only).
 --
 --  Read anew when the game tells of a request, only while the tab is shown;
 --  its count is on the tab (Requests (2)) whenever the panel is.
@@ -44,7 +45,8 @@ local function Read()
     for index = 1, Waiting() do
         local info = C_BattleNet.GetFriendInviteInfo(index)
         if info and info.inviteID then
-            requests[#requests + 1] = { id = info.inviteID, name = info.accountName or "?", at = info.creationTimestamp, index = index }
+            requests[#requests + 1] = { id = info.inviteID, name = info.accountName or "?", at = info.creationTimestamp, index = index,
+                                        level = info.friendLevel }
         end
     end
     table.sort(requests, function(a, b) return (a.at or 0) > (b.at or 0) end)
@@ -89,13 +91,10 @@ local function Add()
     line:ClearFocus()
 end
 
--- The friendly player you have targeted, by the name a friend is added by ("Name-Realm" from another realm).
+-- The friendly player you have targeted, by the name a friend is added by (Contacts.NameOf), unless a friend already.
 local function Target()
-    if not UnitExists("target") or not UnitIsPlayer("target") or not UnitCanCooperate("player", "target") then return nil end
-    local name, realm = UnitName("target")
-    if not name then return nil end
-    if realm and realm ~= "" then name = name .. "-" .. realm end
-    if C_FriendList.GetFriendInfo and C_FriendList.GetFriendInfo(name) then return nil end
+    local name = Contacts.Targeted()
+    if not name or (C_FriendList.GetFriendInfo and C_FriendList.GetFriendInfo(name)) then return nil end
     return name
 end
 
@@ -105,10 +104,17 @@ end
 
 local function Accept(request) BNAcceptFriendInvite(request.id) end
 
+-- Whether invites from whoever sent a request can be blocked, as the game's menu offers it: its kind is known and it
+-- comes over Battle.net, not from a character only (Title).
+local function Blockable(request)
+    local levels = Enum and Enum.BattleNetFriendLevel
+    return C_BattleNet.SetBlocked ~= nil and request.level ~= nil and request.level ~= (levels and levels.Title)
+end
+
 local function Decline(request, owner)
     MenuUtil.CreateContextMenu(owner, ns.Guard(function(_, root)
-        root:CreateButton(Core.Word("DECLINE", "Decline"), ns.Guard(function() BNDeclineFriendInvite(request.id) end))
-        if C_BattleNet.SetBlocked then
+        root:CreateButton(Core.Word("DECLINE", "Decline"), function() ns.Safe("requests", BNDeclineFriendInvite, request.id) end)
+        if Blockable(request) then
             root:CreateButton(Core.Word("BLOCK_INVITES", "Block Invites"), ns.Guard(function()
                 Core.Confirm(Core.Word("BLOCK_INVITES_CONFIRMATION", "Are you sure you want to block all invites from %s?"), request.name, function()
                     C_BattleNet.SetBlocked(request.id, true)

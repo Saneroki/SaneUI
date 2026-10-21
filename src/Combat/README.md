@@ -19,8 +19,8 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
   (a quarter of the screen's width either side of the middle). Push there again, or press Esc, to go back.
   Not in Edit Mode, and not with *Can expand to fullscreen* off (*Sane UI > Combat > Expand window*).
 - **Your keys:** the keys you gave the game's spellbook (P), pet spellbook and talents (N) open the full
-  screen with that window on it (the pet's: the spellbook at the pet's tab), and close it again, as they do
-  the game's windows. Your key bindings stay as they are; *Your spellbook and talents keys open ours* off,
+  screen with that window on it (the pet's: the spellbook at the pet's tab; without a pet, as the game's, it does
+  nothing), and close it again, as they do the game's windows. Your key bindings stay as they are; *Your spellbook and talents keys open ours* off,
   they open the game's own windows again. In the game's key bindings, under *Sane UI*, Combat's own keys for
   the same, to put on other keys.
 - **The spellbook:** the game's book, at its size and in its art, scaled to fit its window: both pages where
@@ -74,9 +74,11 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
   board out (`Board.Show`); `filled` on its way back, and `docked` at rest, take it away (`Board.Hide`).
   `Window.Open(key, tab)` fills the screen with that window on the layout (`Board.Add`, once it stands: Core's
   board adds one only then) and the book at that tab; `Window.Toggle` is that, or back to its size where that
-  window is shown already (the keys). Its option `classic` lists the game's spellbook and talents for Core's
-  *Classic windows* (`Core.Classic`): `show` says what opens the game's (`Classic.Press`, the binding's name, or
-  none while `Keys.Taken()`), `ours` is `Window.Open` of ours.
+  window is shown already (the keys). What is typed into the full screen's search box goes to the board's
+  windows (its option `search`, `Board.Search`); a tab of the book chosen closes it (`Window.ClearSearch`,
+  `window:EndSearch()`). Its option `classic` lists the game's spellbook and talents for Core's *Classic windows*
+  (`Core.Classic`): `show` says what opens the game's (`Classic.Press`, the binding's name, or none while
+  `Keys.Taken()`), `ours` is `Window.Open` of ours.
 - **The board** (`Board.lua`): Core's (`Core.Board.New`, kept in `store.board`: layouts behind tabs, a panel
   per window with its head, X and body, the dropdown *Windows*), a registry of parts in files of their own
   (`Board.Part(key, title, least, part, wants)`; a part has `Build(panel)`, `Show(on)`, `Size(w, h)`,
@@ -118,11 +120,12 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
     action bars is written (no highlight marks).
   - `Casts.lua`: the cast. `SecureActionButtonTemplate` buttons on UIParent, each over the icon of a castable
     entry (`Item.Castable`: a learned spell, a pet ability), in UIParent's units, `Book.LEVEL` above the panel's
-    body: `type` `spell` and `spell` the spell's ID (the rank it is); a pet ability `macro`, `/cast` its name, the
-    right click `/petautocasttoggle` where it may autocast; `checkselfcast`, `useOnKeyDown = false`, no cast on
-    Shift (`shift-type*` empty: `PostClick` links or picks it up). Made, set, placed, shown and hidden out of a
-    fight only; all hidden at `PLAYER_REGEN_DISABLED` (the game locks them after it), set again after
-    `PLAYER_REGEN_ENABLED`. Not in our window, so the full screen never becomes protected.
+    body: `type` `spell` and `spell` the spell's ID (the rank it is); a pet ability `macro`, `/cast` its name and
+    rank where it has one (`Bite(Rank 2)`), the right click `/petautocasttoggle` where it may autocast;
+    `checkselfcast`, `useOnKeyDown = false`, no cast on Shift (`shift-type*` empty: `PostClick` links or picks it
+    up). Made, set, placed, shown and hidden out of a fight only; all hidden at `PLAYER_REGEN_DISABLED` (the game
+    locks them after it), set again after `PLAYER_REGEN_ENABLED`. Not in our window, so the full screen never
+    becomes protected.
 - **The talents** (`Talents/`): the game's shared talent frame (`TalentFrameBaseTemplate`,
   `Blizzard_SharedTalentUI`, loaded with `C_AddOns.LoadAddOn` in a `pcall` where it is not yet) inherited, as the
   game's class frame inherits it; the class layer the game's window adds lives in `Blizzard_PlayerSpells`, which
@@ -142,7 +145,8 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
   as the Camelot window has them not: loadouts, starter builds, hero talents, inspecting; also the node sheen,
   the purchase effects and the action bars' marks (they write the game's bars).
 - **The keys** (`Keys.lua`, `Bindings.xml`): Combat's keys `SANEUI_COMBAT_SPELLBOOK`, `_PETBOOK`, `_TALENTS`
-  (Sane UI's section in the game's key bindings) run `Keys.Press` (`Window.Toggle`). `SetOverrideBinding` on a
+  (Sane UI's section in the game's key bindings) run `Keys.Press` (`Window.Toggle`; the pet book's only while
+  `BookData.HasPet()`, as the game's key opens its book only at the pet's tab). `SetOverrideBinding` on a
   frame of ours puts them on the keys of `TOGGLESPELLBOOK`, `TOGGLEPETBOOK`, `TOGGLETALENTS`
   (`GetBindingKey`): at the login, on `UPDATE_BINDINGS` when those actions' keys changed, cleared
   (`ClearOverrideBindings`) with the switch `keys` off and at standing down; out of a fight only (else after it,
@@ -160,9 +164,10 @@ the key again, or Esc, and it goes back. A talent planner Sane UI knows is a win
   sword (`Interface\CURSOR\Attack`) where its text names the creature, else the sack
   (`Interface\CURSOR\LootAll`), the count left of it. A secret value (a fight) leaves the mark as it was.
   Looked at again on `QUEST_LOG_UPDATE` and `UNIT_QUEST_LOG_CHANGED`, once a frame (`Core.Later`).
-- **Standing down** (`ns.GiveBack`): each part gives back what it lent (the planner) and hides what is protected
-  (the book's secure buttons, now or after the fight), the keys are the game's again, the window hides, the
-  quest marks hide.
+- **Standing down** (`ns.GiveBack`): the keys are the game's again first, then each part gives back what it lent
+  (the planner) and hides what is protected (the book's secure buttons, now or after the fight), the window hides,
+  the quest marks hide and no plate gets one after it; each step by itself, so one that fails keeps none of the
+  others from giving back.
 - Tests: `dev/tests/combat.lua` (the window, the board, the keys, the planner, the quest marks),
   `dev/tests/book.lua` (the spellbook), `dev/tests/talents.lua` (the talents).
 

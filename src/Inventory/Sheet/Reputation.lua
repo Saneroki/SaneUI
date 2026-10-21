@@ -177,9 +177,22 @@ local function War(box)
     Reputation.Refresh()
 end
 
+-- A faction chosen again by its ID where the list has it now (none: nothing chosen), as the game's sheet does.
+local function Reselect(id)
+    for index = 1, id and Core.Ask(Rep().GetNumFactions) or 0 do
+        local data = Core.Ask(Rep().GetFactionDataByIndex, index)
+        if type(data) == "table" and data.factionID == id then return Core.Ask(Rep().SetSelectedFaction, index) end
+    end
+    Core.Ask(Rep().SetSelectedFaction, 0)
+end
+
+-- Made inactive, or active again, the faction moves to another place in the list: it stays the one chosen.
 local function Inactive(box)
-    Core.Ask(Rep().SetFactionActive, Selected(), not box:GetChecked())
+    local index = Selected()
+    local data = index > 0 and Core.Ask(Rep().GetFactionDataByIndex, index)
+    Core.Ask(Rep().SetFactionActive, index, not box:GetChecked())
     ns.Side.Sound(box)
+    Reselect(type(data) == "table" and data.factionID or nil)
     Reputation.Refresh()
 end
 

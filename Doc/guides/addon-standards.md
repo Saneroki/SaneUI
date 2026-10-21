@@ -206,7 +206,7 @@ that the game calls runs behind one:
 |---|---|---|
 | A game event (`Core.On`, `ns.On`, `Core.OnUnit`) | Core's event frame, each listener on its own | stands its module down |
 | A step done later (`Core.Later`) | `Core.Later` itself | stands its module down |
-| A module's `OnLoad`, `OnLogin`, `OnLogout` | Core's start | stands it down; after `OnLoad`, it is not started further |
+| A module's `OnLoad`, `OnLogin`, `OnLogout` | Core's start | stands it down; a module that stood down, in whichever step or at whichever door, gets no further step |
 | A frame's script, a hook (`HookScript`, `hooksecurefunc`), a timer, a menu's or a dialog's function | `ns.Guard(fn)` | stands its module down; nothing once it stood down |
 | The same in Core (its windows, the options, Sync, the data scheduler) | `Core.Guard(label, fn)` | a module's whose code it ran into stands down; Core's own is told once under the label, and the next call tries again |
 | A message between a module's files (`ns.Fire`) | `ns.Safe`, each listener | told once, the others go on |
@@ -233,14 +233,28 @@ And so:
 - **The lint checks it** (`dev/tests/lint`, run by `dev/build`): in Core's folder and every module's, every function given
   to `SetScript`, `HookScript`, `hooksecurefunc`, `C_Timer.After`/`NewTimer`/`NewTicker`, `RegisterCallback`,
   `Menu.ModifyMenu`, `MenuUtil.CreateContextMenu`/`HookTooltipScripts`, a menu's `CreateButton`,
-  `CreateCheckbox`, `CreateRadio` or `AddInitializer` (also through `pcall`) is one of: `ns.Guard(fn)` (in Core
-  `Core.Guard(label, fn)`), a name the file set to one (`local OnShown = ns.Guard(Reshown)`), `nil`, the game's
-  own `GameTooltip_Hide` or a frame's own `StartMoving`/`StopMovingOrSizing`, or a function whose one step is
-  `ns.Safe(...)`, `ns.Guarded(...)` or `Core.Safe(...)`
-  (`function(self) ns.Safe("drag", Drag, self) end`, for what must go on after the module stood down), given
-  there or by the name of a one-line local function (`local function Wish(choice) ns.Safe(...) end`). An intended exception says why on the call's line, `-- unguarded: <why>`:
+  `CreateCheckbox`, `CreateRadio` or `AddInitializer` (also through `pcall`), a dropdown's `SetupMenu`,
+  `SetSelectionTranslator`, `SetIsDefaultCallback` or `SetDefaultCallback`, a menu line's `SetTooltip`, a list
+  view's `SetElementFactory`, `SetElementExtentCalculator` or `SetElementInitializer`, an options row's
+  `AddShownPredicate`, `AddModifyPredicate` or `SetParentInitializer`, `Settings.RegisterProxySetting`'s getter and
+  setter, a chat filter (`AddMessageEventFilter`, also by a local name for it), `TooltipDataProcessor`'s
+  `AddTooltipPostCall`/`AddLinePostCall`, and the function fields the game calls (a dialog's `callback`, the colour
+  picker's `swatchFunc`/`cancelFunc`, a canvas page's `OnRefresh`/`OnDefault`/`OnCommit`, `SlashCmdList.X`) is one
+  of: `ns.Guard(fn)` (in Core `Core.Guard(label, fn)`), a name the file set to one (`local OnShown = ns.Guard(Reshown)`,
+  also one made once and kept, `tips[key] = tips[key] or ns.Guard(...)`), `nil`, the game's own `GameTooltip_Hide`
+  or a frame's own `StartMoving`/`StopMovingOrSizing`, a function that runs nothing of ours (it does nothing or
+  only answers a literal), or a function whose one step is `ns.Safe(...)`, `ns.Guarded(...)` or `Core.Safe(...)`
+  (or a local name the file gave one of them; `function(self) ns.Safe("drag", Drag, self) end`, for what must go on
+  after the module stood down), given there or by the name of a local function
+  (`local function Wish(choice) ns.Safe(...) end`). One that must answer a value may give a fallback of its kind,
+  `function(_, row) return ns.Safe("list", Height, row) or 1 end` (a literal or a constant): never one that
+  replaces a legitimate `false` or `nil` (no `or true` on a predicate); Core's own getters and predicates are
+  `Core.Guard(label, fn)`, a module's `ns.Safe` with such a fallback, so a list still shown after a stand-down
+  never gets `nil`. An intended exception says why on the call's line, `-- unguarded: <why>`:
   only for what has to work after a stand-down and is too small to fail (setting a flag), and for the guards
-  themselves (Core's event frame, `Later`'s timer, its ear at the game's error window).
+  themselves (Core's event frame, `Later`'s timer, its ear at the game's error window). A guard the lint cannot
+  follow (a function that hands one out, `filter:SetupMenu(ns.Feed.Menu(view))`) says how there,
+  `-- guarded: <how>`.
 - **Made once, where it is set:** a guarded function is a closure; make it where the script is set or the
   hook placed, not each time something runs (`stepping = Core.Guard("data", Step)` once, then
   `SetScript("OnUpdate", stepping)` at every wake).

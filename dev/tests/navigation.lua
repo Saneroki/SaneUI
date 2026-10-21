@@ -699,6 +699,17 @@ do
     check(isleMap == 2521 and near(onU, 0) and near(onV, 0), "on the isle: its plane and the point in it, as on a continent")
     player.map, player.x, player.y = 1429, 0.75, 0.3
 end
+-- A battleground's map: hung under a zone of the continent by the game's map tree, its box in a world of its own.
+;(function()
+    MAPS[1459] = { kind = 6, parent = 1429, continent = 30, top = 500, bottom = -500, left = 400, right = -400 }
+    local camera = ns.Camera.New()
+    camera.width, camera.height = 200, 200
+    camera:Show(1415)
+    check(Coords.Box(1459) and Coords.Box(1459).continent == 30 and Coords.PlaneOf(1459) == 1415 and not Coords.InPlane(1459)
+        and Coords.InPlane(1429) and Coords.MapToPlane(1459, 0.5, 0.5, 1415) == nil and not camera:Fit(1459)
+        and camera:Fit(1429), "a map whose box lies in another instance than its plane: no place there, nor a fit")
+    MAPS[1459] = nil
+end)()
 
 -------------------------------------------------------------------------------
 --  Camera
@@ -917,6 +928,20 @@ do
     height = 8
     ns.Indoors.Track(Canvas.view, GetTime() + 10)
     check(Picture("Indoors\\500001-1") and not Picture("Indoors\\500001-0"), "up the stairs: the floor above")
+    ;(function()
+        local asked, at = 0, UnitPosition
+        UnitPosition = function(...)
+            asked = asked + 1
+            return at(...)
+        end
+        ns.Indoors.Track(Canvas.view, GetTime() + 20)
+        local still = asked == 1 and Picture("Indoors\\500001-1")
+        UnitPosition = function() return -8950, -500, height, 1 end -- the same yards, on the other continent's grid
+        ns.Indoors.Track(Canvas.view, GetTime() + 30)
+        check(still and not Picture("Indoors\\500001-1") and not Picture("Indoors\\500001-0"),
+            "standing still the tracker looks no further; on another continent than the view's: no indoor map")
+        UnitPosition = at
+    end)()
     IsIndoors = function() return false end
     Canvas.Layout()
     check(not Picture("Indoors\\500001-1"), "outdoors: no indoor map")
@@ -942,34 +967,59 @@ do
     Canvas.Layout()
 end
 
--- The wheel walks the game's steps, then our map goes on alone.
+-- The wheel walks the game's steps, then our map goes on alone. Each notch in a frame of its own (W.Wait(0)): two in
+-- one frame are laid out once there (below).
 frame._scripts.OnMouseWheel(frame, 1)
+W.Wait(0)
 check(small.native == 3 and near(small.k, 100 / 120) and minimap._zoom == 3, "a notch in: the game's next step")
-frame._scripts.OnMouseWheel(frame, -1)
-frame._scripts.OnMouseWheel(frame, -1)
-frame._scripts.OnMouseWheel(frame, -1)
+for _ = 1, 3 do frame._scripts.OnMouseWheel(frame, -1) W.Wait(0) end
 check(small.native == 0 and near(small.k, 100 / 240), "out to the game's widest step")
 frame._scripts.OnMouseWheel(frame, -1)
+W.Wait(0)
 check(small.native == nil and near(small.k, 100 / 240 / Camera.STEP) and not minimap._shown,
     "out past it: our map alone, a notch farther, the game's minimap out of sight")
 tracker._scripts.OnUpdate(tracker, 0.016)
 check(arrow._shown and arrow._rotation == 1.5, "our arrow shows instead, turned as the player faces")
 frame._scripts.OnMouseWheel(frame, 1)
+W.Wait(0)
 check(small.native == 0 and minimap._shown, "in again: the game's widest step, its minimap back")
-for _ = 1, 5 do frame._scripts.OnMouseWheel(frame, 1) end
+for _ = 1, 5 do frame._scripts.OnMouseWheel(frame, 1) W.Wait(0) end
 check(small.native == 5 and near(small.k, 2), "in to the game's narrowest step")
 frame._scripts.OnMouseWheel(frame, 1)
+W.Wait(0)
 check(small.native == nil and near(small.k, 2 * Camera.STEP) and not minimap._shown,
     "in past it: our map alone, a notch nearer, the game's minimap out of sight")
-for _ = 1, 10 do frame._scripts.OnMouseWheel(frame, 1) end
+for _ = 1, 10 do frame._scripts.OnMouseWheel(frame, 1) W.Wait(0) end
 check(small.native == nil and small.k == Camera.NEAR and Camera.NEAR == 4 * 2,
     "on in to its own nearest zoom: four times the game's narrowest step")
-for _ = 1, 6 do frame._scripts.OnMouseWheel(frame, -1) end
+for _ = 1, 6 do frame._scripts.OnMouseWheel(frame, -1) W.Wait(0) end
 check(small.native == nil and small.k > 2, "out again: our map alone while nearer than the narrowest step")
 frame._scripts.OnMouseWheel(frame, -1)
+W.Wait(0)
 check(small.native == 5 and near(small.k, 2) and minimap._shown, "then the game's narrowest step, its minimap back")
-for _ = 1, 5 do frame._scripts.OnMouseWheel(frame, -1) end
+for _ = 1, 5 do frame._scripts.OnMouseWheel(frame, -1) W.Wait(0) end
 check(small.native == 0, "and out through its steps to the widest")
+-- A fast spin: two notches in one frame laid out once there, the first at once (never later), the second added up
+-- in the camera and laid out on the next frame.
+;(function()
+    local placed, place = 0, ns.Terrain.Place
+    ns.Terrain.Place = function(...)
+        placed = placed + 1
+        return place(...)
+    end
+    frame._scripts.OnMouseWheel(frame, 1)
+    local first = placed == 1 and minimap._zoom == 1
+    frame._scripts.OnMouseWheel(frame, 1)
+    local once = placed == 1 and small.native == 2 and minimap._zoom == 1
+    W.Wait(0)
+    local later = placed == 2 and minimap._zoom == 2
+    W.Wait(0)
+    ns.Terrain.Place = place
+    check(first and once and later and placed == 2,
+        "two notches in one frame: laid out once in it (the first at once), the second on the next frame")
+    for _ = 1, 2 do frame._scripts.OnMouseWheel(frame, -1) W.Wait(0) end
+    check(small.native == 0 and minimap._zoom == 0, "and back out, a notch a frame")
+end)()
 
 -- A drag: no longer following, the game's minimap goes; it follows again after a while without the mouse.
 frame._scripts.OnMouseDown(frame, "LeftButton")
@@ -987,6 +1037,90 @@ W.Wait(0.2)
 tracker._scripts.OnUpdate(tracker, 0.016)
 tracker._scripts.OnUpdate(tracker, 0.016)
 check(small.follow and near(small.u, 500) and minimap._shown, "then it follows again, the game's minimap with it")
+
+-- Core's button Sane UI on the game's minimap only while that is the game's own, not inside our map. In an instance,
+-- where the game tells no place of the player in our planes: the game's minimap alone, with its own ground. The zone
+-- in the middle asked of the game a few times a second, not at each step. A zone entered: the pins placed anew only.
+;(function()
+    local sane
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn then sane = widget end
+    end
+    check(sane and not sane._shown and minimap._shown, "inside our map the game's minimap carries no button Sane UI")
+    local step = minimap._zoom
+    player.map = 500 -- a dungeon: its map has no box, so the game tells no place of the player in our planes
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(minimap._shown and ground == true and minimap._zoom == step and not Canvas.Laid()
+        and Count(Shown(), 801, 804) == 0 and Overviews(Shown(), 0) == 0,
+        "in an instance: the game's minimap alone, its own ground on, at the view's step; nothing of ours but the sea")
+    IsInGroup = function() return true end
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    local blips = 0
+    for _, widget in ipairs(W.frames) do if widget._atlas == ns.Marks.BLIP and widget.x then blips = blips + 1 end end
+    IsInGroup = function() return false end
+    check(blips == 0, "nor the party's marks of ours there: the game's minimap shows the party itself")
+    frame._scripts.OnMouseWheel(frame, 1)
+    W.Wait(0)
+    check(minimap._shown and minimap._zoom == step + 1 and ground == true, "the wheel walks its steps there")
+    frame._scripts.OnMouseWheel(frame, -1)
+    W.Wait(0)
+    player.map = 1429
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(minimap._shown and ground == false and minimap._zoom == step and Canvas.Laid() and Count(Shown(), 801, 804) > 0,
+        "out of it: its ground off again, our map back under it")
+    local asked, at = 0, C_Map.GetMapInfoAtPosition
+    C_Map.GetMapInfoAtPosition = function(...)
+        asked = asked + 1
+        return at(...)
+    end
+    for _ = 1, 5 do -- five steps within one Canvas.LOOK of the last layout (the test's clock stands still)
+        player.x = player.x + 0.00001
+        tracker._scripts.OnUpdate(tracker, 0.016)
+    end
+    local within = asked
+    -- A Canvas.LOOK later (the game's clock seen ahead, so the test's own keeps its phase): one more step, one ask.
+    local clock = GetTime
+    GetTime = function() return clock() + Canvas.LOOK end
+    player.x = player.x + 0.00001
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    local later = asked
+    -- Then a step within a LOOK of that ask, over another zone, and the view stands still: the zone it owes asked once
+    -- the LOOK has passed, and the map laid out for it.
+    C_Map.GetMapInfoAtPosition = function(map, x, y)
+        asked = asked + 1
+        if map == 1415 then return { mapID = 9999, mapType = 3 } end
+        return at(map, x, y)
+    end
+    player.x = player.x + 0.00001
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    local owed = asked == later
+    GetTime = function() return clock() + 2 * Canvas.LOOK end
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    local settled = Canvas.view.zone == 9999
+    C_Map.GetMapInfoAtPosition, GetTime = at, clock
+    player.x = 0.75
+    tracker._scripts.OnUpdate(tracker, 0.016) -- the view back on the player
+    Canvas.Layout()
+    check(within == 0 and later == 1, "following, the zone in the middle asked of the game once a Canvas.LOOK, not at each step")
+    check(owed and settled and Canvas.view.zone == 1429,
+        "the view stopped within a LOOK of its last ask: the zone it owes asked once the LOOK has passed, laid out for it")
+    local placed, pinned, place, pin = 0, 0, ns.Terrain.Place, ns.PinView.Place
+    ns.Terrain.Place = function(...)
+        placed = placed + 1
+        return place(...)
+    end
+    ns.PinView.Place = function(...)
+        pinned = pinned + 1
+        return pin(...)
+    end
+    W.Fire("ZONE_CHANGED")
+    W.Wait(0)
+    local zoned = placed == 0 and pinned >= 1
+    W.Fire("MAP_EXPLORATION_UPDATED")
+    W.Wait(0)
+    ns.Terrain.Place, ns.PinView.Place = place, pin
+    check(zoned and placed == 1, "a zone entered: the pins placed anew, not the whole map; what is explored lays it out")
+end)()
 
 -- A plain click on the game's minimap pings; Ctrl and a click puts the map pin there.
 cursorX, cursorY = 120, 110
@@ -1176,12 +1310,14 @@ ns.Terrain.CAP = tilesBefore
 --  Pins: the game's and Core's, one per thing, filtered, gathered; always over the map
 -------------------------------------------------------------------------------
 local Pins = ns.Pins
--- The pins drawn now, by key (laid: also those laid out past the canvas' edge, out of sight there).
+-- The pins drawn now, by the thing each stands for (Core's: its thing; a gathered marker: "gathered:" and its first
+-- pin's; laid: also those laid out past the canvas' edge, out of sight there).
 local function Drawn(laid)
     local list, count = {}, 0
     for _, widget in ipairs(W.frames) do
         if widget._kind == "Button" and widget.pin and (widget._shown or laid) then
-            list[widget.pin.key] = widget
+            local pin, first = widget.pin, widget.pin.gathered and widget.pin.gathered[1]
+            list[first and "gathered:" .. (first.thing or first.key) or pin.thing or pin.key] = widget
             count = count + 1
         end
     end
@@ -1192,6 +1328,73 @@ full:Show(1415, 0, -9250, 0.4)
 Canvas.Layout()
 local pins, count = Drawn()
 check(full.level == "zone" and count == 12, "the zone's pins: 13 things, two of them near each other gathered into one")
+-- (a function of its own: the main chunk has as many locals as Lua lets it)
+;(function()
+    -- A thing of Core's data with several points on a map: a pin at each, each its own key, the thing's apart (one
+    -- Silverleaf more, 540 yards west of the first; and a mailbox that is an object, in the zone's south west).
+    local reader = Core.Data.Map()
+    local read = reader.On
+    local riding = false
+    reader.On = function(self, map)
+        local list = read(self, map)
+        if map ~= 1429 or not list then return list end
+        local more = {}
+        for index, place in ipairs(list) do more[index] = place end
+        more[#more + 1] = { kind = "object", key = "object:1617", id = 1617, what = "herb", name = "Silverleaf", x = 0.25, y = 0.55 }
+        more[#more + 1] = { kind = "object", key = "object:1685", id = 1685, what = "mailbox", name = "Mailbox", x = 0.1, y = 0.9 }
+        if riding then
+            more[#more + 1] = { kind = "object", key = "object:1617", id = 1617, what = "herb", name = "Silverleaf",
+                                x = 0.245, y = 0.5533 }
+        end
+        return more
+    end
+    Pins.DataChanged()
+    Canvas.Layout()
+    local function Pin(thing, small, pu, pv)
+        local list = {}
+        for _, pin in ipairs(Pins.For(Canvas.view, small, pu, pv)) do
+            if (pin.thing or pin.key) == thing then list[#list + 1] = pin end
+        end
+        return list[1], list
+    end
+    local _, herbs = Pin("object:1617")
+    local alone
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Button" and widget._shown and widget.pin and widget.pin.thing == "object:1617" then alone = widget end
+    end
+    check(#herbs == 2 and herbs[1].key ~= herbs[2].key and herbs[1].key:find("^object:1617@1429:")
+        and alone and (alone.pin.key == herbs[1].key or alone.pin.key == herbs[2].key),
+        "a herb at two places on a map: a pin at each, each its own key, the thing's kept apart; the far one drawn alone")
+    check(Pin("object:1685", true, -800, -9850) and not Pin("object:1685", true, 800, -8600),
+        "a mailbox that is an object: on the small map only near the player, as every service")
+    -- The log changed: Core's quest givers read again with what the game tells; its objects, places and ways kept.
+    local place, herb, giver, quest = Pin("place:1"), Pin("object:1617"), Pin("npc:72"), Pin("quest:7")
+    Pins.Changed("quests")
+    check(place and Pin("place:1") == place and herb and Pin("object:1617") == herb and giver and Pin("npc:72") ~= giver
+        and quest and Pin("quest:7") ~= quest, "the log changed: the quest givers' pins read again, the rest of Core's kept")
+    giver, quest = Pin("npc:72"), Pin("quest:7")
+    Pins.Changed("waypoint")
+    check(Pin("npc:72") == giver and Pin("quest:7") ~= quest, "the arrow led elsewhere: only what the game tells read again")
+    -- One more Silverleaf, 10 yards from the second, in its cell of the gather's grid: it rides with it to the gathering
+    -- (not sorted nor gathered on its own), the two one marker, its tooltip counting both.
+    riding = true
+    Pins.DataChanged()
+    Canvas.Layout()
+    local _, now = Pin("object:1617")
+    local riders = 0
+    for _, pin in ipairs(now) do riders = riders + (pin.with and #pin.with or 0) end
+    local marker
+    for _, widget in ipairs(W.frames) do
+        local first = widget._kind == "Button" and widget._shown and widget.pin and widget.pin.gathered and widget.pin.gathered[1]
+        if first and first.thing == "object:1617" then marker = widget end
+    end
+    if marker then marker._scripts.OnEnter(marker) end
+    check(#now == 2 and riders == 1 and marker and #marker.pin.gathered == 2 and GameTooltip._text == Pins.TEXT.gathered:format(2),
+        "herbs of a kind in one cell of the gather's grid: one goes on, the other rides with it; one marker of both")
+    reader.On = read
+    Pins.DataChanged()
+    Canvas.Layout()
+end)()
 do
     local giver = pins["npc:72"]
     check(giver and giver.pin.kind == "quest" and giver.pin.offer and giver.icon._atlas == Pins.ICONS.offer
@@ -1227,6 +1430,13 @@ do
     Canvas.Layout()
     check(Pins.Standing({ level = 10 }, 999) == "low" and select(2, Pins.Standing({ level = 10 }, 999)) == Pins.TEXT.low,
         "past the game's green range below you: too low, it gives no experience")
+    ;(function()
+        -- The game's own trivial range for the player first, as its quest colours ask it; its green range after.
+        UnitQuestTrivialLevelRange = function(unit) return unit == "player" and 12 or 0 end
+        check(Pins.Standing({ level = 10 }, 999) == "offered",
+            "the game's trivial range for you first: a quest ten levels below you still gives experience where it says so")
+        UnitQuestTrivialLevelRange = nil
+    end)()
     W.Fire("PLAYER_LEVEL_UP")
     W.Wait(0)
     Canvas.Layout()
@@ -1270,6 +1480,9 @@ check(Canvas.LEVELS.pins > Hybrid.LEVEL and Hybrid.LEVEL > Canvas.MAP and Canvas
     and pins["quest:7"]._level > pins["place:2"]._level and pins["quest:7"]._level < frame:GetFrameLevel() + Canvas.LEVELS.marks
     and pins["place:2"]._level > frame:GetFrameLevel() + Hybrid.LEVEL,
     "every pin over the map and the game's minimap, a quest over a service, all under the player's arrow")
+check(pins["quest:7"]._level > pins["npc:72"]._level and pins["npc:72"]._level > pins["flight:2"]._level
+    and pins["flight:2"]._level > pins["place:2"]._level,
+    "a higher kind always over a lower one: a quest in your log, a quest to take, a flight point, a service")
 -- A click on the marker zooms in until they part.
 local release = marker._scripts.OnMouseUp
 marker._scripts.OnMouseDown(marker, "LeftButton")
@@ -1331,6 +1544,7 @@ do
     function slider:SetPoint(...) self.points[#self.points + 1] = { ... } end
     function slider:Init(value, low, high, steps, labels) self.value, self.low, self.high, self.steps, self.labels = value, low, high, steps, labels end
     function slider:RegisterCallback(event, fn, owner) self.event, self.fn, self.owner = event, fn, owner end
+    function slider:UnregisterCallback(_, owner) if self.owner == owner then self.fn, self.owner = nil, nil end end
     local row = { fontString = { GetUnboundedStringWidth = function() return 40 end } }
     function row:AttachTemplate(template) self.template = template return slider end
     local width, height
@@ -1360,6 +1574,18 @@ do
         "moved: kept in its steps (150 %), the herbs drawn at it")
     slider.fn(nil, 100)
     check(ns.options.pinSizes.herb == nil and near(Drawn()["object:1617"]._width, Pins.SIZE.herb), "back at 100 %: nothing kept")
+    ;(function()
+        -- The menu's sliders are its pool's: one that showed the herbs' size, laid out for another kind's row, would
+        -- tell the herbs' callback that kind's size as its Init sets it. Ours is let go first.
+        slider.fn(nil, 150)
+        function slider:Init(value) if self.fn then self.fn(nil, value) end self.value = value end
+        rows.ore.inits[1](row)
+        check(ns.options.pinSizes.herb == 150 and slider.value == 100 and slider.owner,
+            "a slider of the menu's pool that showed the herbs' size, laid out for Possible ore: the herbs keep theirs")
+        local sizes = Core.Copy(ns.options.pinSizes)
+        sizes.herb = nil
+        Core.Set(ns.name, "pinSizes", sizes)
+    end)()
     MinimalSliderWithSteppersMixin = nil
 end
 -- A tooltip: the quest's objectives as the game tells them.
@@ -1392,6 +1618,21 @@ check(rows[2].text._text == "[6] Wolves Across the Border", "a quest with its le
 check(rows[2].icon._shown and rows[2].icon._atlas == Pins.ICONS.log and rows[4].icon._atlas == Pins.ICONS.log
     and not rows[1].icon._shown and not rows[3].icon._shown,
     "each quest with its mark at the left, as its pin on the map has it: the yellow question mark")
+;(function()
+    -- A header folded: the game lists its quests all the same, our log not (as the game's own log has it).
+    local info = C_QuestLog.GetInfo
+    C_QuestLog.GetInfo = function(index)
+        local entry = info(index)
+        if entry and entry.isHeader then entry.isCollapsed = true end
+        return entry
+    end
+    QuestLog.Refresh()
+    local folded = logBox:Draw()
+    check(#folded == 1 and folded[1].row.kind == "header" and folded[1].row.collapsed,
+        "a header folded: its quests and their objectives not listed")
+    C_QuestLog.GetInfo = info
+    QuestLog.Refresh()
+end)()
 do
     local was, saved = { map = full.map, u = full.u, v = full.v, k = full.k }, waypoint
     waypoint = nil
@@ -1457,6 +1698,20 @@ do
     check(not bar._shown and not log._scripts.OnUpdate, "the mouse gone: the scroll bar too")
     logBox._long = nil
 end
+;(function()
+    -- The look while the mouse is on the quest log: one guard, made once, set again at each coming of the mouse.
+    local log = QuestLog.handle.frame
+    log._mouseOver = true
+    log._scripts.OnEnter(log)
+    local look = log._scripts.OnUpdate
+    log._mouseOver = false
+    look(log)
+    log._mouseOver = true
+    log._scripts.OnEnter(log)
+    check(look and log._scripts.OnUpdate == look, "the mouse back on the quest log: the same look as before, made once")
+    log._mouseOver = false
+    log._scripts.OnUpdate(log)
+end)()
 rows[2]._scripts.OnEnter(rows[2])
 local blob
 for _, widget in ipairs(areaFrames) do if widget._shown and widget._map == 1429 then blob = widget end end
@@ -1511,6 +1766,16 @@ do
     check(said and said:find(Pins.TEXT.needsLevel:format(60), 1, true) and said:find(QuestLog.TEXT.level:format(30), 1, true)
         and said:find(QuestLog.TEXT.givenBy:format("A Waiting Giver"), 1, true),
         "below it what the data knows: why not yet (the level it asks), its level, who gives it")
+    ;(function()
+        -- Items the game tells of in a burst: the words drawn again once, on the next frame.
+        local details, drawn = QuestLog.Details, 0
+        QuestLog.Details = function(...) drawn = drawn + 1 return details(...) end
+        for item = 1, 3 do W.Fire("ITEM_DATA_LOAD_RESULT", item, true) end
+        local before = drawn
+        W.Wait(0)
+        QuestLog.Details = details
+        check(before == 0 and drawn == 1, "a burst of items told by the game: the preview's words drawn again once")
+    end)()
     shown[2].remove._scripts.OnClick(shown[2].remove)
     shown = logBox:Draw()
     check(shown[1].row.kind == "header" and shown[1].text._text ~= QuestLog.TEXT.previews and #shown == 5,
@@ -1584,6 +1849,27 @@ end
 ;(function()
     local Dungeons = ns.Dungeons
     check(Window.handle.edge.full and Canvas.camera == full, "the map fills the screen")
+    -- As in Forever's client, which has no dungeon map of its own: the list kept once Core's set was read, the
+    -- game not asked again at each look.
+    local asked, children = 0, C_Map.GetMapChildrenInfo
+    C_Map.GetMapChildrenInfo = function(map, kind, all)
+        if kind == 4 then asked = asked + 1 end
+        return children(map, kind, all)
+    end
+    Dungeons.List()
+    Dungeons.List()
+    Dungeons.List()
+    C_Map.GetMapChildrenInfo = children
+    check(asked <= 1, "no dungeon map of the game's, Core's set read: the dungeons' list kept, not asked again")
+    -- This made-up client tells of dungeons of its own from here on (and no longer after): the kept list (an upvalue
+    -- of List's) asked anew.
+    local function Forget()
+        for index = 1, 64 do
+            local name = debug.getupvalue(Dungeons.List, index)
+            if name == nil then return end
+            if name == "list" then return debug.setupvalue(Dungeons.List, index, nil) end
+        end
+    end
     local old = { children = C_Map.GetMapChildrenInfo, info = C_Map.GetMapInfo, art = C_Map.GetMapArtLayers }
     local names = { [500] = "Hollow Keep", [501] = "Hollow Keep", [600] = "Ashen Vault" }
     C_Map.GetMapChildrenInfo = function(map, kind, all)
@@ -1607,6 +1893,7 @@ end
                  { mapID = 500, relativeHeightIndex = 0, name = "The Upper Hall" } }
     end
     -- The game's dungeons (those of Core's set, below, may be in the list too).
+    Forget()
     local list = {}
     for _, entry in ipairs(Dungeons.List()) do if not entry.instance then list[#list + 1] = entry end end
     check(#list == 2 and list[1].name == "Ashen Vault" and list[2].name == "Hollow Keep" and list[2].map == 500
@@ -1621,6 +1908,7 @@ end
     for _, item in ipairs(menu._items) do if item.text == "Hollow Keep" then keep = item end end
     check(#menu._items >= 2 and menu._items[1].text == "Ashen Vault" and keep and not keep.checked(),
         "the bar's dropdown Dungeons lists them, A to Z")
+    local was = { full.map, full.u, full.v, full.k, full.level } -- the map the dungeon is opened from
     keep.fn()
     local tiles = 0
     for _, widget in ipairs(W.frames) do
@@ -1635,8 +1923,9 @@ end
     floors._items[2].fn()
     check(Dungeons.Shown() == 501 and floors._override == "The Lower Hall", "another floor chosen")
     Dungeons.frame._scripts.OnMouseUp(Dungeons.frame, "RightButton")
-    check(not Dungeons.Shown() and not Dungeons.frame._shown and full.level == "zone" and menu._override == Dungeons.TEXT.dungeons
-        and not floors._shown, "a right click: back to the map, at the zone the dungeon lies in")
+    check(not Dungeons.Shown() and not Dungeons.frame._shown and full.map == was[1] and full.u == was[2] and full.v == was[3]
+        and full.k == was[4] and full.level == was[5] and menu._override == Dungeons.TEXT.dungeons and not floors._shown,
+        "a right click: back to the map it was opened from, as it was")
     check(Canvas.Show(600) and Dungeons.Shown() == 600 and not floors._shown,
         "a pin into a dungeon opens its map here; with one floor, no floors' dropdown")
     W.SmallAndBack(function()
@@ -1648,6 +1937,7 @@ end
     Dungeons.Close()
     C_Map.GetMapChildrenInfo, C_Map.GetMapInfo, C_Map.GetMapArtLayers = old.children, old.info, old.art
     C_Map.GetMapGroupID, C_Map.GetMapGroupMembersInfo = nil, nil
+    Forget()
 end)()
 
 -- The quest log, a window of its own over the full map: pinned, on the screen while the map is small too.
@@ -1973,7 +2263,8 @@ worldMap._map = 1429
 ShowUIPanel(worldMap)
 check(worldMap._shown and worldMap._alpha == 0, "the game's map shows: out of sight at once")
 W.Wait(0)
-check(not worldMap._shown and worldMap._alpha == 1 and panels.hidden == 1, "on the next frame: closed by the game's panel function")
+check(not worldMap._shown and worldMap._alpha == 1 and panels.hidden == 0,
+    "on the next frame: hidden by its own Hide, never by the game's panel functions (their slots stay the game's)")
 check(full.level == "zone" and near(full.u, 0) and Window.frame._group.playing, "ours opens, at the zone it was asked for")
 Window.frame._group:Run(1)
 -- In a fight the game's map stays.
@@ -1994,13 +2285,37 @@ Core.Set(ns.name, "nativeMap", false)
 
 -- The switch Show the game's minimap: given back, exactly (the map back in its corner first).
 Window.Toggle()
-Window.frame._group:Run(1)
+-- On the window's way nothing lays the map out again (held): a refresh waits for the window to stand, the wheel and
+-- a press do nothing.
+;(function()
+    local placed, place = 0, ns.Terrain.Place
+    ns.Terrain.Place = function(...)
+        placed = placed + 1
+        return place(...)
+    end
+    local k = full.k
+    Canvas.Refresh()
+    Canvas.frame._scripts.OnMouseWheel(Canvas.frame, 1)
+    Canvas.frame._scripts.OnMouseDown(Canvas.frame, "LeftButton")
+    local still = Window.handle.edge.away and placed == 0 and full.k == k and not Canvas.frame._scripts.OnUpdate
+    Canvas.frame._scripts.OnMouseUp(Canvas.frame, "LeftButton")
+    Window.frame._group:Run(1)
+    ns.Terrain.Place = place
+    check(still and placed > 0, "on the window's way nothing lays the map out (a refresh, the wheel, a press); where it stands, it is")
+end)()
 check(not Window.handle.edge.away, "back in its corner")
 Core.Set(ns.name, "nativeMinimap", true)
 check(not Hybrid.Taken() and minimap:GetParent() == container and minimap._wheel and #minimap._through == 0
     and ground == true and ignoreRotation == false and configs > 0, "Show the game's minimap: its place, wheel, clicks, ground, rotation and mask back")
 check(cluster._alpha == 1 and cluster._mouse and cluster.ZoneTextButton._mouse and backdrop._alpha == 1 and minimap.ZoomIn._mouse,
     "its cluster, border and buttons back")
+;(function()
+    local sane
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn then sane = widget end
+    end
+    check(sane and sane._shown and minimap._shown, "the game's own minimap again: its button Sane UI on it, back to ours")
+end)()
 check(overrides["CTRL-R"] == nil, "and its key")
 check(Window.frame._shown and Window.frame._alpha == 0 and not Canvas.frame._mouse and not Canvas.frame._wheel and not Canvas.Laid(),
     "the small window rests out of sight, lets the mouse through to the game's minimap and holds no texture")
@@ -2028,10 +2343,15 @@ Window.frame._group:Run(1)
 local classicMenu = Window.handle.edge.classic
 check(classicMenu and classicMenu:IsShown() and #classicMenu._items == 3 and classicMenu._items[1].title ~= nil and classicMenu._items[2].checked() == false
     and classicMenu._items[3].checked() == false, "full, the dropdown Classic windows: the game's minimap and map, neither chosen")
-classicMenu._items[3].fn()
-check(ns.options.nativeMap and worldMap._shown and Window.handle.edge.away, "the game's map chosen: kept, opened at once, ours goes back")
+;(function()
+    local before = panels.shown
+    classicMenu._items[3].fn()
+    check(ns.options.nativeMap and not worldMap._shown and panels.shown == before and Window.handle.edge.away,
+        "the game's map chosen: kept, not opened by our code (its own key opens it), ours goes back")
+    local said = W.printed[#W.printed] or ""
+    check(said:find(ns.TEXT.classicMap, 1, true) and said:find(", M.", 1, true), "and the chat says its key")
+end)()
 Window.frame._group:Run(1)
-HideUIPanel(worldMap)
 check(overrides.M == nil and Window.frame._alpha == 1, "its key is the game's now; our small window stays the minimap")
 Window.Toggle()
 Window.frame._group:Run(1)
@@ -2495,6 +2815,20 @@ local silverleaf, vein = Nodes.Find("Silverleaf"), Nodes.Find("Copper Vein")
 check(silverleaf and silverleaf.kind == "herb" and vein and vein.kind == "ore" and Nodes.Find("A Wolf") == nil,
     "a herb and an ore known by their names, nothing else")
 check(Nodes.Picture(silverleaf) == 3765 and Nodes.Picture(vein) == 5770, "each in the picture of its herb, its ore (not the stone)")
+-- The finder that is on: asked of the game once, again only after the game says its tracking changed.
+do
+    local info, asked = C_Minimap.GetTrackingInfo, 0
+    C_Minimap.GetTrackingInfo = function(index) asked = asked + 1 return info(index) end
+    W.Fire("MINIMAP_UPDATE_TRACKING")
+    Nodes.Active()
+    local once = asked
+    Nodes.Active()
+    check(once > 0 and asked == once, "the finder that is on asked of the game once, not each time it is wanted")
+    W.Fire("MINIMAP_UPDATE_TRACKING")
+    Nodes.Active()
+    check(asked > once, "asked again once the game says its tracking changed")
+    C_Minimap.GetTrackingInfo = info
+end
 
 -- The pin filter's Found herbs and Found ore switch the finders, silently.
 do
@@ -2532,6 +2866,7 @@ end
 
 -- Found herbs (Found.lua): the game's minimap gather.asked, the herb drawn on its dot in its picture.
 gather.tracking[1].active, gather.tracking[2].active = true, false
+W.Fire("MINIMAP_UPDATE_TRACKING") -- as the game says when its tracking changed
 for _, widget in ipairs(W.frames) do
     if widget._parent == minimap and widget._scripts.OnUpdate then gather.overlay = widget end
 end
@@ -2576,6 +2911,18 @@ gather.dots[1] = nil
 Sweeps(40)
 check(#Pictures() == 0, "gathered (no dot any more): gone")
 check(gather.asked > 0, "gather.asked the game's minimap")
+-- One of the finder's own kind left behind (gathered by another while you went on, 1000 yards west): gone once too
+-- far, as those of the other kind; back there, not drawn.
+gather.dots[1] = { 20, 30, "Silverleaf" }
+Sweeps(40)
+check(#Pictures() == 1, "a herb on the game's minimap: drawn")
+gather.dots[1] = nil
+player.x = 0.25
+Sweeps(40)
+player.x = 0.75
+gather.overlay._scripts.OnUpdate(gather.overlay, 0.016)
+check(#Pictures() == 0, "a herb left far behind, out of the minimap's reach: forgotten, not drawn when back")
+Sweeps(40)
 
 -- Sparkles (Sparkles.lua): the game's settings for its interact key, the sparkles on the herb's gather.plate.
 check(C_CVar.GetCVar("softTargetInteract") == "3" and C_CVar.GetCVar("SoftTargetIconGameObject") == "1"
@@ -2647,6 +2994,13 @@ end)()
     check(model and model._kind == "PlayerModel" and model._display == 4203 and model._shown
         and model._points[1][1] == "BOTTOM" and near(model._points[1][4], marks[1]._points[1][4])
         and model._level > marks[1]._level, "its own model in its look, standing on its mark, over it")
+    local bar
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Button" and widget._text == ns.TopBar.TEXT.questLog and not bar then bar = widget._parent end
+    end
+    check(bar and model._level <= marks[1]._level + 1 + Dungeons.SPREAD and model._level < bar._level,
+        "a few levels over its mark only: under the bar over the map, whose clicks it never takes")
+    local stepping = Dungeons.frame._scripts.OnUpdate
     GameTooltip._text = nil
     model._scripts.OnEnter(model)
     check(GameTooltip._text == "The First Boss", "the model's tooltip: the boss")
@@ -2673,6 +3027,7 @@ end)()
     check(Dungeons.Here() == "90:2", "inside: the floor whose box holds the player, the smallest")
     check(Dungeons.Show("90:2") and Shown(9101, 9102) == 2 and Shown(9001, 9012) == 0 and #Marks() == 1,
         "the lower floor: its own tiles and boss")
+    check(stepping and Dungeons.frame._scripts.OnUpdate == stepping, "its step while it shows: one guarded function, made once")
     check(not Marks()[1].model or not Marks()[1].model._shown, "a boss without a look: its mark alone")
     UnitPosition, GetInstanceInfo = before, instance
     Dungeons.Close()

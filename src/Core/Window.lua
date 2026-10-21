@@ -458,10 +458,31 @@ Core.On("PLAYER_REGEN_ENABLED", function()
 end)
 
 -- What closing means for the window: its module's (options.close), else it is hidden. One that holds the
--- game's protected frames is not hidden in a fight (Locked): it closes once the fight is over.
-local function Close(window)
-    if window:Locked() then return Core.AfterCombat(window, Close, window) end
+-- game's protected frames is not hidden in a fight (Locked): it closes once the fight is over, and Esc is the
+-- game's again meanwhile (our stand-in would take every Esc of the fight and close nothing).
+local Close
+local function Owed(window)
+    Close(window)
+    -- One its module closes later (the talk ends on the game's side first) is Esc's again while it is shown.
+    if window.options.escape == "close" and window.frame:IsShown() then Core.Escape(window, Close) end
+end
+function Close(window)
+    if window:Locked() then
+        Core.Escape(window, nil)
+        return Core.AfterCombat(window, Owed, window)
+    end
     if window.options.close then window.options.close() else window.frame:Hide() end
+end
+
+-- Esc given up (false) while a view over the window takes Esc for itself (Core's options on a full screen,
+-- Settings/Screen.lua), and taken again (true) once it has gone: meanwhile a window Esc closes is not closed,
+-- and a full one does not go back.
+function methods:Escapes(on)
+    if self.options.escape == "close" then
+        if not on or self.frame:IsShown() then Core.Escape(self, on and Close or nil) end
+    elseif self.edge and (not on or self.edge.full) then
+        self.edge:Escapes(on)
+    end
 end
 
 -- The spacing of Edit Mode's grid while the game shows it and snaps to it, nil else. Edit Mode is read here,
@@ -815,6 +836,12 @@ function methods:SetTitle(text)
     if Core.Selection then Core.Selection.Moved(self) end -- its dialog in Edit Mode, if chosen
 end
 
+-- Its search closed, as Esc closes it, for a module that leaves the search itself (a tab of Combat's book chosen):
+-- the box emptied (the module told ""), out of sight, the title back.
+function methods:EndSearch()
+    if self.bar then Search(self, false) end
+end
+
 -- May the title bar move the window now: only a kind of window with a title bar of its own, not in Edit
 -- Mode (there its box does), not while it fills the screen or is on its way, and, docked at a screen edge,
 -- only if it says so (dragDocked): an edge is Edit Mode's.
@@ -902,6 +929,9 @@ function Window.Beside(game, click, anchor, secure)
         button:RegisterForClicks("LeftButtonUp")
         button:SetAttribute("type", "click")
         button:SetAttribute("clickbutton", close)
+        -- On the release, as it is registered: unset, the game's key-down setting (on at first) would have the
+        -- template act on the press only, and the close button would never be clicked.
+        button:SetAttribute("useOnKeyDown", false)
         button:SetFrameStrata(game:GetFrameStrata())
     else
         button = Toggle(game, Window.TEXT.sane, Window.TEXT.saneTip, click)
@@ -963,6 +993,25 @@ end
 function Window.ResetAll()
     for _, window in ipairs(windows) do Core.Safe("window", window.Reset, window) end
 end
+
+-- The screen's size or the UI's scale changed: a shown window at rest is placed anew (in its zone, no larger
+-- than the screen now), and one that stands full lays out what it holds for the new size, once (docked). One in
+-- hand, or on its way, is left to the end of that.
+local function Rescreened(window)
+    local edge = window.edge
+    if window.moving or window.sizing then return end
+    if not (edge and edge.away) then return window:Place() end
+    if edge.full and not (edge.clock and edge.clock:IsRunning()) and window.options.docked then
+        Core.Safe("window", window.options.docked, edge.zone and Core.Dock.ZONES[edge.zone] or nil)
+    end
+end
+local Rescreen = Core.Later(function()
+    for _, window in ipairs(windows) do
+        if window.frame:IsShown() then Core.Safe("window", Rescreened, window) end
+    end
+end)
+Core.On("DISPLAY_SIZE_CHANGED", Rescreen)
+Core.On("UI_SCALE_CHANGED", Rescreen)
 
 function Window.New(frame, options)
     local kind = Window.KINDS[options.kind]
@@ -1028,6 +1077,12 @@ function Window.New(frame, options)
     -- Shown again in a zone another window holds now (it came first): it stands free this time.
     frame:HookScript("OnShow", Core.Guard("window", function()
         if window.zone and Core.Dock.Holder(window.zone, frame) then Core.Safe("window", window.Place, window) end
+    end))
+    -- Hidden in the middle of a drag or a sizing (closed by its module, the game or Esc), it is let go where it
+    -- is: a hidden frame hears no end of either, and the dock's shape would stay on the screen.
+    frame:HookScript("OnHide", Core.Guard("window", function()
+        if window.moving then Moved(window) end
+        if window.sizing then Sized(window) end
     end))
     if options.tabs then Core.Safe("window", Window.Views, window) end
     if Core.EditMode.active then Edit(window, true) end

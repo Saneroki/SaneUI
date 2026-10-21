@@ -226,10 +226,19 @@ local function Move(key, step)
     end
 end
 
+-- The left button no longer down (let go where the head did not hear it, or the head hid meanwhile): the drag
+-- stops; what it held stays for the button's own let-go (a click that sorts).
+local function Released(head)
+    local down = rawget(_G, "IsMouseButtonDown")
+    if not down or down("LeftButton") then return false end
+    head:SetScript("OnUpdate", nil)
+    return true
+end
+
 -- A held column moved to where the cursor is: past the middle of the next one, it takes that one's place.
 local function Drag(head)
     local dragging = head.dragging
-    if not dragging then return end
+    if not dragging or Released(head) then return end
     local x = GetCursorPosition() / head:GetEffectiveScale()
     if not dragging.moved and math.abs(x - dragging.x) < Columns.DRAG then return end
     dragging.moved = true
@@ -268,13 +277,15 @@ local function CellUp(cell, mouse)
     if held and not held.moved then SortBy(cell.key) end
 end
 
--- A column's right edge held: as wide as the cursor makes it.
+-- A column's right edge held: as wide as the cursor makes it; drawn anew only when that width changed.
 local function Size(head)
     local dragging = head.dragging
-    if not dragging or not dragging.size then return end
+    if not dragging or not dragging.size or Released(head) then return end
     local x = GetCursorPosition() / head:GetEffectiveScale()
     local key = dragging.key
-    kept.widths[key] = math.max(Columns.LEAST, math.floor(dragging.width + x - dragging.x))
+    local wide = math.max(Columns.LEAST, math.floor(dragging.width + x - dragging.x))
+    if wide == (kept.widths[key] or Columns.DEF[key].width) then return end
+    kept.widths[key] = wide
     Changed()
 end
 

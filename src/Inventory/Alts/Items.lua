@@ -77,10 +77,15 @@ end
 local records = {} -- [item] = its record, once the game told what it is (static facts)
 
 -- An item as a record of the bags' kind (Contents.lua): its name, quality, class, level, bind, price; its
--- category the bags' (Categories.Classify). nil fields while the game does not know it yet.
+-- category the bags' (Categories.Classify). nil fields while the game does not know it yet. What the game told is
+-- kept; the category is worked out each time, as the player may have moved the item, deleted or switched off its
+-- category since.
 function Items.Record(item)
     local record = records[item]
-    if record and record.known then return record end
+    if record and record.known then
+        Categories.Classify(record)
+        return record
+    end
     record = record or { bag = 0, slot = item, item = item }
     records[item] = record
     record.name = ns.Snapshot.Name(item) or record.name
@@ -523,8 +528,12 @@ end
 -- The doll: eight slots down, the weapons' row below them, the room round them.
 local HEIGHTS = { head = Items.HEAD, sub = Items.SUB, grid = Items.SIZE + Items.GAP, gear = Items.LINE, row = Items.LINE,
                   note = Items.NOTE, doll = 2 * Items.DOLL_EDGE + 9 * STEP }
+local function Measured(element)
+    return element.height or HEIGHTS[element.kind]
+end
+-- The game's list asks it for every row: it always gets a number, also after a failure.
 local function Height(_, element)
-    return element.height or HEIGHTS[element.kind] or Items.NOTE
+    return ns.Safe("alts", Measured, element) or Items.NOTE
 end
 
 -- The list's rows, made and drawn by the game's list: each drawn apart from the others.
@@ -532,7 +541,7 @@ local function Init(row, element)
     ns.Safe("alts", Draw, row, element)
 end
 local function Factory(factory)
-    factory("Frame", Init)
+    ns.Safe("alts", factory, "Frame", Init)
 end
 
 function Items.Build(parent)

@@ -33,10 +33,10 @@ only read.
   | *Show tooltips* | Always | A dropdown: *Always* (at once, as the game does), or only while Shift, Ctrl, Alt, or Shift and Alt are held. Until the key is held a tooltip is there but unseen; pressing it shows the tooltip at once, letting go hides it again. (Shift is also the game's key for comparing an item with what you wear; with Alt, the technical details show too.) |
   | *Tooltips at the mouse cursor* | Default | A dropdown: *Default* (where the game puts them), while Shift, Ctrl or Alt is held, or *Always*. The tooltips that stand in the corner of the screen (creatures, players, things in the world, your action bars) follow the mouse instead. Pressing or letting go of the key moves a shown tooltip at once, to the mouse and back |
   | *Colour players by their class* | on | Off: a player's tooltip takes the colour the game gives the name |
-  | *Show icons and portraits* | on | Off: no icon of an item, spell or buff, and no portrait for units: the level stands beside the name |
+  | *Show the icon of items and spells* | on | Off: no icon of an item, spell or buff, and no portrait for units: the level stands beside the name |
   | *3D model in tooltips* | on | Where the thing has a 3D model, it stands in the picture's place (see *3D models* below): a creature or player, moving, its face in view; a mount or a pet. Over a piece of gear, with Alt held: your own character wearing it, beside the panel. Off, or where the game cannot load the model: the picture (the portrait, the item's icon), and no character beside the panel |
   | *Text size* | 14 | From 10 to 20: how large a tooltip's name and lines are written; the smaller texts follow |
-  | *Background opacity* | 97 % | From 30 to 100 percent: how solid the background is. Texts and pictures stay as they are |
+  | *Opacity* | 97 % | From 30 to 100 percent: how solid the background is. Texts and pictures stay as they are |
 
 - **What each panel shows:**
 
@@ -131,8 +131,10 @@ only read.
   Last, **the advice** in one line: the way that brings the most (the auction house must bring 5% more
   than a vendor, for the trouble). *Sell on the AH for 3s 09c* (green; the lowest price you saw); *Sell to
   a vendor* (at the right how much more than the auction house, *+12c over the AH*, where a vendor pays
-  more). On an item the auction house lists to you (you buy it: the game filled the tooltip with
-  `GetItemKey`) it is *Buy if under 2s 79c* instead: the most it is worth paying, what it brings again at
+  more). On an item the auction house lists to you (you buy it: the game filled the tooltip by the item's
+  key, `GetItemKey`, or by its link without the vendor's price, `GetHyperlink` with `hideVendorPrice`, which
+  only the house's lists ask for; and while it shows what it sells, not your own auctions:
+  `AuctionHouseFrame:GetDisplayMode()`) it is *Buy if under 2s 79c* instead: the most it is worth paying, what it brings again at
   the auction house (less the cut) or from a vendor; green while the lowest price now is under it, red
   over it, *now* and that price at the right. A vendor's price alone (no auction price known) stands under
   the caption *Gold* too, with no advice. With Alt, small under the advice: *Lowest* and the price the
@@ -161,7 +163,8 @@ only read.
   too, *<1%* below one. Your progress comes from your quest log (`C_QuestLog.GetQuestObjectives`).
   What is found for a creature is kept until your quest log, your level or the data
   changes (`QUEST_LOG_UPDATE`, `QUEST_TURNED_IN`, `PLAYER_LEVEL_UP`, `PLAYER_LEVEL_CHANGED`, the sets'
-  stamps): its tooltip is read many times a second. A failure while the list is made is noted and told once;
+  stamps): its tooltip is read many times a second. At most 400 creatures' lists are kept, and 400 items',
+  then they are forgotten together. A failure while the list is made is noted and told once;
   what was found before it stays.
   Whether you may take a quest: it is meant for you (your side, also for this client's own races; your race
   by the game's race ID, your class by its class ID), you have reached its lowest level and not passed its
@@ -237,7 +240,7 @@ only read.
   as written (*Channeled*). Its school is found by English words only: in another language the panel has
   no school colour.
 - **Drawing** (`Panel.lua`): one frame per tooltip, made when that tooltip is first filled or shown (not
-  at login), with pools of texts, thin lines, small icons and bars (`Pools.lua`: each pool a `Core.Pool`,
+  at login), with pools of texts, thin lines and small icons (`Pools.lua`: each pool a `Core.Pool`,
   a list of the parts made and how many the draw has taken; a draw hides only what the last one took).
   A draw goes in four steps: every text made and measured (`Measure`), the icon or portrait with its
   plaque (`Picture`), the rows top to bottom (`Lay`), then the background, the dragon and the frame
@@ -284,14 +287,17 @@ only read.
   frame given the creature's display (`SetDisplayInfo`; the display from the game's collections:
   `C_MountJournal.GetMountFromItem`, `GetMountFromSpell`, `GetMountInfoExtraByID` or the first of
   `GetMountAllCreatureDisplayInfoByID`; `C_PetJournal.GetPetInfoByItemID`'s twelfth answer), turned a little
-  (`SetFacing(-0.5)`). What a thing has is asked once per thing and kept. The frame is made for a panel's
+  (`SetFacing(-0.5)`). What a thing has is asked once per thing and kept (at most 400 things, then they are
+  forgotten together). The frame is made for a panel's
   first model. It is given its model only when that changes (the unit's GUID, the display): giving it again would load the model anew and start its moves over,
-  and a panel is drawn many times while it is shown; once hidden it forgets it. The picture stands until the
+  and a panel is drawn many times while it is shown. It keeps its model while hidden (`SetKeepModelOnHide`):
+  the same thing shown again is not drawn anew, and its model stands at once. The picture stands until the
   model is there: a unit's at once when `SetUnit` says it can draw it; the others when the game has loaded
   the model (`OnModelLoaded`, or `GetModelFileID` at once). Where the game does not take the model (the unit
   out of sight, its identity hidden, an error) or the client has no such frame, the picture
-  (`SetPortraitTexture`, the icon) stays, as with the option switched off. A model needs the picture's place:
-  with *Show icons and portraits* off there is none. A frame draws over the panel's own pictures, so the
+  (`SetPortraitTexture`, the icon) stays, as with the option switched off, and the game is asked again at the
+  next draw. A model needs the picture's place:
+  with *Show the icon of items and spells* off there is none. A frame draws over the panel's own pictures, so the
   dragon, the plaque and the level stand on a frame over it (`panel.front`; the level's text is lifted onto
   it, `Pools.Lift`). Its alpha follows the panel's by itself (`Panel.Strength`): a model frame need not follow
   the frame it is in. Unlike the picture it has no round soft edge (a mask works on pictures only): it is cut
@@ -423,7 +429,9 @@ only read.
   now the other way round, the lines of what would change a moment after the rest;
   `TooltipComparisonManager`), and a panel that followed all of that would flicker. So they stand at
   absolute places (`Pin`: a point on `UIParent`), worked out from what holds still (`Compare`, `Lay`): the
-  main panel's place, taken when it shows a new thing (owner and item) and afterwards only once it has
+  main panel's place, taken when it shows a new thing (owner and item) or shows again after it was gone,
+  once it is drawn for it (the game fills the comparisons before it tells of the tooltip they belong to; the
+  end of the frame draws that tooltip first), and afterwards only once it has
   rested in a new place for 0.12 seconds (`Host.Track`, every frame of the main panel: a wobble is never
   followed, a move is); a side decided once for that thing (right where all of them fit, else left, else
   where there is more room; the game's side where nothing can be measured); and for each comparison a
@@ -463,7 +471,7 @@ only read.
   (`HookScript`, `hooksecurefunc`).
 - **Falling back:** every step runs in Core's `ns.Guarded` (an `xpcall` that makes no table and no
   closure). An error outside the kind readers calls Core's `ns.StandDown`: it gives every tooltip back
-  (`ns.GiveBack`: each tooltip's alpha, each in a `pcall` of its own), says so once
+  (`ns.GiveBack`: nothing waits to be drawn any more, then each tooltip's alpha, each step in `ns.Safe`), says so once
   (`ns.GIVEN_BACK`) and ends the module's work for the session. A kind reader's error costs its kind only
   (see *Kinds*).
 - **Sections** (`Read.Section`, `Read.Caption`): a reader opens each section of its own rows under its name;
@@ -502,7 +510,7 @@ only read.
   - A spell's school and its numbers in other languages than English (its facts strip works in every
     language, by the game's own sentences).
   - Small pictures the game puts into a tooltip's lines (`AddTexture`).
-- **Tests:** `lua5.1 dev/tests/tooltips.lua` (458 checks), on a few made-up quests, drops, nodes and a row of
+- **Tests:** `lua5.1 dev/tests/tooltips.lua`, on a few made-up quests, drops, nodes and a row of
   disenchanting compiled
   into packs on the real schemas (`dev/tests/data/tooltips/`, `dev/tests/data/packs.py`): the quest part before
   and after the packs are there, the Inventory section (whole names, two characters with one first name,

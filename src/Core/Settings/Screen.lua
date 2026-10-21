@@ -245,8 +245,7 @@ function Screen.Close(window)
     if not screen or not screen.view:IsShown() then return end
     screen.view:Hide()
     Core.Escape(screen, nil)
-    local edge = window.edge
-    if edge and edge.full then edge:Escapes(true) end
+    window:Escapes(true) -- Esc is the window's again (Window.lua: a panel's close, else its full screen's way back)
     if window.settings then window.settings:UnlockHighlight() end
 end
 
@@ -256,7 +255,7 @@ function Screen.Toggle(window)
     screen.view:Show()
     Sized(screen)
     Choose(screen, screen.chosen)
-    if window.edge then window.edge:Escapes(false) end
+    window:Escapes(false)
     Core.Escape(screen, Escaped)
     if window.settings then window.settings:LockHighlight() end
 end

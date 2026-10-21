@@ -71,11 +71,14 @@ local function Set(button, item)
     local pet = item.entry.bank == select(2, ns.BookData.Banks())
     if pet then
         local name = info.name or ""
+        -- Its own rank, as the game's entry casts its own slot ("Bite(Rank 2)"): by its name alone it is the highest.
+        local rank = Plain(info.subName)
+        local spell = type(rank) == "string" and rank ~= "" and ("%s(%s)"):format(name, rank) or name
         local allowed = ns.BookData.Ask("GetSpellBookItemAutoCast", item.entry.slot, item.entry.bank)
         button:SetAttribute("type1", "macro")
-        button:SetAttribute("macrotext1", "/cast " .. name)
+        button:SetAttribute("macrotext1", "/cast " .. spell)
         button:SetAttribute("type2", "macro")
-        button:SetAttribute("macrotext2", (allowed and "/petautocasttoggle " or "/cast ") .. name)
+        button:SetAttribute("macrotext2", allowed and "/petautocasttoggle " .. name or "/cast " .. spell)
         button:SetAttribute("spell", nil)
     else
         button:SetAttribute("type1", "spell")

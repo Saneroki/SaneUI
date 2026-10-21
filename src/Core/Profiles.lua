@@ -80,10 +80,11 @@ local function Table(t, name)
     return t[name]
 end
 
--- The options page shows what changed, a frame later.
-local Shown = Core.Later(function()
-    if Core.Config and Core.Config.Refresh then Core.Safe("profiles: the options", Core.Config.Refresh) end
-end)
+-- The options page shows what changed, a frame later: one refresh however many ask in that frame
+-- (Settings.lua, read after this file; before it there is no page to show it).
+local function Shown()
+    if Core.Config and Core.Config.RefreshSoon then Core.Config.RefreshSoon() end
+end
 
 -- Whether a module's settings are the game's own (Sync's): those live in profiles only.
 local function Game(name)
@@ -435,10 +436,6 @@ function Profiles.List()
     return names
 end
 
-function Profiles.Exists(name)
-    return Saved(name) ~= nil
-end
-
 -- Whether a profile is always there: Accountwide, which cannot be renamed or deleted.
 function Profiles.Fixed(name)
     return name == ACCOUNTWIDE
@@ -563,7 +560,23 @@ function Profiles.Export(name)
     return Core.Serial.Write({ kind = Profiles.EXPORT, version = Profiles.VERSION, name = name, settings = profile })
 end
 
+-- The CVars of the game's options, in lower case: those the CVars tab has words for and those Sync's
+-- pages keep. Made the first time a profile is imported.
+local known
+local function Known()
+    if not known then
+        known = {}
+        for name in pairs(Core.Config and Core.Config.CVAR_LABELS or {}) do known[name] = true end
+        for _, page in ipairs(Core.Sync and Core.Sync.PAGES or {}) do
+            for _, name in ipairs(page.cvars or {}) do known[name:lower()] = true end
+        end
+    end
+    return known
+end
+
 -- A profile from a text made by Export, under its own name or as; true and its name, or false and why.
+-- The text comes from another player: of the CVars it keeps by name (Sync's named), only the game's
+-- options' stay, so using it sets nothing the game's options could not.
 function Profiles.Import(text, as)
     local value, why = Core.Serial.Read(text)
     if type(value) ~= "table" then return false, why or TEXT.notProfile end
@@ -573,6 +586,14 @@ function Profiles.Import(text, as)
     local settings = {}
     for module, values in pairs(value.settings) do
         if type(module) == "string" and type(values) == "table" then settings[module] = values end
+    end
+    local game = Core.Sync and settings[Core.Sync.name]
+    local named = type(game) == "table" and game.named
+    if type(named) == "table" then
+        local cvars = Known()
+        for name in pairs(named) do
+            if type(name) ~= "string" or not cvars[name:lower()] then named[name] = nil end
+        end
     end
     db.profiles[fresh] = settings
     Shown()
@@ -620,8 +641,9 @@ function Profiles.SetCharacter(which, name)
     return true
 end
 
--- Forgets a character: its line, and what every module kept for it (a deleted character, one moved
--- to another account). Not the one played.
+-- Forgets a character: its line, what every module kept for it, and what Core's data keeps of it (its
+-- bags, bank, gear and gold, by the same key): a deleted character, one moved to another account. Not
+-- the one played.
 function Profiles.Forget(which)
     if which == key then return false, TEXT.current end
     if not Line(which) then return false, TEXT.unknown end
@@ -630,24 +652,10 @@ function Profiles.Forget(which)
         local chars = type(store) == "table" and rawget(store, "chars")
         if type(chars) == "table" then chars[which] = nil end
     end
+    local data = Core.Data
+    if data and data.Forget then Core.Safe("profiles: forgetting", data.Forget, which) end
     Shown()
     return true
-end
-
--- Every kept copy of a module's settings: in use, each profile's, this character's own. (For an
--- upgrade of the first kind: a module's own version, now Core.Options' version and upgrade.)
-function Profiles.Copies(name)
-    local list, seen = {}, {}
-    local function Add(copy)
-        if type(copy) == "table" and not seen[copy] then
-            seen[copy] = true
-            list[#list + 1] = copy
-        end
-    end
-    Add(live[name])
-    for _, profile in pairs(db.profiles) do Add(type(profile) == "table" and profile[name]) end
-    Add(char.settings and char.settings[name])
-    return list
 end
 
 -- /sane profile: the profiles, and one used by name (in any letter case), without the options window.

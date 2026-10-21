@@ -64,6 +64,9 @@ local home = false   -- the Home page (Home.lua) is on show: every entry waits o
 local toggle         -- the checkbox next to the page buttons: hidden spells on or off
 local expanded = {}  -- [spell name] = true: all its ranks are on show (until /reload)
 local parked = {}    -- the game's entries of ranks that are folded away
+-- [one of the game's entries] = true: drawn smaller by us (compact). Kept also once the game has
+-- taken the entry back into its pool, as it draws its next tabs from there: giving back reaches it.
+local scaled = setmetatable({}, { __mode = "k" })
 local FOLD_HEIGHT = 22
 
 -- The page as it is right now (Measure): the spellbook can be resized (Window.lua) and compact.
@@ -111,7 +114,10 @@ local function Place(frame, anchor, x, y, view, size)
         want.anchor, want.x, want.y, want.corner = UIParent, PARK, PARK, "BOTTOMLEFT"
     end
     if Locked(frame) then return Owe() end
-    if math.abs((frame:GetScale() or 1) - size) > 0.001 then frame:SetScale(size) end
+    if math.abs((frame:GetScale() or 1) - size) > 0.001 then
+        frame:SetScale(size)
+        scaled[frame] = size ~= 1 or nil
+    end
     if InPlace(frame, want) then return end
     frame:ClearAllPoints()
     frame:SetPoint("TOPLEFT", want.anchor, want.corner, want.x, want.y)
@@ -605,14 +611,19 @@ local function GiveBack()
     if pagerLent and pagerLent:Lent() then pagerLent:Return() end
 end
 
--- Every entry at the game's size again, also those of other pages and folded ranks. One that a
--- fight holds gets it once the fight is over.
-local function FullSize()
-    for _, frame in ipairs(paged:GetFrames()) do
-        if frame:GetScale() ~= 1 then
-            if Locked(frame) then Core.AfterCombat(AFTER_SIZE, FullSize) else frame:SetScale(1) end
-        end
-    end
+local FullSize -- below
+
+-- One entry at the game's size again. One that a fight holds gets it once the fight is over.
+local function Unscale(frame)
+    if frame:GetScale() == 1 then return end
+    if Locked(frame) then Core.AfterCombat(AFTER_SIZE, FullSize) else frame:SetScale(1) end
+end
+
+-- Every entry at the game's size again: those of the tab on show, also of other pages and folded
+-- ranks, and those the game has taken back into its pool since we drew them smaller.
+function FullSize()
+    for _, frame in ipairs(paged:GetFrames()) do Unscale(frame) end
+    for frame in pairs(scaled) do Unscale(frame) end
 end
 
 -- Leave the spellbook to the game. What is on screen is tidied one last time (the first

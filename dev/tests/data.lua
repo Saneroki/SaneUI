@@ -7,6 +7,7 @@ package.path = root .. "/dev/tests/?.lua;" .. package.path
 local W = require("wowstub")
 W.Install(_G)
 W.RemoveAddon("SaneUI_Data_Characters") -- the packs here are the sample's (Kept: a pack of saved data)
+Enum.BankType = { Character = 0, Account = 2 } -- the bank's kinds, which Characters.lua takes as its file is read
 
 local passed = 0
 local function check(condition, what)
@@ -221,6 +222,19 @@ Steps.Run({ name = "itself", done = function() stopTold[#stopTold + 1] = "itself
 end)
 for _ = 1, 5 do Frame() end
 check(selfStopped == 2 and #stopTold == 0 and not frame:IsShown(), "a job that stops itself runs to its next Check, never further")
+do
+    local cheap = 0
+    Steps.Run("cheap", function()
+        for piece = 1, 20 do
+            cheap = piece
+            if piece == 2 then Steps.Stop("cheap") end
+            W.ms = W.ms + 0.1
+            Steps.Check()
+        end
+    end)
+    for _ = 1, 3 do Frame() end
+    check(cheap == 2 and not frame:IsShown(), "also with the frame's time far from spent at that Check")
+end
 
 -- Told when it ends: done(problem), and error(problem) after an error, outside its coroutine, after the report
 local ended = {}
@@ -358,6 +372,14 @@ check(holes.named.m == true and holes.named.k == nil and holes.named.n == nil, "
 check(Codec.Build({}) == nil and Codec.Build(65100) == nil and #Codec.Versions(false) == 0, "a row that is no text: no build, no versions")
 check(not pcall(Codec.Decoder, { "a" }, { "wobbly" }) and not pcall(Codec.Decoder, { "a" }, { "map bool int" }),
     "a type the codec does not know is an error (the set is refused then)")
+do
+    -- A map's whole-number keys: tonumber reads "nan" too, which is no table key at all
+    local ok, odd = pcall(Codec.Decoder({ "counts" }, { "map int int" }), "1\t\tnan\0311\030inf\0312\0300x10\0313\030-4\0314\0307\0315")
+    local keys = 0
+    for _ in pairs(ok and odd.counts or {}) do keys = keys + 1 end
+    check(ok and keys == 2 and odd.counts[7] == 5 and odd.counts[-4] == 4,
+        "a map of whole-number keys takes whole numbers only: nan, inf and 0x10 are no value, and no error")
+end
 
 -- A pack written by hand into the test's folder: its TOC and its files.
 local function MakePack(name, sets, files, lines)
@@ -798,6 +820,240 @@ Data.Saved("Plain", function() plain = false end)
 for _ = 1, 4 do Frame() end
 check(plain and not W.loaded.SaneUI_Data_Plain and Core.errors["data: SaneUI_Data_Plain"],
     "a pack that names no set and says no saved data is no pack of saved data: refused, never loaded for it")
+
+-------------------------------------------------------------------------------
+--  The account's characters (Characters.lua), on the saved file of the pack Characters
+-------------------------------------------------------------------------------
+do
+    -- The game's bags, bank, gear and gold as the test sets them; reading a slot costs `cost` milliseconds
+    local bags, worn, cost, money = { [0] = { { itemID = 4500, stackCount = 3 } }, [1] = { { itemID = 4501, stackCount = 1 } } }, {}, 0, 1000
+    C_Container = {
+        GetContainerNumSlots = function(bag) return bags[bag] and #bags[bag] or 0 end,
+        GetContainerItemInfo = function(bag, slot)
+            W.ms = W.ms + cost
+            local info = bags[bag] and bags[bag][slot]
+            return info and info.itemID and info or nil
+        end,
+    }
+    C_Bank = { CanViewBank = function() return true end,
+               FetchPurchasedBankTabIDs = function(kind) return kind == Enum.BankType.Character and { 6, 7, 8 } or {} end }
+    GetInventoryItemID = function(_, slot) return worn[slot] end
+    GetMoney = function() return money end
+    -- An alt kept by an older version or by hand: its class and level of the wrong kind
+    local alt = "Player-70-0000BEEF"
+    SaneUIData_Characters = { forever = { format = 1, characters = { [alt] = { name = "Droopy Fairwind", class = 5, level = "thirty", money = 10,
+        bags = "4500\0312" } } } }
+    W.AddPack(live .. "SaneUI_Data_Kept", { name = "SaneUI_Data_Characters" })
+    Data.Find()
+    Data.Saved("Characters", function() end) -- loads it (Core's reader asked for it at the login)
+    for _ = 1, 6 do Frame() end
+    W.Wait(0)
+    local saved = SaneUIData_Characters.forever
+    local function Aside(what)
+        for _, item in ipairs(saved.broken or {}) do if item.what == what then return item end end
+    end
+    local them = Data.Character(alt)
+    check(them and them.class == nil and them.level == nil and them.money == 10 and Aside(alt .. " class").value == 5
+        and Aside(alt .. " level").value == "thirty", "an alt's values of the wrong kind are set aside, never handed out; the others stay")
+    -- Your gold changes: Core's answer follows, and those who listen are told on a later frame, outside the job
+    local told, inside = 0, false
+    Data.OnCharacters(function()
+        told = told + 1
+        inside = inside or coroutine.running() ~= nil
+    end)
+    check(Data.Character(Core.charKey).money == 1000, "you, with your gold")
+    local stamp = Data.CharactersStamp()
+    money = 5000
+    W.Fire("PLAYER_MONEY")
+    Frame()
+    check(Data.Character(Core.charKey).money == 5000 and Data.CharactersStamp() > stamp and told == 0,
+        "your gold changes: read in a step, and the answer and the stamp follow")
+    Frame()
+    check(told == 1 and not inside, "those who listen are told on a later frame, outside the job")
+    -- Three places stored by one read (the bags, what is worn, slot by slot): told once
+    told = 0
+    bags[0][1].stackCount = 7
+    worn[1] = 6001
+    W.Fire("BAG_UPDATE", 0)
+    W.Fire("PLAYER_EQUIPMENT_CHANGED", 1, true)
+    W.Fire("BAG_UPDATE_DELAYED")
+    for _ = 1, 2 do Frame() end
+    check(told == 1 and Data.Items(Core.charKey, "bags")[1].count == 7 and Data.Worn(Core.charKey)[1] == 6001,
+        "a read that stores three places tells those who listen once")
+    -- The bank closes while it is read, its time more than a frame's: kept whole, never half read
+    bags[6], bags[7], bags[8] = { { itemID = 1, stackCount = 1 } }, { { itemID = 2, stackCount = 1 } }, { { itemID = 3, stackCount = 1 } }
+    cost = 3
+    W.Fire("BANKFRAME_OPENED")
+    Frame()
+    W.Fire("BANKFRAME_CLOSED")
+    bags[6], bags[7], bags[8] = nil, nil, nil -- closed: the game knows the bank no more
+    for _ = 1, 4 do Frame() end
+    local bank = Data.Items(Core.charKey, "bank")
+    check(bank and #bank == 3 and bank[3].item == 3, "a bank closed while it was read is kept whole, never half read")
+    -- The logout comes while the job is cut off in the bags: they are read again then, whole
+    bags[2] = { { itemID = 4502, stackCount = 2 } }
+    W.Fire("BAG_UPDATE", 2)
+    W.Fire("BAG_UPDATE_DELAYED")
+    Frame()
+    cost = 0
+    local before = saved.characters[Core.charKey].bags
+    W.Fire("PLAYER_LOGOUT")
+    check(not before:find("4502", 1, true) and saved.characters[Core.charKey].bags:find("4502\0312", 1, true),
+        "the logout reads again the place the job was cut off in")
+    for _ = 1, 4 do Frame() end
+    -- An alt forgotten (Profiles' Forget: deleted, or moved to another account): gone from every answer
+    local count = Data.Count(4500)
+    check(count and count[alt] and count[alt].bags == 2 and count.total == 9, "an alt's things are counted with yours")
+    told = 0
+    local moved = Data.CharactersStamp()
+    check(Data.Forget(Core.charKey) == false and Data.Forget("Player-70-00000000") == false and saved.characters[Core.charKey],
+        "the one played is never forgotten, nor one Core does not know")
+    check(Data.Forget(alt) == true and saved.characters[alt] == nil and Data.Character(alt) == nil and #Data.Characters() == 1
+        and Data.Characters()[1].key == Core.charKey and Data.Items(alt, "bags") == nil and Data.Count(4500).total == 7
+        and not Data.Count(4500)[alt] and Data.CharactersStamp() > moved and told == 0,
+        "an alt forgotten: gone from the saved file, the characters, their things and the counts")
+    Frame()
+    check(told == 1, "and those who listen are told, once, on a later frame")
+end
+
+-------------------------------------------------------------------------------
+--  The ships' times (Ships.lua): looked for once Travel is there; a boat's round learnt, refined, kept over a
+--  new run of the realm, and set right after a ride across a restart
+-------------------------------------------------------------------------------
+do
+    local Ships = Data.Ships()
+    local position, looks = UnitPosition, 0
+    UnitPosition = function(...)
+        looks = looks + 1
+        return position(...)
+    end
+    W.Wait(10)
+    check(looks == 0, "nothing is looked at for the ships' times while the set Travel is not there")
+    -- Two boats, each between two docks 6000 yards apart on one map (y 0 and y 5000); the set gives neither its round
+    W.AddPack(MakePack("Ways", "Travel", { ["Travel.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Travel", { game = "forever", hash = "00000b0a", build = 65000, key = "int", fields = { "kind", "path" }, types = { "text", "list tuple(x:number,y:number,map:int,stay:number,jump:bool)" }, patches = {} })\n'
+        .. 'if not S then return end\nS.rows[3] = "65000\\t\\tboat\\t0\\0310\\0310\\03160\\0306000\\0310\\031\\03160"\n'
+        .. 'S.rows[4] = "65000\\t\\tboat\\t0\\0315000\\0310\\03160\\0306000\\0315000\\031\\03160"\nS.index.byKind = { boat = "3\\0304" }\n' }))
+    Data.Find()
+    Data.Prepare("Travel")
+    for _ = 1, 3 do Frame() end
+    W.Wait(10)
+    local timetable = Ships:Table(3)
+    check(looks > 0 and timetable and #timetable.stops == 2 and not timetable.known and not timetable.given,
+        "the set there, the looks begin; the boat's round is estimated")
+    -- The boats really take 10 seconds a round longer than estimated: they sail slower than the estimate says, so
+    -- a ride's time is a second or so off until the round is learnt (as in the game)
+    local round = timetable.round + 10
+    local slower = (round - 120) / Ships.Run(6000)
+    local function At(seconds) -- yards sailed so many seconds after leaving the first dock, at the estimate's speed
+        local ramp, yards = Ships.SPEED / Ships.ACCEL, 6000
+        if seconds <= 0 then return 0 end
+        if seconds < ramp then return Ships.ACCEL * seconds ^ 2 / 2 end
+        local left = Ships.Run(yards) - seconds
+        if left > ramp then return Ships.SPEED ^ 2 / (2 * Ships.ACCEL) + Ships.SPEED * (seconds - ramp) end
+        return yards - Ships.ACCEL * math.max(0, left) ^ 2 / 2
+    end
+    -- A ride on boat key, which leaves its first dock at server time leaves: aboard well into its run
+    local learnt
+    Ships:OnLearn(function(key) learnt = key end)
+    local function Ride(key, leaves)
+        learnt = nil
+        W.Wait(leaves - 5 - (W.serverStart + W.clock))
+        local y = key == 4 and 5000 or 0
+        W.place = function() return { At((W.serverStart + W.clock - leaves) / slower), y, 5, 0 } end
+        for _ = 1, 60 do W.Wait(1) end
+        W.place = nil
+        W.Wait(5)
+        return learnt == key and Core.Store(Core.name).ships["Stub Realm"][key]
+    end
+    local start = W.serverStart + W.clock + 100
+    local kept = Ride(3, start)
+    check(kept and math.abs(kept.epoch - start) < 3 and kept.rides == 1 and not kept.round, "a ride: when the boat left, kept for this realm")
+    kept = Ride(3, start + round + 1) -- a second late, as a ride's time may be
+    check(kept and kept.rides == 2 and math.abs(kept.round - (round + 1)) < 1 and kept.span == 1 and kept.doubt and Ships:Table(3).known,
+        "the next round's ride: the round learnt from the estimate, doubted until a ride agrees with it")
+    kept = Ride(3, start + 4 * round)
+    local learntRound = kept and kept.round
+    check(kept and kept.span == 3 and not kept.doubt and math.abs(kept.round - round) < 1.5,
+        "a ride three rounds on agrees: the round confirmed, and corrected by the longer span")
+    kept = Ride(3, start + 5 * round)
+    check(kept and kept.round == learntRound and kept.span == 3 and not kept.doubt, "a ride over a shorter span does not change it")
+    local restart = start + 7 * round + 100 -- the realm restarted meanwhile: its ships run from another time
+    kept = Ride(3, restart)
+    local arrive = kept and Ships:Next(3, 1, restart + 1)
+    check(kept and kept.round == learntRound and kept.doubt and math.abs(kept.epoch - restart) < 1
+        and math.abs(arrive - (kept.epoch + Ships:Table(3).round - 60)) < 0.01,
+        "a ride that does not agree is of a new run of the realm: its time taken, the round kept")
+    kept = Ride(3, restart + 2 * round)
+    check(kept and kept.round == learntRound and not kept.doubt, "the next ride of that run agrees with it: the round holds")
+    -- The other boat: its first two rides on either side of a restart, then one more of the new run
+    start = W.serverStart + W.clock + 100
+    Ride(4, start)
+    local other = start + 3 * round + 140
+    kept = Ride(4, other)
+    check(kept and math.abs(kept.round - round) > 20 and kept.doubt, "two rides across a restart give a wrong round, doubted")
+    kept = Ride(4, other + 3 * round)
+    check(kept and math.abs(kept.round - round) < 4 and math.abs(Ships:Table(4).round - round) < 4,
+        "the next ride does not agree with it either: the round it gives takes its place")
+    -- A saved file of the wrong shape: nothing known, and no error
+    local store = Core.Store(Core.name)
+    store.ships["Stub Realm"][3] = { epoch = "soon", seen = {} }
+    check(Ships:Next(3, 1) == nil and Ships:Seen(3) == nil, "a kept ride of the wrong shape is none")
+    store.ships = 7
+    check(pcall(Ships.Next, Ships, 3, 1) and Ships:Next(3, 1) == nil and type(store.ships) == "table", "nor a part that is no table")
+    UnitPosition = position
+end
+
+-------------------------------------------------------------------------------
+--  What a map shows (Map.lua): the sets of one pack read once; the last read's points kept while it is read anew
+-------------------------------------------------------------------------------
+do
+    local Map, Spawns, walks = Data.Map(), Data.Set("Spawns"), 0
+    local each = Spawns.Each
+    Spawns.Each = function(...)
+        walks = walks + 1
+        return each(...)
+    end
+    check(Map:On(1429) == nil, "the places first asked for: nil while they are read")
+    for _ = 1, 3 do Frame() end
+    check(Map:On(1429) and #Map:On(1429) == 0, "then none yet (the boats here stand at no dock of a map)")
+    -- One pack with two of the sets a map reads: they arrive together
+    W.AddPack(MakePack("Spots", "Places, Spawns", {
+        ["Places.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Places", { game = "forever", hash = "0000000c", build = 65000, key = "int", fields = { "kind", "name", "point" }, types = { "text", "text", "point" }, patches = {} })\n'
+            .. 'if not S then return end\nS.rows[1] = "65000\\t\\tcave\\tThe Hole\\t1429\\03150\\03150"\n',
+        ["Spawns.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Spawns", { game = "forever", hash = "0000000d", build = 65000, key = "text", fields = { "points" }, types = { "list point" }, patches = {} })\n'
+            .. 'if not S then return end\nS.rows["object:1617"] = "65000\\t\\t1429\\03110\\03120"\n' }))
+    Data.Find()
+    Data.Prepare("Spawns")
+    for _ = 1, 6 do Frame() end
+    local spot = Map:Spawns("object:1617")
+    check(walks == 1 and #Map:On(1429) == 2 and spot and spot[1429][1][1] == 0.1, "two sets of one pack arriving together: read once")
+    -- The objects' facts arrive: the map is read anew, and until that read is done the last one's points stay
+    W.AddPack(MakePack("Things", "Objects", { ["Objects.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Objects", { game = "forever", hash = "0000000e", build = 65000, key = "int", fields = { "name", "kind" }, types = { "text", "text" }, patches = {} })\n'
+        .. 'if not S then return end\nS.rows[1617] = "65000\\t\\tPeacebloom\\therb"\n' }))
+    Data.Find()
+    Data.Prepare("Objects")
+    Frame()
+    W.Wait(0) -- told: read anew, its walks still to come
+    check(walks == 2 and Map:Spawns("object:1617") == spot, "while the map is read anew, the last read's points stay")
+    for _ = 1, 6 do Frame() end
+    local herb
+    for _, place in ipairs(Map:On(1429)) do herb = herb or place.what == "herb" and place end
+    check(herb and herb.name == "Peacebloom" and Map:Spawns("object:1617") ~= spot and Map:Spawns("object:1617")[1429][1][2] == 0.2,
+        "then the new read's: the object named, a herb")
+    Spawns.Each = nil
+end
+
+-------------------------------------------------------------------------------
+--  The trip underway (Trips.lua): nothing hooked or looked at before a module asks for the trips
+-------------------------------------------------------------------------------
+do
+    local take = function() end
+    TakeTaxiNode = take
+    W.Fire("PLAYER_ENTERING_WORLD")
+    for _ = 1, 3 do W.Wait(1) end
+    check(TakeTaxiNode == take, "the world there, but no module asked for the trips: the flight master is not hooked")
+    check(Data.Trips() and TakeTaxiNode ~= take, "a module asks for them: hooked at once, the world being there")
+end
 os.execute(("rm -rf '%s'"):format(folder))
 
 print = nil -- the stand-in's print; use the real one for the summary

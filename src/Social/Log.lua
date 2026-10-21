@@ -20,6 +20,7 @@ local _, ns = ...
 --      time    "21:07"
 --      at      when it came, on the game's clock (GetTime): what fading counts from
 --      gone    true once the log let it go (Add): the window lets it go too
+--      plain   its words as they read, made once a search asks (Readable)
 --      with    a whisper's other one, as the game names them (sender, or whom you told), and
 --      account for a Battle.net friend their account in this session: the conversations' (Talks.lua)
 -------------------------------------------------------------------------------
@@ -222,6 +223,9 @@ function Log.Read(event, text, sender, _, _, _, _, _, channelIndex, channelName,
     entry.short = ns.Channels.Brief(channel and ns.Channels.Base(channelText) or entry.label)
     if guid and guid == Core.charKey then
         entry.side = MINE
+    elseif kind:find("^MONSTER") or kind:find("^RAID_BOSS") then
+        -- A creature: no player to whisper to or to know, so no link and nothing asked (the game's chat links none).
+        entry.side, entry.name = "left", name
     else
         entry.side, entry.name, entry.class, entry.tie = "left", name, Class(guid), Tie(guid, kind)
         entry.link = name and Link(kind, sender, name, ns.Plain(lineID), ns.Plain(account))
@@ -482,4 +486,15 @@ function Log.Add(entry)
         Log.Shift(list, Log.PRUNE)
     end
     if Log.added then Log.added(entry) end
+end
+
+-- A message's words as they read (Core.Fuzzy.Plain: no colours, links' codes or icons), made once and kept on it
+-- (plain): a search walks every message, the conversations' thousands too, at each change of its words.
+function Log.Readable(entry)
+    local plain = entry.plain
+    if not plain then
+        plain = Core.Fuzzy.Plain(entry.text or "")
+        entry.plain = plain
+    end
+    return plain
 end

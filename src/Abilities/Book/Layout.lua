@@ -6,8 +6,9 @@ local _, ns = ...
 --
 --  Nothing in here touches the game's frames: lists in, lists out. The numbers are the
 --  game's own (Blizzard_PlayerSpells, the Forever variant): a page is 680 x 590,
---  three columns, 15 between columns and 10 between rows; a heading is 51 high,
---  a spell 60, the gap between two groups 20. The filling rule is the game's too
+--  three columns, 15 between columns and 10 between rows; a heading is 60 high, as
+--  high as a spell, so that the rows of the two pages line up; the gap between two
+--  groups is 20. The filling rule is the game's too
 --  (Blizzard_PagedCondensedGridContentFrame): column by column, in as few rows
 --  as the group needs.
 -------------------------------------------------------------------------------
@@ -17,7 +18,7 @@ ns.BookLayout = L
 L.VIEW_WIDTH, L.VIEW_HEIGHT = 680, 590
 L.COLUMNS = 3
 L.X_PAD, L.Y_PAD = 15, 10
-L.HEADER, L.CELL, L.SPACER = 51, 60, 20
+L.HEADER, L.CELL, L.SPACER = 60, 60, 20
 L.CELL_WIDTH = (L.VIEW_WIDTH - L.X_PAD * (L.COLUMNS - 1)) / L.COLUMNS
 
 -- groups: { { header = item or nil, items = { item, ... } }, ... }
