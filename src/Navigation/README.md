@@ -110,14 +110,21 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* and *Atlas* its
   terrain, the open sky around it cut away as the sea is, and routes there walk around what cannot be walked, as on
   the continents. The painted map does not cover the isle yet: *Atlas* shows the terrain there.
-- **Routes:** put the game's map pin (Ctrl and a click) and a golden line leads you there, pulsing towards it,
-  around what cannot be walked (mountains, walls, deep water is swum), through gates and doors, and by the flights
-  your character knows where that is quicker (visit a flight master once for the map to know yours). A pin on
-  the other continent or on Zephras Isle is reached by boat or zeppelin, the line red from pier to pier; between
-  Stormwind and Ironforge the Deeprun Tram is taken where it is quicker, the line red from one city's entrance to it
-  to the other's; and the hearthstone is taken where it is quickest (the map learns its place where you bind it, or the first time you use
-  it). Leave the line and it is planned again; on a flight the line shows the flight's way on from where you are,
-  pin or none, and from where it lands on to the pin; aboard a ship it waits until you have landed. The game tells no ship's timetable: its sailing comes from its way at the game's
+- **Routes:** put the game's map pin (Ctrl and a click) and a golden line leads you there from where you stand,
+  pulsing towards it: around what cannot be walked (mountains, walls, deep water is swum), through gates and doors,
+  into and out of caves, buildings and the cities in the mountains, on the floor you are on (a cave under a hill, a
+  city in a mountain, a building's storeys), and by the flights your character knows where that is quicker (visit
+  a flight master once for the map to know yours; a flight over many flight points is one, taking off once). The
+  line always begins at your arrow: as you go, what lies behind you is gone, a short line runs from you to it, and
+  leave it and it is planned again. A pin on another continent or on Zephras Isle is reached by boat or zeppelin,
+  over as many seas as it takes (by way of the other continent, or the hearthstone home first, where that is
+  quickest), the line red from pier to pier; between Stormwind and Ironforge the Deeprun Tram is taken where it is
+  quicker, the line red from one city's entrance to it to the other's; and the hearthstone is taken where it is
+  quickest (the map learns its place where you bind it, or the first time you use it). A pin where nobody can walk
+  (a tower, a mesa, a city one reaches by lift) gets its line as near as one walks, then straight to it. On a flight
+  the line shows the flight's way on from where you are, pin or none, and from where it lands on to the pin; aboard
+  a ship it waits until you have landed, and a pin set aboard is planned from the pier it comes to. The game tells
+  no ship's timetable: its sailing comes from its way at the game's
   transports' speed, and once you have ridden a ship on your realm the map knows when it really sails there and
   counts the wait for the next one (until then half its time once round). *Route to the map pin* in the pin
   filter switches it off.
@@ -285,7 +292,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   the screen in front (`Dungeons.SPREAD` levels, all under the bar), hidden while it would reach past the view's
   edge (models are not cut there), let go (`ClearModel`) when the view closes.
 - **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
-  in view: a dark edge, the game's dependency bar art tinted gold, its glint moved along by a
+  in view, and from where the player is on (the way's cut, `Route.Cut`): the parts behind are not drawn, the one the
+  player is on only from there, and a line of its own (the head) runs from the player's arrow to that point; the
+  legs after the next fainter. A dark edge, the game's dependency bar art tinted gold, its glint moved along by a
   `TextureCoordTranslation` animation (no code of ours each frame); walks gold, flights pale, ships red. The
   animation is the template of `Route.xml`: the game makes this kind only from XML (one made in Lua has no
   `SetOffset`); where the game has not read the file yet, the glint stands still.
@@ -310,29 +319,52 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   made by `dev/tools/walk-data` from the game's terrain, buildings and water: per terrain tile a block (base64,
   deflate, CBOR, read by the game's `C_EncodingUtil`) of surfaces and rectangles of floors, 2.08 yards a sample,
   each with its height, kind (land, water) and region, and the openings into its neighbours. Unpacked when first
-  needed, the last `Walk.KEEP` kept; the openings of two rectangles of one surface that touch are worked out from
-  the rectangles, written ones once on their tile get their other way. `Under`, `Nearest`, `Openings`, `Portal`.
+  needed, the `Walk.KEEP` asked for last kept (in a job of Core's scheduler an unpacking may end the job's frame);
+  the openings of two rectangles of one surface that touch are worked out from the rectangles, written ones once on
+  their tile get their other way. `Under`, `Around`, `Nearest`, `Regions`, `Opening`, `Openings`, `Portal`, `Gap`.
+  Floors lie one over the other, and the game tells no height of the player (`UnitPosition`'s is always 0): the
+  floor a walker stands on is followed from the rectangle they stood on through the openings nearest the way they
+  went (`Walk.Follow`: a cave's mouth, not the path up the hill over it), and chosen where it cannot be
+  (`Walk.Floor`): near the height they had (within `Walk.RISE`), else outdoors the highest under them, indoors the
+  lowest within `Walk.ROOF` yards.
 - **Search** (`Search.lua`, no frames): a walk between two points: A* over the rectangles through their openings
-  (from where a rectangle was entered to the nearest point of the next opening, swimming twice the cost), ends
-  in different regions refused at once, then the line pulled straight through the openings (a funnel, each
-  opening drawn in from its ends). `Search.Start` runs it as a job of Core's scheduler.
+  (from where a rectangle was entered to the nearest point of the next opening, swimming twice the cost, and each
+  yard up `Search.CLIMB` yards more: the valleys and the roads, through Ironforge's gate, not over its mountain,
+  whose slopes the data holds as floors), from the floor the start stands on (the player's, followed), else from
+  every floor under it and within `Walk.ROOF` yards, each over the lowest at the cost of the climb up to it (a place
+  stands on its lowest floor rather than on the mountain over it; none: the nearest within `Search.REACH`), to any
+  floor of the regions it starts in under the end or within `Search.NEAR` yards of it (its own floor may be missing
+  there: Ironforge's city under its mountain), else the nearest within `Search.FAR` (a tower, a mesa, a city
+  reached by lift). What lies off the walking data is drawn straight and costs `Search.STRAIGHT` times its yards,
+  so the line runs from the start to the end itself. Then the line pulled straight through the openings (a funnel,
+  each opening drawn in from its ends); the heap keeps each node's f as it was put in.
 - **Planner** (`Planner.lua`, no frames): the way to the map pin, a graph over the player, the pin, the known
-  flight points, the docks, the tram's entrances and the hearthstone's place on both their planes (a continent, or
-  Zephras Isle; the canvas' tracker hands it the player's place): walks within one region of the
-  walking data (guessed), the flights of Core's set *Travel* the player's side may take, the boats and zeppelins of
+  flight points, the docks, the tram's entrances and the hearthstone's place on every plane (the continents and
+  Zephras Isle, so a journey may cross a third; the canvas' tracker hands it the player's place): walks (guessed)
+  between the places of one plane, `Planner.APART` seconds more between two that share no region of the walking
+  data (a place's: those of the floors under it and within `Planner.REGION` yards), the flights of Core's set
+  *Travel* the player's side may take (a flight point twice, on the ground and in the air, so a flight over many
+  takes off and lands once, `Planner.BOARD`, and is one leg), the boats and zeppelins of
   *Travel* from dock to dock and its tram from entrance to entrance (all from the game's tables, by
-  `dev/tools/travel-data`), the hearthstone from the player; the quickest chosen (Dijkstra), the walks then searched and the journey chosen once more when one is
-  much longer than guessed. A ship (`Planner.Ship`): its docks and trips from Core's timetable of it (`Data.Ships`:
+  `dev/tools/travel-data`), the hearthstone from the player; the quickest chosen (Dijkstra), the walks then searched
+  (the first from the floor the player stands on: followed every `Planner.FOOT` seconds while there is a pin,
+  `Walk.Follow`, else chosen, `Walk.Floor`) and the journey chosen once more when one is much longer than guessed:
+  all one job of Core's scheduler, which a new pin stops; the line of the pin before goes at once. Where along the
+  line the player is (the cut): at every step of the tracker, of the next `Planner.AHEAD` parts of it the first
+  within `Planner.SLACK` yards of the nearest, never back on the part they are on; the line drawn from there
+  (`Route.Cut`). A ship (`Planner.Ship`): its docks and trips from Core's timetable of it (`Data.Ships`:
   the game's way and stays, its sailing at the game's transports' speed, stretched to its time once round where
   *Travel* has it, `wait`, or a ride taught it); the wait for it the time to its next departure where a ride on this
   realm taught its times, else half its round; then it sails to the dock (the stays between included). One boards
-  and leaves at the pier, the land nearest where it stops. The tram (`Tram`): boarded and left at the cities'
-  entrances to it (its `docks` in *Travel*), its cost the walks down and up and the loading screens
-  (`Planner.STATION`, a guess), half the time between two trains from a station (*Travel*'s `wait`) and its run
-  (`time`); drawn red, straight from entrance to entrance (its tunnel's map has no plane; in it the line stays as it
-  is). Planned again when the pin
-  changes, after a landing, when the player is 40 yards off the line (150 off a ship's way), and when the data
-  arrives; aboard a ship a new pin is planned from where it lands. The known flight points are read at the flight
+  and leaves at the pier, the land nearest where it stops (within `Planner.PIER` yards). The tram (`Tram`): boarded
+  and left at the cities' entrances to it (its `docks` in *Travel*), its cost the walks down and up and the loading
+  screens (`Planner.STATION`, a guess), half the time between two trains from a station (*Travel*'s `wait`; the
+  time to its next train where a ride on this realm taught its times, `Trips:TramNext`) and its run (`time`); drawn
+  red, straight from entrance to entrance (its tunnel's map has no plane; in it the line stays
+  as it is). Planned again when the pin changes, after a landing (a flight's or a ship's), when the player is 40
+  yards off the line (150 off a ship's way), and when the data arrives; aboard a ship a new pin is planned from
+  where it lands (the ship of the plan, or the one Core's `Data.Trips` finds the player on, to the pier of its next
+  dock). The known flight points are read at the flight
   master, the hearthstone's place where it is bound (`HEARTHSTONE_BOUND`) or where it brought the character, both
   kept per character; the hearthstone counts while it is in the bags and bound there (`GetBindLocation`), its
   cooldown as a wait. Without walking data, straight lines. On a flight (Core's `Data.Trips`) its way on is the
@@ -405,13 +437,13 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Art.lua` | The view Parchment: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
 | `Painted.lua` | The view Atlas: the module SaneUI_Atlas found at login, loaded when first drawn, its blocks at the level the zoom asks for |
 | `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, gathered. No frames |
-| `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings. No frames |
-| `Search.lua` | A walk between two points over the walking data, as a job of Core's scheduler. No frames |
-| `Planner.lua` | The way to the map pin: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by the hearthstone. No frames |
+| `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings; the floor a walker stands on, followed or chosen. No frames |
+| `Search.lua` | A walk between two points over the walking data, from the floor the start stands on to a floor at the end. No frames |
+| `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by the hearthstone; where along it the player is. No frames |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
 | `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, zoomed and dragged |
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
-| `Route.lua` | The golden line of a way, the parts in view: walks gold, flights pale, ships red |
+| `Route.lua` | The golden line of a way, from the player on, the parts in view: walks gold, flights pale, ships red |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks |
 | `Marks.lua` | The player's arrow, the map pin, the party |
 | `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders switched by the pin filter and in turn, silently. No frames |
@@ -434,6 +466,17 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-21, routes from the player, through caves and cities, over every sea:** the line always begins at the
+  player's arrow, what lies behind them gone (the planner's cut, `Route.Cut`). The floor the player stands on is
+  followed through the openings they walk by (`Walk.Follow`), so a way out of a cave, a city in a mountain or an
+  upper storey starts on their floor, not on the hill or the mountain over it; the search ends on any floor at the
+  pin, near it, or as near as one walks, then straight to it (a pin on a floor of another region had no line at
+  all), and keeps to the valleys and the roads (each yard up costs two more): in Ironforge, from the flight master to
+  the tram, 327 yards through the city where it took 1,551 over the mountain. The graph spans every plane (the hearthstone home, then a ship; the
+  isle by way of a continent), a flight over many flight points takes off once and is one leg, a pin set aboard a
+  ship is planned from the pier it comes to, the tram's wait is the time to its next train where a ride taught its
+  times, and places that share no region of the walking data are a walk at a cost (a zeppelin's tower, a mesa)
+  instead of none. The plan is one job of Core's scheduler; Walk keeps the tiles asked for last.
 - **2026-10-21, the game's map hidden, never closed; instances:** a map the game opened is hidden by its own `Hide`,
   not the game's panel functions (which left the character sheet to open as ours); the game's map chosen in
   *Classic windows* opens by its key. In an instance the small window shows the game's minimap with its own ground.

@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: the golden line to the map pin now always starts at you
+  and keeps up as you go. It finds its way into and out of caves,
+  buildings and cities in the mountains on the floor you are on, and
+  crosses the seas by whatever way is quickest: the hearthstone home,
+  then a ship, or across another continent to Zephras Isle. A pin
+  where nobody can walk still gets its line, as near as one walks.
 - A review of the whole of Sane UI, with many fixes: the bags keep
   your category order and Sort By again, the bank's sidebar works with
   several bank tabs, guild professions show and guild lists keep their

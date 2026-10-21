@@ -122,7 +122,21 @@ Request Stop; `Planner.lua` draws a flight's way on as the first leg (`Flying`, 
 is Travel's key 1000369 (kind `tram`, `dev/tools/travel-data`); the planner takes it between its two entrances
 (`Tram` in `Planner.lua`: `Planner.STATION` + half of Travel's `wait` + `time`, a straight red leg).
 
-Not yet: portals and lifts in routes, doodads in the walking data (fences, trees), search, the guide, dungeon maps and floors, the minimap's small parts
+Routes, the quality pass (2026-10-21): floors lie one over the other and the game tells no height, so
+`Walk.Follow` follows the player's floor through the openings nearest their way (every `Planner.FOOT` seconds while
+there is a pin) and `Walk.Floor` chooses one where that cannot be done (near the height they had; outdoors the
+highest, indoors the lowest within `Walk.ROOF`). `Search.Walk(continent, u1, v1, u2, v2, from, check)`: from the
+player's floor (`from`), else every floor under the start and within `Walk.ROOF` (each over the lowest at the cost of
+the climb), to any floor of its regions under the end or within `Search.NEAR`, else the nearest within `Search.FAR`;
+straight off the data at `Search.STRAIGHT` times, each yard up `Search.CLIMB` more; `Search.Start` went.
+`Planner.lua`: every plane's places (a third plane: the hearthstone, then a ship), a flight point twice (ground and
+air: one take-off, the flights one leg), the regions of a place's floors within `Planner.REGION` (sharing none:
+`Planner.APART` more), the plan one job of Core's scheduler (`Make`, `Find`), the cut (`Follow`: where along the
+line the player is) drawn by `Route.Cut` (the parts passed gone, a head from the arrow), a ship boarded without the
+plan (`Riding`), the tram's next train (`Trips:TramNext`). Walk's tiles: the 48 asked for last.
+
+Not yet: portals and lifts in routes, doodads in the walking data
+ (fences, trees), search, the guide, dungeon maps and floors, the minimap's small parts
 (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (210
 checks), `dev/tests/walk.py` (28).
 

@@ -557,7 +557,11 @@ end
 -- a sample): a west hall (1) and an east hall (3), a wall between them (columns 128 to 159) with a door (2, rows
 -- 100 to 119; the three one surface) and a channel of water (4, rows 200 to 209, a surface of its own, its opening
 -- into the west hall written from its west side, into the east hall from the hall's west side); a corner of
--- another region nobody can walk to (5). Tile 3105, east of it: one hall (1), open into 3104's east hall.
+-- another region nobody can walk to (5). Tile 3105, east of it: one hall (1), open into 3104's east hall. Tile 6176
+-- on Kalimdor (its north west corner at u 0, v 0), floors one over the other: a field (1) west of a cave (2, 5
+-- yards high) under a hill (3, 40 yards), open into the cave by its mouth (rows 60 to 67) and up the hill by a path
+-- (rows 0 to 7); the hill one surface with a field east of it (4), which the cave does not reach; on that field a
+-- mesa (5, 80 yards) of a region of its own, nobody can walk onto.
 local routesFolder = io.popen("mktemp -d -t saneui-routes-XXXXXX"):read("*l") -- loaded late: kept until the end
 local routesPath = routesFolder .. "/SaneUI_Data_Routes"
 os.execute(("mkdir -p '%s'"):format(routesPath))
@@ -567,9 +571,13 @@ local walkBlocks = {
         { 0, 0, 128, 256, 160,   128, 100, 32, 20, 160,   160, 0, 96, 240, 160,   128, 200, 32, 10, 160,   240, 248, 8, 8, 160 },
         { 0,   0,   2, 15, 2,   1, 0,   0 } },
     [3105] = { 1, { 1, 1, 1 }, { 0, 0, 64, 256, 160 }, { 1, 14 } },
+    [6176] = { 1,
+        { 1, 1, 1,   1, 1, 1,   2, 1, 1,   1, 1, 2 },
+        { 0, 0, 64, 128, 40,   64, 0, 64, 128, 20,   64, 0, 64, 128, 160,   128, 0, 128, 128, 40,   160, 32, 32, 32, 320 },
+        { 8, -2, 60, 67, 5, -2, 0, 7, 10,   0,   0,   0,   0 } },
 }
 Set(routesPath .. "/Walking.lua", "Walking", "00000008", "int", '"map", "links", "block"', '"int", "list int", "text"',
-    'R[3104] = "70245\t\t0\t3105\tblock:3104"\nR[3105] = "70245\t\t0\t3104\tblock:3105"\n')
+    'R[3104] = "70245\t\t0\t3105\tblock:3104"\nR[3105] = "70245\t\t0\t3104\tblock:3105"\nR[6176] = "70245\t\t1\t\tblock:6176"\n')
 out = assert(io.open(routesPath .. "/SaneUI_Data_Routes.toc", "w"))
 out:write("## Title: Data: Routes\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Walking\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nWalking.lua\n")
 out:close()
@@ -2403,7 +2411,9 @@ for index = 1, #points, 2 do
 end
 check(points and through and cost > 100 * s and #points >= 6, "a walk from hall to hall goes through the door, around the wall")
 local ending = Search.Walk(1415, 100 * s, -8533.33 - 50 * s, 244 * s, -8533.33 - 252 * s)
-check(ending and (-8533.33 - ending[#ending]) / s <= 240.01, "to a place nobody can walk to: the walk ends where one can, nearest to it")
+check(ending and (-8533.33 - ending[#ending - 2]) / s <= 240.01 and near(ending[#ending - 1], 244 * s)
+    and near(ending[#ending], -8533.33 - 252 * s),
+    "to a place nobody can walk to: the walk where one can, nearest to it, then straight to the place itself")
 local far = Search.Walk(1415, 200 * s, -8533.33 - 50 * s, (256 + 30) * s, -8533.33 - 50 * s)
 check(far and #far == 4, "into the next tile: a straight walk where nothing is in the way")
 -- The journey: the pin far away (Elwynn's south west, 1750 yards), a flight point near the player and one near
@@ -2802,7 +2812,206 @@ Live.ClearWaypoint()
 W.Fire("USER_WAYPOINT_UPDATED")
 W.Wait(0)
 check(shownWay == nil, "the pin taken away: no line")
+-- Floors one over the other (Kalimdor's tile 6176): chosen where nothing is known of before, followed through the
+-- openings the walker went by, each a start or an end of a walk of its own; a pin off the walking data reached on a
+-- floor near it, the rest straight; a start off it, straight onto it.
+;(function()
+    local s = Walk.SAMPLE
+    local function At(column, row) return column * s, -row * s end
+    local cu, cv = At(96, 64) -- in the cave, under the hill
+    check(#Walk.Under(1414, cu, cv) == 2, "two floors under a point of the cave: the cave's and the hill's")
+    check(select(2, Walk.Floor(1414, cu, cv, false, 40)) == 3 and select(2, Walk.Floor(1414, cu, cv, true, 40)) == 2,
+        "nothing known of before: outdoors the highest floor (the hill), indoors the lowest (the cave)")
+    local gu, gv = At(176, 70)
+    check(select(2, Walk.Floor(1414, cu, cv, false, 40, 8)) == 2 and Walk.Floor(1414, gu, gv, false, 40, 80) == nil,
+        "not followed: the floor near the height the walker had (the cave's), none so near (off the mesa): none")
+    local fu, fv = At(60, 64)
+    local tu, tv = At(66, 64)
+    local _, into = Walk.Follow(1414, tu, tv, 6176, 1, fu, fv)
+    local pu, pv = At(60, 4)
+    local hu, hv = At(66, 4)
+    local _, up = Walk.Follow(1414, hu, hv, 6176, 1, pu, pv)
+    check(into == 2 and up == 3, "followed from the field: by the cave's mouth into the cave, by the path onto the hill")
+    local key, stays = Walk.Follow(1414, cu, cv, 6176, 2, At(70, 64))
+    check(key == 6176 and stays == 2, "on through the cave: the cave, not the hill over it")
+    local ru, rv = At(176, 48)
+    local regions = Walk.Regions(1414, ru, rv, 0)
+    check(regions and regions[1] and regions[2], "the regions of the floors under a point: the field's and the mesa's")
+    -- From the cave to the field beyond the hill: out by its mouth and up the path; from the hill, straight east.
+    local eu, ev = At(200, 64)
+    local points = Search.Walk(1414, cu, cv, eu, ev, { 6176, 2 })
+    local mouth, path = false, false
+    for index = 1, #points or 0, 2 do
+        local column, row = points[index] / s, -points[index + 1] / s
+        if math.abs(column - 64) < 1 and row >= 59 and row <= 68 then mouth = true end
+        if row <= 8.5 then path = true end
+    end
+    check(points and mouth and path and near(points[1], cu) and near(points[#points], ev),
+        "from the cave's floor: out by its mouth, up the hill's path, to the field beyond it")
+    points = Search.Walk(1414, cu, cv, eu, ev)
+    check(points and #points == 4, "nothing known of the start's floor: the shortest of its floors (the hill), straight")
+    -- A pin on the mesa: the field under it (the walk's own region). One beside the field, off the walking data: to
+    -- the field's edge, then straight to it. A start beside it: straight onto it first.
+    local mu, mv = At(176, 48)
+    points = Search.Walk(1414, eu, ev, mu, mv)
+    check(points and #points == 4 and near(points[3], mu) and near(points[4], mv), "a pin on a mesa nobody walks onto: the field under it")
+    local ou, ov = At(200, 134)
+    points = Search.Walk(1414, eu, ev, ou, ov)
+    check(points and near(points[#points - 3], ou) and near(points[#points - 2], -128 * s) and near(points[#points - 1], ou)
+        and near(points[#points], ov),
+        "a pin beside the walking data: to the floor nearest it, then straight to the pin")
+    points = Search.Walk(1414, ou, ov, eu, ev)
+    check(points and near(points[1], ou) and near(points[2], ov) and near(points[4], -128 * s) and near(points[#points], ev),
+        "a start beside it: from the start straight onto the floor, then on")
+    -- The planner from the player in the cave (indoors) to the field: its first walk from the cave's floor.
+    local indoors = IsIndoors
+    IsIndoors = function() return true end
+    player.map, player.x, player.y = 1414, (cu + 12000) / 24000, (20000 - cv) / 40000
+    waypoint = { uiMapID = 1414, position = CreateVector2D((eu + 12000) / 24000, (20000 - ev) / 40000) }
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Frames(8)
+    local leg = shownWay and shownWay.legs[1]
+    mouth = false
+    for _, point in ipairs(leg and leg.points or {}) do
+        if math.abs(point.u / s - 64) < 1 and -point.v / s >= 59 and -point.v / s <= 68 then mouth = true end
+    end
+    check(leg and #shownWay.legs == 1 and leg.kind == "walk" and mouth and near(leg.points[1].u, cu)
+        and near(leg.points[#leg.points].u, eu), "the player in the cave: the line from the cave's floor, out by its mouth")
+    -- The line always from the player: walking along it, the parts behind are gone, a line runs from the player's
+    -- arrow to it; off it by Planner.OFF yards, planned again from there.
+    local first, second = leg.points[1], leg.points[2]
+    local wu, wv = first.u + (second.u - first.u) * 0.5, first.v + (second.v - first.v) * 0.5 + 3
+    Planner.Track(1414, wu, wv, GetTime() + 500)
+    local cut = shownWay.cut
+    check(cut and cut.leg == 1 and cut.index == 1 and math.abs(cut.t - 0.5) < 0.1 and math.abs(cut.gap - 3) < 1
+        and cut.pu == wu and cut.pv == wv, "walking along it: where along the line the player is (the cut)")
+    local camera = Canvas.camera
+    local was = { camera.map, camera.u, camera.v, camera.k }
+    camera:Show(1414, wu, wv)
+    Canvas.Layout()
+    local view = Canvas.view
+    local hx, hy = (wu - view.u) * view.k, (wv - view.v) * view.k
+    local headed, behind = false, false
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Line" and widget._shown and widget._start then
+            if near(widget._start[1], hx) and near(widget._start[2], hy) then headed = true end
+            if near(widget._start[1], (first.u - view.u) * view.k) and near(widget._start[2], (first.v - view.v) * view.k) then
+                behind = true
+            end
+        end
+    end
+    check(Canvas.Laid() and headed and not behind, "the line drawn from the player's arrow, nothing of it behind them")
+    camera:Show(was[1], was[2], was[3], was[4])
+    Canvas.Layout()
+    local before = shownWay
+    player.x, player.y = (wu + 12000) / 24000, (20000 - (wv - 60)) / 40000
+    Planner.Track(1414, wu, wv - 60, GetTime() + 520)
+    Frames(8)
+    check(shownWay ~= before and shownWay and near(shownWay.legs[1].points[1].v, wv - 60),
+        "off the line by more than Planner.OFF yards: planned again from where the player is")
+    IsIndoors = indoors
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
+-- Journeys: a pin nobody can walk to still gets its line (as near as one walks, then straight); across three planes
+-- (the isle, the Eastern Kingdoms, Kalimdor), by the hearthstone or the zeppelin, then the boat; a flight over two
+-- flight points one leg; a new pin while aboard a boat the plan did not have: planned from where it lands.
+;(function()
+    local s = Walk.SAMPLE
+    local function Pin(map, x, y)
+        waypoint = { uiMapID = map, position = CreateVector2D(x, y) }
+        W.Fire("USER_WAYPOINT_UPDATED")
+        W.Wait(0)
+        Frames(8)
+        return shownWay and shownWay.legs or {}
+    end
+    local function Kinds(legs)
+        local list = {}
+        for index, leg in ipairs(legs) do list[index] = leg.kind end
+        return table.concat(list, " ")
+    end
+    -- In the corner of tile 3104 nobody can walk to (region 7), 25 yards past the east hall: to the hall's edge, then
+    -- straight to it.
+    local legs = Pin(1429, (244 * s + 1000) / 2000, (-8500 - (-8533.33 - 252 * s)) / 1500)
+    local walk = legs[1]
+    local points = walk and walk.points or {}
+    local edge = points[#points - 1]
+    check(#legs == 1 and walk.kind == "walk" and near(points[1].u, 500) and edge and math.abs((-8533.33 - edge.v) / s - 240) < 0.1
+        and near(points[#points].v, -8533.33 - 252 * s), "a pin nobody can walk to: as near as one walks, then straight to it")
+    -- From the isle to Kalimdor: the hearthstone home to the Eastern Kingdoms, on foot to the boat, the boat, on foot;
+    -- without it, the zeppelin to the Eastern Kingdoms first.
+    player.map, player.x, player.y = 2521, 0.5, 0.4
+    legs = Pin(1414, 0.875, 0.325)
+    check(Kinds(legs) == "hearth walk boat walk" and legs[1].points[2].map == 1415 and legs[3].points[#legs[3].points].map == 1414,
+        "from the isle to Kalimdor: the hearthstone to a third plane, the Eastern Kingdoms, then the boat")
+    -- Its line from one plane onto another: where it begins, the player is on it; brought home, on it there.
+    local planned = shownWay
+    Planner.Track(2521, 0, 0, GetTime() + 600)
+    Frames(8)
+    local cut = shownWay and shownWay.cut
+    check(shownWay == planned and cut.leg == 1 and cut.gap < 1, "where the hearthstone's line begins: on it, no new plan")
+    Planner.Track(1415, 0, -9250, GetTime() + 610)
+    Frames(8)
+    check(shownWay == planned and cut.gap < 1 and (cut.leg == 2 or cut.t == 1),
+        "brought home by it, on the other plane: on the line there, no new plan")
+    local count = C_Item.GetItemCount
+    C_Item.GetItemCount = function() return 0 end
+    Planner.Update()
+    Frames(8)
+    legs = shownWay and shownWay.legs or {}
+    check(Kinds(legs) == "walk zeppelin walk boat walk" and legs[2].points[#legs[2].points].map == 1415,
+        "without the hearthstone: the zeppelin to the Eastern Kingdoms, on foot to the boat, the boat")
+    C_Item.GetItemCount = count
+    -- Two flights one after the other (Alpha to Beta to Gamma, the set's flights 5 and 6): one leg, along both ways.
+    local nodes = C_TaxiMap.GetTaxiNodesForMap
+    C_TaxiMap.GetTaxiNodesForMap = function(map)
+        if map ~= 1415 then return {} end
+        return { { nodeID = 20, name = "Alpha", position = CreateVector2D(0.5, 0.2), faction = 0 },
+                 { nodeID = 21, name = "Beta", position = CreateVector2D(0.5, 0.15), faction = 0 },
+                 { nodeID = 22, name = "Gamma", position = CreateVector2D(0.375, 0.15), faction = 0 } }
+    end
+    local known = Core.Character(ns.name).flights
+    Core.Character(ns.name).flights = { [20] = true, [21] = true, [22] = true }
+    player.map, player.x, player.y = 1415, 0.5, 0.205
+    legs = Pin(1415, 0.375, 0.145)
+    local flight = legs[2]
+    check(Kinds(legs) == "walk flight walk" and #flight.points == 3 and near(flight.points[2].v, 1000) and near(flight.points[3].u, -1000),
+        "two flights one after the other: one leg along both their ways, taking off and landing once")
+    C_TaxiMap.GetTaxiNodesForMap, Core.Character(ns.name).flights = nodes, known
+    -- Aboard the boat (Core's Data.Trips found the ride), the plan without it: a pin on Kalimdor is planned from the
+    -- pier the boat comes to, its way on in front.
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    local d12 = math.sqrt(600 ^ 2 + 1550 ^ 2)
+    local left = W.serverStart + W.clock - 45 -- it left its dock 45 seconds ago: at full speed now
+    W.place = function()
+        local seconds = W.serverStart + W.clock - left
+        local sailed = Core.Data.Ships().SPEED ^ 2 / 2 + Core.Data.Ships().SPEED * (seconds - Core.Data.Ships().SPEED)
+        local f = math.min(1, sailed / d12)
+        return { -8600 + 600 * f, -450 - 1550 * f, 5, 0 }
+    end
+    for _ = 1, 6 do W.Wait(1) end
+    local trip = Core.Data.Trips():Now()
+    player.map, player.x, player.y = 1415, 0.6, 0.62
+    legs = Pin(1414, 0.875, 0.325)
+    local ride = legs[1]
+    local last = ride and ride.points[#ride.points]
+    check(trip and trip.kind == "boat" and Kinds(legs) == "boat walk" and ride.ship and last.map == 1414 and near(last.u, 9500)
+        and near(last.v, 6000) and near(legs[2].points[#legs[2].points].u, 9000),
+        "aboard a boat the plan did not have: its way on in front, planned from the pier it comes to")
+    W.place = nil
+    W.Wait(3)
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
 ns.Route.Show = show
+
 os.execute(("rm -rf '%s'"):format(routesFolder))
 
 -- (a function of its own: the main chunk has as many locals as Lua lets it)

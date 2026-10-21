@@ -10,14 +10,28 @@ local _, ns = ...
 --
 --      Walk.Ready()            the set is there (asked for, loaded soon, if not)
 --      Walk.Tile(key)          a tile's rectangles, unpacked the first time (the game's base64,
---                              deflate and CBOR); the last Walk.KEEP kept; nil without ground
+--                              deflate and CBOR); the Walk.KEEP asked for last kept; nil without ground
 --      Walk.Rect(tile, index)  a rectangle's column, row, width, height (samples), z, kind, region
---      Walk.Under(continent, u, v)   the rectangles under a point of a continent's plane
---      Walk.Nearest(continent, u, v, reach, region, kind)  the nearest rectangle within reach yards
 --      Walk.Box(tile, index)   a rectangle in the plane: its left, right, top, bottom
+--      Walk.Inside(tile, index, u, v), Walk.Gap(tile, index, u, v)   a point of the plane on it; how far from it
+--      Walk.Under(continent, u, v)   the rectangles under a point of a continent's plane
+--      Walk.Around(continent, u, v, reach, fn)   each rectangle within reach yards of a point
+--      Walk.Nearest(continent, u, v, reach, region, kind)  the nearest rectangle within reach yards
+--      Walk.Regions(continent, u, v, reach)   the regions of the floors under a point and around it
+--      Walk.Opening(tile, index, n), Walk.Openings(tile, index, fn)   a rectangle's openings
+--      Walk.Follow(continent, u, v, key, index, fromU, fromV)   the floor a walker has come to from the one before
+--      Walk.Floor(continent, u, v, indoors, reach, height)   the floor a walker stands on where it is not followed
 --
 --  A tile's samples run from its north west corner, 256 along a side (Walk.SAMPLE
 --  yards each); the plane's u grows east and v north (Coords.lua).
+--
+--  Floors lie one over the other (a cave under a hill, a building's storeys, a
+--  city in a mountain), and the game tells no height of the player (UnitPosition's
+--  is always 0). So the floor a walker stands on is followed as they go: from the
+--  rectangle they stood on through the openings nearest the way they went to the
+--  one that holds them now (Follow); where it cannot be, it is chosen (Floor): near
+--  the height they had, else outdoors the highest floor under them, indoors the
+--  lowest near them.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords = ns.Coords
@@ -27,12 +41,19 @@ ns.Walk = Walk
 Walk.FORMAT = 1
 Walk.SIDE = 256                    -- samples along a tile's side
 Walk.SAMPLE = Coords.TILE / Walk.SIDE
-Walk.KEEP = 48                     -- tiles kept unpacked: the oldest let go
+Walk.KEEP = 48                     -- tiles kept unpacked: the one asked for longest ago let go
 Walk.LAND, Walk.WATER = 1, 2
+Walk.FOLLOW = 64                   -- rectangles looked at, at most, for the floor a walker has come to
+Walk.STRIDE = 30                   -- yards from the walker those may lie
+Walk.ROOF = 6                      -- yards around a walker indoors whose floors may be theirs (their own may
+                                   -- be missing right under them: a storey above, a mountain over a city)
+Walk.RISE = 12                     -- yards a floor the walker cannot be followed onto may lie over or under the
+                                   -- one they stood on and still be theirs
 
 local Walking = Core.Data.Set("Walking")
-local open = {}  -- [tile key] = its tile, or false: no ground there
-local order = {} -- the keys unpacked, oldest first
+local open = {}   -- [tile key] = its tile, or false: no ground there
+local stamps = {} -- [tile key] = when it was last asked for (a count), while it is unpacked
+local kept, clock = 0, 0
 
 -- Whether the walking data can be read now; asked for when not (its pack loads soon after).
 function Walk.Ready()
@@ -58,7 +79,7 @@ local function Unpack(text)
 end
 
 -- An opening of a rectangle: { side, first, last, where, index }; side, first and last nil for one along the whole
--- edge the two share, worked out when first used (Walk.Openings: the neighbour's tile is unpacked by then).
+-- edge the two share, worked out when first used (Walk.Opening: the neighbour's tile is unpacked by then).
 local function Open(list, side, first, last, where, index)
     list[#list + 1] = { side, first, last, where, index }
 end
@@ -143,10 +164,30 @@ local function Read(tile, block)
     end
 end
 
--- A tile's rectangles and openings, unpacked; nil where it has no ground (or the data is not there yet).
+-- The tile asked for longest ago let go, once more than Walk.KEEP are unpacked.
+local function Trim()
+    while kept > Walk.KEEP do
+        local oldest, at
+        for key, stamp in pairs(stamps) do
+            if not at or stamp < at then oldest, at = key, stamp end
+        end
+        open[oldest], stamps[oldest] = nil, nil
+        kept = kept - 1
+    end
+end
+
+-- A tile's rectangles and openings, unpacked; nil where it has no ground (or the data is not there yet). Each ask
+-- keeps it among the last asked for, so the tiles a route and the player's place need stay. In a job of Core's
+-- scheduler (a plan, Planner.lua) an unpacking may end the frame's time: the job goes on in the next frame.
 function Walk.Tile(key)
     local tile = open[key]
-    if tile ~= nil then return tile or nil end
+    if tile ~= nil then
+        if tile then
+            clock = clock + 1
+            stamps[key] = clock
+        end
+        return tile or nil
+    end
     if not Walk.Ready() then return nil end
     local text = Walking:Get(key, "block")
     local block = text and Unpack(text)
@@ -161,11 +202,10 @@ function Walk.Tile(key)
     Read(tile, block)
     tile.left, tile.top = Coords.Corner(tile.column, tile.row)
     open[key] = tile
-    order[#order + 1] = key
-    if #order > Walk.KEEP then
-        local old = table.remove(order, 1)
-        open[old] = nil
-    end
+    clock, kept = clock + 1, kept + 1
+    stamps[key] = clock
+    Trim()
+    Core.Steps.Check()
     return tile
 end
 
@@ -181,6 +221,12 @@ function Walk.Box(tile, index)
     local column, row, width, height = Walk.Rect(tile, index)
     local s = Walk.SAMPLE
     return tile.left + column * s, tile.left + (column + width) * s, tile.top - row * s, tile.top - (row + height) * s
+end
+
+-- Whether a point of the plane lies on a rectangle (its edges count).
+function Walk.Inside(tile, index, u, v)
+    local left, right, top, bottom = Walk.Box(tile, index)
+    return u >= left and u <= right and v <= top and v >= bottom
 end
 
 -- The tile key of a point of a continent's plane (its continent's instance number, as the set keys them).
@@ -214,35 +260,55 @@ function Walk.Under(continent, u, v)
     return found
 end
 
--- The nearest rectangle within reach yards of a point (on its tile and the tiles around it that reach comes
--- into), and the nearest point of it; nil when none. region: only of that region; kind: only of that kind.
-function Walk.Nearest(continent, u, v, reach, region, kind)
-    local best, bestTile, bestIndex, bu, bv
+-- Each rectangle within reach yards of a point (on its tile and the tiles around it that reach comes into):
+-- fn(tile, index, nu, nv, gap), its nearest point to it and how far that is (0: under it). False from fn stops.
+function Walk.Around(continent, u, v, reach, fn)
     local key = Walk.Key(continent, u, v)
-    if not key then return nil end
+    if not key then return end
     local column, row = Coords.Tile(u, v)
+    local most = reach * reach
     for dr = -1, 1 do
         for dc = -1, 1 do
             local left, top = Coords.Corner(column + dc, row + dr)
             local nu = math.max(left, math.min(left + Coords.TILE, u))
             local nv = math.max(top - Coords.TILE, math.min(top, v))
-            local tile = (nu - u) ^ 2 + (nv - v) ^ 2 <= reach * reach and Walk.Tile(key + dr * 64 + dc)
+            local inside = column + dc >= 0 and column + dc < Coords.GRID and row + dr >= 0 and row + dr < Coords.GRID
+            local tile = inside and (nu - u) ^ 2 + (nv - v) ^ 2 <= most and Walk.Tile(key + dr * 64 + dc)
             if tile then
                 for index = 1, tile.count do
-                    if (not region or tile.region[index] == region) and (not kind or tile.kind[index] == kind) then
-                        local left, right, top, bottom = Walk.Box(tile, index)
-                        local nu, nv = math.max(left, math.min(right, u)), math.max(bottom, math.min(top, v))
-                        local gap = (nu - u) ^ 2 + (nv - v) ^ 2
-                        if gap <= reach * reach and (not best or gap < best) then
-                            best, bestTile, bestIndex, bu, bv = gap, tile, index, nu, nv
-                        end
-                    end
+                    local l, r, t, b = Walk.Box(tile, index)
+                    local pu, pv = math.max(l, math.min(r, u)), math.max(b, math.min(t, v))
+                    local gap = (pu - u) ^ 2 + (pv - v) ^ 2
+                    if gap <= most and fn(tile, index, pu, pv, math.sqrt(gap)) == false then return end
                 end
             end
         end
     end
+end
+
+-- The nearest rectangle within reach yards of a point, and the nearest point of it; nil when none. region: only of
+-- that region; kind: only of that kind.
+function Walk.Nearest(continent, u, v, reach, region, kind)
+    local best, bestTile, bestIndex, bu, bv
+    Walk.Around(continent, u, v, reach, function(tile, index, nu, nv, gap)
+        if (not region or tile.region[index] == region) and (not kind or tile.kind[index] == kind)
+            and (not best or gap < best) then
+            best, bestTile, bestIndex, bu, bv = gap, tile, index, nu, nv
+        end
+    end)
     if not best then return nil end
     return bestTile, bestIndex, bu, bv
+end
+
+-- The regions of the floors under a point and within reach yards of it: { [region] = true }, nil when there are none
+-- (a place nobody can walk to, or no data there).
+function Walk.Regions(continent, u, v, reach)
+    local regions
+    Walk.Around(continent, u, v, reach, function(tile, index)
+        regions = regions or {}
+        regions[tile.region[index]] = true
+    end)
+    return regions
 end
 
 -- The first and last sample of the edge two rectangles share on a side of a (b on the tile dr, dc tiles away, on
@@ -270,29 +336,38 @@ local function Side(tile, index, otherIndex)
     return 3
 end
 
--- A rectangle's openings: fn(side, first, last, tile, index) for each, the neighbour's tile unpacked (an opening
--- into a tile not there is passed over). first and last count along the side on the rectangle's own tile.
+-- A rectangle's opening n (1 to #tile.opens[index]): its side, the first and last sample along it (on the
+-- rectangle's own tile), the neighbour's tile (unpacked) and index; nil for one into a tile that is not there, or
+-- that shares no edge. Asked for one by one, so a search makes no function for each rectangle it looks at.
 local STEP = { [0] = -64, [1] = 1, [2] = 64, [3] = -1 } -- the next tile north, east, south, west
 local OFFSET = { [0] = { -1, 0 }, [1] = { 0, 1 }, [2] = { 1, 0 }, [3] = { 0, -1 } } -- its rows, columns away
-function Walk.Openings(tile, index, fn)
-    for _, opening in ipairs(tile.opens[index]) do
-        local side, first, last, where, other = opening[1], opening[2], opening[3], opening[4], opening[5]
-        local next = tile
-        if where > 0 then next = Walk.Tile(tile.key + STEP[where - 1]) end
-        if next and other <= next.count then
-            if not first then
-                local dr, dc = 0, 0
-                if where > 0 then
-                    side = where - 1
-                    dr, dc = OFFSET[side][1], OFFSET[side][2]
-                else
-                    side = Side(tile, index, other)
-                end
-                first, last = Shared(tile, index, next, other, side, dr, dc)
-                opening[1], opening[2], opening[3] = side, first, last
-            end
-            if first then fn(side, first, last, next, other) end
+function Walk.Opening(tile, index, n)
+    local opening = tile.opens[index][n]
+    local side, first, last, where, other = opening[1], opening[2], opening[3], opening[4], opening[5]
+    local next = tile
+    if where > 0 then next = Walk.Tile(tile.key + STEP[where - 1]) end
+    if not next or other > next.count then return nil end
+    if not first then
+        local dr, dc = 0, 0
+        if where > 0 then
+            side = where - 1
+            dr, dc = OFFSET[side][1], OFFSET[side][2]
+        else
+            side = Side(tile, index, other)
         end
+        first, last = Shared(tile, index, next, other, side, dr, dc)
+        if not first then return nil end
+        opening[1], opening[2], opening[3] = side, first, last
+    end
+    return side, first, last, next, other
+end
+
+-- A rectangle's openings: fn(side, first, last, tile, index) for each, the neighbour's tile unpacked (an opening
+-- into a tile not there is passed over). first and last count along the side on the rectangle's own tile.
+function Walk.Openings(tile, index, fn)
+    for n = 1, #tile.opens[index] do
+        local side, first, last, next, other = Walk.Opening(tile, index, n)
+        if side then fn(side, first, last, next, other) end
     end
 end
 
@@ -308,8 +383,113 @@ function Walk.Portal(tile, index, side, first, last)
     return u, tile.top - first * s, u, tile.top - (last + 1) * s
 end
 
+-- How far a point of the plane is from a rectangle (0 on it).
+function Walk.Gap(tile, index, u, v)
+    local left, right, top, bottom = Walk.Box(tile, index)
+    local du = u < left and left - u or u > right and u - right or 0
+    local dv = v > top and v - top or v < bottom and bottom - v or 0
+    return math.sqrt(du * du + dv * dv)
+end
+local Off = Walk.Gap
+
+-- How far a point is from a segment.
+local function ToSegment(u, v, au, av, bu, bv)
+    local du, dv = bu - au, bv - av
+    local length = du * du + dv * dv
+    local t = length > 0 and math.max(0, math.min(1, ((u - au) * du + (v - av) * dv) / length)) or 0
+    return math.sqrt((u - au - du * t) ^ 2 + (v - av - dv * t) ^ 2)
+end
+
+-- Which way a point lies of the line from p to q (> 0 left of it, < 0 right, 0 on it).
+local function Turn(pu, pv, qu, qv, ru, rv)
+    return (qu - pu) * (rv - pv) - (qv - pv) * (ru - pu)
+end
+
+-- How far two segments are from each other (0 where they cross).
+local function Apart(au, av, bu, bv, cu, cv, du, dv)
+    local d1, d2 = Turn(cu, cv, du, dv, au, av), Turn(cu, cv, du, dv, bu, bv)
+    local d3, d4 = Turn(au, av, bu, bv, cu, cv), Turn(au, av, bu, bv, du, dv)
+    if d1 * d2 <= 0 and d3 * d4 <= 0 and (d1 ~= 0 or d2 ~= 0) then return 0 end
+    return math.min(ToSegment(au, av, cu, cv, du, dv), ToSegment(bu, bv, cu, cv, du, dv),
+        ToSegment(cu, cv, au, av, bu, bv), ToSegment(du, dv, au, av, bu, bv))
+end
+
+-- The floor a walker stands on at a point (u, v), who stood on rectangle index of tile key at (fromU, fromV) before
+-- (Walk.Follow's last answer): that one while the point lies on it; else, of the rectangles its openings lead to (and
+-- theirs, at most Walk.FOLLOW of them, within Walk.STRIDE yards of the point), the one that holds the point through
+-- the openings nearest the way the walker went: the floors over and under the right one are reached through openings
+-- elsewhere (a cave's mouth is not the path up the hill over it). Gives its key and index; nil when none holds it (a
+-- jump down, the walker taken away, a place the data has no floor at).
+local tiles, numbers, costs, closed = {}, {}, {}, {} -- reused: asked for while the player moves
+local function Clean(size)
+    for n = 1, size do tiles[n], numbers[n], costs[n] = nil, nil, nil end
+end
+function Walk.Follow(continent, u, v, key, index, fromU, fromV)
+    local tile = Walk.Tile(key)
+    if not tile or index > tile.count then return nil end
+    if Walk.Inside(tile, index, u, v) then return key, index end
+    fromU, fromV = fromU or u, fromV or v
+    wipe(closed)
+    tiles[1], numbers[1], costs[1] = tile, index, 0
+    local size, looked = 1, 0
+    while size > 0 and looked < Walk.FOLLOW do
+        local at = 1
+        for n = 2, size do
+            if costs[n] < costs[at] then at = n end
+        end
+        local here, number, cost = tiles[at], numbers[at], costs[at]
+        tiles[at], numbers[at], costs[at] = tiles[size], numbers[size], costs[size]
+        tiles[size], numbers[size], costs[size] = nil, nil, nil
+        size = size - 1
+        local id = here.key * 65536 + number
+        if not closed[id] then
+            closed[id] = true
+            looked = looked + 1
+            if looked > 1 and Walk.Inside(here, number, u, v) then
+                Clean(size)
+                return here.key, number
+            end
+            for n = 1, #here.opens[number] do
+                local side, first, last, next, other = Walk.Opening(here, number, n)
+                if side and not closed[next.key * 65536 + other] and Off(next, other, u, v) <= Walk.STRIDE then
+                    local au, av, bu, bv = Walk.Portal(here, number, side, first, last)
+                    size = size + 1
+                    tiles[size], numbers[size] = next, other
+                    costs[size] = cost + Apart(au, av, bu, bv, fromU, fromV, u, v)
+                end
+            end
+        end
+    end
+    Clean(size)
+    return nil
+end
+
+-- The floor a walker stands on at a point when it cannot be followed from the one before. height: the height of the
+-- floor they stood on, where one is known: then the floor within Walk.ROOF yards nearest that height, if no more than
+-- Walk.RISE yards from it (none: nil; a gap in the data, likely, the walker cannot have left their height). Nothing
+-- known of before: of the floors under it, outdoors the highest (nothing over the walker but the sky); indoors the
+-- lowest within Walk.ROOF yards (inside a building or a cave: over the walker its upper storeys, the ground or the
+-- mountain); none there, the nearest within reach yards. Gives its tile, its index and the point of it nearest to the
+-- walker; nil when none.
+function Walk.Floor(continent, u, v, indoors, reach, height)
+    local best, bestIndex, bestZ, bu, bv
+    Walk.Around(continent, u, v, (indoors or height) and Walk.ROOF or 0, function(tile, index, nu, nv)
+        local z = tile.rects[index * 5] / 4
+        local better
+        if height then
+            better = math.abs(z - height) <= Walk.RISE and (not bestZ or math.abs(z - height) < math.abs(bestZ - height))
+        else
+            better = not bestZ or (indoors and z < bestZ) or (not indoors and z > bestZ)
+        end
+        if better then best, bestIndex, bestZ, bu, bv = tile, index, z, nu, nv end
+    end)
+    if best or height then return best, bestIndex, bu, bv end
+    return Walk.Nearest(continent, u, v, reach)
+end
+
 -- Every tile let go (the route is off, or a test begins).
 function Walk.Forget()
     wipe(open)
-    wipe(order)
+    wipe(stamps)
+    kept = 0
 end

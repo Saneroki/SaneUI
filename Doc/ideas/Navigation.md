@@ -921,6 +921,40 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
   length and the journey is chosen once more. Planned again when the pin changes, after a flight landed, when
   the player is `Planner.OFF` yards off the line (at most every `Planner.AGAIN` seconds), and when the walking
   data or the flights arrive. The setting *Route to the map pin* (on).
+- **Built (2026-10-21): routes from the player, on their floor, over every plane.** Saneroki: a route that goes
+  into a building or a cave and out again did not work, routes across the continents by tram, flight and ship not
+  well, and the line should always run from the player to the pin.
+  - **The floor:** the walking data holds floors one over the other (a cave under a hill, Ironforge under its
+    mountain, a building's storeys), and the game tells no height (`UnitPosition`'s third answer is always 0).
+    Every lookup took the first floor under a point: a way out of a cave could start on the hill over it, the
+    tram's entrance in Ironforge lay on the mountain (the city's floor lies a yard off it in the data), and a
+    place's region could come from the wrong floor, so that the planner ruled its walk out and drew no line at all. Now
+    the player's floor is followed as they go (`Walk.Follow`: from the rectangle they stood on through the openings
+    nearest the way they went, every quarter of a second while there is a pin) and chosen where it cannot be
+    (`Walk.Floor`: near the height they had; else outdoors the highest under them, indoors the lowest within 6
+    yards). The search starts on that floor and ends on any floor of its regions at the pin (*The walking data*,
+    *The search*). A place's regions are those of every floor under it and within 20 yards (a zeppelin's tower
+    and its foot); two places that share none are still a walk, 60 seconds dearer (a lift, a mesa: Thunder
+    Bluff's flight point, the towers of the zeppelins to Zephras Isle stand on regions of their own).
+  - **The line from the player:** where along it the player is (the cut) is found at every step of the canvas'
+    tracker, from where they were on (a part from one plane onto another, the hearthstone's, at its end on theirs);
+    the parts behind are not drawn, and a line runs from the arrow to it (`Route.Cut`).
+  - **Every plane:** the graph holds every plane's known flight points, docks, the tram and the hearthstone, so a
+    journey crosses a third plane where that is quickest (the hearthstone home, then a ship; Zephras Isle by way of
+    a continent). A flight point is two places, on the ground and in the air: a flight over many takes off and
+    lands once, and is one leg. Aboard a ship the plan does not have (Core's `Data.Trips`), a new pin is planned
+    from the pier of the dock it comes to; a ship's landing plans anew. The tram's wait is the time to its next
+    train where a ride taught its times (`Trips:TramNext`).
+  - **One job:** the journey and its walks are one job of Core's scheduler (a place's floors looked up only for a
+    walk that may still be part of a quicker journey, their regions kept since); Walk keeps the 48 tiles asked for
+    last.
+  - **Checked against the real data** (2026-10-21, the set *Walking* read outside the game): every dock's pier
+    (within 60 yards) and both of the tram's entrances share the main region of their continent within 20 yards;
+    the flight points that do not stand on mesas or where the data has no floor (Thunder Bluff, Freewind Post,
+    Aerie Peak) or in Mount Hyjal's own region. In Ironforge the walk from the flight master to the tram's entrance
+    is 327 yards through the city (it was 1,551 over the mountain: the entrance's own floor lies a yard off its
+    point, under the mountain's), and back alike; from south of the city the walk comes in by the gate at the
+    city's height. In Stormwind, from the flight master's platform down its ramp and through the streets.
 - **Built (2026-10-20): boats, zeppelins and the hearthstone.** What the game's tables give and what they do not:
   - **The ways** (`dev/tools/travel-data`, Core's set *Travel*, keyed by the game's TaxiPath ID like the flights):
     the transports' paths in the client's TaxiPath tables (no flight point at either end), each one way round as
@@ -975,9 +1009,9 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     drawn red, straight from entrance to entrance: the tunnel's own map (369) has no plane, so the game tells no
     place in it there and the line stays as it is until the player comes out at the other end.
   - **In the journey:** each dock a place of the graph, boarded and left at its pier (the floor of land nearest
-    where the ship stops), a way from every dock of a ship to every other; the graph spans the planes of the
-    player and the pin (a continent, or Zephras Isle: below), each place in its own plane, walks only within one
-    plane. The ship's leg
+    where the ship stops), a way from every dock of a ship to every other; the graph spans every plane (a
+    continent, or Zephras Isle: below; until 2026-10-21 only the player's and the pin's), each place in its own
+    plane, walks only within one plane. The ship's leg
     is drawn red from pier to pier along its way, across its leap; the line moves on to the next leg when the player
     is nearer it, and aboard a ship (past its dock, within `Planner.ABOARD` yards of its way) it is not planned
     anew; a new pin is then planned from where the ship lands.
@@ -1015,8 +1049,8 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     and the client the build installs into.
   - **Not yet:** which side's town a dock stands in is not in the client's tables (a town's guards are the
     server's), so a route may lead through the other side's harbour; Zephras Isle's painting (the Atlas); lifts
-    and portals (the lifts' motions are in the client, but not where they stand, nor where a portal leads); the
-    tram's real departures (a ride could teach them, as a ship's); a new route kept only when clearly better.
+    and portals (the lifts' motions are in the client, but not where they stand, nor where a portal leads: a place
+    one reaches by lift is a walk at a cost, `Planner.APART`); a new route kept only when clearly better.
 
 ### The walking data
 
@@ -1053,10 +1087,14 @@ judged on its heights smoothed over three samples, so its bumps make no specks.
 - **Region numbers** are given in the order of the tiles' keys (a run gives the same numbers again) and hold within
   one map: the planner and the search compare them only there, so the isle, made on its own, numbers from 1. Walks across a zone take
   20 to 65 ms of search, spread over frames by the scheduler.
-- **The search** (`Search.lua`): A* over the rectangles from the one under the start (or the nearest within 40
-  yards) to the one under the end in the same region (different regions: no walk, known at once); a step costs
-  the way from where a rectangle was entered to the nearest point of the opening, swimming twice; the line then
-  pulled straight through the openings passed, each drawn in 0.8 yards from its ends.
+- **The search** (`Search.lua`): A* over the rectangles from the floor the start stands on (the player's,
+  followed; else every floor under it and within 6 yards, each over the lowest at the cost of the climb up to it,
+  or the nearest within 40 yards) to any floor of the regions it starts in under the end or within 50 yards of it,
+  else the nearest within 500, what lies off the walking data drawn straight at six times its yards (2026-10-21;
+  before, the first floor under each end, and ends in different regions no walk at all); a step costs the way from
+  where a rectangle was entered to the nearest point of the opening, swimming twice, and each yard up two more
+  (the valleys and the roads: the data holds steep slopes as floors, so a walk into Ironforge went over its
+  mountain); the line then pulled straight through the openings passed, each drawn in 0.8 yards from its ends.
 - **Not yet:** the doodads (trees, fences, rocks) are not read: a line may cross a fence; one-way drops (a
   ledge one can jump down but not climb) are no way.
 

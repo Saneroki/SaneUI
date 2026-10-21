@@ -3,8 +3,55 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 215 (data in the game), 446 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 215 (data in the game), 468 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
+
+### Navigation: routes from the player, on their floor, over every plane (Saneroki, 2026-10-21)
+- At Saneroki's ask: a route into a building or a cave and out again did not work, routes across the continents by
+  tram, flight and ship not well, and the line should always run from the player to the pin.
+- **The floor** (`Walk.lua`, `Search.lua`): the walking data holds floors one over the other, and the game tells no
+  height (`UnitPosition`'s third answer is always 0). Every lookup took the first floor under a point (the hill over
+  a cave, Ironforge's mountain over its city), so a walk could start on the wrong floor and a place's region come
+  from it; the planner then ruled the walk out and drew no line at all. Now
+  `Walk.Follow` follows the player's floor through the openings nearest the way they went (a cave's mouth, not the
+  path up the hill over it), and `Walk.Floor` chooses one where that cannot be done (near the height they had, within
+  `Walk.RISE`; else outdoors the highest under them, indoors the lowest within `Walk.ROOF`). New beside them:
+  `Walk.Around`, `Walk.Regions`, `Walk.Inside`, `Walk.Gap` and `Walk.Opening` (the openings one by one: a search
+  makes no function for each rectangle). The search starts on the player's floor (else on every floor under the
+  start and within `Walk.ROOF`, each over the lowest at the cost of the climb up to it) and ends on any floor of its
+  regions under the end or within `Search.NEAR` (50 yards), else the nearest within `Search.FAR`; what lies off the
+  data is drawn straight at `Search.STRAIGHT` times its yards, so the line reaches the player and the pin
+  themselves; each yard up costs `Search.CLIMB` (2) yards more, so a walk keeps to the valleys and the roads (the
+  data holds steep slopes as floors: a walk into Ironforge went over its mountain). Its heap keeps each node's f as
+  it was put in. `Search.Start` went: the planner's job searches. On the real data (the set read outside the game):
+  Ironforge's flight master to the tram's entrance 327 yards through the city (1,551 over the mountain before; the
+  entrance's own floor lies a yard off its point, under the mountain's), and back alike; of 150 walks between
+  points at random around Stormwind and around Ironforge, 139 found in each (113 and 120 before), every one from its
+  start to its end itself (82 and 65 before).
+- **The line from the player** (`Planner.lua`, `Route.lua`): the plan's cut, where along the line the player is (of
+  the next `Planner.AHEAD` parts the first within `Planner.SLACK` yards of the nearest, never back; a part from one
+  plane onto another at its end on the player's), found at every step of the canvas' tracker; `Route.Cut` hides
+  what lies behind, draws the part the player is on from there, and a line from the player's arrow to it. Leaving
+  the line (`Planner.OFF`) is measured from the cut.
+- **Every plane** (`Planner.lua`): the journey's graph holds every plane's known flight points, docks, the tram and
+  the hearthstone (it held the player's and the pin's planes only), so the hearthstone home and then a ship, or
+  Zephras Isle by way of a continent, are found. A flight point is a place on the ground and one in the air: a
+  flight over many takes off and lands once (`Planner.BOARD`), and its flights are one step and one leg. Places that
+  share no region (of the floors under them and within `Planner.REGION` yards) are a walk `Planner.APART` seconds
+  dearer instead of none (Thunder Bluff's flight point, the zeppelins' towers to Zephras Isle stand on regions of
+  their own). Aboard a ship the plan does not have (Core's `Data.Trips`, `Riding`), a new pin is planned from the pier
+  of its next dock; a ship's landing plans anew. The tram's wait is the time to its next train where a ride taught
+  its times (`Trips:TramNext`). Piers within `Planner.PIER` 60 yards (at 40, three docks had none).
+- **One job** (`Planner.lua`): the journey and its walks are one job of Core's scheduler, which a new pin stops; the
+  line of the pin before goes at once. A place's regions are looked up only for a walk that may still be part of a
+  quicker journey (unpacking no tiles of places nobody walks to), kept since. `Walk.Tile` keeps the `Walk.KEEP` tiles
+  asked for last (it let the oldest unpacked go, the ones the next plan needed among them), and in a job an
+  unpacking may end the job's frame.
+- Tests: Navigation 468 checks (floors one over the other chosen, followed by the cave's mouth and by the hill's
+  path, a floor near the height one had; a walk from the player's floor, from the shortest of its floors; a pin on a
+  mesa, one beside the data, a start beside it; the planner from a cave; the cut and the line from the player's
+  arrow; a leg from one plane onto another; a pin nobody can walk to; three planes by the hearthstone and by the
+  zeppelin; two flights one leg; a pin set aboard a ship). A `/reload` takes it in.
 
 ### A review of the whole addon: bugs, hardening, speed (Saneroki, 2026-10-21)
 Every module and Core read through for bugs, the error doors, secret values, taint, fights, saved shapes and work done
