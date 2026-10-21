@@ -60,10 +60,18 @@ check("words: the far level's parts", sorted(words["far"]), ["images", "last", "
 check("words: the middle level is pencil on parchment, straight from above",
       all(w in words["middle"]["look"] for w in ("pencil", "parchment", "straight from above")), True)
 check("words: both levels are edits of image 1 (they keep its layout)",
-      all("Make image 1 look like" in words[level]["look"] and "never where or what anything is" in words[level]["look"]
-          for level in ("middle", "far")), True)
-check("words: the far level is photorealistic and keeps image 1's layout",
-      all(w in words["far"]["look"] for w in ("photorealistic", "image 1", "image 2")), True)
+      all("Make image 1 look like" in words[level]["look"] for level in ("middle", "far")), True)
+check("words: the middle level keeps its layout exactly", "never where or what anything is" in words["middle"]["look"], True)
+check("words: the far level a photograph from a plane, its layout kept roughly",
+      all(w in words["far"]["look"] for w in ("photograph", "plane", "Keep its layout", "roughly", "image 2")), True)
+plan = Image.new("RGB", (900, 600), (90, 90, 90))
+ImageDraw.Draw(plan).rectangle((0, 0, 899, 59), fill=(255, 0, 0))       # the padding's north edge: the view's top
+ImageDraw.Draw(plan).rectangle((150, 470, 749, 499), fill=(0, 0, 255))  # just inside the frame's south edge
+view = ml.plane_view(plan, (400, 300))
+check("plane view: its size", view.size, (400, 300))
+check("plane view: the far edge is the plan's north", view.getpixel((200, 2))[0] > 200, True)
+check("plane view: the frame's south edge is near its bottom", view.getpixel((200, 295))[2] > 150, True)
+check("padded: a box grown on each side", ml.padded((100, 0, 100, 0), 0.25), (125.0, -25.0, 125.0, -25.0))
 brief = {"biome": "An old gold mine", "buildings": "Timber.", "places": "Tunnels.", "colours": "brown",
          "atmosphere": "Warm lantern light. Dust."}
 middle = ml.words_of("middle", words, brief, True)

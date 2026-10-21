@@ -26,7 +26,7 @@ world, that all three share, so they lie over each other exactly.
 | --- | --- | --- | --- |
 | **Close** | the terrain, pixel-exact: every rock, wall, building, shore and walkable spot where the game has it | a photorealistic satellite photograph of exactly that ground, seen straight down | the game's terrain (an instance's own, with its buildings' indoor maps laid over it), repainted with the Atlas' words (`dev/imagegen/maps/atlas.toml`) |
 | **Middle** | a zone, or one floor of an instance: a top-down map in the manner of the game's own maps, exactly over the terrain | drawn by hand in graphite pencil on the interface's parchment, straight from above | the terrain plan of the frame and the game's map art of it in the same frame (`levels.toml`, `[middle]`) |
-| **Far** | a zone or an instance as a whole, its layout kept, its major places where they lie | a photorealistic aerial render, nearly straight down, realistic fantasy | the terrain plan, the middle level's drawing and a piece of the close level (`levels.toml`, `[far]`) |
+| **Far** | a zone or an instance as a whole, its layout kept roughly, its major places where they lie | a photograph of the landscape from a plane high above, at an angle, realistic fantasy | the terrain plan warped into that view and a piece of the close level (`levels.toml`, `[far]`) |
 
 ### Close: pixel-exact
 
@@ -57,19 +57,22 @@ world, that all three share, so they lie over each other exactly.
   graphite pencil on the cream parchment; clean outlines, light hatching on rock, cliffs and ground nobody walks,
   fine ripples on water, small careful pencil drawings of trees, houses, towers and props where they stand; the
   walkable ground clean paper. Graphite grey only.
-- **Its pictures:** image 1 the terrain plan of the frame (the exact outlines), image 2 the game's own map art of
-  it in the same frame (what a map of it shows; a dungeon floor's title banner painted over), image 3 a piece of the
-  parchment. Where the game has no map of the place, another place's map gives only its manner.
+- **Its pictures:** image 1 the game's own map art of it in the frame, which it is drawn again from (its frame,
+  title banner and ornaments made parchment first), image 2 the terrain plan of the same frame (the exact outlines),
+  image 3 a piece of the parchment. Where the game has no map of the place, image 1 is the terrain plan and another
+  place's map gives only its manner. It takes no words of the brief: they drew what they named.
 
-### Far: photorealistic, its layout kept
+### Far: a photograph from a plane, its layout kept roughly
 
-- **A photorealistic aerial render** of the place, nearly straight down, in natural light: a realistic fantasy
-  world, not a map and not concept art. Strict, though less precise than the other two: every coast, river, lake,
-  mountain, forest edge, road and wall where the terrain has it, and the major places (cities, towns, landmarks,
-  an instance's halls and rooms) where the middle level draws them, at their sizes; the biome, mood, atmosphere and
-  lore of its brief; the borders of zones and continents and the walls of an instance where they are.
-- **Its pictures:** image 1 the terrain plan, image 2 the middle level's drawing (an instance's floors laid where
-  they lie), image 3 a piece of the close level's painting (how the ground looks). So it is painted after them.
+- **A photograph of the landscape from a plane high above, at an angle** (Saneroki, 2026-10-21: "a perspective
+  plane view on the landscape"), in natural light: a realistic fantasy world, not a map and not concept art.
+- **Its layout kept roughly, with some leeway,** so it fits the middle and close levels: lakes, rivers, coasts,
+  mountains, cliffs and the ground nobody can cross, roads, towns and landmarks where the terrain has them, at their
+  sizes; the biome, mood, atmosphere and lore of its brief; the borders of zones and the walls of an instance.
+- **Its pictures:** image 1 the terrain plan of the frame and around it, warped into the plane's view (its near
+  edge the frame's south edge, the land ahead widening), so the places keep their rough positions; image 2 a piece
+  of the close level's painting (how the ground looks). Painted from image 1 a little under full strength. Not the
+  middle level's drawing: given as a picture, its pencil symbols were stamped on the land.
 - **The world:** both continents always together (no view of one continent alone); each zone clearly sectioned from
   the next, the borders softened where nobody walks. What stands there in the lore is shown, not the game's open
   view: Teldrassil the world tree itself, Ironforge the full mountain.

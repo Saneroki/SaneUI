@@ -349,11 +349,18 @@ lists, from inputs of its own:
     another dungeon's map gives only its manner).
   - **Close:** the Atlas' own squares, words, water and lava check (up to three seeds) and colour pass, by its own
     code (`dev/tools/atlas`'s `Game`, `words`, `check`, `colour_of`), an instance's map in place of a continent.
-  - **Middle** (`qwen21-edit-3ref`, each picture at its own size): image 1 the terrain plan, image 2 the game's
-    map art, image 3 a piece of the house parchment; a top-down map in the game's manner, in pencil, exactly over
-    the terrain.
-  - **Far** (`qwen21-edit-3ref`): image 1 the terrain plan, image 2 the middle drawing (an instance's floors laid
-    where they lie), image 3 a piece of the close level; a photorealistic aerial render, nearly straight down.
+  - **Middle** (`qwen21-edit-3ref-i2i`: image to image, starting from image 1 itself): image 1 the game's map
+    art, image 2 the terrain plan, image 3 a piece of the house parchment (where the game has no map, image 1 the
+    plan and image 2 another place's map for its manner); edit words, no brief; strength 0.94, then 0.96, 0.98
+    (at 0.8 and 0.88 the Deadmines' map stayed the game's coloured map, labels and all).
+  - **Far** (`qwen21-edit-2ref-i2i`, strength 0.95, 0.97, 0.985): image 1 the terrain plan of the frame and around
+    it warped into a view from a plane at an angle (`plane_view`), image 2 a piece of the close level; a photograph
+    of the landscape, its layout kept roughly. Learned on Westfall: given the middle drawing as a picture, the model
+    stamped its pencil symbols on the land; from the straight-down plan at 0.9 and 0.95 it stayed that plan; as a
+    whole edit from nothing it painted a fine coast but a closer view than the frame. Its outlines must share FAR
+    (0.3) with the plane view.
+  - **Memory:** the pictures are read for the words at about 1024 pixels (`resolution`); the painting keeps image
+    1's 2048. Three pictures read at 2048 by the vision-language encoder took ComfyUI past the computer's memory.
   - **Checks**, a painting that fails painted again, three tries at most: its outlines against image 1's (the
     normalised correlation of their edges at 256 pixels across, against how well the game's own map agrees with
     the terrain: a middle level must reach three quarters of it, a far one under half), and the vision model.

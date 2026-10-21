@@ -15,13 +15,15 @@ other exactly.
            frame, image 2 the game's map art of it in the same frame (a zone's full map; an instance floor's map,
            its title banner painted over; where the game has none, another place's map for its manner only),
            image 3 the parchment. A zone in one picture, an instance floor by floor.
-  far      a photorealistic aerial render, nearly straight down, its layout kept (levels.toml, [far]): image 1 the
-           terrain plan, image 2 the middle level's drawing (an instance's floors laid where they lie), image 3 a
-           piece of the close level's painting. A zone or an instance in one picture.
+  far      a photograph of the landscape from a plane high above, at an angle, its layout kept roughly
+           (levels.toml, [far]): image 1 the terrain plan of the frame and around it warped into that view
+           (plane_view), image 2 a piece of the close level's painting; painted from image 1 a little under full
+           strength. A zone or an instance in one picture. (Not the middle level's drawing: it was copied.)
 
 Each middle and far painting is checked twice and painted again with the next seed until one passes, TRIES at most:
-  outlines  how well its edges agree with image 1's (their normalised correlation at OUTLINE pixels), against how
-            well the game's own map agrees with the terrain (a middle level must reach MIDDLE of that, a far one FAR);
+  outlines  how well its edges agree with the terrain's (their normalised correlation at OUTLINE pixels): a middle
+            level against how well the game's own map agrees with it (MIDDLE of that), a far one with its plane view
+            (FAR, rough);
   looks     the vision model (qwen3vl-look) answers in JSON: writing in it; a pencil map on paper seen from above
             (middle); a real place, not a map or panels, seen from above, of the brief's kind (far).
 
@@ -29,12 +31,14 @@ Usage:
   dev/tools/map-layers inputs [--zones UIMAPS] [--instances MAPS] [--continents DIR --tables DIR --minimap DIR]
                               [--instance-files DIR] [--mapart DIR] [--out DIR]
   dev/tools/map-layers paint [--levels close,middle,far] [--only NAMES] [--out DIR]
+  dev/tools/map-layers join [--out DIR]
   dev/tools/map-layers contact [--out DIR]
   dev/tools/map-layers status [--out DIR]
 
   inputs    the subjects' frames, terrain plans and the game's map art, remembered in the run's state.json (the
             game's folders default to the Atlas' run's); --zones 1436,1446 --instances 36,209,3065
   paint     the levels in order (the far level needs the other two), what is missing only; --only zone-1436,...
+  join      every subject's close squares joined again, cut along the line where neighbours differ least
   contact   contact.jpg: a row per subject: image 1, the game's map, close, middle and far
   status    its first line: "<made> of <all> paintings made"
 
@@ -96,10 +100,13 @@ ADDRESS = "127.0.0.1:8188"
 TILE, GRID = ta.TILE, ta.GRID
 CENTRE = GRID / 2 * TILE        # yards from a map's middle to its edges
 PER_YARD = at.PX / TILE         # the close level's pixels a yard (the Atlas')
-LAYERS = "qwen21-edit-3ref-i2i" # the middle and far levels: three pictures, the full model, from image 1 itself
-STRENGTH = {"middle": (0.94, 0.96, 0.98), "far": (0.9, 0.95, 1.0)}   # the denoise of each try: the first the
-                                # strictest; a try that still shows writing or the wrong look goes further from image 1
-                                # (the Deadmines' map at 0.8 and 0.88 stayed the game's coloured map, its labels in it)
+LAYERS = {"middle": "qwen21-edit-3ref-i2i",   # three pictures, the full model, from image 1 itself
+          "far": "qwen21-edit-2ref-i2i"}    # two pictures, from the plane view of the plan itself
+STRENGTH = {"middle": (0.94, 0.96, 0.98), "far": (0.95, 0.97, 0.985)}   # the denoise of each try: the middle level
+                                # from image 1 itself, a try that still shows writing going further from it (the
+                                # Deadmines' map at 0.8 and 0.88 stayed the game's coloured map, labels and all); the far
+                                # level a whole edit, its layout kept by its words (started from the terrain plan at 0.9
+                                # and 0.95, Westfall stayed that plan)
 LOOK = "qwen3vl-look"           # the vision model's answers
 SIDE = 2048                     # a middle or far painting's longer side
 PAPER_SIDE = 768                # image 3 of the middle level: a piece of the parchment, this large
@@ -107,9 +114,12 @@ CLOSE_SIDE = 1024               # image 3 of the far level: a piece of the close
 SQUARES = 2                     # a zone's close sample: so many squares a side around its main place
 MOST_SQUARES = 6                # an instance's close level: at most so many squares
 TRIES = 3                       # middle and far paintings of a subject at most (STRENGTH has one a try)
+READ = 1024                     # the pictures are read for the words at about this size; the painting starts from
+                                # image 1 at its own (2048): three at 2048 took ComfyUI past the computer's memory
 OUTLINE = 256                   # pixels across at which outlines are compared
-MIDDLE, FAR = 0.8, 0.6          # of the game's own map's agreement with the terrain: what a painting must reach
-                                # (a faithful pencil copy of the Deadmines' map reached 0.84 of it)
+MIDDLE = 0.8                    # of the game's own map's agreement with the terrain: what a middle painting must
+                                # reach (a faithful pencil copy of the Deadmines' map reached 0.84 of it)
+FAR = 0.3                       # what a far painting's outlines must share with its plane view: rough, some leeway
 FLOOR_FRAME = (0.05, 0.10, 0.95, 0.95)  # the map in an instance floor's art: around it its frame, title banner
 ZONE_FRAME = (0.025, 0.04, 0.975, 0.96)  # and ornaments, a zone's its border: made parchment (they stayed as a strip)
 STYLE_OF = {3065: (70, 1)}      # an instance without map art: whose map shows the manner (Uldaman's halls)
@@ -256,6 +266,36 @@ def framed(picture):
     return picture.resize((SIDE, height), Image.Resampling.LANCZOS)
 
 
+PLANE_PAD = 0.25                # the far level's plan reaches so far past the frame on each side, so land fills its view
+PLANE_FAR = 1.0                 # its far (north) edge spans the plan's whole width, padding and all; its near (south)
+                                # edge the frame's own width: a view from a plane, the land ahead widening
+
+
+def plane_view(plan, size):
+    """A top-down plan of the frame padded by PLANE_PAD seen from a plane at an angle (Saneroki, 2026-10-21: the far
+    level a perspective view of the landscape): its near edge is the frame's south edge across the picture's bottom,
+    its far edge the padded plan's north edge across its top, the ground between foreshortened as a perspective
+    shows it. The places keep their rough positions; the model makes it photographic."""
+    w, h = plan.size
+    inner_left, inner_right = w * PLANE_PAD / (1 + 2 * PLANE_PAD), w * (1 + PLANE_PAD) / (1 + 2 * PLANE_PAD)
+    near_y = h * (1 + PLANE_PAD) / (1 + 2 * PLANE_PAD)
+    spread = (w - PLANE_FAR * w) / 2
+    source = [(spread, 0), (w - spread, 0), (inner_right, near_y), (inner_left, near_y)]   # far left, far right, near
+    target = [(0, 0), (size[0], 0), (size[0], size[1]), (0, size[1])]                   # right, near left
+    rows = []
+    for (x, y), (u, v) in zip(source, target):   # output (u, v) to input (x, y): PIL's perspective data
+        rows.append([u, v, 1, 0, 0, 0, -x * u, -x * v])
+        rows.append([0, 0, 0, u, v, 1, -y * u, -y * v])
+    data = np.linalg.solve(np.array(rows, float), np.array([c for point in source for c in point], float))
+    return plan.transform(size, Image.Transform.PERSPECTIVE, tuple(data), Image.Resampling.BICUBIC)
+
+
+def padded(box, pad):
+    north, south, west, east = box
+    across, down = (west - east) * pad, (north - south) * pad
+    return north + down, south - down, west + across, east - across
+
+
 def tiles_of(path):
     """{tile key: minimap file ID} of a tiles.jsonl (the instances') or the master's set Tiles."""
     found = {}
@@ -372,9 +412,11 @@ def look_words(level, brief):
                 '"from_above": true or false (seen straight from above, like a map)}')
     return ("Look at this picture. Answer with JSON only, no other words: "
             '{"writing": true or false (any letters, words, numbers or labels anywhere in it), '
-            '"map_or_drawing": true or false (a map, a plan or a drawing on paper, rather than a real-looking place), '
+            '"map_or_drawing": true or false (a drawn or painted map with map symbols, or a plan or drawing on paper; '
+            'an aerial photograph of a real-looking place is not a map), '
             '"panels": true or false (split into separate panels, frames or tiles rather than one picture), '
-            '"from_above": true or false (seen from high above, the whole place laid out below), '
+            '"from_above": true or false (a view from high above, from a plane or at an angle, the land laid out '
+            'below), '
             f'"is_it": true or false (is it the right kind of place: {brief["biome"]}; details may differ)' + "}")
 
 
@@ -475,6 +517,8 @@ def inputs(args):
             framed(world.picture(continent, box, SIDE)).save(folder / "ground.png")
             art = zone_art(uimap, tables, mapart)
             art.resize(Image.open(folder / "ground.png").size, Image.Resampling.LANCZOS).save(folder / "art.png")
+            plane_view(world.picture(continent, padded(box, PLANE_PAD), round(SIDE * 1.5)),
+                       Image.open(folder / "ground.png").size).save(folder / "far-plan.png")
             subjects.append({"name": name, "kind": "zone", "key": uimap, "map": continent, "box": box,
                              "centre": centre, "title": zone_briefs[str(uimap)]["name"]})
             print(f"{name}: {zone_briefs[str(uimap)]['name']}, frame {[round(v) for v in box]}")
@@ -519,6 +563,8 @@ def inputs(args):
             folder = out / name
             folder.mkdir(parents=True, exist_ok=True)
             framed(ground.picture(key, union, SIDE)).save(folder / "ground.png")
+            plane_view(ground.picture(key, padded(union, PLANE_PAD), round(SIDE * 1.5)),
+                       Image.open(folder / "ground.png").size).save(folder / "far-plan.png")
             subjects.append({"name": name, "kind": "instance", "key": key, "map": key, "box": union,
                              "floors": records, "title": dungeon_briefs[str(key)]["name"]})
             print(f"{name}: {dungeon_briefs[str(key)]['name']}, {len(records)} floors, {len(indoors.parts)} indoor parts")
@@ -559,8 +605,12 @@ def close(server, subject, state, out):
         indoors = Indoors(files, Path(paths["tables"]), subject["key"])
         x0, y0 = pixel(north, west, PER_YARD)
         x1, y1 = pixel(south, east, PER_YARD)
-        squares = [(i, j) for j in range(int(y0 // at.STEP), int(y1 // at.STEP) + 1)
-                   for i in range(int(x0 // at.STEP), int(x1 // at.STEP) + 1)][:MOST_SQUARES]
+        columns = list(range(int(x0 // at.STEP), int(x1 // at.STEP) + 1))
+        rows = list(range(int(y0 // at.STEP), int(y1 // at.STEP) + 1))
+        while len(columns) * len(rows) > MOST_SQUARES:   # the middle of a large instance, a rectangle kept
+            longer = columns if len(columns) >= len(rows) else rows
+            longer.pop(0 if len(longer) % 2 == 0 else -1)
+        squares = [(i, j) for j in rows for i in columns]
     checks = checks_of(folder)
     for i, j in squares:
         target = folder / "close" / f"{i}-{j}.png"
@@ -593,11 +643,27 @@ def close(server, subject, state, out):
         checks[f"close-{i}-{j}"] = {"seed": seed, "water": result, "passes": at.passes(result), "words": prompt}
         save_checks(folder, checks)
         print(f"{subject['name']} close {i},{j}: seed {seed}, water {result}", flush=True)
-    xs, ys = [i for i, _ in squares], [j for _, j in squares]
-    joined = Image.new("RGB", ((max(xs) - min(xs)) * at.STEP + at.SQ, (max(ys) - min(ys)) * at.STEP + at.SQ))
-    for i, j in squares:
-        joined.paste(Image.open(folder / "close" / f"{i}-{j}.png"), ((i - min(xs)) * at.STEP, (j - min(ys)) * at.STEP))
-    joined.save(folder / "close.png")
+    join_close(folder)
+
+
+def join_close(folder):
+    """The close squares as one picture, joined as the Atlas joins its squares: each overlap cut along the line where
+    the two paintings differ least (at.join_two), rows first, then the rows."""
+    found = {tuple(int(n) for n in p.stem.split("-")): p for p in (folder / "close").glob("*.png")
+             if re.fullmatch(r"\d+-\d+", p.stem)}
+    columns, rows = sorted({i for i, _ in found}), sorted({j for _, j in found})
+    lines = []
+    for j in rows:
+        line = None
+        for i in columns:
+            path = found.get((i, j)) or folder / "close" / f"{i}-{j}-ground.png"
+            square = np.asarray(Image.open(path).convert("RGB"))
+            line = square if line is None else at.join_two(line, square, False)
+        lines.append(line)
+    whole = lines[0].transpose(1, 0, 2)
+    for line in lines[1:]:
+        whole = at.join_two(whole, line.transpose(1, 0, 2), False)
+    Image.fromarray(whole.transpose(1, 0, 2)).save(folder / "close.png")
 
 
 def paint_level(server, level, folder, refs, prompt, brief, reference, compare=None):
@@ -607,17 +673,18 @@ def paint_level(server, level, folder, refs, prompt, brief, reference, compare=N
     ground = Image.open(compare or refs[0])
     best = None
     for seed in range(1, TRIES + 1):
-        settings = {"resolution": 0, "denoise": STRENGTH[level][seed - 1]}   # each picture at its own size
+        settings = {"resolution": READ, "denoise": STRENGTH[level][seed - 1], "width": ground.width // 16 * 16,
+                    "height": ground.height // 16 * 16}
         target = folder / f"{level}-{seed}.png"
         if target.is_file() and f"{level}-{seed}" in checks:
             painting = Image.open(target).convert("RGB")
         else:
-            painting, _ = run_one(server, LAYERS, refs, prompt, f"{level}-{folder.name}", seed, settings)
+            painting, _ = run_one(server, LAYERS[level], refs, prompt, f"{level}-{folder.name}", seed, settings)
             painting.save(target)
             match = agreement(painting, ground)
             _, text = run_one(server, LOOK, [target], look_words(level, brief), f"look-{folder.name}", 1, {})
             seen_ok, seen = verdict(level, text)
-            bar = (MIDDLE if level == "middle" else FAR) * reference
+            bar = MIDDLE * reference if level == "middle" else FAR
             checks[f"{level}-{seed}"] = {"outlines": round(match, 3), "bar": round(bar, 3), "seen": seen,
                                          "strength": settings["denoise"], "passes": bool(seen_ok and match >= bar),
                                          "words": prompt}
@@ -664,28 +731,22 @@ def paint(args):
                 paint_level(server, "middle", fold, refs, words_of("middle", words, here, instance), here,
                             max(reference, 0.15), compare=fold / "ground.png")
         if "far" in args.levels and not (folder / "far.png").is_file():
-            middle = folder / "far-middle.png"   # image 2: the middle drawings laid where they lie
-            ground = Image.open(folder / "ground.png")
-            if instance and len(frames) > 1:
-                canvas = Image.new("RGB", ground.size, (226, 214, 186))
-                north, south, west, east = subject["box"]
-                k = ground.width / (west - east)
-                for frame in frames:
-                    f_north, f_south, f_west, f_east = frame["box"]
-                    drawing = Image.open(out / frame["name"] / "middle.png").resize(
-                        (round((f_west - f_east) * k), round((f_north - f_south) * k)))
-                    canvas.paste(drawing, (round((west - f_west) * k), round((north - f_north) * k)))
-                canvas.save(middle)
-            else:
-                shutil.copyfile(out / frames[0]["name"] / "middle.png", middle)
-            close_piece = folder / "far-close.png"
+            close_piece = folder / "far-close.png"   # image 2: a piece of the close level, how the ground looks
             with Image.open(folder / "close.png") as joined:
                 w, h = joined.size
                 side = min(CLOSE_SIDE, w, h)
                 joined.crop(((w - side) // 2, (h - side) // 2, (w + side) // 2, (h + side) // 2)).save(close_piece)
-            reference = agreement(Image.open(middle), ground)
-            paint_level(server, "far", folder, [folder / "ground.png", middle, close_piece],
-                        words_of("far", words, brief, instance), brief, max(reference, 0.15))
+            paint_level(server, "far", folder, [folder / "far-plan.png", close_piece],
+                        words_of("far", words, brief, instance), brief, 1.0)
+
+
+def join(args):
+    """Joins every subject's close squares again (after a change to the joining); paints nothing."""
+    out = Path(args.out)
+    for subject in load_state(out)["subjects"]:
+        if (out / subject["name"] / "close").is_dir() and any((out / subject["name"] / "close").glob("*-*.png")):
+            join_close(out / subject["name"])
+            print(f"{subject['name']}: close.png joined")
 
 
 def contact(args):
@@ -725,7 +786,7 @@ def status(args):
 
 def main():
     parser = argparse.ArgumentParser(description="The three levels of Navigation's painted maps.")
-    parser.add_argument("command", choices=("inputs", "paint", "contact", "status"))
+    parser.add_argument("command", choices=("inputs", "paint", "join", "contact", "status"))
     numbers = lambda text: [int(k) for k in text.split(",") if k]  # noqa: E731
     parser.add_argument("--zones", type=numbers, default=[])
     parser.add_argument("--instances", type=numbers, default=[])
@@ -738,7 +799,7 @@ def main():
     parser.add_argument("--only", type=lambda text: set(text.split(",")))
     parser.add_argument("--out", default=str(OUT))
     args = parser.parse_args()
-    {"inputs": inputs, "paint": paint, "contact": contact, "status": status}[args.command](args)
+    {"inputs": inputs, "paint": paint, "join": join, "contact": contact, "status": status}[args.command](args)
 
 
 if __name__ == "__main__":

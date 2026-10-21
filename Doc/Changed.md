@@ -6,6 +6,20 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 508 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 125 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the maps' far level a view from a plane, the close squares joined along seams (Saneroki, 2026-10-21)
+- **The far level** (Saneroki: the photographic look is right, but its roads, places and landmarks must fit the middle
+  and close levels roughly, lakes, rivers, mountains and the ground nobody can cross with some leeway, seen from a
+  plane at an angle): image 1 is the terrain plan of the frame and around it warped into that view
+  (`map-layers`' `plane_view`), image 2 a piece of the close level; painted from image 1 a little under full
+  strength (`qwen21-edit-2ref-i2i`, new); its outlines must share 0.3 with the plane view. Not the middle drawing as
+  a picture (its symbols were stamped on the land), not from nothing (a closer view than the frame).
+- **The middle level** paints from the game's map itself (`qwen21-edit-3ref-i2i` at 0.94, 0.96, 0.98), its frame,
+  title banner and ornaments made parchment first; the pictures are read for the words at 1024 pixels (three at 2048
+  took ComfyUI past the computer's memory).
+- **The close level's squares** are joined as the Atlas joins them, each overlap cut where they differ least
+  (`map-layers join`).
+- `Doc/guides/map-style.md`, `Doc/guides/image-generation.md`, `dev/imagegen/maps/levels.toml` say so. Tests: 38.
+
 ### Navigation: the maps' three levels strict, one pipeline for zones and instances (Saneroki, 2026-10-21)
 - **Saneroki:** the first far paintings were far too free; all three levels are to be strict maps of the layout. Close
   the terrain, pixel-exact (the world's cleanup pipeline); middle a top-down map in the manner of the game's own maps,

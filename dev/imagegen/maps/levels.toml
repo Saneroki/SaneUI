@@ -20,13 +20,17 @@ images_plan = "Image 1 is the exact ground plan of this place, seen from straigh
 look_plan = "Make image 1 look like a map in the manner of image 2, drawn by hand in graphite pencil on the cream parchment of image 3, seen straight from above. Change only how it is drawn, never where or what anything is: every outline, wall, room, hall and stair stays exactly where image 1 has it, with the same shape and size. Clean pencil outlines, light hatching on the rock around the halls, small careful pencil drawings of pillars, tombs and props where image 1 has them; the walkable floors are clean paper, the ground around them plain paper."
 last = "Remove every label, name, letter and number, every icon, skull and symbol, the frame, the border and the drawings around the map; where they were, plain paper. Graphite grey pencil on cream paper only."
 
-# The far level: a photorealistic aerial photograph of the place, nearly straight down, its layout kept: coasts,
-# rivers, mountains and walls where the terrain has them, towns, buildings and landmarks where the middle level draws
-# them. Image 1 the terrain plan, image 2 the middle level's drawing, image 3 a piece of the close level's painting.
+# The far level: a photograph of the landscape from a plane high above, at an angle (Saneroki, 2026-10-21: "a
+# perspective plane view on the landscape"), its layout kept roughly, with some leeway: coasts, lakes, rivers,
+# mountains, cliffs and the ground nobody can cross, towns and landmarks where the terrain has them, so it fits the
+# middle and close levels. Image 1 the terrain plan of the frame and around it, warped into that view
+# (dev/tools/map-layers' plane_view), image 2 a piece of the close level's painting; painted from image 1 itself, a
+# little under full strength. Not the middle level's drawing: given as a picture it was copied, symbols and all.
+# A whole edit from nothing kept the look but not the frame (Westfall came out a closer view of its coast alone).
 # Words: images, look, open (instances), "This place is <biome>.", the brief's buildings and places (zones also land,
 # plants and roads), its colours and light, last.
 [far]
-images = "Image 1 is this place's ground seen from straight above. Image 2 is a hand-drawn map of the same place in the same frame. Image 3 shows its ground up close."
-look = "Make image 1 look like a photorealistic aerial photograph of exactly the same place, seen from high above and nearly straight down. Change only how things look, never where or what anything is: every coast, shore, river, lake, cliff, mountain, forest edge, road, wall, room and hall stays where image 1 has it, and every town, building and landmark where image 2 draws it, at its size. Take the look of the ground, its materials and colours from image 3. A realistic fantasy world in natural light."
+images = "Image 1 is this place seen from a plane high above, at an angle: its terrain as the game draws it, the land ahead widening towards the top. Image 2 shows its ground up close."
+look = "Make image 1 look like a photograph taken from a plane high above this place: a realistic fantasy landscape in natural light, seen at the same angle. Keep its layout: every coast, sea, lake, river, mountain, cliff, forest, road, town and landmark stays roughly where image 1 has it, at its size; a little leeway is fine, but nothing moves far, nothing new stands where image 1 has none, and mountains and cliffs stay where they bar the way. The darkest areas of image 1 beyond the coasts are the open sea. Take the look of the ground, its materials and colours from image 2."
 open = "Over halls, caves and rooms under the ground or under a roof, the rock and the roofs are cut away so they lie open to view from above."
 last = "Nothing added that the images do not show. No text, no labels, no map symbols, no frame, no border, no parchment."
