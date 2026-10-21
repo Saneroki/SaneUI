@@ -1,0 +1,3 @@
+# The fixed words of every element list (elements-wide.txt, elements-tall.txt, elements-square.txt): the crop is
+# the part, the words ask only for a clean copy of it, without text, on transparency.
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background. Image 1 is a cut-out of one part of a game interface. Make a clean, sharp picture of exactly this part and nothing else, alone on the transparent background, seen straight from the front: the same material, colour, grain, stitching, metal fittings, wear, shape and proportions as in image 1, nothing added, no other style. Remove every letter, number and icon from it. The part:

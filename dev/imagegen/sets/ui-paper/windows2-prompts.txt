@@ -1,7 +1,0 @@
-# The windows of windows2.txt and windows2-ref.txt.
-bags: a bag window titled "Bags": a column of coloured category tabs down the left edge, dense grids of item icons with stack counts on the parchment, one slim pencil-ruled header line per category, the money in a slim line at the bottom.
-friends: a friends window titled "Friends": a slim search line, rows of friends with small portraits, names, levels and online dots, each row ending in a small folded paper tab, a faint landscape sketch in the bottom corner.
-chat: a chat window titled "Chat": channel tabs as small leather tabs under the header, many lines of chat history on calm parchment, a pencil-ruled input line with a leather patch send button.
-spellbook: a spellbook window titled "Spellbook": the spell schools as coloured tabs down the left edge, two pages of spell icons with their names and ranks.
-quests: a quest log window titled "Quests": a list of zones with their quests and small level numbers on the left page, the chosen quest's text and its rewards as item icons on the right page.
-settings: a settings window titled "Settings": a column of category tabs down the left edge, rows of options with small checkboxes and sliders drawn in pencil.

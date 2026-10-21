@@ -1,9 +1,0 @@
-# The guild window's views from words, as wide windows.
-#   dev/tools/imagegen dev/imagegen/sets/ui-paper/guild.txt
-workflow: qwen21-t2i
-set: aspect_ratio=16:9 (Widescreen), megapixels=1.6
-count: 2
-out: assets/generated/ui-paper/guild
-include: dev/imagegen/sets/ui-paper/style.txt
-before: Concept art of one large, compact, dense window of a high fantasy role-playing game interface filling the picture, rich with tabs, buttons, lists and panels:
-include: dev/imagegen/sets/ui-paper/guild-prompts.txt

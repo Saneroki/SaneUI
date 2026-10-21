@@ -1138,6 +1138,15 @@ Saneroki asked for a much richer bag view, in features and looks.
   patch pieces repeated to any width and the chat window with bubbles anchored left, right and middle. New lists:
   `parts.txt` (one transparent part per picture, no text), `overlays.txt` (stains and faint sketches) and
   `refine.txt` (the picked views refined to the guide by Qwen's edit).
+- The interface's strict harness (Saneroki: the free renders drifted from the decided design):
+  `dev/imagegen/sets/interface/`. `refs.py` cuts each decided part out of its pick, `elements-*.txt` have
+  Qwen's edit copy it cleanly from that crop alone (transparent, no text), `compose.py` lays the views out in code
+  from them (the leather sliced and repeated, `paper.py`'s paper, pencil lines, Kalam, titles pressed into the
+  leather, the game's icons, class icons as pencil sketches; the character doll is the pick itself with its
+  content put in), `polish.txt`/`polish.py` give each view one light pass, `gallery.py` numbers it all from #1.
+  Kalam's font files in `assets/fonts/Kalam/`. The guide gains *The harness*, the doll as a copy of its pick,
+  class colours on paper and the open leather font. The exploration (its six sets, renders and the older concept
+  art, `Elements.png` among them) is archived outside the project.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.

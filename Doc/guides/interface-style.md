@@ -2,9 +2,9 @@
 
 Sane UI's own look for windows, panels and full screens: what each part is made of, how it looks, and what is
 painted by image models versus made in code. Saneroki decides the look by picking from concept art; every decision
-is written here, with the picture it came from, the moment it is taken. The words for image models
-(`dev/imagegen/sets/ui-paper/style.txt` and the lists next to it) are made from this guide. When the two
-disagree, this guide wins and the words get corrected.
+is written here, with the picture it came from, the moment it is taken. The harness that makes the parts and
+views (`dev/imagegen/sets/interface/`, *The harness* below) and the house style's words (`dev/imagegen/style.txt`)
+are made from this guide. When they disagree, this guide wins and the harness gets corrected.
 
 The pictures named here are in `assets/Concept art/UI style/`. They show the part the decision is about. The rest of
 a picture (its other parts, its text, its colours elsewhere) is not part of the style unless a line here says
@@ -37,10 +37,10 @@ with as little room for frame and ornament as the look allows.
 
 - **Texture:** `paper.png`: cream parchment with soft, large, faint clouds and an extremely subtle grain.
 - **Made of layers in code**, so a window can be any size and scroll without repeats:
-  - a seamless grain tile, repeated;
-  - the clouds, scaled to cover the window and cut to it (never stretched or repeated);
-  - a soft darker edge.
-  - `dev/imagegen/sets/ui-paper/paper-test.py` makes and checks these.
+  - `paper.png` scaled to cover the page and cut to it (never stretched or repeated);
+  - a soft darker edge;
+  - the stains (below).
+  - `dev/imagegen/sets/interface/paper.py` lays them.
 - **Stains** (coffee rings, blots, drops: `stain-*.png`, `stains-*.png`) are separate pieces with transparency.
   Code places a few at seeded random spots, faint, and they scroll with the page. They are never painted into a
   part.
@@ -70,9 +70,12 @@ with as little room for frame and ornament as the look allows.
 ## Text
 
 - **On paper: Kalam** (a hand-printed, non-cursive font), in pencil grey with the paper grain over it (Saneroki,
-  2026-10-21). See the font page made by `dev/imagegen/sets/ui-paper/fonts.py`.
+  2026-10-21). Its files are in `assets/fonts/Kalam/` (Light, Regular, Bold).
+- **Class colours on paper** (names in bubbles, lists, the podium): the class's colour darkened until it reads on
+  the paper, its hue kept. The game's own colours, light ones like the priest's white, vanish on the paper.
 - **On leather** (titles, button labels): letters pressed or burned into the leather, as in `title-text.png`
-  ("WANTED"). Code makes them from the text, so they stay dynamic: they are never painted into a part.
+  ("WANTED"). Code makes them from the text, so they stay dynamic: they are never painted into a part. Their font
+  is not decided yet; the harness uses a serif as a stand-in.
 - Image models paint no text into parts. Concept art may show placeholder writing.
 
 ## Parts
@@ -132,11 +135,16 @@ Built on `chat-bubble.png` (its top bubble), made more compact. Each bubble is:
 
 ## Views
 
-- **Character doll:** `doll.png` is the layout and the look (Saneroki, 2026-10-21):
+- **Character doll:** `doll.png` is the layout and the look, to be copied, not redrawn (Saneroki, 2026-10-21):
+  - its shaped leather frame;
   - the hero in the middle: the game's live 3D model in the game;
-  - the gear slots in a column down each side of him;
-  - each slot's stat strip of paper outside it, hanging over the frame;
-  - the main hand, off hand, ranged and ammo slots below, with their stats under them.
+  - the gear slots in a gentle arc down each side of him, eight a side;
+  - the top slot of each side has no strip; each of the seven below has its paper stat strip outside it,
+    hanging out over the leather border;
+  - the main hand, off hand and ranged slots below, the smaller ammo slot beside them, with their stat strips
+    under them.
+
+  The harness's character view is this picture itself, with code putting the live content in (*The harness*).
 - **Bags and bank:** `bags-page.png`. A condensed page cut into close sections, each with a pencil-ruled header
   and a dense grid of item icons. Tabs down the left change the content.
 - **Choosing a class or specialisation:** `class-fan.png`. Its layout and look (cards fanned out over the page)
@@ -170,11 +178,38 @@ moves to its own heading here once it is decided, with its picture.
 - Page-turning and book-opening animations.
 - Stains, sketches and text painted into parts.
 
-## Making parts with image models
+## The harness
 
-- Build each prompt's words from this guide.
-- **One part per picture** for parts the game uses (a title bar, an edge, a patch button, a tab, a bubble), with
-  transparency (Qwen-Image 2.1 gives real alpha). No text, stains or sketches are painted in.
-- Layouts with exact counts (gear slots, rows) are drawn in code and painted by Qwen's edit with the drawing as its
-  only picture. A second picture for the look takes over the layout (`doll-final.txt`).
-- The workflows, lists and tools are in `Doc/guides/image-generation.md` and `dev/imagegen/sets/ui-paper/`.
+How the parts and views of this style are made (`dev/imagegen/sets/interface/`, Saneroki, 2026-10-21). It is
+strict on purpose: nothing is painted from words alone, so nothing can drift from the picks.
+
+1. **Crops** (`refs.py`): each decided part is cut out of the picture it was picked in (*Parts*), and that crop is
+   the only thing the part is made from. A crop's box names the part's place in its picture.
+2. **Elements** (`elements-wide.txt`, `elements-tall.txt`, `elements-square.txt`): Qwen's edit with the crop as
+   its only picture. The words (`elements-before.txt`) ask only for a clean copy: the same material, colour,
+   stitching and shape, alone on transparency, without letters, numbers or icons. Grouped by shape, so no crop
+   is squeezed. Three seeds each.
+3. **Checked against the brief** (`compose.py`, `CHOSEN`): the first seed that follows its brief is used: no label
+   left in, the part whole. A part no seed delivers cleanly is made from its crop with the label covered in
+   code (`refs.py`, `CLEAN`). Marks the edit left in are covered in code (`compose.py`, `COVER`).
+4. **Views** (`compose.py`): laid out in code the way the game will draw them:
+   - the leather parts sliced, their ends kept and their middles repeated;
+   - the paper from `paper.py`;
+   - pencil lines drawn by code;
+   - text in Kalam with the paper's grain;
+   - titles and labels pressed into the leather;
+   - game icons from `references/`, and class icons turned into pencil sketches.
+
+   A view with a decided picture is that picture with its content put in by code (the character doll).
+5. **Polish** (`polish.txt`, `polish.py`): one light pass of Qwen's edit over each view, which may only make the
+   parts sit together (light, soft shadows). The layout, the parts and the writing are the code's.
+6. **Gallery** (`gallery.py`): every element, view and polished view, numbered from #1, at
+   `assets/generated/interface/index.html`.
+
+Rules:
+
+- Parts come from their crops, never from words alone or from a second picture. A second picture takes over the
+  layout.
+- A layout with exact counts (gear slots, rows) is never left to the model.
+- No stains, sketches or text are painted into parts; code lays them over.
+- New decisions go into this guide first, then into the harness's crops, lists and views.

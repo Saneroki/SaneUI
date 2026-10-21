@@ -98,11 +98,11 @@ decisions go there. `dev/imagegen/style.txt` is that look in one `style:` line f
 prompt of the recipes that make interface art (`concept`, `concept-free`, `part-new`): flat front view, light
 from the top left, no text, no stains, no sketches (code lays those over). Its picture, the anchor, is
 `assets/Concept art/UI style/edges-and-buttons.png` (its edges, title strap and patch buttons were picked); the
-recipe `concept` gives it as image 1. Concept art of whole windows takes the longer words of
-`dev/imagegen/sets/ui-paper/style.txt`.
+recipe `concept` gives it as image 1. The parts and views of Sane UI's own windows are made by the strict
+harness in `dev/imagegen/sets/interface/` ([interface-style.md](interface-style.md), *The harness*): each part
+from its crop of a pick, the views laid out in code.
 
-The older bronze house style (`assets/Concept art/Elements.png` and the concept art beside it) is no longer
-Sane UI's look.
+The older bronze house style and the exploration that led to the journal look are archived outside the project.
 
 ## The recipes
 

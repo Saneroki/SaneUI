@@ -1,9 +1,0 @@
-# The picked doll (gallery #3, quick/doll-quick-3) with its header and tabs, by Qwen's edit.
-#   dev/tools/imagegen dev/imagegen/sets/ui-paper/doll2.txt
-workflow: qwen21-edit-1ref
-set: width=1024, height=1024
-count: 3
-out: assets/generated/ui-paper/doll2
-before: Image 1 is a character equipment panel of a game interface. Keep the panel, the hero, the equipment slots and the stat strips exactly where they are, and change only this:
-ref: assets/generated/ui-paper/quick/doll-quick-3.png
-doll-header: add across its top a slim brown leather strip as its header, holding the title "Character" in small engraved serif capitals and two small stitched leather patch buttons at its right end; add down its left edge a column of four small square tabs with small icons in muted colours (equipment, skills, reputations, currencies); make the pencil sketches in its background much fainter, a few light quick strokes only.

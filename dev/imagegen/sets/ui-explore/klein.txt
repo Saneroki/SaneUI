@@ -1,7 +1,0 @@
-# UI exploration, wide (Saneroki, 2026-10-21): every direction and view of prompts.txt with klein4b-t2i, quick
-# pictures to compare looks, not finished art.  dev/tools/imagegen dev/imagegen/sets/ui-explore/klein.txt
-workflow: klein4b-t2i
-count: 2
-out: assets/generated/ui-explore/klein
-style: Flat front view, no perspective, soft light from the top left, muted colours, the strong colours only in the icons. Text shown only as thin placeholder lines, no letters, no words, no watermark.
-include: dev/imagegen/sets/ui-explore/prompts.txt

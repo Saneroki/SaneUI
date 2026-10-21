@@ -1,8 +1,0 @@
-# Qwen against FLUX.2 [dev]: flux2dev-turbo-t2i, the full model, at the same size as the other.
-#   dev/tools/imagegen dev/imagegen/sets/ui-compare/flux.txt
-workflow: flux2dev-turbo-t2i
-set: width=1280, height=960
-count: 2
-out: assets/generated/ui-compare/flux
-style: Compact and dense, almost no empty space. Flat front view, no perspective, soft light from the top left, muted colours, the strong colours only in the icons. Text shown only as thin placeholder lines, no letters, no words, no watermark.
-include: dev/imagegen/sets/ui-compare/prompts.txt

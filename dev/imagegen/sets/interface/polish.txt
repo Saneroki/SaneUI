@@ -1,0 +1,21 @@
+# One light pass over each view laid out by compose.py (Doc/guides/interface-style.md): Qwen's edit may only
+# make the parts sit together as one finished piece; the layout, the parts, the writing and the icons are the
+# code's and stay. polish.py runs it, each view at its own size.
+workflow: qwen21-edit-1ref
+count: 2
+out: assets/generated/interface/polished
+before: Image 1 is a finished window of a game interface. Keep absolutely everything exactly as it is: the layout, every part and its shape, every letter, number, icon and pencil line in its place, every colour. Only make it one finished piece of concept art: unify the light from the top left, let the leather, metal and paper sit together with soft natural shadows where parts lie over each other. Add nothing, remove nothing, change no text.
+ref: assets/generated/interface/views/character.png
+character: the character window.
+ref: assets/generated/interface/views/bags.png
+bags: the bag window.
+ref: assets/generated/interface/views/chat.png
+chat: the chat window.
+ref: assets/generated/interface/views/guild.png
+guild: the guild window.
+ref: assets/generated/interface/views/spellbook.png
+spellbook: the spellbook window.
+ref: assets/generated/interface/views/stats.png
+stats: the character stats window.
+ref: assets/generated/interface/views/bubbles.png
+bubbles: chat bubbles over the game world.

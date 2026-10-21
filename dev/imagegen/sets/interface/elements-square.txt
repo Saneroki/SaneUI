@@ -1,0 +1,17 @@
+# Elements that are about as wide as high, each from its crop (refs.py); Doc/guides/interface-style.md, *Parts*.
+#   python3 dev/imagegen/sets/interface/refs.py && dev/tools/imagegen dev/imagegen/sets/interface/elements-square.txt
+workflow: qwen21-edit-1ref
+count: 3
+out: assets/generated/interface/elements
+include: dev/imagegen/sets/interface/elements-before.txt
+set: width=1024, height=1024
+ref: assets/generated/interface/crops/corner.png
+corner: the top left corner of the leather binding with its metal corner cap, the leather leaving the corner to the right and downwards; no paper.
+ref: assets/generated/interface/crops/patch-square.png
+patch-square: the square stitched leather patch button; its gear icon removed, plain leather inside the stitching.
+ref: assets/generated/interface/crops/buckle.png
+buckle: the dark metal buckle alone, without the leather round it.
+ref: assets/generated/interface/crops/side-tab.png
+side-tab: the leather bookmark tab with its stitched edge; its icon removed, plain leather.
+ref: assets/generated/interface/crops/stat-strip.png
+stat-strip: the strip of paper with its thin pencil outline; all writing removed, plain paper.

@@ -16,7 +16,7 @@ The list of prompts is a text file, one line each:
   flatten: #000000                           reference pictures with transparency are laid on this colour
   before: This is an RGBA format image ...   put before every prompt that follows
   style: Hand-painted fantasy game ...       put after every prompt that follows
-  ref: assets/Concept art/Elements.png, ...  the reference pictures for the prompts that follow
+  ref: assets/Concept art/UI style/doll.png, ...  the reference pictures for the prompts that follow
   frame-window: an empty window frame ...    one prompt: its name (letters, digits, - and _) and its text
 
 workflow, set, count, seed, out, fps and flatten hold for the whole list (the last one counts; set adds

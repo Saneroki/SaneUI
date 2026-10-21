@@ -1,7 +1,0 @@
-# Full screen views with FLUX.2 [dev] (a minute a picture).
-#   dev/tools/imagegen dev/imagegen/sets/ui-fullscreen/flux.txt
-workflow: flux2dev-turbo-t2i
-set: width=1600, height=896
-count: 2
-out: assets/generated/ui-fullscreen/flux
-include: dev/imagegen/sets/ui-fullscreen/prompts.txt
