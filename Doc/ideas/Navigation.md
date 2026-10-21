@@ -146,6 +146,9 @@ minimap) and the full-screen window (the world map) show the same map with the s
   game's pixel-exact edge of the zone's terrain. Everything the player can walk or swim stays pixel-exact:
   every coast and shore into the water, piers, docks and bridges, and every pass from one zone into the next;
   nothing inside the zone is softened or moved.
+- **Scrying and Parchment stay exact (Saneroki, 2026-10-21):** the soft borders and every reimagination are the
+  painted Atlas' alone. Scrying (the terrain) and Parchment (Blizzard's maps) keep drawing the game's own files
+  pixel for pixel, only cut so that neighbouring zones do not overlap, as they are built now.
 - **A size budget (Saneroki, 2026-10-21):** before the big runs, each map pack's size is reckoned (the Atlas'
   close squares, the zone and continent paintings, the three zooms of every dungeon), for the player's disk, its
   memory and loading in the game, and Git LFS's space. That decides each level's pixels a tile, what loads only
