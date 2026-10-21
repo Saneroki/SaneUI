@@ -9,7 +9,8 @@ quest areas, the party, the quest log and the bar over the full map (the pin fil
 ore the game's minimap finds, indoor maps, routes to the map pin on foot, by flight, by boat and zeppelin, by the
 Deeprun Tram, by lift and by the hearthstone; the classic dungeons' and raids' maps of Core's set *Dungeons* in the
 game's map art, with their floors, bosses and the bosses' 3D models (`src/Navigation/README.md`). Not yet: portals
-in the routes, the leveling guide, the dungeons' three zooms, search, the minimap's small parts.
+in the routes, a travel pin's ways under the mouse (*Map pins*), the leveling guide, the dungeons' three zooms,
+search, the minimap's small parts.
 
 How to read this page:
 
@@ -286,6 +287,11 @@ When the window fills the screen:
 - **Our own pin icons, to come (Saneroki, 2026-10-21):** the pins' icons get redesigns of our own in Sane UI's
   style (`Doc/guides/interface-style.md`, *To redesign*): coloured renders of our own pins, developed soon. Until
   they come, the game's icons below stay.
+- **A travel pin's ways, to come (Saneroki, 2026-10-21):** the mouse over a flight point, a boat's or zeppelin's
+  dock or the tram's entrance draws on the map, as elements of their own, the ways the character can take from
+  there: the flights to the flight points it has found, the boats', zeppelins' and the tram's ways to their other
+  docks. Flights from or to a flight point it has not found yet are drawn too, a little differently, so the map
+  shows what is still to be found.
 - **Herb and ore icons** are Blizzard's own profession tracking icons.
 - **Quest marks as the game's (Saneroki, 2026-10-20):** a quest in the log the yellow question mark; one the
   character can take the standard yellow exclamation mark, opaque (no longer see-through); one too low to give

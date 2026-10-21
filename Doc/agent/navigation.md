@@ -223,8 +223,8 @@ Flight points (2026-10-21): only those the character has found are flown (`fligh
 flight master from its flight map's states and the maps' `isUndiscovered`; `Planner.Knows`); the map's others are red
 (`Pins.lua`, `Pins.RED`).
 
-Not yet: portals in routes, search, the guide, the dungeons' three zooms, the minimap's small parts
-(zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
+Not yet: portals in routes, a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
+minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
 checks; 498 with the 2026-10-21 changes), `dev/tests/walk.py` (117).
 
 ## What is not there yet
@@ -248,6 +248,10 @@ checks; 498 with the 2026-10-21 changes), `dev/tests/walk.py` (117).
    above). The dungeons' maps of today are the game's own art (Core's set *Dungeons*). To come as well
    (Saneroki, 2026-10-21): our own pin icons (coloured renders) in place of the game's, and the route line as
    leather stitches in place of the golden line (`Doc/guides/interface-style.md`, *To redesign*).
+8. **A travel pin's ways** (Saneroki, 2026-10-21, to come soon): the mouse over a flight point, a boat's or
+   zeppelin's dock or the tram's entrance draws the ways from there on the map: the flights to the flight points
+   the character has found (`Planner.Knows`), the boats', zeppelins' and the tram's ways; the flights from or to
+   one not found yet a little differently (`Doc/ideas/Navigation.md`, *Map pins*).
 
 ## Open questions without a proposal
 
