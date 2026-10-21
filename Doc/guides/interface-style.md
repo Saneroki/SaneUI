@@ -71,8 +71,9 @@ with as little room for frame and ornament as the look allows.
 
 - **On paper: Kalam** (a hand-printed, non-cursive font), in pencil grey with the paper grain over it (Saneroki,
   2026-10-21). Its files are in `assets/fonts/Kalam/` (Light, Regular, Bold).
-- **Class colours on paper** (names in bubbles, lists, the podium): the class's colour darkened until it reads on
-  the paper, its hue kept. The game's own colours, light ones like the priest's white, vanish on the paper.
+- **Colours that are hard to read on paper** (class colours on names in bubbles, lists, the podium; light quality
+  colours): the game's own colour, unchanged, with a thin dark outline round the letters, made in code with the
+  text (Saneroki, 2026-10-21). Light colours like the priest's white would vanish on the paper without it.
 - **On leather** (titles, button labels): letters pressed or burned into the leather, as in `title-text.png`
   ("WANTED"). Code makes them from the text, so they stay dynamic: they are never painted into a part. Their font
   is not decided yet; the harness uses a serif as a stand-in.

@@ -29,13 +29,6 @@ LEATHER_FONT = "/usr/share/fonts/noto/NotoSerif-Bold.ttf"   # a stand-in: no lea
 CHOSEN = {"edge-left": 3, "top-tab-drawn": 3, "top-tab-patch": "clean"}
 LEAD = (58, 52, 46)            # pencil grey
 BG = (24, 21, 18)              # behind the windows
-def on_paper(color):
-    """A class colour dark enough to read on the paper, its hue kept."""
-    lum = 0.3 * color[0] + 0.59 * color[1] + 0.11 * color[2]
-    k = min(1.0, 120 / max(lum, 1))
-    return tuple(int(v * k) for v in color)
-
-
 CLASS = {"Warrior": (199, 156, 110), "Mage": (63, 199, 235), "Priest": (230, 230, 230), "Rogue": (255, 244, 104),
          "Druid": (255, 124, 10), "Hunter": (170, 211, 114), "Paladin": (244, 140, 186), "Warlock": (135, 136, 238),
          "Shaman": (0, 112, 221)}
@@ -147,10 +140,15 @@ def font(size, weight="Regular"):
     return ImageFont.truetype(KALAM.format(weight), size)
 
 
-def write(canvas, xy, text, size=20, weight="Regular", color=LEAD, alpha=225, anchor="la"):
-    """Kalam in pencil with the paper's grain over it."""
+OUTLINE = (34, 28, 22)          # round letters in a colour that is hard to read on the paper
+
+
+def write(canvas, xy, text, size=20, weight="Regular", color=LEAD, alpha=225, anchor="la", outline=False):
+    """Kalam in pencil with the paper's grain over it; outline: a thin dark line round the letters, for colours
+    hard to read on the paper (the game's class colours)."""
     layer = Image.new("RGBA", canvas.size)
-    ImageDraw.Draw(layer).text(xy, text, font=font(size, weight), fill=color + (alpha,), anchor=anchor)
+    ImageDraw.Draw(layer).text(xy, text, font=font(size, weight), fill=color + (alpha,), anchor=anchor,
+                               stroke_width=1 if outline else 0, stroke_fill=OUTLINE + (alpha,))
     rnd = np.random.default_rng(abs(hash(text)) % 2**32)
     grain = Image.fromarray((rnd.uniform(0.62, 1.0, (canvas.height, canvas.width)) * 255).astype(np.uint8))
     layer.putalpha(ImageChops.multiply(layer.getchannel("A"), grain.filter(ImageFilter.GaussianBlur(0.6))))
@@ -290,7 +288,7 @@ def bubble(canvas, x, y, w, name, cls, channel, time, text, flip=False, seed=0):
     ix = x - 10 if not flip else x + w - 30
     canvas.alpha_composite(sketch(icon(f"ClassIcon_{cls}.blp", 64), 40, tone), (ix, y - 12))
     tx = x + 36 if not flip else x + 14
-    write(canvas, (tx, y + 6), name, 17, "Bold", on_paper(CLASS.get(cls, LEAD)), 240)
+    write(canvas, (tx, y + 6), name, 17, "Bold", CLASS.get(cls, LEAD), 245, outline=True)
     nw = ImageDraw.Draw(canvas).textlength(name, font=font(17, "Bold"))
     write(canvas, (tx + nw + 8, y + 9), f"[{channel}]  {time}", 13, "Light")
     write(canvas, (tx, y + 30), text, 16)
@@ -463,7 +461,7 @@ def view_guild():
                                           ("Mira", "Priest", "The Missing Diplomat", 25), ("Brannoc", "Warrior", "In Sickness and in Health", 28),
                                           ("Kestrel", "Rogue", "The Tome of Divinity", 22)]):
         write(c, (x, y + i * 48), q, 17)
-        write(c, (x, y + i * 48 + 20), f"{n} · Westfall", 14, "Light", on_paper(CLASS[cls]))
+        write(c, (x, y + i * 48 + 20), f"{n} · Westfall", 14, "Light", CLASS[cls], outline=True)
         write(c, (cols[0][1] - 18, y + i * 48 + 4), f"lvl {lv}", 15, anchor="ra")
     x, y = panel((cols[0][0], py + 312, cols[0][1], y1 - 14), "Planned runs")
     for i, (d, t, open_) in enumerate([("The Deadmines", "20:00", "1 tank · 2 dps"), ("Wailing Caverns", "Wed 19:30", "full"),
@@ -482,7 +480,7 @@ def view_guild():
         box(c, (bx, base - h, bx + 130, base), 160, 2, rank + 40)
         write(c, (bx + 65, base - h + 8), str(rank + 1), 30, "Bold", anchor="ma")
         c.alpha_composite(sketch(icon(f"ClassIcon_{cls}.blp", 64), 52), (bx + 39, base - h - 112))
-        write(c, (bx + 65, base - h - 56), n, 18, "Bold", on_paper(CLASS[cls]), anchor="ma")
+        write(c, (bx + 65, base - h - 56), n, 18, "Bold", CLASS[cls], anchor="ma", outline=True)
         write(c, (bx + 65, base - h - 34), f"level {lv}", 14, anchor="ma")
     x, y = panel((cols[2][0], py + 342, cols[2][1], y1 - 14), "Offered to the guild")
     for i, (pattern, name, who) in enumerate([("INV_Sword_0*", "Blade of the March", "Brannoc"), ("INV_Misc_Cape_0*", "Cloak of Dusk", "Mira"),
