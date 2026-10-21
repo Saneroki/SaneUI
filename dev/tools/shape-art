@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Makes the masks Core's round shapes are cut with (src/Core/Shape.lua), in src/Core/Art.
+"""Makes the masks Core's round shapes are cut with (src/Core/Shape.lua), in assets/optimized/Core/Art
+(dev/build puts them into the addon's Art/).
 
   circle.blp       white, its alpha a disc as large as the picture: what lies inside stays. A
                    window's corner is drawn by a square piece of its fill, this mask over the
@@ -39,7 +40,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
-ART = ROOT / "src" / "Core" / "Art"
+ART = ROOT / "assets" / "optimized" / "Core" / "Art"
 SIZE = 256
 CAP = (64, 256)  # a bar's end: width, height
 SAMPLES = 4  # a side's samples per texel

@@ -6,6 +6,17 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 386 (Navigation), 105 (Inventory), 90 (sheet), 237 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### Art: every picture in assets, none in src (Saneroki, 2026-10-21)
+- The modules' textures moved from `src/<Module>/Art/` to `assets/optimized/<Module>/Art/` (Core, Navigation,
+  Social, Tooltips), so `src/` holds code only; all of `assets/` (concept art, examples, the sources and the
+  textures made from them) is committed in Git LFS, but for the image models' candidates and the Atlas' test
+  pack. Navigation's indoor maps (`Art/Indoors/`) are committed now too.
+- `dev/build` puts each module together from `src/<folder>` and `assets/optimized/<folder>` when there is one (the
+  Atlas' way, now every module's); the addons and their `Art\` paths in the game are unchanged.
+- `dev/tools/art`, `shape-art`, `tooltip-art`, `terrain-art`, `indoor-art` write there; `dev/tests/lint` finds a
+  file a TOC lists in either place, and fails on a picture or sound in `src/`.
+- `Doc/guides/images.md`: the place of a module's picture.
+
 ### Navigation: the planner keeps what it found while the pin stays (Saneroki, 2026-10-21)
 - From the review of the whole addon (`Planner.lua`): the walking data's region of each flight point and dock is
   kept from plan to plan (`regions`, emptied when Walking or Travel change), a walk a plan searched already is taken

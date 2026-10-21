@@ -23,7 +23,7 @@ at most WIDEST), the smallest, at the largest scale it allows. The picture lies 
 rest of the texture is clear. Every mipmap is made from the picture itself, in premultiplied alpha with Lanczos,
 a clear texel again taking the colour of the edge near it, so the game's filter never blends in black.
 
-  src/Navigation/Art/Indoors/<root file>-<part>.blp   BLP2, DXT5 with every mipmap (Doc/guides/images.md)
+  assets/optimized/Navigation/Art/Indoors/<root file>-<part>.blp BLP2, DXT5 with every mipmap (Doc/guides/images.md)
 
 Every placement of a building that has such a picture (the object files' MODF: its place, its turn and its scale;
 one tilted more than TILT degrees is left out, its plan would not lie flat), as staging for the set Indoors:
@@ -69,7 +69,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "src" / "Navigation" / "Art" / "Indoors"
+OUT = ROOT / "assets" / "optimized" / "Navigation" / "Art" / "Indoors"  # into the addon's Art/ by dev/build
 STAGING = ROOT / "dev" / "data" / "staging" / "indoors.jsonl"
 GAMES = {"wowf": "forever", "wow_classic_beta": "forever-beta"}  # as dev/tools/data game names them
 

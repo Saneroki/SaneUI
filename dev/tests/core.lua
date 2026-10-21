@@ -98,13 +98,13 @@ check(Core.Config and SaneUI.Settings == nil and SaneUI.Sync == nil and Core.Syn
 -- The options: their pages put up at login, filled when the game's options are first opened -----------
 SettingsPanel = W.NewWidget("Frame", "SettingsPanel") -- the game's options window
 -- The game finds a picture only if its file is there: Interface\AddOns\SaneUI_<Module>\<path> is
--- src/<Module>/<path>.blp (SaneUI: src/Core). So Core has its banner (Sane UI's), the Demo module none.
+-- assets/optimized/<Module>/<path>.blp (SaneUI: Core), put in by dev/build. So Core has its banner (Sane UI's), the Demo module none.
 function W.methods:SetTexture(file)
     self._texture = file
     local addon, path = tostring(file):match("^Interface\\AddOns\\([%w_]+)\\(.+)$")
     local folder = addon == "SaneUI" and "Core" or addon and addon:match("^SaneUI_(.+)$")
     if not folder then return file ~= nil end
-    local handle = io.open(root .. "/src/" .. folder .. "/" .. path:gsub("\\", "/") .. ".blp", "rb")
+    local handle = io.open(root .. "/assets/optimized/" .. folder .. "/" .. path:gsub("\\", "/") .. ".blp", "rb")
     if handle then handle:close() end
     return handle ~= nil
 end

@@ -183,7 +183,7 @@ In `dev/tests/tooltips.lua` (or a file of its own for `Look.lua`):
   file names; each school; each kind of debuff; nil for each fact. Each gives a key that `Looks.lua`
   has, or none.
 - **A secret fact** (the tests' stand-in for one) gives the default and is never a key.
-- **No missing and no dead art:** every file `Looks.lua` names is in `src/Tooltips/Art/looks/`, and every
+- **No missing and no dead art:** every file `Looks.lua` names is in `assets/optimized/Tooltips/Art/looks/`, and every
   file there is named. So `dev/build` fails on a missing picture.
 - **The panel:** a key that did not change sets no texture again; a missing file hides its layer and is
   said once; the option off draws today's panel; the wash desaturates; socket and marks are on

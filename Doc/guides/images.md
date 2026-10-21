@@ -23,8 +23,8 @@ far below its size.
 3. In `dev/tools/art`, give its kind that drawn size in `KINDS` (or use a kind that has it), and add the
    picture to `PICTURES`: the file in `assets/` (a pattern), the name in `assets/optimized/`, the kind, and
    the module that ships it (`None` if none does yet).
-4. Run `dev/tools/art`. It writes `assets/optimized/<name>.blp` (and `src/<Module>/Art/...` for what
-   ships), and prints the texture's size, the `SetTexCoord` numbers and a check of the written file.
+4. Run `dev/tools/art`. It writes `assets/optimized/<name>.blp` (and `assets/optimized/<Module>/Art/...`
+   for what ships), and prints the texture's size, the `SetTexCoord` numbers and a check of the written file.
 5. Draw it as in [Drawing it](#drawing-it): the drawn size, the printed texture coordinates, the game's
    own filter, and a fall-back when `SetTexture` reports the file missing.
 6. List the file in the module's README (*Files*): what it is, that it is original art of Sane UI (the
@@ -42,11 +42,11 @@ Needs Python with Pillow and NumPy, and ImageMagick 7 (`magick`).
 | Compression | **DXT5** (BLP encoding 2, alpha depth 8, alpha encoding 7) | Like Blizzard's logos (`Interface/GLUES/PROMOTIONS/*-SBC-LOGO.BLP`, `Glues-CharacterSelect-Logo-BG.blp`). One byte per texel, and it stays compressed on the graphics card: a quarter of TGA. Our art has soft edges, which need DXT5's full alpha; DXT1 has only on/off alpha. |
 | Mipmaps | **The full chain, down to 1 x 1** | Like Blizzard's. A third more memory. They keep a picture clean when it is drawn at less than half its size (small screens, small UI scale). |
 | Sides | **Powers of two, at most 1024** | Mipmaps halve evenly, DXT works in blocks of 4 x 4, Blizzard's are. |
-| Name and place | `src/<Module>/Art/<name>.blp`, lower case | Not listed in the TOC: only Lua and XML are. The build copies it. |
+| Name and place | `assets/optimized/<Module>/Art/<name>.blp`, lower case | Never in `src/`, which holds no pictures or sounds (`dev/tests/lint` fails on one). Not listed in the TOC: only Lua and XML are. `dev/build` puts `assets/optimized/<Module>/` together with `src/<Module>/`, so in the addon it is `Art/<name>.blp`. Committed (Git LFS), like its source in `assets/`. |
 
-Some sets are no drawn pictures: Navigation's terrain overview (`src/Navigation/Art/Terrain/`), the game's own minimap
-textures made smaller, its zones' outlines (`src/Navigation/Art/Zones/`), its stitched map of Blizzard's zone maps
-(`src/Navigation/Art/Sketches/`) and `Art/Edge.blp`, all made by `dev/tools/terrain-art` from the game's files. The overview's alpha is the land (the water is cut away) and the outlines are alpha only, so both are
+Some sets are no drawn pictures: Navigation's terrain overview (`assets/optimized/Navigation/Art/Terrain/`), the game's own minimap
+textures made smaller, its zones' outlines (`assets/optimized/Navigation/Art/Zones/`), its stitched map of Blizzard's zone maps
+(`assets/optimized/Navigation/Art/Sketches/`) and `Art/Edge.blp`, all made by `dev/tools/terrain-art` from the game's files. The overview's alpha is the land (the water is cut away) and the outlines are alpha only, so both are
 BLP2 with **DXT5** and mipmaps, like the art; ImageMagick's range fit makes them (its cluster fit takes about a minute a
 texture once the alpha is partly see-through).
 
@@ -194,8 +194,8 @@ it, so its size is about the memory it takes:
 
 All of Sane UI's pictures together: 1.5 MB in `assets/optimized/` (from 15.3 MB of drawings). What
 ships now: one banner per options page (looked for when the options first open, drawn when its page
-is), the Tooltips module's six small TGA shapes (`src/Tooltips/Art/`, 72 KB together, made by
-`dev/tools/tooltip-art`), and Core's two masks for round corners (`src/Core/Art/circle.blp` and
+is), the Tooltips module's six small TGA shapes (`assets/optimized/Tooltips/Art/`, 72 KB together, made by
+`dev/tools/tooltip-art`), and Core's two masks for round corners (`assets/optimized/Core/Art/circle.blp` and
 `circle-hole.blp`, 86 KB each, made by `dev/tools/shape-art`), read when a window first draws its plate.
 
 ## Tried and rejected

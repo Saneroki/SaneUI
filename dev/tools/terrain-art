@@ -22,9 +22,9 @@ transparent texels carry the nearest land's colour, so filtering never draws a d
 alpha is the mask of the game's own textures (Terrain.lua), so the coast is cut alike at every zoom; a tile on a
 coast has a mask of its own, at four times the overview's detail, so a pier a few yards wide is not lost.
 
-  src/Navigation/Art/Terrain/<continent>-<row>-<column>.blp   row and column of the block of 8 x 8 tiles
+  assets/optimized/Navigation/Art/Terrain/<continent>-<row>-<column>.blp   row and column of the block of 8 x 8 tiles
                                                               (0 to 7), only blocks that hold a tile
-  src/Navigation/Art/Coasts/<key>.blp                          128 x 128, a tile on a coast (its key in the set Tiles)
+  assets/optimized/Navigation/Art/Coasts/<key>.blp 128 x 128, a tile on a coast (its key in the set Tiles)
   src/Navigation/Coasts.lua                                    the tiles that have one, by continent (ns.COASTS)
 
 Each zone's outline, for Blizzard's map art cut to its zone's shape (src/Navigation/Art.lua; a zone of a
@@ -35,7 +35,7 @@ does not reach out to its box's edge (a lake or a river is its zone's). Whole up
 150 yards), and off the paper frame at the box's edges: two zones that meet overlap there, and the one drawn
 over the other fades into it, so no line shows between them.
 
-  src/Navigation/Art/Zones/<uiMapID>.blp       256 x 256, over the zone map's box
+  assets/optimized/Navigation/Art/Zones/<uiMapID>.blp 256 x 256, over the zone map's box
   src/Navigation/Outlines.lua                  the zones that have one, by continent (ns.OUTLINES)
 
 The stitched map, Navigation's own map of each continent made of Blizzard's zone maps (the view Sketches
@@ -44,8 +44,8 @@ cut by its outline, laid where its box is on the continent's grid, at the overvi
 no zone is (Art.lua draws Blizzard's continent and world maps under it). And the mask that fades their paper
 frames off.
 
-  src/Navigation/Art/Sketches/<continent>-<row>-<column>.blp   as the terrain's overview
-  src/Navigation/Art/Edge.blp                                  256 x 256: a map's box, its frame faded off
+  assets/optimized/Navigation/Art/Sketches/<continent>-<row>-<column>.blp   as the terrain's overview
+  assets/optimized/Navigation/Art/Edge.blp 256 x 256: a map's box, its frame faded off
 
 All are BLP2 with DXT5 (the alpha needs its own block) and a full chain of mipmaps; the DXT blocks are made
 by ImageMagick (its range fit).
@@ -82,11 +82,12 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 TILES = ROOT / "assets" / "data" / "Tiles" / "Tiles.jsonl"
 NAVIGATION = ROOT / "src" / "Navigation"
-TERRAIN = NAVIGATION / "Art" / "Terrain"
-ZONES = NAVIGATION / "Art" / "Zones"
-SKETCHES = NAVIGATION / "Art" / "Sketches"
-EDGE = NAVIGATION / "Art" / "Edge.blp"
-COASTS = NAVIGATION / "Art" / "Coasts"
+ART = ROOT / "assets" / "optimized" / "Navigation" / "Art"  # dev/build puts it into the addon's Art/
+TERRAIN = ART / "Terrain"
+ZONES = ART / "Zones"
+SKETCHES = ART / "Sketches"
+EDGE = ART / "Edge.blp"
+COASTS = ART / "Coasts"
 OUTLINES = NAVIGATION / "Outlines.lua"
 COASTLIST = NAVIGATION / "Coasts.lua"
 

@@ -5,9 +5,9 @@
 #   2. Builds the addons into BUILD, one folder each: a folder of src becomes the addon its TOC
 #      names (src/Core -> BUILD/SaneUI, src/Abilities -> BUILD/SaneUI_Abilities), without what
 #      only development needs (the READMEs), plus the project's licence, which covers every
-#      addon. These folders are the ones to hand to other people. The Atlas (src/Atlas ->
-#      BUILD/SaneUI_Atlas) takes its art and index from assets/optimized/Atlas too, and is built
-#      only once dev/tools/atlas has made them. Then the data packs
+#      addon. These folders are the ones to hand to other people. A module's art comes from
+#      assets/optimized/<its folder> (src/Core + assets/optimized/Core -> BUILD/SaneUI). The Atlas
+#      takes its index from there too, and is built only once dev/tools/atlas has made it. Then the data packs
 #      (BUILD/SaneUI_Data_*), compiled from the master in assets/data by dev/tools/data: Forever
 #      live's (Doc/guides/data.md).
 #   3. Copies them into WoW: Forever's AddOns folder, and removes a module's folder there under its
@@ -37,18 +37,21 @@ esac
 
 "$here/dev/tests/run"
 
-# The addons: [name of the TOC] = its folder in src; [name] = a folder of art put in with it.
+# The addons: [name of the TOC] = its folder in src; [name] = a folder of art put in with it. src holds no
+# pictures or sounds: a module's art is in assets/optimized/<its folder> (Art/, made by dev/tools/art and the
+# other art tools), put together with its code here.
 declare -A source assets
 for toc in "$here"/src/*/*.toc; do
-    source[$(basename "$toc" .toc)]="$(dirname "$toc")"
+    name="$(basename "$toc" .toc)"
+    source[$name]="$(dirname "$toc")"
+    art="$here/assets/optimized/$(basename "$(dirname "$toc")")"
+    if [ -d "$art" ]; then assets[$name]="$art"; fi
 done
 # The Atlas' art (Art/) and its index (Index.lua) are made by dev/tools/atlas into assets/optimized/Atlas (about
 # 3 GB), never into src: the addon is src/Atlas with them. Without them there is no Atlas to build, and the
 # map shows two views; its folder in BUILD then goes as a stale one, and a copy in the game stays (stale only
 # names it there).
-if [ -f "$here/assets/optimized/Atlas/Index.lua" ]; then
-    assets[SaneUI_Atlas]="$here/assets/optimized/Atlas"
-else
+if [ ! -f "$here/assets/optimized/Atlas/Index.lua" ]; then
     unset 'source[SaneUI_Atlas]'
     echo "Not built: SaneUI_Atlas, its art is not made yet (dev/tools/atlas, into assets/optimized/Atlas)."
 fi

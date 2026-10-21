@@ -49,7 +49,7 @@ own again.
   dressed at the login (`C_NamePlate.GetNamePlates`).
 - **The bar** (`Bar.lua`): a border texture the size of the dress, and inside it, one pixel in (`Core.Pixels`),
   a `StatusBar` with the game's raid frames' fill (`Interface\RaidFrame\Raid-Bar-Hp-Fill`) and a dark background.
-  Round by Core's caps (`Core.Shape.CAP_LEFT`, `CAP_RIGHT`, `src/Core/Art/cap-*.blp`, made by
+  Round by Core's caps (`Core.Shape.CAP_LEFT`, `CAP_RIGHT`, `assets/optimized/Core/Art/cap-*.blp`, made by
   `dev/tools/shape-art`): two mask textures per rectangle, at its ends, `Bar.CAP` (a quarter) of its height wide,
   `CLAMPTOWHITE`; the fill and the background share the inner pair, the border has its own. A cap is drawn for a
   bar's proportion, so the corners stay round at any size. Health goes to the bar as the game gives it

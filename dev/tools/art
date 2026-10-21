@@ -22,8 +22,8 @@ prints the numbers).
   sheet    a flipbook made by dev/tools/flipbook: kept whole, its sides are powers of two already (its
            frame's side came from the drawn size there); TexCoords 0-1.
 
-They go into assets/optimized/, and a module's banner also into that module, as Art/banner.blp:
-that copy is the one the game loads (the options page of the module shows it at the top). Another
+They go into assets/optimized/, and a module's banner also into that module's art, as
+assets/optimized/<module>/Art/banner.blp (dev/build puts it into the addon's Art/): that copy is the one the game loads (the options page of the module shows it at the top). Another
 picture a module ships goes there under its own name (Art/smiley.blp).
 
 On the way, alpha from SOLID up becomes solid (the drawings' solid parts came 99 % opaque, which
@@ -208,12 +208,12 @@ def make(pattern, name, kind, module, shipped_as="banner.blp"):
             break
         k += 1
     data = blp(levels, width, height)
-    targets = [OUT / f"{name}.blp"] + ([ROOT / "src" / module / "Art" / shipped_as] if module else [])
+    targets = [OUT / f"{name}.blp"] + ([OUT / module / "Art" / shipped_as] if module else [])
     for target in targets:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
     psnr, alpha = check(targets[0], first)
-    shipped = f", shipped as src/{module}/Art/{shipped_as}" if module else ""
+    shipped = f", shipped as assets/optimized/{module}/Art/{shipped_as}" if module else ""
     print(f"{found[0].name} ({found[0].stat().st_size // 1024} KB) -> {name}.blp {width}x{height}, "
           f"{len(levels)} levels, {len(data) // 1024} KB (read back: {psnr:.1f} dB, alpha off by {alpha:.0f} at most){shipped}")
     if kind != "sheet":

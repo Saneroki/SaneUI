@@ -35,10 +35,11 @@ sys.dont_write_bytecode = True
 SRC = Path(__file__).resolve().parents[2] / "src"
 sys.path.insert(0, str(SRC.parent / "dev" / "data"))
 MAIN = "SaneUI"  # the addon every module depends on; a module's addon is SaneUI_<Module>
-# Modules dev/build puts together from src/<folder> and assets/optimized/<folder> (art, and what a tool makes
-# with it): a file their TOC lists may be in either.
-FROM_ASSETS = {"Atlas"}
+# dev/build puts each module together from src/<folder> and assets/optimized/<folder> (its art, and the Atlas'
+# index a tool makes with it): a file its TOC lists may be in either. src itself holds no pictures or sounds.
 ASSETS = SRC.parent / "assets" / "optimized"
+MEDIA = {".blp", ".tga", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ogg", ".mp3", ".wav", ".flac",
+         ".mp4", ".webm"}
 
 # Globals the addons may write: the table they share, their saved settings and functions,
 # the slash command, key bindings.
@@ -76,14 +77,17 @@ def check_addon(folder):
     fields, listed = read_toc(toc)
     for path in sorted(listed):
         named = path.relative_to(folder)
-        if folder.name in FROM_ASSETS and not path.exists():
+        if not path.exists():
             path = ASSETS / folder.name / named
-            if not path.exists():
+            if not path.exists() and folder.name == "Atlas":
                 continue  # its art is not made yet: dev/build does not build it
         # A name that only differs in capitals loads on Windows and nowhere else; ask for the exact one.
         if not path.exists() or path.name not in {p.name for p in path.parent.iterdir()}:
             problems.append(f"{name} lists a file that is not there: {named}")
     for path in sorted(folder.rglob("*")):
+        if path.suffix.lower() in MEDIA:
+            problems.append(f"a picture or sound in src, its place is assets/optimized/{folder.name}: "
+                            f"{path.relative_to(SRC)}")
         if path.suffix in (".lua", ".xml") and path not in listed and path.name != "Bindings.xml":
             problems.append(f"not listed in {name}, so the game will not load it: {path.relative_to(folder)}")
 
@@ -293,7 +297,7 @@ def check_guards(folders):
 
 counts = check_tocs()
 check_lua(sorted(SRC.rglob("*.lua")), SRC)
-check_lua(sorted(p for name in FROM_ASSETS for p in (ASSETS / name).glob("*.lua")), SRC.parent)
+check_lua(sorted(ASSETS.glob("*/*.lua")), SRC.parent)
 core_fields, _ = read_toc(SRC / "Core" / f"{MAIN}.toc")
 packs = check_packs(core_fields)
 doors = check_guards(p for p in SRC.iterdir() if p.is_dir())

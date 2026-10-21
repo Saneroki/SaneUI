@@ -255,7 +255,7 @@ ticked), colours, buttons, and a list of the CVars. A module's page in tabs has 
 | `About.lua` | The page *Sane UI* under its banner: the links (`About.LINKS`), the feedback buttons, the feedback window and its report, `/sane feedback` |
 | `Banner.xml` | Our rows in the game's lists: the one a banner is drawn in (its height, the art's size and place), and the one to type into |
 
-Sane UI's banner, for the page *Sane UI*, is Core's: `src/Core/Art/banner.blp` (original art of Sane UI, see
+Sane UI's banner, for the page *Sane UI*, is Core's: `assets/optimized/Core/Art/banner.blp` (original art of Sane UI, see
 the project's `LICENSE`; made by `dev/tools/art` from `assets/SaneUI-banner.png`).
 
 ## History
