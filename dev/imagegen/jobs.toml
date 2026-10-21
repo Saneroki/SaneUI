@@ -21,11 +21,12 @@
 #   ignore = ["kwin_wayland", "kwin_x11", "Xorg", "Xwayland", "plasmashell", "gnome-shell"]   the desktop
 #   tries = 3           a job that fails so often in a row waits for gpu-runner reset <name>
 #
-# Long painting runs go in here only on Saneroki's word. Next in line, when he says so:
-#
-# [[job]]
-# name = "atlas"
-# priority = 10
-# command = ["dev/tools/atlas", "paint"]
-# status = ["dev/tools/atlas", "status"]
-# done = '^(\d+) of \1 squares painted'
+# Long painting runs go in here only on Saneroki's word.
+
+# The Atlas' close squares, both continents (Saneroki, 2026-10-21).
+[[job]]
+name = "atlas"
+priority = 10
+command = ["dev/tools/atlas", "paint"]
+status = ["dev/tools/atlas", "status"]
+done = '^(\d+) of \1 squares painted'

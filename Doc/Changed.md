@@ -21,6 +21,9 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
 - `dev/tools/imagegen`: `Server.free` (the Atlas' pause used it inline) and `Server.interrupt`, which stops only
   its own picture (the Atlas' quit interrupted whatever ComfyUI was making, another session's picture too); its
   client id can be set by `IMAGEGEN_CLIENT`, so the runner tells its jobs' pictures from others'.
+- At Saneroki's ask, the same day: the Atlas' close squares are its first job, and `gpu-runner install` makes it
+  a user service (`~/.config/systemd/user/saneui-gpu-runner.service`), started at every login; it stands by
+  for the hold after its own start too, so one started in a gap of another session's work waits first.
 - Guide: `Doc/guides/image-generation.md`, *The GPU runner*. Tests: `dev/tests/gpu_runner.py` (33 checks).
 
 ### Navigation: zones and continents reimagined in the painted view (Saneroki, 2026-10-21)

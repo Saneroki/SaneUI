@@ -222,7 +222,8 @@ only while the card is idle and gives the card back the moment something else wa
   `dev/tools/atlas status`, `'^(\d+) of \1 squares painted'`). The runner reads the file at every look and runs
   the most important unfinished job; stopped, it runs the same command again later. The Atlas goes on where it
   stopped (it skips the squares it has painted); `dev/tools/imagegen` makes its whole list again, so give the
-  runner short lists. Long runs go into the file only on Saneroki's word.
+  runner short lists. Long runs go into the file only on Saneroki's word; the Atlas' close squares are in it
+  (Saneroki, 2026-10-21).
 - **Wanted elsewhere:** the game (`Wow*.exe`; WoW Forever is `WowB.exe` under Proton); another program on the
   card holding more than 1.5 GB of it, or using more than 40 % at three looks in a row (the desktop's own
   programs never count); pictures of another session or tool in ComfyUI's queue (the runner gives its jobs an
@@ -230,8 +231,8 @@ only while the card is idle and gives the card back the moment something else wa
 - **Then:** the job is stopped at once (the Atlas drops the picture being painted and keeps every square
   finished), its pictures leave ComfyUI's queue (by their id: never another's) and the card is freed: ComfyUI
   stopped if the runner started it and nobody else used it meanwhile, else told to let go of its memory, as the
-  Atlas' `p`. With the card free for three minutes (`hold`), the runner goes on: an alt-tab or a restart of the
-  game does not start it again.
+  Atlas' `p`. With the card free for three minutes (`hold`, after its own start too), the runner goes on: an
+  alt-tab or a restart of the game does not start it again.
 - **Another session or tool that needs the card** claims it:
 
   ```bash
@@ -246,7 +247,8 @@ only while the card is idle and gives the card back the moment something else wa
 
 | | |
 | --- | --- |
-| `dev/tools/gpu-runner start` / `stop` | the runner in the background (the user unit `saneui-gpu-runner`) / stopped, the card freed |
+| `dev/tools/gpu-runner install` / `uninstall` | the runner as the user service `saneui-gpu-runner`: started now and at every login, standing by while the card is busy (installed 2026-10-21) |
+| `dev/tools/gpu-runner start` / `stop` | the runner in the background / stopped, the card freed |
 | `dev/tools/gpu-runner run` | the runner in this terminal (Ctrl+C stops it) |
 | `dev/tools/gpu-runner pause` / `resume` | held by hand (the job stopped, the card freed) / going on after the hold |
 | `dev/tools/gpu-runner status` | what it does or why it waits, the claims, each job and how far it is |

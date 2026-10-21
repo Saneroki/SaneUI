@@ -26,7 +26,9 @@ start it again.
 
 Usage:
   dev/tools/gpu-runner run              the runner in this terminal (Ctrl+C stops it and frees the card)
-  dev/tools/gpu-runner start            the runner in the background (a systemd user unit, saneui-gpu-runner)
+  dev/tools/gpu-runner install          the runner as a user service, saneui-gpu-runner: started now and at every
+                                        login, standing by while the card is busy (uninstall: the other way)
+  dev/tools/gpu-runner start            the runner in the background (the service, or else a passing unit)
   dev/tools/gpu-runner stop             stops the runner: its job is stopped and the card freed
   dev/tools/gpu-runner pause | resume   holds the runner by hand (its job stopped, the card freed) | lets it go on
   dev/tools/gpu-runner status           what it does, why it waits, the jobs and how far each is
@@ -63,6 +65,7 @@ STATE = Path(os.environ.get("GPU_RUNNER_STATE") or Path.home() / ".local" / "sta
 RUNTIME = Path(os.environ.get("GPU_RUNNER_DIR") or Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "saneui-gpu")
 ADDRESS = "127.0.0.1:8188"
 UNIT = "saneui-gpu-runner"
+SERVICE = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "systemd" / "user" / f"{UNIT}.service"
 DEFAULTS = {
     "hold": 180,           # seconds the card must be free before a job (re)starts
     "poll": 3,             # seconds between looks
@@ -306,7 +309,8 @@ class Runner:
         self.stopping_job = False
         self.started_comfy = False
         self.freed = True
-        self.wanted_at = 0.0     # the last look that found the card wanted elsewhere
+        self.wanted_at = time.time()   # the last look that found the card wanted elsewhere; at the start too, so
+                                       # a runner started in a gap of another's work stands by for the hold first
         self.told = self.bad_list = None   # what was said last, not to say it at every look
         self.quit = False
 
@@ -496,6 +500,10 @@ def running():
     return status if status and alive(status["pid"]) else None
 
 
+def service_active():
+    return subprocess.run(["systemctl", "--user", "is-active", "--quiet", UNIT]).returncode == 0
+
+
 def show_status(jobs_path):
     status = running()
     if not status:
@@ -543,7 +551,7 @@ def claim(name, wait, command):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0],
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=("run", "start", "stop", "pause", "resume", "status", "claim",
+    parser.add_argument("command", choices=("run", "install", "uninstall", "start", "stop", "pause", "resume", "status", "claim",
                                             "release", "reset"))
     parser.add_argument("name", nargs="?")
     parser.add_argument("--wait", action="store_true")
@@ -556,6 +564,41 @@ def main():
     (RUNTIME / "claims").mkdir(parents=True, exist_ok=True)
     if args.command == "run":
         run(jobs_path)
+    elif args.command == "install":
+        SERVICE.parent.mkdir(parents=True, exist_ok=True)
+        SERVICE.write_text(f"""# Sane UI's GPU runner: ComfyUI work while the graphics card is idle ({Path(__file__).resolve()}).
+# Written by gpu-runner install; gpu-runner uninstall takes it away.
+[Unit]
+Description=Sane UI GPU runner (ComfyUI work while the card is idle)
+
+[Service]
+Type=simple
+WorkingDirectory={ROOT}
+Environment=PATH={os.environ.get('PATH', '/usr/bin')}
+ExecStart={sys.executable} {Path(__file__).resolve()} run --jobs {jobs_path}
+Restart=on-failure
+RestartSec=60
+TimeoutStopSec=60
+
+[Install]
+WantedBy=default.target
+""")
+        if running() and not service_active():
+            raise SystemExit("A runner runs already outside the service: gpu-runner stop first")
+        subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
+        subprocess.run(["systemctl", "--user", "enable", "--now", UNIT], check=True)
+        print(f"Installed: {SERVICE}, started now and at every login. Its log: {STATE / 'runner.log'}")
+    elif args.command == "uninstall":
+        subprocess.run(["systemctl", "--user", "disable", "--now", UNIT], capture_output=True)
+        SERVICE.unlink(missing_ok=True)
+        subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
+        print("The service is gone; the card is free.")
+    elif args.command == "start" and SERVICE.is_file():
+        subprocess.run(["systemctl", "--user", "start", UNIT], check=True)
+        print(f"The runner started ({UNIT}). Its log: {STATE / 'runner.log'}")
+    elif args.command == "stop" and service_active():
+        subprocess.run(["systemctl", "--user", "stop", UNIT], check=True)
+        print("The runner stopped; the card is free. It starts again at the next login (or gpu-runner start).")
     elif args.command == "start":
         if running():
             raise SystemExit("The runner is running already: gpu-runner status")
