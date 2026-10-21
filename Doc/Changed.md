@@ -1047,6 +1047,17 @@ Saneroki asked for a much richer bag view, in features and looks.
   made in code (pencil lines drawn in, then the window faded in), each ending on its still. `ui-panels/anim.py`
   plays only a clip's motion, quickly, and its `clear()` copes with busier backgrounds.
   `gallery.py`: a page of the set's pictures, numbered, each opening full screen.
+- The look picked from the gallery (Saneroki): the journal screen's parchment pages bound in stitched leather
+  (`style.txt`), headers as leather strips with the title and patch buttons, leather bookmark tabs on the left,
+  faint quick pencil sketches. New lists: `doll2`, `windows2` (from words and with the journal screen as
+  reference), `views` (doll, stats, spellbook, chat) and `guild` (the guild window's board with the podium,
+  members, armory, race and crafting, after the plan in `Doc/ideas/Guild.md`), each also by Qwen's edit with the
+  journal screen and a leather window as references.
+- Decided (Saneroki): the character doll's layout, the hero in the middle, the twenty slots in arcs close round him,
+  the stats outside (`ui-panels/guides.py` doll-final, painted by `doll-final-words.txt`; a second picture for the
+  look took over the layout); Kalam with a paper grain as the main font (`fonts.py`: hand-printed fonts on
+  parchment). `chat-compact.txt`: two-line pencil chat bubbles. `paper.txt` and `paper-test.py`: a seamless grain
+  tile, clouds scaled to cover and coffee stains with transparency laid by code, at three window sizes.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.

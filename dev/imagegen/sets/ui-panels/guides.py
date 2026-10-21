@@ -82,6 +82,26 @@ def doll_quick():
     draw("doll-quick", shapes + lines + joins, pad=12)
 
 
+def doll_final():
+    """The doll's final layout (Saneroki, 2026-10-21): the hero in the middle, the twenty slots close round him in
+    two arcs, each slot's stat strip outside it, the weapons below with their strips under them."""
+    shapes, strips = [("rect", (432, 110, 592, 800))], []
+    for i in range(8):
+        y = 160 + i * 86
+        bow = 128 + 42 * math.sin(i / 7 * math.pi)  # out from the middle: the arcs bow round the hero
+        for side in (-1, 1):
+            x = 512 + side * bow
+            shapes.append(slot(x, y, 66))
+            edge = x + side * 41
+            strips.append(("rect", (min(edge, edge + side * 170), y - 28, max(edge, edge + side * 170), y + 28)))
+    for dx in (-170, 0, 170):
+        shapes.append(slot(512 + dx, 868, 70))
+        strips.append(("rect", (512 + dx - 78, 910, 512 + dx + 78, 958)))
+    shapes.append(slot(512 + 240, 876, 46))
+    joins = [("fill", (380, 110, 644, 820)), ("fill", (330, 820, 694, 905))]
+    draw("doll-final", shapes + strips + joins, pad=12)
+
+
 def doll_arcs():
     """The hero standing full size in the middle, the slots in two arcs bowing out to his sides."""
     hero = [("rect", (392, 110, 632, 820))]
@@ -150,6 +170,6 @@ def bags():
 
 
 if __name__ == "__main__":
-    for f in (doll_hug, doll_quick, doll_arcs, doll_shield, doll_wings, doll_hex, doll_strip, book_fan, bags):
+    for f in (doll_hug, doll_quick, doll_final, doll_arcs, doll_shield, doll_wings, doll_hex, doll_strip, book_fan, bags):
         f()
     print(sorted(os.listdir(OUT)))

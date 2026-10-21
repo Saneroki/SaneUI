@@ -1,0 +1,15 @@
+# The character doll's final layout (Saneroki, 2026-10-21): the hero in the middle, the twenty slots close round
+# him in two arcs, each slot's stats outside it, the weapons below with their stats under them. From words the
+# models lose it, so it is drawn in code (ui-panels/guides.py, doll-final) and Qwen's edit paints it, image 2
+# giving the look: the new leather-bound look (views-ref/doll-1), or the liked doll (gallery #3).
+#   python3 dev/imagegen/sets/ui-panels/guides.py && dev/tools/imagegen dev/imagegen/sets/ui-paper/doll-final.txt
+workflow: qwen21-edit-2ref
+set: width=1024, height=1024
+count: 3
+out: assets/generated/ui-paper/doll-final
+include: dev/imagegen/sets/ui-paper/style.txt
+before: Image 1 is an exact layout sketch of a game interface panel: white lines on black. Image 2 shows the wanted look (its leather, parchment, type and pencil work); take only its look, not its layout. Paint image 1 as finished concept art in that look, one compact window over a plain, dark, softly blurred game world, keeping the outline and every slot and strip exactly where the sketch has them:
+ref: assets/generated/ui-panels/guides/doll-final.png, assets/generated/ui-paper/views-ref/doll-1.png
+doll-leather: a character window with a slim stitched leather header titled "Character": the hero standing full size in the tall middle area (where the game shows its live character model), the twenty equipment slots with item icons close round him in two arcs, and in each strip outside a slot the item's name, item level and two main stats in small pencil handwriting; below him the main hand, off hand and ranged weapon slots and the smaller ammo slot, a stat strip under each weapon. The slots' and strips' borders are loose pencil strokes on the paper.
+ref: assets/generated/ui-panels/guides/doll-final.png, assets/generated/ui-paper/quick/doll-quick-3.png
+doll-liked: a character window with a slim stitched leather header titled "Character": the hero standing full size in the tall middle area (where the game shows its live character model), the twenty equipment slots with item icons close round him in two arcs, and in each strip outside a slot the item's name, item level and two main stats in small pencil handwriting; below him the main hand, off hand and ranged weapon slots and the smaller ammo slot, a stat strip under each weapon. The slots' and strips' borders are loose pencil strokes on the paper.

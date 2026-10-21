@@ -18,6 +18,19 @@ SECTIONS = [
     ("dolls-ref", "Dolls with a material reference", "the same, with the journal screen for the materials"),
     ("panels", "Panels", "first round of the look"),
     ("screens", "Full screens", "first round of the look, through the prompt enhancer"),
+    # new rounds go after the others, so the numbers already named stay
+    ("doll2", "Doll with header and tabs", "#3 with a leather header, tabs down the left, fainter sketches"),
+    ("windows2-ref", "Windows in #57's look", "Qwen's edit with #57 as the reference for the look"),
+    ("windows2", "Windows from words", "the look of #57 described in words"),
+    ("views", "Doll, stats, spellbook, chat", "from words: #57's pages bound in the stitched leather"),
+    ("views-ref", "Doll, stats, spellbook, chat (references)", "Qwen's edit with #57 and the leather window as references"),
+    ("guild", "Guild window", "from words: board with podium, members, armory, race, crafting"),
+    ("guild-ref", "Guild window (references)", "Qwen's edit with #57 and the leather window as references"),
+    ("doll-final", "Doll, final layout", "the decided layout drawn in code; look from views-ref/doll-1 (leather) or #3 (liked)"),
+    ("chat-compact", "Compact chat bubbles", "two lines each, paper and pencil only"),
+    ("paper", "Paper", "tileable grain, clouds, coffee stains with transparency"),
+    ("doll-final-words", "Doll, final layout (guide only)", "the decided layout, the look in words, no second picture"),
+    ("paper-test", "Paper laid out", "the seamless grain tile, 2 x 2, and windows of three sizes"),
 ]
 
 
@@ -70,7 +83,7 @@ section { padding: 8px 16px 16px; } h2 { font-size: 18px; margin: 18px 0 2px; } 
 figure { margin: 0; background: var(--card); border-radius: 8px; overflow: hidden; cursor: zoom-in; }
 figure img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; background: #000; }
 figure:hover { outline: 2px solid var(--accent); }
-figcaption { padding: 6px 8px; font-size: 13px; color: var(--dim); overflow-wrap: anywhere; } figcaption b { color: var(--accent); font-size: 16px; }
+figcaption { padding: 6px 8px; font-size: 13px; color: var(--dim); overflow-wrap: anywhere; } figcaption b { color: var(--accent); font-size: 16px; } a { color: var(--accent); }
 #view { position: fixed; inset: 0; background: rgba(0,0,0,.94); display: none; align-items: center; justify-content: center; }
 #view.on { display: flex; } #view img { max-width: 100vw; max-height: calc(100vh - 44px); object-fit: contain; }
 #view .label { position: fixed; top: 0; left: 0; right: 0; padding: 10px 16px; color: var(--accent); font-size: 18px; font-weight: 600; }
@@ -78,7 +91,7 @@ figcaption { padding: 6px 8px; font-size: 13px; color: var(--dim); overflow-wrap
   font-size: 32px; width: 52px; height: 80px; cursor: pointer; border-radius: 6px; }
 #prev { left: 8px; } #next { right: 8px; } #close { top: 26px !important; right: 8px; height: 44px !important; font-size: 24px !important; }
 </style></head><body>
-<header><h1>Paper look</h1><p>Click a picture for full screen; arrow keys step, Escape closes. Name them by number.</p></header>
+<header><h1>Paper look</h1><p>Click a picture for full screen; arrow keys step, Escape closes. Name them by number. <a href="fonts.html">Pencil fonts</a></p></header>
 {BODY}
 <div id="view"><div class="label"></div><img alt=""><button id="prev">&#8249;</button><button id="next">&#8250;</button><button id="close">&#10005;</button></div>
 <script>

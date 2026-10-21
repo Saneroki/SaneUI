@@ -1,0 +1,9 @@
+# Windows in the picked look (style.txt), from words.
+#   dev/tools/imagegen dev/imagegen/sets/ui-paper/windows2.txt
+workflow: qwen21-t2i
+set: aspect_ratio=1:1 (Square), megapixels=1
+count: 2
+out: assets/generated/ui-paper/windows2
+include: dev/imagegen/sets/ui-paper/style.txt
+before: Concept art of one single small, compact window of a high fantasy role-playing game interface, alone in the middle over a plain, dark, softly blurred game world:
+include: dev/imagegen/sets/ui-paper/windows2-prompts.txt

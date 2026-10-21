@@ -1,0 +1,10 @@
+# The guild window's views by Qwen's edit with the two pictures for the look (as views-ref.txt).
+#   dev/tools/imagegen dev/imagegen/sets/ui-paper/guild-ref.txt
+workflow: qwen21-edit-2ref
+set: width=1728, height=960
+count: 2
+out: assets/generated/ui-paper/guild-ref
+include: dev/imagegen/sets/ui-paper/style.txt
+before: Image 1 shows the wanted parchment pages, type, pencil lines and faint sketches, and how panels sit side by side; image 2 shows the wanted stitched leather, metal corners and bookmark tabs. Make a new picture in that look with new content: one large, compact, dense window filling the picture, rich with tabs, buttons, lists and panels:
+ref: assets/generated/ui-paper/screens/journal-1.png, assets/generated/ui-paper/refs/leather.png
+include: dev/imagegen/sets/ui-paper/guild-prompts.txt

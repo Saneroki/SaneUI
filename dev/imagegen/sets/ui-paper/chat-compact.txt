@@ -1,0 +1,10 @@
+# Chat bubbles, extremely compact (Saneroki, 2026-10-21): two lines each, the first the speaker (a tiny class
+# picture, name, channel, time), the second the message; only the paper, its pencil outline and a divider.
+#   dev/tools/imagegen dev/imagegen/sets/ui-paper/chat-compact.txt
+workflow: qwen21-t2i
+set: aspect_ratio=1:1 (Square), megapixels=1
+count: 3
+out: assets/generated/ui-paper/chat-compact
+style: The bubbles are extremely compact and plain: a small piece of cream parchment with a thin, loose hand-drawn pencil outline and a tiny pointed tail, no leather, no frame, no ornament, no shading; exactly two lines of small pencil-grey handwritten print inside, the first line a tiny round class picture, the character's name, the channel and the time, a faint pencil divider, the second line the message. Tight padding, nothing else in them. The quality of high fantasy concept art, neutral to every faction.
+chat-history: Concept art of a compact chat window of a high fantasy role-playing game interface over a plain, dark, softly blurred game world: a slim stitched brown leather header titled "Chat" with small leather bookmark tabs for the channels, and on calm parchment a dense column of tiny two-line chat bubbles, one under the other with small gaps, others' on the left and the player's own on the right, a slim pencil-ruled input line at the bottom.
+chat-bubbles: Concept art of five tiny two-line chat bubbles floating over a dark, softly blurred game world, stacked above a character's head.

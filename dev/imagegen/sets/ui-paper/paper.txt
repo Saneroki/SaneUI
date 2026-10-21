@@ -1,0 +1,13 @@
+# The paper (Saneroki, 2026-10-21): the clouded parchment of the fonts page with an extremely subtle grain, and
+# coffee stains as separate pieces with transparency, laid by code here and there, so a scrolled or resized
+# window shows no repeats (paper-test.py checks the tiles' seams and lays a window out of them).
+#   dev/tools/imagegen dev/imagegen/sets/ui-paper/paper.txt
+workflow: qwen21-t2i
+set: aspect_ratio=1:1 (Square), megapixels=1
+count: 3
+out: assets/generated/ui-paper/paper
+grain: A seamless tileable texture, filling the whole picture edge to edge, flat and evenly lit from straight above: aged cream parchment with an extremely subtle fine paper grain and faint fibres, soft and even, no clouds, no stains, no marks, no folds, no text, no border, no vignette.
+clouds: A texture filling the whole picture edge to edge, flat, seen from straight above: aged cream parchment with soft, large, faint cloudy patches of slightly darker and lighter tone, very gentle, no stains, no marks, no folds, no text, no border.
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background.
+stain: one single faint coffee ring stain as it looks on old parchment, a pale brown ring with a soft uneven edge and a few tiny drops beside it, alone and centred, seen from straight above, very light.
+stains: four separate faint marks on old paper, apart from each other on the transparent background: a pale coffee ring, a half ring, a soft tea blot, a few tiny drops; seen from straight above, very light.
