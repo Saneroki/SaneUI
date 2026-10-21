@@ -6,6 +6,30 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 507 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 125 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the dungeons' paintings researched and held to their words and pictures (Saneroki, 2026-10-21)
+- **The briefs** (`dev/imagegen/maps/dungeons.toml`): all 30 instances researched from the game's own lore texts and
+  pictures of each place and from what is known of them in play, in the zone briefs' fields: `biome` (what kind of
+  place: a cave, a castle, a mine, a temple, a city, a volcano), `buildings`, `places`, `mood`, `colours`,
+  `atmosphere` (its light first). Forever runs the classic versions of all 26; its four new dungeons' pictures are
+  sketches in one tone (`sketch = true`: their colours are the words').
+- **The harness** (`dev/tools/dungeon-paint`, workflow `qwen21-edit-2ref`): image 1 the floors where they lie in the
+  world, seen at an angle, a floor over another lifted, parts far apart moved together, the paper around the rooms
+  left out (no more side-by-side panels); image 2 the game's own picture of the place (the dungeon journal's
+  painting, else the loading screen, cut free of frame and logo; `--pictures`): its architecture, materials, colours,
+  light and mood. "This place is <biome>." in the words.
+- **The check** (`dev/imagegen/workflows/qwen3vl-look.json`, new): the vision model the image model reads its words
+  with looks at each painting (writing, a map or a drawing, panels, seen from above as a whole rather than image 2's view
+  copied, the brief's kind of place) and a failed one is painted again with the next seed: three that pass, six
+  tries at most. A pilot of four (the Deadmines, Wailing Caverns, Blackrock Spire, the Hall of Thanes) passed three;
+  the cave painted from inside, under an arch, was caught. Image 2 is given at 640 pixels (`resolution` 0: each
+  picture at its own size), and the shared far look (`levels.toml`) says that all of the place lies below, cut
+  open, nothing framing the view: two more caves came out from above and passed. `dungeon-paint check` looks at paintings
+  made without it; `contact` marks the failed ones.
+- **The queue:** the far level follows the layout and takes the middle and close levels as inspiration (Saneroki),
+  so the job `dungeons` is held until they are made; its run is ready (30 layouts, 30 pictures). Written in
+  `Doc/guides/map-style.md` (*Strict to its words and pictures*), `Doc/guides/image-generation.md`,
+  `Doc/ideas/Navigation.md`, `Doc/agent/development.md`. Tests: `dev/tests/dungeon_paint.py` (383 checks).
+
 ### Navigation: boats, zeppelins and the tram of one side only for that side (Saneroki, 2026-10-21)
 - **Their side** (Core's set *Travel*, `side` of a boat, a zeppelin and the tram; `dev/tools/travel-data`, `side`):
   `alliance` or `horde` where the way's docks lie within `DOCKSIDE` (600) yards of that side's flight masters alone

@@ -12,272 +12,348 @@
 #   middle   each floor drawn anew in pencil on paper, exactly along that terrain's walls and walkable ground
 #            (levels.toml's [middle]), seen straight from above in the floor's own frame (view below; the world's
 #            middle level is seen at an angle, Saneroki, 2026-10-21), the ground the close level lies over.
-#   far      one free, realistic reimagination of each instance as a whole, seen at an angle (levels.toml's [far]).
+#   far      one realistic reimagination of each instance as a whole, seen at an angle (levels.toml's [far]),
+#            that follows its layout and takes the middle and close levels as inspiration (Saneroki, 2026-10-21).
 # The close and middle levels wait for the instances' terrain, which the world's tools (dev/tools/terrain-art,
-# indoor-art) do not make yet; their jobs join the queue with it. The far level is painted now
-# (dev/tools/dungeon-paint, the GPU runner's job "dungeons"): its image 1 is the instance's layout, every floor's
-# map side by side in the game's order, blurred until only the shapes of its halls, rooms, corridors and water are
-# left (no line, no drawing style, no writing can be read in it). Its words: far below, the shared [far] look, open,
-# the brief's mood, the levels sentence where it has several floors, the brief's places, colours and atmosphere,
-# and the shared [far] last sentence.
+# indoor-art) do not make yet; their jobs join the queue with it, and the far level's job waits for them.
+#
+# The far level (dev/tools/dungeon-paint, the GPU runner's job "dungeons"), strict to these words and two pictures:
+#   image 1  the layout: its floors where they lie in the world, seen at an angle, a floor over another lifted,
+#            blurred to shapes (the game's map art of the floors until the middle level's drawings are made);
+#   image 2  the game's own painting of the place (the dungeon journal's, else its loading screen): its
+#            architecture, materials, colours, light and mood; a sketch (sketch = true) gives no colours.
+# Then a vision check of each painting (writing, a map or a drawing, panels, the kind of place its biome says): a
+# painting that fails is painted again with the next seed. Its words: far, reference (or sketch), the shared [far]
+# look, open, "This place is <biome>.", buildings, mood, levels where it has several floors, places, colours,
+# atmosphere, and the shared [far] last sentence.
 #
 # One table per instance, keyed by its map ID (the game's Map table; the set Dungeons' key). name and kind are for
 # people reading the file and never go into a prompt. The other fields are the zone briefs' (zones.toml), meant
 # alike, and are prompt words that name nothing: a proper name in the words comes back as garbled letters in the
 # picture, so places, peoples and creatures are described, never named. Kinds of people are common nouns in lower
-# case (orcs, trolls, dwarves).
-#   mood        what the place is and how it feels                                          8 to 40 words
-#   places      how its parts lie and join, as a zone's major places                        12 to 60
+# case (orcs, trolls, dwarves). Each was written from the game's own lore texts and pictures of the place and from
+# what is known of it in play (Saneroki asked for each instance's research, 2026-10-21).
+#   biome       what kind of place it physically is: a cave, a castle, a mine, a temple, a city, a volcano  5 to 20 words
+#   buildings   its architecture and materials, what fills its rooms                        10 to 50
+#   places      how its parts lie and join, its major areas in the order one goes through   12 to 60
+#   mood        who holds it now, what happened there, how it feels                         8 to 40
 #   colours     its colours                                                                  4 to 15
 #   atmosphere  its light first, a sentence the Atlas' close level takes whole (no words of colour, haze, mist,
 #               smoke, fog, cloud, dust, glow, cast: its filter drops such clauses), then its air and state  15 to 55
 
 [words]
-far = "Image 1 is a rough, blurred plan of one place seen from straight above. Use image 1 only for the layout: where its halls, rooms, corridors, stairs, courtyards, water and open ground lie, how large they are and how they join."
+far = "Image 1 is a rough, blurred plan of the whole place: its parts where they lie, seen from high above at an angle, a level that lies over another lifted above it. Follow its layout: where the halls, rooms, corridors, stairs, courtyards, water and open ground lie, how large they are and how they join; but paint one whole place, never a plan and never separate panels."
+reference = "Image 2 is only a reference for how this place looks in the game: take from it the architecture, the materials, the colours, the light and the mood. Never copy its view, its composition, its framing or the creatures in it: the picture is seen from high above at an angle and laid out as image 1."
+sketch = "Image 2 is only a sketch of this place in the game: take from it the architecture, the materials and the mood. Never copy its view, its composition, its framing or its colours: the colours are the words', and the picture is seen from high above at an angle and laid out as image 1."
 open = "Roofs, ceilings and the rock above are cut away, so every hall and room lies open to view."
+levels = "Its levels lie one above another where image 1 lifts them; they are one place, joined as follows."
 view = "Seen straight from above like an orthographic satellite image, in image 1's frame: no perspective, no tilt, no horizon."
-levels = "Image 1 shows the place's {n} levels side by side in order from the top left; they are one place, its levels joined as follows."
 
 # Dungeons and raids with the game's own map art (the set Dungeons)
 
 ["33"]
 name = "Shadowfang Keep"
 kind = "dungeon"
-mood = "A haunted castle of grey stone on a forested hill, cursed and overrun by werewolves and the ghosts of its nobles."
-places = "One castle rising level by level: a walled courtyard inside the gate, a great dining hall and kennels around it, two round observatory towers climbing above, the lord's chamber near the top, and a long wall walk along the battlements joining them."
-colours = "cold blue-grey stone, dark slate roofs, black pine green, ghostly violet"
-atmosphere = "Cold blue moonlight from a full moon, deep black shadows, a few warm torches in the windows. Wet stone, wind in the pines, mist drifting through the courtyard."
+biome = "a fortified grey stone keep with towers on a high wooded bluff above a pine forest"
+buildings = "Grey fieldstone walls and round towers under steep dark slate roofs, timber galleries with lit windows, iron gates and long stone stairs. Inside lie prison cells, a kitchen, a long dining hall with tables and cobwebbed chandeliers, a round observatory tower and a lord's chamber at the top."
+places = "The front gate opens on a jail corridor of cells and a walled courtyard. The keep beside it holds a kitchen and a long dining hall; stairs climb to an upper hall and out along the battlement wall walk to a round tower, whose den and two observatory floors rise to the lord's chamber."
+mood = "A noble's keep overrun by werewolves that a mad wizard summoned; the murdered lord and his guards haunt its halls as ghosts, and the whole place feels cursed and grieving."
+colours = "cold blue-grey stone, dark slate roofs, black-green pines, pale moonlit blue, warm amber windows"
+atmosphere = "Cold blue moonlight from a clear night sky, deep black shadows in the corners, and a few warm lamps burning in the windows. Wet stone and wind in the pines, a distant howl, cobwebs and dust on everything, torn tapestries, broken furniture and claw marks on the doors."
 
 ["34"]
 name = "Stormwind Stockade"
 kind = "dungeon"
-mood = "A prison under a great human capital, its dank cell blocks taken over by rioting prisoners."
-places = "One level: long vaulted corridors lined with barred cells, meeting in a central guard hall, with a few larger rooms at their ends."
-colours = "grey granite, rusted iron, dirty straw yellow, torch orange"
-atmosphere = "Dim, flickering torchlight in low vaults, deep shadows between the cells. Smoke from small fires the prisoners lit, water dripping from the vaults, damp air."
+biome = "a prison dungeon of stone halls dug beneath the canals of a great human city"
+buildings = "Squared grey granite blocks, low ceilings on heavy dark timber beams, thick stone pillars. Barred iron cells line the halls; inside: straw on the floors, rough cots, chains, hanging iron cages, piled crates and barrels, wall torches, upturned tables and the prisoners' small fires."
+places = "From a four-lobed entry room a long straight hall leads to a crossing with a long cross hall, both lined by blocks of barred cells; each end of the cross hall opens into a round chamber with four short cell wings, and a small guard room lies past the crossing."
+mood = "A city's prison taken over by its inmates: a brotherhood of outlaws led a revolt, the guards are overthrown, and gangs of rioting prisoners now hold every hall. Cramped, dank and lawless."
+colours = "grey granite, dark timber brown, rusted iron, dirty straw yellow, torch orange, cold slate blue"
+atmosphere = "Dim torchlight in the low halls and pale shafts of daylight slanting down through barred grates from the canals above. Damp, stale air, water dripping from the vaults, smoke from the prisoners' fires, shouting and the clang of iron doors. Everything grimy, broken and looted."
 
 ["36"]
 name = "Deadmines"
 kind = "dungeon"
-mood = "A gang of pirates' hideout in an old gold mine under coastal hills, its tunnels leading down to a hidden sea cave where a great warship is being built."
-places = "Winding mine tunnels, timbered shafts and a smoky foundry descend through the rock and open into a huge sea cave with a dock, the warship at anchor in its water."
-colours = "brown earth and timber, lantern gold, rusted iron, dark green sea water, red sails"
-atmosphere = "Warm lantern light in the tunnels, cool grey daylight falling into the sea cave. Sparks and smoke from the forges, rock dust in the air, quiet water under the ship."
+biome = "an abandoned gold mine of timbered tunnels under coastal hills, opening into a great sea cave"
+buildings = "Rough rock tunnels shored with timber posts and beams, mine cart rails, lanterns and ore heaps. A goblin lumber yard of sawn logs, a foundry of smelting furnaces and molten metal, a heavy iron gate, then wooden docks and a huge pirate warship with masts, rigging and cannons."
+places = "Long winding mine tunnels descend past side galleries to a heavy door, then a lumber cavern, a foundry and a hall where a giant mast is shaped. A cannon-blasted gate opens onto the second level: a vast sea cave with docks around the warship, open to the sea."
+mood = "Unpaid stonemasons turned outlaws hold an old haunted gold mine, where goblins and ogres toil for them on a great warship meant for revenge on the human capital. Busy, hidden and lawless."
+colours = "brown rock and timber, lantern gold, furnace orange, rusted iron, dark teal water, pale turquoise"
+atmosphere = "Warm lantern light along the tunnels, the red heat of furnaces in the foundry, and cool daylight falling into the sea cave through its open mouth. Sawdust, sparks and soot in the air, the creak of timber and rigging, the clank of the forge, and quiet waves lapping under the ship."
 
 ["43"]
 name = "Wailing Caverns"
 kind = "dungeon"
-mood = "A vast cave system under a dry savanna, overgrown with giant ferns and roots, its pools and streams fouled, where druids sleep in a nightmare."
-places = "One level of winding caverns and tunnels branching around a deep central chasm, with pools, little waterfalls and a raised mound at its heart."
-colours = "moss green, earthy brown, murky teal water, pale glowing green"
-atmosphere = "Dim, humid green light from fungus on the walls, pale daylight through cracks in the roof. Mist rising off still pools, the roots of the savanna hanging from the cave roof, the air heavy and damp."
+biome = "a natural cave system of ochre rock and underground springs beneath a dry savanna oasis"
+buildings = "No buildings: rounded ochre and brown rock, giant ferns, broad-leafed plants and mushrooms, hanging roots and vines, still green pools, streams and small waterfalls, steaming fissures, ledges and natural rock bridges, and a raised rock mound where a druid lies sleeping."
+places = "One sprawling level: from the entrance cave, winding tunnels branch around a pit of serpents and a long stream, then descend into a deep winding chasm, climb past a waterfall crag on high ledges and end at a raised rock mound above a pool, where the sleeping druid lies."
+mood = "Druids came to heal the dry plains above with these springs, but their leader's dream became a nightmare: the caves are now twisted, poisoned, and held by mad serpent druids and warped beasts."
+colours = "ochre and rust-brown rock, fern green, murky teal water, pale turquoise springs, dark moss"
+atmosphere = "Dim green-blue light rising from still pools and springs, soft and humid, with deep brown shadows under the overhanging rock. Hot wet air, steam bursting from fissures with a mournful wail, dripping water, roots and vines hanging from the roof, the pools fouled and still."
 
 ["47"]
 name = "Razorfen Kraul"
 kind = "dungeon"
-mood = "A warren of giant thorny brambles in a dry savanna, home of a boar people and their shamans."
-places = "One level: paths walled and roofed by huge twisted thorn vines wind through the dry earth in loops and spirals, opening into small clearings and a sunken pit at the heart."
-colours = "dusty ochre earth, dark red-brown thorns, bone white, dry yellow grass"
-atmosphere = "Hard, hot sunlight broken into stripes by the thorny roof, sharp shadows. Dust in the air, campfires and bone totems smoking in the clearings."
+biome = "a huge warren of giant thorn vines over dry red earth, with earthen tunnels and a cave"
+buildings = "Walls and arches of huge twisted thorn vines and spikes as tall as trees. Boar people's huts of hide and bone, sharpened log posts lashed with rope, rope-and-plank bridges, bone totems, spiked log barricades, glowing crystals of their shamans, pens of boars, and a crone's hut atop a ramp."
+places = "One level of earthen paths walled by thorns, winding in loops that cross over and under each other on bridges and tunnels; clearings with huts lie along it, a plateau and a bat cave branch off, and a ramp climbs to the crone's hut at the end."
+mood = "The boar people's holiest home, grown where their fallen demigod bled; their war-hungry crone and her shamans rule it, and blood drips from the thorns. Savage and tribal."
+colours = "dusty ochre earth, dark red-brown thorns, bone white, dry yellow grass, pale crystal turquoise"
+atmosphere = "Warm dusky sunlight broken into stripes and slivers by the thorn roof, sharp shadows, and pale turquoise light from the shamans' crystals in the hollows. Dry, hot and dusty air, campfire smoke, the grunts and squeals of boars, bones and trophies hung on every post."
 
 ["48"]
 name = "Blackfathom Deeps"
 kind = "dungeon"
-mood = "A sunken temple of an ancient elven people on a dark sea shore, half drowned and taken over by a cult of the deep."
-places = "Three levels as one ruin: a flooded hall of pools at the entrance, a moonlit shrine of broken pillars in the middle, and deep water caverns sinking below to a drowned altar."
-colours = "deep teal water, pale moonstone grey, violet glints, dark algae green"
-atmosphere = "Cold blue-green light rippling over the walls from the water, pale moonlight over the shrine. A drowned silence, wet stone, dark water lapping at broken pillars."
+biome = "a sunken night elf temple in flooded sea caves under a dark forested coast"
+buildings = "Broken temple walls of pale carved stone with crescent moon motifs, fallen pillars and arches, half-drowned stairs and terraces, a moon shrine, an altar with four fire braziers, gnarled roots and kelp hanging from the rock, and the cultists' candles and sacrificial altars."
+places = "Three levels as one sunken ruin: narrow flooded caves lead to a great round pool hall ringed by ruins, then down winding passages to a moon shrine sanctum and the cultists' ceremonial chamber, and through a sealed door into a deep cave lake, lair of a three-headed hydra."
+mood = "A temple to the moon goddess, sunk when the world broke, now held by a doomsday cult with serpent-tailed sea witches and fish-men, feeding captives to a hydra of the old dark gods."
+colours = "deep teal water, pale moonstone grey, dusky violet, dark algae green, candle gold"
+atmosphere = "Cold blue-green light rippling over the walls from the water, pale silver light over the moon shrine, and small warm candle flames in the dark. A drowned silence, wet stone slick with algae, dark water lapping at broken pillars, distant chanting and the gurgle of deep pools."
 
 ["70"]
 name = "Uldaman"
 kind = "dungeon"
-mood = "An excavated vault of an ancient race of giant makers deep under red badlands, with dwarven dig works and old stone guardians."
-places = "Rough dig tunnels with scaffolding and mine carts lead down into vast symmetrical halls of carved stone, rows of guardian statues, and a deep chamber with a great altar at the end."
-colours = "rust red rock, sandstone, bronze, pale turquoise rune light"
-atmosphere = "Warm lamplight in the dig tunnels, cool blue rune light in the great halls. Dry and dusty, the still air of a vault closed for ages."
+biome = "an ancient vault of giant carved stone halls buried deep under red badland cliffs, reached through dig tunnels"
+buildings = "Rough dig tunnels with timber props, scaffolds, rails and mine carts, and tents of a dwarven dig. Then megalithic halls of huge squared grey-gold stone blocks, carved reliefs of seated giants, rows of stone guardian statues in alcoves, great stone doors, ramps, pillared round chambers, and cave brutes' camps."
+places = "Two levels: rough dig tunnels and caves wind down from two entrances into long carved halls, a hall lined with sleeping stone keepers, side chambers of the vault's guardians and a great map room; ramps lead down to the second level, a vast chamber where a colossal stone guardian stands among dormant statues before the inner vault."
+mood = "A sealed vault of ancient giant makers, broken open by dwarven diggers; savage cave brutes, rival dwarves of a dark clan and the vault's awakened stone guardians now fight over its lost secrets."
+colours = "rust red rock, grey-gold sandstone, bronze, timber brown, cool green-grey shadow"
+atmosphere = "Warm lamplight in the dig tunnels, then dim cool green-grey light in the vast stone halls, with deep shadows between the statues. Dry still air of a vault shut for ages, rock dust and rubble on the floors, the scrape of picks and the deep hum of old stone."
 
 ["90"]
 name = "Gnomeregan"
 kind = "dungeon"
-mood = "A once great city of gnomish machines inside a snowy mountain, flooded with glowing waste and overrun by its own robots."
-places = "Four levels as one city: a giant hall of turning gears, sleeping quarters along long ramps, a rocket launch bay, and the inventors' court at the bottom, joined by ramps, lifts and pipes."
-colours = "steel grey, copper and brass, toxic green, warning yellow"
-atmosphere = "Flickering electric light and sparks, harsh and cold, dark corners between the machines. Green waste on the floors, steam venting from broken pipes, oil and rust everywhere."
+biome = "a vast underground gnome city of machine halls inside a snowy mountain"
+buildings = "Steel and brass halls of riveted plates, giant gears, pipes and valves, catwalks, ramps, lifts and spiral walkways; round bunk dormitories, workshops and labs, a rocket launch bay, and the throne court of a traitor king, with pools of green toxic sludge and wrecked robots everywhere."
+places = "Four levels as one city sinking deeper: a great round hall of gears and ramps at the top, a ring of dormitories around a hub below it, a launch bay with rockets and the engineering labs beyond, and the round tinkers' court of the traitor king at the bottom, joined by tunnels, ramps and lifts."
+mood = "The gnomes' wondrous capital, flooded with toxic gas by a traitor who now rules it as a mad king, overrun by savage cave brutes, sick crazed gnomes and his malfunctioning robots."
+colours = "steel grey, copper and brass, toxic green, teal electric blue, warning yellow, rust"
+atmosphere = "Harsh white electric lamps and searchlight beams, crackling blue sparks between the machines, sickly green light off the toxic pools, and dark corners beyond. Cold stale air thick with steam from broken pipes, green sludge pooling on the floors, oil and rust everywhere, the clank of gears and the hiss of valves."
 
 ["109"]
 name = "Sunken Temple"
 kind = "dungeon"
-mood = "A great stepped jungle temple sunk into a swamp lake, home of green dragons and of trolls who worship a blood god."
-places = "One sunken stepped pyramid: rings of galleries and stairs descend around a deep central pit, its upper tiers flooded, a sanctum at the bottom."
-colours = "mossy green stone, murky swamp water, old gold, blood red"
-atmosphere = "Soft green light filtering down through the water above, warm firelight from braziers on the tiers. Hot and humid, vines dripping, the air thick with mist over the flooded steps."
+biome = "an ancient stepped troll temple sunk deep beneath a swamp lake, its lower halls flooded"
+buildings = "Massive troll stonework of ochre and moss-green blocks fitted like a puzzle, pillars carved with zigzags, skull keystones over sealed arches, stone masks on the ring wall, serpent statues on balconies, braziers and tall candles on skull stands, pews before a dark altar, vines and dragon bones in the pit."
+places = "One temple around a deep round pit: a flooded entry hall and stairs climb to a ring corridor of guardian chambers with balconies over the pit; the pit floor below opens over a shallow pool, and halls run out to a chapel in the east, a ritual sanctum in the west and a vast hall in the south."
+mood = "Sunk beneath the swamp by green dragons to stop a blood god's return; fanatic troll priests still work bloody rites here, while corrupted green dragons roam the drowned halls in a waking nightmare."
+colours = "moss green and ochre stone, murky green water, old gold, blood red"
+atmosphere = "Dim green light seeps down through the water above, with warm yellow candle and brazier light pooling on the old stone. The air is hot, wet and still; water drips from the vaults, vines hang over the flooded steps, and distant chanting echoes through the drowned halls."
 
 ["129"]
 name = "Razorfen Downs"
 kind = "dungeon"
-mood = "A hill of giant thorny brambles turned into a plagued burial ground, its boar people serving undead masters."
-places = "One level: a spiral of thorn-walled paths winding down the hill to a central crypt, with tunnels and a field of bones."
-colours = "dead grey thorns, pale bone, sickly plague green, dark earth"
-atmosphere = "Cold, dull grey daylight, a sickly green light rising from the plague. Ghostly fog drifting over the bones, a dead silence."
+biome = "a labyrinth of earthen trails under a dome of giant thorny vines on a dry savanna hill"
+buildings = "Walls and arching roofs of colossal grey-green thorn vines with spikes as long as spears, packed earth trails, crude boar-folk huts of hide and tusk, bone totems, a great hanging gong, cages and pens, heaps of bones and skulls, open graves and dark altars of necromancers."
+places = "One winding maze inside the thorn mound: from the entrance in the north-west, trails run east past a gong chamber and pens to a wide field of bones, then turn back west and down to a great spiral path of thorns that climbs around a central mound to the lich's seat on its top."
+mood = "A burial ground of the boar-folk, grown from a fallen demigod's blood and now seized by undead invaders: cultists raise the dead, a lich holds its heart, and the thorns reek of rot."
+colours = "dead grey-green thorns, pale bone, dark earth, cold ghostly blue, sickly green"
+atmosphere = "Dim cold blue-grey light falls through gaps in the thorn canopy, and pale ghost flames and small torches light the trails. The air is stale and cold, heavy with rot and grave earth; fog creeps over the bone heaps, and only the dry creak of the vines breaks the silence."
 
 ["189"]
 name = "Scarlet Monastery"
 kind = "dungeon"
-mood = "A fortified monastery of fanatical crusaders in a gloomy northern forest."
-places = "Four wings as one walled monastery around a central courtyard: a graveyard with crypts, a great library hall, an armory with training yards, and a tall cathedral with its nave and high altar."
-colours = "white stone, scarlet banners and roofs, gold trim, dark green forest"
-atmosphere = "Dim grey daylight outside, warm candlelight and red and gold light through stained glass inside. Mist over the graveyard, incense in the halls, a cold wind in the courtyard."
+biome = "a fortified gothic monastery and cathedral of a crusading order, walled in a gloomy northern pine forest"
+buildings = "Pale grey stone gothic architecture: pointed-arch windows, steep red tile roofs, tall spires and a bell tower; vaulted halls hung with red banners and gold trim, crypts and a walled graveyard, long galleries of bookshelves, armouries of weapon racks and training dummies, a nave of pews before a high altar."
+places = "Four wings of one walled compound, each entered on its own: crypt tunnels and a walled cloister of graves; a cloister garden, long galleries and a round domed reading hall; a training yard, armouries and a round hall of champions; walled gardens with a fountain before the great cathedral nave."
+mood = "The stronghold of zealous human crusaders who see every stranger as tainted by undeath; proud and holy in look, cruel in deed, its graveyard haunted by those they tortured."
+colours = "pale grey stone, crimson roofs and banners, gold trim, dark pine green, grey-green sky"
+atmosphere = "Pale grey-green daylight under a heavy sky outside, warm candlelight and red and gold light through stained glass inside. Cold damp air in the courtyards, fog curling between the graves, incense and polished steel in the halls, the echo of hymns and drilling soldiers."
 
 ["209"]
 name = "Zul'Farrak"
 kind = "dungeon"
-mood = "A sun-baked city of desert trolls built of sandstone."
-places = "One level: walled courts and terraces around a great stepped pyramid, a sacred pool in a sunken court, and a field of old tombs."
-colours = "sandstone yellow, terracotta, turquoise, sun-bleached bone"
-atmosphere = "Blazing midday sun, harsh short shadows. Heat shimmer over the stone, sand blowing over the stairs."
+biome = "an open-air walled troll city of sandstone on a plateau in a blazing desert of dunes"
+buildings = "Sun-baked sandstone and adobe walls, stepped pyramids and temples carved with grinning masks and tusked skull faces, arched gateways under carved faces, braziers and torches, wooden scaffolds and huts, cages on a pyramid top, a sacred pool with a great gong, rows of sandy tombs."
+places = "A long sandy canyon climbs from the gate in the south to the city on its plateau: open courts joined by ramps and stairs, a field of graves, a rocky basin of basilisks, a sacred pool in a sunken court, a great stepped pyramid at the heart and a chieftain's temple beyond it."
+mood = "The proud ancient city of a desert troll tribe, sun-scorched and defiant, where witch doctors raise the tribe's dead as an army and a giant hydra sleeps in the sacred pool."
+colours = "sandstone ochre, burnt orange, terracotta, deep turquoise water, sun-pale bone"
+atmosphere = "Blazing midday sun from a clear sky, hard short shadows and bright sand throwing light into every corner. Dry scorching air rippling with heat over the stone, wind blowing sand across stairs and graves, drums and war cries echoing from the courts."
 
 ["229"]
 name = "Blackrock Spire"
 kind = "raid"
-mood = "A fortress of an orc war horde and a black dragon flight carved into a volcanic mountain."
-places = "Six levels stacked in one mountain: rough tunnels hung with spider webs at the bottom, an orc town of huts and bridges, great halls and an arena higher up, a dragon's roost at the top, joined by ramps and bridges over a lava abyss."
-colours = "black volcanic rock, glowing orange lava, dark iron, red war banners"
-atmosphere = "Hot red-orange light from the lava below, deep black shadows above. Smoke and ash in the air, sparks drifting upwards."
+biome = "a towering fortress keep carved inside a volcanic mountain, its halls stacked high above a lava abyss"
+buildings = "Colossal black dwarven stonework of square pillars, iron gates and forged doors, overrun by an orc war horde: spiked palisades, hide tents and huts, red war banners, weapon racks; webbed tunnels with egg sacs, ogre dens, worg kennels, dragon eggs in a rookery, an arena with stands, a throne hall."
+places = "Many levels stacked in one spire: past the entrance hall, a broad orc town fills the lower halls, with rough webbed tunnels and beast dens beneath it; ramps and stairs climb to great halls, a dragon rookery, an arena ringed by stands and a throne hall at the top, joined by bridges over the abyss."
+mood = "Carved by dark iron dwarves as the pride of their clan, now seized by a black dragon's brood and a renegade orc horde who breed monsters and dragonkin here for war."
+colours = "black volcanic rock, dark iron, molten orange, deep red banners, ember yellow"
+atmosphere = "Hot red and orange light rises from the lava far below and from torches, with deep black shadow in the high vaults. Smoke and ash hang in the air, sparks drift upward, chains clank, and war drums and dragon roars echo through the halls."
 
 ["230"]
 name = "Blackrock Depths"
 kind = "dungeon"
-mood = "The vast underground city of dark iron dwarves in the heart of a volcano."
-places = "A prison block near the entrance, then a huge city carved into the rock: halls, an arena ringed by stands, a tavern, forges over lava rivers and a throne room, joined by bridges over a molten lake."
-colours = "black and dark grey stone, molten orange, bronze, deep red"
-atmosphere = "Hot red-orange light from lava rivers and forges, deep shadows in the vaults. Heavy smoke, glowing runes, the air shimmering with heat."
+biome = "a vast underground city of dwarves carved deep inside a volcano, around a lake of molten lava"
+buildings = "Monumental dark stone architecture: colossal statues of stern bearded dwarf faces, square towers, heavy iron gates and bronze trim; prison cells, a round fighting arena with stands, forges and an anvil hall over lava channels, a crowded tavern of kegs and long tables, golem workshops, a throne room."
+places = "From a quarry entrance, a prison block leads to a broad highway beside lava channels and a round arena; beyond, the city rises on a higher level around a molten lake: tavern, forges and foundry, an enchanting chamber, a tomb of seven spirits, a hall of braziers and the throne room at the far end."
+mood = "The capital of the dark iron dwarves, enslaved to a fire lord they once summoned; their emperor rules from a burning throne, the prisons scream and the forges never rest."
+colours = "black and dark grey stone, molten orange, bronze, rust red, ember gold"
+atmosphere = "Hot orange light from lava rivers and forges fills the halls, a bright golden line of molten light runs between colossal statues, and deep shadow lies in the vaults. Heavy smoke and soot, air trembling with heat, the clang of hammers, roaring furnaces and the din of a crowded tavern."
 
 ["249"]
 name = "Onyxia's Lair"
 kind = "raid"
-mood = "The volcanic cave lair of a great black dragon."
-places = "One level: a long tunnel lined with nests of dragon whelps leads down into a single vast round cavern with lava vents in its floor."
-colours = "black rock, deep red, molten orange, egg-shell grey"
-atmosphere = "Dark and hot, deep red light from the lava vents below. Smoke curling up, bones and treasure scattered over the floor."
+biome = "a volcanic cave lair deep under a dark swamp, its mouth carved like a dragon's jaws"
+buildings = "Raw black volcanic rock and no buildings: a tunnel mouth shaped like a gaping maw, scorched rubble and great bones, a vast vaulted cavern with a cracked floor of smouldering fissures, side caves heaped with dark dragon eggs, scattered gold and treasure."
+places = "One level: a long winding tunnel guarded by dragonkin runs down from the entrance in the north-west, curves south and east, and opens into one vast oval cavern in the east, with egg-filled caves of whelps off its sides."
+mood = "The hidden lair of a cunning black dragon broodmother hoarding gold and eggs; scorched bones of fallen heroes everywhere, a place of heat, dread and sudden fire."
+colours = "black and dark brown rock, smouldering orange, deep red, ash grey, dull gold"
+atmosphere = "Dark, lit only by red and orange light from fiery cracks in the floor and lava seeping down the walls. Hot dry air thick with smoke and sulphur, flames bursting from the fissures, embers drifting, the rumble of the rock and the cries of whelps."
 
 ["289"]
 name = "Scholomance"
 kind = "dungeon"
-mood = "A school of necromancy in the crypts under an old manor on an island."
-places = "Four levels as one keep around a central stair: crypts and ossuaries at the bottom, summoning chambers and laboratories, lecture halls and a library above, the headmaster's study at the top."
-colours = "grey-green stone, violet necromantic light, bone white, dark wood"
-atmosphere = "Cold and dark, candlelight and violet light from necromantic circles. Green mist creeping over the floors, the stillness of crypts."
+biome = "a school of necromancy in the stone crypts and vaults beneath an old keep on a lake island"
+buildings = "Crypt halls of dark grey-green stone with pointed arches and heavy pillars, iron candelabras with tall candles, horned skulls and webbed drapes on the walls, bookshelves and lecterns, alchemy tables and vats, coffins, cages and piles of bones."
+places = "Stairs from the entrance lead down into a relic hall and a summoning chamber with a balcony; a central hall opens onto a deep bone pit and a two-storey viewing hall, which leads on to a laboratory and to the headmaster's study, ringed by six antechambers on two levels."
+mood = "A lich and a cruel headmaster run a school where cultists learn to raise the dead, haunted by the undead nobles who gave up their keep to them; cold, silent and full of dread."
+colours = "grey-green stone, bone white, sickly green, candle yellow, dark wood, black iron"
+atmosphere = "Dim yellow candlelight from iron candelabras, pale green light from braziers and necromantic circles, deep black shadows in the vaults. Cold stale air, green mist creeping over the floors, the silence of crypts."
 
 ["309"]
 name = "Zul'Gurub"
 kind = "raid"
-mood = "The capital of jungle trolls, overgrown by rainforest around a lake."
-places = "One level: temples and altars of carved stone around a central lake and its island, joined by paths, bridges and stairs through dense jungle over hills."
-colours = "jungle green, mossy grey stone, blood red, old gold"
-atmosphere = "Hot, humid daylight filtered through the canopy, dappled shadows. Mist and steam over the water, torches burning at the altars."
+biome = "a ruined temple city of jungle trolls in a walled jungle valley around a lake"
+buildings = "Stepped pyramids and temples of carved mossy grey stone with steep stairs, troll idols, tusks and skull totems, blood altars, rope bridges over gorges and waterfalls, wooden huts and torches, all half swallowed by vines, giant trees and ferns."
+places = "From the gate, paths, ramps and rope bridges wind over jungle hills past the temples of five animal priests, of bat, snake, spider, tiger and panther, past a high hill and down to a lake shore, then on to the blood god's great temple in the deepest part of the city."
+mood = "The capital of jungle trolls, where a witch doctor and high priests summoned a cruel blood god into the world; savage, hot and ancient, its temples taken back by the jungle."
+colours = "jungle green, mossy grey stone, blood red, brown earth, old gold, murky green water"
+atmosphere = "Hot daylight filtered through the high canopy, dappled patches of sun and deep green shade, torches burning at the altars. Humid, heavy air, mist and steam over the lake and waterfalls, distant drums, birds and insects, vines choking the broken stairs."
 
 ["329"]
 name = "Stratholme"
 kind = "dungeon"
-mood = "A once proud human city, burned and overrun by the plagued dead."
-places = "Two halves of one walled city: a square and streets held by crusaders on one side, and on the other the plagued quarter with stepped towers of the dead and a long street to a slaughterhouse."
-colours = "charred stone, ash grey, plague green, crusader red"
-atmosphere = "Cold dusk light, firelight from burning houses, a sickly green light over the plagued quarter. Smoke and embers in the air, ash falling like snow."
+biome = "a burned, walled human city of streets and squares, half held by zealous crusaders and half by the undead"
+buildings = "Tall half-timbered houses of grey stone and dark beams with steep slate roofs, many gutted and still burning, cobbled streets, a white and red crusader cathedral-fortress with a library and throne hall, and on the dead side stepped stone ziggurats with spikes, bone piles and a slaughterhouse."
+places = "Two halves of one city: from the main gate, streets and a market row lead to a great square before the crusaders' fortified cathedral; from a service gate, an old square and three ziggurats open onto a long walled street ending at a slaughterhouse."
+mood = "A once proud human city, burned in a purge of the plagued and overrun by the undead; zealots hold one half under a disguised demon, a death knight baron the other; ruined and hopeless."
+colours = "charred stone, ash grey, fire orange, plague green, crusader red and white, dark slate"
+atmosphere = "Dark red dusk light, firelight from burning houses and windows, a sickly green light over the dead quarter. Smoke and embers in the air, ash falling like snow, rubble and broken carts in the empty streets."
 
 ["349"]
 name = "Maraudon"
 kind = "dungeon"
-mood = "A vast cave under a desert, holy to the centaurs and overgrown by a corrupted forest of earth spirits."
-places = "Caverns of crystal on one side and fouled waters on the other lead down into an enormous cavern with a waterfall and a giant tree, a grave at its heart."
-colours = "purple crystal, poison green, earth brown, waterfall blue"
-atmosphere = "Soft light from crystals and fungi, a pale shaft of daylight on the waterfall. Falling water, misty green air under a high cave roof."
+biome = "a vast natural cave system under a desert valley, with crystal grottoes, poisoned pools and a deep green cavern"
+buildings = "Untouched natural caverns: raw rock and earth, huge roots and twisted living trees, giant fungi and glowing seed pods, clusters of purple and orange crystal, thorny vines, a small mining camp, waterfalls and rivers, pools of green ooze, a flowering grove at the bottom."
+places = "From a crossroads cave, tunnels lit by purple crystals lead one way to a satyrs' grotto and tunnels lit by orange crystals the other to fungal, poisoned pools; both join at a poisoned waterfall above an enormous cavern of waterfalls, a river and a lake, with a quiet grove and grave at its heart."
+mood = "A cave holy to the centaurs, where an earth princess keeps her dead lover's spirit; corrupted by her grief, haunted by centaur ghosts, satyrs, twisted elementals and plants."
+colours = "teal green, purple and orange crystal, poison green, earth brown, yellow seed pods"
+atmosphere = "Soft light from crystals, fungi and bright yellow seed pods, pale light on the great waterfall, deep teal shadows under the high cave roof. Damp air with green mist over the falls and poisoned pools, dripping water, roots everywhere."
 
 ["389"]
 name = "Ragefire Chasm"
 kind = "dungeon"
-mood = "A volcanic cave under an orc capital, where cultists and fire creatures hide."
-places = "One level: a tight loop of narrow tunnels and ledges around a pool of lava."
-colours = "black and red rock, molten orange"
-atmosphere = "Hot red light from the lava, dark rock all around. Smoke and heat in the narrow tunnels."
+biome = "a small volcanic cave system of lava tunnels under an orc capital in a red rock canyon"
+buildings = "Natural caverns of jagged black and red rock with sharp spikes and cracks of lava, a lava lake, narrow ledges and a raised rock walkway, crude camps of troggs and cultists with fire bowls and bones."
+places = "One level: from the entrance, narrow tunnels wind down past trogg caves to a wide lava lake, then on to a cultists' chamber with a high walkway above it, all one tight loop around the lava."
+mood = "A fiery chasm under an orc city where troggs crawled up from the deep and a demon-worshipping cult hides to plot against the city above; cramped, hot and brutal."
+colours = "black and rust red rock, molten orange and yellow lava, dark brown, ember red"
+atmosphere = "Hot orange and red light from the lava below, black shadows in the narrow tunnels and under the rock spikes. Searing heat, smoke and embers drifting up, the hiss of bubbling lava, walls cracked and scorched."
 
 ["409"]
 name = "Molten Core"
 kind = "raid"
-mood = "The deepest fire pits of a volcano, home of a fire lord and his elementals."
-places = "One level: a ring of great caverns and lava rivers around a central lake of fire, rock bridges between them."
-colours = "black rock, molten orange and yellow, deep red"
-atmosphere = "Infernal orange light from below, black shadows overhead. The air trembling with heat, ash and sparks rising."
+biome = "the vast fire caverns at the molten heart of a volcanic mountain, deep beneath a dwarven fortress city"
+buildings = "Natural caverns of black basalt and cooled lava rock, rivers, lakes and falls of lava, molten cracks in walls and ceilings, vents of fire, dark iron ore veins, carved rune circles set in the floor, rock bridges over lava."
+places = "One level: from the entrance, a long winding loop of tunnels and great caverns runs past lava rivers, a hounds' den and wide fire halls with rune circles on their floors, and ends in the fire lord's lair, a round lake of lava ringed by rock ledges."
+mood = "A fire lord summoned by dwarves, who enslaved them, rules here with his elementals, flame giants and molten hounds; the deepest fire pits of the mountain, infernal and overwhelming."
+colours = "black rock, molten orange and yellow, deep blood red, dark iron grey"
+atmosphere = "Fierce orange and yellow light from the lava below, the caverns lit from beneath, black shadows overhead. The air trembling with heat, fountains of lava and whirlwinds of flame, ash and sparks rising, the roar of lava falls."
 
 ["429"]
 name = "Dire Maul"
 kind = "dungeon"
-mood = "A vast ruined capital of high elves in a forest, its wings held by ogres, haunted by ghosts and twisted by wild magic."
-places = "Six parts as one ruined city: the commons' courtyard and gates, the overgrown gardens of one wing with a library and a demon's prison, the twisted woods of the other wing, and a shrine."
-colours = "pale violet stone, moss green, arcane purple light, ogre brown"
-atmosphere = "Dappled forest light through broken roofs, faint violet arcane light in the halls. Ghostly mist drifting in the gardens, ogre campfires in the commons."
+biome = "a vast ruined elven capital city in an ancient forest, its wings now ogre camps, haunted halls and twisted woods"
+buildings = "Pale violet-white stone in elegant elven style: high arches, colonnades, round arcaded towers, domes and curved roofs of blue-violet tiles, crescent-moon carvings, broken and overgrown with vines and giant roots; tattered ogre awnings, wooden barricades and campfires; tall bookshelves and crystal pylons."
+places = "Six parts around a central plaza: north, ogre-held courtyards and halls up to a throne room in an old temple; west, haunted gardens, a library, a sunken prison ringed by five crystal pylons and a prince's court; east, a quarter overgrown by twisted woods, an altar pool and a forest shrine."
+mood = "Once the capital of ancient elven sorcerers, who fed on a captive demon's power until it ruined them; now ogres hold one wing, elven ghosts another, satyrs and twisted tree giants the third; melancholy and wild."
+colours = "pale violet-white stone, blue-violet roofs, moss green, arcane purple, ogre brown, violet dusk"
+atmosphere = "Violet dusk light and a pale moon over the courtyards, dappled forest light through broken roofs, faint violet arcane light in the halls, warm campfires in the ogre wing. Ghostly mist drifting in the gardens, cool damp air, vines and roots cracking the stone, the stillness of ages."
 
 ["469"]
 name = "Blackwing Lair"
 kind = "raid"
-mood = "A black dragon lord's lair at the top of a volcanic mountain, with laboratories of cruel dragon experiments."
-places = "Four levels as one fortress: a garrison hall, halls and bridges over lava, crimson laboratories full of eggs, and the dragon lord's throne lair at the top."
-colours = "black stone, dark crimson, glowing orange, dark iron"
-atmosphere = "Hot red and orange light from lava and furnaces, dark vaults above. Steam rising from the vats, smoke under the high ceilings."
+biome = "a black dragon lord's fortress of halls and laboratories on the summit of a citadel inside a volcanic mountain"
+buildings = "Massive blocky dwarven stonework of black and dark grey stone, carved square pillars with diamond and arrow patterns, huge riveted iron gates glowing from furnaces, chains, lava channels and grates, rows of black dragon eggs, vats, tubes and suppression machines in the laboratories, bone piles, a great throne hall."
+places = "Four levels rising as one fortress: a garrison hall full of dragon eggs around a central platform, then halls and a long corridor of suppression machines, then crimson laboratories with hatcheries and a great beast's pit, and the dragon lord's vast throne hall at the top."
+mood = "The lair of a black dragon lord, son of a world-breaking dragon, who breeds many-coloured dragons in cruel experiments, guarded by orcs, drakes and dragonkin; dark, hot and menacing."
+colours = "black and dark brown stone, dark iron, furnace orange, dark crimson, ember red"
+atmosphere = "Hot orange and red light from furnaces, lava channels and iron grates, deep black shadows in the high vaults. Steam rising from the laboratory vats, smoke under the ceilings, the clank of chains and the roar of dragons."
 
 ["509"]
 name = "Ruins of Ahn'Qiraj"
 kind = "raid"
-mood = "The outer ruins of a buried insect empire's city in the desert."
-places = "One level: a basin of sand with broken obelisks, ruined walls and pillars, hive mounds and an arena at the far end."
-colours = "golden sand, sandstone, dark blue-green chitin, violet"
-atmosphere = "Harsh desert sun, short black shadows. Sand blowing between the ruins, heat over the basin."
+biome = "the open-air ruined outer city of an insect empire, sunk in a walled desert basin under the sky"
+buildings = "Broken sandstone terraces, walls and stairs carved with hexagonal panels, scarab reliefs and blue stone inlay; tall pointed obelisks and fallen columns; lumpy insect hive mounds and resin combs, clutches of eggs in a hatchery pit, a reservoir basin, tall crystal pylons on the last terrace."
+places = "One open level of sand and ruin: from the gate a first terrace of sand pits, then the general's terrace where waves of insect soldiers charge, a reservoir basin and a hatchery of eggs to the sides, the comb of the hive with an altar, and at the far end the watchers' terrace, an arena ringed by crystals."
+mood = "The ruined outskirts of an ancient insect empire's city, sealed for a thousand years and now broken open: its swarm and a giant stone-skinned guardian hold it while an army of night elves and druids fights in from the gate."
+colours = "golden sand, ochre and pale sandstone, teal inlay, dark brown chitin, violet crystal"
+atmosphere = "Harsh high desert sun, short black shadows, bright pale stone. Hot wind drives sand through the broken walls; wings buzz and insect legs click in the hives, and the clash of an elven army against the swarm rings across the basin."
 
 ["531"]
 name = "Ahn'Qiraj Temple"
 kind = "raid"
-mood = "The vast temple of an insect empire under the desert, where an ancient god sleeps."
-places = "Three levels as one temple: great gates and halls lead down into hive tunnels and at last to a vast chamber of the sleeping god, deep under the sand."
-colours = "sandstone, deep purple, sickly green, chitin black"
-atmosphere = "Eerie purple and green light in the dark, deep shadows. The sense of something enormous and alive below, the air close and still."
+biome = "a buried temple city of an insect empire, with hive tunnels and an ancient god's vault deep under the desert"
+buildings = "Colossal carved sandstone halls and ramps with hexagonal panels, insect-shaped columns, gold and violet trim and statues of insect warriors; resin hive walls of chitin and wax, egg clusters, burrows and a sandy worm pit; at the bottom a vault of living flesh with tentacles and one giant eye."
+places = "Three levels as one temple, entered from above: the hive undergrounds, a maze from an arena past egg-filled hive caves and a slime pool to the emperors' throne hall and a sandy worm pit; the temple gates, a terrace before the great doors; and at the bottom the vault, a vast round pit of flesh around a giant eye."
+mood = "The temple and breeding ground of an insect empire, where twin emperors rule a swarm for the ancient god who wakes in the vault below; captive dragons lie chained within, and madness creeps through the hives."
+colours = "sandstone, gold, deep purple, magenta, sickly green, chitin black"
+atmosphere = "Dim violet light from deep below, scattered warm amber points in the dark, deep black shadows. The air hot, close and still; the hive walls pulse, eggs twitch and burrowers stir the sand, and something enormous breathes and whispers far beneath."
 
 ["533"]
 name = "Naxxramas"
 kind = "raid"
-mood = "A floating necropolis of the undead high in the sky."
-places = "Six parts as one floating fortress: four quarters (of spiders, of constructs, of soldiers, of plague) around a central hall, and an upper sanctum."
-colours = "dark iron, green plague glow, frost blue, bone"
-atmosphere = "Cold, eerie green and blue light, frost on every edge. Fog and frost, the clouds far below."
+biome = "a floating necropolis fortress of the undead high in the sky, all of it enclosed halls"
+buildings = "Dark grey stone and black iron, ribbed vaults and pointed arches with huge curved bone tusks; webs, cocoons and egg sacs in the spider halls; slime pits, flesh workshops and lightning coils for the constructs; training halls, a chapel, plague vents, a fungal grotto; an icy ledge, a round sanctum."
+places = "Six levels as one fortress, in order: the construct quarter, the spider quarter, the soldiers' quarter and the plague quarter, each a chain of halls ending in a portal; the lower necropolis, the central entry hall from which all four open; the upper necropolis, the frost wyrm's icy ledge and the lich's round sanctum at the very top."
+mood = "The floating citadel of an undead army's lich master, where a spider-kingdom's vaults were turned into workshops of plague, flesh and death; hostile, cold and ancient, hanging above a land it poisoned."
+colours = "dark slate grey, black iron, bone white, plague green, frost blue"
+atmosphere = "Cold pale blue light in the stone halls, sickly green light from slime channels and doorways, frost on every edge. The air freezing and stale, thick with webs and the reek of plague, machines droning; through the windows the poisoned land lies far below."
 
-# Forever's new dungeons: the game has no map art of them, so their layouts are given (dungeon-paint --layouts)
+# Forever's new dungeons: the game has no map art of them, so their layouts are given (dungeon-paint --layouts);
+# their pictures in the game are sketches in one tone, so the colours are the words' (sketch)
 
 ["2959"]
 name = "City of Dalaran"
 kind = "dungeon"
-mood = "A walled city of mages on a plateau among forested mountains, and the sewers beneath it."
-places = "Two levels: below, a network of sewers with round cisterns and canals; above, the city of white stone and violet roofs with a citadel at its top and squares in its middle."
-colours = "white stone, violet roofs, gold, forest green, mossy sewer teal"
-atmosphere = "Bright magical daylight over the city, dim green-teal light in the sewers below. Sparkling arcane lights over the spires, damp air and still water in the cisterns."
+biome = "a walled city of mages with spires, on a green valley floor among forested mountains, with sewers beneath"
+buildings = "Pale stone towers and round halls under violet domes and slender spires, floating rings and crystals above the roofs, shops, a round prison dome, gardens with pools, a grove twisted by green demonic fire; below, vaulted sewers with canals of murky water, round cisterns, a tavern and crypt rooms."
+places = "Two levels: first the sewers, a long pipe opening into vaulted halls of canals around cisterns, a tavern and side rooms, then a way up; second the oval walled city: a round landing at its southern gate, a prison dome, gardens and pools, a central square with a blighted grove, towers and shops, the citadel on its northern height."
+mood = "The mages' city after its great protective barrier fell: demonic energy seeps into its central garden, its own arcane constructs and spells run wild, and a necromancer raises the dead in the sewers beneath."
+colours = "pale stone, violet roofs, gold trim, arcane blue, fel green, forest green, murky teal"
+atmosphere = "Cool violet evening light over pale stone and spires, dim lamplight in the sewers below. Arcane sparks crackle above the towers, green fel fire smoulders in the central grove, and the sewers drip and echo with damp, still water."
+sketch = true
 
 ["2998"]
 name = "Excavation Site: Wetlands"
 kind = "dungeon"
-mood = "A dig site in wet green highlands, with ancient ruins uncovered among grassy valleys, rocky hills and a marshy lake."
-places = "Green valleys and winding paths in the west with the dig site and the ruins, a large marshy lake in the middle and north, steep rocky mountains in the south and east."
-colours = "moss green, wet brown earth, grey rock, murky blue-grey lake"
-atmosphere = "Soft grey daylight under a heavy sky, wet surfaces catching the light. Mist hanging over the marsh, the grass wet with rain."
+biome = "an outdoor highland valley of wet grass, thickets and a marsh lake, ringed by mountains, with ancient ruins"
+buildings = "A dwarven dig in the open: square stone platforms, trenches, crates, carts, barrels, tents and lanterns; weathered gate-like stone arches on the slopes; at the end a ring of fitted grey stone blocks with blue lines, a sleeping stone guardian and its control stone; bones and fossils in the grass."
+places = "One outdoor level: from the entrance in the north-east a path skirts a marsh lake with reed islands and rapids into a second pool, then winds west through a thicket of tall grass to the lost dig site in the far west, and back south-east to the guardian's ring of stones under the mountains."
+mood = "A forgotten dig of dwarven explorers in wild wet hills, its crew missing: raptors stalk the tall grass, crocolisks the marsh, orc saboteurs creep in, and an ancient stone guardian of the world's makers stirs over a buried relic."
+colours = "moss and olive green, wet brown earth, grey rock, murky blue-grey marsh, pale stone"
+atmosphere = "Soft grey daylight under a heavy sky, warm where it breaks through, wet leaves and stones catching it. Mist hangs over the marsh, rain drips from the canopy, and strange lights flash among the old stones."
+sketch = true
 
 ["2999"]
 name = "Ruins of Lordaeron"
 kind = "dungeon"
-mood = "The walled capital of a fallen human kingdom, ruined and haunted, on a lake shore."
-places = "A shield-shaped city wall with towers encloses streets, gardens and a graveyard, a grand palace with a domed throne room in the middle, and the lake below its southern wall."
-colours = "pale grey stone, teal domes, dark green, dead brown"
-atmosphere = "Grey dusk light, cold and dim, long soft shadows over the stones. The ruins wrapped in mist, crows on the broken towers, cold and silent."
+biome = "the ruined walled capital city of a fallen human kingdom, outdoors on a lake shore"
+buildings = "Pale grey stone streets of tall gabled houses and long halls with broken teal-green roofs, round towers with teal domes, a grand palace with a domed throne room, spiked iron fences and gates, a statue court, burnt-out houses, a fenced graveyard of crooked tombs, webbed alleys, rubble and dead trees."
+places = "A shield-shaped wall with square towers rings the city. In the north the palace gate where one enters and a courtyard; a long hall leads to the domed throne room in the middle; streets of halls and towers run down both sides, a market west, a royal alley east; the graveyard and burnt houses lie south, above the lake."
+mood = "The capital of a fallen human kingdom, broken by plague and its own prince: undead hordes still haunt its streets, a necromancer raises the dead in its graveyard, and the undead from the city beneath fight to reclaim it."
+colours = "pale grey stone, teal-green roofs, black iron, dark green, dead brown, sickly green"
+atmosphere = "Dim cold dusk light, low and flat, with long soft shadows across the broken stones. An unholy fog creeps through the streets and the graveyard, crows sit on the broken towers, and gargoyles crouch like statues on the rooftops."
+sketch = true
 
 ["3065"]
 name = "The Hall of Thanes"
 kind = "dungeon"
-mood = "An ancient dwarven tomb of kings deep inside a mountain."
-places = "A long processional hall runs from the entrance up to a reliquary, with side halls of tombs, a central chamber, crystal-lined caverns at the far end and a side cave."
-colours = "warm grey stone, gold, bronze, blue crystal"
-atmosphere = "Warm torchlight on carved stone, deep shadows in the side halls. A solemn stillness, a glimmer of blue crystals in the dark."
+biome = "a royal dwarven tomb of carved stone halls and crystal caverns deep inside a mountain"
+buildings = "Massive square pillars carved with knotwork, round arches and ribbed stone vaults, hexagonal floor tiles, a red carpet down the main hall, rows of sarcophagi in alcoves, a great central tomb, braziers and hanging iron lanterns, vault doors and portcullises; blasted walls, powder kegs and tents in a rough cave."
+places = "One level along a straight axis: from the entrance hall in the south through a central chamber with a great tomb, flanked by two long halls of sarcophagi, into a pillared hall of braziers; a breached cave opens to the east, and to the north a bridge crosses a dark cavern of crystals to the round reliquary of the kings."
+mood = "The resting place of the old mountain kings beneath their city, broken into by dark dwarves who blast and loot the vaults; the dead have woken, ghosts walk the halls and stone golems guard the treasures."
+colours = "warm grey stone, amber, gold, bronze, deep red, dark iron, pale lilac crystal"
+atmosphere = "Warm amber torchlight from braziers and hanging lanterns, deep shadows between the carved pillars. The air cold and still as a tomb, rubble where the walls were blasted open, restless ghosts drifting among the sarcophagi, heat rising from a cave of fire."
+sketch = true

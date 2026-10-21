@@ -64,7 +64,25 @@ The wheel zooms smoothly through them, each level's look blending into the next,
   zone clearly sectioned from the next. What stands there in the lore is shown, not the game's open view:
   Teldrassil the world tree itself, Ironforge the full mountain.
 - **An instance:** the whole instance in one view, its halls and rooms where they lie, the roofs and the rock above
-  cut away, seen at a steep angle like a detailed model on a table.
+  cut away, seen at a steep angle like a detailed model on a table. It follows the instance's layout and takes its
+  middle and close levels as inspiration (Saneroki, 2026-10-21), so it is painted after them.
+
+## Strict to its words and pictures
+
+A painting must show the place its brief describes (Saneroki, 2026-10-21): a cave as a cave, a castle as a castle,
+a lava mountain as one, in its own architecture, materials, colours, light and mood. So:
+
+- **Researched briefs:** each zone's and instance's brief is written from the game's own lore texts and pictures of
+  the place and from what is known of it in play: what kind of place it is (`biome`), its architecture and what
+  fills it (`buildings`), how its parts lie (`places`), who holds it and how it feels (`mood`), its colours and its
+  light (`atmosphere`).
+- **The game's picture of the place** goes with the words as a reference: its architecture, materials, colours,
+  light and mood are taken, never its view. Where the game's picture is a sketch in one tone, only its architecture
+  and mood are taken, the colours are the brief's.
+- **The layout** is a picture too: the place's parts where they lie, so the painting follows them.
+- **Checked:** every painting is looked at by a vision model and painted again with the next seed when it shows
+  writing, a map or a drawing instead of a place, separate panels, the reference picture's own view copied instead
+  of the place seen from above, or another kind of place than its brief says.
 
 ## What is drawn over them, never painted
 
@@ -80,8 +98,9 @@ switch where it makes sense:
 
 - Close: `dev/imagegen/maps/atlas.toml` (the Atlas' words, chosen in its lab) with each zone's or instance's
   colours and light.
-- Middle and far: `dev/imagegen/maps/levels.toml`, shared by the world and the instances, with each brief's mood,
-  places, colours and atmosphere (`zones.toml` for the zones, `dungeons.toml` for the instances, the same fields).
+- Middle and far: `dev/imagegen/maps/levels.toml`, shared by the world and the instances, with each brief's biome,
+  buildings, mood, places, colours and atmosphere (`zones.toml` for the zones, `dungeons.toml` for the instances,
+  the same fields).
 - No names anywhere the model can read them: a name in the words, or a label in image 1, comes back as garbled
   lettering. Describe, never name.
 - A change to the shared words changes every painting of that level: the runs show it and are painted anew.

@@ -346,14 +346,31 @@ lists, from inputs of its own:
   the instance maps come out of the world's pipeline, words and tools. The middle levels wait for the Atlas' zone
   level and the instances' terrain.
 - **The instances' far level** (`dev/tools/dungeon-paint`, `saneui makedungeonmaps`; the GPU runner's job
-  `dungeons`): one painting of each instance as a whole, from its layout and its brief (`dungeons.toml`: mood,
-  places, colours, atmosphere, without names). Image 1 is the layout: every floor side by side in the game's order,
-  from the game's map art of it (Core's set *Dungeons*: the floors' tiles in a folder of the game's map art,
-  `--mapart`; frame and title banner cut off) or, where the game has no map art (Forever's new dungeons), the
-  pictures given with `--layouts` (`<map ID>-<floor>.png`); contrast stretched, then blurred until only the shapes
-  are left, so no lines, drawing style or writing carry over. Three seeds an instance, the first of every instance
-  before the second of any; a run keeps its own copy of the plan, as the Atlas does; `contact` makes a sheet to
-  choose from.
+  `dungeons`, held until the instances' middle and close levels are made): one painting of each instance as a
+  whole, strict to its brief (`dungeons.toml`: biome, buildings, places, mood, colours, atmosphere, researched from
+  the game's lore texts and pictures, without names) and to two pictures, with `qwen21-edit-2ref`:
+  - image 1, the layout: the floors where they lie in the world (the floors' boxes of Core's set *Dungeons*), seen
+    at an angle, a floor over another lifted above it, parts far apart moved together in their own directions so
+    it is one place and never a row of panels; drawn from the game's map art (`--mapart`; frame and title banner
+    cut off, the paper around the rooms left out) or the pictures given with `--layouts` (Forever's new dungeons),
+    contrast stretched and blurred to shapes, so no lines, drawing style or writing carry over;
+  - image 2, the game's own picture of the place (`--pictures`: the dungeon journal's painting, else the loading
+    screen, cut free of frame and logo): its architecture, materials, colours, light and mood, never its view; given
+    at 640 pixels with each picture read at its own size (`resolution` 0), so it guides the look with few tokens of
+    its own while image 1 keeps its full 2048. A view the words put inside the place (a cave's hanging roots) was
+    painted from within, under an arch: the shared far look says that all of it lies below, cut open, with nothing
+    framing the view.
+  Three paintings an instance that pass the check, at most six tries, the first try of every instance before the
+  second of any; a run keeps its own copy of the plan, as the Atlas does; `contact` makes a sheet to choose from,
+  failed paintings marked.
+- **The check by a vision model** (`dev/imagegen/workflows/qwen3vl-look.json`): ComfyUI's `TextGenerate` with the
+  Qwen3-VL model the image model reads its words with looks at a picture and answers questions in JSON, about six
+  seconds a picture with no other model to load. The dungeon paintings ask whether there is writing, a map or a
+  drawing, separate panels, whether it is seen from above as a whole, and whether it shows the brief's kind of
+  place; a painting that fails is painted again with the next seed. Tried on the first far paintings (2026-10-21):
+  it caught a plan painted flat, a city painted as four panels and a cave painted from inside in image 2's own view
+  (a second picture may be copied instead of followed: its words say what is taken from it, and the check catches
+  it when it is not).
 - **Upscaling models** (`models/upscale_models/` of ImageGen: 4x-UltraSharpV2 and 4xNomos2, both DAT2, as
   safetensors, 17 s for 1024 to 4096): they sharpen what is there, the faults too, and add no detail; the
   painting is made at the size it is shown.

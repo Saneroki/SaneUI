@@ -1,0 +1,6 @@
+{
+  "ref1": {"class_type": "LoadImage", "inputs": {"image": "missing-ref1.png"}, "_meta": {"title": "ref1"}},
+  "clip": {"class_type": "CLIPLoader", "inputs": {"clip_name": "qwen3vl_8b_int8_convrot.safetensors", "type": "qwen_image", "device": "default"}, "_meta": {"title": "The vision model (the image model's own text encoder)"}},
+  "look": {"class_type": "TextGenerate", "inputs": {"clip": ["clip", 0], "prompt": "{prompt}", "image": ["ref1", 0], "max_length": 600, "sampling_mode": "off", "thinking": false, "use_default_template": true, "mtp": "auto"}, "_meta": {"title": "Look at the picture, answer"}},
+  "answer": {"class_type": "PreviewAny", "inputs": {"source": ["look", 0]}, "_meta": {"title": "The answer"}}
+}

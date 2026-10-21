@@ -166,7 +166,13 @@ minimap) and the full-screen window (the world map) show the same map with the s
   `dev/tools/dungeon-paint` as the GPU runner's job `dungeons`, at a low priority (2; the Atlas is 10, the
   redesigned interface parts go above the dungeons: Saneroki, 2026-10-21). The close and middle zooms wait for the
   instances' own terrain and indoor maps, which `dev/tools/terrain-art` and `indoor-art` do not make yet (they read
-  the continents'); their jobs join the queue with them.
+  the continents'); their jobs join the queue with them. The far zoom follows the instance's layout and takes the
+  middle and close zooms as inspiration (Saneroki, 2026-10-21), so its job is held until they are made. Its
+  harness is strict (Saneroki, 2026-10-21: each instance researched, the painting held to its words and pictures):
+  every brief researched from the game's lore texts and pictures and from play (what kind of place, its
+  architecture, layout, mood, colours and light), the game's own picture of each place as a second reference, the
+  floors laid where they lie as the layout, and a vision check that paints a failed picture again
+  (`Doc/guides/map-style.md`, *Strict to its words and pictures*).
 - **Instance maps as the world map, apart from it (Saneroki, 2026-10-21):** the instance maps are completely
   independent of the world map and separate from it (their own view, data, pictures, packs and jobs; never part of
   the world's picture), but they work in the same way and are made in the same way: the same three levels, one
