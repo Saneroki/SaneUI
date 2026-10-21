@@ -284,7 +284,7 @@ but for a window to try those with (`/sane window`).
 | `Core.Options(name, list, changed)` | Describes a module's switches |
 | `Core.Settle(name, values)` | A module's settings made right for this version: its upgrade, then each switch its default where it has none or a spoiled one, what no description has gone |
 | `Core.Profiles` | Where the settings in use live, and the profiles (see above) |
-| `Core.Settings(name)`, `Core.Set(name, key, value)`, `Core.Reset(name)`, `Core.Described(name, key)` | A module's settings in use; one set from elsewhere than its page; all back to their defaults; a description |
+| `Core.Settings(name)`, `Core.Set(name, key, value)`, `Core.Reset(name, only)`, `Core.Described(name, key)` | A module's settings in use; one set from elsewhere than its page; all back to their defaults (`only(option)`: just those it says, one page of Core's own); a description |
 | `Core.AfterCombat(key, fn, ...)`, `Core.Owed(key)`, `Core.Locked(frame)`, `Core.Restricted()` | Run now, or once the fight is over (the same key once); a protected frame in a fight; a fight or a restriction of the game's |
 | `Core.Off(event, fn)`, `Core.OnUnit(event, unit, fn)`, `Core.OffUnit(event, unit, fn)` | Stop listening; an event of one unit only |
 | `Core.Config` | The options (`Settings/`): `Fill()` makes the pages' controls (once), `Open()` opens them |

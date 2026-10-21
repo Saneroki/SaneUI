@@ -16,7 +16,7 @@ Use current source and the user's instructions when they differ from a note.
 | Future spells, reservations, action layouts, spellbook/Home UI | [abilities.md](abilities.md) |
 | Tooltip content, layout, live unit data, quests, prices | [tooltips.md](tooltips.md) |
 | Messages, bubbles, native chat, input, filtering/fading | [social.md](social.md) |
-| Navigation: minimap, world map, quest log, pins, routes, leveling guide (built: window, both views, canvas, terrain and art at every zoom, the game's minimap and map taken over; pins, quest log, top bar, routes, guide to come; handoff) | [navigation.md](navigation.md), then `Doc/ideas/Navigation.md` |
+| Navigation: minimap, world map, quest log, pins, routes, leveling guide (built: window, both views, canvas, terrain and art at every zoom, the game's minimap and map taken over; pins, quest log, top bar, routes, dungeon maps with their bosses; the guide to come; handoff) | [navigation.md](navigation.md), then `Doc/ideas/Navigation.md` |
 | Combat: its window at the bottom middle, its full screen with our own spellbook and talents (built), as the game's; your spellbook and talents keys open them; unit frames, party, raid, buffs, pets (not built yet) | `src/Combat/README.md`, `Doc/ideas/Combat.md` |
 | Nameplates: the game's plates in our dress (built: round-cornered health bar, combo points in the target's, name, own debuffs and a foe's buffs in the game's aura containers, rare's mark, raid marker) | `src/Nameplates/README.md` |
 | Guild: the guild window on Social's full screen or alone (built: the page with all tabs, overview, roster, equipment, the guild key; Core's wire and guild records; the other views to come) | `src/Guild/README.md`, then `Doc/ideas/Guild.md` |

@@ -1,14 +1,15 @@
 # Navigation
 
 The plan for the **Navigation** module (`SaneUI_Navigation`): the window, the map, the quest log, the pins,
-the waypoint, the routes and the leveling guide. Built so far (2026-10-20): the window, both views, the canvas and
+the waypoint, the routes and the leveling guide. Built so far (2026-10-21): the window, both views, the canvas and
 its controls, the terrain and the art at every zoom (the water cut away, the zones' maps cut to their outlines),
 zones that light up and open by a click, the map moving with its window, the game's minimap over ours (cut to the
-window's shape), the game's map kept closed; the pins of the game and of Core's data, quest areas, the party, the
-quest log and the bar over the full map, routes to the map pin on foot, by flight, by boat and zeppelin, by the
-Deeprun Tram and by the hearthstone (`src/Navigation/README.md`). Not yet: lifts and portals in the routes, the
-leveling guide,
-dungeon maps, search, the minimap's small parts.
+window's shape), the game's map kept closed; the pins of the game and of Core's data in the game's quest marks,
+quest areas, the party, the quest log and the bar over the full map (the pin filter in sections), the herbs and
+ore the game's minimap finds, indoor maps, routes to the map pin on foot, by flight, by boat and zeppelin, by the
+Deeprun Tram and by the hearthstone; the classic dungeons' and raids' maps of Core's set *Dungeons* in the game's
+map art, with their floors, bosses and the bosses' 3D models (`src/Navigation/README.md`). Not yet: lifts and
+portals in the routes, the leveling guide, the dungeons' three zooms, search, the minimap's small parts.
 
 How to read this page:
 
@@ -147,6 +148,11 @@ minimap) and the full-screen window (the world map) show the same map with the s
     render, free like the zones' paintings (*Zones and continents reimagined*).
 
   Made after the zones.
+- **Dungeon maps now, with their bosses (Saneroki, 2026-10-20 and 21):** until the three zooms are made, every
+  dungeon and raid (only those, no other instances) has a map in Blizzard's style: the game's own map art of it,
+  floor by floor (Forever's client has none, so Core's set *Dungeons* holds them, from Blizzard's own tables; the
+  art files are in Forever's install), each boss's icon where it stands, and the boss's 3D game model standing on
+  that spot.
 - **Soft zone edges, exact inside (Saneroki, 2026-10-21):** the close terrain view stays as accurate as planned,
   down to the tiniest walkable places. Only the outermost outline of a zone, and only where the player cannot
   go (the mountains between zones, the edge of the world), is blended into a natural transition instead of the
@@ -235,6 +241,14 @@ When the window fills the screen:
   dropdown and chosen again to come back; whatever is chosen, the mouse pushed into the top right corner, where
   the minimap is docked, always fills the screen with our map.
 - **Quest log on the left side** of the screen; the map takes the rest.
+- **The quest log as Saneroki asked it (Saneroki, 2026-10-21):**
+  - **No scroll bar:** the mouse over the list and its wheel scroll it. Only while the list is longer than fits
+    and the mouse is on it, a scroll bar shows, on the side the window is docked to (at the left edge: its left).
+  - **Each quest's icon at its left,** as its pin on the map has it.
+  - **A click puts the game's map pin on the quest's objective:** the quest's mark on the map (its question mark)
+    or the area where its foes are.
+  - **The right button:** the quest's text (its dialogue: objectives and story), or the map moved to its
+    objective (and the game's track, share and abandon).
 - **A bar on top** of the map with:
   - **Map selector:** pick a region or a dungeon, and the map shows it (*Map selector*). Dungeons are
     drawn the same way as the regions.
@@ -255,6 +269,16 @@ When the window fills the screen:
   travel, places, rares, treasures and books. Shown on both views. The pin types and their data: *Pin
   catalogue*.
 - **Herb and ore icons** are Blizzard's own profession tracking icons.
+- **Quest marks as the game's (Saneroki, 2026-10-20):** a quest in the log the yellow question mark; one the
+  character can take the standard yellow exclamation mark, opaque (no longer see-through); one too low to give
+  experience grey; one whose requirements are not met yet a red question mark.
+- **Tooltips without the click (Saneroki, 2026-10-20):** a pin's tooltip does not say that a click puts the map pin
+  there.
+- **The pin filter in sections (Saneroki, 2026-10-20):** the dropdown is laid out in titled sections and
+  categories, easy to scan, with large icons.
+- **Every pin is clicked for the map pin, the minimap's too (Saneroki, 2026-10-21):** on the small map and on the
+  game's own minimap the icons Sane UI draws, the gathering nodes found around the player among them, take a
+  click and put the game's map pin there. (The game's own minimap dots take no clicks of an addon.)
 - **Rares:** Blizzard's own rare marker, and on a click the area where the rare can spawn.
 - **One pin per thing (Saneroki, 2026-10-16):** the same quest, NPC or place can be known several ways
   (our shipped data, learned in play, shared by the guild, the game live). One pin is kept for it, not
@@ -879,8 +903,8 @@ As Blizzard's hybrid minimap does (*verified*), with our canvas under the native
   lets through.
 - **Index:** per continent, a grid of cells (proposal: 256 yards); the view asks for the cells in view.
   Built in steps when a map's data arrives.
-- **Gathering overlaps:** pins that would cover each other on screen become one marker with the number
-  they hold, placed at their middle. A click on it zooms in until they part; where they share one spot even
+- **Gathering overlaps:** pins that would cover each other on screen become one marker in the icon of the first
+  (drawn highest; no number, built 2026-10-20), placed at their middle. A click on it zooms in until they part; where they share one spot even
   up close, it lists them. How near counts as covering, and the cap on pins drawn, are set by step 0's
   frame-time test. Worked out again when the scale changes, not on a pan.
 - **Pin frames:** a pool of buttons (`CreateFramePool`), the same size on screen at any zoom, Blizzard's
@@ -911,11 +935,17 @@ hidden but what the small view needs.
   `WowScrollBoxList` with a tree view, zones as headers, quests under them, objectives under those; from
   `C_QuestLog.GetNumQuestLogEntries`, `GetInfo`, `GetQuestObjectives`; built again once a frame after
   `QUEST_LOG_UPDATE`.
-- **Actions:** track (`AddQuestWatch`, `RemoveQuestWatch`), focus (`C_SuperTrack.SetSuperTrackedQuestID`),
-  share, abandon (`SetAbandonQuest`, `AbandonQuest`, after a question of our own), show on the map (the
-  camera goes to the quest: `GetQuestsOnMap`, `GetNextWaypoint`).
+- **Actions:** a click puts the game's map pin on its objective (`GetQuestsOnMap`, else `GetNextWaypoint`; a
+  preview's at its giver) and focuses it (`C_SuperTrack.SetSuperTrackedQuestID`), the camera staying; the right
+  button: its text below the list (`GetQuestLogQuestText`, shown only once asked for), show on the map (the camera
+  goes to the objective), track (`AddQuestWatch`, `RemoveQuestWatch`), share, abandon (`SetAbandonQuest`,
+  `AbandonQuest`, after a question of our own). Built 2026-10-21.
+- **No scroll bar at rest** (built 2026-10-21): the list's `MinimalScrollBar` shows only while the mouse is on
+  the window and the list has more than its room (`HasScrollableExtent`), at the window's docked side.
 - **Never Blizzard's quest panel functions** (`QuestMapFrame_OpenToQuestDetails`, `ShowQuestComplete`):
-  called from addon code they taint the map's pins.
+  called from addon code they taint the map's pins. Nor its quest details window (`QuestLogPopupDetailFrame`):
+  it opens by `ShowUIPanel`, which our call would leave tainted (`Doc/guides/addon-standards.md`, *Known traps*);
+  the quest's text is our own.
 - **A view of its own,** in its own file and frame, so it can stand on Core's full screen *board* once
   Core has one (window guide, *Not built yet*); until then the window lays out map and quest log in its
   `docked` hook.
@@ -925,7 +955,9 @@ hidden but what the small view needs.
 - **Map selector:** a breadcrumb World › Continent ▾ › Zone ▾ (*Map selector*), menus by Blizzard's menu
   system (`MenuUtil`, `WowStyle1DropdownTemplate`). Continents and zones from the map tree at run time;
   dungeons from Core's data and the tree's maps of type *Dungeon*.
-- **Pin filter:** a dropdown with a checkbox per kind (`CreateCheckbox`), grouped as the *Pin catalogue*.
+- **Pin filter:** a dropdown with a checkbox per kind (`CreateCheckbox`), in titled sections (built 2026-10-20:
+  `ns.PIN_SECTIONS`, each kind's `section`; around you, quests, travel, towns and services, rares and treasures,
+  gathering), each kind's icon at 24 before its words and a slider for its size.
 - **Three views:** three buttons; the choice is a switch (profiles keep it).
 - **Search:** the full screen's title bar has Core's search; it finds zones, dungeons, towns, services and
   the quests in the log (fuzzy, Core's `Fuzzy.lua`); a hit moves the camera there (proposal).
@@ -1307,12 +1339,14 @@ Each step ends in something tried in the game, and in the module's README markin
 | **7. Leveling guide** | The step, its checks, its view, the item button | Core's data: Guides; step 6 | a starting area played through by the guide |
 | **8. Dungeons and the rest** | Dungeon maps, floors, the minimap's own parts, polish | | |
 
-**Where it stands (2026-10-20):** steps 1 and 2 built (2026-10-19); 3 and 4 built, the live pins and the quest log;
+**Where it stands (2026-10-21):** steps 1 and 2 built (2026-10-19); 3 and 4 built, the live pins and the quest log;
 5 built as far as Core's data goes: the pins, gathered overlaps, tooltips and the quest areas the game shades are
 there, and `Data.Map` reads Spawns, Places and Travel, of which Spawns and Places hold no entries yet, so the
 database's pins come with the import; rares' spawn areas and patrol paths wait for their data. 6 built on foot, by
 flight, by boat and zeppelin, by the tram and by the hearthstone (the walking data, the flights, the ships' ways and
-the tram of the game's tables, the planner, the search, the golden line); lifts and portals not yet. Step 0's points are answered in play as each step is tried.
+the tram of the game's tables, the planner, the search, the golden line); lifts and portals not yet. 8 begun
+(2026-10-21): the dungeons' and raids' maps of Core's set *Dungeons*, their floors, bosses and the bosses' 3D
+models; their three zooms and the minimap's own parts not yet. Step 0's points are answered in play as each step is tried.
 
 The hardest parts, in order: the walking data (its tool and size); keeping the game's map closed in a
 fight; the small view's dots with our ground; the overlay's cut; the pin data (Core's).
@@ -1383,10 +1417,11 @@ battlemaster, spirit healer, meeting stone.
   and *Objects*. Live nodes from the minimap's tracking: optional, by probing (below).
 - **Treasure chests:** the chest's own vignette atlas while the game shows it (`C_VignetteInfo`), else the
   game's chest icon; dimmed once this character opened it (Core's character data).
-- **Live nodes on the full map (optional, later):** the native minimap can be probed point by point
-  (`Minimap:UpdateMouseoverAtPoint`, then `C_TooltipInfo.GetMinimapMouseover`) while a tracking spell is
-  on, a few points at a time as a job in Core's scheduler, never in a fight.
-  The nodes found would stay on the map as discoveries (Core's).
+- **Live nodes** (built 2026-10-20 on the minimap, `Found.lua`, the filter's *Found herbs* and *Found ore*): the
+  native minimap probed point by point (`Minimap:UpdateMouseoverAtPoint`, then
+  `C_TooltipInfo.GetMinimapMouseover`) while a finder is on, a few points a frame, never in a fight; each drawn
+  in the picture of what it gives, a click puts the map pin there (2026-10-21). Kept as discoveries of Core's:
+  not yet.
 
 ### Rares
 
@@ -1485,6 +1520,13 @@ What a dungeon map shows:
 
 - **Plan:** Blizzard's own art first (it costs no space); our own pictures only for the maps the client
   lacks, each kept small.
+- **Built (2026-10-21):** Forever's client has no dungeon maps (none of its map table's maps is of type
+  *Dungeon*), but its install holds Blizzard's map art for them. Core's set *Dungeons* (pack World, keyed by the
+  instance's map ID, `dev/tools/data` batch 9) holds 26 dungeons and raids: their floors (name, size, world box),
+  the art's tiles and each boss (its encounter in the set *Encounters*, its place, its look), from Blizzard's
+  retail tables where they match Forever's own encounters, unverified. The view (`Dungeons.lua`) draws the tiles,
+  each boss's mark (the game's `vignettekillboss`) and its model (`PlayerModel`, `SetDisplayInfo`); the reworked
+  dungeons (Deadmines, Shadowfang Keep, Gnomeregan and others) have their map without bosses.
 - Bosses, entrances, floor links and quest items from Core's data.
 - Drawn as *Maps without a world box* where the game gives none.
 
@@ -1541,3 +1583,5 @@ Each with a proposal; what is not answered when its step comes is built as propo
 15. **Leveling guide in the small window:** the current step at the minimap, or only in full screen?
 16. **Quests taken and handed in by themselves** on a guide's step? *Proposal:* a switch, off by default.
 17. **Leveling figures** (XP per hour, time to level): Navigation's, or the library module's?
+18. **Indoor maps on city streets** (2026-10-21): the game flags Stormwind's and Orgrimmar's streets as indoors,
+    so the indoor plan would lie over them. *Proposal:* not on the streets, only inside buildings and caves.

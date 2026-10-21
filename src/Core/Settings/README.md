@@ -232,7 +232,7 @@ ticked), colours, buttons, and a list of the CVars. A module's page in tabs has 
   the switches of that page, *Defaults* only for them, `Core.Reset(name, only)`). The window's module is chosen
   first (found by the settings its edge reads), the last chosen kept for the session. The view is in the layer
   `DIALOG` (over the map's quest log), dark, takes the mouse and its wheel; the cog again, Esc (it takes Esc from
-  the full screen while there, `edge:Escapes`), the window going back or closing take it away.
+  the window while there, `window:Escapes`), the window going back or closing take it away.
 - **Globals:** `SaneUI_OnAddonCompartmentClick`, `SaneUISettingsBannerMixin`, `SaneUISettingsEntryMixin`, `SaneUIFeedbackFrame`,
   `SaneUISettingsCVarsMixin`, `SaneUISettingsCVarRowMixin` (the templates' mixins: XML
   finds it by name).

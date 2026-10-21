@@ -6,6 +6,19 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 215 (data in the game), 468 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### Docs: this session's asks in the plans and handoffs (Saneroki, 2026-10-21)
+- `Doc/ideas/Navigation.md`: Saneroki's asks under *Decisions* (the quest marks, tooltips without the click, the pin
+  filter in sections, every pin clicked for the map pin the minimap's too, dungeon maps now with their bosses and
+  3D models, the quest log without a scroll bar, its icons, its click and its menu); *Design* (gathered markers,
+  the filter, the quest log's actions, no quest details window of the game's), the status, *Where it stands*
+  (step 8 begun), the gathering and dungeon references as built; open question 18 (indoor maps on city streets).
+- `Doc/agent/navigation.md`: *Built (2026-10-20, 21)*, the *Not yet* list and the test counts.
+- `Doc/ideas/Windows.md` and `Doc/ideas/Onboarding.md`: the options' cog and the ? on every full screen (the ?
+  there now, its `help` the seam for Onboarding's tour).
+- `Doc/ideas/Data.md`: the sets *Indoors* and *Dungeons* in World; *Dungeons* in the sets table.
+- `Doc/agent/core.md`, `Doc/agent/README.md`, `Doc/guides/windows.md`, Core's and Settings' READMEs: the title bar's
+  two buttons, `window:Escapes` (the review moved it from Edge), `Core.Reset(name, only)`.
+
 ### GPU runner and Atlas: rebuild, holds, a run's own plan (Saneroki, 2026-10-21)
 - At Saneroki's ask: the Atlas waits for new notes and rules; then a rebuild starts it anew with the plans of
   that moment, and without one it goes on with the plan it began with.

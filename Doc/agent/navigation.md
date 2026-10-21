@@ -147,10 +147,33 @@ air: one take-off, the flights one leg), the regions of a place's floors within 
 line the player is) drawn by `Route.Cut` (the parts passed gone, a head from the arrow), a ship boarded without the
 plan (`Riding`), the tram's next train (`Trips:TramNext`). Walk's tiles: the 48 asked for last.
 
+## Built (2026-10-20, 21): quest marks, the filter's sections, dungeon maps, the quest log's clicks
+
+Saneroki's asks (`Doc/ideas/Navigation.md`, *Map pins*, *Full screen*, *Dungeon maps now*; README *History*):
+
+- **Quest marks** (`Pins.lua`, `Pins.ICONS`, `Pins.RED`; `PinView.lua` tints): in the log the yellow `questturnin`,
+  to take the opaque `questnormal`, too low the grey `trivialquests`, for later the yellow mark tinted red. Tooltips
+  no longer tell the click (the text `drop` went). The pin filter (`TopBar.lua`, `ns.PIN_SECTIONS`, each kind's
+  `section` in `Navigation.lua`): titled sections, icons of `TopBar.ICON` (24), rows of 30, `SetScrollMode`.
+- **Dungeon maps of Core's set *Dungeons*** (pack World, batch 9 of `sources.toml`, from Blizzard's retail
+  tables; Forever's client has no dungeon maps but has their art): `Dungeons.lua` lists them with the game's own (`Dungeons.List`, `Entry`, `Key(instance)`), builds the
+  art from the set's tiles (`ArtOf`), finds the floor by the world position (`Here`, `OnFloor`), places each boss's
+  mark and its `PlayerModel` (`PlaceBosses`, `Stand`: `SetDisplayInfo`, hidden past the view's edge). An entrance's
+  pin opens its dungeon (`Data/Map.lua` passes the place's `instance`).
+- **The map pin, safely** (`Live.SetWaypoint`): refused off the map, where the game allows none, or when the game
+  refuses it, with `ns.TEXT.noPin`; it once stood the module down.
+- **The quest log's clicks** (`QuestLog.lua`): a click the map pin on the objective (`Pin`, `Where`, `PinView.Drop`),
+  the map staying; the menu *Quest Details* (`QuestLog.Text`, `open`) and *Show Map*; each quest's mark (`Mark`);
+  no scroll bar but while the mouse is on a list longer than its room, at the docked side (`Scroller`, `Side`).
+- **Found herbs and ore clicked** (`Found.lua`): each picture a button, its tooltip the node's name, a click the map
+  pin on its zone's map (`OnMap`).
+- **Core's options on the full screen** (Core, `Settings/Screen.lua`): the title bar's cog and question mark stand
+  on the map's full screen too; the view covers the map and the quest log (layer `DIALOG`).
+
 Not yet: portals and lifts in routes, doodads in the walking data
- (fences, trees), search, the guide, dungeon maps and floors, the minimap's small parts
-(zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (210
-checks), `dev/tests/walk.py` (28).
+ (fences, trees), search, the guide, the dungeons' three zooms, the minimap's small parts
+(zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
+checks), `dev/tests/walk.py` (41).
 
 ## What is not there yet
 
@@ -169,8 +192,8 @@ checks), `dev/tests/walk.py` (28).
 6. **Core's windows:** click to expand (`Edge.lua` still fills on the mouse's coming), the holder, the board
    and Edit Mode layouts are not built. Navigation does not need the holder or the board: it catches the
    game's map itself (plan, *The game's map and minimap*) and lays out its full screen in `docked`.
-7. **Art of our own** where the game has none (dungeon maps it lacks): not made; planned as the dungeons' three
-   zooms (2026-10-21, above).
+7. **Art of our own** where the game has none: not made; planned as the dungeons' three zooms (2026-10-21,
+   above). The dungeons' maps of today are the game's own art (Core's set *Dungeons*).
 
 ## Open questions without a proposal
 

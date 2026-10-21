@@ -78,6 +78,11 @@ together, share the middle.
 - **A ? before them** (Saneroki, 2026-10-16; to come with the Onboarding module, `Doc/ideas/Onboarding.md`):
   help with the window, over it. Only on our window (the Sane UI view), never on the game's own window;
   only where the window has help.
+- **Options and a ? on every full screen (Saneroki, 2026-10-21; in Core):** a full screen's title bar has a
+  button for a view all about settings and configuration (the game's cog: Sane UI's options over the full screen,
+  page by page, besides Esc > Options > AddOns), and beside it a question mark that does nothing yet and will show
+  a tour of, or information about, that view (the window's option `help`). Built: `Settings/Screen.lua`,
+  `Window.lua`.
 - **It moves the window, at any time:** a drag anywhere on it moves a small (not full screen) window, also
   outside Edit Mode. A window docked at a screen edge is Edit Mode's to move; a window may override that
   (`dragDocked`). Outside Edit Mode a title bar's drag docks only in the middle (or not at all), so a

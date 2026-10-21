@@ -152,6 +152,11 @@ first meeting with a window.
 - **Only where there is help:** a window shows it when it has help (a new window option, `help = "<key>"`,
   its page in `Help.lua`) and the Onboarding addon is switched on in the addon list. Otherwise there is no
   ?, and no gap where it would be.
+- **Already on every full screen (Saneroki, 2026-10-21):** Core puts the ? in each full screen's title bar now,
+  left of the options' cog, doing nothing yet; later it shows a tour of that view or information about it. Its
+  click calls the window's option `help` (a function, `Window.lua`), the seam this module plugs into (loading
+  itself, then the window's help plates); a full screen without `help` keeps the ? and its tooltip says the
+  tour is not ready yet.
 - **A click** loads Onboarding if it is not loaded yet (`C_AddOns.LoadAddOn`), then shows the window's help
   over it. A second click, Esc or closing the window hides it. Nothing is loaded until the first click.
 - **Blizzard's help plates** (`Blizzard_HelpPlate`): the window's parts each in a box with a button; the
