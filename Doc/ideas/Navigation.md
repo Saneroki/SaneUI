@@ -1247,8 +1247,8 @@ a cold, very large part.
 
 **Built (2026-10-20, `dev/tools/walk-data`; open question 1 answered):** from the game's own files only: each
 map chunk's heights (but its holes), every collision triangle of every building the object files place (their
-group files, turned and moved as the game places them, cut into columns as a voxel field is made), and the
-water (deeper than `DEEP` a floor to swim on; magma and slime close what lies under them). Sampled every 2.08
+group files, turned and moved as the game places them, cut into columns as a voxel field is made) and, since
+2026-10-21, of every doodad (*The doodads*, below), and the water (deeper than `DEEP` a floor to swim on; magma and slime close what lies under them). Sampled every 2.08
 yards (256 a tile): a floor is the top of a column's span made by something not too steep (`SLOPE` 50°) with
 `ROOM` (2 yards) free above it; two floors side by side are one way within `CLIMB` (2.6 yards); the ground is
 judged on its heights smoothed over three samples, so its bumps make no specks.
@@ -1303,12 +1303,39 @@ judged on its heights smoothed over three samples, so its bumps make no specks.
     Undercity's sewers lead out to a cave on the hillside west of the ruins, so the city and the ruins are one
     region (the lifts: one region). Regions: 108 on the Eastern Kingdoms (131 before), 219 on Kalimdor (221), 5 on
     the isle (6).
-  - **Not joined:** Thunder Bluff's Spirit Rise and Hunter Rise: their bridges end on decks whose stairs down to the
-    main mesa are no part of the buildings' collision (doodads); a small walled harbour far in the south west of the
-    Eastern Kingdoms, reached before only by swimming through its wall, is a region of its own.
-- **Not yet:** the doodads (trees, fences, rocks, some stairs) are not read: a line may cross a fence, and Thunder
-  Bluff's Spirit Rise and Hunter Rise stay apart; one-way drops (a ledge one can jump down but not climb) are no way;
-  an instance's portal or a closed gate is no collision (the walking data goes through Zul'Gurub's gate).
+  - **Not joined:** Thunder Bluff's Spirit Rise and Hunter Rise: their bridge heads' stairs and posts are cut at two
+    yards (the buildings' own, not doodads, as was thought first: *The doodads*); a small walled harbour far in the
+    south west of the Eastern Kingdoms, reached before only by swimming through its wall, is a region of its own.
+- **Built (2026-10-21): the doodads.** `dev/tools/walk-data` reads the collision of the doodads (the game's models:
+  the collision triangles their header names) the object files place, and of those a placed building shows (its
+  first, global doodad set and the placement's own; Zephras Isle's buildings show several), into the same columns as
+  the buildings': fences, rocks, trunks, roots and the game's invisible walls stand as walls; piers, decks and the
+  tops of rocks are floors.
+  - **Placed as the game places them:** a building or a doodad is tilted as well as turned (the buildings were turned
+    only, but 902 stand tilted: a capsized ship upside down, ruins on hillsides, the cave tunnels of Winterspring's
+    mountains). Checked against the game's own files: every building's box as its object file keeps it (to a
+    thousandth of a yard; turned only, 3.4 yards off on the median of the tilted ones, up to 61), the doodads each
+    map chunk lists (99.9 % of 54,000 alike); a building's doodads turned by their quaternion as read (of 9,234 long
+    turned ones, 921 have a wall of their building inside them, 1,252 when turned the other way).
+  - **Left out:** a doodad no wider than `SMALL` (2 yards either way: a torch, a barrel, a crate, a post, a thin
+    trunk; about 82,000 of the 235,000 with collision): one walks round it, where in the samples it took a floor or
+    closed the way between two (the torches at the ruins' gate). What an outdoor doodad holds wholly under the
+    ground (`sunken`: a tree's roots, a rock's foot) is inside the earth. A canopy or anything else high over the
+    ground no longer counts as built there (`built`: only what comes near the ground), so the ground's ragged steep
+    edges are still taken into its squares (`TAKEN`) under the forests.
+  - **The lifts' landings** count a yard up or down three times (`LEVEL`, as Navigation's `Walk.Landing`): one gets
+    off level with the car beside its shaft, not onto the roof over it (the Undercity's roofs over the shafts, 6.5
+    yards up, became a region of their own with the doodads).
+  - **Measured** (the doodads alone, 2026-10-21): 2.41 million rectangles, 17.9 MB of blocks (1.65 and 12.1
+    before), about seven minutes to make. What it changed: the game's invisible wall on the ruins' rampart and a door
+    close the roundabout way the data had into the inner ruins of Lordaeron (joined again by the same day's stair
+    rule); Mount Hyjal is joined to Kalimdor by two cave tunnels that now lie as tilted as the game places them; a
+    giant tree's roots, four yards high across a steep slope, cut Thousand Needles off Feralas (its only walking way
+    in the data; Tanaris only round by Feralas). Thunder Bluff's rises: their bridge heads are the buildings' own
+    stairs and posts, which the same day's stair rule and narrower `CORE` join.
+- **Not yet:** one-way drops (a ledge one can jump down but not climb) are no way; an instance's portal or a closed
+  gate is no collision (the walking data goes through Zul'Gurub's gate); a doodad the game shows only at times (a
+  door, a gate) is a wall all the time; the giant trees' roots are walls where they lie on steep ground.
 
 ### The golden line
 

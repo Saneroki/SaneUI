@@ -9,9 +9,14 @@ tile's side):
   the ground      each map chunk's heights (the game's four triangles a cell), but where the terrain has a hole (a
                   cave's mouth, a building's cellar); too steep (over SLOPE degrees) it is no floor, only a surface
   the buildings   every collision triangle of every building the object files place (WMO group files: their
-                  vertices, indices and each triangle's flags), turned and moved where the game places it; a
-                  triangle cut by each column of samples gives a span of height there (as a voxel field is made),
+                  vertices, indices and each triangle's flags), turned, tilted and moved where the game places it;
+                  a triangle cut by each column of samples gives a span of height there (as a voxel field is made),
                   too steep (its slope in yards over SLOPE degrees) a wall
+  the doodads     the same of every doodad (M2 model: its collision triangles) the object files place and of every
+                  doodad of the sets a placed building shows (its first, global set and the placement's own), placed
+                  where the building puts it: fences, rocks and tree trunks are walls, piers, decks and their stairs
+                  floors. A doodad no wider than SMALL (a torch, a barrel) is left out, one walks round it; what a
+                  doodad of the object files holds wholly under the ground is inside the earth (a tree's roots)
   the water       where water stands deeper than DEEP over a floor, that floor is under water, and the water's
                   surface is a floor to swim on; magma and slime close what lies under them
 
@@ -55,8 +60,8 @@ array of whole numbers:
 
 The input, as for dev/tools/map-meta, for every map with terrain files (the continents, the isle):
   game files    a folder with adt/ (the root terrain files, <tile key>.adt), adt-obj0/ (the object files: where
-                buildings stand) and wmo/ (every placed building's root file <file ID>.wmo and its group files
-                <file ID>_<part>.wmo)
+                buildings and doodads stand), wmo/ (every placed building's root file <file ID>.wmo and its group
+                files <file ID>_<part>.wmo) and m2/ (every model placed or shown by a building, <file ID>.m2)
   client tables a folder of the game's client tables as CSV (LiquidType, LiquidMaterial)
 and the lifts of the master's set Travel (assets/data/Travel: each end's place and height).
 Options: --maps <map>[,<map>...] those maps' tiles only (a map added, as 2991, leaves the others' lines alone), --only
@@ -101,8 +106,12 @@ DEEP = 1.6             # yards of water over a floor that make it one to swim ov
 JOIN = 0.25            # yards: spans of a column nearer than this are one
 WIDEST = 32            # samples: a rectangle's longest side
 SMALLEST = 3000        # samples: a region smaller than this (a roof, a ledge) is left out, but one a lift lands on
+SMALL = 2.0            # yards: a doodad no wider than this either way (a torch, a barrel, a thin trunk) is left out:
+                       # one walks round it, where it would take a sample or close the way between two
 LANDING = 20           # yards from a lift's end its landing may lie (Navigation's Lifts.LANDING)
 RISE = 12              # yards a landing may lie over or under the lift's end (Navigation's Walk.RISE)
+LEVEL = 3              # a yard up or down counts as this many across when a landing is chosen (Navigation's
+                       # Walk.Landing): one gets off level with the car, beside its shaft, not onto the roof over it
 # A square of the ground (outside buildings) may take this share of steep samples at its edges, by its side: the
 # edges of walkable ground, ragged at two yards, make no crowd of small rectangles.
 TAKEN = {2: 0.5, 4: 0.75, 8: 0.85, 16: 0.9, 32: 0.95}
@@ -212,28 +221,53 @@ def ground(path, waters, liquids):
 
 
 # -------------------------------------------------------------------------------------------------
-#  The buildings
+#  The buildings and the doodads
 # -------------------------------------------------------------------------------------------------
+BUILDING, DOODAD = 1, 2
+
+
 def placements(folder):
-    """Every building placed on each continent, once: {continent: [placement]} with its file, place, turn, scale
-    and box in world yards (north, south, west, east)."""
+    """Everything the object files place that the game collides with, once: {continent: [placement]} with its kind
+    (BUILDING, DOODAD), file, place, turn, scale and box in world yards (north, south, west, east); a building with
+    the doodad sets it shows, a doodad only when its model has collision wider than SMALL (its box reaches as far
+    as the model's farthest corner, whichever way it is turned)."""
     found = {}
     for path in sorted((folder / "adt-obj0").glob("*.adt")):
         continent = int(path.stem) // (GRID * GRID)
+        places = found.setdefault(continent, {})
         data = path.read_bytes()
-        for name, at, size in pieces(data, 0, len(data)):
-            if name != b"MODF":
+        top = chunks(data, 0, len(data))
+        ranges = sets = ()
+        if b"MWDR" in top and b"MWDS" in top:  # several doodad sets a building (Zephras Isle's)
+            at, size = top[b"MWDR"]
+            ranges = struct.unpack_from(f"<{size // 4}I", data, at)
+            at, size = top[b"MWDS"]
+            sets = struct.unpack_from(f"<{size // 2}H", data, at)
+        at, size = top.get(b"MODF", (0, 0))
+        for start in range(at, at + size, 64):
+            (file, unique, px, py, pz, rx, ry, rz, lx, ly, lz, ux, uy, uz, flags, shown, _,
+             scale) = struct.unpack_from("<II3f3f3f3fHHHH", data, start)
+            if not flags & 0x8:
                 continue
-            for start in range(at, at + size, 64):
-                (file, unique, px, py, pz, rx, ry, rz, lx, ly, lz, ux, uy, uz, flags, _, _,
-                 scale) = struct.unpack_from("<II3f3f3f3fHHHH", data, start)
-                if not flags & 0x8:
-                    continue
-                north, south = HALF - min(lz, uz), HALF - max(lz, uz)
-                west, east = HALF - min(lx, ux), HALF - max(lx, ux)
-                found.setdefault(continent, {})[unique] = dict(
-                    file=file, at=(px, py, pz), turn=(rx, ry, rz), scale=scale / 1024 if scale else 1,
-                    box=(north, south, west, east))
+            # The first doodad set (the building's global one) is always shown, and the placement's own; with flag
+            # 0x80 its own are those of a range of MWDS (MWDR: its first and last).
+            own = sets[ranges[2 * shown]:ranges[2 * shown + 1] + 1] if flags & 0x80 else (shown,)
+            north, south = HALF - min(lz, uz), HALF - max(lz, uz)
+            west, east = HALF - min(lx, ux), HALF - max(lx, ux)
+            places[(BUILDING, unique)] = dict(
+                kind=BUILDING, file=file, sets=tuple(sorted({0, *own})), at=(px, py, pz), turn=(rx, ry, rz),
+                scale=scale / 1024 if scale else 1, box=(north, south, west, east))
+        at, size = top.get(b"MDDF", (0, 0))
+        for start in range(at, at + size, 36):
+            file, unique, px, py, pz, rx, ry, rz, scale, flags = struct.unpack_from("<II3f3fHH", data, start)
+            if not flags & 0x40:  # a model named in MMDX instead of its file ID: none on these maps
+                continue
+            across, far = measure(folder, file)
+            if across * scale / 1024 > SMALL:
+                far *= scale / 1024
+                places[(DOODAD, unique)] = dict(
+                    kind=DOODAD, file=file, at=(px, py, pz), turn=(rx, ry, rz), scale=scale / 1024,
+                    box=(HALF - pz + far, HALF - pz - far, HALF - px + far, HALF - px - far))
     return {continent: list(places.values()) for continent, places in found.items()}
 
 
@@ -280,30 +314,114 @@ def group(path):
     return vertices[indices].astype(np.float64)
 
 
+_models = {}
+
+
+def model(folder, file):
+    """A model's (M2) collision triangles in its own space: an (n, 3, 3) array of corners (x, y, z), none for a model
+    without (kept per process). Its header (in MD21 since the game's chunked models) holds the collision's indices
+    (three a triangle) and positions."""
+    if file not in _models:
+        corners = np.zeros((0, 3, 3))
+        path = folder / "m2" / f"{file}.m2"
+        data = path.read_bytes() if path.exists() else b""
+        if data[:4] == b"MD21":
+            data = data[8:8 + struct.unpack_from("<I", data, 4)[0]]
+        if data[:4] == b"MD20" and len(data) >= 0xE8 and struct.unpack_from("<I", data, 4)[0] >= 264:
+            count, at, many, start = struct.unpack_from("<4I", data, 0xD8)
+            if count >= 3 and many and at + count * 2 <= len(data) and start + many * 12 <= len(data):
+                indices = np.frombuffer(data, np.uint16, count // 3 * 3, at).astype(np.int64).reshape(-1, 3)
+                vertices = np.frombuffer(data, np.float32, many * 3, start).reshape(-1, 3)
+                corners = vertices[indices[(indices < many).all(axis=1)]].astype(np.float64)
+        _models[file] = corners
+    return _models[file]
+
+
+_measures = {}
+
+
+def measure(folder, file):
+    """How wide a model's collision is (its widest side, along its own x or y) and how far its farthest corner lies
+    from its middle: (0, 0) for a model without (kept per process)."""
+    if file not in _measures:
+        corners = model(folder, file).reshape(-1, 3)
+        across = float(np.ptp(corners[:, :2], axis=0).max()) if len(corners) else 0.0
+        _measures[file] = across, float(np.sqrt((corners ** 2).sum(axis=1)).max()) if len(corners) else 0.0
+    return _measures[file]
+
+
+def quaternion(x, y, z, w):
+    """The turn of a quaternion (x, y, z, w) as a matrix."""
+    length = math.sqrt(x * x + y * y + z * z + w * w) or 1.0
+    x, y, z, w = x / length, y / length, z / length, w / length
+    return np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                     [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                     [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
+
+
+def doodads(folder, file, sets):
+    """The collision triangles of the doodads a building shows, in its own space: the MODD entries of those sets
+    (MODS: each set's first entry and count), each its model (MODI: the file ID of each name) scaled, turned and moved
+    where the entry puts it; but those no wider than SMALL."""
+    path = folder / "wmo" / f"{file}.wmo"
+    data = path.read_bytes() if path.exists() else b""
+    top = chunks(data, 0, len(data))
+    if not all(name in top for name in (b"MODS", b"MODD", b"MODI")):
+        return []
+    at, size = top[b"MODI"]
+    files = struct.unpack_from(f"<{size // 4}I", data, at)
+    sets_at, sets_size = top[b"MODS"]
+    entries_at, entries_size = top[b"MODD"]
+    found = []
+    for index in sets:
+        if (index + 1) * 32 > sets_size:
+            continue
+        first, count = struct.unpack_from("<II", data, sets_at + index * 32 + 20)
+        for entry in range(first, min(first + count, entries_size // 40)):
+            name, x, y, z, qx, qy, qz, qw, scale = struct.unpack_from("<I3f4ff", data, entries_at + entry * 40)
+            name &= 0xFFFFFF  # the top byte holds the entry's flags
+            if name < len(files) and files[name] and measure(folder, files[name])[0] * scale > SMALL:
+                found.append(model(folder, files[name]) @ (quaternion(qx, qy, qz, qw).T * scale) + (x, y, z))
+    return found
+
+
 _groups = {}
 
 
-def building(folder, file):
-    """Every collision triangle of a building in its own space, its parts joined (kept per process)."""
-    if file not in _groups:
-        parts = [group(path) for path in sorted(folder.glob(f"{file}_*.wmo"))]
-        parts = [part for part in parts if len(part)]
-        _groups[file] = np.concatenate(parts) if parts else np.zeros((0, 3, 3))
+def building(folder, file, sets=(0,)):
+    """Every collision triangle of a building in its own space: its parts joined, and the doodads of the sets it
+    shows (kept per process)."""
+    if (file, sets) not in _groups:
+        parts = [group(path) for path in sorted((folder / "wmo").glob(f"{file}_*.wmo"))]
+        parts = [part for part in parts + doodads(folder, file, sets) if len(part)]
+        _groups[(file, sets)] = np.concatenate(parts) if parts else np.zeros((0, 3, 3))
         if len(_groups) > 200:  # keep the memory of one process modest
             _groups.pop(next(iter(_groups)))
-    return _groups[file]
+    return _groups[(file, sets)]
+
+
+def rotation(axis, degrees):
+    """A turn about an axis (0 x, 1 y, 2 z) as a matrix."""
+    c, s = math.cos(math.radians(degrees)), math.sin(math.radians(degrees))
+    if axis == 0:
+        return np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
+    if axis == 1:
+        return np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
+    return np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
+
+
+OWN = np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]])     # its own axes (x, y, z up) as the object files' axes
+WORLD = np.array([[0, 0, -1], [-1, 0, 0], [0, 1, 0]])  # the object files' axes (x, height, z) as the world's
 
 
 def placed(where, corners):
-    """A building's corners (n, 3, 3: its own x, y, z) where the game places it: (north, west, height) in yards. The
-    game turns buildings about the up axis only, on the continents."""
+    """A building's or a doodad's corners (n, 3, 3: its own x, y, z) where the game places it: (north, west, height)
+    in yards. On the object files' axes (x, the height, z) the game tilts it about x by its turn's third angle, then
+    about z by minus the first, then turns it about the height by the second less 90 degrees, and scales it."""
     px, py, pz = where["at"]
-    turn = math.radians(-where["turn"][1])
-    scale = where["scale"]
-    x, y, z = corners[..., 0], corners[..., 1], corners[..., 2]
-    across = (y * math.cos(turn) - x * math.sin(turn)) * scale
-    along = (y * math.sin(turn) + x * math.cos(turn)) * scale
-    return np.stack([HALF - (pz + along), HALF - (px + across), py + z * scale], axis=-1)
+    rx, ry, rz = where["turn"]
+    matrix = WORLD @ rotation(1, ry - 90) @ rotation(2, -rx) @ rotation(0, rz) @ OWN
+    return corners @ (matrix.T * where["scale"]) + (HALF - pz, HALF - px, py)
 
 
 def clip(polygon, axis, low, high):
@@ -453,11 +571,18 @@ def floors(height, hole, water, closed, spans, walls=()):
         kept.sort()
         found[key] = kept
         speck[row, column] = False
-    built = np.zeros((SIDE, SIDE), bool)  # the columns a building reaches into
-    for row, column in spans:
-        built[row, column] = True
-    for row, column, _ in walls:
-        built[row, column] = True
+    # The columns a building or a doodad reaches into near the ground (or where the ground has a hole): a canopy
+    # high over it or what lies under it leaves the ground's own rules alone.
+    built = np.zeros((SIDE, SIDE), bool)
+
+    def reaches(row, column, parts):
+        g = height[row, column]
+        return hole[row, column] or any(high >= g - CLIMB and low <= g + ROOM for low, high, *_ in parts)
+
+    for (row, column), column_spans in spans.items():
+        built[row, column] = reaches(row, column, column_spans)
+    for (row, column, _), column_walls in walls.items():
+        built[row, column] |= reaches(row, column, column_walls)
     return alone, found, np.where(speck, height, np.nan), built
 
 
@@ -689,6 +814,14 @@ def openings(rects, owner, columns, borders, walls=None):
 # -------------------------------------------------------------------------------------------------
 #  A tile
 # -------------------------------------------------------------------------------------------------
+def sunken(triangles, height, hole):
+    """Which triangles (in the tile's samples) lie wholly under the ground, where it has no hole: inside the earth, as
+    a tree's roots or the foot of a rock."""
+    rows = np.clip(triangles[..., 1].astype(np.int64), 0, SIDE - 1)
+    columns = np.clip(triangles[..., 0].astype(np.int64), 0, SIDE - 1)
+    return ((triangles[..., 2] < height[rows, columns] - JOIN) & ~hole[rows, columns]).all(axis=-1)
+
+
 def tile(job):
     """Everything of one tile: (key, rects, openings, borders), or (key, None, None, None) without ground."""
     key, folder, waters, liquids, near_places = job
@@ -700,7 +833,10 @@ def tile(job):
     north0, west0 = HALF - row0 * TILE, HALF - col0 * TILE
     spans, walls = {}, {}
     for where in near_places:
-        corners = building(folder / "wmo", where["file"])
+        if where["kind"] == DOODAD:
+            corners = model(folder, where["file"])
+        else:
+            corners = building(folder, where["file"], where["sets"])
         if not len(corners):
             continue
         world = placed(where, corners)
@@ -708,6 +844,8 @@ def tile(job):
         samples = np.stack([(west0 - world[..., 1]) / SAMPLE, (north0 - world[..., 0]) / SAMPLE, world[..., 2]], axis=-1)
         inside = ((samples[..., 0].max(axis=1) >= 0) & (samples[..., 0].min(axis=1) < SIDE)
                   & (samples[..., 1].max(axis=1) >= 0) & (samples[..., 1].min(axis=1) < SIDE))
+        if where["kind"] == DOODAD:
+            inside &= ~sunken(samples, height, hole)
         rasterize(samples[inside], spans, walls)
     alone, found, specks, built = floors(height, hole, water, closed, spans, walls)
     rects, owner, columns = rectangles(alone, found, specks, built, walls)
@@ -771,7 +909,8 @@ def lifts(path=TRAVEL):
 
 def landings(tiles, ends):
     """The rectangles the lifts' ends land on, as Navigation finds them (Walk.Landing): of those within LANDING
-    yards whose height lies within RISE of the end, the nearest by the squares of both. {(key, number)}"""
+    yards whose height lies within RISE of the end, the nearest by the squares of both, the rise LEVEL times.
+    {(key, number)}"""
     found = set()
     for world, x, y, z in ends:
         row, column = int((HALF - x) // TILE), int((HALF - y) // TILE)
@@ -787,8 +926,9 @@ def landings(tiles, ends):
                     west, east = west0 - c * SAMPLE, west0 - (c + w) * SAMPLE
                     gap = math.hypot(max(south - x, 0, x - north), max(east - y, 0, y - west))
                     rise = quarters / 4 - z
-                    if gap <= LANDING and abs(rise) <= RISE and (best is None or gap * gap + rise * rise < best[0]):
-                        best = (gap * gap + rise * rise, (key, number))
+                    cost = gap * gap + (LEVEL * rise) ** 2
+                    if gap <= LANDING and abs(rise) <= RISE and (best is None or cost < best[0]):
+                        best = (cost, (key, number))
         if best:
             found.add(best[1])
     return found

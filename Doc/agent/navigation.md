@@ -164,6 +164,14 @@ on (`lifts`, `landings`): 1.65 million rectangles, 12.6 MB. The Undercity and th
 `Lifts.Levels` makes stacked levels within one region (`level.alone`, `low`, `split`, `Lifts.SPREAD`), and
 `Planner.lua`'s `Over` keeps a place below a level from one on it also where they share a region.
 
+Doodads in the walking data (2026-10-21): `dev/tools/walk-data` reads the doodads' collision (`model`: the M2 header's
+collision triangles; `placements`: the object files' MDDF and each building's doodad sets, `doodads`, set 0 and the
+placement's own, MWDR/MWDS), places buildings and doodads tilted as the game does (`placed`: the full turn, checked
+against the object files' boxes), leaves out doodads no wider than `SMALL` (2 yards) and what lies wholly under the
+ground (`sunken`), counts a column as built only where something comes near the ground, and picks a lift's landing
+with the rise counted `LEVEL` (3) times, as `Walk.Landing` must too. The models are the game's own, in `m2/` beside
+`wmo/` in the game files' folder. Doodads alone: 2.41 million rectangles, 17.9 MB of blocks.
+
 ## Built (2026-10-20, 21): quest marks, the filter's sections, dungeon maps, the quest log's clicks
 
 Saneroki's asks (`Doc/ideas/Navigation.md`, *Map pins*, *Full screen*, *Dungeon maps now*; README *History*):
@@ -202,10 +210,9 @@ Flight points (2026-10-21): only those the character has found are flown (`fligh
 flight master from its flight map's states and the maps' `isUndiscovered`; `Planner.Knows`); the map's others are red
 (`Pins.lua`, `Pins.RED`).
 
-Not yet: portals and lifts in routes, doodads in the walking data
- (fences, trees), search, the guide, the dungeons' three zooms, the minimap's small parts
+Not yet: portals in routes, search, the guide, the dungeons' three zooms, the minimap's small parts
 (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
-checks; 491 with the 2026-10-21 changes), `dev/tests/walk.py` (71).
+checks; 491 with the 2026-10-21 changes), `dev/tests/walk.py` (87).
 
 ## What is not there yet
 

@@ -3,8 +3,31 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 495 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 71 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 495 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 87 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: the doodads in the walking data's tool (Saneroki, 2026-10-21)
+- **`dev/tools/walk-data`** reads the doodads' collision (the game's models, M2: the collision triangles their header
+  names) the object files place (MDDF) and the placed buildings show (each root file's doodad sets: the first, global
+  one and the placement's own; MWDR/MWDS where one shows several, Zephras Isle's), into the same columns as the
+  buildings': fences, rocks, trunks and the game's invisible walls stand as walls; piers, decks and the tops of rocks
+  are floors. `model`, `measure`, `quaternion`, `doodads`, `building(folder, file, sets)`; `placements` gives each
+  placement its kind (`BUILDING`, `DOODAD`). Its game files' folder gains `m2/` (5,662 models from the game's install).
+- **Placed as the game places them** (`placed`): tilted as well as turned. Buildings were turned only, though 902
+  stand tilted (a capsized ship, ruins on hillsides, cave tunnels). Checked against the game's own files: every
+  building's box as its object file keeps it (to 0.001 yards), the doodads each map chunk lists (99.9 % of 54,000).
+- **Rules:** `SMALL` (2 yards: a doodad no wider either way is left out, about 82,000 torches, barrels, crates and
+  posts; one walks round them); `sunken` (an outdoor doodad's triangles wholly under the ground: a tree's roots);
+  `built` only where something comes near the ground (a canopy leaves the ground's `TAKEN` to its columns); a lift's
+  landing with the rise counted `LEVEL` (3) times, as `Walk.Landing` must too (the Undercity's roofs over the shafts
+  were taken for its landings).
+- **Measured on the whole data** (the doodads alone): 2,413,319 rectangles, 17.9 MB of blocks (1,645,740 and 12.1),
+  five to seven minutes to make. Thunder Bluff's rises are not split by doodads but by their bridge heads' stairs and
+  posts (the buildings' own); the set is made again together with the same day's stair rule, which joins them and
+  the inner ruins of Lordaeron that the game's invisible wall on their rampart now closes off the old way.
+- Tests: walking data 87 checks (a model's collision, a building's doodad sets, the object files' placements, a tilted
+  building of the game in the box its object file keeps, a fence and a deck rasterized, what lies under the ground, a
+  canopy and `built`, a lift's landing beside the shaft, not on the roof).
 
 ### Navigation: only the flight points the character has found (Saneroki, 2026-10-21)
 - At Saneroki's ask: a character may not have found every flight point, and the game tells which ones it has once a

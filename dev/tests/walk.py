@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """Tests of dev/tools/walk-data and dev/tools/travel-data without the game's files: the block's encoding, floors
 joined into surfaces and rectangles on made-up ground (flat land, a steep speck, a hole, a cliff, a bridge, water),
-the openings the game is left to work out and those written, regions too small to keep and their order, a flight's
-path made short, a boat's way (its docks, on the zone maps too, its leaps, which way a newer one replaced) and a
-lift's car (its motion, its ends and rides, its own number kept for its place). And
-dev/tools/terrain-art's open sky around an isle that floats (walk-data reads the terrain with it). Run by
-dev/tests/run."""
+buildings and doodads placed as the game places them (turned, tilted; a model's collision, a building's doodad sets,
+the object files' placements) and rasterized (a fence, a deck), the openings the game is left to work out and those
+written, regions too small to keep and their order, a flight's path made short, a boat's way (its docks, on the zone
+maps too, its leaps, which way a newer one replaced) and a lift's car (its motion, its ends and rides, its own number
+kept for its place). And dev/tools/terrain-art's open sky around an isle that floats (walk-data reads the terrain with
+it). Run by dev/tests/run."""
 import base64
 import importlib.machinery
 import importlib.util
 import math
 import os
+import struct
 import sys
 import tempfile
 import zlib
@@ -235,6 +237,127 @@ check("without it the tiles are open to each other",
       any(target >= 65536 * 2 for links in tiles[middle][1].values() for *_, target in links), True)
 
 
+# --- Placed as the game places them: buildings and doodads ------------------------------------------
+HALF = walk.HALF
+where = dict(at=(100.0, 5.0, 200.0), turn=(0.0, 90.0, 0.0), scale=2.0)
+check("turned a quarter about the height: its own x points east, its y north, z up; scaled; moved",
+      bool(np.allclose(walk.placed(where, np.array([[[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]]])),
+                       [[[HALF - 200, HALF - 102, 5.0], [HALF - 198, HALF - 100, 5.0],
+                         [HALF - 200, HALF - 100, 7.0]]])), True)
+# A building of the game (tile 7325) turned and tilted on both axes: its own box (MOHD) placed is the box its
+# object file keeps for it (MODF), corner for corner.
+where = dict(at=(16000.1298828125, 74.25980377197266, 27123.3828125), turn=(-30.000001907348633, 359.5, 19.0),
+             scale=1.0)
+low = (-71.34767150878906, -107.85765075683594, -25.654861450195312)
+high = (45.163021087646484, 107.8576431274414, 34.16815948486328)
+box = walk.placed(where, np.array([[[x, y, z] for x in (low[0], high[0]) for y in (low[1], high[1])
+                                   for z in (low[2], high[2])]]))[0]
+kept = np.array([[HALF - 27191.361328125, HALF - 16111.0458984375, -12.831830978393555],
+                 [HALF - 27028.6796875, HALF - 15886.6748046875, 155.23016357421875]])
+check("a building tilted 30 and 19 degrees lands in the box the game keeps for it",
+      float(max(np.abs(box.min(axis=0) - kept[0]).max(), np.abs(box.max(axis=0) - kept[1]).max())) < 0.01, True)
+
+
+def chunk(name, data):
+    """A chunk of the game's map files: its name backwards, its size, its data."""
+    return name[::-1] + struct.pack("<I", len(data)) + data
+
+
+def m2(positions, indices):
+    """A made-up model (M2, in MD21 as the game's are) whose header's collision holds these triangles."""
+    header = bytearray(0x100)
+    header[:8] = b"MD20" + struct.pack("<I", 274)
+    faces = struct.pack(f"<{len(indices)}H", *indices)
+    struct.pack_into("<4I", header, 0xD8, len(indices), len(header), len(positions), len(header) + len(faces))
+    body = bytes(header) + faces + struct.pack(f"<{len(positions) * 3}f", *[v for p in positions for v in p])
+    return b"MD21" + struct.pack("<I", len(body)) + body
+
+
+with tempfile.TemporaryDirectory() as folder:
+    game = Path(folder)
+    for name in ("m2", "wmo", "adt-obj0"):
+        (game / name).mkdir()
+    (game / "m2" / "901.m2").write_bytes(m2([(0, 0, 0), (1, 0, 0), (0, 1, 0)], [0, 1, 2]))
+    (game / "m2" / "902.m2").write_bytes(m2([], []))
+    check("a model's collision triangles, from its header", walk.model(game, 901).tolist(),
+          [[[0, 0, 0], [1, 0, 0], [0, 1, 0]]])
+    check("a model without collision has none", len(walk.model(game, 902)), 0)
+
+    # A building whose first doodad set holds the model three times its size 10 yards along its x, and the model as it
+    # is (no wider than SMALL: left out), and whose second set holds it turned a quarter about z (the entry's flags in
+    # its top byte), four times its size, 5 yards up.
+    quarter = math.sqrt(0.5)
+    sets = (struct.pack("<20sII4x", b"Set_$DefaultGlobal", 0, 2) + struct.pack("<20sII4x", b"Set_Own", 2, 1))
+    entries = (struct.pack("<I3f4ff4B", 0, 10, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0)
+               + struct.pack("<I3f4ff4B", 0, 20, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0)
+               + struct.pack("<I3f4ff4B", 1 | 0x01000000, 0, 0, 5, 0, 0, quarter, quarter, 4, 0, 0, 0, 0))
+    (game / "wmo" / "990.wmo").write_bytes(chunk(b"MVER", struct.pack("<I", 17)) + chunk(b"MODS", sets)
+                                          + chunk(b"MODI", struct.pack("<2I", 901, 901)) + chunk(b"MODD", entries))
+    check("a building's global doodad set: its model scaled and moved where the entry puts it, a small one left out",
+          [part.round(6).tolist() for part in walk.doodads(game, 990, (0,))], [[[[10, 0, 0], [13, 0, 0], [10, 3, 0]]]])
+    check("its own set too: turned by the entry's quaternion, scaled, moved",
+          walk.doodads(game, 990, (0, 1))[1].round(6).tolist(), [[[0, 0, 5], [0, 4, 5], [-4, 0, 5]]])
+    check("both in the building's triangles (no parts of its own here)", len(walk.building(game, 990, (0, 1))), 2)
+
+    # The object file of a tile: a building showing its doodad set 1, the model 901 four times its size, the model as
+    # it is (no wider than SMALL), the one without collision, one named instead of its file ID; and Zephras Isle's way
+    # of showing several sets (MWDR, MWDS).
+    building = struct.pack("<II3f3f3f3fHHHH", 990, 1, 100, 5, 200, 0, 90, 0, 90, 0, 190, 110, 10, 210, 0x8, 1, 0, 1024)
+    doodad = struct.pack("<II3f3fHH", 901, 2, 300, 7, 400, 0, 0, 0, 4096, 0x40)
+    small = struct.pack("<II3f3fHH", 901, 6, 300, 7, 400, 0, 0, 0, 1024, 0x40)
+    bare = struct.pack("<II3f3fHH", 902, 3, 300, 7, 400, 0, 0, 0, 1024, 0x40)
+    named = struct.pack("<II3f3fHH", 0, 4, 300, 7, 400, 0, 0, 0, 1024, 0)
+    (game / "adt-obj0" / "2080.adt").write_bytes(chunk(b"MVER", struct.pack("<I", 18)) + chunk(b"MODF", building)
+                                                 + chunk(b"MDDF", doodad + small + bare + named))
+    several = struct.pack("<II3f3f3f3fHHHH", 990, 5, 100, 5, 200, 0, 90, 0, 90, 0, 190, 110, 10, 210, 0x88, 1, 0, 1024)
+    (game / "adt-obj0" / "2081.adt").write_bytes(chunk(b"MVER", struct.pack("<I", 18)) + chunk(b"MODF", several)
+                                                 + chunk(b"MWDR", struct.pack("<4I", 0, 0, 1, 2))
+                                                 + chunk(b"MWDS", struct.pack("<3H", 5, 3, 4)))
+    placed = walk.placements(game)[0]
+    kinds = sorted((p["kind"], p["file"], p.get("sets")) for p in placed)
+    check("the object files' buildings with the doodad sets they show, and the doodads with collision wider than SMALL",
+          kinds, [(walk.BUILDING, 990, (0, 1)), (walk.BUILDING, 990, (0, 3, 4)), (walk.DOODAD, 901, None)])
+    shown = next(p for p in placed if p["kind"] == walk.DOODAD)
+    check("a doodad's box: as far round its place as its model reaches, scaled", shown["box"],
+          (HALF - 400 + 4, HALF - 400 - 4, HALF - 300 + 4, HALF - 300 - 4))
+
+# A doodad on a tile (32, 32 of a continent: its north west corner the world's middle): a fence 4 yards long and
+# 1.5 high along its x, turned a quarter (so running east to west) in the south of the samples of row 100, round
+# column 50; a deck 3 yards over the ground.
+def on_tile(world):
+    """World corners (north, west, height) in the samples of the tile at the world's middle."""
+    return np.stack([-world[..., 1] / walk.SAMPLE, -world[..., 0] / walk.SAMPLE, world[..., 2]], axis=-1)
+
+
+fence = np.array(quad((-2, 0, 0), (2, 0, 0), (2, 0, 1.5), (-2, 0, 1.5)))
+where = dict(at=(HALF + 50 * walk.SAMPLE, 10.0, HALF + 100.8 * walk.SAMPLE), turn=(0.0, 90.0, 0.0), scale=1.0)
+fenced = built_tile(list(on_tile(walk.placed(where, fence))))
+check("a fence (a doodad) stands between the samples it runs along",
+      walk.walled(fenced[5], 100, 50, 2, 10.0, 10.0), True)
+check("the floors on its two sides keep, and are walked between round its end",
+      joined(fenced, (100, 50), (101, 50)), True)
+across = dict(where, at=(HALF + 128 * walk.SAMPLE, 10.0, HALF + 100.8 * walk.SAMPLE), scale=150.0)  # 600 yards long
+check("a fence across the whole tile parts its two sides",
+      joined(built_tile(list(on_tile(walk.placed(across, fence / (1, 1, 150))))), (100, 50), (101, 50)), False)
+deck = np.array(quad((-3, -3, 3), (3, -3, 3), (3, 3, 3), (-3, 3, 3)))
+decked = built_tile(list(on_tile(walk.placed(dict(at=(HALF + 50 * walk.SAMPLE, 10.0, HALF + 50 * walk.SAMPLE),
+                                                       turn=(0.0, 0.0, 0.0), scale=1.0), deck))))
+check("a doodad's deck is a floor over the ground", [floor[0] for floor in decked[2][50][50]], [10.0, 13.0])
+ground_at = np.full((SIDE, SIDE), 10.0, np.float32)
+holed = np.zeros((SIDE, SIDE), bool)
+holed[7, 7] = True
+roots = np.array([[(5.2, 5.2, 8.0), (5.8, 5.2, 9.0), (5.5, 5.8, 9.5)],
+                  [(5.2, 5.2, 8.0), (5.8, 5.2, 9.0), (5.5, 5.8, 11.0)],
+                  [(7.2, 7.2, 8.0), (7.8, 7.2, 9.0), (7.5, 7.8, 9.5)]])
+check("a doodad's triangle wholly under the ground is inside the earth; one coming out of it or under a hole is not",
+      walk.sunken(roots, ground_at, holed).tolist(), [True, False, False])
+none = np.full((SIDE, SIDE), -np.inf, np.float32)
+built = walk.floors(ground_at, np.zeros((SIDE, SIDE), bool), none, none,
+                    {(5, 5): [(30.0, 31.0, True)], (6, 6): [(9.0, 12.0, False)]}, {(8, 8, 0): [(40.0, 41.0)]})[3]
+check("a canopy high over the ground leaves the ground's rules to its columns, a trunk at the ground does not",
+      (bool(built[5, 5]), bool(built[8, 8]), bool(built[6, 6])), (False, False, True))
+
+
 # --- The block -------------------------------------------------------------------------------------
 def blocked(rects, links):
     """Rectangles with a region, as kept() leaves them, written and read back."""
@@ -279,6 +402,10 @@ check("a small region a lift lands on is kept", (0, 0) in walk.regions(tiles, {(
 corner = walk.HALF - 2 * walk.SAMPLE  # the middle of the small rectangle, in the world's yards (tile 0 lies at the corner)
 check("a lift's end lands on the floor nearest it at its height",
       walk.landings(tiles, [(0, corner, corner, 10.5), (0, corner, corner, 40.0), (0, 0.0, 0.0, 10.0)]), {(0, 0)})
+# The Undercity's: a roof right over the car's top (6.5 yards up), the floor one gets off on 8 yards beside it.
+roofed = {0: ([[0, 0, 4, 4, 4 * 16, LAND, 0], [6, 0, 4, 4, 4 * 10, LAND, 1]], {0: [], 1: []}, {})}
+check("one gets off level with the car, beside its shaft, not onto the roof over it",
+      walk.landings(roofed, [(0, corner, corner, 9.5)]), {(0, 1)})
 with tempfile.TemporaryDirectory() as folder:
     master = Path(folder) / "Travel.jsonl"
     master.write_text('{"key":1,"kind":"flight","path":[{"x":1,"y":2,"map":0}]}\n'
