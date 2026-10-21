@@ -888,6 +888,11 @@ Saneroki asked for a much richer bag view, in features and looks.
   a page to look through them all (filters, liked ones). Then `elements.txt` (each direction's corner, buttons, tabs
   and title bar alone, with Qwen's transparency) and `shapes.txt` (fourteen silhouettes and ways of joining the
   tabs to the frame, in plain stone and steel).
+- Qwen against FLUX.2 [dev] (`dev/imagegen/sets/ui-compare/`): the same 18 complete windows from both
+  (`qwen.txt`, `flux.txt`), each model's window closed by its own edit and opened by Wan 2.2 from the closed to
+  the open picture (`anim.py`, with the new workflow `dev/imagegen/workflows/wan22-14b-flf-2ref.json`: first
+  and last frame from two pictures), and `compare.py`, a page with both side by side and `notes.html`, what each
+  model offers for game elements.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.
 
 ### Data: items, spells, talents and recipes from the game's own tables (Saneroki, 2026-10-20)

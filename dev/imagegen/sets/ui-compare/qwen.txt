@@ -1,0 +1,8 @@
+# Qwen against FLUX.2 [dev]: qwen21-t2i, the full model, at the same size as the other.
+#   dev/tools/imagegen dev/imagegen/sets/ui-compare/qwen.txt
+workflow: qwen21-t2i
+set: aspect_ratio=4:3 (Standard), megapixels=1.2
+count: 2
+out: assets/generated/ui-compare/qwen
+style: Compact and dense, almost no empty space. Flat front view, no perspective, soft light from the top left, muted colours, the strong colours only in the icons. Text shown only as thin placeholder lines, no letters, no words, no watermark.
+include: dev/imagegen/sets/ui-compare/prompts.txt
