@@ -1,6 +1,5 @@
 set = "Holidays"
 key = "int"              # the game's holiday ID
-pack = "Game"
 learn = true             # the calendar (C_Calendar)
 about = "The holidays and world events: their name, what they are, and when they start and how long they last, as the client holds it."
 

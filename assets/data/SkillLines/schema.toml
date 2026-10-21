@@ -1,6 +1,5 @@
 set = "SkillLines"
 key = "int"              # the game's skill line ID
-pack = "Spells"
 learn = true
 about = "The skill lines: classes' talent lines, professions, weapons and the rest, with the spells of each (today Abilities' Data/SkillLines, by spell ID instead of name)."
 

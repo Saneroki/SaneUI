@@ -20,6 +20,12 @@ at most the commit it was on, and the next session goes on from there.
    each commit to `main` (Saneroki, 2026-10-17) and runs `dev/build --no-install` (there is no game there).
 5. A commit's *in the game* checks are Saneroki's. The session lists them in its answer; it cannot do them.
 
+**The packs are gone (Saneroki, 2026-10-21):** every set is part of Core, read with it at the login, and the
+data's saved variables are Core's (Data.md, *Sets by concern*; the guide, *Core's TOC*). The ticked boxes
+below keep their history; where a step still to come says "with the X pack" or "the pack's saved variable",
+it means Core and a saved variable `SaneUIData_<Name>` of Core's TOC (`Data.SAVED`), and Core's one saved file
+holds the budget of values for all of them.
+
 **Every commit keeps to these rules:**
 - The *Contracts* and the addon standards.
 - No module reads the data, except where a step says so.

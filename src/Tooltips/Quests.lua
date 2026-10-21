@@ -26,9 +26,9 @@ local _, ns = ...
 --  closes it may be in your log or done. An NPC leaves out what the game shows
 --  grey for your level (its trivial range); an item's panel keeps it.
 --
---  The module only reads: Core loads the packs (Prepare at login) and answers
---  nil until they are there, so a panel has no quest part until then, and none
---  at all with the pack switched off. A creature's tooltip is read again and
+--  The module only reads: Core's sets are there with Core, and answer nil only
+--  where Core does not hold them (a client whose game version it cannot tell):
+--  a panel has no quest part then. A creature's tooltip is read again and
 --  again (a unit frame's many times a second): its list is made once and kept
 --  until your quest log or your level changes, or the data does.
 -------------------------------------------------------------------------------

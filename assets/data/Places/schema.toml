@@ -1,6 +1,5 @@
 set = "Places"
 key = "int"              # our own number, given once by the import: the same kind on the same map within half a percent is the same place
-pack = "World"
 learn = false
 about = "What is no creature and no object but belongs on the map: zone crossings, cave and dungeon entrances, piers, mailboxes, meeting stones, spirit healers."
 

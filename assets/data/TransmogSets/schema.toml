@@ -1,6 +1,5 @@
 set = "TransmogSets"
 key = "int"              # the game's transmog set ID
-pack = "Collections"
 learn = true             # C_TransmogSets
 about = "The appearance sets: their names, for which classes, and the items whose looks make them."
 

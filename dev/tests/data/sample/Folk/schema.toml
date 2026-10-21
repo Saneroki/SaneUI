@@ -1,6 +1,5 @@
 set = "Folk"
 key = "int"
-pack = "Gear"
 about = "Made-up people."
 
 [fields]

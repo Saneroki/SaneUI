@@ -1,6 +1,5 @@
 set = "Indoors"
 key = "int"              # the building's root file ID (a WMO, as the object files' MODF names it)
-pack = "World"
 learn = false
 about = "The game's indoor maps of every building and cave the continents place: each part's picture, where it lies in the building, and where the building stands."
 

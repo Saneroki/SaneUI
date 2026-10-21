@@ -1,6 +1,5 @@
 set = "Dungeons"
 key = "int"              # the instance's map ID (the game's Map table; Encounters' instance)
-pack = "World"
 learn = false
 about = "The maps of the dungeons and raids: each floor's map art from the game's files, the part of the world it shows, and where the bosses stand on it, with their looks."
 

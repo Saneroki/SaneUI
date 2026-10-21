@@ -1,12 +1,11 @@
 -- Runs Core's data framework against the stand-in client (wowstub.lua): the scheduler (Steps.lua), and from
--- step 1a.5 on the packs compiled from the sample master (dev/tests/data/sample) as the game loads them.
+-- step 1a.5 on the set files compiled from the sample master (dev/tests/data/sample) as the game reads them.
 -- Usage, from the project folder:  lua5.1 dev/tests/data.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
 package.path = root .. "/dev/tests/?.lua;" .. package.path
 local W = require("wowstub")
 W.Install(_G)
-W.RemoveAddon("SaneUI_Data_Characters") -- the packs here are the sample's (Kept: a pack of saved data)
 Enum.BankType = { Character = 0, Account = 2 } -- the bank's kinds, which Characters.lua takes as its file is read
 
 local passed = 0
@@ -19,6 +18,27 @@ local function printedMatch(pattern)
     return false
 end
 
+-- The game's bags, bank, gear and gold as the test sets them (the characters' part, at the end); reading a slot
+-- costs `cost` milliseconds
+local bags, worn, cost, money = { [0] = { { itemID = 4500, stackCount = 3 } }, [1] = { { itemID = 4501, stackCount = 1 } } }, {}, 0, 1000
+C_Container = {
+    GetContainerNumSlots = function(bag) return bags[bag] and #bags[bag] or 0 end,
+    GetContainerItemInfo = function(bag, slot)
+        W.ms = W.ms + cost
+        local info = bags[bag] and bags[bag][slot]
+        return info and info.itemID and info or nil
+    end,
+}
+C_Bank = { CanViewBank = function() return true end,
+           FetchPurchasedBankTabIDs = function(kind) return kind == Enum.BankType.Character and { 6, 7, 8 } or {} end }
+GetInventoryItemID = function(_, slot) return worn[slot] end
+GetMoney = function() return money end
+-- The characters' saved variable as the game read it: an alt kept by an older version or by hand, its class and
+-- level of the wrong kind
+local ALT = "Player-70-0000BEEF"
+SaneUIData_Characters = { forever = { format = 1, characters = { [ALT] = { name = "Droopy Fairwind", class = 5, level = "thirty", money = 10,
+    bags = "4500\0312" } } } }
+
 W.LoadCore(root)
 local Core = SaneUI.Core
 SaneUIDB = {}
@@ -30,6 +50,11 @@ W.Fire("PLAYER_LOGIN")
 -------------------------------------------------------------------------------
 local Steps = Core.Steps
 local frame = Steps.frame
+-- Core's reader of the characters' saved part started its jobs at the login: they finish first
+for _ = 1, 10 do
+    W.Wait(0)
+    if frame:IsShown() and frame._scripts.OnUpdate then frame._scripts.OnUpdate(frame, 0.016) end
+end
 check(frame and not frame:IsShown() and not frame._scripts.OnUpdate, "the scheduler's frame is hidden, with no OnUpdate, while there is no work")
 
 -- One frame of the game: the timers asked for in the frame before, then the scheduler's OnUpdate, if it has
@@ -271,17 +296,17 @@ for _ = 1, 10 do Frame() end
 check(#served == 10 and served[#served] == "plain" and not frame:IsShown(), "and the other one gets its turns after it")
 
 -------------------------------------------------------------------------------
---  Packs: the sample master compiled by the tools (dev/tests/data/sample.py), read as the game reads them
+--  Sets: the sample master compiled by the tools (dev/tests/data/sample.py), read as the game reads them
 -------------------------------------------------------------------------------
 local Data, Codec = Core.Data, Core.Data.Codec
 local folder = io.popen("mktemp -d -t saneui-data-XXXXXX"):read("*l")
 check(folder and os.execute(("python3 -I '%s/dev/tests/data/sample.py' '%s'"):format(root, folder)) == 0,
-    "the tools compiled the sample master into packs")
+    "the tools compiled the sample master into set files")
 local expected = {
     forever = dofile(folder .. "/expected-forever.lua"),
     ["forever-beta"] = dofile(folder .. "/expected-forever-beta.lua"),
 }
-local PACKS = { { "Gear", { "Folk", "Gear" } }, { "Words", { "Labels" } } }
+local SETS = { "Folk", "Gear", "Labels" }
 
 -- The first difference between what Lua read and what the tools meant, or nil when there is none.
 local function Differ(got, want, where)
@@ -317,9 +342,9 @@ end
 -- The codec both ways: every row the tools wrote, of both game versions, read back as they meant it
 local files = {}
 for game, sets in pairs(expected) do
-    for _, pack in ipairs(PACKS) do
-        for _, name in ipairs(pack[2]) do
-            local file = Read(("%s/%s/SaneUI_Data_%s/%s.lua"):format(folder, game, pack[1], name))
+    for _, name in ipairs(SETS) do
+        do
+            local file = Read(("%s/%s/Sets/%s.lua"):format(folder, game, name))
             files[game .. " " .. name] = file
             check(file.format == Data.FORMAT and file.name == name and file.header.game == game
                 and file.header.hash:match("^%x%x%x%x%x%x%x%x$"), ("%s's file of %s: format, name, game and hash"):format(name, game))
@@ -381,41 +406,25 @@ do
         "a map of whole-number keys takes whole numbers only: nan, inf and 0x10 are no value, and no error")
 end
 
--- A pack written by hand into the test's folder: its TOC and its files.
-local function MakePack(name, sets, files, lines)
-    local path = folder .. "/hand/SaneUI_Data_" .. name
+-- Set files written by hand into the test's folder: a folder of its own for them, given to W.AddSets.
+local function MakeSets(name, files)
+    local path = folder .. "/hand/" .. name
     os.execute(("mkdir -p '%s'"):format(path))
-    local toc = { "## Title: Data: " .. name, "## LoadOnDemand: 1", "## X-SaneUI-Sets: " .. sets, "## X-SaneUI-Format: 1",
-                  "## X-SaneUI-Game: forever" }
-    for _, line in ipairs(lines or {}) do toc[#toc + 1] = line end
-    local names = {}
-    for file in pairs(files) do names[#names + 1] = file end
-    table.sort(names)
-    for _, file in ipairs(names) do
-        toc[#toc + 1] = file
+    for file, text in pairs(files) do
         local out = assert(io.open(path .. "/" .. file, "w"))
-        out:write(files[file])
+        out:write(text)
         out:close()
     end
-    local out = assert(io.open(path .. "/SaneUI_Data_" .. name .. ".toc", "w"))
-    out:write(table.concat(toc, "\n") .. "\n")
-    out:close()
     return path
 end
 
-local function Loaded()
-    local count = 0
-    for name in pairs(W.loaded) do if name:match("^SaneUI_Data_") then count = count + 1 end end
-    return count
-end
-
--- No pack yet: a handle all the same, nil, and said once, quietly
+-- No set yet: a handle all the same, nil, and said once, quietly
 Data.frozen = true
 local Gear, Labels, Folk = Data.Set("Gear"), Data.Set("Labels"), Data.Set("Folk")
 check(Gear == Data.Set("Gear") and Gear.name == "Gear", "a set's handle: one per name, never nil")
 W.printed = {}
 check(Gear:State() == "missing" and not Gear:Ready() and Gear:Get(100) == nil and Gear:Get(100, "name") == nil,
-    "no pack holds the set: missing, and Get answers nil")
+    "Core holds no such set: missing, and Get answers nil")
 check(Core.errors["data: Gear"] and Core.errors["data: Gear"].count == 1 and #W.printed == 0,
     "a missing set is noted once in the error log, quietly")
 local made, format, text = 0, string.format, tostring
@@ -424,69 +433,44 @@ tostring = function(...) made = made + 1 return text(...) end
 for _ = 1, 100 do Gear:Get(100) end
 string.format, tostring = format, text
 check(made == 0, "after that a Get of it makes no text: the failure is remembered on the set")
-check(Gear.hash == nil and Gear.build == nil and Gear:Stamp() == 0, "no hash, no build, no stamp before it is loaded")
+check(Gear.hash == nil and Gear.build == nil and Gear:Stamp() == 0, "no hash, no build, no stamp before it is there")
 
--- The packs installed: found by their TOC lines, not loaded
-local live = folder .. "/forever/"
-W.AddPack(live .. "SaneUI_Data_Gear")
-W.AddPack(live .. "SaneUI_Data_Words")
-Data.Find()
-check(Gear:State() == "idle" and Labels:State() == "idle" and Folk:State() == "idle" and Loaded() == 0,
-    "the packs found by their TOC lines: idle, nothing loaded")
+-- The set files run (as they do at the end of Core's TOC, here once Core is there): ready at once, their
+-- listeners told on the next frame
+local live = folder .. "/forever/Sets"
 local told = {}
 Gear:OnStamp(function(handle) told[#told + 1] = handle end)
 Gear:OnStamp(function() error("a listener's own problem") end)
--- A listener runs a job's Check past any budget: inside the loader's job it would yield into Core.Safe and fail.
+-- A listener runs a job's Check past any budget: inside the file that hands the set over it would fail.
 local outside
 Gear:OnStamp(function()
     W.ms = W.ms + 100
     Steps.Check()
     outside = coroutine.running() == nil
 end)
-
--- Get never loads a pack: it asks for it, and nothing runs while the loading screen is up
-for _ = 1, 3 do check(Gear:Get(100) == nil, "Get before the pack is loaded: nil") end
-check(Gear:State() == "loading" and Loaded() == 0 and not Steps.Running("data: packs"),
-    "Get asked for the pack and loaded nothing; no loading while the loading screen is up")
-Data.Prepare("Labels")
-check(Labels:State() == "loading" and Loaded() == 0, "Prepare loads nothing at once either")
 local readyNow = {}
 Data.WhenReady(Labels, function(handle) readyNow[#readyNow + 1] = handle end)
-check(#readyNow == 0, "WhenReady of a set not loaded yet: it waits")
+check(#readyNow == 0, "WhenReady of a set not there yet: it waits")
+W.AddSets(live)
+check(#W.fileErrors == 0, "the set files ran without an error" .. (W.fileErrors[1] and ": " .. W.fileErrors[1] or ""))
+check(Gear:State() == "ready" and Gear:Ready() and Labels:Ready() and Folk:Ready(), "the sets are ready once their files ran")
+check(#told == 0 and #readyNow == 0, "their listeners are not told inside the files")
+Frame()
 
--- The loading screen gone in a fight: nothing until the fight ends
-W.combat = true
-W.Fire("PLAYER_REGEN_DISABLED")
-W.Fire("LOADING_SCREEN_DISABLED")
-check(Steps.Running("data: packs"), "the loading screen gone: the loader is a job of the scheduler")
-for _ = 1, 5 do Frame() end
-check(Loaded() == 0, "nothing loads in a fight")
-W.combat = false
-W.Fire("PLAYER_REGEN_ENABLED")
-local most, last = 0, 0
-for _ = 1, 6 do
-    Frame()
-    most, last = math.max(most, Loaded() - last), Loaded()
-end
-check(last == 2 and most == 1, "the fight over: the two packs load, one a frame")
-check(not Steps.Running("data: packs") and not frame:IsShown(), "the loader ends when the line is empty")
-check(#W.fileErrors == 0, "the packs' files ran without an error" .. (W.fileErrors[1] and ": " .. W.fileErrors[1] or ""))
-
--- Loaded: ready, its hash and build, the stamp moved and the listener told once
-check(Gear:State() == "ready" and Gear:Ready() and Labels:Ready() and Folk:Ready(), "the sets are ready")
+-- There: its hash and build, the stamp moved and the listener told once
 check(Gear.hash == liveGear.header.hash and Gear.build == 65100, "the handle names the set's hash and build")
 check(Gear:Stamp() > 0 and #told == 1 and told[1] == Gear, "its stamp moved and its listener was told, once")
-check(outside, "listeners are told on the frame after, outside the loader's job: a job's Check returns at once there")
+check(outside, "listeners are told on the frame after, outside the file: a job's Check returns at once there")
 check(Core.errors["data: Gear listener"] and Core.errors["data: Gear listener"].text:find("a listener's own problem")
-    and Core.errors["data: Gear"].text:find("no data pack holds"), "a listener's failure is noted under a label of its own, apart from the set's")
+    and Core.errors["data: Gear"].text:find("holds no set"), "a listener's failure is noted under a label of its own, apart from the set's")
 check(#readyNow == 1 and readyNow[1] == Labels, "WhenReady: told once the set arrived")
 local atOnce
 Data.WhenReady("Labels", function(handle) atOnce = handle end)
 check(atOnce == Labels, "WhenReady of a set that is ready: at once")
 
 -- Get answers every entry as the tools meant its newest version; gone is nil
-for _, pack in ipairs(PACKS) do
-    for _, name in ipairs(pack[2]) do
+for _, name in ipairs(SETS) do
+    do
         local handle, problem = Data.Set(name), nil
         for key, versions in pairs(expected.forever[name]) do
             local newest = versions[#versions]
@@ -504,8 +488,8 @@ check(Gear:Get(100, "name") == "Plain Gloves" and Gear:Get(100, "nothing") == ni
 check(Labels:Get("end", "label") == "END_TEXT" and Labels:Get("with space", "label") == "SPACED", "text keys, a Lua word and a space among them")
 check(Gear:Get(100) == Gear:Get(100), "a record is made once and shared")
 local kept = Gear:Get(100)
-Data.Find()
-check(Gear:Get(100) == kept, "the packs looked for again (/sane data), the same game version and build: the answers made are kept")
+Data.Retell()
+check(Gear:Get(100) == kept, "the client told again (/sane data), the same game version and build: the answers made are kept")
 
 -- Frozen records: a new key fails at once, a change is found
 local gloves = Gear:Get(100)
@@ -520,7 +504,7 @@ check(Data.Tampered() == gloves, "and a change inside a table of it")
 gloves.stats.agi = 1
 check(Data.Tampered() == nil, "put back: nothing found")
 
--- Versions: History, At, Versions, Changes, with the patch names the pack carries
+-- Versions: History, At, Versions, Changes, with the patch names the set carries
 local history = Gear:History(100)
 check(not Differ(history, expected.forever.Gear[100], "History(100)") and history[3] == Gear:Get(100),
     "History: every version, oldest first, the newest the record Get gives" .. (Differ(history, expected.forever.Gear[100], "") or ""))
@@ -543,7 +527,7 @@ check(#changes == 4 and changes[1].field == "stats" and changes[1].from.agi == 2
     and changes[2].field == "sell" and changes[2].from == 120 and changes[2].to == 110
     and changes[3].field == "weight" and changes[3].from == 1.5 and changes[3].to == nil
     and changes[4].field == "rare" and changes[4].from == nil and changes[4].to == true and changes[4].patch == "1.60.2",
-    "Changes: one per field, in the pack's order, with since, day and patch")
+    "Changes: one per field, in the set's order, with since, day and patch")
 local goneChange = Folk:Changes(3)
 check(#goneChange == 1 and goneChange[1].field == "gone" and goneChange[1].from == false and goneChange[1].to == true,
     "Changes: an entry gone is the field gone")
@@ -585,9 +569,9 @@ check(#broken == 2 and broken[1]:find("a broken walk") and Core.errors["data job
 local walk = Gear:Each(function() end)
 check(walk and walk:Stop() and not Steps.Running(walk.name), "a walk's handle stops it")
 
--- A pack newer than the client: the versions this client has reached
+-- A set newer than the client: the versions this client has reached
 W.build = 65050
-Data.Find()
+Data.Retell()
 check(Gear:Get(100).since == 65000 and Gear:Get(100).sell == 110 and Gear:Get(100).rare == nil and Gear:Get(102) == nil
     and Folk:Get(3).name == "Old Hester", "an older client: Get answers what its build has")
 check(#Gear:History(100) == 2 and #Gear:Changes(100) == 2 and Gear:At(100, 70000).since == 65000 and Gear:History(102) == nil,
@@ -597,17 +581,12 @@ Gear:Each(function(key) walked[#walked + 1] = key end, function() finished = tru
 for _ = 1, 10 do Frame() end
 check(finished and Same(walked, { 100, 101 }), "Each leaves out what the client has not reached")
 W.build = 70245
-Data.Find()
+Data.Retell()
 check(Gear:Get(102) and Gear:Get(102).name == "Ünder Cap" and #Gear:History(100) == 3, "a newer client: all of it again")
 check(Data.Tampered() == nil, "no record was changed by the answers")
 
--- A loading screen in the middle: the loader waits for its end
-local extra = MakePack("Extra", "Extra", { ["Extra.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Extra", { game = "forever", hash = "0badf00d", build = 65000, key = "int", fields = { "name" }, types = { "text" }, patches = {} })\n'
-    .. 'if not S then return end\nS.rows[1] = "65000\\t\\tOne"\n' })
-W.AddPack(extra)
-Data.Find()
-W.Fire("LOADING_SCREEN_ENABLED")
--- Listeners taken back before it arrives are not told: one of OnStamp, one waiting for it (WhenReady)
+-- A set that comes late, written by hand. Listeners taken back before it arrives are not told: one of OnStamp,
+-- one waiting for it (WhenReady)
 local Extra, extraTold = Data.Set("Extra"), {}
 local function Gone() extraTold[#extraTold + 1] = "gone" end
 local function Waits() extraTold[#extraTold + 1] = "waits" end
@@ -617,27 +596,21 @@ Extra:OnStamp(Gone)
 Data.WhenReady("Extra", Waits)
 Extra:OffStamp(Gone)
 Extra:OffStamp(Waits)
-Data.Prepare("Extra")
+W.AddSets(MakeSets("Extra", { ["Extra.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Extra", { game = "forever", hash = "0badf00d", build = 65000, key = "int", fields = { "name" }, types = { "text" }, patches = {} })\n'
+    .. 'if not S then return end\nS.rows[1] = "65000\\t\\tOne"\n' }))
 for _ = 1, 3 do Frame() end
-check(not W.loaded.SaneUI_Data_Extra, "a loading screen up: nothing loads")
-W.Fire("LOADING_SCREEN_DISABLED")
-for _ = 1, 3 do Frame() end
-check(W.loaded.SaneUI_Data_Extra and Data.Set("Extra"):Get(1, "name") == "One" and Data.Set("Extra").hash == "0badf00d",
-    "after it the pack loads, a pack written by hand too")
+check(Data.Set("Extra"):Get(1, "name") == "One" and Data.Set("Extra").hash == "0badf00d", "a set that comes late, written by hand: there")
 check(#extraTold == 1 and extraTold[1] == "stays", "OffStamp: a listener taken back is not told, nor one that waited")
 
--- A pack's file of values of the wrong kind: Get, History, Keys and Each answer nil or nothing, never an error;
+-- A set file of values of the wrong kind: Get, History, Keys and Each answer nil or nothing, never an error;
 -- a text key that looks like a number is shown by /sane data show
-W.AddPack(MakePack("Texts", "Texts", { ["Texts.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Texts", { game = "forever", hash = "00000007", build = 65000, key = "text", fields = { "name" }, types = { "text" }, patches = {} })\n'
+W.AddSets(MakeSets("Texts", { ["Texts.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Texts", { game = "forever", hash = "00000007", build = 65000, key = "text", fields = { "name" }, types = { "text" }, patches = {} })\n'
     .. 'if not S then return end\nS.rows["7"] = "65000\\t\\tSeven"\nS.rows["8"] = {}\nS.rows["9"] = 65000\nS.history["7"] = {}\nS.index.byName = 5\n' }))
-Data.Find()
-Data.Prepare("Texts")
-for _ = 1, 3 do Frame() end
 local Texts, calmReads = Data.Set("Texts"), true
 for _, key in ipairs({ "7", "8", "9", 7 }) do
     calmReads = calmReads and pcall(Texts.Get, Texts, key) and pcall(Texts.History, Texts, key) and pcall(Texts.Changes, Texts, key)
 end
-check(calmReads and pcall(Texts.Keys, Texts, "byName", "Seven"), "no read raises an error on a pack's values of the wrong kind")
+check(calmReads and pcall(Texts.Keys, Texts, "byName", "Seven"), "no read raises an error on a set's values of the wrong kind")
 check(Texts:Get("7", "name") == "Seven" and #Texts:History("7") == 1 and Texts:Get("8") == nil and Texts:Get("9") == nil
     and Texts:History("8") == nil and #Texts:Keys("byName", "Seven") == 0 and Texts:Get(7) == nil,
     "they are no entries; a history that is no text no older versions; an index that is no table no keys")
@@ -649,63 +622,21 @@ W.printed = {}
 SlashCmdList.SANEUI("data show Texts 7")
 check(printedMatch("Texts 7: { name = Seven, since = 65000 }%."), "/sane data show of a text key that looks like a number")
 
--- Packs that are not used: switched off, of another format or game version, naming no set, not loadable
-W.AddPack(live .. "SaneUI_Data_Gear", { name = "SaneUI_Data_Off", enabled = 0, metadata = { ["X-SaneUI-Sets"] = "Switched" } })
-W.AddPack(live .. "SaneUI_Data_Gear", { name = "SaneUI_Data_Later", metadata = { ["X-SaneUI-Sets"] = "Later", ["X-SaneUI-Format"] = "2" } })
-W.AddPack(live .. "SaneUI_Data_Gear", { name = "SaneUI_Data_Beta", metadata = { ["X-SaneUI-Sets"] = "Elsewhere", ["X-SaneUI-Game"] = "forever-beta" } })
-W.AddPack(live .. "SaneUI_Data_Gear", { name = "SaneUI_Data_Empty", metadata = { ["X-SaneUI-Sets"] = false } })
-W.AddPack(live .. "SaneUI_Data_Gear", { name = "SaneUI_Data_Old", reason = "INTERFACE_VERSION", metadata = { ["X-SaneUI-Sets"] = "Old" } })
-W.AddPack(live .. "SaneUI_Data_Gear", { name = "SaneUI_Data_Gone", metadata = { ["X-SaneUI-Sets"] = "Vanished" } })
-W.onDemand.SaneUI_Data_Gone = nil -- listed, but the game cannot load it after all
-W.AddPack(MakePack("Broken", "Broken", { ["Broken.lua"] = "this is not Lua\n" }))
-W.printed = {}
-Data.Find()
+-- A set file that does not run: the game says so and goes on; the set is not there
+W.AddSets(MakeSets("Broken", { ["Broken.lua"] = "this is not Lua\n" }))
 local function StateOf(name)
     local state, why = Data.Set(name):State()
     return state, why or ""
 end
-local state, why = StateOf("Switched")
-check(state == "off" and why:find("switched off"), "a pack switched off in the addon list: off")
-Data.Prepare("Switched")
-Data.Prepare("Switched")
-check(Core.errors["data: SaneUI_Data_Off"] and Core.errors["data: SaneUI_Data_Off"].count == 1 and #W.printed == 0
-    and not W.loaded.SaneUI_Data_Off, "asked for: noted once, quietly, and never loaded (the player's choice stands)")
-state, why = StateOf("Later")
-check(state == "refused" and why:find("of format 2"), "a pack of another format: refused")
-state, why = StateOf("Elsewhere")
-check(state == "refused" and why:find("made for forever%-beta, this client is forever"), "a pack of another game version: refused")
-state, why = StateOf("Old")
-check(state == "refused" and why:find("INTERFACE_VERSION"), "a pack the game cannot load: refused, with the game's reason")
-W.printed = {}
-Data.Prepare("Later")
-Data.Prepare("Later")
-Data.Prepare("Elsewhere")
-check(printedMatch("problem in data: SaneUI_Data_Later") and printedMatch("problem in data: SaneUI_Data_Beta") and #W.printed == 2
-    and Loaded() == 4, "asked for: each said once, loud, and never loaded")
-Data.Prepare("Vanished")
-Data.Prepare("Broken")
-for _ = 1, 4 do Frame() end
-state, why = StateOf("Vanished")
-check(state == "refused" and why:find("did not load") and printedMatch("problem in data: SaneUI_Data_Gone"),
-    "a pack that does not load when asked: refused and reported")
-state, why = StateOf("Broken")
-check(state == "refused" and why:find("its file did not run") and #W.fileErrors == 1 and printedMatch("problem in data: Broken"),
-    "a pack whose file does not run: its set refused and reported")
-check(Data.Set("Broken"):Get(1) == nil and Data.Set("Vanished"):Get(1) == nil, "and Get answers nil, no error")
-
--- Two packs naming one set: the first is used, and it is said
-W.printed = {}
-W.AddPack(live .. "SaneUI_Data_Words", { name = "SaneUI_Data_Twice" })
-Data.Find()
-check(printedMatch("problem in data: Labels") and Core.errors["data: Labels"].text:find("Data: Words is used")
-    and Labels:Ready(), "two packs naming one set: said, the first stays")
-W.RemoveAddon("SaneUI_Data_Twice")
-Data.Find()
+local state, why = StateOf("Broken")
+check(#W.fileErrors == 1 and state == "missing" and why:find("holds no set Broken") and Data.Set("Broken"):Get(1) == nil,
+    "a set file that does not run: the set is missing, and Get answers nil, no error")
 
 -- Set files that Data.Add does not take
 local function Header(game, types) return { game = game, hash = "00000000", build = 0, key = "int", fields = { "a" }, types = types or { "int" } } end
-check(Data.Add(2, "Newer", Header("forever")) == nil and select(2, Data.Set("Newer"):State()):find("of format 2"),
-    "a set file of another format: nil, refused")
+W.printed = {}
+check(Data.Add(2, "Newer", Header("forever")) == nil and select(2, Data.Set("Newer"):State()):find("of format 2")
+    and printedMatch("problem in data: Newer"), "a set file of another format: nil, refused, said")
 check(Data.Add(1, "Beta", Header("forever-beta")) == nil and select(2, Data.Set("Beta"):State()):find("made for forever%-beta"),
     "a set file of another game version: nil, refused")
 check(Data.Add(1, "Odd", Header("forever", { "wobbly" })) == nil and select(2, Data.Set("Odd"):State()):find("cannot be read"),
@@ -713,45 +644,42 @@ check(Data.Add(1, "Odd", Header("forever", { "wobbly" })) == nil and select(2, D
 check(Data.Add(1, "Gear", Header("forever")) == nil and Gear:Get(100, "name") == "Plain Gloves",
     "a set handed over a second time: nil, the first stays")
 
--- The client's game version: the project, then beta or test
+-- The client's game version: the project, then beta or test; set files of another game version refused
 local function Told()
-    Data.Find()
+    Data.Retell()
     return Data.Game()
 end
-W.AddPack(live .. "SaneUI_Data_Words", { name = "SaneUI_Data_Live", metadata = { ["X-SaneUI-Sets"] = "LiveWords" } })
-W.AddPack(folder .. "/forever-beta/SaneUI_Data_Words", { name = "SaneUI_Data_BetaWords", metadata = { ["X-SaneUI-Sets"] = "BetaWords" } })
-check(Told() == "forever" and StateOf("LiveWords") == "idle" and StateOf("BetaWords") == "refused",
-    "a Forever client: forever; live's packs used, the beta's refused")
+check(Told() == "forever" and Data.Add(1, "LiveWords", Header("forever")) and StateOf("LiveWords") == "ready",
+    "a Forever client: forever; live's set files taken")
 W.beta = true
-check(Told() == "forever-beta" and StateOf("BetaWords") == "idle" and StateOf("LiveWords") == "refused",
-    "a beta client: forever-beta; the beta's packs used, live's refused")
-check(Gear:Ready(), "a pack loaded stays loaded")
+check(Told() == "forever-beta" and Data.Add(1, "BetaWords", Header("forever-beta")) and StateOf("BetaWords") == "ready"
+    and Data.Add(1, "LiveLater", Header("forever")) == nil and StateOf("LiveLater") == "refused",
+    "a beta client: forever-beta; the beta's set files taken, live's refused")
+check(Gear:Ready(), "a set there stays")
 W.beta, W.test = false, true
-check(Told() == "forever-ptr" and StateOf("BetaWords") == "refused" and StateOf("LiveWords") == "refused", "a test client: forever-ptr")
+check(Told() == "forever-ptr" and Data.Add(1, "BetaLater", Header("forever-beta")) == nil and StateOf("BetaLater") == "refused",
+    "a test client: forever-ptr")
 W.test = false
 WOW_PROJECT_ID = 2
 local client = Told()
-state, why = StateOf("LiveWords")
-check(client == nil and state == "refused" and why:find("cannot be told"), "a client of another project: no game version, every pack refused")
+check(client == nil and Data.Add(1, "Unknown", Header("forever")) == nil and select(2, StateOf("Unknown")):find("cannot be told"),
+    "a client of another project: no game version, every set refused")
 W.printed = {}
 SlashCmdList.SANEUI("data")
 check(printedMatch("cannot be told %(project 2; beta: no; test: no%)"), "/sane data says so, with what it was told")
 WOW_PROJECT_ID = nil
-check(Told() == nil and StateOf("BetaWords") == "refused", "a client without a project: the same")
+check(Told() == nil, "a client without a project: the same")
 WOW_PROJECT_ID = 18
-check(Told() == "forever" and StateOf("LiveWords") == "idle", "back to Forever")
+check(Told() == "forever", "back to Forever")
 
 -- /sane data
 W.printed = {}
 SlashCmdList.SANEUI("data")
 check(printedMatch("data of forever, build 70245 %(project 18; beta: no; test: no%); players by first name and surname %(regional names: yes%)%."),
     "/sane data: the game version, build and answers, and how players are named")
-check(printedMatch("Data: Gear: loaded %- Folk %x+ %(build 65100%), Gear " .. Gear.hash .. " %(build 65100%)%."), "a pack loaded, with its sets' hashes")
-check(printedMatch("Data: Words: not loaded %- LiveWords%.") and printedMatch("Data: Gear: switched off %- Switched%.")
-    and printedMatch("not used %(of format 2") and printedMatch("Data: Gear: not used %(it names no set%)%.")
-    and printedMatch("Data: Gear: not used %(it did not load %(CORRUPT%)%) %- Vanished%."), "the packs not loaded, off and not used, and why")
-check(printedMatch("Data: Broken: loaded %- Broken %(not used: its file did not run%)%.") and printedMatch("Data: Words: loaded %- Labels %x+%."),
-    "a set of a loaded pack that is not used, and why; no build for a set the game never changed")
+check(printedMatch("sets: .*Folk %x+ %(build 65100%), Gear " .. Gear.hash .. " %(build 65100%)"), "the sets there, with their hashes and builds")
+check(printedMatch("Labels %x+, ") and printedMatch("Newer %(not used: of format 2") and printedMatch("Broken %(missing: Sane UI holds no set Broken%)"),
+    "no build for a set the game never changed; the sets not used or missing, and why")
 check(printedMatch("jobs running: none%."), "and the scheduler's jobs")
 Steps.Run("held", Worker(10, 1, { n = 0 }))
 Frame()
@@ -773,81 +701,41 @@ check(printedMatch("^|c%x+Sane UI:|r   1%.60%.0: sell 120 %-> 110%.$") and print
 check(printedMatch("Gear 100: { from = { 1, 2 }, name = Plain Gloves,") and printedMatch("Labels with space: { label = SPACED, since = 0 }%.")
     and printedMatch("Gear has no 999%.") and printedMatch("/sane data show <set> <key>"), "/sane data show prints an entry")
 W.printed = {}
-SlashCmdList.SANEUI("data show LiveWords alpha")
-check(printedMatch("LiveWords is not loaded; asked for it") and StateOf("LiveWords") == "loading", "an entry of a pack not loaded: asked for")
 SlashCmdList.SANEUI("data show Nowhere 1")
-check(printedMatch("Nowhere is missing %(no data pack holds the set Nowhere%)%.$"), "a set no pack holds")
-for _ = 1, 4 do Frame() end
+check(printedMatch("Nowhere is missing %(Sane UI holds no set Nowhere%)%.$"), "a set Core does not hold")
 Data.frozen = false
 
 -------------------------------------------------------------------------------
---  A pack of saved data (packs.toml: saved): no sets, only its saved variable, handed to Core's readers
+--  The data's saved variables (Data.SAVED): Core's own, handed to Core's readers once they are read
 -------------------------------------------------------------------------------
-W.AddPack(live .. "SaneUI_Data_Kept")
+Data.SAVED.Kept = true
 SaneUIData_Kept = { forever = { format = 9, old = true }, ["forever-beta"] = { format = 1, mine = "beta" } }
-Data.Find()
 local parts = {}
 Data.Saved("Kept", function(part) parts[#parts + 1] = part end)
-check(#parts == 0 and not W.loaded.SaneUI_Data_Kept, "a pack of saved data is found by its TOC (no sets) and asked for, not loaded at once")
-for _ = 1, 4 do Frame() end
 local part = parts[1]
 check(#parts == 1 and part == SaneUIData_Kept.forever and part.format == 1 and part.broken and part.broken[1].old == true and part.old == nil,
-    "loaded, its reader is handed this client's part; one of a format it does not read is set aside under broken, never wiped")
+    "Core's saved variables read: its reader is handed this client's part at once; one of a format it does not read is set aside under broken, never wiped")
 check(SaneUIData_Kept["forever-beta"].mine == "beta", "another game version's part is left as it is")
 Data.Saved("Kept", function(given) parts[#parts + 1] = given end)
-check(#parts == 2 and parts[2] == part, "a reader that asks once it is loaded is handed it at once")
-W.Fire("PLAYER_LOGOUT")
-check(SaneUIDB.data.forever.format == 1 and SaneUIDB.data.forever.saved.Kept == 1, "at the logout Core notes how much each pack of saved data holds")
--- A file that held data at the last logout and did not load now: said at once, while its .bak copy still has it
-W.AddPack(live .. "SaneUI_Data_Kept", { name = "SaneUI_Data_Lost" })
-SaneUIDB.data.forever.saved.Lost = 5
-Data.Find()
-W.printed = {}
-local lost
-Data.Saved("Lost", function(given) lost = given end)
-for _ = 1, 4 do Frame() end
-check(lost and lost.format == 1 and SaneUIData_Lost.forever == lost and Core.errors["data: SaneUI_Data_Lost lost"]
-    and Core.errors["data: SaneUI_Data_Lost lost"].text:find(".bak", 1, true) and printedMatch("problem in data: SaneUI_Data_Lost lost"),
-    "a saved file that held data at the last logout and is gone now is told at once (copy the .bak back); the reader starts anew")
+check(#parts == 2 and parts[2] == part, "a second reader is handed the same part")
+Data.SAVED.Fresh = true
+local fresh
+Data.Saved("Fresh", function(given) fresh = given end)
+check(fresh and fresh.format == 1 and SaneUIData_Fresh.forever == fresh, "a saved variable the game had nothing of: made, with this client's part")
 local never = true
 Data.Saved("Nowhere", function() never = false end)
-for _ = 1, 4 do Frame() end
-check(never and Core.errors["data: SaneUI_Data_Nowhere"], "a pack of saved data that is not installed: noted, and its reader is never called")
-W.AddPack(live .. "SaneUI_Data_Kept", { name = "SaneUI_Data_Plain", metadata = { ["X-SaneUI-Saved"] = false } })
-Data.Find()
-local plain = true
-Data.Saved("Plain", function() plain = false end)
-for _ = 1, 4 do Frame() end
-check(plain and not W.loaded.SaneUI_Data_Plain and Core.errors["data: SaneUI_Data_Plain"],
-    "a pack that names no set and says no saved data is no pack of saved data: refused, never loaded for it")
+check(never and Core.errors["data: saved Nowhere"], "a name that is no saved variable of the data: noted, and its reader is never called")
+W.printed = {}
+SlashCmdList.SANEUI("data")
+check(printedMatch("kept in the game: Characters %d+ values, Fresh 0 values, Kept 1 values%."), "/sane data says what the saved parts hold")
 
 -------------------------------------------------------------------------------
---  The account's characters (Characters.lua), on the saved file of the pack Characters
+--  The account's characters (Characters.lua), on the saved variable SaneUIData_Characters
 -------------------------------------------------------------------------------
 do
-    -- The game's bags, bank, gear and gold as the test sets them; reading a slot costs `cost` milliseconds
-    local bags, worn, cost, money = { [0] = { { itemID = 4500, stackCount = 3 } }, [1] = { { itemID = 4501, stackCount = 1 } } }, {}, 0, 1000
-    C_Container = {
-        GetContainerNumSlots = function(bag) return bags[bag] and #bags[bag] or 0 end,
-        GetContainerItemInfo = function(bag, slot)
-            W.ms = W.ms + cost
-            local info = bags[bag] and bags[bag][slot]
-            return info and info.itemID and info or nil
-        end,
-    }
-    C_Bank = { CanViewBank = function() return true end,
-               FetchPurchasedBankTabIDs = function(kind) return kind == Enum.BankType.Character and { 6, 7, 8 } or {} end }
-    GetInventoryItemID = function(_, slot) return worn[slot] end
-    GetMoney = function() return money end
-    -- An alt kept by an older version or by hand: its class and level of the wrong kind
-    local alt = "Player-70-0000BEEF"
-    SaneUIData_Characters = { forever = { format = 1, characters = { [alt] = { name = "Droopy Fairwind", class = 5, level = "thirty", money = 10,
-        bags = "4500\0312" } } } }
-    W.AddPack(live .. "SaneUI_Data_Kept", { name = "SaneUI_Data_Characters" })
-    Data.Find()
-    Data.Saved("Characters", function() end) -- loads it (Core's reader asked for it at the login)
-    for _ = 1, 6 do Frame() end
-    W.Wait(0)
+    -- The game's bags, bank, gear and gold, and an alt kept by an older version or by hand: set before the login
+    -- (at the top), when Core's reader took the characters' saved part
+    local alt = ALT
     local saved = SaneUIData_Characters.forever
     local function Aside(what)
         for _, item in ipairs(saved.broken or {}) do if item.what == what then return item end end
@@ -930,11 +818,9 @@ do
     W.Wait(10)
     check(looks == 0, "nothing is looked at for the ships' times while the set Travel is not there")
     -- Two boats, each between two docks 6000 yards apart on one map (y 0 and y 5000); the set gives neither its round
-    W.AddPack(MakePack("Ways", "Travel", { ["Travel.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Travel", { game = "forever", hash = "00000b0a", build = 65000, key = "int", fields = { "kind", "path" }, types = { "text", "list tuple(x:number,y:number,map:int,stay:number,jump:bool)" }, patches = {} })\n'
+    W.AddSets(MakeSets("Ways", { ["Travel.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Travel", { game = "forever", hash = "00000b0a", build = 65000, key = "int", fields = { "kind", "path" }, types = { "text", "list tuple(x:number,y:number,map:int,stay:number,jump:bool)" }, patches = {} })\n'
         .. 'if not S then return end\nS.rows[3] = "65000\\t\\tboat\\t0\\0310\\0310\\03160\\0306000\\0310\\031\\03160"\n'
         .. 'S.rows[4] = "65000\\t\\tboat\\t0\\0315000\\0310\\03160\\0306000\\0315000\\031\\03160"\nS.index.byKind = { boat = "3\\0304" }\n' }))
-    Data.Find()
-    Data.Prepare("Travel")
     for _ = 1, 3 do Frame() end
     W.Wait(10)
     local timetable = Ships:Table(3)
@@ -1004,7 +890,7 @@ do
 end
 
 -------------------------------------------------------------------------------
---  What a map shows (Map.lua): the sets of one pack read once; the last read's points kept while it is read anew
+--  What a map shows (Map.lua): sets arriving together read once; the last read's points kept while it is read anew
 -------------------------------------------------------------------------------
 do
     local Map, Spawns, walks = Data.Map(), Data.Set("Spawns"), 0
@@ -1016,22 +902,18 @@ do
     check(Map:On(1429) == nil, "the places first asked for: nil while they are read")
     for _ = 1, 3 do Frame() end
     check(Map:On(1429) and #Map:On(1429) == 0, "then none yet (the boats here stand at no dock of a map)")
-    -- One pack with two of the sets a map reads: they arrive together
-    W.AddPack(MakePack("Spots", "Places, Spawns", {
+    -- Two of the sets a map reads arrive together
+    W.AddSets(MakeSets("Spots", {
         ["Places.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Places", { game = "forever", hash = "0000000c", build = 65000, key = "int", fields = { "kind", "name", "point" }, types = { "text", "text", "point" }, patches = {} })\n'
             .. 'if not S then return end\nS.rows[1] = "65000\\t\\tcave\\tThe Hole\\t1429\\03150\\03150"\n',
         ["Spawns.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Spawns", { game = "forever", hash = "0000000d", build = 65000, key = "text", fields = { "points" }, types = { "list point" }, patches = {} })\n'
             .. 'if not S then return end\nS.rows["object:1617"] = "65000\\t\\t1429\\03110\\03120"\n' }))
-    Data.Find()
-    Data.Prepare("Spawns")
     for _ = 1, 6 do Frame() end
     local spot = Map:Spawns("object:1617")
-    check(walks == 1 and #Map:On(1429) == 2 and spot and spot[1429][1][1] == 0.1, "two sets of one pack arriving together: read once")
+    check(walks == 1 and #Map:On(1429) == 2 and spot and spot[1429][1][1] == 0.1, "two sets arriving together: read once")
     -- The objects' facts arrive: the map is read anew, and until that read is done the last one's points stay
-    W.AddPack(MakePack("Things", "Objects", { ["Objects.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Objects", { game = "forever", hash = "0000000e", build = 65000, key = "int", fields = { "name", "kind" }, types = { "text", "text" }, patches = {} })\n'
+    W.AddSets(MakeSets("Things", { ["Objects.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Objects", { game = "forever", hash = "0000000e", build = 65000, key = "int", fields = { "name", "kind" }, types = { "text", "text" }, patches = {} })\n'
         .. 'if not S then return end\nS.rows[1617] = "65000\\t\\tPeacebloom\\therb"\n' }))
-    Data.Find()
-    Data.Prepare("Objects")
     Frame()
     W.Wait(0) -- told: read anew, its walks still to come
     check(walks == 2 and Map:Spawns("object:1617") == spot, "while the map is read anew, the last read's points stay")

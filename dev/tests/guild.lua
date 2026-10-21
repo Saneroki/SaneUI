@@ -138,11 +138,6 @@ W.templates.WowScrollBoxList = function(box)
     end
 end
 
--- The pack of the guild's records, as dev/build makes it: a TOC with its saved variable and no files.
-W.addons[#W.addons + 1] = { name = "SaneUI_Data_Guild", title = "Data: Guild", loadable = false, reason = "DEMAND_LOADED", enabled = 2,
-    metadata = { Title = "Data: Guild", ["X-SaneUI-Saved"] = "1", ["X-SaneUI-Format"] = "1", ["X-SaneUI-Game"] = "forever" } }
-W.onDemand.SaneUI_Data_Guild = function() end
-
 -------------------------------------------------------------------------------
 --  Core
 -------------------------------------------------------------------------------
@@ -271,7 +266,7 @@ W.Fire("LOADING_SCREEN_DISABLED")
 Guild.Allow("card", true)
 Guild.Start()
 Frames(5)
-check(rawget(_G, "SaneUIData_Guild") and SaneUIData_Guild.forever and SaneUIData_Guild.forever.guilds, "the pack Guild's saved variable is there, keyed by game version")
+check(rawget(_G, "SaneUIData_Guild") and SaneUIData_Guild.forever and SaneUIData_Guild.forever.guilds, "the guild's saved variable is there, keyed by game version")
 check(Guild.Key() == "The Order-Stub", "the guild's key is its name and realm")
 check(#Guild.Roster() == 4 and Guild.Member("Ann Brook").level == 18 and Guild.Member("Sly Rook").away == 3,
     "the roster as the game gives it: every member by key, the days since an offline one was online")

@@ -270,7 +270,7 @@ but for a window to try those with (`/sane window`).
 | `Core.FullName(unit)` | A unit's whole name as the game shows it: a Forever character's first name and surname (`UnitName` gives both), joined by the game's separator; nil when hidden. Use it wherever a player's name is shown |
 | `Core.PlayerKey(unit)`, `Core.PlayerKeyOf(text)` | A player's key, the one name that tells players apart: on Forever first name and surname as one (`Droopy Fairwind`, any realm dropped: the whole name is unique across the region), elsewhere `Name-Realm`; nil for a name that is not whole (a first name alone). Use it wherever a player is kept, counted, compared or shared ([Doc/guides/data.md](../../Doc/guides/data.md), *Players*) |
 | `Core.Surnames()` | Whether this client names players by first name and surname (Forever, or `RegionalUniqueNamesEnabled`) |
-| `Core.Data.Set(name)` and its handle | Sane UI's databases, loaded on demand from the data packs; a module only reads ([Doc/guides/data.md](../../Doc/guides/data.md)) |
+| `Core.Data.Set(name)` and its handle | Sane UI's databases, part of Core (its set files, `Sets/`, read with it at the login); a module only reads ([Doc/guides/data.md](../../Doc/guides/data.md)) |
 | `Core.Data.Map()`: `On(map)`, `Spawns(key)`, `OnChange(fn)` | What the data puts on a map: the places of Spawns, Places and Travel per map, each with what it is ([Doc/guides/data.md](../../Doc/guides/data.md), *What a map shows*) |
 | `Core.Data.Ships()`: `Table(key)`, `Next(key, stop, at)`, `Aboard()`, `Near(yards)`, `Seen(key)`, `OnLearn(fn)` | The boats' and zeppelins' timetables, when they sail on this realm (learnt on a ride, kept on this computer per realm), aboard one, the stops near the player ([Doc/guides/data.md](../../Doc/guides/data.md), *The ships' times*) |
 | `Core.Data.Trips()`: `Now()`, `CanLand()`, `Land()`, `OnChange(fn)`, `NearTram(yards)`, `TramNext(key, at)` | The trip the player is on (a flight, a boat or zeppelin, the tram): its stops, how far along (and its pace, to move it on between looks), how long; a flight's early landing; the tram's next train at a station, learnt on a ride ([Doc/guides/data.md](../../Doc/guides/data.md), *The trip underway*) |
@@ -511,7 +511,7 @@ but for a window to try those with (`/sane window`).
 | `Bindings.lua`, `Bindings.xml` | Sane UI's section in the game's key bindings, and its key for the options |
 | `Demo.lua` | `/sane window` |
 | `People.lua` | Aliases and notes of players: *Set Alias* and *Set Note* (and *Remove Alias*, *Remove Note* for one that is there) in the game's menu of a player (`Menu.ModifyMenu` on its `MENU_UNIT_*` tags), kept in `SaneUIDB.modules.Core.people` by the player's key |
-| `Data/` | The data framework: `Steps.lua` (the scheduler), `Codec.lua` (a pack's row into a record), `Data.lua` (the packs, the answers, the saved parts of packs), `Map.lua` (what the data puts on a map), `Ships.lua` (the ships' timetables and times), `Trips.lua` (the trip underway), `Characters.lua` (what the account's characters have), `Wire.lua` (Sane UI's addon messages: messages and blocks, the queue that keeps to the game's budget, the inbox), `Guild.lua` (the guild's records: the roster, its history, what members share with the guild) ([Doc/guides/data.md](../../Doc/guides/data.md)) |
+| `Data/` | The data framework: `Steps.lua` (the scheduler), `Codec.lua` (a set's row into a record), `Data.lua` (the sets, the answers, the data's saved variables), `Map.lua` (what the data puts on a map), `Ships.lua` (the ships' timetables and times), `Trips.lua` (the trip underway), `Characters.lua` (what the account's characters have), `Wire.lua` (Sane UI's addon messages: messages and blocks, the queue that keeps to the game's budget, the inbox), `Guild.lua` (the guild's records: the roster, its history, what members share with the guild) ([Doc/guides/data.md](../../Doc/guides/data.md)) |
 | `Sync/` | Sync: the game's own per-character settings kept with Sane UI's ([README](Sync/README.md)) |
 | `Settings/` | The options: the pages, their controls, `/sane options` ([README](Settings/README.md)) |
 | `Art/banner.blp` | Sane UI's banner, at the top of the options' page *Sane UI*. Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/SaneUI-banner.png` |
@@ -519,6 +519,10 @@ but for a window to try those with (`/sane window`).
 | `Art/cap-left.blp`, `Art/cap-right.blp` | A bar's two ends (`Shape.CAP_LEFT`, `CAP_RIGHT`; Nameplates' health bar): white but for the two corners on the outer side, cut round with a radius as wide as the end; a quarter as wide as high (64 × 256, DXT5 with mipmaps), laid over a quarter of the bar's height at each end with `CLAMPTOWHITE`. Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
+- 2026-10-21 — The data packs are gone: every set of Core's data is one of Core's own files (`Sets/<Set>.lua`,
+  made by `dev/tools/data` and listed at the end of the built TOC), read with Core at the login, so the addon list
+  shows only the modules; the data's saved variables (`SaneUIData_Characters`, `SaneUIData_Guild`) are Core's
+  (`Data.SAVED`, `Data.Saved`), and `/sane data` lists the sets and the saved parts (Saneroki).
 - 2026-10-20 — Sane UI's addon messages (`Data/Wire.lua`, `Core.Wire`: the prefix `SaneUI`, messages and packed blocks,
   a queue that keeps to the game's budget, an inbox the scheduler takes in) and the guild's records (`Data/Guild.lua`,
   `Data.Guild`: the roster and its history, members' records shared with the guild, this character's card; the pack

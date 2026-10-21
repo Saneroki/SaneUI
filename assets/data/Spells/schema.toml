@@ -1,6 +1,5 @@
 set = "Spells"
 key = "int"              # the game's spell ID: one per rank
-pack = "Spells"
 learn = true             # the game knows every spell by its ID: tooltips, the spellbook, the crawl
 about = "The players' spells and abilities, every rank: what the game says of each, with its history."
 

@@ -3,12 +3,12 @@ local Core = SaneUI.Core
 -------------------------------------------------------------------------------
 --  Sane UI - Core - Data - Characters
 --  What each of the account's characters has, so that every character sees its alts' things
---  (Doc/guides/data.md, *Characters*): who it is, its bags, its bank, what it wears, its gold. Kept in the
---  saved variable of the pack Characters (SaneUIData_Characters), which ships nothing and is loaded soon
---  after every login; never shared.
+--  (Doc/guides/data.md, *Characters*): who it is, its bags, its bank, what it wears, its gold. Kept in
+--  Core's saved variable SaneUIData_Characters, which ships nothing and is taken at every login; never
+--  shared.
 --
 --      Data.Characters()     every character of the account, by name: { key, name, realm, class, race,
---                            level, side, seen, money, bankSeen }; nil until the pack is loaded
+--                            level, side, seen, money, bankSeen }; nil before the login
 --      Data.Character(key)   one of them, or nil
 --      Data.Items(key, place)  what one of them keeps in a place ("bags", "bank", "worn"; the key "account"
 --                            with "bank": the account's own bank), in the order kept: { { item = 4500,
@@ -36,7 +36,7 @@ local Core = SaneUI.Core
 --  and counts, one packed string per place: "item\031count\030item\031count", items in order. What is
 --  worn is kept a second time, slot by slot, for a paper doll: "slot\031item\030slot\031item", slots in
 --  order (slots; "" when nothing is worn, so that it is told from not read yet). Counts across characters
---  are worked out once, in steps, when the pack has loaded, and kept up to date from then on.
+--  are worked out once, in steps, after the login, and kept up to date from then on.
 -------------------------------------------------------------------------------
 local Data, Steps, Codec = Core.Data, Core.Steps, Core.Data.Codec
 local Plain, Ask = Core.Plain, Core.Ask
@@ -51,7 +51,7 @@ local KINDS = { realm = "string", class = "string", race = "number", level = "nu
 local ACCOUNT = "account"                 -- the key of the account's own bank in a count
 local LIST, PART = "\030", "\031"
 
-local part      -- SaneUIData_Characters[game], once the pack has loaded
+local part      -- SaneUIData_Characters[game], from the login on
 local mine      -- this character's entry in it
 local marks = {} -- [what] = true: changed since it was last read (who, bags, worn, money, bank, account)
 local bankOpen = false
@@ -60,7 +60,7 @@ local counted = false -- every place taken apart: Count answers
 local counts = {} -- [item] = the count handed out, or false: none
 local views, list = {}, nil -- what Character and Characters hand out, made anew after a change
 local held = {}  -- [key][place] = what Items handed out ([key].slots: Worn), made anew after a change
-local forgotten = {} -- [key] = true: forgotten before the pack had loaded, dropped once it has
+local forgotten = {} -- [key] = true: forgotten before the login, dropped then
 local listeners = {}
 local stamp = 0
 
@@ -356,7 +356,7 @@ local function Check()
     end
 end
 
--- The pack has loaded (Data.Saved): its part checked, this character's entry made, everything marked
+-- The saved part is there (Data.Saved, at the login): checked, this character's entry made, everything marked
 -- read, and the counts worked out.
 local function Opened(saved)
     part = saved
@@ -467,9 +467,9 @@ function Data.OnCharacters(fn)
     listeners[#listeners + 1] = fn
 end
 
--- Forgets one of the account's characters: its entry in the pack's saved file and every answer made from it,
--- and those who listen are told. Not the one played. Asked before the pack has loaded, it is forgotten once it
--- has. True when there is one to forget (before the pack has loaded: when it is not the one played).
+-- Forgets one of the account's characters: its entry in the saved part and every answer made from it, and
+-- those who listen are told. Not the one played. Asked before the login, it is forgotten then. True when there
+-- is one to forget (before the login: when it is not the one played).
 function Data.Forget(key)
     if type(key) ~= "string" or key == Core.charKey then return false end
     if not part then

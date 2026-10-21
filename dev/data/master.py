@@ -19,7 +19,7 @@ DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 LINES = re.compile(r"^(?P<set>[A-Za-z][A-Za-z0-9]*)(?:\.(?P<game>[a-z]+(?:-(?:ptr|beta))?))?(?:\.(?P<start>\d+))?\.jsonl$")
 FIXES = re.compile(r"^fixes(?:\.(?P<game>[a-z]+(?:-(?:ptr|beta))?))?\.jsonl$")
 KINDS = ("game", "hand", "batch")
-TOP = ("builds.toml", "sources.toml", "packs.toml")
+TOP = ("builds.toml", "sources.toml")
 EPOCH = datetime.date(1970, 1, 1)
 
 
@@ -40,7 +40,7 @@ def is_day(day):
 
 
 def day_number(day):
-    """A day of the master (2026-11-03) as days since 1970, as packs and saved files keep it."""
+    """A day of the master (2026-11-03) as days since 1970, as the set files and saved files keep it."""
     return (datetime.date.fromisoformat(day) - EPOCH).days
 
 
@@ -87,7 +87,6 @@ class Master:
         self.problems = []   # (level, text): level "error" or "warning"
         self.builds = {}     # game version -> {build: {"patch": ..., "day": ...}}
         self.sources = {}    # name -> {"kind": ..., "game": ..., ...}
-        self.packs = {}      # name -> {"title": ..., "notes": ...}
         self.schemas = {}    # set -> Schema
         self.lines = {}      # (set, game) -> [Line], every file of that game version, in file order
         self.files = {}      # (set, game) -> [(start or None, Path)], sorted by start
@@ -134,10 +133,9 @@ class Master:
             return {}
 
     def load(self):
-        """Reads everything: the three tables, every schema, then every set's lines. Returns self."""
+        """Reads everything: the two tables, every schema, then every set's lines. Returns self."""
         self._load_builds()
         self._load_sources()
-        self._load_packs()
         if not self.root.is_dir():
             self.error(f"{self.where(self.root)} is not there")
             return self
@@ -150,8 +148,6 @@ class Master:
                 self.error(f"{self.where(path)}: no file of the master (only {', '.join(TOP)} and a folder per set)")
         self._key_types = {name: schema.key_type() for name, schema in self.schemas.items()}
         for name, schema in self.schemas.items():
-            if schema.pack not in self.packs:
-                self.error(f"{self.where(self.root / name / 'schema.toml')}: its pack '{schema.pack}' is not in packs.toml")
             for field in schema.fields:
                 for inner in [field] + (field.parts or []):
                     if inner.element == "ref" and inner.set not in self.schemas:
@@ -222,22 +218,6 @@ class Master:
         for name in ("game", "hand"):
             if name not in self.sources:
                 self.error(f"{where}: [{name}] is missing")
-
-    def _load_packs(self):
-        where = self.where(self.root / "packs.toml")
-        for name, info in self._toml("packs.toml").items():
-            if not schemas.NAME.match(name):
-                self.error(f"{where}: '{name}' is no pack's name (letters and digits, a capital first)")
-                continue
-            if not isinstance(info, dict) or not all(isinstance(info.get(word), str) and info[word].strip() for word in ("title", "notes")):
-                self.error(f"{where}: [{name}] needs 'title' and 'notes'")
-                continue
-            for word in info:
-                if word not in ("title", "notes", "saved"):
-                    self.error(f"{where}: [{name}] '{word}' is not part of a pack")
-            if "saved" in info and info["saved"] is not True:
-                self.error(f"{where}: [{name}] 'saved' is true or left out")
-            self.packs[name] = info
 
     def _load_schema(self, folder):
         name, path = folder.name, folder / "schema.toml"

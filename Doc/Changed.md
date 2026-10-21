@@ -3,8 +3,35 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 215 (data in the game), 478 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 50 (walking data), 24 (map data), 208 (data tools).
-A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 478 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 50 (walking data), 24 (map data), 198 (data tools).
+A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Core: every data set part of Core, the data packs gone (Saneroki, 2026-10-21)
+- **The data packs are gone** (Saneroki: they filled the addon list and hid the modules one chooses; a second of
+  loading screen and a few hundred megabytes of memory are acceptable): `dev/tools/data compile <dir>` writes every
+  set with entries as `Sets/<Set>.lua` into Core's addon (`BUILD/SaneUI/Sets`, 36 sets, 22 MB) and lists them at the
+  end of its TOC below a line of its own; unchanged files keep their time, files of sets no longer made go. Measured
+  first with Lua 5.1 on all 13 packs: about 85 ms to compile and run, 25 MB of memory, nothing on the graphics card.
+- `assets/data/packs.toml` and every schema's `pack` are gone (the check refuses `pack` now); `stats` totals all sets.
+- **Core's `Data.lua`:** no finding of packs in the addon list, no loader, no states `idle` and `off`. A set file's
+  `Data.Add` makes the set ready at once (listeners told on the next frame); a set refused (format, game version, a
+  client that cannot be told) is said once; one Core does not hold is `missing` once Core's `ADDON_LOADED` came
+  (`loading` before). `Prepare` only says a set that is not there; `Data.Find` is `Data.Retell`. `/sane data` lists
+  the sets with hash and build and the saved parts with their size.
+- **The data's saved variables are Core's** (`## SavedVariables: SaneUIDB, SaneUIData_Characters, SaneUIData_Guild`;
+  `Data.SAVED`): `Data.Saved` hands a part once Core's saved variables are read, so the characters are read at the
+  login. The warning of a lost pack file is gone: everything is in Core's one saved file now, whose budget of values
+  is the whole file's.
+- `dev/build`: the sets into `BUILD/SaneUI` (rsync keeps `Sets/`); a beta's or PTR's game folder gets its game
+  version's sets compiled into the game's copy of Core; `SaneUI_Data_*` folders leave `BUILD/` and the game.
+- `dev/tests/lint` checks the set files of every game version in a copy of Core's TOC, and that Core's TOC declares
+  every saved variable `Data.SAVED` names. `dev/tests/data/packs.py` is `sets.py`; the stand-in client's `W.AddPack`
+  is `W.AddSets` (set files run at the end of Core's files, or at once after them).
+- Tests: `dev/tests/data.lua` 192 (sets arriving and refused, the client's game version by set files, the saved
+  parts), data tools 198 (compiling into `Sets/` and Core's TOC); Tooltips, Navigation, Inventory, Guild and windows
+  with the data there from the login.
+- Docs: the guide `Doc/guides/data.md` (*Core's TOC*, *Loading*, *Saved variables*), the plan `Doc/ideas/Data.md`
+  (*Sets by concern*: decisions 1 and 2 overturned), `Doc/ideas/Data-build.md`, Core's README, the project map.
 
 ### Navigation, Tooltips: indoor maps off the streets, instance maps without players, a rare's model, 3D portraits (Saneroki, 2026-10-21)
 - **Indoor maps only inside buildings and caves** (Saneroki's answer to open question 18): `dev/tools/indoor-art` marks a

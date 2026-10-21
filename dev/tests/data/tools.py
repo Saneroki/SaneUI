@@ -121,7 +121,6 @@ caught("a build's bad day", lambda c: c.replace("builds.toml", '"2026-09-01"', '
 caught("a source's kind", lambda c: c.replace("sources.toml", 'kind = "hand"', 'kind = "people"'), "'kind' is one of")
 caught("a batch's game", lambda c: c.replace("sources.toml", 'game = "forever-beta"', 'game = "other"'), "'game' names the game version")
 caught("a batch's build", lambda c: c.replace("sources.toml", "build = 66000", "build = 65100"), "'build' is a build of forever-beta")
-caught("a pack's notes", lambda c: c.replace("packs.toml", 'notes = "Sample words."', ""), "needs 'title' and 'notes'")
 caught("a type", lambda c: c.replace("Folk/schema.toml", 'title = { type = "text" }', 'title = { type = "string" }'), "is no type")
 caught("an enum's values", lambda c: c.replace("Gear/schema.toml", ', values = ["head", "hands", "feet"]', ""), "an enum needs 'values'")
 caught("a list of lists", lambda c: c.replace("Gear/schema.toml", 'of = "point"', 'of = "list"'), "a list's 'of' is one of")
@@ -133,7 +132,7 @@ caught("an index on a part that cannot be", lambda c: (
     c.replace("Gear/schema.toml", '{ name = "text", type = "text" } ]', '{ name = "text", type = "text" }, { name = "weight", type = "number" } ]'),
     c.replace("Gear/schema.toml", 'byFrom = "from"', 'byFrom = "tasks.weight"')), "a part of type number cannot be indexed")
 caught("a reserved index", lambda c: c.replace("Gear/schema.toml", 'byFrom = "from"', 'replaces = "from"'), "the compiler's")
-caught("a schema's pack", lambda c: c.replace("Labels/schema.toml", 'pack = "Words"', 'pack = "Nowhere"'), "is not in packs.toml")
+caught("a schema's word of before", lambda c: c.replace("Labels/schema.toml", 'set = "Labels"', 'set = "Labels"\npack = "Words"'), "'pack' is not part of a schema")
 caught("a schema's about", lambda c: c.replace("Labels/schema.toml", 'about = "Made-up words keyed by a name."', ""), "'about' says")
 caught("the set's folder", lambda c: c.replace("Labels/schema.toml", 'set = "Labels"', 'set = "Words"'), "the folder")
 caught("a stray file in a set", lambda c: c.write("Gear/notes.txt", "x"), "no file of the set")
@@ -407,9 +406,9 @@ check("diff: an older patch", views.diff(sample, "Gear", patch="1.60.0")[1], '  
 check("diff: within the beta", views.diff(sample, "Gear", "forever-beta"), ["Gear (forever-beta), patch 1.61.0: 1 change.", "  100 66000 (1.61.0): quality 1 → 2"])
 check("diff: a patch not known", views.diff(sample, "Gear", patch="9.9.9"), ["No build of forever is 9.9.9 in builds.toml."])
 numbers = views.stats(sample)
-check("stats: per game version, set and pack", (numbers[0], numbers[2].split(), numbers[5]),
-      ("forever:", ["Folk", "Gear", "3", "4", "1", "1", "4", "607", "B"], "  pack Gear: 2 sets, 6 entries, 2.1 KB"))
-check("stats: the beta", [line.split()[:7] for line in numbers if line.startswith("  Gear ")][2], ["Gear", "Gear", "4", "5", "1", "0", "2"])
+check("stats: per game version and set, then all", (numbers[0], numbers[2].split(), numbers[5]),
+      ("forever:", ["Folk", "3", "4", "1", "1", "4", "607", "B"], "  all: 3 sets, 10 entries, 2.7 KB"))
+check("stats: the beta", [line.split()[:6] for line in numbers if line.startswith("  Gear ")][2], ["Gear", "4", "5", "1", "0", "2"])
 
 # Compiling ----------------------------------------------------------------------------------------------
 import compile as compiler  # noqa: E402
@@ -450,31 +449,29 @@ def shown(text):
     return "".join(f"\\{ord(c):03d}" if ord(c) < 32 or c == "\\" else c for c in text)
 
 
-with tempfile.TemporaryDirectory(prefix="saneui-packs-") as folder:
+with tempfile.TemporaryDirectory(prefix="saneui-sets-") as folder:
     out = Path(folder)
-    made = compiler.compile_packs(sample, out / "one", "forever")
-    compiler.compile_packs(sample, out / "two", "forever")
-    check("compile: the packs made", [(pack, sets) for pack, sets, _ in made], [("Gear", ["Folk", "Gear"]), ("Kept", []), ("Words", ["Labels"])])
-    check("compile: the same master, the same bytes", files_of(out / "one") == files_of(out / "two"), True)
-    gear_pack = out / "one" / "SaneUI_Data_Gear"
-    check("compile: the pack's files", sorted(p.name for p in gear_pack.iterdir()),
-          ["Folk.lua", "Gear.lua", "LICENSE.txt", "SaneUI_Data_Gear.toc"])
-    toc = (gear_pack / "SaneUI_Data_Gear.toc").read_text()
-    interface, version = compiler.core_toc()
-    for line in (f"## Interface: {interface}", f"## Version: {version}", "## LoadOnDemand: 1", "## Dependencies: SaneUI",
-                 "## Group: SaneUI", "## SavedVariables: SaneUIData_Gear", "## X-SaneUI-Sets: Folk, Gear",
-                 "## X-SaneUI-Format: 1", "## X-SaneUI-Game: forever", "## Title: Data: Gear"):
-        check(f"compile: TOC has {line}", line in toc.splitlines(), True)
-    check("compile: TOC lists the sets' files", toc.splitlines()[-2:], ["Folk.lua", "Gear.lua"])
-    gear_text = (gear_pack / "Gear.lua").read_text()
+    (out / "one").mkdir()
+    (out / "one" / "SaneUI.toc").write_text("## Title: Sane UI\nCore.lua\n")
+    made = compiler.compile_sets(sample, out / "one", "forever")
+    compiler.compile_sets(sample, out / "two", "forever")
+    check("compile: the sets made", [name for name, _ in made], ["Folk", "Gear", "Labels"])
+    check("compile: the same master, the same set files", files_of(out / "one" / "Sets") == files_of(out / "two" / "Sets"), True)
+    check("compile: one file per set, in Sets", sorted(p.name for p in (out / "one" / "Sets").iterdir()), ["Folk.lua", "Gear.lua", "Labels.lua"])
+    toc = (out / "one" / "SaneUI.toc").read_text().splitlines()
+    check("compile: Core's TOC lists them at its end", toc, ["## Title: Sane UI", "Core.lua", "", compiler.MARK,
+                                                         "Sets\\Folk.lua", "Sets\\Gear.lua", "Sets\\Labels.lua"])
+    check("compile: no TOC, no list", sorted(p.name for p in (out / "two").iterdir()), ["Sets"])
+    sets = out / "one" / "Sets"
+    gear_text = (sets / "Gear.lua").read_text()
     digest = compiler.hashlib.sha256(gear_text.replace(gear_text.split('hash = "')[1][:8], "00000000", 1).encode()).hexdigest()[:8]
     check("compile: the hash is the file's", f'hash = "{digest}"' in gear_text, True)
     check("compile: live's build", 'build = 65100' in gear_text, True)
     check("compile: patch names", 'patches = { [65000] = "1.60.0", [65100] = "1.60.2" }' in gear_text, True)
     check("compile: decoder types", '"map text int", "number", "int", "int", "bool", "list int", "list point", '
           '"list tuple(kind:text,what:int,count:int,text:text)", "map int int"' in gear_text, True)
-    check("compile: nothing of the beta in live's packs", any(b"Beta Ring" in data for data in files_of(out / "one").values()), False)
-    code, text, problem = lua_rows(gear_pack / "Gear.lua")
+    check("compile: nothing of the beta in live's sets", any(b"Beta Ring" in data for data in files_of(sets).values()), False)
+    code, text, problem = lua_rows(sets / "Gear.lua")
     check("compile: Lua 5.1 runs the file", (code, problem), (0, ""))
     got = text.splitlines()
     view = sample.view("Gear", "forever")
@@ -488,37 +485,36 @@ with tempfile.TemporaryDirectory(prefix="saneui-packs-") as folder:
     check("compile: an index of a list", f"index.byFrom\t1\t100{shown(chr(30))}102" in got, True)
     check("compile: an index of a tuple's part", ("index.byTask\t2\t101" in got, "index.byTask\t100\t101" in got), (True, True))
     check("compile: replaces both ways", ("index.replaces\t102\t101" in got, "index.replacedBy\t101\t102" in got), (True, True))
-    code, text, _ = lua_rows(out / "one" / "SaneUI_Data_Words" / "Labels.lua")
+    code, text, _ = lua_rows(sets / "Labels.lua")
     check("compile: text keys", all(f"rows\t{k}\t" in text for k in ("alpha", "end", "with space")), True)
-    beta = compiler.compile_packs(sample, out / "beta", "forever-beta")
-    check("compile: the beta's packs", [pack for pack, _, _ in beta], ["Gear", "Kept", "Words"])
-    code, text, _ = lua_rows(out / "beta" / "SaneUI_Data_Gear" / "Gear.lua")
+    (out / "beta").mkdir()
+    (out / "beta" / "SaneUI.toc").write_text((out / "one" / "SaneUI.toc").read_text())
+    beta = compiler.compile_sets(sample, out / "beta", "forever-beta")
+    check("compile: the beta's sets", [name for name, _ in beta], ["Folk", "Gear", "Labels"])
+    check("compile: a TOC listed again: its old list replaced", (out / "beta" / "SaneUI.toc").read_text().count(compiler.MARK), 1)
+    code, text, _ = lua_rows(out / "beta" / "Sets" / "Gear.lua")
     head = text.splitlines()[0].split("\t")
     check("compile: the beta's game and build", (head[0], head[2]), ("forever-beta", "66000"))
     beta_view = sample.view("Gear", "forever-beta")
     check("compile: the beta stands on live's newest", f"history\t100\t{shown(compiler.row(sample.schemas['Gear'], beta_view[100][0]))}" in text
           and beta_view[100][0].fields["sell"] == 110, True)
     check("compile: the beta's own entry", "rows\t103\t0\\009\\009Beta Ring\\0094" in text, True)
-    check("compile: no live history in the beta's pack", "\\02865000" in text or "1.60.0" in (out / "beta" / "SaneUI_Data_Gear" / "Gear.lua").read_text(), False)
+    check("compile: no live history in the beta's set", "\\02865000" in text or "1.60.0" in (out / "beta" / "Sets" / "Gear.lua").read_text(), False)
     with Copy() as copy:
         copy.write("Labels/Labels.jsonl", "")
-        (out / "one" / "SaneUI_Data_Old").mkdir()
-        made = compiler.compile_packs(loaded(copy.root), out / "one", "forever")
-        check("compile: a pack without entries is not made, one of saved data is", [pack for pack, _, _ in made], ["Gear", "Kept"])
-        check("compile: packs no longer made are removed", sorted(p.name for p in (out / "one").iterdir()), ["SaneUI_Data_Gear", "SaneUI_Data_Kept"])
-        kept = (out / "one" / "SaneUI_Data_Kept" / "SaneUI_Data_Kept.toc").read_text()
-        check("compile: a pack of saved data says so, names no set and lists no file",
-              ("## X-SaneUI-Saved: 1" in kept, "X-SaneUI-Sets" in kept, [line for line in kept.splitlines() if line and not line.startswith("#")],
-               sorted(p.name for p in (out / "one" / "SaneUI_Data_Kept").iterdir())),
-              (True, False, [], ["LICENSE.txt", "SaneUI_Data_Kept.toc"]))
-        copy.replace("packs.toml", "saved = true", "saved = 1")
-        check("a pack's saved is true or left out", any("'saved' is true or left out" in text for text in loaded(copy.root).errors), True)
+        (sets / "Old.lua").write_text("-- a set no longer made")
+        before = (sets / "Gear.lua").stat().st_mtime_ns
+        made = compiler.compile_sets(loaded(copy.root), out / "one", "forever")
+        check("compile: a set without entries gets no file; files of sets no longer made are removed",
+              ([name for name, _ in made], sorted(p.name for p in sets.iterdir())), (["Folk", "Gear"], ["Folk.lua", "Gear.lua"]))
+        check("compile: the TOC lists only the files made", (out / "one" / "SaneUI.toc").read_text().splitlines()[-2:], ["Sets\\Folk.lua", "Sets\\Gear.lua"])
+        check("compile: a file that did not change is not written", (sets / "Gear.lua").stat().st_mtime_ns, before)
     saved, compiler.CHUNK = compiler.CHUNK, 2
     try:
-        compiler.compile_packs(sample, out / "small", "forever")
-        small = (out / "small" / "SaneUI_Data_Gear" / "Gear.lua").read_text()
+        compiler.compile_sets(sample, out / "small", "forever")
+        small = (out / "small" / "Sets" / "Gear.lua").read_text()
         check("compile: rows cut into Fill functions", small.count("Fill(function()") >= 4, True)
-        code, text, problem = lua_rows(out / "small" / "SaneUI_Data_Gear" / "Gear.lua")
+        code, text, problem = lua_rows(out / "small" / "Sets" / "Gear.lua")
         check("compile: cut rows read back", (code, all(line in text.splitlines() for line in want_rows)), (0, True))
     finally:
         compiler.CHUNK = saved
@@ -537,18 +533,13 @@ with tempfile.TemporaryDirectory(prefix="saneui-staging-") as folder:
     check("cvar-labels stages", result.returncode, 0)
     real = loaded(masters.MASTER)
     check("the real master fits", real.errors, [])
-    # Every set of the plan (Doc/ideas/Data.md, *Sets by concern*), in its pack
-    plan = {"Items": ["Items", "ItemSets", "Disenchants", "Enchantments"], "Quests": ["Quests"],
-            "World": ["NPCs", "CreatureSpells", "Objects", "Zones", "Travel", "Places", "Drops", "Tiles", "Overlays", "Encounters", "Indoors", "Dungeons"],
-            "Spawns": ["Spawns", "QuestAreas", "PatrolPaths"], "CreatureSpawns": ["CreatureSpawns"], "Routes": ["Walking"],
-            "Guides": ["Guides"], "Spells": ["Spells", "Auras", "Trainers", "QuestSpells", "WeaponSkills", "SkillLines", "Professions"],
-            "Talents": ["Talents", "Legacy"], "Market": ["Vendors"], "Game": ["CVarLabels", "Currencies", "Factions", "Holidays"],
-            "Collections": ["Achievements", "Mounts", "TransmogSets"],
-            "Characters": [],  # saved data only (Doc/ideas/Data.md, *Characters*)
-            "Guild": []}  # saved data only: the guild's records (Doc/guides/data.md, *Guild records*)
-    check("every set of the plan has its schema, in its pack",
-          {pack: sorted(name for name, schema in real.schemas.items() if schema.pack == pack) for pack in real.packs},
-          {pack: sorted(names) for pack, names in plan.items()})
+    # Every set of the plan (Doc/ideas/Data.md, *Sets by concern*)
+    plan = ["Items", "ItemSets", "Disenchants", "Enchantments", "Quests", "NPCs", "CreatureSpells", "Objects", "Zones", "Travel",
+            "Places", "Drops", "Tiles", "Overlays", "Encounters", "Indoors", "Dungeons", "Spawns", "QuestAreas", "PatrolPaths",
+            "CreatureSpawns", "Walking", "Guides", "Spells", "Auras", "Trainers", "QuestSpells", "WeaponSkills", "SkillLines",
+            "Professions", "Talents", "Legacy", "Vendors", "CVarLabels", "Currencies", "Factions", "Holidays", "Achievements",
+            "Mounts", "TransmogSets"]
+    check("every set of the plan has its schema", sorted(real.schemas), sorted(plan))
     report = importer.run(real, importer.read_staging(staging))
     check("CVarLabels up to date with references/", (set(counts(report, "CVarLabels", "forever")), report.changed),
           ({"agreeing"}, set()))

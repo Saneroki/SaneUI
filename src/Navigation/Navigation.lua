@@ -21,7 +21,7 @@ local ADDON, ns = ...
 --      Canvas (the frame, its layers, the mouse) . Terrain . Art . Painted . Marks
 --      Hybrid (the game's minimap over ours) . Native (the game's map kept closed) . Window
 --
---  The terrain's textures are Core's data (the set Tiles, pack World) and the
+--  The terrain's textures are Core's data (the set Tiles) and the
 --  module's overview (Art/Terrain); the art and every position come from the
 --  game's map API; the painted map is the module Atlas', loaded when its view is
 --  first drawn (Painted.lua). The pins of the game's data and Core's come later.

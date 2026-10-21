@@ -1,6 +1,5 @@
 set = "Auras"
 key = "int"              # the game's spell ID
-pack = "Spells"
 learn = true
 about = "Buffs and debuffs that are no player spell and no creature's: food, potions, elixirs, item effects, world buffs."
 

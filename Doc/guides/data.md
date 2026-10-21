@@ -1,7 +1,7 @@
 # Data
 
 How Sane UI keeps its own databases: the master in the repository, the tools that check and compile it,
-the packs the game loads, and what a module reads. Read this before adding data, writing a tool that makes
+the set files Core carries into the game, and what a module reads. Read this before adding data, writing a tool that makes
 data, or changing the framework. Why it is built this way, and what is still to come, is in the plan
 [Doc/ideas/Data.md](../ideas/Data.md); the order of the work in [Data-build.md](../ideas/Data-build.md).
 
@@ -18,11 +18,11 @@ A module only reads. Gathering, keeping, checking, sharing and telling about cha
 | Part | Where | What |
 | --- | --- | --- |
 | The master | `assets/data/` | The truth: plain text, one line per version of an entry, every source. Never shipped. |
-| The tools | `dev/tools/data`, Python in `dev/data/` | Check the master, take in staging, compile the packs, show and compare entries. |
+| The tools | `dev/tools/data`, Python in `dev/data/` | Check the master, take in staging, compile Core's set files, show and compare entries. |
 | Staging | `dev/data/staging/` (not committed) | What a tool read from a source, in one neutral format, waiting to be taken in. |
-| The packs | `BUILD/SaneUI_Data_<Pack>/` (not committed) | Load-on-demand addons made from the master by `dev/build`: a TOC and a Lua file per set. |
-| The engine | `src/Core/Data/` (in `SaneUI.toc`) | `Steps.lua` (the scheduler), `Codec.lua` (a row's string into a record), `Data.lua` (finding and loading packs, the answers, the saved parts of packs), `Characters.lua` (what the account's characters have: *Characters*). |
-| Tests | `dev/tests/data/` (tools, sample masters, `packs.py` for a module's tests), `dev/tests/data.lua` (in the game) | Run by `dev/tests/run`. |
+| The set files | `BUILD/SaneUI/Sets/` (not committed) | Part of Core, made from the master by `dev/build`: a Lua file per set, listed at the end of Core's TOC, read with Core at the login. |
+| The engine | `src/Core/Data/` (in `SaneUI.toc`) | `Steps.lua` (the scheduler), `Codec.lua` (a row's string into a record), `Data.lua` (the sets, the answers, the data's saved variables), `Characters.lua` (what the account's characters have: *Characters*). |
+| Tests | `dev/tests/data/` (tools, sample masters, `sets.py` for a module's tests), `dev/tests/data.lua` (in the game) | Run by `dev/tests/run`. |
 
 ## Words
 
@@ -34,8 +34,8 @@ A module only reads. Gathering, keeping, checking, sharing and telling about cha
 | **Build** | The game's build number (`GetBuildInfo`, second answer), the clock of versions. |
 | **Game version** | One game as one kind of client plays it: `forever`, `forever-ptr`, `forever-beta`. |
 | **Source** | Where a fact came from: the game, a person (`hand`), or a numbered batch of staging. |
-| **Pack** | A load-on-demand addon holding one or more sets, compiled for one game version. |
-| **Row** | One version of an entry as one string in a pack. |
+| **Set file** | A set compiled for one game version: `Sets/<Set>.lua`, one of Core's files. |
+| **Row** | One version of an entry as one string in a set file. |
 | **Record** | A row taken apart in the game: a table of field = value. |
 
 ## Game versions
@@ -43,23 +43,23 @@ A module only reads. Gathering, keeping, checking, sharing and telling about cha
 Facts of one game version never reach another (the plan, *Game versions kept apart*).
 
 - **Names:** `forever` (live), `forever-ptr`, `forever-beta`; later `retail` and its own. A name ending in
-  `-ptr` or `-beta` **stands on** the name without it: its packs are the live files with its own on top.
+  `-ptr` or `-beta` **stands on** the name without it: its set files are live's with its own on top.
 - **Short signs** for messages: `f`, `fp`, `fb`.
 - **The client's game version** (`Data.Game()`): `WOW_PROJECT_ID == WOW_PROJECT_CAMELOT` (18, this client) is
   Forever. Then `IsBetaBuild()` gives `-beta`, else `IsPublicTestClient()` or `IsTestBuild()` gives `-ptr`.
-  Any other project, or a missing answer, gives nil: **a client that cannot be told refuses every pack.**
+  Any other project, or a missing answer, gives nil: **a client that cannot be told refuses every set.**
   `/sane data` prints the three answers, so the game shows what each client says.
 
 ## Game facts and personal data
 
-The packs are shared by every player and hold facts about the game; the saved files also hold what is the
+The set files are shared by every player and hold facts about the game; the saved files also hold what is the
 player's own, which never leaves the computer but into the player's own backups (Saneroki, 2026-10-18).
 
 | Kind | What | Kept in | Goes |
 | --- | --- | --- | --- |
-| **Game facts** | The same for every player of a game version: items, quests, NPCs, objects, places, drops, vendors, trainers, travel; the markets per auction house | The master and the packs; learned ones in a pack's `learned` and series | Into the packs; learned ones by sharing and the harvest |
-| **Guild records** (Saneroki, 2026-10-20) | What a player shares about its own characters with its own guild (who they are, what they wear, their professions: the card; more kinds as the module Guild grows), the guild's roster and its history | The pack Guild's saved file, per guild | To the guild's Sane UI only (`Data.Guild`, below), never into the packs, the harvest or any service |
-| **Personal** | The account's characters (their bags, bank, money, gear, level, progress), the auction log and own auctions, mail, settings, profiles, layouts, notes and aliases of players (Core.People), players' names (sellers, senders, friends, guilds) | `SaneUIDB`, `SaneUICharDB`, the pack Characters' saved file, a module's own saved parts | Nowhere: shown to the player only |
+| **Game facts** | The same for every player of a game version: items, quests, NPCs, objects, places, drops, vendors, trainers, travel; the markets per auction house | The master and Core's set files; learned ones in `learned` and the series | Into the set files; learned ones by sharing and the harvest |
+| **Guild records** (Saneroki, 2026-10-20) | What a player shares about its own characters with its own guild (who they are, what they wear, their professions: the card; more kinds as the module Guild grows), the guild's roster and its history | Core's saved variable `SaneUIData_Guild`, per guild | To the guild's Sane UI only (`Data.Guild`, below), never into the set files, the harvest or any service |
+| **Personal** | The account's characters (their bags, bank, money, gear, level, progress), the auction log and own auctions, mail, settings, profiles, layouts, notes and aliases of players (Core.People), players' names (sellers, senders, friends, guilds) | `SaneUIDB`, `SaneUICharDB`, `SaneUIData_Characters`, a module's own saved parts | Nowhere: shown to the player only |
 
 - **A set holds game facts only:** no field for a character, an account, a guild, a GUID or a player's name,
   and no source in `sources.toml` names a player.
@@ -67,7 +67,7 @@ player's own, which never leaves the computer but into the player's own backups 
   back as the game's placeholders (`$N`, `$R`, `$C`); a place as the thing's place, never the path the
   player walked; times no finer than the day; prices without sellers.
 - **Personal data stays out of `learned` and the series:** sharing and the harvest read only those, never
-  the pack Characters (`saved = true`) or a part kept for the player's own views (the last whole auction
+  `SaneUIData_Characters` or a part kept for the player's own views (the last whole auction
   scan with its sellers, the auction log).
 
 ## The master: `assets/data/`
@@ -76,9 +76,8 @@ player's own, which never leaves the computer but into the player's own backups 
 assets/data/
   builds.toml               the builds of every game version: patch and first day
   sources.toml              every source a line may name
-  packs.toml                every pack: its title and notes in the addon list
   <Set>/
-    schema.toml             the set: its key, pack, fields and indexes
+    schema.toml             the set: its key, fields and indexes
     <Set>.jsonl             Forever live's lines, written by the tools
     <Set>.<game>.jsonl      another game version's lines: only what it showed otherwise (<Set>.forever-beta.jsonl)
     <Set>[.<game>].<from>.jsonl   a big set split by key range (int keys only): the keys from <from> to the next file's
@@ -135,29 +134,11 @@ about = "What our tool read of every quest, 2026-10-20."
   optional).
 - A source's name is a number (a batch) or a word. In a line's `src` a number is written as a number.
 
-### packs.toml
-
-```toml
-[Game]
-title = "Data: Game"
-notes = "Sane UI's data from the game's own code: the names of the options' settings, currencies. Loaded only when Sane UI needs it."
-
-[Characters]
-title = "Data: Characters"
-notes = "What your own characters have: ..."
-saved = true
-```
-
-Every schema's `pack` is here. The pack's addon is `SaneUI_Data_<name>`. **`saved = true`** (or left out): a
-pack of saved data, made even when none of its sets has entries (or it has no sets at all, as Characters):
-it holds what Core keeps in the game, in its saved variable (*Saved variables*).
-
 ### schema.toml
 
 ```toml
 set = "Items"
 key = "int"              # Blizzard's ID; "text" for a set keyed by a name (CVarLabels)
-pack = "Items"
 learn = true             # the game may teach it in play (Learned, step 1c)
 about = "Every item players can have: what the game says about it, with its history."
 
@@ -173,8 +154,8 @@ from    = { type = "list", of = "ref", set = "NPCs" }
 bySlot = "slot"
 ```
 
-- **Field order is the order in `[fields]`.** It is the order of a row's fields in the pack, so a field is
-  added at the end, and never moved or removed while a pack of the set is in use (a field no longer wanted
+- **Field order is the order in `[fields]`.** It is the order of a row's fields in the set's file, so a field
+  is added at the end, and never moved or removed once the set is shipped (a field no longer wanted
   stays, unused). Old lines simply lack a new field.
 - `about` says in one sentence what the set holds.
 
@@ -206,11 +187,12 @@ bySlot = "slot"
 ### The sets
 
 Every set of the plan (*Sets by concern*, *The game's own data*) has its schema; its fields and indexes are
-in `assets/data/<Set>/schema.toml`. **A set without entries may still change its fields freely;** once a
-pack of it is in use, the rule of *schema.toml* holds (a field only added at the end). Real data comes with
-prompt 2, which settles what the game gives.
+in `assets/data/<Set>/schema.toml`. **A set without entries may still change its fields freely;** once it
+is shipped, the rule of *schema.toml* holds (a field only added at the end). Real data comes with
+prompt 2, which settles what the game gives. Grouped by concern (the plan, *Sets by concern*); every set is
+part of Core.
 
-| Pack | Sets and their keys |
+| Concern | Sets and their keys |
 | --- | --- |
 | Items | Items (item ID), ItemSets (item set ID), Disenchants (the game's row of disenchanting), Enchantments (enchantment ID) |
 | Quests | Quests (quest ID) |
@@ -325,10 +307,9 @@ that game version's files.
 
 ## The check
 
-`dev/tools/data check` (run by `dev/tests/run`; `dev/build` stops on it, so a broken pack is never made):
+`dev/tools/data check` (run by `dev/tests/run`; `dev/build` stops on it, so a broken set file is never made):
 
-- `builds.toml`, `sources.toml`, `packs.toml` and every schema parse and fit their formats; every schema's
-  pack is known, every `ref` names a set, every index a field of an indexable type.
+- `builds.toml`, `sources.toml` and every schema parse and fit their formats; every `ref` names a set, every index a field of an indexable type.
 - Every set folder holds only its own files; every line parses and fits its schema and the rules of *A line
   of the master*, in order, in the right game version's file, its key in the file's key range.
 - Every `ref` and every `replaces` points at an entry that exists in that game version's view. A set with no
@@ -339,16 +320,18 @@ that game version's files.
 
 Errors fail; warnings are printed.
 
-## Compiling: the packs
+## Compiling: the set files
 
 `dev/tools/data compile <dir> [--game <game version>]` (run by `dev/build`, step 1a.3) writes
-`<dir>/SaneUI_Data_<Pack>/` for every pack one of whose sets has entries in that game version's view, and
-removes the `SaneUI_Data_*` folders in `<dir>` it no longer makes. **The same master always gives the same
-bytes:** no date, no clock, entries sorted by key.
+`<dir>/Sets/<Set>.lua` for every set that has entries in that game version's view, removes the files there
+of sets it no longer makes, and leaves a file that did not change as it is. `<dir>` is Core's built addon
+(`BUILD/SaneUI`; for a beta's or PTR's game folder, the game's copy of Core): when it holds Core's TOC, the
+files are listed at its end (*Core's TOC*). **The same master always gives the same bytes:** no date, no
+clock, entries sorted by key.
 
-- **Live's packs** come from live's files only.
-- **Another game version's packs** stand on live: for every entry, live's newest version becomes the base
-  (since 0), and that game version's own versions follow on top. Live's history is not in them.
+- **Live's set files** come from live's files only.
+- **Another game version's set files** stand on live: for every entry, live's newest version becomes the
+  base (since 0), and that game version's own versions follow on top. Live's history is not in them.
 - Fixes are laid on the lines first; then every version is worked out whole (the game never adds up
   changes).
 - **`build`** of a set is the newest build its own game version's lines know: their `since`, and the
@@ -356,35 +339,26 @@ bytes:** no date, no clock, entries sorted by key.
 - **`hash`** of a set is the first 8 hex digits of the SHA-256 of its file, written with the hash as
   `00000000`. A module that keeps something worked out from a set knows by the hash when it is stale.
 
-### A pack's TOC
+### Core's TOC
+
+Every set is part of Core (Saneroki, 2026-10-21): the game reads all of them with Core, in the loading
+screen, before any module. The data is wanted in the game anyway, and the cost was measured small (the
+whole master, 22 MB of set files: about 0.1 s of loading screen and 25 MB of memory, none of it on the
+graphics card), so nothing is loaded on demand and the addon list shows no data. The build ends Core's TOC
+with:
 
 ```
-## Interface: 16001
-## Title: Data: Game
-## Notes: Sane UI's data from the game's own code: ...
-## Author: Saneroki
-## Version: 0.3.0
-## Category: Sane UI
-## Group: SaneUI
-## Dependencies: SaneUI
-## LoadOnDemand: 1
-## SavedVariables: SaneUIData_Game
-## X-SaneUI-Sets: CVarLabels, Currencies
-## X-SaneUI-Format: 1
-## X-SaneUI-Game: forever
-## X-License: MIT
-
-CVarLabels.lua
-Currencies.lua
+# The data sets: made by dev/tools/data from the master in assets/data; change the master, not these files.
+Sets\Achievements.lua
+Sets\Auras.lua
+...
 ```
 
-- `Interface` and `Version` are Core's. Every set of the pack has its file, also one with no entries
-  (its handle is then ready and answers nil); the sets in name order. A pack's own code (step 1d) follows
-  them, copied from `src/Core/Data/Packs/<Pack>/`.
-- **A pack of saved data** (`saved = true`) says `## X-SaneUI-Saved: 1`. Without sets (Characters) it has no
-  `X-SaneUI-Sets` line and lists no file: the game loads its saved variable all the same (as its own
-  `Blizzard_ClientSavedVariables`).
-- `LICENSE.txt` is the project's `LICENSE`, as in every addon folder.
+- What follows that line is the compiler's: a compile replaces it. `src/Core/SaneUI.toc` itself lists no
+  set file.
+- **The data's saved variables** are Core's too, declared in its TOC: `## SavedVariables: SaneUIDB,
+  SaneUIData_Characters, SaneUIData_Guild` (*Saved variables*); `Data.SAVED` names them, and `dev/tests/lint`
+  fails when the TOC lacks one.
 
 ### A set's file
 
@@ -414,8 +388,9 @@ end)
 ```
 
 - `Data.Add(format, set, header)` gives nil for a format, set or game version this Core does not take (a
-  type the codec does not know, or a set another pack handed over first, too): the file stops there, and
-  the set is not ready (said once).
+  type the codec does not know, or a set another file handed over first, too): the file stops there, and
+  the set is refused (said once). Otherwise the set is ready from then on: nobody reads it before its file
+  has run to its end, and its listeners are told on the next frame.
 - **`R`** holds every entry's newest version; **`H`** the older ones, oldest first, joined by character 28,
   only for entries that have them; **`I[index][value]`** the keys, joined by character 30, sorted.
 - **At most 50,000 statements per `Fill` function:** Lua 5.1 stops at 262,143 constants in one function, and
@@ -447,35 +422,34 @@ end)
 ```lua
 local Data = SaneUI.Core.Data
 
-local Items = Data.Set("Items")     -- a handle: cheap, loads nothing, never nil; one per name
-Data.Prepare("Items")               -- load soon: after the loading screen, out of combat, one pack a frame
+local Items = Data.Set("Items")     -- a handle: cheap, never nil; one per name
 ```
 
 | Call | Gives |
 | --- | --- |
-| `Items:Get(key)` | The record of the newest version this client has reached: field = value, also `since`, `day` and `patch`. nil: not known, not loaded (and then `Prepare` is asked for), no such entry, gone. |
+| `Items:Get(key)` | The record of the newest version this client has reached: field = value, also `since`, `day` and `patch`. nil: not known, the set not there, no such entry, gone. |
 | `Items:Get(key, field)` | One value of that record. |
 | `Items:At(key, build)` | The record as it was at that build, or nil (not there yet, gone). |
 | `Items:History(key)` | An array of records, oldest first, each with `since`, `day`, `patch` (none for `since` 0) and, for a gone version, `gone = true`; its newest is the record `Get` gives. nil when not known. |
 | `Items:Versions(key, n)` | The last n of `History`, oldest first. |
-| `Items:Changes(key)` | An array, oldest first, of `{ since, day, patch, field, from, to }`, one per field that changed, in the pack's order of the fields (an entry gone: `field = "gone"`, `from = false`, `to = true`; back again the other way round). An empty array for an entry that never changed. |
+| `Items:Changes(key)` | An array, oldest first, of `{ since, day, patch, field, from, to }`, one per field that changed, in the set's order of the fields (an entry gone: `field = "gone"`, `from = false`, `to = true`; back again the other way round). An empty array for an entry that never changed. |
 | `Items:Keys(index, value)` | An array of keys from the entries' newest versions (`replaces`, `replacedBy` too); an empty one when none. |
-| `Items:Each(fn, done)` | A job: `fn(key, record)` for every entry the client has (gone ones left out), out of combat, within the budget; then `done(problem)`: nil after the last entry, the error's text when `fn` failed (the walk stops there; noted under one label per set, `data job Each Items`). Gives the job's handle (`:Stop()`); false when the set is not ready (it is asked for). |
-| `Items:Stamp()` | A number that moves when the set loads, and later when learned or accepted data changes it. |
-| `Items:OnStamp(fn)` | `fn(handle)` on the frame after the stamp moved, never inside the loader's job (a listener may start a job, or run `Steps.Check`): a view redraws then, instead of looking every frame. A `fn` given twice is told once; its failure is noted as `data: Items listener`. |
+| `Items:Each(fn, done)` | A job: `fn(key, record)` for every entry the client has (gone ones left out), out of combat, within the budget; then `done(problem)`: nil after the last entry, the error's text when `fn` failed (the walk stops there; noted under one label per set, `data job Each Items`). Gives the job's handle (`:Stop()`); false when the set is not there. |
+| `Items:Stamp()` | A number that moves when the set arrives, and later when learned or accepted data changes it. |
+| `Items:OnStamp(fn)` | `fn(handle)` on the frame after the stamp moved, never inside the set's file (a listener may start a job, or run `Steps.Check`): a view redraws then, instead of looking every frame. A `fn` given twice is told once; its failure is noted as `data: Items listener`. |
 | `Items:OffStamp(fn)` | Stops telling `fn`: one given to `OnStamp`, or one waiting in `WhenReady`. |
-| `Data.WhenReady(Items, fn)` | `fn(handle)` once the set (its handle or its name) is ready: at once if it is, in the caller's own call; else on the frame after it arrived, once, and its pack is asked for (`Prepare`). |
-| `Items:State()` | `"ready"`, `"loading"`, `"idle"` (can be loaded, not asked for), `"missing"`, `"off"` (switched off in the addon list) or `"refused"`; and a few words why. |
+| `Data.WhenReady(Items, fn)` | `fn(handle)` once the set (its handle or its name) is ready: at once if it is, in the caller's own call; else on the frame after it arrived, once. As a rule a set is there before any module asks. |
+| `Items:State()` | `"ready"`; `"refused"` (another format or game version, or the client's cannot be told) or `"missing"` (Core holds no such set), and a few words why; `"loading"` only while Core's own files are still being read. |
 | `Items:Ready()` | `State() == "ready"`. |
-| `Items.hash`, `Items.build` | Where the data came from: its hash, the newest build it knows (nil until loaded). |
+| `Items.hash`, `Items.build` | Where the data came from: its hash, the newest build it knows (nil while the set is not there). |
 
-- **What this client has reached:** a pack made for a later patch than the client's build answers with the
-  versions that build has; `History`, `At`, `Changes` and `Each` stop there too. `Keys` come from the pack's
+- **What this client has reached:** a set made for a later patch than the client's build answers with the
+  versions that build has; `History`, `At`, `Changes` and `Each` stop there too. `Keys` come from the set's
   newest versions, so on such a client `Get` of one of them can be nil.
-- **nil means not known.** No read ever raises an error, also on a pack's values of the wrong kind (a row,
+- **nil means not known.** No read ever raises an error, also on a set's values of the wrong kind (a row,
   a history or an index that is no text or table is no entry), and a read is always cheap: one table index
-  and, the first time, one row taken apart (about 2.5 µs); a set that cannot be had (its pack missing, off
-  or refused) remembers it, so a `Get` of it makes no text. **`Get` never loads a pack** (decision 20).
+  and, the first time, one row taken apart (about 2.5 µs); a set that cannot be had (missing or refused)
+  remembers it, so a `Get` of it makes no text.
 - **Records and arrays are shared and read-only.** A module never writes into one (`Versions` and `Keys`
   give a new array each time, of the shared records). The tests hand out
   frozen ones (`Data.frozen`): writing a new key fails at once, changing one is found by
@@ -486,8 +460,6 @@ Data.Prepare("Items")               -- load soon: after the loading screen, out 
   stops at the first, so a list that may hold one is walked with `pairs`.
 - **The game first:** where the client tells (an item's name, a quest's title), a module asks the client;
   the data fills in what the client does not say.
-- A module that draws often (Tooltips) calls `Prepare` in its `OnLogin`, so its packs are there before the
-  first tooltip.
 
 ### What a map shows (`Data.Map`)
 
@@ -515,7 +487,7 @@ Map:Spawns("npc:69")                 -- a thing's points: { [map] = { { x, y }, 
   position (the building part it stands in, else the terrain's map chunk), on the smallest map box only where
   neither tells; *Places*' numbers by its `PlaceKeys`.
 - **Read** as walks of the scheduler (`Each`), one set after the other, when a set it reads arrives or changes;
-  a set that no pack holds (empty in the master) or that is switched off is passed over without a word.
+  a set Core does not hold (empty in the master) or that is refused is passed over without a word.
 
 ### The ships' times (`Data.Ships`)
 
@@ -585,37 +557,33 @@ A trip's `pace` (yards a second) and `t` (the `GetTime()` of Core's look) let a 
 
 ### Loading
 
-- **Packs are found at first need,** by their TOC lines (`C_AddOns.GetAddOnMetadata`, without loading them):
-  every addon named `SaneUI_Data_*` with `X-SaneUI-Sets`, `X-SaneUI-Format` and `X-SaneUI-Game`. Core keeps
-  no list of its own.
-- **A pack is refused** when its format is not 1, its game version is not the client's, or the client's
-  game version cannot be told. **Off** when the player switched it off (`GetAddOnEnableState` for the
-  character, or the reason `DISABLED`): the player's choice stands, Core never switches a pack on.
-- **`Prepare`** puts the pack in line; the loading is a job of the scheduler (`Steps`) that starts once the
-  loading screen is gone (`LOADING_SCREEN_DISABLED`) and waits while one is up: out of combat and without a
-  restriction, one pack per frame, alone in its frame (`C_AddOns.LoadAddOn`).
-- **Said once:** a pack missing or switched off is noted in the error log, quietly (`Core.NoteError`); a pack
-  that fails to load or a set file that does not run is reported (`Core.Report`: one line in chat). The
-  modules fall back.
-- **A pack of saved data** is found by its `X-SaneUI-Saved` line (a pack with no sets and without it is
-  refused). Its saved variable exists only once it is loaded, so Core's own readers ask for it with
-  `Data.Saved(pack, fn)`: the pack is asked for as by `Prepare`, and `fn(part)` is called once it has loaded
-  (at once when it is), with this client's part (*Saved variables*). Missing, off or refused: said once,
-  `fn` never called, nothing kept. Modules do not call it; they read what Core makes of it.
+- **Every set is read with Core,** at the login, in the loading screen: its file is one of Core's
+  (*Core's TOC*). There is no loading later and nothing in the addon list to switch.
+- **A set is refused** when its format is not 1, its game version is not the client's, or the client's game
+  version cannot be told: reported once (`Core.Report`: one line in chat). A set Core does not hold at all
+  is noted once in the error log, quietly, when it is first asked for (`Core.NoteError`). The modules fall
+  back.
+- **`Data.Prepare(name)`** and **`Data.WhenReady`** stay for readers that ask before Core's files have all
+  run (Core's own, as their files are read) and for sets that come late (the tests): `Prepare` does nothing
+  but say a set that is not there.
+- **The data's saved variables** (`SaneUIData_<Name>`, *Saved variables*) are read with Core's own, so Core's
+  readers ask for one with `Data.Saved(name, fn)`: `fn(part)` once Core's saved variables are read (Core's
+  `ADDON_LOADED`), at once when they are, with this client's part. A name that is not in `Data.SAVED`: noted
+  once, `fn` never called. Modules do not call it; they read what Core makes of it.
 
 ### `/sane data`
 
-The client's game version and build with the three answers it was told by, every pack with its state and
-its sets' hashes, and the scheduler's jobs, each with the milliseconds it worked and its frames, and whether
-they wait now (a fight, a restriction). `/sane data show <set> <key>` prints an entry and what changed, by
-patch (and asks for its pack if it is not loaded); the key is a number only in a set keyed by numbers (a
-text key may look like one). `/sane data` also tells the client anew (`Data.Find`): its game version and
-build; the answers made from them are made again only when either changed.
+The client's game version and build with the three answers it was told by, every set with its hash and
+build (or its state and why), how much each saved part holds, and the scheduler's jobs, each with the
+milliseconds it worked and its frames, and whether they wait now (a fight, a restriction).
+`/sane data show <set> <key>` prints an entry and what changed, by patch; the key is a number only in a set
+keyed by numbers (a text key may look like one). `/sane data` also tells the client anew (`Data.Retell`):
+its game version and build; the answers made from them are made again only when either changed.
 
 ## The scheduler: jobs
 
-`Core.Steps` (`src/Core/Data/Steps.lua`) runs every long piece of the framework's work in steps: loading
-packs, a walk over a set, later the scan's reading, shared data taken in, the characters, the crawl; and
+`Core.Steps` (`src/Core/Data/Steps.lua`) runs every long piece of the framework's work in steps: a walk
+over a set, later the scan's reading, shared data taken in, the characters, the crawl; and
 Core's other long work (Sync finding the game's CVars).
 
 ```lua
@@ -640,7 +608,7 @@ Steps.Run({ name = "Scan", priority = true, label = "Market: the scan",
 | `job.name`, `job.ms`, `job.frames` | Its name, the milliseconds it worked so far, the frames it worked in (for `/sane data`). |
 | `Steps.Check()` | In a job: yields when the frame's budget is spent, else returns at once. Outside a job: nothing. |
 | `Steps.Fresh()` | In a job: waits for a frame of its own (no other work before it in that frame). |
-| `Steps.Spend()` | In a job: the frame's time is all used; nothing else runs in it. With `Fresh` before it: a step that cannot be cut (loading a pack) runs alone in its frame. |
+| `Steps.Spend()` | In a job: the frame's time is all used; nothing else runs in it. With `Fresh` before it: a step that cannot be cut runs alone in its frame. |
 | `Steps.Running(name)`, `Steps.Jobs()`, `Steps.Paused()` | Whether that job runs; the handles of the jobs running, in the order they were started; whether they wait now (a fight or a restriction). |
 
 - **The budget:** at most 5 ms a frame for all jobs together, and never more than a quarter of a frame at
@@ -657,35 +625,34 @@ Steps.Run({ name = "Scan", priority = true, label = "Market: the scan",
   (`Core.Report`, once per label), the others go on.
 - **A job never yields inside `pcall`, `xpcall` or `Core.Safe`:** Lua 5.1 cannot, the yield fails into the
   `pcall`, and the job runs on past its budget without a word. Neither inside an event the game sends from
-  within it (a pack's `ADDON_LOADED` comes inside `LoadAddOn`): what an event tells is told after the job,
-  on the next frame (`OnStamp`).
+  within a call of the job's: what an event tells is told after the job, on the next frame (`OnStamp`).
 - Its frame is shown only while there is work: no `OnUpdate` at rest.
 
-## Saved variables *(1c; built so far: the packs' parts, `format`, `broken`, `saved` and the lost file)*
+## Saved variables *(1c; built so far: the data's saved variables, their parts, `format` and `broken`)*
 
-- **Keyed by game version first:** `SaneUIDB.data["forever"]`, `SaneUIData_Items["forever-beta"]`. Core uses
-  only its client's key; the others (a copied `WTF`) are left as they are.
-- **Core's** (`SaneUIDB.data[game]`): `format` (1); `inbox` (`[set][key] = row`, at most 2,000 rows: learned
-  data for a pack not loaded yet, decision 19); `checked` (`[set] = build`, the patch check); `saved`
-  (`[pack] = values`, how much each pack saved last: *a lost file*); `crawl` (`[kind] = place`).
-- **A lost file:** at the logout Core notes in `saved` how many values each loaded pack's part holds (its
-  own and those of the tables in it). When a pack loads and its saved variable is gone though `saved` says
-  it held something, Core says so at once (`Core.Report`): the game's `.bak` copy still has it until the
-  next logout writes over it.
-- **A pack's** (`SaneUIData_<Pack>[game]`): `format` (1); `learned` (`[set][key] = row`, a whole row in
-  the pack's format); `broken` (parts of a wrong shape, kept for the harvest); and what the pack has of its
-  own: the Market pack its series per auction house (`houses["eu/1234/horde"]`), the World pack its drop
-  counts, the Characters pack the characters.
+- **All in Core's saved file:** `SaneUIDB` and the data's own, `SaneUIData_<Name>` (`Data.SAVED`:
+  Characters, Guild; later the series and what is learned), are declared in Core's TOC, so the game writes
+  them all into one file, `WTF/Account/<account>/SavedVariables/SaneUI.lua`.
+- **Keyed by game version first:** `SaneUIDB.data["forever"]`, `SaneUIData_Characters["forever-beta"]`. Core
+  uses only its client's key; the others (a copied `WTF`) are left as they are.
+- **Core's** (`SaneUIDB.data[game]`) *(1c)*: `format` (1); `checked` (`[set] = build`, the patch check);
+  `crawl` (`[kind] = place`).
+- **A saved variable of the data** (`SaneUIData_<Name>[game]`): `format` (1); `broken` (parts of a wrong
+  shape, kept for the harvest); and what it holds: the characters, the guilds' records; *(1c)* `learned`
+  (`[set][key] = row`, a whole row in the set's format) and the series (the prices per auction house,
+  `houses["eu/1234/horde"]`), the drop counts.
 - **Packed strings, never tables of tables,** for anything that grows (rows, a series' months, a bag), and
-  at most 100,000 values per saved variable (Lua's constant limit would lose the whole file).
+  at most 100,000 values **for Core's saved file as a whole:** Lua 5.1 stops at 262,143 constants in one
+  function, the game reads the file as one, and a file over it loads as nothing (every saved variable in
+  it lost).
 - **Every part is checked on load:** the format number with upgrade steps; a part of a wrong shape goes to
   `broken`, the rest works.
 
 ## Characters
 
 What the account's characters have, so every character sees its alts' things (the plan, *Characters*):
-`src/Core/Data/Characters.lua`, in Core, kept in the saved variable of the pack Characters, which ships
-nothing (`saved = true`, no sets) and is loaded soon after every login. Never shared.
+`src/Core/Data/Characters.lua`, in Core, kept in Core's saved variable `SaneUIData_Characters`, which ships
+nothing and is taken at every login. Never shared.
 
 ```lua
 SaneUIData_Characters["forever"] = {
@@ -708,13 +675,13 @@ SaneUIData_Characters["forever"] = {
 
 | Call | Gives |
 | --- | --- |
-| `Data.Characters()` | Every character of the account, by name: `{ key, name, realm, class, race, level, side, seen, money, bankSeen }`. nil until the pack is loaded. |
+| `Data.Characters()` | Every character of the account, by name: `{ key, name, realm, class, race, level, side, seen, money, bankSeen }`. nil before the login. |
 | `Data.Character(key)` | One of them, or nil. |
 | `Data.Items(key, place)` | What one of them keeps in a place (`bags`, `bank`, `worn`; the key `account` with `bank`: the account's bank), item by item in the order kept (by item ID): `{ { item = 4500, count = 12 }, ... }`. nil: no such character or place, or not loaded yet. |
 | `Data.Worn(key)` | What one of them wears, slot by slot, by the game's inventory slot IDs: `{ [1] = 16854, [16] = 2139, ... }` (the gear, the ammo, the bags' slots), for a paper doll. nil: no such character, not loaded yet, or its slots not read yet (it has not logged in since Sane UI keeps them). |
 | `Data.Count(item)` | `{ total = 40, [key] = { bags = 12, bank = 8, worn = 1 } }`, the key `account` for the account's bank (`{ bank = 5 }`); nil: none of them has it, or not counted yet. |
 | `Data.CharactersStamp()`, `Data.OnCharacters(fn)` | A number that moves when any of it changes (the gold and the day the bank was seen too), and `fn()` called on a later frame, once for what changed together (never inside the job): a view redraws then. |
-| `Data.Forget(key)` | Forgets one of the account's characters (a deleted one, one moved to another account: `Profiles.Forget` calls it): its entry in the saved file and every answer made from it, and those who listen are told. Never the one played; asked before the pack has loaded, done once it has. true when there is one to forget. |
+| `Data.Forget(key)` | Forgets one of the account's characters (a deleted one, one moved to another account: `Profiles.Forget` calls it): its entry in the saved file and every answer made from it, and those who listen are told. Never the one played; asked before the login, done then. true when there is one to forget. |
 
 - **Places:** `bags` (the backpack, the bags, the reagent bag, the keyring where there is one), `worn` (the
   gear and the bags in their slots), `bank` (the character's bank tabs, `C_Bank.FetchPurchasedBankTabIDs`),
@@ -736,7 +703,7 @@ SaneUIData_Characters["forever"] = {
   kept stays.
 - **The whole name:** a name without its surname (the game not knowing it yet) never takes the place of a
   whole one; two characters with one first name are two characters (their keys).
-- **Counts** are worked out once, in steps, after the pack has loaded (every place taken apart), and kept up
+- **Counts** are worked out once, in steps, after the login (every place taken apart), and kept up
   to date from then on: an item's tooltip asks one table.
 - *Not built yet (1c.4):* the auction log and own auctions, the mailbox.
 
@@ -768,8 +735,8 @@ sender, more and it is not heard for ten minutes; at most 1,000 waiting in the i
 ## Guild records
 
 People information, built locally for each user and never shipped (CLAUDE.md, *Game facts, not people*):
-`src/Core/Data/Guild.lua`, quiet until the module Guild starts it (`Data.Guild.Start()`), kept in the saved variable
-of the pack Guild (`saved = true`, no sets), per guild (its name and realm).
+`src/Core/Data/Guild.lua`, quiet until the module Guild starts it (`Data.Guild.Start()`), kept in Core's saved variable
+`SaneUIData_Guild`, per guild (its name and realm).
 
 ```lua
 SaneUIData_Guild["forever"] = { format = 1, guildFormat = 1, guilds = { ["The Order-Realm"] = {
@@ -836,22 +803,20 @@ unique on its realm (`Thrall-Draenor`).
 - **Build:** the number `GetBuildInfo` gives, as a number, compared only within one game version.
 - **Game version:** told once (`Data.Game()`).
 - **Day:** `floor(GetServerTime() / 86400)`; **time:** `GetServerTime()`. Never `time()` for anything kept or
-  shared. In the master a day is a date (`2026-11-03`); in packs, saved files and messages its number.
+  shared. In the master a day is a date (`2026-11-03`); in set files, saved files and messages its number.
 
 ## Adding a set
 
-1. **Its pack:** what is needed together at the same moment goes into one pack; what is big and needed
-   rarely gets its own (the plan, *Sets by concern*). A new pack is a section in `packs.toml`.
-2. **Its schema:** `assets/data/<Set>/schema.toml`: its key, pack, `about`, the fields in the order a pack
-   will carry them, the indexes a module will ask by.
-3. **Its facts:** a tool of ours writes staging into `dev/data/staging/`, each line with its game version,
+1. **Its schema:** `assets/data/<Set>/schema.toml`: its key, `about`, the fields in the order its file will
+   carry them, the indexes a module will ask by. The set becomes one of Core's files by itself.
+2. **Its facts:** a tool of ours writes staging into `dev/data/staging/`, each line with its game version,
    build and source; a new batch gets its number in `sources.toml` (with `game`, `seen` and `build`). A
    short hand-made list is written into `<Set>.jsonl` directly, with the source `hand`.
-4. **Taken in:** `dev/tools/data import <file>`; read the report (new, agreeing, changed, conflicts,
+3. **Taken in:** `dev/tools/data import <file>`; read the report (new, agreeing, changed, conflicts,
    refused); then `--apply`. Conflicts are looked at, not forced.
-5. **Checked and built:** `dev/tools/data check`, `dev/tests/run`, `dev/build`.
-6. **Read:** a module asks `Data.Set("<Set>")`, `Prepare`s it where it draws often, and falls back on nil.
-7. **Tested** on small sample masters in `dev/tests/data/`, never on the real data.
+4. **Checked and built:** `dev/tools/data check`, `dev/tests/run`, `dev/build`.
+5. **Read:** a module asks `Data.Set("<Set>")` and falls back on nil.
+6. **Tested** on small sample masters in `dev/tests/data/`, never on the real data.
 
 ## Tools
 
@@ -859,33 +824,34 @@ unique on its realm (`Thrall-Draenor`).
 | --- | --- |
 | `dev/tools/data check` | Checks the master (run by `dev/tests/run`). |
 | `dev/tools/data import <file> [--apply] [--take]` | Staging into the master, the report first. |
-| `dev/tools/data compile <dir> [--game <game version>]` | The packs (run by `dev/build`). |
-| `dev/tools/data game <game folder>` | The game version a game folder holds, by the product its `.flavor.info` names (`wowf`: `forever`; `wow_classic_beta`: `forever-beta` today); nothing for a product not known. `dev/build` installs that game version's packs. |
-| `dev/tools/data show <set> <key> [--game <game version>]` | An entry: every version as its line says it (build, patch, day, sources, what changed) with its fix, then the entry as the packs carry it. |
+| `dev/tools/data compile <dir> [--game <game version>]` | Core's set files into Core's addon folder, listed in its TOC (run by `dev/build`). |
+| `dev/tools/data game <game folder>` | The game version a game folder holds, by the product its `.flavor.info` names (`wowf`: `forever`; `wow_classic_beta`: `forever-beta` today); nothing for a product not known. `dev/build` installs that game version's set files. |
+| `dev/tools/data show <set> <key> [--game <game version>]` | An entry: every version as its line says it (build, patch, day, sources, what changed) with its fix, then the entry as the set files carry it. |
 | `dev/tools/data diff <set> [--patch 1.60.2] [--game <game version>]` | What a patch changed (the game version's newest when none is named): every entry new, changed (field from → to), gone or back at one of its builds. |
-| `dev/tools/data stats` | Per game version and set: entries, versions, entries that changed, gone ones, its own lines, its file's size in the pack; each pack's totals. |
-| `dev/tools/data harvest` *(1c)* | The packs' saved files into staging, accepted data only. |
+| `dev/tools/data stats` | Per game version and set: entries, versions, entries that changed, gone ones, its own lines, its file's size; then all of them together. |
+| `dev/tools/data harvest` *(1c)* | Core's saved files into staging, accepted data only. |
 | `dev/tools/cvar-labels --staging` | The CVar labels as staging for the set *CVarLabels*. |
 | `dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]` | The game's own facts from a build's client tables (and a beta's hotfixes) as staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy, Currencies, QuestAreas, Achievements, Mounts, TransmogSets, Enchantments, Holidays, Factions and Encounters; `base <batch>` stages for live what only the beta holds (decision 27). What it leaves out and why: `dev/data/staging/game-<game version>-left.csv`. |
 
 ## Tests
 
 - **The tools** (`dev/tests/data/tools.py`): each rule of the check caught; every import case on sample
-  masters, each within its own game version; compiling twice gives the same bytes; a live pack holds nothing
-  of another game version, another's is live's with its own on top.
+  masters, each within its own game version; compiling twice gives the same bytes; a live set file holds
+  nothing of another game version, another's is live's with its own on top; the files listed at the end of
+  Core's TOC.
 - **In the game** (`dev/tests/data.lua`, Lua 5.1 with `wowstub.lua`): the codec reads back every row the
   Python compiler wrote from the sample masters (the one test that keeps the two languages in step);
-  packs found, loaded, refused (missing, switched off, a wrong format, another game version, asked for in
-  combat); `Get` never loads; frozen records; the answers on a sample with history (`History`, `At`,
-  `Versions`, `Changes`, `Keys`, `Each`), also from a pack newer than the client; listeners told after the
-  loader's job, `WhenReady`, `OffStamp`; the scheduler's budget, pauses (by a restriction's own event),
+  set files run, refused (a wrong format, another game version, a client that cannot be told) or missing;
+  frozen records; the answers on a sample with history (`History`, `At`, `Versions`, `Changes`, `Keys`,
+  `Each`), also from a set newer than the client; listeners told after the file, `WhenReady`, `OffStamp`;
+  the data's saved variables (`Data.Saved`); the scheduler's budget, pauses (by a restriction's own event),
   guards, handles (`Stop`, `done`, `error`, `label`) and priority.
 - **Nothing hostile raises an error:** a broken row, a broken saved file or message is dropped or set aside.
 - **Players by their key** (`dev/tests/core.lua`): a whole name with or without a realm is one key, the same
   first name or surname two players, a first name alone none; Retail's `Name-Realm`. Steps 1c and 1f test
   their senders and characters the same way.
-- **A module's tests** run on a few made-up entries on the real schemas: `python3 -I dev/tests/data/packs.py
+- **A module's tests** run on a few made-up entries on the real schemas: `python3 -I dev/tests/data/sets.py
   <sample> <out>` copies the real master's tables and schemas with the sample's lines in place of the real
-  ones (`dev/tests/data/tooltips/` for Tooltips), checks them and compiles the packs; the test puts them into
-  the stand-in client's addon list (`W.AddPack`) before the login. The stand-in client has the pack
-  Characters, as every install has.
+  ones (`dev/tests/data/tooltips/` for Tooltips), checks them and compiles the set files into `<out>/Sets`;
+  the test gives them to the stand-in client (`W.AddSets`), which runs them at the end of Core's files, as
+  Core's TOC does (or at once, given after Core).

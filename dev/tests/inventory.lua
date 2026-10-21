@@ -415,9 +415,9 @@ check(list.ScrollBox.sets == sets + 1 and not ns.Stats.Owed() and not Names():fi
 -------------------------------------------------------------------------------
 local Alts, Snapshot, Items, Roster = ns.Alts, ns.Snapshot, ns.Items, ns.Roster
 local alts = Board.Panel("alts")
-check(alts and alts:IsShown() and alts.title._text == "Alts" and Alts.body.wait:IsShown(),
-    "the other characters' window is on the full screen at first; until Core's data is there it says so")
--- The scheduler's frames (Core's Steps.lua): the characters' data loaded and read.
+check(alts and alts:IsShown() and alts.title._text == "Alts" and not Alts.body.wait:IsShown(),
+    "the other characters' window is on the full screen at first; Core's data of them is there from the login")
+-- The scheduler's frames (Core's Steps.lua): the characters' data read.
 local function Steps()
     local steps = Core.Steps.frame
     for _ = 1, 10 do

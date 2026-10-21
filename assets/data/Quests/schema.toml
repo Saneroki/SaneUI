@@ -1,6 +1,5 @@
 set = "Quests"
 key = "int"              # the game's quest ID
-pack = "Quests"
 learn = true             # the quest watchers (Doc/ideas/Data.md, *What the game tells, and when*)
 about = "Every quest: who it is offered to and what it needs first, who gives and takes it, its objectives, chain and rewards (Doc/ideas/Data.md, *Quests*)."
 

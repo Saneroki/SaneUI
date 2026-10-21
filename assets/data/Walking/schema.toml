@@ -1,6 +1,5 @@
 set = "Walking"
 key = "int"              # a terrain tile, keyed as in the set Tiles: continent * 4096 + row * 64 + column
-pack = "Routes"
 learn = false
 about = "Where players can walk, for Navigation's routes: per terrain tile its floors as rectangles with their openings, packed by our tool (Doc/ideas/Navigation.md, *The walking data*)."
 

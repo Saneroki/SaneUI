@@ -30,9 +30,7 @@ W.links = {}              -- what was sent to the chat line
 W.errors = {}             -- what the red text in the middle of the screen said
 W.foci = {}               -- frames "under the mouse"
 W.loaded = {}             -- [addon name] = true
-W.onDemand = {           -- [addon name] = function that reads it, for an addon that is loaded when asked for
-    SaneUI_Data_Characters = function() end,
-}
+W.onDemand = {}          -- [addon name] = function that reads it, for an addon that is loaded when asked for
 W.slotOfSpell = {}        -- [spell ID] = spellbook slot, for the game's "go to this spell"
 W.gamepad = false         -- a controller is in use
 W.templates = {}          -- [frame template] = function(widget) that gives it its parts
@@ -45,14 +43,10 @@ W.caught = nil            -- set to a list to collect the errors of event handle
 W.ms = 0                  -- the client's precise clock in milliseconds (debugprofilestop), moved by the test
 W.fps = 60                -- the frame rate (GetFramerate)
 W.restrictions = {}       -- [Enum.AddOnRestrictionType] = true while the game restricts addons so
-W.addons = {             -- the addon list: { name, title, notes, loadable, reason, enabled (0 or 2),
-                          -- metadata = { [field] = text } }; W.AddPack puts a compiled pack in it. Every
-                          -- install has the pack of the characters' data (dev/build always makes it): a TOC
-                          -- with its saved variable and no files, not loaded
-    { name = "SaneUI_Data_Characters", title = "Data: Characters", loadable = false, reason = "DEMAND_LOADED", enabled = 2,
-      metadata = { Title = "Data: Characters", ["X-SaneUI-Saved"] = "1", ["X-SaneUI-Format"] = "1", ["X-SaneUI-Game"] = "forever" } },
-}
-W.fileErrors = {}         -- the errors of an addon's files that LoadAddOn ran (the game shows them, goes on)
+W.addons = {}             -- the addon list: { name, title, notes, loadable, reason, enabled (0 or 2),
+                          -- metadata = { [field] = text } }
+W.sets = {}               -- the set files given before W.LoadCore: run as the last files of Core's TOC (W.AddSets)
+W.fileErrors = {}         -- the errors of files that ran as the game runs them (it shows them, goes on)
 W.project = 18            -- the client: WOW_PROJECT_ID (WoW: Forever's is 18, WOW_PROJECT_CAMELOT)
 W.build = 70245           -- its build (GetBuildInfo)
 W.beta = false            -- IsBetaBuild
@@ -105,6 +99,9 @@ end
 -- ADDON_LOADED is the test's to fire.
 function W.LoadCore(root)
     LoadToc(root, "SaneUI", "Core", "SaneUI.toc", {})
+    local given = W.sets
+    W.sets = {}
+    for _, path in ipairs(given) do W.AddSets(path) end
 end
 
 -- Runs every file of a module (src/<folder>), in the order its TOC lists them, with the one
@@ -123,43 +120,33 @@ local function Listed(name)
 end
 W.Listed = Listed
 
--- Puts a compiled pack (folder: its whole path, as dev/tools/data compile wrote it) into the addon list,
--- not loaded, as the game lists a load-on-demand addon: its TOC's ## lines are its metadata, and
--- LoadAddOn runs the files it lists (an error in one is kept in W.fileErrors and the next one runs, as
--- in the game), then fires ADDON_LOADED. options: name (another addon name), enabled, loadable, reason,
--- metadata (fields over the TOC's; false takes one away). Gives the list's entry.
-function W.AddPack(folder, options)
-    options = options or {}
-    local name = options.name or folder:match("([^/]+)/*$")
-    local toc = assert(io.open(folder .. "/" .. folder:match("([^/]+)/*$") .. ".toc", "r"), "no TOC in " .. folder)
-    local metadata, files = {}, {}
-    for line in toc:lines() do
-        local field, value = line:match("^##%s*([^:]+):%s*(.-)%s*$")
-        if field then
-            metadata[field] = value
-        elseif line:match("%S") and not line:match("^%s*#") then
-            files[#files + 1] = line:match("^%s*(.-)%s*$")
-        end
+-- Core's set files (Sets/<Set>.lua, as dev/tools/data compile writes them into Core's addon, or written by the
+-- test): path is one file, or a folder whose .lua files run in the order of their names. Given before W.LoadCore
+-- they run at the end of Core's files, where its TOC lists them; given later they run at once, as if they had
+-- come late. An error in one is kept in W.fileErrors and the next one runs, as in the game.
+function W.AddSets(path)
+    if not (rawget(_G, "SaneUI") and SaneUI.Core and SaneUI.Core.Data and SaneUI.Core.Data.Add) then
+        W.sets[#W.sets + 1] = path
+        return
     end
-    toc:close()
-    for field, value in pairs(options.metadata or {}) do metadata[field] = value or nil end
-    local addon = { name = name, title = metadata.Title or name, notes = metadata.Notes, metadata = metadata,
-                    loadable = options.loadable or false, reason = options.reason or "DEMAND_LOADED",
-                    enabled = options.enabled or 2 }
-    W.addons[#W.addons + 1] = addon
-    W.onDemand[name] = function()
-        for _, file in ipairs(files) do
-            local chunk, problem = loadfile(folder .. "/" .. file:gsub("\\", "/"))
-            local ok = chunk and true
-            if chunk then ok, problem = pcall(chunk, name, {}) end
-            if not ok then W.fileErrors[#W.fileErrors + 1] = name .. "/" .. file .. ": " .. tostring(problem) end
+    local files = {}
+    if path:match("%.lua$") then
+        files[1] = path
+    else
+        for file in io.popen(("ls '%s'"):format(path)):lines() do
+            if file:match("%.lua$") then files[#files + 1] = path .. "/" .. file end
         end
-        addon.loadable, addon.reason = true, nil
+        table.sort(files)
     end
-    return addon
+    for _, file in ipairs(files) do
+        local chunk, problem = loadfile(file)
+        local ok = chunk and true
+        if chunk then ok, problem = pcall(chunk, "SaneUI", {}) end
+        if not ok then W.fileErrors[#W.fileErrors + 1] = file .. ": " .. tostring(problem) end
+    end
 end
 
--- Takes a pack (or any addon) out of the addon list again.
+-- Takes an addon out of the addon list again.
 function W.RemoveAddon(name)
     local _, index = Listed(name)
     if index then table.remove(W.addons, index) end

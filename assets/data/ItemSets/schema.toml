@@ -1,6 +1,5 @@
 set = "ItemSets"
 key = "int"              # the game's item set ID
-pack = "Items"
 learn = true             # an item's tooltip shows its set
 about = "The item sets: their items and what wearing several of them gives."
 

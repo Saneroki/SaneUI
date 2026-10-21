@@ -1,6 +1,5 @@
 set = "Talents"
 key = "int"              # the game's trait node ID
-pack = "Talents"
 learn = true             # the tree, when it opens (C_Traits)
 about = "Each class's talent tree: its nodes, where they stand, the links between them, their ranks and the spell of each rank."
 

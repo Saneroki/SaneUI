@@ -6,12 +6,12 @@ local Core = SaneUI.Core
 --  never shipped; Doc/ideas/Guild.md, *The data*): the game's roster as it is now, its history (who joined,
 --  left, went up or down a rank, reached a level) and every member's records, each of a kind (card: who the
 --  character is and what it wears; more kinds as the views come), shared with the guild by the wire
---  (Wire.lua). Kept per guild, realm and name, in the saved variable of the pack Guild (SaneUIData_Guild),
---  which ships nothing. Quiet until a module starts it (Guild.Start): without the module Guild nothing is
+--  (Wire.lua). Kept per guild, realm and name, in Core's saved variable SaneUIData_Guild, which ships
+--  nothing. Quiet until a module starts it (Guild.Start): without the module Guild nothing is
 --  asked of the game, sent or kept.
 --
 --      local Guild = SaneUI.Core.Data.Guild
---      Guild.Start()                 the module wants it: the pack loaded, the roster read, the wire listened to
+--      Guild.Start()                 the module wants it: the saved part taken, the roster read, the wire listened to
 --      Guild.Key()                   this character's guild ("Name-Realm"), nil outside one
 --      Guild.Info()                  { name, realm, rank, rankIndex, total, online, motd, text } of the guild now
 --      Guild.Roster()                the members now: { key, name, rank, rankIndex, level, class, className, zone,

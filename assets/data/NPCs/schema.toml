@@ -1,6 +1,5 @@
 set = "NPCs"
 key = "int"              # the game's creature ID
-pack = "World"
 learn = true             # seen out of combat, with no restriction active (Doc/ideas/Data.md, *Creatures*)
 about = "Every creature: its name, levels, rank, kind, reaction, stats, spells, buffs at rest and services."
 

@@ -6,7 +6,7 @@
 | --- | --- |
 | `dev/tests/run` | Lua 5.1 syntax/global/TOC lint, then all offline tests |
 | `dev/saneui` (`saneui`) | One command for every script by expressive names (`saneui` lists them; `--card` feeds the Konsole greeting, `--names` fish's completion, `--link` makes `~/bin/saneui`); `start\|pause\|resume\|stop\|status gpurunner\|comfyui`; the GPU queue's `gpuqueue`, `switch`, `rebuildstart`, `rebuild`, `hold`, `unhold` |
-| `dev/build [--install] [--release [TAG]]` | Tests (a release: its own), rsync source into the `BUILD/` addon folders (one per `src/*/*.toc`; `SaneUI_Atlas` with `assets/optimized/Atlas/`, only once its `Index.lua` is there), compile the data packs (`BUILD/SaneUI_Data_*`, Forever live's); with `--install` copies into the game (the packs of the game folder's own game version, by its `.flavor.info`); without it nothing goes into the game. Each built TOC gets `## X-SaneUI-Build: dev <commit>[ +changes]` or `release <tag> <commit>`. `--release TAG` (default `current`) builds git's copy of the tag (`git archive`, LFS art smudged) into `BUILD/release/<tag>`; installed, it takes our modules it lacks out of the game. |
+| `dev/build [--install] [--release [TAG]]` | Tests (a release: its own), rsync source into the `BUILD/` addon folders (one per `src/*/*.toc`; `SaneUI_Atlas` with `assets/optimized/Atlas/`, only once its `Index.lua` is there), compile Core's data sets (`BUILD/SaneUI/Sets/`, listed at the end of its TOC, Forever live's); with `--install` copies into the game (the sets of the game folder's own game version, by its `.flavor.info`, compiled into the game's copy of Core; old `SaneUI_Data_*` folders removed); without it nothing goes into the game. Each built TOC gets `## X-SaneUI-Build: dev <commit>[ +changes]` or `release <tag> <commit>`. `--release TAG` (default `current`) builds git's copy of the tag (`git archive`, LFS art smudged) into `BUILD/release/<tag>`; installed, it takes our modules it lacks out of the game. |
 | `dev/installdev` / `dev/installrelease [TAG]` | `dev/build --install` / `dev/build --release TAG --install` (`saneui installdev`, `saneui installrelease`) |
 | `dev/build --check` | Tests and rsync dry-run; writes nothing |
 | `dev/snapshot X.Y.Z [--dry]` (`saneui snapshot`) | A release from main's newest commit: `## Version` in every TOC committed (temp index, CAS on main), tested on `git archive` of it, then tag `vX.Y.Z`, branch `release/X.Y` (new or fast-forward), tag `current` moved; working-tree TOCs get only the version line; nothing pushed |
@@ -29,7 +29,7 @@
 | `dev/tools/voicegen key\|account\|design\|pick\|names\|say\|sound\|ogg` | Send the voice database's lines, the cast's designs and the names to the cloud voice service; master WAVs and game Ogg files in `dev/voices/sound/`, every file made in `dev/voices/made.jsonl`; short UI sounds as candidates in `assets/generated/sounds/`. Key and service config in `~/.config/saneui/voice-service.json`, never in the repository (stdlib and ffmpeg; see `Doc/guides/voice-generation.md`) |
 | `dev/tools/project-index [--check]` | Regenerate navigation hashes/index, or report stale files |
 | `dev/tools/cvar-labels [--check]` | Regenerate `src/Core/Settings/Data/CVarLabels.lua` (CVar → game string names) from `references/` options code; `--staging [file] [--build N]` writes the same as staging for the data set *CVarLabels* (`dev/data/staging/cvar-labels.jsonl`) |
-| `dev/tools/data check\|import\|compile\|game\|show\|diff\|stats` | Core's data framework (`Doc/guides/data.md`): check the master in `assets/data/` (run by `dev/tests/run`); `import <staging> [--apply] [--take]` takes staging in, the report first (new, agreeing, changed, older, gone, conflicts; `--take` writes conflicts in as corrections); `compile <folder> [--game G]` the packs; `game <folder>` a game folder's game version; `show <set> <key>`, `diff <set> [--patch P]`, `stats` for people; `--master <folder>` for another master (tests); Python in `dev/data/` |
+| `dev/tools/data check\|import\|compile\|game\|show\|diff\|stats` | Core's data framework (`Doc/guides/data.md`): check the master in `assets/data/` (run by `dev/tests/run`); `import <staging> [--apply] [--take]` takes staging in, the report first (new, agreeing, changed, older, gone, conflicts; `--take` writes conflicts in as corrections); `compile <folder> [--game G]` Core's set files into Core's addon folder; `game <folder>` a game folder's game version; `show <set> <key>`, `diff <set> [--patch P]`, `stats` for people; `--master <folder>` for another master (tests); Python in `dev/data/` |
 | `dev/tools/sync-pages [--check]` | Regenerate `src/Core/Sync/Data/Pages.lua` (what each of the game's options pages sets) from `references/` options code |
 | `dev/tools/blizzard check\|show\|uses\|adopt` | A new build's Blizzard interface code (the game's `exportInterfaceFiles code`) against `references/`: `check [<new>] [--old <export>\|git:<rev>] [--build V]` writes the todo list of what reaches Sane UI (broken, deprecated, changed, review, housekeeping) to `dev/blizzard/reports/`; `show <name>` a symbol in both with its diff; `uses [--list] [--unknown]` what Sane UI takes from Blizzard; `adopt` makes the new export `references/` and remakes CVarLabels and Pages; Python in `dev/blizzard/` (see `Doc/guides/blizzard-updates.md`) |
 
@@ -43,8 +43,8 @@ game restart; changed known files need reload. Preserve unrelated `BUILD/SaneUI.
 ## Tests and their limits
 
 `dev/tests/lint` checks every `src/` folder: one TOC each, listed/missing source, matching versions/interface,
-dependency/group metadata, Lua 5.1 parsing, and bytecode `SETGLOBAL` names; and the data packs, compiled for every game
-version into a scratch folder (TOC lines, files, Lua that writes no global). It is not a full API lint.
+dependency/group metadata, Lua 5.1 parsing, and bytecode `SETGLOBAL` names; and Core's data sets, compiled for every game
+version into a scratch copy of Core's TOC (every file listed, Lua that writes no global), and the data's saved variables in Core's TOC. It is not a full API lint.
 `wowstub.lua` supplies events/timers/actions/cursor/spells/options and generic widgets; unknown
 PascalCase widget methods silently succeed. Tests extend this with tooltip/chat/book fixtures.
 WoW's argument-passing `xpcall` is shimmed because stock Lua 5.1 lacks it.
@@ -53,14 +53,14 @@ WoW's argument-passing `xpcall` is shimmed because stock Lua 5.1 lacks it.
 | --- | --- |
 | `core.lua` | Lifecycle/isolation, options pages (put up at login, filled on open), defaults, profiles, errors, guards, helpers |
 | `spellbook.lua` | Lazy sources/trainer, page merge/folding/Home, reservations/pushes/combat/cursor, presets, UI restoration |
-| `tooltips.lua` | Reader output, model redraw, live values, quests (on sample packs, before and after they load)/cache/prices, the Inventory section (Core's characters), other addons' lines in their own section, native restoration/anchors/secrets, per-kind/module fallback |
+| `tooltips.lua` | Reader output, model redraw, live values, quests (on sample set files)/cache/prices, the Inventory section (Core's characters), other addons' lines in their own section, native restoration/anchors/secrets, per-kind/module fallback |
 | `social.lua` | Event decoding, width/wrapping, native input/restoration, filtering, fading, lockdown and fallback, game channels join/leave |
 | `sync.lua` | Sync parts capture/apply, scope and state filters, reload dialog, combat wait, kept CVars, profiles, per-character CVars, the generated page lists |
 | `window.lua` | Dock arithmetic, movement/sizing/skin, expansion/demo |
-| `data.lua` | The data framework in the game: the scheduler's budget, pauses (combat, restrictions), failing jobs, `Fresh`/`Spend`; the sample packs (compiled by `data/sample.py` into a temporary folder) read back by the codec as the tools meant them, packs found, loaded one a frame after the loading screen and out of combat, missing, switched off or refused (format, game version, not loadable, a file that does not run), `Get` never loading, frozen records, the client's game version, `/sane data`; `History`, `At`, `Versions`, `Changes`, `Keys` and `Each`, also from a pack newer than the client; packs of saved data (`Data.Saved`, a part per game version, a wrong format set aside, the lost file) |
-| `data/packs.py` (Python) | A module's sample lines (`data/tooltips/`) on the real schemas, checked and compiled into packs for that module's test |
-| `data/sample.py` (Python) | Compiles `data/sample/` for `forever` and `forever-beta` into a folder given, with `expected-<game version>.lua` (every version of every entry as Lua tables) beside the packs: what `data.lua` compares with |
-| `data/tools.py` (Python) | The data tools on `data/sample/`: every rule of the check, every case of the import within its game version (and `--take`), `show`, `diff` and `stats`, compiling (same bytes, game versions apart, rows read back by Lua 5.1), CVarLabels up to date, every set of the plan with its schema in its pack |
+| `data.lua` | The data framework in the game: the scheduler's budget, pauses (combat, restrictions), failing jobs, `Fresh`/`Spend`; the sample set files (compiled by `data/sample.py` into a temporary folder) read back by the codec as the tools meant them, sets arriving (ready at once, listeners told on the next frame), missing or refused (format, game version, a file that does not run), frozen records, the client's game version, `/sane data`; `History`, `At`, `Versions`, `Changes`, `Keys` and `Each`, also from a set newer than the client; the data's saved variables (`Data.Saved`, a part per game version, a wrong format set aside) |
+| `data/sets.py` (Python) | A module's sample lines (`data/tooltips/`) on the real schemas, checked and compiled into set files for that module's test |
+| `data/sample.py` (Python) | Compiles `data/sample/` for `forever` and `forever-beta` into a folder given, with `expected-<game version>.lua` (every version of every entry as Lua tables) beside the set files: what `data.lua` compares with |
+| `data/tools.py` (Python) | The data tools on `data/sample/`: every rule of the check, every case of the import within its game version (and `--take`), `show`, `diff` and `stats`, compiling (same bytes, game versions apart, rows read back by Lua 5.1, listed in Core's TOC), CVarLabels up to date, every set of the plan with its schema |
 | `blizzard.py` (Python) | `dev/tools/blizzard` on a small export (`blizzard/old`) and a new build made from it in the test with one change of each kind, against a small module (`blizzard/src`): Lua tokens and definitions, TOC conditions, XML and documentation symbols, every section of the todo list, hints, diffs, cited lines, the Markdown and JSON; Sane UI's own source read by `luac5.1` without problems |
 
 A green suite does not prove native API availability, rendering, protected calls or taint.
@@ -100,8 +100,8 @@ module or data file has a licence of its own. Original art/name terms differ fro
 
 Observed on 2026-10-14, checked again on 2026-10-16; do not mistake older text for current behaviour:
 
-- Source has nine addons (2026-10-20): Core (`SaneUI`), Abilities, Tooltips, Social, Combat, Navigation, Atlas, Inventory,
-  Nameplates, besides the data packs `dev/tools/data` compiles. Older text saying fewer (or an addon *Settings* or *Sync*)
+- Source has ten addons (2026-10-21): Core (`SaneUI`), Abilities, Tooltips, Social, Combat, Navigation, Atlas, Inventory,
+  Nameplates, Guild; Core's data sets are Core's own files (2026-10-21: no `SaneUI_Data_*` packs any more). Older text saying fewer (or an addon *Settings* or *Sync*)
   is stale.
 - Tooltips README's “Not there yet” sub-bullet on a player's specialisation (`src/Tooltips/README.md`,
   section *Not there yet*) conflicts with the spec its Player row and `Inspect.Talents` show; delete

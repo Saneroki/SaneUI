@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""The tool of Core's data framework: the master in assets/data, staging, the packs (Doc/guides/data.md).
+"""The tool of Core's data framework: the master in assets/data, staging, Core's set files (Doc/guides/data.md).
 
 Usage:  dev/tools/data check                              check the master (dev/tests/run runs it)
         dev/tools/data import <staging> [--apply] [--take]  staging into the master: the report, then --apply
-        dev/tools/data compile <folder> [--game <version>]  the packs of a game version (forever) into a folder
+        dev/tools/data compile <folder> [--game <version>]  the set files of a game version (forever) into Core's
+                                                            built addon (BUILD/SaneUI): Sets/, listed in its TOC
         dev/tools/data game <game folder>                   the game version a game folder holds (.flavor.info)
         dev/tools/data show <set> <key> [--game <version>]  an entry with every version and source
         dev/tools/data diff <set> [--patch 1.60.2] [--game <version>]  what a patch changed (the newest one)
-        dev/tools/data stats                                counts and sizes per set and pack
+        dev/tools/data stats                                counts and sizes per set
         --master <folder>                                   another master than assets/data (tests)
 """
 import argparse
@@ -77,15 +78,16 @@ def run_compile(args):
     master = load(args.master)
     if master.errors:
         say_problems(master)
-        print("Data: the master has problems; no pack is made from it.", file=sys.stderr)
+        print("Data: the master has problems; no set file is made from it.", file=sys.stderr)
         return 1
     if args.game not in master.games:
         print(f"Data: '{args.game}' is no game version of builds.toml ({', '.join(master.games)}).", file=sys.stderr)
         return 1
     folder = Path(args.folder)
     folder.mkdir(parents=True, exist_ok=True)
-    for pack, sets, entries in compiler.compile_packs(master, folder, args.game):
-        print(f"Built: {folder / (compiler.PREFIX + pack)} ({args.game}: {', '.join(sets) + f'; {entries} entries' if sets else 'saved data only'})")
+    made = compiler.compile_sets(master, folder, args.game)
+    entries = sum(count for _, count in made)
+    print(f"Built: {folder / compiler.SETS} ({args.game}: {len(made)} sets, {entries} entries)")
     return 0
 
 
@@ -147,7 +149,7 @@ def main():
     taking.add_argument("file")
     taking.add_argument("--apply", action="store_true", help="write the master")
     taking.add_argument("--take", action="store_true", help="write conflicts into their versions as corrections")
-    making = commands.add_parser("compile", help="the packs into a folder")
+    making = commands.add_parser("compile", help="the set files into Core's built addon")
     making.add_argument("folder")
     making.add_argument("--game", default=masters.LIVE, help="the game version (forever)")
     telling = commands.add_parser("game", help="the game version of a game folder")
@@ -160,7 +162,7 @@ def main():
     comparing.add_argument("set")
     comparing.add_argument("--patch", help="the patch (1.60.2); the game version's newest when left out")
     comparing.add_argument("--game", default=masters.LIVE, help="the game version (forever)")
-    commands.add_parser("stats", help="counts and sizes per set and pack")
+    commands.add_parser("stats", help="counts and sizes per set")
     args = parser.parse_args()
     return {"check": run_check, "import": run_import, "compile": run_compile, "game": run_game, "show": run_show,
             "diff": run_diff, "stats": run_stats}[args.command](args)

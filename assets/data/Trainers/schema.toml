@@ -1,6 +1,5 @@
 set = "Trainers"
 key = "int"              # the game's spell ID of the rank a trainer teaches
-pack = "Spells"
 learn = true             # the trainer window (TRAINER_SHOW)
 about = "What class and profession trainers teach: each rank with its level, cost and what it needs first (today Abilities' Data/Classes)."
 

@@ -1,6 +1,5 @@
 set = "Currencies"
 key = "int"              # the game's currency ID
-pack = "Game"
 learn = true
 about = "Every currency: its name, icon and caps (C_CurrencyInfo), legacy points among them."
 

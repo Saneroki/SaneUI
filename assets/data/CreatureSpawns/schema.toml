@@ -1,6 +1,5 @@
 set = "CreatureSpawns"
 key = "int"              # the game's creature ID
-pack = "CreatureSpawns"
 learn = true             # every looted creature tells where it was (Doc/ideas/Data.md, *What every kill teaches*)
 about = "Where every creature that is not in Spawns spawns: its points and areas (decision 18), so Spawns stays lean."
 

@@ -407,10 +407,10 @@ local overrides = {}
 SetOverrideBindingClick = function(_, _, key, button, click) overrides[key] = button .. ":" .. click end
 ClearOverrideBindings = function() overrides = {} end
 
--- The terrain's data: a pack with four tiles round the player, one on the other continent, and one on the isle (its
+-- The terrain's data: a set with four tiles round the player, one on the other continent, and one on the isle (its
 -- middle: row and column 32 of its own grid, 2991).
 local folder = io.popen("mktemp -d -t saneui-navigation-XXXXXX"):read("*l")
-local packPath = folder .. "/SaneUI_Data_World"
+local packPath = folder .. "/World"
 os.execute(("mkdir -p '%s'"):format(packPath))
 local ISLE_TILE = 2991 * 4096 + 32 * 64 + 32
 local TILES = { [3104] = 801, [3105] = 802, [3168] = 803, [3169] = 804, [4096 + 2080] = 900, [ISLE_TILE] = 950 }
@@ -494,12 +494,8 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byFromNode[20] = "5"\nI.byFromNode[21] = "6"\nI.byKind = {}\n'
     .. 'I.byKind.boat = "1\0303"\nI.byKind.flight = "2\0305\0306"\nI.byKind.tram = "7"\nI.byKind.zeppelin = "4"\n'
     .. 'I.byKind.lift = "8\0309\03010"\n')
-out = assert(io.open(packPath .. "/SaneUI_Data_World.toc", "w"))
-out:write("## Title: Data: World\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Drops, NPCs, Objects, Overlays, Places, Tiles, Travel\n## X-SaneUI-Format: 1\n"
-    .. "## X-SaneUI-Game: forever\nDrops.lua\nNPCs.lua\nObjects.lua\nOverlays.lua\nPlaces.lua\nTiles.lua\nTravel.lua\n")
-out:close()
-W.AddPack(packPath)
-local spawnsPath = folder .. "/SaneUI_Data_Spawns"
+W.AddSets(packPath)
+local spawnsPath = folder .. "/Spawns"
 os.execute(("mkdir -p '%s'"):format(spawnsPath))
 Set(spawnsPath .. "/Spawns.lua", "Spawns", "00000007", "text", '"points", "middles"',
     '"list point", "list tuple(map:int,x:number,y:number,size:number)"',
@@ -512,7 +508,7 @@ Set(spawnsPath .. "/Spawns.lua", "Spawns", "00000007", "text", '"points", "middl
     .. 'R["npc:74"] = "70245\t\t1429\03150\03185\t"\n'
     .. 'R["npc:75"] = "70245\t\t1429\03140\03160\t"\n')
 -- The quests they give: one this character can take (100), one it has done (5, doneQuests below).
-local questsPath = folder .. "/SaneUI_Data_Quests"
+local questsPath = folder .. "/Quests"
 os.execute(("mkdir -p '%s'"):format(questsPath))
 Set(questsPath .. "/Quests.lua", "Quests", "00000009", "int", '"name", "minLevel", "startNPCs", "level"',
     '"text", "int", "list int", "int"',
@@ -521,14 +517,11 @@ Set(questsPath .. "/Quests.lua", "Quests", "00000009", "int", '"name", "minLevel
     .. 'I.byStartNPC = {}\nI.byStartNPC[72] = "100"\nI.byStartNPC[73] = "5"\nI.byStartNPC[74] = "101"\n')
 LOCALIZED_CLASS_NAMES_MALE = { WARRIOR = "Warrior", MAGE = "Mage" }
 GetQuestGreenRange = function() return 5 end
-out = assert(io.open(questsPath .. "/SaneUI_Data_Quests.toc", "w"))
-out:write("## Title: Data: Quests\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Quests\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nQuests.lua\n")
-out:close()
-W.AddPack(questsPath)
+W.AddSets(questsPath)
 -- The indoor map of a building (the set Indoors): one at the player's place (world x -8950, y -500: plane u 500,
 -- v -8950, terrain tile 3104), turned 90 degrees so its own axes lie along the plane's, two floors one above the other,
 -- and around them a street under the sky (open), as a city is one building.
-local indoorsPath = io.popen("mktemp -d -t saneui-indoors-XXXXXX"):read("*l") .. "/SaneUI_Data_Indoors" -- loaded late
+local indoorsPath = io.popen("mktemp -d -t saneui-indoors-XXXXXX"):read("*l") .. "/Indoors"
 os.execute(("mkdir -p '%s'"):format(indoorsPath))
 Set(indoorsPath .. "/Indoors.lua", "Indoors", "0000000a", "int", '"groups", "placed", "tiles"',
     '"list tuple(group:int,file:text,left:number,bottom:number,right:number,top:number,low:number,high:number,outdoor:bool,open:bool)", '
@@ -536,13 +529,10 @@ Set(indoorsPath .. "/Indoors.lua", "Indoors", "0000000a", "int", '"groups", "pla
     'R[500001] = "70245\t\t0\031500001-0\031-10\031-10\03110\03110\031-1\0315\031\031\0301\031500001-1\031-10\031-10\03110\03110\0315\03112\031\031'
     .. '\0302\031500001-2\031-60\031-60\03160\03160\031-1\03112\031\0311'
     .. '\t0\031-8950\031-500\0310\03190\0311\t3104"\nI.byTile = {}\nI.byTile[3104] = "500001"\n')
-out = assert(io.open(indoorsPath .. "/SaneUI_Data_Indoors.toc", "w"))
-out:write("## Title: Data: Indoors\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Indoors\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nIndoors.lua\n")
-out:close()
-W.AddPack(indoorsPath)
+W.AddSets(indoorsPath)
 -- The maps of dungeons the game has none of (the sets Dungeons and Encounters): tested with the dungeons' view.
 do
-local dungeonsPath = io.popen("mktemp -d -t saneui-dungeons-XXXXXX"):read("*l") .. "/SaneUI_Data_DungeonMaps" -- loaded late
+local dungeonsPath = io.popen("mktemp -d -t saneui-dungeons-XXXXXX"):read("*l") .. "/DungeonMaps"
 os.execute(("mkdir -p '%s'"):format(dungeonsPath))
 -- Deep Halls (instance 90): its upper floor 300 by 200 yards (12 tiles), the lower one 150 by 100 (2 tiles), a
 -- boss on each.
@@ -557,15 +547,12 @@ Set(dungeonsPath .. "/Dungeons.lua", "Dungeons", "0000000b", "int", '"name", "fl
     .. '\0302\031Lower\0311002\031668\031256\03150\031-50\03175\031-75\t'
     .. table.concat(upper, "\030") .. '\0302\0310\0310\0319101\0302\0310\0311\0319102'
     .. '\t700\0311\0310.25\0310.5\0314203\030701\0312\0310.5\0310.5"\n')
-Set(dungeonsPath .. "/Encounters.lua", "Encounters", "0000000c", "int", '"name", "instance", "order"', '"text", "int", "int"',
-    'R[700] = "70245\t\tThe First Boss\t90\t0"\nR[701] = "70245\t\tThe Second Boss\t90\t1"\n')
-out = assert(io.open(dungeonsPath .. "/SaneUI_Data_DungeonMaps.toc", "w"))
-out:write("## Title: Data: Dungeon maps\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Dungeons, Encounters\n## X-SaneUI-Format: 1\n"
-    .. "## X-SaneUI-Game: forever\nDungeons.lua\nEncounters.lua\n")
-out:close()
-W.AddPack(dungeonsPath)
+Set(dungeonsPath .. "/Encounters.lua", "Encounters", "0000000c", "int", '"name", "instance", "order", "abilities", "loot"',
+    '"text", "int", "int", "list int", "list int"',
+    'R[700] = "70245\t\tThe First Boss\t90\t0\t801\030802\t901\030902"\nR[701] = "70245\t\tThe Second Boss\t90\t1"\n')
+W.AddSets(dungeonsPath)
 end
--- The walking data (pack Routes): two tiles round the player, their blocks as the game unpacks them (the
+-- The walking data (the set Walking): two tiles round the player, their blocks as the game unpacks them (the
 -- encoding stand-ins below hand back these tables). Tile 3104 (its north west corner at u 0, v -8533, 2.08 yards
 -- a sample): a west hall (1) and an east hall (3), a wall between them (columns 128 to 159) with a door (2, rows
 -- 100 to 119; the three one surface) and a channel of water (4, rows 200 to 209, a surface of its own, its opening
@@ -577,8 +564,8 @@ end
 -- mesa (5, 80 yards) of a region of its own, nobody can walk onto. Tile 6177 east of it (its own regions, no way
 -- across): a field (1, 10 yards high, region 3) and a courtyard (2, the same surface) south east of it; a mesa (3,
 -- 80 yards, region 4) beside the field, north of the courtyard; a hall (4, region 5) 20 yards under the courtyard.
-local routesFolder = io.popen("mktemp -d -t saneui-routes-XXXXXX"):read("*l") -- loaded late: kept until the end
-local routesPath = routesFolder .. "/SaneUI_Data_Routes"
+local routesFolder = io.popen("mktemp -d -t saneui-routes-XXXXXX"):read("*l") -- kept until the end
+local routesPath = routesFolder .. "/Routes"
 os.execute(("mkdir -p '%s'"):format(routesPath))
 local walkBlocks = {
     [3104] = { 1,
@@ -598,16 +585,10 @@ local walkBlocks = {
 Set(routesPath .. "/Walking.lua", "Walking", "00000008", "int", '"map", "links", "block"', '"int", "list int", "text"',
     'R[3104] = "70245\t\t0\t3105\tblock:3104"\nR[3105] = "70245\t\t0\t3104\tblock:3105"\nR[6176] = "70245\t\t1\t\tblock:6176"\n'
     .. 'R[6177] = "70245\t\t1\t\tblock:6177"\n')
-out = assert(io.open(routesPath .. "/SaneUI_Data_Routes.toc", "w"))
-out:write("## Title: Data: Routes\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Walking\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nWalking.lua\n")
-out:close()
-W.AddPack(routesPath)
+W.AddSets(routesPath)
 C_EncodingUtil = { DecodeBase64 = function(text) return text end, DecompressString = function(text) return text end,
                    DeserializeCBOR = function(text) return walkBlocks[tonumber(text:match("%d+"))] end }
-out = assert(io.open(spawnsPath .. "/SaneUI_Data_Spawns.toc", "w"))
-out:write("## Title: Data: Spawns\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Spawns\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nSpawns.lua\n")
-out:close()
-W.AddPack(spawnsPath)
+W.AddSets(spawnsPath)
 
 W.LoadCore(root)
 local Core = SaneUI.Core
@@ -851,7 +832,7 @@ check(near(Hybrid.Zoom(0, 200), 100 / 250) and minimap._zoom == 2, "after a load
 radii[0] = 240
 W.Fire("PLAYER_ENTERING_WORLD")
 
--- The terrain's data arrives after the loading screen.
+-- Core's data is there from the login, with Core; the map's places are read in steps after the loading screen.
 local Tiles = Core.Data.Set("Tiles")
 W.Fire("LOADING_SCREEN_DISABLED")
 local steps = Core.Steps.frame
@@ -861,14 +842,13 @@ local function Frames(count)
         if steps:IsShown() and steps._scripts.OnUpdate then steps._scripts.OnUpdate(steps, 0.016) end
     end
 end
-local before = Core.Data.Map():On(1429)
-check(before and #before == 0, "Core's places asked for before their packs are there: none yet, the packs asked for")
+check(Core.Data.Map():On(1429) == nil, "Core's places first asked for: nil while they are read")
 Frames(16)
 os.execute(("rm -rf '%s'"):format(folder))
-check(#W.fileErrors == 0, "the pack's file ran" .. (W.fileErrors[1] and ": " .. W.fileErrors[1] or ""))
-check(Tiles:Ready() and Tiles:Get(3104, "minimap") == 801, "the pack is loaded: the set Tiles answers")
+check(#W.fileErrors == 0, "the set files ran" .. (W.fileErrors[1] and ": " .. W.fileErrors[1] or ""))
+check(Tiles:Ready() and Tiles:Get(3104, "minimap") == 801, "the set Tiles answers")
 
--- Core's places on the map (Data.Map), read once their packs are there: by map, what each is.
+-- Core's places on the map (Data.Map), read in steps: by map, what each is.
 local places = Core.Data.Map():On(1429)
 local byKey = {}
 for _, place in ipairs(places or {}) do byKey[place.key] = place end
@@ -2433,9 +2413,7 @@ Core.Set(ns.name, "nativeMinimap", false)
 --  Routes: the walking data, the walk between two points, the journey with a flight, a boat, the hearthstone
 -------------------------------------------------------------------------------
 local Walk, Search, Planner = ns.Walk, ns.Search, ns.Planner
-check(Walk.Ready() == false and Core.Data.Set("Walking"):State() == "loading", "the walking data is asked for when first needed")
-Frames(4)
-check(Walk.Ready(), "and loads (the pack Routes)")
+check(Walk.Ready() and Walk.Known(), "the walking data is there, with Core")
 local hall = Walk.Tile(3104)
 check(hall and hall.count == 5 and hall.kind[4] == Walk.WATER and hall.region[5] == 7 and select(5, Walk.Rect(hall, 1)) == 40,
     "a tile unpacked: its rectangles, their kinds, regions and heights")

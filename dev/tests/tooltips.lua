@@ -250,12 +250,11 @@ local function shape(panel)
     return table.concat(list, " ")
 end
 
--- Core's data the module reads: a few made-up quests and drops (dev/tests/data/tooltips) compiled into packs
--- on the real schemas, in the addon list before the login
+-- Core's data the module reads: a few made-up quests and drops (dev/tests/data/tooltips) compiled into set files
+-- on the real schemas, read with Core at the login
 local folder = io.popen("mktemp -d -t saneui-tooltips-XXXXXX"):read("*l")
-check(folder and os.execute(("python3 -I '%s/dev/tests/data/packs.py' '%s/dev/tests/data/tooltips' '%s'"):format(root, root, folder)) == 0,
-    "the tools compiled the sample quests, drops, nodes and disenchanting into packs")
-for _, pack in ipairs({ "Quests", "World", "Items" }) do W.AddPack(folder .. "/SaneUI_Data_" .. pack) end -- Characters: every install's (wowstub)
+check(folder and os.execute(("python3 -I '%s/dev/tests/data/sets.py' '%s/dev/tests/data/tooltips' '%s'"):format(root, root, folder)) == 0,
+    "the tools compiled the sample quests, drops, nodes and disenchanting into set files")
 -- The characters' saved file: two alts, one of them sharing your first name; a broken entry, and what one alt
 -- wears slot by slot in a wrong shape
 SaneUIData_Characters = { forever = { format = 1, characters = {
@@ -285,12 +284,13 @@ W.Load(root, "SaneUI", "Core/Profiles", {})
 W.Load(root, "SaneUI", "Core/Fuzzy", {})
 for _, file in ipairs({ "Steps", "Codec", "Data", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
 W.Load(root, "SaneUI", "Core/People", {}) -- aliases and notes of players
+W.AddSets(folder .. "/Sets") -- the set files, at the end of Core's TOC
 local Core = SaneUI.Core
 local Data = Core.Data
 -- Saved by an earlier version (the first shape of the settings): by hand, no choice; the mouse switch of version 2.
 SaneUIDB = { modules = { Tooltips = { options = { show = "never", cursor = true } } } }
 W.Fire("ADDON_LOADED", "SaneUI")
--- The scheduler's frames (Steps.lua): loading a pack, reading the characters
+-- The scheduler's frames (Steps.lua): reading the characters
 local function Steps(frames)
     local steps = Core.Steps.frame
     for _ = 1, frames or 10 do
@@ -308,8 +308,8 @@ for _, file in ipairs(files) do
     W.Load(root, "SaneUI_Tooltips", "Tooltips/" .. file, ns)
 end
 check(SaneUI.Tooltips == ns and ns.addon == "SaneUI_Tooltips", "the module is an addon of its own")
-check(ns.QuestFacts == nil and ns.Quests and Data.Set("Quests"):State() == "idle",
-    "the module keeps no quest data of its own: it reads Core's, whose pack is not loaded before anybody asks for it")
+check(ns.QuestFacts == nil and ns.Quests and Data.Set("Quests"):State() == "ready",
+    "the module keeps no quest data of its own: it reads Core's, there with Core")
 W.Fire("ADDON_LOADED", "SaneUI_Tooltips")
 local options = ns.options
 check(options == Core.Settings("Tooltips"), "the switches are the table Core keeps for the module")
@@ -339,9 +339,9 @@ pinned.CloseButton:EnableMouse(true)
 ns.store.prices, ns.store.seen = { [1] = 5, [2] = 6, [3] = 7, [4] = "lots" }, { [1] = 100 - 31, [2] = 100 - 30, [4] = 100 }
 W.Fire("PLAYER_LOGIN")
 check(#postCalls == 1 and postCalls[1].kind == "ALL", "one listener for every kind of tooltip data")
-check(Data.Set("Quests"):State() == "loading" and Data.Set("Drops"):State() == "loading" and Data.Set("Disenchants"):State() == "loading",
-    "at the login the module asks for Core's data (Quests, Drops, Disenchants): loaded once the loading screen is gone")
-check(Data.Characters() == nil and Data.Count(4500) == nil, "and Core asks for the characters' data; until it is there, nothing is counted")
+check(Data.Set("Quests"):Ready() and Data.Set("Drops"):Ready() and Data.Set("Disenchants"):Ready(),
+    "at the login Core's data the module reads is there (Quests, Drops, Disenchants)")
+check(Data.Count(4500) == nil, "and Core reads the characters' data in steps; until they are done, nothing is counted")
 check(tip._scripts.OnTooltipCleared and tip._scripts.OnShow and ns.Panel.All()[tip] == nil,
     "the tooltips that also show hints are hooked at login; their panels are only made when first needed")
 check(ns.store.prices[1] == nil and ns.store.prices[2] == 6 and ns.store.prices[3] == nil and ns.store.seen[1] == nil,
@@ -1020,14 +1020,11 @@ local kobold = { { "Kobold", nil, { 1, 0.1, 0.1 } }, { "Level 5 Humanoid (Elite)
     { "The Kobold Menace", nil, GOLD, nil, LINE.QuestTitle, data = { id = 60 } }, { "4/10 Kobold Vermin slain", nil, nil, nil, LINE.QuestObjective },
     { "Not ours", added = true } }
 tip:Fill({ type = TYPE.Unit, guid = "Creature-0-1-2-3-1-4" }, kobold)
-check(row(panel, 8).left == "The Kobold Menace" and row(panel, 8).right == "" and count(panel) == 9 and askedLog == 0,
-    "before Core's quest data is loaded, a creature has the game's own quest lines and nothing of the data (no error)")
 W.Fire("LOADING_SCREEN_DISABLED")
 Steps()
-check(Data.Set("Quests"):Ready() and Data.Set("Drops"):Ready(), "once the loading screen is gone, the packs load (one a frame, out of combat)")
 check(row(panel, 6).left == "137 XP" and row(panel, 5).live == "health" and row(panel, 7).kind == "caption" and row(panel, 7).left == "Quest"
     and row(panel, 8).left == "The Kobold Menace",
-    "and the panel that is shown is read anew, by itself: experience (in Status, under its health), then the quests under the caption Quest")
+    "a creature with Core's quest data: experience (in Status, under its health), then the quests under the caption Quest")
 check(row(panel, 8).right == "Level 2" and row(panel, 8).rr == 1 and row(panel, 8).rb == 0,
     "a quest's name has its level at the right (the game's line says which quest it is), in the colour of how hard it is")
 check(row(panel, 9).icon == "kill" and row(panel, 9).left == "Kobold Vermin slain" and row(panel, 9).right == "4/10",
@@ -1550,8 +1547,6 @@ Steps()
 check(you.slots == "" and you.worn == nil and next(Data.Worn(Core.charKey)) == nil and Data.Count(6001) == nil,
     "everything taken off: the slots kept empty, the place worn gone")
 INVSLOT_AMMO, GetInventoryItemID = nil, function() return nil end
-W.Fire("PLAYER_LOGOUT")
-check(SaneUIDB.data and SaneUIDB.data.forever.saved.Characters > 0, "at the logout Core notes how much the characters' file holds (a lost file is noticed)")
 
 -- A buff -------------------------------------------------------------------------------------
 auras.player = { HELPFUL = { { isHelpful = true, dispelName = "Magic", duration = 1800, expirationTime = W.clock + 1000, sourceUnit = "mouseover", auraInstanceID = 7 } } }

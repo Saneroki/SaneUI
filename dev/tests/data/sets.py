@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""A module's sample data on the real schemas, compiled into packs for that module's tests: a copy of the real
-master's tables and schemas (assets/data) with the sample's lines in place of the real ones, checked, then the
-packs of a game version (forever unless given) written into <out>. So a module is tested on a few made-up
-entries, never on the real data, in the very shape the real packs have.
+"""A module's sample data on the real schemas, compiled into set files for that module's tests: a copy of the
+real master's tables and schemas (assets/data) with the sample's lines in place of the real ones, checked, then
+the set files of a game version (forever unless given) written into <out>/Sets. So a module is tested on a few
+made-up entries, never on the real data, in the very shape the real set files have.
 
-Usage: python3 -I dev/tests/data/packs.py <sample folder> <out folder> [game version]
+Usage: python3 -I dev/tests/data/sets.py <sample folder> <out folder> [game version]
        the sample folder holds <Set>/<Set>.jsonl files, as the master does"""
 import shutil
 import sys
@@ -21,7 +21,7 @@ import master as masters  # noqa: E402
 
 
 def main(sample, out, game="forever"):
-    with tempfile.TemporaryDirectory(prefix="saneui-packs-") as folder:
+    with tempfile.TemporaryDirectory(prefix="saneui-sets-") as folder:
         root = Path(folder) / "data"
         root.mkdir()
         for name in masters.TOP:
@@ -37,7 +37,7 @@ def main(sample, out, game="forever"):
             print("\n".join(master.errors), file=sys.stderr)
             return 1
         Path(out).mkdir(parents=True, exist_ok=True)
-        compiler.compile_packs(master, Path(out), game)
+        compiler.compile_sets(master, Path(out), game)
     return 0
 
 

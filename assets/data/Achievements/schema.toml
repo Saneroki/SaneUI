@@ -1,6 +1,5 @@
 set = "Achievements"
 key = "int"              # the game's achievement ID
-pack = "Collections"
 learn = true             # the achievement window (GetAchievementInfo)
 about = "The achievements: name, what they ask, their points, category and reward (not the game's statistics)."
 

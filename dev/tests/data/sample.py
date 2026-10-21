@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""The sample master (dev/tests/data/sample) compiled for the game's tests (dev/tests/data.lua): the packs of
-each game version into <folder>/<game version>/, and next to them expected-<game version>.lua, every
+"""The sample master (dev/tests/data/sample) compiled for the game's tests (dev/tests/data.lua): the set files
+of each game version into <folder>/<game version>/Sets/, and next to them expected-<game version>.lua, every
 version of every entry as the Python side means it (with its build's patch), for Lua to compare with what its codec reads. The one
 place the two languages are held in step.
 
@@ -82,7 +82,7 @@ def main(folder):
     for game in GAMES:
         target = folder / game
         target.mkdir(parents=True, exist_ok=True)
-        compiler.compile_packs(master, target, game)
+        compiler.compile_sets(master, target, game)
         (folder / f"expected-{game}.lua").write_text(expected(master, game), encoding="utf-8")
     return 0
 

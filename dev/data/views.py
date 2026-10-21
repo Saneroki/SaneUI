@@ -1,5 +1,5 @@
 """What the master holds, for people (Doc/guides/data.md, *Tools*): an entry with every version and source
-(show), what a patch changed (diff), and counts and sizes per set and pack (stats). Each gives lines of text.
+(show), what a patch changed (diff), and counts and sizes per set (stats). Each gives lines of text.
 """
 import json
 
@@ -31,7 +31,7 @@ def _fields(schema, fields):
 
 def show(master, set_name, text, game=masters.LIVE):
     """An entry's versions, each as its line says (its sources and what it changed) with the fix laid on it,
-    then the entry as the packs carry it now."""
+    then the entry as the set files carry it now."""
     schema = master.schemas.get(set_name)
     if schema is None:
         return [f"'{set_name}' is no set ({', '.join(sorted(master.schemas))})."]
@@ -40,7 +40,7 @@ def show(master, set_name, text, game=masters.LIVE):
     if not versions:
         return [f"{set_name} has no {text!r} in {game}."]
     fixes = {fix.order(): fix for fix in master.fixes.get((set_name, game), [])}
-    out = [f"{set_name} {key!r} ({game}), in the pack {schema.pack}:"]
+    out = [f"{set_name} {key!r} ({game}):"]
     for version in versions:
         line = version.line
         if line is None:
@@ -104,11 +104,10 @@ def _size(count):
 
 
 def stats(master):
-    """Per game version: every set's entries, versions and file size in its pack, then each pack's totals."""
+    """Per game version: every set's entries, versions and file size, then the totals."""
     out = []
     for game in master.games:
-        packs = {}
-        rows = []
+        rows, total = [], [0, 0, 0]
         for name in sorted(master.schemas):
             schema = master.schemas[name]
             view = master.view(name, game)
@@ -120,19 +119,16 @@ def stats(master):
             gone = sum(1 for v in view.values() if v[-1].gone)
             own = len(master.lines.get((name, game), []))
             size = len(text.encode("utf-8"))
-            rows.append((name, schema.pack, entries, versions, changed, gone, own, _size(size)))
-            total = packs.setdefault(schema.pack, [0, 0, 0])
+            rows.append((name, entries, versions, changed, gone, own, _size(size)))
             total[0], total[1], total[2] = total[0] + 1, total[1] + entries, total[2] + size
         if not rows:
             out.append(f"{game}: no entries.")
             continue
         out.append(f"{game}:")
-        head = ("Set", "Pack", "Entries", "Versions", "Changed", "Gone", "Lines", "Size")
+        head = ("Set", "Entries", "Versions", "Changed", "Gone", "Lines", "Size")
         widths = [max(len(str(row[i])) for row in rows + [head]) for i in range(len(head))]
         for row in [head] + rows:
-            out.append("  " + "  ".join(str(cell).ljust(width) if i < 2 else str(cell).rjust(width)
+            out.append("  " + "  ".join(str(cell).ljust(width) if i < 1 else str(cell).rjust(width)
                                         for i, (cell, width) in enumerate(zip(row, widths))).rstrip())
-        for pack in sorted(packs):
-            sets, entries, size = packs[pack]
-            out.append(f"  pack {pack}: {sets} {'set' if sets == 1 else 'sets'}, {entries} entries, {_size(size)}")
+        out.append(f"  all: {total[0]} {'set' if total[0] == 1 else 'sets'}, {total[1]} entries, {_size(total[2])}")
     return out

@@ -515,8 +515,8 @@ only read.
   - Small pictures the game puts into a tooltip's lines (`AddTexture`).
 - **Tests:** `lua5.1 dev/tests/tooltips.lua`, on a few made-up quests, drops, nodes and a row of
   disenchanting compiled
-  into packs on the real schemas (`dev/tests/data/tooltips/`, `dev/tests/data/packs.py`): the quest part before
-  and after the packs are there, the Inventory section (whole names, two characters with one first name,
+  into set files on the real schemas (`dev/tests/data/tooltips/`, `dev/tests/data/sets.py`): the quest part,
+  the Inventory section (whole names, two characters with one first name,
   the account's bank, the total, bags and the bank read in steps, the bank only while open; only with Alt),
   the line that Alt shows more (tiny, between two rules, gone with Alt, none on a button's hint), a thing's own
   lines in one section Info, the durability bar with its words inside and round corners, a section's name in

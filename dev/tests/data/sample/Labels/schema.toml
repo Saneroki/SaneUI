@@ -1,6 +1,5 @@
 set = "Labels"
 key = "text"
-pack = "Words"
 about = "Made-up words keyed by a name."
 
 [fields]

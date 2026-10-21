@@ -264,5 +264,5 @@ function Gathering.Start(arrived)
     end
     OBJECTS:OnStamp(Arrived)
     DROPS:OnStamp(Arrived)
-    Data.Prepare("Objects") -- (in the same pack as Drops, which Quests.lua asks for too)
+    Data.Prepare("Objects")
 end

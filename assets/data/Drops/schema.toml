@@ -1,6 +1,5 @@
 set = "Drops"
 key = "text"             # npc:<creature ID>, object:<object ID>, zone:<map ID> (fishing): the kinds of ID overlap
-pack = "World"
 learn = false            # counted in play per build period into the pack's saved file (step 1d.3), not learned rows
 about = "What creatures, objects and fishing waters give: per item how, how often and the chance per corpse looted (Doc/ideas/Data.md, *Drop rates and gathering*)."
 

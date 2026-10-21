@@ -1,6 +1,5 @@
 set = "QuestAreas"
 key = "text"             # <quest>/<objective>/<stage>/<map>: one area per objective, stage and map
-pack = "Spawns"
 learn = true             # a cell where an objective's count went up is added (Doc/ideas/Data.md, *Quest areas*)
 about = "Where a quest's objectives are found, as the game shades it on its map: cells in runs per row, with their middle and size."
 

@@ -32,8 +32,8 @@ local Core = SaneUI.Core
 --  An NPC with many points on a map (a wanderer, a rare) stands at the middles of its areas there instead; a
 --  boat or a zeppelin at each of its docks (Travel's docks), one place per dock even where it stops twice.
 --
---  Read as a job of the scheduler when a set it reads arrives or changes. A set no pack holds (empty in the
---  master, so not shipped) or switched off is passed over without a word: its places are simply not there.
+--  Read as a job of the scheduler when a set it reads arrives or changes. A set Core does not hold (empty in the
+--  master, so not shipped) or refused is passed over without a word: its places are simply not there.
 -------------------------------------------------------------------------------
 local Data = Core.Data
 
@@ -53,13 +53,13 @@ local listeners = {}
 local job, stale -- a walk is running; a set changed while it ran
 local FROZEN = { __newindex = function() error("a place of Sane UI's data is read-only", 2) end }
 
--- Whether a set can be had: there is a pack for it, and it is not switched off or refused.
+-- Whether a set can be had: Core holds it (or is still reading it), and it is not refused.
 local function Usable(handle)
     local state = handle:State()
-    return state == "ready" or state == "loading" or state == "idle"
+    return state == "ready" or state == "loading"
 end
 
--- A record or an index' keys of a set that can be had; nothing (and no word) from one no pack holds.
+-- A record or an index' keys of a set that can be had; nothing (and no word) from one Core does not hold.
 local function Get(name, key)
     local handle = handles[name]
     return Usable(handle) and handle:Get(key) or nil
@@ -213,8 +213,8 @@ local function Read()
     Next(1)
 end
 
--- A set changed or arrived: read again on the next frame, once for all the sets told together (those of
--- one pack arrive at once); after the walk running now, if one is.
+-- A set changed or arrived: read again on the next frame, once for all the sets told together (those read
+-- with Core arrive at once); after the walk running now, if one is.
 local Reread = Core.Later(function()
     if job then stale = true else Read() end
 end)

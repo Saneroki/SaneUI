@@ -2,7 +2,7 @@ local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
 --  Sane UI - Core - Steps
---  One scheduler for the long work of Core's data framework: loading packs, a walk over a set, later the
+--  One scheduler for the long work of Core's data framework: a walk over a set, later the
 --  auction scan's reading, shared data taken in, the characters, the crawl; and of Core's other long work
 --  (Sync's finding of the game's CVars). A job is a coroutine that does a piece of work, then asks
 --  Steps.Check whether the frame's time is spent; if it is, the job yields and goes on in the next frame.
@@ -223,7 +223,7 @@ function Steps.Fresh()
 end
 
 -- In a job: this frame's time is all used; nothing else runs in it. After Fresh, a step that cannot be cut
--- (loading a pack) runs alone in its frame.
+-- runs alone in its frame.
 function Steps.Spend()
     if not current or coroutine.running() ~= current.thread then return end
     spent = true

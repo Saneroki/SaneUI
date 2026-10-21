@@ -1,6 +1,5 @@
 set = "Vendors"
 key = "int"              # the vendor's creature ID
-pack = "Market"
 learn = true             # at every vendor (MERCHANT_SHOW); the same on every realm
 about = "What each vendor sells, for how much, how many, and in which other currency."
 

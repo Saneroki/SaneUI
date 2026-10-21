@@ -1,6 +1,5 @@
 set = "Spawns"
 key = "text"             # npc:<creature ID> or object:<object ID>: the two kinds of ID overlap
-pack = "Spawns"
 learn = true
 about = "What a map shows, and where: NPCs with a service, quest givers and objectives, rares, treasures, objects, herbs and ore; their points and areas."
 

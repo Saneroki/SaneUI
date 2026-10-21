@@ -35,7 +35,7 @@ local _, ns = ...
 --                    city in a mountain, a building's storeys); where it cannot be followed (the first plan, a
 --                    loading screen), the one Walk.Floor chooses (outdoors the highest, indoors the lowest); a lift
 --                    of the line ridden (Rode), the landing at its other end
---      without data  (the pack Routes not installed, or a plane it has nothing of): each walk a straight line
+--      without data  (the set Walking not there, or a plane it has nothing of): each walk a straight line
 --      the line      always from the player: at every step of the canvas' tracker where along it the player is
 --                    (the cut: of the next Planner.AHEAD parts of it, the first within Planner.SLACK yards of the
 --                    nearest), and it is drawn from the player's arrow to that point and on from there (Route.Cut);

@@ -1,6 +1,5 @@
 set = "Items"
 key = "int"              # the game's item ID
-pack = "Items"
 learn = true             # the game shows items in play: tooltips, bags, the crawl
 about = "Every item players can have, as the game says it, with its history: what it is, its stats and effects, its set."
 

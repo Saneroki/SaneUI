@@ -1568,8 +1568,9 @@ do
     local clock, frames = debugprofilestop, 0
     debugprofilestop = function() W.ms = W.ms + 0.05; return W.ms end -- every look takes its time
     local older, newer
+    local jobs = #Core.Steps.Jobs() -- Core's own since the login (the characters read)
     Fuzzy.Filter(long, "iron", { "name" }, function(found) older = found end)
-    check(older == nil and #Core.Steps.Jobs() == 1, "a long list is not filtered in the call: it is a job of the scheduler")
+    check(older == nil and #Core.Steps.Jobs() == jobs + 1, "a long list is not filtered in the call: it is a job of the scheduler")
     local step = Core.Steps.frame:GetScript("OnUpdate")
     step()
     frames = frames + 1

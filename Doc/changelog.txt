@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- The addon list is tidy again: Sane UI's data is part of Sane UI
+  itself and is read with it, so only the modules you choose are
+  listed, and no "Data:" entries any more.
 - Navigation: indoor maps show only inside buildings and caves, no
   longer on Stormwind's and Orgrimmar's streets. Dungeon maps show no
   arrow for you (the game gives no position inside an instance). Hold

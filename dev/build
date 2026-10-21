@@ -17,14 +17,14 @@
 #      only development needs (the READMEs), plus the project's licence, which covers every
 #      addon. These folders are the ones to hand to other people. A module's art comes from
 #      assets/optimized/<its folder> (src/Core + assets/optimized/Core -> BUILD/SaneUI). The Atlas
-#      takes its index from there too, and is built only once dev/tools/atlas has made it. Then the data packs
-#      (BUILD/SaneUI_Data_*), compiled from the master in assets/data by dev/tools/data: Forever
-#      live's (Doc/guides/data.md).
+#      takes its index from there too, and is built only once dev/tools/atlas has made it. Then Core's data
+#      sets (BUILD/SaneUI/Sets, listed at the end of its TOC), compiled from the master in assets/data by
+#      dev/tools/data: Forever live's (Doc/guides/data.md).
 #   3. With --install: copies them into WoW: Forever's AddOns folder, and removes a module's folder there under its
-#      old name (SaneUI_Chat, now SaneUI_Social; SaneUI_Spellbook, now SaneUI_Abilities). The data
-#      packs go in as the game folder's product says (.flavor.info): live's into live's folder; into
-#      a beta's or PTR's folder that game version's, compiled into a scratch folder; none into a
-#      folder of a product not known. A module of ours that this build does not have (one the
+#      old name (SaneUI_Chat, now SaneUI_Social; SaneUI_Spellbook, now SaneUI_Abilities; the data
+#      packs SaneUI_Data_*, now part of Core). Core's sets go in as the game folder's product says
+#      (.flavor.info): live's into live's folder; into a beta's or PTR's folder that game version's,
+#      compiled into the game's copy of Core. A module of ours that this build does not have (one the
 #      release predates) is taken out of the game, so a release never runs with newer modules.
 #
 # Why a copy and not a symlink: the game runs inside Steam's container, which
@@ -107,26 +107,18 @@ if [ ! -f "$root/assets/optimized/Atlas/Index.lua" ]; then
 fi
 names="$(printf '%s\n' "${!source[@]}" | sort)"
 
-# LICENSE.txt is not in src (it is the project's LICENSE): keep it when rsync tidies the build. An addon with art
-# from assets gets both folders' files; rsync copies only what changed.
-to_build() { rsync -a --delete --exclude='*.md' --exclude='/LICENSE' --filter='P /LICENSE.txt' "${@:2}" "${source[$1]}/" ${assets[$1]:+"${assets[$1]}/"} "$build/$1/"; }
+# LICENSE.txt is not in src (it is the project's LICENSE), nor are Core's sets (Sets/, dev/tools/data compile
+# keeps them): keep both when rsync tidies the build. An addon with art from assets gets both folders' files;
+# rsync copies only what changed.
+to_build() { rsync -a --delete --exclude='*.md' --exclude='/LICENSE' --filter='P /LICENSE.txt' --filter='P /Sets/' "${@:2}" "${source[$1]}/" ${assets[$1]:+"${assets[$1]}/"} "$build/$1/"; }
 to_game() { rsync -a --delete "${@:2}" "$build/$1/" "$addons/$1/"; }
 
-# stale <folder>: the Sane UI addons in it that this build does not make (a module renamed or removed).
-# The data packs are not among them: dev/tools/data compile keeps its own folders.
+# stale <folder>: the Sane UI addons in it that this build does not make (a module renamed or removed; the
+# data packs SaneUI_Data_* of before, now part of Core).
 stale() {
     local dir
     for dir in "$1"/SaneUI "$1"/SaneUI_*; do
-        case "$(basename "$dir")" in SaneUI_Data_*) continue ;; esac
         if [ -d "$dir" ] && [ -z "${source[$(basename "$dir")]:-}" ]; then echo "$dir"; fi
-    done
-}
-
-# The data packs of a folder: SaneUI_Data_* (the master's, made by dev/tools/data compile).
-packs() {
-    local dir
-    for dir in "$1"/SaneUI_Data_*; do
-        if [ -d "$dir" ]; then basename "$dir"; fi
     done
 }
 
@@ -142,13 +134,8 @@ if [ "$mode" = "--check" ]; then
     stale "$build" | sed 's/^/Would be removed from the build: /'
     scratch="$(mktemp -d)"
     "$root/dev/tools/data" compile "$scratch" >/dev/null
-    for pack in $(packs "$scratch"); do
-        echo "BUILD/$pack would change like this:"
-        rsync -a --delete --dry-run --itemize-changes "$scratch/$pack/" "$build/$pack/"
-    done
-    for pack in $(packs "$build"); do
-        [ -d "$scratch/$pack" ] || echo "Would be removed from the build: $build/$pack"
-    done
+    echo "BUILD/SaneUI/Sets would change like this:"
+    rsync -a --delete --checksum --dry-run --itemize-changes "$scratch/Sets/" "$build/SaneUI/Sets/"
     rm -rf "$scratch"
     echo "Nothing written (--check)."
     exit 0
@@ -166,7 +153,7 @@ for name in $names; do
     sed -i "/^## Version:/a ## X-SaneUI-Build: $mark" "$build/$name/$name.toc"
     echo "Built: ${build#"$here"/}/$name ($(find "$build/$name" -type f | wc -l) files)"
 done
-"$root/dev/tools/data" compile "$build" | sed "s|$root/||; s|$here/||"
+"$root/dev/tools/data" compile "$build/SaneUI" | sed "s|$root/||; s|$here/||"
 echo "Version $(sed -n 's/^## Version: //p' "$build/SaneUI/SaneUI.toc"), $mark."
 
 if [ -z "$install" ]; then
@@ -201,37 +188,21 @@ if [ "$build" != "$here/BUILD" ]; then
         fi
     done
 fi
-# Our own old names (a module renamed): those folders are ours, and would load next to the new one.
-for old in SaneUI_Chat SaneUI_Spellbook; do
+# Our own old names (a module renamed, the data packs now in Core): those folders are ours, and would load next
+# to the new one.
+for old in SaneUI_Chat SaneUI_Spellbook $(cd "$addons" && ls -d SaneUI_Data_* 2>/dev/null); do
     if [ -d "$addons/$old" ] && [ -z "${source[$old]:-}" ]; then
         rm -rf "${addons:?}/$old"
-        echo "Removed from the game, the module's old name: $addons/$old"
+        echo "Removed from the game, an old folder of ours: $addons/$old"
     fi
 done
-# The data packs of the game folder's own game version (Doc/guides/data.md, *Game versions*).
+# Core's sets of the game folder's own game version (Doc/guides/data.md, *Game versions*): the build has live's;
+# a beta's or PTR's game copy of Core gets that game version's in their place.
 game="$("$root/dev/tools/data" game "$wow" || true)"
 if [ -z "$game" ]; then
-    echo "No data packs installed: the game folder's product (.flavor.info) is not one Sane UI knows." >&2
-    from=""
-elif [ "$game" = "forever" ]; then
-    from="$build"
-else
-    from="$(mktemp -d)"
-    "$root/dev/tools/data" compile "$from" --game "$game" >/dev/null
-fi
-if [ -n "$from" ]; then
-    for pack in $(packs "$from"); do
-        rsync -a --delete "$from/$pack/" "$addons/$pack/"
-        echo "Installed: $addons/$pack ($game)"
-    done
-    # Packs this build no longer makes are ours (the SaneUI_Data_ names are the master's).
-    for pack in $(packs "$addons"); do
-        if [ ! -d "$from/$pack" ]; then
-            rm -rf "${addons:?}/$pack"
-            echo "Removed from the game, a pack this build does not make: $addons/$pack"
-        fi
-    done
-    [ "$from" = "$build" ] || rm -rf "$from"
+    echo "Core's sets are live's: the game folder's product (.flavor.info) is not one Sane UI knows, so Core uses none." >&2
+elif [ "$game" != "forever" ] && [ -d "$addons/SaneUI" ]; then
+    "$root/dev/tools/data" compile "$addons/SaneUI" --game "$game" | sed "s|$addons/||"
 fi
 # Not ours to delete: somebody else's addon may carry that name.
 stale "$addons" | sed 's/^/In the game but not in this build, remove it by hand if it is an old module: /'

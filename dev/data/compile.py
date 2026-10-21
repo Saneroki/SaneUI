@@ -1,8 +1,9 @@
-"""The master into packs (Doc/guides/data.md, *Compiling: the packs*).
+"""The master into Core's set files (Doc/guides/data.md, *Compiling: the set files*).
 
-A pack is a load-on-demand addon, SaneUI_Data_<Pack>: its TOC, one Lua file per set and the project's
-licence. Compiling is a pure function of the master: no date, no clock, entries sorted by key, so the same
-master always gives the same bytes.
+Every set is a Lua file of Core's addon, Sets/<Set>.lua, listed at the end of Core's TOC: the game reads all
+of them at the login, with Core (Saneroki, 2026-10-21: the data is wanted in the game anyway, and a second of
+loading screen and some memory are a fair price for it). Compiling is a pure function of the master: no date,
+no clock, entries sorted by key, so the same master always gives the same bytes.
 """
 import hashlib
 import re
@@ -12,9 +13,9 @@ import master as masters
 
 FORMAT = 1
 CHUNK = 50_000  # statements per Fill function: Lua 5.1 stops at 262,143 constants in one function
-PREFIX = "SaneUI_Data_"
-CORE_TOC = masters.ROOT / "src" / "Core" / "SaneUI.toc"
-LICENSE = masters.ROOT / "LICENSE"
+SETS = "Sets"  # the folder of Core's addon the set files go into
+TOC = "SaneUI.toc"
+MARK = "# The data sets: made by dev/tools/data from the master in assets/data; change the master, not these files."
 PLACEHOLDER = "00000000"
 LIST, PART, VERSION = "\x1e", "\x1f", "\x1c"  # characters 30, 31 and 28
 KEYWORDS = set("and break do else elseif end false for function if in local nil not or repeat return then true until while".split())
@@ -22,16 +23,6 @@ IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 # The products a game folder's .flavor.info names, and the game version each serves today. A beta or PTR
 # product serves whichever game is tested in it (Doc/ideas/SaneSync.md, *Finding the game*).
 PRODUCTS = {"wowf": "forever", "wow_classic_beta": "forever-beta"}
-
-
-def core_toc():
-    """Core's Interface and Version, which every pack carries."""
-    fields = {}
-    for line in CORE_TOC.read_text(encoding="utf-8").splitlines():
-        match = re.match(r"##\s*([^:]+?)\s*:\s*(.*)$", line)
-        if match:
-            fields[match.group(1)] = match.group(2).strip()
-    return fields.get("Interface", ""), fields.get("Version", "")
 
 
 def product_game(folder):
@@ -249,57 +240,36 @@ def set_file(master, schema, game):
     return text.replace(f"hash = {lua_string(PLACEHOLDER)}", f"hash = {lua_string(digest)}", 1), len(keys)
 
 
-def toc(master, pack, sets, game, interface, version):
-    """A pack's TOC. A pack of saved data (packs.toml: saved) says so; one without sets lists no file: the
-    game loads its saved variable all the same, and Core keeps what it reads in the game there."""
-    info = master.packs[pack]
-    marks = ([f"## X-SaneUI-Sets: {', '.join(sets)}"] if sets else []) + (["## X-SaneUI-Saved: 1"] if info.get("saved") else [])
-    lines = [
-        f"## Interface: {interface}",
-        f"## Title: {info['title']}",
-        f"## Notes: {info['notes']}",
-        "## Author: Saneroki",
-        f"## Version: {version}",
-        "## Category: Sane UI",
-        "## Group: SaneUI",
-        "## Dependencies: SaneUI",
-        "## LoadOnDemand: 1",
-        f"## SavedVariables: SaneUIData_{pack}",
-    ] + marks + [
-        f"## X-SaneUI-Format: {FORMAT}",
-        f"## X-SaneUI-Game: {game}",
-        "## X-License: MIT",
-        "",
-        "# Made by dev/tools/data from the master in assets/data; change the master, not this folder.",
-    ] + [f"{name}.lua" for name in sets]
-    return "\n".join(lines) + "\n"
+def list_in_toc(path, names):
+    """Lists the set files at the end of Core's TOC, below MARK: what stood below it before is replaced."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if MARK in lines:
+        lines = lines[:lines.index(MARK)]
+    while lines and not lines[-1].strip():
+        lines.pop()
+    lines += ["", MARK] + [f"{SETS}\\{name}.lua" for name in names]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def compile_packs(master, folder, game):
-    """Writes the packs of a game version into folder; removes the SaneUI_Data_* folders there it no longer
-    makes. Returns [(pack, sets, entries)] of the packs made."""
-    interface, version = core_toc()
+def compile_sets(master, folder, game):
+    """Writes the set files of a game version into folder/Sets (Core's addon); a set without entries gets none,
+    and a file there of a set no longer made is removed. When the folder holds Core's TOC, the files are listed
+    at its end. Returns [(set, entries)] of the files made."""
+    target = folder / SETS
+    target.mkdir(parents=True, exist_ok=True)
     made = []
-    for pack in sorted(master.packs):
-        sets = sorted(name for name, schema in master.schemas.items() if schema.pack == pack)
-        files, entries = {}, 0
-        for name in sets:
-            text, count = set_file(master, master.schemas[name], game)
-            files[f"{name}.lua"] = text
-            entries += count
-        if not entries and not master.packs[pack].get("saved"):
+    for name in sorted(master.schemas):
+        text, entries = set_file(master, master.schemas[name], game)
+        if not entries:
             continue
-        target = folder / f"{PREFIX}{pack}"
-        if target.exists():
-            shutil.rmtree(target)
-        target.mkdir(parents=True)
-        (target / f"{PREFIX}{pack}.toc").write_text(toc(master, pack, sets, game, interface, version), encoding="utf-8")
-        for name, text in files.items():
-            (target / name).write_text(text, encoding="utf-8")
-        shutil.copyfile(LICENSE, target / "LICENSE.txt")
-        made.append((pack, sets, entries))
-    names = {f"{PREFIX}{pack}" for pack, _, _ in made}
-    for old in sorted(folder.glob(f"{PREFIX}*")):
-        if old.is_dir() and old.name not in names:
-            shutil.rmtree(old)
+        path = target / f"{name}.lua"
+        if not path.exists() or path.read_text(encoding="utf-8") != text:  # unchanged files keep their time
+            path.write_text(text, encoding="utf-8")
+        made.append((name, entries))
+    names = {name for name, _ in made}
+    for old in sorted(target.glob("*.lua")):
+        if old.stem not in names:
+            old.unlink()
+    if (folder / TOC).exists():
+        list_in_toc(folder / TOC, [name for name, _ in made])
     return made

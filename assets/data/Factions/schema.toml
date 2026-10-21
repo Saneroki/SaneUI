@@ -1,6 +1,5 @@
 set = "Factions"
 key = "int"              # the game's faction ID
-pack = "Game"
 learn = true             # the reputation panel (C_Reputation)
 about = "The factions the reputation panel shows: their name, what they are, and the header they stand under."
 

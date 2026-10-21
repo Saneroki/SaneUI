@@ -1,6 +1,5 @@
 set = "QuestSpells"
 key = "text"             # <spell ID>/<way>: one entry per way to the reward
-pack = "Spells"
 learn = false
 about = "Spells that quests give, by class: each way to one, for which races, from which level, where it starts and by which quests (today Abilities' Data/QuestSpells)."
 

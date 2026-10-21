@@ -12,9 +12,9 @@ Sane UI is one addon per folder in src: SaneUI (Core) and one for each module.
   3. Every Lua file parses (the game's Lua is 5.1).
   4. No file writes a global that is not Sane UI's own: all addons share one set of globals,
      and a stray one (a forgotten "local") can break another addon or the game's own code.
-  5. The data packs (Doc/guides/data.md), compiled from the master for every game version into a scratch
-     folder: their TOCs (load on demand, under Sane UI, the X-SaneUI lines, the saved variable, Core's
-     Interface and Version), their files, and their Lua, which parses and writes no global.
+  5. Core's data sets (Doc/guides/data.md), compiled from the master for every game version into a scratch
+     copy of Core's TOC: every set file listed at its end, their Lua parses and writes no global; and Core's
+     TOC declares every saved variable of the data (Data.SAVED in Data/Data.lua) as SaneUIData_<Name>.
   6. Every function Sane UI gives the game to call later, in Core and in every module, is behind a guard
      (Doc/guides/addon-standards.md, section 10): a frame's script, a hook, a timer; a menu's function (its
      lines, a dropdown's menu, its words for the choice, whether it is at its default and its reset, a line's
@@ -141,40 +141,35 @@ def check_lua(paths, base, allowed=OWN):
                 problems.append(f"{path.relative_to(base)}:{line}: writes the global '{name}' (forgotten 'local'?)")
 
 
-def check_packs(core):
-    """Compiles the master's packs for every game version and checks each pack. Returns how many."""
+def check_sets(core):
+    """Compiles the master's sets for every game version and checks them; checks that Core's TOC declares the
+    data's saved variables. Returns how many set files."""
     import check as checks
     import compile as compiler
     import master as masters
+    toc = SRC / "Core" / f"{MAIN}.toc"
+    saved = re.search(r"^Data\.SAVED = \{([^}]*)\}", (SRC / "Core" / "Data" / "Data.lua").read_text(encoding="utf-8"), re.M)
+    names = {f"SaneUIData_{name}" for name in re.findall(r"(\w+)\s*=\s*true", saved.group(1))} if saved else set()
+    declared = {name.strip() for name in core.get("SavedVariables", "").split(",")}
+    if not names or names - declared:
+        problems.append(f"{toc.relative_to(SRC)}: '## SavedVariables' lacks the data's {', '.join(sorted(names - declared)) or 'Data.SAVED'}")
     data = masters.Master().load()
     checks.check(data)
     if data.errors:
-        problems.append("the data packs are not checked: the master has problems (dev/tools/data check)")
+        problems.append("Core's data sets are not checked: the master has problems (dev/tools/data check)")
         return 0
     count, folder = 0, Path(tempfile.mkdtemp(prefix="saneui-lint-"))
     try:
         for game in data.games:
-            made = compiler.compile_packs(data, folder / game, game)
-            for pack, sets, _ in made:
-                name = compiler.PREFIX + pack
-                where = f"data pack {name} ({game})"
-                toc = folder / game / name / f"{name}.toc"
-                fields, listed = read_toc(toc)
-                want = {"Interface": core.get("Interface"), "Version": core.get("Version"), "Dependencies": MAIN,
-                        "Group": MAIN, "LoadOnDemand": "1", "SavedVariables": f"SaneUIData_{pack}",
-                        "X-SaneUI-Sets": ", ".join(sets) or None, "X-SaneUI-Format": str(compiler.FORMAT), "X-SaneUI-Game": game,
-                        "X-SaneUI-Saved": "1" if data.packs[pack].get("saved") else None}
-                for field, value in want.items():
-                    if fields.get(field) != value:
-                        problems.append(f"{where}: '## {field}: {fields.get(field)}', wants '{value}'")
-                for field in ("Title", "Notes", "Author"):
-                    if not fields.get(field):
-                        problems.append(f"{where}: no '## {field}'")
-                files = sorted(p for p in (folder / game / name).iterdir() if p.suffix == ".lua")
-                if sorted(listed) != files:
-                    problems.append(f"{where}: its TOC and its Lua files differ")
-                check_lua(files, folder, re.compile(r"^$"))
-                count += 1
+            (folder / game).mkdir()
+            shutil.copyfile(toc, folder / game / compiler.TOC)
+            made = compiler.compile_sets(data, folder / game, game)
+            _, listed = read_toc(folder / game / compiler.TOC)
+            files = sorted((folder / game / compiler.SETS).glob("*.lua"))
+            if sorted(path for path in listed if path.parent.name == compiler.SETS) != files or len(files) != len(made):
+                problems.append(f"Core's data sets ({game}): its TOC and its set files differ")
+            check_lua(files, folder, re.compile(r"^$"))
+            count += len(files)
     finally:
         shutil.rmtree(folder)
     return count
@@ -400,11 +395,11 @@ counts = check_tocs()
 check_lua(sorted(SRC.rglob("*.lua")), SRC)
 check_lua(sorted(ASSETS.glob("*/*.lua")), SRC.parent)
 core_fields, _ = read_toc(SRC / "Core" / f"{MAIN}.toc")
-packs = check_packs(core_fields)
+sets = check_sets(core_fields)
 doors = check_guards(p for p in SRC.iterdir() if p.is_dir())
 for problem in problems:
     print(problem, file=sys.stderr)
 if problems:
     sys.exit(1)
 print(f"Lint: {len(counts)} addons, {sum(counts)} files in their TOCs, all there, all parse, no stray globals, "
-      f"every door guarded ({doors['bare']} marked bare, {doors['guarded']} marked guarded); {packs} data packs fit.")
+      f"every door guarded ({doors['bare']} marked bare, {doors['guarded']} marked guarded); {sets} data set files fit.")

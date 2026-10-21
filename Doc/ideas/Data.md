@@ -74,7 +74,19 @@ framework gives that data one home in Core, so that:
 
 ## Sets by concern
 
-A pack is cut by **who needs it and when**: what is needed together at the same moment goes into one pack;
+**Every set is part of Core (Saneroki, 2026-10-21), in place of the packs below** (decisions 1 and 2 overturned).
+The data packs as addons of their own filled the addon list and made the modules the player chooses hard to
+find, and loading on demand bought little: the whole master is 22 MB of set files, measured at about 0.1 s
+of loading screen and 25 MB of memory (none of it on the graphics card), and most of it is wanted in the
+game anyway; a second of loading screen and a few hundred megabytes of memory are acceptable. So
+`dev/tools/data` writes every set as `Sets/<Set>.lua` into Core's addon, listed at the end of Core's TOC, and
+the data's saved variables are Core's (`SaneUIData_Characters`, `SaneUIData_Guild`, later the series and
+what is learned), in Core's one saved file. The table below keeps the concerns; its *Loads* column is
+history. Whatever this plan says of loading a pack, a pack switched off or a pack's TOC lines no longer
+holds; the guide is the reference (*Core's TOC*, *Loading*, *Saved variables*). A pack's own code (decision
+24) goes into Core.
+
+A pack was cut by **who needs it and when**: what is needed together at the same moment goes into one pack;
 what is big and needed rarely (spawn places, long price history) gets its own, so it does not load with
 the rest.
 
@@ -496,6 +508,9 @@ Prices:Range(item, fromDay, toDay)        -- the shipped archive and the saved d
 
 ### Loading
 
+*Superseded (Saneroki, 2026-10-21): every set is read with Core at the login (*Sets by concern*). What
+follows is how the packs were loaded.*
+
 - At login Core finds the packs and their sets from their TOC lines (`## X-SaneUI-Sets: Items, ItemSets`,
   `## X-SaneUI-Format: 1`), read with `C_AddOns.GetAddOnMetadata` without loading them. Core needs no
   generated list of its own.
@@ -689,6 +704,10 @@ build it looks for what changed, during the loading.
 ## Live data
 
 ### Saved variables
+
+*Since 2026-10-21 the data's saved variables are Core's (*Sets by concern*): all in Core's one saved file, so
+the budget of values below is the whole file's, and a lost file loses all of them at once (no warning per
+variable any more).*
 
 - **Each pack declares its own saved variable** (`SaneUIData_Market`, `SaneUIData_Items`): the client loads
   it only with its pack, so months of auction history never slow a login that does not need them. Settings

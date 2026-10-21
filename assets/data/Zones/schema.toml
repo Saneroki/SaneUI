@@ -1,6 +1,5 @@
 set = "Zones"
 key = "int"              # the game's map ID (C_Map)
-pack = "World"
 learn = false
 about = "The zones: their names, level ranges, sides and continents, in the order players come to them."
 

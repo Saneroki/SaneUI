@@ -2,8 +2,8 @@ local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
 --  Sane UI - Core - Codec
---  A row of a data pack into a record (Doc/guides/data.md, *A row*). A row is one string: its build, its
---  day, then the fields in the order the pack's header names them, a tab between them; inside a field,
+--  A row of a data set into a record (Doc/guides/data.md, *A row*). A row is one string: its build, its
+--  day, then the fields in the order the set's header names them, a tab between them; inside a field,
 --  character 30 between a list's or map's elements and character 31 between an element's parts. Game text
 --  holds none of these, so a row is taken apart with plain finds and nothing is escaped. An empty part is
 --  no value. A row of only a build and a day is a gone version.
@@ -68,7 +68,7 @@ local function Element(spec)
     return decode
 end
 
--- The function that reads one field's part (never an empty one), from its type in the pack's header:
+-- The function that reads one field's part (never an empty one), from its type in the set's header:
 -- int, number, text, bool, point, tuple(...), list <element>, map <int|text> <element>.
 local function Field(spec)
     local of = match(spec, "^list (.+)$")
@@ -106,7 +106,7 @@ local function Field(spec)
 end
 
 -- A decoder for the rows of a set: decode(row) gives a record, field = value, with since and day; a gone
--- version gives { since, day, gone = true }. Errors on a type it does not know (the pack is refused then).
+-- version gives { since, day, gone = true }. Errors on a type it does not know (the set is refused then).
 function Codec.Decoder(fields, types)
     assert(type(fields) == "table" and type(types) == "table" and #fields == #types, "fields and types do not match")
     local decoders = {}
@@ -138,7 +138,7 @@ function Codec.Build(row)
     return tonumber(match(row, "^(%d+)"))
 end
 
--- An entry's older versions (a pack's history string), oldest first; none for one that is no text.
+-- An entry's older versions (a set's history string), oldest first; none for one that is no text.
 function Codec.Versions(history)
     if type(history) ~= "string" then return {} end
     return Cut(history, VERSION)

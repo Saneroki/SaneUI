@@ -14,8 +14,8 @@ local _, ns = ...
 --      Account bank                     Bank 5
 --      Total                                26    with two or more
 --
---  Only while Alt is held. Nothing until Core has read the characters (the pack
---  Characters loaded), nothing for an item none of them has.
+--  Only while Alt is held. Nothing until Core has read the characters (in steps
+--  after the login), nothing for an item none of them has.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Data = Core.Data

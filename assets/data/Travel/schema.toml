@@ -1,7 +1,6 @@
 set = "Travel"
 key = "int"              # the game's TaxiPath ID of a flight, a boat or a zeppelin; our own number for a way the game has no path for
                          # (the tram 1000369; a lift's car from 1100001 on, kept for a car at the same place: dev/tools/travel-data)
-pack = "World"
 learn = true             # the flight master's watcher: flights and their costs
 about = "The ways to travel other than on foot: boats, zeppelins, trams, lifts, portals and flights, with their times."
 

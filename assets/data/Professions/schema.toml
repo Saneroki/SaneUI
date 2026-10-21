@@ -1,6 +1,5 @@
 set = "Professions"
 key = "int"              # the game's spell ID of the recipe
-pack = "Spells"
 learn = true             # the profession window, while it is open
 about = "The professions' recipes: what each makes, from what, at which skill, with which tools and cooldown."
 

@@ -5,8 +5,8 @@ local _, ns = ...
 --  The land as the minimap shows it, at every zoom, in two levels of detail:
 --
 --      tiles      the game's own minimap textures, one of 512 x 512 per tile of a continent's
---                 grid (Coords.lua); which file a tile shows is Core's data, the set Tiles (pack
---                 World). Drawn while at most Terrain.CAP of them are in view.
+--                 grid (Coords.lua); which file a tile shows is Core's data, the set Tiles.
+--                 Drawn while at most Terrain.CAP of them are in view.
 --      overview   the same tiles at 64 x 64 texels, eight by eight in one texture of the module's
 --                 own (Art/Terrain/<continent>-<row>-<column>.blp, made by dev/tools/terrain-art):
 --                 a whole continent in a few dozen textures. Always drawn, under the tiles, so the

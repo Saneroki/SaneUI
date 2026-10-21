@@ -1,6 +1,5 @@
 set = "Encounters"
 key = "int"              # the game's encounter ID (DungeonEncounter)
-pack = "World"
 learn = true             # ENCOUNTER_START names it
 about = "The bosses of the dungeons and raids: name, the instance they are in, their order there and the difficulty."
 

@@ -1,6 +1,5 @@
 set = "Disenchants"
 key = "int"              # the game's row of disenchanting (its client table ItemDisenchantLoot)
-pack = "Items"
 learn = false
 about = "What disenchanting gives: per range of items (their class, quality and item levels) the materials, how often and how many."
 

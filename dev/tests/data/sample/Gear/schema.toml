@@ -1,6 +1,5 @@
 set = "Gear"
 key = "int"
-pack = "Gear"
 learn = true
 about = "Made-up things, one field of every type."
 

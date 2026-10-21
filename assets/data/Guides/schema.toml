@@ -1,6 +1,5 @@
 set = "Guides"
 key = "int"              # a guide, numbered by our tool
-pack = "Guides"
 learn = false
 about = "The leveling guides: per guide its side, levels and the guide after it; per step its places, actions, checks and for whom (Doc/ideas/Navigation.md, *Leveling guide*)."
 

@@ -1,13 +1,13 @@
 """A set's schema (assets/data/<Set>/schema.toml) and the values its fields take.
 
-The schema says a set's key, its pack and its fields in the order a pack's rows carry them; this file reads
+The schema says a set's key and its fields in the order a set's rows carry them; this file reads
 it, checks it, and checks a value against a field. Doc/guides/data.md, *schema.toml*, is the reference.
 """
 import math
 import re
 import tomllib
 
-# Characters a pack's row is cut by: a tab between fields, 30 between a list's elements, 31 between an
+# Characters a set's row is cut by: a tab between fields, 30 between a list's elements, 31 between an
 # element's parts, 28 between the versions of an entry's history. No text may hold them.
 CUTS = re.compile("[\t\x1c\x1e\x1f]")
 
@@ -60,7 +60,6 @@ class Schema:
     def __init__(self):
         self.set = None
         self.key = None
-        self.pack = None
         self.learn = False
         self.about = None
         self.fields = []
@@ -145,16 +144,14 @@ def load(path, where=None):
         return None, [f"{where}: does not parse: {error}"]
     problems, schema = [], Schema()
     for word in data:
-        if word not in ("set", "key", "pack", "learn", "about", "fields", "index"):
+        if word not in ("set", "key", "learn", "about", "fields", "index"):
             problems.append(f"{where}: '{word}' is not part of a schema")
-    schema.set, schema.key, schema.pack = data.get("set"), data.get("key"), data.get("pack")
+    schema.set, schema.key = data.get("set"), data.get("key")
     schema.learn, schema.about = data.get("learn", False), data.get("about")
     if not (isinstance(schema.set, str) and NAME.match(schema.set)):
         problems.append(f"{where}: 'set' is the set's name (letters and digits, a capital first)")
     if schema.key not in ("int", "text"):
         problems.append(f"{where}: 'key' is \"int\" or \"text\"")
-    if not (isinstance(schema.pack, str) and NAME.match(schema.pack)):
-        problems.append(f"{where}: 'pack' names the pack the set goes into")
     if not isinstance(schema.learn, bool):
         problems.append(f"{where}: 'learn' is true or false")
     if not (isinstance(schema.about, str) and schema.about.strip()):

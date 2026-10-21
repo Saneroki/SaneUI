@@ -2,13 +2,12 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - Walk
---  Where a player can walk: Core's set Walking (pack Routes, loaded when the
---  first route is asked for), made from the game's own files by dev/tools/walk-
---  data. Per terrain tile a block: its floors joined into rectangles, each with
+--  Where a player can walk: Core's set Walking, made from the game's own files
+--  by dev/tools/walk-data. Per terrain tile a block: its floors joined into rectangles, each with
 --  its height, its kind (land or water), its region (all a player can walk
 --  between) and its openings into its neighbours. Knows no frames.
 --
---      Walk.Ready()            the set is there (asked for, loaded soon, if not)
+--      Walk.Ready()            the set is there
 --      Walk.Tile(key)          a tile's rectangles, unpacked the first time (the game's base64,
 --                              deflate and CBOR); the Walk.KEEP asked for last kept; nil without ground
 --      Walk.Rect(tile, index)  a rectangle's column, row, width, height (samples), z, kind, region
@@ -56,18 +55,15 @@ local open = {}   -- [tile key] = its tile, or false: no ground there
 local stamps = {} -- [tile key] = when it was last asked for (a count), while it is unpacked
 local kept, clock = 0, 0
 
--- Whether the walking data can be read now; asked for when not (its pack loads soon after).
+-- Whether the walking data can be read now.
 function Walk.Ready()
-    local state = Walking:State()
-    if state == "ready" then return true end
-    if state == "idle" or state == "loading" then Core.Data.Prepare("Walking") end
-    return false
+    return Walking:State() == "ready"
 end
 
--- Whether the walking data is there at all (its pack installed and switched on).
+-- Whether the walking data is there at all (Core holds it, or is still reading it).
 function Walk.Known()
     local state = Walking:State()
-    return state == "ready" or state == "idle" or state == "loading"
+    return state == "ready" or state == "loading"
 end
 
 local function Unpack(text)
