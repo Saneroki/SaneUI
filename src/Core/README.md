@@ -80,7 +80,9 @@ but for a window to try those with (`/sane window`).
   Sane UI's options (none set at first), and a key for each module that has one (Social: the chat window).
 - **The options** (Esc > Options > AddOns > Sane UI, see [Settings' README](Settings/README.md)): *Sane UI* itself shows only
   its logo; under it are Sane UI's own pages *Profiles*, *General* and *Appearance*, then a page per module
-  (*Social*, *Abilities*, *Tooltips*).
+  (*Social*, *Abilities*, *Tooltips*). On every full screen the cog in its title bar shows them there too
+  (*General*, *Appearance* and the modules' pages, the full screen's own module first); the question mark beside
+  it will hold a tour of that full screen.
 - **General switches:** on the page *General*: *Errors in chat* (on): a line in chat for each kind of problem.
   On the page *Appearance*, under *Windows*: *Animation type* (Glide): how every window docked to a screen
   edge fills the screen and goes back, and how a window opens while the mouse rests on it: *Glide* (quick,

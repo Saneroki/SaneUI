@@ -549,6 +549,60 @@ do
     other:Hide()
 end
 
+-- Sane UI's options on a full screen (Screen.lua): the pages the game's options have under Sane UI, in a view over
+-- the window, the window's own module chosen first; Esc takes the view away, not the full screen ----------------
+do
+    local Screen = Config.Screen
+    local escapes, lit = {}, nil
+    local frame = CreateFrame("Frame", nil, UIParent)
+    local window = { frame = frame, inside = CreateFrame("Frame", nil, frame), options = { edge = Core.Settings("Tabbed") },
+                     settings = CreateFrame("Button", nil, frame),
+                     edge = { full = true, Escapes = function(_, on) escapes[#escapes + 1] = on end } }
+    window.settings.LockHighlight = function() lit = true end
+    window.settings.UnlockHighlight = function() lit = false end
+    local before = #W.frames
+    Screen.Toggle(window)
+    local view = W.frames[before + 1]
+    check(Screen.Shown(window) and view._parent == frame and view._shown and view._points[1][2] == window.inside and lit
+        and escapes[1] == false and SaneUIEscape:IsShown(),
+        "the cog: the view over what the window holds, the cog lit; Esc is the view's now, not the full screen's")
+    local rows, names = {}, {}
+    for index = before + 1, #W.frames do
+        local widget = W.frames[index]
+        if widget._kind == "Button" and rawget(widget, "words") and rawget(widget, "bar") then
+            rows[widget.words._text] = widget
+            names[#names + 1] = widget.words._text
+        end
+    end
+    local function Says(text)
+        for index = before + 1, #W.frames do
+            local widget = W.frames[index]
+            if widget._kind == "FontString" and widget._text == text then
+                local up = widget
+                while up and up._shown do up = up._parent end
+                if up == nil then return true end
+            end
+        end
+        return false
+    end
+    check(table.concat(names, ", ") == "General, Appearance, Demo module, Listed module, Tabbed module",
+        "at the left Sane UI's pages as the game's options list them: General, Appearance, a page per module")
+    check(rows["Tabbed module"].bar._shown and not rows.General.bar._shown and Says("Tabbed module") and Says("Fade out"),
+        "the window's own module chosen first, its page drawn as in the game's options")
+    rows.General._scripts.OnClick(rows.General)
+    check(rows.General.bar._shown and not rows["Tabbed module"].bar._shown and Says("Errors in chat") and not Says("Fade out")
+        and not Says("Animations"), "another chosen: its page instead; Core's General without what is Appearance's")
+    SaneUIEscape:Hide()
+    check(not Screen.Shown(window) and escapes[2] == true and lit == false, "Esc: the view away, the full screen's Esc again")
+    Screen.Toggle(window)
+    check(Screen.Shown(window) and rows.General.bar._shown, "the cog again: the page last chosen")
+    Screen.Toggle(window)
+    check(not Screen.Shown(window), "and once more: away")
+    Screen.Toggle(window)
+    frame:Hide()
+    check(not Screen.Shown(window), "the window closed: the view goes with it")
+end
+
 -- The test modules go; the page Profiles is built the first time the game shows it
 for _, name in ipairs({ "Listed", "Tabbed" }) do
     Core.described[name], SaneUI[name], SaneUIDB.modules[name] = nil, nil, nil

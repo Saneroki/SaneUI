@@ -84,6 +84,7 @@ Sync\Game.lua
 Settings\Settings.lua
 Settings\Panel.lua
 Settings\Tabbed.lua
+Settings\Screen.lua
 Settings\Profiles.lua
 Settings\Synced.lua
 # The page Sane UI: links (Discord, website, GitHub) and feedback

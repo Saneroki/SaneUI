@@ -6,6 +6,25 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 386 (Navigation), 105 (Inventory), 90 (sheet), 237 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### Core: Sane UI's options on every full screen (Saneroki, 2026-10-21)
+- **The title bar of a full window** (`Window.lua`): two buttons more, left of the others, only while it fills the
+  screen: the game's cog (`questlog-icon-setting`, Sane UI's options over the full screen) and a question mark in
+  the game's gold words (`Square` takes `art.text`), the full screen's tour: the window's option `help`, without
+  which it does nothing yet.
+- **The options view** (new `Settings/Screen.lua`, `Config.Screen`): over what the window holds, in the layer
+  `DIALOG` (over the map's quest log), dark, taking the mouse and its wheel. At the left Sane UI's pages as the
+  game's options list them (*General*, *Appearance*, a page per module that is on and has switches) in the look of
+  the game's own list of pages; at the right the chosen one, drawn as a page in tabs is (`Config.BuildTabbed`),
+  built when first chosen; the window's module chosen first (found by the settings its edge reads), the last chosen
+  kept for the session. *All options* at the list's foot opens the game's options at Sane UI (Profiles is only
+  there), the full screen going back first. The cog again, Esc, the window going back or closing take it away;
+  while it is there Esc is its own (`edge:Escapes`, new in `Edge.lua`).
+- **`Config.BuildTabbed(page, name, onPage, title)`**: only the switches of one page (Core's *General* and
+  *Appearance*), its title; *Defaults* sets only those back (`Core.Reset(name, only)`).
+- Tests: Core 355 checks (the view, its pages, the window's module first, another chosen, Esc, the window closed),
+  windows 376 (the two buttons only on the full screen, the dropdown left of them), Social 565. A game restart takes
+  it in (a new file in Core's TOC).
+
 ### Navigation: the bosses' 3D models on the dungeon maps (Saneroki, 2026-10-21)
 - **Core's set *Dungeons***: each boss's tuple gains `display` (its look: the first creature of its entry in
   Blizzard's retail boss journal, `JournalEncounterCreature`, read from the local retail install), only where

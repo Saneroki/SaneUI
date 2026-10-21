@@ -726,8 +726,11 @@ check(placed == before + 1 and come.playing and come.moves[1].y == Edge.DROP and
     "what it holds is laid out for the new size, and comes in from a little above")
 local menu, wideBar = edge.classic, wideWindow.bar
 check(wideBar and wideBar:IsShown() and wideBar._points[1][1] == "TOPLEFT" and wideBar._height == Window.BAR
-    and wideWindow.buttons:IsShown() and #wideWindow.buttons.list == 2 and wideWindow.full.isMinimized == false,
+    and wideWindow.buttons:IsShown() and #wideWindow.buttons.list == 4 and wideWindow.full.isMinimized == false,
     "full, a window without a title bar of its own has one at its top: its buttons there, full screen offering the way back")
+check(wideWindow.settings:IsShown() and wideWindow.help:IsShown() and wideWindow.settings.picture._atlas == Window.SETTINGS
+    and wideWindow.help.picture._text == "?" and wideWindow.buttons.first == wideWindow.help,
+    "and, left of them, the game's cog (Sane UI's options over the full screen) and the question mark (its tour)")
 check(menu and menu:IsShown() and menu._override == Edge.CLASSIC and menu._parent == wide and menu._points[1][1] == "RIGHT"
     and menu._points[1][2] == wideWindow.buttons.first and #menu._items == 2 and menu._items[1].text == "Friends list",
     "and the dropdown Classic windows in the title bar, left of the buttons, with the game's windows it stands for")
@@ -995,10 +998,12 @@ local find, box = titleBar.find, titleBar.box
 check(titleBar:IsShown() and titleBar._height == Window.BAR and titleBar._points[1][1] == "TOPLEFT" and titleBar._points[2][1] == "TOPRIGHT"
     and titleBar.title._text == "Vendor" and titleBar.glass:IsShown() and titleBar._level == trader:GetFrameLevel() + Window.BAR_LEVEL,
     "a kind of window with a title bar has it across its top, above what it holds: a magnifier and its title at the left")
-check(buttons:IsShown() and buttons._parent == titleBar and #buttons.list == 3 and full == traderWindow.full and toggle == traderWindow.toggle
+check(buttons:IsShown() and buttons._parent == titleBar and #buttons.list == 5 and full == traderWindow.full and toggle == traderWindow.toggle
     and buttons._points[1][1] == "RIGHT" and close._points[1][1] == "RIGHT" and full._points[1][2] == close
     and toggle._points[1][2] == full and buttons.first == toggle,
     "at its right, from the right: close, full screen, the game's own window")
+check(not traderWindow.settings:IsShown() and not traderWindow.help:IsShown(),
+    "the options and the question mark are not there while it is small: only on its full screen")
 check(full.isMinimized == true and toggle._Normal._texture:find("SquareButton") and next(traderWindow.edge.strips) == nil,
     "full screen offers to fill the screen; the game's window is the game's square button")
 
@@ -1060,8 +1065,9 @@ check(traderWindow.edge.full and traderClock.playing and full.isMinimized == fal
 traderClock:Run(1)
 local traderMenu = traderWindow.edge.classic
 check(trader._width == 1920 and titleBar:IsShown() and traderMenu:IsShown() and traderMenu._points[1][1] == "RIGHT"
-    and traderMenu._points[1][2] == toggle and box._points[2][2] == traderMenu,
-    "full, its title bar is the full screen's: the dropdown Classic windows left of the buttons, the search box ending left of that")
+    and traderMenu._points[1][2] == traderWindow.help and traderWindow.help._points[1][2] == traderWindow.settings
+    and traderWindow.settings._points[1][2] == toggle and box._points[2][2] == traderMenu,
+    "full, its title bar is the full screen's: the options and the question mark, the dropdown Classic windows left of them, the search box ending left of that")
 trader:Hide()
 trader:Show()
 check(not traderWindow.edge.away and trader._width == 400, "hidden, it is back at its size")
@@ -1103,7 +1109,7 @@ at(plain, 860, 490)
 plainWindow.edge:Fill(true)
 plain._group:Run(1)
 local plainBar = plainWindow.bar
-check(plainBar and plainBar:IsShown() and #plainWindow.buttons.list == 2 and not plainBar.glass:IsShown(),
+check(plainBar and plainBar:IsShown() and #plainWindow.buttons.list == 4 and not plainBar.glass:IsShown(),
     "filling the screen it has the title bar at its top; without search, no magnifier")
 plainBar.find:GetScript("OnClick")(plainBar.find)
 check(not plainBar.box:IsShown(), "and its title opens no search")
@@ -1645,8 +1651,8 @@ do
         and views[1]._parent == demoWindow.inside and views[1]._points[1][5] == -Window.TABS,
         "two views behind the game's tabs, on top of them: the first chosen, built and shown, the second not built yet")
     local own = demoWindow.buttons.list[3]
-    check(#demoWindow.buttons.list == 3 and demoWindow.buttons.first == own and own._points[1][2] == demoWindow.full,
-        "a button of its module's own, left of Core's")
+    check(#demoWindow.buttons.list == 5 and demoWindow.buttons.first == own and own._points[1][2] == demoWindow.full,
+        "a button of its module's own, left of Core's (the options and the question mark only on its full screen)")
     local keepBox, demoWatch
     for index = before + 1, #W.frames do
         local widget = W.frames[index]

@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Every full screen has a cog in its title bar: Sane UI's options right
+  there, page by page, as in the game's options. A question mark beside
+  it will hold a tour of that screen.
 - Navigation: the travel overlay sits lower, two thirds up the screen,
   with a fine golden line that fills smoothly as you go. Waiting at a
   dock or a tram station, it shows when the next ship or train comes

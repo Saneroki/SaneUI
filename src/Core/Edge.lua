@@ -255,6 +255,12 @@ local function Escape(edge, on)
     Core.Escape(edge, on and Escaped or nil)
 end
 
+-- Esc for the full screen given up (false) while a view over it takes Esc for itself (Core's options,
+-- Settings/Screen.lua), and taken again (true) once it has gone.
+function methods:Escapes(on)
+    Escape(self, on)
+end
+
 -- What the window holds: coming, true, it comes in, from a little above down to its place, as a panel's
 -- intro (Motion.Slide, Motion.Fade); false, it fades out; nil, it is in sight and still. With a motion of
 -- no time it is simply in sight.

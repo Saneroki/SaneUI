@@ -222,10 +222,21 @@ ticked), colours, buttons, and a list of the CVars. A module's page in tabs has 
     `RegisterCVarSetting`). The text is looked up in the game, in its language; a string this client lacks is
     left out.
   - Keeping one is Sync's (`Core.Sync.Keep`).
+- **On a full screen too** (`Screen.lua`, Saneroki, 2026-10-21): every window that fills the screen has the game's
+  cog in its title bar (`Window.lua`, left of its buttons, with the question mark of its tour); a click puts
+  Sane UI's options over what the full screen holds, besides the game's own: at the left the pages as the game
+  lists them under Sane UI (*General*, *Appearance*, a page per module that is on and has switches; Profiles
+  only in the game's options, its button *All options* at the list's foot opens them there, the full screen going
+  back first), in the look of the game's own list of pages (`Options_List_Active`, `Options_List_Hover`); at the
+  right the chosen page, drawn by `Config.BuildTabbed` as a page in tabs is (Core's own pages too: `onPage`, only
+  the switches of that page, *Defaults* only for them, `Core.Reset(name, only)`). The window's module is chosen
+  first (found by the settings its edge reads), the last chosen kept for the session. The view is in the layer
+  `DIALOG` (over the map's quest log), dark, takes the mouse and its wheel; the cog again, Esc (it takes Esc from
+  the full screen while there, `edge:Escapes`), the window going back or closing take it away.
 - **Globals:** `SaneUI_OnAddonCompartmentClick`, `SaneUISettingsBannerMixin`, `SaneUISettingsEntryMixin`, `SaneUIFeedbackFrame`,
   `SaneUISettingsCVarsMixin`, `SaneUISettingsCVarRowMixin` (the templates' mixins: XML
   finds it by name).
-- **Tests:** `lua5.1 dev/tests/core.lua` (Core with its options, 317 checks; two modules only its options
+- **Tests:** `lua5.1 dev/tests/core.lua` (Core with its options, 355 checks; two modules only its options
   tests see, one with a switch of every kind on a list page, one in tabs); Sync's sections in
   `dev/tests/sync.lua`, the page Social in `dev/tests/social.lua`.
 
@@ -235,6 +246,7 @@ ticked), colours, buttons, and a list of the CVars. A module's page in tabs has 
 | `Settings.lua` | The pages (put up at login; the lists filled when the options first open, a page of our own built when first shown), the kinds of switches and their rows on the game's lists, the row to type into, the banners, `/sane options` |
 | `Panel.lua` | The parts of a page of our own: header, tabs over their box, scroll area, titled boxes, checkboxes, sliders, dropdowns (one or several), boxes to type into, colours, buttons; each page's controls shown anew together |
 | `Tabbed.lua` | A module's page in tabs, drawn from its switches' descriptions (`tab`, `header`, `headerTip`, `parent`, `parentValue`, `inline`, `unit`, `hidden`, the kinds), its search and *Defaults* |
+| `Screen.lua` | Sane UI's options over a full screen (its title bar's cog): the list of pages, the chosen one drawn as a page in tabs |
 | `Profiles.lua` | The page *Profiles*: its tabs, the tab *Profiles*, the export/import window |
 | `Synced.lua` | The tab *Game settings*: Sync's parts, kept per profile |
 | `CVars.lua` | The tab *CVars* on the page *Profiles*: the list of the game's CVars |

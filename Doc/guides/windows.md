@@ -151,7 +151,9 @@ and while it is away (Edge).
    when a window without one fills the screen) and the whole window otherwise; `window.top` says how far
    down it starts. Name the part that fades while the size moves (`content`). Several views: `tabs`, each
    built in the frame its tab gives when first chosen. Buttons of the module's own in the title bar:
-   `buttons = { { atlas, tip, text, click } }`, left of Core's.
+   `buttons = { { atlas, tip, text, click } }`, left of Core's. Full, Core adds two left of them: the game's
+   cog (Sane UI's options over the full screen, `Settings/Screen.lua`) and a question mark, the full screen's
+   tour: `help = function()` (without, it does nothing yet).
 4. **Lay out in `docked(zone)`,** which comes once the window stands (placed, or full screen reached), not in
    `OnSizeChanged` while `window.edge.away` (every step of a motion is a new size).
 5. **Search:** `search = function(text)`, then `Core.Fuzzy.Filter(rows, text, fields, done)`: `fields` the

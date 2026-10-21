@@ -33,7 +33,9 @@ local Core = SaneUI.Core
 --  docked at a screen edge (that is Edit Mode's; dragDocked lets it), and such
 --  a drag docks only in the middle of the screen. Every window that fills the
 --  screen has the bar at its top, the window's full screen view's own; in Edit
---  Mode the buttons are not there.
+--  Mode the buttons are not there. Full, two more stand left of the others: the
+--  game's cog, Sane UI's options over the full screen (Settings/Screen.lua), and
+--  a question mark, the full screen's tour (help: without, it does nothing yet).
 --
 --  What a window was left as is kept with its place: whether it filled the
 --  screen, and whether the game's own window was chosen instead. When the game
@@ -58,6 +60,7 @@ local Core = SaneUI.Core
 --          insets = { left = 0, right = 0, top = 0, bottom = 0 },  -- docked, the room it keeps from the
 --                                       -- screen's edges (UI units; without: flush with them)
 --          search = function(text) end, -- what is typed into its search box, at every change ("": none)
+--          help = function() end,       -- the question mark on its full screen: a tour of what it shows
 --          dragDocked = true,           -- its title bar moves it docked at a screen edge too (not in Edit Mode)
 --          escape = "close",            -- Esc closes it, small or full, as the game's panels close (close, else
 --                                       -- hidden); full, it is not made small first, so it opens full again.
@@ -145,7 +148,11 @@ Window.TEXT = {
     classic = "Classic window", classicTip = "The game's own window instead of this one.",
     sane = "Sane UI window", saneTip = "Sane UI's window instead of the game's.",
     search = Core.Word("SEARCH", "Search"),
+    settings = Core.Word("SETTINGS_TITLE", "Options"),
+    settingsTip = "Sane UI's options over this full screen: General, Appearance and each module's page. Click again to go back.",
+    help = Core.Word("HELP_LABEL", "Help"), helpTip = "A tour of this full screen: what it shows and how it works. Not ready yet.",
 }
+Window.SETTINGS = "questlog-icon-setting" -- the game's cog (its quest log's settings)
 -- The kinds of window (Saneroki, 2026-10-16; Doc/guides/windows.md, section 2): the options each kind has
 -- unless the module gives them itself. What the Combat module shows (unit frames, nameplates, buffs, action
 -- bars) is no window.
@@ -567,7 +574,7 @@ local function Box(window)
 end
 
 -- A button of the title bar: the game's square button with a picture on it (an atlas or a texture, half
--- its size), the game's click sound, a tip to say what it does.
+-- its size; or a sign in words: art.text), the game's click sound, a tip to say what it does.
 -- With template (a secure one), click runs after the template's own (PostClick).
 local function Square(parent, art, text, tip, click, template)
     local button = CreateFrame("Button", nil, parent, template)
@@ -575,9 +582,15 @@ local function Square(parent, art, text, tip, click, template)
     button:SetNormalTexture(SQUARE .. "Up")
     button:SetPushedTexture(SQUARE .. "Down")
     button:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-    local picture = button:CreateTexture(nil, "ARTWORK", nil, 5)
-    if art.atlas then picture:SetAtlas(art.atlas) else picture:SetTexture(art.texture) end
-    picture:SetSize(Window.BUTTON / 2, Window.BUTTON / 2)
+    local picture
+    if art.text then -- a sign in the game's gold words (the question mark)
+        picture = button:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        picture:SetText(art.text)
+    else
+        picture = button:CreateTexture(nil, "ARTWORK", nil, 5)
+        if art.atlas then picture:SetAtlas(art.atlas) else picture:SetTexture(art.texture) end
+        picture:SetSize(Window.BUTTON / 2, Window.BUTTON / 2)
+    end
     picture:SetPoint("CENTER", -1, 0)
     button.picture = picture
     button:SetScript(template and "PostClick" or "OnClick", Core.Guard("window", function(self)
@@ -695,7 +708,8 @@ local function Bar(window)
 end
 
 -- The buttons at the title bar's right, made with it: from the right, close, full screen (with edge), the
--- game's own window (with native), then the module's own (buttons).
+-- game's own window (with native), the module's own (buttons), then (with edge, full only) the options and the
+-- question mark.
 local function Buttons(window)
     if window.buttons then return window.buttons end
     local frame, options = window.frame, window.options
@@ -720,6 +734,15 @@ local function Buttons(window)
     for index, own in ipairs(options.buttons or {}) do
         window.own[index] = Square(buttons, own, own.tip, own.text, own.click)
         buttons.list[#buttons.list + 1] = window.own[index]
+    end
+    if window.edge then
+        window.settings = Square(buttons, { atlas = Window.SETTINGS }, Window.TEXT.settings, Window.TEXT.settingsTip,
+            function() if Core.Config and Core.Config.Screen then Core.Config.Screen.Toggle(window) end end)
+        window.help = Square(buttons, { text = "?" }, Window.TEXT.help, Window.TEXT.helpTip, function()
+            if options.help then options.help() end
+        end)
+        buttons.list[#buttons.list + 1] = window.settings
+        buttons.list[#buttons.list + 1] = window.help
     end
     window.buttons = buttons
     return buttons
@@ -753,6 +776,12 @@ function methods:Refresh()
     if full then
         full:SetShown(edge.settings.expand and not edge.off and true or false)
         if edge.full then full:Maximize(true, true) else full:Minimize(true, true) end
+    end
+    if self.settings then
+        local whole = edge.full and true or false
+        self.settings:SetShown(whole)
+        self.help:SetShown(whole)
+        if not whole and Core.Config and Core.Config.Screen then Core.Config.Screen.Close(self) end
     end
     local right
     for _, button in ipairs(buttons.list) do

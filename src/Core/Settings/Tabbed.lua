@@ -354,13 +354,17 @@ local function Search(page, anchor, find)
 end
 
 -- Builds a module's page into the frame Core put up for it: its title, the search box and Defaults,
--- the tabs (Panel.TabbedFrame), each a scroll area of boxes.
-function Config.BuildTabbed(page, name)
-    local list = Core.described[name].list
-    local byKey = {}
-    for _, option in ipairs(list) do byKey[option.key] = option end
+-- the tabs (Panel.TabbedFrame), each a scroll area of boxes. Also into a frame of the options on a full
+-- screen (Screen.lua), where Core's own pages are drawn so too: onPage, only the switches that name that
+-- page (option.page; nil: those that name none, all of a module's), and title, the page's.
+function Config.BuildTabbed(page, name, onPage, title)
+    local list, byKey = {}, {}
+    for _, option in ipairs(Core.described[name].list) do
+        byKey[option.key] = option
+        if option.page == onPage then list[#list + 1] = option end
+    end
     local module = SaneUI[name]
-    local title = module and module.title or name
+    title = title or module and module.title or name
     Panel.Header(page, title)
 
     local states, tabs = {}, {}
@@ -382,7 +386,9 @@ function Config.BuildTabbed(page, name)
     -- Defaults: every setting of the module back to its default (Core.Reset), after asking; the game's
     -- own Defaults (All settings) does the same through the page's OnDefault (Settings.lua).
     local defaults = Panel.Button(page, TEXT.defaults, TEXT.defaultsTip, function()
-        Core.Confirm(TEXT.askDefaults, title, function() Core.Reset(name) end, true)
+        Core.Confirm(TEXT.askDefaults, title, function()
+            Core.Reset(name, function(option) return option.page == onPage end)
+        end, true)
     end, nil, 96)
     defaults:SetPoint("TOPRIGHT", -36, -16)
 

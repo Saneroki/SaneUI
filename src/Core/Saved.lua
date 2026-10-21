@@ -242,12 +242,13 @@ function Core.Set(name, key, value)
     return now
 end
 
--- Every switch of a module back to its default, as Core.Set does one: told, shown.
-function Core.Reset(name)
+-- Every switch of a module back to its default, as Core.Set does one: told, shown. only(option): just those
+-- it says (one page of Core's own).
+function Core.Reset(name, only)
     local described = Core.described[name]
     if not described then return end
     for _, option in ipairs(described.list) do
-        if Keeps(option) then Core.Set(name, option.key, Copy(option.default)) end
+        if Keeps(option) and (not only or only(option)) then Core.Set(name, option.key, Copy(option.default)) end
     end
 end
 

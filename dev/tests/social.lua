@@ -2670,7 +2670,7 @@ do
     for _, widget in ipairs(W.frames) do
         if widget._parent == coreBar and rawget(widget, "list") then coreButtons = widget end
     end
-    check(coreButtons and #coreButtons.list == 3, "its buttons: close, full screen and back, the game's chat")
+    check(coreButtons and #coreButtons.list == 5, "its buttons: close, full screen and back, the game's chat, options, help")
     local tab
     FriendsFrame = CreateFrame("Frame", "FriendsFrame", UIParent)
     FriendsFrame:Hide()
