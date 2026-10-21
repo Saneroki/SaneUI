@@ -3,8 +3,47 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 478 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 50 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 491 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 71 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: the walking data joins what players walk between (Saneroki, 2026-10-21)
+- **Found on the real data** (while adding the lifts): the Undercity's ring, lower parts, quarters and sewers were
+  regions apart; its lifts' upper landings, Freewind Post's mesa and Gnomeregan's lift's landings were left out as
+  small regions; Thunder Bluff's rises lay apart.
+- **`dev/tools/walk-data`:**
+  - A building's slope is judged in yards (`YARDS`): in the samples' space (2.08 yards across, a yard up) `SLOPE`'s
+    50° was 30°, so the Undercity's ramps (27° to 39°, the building's collision-only triangles) were walls.
+  - **Thin walls:** a wall takes a sample's floor only where it comes into the middle of its square (`CORE`, half
+    its side); off the middle it is kept on each side whose way it crosses (`walls[(row, column, side)]`, from the
+    sample's middle to that side's) and closes the way to the next sample where it rises more than `STEP` (0.5
+    yards) over the higher floor under its `ROOM`, or more than `LEDGE` (1.5) between the two (`stands`, `walled`:
+    in the flood of the surfaces, the openings and across the tiles' edges). Doors and bridges narrower than two
+    samples stay open (the lifts' upper landings open into the throne room through arches 3.9 yards wide); a wall
+    standing in water closes it (the water's floors ignored walls).
+  - **The lifts' landings kept:** the region a lift of the master's set *Travel* lands on (`lifts`, `landings`: as
+    `Walk.Landing`, the floor within `LANDING` yards of its end and `RISE` of its height, the nearest by both) is
+    kept however small (`regions(tiles, keep)`).
+- **The set *Walking* made again and taken in** (`dev/tools/data import ... --apply --take`: 1,506 tiles corrected,
+  244 agreeing): 1,750 tiles, 1,645,740 rectangles (1,452,740 before), 12.1 MB of blocks (10.5), 12.6 MB in the
+  master (10.9); regions: 108 on the Eastern Kingdoms (131), 219 on Kalimdor (221), 5 on the isle (6); three minutes
+  to make. Joined: the Undercity's levels and landings, Gnomeregan's lift's ends, Thunder Bluff's Elder Rise to the
+  main mesa by its bridge, Orgrimmar's flight tower, the Crossroads' tower, the zeppelin towers to Zephras Isle,
+  the Caverns of Time, Jintha'Alor, Timbermaw Hold and more. Not joined: Thunder Bluff's Spirit Rise and Hunter Rise
+  (their bridges end on decks whose stairs are doodads, which the tool does not read).
+- **The Undercity's sewers** lead out to a cave on the hillside west of the ruins (world x 1658, y 729), so the city
+  and the ruins are one region. **`Lifts.lua`:** two levels within one region where they are stacked round a lift
+  (`level.alone`), told apart by height (`split` halfway between the landings, `low` the lower landing's, within
+  `Walk.RISE`), a place below them only within `Lifts.SPREAD` yards, joining no two regions (`Joined`); a lift within
+  one region side by side joins none; each landing's height kept (`fz`). **`Planner.lua`:** a place below a level
+  and one on it stay apart also where they share a region (`Over`).
+- Checked on the real data (outside the game): from the ruins to the Undercity's flight master, bank, quarters and
+  back, from the canyon to Freewind Post's flight master and back, down Gnomeregan's lift: walk, lift, walk each; from
+  the lift into the Magic Quarter on foot all the way; Thunder Bluff's flight master to the Elder Rise on foot.
+- Tests: `dev/tests/walk.py` 71 checks (a ramp of 35° walkable, one of 55° not; a wall off a sample's middle keeps
+  its floor and closes the way; a door narrower than two samples open; walls, railings, sills, ledges and a stair's
+  steps; a wall on a tile's edge; a lift's landing kept, the lifts read from the master); Navigation 491 (a lift
+  within one region: its levels, a pin under the courtyard by the lift, one beyond it on foot, out of the hall). A
+  `/reload` takes it in.
 
 ### Navigation, data: bosses' abilities and loot in their tooltips, more bosses, enemies (Saneroki, 2026-10-21)
 - **Batch 11** (`sources.toml`, "the dungeons' and raids' bosses and enemies as our tool picked them"): taken in with

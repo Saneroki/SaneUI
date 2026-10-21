@@ -9,6 +9,7 @@ dev/tests/run."""
 import base64
 import importlib.machinery
 import importlib.util
+import math
 import os
 import sys
 import tempfile
@@ -139,6 +140,101 @@ across = [link for number, links in shore[3].items() for link in links if shore[
 check("open to each other along the shore", len(across) > 0, True)
 
 
+# --- Buildings: their slopes, their walls ----------------------------------------------------------
+def quad(a, b, c, d):
+    """A building's quad as two triangles, its corners in the tile's samples (column, row, height)."""
+    return [np.array([a, b, c], float), np.array([a, c, d], float)]
+
+
+def built_tile(triangles, height=10.0):
+    """Flat ground with buildings' triangles on it, as tile() makes it: rectangles, owner, columns, openings,
+    borders, and the walls rasterize found."""
+    spans, walls = {}, {}
+    walk.rasterize(np.array(triangles), spans, walls)
+    flat = np.full((SIDE, SIDE), height, np.float32)
+    none = np.full((SIDE, SIDE), -np.inf, np.float32)
+    alone, found, specks, built = walk.floors(flat, np.zeros((SIDE, SIDE), bool), none, none, spans, walls)
+    rects, owner, columns = walk.rectangles(alone, found, specks, built, walls)
+    borders = {}
+    links = walk.openings(rects, owner, columns, borders, walls)
+    return rects, owner, columns, links, borders, walls
+
+
+def joined(tile, a, b):
+    """Whether the floors of samples a and b (row, column; the first floor each) can be walked between on the tile."""
+    rects, owner, _, links, _, _ = tile
+    parent = list(range(len(rects)))
+
+    def find(node):
+        while parent[node] != node:
+            node = parent[node]
+        return node
+
+    for number, list_ in links.items():
+        for *_, target in list_:
+            parent[find(number)] = find(target % 65536)
+    return find(owner[(*a, 0)]) == find(owner[(*b, 0)])
+
+
+# Slopes are judged in yards, not in samples across and yards up (where a ramp of 30 degrees was too steep).
+rise = walk.SAMPLE * math.tan(math.radians(35))
+spans = {}
+walk.rasterize(np.array(quad((0, 0, 0), (4, 0, 0), (4, 4, 4 * rise), (0, 4, 4 * rise))), spans, {})
+check("a ramp of 35 degrees is walkable", all(walkable for column in spans.values() for *_, walkable in column), True)
+steep = walk.SAMPLE * math.tan(math.radians(55))
+spans = {}
+walk.rasterize(np.array(quad((0, 0, 0), (4, 0, 0), (4, 4, 4 * steep), (0, 4, 4 * steep))), spans, {})
+check("one of 55 degrees is not", any(walkable for column in spans.values() for *_, walkable in column), False)
+
+# A wall 5 yards high along column 10.9, off the middle of the samples of column 10: their floors stay, the wall
+# stands on their east sides.
+wall = quad((10.9, 0, 10), (10.9, 256, 10), (10.9, 256, 15), (10.9, 0, 15))
+walled = built_tile(wall)
+spans, walls = {}, {}
+walk.rasterize(np.array(wall), spans, walls)
+check("a wall off a sample's middle takes no floor", (5, 10) in spans, False)
+check("it stands on the side whose way it crosses", sorted(side for row, column, side in walls if row == 5), [1])
+check("the floors on its two sides are not one way", walk.walled(walls, 5, 10, 1, 10.0, 10.0), True)
+check("nor walked between on the tile", joined(walled, (5, 10), (5, 11)), False)
+check("a wall through a sample's middle takes its floor",
+      built_tile(quad((10.5, 0, 10), (10.5, 256, 10), (10.5, 256, 15), (10.5, 0, 15)))[2][5][10], [])
+
+# The same wall with a door 3.75 yards wide (rows 10.1 to 11.9), its sides in the margins of the samples beside it:
+# narrower than two samples, still open.
+door = (quad((10.9, 0, 10), (10.9, 10.1, 10), (10.9, 10.1, 15), (10.9, 0, 15))
+        + quad((10.9, 11.9, 10), (10.9, 256, 10), (10.9, 256, 15), (10.9, 11.9, 15))
+        + quad((10.6, 10.1, 10), (11.2, 10.1, 10), (11.2, 10.1, 15), (10.6, 10.1, 15))
+        + quad((10.6, 11.9, 10), (11.2, 11.9, 10), (11.2, 11.9, 15), (10.6, 11.9, 15)))
+opened = built_tile(door)
+check("a door narrower than two samples: its samples keep their floors",
+      all(opened[2][row][column] for row in (10, 11) for column in (10, 11)), True)
+check("and the way through it", joined(opened, (10, 10), (10, 11)), True)
+check("so both sides of the wall are walked between", joined(opened, (5, 10), (5, 11)), True)
+
+# What stands between two floors side by side: a wall over them, a railing, a sill, a ledge, the risers of stairs, a
+# beam overhead.
+check("a wall closes the way", walk.stands([(10.0, 15.0)], 10.0, 10.0), True)
+check("a railing too", walk.stands([(10.8, 11.2)], 10.0, 10.0), True)
+check("a sill does not", walk.stands([(10.0, 10.3)], 10.0, 10.0), False)
+check("a ledge two yards high does", walk.stands([(10.0, 12.0)], 10.0, 12.0), True)
+check("a stair's steps do not", walk.stands([(10.0, 10.5), (10.5, 11.0), (11.0, 11.5), (11.5, 12.0)], 10.0, 12.0), False)
+check("a beam overhead does not", walk.stands([(12.5, 13.0)], 10.0, 10.0), False)
+
+# A wall at the tile's east edge closes the way into the next tile; the next tile's border has none.
+edge = built_tile(quad((255.9, 0, 10), (255.9, 256, 10), (255.9, 256, 15), (255.9, 0, 15)))
+plain = cut(*ground())
+middle = 32 * 64 + 32
+tiles = {middle: (edge[0], edge[3], edge[4]), middle + 1: (plain[0], plain[3], plain[4])}
+walk.across(tiles)
+check("a wall on a tile's edge closes the way into the next tile",
+      any(target >= 65536 * 2 for links in tiles[middle][1].values() for *_, target in links), False)
+tiles = {middle: (plain[0], {n: list(v) for n, v in plain[3].items()}, plain[4]),
+         middle + 1: (plain[0], {n: list(v) for n, v in plain[3].items()}, plain[4])}
+walk.across(tiles)
+check("without it the tiles are open to each other",
+      any(target >= 65536 * 2 for links in tiles[middle][1].values() for *_, target in links), True)
+
+
 # --- The block -------------------------------------------------------------------------------------
 def blocked(rects, links):
     """Rectangles with a region, as kept() leaves them, written and read back."""
@@ -177,6 +273,17 @@ isle = 2991 * 4096 + 32 * 64 + 32  # a tile of another map (Zephras Isle): its r
 later_first = {isle: (large, {0: []}, {}), 0: (large, {0: []}, {})}
 check("regions numbered in the order of the tiles' keys, not as the tiles were read",
       walk.regions(later_first), {(0, 0): 1, (isle, 0): 2})
+
+# A lift's landing: the region it lands on is kept, however small (Freewind Post's mesa).
+check("a small region a lift lands on is kept", (0, 0) in walk.regions(tiles, {(0, 0)}), True)
+corner = walk.HALF - 2 * walk.SAMPLE  # the middle of the small rectangle, in the world's yards (tile 0 lies at the corner)
+check("a lift's end lands on the floor nearest it at its height",
+      walk.landings(tiles, [(0, corner, corner, 10.5), (0, corner, corner, 40.0), (0, 0.0, 0.0, 10.0)]), {(0, 0)})
+with tempfile.TemporaryDirectory() as folder:
+    master = Path(folder) / "Travel.jsonl"
+    master.write_text('{"key":1,"kind":"flight","path":[{"x":1,"y":2,"map":0}]}\n'
+                      '{"key":1100001,"kind":"lift","path":[{"x":1,"y":2,"map":1,"z":3},{"x":1,"y":2,"z":9}]}\n')
+    check("the lifts' ends from the master's set Travel", walk.lifts(master), [(1, 1, 2, 3), (1, 1, 2, 9)])
 
 # --- The open sky around an isle that floats (dev/tools/terrain-art) --------------------------------
 art = walk.ART

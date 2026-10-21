@@ -157,6 +157,13 @@ start on known floors (`step.floor`), `Rode` puts the floor on the far landing a
 (`target.at`). Checked offline on the real data: Walk, Search, Lifts and Planner under lua5.1 with stubs, the tiles
 decoded from `Walking.jsonl` in Python.
 
+Walking data joined (2026-10-21): `dev/tools/walk-data` judges a building's slope in yards (it was 30° in the
+samples' space), lets a wall take a sample's floor only in its middle (`CORE`) and else close the ways it crosses
+(`walls[(row, column, side)]`, `stands`, `walled`: `STEP`, `LEDGE`), and keeps the regions the master's lifts land
+on (`lifts`, `landings`): 1.65 million rectangles, 12.6 MB. The Undercity and the ruins are one region (its sewers):
+`Lifts.Levels` makes stacked levels within one region (`level.alone`, `low`, `split`, `Lifts.SPREAD`), and
+`Planner.lua`'s `Over` keeps a place below a level from one on it also where they share a region.
+
 ## Built (2026-10-20, 21): quest marks, the filter's sections, dungeon maps, the quest log's clicks
 
 Saneroki's asks (`Doc/ideas/Navigation.md`, *Map pins*, *Full screen*, *Dungeon maps now*; README *History*):
@@ -193,7 +200,7 @@ Saneroki's asks (`Doc/ideas/Navigation.md`, *Map pins*, *Full screen*, *Dungeon 
 Not yet: portals and lifts in routes, doodads in the walking data
  (fences, trees), search, the guide, the dungeons' three zooms, the minimap's small parts
 (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
-checks; 485 with the 2026-10-21 changes), `dev/tests/walk.py` (41).
+checks; 491 with the 2026-10-21 changes), `dev/tests/walk.py` (71).
 
 ## What is not there yet
 

@@ -22,8 +22,8 @@ local _, ns = ...
 --                    its landing, Lifts.lua: the wait for the car, half the time between two departures, and its
 --                    ride), the hearthstone from the player to its place (its cooldown and the cast); the quickest
 --                    taken (Dijkstra). Between two levels a lift joins (Thunder Bluff's mesa and Mulgore), or a
---                    level and a place below it (the Undercity under the ruins over it, Lifts.Stand), no walk: the
---                    lift is the way
+--                    level and a place below it (the Undercity under the ruins over it, Lifts.Stand; also where
+--                    the two share a region), no walk: the lift is the way
 --      the walks     then searched on the walking data (Search.lua): the first from the floor the player stands
 --                    on, the others from the floor of the lift's landing they start at, else from every floor at
 --                    the place they start; a walk found much longer than its guess is put in at its true length and
@@ -424,6 +424,14 @@ local function Share(a, b)
     return false
 end
 
+-- Whether a lift's upper level lies over one place (below: the upper levels it stands below, Lifts.Stand) and the
+-- other stands on that level (other: its regions; otherBelow: the upper levels it stands below), so the lift is the
+-- way between them, also where they share a region (the Undercity, joined to the ruins over it far off by its
+-- sewers). Two places below one level are a walk apart.
+local function Over(below, other, otherBelow)
+    return below ~= nil and Share(below, other) and not (otherBelow and Share(otherBelow, below))
+end
+
 -- The quickest journey by the guesses from the start (start: { map, u, v, from: the player's floor }) to the goal (a
 -- place: { map, u, v }): a list of steps { kind = "walk" | "flight" | "boat" | "zeppelin" | "tram" | "lift" | "hearth",
 -- from, to (the places' names), map, u1, v1, map2, u2, v2, ... (a walk's floor: the one it starts on, where known; a
@@ -541,11 +549,12 @@ local function Journey(start, goal, measured)
                             end
                             local theirs, theirBelow
                             if mine then theirs, theirBelow = RegionsOf(name) end
-                            if theirs and not Share(mine, theirs) then
-                                if Lifts.Joined(mine, theirs, here.map) or (mineBelow and Share(mineBelow, theirs))
-                                    or (theirBelow and Share(theirBelow, mine)) then
+                            if theirs then
+                                local apart = not Share(mine, theirs)
+                                if (apart and Lifts.Joined(mine, theirs, here.map)) or Over(mineBelow, theirs, theirBelow)
+                                    or Over(theirBelow, mine, mineBelow) then
                                     total = nil
-                                else
+                                elseif apart then
                                     total = total + Planner.APART
                                 end
                             end

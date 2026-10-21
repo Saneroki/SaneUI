@@ -491,9 +491,13 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     .. '\t-400\031-933.33\0311\031\031\031-20\030-400\031-933.33\031\031\031\03110\t\t\t3.5\t16"\n'
     .. 'R[10] = "70245\t\tlift\t\t2521\03120\03120\t2521\03120\03120\t\t\t20'
     .. '\t500\031600\0312991\031\031\0310\030500\031600\031\031\031\03120\t\t\t2\t6"\n'
+    -- And one on tile 6178 within one region, from a hall up to the courtyard over it (11: x -133.33, y -1333.33,
+    -- from -20 to 10 yards), on no zone map.
+    .. 'R[11] = "70245\t\tlift\t\t\t\t\t\t30'
+    .. '\t-133.33\031-1333.33\0311\031\031\031-20\030-133.33\031-1333.33\031\031\031\03110\t\t\t3.5\t16"\n'
     .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byFromNode[20] = "5"\nI.byFromNode[21] = "6"\nI.byKind = {}\n'
     .. 'I.byKind.boat = "1\0303"\nI.byKind.flight = "2\0305\0306"\nI.byKind.tram = "7"\nI.byKind.zeppelin = "4"\n'
-    .. 'I.byKind.lift = "8\0309\03010"\n')
+    .. 'I.byKind.lift = "8\0309\03010\03011"\n')
 W.AddSets(packPath)
 local spawnsPath = folder .. "/Spawns"
 os.execute(("mkdir -p '%s'"):format(spawnsPath))
@@ -566,6 +570,8 @@ end
 -- mesa (5, 80 yards) of a region of its own, nobody can walk onto. Tile 6177 east of it (its own regions, no way
 -- across): a field (1, 10 yards high, region 3) and a courtyard (2, the same surface) south east of it; a mesa (3,
 -- 80 yards, region 4) beside the field, north of the courtyard; a hall (4, region 5) 20 yards under the courtyard.
+-- Tile 6178 east of it: a courtyard (1, 10 yards, region 6) over a hall (2, -20 yards) of the same region (joined to
+-- it far off, as the Undercity is to the ruins by its sewers).
 local routesFolder = io.popen("mktemp -d -t saneui-routes-XXXXXX"):read("*l") -- kept until the end
 local routesPath = routesFolder .. "/Routes"
 os.execute(("mkdir -p '%s'"):format(routesPath))
@@ -583,10 +589,11 @@ local walkBlocks = {
         { 2, 1, 3,   1, 1, 4,   1, 1, 5 },
         { 0, 0, 128, 256, 40,   128, 128, 128, 128, 40,   128, 0, 128, 128, 320,   144, 144, 96, 96, -80 },
         { 0, 0, 0, 0 } },
+    [6178] = { 1, { 1, 1, 6,   1, 1, 6 }, { 0, 0, 256, 128, 40,   64, 32, 128, 64, -80 }, { 0, 0 } },
 }
 Set(routesPath .. "/Walking.lua", "Walking", "00000008", "int", '"map", "links", "block"', '"int", "list int", "text"',
     'R[3104] = "70245\t\t0\t3105\tblock:3104"\nR[3105] = "70245\t\t0\t3104\tblock:3105"\nR[6176] = "70245\t\t1\t\tblock:6176"\n'
-    .. 'R[6177] = "70245\t\t1\t\tblock:6177"\n')
+    .. 'R[6177] = "70245\t\t1\t\tblock:6177"\nR[6178] = "70245\t\t1\t\tblock:6178"\n')
 W.AddSets(routesPath)
 C_EncodingUtil = { DecodeBase64 = function(text) return text end, DecompressString = function(text) return text end,
                    DeserializeCBOR = function(text) return walkBlocks[tonumber(text:match("%d+"))] end }
@@ -3087,7 +3094,7 @@ end)()
     for _, level in ipairs(levels) do
         if level.lower == 3 then beside = level elseif level.lower == 5 then stacked = level end
     end
-    check(#levels == 2 and beside and beside.upper == 4 and not beside.stacked and stacked and stacked.upper == 3
+    check(#levels == 3 and beside and beside.upper == 4 and not beside.stacked and stacked and stacked.upper == 3
         and stacked.stacked and stacked.maps[1456], "the levels the lifts join: the mesa beside the field, the courtyard over the hall")
     check(Lifts.Joined({ [3] = true }, { [4] = true }, 1414) and Lifts.Joined({ [5] = true }, { [3] = true }, 1414)
         and not Lifts.Joined({ [4] = true }, { [5] = true }, 1414), "joined: two levels one lift joins")
@@ -3120,6 +3127,37 @@ end)()
     legs = Pin(1414, fu, fv)
     check(Kinds(legs) == "walk lift walk" and legs[2].near == down[1] and legs[2].far == down[2],
         "out of the hall: on foot to the lift, up it, on foot to the pin")
+    IsIndoors = indoors
+    -- A lift within one region (11, on tile 6178: the hall under the courtyard, one region as the Undercity is with the
+    -- ruins over it): its levels told apart by height round it, joining no two regions; a pin in the hall by the lift
+    -- (no walk ending on the courtyard over it), one on the courtyard beyond the hall on foot, and out of the hall.
+    local alone, one = lifts[11], nil
+    for _, level in ipairs(levels) do
+        if level.alone then one = level end
+    end
+    check(alone and Lifts.Landed(alone[1]) and Lifts.Landed(alone[2]) and alone[1].region == 6 and alone[2].region == 6
+        and one and one.alone == alone and one.lower == 6 and one.upper == 6 and one.stacked and one.split == -5
+        and not Lifts.Joined({ [6] = true }, { [6] = true }, 1414),
+        "a lift within one region: the levels round it stacked, told apart by height; it joins no two regions")
+    local function In6178(column, row) return 2 * Coords.TILE + column * s, -row * s end
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Stand(In6178(20, 20))
+    local inU, inV = In6178(100, 64)
+    legs = Pin(1414, inU, inV)
+    check(Kinds(legs) == "walk lift walk" and legs[2].near == alone[2] and legs[2].far == alone[1]
+        and Close(legs[3].points[#legs[3].points], inU, inV),
+        "a pin in the hall under the courtyard of its region: on foot to the lift, down it, on foot to the pin")
+    check(Kinds(Pin(1414, In6178(230, 110))) == "walk", "a pin on the courtyard beyond the hall: on foot")
+    IsIndoors = function() return true end
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Stand(In6178(110, 70))
+    legs = Pin(1414, In6178(20, 20))
+    check(Kinds(legs) == "walk lift walk" and legs[2].near == alone[1] and legs[2].far == alone[2],
+        "out of that hall: on foot to the lift, up it, on foot to the pin")
     IsIndoors = indoors
     -- The floor after a ride: at the lift as long as it rides, then on along the line past it: on the mesa now, and a pin
     -- there is a walk; at it as long, then back the way one came: not.

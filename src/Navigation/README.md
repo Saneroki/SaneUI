@@ -384,8 +384,13 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   `Lifts.RING` yards round its shaft a third of the lower level's points lie under the upper: the Undercity under
   the ruins; Thunder Bluff's mesa is beside the land at its foot) and the place lies over the lower level (its known
   floor under the upper's; else the lower level's floors under it; the pin on the lift's own map also over any other
-  floor below there, or the nearest within `Lifts.RING` yards: the city's bank, missing from the walking data); by a
-  lift side by side, where the upper landing overhangs the platform, on the upper. A walk's guess between two places
+  floor below there, or the nearest within `Lifts.RING` yards where its own is missing); by a lift side by side,
+  where the upper landing overhangs the platform, on the upper. Where a lift's two landings lie in one region (the
+  Undercity, joined to the ruins far off by its sewers), its levels are that region's floors round it, stacked,
+  told apart by height (the upper from halfway between the landings up, the lower near its lower landing's
+  height), and a place stands below them only within `Lifts.SPREAD` yards of it; a place below a level and one on it
+  are kept apart also where they share a region; a lift within one region whose levels lie side by side (the
+  Great Lift) joins none. A walk's guess between two places
   of known heights (the player, a lift's ends) counts the climb too. The floor after a ride (`Rode`): at a lift
   joining the line's lift's two levels (`Lifts.Near`, within `Lifts.NEAR` yards) as long as its ride takes, then on
   along the line past it, the player is on the landing at its other end. Planned again when the pin changes, after
@@ -498,6 +503,16 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-21, the walking data joins what players walk between:** the Undercity is one city: its ring, lower
+  parts, quarters and sewers, and the lifts' upper landings with the throne room (`dev/tools/walk-data` judged the
+  buildings' slopes too steep from 30 degrees on, and closed doors and bridges narrower than two samples by their
+  sides: now a wall closes the way between two samples instead of taking a sample whose middle it keeps out of).
+  Freewind Post's and Gnomeregan's lifts land (the regions lifts land on are kept however small), Thunder Bluff's
+  Elder Rise is joined to the main mesa by its bridge, and many towers, ramps and terraces to their land (Orgrimmar's
+  flight tower, the Crossroads, the zeppelin towers to Zephras Isle, the Caverns of Time). The Undercity's sewers
+  lead out to a cave on the hillside west of the ruins, so the city and the ruins are one region; a lift within one
+  region still joins two levels where they lie one over the other (`Lifts.Levels`, told apart by height), so routes
+  from the ruins into the city still take the lift.
 - **2026-10-21, bosses with their abilities and loot; enemies:** the dungeon maps' boss tooltips list what the boss
   casts and drops, with their icons, from the game; Core's sets gained them (batch 11: *Encounters* `abilities`,
   `loot`; *Dungeons* 100 more bosses, in the dungeons Blizzard rebuilt too, and `enemies` in six dungeons), and the

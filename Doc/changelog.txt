@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: routes know the Undercity, Freewind Post and Gnomeregan
+  better. Inside the Undercity they walk you down the ramps into every
+  quarter; the lifts of Freewind Post and Gnomeregan are taken too, and
+  Thunder Bluff's Elder Rise is reached over its bridge. Narrow doors,
+  ramps and towers no longer stop a route.
 - Navigation: the dungeon maps show many more bosses, and a boss's
   tooltip lists its abilities and what it drops, with their icons.
   In six dungeons the enemies are marked too.

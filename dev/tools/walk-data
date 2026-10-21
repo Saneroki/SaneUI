@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Makes the walking data of Navigation's routes from the game's own files: where a player can walk on each terrain
 tile of the continents and of Zephras Isle (its own map, 2991; around it open sky, the terrain's holes), as staging
-for Core's set Walking (pack Routes; Doc/ideas/Navigation.md, *The walking data*).
+for Core's set Walking (Doc/ideas/Navigation.md, *The walking data*).
 
 What is walkable is read from what the game itself collides with, sampled every SAMPLE yards (256 samples along a
 tile's side):
@@ -10,20 +10,27 @@ tile's side):
                   cave's mouth, a building's cellar); too steep (over SLOPE degrees) it is no floor, only a surface
   the buildings   every collision triangle of every building the object files place (WMO group files: their
                   vertices, indices and each triangle's flags), turned and moved where the game places it; a
-                  triangle cut by each column of samples gives a span of height there (as a voxel field is made)
+                  triangle cut by each column of samples gives a span of height there (as a voxel field is made),
+                  too steep (its slope in yards over SLOPE degrees) a wall
   the water       where water stands deeper than DEEP over a floor, that floor is under water, and the water's
                   surface is a floor to swim on; magma and slime close what lies under them
 
 In each column the spans are joined where they touch; the top of a span is a floor when what made it is not too
-steep and nothing stands within ROOM yards above it (a floor under a low roof or inside a wall is none). Two floors
-side by side are one way when their heights differ by at most CLIMB.
+steep and nothing stands within ROOM yards above it (a floor under a low roof or inside a wall is none). A wall takes
+a sample's floor only where it comes into the middle of its square (CORE); off the middle it stands between the
+sample and the next one on each side whose way it crosses (from the sample's middle to that side's), so a door or a
+bridge narrower than two samples stays open. Two floors side by side are one way when their heights differ by at
+most CLIMB and no wall stands between them: none rising more than STEP over the higher floor under its ROOM (a wall,
+a railing; a sill does not), none rising more than LEDGE between the two (a ledge; a stair's steps do not).
 
 The floors are joined into rectangles of floors that are all one way with each other (land or water, never both),
 at most WIDEST samples a side: few and large in open land, many and small in towns, caves and on mountains. Each
 rectangle keeps its height, its kind and the openings along its sides into its neighbours (on its own tile and the
 next), and every rectangle that can be walked to from another has the same region number, so the game can tell at
 once that a place cannot be reached on foot. A region's number holds within its map (the game compares them only
-there): numbered in the order of the tiles' keys, so a run gives the same numbers again.
+there): numbered in the order of the tiles' keys, so a run gives the same numbers again. A region smaller than
+SMALLEST samples (a roof, a ledge) is left out, but one a lift lands on (the floor nearest a lift's end within LANDING
+yards, its height within RISE, as Navigation finds its landing: Freewind Post's mesa).
 
   dev/data/staging/walking.jsonl    one line per tile with ground: set Walking, key the tile's key in the set Tiles
                                     (continent * 4096 + row * 64 + column), fields map (the continent), links (the
@@ -51,6 +58,7 @@ The input, as for dev/tools/map-meta, for every map with terrain files (the cont
                 buildings stand) and wmo/ (every placed building's root file <file ID>.wmo and its group files
                 <file ID>_<part>.wmo)
   client tables a folder of the game's client tables as CSV (LiquidType, LiquidMaterial)
+and the lifts of the master's set Travel (assets/data/Travel: each end's place and height).
 Options: --maps <map>[,<map>...] those maps' tiles only (a map added, as 2991, leaves the others' lines alone), --only
 <key>[,<key>...] some tiles only (with their neighbours' edges), --pictures <folder> a picture of each tile's
 rectangles, --processes N.
@@ -74,6 +82,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 STAGING = ROOT / "dev" / "data" / "staging" / "walking.jsonl"
+TRAVEL = ROOT / "assets" / "data" / "Travel" / "Travel.jsonl"  # the master's set Travel: its lifts
 BUILD = 70245          # the client build the game files are of (the set Tiles' build)
 
 GRID = 64              # tiles along each side of a continent
@@ -85,16 +94,22 @@ HALF = GRID / 2 * TILE # yards from a continent's middle to its edges
 SLOPE = 50             # degrees: steeper ground or building floor is no floor
 ROOM = 2.0             # yards a floor needs free above it
 CLIMB = 2.6            # yards two floors side by side may differ and still be one way (a little over the slope)
+CORE = 0.5             # samples: a wall in the square of this side round a sample's middle leaves it no floor
+STEP = 0.5             # yards a wall between two floors side by side may rise over the higher (a sill, a curb)
+LEDGE = 1.5            # yards a wall between two floors side by side may rise between them (a stair's step)
 DEEP = 1.6             # yards of water over a floor that make it one to swim over
 JOIN = 0.25            # yards: spans of a column nearer than this are one
 WIDEST = 32            # samples: a rectangle's longest side
-SMALLEST = 3000        # samples: a region smaller than this (a roof, a ledge, a plateau) is left out
+SMALLEST = 3000        # samples: a region smaller than this (a roof, a ledge) is left out, but one a lift lands on
+LANDING = 20           # yards from a lift's end its landing may lie (Navigation's Lifts.LANDING)
+RISE = 12              # yards a landing may lie over or under the lift's end (Navigation's Walk.RISE)
 # A square of the ground (outside buildings) may take this share of steep samples at its edges, by its side: the
 # edges of walkable ground, ragged at two yards, make no crowd of small rectangles.
 TAKEN = {2: 0.5, 4: 0.75, 8: 0.85, 16: 0.9, 32: 0.95}
 THIN = 0.5             # yards: the ground's surface is a span this thick
 UP = math.cos(math.radians(SLOPE))
 STEEP = math.tan(math.radians(SLOPE)) * SAMPLE  # height over one sample past which the ground is too steep
+YARDS = np.array([SAMPLE, SAMPLE, 1.0])          # the samples' space (columns, rows, height) in yards
 LAND, WATER = 1, 2
 FORMAT = 1             # the blocks' format, as Navigation's Walk.lua reads it
 
@@ -310,26 +325,36 @@ def clip(polygon, axis, low, high):
     return polygon
 
 
-def rasterize(triangles, spans):
+# The way from a sample's middle to each of its sides (0 north, 1 east, 2 south, 3 west) as a box in the sample's
+# square (first and last column, first and last row, from its north west corner), a line THREAD thick; and its
+# middle, CORE wide.
+THREAD = 0.01
+SPOKES = ((0.5 - THREAD, 0.5 + THREAD, 0.0, 0.5), (0.5, 1.0, 0.5 - THREAD, 0.5 + THREAD),
+          (0.5 - THREAD, 0.5 + THREAD, 0.5, 1.0), (0.0, 0.5, 0.5 - THREAD, 0.5 + THREAD))
+MIDDLE = ((1 - CORE) / 2, (1 + CORE) / 2, (1 - CORE) / 2, (1 + CORE) / 2)
+
+
+def rasterize(triangles, spans, walls):
     """Each triangle (in the tile's samples: column, row, height) into the columns it covers: a span (low, high,
-    walkable) in spans[(row, column)]."""
+    walkable) in spans[(row, column)]. A triangle too steep to walk on (a wall) that keeps out of a sample's middle
+    leaves its floor alone: where it crosses the way from the middle to a side, it stands on that side, (low, high)
+    in walls[(row, column, side)]; so a door or a bridge narrower than two samples is not closed by its sides."""
     for triangle in triangles:
-        a, b, c = triangle
+        a, b, c = triangle * YARDS  # the slope in yards, not in samples across and yards up
         normal = np.cross(b - a, c - a)
         length = math.sqrt(normal[0] ** 2 + normal[1] ** 2 + normal[2] ** 2)
         if length == 0:
             continue
-        # The samples' space is the world's turned (columns east, rows south), so up is still up.
         walkable = abs(normal[2]) / length >= UP
         cols, rows = triangle[:, 0], triangle[:, 1]
         r0, r1 = max(int(math.floor(rows.min())), 0), min(int(math.floor(rows.max())), SIDE - 1)
         c0, c1 = max(int(math.floor(cols.min())), 0), min(int(math.floor(cols.max())), SIDE - 1)
         if r0 > r1 or c0 > c1:
             continue
-        if r0 == r1 and c0 == c1:
-            spans.setdefault((r0, c0), []).append((float(triangle[:, 2].min()), float(triangle[:, 2].max()), walkable))
-            continue
         polygon = [tuple(point) for point in triangle]
+        if r0 == r1 and c0 == c1:
+            put(polygon, r0, c0, walkable, spans, walls)
+            continue
         for row in range(r0, r1 + 1):
             strip = clip(polygon, 1, row, row + 1)
             if len(strip) < 3:
@@ -338,10 +363,30 @@ def rasterize(triangles, spans):
             high = min(int(math.floor(max(p[0] for p in strip))), c1)
             for column in range(low, high + 1):
                 cell = clip(strip, 0, column, column + 1)
-                if len(cell) < 3:
-                    continue
-                heights = [p[2] for p in cell]
-                spans.setdefault((row, column), []).append((min(heights), max(heights), walkable))
+                if len(cell) >= 3:
+                    put(cell, row, column, walkable, spans, walls)
+
+
+def put(cell, row, column, walkable, spans, walls):
+    """A triangle's part in one sample's column (rasterize): a span, or a wall on the sides it crosses the way to."""
+    heights = [p[2] for p in cell]
+    if walkable:
+        spans.setdefault((row, column), []).append((min(heights), max(heights), True))
+        return
+    left, right = min(p[0] for p in cell) - column, max(p[0] for p in cell) - column
+    top, bottom = min(p[1] for p in cell) - row, max(p[1] for p in cell) - row
+
+    def part(box):
+        if left > box[1] or right < box[0] or top > box[3] or bottom < box[2]:
+            return []
+        return clip(clip(cell, 0, column + box[0], column + box[1]), 1, row + box[2], row + box[3])
+
+    if part(MIDDLE):
+        spans.setdefault((row, column), []).append((min(heights), max(heights), False))
+    for side, box in enumerate(SPOKES):
+        crossed = part(box)
+        if crossed:
+            walls.setdefault((row, column, side), []).append((min(p[2] for p in crossed), max(p[2] for p in crossed)))
 
 
 # -------------------------------------------------------------------------------------------------
@@ -354,7 +399,7 @@ def smooth(grid):
     return total / 9
 
 
-def floors(height, hole, water, closed, spans):
+def floors(height, hole, water, closed, spans, walls=()):
     """Every column's floors, lowest first: {(row, column): [(height, kind)]}; the columns with only the ground as
     one floor array (NaN where none) for speed; and where the ground is only too steep (no hole, no building, no
     water): a speck of it may be walked over (rectangles)."""
@@ -411,6 +456,8 @@ def floors(height, hole, water, closed, spans):
     built = np.zeros((SIDE, SIDE), bool)  # the columns a building reaches into
     for row, column in spans:
         built[row, column] = True
+    for row, column, _ in walls:
+        built[row, column] = True
     return alone, found, np.where(speck, height, np.nan), built
 
 
@@ -428,16 +475,38 @@ def near(a, b):
     return abs(a[0] - b[0]) <= CLIMB
 
 
+SIDES = ((0, -1, 0), (1, 0, 1), (2, 1, 0), (3, 0, -1))  # side, row step, column step: north, east, south, west
+
+
+def stands(walls, a, b):
+    """Whether one of the walls ((low, high), ...) on the way between two floors side by side, at heights a and b,
+    stands in it: rising more than STEP over the higher floor and lower than the ROOM over it (a wall, a railing),
+    or rising more than LEDGE between them (a ledge: no step)."""
+    low, top = min(a, b), max(a, b)
+    return any((high > top + STEP and bottom < top + ROOM) or min(high, top) - max(bottom, low) > LEDGE
+               for bottom, high in walls)
+
+
+def walled(walls, row, column, side, a, b):
+    """Whether a wall stands between two floors side by side, a (row, column's height) and b (the next sample's on
+    that side): on the way from either middle to their shared side (rasterize)."""
+    if not walls:
+        return False
+    _, dr, dc = SIDES[side]
+    return (stands(walls.get((row, column, side), ()), a, b)
+            or stands(walls.get((row + dr, column + dc, (side + 2) % 4), ()), a, b))
+
+
 # -------------------------------------------------------------------------------------------------
 #  Rectangles
 # -------------------------------------------------------------------------------------------------
-def surfaces(columns):
+def surfaces(columns, walls=None):
     """The floors in surfaces: each the floors of one kind that are one way with each other, at most one in a column
     (the ground, a cave's floor under it, a bridge's deck over a river, a building's storey), found by a flood
     from floor to floor, the neighbour's floor nearest in height taken. A floor joins only when it is one way
     with every neighbour of the surface around it, so any two neighbouring samples of a surface are one way
-    (the game takes two rectangles of one surface that touch as open along all their edge). A list of
-    {(row, column): index}."""
+    (the game takes two rectangles of one surface that touch as open along all their edge), no wall between them
+    (walled). A list of {(row, column): index}."""
     taken = set()
     found = []
     for row in range(SIDE):
@@ -451,14 +520,16 @@ def surfaces(columns):
                 while queue:
                     r, c, i = queue.pop()
                     floor = columns[r][c][i]
-                    for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+                    for _, dr, dc in SIDES:
+                        nr, nc = r + dr, c + dc
                         if not (0 <= nr < SIDE and 0 <= nc < SIDE) or (nr, nc) in cells:
                             continue
                         pick, gap = -1, None
-                        around = [columns[ar][ac][cells[(ar, ac)]]
-                                  for ar, ac in ((nr - 1, nc), (nr + 1, nc), (nr, nc - 1), (nr, nc + 1)) if (ar, ac) in cells]
+                        around = [(side, columns[nr + sr][nc + sc][cells[(nr + sr, nc + sc)]])
+                                  for side, sr, sc in SIDES if (nr + sr, nc + sc) in cells]
                         for j, other in enumerate(columns[nr][nc]):
-                            if (nr, nc, j) in taken or other[1] != floor[1] or not all(near(other, a) for a in around):
+                            if (nr, nc, j) in taken or other[1] != floor[1] or not all(
+                                    near(other, a) and not walled(walls, nr, nc, side, other[0], a[0]) for side, a in around):
                                 continue
                             distance = abs(other[0] - floor[0])
                             if gap is None or distance < gap:
@@ -471,7 +542,7 @@ def surfaces(columns):
     return found
 
 
-def rectangles(alone, found, specks, built):
+def rectangles(alone, found, specks, built, walls=None):
     """The tile's floors joined into rectangles: a list of [column, row, width, height, z, kind], owner
     {(row, column, index): rectangle} for every floor, and every column's floors.
 
@@ -483,7 +554,7 @@ def rectangles(alone, found, specks, built):
     link floors of any surfaces that meet (openings)."""
     columns = [[floors_of(alone, found, row, column) for column in range(SIDE)] for row in range(SIDE)]
     owner, rects = {}, []
-    for surface, cells in enumerate(surfaces(columns)):
+    for surface, cells in enumerate(surfaces(columns, walls)):
         rows = [r for r, _ in cells]
         cols = [c for _, c in cells]
         r0, c0 = min(rows) // WIDEST * WIDEST, min(cols) // WIDEST * WIDEST
@@ -572,12 +643,11 @@ def rectangles(alone, found, specks, built):
     return rects, owner, columns
 
 
-SIDES = ((0, -1, 0), (1, 0, 1), (2, 1, 0), (3, 0, -1))  # side, row step, column step: north, east, south, west
-
-
-def openings(rects, owner, columns, borders):
+def openings(rects, owner, columns, borders, walls=None):
     """The openings of every rectangle on its own tile: {rect: [[side, first, last, neighbour]]}; and what lies
-    along the tile's edges for the next tiles: borders[side] = [(position, z, rect)] per floor there."""
+    along the tile's edges for the next tiles: borders[side] = [(position, z, rect, walls)] per floor there, with
+    the walls on the way to that side (rasterize)."""
+    walls = walls or {}
     found = {number: [] for number in range(len(rects))}
     for number, (column, row, width, height, *_) in enumerate(rects):
         for side, dr, dc in SIDES:
@@ -596,13 +666,14 @@ def openings(rects, owner, columns, borders):
                 target = None
                 if 0 <= nr < SIDE and 0 <= nc < SIDE and own is not None:
                     for i, floor in enumerate(columns[nr][nc]):
-                        if near(floor, own):
+                        if near(floor, own) and not walled(walls, r, c, side, own[0], floor[0]):
                             other = owner.get((nr, nc, i))
                             if other is not None and other != number:
                                 target = other
                                 break
                 elif own is not None:
-                    borders.setdefault(side, []).append((c if side in (0, 2) else r, own[0], number))
+                    borders.setdefault(side, []).append((c if side in (0, 2) else r, own[0], number,
+                                                         walls.get((r, c, side), ())))
                 position = c if side in (0, 2) else r
                 if target is not None and run and run[3] == target and run[2] == position - 1:
                     run[2] = position
@@ -627,7 +698,7 @@ def tile(job):
     height, hole, water, closed = ground(path, waters, liquids)
     row0, col0 = key % (GRID * GRID) // GRID, key % GRID
     north0, west0 = HALF - row0 * TILE, HALF - col0 * TILE
-    spans = {}
+    spans, walls = {}, {}
     for where in near_places:
         corners = building(folder / "wmo", where["file"])
         if not len(corners):
@@ -637,11 +708,11 @@ def tile(job):
         samples = np.stack([(west0 - world[..., 1]) / SAMPLE, (north0 - world[..., 0]) / SAMPLE, world[..., 2]], axis=-1)
         inside = ((samples[..., 0].max(axis=1) >= 0) & (samples[..., 0].min(axis=1) < SIDE)
                   & (samples[..., 1].max(axis=1) >= 0) & (samples[..., 1].min(axis=1) < SIDE))
-        rasterize(samples[inside], spans)
-    alone, found, specks, built = floors(height, hole, water, closed, spans)
-    rects, owner, columns = rectangles(alone, found, specks, built)
+        rasterize(samples[inside], spans, walls)
+    alone, found, specks, built = floors(height, hole, water, closed, spans, walls)
+    rects, owner, columns = rectangles(alone, found, specks, built, walls)
     borders = {}
-    links = openings(rects, owner, columns, borders)
+    links = openings(rects, owner, columns, borders, walls)
     if not rects:
         return key, None, None, None
     return key, rects, links, borders
@@ -654,7 +725,8 @@ NEXT = {0: (-1, 0, 2), 1: (0, 1, 3), 2: (1, 0, 0), 3: (0, -1, 1)}  # side: row s
 
 
 def across(tiles):
-    """The openings between tiles: for each edge, floors at the same place along it one way with each other."""
+    """The openings between tiles: for each edge, floors at the same place along it one way with each other, no
+    wall on the way between them on either tile."""
     for key, (rects, links, borders) in tiles.items():
         continent, rest = divmod(key, GRID * GRID)
         row, column = divmod(rest, GRID)
@@ -663,13 +735,13 @@ def across(tiles):
             if other not in tiles or not (0 <= row + dr < GRID and 0 <= column + dc < GRID):
                 continue
             theirs = {}
-            for position, z, rect in tiles[other][2].get(opposite, []):
-                theirs.setdefault(position, []).append((z, rect))
+            for position, z, rect, walls in tiles[other][2].get(opposite, []):
+                theirs.setdefault(position, []).append((z, rect, walls))
             runs = {}
-            for position, z, rect in sorted(borders.get(side, [])):
+            for position, z, rect, walls in sorted(borders.get(side, []), key=lambda border: border[:3]):
                 match = None
-                for their_z, their_rect in theirs.get(position, []):
-                    if abs(their_z - z) <= CLIMB:
+                for their_z, their_rect, their_walls in theirs.get(position, []):
+                    if abs(their_z - z) <= CLIMB and not stands(walls, z, their_z) and not stands(their_walls, z, their_z):
                         match = their_rect
                         break
                 if match is None:
@@ -684,9 +756,48 @@ def across(tiles):
                 links[rect].extend(list_)
 
 
-def regions(tiles):
+def lifts(path=TRAVEL):
+    """Both ends of every lift in the master's set Travel: [(map, x, y, z)] in the world's yards."""
+    found = []
+    if not path.exists():
+        return found
+    for text in path.read_text(encoding="utf-8").splitlines():
+        line = json.loads(text) if text.strip() else {}
+        way = line.get("path") or []
+        if line.get("kind") == "lift" and len(way) >= 2 and "map" in way[0]:
+            found.extend((way[0]["map"], point["x"], point["y"], point["z"]) for point in way[:2])
+    return found
+
+
+def landings(tiles, ends):
+    """The rectangles the lifts' ends land on, as Navigation finds them (Walk.Landing): of those within LANDING
+    yards whose height lies within RISE of the end, the nearest by the squares of both. {(key, number)}"""
+    found = set()
+    for world, x, y, z in ends:
+        row, column = int((HALF - x) // TILE), int((HALF - y) // TILE)
+        best = None
+        for dr in (-1, 0, 1):
+            for dc in (-1, 0, 1):
+                key = world * GRID * GRID + (row + dr) * GRID + column + dc
+                if key not in tiles or not (0 <= row + dr < GRID and 0 <= column + dc < GRID):
+                    continue
+                north0, west0 = HALF - (row + dr) * TILE, HALF - (column + dc) * TILE
+                for number, (c, r, w, h, quarters, *_) in enumerate(tiles[key][0]):
+                    north, south = north0 - r * SAMPLE, north0 - (r + h) * SAMPLE
+                    west, east = west0 - c * SAMPLE, west0 - (c + w) * SAMPLE
+                    gap = math.hypot(max(south - x, 0, x - north), max(east - y, 0, y - west))
+                    rise = quarters / 4 - z
+                    if gap <= LANDING and abs(rise) <= RISE and (best is None or gap * gap + rise * rise < best[0]):
+                        best = (gap * gap + rise * rise, (key, number))
+        if best:
+            found.add(best[1])
+    return found
+
+
+def regions(tiles, keep=()):
     """A region number for every rectangle: one for all that can be walked to from each other; regions smaller
-    than SMALLEST samples get none (nobody walks onto a roof or a ledge from the ground)."""
+    than SMALLEST samples get none (nobody walks onto a roof or a ledge from the ground), but those of the
+    rectangles in keep (the lifts' landings: Freewind Post's mesa)."""
     parent = {}
 
     def find(node):
@@ -713,13 +824,14 @@ def regions(tiles):
         for number, rect in enumerate(rects):
             root = find((key, number))
             area[root] = area.get(root, 0) + rect[2] * rect[3]
+    landed = {find(node) for node in keep}
     numbers = {}
     found = {}
     for key in sorted(tiles):  # in the keys' order, not the order the tiles were read in
         rects = tiles[key][0]
         for number in range(len(rects)):
             root = find((key, number))
-            if area[root] < SMALLEST:
+            if area[root] < SMALLEST and root not in landed:
                 continue
             if root not in numbers:
                 numbers[root] = len(numbers) + 1
@@ -909,7 +1021,7 @@ def main():
             if done % 50 == 0 or done == len(jobs):
                 print(f"{done} of {len(jobs)} tiles read", file=sys.stderr, flush=True)
     across(tiles)
-    tiles = kept(tiles, regions(tiles))
+    tiles = kept(tiles, regions(tiles, landings(tiles, lifts())))
     STAGING.parent.mkdir(parents=True, exist_ok=True)
     total, count = 0, 0
     with open(STAGING, "w", encoding="utf-8") as out:

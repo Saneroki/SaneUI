@@ -1188,8 +1188,8 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     Lift's two, Freewind Post's two, Gnomeregan's, and two small ones (Gnomeregan's surface, Azshara's coast).
   - **In the journey** (`Lifts.lua`, `Planner.lua`): each end of a car at its landing, the floor of the walking data
     beside its shaft nearest its height (`Walk.Landing`, within `Lifts.LANDING` yards), only a car both of whose
-    ends have one (Freewind Post's mesa, Gnomeregan's landings and the small ones are no floors of the walking data:
-    on the map only); the ride from one end to the other costs half the time between two departures and the ride.
+    ends have one (since 2026-10-21 all fourteen: the walking data keeps the regions lifts land on); the ride from
+    one end to the other costs half the time between two departures and the ride.
     The ends' regions are their landings': the lower in the land or the city, the upper on the mesa or the ruins.
     Between two levels a lift joins there is no walk: the lift is the way (until then such a walk cost
     `Planner.APART` more, and a lift's level was reached as near as one walks). A walk's guess between places of
@@ -1201,10 +1201,10 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     at its foot: none). A place stands below a stacked lift's upper level (`Lifts.Stand`) where it lies over the
     lower level: its own floor known (the player's) under the upper's; else the lower level's floors under it; a pin
     on the lift's own map (the Undercity's) also over any floor below there, or the nearest within `Lifts.RING`
-    yards (the city's lower parts; the bank, whose floor the walking data does not have); it stands on the floor
+    yards (the city's lower parts; where its own floor is missing from the walking data); it stands on the floor
     below that showed it, and is reached from the upper level only by the lift. A pin on Tirisfal Glades' map stands
-    on the ruins. By a lift side by side the upper landing overhangs the platform at its foot: there a place stands
-    on the upper.
+    on the ruins, but over the lower level's floors (the bank, whose floor the walking data holds since 2026-10-21).
+    By a lift side by side the upper landing overhangs the platform at its foot: there a place stands on the upper.
   - **The floor after a ride** (`Rode`): the game tells no height and no opening leads through a shaft, so the floor
     followed would stay at the end one boarded. At a lift joining the line's lift's two levels (`Lifts.Near`,
     within `Lifts.NEAR` yards: the planned car or one beside it) as long as its ride takes, then on along the line
@@ -1215,11 +1215,21 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     lifts): from Mulgore to Thunder Bluff's flight master, by either lift, and back; from the ruins of Lordaeron to
     the Undercity's flight master, its bank, the Magic Quarter, the Royal Quarter and the War Quarter, and out
     again: walk, lift, walk each.
-  - **Not yet:** the walking data joins the Undercity's levels to each other nowhere (its ramps and stairs are no
-    floors there: the ring the lifts arrive at, its lower parts and quarters, its sewers are regions apart), so a
-    walk from the lift to a pin in a lower part is as near as one walks, then straight; the lifts' upper landings
-    there, Freewind Post's mesa and Gnomeregan's landings are left out as small regions. A pin at the Undercity's
-    bank put on Tirisfal Glades' map stands on the throne room over it.
+  - **Built (2026-10-21): the walking data joins the city.** The Undercity's ring, its lower parts, quarters and
+    sewers are one region, and the lifts' upper landings join the throne room through their arches; Freewind Post's
+    mesa and Gnomeregan's landings are kept (*The walking data*, *What players walk between*). The sewers also lead
+    out to a cave on the hillside west of the ruins, so the city and the ruins are one region too. **One region:**
+    where a lift's two landings lie in one region, `Lifts.Levels` joins two levels there all the same where they are
+    stacked round it (`level.alone`, that lift), told apart by height: the upper from halfway between the landings up
+    (`level.split`), the lower within `Walk.RISE` yards of its lower landing's height (`level.low`); a place stands
+    below them only within `Lifts.SPREAD` (250) yards of the lift, and such a level joins no two regions
+    (`Lifts.Joined`). The planner keeps a place below a level and one on it apart also where they share a region
+    (`Over`: the lift is the way; two places below one level are a walk apart). A lift within one region whose levels
+    lie side by side (the Great Lift) joins none.
+  - **Checked against the real data** (2026-10-21, the new walking data, outside the game): from the ruins to the
+    city's flight master, bank, quarters and throne room and out again, from the canyon to Freewind Post's flight
+    master and back, from Dun Morogh down Gnomeregan's lift: walk, lift, walk each; from the lift's lower landing
+    into the Magic Quarter on foot all the way; Thunder Bluff's flight master to the Elder Rise over its bridge.
 
 ### The walking data
 
@@ -1244,15 +1254,15 @@ judged on its heights smoothed over three samples, so its bumps make no specks.
   walked over at the square's height; a lone sample among steep ground is left out. So the land is a few large
   rectangles, towns, caves and mountainsides many small ones.
 - **Regions:** all rectangles one can walk or swim between share a number; a region under `SMALLEST` (3,000
-  samples, rooftops, ledges, plateaus nobody walks onto) is left out.
+  samples, rooftops, ledges, plateaus nobody walks onto) is left out, but one a lift lands on (2026-10-21).
 - **The block** of a tile (CBOR, deflated, base64; the game's `C_EncodingUtil` reads it): its surfaces (count,
   kind, region), its rectangles (column, row, width, height, height in quarter yards) and the openings the game
   cannot work out itself: two rectangles of one surface that touch are open along all their edge (not
   written); every other opening is written (between surfaces, into the next tile, or only part of an edge), on
   its own tile once (`Walk.lua` adds the other way).
-- **Size:** 1,724 tiles of both continents and 26 of Zephras Isle, 1.46 million rectangles, 10.9 MB in the master
-  (the pack *Data: Routes*, loaded at the first route); about two minutes to make on this computer, the isle alone
-  (`--maps 2991`) a few seconds.
+- **Size:** 1,724 tiles of both continents and 26 of Zephras Isle, 1.65 million rectangles (1.45 million before
+  2026-10-21), 12.6 MB in the master (12.1 MB of blocks; 10.9 and 10.5 before); about three minutes to make on this
+  computer, the isle alone (`--maps 2991`) a few seconds.
 - **Region numbers** are given in the order of the tiles' keys (a run gives the same numbers again) and hold within
   one map: the planner and the search compare them only there, so the isle, made on its own, numbers from 1. Walks across a zone take
   20 to 65 ms of search, spread over frames by the scheduler.
@@ -1264,8 +1274,35 @@ judged on its heights smoothed over three samples, so its bumps make no specks.
   where a rectangle was entered to the nearest point of the opening, swimming twice, and each yard up two more
   (the valleys and the roads: the data holds steep slopes as floors, so a walk into Ironforge went over its
   mountain); the line then pulled straight through the openings passed, each drawn in 0.8 yards from its ends.
-- **Not yet:** the doodads (trees, fences, rocks) are not read: a line may cross a fence; one-way drops (a
-  ledge one can jump down but not climb) are no way.
+- **Built (2026-10-21): what players walk between, joined.** Found on the real data while adding the lifts: the
+  Undercity's levels were regions apart, and the lifts' landings there, Freewind Post's and Gnomeregan's were left
+  out.
+  - **Slopes in yards:** a building's triangle was judged in the samples' space (2.08 yards across, a yard up), so
+    `SLOPE`'s 50° was 30° for buildings, and the Undercity's ramps (27° to 39°, the building's collision-only
+    triangles) were walls. Now in yards, as the ground's.
+  - **Thin walls:** a wall anywhere in a sample's square took its floor, so a door or a bridge narrower than about
+    two samples was closed by its sides (the lifts' upper landings open into the throne room through arches 3.9
+    yards wide). Now a wall takes a floor only where it comes into the middle of the sample's square (`CORE`, half
+    its side); off the middle it stands on each side whose way it crosses (from the sample's middle to that side's),
+    and closes the way to the next sample there where it rises more than `STEP` (half a yard) over the higher floor
+    of the two under its `ROOM` (a wall, a railing; not a sill), or more than `LEDGE` (1.5 yards) between them (a
+    ledge; a stair's steps do not). The water's floors too: no more swimming through a wall that stands in water.
+  - **The lifts' landings kept:** the region a lift of the master's set *Travel* lands on (as `Walk.Landing` finds
+    it: of the floors within `LANDING`, 20 yards, of its end whose height lies within `RISE`, 12, the nearest by
+    both) is kept however small: Freewind Post's mesa, two small lifts' platforms.
+  - **What it joined:** the Undercity's ring, lower parts, quarters and sewers and the lifts' upper landings;
+    Gnomeregan's lift's two ends; Thunder Bluff's Elder Rise to the main mesa by its bridge; towers, ramps and
+    terraces to their land: Orgrimmar's flight tower, the Crossroads' tower, the zeppelin towers to Zephras Isle, the
+    Caverns of Time, Jintha'Alor, Timbermaw Hold, the city behind Zul'Gurub's gate, the gates of Ahn'Qiraj. The
+    Undercity's sewers lead out to a cave on the hillside west of the ruins, so the city and the ruins are one
+    region (the lifts: one region). Regions: 108 on the Eastern Kingdoms (131 before), 219 on Kalimdor (221), 5 on
+    the isle (6).
+  - **Not joined:** Thunder Bluff's Spirit Rise and Hunter Rise: their bridges end on decks whose stairs down to the
+    main mesa are no part of the buildings' collision (doodads); a small walled harbour far in the south west of the
+    Eastern Kingdoms, reached before only by swimming through its wall, is a region of its own.
+- **Not yet:** the doodads (trees, fences, rocks, some stairs) are not read: a line may cross a fence, and Thunder
+  Bluff's Spirit Rise and Hunter Rise stay apart; one-way drops (a ledge one can jump down but not climb) are no way;
+  an instance's portal or a closed gate is no collision (the walking data goes through Zul'Gurub's gate).
 
 ### The golden line
 

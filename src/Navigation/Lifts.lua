@@ -13,11 +13,14 @@ local _, ns = ...
 --                          end), maps (the zone maps its ends lie on), [1] its lower end, [2] its upper }, each end
 --                          { name ("lift:<key>:<n>"), lift, map, u, v, z (its height) }
 --      Lifts.Landed(end)   whether the end lies on a landing (asked once the walking data is there): then also its
---                          floor ({ key, index }), pu, pv (the landing's point nearest the shaft) and region
+--                          floor ({ key, index }), pu, pv (the landing's point nearest the shaft), region and fz (the
+--                          floor's height)
 --      Lifts.Levels(map)   the levels the lifts of a plane join: { lower, upper (regions), stacked }, one per two
---                          regions a lift's landings lie in: stacked, one over the other (the Undercity under the ruins
---                          of Lordaeron), or side by side (Thunder Bluff's mesa and Mulgore at its foot); a lift within
---                          one region (the Great Lift) joins none
+--                          regions a lift's landings lie in: stacked, one over the other (Gnomeregan under Dun Morogh),
+--                          or side by side (Thunder Bluff's mesa and Mulgore at its foot); a lift within one region
+--                          joins levels only where they are stacked round it (alone: that lift; the Undercity under
+--                          the ruins of Lordaeron, joined to them far off by its sewers), told apart by height (low:
+--                          its lower landing's, split: halfway up), else none (the Great Lift)
 --      Lifts.Joined(a, b, map)   whether a lift joins a region of each of two places (sets of regions)
 --      Lifts.Stand(map, u, v, regions, floor, reach, at)   where a place stands (floor: its own where known; at:
 --                          the pin's map): its regions without the levels it does not stand on, and the lifts' upper
@@ -30,14 +33,17 @@ local _, ns = ...
 --  at its foot). A place below a stacked lift's upper level stands there, not on that level: one whose floor is known
 --  (the player's, a lift's end) where that level's floors lie over it by more than Walk.RISE yards; any other where
 --  floors of the lift's lower level lie under that level's under the place (the Undercity's flight master). A pin on
---  the map the lift's ends lie on (the Undercity's) also over floors of any other region below that level's (the
---  city's lower parts, which the walking data does not join to the lift), and, with none under it, where the nearest
+--  the map the lift's ends lie on (the Undercity's) also over any other floor below that level's (the city's lower
+--  parts: its canals and quarters), and, with none under it, where the nearest
 --  such floor within Lifts.RING yards lies under that level (the city's bank, its floor missing from the walking data
 --  under the throne room); a pin on another map stands as its floors are (the ruins' courtyard over their cellars).
 --  It stands on the floor below that showed it.
 --  Where two levels side by side lie one over the other, by the lift (its upper landing over the platform at its
 --  foot), a place stands on the upper. A walk between two levels a lift joins, or between a level and a place below
 --  it, is none: the lift is the way (Planner.lua).
+--  Where a lift's two landings lie in one region, its levels are its region's floors round it, told apart by their
+--  height: the upper from halfway between the landings up, the lower within Walk.RISE yards of its lower landing's
+--  height; a place stands below such a level only within Lifts.SPREAD yards of its lift.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords, Walk = ns.Coords, ns.Walk
@@ -47,6 +53,7 @@ ns.Lifts = Lifts
 Lifts.LANDING = 20  -- yards from a lift's end its landing may lie (beside its shaft: a door, a platform)
 Lifts.NEAR = 12     -- yards from its shaft within which a player is at a lift (on its car, or at its landing)
 Lifts.RING = 40     -- yards round a lift's shaft where its levels are looked at: one over the other, or side by side
+Lifts.SPREAD = 250  -- yards round a lift within one region where a place may stand below its upper level (the city)
 
 local Travel = Core.Data.Set("Travel")
 local lifts       -- every lift, while Core's set Travel stays as it is
@@ -96,14 +103,24 @@ function Lifts.Landed(point)
         point.landed = tile ~= nil
         if tile then
             point.floor, point.pu, point.pv, point.region = { tile.key, index }, pu, pv, tile.region[index]
+            point.fz = tile.rects[index * 5] / 4
         end
     end
     return point.landed
 end
 
+-- Whether a floor (its region and height) lies on a level's upper level, or on its lower: its region; within one
+-- region (level.alone), its height (Lifts' header).
+local function Upper(level, region, z)
+    return region == level.upper and (not level.alone or z >= level.split)
+end
+local function Lower(level, region, z)
+    return region == level.lower and (not level.alone or (z < level.split and math.abs(z - level.low) <= Walk.RISE))
+end
+
 -- Of sixteen points on a ring Lifts.RING yards round a lift's shaft, those on its lower level, and of those the ones
 -- under its upper level.
-local function Ring(lift)
+local function Ring(lift, level)
     local on, under = 0, 0
     for step = 0, 15 do
         local angle = step * math.pi / 8
@@ -112,8 +129,8 @@ local function Ring(lift)
         for _, found in ipairs(Walk.Under(lift.map, u, v)) do
             local tile, index = found[1], found[2]
             local z, region = tile.rects[index * 5] / 4, tile.region[index]
-            if region == lift[1].region and (not low or z < low) then low = z end
-            if region == lift[2].region and (not high or z > high) then high = z end
+            if Lower(level, region, z) and (not low or z < low) then low = z end
+            if Upper(level, region, z) and (not high or z > high) then high = z end
         end
         if low then
             on = on + 1
@@ -127,55 +144,66 @@ function Lifts.Levels(map)
     local found = levels[map]
     if found then return found end
     found = {}
-    local byPair = {}
+    local byPair, kept = {}, {}
     for _, lift in ipairs(Lifts.All()) do
-        if lift.map == map and Lifts.Landed(lift[1]) and Lifts.Landed(lift[2]) and lift[1].region ~= lift[2].region then
-            local pair = lift[1].region .. ":" .. lift[2].region
-            local level = byPair[pair]
+        if lift.map == map and Lifts.Landed(lift[1]) and Lifts.Landed(lift[2]) then
+            local lower, upper = lift[1].region, lift[2].region
+            local level = lower ~= upper and byPair[lower .. ":" .. upper]
             if not level then
-                level = { lower = lift[1].region, upper = lift[2].region, on = 0, under = 0, maps = {} }
-                byPair[pair] = level
+                level = { lower = lower, upper = upper, on = 0, under = 0, maps = {} }
+                if lower == upper then
+                    level.alone, level.low, level.split = lift, lift[1].fz, (lift[1].fz + lift[2].fz) / 2
+                else
+                    byPair[lower .. ":" .. upper] = level
+                end
                 found[#found + 1] = level
             end
-            local on, under = Ring(lift)
+            local on, under = Ring(lift, level)
             level.on, level.under = level.on + on, level.under + under
             for at in pairs(lift.maps) do level.maps[at] = true end
         end
     end
-    for _, level in ipairs(found) do level.stacked = level.on > 0 and level.under * 3 >= level.on end
-    if lifts and Walk.Ready() then levels[map] = found end
-    return found
+    for _, level in ipairs(found) do
+        level.stacked = level.on > 0 and level.under * 3 >= level.on
+        if level.stacked or not level.alone then kept[#kept + 1] = level end
+    end
+    if lifts and Walk.Ready() then levels[map] = kept end
+    return kept
 end
 
 function Lifts.Joined(a, b, map)
     for _, level in ipairs(Lifts.Levels(map)) do
-        if (a[level.lower] and b[level.upper]) or (a[level.upper] and b[level.lower]) then return true end
+        if not level.alone and ((a[level.lower] and b[level.upper]) or (a[level.upper] and b[level.lower])) then
+            return true
+        end
     end
     return false
 end
 
--- The highest floor of a region in a list of floors ({ tile, index } each), or nil.
-local function Top(list, region)
+-- The highest floor on a level's upper level (on: Upper) or its lower (Lower) in a list of floors ({ tile, index }
+-- each), or nil.
+local function Top(list, level, on)
     local top
     for _, found in ipairs(list) do
         local tile, index = found[1], found[2]
         local z = tile.rects[index * 5] / 4
-        if tile.region[index] == region and (not top or z > top) then top = z end
+        if on(level, tile.region[index], z) and (not top or z > top) then top = z end
     end
     return top
 end
 
 -- Whether a place stands below a stacked level (Lifts' header): by its own floor's height where it is known (ownZ, of
--- the region own), else by the floors under it (under) of the level's lower region; wide (a pin on the lift's map):
+-- the region own), else by the floors under it (under) of the level's lower level; wide (a pin on the lift's map):
 -- of any other, and with none there, the nearest within Lifts.RING yards. And the region of the floor below that
--- showed it.
+-- showed it. Within one region, only within Lifts.SPREAD yards of its lift.
 local function Under(map, u, v, under, level, own, ownZ, wide)
-    local upper = level.upper
-    local top = Top(under, upper)
+    local alone = level.alone
+    if alone and (alone.u - u) ^ 2 + (alone.v - v) ^ 2 > Lifts.SPREAD ^ 2 then return false end
+    local top = Top(under, level, Upper)
     if not top then return false end
-    if ownZ then return own ~= upper and top > ownZ + Walk.RISE end
+    if ownZ then return not Upper(level, own, ownZ) and top > ownZ + Walk.RISE end
     local function Below(region, z)
-        return region ~= upper and (wide or region == level.lower) and z < top - Walk.RISE
+        return not Upper(level, region, z) and (wide or Lower(level, region, z)) and z < top - Walk.RISE
     end
     for _, found in ipairs(under) do
         local tile, index = found[1], found[2]
@@ -189,7 +217,7 @@ local function Under(map, u, v, under, level, own, ownZ, wide)
             best, at, au, av, region = gap, z, nu, nv, tile.region[index]
         end
     end)
-    local over = best and Top(Walk.Under(map, au, av), upper)
+    local over = best and Top(Walk.Under(map, au, av), level, Upper)
     if over and over > at + Walk.RISE then return true, region end
     return false
 end
@@ -216,7 +244,7 @@ function Lifts.Stand(map, u, v, regions, floor, reach, at)
                     add[region] = true
                 end
             end
-        elseif not ownZ and Top(under, level.upper) and Top(under, level.lower) then
+        elseif not ownZ and Top(under, level, Upper) and Top(under, level, Lower) then
             drop = drop or {}
             drop[level.lower] = true
         end
