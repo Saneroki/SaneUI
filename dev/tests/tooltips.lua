@@ -1185,16 +1185,29 @@ world.target.far = true -- out of sight: the game cannot draw its model
 local sameGuid = UnitGUID
 UnitGUID = function(unit) return unit == "target" and "Creature-0-0-0-0-9999-0" or sameGuid(unit) end -- another creature
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, kobold)
-check(not figure:IsShown() and panel.icon:IsShown() and panel.icon.portrait == "target" and #given == asked + 1,
-    "where the game cannot draw the model, the flat picture")
+check(figure:GetAlpha() == 0 and panel.icon:IsShown() and panel.icon.portrait == "target" and #given == asked + 1
+    and figure._scripts.OnUpdate, "refused (not ready, perhaps): the flat picture meanwhile, the model asked for again in a moment")
+local Panel = ns.Panel
+for _ = 1, Panel.RETRIES do figure._scripts.OnUpdate(figure, Panel.RETRY) end
+check(not figure:IsShown() and not figure._scripts.OnUpdate and panel.icon:IsShown() and #given == asked + 1 + Panel.RETRIES,
+    "where the game still cannot draw it after its tries, the flat picture stays")
 panel.drawn = false
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, kobold)
-check(not figure:IsShown() and #given == asked + 2, "and the game is asked again at the next draw")
-world.target.far, UnitGUID = nil, sameGuid
+check(figure:GetAlpha() == 0 and #given == asked + 2 + Panel.RETRIES, "and the game is asked again at the next draw")
+-- Refused at first, taken at the third try: the 3D model without Alt or a new draw.
+world.target.far = nil
+figure._scripts.OnUpdate(figure, Panel.RETRY / 2) -- (not yet: not asked)
+check(#given == asked + 2 + Panel.RETRIES, "between two tries the game is not asked")
+figure._scripts.OnUpdate(figure, Panel.RETRY / 2)
+check(figure:IsShown() and figure:GetAlpha() == 1 and not panel.icon:IsShown() and not figure._scripts.OnUpdate
+    and figure._model == "target" and panel.figured == figure,
+    "taken at a later try: the live 3D model in the picture's place at once, no Alt and no new draw needed")
+UnitGUID = sameGuid
+asked = #given
 options.models = false
 panel.drawn = false
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, kobold)
-check(not figure:IsShown() and panel.icon:IsShown() and #given == asked + 2, "switched off: the flat picture, and no model is asked for")
+check(not figure:IsShown() and panel.icon:IsShown() and #given == asked, "switched off: the flat picture, and no model is asked for")
 options.models, options.show = true, "shift"
 panel.drawn = false
 tip:Fill({ type = TYPE.Unit, guid = "Creature-1" }, kobold)

@@ -234,10 +234,15 @@ end
 -- A frame is given its model only when that changes, as giving it again would load it anew and start
 -- its moves over, and a panel is drawn many times while it is shown. It keeps it while hidden: a panel
 -- shown again with the same thing is not drawn anew (Tooltips.lua), so the model must still be there.
--- The picture stands until the model is there: a unit's as soon as the game takes the unit; a
--- creature's and a piece of gear when the game has loaded it (OnModelLoaded). Where the game cannot
--- draw it (a unit out of sight, its identity hidden, a model it does not load), the picture stays.
+-- The model is always wanted, the picture only its stand-in (Saneroki, 2026-10-21): it stands until the
+-- model is there: a unit's as soon as the game takes the unit; a creature's and a piece of gear when the
+-- game has loaded it (OnModelLoaded). A unit the game refuses at first (its model not ready yet) is asked
+-- for again every Panel.RETRY seconds, Panel.RETRIES times, while the panel shows it (no Alt, no new draw
+-- needed). Where the game still cannot draw it (a unit out of sight, its identity hidden, a model it does
+-- not load), the picture stays, until the next draw.
 local FRAMES = { figure = "PlayerModel" } -- [the panel's field] = the kind of frame
+Panel.RETRY, Panel.RETRIES = 0.1, 10 -- a unit's model refused at first: asked again so often, so many times
+local Retry, retrying -- below; Retry guarded once when the first frame is made (Made)
 local TRIED = Enum.ItemTryOnReason and Enum.ItemTryOnReason.Success or 0
 
 -- The model has come: it stands in the picture's place from now.
@@ -262,6 +267,7 @@ local function Made(panel, field)
         pcall(figure.SetKeepModelOnHide, figure, true) -- (see above: kept while hidden)
         pcall(figure.SetScript, figure, "OnModelLoaded", ns.Guard(Loaded))
         figure.ready = false
+        retrying = retrying or ns.Guard(Retry)
     end
     panel[field] = figure
     return figure
@@ -287,6 +293,27 @@ local function Wanted(head)
     return nil
 end
 
+-- A unit's model the game refused at first, asked for again (see above) while the frame waits unseen; taken, it
+-- stands in the picture's place at once. The panel drawn anew, or shown with another thing, ends the asking.
+function Retry(figure, elapsed)
+    figure.wait = figure.wait - (elapsed or 0)
+    if figure.wait > 0 then return end
+    figure.wait, figure.tries = Panel.RETRY, figure.tries - 1
+    local panel, head = figure.panel, figure.head
+    local kind, key = Wanted(head)
+    local taken = key == figure.want and LOAD[kind] and LOAD[kind](figure, head)
+    if taken then
+        figure:SetScript("OnUpdate", nil)
+        figure.key, figure.ready, figure.head = key, true, nil
+        panel.figured = figure
+        panel.icon:Hide()
+        figure:SetAlpha(panel.allowed and 1 or 0)
+    elseif key ~= figure.want or figure.tries <= 0 then
+        figure:SetScript("OnUpdate", nil)
+        figure.head = nil
+        figure:Hide()
+    end
+end
 -- Shows the frame for the head's model, given it if it is a new one. Returns whether the model stands
 -- in the picture's place now.
 local function Figure(panel, head)
@@ -298,6 +325,11 @@ local function Figure(panel, head)
         if frame and (other ~= field or not kind) then frame:Hide() end
     end
     panel.figured = nil
+    local waiting = panel[field]
+    if waiting and waiting.head then -- a refused unit's asking ends: this draw decides anew
+        waiting:SetScript("OnUpdate", nil)
+        waiting.head = nil
+    end
     if not kind then return false end
     local figure = Made(panel, field)
     if not figure then return false end
@@ -308,7 +340,13 @@ local function Figure(panel, head)
         local taken, ready = LOAD[kind](figure, head)
         if not taken then
             figure.key = nil -- asked again at the next draw
-            figure:Hide()
+            if kind == "unit" then -- perhaps not ready yet: asked again in a moment, unseen meanwhile (Retry)
+                figure.head, figure.want, figure.tries, figure.wait = head, key, Panel.RETRIES, Panel.RETRY
+                figure:SetAlpha(0)
+                figure:SetScript("OnUpdate", retrying)
+            else
+                figure:Hide()
+            end
             return false
         end
         if kind ~= "unit" then pcall(figure.SetPortraitZoom, figure, head.modelZoom or 0) end

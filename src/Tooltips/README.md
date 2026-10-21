@@ -78,9 +78,12 @@ only read.
   Lines that only repeat a number (*Spell ID: 1459*) are left out: Alt shows the numbers.
 
   **3D models** (the setting *3D model in tooltips*): a creature's or a player's portrait is its live 3D
-  model, moving, its face in view. A mount (the item that teaches it, the spell that summons it) and a pet
-  (the item that teaches it) show their model, a little from the side. The icon stands until the game has
-  loaded the model. A piece of gear keeps its icon. **Hold Alt** over a piece you can see on a character (a
+  model, moving, its face in view, always, without Alt (Saneroki, 2026-10-21); the flat portrait only stands
+  in while the model is not there, and stays only where the game cannot give it. A mount (the item that teaches
+  it, the spell that summons it) and a pet (the item that teaches it) show their model, a little from the side.
+  The icon stands until the game has loaded the model; a unit the game refuses at first (its model not ready
+  yet) is asked for again ten times a second for a second (`Panel.RETRY`, `Panel.RETRIES`), so its model comes
+  without a new draw. A piece of gear keeps its icon. **Hold Alt** over a piece you can see on a character (a
   helm, a chest, a weapon, a cloak; not a ring): your own character wearing it, as the game's dressing room
   puts it on you, stands beside the panel, as high as the panel, see-through (no ground of its own), turning
   slowly round (once in ten seconds). It stands at the panel's left; at its right where the left has no room

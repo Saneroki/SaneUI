@@ -40,7 +40,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   steps. Out of it, our map is back.
 - **Pins:** every kind of thing in its own icon, the game's map icons: no discs, no numbers. The game's own marks
   where it tells them (your quests: the yellow ?, the quest the arrow leads to glowing; flight points of your side;
-  rares (a skull) and treasures (a chest) nearby; the game's points and ways into other maps), and what Core's data
+  rares (a skull; hold Alt over one and its 3D model stands beside the tooltip) and treasures (a chest) nearby; the
+  game's points and ways into other maps), and what Core's data
   knows: quest givers with a quest you can take (the yellow !), with a quest too low to give you experience (a grey
   !) or one you cannot take yet (its level, a quest first: a red ?), or with quests you have done only (grey, off
   at first); services, each its
@@ -75,6 +76,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   moving at first, 0 never), silently too, and the ones of the finder that is off meanwhile stay on the map until
   you gather one, go far from it or it is five minutes old. As the pins do, each takes the mouse: its tooltip
   names it, and a click puts the game's map pin where it is, so the game's arrow leads there.
+- **Indoor maps:** inside a building or a cave, its indoor map lies over the map at the floor you stand on (the
+  game's own indoor pictures, without their black). Only inside buildings and caves, never on a street: Stormwind's
+  and Orgrimmar's streets and squares keep the city's own map, though the game counts each city as one building.
 - **Sparkles** (the setting *Sparkles on herbs and ore*, on at first): gold sparkles in the world on the herb or
   ore your interact key would gather now, hanging from the game's plate on it, so you see it among the grass and
   the rocks. They need the game's interact key: while they are on, *Enable Interact Key* is on and it looks all
@@ -104,7 +108,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   stands, and its own 3D model standing on the mark (the game's model of the boss's look), its name in the tooltip
   (not yet confirmed by the game). The wheel zooms it, a drag moves it, a right
   click goes back to the map it was opened from. Shift and a click on a dungeon's entrance opens it too, and inside a
-  dungeon the full map opens on its map, at the floor you stand on where the game tells your place.
+  dungeon the full map opens on its map, at its lowest floor. Instance maps keep rules of their own, apart from the
+  world map's and its indoor maps': Forever tells nobody's place inside an instance, so they show no arrow for you
+  and no party or raid; what stands still there, the bosses, stands on them.
 - **Zephras Isle** is on the map as a continent is, a zone of its own: the map follows you there, its pins and the
   map pin stand on it, a click on it at the world opens it, and a right click on it goes out to the world (there is
   no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* and *Atlas* its
@@ -282,13 +288,13 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 - **Dungeons** (`Dungeons.lua`): the maps of kind *Dungeon* under the world map (`C_Map.GetMapChildrenInfo`), one
   entry per map group (`C_Map.GetMapGroupMembersInfo`: its floors, lowest first), drawn in a view of their own over
   the canvas, under the bar: the floor's art (`Art.Of`) fitted whole in a frame that is scaled to zoom (up to
-  `Dungeons.NEAR` times) and moved by a drag; the player's arrow where `C_Map.GetPlayerMapPosition` tells it on the
-  floor shown. `Canvas.Show` of a dungeon's map opens it; going small or a right click closes it (the map under it
+  `Dungeons.NEAR` times) and moved by a drag (its step runs only while a drag goes on); no player's arrow and no
+  group (Forever tells no place inside an instance). `Canvas.Show` of a dungeon's map opens it; going small or a right click closes it (the map under it
   stays as it was). The list is kept once the game told of a dungeon map or the set was read. Core's set *Dungeons* (pack World)
   adds the dungeons the game has no map of: walked once it is there (`Each`), each floor keyed `"<instance>:<floor>"`
   (`Dungeons.Key(instance)` gives the lowest; an entrance's pin takes it as its `to`), its art from the set's tiles
-  (the game's files), the player's arrow by `UnitPosition` in the floor's box, the floor you are on by the smallest
-  box that holds you (`Dungeons.Here`, the instance from `GetInstanceInfo`), the bosses (`Dungeons.Bosses`) in
+  (the game's files), inside one its lowest floor (`Dungeons.Here`, the instance from `GetInstanceInfo`; the floors'
+  world boxes are kept for the enemies' places to come), the bosses (`Dungeons.Bosses`) in
   `Dungeons.BOSS` over the art, the same size at every zoom (`Dungeons.PlaceBosses`), named by the set *Encounters*;
   a boss with a look (the set's `display`) gets a `PlayerModel` of it standing on its mark (`SetDisplayInfo`, as the
   game's guild news shows a boss; `Dungeons.MODEL_WIDTH` x `MODEL_HEIGHT`, turned `Dungeons.FACING`), one lower on
@@ -394,7 +400,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   in the building, the building's place, turn and scale). The building: the one whose part holds your place
   (`UnitPosition`), of those on your terrain tile (`byTile`); its parts whose height reaches yours (from
   `Indoors.BELOW` under their floor to their top), the floor nearest below you on top; without a height every part
-  with the game's indoor flag. A picture is the square any texture is laid out in, its texture coordinates turned to
+  with the game's indoor flag. Never on a street (Saneroki, 2026-10-21): a part under the sky that the game counts
+  indoors (`open`: lit as outdoors, `EXTERIOR_LIT`, and its area outdoors in `WMOAreaTable`; Stormwind's 64 and
+  Orgrimmar's 12) is not drawn, and where the part you stand in (the smallest holding your place and height) is one,
+  that building is passed over. A picture is the square any texture is laid out in, its texture coordinates turned to
   the building's turn inside it and clear around it. Looked at again a few times a second (`Indoors.Track`).
 - **The game's minimap** (`Hybrid.lua`): over our map while the view follows you at one of its zoom steps,
   square, as large as the view's shorter side, in its middle, cut by the game's own white square (the game draws
@@ -461,7 +470,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, zoomed and dragged |
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
 | `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold, flights pale, ships red |
-| `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks |
+| `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks; a rare's 3D model beside its tooltip with Alt |
 | `Marks.lua` | The player's arrow, the map pin, the party |
 | `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders switched by the pin filter and in turn, silently. No frames |
 | `Indoors.lua` | The indoor map of the building you are in: the game's indoor pictures without their black, at your floor |
@@ -483,6 +492,11 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-21, indoor maps off the streets; instance maps without players; a rare's model:** as Saneroki decided,
+  the indoor maps only inside buildings and caves (Core's set *Indoors* marks the open parts, `open`, from the game's
+  part flags and its `WMOAreaTable`); instance maps keep rules of their own: no arrow, no group, no floor by place
+  (Forever tells none inside an instance), the bosses on them; Alt over a rare's pin shows its 3D model beside the
+  tooltip (`PinView`, `SetCreature`).
 - **2026-10-21, lifts in the routes:** Thunder Bluff's mesa and the Undercity are reached by their lifts, and the
   Great Lift between the Barrens and Thousand Needles is taken where it is quicker: on foot to the lift, up or down,
   on foot on, instead of as near as one walks and straight on. The lifts are fourteen cars of Core's set *Travel*

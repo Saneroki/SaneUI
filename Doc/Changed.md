@@ -6,6 +6,28 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 215 (data in the game), 478 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 50 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### Navigation, Tooltips: indoor maps off the streets, instance maps without players, a rare's model, 3D portraits (Saneroki, 2026-10-21)
+- **Indoor maps only inside buildings and caves** (Saneroki's answer to open question 18): `dev/tools/indoor-art` marks a
+  part `open` where the game lights it as outdoors (its flag `EXTERIOR_LIT`) and its area counts as outdoors
+  (`WMOAreaTable`, flag 4): Stormwind's 64 and Orgrimmar's 12 streets and squares, one part of two other buildings.
+  Core's set *Indoors* gains the field (schema; the four entries taken in again as corrections of build 70245, their
+  pictures unchanged). `Indoors.lua` never draws an open part and passes over a building where the part you stand in
+  (the smallest holding your place and height, `Standing`) is open.
+- **Instance maps keep rules of their own** (Saneroki: Forever tells no player's place inside an instance): `Dungeons.lua`
+  has no arrow and no group any more, `Dungeons.Here` gives the instance's lowest floor, the drag's step runs only
+  while dragging. Decided too: the enemies' and bosses' fixed places are shown, the bosses in full 3D (built).
+- **A rare's 3D model with Alt** (`PinView.lua`): over a rare's pin with Alt held, a `PlayerModel` of its creature
+  (`SetCreature`) beside the tooltip (left, or right without room), unseen until loaded; Alt let go or the mouse off
+  the pin: gone.
+- **Tooltips: 3D portraits always** (`Panel.lua`): a unit's model the game refuses at first is asked for again, unseen,
+  every `Panel.RETRY` (0.1) seconds, `Panel.RETRIES` (10) times, and stands in the portrait's place once taken; until
+  now it waited for the next draw, which only Alt caused. The flat portrait stays only where the game still refuses.
+- Plans: `Doc/ideas/Navigation.md` (instance rules, indoor maps, a rare's model; open question 18 answered),
+  `Doc/ideas/Tooltips/Build.md`; handoffs `Doc/agent/navigation.md`, `Doc/agent/tooltips.md`.
+- Tests: Navigation 485 checks (a street of the building: no plan; back inside: the floor, the street not drawn; no
+  arrow inside an instance; the drag's step only while dragging; the rare's model with Alt), Tooltips 485 (refused
+  at first, taken at a later try without a new draw; still refused: the picture). A `/reload` takes it in.
+
 ### Navigation: lifts in the routes (Saneroki, 2026-10-21)
 - **Saneroki's ask:** a route into the Undercity or up Thunder Bluff's mesas walks to the lift, rides it and walks
   on, instead of ending as near as one walks and running straight to the pin.

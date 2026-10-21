@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: indoor maps show only inside buildings and caves, no
+  longer on Stormwind's and Orgrimmar's streets. Dungeon maps show no
+  arrow for you (the game gives no position inside an instance). Hold
+  Alt on a rare's map pin to see its 3D model beside the tooltip.
+- Tooltips: portraits are always the live 3D model, without Alt.
 - Navigation: routes take the lifts. Up Thunder Bluff's mesas and down
   into the Undercity the golden line leads you to the lift, up or down
   it, and on; the Great Lift too, where it is quicker. The lifts are on

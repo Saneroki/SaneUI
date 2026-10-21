@@ -12,8 +12,7 @@ local _, ns = ...
 --                   lowest floor; and those of Core's set Dungeons the game has no map of (Forever's
 --                   client has none: their floors are the set's, keyed "<instance>:<floor>"), A to Z
 --      a floor      the game's floors of the dungeon (C_Map.GetMapGroupMembersInfo) or the set's,
---                   chosen in the bar's dropdown beside it; the first shown is the player's floor when
---                   inside
+--                   chosen in the bar's dropdown beside it; the first shown is its lowest
 --      the art      the game's own map art of the floor (Art.Of; the set's: its tiles, the game's
 --                   files), fitted into the view whole
 --      the bosses   where Core's set Dungeons has them: the game's boss mark at each one's place and the
@@ -25,17 +24,19 @@ local _, ns = ...
 --                   (the map stays under the dungeon's view, as it was)
 --      also         a pin that leads into a dungeon (Shift and a click on its entrance) opens its map here
 --                   (Canvas.Show)
---      the player   the game's arrow where the game tells the player's place on the floor shown (a floor
---                   of the set's: the player's place in the world, UnitPosition, in its box)
+--      no player    Forever tells no place of the player inside an instance, nor of the party or raid
+--                   (Saneroki, 2026-10-21): an instance's map has no arrow and no group, and no floor is
+--                   chosen by where the player stands. What stands still there is drawn: the bosses (and
+--                   the enemies, once Core's data has their places)
 --
---  Opening the full map inside a dungeon shows its map at once (Window.lua).
+--  An instance's map keeps rules of its own, apart from the world map's and its indoor maps' (Indoors.lua).
+--  Opening the full map inside a dungeon shows its map at once (Window.lua): the game tells which instance.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Dungeons = {}
 ns.Dungeons = Dungeons
 
 Dungeons.NEAR = 4   -- the nearest zoom: so many times the whole map's
-Dungeons.LOOK = 0.2 -- seconds between two looks at the player's place
 Dungeons.LEVEL = 22 -- over the canvas' layers and marks (Canvas.LEVELS: up to 21), under the bar (TopBar: 30)
 Dungeons.SPREAD = 3 -- the models' levels over their marks, by how far down each stands: all of them under the bar
 Dungeons.BOSS = "vignettekillboss" -- a boss's mark: the game's own
@@ -54,7 +55,7 @@ local DUNGEON = KINDS.Dungeon or 4
 local SET = Core.Data.Set("Dungeons")
 local ENCOUNTERS = Core.Data.Set("Encounters")
 
-local frame, content, over, arrow, canvas
+local frame, content, over, canvas
 local tiles = {}  -- the art's textures, made as many as needed
 local marks = {}  -- the bosses' marks, made as many as needed
 local fromData    -- the dungeons of the set, once walked (Walk); nil until then
@@ -65,7 +66,6 @@ local shown       -- the floor shown, nil while the map is
 local floors      -- the floors of the dungeon shown (one at least)
 local zoom, panX, panY = 1, 0, 0 -- the zoom (1: whole), the art's middle from the view's, in screen units
 local dragX, dragY -- where the cursor was at the last step of a drag
-local nextLook = 0
 
 -- The floors of a map's dungeon: the members of its map group, lowest first; only itself without a group.
 local function Floors(map)
@@ -158,15 +158,6 @@ local function Entry(map)
     return nil
 end
 
--- The player in the world: x (north), y (west), from the game; nil where it tells none.
-local function World()
-    local position = rawget(_G, "UnitPosition")
-    local x, y = Core.Ask(position, "player")
-    x, y = Core.Plain(x), Core.Plain(y)
-    if type(x) ~= "number" or type(y) ~= "number" then return nil end
-    return x, y
-end
-
 -- The instance the player is in: its map ID, the game's GetInstanceInfo's eighth answer (Core.Ask gives three).
 local function Instance()
     local info = rawget(_G, "GetInstanceInfo")
@@ -176,30 +167,13 @@ local function Instance()
     return type(instance) == "number" and instance or nil
 end
 
--- A world point on a floor of the set: 0 to 1 across its map from the top left; nil without its box.
-local function OnFloor(data, x, y)
-    if not (data.north and data.south and data.west and data.east) then return nil end
-    if data.north == data.south or data.west == data.east then return nil end
-    return (data.west - y) / (data.west - data.east), (data.north - x) / (data.north - data.south)
-end
-
--- The floor the player is on, if it is a dungeon's: the game's map of it, or in a dungeon of the set the floor
--- whose box holds the player (the smallest; its first floor where none does or the game tells no place).
+-- The map of the dungeon the player is in: the game's map of it, or the set's dungeon of the instance the game
+-- names, at its lowest floor (the game tells no place inside, so no floor by it); nil outside.
 function Dungeons.Here()
     local map = Core.Plain(Core.Ask(C_Map.GetBestMapForUnit, "player"))
     if map and Entry(map) then return map end
     local entry = Entry(Dungeons.Key(Instance()))
-    if not entry then return nil end
-    local x, y = World()
-    local best, area
-    for _, floor in ipairs(x and entry.floors or {}) do
-        local mapX, mapY = OnFloor(floor.data, x, y)
-        if mapX and mapX >= 0 and mapX <= 1 and mapY >= 0 and mapY <= 1 then
-            local size = math.abs((floor.data.north - floor.data.south) * (floor.data.west - floor.data.east))
-            if not area or size < area then best, area = floor, size end
-        end
-    end
-    return (best or entry.floors[1]).map
+    return entry and entry.floors[1].map or nil
 end
 
 -- The set's dungeon of an instance (its map ID, as the entrances name it): the key of its lowest floor, which
@@ -252,7 +226,6 @@ local function Place()
     content:ClearAllPoints()
     content:SetPoint("CENTER", frame, "CENTER", panX / scale, panY / scale)
     Dungeons.PlaceBosses(art, scale)
-    nextLook = 0 -- the arrow with it, on the next frame
 end
 
 -- The floor's art: its tiles row by row, the last ones cut at the art's edge (as Art.lua lays a map's).
@@ -287,48 +260,21 @@ local function Draw()
     Place()
 end
 
--- The player's arrow on the floor shown, turned as the player faces; out of sight elsewhere.
-local function Look()
-    local x, y
-    local _, floor = Entry(shown)
-    if floor and floor.data then
-        local worldX, worldY = World()
-        if worldX then x, y = OnFloor(floor.data, worldX, worldY) end
-        if x and (x < 0 or x > 1 or y < 0 or y > 1) then x, y = nil, nil end
-    else
-        local position = shown and Core.Ask(C_Map.GetPlayerMapPosition, shown, "player")
-        x, y = position and Core.Plain(position.x), position and Core.Plain(position.y)
-    end
-    local art = shown and ArtOf(shown)
-    if not x or not y or not art or (x == 0 and y == 0) then return arrow:Hide() end
-    local facing = Core.Plain(Core.Ask(GetPlayerFacing))
-    if facing then arrow:SetRotation(facing) end
-    local scale = content:GetScale() -- the arrow is not in the art: the same size at every zoom
-    arrow:ClearAllPoints()
-    arrow:SetPoint("CENTER", frame, "CENTER", panX + (x - 0.5) * art.width * scale, panY - (y - 0.5) * art.height * scale)
-    arrow:Show()
-end
-
 local function Cursor()
     local x, y = GetCursorPosition()
     local scale = frame:GetEffectiveScale()
     return x / scale, y / scale
 end
 
-local function Update(_, elapsed)
-    if dragX then
-        local x, y = Cursor()
-        panX, panY = panX + x - dragX, panY + y - dragY
-        dragX, dragY = x, y
-        Place()
-    end
-    nextLook = nextLook - (elapsed or 0)
-    if nextLook <= 0 then
-        nextLook = Dungeons.LOOK
-        Look()
-    end
+-- A drag's step: the art follows the cursor. Only while a drag goes on (Down, Up).
+local function Update()
+    if not dragX then return end
+    local x, y = Cursor()
+    panX, panY = panX + x - dragX, panY + y - dragY
+    dragX, dragY = x, y
+    Place()
 end
-local updating = ns.Guard(Update) -- made once: the view's step while it shows
+local updating = ns.Guard(Update) -- made once: set at every drag
 
 -- The wheel: nearer or farther around the point under the mouse, which stays where it is.
 local function Wheel(_, delta)
@@ -344,16 +290,18 @@ local function Wheel(_, delta)
     local factor = zoom / was
     panX, panY = mouseX - (mouseX - panX) * factor, mouseY - (mouseY - panY) * factor
     Place()
-    Look()
 end
 
 local function Down(_, button)
-    if button == "LeftButton" then dragX, dragY = Cursor() end
+    if button ~= "LeftButton" then return end
+    dragX, dragY = Cursor()
+    frame:SetScript("OnUpdate", updating)
 end
 
 local function Up(_, button)
     if button == "LeftButton" then
         dragX, dragY = nil, nil
+        frame:SetScript("OnUpdate", nil)
     elseif button == "RightButton" then
         Dungeons.Out()
     end
@@ -475,10 +423,6 @@ function Dungeons.Build(canvasFrame)
     over = CreateFrame("Frame", nil, frame) -- over the art
     over:SetAllPoints()
     over:SetFrameLevel(content:GetFrameLevel() + 1)
-    arrow = over:CreateTexture(nil, "OVERLAY", nil, 7)
-    arrow:SetAtlas("UI-WorldMapArrow")
-    arrow:SetSize(ns.Marks.ARROW, ns.Marks.ARROW)
-    arrow:Hide()
     frame:SetScript("OnMouseWheel", ns.Guard(Wheel))
     frame:SetScript("OnMouseDown", ns.Guard(Down))
     frame:SetScript("OnMouseUp", ns.Guard(Up))
@@ -504,8 +448,6 @@ function Dungeons.Show(map)
     zoom, panX, panY, dragX = 1, 0, 0, nil
     frame:SetFrameLevel(canvas:GetFrameLevel() + Dungeons.LEVEL)
     frame:Show()
-    frame:SetScript("OnUpdate", updating)
-    nextLook = 0
     Draw()
     ns.Safe("bar", ns.TopBar.Update)
     return true

@@ -194,7 +194,9 @@ In `dev/tests/tooltips.lua` (or a file of its own for `Look.lua`):
 
 Each step is a commit that ships on its own and changes nothing the player sees until its art is there.
 
-0. **Live 3D portraits.** Done (2026-10-16).
+0. **Live 3D portraits.** Done (2026-10-16). Always the 3D model, the flat portrait only as its stand-in and where
+   the game cannot give the model (Saneroki, 2026-10-21): a unit the game refuses at first is asked for again a few
+   times at once (`Panel.RETRY`), not only at the next draw (which Alt caused).
 1. **Facts and `Look.lua`,** with their tests. Creature type IDs from `C_CreatureInfo`. Nothing drawn yet.
 2. **`Looks.lua`, the layers in `Panel.lua`, the option *Illustrated look*;** the border's inset in place of
    `PAD`. Tried in the game with placeholder pictures made by a tool (a flat colour and the key's name on

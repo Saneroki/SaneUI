@@ -16,6 +16,9 @@ local _, ns = ...
 --                  (QuestLog.Preview)
 --      gathered    pins that would cover each other: one marker in the icon of the first (drawn highest), its
 --                  tooltip what is there; a click zooms in
+--      a rare      with Alt held, its 3D model (the game's, by its creature: SetCreature) stands beside the
+--                  tooltip, at its left, or at its right where the left has no room; Alt let go, or the
+--                  mouse off the pin, and it goes. Where the game has no model of it, nothing stands there
 --      a click     the game's map pin where it stands, on the small map and the full one (Act); on the
 --                  full map a quest also shows in the quest log; Shift and a click on one that leads into
 --                  another map opens that map
@@ -40,9 +43,15 @@ PinView.GREY = 0.8 -- a grey quest's icon: so opaque, its colour taken away
 PinView.TIERS = { log = 6, quest = 5, rare = 4, entrance = 3, flight = 3, travel = 3, place = 3, treasure = 2,
                   service = 1 }
 PinView.LEVELS = 6
+PinView.MODEL_WIDTH, PinView.MODEL_HEIGHT = 170, 210 -- a rare's model beside its tooltip (Alt held)
+PinView.MODEL_GAP = 8     -- between the tooltip and the model
+PinView.MODEL_TURN = -0.5 -- radians: a little from the side, as the tooltips turn a creature
 
 local layer, holder, view
 local used, free = {}, {} -- [key] = button while in view; buttons let go
+local hovered             -- the pin's button the mouse is on (Tip), for the rare's model
+local stage               -- the rare's model frame, once made; false where the client has none
+local Model               -- below
 
 -- A pin's tooltip: its name, its lines; a quest's objectives as the game tells them.
 local function Tip(button)
@@ -78,6 +87,8 @@ local function Tip(button)
         if pin.unverified then GameTooltip:AddLine(Pins.TEXT.unverified, 0.5, 0.5, 0.5) end
     end
     GameTooltip:Show()
+    hovered = button
+    Model()
 end
 
 -- The game's map pin where a pin stands (its own map and its place there; a gathered marker's first pin), as Ctrl
@@ -102,6 +113,62 @@ local function Act(pin)
     if ns.Canvas.camera ~= ns.Window.full then return end
     if pin.click == "quest" and pin.quest then return ns.QuestLog.Focus(pin.quest) end
     if pin.click == "preview" and pin.quests then return ns.QuestLog.Preview(pin.quests, pin.map, pin.x, pin.y) end
+end
+
+-- A rare's creature (its NPC ID), from its pin's key ("npc:<id>": Core's data, or the game's mark of it).
+local function Creature(pin)
+    if not pin or pin.kind ~= "rare" or pin.gathered then return nil end
+    return tonumber(tostring(pin.key):match("^npc:(%d+)$"))
+end
+
+-- The model's frame, made the first time Alt is held over a rare: see-through, over the tooltips' layer, unseen
+-- until the game has the model (OnModelLoaded).
+local function Stage()
+    if stage ~= nil then return stage end
+    local made, model = pcall(CreateFrame, "PlayerModel", nil, UIParent)
+    stage = made and model or false
+    if not stage then return false end
+    model:SetFrameStrata("TOOLTIP")
+    model:SetSize(PinView.MODEL_WIDTH, PinView.MODEL_HEIGHT)
+    model:Hide()
+    pcall(model.SetScript, model, "OnModelLoaded", ns.Guard(function(self) self:SetAlpha(1) end))
+    return model
+end
+
+-- The rare's model beside the tooltip while Alt is held over its pin (see above), else none.
+function Model()
+    local npc = hovered and hovered:IsMouseOver() and IsAltKeyDown() and Creature(hovered.pin)
+    local model = (npc or stage) and Stage()
+    if not model then return end
+    if not npc then
+        model:Hide()
+        return
+    end
+    if model.npc ~= npc then
+        model:SetAlpha(0)
+        model:ClearModel()
+        model.npc = nil
+        if not pcall(model.SetCreature, model, npc) then return model:Hide() end
+        model.npc = npc
+        pcall(model.SetPortraitZoom, model, 0)
+        pcall(model.SetFacing, model, PinView.MODEL_TURN)
+        local file = Core.Ask(model.GetModelFileID, model)
+        if type(file) == "number" and file > 0 then model:SetAlpha(1) end -- the game had it already
+    end
+    model:ClearAllPoints()
+    local left = GameTooltip:GetLeft()
+    if left and left > PinView.MODEL_WIDTH + PinView.MODEL_GAP then
+        model:SetPoint("TOPRIGHT", GameTooltip, "TOPLEFT", -PinView.MODEL_GAP, 0)
+    else
+        model:SetPoint("TOPLEFT", GameTooltip, "TOPRIGHT", PinView.MODEL_GAP, 0)
+    end
+    model:Show()
+end
+
+local function Left()
+    hovered = nil
+    GameTooltip_Hide()
+    Model()
 end
 
 local function Down(button, mouse)
@@ -134,7 +201,7 @@ local function Make()
     button:SetScript("OnMouseDown", ns.Guard(Down))
     button:SetScript("OnMouseUp", ns.Guard(Up))
     button:SetScript("OnEnter", ns.Guard(Tip))
-    button:SetScript("OnLeave", GameTooltip_Hide)
+    button:SetScript("OnLeave", ns.Guard(Left))
     return button
 end
 
@@ -242,4 +309,11 @@ function PinView.Clear()
         used[key] = nil
         free[#free + 1] = button
     end
+    hovered = nil
+    if stage then stage:Hide() end
 end
+
+-- Alt pressed or let go over a rare's pin: its model comes or goes.
+ns.On("MODIFIER_STATE_CHANGED", function()
+    if hovered or (stage and stage:IsShown()) then Model() end
+end)

@@ -526,13 +526,15 @@ out:write("## Title: Data: Quests\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Quests\
 out:close()
 W.AddPack(questsPath)
 -- The indoor map of a building (the set Indoors): one at the player's place (world x -8950, y -500: plane u 500,
--- v -8950, terrain tile 3104), turned 90 degrees so its own axes lie along the plane's, two floors one above the other.
+-- v -8950, terrain tile 3104), turned 90 degrees so its own axes lie along the plane's, two floors one above the other,
+-- and around them a street under the sky (open), as a city is one building.
 local indoorsPath = io.popen("mktemp -d -t saneui-indoors-XXXXXX"):read("*l") .. "/SaneUI_Data_Indoors" -- loaded late
 os.execute(("mkdir -p '%s'"):format(indoorsPath))
 Set(indoorsPath .. "/Indoors.lua", "Indoors", "0000000a", "int", '"groups", "placed", "tiles"',
-    '"list tuple(group:int,file:text,left:number,bottom:number,right:number,top:number,low:number,high:number,outdoor:bool)", '
+    '"list tuple(group:int,file:text,left:number,bottom:number,right:number,top:number,low:number,high:number,outdoor:bool,open:bool)", '
     .. '"list tuple(map:int,x:number,y:number,z:number,yaw:number,scale:number)", "list int"',
-    'R[500001] = "70245\t\t0\031500001-0\031-10\031-10\03110\03110\031-1\0315\031\0301\031500001-1\031-10\031-10\03110\03110\0315\03112\031'
+    'R[500001] = "70245\t\t0\031500001-0\031-10\031-10\03110\03110\031-1\0315\031\031\0301\031500001-1\031-10\031-10\03110\03110\0315\03112\031\031'
+    .. '\0302\031500001-2\031-60\031-60\03160\03160\031-1\03112\031\0311'
     .. '\t0\031-8950\031-500\0310\03190\0311\t3104"\nI.byTile = {}\nI.byTile[3104] = "500001"\n')
 out = assert(io.open(indoorsPath .. "/SaneUI_Data_Indoors.toc", "w"))
 out:write("## Title: Data: Indoors\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Indoors\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nIndoors.lua\n")
@@ -947,13 +949,21 @@ do
     end
     local ground = Picture("Indoors\\500001-0")
     local c = ground and ground._coords
-    check(ground and not Picture("Indoors\\500001-1") and c and near(c[1], 0) and near(c[2], 0) and near(c[3], 0)
+    check(ground and not Picture("Indoors\\500001-1") and not Picture("Indoors\\500001-2") and c and near(c[1], 0) and near(c[2], 0) and near(c[3], 0)
         and near(c[4], 1) and near(c[5], 1) and near(c[6], 0) and near(c[7], 1) and near(c[8], 1)
         and near(ground._width, 20 * Canvas.view.k), "indoors, the building the player stands in: its floor at the "
         .. "player's height, its picture turned with the building, as large as it is")
     height = 8
     ns.Indoors.Track(Canvas.view, GetTime() + 10)
     check(Picture("Indoors\\500001-1") and not Picture("Indoors\\500001-0"), "up the stairs: the floor above")
+    -- Out on the street around it (40 yards east in the building's own x): no indoor map, though the game says indoors.
+    UnitPosition = function() return -8950, -540, height, 0 end
+    ns.Indoors.Track(Canvas.view, GetTime() + 12)
+    check(not Picture("Indoors\\500001-1") and not Picture("Indoors\\500001-2"),
+        "on a street of the building (a city's): no indoor map, the map's own art")
+    UnitPosition = function() return -8950, -500, height, 0 end
+    ns.Indoors.Track(Canvas.view, GetTime() + 14)
+    check(Picture("Indoors\\500001-1") and not Picture("Indoors\\500001-2"), "back inside: its floor again, the street not drawn")
     ;(function()
         local asked, at = 0, UnitPosition
         UnitPosition = function(...)
@@ -1488,6 +1498,35 @@ check(pins["place:1"] and pins["place:1"].icon._atlas == "dungeon" and pins["pla
     and pins["place:2"] and pins["place:2"].icon._atlas == "mailbox" and pins["travel:1"]
     and pins["npc:70"].icon._atlas == Pins.ICONS.rare,
     "Core's places: a dungeon's entrance that opens its map, a mailbox, a boat; the rare in its kind's icon (a skull)")
+-- Alt held over the rare's pin: its 3D model beside the tooltip, by its creature; Alt let go, or the mouse off it: gone.
+;(function()
+    local rare, alt, asked = pins["npc:70"], false, nil
+    local wasAlt = rawget(_G, "IsAltKeyDown")
+    IsAltKeyDown = function() return alt end
+    W.methods.SetCreature = function(self, npc) asked, self._creature = npc, npc end
+    W.methods.ClearModel = function(self) self._creature = nil end
+    rare._mouseOver = true
+    rare._scripts.OnEnter(rare)
+    local model
+    for _, widget in ipairs(W.frames) do if widget._kind == "PlayerModel" and widget._parent == UIParent then model = widget end end
+    check(not (model and model._shown), "without Alt: the tooltip alone")
+    alt = true
+    W.Fire("MODIFIER_STATE_CHANGED", "LALT", 1)
+    for _, widget in ipairs(W.frames) do if widget._kind == "PlayerModel" and widget._parent == UIParent then model = widget end end
+    check(model and model._shown and asked == 70 and model._creature == 70 and model._points[1][2] == GameTooltip,
+        "Alt held: the rare's 3D model beside the tooltip, the game's model of its creature")
+    model._scripts.OnModelLoaded(model)
+    check(model:GetAlpha() == 1, "seen once the game has loaded it")
+    alt = false
+    W.Fire("MODIFIER_STATE_CHANGED", "LALT", 0)
+    check(not model._shown, "Alt let go: gone")
+    alt = true
+    W.Fire("MODIFIER_STATE_CHANGED", "LALT", 1)
+    rare._mouseOver = false
+    rare._scripts.OnLeave(rare)
+    check(not model._shown, "the mouse off the pin: gone")
+    IsAltKeyDown, W.methods.SetCreature, W.methods.ClearModel = wasAlt, nil, nil
+end)()
 do
     local dock = pins["travel:3:1"]
     check(dock and dock.icon._atlas == "flightmasterferry" and dock.pin.name == Pins.WAY_WORDS.boat
@@ -3307,7 +3346,7 @@ Core.Set(ns.name, "nodeSparkles", true)
 end)()
 
 -- The dungeons of Core's set Dungeons, which the game has no map of (Forever's client has none): their floors, the
--- game's tiles, the bosses' marks with their names (the set Encounters), the player's arrow by the world.
+-- game's tiles, the bosses' marks with their names (the set Encounters); no player inside (the game tells no place).
 ;(function()
     local Dungeons = ns.Dungeons
     -- A model's look, as the game keeps it.
@@ -3361,7 +3400,7 @@ end)()
     end
     check(bar and model._level <= marks[1]._level + 1 + Dungeons.SPREAD and model._level < bar._level,
         "a few levels over its mark only: under the bar over the map, whose clicks it never takes")
-    local stepping = Dungeons.frame._scripts.OnUpdate
+    check(not Dungeons.frame._scripts.OnUpdate, "nothing runs each frame while it rests")
     GameTooltip._text = nil
     model._scripts.OnEnter(model)
     check(GameTooltip._text == "The First Boss", "the model's tooltip: the boss")
@@ -3369,11 +3408,14 @@ end)()
     local view = Dungeons.frame
     local wasX = cursorX
     view._scripts.OnMouseDown(view, "LeftButton")
+    local stepping = view._scripts.OnUpdate
     cursorX = wasX - 560
     view._scripts.OnUpdate(view, 0.01)
     view._scripts.OnMouseUp(view, "LeftButton")
-    check(not model._shown and marks[1]._shown, "a model that would reach past the view's edge: hidden, its mark stays")
+    check(not model._shown and marks[1]._shown and stepping and not view._scripts.OnUpdate,
+        "a model that would reach past the view's edge: hidden, its mark stays; the drag's step only while it drags")
     view._scripts.OnMouseDown(view, "LeftButton")
+    check(view._scripts.OnUpdate == stepping, "the drag's step: one guarded function, made once")
     cursorX = wasX
     view._scripts.OnUpdate(view, 0.01)
     view._scripts.OnMouseUp(view, "LeftButton")
@@ -3381,14 +3423,16 @@ end)()
     local before, instance = UnitPosition, rawget(_G, "GetInstanceInfo")
     UnitPosition = function() return 0, 0, 0, 0 end
     GetInstanceInfo = function() return "Deep Halls", "party", 1, "", 5, 0, false, 90 end
-    Dungeons.frame._scripts.OnUpdate(Dungeons.frame, 1)
     local arrow
-    for _, widget in ipairs(W.frames) do if widget._atlas == "UI-WorldMapArrow" and widget._shown then arrow = widget end end
-    check(arrow and near(arrow._points[1][4], 0) and near(arrow._points[1][5], 0), "the player in its middle: the arrow there")
-    check(Dungeons.Here() == "90:2", "inside: the floor whose box holds the player, the smallest")
+    for _, widget in ipairs(W.frames) do
+        local up = widget._parent
+        while up and up ~= view do up = up._parent end
+        if up and widget._atlas == "UI-WorldMapArrow" then arrow = widget end
+    end
+    check(not arrow and Dungeons.Here() == "90:1",
+        "inside: the dungeon the game names, at its lowest floor; no arrow (the game tells no place in an instance)")
     check(Dungeons.Show("90:2") and Shown(9101, 9102) == 2 and Shown(9001, 9012) == 0 and #Marks() == 1,
         "the lower floor: its own tiles and boss")
-    check(stepping and Dungeons.frame._scripts.OnUpdate == stepping, "its step while it shows: one guarded function, made once")
     check(not Marks()[1].model or not Marks()[1].model._shown, "a boss without a look: its mark alone")
     UnitPosition, GetInstanceInfo = before, instance
     Dungeons.Close()

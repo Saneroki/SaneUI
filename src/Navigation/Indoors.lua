@@ -9,10 +9,15 @@ local _, ns = ...
 --  turn and scale; the set's schema has the formula).
 --
 --      which building   the one whose part holds the player's place (UnitPosition), of those on the
---                       terrain tile the player stands on (the set's index byTile)
+--                       terrain tile the player stands on (the set's index byTile). Only inside buildings
+--                       and caves, never on a street (Saneroki, 2026-10-21): where the part the player
+--                       stands in (the smallest that holds their place and height) is one under the sky
+--                       though the game counts it indoors (open: Stormwind's and Orgrimmar's streets and
+--                       squares, the cities being one building each), that building is passed over
 --      which parts      those whose height reaches the player's (from Indoors.BELOW under their floor
 --                       to their top), the one whose floor lies nearest below the player drawn on top;
---                       without the player's height, every part with the game's indoor flag
+--                       without the player's height, every part with the game's indoor flag; never an
+--                       open one (a street keeps the map's own art)
 --      turned           a picture is drawn as the square the canvas lays out any texture in (its box in
 --                       the plane), its texture coordinates turned inside it to the building's turn, and
 --                       what lies outside the picture clear (the texture's wrap)
@@ -84,6 +89,19 @@ local function Within(part, bx, by)
     return bx >= part.left and bx <= part.right and by >= part.bottom and by <= part.top
 end
 
+-- The part the player stands in: the smallest whose square holds their place and, where their height is known,
+-- whose height does; nil for none.
+local function Standing(record, bx, by, bz)
+    local best, least
+    for _, part in ipairs(record.groups or {}) do
+        if Within(part, bx, by) and (not bz or (bz >= part.low - Indoors.BELOW and bz <= part.high)) then
+            local size = (part.right - part.left) * (part.top - part.bottom)
+            if not least or size < least then best, least = part, size end
+        end
+    end
+    return best
+end
+
 -- The floor nearest below the player last, so it is drawn over the others.
 local function Lower(one, other)
     return one.low < other.low
@@ -105,10 +123,12 @@ function Indoors.Inside(continent)
                 for _, part in ipairs(record.groups or {}) do
                     if Within(part, bx, by) then holds = true break end
                 end
-                if holds then
+                local here = holds and Standing(record, bx, by, bz)
+                if holds and not (here and here.open) then
                     local parts = {}
                     for _, part in ipairs(record.groups or {}) do
-                        if bz then
+                        if part.open then -- a street keeps the map's own art, also seen from a building
+                        elseif bz then
                             if bz >= part.low - Indoors.BELOW and bz <= part.high then parts[#parts + 1] = part end
                         elseif not part.outdoor then
                             parts[#parts + 1] = part

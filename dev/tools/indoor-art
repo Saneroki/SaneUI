@@ -31,7 +31,10 @@ one tilted more than TILT degrees is left out, its plan would not lie flat), as 
   dev/data/staging/indoors.jsonl    one line per building: key its root file's ID, fields
     groups   per part with a picture: group (its number in the building), file (the picture's name), left, bottom,
              right, top (where the texture's corners lie, in the building's own x and y, yards), low and high (the
-             part's height, its box's z), outdoor (true for a part without the game's indoor flag)
+             part's height, its box's z), outdoor (true for a part without the game's indoor flag), open (true
+             for a part under the sky though the game counts it indoors: a city's street, square or courtyard,
+             which the game lights as outdoors, its flag EXTERIOR_LIT, and whose area its table WMOAreaTable
+             counts as outdoors, AREA_OUTDOOR; Stormwind and Orgrimmar are each one building)
     placed   per placement: map (the continent's instance), x, y, z (where the building's origin stands, in world
              yards: x grows to the north, y to the west), yaw (the game's turn about the up axis, degrees), scale
     tiles    the terrain tiles its placements' boxes touch (keys of the set Tiles), for the index byTile
@@ -89,6 +92,8 @@ GRID = 64              # tiles along each side of a continent
 TILE = 1600 / 3        # a tile's side in yards
 HALF = GRID / 2 * TILE # yards from a continent's middle to its edges
 INDOOR = 0x2000        # a part's flag: indoors
+EXTERIOR_LIT = 0x40    # a part's flag: lit as outdoors (by the sky)
+AREA_OUTDOOR = 0x4     # a part's area's flag (WMOAreaTable): outdoors
 
 # Places to look at with --check: a name, the continent's instance, the middle (world x and y) and how far around.
 CHECKS = [
@@ -138,6 +143,26 @@ def building(path):
                 flags, *box = struct.unpack_from("<I6f", data, start)
                 parts.append((flags, tuple(box)))
     return wmo, parts
+
+
+def part_id(path):
+    """A part file's number in the game's tables (its MOGP's unique ID, WMOAreaTable's WMOGroupID); None without."""
+    if not path.exists():
+        return None
+    data = path.read_bytes()
+    for name, at, size in ART.pieces(data, 0, len(data)):
+        if name == b"MOGP":
+            return struct.unpack_from("<I", data, at + 56)[0]
+    return None
+
+
+def area_flags(tables):
+    """{(WMO ID, part's unique ID): its area's flags} of the game's table WMOAreaTable."""
+    found = {}
+    with open(tables / "WMOAreaTable.csv", encoding="utf-8") as table:
+        for row in csv.DictReader(table):
+            found[(int(row["WMOID"]), int(row["WMOGroupID"]))] = int(row["Flags"] or 0)
+    return found
 
 
 def textures(tables):
@@ -505,6 +530,8 @@ def main():
     game, build = build_of(folder)
     minimaps = folder / "wmo-minimap"
     table = textures(tables)
+    areas = area_flags(tables)
+    wmos = {}  # [root file] = its WMO ID
     places = WALK.placements(folder)
     by_file = {}
     tilted = []  # the files of the placements left out
@@ -522,7 +549,7 @@ def main():
         wmo, parts = building(folder / "wmo" / f"{file}.wmo")
         if wmo not in table:
             continue
-        buildings[file] = parts
+        buildings[file], wmos[file] = parts, wmo
         for part, blocks in sorted(table[wmo].items()):
             if part >= len(parts):
                 left_out["no such part"] += 1
@@ -559,6 +586,9 @@ def main():
                      "right": round(right, 2), "top": round(top, 2), "low": round(box[2], 2), "high": round(box[5], 2)}
             if not flags & INDOOR:
                 group["outdoor"] = True
+            unique = part_id(folder / "wmo" / f"{file}_{part:03d}.wmo")
+            if flags & EXTERIOR_LIT and areas.get((wmos[file], unique), 0) & AREA_OUTDOOR:
+                group["open"] = True
             groups.append(group)
         wheres = sorted((placed(where, continent) for continent, where in by_file[file]),
                         key=lambda where: (where["map"], where["x"], where["y"]))

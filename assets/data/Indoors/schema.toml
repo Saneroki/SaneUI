@@ -21,6 +21,7 @@ groups = { type = "list", of = "tuple", parts = [
     { name = "low", type = "number" },              # the part's height in the building's own z: its box's lowest
     { name = "high", type = "number" },             # and highest
     { name = "outdoor", type = "bool" },            # the part lacks the game's indoor flag
+    { name = "open", type = "bool" },               # under the sky though counted indoors: a city's street or square
 ] }
 placed = { type = "list", of = "tuple", parts = [
     { name = "map", type = "int", min = 0 },        # the continent's instance (0, 1, 2991)

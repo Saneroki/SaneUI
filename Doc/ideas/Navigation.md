@@ -153,6 +153,15 @@ minimap) and the full-screen window (the world map) show the same map with the s
   floor by floor (Forever's client has none, so Core's set *Dungeons* holds them, from Blizzard's own tables; the
   art files are in Forever's install), each boss's icon where it stands, and the boss's 3D game model standing on
   that spot.
+- **Instance maps keep rules of their own (Saneroki, 2026-10-21),** apart from the world map's and its indoor maps':
+  - **No players on them:** Forever tells no player's place inside an instance (not in its current versions), so an
+    instance's map shows neither the player nor the party or raid, and its floor is not chosen by where one stands.
+  - **What stands still is shown:** the enemies' and the bosses' places are fixed, so they can stand on the map.
+  - **The bosses in full 3D:** each boss as its 3D game model where it stands, in every zoom of the instance maps
+    (the three zooms to come too).
+- **Indoor maps only inside buildings and caves (Saneroki, 2026-10-21):** the world map's indoor maps lie over the
+  map inside a building or a cave, never on a street; Stormwind's and Orgrimmar's streets and squares (each city is
+  one building to the game) keep the city's own map.
 - **Soft zone edges, exact inside (Saneroki, 2026-10-21):** the close terrain view stays as accurate as planned,
   down to the tiniest walkable places. Only the outermost outline of a zone, and only where the player cannot
   go (the mountains between zones, the edge of the world), is blended into a natural transition instead of the
@@ -276,6 +285,8 @@ When the window fills the screen:
   there.
 - **The pin filter in sections (Saneroki, 2026-10-20):** the dropdown is laid out in titled sections and
   categories, easy to scan, with large icons.
+- **A rare's 3D model with Alt (Saneroki, 2026-10-21):** Alt held over a rare enemy's map pin shows its 3D model
+  beside the tooltip, as the tooltips show your character beside a piece of gear.
 - **Every pin is clicked for the map pin, the minimap's too (Saneroki, 2026-10-21):** on the small map and on the
   game's own minimap the icons Sane UI draws, the gathering nodes found around the player among them, take a
   click and put the game's map pin there. (The game's own minimap dots take no clicks of an addon.)
@@ -1562,7 +1573,7 @@ What a dungeon map shows:
 | --- | --- |
 | Which | every dungeon and raid of this client, with its floors, Forever's own among them |
 | Art | Blizzard's own dungeon maps where the client has them (`C_Map.GetMapArtLayerTextures`); a picture of our own, made for Sane UI (`Doc/guides/images.md`), only where the client has none |
-| On the map | bosses (the creature's portrait), entrances, floor links, quest items; player and party live |
+| On the map | bosses (the game's boss mark and the boss's 3D model, built), enemies (their fixed places: to come), entrances, floor links, quest items; never the player or the party (*Instance maps keep rules of their own*) |
 | Floors | a menu that follows the player's floor; clickable floor links |
 
 - **Plan:** Blizzard's own art first (it costs no space); our own pictures only for the maps the client
@@ -1573,7 +1584,10 @@ What a dungeon map shows:
   the art's tiles and each boss (its encounter in the set *Encounters*, its place, its look), from Blizzard's
   retail tables where they match Forever's own encounters, unverified. The view (`Dungeons.lua`) draws the tiles,
   each boss's mark (the game's `vignettekillboss`) and its model (`PlayerModel`, `SetDisplayInfo`); the reworked
-  dungeons (Deadmines, Shadowfang Keep, Gnomeregan and others) have their map without bosses.
+  dungeons (Deadmines, Shadowfang Keep, Gnomeregan and others) have their map without bosses. No player's arrow
+  and no group (2026-10-21: the game tells no place inside an instance); the floors' world boxes stay in the set for
+  the enemies' places to come (from a source that passes *Careful data*, the server databases' spawns where they
+  agree, placed by those boxes; Core's spawns are keyed by the game's zone maps, which Forever lacks inside).
 - Bosses, entrances, floor links and quest items from Core's data.
 - Drawn as *Maps without a world box* where the game gives none.
 
@@ -1630,5 +1644,5 @@ Each with a proposal; what is not answered when its step comes is built as propo
 15. **Leveling guide in the small window:** the current step at the minimap, or only in full screen?
 16. **Quests taken and handed in by themselves** on a guide's step? *Proposal:* a switch, off by default.
 17. **Leveling figures** (XP per hour, time to level): Navigation's, or the library module's?
-18. **Indoor maps on city streets** (2026-10-21): the game flags Stormwind's and Orgrimmar's streets as indoors,
-    so the indoor plan would lie over them. *Proposal:* not on the streets, only inside buildings and caves.
+18. Answered (Saneroki, 2026-10-21: *Indoor maps only inside buildings and caves*, built). **Indoor maps on city
+    streets:** the game flags Stormwind's and Orgrimmar's streets as indoors, so the indoor plan would lie over them.
