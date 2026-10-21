@@ -1,0 +1,8 @@
+# Full screen views with Qwen-Image 2.1 and its prompt enhancer (dev/imagegen/workflows/qwen21-pe-t2i.json):
+# a language model writes the brief out into a full description first, inventing what the brief leaves open.
+#   dev/tools/imagegen dev/imagegen/sets/ui-fullscreen/qwen-pe.txt
+workflow: dev/imagegen/workflows/qwen21-pe-t2i.json
+set: aspect_ratio=16:9 (Widescreen), megapixels=1.6
+count: 2
+out: assets/generated/ui-fullscreen/qwen-pe
+include: dev/imagegen/sets/ui-fullscreen/prompts.txt

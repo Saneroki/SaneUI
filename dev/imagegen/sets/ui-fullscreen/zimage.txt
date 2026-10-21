@@ -1,0 +1,7 @@
+# Full screen views with Z-Image: quick, many seeds.
+#   dev/tools/imagegen dev/imagegen/sets/ui-fullscreen/zimage.txt
+workflow: zimage-turbo-t2i
+set: width=1600, height=896
+count: 4
+out: assets/generated/ui-fullscreen/zimage
+include: dev/imagegen/sets/ui-fullscreen/prompts.txt

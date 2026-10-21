@@ -1,0 +1,7 @@
+# Full screen views with Qwen-Image 2.1 as written (no enhancer).
+#   dev/tools/imagegen dev/imagegen/sets/ui-fullscreen/qwen.txt
+workflow: qwen21-t2i
+set: aspect_ratio=16:9 (Widescreen), megapixels=1.6
+count: 2
+out: assets/generated/ui-fullscreen/qwen
+include: dev/imagegen/sets/ui-fullscreen/prompts.txt

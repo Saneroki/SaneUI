@@ -4,19 +4,26 @@ in the browser, with the stretch test of slice.py, the single elements and the s
 marks the liked ones (kept in the browser) and "Copy liked" puts their names on the clipboard, to name them
 in the chat. Run it again after more pictures came in.
   python3 dev/imagegen/sets/ui-explore/gallery.py   ->  assets/generated/ui-explore/index.html
+Another set's pictures: give its folder; each folder in it is a model (names <view>-<seed>.png or
+<direction>-<view>-<seed>.png).
+  python3 dev/imagegen/sets/ui-explore/gallery.py assets/generated/ui-fullscreen
 """
-import html, json, os
+import html, json, os, sys
 from PIL import Image
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../..")
-OUT = os.path.join(ROOT, "assets/generated/ui-explore")
+OUT = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(ROOT, "assets/generated/ui-explore")
 MODELS = ["klein", "zimage", "qwen", "sdxl", "flux2dev"]
+if len(sys.argv) > 1:
+    MODELS = sorted(d for d in os.listdir(OUT) if os.path.isdir(os.path.join(OUT, d)) and d not in ("thumbs", "stretched"))
 
 
 def pictures():
     # the model lists, their stretch tests, the single elements (elements.txt, Qwen) and the silhouettes
     # (shapes.txt, Z-Image: the shape as the direction, the material as the view)
-    sources = [(m, m) for m in MODELS] + [(m, "stretched/" + m) for m in MODELS] + [("qwen", "elements"), ("zimage", "shapes")]
+    sources = [(m, m) for m in MODELS] + [(m, "stretched/" + m) for m in MODELS]
+    if len(sys.argv) == 1:
+        sources += [("qwen", "elements"), ("zimage", "shapes")]
     for model, sub in sources:
         folder = os.path.join(OUT, sub)
         if not os.path.isdir(folder):
@@ -26,7 +33,11 @@ def pictures():
             if not name.endswith(".png") or name == "contact.png":
                 continue
             stem = name[:-4]
-            direction, view, seed = (stem.rsplit("-", 2) + ["", ""])[:3]
+            parts = stem.rsplit("-", 2)
+            if len(parts) == 3 and not parts[1].isdigit():
+                direction, view, seed = parts
+            else:  # <view>-<seed>
+                (direction, seed), view = stem.rsplit("-", 1), ""
             thumb = os.path.join("thumbs", sub, stem + ".jpg")
             path = os.path.join(OUT, thumb)
             if not os.path.exists(path) or os.path.getmtime(path) < os.path.getmtime(os.path.join(folder, name)):

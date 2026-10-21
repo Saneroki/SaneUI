@@ -35,7 +35,7 @@ exporting, write into the graph:
                titles (ref1, ref2, ...), nodes without such a title after them by node number. A node
                the list gives no picture for keeps its own.
 
-Every input called seed or noise_seed gets the seed: the first seed for the first picture of each
+Every input called seed or noise_seed (also as an option's, sampling_mode.seed) gets the seed: the first seed for the first picture of each
 prompt and one more for each further one. Every prompt of a set so runs through the same seeds, which
 keeps a set alike; a picture is made again by its seed (the number in its file name).
 
@@ -217,7 +217,7 @@ def fill(graph, job, seed, settings, uploaded):
                 continue
             if key in settings:
                 inputs[key] = settings[key]
-            elif key in SEED_INPUTS and isinstance(val, int):
+            elif key.rsplit(".", 1)[-1] in SEED_INPUTS and isinstance(val, int):  # also an option's (sampling_mode.seed)
                 inputs[key] = seed
             elif isinstance(val, str):
                 inputs[key] = val.replace("{prompt}", job["prompt"]).replace("{name}", job["name"])

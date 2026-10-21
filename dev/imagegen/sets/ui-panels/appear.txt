@@ -1,0 +1,19 @@
+# Written by anim.py: each panel coming in, from the empty picture to the panel.
+workflow: dev/imagegen/workflows/wan22-14b-flf-2ref.json
+set: width=640, height=640, length=33
+count: 1
+fps: 16
+out: assets/generated/ui-panels/anim
+style: Quick and snappy: the motion is done within the first half of the clip, then everything holds still on the finished panel. The camera and the background never move.
+ref: assets/generated/ui-panels/empty/doll-hug-1.png, assets/generated/ui-panels/panels/doll-hug-1.png
+doll-hug: A small fantasy game panel appears out of nothing: it unfolds from a thin bright vertical seam in the middle, its sides opening outwards to its full outline.
+ref: assets/generated/ui-panels/empty/doll-shield-1.png, assets/generated/ui-panels/panels/doll-shield-1.png
+doll-shield: A small fantasy game panel appears out of nothing: it drops in from just above and lands with a small puff of dust.
+ref: assets/generated/ui-panels/empty/doll-ring-1.png, assets/generated/ui-panels/panels/doll-ring-1.png
+doll-ring: A small fantasy game panel appears out of nothing: it grows out of a small bright point in the middle, spinning once into place.
+ref: assets/generated/ui-panels/empty/doll-wings-1.png, assets/generated/ui-panels/panels/doll-wings-1.png
+doll-wings: A small fantasy game panel appears out of nothing: its two wings fold out from the middle arch like opening wings.
+ref: assets/generated/ui-panels/empty/book-fan-1.png, assets/generated/ui-panels/panels/book-fan-1.png
+book-fan: A small fantasy game panel appears out of nothing: its spell icons fan out from a closed stack into the curve, the panel growing with them.
+ref: assets/generated/ui-panels/empty/bags-categories-1.png, assets/generated/ui-panels/panels/bags-categories-1.png
+bags-categories: A small fantasy game panel appears out of nothing: it slides up a short way from below while fading in, its category blocks snapping open one after another.

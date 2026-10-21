@@ -976,6 +976,16 @@ Saneroki asked for a much richer bag view, in features and looks.
   the open picture (`anim.py`, with the new workflow `dev/imagegen/workflows/wan22-14b-flf-2ref.json`: first
   and last frame from two pictures), and `compare.py`, a page with both side by side and `notes.html`, what each
   model offers for game elements.
+- Full screens (`dev/imagegen/sets/ui-fullscreen/`): eight screens of the game's and our windows together, under a
+  few rough rules (compact, slim borders, one connected family of pieces, plain textured free areas, faction
+  neutral), for Qwen with and without its prompt enhancer (new workflow `qwen21-pe-t2i.json`), FLUX.2 and Z-Image.
+- Small panels with Qwen (`dev/imagegen/sets/ui-panels/`, Saneroki: compact, little room for art, dynamic outlines
+  for the character doll and the spellbook): `panels.txt` from words; `guides.py` draws exact layouts (slots,
+  outline round them) which `guided.txt` has Qwen's edit paint; `anim.py` takes a panel out of its picture in
+  code and has Wan 2.2 paint it appearing, played backwards for leaving. Qwen's ControlNet
+  (`qwen21-cn-t2i.json`) painted the guide's lines themselves, so the edit took its place.
+- `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
+- `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.
 
 ### Data: items, spells, talents and recipes from the game's own tables (Saneroki, 2026-10-20)
