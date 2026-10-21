@@ -52,8 +52,10 @@ Then `/reload` in the game (a new file or a first install needs a game restart).
   branch `release/0.4`, and `current` moved to it. Only what is committed goes in. Nothing is pushed.
 - **A new script** gets its command in `dev/saneui` (its name, what it does, and its words on the greeting
   card if it is in daily use); the tests fail on a script without one.
-- **Background work** has verbs: `saneui start|pause|resume|stop|status gpujobs` (ComfyUI jobs while the
-  graphics card is idle), `saneui start|stop|status comfyui`.
+- **Background work** has verbs: `saneui start|pause|resume|stop|status gpurunner` (the queue of ComfyUI
+  renders by priority while the graphics card is idle; `saneui gpuqueue` lists it, `saneui switch <job>` runs
+  another job now, `saneui rebuildstart <job>` rebuilds a job's plan and runs it now),
+  `saneui start|stop|status comfyui`.
 
 ## Trying what is on GitHub, such as a Claude cloud session's work
 ```bash

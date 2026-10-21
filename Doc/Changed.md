@@ -6,6 +6,24 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 215 (data in the game), 468 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### GPU runner: the queue started, listed and switched (Saneroki, 2026-10-21)
+- At Saneroki's ask, the runner's commands say what they do: `saneui start|stop|pause|resume|status gpurunner`
+  (was `gpujobs`), `saneui gpuqueue` (`gpu-runner queue`, also `status`): the runner's state and the queue in the
+  order it runs, with each job's priority, progress, which runs now and which next, the held, finished and
+  failed ones.
+- `saneui switch <job>` (`gpu-runner switch`): that job now, let go if held, finished or failed; the job at
+  work is stopped with its progress kept; the runner started if it is not running, its hold skipped. The job
+  stays first (`first.json` in the runner's state) until it is finished or another is switched to;
+  `switch --back` gives the priorities back at once. `saneui rebuildstart <job>`: `rebuild`, then `switch`.
+- The runner now lets a more important job take over at once (one added to `jobs.toml`, a switch): the job at
+  work is stopped as for the game and comes back when its turn comes.
+- A standing rule (guide, *The GPU runner*; `jobs.toml`'s head; the instructions): a session that adds or
+  changes a render plan adds or updates its job in `dev/imagegen/jobs.toml` with a priority. The UI look sets
+  (`ui-explore`, `ui-style`, `ui-compare`) are rendered, so they have no job.
+- The Konsole greeting shows `gpurunner`, `gpuqueue`, `switch` and `rebuildstart`; `rebuild` is in `saneui`'s
+  list only. Tests: 12 more of the GPU runner (the order with a switch, a runner on made-up jobs: the switch,
+  the switch back, a new job taking over, one switched to and finished).
+
 ### Docs: this session's asks in the plans and handoffs (Saneroki, 2026-10-21)
 - `Doc/ideas/Navigation.md`: Saneroki's asks under *Decisions* (the quest marks, tooltips without the click, the pin
   filter in sections, every pin clicked for the map pin the minimap's too, dungeon maps now with their bosses and

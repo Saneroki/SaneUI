@@ -5,7 +5,7 @@
 | Command | Effect |
 | --- | --- |
 | `dev/tests/run` | Lua 5.1 syntax/global/TOC lint, then all offline tests |
-| `dev/saneui` (`saneui`) | One command for every script by expressive names (`saneui` lists them; `--card` feeds the Konsole greeting, `--names` fish's completion, `--link` makes `~/bin/saneui`); `start\|pause\|resume\|stop\|status gpujobs\|comfyui` |
+| `dev/saneui` (`saneui`) | One command for every script by expressive names (`saneui` lists them; `--card` feeds the Konsole greeting, `--names` fish's completion, `--link` makes `~/bin/saneui`); `start\|pause\|resume\|stop\|status gpurunner\|comfyui`; the GPU queue's `gpuqueue`, `switch`, `rebuildstart`, `rebuild`, `hold`, `unhold` |
 | `dev/build [--install] [--release [TAG]]` | Tests (a release: its own), rsync source into the `BUILD/` addon folders (one per `src/*/*.toc`; `SaneUI_Atlas` with `assets/optimized/Atlas/`, only once its `Index.lua` is there), compile the data packs (`BUILD/SaneUI_Data_*`, Forever live's); with `--install` copies into the game (the packs of the game folder's own game version, by its `.flavor.info`); without it nothing goes into the game. Each built TOC gets `## X-SaneUI-Build: dev <commit>[ +changes]` or `release <tag> <commit>`. `--release TAG` (default `current`) builds git's copy of the tag (`git archive`, LFS art smudged) into `BUILD/release/<tag>`; installed, it takes our modules it lacks out of the game. |
 | `dev/installdev` / `dev/installrelease [TAG]` | `dev/build --install` / `dev/build --release TAG --install` (`saneui installdev`, `saneui installrelease`) |
 | `dev/build --check` | Tests and rsync dry-run; writes nothing |

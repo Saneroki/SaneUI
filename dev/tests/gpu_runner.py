@@ -9,6 +9,7 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 sys.dont_write_bytecode = True
@@ -136,6 +137,67 @@ runner.PAUSED.touch()
 check("paused and claimed", watch.reasons(set()), ["paused by hand", "claimed by voice"])
 runner.PAUSED.unlink()
 (claims / "voice").unlink()
+
+
+# --- A switch, and the more important job taking over (a runner on made-up jobs, nothing on the card) ---------
+
+looks.update(users=[], queue=[], games=[])
+listed.write_text("""hold = 0
+poll = 0.05
+[[job]]
+name = "a"
+priority = 5
+comfyui = false
+command = ["sleep", "30"]
+[[job]]
+name = "b"
+priority = 1
+comfyui = false
+command = ["sleep", "30"]
+[[job]]
+name = "quick"
+comfyui = false
+command = ["true"]
+""")
+_, jobs = runner.load_jobs(listed)
+check("ordered: by priority", [j["name"] for j in runner.ordered(jobs)], ["a", "b", "quick"])
+check("ordered: the one switched to first", [j["name"] for j in runner.ordered(jobs, {"name": "b"})], ["b", "a", "quick"])
+check("waiting: held, finished or failed ones not", [runner.waiting(j, {"b": {"finished": "x"}, "quick": {"failures": 3}}, 3,
+                                                                   {"a": "x"}) for j in jobs], [False, False, False])
+import threading
+live = runner.Runner(listed)
+thread = threading.Thread(target=live.loop, daemon=True)
+thread.start()
+
+
+def becomes(what, want, seconds=5):
+    end = time.time() + seconds
+    while time.time() < end:
+        if what() == want:
+            return want
+        time.sleep(0.05)
+    return what()
+
+
+name = lambda: live.job and live.job["name"]
+check("live: the most important runs", becomes(name, "a"), "a")
+runner.write_json(runner.FIRST, {"name": "b", "at": time.time()})
+check("live: a switch takes over at once", becomes(name, "b"), "b")
+kept = runner.read_json(runner.STATE / "state.json", {})
+check("live: the job switched from is only stopped", kept.get("a", {}).get("failures", 0), 0)
+runner.FIRST.unlink()
+check("live: back to the priorities", becomes(name, "a"), "a")
+listed.write_text(listed.read_text() + '[[job]]\nname = "new"\npriority = 9\ncomfyui = false\ncommand = ["sleep", "30"]\n')
+check("live: a more important new job takes over", becomes(name, "new"), "new")
+runner.write_json(runner.FIRST, {"name": "quick", "at": time.time()})
+check("live: one switched to and finished ...", becomes(lambda: bool(runner.read_json(runner.STATE / "state.json", {})
+                                                                      .get("quick", {}).get("finished")), True), True)
+check("... is no longer first", becomes(lambda: runner.FIRST.exists(), False), False)
+check("... and the priorities go on", becomes(name, "new"), "new")
+live.quit = True
+thread.join(5)
+live.shut()
+check("live: stopped, nothing left running", live.proc, None)
 
 check("the game's name under Proton", fnmatch.fnmatch("WowB.exe".lower(), "Wow*.exe".lower()), True)
 check("Battle.net is no game", fnmatch.fnmatch("Battle.net.exe".lower(), "Wow*.exe".lower()), False)

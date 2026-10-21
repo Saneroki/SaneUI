@@ -214,19 +214,38 @@ dev/tools/imagegen dev/imagegen/sets/example/parts.txt --count 2 --only star
 
 ## The GPU runner
 
-The card is also the game's. Long work (the Atlas, a big set) goes to `dev/tools/gpu-runner`, which runs it
-only while the card is idle and gives the card back the moment something else wants it.
+The card is also the game's. Long work (the Atlas, a big set) goes to `dev/tools/gpu-runner`, the queue of
+ComfyUI renders, which runs it by priority only while the card is idle and gives the card back the moment
+something else wants it. Saneroki runs it as `saneui start gpurunner` / `saneui stop gpurunner`, sees the queue
+with `saneui gpuqueue` and changes the job at work with `saneui switch <job>` (Saneroki, 2026-10-21).
 
 - **The jobs:** `dev/imagegen/jobs.toml`, one `[[job]]` each: a `name`, a `priority` (higher first) and the
   `command` of a tool, optionally a `status` command and a `done` pattern for its output (the Atlas:
   `dev/tools/atlas status`, `'^(\d+) of \1 squares painted'`). The runner reads the file at every look and runs
-  the most important unfinished job; stopped, it runs the same command again later. The Atlas goes on where it
+  the most important unfinished job; stopped, it runs the same command again later. A job more important than
+  the one at work (a new one in the file, a switch) takes over at once: the one at work is stopped as for the
+  game, its progress kept, and comes back when its turn comes. The Atlas goes on where it
   stopped (it skips the squares it has painted); `dev/tools/imagegen` makes its whole list again, so give the
   runner short lists. Long runs go into the file only on Saneroki's word; the Atlas' close squares are in it
   (Saneroki, 2026-10-21).
 - **New GPU work goes here:** a tool that runs long on the card is added as a job (with `status` and `done`
   when it can tell how far it is, and skipping what it has made when run again), never started by itself
   next to the runner. Its command also gets its name in `dev/saneui` (README.md, *Building*).
+- **Every render plan is in the queue (Saneroki, 2026-10-21):** a session that adds or changes a render plan
+  (a set's lists in `dev/imagegen/sets/`, such as the UI looks of `ui-explore/` and `ui-style/`, a map's
+  plan, a job's words or workflow) adds or updates its job in `dev/imagegen/jobs.toml` in the same commit: a
+  `name`, a `priority` (the Atlas' close squares are 10; above it what Saneroki waits for, below it what can
+  wait; ask Saneroki when unclear) and a `rebuild` command when the plan's change has to start it anew. A
+  finished job whose plan changed is let go again with `saneui switch <job>` or `saneui rebuildstart <job>`
+  when it should run now, else `dev/tools/gpu-runner reset <job>`. Quick tries of a few pictures while a
+  session works on a look need no job (their pictures in ComfyUI's queue make the runner yield); what is left
+  to render when the session ends goes in as a job.
+- **The switch:** `saneui switch <job>` makes the job run now: held, finished or failed, it is let go again;
+  the job at work is stopped with its progress kept (the Atlas keeps every square painted and its own plan);
+  the runner is started if it is not running, and skips its three minutes' hold. The job switched to stays
+  first, also after the game or a claim took the card, until it is finished or another is switched to; then
+  the priorities rule again (`saneui switch --back` at once). `saneui rebuildstart <job>` rebuilds the job's
+  plan and its ComfyUI instructions first (`saneui rebuild`), then switches to it.
 - **Wanted elsewhere:** the game (`Wow*.exe`; WoW Forever is `WowB.exe` under Proton); another program on the
   card holding more than 1.5 GB of it, or using more than 40 % at three looks in a row (the desktop's own
   programs never count); pictures of another session or tool in ComfyUI's queue (the runner gives its jobs an
@@ -251,15 +270,17 @@ only while the card is idle and gives the card back the moment something else wa
 | | |
 | --- | --- |
 | `dev/tools/gpu-runner install` / `uninstall` | the runner as the user service `saneui-gpu-runner`: started now and at every login, standing by while the card is busy (installed 2026-10-21) |
-| `dev/tools/gpu-runner start` / `stop` | the runner in the background / stopped, the card freed |
+| `saneui start gpurunner` / `stop gpurunner` | the runner at work through the queue (the service) / stopped, its job's progress kept, the card freed |
 | `dev/tools/gpu-runner run` | the runner in this terminal (Ctrl+C stops it) |
-| `dev/tools/gpu-runner pause` / `resume` | held by hand (the job stopped, the card freed) / going on after the hold |
-| `dev/tools/gpu-runner status` | what it does or why it waits, the claims, each job and how far it is |
-| `dev/tools/gpu-runner reset NAME` | a job finished or left after three failures runs again |
+| `saneui pause gpurunner` / `resume gpurunner` | held by hand (the job stopped, the card freed) / going on after the hold |
+| `saneui gpuqueue` (`saneui status gpurunner`) | what it does or why it waits, the claims, the queue in the order it runs: priority, progress, which runs now and which next, the held, finished and failed |
+| `saneui switch <job>` / `switch --back` | that job now, first until it is finished, the one at work kept for later / the priorities again |
+| `saneui rebuildstart <job>` | `rebuild`, then `switch` |
+| `dev/tools/gpu-runner reset NAME` | a job finished or left after three failures runs again when its turn comes |
 | `saneui hold NAME` / `unhold NAME` | a job kept from running (stopped if it runs), across restarts, the others going on (`--why TEXT`) |
 | `saneui rebuild NAME` | the job anew with the plans as they are (its `rebuild` command; the Atlas: the run so far put aside in `assets/generated/atlas-runs/`); without it the job goes on with its own plan |
 
-A pause by hand and the holds are kept there too, so they last over a restart. **The Atlas' plan:** a run
+A pause by hand, the holds and the switch (`first.json`) are kept there too, so they last over a restart. **The Atlas' plan:** a run
 paints with the words, zone briefs and workflow it began with (a copy in the run's `plan/`, made at its first
 paint; `dev/tools/atlas status` says when the plans have changed since), so new rules never mix into a run under
 way: they take effect with `saneui rebuild atlas`.

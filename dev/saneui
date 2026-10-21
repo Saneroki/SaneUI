@@ -4,7 +4,7 @@
   saneui                          the commands, by group
   saneui <command> [args ...]     runs one: saneui installdev, saneui showerrors, saneui atlas status
   saneui start|pause|resume|stop|status <command>
-                                  the ones that run in the background: saneui start gpujobs, saneui stop comfyui
+                                  the ones that run in the background: saneui start gpurunner, saneui stop comfyui
   saneui help <command>           a command's own help
 
 In the terminal: ~/bin/saneui is a link to this file (made once: saneui --link); the Konsole greeting shows the
@@ -34,9 +34,15 @@ GROUPS = {
         "showerrors": (["dev/tools/errors"], "the errors the game logged", "the game's error log"),
     },
     "Background": {
-        "gpujobs": (["dev/tools/gpu-runner"], "ComfyUI jobs (the Atlas) while the graphics card is idle", 'ComfyUI jobs when GPU idle'),
-        "rebuild": (["dev/tools/gpu-runner", "rebuild"], "a GPU job anew with the plans as they are (rebuild atlas)",
-                    "a GPU job anew, plans of now"),
+        "gpurunner": (["dev/tools/gpu-runner"], "the queue of ComfyUI renders by priority, while the graphics card is idle",
+                      "ComfyUI queue by priority"),
+        "gpuqueue": (["dev/tools/gpu-runner", "queue"], "the GPU queue: its order, priorities, progress, what runs now",
+                     "the queue: order, progress"),
+        "switch": (["dev/tools/gpu-runner", "switch"], "run this GPU job now, the running one kept for later (--back)",
+                   "run this GPU job now"),
+        "rebuildstart": (["dev/tools/gpu-runner", "rebuildstart"], "rebuild a GPU job's plan, then run it now",
+                         "rebuild a GPU job, run it now"),
+        "rebuild": (["dev/tools/gpu-runner", "rebuild"], "a GPU job anew with the plans as they are (rebuild atlas)", None),
         "hold": (["dev/tools/gpu-runner", "hold"], "keep a GPU job from running, across restarts (--why TEXT)", None),
         "unhold": (["dev/tools/gpu-runner", "unhold"], "let a held GPU job run again", None),
         "comfyui": (["comfyui"], "the image generator; saneui comfyui log follows it", 'the image generator'),
@@ -74,7 +80,7 @@ COMMANDS = {name: entry for group in GROUPS.values() for name, entry in group.it
 VERBS = ("start", "pause", "resume", "stop", "status")
 # what each background command does with them; a verb missing here is not there
 BACKGROUND = {
-    "gpujobs": {"start": ["start"], "pause": ["pause"], "resume": ["resume"], "stop": ["stop"], "status": ["status"]},
+    "gpurunner": {"start": ["start"], "pause": ["pause"], "resume": ["resume"], "stop": ["stop"], "status": ["status"]},
     "comfyui": {"start": ["start"], "stop": ["stop"], "status": ["status"]},
 }
 LINK = Path.home() / "bin" / "saneui"

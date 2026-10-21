@@ -1,7 +1,12 @@
-# The GPU runner's jobs (dev/tools/gpu-runner; Doc/guides/image-generation.md, *The GPU runner*): ComfyUI work
+# The GPU runner's queue (dev/tools/gpu-runner; Doc/guides/image-generation.md, *The GPU runner*): ComfyUI work
 # done while the graphics card is idle. The runner reads this file again at every look, so a job added here is
-# taken up without a restart. The most important unfinished job runs first: a higher priority, equal ones in
-# this file's order.
+# taken up without a restart. The most important unfinished job runs: a higher priority, equal ones in this
+# file's order, or the one switched to (saneui switch NAME) until it is finished; a more important one takes
+# over from the one at work at once, which keeps its progress. saneui gpuqueue lists them in the order they run.
+#
+# A session that adds or changes a render plan (a set's lists, a map's plan, a job's words or workflow) adds or
+# updates its job here in the same commit, with a priority: the Atlas' close squares are 10, above it what
+# Saneroki waits for, below it what can wait; ask Saneroki when unclear.
 #
 #   [[job]]
 #   name = "atlas"                                   # letters, digits, - and _; its log is <name>.log
