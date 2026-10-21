@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """UI exploration: a page to look through what the model lists made (assets/generated/ui-explore/<model>/),
-in the browser, with the stretch test of slice.py: every picture small, filtered by direction, view and model, a click shows it large, a heart
+in the browser, with the stretch test of slice.py, the single elements and the silhouettes: every picture small, filtered by direction, view and model, a click shows it large, a heart
 marks the liked ones (kept in the browser) and "Copy liked" puts their names on the clipboard, to name them
 in the chat. Run it again after more pictures came in.
   python3 dev/imagegen/sets/ui-explore/gallery.py   ->  assets/generated/ui-explore/index.html
@@ -14,7 +14,10 @@ MODELS = ["klein", "zimage", "qwen", "sdxl", "flux2dev"]
 
 
 def pictures():
-    for model, sub in [(m, m) for m in MODELS] + [(m, "stretched/" + m) for m in MODELS]:
+    # the model lists, their stretch tests, the single elements (elements.txt, Qwen) and the silhouettes
+    # (shapes.txt, Z-Image: the shape as the direction, the material as the view)
+    sources = [(m, m) for m in MODELS] + [(m, "stretched/" + m) for m in MODELS] + [("qwen", "elements"), ("zimage", "shapes")]
+    for model, sub in sources:
         folder = os.path.join(OUT, sub)
         if not os.path.isdir(folder):
             continue
@@ -27,7 +30,9 @@ def pictures():
             thumb = os.path.join("thumbs", sub, stem + ".jpg")
             path = os.path.join(OUT, thumb)
             if not os.path.exists(path) or os.path.getmtime(path) < os.path.getmtime(os.path.join(folder, name)):
-                im = Image.open(os.path.join(folder, name)).convert("RGB")
+                im = Image.open(os.path.join(folder, name)).convert("RGBA")
+                ground = Image.new("RGBA", im.size, (92, 88, 80, 255))  # clear parts on a mid grey
+                im = Image.alpha_composite(ground, im).convert("RGB")
                 im.thumbnail((560, 560))
                 im.save(path, quality=84)
             yield {"id": f"{model}/{stem}", "model": model, "direction": direction, "view": view, "seed": seed,

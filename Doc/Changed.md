@@ -746,7 +746,9 @@ Saneroki asked for a much richer bag view, in features and looks.
   character sheet, a window with an unusual outline, a sheet of loose pieces, a spellbook and a frame made for
   stretching, with four models (`klein.txt`, `zimage.txt`, `qwen.txt`, `sdxl.txt`; `frame.txt` with FLUX.2 [dev]);
   `slice.py` cuts each frame into nine and draws it at four sizes as the game stretches it, `gallery.py` makes
-  a page to look through them all (filters, liked ones).
+  a page to look through them all (filters, liked ones). Then `elements.txt` (each direction's corner, buttons, tabs
+  and title bar alone, with Qwen's transparency) and `shapes.txt` (fourteen silhouettes and ways of joining the
+  tabs to the frame, in plain stone and steel).
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.
 
 ### Data: items, spells, talents and recipes from the game's own tables (Saneroki, 2026-10-20)
