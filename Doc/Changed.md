@@ -6,6 +6,19 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 347 checks (Core, with its options and profiles), 344 (Abilities), 466 (Tooltips), 561 (Social), 90 (Sync), 368 (windows), 183 (data in the game), 386 (Navigation), 105 (Inventory), 90 (sheet), 237 (bags), 36 (Combat), 35 (spellbook), 64 (talents), 52 (Nameplates), 79 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### Navigation: the planner keeps what it found while the pin stays (Saneroki, 2026-10-21)
+- From the review of the whole addon (`Planner.lua`): the walking data's region of each flight point and dock is
+  kept from plan to plan (`regions`, emptied when Walking or Travel change), a walk a plan searched already is taken
+  again when the plan is chosen anew (`start.walked`, by from:to), and the game's news of its map pin plans again
+  only when the pin moved (`Waypoint`, `Pinned`). The hearthstone's kept place is used only when its map and point
+  are numbers, a kept `flights` that is no table is replaced, and `UNIT_SPELLCAST_SUCCEEDED`'s spell is read
+  plainly (`Core.Plain`). A `/reload` takes it in.
+
+### Tests: a part the image lists include is checked in them (Saneroki, 2026-10-21)
+- `dev/tests/imagegen.py`: a list other lists include that names no workflow (the house style, the leather look's
+  shared views) is checked as part of the lists that include it, no longer as a set of its own; the suite stopped
+  there since the leather look's views came in.
+
 ### Navigation: the quest log without a scroll bar, a click pins the objective; found herbs clicked (Saneroki, 2026-10-21)
 - **The quest log** (`QuestLog.lua`, at Saneroki's ask): no scroll bar at rest, the wheel scrolls the list; while
   the mouse is on the window and the list is longer than its room, the game's thin scroll bar shows at the side the

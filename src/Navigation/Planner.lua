@@ -69,6 +69,8 @@ local plan              -- the journey being planned or drawn: { legs, at, targe
 local jobs = {}         -- the walks being searched
 local docks             -- every dock, by name, while Core's set Travel stays as it is (Docks)
 local planes = {}       -- [the world's map] = the map of its plane (Coords.Planes), or false
+local regions = {}      -- [place name] = the region of the walking data a flight point or a dock stands in, or
+                        -- false: none; kept while the walking data and Travel stay as they are (Journey)
 local lastPlan, nextLook = -math.huge, 0
 local onTaxi = false
 local homeward          -- when the hearthstone was used: its place is where the character is next
@@ -81,10 +83,10 @@ end
 -------------------------------------------------------------------------------
 --  Flight points
 -------------------------------------------------------------------------------
--- The flight points this character knows, kept for it ({ [node ID] = true }).
+-- The flight points this character knows, kept for it ({ [node ID] = true }; anything else saved there: none).
 local function Known()
     local char = Core.Character(ns.name)
-    char.flights = char.flights or {}
+    if type(char.flights) ~= "table" then char.flights = {} end
     return char.flights
 end
 
@@ -291,10 +293,11 @@ end
 --  The hearthstone
 -------------------------------------------------------------------------------
 -- Its place ({ map, u, v }) and the seconds until it brings the character there (its cooldown, the cast); nil
--- when it cannot: none in the bags, its place not known, or bound elsewhere since.
+-- when it cannot: none in the bags, its place not known (or saved in another shape), or bound elsewhere since.
 local function Hearth()
     local place = Core.Character(ns.name).hearth
-    if type(place) ~= "table" or not place.map or not place.u or not Coords.Box(place.map) then return nil end
+    if type(place) ~= "table" or type(place.map) ~= "number" or type(place.u) ~= "number" or type(place.v) ~= "number"
+        or not Coords.Box(place.map) then return nil end
     local bound = rawget(_G, "GetBindLocation") and Core.Ask(GetBindLocation)
     if bound and place.name and bound ~= place.name then return nil end
     local items = rawget(_G, "C_Item")
@@ -369,15 +372,17 @@ local function Journey(startMap, pu, pv, endMap, tu, tv, measured)
     local function Walking(fromName, a, toName, b)
         return measured[fromName .. ":" .. toName] or Distance(a.u, a.v, b.u, b.v) * Planner.DETOUR / Planner.RUN
     end
-    -- The region of the walking data a place stands in (nil: not known; walks are then not ruled out).
-    local regions = {}
+    -- The region of the walking data a place stands in (nil: not known; walks are then not ruled out): a flight
+    -- point's and a dock's kept from plan to plan (regions), the ends' and the hearthstone's (they move) for this one.
+    local moving = {}
     local function RegionOf(name)
         if not useData then return nil end
-        if regions[name] == nil then
+        local kept = (name == "start" or name == "end" or name == "hearth") and moving or regions
+        if kept[name] == nil then
             local place = places[name]
-            regions[name] = Region(place.map, place.u, place.v) or false
+            kept[name] = Region(place.map, place.u, place.v) or false
         end
-        return regions[name] or nil
+        return kept[name] or nil
     end
     -- Dijkstra over the places.
     local best, from, how, done = { start = 0 }, {}, {}, {}
@@ -524,22 +529,29 @@ end
 
 local Make -- (below)
 
--- Every walk of the journey searched, one after the other; a walk much longer than guessed, once: chosen again.
+-- Every walk of the journey searched, one after the other (one this plan has searched already, kept in its start's
+-- walked, taken as it was found); a walk much longer than guessed, once: chosen again.
 local function Walks(start, steps, measured, again)
     Stop()
     local pending = {}
     for _, step in ipairs(steps) do
         if step.kind == "walk" then pending[#pending + 1] = step end
     end
+    start.walked = start.walked or {}
     local function Next(index)
         local step = pending[index]
         if not step then return Draw(steps, start.keep) end
+        local key = step.from .. ":" .. step.to
+        if start.walked[key] then
+            step.points = start.walked[key]
+            return Next(index + 1)
+        end
         jobs[1] = Search.Start(step.map, step.u1, step.v1, step.u2, step.v2, function(points, cost)
             jobs[1] = nil
             if points then
-                step.points = points
+                step.points, start.walked[key] = points, points
                 local seconds = cost / Planner.RUN
-                measured[step.from .. ":" .. step.to] = seconds
+                measured[key] = seconds
                 if again and seconds > step.guess * Planner.WORSE then
                     return Make(start, measured, false)
                 end
@@ -652,21 +664,36 @@ Planner.TEXT = {
     sea = "no way to the map pin's continent is known yet: no line.",
 }
 
+-- The game's map pin in its plane: { map, u, v }, or nil.
+local function Pinned()
+    local map, x, y = Live.Waypoint()
+    local plane = map and Coords.PlaneOf(map)
+    local u, v
+    if plane then u, v = Coords.MapToPlane(map, x, y, plane) end
+    return u and { map = plane, u = u, v = v } or nil
+end
+
 -- The pin moved, came or went: planned anew (or the line goes).
 function Planner.Update()
     Stop()
     local wanted = ns.Pins.Shows("route") and not ns.off
-    local map, x, y = Live.Waypoint()
-    local plane = wanted and map and Coords.PlaneOf(map)
-    local u, v
-    if plane then u, v = Coords.MapToPlane(map, x, y, plane) end
-    target = u and { map = plane, u = u, v = v } or nil
+    target = wanted and Pinned() or nil
     -- Without a pin, a flight's way is drawn all the same.
     if not wanted or (not target and not Flying()) then
         target, plan = nil, nil
         return ns.Route.Show(nil)
     end
     Plan()
+end
+
+-- The game says its map pin or its arrow changed: planned anew only when the pin is somewhere else now (the arrow
+-- led to a quest: the plan, or the walks being searched for it, stay).
+local function Waypoint()
+    local now = Pinned()
+    if target and now and now.map == target.map and now.u == target.u and now.v == target.v and (plan or #jobs > 0) then
+        return
+    end
+    Planner.Update()
 end
 
 -- On a flight: its way on drawn anew from where the player is, the rest of the plan kept (planned once from where it
@@ -718,7 +745,7 @@ end
 ns.On("TAXIMAP_OPENED", function() ns.Safe("flight points", Learn) end)
 ns.On("HEARTHSTONE_BOUND", function() ns.Safe("hearthstone", Home) end)
 Core.OnUnit("UNIT_SPELLCAST_SUCCEEDED", "player", function(_, _, spell)
-    if spell == Planner.HOMEWARD and not ns.off then
+    if Core.Plain(spell) == Planner.HOMEWARD and not ns.off then
         homeward = GetTime()
         arriving()
     end
@@ -727,8 +754,10 @@ end)
 ns.On("PLAYER_ENTERING_WORLD", function()
     if homeward then arriving() end
 end)
--- The walking data or the flights arrived (a pin set before them got a straight line): planned again.
+-- The walking data or the flights arrived (a pin set before them got a straight line): planned again, the places'
+-- regions looked up anew.
 local function Changed()
+    wipe(regions)
     if target then ns.Guarded(Plan) end
 end
 Core.Data.Set("Walking"):OnStamp(Changed)
@@ -753,5 +782,5 @@ Trips:OnChange(ns.Guard(function()
     ns.Route.Show(nil)
 end))
 ns.Listen("LIVE", function(what)
-    if what == "waypoint" then ns.Guarded(Planner.Update) end
+    if what == "waypoint" then ns.Guarded(Waypoint) end
 end)

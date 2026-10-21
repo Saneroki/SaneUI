@@ -72,15 +72,19 @@ with tempfile.TemporaryDirectory() as folder:
     except SystemExit:
         check("include of itself fails", "failed", "failed")
 
-# Every recipe and set reads, names a workflow, and has a house style where it makes interface art
+# Every recipe and set reads, names a workflow, and has a house style where it makes interface art. A part that
+# other lists include and that names no workflow (the house style, a set's shared views) is checked in them.
 lists = sorted((ROOT / "dev" / "imagegen").rglob("*.txt"))
 check("recipes and sets found", len(lists) > 8, True)
+parts = {(ROOT / line.partition(":")[2].strip()).resolve() for path in lists
+         for line in path.read_text(encoding="utf-8").splitlines() if line.strip().startswith("include:")}
+check("the house style is a part", (ROOT / "dev" / "imagegen" / "style.txt").resolve() in parts, True)
 home = ig.WORKFLOWS[-1]
 for path in lists:
-    if path.name == "style.txt":
-        continue
     rel = path.relative_to(ROOT)
     run, jobs = ig.read_list(rel)
+    if path.resolve() in parts and not run["workflow"]:
+        continue
     check(f"{rel} names a workflow", bool(run["workflow"]), True)
     if "/sets/" in str(rel):
         check(f"{rel} has prompts", bool(jobs) and all(j["prompt"] for j in jobs), True)
