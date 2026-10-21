@@ -1,0 +1,745 @@
+#!/usr/bin/env python3
+"""Paints the three levels of Navigation's painted maps, for the world's zones and for the instances (dungeons and
+raids) alike, by one pipeline (Doc/guides/map-style.md; Saneroki, 2026-10-21: strict maps of the layout, not free
+concept art). Every subject has one frame, its box in the world, that all three levels share, so they lie over each
+other exactly.
+
+  close    the terrain, pixel-exact: the Atlas' own squares (dev/tools/atlas: one terrain tile at 2048 pixels, the
+           game's minimap textures softened, its water flattened), the Atlas' words (atlas.toml) with the subject's
+           colours and light, the Atlas' check against the game's water and lava (up to three seeds) and its
+           colour pass. An instance's terrain is its own map's tiles with the indoor maps of the buildings they
+           place laid over them, as the game's minimap draws them (dev/tools/indoor-art's parts, placed as Navigation
+           places them). The samples paint the squares around the zone's main place, or over the whole instance.
+  middle   a map in the manner of the game's own, laid exactly over the terrain, drawn in pencil on the
+           interface's parchment, straight from above (levels.toml, [middle]): image 1 the terrain plan of the
+           frame, image 2 the game's map art of it in the same frame (a zone's full map; an instance floor's map,
+           its title banner painted over; where the game has none, another place's map for its manner only),
+           image 3 the parchment. A zone in one picture, an instance floor by floor.
+  far      a photorealistic aerial render, nearly straight down, its layout kept (levels.toml, [far]): image 1 the
+           terrain plan, image 2 the middle level's drawing (an instance's floors laid where they lie), image 3 a
+           piece of the close level's painting. A zone or an instance in one picture.
+
+Each middle and far painting is checked twice and painted again with the next seed until one passes, TRIES at most:
+  outlines  how well its edges agree with image 1's (their normalised correlation at OUTLINE pixels), against how
+            well the game's own map agrees with the terrain (a middle level must reach MIDDLE of that, a far one FAR);
+  looks     the vision model (qwen3vl-look) answers in JSON: writing in it; a pencil map on paper seen from above
+            (middle); a real place, not a map or panels, seen from above, of the brief's kind (far).
+
+Usage:
+  dev/tools/map-layers inputs [--zones UIMAPS] [--instances MAPS] [--continents DIR --tables DIR --minimap DIR]
+                              [--instance-files DIR] [--mapart DIR] [--out DIR]
+  dev/tools/map-layers paint [--levels close,middle,far] [--only NAMES] [--out DIR]
+  dev/tools/map-layers contact [--out DIR]
+  dev/tools/map-layers status [--out DIR]
+
+  inputs    the subjects' frames, terrain plans and the game's map art, remembered in the run's state.json (the
+            game's folders default to the Atlas' run's); --zones 1436,1446 --instances 36,209,3065
+  paint     the levels in order (the far level needs the other two), what is missing only; --only zone-1436,...
+  contact   contact.jpg: a row per subject: image 1, the game's map, close, middle and far
+  status    its first line: "<made> of <all> paintings made"
+
+It writes, in the run's folder (default assets/generated/map-layers, never committed), per subject <name>
+(zone-<uimap>, instance-<map> and its floors instance-<map>-<floor>):
+  <name>/ground.png, art.png          the terrain plan and the game's map art in the frame (images 1 and 2)
+  <name>/close/<i>-<j>.png, close.png the close squares, painted, and joined
+  <name>/middle-<try>.png, far-<try>.png and checks.json (each try's outline agreement and the vision model's answer)
+  state.json                          the paths and subjects
+Needs Python with Pillow and NumPy, and ComfyUI; the game's files as dev/tools/atlas, dev/tools/indoor-art and
+the private baseline extract them (an instance's terrain in a folder of its own: wdt/, adt/, adt-obj0/, minimap/,
+wmo/, wmo-minimap/, tiles.jsonl).
+"""
+import argparse
+import importlib.machinery
+import importlib.util
+import io
+import json
+import math
+import os
+import re
+import shutil
+import struct
+import subprocess
+import sys
+import time
+import tomllib
+import urllib.request
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageFilter
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def module(name, path):
+    loader = importlib.machinery.SourceFileLoader(name, str(path))
+    spec = importlib.util.spec_from_loader(name, loader)
+    found = importlib.util.module_from_spec(spec)
+    loader.exec_module(found)
+    return found
+
+
+at = module("atlas", ROOT / "dev" / "tools" / "atlas")              # the close level: squares, words, checks
+ta, ig = at.ta, at.ig                                               # the terrain; ComfyUI and its workflows
+ia = module("indoor_art", ROOT / "dev" / "tools" / "indoor-art")    # buildings' indoor maps
+
+MAPS = ROOT / "dev" / "imagegen" / "maps"
+LEVELS, ATLAS = MAPS / "levels.toml", MAPS / "atlas.toml"
+ZONES, DUNGEONS = MAPS / "zones.toml", MAPS / "dungeons.toml"
+SET = ROOT / "assets" / "data" / "Dungeons" / "Dungeons.jsonl"
+META = ROOT / "assets" / "generated" / "maps" / "meta" / "places.json"
+PAPER = ROOT / "assets" / "Concept art" / "UI style" / "paper.png"
+OUT = ROOT / "assets" / "generated" / "map-layers"
+COMFY = Path(os.environ.get("IMAGEGEN_HOME", "/data/Projects/ImageGen"))
+ADDRESS = "127.0.0.1:8188"
+
+TILE, GRID = ta.TILE, ta.GRID
+CENTRE = GRID / 2 * TILE        # yards from a map's middle to its edges
+PER_YARD = at.PX / TILE         # the close level's pixels a yard (the Atlas')
+LAYERS = "qwen21-edit-3ref-i2i" # the middle and far levels: three pictures, the full model, from image 1 itself
+STRENGTH = {"middle": (0.94, 0.96, 0.98), "far": (0.9, 0.95, 1.0)}   # the denoise of each try: the first the
+                                # strictest; a try that still shows writing or the wrong look goes further from image 1
+                                # (the Deadmines' map at 0.8 and 0.88 stayed the game's coloured map, its labels in it)
+LOOK = "qwen3vl-look"           # the vision model's answers
+SIDE = 2048                     # a middle or far painting's longer side
+PAPER_SIDE = 768                # image 3 of the middle level: a piece of the parchment, this large
+CLOSE_SIDE = 1024               # image 3 of the far level: a piece of the close level, this large
+SQUARES = 2                     # a zone's close sample: so many squares a side around its main place
+MOST_SQUARES = 6                # an instance's close level: at most so many squares
+TRIES = 3                       # middle and far paintings of a subject at most (STRENGTH has one a try)
+OUTLINE = 256                   # pixels across at which outlines are compared
+MIDDLE, FAR = 0.8, 0.6          # of the game's own map's agreement with the terrain: what a painting must reach
+                                # (a faithful pencil copy of the Deadmines' map reached 0.84 of it)
+FLOOR_FRAME = (0.05, 0.10, 0.95, 0.95)  # the map in an instance floor's art: around it its frame, title banner
+ZONE_FRAME = (0.025, 0.04, 0.975, 0.96)  # and ornaments, a zone's its border: made parchment (they stayed as a strip)
+STYLE_OF = {3065: (70, 1)}      # an instance without map art: whose map shows the manner (Uldaman's halls)
+
+
+# --- Frames and the terrain plan ----------------------------------------------------------------
+
+def pixel(x, y, k):
+    """Where a world point (x north, y west, yards) lies at k pixels a yard: (column, row) from the map's corner."""
+    return (CENTRE - y) * k, (CENTRE - x) * k
+
+
+def affine(fn):
+    """PIL's AFFINE data for a linear map of output pixels (u, v) to input pixels."""
+    c = fn(0, 0)
+    a, d = (p - q for p, q in zip(fn(1, 0), c))
+    b, e = (p - q for p, q in zip(fn(0, 1), c))
+    return (a, b, c[0], d, e, c[1])
+
+
+def buildings_of(folder, map_id):
+    """The buildings a map's object files place (MODF; with flag 0x8 the file's ID), once each: file, place,
+    turn and scale, as dev/tools/walk-data reads them (doodads left out)."""
+    found = {}
+    for path in sorted((folder / "adt-obj0").glob("*.adt")):
+        if int(path.stem) // (GRID * GRID) != map_id:
+            continue
+        data = path.read_bytes()
+        for name, at, size in ta.pieces(data, 0, len(data)):
+            if name != b"MODF":
+                continue
+            for start in range(at, at + size, 64):
+                (file, unique, px, py, pz, rx, ry, rz, *_, flags, _, _, scale) = struct.unpack_from(
+                    "<II3f3f3f3fHHHH", data, start)
+                if flags & 0x8:
+                    found[unique] = {"file": file, "at": (px, py, pz), "turn": (rx, ry, rz),
+                                     "scale": scale / 1024 if scale else 1}
+    return list(found.values())
+
+
+class Indoors:
+    """The indoor maps of the buildings an instance's terrain places (its object files), each part as the game's
+    indoor minimap draws it (indoor-art's plan, its black taken out), placed as Navigation places them."""
+
+    def __init__(self, folder, tables, map_id):
+        textures = ia.textures(tables)
+        minimap = folder / "wmo-minimap"
+        self.parts = []
+        for where in buildings_of(folder, map_id):
+            if ia.tilt(where["turn"]) > ia.TILT:
+                continue
+            root = folder / "wmo" / f"{where['file']}.wmo"
+            if not root.is_file():
+                continue
+            wmo, parts = ia.building(root)
+            place = ia.placed(where, map_id)
+            for number, (flags, box) in enumerate(parts):
+                blocks = textures.get(wmo, {}).get(number)
+                if not blocks or not all((minimap / f"{f}.blp").is_file() for f in blocks.values()):
+                    continue
+                sizes = {f: ia.texture_size(minimap / f"{f}.blp") for f in blocks.values()}
+                if not ia.fits(box, blocks, sizes):
+                    continue
+                rgb, alpha = ia.plan(blocks, minimap)
+                if (alpha > 0.5).sum() < ia.SPECK:
+                    continue
+                rgb = ia.bleed(rgb, (alpha > 0.5).astype(np.float32))
+                alpha = ia.softened(rgb, alpha)
+                picture = Image.fromarray((np.dstack([rgb, alpha]) * 255).clip(0, 255).astype(np.uint8), "RGBA")
+                top = box[1] + (max(row for _, row in blocks) + 1) * ia.BLOCK
+                middle = self.world(place, (box[0] + box[3]) / 2, (box[1] + box[4]) / 2)
+                self.parts.append({"picture": picture, "box": box, "top": top, "place": place, "middle": middle,
+                                   "z": place["z"] + place["scale"] * box[2]})
+        self.parts.sort(key=lambda part: part["z"])   # the lower parts first: a part above is drawn over them
+
+    @staticmethod
+    def world(place, bx, by):
+        turn, s = math.radians(place["yaw"]), place["scale"]
+        return (place["x"] - s * (bx * math.cos(turn) - by * math.sin(turn)),
+                place["y"] - s * (bx * math.sin(turn) + by * math.cos(turn)))
+
+    def bounds(self):
+        """The box (north, south, west, east) of everything the indoor maps draw."""
+        xs, ys = [], []
+        for part in self.parts:
+            b = part["box"]
+            for bx, by in ((b[0], b[1]), (b[3], b[1]), (b[0], b[4]), (b[3], b[4])):
+                x, y = self.world(part["place"], bx, by)
+                xs.append(x)
+                ys.append(y)
+        return max(xs), min(xs), max(ys), min(ys)
+
+    def draw(self, canvas, left, top, k, within=None):
+        """Lays the parts over a picture whose top left lies at pixel (left, top) of the map at k pixels a yard;
+        only the parts whose middle lies within a box, if one is given."""
+        for part in self.parts:
+            if within and not (within[1] <= part["middle"][0] <= within[0] and within[3] <= part["middle"][1] <= within[2]):
+                continue
+            place, box, ceiling = part["place"], part["box"], part["top"]
+            turn, s = math.radians(place["yaw"]), place["scale"]
+            cos, sin = math.cos(turn), math.sin(turn)
+
+            def source(u, v):   # a canvas pixel to the part's picture: world, then the building's own x and y
+                dx = CENTRE - (top + v) / k - place["x"]
+                dy = CENTRE - (left + u) / k - place["y"]
+                bx, by = -(cos * dx + sin * dy) / s, -(-sin * dx + cos * dy) / s
+                return (bx - box[0]) * ia.TEXELS, (ceiling - by) * ia.TEXELS
+            laid = part["picture"].transform(canvas.size, Image.Transform.AFFINE, affine(source), Image.Resampling.BILINEAR)
+            canvas.alpha_composite(laid)
+        return canvas
+
+
+class Ground:
+    """A map's terrain from above: its minimap textures, with an instance's indoor maps over them."""
+
+    def __init__(self, minimap, tiles, indoors=None):
+        self.minimap, self.tiles, self.indoors = Path(minimap), tiles, indoors
+
+    def picture(self, map_id, box, width, within=None):
+        """The terrain of a box (north, south, west, east), width pixels across, north up."""
+        north, south, west, east = box
+        k = width / (west - east)
+        left, top = pixel(north, west, k)
+        height = max(1, round((north - south) * k))
+        canvas = Image.new("RGBA", (width, height), (0, 0, 0, 255))
+        size = TILE * k
+        for row in range(int(top // size), int((top + height) // size) + 1):
+            for column in range(int(left // size), int((left + width) // size) + 1):
+                file = self.tiles.get(map_id * GRID * GRID + row * GRID + column)
+                if not file or not (self.minimap / f"{file}.blp").is_file():
+                    continue
+                x0, y0 = round(column * size - left), round(row * size - top)
+                x1, y1 = round((column + 1) * size - left), round((row + 1) * size - top)
+                with Image.open(self.minimap / f"{file}.blp") as texture:
+                    canvas.paste(texture.convert("RGBA").resize((x1 - x0, y1 - y0), Image.Resampling.LANCZOS), (x0, y0))
+        if self.indoors:
+            self.indoors.draw(canvas, left, top, k, within)
+        return canvas.convert("RGB")
+
+
+def framed(picture):
+    """A frame's picture at SIDE across, its height on a multiple of 32: all of a frame's pictures the same size."""
+    height = max(32, round(picture.height * SIDE / picture.width / 32) * 32)
+    return picture.resize((SIDE, height), Image.Resampling.LANCZOS)
+
+
+def tiles_of(path):
+    """{tile key: minimap file ID} of a tiles.jsonl (the instances') or the master's set Tiles."""
+    found = {}
+    for line in open(path, encoding="utf-8"):
+        row = json.loads(line)
+        if row.get("minimap"):
+            found[row["key"]] = row["minimap"]
+    return found
+
+
+# --- The game's map art ---------------------------------------------------------------------------
+
+def zone_art(uimap, tables, mapart):
+    """A zone's full map (with the parts the game reveals once explored), flattened on its own paper."""
+    rows = {name: ta.table(tables, name) for name in ("UiMapXMapArt", "UiMapArt", "UiMapArtStyleLayer", "UiMapArtTile",
+                                                       "WorldMapOverlay")}
+    rows["parts"] = {}
+    for row in ta.table(tables, "WorldMapOverlayTile"):
+        if row["LayerIndex"] == "0" and int(row["FileDataID"]) > 0:
+            rows["parts"].setdefault(row["WorldMapOverlayID"], []).append(row)
+    picture = ta.full(uimap, rows, mapart)
+    return parchment_around(flat(picture), ZONE_FRAME) if picture else None
+
+
+def floors_of_set():
+    found = {}
+    for line in SET.open(encoding="utf-8"):
+        entry = json.loads(line)
+        tiles = entry.get("tiles", [])
+        found[int(entry["key"])] = [
+            {"floor": f["floor"], "name": f.get("name") or "", "size": (f["width"], f["height"]), "tile": f["tile"],
+             "tiles": [(t["row"], t["column"], t["file"]) for t in tiles if t["floor"] == f["floor"]],
+             "box": (f["north"], f["south"], f["west"], f["east"])}
+            for f in sorted(entry.get("floors", []), key=lambda f: f["floor"])]
+    return found
+
+
+def floor_art(floor, mapart):
+    """An instance floor's map art in its frame, its frame and title banner made parchment."""
+    width, height = floor["size"]
+    picture = Image.new("RGBA", (width, height))
+    for row, column, file in floor["tiles"]:
+        with Image.open(mapart / f"{file}.blp") as texture:
+            picture.paste(texture.convert("RGBA").resize((floor["tile"], floor["tile"])),
+                          (column * floor["tile"], row * floor["tile"]))
+    return parchment_around(flat(picture), FLOOR_FRAME)
+
+
+def parchment_around(picture, frame):
+    """The picture with all outside the map (frame: its part, left, top, right, bottom) made the house parchment,
+    softly: no frame, banner or ornament reaches the model."""
+    with Image.open(PAPER) as paper:
+        sheet = paper.convert("RGB").resize(picture.size, Image.Resampling.LANCZOS)
+    inside = Image.new("L", picture.size, 0)
+    inside.paste(255, tuple(round(f * picture.size[i % 2]) for i, f in enumerate(frame)))
+    return Image.composite(picture, sheet, inside.filter(ImageFilter.GaussianBlur(8)))
+
+
+def flat(picture):
+    under = Image.new("RGBA", picture.size, (180, 160, 120, 255))
+    under.alpha_composite(picture.convert("RGBA"))
+    return under.convert("RGB")
+
+
+# --- The words ------------------------------------------------------------------------------------
+
+def light(brief):
+    return brief["atmosphere"].split(". ")[0].rstrip(".")
+
+
+def words_of(level, words, brief, instance):
+    """A painting's words. The middle level: its pictures, look and last sentence, no brief (its words drew what
+    the brief names, a ship on a mine's floor). The far level: its pictures and look, open (instances), the brief,
+    its last sentence."""
+    said = words[level]
+    if level == "middle":
+        plan = brief.get("_style_only")
+        return " ".join([said["images_plan" if plan else "images"], said["look_plan" if plan else "look"], said["last"]])
+    parts = [said["images"], said["look"]]
+    if instance:
+        parts.append(said["open"])
+    parts.append(f"This place is {brief['biome'][0].lower() + brief['biome'][1:]}.")
+    for field in ("land", "plants", "buildings", "roads", "places"):
+        if brief.get(field):
+            parts.append(brief[field])
+    parts += [f"Its colours: {brief['colours']}.", f"Its light: {light(brief)}.", said["last"]]
+    return " ".join(part.strip() for part in parts)
+
+
+# --- The checks -----------------------------------------------------------------------------------
+
+def outlines(picture):
+    """A picture's edges at OUTLINE pixels across, normalised: what two pictures of one layout share."""
+    small = picture.convert("L").resize((OUTLINE, max(1, round(OUTLINE * picture.height / picture.width))),
+                                        Image.Resampling.BOX).filter(ImageFilter.GaussianBlur(1))
+    grey = np.asarray(small, np.float32)
+    gy, gx = np.gradient(grey)
+    edges = np.asarray(Image.fromarray(np.hypot(gx, gy).clip(0, 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(2)),
+                       np.float32)
+    return (edges - edges.mean()) / (edges.std() + 1e-6)
+
+
+def agreement(a, b):
+    """How well two pictures' outlines agree, -1 to 1 (their normalised correlation)."""
+    ea, eb = outlines(a), outlines(b.resize(a.size))
+    return float((ea * eb).mean())
+
+
+def look_words(level, brief):
+    if level == "middle":
+        return ("Look at this picture. Answer with JSON only, no other words: "
+                '{"writing": true or false (any letters, words, numbers or labels anywhere in it), '
+                '"pencil_map": true or false (a map drawn by hand in grey pencil on cream paper), '
+                '"from_above": true or false (seen straight from above, like a map)}')
+    return ("Look at this picture. Answer with JSON only, no other words: "
+            '{"writing": true or false (any letters, words, numbers or labels anywhere in it), '
+            '"map_or_drawing": true or false (a map, a plan or a drawing on paper, rather than a real-looking place), '
+            '"panels": true or false (split into separate panels, frames or tiles rather than one picture), '
+            '"from_above": true or false (seen from high above, the whole place laid out below), '
+            f'"is_it": true or false (is it the right kind of place: {brief["biome"]}; details may differ)' + "}")
+
+
+def verdict(level, text):
+    found = re.search(r"\{.*\}", text or "", re.S)
+    try:
+        seen = json.loads(found.group(0)) if found else {}
+    except json.JSONDecodeError:
+        seen = {}
+    if level == "middle":
+        ok = seen.get("writing") is False and seen.get("pencil_map") is True and seen.get("from_above") is True
+    else:
+        ok = (seen.get("writing") is False and seen.get("map_or_drawing") is False and seen.get("panels") is False
+              and seen.get("from_above") is True and seen.get("is_it") is True)
+    return ok, seen
+
+
+# --- ComfyUI --------------------------------------------------------------------------------------
+
+def reachable():
+    try:
+        urllib.request.urlopen(ig.Server(ADDRESS).url + "/queue", timeout=3).close()
+        return True
+    except OSError:
+        return False
+
+
+def start_comfyui():
+    if reachable():
+        return
+    if shutil.which("comfyui"):
+        subprocess.run(["comfyui", "start"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        for _ in range(60):
+            if reachable():
+                return
+            time.sleep(2)
+    sys.exit(f"ComfyUI is not reachable at {ADDRESS}: comfyui start")
+
+
+def run_one(server, workflow, refs, prompt, name, seed, settings):
+    """One picture, or one answer, from ComfyUI: (picture or None, text or None)."""
+    graph = json.loads(ig.find_workflow(workflow).read_text())
+    uploaded = {path: server.upload(path) for path in refs}
+    entry = server.wait(server.queue(ig.fill(graph, {"prompt": prompt, "name": name, "refs": refs}, seed, settings,
+                                             uploaded)))
+    if entry.get("status", {}).get("status_str") == "error":
+        raise RuntimeError(f"ComfyUI failed on {name}: {json.dumps(entry.get('status'))[:300]}")
+    text = next((t for output in entry.get("outputs", {}).values() for t in output.get("text", [])), None)
+    data = next(server.pictures(entry), None)
+    for output in entry.get("outputs", {}).values():
+        for image in output.get("images", []):
+            (COMFY / "output" / image.get("subfolder", "") / image.get("filename", "-")).unlink(missing_ok=True)
+    for name_ in uploaded.values():
+        (COMFY / "input" / name_).unlink(missing_ok=True)
+    return (Image.open(io.BytesIO(data)).convert("RGB") if data else None), text
+
+
+# --- The subjects ---------------------------------------------------------------------------------
+
+def load_state(out):
+    path = out / "state.json"
+    return json.loads(path.read_text()) if path.is_file() else {"paths": {}, "subjects": []}
+
+
+def save_state(out, state):
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "state.tmp").write_text(json.dumps(state, indent=1))
+    os.replace(out / "state.tmp", out / "state.json")
+
+
+def inputs(args):
+    """Every subject's frame, terrain plan and map art, and its floors."""
+    out = Path(args.out)
+    state = load_state(out)
+    atlas = json.loads((ROOT / "assets" / "generated" / "atlas" / "state.json").read_text())["paths"]
+    paths = state["paths"]
+    for name, default in (("continents", atlas["adt"]), ("tables", atlas["tables"]), ("minimap", atlas["minimap"]),
+                          ("instance_files", None), ("mapart", None)):
+        given = getattr(args, name, None)
+        if given or name not in paths:
+            paths[name] = str(Path(given).resolve()) if given else default
+    tables, mapart = Path(paths["tables"]), Path(paths["mapart"])
+    zone_briefs, dungeon_briefs = tomllib.loads(ZONES.read_text()), tomllib.loads(DUNGEONS.read_text())
+    subjects = []
+    if args.zones:
+        found, _ = ta.zones(tables, (0, 1))
+        places = json.loads(META.read_text())["zones"]
+        world = Ground(paths["minimap"], tiles_of(ROOT / "assets" / "data" / "Tiles" / "Tiles.jsonl"))
+        for uimap in args.zones:
+            continent, box, _ = found[uimap]
+            zone = places[str(uimap)]
+            main = (zone.get("flights") or [{"x": 50, "y": 50}])[0]   # the close sample: around its flight master
+            north, south, west, east = box
+            centre = (north - main["y"] / 100 * (north - south), west - main["x"] / 100 * (west - east))
+            name = f"zone-{uimap}"
+            folder = out / name
+            folder.mkdir(parents=True, exist_ok=True)
+            framed(world.picture(continent, box, SIDE)).save(folder / "ground.png")
+            art = zone_art(uimap, tables, mapart)
+            art.resize(Image.open(folder / "ground.png").size, Image.Resampling.LANCZOS).save(folder / "art.png")
+            subjects.append({"name": name, "kind": "zone", "key": uimap, "map": continent, "box": box,
+                             "centre": centre, "title": zone_briefs[str(uimap)]["name"]})
+            print(f"{name}: {zone_briefs[str(uimap)]['name']}, frame {[round(v) for v in box]}")
+    if args.instances:
+        folder_files = Path(paths["instance_files"])
+        sets = floors_of_set()
+        instance_tiles = tiles_of(folder_files / "tiles.jsonl")
+        for key in args.instances:
+            indoors = Indoors(folder_files, tables, key)
+            ground = Ground(folder_files / "minimap", instance_tiles, indoors)
+            floors = sets.get(key) or []
+            if not floors:   # no map art: one floor, the frame what its indoor maps draw, a little around
+                north, south, west, east = indoors.bounds()
+                pad = 0.08 * max(north - south, west - east)
+                north, south, west, east = north + pad, south - pad, west + pad, east - pad
+                wide, high = west - east, north - south   # widened to the game's 3:2 of map art
+                if wide < 1.5 * high:
+                    grow = (1.5 * high - wide) / 2
+                    west, east = west + grow, east - grow
+                else:
+                    grow = (wide / 1.5 - high) / 2
+                    north, south = north + grow, south - grow
+                floors = [{"floor": 1, "name": "", "box": (north, south, west, east)}]
+            name = f"instance-{key}"
+            records = []
+            for floor in floors:
+                floor_name = f"{name}-{floor['floor']}"
+                folder = out / floor_name
+                folder.mkdir(parents=True, exist_ok=True)
+                box = tuple(floor["box"])
+                picture = framed(ground.picture(key, box, SIDE, within=box if len(floors) > 1 else None))
+                picture.save(folder / "ground.png")
+                if floor.get("tiles"):
+                    art, style_only = floor_art(floor, mapart), False
+                else:
+                    other, number = STYLE_OF[key]
+                    art, style_only = floor_art(next(f for f in sets[other] if f["floor"] == number), mapart), True
+                art.resize(picture.size, Image.Resampling.LANCZOS).save(folder / "art.png")
+                records.append({"name": floor_name, "floor": floor["floor"], "box": box, "style_only": style_only})
+            union = (max(f["box"][0] for f in records), min(f["box"][1] for f in records),
+                     max(f["box"][2] for f in records), min(f["box"][3] for f in records))
+            folder = out / name
+            folder.mkdir(parents=True, exist_ok=True)
+            framed(ground.picture(key, union, SIDE)).save(folder / "ground.png")
+            subjects.append({"name": name, "kind": "instance", "key": key, "map": key, "box": union,
+                             "floors": records, "title": dungeon_briefs[str(key)]["name"]})
+            print(f"{name}: {dungeon_briefs[str(key)]['name']}, {len(records)} floors, {len(indoors.parts)} indoor parts")
+    state["subjects"] = [s for s in state["subjects"] if s["name"] not in {n["name"] for n in subjects}] + subjects
+    save_state(out, state)
+
+
+# --- The levels -----------------------------------------------------------------------------------
+
+def checks_of(folder):
+    path = folder / "checks.json"
+    return json.loads(path.read_text()) if path.is_file() else {}
+
+
+def save_checks(folder, checks):
+    (folder / "checks.json").write_text(json.dumps(checks, indent=1))
+
+
+def close(server, subject, state, out):
+    """The close level: the Atlas' squares over the subject's terrain, painted, checked, colour-passed, joined."""
+    paths, folder = state["paths"], out / subject["name"]
+    (folder / "close").mkdir(parents=True, exist_ok=True)
+    fixed = tomllib.loads(ATLAS.read_text())
+    north, south, west, east = subject["box"]
+    if subject["kind"] == "zone":
+        game = at.Game({"adt": paths["continents"], "tables": paths["tables"], "minimap": paths["minimap"]})
+        guides = at.Guides(game)
+        briefs = tomllib.loads(ZONES.read_text())
+        x, y = pixel(*subject["centre"], PER_YARD)
+        i0, j0 = round(x / at.STEP) - SQUARES // 2, round(y / at.STEP) - SQUARES // 2
+        squares = [(i, j) for j in range(j0, j0 + SQUARES) for i in range(i0, i0 + SQUARES)]
+        indoors = None
+    else:
+        files = Path(paths["instance_files"])
+        game = at.Game({"adt": files / "adt", "tables": paths["tables"], "minimap": files / "minimap"})
+        game.files = tiles_of(files / "tiles.jsonl")
+        guides, briefs = None, {"instance": tomllib.loads(DUNGEONS.read_text())[str(subject["key"])]}
+        indoors = Indoors(files, Path(paths["tables"]), subject["key"])
+        x0, y0 = pixel(north, west, PER_YARD)
+        x1, y1 = pixel(south, east, PER_YARD)
+        squares = [(i, j) for j in range(int(y0 // at.STEP), int(y1 // at.STEP) + 1)
+                   for i in range(int(x0 // at.STEP), int(x1 // at.STEP) + 1)][:MOST_SQUARES]
+    checks = checks_of(folder)
+    for i, j in squares:
+        target = folder / "close" / f"{i}-{j}.png"
+        if target.is_file():
+            continue
+        square = game.square(subject["map"], i, j)
+        if indoors:
+            canvas = Image.fromarray(square["rgb"]).convert("RGBA")
+            indoors.draw(canvas, i * at.STEP, j * at.STEP, PER_YARD)
+            square["rgb"] = np.asarray(canvas.convert("RGB")).copy()
+            facts = {"water": float(at.water_of(square).mean()), "lava": float(square["lava"].mean()) / 255,
+                     "slime": float(square["slime"].mean()) / 255, "zones": [{"uimap": "instance"}]}
+        else:
+            facts = guides.facts(subject["map"], i, j, square)
+        prompt = at.words(fixed, briefs, facts)
+        source = folder / "close" / f"{i}-{j}-ground.png"
+        Image.fromarray(square["rgb"]).save(source)
+        best = None
+        for seed in range(1, at.TRIES + 1):
+            painting, _ = run_one(server, at.WORKFLOW, [source], prompt, f"close-{subject['name']}-{i}-{j}", seed, at.SETTINGS)
+            result = at.check(square, painting)
+            score = result["added"] + result["lost"]
+            if best is None or score < best[0]:
+                best = (score, seed, painting, result)
+            if at.passes(result):
+                break
+        score, seed, painting, result = best
+        coloured = at.colour_of(np.asarray(painting), square)
+        Image.fromarray(coloured).save(target)
+        checks[f"close-{i}-{j}"] = {"seed": seed, "water": result, "passes": at.passes(result), "words": prompt}
+        save_checks(folder, checks)
+        print(f"{subject['name']} close {i},{j}: seed {seed}, water {result}", flush=True)
+    xs, ys = [i for i, _ in squares], [j for _, j in squares]
+    joined = Image.new("RGB", ((max(xs) - min(xs)) * at.STEP + at.SQ, (max(ys) - min(ys)) * at.STEP + at.SQ))
+    for i, j in squares:
+        joined.paste(Image.open(folder / "close" / f"{i}-{j}.png"), ((i - min(xs)) * at.STEP, (j - min(ys)) * at.STEP))
+    joined.save(folder / "close.png")
+
+
+def paint_level(server, level, folder, refs, prompt, brief, reference, compare=None):
+    """A middle or far painting: tries until one passes both checks; the best kept as <level>.png. Its outlines
+    are compared with the terrain plan (compare, else image 1)."""
+    checks = checks_of(folder)
+    ground = Image.open(compare or refs[0])
+    best = None
+    for seed in range(1, TRIES + 1):
+        settings = {"resolution": 0, "denoise": STRENGTH[level][seed - 1]}   # each picture at its own size
+        target = folder / f"{level}-{seed}.png"
+        if target.is_file() and f"{level}-{seed}" in checks:
+            painting = Image.open(target).convert("RGB")
+        else:
+            painting, _ = run_one(server, LAYERS, refs, prompt, f"{level}-{folder.name}", seed, settings)
+            painting.save(target)
+            match = agreement(painting, ground)
+            _, text = run_one(server, LOOK, [target], look_words(level, brief), f"look-{folder.name}", 1, {})
+            seen_ok, seen = verdict(level, text)
+            bar = (MIDDLE if level == "middle" else FAR) * reference
+            checks[f"{level}-{seed}"] = {"outlines": round(match, 3), "bar": round(bar, 3), "seen": seen,
+                                         "strength": settings["denoise"], "passes": bool(seen_ok and match >= bar),
+                                         "words": prompt}
+            save_checks(folder, checks)
+            print(f"{folder.name} {level} {seed}: outlines {match:.3f} (bar {bar:.3f}), {seen}", flush=True)
+        mark = checks[f"{level}-{seed}"]
+        rank = (mark["passes"], mark["outlines"])
+        if best is None or rank > best[0]:
+            best = (rank, seed)
+        if mark["passes"]:
+            break
+    shutil.copyfile(folder / f"{level}-{best[1]}.png", folder / f"{level}.png")
+
+
+def paint(args):
+    out = Path(args.out)
+    state = load_state(out)
+    words = tomllib.loads(LEVELS.read_text())
+    zone_briefs, dungeon_briefs = tomllib.loads(ZONES.read_text()), tomllib.loads(DUNGEONS.read_text())
+    paper = out / "paper.png"
+    if not paper.is_file():
+        with Image.open(PAPER) as image:
+            image.convert("RGB").crop((0, 0, PAPER_SIDE, PAPER_SIDE)).save(paper)
+    start_comfyui()
+    server = ig.Server(ADDRESS)
+    for subject in state["subjects"]:
+        if args.only and subject["name"] not in args.only:
+            continue
+        instance = subject["kind"] == "instance"
+        brief = dict((dungeon_briefs if instance else zone_briefs)[str(subject["key"])])
+        folder = out / subject["name"]
+        if "close" in args.levels and not (folder / "close.png").is_file():
+            close(server, subject, state, out)
+        frames = subject.get("floors") or [{"name": subject["name"], "style_only": False}]
+        if "middle" in args.levels:
+            for frame in frames:
+                fold = out / frame["name"]
+                if (fold / "middle.png").is_file():
+                    continue
+                here = dict(brief, _style_only=frame["style_only"])
+                reference = 0.3 if frame["style_only"] else agreement(Image.open(fold / "art.png"), Image.open(fold / "ground.png"))
+                refs = ([fold / "ground.png", fold / "art.png", paper] if frame["style_only"]    # image 1 the plan
+                        else [fold / "art.png", fold / "ground.png", paper])                     # image 1 the map
+                paint_level(server, "middle", fold, refs, words_of("middle", words, here, instance), here,
+                            max(reference, 0.15), compare=fold / "ground.png")
+        if "far" in args.levels and not (folder / "far.png").is_file():
+            middle = folder / "far-middle.png"   # image 2: the middle drawings laid where they lie
+            ground = Image.open(folder / "ground.png")
+            if instance and len(frames) > 1:
+                canvas = Image.new("RGB", ground.size, (226, 214, 186))
+                north, south, west, east = subject["box"]
+                k = ground.width / (west - east)
+                for frame in frames:
+                    f_north, f_south, f_west, f_east = frame["box"]
+                    drawing = Image.open(out / frame["name"] / "middle.png").resize(
+                        (round((f_west - f_east) * k), round((f_north - f_south) * k)))
+                    canvas.paste(drawing, (round((west - f_west) * k), round((north - f_north) * k)))
+                canvas.save(middle)
+            else:
+                shutil.copyfile(out / frames[0]["name"] / "middle.png", middle)
+            close_piece = folder / "far-close.png"
+            with Image.open(folder / "close.png") as joined:
+                w, h = joined.size
+                side = min(CLOSE_SIDE, w, h)
+                joined.crop(((w - side) // 2, (h - side) // 2, (w + side) // 2, (h + side) // 2)).save(close_piece)
+            reference = agreement(Image.open(middle), ground)
+            paint_level(server, "far", folder, [folder / "ground.png", middle, close_piece],
+                        words_of("far", words, brief, instance), brief, max(reference, 0.15))
+
+
+def contact(args):
+    out = Path(args.out)
+    state = load_state(out)
+    rows = []
+    for subject in state["subjects"]:
+        frames = subject.get("floors") or [{"name": subject["name"]}]
+        rows.append([out / subject["name"] / "ground.png", out / frames[0]["name"] / "art.png",
+                     out / subject["name"] / "close.png", out / frames[0]["name"] / "middle.png",
+                     out / subject["name"] / "far.png"])
+    w, h = 480, 320
+    sheet = Image.new("RGB", (w * 5, h * len(rows)), (30, 30, 30))
+    for r, row in enumerate(rows):
+        for c, path in enumerate(row):
+            if path.is_file():
+                with Image.open(path) as picture:
+                    tile = picture.convert("RGB")
+                    tile.thumbnail((w, h))
+                    sheet.paste(tile, (c * w, r * h))
+    sheet.save(out / "contact.jpg", quality=88)
+    print(f"{out / 'contact.jpg'}: {len(rows)} subjects: terrain plan, the game's map, close, middle, far")
+
+
+def status(args):
+    out = Path(args.out)
+    state = load_state(out)
+    wanted = made = 0
+    for subject in state["subjects"]:
+        frames = subject.get("floors") or [{"name": subject["name"]}]
+        paths = [out / subject["name"] / "close.png", out / subject["name"] / "far.png"]
+        paths += [out / f["name"] / "middle.png" for f in frames]
+        wanted += len(paths)
+        made += sum(1 for p in paths if p.is_file())
+    print(f"{made} of {wanted or 1} paintings made ({len(state['subjects'])} subjects)")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="The three levels of Navigation's painted maps.")
+    parser.add_argument("command", choices=("inputs", "paint", "contact", "status"))
+    numbers = lambda text: [int(k) for k in text.split(",") if k]  # noqa: E731
+    parser.add_argument("--zones", type=numbers, default=[])
+    parser.add_argument("--instances", type=numbers, default=[])
+    parser.add_argument("--continents")
+    parser.add_argument("--tables")
+    parser.add_argument("--minimap")
+    parser.add_argument("--instance-files", dest="instance_files")
+    parser.add_argument("--mapart")
+    parser.add_argument("--levels", type=lambda text: set(text.split(",")), default={"close", "middle", "far"})
+    parser.add_argument("--only", type=lambda text: set(text.split(",")))
+    parser.add_argument("--out", default=str(OUT))
+    args = parser.parse_args()
+    {"inputs": inputs, "paint": paint, "contact": contact, "status": status}[args.command](args)
+
+
+if __name__ == "__main__":
+    main()

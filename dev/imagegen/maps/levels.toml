@@ -1,20 +1,32 @@
-# The words of the maps' painted middle and far levels, shared by the world (the Atlas) and the instance maps, so
-# they are one look (Saneroki, 2026-10-21; Doc/guides/map-style.md). The close level is the Atlas' own words
-# (atlas.toml), for both too. Each plan says what its image 1 is; then come these words, the brief (the zone
-# briefs' fields, zones.toml; the instances' the same, dungeons.toml) and the level's last sentence. A change here
-# changes every painting of that level: their runs show it in their status and are painted anew.
+# The words of the maps' middle and far levels, shared by the world's zones and the instances (dungeons and raids),
+# so the two are one look and one precision (Saneroki, 2026-10-21; Doc/guides/map-style.md). The close level is the
+# Atlas' own words (atlas.toml), for both too. dev/tools/map-layers puts each painting's words together.
+#
+# Strict (Saneroki, 2026-10-21: "much more strict"; not free concept art, actual maps of the layout). As the Atlas'
+# lab found, words of an edit ("make image 1 look like ..., change only how it looks, never where or what anything
+# is") keep a layout, words of a new picture do not; and each painting starts from image 1 itself (image to image,
+# workflow qwen21-edit-3ref-i2i), its strength rising a step a try. A first pilot that asked for "a new map" with the
+# brief's words drew the mine's floor with the ship of the cove beside it: the middle level takes no brief at all.
 
-# The middle level: a hand-drawn map in pencil on paper, in the interface's own paper and pencil
-# (Doc/guides/interface-style.md, *Paper*, *Pencil*), drawn exactly along the terrain: image 1 is the close level's
-# terrain. Where it is seen from is each plan's own (Saneroki, 2026-10-21): the world's zones at a perspective
-# angle, the instances' floors straight from above (dungeons.toml's view), where their drawing lies under the close
-# level wherever the terrain has nothing to show. Its plans are to come, with the terrain of the instances and the
-# Atlas' zone level.
+# The middle level: the game's own map of the place, drawn again by hand in graphite pencil on the interface's
+# parchment (Doc/guides/interface-style.md, *Paper*, *Pencil*), straight from above, exactly over the terrain.
+# Image 1 the game's map art in the frame, image 2 the terrain plan of the same frame, image 3 the parchment.
+# Words: images, look, last. Where the game has no map of the place, image 1 is the terrain plan and image 2
+# another place's map for its manner (images_plan, look_plan).
 [middle]
-look = "Draw it anew as a beautiful hand-drawn map in pencil on paper: loose, clean graphite pencil lines on cream parchment with soft faint clouds and an extremely subtle grain. Trace every wall, cliff, shore, edge of water and outline of every hall, room, corridor and walkable ground exactly where image 1 has it, with the same shape and size; the walkable ground stays clean paper, solid rock and ground nobody walks are shaded lightly with pencil hatching, water is drawn with fine pencil ripples. Graphite grey only."
-last = "Plain calm paper: no stains, no sketches, no frame, no border, no legend, no labels, no text, no letters, no numbers, no symbols, no icons, no compass."
+images = "Image 1 is the game's own map of this place. Image 2 is the exact ground plan of the same place, in the same frame. Image 3 is a piece of the paper to draw on."
+look = "Make image 1 look like a map drawn by hand in graphite pencil on the cream parchment of image 3, seen straight from above. Change only how it is drawn, never where or what anything is: every outline, wall, cliff, shore, river, road, building, room and hall stays exactly where image 1 has it, with the same shape and size, as image 2 shows them. Clean pencil outlines, light hatching on rock, cliffs and ground nobody walks, fine pencil ripples on water, small careful pencil drawings of trees, houses and props where image 1 has them; the walkable ground is clean paper."
+images_plan = "Image 1 is the exact ground plan of this place, seen from straight above. Image 2 is another place's map from the game: take only how it is drawn, nothing of its layout. Image 3 is a piece of the paper to draw on."
+look_plan = "Make image 1 look like a map in the manner of image 2, drawn by hand in graphite pencil on the cream parchment of image 3, seen straight from above. Change only how it is drawn, never where or what anything is: every outline, wall, room, hall and stair stays exactly where image 1 has it, with the same shape and size. Clean pencil outlines, light hatching on the rock around the halls, small careful pencil drawings of pillars, tombs and props where image 1 has them; the walkable floors are clean paper, the ground around them plain paper."
+last = "Remove every label, name, letter and number, every icon, skull and symbol, the frame, the border and the drawings around the map; where they were, plain paper. Graphite grey pencil on cream paper only."
 
-# The far level: a free, realistic reimagination, the place as a whole, its mood first, seen at an angle.
+# The far level: a photorealistic aerial photograph of the place, nearly straight down, its layout kept: coasts,
+# rivers, mountains and walls where the terrain has them, towns, buildings and landmarks where the middle level draws
+# them. Image 1 the terrain plan, image 2 the middle level's drawing, image 3 a piece of the close level's painting.
+# Words: images, look, open (instances), "This place is <biome>.", the brief's buildings and places (zones also land,
+# plants and roads), its colours and light, last.
 [far]
-look = "Paint a new picture of that place: a realistic fantasy render like cinematic concept art, the whole place in one view, seen from high above at a steep angle like a detailed model on a table: all of it lies below, cut open, with no cave mouth, arch, roof or wall framing the view."
-last = "This is not a map and not a drawing: no parchment, no paper, no outlines, no ink lines, no frame, no border, no legend, no labels, no text, no letters, no numbers, no symbols, no icons, no compass. Nothing of image 1's colours or drawing style is kept."
+images = "Image 1 is this place's ground seen from straight above. Image 2 is a hand-drawn map of the same place in the same frame. Image 3 shows its ground up close."
+look = "Make image 1 look like a photorealistic aerial photograph of exactly the same place, seen from high above and nearly straight down. Change only how things look, never where or what anything is: every coast, shore, river, lake, cliff, mountain, forest edge, road, wall, room and hall stays where image 1 has it, and every town, building and landmark where image 2 draws it, at its size. Take the look of the ground, its materials and colours from image 3. A realistic fantasy world in natural light."
+open = "Over halls, caves and rooms under the ground or under a roof, the rock and the roofs are cut away so they lie open to view from above."
+last = "Nothing added that the images do not show. No text, no labels, no map symbols, no frame, no border, no parchment."

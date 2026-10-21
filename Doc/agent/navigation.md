@@ -259,11 +259,11 @@ checks; 508 with the 2026-10-21 changes), `dev/tests/walk.py` (125).
    and Edit Mode layouts are not built. Navigation does not need the holder or the board: it catches the
    game's map itself (plan, *The game's map and minimap*) and lays out its full screen in `docked`.
 7. **Art of our own** where the game has none: not made; planned as the dungeons' three zooms (2026-10-21,
-   above). The dungeons' maps of today are the game's own art (Core's set *Dungeons*); their far zoom is planned
-   and queued (`dev/imagegen/maps/dungeons.toml`, `dev/tools/dungeon-paint`, the GPU job `dungeons`, priority 2),
-   their close zoom waits for the instances' indoor maps (`dev/tools/indoor-art` reads only the continents'). To come as well
-   (Saneroki, 2026-10-21): our own pin icons (coloured renders) in place of the game's, and the route line as
-   leather stitches in place of the golden line (`Doc/guides/interface-style.md`, *To redesign*).
+   above). The dungeons' maps of today are the game's own art (Core's set *Dungeons*); their three levels and the
+   zones' are made by `dev/tools/map-layers` (samples 2026-10-21: Westfall, Tanaris, the Deadmines, Zul'Farrak, the
+   Hall of Thanes), the whole run queued once Saneroki has seen them. To come as well (Saneroki, 2026-10-21): our
+   own pin icons (coloured renders) in place of the game's, and the route line as leather stitches in place of the
+   golden line (`Doc/guides/interface-style.md`, *To redesign*).
 8. **A travel pin's ways** (Saneroki, 2026-10-21, to come soon): the mouse over a flight point, a boat's or
    zeppelin's dock or the tram's entrance draws the ways from there on the map: the flights to the flight points
    the character has found (`Planner.Knows`), the boats', zeppelins' and the tram's ways; the flights from or to

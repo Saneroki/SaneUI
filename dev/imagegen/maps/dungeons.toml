@@ -1,31 +1,14 @@
-# The paintings of Navigation's instance maps: the dungeons and raids (Doc/guides/map-style.md; Doc/ideas/
-# Navigation.md, *Instance maps as the world map, apart from it*; Doc/guides/image-generation.md, *Maps*).
+# The briefs of Navigation's instance maps, the dungeons and raids (Doc/guides/map-style.md; Doc/ideas/Navigation.md,
+# *Instance maps as the world map, apart from it*; Doc/guides/image-generation.md, *Maps*).
 #
 # The instance maps are apart from the world map (their own view, data, pictures and jobs), but their three levels
-# are made as the world map's are: the same pipeline, words, ComfyUI tools and terrain cleanups, so the two are one
-# look and one precision (Saneroki, 2026-10-21). Text, pins, the bosses' 3D models and every other mark are drawn
-# over them by code, never painted.
-#   close    each floor's own terrain and indoor maps, pixel-exact: repainted by the Atlas' code with the Atlas'
-#            words (atlas.toml), its softening, its check against the game's water and lava and its colour pass, at
-#            the Atlas' pixels a yard, cut to the game's outline; from this file it takes a brief's colours and the
-#            light of its atmosphere (its first sentence), as a zone's.
-#   middle   each floor drawn anew in pencil on paper, exactly along that terrain's walls and walkable ground
-#            (levels.toml's [middle]), seen straight from above in the floor's own frame (view below; the world's
-#            middle level is seen at an angle, Saneroki, 2026-10-21), the ground the close level lies over.
-#   far      one realistic reimagination of each instance as a whole, seen at an angle (levels.toml's [far]),
-#            that follows its layout and takes the middle and close levels as inspiration (Saneroki, 2026-10-21).
-# The close and middle levels wait for the instances' terrain, which the world's tools (dev/tools/terrain-art,
-# indoor-art) do not make yet; their jobs join the queue with it, and the far level's job waits for them.
-#
-# The far level (dev/tools/dungeon-paint, the GPU runner's job "dungeons"), strict to these words and two pictures:
-#   image 1  the layout: its floors where they lie in the world, seen at an angle, a floor over another lifted,
-#            blurred to shapes (the game's map art of the floors until the middle level's drawings are made);
-#   image 2  the game's own painting of the place (the dungeon journal's, else its loading screen): its
-#            architecture, materials, colours, light and mood; a sketch (sketch = true) gives no colours.
-# Then a vision check of each painting (writing, a map or a drawing, panels, the kind of place its biome says): a
-# painting that fails is painted again with the next seed. Its words: far, reference (or sketch), the shared [far]
-# look, open, "This place is <biome>.", buildings, mood, levels where it has several floors, places, colours,
-# atmosphere, and the shared [far] last sentence.
+# are made as the world map's are, by one pipeline (dev/tools/map-layers) with the same words and tools, so the two
+# are one look and one precision (Saneroki, 2026-10-21): close, the instance's own terrain (its map's tiles and the
+# indoor maps of the buildings they place) repainted with the Atlas' words (atlas.toml), from this file its colours
+# and the light of its atmosphere; middle, each floor a top-down map in the manner of the game's, in pencil on
+# parchment, exactly over that terrain; far, the instance as a photorealistic aerial render, its layout kept. The
+# shared words are in levels.toml. Text, pins, the bosses' 3D models and every other mark are drawn over them by
+# code, never painted.
 #
 # One table per instance, keyed by its map ID (the game's Map table; the set Dungeons' key). name and kind are for
 # people reading the file and never go into a prompt. The other fields are the zone briefs' (zones.toml), meant
@@ -40,14 +23,6 @@
 #   colours     its colours                                                                  4 to 15
 #   atmosphere  its light first, a sentence the Atlas' close level takes whole (no words of colour, haze, mist,
 #               smoke, fog, cloud, dust, glow, cast: its filter drops such clauses), then its air and state  15 to 55
-
-[words]
-far = "Image 1 is a rough, blurred plan of the whole place: its parts where they lie, seen from high above at an angle, a level that lies over another lifted above it. Follow its layout: where the halls, rooms, corridors, stairs, courtyards, water and open ground lie, how large they are and how they join; but paint one whole place, never a plan and never separate panels."
-reference = "Image 2 is only a reference for how this place looks in the game: take from it the architecture, the materials, the colours, the light and the mood. Never copy its view, its composition, its framing or the creatures in it: the picture is seen from high above at an angle and laid out as image 1."
-sketch = "Image 2 is only a sketch of this place in the game: take from it the architecture, the materials and the mood. Never copy its view, its composition, its framing or its colours: the colours are the words', and the picture is seen from high above at an angle and laid out as image 1."
-open = "Roofs, ceilings and the rock above are cut away, so every hall and room lies open to view."
-levels = "Its levels lie one above another where image 1 lifts them; they are one place, joined as follows."
-view = "Seen straight from above like an orthographic satellite image, in image 1's frame: no perspective, no tilt, no horizon."
 
 # Dungeons and raids with the game's own map art (the set Dungeons)
 
@@ -311,8 +286,7 @@ mood = "The floating citadel of an undead army's lich master, where a spider-kin
 colours = "dark slate grey, black iron, bone white, plague green, frost blue"
 atmosphere = "Cold pale blue light in the stone halls, sickly green light from slime channels and doorways, frost on every edge. The air freezing and stale, thick with webs and the reek of plague, machines droning; through the windows the poisoned land lies far below."
 
-# Forever's new dungeons: the game has no map art of them, so their layouts are given (dungeon-paint --layouts);
-# their pictures in the game are sketches in one tone, so the colours are the words' (sketch)
+# Forever's new dungeons: the game has no map art of them
 
 ["2959"]
 name = "City of Dalaran"
@@ -323,7 +297,6 @@ places = "Two levels: first the sewers, a long pipe opening into vaulted halls o
 mood = "The mages' city after its great protective barrier fell: demonic energy seeps into its central garden, its own arcane constructs and spells run wild, and a necromancer raises the dead in the sewers beneath."
 colours = "pale stone, violet roofs, gold trim, arcane blue, fel green, forest green, murky teal"
 atmosphere = "Cool violet evening light over pale stone and spires, dim lamplight in the sewers below. Arcane sparks crackle above the towers, green fel fire smoulders in the central grove, and the sewers drip and echo with damp, still water."
-sketch = true
 
 ["2998"]
 name = "Excavation Site: Wetlands"
@@ -334,7 +307,6 @@ places = "One outdoor level: from the entrance in the north-east a path skirts a
 mood = "A forgotten dig of dwarven explorers in wild wet hills, its crew missing: raptors stalk the tall grass, crocolisks the marsh, orc saboteurs creep in, and an ancient stone guardian of the world's makers stirs over a buried relic."
 colours = "moss and olive green, wet brown earth, grey rock, murky blue-grey marsh, pale stone"
 atmosphere = "Soft grey daylight under a heavy sky, warm where it breaks through, wet leaves and stones catching it. Mist hangs over the marsh, rain drips from the canopy, and strange lights flash among the old stones."
-sketch = true
 
 ["2999"]
 name = "Ruins of Lordaeron"
@@ -345,7 +317,6 @@ places = "A shield-shaped wall with square towers rings the city. In the north t
 mood = "The capital of a fallen human kingdom, broken by plague and its own prince: undead hordes still haunt its streets, a necromancer raises the dead in its graveyard, and the undead from the city beneath fight to reclaim it."
 colours = "pale grey stone, teal-green roofs, black iron, dark green, dead brown, sickly green"
 atmosphere = "Dim cold dusk light, low and flat, with long soft shadows across the broken stones. An unholy fog creeps through the streets and the graveyard, crows sit on the broken towers, and gargoyles crouch like statues on the rooftops."
-sketch = true
 
 ["3065"]
 name = "The Hall of Thanes"
@@ -356,4 +327,3 @@ places = "One level along a straight axis: from the entrance hall in the south t
 mood = "The resting place of the old mountain kings beneath their city, broken into by dark dwarves who blast and loot the vaults; the dead have woken, ghosts walk the halls and stone golems guard the treasures."
 colours = "warm grey stone, amber, gold, bronze, deep red, dark iron, pale lilac crystal"
 atmosphere = "Warm amber torchlight from braziers and hanging lanterns, deep shadows between the carved pillars. The air cold and still as a tomb, rubble where the walls were blasted open, restless ghosts drifting among the sarcophagi, heat rising from a cave of fire."
-sketch = true

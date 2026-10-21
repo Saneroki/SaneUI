@@ -21,7 +21,7 @@
 #   voices.py       the voice database's rules: the cast, the names, words, parts, tone, presets
 #   imagegen.py     the image pipeline's lists, recipes and sets, and the flipbook's grid and loops
 #   atlas.py        the Atlas painting's words, its check against the game's water, the seams, the screen
-#   dungeon_paint.py  the dungeons' paintings: the briefs, the words, the layout, what is left, the status
+#   map_layers.py   the maps' three levels: frames, the buildings' indoor maps placed, the words, the checks
 #   gpu_runner.py   the GPU runner: its jobs in order, the claims, what counts as the card wanted elsewhere
 #   saneui.py       dev/saneui: every command's script is there, its names, the greeting card, the completion
 #   walk.py         the walking data's tools: floors, surfaces, rectangles, openings, blocks, regions; flights' paths
@@ -58,7 +58,7 @@ lua5.1 dev/tests/data.lua
 python3 -I dev/tests/voices.py
 python3 -I dev/tests/imagegen.py
 python3 -I dev/tests/atlas.py
-python3 -I dev/tests/dungeon_paint.py
+python3 -I dev/tests/map_layers.py
 python3 -I dev/tests/gpu_runner.py
 python3 -I dev/tests/saneui.py
 python3 -I dev/tests/walk.py

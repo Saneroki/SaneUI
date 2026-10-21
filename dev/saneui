@@ -59,8 +59,8 @@ GROUPS = {
         "maketerrain": (["dev/tools/terrain-art"], "Navigation's terrain, outlines and stitched map", None),
         "makeindoormaps": (["dev/tools/indoor-art"], "Navigation's indoor maps", None),
         "makemapguides": (["dev/tools/map-meta"], "the guides the painted map is made from", None),
-        "makedungeonmaps": (["dev/tools/dungeon-paint"], "the dungeons' and raids' paintings: paint status contact rebuild",
-                            None),
+        "makemaplayers": (["dev/tools/map-layers"], "the maps' three levels, zones and instances: inputs paint contact",
+                          None),
     },
     "Data": {
         "data": (["dev/tools/data"], "Core's data framework: check, compile, import", 'check · compile · import'),

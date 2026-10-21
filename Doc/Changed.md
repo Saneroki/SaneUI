@@ -6,6 +6,27 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 508 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 125 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the maps' three levels strict, one pipeline for zones and instances (Saneroki, 2026-10-21)
+- **Saneroki:** the first far paintings were far too free; all three levels are to be strict maps of the layout. Close
+  the terrain, pixel-exact (the world's cleanup pipeline); middle a top-down map in the manner of the game's own maps,
+  in pencil on parchment, exactly over the terrain; far a photorealistic render with a very strict harness, its major
+  places, borders and walls where they are. `Doc/guides/map-style.md` and `Doc/ideas/Navigation.md` (*Strict maps,
+  all three*) say so.
+- **`dev/tools/map-layers`** (new; `saneui makemaplayers`), for zones and instances alike, every subject in one frame
+  (its box in the world) that its three levels share: `inputs` (the terrain plan from the game's minimap textures, an
+  instance's from its own map's tiles with the indoor maps of the buildings they place laid over them; the game's map
+  art in the same frame, its frame, title banner and ornaments made parchment); close by the Atlas' own code (squares,
+  words, water and lava check, colour pass); middle and far with the new workflow `qwen21-edit-3ref-i2i` (three
+  pictures, starting from image 1 itself, its strength rising a try): the middle level from the game's map, the
+  terrain plan and the parchment, the far level from the terrain plan, the middle drawing and the close painting;
+  each middle and far painting checked for its outlines against the terrain and by the vision model, painted again
+  when it fails. `contact` lays a sheet of a subject's inputs and levels.
+- **The words** (`dev/imagegen/maps/levels.toml`): edits of image 1 ("make image 1 look like ..., never where or what
+  anything is"), which keep the layout; the middle level takes no brief (a first try drew the cove's ship on the mine's
+  floor). `dungeons.toml` keeps the briefs only.
+- **`dev/tools/dungeon-paint`** (its far paintings, its test and its job) is gone: `map-layers` replaces it.
+- Tests: `dev/tests/map_layers.py` (33 checks, new, in `dev/tests/run`).
+
 ### Navigation, data: Forever's own ways of travel; Dalaran's airship the Alliance's (Saneroki, 2026-10-21)
 - **Which ways Forever has** (its client and what its beta servers sent, against Classic Era's): Classic's five boats,
   three Horde zeppelins, the Deeprun Tram (a second set of cars, the same run) and its lifts (the Undercity's cars

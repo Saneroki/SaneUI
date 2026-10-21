@@ -338,39 +338,34 @@ lists, from inputs of its own:
   game's water and keeps the best of three seeds; `--near` paints a few squares around a place first, `join`
   stitches them, each through the colour pass (`--mood`); in a terminal it shows its progress, `p` pauses (and frees the graphics card), `q` quits; the whole run goes
   to the GPU runner (*The GPU runner*), which paints only while the card is idle.
-- **The three levels, the world's and the instances' alike** ([map-style.md](map-style.md), Saneroki, 2026-10-21):
-  close, the terrain repainted pixel-exact with the Atlas' words (`atlas.toml`); middle, a strict pencil drawing on
-  paper traced along that terrain (the world's zones at an angle, an instance's floors straight from above); far, a
-  free realistic reimagination. The middle and far levels share their words
-  (`dev/imagegen/maps/levels.toml`), and every brief has the zone briefs' fields (`zones.toml`, `dungeons.toml`), so
-  the instance maps come out of the world's pipeline, words and tools. The middle levels wait for the Atlas' zone
-  level and the instances' terrain.
-- **The instances' far level** (`dev/tools/dungeon-paint`, `saneui makedungeonmaps`; the GPU runner's job
-  `dungeons`, held until the instances' middle and close levels are made): one painting of each instance as a
-  whole, strict to its brief (`dungeons.toml`: biome, buildings, places, mood, colours, atmosphere, researched from
-  the game's lore texts and pictures, without names) and to two pictures, with `qwen21-edit-2ref`:
-  - image 1, the layout: the floors where they lie in the world (the floors' boxes of Core's set *Dungeons*), seen
-    at an angle, a floor over another lifted above it, parts far apart moved together in their own directions so
-    it is one place and never a row of panels; drawn from the game's map art (`--mapart`; frame and title banner
-    cut off, the paper around the rooms left out) or the pictures given with `--layouts` (Forever's new dungeons),
-    contrast stretched and blurred to shapes, so no lines, drawing style or writing carry over;
-  - image 2, the game's own picture of the place (`--pictures`: the dungeon journal's painting, else the loading
-    screen, cut free of frame and logo): its architecture, materials, colours, light and mood, never its view; given
-    at 640 pixels with each picture read at its own size (`resolution` 0), so it guides the look with few tokens of
-    its own while image 1 keeps its full 2048. A view the words put inside the place (a cave's hanging roots) was
-    painted from within, under an arch: the shared far look says that all of it lies below, cut open, with nothing
-    framing the view.
-  Three paintings an instance that pass the check, at most six tries, the first try of every instance before the
-  second of any; a run keeps its own copy of the plan, as the Atlas does; `contact` makes a sheet to choose from,
-  failed paintings marked.
+- **The three levels, the world's and the instances' alike** (`dev/tools/map-layers`, `saneui makemaplayers`;
+  [map-style.md](map-style.md); Saneroki, 2026-10-21: strict maps of the layout, not free concept art): each subject
+  (a zone, an instance, an instance's floor) has one frame, its box in the world, that its three levels share.
+  - **Inputs** (`map-layers inputs`): the terrain plan of the frame, from the game's minimap textures (an
+    instance's from its own map's tiles, with the indoor maps of the buildings its object files place laid over
+    them, placed as Navigation places indoor maps: the instances' terrain is extracted into a folder of its own,
+    so the continents' tools never read it); the game's map art in the same frame (a zone's full map with its
+    explored parts; an instance floor's map, its title banner painted over; Forever's new dungeons have none, so
+    another dungeon's map gives only its manner).
+  - **Close:** the Atlas' own squares, words, water and lava check (up to three seeds) and colour pass, by its own
+    code (`dev/tools/atlas`'s `Game`, `words`, `check`, `colour_of`), an instance's map in place of a continent.
+  - **Middle** (`qwen21-edit-3ref`, each picture at its own size): image 1 the terrain plan, image 2 the game's
+    map art, image 3 a piece of the house parchment; a top-down map in the game's manner, in pencil, exactly over
+    the terrain.
+  - **Far** (`qwen21-edit-3ref`): image 1 the terrain plan, image 2 the middle drawing (an instance's floors laid
+    where they lie), image 3 a piece of the close level; a photorealistic aerial render, nearly straight down.
+  - **Checks**, a painting that fails painted again, three tries at most: its outlines against image 1's (the
+    normalised correlation of their edges at 256 pixels across, against how well the game's own map agrees with
+    the terrain: a middle level must reach three quarters of it, a far one under half), and the vision model.
+  - The words: `levels.toml` (middle, far) and `atlas.toml` (close), with the briefs of `zones.toml` and
+    `dungeons.toml`.
 - **The check by a vision model** (`dev/imagegen/workflows/qwen3vl-look.json`): ComfyUI's `TextGenerate` with the
   Qwen3-VL model the image model reads its words with looks at a picture and answers questions in JSON, about six
-  seconds a picture with no other model to load. The dungeon paintings ask whether there is writing, a map or a
-  drawing, separate panels, whether it is seen from above as a whole, and whether it shows the brief's kind of
-  place; a painting that fails is painted again with the next seed. Tried on the first far paintings (2026-10-21):
-  it caught a plan painted flat, a city painted as four panels and a cave painted from inside in image 2's own view
-  (a second picture may be copied instead of followed: its words say what is taken from it, and the check catches
-  it when it is not).
+  seconds a picture with no other model to load. The map levels ask about writing, a pencil map seen from above
+  (middle), and a real place, not a map or panels, seen from above, of the brief's kind (far). Tried on the first
+  dungeon paintings (2026-10-21): it caught a plan painted flat, a city painted as four panels and a cave painted
+  from inside in a reference picture's own view (a second picture may be copied instead of followed: its words say
+  what is taken from it, and the check catches it when it is not).
 - **Upscaling models** (`models/upscale_models/` of ImageGen: 4x-UltraSharpV2 and 4xNomos2, both DAT2, as
   safetensors, 17 s for 1024 to 4096): they sharpen what is there, the faults too, and add no detail; the
   painting is made at the size it is shown.

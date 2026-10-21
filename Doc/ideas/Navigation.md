@@ -116,8 +116,16 @@ minimap) and the full-screen window (the world map) show the same map with the s
   their own views unchanged. Open: the switch-over zoom between the close squares and the zone paintings, and
   how the angled paintings meet at the borders (painted per zone and blended, or each continent painted as a
   whole and cut by the zones' outlines).
+  - **Strict maps, all three (Saneroki, 2026-10-21, last of the day; replacing the free paintings of this
+    decision and the angled middle zoom below):** the close zoom the terrain, pixel-exact; the middle zoom a
+    top-down map in Blizzard's style, in pencil on the interface's parchment, exactly over the terrain, looking much
+    like the game's own maps (which are its input); the far zoom a photorealistic aerial render with a very strict
+    harness: outlines, locations, biome, mood, atmosphere, lore and layout fitting the zones, the continent and the
+    dungeons, not exact but with the major places (cities, landmarks) where they lie in the zone or instance, its
+    borders and walls kept. Not free, creative concept art. One pipeline for zones and instances
+    (`dev/tools/map-layers`, `Doc/guides/map-style.md`).
   - **The three levels' looks (Saneroki, 2026-10-21, later the same day; for the middle zoom replacing the free
-    painting above):** the close zoom is the terrain, pixel-exact; the middle zoom is not drawn by code and not a
+    painting above; since made stricter, above):** the close zoom is the terrain, pixel-exact; the middle zoom is not drawn by code and not a
     free painting but rendered as a beautiful hand-drawn map in pencil on paper, in the interface's own paper and
     pencil (`Doc/guides/interface-style.md`), very strict: every wall, edge and walkable area traced exactly along
     the terrain map. The world's middle zoom keeps its perspective angle; an instance's is seen straight from
@@ -154,25 +162,21 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **Dungeon, instance and raid maps in three zooms (Saneroki, 2026-10-21), as the world map:**
   - **close up:** the accurate terrain of the instance repainted, pixel-exact, as the Atlas' close squares;
   - **in between:** the rooms, corridors and walls exact in their shapes and sizes, so it is useful in the game.
-    First planned as a clean map drawn by code; since (Saneroki, 2026-10-21, later the same day) rendered as the
-    world's middle zoom is: a pencil drawing on paper traced exactly along the instance's terrain, its walls and
-    walkable ground, the ground the close zoom lies over;
-  - **zoomed out fully:** a full reimagination of the instance, its layout, the mood of its rooms and a realistic
-    render, free like the zones' paintings (*Zones and continents reimagined*).
+    First planned as a clean map drawn by code; since (Saneroki, 2026-10-21) rendered as the world's middle zoom
+    is: a top-down map in the manner of the game's dungeon maps, in pencil on parchment, exactly over the
+    instance's terrain, the ground the close zoom lies over;
+  - **zoomed out fully:** the instance as a whole, a photorealistic aerial render with its layout, halls and rooms
+    where they lie (first planned as a free reimagination; made strict, Saneroki, 2026-10-21).
 
-  Made after the zones. **Planned and queued (2026-10-21):** the far zoom's words and briefs are in
-  `dev/imagegen/maps/dungeons.toml` (30 instances: the 26 of Core's set *Dungeons* and Forever's four new dungeons)
-  and the words it shares with the world's paintings in `dev/imagegen/maps/levels.toml`, painted by
-  `dev/tools/dungeon-paint` as the GPU runner's job `dungeons`, at a low priority (2; the Atlas is 10, the
-  redesigned interface parts go above the dungeons: Saneroki, 2026-10-21). The close and middle zooms wait for the
-  instances' own terrain and indoor maps, which `dev/tools/terrain-art` and `indoor-art` do not make yet (they read
-  the continents'); their jobs join the queue with them. The far zoom follows the instance's layout and takes the
-  middle and close zooms as inspiration (Saneroki, 2026-10-21), so its job is held until they are made. Its
-  harness is strict (Saneroki, 2026-10-21: each instance researched, the painting held to its words and pictures):
-  every brief researched from the game's lore texts and pictures and from play (what kind of place, its
-  architecture, layout, mood, colours and light), the game's own picture of each place as a second reference, the
-  floors laid where they lie as the layout, and a vision check that paints a failed picture again
-  (`Doc/guides/map-style.md`, *Strict to its words and pictures*).
+  Made after the zones. **The pipeline (2026-10-21):** `dev/tools/map-layers`, for zones and instances alike: an
+  instance's terrain is its own map's tiles with the indoor maps of the buildings they place (extracted from the
+  install into a folder of its own), painted at the close level by the Atlas' own code; its floors' middle maps
+  from that terrain and the game's map art in the same frame; its far render from the terrain, the middle maps and
+  the close painting; each middle and far painting checked for its outlines and by a vision model. The briefs are
+  `dev/imagegen/maps/dungeons.toml` (30 instances, researched from the game's lore texts and pictures and from
+  play) and `zones.toml`; the shared words `levels.toml`. Samples painted (2026-10-21): Westfall and Tanaris, the
+  Deadmines, Zul'Farrak and the Hall of Thanes, all three levels; the whole run is queued once Saneroki has seen
+  them.
 - **Instance maps as the world map, apart from it (Saneroki, 2026-10-21):** the instance maps are completely
   independent of the world map and separate from it (their own view, data, pictures, packs and jobs; never part of
   the world's picture), but they work in the same way and are made in the same way: the same three levels, one
