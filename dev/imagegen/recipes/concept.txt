@@ -5,5 +5,5 @@ include: dev/imagegen/style.txt
 workflow: qwen21-turbo-edit-1ref
 set: width=1536, height=1024
 count: 8
-ref: assets/Concept art/Elements.png
+ref: assets/Concept art/UI style/edges-and-buttons.png
 before: Use image 1 only as a reference for the style, materials, colours, rims and ornaments. Create new concept art of a game interface element, shown whole and centred on a plain dark grey background, with nothing else from image 1:

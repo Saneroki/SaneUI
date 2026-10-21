@@ -1,0 +1,19 @@
+# Separate parts for the game (Doc/guides/interface-style.md, Saneroki 2026-10-21): one part per picture, with
+# transparency, no text, no stains, no sketches; code slices, stretches and repeats them, and lays text over them.
+#   dev/tools/imagegen dev/imagegen/sets/ui-paper/parts.txt
+workflow: qwen21-t2i
+set: aspect_ratio=1:1 (Square), megapixels=1
+count: 2
+out: assets/generated/ui-paper/parts
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background. One single interface part of a high fantasy game, alone and centred, seen straight from the front, flat, even light from the top left, nothing else in the picture:
+style: Dark brown leather with a visible grain and neat saddle stitching, small dark steel fittings, cream parchment with an extremely subtle grain, clean graphite pencil lines, as the guide's journal look. No text, no letters, no numbers, no icons, no stains, no sketches, no watermark.
+title-bar: a long, slim, horizontal strip of stitched dark brown leather, a window's title bar, with a small dark steel fitting at each end and a plain empty middle, the stitching running evenly along both long edges.
+edge-side: a long, thin, vertical strip of stitched dark brown leather, the side binding of a book-like window, a small dark steel corner cap at its top and bottom end, the stitching running evenly along it.
+corner: one single top-left corner of a window's thin stitched dark brown leather binding, with a small dark steel corner cap, the two leather strips leaving the corner to the right and downwards.
+patch-wide: one long horizontal leather patch button, stitched all round its edge with even stitches and a small rivet at each end, its long middle plain and even so it can be repeated to any width.
+patch-square: one small square stitched leather patch button with a rivet in each corner, plain in the middle.
+side-tab: one small leather bookmark tab, its square end with a stitched edge, as it sticks out of a book's left edge, plain in the middle.
+top-tab-patch: one darker, patchy parchment and leather tab for a row of tabs under a title bar, its top corners rounded, plain in the middle.
+top-tab-drawn: one tab drawn on cream paper with a loose graphite pencil outline, its top corners rounded, plain inside.
+dropdown-band: one narrow stitched leather band hanging straight down from a top edge, with a small dark steel buckle near its lower end, its tip cut in a point.
+paper-strip: one narrow strip of cream parchment with a thin loose pencil outline and a slightly torn short end, as it hangs out over a leather border.

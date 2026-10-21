@@ -26,8 +26,9 @@ pressed looks and most motion are made in code, from the chosen pictures.
 
 ## What keeps a set alike
 
-1. **The house style:** `dev/imagegen/style.txt` holds the look in words, and its picture is the
-   anchor, `assets/Concept art/Elements.png`. Every concept is made from the anchor, so a new set looks
+1. **The house style:** `dev/imagegen/style.txt` holds the look in words, made from
+   [interface-style.md](interface-style.md), and its picture is the anchor,
+   `assets/Concept art/UI style/edges-and-buttons.png`. Every concept is made from the anchor, so a new set looks
    like the old ones.
 2. **One concept per set, every part from it.** A part cut out of the concept keeps its light, colours
    and rim width; parts made one at a time drift apart.
@@ -91,20 +92,17 @@ qwen21-turbo-edit-1ref`); `dev/imagegen/workflows/` is looked in first, for work
 
 ## The house style
 
-**The look of Sane UI's own windows is decided in [interface-style.md](interface-style.md)** (Saneroki,
-2026-10-21): an adventurer's journal of parchment and stitched leather, pencil on the paper. The words for its
-parts are in `dev/imagegen/sets/ui-paper/style.txt`, made from that guide. The bronze words below are the older
-house style of the recipes.
+The look of Sane UI's own windows is decided in [interface-style.md](interface-style.md) (Saneroki,
+2026-10-21): an adventurer's journal of parchment and stitched leather, pencil on the paper; Saneroki's
+decisions go there. `dev/imagegen/style.txt` is that look in one `style:` line for parts, put after every
+prompt of the recipes that make interface art (`concept`, `concept-free`, `part-new`): flat front view, light
+from the top left, no text, no stains, no sketches (code lays those over). Its picture, the anchor, is
+`assets/Concept art/UI style/edges-and-buttons.png` (its edges, title strap and patch buttons were picked); the
+recipe `concept` gives it as image 1. Concept art of whole windows takes the longer words of
+`dev/imagegen/sets/ui-paper/style.txt`.
 
-`dev/imagegen/style.txt` is one `style:` line, put after every prompt of the recipes that make interface
-art (`concept`, `concept-free`, `part-new`): slim rims of polished bronze and warm gold with a fine black
-outline, deep charcoal panels with a faint grain, sweeping curves ending in sharp points, four-pointed
-stars with a glowing golden centre, warm glints along the rims; flat front view, light from the top left;
-no text. It describes the concept art in `assets/Concept art/` (the chat bubbles, the gear slots), and its
-picture is `Elements.png`, the anchor: the recipe `concept` gives it as image 1.
-
-It keeps to the one colour Sane UI has of its own, the bronze of its window borders
-([gui-development.md](gui-development.md), *Art*).
+The older bronze house style (`assets/Concept art/Elements.png` and the concept art beside it) is no longer
+Sane UI's look.
 
 ## The recipes
 

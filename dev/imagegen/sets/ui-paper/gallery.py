@@ -31,6 +31,9 @@ SECTIONS = [
     ("paper", "Paper", "tileable grain, clouds, coffee stains with transparency"),
     ("doll-final-words", "Doll, final layout (guide only)", "the decided layout, the look in words, no second picture"),
     ("paper-test", "Paper laid out", "the seamless grain tile, 2 x 2, and windows of three sizes"),
+    ("refine", "Picked views refined to the guide", "doll overhangs, bags and guild without leather on paper, chat window, compact bubbles"),
+    ("parts", "Separate parts", "one part per picture, transparent, no text: for slicing and repeating in code"),
+    ("overlays", "Stains and sketches", "transparent overlays for code to place on the paper"),
 ]
 
 

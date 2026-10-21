@@ -10,6 +10,13 @@ The pictures named here are in `assets/Concept art/UI style/`. They show the par
 a picture (its other parts, its text, its colours elsewhere) is not part of the style unless a line here says
 so. Pictures that are not named here are not part of the style at all, nor are the words that made them.
 
+## Scope
+
+Sane UI is a complete redesign (Saneroki, 2026-10-21): every window and view Sane UI makes or recreates gets this
+look and its own layout, art, fonts and style, not Blizzard's. The game's native windows that Sane UI leaves in
+place stay in their own style, mostly untouched. How the game works (its API, secure frames, scaling) stays as
+Blizzard's code has it ([gui-development.md](gui-development.md)).
+
 ## The idea
 
 An adventurer's journal: an open book of cream parchment bound in thin, stitched dark brown leather. The art is a
@@ -92,7 +99,10 @@ with as little room for frame and ornament as the look allows.
 
 ### Tabs
 
-- **Tabs on the paper:** `paper-tabs.png` is Saneroki's main tab look (2026-10-21).
+- **Top tabs:** a row of tabs right under the title bar, across the top of the page (Saneroki, 2026-10-21). There
+  are two styles:
+  - **patch tabs:** darker, patchy tabs, as in the row under the title bar in `top-tabs.png`;
+  - **drawn tabs:** tabs drawn on the paper in pencil, as in the row under the paper top of `guild-board.png`.
 - **Side tabs:** `side-tabs.png`. Small leather bookmark tabs sticking out of the window's left edge, each with a
   small icon in a muted colour (deep red, green, ochre, slate blue).
 - **Tabs that change the page's content** may stand down the left side of the page, as in `bags-page.png`.
@@ -105,6 +115,11 @@ with as little room for frame and ornament as the look allows.
   a curled corner, a note in the margin.
 
 ### Chat bubbles
+
+Bubbles appear in two places:
+
+- **On a chat window's paper:** a column of bubbles, each anchored left, right or in the middle of the page.
+- **Floating:** over the game world.
 
 Built on `chat-bubble.png` (its top bubble), made more compact. Each bubble is:
 

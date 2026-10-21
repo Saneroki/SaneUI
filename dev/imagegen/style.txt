@@ -1,5 +1,6 @@
-# Sane UI's house style: the look every picture of Sane UI shares, in words. Every recipe that makes
-# interface art includes it, so all sets say the same. Its picture is the anchor, assets/Concept art/
-# Elements.png: the recipes give it as image 1 where no picture of the set is there yet.
+# Sane UI's house style: the look every interface picture of Sane UI shares, in words, made from
+# Doc/guides/interface-style.md (Saneroki, 2026-10-21; the guide wins where they differ). Every recipe that makes
+# interface art includes it, so all sets say the same. Its picture is the anchor, assets/Concept art/UI style/
+# edges-and-buttons.png: the recipes give it as image 1 where no picture of the set is there yet.
 # Change it only on purpose: every set made after the change looks different from the ones before.
-style: Polished fantasy game interface art: slim rims of polished bronze and warm gold with a soft bevel and a fine black outline, panels of deep charcoal black with a faint grain, sweeping curves that end in sharp points, four-pointed star ornaments with a glowing golden centre, small warm glints of light along the rims. Clean, crisp, chunky shapes that stay readable when small. Flat front view, no perspective, even light from the top left. No text, no letters, no numbers, no watermark.
+style: An adventurer's journal: cream parchment with soft faint clouds and an extremely subtle grain, bound in thin dark brown leather with a visible grain and neat saddle stitching. Leather and metal only as the binding: thin outer borders, slim stitched leather title bars, small stitched leather patch buttons set into the border, small dark steel accents used sparingly (corner caps, rivets, a ring, a buckle). Everything on the paper is pencil and paper, flat on the page: loose, clean graphite pencil outlines, rules and dividers, paper strips, folded paper tabs; never leather on the paper. Plain calm paper, no stains, no sketches. High fantasy concept art quality, neutral to every faction. Flat front view, no perspective, even light from the top left. No text, no letters, no numbers, no watermark.

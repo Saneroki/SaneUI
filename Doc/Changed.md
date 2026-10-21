@@ -1104,6 +1104,14 @@ Saneroki asked for a much richer bag view, in features and looks.
   buttons, dropdown bands, tabs, side tabs, chat bubbles, the doll, bags, the guild window, animation) and what
   code makes (text, stains, sketches); its pictures in `assets/Concept art/UI style/`; listed in CLAUDE.md's
   guides; `ui-paper/style.txt` rewritten from it; image-generation.md points to it.
+- Sane UI's own look replaces Blizzard's art (Saneroki): every window and view Sane UI makes or recreates gets its
+  own layout, art, fonts and style; the native windows stay mostly untouched. `gui-development.md` says so (a new
+  section, its art, window and font rules narrowed to native windows; Kalam as Sane UI's own font on paper); the
+  house style `dev/imagegen/style.txt` is now the journal look, its anchor `assets/Concept art/UI style/
+  edges-and-buttons.png` instead of `Elements.png`. The guide gains its scope, the two top-tab styles, leather
+  patch pieces repeated to any width and the chat window with bubbles anchored left, right and middle. New lists:
+  `parts.txt` (one transparent part per picture, no text), `overlays.txt` (stains and faint sketches) and
+  `refine.txt` (the picked views refined to the guide by Qwen's edit).
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.

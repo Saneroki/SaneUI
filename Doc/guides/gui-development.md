@@ -1,13 +1,28 @@
 # GUI development
 
-How to build windows, lists, menus and other widgets so they look and behave like Blizzard's. Read this
-before creating or changing anything the player sees. For what a feature should show, read
+How to build windows, lists, menus and other widgets so they behave like Blizzard's and look like Sane UI's
+own ([interface-style.md](interface-style.md)). Read this before creating or changing anything the player
+sees. For what a feature should show, read
 [blizzard-design-principles.md](blizzard-design-principles.md). For code rules (taint, combat, events),
 read [addon-standards.md](addon-standards.md).
 
+## Sane UI's own look
+
+Sane UI redesigns every window and view it makes or recreates in a look of its own (Saneroki, 2026-10-21):
+layouts, art, fonts and style are Sane UI's, described in [interface-style.md](interface-style.md). For those,
+Blizzard's art, its templates' looks, its fonts and the older bronze skin are no longer the model. The game's
+native windows that Sane UI does not recreate stay as the game draws them, mostly untouched.
+
+What stays from Blizzard for our own windows too: how the game works, found in `references/` as below
+(its API, events, secure templates and taint, scaling, Esc and the window manager, languages), and the
+design principles of what a view shows and how it behaves
+([blizzard-design-principles.md](blizzard-design-principles.md)). Where this guide below says to use
+Blizzard's art, templates or fonts for the look, that holds for the native windows Sane UI changes in place.
+
 ## The one rule
 
-**Look it up in `references/` first, then build with Blizzard's own parts.** Blizzard's interface is
+**Look it up in `references/` first, then build with Blizzard's own parts** (for how it works; the look of
+our own windows is Sane UI's, above). Blizzard's interface is
 written in the same Lua and XML an addon uses, and its templates, fonts, colours, textures and sounds
 are all available to us. Something built from them looks right, follows the client's scaling and
 languages, and changes with the game. Something drawn by hand does none of that.
@@ -57,7 +72,7 @@ registers Sane UI's pages at login for that reason; only their controls wait unt
 
 - A window of ours is `Core.Window.New` with `skin = true`: Core's skin (the game's dark dialog tile and a thin trim in
   Sane UI's bronze, with round corners that are square on the screen's edges, as set: Core's `Shape.lua`)
-  is the look of every Sane UI window. A dialog that should look like one of the game's starts from a
+  is the look of Sane UI's windows until each is rebuilt in its own look ([interface-style.md](interface-style.md)). A dialog that should look like one of the game's starts from a
   Blizzard frame template (`ButtonFrameTemplate`), which brings border, title bar, close button and the
   right sizes. Neither rebuilds a border from single textures: the game has no border whose corners take
   any radius, so Core's Shape is the one place that draws one.
@@ -102,19 +117,23 @@ registers Sane UI's pages at login for that reason; only their controls wait unt
   files. Second choice is a file path into the client (`Interface\...`), found in
   `references/BlizzardInterfaceArt`. Icons by file ID from the API.
 - Blizzard's art is used from the client, never copied into the addon (policy and licence).
-- Own art only when Blizzard has nothing that fits, in the same style, as small as possible, with a
-  note in the module's README where it came from.
+- Sane UI's own windows use Sane UI's own art ([interface-style.md](interface-style.md)): painted parts
+  in `assets/`, stretched and tiled by code, with text, stains and sketches laid over them by code.
+  Blizzard's art (above) for the native windows Sane UI changes in place, and for icons.
 - Own pictures: format, size for 4K, encoder and how to draw them are decided in
   [images.md](images.md) (BLP2, DXT5 with mipmaps, made by `dev/tools/art`; the game's own filter).
 - Stretch only what was made for it (nine-slice borders, tiling backgrounds). Everything else keeps its
   proportions (`SetAtlas(name, true)` uses the atlas size).
-- Do not tint Blizzard art into new colours piece by piece to make a "theme". Sane UI's one colour of
-  its own is the bronze of its window borders (`Core.GOLD`, Core's skin); otherwise tint only where
+- Do not tint Blizzard art into new colours piece by piece to make a "theme"; tint it only where
   Blizzard does (desaturate for unavailable, vertex colour for state).
 
 ## Text
 
-- **Font objects (`SetFontObject`), never a font file of our own.** The client's font objects switch
+- **Sane UI's own windows:** text on paper is Kalam in pencil grey with the paper's grain, text on leather is
+  pressed into the leather, both made in code ([interface-style.md](interface-style.md), *Text*). The font
+  is Sane UI's own font file, behind a font object of our own; for a language Kalam lacks, that object
+  falls back to the game's font.
+- **Native windows: font objects (`SetFontObject`), never a font file of our own.** The client's font objects switch
   fonts per language and follow its text settings. To change only the size, take file and flags from
   the game's font object (`GetFont`) and set them back with the new size, as Chat does with
   `ChatFontNormal` and Tooltips with `GameTooltipText`: the file still follows the language. The basic
