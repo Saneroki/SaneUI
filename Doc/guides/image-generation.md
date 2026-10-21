@@ -340,7 +340,8 @@ lists, from inputs of its own:
   to the GPU runner (*The GPU runner*), which paints only while the card is idle.
 - **The three levels, the world's and the instances' alike** ([map-style.md](map-style.md), Saneroki, 2026-10-21):
   close, the terrain repainted pixel-exact with the Atlas' words (`atlas.toml`); middle, a strict pencil drawing on
-  paper traced along that terrain; far, a free realistic reimagination. The middle and far levels share their words
+  paper traced along that terrain (the world's zones at an angle, an instance's floors straight from above); far, a
+  free realistic reimagination. The middle and far levels share their words
   (`dev/imagegen/maps/levels.toml`), and every brief has the zone briefs' fields (`zones.toml`, `dungeons.toml`), so
   the instance maps come out of the world's pipeline, words and tools. The middle levels wait for the Atlas' zone
   level and the instances' terrain.

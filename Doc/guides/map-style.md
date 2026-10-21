@@ -22,7 +22,7 @@ The wheel zooms smoothly through them, each level's look blending into the next,
 | Level | What it shows | Look | Made from |
 | --- | --- | --- | --- |
 | **Close** | the terrain, exact: every rock, wall, building, shore and walkable spot where the game has it | a photorealistic satellite photograph of exactly that ground, seen straight down | the game's terrain and indoor maps, repainted with the Atlas' words (`dev/imagegen/maps/atlas.toml`) |
-| **Middle** | a zone or one floor of an instance, its walls and walkable ground traced exactly | a beautiful hand-drawn map in pencil on paper, seen straight from above | the close level's terrain, drawn anew (`levels.toml`, `[middle]`) |
+| **Middle** | a zone or one floor of an instance, its walls and walkable ground traced exactly | a beautiful hand-drawn map in pencil on paper: the world's zones at an angle, an instance's floors straight from above | the close level's terrain, drawn anew (`levels.toml`, `[middle]`) |
 | **Far** | the world with both continents, or an instance as a whole | a free, realistic fantasy painting, seen from high above at an angle | the zones' or the instance's layout and brief (`levels.toml`, `[far]`) |
 
 ### Close: pixel-exact
@@ -38,8 +38,8 @@ The wheel zooms smoothly through them, each level's look blending into the next,
 - **Indoor maps are clear around, never black:** buildings, caves, city districts and the instances' floors have a
   transparent background, in the same place and scale as the terrain, so they lie seamlessly over what is under
   them.
-- **The middle level is under it:** where the close level has nothing to show (around an instance's halls and
-  caves, the void the game's textures leave black), its own middle level's drawing shows, never black or an empty
+- **In an instance, the middle level is under it:** where the close level has nothing to show (around the halls
+  and caves, the void the game's textures leave black), the floor's middle drawing shows, never black or an empty
   colour.
 
 ### Middle: pencil on paper, strict
@@ -50,7 +50,8 @@ The wheel zooms smoothly through them, each level's look blending into the next,
   is traced exactly along the terrain, with the same shape and size. The walkable ground stays clean paper; solid
   rock and ground nobody walks are shaded lightly with hatching; water is drawn with fine pencil ripples.
 - Graphite grey only; plain calm paper: no stains, no sketches painted in.
-- Seen straight from above, in the map's own frame, so the close level lies exactly over it.
+- **Where it is seen from (Saneroki, 2026-10-21):** the world's zones at a perspective angle; an instance's floors
+  straight from above, in the floor's own frame, so the close level lies exactly over it.
 - In the world it is a whole zone, showing its open view (a city under a roof or a tree is drawn as the game opens
   it); in an instance one floor.
 

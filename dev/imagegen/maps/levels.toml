@@ -6,10 +6,12 @@
 
 # The middle level: a hand-drawn map in pencil on paper, in the interface's own paper and pencil
 # (Doc/guides/interface-style.md, *Paper*, *Pencil*), drawn exactly along the terrain: image 1 is the close level's
-# terrain, and this drawing lies under it wherever the terrain has nothing to show. Its plan is to come, with the
-# terrain of the instances; the world's with the Atlas' zone level.
+# terrain. Where it is seen from is each plan's own (Saneroki, 2026-10-21): the world's zones at a perspective
+# angle, the instances' floors straight from above (dungeons.toml's view), where their drawing lies under the close
+# level wherever the terrain has nothing to show. Its plans are to come, with the terrain of the instances and the
+# Atlas' zone level.
 [middle]
-look = "Draw it anew as a beautiful hand-drawn map in pencil on paper, seen straight from above: loose, clean graphite pencil lines on cream parchment with soft faint clouds and an extremely subtle grain. Trace every wall, cliff, shore, edge of water and outline of every hall, room, corridor and walkable ground exactly where image 1 has it, with the same shape and size; the walkable ground stays clean paper, solid rock and ground nobody walks are shaded lightly with pencil hatching, water is drawn with fine pencil ripples. Graphite grey only."
+look = "Draw it anew as a beautiful hand-drawn map in pencil on paper: loose, clean graphite pencil lines on cream parchment with soft faint clouds and an extremely subtle grain. Trace every wall, cliff, shore, edge of water and outline of every hall, room, corridor and walkable ground exactly where image 1 has it, with the same shape and size; the walkable ground stays clean paper, solid rock and ground nobody walks are shaded lightly with pencil hatching, water is drawn with fine pencil ripples. Graphite grey only."
 last = "Plain calm paper: no stains, no sketches, no frame, no border, no legend, no labels, no text, no letters, no numbers, no symbols, no icons, no compass."
 
 # The far level: a free, realistic reimagination, the place as a whole, its mood first, seen at an angle.

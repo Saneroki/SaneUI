@@ -10,7 +10,8 @@
 #            the Atlas' pixels a yard, cut to the game's outline; from this file it takes a brief's colours and the
 #            light of its atmosphere (its first sentence), as a zone's.
 #   middle   each floor drawn anew in pencil on paper, exactly along that terrain's walls and walkable ground
-#            (levels.toml's [middle]), the ground the close level lies over.
+#            (levels.toml's [middle]), seen straight from above in the floor's own frame (view below; the world's
+#            middle level is seen at an angle, Saneroki, 2026-10-21), the ground the close level lies over.
 #   far      one free, realistic reimagination of each instance as a whole, seen at an angle (levels.toml's [far]).
 # The close and middle levels wait for the instances' terrain, which the world's tools (dev/tools/terrain-art,
 # indoor-art) do not make yet; their jobs join the queue with it. The far level is painted now
@@ -34,6 +35,7 @@
 [words]
 far = "Image 1 is a rough, blurred plan of one place seen from straight above. Use image 1 only for the layout: where its halls, rooms, corridors, stairs, courtyards, water and open ground lie, how large they are and how they join."
 open = "Roofs, ceilings and the rock above are cut away, so every hall and room lies open to view."
+view = "Seen straight from above like an orthographic satellite image, in image 1's frame: no perspective, no tilt, no horizon."
 levels = "Image 1 shows the place's {n} levels side by side in order from the top left; they are one place, its levels joined as follows."
 
 # Dungeons and raids with the game's own map art (the set Dungeons)

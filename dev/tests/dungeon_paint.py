@@ -43,7 +43,9 @@ def check(name, got, want):
 
 fixed, shared, briefs = dp.plan()
 LIMITS = {"mood": (8, 40), "places": (12, 60), "colours": (4, 15), "atmosphere": (15, 55)}
-check("plan: the instances' fixed words", sorted(fixed), ["far", "levels", "open"])
+check("plan: the instances' fixed words", sorted(fixed), ["far", "levels", "open", "view"])
+check("plan: an instance's middle level is seen straight from above", "straight from above" in fixed["view"], True)
+check("plan: the shared middle look leaves the view to each plan", "from above" in shared["middle"]["look"], False)
 check("plan: the levels sentence counts", "{n}" in fixed["levels"], True)
 check("plan: the shared levels", sorted(shared), ["far", "middle"])
 check("plan: each level a look and a last sentence", [sorted(shared[level]) for level in ("far", "middle")],
@@ -116,7 +118,13 @@ with tempfile.TemporaryDirectory() as folder:
     copy = dp.plan_of(run, state)
     check("plan's copy: its files", sorted(p.name for p in copy.iterdir()), ["dungeons.toml", "levels.toml",
                                                                              "workflow.json"])
-    check("plan's copy: its fingerprint kept", state["plan"]["fingerprint"], dp.fingerprint())
+    check("plan's copy: the same as the plan", dp.fingerprint(copy), dp.fingerprint())
+    with (copy / "levels.toml").open("a") as handle:
+        handle.write("\n# a change of the middle level's words alone\n")
+    check("plan's copy: the middle level's words do not count", dp.fingerprint(copy), dp.fingerprint())
+    text = (copy / "dungeons.toml").read_text().replace("A gang of pirates", "A band of pirates")
+    (copy / "dungeons.toml").write_text(text)
+    check("plan's copy: a brief's change counts", dp.fingerprint(copy) != dp.fingerprint(), True)
     check("plan's copy: read as the plan", dp.plan(copy)[2].keys() == briefs.keys(), True)
 
     class Args:

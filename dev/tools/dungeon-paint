@@ -34,7 +34,7 @@ It writes, in the run's folder (default assets/generated/dungeons, never committ
   far/<key>-<seed>.png      the paintings
   paintings.jsonl           a line per painting: what, key, seed, words, workflow, settings, time
   plan/                     the plan the run paints with: dungeons.toml, levels.toml, workflow.json
-  state.json                the paths given, when the run began and its plan's fingerprint
+  state.json                the paths given, when the run began
 Needs Python with Pillow and ComfyUI (comfyui start; the GPU runner starts it for its job).
 """
 import argparse
@@ -222,11 +222,14 @@ def save_state(out, state):
     os.replace(temp, out / "state.json")
 
 
-def fingerprint(paths=None):
-    paths = paths or [*PLAN.values(), ig.find_workflow(WORKFLOW)]
-    digest = hashlib.sha1()
-    for path in paths:
-        digest.update(Path(path).read_bytes())
+def fingerprint(folder=None):
+    """What the paintings are made with, of the run's copy of the plan (folder) or the plan as it is: the far
+    level's words, the briefs and the workflow, nothing else of the files (the middle level's words do not count)."""
+    fixed, shared, briefs = plan(folder)
+    used = [fixed["far"], fixed["open"], fixed["levels"], shared["far"],
+            {key: [brief[field] for field in ("mood", "places", "colours", "atmosphere")] for key, brief in briefs.items()}]
+    digest = hashlib.sha1(json.dumps(used, sort_keys=True).encode())
+    digest.update((folder / "workflow.json" if folder else ig.find_workflow(WORKFLOW)).read_bytes())
     return digest.hexdigest()[:12]
 
 
@@ -238,7 +241,7 @@ def plan_of(out, state):
         for name, path in PLAN.items():
             shutil.copyfile(path, folder / name)
         shutil.copyfile(ig.find_workflow(WORKFLOW), folder / "workflow.json")
-        state["plan"] = {"began": time.strftime("%Y-%m-%d %H:%M"), "fingerprint": fingerprint(), "workflow": WORKFLOW}
+        state["plan"] = {"began": time.strftime("%Y-%m-%d %H:%M"), "workflow": WORKFLOW}
         save_state(out, state)
     return folder
 
@@ -358,7 +361,7 @@ def status(args):
     no_brief = [str(key) for key in sets if key not in briefs]
     if no_brief:
         print(f"In the set Dungeons without a brief in dungeons.toml: {', '.join(no_brief)}")
-    if "plan" in state and state["plan"]["fingerprint"] != fingerprint():
+    if (out / "plan" / "workflow.json").is_file() and fingerprint(out / "plan") != fingerprint():
         print(f"The plan changed since the run began ({state['plan']['began']}): saneui rebuild dungeons paints it anew")
 
 

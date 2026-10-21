@@ -120,8 +120,9 @@ minimap) and the full-screen window (the world map) show the same map with the s
     painting above):** the close zoom is the terrain, pixel-exact; the middle zoom is not drawn by code and not a
     free painting but rendered as a beautiful hand-drawn map in pencil on paper, in the interface's own paper and
     pencil (`Doc/guides/interface-style.md`), very strict: every wall, edge and walkable area traced exactly along
-    the terrain map, seen straight from above, so it lies under the close zoom as its ground wherever the terrain
-    has nothing to show (rather than black or paper, Saneroki); the far zoom is the free, realistic reimagination
+    the terrain map. The world's middle zoom keeps its perspective angle; an instance's is seen straight from
+    above, in the floor's own frame, so it lies under the close zoom as its ground wherever the terrain has nothing
+    to show (rather than black or paper, Saneroki); the far zoom is the free, realistic reimagination
     described here. Text, pins, the bosses' 3D models and every other mark are overlays drawn by code; the
     paintings are only the ground. The same three looks for the instance maps (*Instance maps as the world map,
     apart from it*). The style guide: `Doc/guides/map-style.md`.

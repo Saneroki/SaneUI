@@ -6,6 +6,15 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 502 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 117 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the world's middle level at an angle, the instances' from above (Saneroki, 2026-10-21)
+- The world's middle level (the zones' pencil drawings) keeps its perspective angle; an instance's floors are drawn
+  straight from above, in the floor's own frame, the ground their close level lies over. `levels.toml`'s shared
+  middle look leaves the view to each plan; `dungeons.toml` has the instances' (`view`). Written in
+  `Doc/guides/map-style.md`, `Doc/ideas/Navigation.md` and `Doc/guides/image-generation.md`.
+- `dev/tools/dungeon-paint`: a run's plan counts as changed only when what its paintings are made with changes (the
+  far level's words, the briefs, the workflow), read from the run's own copy, not when the middle level's words do.
+  Tests: 272 checks.
+
 ### Navigation: the maps' three looks, the instance maps made as the world's (Saneroki, 2026-10-21)
 - **The map style guide** (`Doc/guides/map-style.md`, new; in CLAUDE.md's guides): the Atlas and the instance maps in
   three levels, alike: close the terrain pixel-exact (the Atlas' words), middle a beautiful pencil drawing on paper
