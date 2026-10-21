@@ -12,7 +12,9 @@ from     = { type = "point" }
 to       = { type = "point" }
 fromNode = { type = "int", min = 0 }         # a flight's taxi nodes (the flight points themselves are the game's)
 toNode   = { type = "int", min = 0 }
-side     = { type = "enum", values = ["alliance", "horde"] }  # none: both
+side     = { type = "enum", values = ["alliance", "horde"] }  # none: both. A flight's: only that side's flight masters stand at both
+                                             # ends; a boat's, zeppelin's or the tram's: its docks lie near that side's flight
+                                             # masters alone (its towns, dev/tools/travel-data's DOCKSIDE yards)
 time     = { type = "number", min = 0 }      # the trip, in seconds (a lift's: its slower ride, up or down)
 wait     = { type = "number", min = 0 }      # between two departures, in seconds (a transport: from one dock, its way once round;
                                              # the tram: from one station, its trains' round over the trains; a lift's car:

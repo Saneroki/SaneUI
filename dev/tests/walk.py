@@ -5,7 +5,8 @@ buildings and doodads placed as the game places them (turned, tilted; a model's 
 the object files' placements) and rasterized (a fence, a deck), the openings the game is left to work out and those
 written, regions too small to keep and their order, a flight's path made short, a boat's way (its docks, on the zone
 maps too, its leaps, which way a newer one replaced), a lift's car (its motion, its ends and rides, its own number
-kept for its place) and a portal (the client's trigger, where a batch says it brings one). And dev/tools/terrain-art's open sky around an isle that floats (walk-data reads the terrain with
+kept for its place), a way's side (its towns', by the flight masters near its docks) and a portal (the client's
+trigger, where a batch says it brings one). And dev/tools/terrain-art's open sky around an isle that floats (walk-data reads the terrain with
 it). Run by dev/tests/run."""
 import base64
 import importlib.machinery
@@ -614,6 +615,23 @@ check("its ends in the world's yards, the lower first with its map, each with it
 check("its ends on the zone maps, for the map's pins", (fields[travel.LIFTS + 4]["from"], fields[travel.LIFTS + 4]["to"]),
       ([1456, -12.9, 1.9], [1456, -12.9, 1.9]))
 check("a car the client does not move as a lift left out, and why", left, [(9, "the client does not move it as a lift")])
+
+# --- A way's side: its towns', by the flight masters near its docks ---------------------------------------
+def taxi(world, x, y, flags):
+    return {"ContinentID": str(world), "Pos[0]": str(x), "Pos[1]": str(y), "Flags": str(flags)}
+
+
+nodes = {1: taxi(0, 0, 0, travel.ALLIANCE), 2: taxi(0, 5000, 0, travel.ALLIANCE | travel.HORDE),
+         3: taxi(1, 0, 0, travel.HORDE), 4: taxi(1, 5000, 0, 0)}
+check("a way between a side's town and a port of both: that side's",
+      travel.side([(0, 300, 0, 0), (0, 5100, 0, 0)], nodes), "alliance")
+check("between towns of both sides, or with no flight master near (one of no side's does not count): none",
+      (travel.side([(0, 0, 0, 0), (1, 0, 0, 0)], nodes), travel.side([(1, 5000, 0, 0), (0, 3000, 0, 0)], nodes)),
+      (None, None))
+check("a dock farther than DOCKSIDE yards from the flight master: no town of its side",
+      travel.side([(1, travel.DOCKSIDE + 10, 0, 0)], nodes), None)
+check("a transport's side among its fields (its first dock by an Alliance flight master)",
+      travel.transport(ship, None, nodes).get("side"), "alliance")
 
 # --- A portal: the client's trigger, where the batch says it brings one ------------------------------------
 triggers = {542: {"ContinentID": "1", "Pos[0]": "8799.41", "Pos[1]": "969.787", "Pos[2]": "30.2409"},

@@ -232,12 +232,12 @@ search's other floors at `Search.ASIDE`, a leap of `Planner.LEAP` yards chooses 
 down (portals: Core's set *Travel*, kind `portal`, batch 12; `Portals`, `Ends`, `Arrival`); a walk between regions
 the search finds none of was drawn straight (now none, its regions cut for the plan, the journey chosen again,
 `Planner.TRIES`; a place reached on foot is a node of its own; `Search.Walk` tells `"off"` and the yards off the data
-at the end). Left: one side routed through the other's harbours and zeppelin towers (no side for ships yet), the
-walking data's one-way openings (its tool, small islands).
+at the end); one side routed through the other's harbours and zeppelin towers (a ship's `side` now: its towns', by
+the flight masters near its docks). Left: the walking data's one-way openings (its tool, small islands).
 
 Not yet: a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
 minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
-checks; 506 with the 2026-10-21 changes), `dev/tests/walk.py` (121).
+checks; 507 with the 2026-10-21 changes), `dev/tests/walk.py` (125).
 
 ## What is not there yet
 

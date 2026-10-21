@@ -464,14 +464,14 @@ Set(packPath .. "/Places.lua", "Places", "00000005", "int", '"kind", "name", "po
     .. 'R[2] = "70245\t\tmailbox\t\t1429\03170\03170\t\t\t"\n')
 -- The boat's way round has its docks on the maps too: in the east hall, and on Kalimdor in the game's area 12.
 Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
-    '"kind", "name", "from", "to", "fromNode", "toNode", "length", "path", "docks", "dockAreas", "time", "wait"',
+    '"kind", "name", "from", "to", "fromNode", "toNode", "length", "path", "docks", "dockAreas", "time", "wait", "side"',
     '"text", "text", "point", "point", "int", "int", "number", "list tuple(x:number,y:number,map:int,stay:number,jump:bool,z:number)", '
-    .. '"list point", "list int", "number", "number"',
+    .. '"list point", "list int", "number", "number", "text"',
     'R[1] = "70245\t\tboat\tTo the west\t1429\03190\03190\t1414\03150\03150\t\t\t"\n'
     .. 'R[2] = "70245\t\tflight\t\t\t\t2\t5\t6000"\n'
     .. 'R[3] = "70245\t\tboat\t\t\t\t\t\t3898.1\t-8600\031-450\0310\03160\030-8000\031-2000\0305000\031-9000\0311\031\0311'
     .. '\0306000\031-9500\031\03160\0305000\031-9000\030-8000\031-2000\0310\031\0311'
-    .. '\t1429\03172.5\0316.7\0301414\03189.6\03135\t0\03012"\n'
+    .. '\t1429\03172.5\0316.7\0301414\03189.6\03135\t0\03012\t\t\talliance"\n'
     .. 'R[4] = "70245\t\tzeppelin\t\t\t\t\t\t\t-8650\031-400\0310\03130\030-8000\031500\030-500\0310\0312991\031\0311'
     .. '\030-1000\0310\031\03130\030-500\0310\030-8000\031500\0310\031\0311\t1429\03170\03110\0302521\03150\03180\t0\0300"\n'
     -- Two flights with their ways (Alpha to Beta to Gamma, 1000 yards each) and the tram (2000 yards in 50 seconds, a
@@ -2600,6 +2600,14 @@ Frames(8)
 check(shownWay and #shownWay.legs == 3 and shownWay.legs[1].kind == "walk" and shownWay.legs[2].kind == "boat"
     and near(shownWay.legs[1].points[1].u, 450) and near(shownWay.legs[1].points[1].v, -8700),
     "in the town at the dock, not on the boat: planned from the player, on foot to the pier")
+-- The boat is the Alliance's (its towns'): a Horde character has no way across the sea, and no line.
+UnitFactionGroup = function() return "Horde" end
+Planner.Update()
+Frames(8)
+check(shownWay == nil, "the boat is the other side's: no way across the sea for a Horde character, no line")
+UnitFactionGroup = function() return "Alliance" end
+Planner.Update()
+Frames(8)
 -- A pin on the isle (u 200, v -1200; the canvas' map pin mark there too): on foot to the zeppelin's tower, the
 -- zeppelin, a straight walk to the pin (no walking data there).
 player.x, player.y = 0.75, 0.3

@@ -11,7 +11,8 @@ The bigger changes of each version, newest first.
   dock town no longer counts as being aboard, a route from under
   Orgrimmar's rock arches or a roof starts on the ground you stand
   on, and where no walk leads (Teldrassil's top down to its shore)
-  the route finds the way that does.
+  the route finds the way that does. Routes take your side's boats and
+  zeppelins and those of both sides, never the other side's.
 - Navigation: routes know the land as the game builds it. Hills and
   passes you can walk up are taken where they are shorter, slopes too
   steep to climb never; water inside buildings, like Stormwind's

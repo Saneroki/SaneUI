@@ -1214,9 +1214,9 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     isle. Its minimap textures are the Forever beta client's, as the continents' were: the newer build (70450 over
     live's 70245, whose textures differ a little in many tiles; the isle's tiles and file IDs are the same in both),
     and the client the build installs into.
-  - **Not yet:** which side's town a dock stands in is not in the client's tables (a town's guards are the
-    server's), so a route may lead through the other side's harbour; Zephras Isle's painting (the Atlas); a new route
-    kept only when clearly better.
+  - **Not yet:** Zephras Isle's painting (the Atlas); a new route kept only when clearly better. Which side's town a
+    dock stands in is not in the client's tables (a town's guards are the server's); since 2026-10-21 a ship's side
+    is its towns' by the flight masters near its docks (below, *the portals*).
 - **Built (2026-10-21): the lifts.** Saneroki: a route into the Undercity or up Thunder Bluff's mesas should walk to
   the lift, ride it and walk on, not end as near as one walks and run straight to the pin.
   - **The data** (Core's set *Travel*, kind `lift`, `dev/tools/travel-data --lifts`): the client moves each lift's
@@ -1295,9 +1295,14 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     and the journey is chosen again (`Planner.TRIES`, `Planner.BUDGET`); walks after walks (a place reached on foot is a
     node of its own), which let the choice wander. Straight walks in 200 journeys: 21 before, 10 after (most for one
     side deep in the other's lands, where the plan's budget ends the choosing).
-  - **Still found:** routes for one side through the other's harbours and zeppelin towers (*Not yet* above); a few
-    NPCs' places of Stormwind that Forever's rebuilt city has no floor near; small islands in the walking data where
-    its tool writes an opening between two floors one way only (0.1 % of the ground; a start there falls back).
+  - **A ship's side** (Core's set *Travel*, `side` of a boat, zeppelin or the tram; `dev/tools/travel-data`,
+    `side`): alliance or horde where its docks lie within `DOCKSIDE` (600) yards of that side's flight masters alone
+    (its towns: Grom'gol's and the Horde's towers, Menethil, Theramore, Auberdine, Rut'theran, Feathermoon, Stormwind's
+    harbour, the tram), none for both (Booty Bay and Ratchet, the goblins' ports, Dalaran's zeppelin); the planner
+    takes only its own side's and both sides' (routes went through the other side's harbours and zeppelin towers).
+  - **Still found:** a few NPCs' places of Stormwind that Forever's rebuilt city has no floor near; small islands in
+    the walking data where its tool writes an opening between two floors one way only (0.1 % of the ground; a start
+    there falls back).
 
 ### The walking data
 

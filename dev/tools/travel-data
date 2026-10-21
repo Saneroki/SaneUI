@@ -15,14 +15,17 @@ staging for Core's set Travel (pack World): the ways Navigation's route planner 
                   in the game's TransportAnimation, the same for every car within AGREE seconds), wait (seconds
                   between two trains leaving one station: its cars' motion once round, the same for every car,
                   over the trains: its cars set out from their stations together, one train each way), docks and
-                  dockAreas (the cities' entrances to each station, placed as a transport's docks)
+                  dockAreas (the cities' entrances to each station, placed as a transport's docks), side (as a
+                  transport's, by the flight masters near its entrances)
     a transport   a boat or a zeppelin, one way round as the game moves it (a path between no flight points): kind
                   (a boat when all its way lies within FLOAT yards of the sea's level, else a zeppelin), length
                   (yards it moves along its way once round, its leaps not counted) and path: its points, each with
                   map (the world's map it lies on, at its first point and wherever the way comes onto another),
                   stay (where it stops at a dock: the seconds it stands there, the game's delay) and jump (where it
                   leaps to the point from the one before, onto another map or far on the same: the game's teleport;
-                  after its last point it starts again from its first), docks (its docks on the zone maps, for the
+                  after its last point it starts again from its first), side (alliance or horde where its docks
+                  lie near that side's flight masters alone, within DOCKSIDE yards: its towns'; none: both, as the
+                  goblins' ports), docks (its docks on the zone maps, for the
                   map's pins: one per place it stops at, in the order it first comes to them, each placed by
                   map-data's Placer; a dock on no zone map left out) and dockAreas (the game's area each of them
                   lies in, the AreaTable ID its terrain or building gives, which names it; 0 where none does)
@@ -91,6 +94,7 @@ STILL = 1.0  # yards a lift's car may move sideways
 END = 0.1  # yards from the end of its way within which a lift's car stands there
 RISE = 10.0  # yards a lift rises at least (a door the game moves so rises less)
 ALLIANCE, HORDE = 0x1, 0x2  # the flight points' sides in TaxiNodes' Flags
+DOCKSIDE = 600.0  # yards from a dock within which one side's flight masters alone make it that side's town
 TELEPORT, STOP = 0x1, 0x2  # TaxiPathNode's Flags: the transport leaps after this point; it stops here
 
 
@@ -168,9 +172,28 @@ def replaced(places):
             and (len(places[other]) > len(places[key]) or (len(places[other]) == len(places[key]) and other > key))}
 
 
-def transport(path, placer=None):
+def side(places, nodes):
+    """A way's side from its docks ([(world, x, y, ...)]) and the flight points (nodes: {ID: its TaxiNodes row}):
+    alliance or horde where a dock lies within DOCKSIDE yards of that side's flight masters alone (that side's town:
+    its guards are the server's, its flight masters the client's) and none so near the other's alone; None else (a
+    goblin port with both, no flight master near, or towns of both sides)."""
+    towns = set()
+    for world, x, y, *_ in places:
+        near = 0
+        for node in nodes.values():
+            if int(node["ContinentID"]) == world and math.hypot(float(node["Pos[0]"]) - x,
+                                                                float(node["Pos[1]"]) - y) <= DOCKSIDE:
+                near |= int(node["Flags"]) & (ALLIANCE | HORDE)
+        if near in (ALLIANCE, HORDE):
+            towns.add(near)
+    if len(towns) != 1:
+        return None
+    return "alliance" if towns == {ALLIANCE} else "horde"
+
+
+def transport(path, placer=None, nodes=None):
     """A transport's fields from its path's points (in the game's order); its docks on the zone maps where a placer
-    (map-data's Placer) is given."""
+    (map-data's Placer) is given; its side where the flight points are (nodes, side)."""
     points, length = [], 0.0
     for index, p in enumerate(path):
         world, x, y = int(p["ContinentID"]), float(p["Loc[0]"]), float(p["Loc[1]"])
@@ -205,6 +228,9 @@ def transport(path, placer=None):
     out.append(points[-1])
     heights = [abs(float(p["Loc[2]"])) for p in path]
     fields = {"kind": "boat" if max(heights) <= FLOAT else "zeppelin", "length": round(length, 1), "path": out}
+    sided = nodes and side(docks(path), nodes)
+    if sided:
+        fields["side"] = sided
     if placer:
         placed = [(placer.place(*dock), placer.area(*dock)) for dock in docks(path)]
         placed = [(point, area) for point, area in placed if point]
@@ -223,8 +249,9 @@ TRAM_CARS = range(176080, 176086)
 TRAM_KEY = 1000369
 
 
-def tram(folder, placer=None):
-    """The tram's fields, or None when the tables do not have it whole (a station, a car) or its cars disagree."""
+def tram(folder, placer=None, nodes=None):
+    """The tram's fields, or None when the tables do not have it whole (a station, a car) or its cars disagree; its
+    side where the flight points are (nodes, side: the cities' entrances to it)."""
     triggers = {int(row["ID"]): row for row in table(folder, "AreaTrigger")}
     if any(a not in triggers or b not in triggers for a, b in TRAM_STATIONS):
         return None
@@ -268,6 +295,9 @@ def tram(folder, placer=None):
         fields["wait"] = round(sorted(rounds)[len(rounds) // 2] / len(ways), 3)
     if name:
         fields["name"] = name
+    sided = nodes and side(places, nodes)
+    if sided:
+        fields["side"] = sided
     if placer:
         placed = [(placer.place(*door), placer.area(*door)) for door in places]
         if all(point for point, _ in placed):
@@ -430,8 +460,8 @@ def main():
         if key in gone:
             left += 1
         else:
-            lines.append((key, transport(path, placer)))
-    trams = tram(folder, placer)
+            lines.append((key, transport(path, placer, nodes)))
+    trams = tram(folder, placer, nodes)
     if trams:
         lines.append((TRAM_KEY, trams))
     sources = {}

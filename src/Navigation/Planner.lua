@@ -571,6 +571,9 @@ end
 -- lands once; the flights one after the other are one step (hops: each flight's record and ends, in order).
 local function Journey(start, goal, measured, cut)
     local known = Known()
+    -- A boat, zeppelin or tram of one side (Core's set Travel: its towns'): none for the other side (their guards).
+    local faction = Core.Plain(UnitFactionGroup("player"))
+    faction = type(faction) == "string" and faction:lower() or nil
     local now = Ships.Now()
     local useData = Walk.Ready()
     -- The places: the two ends, and on every plane the known flight points, the docks, the lifts' ends, the
@@ -727,7 +730,7 @@ local function Journey(start, goal, measured, cut)
             -- its next train where a ride taught its times (Data.Trips), once down at its platform.
             if here.dock then
                 for _, ship in ipairs(here.dock.ways) do
-                    if places[ship.to] then
+                    if places[ship.to] and (not ship.way.side or ship.way.side == faction) then
                         local seconds, at = ship.seconds, now + low
                         local _, leaves
                         if ship.stop then

@@ -3,8 +3,20 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 506 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 121 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 507 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 125 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: boats, zeppelins and the tram of one side only for that side (Saneroki, 2026-10-21)
+- **Their side** (Core's set *Travel*, `side` of a boat, a zeppelin and the tram; `dev/tools/travel-data`, `side`):
+  `alliance` or `horde` where the way's docks lie within `DOCKSIDE` (600) yards of that side's flight masters alone
+  (the client's flight points and their sides: its towns; a town's guards are the server's), none where they are of
+  both sides or none (a goblins' port). Horde: Grom'gol's, Orgrimmar's and the Undercity's zeppelins, Mulgore's to
+  Zephras Isle; Alliance: Menethil's, Theramore's, Auberdine's, Rut'theran's, Feathermoon's boats, the one from
+  Stormwind's harbour, the tram; both: Booty Bay to Ratchet, Steamwheedle Port to the Riverglades, Dalaran's zeppelin.
+- **The planner** (`Journey`): a ship or the tram of the other side is no way (its harbours and towers are guarded);
+  routes for one side went through the other's (an Alliance character from Tirisfal by the Undercity's zeppelin).
+- Tests: Navigation 507 checks (the boat the other side's: no way across the sea, no line), walking data 125 (a way's
+  side by the flight masters near its docks, a dock too far from one, a transport's among its fields).
 
 ### Navigation: Teldrassil's portal in the routes; a walk not found is none, the journey chosen again (Saneroki, 2026-10-21)
 - **The portals** (Core's set *Travel*, kind `portal`; batch 12 of `sources.toml`, unverified; `dev/tools/travel-data

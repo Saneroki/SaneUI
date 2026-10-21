@@ -128,7 +128,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   line always begins at your arrow: as you go, what lies behind you is gone, a short line runs from you to it, and
   leave it and it is planned again. A pin on another continent or on Zephras Isle is reached by boat or zeppelin,
   over as many seas as it takes (by way of the other continent, or the hearthstone home first, where that is
-  quickest), the line red from pier to pier; between Stormwind and Ironforge the Deeprun Tram is taken where it is
+  quickest), your side's or both sides' (not the other side's harbours and zeppelin towers), the line red from pier
+  to pier; between Stormwind and Ironforge the Deeprun Tram is taken where it is
   quicker, the line red from one city's entrance to it to the other's; and the hearthstone is taken where it is
   quickest (the map learns its place where you bind it, or the first time you use it). Thunder Bluff's mesa and the
   Undercity are reached by their lifts, and the Great Lift is taken where it is quicker: on foot to the lift, up or
@@ -373,7 +374,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   data (a place's: those of the floors under it and within `Planner.REGION` yards), the flights of Core's set
   *Travel* the player's side may take (a flight point twice, on the ground and in the air, so a flight over many
   takes off and lands once, `Planner.BOARD`, and is one leg), the boats and zeppelins of
-  *Travel* from dock to dock and its tram from entrance to entrance (all from the game's tables, by
+  *Travel* from dock to dock and its tram from entrance to entrance, those of the player's side or of both (*Travel*'s
+  `side`: their towns', by the flight masters near their docks) (all from the game's tables, by
   `dev/tools/travel-data`), its portals from their trigger to where they bring one (`Planner.PORTAL` seconds; with
   walking data only one with a floor at both ends, within `Planner.ARRIVE` yards at their height), the hearthstone
   from the player; the quickest chosen (Dijkstra; a place reached on foot is a node of its own, from which no walk
