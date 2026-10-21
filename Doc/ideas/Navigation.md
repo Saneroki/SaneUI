@@ -7,10 +7,10 @@ zones that light up and open by a click, the map moving with its window, the gam
 window's shape), the game's map kept closed; the pins of the game and of Core's data in the game's quest marks,
 quest areas, the party, the quest log and the bar over the full map (the pin filter in sections), the herbs and
 ore the game's minimap finds, indoor maps, routes to the map pin on foot, by flight, by boat and zeppelin, by the
-Deeprun Tram, by lift and by the hearthstone; the classic dungeons' and raids' maps of Core's set *Dungeons* in the
-game's map art, with their floors, bosses and the bosses' 3D models (`src/Navigation/README.md`). Not yet: portals
-in the routes, a travel pin's ways under the mouse (*Map pins*), the leveling guide, the dungeons' three zooms,
-search, the minimap's small parts.
+Deeprun Tram, by lift, through Teldrassil's portal and by the hearthstone; the classic dungeons' and raids' maps of
+Core's set *Dungeons* in the game's map art, with their floors, bosses and the bosses' 3D models
+(`src/Navigation/README.md`). Not yet: a travel pin's ways under the mouse (*Map pins*), the leveling guide, the
+dungeons' three zooms, search, the minimap's small parts.
 
 How to read this page:
 
@@ -1215,8 +1215,8 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     live's 70245, whose textures differ a little in many tiles; the isle's tiles and file IDs are the same in both),
     and the client the build installs into.
   - **Not yet:** which side's town a dock stands in is not in the client's tables (a town's guards are the
-    server's), so a route may lead through the other side's harbour; Zephras Isle's painting (the Atlas); portals
-    (where one leads is not in the client); a new route kept only when clearly better.
+    server's), so a route may lead through the other side's harbour; Zephras Isle's painting (the Atlas); a new route
+    kept only when clearly better.
 - **Built (2026-10-21): the lifts.** Saneroki: a route into the Undercity or up Thunder Bluff's mesas should walk to
   the lift, ride it and walk on, not end as near as one walks and run straight to the pin.
   - **The data** (Core's set *Travel*, kind `lift`, `dev/tools/travel-data --lifts`): the client moves each lift's
@@ -1274,6 +1274,30 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     city's flight master, bank, quarters and throne room and out again, from the canyon to Freewind Post's flight
     master and back, from Dun Morogh down Gnomeregan's lift: walk, lift, walk each; from the lift's lower landing
     into the Magic Quarter on foot all the way; Thunder Bluff's flight master to the Elder Rise over its bridge.
+- **Built (2026-10-21): the portals; routes checked on the whole real data.** Saneroki asked whether the routes are
+  reliable, flexible and robust: checked outside the game, the planner, its search and Core's timetables over every
+  walking tile, the game's flight points and the set *Travel*, on journeys through the cities and 200 between NPCs'
+  places (both sides, both continents and the isle).
+  - **The portals** (Core's set *Travel*, kind `portal`, `dev/tools/travel-data --portals`, batch 12 of
+    `sources.toml`, unverified): the client holds a portal's trigger (its `AreaTrigger`), not where it brings one;
+    picked where every record agrees, it asks nothing of who steps in, no door stands at it, there is a way back and
+    Forever's world has a floor at both ends. Four in build 70245: Darnassus and Rut'theran Village (the only way
+    between Teldrassil's top and its shore), Stormwind's Wizard's Sanctum up and down (the walking data holds no
+    floor of its rooms, so no route takes it yet; the map shows it). A record per trigger: its key 1200000 + the
+    trigger's ID, `path` its place and where it brings one, each with its height, `length`, `from` and `to` (pins).
+  - **In the journey:** a portal's two ends are places on their floors (`Walk.Landing` within `Planner.ARRIVE`
+    yards), the way through `Planner.PORTAL` seconds, drawn violet; after the leap the floor followed is the one where
+    it brings one (`Arrival`).
+  - **Found and fixed:** aboard in the town at a ship's dock (`Planner.DECK`, `Along`); the floor guessed outdoors
+    (the highest: Orgrimmar's rock overhangs, a rock's top) with no walk leaving it (`guess`, `Search.ASIDE`); the
+    height from before a leap; a walk between places that share no region taken on its guess though the search
+    finds none, drawn straight (Teldrassil's top to Moonglade): now none, and so every walk between those regions,
+    and the journey is chosen again (`Planner.TRIES`, `Planner.BUDGET`); walks after walks (a place reached on foot is a
+    node of its own), which let the choice wander. Straight walks in 200 journeys: 21 before, 10 after (most for one
+    side deep in the other's lands, where the plan's budget ends the choosing).
+  - **Still found:** routes for one side through the other's harbours and zeppelin towers (*Not yet* above); a few
+    NPCs' places of Stormwind that Forever's rebuilt city has no floor near; small islands in the walking data where
+    its tool writes an opening between two floors one way only (0.1 % of the ground; a start there falls back).
 
 ### The walking data
 
@@ -1552,9 +1576,9 @@ Each step ends in something tried in the game, and in the module's README markin
 5 built as far as Core's data goes: the pins, gathered overlaps, tooltips and the quest areas the game shades are
 there, and `Data.Map` reads Spawns, Places and Travel, of which Spawns and Places hold no entries yet, so the
 database's pins come with the import; rares' spawn areas and patrol paths wait for their data. 6 built on foot, by
-flight, by boat and zeppelin, by the tram, by lift and by the hearthstone (the walking data, the flights, the ships'
-ways and the tram of the game's tables, the lifts' places of a batch, the planner, the search, the golden line);
-portals not yet. 8 begun
+flight, by boat and zeppelin, by the tram, by lift, through portals and by the hearthstone (the walking data, the
+flights, the ships' ways and the tram of the game's tables, the lifts' and portals' places of batches, the planner,
+the search, the golden line), checked on the whole real data outside the game (2026-10-21). 8 begun
 (2026-10-21): the dungeons' and raids' maps of Core's set *Dungeons*, their floors, bosses and the bosses' 3D
 models; their three zooms and the minimap's own parts not yet. Step 0's points are answered in play as each step is tried.
 

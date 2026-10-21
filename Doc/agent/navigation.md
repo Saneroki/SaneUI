@@ -225,14 +225,19 @@ flight master from its flight map's states and the maps' `isUndiscovered`; `Plan
 
 Routes on the real data (2026-10-21): the planner, its search and Core's timetables can be run outside the game over
 every walking tile, the game's flight points and Core's set *Travel* (a harness of the session's own, not in the
-project); 200 journeys between NPCs' places found two faults fixed here: aboard a ship by standing in the town at its
+project); 200 journeys between NPCs' places found faults fixed here: aboard a ship by standing in the town at its
 dock (`Aboard`: now within `Planner.DECK` yards of its way, past `Planner.DOCK` yards along it), and the player's floor
 guessed (outdoors the highest: Orgrimmar's rock overhangs, a roof) with no walk leaving it (`Footing`'s `guess`, the
-search's other floors at `Search.ASIDE`, a leap of `Planner.LEAP` yards chooses it anew).
+search's other floors at `Search.ASIDE`, a leap of `Planner.LEAP` yards chooses it anew); Teldrassil's top had no way
+down (portals: Core's set *Travel*, kind `portal`, batch 12; `Portals`, `Ends`, `Arrival`); a walk between regions
+the search finds none of was drawn straight (now none, its regions cut for the plan, the journey chosen again,
+`Planner.TRIES`; a place reached on foot is a node of its own; `Search.Walk` tells `"off"` and the yards off the data
+at the end). Left: one side routed through the other's harbours and zeppelin towers (no side for ships yet), the
+walking data's one-way openings (its tool, small islands).
 
-Not yet: portals in routes, a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
+Not yet: a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
 minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
-checks; 502 with the 2026-10-21 changes), `dev/tests/walk.py` (117).
+checks; 506 with the 2026-10-21 changes), `dev/tests/walk.py` (121).
 
 ## What is not there yet
 

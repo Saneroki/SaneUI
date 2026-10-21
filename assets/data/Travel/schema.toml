@@ -1,6 +1,7 @@
 set = "Travel"
 key = "int"              # the game's TaxiPath ID of a flight, a boat or a zeppelin; our own number for a way the game has no path for
-                         # (the tram 1000369; a lift's car from 1100001 on, kept for a car at the same place: dev/tools/travel-data)
+                         # (the tram 1000369; a lift's car from 1100001 on, kept for a car at the same place; a portal 1200000 + its
+                         # area trigger's ID: dev/tools/travel-data)
 learn = true             # the flight master's watcher: flights and their costs
 about = "The ways to travel other than on foot: boats, zeppelins, trams, lifts, portals and flights, with their times."
 
@@ -18,7 +19,7 @@ wait     = { type = "number", min = 0 }      # between two departures, in second
                                              # from one end, its motion once round)
 cost     = { type = "money" }
 length   = { type = "number", min = 0 }      # yards along its way, from the game's path (a transport's once round, its leaps not
-                                             # counted; a lift's: the yards it rises)
+                                             # counted; a lift's: the yards it rises; a portal's: between its two ends)
 # path: the way's points in the world's yards (x to the north, y to the west), as the game's path has them (points
 # on a straight run left out), for the map to draw it. A flight's lie on the continent of its start. A boat's or a
 # zeppelin's is one way round as the game moves it, after its last point again from its first: map is the world's
@@ -27,6 +28,8 @@ length   = { type = "number", min = 0 }      # yards along its way, from the gam
 # tram's is its two stations in its own map's yards (where one leaves it; its trains run between them). A lift's is
 # its car's two ends, the lower first with its map, each with z, its height: where the car stands at the start of its
 # motion, moved by the game's TransportAnimation to its lowest and its highest (from and to: the two on the zone maps).
+# A portal's is the game's area trigger one steps into, with its map, then where it brings one, each with z (from
+# and to: the two on the zone maps).
 path     = { type = "list", of = "tuple", parts = [
     { name = "x", type = "number" },
     { name = "y", type = "number" },

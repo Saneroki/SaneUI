@@ -495,9 +495,13 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     -- from -20 to 10 yards), on no zone map.
     .. 'R[11] = "70245\t\tlift\t\t\t\t\t\t30'
     .. '\t-133.33\031-1333.33\0311\031\031\031-20\030-133.33\031-1333.33\031\031\031\03110\t\t\t3.5\t16"\n'
+    -- A portal (12): its trigger on the west field of tile 6176 (world x -208.33, y -62.5, 10 yards), where it brings
+    -- one on the city's building floor of tile 6179 (x -66.67, y -1666.67, 50 yards), on no zone map.
+    .. 'R[12] = "70245\t\tportal\t\t\t\t\t\t1606'
+    .. '\t-208.33\031-62.5\0311\031\031\03110\030-66.67\031-1666.67\031\031\031\03150"\n'
     .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byFromNode[20] = "5"\nI.byFromNode[21] = "6"\nI.byKind = {}\n'
     .. 'I.byKind.boat = "1\0303"\nI.byKind.flight = "2\0305\0306"\nI.byKind.tram = "7"\nI.byKind.zeppelin = "4"\n'
-    .. 'I.byKind.lift = "8\0309\03010\03011"\n')
+    .. 'I.byKind.lift = "8\0309\03010\03011"\nI.byKind.portal = "12"\n')
 W.AddSets(packPath)
 local spawnsPath = folder .. "/Spawns"
 os.execute(("mkdir -p '%s'"):format(spawnsPath))
@@ -3028,10 +3032,12 @@ end)()
     end
     local mu, mv = At(176, 48) -- on the mesa, over the field east of the hill
     local wu, wv = At(30, 64) -- the field west of the hill
-    local points, cost = Search.Walk(1414, mu, mv, wu, wv, { 6176, 5 })
+    local points, cost = Search.Walk(1414, mu, mv, wu, wv, { 6176, 5, guess = true })
     check(points and #points > 4 and Over(points, 2) and near(points[1], mu) and near(points[#points - 1], wu)
-        and cost < Search.ASIDE, "from a floor no way leaves (the mesa): from the field under it, over the hill's path, "
-        .. "at its own cost")
+        and cost < Search.ASIDE, "from a floor no way leaves (the mesa), a guess: from the field under it, over the "
+        .. "hill's path, at its own cost")
+    points = Search.Walk(1414, mu, mv, wu, wv, { 6176, 5 })
+    check(points and not Over(points, 2), "the same floor known (the player is up there): from it, straight, not over the hill")
     local function Pin(u, v)
         waypoint = { uiMapID = 1414, position = CreateVector2D((u + 12000) / 24000, (20000 - v) / 40000) }
         W.Fire("USER_WAYPOINT_UPDATED")
@@ -3062,6 +3068,51 @@ end)()
     leg = shownWay and shownWay.legs[1]
     check(leg and leg.kind == "walk" and #leg.points == 2 and near(leg.points[1].u, cu) and near(leg.points[2].u, eu),
         "after a leap: the floor chosen anew there (the hill), not followed into the cave")
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
+-- A portal (Core's set Travel, 12): from the west field of tile 6176 to the city's building floor on tile 6179 (its own
+-- region, no walk there): on foot to its trigger, through it, on foot to the pin; after the leap through it the floor
+-- followed is where it brings one (the building's, not the roof over it the guess outdoors would take).
+;(function()
+    local s = Walk.SAMPLE
+    local function At(tile, column, row) return tile * Coords.TILE + column * s, -row * s end
+    local pu, pv = At(0, 20, 100) -- the player on the west field
+    local tu, tv = 62.5, -208.33 -- the portal's trigger (its record's)
+    local au, av = 1666.67, -66.67 -- where it brings one: the building's floor, under its roof
+    local eu, ev = At(3, 56, 40) -- the pin on the building's floor, past its roof
+    player.map, player.x, player.y = 1414, (pu + 12000) / 24000, (20000 - pv) / 40000
+    waypoint = { uiMapID = 1414, position = CreateVector2D((eu + 12000) / 24000, (20000 - ev) / 40000) }
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Frames(8)
+    local legs, kinds = shownWay and shownWay.legs or {}, {}
+    for index, leg in ipairs(legs) do kinds[index] = leg.kind end
+    local portal = legs[2]
+    check(table.concat(kinds, " ") == "walk portal walk" and near(portal.points[1].u, tu) and near(portal.points[1].v, tv)
+        and near(portal.points[2].u, au) and near(portal.points[2].v, av),
+        "a pin past a portal: on foot to its trigger, through it, on foot to the pin")
+    Planner.Track(1414, tu, tv, GetTime() + 700)
+    player.x, player.y = (au + 12000) / 24000, (20000 - av) / 40000
+    Planner.Track(1414, au, av, GetTime() + 701)
+    local floor = Planner.Floor()
+    check(floor and floor[1] == 6179 and floor[2] == 2 and not floor.guess,
+        "through the portal: the floor followed is the building's where it brings one, not its roof")
+    -- A slow portal (a thousand seconds): the walk straight to the pin looks quicker, but no walk is found from the
+    -- field's region to the building's (none of its floors within Search.FAR yards of the pin): it is none, and the
+    -- journey chosen again takes the portal all the same.
+    local portalTime = Planner.PORTAL
+    Planner.PORTAL = 1000
+    player.map, player.x, player.y = 1414, (pu + 12000) / 24000, (20000 - pv) / 40000
+    Planner.Update()
+    Frames(8)
+    legs, kinds = shownWay and shownWay.legs or {}, {}
+    for index, leg in ipairs(legs) do kinds[index] = leg.kind end
+    check(table.concat(kinds, " ") == "walk portal walk",
+        "a walk between regions not found: none, the journey chosen again goes through the portal")
+    Planner.PORTAL = portalTime
     player.map, player.x, player.y = 1429, 0.75, 0.3
     waypoint = nil
     W.Fire("USER_WAYPOINT_UPDATED")

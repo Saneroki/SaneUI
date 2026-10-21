@@ -26,6 +26,11 @@ staging for Core's set Travel (pack World): the ways Navigation's route planner 
                   map's pins: one per place it stops at, in the order it first comes to them, each placed by
                   map-data's Placer; a dock on no zone map left out) and dockAreas (the game's area each of them
                   lies in, the AreaTable ID its terrain or building gives, which names it; 0 where none does)
+    a portal      with --portals (below): a trigger of the game's that brings one elsewhere on its continent the
+                  moment one steps into it: kind portal, path (its two ends in the world's yards, each with z: the
+                  trigger's place, the game's, with its map; then where it brings one), length (the yards between
+                  them), from and to (the two on the zone maps, each placed by map-data's Placer, for the map's pins);
+                  its key our own number, PORTALS + the trigger's ID
     a lift        with --lifts (below): a car that goes straight up and down, as the game moves it in its
                   TransportAnimation (no taxi path): kind lift, path (its two ends in the world's yards, the lower
                   first with its map, each with z, its height: where the car stands at the start of its motion,
@@ -46,6 +51,11 @@ world's yards), and writes its lifts as that batch's lines. A car the client doe
 down within STILL yards, standing once a round at each end of its way, within END yards of it, and nowhere between,
 rising RISE yards or more) is left out.
 
+Where a portal brings one is not in the client's tables either: --portals <places> <batch> takes it from a batch of our
+picking, a CSV file with a line per portal (trigger, continent, x, y, z: the game's area trigger and where it brings
+one, in the world's yards), and writes its portals as that batch's lines; a trigger the client does not have, or has on
+another continent, is left out.
+
 Left out: flights between flight points of no side (the game's own, not a flight master's); paths that stop at
 fewer than two docks (a moving thing, no way between places); and a transport whose every dock is one of another
 transport with more docks (or, with the same ones, a newer ID): the older way the newer one replaced. Two stops
@@ -56,7 +66,7 @@ AreaTrigger, Map and TransportAnimation for the tram and the lifts, and
 for placing the docks those map-data reads: AreaTable, UiMap, UiMapAssignment, WMOAreaTable), and its terrain files
 as map-data takes them.
 
-Usage:  dev/tools/travel-data <client tables> <terrain> [--lifts <places> <batch>]
+Usage:  dev/tools/travel-data <client tables> <terrain> [--lifts <places> <batch>] [--portals <places> <batch>]
 """
 import csv
 import json
@@ -76,6 +86,7 @@ SAME = 20.0  # yards between two stops of one dock
 AGREE = 0.005  # seconds the tram's cars' runs may differ by
 LIFTS = 1100000  # our own numbers of the lifts: from LIFTS + 1 on (the tram's, 1000369, lies below)
 HERE = 5.0  # yards between a lift's lower end and that of the master's lift whose key it keeps
+PORTALS = 1200000  # our own numbers of the portals: PORTALS + the game's area trigger ID
 STILL = 1.0  # yards a lift's car may move sideways
 END = 0.1  # yards from the end of its way within which a lift's car stands there
 RISE = 10.0  # yards a lift rises at least (a door the game moves so rises less)
@@ -345,6 +356,37 @@ def lifts(cars, motions, kept, placer=None):
     return lines, left
 
 
+def portals(rows, triggers, placer=None):
+    """The portals' lines: [(key, fields)] of a batch's portals ([(trigger, continent, x, y, z)], in order), each from
+    the client's area trigger (triggers: {ID: its AreaTrigger row}); and those left out ([(trigger, why)])."""
+    lines, left = [], []
+    for trigger, continent, x, y, z in rows:
+        row = triggers.get(trigger)
+        if not row:
+            left.append((trigger, "the client has no such trigger"))
+            continue
+        if int(row["ContinentID"]) != continent:
+            left.append((trigger, "the client has it on another continent"))
+            continue
+        tx, ty, tz = float(row["Pos[0]"]), float(row["Pos[1]"]), float(row["Pos[2]"])
+        fields = {"kind": "portal", "length": round(math.dist((tx, ty, tz), (x, y, z)), 1),
+                  "path": [{"x": tx, "y": ty, "map": continent, "z": tz}, {"x": x, "y": y, "z": z}]}
+        if placer:
+            into, out = placer.place(continent, tx, ty, tz), placer.place(continent, x, y, z)
+            if into:
+                fields["from"] = into
+            if out:
+                fields["to"] = out
+        lines.append((PORTALS + trigger, fields))
+    return lines, left
+
+
+def portal_places(path):
+    """The portals of a batch's places file: [(trigger, continent, x, y, z)], in the file's order."""
+    return [(int(row["trigger"]), int(row["continent"]), float(row["x"]), float(row["y"]), float(row["z"]))
+            for row in csv.DictReader(open(path, encoding="utf-8"))]
+
+
 def lift_places(path):
     """The cars of a batch's places file: [(object, continent, x, y, z)], in the file's order."""
     return [(int(row["object"]), int(row["continent"]), float(row["x"]), float(row["y"]), float(row["z"]))
@@ -353,14 +395,15 @@ def lift_places(path):
 
 def main():
     args = sys.argv[1:]
-    places, batch = None, None
-    if "--lifts" in args:
-        at = args.index("--lifts")
-        if len(args) < at + 3 or not args[at + 2].isdigit():
-            print(__doc__.strip().splitlines()[-1], file=sys.stderr)
-            return 2
-        places, batch = Path(args[at + 1]), int(args[at + 2])
-        del args[at:at + 3]
+    batches = {}
+    for option in ("--lifts", "--portals"):
+        if option in args:
+            at = args.index(option)
+            if len(args) < at + 3 or not args[at + 2].isdigit():
+                print(__doc__.strip().splitlines()[-1], file=sys.stderr)
+                return 2
+            batches[option] = (Path(args[at + 1]), int(args[at + 2]))
+            del args[at:at + 3]
     if len(args) != 2:
         print(__doc__.strip().splitlines()[-1], file=sys.stderr)
         return 2
@@ -392,7 +435,8 @@ def main():
     if trams:
         lines.append((TRAM_KEY, trams))
     sources = {}
-    if places:
+    if "--lifts" in batches:
+        places, batch = batches["--lifts"]
         motions = {}
         for row in table(folder, "TransportAnimation"):
             motions.setdefault(int(row["TransportID"]), []).append(row)
@@ -400,7 +444,17 @@ def main():
         for car, why in dropped:
             print(f"left out: the lift car {car}: {why}")
         lines += found
-        sources = {key: batch for key, _ in found}
+        sources.update({key: batch for key, _ in found})
+    gates = 0
+    if "--portals" in batches:
+        places, batch = batches["--portals"]
+        triggers = {int(row["ID"]): row for row in table(folder, "AreaTrigger")}
+        found, dropped = portals(portal_places(places), triggers, placer)
+        for trigger, why in dropped:
+            print(f"left out: the portal at trigger {trigger}: {why}")
+        lines += found
+        sources.update({key: batch for key, _ in found})
+        gates = len(found)
     lines.sort(key=lambda line: line[0])
     STAGING.parent.mkdir(parents=True, exist_ok=True)
     with open(STAGING, "w", encoding="utf-8") as out:
@@ -412,7 +466,8 @@ def main():
     placed = sum(len(fields.get("docks", ())) for _, fields in lines)
     flights = sum(1 for _, fields in lines if fields["kind"] == "flight")
     print(f"Wrote {STAGING.relative_to(ROOT)}: {flights} flights, {ships} boats and zeppelins, "
-          f"{'the tram' if trams else 'no tram'}, with {placed} docks on the zone maps, {len(sources)} lifts "
+          f"{'the tram' if trams else 'no tram'}, with {placed} docks on the zone maps, {len(sources) - gates} lifts, "
+          f"{gates} portals "
           f"({left} ways left out; replaced: {', '.join(map(str, sorted(gone))) or 'none'}).")
     return 0
 

@@ -133,8 +133,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   quickest (the map learns its place where you bind it, or the first time you use it). Thunder Bluff's mesa and the
   Undercity are reached by their lifts, and the Great Lift is taken where it is quicker: on foot to the lift, up or
   down it, on foot on (and out again the same way); a pin over the Undercity is taken to be in the city (a pin put on
-  Tirisfal Glades' map there, on the ruins). A pin where nobody can walk (a tower, a plateau) gets its line as near
-  as one walks, then straight to it. The lifts are on the map too (not yet confirmed by the game). On a flight
+  Tirisfal Glades' map there, on the ruins). Darnassus and Rut'theran Village are reached through Teldrassil's portal
+  between them (the line violet through it). A pin where nobody can walk (a tower, a plateau) gets its line as near
+  as one walks, then straight to it. The lifts and portals are on the map too (not yet confirmed by the game). On a flight
   the line shows the flight's way on from where you are, pin or none, and from where it lands on to the pin; aboard
   a ship it waits until you have landed, and a pin set aboard is planned from the pier it comes to. The game tells
   no ship's timetable: its sailing comes from its way at the game's
@@ -360,10 +361,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   floor of the regions it starts in under the end or within `Search.NEAR` yards of it (its own floor may be missing
   there: Ironforge's city under its mountain), else the nearest within `Search.FAR` (a tower, a plateau no lift
   reaches). What lies off the walking data is drawn straight and costs `Search.STRAIGHT` times its yards,
-  so the line runs from the start to the end itself. Then the line pulled straight through the openings (a funnel,
+  so the line runs from the start to the end itself; the search tells those yards at the end, and `"off"` where no
+  floor lies near the start or the end at all (nothing to search). Then the line pulled straight through the openings (a funnel,
   each opening drawn in from its ends); the heap keeps each node's f as it was put in.
 - **Planner** (`Planner.lua`, no frames): the way to the map pin, a graph over the player, the pin, the known
-  flight points, the docks, the tram's entrances and the hearthstone's place on every plane (the continents and
+  flight points, the docks, the tram's entrances, the lifts' and portals' ends and the hearthstone's place on every
+  plane (the continents and
   Zephras Isle, so a journey may cross a third; the canvas' tracker hands it the player's place): walks (guessed,
   at least as long as the steepest floor needs to climb between them, `Planner.SLOPE`) between the places of one
   plane, `Planner.APART` seconds more between two that share no region of the walking
@@ -371,12 +374,19 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   *Travel* the player's side may take (a flight point twice, on the ground and in the air, so a flight over many
   takes off and lands once, `Planner.BOARD`, and is one leg), the boats and zeppelins of
   *Travel* from dock to dock and its tram from entrance to entrance (all from the game's tables, by
-  `dev/tools/travel-data`), the hearthstone from the player; the quickest chosen (Dijkstra), the walks then searched
+  `dev/tools/travel-data`), its portals from their trigger to where they bring one (`Planner.PORTAL` seconds; with
+  walking data only one with a floor at both ends, within `Planner.ARRIVE` yards at their height), the hearthstone
+  from the player; the quickest chosen (Dijkstra; a place reached on foot is a node of its own, from which no walk
+  goes on: the walk straight on is a way of its own), the walks then searched
   (the first from the floor the player stands on: followed every `Planner.FOOT` seconds while there is a pin,
   `Walk.Follow`, else chosen, `Walk.Floor`, and chosen anew after a leap of `Planner.LEAP` yards between two looks,
   a portal; none on a flight, a boat or a zeppelin; one chosen among others under the player a guess, for which the
-  journey counts the regions of every floor around them, until they stand where one floor alone lies under them)
-  and the journey chosen once more when one is much longer than guessed:
+  journey counts the regions of every floor around them, until they stand where one floor alone lies under them;
+  after a leap to where a portal brings one, its floor there) and the journey chosen again, up to `Planner.TRIES`
+  times while the plan's searches have looked at fewer than `Planner.BUDGET` rectangles (`Search.looked`), when one is
+  much longer than guessed or not found: a walk not found is none, and where its two places share
+  no region, so is every walk between those regions, and one that ends only as near as one walks (Teldrassil's top
+  and the shore under it: the portal is the way); one without walking data at an end stays a guess, drawn straight:
   all one job of Core's scheduler, which a new pin stops; the line of the pin before goes at once. Where along the
   line the player is (the cut): at every step of the tracker, of the next `Planner.AHEAD` parts of it the first
   within `Planner.SLACK` yards of the nearest, never back on the part they are on; the line drawn from there

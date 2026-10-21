@@ -11,13 +11,17 @@ local _, ns = ...
 --  the way), the openings drawn in a little from their ends so the line does not
 --  graze a wall. Knows no frames.
 --
---      Search.Walk(continent, u1, v1, u2, v2, from, check)   points { u1, v1, ..., u2, v2 } and the cost
---                      in yards, or nil (no data, or no floor near enough); from: the floor the start stands
---                      on ({ key, index }, Walk.Follow's), else every floor under it; check: called between
---                      pieces of the work (in a job of Core's scheduler, its Steps.Check)
+--      Search.Walk(continent, u1, v1, u2, v2, from, check)   points { u1, v1, ..., u2, v2 }, the cost in yards
+--                      and the yards from the walking data to the end (0: on it; more than Search.NEAR: as near as
+--                      one walks, Search.FAR); nil and "off" where the walking data has no floor near the start or the end
+--                      (nothing to search), nil where no way is found (or Search.MOST rectangles were looked at
+--                      first); from: the floor the start stands on ({ key, index }, Walk.Follow's), else every
+--                      floor under it; check: called between pieces of the work (in a job of Core's scheduler,
+--                      its Steps.Check)
 --
---  The start: on its floor (the others under it only where no way leaves that
---  one, Search.ASIDE), or the floors under it and within Walk.ROOF yards,
+--  The start: on its floor (where that is a guess, the others under it too, taken
+--  only where no way leaves that one, Search.ASIDE), or the floors under it and
+--  within Walk.ROOF yards,
 --  each over the lowest at the cost of the climb (none: the nearest within
 --  Search.REACH yards, else within Search.FAR: a gap in the walking data). The end: on a floor of the regions the start is in, under
 --  it or within Search.NEAR yards of it (a pin inside a wall, or where its own
@@ -42,10 +46,11 @@ Search.CLIMB = 0.25     -- each yard up costs so many yards more: the game runs 
                         -- (no slope over 50 degrees is a floor at all), so the shorter way over a hill or a pass is
                         -- taken; of two ways about as long the flatter
 Search.EDGE = 0.8       -- yards an opening is drawn in from its ends
-Search.ASIDE = 500      -- yards more a walk from another floor at the start costs than one from the floor it stands on
-                        -- (where that is known): taken only where no way leaves that one (a roof, a rock's top the
-                        -- start was guessed on, a floor the walking data closes in), and not counted in its cost
+Search.ASIDE = 500      -- yards more a walk from another floor at the start costs than one from the floor it was
+                        -- guessed on: taken only where no way leaves that one (a roof, a rock's top over a street, a
+                        -- floor the walking data closes in), and not counted in its cost
 Search.MOST = 200000    -- rectangles looked at, at most, before a search gives up
+Search.looked = 0       -- rectangles looked at by every search so far (a plan counts its own: Planner.BUDGET)
 Search.EVERY = 64       -- rectangles looked at between two looks at the frame's time
 
 local floor, sqrt = math.floor, math.sqrt
@@ -61,7 +66,8 @@ end
 -- the tram's entrance): those under it and within Walk.ROOF yards (its own may be missing right under it: Ironforge's
 -- floor at the tram's entrance), each at its way there, straight, and the climb from the lowest of them: a place
 -- stands on its lowest floor rather than on the hill or the mountain over it (Ironforge's flight master under the
--- mountain, whose top is the shorter way to Tinker Town). Knowing it: that one, and the others at Search.ASIDE more.
+-- mountain, whose top is the shorter way to Tinker Town). Knowing it: that one; where it is a guess (guess: the
+-- player's, chosen among others, Planner.lua), the others too, at Search.ASIDE more.
 local function Sources(continent, u, v, from)
     local list, own = {}, nil
     local tile = from and Walk.Tile(from[1])
@@ -74,6 +80,7 @@ local function Sources(continent, u, v, from)
             own = Id(tile, from[2])
         end
     end
+    if own and not from.guess then return list, own end
     local first, lowest = #list + 1, nil
     Walk.Around(continent, u, v, Walk.ROOF, function(near, index, nu, nv, gap)
         if Id(near, index) ~= own then
@@ -234,13 +241,14 @@ end
 
 -- The search itself; check() is called every Search.EVERY rectangles (the scheduler's Check, or nothing).
 local function Run(continent, u1, v1, u2, v2, start, check)
-    if not Walk.Ready() then return nil end
+    if not Walk.Ready() then return nil, "off" end
     local sources, own = Sources(continent, u1, v1, start)
-    if #sources == 0 then return nil end
+    if #sources == 0 then return nil, "off" end
     local regions = {}
     for _, source in ipairs(sources) do regions[source[1].region[source[2]]] = true end
     local goals = Goals(continent, u2, v2, regions)
-    if not goals then return nil end
+    -- None of the start's regions near the end: no way, where the end has floors at all near it.
+    if not goals then return nil, not Walk.Nearest(continent, u2, v2, Search.FAR) and "off" or nil end
     local g, from, enterU, enterV, via, tiles, indexes = {}, {}, {}, {}, {}, {}, {}
     local closed, heap, keys = {}, {}, {}
     for _, source in ipairs(sources) do
@@ -258,6 +266,7 @@ local function Run(continent, u1, v1, u2, v2, start, check)
         if not closed[id] then
             closed[id] = true
             seen = seen + 1
+            Search.looked = Search.looked + 1
             if seen > Search.MOST then return nil end
             if check and seen % Search.EVERY == 0 then check() end
             local tile, index = tiles[id], indexes[id]
@@ -314,12 +323,13 @@ local function Run(continent, u1, v1, u2, v2, start, check)
     else
         points[1], points[2] = u1, v1
     end
-    if (goal[3] - u2) ^ 2 + (goal[4] - v2) ^ 2 > 0.25 then
+    local rest = sqrt((goal[3] - u2) ^ 2 + (goal[4] - v2) ^ 2)
+    if rest > 0.5 then
         points[#points + 1], points[#points + 2] = u2, v2
     else
         points[#points - 1], points[#points] = u2, v2
     end
-    return points, cost
+    return points, cost, rest
 end
 
 function Search.Walk(continent, u1, v1, u2, v2, from, check)

@@ -3,8 +3,41 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 502 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 117 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 506 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 121 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: Teldrassil's portal in the routes; a walk not found is none, the journey chosen again (Saneroki, 2026-10-21)
+- **The portals** (Core's set *Travel*, kind `portal`; batch 12 of `sources.toml`, unverified; `dev/tools/travel-data
+  --portals <places> <batch>`, `portals`, `portal_places`): the game's trigger (its `AreaTrigger`: the client's place)
+  and where it brings one (a batch file of our picking); its key 1200000 + the trigger's ID, `path` its two ends with
+  their heights, `length`, `from` and `to` (the map's pins: `Data.Map` makes them, the game's portal icon). Four:
+  Darnassus and Rut'theran Village, Stormwind's Wizard's Sanctum up and down. The two zeppelins to Zephras Isle now
+  name the area of their dock there (Valanaar, 16638, read from the isle's terrain).
+- **In the journey** (`Planner.lua`: `Portals`, `Ends`, `Arrival`): a portal's trigger and where it brings one are
+  places on their floors (`Walk.Landing` within `Planner.ARRIVE`, 20 yards, at their height; with walking data only a
+  portal with a floor at both ends, not yet the Sanctum's, whose rooms the walking data leaves out as small); the way
+  through `Planner.PORTAL` (3) seconds, drawn violet; after a leap to where a portal brings one, the floor followed is
+  its floor there. `Planner.Floor()`: the floor followed.
+- **A walk not found** (`Find`, `Measured`, `Cut`): the journey is chosen again (up to `Planner.TRIES`, 8, while its
+  searches have looked at fewer than `Planner.BUDGET`, 400,000 rectangles) with the walk as none, and where its places
+  share no region every walk between those regions too; between such places a walk that ends only as near as one walks
+  (more than `Search.NEAR` yards off the walking data) is none as well; one with no walking data at an end stays a
+  guess, drawn straight. Before, a walk between regions was taken on its guess and drawn straight where none was found
+  (Teldrassil's top to Moonglade, Rut'theran up to Dolanaar).
+- **No walk after a walk** (`Journey`, `FOOT`, `Place`): a place reached on foot is a node of its own, from which no
+  walk goes on (the walk straight on is a way of its own). Walks through places on the way were joined and searched
+  as one, their parts never measured, so the choice went round (a 12,000-yard swim over the sea in place of the boat).
+- **The search** (`Search.lua`): `Search.Walk` tells the yards from the walking data to the end (its third result) and
+  `"off"` where no floor lies near the start or the end; `Search.looked` counts the rectangles of every search; the
+  other floors under a start only for a guess (`from.guess`: a floor known is the walk's own; a floor over it,
+  Orgrimmar's rim, made an impossible walk look found).
+- **Checked on the real data** (outside the game): the city journeys as before, Teldrassil's through the portal; of
+  200 journeys between NPCs' places, walks drawn straight 21 before these two changes, 10 after: most for one side deep
+  in the other's lands with no ship or flight of its own (a Horde character on Teldrassil), where the budget ends the
+  choosing; Archmage Xylem's tower top, nobody walks onto. A plan's searches 563 ms on average outside the game (312
+  before), the longest 4.2 s (2.2).
+- Tests: Navigation 506 checks (a pin past a portal; the floor after it; a slow portal: the walk between regions not
+  found, the portal taken; the floor known: no other), walking data 121 (a portal's record, its ends, left out).
 
 ### Navigation: the world's middle level at an angle, the instances' from above (Saneroki, 2026-10-21)
 - The world's middle level (the zones' pencil drawings) keeps its perspective angle; an instance's floors are drawn

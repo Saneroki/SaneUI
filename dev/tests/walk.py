@@ -4,8 +4,8 @@ joined into surfaces and rectangles on made-up ground (flat land, a steep speck,
 buildings and doodads placed as the game places them (turned, tilted; a model's collision, a building's doodad sets,
 the object files' placements) and rasterized (a fence, a deck), the openings the game is left to work out and those
 written, regions too small to keep and their order, a flight's path made short, a boat's way (its docks, on the zone
-maps too, its leaps, which way a newer one replaced) and a lift's car (its motion, its ends and rides, its own number
-kept for its place). And dev/tools/terrain-art's open sky around an isle that floats (walk-data reads the terrain with
+maps too, its leaps, which way a newer one replaced), a lift's car (its motion, its ends and rides, its own number
+kept for its place) and a portal (the client's trigger, where a batch says it brings one). And dev/tools/terrain-art's open sky around an isle that floats (walk-data reads the terrain with
 it). Run by dev/tests/run."""
 import base64
 import importlib.machinery
@@ -614,6 +614,21 @@ check("its ends in the world's yards, the lower first with its map, each with it
 check("its ends on the zone maps, for the map's pins", (fields[travel.LIFTS + 4]["from"], fields[travel.LIFTS + 4]["to"]),
       ([1456, -12.9, 1.9], [1456, -12.9, 1.9]))
 check("a car the client does not move as a lift left out, and why", left, [(9, "the client does not move it as a lift")])
+
+# --- A portal: the client's trigger, where the batch says it brings one ------------------------------------
+triggers = {542: {"ContinentID": "1", "Pos[0]": "8799.41", "Pos[1]": "969.787", "Pos[2]": "30.2409"},
+            7: {"ContinentID": "0", "Pos[0]": "1", "Pos[1]": "2", "Pos[2]": "3"}}
+lines, left = travel.portals([(542, 1, 9946.25, 2612.97, 1316.49), (7, 1, 0.0, 0.0, 0.0), (8, 1, 0.0, 0.0, 0.0)],
+                             triggers, Places())
+fields = dict(lines)
+check("a portal's number: PORTALS and the trigger's", [key for key, _ in lines], [travel.PORTALS + 542])
+check("its two ends in the world's yards, the trigger's own first with its map, each with its height; the yards apart",
+      (fields[travel.PORTALS + 542]["path"], fields[travel.PORTALS + 542]["length"]),
+      ([{"x": 8799.41, "y": 969.787, "map": 1, "z": 30.2409}, {"x": 9946.25, "y": 2612.97, "z": 1316.49}], 2381.1))
+check("its ends on the zone maps, for the map's pins", (fields[travel.PORTALS + 542]["from"], fields[travel.PORTALS + 542]["to"]),
+      ([1456, 88.0, 9.7], [1456, 99.5, 26.1]))
+check("a trigger the client has on another continent, or not at all, left out, and why", left,
+      [(7, "the client has it on another continent"), (8, "the client has no such trigger")])
 
 if failed:
     print(f"Walking data: {failed} of {checks} checks failed.")
