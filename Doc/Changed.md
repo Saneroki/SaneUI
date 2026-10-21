@@ -30,7 +30,9 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   dungeon, instance and raid maps get three zooms too: the accurate terrain close up, a clean Blizzard-style
   plan of rooms and corridors in between, a free realistic reimagination zoomed out fully. Indoor maps, painted
   or not, are clear around (never black) and as accurate as the terrain, to lie seamlessly over it. The map
-  selector picks the dungeon maps, opening in their three zooms.
+  selector picks the dungeon maps, opening in their three zooms. Far out: no pins and no names in the paintings
+  (names, level ranges and gathering skills are an overlay with switches), soft zone borders, and the lore's
+  view (Teldrassil's world tree, Ironforge's mountain) where the game's zone is cut open.
 
 ### Navigation: routes from the player, on their floor, over every plane (Saneroki, 2026-10-21)
 - At Saneroki's ask: a route into a building or a cave and out again did not work, routes across the continents by

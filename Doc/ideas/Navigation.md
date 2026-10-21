@@ -114,6 +114,19 @@ minimap) and the full-screen window (the world map) show the same map with the s
   their own views unchanged. Open: the switch-over zoom between the close squares and the zone paintings, and
   how the angled paintings meet at the borders (painted per zone and blended, or each continent painted as a
   whole and cut by the zones' outlines).
+  - **No pins far out (Saneroki, 2026-10-21):** the middle and far zooms show no pins; pins are the close,
+    accurate terrain view's.
+  - **No names in the paintings:** the renders show no text. Names are an interactive overlay drawn by code,
+    each kind its own switch: the zones' names and their major places' names on the zone and continent views;
+    on the world view, per zone, its level range (its enemies and its quests) and the skill it is meant for in
+    fishing, herbalism and mining.
+  - **Soft borders:** a zone's outline follows the game's only in general, never pixel by pixel, with natural
+    transitions into the next: the game's harsh, straight lines and abrupt changes of biome are softened and
+    made realistic.
+  - **Lore over the open map:** where the game's zone is a cut-open view, the far zoom shows what stands there
+    in the lore, while the middle zoom keeps the open view: Teldrassil and Darnassus the world tree itself, not
+    its open crown; Ironforge an imagined open mountain with the city inside in the middle zoom, and the
+    realistic full mountain landscape far out. The same for the other places under the ground or under a roof.
 - **Dungeon, instance and raid maps in three zooms (Saneroki, 2026-10-21), as the world map:**
   - **close up:** the accurate terrain of the instance repainted, as the Atlas' close squares;
   - **in between:** a clean, simple map in Blizzard's style that outlines the rooms, corridors and walls, exact
@@ -383,7 +396,7 @@ and its window guide, and against the data plan.
 | Live minimap dots (tracked herbs and ore, party, town tracking) | Yes, in both views (Saneroki, 2026-10-20: on the full map too, the native minimap around the player at the map's scale) | The engine draws them only on the native minimap, which follows the player at its own zoom steps. |
 | Map follows the player; separate zoom and position per view | Yes | Positions may be hidden in some places (*to try*). |
 | Quest log on the left in full screen | Yes | Our own list; Blizzard's is bound to its map window. |
-| Map selector for regions and dungeons | Yes | No terrain inside dungeons: Blizzard's map art only there. |
+| Map selector for regions and dungeons | Yes | Dungeons in three zooms (*Dungeon, instance and raid maps in three zooms*). |
 | Pin filter dropdown | Yes | None. |
 | Three views, Blizzard maps fitting the terrain | Yes | Painted art is not exact to the yard; the overlay needs each zone cut out. |
 | Our own pin database | Yes | Core's data framework must be built first. |
