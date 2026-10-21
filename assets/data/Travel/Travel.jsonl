@@ -329,3 +329,15 @@
 {"key":2631299,"since":70245,"src":[13],"kind":"portal","from":[1416,12.0,56.2],"to":[1453,49.9,86.7],"side":"alliance","length":9459.7,"path":[{"x":450.656,"y":446.307,"map":0,"z":110.746},{"x":-8999.8,"y":856.45,"z":29.62}]}
 {"key":2654168,"since":70245,"src":[13],"kind":"portal","from":[1453,50.0,87.0],"to":[1416,12.1,56.0],"side":"alliance","length":9467.7,"path":[{"x":-9003.389,"y":853.427,"map":0,"z":29.621},{"x":455.13,"y":444.87,"z":110.75}]}
 {"key":2691558,"since":70245,"src":[13],"kind":"portal","from":[1416,15.0,55.3],"to":[1416,14.5,57.5],"side":"alliance","length":168.7,"path":[{"x":467.357,"y":364.126,"map":0,"z":292.459},{"x":427.19,"y":376.23,"z":129.08}]}
+{"key":3003561,"since":70245,"src":[14],"kind":"teleport","name":"Teleport: Stormwind","side":"alliance","path":[{"x":-9003.46,"y":870.031,"map":0,"z":29.6206}],"spell":3561,"reagent":17031}
+{"key":3003562,"since":70245,"src":[14],"kind":"teleport","name":"Teleport: Ironforge","side":"alliance","path":[{"x":-4613.62,"y":-915.38,"map":0,"z":501.062}],"spell":3562,"reagent":17031}
+{"key":3003563,"since":70245,"src":[14],"kind":"teleport","name":"Teleport: Undercity","side":"horde","path":[{"x":1773.47,"y":61.121,"map":0,"z":-46.3207}],"spell":3563,"reagent":17031}
+{"key":3003565,"since":70245,"src":["game"],"kind":"teleport","name":"Teleport: Darnassus","side":"alliance","spell":3565,"reagent":17031}
+{"key":3003566,"since":70245,"src":[14],"kind":"teleport","name":"Teleport: Thunder Bluff","side":"horde","path":[{"x":-964.98,"y":283.433,"map":1,"z":111.187}],"spell":3566,"reagent":17031}
+{"key":3003567,"since":70245,"src":[14],"kind":"teleport","name":"Teleport: Orgrimmar","side":"horde","path":[{"x":1469.85,"y":-4221.52,"map":1,"z":58.9939}],"spell":3567,"reagent":17031}
+{"key":3018960,"since":70245,"src":[14],"kind":"teleport","name":"Teleport: Moonglade","path":[{"x":7991.88,"y":-2679.84,"map":1,"z":512.1}],"spell":18960}
+{"key":3023442,"since":70245,"src":[14],"kind":"teleport","name":"Everlook Transporter","path":[{"x":6755.33,"y":-4658.09,"map":1,"z":724.8}],"spell":23442,"items":[18984,260820]}
+{"key":3023453,"since":70245,"src":["game"],"kind":"teleport","name":"Gnomish Transporter","spell":23453,"items":[18986,260819]}
+{"key":4269339,"since":70245,"src":["game"],"kind":"teleport","name":"Mount Hyjal Transporter","spell":1269339,"items":[260821,260823]}
+{"key":4297659,"since":70245,"src":["game"],"kind":"teleport","name":"Teleport: Dalaran","side":"alliance","spell":1297659,"reagent":17031}
+{"key":4312670,"since":70245,"src":["game"],"kind":"teleport","name":"Crumbling Hearthstone","spell":1312670,"items":[282006]}

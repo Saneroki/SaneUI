@@ -728,6 +728,10 @@ variable any more).*
 
 ### Learned
 
+*Built ahead (2026-10-21, Data-build 1c.1): `Data.Learn` and the saved variable `SaneUIData_Learned`, learned rows
+laid over the sets and dropped once a set is as new, and the first watcher, where a teleport brought the player
+(`src/Core/Data/Teleports.lua`, for Navigation's routes). The guide, *Learned*, is the reference.*
+
 - The database keeps only what differs from the pack, with the build and the day (`Learn`, inside Core).
   `Get` reads learned facts over the pack's.
 - **While a pack is not loaded** (Saneroki, decision 19) its saved variable does not exist yet, and whatever

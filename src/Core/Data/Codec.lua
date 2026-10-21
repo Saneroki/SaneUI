@@ -2,7 +2,8 @@ local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
 --  Sane UI - Core - Codec
---  A row of a data set into a record (Doc/guides/data.md, *A row*). A row is one string: its build, its
+--  A row of a data set into a record, and a record Core learned in play back into one (Doc/guides/data.md,
+--  *A row*, *Learned*). A row is one string: its build, its
 --  day, then the fields in the order the set's header names them, a tab between them; inside a field,
 --  character 30 between a list's or map's elements and character 31 between an element's parts. Game text
 --  holds none of these, so a row is taken apart with plain finds and nothing is escaped. An empty part is
@@ -129,6 +130,108 @@ function Codec.Decoder(fields, types)
         end
         if column <= 1 then record.gone = true end
         return record
+    end
+end
+
+-------------------------------------------------------------------------------
+--  A record into a row: what Core learns in play (Data.Learn), in the set's own format
+-------------------------------------------------------------------------------
+local format, concat, maxn = string.format, table.concat, table.maxn
+
+-- A number as the compiler writes it: a whole one as it is, any other as %.14g.
+local function Number(value)
+    if type(value) ~= "number" or value ~= value then error("no number: " .. tostring(value)) end
+    if value == math.floor(value) and math.abs(value) < 2 ^ 53 then return format("%.0f", value) end
+    return format("%.14g", value)
+end
+
+-- Text holds none of the row's separators (game text never does).
+local function Clean(value)
+    if type(value) ~= "string" or find(value, "[\t\028\030\031]") then
+        error("no text for a row: " .. tostring(value))
+    end
+    return value
+end
+
+local function Spot(value)
+    return Number(value.map) .. PART .. Number(value.x) .. PART .. Number(value.y)
+end
+
+local ENCODERS = { int = Number, number = Number, text = Clean, point = Spot,
+                   bool = function(value) return value and "1" or "" end }
+
+-- Parts joined by a separator, the empty ones at the end left out.
+local function Joined(parts, separator)
+    local last = #parts
+    while last > 0 and parts[last] == "" do last = last - 1 end
+    return concat(parts, separator, 1, last)
+end
+
+local function ElementEncoder(spec)
+    local tuple = match(spec, "^tuple%((.*)%)$")
+    if not tuple then
+        local encode = ENCODERS[spec]
+        if not encode then error("no such type: " .. tostring(spec)) end
+        return encode
+    end
+    local names, encoders = {}, {}
+    for name, kind in tuple:gmatch("([%w_]+):([%w_]+)") do
+        names[#names + 1], encoders[#encoders + 1] = name, ENCODERS[kind]
+    end
+    return function(value)
+        local parts = {}
+        for index, name in ipairs(names) do
+            local part = value[name]
+            parts[index] = part == nil and "" or encoders[index](part)
+        end
+        return Joined(parts, PART)
+    end
+end
+
+-- The function that writes one field's value as its part of a row (nil: an empty part), from its type in the set's
+-- header: the decoder's (Field) turned round. A list keeps its holes; a map is written in the order of its keys.
+local function FieldEncoder(spec)
+    local of = match(spec, "^list (.+)$")
+    if of then
+        local encode = ElementEncoder(of)
+        return function(list)
+            local parts = {}
+            for index = 1, maxn(list) do parts[index] = list[index] == nil and "" or encode(list[index]) end
+            return concat(parts, LIST)
+        end
+    end
+    local keys, element = match(spec, "^map (%a+) (.+)$")
+    if keys then
+        local encode = ElementEncoder(element)
+        return function(map)
+            local order = {}
+            for key in pairs(map) do order[#order + 1] = key end
+            table.sort(order)
+            local parts = {}
+            for index, key in ipairs(order) do
+                parts[index] = (keys == "int" and Number(key) or Clean(key)) .. PART .. encode(map[key])
+            end
+            return concat(parts, LIST)
+        end
+    end
+    return ElementEncoder(spec)
+end
+
+-- An encoder for the rows of a set: encode(record) gives the fields' part of its row, each behind a tab, those empty
+-- at the end left out (the row is its build and day, then this), so that Decoder reads the same record back. Errors on
+-- a value it cannot write (text with a separator, no number where one belongs) or a type it does not know.
+function Codec.Encoder(fields, types)
+    assert(type(fields) == "table" and type(types) == "table" and #fields == #types, "fields and types do not match")
+    local encoders = {}
+    for index, spec in ipairs(types) do encoders[index] = FieldEncoder(spec) end
+    return function(record)
+        local parts = {}
+        for index, name in ipairs(fields) do
+            local value = record[name]
+            parts[index] = value == nil and "" or encoders[index](value)
+        end
+        local text = Joined(parts, TAB)
+        return text == "" and "" or TAB .. text
     end
 end
 

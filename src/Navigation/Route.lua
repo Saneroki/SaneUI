@@ -23,7 +23,7 @@ local _, ns = ...
 --  TextureCoordTranslation animation from Route.xml, as the game's talent lines
 --  move theirs), so nothing of ours runs every frame for the pulse. A walk is
 --  golden; a flight pale gold; a boat's or zeppelin's way red, as the plan has the
---  ships' routes; the hearthstone's pale blue, straight to its place.
+--  ships' routes; the hearthstone's and the teleports' pale blue, straight to where they bring one.
 -------------------------------------------------------------------------------
 local Coords = ns.Coords
 local Route = {}
@@ -40,7 +40,7 @@ Route.GLINT_PULSE = "SaneUINavigationGlintTemplate"
 Route.COLOURS = {
     walk = { 1, 0.78, 0.25 }, flight = { 1, 0.92, 0.6 },
     boat = { 0.95, 0.3, 0.2 }, zeppelin = { 0.95, 0.3, 0.2 }, tram = { 0.95, 0.3, 0.2 },
-    lift = { 1, 0.78, 0.25 }, portal = { 0.7, 0.5, 1 }, hearth = { 0.6, 0.8, 1 },
+    lift = { 1, 0.78, 0.25 }, portal = { 0.7, 0.5, 1 }, hearth = { 0.6, 0.8, 1 }, teleport = { 0.6, 0.8, 1 },
 }
 
 -- The lines' thickness, at the size the pin filter's slider for the route asks (set at each layout, Place).

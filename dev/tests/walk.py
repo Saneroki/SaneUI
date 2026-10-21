@@ -648,6 +648,41 @@ check("its ends on the zone maps, for the map's pins", (fields[travel.PORTALS + 
 check("a trigger the client has on another continent, or not at all, left out, and why", left,
       [(7, "the client has it on another continent"), (8, "the client has no such trigger")])
 
+# --- A teleport: a class's spell to a place the server holds, or an item's; where a batch says it brings one ------------
+races = {0: "alliance", 1: "horde", 2: "alliance", 4: "horde", 23: None}
+check("a race mask's side: one side's races alone, else none (a race of neither, both sides, every race)",
+      [travel.race_side(0b101, 0, races), travel.race_side(0b10010, 0, races), travel.race_side(0b111, 0, races),
+       travel.race_side(1 << 23 | 1, 0, races), travel.race_side(0, 0, races), travel.race_side(-1, 0, races)],
+      ["alliance", "horde", None, None, None, None])
+with tempfile.TemporaryDirectory() as folder:
+    def write(name, header, rows):
+        with open(Path(folder) / f"{name}.csv", "w", encoding="utf-8") as out:
+            out.write(",".join(header) + "\n" + "".join(",".join(map(str, row)) + "\n" for row in rows))
+
+    write("SpellName", ["ID", "Name_lang"], [(3561, "Teleport: Stormwind"), (556, "Astral Recall"),
+                                              (23453, "Gnomish Transporter"), (777, "Fireball")])
+    write("SpellEffect", ["SpellID", "Effect", "ImplicitTarget[1]"], [(3561, travel.TELEPORT_UNITS, travel.AT_PLACE),
+                                                                    (556, travel.TELEPORT_UNITS, 9), (23453, 3, 0)])
+    write("ChrRaces", ["ID", "PlayableRaceBit", "Alliance"], [(1, 0, 0), (2, 1, 1), (3, 2, 0), (12, -1, 2)])
+    write("SkillLineAbility", ["Spell", "ClassMask", "RaceMasks[0]", "RaceMasks[1]"],
+          [(3561, 128, 0b101, 0), (556, 64, 0, 0), (777, 128, 0, 0)])
+    write("ItemEffect", ["ID", "SpellID"], [(1, 23453), (2, 23453), (3, 777)])
+    write("ItemXItemEffect", ["ItemEffectID", "ItemID"], [(1, 260819), (2, 999999), (1, 18986), (3, 5)])
+    write("ItemSparse", ["ID"], [(18986,), (260819,), (5,)])
+    write("SpellReagents", ["SpellID", "Reagent[0]"], [(3561, 17031), (23453, 0)])
+    lines, left = travel.teleports(Path(folder), {3561: (0, -9003.46, 870.031, 29.6206), 777: (1, 0.0, 0.0, 0.0)})
+check("the teleports: a class's spell to a place the server holds (not one home, Astral Recall's), and an item's "
+      "of ITEM_TELEPORTS; each its number, TELEPORTS and the spell's", [key for key, _ in lines],
+      [travel.TELEPORTS + 3561, travel.TELEPORTS + 23453])
+fields = dict(lines)
+check("a class's: its name, spell, side (its races'), reagent, and where the batch says it brings one",
+      fields[travel.TELEPORTS + 3561], {"kind": "teleport", "spell": 3561, "name": "Teleport: Stormwind", "side": "alliance",
+                                        "reagent": 17031, "path": [{"x": -9003.46, "y": 870.031, "map": 0, "z": 29.6206}]})
+check("an item's: the items of the client that cast it, no side, no reagent, nowhere known yet",
+      fields[travel.TELEPORTS + 23453], {"kind": "teleport", "spell": 23453, "name": "Gnomish Transporter",
+                                         "items": [18986, 260819]})
+check("a place for a spell the client has as no teleport: left out, and why", left, [(777, "the client has it as no teleport")])
+
 if failed:
     print(f"Walking data: {failed} of {checks} checks failed.")
     sys.exit(1)

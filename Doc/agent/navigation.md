@@ -237,9 +237,19 @@ the flight masters near its docks; batch 13: Forever's portal objects, Stormwind
 and the sides its servers' NPCs show, Dalaran's airship the Alliance's). Forever's ways against Classic's: the plan,
 *The planner*, *Forever's own ways*. Left: the walking data's one-way openings (its tool, small islands).
 
+The teleports a character has (2026-10-21; the plan, *Built: the teleports a character has, and Frequent Flier*):
+Core's set *Travel*, kind `teleport` (key 3000000 + the spell; fields `spell`, `items`, `reagent`; `dev/tools/
+travel-data --teleports`): the class teleports of Forever's client (mage, druid) and the engineers' transporters and
+the Crumbling Hearthstone; where they bring one from batch 14 (seven, unverified) or learnt in play by Core
+(`src/Core/Data/Teleports.lua`, a watcher: the leap after the cast; kept by `Data.Learn` in `SaneUIData_Learned`,
+the first piece of the data plan's learned data, 1c.1, built ahead). `Planner.lua`: `Teleports` (known spell and
+reagent, or an item held that `C_Item.IsUsableItem` allows; its cooldown and `Planner.HEARTH`; its floor by
+`Walk.Landing`, `landings`, and `Arrival` after the leap), `Hearth` with Astral Recall (`Planner.RECALL`), Frequent
+Flier's faster flights (`Planner.Pace`, `Planner.FASTER`). The routes harness has `teleports.lua` for them.
+
 Not yet: a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
 minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
-checks; 508 with the 2026-10-21 changes), `dev/tests/walk.py` (125).
+checks; 524 with the 2026-10-21 changes), `dev/tests/walk.py` (125; 130 with the teleports' tool).
 
 ## What is not there yet
 

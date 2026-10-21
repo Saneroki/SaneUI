@@ -4,7 +4,7 @@
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
-## SavedVariables: SaneUIDB, SaneUIData_Characters, SaneUIData_Guild
+## SavedVariables: SaneUIDB, SaneUIData_Characters, SaneUIData_Guild, SaneUIData_Learned
 ## SavedVariablesPerCharacter: SaneUICharDB
 ## IconTexture: Interface\Icons\INV_Misc_Gear_01
 ## AddonCompartmentFunc: SaneUI_OnAddonCompartmentClick
@@ -55,7 +55,7 @@ Demo.lua
 # The data framework: Sane UI's own databases, and the scheduler that does their long work in steps, a few
 # milliseconds a frame (Doc/guides/data.md). The sets themselves (Sets\<Set>.lua) are made by dev/tools/data
 # from the master in assets/data and listed at the end of this file in the build; what Core keeps of the data
-# in the game is in the saved variables SaneUIData_<Name> (Data.SAVED)
+# in the game is in the saved variables SaneUIData_<Name> (Data.SAVED), what it learns in play in SaneUIData_Learned
 Data\Steps.lua
 Data\Codec.lua
 Data\Data.lua
@@ -65,6 +65,8 @@ Data\Map.lua
 Data\Ships.lua
 # The trip the player is on: a flight, a boat or zeppelin, the tram; its stops, how far along, how long (Data.Trips)
 Data\Trips.lua
+# Where the teleports of the set Travel bring one, learnt where one brought the player (Data.Learn)
+Data\Teleports.lua
 # What each of the account's characters has (bags, bank, worn), kept in the saved variable SaneUIData_Characters
 Data\Characters.lua
 # Sane UI's addon messages: the prefix, messages and blocks, a queue that keeps to the game's budget, the inbox (Core.Wire)

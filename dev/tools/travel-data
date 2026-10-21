@@ -42,6 +42,14 @@ staging for Core's set Travel (pack World): the ways Navigation's route planner 
                   from one end: its motion once round) and from and to (its lower and upper end on the zone maps,
                   each placed by map-data's Placer, for the map's pins); its key our own number, from LIFTS + 1 on,
                   that of the master's lift whose lower end lies within HERE yards where there is one
+    a teleport    with --teleports (below): a spell that brings who casts it to a place the server holds: every class's
+                  (a spell a class learns, SkillLineAbility, whose effect is TELEPORT_UNITS to such a place, AT_PLACE:
+                  the mage's to the capitals and Dalaran, the druid's to Moonglade) and those of ITEM_TELEPORTS, cast
+                  by an item: kind teleport, name (the spell's), spell, side (alliance or horde where its race mask
+                  names that side's races alone: ChrRaces), reagent (an item its cast uses up: SpellReagents), items
+                  (the items that cast it, ItemEffect: none for a spell one knows), path (where it brings one, one
+                  point in the world's yards with its map and z, where a batch says it); its key our own number,
+                  TELEPORTS + the spell's ID
 
 On a path a point on a straight run, within STRAIGHT yards of the line between its neighbours, is left out (never a
 dock or a leap). The game's tables hold neither a transport's speed nor its timetable: the planner estimates them
@@ -59,17 +67,24 @@ picking, a CSV file with a line per portal (trigger, continent, x, y, z: the gam
 one, in the world's yards), and writes its portals as that batch's lines; a trigger the client does not have, or has on
 another continent, is left out.
 
+Nor where a teleport brings one (the server's spell_target table): --teleports <places> <batch> writes every teleport
+of the client, and takes where some bring one from a batch of our picking, a CSV file with a line per spell (spell,
+continent, x, y, z, in the world's yards): those are that batch's lines, the others the game's, without a path (where
+they bring one is learnt in play, Doc/ideas/Data.md, learned data). A spell the client has as no teleport is left out.
+
 Left out: flights between flight points of no side (the game's own, not a flight master's); paths that stop at
 fewer than two docks (a moving thing, no way between places); and a transport whose every dock is one of another
 transport with more docks (or, with the same ones, a newer ID): the older way the newer one replaced. Two stops
 within SAME yards on one map are one dock.
 
 The input, of the build BUILD: a folder of the game's client tables as CSV (TaxiNodes, TaxiPath, TaxiPathNode,
-AreaTrigger, Map and TransportAnimation for the tram and the lifts, and
+AreaTrigger, Map and TransportAnimation for the tram and the lifts, SpellName, SpellEffect, SpellReagents,
+SkillLineAbility, ChrRaces, ItemEffect, ItemXItemEffect and ItemSparse for the teleports, and
 for placing the docks those map-data reads: AreaTable, UiMap, UiMapAssignment, WMOAreaTable), and its terrain files
 as map-data takes them.
 
 Usage:  dev/tools/travel-data <client tables> <terrain> [--lifts <places> <batch>] [--portals <places> <batch>]
+            [--teleports <places> <batch>]
 """
 import csv
 import json
@@ -96,6 +111,13 @@ RISE = 10.0  # yards a lift rises at least (a door the game moves so rises less)
 ALLIANCE, HORDE = 0x1, 0x2  # the flight points' sides in TaxiNodes' Flags
 DOCKSIDE = 600.0  # yards from a dock within which one side's flight masters alone make it that side's town
 TELEPORT, STOP = 0x1, 0x2  # TaxiPathNode's Flags: the transport leaps after this point; it stops here
+TELEPORTS = 3000000  # our own numbers of the teleports: TELEPORTS + the spell's ID (the portal objects' lie below)
+TELEPORT_UNITS, AT_PLACE = 252, 17  # SpellEffect: the effect that moves one elsewhere; its target, a place the server holds
+# The spells of the items that bring one to a town of the world: the engineers' transporters to Everlook, Gadgetzan and
+# Mount Hyjal, the Crumbling Hearthstone. Most are the server's own (a script: a dummy effect in the client), so they are
+# named here; the items that cast them are the client's. Not the one that moves one a few yards (Tinker: Teleport).
+ITEM_TELEPORTS = (23442, 23453, 1269339, 1312670)
+SIDES = {"0": "alliance", "1": "horde"}  # ChrRaces' Alliance column: the side of a race (2: neither)
 
 
 def table(folder, name):
@@ -411,6 +433,66 @@ def portals(rows, triggers, placer=None):
     return lines, left
 
 
+def race_side(low, high, races):
+    """The side of a race mask (SkillLineAbility's RaceMasks: its two halves of 32 bits, the low first): alliance or
+    horde where every race it names is that side's (races: {the race's bit: its side, None for neither}); None for a
+    mask of none, of both sides' races, or of one of neither."""
+    mask = (int(low) & 0xFFFFFFFF) | (int(high) & 0xFFFFFFFF) << 32
+    named = {side for bit, side in races.items() if mask >> bit & 1}
+    return named.pop() if len(named) == 1 and None not in named else None
+
+
+def teleports(folder, places=None):
+    """The teleports' lines: [(key, fields)], in the order of their spells, each a spell that brings who casts it to a
+    place the server holds: every class's (a spell a class learns whose effect is TELEPORT_UNITS to AT_PLACE) and those
+    of ITEM_TELEPORTS with the items that cast them; where it brings one from a batch's places ({spell: (continent, x,
+    y, z)}). And the spells of places left out, with why ([(spell, why)])."""
+    names = {int(row["ID"]): row["Name_lang"] for row in table(folder, "SpellName")}
+    moves = {int(row["SpellID"]) for row in table(folder, "SpellEffect")
+             if int(row["Effect"]) == TELEPORT_UNITS and int(row["ImplicitTarget[1]"]) == AT_PLACE}
+    races = {int(row["PlayableRaceBit"]): SIDES.get(row["Alliance"]) for row in table(folder, "ChrRaces")
+             if int(row["PlayableRaceBit"]) >= 0}
+    found = {}
+
+    def way(spell):
+        if spell not in found:
+            found[spell] = {"kind": "teleport", "spell": spell}
+            if names.get(spell):
+                found[spell]["name"] = names[spell]
+        return found[spell]
+
+    for row in table(folder, "SkillLineAbility"):
+        spell = int(row["Spell"])
+        if int(row["ClassMask"]) and spell in moves:
+            fields, sided = way(spell), race_side(row["RaceMasks[0]"], row["RaceMasks[1]"], races)
+            if sided:
+                fields["side"] = sided
+    effects = {int(row["ID"]): int(row["SpellID"]) for row in table(folder, "ItemEffect")}
+    items = {int(row["ID"]) for row in table(folder, "ItemSparse")}
+    for row in table(folder, "ItemXItemEffect"):
+        spell, item = effects.get(int(row["ItemEffectID"])), int(row["ItemID"])
+        if spell in ITEM_TELEPORTS and item in items:
+            fields = way(spell)
+            fields["items"] = sorted(set(fields.get("items", [])) | {item})
+    for row in table(folder, "SpellReagents"):
+        spell = int(row["SpellID"])
+        if spell in found and int(row["Reagent[0]"]) > 0:
+            found[spell]["reagent"] = int(row["Reagent[0]"])
+    left = []
+    for spell, (continent, x, y, z) in sorted((places or {}).items()):
+        if spell not in found:
+            left.append((spell, "the client has it as no teleport"))
+        else:
+            found[spell]["path"] = [{"x": x, "y": y, "map": continent, "z": z}]
+    return [(TELEPORTS + spell, found[spell]) for spell in sorted(found)], left
+
+
+def teleport_places(path):
+    """Where a batch's teleports bring one: {spell: (continent, x, y, z)}."""
+    return {int(row["spell"]): (int(row["continent"]), float(row["x"]), float(row["y"]), float(row["z"]))
+            for row in csv.DictReader(open(path, encoding="utf-8"))}
+
+
 def portal_places(path):
     """The portals of a batch's places file: [(trigger, continent, x, y, z)], in the file's order."""
     return [(int(row["trigger"]), int(row["continent"]), float(row["x"]), float(row["y"]), float(row["z"]))
@@ -426,7 +508,7 @@ def lift_places(path):
 def main():
     args = sys.argv[1:]
     batches = {}
-    for option in ("--lifts", "--portals"):
+    for option in ("--lifts", "--portals", "--teleports"):
         if option in args:
             at = args.index(option)
             if len(args) < at + 3 or not args[at + 2].isdigit():
@@ -485,6 +567,14 @@ def main():
         lines += found
         sources.update({key: batch for key, _ in found})
         gates = len(found)
+    spells = []
+    if "--teleports" in batches:
+        places, batch = batches["--teleports"]
+        spells, dropped = teleports(folder, teleport_places(places))
+        for spell, why in dropped:
+            print(f"left out: where the spell {spell} brings one: {why}")
+        lines += spells
+        sources.update({key: batch for key, fields in spells if "path" in fields})
     lines.sort(key=lambda line: line[0])
     STAGING.parent.mkdir(parents=True, exist_ok=True)
     with open(STAGING, "w", encoding="utf-8") as out:
@@ -495,10 +585,11 @@ def main():
     ships = sum(1 for _, fields in lines if fields["kind"] in ("boat", "zeppelin"))
     placed = sum(len(fields.get("docks", ())) for _, fields in lines)
     flights = sum(1 for _, fields in lines if fields["kind"] == "flight")
+    landed = sum(1 for _, fields in spells if "path" in fields)
     print(f"Wrote {STAGING.relative_to(ROOT)}: {flights} flights, {ships} boats and zeppelins, "
-          f"{'the tram' if trams else 'no tram'}, with {placed} docks on the zone maps, {len(sources) - gates} lifts, "
-          f"{gates} portals "
-          f"({left} ways left out; replaced: {', '.join(map(str, sorted(gone))) or 'none'}).")
+          f"{'the tram' if trams else 'no tram'}, with {placed} docks on the zone maps, "
+          f"{len(sources) - gates - landed} lifts, {gates} portals, {len(spells)} teleports ({landed} with where they "
+          f"bring one) ({left} ways left out; replaced: {', '.join(map(str, sorted(gone))) or 'none'}).")
     return 0
 
 

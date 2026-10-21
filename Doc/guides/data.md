@@ -357,8 +357,8 @@ Sets\Auras.lua
 - What follows that line is the compiler's: a compile replaces it. `src/Core/SaneUI.toc` itself lists no
   set file.
 - **The data's saved variables** are Core's too, declared in its TOC: `## SavedVariables: SaneUIDB,
-  SaneUIData_Characters, SaneUIData_Guild` (*Saved variables*); `Data.SAVED` names them, and `dev/tests/lint`
-  fails when the TOC lacks one.
+  SaneUIData_Characters, SaneUIData_Guild, SaneUIData_Learned` (*Saved variables*); `Data.SAVED` names them, and
+  `dev/tests/lint` fails when the TOC lacks one.
 
 ### A set's file
 
@@ -435,7 +435,7 @@ local Items = Data.Set("Items")     -- a handle: cheap, never nil; one per name
 | `Items:Changes(key)` | An array, oldest first, of `{ since, day, patch, field, from, to }`, one per field that changed, in the set's order of the fields (an entry gone: `field = "gone"`, `from = false`, `to = true`; back again the other way round). An empty array for an entry that never changed. |
 | `Items:Keys(index, value)` | An array of keys from the entries' newest versions (`replaces`, `replacedBy` too); an empty one when none. |
 | `Items:Each(fn, done)` | A job: `fn(key, record)` for every entry the client has (gone ones left out), out of combat, within the budget; then `done(problem)`: nil after the last entry, the error's text when `fn` failed (the walk stops there; noted under one label per set, `data job Each Items`). Gives the job's handle (`:Stop()`); false when the set is not there. |
-| `Items:Stamp()` | A number that moves when the set arrives, and later when learned or accepted data changes it. |
+| `Items:Stamp()` | A number that moves when the set arrives, when Core learned an entry of it in play (*Learned*), and later when accepted data changes it. |
 | `Items:OnStamp(fn)` | `fn(handle)` on the frame after the stamp moved, never inside the set's file (a listener may start a job, or run `Steps.Check`): a view redraws then, instead of looking every frame. A `fn` given twice is told once; its failure is noted as `data: Items listener`. |
 | `Items:OffStamp(fn)` | Stops telling `fn`: one given to `OnStamp`, or one waiting in `WhenReady`. |
 | `Data.WhenReady(Items, fn)` | `fn(handle)` once the set (its handle or its name) is ready: at once if it is, in the caller's own call; else on the frame after it arrived, once. As a rule a set is there before any module asks. |
@@ -555,6 +555,36 @@ A trip's `pace` (yards a second) and `t` (the `GetTime()` of Core's look) let a 
   there: the flight master's hooks and the looks, every `Trips.LOOK` seconds, every `Trips.CLOSE` on a trip or in
   the tram's map. Before, nothing. A kept flight, pace or tram time of the wrong shape is none.
 
+### Learned (`Data.Learn`) *(built ahead of 1c.1, 2026-10-21, for Navigation's teleports)*
+
+What the game showed in play that a set does not hold yet: a game fact (*Game facts and personal data*), the same
+for every player, kept until a release takes it in.
+
+```lua
+Data.Learn("Travel", 4297659, record)   -- Core's watchers only: record, the set's own with what the game showed put in
+```
+
+- **Only Core learns** (its watchers); a module reads the sets as ever, and `Get` gives the learned entry. False
+  when it cannot be kept: the set not ready, Core's saved variables not read yet, a value its fields cannot hold
+  (text with a separator, no number where one belongs), no field at all.
+- **A whole row** in the set's format (`Codec.Encoder`, the decoder turned round), of the client's build and the
+  server's day, in `SaneUIData_Learned[game].learned[set][key]`: no merging of fields.
+- **Read over the set's own** at once (its stamp moves, its listeners are told on the next frame): the set's newest
+  version goes into the entry's history, the learned one is its newest (learnt again, it takes the last one's place).
+  At the login, laid over the sets once Core's saved variables are read.
+- **Dropped once the set is as new:** at the login a learned row is dropped when the set has a version of that entry
+  at its build and day or later, whether it agrees or not (the release has seen that build and decided), and so is
+  one that is no row. So a wrong learned fact cannot stand over the sets for ever.
+- **Not yet** (1c.1, 1c.3, 1f): confirmations (a cast that agrees teaches nothing new and is not kept), the harvest
+  into the master and sharing with the guild. An entry learnt that the set does not have is read by `Get`, but no
+  index lists it.
+- **The teleports' watcher** (`Data/Teleports.lua`): after the player cast the spell of a teleport of *Travel*
+  (`UNIT_SPELLCAST_SUCCEEDED`; an item's, the spell it casts), the player's place in the world is looked at every
+  `Teleports.LOOK` seconds and after a loading screen, for `Teleports.WAIT` seconds; a leap of `Teleports.LEAP`
+  yards between two looks, or onto another map, is the teleport (no step, charge or blink goes so far so fast), and
+  where it ends, to a hundredth of a yard with its map (no height), the way's path, learnt; within `Teleports.SAME`
+  yards of the set's place, nothing (its numbers: `Data.Teleports`).
+
 ### Loading
 
 - **Every set is read with Core,** at the login, in the loading screen: its file is one of Core's
@@ -628,19 +658,19 @@ Steps.Run({ name = "Scan", priority = true, label = "Market: the scan",
   within a call of the job's: what an event tells is told after the job, on the next frame (`OnStamp`).
 - Its frame is shown only while there is work: no `OnUpdate` at rest.
 
-## Saved variables *(1c; built so far: the data's saved variables, their parts, `format` and `broken`)*
+## Saved variables *(1c; built so far: the data's saved variables, their parts, `format` and `broken`; `learned`)*
 
 - **All in Core's saved file:** `SaneUIDB` and the data's own, `SaneUIData_<Name>` (`Data.SAVED`:
-  Characters, Guild; later the series and what is learned), are declared in Core's TOC, so the game writes
+  Characters, Guild, Learned; later the series), are declared in Core's TOC, so the game writes
   them all into one file, `WTF/Account/<account>/SavedVariables/SaneUI.lua`.
 - **Keyed by game version first:** `SaneUIDB.data["forever"]`, `SaneUIData_Characters["forever-beta"]`. Core
   uses only its client's key; the others (a copied `WTF`) are left as they are.
 - **Core's** (`SaneUIDB.data[game]`) *(1c)*: `format` (1); `checked` (`[set] = build`, the patch check);
   `crawl` (`[kind] = place`).
 - **A saved variable of the data** (`SaneUIData_<Name>[game]`): `format` (1); `broken` (parts of a wrong
-  shape, kept for the harvest); and what it holds: the characters, the guilds' records; *(1c)* `learned`
-  (`[set][key] = row`, a whole row in the set's format) and the series (the prices per auction house,
-  `houses["eu/1234/horde"]`), the drop counts.
+  shape, kept for the harvest); and what it holds: the characters, the guilds' records, `learned`
+  (`SaneUIData_Learned`: `[set][key] = row`, a whole row in the set's format, *Learned*); *(1c)* the series (the
+  prices per auction house, `houses["eu/1234/horde"]`), the drop counts.
 - **Packed strings, never tables of tables,** for anything that grows (rows, a series' months, a bag), and
   at most 100,000 values **for Core's saved file as a whole:** Lua 5.1 stops at 262,143 constants in one
   function, the game reads the file as one, and a file over it loads as nothing (every saved variable in
@@ -844,8 +874,10 @@ unique on its realm (`Thrall-Draenor`).
   set files run, refused (a wrong format, another game version, a client that cannot be told) or missing;
   frozen records; the answers on a sample with history (`History`, `At`, `Versions`, `Changes`, `Keys`,
   `Each`), also from a set newer than the client; listeners told after the file, `WhenReady`, `OffStamp`;
-  the data's saved variables (`Data.Saved`); the scheduler's budget, pauses (by a restriction's own event),
-  guards, handles (`Stop`, `done`, `error`, `label`) and priority.
+  the data's saved variables (`Data.Saved`); the codec the other way round (`Codec.Encoder`) and what is learned
+  (`Data.Learn`: laid over a set at the login, dropped once the set is as new, learnt anew; the teleports' watcher);
+  the scheduler's budget, pauses (by a restriction's own event), guards, handles (`Stop`, `done`, `error`, `label`)
+  and priority.
 - **Nothing hostile raises an error:** a broken row, a broken saved file or message is dropped or set aside.
 - **Players by their key** (`dev/tests/core.lua`): a whole name with or without a realm is one key, the same
   first name or surname two players, a first name alone none; Retail's `Name-Realm`. Steps 1c and 1f test

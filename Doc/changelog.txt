@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: routes use the teleports your character has: a mage's
+  to the capitals and Dalaran, a druid's to Moonglade, an engineer's
+  transporters, the Crumbling Hearthstone, and a shaman's Astral Recall
+  home. Where a teleport brings you the map learns the first time it
+  does. With the Legacy perk Frequent Flier, routes know your flights
+  are faster.
 - Navigation: routes to Zephras Isle take your own side's airship:
   the Alliance's from Dalaran, the Horde's from Mulgore. Forever's
   portals between Stormwind and Dalaran show on the map.

@@ -1,12 +1,13 @@
 set = "Travel"
 key = "int"              # the game's TaxiPath ID of a flight, a boat or a zeppelin; our own number for a way the game has no path for
                          # (the tram 1000369; a lift's car from 1100001 on, kept for a car at the same place; a portal 1200000 + its
-                         # area trigger's ID: dev/tools/travel-data; a portal object 2000000 + its game object's entry: batch 13)
-learn = true             # the flight master's watcher: flights and their costs
-about = "The ways to travel other than on foot: boats, zeppelins, trams, lifts, portals and flights, with their times."
+                         # area trigger's ID: dev/tools/travel-data; a portal object 2000000 + its game object's entry: batch 13; a
+                         # teleport 3000000 + its spell's ID: dev/tools/travel-data)
+learn = true             # the flight master's watcher: flights and their costs; Core's teleports: where each brought one
+about = "The ways to travel other than on foot: boats, zeppelins, trams, lifts, portals, teleports and flights, with their times."
 
 [fields]
-kind     = { type = "enum", values = ["boat", "zeppelin", "tram", "lift", "portal", "flight"] }
+kind     = { type = "enum", values = ["boat", "zeppelin", "tram", "lift", "portal", "flight", "teleport"] }
 name     = { type = "text" }
 from     = { type = "point" }
 to       = { type = "point" }
@@ -31,7 +32,8 @@ length   = { type = "number", min = 0 }      # yards along its way, from the gam
 # its car's two ends, the lower first with its map, each with z, its height: where the car stands at the start of its
 # motion, moved by the game's TransportAnimation to its lowest and its highest (from and to: the two on the zone maps).
 # A portal's is the game's area trigger one steps into (or the portal object one uses), with its map, then where it
-# brings one, each with z (from and to: the two on the zone maps).
+# brings one, each with z (from and to: the two on the zone maps). A teleport's is where it brings one, with its map
+# (and z where known): none while that is not known.
 path     = { type = "list", of = "tuple", parts = [
     { name = "x", type = "number" },
     { name = "y", type = "number" },
@@ -46,6 +48,11 @@ path     = { type = "list", of = "tuple", parts = [
 # the game's area each lies in (its AreaTable ID, as the terrain or a building there gives it; 0: none), which names it.
 docks     = { type = "list", of = "point" }
 dockAreas = { type = "list", of = "int", min = 0 }
+# A teleport: the spell that brings one there (the one the game names when it is cast; an item's, the spell it casts),
+# the items that cast it (none: a spell one knows) and the item its cast uses up (a reagent).
+spell     = { type = "int", min = 1 }
+items     = { type = "list", of = "ref", set = "Items" }
+reagent   = { type = "ref", set = "Items" }
 
 [index]
 byKind     = "kind"

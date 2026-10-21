@@ -1,6 +1,6 @@
 # Sane UI: Navigation
 
-**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot, by flight, by boat and zeppelin, by the Deeprun Tram, by lift and by the hearthstone; the leveling guide comes later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
+**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot, by flight, by boat and zeppelin, by the Deeprun Tram, by lift, by the hearthstone and by the teleports a character has; the leveling guide comes later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 Sane UI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
@@ -124,14 +124,21 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   into and out of caves, buildings and the cities in the mountains, on the floor you are on (a cave under a hill, a
   city in a mountain, a building's storeys), and by the flights your character has found where that is quicker:
   only those, as the game tells them at a flight master (it tells them once you have opened one, each session;
-  until your first, the ones found before; a flight over many flight points is one, taking off once). The
+  until your first, the ones found before; a flight over many flight points is one, taking off once; with the Legacy
+  perk *Frequent Flier* the flights count 20 % faster). The
   line always begins at your arrow: as you go, what lies behind you is gone, a short line runs from you to it, and
   leave it and it is planned again. A pin on another continent or on Zephras Isle is reached by boat or zeppelin,
   over as many seas as it takes (by way of the other continent, or the hearthstone home first, where that is
   quickest), your side's or both sides' (not the other side's harbours and zeppelin towers), the line red from pier
   to pier; between Stormwind and Ironforge the Deeprun Tram is taken where it is
   quicker, the line red from one city's entrance to it to the other's; and the hearthstone is taken where it is
-  quickest (the map learns its place where you bind it, or the first time you use it). Thunder Bluff's mesa and the
+  quickest (the map learns its place where you bind it, or the first time you use it; a shaman's Astral Recall
+  brings you there too). So are the teleports your character has, the line pale blue to where each brings you, then
+  on foot: a mage's to the capitals and Dalaran (with a Rune of Teleportation in the bags), a druid's to Moonglade, an
+  engineer's transporters to Gadgetzan, Everlook and Mount Hyjal and the Crumbling Hearthstone (while in the bags,
+  usable and not cooling down). Where one brings you the map knows from the original game (not yet confirmed by the
+  game) or learns the first time it brings a character of yours there (the Dalaran, Darnassus and Mount Hyjal
+  teleports, the Gnomish Transporter and the Crumbling Hearthstone until then are no way). Thunder Bluff's mesa and the
   Undercity are reached by their lifts, and the Great Lift is taken where it is quicker: on foot to the lift, up or
   down it, on foot on (and out again the same way); a pin over the Undercity is taken to be in the city (a pin put on
   Tirisfal Glades' map there, on the ruins). Darnassus and Rut'theran Village are reached through Teldrassil's portal
@@ -375,14 +382,22 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   plane, `Planner.APART` seconds more between two that share no region of the walking
   data (a place's: those of the floors under it and within `Planner.REGION` yards), the flights of Core's set
   *Travel* the player's side may take (a flight point twice, on the ground and in the air, so a flight over many
-  takes off and lands once, `Planner.BOARD`, and is one leg), the boats and zeppelins of
+  takes off and lands once, `Planner.BOARD`, and is one leg; at `Planner.FLY` yards a second, `Planner.FASTER` times
+  that with the Legacy perk Frequent Flier: `Planner.Pace`, its spell known or its aura on the character), the boats
+  and zeppelins of
   *Travel* from dock to dock and its tram from entrance to entrance, those of the player's side or of both (*Travel*'s
   `side`: their towns', by the flight masters near their docks) (all from the game's tables, by
   `dev/tools/travel-data`), its portals (the game's area triggers, and its portal objects one uses: batch 13, their
   places as Forever's servers sent them) from their trigger to where they bring one, those of the player's side or
   of both (`Planner.PORTAL` seconds; with
   walking data only one with a floor at both ends, within `Planner.ARRIVE` yards at their height), the hearthstone
-  from the player; the quickest chosen (Dijkstra; a place reached on foot is a node of its own, from which no walk
+  from the player (its cooldown, or Astral Recall's, `Planner.RECALL`, whichever is sooner), the teleports this
+  character has from the player to where each brings one (`Teleports`: Core's set *Travel*, kind `teleport`, of the
+  player's side or of both; a spell it knows, `C_SpellBook.IsSpellKnown`, with its reagent in the bags, or one of its
+  items in the bags that the game lets it use, `C_Item.IsUsableItem`; its cooldown, `C_Spell.GetSpellCooldown` or
+  `C_Item.GetItemCooldown`, and `Planner.HEARTH`; where it brings one on its floor where its height is known,
+  `Walk.Landing` within `Planner.ARRIVE` yards, else like the hearthstone's place; after the leap the floor followed
+  is that one); the quickest chosen (Dijkstra; a place reached on foot is a node of its own, from which no walk
   goes on: the walk straight on is a way of its own), the walks then searched
   (the first from the floor the player stands on: followed every `Planner.FOOT` seconds while there is a pin,
   `Walk.Follow`, else chosen, `Walk.Floor`, and chosen anew after a leap of `Planner.LEAP` yards between two looks,
@@ -434,8 +449,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   once a flight master was opened this session); kept per character as `flightPoints` (the older `flights` held every
   point a flight master listed, found or not, and goes), `Planner.Knows`; only those are flown, and the map's pins of
   the others are red (`Pins.lua`); a pin set before is planned again when they changed. The hearthstone's place is
-  learnt where it is bound (`HEARTHSTONE_BOUND`) or where it brought the character, kept per character; the hearthstone counts while it is in the bags and bound there (`GetBindLocation`), its
-  cooldown as a wait. Without walking data, straight lines. On a flight (Core's `Data.Trips`) its way on is the
+  learnt where it is bound (`HEARTHSTONE_BOUND`) or where it (or Astral Recall) brought the character, kept per character; the hearthstone counts while it is in the bags and bound there (`GetBindLocation`), its
+  cooldown as a wait. Where a teleport brings one is the set's: the original game's (batch 14, unverified) or where
+  one brought a character, learnt by Core (`src/Core/Data/Teleports.lua`, Core's learned data); the plan is made
+  again when Core learnt one (*Travel*'s stamp). Without walking data, straight lines. On a flight (Core's `Data.Trips`) its way on is the
   line's first leg, drawn anew from the player every `Planner.AGAIN` seconds, the plan from where it lands after
   it; without a pin that leg alone.
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
@@ -511,7 +528,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings; the floor a walker stands on, followed or chosen. No frames |
 | `Search.lua` | A walk between two points over the walking data, from the floor the start stands on to a floor at the end. No frames |
 | `Lifts.lua` | The lifts of Core's set *Travel* on the walking data: each end at its landing, the levels they join (stacked or side by side), where a place stands among them. No frames |
-| `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by lift, by the hearthstone; where along it the player is. No frames |
+| `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by lift, by the hearthstone, by the teleports it has; where along it the player is. No frames |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
 | `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, zoomed and dragged |
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
@@ -538,6 +555,14 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-21, the teleports a character has; Frequent Flier:** routes take the teleports the character has where
+  they are quicker, from where it stands to where each brings it (`Teleports`, Core's set *Travel*, kind `teleport`:
+  the mage's to the capitals and Dalaran, the druid's to Moonglade, the engineers' transporters, the Crumbling
+  Hearthstone; a spell known with its reagent, or an item held that the game lets the character use; its cooldown
+  and `Planner.HEARTH`), drawn pale blue like the hearthstone's; Astral Recall brings the character to the
+  hearthstone's place too (`Planner.RECALL`). Where a teleport brings one: the original game's for seven of them
+  (batch 14, unverified), else learnt by Core where one brought a character (`src/Core/Data/Teleports.lua`). With the
+  Legacy perk Frequent Flier the flights count 20 % faster (`Planner.Pace`, `Planner.FASTER`).
 - **2026-10-21, the ground as the game draws it; water in buildings; indoors on a building's floor:** the walking
   data judges the ground by the game's own triangles (it smoothed the heights, so walks went up Ironforge's mountain
   and into the ground under Stormwind), so a hill or a pass a player walks up is taken where it is shorter

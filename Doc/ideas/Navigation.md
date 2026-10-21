@@ -7,7 +7,8 @@ zones that light up and open by a click, the map moving with its window, the gam
 window's shape), the game's map kept closed; the pins of the game and of Core's data in the game's quest marks,
 quest areas, the party, the quest log and the bar over the full map (the pin filter in sections), the herbs and
 ore the game's minimap finds, indoor maps, routes to the map pin on foot, by flight, by boat and zeppelin, by the
-Deeprun Tram, by lift, through Teldrassil's portal and by the hearthstone; the classic dungeons' and raids' maps of
+Deeprun Tram, by lift, through Teldrassil's portal, by the hearthstone and by the teleports a character has; the
+classic dungeons' and raids' maps of
 Core's set *Dungeons* in the game's map art, with their floors, bosses and the bosses' 3D models
 (`src/Navigation/README.md`). Not yet: a travel pin's ways under the mouse (*Map pins*), the leveling guide, the
 dungeons' three zooms, search, the minimap's small parts.
@@ -1322,8 +1323,9 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
       portal objects (spellcasters one uses), as its servers placed them: Stormwind's Skyborne Portal to Dalaran (under
       the Mage Quarter) and Dalaran's back, Dalaran's Violet Citadel up and down, and on Zephras Isle portals to
       Valanaar and the Rohashi Spires (where those bring one is not known: left out). The mage's teleports and portals
-      to the six capitals, a new Teleport: Dalaran, and the druid's Teleport: Moonglade are spells, not ways of the
-      routes yet.
+      to the six capitals, a new Teleport: Dalaran (the Alliance's races, by its race mask), and the druid's Teleport:
+      Moonglade are spells: ways of the routes since 2026-10-21 (*The teleports*, below), the portals not (a mage's own
+      way is its teleport to the same place).
     - **The tram and lifts:** the Deeprun Tram with a second set of cars (the same run, 58.6 seconds, and round); the
       lifts as Classic's, the Undercity's three cars under new IDs (sent by its servers).
     - **Flights:** 74 flight masters (Classic's 67): Mount Hyjal's two, the Riverglades' Rog'mar and Farholde Keep.
@@ -1336,6 +1338,41 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
   - **Still found:** a few NPCs' places of Stormwind that Forever's rebuilt city has no floor near; small islands in
     the walking data where its tool writes an opening between two floors one way only (0.1 % of the ground; a start
     there falls back).
+- **Built (2026-10-21): the teleports a character has, and Frequent Flier.**
+  - **The teleports** (Core's set *Travel*, kind `teleport`, key 3000000 + the spell's ID; `dev/tools/travel-data
+    --teleports`): from Forever's client every class's spell that moves one to a place the server holds (the
+    effect TELEPORT_UNITS to such a place: the mage's six capitals and Dalaran, the druid's Moonglade), each with its
+    side by its race mask and its reagent (the Rune of Teleportation); and the items' of a short list (their spells
+    are mostly the server's scripts): the engineers' transporters, Forever's new ones (EZ-Thro Field Transporter:
+    Gadgetzan, SAF-T Emergency Ripper: Everlook, EZ and SAF Field Transporter: Mt. Hyjal, Dimensional Transporter -
+    Mt. Hyjal; three charges, or Engineering 300, a four hours' cooldown) with Classic's two that cast the same
+    spells, and the Crumbling Hearthstone (one use, gone after a day). Not the SAF-T Teleport (Tinker: Teleport, a
+    few yards). The shaman's Astral Recall goes to the hearthstone's place and is the hearthstone's second way.
+  - **Where they bring one** is no table of the client's. **Batch 14** (unverified): the original game's place for
+    seven of them, where both records agree, it lies on a continent and Forever's own world has a floor there
+    (Stormwind, Ironforge, the Undercity, Thunder Bluff, Orgrimmar, Moonglade, Everlook); Darnassus' left out (two
+    places 13 yards apart). The others (Dalaran, Mount Hyjal, the Gnomish Transporter, whose place is a script's, the
+    Crumbling Hearthstone) are **learnt in play** by Core (`src/Core/Data/Teleports.lua`): after the cast of a
+    teleport's spell, a leap of `LEAP` (50) yards between two looks every quarter second, or onto another map after
+    a loading screen, is the teleport, and where it ends its place (no height: the game tells none); kept as Core's
+    learned data (`Data.Learn`, `SaneUIData_Learned`), the set's record with that place, read over the set at once
+    and shared and harvested as learned data will be (*Doc/ideas/Data.md*, *Learned*). A cast that lands within
+    `SAME` (2) yards of the set's place teaches nothing new; a confirmation is not kept yet (1c.1).
+  - **In the journey** (`Teleports`): from the player to where each brings one, the teleports the character has now:
+    a spell it knows (`C_SpellBook.IsSpellKnown`) with its reagent in the bags, or an item of its in the bags the game
+    lets it use (`C_Item.IsUsableItem`: its level, its skill, its charges); of its side or of both; its cooldown
+    (`C_Spell.GetSpellCooldown`, `C_Item.GetItemCooldown`) and `Planner.HEARTH` (the cast, 10 seconds for all of
+    them, and the loading screen). Where its height is known, on its floor there (`Walk.Landing`), and after the leap
+    the floor followed is that one (`Arrival`). Drawn pale blue, as the hearthstone's.
+  - **Frequent Flier** (a Legacy perk of the adventure tree, spell 1225490: flights half price and 20 % faster):
+    where the game tells the character has it (its spell known, or its aura on the character), the flights count
+    `Planner.FASTER` (1.2) times as fast (`Planner.Pace`). A flight's time on screen (`Data.Trips`) is the character's
+    own pace already.
+  - **Checked on the real data** (the routes harness, its `teleports.lua`): a mage from Goldshire to the Cathedral by
+    Teleport: Stormwind, from Kharanos to Ironforge's flight master, from the Crossroads to Thunder Bluff, a Horde mage
+    from Orgrimmar into the Undercity; a druid from Stormwind to Nighthaven; an engineer from Orgrimmar to Everlook;
+    no rune, no teleport. The 29 fixed journeys and 200 random ones give the same legs as before for a character
+    with none.
 
 ### The walking data
 
@@ -1614,8 +1651,9 @@ Each step ends in something tried in the game, and in the module's README markin
 5 built as far as Core's data goes: the pins, gathered overlaps, tooltips and the quest areas the game shades are
 there, and `Data.Map` reads Spawns, Places and Travel, of which Spawns and Places hold no entries yet, so the
 database's pins come with the import; rares' spawn areas and patrol paths wait for their data. 6 built on foot, by
-flight, by boat and zeppelin, by the tram, by lift, through portals and by the hearthstone (the walking data, the
-flights, the ships' ways and the tram of the game's tables, the lifts' and portals' places of batches, the planner,
+flight, by boat and zeppelin, by the tram, by lift, through portals, by the hearthstone and by the teleports a character
+has (the walking data, the flights, the ships' ways and the tram of the game's tables, the lifts', portals' and
+teleports' places of batches and of play, the planner,
 the search, the golden line), checked on the whole real data outside the game (2026-10-21). 8 begun
 (2026-10-21): the dungeons' and raids' maps of Core's set *Dungeons*, their floors, bosses and the bosses' 3D
 models; their three zooms and the minimap's own parts not yet. Step 0's points are answered in play as each step is tried.

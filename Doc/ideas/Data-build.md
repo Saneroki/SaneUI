@@ -140,6 +140,11 @@ holds the budget of values for all of them.
   - `Stamp` moves.
   - Tests, among them: saved data under another game version's key (a copied `WTF`) is neither used nor
     changed.
+  - *Built ahead (2026-10-21) for Navigation's teleports, in `Data.lua` (the guide, *Learned*): the saved variable
+    `SaneUIData_Learned` (its part per game version, `format`, `learned[set][key]` a whole row), `Data.Learn` with
+    `Codec.Encoder`, learned rows laid over a set's own at the login and dropped once the set is as new, `Stamp`
+    moving, and the first watcher (`Data/Teleports.lua`: where a teleport brought the player). Still open: the
+    inbox (no set waits to load any more: every set comes with Core), confirmations, the budget of values.*
 - [ ] **1c.2 Series.**
   - The series *Prices*: today's points, the months at logout, the archive handshake (`archivedTo`), and
     the roll-up.

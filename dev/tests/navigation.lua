@@ -464,9 +464,10 @@ Set(packPath .. "/Places.lua", "Places", "00000005", "int", '"kind", "name", "po
     .. 'R[2] = "70245\t\tmailbox\t\t1429\03170\03170\t\t\t"\n')
 -- The boat's way round has its docks on the maps too: in the east hall, and on Kalimdor in the game's area 12.
 Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
-    '"kind", "name", "from", "to", "fromNode", "toNode", "length", "path", "docks", "dockAreas", "time", "wait", "side"',
+    '"kind", "name", "from", "to", "fromNode", "toNode", "length", "path", "docks", "dockAreas", "time", "wait", "side", '
+    .. '"spell", "items", "reagent"',
     '"text", "text", "point", "point", "int", "int", "number", "list tuple(x:number,y:number,map:int,stay:number,jump:bool,z:number)", '
-    .. '"list point", "list int", "number", "number", "text"',
+    .. '"list point", "list int", "number", "number", "text", "int", "list int", "int"',
     'R[1] = "70245\t\tboat\tTo the west\t1429\03190\03190\t1414\03150\03150\t\t\t"\n'
     .. 'R[2] = "70245\t\tflight\t\t\t\t2\t5\t6000"\n'
     .. 'R[3] = "70245\t\tboat\t\t\t\t\t\t3898.1\t-8600\031-450\0310\03160\030-8000\031-2000\0305000\031-9000\0311\031\0311'
@@ -499,9 +500,18 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     -- one on the city's building floor of tile 6179 (x -66.67, y -1666.67, 50 yards), on no zone map.
     .. 'R[12] = "70245\t\tportal\t\t\t\t\t\t1606'
     .. '\t-208.33\031-62.5\0311\031\031\03110\030-66.67\031-1666.67\031\031\031\03150\t\t\t\t\talliance"\n'
+    -- Teleports, each where it brings one on Kalimdor (world x 6400, y -9400: plane u 9400, v 6400, by the pin): a mage's
+    -- with its reagent, the Alliance's; the Horde's to the same place; a druid's (u 9400, v 6500); an engineer's
+    -- transporter (u 9500, v 6400); and one the set knows no place of.
+    .. 'R[3003561] = "70245\t\tteleport\tTeleport: Stormwind\t\t\t\t\t\t6400\031-9400\0311\t\t\t\t\talliance\t3561\t\t17031"\n'
+    .. 'R[3003567] = "70245\t\tteleport\tTeleport: Orgrimmar\t\t\t\t\t\t6400\031-9400\0311\t\t\t\t\thorde\t3567\t\t17031"\n'
+    .. 'R[3018960] = "70245\t\tteleport\tTeleport: Moonglade\t\t\t\t\t\t6500\031-9400\0311\t\t\t\t\t\t18960"\n'
+    .. 'R[3023442] = "70245\t\tteleport\tEverlook Transporter\t\t\t\t\t\t6400\031-9500\0311\t\t\t\t\t\t23442\t260820"\n'
+    .. 'R[4297659] = "70245\t\tteleport\tTeleport: Dalaran\t\t\t\t\t\t\t\t\t\t\talliance\t1297659\t\t17031"\n'
     .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byFromNode[20] = "5"\nI.byFromNode[21] = "6"\nI.byKind = {}\n'
     .. 'I.byKind.boat = "1\0303"\nI.byKind.flight = "2\0305\0306"\nI.byKind.tram = "7"\nI.byKind.zeppelin = "4"\n'
-    .. 'I.byKind.lift = "8\0309\03010\03011"\nI.byKind.portal = "12"\n')
+    .. 'I.byKind.lift = "8\0309\03010\03011"\nI.byKind.portal = "12"\n'
+    .. 'I.byKind.teleport = "3003561\0303003567\0303018960\0303023442\0304297659"\n')
 W.AddSets(packPath)
 local spawnsPath = folder .. "/Spawns"
 os.execute(("mkdir -p '%s'"):format(spawnsPath))
@@ -2899,6 +2909,93 @@ home = Core.Character(ns.name).hearth
 check(home.map == 1415 and near(home.u, 0) and near(home.v, -9250) and home.name == "Harbour Inn",
     "the hearthstone's place: learnt where it brought the character")
 player.x, player.y = 0.75, 0.3
+-- The teleports this character has (Core's set Travel, kind teleport), each from the player to where it brings one, by
+-- the pin on Kalimdor: a mage's only while it knows the spell and has its reagent, of its own side; a druid's; an
+-- engineer's transporter while it is in the bags, usable and not cooling down; one the set knows no place of, once Core
+-- learnt it where it brought the character. And the shaman's Astral Recall, to the hearthstone's place.
+;(function()
+    local known, held, usable, cooling = {}, {}, {}, {}
+    local isKnown, count, itemCooldown = C_SpellBook.IsSpellKnown, C_Item.GetItemCount, C_Item.GetItemCooldown
+    local hearth = Core.Character(ns.name).hearth
+    C_SpellBook.IsSpellKnown = function(id) return known[id] == true end
+    C_Item.GetItemCount = function(id) return held[id] or 0 end
+    C_Item.IsUsableItem = function(id) return usable[id] ~= false end
+    C_Item.GetItemCooldown = function(id) return cooling[id] and GetTime() or 0, cooling[id] or 0, 1 end
+    local function Route()
+        Planner.Update()
+        Frames(8)
+        local kinds = {}
+        for index, leg in ipairs(shownWay and shownWay.legs or {}) do kinds[index] = leg.kind end
+        local first = shownWay and shownWay.legs[1]
+        return table.concat(kinds, " "), first and first.points[#first.points]
+    end
+    waypoint = { uiMapID = 1414, position = CreateVector2D(21500 / 24000, 0.3375) }
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    local kinds = Route()
+    check(kinds:find("boat") and not kinds:find("teleport") and not kinds:find("hearth"),
+        "nothing to teleport with, no hearthstone: the boat")
+    -- A mage: its teleport only with the spell known and its reagent in the bags
+    known[3561] = true
+    kinds = Route()
+    check(kinds:find("boat") and not kinds:find("teleport"), "a mage's teleport known, but no reagent in the bags: the boat")
+    held[17031] = 1
+    local there
+    kinds, there = Route()
+    check(kinds == "teleport walk" and there.map == 1414 and near(there.u, 9400) and near(there.v, 6400),
+        "with its reagent: the teleport to where it brings one, then on foot to the pin")
+    check(shownWay.legs[1].points[1].map == 1415, "the teleport's line from where the player is")
+    known[3561] = nil
+    known[3567] = true
+    kinds = Route()
+    check(kinds:find("boat") and not kinds:find("teleport"), "the other side's teleport (known all the same): not taken")
+    known[3567] = nil
+    -- A druid's: no reagent
+    known[18960] = true
+    kinds, there = Route()
+    check(kinds == "teleport walk" and near(there.u, 9400) and near(there.v, 6500), "a druid's teleport: taken, no reagent asked")
+    known[18960] = nil
+    -- An engineer's transporter: held, usable, its cooldown counted
+    held[260820] = 1
+    kinds, there = Route()
+    check(kinds == "teleport walk" and near(there.u, 9500) and near(there.v, 6400), "an engineer's transporter in the bags: taken")
+    cooling[260820] = 4 * 3600
+    kinds = Route()
+    check(kinds:find("boat") and not kinds:find("teleport"), "while it cools down (hours): the boat")
+    cooling[260820], usable[260820] = nil, false
+    kinds = Route()
+    check(kinds:find("boat") and not kinds:find("teleport"), "one the game says the character cannot use (its level, its skill): the boat")
+    held[260820], usable[260820] = nil, nil
+    -- Teleport: Dalaran, whose place the set has not: no way until Core learnt it, where it brought the character
+    known[1297659] = true
+    kinds = Route()
+    check(kinds:find("boat") and not kinds:find("teleport"), "a teleport the set knows no place of: none")
+    W.place = { -9000, 860, 0, 0 }
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-2", 1297659)
+    W.Wait(0.3)
+    W.place = { 6400, -9300, 0, 1 }
+    W.Wait(0.3)
+    W.place = nil
+    Frames(8)
+    kinds, there = Route()
+    check(kinds == "teleport walk" and there.map == 1414 and near(there.u, 9300) and near(there.v, 6400),
+        "learnt where it brought the character (Core's learned data): the teleport there, then on foot")
+    known[1297659] = nil
+    -- A shaman's Astral Recall: to the hearthstone's place, without the hearthstone; its cooldown counted
+    Core.Character(ns.name).hearth = { map = 1414, u = 9400, v = 6400, name = bindName }
+    known[Planner.RECALL] = true
+    kinds = Route()
+    check(kinds == "hearth walk", "Astral Recall known, no hearthstone: home by it, then on foot")
+    local spellCooldown = C_Spell.GetSpellCooldown
+    C_Spell.GetSpellCooldown = function(id)
+        if id == Planner.RECALL then return { startTime = GetTime(), duration = 900, isEnabled = true } end
+    end
+    kinds = Route()
+    check(kinds:find("boat") and not kinds:find("hearth"), "while Astral Recall cools down: the boat")
+    C_Spell.GetSpellCooldown, known[Planner.RECALL] = spellCooldown, nil
+    C_SpellBook.IsSpellKnown, C_Item.GetItemCount, C_Item.GetItemCooldown, C_Item.IsUsableItem = isKnown, count, itemCooldown, nil
+    Core.Character(ns.name).hearth = hearth
+end)()
 -- The setting off, or the pin gone: no line.
 do
     local chosen = Core.Copy(ns.options.pins)
@@ -3198,6 +3295,27 @@ end)()
     local flight = legs[2]
     check(Kinds(legs) == "walk flight walk" and #flight.points == 3 and near(flight.points[2].v, 1000) and near(flight.points[3].u, -1000),
         "two flights one after the other: one leg along both their ways, taking off and landing once")
+    -- The Legacy perk Frequent Flier: flights 20 % faster. A pin east of Beta (u 1820, v 1000) as quick on foot as by
+    -- the flight from Alpha with the walks to and from it: on foot without the perk, by the flight with it (its spell
+    -- known, or its aura on the character).
+    local isKnown = C_SpellBook.IsSpellKnown
+    local function Perk(spell, aura)
+        C_SpellBook.IsSpellKnown = function(id) return spell and id == Planner.FLIER end
+        C_UnitAuras = aura and { GetPlayerAuraBySpellID = function(id) if id == Planner.FLIER then return { spellId = id } end end }
+            or nil
+        Planner.Update()
+        Frames(8)
+        return Kinds(shownWay and shownWay.legs or {}), Planner.Pace()
+    end
+    Pin(1415, 0.5 + 1820 / 8000, 0.15)
+    local kinds, pace = Perk(false, false)
+    check(kinds == "walk" and pace == 1, "without Frequent Flier: a pin as quick on foot as by the flight, on foot")
+    kinds, pace = Perk(true, false)
+    check(kinds == "walk flight walk" and pace == Planner.FASTER and Planner.FASTER == 1.2,
+        "with it (its spell known): the flight 20 % faster, so the flight")
+    kinds, pace = Perk(false, true)
+    check(kinds == "walk flight walk" and pace == Planner.FASTER, "with its aura on the character: the same")
+    C_SpellBook.IsSpellKnown, C_UnitAuras = isKnown, nil
     C_TaxiMap.GetTaxiNodesForMap, Core.Character(ns.name).flightPoints = nodes, known
     -- Aboard the boat (Core's Data.Trips found the ride), the plan without it: a pin on Kalimdor is planned from the
     -- pier the boat comes to, its way on in front.

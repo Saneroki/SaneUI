@@ -38,6 +38,21 @@ GetMoney = function() return money end
 local ALT = "Player-70-0000BEEF"
 SaneUIData_Characters = { forever = { format = 1, characters = { [ALT] = { name = "Droopy Fairwind", class = 5, level = "thirty", money = 10,
     bags = "4500\0312" } } } }
+-- What Core learnt in play before (Data.Learn), as the game read it: rows of a set that comes with Core (Lore, its file
+-- among Core's): one newer than the set's own, one the set is as new as (the same build, a later day), one that is no
+-- row; and another game version's part
+local lore = io.popen("mktemp -d -t saneui-learned-XXXXXX"):read("*l")
+do
+    local out = assert(io.open(lore .. "/Lore.lua", "w"))
+    out:write('local S = SaneUI.Core.Data.Add(1, "Lore", { game = "forever", hash = "0000001e", build = 65100, key = "int", '
+        .. 'fields = { "name", "path" }, types = { "text", "list tuple(x:number,y:number,map:int)" }, patches = {} })\n'
+        .. 'if not S then return end\nS.rows[1] = "65000\\t\\tOld Road"\nS.rows[2] = "65100\\t20500\\tKept"\n'
+        .. 'S.rows[5] = "65000\\t\\tStone"\n')
+    out:close()
+end
+W.AddSets(lore)
+SaneUIData_Learned = { forever = { format = 1, learned = { Lore = { [1] = "65100\t20000\tNew Road\t1\0312\0310",
+    [2] = "65100\t20400\tStale", [3] = 7 } } }, ["forever-beta"] = { format = 1, learned = { Lore = { [1] = "beta's" } } } }
 
 W.LoadCore(root)
 local Core = SaneUI.Core
@@ -405,6 +420,27 @@ do
     check(ok and keys == 2 and odd.counts[7] == 5 and odd.counts[-4] == 4,
         "a map of whole-number keys takes whole numbers only: nan, inf and 0x10 are no value, and no error")
 end
+-- The codec the other way round (Data.Learn): a record written as a row of its set's fields and read back the same, of
+-- every type; nothing at a row's end that holds no value
+do
+    local fields = { "kind", "count", "share", "seen", "at", "path", "words", "named", "counts", "none" }
+    local types = { "text", "int", "number", "bool", "point", "list tuple(x:number,y:number,map:int,jump:bool)",
+                    "list text", "map text bool", "map int int", "text" }
+    local encode, decode = Codec.Encoder(fields, types), Codec.Decoder(fields, types)
+    local back = decode("70245\t20746" .. encode({ kind = "teleport", count = 3000000, share = 0.125, seen = true,
+        at = { map = 1429, x = 41.5, y = 7 }, path = { { x = -9003.46, y = 870.031, map = 0 }, nil, { x = 1, y = 2, jump = true } },
+        words = { "a", nil, "c" }, named = { m = true }, counts = { [7] = 5, [-4] = 4 }, since = 1, day = 2 }))
+    check(back.kind == "teleport" and back.count == 3000000 and back.share == 0.125 and back.seen == true and back.at.map == 1429
+        and back.at.x == 41.5 and back.at.y == 7 and back.path[1].x == -9003.46 and back.path[1].y == 870.031
+        and back.path[1].map == 0 and back.path[2] == nil and back.path[3].jump == true and back.words[1] == "a"
+        and back.words[2] == nil and back.words[3] == "c" and back.named.m == true and back.counts[7] == 5
+        and back.counts[-4] == 4 and back.none == nil and back.since == 70245 and back.day == 20746,
+        "a record written as its set's row is read back the same, of every type (since and day are the row's, not the record's)")
+    check(encode({ kind = "teleport" }) == "\tteleport" and encode({ count = 3 }) == "\t\t3" and encode({}) == "",
+        "the empty fields at a row's end are left out, those before a value kept")
+    check(not pcall(encode, { kind = "a\tb" }) and not pcall(encode, { count = "many" }) and not pcall(encode, { share = 0 / 0 }),
+        "a text with a separator in it, or no number where one belongs: an error, no row")
+end
 
 -- Set files written by hand into the test's folder: a folder of its own for them, given to W.AddSets.
 local function MakeSets(name, files)
@@ -727,7 +763,42 @@ Data.Saved("Nowhere", function() never = false end)
 check(never and Core.errors["data: saved Nowhere"], "a name that is no saved variable of the data: noted, and its reader is never called")
 W.printed = {}
 SlashCmdList.SANEUI("data")
-check(printedMatch("kept in the game: Characters %d+ values, Fresh 0 values, Kept 1 values%."), "/sane data says what the saved parts hold")
+check(printedMatch("kept in the game: Characters %d+ values, Fresh 0 values, Kept 1 values, Learned 1 values%."),
+    "/sane data says what the saved parts hold")
+
+-------------------------------------------------------------------------------
+--  What Core learns in play (Data.Learn): kept in SaneUIData_Learned, read over the sets while it is newer
+-------------------------------------------------------------------------------
+do
+    local Lore = Data.Set("Lore")
+    local road, history = Lore:Get(1), Lore:History(1)
+    check(road and road.name == "New Road" and road.since == 65100 and road.day == 20000 and road.path[1].y == 2
+        and history and #history == 2 and history[1].name == "Old Road" and history[2] == road,
+        "what was learnt before, newer than the set's own: read over it, the set's own in its history")
+    local saved = SaneUIData_Learned.forever.learned.Lore
+    check(Lore:Get(2).name == "Kept" and saved[2] == nil and saved[3] == nil and saved[1],
+        "a learnt row the set is as new as (its build, a later day of the set's) is dropped, and one that is no row")
+    check(SaneUIData_Learned["forever-beta"].learned.Lore[1] == "beta's", "another game version's part is left as it is")
+    -- Learnt now: an entry the set has, and one it has not
+    local stamp, told = Lore:Stamp(), 0
+    local function Told() told = told + 1 end
+    Lore:OnStamp(Told)
+    check(Data.Learn("Lore", 5, { name = "Stone", path = { { x = 10, y = 20, map = 1 } } })
+        and Data.Learn("Lore", 9, { name = "Far Away" }), "an entry learnt, and one the set does not have")
+    local stone, far = Lore:Get(5), Lore:Get(9)
+    check(stone.name == "Stone" and stone.path[1].x == 10 and stone.path[1].map == 1 and stone.since == W.build
+        and stone.day == math.floor(GetServerTime() / 86400) and far and far.name == "Far Away" and Lore:Stamp() > stamp
+        and told == 0, "read over the set at once, of this client's build and the server's day; the stamp moved")
+    Frame()
+    check(told == 1, "and the set's listeners are told on the next frame")
+    check(type(saved[5]) == "string" and Codec.Build(saved[5]) == W.build, "kept in the saved variable as a row of the set")
+    check(Data.Learn("Lore", 1, { name = "Newest Road" }) and #Lore:History(1) == 2 and Lore:Get(1).name == "Newest Road",
+        "learnt again: in the last one's place, the set's own still in the history under it")
+    check(not Data.Learn("Lore", 1, { name = "a\tb" }) and not Data.Learn("Lore", 1, {}) and not Data.Learn("Nowhere", 1, { name = "x" })
+        and not Data.Learn("Lore", nil, { name = "x" }) and Lore:Get(1).name == "Newest Road",
+        "nothing learnt of a value its fields cannot hold, of no field at all, of a set Core does not hold, or without a key")
+    Lore:OffStamp(Told)
+end
 
 -------------------------------------------------------------------------------
 --  The account's characters (Characters.lua), on the saved variable SaneUIData_Characters
@@ -817,10 +888,14 @@ do
     end
     W.Wait(10)
     check(looks == 0, "nothing is looked at for the ships' times while the set Travel is not there")
-    -- Two boats, each between two docks 6000 yards apart on one map (y 0 and y 5000); the set gives neither its round
-    W.AddSets(MakeSets("Ways", { ["Travel.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Travel", { game = "forever", hash = "00000b0a", build = 65000, key = "int", fields = { "kind", "path" }, types = { "text", "list tuple(x:number,y:number,map:int,stay:number,jump:bool)" }, patches = {} })\n'
+    -- Two boats, each between two docks 6000 yards apart on one map (y 0 and y 5000); the set gives neither its round.
+    -- And two teleports (Teleports.lua, below): one to a place the set has, one to a place it has not.
+    W.AddSets(MakeSets("Ways", { ["Travel.lua"] = 'local S = SaneUI.Core.Data.Add(1, "Travel", { game = "forever", hash = "00000b0a", build = 65000, key = "int", fields = { "kind", "path", "spell" }, types = { "text", "list tuple(x:number,y:number,map:int,stay:number,jump:bool)", "int" }, patches = {} })\n'
         .. 'if not S then return end\nS.rows[3] = "65000\\t\\tboat\\t0\\0310\\0310\\03160\\0306000\\0310\\031\\03160"\n'
-        .. 'S.rows[4] = "65000\\t\\tboat\\t0\\0315000\\0310\\03160\\0306000\\0315000\\031\\03160"\nS.index.byKind = { boat = "3\\0304" }\n' }))
+        .. 'S.rows[4] = "65000\\t\\tboat\\t0\\0315000\\0310\\03160\\0306000\\0315000\\031\\03160"\n'
+        .. 'S.rows[3003561] = "65000\\t\\tteleport\\t-9003.46\\031870.03\\0310\\t3561"\n'
+        .. 'S.rows[4297659] = "65000\\t\\tteleport\\t\\t1297659"\n'
+        .. 'S.index.byKind = { boat = "3\\0304", teleport = "3003561\\0304297659" }\n' }))
     for _ = 1, 3 do Frame() end
     W.Wait(10)
     local timetable = Ships:Table(3)
@@ -890,6 +965,57 @@ do
 end
 
 -------------------------------------------------------------------------------
+--  Where a teleport brings one (Teleports.lua): learnt where one brought the player, as learned data of Travel
+-------------------------------------------------------------------------------
+do
+    local Travel, Teleports = Data.Set("Travel"), Data.Teleports
+    local function Cast(spell) W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-1", spell) end
+    -- Teleport: Dalaran, which the set knows no place of: cast in Stormwind, a look there, then the leap
+    W.place = { -9000, 860, 0, 0 }
+    Cast(1297659)
+    W.Wait(0.3)
+    W.place = { 300.123, 400.456, 0, 0 }
+    W.Wait(0.3)
+    local way, learnt = Travel:Get(4297659), SaneUIData_Learned.forever.learned.Travel
+    check(way and way.path and way.path[1].x == 300.12 and way.path[1].y == 400.46 and way.path[1].map == 0
+        and way.kind == "teleport" and way.spell == 1297659 and learnt and type(learnt[4297659]) == "string",
+        "a teleport's spell cast, then a leap: where it ended is its place, to a hundredth of a yard, learnt into the set's record")
+    -- One the set has a place for: a cast that lands there teaches nothing new
+    W.place = { 100, 100, 0, 0 }
+    Cast(3561)
+    W.Wait(0.3)
+    W.place = { -9003, 870.5, 0, 0 }
+    W.Wait(0.3)
+    check(learnt[3003561] == nil and Travel:Get(3003561).path[1].x == -9003.46,
+        "a landing within Teleports.SAME yards of the set's place: nothing learnt")
+    -- Running on after a cast, never a leap, for longer than it waits: nothing learnt, nor by a leap after that
+    local from = W.clock
+    W.place = function() return { 200 + 7 * (W.clock - from), 200, 0, 0 } end
+    Cast(1297659)
+    W.Wait(Teleports.WAIT + 5)
+    W.place = { 5000, 5000, 0, 0 }
+    W.Wait(1)
+    check(Travel:Get(4297659).path[1].x == 300.12, "running on after a cast: no leap, nothing learnt, and nothing after its time")
+    -- Onto another map by a loading screen (no place told meanwhile): where the player stands once it is over
+    W.place = { -9000, 860, 0, 0 }
+    Cast(1297659)
+    W.place = nil
+    W.Wait(2)
+    W.place = { 7000.5, -2000.25, 0, 1 }
+    W.Fire("PLAYER_ENTERING_WORLD")
+    W.Wait(0)
+    way = Travel:Get(4297659)
+    check(way.path[1].map == 1 and way.path[1].x == 7000.5 and way.path[1].y == -2000.25,
+        "after a loading screen, onto another map: learnt there")
+    -- A spell of no teleport: nothing looked for
+    Cast(12345)
+    W.place = { 0, 0, 0, 0 }
+    W.Wait(1)
+    check(Travel:Get(4297659).path[1].map == 1, "a spell of no teleport: nothing learnt")
+    W.place = nil
+end
+
+-------------------------------------------------------------------------------
 --  What a map shows (Map.lua): sets arriving together read once; the last read's points kept while it is read anew
 -------------------------------------------------------------------------------
 do
@@ -936,7 +1062,7 @@ do
     check(TakeTaxiNode == take, "the world there, but no module asked for the trips: the flight master is not hooked")
     check(Data.Trips() and TakeTaxiNode ~= take, "a module asks for them: hooked at once, the world being there")
 end
-os.execute(("rm -rf '%s'"):format(folder))
+os.execute(("rm -rf '%s' '%s'"):format(folder, lore))
 
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Data in the game: all %d checks passed.\n"):format(passed))

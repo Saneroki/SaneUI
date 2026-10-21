@@ -6,14 +6,16 @@ local _, ns = ...
 --  setting Route to the map pin is on. Knows no frames.
 --
 --      the journey   a graph over the player, the pin, the flight points this character knows, the docks of the
---                    boats and zeppelins, the cities' entrances to the tram and the hearthstone's place, on every
+--                    boats and zeppelins, the cities' entrances to the tram, the hearthstone's place and where the
+--                    teleports this character has bring one, on every
 --                    plane (a continent, or a map of its own on the world map: Zephras Isle, Coords.Planes), so
 --                    a journey may cross a third one (the hearthstone home, then a ship over the sea); its ways:
 --                    on foot between two places of one plane (guessed at Planner.DETOUR times the straight line;
 --                    between places that share no region of the walking data Planner.APART seconds more: a tower,
 --                    a gap in the walking data, taken only where nothing else goes), the flights between known
 --                    flight points
---                    (the game's, Core's set Travel, as only its side flies them; each at its way's length, taking
+--                    (the game's, Core's set Travel, as only its side flies them; each at its way's length at
+--                    Planner.FLY yards a second, Planner.FASTER times that with the Legacy perk Frequent Flier, taking
 --                    off and landing once, Planner.BOARD, however many flight points it passes over), the boats and
 --                    zeppelins from dock to dock (Core's set Travel, the game's own ways of them: the wait for one
 --                    and the trip, Planner.Ship), the tram from one city's entrance to it to the other's (Core's
@@ -22,7 +24,10 @@ local _, ns = ...
 --                    its landing, Lifts.lua: the wait for the car, half the time between two departures, and its
 --                    ride), the portals from their trigger to where they bring one (Core's set Travel, Portals:
 --                    Planner.PORTAL seconds; with walking data only one with a floor at both ends), the
---                    hearthstone from the player to its place (its cooldown and the cast); the quickest
+--                    hearthstone from the player to its place (its cooldown and the cast; or the shaman's Astral
+--                    Recall, which brings one there too), the teleports this character has (Core's set Travel,
+--                    Teleports: a spell it knows, with its reagent in the bags, or an item it holds that the game
+--                    lets it use) from the player to where each brings one (its cooldown and the cast); the quickest
 --                    taken (Dijkstra). Between two levels a lift joins (Thunder Bluff's mesa and Mulgore), or a
 --                    level and a place below it (the Undercity under the ruins over it, Lifts.Stand; also where
 --                    the two share a region), no walk: the lift is the way
@@ -57,8 +62,9 @@ local _, ns = ...
 --  master was opened this session the game does not know them) and kept for the character
 --  (Planner.Knows): only those are flown, and the map shows the others red. The world map's own list
 --  holds every point on this client, found or not. The hearthstone's place is learnt where the character binds it
---  (HEARTHSTONE_BOUND) and where it brings the character, and kept for the character with the
---  game's name of it (GetBindLocation), which tells when it was bound elsewhere since.
+--  (HEARTHSTONE_BOUND) and where it (or Astral Recall) brings the character, and kept for the character with the
+--  game's name of it (GetBindLocation), which tells when it was bound elsewhere since. Where a teleport brings one
+--  is Core's: the set's, or where one brought a character, learnt in play (Core's Data/Teleports.lua).
 --
 --  A boat or zeppelin: its timetable is Core's (Data.Ships): the game's way and stays, its sailing at the
 --  game's transports' speed, its round where the set or a ride knows it. The wait for one is the time to its
@@ -71,8 +77,10 @@ ns.Planner = Planner
 
 Planner.RUN = 7          -- yards a second on foot, the game's run speed
 Planner.FLY = 30         -- yards a second on a flight, about the game's flights
+Planner.FASTER = 1.2     -- times as fast a flight is with the Legacy perk Frequent Flier (the game's 20 % faster)
 Planner.BOARD = 8        -- seconds a flight takes besides its way: taking off, landing
-Planner.HEARTH = 15      -- seconds the hearthstone takes besides its cooldown: the cast, the loading screen
+Planner.HEARTH = 15      -- seconds a teleport takes besides its cooldown: the cast (the game's 10 for the hearthstone
+                         -- and every teleport of the routes), the loading screen
 Planner.PORTAL = 3       -- seconds a portal takes: the step into it, the move
 Planner.ARRIVE = 20      -- yards from a portal's end its floor may lie (at about its height)
 Planner.STATION = 30     -- seconds the tram takes besides the wait and its run, a guess: the walks between the
@@ -97,6 +105,8 @@ Planner.LEAP = 50        -- yards the player may move between two looks and thei
 Planner.AHEAD = 60       -- parts of the line ahead of where the player was, looked at for where they are now
 Planner.SLACK = 5        -- yards a part further on must be nearer than the first ones to be where the player is
 Planner.HEARTHSTONE, Planner.HOMEWARD = 6948, 8690 -- the hearthstone: its item, its spell
+Planner.RECALL = 556     -- the shaman's Astral Recall: to the hearthstone's place too, a spell with its own cooldown
+Planner.FLIER = 1225490  -- the Legacy perk Frequent Flier: its spell (flights 20 % faster, half price)
 
 local SHIPS = { "boat", "zeppelin" }
 local Travel = Core.Data.Set("Travel")
@@ -108,6 +118,9 @@ local job               -- the plan being made: a job of Core's scheduler
 local made = 0          -- jobs made, each by a name of its own
 local docks             -- every dock, by name, while Core's set Travel stays as it is (Docks)
 local portals           -- every portal, while Core's set Travel stays as it is (Portals)
+local landings = {}     -- [a teleport's key] = where it brings one on its floor ({ map, u, v, floor = { key, index, z }
+                        -- }), or false: no floor there; kept while the walking data and Travel stay as they are
+                        -- (Teleports)
 local planes = {}       -- [the world's map] = the map of its plane (Coords.Planes), or false
 local regions = {}      -- [place name] = where a flight point, a dock or a lift's end stands: { set (the regions of
                         -- the walking data, or false: none), below (the lifts' upper levels it stands below, or
@@ -204,9 +217,19 @@ Points = function(continent)
     return found
 end
 
+-- How many times as fast as Planner.FLY this character's flights are: Planner.FASTER with the Legacy perk Frequent
+-- Flier (its spell known, or its aura on the character, as the game tells it), else 1.
+function Planner.Pace()
+    local book, auras = rawget(_G, "C_SpellBook"), rawget(_G, "C_UnitAuras")
+    if book and Core.Ask(book.IsSpellKnown, Planner.FLIER) then return Planner.FASTER end
+    if auras and type(Core.Ask(auras.GetPlayerAuraBySpellID, Planner.FLIER)) == "table" then return Planner.FASTER end
+    return 1
+end
+
 -- The flights from a flight point this character may take: { { to, seconds, flight } }, each at its way's length
--- (taking off and landing are the journey's, once for all the flights one after the other).
-local function Flights(node, points, known)
+-- at Planner.FLY yards a second, pace times that (taking off and landing are the journey's, once for all the flights
+-- one after the other).
+local function Flights(node, points, known, pace)
     local list = {}
     local side = Core.Plain(UnitFactionGroup("player"))
     side = side and side:lower()
@@ -219,7 +242,7 @@ local function Flights(node, points, known)
                 local a, b = points[node], points[to]
                 length = Distance(a.u, a.v, b.u, b.v)
             end
-            list[#list + 1] = { to = to, seconds = length / Planner.FLY, flight = flight }
+            list[#list + 1] = { to = to, seconds = length / (Planner.FLY * pace), flight = flight }
         end
     end
     return list
@@ -397,25 +420,97 @@ local function Ends(portal)
 end
 
 -------------------------------------------------------------------------------
---  The hearthstone
+--  The hearthstone and the teleports
 -------------------------------------------------------------------------------
--- Its place ({ map, u, v }) and the seconds until it brings the character there (its cooldown, the cast); nil
--- when it cannot: none in the bags, its place not known (or saved in another shape), or bound elsewhere since.
+-- The seconds a cooldown has left (start and duration as the game tells them; none: 0).
+local function Left(start, duration)
+    if type(start) == "number" and type(duration) == "number" and start > 0 then
+        return math.max(0, start + duration - GetTime())
+    end
+    return 0
+end
+
+-- The seconds until this character can cast a spell it knows (its cooldown left), nil when it does not know it.
+local function Spell(spell)
+    local book, spells = rawget(_G, "C_SpellBook"), rawget(_G, "C_Spell")
+    if not (book and Core.Ask(book.IsSpellKnown, spell)) then return nil end
+    local cooldown = spells and Core.Ask(spells.GetSpellCooldown, spell)
+    if type(cooldown) ~= "table" then return 0 end
+    return Left(Core.Plain(cooldown.startTime), Core.Plain(cooldown.duration))
+end
+
+-- Whether this character has an item in its bags.
+local function Held(item)
+    local items = rawget(_G, "C_Item")
+    local count = items and Core.Ask(items.GetItemCount, item)
+    return type(count) == "number" and count > 0
+end
+
+-- The seconds until this character can use an item of its bags (its cooldown left), nil when it has none or the game
+-- says it cannot use it (its level, its skill, its charges spent).
+local function Item(item)
+    if not Held(item) or Core.Ask(C_Item.IsUsableItem, item) == false then return nil end
+    return Left(Core.Ask(C_Item.GetItemCooldown, item))
+end
+
+-- Its place ({ map, u, v }) and the seconds until it brings the character there (the cooldown of the hearthstone or
+-- of Astral Recall, the sooner, and the cast); nil when it cannot: neither in the bags nor known, its place not known
+-- (or saved in another shape), or bound elsewhere since.
 local function Hearth()
     local place = Core.Character(ns.name).hearth
     if type(place) ~= "table" or type(place.map) ~= "number" or type(place.u) ~= "number" or type(place.v) ~= "number"
         or not Coords.Box(place.map) then return nil end
     local bound = rawget(_G, "GetBindLocation") and Core.Ask(GetBindLocation)
     if bound and place.name and bound ~= place.name then return nil end
-    local items = rawget(_G, "C_Item")
-    local count = items and Core.Ask(items.GetItemCount, Planner.HEARTHSTONE)
-    if type(count) ~= "number" or count < 1 then return nil end
-    local start, duration = Core.Ask(items.GetItemCooldown, Planner.HEARTHSTONE)
-    local left = 0
-    if type(start) == "number" and type(duration) == "number" and start > 0 then
-        left = math.max(0, start + duration - GetTime())
-    end
+    local stone, recall = Item(Planner.HEARTHSTONE), Spell(Planner.RECALL)
+    local left = stone and recall and math.min(stone, recall) or stone or recall
+    if not left then return nil end
     return place, left + Planner.HEARTH
+end
+
+-- The seconds until this character can take a teleport of Core's set Travel (its cooldown left); nil when it cannot:
+-- its spell not known or its reagent not in the bags; none of its items in the bags that the game lets it use.
+local function Usable(way)
+    if type(way.items) ~= "table" then
+        if not way.spell or (way.reagent and not Held(way.reagent)) then return nil end
+        return Spell(way.spell)
+    end
+    local soonest
+    for _, item in pairs(way.items) do
+        local left = Item(item)
+        if left and (not soonest or left < soonest) then soonest = left end
+    end
+    return soonest
+end
+
+-- The teleports this character has now (Core's set Travel, kind teleport: of its side or of both) that bring one to a
+-- known place of a plane (the set's, or where one brought a character, learnt by Core): { { name ("teleport:<key>"),
+-- way, seconds (its cooldown left and the cast, Planner.HEARTH), place = { map, u, v, z, floor } } }. Its floor where
+-- the place's height is known and the walking data is there: the one within Planner.ARRIVE yards nearest it at that
+-- height (Walk.Landing; none there: the walk from it starts from every floor at the place, as the hearthstone's).
+local function Teleports(faction)
+    local list = {}
+    for _, key in ipairs(Travel:Keys("byKind", "teleport")) do
+        local way = Travel:Get(key)
+        local landing = way and type(way.path) == "table" and way.path[1]
+        local map = type(landing) == "table" and landing.map and landing.x and landing.y and Plane(landing.map)
+        local left = map and (not way.side or way.side == faction) and Usable(way)
+        if left then
+            local place = { map = map, u = -landing.y, v = landing.x, z = landing.z }
+            if landing.z and Walk.Ready() then
+                if landings[key] == nil then
+                    local tile, index = Walk.Landing(map, place.u, place.v, landing.z, Planner.ARRIVE)
+                    landings[key] = tile and { map = map, u = place.u, v = place.v,
+                                               floor = { tile.key, index, z = select(5, Walk.Rect(tile, index)) } }
+                        or false
+                end
+                place.floor = landings[key] and landings[key].floor or nil
+                place.z = place.floor and place.floor.z or place.z
+            end
+            list[#list + 1] = { name = "teleport:" .. key, way = way, seconds = left + Planner.HEARTH, place = place }
+        end
+    end
+    return list
 end
 
 -- The character's place now as the hearthstone's (where it was bound, or where it brought the character); false
@@ -437,13 +532,19 @@ local arriving = Core.Later(Arrived, 2)
 -------------------------------------------------------------------------------
 --  The floor the player stands on
 -------------------------------------------------------------------------------
--- After a leap: within Planner.ARRIVE yards of where a portal brings one (the player came through it), on its floor
--- there; nil else.
+-- After a leap: within Planner.ARRIVE yards of where a portal or a teleport brings one (the player came through it, or
+-- by it), on its floor there; nil else.
 local function Arrival(map, u, v)
     for _, portal in ipairs(Portals()) do
         local ends = portal.ends
         if ends and portal.map == map and Distance(u, v, portal.tu, portal.tv) <= Planner.ARRIVE then
             return { ends[2][1], ends[2][2], map = map, u = u, v = v, z = ends[2].z }
+        end
+    end
+    for _, landing in pairs(landings) do
+        if landing and landing.map == map and Distance(u, v, landing.u, landing.v) <= Planner.ARRIVE then
+            local floor = landing.floor
+            return { floor[1], floor[2], map = map, u = u, v = v, z = floor.z }
         end
     end
     return nil
@@ -563,11 +664,11 @@ end
 
 -- The quickest journey by the guesses from the start (start: { map, u, v, from: the player's floor }) to the goal (a
 -- place: { map, u, v }): a list of steps { kind = "walk" | "flight" | "boat" | "zeppelin" | "tram" | "lift" | "portal" |
--- "hearth", from, to (the places' names), map, u1, v1, map2, u2, v2, ... (a walk's floor: the one it starts on, where
--- known, and apart: the regions of its ends where they share none; a lift's near and far: its ends) } and its seconds;
--- nil when none reaches it. No walk follows another (one walk straight on is a way of its own). measured:
--- { [from] = { [to] = seconds } } walks searched already, in place of their guesses; cut: { [region] = { [region] =
--- true } } regions no walk was found between (Find), none walked between. A flight point is two places: on
+-- "hearth" | "teleport", from, to (the places' names), map, u1, v1, map2, u2, v2, ... (a walk's floor: the one it
+-- starts on, where known, and apart: the regions of its ends where they share none; a lift's near and far: its ends) }
+-- and its seconds; nil when none reaches it. No walk follows another (one walk straight on is a way of its own).
+-- measured: { [from] = { [to] = seconds } } walks searched already, in place of their guesses; cut: { [region] = {
+-- [region] = true } } regions no walk was found between (Find), none walked between. A flight point is two places: on
 -- the ground (its node's ID) and in the air over it (minus that), so a flight over many flight points takes off and
 -- lands once; the flights one after the other are one step (hops: each flight's record and ends, in order).
 local function Journey(start, goal, measured, cut)
@@ -578,7 +679,8 @@ local function Journey(start, goal, measured, cut)
     local now = Ships.Now()
     local useData = Walk.Ready()
     -- The places: the two ends, and on every plane the known flight points, the docks, the lifts' ends, the
-    -- hearthstone's. A place's floor and height where they are known: the player's, a lift's end's.
+    -- hearthstone's, where the teleports bring one. A place's floor and height where they are known: the player's, a
+    -- lift's end's, a portal's and a teleport's ends'.
     local places = {
         start = { map = start.map, u = start.u, v = start.v, floor = start.from, z = start.from and start.from.z },
         ["end"] = { map = goal.map, u = goal.u, v = goal.v, at = goal.at },
@@ -617,6 +719,10 @@ local function Journey(start, goal, measured, cut)
     end
     local hearth, homeSeconds = Hearth()
     if hearth then places.hearth = { map = hearth.map, u = hearth.u, v = hearth.v } end
+    -- Where the teleports this character has bring one (on its floor there, where known).
+    local teleports = Teleports(faction)
+    for _, teleport in ipairs(teleports) do places[teleport.name] = teleport.place end
+    local pace = Planner.Pace()
     -- A walk's seconds: as found, else guessed (between two places of known heights the climb too, as the search
     -- counts it, and at least the way the steepest floor needs to climb it: a lift's two ends are no walk apart);
     -- and whether it was found.
@@ -629,11 +735,11 @@ local function Journey(start, goal, measured, cut)
         return (way + rise * Search.CLIMB) * Planner.DETOUR / Planner.RUN, false
     end
     -- The regions of the walking data a place stands in (nil: not known; walks are then not ruled out), and the
-    -- lifts' upper levels it stands below (Lifts.Stand): a flight point's, a dock's and a lift's end's kept from plan
-    -- to plan (regions), the ends' and the hearthstone's (they move) for this one. A place's floor known (the
-    -- player's, a lift's landing): its region (the player's a guess: those of the floors around them too); the pin's
-    -- those of the floors under it, where there are any (on a mesa, not the land at its foot); any other's those of
-    -- the floors under it and within Planner.REGION yards.
+    -- lifts' upper levels it stands below (Lifts.Stand): a flight point's, a dock's, a lift's end's and a teleport's
+    -- kept from plan to plan (regions), the ends' and the hearthstone's (they move) for this one. A place's floor known
+    -- (the player's, a lift's landing): its region (the player's a guess: those of the floors around them too); the
+    -- pin's those of the floors under it, where there are any (on a mesa, not the land at its foot); any other's those
+    -- of the floors under it and within Planner.REGION yards.
     local moving = {}
     local function RegionsOf(name)
         if not useData then return nil end
@@ -686,7 +792,9 @@ local function Journey(start, goal, measured, cut)
         local here = places[name0]
         if not here then
             -- In the air over a flight point: on to the next ones, or down.
-            for _, flight in ipairs(Flights(-current, points, known)) do Reach(-flight.to, low + flight.seconds, flight.flight) end
+            for _, flight in ipairs(Flights(-current, points, known, pace)) do
+                Reach(-flight.to, low + flight.seconds, flight.flight)
+            end
             Reach(-current, low, "down")
         else
             -- On foot (not on from a walk): to every place of the same plane; between places that share no region, it
@@ -756,8 +864,11 @@ local function Journey(start, goal, measured, cut)
             -- Through a portal (one of the player's side or of both): from its trigger to where it brings one.
             local portal = here.portal
             if portal and (not portal.side or portal.side == faction) then Reach(here.out, low + Planner.PORTAL, portal) end
-            -- Home: the hearthstone from where the player is.
-            if current == "start" and places.hearth then Reach("hearth", low + homeSeconds, "hearth") end
+            -- Home: the hearthstone from where the player is; and the teleports this character has.
+            if current == "start" then
+                if places.hearth then Reach("hearth", low + homeSeconds, "hearth") end
+                for _, teleport in ipairs(teleports) do Reach(teleport.name, low + teleport.seconds, teleport.way) end
+            end
         end
     end
     if not best[finish] then return nil end
@@ -792,6 +903,8 @@ local function Journey(start, goal, measured, cut)
                     apart[at]
             elseif way == "hearth" then
                 step.kind = "hearth"
+            elseif way.kind == "teleport" then
+                step.kind, step.teleport = "teleport", way
             elseif way.kind == "tram" then
                 step.kind, step.tram = "tram", way
             elseif way.kind == "lift" then
@@ -922,10 +1035,11 @@ local function Draw(steps, keep)
             legs[#legs + 1] = { kind = "walk", points = points }
         elseif step.kind == "flight" then
             legs[#legs + 1] = { kind = "flight", points = FlightPoints(step) }
-        elseif step.kind == "hearth" or step.kind == "tram" or step.kind == "lift" or step.kind == "portal" then
-            -- Straight to the hearthstone's place; the tram's from entrance to entrance (its tunnel's map has no
-            -- plane); a lift's from its landing to the one at its other end (near and far: its ends, for Rode); a
-            -- portal's from its trigger to where it brings one.
+        elseif step.kind == "hearth" or step.kind == "teleport" or step.kind == "tram" or step.kind == "lift"
+            or step.kind == "portal" then
+            -- Straight to the hearthstone's place, or where a teleport brings one; the tram's from entrance to entrance
+            -- (its tunnel's map has no plane); a lift's from its landing to the one at its other end (near and far: its
+            -- ends, for Rode); a portal's from its trigger to where it brings one.
             legs[#legs + 1] = { kind = step.kind, near = step.near, far = step.far, portal = step.portal,
                                 points = { { map = step.map, u = step.u1, v = step.v1 },
                                            { map = step.map2, u = step.u2, v = step.v2 } } }
@@ -1230,7 +1344,8 @@ ns.On("TAXI_NODE_STATUS_CHANGED", function()
 end)
 ns.On("HEARTHSTONE_BOUND", function() ns.Safe("hearthstone", Home) end)
 Core.OnUnit("UNIT_SPELLCAST_SUCCEEDED", "player", function(_, _, spell)
-    if Core.Plain(spell) == Planner.HOMEWARD and not ns.off then
+    spell = Core.Plain(spell)
+    if (spell == Planner.HOMEWARD or spell == Planner.RECALL) and not ns.off then
         homeward = GetTime()
         arriving()
     end
@@ -1249,11 +1364,14 @@ local function Changed()
 end
 Core.Data.Set("Walking"):OnStamp(function()
     footing, portals = nil, nil
+    wipe(landings)
     Lifts.Forget()
     Changed()
 end)
+-- (also when Core learnt where a teleport brings one)
 Travel:OnStamp(function()
     docks, portals = nil, nil
+    wipe(landings)
     Lifts.Forget()
     Changed()
 end)

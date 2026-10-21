@@ -89,3 +89,9 @@ kind = "batch"
 game = "forever"
 seen = "forever-beta"
 about = "Forever's own ways of travel as its beta servers sent them (builds 70124 to 70374): the portal objects (a spellcaster one uses for a teleport), where a pair of them, there and back, stands at both places as the servers placed them and each one's target lies beside the other, and Forever's world has a floor at both ends; and the side of a boat, zeppelin or portal whose ends show only that side's NPCs (by Forever's client's faction table: those hostile to the other side). Unverified: a ride or a step through in play confirms it."
+
+[14]
+kind = "batch"
+game = "forever"
+build = 70245
+about = "The teleports: where each of the original game's (patch 1.12) teleports brings one, where every record of it agrees, it lies on a continent and Forever's own world has a floor there: the mage's to Stormwind, Ironforge, the Undercity, Thunder Bluff and Orgrimmar, the druid's to Moonglade, the engineers' transporter to Everlook; the teleports themselves (their spells, sides, reagents and the items that cast them) read from Forever's client by dev/tools/travel-data. Unverified: a cast in play confirms it."

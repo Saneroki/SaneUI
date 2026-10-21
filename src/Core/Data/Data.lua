@@ -25,7 +25,8 @@ local Core = SaneUI.Core
 --
 --  What Core keeps in the game of the data is in saved variables of Core's TOC, SaneUIData_<Name> (Data.SAVED;
 --  Characters is one). Core's own readers ask for one with Data.Saved(name, fn) and get its part of this
---  client's game version.
+--  client's game version. What Core learns in play (Data.Learn) is kept in SaneUIData_Learned and read over
+--  the sets while it is newer than they are.
 -------------------------------------------------------------------------------
 local Data = Core.Data -- made by Codec.lua
 local Codec, Steps = Data.Codec, Core.Steps
@@ -33,10 +34,10 @@ local Codec, Steps = Data.Codec, Core.Steps
 Data.FORMAT = 1
 Data.frozen = false -- the tests' switch: records handed out read-only, changes found by Data.Tampered()
 -- The saved variables of Core's data, SaneUIData_<name>, as Core's TOC declares them.
-Data.SAVED = { Characters = true, Guild = true }
+Data.SAVED = { Characters = true, Guild = true, Learned = true }
 local CAMELOT = 18 -- WOW_PROJECT_CAMELOT, WoW: Forever's project number, should the global be missing
 local WEAK = { __mode = "v" }
-local LIST = "\030"
+local LIST, VERSION = "\030", "\028"
 
 local TEXT = {
     missing = "Sane UI holds no set %s",
@@ -241,6 +242,99 @@ function Data.Saved(name, fn)
     if arrived then Keep(name) end
 end
 
+-------------------------------------------------------------------------------
+--  Learned
+-------------------------------------------------------------------------------
+-- What the game showed in play that a set does not hold yet (Doc/guides/data.md, *Learned*): kept in Core's saved
+-- variable SaneUIData_Learned until a release takes it in, its part's learned[set][key] a whole row in the set's
+-- format, of the client's build and the server's day. Read over the set's own newest version while it is newer;
+-- dropped once the set has a version of that entry at its build and day or later (the release has seen that build
+-- and decided, whether it agrees or not), so a wrong fact cannot stand over the sets for ever. Only Core learns
+-- (Data.Learn, its watchers); the modules read the sets as ever.
+local learned -- this client's learned rows ({ [set name] = { [key] = row } }), once Core's saved variables are read
+
+-- A row's build and day (0 where it has none); nil for what is no row.
+local function Stamped(row)
+    if type(row) ~= "string" then return nil end
+    local built, day = string.match(row, "^(%d+)\t(%d*)")
+    return tonumber(built), tonumber(day) or 0
+end
+
+-- Whether a set's own row of an entry is as new as a learned one, or newer.
+local function AsNew(own, row)
+    local ownBuild, ownDay = Stamped(own)
+    local build, day = Stamped(row)
+    return ownBuild ~= nil and (ownBuild > build or (ownBuild == build and ownDay >= day))
+end
+
+-- A learned row laid over the set's own: the set's newest version goes into the entry's history, the learned one is
+-- its newest (one learned again takes the place of the one before).
+local function Lay(set, key, row)
+    if not set.laid[key] and set.rows[key] then
+        local before = set.history[key]
+        set.history[key] = (type(before) == "string" and before .. VERSION or "") .. set.rows[key]
+    end
+    set.rows[key], set.laid[key] = row, true
+end
+
+-- A set's learned rows laid over its own; those the set is as new as, and what is no row, dropped.
+local function Overlay(set)
+    local rows = learned and learned[set.name]
+    if rows == nil then return end
+    if type(rows) ~= "table" then
+        learned[set.name] = nil
+        return
+    end
+    local laid = false
+    for key, row in pairs(rows) do
+        if not Stamped(row) or (set.rows[key] and AsNew(set.rows[key], row)) then
+            rows[key] = nil
+        else
+            Lay(set, key, row)
+            laid = true
+        end
+    end
+    if next(rows) == nil then learned[set.name] = nil end
+    if laid then
+        Forget(set)
+        Moved(set)
+    end
+end
+
+-- The server's day, as days since 1970.
+local function Today()
+    local now = Core.Plain(Core.Ask(rawget(_G, "GetServerTime"))) or Core.Ask(rawget(_G, "time")) or 0
+    return math.floor(now / 86400)
+end
+
+-- Learns an entry of a set from play (Core's watchers only): record, a whole record in the set's fields (the set's own
+-- with what the game showed put in), kept as a row of this client's build and the server's day and read over the set's
+-- at once; its listeners are told on the next frame. False when it cannot be kept: the set not ready, Core's saved
+-- variables not read yet, a value its fields cannot hold, or no field at all.
+function Data.Learn(name, key, record)
+    local set = sets[name]
+    if not (learned and set and set.ready and set.encode) or key == nil or type(record) ~= "table" then return false end
+    local ok, body = pcall(set.encode, record)
+    if not ok or body == "" then return false end
+    local row = ClientBuild() .. "\t" .. Today() .. body
+    if type(learned[name]) ~= "table" then learned[name] = {} end
+    learned[name][key] = row
+    Lay(set, key, row)
+    Forget(set)
+    Moved(set)
+    return true
+end
+
+-- Core's saved variables read: what was learned before laid over the sets there (as a rule all of them: their files
+-- run with Core's).
+Data.Saved("Learned", function(part)
+    if type(part.learned) ~= "table" then part.learned = {} end
+    learned = part.learned
+    for _, set in pairs(sets) do
+        if set.ready then Overlay(set) end
+    end
+end)
+
 -- Called by a set's file as it is read (Doc/guides/data.md, *A set's file*): nil for a format, set or game
 -- version this Core does not take (the file stops there); else the table its rows, history and indexes go
 -- into. The set is ready from then on (nobody reads it before its file has run to its end), and its
@@ -271,13 +365,17 @@ function Data.Add(format, name, header)
         return nil
     end
     set.decode, set.fields, set.key = decode, header.fields, header.key
+    local writes, encode = pcall(Codec.Encoder, header.fields, header.types)
+    set.encode = writes and encode or nil -- without, nothing of it is learned; it is read all the same
     set.patches = type(header.patches) == "table" and header.patches or {}
-    set.rows, set.history, set.index = {}, {}, {}
+    set.rows, set.history, set.index, set.laid = {}, {}, {}, {}
     Forget(set)
     set.added, set.ready, set.refused, set.failed, set.why = true, true, nil, nil, nil
     local handle = Data.Set(name)
     handle.hash, handle.build = header.hash, header.build
     Moved(set)
+    -- Its rows are filled once its file has run to its end: what was learned of it is laid over them then.
+    if learned then Core.Later(function() Overlay(set) end)() end
     return set
 end
 

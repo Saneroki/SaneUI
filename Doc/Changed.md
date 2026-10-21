@@ -3,8 +3,44 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 508 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 125 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 209 (data in the game), 524 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 130 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation, Core: the teleports a character has in the routes; what Core learns in play; Frequent Flier (Saneroki, 2026-10-21)
+- **The teleports** (Core's set *Travel*, kind `teleport`, key 3000000 + the spell's ID; new fields `spell`, `items`,
+  `reagent`; `dev/tools/travel-data --teleports <places> <batch>`, `teleports`, `race_side`, `teleport_places`): from
+  Forever's client every class's spell whose effect moves one to a place the server holds (the mage's to Stormwind,
+  Ironforge, Darnassus, the Undercity, Thunder Bluff, Orgrimmar and Dalaran, each its side by its race mask and its
+  reagent, the Rune of Teleportation; the druid's to Moonglade) and the items' of `ITEM_TELEPORTS` (the engineers'
+  transporters to Everlook, Gadgetzan and Mount Hyjal, Forever's four and Classic's two; the Crumbling Hearthstone):
+  twelve. Not the SAF-T Teleport (Tinker: Teleport, a few yards).
+- **Batch 14** (`sources.toml`, unverified): where seven of them bring one, the original game's place where every
+  record of it agrees, on a continent, with a floor of Forever's own world there (Stormwind, Ironforge, the Undercity,
+  Thunder Bluff, Orgrimmar, Moonglade, Everlook); Darnassus' left out (two places 13 yards apart).
+- **What Core learns in play** (the data plan's 1c.1 built ahead; `Doc/guides/data.md`, *Learned*): `Data.Learn(set,
+  key, record)` keeps a whole row of the set (`Codec.Encoder`, new: the decoder turned round) of the client's build
+  and the server's day in the new saved variable `SaneUIData_Learned` (Core's TOC, `Data.SAVED`); read over the set's
+  own at once (its stamp moves) and at the login, dropped once the set has a version of that entry as new or newer.
+- **Where a teleport brings one, learnt** (`src/Core/Data/Teleports.lua`, new in Core's TOC): after the player cast a
+  teleport's spell, a leap of `LEAP` (50) yards between two looks a quarter second apart, or onto another map after a
+  loading screen, is the teleport; where it ends (no height: the game tells none) is learnt into *Travel*; within
+  `SAME` (2) yards of the set's place nothing.
+- **The planner** (`Planner.lua`: `Teleports`, `Usable`, `Spell`, `Item`, `Held`, `landings`): from the player to where
+  each brings one, the teleports the character has now (a spell known, `C_SpellBook.IsSpellKnown`, with its reagent
+  in the bags; an item in the bags that the game lets it use, `C_Item.IsUsableItem`; of its side or of both), their
+  cooldown and `Planner.HEARTH`; on its floor where its height is known (`Walk.Landing`), after the leap the floor
+  followed there (`Arrival`); drawn pale blue (`Route.COLOURS.teleport`). The hearthstone's way by Astral Recall
+  too (`Planner.RECALL`, the sooner of the two). The Legacy perk Frequent Flier (`Planner.FLIER`, `Planner.Pace`):
+  flights `Planner.FASTER` (1.2) times as fast where the game tells the character has it (its spell, or its aura).
+- **On the real data** (the routes harness): the mage from Goldshire to the Cathedral, from Kharanos to Ironforge,
+  from the Crossroads to Thunder Bluff, from Orgrimmar into the Undercity; the druid from Stormwind to Nighthaven; the
+  engineer from Orgrimmar to Everlook; without runes none. The 29 fixed journeys and 200 random ones give the same
+  legs as before for a character with nothing of it.
+- Tests: Navigation 524 (a mage's teleport only with its reagent, the other side's never, a druid's, a transporter
+  held, cooling down or unusable; one learnt in play; Astral Recall and its cooldown; Frequent Flier's flight), data
+  209 (the encoder; what was learnt, laid over a set at the login, dropped once the set is as new, learnt anew; the
+  teleports' watcher: a leap, a loading screen, running on, a landing the set has), walking data (the teleports from
+  made-up client tables).
 
 ### Navigation: the maps' far level a view from a plane, the close squares joined along seams (Saneroki, 2026-10-21)
 - **The far level** (Saneroki: the photographic look is right, but its roads, places and landmarks must fit the middle
