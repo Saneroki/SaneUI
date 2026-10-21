@@ -21,15 +21,16 @@ Blizzard's code has it ([gui-development.md](gui-development.md)).
 
 ## The idea
 
-An adventurer's journal: an open book of cream parchment bound in thin, stitched dark brown leather. The art is a
-quiet background; the content (icons, names, numbers, text) is what stands out. Everything is compact and dense,
+An adventurer's journal: an open book of dark brown parchment bound in thin, stitched dark brown leather. The art
+is a quiet background; the content (icons, names, numbers, text) is what stands out. Everything is compact and dense,
 with as little room for frame and ornament as the look allows.
 
 - **Leather and metal are the binding.** They form a window's outer border, its title bar and the hard buttons
   set into that border. A leather piece always joins the leather border; it never sits on its own on the paper.
-- **Everything on the paper is pencil and paper.** Outlines, dividers, slots, frames round content, section
-  headers and decorations are pencil strokes or pieces of paper (strips, tabs, notes), flat on the page. No
-  leather on paper areas (Saneroki, 2026-10-21: leather headline bars on paper panels are out).
+- **Everything on the paper is pencil.** Outlines, dividers, slots, frames round content, tabs, buttons, section
+  headers and decorations are clean pencil lines on transparency, flat on the page (*Pencil pieces*). The only
+  paper pieces are those hanging out over the border (*Overhangs*). No leather on paper areas (Saneroki,
+  2026-10-21: leather headline bars on paper panels are out).
 - **What changes is made in code.** Text, icons, stains and sketches are laid over the painted parts by code, so
   windows can resize, scroll and show live data.
 - **No colour in the design (Saneroki, 2026-10-21).** The design language is brown leather, paper and pencil lines.
@@ -53,8 +54,8 @@ with as little room for frame and ornament as the look allows.
 - **Stains** (coffee rings, blots, drops: `stain-*.png`, `stains-*.png`) are separate pieces with transparency.
   Code places a few at seeded random spots, faint, and they scroll with the page. They are never painted into a
   part.
-- **Sketches:** the elaborate pencil line drawings in `sketches/` (paper #201–212: a wolf's head, landscapes with a ruin, a
-  coastline map, trees; Saneroki, 2026-10-21) are the decorations of the paper, with the coffee stains. They are
+- **Sketches:** the elaborate pencil line drawings in `sketches/` (paper #201–212: a wolf's head, landscapes with
+  a ruin, a coastline map, trees; Saneroki, 2026-10-21) are the decorations of the paper, with the coffee stains. They are
   separate pieces in graphite with their own transparency, placed by code, very faint, never painted into a part.
 - **Overhangs** (`doll.png`): paper strips and pieces may hang out over the leather border or cross it, where a
   strip belongs to content at the edge (a slot's stat strip, a note, a tab). Saneroki wants more of them, where
@@ -74,14 +75,15 @@ with as little room for frame and ornament as the look allows.
 
 ### Pencil
 
-- Graphite grey on the paper, with the paper's grain showing through.
-- Pencil draws every outline and divider on the paper: slots, rows, the frames of panels and bubbles, ruled lines.
-  Strokes are loose and hand-drawn but clean.
+- Dark graphite (30, 23, 17) on the paper, in clean, sharp lines (*Pencil pieces*).
+- Pencil draws every outline and divider on the paper: slots, rows, the frames of panels and bubbles, ruled lines,
+  and the decorations (the sketches).
 
 ## Text
 
 - **On paper: Kalam** (a hand-printed, non-cursive font), in dark graphite (30, 23, 17) with the paper grain over
-  it, readable on the dark brown paper (Saneroki, 2026-10-21). Its files are in `assets/fonts/Kalam/` (Light, Regular, Bold).
+  it, readable on the dark brown paper (Saneroki, 2026-10-21). Its files are in `assets/fonts/Kalam/` (Light,
+  Regular, Bold).
 - **Colours that are hard to read on paper** (class colours on names in bubbles, lists, the podium; light quality
   colours): the game's own colour, unchanged, with a thin dark outline round the letters, made in code with the
   text (Saneroki, 2026-10-21). Light colours like the priest's white would vanish on the paper without it.
@@ -115,7 +117,7 @@ with as little room for frame and ornament as the look allows.
   repeating its middle for wider buttons, and presses the label in. The earlier patch (round 1 #23) is dropped.
 - **Dropdown buttons:** a leather band hanging down from the top, with a buckle: the band of the kit
   (`kit/kit3-09.png`). Its inside is plain leather for the code's inlay. A band opens an overlay.
-- **On the paper:** pencil-outlined paper pieces, never leather.
+- **On the paper:** pencil boxes (*Pencil pieces*), never leather.
 
 ### Kit parts
 
@@ -202,8 +204,8 @@ Built on `chat-bubble.png` (paper #133's top bubble), made more compact. Each bu
 
 - **Character doll:** `doll.png` is the layout and the look, to be copied, not redrawn (Saneroki, 2026-10-21):
   - its shaped leather frame;
-  - the hero in the middle: the game's live 3D model in the game. No pencil rectangle behind him; a loose pencil
-    sketch of stony ground fills the bottom of his place, under his feet (Saneroki, 2026-10-21);
+  - the hero in the middle: the game's live 3D model in the game. No pencil rectangle behind him; a pencil line
+    drawing of stony ground fills the bottom of his place, under his feet (Saneroki, 2026-10-21);
   - the gear slots in a rounded layout, eight a side: each row shifted outward a little more toward the middle
     rows, so the slots form an arc round the hero, not a straight column (Saneroki, 2026-10-21);
   - the top slot of each side has no strip; each of the seven below has its paper stat strip outside it,
@@ -216,8 +218,9 @@ Built on `chat-bubble.png` (paper #133's top bubble), made more compact. Each bu
   and a dense grid of item icons. Tabs down the left change the content.
 - **Choosing a class or specialisation:** `class-fan.png`. Its layout and look (cards fanned out over the page)
   are kept for a view such as a spellbook's class choice.
-- **Guild window:** `guild-top.png` (paper #120). Its paper top area (the guild's emblem, name and member count on the paper)
-  and its row of tabs fit the guild window. Its leather panel headers on the paper do not (*The idea*).
+- **Guild window:** `guild-top.png` (paper #120). Its paper top area (the guild's emblem, name and member count on
+  the paper) and its row of tabs fit the guild window. Its leather panel headers on the paper do not (*The idea*).
+  Its board's race to the highest level is a podium (*Pencil pieces*).
 
 ## To redesign
 
@@ -255,10 +258,12 @@ needs, for responsive, flexible designs).
   never larger than this.
 - **How:** `catalog.py hires`.
   1. Each decided part is upscaled in code (Lanczos).
-  2. One gentle pass of Qwen goes over the whole part: `qwen21-inpaint.json` with a full mask, denoise 0.3, guidance
-     2.5 and negative words. It sharpens texture, stitches and pencil, and keeps every shape where it is.
-  3. The part's transparency comes back from the upscaled source.
-  4. The results go to `assets/generated/interface/hires/`.
+  2. One gentle pass of Qwen goes over the whole part: `qwen21-inpaint.json` with a full mask, denoise 0.3,
+     guidance 2.5 and negative words. It sharpens texture, stitches and pencil, and keeps every shape where it is.
+  3. The part's transparency comes back from the upscaled source; marks the pass brought back are covered again
+     in code (the letters in #12's title label).
+  4. The results go to `assets/generated/interface/hires/`; `pencil.py` takes the pencil box's lines from the
+     hires #14.
 - **Parts, not pictures:** the code gets parts it can lay out at any size:
   - the window pieces cut from the hires #12 (its top, bottom, edges, corners, clasp), whose middles stretch or
     repeat seamlessly;
@@ -288,8 +293,8 @@ of its own or on earlier renders.
    a part may be made from.
 3. **Elements** (`elements-*.txt`): only for parts no pick shows ready to use, Qwen's edit makes them from their
    crop alone. The words ask for a clean copy (the same material and shape, transparent, no letters or icons).
-   Where code can prepare the crop (marks smoothed, a shape cut, `refs.py`, `shape.py`), it does, so the model
-   only finishes. Saneroki approves each element by number; approved ones are copied to
+   Where code can prepare the crop (marks smoothed, a label covered, `refs.py`), it does, so the model only
+   finishes. Saneroki approves each element by number; approved ones are copied to
    `assets/Concept art/UI style/elements/`.
 4. **Only decided parts** (`compose.py`, `SOURCE`): a view takes its parts from this list alone and refuses any
    other. A part Saneroki did not name is archived, never an input.
@@ -314,7 +319,7 @@ through `dev/imagegen/workflows/qwen21-inpaint.json`):
   guidance (cfg) above 1; `clean.py` runs at 3.
 - **Code where the model fails:** when the model keeps writing letters or invents parts (a new stack of pages),
   code does it with the pick's own pixels (cut rows, copy the pick's own empty paper).
-- **Low strength:** an image-to-image pass at a low denoise (about 0.2) keeps the model close to its input.
+- **Low strength:** a pass at a low denoise keeps the model close to its input: the hires pass runs at 0.3.
 - **Training:** a small LoRA trained only on the approved pictures (`TrainLoraNode`) teaches a model this style
   and nothing else. It is for later, when there are enough approved pictures.
 
@@ -325,3 +330,27 @@ Rules:
 - A layout with exact counts (gear slots, rows) is never left to the model.
 - No stains, sketches or text are painted into parts; code lays them over.
 - New decisions go into this guide first, then into the harness's crops, lists and views.
+
+## Running it
+
+The whole render is one job of the GPU runner, `interface` (`dev/imagegen/jobs.toml`, priority 20), which runs
+`catalog.py`: it cleans the picks, makes the 4K parts and the variants, takes out the pencil lines, lays out the
+views and rebuilds the gallery. Each step skips what it has made, so a stopped run goes on where it stopped.
+
+- See how far it is: `saneui gpuqueue` (the job's line is `catalog.py --status`).
+- Run it now: `saneui switch interface`.
+- After a decision changed (a pick, a cut, a part's source): `saneui rebuildstart interface` forgets what was
+  made (`catalog.py --rebuild`) and renders it all anew.
+- Single steps by hand: `python3 dev/imagegen/sets/interface/catalog.py clean|hires|variants|pencil|views`; the
+  views alone need no graphics card (`compose.py`, `gallery.py`).
+- See the results: the gallery, `assets/generated/interface/index.html` (`.claude/launch.json` "interface").
+
+When Saneroki decides:
+
+1. The decision goes into this guide.
+2. A liked part is cut out of its picture into `assets/Concept art/UI style/` (only the liked section); a part he
+   did not name is archived and never an input.
+3. A view or part that uses it changes in `compose.py` (`SOURCE`), `catalog.py` (`HIRES`, `VARIANTS`) or
+   `clean.py`.
+4. The job is rebuilt.
+

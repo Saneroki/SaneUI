@@ -1313,6 +1313,11 @@ Saneroki asked for a much richer bag view, in features and looks.
   part at 4K scale (a gentle Qwen pass over the part upscaled twice, transparency put back) and variants of
   #14's pencil pieces and five kit parts to pick from; the GPU runner's new job `interface`. The guide gains
   *Pencil pieces* and *High resolution*.
+- The interface harness finalized: `catalog.py` is the whole render (the picks cleaned, the parts at 4K, the
+  variants, the pencil pieces, the views, the gallery), each step skipping what it made, with `--status` and
+  `--rebuild`; the GPU runner's job `interface` runs it with its status and rebuild. The guide gains *Running it*
+  (the commands and how a new decision flows into the harness) and drops the last earlier wording (cream paper,
+  loose pencil, paper pieces on the page).
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.

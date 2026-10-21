@@ -52,10 +52,14 @@ status = ["dev/tools/dungeon-paint", "status"]
 done = '^(\d+) of \1 paintings made'
 rebuild = ["dev/tools/dungeon-paint", "rebuild"]
 
-# The interface's parts at 4K scale and variants to pick from (Saneroki, 2026-10-21: lock in the style, clean high
-# quality renders of every part the code needs). Each step skips what it has made. Plan:
-# dev/imagegen/sets/interface/catalog.py; Doc/guides/interface-style.md, *High resolution*.
+# The interface's whole render (Saneroki, 2026-10-21: the style locked in, clean high quality renders of every part
+# the code needs, at 4K scale): the picks cleaned, the parts at 4K, variants to pick from, the pencil pieces, the
+# views and the gallery. Each step skips what it has made. Plan: dev/imagegen/sets/interface/catalog.py;
+# Doc/guides/interface-style.md, *Running it*.
 [[job]]
 name = "interface"
 priority = 20
 command = ["python3", "dev/imagegen/sets/interface/catalog.py"]
+status = ["python3", "dev/imagegen/sets/interface/catalog.py", "--status"]
+done = '^complete'
+rebuild = ["python3", "dev/imagegen/sets/interface/catalog.py", "--rebuild"]

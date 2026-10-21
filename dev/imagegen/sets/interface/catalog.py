@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""The interface's parts in high resolution for 4K, and new variants to pick from (Doc/guides/interface-style.md,
-*High resolution*). Run by the GPU runner (dev/imagegen/jobs.toml, job "interface"); each step skips what it made.
+"""The interface's whole render (Doc/guides/interface-style.md, *The harness* and *High resolution*): run by the GPU
+runner as its job "interface" (dev/imagegen/jobs.toml). Each step skips what it has made, so a stopped run goes on
+where it stopped; --rebuild starts anew from the decided references (after a decision changed).
+
+  clean     the decided pictures cleaned (clean.py: #12 and #3)  ->  assets/generated/interface/clean/
 
   hires     every decided part at twice its size, the scale of a 4K screen: upscaled in code (Lanczos), then one
             gentle pass of Qwen over the whole picture (qwen21-inpaint.json with a full mask, low denoise), which
@@ -11,7 +14,12 @@
             with their light inset lines  ->  assets/generated/interface/variants/<name>-<seed>.png, then pencil.py
             turns the pencil ones into graphite lines
 
-  python3 dev/imagegen/sets/interface/catalog.py [hires|variants ...]
+  pencil    the pencil lines of #14 and of the pencil variants (pencil.py)  ->  .../pencil/
+  views     the views laid out in code (compose.py)  ->  .../views/, then the gallery (gallery.py)
+
+  python3 dev/imagegen/sets/interface/catalog.py [clean|hires|variants|pencil|views ...]
+  python3 dev/imagegen/sets/interface/catalog.py --status     how far it is (the runner's status line)
+  python3 dev/imagegen/sets/interface/catalog.py --rebuild    forget what was made, so the next run makes it anew
 """
 import os, subprocess, sys
 from PIL import Image
@@ -122,7 +130,6 @@ def hires():
             rgb.putalpha(raw.getchannel("A"))
             raw = rgb
         raw.save(path(f"{GEN}/hires/{name}.png"))
-    subprocess.run(["python3", "dev/imagegen/sets/interface/pencil.py", f"{GEN}/hires/pencil-box.png"], cwd=ROOT)
 
 
 def variants():
@@ -141,10 +148,47 @@ def variants():
     os.makedirs(os.path.dirname(path(lst)), exist_ok=True)
     open(path(lst), "w").write("\n".join(lines) + "\n")
     run(lst)
-    subprocess.run(["python3", "dev/imagegen/sets/interface/pencil.py"], cwd=ROOT)
 
+
+def clean():
+    for name in ("frame", "doll"):
+        if not os.path.exists(path(f"{GEN}/clean/{name}.png")):
+            subprocess.run(["python3", "dev/imagegen/sets/interface/clean.py", name], cwd=ROOT, check=True)
+
+
+def pencil():
+    subprocess.run(["python3", "dev/imagegen/sets/interface/pencil.py"], cwd=ROOT, check=True)
+
+
+def views():
+    subprocess.run(["python3", "dev/imagegen/sets/interface/compose.py"], cwd=ROOT, check=True)
+    subprocess.run(["python3", "dev/imagegen/sets/interface/gallery.py"], cwd=ROOT, check=True)
+
+
+def status():
+    """One line: parts and variants made of all; "complete" when everything is there."""
+    have = sum(os.path.exists(path(f"{GEN}/hires/{n}.png")) for n in HIRES)
+    var = sum(os.path.exists(path(f"{GEN}/variants/{n}-{seeds}.png")) for n, (_, _, seeds) in VARIANTS.items())
+    views_ = os.path.exists(path(f"{GEN}/views/guild.png"))
+    done = have == len(HIRES) and var == len(VARIANTS) and views_
+    print(f"{'complete: ' if done else ''}{have} of {len(HIRES)} parts at 4K, {var} of {len(VARIANTS)} variants, "
+          f"views {'laid out' if views_ else 'not yet'}")
+
+
+def rebuild():
+    import shutil
+    for d in ("clean", "hires", "variants", "pencil"):
+        shutil.rmtree(path(f"{GEN}/{d}"), ignore_errors=True)
+    print("forgotten: the next run makes everything anew")
+
+
+STEPS = {"clean": clean, "hires": hires, "variants": variants, "pencil": pencil, "views": views}
 
 if __name__ == "__main__":
-    for step in sys.argv[1:] or ("hires", "variants"):
-        {"hires": hires, "variants": variants}[step]()
-    subprocess.run(["python3", "dev/imagegen/sets/interface/gallery.py"], cwd=ROOT)
+    if sys.argv[1:] == ["--status"]:
+        status()
+    elif sys.argv[1:] == ["--rebuild"]:
+        rebuild()
+    else:
+        for step in sys.argv[1:] or STEPS:
+            STEPS[step]()
