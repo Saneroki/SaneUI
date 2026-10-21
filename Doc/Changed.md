@@ -1099,6 +1099,11 @@ Saneroki asked for a much richer bag view, in features and looks.
   look took over the layout); Kalam with a paper grain as the main font (`fonts.py`: hand-printed fonts on
   parchment). `chat-compact.txt`: two-line pencil chat bubbles. `paper.txt` and `paper-test.py`: a seamless grain
   tile, clouds scaled to cover and coffee stains with transparency laid by code, at three window sizes.
+- The interface style written down (Saneroki's decisions): new guide `Doc/guides/interface-style.md`, the journal
+  of parchment and stitched leather with pencil on the paper, part by part (paper, leather, title bar, patch
+  buttons, dropdown bands, tabs, side tabs, chat bubbles, the doll, bags, the guild window, animation) and what
+  code makes (text, stains, sketches); its pictures in `assets/Concept art/UI style/`; listed in CLAUDE.md's
+  guides; `ui-paper/style.txt` rewritten from it; image-generation.md points to it.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.

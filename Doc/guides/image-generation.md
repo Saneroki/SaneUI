@@ -91,6 +91,11 @@ qwen21-turbo-edit-1ref`); `dev/imagegen/workflows/` is looked in first, for work
 
 ## The house style
 
+**The look of Sane UI's own windows is decided in [interface-style.md](interface-style.md)** (Saneroki,
+2026-10-21): an adventurer's journal of parchment and stitched leather, pencil on the paper. The words for its
+parts are in `dev/imagegen/sets/ui-paper/style.txt`, made from that guide. The bronze words below are the older
+house style of the recipes.
+
 `dev/imagegen/style.txt` is one `style:` line, put after every prompt of the recipes that make interface
 art (`concept`, `concept-free`, `part-new`): slim rims of polished bronze and warm gold with a fine black
 outline, deep charcoal panels with a faint grain, sweeping curves ending in sharp points, four-pointed
