@@ -102,6 +102,20 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **Close up and far out (Saneroki, 2026-10-19):** the painted view holds its quality and small details from a
   single building up close to the whole world far out: many small detailed pictures stitched together like the
   game's own tiles, with coarser levels for the far views, so it stays sharp up close and light on the whole world.
+- **Zones and continents reimagined (Saneroki, 2026-10-21, replacing for the middle and far zooms "the far
+  levels are made from the close ones" below):** the close zooms are unchanged: the accurate terrain
+  repainted, square by square, as built (*The lab*, *The whole run*). The middle zoom (a whole zone) and the far zoom (the continents, the world) are a
+  free, realistic fantasy painting of each zone by the image model: very cool to look at, the zone's mood and
+  lore, its general layout and its major places (cities, landmarks, the great mountains, lakes and forests)
+  where they lie, the game's own buildings and looks of the zone fed to the model as reference pictures of its
+  3D world. They need not be accurate or useful for finding one's way, and need not be seen from straight
+  above: a perspective angle is welcome, for the full freedom of the render. The zones' borders fit together,
+  each zone clearly sectioned from the next, so the continents read as one picture. Parchment and Scrying keep
+  their own views unchanged. Open: the switch-over zoom between the close squares and the zone paintings, and
+  how the angled paintings meet at the borders (painted per zone and blended, or each continent painted as a
+  whole and cut by the zones' outlines).
+- **Dungeon maps reimagined (Saneroki, 2026-10-21):** a full reimagination of the dungeon maps in the painted
+  look, still precise in outlines and room sizes, so they are useful in the game. Painted after the zones.
 - **Entrances and ways out are pins (Saneroki, 2026-10-19, replacing the same day's ask to paint them):** caves,
   mines, the entrances of dungeons and raids and the ways from one zone into the next are shown by map pins, not
   painted into the view.
@@ -135,7 +149,8 @@ minimap) and the full-screen window (the world map) show the same map with the s
   (`dev/imagegen/sets/maps-styles/`: grimy realism, the original game's painted textures, high-fantasy matte
   painting, an old oil painting, a photorealistic render; tried 2026-10-19: all five keep the layout up close; the
   whole world painted in one picture drew the continents larger than they are, so the far levels are made
-  from the close ones, never painted on their own). The **terrain is the base**: the painted view is the terrain repainted in that look, every building, street,
+  from the close ones, never painted on their own; since 2026-10-21 only the close levels, *Zones and
+  continents reimagined*). The **terrain is the base**: the painted view is the terrain repainted in that look, every building, street,
   tree and shore where the terrain has it, so it serves as the map of one's close vicinity, zoomed in as close as
   the minimap, single buildings clear. The painted continent maps of the pilot work only far out.
 - **Routes, later (Saneroki, 2026-10-19):** flight paths, and the ships' routes as a red dotted line, shown when

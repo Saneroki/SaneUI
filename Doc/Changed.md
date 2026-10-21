@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 215 (data in the game), 468 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### Navigation: zones and continents reimagined in the painted view (Saneroki, 2026-10-21)
+- Plan only (`Doc/ideas/Navigation.md`, *Zones and continents reimagined*, *Dungeon maps reimagined*): the close
+  zooms stay the accurate terrain repainted; the zone and continent zooms become free, realistic fantasy
+  paintings of each zone's mood, layout and major places, perspective allowed, borders fitting together; the
+  dungeon maps get a painted reimagination that keeps their outlines and room sizes.
+
 ### Navigation: routes from the player, on their floor, over every plane (Saneroki, 2026-10-21)
 - At Saneroki's ask: a route into a building or a cave and out again did not work, routes across the continents by
   tram, flight and ship not well, and the line should always run from the player to the pin.
