@@ -21,6 +21,7 @@
 #   voices.py       the voice database's rules: the cast, the names, words, parts, tone, presets
 #   imagegen.py     the image pipeline's lists, recipes and sets, and the flipbook's grid and loops
 #   atlas.py        the Atlas painting's words, its check against the game's water, the seams, the screen
+#   gpu_runner.py   the GPU runner: its jobs in order, the claims, what counts as the card wanted elsewhere
 #   walk.py         the walking data's tools: floors, surfaces, rectangles, openings, blocks, regions; flights' paths
 #   map_data.py     dev/tools/map-data: world positions on zone maps (terrain, buildings, boxes), Places' keys, zones
 #   data check      the master of Core's data framework (assets/data) fits its rules
@@ -55,6 +56,7 @@ lua5.1 dev/tests/data.lua
 python3 -I dev/tests/voices.py
 python3 -I dev/tests/imagegen.py
 python3 -I dev/tests/atlas.py
+python3 -I dev/tests/gpu_runner.py
 python3 -I dev/tests/walk.py
 python3 -I dev/tests/map_data.py
 dev/tools/data check

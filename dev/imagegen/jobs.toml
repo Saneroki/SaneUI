@@ -1,0 +1,31 @@
+# The GPU runner's jobs (dev/tools/gpu-runner; Doc/guides/image-generation.md, *The GPU runner*): ComfyUI work
+# done while the graphics card is idle. The runner reads this file again at every look, so a job added here is
+# taken up without a restart. The most important unfinished job runs first: a higher priority, equal ones in
+# this file's order.
+#
+#   [[job]]
+#   name = "atlas"                                   # letters, digits, - and _; its log is <name>.log
+#   priority = 10
+#   command = ["dev/tools/atlas", "paint"]           # run from Sane UI's folder; run again after each stop
+#   status = ["dev/tools/atlas", "status"]           # optional: its first line shows in gpu-runner status
+#   done = '^(\d+) of \1 squares painted'            # optional: finished when status's output matches this
+#   comfyui = true                                   # false: the job needs no ComfyUI (the runner leaves it off)
+#
+# The runner's settings (these are the defaults):
+#   hold = 180          seconds the card must stay free before a job starts again
+#   poll = 3            seconds between looks
+#   mem_limit = 1536    MiB another program may hold of the card
+#   sm_limit = 40       percent of the card another program may use ...
+#   busy_looks = 3      ... at so many looks in a row
+#   games = ["Wow*.exe"]
+#   ignore = ["kwin_wayland", "kwin_x11", "Xorg", "Xwayland", "plasmashell", "gnome-shell"]   the desktop
+#   tries = 3           a job that fails so often in a row waits for gpu-runner reset <name>
+#
+# Long painting runs go in here only on Saneroki's word. Next in line, when he says so:
+#
+# [[job]]
+# name = "atlas"
+# priority = 10
+# command = ["dev/tools/atlas", "paint"]
+# status = ["dev/tools/atlas", "status"]
+# done = '^(\d+) of \1 squares painted'

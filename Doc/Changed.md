@@ -6,6 +6,23 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 215 (data in the game), 468 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
 
+### Image generation: the GPU runner (Saneroki, 2026-10-21)
+- At Saneroki's ask: the long ComfyUI work (the Atlas, the rerenders of its middle and far zooms, dungeon maps)
+  should use the graphics card only while it is idle, since the game uses it too.
+- `dev/tools/gpu-runner`: runs the most important unfinished job of `dev/imagegen/jobs.toml` (a tool's command,
+  a priority, optionally a status command and the pattern that says it is done), and stops it as soon as the
+  card is wanted elsewhere: the game (`Wow*.exe`), another program holding more than 1.5 GB of the card or using
+  more than 40 % at three looks in a row (not the desktop's), ComfyUI pictures of another session or tool, a
+  claim (`gpu-runner claim NAME [--wait] [-- COMMAND]`, or a file in `$XDG_RUNTIME_DIR/saneui-gpu/claims/`), a
+  pause by hand. Its pictures then leave ComfyUI's queue and the card is freed (ComfyUI stopped if the runner
+  started it and nobody else used it, else `/free`); it goes on after the card has been free for `hold` (three
+  minutes). `start` (a systemd user unit), `stop`, `pause`, `resume`, `status`, `reset`; its log in
+  `~/.local/state/saneui/gpu-runner/`. The job list ships with no job: long runs start on Saneroki's word.
+- `dev/tools/imagegen`: `Server.free` (the Atlas' pause used it inline) and `Server.interrupt`, which stops only
+  its own picture (the Atlas' quit interrupted whatever ComfyUI was making, another session's picture too); its
+  client id can be set by `IMAGEGEN_CLIENT`, so the runner tells its jobs' pictures from others'.
+- Guide: `Doc/guides/image-generation.md`, *The GPU runner*. Tests: `dev/tests/gpu_runner.py` (33 checks).
+
 ### Navigation: zones and continents reimagined in the painted view (Saneroki, 2026-10-21)
 - Plan only (`Doc/ideas/Navigation.md`, *Zones and continents reimagined*, *Dungeon maps reimagined*): the close
   zooms stay the accurate terrain repainted; the zone and continent zooms become free, realistic fantasy

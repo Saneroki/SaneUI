@@ -244,7 +244,8 @@ def check(graph, jobs):
 class Server:
     def __init__(self, address):
         self.url = address.rstrip("/") if "://" in address else "http://" + address.rstrip("/")
-        self.client = str(uuid.uuid4())
+        # its pictures in ComfyUI's queue go by this name: dev/tools/gpu-runner names its jobs' to tell them from others'
+        self.client = os.environ.get("IMAGEGEN_CLIENT") or str(uuid.uuid4())
 
     def call(self, path, data=None, headers=None):
         request = urllib.request.Request(self.url + path, data=data, headers=headers or {})
@@ -284,6 +285,17 @@ class Server:
     def queue(self, graph):
         body = json.dumps({"prompt": graph, "client_id": self.client}).encode()
         return json.loads(self.call("/prompt", body, {"Content-Type": "application/json"}))["prompt_id"]
+
+    def free(self):
+        """Lets go of the graphics card's memory once the picture being made is done (the game may run)."""
+        body = json.dumps({"unload_models": True, "free_memory": True}).encode()
+        self.call("/free", body, {"Content-Type": "application/json"})
+
+    def interrupt(self, prompt_id):
+        """Stops this picture if it is the one being made, never another's; takes it off the queue if it waits."""
+        headers = {"Content-Type": "application/json"}
+        self.call("/queue", json.dumps({"delete": [prompt_id]}).encode(), headers)
+        self.call("/interrupt", json.dumps({"prompt_id": prompt_id}).encode(), headers)
 
     def wait(self, prompt_id):
         """Waits until ComfyUI has run the job (a job is in the history once it is done, or failed)."""

@@ -212,6 +212,49 @@ dev/tools/imagegen dev/imagegen/sets/example/parts.txt --count 2 --only star
   `output/imagegen/`. ComfyUI keeps a copy there in any case: clear it now and then.
 - Ctrl+C stops the waiting, not ComfyUI: clear its queue there (*Queue* panel).
 
+## The GPU runner
+
+The card is also the game's. Long work (the Atlas, a big set) goes to `dev/tools/gpu-runner`, which runs it
+only while the card is idle and gives the card back the moment something else wants it.
+
+- **The jobs:** `dev/imagegen/jobs.toml`, one `[[job]]` each: a `name`, a `priority` (higher first) and the
+  `command` of a tool, optionally a `status` command and a `done` pattern for its output (the Atlas:
+  `dev/tools/atlas status`, `'^(\d+) of \1 squares painted'`). The runner reads the file at every look and runs
+  the most important unfinished job; stopped, it runs the same command again later. The Atlas goes on where it
+  stopped (it skips the squares it has painted); `dev/tools/imagegen` makes its whole list again, so give the
+  runner short lists. Long runs go into the file only on Saneroki's word.
+- **Wanted elsewhere:** the game (`Wow*.exe`; WoW Forever is `WowB.exe` under Proton); another program on the
+  card holding more than 1.5 GB of it, or using more than 40 % at three looks in a row (the desktop's own
+  programs never count); pictures of another session or tool in ComfyUI's queue (the runner gives its jobs an
+  `IMAGEGEN_CLIENT`, which `dev/tools/imagegen` and the Atlas send with each picture); a claim; a pause by hand.
+- **Then:** the job is stopped at once (the Atlas drops the picture being painted and keeps every square
+  finished), its pictures leave ComfyUI's queue (by their id: never another's) and the card is freed: ComfyUI
+  stopped if the runner started it and nobody else used it meanwhile, else told to let go of its memory, as the
+  Atlas' `p`. With the card free for three minutes (`hold`), the runner goes on: an alt-tab or a restart of the
+  game does not start it again.
+- **Another session or tool that needs the card** claims it:
+
+  ```bash
+  dev/tools/gpu-runner claim my-test -- dev/tools/imagegen dev/imagegen/sets/example/parts.txt --count 1
+  ```
+
+  runs the command once the runner has given the card back, and releases the claim after it.
+  `claim NAME --wait` and `release NAME` do the same around several steps; a file in
+  `$XDG_RUNTIME_DIR/saneui-gpu/claims/` is a claim too (`touch` it, `rm` it; a process id as its first line ends
+  the claim with that process). A short ComfyUI job of a session needs no claim: its pictures in the queue are
+  enough.
+
+| | |
+| --- | --- |
+| `dev/tools/gpu-runner start` / `stop` | the runner in the background (the user unit `saneui-gpu-runner`) / stopped, the card freed |
+| `dev/tools/gpu-runner run` | the runner in this terminal (Ctrl+C stops it) |
+| `dev/tools/gpu-runner pause` / `resume` | held by hand (the job stopped, the card freed) / going on after the hold |
+| `dev/tools/gpu-runner status` | what it does or why it waits, the claims, each job and how far it is |
+| `dev/tools/gpu-runner reset NAME` | a job finished or left after three failures runs again |
+
+Its log is `~/.local/state/saneui/gpu-runner/runner.log`, each job's output `<name>.log` beside it. The limits
+and the hold are set at the head of `jobs.toml`.
+
 ## Maps
 
 Navigation's painted map view (`Doc/ideas/Navigation.md`, *The painted view*) is made with the same tool and
@@ -256,7 +299,8 @@ lists, from inputs of its own:
   square of ten zones at 2048, each in its zone's atmosphere; about two and a half minutes a picture).
 - **The Atlas' run:** `dev/tools/atlas` paints every square of both continents from these, checks it against the
   game's water and keeps the best of three seeds; `--near` paints a few squares around a place first, `join`
-  stitches them, each through the colour pass (`--mood`); in a terminal it shows its progress, `p` pauses (and frees the graphics card), `q` quits.
+  stitches them, each through the colour pass (`--mood`); in a terminal it shows its progress, `p` pauses (and frees the graphics card), `q` quits; the whole run goes
+  to the GPU runner (*The GPU runner*), which paints only while the card is idle.
 - **Upscaling models** (`models/upscale_models/` of ImageGen: 4x-UltraSharpV2 and 4xNomos2, both DAT2, as
   safetensors, 17 s for 1024 to 4096): they sharpen what is there, the faults too, and add no detail; the
   painting is made at the size it is shown.

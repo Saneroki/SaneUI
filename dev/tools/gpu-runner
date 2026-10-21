@@ -1,0 +1,600 @@
+#!/usr/bin/env python3
+"""Runs the pending ComfyUI work (the Atlas' painting, image sets) while the graphics card is idle, and gives
+the card back as soon as something else wants it: the game, another program on the card, ComfyUI work of
+another session or tool, or a claim. Guide: Doc/guides/image-generation.md, *The GPU runner*.
+
+The jobs are in dev/imagegen/jobs.toml (or --jobs FILE): each a command of an existing tool and a priority.
+The runner runs the most important one not yet finished; stopped, it runs the same command again later, and
+the tool goes on where it stopped (dev/tools/atlas skips the squares it has painted; dev/tools/imagegen
+makes its whole list again, so give it short lists). A job is finished when its command ends well, or, with
+done, when its status command's output matches done (the Atlas ends well when it is stopped too).
+
+The card is wanted elsewhere while:
+  - the game runs (a program of the names in games, by default Wow*.exe: WoW Forever is WowB.exe under Proton);
+  - another program on the card (not ComfyUI, not the desktop's in ignore) holds more than mem_limit MiB of it,
+    or uses more than sm_limit percent of it at busy_looks looks in a row (a browser and Battle.net stay under);
+  - ComfyUI has pictures of another session or tool in its queue (told apart by IMAGEGEN_CLIENT, which the
+    runner gives its jobs and dev/tools/imagegen sends with every picture);
+  - a claim is there: a file in $XDG_RUNTIME_DIR/saneui-gpu/claims/ (any name; if its first line is a process
+    id, the claim ends with that process), made with `gpu-runner claim` or by hand;
+  - it is paused by hand (gpu-runner pause).
+Then the runner stops its job at once (SIGTERM: the Atlas drops the picture being painted, keeps every square
+finished), takes its pictures off ComfyUI's queue and frees the card: ComfyUI stopped if the runner started
+it and nobody else has used it since, else told to let go of its memory (`/free`, as the Atlas' pause). It
+goes on once the card has been free for hold seconds, so a quick alt-tab or a restart of the game does not
+start it again.
+
+Usage:
+  dev/tools/gpu-runner run              the runner in this terminal (Ctrl+C stops it and frees the card)
+  dev/tools/gpu-runner start            the runner in the background (a systemd user unit, saneui-gpu-runner)
+  dev/tools/gpu-runner stop             stops the runner: its job is stopped and the card freed
+  dev/tools/gpu-runner pause | resume   holds the runner by hand (its job stopped, the card freed) | lets it go on
+  dev/tools/gpu-runner status           what it does, why it waits, the jobs and how far each is
+  dev/tools/gpu-runner claim NAME [--wait] [-- COMMAND ...]
+                                        claims the card for NAME; --wait: until the runner has given it back;
+                                        with a command: for as long as the command runs, then released
+  dev/tools/gpu-runner release NAME     ends the claim NAME
+  dev/tools/gpu-runner reset NAME       forgets that the job NAME finished or failed, so it runs again
+  --jobs FILE                           another job list (default dev/imagegen/jobs.toml)
+
+Its log: ~/.local/state/saneui/gpu-runner/runner.log, each job's output beside it in <job>.log; what is
+finished in state.json there.
+"""
+import argparse
+import fnmatch
+import importlib.machinery
+import importlib.util
+import json
+import os
+import re
+import shutil
+import signal
+import subprocess
+import sys
+import time
+import tomllib
+import urllib.request
+import uuid
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+JOBS = ROOT / "dev" / "imagegen" / "jobs.toml"
+STATE = Path(os.environ.get("GPU_RUNNER_STATE") or Path.home() / ".local" / "state" / "saneui" / "gpu-runner")
+RUNTIME = Path(os.environ.get("GPU_RUNNER_DIR") or Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "saneui-gpu")
+ADDRESS = "127.0.0.1:8188"
+UNIT = "saneui-gpu-runner"
+DEFAULTS = {
+    "hold": 180,           # seconds the card must be free before a job (re)starts
+    "poll": 3,             # seconds between looks
+    "mem_limit": 1536,     # MiB another program may hold of the card
+    "sm_limit": 40,        # percent of the card another program may use
+    "games": ["Wow*.exe"],
+    "ignore": ["kwin_wayland", "kwin_x11", "Xorg", "Xwayland", "plasmashell", "gnome-shell"],  # the desktop
+    "busy_looks": 3,       # looks in a row over sm_limit that count
+    "tries": 3,            # a job that fails so often in a row is left until gpu-runner reset
+}
+GRACE = 30                 # seconds a stopped job has to end before it is killed
+
+
+def module(name, path):
+    loader = importlib.machinery.SourceFileLoader(name, str(path))
+    found = importlib.util.module_from_spec(importlib.util.spec_from_loader(name, loader))
+    loader.exec_module(found)
+    return found
+
+
+ig = module("imagegen", ROOT / "dev" / "tools" / "imagegen")   # ComfyUI's calls, shared with the Atlas
+
+
+def say(text):
+    line = f"{time.strftime('%Y-%m-%d %H:%M:%S')} {text}"
+    print(line, flush=True)
+    STATE.mkdir(parents=True, exist_ok=True)
+    with open(STATE / "runner.log", "a") as log:
+        log.write(line + "\n")
+
+
+def read_json(path, empty):
+    try:
+        return json.loads(path.read_text())
+    except (OSError, ValueError):
+        return empty
+
+
+def write_json(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_suffix(".tmp")
+    temp.write_text(json.dumps(data, indent=1))
+    os.replace(temp, path)
+
+
+def alive(pid):
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+
+
+# --- The jobs ------------------------------------------------------------------------------------
+
+def load_jobs(path):
+    """The settings and the jobs, most important first (a higher priority; equal ones in the file's order)."""
+    data = tomllib.loads(Path(path).read_text()) if Path(path).is_file() else {}
+    settings = {**DEFAULTS, **{k: v for k, v in data.items() if k != "job"}}
+    jobs = []
+    for at, job in enumerate(data.get("job", [])):
+        if not job.get("name") or not job.get("command"):
+            raise SystemExit(f"{path}: every [[job]] needs a name and a command")
+        if job["name"] in {j["name"] for j in jobs}:
+            raise SystemExit(f"{path}: two jobs are called {job['name']}")
+        jobs.append({"priority": 0, "status": None, "done": None, **job, "at": at})
+    jobs.sort(key=lambda j: (-j["priority"], j["at"]))
+    return settings, jobs
+
+
+def progress(job):
+    """The first line of the job's status command, and whether its done matches; (None, None) without one."""
+    if not job["status"]:
+        return None, None
+    try:
+        out = subprocess.run(job["status"], cwd=ROOT, capture_output=True, text=True, timeout=120).stdout
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return f"status failed: {error}", None
+    first = out.strip().splitlines()[0] if out.strip() else ""
+    return first, bool(job["done"] and re.search(job["done"], out, re.MULTILINE))
+
+
+def next_job(jobs, state, tries):
+    for job in jobs:
+        mine = state.get(job["name"], {})
+        if mine.get("finished") or mine.get("failures", 0) >= tries:
+            continue
+        if progress(job)[1]:
+            state[job["name"]] = {**mine, "finished": time.strftime("%Y-%m-%d %H:%M")}
+            say(f"{job['name']}: already finished")
+            continue
+        return job
+    return None
+
+
+# --- Who wants the card --------------------------------------------------------------------------
+
+def processes():
+    """Each process' id and the file name of its program (a Windows program's too: S:\\...\\WowB.exe)."""
+    for entry in Path("/proc").iterdir():
+        if entry.name.isdigit():
+            try:
+                argv0 = (entry / "cmdline").read_bytes().split(b"\0", 1)[0].decode(errors="replace")
+            except OSError:
+                continue
+            if argv0:
+                yield int(entry.name), re.split(r"[\\/]", argv0)[-1]
+
+
+def playing(patterns):
+    return [f"the game ({name}, {pid})" for pid, name in processes()
+            if any(fnmatch.fnmatch(name.lower(), p.lower()) for p in patterns)]
+
+
+def card_users():
+    """The programs on the card: id, percent used, MiB held (nvidia-smi pmon, the graphics programs too)."""
+    try:
+        out = subprocess.run(["nvidia-smi", "pmon", "-c", "1", "-s", "um"], capture_output=True, text=True,
+                             timeout=20).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    found = []
+    for line in out.splitlines():
+        cols = line.split()
+        if line.startswith("#") or len(cols) < 10 or not cols[1].isdigit():
+            continue
+        number = lambda text: int(text) if text.isdigit() else 0
+        found.append((int(cols[1]), number(cols[3]), number(cols[9])))
+    return found
+
+
+def comfyui_pid():
+    try:
+        out = subprocess.run(["systemctl", "--user", "show", "-p", "MainPID", "--value", "comfyui.service"],
+                             capture_output=True, text=True, timeout=10).stdout.strip()
+        return int(out) if out.isdigit() and out != "0" else None
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+
+def comfy_queue():
+    """ComfyUI's queue: (prompt id, client id, running) each; None when ComfyUI does not answer."""
+    try:
+        with urllib.request.urlopen(ig.Server(ADDRESS).url + "/queue", timeout=3) as response:
+            data = json.loads(response.read())
+    except (OSError, ValueError):
+        return None
+    return [(item[1], (item[3] or {}).get("client_id"), kind == "queue_running")
+            for kind in ("queue_running", "queue_pending") for item in data.get(kind, [])]
+
+
+def claims():
+    """The claims standing; a claim whose process has ended is taken away."""
+    found = []
+    folder = RUNTIME / "claims"
+    for path in sorted(folder.glob("*")) if folder.is_dir() else []:
+        try:
+            first = (path.read_text().strip().splitlines() or [""])[0]
+        except OSError:
+            continue
+        if first.isdigit() and not alive(int(first)):
+            path.unlink(missing_ok=True)
+            continue
+        found.append(path.name)
+    return found
+
+
+class Watch:
+    """Looks at everything that may want the card; remembers what used it a look ago."""
+
+    def __init__(self, settings, client):
+        self.settings, self.client = settings, client
+        self.busy = {}           # program id: looks in a row over sm_limit
+        self.others_seen = False  # pictures of others in ComfyUI's queue, ever
+
+    def reasons(self, own_pids):
+        s = self.settings
+        reasons = ["paused by hand"] if (RUNTIME / "paused").exists() else []
+        reasons += [f"claimed by {name}" for name in claims()]
+        reasons += playing(s["games"])
+        comfy = comfyui_pid()
+        busy = {}
+        for pid, sm, mib in card_users():
+            name = comm(pid)
+            if pid == comfy or pid in own_pids or name in s["ignore"]:
+                continue
+            if mib > s["mem_limit"]:
+                reasons.append(f"{name} ({pid}) holds {mib} MiB of the card")
+            elif sm > s["sm_limit"]:
+                busy[pid] = self.busy.get(pid, 0) + 1
+                if busy[pid] >= s["busy_looks"]:
+                    reasons.append(f"{name} ({pid}) uses {sm} % of the card")
+        self.busy = busy
+        others = [p for p, client, _ in comfy_queue() or [] if client != self.client]
+        if others:
+            self.others_seen = True
+            reasons.append("ComfyUI makes pictures of another session or tool")
+        return reasons
+
+
+def comm(pid):
+    try:
+        return Path(f"/proc/{pid}/comm").read_text().strip()
+    except OSError:
+        return "?"
+
+
+def tree(pid):
+    """A process and all under it."""
+    found, todo = set(), [pid]
+    children = {}
+    for entry in Path("/proc").iterdir():
+        if entry.name.isdigit():
+            try:
+                parent = int((entry / "stat").read_text().rsplit(")", 1)[1].split()[1])
+            except (OSError, IndexError, ValueError):
+                continue
+            children.setdefault(parent, []).append(int(entry.name))
+    while todo:
+        p = todo.pop()
+        if p not in found:
+            found.add(p)
+            todo += children.get(p, [])
+    return found
+
+
+# --- The runner ----------------------------------------------------------------------------------
+
+class Runner:
+    def __init__(self, jobs_path):
+        self.jobs_path = jobs_path
+        self.settings, self.jobs = load_jobs(jobs_path)
+        self.client = f"gpu-runner-{uuid.uuid4()}"
+        self.watch = Watch(self.settings, self.client)
+        self.server = ig.Server(ADDRESS)
+        self.state = read_json(STATE / "state.json", {})
+        self.proc = self.job = None
+        self.job_log = None
+        self.stopping_job = False
+        self.started_comfy = False
+        self.freed = True
+        self.wanted_at = 0.0     # the last look that found the card wanted elsewhere
+        self.told = self.bad_list = None   # what was said last, not to say it at every look
+        self.quit = False
+
+    def write_status(self, phase, reasons=(), note=""):
+        write_json(RUNTIME / "status.json", {
+            "pid": os.getpid(), "phase": phase, "job": self.job["name"] if self.job else None,
+            "reasons": list(reasons), "note": note, "freed": self.freed, "since": self.since,
+            "updated": time.time()})
+
+    def comfy_up(self):
+        return comfy_queue() is not None
+
+    def start_job(self, job):
+        if job.get("comfyui", True) and not self.comfy_up():
+            say("starting ComfyUI")
+            if not shutil.which("comfyui") or subprocess.run(["comfyui", "start"], capture_output=True).returncode:
+                say("ComfyUI did not start: see comfyui log")
+                return
+            self.started_comfy, self.watch.others_seen = True, False
+        self.job, self.stopping_job = job, False
+        self.freed = not job.get("comfyui", True)   # a job without ComfyUI leaves its memory to whoever uses it
+        self.job_log = open(STATE / f"{job['name']}.log", "a")
+        self.job_log.write(f"--- {time.strftime('%Y-%m-%d %H:%M:%S')} {' '.join(job['command'])}\n")
+        self.job_log.flush()
+        env = {**os.environ, "IMAGEGEN_CLIENT": self.client, "PYTHONUNBUFFERED": "1"}
+        self.proc = subprocess.Popen(job["command"], cwd=ROOT, env=env, stdin=subprocess.DEVNULL,
+                                     stdout=self.job_log, stderr=subprocess.STDOUT, start_new_session=True)
+        say(f"{job['name']}: started ({' '.join(job['command'])}), pid {self.proc.pid}")
+
+    def stop_job(self, why):
+        """Stops the job now; its pictures leave ComfyUI's queue."""
+        if not self.proc:
+            return
+        say(f"{self.job['name']}: stopping ({why})")
+        self.stopping_job = True
+        try:
+            os.killpg(self.proc.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            self.proc.wait(GRACE)
+        except subprocess.TimeoutExpired:
+            say(f"{self.job['name']}: did not end in {GRACE} s, killed")
+            os.killpg(self.proc.pid, signal.SIGKILL)
+            self.proc.wait()
+        for prompt, client, _ in comfy_queue() or []:
+            if client == self.client:
+                try:
+                    self.server.interrupt(prompt)
+                except SystemExit:
+                    pass
+        self.ended()
+
+    def ended(self):
+        """The job's process has ended: finished, stopped by the runner, or failed."""
+        code = self.proc.returncode
+        name = self.job["name"]
+        mine = self.state.setdefault(name, {})
+        line, done = progress(self.job)
+        if done or (done is None and code == 0 and not self.stopping_job):
+            mine.update(finished=time.strftime("%Y-%m-%d %H:%M"), failures=0)
+            say(f"{name}: finished" + (f" ({line})" if line else ""))
+        elif self.stopping_job:
+            say(f"{name}: stopped" + (f" ({line})" if line else ""))
+        else:  # an error, or it ended well without finishing (the Atlas ends so when ComfyUI went away)
+            mine["failures"] = mine.get("failures", 0) + 1
+            say(f"{name}: {'ended without finishing' if code == 0 else f'failed with {code}'}"
+                + (f" ({line})" if line else "") + f", {mine['failures']} of {self.settings['tries']} times;"
+                f" see {STATE / (name + '.log')}")
+        write_json(STATE / "state.json", self.state)
+        self.job_log.close()
+        self.proc = self.job = self.job_log = None
+        self.stopping_job = False
+
+    def free(self):
+        """Gives the card back: ComfyUI stopped if the runner started it and nobody else uses it, else freed."""
+        if self.freed:
+            return
+        self.freed = True
+        queue = comfy_queue()
+        if queue is None:
+            return
+        if self.started_comfy and not queue and not self.watch.others_seen:   # others may come back to it
+            subprocess.run(["comfyui", "stop"], capture_output=True)
+            self.started_comfy = False
+            say("ComfyUI stopped: the card is free")
+        elif not queue:
+            try:
+                self.server.free()
+                say("ComfyUI let go of the card's memory")
+            except SystemExit:
+                pass
+        else:
+            say("ComfyUI works for another session or tool: its memory left to it")
+
+    def loop(self):
+        self.since = time.time()
+        phase = None
+        while not self.quit:
+            try:   # the list may change while it runs; one being written keeps the last good one
+                self.settings, self.jobs = load_jobs(self.jobs_path)
+                self.watch.settings, self.bad_list = self.settings, None
+            except (SystemExit, tomllib.TOMLDecodeError, OSError) as error:
+                if str(error) != self.bad_list:
+                    say(f"the job list is not readable, the last one stays: {error}")
+                    self.bad_list = str(error)
+            if self.proc and self.proc.poll() is not None:
+                self.ended()
+                self.since = time.time()
+            own = tree(self.proc.pid) if self.proc else set()
+            reasons = self.watch.reasons(own)
+            now = time.time()
+            if reasons:
+                self.wanted_at = now
+                if self.proc:
+                    self.stop_job("; ".join(reasons))
+                self.free()
+                new = "waiting"
+                if new != phase or reasons != self.told:
+                    say("waiting: " + "; ".join(reasons))
+                    self.told = reasons
+                self.write_status("waiting", reasons)
+            elif self.proc:
+                new = "working"
+                self.write_status("working")
+            else:
+                self.told = None
+                left = self.settings["hold"] - (now - self.wanted_at)
+                if left > 0:
+                    new = "holding"
+                    if phase != new:
+                        say(f"the card is free: going on in {int(left)} s if it stays so")
+                    self.write_status("holding", note=f"going on in {int(left)} s")
+                else:
+                    job = next_job(self.jobs, self.state, self.settings["tries"])
+                    write_json(STATE / "state.json", self.state)
+                    if job:
+                        self.start_job(job)
+                        new = "working"
+                        self.write_status("working")
+                    else:
+                        new = "idle"
+                        if phase != new:
+                            say("no job left to do")
+                        self.free()
+                        self.write_status("idle")
+            if new != phase:
+                self.since = now
+            phase = new
+            time.sleep(self.settings["poll"])
+
+    def shut(self):
+        if self.proc:
+            self.stop_job("the runner stops")
+        self.free()
+        if self.started_comfy and comfy_queue() == [] and not self.watch.others_seen:
+            subprocess.run(["comfyui", "stop"], capture_output=True)
+        (RUNTIME / "status.json").unlink(missing_ok=True)
+        say("the runner stopped")
+
+
+def run(jobs_path):
+    import fcntl
+    RUNTIME.mkdir(parents=True, exist_ok=True)
+    lock = open(RUNTIME / "runner.lock", "w")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        raise SystemExit("The runner is running already: gpu-runner status")
+    runner = Runner(jobs_path)
+
+    def stop(*_):
+        runner.quit = True
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGINT, stop)
+    say(f"the runner started (pid {os.getpid()}, jobs {jobs_path}, hold {runner.settings['hold']} s)")
+    try:
+        runner.loop()
+    finally:
+        runner.shut()
+
+
+# --- Commands ------------------------------------------------------------------------------------
+
+def running():
+    status = read_json(RUNTIME / "status.json", None)
+    return status if status and alive(status["pid"]) else None
+
+
+def show_status(jobs_path):
+    status = running()
+    if not status:
+        print("The runner is not running. Start it: dev/tools/gpu-runner start")
+    else:
+        since = time.strftime("%H:%M", time.localtime(status["since"]))
+        line = {"working": f"working on {status['job']}", "waiting": "waiting: " + "; ".join(status["reasons"]),
+                "holding": f"the card is free, {status['note']}", "idle": "no job left to do"}[status["phase"]]
+        print(f"Runner (pid {status['pid']}): {line} (since {since})"
+              + ("" if status["freed"] or status["phase"] == "working" else "; the card not yet freed"))
+    names = claims()
+    if names:
+        print("Claims: " + ", ".join(names))
+    settings, jobs = load_jobs(jobs_path)
+    state = read_json(STATE / "state.json", {})
+    print(f"Jobs ({jobs_path.relative_to(ROOT) if jobs_path.is_relative_to(ROOT) else jobs_path}):"
+          + ("" if jobs else " none"))
+    for job in jobs:
+        mine = state.get(job["name"], {})
+        how = ("finished " + mine["finished"] if mine.get("finished")
+               else f"left after {mine['failures']} failures (gpu-runner reset {job['name']})"
+               if mine.get("failures", 0) >= settings["tries"] else "to do")
+        line, _ = progress(job)
+        print(f"  {job['priority']:>3}  {job['name']}: {how}" + (f"; {line}" if line else ""))
+
+
+def claim(name, wait, command):
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+", name):
+        raise SystemExit("A claim's name: letters, digits, . _ -")
+    path = RUNTIME / "claims" / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"{os.getpid()}\n" if command else "")
+    if wait or command:
+        while (status := running()) and not (status["phase"] == "waiting" and status["freed"]):
+            time.sleep(1)
+    if not command:
+        print(f"Claimed for {name}" + (": the card is free" if wait else "") + f". End it: gpu-runner release {name}")
+        return 0
+    try:
+        return subprocess.run(command).returncode
+    finally:
+        path.unlink(missing_ok=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0],
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("command", choices=("run", "start", "stop", "pause", "resume", "status", "claim",
+                                            "release", "reset"))
+    parser.add_argument("name", nargs="?")
+    parser.add_argument("--wait", action="store_true")
+    parser.add_argument("--jobs", default=str(JOBS))
+    argv, rest = sys.argv[1:], []
+    if "--" in argv:
+        argv, rest = argv[:argv.index("--")], argv[argv.index("--") + 1:]
+    args = parser.parse_args(argv)
+    jobs_path = Path(args.jobs).resolve()
+    (RUNTIME / "claims").mkdir(parents=True, exist_ok=True)
+    if args.command == "run":
+        run(jobs_path)
+    elif args.command == "start":
+        if running():
+            raise SystemExit("The runner is running already: gpu-runner status")
+        subprocess.run(["systemctl", "--user", "reset-failed", UNIT], capture_output=True)
+        env = [f"--setenv={k}={os.environ[k]}" for k in ("PATH", "GPU_RUNNER_DIR", "GPU_RUNNER_STATE") if k in os.environ]
+        subprocess.run(["systemd-run", "--user", "--quiet", "--collect", f"--unit={UNIT}",
+                        f"--working-directory={ROOT}", *env, sys.executable, str(Path(__file__).resolve()), "run", "--jobs", str(jobs_path)], check=True)
+        print(f"The runner started in the background ({UNIT}). Its log: {STATE / 'runner.log'}")
+    elif args.command == "stop":
+        status = running()
+        if not status:
+            print("The runner is not running.")
+            return
+        os.kill(status["pid"], signal.SIGTERM)
+        while alive(status["pid"]):
+            time.sleep(0.5)
+        print("The runner stopped; the card is free.")
+    elif args.command == "pause":
+        (RUNTIME / "paused").touch()
+        print("Paused: the job stops and the card is freed. Go on: gpu-runner resume")
+    elif args.command == "resume":
+        (RUNTIME / "paused").unlink(missing_ok=True)
+        print("Resumed: the runner goes on once the card has been free for its hold time.")
+    elif args.command == "status":
+        show_status(jobs_path)
+    elif args.command in ("claim", "release", "reset"):
+        if not args.name:
+            parser.error(f"{args.command} needs a NAME")
+        if args.command == "claim":
+            sys.exit(claim(args.name, args.wait, rest))
+        if args.command == "release":
+            (RUNTIME / "claims" / args.name).unlink(missing_ok=True)
+            print(f"Released {args.name}.")
+        else:
+            state = read_json(STATE / "state.json", {})
+            state.pop(args.name, None)
+            write_json(STATE / "state.json", state)
+            print(f"{args.name} runs again when its turn comes.")
+
+
+if __name__ == "__main__":
+    main()

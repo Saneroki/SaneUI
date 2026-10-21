@@ -837,9 +837,7 @@ class Painter:
             return
         try:
             if self.prompt_id:
-                body = json.dumps({"delete": [self.prompt_id]}).encode()
-                self.server.call("/queue", body, {"Content-Type": "application/json"})
-            self.server.call("/interrupt", b"")
+                self.server.interrupt(self.prompt_id)
         except SystemExit:
             pass
 
@@ -848,8 +846,7 @@ class Painter:
         if self.dry:
             return
         try:
-            body = json.dumps({"unload_models": True, "free_memory": True}).encode()
-            self.server.call("/free", body, {"Content-Type": "application/json"})
+            self.server.free()
         except SystemExit:
             pass
 
