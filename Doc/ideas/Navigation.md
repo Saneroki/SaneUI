@@ -7,9 +7,9 @@ zones that light up and open by a click, the map moving with its window, the gam
 window's shape), the game's map kept closed; the pins of the game and of Core's data in the game's quest marks,
 quest areas, the party, the quest log and the bar over the full map (the pin filter in sections), the herbs and
 ore the game's minimap finds, indoor maps, routes to the map pin on foot, by flight, by boat and zeppelin, by the
-Deeprun Tram and by the hearthstone; the classic dungeons' and raids' maps of Core's set *Dungeons* in the game's
-map art, with their floors, bosses and the bosses' 3D models (`src/Navigation/README.md`). Not yet: lifts and
-portals in the routes, the leveling guide, the dungeons' three zooms, search, the minimap's small parts.
+Deeprun Tram, by lift and by the hearthstone; the classic dungeons' and raids' maps of Core's set *Dungeons* in the
+game's map art, with their floors, bosses and the bosses' 3D models (`src/Navigation/README.md`). Not yet: portals
+in the routes, the leveling guide, the dungeons' three zooms, search, the minimap's small parts.
 
 How to read this page:
 
@@ -1155,9 +1155,55 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     live's 70245, whose textures differ a little in many tiles; the isle's tiles and file IDs are the same in both),
     and the client the build installs into.
   - **Not yet:** which side's town a dock stands in is not in the client's tables (a town's guards are the
-    server's), so a route may lead through the other side's harbour; Zephras Isle's painting (the Atlas); lifts
-    and portals (the lifts' motions are in the client, but not where they stand, nor where a portal leads: a place
-    one reaches by lift is a walk at a cost, `Planner.APART`); a new route kept only when clearly better.
+    server's), so a route may lead through the other side's harbour; Zephras Isle's painting (the Atlas); portals
+    (where one leads is not in the client); a new route kept only when clearly better.
+- **Built (2026-10-21): the lifts.** Saneroki: a route into the Undercity or up Thunder Bluff's mesas should walk to
+  the lift, ride it and walk on, not end as near as one walks and run straight to the pin.
+  - **The data** (Core's set *Travel*, kind `lift`, `dev/tools/travel-data --lifts`): the client moves each lift's
+    car (its `TransportAnimation`) but does not say where it stands; that is batch 10 of `sources.toml` (unverified),
+    picked where every record of it agrees, the client moves it as the original game's does, and Forever's own world
+    has a floor at both ends. The tool reads the motion: a car going straight up and down, standing once a round at
+    each end and nowhere between, rising ten yards or more (a door less). A car is a record of its own (our own
+    number from 1100001, kept for a car at the same place): its two ends in the world's yards with their heights
+    (`path`, the lower first; the path's new part `z`), its slower ride (`time`), the time between two departures
+    from an end (`wait`, its motion once round), its rise (`length`), its ends on the zone maps (`from`, `to`, the
+    pins). Fourteen cars in build 70245: Thunder Bluff's four (two pairs side by side, 10 seconds a ride, 30 once
+    round), the Undercity's three (3.5 and 16.7; Forever's own cars there, new IDs of the same motion), the Great
+    Lift's two, Freewind Post's two, Gnomeregan's, and two small ones (Gnomeregan's surface, Azshara's coast).
+  - **In the journey** (`Lifts.lua`, `Planner.lua`): each end of a car at its landing, the floor of the walking data
+    beside its shaft nearest its height (`Walk.Landing`, within `Lifts.LANDING` yards), only a car both of whose
+    ends have one (Freewind Post's mesa, Gnomeregan's landings and the small ones are no floors of the walking data:
+    on the map only); the ride from one end to the other costs half the time between two departures and the ride.
+    The ends' regions are their landings': the lower in the land or the city, the upper on the mesa or the ruins.
+    Between two levels a lift joins there is no walk: the lift is the way (until then such a walk cost
+    `Planner.APART` more, and a lift's level was reached as near as one walks). A walk's guess between places of
+    known heights counts the climb (the Great Lift's two ends lie two yards apart, 130 over each other).
+  - **Stacked and side by side:** the Undercity lies under the ruins of Lordaeron, whose floors the walking data
+    holds over the whole city, so a pin there, or its flight master, had the ruins' region too and every walk to it
+    stayed up there. Two levels are stacked where, on a ring `Lifts.RING` yards round their lifts' shafts, at least
+    a third of the lower level's points lie under the upper (the Undercity: 58 %; Thunder Bluff's mesa beside the land
+    at its foot: none). A place stands below a stacked lift's upper level (`Lifts.Stand`) where it lies over the
+    lower level: its own floor known (the player's) under the upper's; else the lower level's floors under it; a pin
+    on the lift's own map (the Undercity's) also over any floor below there, or the nearest within `Lifts.RING`
+    yards (the city's lower parts; the bank, whose floor the walking data does not have); it stands on the floor
+    below that showed it, and is reached from the upper level only by the lift. A pin on Tirisfal Glades' map stands
+    on the ruins. By a lift side by side the upper landing overhangs the platform at its foot: there a place stands
+    on the upper.
+  - **The floor after a ride** (`Rode`): the game tells no height and no opening leads through a shaft, so the floor
+    followed would stay at the end one boarded. At a lift joining the line's lift's two levels (`Lifts.Near`,
+    within `Lifts.NEAR` yards: the planned car or one beside it) as long as its ride takes, then on along the line
+    past it, the player is on that lift's landing at the other end.
+  - **On the map:** a lift is a pin at its shaft (`Data.Map`: a way's place at `from` and `to`), named a lift, not
+    yet confirmed by the game.
+  - **Checked against the real data** (2026-10-21, outside the game, the planner on the set *Walking* and the
+    lifts): from Mulgore to Thunder Bluff's flight master, by either lift, and back; from the ruins of Lordaeron to
+    the Undercity's flight master, its bank, the Magic Quarter, the Royal Quarter and the War Quarter, and out
+    again: walk, lift, walk each.
+  - **Not yet:** the walking data joins the Undercity's levels to each other nowhere (its ramps and stairs are no
+    floors there: the ring the lifts arrive at, its lower parts and quarters, its sewers are regions apart), so a
+    walk from the lift to a pin in a lower part is as near as one walks, then straight; the lifts' upper landings
+    there, Freewind Post's mesa and Gnomeregan's landings are left out as small regions. A pin at the Undercity's
+    bank put on Tirisfal Glades' map stands on the throne room over it.
 
 ### The walking data
 
@@ -1343,8 +1389,9 @@ Each step ends in something tried in the game, and in the module's README markin
 5 built as far as Core's data goes: the pins, gathered overlaps, tooltips and the quest areas the game shades are
 there, and `Data.Map` reads Spawns, Places and Travel, of which Spawns and Places hold no entries yet, so the
 database's pins come with the import; rares' spawn areas and patrol paths wait for their data. 6 built on foot, by
-flight, by boat and zeppelin, by the tram and by the hearthstone (the walking data, the flights, the ships' ways and
-the tram of the game's tables, the planner, the search, the golden line); lifts and portals not yet. 8 begun
+flight, by boat and zeppelin, by the tram, by lift and by the hearthstone (the walking data, the flights, the ships'
+ways and the tram of the game's tables, the lifts' places of a batch, the planner, the search, the golden line);
+portals not yet. 8 begun
 (2026-10-21): the dungeons' and raids' maps of Core's set *Dungeons*, their floors, bosses and the bosses' 3D
 models; their three zooms and the minimap's own parts not yet. Step 0's points are answered in play as each step is tried.
 

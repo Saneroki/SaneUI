@@ -440,10 +440,11 @@ local function FromData(place)
             pin.lines[#pin.lines + 1] = Pins.TEXT.openMap
         end
     elseif kind == "travel" then
-        pin.kind, pin.atlas = "travel", WAYS[what] or WAYS.boat
+        -- Named by its kind where it has no name of its own (a lift).
+        pin.kind, pin.atlas, pin.name = "travel", WAYS[what] or WAYS.boat, pin.name or Pins.WAY_WORDS[what]
         if place.towards then
             -- A dock: the game's own way (its TaxiPath tables), where it goes from here.
-            pin.name, pin.unverified, pin.lines = pin.name or Pins.WAY_WORDS[what], nil, {}
+            pin.unverified, pin.lines = nil, {}
             for _, there in ipairs(place.towards) do
                 pin.lines[#pin.lines + 1] = Pins.TEXT.towards:format(Towards(there))
             end

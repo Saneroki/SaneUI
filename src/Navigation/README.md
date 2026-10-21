@@ -1,6 +1,6 @@
 # Sane UI: Navigation
 
-**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot, by flight, by boat and zeppelin, by the Deeprun Tram and by the hearthstone; the leveling guide comes later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
+**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot, by flight, by boat and zeppelin, by the Deeprun Tram, by lift and by the hearthstone; the leveling guide comes later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 Sane UI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
@@ -120,8 +120,11 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   over as many seas as it takes (by way of the other continent, or the hearthstone home first, where that is
   quickest), the line red from pier to pier; between Stormwind and Ironforge the Deeprun Tram is taken where it is
   quicker, the line red from one city's entrance to it to the other's; and the hearthstone is taken where it is
-  quickest (the map learns its place where you bind it, or the first time you use it). A pin where nobody can walk
-  (a tower, a mesa, a city one reaches by lift) gets its line as near as one walks, then straight to it. On a flight
+  quickest (the map learns its place where you bind it, or the first time you use it). Thunder Bluff's mesa and the
+  Undercity are reached by their lifts, and the Great Lift is taken where it is quicker: on foot to the lift, up or
+  down it, on foot on (and out again the same way); a pin over the Undercity is taken to be in the city (a pin put on
+  Tirisfal Glades' map there, on the ruins). A pin where nobody can walk (a tower, a plateau) gets its line as near
+  as one walks, then straight to it. The lifts are on the map too (not yet confirmed by the game). On a flight
   the line shows the flight's way on from where you are, pin or none, and from where it lands on to the pin; aboard
   a ship it waits until you have landed, and a pin set aboard is planned from the pier it comes to. The game tells
   no ship's timetable: its sailing comes from its way at the game's
@@ -334,8 +337,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   every floor under it and within `Walk.ROOF` yards, each over the lowest at the cost of the climb up to it (a place
   stands on its lowest floor rather than on the mountain over it; none: the nearest within `Search.REACH`), to any
   floor of the regions it starts in under the end or within `Search.NEAR` yards of it (its own floor may be missing
-  there: Ironforge's city under its mountain), else the nearest within `Search.FAR` (a tower, a mesa, a city
-  reached by lift). What lies off the walking data is drawn straight and costs `Search.STRAIGHT` times its yards,
+  there: Ironforge's city under its mountain), else the nearest within `Search.FAR` (a tower, a plateau no lift
+  reaches). What lies off the walking data is drawn straight and costs `Search.STRAIGHT` times its yards,
   so the line runs from the start to the end itself. Then the line pulled straight through the openings (a funnel,
   each opening drawn in from its ends); the heap keeps each node's f as it was put in.
 - **Planner** (`Planner.lua`, no frames): the way to the map pin, a graph over the player, the pin, the known
@@ -361,7 +364,20 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   screens (`Planner.STATION`, a guess), half the time between two trains from a station (*Travel*'s `wait`; the
   time to its next train where a ride on this realm taught its times, `Trips:TramNext`) and its run (`time`); drawn
   red, straight from entrance to entrance (its tunnel's map has no plane; in it the line stays
-  as it is). Planned again when the pin changes, after a landing (a flight's or a ship's), when the player is 40
+  as it is). A lift (`Lifts.lua`, Core's set *Travel*): each end of its car at its landing (`Walk.Landing`: the
+  floor within `Lifts.LANDING` yards of the end nearest its height), only where both ends have one; its cost half
+  the time between two departures from an end (`wait`) and its ride (`time`); drawn gold, straight from landing to
+  landing. Between two levels a lift joins (its landings' regions), or a level and a place below it, no walk: the
+  lift is the way. A place stands below a lift's upper level (`Lifts.Stand`) where its levels are stacked (on a ring
+  `Lifts.RING` yards round its shaft a third of the lower level's points lie under the upper: the Undercity under
+  the ruins; Thunder Bluff's mesa is beside the land at its foot) and the place lies over the lower level (its known
+  floor under the upper's; else the lower level's floors under it; the pin on the lift's own map also over any other
+  floor below there, or the nearest within `Lifts.RING` yards: the city's bank, missing from the walking data); by a
+  lift side by side, where the upper landing overhangs the platform, on the upper. A walk's guess between two places
+  of known heights (the player, a lift's ends) counts the climb too. The floor after a ride (`Rode`): at a lift
+  joining the line's lift's two levels (`Lifts.Near`, within `Lifts.NEAR` yards) as long as its ride takes, then on
+  along the line past it, the player is on the landing at its other end. Planned again when the pin changes, after
+  a landing (a flight's or a ship's), when the player is 40
   yards off the line (150 off a ship's way), and when the data arrives; aboard a ship a new pin is planned from
   where it lands (the ship of the plan, or the one Core's `Data.Trips` finds the player on, to the pier of its next
   dock). The known flight points are read at the flight
@@ -439,11 +455,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, gathered. No frames |
 | `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings; the floor a walker stands on, followed or chosen. No frames |
 | `Search.lua` | A walk between two points over the walking data, from the floor the start stands on to a floor at the end. No frames |
-| `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by the hearthstone; where along it the player is. No frames |
+| `Lifts.lua` | The lifts of Core's set *Travel* on the walking data: each end at its landing, the levels they join (stacked or side by side), where a place stands among them. No frames |
+| `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by lift, by the hearthstone; where along it the player is. No frames |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
 | `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, zoomed and dragged |
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
-| `Route.lua` | The golden line of a way, from the player on, the parts in view: walks gold, flights pale, ships red |
+| `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold, flights pale, ships red |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks |
 | `Marks.lua` | The player's arrow, the map pin, the party |
 | `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders switched by the pin filter and in turn, silently. No frames |
@@ -466,6 +483,15 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-21, lifts in the routes:** Thunder Bluff's mesa and the Undercity are reached by their lifts, and the
+  Great Lift between the Barrens and Thousand Needles is taken where it is quicker: on foot to the lift, up or down,
+  on foot on, instead of as near as one walks and straight on. The lifts are fourteen cars of Core's set *Travel*
+  (kind `lift`, batch 10 of `sources.toml`, their motion from the game's client by `dev/tools/travel-data`); each end
+  of a car at its landing, the floor beside its shaft at its height (`Walk.Landing`); no walk between two levels a lift
+  joins. A place under the ruins over the Undercity stands in the city (`Lifts.Stand`: the levels stacked there, side
+  by side at Thunder Bluff); after a ride on the line's lift the floor followed is the landing at its other end
+  (`Rode`). The lifts are on the map, named, not yet confirmed by the game. Freewind Post's, Gnomeregan's and two small
+  ones are on the map only: the walking data has no floor at an end of theirs.
 - **2026-10-21, routes from the player, through caves and cities, over every sea:** the line always begins at the
   player's arrow, what lies behind them gone (the planner's cut, `Route.Cut`). The floor the player stands on is
   followed through the openings they walk by (`Walk.Follow`), so a way out of a cave, a city in a mountain or an

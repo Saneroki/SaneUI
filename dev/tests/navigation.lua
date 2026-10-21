@@ -465,7 +465,7 @@ Set(packPath .. "/Places.lua", "Places", "00000005", "int", '"kind", "name", "po
 -- The boat's way round has its docks on the maps too: in the east hall, and on Kalimdor in the game's area 12.
 Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     '"kind", "name", "from", "to", "fromNode", "toNode", "length", "path", "docks", "dockAreas", "time", "wait"',
-    '"text", "text", "point", "point", "int", "int", "number", "list tuple(x:number,y:number,map:int,stay:number,jump:bool)", '
+    '"text", "text", "point", "point", "int", "int", "number", "list tuple(x:number,y:number,map:int,stay:number,jump:bool,z:number)", '
     .. '"list point", "list int", "number", "number"',
     'R[1] = "70245\t\tboat\tTo the west\t1429\03190\03190\t1414\03150\03150\t\t\t"\n'
     .. 'R[2] = "70245\t\tflight\t\t\t\t2\t5\t6000"\n'
@@ -481,8 +481,19 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     .. 'R[6] = "70245\t\tflight\t\t\t\t21\t22\t1000\t1000\0310\0301000\0311000"\n'
     .. 'R[7] = "70245\t\ttram\tDeeprun Tram\t\t\t\t\t2000\t0\0310\031369\0302000\0310'
     .. '\t1415\03157.5\03164.5\0301415\03150\03120\t1519\0301537\t50\t120"\n'
+    -- Three lifts, each its car's two ends (the lower first) with their heights, its ride and the time between two
+    -- departures from an end, on the city map 1456: on Kalimdor's tile 6177 up the mesa's cliff (8: world x -133.33,
+    -- y -800, from 10 to 80 yards) and down into the hall under the courtyard (9: x -400, y -933.33, from 10 to -20);
+    -- one on the isle where the walking data has none (10).
+    .. 'R[8] = "70245\t\tlift\t\t1456\03140\03156.7\t1456\03140\03156.7\t\t\t70'
+    .. '\t-133.33\031-800\0311\031\031\03110\030-133.33\031-800\031\031\031\03180\t\t\t10\t30"\n'
+    .. 'R[9] = "70245\t\tlift\t\t1456\03146.7\03170\t1456\03146.7\03170\t\t\t30'
+    .. '\t-400\031-933.33\0311\031\031\031-20\030-400\031-933.33\031\031\031\03110\t\t\t3.5\t16"\n'
+    .. 'R[10] = "70245\t\tlift\t\t2521\03120\03120\t2521\03120\03120\t\t\t20'
+    .. '\t500\031600\0312991\031\031\0310\030500\031600\031\031\031\03120\t\t\t2\t6"\n'
     .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byFromNode[20] = "5"\nI.byFromNode[21] = "6"\nI.byKind = {}\n'
-    .. 'I.byKind.boat = "1\0303"\nI.byKind.flight = "2\0305\0306"\nI.byKind.tram = "7"\nI.byKind.zeppelin = "4"\n')
+    .. 'I.byKind.boat = "1\0303"\nI.byKind.flight = "2\0305\0306"\nI.byKind.tram = "7"\nI.byKind.zeppelin = "4"\n'
+    .. 'I.byKind.lift = "8\0309\03010"\n')
 out = assert(io.open(packPath .. "/SaneUI_Data_World.toc", "w"))
 out:write("## Title: Data: World\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Drops, NPCs, Objects, Overlays, Places, Tiles, Travel\n## X-SaneUI-Format: 1\n"
     .. "## X-SaneUI-Game: forever\nDrops.lua\nNPCs.lua\nObjects.lua\nOverlays.lua\nPlaces.lua\nTiles.lua\nTravel.lua\n")
@@ -561,7 +572,9 @@ end
 -- on Kalimdor (its north west corner at u 0, v 0), floors one over the other: a field (1) west of a cave (2, 5
 -- yards high) under a hill (3, 40 yards), open into the cave by its mouth (rows 60 to 67) and up the hill by a path
 -- (rows 0 to 7); the hill one surface with a field east of it (4), which the cave does not reach; on that field a
--- mesa (5, 80 yards) of a region of its own, nobody can walk onto.
+-- mesa (5, 80 yards) of a region of its own, nobody can walk onto. Tile 6177 east of it (its own regions, no way
+-- across): a field (1, 10 yards high, region 3) and a courtyard (2, the same surface) south east of it; a mesa (3,
+-- 80 yards, region 4) beside the field, north of the courtyard; a hall (4, region 5) 20 yards under the courtyard.
 local routesFolder = io.popen("mktemp -d -t saneui-routes-XXXXXX"):read("*l") -- loaded late: kept until the end
 local routesPath = routesFolder .. "/SaneUI_Data_Routes"
 os.execute(("mkdir -p '%s'"):format(routesPath))
@@ -575,9 +588,14 @@ local walkBlocks = {
         { 1, 1, 1,   1, 1, 1,   2, 1, 1,   1, 1, 2 },
         { 0, 0, 64, 128, 40,   64, 0, 64, 128, 20,   64, 0, 64, 128, 160,   128, 0, 128, 128, 40,   160, 32, 32, 32, 320 },
         { 8, -2, 60, 67, 5, -2, 0, 7, 10,   0,   0,   0,   0 } },
+    [6177] = { 1,
+        { 2, 1, 3,   1, 1, 4,   1, 1, 5 },
+        { 0, 0, 128, 256, 40,   128, 128, 128, 128, 40,   128, 0, 128, 128, 320,   144, 144, 96, 96, -80 },
+        { 0, 0, 0, 0 } },
 }
 Set(routesPath .. "/Walking.lua", "Walking", "00000008", "int", '"map", "links", "block"', '"int", "list int", "text"',
-    'R[3104] = "70245\t\t0\t3105\tblock:3104"\nR[3105] = "70245\t\t0\t3104\tblock:3105"\nR[6176] = "70245\t\t1\t\tblock:6176"\n')
+    'R[3104] = "70245\t\t0\t3105\tblock:3104"\nR[3105] = "70245\t\t0\t3104\tblock:3105"\nR[6176] = "70245\t\t1\t\tblock:6176"\n'
+    .. 'R[6177] = "70245\t\t1\t\tblock:6177"\n')
 out = assert(io.open(routesPath .. "/SaneUI_Data_Routes.toc", "w"))
 out:write("## Title: Data: Routes\n## LoadOnDemand: 1\n## X-SaneUI-Sets: Walking\n## X-SaneUI-Format: 1\n## X-SaneUI-Game: forever\nWalking.lua\n")
 out:close()
@@ -3005,6 +3023,140 @@ end)()
         "aboard a boat the plan did not have: its way on in front, planned from the pier it comes to")
     W.place = nil
     W.Wait(3)
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
+-- Lifts (Core's set Travel, Lifts.lua), on Kalimdor's tile 6177: lift 8 up the mesa's cliff from the field, lift 9 down
+-- from the courtyard into the hall under it. Each end on its landing; the levels they join, side by side and stacked;
+-- a pin on the mesa or in the hall reached by its lift (walk, lift, walk), never by a walk between two levels a lift
+-- joins; out of the hall again; the floor after a ride (and not without one); a pin on the courtyard over the hall by
+-- the map it is on; the lifts on the map.
+;(function()
+    MAPS[1456] = { kind = 3, parent = 1414, continent = 1, top = 1000, bottom = -1000, left = 0, right = -2000 }
+    local Lifts, s = ns.Lifts, Walk.SAMPLE
+    local function At(column, row) return Coords.TILE + column * s, -row * s end
+    local function Pin(map, u, v)
+        local info = MAPS[map]
+        waypoint = { uiMapID = map, position = CreateVector2D((-u - info.left) / (info.right - info.left),
+                                                             (v - info.top) / (info.bottom - info.top)) }
+        W.Fire("USER_WAYPOINT_UPDATED")
+        W.Wait(0)
+        Frames(8)
+        return shownWay and shownWay.legs or {}
+    end
+    local function Kinds(legs)
+        local list = {}
+        for index, leg in ipairs(legs) do list[index] = leg.kind end
+        return table.concat(list, " ")
+    end
+    local function Stand(u, v)
+        player.map, player.x, player.y = 1414, (u + 12000) / 24000, (20000 - v) / 40000
+    end
+    local function Close(point, u, v) return math.abs(point.u - u) < 0.5 and math.abs(point.v - v) < 0.5 end
+    local lifts = {}
+    for _, lift in ipairs(Lifts.All()) do lifts[lift.key] = lift end
+    local up, down, isle = lifts[8], lifts[9], lifts[10]
+    check(up and down and isle and up.map == 1414 and isle.map == 2521 and near(up.u, 800) and Lifts.Landed(up[1])
+        and Lifts.Landed(up[2]) and up[1].region == 3 and up[2].region == 4 and Lifts.Landed(down[1])
+        and Lifts.Landed(down[2]) and down[1].region == 5 and down[2].region == 3 and not Lifts.Landed(isle[1]),
+        "each end of a lift on its landing, the floor by its shaft at its height (the field's and the mesa's, the hall's "
+        .. "and the courtyard's); none where the walking data has no floor")
+    local levels = Lifts.Levels(1414)
+    local beside, stacked
+    for _, level in ipairs(levels) do
+        if level.lower == 3 then beside = level elseif level.lower == 5 then stacked = level end
+    end
+    check(#levels == 2 and beside and beside.upper == 4 and not beside.stacked and stacked and stacked.upper == 3
+        and stacked.stacked and stacked.maps[1456], "the levels the lifts join: the mesa beside the field, the courtyard over the hall")
+    check(Lifts.Joined({ [3] = true }, { [4] = true }, 1414) and Lifts.Joined({ [5] = true }, { [3] = true }, 1414)
+        and not Lifts.Joined({ [4] = true }, { [5] = true }, 1414), "joined: two levels one lift joins")
+    -- From the field to the mesa: walk to the lift, up, walk on; no walk between the field and the mesa.
+    local fu, fv = At(40, 64)
+    Stand(fu, fv)
+    local mu, mv = At(200, 60)
+    local legs = Pin(1414, mu, mv)
+    local lift = legs[2]
+    check(Kinds(legs) == "walk lift walk" and Close(legs[1].points[#legs[1].points], 800, -133.33) and lift.near == up[1]
+        and lift.far == up[2] and Close(legs[3].points[#legs[3].points], mu, mv),
+        "a pin on the mesa: on foot to the lift, up it, on foot to the pin")
+    -- Into the hall under the courtyard: the pin stands in it (the lift's lower level under the courtyard there).
+    local hu, hv = At(200, 200)
+    legs = Pin(1414, hu, hv)
+    check(Kinds(legs) == "walk lift walk" and legs[2].near == down[2] and legs[2].far == down[1]
+        and Close(legs[3].points[#legs[3].points], hu, hv), "a pin in the hall: on foot to the lift, down it, on foot to the pin")
+    -- On the courtyard beyond the hall: on its map (the lifts'), over the city its lift goes down to; on another, where
+    -- its floor is.
+    local cu, cv = At(250, 250)
+    check(Kinds(Pin(1414, cu, cv)) == "walk" and Kinds(Pin(1456, cu, cv)) == "walk lift walk",
+        "a pin on the courtyard beside the hall: on the courtyard; on the lifts' own map, in the hall beside it")
+    -- Out of the hall: from its floor (indoors the lowest under the player) to the lift, up, to the field.
+    local indoors = IsIndoors
+    IsIndoors = function() return true end
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Stand(At(190, 210))
+    legs = Pin(1414, fu, fv)
+    check(Kinds(legs) == "walk lift walk" and legs[2].near == down[1] and legs[2].far == down[2],
+        "out of the hall: on foot to the lift, up it, on foot to the pin")
+    IsIndoors = indoors
+    -- The floor after a ride: at the lift as long as it rides, then on along the line past it: on the mesa now, and a pin
+    -- there is a walk; at it as long, then back the way one came: not.
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Stand(fu, fv)
+    legs = Pin(1414, mu, mv)
+    local clock = GetTime() + 1000
+    local function Go(points, first, last)
+        for index = first, last, first <= last and 1 or -1 do
+            local point = points[index]
+            for _ = 1, 4 do
+                clock = clock + 0.25
+                Stand(point.u, point.v)
+                Planner.Track(1414, point.u, point.v, clock)
+            end
+        end
+    end
+    local function Wait(u, v, seconds)
+        for _ = 1, seconds * 4 do
+            clock = clock + 0.25
+            Planner.Track(1414, u, v, clock)
+        end
+    end
+    local walk = legs[1].points
+    Go(walk, 1, #walk)
+    Wait(800, -133.33, 11)
+    Go(walk, #walk, 1)
+    local back = not legs[2].rode
+    Go(walk, 1, #walk)
+    Wait(800, -133.33, 11)
+    Go(legs[3].points, 1, math.min(4, #legs[3].points))
+    local rode = legs[2].rode
+    local there = legs[3].points[math.min(4, #legs[3].points)]
+    check(back and rode and Kinds(Pin(1414, there.u + 10, there.v + 10)) == "walk",
+        "after a ride on the line's lift, on its other level: a pin there is a walk; not after going back without one")
+    -- The lifts on the map: a place each at its shaft on its map, a lift; its pin named so, not yet confirmed by the game.
+    local onMap = {}
+    for _, place in ipairs(Core.Data.Map():On(1456) or {}) do onMap[place.key] = place end
+    check(onMap["travel:8"] and onMap["travel:8"].what == "lift" and onMap["travel:9"] and #Core.Data.Map():On(1456) == 2,
+        "the lifts on the map: one place each, at its shaft")
+    local was, using = { full.map, full.u, full.v, full.k }, Canvas.camera
+    Canvas.Use(full)
+    full:Show(2521, -600, 500, 0.5)
+    Canvas.Layout()
+    local pin = Drawn(true)["travel:10"]
+    GameTooltip._text, GameTooltip._lines = nil, nil
+    if pin then pin._scripts.OnEnter(pin) end
+    check(pin and pin.icon._atlas == "poi-door-up" and GameTooltip._text == Pins.WAY_WORDS.lift
+        and GameTooltip._lines and GameTooltip._lines[1] == Pins.TEXT.unverified,
+        "a lift's pin: its look, named a lift, not yet confirmed by the game")
+    full:Show(was[1], was[2], was[3], was[4])
+    Canvas.Use(using)
+    Canvas.Layout()
+    MAPS[1456] = nil
     player.map, player.x, player.y = 1429, 0.75, 0.3
     waypoint = nil
     W.Fire("USER_WAYPOINT_UPDATED")

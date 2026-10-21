@@ -2,7 +2,8 @@
 """Tests of dev/tools/walk-data and dev/tools/travel-data without the game's files: the block's encoding, floors
 joined into surfaces and rectangles on made-up ground (flat land, a steep speck, a hole, a cliff, a bridge, water),
 the openings the game is left to work out and those written, regions too small to keep and their order, a flight's
-path made short, and a boat's way (its docks, on the zone maps too, its leaps, which way a newer one replaced). And
+path made short, a boat's way (its docks, on the zone maps too, its leaps, which way a newer one replaced) and a
+lift's car (its motion, its ends and rides, its own number kept for its place). And
 dev/tools/terrain-art's open sky around an isle that floats (walk-data reads the terrain with it). Run by
 dev/tests/run."""
 import base64
@@ -242,6 +243,46 @@ places = {10: [(0, 0.0, 0.0), (1, 500.0, 0.0)], 11: [(0, 5.0, 0.0), (0, 900.0, 0
           12: [(0, 0.0, 0.0), (1, 2000.0, 0.0)], 13: [(0, 0.0, 0.0), (1, 2000.0, 0.0)]}
 check("a way all of whose docks a way with more docks has is replaced; of two alike, the older",
       travel.replaced(places), {10, 12})
+
+# --- A lift's car: its motion, its ends, its key kept for the same place ------------------------------------
+def frame(ms, z, x=0.0, y=0.0):
+    return {"TimeIndex": str(ms), "Pos[0]": str(x), "Pos[1]": str(y), "Pos[2]": str(z)}
+
+
+# At the top 5 seconds, down 60 yards in 10, at the bottom 5, up in 10; another starting halfway down, stopping at the
+# bottom first (its ride down across the round's end); a door rising 5 yards; a car that stops halfway too; one moving
+# sideways.
+top = [frame(0, 0), frame(5000, 0), frame(6000, -2), frame(14000, -58), frame(15000, -60), frame(20000, -60),
+       frame(30000, 0)]
+halfway = [frame(0, 0), frame(1800, -55), frame(6800, -55), frame(10300, 41), frame(15200, 41), frame(16700, 0)]
+check("a lift's motion: its lowest and highest, its slower ride, its round", travel.lift(top), (-60.0, 0.0, 10.0, 30.0))
+check("a car first between its ends: its rides across the round's end", travel.lift(halfway), (-55.0, 41.0, 3.5, 16.7))
+check("a door's motion, rising less than a lift: none", travel.lift([frame(0, 0), frame(1000, 5), frame(5000, 5),
+                                                                   frame(6000, 0)]), None)
+check("a car that stands between its ends too: none",
+      travel.lift([frame(0, 0), frame(5000, -30), frame(8000, -30), frame(12000, -60), frame(15000, -60), frame(20000, 0)]),
+      None)
+check("a car that moves sideways: none", travel.lift([frame(0, 0), frame(5000, -60, x=20.0), frame(10000, 0)]), None)
+
+
+class Places:
+    def place(self, world, x, y, z=None):
+        return [1456, round(x / 100, 1), round(y / 100, 1)]
+
+
+cars = [(4170, 1, -1286.24, 189.72, 130.08), (4171, 1, -1308.38, 185.29, 68.5858), (9, 1, 0.0, 0.0, 0.0)]
+lines, left = travel.lifts(cars, {4170: top, 4171: halfway, 9: [frame(0, 0), frame(1000, 2), frame(2000, 0)]},
+                           {travel.LIFTS + 3: (1, -1308.0, 185.0)}, Places())
+fields = dict(lines)
+check("each lift its own number: the master's at its place kept, a new one after the highest",
+      [key for key, _ in lines], [travel.LIFTS + 4, travel.LIFTS + 3])
+check("its ends in the world's yards, the lower first with its map, each with its height; its ride and round",
+      (fields[travel.LIFTS + 4]["path"], fields[travel.LIFTS + 4]["time"], fields[travel.LIFTS + 4]["wait"],
+       fields[travel.LIFTS + 4]["length"]),
+      ([{"x": -1286.24, "y": 189.72, "map": 1, "z": 70.08}, {"x": -1286.24, "y": 189.72, "z": 130.08}], 10.0, 30.0, 60.0))
+check("its ends on the zone maps, for the map's pins", (fields[travel.LIFTS + 4]["from"], fields[travel.LIFTS + 4]["to"]),
+      ([1456, -12.9, 1.9], [1456, -12.9, 1.9]))
+check("a car the client does not move as a lift left out, and why", left, [(9, "the client does not move it as a lift")])
 
 if failed:
     print(f"Walking data: {failed} of {checks} checks failed.")

@@ -21,12 +21,12 @@ local _, ns = ...
 --  Search.REACH yards). The end: on a floor of the regions the start is in, under
 --  it or within Search.NEAR yards of it (a pin inside a wall, or where its own
 --  floor is missing from the data: Ironforge's city under its mountain), else the
---  nearest within Search.FAR (a pin on a tower, a mesa or in a city one reaches by
---  lift). Floors one over the other are each a start or an end of their own, so
---  the walk is the shortest between any two. What lies between the walking data
---  and the point itself is drawn straight and costs Search.STRAIGHT times its
---  yards: the line always runs from the start to the end, and a way that reaches
---  the end on foot is taken where there is one.
+--  nearest within Search.FAR (a pin on a tower, or on a plateau no lift reaches:
+--  the planner takes the lifts, Lifts.lua). Floors one over the other are each a
+--  start or an end of their own, so the walk is the shortest between any two. What
+--  lies between the walking data and the point itself is drawn straight and costs
+--  Search.STRAIGHT times its yards: the line always runs from the start to the end,
+--  and a way that reaches the end on foot is taken where there is one.
 -------------------------------------------------------------------------------
 local Walk = ns.Walk
 local Search = {}

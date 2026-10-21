@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: routes take the lifts. Up Thunder Bluff's mesas and down
+  into the Undercity the golden line leads you to the lift, up or down
+  it, and on; the Great Lift too, where it is quicker. The lifts are on
+  the map.
 - Navigation: the golden line to the map pin now always starts at you
   and keeps up as you go. It finds its way into and out of caves,
   buildings and cities in the mountains on the floor you are on, and

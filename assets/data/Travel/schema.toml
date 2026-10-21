@@ -1,5 +1,6 @@
 set = "Travel"
 key = "int"              # the game's TaxiPath ID of a flight, a boat or a zeppelin; our own number for a way the game has no path for
+                         # (the tram 1000369; a lift's car from 1100001 on, kept for a car at the same place: dev/tools/travel-data)
 pack = "World"
 learn = true             # the flight master's watcher: flights and their costs
 about = "The ways to travel other than on foot: boats, zeppelins, trams, lifts, portals and flights, with their times."
@@ -12,23 +13,28 @@ to       = { type = "point" }
 fromNode = { type = "int", min = 0 }         # a flight's taxi nodes (the flight points themselves are the game's)
 toNode   = { type = "int", min = 0 }
 side     = { type = "enum", values = ["alliance", "horde"] }  # none: both
-time     = { type = "number", min = 0 }      # the trip, in seconds
+time     = { type = "number", min = 0 }      # the trip, in seconds (a lift's: its slower ride, up or down)
 wait     = { type = "number", min = 0 }      # between two departures, in seconds (a transport: from one dock, its way once round;
-                                             # the tram: from one station, its trains' round over the trains)
+                                             # the tram: from one station, its trains' round over the trains; a lift's car:
+                                             # from one end, its motion once round)
 cost     = { type = "money" }
-length   = { type = "number", min = 0 }      # yards along its way, from the game's path (a transport's once round, its leaps not counted)
+length   = { type = "number", min = 0 }      # yards along its way, from the game's path (a transport's once round, its leaps not
+                                             # counted; a lift's: the yards it rises)
 # path: the way's points in the world's yards (x to the north, y to the west), as the game's path has them (points
 # on a straight run left out), for the map to draw it. A flight's lie on the continent of its start. A boat's or a
 # zeppelin's is one way round as the game moves it, after its last point again from its first: map is the world's
 # map a point lies on (at its first point and wherever the way comes onto another), stay the seconds it stands
 # there at a dock, jump that it leaps to the point from the one before (onto another map, or far on the same). A
-# tram's is its two stations in its own map's yards (where one leaves it; its trains run between them).
+# tram's is its two stations in its own map's yards (where one leaves it; its trains run between them). A lift's is
+# its car's two ends, the lower first with its map, each with z, its height: where the car stands at the start of its
+# motion, moved by the game's TransportAnimation to its lowest and its highest (from and to: the two on the zone maps).
 path     = { type = "list", of = "tuple", parts = [
     { name = "x", type = "number" },
     { name = "y", type = "number" },
     { name = "map", type = "int", min = 0 },
     { name = "stay", type = "number", min = 0 },
     { name = "jump", type = "bool" },
+    { name = "z", type = "number" },
 ] }
 # A boat's or zeppelin's docks on the zone maps, for the map's pins: one per place it stops at (stops within 20 yards
 # are one), in the order it first comes to them, placed from its path as every map point is (map-data's Placer); a

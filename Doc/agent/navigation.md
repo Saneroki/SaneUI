@@ -147,6 +147,16 @@ air: one take-off, the flights one leg), the regions of a place's floors within 
 line the player is) drawn by `Route.Cut` (the parts passed gone, a head from the arrow), a ship boarded without the
 plan (`Riding`), the tram's next train (`Trips:TramNext`). Walk's tiles: the 48 asked for last.
 
+Lifts (2026-10-21): Travel's kind `lift`, one record per car (keys from 1100001, `dev/tools/travel-data --lifts
+<places> <batch>`: the motion from the client's TransportAnimation, the places a batch file of our picking, batch
+10). `Lifts.lua` (no frames): each end at its landing (`Walk.Landing`), `Lifts.Levels` (two landings' regions;
+stacked or side by side by a ring round the shaft), `Lifts.Joined`, `Lifts.Stand` (where a place stands: below a
+stacked upper level, the Undercity under the ruins), `Lifts.Near`. `Planner.lua`: lift ends are places (`lift`,
+`floor`, `z`), the ride costs `wait / 2 + time`, no walk between two joined levels or into a place below one, walks
+start on known floors (`step.floor`), `Rode` puts the floor on the far landing after a ride; the pin keeps its map
+(`target.at`). Checked offline on the real data: Walk, Search, Lifts and Planner under lua5.1 with stubs, the tiles
+decoded from `Walking.jsonl` in Python.
+
 ## Built (2026-10-20, 21): quest marks, the filter's sections, dungeon maps, the quest log's clicks
 
 Saneroki's asks (`Doc/ideas/Navigation.md`, *Map pins*, *Full screen*, *Dungeon maps now*; README *History*):

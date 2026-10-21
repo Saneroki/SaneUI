@@ -3,8 +3,45 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 215 (data in the game), 468 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 41 (walking data), 24 (map data), 208 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 215 (data in the game), 478 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 50 (walking data), 24 (map data), 208 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; the new data packs *Data: Items*, *Data: Spawns* and *Data: Guild*).
+
+### Navigation: lifts in the routes (Saneroki, 2026-10-21)
+- **Saneroki's ask:** a route into the Undercity or up Thunder Bluff's mesas walks to the lift, rides it and walks
+  on, instead of ending as near as one walks and running straight to the pin.
+- **The data** (Core's set *Travel*, kind `lift`; batch 10 of `sources.toml`, unverified): `dev/tools/travel-data
+  --lifts <places> <batch>` reads each lift car's motion from the client's `TransportAnimation` (straight up and
+  down, standing once a round at each end and nowhere between, rising 10 yards or more: `lift`), and writes one
+  record per car: its two ends in the world's yards with their heights (`path`, the lower first; the path's tuple has
+  a new part `z`), its slower ride (`time`), the time between two departures from an end (`wait`), its rise
+  (`length`), its ends on the zone maps (`from`, `to`, by map-data's Placer); its key our own number from 1100001,
+  the master's kept for a car at the same place (`lift_keys`). Where the cars stand is a batch file of our picking.
+  Fourteen cars: Thunder Bluff's four, the Undercity's three, the Great Lift's two, Freewind Post's two,
+  Gnomeregan's and two small ones.
+- **`Lifts.lua`** (new in the TOC, no frames): each end of a car on its landing (`Walk.Landing`, new: the floor
+  within `Lifts.LANDING` yards of a point nearest its height), the levels the lifts join (`Lifts.Levels`: two
+  landings' regions, stacked where on a ring `Lifts.RING` yards round the shafts a third of the lower level's points
+  lie under the upper: the Undercity under the ruins of Lordaeron; side by side at Thunder Bluff), `Lifts.Joined`,
+  `Lifts.Stand` (a place over a stacked lift's lower level stands below its upper one: the player by its floor, any
+  place by the lower level's floors under it, the pin on the lift's own map also by any floor below there or the
+  nearest within `Lifts.RING` yards; by a lift side by side, under its overhanging landing, on the upper),
+  `Lifts.Near`.
+- **`Planner.lua`:** the lifts' ends are places of the journey, at their landings, only where both ends have one;
+  the ride costs half the time between two departures and its ride; no walk between two levels a lift joins, or
+  between a level and a place below it; a walk's guess between places of known heights counts the climb; every walk
+  starts on the floor known at its start (the player's, a landing's: `step.floor`); a lift's leg is drawn straight
+  from landing to landing (gold); after a ride on the line's lift the floor followed is its far landing (`Rode`);
+  the pin keeps the map it was put on (`target.at`); `Planner.APART` is left for gaps of the walking data.
+- `Pins.lua`: a way without a name of its own (a lift) is named by its kind.
+- Checked outside the game on the real walking data: Mulgore to Thunder Bluff's flight master by either lift and
+  back; the ruins of Lordaeron to the Undercity's flight master, bank, Magic, Royal and War Quarter and out again,
+  each walk, lift, walk.
+- Not yet: the walking data joins the Undercity's levels nowhere (its ramps and stairs), so a walk from the lift to
+  its lower parts ends as near as one walks; the small landings (the Undercity's upper ones, Freewind Post's mesa,
+  Gnomeregan's) are left out of it.
+- Tests: `dev/tests/navigation.lua` 478 (a field with a mesa beside it and a courtyard over a hall: the landings,
+  the levels, walk, lift, walk up and down, out again, the floor after a ride and not without one, a pin by its map,
+  the lifts on the map), `dev/tests/walk.py` 50 (a lift's motion, its ends, keys and what is left out).
 
 ### GPU runner: the queue started, listed and switched (Saneroki, 2026-10-21)
 - At Saneroki's ask, the runner's commands say what they do: `saneui start|stop|pause|resume|status gpurunner`

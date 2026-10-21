@@ -64,7 +64,7 @@ GROUPS = {
         "data": (["dev/tools/data"], "Core's data framework: check, compile, import", 'check · compile · import'),
         "readgamedata": (["dev/tools/game-data"], "the game's facts from its client tables", None),
         "readmapdata": (["dev/tools/map-data"], "the facts of Navigation's map", None),
-        "readtraveldata": (["dev/tools/travel-data"], "flights, boats and zeppelins", None),
+        "readtraveldata": (["dev/tools/travel-data"], "flights, boats, zeppelins, the tram and lifts", None),
         "makewalkdata": (["dev/tools/walk-data"], "the walking data of Navigation's routes", None),
         "makecvarlabels": (["dev/tools/cvar-labels"], "the names of the game's settings", None),
         "makesyncpages": (["dev/tools/sync-pages"], "what each of the game's options pages sets", None),

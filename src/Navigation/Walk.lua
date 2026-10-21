@@ -21,6 +21,7 @@ local _, ns = ...
 --      Walk.Opening(tile, index, n), Walk.Openings(tile, index, fn)   a rectangle's openings
 --      Walk.Follow(continent, u, v, key, index, fromU, fromV)   the floor a walker has come to from the one before
 --      Walk.Floor(continent, u, v, indoors, reach, height)   the floor a walker stands on where it is not followed
+--      Walk.Landing(continent, u, v, z, reach)   the floor nearest a point at a height (a lift's end)
 --
 --  A tile's samples run from its north west corner, 256 along a side (Walk.SAMPLE
 --  yards each); the plane's u grows east and v north (Coords.lua).
@@ -485,6 +486,21 @@ function Walk.Floor(continent, u, v, indoors, reach, height)
     end)
     if best or height then return best, bestIndex, bu, bv end
     return Walk.Nearest(continent, u, v, reach)
+end
+
+-- The floor nearest a point at a height (a lift's end, beside its shaft): of the floors within reach yards whose
+-- height is no more than Walk.RISE yards from it, the nearest counting both; its tile, its index and its point nearest
+-- the point. nil when none.
+function Walk.Landing(continent, u, v, z, reach)
+    local best, bestTile, bestIndex, bu, bv
+    Walk.Around(continent, u, v, reach, function(tile, index, nu, nv, gap)
+        local rise = tile.rects[index * 5] / 4 - z
+        if math.abs(rise) <= Walk.RISE and (not best or gap * gap + rise * rise < best) then
+            best, bestTile, bestIndex, bu, bv = gap * gap + rise * rise, tile, index, nu, nv
+        end
+    end)
+    if not best then return nil end
+    return bestTile, bestIndex, bu, bv
 end
 
 -- Every tile let go (the route is off, or a test begins).

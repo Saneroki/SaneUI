@@ -26,10 +26,25 @@ staging for Core's set Travel (pack World): the ways Navigation's route planner 
                   map's pins: one per place it stops at, in the order it first comes to them, each placed by
                   map-data's Placer; a dock on no zone map left out) and dockAreas (the game's area each of them
                   lies in, the AreaTable ID its terrain or building gives, which names it; 0 where none does)
+    a lift        with --lifts (below): a car that goes straight up and down, as the game moves it in its
+                  TransportAnimation (no taxi path): kind lift, path (its two ends in the world's yards, the lower
+                  first with its map, each with z, its height: where the car stands at the start of its motion,
+                  moved to its motion's lowest and highest), length (the yards it rises), time (seconds from leaving
+                  one end to reaching the other, the slower of its two rides), wait (seconds between two departures
+                  from one end: its motion once round) and from and to (its lower and upper end on the zone maps,
+                  each placed by map-data's Placer, for the map's pins); its key our own number, from LIFTS + 1 on,
+                  that of the master's lift whose lower end lies within HERE yards where there is one
 
 On a path a point on a straight run, within STRAIGHT yards of the line between its neighbours, is left out (never a
 dock or a leap). The game's tables hold neither a transport's speed nor its timetable: the planner estimates them
 until they are learned in play (Doc/ideas/Data.md, learned data).
+
+The lifts' places are not in the client's tables: --lifts <places> <batch> takes them from a batch of our picking
+(assets/data/sources.toml), a CSV file with a line per car (object, continent, x, y, z: the game object whose motion
+TransportAnimation holds, the world's map it stands on, and where it stands at the start of its motion, in the
+world's yards), and writes its lifts as that batch's lines. A car the client does not move as a lift (straight up and
+down within STILL yards, standing once a round at each end of its way, within END yards of it, and nowhere between,
+rising RISE yards or more) is left out.
 
 Left out: flights between flight points of no side (the game's own, not a flight master's); paths that stop at
 fewer than two docks (a moving thing, no way between places); and a transport whose every dock is one of another
@@ -37,11 +52,11 @@ transport with more docks (or, with the same ones, a newer ID): the older way th
 within SAME yards on one map are one dock.
 
 The input, of the build BUILD: a folder of the game's client tables as CSV (TaxiNodes, TaxiPath, TaxiPathNode,
-AreaTrigger, Map and TransportAnimation for the tram, and
+AreaTrigger, Map and TransportAnimation for the tram and the lifts, and
 for placing the docks those map-data reads: AreaTable, UiMap, UiMapAssignment, WMOAreaTable), and its terrain files
 as map-data takes them.
 
-Usage:  dev/tools/travel-data <client tables> <terrain>
+Usage:  dev/tools/travel-data <client tables> <terrain> [--lifts <places> <batch>]
 """
 import csv
 import json
@@ -53,11 +68,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STAGING = ROOT / "dev" / "data" / "staging" / "travel.jsonl"
+MASTER = ROOT / "assets" / "data" / "Travel" / "Travel.jsonl"
 BUILD = 70245
 STRAIGHT = 2.0  # yards
 FLOAT = 5.0  # yards over or under the sea's level (0) a boat's way keeps to
 SAME = 20.0  # yards between two stops of one dock
 AGREE = 0.005  # seconds the tram's cars' runs may differ by
+LIFTS = 1100000  # our own numbers of the lifts: from LIFTS + 1 on (the tram's, 1000369, lies below)
+HERE = 5.0  # yards between a lift's lower end and that of the master's lift whose key it keeps
+STILL = 1.0  # yards a lift's car may move sideways
+END = 0.1  # yards from the end of its way within which a lift's car stands there
+RISE = 10.0  # yards a lift rises at least (a door the game moves so rises less)
 ALLIANCE, HORDE = 0x1, 0x2  # the flight points' sides in TaxiNodes' Flags
 TELEPORT, STOP = 0x1, 0x2  # TaxiPathNode's Flags: the transport leaps after this point; it stops here
 
@@ -244,12 +265,107 @@ def tram(folder, placer=None):
     return fields
 
 
+def lift(rows):
+    """A lift's motion from its car's TransportAnimation rows (TimeIndex in milliseconds, Pos its offset from where it
+    stands at the start): (low, high, time, wait), its lowest and highest height from there, the seconds of the slower
+    of its two rides and of its motion once round; None for a motion that is no lift's."""
+    keys = sorted((int(row["TimeIndex"]), float(row["Pos[0]"]), float(row["Pos[1]"]), float(row["Pos[2]"]))
+                  for row in rows)
+    if len(keys) < 3 or keys[0][0] != 0 or any(abs(x) > STILL or abs(y) > STILL for _, x, y, _ in keys):
+        return None
+    low, high = min(key[3] for key in keys), max(key[3] for key in keys)
+    whole = keys[-1][0]  # once round: at its last keyframe it starts again from its first
+    if high - low < RISE or whole <= 0:
+        return None
+    # Each keyframe of a round, a ring: at its lowest (-1), at its highest (1), or between (0); one standing between
+    # its ends (two keyframes alike there) stops at a floor between them: no lift of two ends.
+    ring = [(t, -1 if z - low <= END else 1 if high - z <= END else 0) for t, _, _, z in keys[:-1]]
+    if any(ring[index][1] == 0 and abs(keys[index][3] - keys[index + 1][3]) <= END for index in range(len(ring))):
+        return None
+    start = next((index for index in range(len(ring)) if ring[index][1] != ring[index - 1][1]), None)
+    if start is None:
+        return None
+    # The runs of keyframes alike, around the ring from a change on, so that none is cut in two.
+    runs = []
+    for step in range(len(ring)):
+        index = (start + step) % len(ring)
+        when, mark = ring[index][0] + (whole if index < start else 0), ring[index][1]
+        if runs and runs[-1][0] == mark:
+            runs[-1][2] = when
+        else:
+            runs.append([mark, when, when])
+    stands = [run for run in runs if run[0]]
+    if sorted(run[0] for run in stands) != [-1, 1]:
+        return None  # it stands more than once at an end, or never: no lift's motion
+    # Its two rides: from its last keyframe at one end to its first at the other.
+    one, other = stands
+    rides = ((other[1] - one[2]) % whole, (one[1] - other[2]) % whole)
+    return low, high, round(max(rides) / 1000, 3), round(whole / 1000, 3)
+
+
+def lift_keys(master=MASTER):
+    """The master's lifts: {key: (continent, x, y)}, the lower end of each as its newest path has it."""
+    found = {}
+    if not master.exists():
+        return found
+    for text in open(master, encoding="utf-8"):
+        line = json.loads(text)
+        key, path = line.get("key"), line.get("path")
+        if isinstance(key, int) and LIFTS < key < LIFTS * 2 and path:
+            found[key] = (path[0].get("map"), path[0]["x"], path[0]["y"])
+    return found
+
+
+def lifts(cars, motions, kept, placer=None):
+    """The lifts' lines: [(key, fields)] of the cars ([(object, continent, x, y, z)], in order) the client moves as
+    lifts (motions: {object: its TransportAnimation rows}), each with the key of the master's lift at its place (kept:
+    lift_keys) or the next new one; and the cars left out ([(object, why)])."""
+    lines, left, used = [], [], set()
+    for car, continent, x, y, z in cars:
+        motion = lift(motions.get(car, ()))
+        if not motion:
+            left.append((car, "the client does not move it as a lift" if motions.get(car) else "no motion in the client"))
+            continue
+        low, high, time, wait = motion
+        key = next((key for key, (world, kx, ky) in sorted(kept.items()) if key not in used and world == continent
+                    and math.hypot(kx - x, ky - y) <= HERE), None)
+        if key is None:
+            key = max([LIFTS, *kept, *used]) + 1
+        used.add(key)
+        fields = {"kind": "lift", "length": round(high - low, 1), "time": time, "wait": wait,
+                  "path": [{"x": x, "y": y, "map": continent, "z": round(z + low, 3)},
+                           {"x": x, "y": y, "z": round(z + high, 3)}]}
+        if placer:
+            lower, upper = placer.place(continent, x, y, z + low), placer.place(continent, x, y, z + high)
+            if lower:
+                fields["from"] = lower
+            if upper:
+                fields["to"] = upper
+        lines.append((key, fields))
+    return lines, left
+
+
+def lift_places(path):
+    """The cars of a batch's places file: [(object, continent, x, y, z)], in the file's order."""
+    return [(int(row["object"]), int(row["continent"]), float(row["x"]), float(row["y"]), float(row["z"]))
+            for row in csv.DictReader(open(path, encoding="utf-8"))]
+
+
 def main():
-    if len(sys.argv) != 3:
+    args = sys.argv[1:]
+    places, batch = None, None
+    if "--lifts" in args:
+        at = args.index("--lifts")
+        if len(args) < at + 3 or not args[at + 2].isdigit():
+            print(__doc__.strip().splitlines()[-1], file=sys.stderr)
+            return 2
+        places, batch = Path(args[at + 1]), int(args[at + 2])
+        del args[at:at + 3]
+    if len(args) != 2:
         print(__doc__.strip().splitlines()[-1], file=sys.stderr)
         return 2
-    folder = Path(sys.argv[1])
-    placer = map_data().Placer(folder, Path(sys.argv[2]))
+    folder = Path(args[0])
+    placer = map_data().Placer(folder, Path(args[1]))
     nodes = {int(row["ID"]): row for row in table(folder, "TaxiNodes")}
     points = {}
     for row in table(folder, "TaxiPathNode"):
@@ -275,18 +391,29 @@ def main():
     trams = tram(folder, placer)
     if trams:
         lines.append((TRAM_KEY, trams))
+    sources = {}
+    if places:
+        motions = {}
+        for row in table(folder, "TransportAnimation"):
+            motions.setdefault(int(row["TransportID"]), []).append(row)
+        found, dropped = lifts(lift_places(places), motions, lift_keys(), placer)
+        for car, why in dropped:
+            print(f"left out: the lift car {car}: {why}")
+        lines += found
+        sources = {key: batch for key, _ in found}
     lines.sort(key=lambda line: line[0])
     STAGING.parent.mkdir(parents=True, exist_ok=True)
     with open(STAGING, "w", encoding="utf-8") as out:
         for key, fields in lines:
-            line = {"set": "Travel", "key": key, "game": "forever", "build": BUILD, "src": "game", "fields": fields}
+            line = {"set": "Travel", "key": key, "game": "forever", "build": BUILD, "src": sources.get(key, "game"),
+                    "fields": fields}
             out.write(json.dumps(line, separators=(",", ":")) + "\n")
     ships = sum(1 for _, fields in lines if fields["kind"] in ("boat", "zeppelin"))
     placed = sum(len(fields.get("docks", ())) for _, fields in lines)
     flights = sum(1 for _, fields in lines if fields["kind"] == "flight")
     print(f"Wrote {STAGING.relative_to(ROOT)}: {flights} flights, {ships} boats and zeppelins, "
-          f"{'the tram' if trams else 'no tram'}, with {placed} docks on the zone maps ({left} ways left out; "
-          f"replaced: {', '.join(map(str, sorted(gone))) or 'none'}).")
+          f"{'the tram' if trams else 'no tram'}, with {placed} docks on the zone maps, {len(sources)} lifts "
+          f"({left} ways left out; replaced: {', '.join(map(str, sorted(gone))) or 'none'}).")
     return 0
 
 

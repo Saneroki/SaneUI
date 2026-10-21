@@ -10,24 +10,31 @@ local _, ns = ...
 --                    plane (a continent, or a map of its own on the world map: Zephras Isle, Coords.Planes), so
 --                    a journey may cross a third one (the hearthstone home, then a ship over the sea); its ways:
 --                    on foot between two places of one plane (guessed at Planner.DETOUR times the straight line;
---                    between places that share no region of the walking data Planner.APART seconds more: a lift,
---                    a tower, a mesa, taken only where nothing else goes), the flights between known flight points
+--                    between places that share no region of the walking data Planner.APART seconds more: a tower,
+--                    a gap in the walking data, taken only where nothing else goes), the flights between known
+--                    flight points
 --                    (the game's, Core's set Travel, as only its side flies them; each at its way's length, taking
 --                    off and landing once, Planner.BOARD, however many flight points it passes over), the boats and
 --                    zeppelins from dock to dock (Core's set Travel, the game's own ways of them: the wait for one
 --                    and the trip, Planner.Ship), the tram from one city's entrance to it to the other's (Core's
 --                    set Travel: the way down and up, the wait for a train, its next where a ride taught its
---                    times, and its run, Tram), the hearthstone from the player to its place (its cooldown and the
---                    cast); the quickest taken (Dijkstra)
+--                    times, and its run, Tram), the lifts from one end to the other (Core's set Travel, each end at
+--                    its landing, Lifts.lua: the wait for the car, half the time between two departures, and its
+--                    ride), the hearthstone from the player to its place (its cooldown and the cast); the quickest
+--                    taken (Dijkstra). Between two levels a lift joins (Thunder Bluff's mesa and Mulgore), or a
+--                    level and a place below it (the Undercity under the ruins over it, Lifts.Stand), no walk: the
+--                    lift is the way
 --      the walks     then searched on the walking data (Search.lua): the first from the floor the player stands
---                    on, the others from every floor at the place they start; a walk found much longer than its
---                    guess is put in at its true length and the journey chosen again, once. The journey and its
+--                    on, the others from the floor of the lift's landing they start at, else from every floor at
+--                    the place they start; a walk found much longer than its guess is put in at its true length and
+--                    the journey chosen again, once. The journey and its
 --                    walks are one job of Core's scheduler (a few milliseconds a frame, never in a fight); a new
 --                    pin stops it, and the line of the pin before goes at once
 --      the floor     the player's, followed as they go (Walk.Follow, every Planner.FOOT seconds while there is a
 --                    pin): the game tells no height, and floors lie one over the other (a cave under a hill, a
 --                    city in a mountain, a building's storeys); where it cannot be followed (the first plan, a
---                    loading screen), the one Walk.Floor chooses (outdoors the highest, indoors the lowest)
+--                    loading screen), the one Walk.Floor chooses (outdoors the highest, indoors the lowest); a lift
+--                    of the line ridden (Rode), the landing at its other end
 --      without data  (the pack Routes not installed, or a plane it has nothing of): each walk a straight line
 --      the line      always from the player: at every step of the canvas' tracker where along it the player is
 --                    (the cut: of the next Planner.AHEAD parts of it, the first within Planner.SLACK yards of the
@@ -54,7 +61,7 @@ local _, ns = ...
 --  next departure where a ride on this realm taught its times, else half its round.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-local Coords, Live, Walk, Search = ns.Coords, ns.Live, ns.Walk, ns.Search
+local Coords, Live, Walk, Search, Lifts = ns.Coords, ns.Live, ns.Walk, ns.Search, ns.Lifts
 local Planner = {}
 ns.Planner = Planner
 
@@ -67,6 +74,7 @@ Planner.STATION = 30     -- seconds the tram takes besides the wait and its run,
 Planner.DETOUR = 1.3     -- a walk not searched yet is guessed at so many times the straight line
 Planner.WORSE = 1.6      -- a walk found this much longer than its guess makes the journey be chosen again
 Planner.APART = 60       -- seconds more a walk between two places that share no region of the walking data costs
+                         -- (and no lift joins: then there is no walk)
 Planner.REGION = 20      -- yards around a place whose floors' regions are its own too (a tower's foot, a shore)
 Planner.OFF = 40         -- yards off the line that make a new plan
 Planner.ABOARD = 150     -- yards off a boat's or zeppelin's way the player may be and still be aboard
@@ -89,8 +97,9 @@ local job               -- the plan being made: a job of Core's scheduler
 local made = 0          -- jobs made, each by a name of its own
 local docks             -- every dock, by name, while Core's set Travel stays as it is (Docks)
 local planes = {}       -- [the world's map] = the map of its plane (Coords.Planes), or false
-local regions = {}      -- [place name] = the regions of the walking data a flight point or a dock stands in, or
-                        -- false: none; kept while the walking data and Travel stay as they are (Journey)
+local regions = {}      -- [place name] = where a flight point, a dock or a lift's end stands: { set (the regions of
+                        -- the walking data, or false: none), below (the lifts' upper levels it stands below, or
+                        -- false) }; kept while the walking data and Travel stay as they are (Journey)
 local footing           -- the floor the player stands on: { key, index, map = its plane } (Walk.Follow), nil while
                         -- not known
 local lastPlan, nextLook, nextFoot = -math.huge, 0, 0
@@ -376,6 +385,34 @@ local function Footing(map, u, v)
     return footing
 end
 
+-- A lift of the line ridden: the game tells no height, and no floor is followed through a lift's shaft. The player was
+-- at a lift that joins the two levels of the line's lift (Lifts.Near: the one planned, or another beside it) as long as
+-- its ride takes, then went on along the line past it: on that lift's landing at the other level now (else, at it no
+-- longer, the time there counts anew).
+local function Rode(map, u, v, now)
+    for index, leg in ipairs(plan and plan.legs or {}) do
+        local near, far = leg.near, leg.far
+        if leg.kind == "lift" and near and far and not leg.rode then
+            local lift = Lifts.Near(map, u, v, near.lift[1].region, near.lift[2].region)
+            if lift then
+                leg.at, leg.since = lift, leg.since or now
+            elseif leg.since then
+                local at = leg.at
+                if plan.cut.leg > index and now - leg.since >= at.time then
+                    leg.rode = true
+                    local landing = at[far == far.lift[1] and 1 or 2]
+                    local tile = Walk.Tile(landing.floor[1])
+                    if tile and landing.floor[2] <= tile.count then
+                        footing = { landing.floor[1], landing.floor[2], map = map, u = landing.pu, v = landing.pv,
+                                    z = select(5, Walk.Rect(tile, landing.floor[2])) }
+                    end
+                end
+                leg.since = nil
+            end
+        end
+    end
+end
+
 -------------------------------------------------------------------------------
 --  The journey
 -------------------------------------------------------------------------------
@@ -388,8 +425,9 @@ local function Share(a, b)
 end
 
 -- The quickest journey by the guesses from the start (start: { map, u, v, from: the player's floor }) to the goal (a
--- place: { map, u, v }): a list of steps { kind = "walk" | "flight" | "boat" | "zeppelin" | "tram" | "hearth", from,
--- to (the places' names), map, u1, v1, map2, u2, v2, ... } and its seconds; nil when none reaches it. measured:
+-- place: { map, u, v }): a list of steps { kind = "walk" | "flight" | "boat" | "zeppelin" | "tram" | "lift" | "hearth",
+-- from, to (the places' names), map, u1, v1, map2, u2, v2, ... (a walk's floor: the one it starts on, where known; a
+-- lift's near and far: its ends) } and its seconds; nil when none reaches it. measured:
 -- { [from] = { [to] = seconds } } walks searched already, in place of their guesses. A flight point is two places: on
 -- the ground (its node's ID) and in the air over it (minus that), so a flight over many flight points takes off and
 -- lands once; the flights one after the other are one step (hops: each flight's record and ends, in order).
@@ -397,8 +435,12 @@ local function Journey(start, goal, measured)
     local known = Known()
     local now = Ships.Now()
     local useData = Walk.Ready()
-    -- The places: the two ends, and on every plane the known flight points, the docks, the hearthstone's.
-    local places = { start = { map = start.map, u = start.u, v = start.v }, ["end"] = { map = goal.map, u = goal.u, v = goal.v } }
+    -- The places: the two ends, and on every plane the known flight points, the docks, the lifts' ends, the
+    -- hearthstone's. A place's floor and height where they are known: the player's, a lift's end's.
+    local places = {
+        start = { map = start.map, u = start.u, v = start.v, floor = start.from, z = start.from and start.from.z },
+        ["end"] = { map = goal.map, u = goal.u, v = goal.v, at = goal.at },
+    }
     local points = {}
     for _, plane in ipairs(Coords.Planes()) do
         for node, point in pairs(Points(plane)) do
@@ -410,33 +452,55 @@ local function Journey(start, goal, measured)
         local u, v = Pier(dock)
         places[name] = { map = dock.map, u = u, v = v, dock = dock }
     end
+    -- Each end of a lift at its landing (with walking data, only a lift both of whose ends lie on one).
+    for _, lift in ipairs(Lifts.All()) do
+        if not useData or (Lifts.Landed(lift[1]) and Lifts.Landed(lift[2])) then
+            for _, point in ipairs(lift) do
+                places[point.name] = { map = point.map, u = point.pu or point.u, v = point.pv or point.v, z = point.z,
+                                       floor = point.floor, lift = point }
+            end
+        end
+    end
     local hearth, homeSeconds = Hearth()
     if hearth then places.hearth = { map = hearth.map, u = hearth.u, v = hearth.v } end
-    -- A walk's seconds: as found, else guessed; and whether it was found.
+    -- A walk's seconds: as found, else guessed (between two places of known heights, the climb too, as the search
+    -- counts it: a lift's two ends are no walk apart); and whether it was found.
     local function Walking(fromName, a, toName, b)
         local found = measured[fromName]
         found = found and found[toName]
         if found then return found, true end
-        return Distance(a.u, a.v, b.u, b.v) * Planner.DETOUR / Planner.RUN, false
+        local climb = a.z and b.z and math.abs(a.z - b.z) * Search.CLIMB or 0
+        return (Distance(a.u, a.v, b.u, b.v) + climb) * Planner.DETOUR / Planner.RUN, false
     end
-    -- The regions of the walking data a place stands in (nil: not known; walks are then not ruled out): a flight
-    -- point's and a dock's kept from plan to plan (regions), the ends' and the hearthstone's (they move) for this one;
-    -- the start's that of the player's floor, where it is known.
+    -- The regions of the walking data a place stands in (nil: not known; walks are then not ruled out), and the
+    -- lifts' upper levels it stands below (Lifts.Stand): a flight point's, a dock's and a lift's end's kept from plan
+    -- to plan (regions), the ends' and the hearthstone's (they move) for this one. A place's floor known (the
+    -- player's, a lift's landing): its region; the pin's those of the floors under it, where there are any (on a
+    -- mesa, not the land at its foot); any other's those of the floors under it and within Planner.REGION yards.
     local moving = {}
     local function RegionsOf(name)
         if not useData then return nil end
         local kept = (name == "start" or name == "end" or name == "hearth") and moving or regions
-        if kept[name] == nil then
+        local found = kept[name]
+        if found == nil then
             local place = places[name]
-            local tile = name == "start" and start.from and Walk.Tile(start.from[1])
-            if tile and start.from[2] <= tile.count then
-                kept[name] = { [tile.region[start.from[2]]] = true }
+            local floor = place.floor
+            local tile = floor and Walk.Tile(floor[1])
+            local set
+            if tile and floor[2] <= tile.count then
+                set = { [tile.region[floor[2]]] = true }
             else
-                kept[name] = Walk.Regions(place.map, place.u, place.v, Planner.REGION) or false
+                floor = nil
+                set = name == "end" and Walk.Regions(place.map, place.u, place.v, 0)
+                    or Walk.Regions(place.map, place.u, place.v, Planner.REGION)
             end
+            local below
+            set, below = Lifts.Stand(place.map, place.u, place.v, set, floor, Planner.REGION, place.at)
+            found = { set = set or false, below = below or false }
+            kept[name] = found
             Core.Steps.Check() -- its tiles unpacked: the frame's time may be spent
         end
-        return kept[name] or nil
+        return found.set or nil, found.below or nil
     end
     -- Dijkstra over the places; a flight point in the air is its node's ID, negative.
     local best, from, how, done = { start = 0 }, {}, {}, {}
@@ -461,20 +525,32 @@ local function Journey(start, goal, measured)
             Reach(-current, low, "down")
         else
             -- On foot: to every place of the same plane; between places that share no region, it costs more (unless
-            -- the walk was found already: then as found). A place's regions are looked up only for a walk that may
+            -- the walk was found already: then as found), and between two levels a lift joins, or a level and a place
+            -- below it, there is none (the lift is the way). A place's regions are looked up only for a walk that may
             -- still be part of a quicker journey: the first plan unpacks no tiles of places nobody walks to.
-            local mine
+            local mine, mineBelow
             for name, place in pairs(places) do
                 if not done[name] and place.map == here.map then
                     local seconds, found = Walking(current, here, name, place)
                     local total = low + seconds
                     if (not best[name] or total < best[name]) and (not best["end"] or total < best["end"]) then
                         if not found then
-                            if mine == nil then mine = RegionsOf(current) or false end
-                            local theirs = mine and RegionsOf(name)
-                            if theirs and not Share(mine, theirs) then total = total + Planner.APART end
+                            if mine == nil then
+                                mine, mineBelow = RegionsOf(current)
+                                mine = mine or false
+                            end
+                            local theirs, theirBelow
+                            if mine then theirs, theirBelow = RegionsOf(name) end
+                            if theirs and not Share(mine, theirs) then
+                                if Lifts.Joined(mine, theirs, here.map) or (mineBelow and Share(mineBelow, theirs))
+                                    or (theirBelow and Share(theirBelow, mine)) then
+                                    total = nil
+                                else
+                                    total = total + Planner.APART
+                                end
+                            end
                         end
-                        Reach(name, total, "walk")
+                        if total then Reach(name, total, "walk") end
                     end
                 end
             end
@@ -499,6 +575,13 @@ local function Journey(start, goal, measured)
                         Reach(ship.to, low + seconds, ship)
                     end
                 end
+            end
+            -- Up or down: a lift from its end to its other one, the wait for its car (half the time between two
+            -- departures from an end) and its ride.
+            if here.lift then
+                local lift = here.lift.lift
+                local other = lift[here.lift == lift[1] and 2 or 1]
+                if places[other.name] then Reach(other.name, low + lift.wait / 2 + lift.time, lift) end
             end
             -- Home: the hearthstone from where the player is.
             if current == "start" and places.hearth then Reach("hearth", low + homeSeconds, "hearth") end
@@ -530,11 +613,13 @@ local function Journey(start, goal, measured)
         else
             local step = { from = previous, to = at, map = a.map, u1 = a.u, v1 = a.v, map2 = b.map, u2 = b.u, v2 = b.v }
             if way == "walk" then
-                step.kind, step.guess = "walk", (Walking(previous, a, at, b))
+                step.kind, step.guess, step.floor = "walk", (Walking(previous, a, at, b)), a.floor
             elseif way == "hearth" then
                 step.kind = "hearth"
             elseif way.kind == "tram" then
                 step.kind, step.tram = "tram", way
+            elseif way.kind == "lift" then
+                step.kind, step.near, step.far = "lift", a.lift, b.lift
             else
                 step.kind, step.ship = way.kind, way
             end
@@ -555,9 +640,10 @@ local function Journey(start, goal, measured)
     return joined, best["end"]
 end
 
--- Every walk of the journey searched (in the plan's job), one after the other: the first from the floor the player
--- stands on, the others from every floor at the place they start. A walk much longer than its guess, once: the
--- journey chosen again with the walks found so far in place of their guesses (and kept for it).
+-- Every walk of the journey searched (in the plan's job), one after the other: each from the floor it starts on where
+-- that is known (the player's, a lift's landing), else from every floor at the place it starts. A walk much longer
+-- than its guess, once: the journey chosen again with the walks found so far in place of their guesses (and kept for
+-- it).
 local function Find(start, goal)
     local measured, walked = {}, {}
     local again = true
@@ -569,8 +655,8 @@ local function Find(start, goal)
             if step.kind == "walk" then
                 local key = step.from .. ":" .. step.to
                 if walked[key] == nil then
-                    local points, cost = Search.Walk(step.map, step.u1, step.v1, step.u2, step.v2,
-                        step.from == "start" and start.from or nil, Core.Steps.Check)
+                    local points, cost = Search.Walk(step.map, step.u1, step.v1, step.u2, step.v2, step.floor,
+                        Core.Steps.Check)
                     walked[key] = points and { points = points, seconds = cost / Planner.RUN } or false
                     if points then
                         measured[step.from] = measured[step.from] or {}
@@ -649,10 +735,12 @@ local function Draw(steps, keep)
             legs[#legs + 1] = { kind = "walk", points = points }
         elseif step.kind == "flight" then
             legs[#legs + 1] = { kind = "flight", points = FlightPoints(step) }
-        elseif step.kind == "hearth" or step.kind == "tram" then
-            -- Straight to the hearthstone's place; the tram's from entrance to entrance (its tunnel's map has no plane).
-            legs[#legs + 1] = { kind = step.kind, points = { { map = step.map, u = step.u1, v = step.v1 },
-                                                             { map = step.map2, u = step.u2, v = step.v2 } } }
+        elseif step.kind == "hearth" or step.kind == "tram" or step.kind == "lift" then
+            -- Straight to the hearthstone's place; the tram's from entrance to entrance (its tunnel's map has no
+            -- plane); a lift's from its landing to the one at its other end (near and far: its ends, for Rode).
+            legs[#legs + 1] = { kind = step.kind, near = step.near, far = step.far,
+                                points = { { map = step.map, u = step.u1, v = step.v1 },
+                                           { map = step.map2, u = step.u2, v = step.v2 } } }
         else
             legs[#legs + 1] = { kind = step.kind, ship = true, points = ShipPoints(step) }
         end
@@ -790,13 +878,13 @@ Planner.TEXT = {
     sea = "no way to the map pin's continent is known yet: no line.",
 }
 
--- The game's map pin in its plane: { map, u, v }, or nil.
+-- The game's map pin in its plane: { map, u, v, at (the map it was put on) }, or nil.
 local function Pinned()
     local map, x, y = Live.Waypoint()
     local plane = map and Coords.PlaneOf(map)
     local u, v
     if plane then u, v = Coords.MapToPlane(map, x, y, plane) end
-    return u and { map = plane, u = u, v = v } or nil
+    return u and { map = plane, u = u, v = v, at = map } or nil
 end
 
 -- The pin moved, came or went: planned anew (or the line goes); the line to the pin before goes at once.
@@ -895,13 +983,17 @@ local function Follow(map, u, v)
 end
 
 -- A step of the canvas' tracker: the player's place (Route.Track). Every step: where along the line the player is,
--- the line drawn from there; every Planner.FOOT seconds the floor they stand on; every Planner.LOOK seconds whether
--- to plan again: off the line (aboard a boat or zeppelin: off its way), after a flight landed.
+-- the line drawn from there; every Planner.FOOT seconds the floor they stand on (a lift of the line ridden, Rode);
+-- every Planner.LOOK seconds whether to plan again: off the line (aboard a boat or zeppelin: off its way), after a
+-- flight landed.
 function Planner.Track(map, u, v, now)
     if plan and u and Follow(map, u, v) then ns.Route.Cut(plan) end
     if now >= nextFoot then
         nextFoot = now + Planner.FOOT
-        if u and target and not ns.off then Footing(map, u, v) end
+        if u and target and not ns.off then
+            Rode(map, u, v, now)
+            Footing(map, u, v)
+        end
     end
     if now < nextLook then return end
     nextLook = now + Planner.LOOK
@@ -951,10 +1043,12 @@ local function Changed()
 end
 Core.Data.Set("Walking"):OnStamp(function()
     footing = nil
+    Lifts.Forget()
     Changed()
 end)
 Travel:OnStamp(function()
     docks = nil
+    Lifts.Forget()
     Changed()
 end)
 -- A ride taught a boat's round: its trips made anew.

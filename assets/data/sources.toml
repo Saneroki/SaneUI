@@ -65,3 +65,9 @@ kind = "batch"
 game = "forever"
 build = 70245
 about = "The maps of the dungeons and raids Forever's client has, from Blizzard's own tables of the newest retail client (12.1.5.70448): each floor's map art (every tile the same file in Forever's live and beta clients), the part of the world it shows, and where each boss stands on it, only where Forever's clients list that boss under the same encounter in the same instance (its name is Forever's, the set Encounters). Unverified: Forever's own word replaces it."
+
+[10]
+kind = "batch"
+game = "forever"
+build = 70245
+about = "The lifts: where each car of the original game (patch 1.12) stands at the start of its motion, where every record of it agrees, Forever's client moves it as the original game's does (its TransportAnimation, keyframe for keyframe) and Forever's own world has a floor at both ends of its way; their ends, rides and rounds read from Forever's client by dev/tools/travel-data. Unverified: the place the game's server sends for a car confirms it."

@@ -25,7 +25,9 @@ Nodes.lua
 Walk.lua
 # A walk between two points over the walking data, as a job of Core's scheduler. Knows no frames
 Search.lua
-# The way to the map pin: on foot and by the flights this character knows. Knows no frames
+# The lifts on the walking data: each end at its landing, the levels they join, where a place stands. Knows no frames
+Lifts.lua
+# The way to the map pin: on foot, by the flights this character knows, by ship, tram and lift. Knows no frames
 Planner.lua
 # The frame the map is drawn in, the same for both views: its layers, the player's place, the mouse
 Canvas.lua
