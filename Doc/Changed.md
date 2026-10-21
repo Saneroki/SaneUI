@@ -6,6 +6,21 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 192 (data in the game), 498 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 117 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the dungeons' and raids' paintings planned and queued (Saneroki, 2026-10-21)
+- **The plan** (`dev/imagegen/maps/dungeons.toml`, new): the far zoom of the instance maps, one free realistic painting
+  of each instance as a whole: the fixed words (edit, levels, last) and a brief for each of 30 instances (the 26 of
+  Core's set *Dungeons* and Forever's four new dungeons: setting, layout, colours, atmosphere, no names). The close
+  zoom is described there and waits for its inputs (the instances' own indoor maps and terrain).
+- **The tool** (`dev/tools/dungeon-paint`, new; `saneui makedungeonmaps`): `paint` makes each instance's image 1
+  (its floors side by side in the game's order, from the game's map art of the set's tiles, `--mapart`, cut free of
+  frame and title banner, or from given pictures, `--layouts`; contrast stretched, blurred to shapes) and paints
+  three seeds an instance with the full Qwen edit model at 2048 x 1360, the first seed of all before the second of
+  any, skipping what is made; `status` (`<made> of <all> paintings made`), `contact` (a sheet to choose from),
+  `rebuild`, `--dry`.
+- **The queue** (`dev/imagegen/jobs.toml`): the job `dungeons`, priority 2; the redesigns of interface parts go
+  above it when they are queued. `Doc/guides/image-generation.md` (*Maps*, *The GPU runner*),
+  `Doc/ideas/Navigation.md`, `Doc/agent/development.md` and `navigation.md` say so.
+
 ### Doc: a travel pin's ways on the map, to come (Saneroki, 2026-10-21)
 - `Doc/ideas/Navigation.md` (*Map pins*, what is not there yet) and `Doc/agent/navigation.md` (*What is not there
   yet*): the mouse over a flight point, a boat's or zeppelin's dock or the tram's entrance is to draw the ways the

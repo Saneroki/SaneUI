@@ -6,7 +6,9 @@
 #
 # A session that adds or changes a render plan (a set's lists, a map's plan, a job's words or workflow) adds or
 # updates its job here in the same commit, with a priority: the Atlas' close squares are 10, above it what
-# Saneroki waits for, below it what can wait; ask Saneroki when unclear.
+# Saneroki waits for, below it what can wait; ask Saneroki when unclear. The dungeons' paintings are low (2); the
+# redesigns of interface parts (the map pins, the route line, the raid markers, ...) go above them when they are
+# queued (Saneroki, 2026-10-21).
 #
 #   [[job]]
 #   name = "atlas"                                   # letters, digits, - and _; its log is <name>.log
@@ -38,3 +40,13 @@ command = ["dev/tools/atlas", "paint"]
 status = ["dev/tools/atlas", "status"]
 done = '^(\d+) of \1 squares painted'
 rebuild = ["dev/tools/atlas", "rebuild"]
+
+# The dungeons' and raids' far zoom: one painting of each instance, three seeds (Saneroki, 2026-10-21: queued, not
+# urgent). Its plan: dev/imagegen/maps/dungeons.toml.
+[[job]]
+name = "dungeons"
+priority = 2
+command = ["dev/tools/dungeon-paint", "paint"]
+status = ["dev/tools/dungeon-paint", "status"]
+done = '^(\d+) of \1 paintings made'
+rebuild = ["dev/tools/dungeon-paint", "rebuild"]

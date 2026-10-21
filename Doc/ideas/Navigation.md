@@ -148,7 +148,12 @@ minimap) and the full-screen window (the world map) show the same map with the s
   - **zoomed out fully:** a full reimagination of the instance, its layout, the mood of its rooms and a realistic
     render, free like the zones' paintings (*Zones and continents reimagined*).
 
-  Made after the zones.
+  Made after the zones. **Planned and queued (2026-10-21):** the far zoom's words and briefs are in
+  `dev/imagegen/maps/dungeons.toml` (30 instances: the 26 of Core's set *Dungeons* and Forever's four new dungeons),
+  painted by `dev/tools/dungeon-paint` as the GPU runner's job `dungeons`, at a low priority (2; the Atlas is 10,
+  the redesigned interface parts go above the dungeons: Saneroki, 2026-10-21). The close zoom waits for its inputs:
+  the instances' own indoor maps and terrain, which `dev/tools/indoor-art` does not make yet (it reads the
+  continents' buildings); its job joins the queue with them.
 - **Dungeon maps now, with their bosses (Saneroki, 2026-10-20 and 21):** until the three zooms are made, every
   dungeon and raid (only those, no other instances) has a map in Blizzard's style: the game's own map art of it,
   floor by floor (Forever's client has none, so Core's set *Dungeons* holds them, from Blizzard's own tables; the

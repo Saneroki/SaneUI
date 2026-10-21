@@ -238,7 +238,8 @@ with `saneui gpuqueue` and changes the job at work with `saneui switch <job>` (S
   (a set's lists in `dev/imagegen/sets/`, such as the UI looks of `ui-explore/` and `ui-style/`, a map's
   plan, a job's words or workflow) adds or updates its job in `dev/imagegen/jobs.toml` in the same commit: a
   `name`, a `priority` (the Atlas' close squares are 10; above it what Saneroki waits for, below it what can
-  wait; ask Saneroki when unclear) and a `rebuild` command when the plan's change has to start it anew. A
+  wait; ask Saneroki when unclear; the dungeons' paintings are 2, and the redesigns of interface parts, such as
+  the map pins, the route line and the raid markers, go above them when they are queued: Saneroki, 2026-10-21) and a `rebuild` command when the plan's change has to start it anew. A
   finished job whose plan changed is let go again with `saneui switch <job>` or `saneui rebuildstart <job>`
   when it should run now, else `dev/tools/gpu-runner reset <job>`. Quick tries of a few pictures while a
   session works on a look need no job (their pictures in ComfyUI's queue make the runner yield); what is left
@@ -337,6 +338,16 @@ lists, from inputs of its own:
   game's water and keeps the best of three seeds; `--near` paints a few squares around a place first, `join`
   stitches them, each through the colour pass (`--mood`); in a terminal it shows its progress, `p` pauses (and frees the graphics card), `q` quits; the whole run goes
   to the GPU runner (*The GPU runner*), which paints only while the card is idle.
+- **The dungeons' and raids' far zoom** (`dev/tools/dungeon-paint`, `saneui makedungeonmaps`; the GPU runner's job
+  `dungeons`): one free painting of each instance as a whole, from its layout and its brief
+  (`dev/imagegen/maps/dungeons.toml`: setting, layout, colours, atmosphere, without names). Image 1 is the layout:
+  every floor side by side in the game's order, from the game's map art of it (Core's set *Dungeons*: the floors'
+  tiles in a folder of the game's map art, `--mapart`; frame and title banner cut off) or, where the game has no
+  map art (Forever's new dungeons), the pictures given with `--layouts` (`<map ID>-<floor>.png`); contrast
+  stretched, then blurred until only the shapes are left, so no lines, drawing style or writing carry over. Three
+  seeds an instance, the first of every instance before the second of any; `contact` makes a sheet to choose from.
+  The close zoom (the instance's own indoor maps repainted with the Atlas' words) waits for its inputs; the
+  middle zoom is drawn by code.
 - **Upscaling models** (`models/upscale_models/` of ImageGen: 4x-UltraSharpV2 and 4xNomos2, both DAT2, as
   safetensors, 17 s for 1024 to 4096): they sharpen what is there, the faults too, and add no detail; the
   painting is made at the size it is shown.
