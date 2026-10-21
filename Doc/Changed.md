@@ -1195,6 +1195,13 @@ Saneroki asked for a much richer bag view, in features and looks.
   Kalam's font files in `assets/fonts/Kalam/`. The guide gains *The harness*, the doll as a copy of its pick,
   class colours on paper and the open leather font. The exploration (its six sets, renders and the older concept
   art, `Elements.png` among them) is archived outside the project.
+- The harness's round 2 (Saneroki's review): the unnamed elements archived; the edges, the patch for every
+  button, the drawn tab's lines and the patch tab kept (`assets/Concept art/UI style/elements/`). No colour in the
+  design (brown leather, paper, pencil). New: plain dropdown bands for code inlays (`elements-band.txt`, the
+  crop's marks smoothed in `refs.py`), the patch tab as an interlocking arrow with worn stitched ends (`shape.py`,
+  `elements-arrow.txt`), bubbles drawn in code as one piece of paper with the class icon's round in their
+  silhouette, the doll's slots in arcs, a darker, browner paper (`paper.py`, `TONE`), the gallery split into parts
+  in use and parts to pick.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.

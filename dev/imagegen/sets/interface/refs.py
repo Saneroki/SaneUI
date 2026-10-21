@@ -33,23 +33,43 @@ CROPS = {
 
 # crops whose label is covered in code (the paper of its own tone over the dark letters inside this box,
 # fractions of the crop), for parts no seed of the edit painted without it
-CLEAN = {"top-tab-patch": (0.12, 0.18, 0.88, 0.82)}
+CLEAN = {"top-tab-patch": (0.12, 0.18, 0.88, 0.82), "title-bar": (0.3, 0.15, 0.7, 0.85)}
+# crops whose inside is smoothed in code before the edit paints it anew (marks that the edit kept otherwise):
+# the inside blurred to its own leather and a fine grain laid over it
+SMOOTH = {"dropdown-band": (0.16, 0.06, 0.84, 0.8)}
 
 
 def clean(img, inner):
-    """The dark marks inside inner covered by the median tone of the light pixels there, softly."""
+    """The marks inside inner (letters darker or lighter than the part) covered by the part's own tone, softly."""
     import numpy as np
     from PIL import ImageFilter
     w, h = img.size
     x0, y0, x1, y1 = round(inner[0] * w), round(inner[1] * h), round(inner[2] * w), round(inner[3] * h)
     region = img.crop((x0, y0, x1, y1))
     lum = np.asarray(region.convert("L"))
-    tone = np.median(np.asarray(region)[lum > np.percentile(lum, 50)], axis=0).astype(np.uint8)
-    dark = region.convert("L").point(lambda v, m=float(np.percentile(lum, 50)): 255 if v < m - 18 else 0)
-    mask = dark.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.GaussianBlur(1.5))
-    fill = Image.new("RGB", region.size, tuple(int(v) for v in tone))
-    fill = Image.blend(fill, region.filter(ImageFilter.GaussianBlur(6)), 0.5)
+    tone = np.median(np.asarray(region).reshape(-1, 3), axis=0).astype(np.uint8)
+    dark = region.convert("L").point(lambda v, m=float(np.percentile(lum, 50)): 255 if abs(v - m) > 14 else 0)  # dark or light letters
+    grow = max(5, (h // 18) | 1)                       # filters sized to the part, small crop or large element
+    mask = dark.filter(ImageFilter.MaxFilter(grow)).filter(ImageFilter.GaussianBlur(max(1.5, h / 90)))
+    grain = np.random.default_rng(7).normal(0, 5, (region.height, region.width, 1))
+    fill = Image.fromarray((np.full((region.height, region.width, 3), tone, dtype=np.float32) + grain).clip(0, 255).astype(np.uint8))
+    fill = fill.filter(ImageFilter.GaussianBlur(0.6))
     img.paste(Image.composite(fill, region, mask), (x0, y0))
+    return img
+
+
+def smooth(img, inner, seed=1):
+    import numpy as np
+    from PIL import ImageFilter
+    w, h = img.size
+    box = (round(inner[0] * w), round(inner[1] * h), round(inner[2] * w), round(inner[3] * h))
+    region = img.crop(box).filter(ImageFilter.GaussianBlur(9))
+    grain = np.random.default_rng(seed).normal(0, 7, (region.height, region.width, 1))
+    region = Image.fromarray((np.asarray(region, dtype=np.float32) + grain).clip(0, 255).astype(np.uint8))
+    mask = Image.new("L", region.size, 0)
+    from PIL import ImageDraw as D
+    D.Draw(mask).rectangle((3, 3, region.width - 4, region.height - 4), fill=255)
+    img.paste(region, box[:2], mask.filter(ImageFilter.GaussianBlur(2)))
     return img
 
 
@@ -61,6 +81,8 @@ def main():
         crop.save(os.path.join(OUT, name + ".png"))
         if name in CLEAN:
             clean(crop.copy(), CLEAN[name]).convert("RGBA").save(os.path.join(OUT, name + "-clean.png"))
+        if name in SMOOTH:
+            smooth(crop.copy(), SMOOTH[name]).save(os.path.join(OUT, name + "-plain.png"))
         tiles.append((name, crop))
     # one sheet to check the boxes
     w = 300

@@ -10,6 +10,8 @@ from PIL import Image, ImageFilter
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../..")
 REFS = os.path.join(ROOT, "assets/Concept art/UI style")
+TONE = (226, 200, 156)     # the page's mean colour: darker and browner than the parchment as painted (Saneroki:
+                           # the paper too bright; #57 of round 1, about (238, 211, 162), closer, and darker still)
 EDGE = 0.20                # the soft darker edge round a page
 STAIN_EVERY = 700 * 700    # paper per stain
 STAIN_ALPHA = 0.30
@@ -39,13 +41,14 @@ def stains():
     return _stains
 
 
-def page(w, h, seed="page", edge=EDGE, stained=True):
-    """A page of paper w x h: the parchment covering it, the soft edge, a few stains."""
+def page(w, h, seed="page", edge=EDGE, stained=True, tone=TONE):
+    """A page of paper w x h: the parchment covering it in the paper's tone, the soft edge, a few stains."""
     src = source()
     k = max(w / src.width, h / src.height)
     big = src.resize((max(w, round(src.width * k)), max(h, round(src.height * k))), Image.BICUBIC)
     left, top = (big.width - w) // 2, (big.height - h) // 2
     img = np.asarray(big.crop((left, top, left + w, top + h)), dtype=np.float32)
+    img *= np.array(tone, dtype=np.float32) / np.asarray(src, dtype=np.float32).reshape(-1, 3).mean(axis=0)
     yy, xx = np.mgrid[0:h, 0:w]
     dist = np.minimum.reduce([xx, w - 1 - xx, yy, h - 1 - yy]).astype(np.float32)
     img *= (1 - edge * np.exp(-dist / 26))[..., None]

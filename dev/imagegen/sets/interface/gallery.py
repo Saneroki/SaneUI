@@ -11,10 +11,14 @@ from PIL import Image
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../..")
 OUT = os.path.join(ROOT, "assets/generated/interface")
 # folder: title, what it shows
-SECTIONS = [
-    ("elements", "Elements", "each made only from its crop of a pick (refs.py, elements-*.txt): with transparency, no text"),
-    ("views", "Views laid out in code", "compose.py: the elements sliced and repeated, the paper, pencil lines, Kalam, pressed leather titles, game icons"),
-    ("polished", "Views polished", "polish.txt: one light pass by Qwen's edit over each laid-out view"),
+SECTIONS = [   # folder, the pictures in it, title, what it shows
+    ("elements", "edge-*.png patch-wide-*.png top-tab-drawn-*.png top-tab-patch-*.png", "Elements in use",
+     "approved by Saneroki: the edges, the patch for every button, the drawn tab's lines, the patch tab"),
+    ("elements", "dropdown-band-*.png top-tab-arrow-*.png", "New elements to pick",
+     "dropdown bands with an empty inside for code inlays; the patch tab as an arrow with worn, stitched ends"),
+    ("views", "*.png", "Views laid out in code",
+     "compose.py: the elements sliced and repeated, the paper, pencil lines, Kalam, pressed leather titles, game icons"),
+    ("polished", "*.png", "Views polished", "polish.txt: one light pass by Qwen's edit over each laid-out view"),
 ]
 
 
@@ -40,8 +44,8 @@ def thumb(path):
 
 def main():
     number, body, items = 0, [], []
-    for folder, title, about in SECTIONS:
-        files = sorted(f for f in glob.glob(os.path.join(OUT, folder, "*.png")) if not f.endswith("contact.png"))
+    for folder, patterns, title, about in SECTIONS:
+        files = sorted(f for p in patterns.split() for f in glob.glob(os.path.join(OUT, folder, p)) if not f.endswith("contact.png"))
         if not files:
             continue
         cards = []

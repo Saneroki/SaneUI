@@ -30,12 +30,17 @@ with as little room for frame and ornament as the look allows.
   leather on paper areas (Saneroki, 2026-10-21: leather headline bars on paper panels are out).
 - **What changes is made in code.** Text, icons, stains and sketches are laid over the painted parts by code, so
   windows can resize, scroll and show live data.
+- **No colour in the design (Saneroki, 2026-10-21).** The design language is brown leather, paper and pencil lines.
+  Tabs, buttons and bands are never coloured (no red, green or blue tabs sticking out). Colour comes only from
+  the game's content: item and spell icons, class colours in text.
 
 ## Materials
 
 ### Paper
 
-- **Texture:** `paper.png`: cream parchment with soft, large, faint clouds and an extremely subtle grain.
+- **Texture:** `paper.png`: parchment with soft, large, faint clouds and an extremely subtle grain.
+- **Tone:** darker and browner than `paper.png` as painted (Saneroki, 2026-10-21: the paper was too bright). The
+  page's mean colour is about (226, 200, 156); the harness sets it (`paper.py`, `TONE`).
 - **Made of layers in code**, so a window can be any size and scroll without repeats:
   - `paper.png` scaled to cover the page and cut to it (never stretched or repeated);
   - a soft darker edge;
@@ -55,7 +60,8 @@ with as little room for frame and ornament as the look allows.
 - **Look:** dark brown with a visible grain and neat saddle stitching along its edges. It is thin: a border, not a
   cover.
 - **The window's edges** (`edges-and-buttons.png`, the left and right edges): a thin stitched leather binding. The
-  book's edge shows a little, with small dark metal fittings (a corner cap, a ring or clasp at the side).
+  book's edge shows a little, with small dark metal fittings (a corner cap, a ring or clasp at the side). The
+  harness's edge parts are approved (`elements/edge-left-*.png`, `elements/edge-right-*.png`).
 
 ### Metal
 
@@ -89,8 +95,9 @@ with as little room for frame and ornament as the look allows.
 
 ### Buttons
 
-- **Hard buttons:** leather patches, as at the bottom left of `edges-and-buttons.png`. They are stitched or riveted
-  and set into the leather border, along the title bar or along the bottom edge. Their labels are made in code.
+- **Hard buttons:** leather patches as `elements/patch-wide-2.png` (Saneroki, 2026-10-21): every leather patch and
+  button has this look. They are stitched and set into the leather border, along the title bar or along the
+  bottom edge. Their labels are made in code.
 - **Patch pieces for any width:** the square leather patches in the top right corner of `guild-board.png` are the
   pieces buttons are built from. Code places them and repeats their middle to make a button as wide as it needs
   (a left end, a middle that repeats, a right end). So the patch is painted as separate pieces:
@@ -98,17 +105,26 @@ with as little room for frame and ornament as the look allows.
   - the stitching running on along the repeated middle;
   - no icon or text in it.
 - **Dropdown buttons:** leather bands hanging down from the top border, with a buckle, as in `dropdown-bands.png`
-  (only its bands and buckle). A band opens an overlay (a dropdown, a menu).
+  (only its bands and buckle). A band opens an overlay (a dropdown, a menu). Its inside is an empty field of
+  plain, textured leather, without marks or designs: code lays its inlay into it (Saneroki, 2026-10-21).
 - **On the paper:** pencil-outlined paper pieces, never leather.
 
 ### Tabs
 
 - **Top tabs:** a row of tabs right under the title bar, across the top of the page (Saneroki, 2026-10-21). There
   are two styles:
-  - **patch tabs:** darker, patchy tabs, as in the row under the title bar in `top-tabs.png`;
-  - **drawn tabs:** tabs drawn on the paper in pencil, as in the row under the paper top of `guild-board.png`.
-- **Side tabs:** `side-tabs.png`. Small leather bookmark tabs sticking out of the window's left edge, each with a
-  small icon in a muted colour (deep red, green, ochre, slate blue).
+  - **patch tabs:** darker, patchy tabs, as in the row under the title bar in `top-tabs.png`, their look
+    `elements/top-tab-patch-3.png`, shaped as arrows pointing right (Saneroki, 2026-10-21):
+    - the top and bottom stay straight;
+    - the left end is cut in as a V, and the right end runs out into a point;
+    - tabs side by side form a strip, each tip in the next one's cut;
+    - the slanted ends are soft, worn, stitched leather edges like the top and bottom, never sharp straight
+      cuts;
+    - their labels are pressed in by code.
+  - **drawn tabs:** tabs drawn on the paper in pencil, as in the row under the paper top of `guild-board.png`, their
+    lines as `elements/top-tab-drawn-1.png`; their labels in Kalam by code, never painted.
+- **Side tabs:** leather tabs sticking out of the window's left edge, in the brown leather of the patches with a
+  small icon pressed in. Never coloured (*No colour in the design*).
 - **Tabs that change the page's content** may stand down the left side of the page, as in `bags-page.png`.
 
 ### Panels and sections on a page
@@ -127,11 +143,15 @@ Bubbles appear in two places:
 
 Built on `chat-bubble.png` (its top bubble), made more compact. Each bubble is:
 
-- a small piece of paper with a tiny, minimal pencil outline and the speech-bubble triangle;
-- two lines and very little padding: the first holds the name (in its class colour), the channel and the time; the
-  second holds the message;
-- room at the left for a sketched class icon, which sits in the bubble's top left corner and overlaps that corner a
-  little, giving the bubble its shape;
+- one piece of paper, drawn in code, in this silhouette:
+  - a low rounded body;
+  - a round bulge over its top left corner (top right when anchored right), holding the sketched class icon. The
+    round is part of the paper and its outline, not a separate element (Saneroki, 2026-10-21);
+  - the speech-bubble triangle below;
+- one tiny, minimal pencil outline round the whole shape;
+- two lines and very little padding:
+  - the first holds the name in its class colour with the outline (*Text*), the channel and the time;
+  - the second holds the message;
 - no leather and no ornament.
 
 ## Views
@@ -139,7 +159,8 @@ Built on `chat-bubble.png` (its top bubble), made more compact. Each bubble is:
 - **Character doll:** `doll.png` is the layout and the look, to be copied, not redrawn (Saneroki, 2026-10-21):
   - its shaped leather frame;
   - the hero in the middle: the game's live 3D model in the game;
-  - the gear slots in a gentle arc down each side of him, eight a side;
+  - the gear slots in a rounded layout, eight a side: each row shifted outward a little more toward the middle
+    rows, so the slots form an arc round the hero, not a straight column (Saneroki, 2026-10-21);
   - the top slot of each side has no strip; each of the seven below has its paper stat strip outside it,
     hanging out over the leather border;
   - the main hand, off hand and ranged slots below, the smaller ammo slot beside them, with their stat strips

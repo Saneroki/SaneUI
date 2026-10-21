@@ -5,7 +5,7 @@ with the paper's grain over it, titles and labels pressed into the leather, game
 here is painted by a model except the parts themselves (elements-*.txt, each from its crop of a pick), so the
 layout and the look cannot drift. polish.txt then gives each view one light pass by Qwen's edit.
   python3 dev/imagegen/sets/interface/compose.py [view ...]   ->  assets/generated/interface/views/<view>.png
-The part used is the first seed of each element unless CHOSEN names another.
+Where each part comes from is in SOURCE.
 """
 import glob, math, os, random, sys
 import numpy as np
@@ -24,9 +24,16 @@ OUT = os.path.join(ROOT, "assets/generated/interface/views")
 KALAM = os.path.join(ROOT, "assets/fonts/Kalam/Kalam-{}.ttf")
 LEATHER_FONT = "/usr/share/fonts/noto/NotoSerif-Bold.ttf"   # a stand-in: no leather font is decided yet
 
-# element: seed, where seed 1 does not follow its brief (a label or mark left in, the part cut short); "clean":
-# the pick's crop with its label covered in code (refs.py), where no seed lost its label
-CHOSEN = {"edge-left": 3, "top-tab-drawn": 3, "top-tab-patch": "clean"}
+# Where each part comes from (Saneroki's review of round 1, 2026-10-21; the elements he did not name are archived):
+#   a number: that seed of the element; ("crop", file): a crop of a pick from refs.py (cleaned there);
+#   ("clean", seed, box): that seed with its label covered in code (box as fractions of the part)
+SOURCE = {"edge-left": 3, "edge-right": 1,                   # #13-18 all fine
+          "patch-wide": 2,                                   # #23: every leather patch and button
+          "top-tab-drawn": ("clean", 1, (0.08, 0.12, 0.92, 0.88)),   # #34: its pencil lines; text by code
+          "top-tab-arrow": 1,                                # #39 shaped as an arrow (shape.py, elements-arrow.txt)
+          "dropdown-band": 1,                                # a plain band (elements-band.txt)
+          "title-bar": ("crop", "title-bar-clean")}          # the pick (#61) itself, its title covered
+FALLBACK = {"top-tab-arrow": "top-tab-arrow", "dropdown-band": "dropdown-band-plain"}   # crops until rendered
 LEAD = (58, 52, 46)            # pencil grey
 BG = (24, 21, 18)              # behind the windows
 CLASS = {"Warrior": (199, 156, 110), "Mage": (63, 199, 235), "Priest": (230, 230, 230), "Rogue": (255, 244, 104),
@@ -36,27 +43,24 @@ CLASS = {"Warrior": (199, 156, 110), "Mage": (63, 199, 235), "Priest": (230, 230
 
 # ---- parts ------------------------------------------------------------------------------------------------
 
-# marks the edit left in an element, covered in code by the element's own paper: (left, top, right, bottom) as
-# fractions of the trimmed element
-COVER = {"chat-bubble": (0.09, 0.15, 0.215, 0.56)}   # a portrait the edit kept beside the empty icon circle
-
-
 def part(name):
-    """An element as painted (its chosen seed), trimmed to what it covers, its leftover marks covered."""
-    if CHOSEN.get(name) == "clean":
-        return Image.open(os.path.join(CROPS, name + "-clean.png")).convert("RGBA")
-    f = os.path.join(ELEMENTS, f"{name}-{CHOSEN.get(name, 1)}.png")
-    img = Image.open(f if os.path.exists(f) else os.path.join(CROPS, name + ".png")).convert("RGBA")
+    """A part from its source (SOURCE), trimmed to what it covers."""
+    src = SOURCE.get(name, 1)
+    if isinstance(src, tuple) and src[0] == "crop":
+        img = Image.open(os.path.join(CROPS, src[1] + ".png")).convert("RGBA")
+    else:
+        seed = src[1] if isinstance(src, tuple) else src
+        f = os.path.join(ELEMENTS, f"{name}-{seed}.png")
+        if not os.path.exists(f):
+            f = os.path.join(CROPS, FALLBACK.get(name, name) + ".png")
+        img = Image.open(f).convert("RGBA")
     box = img.getchannel("A").point(lambda v: 255 if v > 24 else 0).getbbox()
     img = img.crop(box) if box else img
-    if name in COVER:
-        l, t, r, b = COVER[name]
-        area = (round(l * img.width), round(t * img.height), round(r * img.width), round(b * img.height))
-        rgb = np.asarray(img.convert("RGB"))
-        tone = tuple(int(v) for v in np.median(rgb[img.height // 2, img.width // 3:img.width // 2], axis=0))
-        mask = Image.new("L", img.size)
-        ImageDraw.Draw(mask).ellipse(area, fill=255)
-        img.paste(Image.new("RGBA", img.size, tone + (255,)), (0, 0), mask.filter(ImageFilter.GaussianBlur(4)))
+    if isinstance(src, tuple) and src[0] == "clean":
+        import refs
+        rgb = refs.clean(img.convert("RGB"), src[2])
+        rgb.putalpha(img.getchannel("A"))
+        img = rgb
     return img
 
 
@@ -114,7 +118,7 @@ def icon(pattern, size, seed=0):
     return img.resize((size, size), Image.LANCZOS)
 
 
-def sketch(img, size, disc=None):
+def sketch(img, size, disc=None, ring=True):
     """A game icon drawn as a pencil sketch: its edges as grey strokes in a round, on nothing or on a disc of
     paper of the colour disc."""
     g = ImageOps.grayscale(img.convert("RGB")).resize((size * 2, size * 2), Image.LANCZOS)
@@ -130,7 +134,8 @@ def sketch(img, size, disc=None):
     if disc:
         ImageDraw.Draw(out).ellipse((1, 1, size - 2, size - 2), fill=disc + (255,))
     out.alpha_composite(lines)
-    ImageDraw.Draw(out).ellipse((1, 1, size - 2, size - 2), outline=LEAD + (170,), width=2)
+    if ring:
+        ImageDraw.Draw(out).ellipse((1, 1, size - 2, size - 2), outline=LEAD + (170,), width=2)
     return out
 
 
@@ -214,35 +219,31 @@ class Window:
         self.side_tabs, self.buttons, self.bands = side_tabs, buttons, bands
 
     def finish(self):
-        """The leather on top of the paper: edges, bottom, corners, title bar, then tabs, bands, buttons."""
+        """The leather on top of the paper: the side edges and the bottom, the title bar with its title pressed in
+        and its close patch, then the side tabs, bands and buttons, all brown leather (no colour: the design is
+        brown leather, paper and pencil)."""
         c, M, w, h = self.canvas, self.MARGIN, self.w, self.h
-        for i, (color, ico) in enumerate(self.side_tabs):
-            tab = tint(part("side-tab"), color).resize((50, 46), Image.LANCZOS)
-            y = M + self.TITLE + 18 + i * 54
-            c.alpha_composite(tab, (M - 30, y))
+        for i, ico in enumerate(self.side_tabs):
+            y = M + self.TITLE + 18 + i * 50
+            c.alpha_composite(three(part("patch-wide"), 50, 42, cap=0.2), (M - 32, y))
             if ico is not None:
-                g = ImageOps.grayscale(ico.convert("RGB")).resize((24, 24), Image.LANCZOS)
-                mark = Image.new("RGBA", (24, 24), (30, 18, 10, 0))
-                mark.putalpha(ImageOps.invert(g).point(lambda v: int(v * 0.55)))
-                c.alpha_composite(mark, (M - 22, y + 11))
-        edge = part("edge-left")
-        side = three(edge, h - self.TITLE + 4, self.BORDER, horizontal=False, cap=0.06)
+                g = ImageOps.grayscale(ico.convert("RGB")).resize((22, 22), Image.LANCZOS)
+                mark = Image.new("RGBA", (22, 22), (30, 18, 10, 0))
+                mark.putalpha(ImageOps.invert(g).point(lambda v: int(v * 0.6)))
+                c.alpha_composite(mark, (M - 25, y + 10))
+        side = three(part("edge-left"), h - self.TITLE + 4, self.BORDER, horizontal=False, cap=0.06)
         c.alpha_composite(side, (M, M + self.TITLE - 4))
-        c.alpha_composite(side.transpose(Image.FLIP_LEFT_RIGHT), (M + w - self.BORDER, M + self.TITLE - 4))
-        c.alpha_composite(three(edge.rotate(90, expand=True), w, self.BOTTOM, cap=0.06), (M, M + h - self.BOTTOM))
-        cor = part("corner").resize((34, 34), Image.LANCZOS)
-        c.alpha_composite(cor.transpose(Image.FLIP_TOP_BOTTOM), (M - 4, M + h - 30))
-        c.alpha_composite(cor.rotate(180), (M + w - 30, M + h - 30))
+        right = three(part("edge-right"), h - self.TITLE + 4, self.BORDER, horizontal=False, cap=0.06)
+        c.alpha_composite(right, (M + w - self.BORDER, M + self.TITLE - 4))
+        c.alpha_composite(three(part("edge-left").rotate(90, expand=True), w, self.BOTTOM, cap=0.06), (M, M + h - self.BOTTOM))
         c.alpha_composite(three(part("title-bar"), w + 8, self.TITLE, cap=0.07), (M - 4, M))
         press(c, (M + w // 2, M + self.TITLE // 2), self.title.upper(), 21)
-        for i, (label) in enumerate(("x",)):
-            p = part("patch-square").resize((30, 30), Image.LANCZOS)
-            c.alpha_composite(p, (M + w - 56, M + 8))
-            press(c, (M + w - 41, M + 22), "x", 18)
+        c.alpha_composite(three(part("patch-wide"), 32, 28, cap=0.3), (M + w - 70, M + 9))
+        press(c, (M + w - 54, M + 22), "x", 17)
         for x, label in self.bands:
-            band = three(part("dropdown-band"), 92, 34, horizontal=False, cap=0.12)
+            band = three(part("dropdown-band"), 96, 36, horizontal=False, cap=0.12)
             c.alpha_composite(band, (M + x, M + self.TITLE - 10))
-            press(c, (M + x + 17, M + self.TITLE + 40), label, 13)
+            press(c, (M + x + 18, M + self.TITLE + 34), label, 12)
         x = M + 26
         for label in self.buttons:
             width = 34 + len(label) * 11
@@ -261,37 +262,62 @@ class Window:
 
 
 def top_tabs(canvas, x, y, labels, style, active=0, height=34):
-    """The row of tabs under the title bar: 'patch' (darker patches) or 'drawn' (pencil on the paper)."""
-    name = "top-tab-patch" if style == "patch" else "top-tab-drawn"
+    """The row of tabs under the title bar: 'patch' (the arrow patches, #39, each tip in the next one's cut) or
+    'drawn' (pencil on the paper, #34); the labels by code (pressed into the patches, Kalam on the paper)."""
     for i, label in enumerate(labels):
-        width = 30 + len(label) * 10
-        tab = three(part(name), width, height + (4 if i == active else 0), cap=0.18)
-        canvas.alpha_composite(tab, (x, y - (4 if i == active else 0)))
         if style == "patch":
-            press(canvas, (x + width // 2, y + height // 2), label, 14)
+            arrow = part("top-tab-arrow")
+            d = round(height * 0.5)
+            width = 44 + len(label) * 9 + d
+            tab = three(arrow, width, height, cap=min(0.3, (d + 10) / (arrow.width * height / arrow.height)))
+            canvas.alpha_composite(tab, (x, y))
+            press(canvas, (x + (width + d // 2) // 2, y + height // 2), label, 14)
+            x += width - d + 1
         else:
+            width = 30 + len(label) * 10
+            tab = three(part("top-tab-drawn"), width, height + (4 if i == active else 0), cap=0.18)
+            canvas.alpha_composite(tab, (x, y - (4 if i == active else 0)))
             write(canvas, (x + width // 2, y + height // 2 + 2), label, 18, "Bold" if i == active else "Regular", anchor="mm")
-        x += width + 2
+            x += width + 2
     return x
 
 
 def bubble(canvas, x, y, w, name, cls, channel, time, text, flip=False, seed=0):
-    """A chat bubble: the painted bubble sliced to w and two lines high, the sketched class icon over its top
-    left corner, the name in its class colour with channel and time, the message under it."""
-    b = part("chat-bubble")
-    if flip:
-        b = b.transpose(Image.FLIP_LEFT_RIGHT)
-    h = 66
-    canvas.alpha_composite(nine(b, w, h, 0.16 if not flip else 0.05, 0.3, 0.05 if not flip else 0.16, 0.36), (x, y))
-    tone = tuple(int(v) for v in np.median(np.asarray(canvas.crop((x + w // 3, y + 20, x + w // 2, y + 40)).convert("RGB")).reshape(-1, 3), axis=0))
-    tone = tone if sum(tone) > 450 else (226, 214, 190)
-    ix = x - 10 if not flip else x + w - 30
-    canvas.alpha_composite(sketch(icon(f"ClassIcon_{cls}.blp", 64), 40, tone), (ix, y - 12))
-    tx = x + 36 if not flip else x + 14
-    write(canvas, (tx, y + 6), name, 17, "Bold", CLASS.get(cls, LEAD), 245, outline=True)
-    nw = ImageDraw.Draw(canvas).textlength(name, font=font(17, "Bold"))
-    write(canvas, (tx + nw + 8, y + 9), f"[{channel}]  {time}", 13, "Light")
-    write(canvas, (tx, y + 30), text, 16)
+    """A chat bubble drawn as one piece of paper (#41's layout and silhouette): a low rounded body two lines high,
+    a round bulge over its top left corner (top right when flipped) holding the sketched class icon, the small
+    tail below; one tiny pencil outline round the whole shape. The name in its class colour with an outline,
+    the channel and time beside it, the message under it."""
+    h, R, pad = 52, 19, 7
+    if w is None:   # as wide as its text needs
+        meta = f"[{channel}]  {time}"
+        top = R + 14 + font(16, "Bold").getlength(name) + 7 + font(12, "Light").getlength(meta)
+        w = int(max(top, font(15).getlength(text) + 2 * pad + 8) + pad + 6)
+    cx = x + 10 if not flip else x + w - 10           # the bulge's centre
+    cy = y + 6
+    m = 30                                            # room round the shape on its layer
+    L = Image.new("L", (w + 2 * m, h + 2 * m))
+    d = ImageDraw.Draw(L)
+    d.rounded_rectangle((m, m, m + w, m + h), radius=7, fill=255)
+    d.ellipse((cx - x + m - R, cy - y + m - R, cx - x + m + R, cy - y + m + R), fill=255)
+    tx0 = m + 18 if not flip else m + w - 18
+    sgn = 1 if not flip else -1
+    d.polygon([(tx0, m + h - 1), (tx0 + sgn * 14, m + h - 1), (tx0 - sgn * 6, m + h + 11)], fill=255)
+    L = L.filter(ImageFilter.GaussianBlur(0.6))
+    layer = paper.page(w + 2 * m, h + 2 * m, f"bubble{seed}{name}", edge=0, stained=False)
+    layer = Image.blend(layer, Image.new("RGBA", layer.size, (255, 248, 232, 255)), 0.12)
+    layer.putalpha(L)
+    outline = ImageChops.subtract(L, L.filter(ImageFilter.MinFilter(3)))
+    ink = Image.new("RGBA", layer.size, LEAD + (0,))
+    ink.putalpha(outline.point(lambda v: int(v * 0.75)))
+    layer.alpha_composite(ink)
+    canvas.alpha_composite(layer, (x - m, y - m))
+    canvas.alpha_composite(sketch(icon(f"ClassIcon_{cls}.blp", 64), 2 * R - 8, ring=False), (cx - R + 4, cy - R + 4))
+    nx = x + R + 14 if not flip else x + pad + 4
+    write(canvas, (nx, y + 4), name, 16, "Bold", CLASS.get(cls, LEAD), 245, outline=True)
+    nw = ImageDraw.Draw(canvas).textlength(name, font=font(16, "Bold"))
+    write(canvas, (nx + nw + 7, y + 7), f"[{channel}]  {time}", 12, "Light")
+    line(canvas, (x + pad + 2, y + 27), (x + w - pad - 2, y + 27), 60, 1, seed + 3)
+    write(canvas, (x + pad + 4, y + 29), text, 15)
 
 
 # ---- the views --------------------------------------------------------------------------------------------
@@ -311,6 +337,7 @@ ITEMS = ["Helm of the Grey Watch", "Amulet of Ash", "Pauldrons of the Pass", "Cl
 # Where #3 (doll.png) has its slots and strips, in its own pixels: the view is that picture, its painted frame,
 # arcs and overhanging strips kept as they are; code only puts the live content into it.
 DOLL_ROWS = [198, 280, 362, 443, 523, 603, 683]                 # the tops of the seven rows with strips
+ARC = 30                                                         # how far the middle rows move outward, pixels
 DOLL = {"top": [(310, 100, 400, 190), (605, 100, 700, 190)],      # the two top slots (no strip)
         "left": [((340, y + 4, 404, y + 68), (230, y, 336, y + 70)) for y in DOLL_ROWS],
         "right": [((614, y + 4, 678, y + 68), (680, y, 786, y + 70)) for y in DOLL_ROWS],
@@ -359,12 +386,34 @@ def view_character():
     strips over the leather kept as painted; code puts the live content in: game icons in the slots, each
     strip's writing replaced by the item's stats in Kalam. The hero stands in for the game's live model."""
     c = Image.open(os.path.join(REFS, "doll.png")).convert("RGBA")
+    # the arcs (Saneroki, 2026-10-21: the slots in a rounded layout, not straight under each other): each row of
+    # slot and strip moves outward, most in the middle rows, so the columns bow round the hero; the gap a moved
+    # row leaves next to the hero's frame is filled with the paper of that spot
+    shift = {}
+    tones = {sgn: tuple(int(v) for v in np.median(np.asarray(c.crop(box).convert("RGB")).reshape(-1, 3), axis=0))
+             for sgn, box in ((-1, (372, 269, 402, 278)), (1, (622, 269, 652, 278)))}   # the paper between two rows
+    for j, y in enumerate(DOLL_ROWS):
+        dx = round(ARC * math.sin(math.pi * (j + 1) / 7))
+        shift[j] = dx
+        for x0, x1, sgn in ((226, 410, -1), (606, 792, 1)):
+            band = (x0, y - 3, x1, y + 73)
+            piece = c.crop(band)
+            gap = (x1 - dx - 4, band[1], x1, band[3]) if sgn < 0 else (x0, band[1], x0 + dx + 4, band[3])
+            fill = paper.page(gap[2] - gap[0], gap[3] - gap[1], f"gap{j}{sgn}", edge=0, stained=False, tone=tones[sgn])
+            mask = Image.new("L", fill.size)
+            ImageDraw.Draw(mask).rectangle((0, 3, fill.width, fill.height - 4), fill=255)
+            fill.putalpha(mask.filter(ImageFilter.GaussianBlur(2)))
+            c.alpha_composite(fill, gap[:2])
+            c.paste(piece, (x0 + sgn * dx, band[1]))
     left, right = GEAR["left"], GEAR["right"]
     for (sl, _), (name, pattern) in zip([(r, None) for r in DOLL["top"]], [left[0], right[0]]):
         x0, y0, x1, y1 = sl
         c.alpha_composite(icon(pattern, x1 - x0 - 20, 0), (x0 + 10, y0 + 10))
     for side, gear, first in (("left", left[1:], 1), ("right", right[1:], 9)):
         for i, ((sl, st), (name, pattern)) in enumerate(zip(DOLL[side], gear)):
+            sgn = -1 if side == "left" else 1
+            sl = (sl[0] + sgn * shift[i], sl[1], sl[2] + sgn * shift[i], sl[3])
+            st = (st[0] + sgn * shift[i], st[1], st[2] + sgn * shift[i], st[3])
             x0, y0, x1, y1 = sl
             c.alpha_composite(icon(pattern, x1 - x0 - 12, i + 1), (x0 + 6, y0 + 6))
             k = first + i
@@ -382,8 +431,8 @@ def view_bags():
     """Bags and bank (bags-page.png): a condensed page cut into close sections, a pencil-ruled header each, dense
     grids of item icons; tabs down the left change the content."""
     W, H = 900, 760
-    win = Window(W, H, "Bags", side_tabs=[((150, 52, 40), icon("INV_Misc_Bag_0*", 32)), ((70, 110, 60), icon("INV_Misc_Herb_0*", 32)),
-                                           ((176, 130, 60), icon("INV_Misc_Coin_0[1-9]*", 32)), ((70, 90, 130), icon("INV_Misc_Key_0*", 32))],
+    win = Window(W, H, "Bags", side_tabs=[icon("INV_Misc_Bag_0*", 32), icon("INV_Misc_Herb_0*", 32),
+                                           icon("INV_Misc_Coin_0[1-9]*", 32), icon("INV_Misc_Key_0*", 32)],
                  buttons=["Sort", "Bank", "Junk"], seed="bags")
     c, M = win.canvas, win.MARGIN
     x0, y0, x1, y1 = win.inner
@@ -425,10 +474,10 @@ def view_chat():
             ("left", "Elowen", "Druid", "Guild", "20:45", "Got it, thanks!")]
     y = y0 + 64
     for side, name, cls, ch, t, text in msgs:
-        w = min(470, 190 + len(text) * 7)
+        w = int(max(font(16, "Bold").getlength(name) + 140, font(15).getlength(text) + 30) + 10)
         x = {"left": x0 + 26, "right": x1 - 26 - w, "middle": (x0 + x1) // 2 - w // 2}[side]
         bubble(c, x, y, w, name, cls, ch, t, text, flip=(side == "right"))
-        y += 80
+        y += 70
     line(c, (x0 + 18, y1 - 50), (x1 - 120, y1 - 50), 130, 1)
     write(c, (x0 + 22, y1 - 76), "Say something to the guild ...", 16, "Light", alpha=140)
     return win.finish()
@@ -472,7 +521,7 @@ def view_guild():
     x, y = panel((cols[1][0], py, cols[1][1], y1 - 14), "Guild chat")
     for i, (n, cls, text) in enumerate([("Elowen", "Druid", "Anyone for the Deadmines?"), ("Brannoc", "Warrior", "I can tank."),
                                         ("Mira", "Priest", "I'll heal!"), ("Tolvar", "Hunter", "Ding 30!"), ("Kestrel", "Rogue", "Grats!")]):
-        bubble(c, x + 14 + (60 if i % 2 else 0), y + 8 + i * 80, 300, n, cls, "Guild", f"20:4{i}", text, flip=bool(i % 2))
+        bubble(c, x + 14 + (60 if i % 2 else 0), y + 8 + i * 74, None, n, cls, "Guild", f"20:4{i}", text, flip=bool(i % 2))
     x, y = panel((cols[2][0], py, cols[2][1], py + 330), "Race to level 60")
     base = py + 290
     for rank, (n, cls, lv, h, px) in enumerate([("Brannoc", "Warrior", 58, 120, 1), ("Elowen", "Druid", 57, 90, 0), ("Mira", "Priest", 55, 66, 2)]):
@@ -497,7 +546,7 @@ def view_spellbook():
     W, H = 900, 760
     schools = [((150, 52, 40), "Spell_Fire_FlameBolt"), ((70, 90, 130), "Spell_Frost_FrostBolt02"), ((110, 70, 130), "Spell_Nature_StarFall"),
                ((176, 130, 60), "Spell_Holy_*")]
-    win = Window(W, H, "Spellbook", side_tabs=[(col, icon(p + ("" if "*" in p else ".blp"), 32)) for col, p in schools],
+    win = Window(W, H, "Spellbook", side_tabs=[icon(p + ("" if "*" in p else ".blp"), 32) for _, p in schools],
                  buttons=["Previous", "Next"], bands=[(W - 150, "Filter")], seed="spellbook")
     c, M = win.canvas, win.MARGIN
     x0, y0, x1, y1 = win.inner
@@ -522,7 +571,7 @@ def view_spellbook():
 def view_stats():
     """Character stats, with the drawn top tabs: rows of names and values under pencil-ruled headers."""
     W, H = 560, 780
-    win = Window(W, H, "Character", side_tabs=[((150, 52, 40), icon("INV_Chest_Plate0*", 32)), ((70, 110, 60), icon("Spell_Nature_*", 32))],
+    win = Window(W, H, "Character", side_tabs=[icon("INV_Chest_Plate0*", 32), icon("Spell_Nature_*", 32)],
                  seed="stats")
     c, M = win.canvas, win.MARGIN
     x0, y0, x1, y1 = win.inner
@@ -551,7 +600,7 @@ def view_bubbles():
     for i, (n, cls, ch, t, text) in enumerate([("Elowen", "Druid", "Say", "20:41", "Watch out, there's a patrol!"),
                                                 ("Brannoc", "Warrior", "Party", "20:41", "Pulling the next pack."),
                                                 ("Mira", "Priest", "Yell", "20:42", "Heals incoming!")]):
-        bubble(img, 140 + i * 40, 90 + i * 120, 470, n, cls, ch, t, text)
+        bubble(img, 160 + i * 40, 100 + i * 110, None, n, cls, ch, t, text)
     return img
 
 
