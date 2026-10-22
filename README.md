@@ -10,7 +10,9 @@ them, and you see what you can train and what it costs.
 
 ## How to use
 - **Install:** copy the folders in `BUILD` (`SaneUI`, `SaneUI_Abilities`, `SaneUI_Tooltips`, `SaneUI_Social`,
-  `SaneUI_Combat`) into `World of Warcraft/_forever_/Interface/AddOns` and restart the game.
+  `SaneUI_Combat`) into `World of Warcraft/_forever_/Interface/AddOns` and restart the game. Their data is
+  Forever live's: the beta's client (`_classic_beta_`) does not use it, so a copy there goes without its data
+  (`saneui installdev` puts the beta's own in).
 - **Switch modules on and off:** in the addon list, under the category *Sane UI*, the line *Sane UI* has
   the modules under it. Tick or untick each one by itself. *Sane UI* itself must stay ticked.
 - **In the game:** `/sane` says which modules are on and lists their commands. The options are under
@@ -39,7 +41,9 @@ saneui installrelease      # the release into the game: the tag current, or one 
 saneui build               # test and build into BUILD only (--release TAG: a release, into BUILD/release/TAG)
 saneui installed           # which build the game has
 ```
-Then `/reload` in the game (a new file or a first install needs a game restart).
+Then `/reload` in the game (a new file or a first install needs a game restart). The installs go into each
+game folder of Forever there is, live's `_forever_` and the beta's `_classic_beta_`, each with the data sets of
+its own game version (a client does not use another's); `WOW_FOREVER` names one folder alone.
 
 - **The dev build** is the default: the working tree as it is, with every change not yet committed. Its TOCs
   say `## X-SaneUI-Build: dev <commit>` (`+changes` when the tree differs from the commit).

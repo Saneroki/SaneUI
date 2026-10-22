@@ -20,12 +20,15 @@
 #      takes its index from there too, and is built only once dev/tools/atlas has made it. Then Core's data
 #      sets (BUILD/SaneUI/Sets, listed at the end of its TOC), compiled from the master in assets/data by
 #      dev/tools/data: Forever live's (Doc/guides/data.md).
-#   3. With --install: copies them into WoW: Forever's AddOns folder, and removes a module's folder there under its
+#   3. With --install: copies them into the AddOns folder of each of WoW: Forever's game folders (live's
+#      _forever_ and the beta's _classic_beta_, whichever are there; WOW_FOREVER names one alone), so the
+#      game has this build whichever of them it is started in, and removes a module's folder there under its
 #      old name (SaneUI_Chat, now SaneUI_Social; SaneUI_Spellbook, now SaneUI_Abilities; the data
 #      packs SaneUI_Data_*, now part of Core). Core's sets go in as the game folder's product says
 #      (.flavor.info): live's into live's folder; into a beta's or PTR's folder that game version's,
-#      compiled into the game's copy of Core. A module of ours that this build does not have (one the
-#      release predates) is taken out of the game, so a release never runs with newer modules.
+#      compiled into the game's copy of Core (a client refuses another game version's sets). A module of
+#      ours that this build does not have (one the release predates) is taken out of the game, so a release
+#      never runs with newer modules.
 #
 # Why a copy and not a symlink: the game runs inside Steam's container, which
 # cannot see /data. A link from the AddOns folder to this project would be dead there.
@@ -161,7 +164,20 @@ if [ -z "$install" ]; then
     exit 0
 fi
 
-if [ ! -d "$addons" ]; then
+# The game folders it goes into: WOW_FOREVER's alone; else each of Forever's beside the default one whose product
+# Sane UI knows (live's _forever_, the beta's _classic_beta_; not retail's), so that neither keeps an older build,
+# nor a copy of the other's with sets its client refuses.
+folders=()
+if [ -n "${WOW_FOREVER:-}" ]; then
+    if [ -d "$addons" ]; then folders=("$wow"); fi
+else
+    for folder in "$(dirname "$wow")"/_*_; do
+        if [ -d "$folder/Interface/AddOns" ] && "$root/dev/tools/data" game "$folder" >/dev/null; then
+            folders+=("$folder")
+        fi
+    done
+fi
+if [ ${#folders[@]} -eq 0 ]; then
     echo "AddOns folder not found: $addons" >&2
     echo "Set WOW_FOREVER to the game's folder (_forever_; the beta's is _classic_beta_). The build itself is done." >&2
     exit 1
@@ -173,37 +189,50 @@ if [ -n "$pointers" ]; then
     echo "$pointers" | sed "s|^$build/|  |" >&2
     exit 1
 fi
-for name in $names; do
-    to_game "$name"
-    echo "Installed: $addons/$name"
-done
-# A release goes in whole: a module of the dev build it does not have (newer than the release) leaves the game,
-# and installdev brings it back. The dev build leaves the Atlas' copy when its art is not made here (above).
-if [ "$build" != "$here/BUILD" ]; then
-    for toc in "$here"/src/*/*.toc; do
-        name="$(basename "$toc" .toc)"
-        if [ -z "${source[$name]:-}" ] && [ -d "$addons/$name" ]; then
-            rm -rf "${addons:?}/$name"
-            echo "Removed from the game, not in release $release: $addons/$name"
+
+# into <game folder>: the build into its AddOns folder (wow and addons, which to_game and stale read).
+into() {
+    local name toc old game
+    wow="$1" addons="$1/Interface/AddOns"
+    # Core's sets of the game folder's own game version (Doc/guides/data.md, *Game versions*): the build has
+    # live's; a beta's or PTR's game copy of Core keeps its own, made anew from the master after the copy.
+    game="$("$root/dev/tools/data" game "$wow" || true)"
+    for name in $names; do
+        if [ "$name" = SaneUI ] && [ -n "$game" ] && [ "$game" != forever ]; then
+            to_game "$name" --exclude=/Sets/
+        else
+            to_game "$name"
+        fi
+        echo "Installed: $addons/$name"
+    done
+    # A release goes in whole: a module of the dev build it does not have (newer than the release) leaves the
+    # game, and installdev brings it back. The dev build leaves the Atlas' copy when its art is not made here.
+    if [ "$build" != "$here/BUILD" ]; then
+        for toc in "$here"/src/*/*.toc; do
+            name="$(basename "$toc" .toc)"
+            if [ -z "${source[$name]:-}" ] && [ -d "$addons/$name" ]; then
+                rm -rf "${addons:?}/$name"
+                echo "Removed from the game, not in release $release: $addons/$name"
+            fi
+        done
+    fi
+    # Our own old names (a module renamed, the data packs now in Core): those folders are ours, and would load
+    # next to the new one.
+    for old in SaneUI_Chat SaneUI_Spellbook $(cd "$addons" && ls -d SaneUI_Data_* 2>/dev/null); do
+        if [ -d "$addons/$old" ] && [ -z "${source[$old]:-}" ]; then
+            rm -rf "${addons:?}/$old"
+            echo "Removed from the game, an old folder of ours: $addons/$old"
         fi
     done
-fi
-# Our own old names (a module renamed, the data packs now in Core): those folders are ours, and would load next
-# to the new one.
-for old in SaneUI_Chat SaneUI_Spellbook $(cd "$addons" && ls -d SaneUI_Data_* 2>/dev/null); do
-    if [ -d "$addons/$old" ] && [ -z "${source[$old]:-}" ]; then
-        rm -rf "${addons:?}/$old"
-        echo "Removed from the game, an old folder of ours: $addons/$old"
+    if [ -z "$game" ]; then
+        echo "Core's sets are live's: the game folder's product (.flavor.info) is not one Sane UI knows, so Core uses none." >&2
+    elif [ "$game" != "forever" ] && [ -d "$addons/SaneUI" ]; then
+        "$root/dev/tools/data" compile "$addons/SaneUI" --game "$game" | sed "s|$addons/||"
     fi
+    # Not ours to delete: somebody else's addon may carry that name.
+    stale "$addons" | sed 's/^/In the game but not in this build, remove it by hand if it is an old module: /'
+}
+for folder in "${folders[@]}"; do
+    into "$folder"
 done
-# Core's sets of the game folder's own game version (Doc/guides/data.md, *Game versions*): the build has live's;
-# a beta's or PTR's game copy of Core gets that game version's in their place.
-game="$("$root/dev/tools/data" game "$wow" || true)"
-if [ -z "$game" ]; then
-    echo "Core's sets are live's: the game folder's product (.flavor.info) is not one Sane UI knows, so Core uses none." >&2
-elif [ "$game" != "forever" ] && [ -d "$addons/SaneUI" ]; then
-    "$root/dev/tools/data" compile "$addons/SaneUI" --game "$game" | sed "s|$addons/||"
-fi
-# Not ours to delete: somebody else's addon may carry that name.
-stale "$addons" | sed 's/^/In the game but not in this build, remove it by hand if it is an old module: /'
 echo "New addon or new file: restart the game. Changed file only: /reload in the game."

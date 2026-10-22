@@ -352,7 +352,11 @@ function Data.Add(format, name, header)
         Say("data: game", TEXT.noGame, true)
         return nil
     elseif type(header) ~= "table" or header.game ~= client then
-        why = TEXT.otherGame:format(tostring(type(header) == "table" and header.game), client)
+        -- A copy of Sane UI made for another game folder: every set of it is another game version's, said once.
+        set.refused = true
+        set.why = TEXT.otherGame:format(tostring(type(header) == "table" and header.game), client)
+        Say("data: game", TEXT.refused:format("Sane UI's data", set.why), true)
+        return nil
     end
     local ok, decode
     if not why then

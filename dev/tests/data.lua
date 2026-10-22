@@ -673,8 +673,12 @@ local function Header(game, types) return { game = game, hash = "00000000", buil
 W.printed = {}
 check(Data.Add(2, "Newer", Header("forever")) == nil and select(2, Data.Set("Newer"):State()):find("of format 2")
     and printedMatch("problem in data: Newer"), "a set file of another format: nil, refused, said")
-check(Data.Add(1, "Beta", Header("forever-beta")) == nil and select(2, Data.Set("Beta"):State()):find("made for forever%-beta"),
-    "a set file of another game version: nil, refused")
+W.printed = {}
+check(Data.Add(1, "Beta", Header("forever-beta")) == nil and select(2, Data.Set("Beta"):State()):find("made for forever%-beta")
+    and Data.Add(1, "BetaToo", Header("forever-beta")) == nil and StateOf("BetaToo") == "refused"
+    and #W.printed == 1 and printedMatch("problem in data: game") and not Core.errors["data: Beta"]
+    and Core.errors["data: game"].text:find("Sane UI's data is not used: made for forever%-beta"),
+    "set files of another game version (a copy made for another game folder): nil, refused, said once for them all")
 check(Data.Add(1, "Odd", Header("forever", { "wobbly" })) == nil and select(2, Data.Set("Odd"):State()):find("cannot be read"),
     "a set file with a type the codec does not know: nil, refused")
 check(Data.Add(1, "Gear", Header("forever")) == nil and Gear:Get(100, "name") == "Plain Gloves",

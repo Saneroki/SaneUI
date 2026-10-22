@@ -7,7 +7,9 @@
 # Core keeps its log in there (SaneUIDB.log): every problem in the order it happened, with its
 # time, the place it happened, the addon's version and the game's build. This prints it.
 #
-# So after an error in the game: /reload (or log out), then run this.
+# So after an error in the game: /reload (or log out), then run this. It reads the game folder
+# played last: of live's _forever_ and the beta's _classic_beta_, the one whose saved settings of
+# Sane UI were written last (WOW_FOREVER names one instead).
 #
 # Usage:  dev/tools/errors          the newest 10 entries, each with the place it happened
 #         dev/tools/errors 30       the newest 30
@@ -16,6 +18,10 @@
 set -euo pipefail
 
 wow="${WOW_FOREVER:-$HOME/.local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c/Program Files (x86)/World of Warcraft/_forever_}"
+if [ -z "${WOW_FOREVER:-}" ]; then
+    newest="$(ls -t "$(dirname "$wow")"/_*_/WTF/Account/*/SavedVariables/SaneUI.lua 2>/dev/null | head -n1 || true)"
+    if [ -n "$newest" ]; then wow="${newest%/WTF/Account/*}"; fi
+fi
 command -v lua5.1 >/dev/null || { echo "lua5.1 is not installed." >&2; exit 1; }
 
 found=0

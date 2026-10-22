@@ -590,7 +590,8 @@ Data.Learn("Travel", 4297659, record)   -- Core's watchers only: record, the set
 - **Every set is read with Core,** at the login, in the loading screen: its file is one of Core's
   (*Core's TOC*). There is no loading later and nothing in the addon list to switch.
 - **A set is refused** when its format is not 1, its game version is not the client's, or the client's game
-  version cannot be told: reported once (`Core.Report`: one line in chat). A set Core does not hold at all
+  version cannot be told: reported once (`Core.Report`: one line in chat); the last two once for all sets
+  (`data: game`: then every set is so, a copy of Sane UI made for another game folder). A set Core does not hold at all
   is noted once in the error log, quietly, when it is first asked for (`Core.NoteError`). The modules fall
   back.
 - **`Data.Prepare(name)`** and **`Data.WhenReady`** stay for readers that ask before Core's files have all

@@ -107,18 +107,24 @@ def run(argv):
 
 
 def installed():
-    """The build in the game: Core's TOC there."""
-    toc = GAME / "Interface" / "AddOns" / "SaneUI" / "SaneUI.toc"
-    if not toc.is_file():
-        print(f"No Sane UI in the game ({toc.parent.parent}).")
+    """The build in the game: Core's TOC in each game folder (WOW_FOREVER's alone, else live's and the beta's)."""
+    folders = [GAME] if os.environ.get("WOW_FOREVER") else sorted(GAME.parent.glob("_*_"))
+    found = False
+    for folder in folders:
+        toc = folder / "Interface" / "AddOns" / "SaneUI" / "SaneUI.toc"
+        if not toc.is_file():
+            continue
+        fields = {}
+        for line in toc.read_text(errors="replace").splitlines():
+            if line.startswith("## ") and ":" in line:
+                key, value = line[3:].split(":", 1)
+                fields[key.strip()] = value.strip()
+        build = fields.get("X-SaneUI-Build", "dev (built before builds were marked)")
+        print(f"In the game ({folder.name}): Sane UI {fields.get('Version', '?')}, {build}.")
+        found = True
+    if not found:
+        print(f"No Sane UI in the game ({GAME / 'Interface' / 'AddOns'}).")
         return 1
-    fields = {}
-    for line in toc.read_text(errors="replace").splitlines():
-        if line.startswith("## ") and ":" in line:
-            key, value = line[3:].split(":", 1)
-            fields[key.strip()] = value.strip()
-    build = fields.get("X-SaneUI-Build", "dev (built before builds were marked)")
-    print(f"In the game: Sane UI {fields.get('Version', '?')}, {build}.")
     return 0
 
 

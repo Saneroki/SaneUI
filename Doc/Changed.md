@@ -6,6 +6,23 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 530 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Core, dev: the beta's copy of Sane UI with its own data sets (2026-10-22)
+- In the game, every route was one straight line to its pin: the beta's client (`_classic_beta_`, game version
+  `forever-beta`) had a copy of live's folder, whose sets (all made for `forever`) it refuses, so Navigation planned
+  without the walking data and Travel (the error log: "Walking is not used: made for forever, this client is
+  forever-beta").
+- `dev/build --install` (`saneui installdev`, `installrelease`): into each game folder of Forever's there is (by its
+  product, `.flavor.info`: live's `_forever_`, the beta's `_classic_beta_`; not retail's), each with its own game
+  version's sets: a beta's or PTR's copy of Core keeps its `Sets/` while the rest is copied, and has them made anew
+  from the master after it, so it never holds live's. `WOW_FOREVER` names one folder alone, as before.
+- `saneui showerrors` (`dev/tools/errors`) reads the game folder played last (whose `SaneUI.lua` was written last);
+  `saneui installed` names the build in each game folder.
+- `Data.Add`: set files of another game version are refused as before, but said once for them all (`data: game`:
+  "Sane UI's data is not used: made for forever, this client is forever-beta"), not in a chat line for each of the
+  37 sets.
+- README.md (*How to use*, *Building*), `Doc/guides/data.md` (*Loading*). Tests: `dev/tests/data.lua` (209: the sets
+  of another game version said once).
+
 ### dev: the interface lab reads frame XML and loads Core from its TOC (2026-10-22)
 - Frame XML (`dev/uilab/lab/xmlui.lua`), read as the game reads it: `<Script>` and `<Include>`, fonts, frames,
   regions and animations; a virtual one a template for `CreateFrame`, `inherits` and `CreateTexture`, an intrinsic
