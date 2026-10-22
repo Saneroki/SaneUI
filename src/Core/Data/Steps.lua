@@ -3,8 +3,8 @@ local Core = SaneUI.Core
 -------------------------------------------------------------------------------
 --  Sane UI - Core - Steps
 --  One scheduler for the long work of Core's data framework: a walk over a set, later the
---  auction scan's reading, shared data taken in, the characters, the crawl; and of Core's other long work
---  (Sync's finding of the game's CVars). A job is a coroutine that does a piece of work, then asks
+--  auction scan's reading, shared data taken in, the characters, the crawl; of Core's other long work
+--  (Sync's finding of the game's CVars); and of the modules' (Navigation's route plans). A job is a coroutine that does a piece of work, then asks
 --  Steps.Check whether the frame's time is spent; if it is, the job yields and goes on in the next frame.
 --  All jobs together get at most 5 ms a frame, and never more than a quarter of a frame at the current
 --  frame rate, so a slower computer takes more frames, no frame more time. Nothing runs in a fight or while

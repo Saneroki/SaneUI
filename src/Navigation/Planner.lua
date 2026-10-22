@@ -32,27 +32,32 @@ local _, ns = ...
 --                    level and a place below it (the Undercity under the ruins over it, Lifts.Stand; also where
 --                    the two share a region), no walk: the lift is the way
 --      the walks     then searched on the walking data (Search.lua): the first from the floor the player stands
---                    on, the others from the floor of the lift's landing they start at, else from every floor at
---                    the place they start; a walk found much longer than its guess is put in at its true length and
---                    the journey chosen again, once. The journey and its
+--                    on, the others from the floor they start on where it is known (a lift's landing, a portal's
+--                    end, a teleport's landing), else from every floor at the place they start; a walk found
+--                    Planner.WORSE times its guess or more is put in at its true length, one not found as none
+--                    (between places that share no region, every walk between those regions too), and the journey
+--                    chosen again, up to Planner.TRIES times while its searches have looked at fewer than
+--                    Planner.BUDGET rectangles (Find). The journey and its
 --                    walks are one job of Core's scheduler (a few milliseconds a frame, never in a fight); a new
 --                    pin stops it, and the line of the pin before goes at once
 --      the floor     the player's, followed as they go (Walk.Follow, every Planner.FOOT seconds while there is a
 --                    pin): the game tells no height, and floors lie one over the other (a cave under a hill, a
---                    city in a mountain, a building's storeys); where it cannot be followed (the first plan, a
---                    loading screen), the one Walk.Floor chooses (outdoors the highest, indoors the lowest); a lift
---                    of the line ridden (Rode), the landing at its other end
+--                    city in a mountain, a building's storeys); where it cannot be followed, the floor near the
+--                    height they had; after a leap (a portal, a teleport), the floor where it brings one (Arrival);
+--                    else (the first plan, a loading screen) the one Walk.Floor chooses (outdoors the highest,
+--                    indoors the lowest), a guess where others lie under the player; a lift of the line ridden
+--                    (Rode), the landing at its other end
 --      without data  (the set Walking not there, or a plane it has nothing of): each walk a straight line
 --      the line      always from the player: at every step of the canvas' tracker where along it the player is
 --                    (the cut: of the next Planner.AHEAD parts of it, the first within Planner.SLACK yards of the
 --                    nearest), and it is drawn from the player's arrow to that point and on from there (Route.Cut);
 --                    what lies behind is gone, the legs after the next are fainter
 --      planned again when the pin moves, when the player is Planner.OFF yards off the line (Planner.ABOARD
---                    from a ship's way), after a flight or a ship has landed, and when the data arrives; never
---                    more often than every Planner.AGAIN seconds. Aboard a boat or a zeppelin the line stays; a
---                    new pin then is planned from where it lands, its way on in front (the ship the plan has, or
---                    the one Core's Data.Trips finds the player on, to the pier of its next dock); in the tram's
---                    tunnel (a map of no plane) the line stays as it is
+--                    from a ship's way), after a flight or a ship has landed, and when the data arrives; for the
+--                    player's moves never more often than every Planner.AGAIN seconds. Aboard a boat or a
+--                    zeppelin the line stays; a new pin then is planned from where it lands, its way on in front
+--                    (the ship the plan has, or the one Core's Data.Trips finds the player on, to the pier of its
+--                    next dock); in the tram's tunnel (a map of no plane) the line stays as it is
 --      on a flight   its way on (Core's Data.Trips), drawn anew from where the player is every Planner.AGAIN
 --                    seconds, the plan from where it lands to the pin after it; without a pin, the flight's
 --                    way alone
@@ -102,6 +107,8 @@ Planner.AGAIN = 3        -- seconds at least between two plans
 Planner.LOOK = 1         -- seconds between two looks whether the player left the line
 Planner.FOOT = 0.25      -- seconds between two looks at the floor the player stands on
 Planner.LEAP = 50        -- yards the player may move between two looks and their floor still be followed
+Planner.HOP = 20         -- yards a second faster than anyone runs or rides (the swiftest mounts: 14): a step between
+                         -- two looks so fast is a hop (a portal's few yards up or down a tower, Arrival)
 Planner.AHEAD = 60       -- parts of the line ahead of where the player was, looked at for where they are now
 Planner.SLACK = 5        -- yards a part further on must be nearer than the first ones to be where the player is
 Planner.HEARTHSTONE, Planner.HOMEWARD = 6948, 8690 -- the hearthstone: its item, its spell
@@ -113,7 +120,7 @@ local Travel = Core.Data.Set("Travel")
 local Ships = Core.Data.Ships()
 local Trips = Core.Data.Trips()
 local target            -- { map, u, v }: the pin in its plane
-local plan              -- the journey drawn: { legs, at (the leg the player is on), cut, target }
+local plan              -- the journey drawn: { legs, at (the leg the player is on), cut, target (the pin it leads to) }
 local job               -- the plan being made: a job of Core's scheduler
 local made = 0          -- jobs made, each by a name of its own
 local docks             -- every dock, by name, while Core's set Travel stays as it is (Docks)
@@ -122,11 +129,13 @@ local landings = {}     -- [a teleport's key] = where it brings one on its floor
                         -- }), or false: no floor there; kept while the walking data and Travel stay as they are
                         -- (Teleports)
 local planes = {}       -- [the world's map] = the map of its plane (Coords.Planes), or false
-local regions = {}      -- [place name] = where a flight point, a dock or a lift's end stands: { set (the regions of
+local regions = {}      -- [place name] = where a flight point, a dock, a lift's or a portal's end or a teleport's
+                        -- landing stands: { set (the regions of
                         -- the walking data, or false: none), below (the lifts' upper levels it stands below, or
                         -- false) }; kept while the walking data and Travel stay as they are (Journey)
 local footing           -- the floor the player stands on: { key, index, map = its plane } (Walk.Follow), nil while
                         -- not known
+local seen = {}         -- where the player was at the last look at their floor: { map, u, v, at } (Footing)
 local lastPlan, nextLook, nextFoot = -math.huge, 0, 0
 local onTaxi = false
 local homeward          -- when the hearthstone was used: its place is where the character is next
@@ -139,11 +148,10 @@ end
 -------------------------------------------------------------------------------
 --  Flight points
 -------------------------------------------------------------------------------
--- The flight points this character has found, kept for it ({ [node ID] = true }; anything else saved there: none),
--- as flightPoints: the earlier flights held every flight point a flight master listed, found or not, and goes.
+-- The flight points this character has found, kept for it as flightPoints ({ [node ID] = true }; anything else saved
+-- there: none).
 local function Known()
     local char = Core.Character(ns.name)
-    if char.flights ~= nil then char.flights = nil end
     if type(char.flightPoints) ~= "table" then char.flightPoints = {} end
     return char.flightPoints
 end
@@ -254,6 +262,7 @@ end
 -- The map whose plane is the yards of one of the world's maps (0 the Eastern Kingdoms, 1 Kalimdor, 2991 Zephras
 -- Isle), or nil: a map none of the planes on the game's world map has (Coords.Planes).
 local function Plane(world)
+    if world == nil then return nil end -- (a trip's place the game did not tell)
     local found = planes[world]
     if found ~= nil then return found or nil end
     local list = Coords.Planes()
@@ -487,7 +496,9 @@ end
 -- known place of a plane (the set's, or where one brought a character, learnt by Core): { { name ("teleport:<key>"),
 -- way, seconds (its cooldown left and the cast, Planner.HEARTH), place = { map, u, v, z, floor } } }. Its floor where
 -- the place's height is known and the walking data is there: the one within Planner.ARRIVE yards nearest it at that
--- height (Walk.Landing; none there: the walk from it starts from every floor at the place, as the hearthstone's).
+-- height (Walk.Landing; none there: the walk from it starts from every floor at the place, as the hearthstone's), a
+-- guess (the place is not yet the game's own, and a rebuilt city may close that floor in: Teleport: Stormwind's height
+-- is the Wizard's Sanctum's cellar's), so the walk from it takes the floors around it too, as from the player's.
 local function Teleports(faction)
     local list = {}
     for _, key in ipairs(Travel:Keys("byKind", "teleport")) do
@@ -501,7 +512,8 @@ local function Teleports(faction)
                 if landings[key] == nil then
                     local tile, index = Walk.Landing(map, place.u, place.v, landing.z, Planner.ARRIVE)
                     landings[key] = tile and { map = map, u = place.u, v = place.v,
-                                               floor = { tile.key, index, z = select(5, Walk.Rect(tile, index)) } }
+                                               floor = { tile.key, index, z = select(5, Walk.Rect(tile, index)),
+                                                         guess = true } }
                         or false
                 end
                 place.floor = landings[key] and landings[key].floor or nil
@@ -532,22 +544,28 @@ local arriving = Core.Later(Arrived, 2)
 -------------------------------------------------------------------------------
 --  The floor the player stands on
 -------------------------------------------------------------------------------
--- After a leap: within Planner.ARRIVE yards of where a portal or a teleport brings one (the player came through it, or
--- by it), on its floor there; nil else.
-local function Arrival(map, u, v)
+-- Where a portal or a teleport brought the player, on its floor there; nil else. After a leap: the nearest of the
+-- places they bring one within Planner.ARRIVE yards of the player (a teleport lands one on its very place). After a
+-- hop (fu, fv, fz: where the player was and their floor's height): a portal's end within Planner.ARRIVE yards whose
+-- trigger lay within as many of where they were, at about that height (Walk.RISE): the Wizard's Sanctum's two go up
+-- and down a tower a few yards across, between rooms one over the other.
+local function Arrival(map, u, v, fu, fv, fz)
+    local best, floor
     for _, portal in ipairs(Portals()) do
         local ends = portal.ends
-        if ends and portal.map == map and Distance(u, v, portal.tu, portal.tv) <= Planner.ARRIVE then
-            return { ends[2][1], ends[2][2], map = map, u = u, v = v, z = ends[2].z }
+        if ends and portal.map == map and (not fu or (Distance(fu, fv, portal.u, portal.v) <= Planner.ARRIVE
+            and (not fz or not ends[1].z or math.abs(fz - ends[1].z) <= Walk.RISE))) then
+            local gap = Distance(u, v, portal.tu, portal.tv)
+            if gap <= Planner.ARRIVE and (not best or gap < best) then best, floor = gap, ends[2] end
         end
     end
-    for _, landing in pairs(landings) do
-        if landing and landing.map == map and Distance(u, v, landing.u, landing.v) <= Planner.ARRIVE then
-            local floor = landing.floor
-            return { floor[1], floor[2], map = map, u = u, v = v, z = floor.z }
+    if not fu then
+        for _, landing in pairs(landings) do
+            local gap = landing and landing.map == map and Distance(u, v, landing.u, landing.v)
+            if gap and gap <= Planner.ARRIVE and (not best or gap < best) then best, floor = gap, landing.floor end
         end
     end
-    return nil
+    return floor and { floor[1], floor[2], map = map, u = u, v = v, z = floor.z, guess = floor.guess } or nil
 end
 
 -- The floor under the player now, as { key, index, z, guess } for the search (nil while the walking data has none
@@ -555,13 +573,19 @@ end
 -- height they had (Walk.Floor), else the one before while they are within Walk.STRIDE yards of it (a gap in the walking
 -- data, a rock or a cart it does not hold); else chosen anew (Walk.Floor: outdoors the highest, indoors the lowest),
 -- so too after a leap of more than Planner.LEAP yards (a summons: the height before tells nothing there; through a
--- portal, the floor where it brings one). A
+-- portal or by a teleport, the floor where it brings one, Arrival). After a hop (now: the time of this look; a step
+-- since the last one faster than Planner.HOP yards a second) through a portal, the floor where it brings one. A
 -- floor chosen among others under the player is a guess (a rock's top over a street may be the highest), and so are
 -- those followed from it, until the player stands where only one floor lies under them.
-local function Footing(map, u, v)
+local function Footing(map, u, v, now)
     if not Walk.Ready() then return nil end
+    local fu, fv = seen.map == map and seen.u, seen.map == map and seen.v
+    local hop = fu and now and seen.at and Distance(u, v, fu, fv) > Planner.HOP * math.max(now - seen.at, Planner.FOOT)
+    if now then seen.map, seen.u, seen.v, seen.at = map, u, v, now end
     if footing and (footing.map ~= map or Distance(u, v, footing.u, footing.v) > Planner.LEAP) then
         footing = Arrival(map, u, v)
+    elseif footing and hop then
+        footing = Arrival(map, u, v, fu, fv, footing.z) or footing
     end
     local tile, index
     if footing then
@@ -737,11 +761,12 @@ local function Journey(start, goal, measured, cut)
         return (way + rise * Search.CLIMB) * Planner.DETOUR / Planner.RUN, false
     end
     -- The regions of the walking data a place stands in (nil: not known; walks are then not ruled out), and the
-    -- lifts' upper levels it stands below (Lifts.Stand): a flight point's, a dock's, a lift's end's and a teleport's
-    -- kept from plan to plan (regions), the ends' and the hearthstone's (they move) for this one. A place's floor known
-    -- (the player's, a lift's landing): its region (the player's a guess: those of the floors around them too); the
-    -- pin's those of the floors under it, where there are any (on a mesa, not the land at its foot); any other's those
-    -- of the floors under it and within Planner.REGION yards.
+    -- lifts' upper levels it stands below (Lifts.Stand): a flight point's, a dock's, a lift's end's, a portal's end's
+    -- and a teleport's kept from plan to plan (regions), the ends' and the hearthstone's (they move) for this one. A
+    -- place's floor known (the player's, a lift's landing, a portal's end, a teleport's landing): its region (the
+    -- player's a guess: those of the floors around them too); the pin's those of the floors under it, where there are
+    -- any (on a mesa, not the land at its foot); any other's those of the floors under it and within Planner.REGION
+    -- yards.
     local moving = {}
     local function RegionsOf(name)
         if not useData then return nil end
@@ -910,14 +935,12 @@ local function Journey(start, goal, measured, cut)
                     apart[at]
             elseif way == "hearth" then
                 step.kind = "hearth"
-            elseif way.kind == "teleport" then
-                step.kind, step.teleport = "teleport", way
-            elseif way.kind == "tram" then
-                step.kind, step.tram = "tram", way
+            elseif way.kind == "teleport" or way.kind == "tram" then
+                step.kind = way.kind
             elseif way.kind == "lift" then
                 step.kind, step.near, step.far = "lift", a.lift, b.lift
             elseif way.kind == "portal" then
-                step.kind, step.portal = "portal", way
+                step.kind = "portal"
             else
                 step.kind, step.ship = way.kind, way
             end
@@ -928,21 +951,17 @@ local function Journey(start, goal, measured, cut)
     return steps, best[finish]
 end
 
--- Every walk of the journey searched (in the plan's job), one after the other: each from the floor it starts on where
--- that is known (the player's, a lift's landing), else from every floor at the place it starts. A walk much longer
--- than its guess, or one the search did not find (Teldrassil's top and the shore under it: the portal is the way): the
--- journey chosen again with the walks found so far in place of their guesses, those not found as none (Measured),
--- up to Planner.TRIES times while its searches have looked at fewer than Planner.BUDGET rectangles. Where nothing else
--- goes, the walk not found stays, drawn straight.
--- What a walk searched tells the next choice of the journey (Find; found: { points, seconds }, false, or "off": no
--- walking data at one of its ends, Search.Walk): found, its seconds in place of its guess; not found, none (too long
--- for the search, or no way), and between places that share no region, no other walk between those regions either
+-- What a walk searched tells the next choice of the journey (Find; found: { points, seconds }; { near = points }, one
+-- between places that share no region that ends only as near as one walks; false; or "off": no walking data at one
+-- of its ends, Search.Walk): found, its seconds in place of its guess; not found (or only near), none (too long for
+-- the search, or no way), and between places that share no region, no other walk between those regions either
 -- (Teldrassil's top and the shore under it).
 local function Measured(measured, cut, step, found)
     if found == "off" then return end -- no walking data at one of its ends: nothing to tell
+    local seconds = type(found) == "table" and found.seconds or nil
     measured[step.from] = measured[step.from] or {}
-    measured[step.from][step.to] = found and found.seconds or math.huge
-    if not found and step.apart then
+    measured[step.from][step.to] = seconds or math.huge
+    if not seconds and step.apart then
         for a in pairs(step.apart[1]) do
             cut[a] = cut[a] or {}
             for b in pairs(step.apart[2]) do cut[a][b] = true end
@@ -950,6 +969,13 @@ local function Measured(measured, cut, step, found)
     end
 end
 
+-- Every walk of the journey searched (in the plan's job), one after the other: each from the floor it starts on where
+-- that is known (the player's, a lift's landing, a portal's end, a teleport's landing), else from every floor at the
+-- place it starts. A walk much longer than its guess, or one the search did not find (Teldrassil's top and the shore
+-- under it: the portal is the way): the journey chosen again with the walks found so far in place of their guesses,
+-- those not found as none (Measured), up to Planner.TRIES times while its searches have looked at fewer than
+-- Planner.BUDGET rectangles. Where nothing else goes, the walk not found stays: drawn as near as one walks, then
+-- straight, where its search came that near (a place nobody walks onto, a plateau no lift reaches), else straight.
 local function Find(start, goal)
     local measured, walked, cut = {}, {}, {}
     local tries, spent = Planner.TRIES, Search.looked
@@ -964,15 +990,21 @@ local function Find(start, goal)
                     local points, cost, rest = Search.Walk(step.map, step.u1, step.v1, step.u2, step.v2, step.floor,
                         Core.Steps.Check)
                     local off = not points and cost == "off"
-                    -- Between places that share no region, a walk that ends only as near as one walks is none.
-                    if points and step.apart and rest > Search.NEAR then points = nil end
-                    walked[key] = points and { points = points, seconds = cost / Planner.RUN } or (off and "off") or false
+                    if points and step.apart and rest > Search.NEAR then
+                        -- Between places that share no region, a walk that ends only as near as one walks is none
+                        -- (another way may reach the place: a lift, a portal); kept to be drawn, should it stay.
+                        walked[key] = { near = points }
+                    else
+                        walked[key] = points and { points = points, seconds = cost / Planner.RUN } or (off and "off")
+                            or false
+                    end
                 end
                 local found = walked[key]
                 Measured(measured, cut, step, found)
-                step.points = type(found) == "table" and found.points or nil
+                local seconds = type(found) == "table" and found.seconds or nil
+                step.points = type(found) == "table" and (found.points or found.near) or nil
                 if tries > 0 and Search.looked - spent < Planner.BUDGET
-                    and (found == false or (type(found) == "table" and found.seconds > step.guess * Planner.WORSE)) then
+                    and ((found ~= "off" and not seconds) or (seconds and seconds > step.guess * Planner.WORSE)) then
                     again = true
                     break
                 end
@@ -1047,7 +1079,7 @@ local function Draw(steps, keep)
             -- Straight to the hearthstone's place, or where a teleport brings one; the tram's from entrance to entrance
             -- (its tunnel's map has no plane); a lift's from its landing to the one at its other end (near and far: its
             -- ends, for Rode); a portal's from its trigger to where it brings one.
-            legs[#legs + 1] = { kind = step.kind, near = step.near, far = step.far, portal = step.portal,
+            legs[#legs + 1] = { kind = step.kind, near = step.near, far = step.far,
                                 points = { { map = step.map, u = step.u1, v = step.v1 },
                                            { map = step.map2, u = step.u2, v = step.v2 } } }
         else
@@ -1180,7 +1212,7 @@ local function Plan(before)
         local last = leg.points[#leg.points]
         return Make({ map = last.map, u = last.u, v = last.v, keep = leg })
     end
-    local floor = Footing(map, pu, pv)
+    local floor = Footing(map, pu, pv, GetTime())
     Make({ map = map, u = pu, v = pv, from = floor and { floor[1], floor[2], z = floor.z, guess = floor.guess } })
 end
 
@@ -1213,6 +1245,7 @@ function Planner.Update()
     -- Without a pin, a flight's way is drawn all the same.
     if not wanted or (not target and not Flying()) then
         target, footing = nil, nil
+        if not wanted then Walk.Forget() end -- the route off: its unpacked tiles let go
         return
     end
     Plan(before)
@@ -1305,12 +1338,13 @@ function Planner.Track(map, u, v, now)
     if now >= nextFoot then
         nextFoot = now + Planner.FOOT
         if u and target and not ns.off then
-            -- On a flight, a boat or a zeppelin no floor is under the player: chosen anew where they come down.
+            -- On a flight, a boat, a zeppelin or the tram no floor is under the player: chosen anew where they come
+            -- down.
             if Trips:Now() or (rawget(_G, "UnitOnTaxi") and Core.Plain(UnitOnTaxi("player"))) then
                 footing = nil
             else
                 Rode(map, u, v, now)
-                Footing(map, u, v)
+                Footing(map, u, v, now)
             end
         end
     end
@@ -1369,19 +1403,20 @@ local function Changed()
     wipe(regions)
     if target then ns.Guarded(Plan) end
 end
-Core.Data.Set("Walking"):OnStamp(function()
+Core.Data.Set("Walking"):OnStamp(ns.Guard(function()
     footing, portals = nil, nil
     wipe(landings)
+    Walk.Forget()
     Lifts.Forget()
     Changed()
-end)
+end))
 -- (also when Core learnt where a teleport brings one)
-Travel:OnStamp(function()
+Travel:OnStamp(ns.Guard(function()
     docks, portals = nil, nil
     wipe(landings)
     Lifts.Forget()
     Changed()
-end)
+end))
 -- A ride taught a boat's round: its trips made anew.
 Ships:OnLearn(ns.Guard(function() docks = nil end))
 -- A flight began, ended or was asked to land at its next flight point: its way, and the plan from where it lands

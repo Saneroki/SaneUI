@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: routes keep you on the right floor through the Wizard's
+  Sanctum's and Dalaran's portals, take Teleport: Stormwind, and lead
+  to a pin nobody can walk to as near as you can walk.
 - Navigation: a route's line keeps to ground you can walk on, and no
   route starts or ends on a rock top or in a hut it could not leave.
   From Dalaran, routes into Stormwind's Wizard's Sanctum take the

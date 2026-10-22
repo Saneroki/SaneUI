@@ -165,8 +165,8 @@ on (`lifts`, `landings`): 1.65 million rectangles, 12.6 MB. The Undercity and th
 `Lifts.Levels` makes stacked levels within one region (`level.alone`, `low`, `split`, `Lifts.SPREAD`), and
 `Planner.lua`'s `Over` keeps a place below a level from one on it also where they share a region. The whole city
 (2026-10-22): within one region a place stands below a level on a map the lift's ends lie on (`Round`: in that map's
-box, in the lift's plane; the Undercity's holds its Royal Quarter, up to 344 yards from the nearest lift), else within
-`Lifts.SPREAD` yards of the lift (a lift on no map); before, the Royal Quarter (beyond `SPREAD`) counted as on the
+box, in the lift's plane; the Undercity's holds its Royal Quarter, up to 344 yards from the nearest lift), or within
+`Lifts.SPREAD` yards of the lift; before, the Royal Quarter (beyond `SPREAD`) counted as on the
 ruins, so routes from near the lifts went up and round, and walks from the surface ended on the hill over it. No walk
 after a walk at a flight point (2026-10-22): `Journey` takes off with the first flight (`Flights` from the ground
 node, `Planner.BOARD` with it; no `"up"` way), so the air over a flight point (`-node`) is reached by a flight only
@@ -266,17 +266,28 @@ reagent, or an item held that `C_Item.IsUsableItem` allows; its cooldown and `Pl
 `Walk.Landing`, `landings`, and `Arrival` after the leap), `Hearth` with Astral Recall (`Planner.RECALL`), Frequent
 Flier's faster flights (`Planner.Pace`, `Planner.FASTER`). The routes harness has `teleports.lua` for them.
 
+The routing finalized (2026-10-22; the plan, *Built: the routing finalized*): read through with its docs and set
+right. `Footing` keeps `seen` (the last look: map, u, v, at); a step faster than `Planner.HOP` yards a second is a
+hop, and `Arrival(map, u, v, fu, fv, fz)` takes the portal whose trigger lay at the player's last place and height
+(the Wizard's Sanctum's and Dalaran's Violet Citadel's portals cross 6 to 42 yards, under `Planner.LEAP`); after a
+leap `Arrival` takes the nearest end or landing. A teleport's landing floor is a guess (`guess = true` in
+`landings`): Teleport: Stormwind's lies in the Sanctum's closed cellar. `Find` keeps a walk between places apart
+that ends only near as `{ near = points }`: none for the journey (`Measured`), drawn where it stays. `Walk.Forget`
+runs when the route is switched off and on the walking data's stamp; both stamps' listeners are `ns.Guard`ed.
+
 Not yet: a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
 minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
 checks; 524 with the 2026-10-21 changes; 527 with the whole city below; 528 with no walk after a walk at a flight
-point), `dev/tests/walk.py` (125; 130 with the
+point; 530 with the routing finalized), `dev/tests/walk.py` (125; 130 with the
 teleports' tool; 147 with the walking data's openings).
 
 ## What is not there yet
 
-1. **Core's data framework** has only step 1a (`Doc/ideas/Data-build.md`): the sets (part of Core since 2026-10-21), `Data.Set`, `Get`,
-   history, `OnStamp`, the scheduler. Not built: `Data.Map()` and `Data.Areas()` (1d.5), the Quests reader
-   (1b, 1d.4), the characters' data such as known flight points and rares seen (1c.4).
+1. **Core's data framework** has step 1a (`Doc/ideas/Data-build.md`): the sets (part of Core since 2026-10-21), `Data.Set`, `Get`,
+   history, `OnStamp`, the scheduler; besides, `Data.Map()` (the places of Spawns, Places and Travel on a map)
+   and the first learned data (`Data.Learn`: where a teleport brought one, 1c.1). Not built: `Data.Areas()`
+   (1d.5), the Quests reader (1b, 1d.4), the characters' data such as rares seen (1c.4); the flight points a
+   character found are Navigation's own (`Planner.lua`).
 2. **Sets Navigation reads with entries** (2026-10-20): Zones, Places, Travel, NPCs, Objects, Quests (the old
    facts), Spawns, Walking (`dev/tools/map-data`, `travel-data`, `walk-data` and picked batches, `sources.toml`);
    **still empty:** QuestAreas, PatrolPaths, CreatureSpawns, Guides.

@@ -441,7 +441,8 @@ end
 -- and its hops as Route made them (tables, their names text); else none.
 local function Kept()
     local kept = Character().trip
-    if type(kept) ~= "table" or type(kept.at) ~= "number" or type(kept.hops) ~= "table" or not kept.hops[1] then
+    if type(kept) ~= "table" or type(kept.at) ~= "number" or type(kept.world) ~= "number" or type(kept.hops) ~= "table"
+        or not kept.hops[1] then
         return nil
     end
     for _, hop in ipairs(kept.hops) do

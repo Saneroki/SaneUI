@@ -7,7 +7,7 @@ zones that light up and open by a click, the map moving with its window, the gam
 window's shape), the game's map kept closed; the pins of the game and of Core's data in the game's quest marks,
 quest areas, the party, the quest log and the bar over the full map (the pin filter in sections), the herbs and
 ore the game's minimap finds, indoor maps, routes to the map pin on foot, by flight, by boat and zeppelin, by the
-Deeprun Tram, by lift, through Teldrassil's portal, by the hearthstone and by the teleports a character has; the
+Deeprun Tram, by lift, through portals, by the hearthstone and by the teleports a character has; the
 classic dungeons' and raids' maps of
 Core's set *Dungeons* in the game's map art, with their floors, bosses and the bosses' 3D models
 (`src/Navigation/README.md`). Not yet: a travel pin's ways under the mouse (*Map pins*), the leveling guide, the
@@ -383,9 +383,11 @@ the game's own art and the game's own API.
 
 - **Data in Core (Saneroki, 2026-10-16):** pin locations, spawn places, patrol paths, travel, places and
   the other map data are saved and handled by Core's database system (`Doc/ideas/Data.md`), not by
-  Navigation: it ships them in its load-on-demand packs, and Navigation only reads them (`Data.Set`).
+  Navigation: it ships them, and Navigation only reads them (`Data.Set`). (The load-on-demand packs went on
+  2026-10-21: every set is a file of Core's, read with Core at the login.)
 - **Route data on demand, by Core (Saneroki, 2026-10-16):** the walking data for routes is Core's data too,
-  in a pack of its own that Core loads when the first route is asked for, never at login.
+  in a pack of its own that Core loads when the first route is asked for, never at login. **Superseded (Saneroki,
+  2026-10-21):** every set is part of Core and read with it at the login, the walking data too.
 - **Art:** the game's own art first, loaded by path, atlas or file ID: its map legend's atlases for quests,
   rares and travel, its vignette atlases, its tracking icons, until our own pin icons replace them (*Map pins*,
   Saneroki, 2026-10-21). A picture of our own only where the game has
@@ -623,9 +625,9 @@ guide), and these for Navigation in particular:
 | `Hybrid.lua` | The native `Minimap` in the small view, and back | yes |
 | `Native.lua` | The game's world map kept closed, its openers caught, and back | yes |
 | `QuestLog.lua` | The quest list on the left | yes |
-| `DockWatch.lua` | At a dock: its ships' destinations and times; aboard, when it lands | yes |
+| `DockWatch.lua` | At a dock or the tram's station: what stops there, where it goes, when it comes and leaves (`TripView.lua` draws it) | no |
 | `TopBar.lua` | Map selector, pin filter, the three views | yes |
-| `Planner.lua` | The journey: walking, flights, ships, hearthstone | no |
+| `Planner.lua` | The journey: walking, flights, ships, the tram, lifts, portals, the hearthstone, teleports | no |
 | `Search.lua` | The path search on Core's walking data, in steps | no |
 | `Route.lua` | The golden line | yes |
 | `Guide.lua`, `GuideView.lua` | The leveling guide: the step, its checks; its view | no; yes |
@@ -1101,20 +1103,21 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
 1. **The journey:** a small graph whose nodes are the known flight points, piers, portals, lifts, the
    hearthstone's place and the two ends; its edges are flights (times from Core's data), ships and
    zeppelins (their timetable: the wait and the trip), the hearthstone (its cooldown as a wait), and
-   walking between nodes (estimated from the walking data's region graph). A few hundred nodes: a
+   walking between nodes (guessed at `Planner.DETOUR` times the straight line and its climb; the walking
+   data's regions rule a walk out or make it cost `Planner.APART` more). A few hundred nodes: a
    shortest-path search in well under a millisecond. Run speed from the game.
-2. **The walking legs:** on Core's walking data, which our tool makes as a graph of walkable points and
-   the walkable links between them (points sparse in open land, dense in towns, caves and tunnels), grouped
-   into regions with the links between regions known in advance. The search finds the regions first,
-   then the points inside only those regions, each region opened on first need.
-3. **Drawn as soon as the journey is known;** the walking legs fill in as they are found.
+2. **The walking legs:** on Core's walking data, which our tool makes as rectangles of walkable floor per
+   terrain tile and the openings between them, grouped into regions; the search (A*) runs over the
+   rectangles through their openings, each tile unpacked on first need (*The walking data*).
+3. **Drawn once its walks are searched** (one job of the scheduler, a few frames), so the line does not change
+   under the player's eyes.
 
 - **In steps:** a job in Core's scheduler, so it shares the one frame budget and stops in a fight; the
   line stays drawn in a fight, only replanning waits.
-- **Replanned** when the player has left the line, or has reached the end of a leg (a flight landed, a
-  ship arrived); a new route replaces the shown one only when it is clearly better, so the line does not
-  jump. How far off counts as left, and how much better is clearly better, are tuned in the game.
-- **Without walking data** (the pack switched off, inside an instance): a straight line to the pin.
+- **Replanned** when the player has left the line (`Planner.OFF` yards), or has reached the end of a leg (a
+  flight landed, a ship arrived), at most every `Planner.AGAIN` seconds.
+- **Without walking data** (none for that plane): the journey all the same, each walk a straight line. Inside
+  an instance no line: the game gives no position there.
 - **Built (2026-10-20, `Planner.lua`):** the journey on the player's continent over the start, the end and the
   flight points this character knows (read at the flight master, `C_TaxiMap.GetAllTaxiNodes`, else the older
   window's names; kept per character), the flights of Core's set *Travel* its side may take (each at its way's
@@ -1323,7 +1326,7 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     city's floors under the surface reach 344 yards from the nearest lift (9 % of them beyond `SPREAD`: the Royal
     Quarter, the Magic Quarter's far end, the sewers' tunnel out to the west), every one inside the Undercity map's
     box. So a place now stands below such a level on a map the lift's ends lie on (`Round`: in that map's box, the
-    game's own bounds of the city), else within `SPREAD` yards of the lift (one on no map). Checked again: the
+    game's own bounds of the city), or within `SPREAD` yards of the lift. Checked again: the
     teleport and the hearthstone one walk of 881 yards (52 to the mage trainers); from Sylvanas to the flight
     master, the inn and the bank on foot, to Brill on foot to a lift, up it and on; from Brill, the zeppelin tower
     and the ruins down a lift to her floor. The 200 journeys between NPCs' places, outdoors and indoors, are the
@@ -1442,12 +1445,47 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     from Orgrimmar into the Undercity; a druid from Stormwind to Nighthaven; an engineer from Orgrimmar to Everlook;
     no rune, no teleport. The 29 fixed journeys and 200 random ones give the same legs as before for a character
     with none.
+- **Built (2026-10-22): the routing finalized.** Saneroki asked to go through the code and finalize the routing as it
+  stands. Read through, with its docs: the planner, the search, the walking data's reader, the lifts, the teleports
+  Core learns, the line and the trip view. Set right:
+  - **A portal a few yards across** (the Wizard's Sanctum's two, Dalaran's Violet Citadel's: 6 to 42 yards, a
+    hundred and more up or down): the floor was taken anew only after a leap of `Planner.LEAP` yards, so after them
+    it stayed the one before. A hop now (a step between two looks faster than `Planner.HOP` yards a second) from a
+    portal's trigger, at its height, to its other end is that portal: the floor followed is its end's (`Arrival`).
+    After a leap, the nearest place a portal or a teleport brings one, not the first found.
+  - **A teleport's landing** on its floor is a guess (its place is not yet the game's own): Teleport: Stormwind's
+    height is the Wizard's Sanctum's cellar's, closed in since the walking data of 2026-10-22, so no walk left it and
+    routes never took it; the walk from it takes the floors around it too now.
+  - **A walk that ends only as near as one walks** between places that share no region stays none for the journey;
+    where it stays the way it is drawn as near as one walks, then straight (it was drawn straight from its start, and
+    the player on the roads beside it was off the line, planned again every `Planner.AGAIN` seconds).
+  - The walking data's unpacked tiles let go when the route is switched off or the data changes (`Walk.Forget`, no
+    caller before); the stamps' listeners guarded; a flight kept over a `/reload` without its world map is none;
+    leftovers gone.
+- Checked on the real data outside the game (the code of today, the walking data of 2026-10-22, the game's maps and
+  flight points, Core's set *Travel*: 296 flights, 7 boats, 5 zeppelins, the tram, 14 lifts, 8 portals, 12
+  teleports): the 29 fixed journeys and the 8 with and without a teleport each run from the player to the pin,
+  Teleport: Stormwind among them now (then 644 yards on foot to the Cathedral); of 200 journeys between NPCs' places (outdoors; indoors in turn) every one finds a way, 9 (8)
+  draw a walk straight, 1 (1) as near as one walks, then straight (Archmage Xylem's tower), none from elsewhere
+  than the player; 571 ms a route (627), the slowest 3.9 s (4.4), spread over frames as a job of Core's
+  scheduler. Kept as they are:
+  - a walk of one side deep into the other's lands (a Horde character from Hillsbrad into Ironforge): its search
+    stops at `Search.MOST` rectangles, or no floor of its start's regions lies near its end, and it is drawn
+    straight; Archmage Xylem's tower is reached by his teleport only;
+  - the Wizard's Sanctum's rooms only by portal, from Dalaran (the game's own walls close them off from the streets
+    in the walking data);
+  - a boat's or zeppelin's wait is half its round until a ride on this realm taught its times;
+  - a character flies only once it has opened a flight master (the game tells the flight points found only there);
+  - after a loading screen inside a building of several floors the player's floor is a guess (the game tells no
+    height) until they stand where only one floor lies under them;
+  - no route inside an instance (the game gives no position there).
+  To come: a travel pin's ways under the mouse (*Map pins*).
 
 ### The walking data
 
-Core's (pack Routes, loaded on the first route, *Decisions*): per region a block, packed (the game's
-`C_EncodingUtil` unpacks it), opened on first need, the opened ones capped (the cap measured with the first
-real data) and let go when no route is asked for. The format, the tool and the checks are Core's data
+Core's set *Walking*, read with Core at the login (every set is Core's since 2026-10-21): per terrain tile a
+block, packed (the game's `C_EncodingUtil` unpacks it), unpacked on first need, the `Walk.KEEP` (48) asked for
+last kept. The format, the tool and the checks are Core's data
 framework's; this is the one set where its rule of plain text gives way, as `Doc/ideas/Data.md` foresees for
 a cold, very large part.
 
@@ -1652,7 +1690,10 @@ samples, *The ground as the game draws it*, below).
 
 What Navigation reads (`Doc/ideas/Data.md`); Navigation writes nothing there.
 
-| Need | Set, reader | Pack | Loads |
+Every set is Core's and read with Core at the login (since 2026-10-21); the concern is the set's group in
+`Doc/guides/data.md`.
+
+| Need | Set, reader | Concern | Loads |
 | --- | --- | --- | --- |
 | Pins: services, givers, rares, chests, herbs, ore, books, places | `Data.Map()`: `On`, `Near`, `Services` | Spawns, World | Navigation's `OnLogin` asks for it (`Prepare`): the minimap shows from login |
 | Quest areas, spawn areas | `Data.Areas()`, *Spawns* | Spawns | the same |
@@ -1660,12 +1701,13 @@ What Navigation reads (`Doc/ideas/Data.md`); Navigation writes nothing there.
 | Quests: available, requirements, chains | *Quests* | Quests | soon after login |
 | Terrain tiles | *Tiles* (new, proposed) | World | soon after login |
 | Zone levels, piers, ships, flight times | *Zones*, *Travel* | World | soon after login |
-| Leveling guides | *Guides* | Guides | first guide shown |
-| Walking data | *Walking* | Routes | first route |
-| Known flight points, rares seen and killed | the character's data | Characters | soon after login |
+| Leveling guides | *Guides* | Guides | at the login |
+| Walking data | *Walking* | Routes | at the login |
+| Flight points found, the hearthstone's place | Navigation's own, per character (`Core.Character`) | none | at the login |
+| Rares seen and killed | the character's data (to come) | Characters | |
 
-- **A pack that is not there yet or switched off** leaves its pins out; the map works with the live
-  sources alone. `Get` never loads a pack (Data.md, decision 20).
+- **A set that is missing or refused** (made for another game version) leaves its pins out; the map works
+  with the live sources alone.
 - **Told when data arrives:** by Core, not a look every frame: `Set:OnStamp(fn)` when a set arrives or
   changes, `Data.WhenReady(set, fn)` once it is there.
 - **Map positions to world** are converted by Navigation once per map, kept with the map's pins.
@@ -1684,8 +1726,8 @@ What Navigation reads (`Doc/ideas/Data.md`); Navigation writes nothing there.
 - **Kept for the account** (`Core.Store`): the window's place (Core's).
 - **Kept per character** (`Core.Character`): each view's last camera (map, centre, scale), the small view's
   native zoom step, the selector's last 30 maps, the guide and its step.
-- **Core's character data**, not Navigation's: known flight points, rares seen and killed (Data.md,
-  *Characters*).
+- **Kept per character by Navigation** (`Core.Character`, `Planner.lua`): the flight points found and the
+  hearthstone's place. Rares seen and killed are to be Core's character data (Data.md, *Characters*).
 
 ## When something fails
 
@@ -1696,8 +1738,8 @@ everything back (`GiveBack`) and says so once.
 | --- | --- |
 | The window, the canvas, taking a frame | Stand down: the game's minimap and map are back |
 | Terrain (table missing, a file will not load) | The native minimap's own ground; Blizzard's art in the full view |
-| A pack missing or switched off | Its pins are left out; live pins stay |
-| Walking data missing | A straight line to the pin |
+| A set missing or refused | Its pins are left out; live pins stay |
+| Walking data missing | The journey all the same, each walk a straight line |
 | The position is hidden or unknown | The map stays where it was; the arrow hides |
 | Closing the game's map in a fight | Ours stays closed, the game's stays open until the fight ends |
 
@@ -1717,7 +1759,7 @@ fight, it waits for `PLAYER_REGEN_ENABLED`.
 | A map's pins arrive, the filter changes | index, cluster | in steps, within the scheduler's budget |
 | Route search | Core's scheduler | its budget (5 ms, out of combat) |
 
-- **Caps** on terrain textures, art textures, pins, lines and opened walking regions, each set from step 0's
+- **Caps** on terrain textures, art textures, pins, lines and unpacked walking tiles (`Walk.KEEP`), each set from step 0's
   frame-time test (f) and the first real data. Pools grow to their cap and are kept (a frame cannot be
   destroyed).
 - **No garbage in what runs often:** no table, closure or string made in the frame step or a layout loop.
@@ -1817,9 +1859,9 @@ battlemaster, spirit healer, meeting stone.
 
 | Pin | Icon | Notes | Data |
 | --- | --- | --- | --- |
-| Flight point | `TaxiNode_*` atlas; grey when not known | live; the known ones are learnt at the flight master | Blizzard |
-| Boat, zeppelin, tram, lift | `TaxiNode_Continent_*` | with destinations; right-click opens the destination map | Core's *Travel* |
-| Portal | `TaxiNode_Continent_Neutral`, as the game's legend shows a teleport | the few portals and passages | Core's *Travel* |
+| Flight point | `TaxiNode_*` atlas; red and dimmed when not found | live; the ones found are learnt at the flight master | Blizzard |
+| Boat, zeppelin, tram, lift | `flightmasterferry`, `vehicle-air-horde`, `vehicle-alliancecart`, `poi-door-up` (`Pins.WAY_ICONS`) | with destinations; Shift and a click opens the destination map | Core's *Travel* |
+| Portal | `mageportalalliance` | the portals of Core's *Travel* | Core's *Travel* |
 | Zone crossing, cave entrance | `CaveUnderground-Up/Down` | where a path leaves the zone or goes underground | Core's *Places* |
 
 ### Places
@@ -1971,7 +2013,8 @@ What a dungeon map shows:
 
 Each with a proposal; what is not answered when its step comes is built as proposed.
 
-1. **Walking data:** how dense a graph of walkable points (and so how big), and made from what our tool can
+1. Answered (2026-10-20, *The walking data*: rectangles of walkable floor per terrain tile, from the game's own
+   files). **Walking data:** how dense a graph of walkable points (and so how big), and made from what our tool can
    read of the client's terrain? *Proposal:* as sparse as still gives good routes in towns and tunnels,
    decided on the tool's first output and measured, in Core's pack format.
 2. Answered (Saneroki, 2026-10-19: the views at every zoom): terrain everywhere, by the overview far out.

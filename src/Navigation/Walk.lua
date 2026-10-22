@@ -20,7 +20,7 @@ local _, ns = ...
 --      Walk.Opening(tile, index, n), Walk.Openings(tile, index, fn)   a rectangle's openings
 --      Walk.Follow(continent, u, v, key, index, fromU, fromV)   the floor a walker has come to from the one before
 --      Walk.Floor(continent, u, v, indoors, reach, height)   the floor a walker stands on where it is not followed
---      Walk.Landing(continent, u, v, z, reach)   the floor nearest a point at a height (a lift's end)
+--      Walk.Landing(continent, u, v, z, reach)   the floor nearest a point at a height (a lift's or a portal's end, a teleport's landing)
 --
 --  A tile's samples run from its north west corner, 256 along a side (Walk.SAMPLE
 --  yards each); the plane's u grows east and v north (Coords.lua).
@@ -491,9 +491,9 @@ function Walk.Floor(continent, u, v, indoors, reach, height)
     return Walk.Nearest(continent, u, v, reach)
 end
 
--- The floor nearest a point at a height (a lift's end, beside its shaft): of the floors within reach yards whose
--- height is no more than Walk.RISE yards from it, the nearest counting both, the height Walk.LEVEL times; its tile, its
--- index and its point nearest the point. nil when none.
+-- The floor nearest a point at a height (a lift's end beside its shaft, a portal's end, a teleport's landing): of
+-- the floors within reach yards whose height is no more than Walk.RISE yards from it, the nearest counting both, the
+-- height Walk.LEVEL times; its tile, its index and its point nearest the point. nil when none.
 function Walk.Landing(continent, u, v, z, reach)
     local best, bestTile, bestIndex, bu, bv
     Walk.Around(continent, u, v, reach, function(tile, index, nu, nv, gap)
@@ -507,7 +507,7 @@ function Walk.Landing(continent, u, v, z, reach)
     return bestTile, bestIndex, bu, bv
 end
 
--- Every tile let go (the route is off, or a test begins).
+-- Every tile let go (the route switched off, the walking data changed: Planner.lua).
 function Walk.Forget()
     wipe(open)
     wipe(stamps)

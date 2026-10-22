@@ -21,9 +21,10 @@ local _, ns = ...
 --  line there; Fit): under them a dark edge, over them the game's dependency bar art
 --  tinted gold, and over that its glint, moved along the line by the engine (a
 --  TextureCoordTranslation animation from Route.xml, as the game's talent lines
---  move theirs), so nothing of ours runs every frame for the pulse. A walk is
---  golden; a flight pale gold; a boat's or zeppelin's way red, as the plan has the
---  ships' routes; the hearthstone's and the teleports' pale blue, straight to where they bring one.
+--  move theirs), so nothing of ours runs every frame for the pulse. A walk and a
+--  lift are golden; a flight pale gold; a boat's, a zeppelin's and the tram's way
+--  red, as the plan has the ships' routes; a portal's violet; the hearthstone's and
+--  the teleports' pale blue, straight to where they bring one.
 -------------------------------------------------------------------------------
 local Coords = ns.Coords
 local Route = {}
@@ -279,10 +280,6 @@ function Route.Cut(newWay)
         if against < 0 then first = index + 1 end
     end
     Head(edge)
-end
-
-function Route.Way()
-    return way
 end
 
 -- A step of the canvas' tracker (the player's place): the planner sees where along the way the player is.

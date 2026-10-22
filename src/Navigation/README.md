@@ -1,6 +1,6 @@
 # Sane UI: Navigation
 
-**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot, by flight, by boat and zeppelin, by the Deeprun Tram, by lift, by the hearthstone and by the teleports a character has; the leveling guide comes later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
+**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot, by flight, by boat and zeppelin, by the Deeprun Tram, by lift, through portals, by the hearthstone and by the teleports a character has; the leveling guide comes later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 Sane UI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
@@ -135,8 +135,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   quickest (the map learns its place where you bind it, or the first time you use it; a shaman's Astral Recall
   brings you there too). So are the teleports your character has, the line pale blue to where each brings you, then
   on foot: a mage's to the capitals and Dalaran (with a Rune of Teleportation in the bags), a druid's to Moonglade, an
-  engineer's transporters to Gadgetzan, Everlook and Mount Hyjal and the Crumbling Hearthstone (while in the bags,
-  usable and not cooling down). Where one brings you the map knows from the original game (not yet confirmed by the
+  engineer's transporters to Gadgetzan, Everlook and Mount Hyjal and the Crumbling Hearthstone (while in the bags
+  and usable; one cooling down counts its wait). Where one brings you the map knows from the original game (not yet confirmed by the
   game) or learns the first time it brings a character of yours there (the Dalaran, Darnassus and Mount Hyjal
   teleports, the Gnomish Transporter and the Crumbling Hearthstone until then are no way). Thunder Bluff's mesa and the
   Undercity are reached by their lifts, and the Great Lift is taken where it is quicker: on foot to the lift, up or
@@ -325,8 +325,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   in view, and from where the player is on (the way's cut, `Route.Cut`): the parts behind are not drawn, the one the
   player is on only from there, and a line of its own (the head) runs from the player's arrow to that point; the
   legs after the next fainter. A dark edge, the game's dependency bar art tinted gold, its glint moved along by a
-  `TextureCoordTranslation` animation (no code of ours each frame); walks gold, flights pale, ships red. The
-  animation is the template of `Route.xml`: the game makes this kind only from XML (one made in Lua has no
+  `TextureCoordTranslation` animation (no code of ours each frame); walks and lifts gold, flights pale, ships and the
+  tram red, portals violet, the hearthstone and the teleports pale blue. The animation is the template of `Route.xml`: the game makes this kind only from XML (one made in Lua has no
   `SetOffset`); where the game has not read the file yet, the glint stands still.
 - **QuestLog** (`QuestLog.lua`): a window of Core's of its own (title bar, docks, its grip seen while the mouse is
   on it; place and size in `store.questLogPlace`), over the full map in the layer `DIALOG` with its dark background,
@@ -363,7 +363,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   (from where a rectangle was entered to the nearest point of the next opening, swimming twice the cost, and each
   yard up `Search.CLIMB` yards more, a little: the game runs as fast up a hill as on the flat, and the data holds no
   slope over 50 degrees, so a shorter way over a hill or a pass is taken, and Ironforge's mountain, steeper, is
-  none), from the floor the start stands on (the player's, followed; the other floors there too, `Search.ASIDE`
+  none), from the floor the start stands on (the player's, followed; where that is a guess, the other floors there
+  too, `Search.ASIDE`
   yards more and not counted in its cost, so a walk is found where no way leaves that one: a guess that was wrong, a
   floor the walking data closes in), else from every floor under it and within
   `Walk.ROOF` yards, each over the lowest at the cost of the climb up to it (a place
@@ -381,7 +382,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   Zephras Isle, so a journey may cross a third; the canvas' tracker hands it the player's place): walks (guessed,
   at least as long as the steepest floor needs to climb between them, `Planner.SLOPE`) between the places of one
   plane, `Planner.APART` seconds more between two that share no region of the walking
-  data (a place's: those of the floors under it and within `Planner.REGION` yards), the flights of Core's set
+  data (a place's: its floor's where it is known, with every floor around a guess; the pin's those under it; any
+  other's those under it and within `Planner.REGION` yards), the flights of Core's set
   *Travel* the player's side may take (a flight point twice, on the ground and in the air, the air reached by a
   flight only, taking off with the first: a flight over many takes off and lands once, `Planner.BOARD`, and is one
   leg, and one comes down at a flight point only after a flight: no walk follows another there, on from another of
@@ -399,18 +401,20 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   player's side or of both; a spell it knows, `C_SpellBook.IsSpellKnown`, with its reagent in the bags, or one of its
   items in the bags that the game lets it use, `C_Item.IsUsableItem`; its cooldown, `C_Spell.GetSpellCooldown` or
   `C_Item.GetItemCooldown`, and `Planner.HEARTH`; where it brings one on its floor where its height is known,
-  `Walk.Landing` within `Planner.ARRIVE` yards, else like the hearthstone's place; after the leap the floor followed
-  is that one); the quickest chosen (Dijkstra; a place reached on foot is a node of its own, from which no walk
+  `Walk.Landing` within `Planner.ARRIVE` yards, a guess (the place is not yet the game's own, and Teleport:
+  Stormwind's height is the Wizard's Sanctum's cellar's, closed in), else like the hearthstone's place; after the leap
+  the floor followed is that one); the quickest chosen (Dijkstra; a place reached on foot is a node of its own, from which no walk
   goes on: the walk straight on is a way of its own), the walks then searched
   (the first from the floor the player stands on: followed every `Planner.FOOT` seconds while there is a pin,
   `Walk.Follow`, else chosen, `Walk.Floor`, and chosen anew after a leap of `Planner.LEAP` yards between two looks,
-  a portal; none on a flight, a boat or a zeppelin; one chosen among others under the player a guess, for which the
+  a portal; none on a flight, a boat, a zeppelin or the tram; one chosen among others under the player a guess, for which the
   journey counts the regions of every floor around them, until they stand where one floor alone lies under them;
-  after a leap to where a portal brings one, its floor there) and the journey chosen again, up to `Planner.TRIES`
+  after a leap, or a hop faster than `Planner.HOP` yards a second (a portal a few yards across: the Wizard's
+  Sanctum's, Dalaran's Violet Citadel's), to where a portal brings one, its floor there) and the journey chosen again, up to `Planner.TRIES`
   times while the plan's searches have looked at fewer than `Planner.BUDGET` rectangles (`Search.looked`), when one is
   much longer than guessed or not found: a walk not found is none, and where its two places share
   no region, so is every walk between those regions, and one that ends only as near as one walks (Teldrassil's top
-  and the shore under it: the portal is the way); one without walking data at an end stays a guess, drawn straight:
+  and the shore under it: the portal is the way; where it stays the way, drawn as near as one walks, then straight); one without walking data at an end stays a guess, drawn straight:
   all one job of Core's scheduler, which a new pin stops; the line of the pin before goes at once. Where along the
   line the player is (the cut): at every step of the tracker, of the next `Planner.AHEAD` parts of it the first
   within `Planner.SLACK` yards of the nearest, never back on the part they are on; the line drawn from there
@@ -441,7 +445,7 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   yards), or within `Lifts.SPREAD` yards of it; a place below a level and one on it
   are kept apart also where they share a region; a lift within one region whose levels lie side by side (the
   Great Lift) joins none. A walk's guess between two places
-  of known heights (the player, a lift's ends) counts the climb too. The floor after a ride (`Rode`): at a lift
+  of known heights (the player, a lift's or a portal's ends, a teleport's landing) counts the climb too. The floor after a ride (`Rode`): at a lift
   joining the line's lift's two levels (`Lifts.Near`, within `Lifts.NEAR` yards) as long as its ride takes, then on
   along the line past it, the player is on the landing at its other end. Planned again when the pin changes, after
   a landing (a flight's or a ship's), when the player is 40
@@ -533,11 +537,11 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings; the floor a walker stands on, followed or chosen. No frames |
 | `Search.lua` | A walk between two points over the walking data, from the floor the start stands on to a floor at the end. No frames |
 | `Lifts.lua` | The lifts of Core's set *Travel* on the walking data: each end at its landing, the levels they join (stacked or side by side), where a place stands among them. No frames |
-| `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by lift, by the hearthstone, by the teleports it has; where along it the player is. No frames |
+| `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by lift, through portals, by the hearthstone, by the teleports it has; where along it the player is. No frames |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
 | `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, zoomed and dragged |
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
-| `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold, flights pale, ships red |
+| `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold, flights pale, ships and the tram red, portals violet, the hearthstone and the teleports pale blue |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks; a rare's 3D model beside its tooltip with Alt |
 | `Marks.lua` | The player's arrow, the map pin, the party |
 | `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders switched by the pin filter and in turn, silently. No frames |

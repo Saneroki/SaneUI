@@ -44,7 +44,7 @@ local Core = SaneUI.Core
 --  (Core.Store), on this computer only. Where the set has no round, the rides learn
 --  it from the rounds between them, and correct it while they agree with it (Keep,
 --  below). Nothing in a taxi's flight, and nothing while the set Travel is not
---  loaded (a module that shows the ways asks for it: Navigation, at login).
+--  loaded (it is Core's, read with Core at the login).
 -------------------------------------------------------------------------------
 local Data = Core.Data
 
@@ -448,7 +448,7 @@ Tick = Core.Guard("data: ships", function()
 end)
 -- A loading screen: the samples before it were of another place.
 Core.On("PLAYER_ENTERING_WORLD", function() last, ride = nil, nil end)
--- The set Travel arrived (a module that shows the ways asked for it; Core never does): the looks begin then, and
+-- The set Travel arrived (with Core, at the login): the looks begin then, and
 -- never before, so nothing is looked at for a set that is not loaded. It changed: its timetables are made anew.
 Travel:OnStamp(function()
     wipe(tables)
@@ -460,4 +460,3 @@ end)
 function Data.Ships()
     return Ships
 end
-Data.ShipsReader = Ships

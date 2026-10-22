@@ -199,7 +199,7 @@ part of Core.
 | World | NPCs (creature ID), CreatureSpells (spell ID), Objects (object ID), Zones (map ID), Travel (the game's TaxiPath ID; our own number for a way it has no path for), Places (our own numbers), Drops (`npc:<ID>`, `object:<ID>`, `zone:<map ID>`), Tiles (continent × 4096 + row × 64 + column), Overlays (the game's overlay ID), Indoors (the building's root file ID), Encounters (encounter ID), Bosses (encounter ID), Dungeons (the instance's map ID) |
 | Spawns | Spawns (`npc:<ID>`, `object:<ID>`), QuestAreas (`<quest>/<objective>/<stage>/<map>`), PatrolPaths (creature ID) |
 | CreatureSpawns | CreatureSpawns (creature ID) |
-| Routes | Walking (a region, numbered by our tool) |
+| Routes | Walking (a terrain tile: continent × 4096 + row × 64 + column) |
 | Guides | Guides (a guide, numbered by our tool) |
 | Spells | Spells, Auras (spell ID), Trainers (the rank's spell ID), QuestSpells (`<spell ID>/<way>`), WeaponSkills (the teaching spell's ID), SkillLines (skill line ID), Professions (the recipe's spell ID) |
 | Characters | No sets: saved data only (*Characters*) |
@@ -523,7 +523,7 @@ Ships:OnLearn(fn)     -- fn(key) on the frame after a ride taught its times
   `Ships.ROUNDS` rounds apart, within a quarter of the round kept). A round worked out from the estimate starts
   doubted.
 - **Looked at** every `Ships.LOOK` seconds, every `Ships.CLOSE` near a stop or aboard; not in a taxi's flight. The
-  looks begin when *Travel* arrives (Navigation asks for it at login; Core never does), never before.
+  looks begin when *Travel* arrives (with Core, at the login), never before.
 
 ### The trip underway (`Data.Trips`)
 

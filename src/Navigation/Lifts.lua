@@ -26,7 +26,7 @@ local _, ns = ...
 --                          the pin's map): its regions without the levels it does not stand on, and the lifts' upper
 --                          levels it stands below ({ [region] = true }, nil: none)
 --      Lifts.Near(map, u, v, lower, upper)   a lift within Lifts.NEAR yards of the point that joins those two
---                          regions, and its ends
+--                          regions (nil: none)
 --
 --  Two levels are stacked where, on a ring Lifts.RING yards round their lifts' shafts, at least a third of the points
 --  on the lower level lie under the upper (the Undercity under the ruins; Thunder Bluff's mesa stands beside the land

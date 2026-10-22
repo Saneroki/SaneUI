@@ -3,8 +3,42 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 528 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 530 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: the routing finalized (2026-10-22)
+- Read through with its docs (the planner, the search, the walking data's reader, the lifts, Core's teleports, the
+  line, the trip view); set right:
+  - `Planner.lua`: a portal a few yards across (the Wizard's Sanctum's two, Dalaran's Violet Citadel's: 6 to 42
+    yards, a hundred and more up or down) left the floor followed as it was before it, as only a leap of
+    `Planner.LEAP` yards took it anew. A hop now (`Planner.HOP`, 20 yards a second between two looks, `seen`) from a
+    portal's trigger, at its height, to its other end is that portal: its end's floor is followed
+    (`Arrival(map, u, v, fu, fv, fz)`). After a leap the nearest end or landing, not the first found (Teleport:
+    Stormwind lands 12 yards from the Sanctum's top room's portal end).
+  - A teleport's landing floor is a guess (`landings`): Teleport: Stormwind's is the Sanctum's cellar, closed in since
+    the walking data of 2026-10-22, so no walk left it and routes never took it.
+  - `Find`: a walk between places that share no region that ends only as near as one walks (`{ near = points }`)
+    stays none for the journey (`Measured`), and where it stays the way it is drawn as near as one walks, then
+    straight (it was drawn straight from its start, and the player on the roads beside it was off the line, planned
+    again every `Planner.AGAIN` seconds).
+  - `Walk.Forget` (no caller): when the route is switched off, and on the walking data's stamp; the stamps' listeners
+    behind `ns.Guard`. `Plane(nil)` is none (it raised: a flight begun where the game told no place); `Trips`: a
+    flight kept over a `/reload` without its world map is not kept.
+  - Gone: `Route.Way`, `Coords.WORLD`, `Data.ShipsReader`, the steps' `teleport`, `tram` and `portal`, and the
+    built-in clean-up of the characters' old `flights` (a one-time clean-up is a step of development, not the
+    addon's).
+  - Comments and docs as the code is: `Planner.lua` (its header: the retries, the floor, the re-plans; `Find`'s
+    description above it), `Route.lua`, `Walk.lua`, `Lifts.lua`, `Steps.lua`, `Ships.lua`; `src/Navigation/README.md`,
+    `Doc/ideas/Navigation.md` (the planner's first design, the packs that went, its data, failures and pin
+    catalogue, open question 1), `Doc/agent/navigation.md`, `Doc/guides/data.md`, Travel's `schema.toml`.
+- Checked on the real data (outside the game, the walking data of 2026-10-22): the 29 fixed journeys keep their legs;
+  of the 16 with and without a teleport only Teleport: Stormwind's changed (taken now: the teleport, then 644 yards on
+  foot to the Cathedral); of 200 journeys between NPCs' places (outdoors; indoors in turn) none without a way, 9 (8)
+  walks drawn straight (10, 9 before), 1 drawn as near as one walks (Archmage Xylem's tower), none from elsewhere than
+  the player; 571 ms a route (627), the slowest 3.9 s (4.4).
+- Tests: `dev/tests/navigation.lua` (530 checks: through a portal a few yards across, up onto a roof, its floor
+  followed; a pin on a mesa no lift reaches, as near as one walks, then straight; the old list's clean-up gone; the
+  test portal 14 on tile 6179).
 
 ### Navigation: a world tile's words its zone's kind, colours and light only (2026-10-22)
 - `dev/tools/map-layers tiles`: a square takes `tile_words`: the far level's pictures and look, its main zone's

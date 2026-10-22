@@ -3,7 +3,8 @@ key = "int"              # the game's TaxiPath ID of a flight, a boat or a zeppe
                          # (the tram 1000369; a lift's car from 1100001 on, kept for a car at the same place; a portal 1200000 + its
                          # area trigger's ID: dev/tools/travel-data; a portal object 2000000 + its game object's entry: batch 13; a
                          # teleport 3000000 + its spell's ID: dev/tools/travel-data)
-learn = true             # the flight master's watcher: flights and their costs; Core's teleports: where each brought one
+learn = true             # learnt in play: where each teleport brought one (Core's watcher, Data/Teleports.lua); the flight
+                         # master's flights and their costs to come
 about = "The ways to travel other than on foot: boats, zeppelins, trams, lifts, portals, teleports and flights, with their times."
 
 [fields]
@@ -15,7 +16,8 @@ fromNode = { type = "int", min = 0 }         # a flight's taxi nodes (the flight
 toNode   = { type = "int", min = 0 }
 side     = { type = "enum", values = ["alliance", "horde"] }  # none: both. A flight's: only that side's flight masters stand at both
                                              # ends; a boat's, zeppelin's or the tram's: its docks lie near that side's flight
-                                             # masters alone (its towns, dev/tools/travel-data's DOCKSIDE yards)
+                                             # masters alone (its towns, dev/tools/travel-data's DOCKSIDE yards); a portal's:
+                                             # its town's (the NPCs that side's there); a teleport's: the races that have it
 time     = { type = "number", min = 0 }      # the trip, in seconds (a lift's: its slower ride, up or down)
 wait     = { type = "number", min = 0 }      # between two departures, in seconds (a transport: from one dock, its way once round;
                                              # the tram: from one station, its trains' round over the trains; a lift's car:

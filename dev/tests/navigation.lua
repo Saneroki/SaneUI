@@ -507,6 +507,10 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     -- one on the city's building floor of tile 6179 (x -66.67, y -1666.67, 50 yards), on no zone map.
     .. 'R[12] = "70245\t\tportal\t\t\t\t\t\t1606'
     .. '\t-208.33\031-62.5\0311\031\031\03110\030-66.67\031-1666.67\031\031\031\03150\t\t\t\t\talliance"\n'
+    -- A portal a few yards across (14): on tile 6179 from the building's floor (world x -16.67, y -1616.67, 50 yards)
+    -- up onto its roof (x -41.67, y -1641.67, 65 yards), of both sides.
+    .. 'R[14] = "70245\t\tportal\t\t\t\t\t\t36'
+    .. '\t-16.67\031-1616.67\0311\031\031\03150\030-41.67\031-1641.67\031\031\031\03165"\n'
     -- Teleports, each where it brings one on Kalimdor (world x 6400, y -9400: plane u 9400, v 6400, by the pin): a mage's
     -- with its reagent, the Alliance's; the Horde's to the same place; a druid's (u 9400, v 6500); an engineer's
     -- transporter (u 9500, v 6400); and one the set knows no place of.
@@ -517,7 +521,7 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     .. 'R[4297659] = "70245\t\tteleport\tTeleport: Dalaran\t\t\t\t\t\t\t\t\t\t\talliance\t1297659\t\t17031"\n'
     .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byFromNode[20] = "5"\nI.byFromNode[21] = "6"\nI.byKind = {}\n'
     .. 'I.byKind.boat = "1\0303"\nI.byKind.flight = "2\0305\0306"\nI.byKind.tram = "7"\nI.byKind.zeppelin = "4"\n'
-    .. 'I.byKind.lift = "8\0309\03010\03011\03013"\nI.byKind.portal = "12"\n'
+    .. 'I.byKind.lift = "8\0309\03010\03011\03013"\nI.byKind.portal = "12\03014"\n'
     .. 'I.byKind.teleport = "3003561\0303003567\0303018960\0303023442\0304297659"\n')
 W.AddSets(packPath)
 local spawnsPath = folder .. "/Spawns"
@@ -2525,10 +2529,8 @@ check(#shownWay.legs[1].points >= 2 and near(shownWay.legs[2].points[1].u, 600) 
     "each leg from where it starts to where it ends")
 -- At a flight master (TAXIMAP_OPENED) what this character has found is what the game tells then: its flight map's
 -- (Current and Reachable; Unreachable not, the game's flight map leaves those out) and every plane's, as the game's maps
--- mark them; the earlier list, which held every flight point a flight master listed, goes. Only the found are flown;
--- on the map the found one as the game draws it.
+-- mark them. Only the found are flown; on the map the found one as the game draws it.
 ;(function()
-    Core.Character(ns.name).flights = { [2] = true, [5] = true }
     local nodes, all, mapID = C_TaxiMap.GetTaxiNodesForMap, C_TaxiMap.GetAllTaxiNodes, rawget(_G, "GetTaxiMapID")
     C_TaxiMap.GetTaxiNodesForMap = function(map)
         local list = nodes(map)
@@ -2540,8 +2542,8 @@ check(#shownWay.legs[1].points >= 2 and near(shownWay.legs[2].points[1].u, 600) 
     W.Fire("TAXIMAP_OPENED", 1)
     W.Wait(0)
     Frames(8)
-    check(Planner.Knows(2) and not Planner.Knows(5) and Core.Character(ns.name).flights == nil,
-        "at a flight master: the one it stands at found, one its flight map leaves out not; the old list gone")
+    check(Planner.Knows(2) and not Planner.Knows(5),
+        "at a flight master: the one it stands at found, one its flight map leaves out not")
     check(shownWay and #shownWay.legs == 1 and shownWay.legs[1].kind == "walk",
         "a flight point not found is not flown to: on foot, planned again at once")
     -- The continent's flight points on the map (Near found, Far not), the pins made anew as the game said.
@@ -3237,6 +3239,70 @@ end)()
     for _, leg in ipairs(shownWay and shownWay.legs or {}) do through = through or leg.kind == "portal" end
     check(shownWay and not through, "the portal the other side's: a Horde character's line goes without it")
     UnitFactionGroup = function() return "Alliance" end
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
+-- A portal a few yards across between floors one over the other (14: from the building's floor of tile 6179 up onto
+-- its roof, 35 yards on, as the Wizard's Sanctum's go up and down its tower): a hop between two looks, no leap of
+-- Planner.LEAP yards; the floor followed after it is the roof's, where it brings one, not the floor under it.
+;(function()
+    local s = Walk.SAMPLE
+    local function At(column, row) return 3 * Coords.TILE + column * s, -row * s end
+    local fu, fv = At(8, 8)     -- its trigger, on the building's floor
+    local ru, rv = At(20, 20)   -- where it brings one: the roof
+    local eu, ev = At(200, 200) -- a pin on the ground east of the building
+    player.map, player.x, player.y = 1414, (fu + 12000) / 24000, (20000 - fv) / 40000
+    waypoint = { uiMapID = 1414, position = CreateVector2D((eu + 12000) / 24000, (20000 - ev) / 40000) }
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Frames(8)
+    local now = GetTime() + 800
+    Planner.Track(1414, fu, fv, now)
+    local before = Planner.Floor()
+    player.x, player.y = (ru + 12000) / 24000, (20000 - rv) / 40000
+    Planner.Track(1414, ru, rv, now + 0.3)
+    local floor = Planner.Floor()
+    check(before and before[1] == 6179 and before[2] == 2 and floor and floor[1] == 6179 and floor[2] == 3,
+        "through a portal a few yards across, up onto the roof: the floor followed is the roof's, not the floor under it")
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
+-- A pin on ground of its own far from any floor one walks on (the mesa of tile 6177, 133 yards north of the courtyard;
+-- its lift, 8, out of the way): the walk to it ends only as near as one walks, so it is none and the journey looks for
+-- another way; none goes, and the line runs as near as one walks (the courtyard's edge), then straight to the pin, not
+-- straight from where it starts. (Without the hearthstone, and as the game's walking data covers every continent: no
+-- walk is off it, as the docks of these tests are, whose walks would stay as guessed.)
+;(function()
+    local s, Lifts = Walk.SAMPLE, ns.Lifts
+    local function At(column, row) return Coords.TILE + column * s, -row * s end
+    local cu, cv = At(136, 136) -- on the courtyard, over no hall
+    local mu, mv = At(240, 64)  -- on the mesa, far from its edges
+    local all, walk, hearth = Lifts.All, Search.Walk, Core.Character(ns.name).hearth
+    Lifts.Forget()
+    Lifts.All = function() return {} end
+    Search.Walk = function(...)
+        local points, cost, rest = walk(...)
+        if not points and cost == "off" then return nil end
+        return points, cost, rest
+    end
+    Core.Character(ns.name).hearth = nil
+    player.map, player.x, player.y = 1414, (cu + 12000) / 24000, (20000 - cv) / 40000
+    waypoint = { uiMapID = 1414, position = CreateVector2D((mu + 12000) / 24000, (20000 - mv) / 40000) }
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Frames(8)
+    local leg = shownWay and shownWay.legs[1]
+    local points = leg and leg.points or {}
+    local edge = points[#points - 1]
+    check(shownWay and #shownWay.legs == 1 and leg.kind == "walk" and #points >= 3 and edge
+        and math.abs(-edge.v / s - 128) < 0.5 and near(points[#points].u, mu) and near(points[#points].v, mv),
+        "a pin on a mesa no lift reaches, far from the courtyard: as near as one walks (its edge), then straight to it")
+    Lifts.All, Search.Walk, Core.Character(ns.name).hearth = all, walk, hearth
+    Lifts.Forget()
     player.map, player.x, player.y = 1429, 0.75, 0.3
     waypoint = nil
     W.Fire("USER_WAYPOINT_UPDATED")
