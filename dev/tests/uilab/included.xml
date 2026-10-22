@@ -1,0 +1,10 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <Script file="included.lua"/>
+    <!-- parentArray on a template: every frame that inherits it joins its parent's list -->
+    <Frame name="LabTestBaseTemplate" mixin="LabTestMixin" parentArray="Things" virtual="true">
+        <Size x="10" y="20"/>
+        <Scripts>
+            <OnLoad method="OnLoad"/>
+        </Scripts>
+    </Frame>
+</Ui>

@@ -65,6 +65,11 @@ return function(Lab)
     Lab.handler = nil   -- the game code's own (seterrorhandler)
     function Lab.Report(e)
         local msg = e.msg:gsub(Lab.root .. "/", "")
+        if Lab.blizzardLoading then
+            -- a script of Blizzard's own frames, made while its interface loads: it needs what the lab has not
+            Lab.Note("lab", "Blizzard's interface in the lab: " .. msg, { stack = e.stack })
+            return
+        end
         Lab.Note("error", msg, { stack = e.stack })
         if Lab.handler then
             local ok = pcall(Lab.handler, e.msg)
@@ -112,7 +117,7 @@ return function(Lab)
     Lab.kinds = {}
     function Lab.Kind(name, parent, docs, scripts)
         local k = { name = name, parent = parent and Lab.kinds[parent], methods = {}, docs = docs or {}, scripts = {} }
-        for _, sc in ipairs(scripts or {}) do k.scripts[sc] = true end
+        for _, sc in ipairs(scripts or {}) do k.scripts[sc:lower()] = sc end   -- the game takes any case
         Lab.kinds[name] = k
         return k.methods
     end
@@ -135,7 +140,14 @@ return function(Lab)
         end
     end
 
+    -- What the game has but the lab does not do: told once, with the place of the code that wanted it.
     local missing = {}
+    function Lab.Missing(text, level)
+        if missing[text] then return end
+        missing[text] = true
+        -- while Blizzard's own interface loads, it is the lab's own business (its log's "the lab")
+        Lab.Note(Lab.blizzardLoading and "lab" or "missing", text, { where = Lab.Caller(level or 4) })
+    end
     Lab.meta = {}
     function Lab.Meta(kindName)
         if Lab.meta[kindName] then return Lab.meta[kindName] end
@@ -151,7 +163,7 @@ return function(Lab)
                     if doc then
                         m = function()
                             local text = "the lab does not do " .. kindName .. ":" .. key .. "() yet (the game has it)"
-                            if not missing[text] then missing[text] = true; Lab.Note("missing", text, { where = Lab.Caller(3) }) end
+                            Lab.Missing(text)
                         end
                     end
                 end
@@ -175,13 +187,57 @@ return function(Lab)
         return false
     end
 
+    -- The script's name as the kind has it (the game takes "OnGamepadStick" for "OnGamePadStick"), or false.
     function Lab.ScriptAllowed(o, script)
+        if type(script) ~= "string" then return false end
         local k = Lab.kinds[S[o].kind]
+        local low = script:lower()
         while k do
-            if k.scripts[script] then return true end
+            if k.scripts[low] then return k.scripts[low] end
             k = k.parent
         end
         return false
+    end
+
+    -- SetScript and the rest, the same for frames, regions and animations: a script the kind does not have is an
+    -- error, as in the game; HookScript on no script sets it.
+    function Lab.ScriptMethods(M)
+        local function canonical(self, name, method)
+            local c = Lab.ScriptAllowed(self, name)
+            if not c then
+                error(("%s(): %s doesn't have a \"%s\" script"):format(method, S[self].kind, tostring(name)), 3)
+            end
+            return c
+        end
+        local function scripts(self)
+            local s = S[self]
+            s.scripts = s.scripts or {}
+            return s
+        end
+        function M:SetScript(name, fn)
+            name = canonical(self, name, "SetScript")
+            if fn ~= nil and type(fn) ~= "function" then error("SetScript(): handler must be a function or nil", 2) end
+            local s = scripts(self)
+            s.scripts[name] = fn
+            if s.hooks then s.hooks[name] = nil end
+            Lab.Touch()
+        end
+        function M:GetScript(name)
+            name = canonical(self, name, "GetScript")
+            return scripts(self).scripts[name]
+        end
+        function M:HasScript(name) return Lab.ScriptAllowed(self, name) and true or false end
+        function M:HookScript(name, fn)
+            name = canonical(self, name, "HookScript")
+            local s = scripts(self)
+            if not s.scripts[name] then
+                s.scripts[name] = fn
+                return
+            end
+            s.hooks = s.hooks or {}
+            s.hooks[name] = s.hooks[name] or {}
+            table.insert(s.hooks[name], fn)
+        end
     end
 
     -- A new object of a kind: its table (with the userdata the game's own objects carry at [0]) and its state.

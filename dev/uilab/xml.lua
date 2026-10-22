@@ -16,6 +16,7 @@ function xml.parse(text)
     local stack = { root }
     local i = 1
     local n = #text
+    local line, counted = 1, 1     -- the line of text[counted], counted on as the reader goes
     while i <= n do
         local lt = text:find("<", i, true)
         if not lt then
@@ -44,7 +45,9 @@ function xml.parse(text)
         else
             local tag, j = text:match("^<([%w_:%.%-]+)()", lt)
             if not tag then error("xml: bad tag at " .. lt) end
-            local el = { tag = tag, attrs = {}, children = {}, text = "", line = select(2, text:sub(1, lt):gsub("\n", "")) + 1 }
+            line = line + select(2, text:sub(counted, lt):gsub("\n", ""))
+            counted = lt + 1
+            local el = { tag = tag, attrs = {}, children = {}, text = "", line = line }
             while true do
                 local ws = text:match("^%s*()", j)
                 j = ws

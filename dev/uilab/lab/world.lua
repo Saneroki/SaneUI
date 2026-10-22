@@ -139,6 +139,7 @@ return function(Lab)
     G.UnitExists = function(unit) return U(unit) ~= nil end
     G.UnitName = function(unit) local u = U(unit); if u then return u.name, u.surname end return nil end
     G.UnitNameUnmodified = G.UnitName
+    G.UnitNameUnmodified = G.UnitName
     G.UnitFullName = function(unit) local u = U(unit); if u then return u.name, u.realm or Lab.world.realm end end
     G.GetUnitName = function(unit, showServer) local u = U(unit); return u and World.FullName(u) end
     G.UnitClass = function(unit) local u = U(unit); if u then local c = class(u); return c.name, c.file, c.id end end
@@ -412,6 +413,11 @@ return function(Lab)
         return e and (type(e) == "table" and e[1] or e)
     end
     G.C_Container = {
+        -- the bags' slots among the character's (Blizzard's CONTAINER_BAG_OFFSET: 30 before the first bag)
+        ContainerIDToInventoryID = function(b)
+            if type(b) ~= "number" or b < 1 then error("ContainerIDToInventoryID(): a bag's ID expected", 2) end
+            return 30 + b
+        end,
         GetContainerNumSlots = function(b) local bg = bag(b); return bg and bg.size or 0 end,
         GetContainerItemID = function(b, s) return World.BagItemID(b, s) end,
         GetContainerItemLink = function(b, s) local id = World.BagItemID(b, s); return id and World.Link(id) end,

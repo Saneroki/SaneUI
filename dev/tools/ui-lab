@@ -208,6 +208,23 @@ def font_file(path):
     return hit
 
 
+def blp_raw(path):
+    """A BLP2 file of uncompressed pixels (encoding 3, BGRA), which the image library does not read; else None."""
+    if path.suffix.lower() != ".blp":
+        return None
+    import struct
+    from PIL import Image
+    data = path.read_bytes()
+    if data[:4] != b"BLP2" or len(data) < 148 or data[8] != 3:
+        return None
+    width, height = struct.unpack_from("<II", data, 12)
+    offset = struct.unpack_from("<I", data, 20)[0]
+    raw = data[offset:offset + width * height * 4]
+    if len(raw) < width * height * 4:
+        return None
+    return Image.frombytes("RGBA", (width, height), raw, "raw", "BGRA")
+
+
 def png_of(path):
     """The texture as PNG bytes (BLP and TGA converted once, kept in the cache)."""
     if path.suffix.lower() == ".png":
@@ -217,7 +234,7 @@ def png_of(path):
     if not out.exists():
         from PIL import Image
         out.parent.mkdir(parents=True, exist_ok=True)
-        img = Image.open(path)
+        img = blp_raw(path) or Image.open(path)
         img.load()
         img = img.convert("RGBA")
         img.save(out, optimize=False, compress_level=1)

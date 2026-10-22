@@ -1,0 +1,177 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <!--
+        The scene xml-templates.lua: a window of the lab's own built from XML, with Blizzard's templates in it. What
+        it shows of the reader: a mixin from an inline Script, a virtual template inherited, Size and Anchors
+        (relativeKey, $parent), Layers, Frames, parentKey and parentArray, KeyValues (a global among them), Scripts
+        (method, function, inline, inherit), the button's texture and fonts, a slider's thumb, a bar's fill and an
+        animation.
+    -->
+    <Script>
+        LabXMLWindowMixin = {}
+
+        function LabXMLWindowMixin:OnLoad()
+            self.Title:SetText(self.titleText)
+            self.Tabs:AddTab("Buttons")
+            self.Tabs:AddTab("Values")
+            self.Tabs:SetTabSelectedCallback(function(id) self:ShowPage(id) end)
+            self.Tabs:SetTab(1)
+        end
+
+        function LabXMLWindowMixin:ShowPage(id)
+            for i, page in ipairs(self.Pages) do page:SetShown(i == id) end
+        end
+
+        function LabXMLWindowMixin:OnShow()
+            self.FadeIn:Play()
+        end
+
+        function LabXMLCheck_OnClick(check)
+            print(check:GetChecked() and "ticked" or "not ticked")
+        end
+
+        function LabXMLWindow_Close(button)
+            button:GetParent():GetParent():Hide()
+        end
+    </Script>
+
+    <!-- A row: its words at the left; a page holds a few -->
+    <FontString name="LabXMLLabelTemplate" inherits="GameFontHighlight" justifyH="LEFT" virtual="true">
+        <Size x="120" y="20"/>
+    </FontString>
+
+    <Frame name="LabXMLWindowTemplate" inherits="BackdropTemplate" mixin="LabXMLWindowMixin" toplevel="true"
+        enableMouse="true" movable="true" virtual="true">
+        <Size x="420" y="300"/>
+        <KeyValues>
+            <KeyValue key="backdropInfo" value="BACKDROP_DIALOG_32_32" type="global"/>
+            <KeyValue key="titleText" value="A window from XML"/>
+        </KeyValues>
+        <Layers>
+            <Layer level="ARTWORK">
+                <FontString parentKey="Title" inherits="GameFontNormalLarge">
+                    <Anchors>
+                        <Anchor point="TOP" y="-18"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Frame parentKey="Tabs" inherits="TabSystemTemplate">
+                <KeyValues>
+                    <KeyValue key="minTabWidth" value="90" type="number"/>
+                </KeyValues>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeKey="$parent" relativePoint="BOTTOMLEFT" x="18" y="2"/>
+                </Anchors>
+            </Frame>
+            <Frame name="$parentButtons" parentArray="Pages">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="24" y="-50"/>
+                    <Anchor point="BOTTOMRIGHT" x="-24" y="20"/>
+                </Anchors>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <FontString parentKey="Label" inherits="LabXMLLabelTemplate" text="OKAY">
+                            <Anchors>
+                                <Anchor point="TOPLEFT"/>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <Button parentKey="Okay" inherits="UIPanelButtonTemplate" text="OKAY">
+                        <Size x="120" y="22"/>
+                        <Anchors>
+                            <Anchor point="LEFT" relativeKey="$parent.Label" relativePoint="RIGHT" x="8"/>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>print("Okay was clicked with " .. button)</OnClick>
+                        </Scripts>
+                    </Button>
+                    <CheckButton parentKey="Check" inherits="UICheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeKey="$parent.Label" relativePoint="BOTTOMLEFT" x="-4" y="-12"/>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick function="LabXMLCheck_OnClick" inherit="append"/>
+                        </Scripts>
+                    </CheckButton>
+                    <EditBox parentKey="Edit" inherits="InputBoxTemplate" autoFocus="false">
+                        <Size x="200" y="20"/>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeKey="$parent.Check" relativePoint="BOTTOMLEFT" x="8" y="-12"/>
+                        </Anchors>
+                    </EditBox>
+                    <Button parentKey="Close" inherits="UIPanelButtonTemplate" text="CLOSE">
+                        <Size x="100" y="22"/>
+                        <Anchors>
+                            <Anchor point="BOTTOMRIGHT"/>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick function="LabXMLWindow_Close"/>
+                        </Scripts>
+                    </Button>
+                </Frames>
+            </Frame>
+            <Frame name="$parentValues" parentArray="Pages" hidden="true">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="24" y="-50"/>
+                    <Anchor point="BOTTOMRIGHT" x="-24" y="20"/>
+                </Anchors>
+                <Frames>
+                    <StatusBar parentKey="Bar" minValue="0" maxValue="100" defaultValue="20">
+                        <Size x="260" y="14"/>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" y="-8"/>
+                        </Anchors>
+                        <BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
+                        <BarColor r="0.2" g="0.8" b="0.3"/>
+                        <Layers>
+                            <Layer level="BACKGROUND">
+                                <Texture setAllPoints="true">
+                                    <Color r="0" g="0" b="0" a="0.5"/>
+                                </Texture>
+                            </Layer>
+                        </Layers>
+                    </StatusBar>
+                    <Slider parentKey="Slider" minValue="0" maxValue="100" defaultValue="40" valueStep="1"
+                        obeyStepOnDrag="true" orientation="HORIZONTAL" enableMouse="true">
+                        <Size x="260" y="17"/>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeKey="$parent.Bar" relativePoint="BOTTOMLEFT" y="-20"/>
+                        </Anchors>
+                        <Layers>
+                            <Layer level="BACKGROUND">
+                                <Texture>
+                                    <Size y="6"/>
+                                    <Anchors>
+                                        <Anchor point="LEFT"/>
+                                        <Anchor point="RIGHT"/>
+                                    </Anchors>
+                                    <Color r="0.2" g="0.2" b="0.2"/>
+                                </Texture>
+                            </Layer>
+                        </Layers>
+                        <ThumbTexture file="Interface\Buttons\UI-SliderBar-Button-Horizontal">
+                            <Size x="32" y="32"/>
+                        </ThumbTexture>
+                        <Scripts>
+                            <OnValueChanged>self:GetParent().Bar:SetValue(value)</OnValueChanged>
+                        </Scripts>
+                    </Slider>
+                </Frames>
+            </Frame>
+        </Frames>
+        <Animations>
+            <AnimationGroup parentKey="FadeIn" setToFinalAlpha="true">
+                <Alpha fromAlpha="0" toAlpha="1" duration="0.4" smoothing="OUT"/>
+            </AnimationGroup>
+        </Animations>
+        <Scripts>
+            <OnLoad method="OnLoad" inherit="prepend"/>
+            <OnShow method="OnShow"/>
+            <OnMouseDown>self:StartMoving()</OnMouseDown>
+            <OnMouseUp>self:StopMovingOrSizing()</OnMouseUp>
+        </Scripts>
+    </Frame>
+</Ui>

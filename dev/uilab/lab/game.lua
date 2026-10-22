@@ -73,6 +73,76 @@ return function(Lab)
         for i = 1, select("#", ...) do out[i] = tostring((select(i, ...))) end
         return unpack(out, 1, select("#", ...))
     end
+    -- The client's extensions of string, table and math (LuaStringExtensions, LuaTableExtensions, LuaMathExtensions
+    -- in Blizzard's documentation), as documented there.
+    local WS = " \r\n\t"
+    local function set(chars) return "[" .. (chars or WS):gsub("[%]%^%-%%]", "%%%0") .. "]" end
+    function string.ltrim(s, chars) return (s:gsub("^" .. set(chars) .. "+", "")) end
+    function string.rtrim(s, chars) return (s:gsub(set(chars) .. "+$", "")) end
+    function string.contains(s, sub) return s:find(sub, 1, true) ~= nil end
+    function string.startswith(s, prefix) return s:sub(1, #prefix) == prefix end
+    function string.endswith(s, suffix) return suffix == "" or s:sub(-#suffix) == suffix end
+    local frozen = setmetatable({}, { __mode = "k" })
+    function table.contains(t, v) for _, x in pairs(t) do if x == v then return true end end return false end
+    function table.count(t) local n = 0 for _ in pairs(t) do n = n + 1 end return n end
+    function table.create() return {} end
+    function table.indexof(t, v) local i = 1 while t[i] ~= nil do if t[i] == v then return i end i = i + 1 end return nil end
+    function table.keys(t) local out = {} for k in pairs(t) do out[#out + 1] = k end return out end
+    function table.values(t) local out = {} for _, v in pairs(t) do out[#out + 1] = v end return out end
+    function table.isempty(t) return next(t) == nil end
+    function table.getcountinfo(t)
+        local n, ints, most = 0, 0, 0
+        for k in pairs(t) do
+            n = n + 1
+            if type(k) == "number" and k > 0 and k % 1 == 0 then ints = ints + 1; most = math.max(most, k) end
+        end
+        return n, ints, most
+    end
+    function table.removeunordered(t, i)
+        local n = #t
+        i = i or n
+        if i < 1 or i > n then return nil end
+        local v = t[i]
+        t[i] = t[n]
+        t[n] = nil
+        return v
+    end
+    function table.removevalue(t, v)
+        local removed = 0
+        for i = #t, 1, -1 do if t[i] == v then table.remove(t, i); removed = removed + 1 end end
+        return removed
+    end
+    function table.freeze(t)
+        local mt = getmetatable(t) or {}
+        local inner = {}
+        for k, v in pairs(t) do inner[k] = v; t[k] = nil end
+        mt.__index = inner
+        mt.__newindex = function() error("attempt to modify a frozen table", 2) end
+        mt.__metatable = false
+        setmetatable(t, mt)
+        frozen[t] = true
+        return t
+    end
+    function table.isfrozen(t) return frozen[t] or false end
+    function math.clamp(v, lo, hi) return math.min(math.max(v, lo), hi) end
+    function math.isnan(v) return v ~= v end
+    function math.isinf(v) return v == math.huge or v == -math.huge end
+    function math.isfinite(v) return v == v and v ~= math.huge and v ~= -math.huge end
+    function math.lerp(a, b, t) return a + (b - a) * t end
+    function math.normalize(v, lo, hi) return (v - lo) / (hi - lo) end
+    function math.remap(v, a, b, c, d) return c + (v - a) / (b - a) * (d - c) end
+    function math.round(v, places)
+        local m = 10 ^ (places or 0)
+        local x = v * m
+        x = x >= 0 and math.floor(x + 0.5) or math.ceil(x - 0.5)
+        return x / m
+    end
+    function math.saturate(v) return math.min(math.max(v, 0), 1) end
+    function math.sign(v) return v > 0 and 1 or v < 0 and -1 or 0 end
+    function math.wrap(v, lo, hi)
+        if lo == hi then return lo end
+        return lo + (v - lo) % (hi - lo)
+    end
     function table.wipe(t) for k in pairs(t) do t[k] = nil end return t end
     G.wipe, G.tinsert, G.tremove, G.sort, G.getn, G.foreach = table.wipe, table.insert, table.remove, table.sort, table.getn, table.foreach
     G.tContains = function(t, v) for _, x in pairs(t) do if x == v then return true end end return false end
@@ -125,7 +195,11 @@ return function(Lab)
     G.canaccesstable = function() return true end
     G.forceinsecure = function() end
     G.securecall = function(fn, ...)
-        if type(fn) == "string" then fn = G[fn] end
+        if type(fn) == "string" then
+            local name = fn
+            fn = G[name]
+            if type(fn) ~= "function" then error("securecall(): no function " .. name, 2) end
+        end
         return Lab.Call(fn, ...)
     end
     G.securecallfunction = G.securecall
@@ -249,7 +323,10 @@ return function(Lab)
     G.PlaySound = function(kit, channel) Lab.Note("sound", "PlaySound " .. tostring(kit)); return true, 1 end
     G.PlaySoundFile = function(file, channel) Lab.Note("sound", "PlaySoundFile " .. tostring(file)); return true, 1 end
     G.StopSound = function() end
-    G.print = function(...)
+    G.C_Sound = { PlaySound = G.PlaySound, PlaySoundFile = G.PlaySoundFile, StopSound = G.StopSound }
+    -- print's lines go to the page's log (the lab's own chat frame), and to a chat frame of the code's own if it set
+    -- one; Blizzard's print (Blizzard_PrintHandler) hands them here (lab/blizzard.lua).
+    function Lab.Print(...)
         local parts = {}
         for i = 1, select("#", ...) do parts[i] = tostring((select(i, ...))) end
         local text = table.concat(parts, " ")
@@ -257,6 +334,55 @@ return function(Lab)
         local chat = rawget(G, "DEFAULT_CHAT_FRAME")
         if chat and chat ~= Lab.labChat and type(chat.AddMessage) == "function" then Lab.Call(chat.AddMessage, chat, text) end
     end
+    G.print = Lab.Print
+    -- The chat windows' settings, which the client keeps per character (functions its documentation leaves out):
+    -- the first two as a new character has them, General and Combat Log, the others empty.
+    local chatWindows = {}
+    for i = 1, 10 do
+        chatWindows[i] = { name = i == 1 and "General" or i == 2 and "Combat Log" or "", size = 14, r = 0, g = 0, b = 0,
+            alpha = 0.25, shown = i <= 2, locked = i == 1, docked = i <= 2 and i or nil, through = false,
+            messages = {}, channels = {} }
+    end
+    for _, kind in ipairs({ "SYSTEM", "SAY", "EMOTE", "YELL", "WHISPER", "PARTY", "PARTY_LEADER", "RAID", "RAID_LEADER",
+        "RAID_WARNING", "GUILD", "OFFICER", "MONSTER_SAY", "MONSTER_YELL", "MONSTER_EMOTE", "MONSTER_WHISPER",
+        "MONSTER_BOSS_EMOTE", "MONSTER_BOSS_WHISPER", "ERRORS", "AFK", "DND", "IGNORED", "CHANNEL" }) do
+        table.insert(chatWindows[1].messages, kind)
+    end
+    local function win(i)
+        local w = chatWindows[tonumber(i) or 0]
+        if not w then error("chat window " .. tostring(i) .. " out of range", 3) end
+        return w
+    end
+    local function drop(list, value)
+        for k = #list, 1, -1 do if list[k] == value then table.remove(list, k) end end
+    end
+    G.GetChatWindowInfo = function(i)
+        local w = win(i)
+        return w.name, w.size, w.r, w.g, w.b, w.alpha, w.shown, w.locked, w.docked, w.through
+    end
+    G.GetChatWindowMessages = function(i) return unpack(win(i).messages) end
+    G.GetChatWindowChannels = function(i)
+        local out = {}
+        for _, c in ipairs(win(i).channels) do out[#out + 1] = c; out[#out + 1] = 0 end
+        return unpack(out)
+    end
+    G.GetChatWindowSavedPosition = function(i) local w = win(i); return w.point or "BOTTOMLEFT", w.x or 0, w.y or 0 end
+    G.GetChatWindowSavedDimensions = function(i) local w = win(i); return w.width or 0, w.height or 0 end
+    G.SetChatWindowName = function(i, name) win(i).name = name end
+    G.SetChatWindowSize = function(i, size) win(i).size = size end
+    G.SetChatWindowColor = function(i, r, g, b) local w = win(i); w.r, w.g, w.b = r, g, b end
+    G.SetChatWindowAlpha = function(i, a) win(i).alpha = a end
+    G.SetChatWindowShown = function(i, on) win(i).shown = on and true or false end
+    G.SetChatWindowLocked = function(i, on) win(i).locked = on and true or false end
+    G.SetChatWindowDocked = function(i, n) win(i).docked = n end
+    G.SetChatWindowUninteractable = function(i, on) win(i).through = on and true or false end
+    G.SetChatWindowSavedPosition = function(i, point, x, y) local w = win(i); w.point, w.x, w.y = point, x, y end
+    G.SetChatWindowSavedDimensions = function(i, width, height) local w = win(i); w.width, w.height = width, height end
+    G.AddChatWindowMessages = function(i, kind) drop(win(i).messages, kind); table.insert(win(i).messages, kind) end
+    G.RemoveChatWindowMessages = function(i, kind) drop(win(i).messages, kind) end
+    G.AddChatWindowChannel = function(i, name) drop(win(i).channels, name); table.insert(win(i).channels, name) end
+    G.RemoveChatWindowChannel = function(i, name) drop(win(i).channels, name) end
+
     G.ReloadUI = function() Lab.reload = true end
     G.C_UI = { Reload = G.ReloadUI }
     G.Screenshot = function() Lab.Note("note", "Screenshot()") end
@@ -304,12 +430,21 @@ return function(Lab)
     G.SetCVar = function(name, value) Lab.cvars[name] = value ~= nil and tostring(value) or nil; Lab.Fire("CVAR_UPDATE", name, value) return true end
     G.GetCVarBool = function(name) local v = Lab.cvars[name]; return v == "1" or v == "true" end
     G.GetCVarDefault = function(name) return Lab.cvarDefaults[name] end
+    -- the client's defaults of the CVars the lab knows (userFontScale: read by Blizzard's shared templates)
     Lab.cvars = { scriptErrors = "1", uiScale = "1", useUiScale = "0", colorChatNamesByClass = "1", chatStyle = "im",
-        whisperMode = "inline" }
+        whisperMode = "inline", userFontScale = "1", userFontScaleGlue = "1" }
     Lab.cvarDefaults = {}
     for k, v in pairs(Lab.cvars) do Lab.cvarDefaults[k] = v end
     G.C_CVar = { GetCVar = G.GetCVar, SetCVar = G.SetCVar, GetCVarBool = G.GetCVarBool, GetCVarDefault = G.GetCVarDefault,
-        RegisterCVar = function(name, value) if Lab.cvars[name] == nil then Lab.cvars[name] = tostring(value) end end }
+        RegisterCVar = function(name, value) if Lab.cvars[name] == nil then Lab.cvars[name] = tostring(value) end end,
+        AreCVarsLoaded = function() return true end,
+        -- a CVar the lab does not know is not there, as an unknown one in the game
+        GetCVarInfo = function(name)
+            local v = Lab.cvars[name]
+            if v == nil then return nil end
+            return v, Lab.cvarDefaults[name] or v, false, false, false, false, false
+        end }
+    G.C_RestrictedActions = { IsAddOnRestrictionActive = function() return false end }
 
     Lab.addons = {}   -- [name] = { title, notes, fields = {}, loaded }
     local function addon(name)
@@ -353,7 +488,159 @@ return function(Lab)
     G.Constants = {}
     for name, c in pairs(Lab.docs.constants) do G.Constants[name] = c end
     G.Constants.CharacterNameSeparatorConsts = G.Constants.CharacterNameSeparatorConsts or { CHARACTERNAME_SURNAME_SEPARATOR = " " }
+    -- The bag slots the documentation names by the client's own globals: as the game's bag indices count them
+    -- (the backpack, the bags up to Enum.BagIndex.Bag_4, then the reagent bag).
+    local bagIndex = G.Enum.BagIndex or {}
+    local inv = G.Constants.InventoryConstants or {}
+    G.Constants.InventoryConstants = inv
+    inv.NumBagSlots = inv.NumBagSlots or bagIndex.Bag_4 or 4
+    inv.NumReagentBagSlots = inv.NumReagentBagSlots or ((bagIndex.ReagentBag or 5) - (bagIndex.Bag_4 or 4))
 
+    -- What the game documents but the lab does not do: there as in the game (a namespace, a function), and
+    -- calling it says so. G answers for a documented name the lab has not given; Lab.Documented does the same for
+    -- the namespaces the lab has (called when all of the lab's API is in, host.lua).
+    local stubs = {}
+    local function stub(label)
+        local f = stubs[label]
+        if not f then
+            f = function() Lab.Missing("the lab does not do " .. label .. "() yet (the game has it)", 3) end
+            stubs[label] = f
+        end
+        return f
+    end
+    local function documented(t, name)
+        local names = Lab.docs.namespaces[name]
+        local mt = getmetatable(t)
+        if not mt then mt = {}; setmetatable(t, mt) end
+        if mt.__index then return t end
+        mt.__index = function(_, key)
+            if names[key] then return stub(name .. "." .. key) end
+        end
+        return t
+    end
+    function Lab.Documented()
+        for name in pairs(Lab.docs.namespaces) do
+            local t = rawget(G, name)
+            if type(t) == "table" then documented(t, name) end
+        end
+    end
+    setmetatable(G, { __index = function(_, key)
+        if type(key) ~= "string" then return nil end
+        if Lab.docs.namespaces[key] then
+            local t = documented({}, key)
+            rawset(G, key, t)
+            return t
+        end
+        if Lab.docs.globals[key] then return stub(key) end
+    end })
+
+    -- Of the client's script functions (FrameScript), those Blizzard's shared code builds on.
+    -- A secure delegate calls its function in a protected call: an error is reported and returns nothing.
+    G.CreateSecureDelegate = function(fn)
+        if type(fn) ~= "function" then error("CreateSecureDelegate(): a function expected", 2) end
+        return function(...) return Lab.Call(fn, ...) end
+    end
+    G.securecallmethod = function(object, method, ...) return Lab.Call(object[method], object, ...) end
+    G.GetCallstackHeight = function() return 1 end
+    G.GetErrorCallstackHeight = function() return nil end
+    G.SetErrorCallstackHeight = function() end
+    G.GetCurrentEventID = function() return nil end
+    G.RunScript = function(code)
+        local chunk, err = loadstring(code, "RunScript")
+        if not chunk then error(err, 2) end
+        setfenv(chunk, G)
+        return chunk()
+    end
+    G.scrub = function(...) return ... end
+    G.scrubsecretvalues = function(...) return ... end
+    G.hasanysecretvalues = function() return false end
+    G.canaccessallvalues = function() return true end
+    G.canaccesssecrets = function() return true end
+    G.securecopy = function(v) return v end
+    G.dropsecretaccess = function() end
+    -- Events heard by a function (RegisterEventCallback; a frame's own has the frame as its owner): called after
+    -- the frames, in the order registered, with the owner (nil for the global one) and the event's arguments.
+    Lab.eventCallbacks = {}
+    function Lab.AddEventCallback(event, fn, owner, units)
+        if type(event) ~= "string" or not Lab.KnownEvent(event) then
+            error(('RegisterEventCallback(): Attempt to register unknown event "%s"'):format(tostring(event)), 3)
+        end
+        local list = Lab.eventCallbacks[event] or {}
+        Lab.eventCallbacks[event] = list
+        for _, c in ipairs(list) do if c.fn == fn and c.owner == owner then c.units = units return true end end
+        list[#list + 1] = { fn = fn, owner = owner, units = units }
+        return true
+    end
+    function Lab.RemoveEventCallback(event, owner, fn)
+        local list = Lab.eventCallbacks[event] or {}
+        for i = #list, 1, -1 do
+            if list[i].owner == owner and (fn == nil or list[i].fn == fn) then table.remove(list, i) end
+        end
+    end
+    G.RegisterEventCallback = function(event, fn) return Lab.AddEventCallback(event, fn) end
+    G.RegisterUnitEventCallback = function(event, fn, unit1, unit2) return Lab.AddEventCallback(event, fn, nil, { unit1, unit2 }) end
+    G.UnregisterEventCallback = function(event, fn) Lab.RemoveEventCallback(event, nil, fn) end
+    G.UnregisterUnitEventCallback = G.UnregisterEventCallback
+
+    -- The client's kiosk mode (the game on show at a fair, not in its documentation): off, as at home.
+    G.Kiosk = { IsEnabled = function() return false end }
+    -- No gamepad in the lab: the client's cursor control for it (not in its documentation) does nothing.
+    G.CanAutoSetGamePadCursorControl = function() return false end
+    G.SetGamePadCursorControl = function() end
+    G.IsGamePadCursorControlEnabled = function() return false end
+
+    -- Edit Mode's layouts, as the client keeps them for the account (EditModeManager's documentation): the saved
+    -- ones (Blizzard's Lua puts its presets before them) and the active one, counted with the presets; every change
+    -- comes back as EDIT_MODE_LAYOUTS_UPDATED, as from the server. The default layout is the lab's choice: Modern.
+    local editMode = { layouts = {}, activeLayout = 1, account = {} }
+    Lab.editMode = editMode
+    local function copy(v)
+        if type(v) ~= "table" then return v end
+        local out = {}
+        for k, x in pairs(v) do out[k] = copy(x) end
+        return out
+    end
+    local function layouts() return { layouts = copy(editMode.layouts), activeLayout = editMode.activeLayout } end
+    local function updated() Lab.Fire("EDIT_MODE_LAYOUTS_UPDATED", layouts(), false) end
+    Lab.EditModeLayouts = layouts
+    G.C_EditMode = {
+        GetLayouts = layouts,
+        SaveLayouts = function(info)
+            local saved = {}
+            local preset = G.Enum.EditModeLayoutType and G.Enum.EditModeLayoutType.Preset
+            for _, l in ipairs(info.layouts or {}) do
+                if l.layoutType ~= preset then saved[#saved + 1] = copy(l) end
+            end
+            editMode.layouts, editMode.activeLayout = saved, info.activeLayout or editMode.activeLayout
+        end,
+        SetActiveLayout = function(i) editMode.activeLayout = i; updated() end,
+        OnLayoutAdded = function(i, activate) if activate then editMode.activeLayout = i end; updated() end,
+        OnLayoutDeleted = function(i)
+            if editMode.activeLayout == i then editMode.activeLayout = 1
+            elseif editMode.activeLayout > i then editMode.activeLayout = editMode.activeLayout - 1 end
+            updated()
+        end,
+        OnEditModeExit = function() end,
+        GetEditModeDefaultLayout = function() return G.Enum.EditModePresetLayouts and G.Enum.EditModePresetLayouts.Modern or 0 end,
+        GetAccountSettings = function()
+            local out = {}
+            for _, v in pairs(G.Enum.EditModeAccountSetting or {}) do
+                out[#out + 1] = { setting = v, value = editMode.account[v] or 0 }
+            end
+            table.sort(out, function(a, b) return a.setting < b.setting end)
+            return out
+        end,
+        SetAccountSetting = function(setting, value) editMode.account[setting] = value end,
+        IsValidLayoutName = function(name) return type(name) == "string" and name:match("%S") ~= nil end,
+    }
+
+    -- The settings panel opens on the client's event, as SettingsUtil documents it.
+    G.C_SettingsUtil = {
+        OpenSettingsPanel = function(id, element) Lab.Fire("SETTINGS_PANEL_OPEN", id, element) end,
+        NotifySettingsLoaded = function() Lab.Fire("SETTINGS_LOADED") end,
+    }
+    G.C_EventUtils = { IsEventValid = function(event) return Lab.KnownEvent(event) and true or false end,
+        IsCallbackEvent = function() return false end }
     Lab.extraEvents = {}
     for _, e in ipairs({ "ADDON_LOADED", "PLAYER_LOGIN", "PLAYER_LOGOUT", "PLAYER_ENTERING_WORLD", "VARIABLES_LOADED",
         "SPELLS_CHANGED", "UPDATE_BINDINGS", "DISPLAY_SIZE_CHANGED", "UI_SCALE_CHANGED", "CVAR_UPDATE" }) do

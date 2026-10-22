@@ -38,6 +38,7 @@ part("messages")
 part("tooltip")
 part("anim")
 part("templates")
+part("xmlui")
 part("input")
 part("render")
 
@@ -101,6 +102,10 @@ local function gameFrames()
         tooltip:SetPoint("BOTTOMRIGHT", ui, "BOTTOMRIGHT", -13, 64)
     end
     G.GameTooltip_Hide = function() G.GameTooltip:Hide() end
+    -- Of the game's own windows the lab has none (bags, the micro menu): what Blizzard's shared code calls of them
+    -- does nothing.
+    G.CloseAllBags = function() end
+    G.UpdateMicroButtons = function() end
 end
 
 -- Saved variables: kept by the server between runs, as the game keeps them in WTF.
@@ -164,8 +169,26 @@ local function newAddon(name, fields)
     return a
 end
 
--- An addon from its TOC, as the game reads it: its fields, its files in order (XML files are not read by the lab
--- yet: it says so), its saved variables.
+-- Sane UI's Core catches its errors and those of its modules (its guards) and keeps them in its error log
+-- (/sane errors): the lab shows each one of this run as an error, with the place the log has for it.
+local function coreErrors()
+    local Core = rawget(G, "SaneUI") and G.SaneUI.Core
+    if type(Core) ~= "table" or type(Core.NoteError) ~= "function" then return end
+    local function show(label, text)
+        text = tostring(text):gsub(ROOT .. "/", "")
+        local first, rest = text:match("^([^\n]*)\n?(.*)$")
+        Lab.Note("error", "Sane UI caught (" .. tostring(label) .. "): " .. first, { stack = rest ~= "" and rest or nil })
+    end
+    for _, e in ipairs(Core.log or {}) do show(e.label, e.text) end
+    local note = Core.NoteError
+    Core.NoteError = function(label, text, ...)
+        show(label, text)
+        return note(label, text, ...)
+    end
+end
+
+-- An addon from its TOC, as the game reads it: its fields, its files in order (Lua, and XML with the Lua files
+-- its <Script>s name), its saved variables.
 local function loadTOC(path)
     local full = path:sub(1, 1) == "/" and path or (ROOT .. "/" .. path)
     local f = io.open(full)
@@ -190,9 +213,10 @@ local function loadTOC(path)
         if file:lower():match("%.lua$") then
             runFile(p, name, a.ns)
         elseif file:lower():match("%.xml$") then
-            Lab.Note("missing", "the lab does not read XML files yet: " .. Lab.Short(p) .. " left out")
+            Lab.LoadXML(p, { addon = name, ns = a.ns, run = function(lua) runFile(lua, name, a.ns) end })
         end
     end
+    if name == "SaneUI" then coreErrors() end   -- before its saved log is read: this run's errors only
     addonLoaded(name)
     return a.ns
 end
@@ -206,7 +230,12 @@ function SceneAPI.Addon(name, ...)
     local a = newAddon(name, { Title = name })
     for i = 1, select("#", ...) do
         local file = select(i, ...)
-        runFile(file:sub(1, 1) == "/" and file or (ROOT .. "/" .. file), name, a.ns)
+        local path = file:sub(1, 1) == "/" and file or (ROOT .. "/" .. file)
+        if path:lower():match("%.xml$") then
+            Lab.LoadXML(path, { addon = name, ns = a.ns, run = function(lua) runFile(lua, name, a.ns) end })
+        else
+            runFile(path, name, a.ns)
+        end
     end
     return a.ns
 end
@@ -220,6 +249,7 @@ function SceneAPI.Say(kind, from, text, channel) Lab.World.Chat(kind, from, text
 function SceneAPI.Fire(event, ...) Lab.Fire(event, ...) end
 function SceneAPI.After(seconds, fn) G.C_Timer.After(seconds, fn) end
 function SceneAPI.Note(text) Lab.Note("note", tostring(text)) end
+function SceneAPI.Slash(line) Lab.Slash(line) end
 function SceneAPI.Combat(on) Lab.world.combat = on and true or nil; Lab.Fire(on and "PLAYER_REGEN_DISABLED" or "PLAYER_REGEN_ENABLED") end
 SceneAPI.world = function() return Lab.world end
 
@@ -235,6 +265,8 @@ local function start(msg)
     gameFrames()
     part("world")
     Lab.World.Load(msg.world or "default")
+    Lab.LoadBlizzard("game")
+    Lab.Documented()
     if msg.scene then
         local path = ROOT .. "/" .. msg.scene
         local chunk, err = loadfile(path)
@@ -252,6 +284,7 @@ local function start(msg)
     Lab.loggedIn = true
     Lab.Fire("PLAYER_LOGIN")
     Lab.Fire("PLAYER_ENTERING_WORLD", not msg.reload, msg.reload and true or false)
+    Lab.Fire("EDIT_MODE_LAYOUTS_UPDATED", Lab.EditModeLayouts(), true)   -- the account's layouts, as the login sends them
     for _, fn in ipairs(logins) do Lab.Call(fn) end
     Lab.World.Start()
 end

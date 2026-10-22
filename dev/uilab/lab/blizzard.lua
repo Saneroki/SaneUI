@@ -1,7 +1,8 @@
 -- What the game's own interface gives every addon before it loads, taken from Blizzard's code itself
 -- (references/BlizzardInterfaceCode): the client's named colours and global strings (from its tables, where the
--- lab's server has them), Blizzard's shared Lua (Mixin, tables, colours, pools, callbacks, the backdrop) and its
--- font objects (GameFontNormal and the rest, read from its font XML).
+-- lab's server has them), and Blizzard's addons the game loads before any addon, read from their TOCs, Lua and XML
+-- (lab/xmlui.lua) alike: the shared code and templates (Mixin, pools, callbacks, the backdrop, the buttons, tabs,
+-- scroll boxes, menus), the font objects (GameFontNormal and the rest), the panel manager and the settings panel.
 return function(Lab)
     local S = Lab.S
     local G = Lab.G
@@ -104,45 +105,116 @@ return function(Lab)
     G.C_CurveUtil = { CreateCurve = function() return setmetatable({ points = {} }, Curve) end,
         CreateColorCurve = function() return setmetatable({ points = {} }, Curve) end }
 
-    -- Blizzard's Lua files ------------------------------------------------------------------------------------------------
-    -- A file runs as the game runs an addon's file: its folder's name and a table of its own as ...
+    -- Blizzard's addons ---------------------------------------------------------------------------------------------------
+    -- Read from their TOCs as this client reads them: its load groups (camelot, mainline), its family (Mainline) and
+    -- game (Camelot) in the paths, the game's side and not the login screen's; each one's dependencies first. A file
+    -- runs as the game runs an addon's file: its folder's name and a table of its own as ...; one that stops (it
+    -- needs what the lab has not) is a line of the lab's own, and the rest goes on.
+    local GAME_TYPES = { camelot = true, mainline = true }
+    local function loads(conditions)
+        local allow, deny = nil, false
+        for list in conditions:gmatch("%[AllowLoadGameType ([^%]]+)%]") do
+            allow = allow or false
+            for t in list:gmatch("[^,%s]+") do if GAME_TYPES[t:lower()] then allow = true end end
+        end
+        for list in conditions:gmatch("%[ExcludeLoadGameType ([^%]]+)%]") do
+            for t in list:gmatch("[^,%s]+") do if GAME_TYPES[t:lower()] then deny = true end end
+        end
+        for side in conditions:gmatch("%[AllowLoad (%a+)%]") do
+            if side:lower() == "glue" then deny = true end
+        end
+        return allow ~= false and not deny
+    end
+    Lab.BlizzardLoads = loads
+
     local ns = {}
-    function Lab.RunBlizzardFile(addon, file)
-        local path = BLIZ .. addon .. "/" .. file:gsub("\\", "/")
+    -- The events Blizzard's own code registers are the game's, though its documentation leaves some out.
+    local function events(path)
+        local f = io.open(path)
+        if not f then return end
+        local text = f:read("*a")
+        f:close()
+        for e in text:gmatch("Register%a*Event%a*%(%s*[%w_.]*%s*,?%s*\"([%u%d_]+)\"") do Lab.extraEvents[e] = true end
+        for e in text:gmatch("Register%a*Event%a*%(%s*\"([%u%d_]+)\"") do Lab.extraEvents[e] = true end
+    end
+
+    -- Modules: what a file returns, for import(".Folder.File") in a file beside it (relative to that file's folder).
+    local modules, running = {}, {}
+    G.import = function(spec)
+        local here = running[#running]
+        local path = here and here:match("^(.*)/[^/]+$") or ""
+        local key = path .. "/" .. tostring(spec):gsub("^%.", ""):gsub("%.", "/")
+        local m = modules[key]
+        if m == nil then error("import(): no module " .. tostring(spec) .. " loaded", 2) end
+        return m
+    end
+
+    function Lab.RunBlizzardFile(addon, path)
+        events(path)
         local chunk, err = loadfile(path)
+        local short = path:sub(#BLIZ + 1)
         if not chunk then
-            Lab.Note("lab", "Blizzard's " .. addon .. "/" .. file .. " did not load: " .. tostring(err))
+            Lab.Note("lab", "Blizzard's " .. short .. " did not load: " .. tostring(err))
             return false
         end
         setfenv(chunk, G)
         ns[addon] = ns[addon] or {}
+        running[#running + 1] = path
         local ok, e = pcall(chunk, addon, ns[addon])
+        running[#running] = nil
+        if ok and e ~= nil then modules[path:gsub("%.[Ll][Uu][Aa]$", "")] = e end
         if not ok then
-            Lab.Note("lab", "Blizzard's " .. addon .. "/" .. file .. " stopped in the lab: " .. tostring(e):gsub(Lab.root .. "/", ""))
+            Lab.Note("lab", "Blizzard's " .. short .. " stopped in the lab: " .. tostring(e):gsub(Lab.root .. "/", ""))
             return false
         end
         return true
     end
 
-    -- Blizzard_SharedXMLBase: all its Lua, in its TOC's order.
-    local toc = io.open(BLIZ .. "Blizzard_SharedXMLBase/Blizzard_SharedXMLBase.toc")
-    if toc then
+    local loaded = {}
+    Lab.blizzardLoaded = loaded
+    function Lab.LoadBlizzardAddOn(name)
+        if loaded[name] ~= nil then return loaded[name] end
+        loaded[name] = false
+        local folder = BLIZ .. name .. "/"
+        local toc = io.open(folder .. name .. ".toc")
+        if not toc then Lab.Note("lab", "Blizzard's " .. name .. " is not in references/") return false end
+        local deps, files = {}, {}
+        local side = true
         for line in toc:lines() do
-            local file = line:match("^%s*([^#%s][^%s]*%.lua)%s*$")
-            if file then Lab.RunBlizzardFile("Blizzard_SharedXMLBase", file) end
+            line = line:gsub("\r$", "")
+            local key, value = line:match("^##%s*([%w%-_]+)%s*:%s*(.-)%s*$")
+            if key then
+                local k = key:lower()
+                if k == "dependencies" or k == "dep" or k == "requireddeps" then
+                    local cond = value:match("(%[.*)$") or ""
+                    if loads(cond) then
+                        for d in value:gsub("%[.*$", ""):gmatch("[^,%s]+") do deps[#deps + 1] = d end
+                    end
+                elseif k == "allowload" and value:lower() == "glue" then
+                    side = false
+                elseif k == "allowloadgametype" and not loads("[AllowLoadGameType " .. value .. "]") then
+                    side = false
+                end
+            elseif not line:match("^%s*#") and line:match("%S") then
+                local file, cond = line:match("^%s*(%S+)%s*(.-)%s*$")
+                if loads(cond) then files[#files + 1] = file end
+            end
         end
         toc:close()
-    end
-    -- Of Blizzard_SharedXML, the plain Lua the game's windows lean on that stands without its XML.
-    for _, file in ipairs({ "SharedColorConstants.lua", "ColorUtil.lua", "ClassColors.lua", "Mainline/NineSliceLayouts.lua", "NineSlice.lua", "Backdrop.lua",
-        "FormattingUtil.lua", "LinkUtil.lua", "StringUtil.lua", "EventUtil.lua", "SortUtil.lua", "CircularBuffer.lua",
-        "DataProvider.lua", "EasingUtil.lua", "Interpolator.lua", "ButtonGroup.lua", "RegionUtil.lua",
-        "PixelUtil.lua", "TextureUtil.lua", "MoneyFormatter.lua" }) do
-        local f = io.open(BLIZ .. "Blizzard_SharedXML/" .. file)
-        if f then
-            f:close()
-            Lab.RunBlizzardFile("Blizzard_SharedXML", file)
+        if not side then return false end
+        for _, d in ipairs(deps) do Lab.LoadBlizzardAddOn(d) end
+        local how = { addon = name, blizzard = true, run = function(p) Lab.RunBlizzardFile(name, p) end }
+        for _, file in ipairs(files) do
+            local path = folder .. file:gsub("%[Family%]", "Mainline"):gsub("%[Game%]", "Camelot"):gsub("\\", "/")
+            local f = io.open(path)
+            if f then
+                f:close()
+                if path:lower():match("%.lua$") then Lab.RunBlizzardFile(name, path)
+                elseif path:lower():match("%.xml$") then Lab.LoadXML(path, how) end
+            end
         end
+        loaded[name] = true
+        return true
     end
 
     -- Font objects from Blizzard's font XML ------------------------------------------------------------------------------------
@@ -192,30 +264,40 @@ return function(Lab)
         end
     end
 
-    function Lab.LoadFontXML(path)
-        local doc, err = xml.read(path)
-        if not doc then Lab.Note("lab", "font XML " .. path .. ": " .. tostring(err)) return end
-        for _, el in ipairs(doc.children) do
-            if el.tag == "Font" and el.attrs.name then
-                local font = Lab.named[el.attrs.name] or Lab.NewFont(el.attrs.name)
-                applyFont(font, el)
-            elseif el.tag == "FontFamily" and el.attrs.name then
-                local font = Lab.named[el.attrs.name] or Lab.NewFont(el.attrs.name)
-                for _, m in ipairs(el.children) do
-                    if m.tag == "Member" and m.attrs.alphabet == "roman" then
-                        local f = xml.find(m, "Font")
-                        if f then applyFont(font, f) end
-                    end
+    -- A <Font> or <FontFamily> of the game's XML: the font object of its name, made or changed.
+    function Lab.FontElement(el)
+        if not el.attrs.name then return end
+        local font = Lab.named[el.attrs.name] or Lab.NewFont(el.attrs.name)
+        if el.tag == "Font" then
+            applyFont(font, el)
+        else
+            for _, m in ipairs(el.children) do
+                if m.tag == "Member" and m.attrs.alphabet == "roman" then
+                    local f = xml.find(m, "Font")
+                    if f then applyFont(font, f) end
                 end
             end
         end
     end
-    local fonts = BLIZ .. "Blizzard_Fonts_Shared/"
-    for _, file in ipairs({ "Mainline/Fonts.xml", "Shared/Fonts.xml", "Shared/GameFonts.xml", "Mainline/GameFonts.xml",
-        "Shared/FontStyles.xml", "Mainline/FontStyles.xml", "Mainline/GameFontStyles.xml", "Shared/GameFontStyles.xml" }) do
-        local f = io.open(fonts .. file)
-        if f then f:close(); Lab.LoadFontXML(fonts .. file) end
+
+    -- Blizzard's own interface, as far as it stands in the lab: the shared code and templates every window of the
+    -- game is built from, its fonts, its menus and colours (with their dependencies), and the game's settings.
+    -- Two steps, as the game loads them: what stands before UIParent (Lab.LoadBlizzard("shared")), then, once the
+    -- game's frames are there, what is built on them (Lab.LoadBlizzard("game"), host.lua).
+    local STEPS = {
+        shared = { "Blizzard_SharedXMLBase", "Blizzard_Fonts_Shared", "Blizzard_SharedXML", "Blizzard_SharedXMLGame" },
+        game = { "Blizzard_UIParentPanelManager", "Blizzard_Settings_Shared" },
+    }
+    function Lab.LoadBlizzard(step)
+        Lab.blizzardLoading = true
+        for _, name in ipairs(STEPS[step]) do Lab.LoadBlizzardAddOn(name) end
+        Lab.blizzardLoading = nil
+        -- Blizzard's error handler hands an error to the game's error window: in the lab that is its log.
+        Lab.handler = nil
     end
+    Lab.LoadBlizzard("shared")
+    if type(rawget(G, "setprinthandler")) == "function" then G.setprinthandler(Lab.Print) end
+
     -- The few the lab needs should the XML be missing.
     for name, def in pairs({ GameFontNormal = { 12, 1, 0.82, 0 }, GameFontHighlight = { 12, 1, 1, 1 },
         GameTooltipHeaderText = { 14, 1, 1, 1 }, GameTooltipText = { 12, 1, 1, 1 }, ChatFontNormal = { 14, 1, 1, 1 } }) do

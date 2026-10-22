@@ -11,28 +11,8 @@ return function(Lab)
 
     Lab.playing = {}   -- [group] = true while it plays
 
-    local function scripts(o)
-        local s = S[o]
-        s.scripts = s.scripts or {}
-        return s
-    end
-    for _, M in ipairs({ Group, Anim }) do
-        M.SetScript = function(self, name, fn)
-            if not Lab.ScriptAllowed(self, name) then
-                error(("SetScript(): %s doesn't have a \"%s\" script"):format(S[self].kind, tostring(name)), 2)
-            end
-            scripts(self).scripts[name] = fn
-        end
-        M.GetScript = function(self, name) return scripts(self).scripts[name] end
-        M.HookScript = function(self, name, fn)
-            local s = scripts(self)
-            if not s.scripts[name] then s.scripts[name] = fn return end
-            s.hooks = s.hooks or {}
-            s.hooks[name] = s.hooks[name] or {}
-            table.insert(s.hooks[name], fn)
-        end
-        M.HasScript = function(self, name) return Lab.ScriptAllowed(self, name) end
-    end
+    Lab.ScriptMethods(Group)
+    Lab.ScriptMethods(Anim)
 
     function Lab.NewAnimationGroup(target, name, template)
         local g = Lab.New("AnimationGroup", { name = name, parent = target, target = target, anims = {}, looping = "NONE",

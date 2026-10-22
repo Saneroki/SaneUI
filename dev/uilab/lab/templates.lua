@@ -1,6 +1,7 @@
--- The templates CreateFrame knows in the lab, made as the game's XML makes them: BackdropTemplate is Blizzard's
--- own mixin (Backdrop.lua) with the scripts its XML gives it. Templates of Blizzard's that are more than that are
--- not in the lab yet: CreateFrame says so and makes the frame without them.
+-- Templates of the lab's own, in Lua, for when Blizzard's XML is not there to read: BackdropTemplate as Blizzard's
+-- mixin (Backdrop.lua) with the scripts its XML gives it. Blizzard's own XML (lab/xmlui.lua, lab/blizzard.lua) puts
+-- its templates over these when it is read; a template neither has, CreateFrame says so and makes the frame
+-- without it.
 return function(Lab)
     local G = Lab.G
     local S = Lab.S

@@ -26,12 +26,36 @@ prints its log.
   - scripts and events, timers, the mouse (focus, clicks, dragging, moving and sizing, the wheel, links in
     text) and the keys.
 - **What the game has but the lab does not do yet** is known from Blizzard's own API documentation
-  (`references/BlizzardInterfaceCode`, `Blizzard_APIDocumentationGenerated`). Such a method is still there, as in
-  the game, and calling it puts a "not in the lab" line in the log. The same documentation gives `Enum`,
-  `Constants` and the list of events: registering an event the game does not have is an error, as in the game.
-- **Blizzard's own shared Lua** (`Blizzard_SharedXMLBase`, and the parts of `Blizzard_SharedXML` that stand
-  without its XML) runs as it is, so `Mixin`, `CreateColor`, the colour constants, pools, callbacks and
-  `BackdropTemplate` are Blizzard's. Its font objects (`GameFontNormal` and the rest) are read from its font XML.
+  (`references/BlizzardInterfaceCode`, `Blizzard_APIDocumentationGenerated`). Such a method, namespace or function
+  is still there, as in the game, and calling it puts a "not in the lab" line in the log. The same documentation
+  gives `Enum` (with each one's `Meta`), `Constants` and the list of events: registering an event the game does not
+  have is an error, as in the game (the events Blizzard's own code registers count as the game's too).
+- **Frame XML** (`dev/uilab/lab/xmlui.lua`) is read as the game reads it: `<Script>` (a file or inline) and
+  `<Include>`, fonts, and every frame, region and animation. A virtual one is a template (CreateFrame's fourth
+  argument, `inherits`, CreateTexture's), an intrinsic one a kind of its own (`CreateFrame("EventFrame")`), any
+  other is made at once. Its attributes and parts: `name` and `$parent`, `parent`, `inherits`, `mixin`,
+  `parentKey`, `parentArray`, `hidden`, `setAllPoints`, strata, levels, the mouse; `Size`, `Anchors` (with
+  `relativeKey`, `relativeTo`), `Layers`, `Frames`, `Scripts` (`method`, `function`, inline code with the game's
+  argument names, `inherit`, an intrinsic's `intrinsicOrder`), `KeyValues` (a dotted global too), `Attributes`,
+  `Animations`, the buttons' textures and fonts, `ButtonText`, `ThumbTexture`, `BarTexture`, `ScrollChild`,
+  `TexCoords`, `Color`, `Gradient`, `MaskedTextures`. An object's anchors are set once all its parts are there
+  (so `relativeKey` finds a part made after it), then the OnLoads run, children before their parents. What it
+  does not read yet it says ("not in the lab"). `C_XMLUtil` tells a template's kind, size and KeyValues.
+- **Blizzard's own interface** is loaded from its TOCs as the game loads it for this client (its load groups
+  `camelot` and `mainline`, `[Family]` Mainline, `[Game]` Camelot), Lua and XML, each addon after its
+  dependencies: `Blizzard_SharedXMLBase`, `Blizzard_Fonts_Shared`, `Blizzard_SharedXML` (with its menus,
+  colours and narration) and `Blizzard_SharedXMLGame` before the game's frames, `Blizzard_UIParentPanelManager`
+  and `Blizzard_Settings_Shared` after them. So `Mixin`, `CreateColor`, pools, callbacks, the font objects
+  (`GameFontNormal` and the rest) and the templates (`UIPanelButtonTemplate`, `TabSystemTemplate`,
+  `UICheckButtonTemplate`, `InputBoxTemplate`, `WowStyle1DropdownTemplate`, `BackdropTemplate`, ...) are
+  Blizzard's, and `Settings` with its panel is the game's own. A file of theirs that stops in the lab (it needs
+  what the lab does not have) is a line under "the lab" in the log, and the rest goes on.
+- **The client's own state** the lab keeps as the game's documentation describes it, where Sane UI needs it: CVars
+  (`C_CVar`), the addons (`C_AddOns`), saved variables, Edit Mode's layouts (`C_EditMode`, sent again as
+  `EDIT_MODE_LAYOUTS_UPDATED` at the login and on every change), the chat windows' settings, the settings panel's
+  opening (`C_SettingsUtil`). Blizzard's `print` writes to the log.
+- **Sane UI's caught errors:** Core's guards keep what fails in its error log; the lab shows each one of the run
+  as an error ("Sane UI caught").
 - **Drawing:** the host sends the page every region that is seen, in the game's order, in the screen's pixels;
   the page draws them and sends back the mouse and the keys. Texts are broken into lines and measured by the
   host with the font files' own widths, so the page draws each line where the game would.
@@ -44,12 +68,18 @@ prints its log.
   the login. Its first comment line is its description in the page's list.
 
   ```lua
-  local ns = Lab.Addon("SaneUI_Draft", "dev/uilab/drafts/Journal.lua")   -- files as one addon's
-  Lab.TOC("src/Core/SaneUI.toc")             -- an addon from its TOC (its XML files are not read yet)
+  local ns = Lab.Addon("SaneUI_Draft", "dev/uilab/drafts/Journal.lua")   -- files as one addon's (Lua or XML)
+  Lab.TOC("src/Core/SaneUI.toc")             -- an addon from its TOC, its Lua and XML files
   Lab.World("default")                       -- the fake server's world (default: default)
   Lab.OnLogin(function() ... end)            -- after PLAYER_LOGIN and PLAYER_ENTERING_WORLD
+  Lab.Slash("/sane window")                  -- a slash command, as typed
   Lab.Say("GUILD", "Mirabel Ashgrove", "Hello")   -- a chat line from the server now
   ```
+
+  The scenes: `basics` (plain widgets), `journal-chat` (the journal draft), `xml-templates` (a window from the
+  scene's own XML on Blizzard's templates), `core` (Core from its TOC, with its window to try windows with; rest
+  the mouse on its free corner and it opens; `/sane options` in the console opens Core's options in the game's
+  settings panel).
 
   Everything else in a scene is the game's API.
 - **A world** (`dev/uilab/worlds/<name>.lua`) is the fake server:
@@ -110,13 +140,22 @@ The settings of this computer are in `~/.config/saneui/uilab.json`, all optional
 
 ## Limits, and what comes next
 
-- XML is not read yet, so frames made from Blizzard's XML templates (`UIPanelButtonTemplate`,
-  `TabSystemTemplate`) get no template: the lab says so and makes the frame without it. Font XML is read. Next:
-  frame and texture templates from XML, then Core loaded from its TOC, so Core's windows (`Window`, `Board`,
-  `Views`) can be built in the lab too.
+- XML: what the lab does not read yet it tells (in Blizzard's own files under "the lab"): `<ModelScene>` and other
+  model kinds, the animations past alpha, translation, scale and rotation, `autoplay`, a few attributes. A
+  script of a texture or a font string is kept and its OnLoad runs, but the mouse reaches frames only.
+- Blizzard's interface: only the addons named above; the game's own windows and HUD (action bars, the minimap,
+  bags, the micro menu, Edit Mode's window) are not loaded, so Core's parts that lean on them stand aside, as
+  Core's code allows where they are missing. What Blizzard's shared
+  code calls of them does nothing (`CloseAllBags`, `UpdateMicroButtons`). The client's state the lab has no
+  source for is its own choice, said where it is made: the CVars it knows, Edit Mode's default layout (Modern),
+  the chat windows of a new character, no gamepad, no kiosk.
+- Art: Blizzard's art in `references/` lacks some newer files (the settings panel's metal frame,
+  `uiframemetal2xc60`): they are magenta boxes there.
 - No 3D: a model frame is a dashed box.
 - Not the game's renderer: the page draws with the browser. Texts use the font files' widths without kerning.
   Masks, blend modes and texture coordinates follow the game's rules, but sub-pixel edges can differ. Judge the
   final look in the game.
 - The pieces repeat by drawing one texture per tile with their texture coordinates, so the art can go into the
   game in power-of-two textures, `SetTexCoord` taking the part in use (`Doc/guides/images.md`).
+- Next: Core's own windows (`Window`, `Board`, `Views`) built in scenes of their own, and the modules from their
+  TOCs.

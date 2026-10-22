@@ -169,8 +169,13 @@ return function(Lab)
     function TB:GetTextureSliceMode() return S[self].sliceMode or 0 end
     function TB:ClearTextureSlice() S[self].slice = nil; Lab.Touch() end
     function TB:SetAtlas(name, useAtlasSize, filter)
-        local a = Lab.Atlas(name)
         local s = S[self]
+        if name == nil or name == "" then
+            s.file, s.atlas = nil, nil
+            Lab.Touch()
+            return false
+        end
+        local a = Lab.Atlas(name)
         if not a then
             Lab.Warn("atlas the lab does not know: " .. tostring(name))
             s.file, s.atlas = nil, name
@@ -206,6 +211,20 @@ return function(Lab)
     function Tex:GetMaskTexture(i) return (S[self].masks or {})[i] end
     Lab.kinds.FontString.methods.AddMaskTexture = Tex.AddMaskTexture
     Lab.kinds.FontString.methods.RemoveMaskTexture = Tex.RemoveMaskTexture
+
+    -- The client's atlases, as C_Texture tells them (the lab's server reads the game's list, host.lua).
+    Lab.G.C_Texture = {
+        GetAtlasInfo = function(name)
+            local a = Lab.Atlas(name)
+            if not a then return nil end
+            return { elementName = name, width = a.w, height = a.h,
+                rawSize = Lab.G.CreateVector2D and Lab.G.CreateVector2D(a.w, a.h) or { x = a.w, y = a.h },
+                leftTexCoord = a.l, rightTexCoord = a.r, topTexCoord = a.t, bottomTexCoord = a.b,
+                tilesHorizontally = a.tileH or false, tilesVertically = a.tileV or false, filename = a.file }
+        end,
+        GetAtlasExists = function(name) return Lab.Atlas(name) ~= nil end,
+        GetFilenameFromFileDataID = function(id) return Lab.FileOfID(id) end,
+    }
 
     -- Lines ----------------------------------------------------------------------------------------------------------
     local function ends(self, which, relPoint, rel, x, y)

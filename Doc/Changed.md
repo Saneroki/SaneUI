@@ -6,6 +6,32 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 530 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### dev: the interface lab reads frame XML and loads Core from its TOC (2026-10-22)
+- Frame XML (`dev/uilab/lab/xmlui.lua`), read as the game reads it: `<Script>` and `<Include>`, fonts, frames,
+  regions and animations; a virtual one a template for `CreateFrame`, `inherits` and `CreateTexture`, an intrinsic
+  one a kind of its own (`CreateFrame("EventFrame")`, `"DropdownButton"`). Attributes and parts: names with
+  `$parent`, `parentKey` and `parentArray` (a template's too), `mixin`, `Size`, `Anchors` with `relativeKey` (set
+  once the object's parts are all there), `Layers`, `Frames`, `Scripts` (`method`, `function`, inline code with the
+  game's argument names, `inherit`, `intrinsicOrder`), `KeyValues` (dotted globals), the buttons' textures and
+  fonts, `ThumbTexture`, `BarTexture`, `ScrollChild`, `Animations`; OnLoads children first. `C_XMLUtil` tells a
+  template. An addon's TOC-listed XML is read (`Lab.TOC`), and a scene's own (`Lab.Addon`).
+- Blizzard's interface loaded from its TOCs as this client loads it (`camelot`, `mainline`, `[Family]`,
+  `[Game]`), Lua and XML with their dependencies: the shared XML and its templates (`UIPanelButtonTemplate`,
+  `TabSystemTemplate`, the check boxes, input boxes, dropdowns, scroll boxes), its fonts, the panel manager and the
+  settings panel, so `Settings` is the game's own. Its `print` writes to the lab's log; `import` for its modules.
+- What the game documents but the lab does not do: namespaces and global functions are there too, and told when
+  called (as methods were); `Enum`'s `Meta`; the extensions of `string`, `table` and `math`; a script's name in any
+  case; scripts of textures and font strings; events heard by functions (`RegisterEventCallback`); the events
+  Blizzard's code registers known. The client's state Core needs, as documented: `C_EditMode` (layouts, sent at
+  the login), the chat windows' settings, `C_SettingsUtil`, `C_CVar.GetCVarInfo`, `C_Texture.GetAtlasInfo`, the
+  bag slots' constants.
+- Set right: `IsMouseOver`'s offsets move each edge outward as in the game; a font string's size 0 is its text's;
+  uncompressed BLP files are read.
+- Core's caught errors (its error log) show in the lab's log as errors. Scenes `core` (Core from its TOC, its
+  window to try windows with, `/sane options` opens its options) and `xml-templates` (a window from the scene's own
+  XML on Blizzard's templates); `dev/tests/uilab.py` checks the XML reader (`dev/tests/uilab/`), Blizzard's
+  templates and Core; `saneui checkuilab` is clean for every scene. Guide: `Doc/guides/ui-lab.md`.
+
 ### Navigation: the routing finalized (2026-10-22)
 - Read through with its docs (the planner, the search, the walking data's reader, the lifts, Core's teleports, the
   line, the trip view); set right:

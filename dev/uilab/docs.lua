@@ -45,9 +45,14 @@ return function(root)
                 local e = {}
                 for _, f in ipairs(tab.Fields or {}) do e[f.Name] = f.EnumValue end
                 docs.enums[tab.Name] = e
+                -- the client gives every enumeration its Meta too (Enum.ItemQualityMeta.NumValues)
+                docs.enums[tab.Name .. "Meta"] = { MinValue = tab.MinValue, MaxValue = tab.MaxValue, NumValues = tab.NumValues }
             elseif tab.Type == "Constants" then
                 local c = {}
-                for _, v in ipairs(tab.Values or {}) do c[v.Name] = v.Value end
+                -- a value the documentation names by a client global (Value = NUM_BAG_SLOTS) is not in it: left out
+                for _, v in ipairs(tab.Values or {}) do
+                    if type(v.Value) ~= "table" then c[v.Name] = v.Value end
+                end
                 docs.constants[tab.Name] = c
             end
         end

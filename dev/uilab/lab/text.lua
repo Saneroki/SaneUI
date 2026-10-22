@@ -449,7 +449,9 @@ return function(Lab)
     function Lab.NewFontString(parent, name, layer, inherits, sub)
         local fs = Lab.New("FontString", { name = name, parent = parent, shown = true, layer = layer or "ARTWORK",
             sub = sub or 0, text = "", intrinsic = intrinsic })
-        if inherits then FS.SetFontObject(fs, inherits) end
+        -- inherits: a font string template (from XML), else a font object, as the game takes either
+        if inherits and Lab.templates[inherits] then Lab.ApplyTemplate(fs, inherits)
+        elseif inherits then FS.SetFontObject(fs, inherits) end
         return fs
     end
 

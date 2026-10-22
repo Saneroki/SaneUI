@@ -17,23 +17,40 @@ return function(Lab)
     Lab.eventFrames = {}       -- [event] = frames registered for it, in the order they registered
     Lab.templates = {}         -- [name] = function(object): the templates the lab knows (lab/templates.lua)
 
+    -- Templates are applied in the order given, each with what it inherits first; what they make waits for the
+    -- object to be complete (Lab.Building, lab/xmlui.lua).
     function Lab.ApplyTemplate(o, names)
-        for name in tostring(names):gmatch("[^,%s]+") do
-            local t = Lab.templates[name]
-            if t then
-                t(o)
-            else
-                Lab.Warn("template the lab does not know (yet): " .. name)
+        Lab.Building(function()
+            for name in tostring(names):gmatch("[^,%s]+") do
+                local t = Lab.templates[name]
+                if t then
+                    t(o)
+                else
+                    Lab.Warn("template the lab does not know (yet): " .. name)
+                end
             end
-        end
+        end)
     end
 
     -- CreateFrame ---------------------------------------------------------------------------------------------------
     local INIT = {}
     Lab.INIT = INIT
+    -- The frame alone, as the game makes it before any template: its kind's state, its parent's strata and level.
+    function Lab.MakeFrame(kind, name, parent, id)
+        local ps = parent and S[parent]
+        local f = Lab.New(kind, { name = name, parent = parent, shown = true, children = {}, regions = {},
+            strata = ps and ps.strata or "MEDIUM", level = ps and ps.level + 1 or 0, scripts = {}, events = {},
+            id = id or 0 })
+        Lab.frames[#Lab.frames + 1] = f
+        if ps then ps.children[#ps.children + 1] = f end
+        if Lab.Is(f, "Button") then INIT.Button(f) end
+        if kind ~= "Button" and kind ~= "CheckButton" and INIT[kind] then INIT[kind](f) end
+        return f
+    end
+    -- An intrinsic kind (EventFrame, DropdownButton) is its frame kind with its template applied first.
     function Lab.CreateFrame(kindName, name, parent, template, id)
         if type(kindName) ~= "string" then error("CreateFrame(): frame type must be a string", 3) end
-        local kind = Lab.frameKinds[kindName:lower()]
+        local kind, intrinsic = Lab.FrameKind(kindName)
         if not kind then error("CreateFrame(): Unknown frame type '" .. kindName .. "'", 3) end
         if type(parent) == "string" then parent = Lab.G[parent] end
         if parent ~= nil and not (S[parent] and Lab.Is(parent, "Frame")) then
@@ -43,17 +60,13 @@ return function(Lab)
         if name and name:find("$parent", 1, true) then
             name = name:gsub("%$parent", parent and S[parent].name or "")
         end
-        local ps = parent and S[parent]
-        local f = Lab.New(kind, { name = name, parent = parent, shown = true, children = {}, regions = {},
-            strata = ps and ps.strata or "MEDIUM", level = ps and ps.level + 1 or 0, scripts = {}, events = {},
-            id = id or 0 })
-        Lab.frames[#Lab.frames + 1] = f
-        if ps then ps.children[#ps.children + 1] = f end
-        if Lab.Is(f, "Button") then INIT.Button(f) end
-        if kind ~= "Button" and kind ~= "CheckButton" and INIT[kind] then INIT[kind](f) end
-        if template then Lab.ApplyTemplate(f, template) end
-        if S[f].scripts.OnLoad then Lab.Run(f, "OnLoad") end
-        return f
+        return Lab.Building(function()
+            local f = Lab.MakeFrame(kind, name, parent, id)
+            if intrinsic then Lab.ApplyTemplate(f, intrinsic) end
+            if template then Lab.ApplyTemplate(f, template) end
+            Lab.Loaded(f)
+            return f
+        end)
     end
 
     -- Children and regions ---------------------------------------------------------------------------------------------
@@ -225,36 +238,7 @@ return function(Lab)
     function Frame:SetToplevel(on) S[self].toplevel = on and true or nil end
     function Frame:IsToplevel() return S[self].toplevel or false end
 
-    -- Scripts ------------------------------------------------------------------------------------------------------------
-    local function script(self, name, method)
-        if type(name) ~= "string" or not Lab.ScriptAllowed(self, name) then
-            error(("%s(): %s doesn't have a \"%s\" script"):format(method, S[self].kind, tostring(name)), 3)
-        end
-    end
-    function Frame:SetScript(name, fn)
-        script(self, name, "SetScript")
-        if fn ~= nil and type(fn) ~= "function" then error("SetScript(): handler must be a function or nil", 2) end
-        local s = S[self]
-        s.scripts[name] = fn
-        if s.hooks then s.hooks[name] = nil end
-        Lab.Touch()
-    end
-    function Frame:GetScript(name)
-        script(self, name, "GetScript")
-        return S[self].scripts[name]
-    end
-    function Frame:HasScript(name) return Lab.ScriptAllowed(self, name) end
-    function Frame:HookScript(name, fn)
-        script(self, name, "HookScript")
-        local s = S[self]
-        if not s.scripts[name] then
-            s.scripts[name] = fn
-            return
-        end
-        s.hooks = s.hooks or {}
-        s.hooks[name] = s.hooks[name] or {}
-        table.insert(s.hooks[name], fn)
-    end
+    -- Scripts: Lab.ScriptMethods on every script region (lab/core.lua, lab/kinds.lua).
 
     -- Events ------------------------------------------------------------------------------------------------------------
     function Lab.KnownEvent(event)
@@ -289,6 +273,10 @@ return function(Lab)
     function Frame:UnregisterAllEvents()
         for event in pairs(S[self].events) do Frame.UnregisterEvent(self, event) end
     end
+    function Frame:RegisterEventCallback(event, fn) return Lab.AddEventCallback(event, fn, self) end
+    function Frame:RegisterUnitEventCallback(event, fn, u1, u2) return Lab.AddEventCallback(event, fn, self, { u1, u2 }) end
+    function Frame:UnregisterEventCallback(event) Lab.RemoveEventCallback(event, self) end
+    Frame.UnregisterUnitEventCallback = Frame.UnregisterEventCallback
     function Frame:IsEventRegistered(event) return S[self].events[event] or false end
     function Frame:RegisterAllEvents() S[self].allEvents = true end
 
@@ -311,6 +299,15 @@ return function(Lab)
         end
         for _, f in ipairs(Lab.frames) do
             if S[f].allEvents then Lab.Run(f, "OnEvent", event, ...) end
+        end
+        local callbacks = Lab.eventCallbacks and Lab.eventCallbacks[event]
+        if callbacks then
+            local unit = ...
+            local copy = {}
+            for i, c in ipairs(callbacks) do copy[i] = c end
+            for _, c in ipairs(copy) do
+                if not c.units or c.units[1] == unit or c.units[2] == unit then Lab.Call(c.fn, c.owner, ...) end
+            end
         end
         if Lab.OnFired then Lab.OnFired(event, ...) end
     end

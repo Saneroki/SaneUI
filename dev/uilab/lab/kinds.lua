@@ -3,7 +3,9 @@
 return function(Lab)
     local K = Lab.Kind
     K("Object", nil, { "SimpleObjectAPI", "SimpleFrameScriptObjectAPI" })
-    K("ScriptRegion", "Object", { "SimpleScriptRegionAPI", "SimpleScriptRegionResizingAPI" })
+    -- the scripts every region has, a texture or a font string too (the game's XML gives them OnLoad and the mouse's)
+    K("ScriptRegion", "Object", { "SimpleScriptRegionAPI", "SimpleScriptRegionResizingAPI" },
+        { "OnLoad", "OnShow", "OnHide", "OnEnter", "OnLeave", "OnMouseDown", "OnMouseUp" })
     K("Region", "ScriptRegion", { "SimpleRegionAPI" })
     K("TextureBase", "Region", { "SimpleTextureBaseAPI" })
     K("Texture", "TextureBase", { "SimpleTextureAPI" })
@@ -12,9 +14,8 @@ return function(Lab)
     K("FontString", "Region", { "SimpleFontStringAPI" })
     K("Font", "Object", { "SimpleFontAPI" })
 
-    local frame = { "OnShow", "OnHide", "OnEvent", "OnUpdate", "OnSizeChanged", "OnEnter", "OnLeave", "OnMouseDown",
-        "OnMouseUp", "OnMouseWheel", "OnDragStart", "OnDragStop", "OnReceiveDrag", "OnKeyDown", "OnKeyUp", "OnChar",
-        "OnLoad", "OnAttributeChanged", "OnHyperlinkClick", "OnHyperlinkEnter", "OnHyperlinkLeave", "OnEnable",
+    local frame = { "OnEvent", "OnUpdate", "OnSizeChanged", "OnMouseWheel", "OnDragStart", "OnDragStop", "OnReceiveDrag", "OnKeyDown", "OnKeyUp", "OnChar",
+        "OnAttributeChanged", "OnHyperlinkClick", "OnHyperlinkEnter", "OnHyperlinkLeave", "OnEnable",
         "OnDisable", "OnGamePadButtonDown", "OnGamePadButtonUp", "OnGamePadStick", "OnTooltipSetItem",
         "OnTooltipCleared", "OnTooltipSetUnit", "OnTooltipSetSpell", "OnTooltipSetDefaultAnchor" }
     K("Frame", "ScriptRegion", { "SimpleFrameAPI" }, frame)
@@ -49,4 +50,5 @@ return function(Lab)
         "MessageFrame", "ScrollingMessageFrame", "GameTooltip", "Cooldown", "Model", "PlayerModel", "DressUpModel" }) do
         Lab.frameKinds[name:lower()] = name
     end
+    Lab.ScriptMethods(Lab.kinds.ScriptRegion.methods)
 end

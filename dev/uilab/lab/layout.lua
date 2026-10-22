@@ -56,16 +56,20 @@ return function(Lab)
             if fx == 0 then L = ax elseif fx == 1 then R = ax else CX = ax end
             if fy == 1 then T = ay elseif fy == 0 then B = ay else CY = ay end
         end
+        -- a font string's size of 0 is none: its text gives it (SetWidth(0), <Size x="0"/>), as in the game
+        local ownW, ownH = s.w, s.h
+        if s.intrinsic and ownW == 0 then ownW = nil end
+        if s.intrinsic and ownH == 0 then ownH = nil end
         local w
         if L and R then w = R - L
-        elseif s.w then w = s.w * sc
+        elseif ownW then w = ownW * sc
         elseif L and CX then w = 2 * (CX - L)
         elseif R and CX then w = 2 * (R - CX)
         elseif s.intrinsic then w = (s.intrinsic(o, nil)) * sc
         else w = 0 end
         local h
         if T and B then h = T - B
-        elseif s.h then h = s.h * sc
+        elseif ownH then h = ownH * sc
         elseif T and CY then h = 2 * (T - CY)
         elseif B and CY then h = 2 * (CY - B)
         elseif s.intrinsic then
@@ -265,9 +269,9 @@ return function(Lab)
             local l, b, w, h = Lab.Rect(self)
             if l then return (axis == "w" and w or h) / Lab.EScale(self) end
         end
-        if s[axis] then return s[axis] end
+        if s[axis] and not (s.intrinsic and s[axis] == 0) then return s[axis] end
         if s.intrinsic then
-            local w, h = s.intrinsic(self, s.w)
+            local w, h = s.intrinsic(self, s.w ~= 0 and s.w or nil)
             return axis == "w" and w or h
         end
         return 0
@@ -299,8 +303,9 @@ return function(Lab)
         if not l then return false end
         local sc = Lab.EScale(self)
         local x, y = Lab.mouse.x, Lab.mouse.y
-        return x >= l - (left or 0) * sc and x <= l + w + (right or 0) * sc
-            and y >= b - (bottom or 0) * sc and y <= b + h + (top or 0) * sc
+        -- the offsets move each edge (IsMouseOver(10, -10, -5, 5): ten above and below, five to each side)
+        return x >= l + (left or 0) * sc and x <= l + w + (right or 0) * sc
+            and y >= b + (bottom or 0) * sc and y <= b + h + (top or 0) * sc
     end
     function SR:IsMouseMotionFocus() return Lab.focus == self end
     function SR:IsMouseEnabled() return S[self].mouse and true or false end

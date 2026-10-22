@@ -1,0 +1,52 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <Include file="included.xml"/>
+
+    <!-- An intrinsic kind: its OnLoad runs before one a template gives it (precall) -->
+    <Frame name="LabTestIntrinsic" intrinsic="true">
+        <Scripts>
+            <OnLoad>LabTestIntrinsicRan = (LabTestIntrinsicRan or 0) + 1</OnLoad>
+        </Scripts>
+    </Frame>
+
+    <Frame name="LabTestParent" parent="UIParent">
+        <Size x="200" y="100"/>
+        <Anchors>
+            <Anchor point="CENTER"/>
+        </Anchors>
+        <KeyValues>
+            <KeyValue key="label" value="parent"/>
+            <KeyValue key="bag" value="Enum.BagIndex.Bag_4" type="global"/>
+        </KeyValues>
+        <Layers>
+            <Layer level="OVERLAY" textureSubLevel="2">
+                <FontString parentKey="Words" inherits="GameFontNormal" text="CLOSE">
+                    <Anchors>
+                        <Anchor point="TOP" relativeKey="$parent.Second" relativePoint="BOTTOM"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <!-- anchored to a part made after it -->
+            <Frame parentKey="First" inherits="LabTestBaseTemplate">
+                <KeyValues>
+                    <KeyValue key="label" value="first"/>
+                </KeyValues>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeKey="$parent.Second" relativePoint="BOTTOMLEFT" y="-3"/>
+                </Anchors>
+            </Frame>
+            <Frame name="$parentSecond" parentKey="Second" inherits="LabTestBaseTemplate">
+                <KeyValues>
+                    <KeyValue key="label" value="second"/>
+                </KeyValues>
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="5" y="-7"/>
+                </Anchors>
+            </Frame>
+        </Frames>
+        <Scripts>
+            <OnLoad>table.insert(LabTestOrder, self.label)</OnLoad>
+        </Scripts>
+    </Frame>
+</Ui>
