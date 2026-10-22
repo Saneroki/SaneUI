@@ -1433,6 +1433,11 @@ Saneroki asked for a much richer bag view, in features and looks.
 - The paper lighter again (Saneroki, 2026-10-22): `paper.py`'s `TONE` a light cream (220, 204, 178), between the
   dark brown and an off-white that was a little too white; the frame's and the doll's paper follow it (the
   doll's tone now taken from plain paper behind the hero's head, not the darker ground sketch).
+- The window's bottom fits (Saneroki, 2026-10-22: it had a straight cut-off): `pieces.py` cuts it as its two corners
+  and the page stack between them (`FRAME_BOTTOM_X`), transparent above the stack (`BOTTOM_JOIN`); `compose.py`
+  stretches the stack whole between the corners, edge to edge (`butt`; the cross-fades showed as blocks where its
+  bowed lines did not meet) and draws the page's edge on it (`page_edge`: a little darkening, a light lip, a soft
+  shadow). Buttons are the patch stretched by nine slices (no repeat seams), a little higher off the page's edge.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.

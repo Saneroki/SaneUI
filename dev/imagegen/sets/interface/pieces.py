@@ -29,15 +29,18 @@ OUT = os.path.join(GEN, "pieces")
 SCALE = 2           # the pieces are at 4K: twice the pixels of the picks (a layout pixel at 1080p)
 
 # The window: #12 (clean/frame.png) in its own pixels (the 1080p layout's), cut at SCALE
-FRAME_X = (196, 380, 530, 836)         # left end | middle (no rivet, stretched) | right end of the top and bottom
+FRAME_X = (196, 380, 530, 836)         # left end | middle (no rivet, stretched) | right end of the top
 FRAME_TOP = (86, 210)                  # the top: strap, ribbon, corner patch, title label, a little paper
-FRAME_BOTTOM = (820, 876)              # the bottom: the page's end, the page stack, the corners (no strap)
+FRAME_BOTTOM_X = (196, 262, 748, 836)  # the bottom: its left corner | the page stack (stretched whole) | right corner
+FRAME_BOTTOM = (820, 876)              # the bottom: the page stack and the corners (no strap)
+BOTTOM_JOIN = 826                      # where the page meets the stack (the strap's rows cut out): the bottom's
+                                       # rows above it are the page, left to code's paper
 FRAME_LEFT = (196, 240, 300, 600)      # the left edge: x from-to, the plain stretch it repeats (y)
 FRAME_RIGHT = (764, 836, 230, 370)     # the right edge, above its clasp
 CLASP = (764, 380, 836, 510)
 TITLE_AT = (372, 182)                  # where the title label's writing starts
 CLOSE_AT = (770, 124)                  # the middle of the corner patch on the strap: the close button
-TOP_FADE, BOTTOM_FADE = 26, 8          # the top's and bottom's paper fades into the page over so many pixels
+TOP_FADE = 26                          # the top's paper fades into the page over so many pixels
 FRAME_PAPER = (300, 200, 560, 240)     # a stretch of #12's plain paper, for its tone
 DOLL_PAPER = (420, 120, 470, 200)      # the same in #3 (behind the hero's head)
 
@@ -192,8 +195,21 @@ def main():
                              ("right", (x2, x3), "its right end, kept whole; the close button is its corner patch")):
         save(f"frame-top-{end}", fade(f.crop((a, t0, b, t1)), "bottom", TOP_FADE * SCALE),
              f"the window's top (strap, ribbon, title label): {how}; its paper fades into the page")
-        save(f"frame-bottom-{end}", fade(f.crop((a, b0, b, b1)), "top", BOTTOM_FADE * SCALE),
-             f"the window's bottom (the page's end, the page stack): {how}")
+    # the bottom: only the stack and the corners; its rows above the join are the page (code's paper shows there)
+    join = (BOTTOM_JOIN - FRAME_BOTTOM[0]) * SCALE
+    ramp = Image.new("L", (1, b1 - b0), 255)
+    for y in range(b1 - b0):
+        ramp.putpixel((0, y), 0 if y < join - 1 else (128 if y < join + 1 else 255))
+    bx0, bx1, bx2, bx3 = z(FRAME_BOTTOM_X)
+    for end, (a, b), how in (("left", (bx0, bx1), "its left corner, kept whole"),
+                             ("middle", (bx1, bx2), "the page stack, stretched whole between the corners (no repeat, "
+                                                    "no cross-fade: its lines run on)"),
+                             ("right", (bx2, bx3), "its right corner, kept whole")):
+        piece = f.crop((a, b0, b, b1))
+        piece.putalpha(ImageChops.multiply(piece.getchannel("A"), ramp.resize(piece.size)))
+        save(f"frame-bottom-{end}", piece, f"the window's bottom (the page stack): {how}; the page meets it "
+                                          f"{BOTTOM_JOIN - FRAME_BOTTOM[0]} layout pixels down (code draws the page's "
+                                          f"edge there)")
     lx0, lx1, ly0, ly1 = z(FRAME_LEFT)
     rx0, rx1, ry0, ry1 = z(FRAME_RIGHT)
     save("frame-left", seamless_y(f.crop((lx0, ly0, lx1, ly1))), "the window's left edge: repeats down without a seam")

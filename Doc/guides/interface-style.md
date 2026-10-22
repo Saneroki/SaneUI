@@ -104,7 +104,9 @@ with as little room for frame and ornament as the look allows.
   - **the edges:** the thin stitched leather binding, the clasp on the right, the pages' edges showing;
   - **the corners:** the metal caps and the page corners of the stacked pages;
   - **the bottom:** the page running down to its own stack of pages. No leather strap or patches lie over the
-    paper at the bottom.
+    paper at the bottom. The page lies on the stack with a natural edge, drawn by code: the page darkening a
+    little as it bends down, a faint light lip, its soft shadow on the stack (Saneroki, 2026-10-22: no straight
+    cut). The stack is one piece stretched between its two corners, so its lines run on without a join.
 - The harness uses #12's own pixels for all of it (*The harness*): its parts fit together exactly at their own
   scale. Repeats are joined without seams; where #12 has things that are not wanted, code cuts them out (the
   strap's rows) or covers them with #12's own paper (the label's writing).
@@ -275,9 +277,10 @@ needs, for responsive, flexible designs).
 - **Pieces** (`pieces.py`, `assets/generated/interface/pieces/`, Saneroki, 2026-10-22): the final puzzle pieces
   code builds every window from, at 4K, alone on transparency, trimmed. `pieces.json` says how each is laid.
   - **The window** from #12, its paper moved to the page's tone: `frame-top-left`, `-middle`, `-right` (the
-    strap, ribbon, title label and corner patch; the middle stretches, its paper fades into the page), the same
-    three for the bottom (the page stack), `frame-left` and `frame-right` (tiles that repeat down without a seam),
-    `frame-clasp`. The title's and the close button's places are in `pieces.json`.
+    strap, ribbon, title label and corner patch; the middle stretches, its paper fades into the page);
+    `frame-bottom-left`, `-middle`, `-right` (the two corners and the page stack between them, stretched whole
+    and joined edge to edge; above the stack it is transparent, so the page runs down to it and code draws the
+    page's edge); `frame-left` and `frame-right` (tiles that repeat down without a seam), `frame-clasp`. The title's and the close button's places are in `pieces.json`.
   - **The character window** (`doll`): #3 whole, on the page's tone; code fills its slots and strips.
   - **Cut-outs:** `patch` (every button and side tab), `tab-arrow`, `tab-arrow-b`, `tab-patch`, `edge-left`,
     `edge-right`, and every kit part (`kit3-01` to `kit4-11`). Their rim (the pick's light background left at
