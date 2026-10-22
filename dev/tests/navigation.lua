@@ -3904,6 +3904,104 @@ end)()
     W.Fire("USER_WAYPOINT_UPDATED")
     W.Wait(0)
 end)()
+-- No ride brings one back to where the rides since the last walk began: from the field of tile 6177 to a pin on it
+-- whose walk straight there is a long way round (priced twenty times what the search found, as behind a shut gate),
+-- the line walked to the foot of lift 8, rode up the mesa's cliff and straight down again, and walked on from its foot
+-- (a walk after a walk). Now the one walk.
+;(function()
+    local s = Walk.SAMPLE
+    local function Spot(u, v) return (u + 12000) / 24000, (20000 - v) / 40000 end
+    local fu, fv = Coords.TILE + 40 * s, -64 * s
+    local pu, pv = Coords.TILE + 40 * s, -200 * s
+    local price, hearth = Search.Price, Core.Character(ns.name).hearth
+    Search.Price = function(map, u1, v1, u2, v2, ...)
+        local cost, rest, found = price(map, u1, v1, u2, v2, ...)
+        if cost and math.abs(u1 - fu) < 0.5 and math.abs(v1 - fv) < 0.5 and math.abs(u2 - pu) < 0.5
+            and math.abs(v2 - pv) < 0.5 then
+            cost = cost * 20
+        end
+        return cost, rest, found
+    end
+    Core.Character(ns.name).hearth = nil
+    player.map, player.x, player.y = 1414, Spot(fu, fv)
+    waypoint = { uiMapID = 1414, position = CreateVector2D(Spot(pu, pv)) }
+    shownWay = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Frames(8)
+    local kinds = {}
+    for index, leg in ipairs(shownWay and shownWay.legs or {}) do kinds[index] = leg.kind end
+    check(table.concat(kinds, " ") == "walk",
+        "a walk straight there a long way round: never up a lift and straight down again to walk on; the one walk")
+    Search.Price, Core.Character(ns.name).hearth = price, hearth
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
+-- A walk to a lift's end ends on its own level (Lifts.Heights: within Walk.RISE yards of its landing's height, nearer
+-- it than the other end's): from the hall of tile 6178 to the upper end of lift 11, on the courtyard over the hall (one
+-- region, joined to it only far off), the search ended on the hall under it, where the lift's foot is, and a journey
+-- rode down and up again from there as though it had come down the lift. Now it ends on the courtyard: none there.
+;(function()
+    local s, Lifts = Walk.SAMPLE, ns.Lifts
+    local lift
+    for _, each in ipairs(Lifts.All()) do
+        if each.key == 11 then lift = each end
+    end
+    local low, high = Lifts.Heights(lift[1]), Lifts.Heights(lift[2])
+    check(low and high and low[1] == -32 and low[2] == -8 and high[1] == -2 and high[2] == 22,
+        "each end of a lift: the heights of its own level, within Walk.RISE yards of its landing's")
+    local hu, hv, hall = 2 * Coords.TILE + 110 * s, -70 * s, { 6178, 2 }
+    local top, foot = lift[2], lift[1]
+    check(Search.Price(1414, hu, hv, top.pu, top.pv, hall)
+        and not Search.Price(1414, hu, hv, top.pu, top.pv, hall, nil, nil, nil, high)
+        and Search.Price(1414, hu, hv, foot.pu, foot.pv, hall, nil, nil, nil, low),
+        "from the hall to the lift's upper end: on its level only (the courtyard: no way there), not on the hall under "
+        .. "it; to its foot on the hall")
+end)()
+-- Of the journeys whose walks were all priced, the quickest is drawn. Alpha and Beta known (the set's flight 5), the
+-- player 100 yards south of Alpha, the pin 2000 yards north of Beta, each walk priced at its guess times a factor:
+-- first the flight, its walk on from Beta 1.7 times its guess (so the journey is chosen again), then the walk straight
+-- there, 1.55 times its guess (under Planner.WORSE times: it stays), dearer as priced than the flight with its walks.
+-- The line was the walk; now the flight.
+;(function()
+    local price, nodes, known = Search.Price, C_TaxiMap.GetTaxiNodesForMap, Core.Character(ns.name).flightPoints
+    local count, hearth = C_Item.GetItemCount, Core.Character(ns.name).hearth
+    C_TaxiMap.GetTaxiNodesForMap = function(map)
+        if map ~= 1415 then return {} end
+        return { { nodeID = 20, name = "Alpha", position = CreateVector2D(0.5, 0.2), faction = 0 },
+                 { nodeID = 21, name = "Beta", position = CreateVector2D(0.5, 0.15), faction = 0 } }
+    end
+    Core.Character(ns.name).flightPoints = { [20] = true, [21] = true }
+    C_Item.GetItemCount = function() return 0 end
+    Core.Character(ns.name).hearth = nil
+    local priced = {}
+    Search.Price = function(map, u1, v1, u2, v2)
+        local times = 1
+        if math.abs(v2 - 3000) < 1 then times = math.abs(v1 - 1000) < 1 and 1.7 or 1.55 end
+        local cost = times * math.sqrt((u2 - u1) ^ 2 + (v2 - v1) ^ 2) * Planner.DETOUR
+        priced[#priced + 1] = times
+        return cost, 0, { points = { u1, v1, u2, v2 }, cost = cost, rest = 0 }
+    end
+    player.map, player.x, player.y = 1415, 0.5, 0.205
+    waypoint = { uiMapID = 1415, position = CreateVector2D(0.5, 0.05) }
+    shownWay = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Frames(8)
+    local legs, kinds = shownWay and shownWay.legs or {}, {}
+    for index, leg in ipairs(legs) do kinds[index] = leg.kind end
+    check(table.concat(kinds, " ") == "walk flight walk" and table.concat(priced, " ") == "1 1.7 1.55"
+        and near(legs[2].points[#legs[2].points].v, 1000),
+        "the flight priced, chosen again, the walk straight there priced dearer: of the journeys priced whole, the flight")
+    Search.Price, C_TaxiMap.GetTaxiNodesForMap, Core.Character(ns.name).flightPoints = price, nodes, known
+    C_Item.GetItemCount, Core.Character(ns.name).hearth = count, hearth
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
 ns.Route.Show = show
 
 os.execute(("rm -rf '%s'"):format(routesFolder))

@@ -157,7 +157,8 @@ Lifts (2026-10-21): Travel's kind `lift`, one record per car (keys from 1100001,
 <places> <batch>`: the motion from the client's TransportAnimation, the places a batch file of our picking, batch
 10). `Lifts.lua` (no frames): each end at its landing (`Walk.Landing`), `Lifts.Levels` (two landings' regions;
 stacked or side by side by a ring round the shaft), `Lifts.Joined`, `Lifts.Stand` (where a place stands: below a
-stacked upper level, the Undercity under the ruins), `Lifts.Near`. `Planner.lua`: lift ends are places (`lift`,
+stacked upper level, the Undercity under the ruins), `Lifts.Near`, `Lifts.Heights` (2026-10-22: the heights of an
+end's own level, for the walks to it). `Planner.lua`: lift ends are places (`lift`,
 `floor`, `z`), the ride costs `wait / 2 + time`, no walk between two joined levels or into a place below one, walks
 start on known floors (`step.floor`), `Rode` puts the floor on the far landing after a ride; the pin keeps its map
 (`target.at`). Checked offline on the real data: Walk, Search, Lifts and Planner under lua5.1 with stubs, the tiles
@@ -177,6 +178,15 @@ after a walk at a flight point (2026-10-22): `Journey` takes off with the first 
 node, `Planner.BOARD` with it; no `"up"` way), so the air over a flight point (`-node`) is reached by a flight only
 and `"down"` is a landing; before, up and straight down let a walk follow the walk there, on from another of its
 floors (`Search`'s sources: every floor at a place without its own), as from the lift to Sylvanas by the bat handler.
+No ride straight back (2026-10-22): `Journey` keeps, per node reached by a ride, the place the rides since the last
+walk began (`boarded`; `origin` while a node is looked at) and lets no ride (nor `"down"`) reach it, so a lift's end
+walked to is not ridden up and straight down again to walk on (5 of 200 routes did, at the Undercity's lifts and
+Gnomeregan's); a walk to a lift's end ends on its own level (`step.level` = `Lifts.Heights`: within `Walk.RISE` of
+its landing's height, at most half way to the other's; `Search.Price`'s `level` keeps `Goals` to those heights, none
+else), as the walk to the Undercity's upper landings ended in the city under them; and `Find` draws the quickest of
+the journeys priced whole (`kept`: Journey's seconds with each walk's price in place of its guess and
+`Planner.APART`), as one chosen again could be dearer than one before it (a walk up to `Planner.WORSE` times its
+guess stays; after `Planner.TRIES` the last stayed: Ironforge to the Undercity by Dalaran, 910 s for 650).
 
 Doodads in the walking data (2026-10-21): `dev/tools/walk-data` reads the doodads' collision (`model`: the M2 header's
 collision triangles; `placements`: the object files' MDDF and each building's doodad sets, `doodads`, set 0 and the
@@ -297,7 +307,8 @@ with the routes harness outside the project (as 2026-10-21, above).
 Not yet: a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
 minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
 checks; 524 with the 2026-10-21 changes; 527 with the whole city below; 528 with no walk after a walk at a flight
-point; 530 with the routing finalized; 551 with the coarse layer), `dev/tests/walk.py` (125; 130 with the
+point; 530 with the routing finalized; 551 with the coarse layer; 555 with no ride straight back), `dev/tests/walk.py`
+(125; 130 with the
 teleports' tool; 147 with the walking data's openings; 159 with the coarse layer).
 
 ## What is not there yet

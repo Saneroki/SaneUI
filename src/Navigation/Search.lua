@@ -24,14 +24,15 @@ local _, ns = ...
 --  its straight line is priced at once. A start priced again in one plan goes out
 --  of its tiles as the first time (Out, kept in the planner's memo).
 --
---      Search.Price(continent, u1, v1, u2, v2, from, check, water, memo)   the cost in yards on land, the yards
+--      Search.Price(continent, u1, v1, u2, v2, from, check, water, memo, level)   the cost in yards on land, the yards
 --                      from the walking data to the end (0: on it; more than Search.NEAR: as near as one walks,
 --                      Search.FAR) and what Search.Walk needs to draw it; nil and "off" where the walking data has no
 --                      floor near the start or the end (nothing to search), nil where no way is found (or Search.MOST
 --                      nodes were looked at first); from: the floor the start stands on ({ key, index }, Walk.Follow's),
 --                      else every floor under it; check: called between pieces of the work (in a job of Core's
 --                      scheduler, its Steps.Check); water: what a yard swum costs in yards on land (the walker's speed on
---                      land over theirs in water), else Search.WATER; memo: a table kept while one plan is made
+--                      land over theirs in water), else Search.WATER; memo: a table kept while one plan is made; level:
+--                      the heights the floor it ends on lies between ({ low, high }: a lift's end's, Lifts.Heights)
 --      Search.Walk(continent, u1, v1, u2, v2, from, check, water, found)   points { u1, v1, ..., u2, v2 }, the cost and
 --                      the yards from the walking data to the end, or nil (and "off") as Search.Price; found: what
 --                      Search.Price gave for this walk, else it is priced first
@@ -44,7 +45,9 @@ local _, ns = ...
 --  it or within Search.NEAR yards of it (a pin inside a wall, or where its own
 --  floor is missing from the data: Ironforge's city under its mountain), else the
 --  nearest within Search.FAR (a pin on a tower, or on a plateau no lift reaches:
---  the planner takes the lifts, Lifts.lua). Floors one over the other are each a
+--  the planner takes the lifts, Lifts.lua); a walk to a lift's end on a floor of
+--  its level within Search.NEAR yards only, never on the other level over or under
+--  it (none there: no way). Floors one over the other are each a
 --  start or an end of their own, so the walk is the shortest between any two. What
 --  lies between the walking data and the point itself is drawn straight and costs
 --  Search.STRAIGHT times its yards: the line always runs from the start to the end,
@@ -123,14 +126,17 @@ end
 -- end), cost (the rest of the way, straight) }; nil when none is near enough. Those under the end, and those within
 -- Search.NEAR yards of it at Search.STRAIGHT times their way to it: the end's own floor may be missing from the data
 -- where another lies over it (Ironforge's city under its mountain), and the walk to the one over it is the long way.
-local function Goals(continent, u, v, regions)
+-- With a level (the heights a lift's end's floors lie between), only those at its heights: none such, none.
+local function Goals(continent, u, v, regions, level)
     local goals, any = {}, false
     Walk.Around(continent, u, v, Search.NEAR, function(tile, index, nu, nv, gap)
-        if regions[tile.region[index]] then
+        local z = tile.rects[index * 5] / 4
+        if regions[tile.region[index]] and (not level or (z >= level[1] and z <= level[2])) then
             goals[Id(tile, index)], any = { tile, index, nu, nv, gap * Search.STRAIGHT }, true
         end
     end)
     if any then return goals end
+    if level then return nil end
     for region in pairs(regions) do
         local tile, index, nu, nv = Walk.Nearest(continent, u, v, Search.FAR, region)
         if tile then
@@ -478,16 +484,16 @@ local function Run(sources, goals, u2, v2, check, water, opts)
              viaFirst = viaFirst, viaLast = viaLast, across = across, first = first }
 end
 
--- The walk's start and end on the walking data: its sources, the floor it stands on (own) and its goals; nil and
--- "off" where the walking data has no floor near the start or the end, nil where none of the start's regions
--- reaches the end.
-local function Prepare(continent, u1, v1, u2, v2, start)
+-- The walk's start and end on the walking data: its sources, the floor it stands on (own) and its goals (at the
+-- level's heights, where it has one); nil and "off" where the walking data has no floor near the start or the end, nil
+-- where none of the start's regions reaches the end.
+local function Prepare(continent, u1, v1, u2, v2, start, level)
     if not Walk.Ready() then return nil, "off" end
     local sources, own = Sources(continent, u1, v1, start)
     if #sources == 0 then return nil, "off" end
     local regions = {}
     for _, source in ipairs(sources) do regions[source[1].region[source[2]]] = true end
-    local goals = Goals(continent, u2, v2, regions)
+    local goals = Goals(continent, u2, v2, regions, level)
     -- None of the start's regions near the end: no way, where the end has floors at all near it.
     if not goals then return nil, not Walk.Nearest(continent, u2, v2, Search.FAR) and "off" or nil end
     return sources, own, goals
@@ -693,9 +699,9 @@ end
 -- What a walk costs, by the coarse way: see the header. From the start's tiles and those of the end rectangle by
 -- rectangle, across the others by their gates; a start already priced in this plan (memo) from the ways out of its
 -- tiles found then (Out).
-function Search.Price(continent, u1, v1, u2, v2, from, check, water, memo)
+function Search.Price(continent, u1, v1, u2, v2, from, check, water, memo, level)
     water = water or Search.WATER
-    local sources, own, goals = Prepare(continent, u1, v1, u2, v2, from)
+    local sources, own, goals = Prepare(continent, u1, v1, u2, v2, from, level)
     if not sources then return nil, own end
     local zone, ends = TilesOf(sources), TilesOf(goals)
     local apart = Apart(zone, ends)

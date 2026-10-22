@@ -3,8 +3,31 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 551 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: no ride straight back (2026-10-22)
+- `Planner.lua` (`Journey`): no ride brings one back to where the rides since the last walk began (`boarded`: for a
+  node reached by a ride, that place; `origin` while a node is looked at; neither a ride nor a landing reaches it). A
+  lift's end reached on foot lets no walk go on and the same end reached by the lift does, so 5 of 200 routes between
+  NPCs rode a lift up and straight down again (the Undercity's, the small one by Gnomeregan) for a walk after a walk.
+- `Lifts.lua` (`Lifts.Heights`, new): the heights of a lift end's own level (within `Walk.RISE` yards of its
+  landing's, at most half way to the other end's); `Search.Price` takes them (`level`, passed to `Goals`): such a walk
+  ends only on a floor at those heights within `Search.NEAR` yards, none else. A walk to the Undercity's upper landings
+  ended in the city under them (one region with the ruins, by the sewers), as though it had come down the lift.
+- `Planner.lua` (`Find`): of the journeys whose walks were all priced, the quickest as priced is drawn (`kept`: the
+  journey's seconds with each walk's price in place of its guess and of `Planner.APART`). One chosen again by its
+  guesses could be dearer than one priced before it: a walk up to `Planner.WORSE` times its guess stays, and after
+  `Planner.TRIES` tries the last stayed whatever it cost (Ironforge to Apothecary Zinge by Dalaran's portals, then an
+  Undercity lift up and straight down: about 910 seconds where 650 were known).
+- Checked on the real data (outside the game, the walking data of 2026-10-22, the code before and after): of 200
+  routes between NPCs none rides back (5 before; with the player indoors 4, in turn 5); those go by one walk or
+  another real way, and three others take the quicker journey priced before them; walks drawn straight 1, off the
+  data 1, none and not from the player 0, as before; the 29 fixed journeys the same legs; the teleports' 16 from the
+  player to the pin; 128 ms a route (127).
+- Tests: `dev/tests/navigation.lua` (555 checks: a walk straight there a long way round, never up a lift and
+  straight down again to walk on; each end of a lift its level's heights, and a walk to the upper end from the hall
+  under it none; of the journeys priced whole the quickest drawn).
 
 ### Inventory, Core: the character, the bags and the alts in Sane UI's own look (Saneroki, 2026-10-22)
 - Saneroki asked for the inventory's windows in the new art and style (`Doc/guides/interface-style.md`), resizable

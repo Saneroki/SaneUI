@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: routes no longer ride a lift up and straight back down
+  (in the Undercity, by Gnomeregan), a route's walk to a lift leads to
+  the lift's own floor, and of the ways a route has worked out the
+  quickest is shown.
 - Inventory: the character, the bags, the bank and your alts in
   Sane UI's own look: an adventurer's journal of cream paper bound in
   stitched leather, items in pencil-drawn slots, words in a

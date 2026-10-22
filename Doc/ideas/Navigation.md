@@ -1359,6 +1359,33 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     before; 619 ms a route (643), the slowest 4.3 s (5.8). One other journey changed by chance only: out of a place
     no walk is found from (Archmage Xylem's) every way costs the same, and another is drawn straight (488 yards to a
     flight point, where it was 9,495 to a portal).
+  - **Fixed (2026-10-22): no ride straight back.** 5 of 200 journeys between NPCs' places (4 and 5 with the player
+    indoors, in turn) rode a lift up and straight down again (the Undercity's, and the small one by Gnomeregan), only
+    so that a walk could follow a walk: a lift's end reached on foot is a node from which no walk goes on, the same
+    end reached by the lift one from which one does. Three things made it pay, each fixed:
+    - **No ride back to where the rides began:** the journey keeps, for a place reached by a ride, where the rides
+      since the last walk began, and no ride (nor a landing) brings one back there: not down a lift one rode up, nor
+      down at a flight point after flying round to it again.
+    - **A walk to a lift's end ends on its level:** the search ends a walk on any floor of its regions within 50
+      yards, and the Undercity is one region with the ruins over it (its sewers): a walk to a lift's upper end
+      ended in the city under it, at the lift's foot, so the line seemed to come down the lift first and could then
+      ride up (from the Royal Quarter to the Bulwark). Now such a walk ends on a floor within 12 yards (`Walk.RISE`)
+      of the end's landing's height, at most half way to the other end's (`Lifts.Heights`); none there, no walk.
+      Walks to the lifts' foot in the city are a little longer for it (the climb to their landings: 166 yards to 184,
+      162 to 232).
+    - **The quickest journey priced:** a journey chosen again by its guesses may be dearer, as priced, than one
+      before it (a walk found up to `Planner.WORSE` times its guess stays; and after `Planner.TRIES` tries the last
+      stayed whatever it cost: from Ironforge to the Undercity by Dalaran's portals, then down one lift, along the
+      city and up another, 910 seconds where 650 were known). Of the journeys whose walks were all priced, the
+      quickest is drawn now.
+
+    Checked on the real data (outside the game, the walking data of 2026-10-22, the code before and after): of the
+    200 journeys none rides back, outdoors, indoors or in turn (5, 4 and 5 before); the five go by one walk or another
+    real way (from the Royal Quarter to the Bulwark one walk of 2,102 yards; from Ironforge to Apothecary Zinge by
+    Dalaran's portals and one walk), and three others the quicker journey priced before them (from Clerk Horrace
+    Whitesteed to Ginny Longberry a longer flight and 3,300 yards less on foot). Walks drawn straight 1, off the data
+    1, none and not from the player 0, as before; the 29 fixed journeys the same legs; the teleports' 16 all from the
+    player to the pin; 128 ms a route (127), the slowest 0.76 s (0.77).
 - **Built (2026-10-21): the portals; routes checked on the whole real data.** Saneroki asked whether the routes are
   reliable, flexible and robust: checked outside the game, the planner, its search and Core's timetables over every
   walking tile, the game's flight points and the set *Travel*, on journeys through the cities and 200 between NPCs'

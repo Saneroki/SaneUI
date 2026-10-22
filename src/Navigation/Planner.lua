@@ -32,16 +32,19 @@ local _, ns = ...
 --                    lets it use) from the player to where each brings one (its cooldown and the cast); the quickest
 --                    taken (Dijkstra). Between two levels a lift joins (Thunder Bluff's mesa and Mulgore), or a
 --                    level and a place below it (the Undercity under the ruins over it, Lifts.Stand; also where
---                    the two share a region), no walk: the lift is the way
+--                    the two share a region), no walk: the lift is the way. No ride brings one back to where the
+--                    rides since the last walk began (up a lift and straight down again, so that a walk follows a
+--                    walk)
 --      the walks     then priced on the walking data by its coarse layer (Search.Price): the first from the floor
 --                    the player stands on, the others from the floor they start on where it is known (a lift's
 --                    landing, a portal's end, a teleport's landing), else from every floor at the place they start;
---                    a walk priced Planner.WORSE times its guess or more is put in at its price, one not found as
+--                    one to a lift's end to a floor of its own level (Lifts.Heights); a walk priced Planner.WORSE
+--                    times its guess or more is put in at its price, one not found as
 --                    none (between places that share no region, every walk between those regions too), and the
 --                    journey chosen again, up to Planner.TRIES times while its searches have looked at fewer than
 --                    Planner.BUDGET nodes (Find); so a walk many times its straight line is never searched as a
---                    short one. Once the journey stays, its walks are searched along their coarse ways and drawn
---                    (Search.Walk). The journey and its
+--                    short one. Of the journeys whose walks were all priced, the quickest stays, its walks searched
+--                    along their coarse ways and drawn (Search.Walk). The journey and its
 --                    walks are one job of Core's scheduler (a few milliseconds a frame, never in a fight); a new
 --                    pin stops it, and the line of the pin before goes at once
 --      the floor     the player's, followed as they go (Walk.Follow, every Planner.FOOT seconds while there is a
@@ -715,8 +718,10 @@ end
 -- The quickest journey by the guesses from the start (start: { map, u, v, from: the player's floor }) to the goal (a
 -- place: { map, u, v }): a list of steps { kind = "walk" | "flight" | "boat" | "zeppelin" | "tram" | "lift" | "portal" |
 -- "hearth" | "teleport", from, to (the places' names), map, u1, v1, map2, u2, v2, ... (a walk's floor: the one it
--- starts on, where known, and apart: the regions of its ends where they share none; a lift's near and far: its ends) }
--- and its seconds; nil when none reaches it. No walk follows another (one walk straight on is a way of its own).
+-- starts on, where known, level: the heights of the one it ends on, to a lift's end, and apart: the regions of its ends
+-- where they share none; a lift's near and far: its ends) } and its seconds; nil when none reaches it. No walk follows
+-- another (one walk straight on is a way of its own), and no ride brings one back to where the rides since the last
+-- walk began (up a lift and straight down: a walk would go on from where one walked to).
 -- measured: { [from] = { [to] = seconds } } walks searched already, in place of their guesses; cut: { [region] = {
 -- [region] = true } } regions no walk was found between (Find), none walked between. A flight point is two places: on
 -- the ground (its node's ID) and in the air over it (minus that), the air reached by a flight only (taking off is its
@@ -823,14 +828,18 @@ local function Journey(start, goal, measured, cut)
     -- Dijkstra over the places; a flight point in the air is its node's ID, negative. A place reached on foot is a node
     -- of its own (its name behind FOOT, Place), from which no walk goes on: a walk on from there would be one walk,
     -- and the walk straight there is a way of its own (each searched as it is, Find); nor after taking off there, as
-    -- the air over a flight point is reached by a flight only. apart: [node] = the regions of the two places the walk
-    -- to it runs between, where they share none ({ from's, to's }: a guess a search may not find).
-    local best, from, how, done, apart = { start = 0 }, {}, {}, {}, {}
+    -- the air over a flight point is reached by a flight only; nor by riding back to where the rides since the last
+    -- walk began (origin), which leaves one where one walked to (a lift up and straight down, a flight back to where
+    -- it took off). boarded: [node] = that place, for one reached by a ride. apart: [node] = the regions of the two
+    -- places the walk to it runs between, where they share none ({ from's, to's }: a guess a search may not find).
+    local best, from, how, done, apart, boarded = { start = 0 }, {}, {}, {}, {}, {}
     local finish = FOOT .. "end"
-    local current, low
+    local current, low, origin
     local function Reach(name, seconds, way, far)
+        if way ~= "walk" and Place(name) == origin then return end
         if not done[name] and (not best[name] or seconds < best[name]) then
             best[name], from[name], how[name], apart[name] = seconds, current, way, far
+            boarded[name] = way ~= "walk" and origin or nil
         end
     end
     while true do
@@ -842,6 +851,7 @@ local function Journey(start, goal, measured, cut)
         done[current] = true
         Core.Steps.Check()
         local name0, walked = Place(current)
+        origin = boarded[current] or name0
         local here = places[name0]
         if not here then
             -- In the air over a flight point, come there by a flight: on to the next ones, or down.
@@ -959,6 +969,7 @@ local function Journey(start, goal, measured, cut)
             if way == "walk" then
                 step.kind, step.guess, step.floor, step.apart = "walk", (Walking(step.from, a, step.to, b)), a.floor,
                     apart[at]
+                step.level = b.lift and Lifts.Heights(b.lift) or nil
             elseif way == "hearth" then
                 step.kind = "hearth"
             elseif way.kind == "teleport" or way.kind == "tram" then
@@ -997,20 +1008,23 @@ end
 
 -- Every walk of the journey priced by the coarse layer (in the plan's job), one after the other: each from the floor
 -- it starts on where that is known (the player's, a lift's landing, a portal's end, a teleport's landing), else from
--- every floor at the place it starts. A walk much dearer than its guess, or one not found (Teldrassil's top and the
--- shore under it: the portal is the way): the journey chosen again with the walks priced so far in place of their
--- guesses, those not found as none (Measured), up to Planner.TRIES times while its searches have looked at fewer than
--- Planner.BUDGET nodes. Once it stays, each walk searched along its coarse way for its line. Where nothing else goes,
--- the walk not found stays: drawn as near as one walks, then straight, where its search came that near (a place
--- nobody walks onto, a plateau no lift reaches), else straight.
+-- every floor at the place it starts; one to a lift's end to a floor of its level. A walk much dearer than its guess,
+-- or one not found (Teldrassil's top and the shore under it: the portal is the way): the journey chosen again with the
+-- walks priced so far in place of their guesses, those not found as none (Measured), up to Planner.TRIES times while
+-- its searches have looked at fewer than Planner.BUDGET nodes. Of the journeys whose walks were all priced, the
+-- quickest as priced stays (one chosen again by its guesses may come out dearer than one before it: a walk found up to
+-- Planner.WORSE times its guess, or the tries spent), each walk searched along its coarse way for its line. Where
+-- nothing else goes, the walk not found stays: drawn as near as one walks, then straight, where its search came that
+-- near (a place nobody walks onto, a plateau no lift reaches), else straight.
 local function Find(start, goal)
     local measured, walked, cut, memo = {}, {}, {}, {}
     local tries, spent = Planner.TRIES, Search.looked
+    local kept, keptSeconds -- the quickest journey priced whole so far, and its seconds so
     local swim
     land, swim = Speeds()
     local water = math.max(1, land / swim) -- a yard swum costs so many on land
     while true do
-        local steps = Journey(start, goal, measured, cut)
+        local steps, seconds = Journey(start, goal, measured, cut)
         if not steps or not Walk.Ready() then return steps end
         local again = false
         for _, step in ipairs(steps) do
@@ -1018,7 +1032,7 @@ local function Find(start, goal)
                 local key = step.from .. ":" .. step.to
                 if walked[key] == nil then
                     local cost, rest, way = Search.Price(step.map, step.u1, step.v1, step.u2, step.v2, step.floor,
-                        Core.Steps.Check, water, memo)
+                        Core.Steps.Check, water, memo, step.level)
                     if not cost then
                         walked[key] = rest == "off" and "off" or false
                     elseif step.apart and rest > Search.NEAR then
@@ -1032,16 +1046,28 @@ local function Find(start, goal)
                 local found = walked[key]
                 Measured(measured, cut, step, found)
                 step.walked = found
-                local seconds = type(found) == "table" and found.seconds or nil
+                local priced = type(found) == "table" and found.seconds or nil
+                -- The journey's seconds as priced: the walk's own in place of its guess (and of Planner.APART, a
+                -- guess's only); one not found, none.
+                if found ~= "off" then
+                    local guessed = step.guess + (step.apart and Planner.APART or 0)
+                    seconds = priced and seconds + priced - guessed or math.huge
+                end
                 if tries > 0 and Search.looked - spent < Planner.BUDGET
-                    and ((found ~= "off" and not seconds) or (seconds and seconds > step.guess * Planner.WORSE)) then
+                    and ((found ~= "off" and not priced) or (priced and priced > step.guess * Planner.WORSE)) then
                     again = true
                     break
                 end
             end
         end
+        local whole = true
+        for _, step in ipairs(steps) do
+            if step.kind == "walk" and step.walked == nil then whole = false end
+        end
+        if whole and (not kept or seconds < keptSeconds) then kept, keptSeconds = steps, seconds end
         if not again then
-            -- The journey stays: its walks' lines, each along its coarse way.
+            -- The journey stays, or a quicker one priced whole before it: its walks' lines, each along its coarse way.
+            steps = kept
             for _, step in ipairs(steps) do
                 local found = step.kind == "walk" and step.walked
                 if type(found) == "table" then

@@ -15,6 +15,8 @@ local _, ns = ...
 --      Lifts.Landed(end)   whether the end lies on a landing (asked once the walking data is there): then also its
 --                          floor ({ key, index }), pu, pv (the landing's point nearest the shaft), region and fz (the
 --                          floor's height)
+--      Lifts.Heights(end)  the heights the floors of the end's own level lie between ({ low, high }; nil where an end
+--                          lies on no landing): within Walk.RISE yards of its landing's, nearer it than the other end's
 --      Lifts.Levels(map)   the levels the lifts of a plane join: { lower, upper (regions), stacked }, one per two
 --                          regions a lift's landings lie in: stacked, one over the other (Gnomeregan under Dun Morogh),
 --                          or side by side (Thunder Bluff's mesa and Mulgore at its foot); a lift within one region
@@ -40,7 +42,8 @@ local _, ns = ...
 --  It stands on the floor below that showed it.
 --  Where two levels side by side lie one over the other, by the lift (its upper landing over the platform at its
 --  foot), a place stands on the upper. A walk between two levels a lift joins, or between a level and a place below
---  it, is none: the lift is the way (Planner.lua).
+--  it, is none: the lift is the way (Planner.lua); and a walk to a lift's end ends on its own level (Heights), never
+--  on the other one over or under it (the city under the Undercity's upper landings).
 --  Where a lift's two landings lie in one region, its levels are its region's floors round it, told apart by their
 --  height: the upper from halfway between the landings up, the lower within Walk.RISE yards of its lower landing's
 --  height; a place stands below such a level only round its lift: on a map its ends lie on (in that map's box: the
@@ -109,6 +112,17 @@ function Lifts.Landed(point)
         end
     end
     return point.landed
+end
+
+function Lifts.Heights(point)
+    local lift = point.lift
+    local other = lift[point == lift[1] and 2 or 1]
+    if not (Lifts.Landed(point) and Lifts.Landed(other)) then return nil end
+    if not point.heights then
+        local reach = math.min(Walk.RISE, math.abs(point.fz - other.fz) / 2)
+        point.heights = { point.fz - reach, point.fz + reach }
+    end
+    return point.heights
 end
 
 -- Whether a floor (its region and height) lies on a level's upper level, or on its lower: its region; within one

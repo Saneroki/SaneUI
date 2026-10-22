@@ -432,7 +432,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   `Walk.Landing` within `Planner.ARRIVE` yards, a guess (the place is not yet the game's own, and Teleport:
   Stormwind's height is the Wizard's Sanctum's cellar's, closed in), else like the hearthstone's place; after the leap
   the floor followed is that one); the quickest chosen (Dijkstra; a place reached on foot is a node of its own, from which no walk
-  goes on: the walk straight on is a way of its own), the walks then priced by the coarse layer (`Search.Price`)
+  goes on: the walk straight on is a way of its own; and no ride brings one back to where the rides since the last
+  walk began, as up a lift and straight down again would let a walk follow a walk), the walks then priced by the coarse layer (`Search.Price`)
   (the first from the floor the player stands on: followed every `Planner.FOOT` seconds while there is a pin,
   `Walk.Follow`, else chosen, `Walk.Floor`, and chosen anew after a leap of `Planner.LEAP` yards between two looks,
   a portal; none on a flight, a boat, a zeppelin or the tram; one chosen among others under the player a guess, for which the
@@ -441,7 +442,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   Sanctum's, Dalaran's Violet Citadel's), to where a portal brings one, its floor there) and the journey chosen again, up to `Planner.TRIES`
   times while the plan's searches have looked at fewer than `Planner.BUDGET` nodes (`Search.looked`), when one is
   much dearer than guessed or not found (so a walk many times its straight line is never searched as a short one);
-  once the journey stays, its walks searched along their coarse ways for their lines (`Search.Walk`): a walk not
+  of the journeys whose walks were all priced, the quickest stays (one chosen again by its guesses may come out
+  dearer than one before it), its walks searched along their coarse ways for their lines (`Search.Walk`): a walk not
   found is none, and where its two places share
   no region, so is every walk between those regions, and one that ends only as near as one walks (Teldrassil's top
   and the shore under it: the portal is the way; where it stays the way, drawn as near as one walks, then straight); one without walking data at an end stays a guess, drawn straight:
@@ -462,7 +464,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   its shaft, not on the roof over it), only where both ends have one; its cost half
   the time between two departures from an end (`wait`) and its ride (`time`); drawn gold, straight from landing to
   landing. Between two levels a lift joins (its landings' regions), or a level and a place below it, no walk: the
-  lift is the way. A place stands below a lift's upper level (`Lifts.Stand`) where its levels are stacked (on a ring
+  lift is the way; and a walk to a lift's end ends on its own level (`Lifts.Heights`: within `Walk.RISE` yards of its
+  landing's height, nearer it than the other end's), never on the level over or under it. A place stands below a lift's upper level (`Lifts.Stand`) where its levels are stacked (on a ring
   `Lifts.RING` yards round its shaft a third of the lower level's points lie under the upper: the Undercity under
   the ruins; Thunder Bluff's mesa is beside the land at its foot) and the place lies over the lower level (its known
   floor under the upper's; else the lower level's floors under it; the pin on the lift's own map also over any other
@@ -595,6 +598,17 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-22, no ride straight back:** 5 of 200 routes between NPCs rode a lift up and straight down again (the
+  Undercity's, Gnomeregan's), only so that a walk could follow a walk: a place reached on foot lets no walk go on,
+  one reached by a ride does. Three things made it pay: a walk to a lift's upper end could end on the city under it,
+  at the lift's foot, as though it had come down already; a journey chosen again by its guesses could come out
+  dearer than one priced before it (a walk found up to 1.6 times its guess stays, and after eight tries the last
+  stays whatever it costs: from Ironforge to the Undercity by Dalaran's portals, 910 seconds where 650 were known);
+  and nothing kept the ride from going back. Now no ride brings one back to where the rides since the last walk
+  began, a walk to a lift's end ends on its own level (within 12 yards of its landing's height), and of the journeys
+  whose walks were all priced the quickest is drawn. The five go by one walk or another real way (from the Undercity
+  to the Bulwark one walk of 2,102 yards); the walks drawn straight, off the walking data or not from the player stay
+  as they were, and so do the 29 fixed journeys and the teleports'.
 - **2026-10-22, long walks found fast:** a far pin took the planner seconds: each walk was searched rectangle by
   rectangle as far as its length reached, and one many times its straight line (a Horde character deep in the
   Alliance's lands) was tried as a short one and given up after 200,000 rectangles, then drawn straight. The walking
