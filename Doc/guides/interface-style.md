@@ -104,9 +104,11 @@ with as little room for frame and ornament as the look allows.
   - **the edges:** the thin stitched leather binding, the clasp on the right, the pages' edges showing;
   - **the corners:** the metal caps and the page corners of the stacked pages;
   - **the bottom:** the page running down to its own stack of pages. No leather strap or patches lie over the
-    paper at the bottom. The page lies on the stack with a natural edge, drawn by code: the page darkening a
-    little as it bends down, a faint light lip, its soft shadow on the stack (Saneroki, 2026-10-22: no straight
-    cut). The stack is one piece stretched between its two corners, so its lines run on without a join.
+    paper at the bottom. The page curls onto the stack and the bindings run down into the corner caps as one
+    painted piece (Saneroki, 2026-10-22: no straight cut-off, the bottom one piece with the edges and the paper).
+    Code cut the strap's rows out of #12, so the page and the stack below came from rows that never met; one
+    masked repaint of that band at 4K, the whole width with both edges (`catalog.py bottom`), joins them. The
+    stack is one piece stretched between its two corners, so its lines run on without a join.
 - The harness uses #12's own pixels for all of it (*The harness*): its parts fit together exactly at their own
   scale. Repeats are joined without seams; where #12 has things that are not wanted, code cuts them out (the
   strap's rows) or covers them with #12's own paper (the label's writing).
@@ -271,16 +273,17 @@ needs, for responsive, flexible designs).
      in code (the letters in #12's title label).
   5. The results go to `assets/generated/interface/hires/`; `pencil.py` takes the pencil box's lines from the
      hires #14.
-  6. `catalog.py masks`: the two whole picks (#12, #3) have a background round them; ComfyUI's background removal
+  6. `catalog.py bottom`: the window's bottom repainted once as one piece (*The window's top, edges and bottom*).
+  7. `catalog.py masks`: the two whole picks (#12, #3) have a background round them; ComfyUI's background removal
      (BiRefNet, `dev/imagegen/workflows/birefnet-mask.json`) finds it, once each, so their outside becomes
      transparent.
 - **Pieces** (`pieces.py`, `assets/generated/interface/pieces/`, Saneroki, 2026-10-22): the final puzzle pieces
   code builds every window from, at 4K, alone on transparency, trimmed. `pieces.json` says how each is laid.
   - **The window** from #12, its paper moved to the page's tone: `frame-top-left`, `-middle`, `-right` (the
     strap, ribbon, title label and corner patch; the middle stretches, its paper fades into the page);
-    `frame-bottom-left`, `-middle`, `-right` (the two corners and the page stack between them, stretched whole
-    and joined edge to edge; above the stack it is transparent, so the page runs down to it and code draws the
-    page's edge); `frame-left` and `frame-right` (tiles that repeat down without a seam), `frame-clasp`. The title's and the close button's places are in `pieces.json`.
+    `frame-bottom-left`, `-middle`, `-right` (the page curling onto its stack and the two corners, from the
+    repainted bottom; the stack stretched whole between the corners, joined edge to edge; its paper fades into
+    the page); `frame-left` and `frame-right` (tiles that repeat down without a seam), `frame-clasp`. The title's and the close button's places are in `pieces.json`.
   - **The character window** (`doll`): #3 whole, on the page's tone; code fills its slots and strips.
   - **Cut-outs:** `patch` (every button and side tab), `tab-arrow`, `tab-arrow-b`, `tab-patch`, `edge-left`,
     `edge-right`, and every kit part (`kit3-01` to `kit4-11`). Their rim (the pick's light background left at
@@ -372,7 +375,7 @@ lines, cuts the final pieces, lays out the views and the 4K full screen, and reb
 - Run it now: `saneui switch interface`.
 - After a decision changed (a pick, a cut, a part's source): `saneui rebuildstart interface` forgets what was
   made (`catalog.py --rebuild`) and renders it all anew.
-- Single steps by hand: `python3 dev/imagegen/sets/interface/catalog.py clean|hires|masks|pencil|pieces|views`;
+- Single steps by hand: `python3 dev/imagegen/sets/interface/catalog.py clean|hires|bottom|masks|pencil|pieces|views`;
   the pieces and the views need no graphics card (`pieces.py`, `compose.py`, `gallery.py`).
 - See the results: the gallery, `assets/generated/interface/index.html` (`.claude/launch.json` "interface").
 

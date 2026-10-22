@@ -277,7 +277,7 @@ FRAME_R = pieces.FRAME_RIGHT[1] - pieces.FRAME_RIGHT[0]
 CLASP_H = pieces.CLASP[3] - pieces.CLASP[1]
 TITLE_AT = (pieces.TITLE_AT[0] - pieces.FRAME_X[0], pieces.TITLE_AT[1] - pieces.FRAME_TOP[0])
 CLOSE_FROM_RIGHT = (pieces.FRAME_X[3] - pieces.CLOSE_AT[0], pieces.CLOSE_AT[1] - pieces.FRAME_TOP[0])
-BOTTOM_JOIN = pieces.BOTTOM_JOIN - pieces.FRAME_BOTTOM[0]     # how far down the bottom the page meets the stack
+PAGE_FOOT = pieces.FRAME_BOTTOM[1] - pieces.PAGE_END          # the bottom's height below the page's end
 
 
 def band(left, mid, right, length, blend):
@@ -312,24 +312,6 @@ def butt(left, mid, right, length):
     return out
 
 
-def page_edge(canvas, x0, x1, y):
-    """Where the page meets the stack (layout pixels): the page darkening a little as it bends down, a faint light
-    lip at its edge, and its soft shadow on the stack below it."""
-    w = z(x1 - x0)
-    above, below = z(12), z(6)
-    shade = Image.new("RGBA", (w, above + below))
-    for i in range(above):
-        t = (i + 1) / above
-        ImageDraw.Draw(shade).line((0, i, w, i), fill=(66, 46, 28, int(70 * t ** 1.8)))
-    ImageDraw.Draw(shade).line((0, above - z(1), w, above - z(1)), fill=(255, 246, 226, 60), width=max(1, z(1)))
-    for i in range(below):
-        t = 1 - i / below
-        ImageDraw.Draw(shade).line((0, above + i, w, above + i), fill=(30, 20, 12, int(120 * t ** 1.5)))
-    # its ends fade into the edges' leather
-    shade.putalpha(ImageChops.multiply(shade.getchannel("A"), fade(fade(Image.new("RGBA", shade.size, (0, 0, 0, 255)), "left", z(10)), "right", z(10)).getchannel("A")))
-    canvas.alpha_composite(shade, (z(x0), z(y) - above))
-
-
 def column(tile, length):
     """A vertical edge of any length (pixels) from its tile, repeated (the tile joins itself without a seam)."""
     out = Image.new("RGBA", (tile.width, length))
@@ -353,7 +335,7 @@ class Window:
         # the page: from the edges' inner sides, under the top and bottom's paper
         x0, y0, x1, y1 = (M + FRAME_L - 6, M + FRAME_T - 30, M + w - FRAME_R + 6, M + h - FRAME_B + 40)
         put(self.canvas, paper.page(z(x1 - x0), z(y1 - y0), seed, edge=0), (x0, y0))
-        self.content = (M + FRAME_L + 8, M + FRAME_T + 2, M + w - FRAME_R - 8, M + h - FRAME_B - (58 if buttons else 8))
+        self.content = (M + FRAME_L + 8, M + FRAME_T + 2, M + w - FRAME_R - 8, M + h - PAGE_FOOT - (52 if buttons else 8))
         self.side_tabs, self.buttons, self.bands = side_tabs, buttons, bands
 
     def finish(self):
@@ -372,7 +354,6 @@ class Window:
         put(c, piece("frame-clasp"), (M + w - FRAME_R, M + (h - CLASP_H) // 2))
         put(c, band(*(piece(f"frame-top-{e}") for e in ("left", "middle", "right")), z(w), z(48)), (M, M))
         put(c, butt(*(piece(f"frame-bottom-{e}") for e in ("left", "middle", "right")), z(w)), (M, M + h - FRAME_B))
-        page_edge(c, M + FRAME_L - 4, M + w - FRAME_R + 4, M + h - FRAME_B + BOTTOM_JOIN)
         # the title on the label, in Kalam; the close button on the corner patch, pressed in
         write(c, (M + TITLE_AT[0], M + TITLE_AT[1]), self.title, 22, "Bold", anchor="lm")
         press(c, (M + w - CLOSE_FROM_RIGHT[0], M + CLOSE_FROM_RIGHT[1]), "x", 17)
@@ -384,8 +365,8 @@ class Window:
         x = M + FRAME_L + 30
         for label in self.buttons:   # the patch stretched by nine slices (its rivets kept), never repeated
             width = 40 + len(label) * 10
-            put(c, nine(part("patch"), z(width), z(34), 0.2, 0.2, 0.2, 0.2), (x, M + h - FRAME_B - 48))
-            press(c, (x + width // 2, M + h - FRAME_B - 31), label, 14)
+            put(c, nine(part("patch"), z(width), z(34), 0.2, 0.2, 0.2, 0.2), (x, M + h - PAGE_FOOT - 44))
+            press(c, (x + width // 2, M + h - PAGE_FOOT - 27), label, 14)
             x += width + 8
         return c
 

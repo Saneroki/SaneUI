@@ -10,6 +10,8 @@ anew from the decided references (after a decision changed).
             denoise), which sharpens its detail and keeps everything where it is; transparency put back from the
             upscaled source. Before it, a cut-out's holes (light metal its cut took for the background) are made
             solid and a label's painted letters covered  ->  assets/generated/interface/hires/<part>.png
+  bottom    the window's bottom repainted once as one piece where the page meets its stack (a masked inpaint of
+            that band of the 4K #12, the whole width)  ->  .../hires/window.png (the one before: window-unjoined.png)
   masks     the outside of the two whole picks (#12, #3) found by the background removal (birefnet-mask.json)
             ->  .../hires/<part>-mask.png
   pencil    the pencil lines of #14 (pencil.py)  ->  .../pencil/
@@ -17,7 +19,7 @@ anew from the decided references (after a decision changed).
   views     the views laid out in code from the pieces (compose.py), the full screen at 4K  ->  .../views/, then
             the gallery (gallery.py)
 
-  python3 dev/imagegen/sets/interface/catalog.py [clean|hires|masks|pencil|pieces|views ...]
+  python3 dev/imagegen/sets/interface/catalog.py [clean|hires|bottom|masks|pencil|pieces|views ...]
   python3 dev/imagegen/sets/interface/catalog.py --status     how far it is (the runner's status line)
   python3 dev/imagegen/sets/interface/catalog.py --rebuild    forget what was made, so the next run makes it anew
 """
@@ -48,6 +50,21 @@ HIRES = {
 HIRES.update({f"kit{k}-{i:02}": f"{REFS}/kit/kit{k}-{i:02}.png" for k, n in ((3, 11), (4, 11)) for i in range(1, n + 1)})
 LABELS = {"top-tab-patch": (0.12, 0.18, 0.88, 0.82)}     # parts whose painted label is covered (the box inside them)
 MASKS = ["window", "doll"]                               # whole picks whose outside the background removal finds
+# The window's bottom joined (Saneroki, 2026-10-22: the page, the edges and the stack were no one piece): where
+# clean.py cut the strap's rows out, the page met a stack, edges and corners from other rows of #12 in a straight
+# line. One masked repaint of that band, the whole width with both edges, at 4K: the model sees the window round it
+# and paints the page curling onto its stack, the bindings running down into the corner caps; all else stays.
+BOTTOM = (186, 796, 846, 858)            # the band repainted, in #12's pixels (the layout's): from over its lowest
+                                         # pencil line down into the stack
+BOTTOM_AROUND = (700, 924)               # the rows the model sees round it
+BOTTOM_WORDS = ("The lower end of an open journal bound in thin stitched dark brown leather, seen straight from the "
+                "front: the plain light cream parchment page runs down and curls gently over its lower edge onto the "
+                "thick stack of page edges beneath it, its edge soft and a little uneven with a faint shadow under "
+                "it; at the left and the right the thin stitched leather binding runs straight down and turns "
+                "smoothly into the metal corner caps. One continuous, coherent piece, the same painting, light and "
+                "colours as above and below it.")
+BOTTOM_NEGATIVE = ("straight line, seam, horizontal cut, hard edge, gap, strap, belt, buckle, leather patch, button, "
+                   "text, letters, pencil frame, box, blurry, smeared")
 HIRES_WORDS = ("Exactly the same picture in higher resolution: every shape, line, colour, texture and stitch where it "
                "is, only sharper and finer, clean and crisp. Nothing added, nothing removed, no text.")
 NEGATIVE = "blurry, smeared, noise, artifacts, extra objects, text, letters, watermark, changed shape"
@@ -148,6 +165,37 @@ def hires():
         raw.save(path(f"{GEN}/hires/{name}.png"))
 
 
+def bottom():
+    """The window's bottom repainted as one piece (BOTTOM), once; the window before it is kept beside it."""
+    before = path(f"{GEN}/hires/window-unjoined.png")
+    if os.path.exists(before):
+        return
+    from PIL import ImageDraw, ImageFilter
+    win = Image.open(path(f"{GEN}/hires/window.png")).convert("RGBA")
+    y0, y1 = BOTTOM_AROUND[0] * SCALE, BOTTOM_AROUND[1] * SCALE
+    around = win.convert("RGB").crop((0, y0, win.width, y1))
+    mask = Image.new("L", around.size)
+    x0, b0, x1, b1 = (v * SCALE for v in BOTTOM)
+    ImageDraw.Draw(mask).rectangle((x0, b0 - y0, x1, b1 - y0), fill=255)
+    mask = mask.filter(ImageFilter.GaussianBlur(6 * SCALE))
+    work = f"{GEN}/hires/in"
+    around.save(path(f"{work}/window-bottom.png"))
+    mask.convert("RGB").save(path(f"{work}/window-bottom-mask.png"))
+    lst = f"{work}/bottom.txt"
+    open(path(lst), "w").write("\n".join([
+        "# Written by catalog.py: the window's bottom joined, one render.",
+        "workflow: dev/imagegen/workflows/qwen21-inpaint.json", "count: 1", f"out: {GEN}/hires/raw",
+        f"ref: {work}/window-bottom.png, {work}/window-bottom-mask.png", f"window-bottom: {BOTTOM_WORDS}"]) + "\n")
+    run(lst, "--set", "cfg=3.0", "--set", f"negative_prompt={BOTTOM_NEGATIVE}")
+    raw = Image.open(path(f"{GEN}/hires/raw/window-bottom-1.png")).convert("RGB").resize(around.size, Image.LANCZOS)
+    win.save(before)
+    joined = win.convert("RGB")
+    joined.paste(raw, (0, y0))
+    joined = joined.convert("RGBA")
+    joined.putalpha(win.getchannel("A"))
+    joined.save(path(f"{GEN}/hires/window.png"))
+
+
 def masks():
     """The outside of the whole picks: the background removal's mask of each, once."""
     todo = [n for n in MASKS if not os.path.exists(path(f"{GEN}/hires/{n}-mask.png"))]
@@ -187,10 +235,12 @@ def status():
     """One line: parts made of all, masks, pieces, the full screen; "complete" when everything is there."""
     have = sum(os.path.exists(path(f"{GEN}/hires/{n}.png")) for n in HIRES)
     mask = sum(os.path.exists(path(f"{GEN}/hires/{n}-mask.png")) for n in MASKS)
+    joined = os.path.exists(path(f"{GEN}/hires/window-unjoined.png"))
     cut = os.path.exists(path(f"{GEN}/pieces/pieces.json"))
     full = os.path.exists(path(f"{GEN}/views/fullscreen.png"))
-    done = have == len(HIRES) and mask == len(MASKS) and cut and full
-    print(f"{'complete: ' if done else ''}{have} of {len(HIRES)} parts at 4K, {mask} of {len(MASKS)} masks, "
+    done = have == len(HIRES) and joined and mask == len(MASKS) and cut and full
+    print(f"{'complete: ' if done else ''}{have} of {len(HIRES)} parts at 4K, bottom {'joined' if joined else 'not yet'}, "
+          f"{mask} of {len(MASKS)} masks, "
           f"pieces {'cut' if cut else 'not yet'}, full screen {'laid out' if full else 'not yet'}")
 
 
@@ -201,7 +251,7 @@ def rebuild():
     print("forgotten: the next run makes everything anew")
 
 
-STEPS = {"clean": clean, "hires": hires, "masks": masks, "pencil": pencil, "pieces": pieces, "views": views}
+STEPS = {"clean": clean, "hires": hires, "bottom": bottom, "masks": masks, "pencil": pencil, "pieces": pieces, "views": views}
 
 if __name__ == "__main__":
     sys.path.insert(0, HERE)

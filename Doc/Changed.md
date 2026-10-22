@@ -1456,6 +1456,11 @@ Saneroki asked for a much richer bag view, in features and looks.
   stretches the stack whole between the corners, edge to edge (`butt`; the cross-fades showed as blocks where its
   bowed lines did not meet) and draws the page's edge on it (`page_edge`: a little darkening, a light lip, a soft
   shadow). Buttons are the patch stretched by nine slices (no repeat seams), a little higher off the page's edge.
+- The window's bottom one piece (Saneroki, 2026-10-22: the straight cut-off still showed; the page, the edges and
+  the stack did not belong together): new step `catalog.py bottom` repaints the band where the page meets its stack
+  once, the whole width with both edges, by a masked inpaint of the 4K #12 (`BOTTOM`); `pieces.py` cuts the bottom
+  from it with its paper fading into the page (`FRAME_BOTTOM` from 806, `PAGE_END`); the code-drawn page edge is
+  gone.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.
