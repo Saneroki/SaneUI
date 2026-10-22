@@ -65,6 +65,9 @@ GROUPS = {
                          None),
         "showworldmap": (["dev/tools/world-map", "serve"], "the world map offline in the browser, every layer stacked",
                          "world map offline, layered"),
+        "showuilab": (["dev/tools/ui-lab", "serve"], "the interface lab: Sane UI's Lua drawn in the browser with a fake "
+                      "server", "interface lab: Lua in browser"),
+        "checkuilab": (["dev/tools/ui-lab", "check"], "a scene of the interface lab run without the page, its log", None),
     },
     "Data": {
         "data": (["dev/tools/data"], "Core's data framework: check, compile, import", 'check · compile · import'),

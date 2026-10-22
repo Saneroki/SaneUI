@@ -290,7 +290,11 @@ needs, for responsive, flexible designs).
     `frame-left` (the edge: a tile that repeats down without a seam, its paper fading into the page),
     `frame-right` (it mirrored), `frame-bottom` (it turned a quarter, repeating along), `frame-cap-left` and
     `-right` (the bottom corners' metal caps), `frame-corner-left` and `-right` (their rounded outlines, which
-    code cuts the mitred corners to), `frame-clasp`. The title's and the close button's places are in `pieces.json`.
+    code cuts the mitred corners to), `frame-mitre-left-edge`, `-left-bottom`, `-right-edge`, `-right-bottom`
+    (masks of the corners' boxes: the edge's and the bottom's part of the mitre within the rounded outline, for
+    the game, which cuts no picture on a slant), `frame-clasp`. The title's and the close button's places are in
+    `pieces.json`. How the game lays them: the interface lab's draft `dev/uilab/drafts/Journal.lua`
+    (`Doc/guides/ui-lab.md`).
   - **The character window** (`doll`): #3 whole, on the page's tone; code fills its slots and strips. Its
     outside is what the background removal and #3's backdrop colour (a dark, cool grey reached from the
     border) call outside, cut to the frame's bounds, only the part that hangs together with the window (the

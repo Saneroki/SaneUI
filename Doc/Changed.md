@@ -1605,6 +1605,23 @@ Saneroki asked for a much richer bag view, in features and looks.
 - The interface harness's page of pieces (`gallery.py` writes `pieces.html` beside `index.html`): the 61 final
   pieces by group with what `pieces.json` says of each, previews that keep their transparency, a backdrop to choose
   (checks, the page's paper, dark, light), full quality and true pixels on a click, the 4K views built from them.
+- **The interface lab** (`dev/tools/ui-lab`, `dev/uilab/`, `saneui showuilab`, http://127.0.0.1:8774/; guide
+  `Doc/guides/ui-lab.md`): Sane UI's Lua run under Lua 5.1 as the game runs it and drawn in the browser, so windows
+  are built with the code that goes into the game. A stand-in of the game's widget API: frames, buttons, check
+  buttons, edit boxes, scroll frames, sliders, status bars, message frames, the tooltip, cooldowns, animations;
+  textures with coordinates, tiling, nine slices, masks, blend modes, colours; font strings measured with the font
+  files' widths; anchors, strata, levels, layers, clipping; scripts, events, timers, the mouse and the keys.
+  Blizzard's API documentation tells what the game has that the lab does not do yet (told in the log, never nil),
+  gives `Enum`, `Constants` and the events (an unknown one is an error). Blizzard's own shared Lua and font objects
+  run as they are. A fake server (`dev/uilab/worlds/default.lua`): the player, the guild, the party, chat on a
+  script, the game's items and spells from the data master; the page sends chat and events. Scenes
+  (`dev/uilab/scenes/`: `basics`, `journal-chat`), the draft `dev/uilab/drafts/Journal.lua` (the journal window
+  from the 4K pieces as the game lays them: the top in three, the edges and the bottom repeated tile by tile, the
+  mitred corners under masks, the caps, the clasp, the paper cut to the page). Reload on a change with the saved
+  variables kept, an inspector of the frames under the mouse (made at which file and line), a Lua console.
+  Settings of the computer in `~/.config/saneui/uilab.json` (the client's tables, the listfile, the atlases).
+  `dev/tests/uilab.py` in the test run. `pieces.py mitres`: the four masks of the mitred corners
+  (`frame-mitre-*`), made with the pieces.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.

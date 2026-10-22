@@ -302,6 +302,7 @@ def main():
         ramp.paste(top, (0, 0))                        # the rounding comes in below the box's top, no step
         shape.putalpha(ImageChops.lighter(outline.crop(z(box)), ramp))
         save(f"frame-corner-{side}", shape, f"the bottom {side} corner's rounded outline: code keeps the frame inside it")
+    mitres(save)
     made["frame-top-left"]["title_at"] = [TITLE_AT[0] - FRAME_X[0], TITLE_AT[1] - FRAME_TOP[0]]
     made["frame-top-right"]["close_at"] = [CLOSE_AT[0] - FRAME_X[2], CLOSE_AT[1] - FRAME_TOP[0]]
 
@@ -339,6 +340,29 @@ def main():
     print(f"{len(made)} pieces in {os.path.relpath(OUT, ROOT)}")
 
 
+def mitres(save):
+    """The masks of the mitred bottom corners, for the game (which cuts no picture on a slant): over each corner's box
+    (CAPS), the side's part and the bottom's part of the corner, each within the corner's rounded outline, split on
+    the line from the inner corner to the outer one, softened by a pixel."""
+    for side, box in CAPS.items():
+        shape = Image.open(os.path.join(OUT, f"frame-corner-{side}.png")).getchannel("A")
+        w, h = shape.size
+        yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+        if side == "left":                                        # the outer corner at the box's bottom left
+            d = (h - xx - yy) / np.sqrt(2)                        # > 0 on the edge's side of the line
+        else:                                                     # the book's right end, RIGHT_IN before the box's end
+            ox = (FRAME_X[3] - RIGHT_IN - box[0]) * SCALE
+            d = (xx - (ox - h) - yy) / np.sqrt(2)
+        edge = np.clip(d + 0.5, 0, 1)
+        a = np.asarray(shape, dtype=np.float32)
+        for part, k in (("edge", edge), ("bottom", 1 - edge)):
+            m = Image.new("RGBA", shape.size, (255, 255, 255, 0))
+            m.putalpha(Image.fromarray((a * k).astype(np.uint8)))
+            save(f"frame-mitre-{side}-{part}", m, f"a mask (white, alpha): of the bottom {side} corner's box, the "
+                 + ("side's part" if part == "edge" else "bottom's part") + " of the mitred corner within its rounded "
+                 "outline; the game masks the edge's and the bottom's leather with it under the cap", box=list(box))
+
+
 def sheet(made):
     """One picture of every piece on a checkerboard, to look them over."""
     cell, cols = 360, 8
@@ -361,4 +385,13 @@ def sheet(made):
 
 
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:] == ["mitres"]:                               # the corner masks alone, the pieces as they are
+        listing = json.load(open(os.path.join(OUT, "pieces.json")))
+
+        def keep(name, img, how, **extra):
+            img.save(os.path.join(OUT, name + ".png"))
+            listing["pieces"][name] = {"file": name + ".png", "size": list(img.size), "how": how, **extra}
+        mitres(keep)
+        json.dump(listing, open(os.path.join(OUT, "pieces.json"), "w"), indent=1)
+    else:
+        main()

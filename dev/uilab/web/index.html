@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interface Lab</title>
+<link rel="stylesheet" href="/lab.css">
+</head>
+<body>
+<header>
+  <h1>Interface lab</h1>
+  <label>Scene <select id="scene"></select></label>
+  <label>World <select id="world"></select></label>
+  <label>Screen
+    <select id="screen">
+      <option value="1920x1080">1920 × 1080</option>
+      <option value="2560x1440">2560 × 1440</option>
+      <option value="3840x2160" selected>3840 × 2160</option>
+    </select>
+  </label>
+  <label>UI scale <input id="scale" type="range" min="0.65" max="1.15" step="0.01" value="0.65"><output id="scaleOut">0.65</output></label>
+  <label>Backdrop
+    <select id="backdrop">
+      <option value="world">the game's world</option>
+      <option value="dark">dark</option>
+      <option value="checks">checks</option>
+      <option value="light">light</option>
+    </select>
+  </label>
+  <label>Zoom
+    <select id="zoom">
+      <option value="fit" selected>fit</option>
+      <option value="1">100 %</option>
+      <option value="0.5">50 %</option>
+    </select>
+  </label>
+  <span class="grow"></span>
+  <button id="inspect" title="Show what is under the mouse (I)">Inspect</button>
+  <button id="pause" title="Stop time (P)">Pause</button>
+  <button id="reload" title="Run the scene again, as /reload does (keeps saved variables)">Reload</button>
+  <button id="fresh" title="Run the scene again with its saved variables cleared">Fresh</button>
+</header>
+<main>
+  <section id="viewport">
+    <div id="stage" tabindex="0"><div id="items"></div><div id="overlay"></div></div>
+  </section>
+  <aside>
+    <nav>
+      <button data-tab="log" class="on">Log <span id="logCount"></span></button>
+      <button data-tab="server">Server</button>
+      <button data-tab="inspector">Inspect</button>
+      <button data-tab="console">Console</button>
+    </nav>
+    <div id="tab-log" class="tab on">
+      <div class="filters">
+        <label><input type="checkbox" data-kind="error" checked> errors</label>
+        <label><input type="checkbox" data-kind="warn" checked> warnings</label>
+        <label><input type="checkbox" data-kind="missing" checked> not in the lab</label>
+        <label><input type="checkbox" data-kind="print" checked> print</label>
+        <label><input type="checkbox" data-kind="chat" checked> events</label>
+        <label><input type="checkbox" data-kind="lab"> the lab</label>
+        <button id="clearLog">Clear</button>
+      </div>
+      <ol id="log"></ol>
+    </div>
+    <div id="tab-server" class="tab">
+      <h2>Chat from the server</h2>
+      <form id="chatForm">
+        <label>Kind
+          <select id="chatKind">
+            <option>GUILD</option><option>SAY</option><option>YELL</option><option>WHISPER</option><option>PARTY</option>
+            <option>RAID</option><option>OFFICER</option><option>CHANNEL</option><option>EMOTE</option><option>SYSTEM</option>
+            <option>RAID_WARNING</option><option>INSTANCE_CHAT</option>
+          </select>
+        </label>
+        <label>From <input id="chatFrom" list="people" placeholder="a name"></label>
+        <label id="chatChannelLabel" hidden>Channel <input id="chatChannel" type="number" value="2" min="1"></label>
+        <label class="wide">Text <input id="chatText" placeholder="{item:19019} and {player:Name} become links"></label>
+        <button>Send</button>
+      </form>
+      <datalist id="people"></datalist>
+      <h2>Any event</h2>
+      <form id="eventForm">
+        <label class="wide">Event <input id="eventName" placeholder="GUILD_ROSTER_UPDATE"></label>
+        <label class="wide">Arguments (JSON) <input id="eventArgs" placeholder='["player"]'></label>
+        <button>Fire</button>
+      </form>
+      <h2>The world</h2>
+      <p class="buttons">
+        <button id="replay">Replay the world's script</button>
+        <label><input type="checkbox" id="combat"> in combat</label>
+      </p>
+      <p class="hint">The world file is <code id="worldFile"></code>: the character, guild, chat script and items. Edit it and the lab reloads.</p>
+    </div>
+    <div id="tab-inspector" class="tab">
+      <p class="hint">With Inspect on, the frames under the mouse are listed here, top first; a click keeps them.</p>
+      <div id="inspectOut"></div>
+    </div>
+    <div id="tab-console" class="tab">
+      <p class="hint">Lua in the game's environment, as /run; an expression shows its value (as /dump). Slash commands too: /reload.</p>
+      <textarea id="code" spellcheck="false" placeholder="UIParent:GetChildren()"></textarea>
+      <p class="buttons"><button id="run">Run (Enter)</button></p>
+    </div>
+  </aside>
+</main>
+<footer><span id="status">starting…</span><span class="grow"></span><span id="focus"></span><span id="perf"></span></footer>
+<script src="/lab.js"></script>
+</body>
+</html>

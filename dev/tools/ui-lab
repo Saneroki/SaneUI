@@ -1,0 +1,615 @@
+#!/usr/bin/env python3
+"""The interface lab: Sane UI's Lua drawn in the browser as the game would draw it (Doc/guides/ui-lab.md).
+
+  dev/tools/ui-lab serve [--port 8774]     the lab at http://127.0.0.1:8774/
+  dev/tools/ui-lab check [SCENE]           runs a scene headless for a few seconds, prints its log; exit 1 on errors
+
+The page runs the code of a scene (dev/uilab/scenes/) under Lua 5.1 in the lab's host (dev/uilab/host.lua), with the
+lab's stand-in for the game's API and a fake server (dev/uilab/worlds/), and draws what it makes; the files it
+read are watched, and a change runs it again, as /reload does. This server starts the host, answers its questions
+(a font's widths, an item, a spell, the client's tables, an atlas) and gives the page the textures and fonts.
+
+Where the textures come from, by the path code gives them:
+  Interface\\AddOns\\SaneUI\\...      assets/optimized/Core/... (SaneUI_<Module>: assets/optimized/<Module>/...),
+                                    then BUILD/, then the drafts the config names (art not chosen yet)
+  Interface\\...                     Blizzard's art in references/BlizzardInterfaceArt
+  a file ID                         by the listfile the config names
+Settings of this computer (all optional) in ~/.config/saneui/uilab.json:
+  client    a folder of the client's tables as CSV (GlobalColor, GlobalStrings, ChrClasses, ...): the game's own
+            colours, strings, class and race names
+  listfile  the game's file IDs to paths (CSV: id;path), for textures given by file ID
+  atlas     the game's atlases (TSV: name file fileDataID width height left right top bottom tileH tileV)
+  drafts    { "SaneUI/Art/Journal": "assets/generated/interface/pieces" }: addon folders served from elsewhere
+  fonts     { "frizqt__.ttf": "/usr/share/fonts/...ttf" }: stand-ins for the game's own fonts, which its client
+            ships compiled and cannot be read
+"""
+import argparse
+import csv
+import hashlib
+import io
+import json
+import os
+import subprocess
+import sys
+import threading
+import time
+import urllib.parse
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+LAB = ROOT / "dev/uilab"
+WEB = LAB / "web"
+CACHE = ROOT / "assets/generated/ui-lab"
+CONFIG = Path.home() / ".config/saneui/uilab.json"
+ART = ROOT / "references/BlizzardInterfaceArt"
+EXTS = (".png", ".tga", ".blp", ".jpg", ".jpeg")
+
+DEFAULT_FONTS = {   # the game's fonts by file name: stand-ins with about their widths and look
+    "frizqt__.ttf": ["/usr/share/fonts/caladea/Caladea-Regular.ttf", "/usr/share/fonts/noto/NotoSerif-Regular.ttf"],
+    "frizqt___cyr.ttf": ["/usr/share/fonts/caladea/Caladea-Regular.ttf"],
+    "arialn.ttf": ["/usr/share/fonts/liberation/LiberationSansNarrow-Regular.ttf",
+                   "/usr/share/fonts/liberation/LiberationSans-Regular.ttf", "/usr/share/fonts/noto/NotoSans-Regular.ttf"],
+    "morpheus.ttf": ["/usr/share/fonts/noto/NotoSerif-Bold.ttf"],
+    "skurri.ttf": ["/usr/share/fonts/caladea/Caladea-Bold.ttf", "/usr/share/fonts/noto/NotoSerif-Bold.ttf"],
+}
+FALLBACK_FONT = ["/usr/share/fonts/noto/NotoSans-Regular.ttf", "/usr/share/fonts/liberation/LiberationSans-Regular.ttf"]
+
+
+def config():
+    try:
+        return json.loads(CONFIG.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+CONF = config()
+
+
+# Files by the game's paths -------------------------------------------------------------------------------------------
+class Finder:
+    """Case-insensitive lookups in a folder tree, as the game's paths ignore case (Blizzard's art has a folder
+    in two spellings, GLUES and Glues: both are searched)."""
+
+    def __init__(self):
+        self.dirs = {}
+
+    def listing(self, folder):
+        key = str(folder)
+        if key not in self.dirs:
+            names = {}
+            try:
+                for name in os.listdir(folder):
+                    names.setdefault(name.lower(), []).append(name)
+            except OSError:
+                pass
+            self.dirs[key] = names
+        return self.dirs[key]
+
+    def find(self, base, rel, exts=EXTS):
+        parts = [p for p in rel.replace("\\", "/").split("/") if p]
+        if not parts:
+            return None
+        folders = [Path(base)]
+        for part in parts[:-1]:
+            nxt = []
+            for f in folders:
+                for name in self.listing(f).get(part.lower(), []):
+                    nxt.append(f / name)
+            folders = nxt
+            if not folders:
+                return None
+        last = parts[-1].lower()
+        for f in folders:
+            names = self.listing(f)
+            if last in names and Path(last).suffix in EXTS + (".ttf", ".otf"):
+                return f / names[last][0]
+            stem = last.rsplit(".", 1)[0] if Path(last).suffix in EXTS else last
+            for ext in exts:
+                if stem + ext in names:
+                    return f / names[stem + ext][0]
+        return None
+
+
+FIND = Finder()
+LISTFILE = {}
+ATLAS = {}
+
+
+def listfile():
+    if not LISTFILE and CONF.get("listfile"):
+        try:
+            with open(CONF["listfile"], encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    i, _, p = line.rstrip("\n").partition(";")
+                    if i.isdigit():
+                        LISTFILE[int(i)] = p
+        except OSError:
+            pass
+        LISTFILE.setdefault(-1, "")
+    return LISTFILE
+
+
+def atlases():
+    if not ATLAS and CONF.get("atlas"):
+        try:
+            with open(CONF["atlas"], encoding="utf-8") as f:
+                for row in csv.DictReader(f, delimiter="\t"):
+                    if row.get("name"):
+                        ATLAS[row["name"].lower()] = row
+        except OSError:
+            pass
+        ATLAS.setdefault("", {})
+    return ATLAS
+
+
+def addon_module(addon):
+    if addon.lower() == "saneui":
+        return "Core"
+    if addon.lower().startswith("saneui_"):
+        return addon[7:]
+    return None
+
+
+def texture_file(path):
+    """The file a texture path (or file ID) of the game's code stands for, or None."""
+    if path.startswith("fileid:") or path.isdigit():
+        p = listfile().get(int(path.split(":")[-1]))
+        if not p:
+            return None
+        path = p
+    p = path.replace("\\", "/").lstrip("/")
+    low = p.lower()
+    if low.startswith("interface/addons/"):
+        rest = p[len("interface/addons/"):]
+        addon, _, inner = rest.partition("/")
+        module = addon_module(addon)
+        if module:
+            hit = FIND.find(ROOT / "assets/optimized" / module, inner)
+            if hit:
+                return hit
+        hit = FIND.find(ROOT / "BUILD" / addon, inner)
+        if hit:
+            return hit
+        for prefix, folder in {**{"SaneUI/Art/Journal": "assets/generated/interface/pieces"}, **CONF.get("drafts", {})}.items():
+            pre = prefix.replace("\\", "/").lower().rstrip("/") + "/"
+            if rest.lower().startswith(pre):
+                hit = FIND.find(ROOT / folder, rest[len(pre):])
+                if hit:
+                    return hit
+        return None
+    if low.startswith("interface/"):
+        return FIND.find(ART, p)
+    return FIND.find(ROOT, p)
+
+
+def font_file(path):
+    p = path.replace("\\", "/").lstrip("/")
+    low = p.lower()
+    name = low.rsplit("/", 1)[-1]
+    fonts = {**{k: v for k, v in DEFAULT_FONTS.items()}, **{k.lower(): [v] for k, v in CONF.get("fonts", {}).items()}}
+    if low.startswith("fonts/"):
+        for cand in fonts.get(name, []) + FALLBACK_FONT:
+            if os.path.exists(cand):
+                return Path(cand)
+        return None
+    if low.startswith("interface/addons/"):
+        rest = p[len("interface/addons/"):]
+        addon, _, inner = rest.partition("/")
+        module = addon_module(addon)
+        for base in ([ROOT / "assets/optimized" / module] if module else []) + [ROOT / "BUILD" / addon]:
+            hit = FIND.find(base, inner, exts=(".ttf", ".otf"))
+            if hit:
+                return hit
+        hits = [h for h in (ROOT / "assets/fonts").rglob("*") if h.name.lower() == name]
+        if hits:
+            return hits[0]
+    hit = FIND.find(ROOT, p, exts=(".ttf", ".otf"))
+    return hit
+
+
+def png_of(path):
+    """The texture as PNG bytes (BLP and TGA converted once, kept in the cache)."""
+    if path.suffix.lower() == ".png":
+        return path.read_bytes()
+    key = hashlib.sha1(f"{path}:{path.stat().st_mtime}".encode()).hexdigest()[:20]
+    out = CACHE / "tex" / (key + ".png")
+    if not out.exists():
+        from PIL import Image
+        out.parent.mkdir(parents=True, exist_ok=True)
+        img = Image.open(path)
+        img.load()
+        img = img.convert("RGBA")
+        img.save(out, optimize=False, compress_level=1)
+    return out.read_bytes()
+
+
+# The host's questions ------------------------------------------------------------------------------------------------
+FONTS = {}
+RANGES = [(32, 592), (0x2000, 0x2070), (0x20AC, 0x20AD), (0x2122, 0x2123), (0x2190, 0x2194), (0x25A0, 0x25D0)]
+
+
+def font_answer(path):
+    f = font_file(path)
+    if not f:
+        return {"ok": False}
+    key = str(f)
+    if key not in FONTS:
+        from PIL import ImageFont
+        try:
+            font = ImageFont.truetype(key, 1000)
+        except OSError:
+            return {"ok": False}
+        adv = {}
+        for a, b in RANGES:
+            for cp in range(a, b):
+                try:
+                    adv[str(cp)] = round(font.getlength(chr(cp)) / 1000, 4)
+                except Exception:
+                    pass
+        FONTS[key] = {"ok": True, "adv": adv, "url": "/font?p=" + urllib.parse.quote(key)}
+    return FONTS[key]
+
+
+def client_answer():
+    folder = CONF.get("client")
+    if not folder or not os.path.isdir(folder):
+        return {"ok": False}
+    build = Path(folder).name
+    out = CACHE / "cache" / f"client-{build}.lua"
+    if not out.exists():
+        out.parent.mkdir(parents=True, exist_ok=True)
+
+        def rows(name):
+            try:
+                with open(Path(folder) / f"{name}.csv", encoding="utf-8", errors="replace", newline="") as f:
+                    return list(csv.DictReader(f))
+            except OSError:
+                return []
+
+        def lua(s):
+            return '"' + str(s).replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "") + '"'
+
+        lines = ["return {", "colors = {"]
+        for r in rows("GlobalColor"):
+            try:
+                c = int(r["Color"]) & 0xFFFFFFFF
+            except (KeyError, ValueError):
+                continue
+            a, red, g, b = (c >> 24) & 255, (c >> 16) & 255, (c >> 8) & 255, c & 255
+            lines.append(f"[{lua(r['LuaConstantName'])}] = {{{red / 255:.4f}, {g / 255:.4f}, {b / 255:.4f}, {a / 255:.4f}}},")
+        lines.append("}, strings = {")
+        for r in rows("GlobalStrings"):
+            tag = r.get("BaseTag")
+            if tag:
+                lines.append(f"[{lua(tag)}] = {lua(r.get('TagText_lang', ''))},")
+        lines.append("}, classes = {")
+        for r in rows("ChrClasses"):
+            if r.get("Filename"):
+                color = ""
+                if r.get("ClassColorR"):
+                    color = f", r = {int(r['ClassColorR']) / 255:.4f}, g = {int(r['ClassColorG']) / 255:.4f}, b = {int(r['ClassColorB']) / 255:.4f}"
+                lines.append(f"{{ id = {int(r['ID'])}, file = {lua(r['Filename'])}, name = {lua(r['Name_lang'])}, "
+                             f"female = {lua(r.get('Name_female_lang') or r['Name_lang'])}{color} }},")
+        lines.append("}, races = {")
+        for r in rows("ChrRaces"):
+            if r.get("ClientFileString"):
+                lines.append(f"{{ id = {int(r['ID'])}, file = {lua(r['ClientFileString'])}, name = {lua(r['Name_lang'])} }},")
+        lines.append("}, itemClasses = {")
+        for r in rows("ItemClass"):
+            lines.append(f"[{int(r['ClassID'])}] = {lua(r['ClassName_lang'])},")
+        lines.append("}, itemSubClasses = {")
+        for r in rows("ItemSubClass"):
+            name = r.get("VerboseName_lang") or r.get("DisplayName_lang")
+            if name:
+                lines.append(f"[{lua(r['ClassID'] + '.' + r['SubClassID'])}] = {lua(name)},")
+        lines.append("}}")
+        out.write_text("\n".join(lines))
+    return {"ok": True, "file": str(out), "build": build}
+
+
+DATA = {}
+
+
+def master(set_name):
+    if set_name not in DATA:
+        table = {}
+        for name in (f"{set_name}.jsonl",):
+            p = ROOT / "assets/data" / set_name / name
+            if p.exists():
+                with open(p, encoding="utf-8") as f:
+                    for line in f:
+                        try:
+                            row = json.loads(line)
+                        except ValueError:
+                            continue
+                        table[row.get("key")] = row
+        DATA[set_name] = table
+    return DATA[set_name]
+
+
+def answer(q):
+    need = q.get("need")
+    if need == "font":
+        return font_answer(q.get("file", ""))
+    if need == "client":
+        return client_answer()
+    if need == "item":
+        row = master("Items").get(q.get("id"))
+        return {"ok": bool(row), "item": row}
+    if need == "spell":
+        row = master("Spells").get(q.get("id"))
+        return {"ok": bool(row), "spell": row}
+    if need == "fileid":
+        p = listfile().get(q.get("id"))
+        return {"ok": bool(p), "path": p}
+    if need == "atlas":
+        row = atlases().get(str(q.get("name", "")).lower())
+        if not row:
+            return {"ok": False}
+        return {"ok": True, "file": row["file"], "w": float(row["width"]), "h": float(row["height"]),
+                "l": float(row["left"]), "r": float(row["right"]), "t": float(row["top"]), "b": float(row["bottom"]),
+                "tileH": row.get("tileH") == "1", "tileV": row.get("tileV") == "1"}
+    return {"ok": False}
+
+
+# The host ------------------------------------------------------------------------------------------------------------
+class Host:
+    """One run of the lab's host: a scene with its world on a screen. Messages go one at a time."""
+
+    def __init__(self):
+        self.proc = None
+        self.lock = threading.Lock()
+        self.files = {}
+        self.scene = None
+        self.world = "default"
+        self.screen = {"pw": 3840, "ph": 2160, "scale": 0.65}
+        self.saved = {}
+        self.checked = 0
+        self.reset = False
+
+    def saved_file(self):
+        name = Path(self.scene or "none").stem
+        return CACHE / "saved" / f"{name}.json"
+
+    def send(self, msg):
+        line = json.dumps(msg) + "\n"
+        self.proc.stdin.write(line)
+        self.proc.stdin.flush()
+        while True:
+            out = self.proc.stdout.readline()
+            if not out:
+                err = self.proc.stderr.read() if self.proc.poll() is not None else ""
+                self.proc = None
+                return {"changes": {}, "messages": [{"kind": "error", "text": "the lab's host stopped: " + err[-2000:]}]}
+            if not out.startswith('{"changes"'):
+                q = json.loads(out)
+                self.proc.stdin.write(json.dumps(answer(q)) + "\n")
+                self.proc.stdin.flush()
+                continue
+            return json.loads(out)
+
+    def stop(self, keep=True):
+        if self.proc:
+            if keep:
+                try:
+                    r = self.send({"op": "logout"})
+                    if r.get("saved"):
+                        self.saved.update(r["saved"])
+                        self.saved_file().parent.mkdir(parents=True, exist_ok=True)
+                        self.saved_file().write_text(json.dumps(self.saved, indent=1))
+                except Exception:
+                    pass
+            try:
+                self.proc.kill()
+            except Exception:
+                pass
+            self.proc = None
+
+    def start(self, scene=None, world=None, screen=None, reload=False):
+        self.stop()
+        if scene is not None:
+            self.scene = scene
+        if world:
+            self.world = world
+        if screen:
+            self.screen.update(screen)
+        try:
+            self.saved = json.loads(self.saved_file().read_text())
+        except (OSError, ValueError):
+            self.saved = {}
+        self.proc = subprocess.Popen(["lua5.1", str(LAB / "host.lua"), str(ROOT)], stdin=subprocess.PIPE,
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, cwd=ROOT)
+        r = self.send({"op": "start", "scene": self.scene, "world": self.world, "screen": self.screen,
+                       "saved": self.saved, "reload": reload})
+        self.files = {}
+        for f in (r.get("files") or []) + [str(p) for p in LAB.rglob("*.lua")]:
+            try:
+                self.files[f] = os.stat(f).st_mtime
+            except OSError:
+                pass
+        r["reset"] = True
+        return r
+
+    def changed(self):
+        now = time.time()
+        if now - self.checked < 0.4:
+            return False
+        self.checked = now
+        for f, m in self.files.items():
+            try:
+                if os.stat(f).st_mtime != m:
+                    return True
+            except OSError:
+                return True
+        return False
+
+    def call(self, msg):
+        with self.lock:
+            if not self.proc:
+                return self.start(reload=True)
+            if msg.get("op") == "frame" and self.changed():
+                return self.start(reload=True)
+            r = self.send(msg)
+            if r.get("reload"):
+                return self.start(reload=True)
+            return r
+
+
+HOST = Host()
+
+
+def scenes():
+    out = []
+    for p in sorted((LAB / "scenes").glob("*.lua")):
+        about = ""
+        for line in p.read_text(encoding="utf-8").splitlines():
+            if line.startswith("--"):
+                about = line[2:].strip()
+                break
+        out.append({"path": str(p.relative_to(ROOT)), "name": p.stem, "about": about})
+    worlds = [p.stem for p in sorted((LAB / "worlds").glob("*.lua"))]
+    return {"scenes": out, "worlds": worlds, "scene": HOST.scene, "world": HOST.world, "screen": HOST.screen}
+
+
+class Handler(BaseHTTPRequestHandler):
+    def log_message(self, *args):
+        pass
+
+    def reply(self, body, kind="application/json", code=200, cache=False):
+        if isinstance(body, (dict, list)):
+            body = json.dumps(body).encode()
+        elif isinstance(body, str):
+            body = body.encode()
+        self.send_response(code)
+        self.send_header("Content-Type", kind)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "max-age=3600" if cache else "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self):
+        url = urllib.parse.urlparse(self.path)
+        q = urllib.parse.parse_qs(url.query)
+        if url.path in ("/", "/index.html"):
+            return self.reply((WEB / "index.html").read_bytes(), "text/html; charset=utf-8")
+        if url.path in ("/lab.js", "/lab.css"):
+            kind = "text/javascript" if url.path.endswith(".js") else "text/css"
+            return self.reply((WEB / url.path[1:]).read_bytes(), kind + "; charset=utf-8")
+        if url.path == "/api/scenes":
+            return self.reply(scenes())
+        if url.path == "/tex":
+            p = q.get("p", [""])[0]
+            f = texture_file(p)
+            if not f:
+                return self.reply(b"", "image/png", 404)
+            try:
+                return self.reply(png_of(f), "image/png", cache=False)
+            except Exception as e:
+                return self.reply(str(e), "text/plain", 500)
+        if url.path == "/font":
+            p = q.get("p", [""])[0]
+            if p in FONTS or os.path.exists(p):
+                return self.reply(Path(p).read_bytes(), "font/ttf", cache=True)
+            return self.reply(b"", "font/ttf", 404)
+        if url.path == "/api/source":
+            p = (ROOT / q.get("f", [""])[0]).resolve()
+            if ROOT in p.parents and p.suffix == ".lua" and p.exists():
+                return self.reply(p.read_text(encoding="utf-8"), "text/plain; charset=utf-8")
+            return self.reply("", "text/plain", 404)
+        return self.reply(b"", "text/plain", 404)
+
+    def do_POST(self):
+        n = int(self.headers.get("Content-Length") or 0)
+        try:
+            body = json.loads(self.rfile.read(n) or b"{}")
+        except ValueError:
+            body = {}
+        path = urllib.parse.urlparse(self.path).path
+        if path == "/api/start":
+            with HOST.lock:
+                r = HOST.start(scene=body.get("scene"), world=body.get("world"), screen=body.get("screen"))
+            return self.reply(r)
+        if path == "/api/frame":
+            return self.reply(HOST.call({"op": "frame", "dt": body.get("dt", 0), "input": body.get("input", [])}))
+        if path == "/api/run":
+            return self.reply(HOST.call({"op": "run", "code": body.get("code", "")}))
+        if path == "/api/server":
+            return self.reply(HOST.call({"op": "server", **body}))
+        if path == "/api/inspect":
+            return self.reply(HOST.call({"op": "inspect", "x": body.get("x", 0), "y": body.get("y", 0)}))
+        if path == "/api/screen":
+            HOST.screen.update(body)
+            return self.reply(HOST.call({"op": "screen", **HOST.screen}))
+        if path == "/api/redraw":
+            return self.reply(HOST.call({"op": "redraw"}))
+        if path == "/api/reset":
+            with HOST.lock:
+                HOST.saved = {}
+                try:
+                    HOST.saved_file().unlink()
+                except OSError:
+                    pass
+                HOST.stop(keep=False)
+                r = HOST.start()
+            return self.reply(r)
+        return self.reply({"error": "unknown"}, code=404)
+
+
+def serve(port):
+    first = sorted((LAB / "scenes").glob("*.lua"))
+    HOST.scene = str(first[0].relative_to(ROOT)) if first else None
+    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    print(f"The interface lab: http://127.0.0.1:{port}/  (Ctrl+C stops it)")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        HOST.stop()
+
+
+def check(scene, seconds):
+    """Runs a scene without the page: starts it, steps it some seconds, prints what it told; 1 on an error."""
+    if scene and not scene.endswith(".lua"):
+        scene = f"dev/uilab/scenes/{scene}.lua"
+    first = sorted((LAB / "scenes").glob("*.lua"))
+    HOST.scene = scene or (str(first[0].relative_to(ROOT)) if first else None)
+    errors = 0
+    items = 0
+
+    def show(r):
+        nonlocal errors, items
+        items += sum(1 for v in (r.get("changes") or {}).values() if v is not None)
+        for m in r.get("messages") or []:
+            if m.get("kind") in ("error",):
+                errors += 1
+            if m.get("kind") != "lab":
+                print(f"{m.get('kind'):>8}: {m.get('text')}" + (("\n" + m["stack"]) if m.get("stack") else ""))
+
+    t0 = time.time()
+    show(HOST.start())
+    steps = int(seconds * 30)
+    for _ in range(steps):
+        show(HOST.call({"op": "frame", "dt": 1 / 30, "input": []}))
+    HOST.stop(keep=False)
+    print(f"{HOST.scene}: {items} drawn items, {errors} errors, {time.time() - t0:.1f} s")
+    return 1 if errors else 0
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd")
+    s = sub.add_parser("serve")
+    s.add_argument("--port", type=int, default=8774)
+    c = sub.add_parser("check")
+    c.add_argument("scene", nargs="?")
+    c.add_argument("--seconds", type=float, default=3)
+    a = ap.parse_args()
+    if a.cmd == "check":
+        sys.exit(check(a.scene, a.seconds))
+    serve(getattr(a, "port", 8774))
+
+
+if __name__ == "__main__":
+    main()
