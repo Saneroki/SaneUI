@@ -402,6 +402,9 @@ the game's own art and the game's own API.
   same one the native map sets).
 - **Route to the pin:** a path that correctly goes around obstacles such as mountains, and that uses
   **flight paths and ships**.
+- **Water is slow (Saneroki, 2026-10-22):** one swims at about 60 % of one's speed on foot, and a rider far slower
+  than they ride (up to 200 %), so a walk swims only where that is quicker: walks are timed at the character's own
+  speeds on land and in water, not as the shortest way.
 - **Look:** instead of a dotted line, a **thin golden line pulsing towards the pin**, its corners **curved**
   (Saneroki, 2026-10-22: a curve of each corner and its two neighbours, not short straight lines).
 - **Leather stitches, to come (Saneroki, 2026-10-21):** the route line is to look like leather stitches, in Sane
@@ -1526,7 +1529,10 @@ samples, *The ground as the game draws it*, below).
   or the nearest within 40 yards) to any floor of the regions it starts in under the end or within 50 yards of it,
   else the nearest within 500, what lies off the walking data drawn straight at six times its yards (2026-10-21;
   before, the first floor under each end, and ends in different regions no walk at all); a step costs the way from
-  where a rectangle was entered to the nearest point of the opening, swimming twice, and each yard up a quarter more
+  where a rectangle was entered to where the straight line on to the end crosses the opening (2026-10-22; before,
+  the nearest point of it, a stair across open ground), a yard swum at the character's speed on land over its speed
+  in water (2026-10-22, Saneroki: one swims at about 60 % of one's speed on foot, and far slower than one rides;
+  the game tells both, `GetUnitSpeed`, and the fastest seen riding is kept; before, twice), and each yard up a quarter more
   (2026-10-21: the game runs as fast up a hill as on the flat, so the shorter way over a hill or a pass is taken; two
   more before, while the data held steep slopes as floors and a walk into Ironforge went over its mountain); the line
   then pulled straight through the openings passed, each drawn in 0.8 yards from its ends.

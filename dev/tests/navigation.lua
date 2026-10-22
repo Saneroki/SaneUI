@@ -2622,6 +2622,60 @@ Core.Character(ns.name).flightPoints = {}
 ns.Planner.Update()
 Frames(8)
 check(shownWay and #shownWay.legs == 1 and shownWay.legs[1].kind == "walk", "without the flight points known: on foot")
+-- A yard swum at its price, the character's own speeds: from the west hall to the east hall at row 170 the channel's
+-- way is the shorter (256 yards, 67 of them swum), the door's the dry one (323 yards). On foot (the game's 7 yards a
+-- second, 4.72 swimming) the walk swims; a rider (14) goes round by the door, and so does the character once it was
+-- seen riding, mounted or not (not on a flight's mount).
+;(function()
+    local s = Walk.SAMPLE
+    local au, av, bu, bv = 100 * s, -8533.33 - 170 * s, 200 * s, -8533.33 - 170 * s
+    local function Swims(list) -- the rows of a walk's points: one in the channel (rows 200 to 209)
+        for _, row in ipairs(list) do if row > 199 then return true end end
+        return false
+    end
+    local function Rows(flat)
+        local list = {}
+        for index = 2, #(flat or {}), 2 do list[#list + 1] = (-8533.33 - flat[index]) / s end
+        return list
+    end
+    local function Drawn()
+        local leg, list = shownWay and #shownWay.legs == 1 and shownWay.legs[1], {}
+        if not (leg and leg.kind == "walk") then return nil end
+        for _, point in ipairs(leg.points) do list[#list + 1] = (-8533.33 - point.v) / s end
+        return list
+    end
+    check(Swims(Rows(Search.Walk(1415, au, av, bu, bv, nil, nil, 7 / 4.72)))
+        and not Swims(Rows(Search.Walk(1415, au, av, bu, bv, nil, nil, 14 / 4.72))),
+        "a yard swum at its price: on foot (7 yards a second, 4.72 swimming) the channel's way, a rider's (14) by the door")
+    local speed, mounted, taxi, char = GetUnitSpeed, rawget(_G, "IsMounted"), rawget(_G, "UnitOnTaxi"), Core.Character(ns.name)
+    local ride, before = char.ride, { player.map, player.x, player.y, waypoint }
+    char.ride = nil
+    GetUnitSpeed, IsMounted = function() return 0, 7, 0, 4.72 end, function() return false end
+    player.map, player.x, player.y = 1415, (au + 4000) / 8000, (4000 - av) / 20000
+    waypoint = { uiMapID = 1415, position = CreateVector2D((bu + 4000) / 8000, (4000 - bv) / 20000) }
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Frames(8)
+    local onFoot = Drawn()
+    GetUnitSpeed, IsMounted, UnitOnTaxi = function() return 0, 14, 0, 4.72 end, function() return true end,
+        function() return true end
+    Planner.Track(1415, au, av, GetTime() + 1)
+    local flown = char.ride
+    UnitOnTaxi = function() return false end
+    Planner.Track(1415, au, av, GetTime() + 1.3)
+    local kept = char.ride
+    GetUnitSpeed, IsMounted = function() return 0, 7, 0, 4.72 end, function() return false end
+    ns.Planner.Update()
+    Frames(8)
+    local rider = Drawn()
+    check(onFoot and Swims(onFoot) and flown == nil and kept == 14 and rider and not Swims(rider),
+        "the planner by the character's speeds: on foot it swims; seen riding (not on a flight), it rides round, unmounted too")
+    GetUnitSpeed, IsMounted, UnitOnTaxi, char.ride = speed, mounted, taxi, ride
+    player.map, player.x, player.y, waypoint = before[1], before[2], before[3], before[4]
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Frames(8)
+end)()
 -- A boat's way (Core's set Travel, 3): a dock on each continent; each way between them the wait for it (half its
 -- round: its runs at the game's transports' speed, its stays; its leaps take no time, the one from its last point
 -- back to its first too) and the trip.

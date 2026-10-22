@@ -373,7 +373,8 @@ end
 
 -- An opening as a segment of the plane: its two ends (u1, v1, u2, v2), from the rectangle's side.
 function Walk.Portal(tile, index, side, first, last)
-    local column, row, width, height = Walk.Rect(tile, index)
+    local r, base = tile.rects, (index - 1) * 5
+    local column, row, width, height = r[base + 1], r[base + 2], r[base + 3], r[base + 4]
     local s = Walk.SAMPLE
     if side == 0 or side == 2 then
         local v = tile.top - (side == 0 and row or row + height) * s

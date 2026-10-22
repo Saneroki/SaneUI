@@ -3,8 +3,32 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 535 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 537 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: walks timed at the character's own speeds, water priced by them (Saneroki, 2026-10-22)
+- Routes swam where land was there: from Westfall to Stormwind harbor's boat a walk swam 942 yards along the coast
+  at Longshore, the dry way through the Valley of Heroes and the city 73 % longer; with a yard swum at twice a yard
+  walked (`Search.WATER` 2) that was the cheapest. One swims at about 60 % of one's speed on foot (Saneroki) and far
+  slower than one rides (60 % mount: 2.4 times, epic: 3), so for a rider the land is quicker.
+- `Planner.lua`: `Speeds`: the character's speed on land and in water as the game tells it (`GetUnitSpeed`, with a
+  mount, form or aspect), on land at least the fastest it was seen riding (`Ridden`, at each look at the floor:
+  mounted, not on a flight's mount; kept per character as `ride`), else `Planner.RUN` and `Planner.SWIM` (new, 4.2:
+  60 % of 7). Each plan (`Find`) times its walks at that land speed (the guess and the walk found; before
+  `Planner.RUN`) and has each search price a yard swum at land over water speed.
+- `Search.lua`: `Search.Walk(..., water)`: a yard swum costs `water` yards (else `Search.WATER`, now 1 / 0.6). Each step
+  goes from where a rectangle was entered to where the straight line on to the end crosses the next opening
+  (`Through`; before the nearest point of it), so open ground costs its straight way: a dry walk's cost over its
+  drawn yards 1.044 to 1.033 (median of 100 journeys). The openings passed kept in three tables (`viaSide`,
+  `viaFirst`, `viaLast`): no table made per step; squares by multiplication, the rectangle's own cost and height read
+  once.
+- `Walk.lua`: `Walk.Portal` reads the rectangle's numbers itself.
+- On the real data (the offline checks): of the walks of 100 journeys 4.5 % of the yards were swum, now on foot 5.5,
+  on a 60 % mount 3.9, on an epic one 2.9; the 200-journey scan unchanged (0 none, 9 drawn straight, 1 off, 0 not from
+  the player) at 505 ms a route (532 before), indoors 493; the 29 fixed journeys the same legs (one in the Undercity
+  by the lift beside), their walks 0.2 % shorter; the 16 teleport journeys from the player to the pin.
+- Tests: `dev/tests/navigation.lua` (537: from hall to hall at row 170 the channel on foot, the door for a rider; the
+  planner by the character's speeds, riding kept, not a flight's).
 
 ### Navigation: the golden line's corners curved (Saneroki, 2026-10-22)
 - `Route.lua`: a corner of a leg that turns more than `Route.BEND` (10) degrees is drawn as a quadratic curve from a

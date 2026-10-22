@@ -365,8 +365,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   else outdoors the highest under them, indoors the lowest within `Walk.ROOF` yards, a building's floor before the
   ground (the game's indoors is inside a building or a cave: not the ground deep under Stormwind's buildings).
 - **Search** (`Search.lua`, no frames): a walk between two points: A* over the rectangles through their openings
-  (from where a rectangle was entered to the nearest point of the next opening, swimming twice the cost, and each
-  yard up `Search.CLIMB` yards more, a little: the game runs as fast up a hill as on the flat, and the data holds no
+  (from where a rectangle was entered to where the straight line on to the end crosses the next opening, so open
+  ground costs its straight way; a yard swum at the character's own price, its speed on land over its speed in
+  water, the planner's `Speeds`: on land the fastest it was seen riding, kept per character as `ride`, so a rider
+  goes round where one on foot swims; and each yard up `Search.CLIMB` yards more, a little: the game runs as fast up a hill as on the flat, and the data holds no
   slope over 50 degrees, so a shorter way over a hill or a pass is taken, and Ironforge's mountain, steeper, is
   none), from the floor the start stands on (the player's, followed; where that is a guess, the other floors there
   too, `Search.ASIDE`
@@ -569,6 +571,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-22, water is slow:** a route to Stormwind harbor's boat swam 942 yards along the coast at Longshore, as a
+  yard swum cost only twice a yard walked. Walks are now timed at the character's own speeds (as the game tells
+  them, riding where it was seen riding), so a rider keeps to land where one on foot swims across; and each step aims
+  along the straight line to the walk's end, so open ground costs its straight way, not a stair of nearest points.
 - **2026-10-22, the golden line curved:** its corners were sharp, so a way round many corners showed as short
   straight lines. A corner turning more than 10 degrees is now a curve of the corner and the points before and after
   it, never more than 6 units inside the corner; the glint flows on from piece to piece in one pulse.

@@ -141,13 +141,17 @@ there is a pin) and `Walk.Floor` chooses one where that cannot be done (near the
 highest, indoors the lowest within `Walk.ROOF`). `Search.Walk(continent, u1, v1, u2, v2, from, check)`: from the
 player's floor (`from`), else every floor under the start and within `Walk.ROOF` (each over the lowest at the cost of
 the climb), to any floor of its regions under the end or within `Search.NEAR`, else the nearest within `Search.FAR`;
-straight off the data at `Search.STRAIGHT` times, each yard up `Search.CLIMB` more; `Search.Start` went.
+straight off the data at `Search.STRAIGHT` times, each yard up `Search.CLIMB` more; `Search.Start` went. A step
+aims where the straight line on to the end crosses the next opening (`Through`, 2026-10-22); a yard swum costs the
+walk's `water` (the planner's: the character's speed on land over its speed in water; else `Search.WATER`, 1 / 0.6).
 `Planner.lua`: every plane's places (a third plane: the hearthstone, then a ship), a flight point twice (ground and
 air, the air reached by a flight only: one take-off with the first flight, the flights one leg, no walk on after a
 walk there), the regions of a place's floors within `Planner.REGION` (sharing none:
 `Planner.APART` more), the plan one job of Core's scheduler (`Make`, `Find`), the cut (`Follow`: where along the
 line the player is) drawn by `Route.Cut` (the parts passed gone, a head from the arrow), a ship boarded without the
-plan (`Riding`), the tram's next train (`Trips:TramNext`). Walk's tiles: the 48 asked for last.
+plan (`Riding`), the tram's next train (`Trips:TramNext`). Walk's tiles: the 48 asked for last. Walks timed at
+the character's own speeds (`Speeds`, each plan: `GetUnitSpeed`, on land at least the fastest seen riding, kept per
+character as `ride` by `Ridden` at each floor look; else `Planner.RUN`, `Planner.SWIM`).
 
 Lifts (2026-10-21): Travel's kind `lift`, one record per car (keys from 1100001, `dev/tools/travel-data --lifts
 <places> <batch>`: the motion from the client's TransportAnimation, the places a batch file of our picking, batch

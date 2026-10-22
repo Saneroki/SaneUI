@@ -5,19 +5,22 @@ local _, ns = ...
 --  A walk from one point of a plane to another over the walking data (Walk.lua):
 --  the rectangles from the floor the start stands on to a floor at the end,
 --  through their openings, the shortest by A* (each step costs the way from where
---  the rectangle was entered to the nearest point of the opening, water twice
---  that, and Search.CLIMB times what it climbs); then the line pulled straight
+--  the rectangle was entered to where the straight line on to the end crosses the
+--  opening, so open ground costs its straight way, not a stair of nearest points;
+--  a yard swum the water's price, Search.WATER or the planner's; and Search.CLIMB
+--  times what it climbs); then the line pulled straight
 --  through the openings it passes (a funnel: corners only where something is in
 --  the way), the openings drawn in a little from their ends so the line does not
 --  graze a wall. Knows no frames.
 --
---      Search.Walk(continent, u1, v1, u2, v2, from, check)   points { u1, v1, ..., u2, v2 }, the cost in yards
+--      Search.Walk(continent, u1, v1, u2, v2, from, check, water)   points { u1, v1, ..., u2, v2 }, the cost in yards
 --                      and the yards from the walking data to the end (0: on it; more than Search.NEAR: as near as
 --                      one walks, Search.FAR); nil and "off" where the walking data has no floor near the start or the end
 --                      (nothing to search), nil where no way is found (or Search.MOST rectangles were looked at
 --                      first); from: the floor the start stands on ({ key, index }, Walk.Follow's), else every
 --                      floor under it; check: called between pieces of the work (in a job of Core's scheduler,
---                      its Steps.Check)
+--                      its Steps.Check); water: what a yard swum costs in yards on land (the walker's speed on land
+--                      over theirs in water), else Search.WATER
 --
 --  The start: on its floor (where that is a guess, the others under it too, taken
 --  only where no way leaves that one, Search.ASIDE), or the floors under it and
@@ -41,7 +44,8 @@ Search.REACH = 40       -- yards the start may be from the walking data's neares
 Search.NEAR = 50        -- yards from the end a floor of the walk's regions may be and end it, the rest straight
 Search.FAR = 500        -- yards from the end the nearest such floor may be, at most, where none is that near
 Search.STRAIGHT = 6     -- what lies off the walking data, straight, costs so many times its yards
-Search.WATER = 2        -- swimming costs so many times walking
+Search.WATER = 1 / 0.6  -- a yard swum costs so many on land, where the walk is not told (one swims at 60 % of one's
+                        -- speed on land: the planner tells the character's own, Planner.lua)
 Search.CLIMB = 0.25     -- each yard up costs so many yards more: the game runs as fast up a hill as on the flat
                         -- (no slope over 50 degrees is a floor at all), so the shorter way over a hill or a pass is
                         -- taken; of two ways about as long the flatter
@@ -56,10 +60,6 @@ Search.EVERY = 64       -- rectangles looked at between two looks at the frame's
 local floor, sqrt = math.floor, math.sqrt
 local GOAL = -1 -- the end itself, reached from each floor at it
 local function Id(tile, index) return tile.key * 65536 + index end
-
-local function Weight(tile, index)
-    return tile.kind[index] == Walk.WATER and Search.WATER or 1
-end
 
 -- The floors the walk may start on: { tile, index, u, v (the start on it), cost (of the way onto it) } each, and the
 -- id of the floor it stands on where that is known (from). Not knowing which floor the start is on (a flight point,
@@ -122,14 +122,22 @@ local function Goals(continent, u, v, regions)
     return any and goals or nil
 end
 
--- The nearest point of a segment to a point.
-local function Closest(u, v, au, av, bu, bv)
-    local du, dv = bu - au, bv - av
-    local length = du * du + dv * dv
-    if length == 0 then return au, av end
-    local t = ((u - au) * du + (v - av) * dv) / length
-    t = math.max(0, math.min(1, t))
-    return au + du * t, av + dv * t
+-- Where the way from a point (fu, fv) to the walk's end (eu, ev) crosses an opening (au, av to bu, bv: a
+-- rectangle's side, level or upright) at the least: where the straight line between them crosses its line (the end
+-- mirrored over it where both lie on one side), held within the opening.
+local function Through(fu, fv, au, av, bu, bv, eu, ev)
+    if av == bv then
+        local a, b = fv - av, ev - av
+        if a * b > 0 then b = -b end
+        local u = a ~= b and fu + (eu - fu) * a / (a - b) or eu
+        if au > bu then au, bu = bu, au end
+        return u < au and au or u > bu and bu or u, av
+    end
+    local a, b = fu - au, eu - au
+    if a * b > 0 then b = -b end
+    local v = a ~= b and fv + (ev - fv) * a / (a - b) or ev
+    if av > bv then av, bv = bv, av end
+    return au, v < av and av or v > bv and bv or v
 end
 
 -- A binary heap of node ids, each by the f it had when it was put in (keys); an id put in again with a lower f is
@@ -240,7 +248,7 @@ local function Portal(tile, index, side, first, last)
 end
 
 -- The search itself; check() is called every Search.EVERY rectangles (the scheduler's Check, or nothing).
-local function Run(continent, u1, v1, u2, v2, start, check)
+local function Run(continent, u1, v1, u2, v2, start, check, water)
     if not Walk.Ready() then return nil, "off" end
     local sources, own = Sources(continent, u1, v1, start)
     if #sources == 0 then return nil, "off" end
@@ -249,7 +257,8 @@ local function Run(continent, u1, v1, u2, v2, start, check)
     local goals = Goals(continent, u2, v2, regions)
     -- None of the start's regions near the end: no way, where the end has floors at all near it.
     if not goals then return nil, not Walk.Nearest(continent, u2, v2, Search.FAR) and "off" or nil end
-    local g, from, enterU, enterV, via, tiles, indexes = {}, {}, {}, {}, {}, {}, {}
+    local g, from, enterU, enterV, tiles, indexes = {}, {}, {}, {}, {}, {}
+    local viaSide, viaFirst, viaLast = {}, {}, {} -- the opening each floor was reached through, from its from
     local closed, heap, keys = {}, {}, {}
     for _, source in ipairs(sources) do
         local tile, index, su, sv, cost = source[1], source[2], source[3], source[4], source[5]
@@ -270,12 +279,13 @@ local function Run(continent, u1, v1, u2, v2, start, check)
             if seen > Search.MOST then return nil end
             if check and seen % Search.EVERY == 0 then check() end
             local tile, index = tiles[id], indexes[id]
-            local weight = Weight(tile, index)
-            local fu, fv = enterU[id], enterV[id]
+            local weight = tile.kind[index] == Walk.WATER and water or 1
+            local fu, fv, here, z = enterU[id], enterV[id], g[id], tile.rects[index * 5] / 4
             -- A floor at the end: the end itself from it.
             local goal = goals[id]
             if goal then
-                local cost = g[id] + sqrt((goal[3] - fu) ^ 2 + (goal[4] - fv) ^ 2) * weight + goal[5]
+                local du, dv = goal[3] - fu, goal[4] - fv
+                local cost = here + sqrt(du * du + dv * dv) * weight + goal[5]
                 if g[GOAL] == nil or cost < g[GOAL] then
                     g[GOAL], from[GOAL] = cost, id
                     Push(heap, keys, cost, GOAL)
@@ -283,18 +293,21 @@ local function Run(continent, u1, v1, u2, v2, start, check)
             end
             for n = 1, #tile.opens[index] do
                 local side, first, last, next, other = Walk.Opening(tile, index, n)
-                local nid = side and Id(next, other)
+                local nid = side and next.key * 65536 + other
                 if nid and not closed[nid] then
                     local au, av, bu, bv = Walk.Portal(tile, index, side, first, last)
-                    local pu, pv = Closest(fu, fv, au, av, bu, bv)
-                    local cost = g[id] + sqrt((pu - fu) ^ 2 + (pv - fv) ^ 2) * weight
-                    local rise = next.rects[other * 5] / 4 - tile.rects[index * 5] / 4
+                    local pu, pv = Through(fu, fv, au, av, bu, bv, u2, v2)
+                    local du, dv = pu - fu, pv - fv
+                    local cost = here + sqrt(du * du + dv * dv) * weight
+                    local rise = next.rects[other * 5] / 4 - z
                     if rise > 0 then cost = cost + rise * Search.CLIMB end
                     if g[nid] == nil or cost < g[nid] then
-                        g[nid], from[nid], via[nid] = cost, id, { tile, index, side, first, last }
+                        g[nid], from[nid] = cost, id
+                        viaSide[nid], viaFirst[nid], viaLast[nid] = side, first, last
                         enterU[nid], enterV[nid] = pu, pv
                         tiles[nid], indexes[nid] = next, other
-                        Push(heap, keys, cost + sqrt((u2 - pu) ^ 2 + (v2 - pv) ^ 2), nid)
+                        du, dv = u2 - pu, v2 - pv
+                        Push(heap, keys, cost + sqrt(du * du + dv * dv), nid)
                     end
                 end
             end
@@ -306,10 +319,10 @@ local function Run(continent, u1, v1, u2, v2, start, check)
     local goal = goals[last]
     local list = {}
     local id = last
-    while via[id] do
-        local step = via[id]
-        table.insert(list, 1, Portal(step[1], step[2], step[3], step[4], step[5]))
-        id = from[id]
+    while viaSide[id] do
+        local parent = from[id]
+        table.insert(list, 1, Portal(tiles[parent], indexes[parent], viaSide[id], viaFirst[id], viaLast[id]))
+        id = parent
     end
     local su, sv = enterU[id], enterV[id]
     local cost = g[GOAL]
@@ -332,6 +345,6 @@ local function Run(continent, u1, v1, u2, v2, start, check)
     return points, cost, rest
 end
 
-function Search.Walk(continent, u1, v1, u2, v2, from, check)
-    return Run(continent, u1, v1, u2, v2, from, check)
+function Search.Walk(continent, u1, v1, u2, v2, from, check, water)
+    return Run(continent, u1, v1, u2, v2, from, check, water or Search.WATER)
 end

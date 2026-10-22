@@ -12,7 +12,9 @@ local _, ns = ...
 --                    a journey may cross a third one (the hearthstone home, then a ship over the sea); its ways:
 --                    on foot between two places of one plane (guessed at Planner.DETOUR times the straight line;
 --                    between places that share no region of the walking data Planner.APART seconds more: a tower,
---                    a gap in the walking data, taken only where nothing else goes), the flights between known
+--                    a gap in the walking data, taken only where nothing else goes; at the character's own speed,
+--                    Speeds: on land the fastest it was seen riding where it rides, a yard swum at its speed in
+--                    water, so a rider goes round a lake where one on foot swims across), the flights between known
 --                    flight points
 --                    (the game's, Core's set Travel, as only its side flies them; each at its way's length at
 --                    Planner.FLY yards a second, Planner.FASTER times that with the Legacy perk Frequent Flier, taking
@@ -80,7 +82,8 @@ local Coords, Live, Walk, Search, Lifts = ns.Coords, ns.Live, ns.Walk, ns.Search
 local Planner = {}
 ns.Planner = Planner
 
-Planner.RUN = 7          -- yards a second on foot, the game's run speed
+Planner.RUN = 7          -- yards a second on foot, the game's run speed (where the game does not tell the character's)
+Planner.SWIM = 4.2       -- yards a second swimming, where the game does not tell: 60 % of the run speed
 Planner.FLY = 30         -- yards a second on a flight, about the game's flights
 Planner.FASTER = 1.2     -- times as fast a flight is with the Legacy perk Frequent Flier (the game's 20 % faster)
 Planner.BOARD = 8        -- seconds a flight takes besides its way: taking off, landing
@@ -123,6 +126,7 @@ local target            -- { map, u, v }: the pin in its plane
 local plan              -- the journey drawn: { legs, at (the leg the player is on), cut, target (the pin it leads to) }
 local job               -- the plan being made: a job of Core's scheduler
 local made = 0          -- jobs made, each by a name of its own
+local land = Planner.RUN -- yards a second on land in the plan being made (Speeds)
 local docks             -- every dock, by name, while Core's set Travel stays as it is (Docks)
 local portals           -- every portal, while Core's set Travel stays as it is (Portals)
 local landings = {}     -- [a teleport's key] = where it brings one on its floor ({ map, u, v, floor = { key, index, z }
@@ -223,6 +227,26 @@ Points = function(continent)
         end
     end
     return found
+end
+
+-- How fast this character goes, in yards a second, on land and swimming: as the game tells it now (GetUnitSpeed, with
+-- what speeds it up: a mount, a form, an aspect), on land at least the fastest it was seen riding (it rides again where
+-- it rode, Ridden); where the game tells nothing, Planner.RUN and Planner.SWIM.
+local function Speeds()
+    local ok, _, run, _, swim = pcall(rawget(_G, "GetUnitSpeed"), "player")
+    run, swim = ok and Core.Plain(run), ok and Core.Plain(swim)
+    run = type(run) == "number" and run > 0 and run or Planner.RUN
+    swim = type(swim) == "number" and swim > 0 and swim or Planner.SWIM
+    return math.max(run, tonumber(Core.Character(ns.name).ride) or 0), swim
+end
+
+-- The character on a mount (not a flight's): how fast it rides, kept where faster than seen before (Speeds).
+local function Ridden()
+    if not Core.Ask(rawget(_G, "IsMounted")) or Core.Ask(rawget(_G, "UnitOnTaxi"), "player") then return end
+    local ok, _, run = pcall(rawget(_G, "GetUnitSpeed"), "player")
+    run = ok and Core.Plain(run)
+    local char = Core.Character(ns.name)
+    if type(run) == "number" and run < Planner.HOP and run > (tonumber(char.ride) or 0) then char.ride = run end
 end
 
 -- How many times as fast as Planner.FLY this character's flights are: Planner.FASTER with the Legacy perk Frequent
@@ -758,7 +782,7 @@ local function Journey(start, goal, measured, cut)
         if found then return found, true end
         local rise = a.z and b.z and math.abs(a.z - b.z) or 0
         local way = math.max(Distance(a.u, a.v, b.u, b.v), rise / Planner.SLOPE)
-        return (way + rise * Search.CLIMB) * Planner.DETOUR / Planner.RUN, false
+        return (way + rise * Search.CLIMB) * Planner.DETOUR / land, false
     end
     -- The regions of the walking data a place stands in (nil: not known; walks are then not ruled out), and the
     -- lifts' upper levels it stands below (Lifts.Stand): a flight point's, a dock's, a lift's end's, a portal's end's
@@ -979,6 +1003,9 @@ end
 local function Find(start, goal)
     local measured, walked, cut = {}, {}, {}
     local tries, spent = Planner.TRIES, Search.looked
+    local swim
+    land, swim = Speeds()
+    local water = math.max(1, land / swim) -- a yard swum costs so many on land
     while true do
         local steps = Journey(start, goal, measured, cut)
         if not steps or not Walk.Ready() then return steps end
@@ -988,14 +1015,14 @@ local function Find(start, goal)
                 local key = step.from .. ":" .. step.to
                 if walked[key] == nil then
                     local points, cost, rest = Search.Walk(step.map, step.u1, step.v1, step.u2, step.v2, step.floor,
-                        Core.Steps.Check)
+                        Core.Steps.Check, water)
                     local off = not points and cost == "off"
                     if points and step.apart and rest > Search.NEAR then
                         -- Between places that share no region, a walk that ends only as near as one walks is none
                         -- (another way may reach the place: a lift, a portal); kept to be drawn, should it stay.
                         walked[key] = { near = points }
                     else
-                        walked[key] = points and { points = points, seconds = cost / Planner.RUN } or (off and "off")
+                        walked[key] = points and { points = points, seconds = cost / land } or (off and "off")
                             or false
                     end
                 end
@@ -1337,6 +1364,7 @@ function Planner.Track(map, u, v, now)
     if plan and u and Follow(map, u, v) then ns.Route.Cut(plan) end
     if now >= nextFoot then
         nextFoot = now + Planner.FOOT
+        Ridden()
         if u and target and not ns.off then
             -- On a flight, a boat, a zeppelin or the tram no floor is under the player: chosen anew where they come
             -- down.
