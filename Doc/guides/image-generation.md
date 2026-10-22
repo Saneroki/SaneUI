@@ -352,9 +352,9 @@ lists, from inputs of its own:
   - **Middle** (`qwen21-edit-3ref-i2i`: image to image, starting from image 1 itself): image 1 the game's map
     art, image 2 the terrain plan, image 3 a piece of the parchment (the house paper's grain in the yellow-orange of the game's maps, a zone's turned
     towards its land's colour: `parchment`, `land_tone`) (where the game has no map, image 1 the
-    plan and image 2 another place's map for its manner); edit words, no brief; strength 0.94, 0.96 (one step
-    skipped, two seeds), then 0.98 (none) (at 0.8 and 0.88, six and three skipped, the Deadmines' map stayed the
-    game's coloured map, labels and all).
+    plan and image 2 another place's map for its manner); edit words, no brief; strength 0.95 each try (one step
+    skipped), a try another seed (none skipped lost the zone's colours: Duskwood came out pale; at 0.8 and 0.88, six
+    and three skipped, the Deadmines' map stayed the game's coloured map, labels and all).
   - **Far** (straight down, from noise, its layout held by controls: the Fun ControlNet Union,
     `QwenImageDiffsynthControlnet`; Saneroki, 2026-10-22: all three levels from straight above, each zone on its
     own, joined along the outlines by `map-layers stitch`): image 1 the place's terrain in its frame, lightly blurred

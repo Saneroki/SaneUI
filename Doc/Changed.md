@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 209 (data in the game), 527 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the maps' middle tries keep their zone's colours; the stitched middle level over a sea of its own (2026-10-22)
+- `dev/tools/map-layers`: the middle level's three tries all skip one step (`STRENGTH` 0.95 each, a try another
+  seed; the third from noise lost the zone's colours: Duskwood came out pale); `stitch` lays the middle level's
+  zones each only within its outline over a faded grey-blue wash on the parchment (`SEA_WASH`; the zones' whole
+  paintings under them showed their frames' edges), the far level's over the zones' whole photographs as before.
+- Westfall, Elwynn Forest and Duskwood stitched at both levels: the far level meets seamlessly along the outlines.
+
 ### Navigation: the Atlas' middle and far levels of every zone queued (Saneroki, 2026-10-22)
 - `jobs.toml`: `zonemaps` (priority 10, beside `atlas`): every zone's and city's middle and far levels, 49 zones
   (Saneroki: render everything at all three levels so the Atlas works in the game; the close level is the job

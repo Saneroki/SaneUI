@@ -131,12 +131,12 @@ HEIGHTS = "qwen21-edit-2ref-i2i-cn2"  # a zone's far level: two pictures and two
 GUIDED = "qwen21-edit-2ref-i2i-cn"    # an instance's: two pictures and one control (its plan's edges)
 LAYERS = {"middle": "qwen21-edit-3ref-i2i",   # three pictures, the full model, from image 1 itself
           "far": GUIDED}
-STRENGTH = {"middle": (0.94, 0.96, 0.98), "far": (1.0, 1.0, 1.0)}   # the denoise of each try. ComfyUI runs int(25 /
+STRENGTH = {"middle": (0.95, 0.95, 0.95), "far": (1.0, 1.0, 1.0)}   # the denoise of each try. ComfyUI runs int(25 /
                                 # denoise) steps and skips the first ones beyond 25: 0.927 to 0.961 skip one, above it
-                                # none (0.94 and 0.96 differ by their seed only). The middle level from image 1 itself,
-                                # one step skipped, then none (the Deadmines' map at 0.8 and 0.88, six and three
-                                # skipped, stayed the game's coloured map, labels and all); the far level from noise,
-                                # its controls keeping the layout, a try another seed
+                                # none. The middle level from image 1 itself, one step skipped, a try another seed (none
+                                # skipped lost the zone's colours: Duskwood came out pale; the Deadmines' map at 0.8 and
+                                # 0.88, six and three skipped, stayed the game's coloured map, labels and all); the far
+                                # level from noise, its controls keeping the layout, a try another seed
 LOOK = "qwen3vl-look"           # the vision model's answers
 SIDE = 2048                     # a middle or far painting's longer side
 PAPER_SIDE = 768                # image 3 of the middle level: a piece of the parchment, this large
@@ -1038,13 +1038,15 @@ def contact(args):
 
 
 STITCHED = 6000                 # pixels: a stitched map at most so wide (else at its finest zone's own scale)
+SEA_WASH = (128, 140, 140)      # the middle level's sea when stitched: the parchment washed faded grey-blue
 
 
 def stitch(args):
     """Every painted zone's middle and far levels laid where they lie on their continent, as the levels of the
     world are made (Saneroki, 2026-10-22: each zone painted on its own and the zones joined, all three levels in
-    the same place): each zone's whole painting first (the sea between them), then each cut by its outline
-    (Navigation's zone masks, soft past the border) over it. stitch-<level>-<continent>.jpg over the zones' area."""
+    the same place): each zone cut by its outline (Navigation's zone masks, soft past the border), over the sea:
+    the far level's the zones' whole photographs, the middle level's a faded grey-blue wash on the parchment (the
+    zones' whole paintings showed their frames' edges there). stitch-<level>-<continent>.jpg over the zones' area."""
     out = Path(args.out)
     zones = [s for s in load_state(out)["subjects"] if s["kind"] == "zone"]
     for level in ("middle", "far"):
@@ -1056,15 +1058,19 @@ def stitch(args):
             west, east = max(s["box"][2] for s in here), min(s["box"][3] for s in here)
             k = min(min(SIDE / (s["box"][2] - s["box"][3]) for s in here), STITCHED / (west - east))
             left, top = pixel(north, west, k)
-            ground = parchment((16, 16)).resize((8, 8)).getpixel((4, 4)) if level == "middle" else SEA
-            sheet = Image.new("RGBA", (round((west - east) * k), round((north - south) * k)), ground + (255,))
+            size = (round((west - east) * k), round((north - south) * k))
+            if level == "middle":   # the sea a faded grey-blue wash on the parchment, each zone only within its outline
+                sheet = parchment(size, SEA_WASH).convert("RGBA")
+            else:                   # the zones' whole photographs first: the open sea between them
+                sheet = Image.new("RGBA", size, SEA + (255,))
             laid = []
             for subject in here:
                 n, so, w, e = subject["box"]
                 at_x, at_y = (round(c) for c in pixel(n, w, k))
                 size = (round((w - e) * k), round((n - so) * k))
                 painting = Image.open(out / subject["name"] / f"{level}.png").convert("RGBA").resize(size, Image.Resampling.LANCZOS)
-                sheet.alpha_composite(painting, (at_x - round(left), at_y - round(top)))
+                if level == "far":
+                    sheet.alpha_composite(painting, (at_x - round(left), at_y - round(top)))
                 laid.append((subject, painting, (at_x - round(left), at_y - round(top))))
             for subject, painting, where in laid:
                 outline = OUTLINES / f"{subject['key']}.blp"
