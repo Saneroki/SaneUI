@@ -1547,6 +1547,9 @@ Saneroki asked for a much richer bag view, in features and looks.
   `DOLL_FRAME`); its slot columns bent along the arc as one piece (no steps in its edge). The four parts whose
   cut-outs had holes (the arrow tabs, the edges) are rendered once more from the filled ones; every view laid out
   at 4K by the job.
+- The interface harness's page of pieces (`gallery.py` writes `pieces.html` beside `index.html`): the 61 final
+  pieces by group with what `pieces.json` says of each, previews that keep their transparency, a backdrop to choose
+  (checks, the page's paper, dark, light), full quality and true pixels on a click, the 4K views built from them.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.
