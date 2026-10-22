@@ -1430,6 +1430,8 @@ Saneroki asked for a much richer bag view, in features and looks.
   scale (layouts in 1080p pixels, `--scale`), each window on transparency, and a new 4K full screen of the
   character, guild and chat windows; the guild window takes two columns when narrow. The job `interface` is
   queued again.
+- The paper much whiter again (Saneroki, 2026-10-22): `paper.py`'s `TONE` a warm off-white (238, 229, 208), just
+  under the picked parchment's own; the frame's and the doll's paper follow it.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.

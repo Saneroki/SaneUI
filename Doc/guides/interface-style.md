@@ -21,7 +21,7 @@ Blizzard's code has it ([gui-development.md](gui-development.md)).
 
 ## The idea
 
-An adventurer's journal: an open book of dark brown parchment bound in thin, stitched dark brown leather. The art
+An adventurer's journal: an open book of warm off-white parchment bound in thin, stitched dark brown leather. The art
 is a quiet background; the content (icons, names, numbers, text) is what stands out. Everything is compact and dense,
 with as little room for frame and ornament as the look allows.
 
@@ -42,10 +42,11 @@ with as little room for frame and ornament as the look allows.
 ### Paper
 
 - **Texture:** `paper.png`: parchment with soft, large, faint clouds and an extremely subtle grain.
-- **Tone:** a dark brown, not yellow: close to the leather but brighter (Saneroki, 2026-10-21). The page's mean
-  colour is (150, 114, 80); #12's strap is about (77, 48, 31). The harness sets it (`paper.py`, `TONE`). The
-  paper of the window (#12) and of the doll (#3) is moved to the same tone, their leather and metal keeping
-  their own colours (`compose.py`, `tone_shift`).
+- **Tone:** a warm off-white, much whiter than the dark brown it was for a day (Saneroki, 2026-10-22). The
+  page's mean colour is (238, 229, 208), just under the picked parchment's own (248, 241, 217), so its clouds
+  still show; #12's strap is about (77, 48, 31). The harness sets it (`paper.py`, `TONE`). The paper of the
+  window (#12) and of the doll (#3) is moved to the same tone, their leather and metal keeping their own colours
+  (`pieces.py`, `tone_shift`).
 - **Made of layers in code**, so a window can be any size and scroll without repeats:
   - `paper.png` scaled to cover the page and cut to it (never stretched or repeated);
   - a soft darker edge;
@@ -82,7 +83,7 @@ with as little room for frame and ornament as the look allows.
 ## Text
 
 - **On paper: Kalam** (a hand-printed, non-cursive font), in dark graphite (30, 23, 17) with the paper grain over
-  it, readable on the dark brown paper (Saneroki, 2026-10-21). Its files are in `assets/fonts/Kalam/` (Light,
+  it, readable on the paper (Saneroki, 2026-10-21). Its files are in `assets/fonts/Kalam/` (Light,
   Regular, Bold).
 - **Colours that are hard to read on paper** (class colours on names in bubbles, lists, the podium; light quality
   colours): the game's own colour, unchanged, with a thin dark outline round the letters, made in code with the
