@@ -103,6 +103,10 @@ check("words: the light is the atmosphere's first sentence", "Its light: Warm la
 check("words: the last sentence last", far.endswith(words["far"]["last"]), True)
 check("words: another place's map for its manner only",
       ml.words_of("middle", words, dict(brief, _style_only=True), True).startswith(words["middle"]["images_plan"]), True)
+tile = ml.tile_words(words, dict(brief, land="A lake in the north.", plants="Oaks.", roads="A road."))
+check("words: a square's words name its kind, colours and light, never the zone's places, land, plants or roads",
+      all(w in tile for w in ("This place is an old gold mine.", "Its colours: brown", "Its light: Warm lantern light."))
+      and not any(w in tile for w in ("A lake in the north.", "Oaks.", "A road.", "Tunnels.", "Timber.")), True)
 check("strength: one a try, the first the strictest",
       all(len(ml.STRENGTH[level]) == ml.TRIES and list(ml.STRENGTH[level]) == sorted(ml.STRENGTH[level])
           for level in ("middle", "far")), True)

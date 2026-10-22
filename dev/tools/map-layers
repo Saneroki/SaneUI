@@ -1160,6 +1160,17 @@ def blur(a, r):
     return np.asarray(Image.fromarray(a.clip(0, 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(r)), np.float32)
 
 
+def tile_words(words, brief):
+    """A square's words: the far level's pictures and look, its main zone's kind of place, colours and light, the
+    last sentence; never the zone's land, plants, buildings, roads or places, nor the zones beside it (the model
+    painted whatever the words named into the square: Elwynn Forest's lakes into a square of its forest; the Atlas'
+    lab had learnt the same)."""
+    said = words["far"]
+    return " ".join([said["images_zone"], said["look_zone"],
+                     f"This place is {brief['biome'][0].lower() + brief['biome'][1:]}.",
+                     f"Its colours: {brief['colours']}.", f"Its light: {light(brief)}.", said["last"]])
+
+
 def tiles(args):
     """The world's high resolution tiles: every square of the Atlas' plan with land, painted with the far harness."""
     out, run = Path(args.out), Path(args.run)
@@ -1175,7 +1186,6 @@ def tiles(args):
         print(f"{len(done)} of {len(squares)} squares painted ({100 * len(done) / max(1, len(squares)):.1f} %)")
         return
     words, briefs = tomllib.loads(LEVELS.read_text()), tomllib.loads(ZONES.read_text())
-    found, _ = ta.zones(Path(paths["tables"]), (0, 1))
     liquids = {t: f for kinds in game.liquids.values() for t, f in kinds.items()}
     world = Ground(paths["minimap"], tiles_of(ROOT / "assets" / "data" / "Tiles" / "Tiles.jsonl"),
                    adt=paths["continents"], liquids=liquids)
@@ -1210,13 +1220,7 @@ def tiles(args):
         facts = guides.facts(continent, i, j, square)
         keys = [str(z["uimap"]) for z in facts["zones"] if str(z["uimap"]) in briefs]
         brief = dict(briefs[keys[0]]) if keys else dict(briefs["sea"], biome="the open sea", colours="deep dark blue")
-        middle = ((box[0] + box[1]) / 2, (box[2] + box[3]) / 2)
-        around = []
-        for other in keys[1:NEIGHBOURS]:
-            b = found[int(other)][1]
-            angle = math.atan2((b[0] + b[1]) / 2 - middle[0], middle[1] - (b[2] + b[3]) / 2)
-            around.append((COMPASS[round(math.degrees(angle) / 45) % 8], briefs[other]["biome"]))
-        prompt = words_of("far", words, brief, False, around)
+        prompt = tile_words(words, brief)
         refs = [work / f"{name}-{part}.png" for part in ("colours", "coarse", "height", "water")]
         best = None
         for seed in range(1, TRIES + 1):
