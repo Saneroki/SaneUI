@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: the route's golden line bends round its corners in
+  smooth curves instead of short straight lines, its glint flowing
+  along in one pulse.
 - Navigation: routes keep you on the right floor through the Wizard's
   Sanctum's and Dalaran's portals, take Teleport: Stormwind, and lead
   to a pin nobody can walk to as near as you can walk.

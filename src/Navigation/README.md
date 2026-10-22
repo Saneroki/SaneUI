@@ -327,7 +327,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   legs after the next fainter. A dark edge, the game's dependency bar art tinted gold, its glint moved along by a
   `TextureCoordTranslation` animation (no code of ours each frame); walks and lifts gold, flights pale, ships and the
   tram red, portals violet, the hearthstone and the teleports pale blue. The animation is the template of `Route.xml`: the game makes this kind only from XML (one made in Lua has no
-  `SetOffset`); where the game has not read the file yet, the glint stands still.
+  `SetOffset`); where the game has not read the file yet, the glint stands still. A corner that turns more than
+  `Route.BEND` degrees is drawn as a curve, from a point before it to one after it with the corner its middle point
+  (a curve of three points of the way, so short parts one after the other make one smooth line), in pieces turning
+  about `Route.BEND` degrees each: it cuts the corner no deeper than `Route.STRAY` units at every zoom, never past
+  the middle of a part. The art runs on from piece to piece and each glint starts at the pulse's moment
+  (`Route.PULSE`), so the pieces pulse as one line; the head meets the line on the curve.
 - **QuestLog** (`QuestLog.lua`): a window of Core's of its own (title bar, docks, its grip seen while the mouse is
   on it; place and size in `store.questLogPlace`), over the full map in the layer `DIALOG` with its dark background,
   and pinned (`store.questLogPinned`, its title bar's pin) on the screen alone in the layer `LOW` without one (no
@@ -564,6 +569,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-22, the golden line curved:** its corners were sharp, so a way round many corners showed as short
+  straight lines. A corner turning more than 10 degrees is now a curve of the corner and the points before and after
+  it, never more than 6 units inside the corner; the glint flows on from piece to piece in one pulse.
 - **2026-10-22, no walk after a walk at a flight point:** a route that walked to a flight point could take off and
   come straight down again there and walk on, from another of its floors where the walking data has no way between
   them (from the Undercity's lift to Sylvanas by the bat handler on the ring, on from the floor under it), or round

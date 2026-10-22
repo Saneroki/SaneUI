@@ -3,8 +3,26 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 530 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 535 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: the golden line's corners curved (Saneroki, 2026-10-22)
+- `Route.lua`: a corner of a leg that turns more than `Route.BEND` (10) degrees is drawn as a quadratic curve from a
+  point before it to one after it, the corner its middle point (Saneroki asked for a curve over three points: a way
+  round many corners showed as short straight lines). It reaches along both parts as far as cuts the corner
+  `Route.STRAY` (6) units deep (half its reach times the sine of half the turn), at most to a part's middle, so short
+  parts one after the other make one smooth line; drawn in an even number of pieces turning about 10 degrees each,
+  none shorter than `Route.PIECE` (2) units; all three scaled with the route's pin size. A leg's points form runs
+  on the view's plane (`Lay`, `Run`, `Bend`, `Half`, `Curve`, `Piece`); each piece is tested against the view's
+  rectangle in the holder's units (`Near` gone).
+- Each piece stands for a share of the way's part (`t0`, `t1`): the cut (`Against`, `Share`) finds the piece the
+  player is on (`on`) and draws it from there; the head ends on that piece, so it meets the curve.
+- The art runs on along the leg (`along`: the texture coordinates continue from piece to piece, the head's into the
+  line), and each glint starts at the pulse's moment (`Play(false, GetTime() % Route.PULSE)`; `Route.PULSE` is
+  `Route.xml`'s 1.2 seconds), so the pieces pulse as one line wherever they came into view.
+- Tests: `dev/tests/navigation.lua` (535: a right angle a curve of pieces end to end, each turning little, 6 units
+  deep and no deeper; its art running on, the glints in step, Route.xml's duration; a turn under 10 degrees a corner
+  still; the player on the curve, the head meeting it). The stub's `Play` keeps its offset.
 
 ### Core, dev: the beta's copy of Sane UI with its own data sets (2026-10-22)
 - In the game, every route was one straight line to its pin: the beta's client (`_classic_beta_`, game version

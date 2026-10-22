@@ -103,7 +103,8 @@ window*, *Always on top*):
   `Core/Data/Map.lua`: Spawns, Places, Travel; filled 2026-10-20), one per key, filtered (setting
   `pins`, multi), gathered (`Pins.Gather`), in the game's atlases; `Canvas.Press`/`Release` share drags and clicks.
 - `Areas.lua`: the game's `QuestPOIFrame` per zone in view (the quest under the mouse in the log, else the arrow's).
-- `Marks.Group`: the party and raid. `Route.lua`: the golden line's drawing (`Route.Show(way)`); no planner yet.
+- `Marks.Group`: the party and raid. `Route.lua`: the golden line's drawing (`Route.Show(way)`, the planner's way);
+  corners turning more than `Route.BEND` degrees as curves (`Route.STRAY` units deep at most), one pulse along them.
 - `QuestLog.lua` at the full map's left, `TopBar.lua` over the map (log button, views, map selector, pin filter);
   `Window.lua` lays them out (the log comes in with the motion; `Window.FullSize`).
 - Stacking: `Canvas.LEVELS` (map up to `Canvas.MAP` 5, areas 6, route 7, the game's minimap 10, pins 12, marks 20,

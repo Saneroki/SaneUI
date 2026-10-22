@@ -66,7 +66,7 @@ function methods:CreateAnimationGroup(_, template)
     assert(template == nil or W.xmlTemplates[template] == "AnimationGroup", "no such animation template: " .. tostring(template))
     local group = { scripts = {}, playing = false, progress = 0, template = template }
     function group:SetScript(name, fn) self.scripts[name] = fn end
-    function group:Play() self.playing, self.progress = true, 0 end
+    function group:Play(_, offset) self.playing, self.progress, self.offset = true, 0, offset end
     function group:Stop() self.playing = false end
     function group:IsPlaying() return self.playing end
     group.SetToFinalAlpha, group.SetLooping = noop, noop
@@ -2095,6 +2095,69 @@ do
     Canvas.Moved()
     ns.Route.Show(nil)
 end
+-- A corner of the way drawn as a curve: its pieces end to end from the part before to the part after, cutting the
+-- corner Route.STRAY units deep and no deeper, each turning little from the one before; the art running on from piece
+-- to piece, every glint started at the pulse's moment. A turn of under Route.BEND degrees stays a corner. The player
+-- on the curve: the pieces behind them go, the head meets the line where they are.
+;(function()
+    local view, scale = Canvas.view, ns.PinScale("route")
+    local function At(x, y) return { map = view.map, u = view.u + x / view.k, v = view.v + y / view.k } end
+    local function Glints()
+        local list = {}
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "Line" and widget._shown and widget._group
+                and widget._parent._level == frame:GetFrameLevel() + Canvas.LEVELS.route then
+                list[#list + 1] = widget
+            end
+        end
+        return list
+    end
+    local function Gap(a, b) return math.sqrt((a[1] - b[1]) ^ 2 + (a[2] - b[2]) ^ 2) end
+    -- How far a point lies from the way: east from (-60, 0) to (0, 0), then north to (0, 60).
+    local function Off(p)
+        local x, y = math.max(-60, math.min(0, p[1])), math.max(0, math.min(60, p[2]))
+        return math.min(math.sqrt((p[1] - x) ^ 2 + p[2] ^ 2), math.sqrt(p[1] ^ 2 + (p[2] - y) ^ 2))
+    end
+    local way = { legs = { { kind = "walk", points = { At(-60, 0), At(0, 0), At(0, 60) } } } }
+    ns.Route.Show(way)
+    local glints = Glints()
+    local joined, flowing, inStep, gentle, nearest, farthest = true, true, true, true, math.huge, 0
+    for index, glint in ipairs(glints) do
+        nearest = math.min(nearest, Gap(glint._start, { 0, 0 }))
+        farthest = math.max(farthest, Off(glint._start), Off(glint._end))
+        if glint._group.offset == nil or not near(glint._group.offset, GetTime() % ns.Route.PULSE) then inStep = false end
+        local after = glints[index + 1]
+        if after then
+            if Gap(glint._end, after._start) > 1e-6 then joined = false end
+            if not near(glint._coords[2], after._coords[1]) then flowing = false end
+            local a = math.atan2(glint._end[2] - glint._start[2], glint._end[1] - glint._start[1])
+            local b = math.atan2(after._end[2] - after._start[2], after._end[1] - after._start[1])
+            if math.abs(math.deg(b - a)) > 1.5 * ns.Route.BEND then gentle = false end
+        end
+    end
+    check(#glints > 4 and joined and Gap(glints[1]._start, { -60, 0 }) < 1e-6 and Gap(glints[#glints]._end, { 0, 60 }) < 1e-6
+        and gentle, "a right angle of the way: a curve, its pieces end to end, each turning little from the one before")
+    check(math.abs(nearest - ns.Route.STRAY * scale) < 0.01 and farthest <= ns.Route.STRAY * scale + 1e-6,
+        "the curve cuts the corner Route.STRAY units deep, and strays no farther from the way")
+    local xml = io.open("src/Navigation/Route.xml"):read("*a")
+    check(flowing and inStep and tonumber(xml:match('duration="([%d.]+)"')) == ns.Route.PULSE,
+        "its art runs on from piece to piece, every glint started at the pulse's moment (Route.xml's)")
+    ns.Route.Show({ legs = { { kind = "walk", points = { At(-60, 0), At(0, 0),
+        At(60 * math.cos(math.rad(ns.Route.BEND / 2)), 60 * math.sin(math.rad(ns.Route.BEND / 2))) } } } })
+    check(#Glints() == 2, "a turn of under Route.BEND degrees: a corner still")
+    -- The player south of the way, 54 units along it: on the curve's first half.
+    way.cut = { leg = 1, index = 1, t = 0 }
+    ns.Route.Show(way)
+    local spot, cut = At(-6, 0), way.cut
+    cut.t, cut.map, cut.u, cut.v, cut.pu, cut.pv = 0.9, view.map, spot.u, spot.v, spot.u, view.v - 10 / view.k
+    ns.Route.Cut(way)
+    glints = Glints()
+    local headLine, drawn = glints[#glints], glints[1]
+    check(#glints > 2 and Gap(headLine._end, drawn._start) < 1e-6 and Off(drawn._start) <= ns.Route.STRAY * scale
+        and Gap(headLine._start, { -6, -10 }) < 1e-6 and near(headLine._coords[2], drawn._coords[1]),
+        "the player on the curve: drawn from where they are on it, the head meeting it there, its art running on")
+    ns.Route.Show(nil)
+end)()
 frame._mouseOver = true
 frame._scripts.OnEnter(frame)
 check(ns.Window.handle.options.grip == "hover" and ns.Window.handle.hovered,

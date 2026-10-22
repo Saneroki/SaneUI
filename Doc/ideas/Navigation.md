@@ -402,7 +402,8 @@ the game's own art and the game's own API.
   same one the native map sets).
 - **Route to the pin:** a path that correctly goes around obstacles such as mountains, and that uses
   **flight paths and ships**.
-- **Look:** instead of a dotted line, a **thin golden line pulsing towards the pin**.
+- **Look:** instead of a dotted line, a **thin golden line pulsing towards the pin**, its corners **curved**
+  (Saneroki, 2026-10-22: a curve of each corner and its two neighbours, not short straight lines).
 - **Leather stitches, to come (Saneroki, 2026-10-21):** the route line is to look like leather stitches, in Sane
   UI's style (`Doc/guides/interface-style.md`, *To redesign*), and replaces the golden line.
 
@@ -1664,6 +1665,12 @@ samples, *The ground as the game draws it*, below).
 - The path made short first: straight runs joined, corners cut where the walking data shows a clear way
   (it changes the drawing, never the cost); only the part in view is drawn.
 - `CreateLine` segments from a pool, a few pixels thick, gold, a darker edge under it.
+- **Corners as curves (Saneroki, 2026-10-22; built):** a corner turning more than `Route.BEND` (10 degrees) is
+  a quadratic curve from a point before it to one after it, the corner its middle point: no deeper inside the
+  corner than `Route.STRAY` (6 units, about the line's thickness) at any zoom, never past the middle of a part,
+  so short parts one after the other make one smooth line; drawn in pieces of about 10 degrees each. The art
+  runs on from piece to piece, and each glint starts at the pulse's moment (`Play(false, GetTime() %
+  Route.PULSE)`, as the game offsets its dependency lines), so the pieces pulse as one line.
 - **The pulse runs towards the pin without code each frame:** a repeating soft gradient on each line,
   moved by a `TextureCoordTranslation` animation (*verified* to exist; Blizzard moves lines this way in
   `PowerDependencyLine`). The animation runs in the game's engine; no `OnUpdate` of ours.
