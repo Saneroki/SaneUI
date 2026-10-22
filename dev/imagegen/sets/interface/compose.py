@@ -539,11 +539,11 @@ def stats_in(canvas, rect, lines):
         y += size + 3
 
 
-def view_character():
-    """The character doll: Saneroki's pick itself (the piece doll, #3), its frame, the slots in their arcs and the
-    paper strips over the leather kept as painted; code puts the live content in: game icons in the slots, each
-    strip's writing replaced by the item's stats in Kalam. The hero stands in for the game's live model."""
-    c = piece("doll").copy()                                     # #3 cleaned, on the page's tone, outside transparent
+def doll_bent(c=None):
+    """The doll (the piece doll, #3, or c: a copy of it at this scale) with its two slot columns bent along the
+    arc; and how far each row moved outward (layout pixels). The game's doll is made from it too
+    (dev/tools/journal-art)."""
+    c = (c or piece("doll")).copy()                              # #3 cleaned, on the page's tone, outside transparent
     # the arcs (Saneroki, 2026-10-21: the slots in a rounded layout, not straight under each other): each row of
     # slot and strip moves outward, most in the middle rows, so the columns bow round the hero; the gap a moved
     # row leaves next to the hero's frame is filled with the paper of that spot
@@ -572,7 +572,14 @@ def view_character():
             else:
                 a[y, X0 + d:X1 + d] = src[r]
                 a[y, X0:X0 + d] = fill[r, :d]
-    c = Image.fromarray(a)
+    return Image.fromarray(a), shift
+
+
+def view_character():
+    """The character doll: Saneroki's pick itself (the piece doll, #3), its frame, the slots in their arcs and the
+    paper strips over the leather kept as painted; code puts the live content in: game icons in the slots, each
+    strip's writing replaced by the item's stats in Kalam. The hero stands in for the game's live model."""
+    c, shift = doll_bent()
     left, right = GEAR["left"], GEAR["right"]
     for sl, (name, pattern) in zip(DOLL["top"], [left[0], right[0]]):
         x0, y0, x1, y1 = sl

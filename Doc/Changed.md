@@ -6,6 +6,44 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 551 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory, Core: the character, the bags and the alts in Sane UI's own look (Saneroki, 2026-10-22)
+- Saneroki asked for the inventory's windows in the new art and style (`Doc/guides/interface-style.md`), resizable
+  on the board as before. Three windows changed; the stats and the sheet's other windows keep the dark plate.
+- **Core.Journal** (`src/Core/Journal.lua`, new; from the interface lab's draft, which it replaces): the window of
+  paper bound in stitched leather from the art's pieces (the top in three, its middle stretched; the edges and the
+  bottom repeated; the bottom corners mitred under their caps; the clasp; the paper cut, never stretched), laid out
+  anew at every size; pencil rules, pencil boxes (nine pieces), an item's pencil slot; the leather patch as a button
+  (`Journal.Patch`, `Journal.Button`); Kalam font objects; letters pressed into leather in the leather's light tan
+  with a dark edge, as `title-text.png` shows them; `Journal.Ink` for a game colour that reads on the paper. The
+  leather is drawn at 0.8 of its 4K size (`Journal.SCALE`), so a full screen of windows keeps room.
+- **Core's board** (`Board.lua`): a window's spec may ask for `dress = "journal"` (the journal round its panel, its
+  title on the top's label, the X on the corner patch, the strap and label its head) or `"bare"` (no plate: the
+  module draws its own window; a head, a Kalam title and a pressed X it places itself).
+- **Art** (`dev/tools/journal-art`, `saneui makejournalart`, new): the pieces as BLP2 textures for Core
+  (`assets/optimized/Core/Art/Journal/`, 23 files): each piece at its texture's top left, a repeated piece repeated
+  into the rest so tiles join without a seam; a square pencil slot made from the box's corners; Kalam into Core's
+  `Fonts/`. The character window for the game: the doll with the hero taken out (repainted as paper by the image
+  model with the stony ground kept, its paper toned and grained to the column's in code;
+  `assets/interface/doll-empty.png`), its slot columns bent into their arcs (`compose.py`'s `doll_bent`, now shared)
+  and its strips' painted writing covered. `dev/tools/art` runs its pictures only when called as a script.
+- **The character** (`Sheet/Doll.lua`, new; `Sheet.lua`, `Slots.lua`, `Model.lua`): the doll picture, scaled to fit
+  its window at the top; the game's item buttons in its painted slots (empty: the doll's sketch shows), each strip
+  with the item's name in its quality's colour (outlined), the slot and item level, its two largest stats; the name,
+  title and level line (the class's colour as ink) in the hero's place, the live model under them standing on the
+  doll's ground, no race backdrop; the X on the right strap. Its least is 0.6 of the doll.
+- **The bags and the bank** (`Paper.lua`, new; `Bags.lua`, `Bank.lua`, `Canvas.lua`, `Cells.lua`, `Foot.lua`,
+  `Sidebar.lua`, `Columns.lua`): on the journal's page; the bar and foot a pencil rule, no dark band; every cell a
+  pencil slot with its icon covering the slot's inner line, an empty slot the paper in its box; heads in Kalam over a
+  pencil rule; the sidebar in graphite, the chosen row shaded; the View dropdown, Sell Junk and Deposit leather
+  patches; a list's coloured names outlined. Bodies sized through `Board.Body`/`Board.Least`.
+- **The alts** (`Alts.lua`, `Roster.lua`, `Items.lua`): the same page and pencil, the roster's names in their class
+  colour outlined, the head's level line as ink, worn gear in pencil slots.
+- Interface lab: the scene `inventory` (Core and Inventory, the module as `LabInventory` in the console);
+  `Lab.Blizzard(name)` loads one more of Blizzard's addons; a scroll frame tells its scroll only when it changes, as
+  the game does (Blizzard's scroll bar and frame set each other). The draft `Journal.lua` and its scene now use Core.
+- Tests: the sheet's, the bags' and the inventory's checks follow the doll and the paper; the test stub has
+  `CreateFont`.
+
 ### dev: Blizzard's code and art from the newest export, never references/ (Saneroki, 2026-10-22)
 - A hard rule (Saneroki, 2026-10-22): Sane UI's tools read Blizzard's interface code and art from the newest
   export, the build with the highest version number in the exports' folder this computer's settings name

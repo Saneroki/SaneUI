@@ -62,7 +62,14 @@ Everything the game's (Camelot) character window has, in our panel:
 - **Windows of their own (Saneroki, 2026-10-20):** not one sheet with side tabs, but each part a window on the
   module's board, moved and sized there like every other: the paper doll (scaled to fit), the stats with the
   game's sidebar (gear sets, titles, the pet), and each of the game's tabs; what is in a window follows its size.
-- **Built from Blizzard's code,** its layout, sizes, art (atlases and textures by path), the game's words
+- **Sane UI's own look (Saneroki, 2026-10-22):** the character, the bags, the bank and the alts in the new art and
+  style (`Doc/guides/interface-style.md`), still sized on the board by dragging the lines between windows. Built
+  the same day: the character on the doll (its own leather and paper; slots in arcs, strips with each item's
+  words, the live model on the doll's ground), the bags, the bank and the alts on the journal's page (Core's
+  `Core.Journal`, the board's `dress`). The stats and the game's tabs' windows keep the game's art for now; they
+  are next.
+- **Built from Blizzard's code,** its behaviour, layout and sizes (and, for the windows not made over yet, its
+  art by path), the game's words
   (`GlobalStrings`) and behaviour, rewritten for our panel where it must be:
   - no frame named like one of Blizzard's (`CharacterFrame`, `PaperDollFrame`, `Character…Slot`): ours carry
     `SaneUI` names or none, and nothing of Blizzard's is written;
@@ -140,7 +147,9 @@ character Core has not read slot by slot yet (it has not logged in since) shows 
    search; then pins, the player's own groups and junk marks; next, the steps under *The bags*.
 4. **The other characters** (built 2026-10-20): the snapshot window from `Core.Data.Characters`, an alt's gear
    on a paper doll.
-5. **The game's keys:** whether C and B open ours (Core's holder, `Holder.lua`, keeps the game's window out
+5. **Sane UI's own look** (built 2026-10-22): the character, the bags, the bank and the alts in the journal's
+   look; next the stats and the windows of the game's tabs.
+6. **The game's keys:** whether C and B open ours (Core's holder, `Holder.lua`, keeps the game's window out
    of sight while ours is chosen), and *Classic windows* in the full window's dropdown for the game's own.
 
 ## Open questions

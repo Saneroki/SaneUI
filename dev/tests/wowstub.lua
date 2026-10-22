@@ -448,6 +448,12 @@ function W.Install(env)
         if template and W.templates[template] then W.templates[template](widget) end
         return widget
     end
+    -- A font object of the addon's own, by its name (Sane UI's Kalam): a global, as the game makes it.
+    env.CreateFont = function(name)
+        local font = NewWidget("Font", name)
+        if name then env[name] = font end
+        return font
+    end
     env.UIParent = NewWidget("Frame", "UIParent")
     env.GameTooltip = NewWidget("GameTooltip", "GameTooltip")
     env.UIErrorsFrame = NewWidget("Frame", "UIErrorsFrame")

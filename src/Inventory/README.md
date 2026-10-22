@@ -32,9 +32,11 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   window is on the screen: a click puts it there or takes it off.
 - **The character sheet**, Sane UI's own, in windows of their own that you move and size on the full screen like
   every other (the dropdown *Windows* adds the ones that are not there; at first the character and the stats):
-  - *Character*: your model in the middle (drag to turn it, the wheel or the buttons over it to zoom), your gear
-    round it in the game's places, your level and class above; as large as its window lets it be, never larger
-    than the game's. A click on a slot picks the item up or puts the one you hold there (a drag the same), Shift or
+  - *Character*: Sane UI's own doll, a page of paper in a shaped leather frame (`Doc/guides/interface-style.md`):
+    your model in the middle standing on a pencil sketch of stony ground (drag to turn it, the wheel or the buttons
+    over it to zoom), your name and level above it, your gear in two arcs of pencil slots round it with a paper
+    strip beside each piece saying its name in its quality's colour, its slot and item level and its two largest
+    stats, the weapons and their strips below; as large as its window lets it be. A click on a slot picks the item up or puts the one you hold there (a drag the same), Shift or
     Ctrl and a click links it or tries it on, the tooltip is the game's; an item let go over the model is put on.
     Using an equipped item with a right click stays on the game's own sheet and the action bars.
   - *Character Stats*: your stats as the game lists them, with its tooltips (in a fight they show what they were
@@ -54,8 +56,9 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     watch key puts it on the backpack), with the game's switches Unused and Show on Backpack; the transfer between
     characters stays on the game's own sheet.
   - *Statistics*: the game's statistics by category, each category folding by a click.
-- **Your bags** (the window *Bags*): everything you carry, in a flat,
-  dark look: each item in a thin border of its quality's colour (a quest item's in gold), its item level at the top
+- **Your bags** (the window *Bags*): everything you carry, on a page of the journal (Sane UI's own look: paper
+  bound in stitched leather, everything on it drawn in pencil, the words in a hand-printed font): each item in a
+  pencil slot, in a thin border of its quality's colour (a quest item's in gold), its item level at the top
   left, its count at the bottom right, a quest's mark on an item that starts one, red when you cannot use it.
   - **The bar** at the top: how many of your bags' slots are taken (every bag's in its tooltip); at the right *Sell
     All Junk Items* at a vendor, the junk marker, the bags' button (your bags stand in a strip under the bar, at
@@ -177,23 +180,27 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   (`CharacterFrame.xml`, `PaperDollFrame.xml`, `PaperDollFrame.lua`, `ReputationFrame`, `SkillsFrame`, `PVPRankFrame`,
   `TokenFrame`, `StatisticsFrame`), its parts windows of their own on the board (Saneroki, 2026-10-20), each moved
   and sized there; what is in a window follows its size.
-  - **The character** (`Sheet/Sheet.lua`, the part `character`): the game's left pane (`Sheet.WIDTH` 398 by
-    `Sheet.HEIGHT` 464, on `UI-Character-Info-General-BG`), its top strip (the game's rock and edge) with the level
-    line (`PaperDollFrame_SetLevel`: the effective level, the specialization where the game has one, the class in its
-    colour), the model and the slots; scaled to fit its window's body and never larger than the game's
-    (`Sheet.Size`), the board's least `Sheet.LEAST` of it. The panel's head is `UnitPVPName`. `Sheet.LEFT` is its width
-    too (the other characters' paper doll reads it).
-  - **Slots** (`Sheet/Slots.lua`): the game's `ItemButton` on its slot frame (`UI-Character-Info-GearSlot`), in
-    its places (`Slots.TOP`, `LEFT`, `RIGHT`, `BOTTOM`, `SIZE`, `GAP`); the ranged slot only where
-    `C_PaperDollInfo.IsRangedSlotShown`, the ammo slot (`…GearSlotSmall`) and the weapons moved left while
-    `UnitUsesAmmo`. Drawn as `PaperDollItemSlotButton_Update` draws (the game's `SetItemButton…` functions:
-    icon, count, quality, red while broken or unusable, grey while locked; empty, `GetInventorySlotInfo`'s picture).
+  - **The character** (`Sheet/Sheet.lua`, the part `character`, dressed `bare` on Core's board): the doll
+    (`Sheet/Doll.lua`: Core's `Art/Journal/doll`, `Doll.WIDTH` by `Doll.HEIGHT`, its slots and strips in the
+    pixels of a 1080p layout, `Doll.TOP`, `LEFT`, `RIGHT`, `WEAPONS`, `AMMO`, `HERO`), at the window's top
+    middle, scaled to fit and never larger than its picture is drawn for 4K (`Sheet.Size`), the board's least
+    `Sheet.LEAST` of it. In the hero's place the panel's title (`UnitPVPName`, Kalam), the level line under it
+    (`PaperDollFrame_SetLevel`: the effective level, the specialization where the game has one, the class as ink,
+    `Core.Journal.Ink`) and the model; the panel's head (to drag it) is the doll's top, its X on the right strap.
+    `Sheet.LEFT` (the game's 398) is still what the other characters' paper doll reads.
+  - **Slots** (`Sheet/Slots.lua`): the game's `ItemButton` without its frame, in the doll's painted slots
+    (`Doll.INSET` from their sides), in the game's order; the ranged slot (and its strip) only where
+    `C_PaperDollInfo.IsRangedSlotShown`, the ammo slot while `UnitUsesAmmo`. Drawn as
+    `PaperDollItemSlotButton_Update` draws (the game's `SetItemButton…` functions: icon, count, quality, red while
+    broken or unusable, grey while locked; empty: no picture, the doll's sketch shows). Its strip (`Doll.Strip`):
+    the item's name in its quality's colour, outlined; the slot's word and `ITEM_LEVEL_ABBR`; the two largest of
+    `GetItemStats` by the game's short names; empty, the slot's word, faint.
     Clicks: `PickupInventoryItem` (left click, drag, drop), `HandleModifiedItemClick` (a modified click); a right
     click calls nothing (`UseInventoryItem` is the game's own). Tooltip: `GameTooltip:SetInventoryItem`.
   - **Model** (`Sheet/Model.lua`): a `ModelScene` of the game's `PanningModelSceneMixinTemplate` set up by
     `ModelSceneUtil.SetUpCharacterSheetScene` when shown and at `UNIT_MODEL_CHANGED`, the game's turn and zoom
-    buttons (`ModelSceneControlFrameTemplate`), the race's background in four parts (`DressUpTexturePath`, greyed)
-    under `UI-Character-Info-RaceBG-Overlay`; an item let go over it (a drop, or the left button) where
+    buttons (`ModelSceneControlFrameTemplate`), on the doll's own paper and ground (no race background); an item
+    let go over it (a drop, or the left button) where
     `C_PaperDollInfo.CanAutoEquipCursorItem` says it can be: `AutoEquipCursorItem`.
   - **The stats and the sidebar** (`Sheet/Sidebar.lua`, the part `stats`): the game's right pane as a window, at the
     game's width (`Sidebar.WIDTH`) and the window's height, in its middle: the game's stat background stretched, its
@@ -428,12 +435,14 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     order of the cells drawn (`Cells.Take`), each in a holder of ours that carries the bag's ID (`SetID`): the
     template's `GetBagID` asks its parent, so nothing of ours is written into the button and its click (use,
     drag, split, sell, deposit) is the template's own code, in a fight too. Made out of a fight only
-    (`Cells.short`, `Core.AfterCombat`). The flat look set on the template's own parts once (the icon cut
-    `Cells.ZOOM` round its edge and to the button's size, its mask, border, normal texture and new item's glow
-    away, the highlight to the button's size, a warm glow pressed), ours beside them in a table of our own: a thin
+    (`Cells.short`, `Core.AfterCombat`). Sane UI's look set on the template's own parts once: a pencil slot at the
+    button's edge (`Core.Journal.Slot`), the icon inset by `Core.Journal.SLOT_ICON` of the cell over the slot's
+    inner line and cut `Cells.ZOOM` round its edge, its mask, border, normal texture and new item's glow away, the
+    highlight to the icon's size, a warm glow pressed; ours beside them in a table of our own: a thin
     border of the screen's own pixels in the quality's colour (`Cells.QUEST`, twice as thick, on a quest item),
     above the cooldown's swipe the count, the item level, BoE, the set's name, the game's `QuestNormal` on an item
-    that starts a quest, the junk coin; an empty slot a dark square; a pad (`Cells.Pad`) one that takes no mouse.
+    that starts a quest, the junk coin; an empty slot the pencil slot alone; a pad (`Cells.Pad`) one drawn fainter
+    that takes no mouse.
     Drawn by the template's own functions (`SetItemButtonTexture`, `Quality`, `Count`, `Desaturated`,
     `UpdateCooldown`, …). In the list the button's hit rect reaches over its line. Hooks after its `OnEnter`,
     `OnClick` and `OnMouseUp` light a list's line, open the item's menu (Alt and the right button, which the
@@ -448,8 +457,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     Pinned (shown when empty too) and every category that takes items (`Categories.Takes`), in the grid; an item
     on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`.
   - **The sidebar** (`Bags/Sidebar.lua`): `ns.Sidebars.New(body, top, bottom, options)` a window's (rows of the
-    game's look at Sane UI's size, `Sidebars.WIDTH` wide, the names always shown (one cut short whole in its
-    tooltip), the view shown with a bar of `Core.GOLD` at its left; scrolled by the wheel; `Begin`, `Row`,
+    journal's look, `Sidebars.WIDTH` wide, the names in Kalam always shown (one cut short whole in its tooltip), the
+    view shown shaded in pencil with a graphite bar at its left; scrolled by the wheel; `Begin`, `Row`,
     `Divider`, `Done`; its `choose`, `drop`, `menu`, `add` answer the clicks); `ns.BagSidebar` the bags' (every
     category switched on, empty ones too; a click `Bags.Choose`, an item on the cursor let go there `Menus.Drop`, a
     right click `Menus.Row`). A row the window marks (`row.drag`: the bags' movable categories and groups) is
@@ -532,9 +541,11 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 | `Keys.lua` | The bag keys and the game's bag buttons open the full screen with the bags; the game's bag windows kept unseen |
 | `Bindings.xml` | Inventory's key in the game's key bindings |
 | `Window.lua` | Its window: docked in the bottom right corner, filling the screen from that corner |
-| `Board.lua` | The full screen's windows on Core's board; the parts register theirs |
-| `Sheet/Slots.lua` | The character sheet's equipment slots |
-| `Sheet/Model.lua` | The character sheet's model, its background and buttons |
+| `Board.lua` | The full screen's windows on Core's board; the parts register theirs; which wear the journal (`Board.DRESS`), their bodies' sizes |
+| `Paper.lua` | What the windows on the journal's page draw with: graphite, the pencil's shading, Kalam, a rule, the leather dropdown |
+| `Sheet/Doll.lua` | The character's doll: its picture, its slots and strips, a strip's words |
+| `Sheet/Slots.lua` | The character sheet's equipment slots, in the doll's slots, and their strips |
+| `Sheet/Model.lua` | The character sheet's model and its buttons, in the doll's hero's place |
 | `Sheet/Stats.lua` | The stats, the player's and the pet's: the game's list and rows, put together by our code |
 | `Sheet/List.lua` | A window's scrolling list in the game's look |
 | `Sheet/Side.lua` | The side pane at a window's right, as the game lays it out |

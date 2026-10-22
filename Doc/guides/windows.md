@@ -306,7 +306,10 @@ not by itself. The rules:
 - **What is in a window is the module's**: a panel of Core's (`Core.Skin` plate, a head `Board.HEAD` high with its
   title and the X, a line, the body) holds the module's part, built the first time it is shown (`build`), told
   when it is shown and hidden (`show`), its size once a change stands (`size`), the search (`search`). A window
-  not ours stands in its panel by the module's seat (section *Seated*).
+  not ours stands in its panel by the module's seat (section *Seated*). A window may ask for Sane UI's own look
+  (`spec.dress = "journal"`: `Core.Journal`'s leather and paper round it, its title on the top's label, the X on
+  the corner patch, its body the page's room, `Core.Journal.Inner`) or for none (`"bare"`: the module draws its
+  own window, as the character's doll; a head, a Kalam title and a pressed X it places on its art).
 
 ### Combat
 

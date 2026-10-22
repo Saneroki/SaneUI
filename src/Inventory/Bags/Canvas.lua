@@ -22,23 +22,28 @@ local Sheet = {}   -- a canvas's functions
 Sheet.__index = Sheet
 
 Canvas.INSET = 8   -- from the scroll area's left to the items
-Canvas.HEAD_COLOR = { 0.7, 0.7, 0.7 }
-Canvas.MEMBER_COLOR = { 0.55, 0.55, 0.55 }
-Canvas.HEAD_LINE = { 0.7, 0.7, 0.7, 0.2 }
+Canvas.HEAD_COLOR = ns.Paper.SOFT     -- a category's head: graphite, a group's member lighter
+Canvas.MEMBER_COLOR = ns.Paper.FAINT
 
 local Layout, Cells, Columns, Menus, Categories = ns.Layout, ns.Cells, ns.Columns, ns.Menus, ns.Categories
 
--- The fonts of a canvas's words: a category's head, a group member's, a part's.
+-- The fonts of a canvas's words, Kalam (ns.Paper): a category's head, a group member's, a part's; a list's line,
+-- plain and in a game colour.
 local fonts
 local function Fonts()
     if fonts then return fonts end
+    local Paper = ns.Paper
     fonts = {
-        head = Core.Font("SaneUIBagsHead", "GameFontHighlightSmall", 11),
-        member = Core.Font("SaneUIBagsMember", "GameFontHighlightSmall", 10),
-        part = Core.Font("SaneUIBagsPart", "GameFontHighlight", 13),
+        head = Paper.Font("SaneUIBagsHead", 16, true),
+        member = Paper.Font("SaneUIBagsMember", 13),
+        part = Paper.Font("SaneUIBagsPart", 19, true),
+        row = Paper.Font("SaneUIBagsRow", 14),
+        rowColored = Paper.Outlined("SaneUIBagsRowColored", 14),
+        plus = Paper.Font("SaneUIBagsPlus", 22, true),
     }
     return fonts
 end
+Canvas.Fonts = Fonts
 
 -- What a block folds by in the list (its category, its group, else its name).
 local function Fold(block)
@@ -98,7 +103,8 @@ local function MakeHead(canvas)
     head.canvas = canvas
     head.lit = head:CreateTexture(nil, "BACKGROUND")
     head.lit:SetAllPoints()
-    head.lit:SetColorTexture(1, 1, 1, 0.08)
+    local shade = ns.Paper.SHADE
+    head.lit:SetColorTexture(shade[1], shade[2], shade[3], shade[4])
     head.lit:Hide()
     head.arrow = head:CreateTexture(nil, "ARTWORK")
     head.arrow:SetSize(12, 12)
@@ -109,9 +115,10 @@ local function MakeHead(canvas)
     head.word:SetJustifyH("LEFT")
     head.number = head:CreateFontString(nil, "ARTWORK")
     head.number:SetPoint("LEFT", head.word, "RIGHT", 4, 0)
-    head.line = head:CreateTexture(nil, "ARTWORK")
-    head.line:SetPoint("LEFT", head.number, "RIGHT", 6, 0)
-    head.line:SetPoint("RIGHT", -Layout.GAP, 0)
+    -- the pencil rule under the head's words, across the block
+    head.line = Core.Journal.Rule(head)
+    head.line:SetPoint("BOTTOMLEFT", 0, 0)
+    head.line:SetPoint("BOTTOMRIGHT", -Layout.GAP, 0)
     head:SetScript("OnMouseUp", function(self, mouse) ns.Safe("bags", HeadUp, self, mouse) end)
     head:SetScript("OnReceiveDrag", function(self) ns.Safe("bags", HeadDrop, self) end)
     head:SetScript("OnEnter", function(self) ns.Safe("bags", HeadEnter, self) end)
@@ -122,7 +129,7 @@ end
 function Sheet:Head(place)
     local head = self.heads:Take()
     local block = place.block
-    local font, line = Fonts(), Canvas.HEAD_LINE
+    local font = Fonts()
     head:ClearAllPoints()
     head:SetPoint("TOPLEFT", self.child, "TOPLEFT", place.x + Canvas.INSET, -place.y)
     head:SetSize(place.width, place.height)
@@ -130,11 +137,11 @@ function Sheet:Head(place)
     if object then head.word:SetFontObject(object); head.number:SetFontObject(object) end
     head.word:SetText(block.word or "")
     local color = place.level == 3 and Canvas.MEMBER_COLOR or Canvas.HEAD_COLOR
-    if place.level == 1 then head.word:SetTextColor(1, 1, 1) else head.word:SetTextColor(color[1], color[2], color[3]) end
-    head.number:SetTextColor(color[1], color[2], color[3], 0.9)
+    local ink = ns.Paper.INK
+    if place.level == 1 then head.word:SetTextColor(ink[1], ink[2], ink[3]) else head.word:SetTextColor(color[1], color[2], color[3], color[4]) end
+    head.number:SetTextColor(ns.Paper.FAINT[1], ns.Paper.FAINT[2], ns.Paper.FAINT[3], ns.Paper.FAINT[4])
     head.number:SetText(block.number and "(" .. tostring(block.number) .. ")" or "")
-    head.line:SetColorTexture(line[1], line[2], line[3], place.level == 3 and line[4] / 2 or line[4])
-    head.line:SetHeight(Core.Pixels(head, 1))
+    head.line:SetAlpha(place.level == 3 and 0.35 or ns.Paper.RULE_ALPHA)
     head.key, head.group = block.key, block.group
     local list = self.owner.store.look == "list" and place.level ~= 1
     head.fold = list and Fold(block) or nil
@@ -183,7 +190,7 @@ function Sheet:Label(place)
     label:SetSize(place.width, place.height)
     local object = Fonts().member
     if object then label.text:SetFontObject(object) end
-    label.text:SetTextColor(color[1], color[2], color[3])
+    label.text:SetTextColor(color[1], color[2], color[3], color[4])
     label.text:SetText(block.word or "")
     label.key, label.group = block.key, block.group
     label:Show()
@@ -211,11 +218,9 @@ end
 
 local function MakePlus(canvas)
     local plus = CreateFrame("Button", nil, canvas.child)
-    local back = plus:CreateTexture(nil, "BACKGROUND")
-    back:SetAllPoints()
-    back:SetColorTexture(0, 0, 0, 0.4)
+    Core.Journal.Slot(plus, 1, "BACKGROUND")
     plus.sign = plus:CreateFontString(nil, "ARTWORK")
-    plus.sign:SetFontObject(Core.Font("SaneUIBagsPlus", "GameFontHighlightLarge", 18, "OUTLINE") or "GameFontHighlightLarge")
+    plus.sign:SetFontObject(Fonts().plus)
     plus.sign:SetPoint("CENTER")
     plus.sign:SetText("+")
     plus.sign:SetAlpha(0.5)
@@ -242,12 +247,13 @@ end
 -- A line: behind its item button, which reaches over it; a word for each column shown (Columns.lua).
 local function MakeRow(canvas)
     local row = CreateFrame("Frame", nil, canvas.child)
+    local zebra, shade = ns.Paper.ZEBRA, ns.Paper.SHADE
     row.back = row:CreateTexture(nil, "BACKGROUND")
     row.back:SetAllPoints()
-    row.back:SetColorTexture(1, 1, 1, 0.03)
+    row.back:SetColorTexture(zebra[1], zebra[2], zebra[3], zebra[4])
     row.lit = row:CreateTexture(nil, "BORDER")
     row.lit:SetAllPoints()
-    row.lit:SetColorTexture(1, 1, 1, 0.08)
+    row.lit:SetColorTexture(shade[1], shade[2], shade[3], shade[4])
     row.lit:Hide()
     row.cells = {}
     return row
@@ -257,7 +263,7 @@ local function Cell(row, key)
     local cell = row.cells[key]
     if not cell then
         cell = row:CreateFontString(nil, "ARTWORK")
-        cell:SetFontObject(Core.Font("SaneUIBagsRow", "GameFontHighlightSmall", 11) or "GameFontHighlightSmall")
+        cell:SetFontObject(Fonts().row)
         cell:SetWordWrap(false)
         cell:SetJustifyH(Columns.DEF[key].number and "RIGHT" or "LEFT")
         row.cells[key] = cell
@@ -284,7 +290,7 @@ function Sheet:Row(place, button)
             cell:SetWidth(spot.width)
             local text, r, g, b = Columns.Value(key, entry)
             cell:SetText(text)
-            cell:SetTextColor(r or 1, g or 1, b or 1)
+            ns.Paper.Color(cell, r, g, b, Fonts().row, Fonts().rowColored)
             cell:Show()
         end
     end

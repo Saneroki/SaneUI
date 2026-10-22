@@ -55,6 +55,8 @@ local Core = SaneUI.Core
 --               size = function(panel, width, height) end,  -- placed that large (once a change stands)
 --               search = function(panel, text) end,
 --               present = function() return true end,       -- it has something to show now
+--               dress = "journal",             -- the journal's leather and paper (Core.Journal), not the dark plate;
+--                                              -- "bare": none, the module draws its own (its head, title, X there)
 --               icon = "Interface/ICONS/...",  -- its tab of its own after the layouts' tabs: a texture or file ID
 --                                              -- (coords: its texture coordinates), or function(texture) that
 --                                              -- draws it (a portrait); none: only the dropdown lists it
@@ -532,21 +534,9 @@ Board.Release = Release
 -------------------------------------------------------------------------------
 --  The panels
 -------------------------------------------------------------------------------
--- A window's panel in what the window holds: a plate in Sane UI's look (Core.Skin), a head with its title at the
--- left, the module's buttons and the X at its right, a thin line under it; under that, its body.
-local function Panel(board, spec)
-    local panel = board.panels[spec.key]
-    if panel and panel.spec == spec then return panel end
-    -- Another window took that key (Board.Offer, Withdraw): the one before is told it is hidden, and what it built
-    -- goes out of sight with its panel; the new one gets a panel of its own, built for it.
-    if panel and panel:IsShown() then
-        panel:Hide()
-        if panel.spec.show then Core.Safe(Label(board), panel.spec.show, panel, false) end
-    end
-    local inside = board.inside
-    panel = CreateFrame("Frame", nil, inside)
-    panel:SetFrameLevel(inside:GetFrameLevel() + Board.LEVEL)
-    panel.key, panel.spec, panel.board = spec.key, spec, board
+-- The dark plate (Core.Skin): a head with its title at the left, the module's buttons and the X at its right, a
+-- thin line under it; under that, its body.
+local function Plate(board, panel, spec)
     panel.skin = Core.Skin.New(panel, { radius = Board.RADIUS })
     panel.close = CreateFrame("Button", nil, panel, "UIPanelCloseButtonNoScripts")
     panel.close:SetPoint("TOPRIGHT", -2, -(Board.HEAD - 24) / 2)
@@ -571,6 +561,89 @@ local function Panel(board, spec)
     panel.body = CreateFrame("Frame", nil, panel)
     panel.body:SetPoint("TOPLEFT", 0, -Board.HEAD)
     panel.body:SetPoint("BOTTOMRIGHT")
+end
+
+-- The journal (Core.Journal, spec.dress = "journal"): the book's leather and paper round the panel, its title on
+-- the top's label, the X on the top's corner patch, the strap and the label its head to drag it by; its body the
+-- page's room. Its body's size from the panel's: Core.Journal.Inner.
+local function Journal(board, panel, spec)
+    local look = Core.Journal.Dress(panel, spec.title)
+    panel.look = look
+    panel.skin = { Rest = function() end }
+    panel.close = look.close
+    panel.close:SetScript("OnClick", function() Core.Safe(Label(board), board.Remove, board, panel.key) end)
+    Core.Tip(panel.close, Board.TEXT.remove, nil, "ANCHOR_TOP")
+    panel.head = look.head
+    panel.head:EnableMouse(true)
+    panel.head:RegisterForDrag("LeftButton")
+    panel.head:SetScript("OnDragStart", function() Core.Safe(Label(board), board.Lift, board, panel) end)
+    panel.head:SetScript("OnDragStop", function() Core.Safe(Label(board), Release, false) end)
+    panel.title = look.title
+    panel.body = CreateFrame("Frame", nil, panel)
+    panel.body:SetAllPoints(look.content)
+end
+
+-- Bare (spec.dress = "bare"): no plate, the module draws its own window (the character's doll, a piece of its
+-- own leather and paper). A head along its top to drag it by, its title in Kalam and the X pressed into leather,
+-- which the module may move onto its art; its body the whole panel.
+local function Bare(board, panel, spec)
+    local J = Core.Journal
+    panel.skin = { Rest = function() end }
+    panel.body = CreateFrame("Frame", nil, panel)
+    panel.body:SetAllPoints()
+    panel.head = CreateFrame("Frame", nil, panel)
+    panel.head:SetPoint("TOPLEFT")
+    panel.head:SetPoint("TOPRIGHT")
+    panel.head:SetHeight(Board.HEAD)
+    panel.head:SetFrameLevel(panel.body:GetFrameLevel() + 20)
+    panel.head:EnableMouse(true)
+    panel.head:RegisterForDrag("LeftButton")
+    panel.head:SetScript("OnDragStart", function() Core.Safe(Label(board), board.Lift, board, panel) end)
+    panel.head:SetScript("OnDragStop", function() Core.Safe(Label(board), Release, false) end)
+    panel.title = panel.head:CreateFontString(nil, "OVERLAY")
+    J.Font(panel.title, 20, true)
+    panel.title:SetPoint("CENTER")
+    panel.title:SetText(spec.title or "")
+    panel.close = CreateFrame("Button", nil, panel)
+    panel.close:SetSize(20, 20)
+    panel.close:SetFrameLevel(panel.head:GetFrameLevel() + 1)
+    panel.close:SetPoint("TOPRIGHT")
+    local x = panel.close:CreateFontString(nil, "OVERLAY")
+    J.Press(x, 19)
+    x:SetPoint("CENTER", 0, 1)
+    x:SetText("x")
+    panel.close:SetFontString(x)
+    panel.close:SetPushedTextOffset(1, -1)
+    panel.close:SetScript("OnEnter", Core.Guard(Label(board), function() x:SetTextColor(J.LIT[1], J.LIT[2], J.LIT[3], 1) end))
+    panel.close:SetScript("OnLeave", Core.Guard(Label(board), function()
+        x:SetTextColor(J.LEATHER[1], J.LEATHER[2], J.LEATHER[3], 0.85)
+    end))
+    panel.close:SetScript("OnClick", function() Core.Safe(Label(board), board.Remove, board, panel.key) end)
+    Core.Tip(panel.close, Board.TEXT.remove, nil, "ANCHOR_TOP")
+end
+
+-- A window's panel in what the window holds: the dark plate, or the journal when its spec asks for it
+-- (spec.dress); a head with its title and the X; under that, its body.
+local function Panel(board, spec)
+    local panel = board.panels[spec.key]
+    if panel and panel.spec == spec then return panel end
+    -- Another window took that key (Board.Offer, Withdraw): the one before is told it is hidden, and what it built
+    -- goes out of sight with its panel; the new one gets a panel of its own, built for it.
+    if panel and panel:IsShown() then
+        panel:Hide()
+        if panel.spec.show then Core.Safe(Label(board), panel.spec.show, panel, false) end
+    end
+    local inside = board.inside
+    panel = CreateFrame("Frame", nil, inside)
+    panel:SetFrameLevel(inside:GetFrameLevel() + Board.LEVEL)
+    panel.key, panel.spec, panel.board = spec.key, spec, board
+    if spec.dress == "journal" then
+        Journal(board, panel, spec)
+    elseif spec.dress == "bare" then
+        Bare(board, panel, spec)
+    else
+        Plate(board, panel, spec)
+    end
     panel.fade = Core.Motion.Fade(panel)
     panel:Hide()
     board.panels[spec.key] = panel

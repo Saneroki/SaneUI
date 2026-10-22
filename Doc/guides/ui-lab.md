@@ -68,15 +68,18 @@ prints its log.
   the login. Its first comment line is its description in the page's list.
 
   ```lua
-  local ns = Lab.Addon("SaneUI_Draft", "dev/uilab/drafts/Journal.lua")   -- files as one addon's (Lua or XML)
+  local ns = Lab.Addon("SaneUI_Draft", "dev/uilab/drafts/Draft.lua")     -- files as one addon's (Lua or XML)
   Lab.TOC("src/Core/SaneUI.toc")             -- an addon from its TOC, its Lua and XML files
   Lab.World("default")                       -- the fake server's world (default: default)
+  Lab.Blizzard("Blizzard_FrameXMLUtil")     -- one more of Blizzard's addons than the lab loads itself
   Lab.OnLogin(function() ... end)            -- after PLAYER_LOGIN and PLAYER_ENTERING_WORLD
   Lab.Slash("/sane window")                  -- a slash command, as typed
   Lab.Say("GUILD", "Mirabel Ashgrove", "Hello")   -- a chat line from the server now
   ```
 
-  The scenes: `basics` (plain widgets), `journal-chat` (the journal draft), `xml-templates` (a window from the
+  The scenes: `basics` (plain widgets), `journal-chat` (a chat window in Core's journal look), `inventory` (Core
+  and Inventory from their TOCs, the full screen with the character, the bags and the alts; the module is
+  `LabInventory` in the console), `xml-templates` (a window from the
   scene's own XML on Blizzard's templates), `core` (Core from its TOC, with its window to try windows with; rest
   the mouse on its free corner and it opens; `/sane options` in the console opens Core's options in the game's
   settings panel).
@@ -93,9 +96,9 @@ prints its log.
   sends chat lines and any event while the scene runs. What the player sends (`SendChatMessage`, addon
   messages to the guild or group) comes back as the server sends it.
 - **A draft** (`dev/uilab/drafts/`) is code that is meant for the game but not chosen yet, written as an addon's
-  file on the game's API alone. `Journal.lua` builds the journal window from the art's pieces. Once it is right,
-  it moves into its module (`src/`) as it is, gets Core's guards on its scripts (`ns.Guard`, a hard rule there),
-  and joins the TOC.
+  file on the game's API alone. Once it is right, it moves into its module (`src/`) as it is, gets Core's guards
+  on its scripts (`ns.Guard`, a hard rule there), and joins the TOC. The journal window began as one; it is
+  Core's now (`src/Core/Journal.lua`).
 
 ## Pictures and fonts
 
@@ -104,7 +107,7 @@ The lab's server finds the files by the paths code gives them, as the game does,
 | Path | Where the lab finds it |
 | --- | --- |
 | `Interface\AddOns\SaneUI\...`, `SaneUI_<Module>\...` | `assets/optimized/Core/...` (`<Module>`), then `BUILD/`, then the drafts |
-| `Interface\AddOns\SaneUI\Art\Journal\<piece>` | not chosen yet: `assets/generated/interface/pieces/<piece>.png` |
+| `Interface\AddOns\SaneUI\Art\Journal\<piece>` | Core's textures (`dev/tools/journal-art`); only where one is missing the harness's `assets/generated/interface/pieces/<piece>.png` |
 | `Interface\...` | Blizzard's art, the newest export's (`dev/tools/blizzard where`) |
 | a file ID (`GetItemInfo`'s icons) | the game's listfile (below) |
 | `Fonts\FRIZQT__.TTF` and the game's other fonts | stand-ins: the client ships them compiled, so they cannot be read |

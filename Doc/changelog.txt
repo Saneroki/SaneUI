@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Inventory: the character, the bags, the bank and your alts in
+  Sane UI's own look: an adventurer's journal of cream paper bound in
+  stitched leather, items in pencil-drawn slots, words in a
+  hand-printed font. The character stands on a painted doll with your
+  gear in two arcs round you, each piece's name, level and stats on a
+  paper strip beside it. Every window still resizes on the full screen.
 - Navigation: routes to far pins are found many times faster, and a
   long walk around mountains or through the other side's lands is
   found and drawn instead of a straight line.

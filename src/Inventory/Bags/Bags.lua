@@ -7,7 +7,7 @@ local _, ns = ...
 --  game's own bag windows stay as they are: our code neither opens nor closes
 --  them.
 --
---      the bar      a dark band at the top: how many slots of the bags are
+--      the bar      a band at the top, a pencil rule under it: how many slots of the bags are
 --                   taken of how many (every bag's in its tooltip); at the
 --                   right what can be done at a vendor or a banker
 --                   (Foot.lua), the junk marker (a click, then clicks on
@@ -25,7 +25,7 @@ local _, ns = ...
 --                   (Views.lua, Layout.lua) and drawn (Canvas.lua), each item
 --                   the game's own item button (Cells.lua); the bank has a
 --                   window of its own (Bank.lua)
---      the foot     a dark band at the bottom: the currencies, the gold
+--      the foot     a band at the bottom, a pencil rule over it: the currencies, the gold
 --                   (Foot.lua)
 --  The search box of the full window finds items by their name, their
 --  category or their item level: the views of the bags as they are fade what
@@ -49,13 +49,12 @@ ns.Bags = Bags
 Bags.EDGE = 6        -- from the panel's sides to what is in it
 Bags.INSET = 8       -- from the scroll area's left to the items
 Bags.SCROLL = 20     -- room at the right for the game's scroll bar
-Bags.BAR = 35        -- the dark band at the top
+Bags.BAR = 35        -- the band at the top
 Bags.BAR_BUTTON = 24 -- a button on it
 Bags.BAR_GAP = 6
 Bags.MENU_WIDTH = 110
-Bags.SHADE = { 0, 0, 0, 0.5 }        -- the bar's band
-Bags.RULE = { 0.15, 0.15, 0.15, 1 }  -- the line under the bar, over the foot, by the sidebar
-Bags.COUNT_COLOR = { 0.6, 0.6, 0.6 } -- the bar's count
+Bags.RULE = { ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3], 0.3 } -- the line by the sidebar
+Bags.COUNT_COLOR = ns.Paper.SOFT    -- the bar's count
 Bags.LEAST = { 560, 320 }
 -- The settings that show Pinned and Recent (store.bags).
 Bags.SHOW = { pinned = "showPinned", recent = "showRecent" }
@@ -147,7 +146,7 @@ Bags.CleanButton = CleanButton
 local fonts
 local function Fonts()
     if fonts then return fonts end
-    fonts = { count = Core.Font("SaneUIBagsBarCount", "GameFontHighlightSmall", 11) }
+    fonts = { count = ns.Paper.Font("SaneUIBagsBarCount", 15) }
     return fonts
 end
 Bags.Fonts = Fonts
@@ -396,17 +395,9 @@ function Bags.Count()
     end
 end
 
--- A dark band with a thin line at one edge (the bar's at its foot, the foot's at its top).
+-- A band on the paper with a pencil rule at one edge (the bar's at its foot, the foot's at its top).
 local function Band(frame, edge)
-    local back = frame:CreateTexture(nil, "BACKGROUND")
-    back:SetAllPoints()
-    back:SetColorTexture(Bags.SHADE[1], Bags.SHADE[2], Bags.SHADE[3], Bags.SHADE[4])
-    local line = frame:CreateTexture(nil, "BORDER")
-    line:SetColorTexture(Bags.RULE[1], Bags.RULE[2], Bags.RULE[3], Bags.RULE[4])
-    line:SetPoint(edge .. "LEFT")
-    line:SetPoint(edge .. "RIGHT")
-    line:SetHeight(Core.Pixels(frame, 1))
-    return back, line
+    return nil, ns.Paper.Rule(frame, edge, "BORDER")
 end
 Bags.Band = Band
 
@@ -492,15 +483,14 @@ local function Bar(body)
     bar.count = bar:CreateFontString(nil, "ARTWORK")
     local font = Fonts()
     if font.count then bar.count:SetFontObject(font.count) end
-    bar.count:SetTextColor(Bags.COUNT_COLOR[1], Bags.COUNT_COLOR[2], Bags.COUNT_COLOR[3])
+    bar.count:SetTextColor(Bags.COUNT_COLOR[1], Bags.COUNT_COLOR[2], Bags.COUNT_COLOR[3], Bags.COUNT_COLOR[4])
     bar.count:SetPoint("LEFT", Bags.INSET + Bags.EDGE, 0)
     local hover = CreateFrame("Frame", nil, bar)
     hover:SetAllPoints(bar.count)
     hover:SetScript("OnEnter", function(self) ns.Safe("bags", Foot.FreeTip, self) end)
     hover:SetScript("OnLeave", GameTooltip_Hide)
-    menu = CreateFrame("DropdownButton", nil, bar, "WowStyle1DropdownTemplate")
+    menu = ns.Paper.Dropdown(bar, Bags.MENU_WIDTH, Bags.BAR_BUTTON)
     menu:SetPoint("RIGHT", -Bags.EDGE, 0)
-    menu:SetWidth(Bags.MENU_WIDTH)
     menu:OverrideText(ns.TEXT.bagsView)
     menu:SetupMenu(ViewMenu)
     sort = CleanButton(bar, Clean, CleanTip)
@@ -588,9 +578,9 @@ function Bags.Show(on)
     end
 end
 
--- The panel's new size: the scroll area's child as wide as the area, laid out anew.
-function Bags.Size(newWidth)
-    width = newWidth or width
+-- The panel's new size (its body's: Board.Body): the scroll area's child as wide as the area, laid out anew.
+function Bags.Size(newWidth, newHeight)
+    if newWidth then width = ns.Board.Body("bags", newWidth, newHeight or 0) end
     if not child then return end
     child:SetWidth(math.max(1, width - Sidebar.Width() - Bags.EDGE - Bags.SCROLL))
     if kept.look == "list" then columns:Refresh(math.max(1, child:GetWidth() - Bags.INSET)) end
@@ -599,7 +589,7 @@ end
 
 -- The sidebar folded or unfolded: the items laid out in the room left.
 function Bags.Resized()
-    Bags.Size(width)
+    Bags.Size()
 end
 
 function Bags.Search(text)
@@ -607,6 +597,5 @@ function Bags.Search(text)
     Bags.Redraw()
 end
 
--- The board's least: the sidebar and some item buttons in a line, the foot, the panel's head and edges.
-local edge, head = Core.Board.EDGE, Core.Board.HEAD
-ns.Board.Part("bags", ns.TEXT.bags, { Bags.LEAST[1] + 2 * edge, Bags.LEAST[2] + head + 2 * edge }, Bags)
+-- The board's least: the sidebar and some item buttons in a line, the foot, the panel's leather round them.
+ns.Board.Part("bags", ns.TEXT.bags, ns.Board.Least("bags", Bags.LEAST[1], Bags.LEAST[2]), Bags)

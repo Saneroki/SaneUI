@@ -871,7 +871,7 @@ Choose(RowMenu("Trade Goods"), "Switch Off")
 check(not RowNamed("Trade Goods") and Categories.Off("trade"), "switched off: its items in Miscellaneous")
 local dropdown
 for _, widget in ipairs(W.frames) do
-    if widget._generator and widget._override == "View" then dropdown = widget end
+    if widget._generator and (rawget(widget, "word") or widget._override) == "View" then dropdown = widget end
 end
 dropdown:GenerateMenu()
 local off = Line(dropdown._items, "Switched Off")
@@ -1419,7 +1419,7 @@ row:GetScript("OnClick")(row, "LeftButton")
 check(Bank.Viewing() == "tab:6" and Bank.cells:Shown(6, 1) and BankRow("Ores").bar:IsShown(), "a tab by itself")
 local bankMenu
 for _, widget in ipairs(W.frames) do
-    if widget._generator and widget._override == "View" and widget._parent and widget._parent._parent == bankPanel.body then bankMenu = widget end
+    if widget._generator and (rawget(widget, "word") or widget._override) == "View" and widget._parent and widget._parent._parent == bankPanel.body then bankMenu = widget end
 end
 bankMenu:GenerateMenu()
 Choose(bankMenu._items, "Group by Category")

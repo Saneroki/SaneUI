@@ -611,11 +611,10 @@ function Bank.Build(made)
     bar.count = bar:CreateFontString(nil, "ARTWORK")
     local font = Bags.Fonts().count
     if font then bar.count:SetFontObject(font) end
-    bar.count:SetTextColor(Bags.COUNT_COLOR[1], Bags.COUNT_COLOR[2], Bags.COUNT_COLOR[3])
+    bar.count:SetTextColor(Bags.COUNT_COLOR[1], Bags.COUNT_COLOR[2], Bags.COUNT_COLOR[3], Bags.COUNT_COLOR[4])
     bar.count:SetPoint("LEFT", Bags.INSET + Bags.EDGE, 0)
-    menu = CreateFrame("DropdownButton", nil, bar, "WowStyle1DropdownTemplate")
+    menu = ns.Paper.Dropdown(bar, Bags.MENU_WIDTH, Bags.BAR_BUTTON)
     menu:SetPoint("RIGHT", -Bags.EDGE, 0)
-    menu:SetWidth(Bags.MENU_WIDTH)
     menu:OverrideText(ns.TEXT.bagsView)
     menu:SetupMenu(ViewMenu)
     sort = Bags.CleanButton(bar, Clean, CleanTip)
@@ -623,15 +622,12 @@ function Bank.Build(made)
     deposit = CreateFrame("Button", nil, bar)
     deposit:SetHeight(Foot.ACT)
     deposit:SetPoint("RIGHT", sort, "LEFT", -Bags.BAR_GAP, 0)
-    local back = deposit:CreateTexture(nil, "BACKGROUND")
-    back:SetAllPoints()
-    back:SetColorTexture(0, 0, 0, 0.4)
     deposit.text = deposit:CreateFontString(nil, "ARTWORK")
-    deposit.text:SetFontObject(Core.Font("SaneUIBagsAct", "GameFontHighlightSmall", 10) or "GameFontHighlightSmall")
+    ns.Paper.Leather(deposit, deposit.text, Foot.ACT)
     deposit.text:SetPoint("CENTER")
     deposit.text:SetText(Core.Word("REAGENTBANK_DEPOSIT", "Deposit All Reagents"))
     deposit.text:SetTextColor(Foot.ACT_COLOR[1], Foot.ACT_COLOR[2], Foot.ACT_COLOR[3])
-    deposit:SetWidth(math.max(58, (deposit.text:GetStringWidth() or 0) + 14))
+    deposit:SetWidth(math.max(58, (deposit.text:GetStringWidth() or 0) + 24))
     deposit:SetScript("OnClick", function() ns.Safe("bank", Deposit) end)
     deposit:Hide()
     Bank.deposit = deposit
@@ -676,8 +672,8 @@ function Bank.Show(on)
     end
 end
 
-function Bank.Size(newWidth)
-    width = newWidth or width
+function Bank.Size(newWidth, newHeight)
+    if newWidth then width = ns.Board.Body("bank", newWidth, newHeight or 0) end
     if not child then return end
     child:SetWidth(math.max(1, width - rail:Width() - Bags.EDGE - Bags.SCROLL))
     if kept.look == "list" then columns:Refresh(math.max(1, child:GetWidth() - Bags.INSET)) end
@@ -694,5 +690,4 @@ function Bank.Present()
     return Contents.bankOpen == true
 end
 
-local edge, head = Core.Board.EDGE, Core.Board.HEAD
-ns.Board.Part("bank", Core.Word("BANK", "Bank"), { Bank.LEAST[1] + 2 * edge, Bank.LEAST[2] + head + 2 * edge }, Bank)
+ns.Board.Part("bank", Core.Word("BANK", "Bank"), ns.Board.Least("bank", Bank.LEAST[1], Bank.LEAST[2]), Bank)

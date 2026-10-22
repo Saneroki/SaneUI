@@ -95,7 +95,8 @@ local function Level(who)
     local colours = rawget(_G, "RAID_CLASS_COLORS")
     local colour = colours and type(who.class) == "string" and colours[who.class]
     local level = type(who.level) == "number" and who.level or "?"
-    return Alts.TEXT.level:format(level, colour and colour.colorStr or "ffffffff", ClassName(who.class))
+    local ink = colour and ns.Paper.InkHex(colour.r, colour.g, colour.b) or "ff1e1711"
+    return Alts.TEXT.level:format(level, ink, ClassName(who.class))
 end
 
 -- The lines of a character's tooltip in the roster: { text, r, g, b }.
@@ -141,7 +142,7 @@ end
 local function Head(key)
     if key == ns.Snapshot.ACCOUNT then
         head.name:SetText(Alts.TEXT.account)
-        head.name:SetTextColor(1, 1, 1)
+        head.name:SetTextColor(ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3])
         head.gold:SetText("")
         head.line:SetText("")
         return
@@ -152,7 +153,7 @@ local function Head(key)
     head.name:SetTextColor(ns.Roster.Colour(who.class))
     head.gold:SetText(type(who.money) == "number" and Core.Coins(who.money) or "")
     local seen = key == Core.charKey and Alts.TEXT.now or Seen(who.seen) or Alts.TEXT.unseen
-    head.line:SetText(Level(who) .. "  |cff808080" .. seen .. "|r")
+    head.line:SetText(Level(who) .. "  |c" .. ns.Paper.FAINT_HEX .. seen .. "|r")
 end
 
 -- A place's head, for Items.Elements: its words, the note beside it, what it says without items.
@@ -314,19 +315,21 @@ function Alts.Build(made)
     head:SetPoint("TOPLEFT")
     head:SetPoint("TOPRIGHT")
     head:SetHeight(Alts.HEAD)
-    head.name = head:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    head.name = head:CreateFontString(nil, "ARTWORK")
+    head.name:SetFontObject(ns.Paper.Outlined("SaneUIAltsName", 21, true))
     head.name:SetPoint("TOPLEFT", 2, -4)
-    head.gold = head:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    head.gold = head:CreateFontString(nil, "ARTWORK")
+    head.gold:SetFontObject(ns.Paper.Font("SaneUIAltsGold", 15))
     head.gold:SetPoint("TOPRIGHT", -2, -6)
     head.name:SetPoint("RIGHT", head.gold, "LEFT", -8, 0)
     head.name:SetJustifyH("LEFT")
     head.name:SetWordWrap(false)
-    head.line = head:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    head.line = head:CreateFontString(nil, "ARTWORK")
+    head.line:SetFontObject(ns.Paper.Font("SaneUIAltsLine", 14))
     head.line:SetPoint("TOPLEFT", head.name, "BOTTOMLEFT", 0, -4)
     head.line:SetJustifyH("LEFT")
-    menu = CreateFrame("DropdownButton", nil, head, "WowStyle1DropdownTemplate")
+    menu = ns.Paper.Dropdown(head, ns.Bags.MENU_WIDTH, ns.Bags.BAR_BUTTON)
     menu:SetPoint("BOTTOMRIGHT", -2, 2)
-    menu:SetWidth(ns.Bags.MENU_WIDTH)
     menu:OverrideText(ns.TEXT.bagsView)
     menu:SetupMenu(Menu)
     Alts.menu = menu
@@ -337,7 +340,9 @@ function Alts.Build(made)
     items:SetPoint("BOTTOMRIGHT")
     ns.Items.Build(items)
 
-    body.wait = body:CreateFontString(nil, "ARTWORK", "GameFontDisable")
+    body.wait = body:CreateFontString(nil, "ARTWORK")
+    body.wait:SetFontObject(ns.Paper.Font("SaneUIAltsWait", 16))
+    body.wait:SetTextColor(ns.Paper.FAINT[1], ns.Paper.FAINT[2], ns.Paper.FAINT[3], ns.Paper.FAINT[4])
     body.wait:SetPoint("CENTER")
     body.wait:SetText(Alts.TEXT.loading)
     body.wait:Hide()
@@ -356,8 +361,8 @@ end
 -- The panel's body is that wide (nil: as it was): the grid as many items wide as fit (the roster, Storage,
 -- their gaps and the scroll bar left out).
 local panelWidth = 0
-function Alts.Size(w)
-    panelWidth = w or panelWidth
+function Alts.Size(w, h)
+    if w then panelWidth = ns.Board.Body("alts", w, h or 0) end
     local inner = panelWidth - 2 * EDGE - ns.Roster.WIDTH - 2 * Alts.ROSTER_GAP - (rail and rail:Width() or 0) - ns.Items.BAR
     if inner == width then return end
     width = inner
@@ -374,10 +379,9 @@ function Alts.Search(text)
 end
 
 -- The board's least: the roster, Storage, their gaps, a grid four items wide with its scroll bar, a few rows
--- of it under the head, the panel's head and edges.
+-- of it under the head, the panel's leather round them.
 Alts.LEAST_ITEMS = 4
 local step = ns.Items.SIZE + ns.Items.GAP
-ns.Board.Part("alts", Alts.TEXT.title, {
+ns.Board.Part("alts", Alts.TEXT.title, ns.Board.Least("alts",
     ns.Roster.WIDTH + 2 * Alts.ROSTER_GAP + ns.Sidebars.WIDTH + Alts.LEAST_ITEMS * step + ns.Items.BAR + 2 * EDGE,
-    Alts.HEAD + ns.Items.HEAD + Alts.ROWS * step + Core.Board.HEAD + 2 * EDGE,
-}, Alts)
+    Alts.HEAD + ns.Items.HEAD + Alts.ROWS * step + 2 * EDGE), Alts)

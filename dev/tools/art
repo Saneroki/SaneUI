@@ -221,5 +221,6 @@ def make(pattern, name, kind, module, shipped_as="banner.blp"):
               f"{texels / UNIT_PIXELS:.0%} of the texels 4K at UI scale 1 asks for")
 
 
-for picture in PICTURES:
-    make(*picture)
+if __name__ == "__main__":
+    for picture in PICTURES:
+        make(*picture)

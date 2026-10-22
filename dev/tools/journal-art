@@ -1,0 +1,229 @@
+#!/usr/bin/env python3
+"""Makes the game's textures of the journal look (Doc/guides/interface-style.md) from the art's final pieces.
+
+The pieces (assets/generated/interface/pieces/, made by dev/imagegen/sets/interface/catalog.py) are drawn for 4K:
+one of their pixels is one of a 4K screen's, so they are kept at their size (a few made smaller where the game
+draws them small: the patch, the pencil box and rule, the stains and sketches). Each becomes a BLP2 file as
+Doc/guides/images.md decides (DXT5, the full chain of mipmaps, sides a power of two; the BLP writer is
+dev/tools/art's): the piece at the texture's top left, the rest of the texture
+
+  - for a piece repeated along one way (the edges, the bottom): the piece itself again, so the game's filtering
+    finds the next tile's pixels where one tile meets the next;
+  - for a piece stretched (the top's middle): its edge pixels, carried on;
+  - else clear, its edge colour carried in (no dark seam).
+
+The masks of the bottom corners are made square (128 x 128): a mask is a shape stretched to its box.
+
+The character window (doll.png) is made here for the game:
+  1. the hero taken out of his place (the game draws the live model there): assets/interface/doll-empty.png, the
+     doll's middle column with the hero repainted as paper by an image model, its paper toned to the column's
+     and the stony ground under his feet kept;
+  2. its two slot columns bent along the arc (compose.py, doll_bent);
+  3. the strips' painted writing covered with paper (compose.py, clean): code writes the items' words there;
+  4. cut to the window (compose.py, DOLL_BOX).
+
+Kalam (assets/fonts/Kalam) goes into Core's Fonts/.
+
+Writes assets/optimized/Core/Art/Journal/<piece>.blp and prints each one's size and texture size for
+src/Core/Journal.lua (Journal.PIECES), and the doll's slots and strips (src/Inventory/Sheet/Doll.lua).
+
+Usage:  dev/tools/journal-art [piece ...]
+"""
+import importlib.machinery
+import importlib.util
+import shutil
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[2]
+PIECES = ROOT / "assets/generated/interface/pieces"
+OUT = ROOT / "assets/optimized/Core/Art/Journal"
+FONTS = ROOT / "assets/fonts/Kalam"
+HARNESS = ROOT / "dev/imagegen/sets/interface"
+EMPTY = ROOT / "assets/interface/doll-empty.png"
+EMPTY_AT = (800, 170)        # where the doll's middle column without the hero stands on the doll, in its pixels
+LARGEST = 2048
+
+_loader = importlib.machinery.SourceFileLoader("art", str(ROOT / "dev/tools/art"))
+_spec = importlib.util.spec_from_loader("art", _loader)
+art = importlib.util.module_from_spec(_spec)
+_loader.exec_module(art)
+
+BOX = 116 / 931              # the pencil box drawn 58 layout pixels high: 116 of 4K's pixels, from 931
+# piece: (scale, how): "whole", "tile-x" / "tile-y" (repeated along), "stretch-x" (stretched along), "mask"
+LIST = {
+    "frame-top-left": (1, "whole"),
+    "frame-top-middle": (1, "stretch-x"),
+    "frame-top-right": (1, "whole"),
+    "frame-left": (1, "tile-y"),
+    "frame-right": (1, "tile-y"),
+    "frame-bottom": (1, "tile-x"),
+    "frame-clasp": (1, "whole"),
+    "frame-cap-left": (1, "whole"),
+    "frame-cap-right": (1, "whole"),
+    "frame-mitre-left-edge": (1, "mask"),
+    "frame-mitre-left-bottom": (1, "mask"),
+    "frame-mitre-right-edge": (1, "mask"),
+    "frame-mitre-right-bottom": (1, "mask"),
+    "paper": (1, "whole"),
+    "patch": (256 / 778, "whole"),
+    "pencil-box": (BOX, "whole"),
+    "pencil-rule": (BOX, "stretch-x"),
+    "pencil-slot": (1, "whole"),
+    "stain-1": (0.5, "whole"),
+    "stain-2": (0.5, "whole"),
+    "sketch-map-1": (0.5, "whole"),
+    "sketch-tree-1": (0.5, "whole"),
+    "doll": (1, "whole"),
+}
+
+
+def side(n):
+    s = 1
+    while s < n:
+        s *= 2
+    return min(s, LARGEST)
+
+
+def doll():
+    """The game's doll (see the docstring), as an RGBA picture, and its slots and strips in its pixels."""
+    sys.path.insert(0, str(HARNESS))
+    import compose
+    compose.S = 2
+    c = Image.open(PIECES / "doll.png").convert("RGBA")
+    empty = Image.open(EMPTY).convert("RGBA")
+    over = Image.new("RGBA", c.size)
+    over.paste(empty, EMPTY_AT)
+    alpha = np.asarray(c)[..., 3].copy()
+    c = Image.alpha_composite(c, over)
+    a = np.asarray(c).copy()
+    a[..., 3] = alpha                          # the doll's own outline; the column only changes its colours
+    c, shift = compose.doll_bent(Image.fromarray(a))
+    x0, y0 = compose.DOLL_BOX[:2]
+    slots = {"top": [], "left": [], "right": [], "weapons": [], "ammo": None}
+    for sl in compose.DOLL["top"]:
+        slots["top"].append([v - o for v, o in zip(sl, (x0, y0, x0, y0))])
+    for name in ("left", "right"):
+        sgn = -1 if name == "left" else 1
+        for i, (sl, st) in enumerate(compose.DOLL[name]):
+            sl = (sl[0] + sgn * shift[i], sl[1], sl[2] + sgn * shift[i], sl[3])
+            st = (st[0] + sgn * shift[i], st[1], st[2] + sgn * shift[i], st[3])
+            paper = compose.clean(c, st, f"{name}{i}")
+            slots[name].append(([v - o for v, o in zip(sl, (x0, y0, x0, y0))],
+                                [round(v - o) for v, o in zip(paper, (x0, y0, x0, y0))]))
+    for i, (sl, st) in enumerate(compose.DOLL["weapons"]):
+        paper = compose.clean(c, st, f"weapon{i}")
+        slots["weapons"].append(([v - o for v, o in zip(sl, (x0, y0, x0, y0))],
+                                 [round(v - o) for v, o in zip(paper, (x0, y0, x0, y0))]))
+    slots["ammo"] = [v - o for v, o in zip(compose.DOLL["ammo"], (x0, y0, x0, y0))]
+    box = compose.zz(*compose.DOLL_BOX)
+    return c.crop(box), slots
+
+
+def slot():
+    """A square pencil box for an item's slot (116 x 116, the box's height): the box's four corners kept whole
+    (30 % of its height), its sides stretched between them."""
+    box = Image.open(PIECES / "pencil-box.png").convert("RGBA")
+    box = box.resize((round(box.width * BOX), round(box.height * BOX)), Image.LANCZOS)
+    w, h = box.size
+    c = round(0.3 * h)
+    out = Image.new("RGBA", (h, h))
+    n = h - 2 * c
+    parts = {  # (source box, target box)
+        "tl": ((0, 0, c, c), (0, 0)), "tr": ((w - c, 0, w, c), (h - c, 0)),
+        "bl": ((0, h - c, c, h), (0, h - c)), "br": ((w - c, h - c, w, h), (h - c, h - c)),
+    }
+    for src, at in parts.values():
+        out.paste(box.crop(src), at)
+    out.paste(box.crop((c, 0, w - c, c)).resize((n, c), Image.LANCZOS), (c, 0))
+    out.paste(box.crop((c, h - c, w - c, h)).resize((n, c), Image.LANCZOS), (c, h - c))
+    out.paste(box.crop((0, c, c, h - c)), (0, c))
+    out.paste(box.crop((w - c, c, w, h - c)), (h - c, c))
+    return out
+
+
+def texture(name, picture, scale, how):
+    if scale != 1:
+        w, h = round(picture.width * scale), round(picture.height * scale)
+        # premultiplied, so clear pixels do not darken the edge
+        picture = art.resize(art.load_image(picture), w, h)
+    else:
+        picture = art.load_image(picture)
+    h, w = picture.shape[:2]
+    if how == "mask":
+        tw = th = 128
+        picture = art.resize(picture, tw, th)
+        h, w = th, tw
+    tw, th = side(w), side(h)
+    canvas = np.zeros((th, tw, 4))
+    canvas[:h, :w] = picture
+    if how == "tile-y":
+        for y in range(h, th):
+            canvas[y, :w] = picture[(y - h) % h]
+    elif how == "tile-x":
+        for x in range(w, tw):
+            canvas[:h, x] = picture[:, (x - w) % w]
+    elif how == "stretch-x":
+        canvas[:h, w:] = picture[:, w - 1:w]
+    levels, first, k = [], None, 0
+    while True:
+        lw, lh = max(1, tw >> k), max(1, th >> k)
+        image = art.straight(canvas if k == 0 else art.resize(canvas, lw, lh))
+        if first is None:
+            first = image
+        levels.append(art.dxt5(image))
+        if lw == lh == 1:
+            break
+        k += 1
+    data = art.blp(levels, tw, th)
+    target = OUT / f"{name}.blp"
+    target.write_bytes(data)
+    psnr, off = art.check(target, first)
+    print(f"{name}: {w} x {h} in {tw} x {th}, {len(data) // 1024} KB (read back {psnr:.1f} dB)")
+    return w, h, tw, th
+
+
+def load_image(picture):
+    """art.load for a picture in memory: floats 0-1, colour premultiplied, not cropped."""
+    rgba = np.asarray(picture.convert("RGBA"), dtype=np.float64) / 255
+    alpha = np.minimum(1.0, rgba[..., 3] * 255 / art.SOLID)
+    rgba[..., :3] *= alpha[..., None]
+    rgba[..., 3] = alpha
+    return rgba
+
+
+art.load_image = load_image
+
+
+def main(names):
+    OUT.mkdir(parents=True, exist_ok=True)
+    sizes, slots = {}, None
+    for name in names or LIST:
+        scale, how = LIST[name]
+        if name == "doll":
+            picture, slots = doll()
+        elif name == "pencil-slot":
+            picture = slot()
+        else:
+            picture = Image.open(PIECES / f"{name}.png").convert("RGBA")
+        sizes[name] = texture(name, picture, scale, how)
+    fonts = ROOT / "assets/optimized/Core/Fonts"
+    fonts.mkdir(parents=True, exist_ok=True)
+    for f in list(FONTS.glob("Kalam-*.ttf")) + [FONTS / "OFL.txt"]:
+        shutil.copy2(f, fonts / f.name)
+    print("\nJournal.PIECES (src/Core/Journal.lua): { width, height, texture width, texture height }")
+    for name, (w, h, tw, th) in sizes.items():
+        print(f'    ["{name}"] = {{ {w}, {h}, {tw}, {th} }},')
+    if slots:
+        print("\nThe doll's slots and strips, in its pixels { left, top, right, bottom } (src/Inventory/Sheet/Doll.lua):")
+        print("    top =", slots["top"])
+        for key in ("left", "right", "weapons"):
+            print(f"    {key} =", slots[key])
+        print("    ammo =", slots["ammo"])
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

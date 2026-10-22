@@ -37,7 +37,7 @@ Columns.LEAST = 20         -- the least a column is made
 Columns.NAME_LEAST = 60    -- the least the name keeps
 Columns.DRAG = 6           -- how far a column is moved before it is dragged
 Columns.GRIP = 6           -- the edge at a column's right that sizes it
-Columns.MUTED = { 0.6, 0.6, 0.6 }
+Columns.MUTED = ns.Paper.FAINT
 Columns.VALUE = { 0.85, 0.85, 0.85 }
 
 local BIND = Enum and Enum.ItemBind or {}
@@ -312,7 +312,7 @@ local function MakeCell(head, key)
     cell:SetHeight(Columns.HEAD)
     cell:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     cell.text = cell:CreateFontString(nil, "ARTWORK")
-    cell.text:SetFontObject(Core.Font("SaneUIBagsColumn", "GameFontHighlightSmall", 10) or "GameFontHighlightSmall")
+    cell.text:SetFontObject(ns.Paper.Font("SaneUIBagsColumn", 13, true))
     cell.text:SetAllPoints()
     cell.text:SetWordWrap(false)
     cell.text:SetJustifyH(Columns.DEF[key].number and "RIGHT" or "LEFT")
@@ -347,7 +347,7 @@ function Head:Refresh(newWidth)
         local word = Columns.DEF[key].word
         if kept.listSort == key then word = word .. (kept.listDown and " v" or " ^") end
         cell.text:SetText(word)
-        cell.text:SetTextColor(Columns.MUTED[1], Columns.MUTED[2], Columns.MUTED[3])
+        cell.text:SetTextColor(Columns.MUTED[1], Columns.MUTED[2], Columns.MUTED[3], Columns.MUTED[4])
         cell:Show()
         local grip = grips[key]
         if grip then

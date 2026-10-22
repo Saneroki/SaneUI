@@ -1,7 +1,17 @@
 -- Journal chat: a chat window of the journal look, from the 4K pieces, fed by the fake server's chat
--- The window is the draft dev/uilab/drafts/Journal.lua; this scene only fills it: tabs, the lines, the line to type in.
-local ns = Lab.Addon("SaneUI_Draft", "dev/uilab/drafts/Journal.lua")
-local Journal = ns.Journal
+-- The window is Core's (Core.Journal, src/Core/Journal.lua); this scene only fills it: tabs, the lines, the line to type in.
+Lab.TOC("src/Core/SaneUI.toc")
+local Journal = SaneUI.Core.Journal
+
+-- A window of the journal: a frame dressed, its content the page's room, its X hiding it.
+local function Window(parent, name, width, height, title)
+    local f = CreateFrame("Frame", name, parent)
+    f:SetSize(width, height)
+    local look = Journal.Dress(f, title)
+    f.content = look.content
+    look.close:SetScript("OnClick", function() f:Hide() end)
+    return f
+end
 
 local KINDS = { SAY = "Say", YELL = "Yell", GUILD = "Guild", OFFICER = "Officer", PARTY = "Party", RAID = "Raid",
     WHISPER = "Whisper", WHISPER_INFORM = "To", CHANNEL = nil, EMOTE = "", SYSTEM = "" }
@@ -18,7 +28,7 @@ local function ink(r, g, b)
 end
 
 Lab.OnLogin(function()
-    local w = Journal.Window(UIParent, "LabJournalChat", 400, 520, "Chat")
+    local w = Window(UIParent, "LabJournalChat", 400, 520, "Chat")
     w:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 40, 40)
     w:EnableMouse(true)
     w:SetMovable(true)
@@ -62,7 +72,7 @@ Lab.OnLogin(function()
     local tabs = {}
     local x = 0
     for i, t in ipairs(TABS) do
-        local tab = Journal.Tab(c, t[1], function()
+        local tab = Journal.Button(c, t[1], function()
             for j, other in ipairs(tabs) do other:SetChosen(j == i) end
             shown = {}
             for _, kind in ipairs(t[2]) do shown[kind] = true end

@@ -4,17 +4,19 @@ local _, ns = ...
 --  Sane UI - Inventory - Sheet
 --  The character: the paper doll of the game's character sheet (Camelot's
 --  CharacterFrame and PaperDollFrame), ours, a window of its own on the
---  module's full screen (Board.lua, the key "character"). The game's left pane
---  at the game's size (398 by 464), on its art: a strip at the top with the
---  level line, the character's model (Model.lua), the equipment slots round it
---  (Slots.lua). The panel's head says the character's name with its title, as
---  the game's window is headed. The rest of the game's sheet stands in windows
+--  module's full screen (Board.lua, the key "character"), in Sane UI's own
+--  look: the doll (Doll.lua), its own leather frame and paper, the equipment
+--  slots in their arcs with the items' strips (Slots.lua), and in the hero's
+--  place the character's name with its title, the level line under it and the
+--  character's live model (Model.lua) standing on the doll's stony ground. The
+--  doll's top is the head it is dragged by, the X on its right strap. The rest
+--  of the game's sheet stands in windows
 --  of its own beside it: the stats and the sidebar (Sidebar.lua), and what the
 --  game's sheet has behind its tabs (Reputation.lua, Skills.lua, PvP.lua,
 --  Currency.lua, Statistics.lua).
 --
---  The window is moved and sized on Core's board: the paper doll stands in its
---  middle at the top, as large as fits and never larger than the game's. It
+--  The window is moved and sized on Core's board: the doll stands in its middle,
+--  as large as fits and never larger than its picture is drawn for 4K. It
 --  listens to the game only while shown. Nothing of the game's sheet is
 --  touched: ours reads the game and calls only what the game lets addon code
 --  call.
@@ -23,12 +25,10 @@ local Core = SaneUI.Core
 local Sheet = {}
 ns.Sheet = Sheet
 
--- The game's sizes (CharacterFrame.xml, PaperDollFrame.xml): its left pane, the strip at its top, the level line
--- in the strip's middle a little low; how small the paper doll may be made on the board.
+-- The game's sizes (CharacterFrame.xml, PaperDollFrame.xml): its left pane (the other characters' window reads
+-- it); how small the doll may be made on the board.
 Sheet.WIDTH, Sheet.HEIGHT = 398, 464
-Sheet.LEFT = Sheet.WIDTH -- the game's left pane, the paper doll's width (the other characters' window reads it)
-Sheet.STRIP = 36
-Sheet.LEVEL_Y = -2
+Sheet.LEFT = Sheet.WIDTH
 Sheet.LEAST = 0.6
 
 local holder, level, panel
@@ -48,7 +48,12 @@ local function Level()
     local className, class, classID = UnitClass("player")
     local colors = rawget(_G, "RAID_CLASS_COLORS")
     local color = colors and class and colors[class]
-    local colour = color and color.colorStr or "ffffffff"
+    -- the class's colour as ink on the paper (Core.Journal.Ink: darkened, so a light one reads)
+    local colour = "ff1e1711"
+    if color then
+        local r, g, b = Core.Journal.Ink(color.r, color.g, color.b)
+        colour = ("ff%02x%02x%02x"):format(math.floor(r * 255), math.floor(g * 255), math.floor(b * 255))
+    end
     local spec
     local specs = rawget(_G, "C_SpecializationInfo")
     if specs and specs.GetSpecialization and specs.IsSpecSelectionEnabled and specs.GetSpecializationInfo then
@@ -64,9 +69,15 @@ local function Level()
     end
 end
 
--- The panel's head: the character's name with its title.
+-- The panel's title, in the hero's place: the character's name with its title.
 local function Title()
     if panel and panel.title then panel.title:SetText(Game("UnitPVPName", "player") or Core.charName or "") end
+end
+
+-- The level line, in Kalam on the paper: the class's colour outlined, so a light one reads on it.
+local function Ink()
+    level:SetFont(Core.Journal.FONT, 13 * Core.Journal.PX, "")
+    level:SetTextColor(Core.Journal.INK[1], Core.Journal.INK[2], Core.Journal.INK[3], 0.9)
 end
 
 -- The paper doll as it is now.
@@ -115,33 +126,47 @@ local UNIT_EVENTS = { UNIT_MODEL_CHANGED = Remodeled, UNIT_INVENTORY_CHANGED = I
 -------------------------------------------------------------------------------
 function Sheet.Build(made)
     panel = made
+    local Doll = ns.Doll
     holder = CreateFrame("Frame", nil, panel.body)
-    holder:SetSize(Sheet.WIDTH, Sheet.HEIGHT)
-    holder:SetPoint("TOP", panel.body, "TOP")
-    local back = holder:CreateTexture(nil, "BACKGROUND")
-    back:SetAtlas("UI-Character-Info-General-BG", true)
-    back:SetPoint("TOPLEFT")
+    holder:SetSize(Doll.WIDTH, Doll.HEIGHT)
+    holder:SetPoint("TOP")
+    Doll.Build(holder)
     Sheet.pane = holder
+    local function At(x, y) return x * Core.Journal.PX, -y * Core.Journal.PX end
 
-    -- The strip at the top, the game's rock with its edge, the level line in it.
-    local strip = CreateFrame("Frame", nil, holder)
-    strip:SetPoint("TOPLEFT")
-    strip:SetPoint("TOPRIGHT")
-    strip:SetHeight(Sheet.STRIP)
-    local rock = strip:CreateTexture(nil, "ARTWORK")
-    rock:SetTexture("Interface\\FrameGeneral\\UI-Background-Rock", "REPEAT", "REPEAT")
-    rock:SetHorizTile(true)
-    rock:SetVertTile(true)
-    rock:SetAllPoints()
-    local edge = strip:CreateTexture(nil, "ARTWORK", nil, 1)
-    edge:SetAtlas("_UI-Frame-InnerTopTile", true)
-    edge:SetHorizTile(true)
-    edge:SetPoint("BOTTOMLEFT")
-    edge:SetPoint("BOTTOMRIGHT")
-    level = strip:CreateFontString(nil, "OVERLAY", "GameFontNormalMed2Outline")
-    level:SetPoint("CENTER", 0, Sheet.LEVEL_Y)
+    -- the hero's place: the name, the level line, the model under them
+    local hero = Doll.HERO
+    local x, top = At((hero[1] + hero[3]) / 2, Doll.NAME_Y)
+    local width = (hero[3] - hero[1] - 8) * Core.Journal.PX
+    panel.head:SetParent(holder)
+    panel.head:ClearAllPoints()
+    panel.head:SetPoint("TOPLEFT", holder, "TOPLEFT")
+    panel.head:SetPoint("TOPRIGHT", holder, "TOPRIGHT")
+    panel.head:SetHeight(Doll.HEAD * Core.Journal.PX)
+    panel.title:SetParent(holder)
+    panel.title:ClearAllPoints()
+    panel.title:SetPoint("TOP", holder, "TOPLEFT", x, top)
+    panel.title:SetWidth(width)
+    panel.title:SetWordWrap(false)
+    Core.Journal.Font(panel.title, 16, true)
+    local _, levelY = At(0, Doll.LEVEL_Y)
+    level = holder:CreateFontString(nil, "OVERLAY")
+    level:SetPoint("TOP", holder, "TOPLEFT", x, levelY)
+    level:SetWidth(width)
+    level:SetWordWrap(false)
+    Ink()
+    panel.close:SetParent(holder)
+    panel.close:ClearAllPoints()
+    panel.close:SetPoint("CENTER", holder, "TOPLEFT", At(Doll.CLOSE[1], Doll.CLOSE[2]))
+    panel.close:SetFrameLevel(holder:GetFrameLevel() + 30)
 
-    ns.Model.Build(holder, strip)
+    local left, modelTop = At(hero[1], Doll.MODEL_TOP)
+    local right, bottom = At(hero[3], hero[4])
+    local place = CreateFrame("Frame", nil, holder)
+    place:SetPoint("TOPLEFT", holder, "TOPLEFT", left, modelTop)
+    place:SetPoint("BOTTOMRIGHT", holder, "TOPLEFT", right, bottom)
+    ns.Model.Build(place)
+
     local items = CreateFrame("Frame", nil, holder)
     items:SetAllPoints()
     items:SetFrameLevel(holder:GetFrameLevel() + 10) -- above the model, as the game's items frame
@@ -158,12 +183,12 @@ function Sheet.Show(on)
     if on then Refresh() end
 end
 
--- The panel placed that large: the paper doll as large as fits in its body, never larger than the game's.
+-- The panel placed that large: the doll as large as fits in it at its top middle, never larger than its picture
+-- is drawn for 4K.
 function Sheet.Size(width, height)
     if not holder then return end
-    local bodyWidth, bodyHeight = ns.Page.Body(width, height)
-    holder:SetScale(math.max(0.1, math.min(1, bodyWidth / Sheet.WIDTH, bodyHeight / Sheet.HEIGHT)))
+    holder:SetScale(math.max(0.1, math.min(1, width / ns.Doll.WIDTH, height / ns.Doll.HEIGHT)))
 end
 
 ns.Board.Part("character", Core.Word("CHARACTER", "Character"),
-    ns.Page.Least(math.floor(Sheet.WIDTH * Sheet.LEAST), math.floor(Sheet.HEIGHT * Sheet.LEAST)), Sheet)
+    ns.Board.Least("character", math.floor(ns.Doll.WIDTH * Sheet.LEAST), math.floor(ns.Doll.HEIGHT * Sheet.LEAST)), Sheet)

@@ -245,6 +245,12 @@ function SceneAPI.Saved(name, ...)
     for i = 1, select("#", ...) do local v = select(i, ...); a.saved[v] = true; savedNames[v] = true end
 end
 function SceneAPI.Loaded(name) addonLoaded(name) end
+-- One more of Blizzard's addons than the lab loads itself (with its dependencies), as the game would have it.
+function SceneAPI.Blizzard(name)
+    Lab.blizzardLoading = true
+    Lab.LoadBlizzardAddOn(name)
+    Lab.blizzardLoading = nil
+end
 function SceneAPI.OnLogin(fn) logins[#logins + 1] = fn end
 function SceneAPI.Say(kind, from, text, channel) Lab.World.Chat(kind, from, text, channel) end
 function SceneAPI.Fire(event, ...) Lab.Fire(event, ...) end

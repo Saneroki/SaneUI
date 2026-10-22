@@ -64,6 +64,11 @@ Board.ICONS = {
     alts = "Interface/ICONS/INV_Misc_GroupNeedMore",
 }
 
+-- The windows in Sane UI's own look (Doc/guides/interface-style.md, Core.Journal): the character on its doll (its
+-- own leather and paper, "bare"), the bags, the bank and the alts on the journal's page. The others keep Core's
+-- dark plate for now.
+Board.DRESS = { character = "bare", bags = "journal", bank = "journal", alts = "journal" }
+
 -- The windows in the dropdown's order; those the first layout holds.
 Board.ORDER = { "character", "stats", "reputation", "skills", "pvp", "currency", "statistics", "bags", "bank", "alts" }
 Board.FIRST = { character = true, stats = true, bags = true, bank = true, alts = true }
@@ -82,7 +87,7 @@ end
 -- a function giving it) and the part itself.
 function Board.Part(key, title, least, part)
     parts[key] = { part = part, spec = {
-        key = key, title = title, least = least, icon = Board.ICONS[key],
+        key = key, title = title, least = least, icon = Board.ICONS[key], dress = Board.DRESS[key],
         build = function(panel) ns.Safe(key, part.Build, panel) end,
         show = Step(key, part, "Show"), size = Step(key, part, "Size"), search = Step(key, part, "Search"),
         present = part.Present and function() return ns.Safe(key, part.Present) == true end or nil,
@@ -154,6 +159,27 @@ end
 
 function Board.Search(text)
     if layouts then layouts:Search(text) end
+end
+
+-- A window's body (what its part fills) in its panel that large, and the panel round a body that large: the
+-- journal's page in its leather, the doll's whole panel, or the dark plate's under its head.
+function Board.Body(key, width, height)
+    local dress = Board.DRESS[key]
+    if dress == "journal" then return Core.Journal.Inner(width, height) end
+    if dress == "bare" then return width, height end
+    local edge = Core.Board.EDGE
+    return width - 2 * edge, height - Core.Board.HEAD - 2 * edge
+end
+
+function Board.Least(key, width, height)
+    local dress = Board.DRESS[key]
+    if dress == "journal" then
+        local w, h = Core.Journal.Outer(width, height)
+        return { math.ceil(w), math.ceil(h) }
+    end
+    if dress == "bare" then return { width, height } end
+    local edge = Core.Board.EDGE
+    return { width + 2 * edge, height + Core.Board.HEAD + 2 * edge }
 end
 
 -- A part's panel, once made (Core's board's).

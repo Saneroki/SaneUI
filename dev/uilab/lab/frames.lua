@@ -674,16 +674,20 @@ return function(Lab)
     end
     function Scroll:GetVerticalScrollRange() return range(self, "v") end
     function Scroll:GetHorizontalScrollRange() return range(self, "h") end
+    -- The game tells OnVerticalScroll (OnHorizontalScroll) only when the offset changes: Blizzard's scroll bar and
+    -- its scroll frame set each other (ScrollUtil.InitScrollFrameWithScrollBar) and stop there.
     function Scroll:SetVerticalScroll(v)
+        local was = S[self].vscroll
         S[self].vscroll = v
         Lab.Touch()
-        Lab.Run(self, "OnVerticalScroll", v)
+        if was == nil or math.abs((was or 0) - (v or 0)) > 1e-6 then Lab.Run(self, "OnVerticalScroll", v) end
     end
     function Scroll:GetVerticalScroll() return S[self].vscroll end
     function Scroll:SetHorizontalScroll(v)
+        local was = S[self].hscroll
         S[self].hscroll = v
         Lab.Touch()
-        Lab.Run(self, "OnHorizontalScroll", v)
+        if was == nil or math.abs((was or 0) - (v or 0)) > 1e-6 then Lab.Run(self, "OnHorizontalScroll", v) end
     end
     function Scroll:GetHorizontalScroll() return S[self].hscroll end
     function Scroll:UpdateScrollChildRect() Lab.Touch() end

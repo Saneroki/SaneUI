@@ -112,7 +112,7 @@ function GameTooltip:SetInventoryItem(_, id) self._item = id return worn[id] ~= 
 UnitPVPName = function() return "Tester Stub, the Patient" end
 UnitSex = function() return 2 end
 UnitEffectiveLevel = function() return W.level end
-RAID_CLASS_COLORS = { MAGE = { colorStr = "ff3fc7eb" } }
+RAID_CLASS_COLORS = { MAGE = { r = 0.25, g = 0.78, b = 0.92, colorStr = "ff3fc7eb" } }
 PLAYER_LEVEL_NO_SPEC = "Level %s |c%s%s|r"
 DressUpTexturePath = function(race) return "bg-" .. race end
 local scenes = 0
@@ -413,9 +413,10 @@ for _, key in ipairs({ "reputation", "skills", "pvp", "currency", "statistics" }
     check(not Board.layouts:Has(key) and not Board.Panel(key), "at first " .. key .. " is not on the board, and not built")
 end
 check(Board.layouts:Has("character") and Board.layouts:Has("stats"), "the first layout holds the paper doll and the stats")
+local dollRect = Board.layouts.rects.character
 check(ns.Sheet.pane:GetScale() < 1 and near(ns.Sheet.pane:GetScale(),
-    (Board.layouts.rects.character[3] - 2 * Core.Board.EDGE) / ns.Sheet.WIDTH),
-    "the paper doll as large as fits in its window")
+    math.min(dollRect[3] / ns.Doll.WIDTH, dollRect[4] / ns.Doll.HEIGHT)),
+    "the doll as large as fits in its window")
 
 -- Each window's tab of its own in the title bar, after the layouts' tabs: its icon in place of words, lit while
 -- the window is on the board; a click puts it on or takes it off.

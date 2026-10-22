@@ -16,15 +16,18 @@ local _, ns = ...
 --  (GetBagID), so nothing of ours is written into the button. The slot is
 --  the button's own ID.
 --
---  The look, flat: the icon cut a little round its edge, a thin border in its
---  quality's colour (a quest item's thicker, in gold), the game's highlight,
+--  The look, Sane UI's own (Core.Journal): each cell a pencil slot on the
+--  paper, the icon in it covering its inner line, cut a little round its
+--  edge, a thin border in its quality's colour (a quest item's thicker, in
+--  gold), the game's highlight,
 --  a warm glow while pressed; over it, above the cooldown's swipe, the count
 --  at the bottom right, the item level of gear at the top left in its
 --  quality's colour, BoE at the bottom left on gear not yet bound, the
 --  equipment set's name at the bottom, a quest mark on an item that starts a
 --  quest, a coin on junk. An item the character cannot use is tinted red.
---  An empty slot is a dark square; a pad (Cells.Pad) is one that fills a row
---  and takes no mouse. What a search does not find is faded.
+--  An empty slot is the pencil slot alone; a pad (Cells.Pad) is one drawn
+--  fainter that fills a row and takes no mouse. What a search does not find
+--  is faded.
 --
 --  Made out of a fight only: a button first needed in a fight waits for its
 --  end (Cells.short tells the window).
@@ -36,12 +39,12 @@ ns.Cells = Cells
 Cells.TEMPLATE = "ContainerFrameItemButtonTemplate"
 Cells.ZOOM = 0.08                       -- the icon's edge cut away, on each side
 Cells.PRESSED = { 0.973, 0.839, 0.604 } -- the glow while pressed
-Cells.NEUTRAL = { 0.25, 0.25, 0.25 }    -- the border of an item without a quality's colour
+Cells.NEUTRAL = { 0.12, 0.09, 0.07 }    -- the border of an item without a quality's colour: graphite
 Cells.QUEST = { 1, 0.82, 0 }            -- a quest item's border
-Cells.EMPTY = { 0.08, 0.08, 0.08 }      -- an empty slot's square
-Cells.EMPTY_ALPHA, Cells.PAD_ALPHA = 0.6, 0.35
-Cells.EMPTY_EDGE = { 0.15, 0.15, 0.15, 0.5 }
-Cells.PAD_EDGE = { 0, 0, 0, 0.3 }
+Cells.EMPTY = { 0.12, 0.09, 0.07 }      -- an empty slot: the paper in its pencil slot, a breath of graphite
+Cells.EMPTY_ALPHA, Cells.PAD_ALPHA = 0.04, 0.45
+Cells.EMPTY_EDGE = { 0, 0, 0, 0 }
+Cells.PAD_EDGE = { 0, 0, 0, 0 }
 Cells.FADED = 0.2                       -- what a search does not find
 Cells.UNUSABLE = { 1, 0.1, 0.1 }
 Cells.MARK, Cells.COIN = 16, 12         -- the quest mark, the junk coin
@@ -140,10 +143,15 @@ local function Skin(button, holder)
     end
     local glow = Part(button, "newitemglowAnim")
     if glow and glow.Stop then glow:Stop() end
+    -- the pencil slot at the button's edge; the icon and what lies on it inside, over the slot's inner line
+    local inset = ns.Layout.SIZE * Core.Journal.SLOT_ICON
+    local face = CreateFrame("Frame", nil, button)
+    face:SetPoint("TOPLEFT", inset, -inset)
+    face:SetPoint("BOTTOMRIGHT", -inset, inset)
     local icon = Part(button, "icon")
     if icon then
         icon:ClearAllPoints()
-        icon:SetAllPoints(button)
+        icon:SetAllPoints(face)
         icon:SetTexCoord(Cells.ZOOM, 1 - Cells.ZOOM, Cells.ZOOM, 1 - Cells.ZOOM)
         local mask = Part(button, "IconMask")
         if mask and icon.RemoveMaskTexture then
@@ -152,13 +160,13 @@ local function Skin(button, holder)
         end
     end
     local light = button:GetHighlightTexture()
-    if light then light:ClearAllPoints(); light:SetAllPoints(button) end
+    if light then light:ClearAllPoints(); light:SetAllPoints(face) end
     local pressed = button:GetPushedTexture()
     if pressed then
         pressed:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
         pressed:SetTexCoord(0, 1, 0, 1)
         pressed:ClearAllPoints()
-        pressed:SetAllPoints(button)
+        pressed:SetAllPoints(face)
         pressed:SetVertexColor(Cells.PRESSED[1], Cells.PRESSED[2], Cells.PRESSED[3], 1)
     end
     local normal = button:GetNormalTexture()
@@ -166,11 +174,12 @@ local function Skin(button, holder)
     local border = Part(button, "IconBorder")
     if border then border:SetAlpha(0) end
 
-    local mine = { holder = holder }
+    local mine = { holder = holder, face = face }
+    mine.slot = Core.Journal.Slot(button, 1, "BACKGROUND")
     mine.empty = button:CreateTexture(nil, "BACKGROUND", nil, 1)
-    mine.empty:SetAllPoints()
+    mine.empty:SetAllPoints(face)
     mine.empty:SetColorTexture(Cells.EMPTY[1], Cells.EMPTY[2], Cells.EMPTY[3], 1)
-    mine.border = Border(button)
+    mine.border = Border(face)
     -- Above the cooldown's swipe: the words and marks.
     local over = CreateFrame("Frame", nil, button)
     over:SetAllPoints()
@@ -183,12 +192,12 @@ local function Skin(button, holder)
         count:SetParent(over)
         if font.count then count:SetFontObject(font.count) end
         count:ClearAllPoints()
-        count:SetPoint("BOTTOMRIGHT", -2, 2)
+        count:SetPoint("BOTTOMRIGHT", face, "BOTTOMRIGHT", -1, 1)
     end
     local function Words(point, x, y, object)
         local words = over:CreateFontString(nil, "OVERLAY", nil, 7)
         if object then words:SetFontObject(object) end
-        words:SetPoint(point, button, point, x, y)
+        words:SetPoint(point, face, point, x, y)
         return words
     end
     mine.level = Words("TOPLEFT", 1, -1, font.level)
@@ -360,9 +369,7 @@ function Pool:Pad(x, y, size)
     local pad = self.pads[self.padded]
     if not pad then
         pad = CreateFrame("Frame", nil, self.parent)
-        pad.back = pad:CreateTexture(nil, "BACKGROUND", nil, 1)
-        pad.back:SetAllPoints()
-        pad.back:SetColorTexture(Cells.EMPTY[1], Cells.EMPTY[2], Cells.EMPTY[3], 1)
+        pad.back = Core.Journal.Slot(pad, 1, "BACKGROUND")
         pad.back:SetAlpha(Cells.PAD_ALPHA)
         pad.border = Border(pad, "ARTWORK")
         self.pads[self.padded] = pad

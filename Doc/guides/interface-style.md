@@ -293,8 +293,8 @@ needs, for responsive, flexible designs).
     code cuts the mitred corners to), `frame-mitre-left-edge`, `-left-bottom`, `-right-edge`, `-right-bottom`
     (masks of the corners' boxes: the edge's and the bottom's part of the mitre within the rounded outline, for
     the game, which cuts no picture on a slant), `frame-clasp`. The title's and the close button's places are in
-    `pieces.json`. How the game lays them: the interface lab's draft `dev/uilab/drafts/Journal.lua`
-    (`Doc/guides/ui-lab.md`).
+    `pieces.json`. How the game lays them: Core's `src/Core/Journal.lua` (`Core.Journal`), from the textures
+    `dev/tools/journal-art` makes of the pieces (*In the game*).
   - **The character window** (`doll`): #3 whole, on the page's tone; code fills its slots and strips. Its
     outside is what the background removal and #3's backdrop colour (a dark, cool grey reached from the
     border) call outside, cut to the frame's bounds, only the part that hangs together with the window (the
@@ -323,6 +323,29 @@ needs, for responsive, flexible designs).
   slicing are taken at the pieces' scale.
 - **Known flaw:** the two blades of the kit (`kit3-11`, `kit4-08`) keep the bites along their top edge that their
   cut-outs have.
+
+## In the game
+
+How the look reaches the game (2026-10-22, Saneroki asked for the inventory's windows in it):
+
+- **Textures:** `dev/tools/journal-art` (`saneui makejournalart`) makes Core's `Art/Journal/` from the final pieces,
+  BLP2 by `Doc/guides/images.md`, each piece at its texture's top left (a repeated piece repeated into the rest, so
+  tiles join without a seam); a square pencil slot from the box's corners; Kalam into Core's `Fonts/`.
+- **The character window for the game:** the doll with the hero taken out (the game's live model stands there): his
+  place repainted as paper by an image model with the stony ground kept, the paper toned and grained to the
+  column's in code (`assets/interface/doll-empty.png`); the slot columns bent into their arcs and the strips'
+  writing covered, as the harness's view does.
+- **Code:** `Core.Journal` (`src/Core/Journal.lua`) lays the window out for any size, so windows on a board follow
+  the lines dragged between them; Core's board dresses a panel in it (`dress = "journal"`), or leaves it bare for a
+  window that is a picture of its own (the doll). The leather is drawn at 0.8 of its 4K size on the board
+  (`Journal.SCALE`), so several windows keep room for what they hold.
+- **Letters pressed into leather** are the leather's light tan with a dark edge of the cut, as `title-text.png`
+  shows them; still in Kalam Bold until the font is decided.
+- **Colours on the paper:** graphite for words; a game colour (a quality's, a class's) outlined where it stands
+  alone (a name), darkened toward the graphite inside a line of words (the class in a level line); the pencil's
+  light shading for a row under the mouse or chosen.
+- **In the look:** the character (the doll), the bags, the bank and the alts (Inventory). The other windows keep
+  Core's dark plate until they are made over.
 
 ## The harness
 

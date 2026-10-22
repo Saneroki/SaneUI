@@ -51,6 +51,7 @@ GROUPS = {
         "atlas": (["dev/tools/atlas"], "the Atlas' painting: paint status join pack", 'paint · status · join · pack'),
         "makeimages": (["dev/tools/imagegen"], "a list of prompts through ComfyUI", 'prompts through ComfyUI'),
         "makeart": (["dev/tools/art"], "the game's textures from the drawings", None),
+        "makejournalart": (["dev/tools/journal-art"], "the journal look's textures for Core (Art/Journal)", None),
         "measureart": (["dev/tools/art-measure"], "how sharp the game draws a picture", None),
         "makeflipbook": (["dev/tools/flipbook"], "a clip's frames as a flipbook", None),
         "makeshapes": (["dev/tools/shape-art"], "the masks of Core's round shapes", None),

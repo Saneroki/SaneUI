@@ -17,9 +17,12 @@ Window.lua
 Keys.lua
 # The full screen's windows on Core's board; the parts after it register theirs
 Board.lua
-# The character sheet, our own, its parts windows of their own on the board: what they share first (the slots, the
-# model, the stats list, a list, the side pane, the rows, the page), then the windows: the character (the paper
+# What the windows on the journal's page draw with: graphite, the pencil's shading, Kalam, a rule
+Paper.lua
+# The character sheet, our own, its parts windows of their own on the board: what they share first (the doll, the
+# slots, the model, the stats list, a list, the side pane, the rows, the page), then the windows: the character (the paper
 # doll), the stats with the sidebar (gear sets, titles), and what the game's sheet has behind its tabs
+Sheet\Doll.lua
 Sheet\Slots.lua
 Sheet\Model.lua
 Sheet\Stats.lua

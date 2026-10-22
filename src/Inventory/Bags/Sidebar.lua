@@ -41,17 +41,16 @@ Sidebar.ROW, Sidebar.ROW_GAP = 26, 2
 Sidebar.ICON, Sidebar.ICON_SMALL = 18, 16
 Sidebar.INDENT = 16
 Sidebar.STEP = 28          -- the wheel's step
-Sidebar.SHADE = { 0, 0, 0, 0.25 }
-Sidebar.MUTED = { 0.5, 0.5, 0.5 }
-Sidebar.DIVIDER = { 0.2, 0.2, 0.2, 1 }
+Sidebar.MUTED = ns.Paper.FAINT  -- counts, the head's word
+Sidebar.DIVIDER = { ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3], 0.25 }
 Sidebar.DIM = 0.75         -- a row's words while not shown
-Sidebar.LIT = 0.1          -- the row shown, in Sane UI's colour
-Sidebar.HOVER = 0.06
-Sidebar.TAKES = 0.15       -- the light of a row under the mouse that takes the item held
+Sidebar.LIT = ns.Paper.CHOSEN[4] -- the row shown: the pencil's shading
+Sidebar.HOVER = ns.Paper.SHADE[4]
+Sidebar.TAKES = 0.2        -- the shading of a row under the mouse that takes the item held
 Sidebar.EDGE = 0.25        -- a row's top and foot quarter: before or after it; between: into it
 Sidebar.GHOST = 0.85       -- the dragged row's ghost
 Sidebar.LIFTED = 0.35      -- the dragged row itself meanwhile
-Sidebar.INTO = 0.25        -- the row it would go into, in Sane UI's colour
+Sidebar.INTO = 0.2         -- the row it would go into, shaded
 
 local Categories = ns.Categories
 local Rail = {}            -- a sidebar's functions
@@ -59,8 +58,8 @@ Rail.__index = Rail
 
 local function Fonts()
     return {
-        label = Core.Font("SaneUIBagsSideLabel", "GameFontHighlightSmall", 11),
-        count = Core.Font("SaneUIBagsSideCount", "GameFontHighlightSmall", 10),
+        label = ns.Paper.Font("SaneUIBagsSideLabel", 15),
+        count = ns.Paper.Font("SaneUIBagsSideCount", 13),
     }
 end
 
@@ -80,7 +79,8 @@ local function RowEnter(row)
     if not (row.rail.tip and row.rail.tip(row)) then RowTip(row) end
     -- Brighter by its colour's alpha (a region's own alpha goes no higher than 1).
     local takes = GetCursorInfo() == "item" and row.takes
-    row.hover:SetColorTexture(1, 1, 1, takes and Sidebar.TAKES or Sidebar.HOVER)
+    local ink = ns.Paper.INK
+    row.hover:SetColorTexture(ink[1], ink[2], ink[3], takes and Sidebar.TAKES or Sidebar.HOVER)
 end
 
 local function RowLeave(row)
@@ -131,7 +131,7 @@ local function MakeRow(rail)
     row.back:SetAllPoints()
     row.hover = row:CreateTexture(nil, "BACKGROUND", nil, 1)
     row.hover:SetAllPoints()
-    row.hover:SetColorTexture(1, 1, 1, Sidebar.HOVER)
+    row.hover:SetColorTexture(ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3], Sidebar.HOVER)
     row.hover:Hide()
     row.bar = row:CreateTexture(nil, "ARTWORK")
     row.bar:SetPoint("TOPLEFT")
@@ -147,7 +147,7 @@ local function MakeRow(rail)
     row.label:SetPoint("RIGHT", -30, 0)
     row.count = row:CreateFontString(nil, "ARTWORK")
     if font.count then row.count:SetFontObject(font.count) end
-    row.count:SetTextColor(Sidebar.MUTED[1], Sidebar.MUTED[2], Sidebar.MUTED[3])
+    row.count:SetTextColor(Sidebar.MUTED[1], Sidebar.MUTED[2], Sidebar.MUTED[3], Sidebar.MUTED[4])
     row.count:SetPoint("RIGHT", -6, 0)
     row:SetScript("OnEnter", function(self) ns.Safe("bags", RowEnter, self) end)
     row:SetScript("OnLeave", function(self) ns.Safe("bags", RowLeave, self) end)
@@ -201,11 +201,11 @@ function Rail:Row(word, number, file, atlas, depth, shown)
     row.label:SetText(word)
     row.label:SetAlpha(shown and 1 or Sidebar.DIM)
     row.count:SetText(number and tostring(number) or "")
-    local gold = Core.GOLD
-    row.bar:SetColorTexture(gold[1], gold[2], gold[3], 1)
+    local ink = ns.Paper.INK
+    row.bar:SetColorTexture(ink[1], ink[2], ink[3], 0.8)
     row.bar:SetWidth(Core.Pixels(row, 2))
     row.bar:SetShown(shown)
-    row.back:SetColorTexture(gold[1], gold[2], gold[3], Sidebar.LIT)
+    row.back:SetColorTexture(ink[1], ink[2], ink[3], Sidebar.LIT)
     row.back:SetShown(shown)
     row:Show()
     self.y = self.y + Sidebar.ROW + Sidebar.ROW_GAP
@@ -311,9 +311,9 @@ local function Ghost(rail)
     ghost:SetAlpha(Sidebar.GHOST)
     local back = ghost:CreateTexture(nil, "BACKGROUND")
     back:SetAllPoints()
-    back:SetColorTexture(0.05, 0.05, 0.05, 0.95)
-    local gold = Core.GOLD
-    ns.Cells.Edge(ns.Cells.Border(ghost), gold[1], gold[2], gold[3], 1, Core.Pixels(ghost, 1))
+    back:SetColorTexture(220 / 255, 204 / 255, 178 / 255, 0.95) -- a scrap of the page
+    local gold = ns.Paper.INK
+    ns.Cells.Edge(ns.Cells.Border(ghost), gold[1], gold[2], gold[3], 0.8, Core.Pixels(ghost, 1))
     ghost.icon = ghost:CreateTexture(nil, "ARTWORK")
     ghost.icon:SetSize(Sidebar.ICON, Sidebar.ICON)
     ghost.icon:SetPoint("LEFT", 8, 0)
@@ -392,9 +392,6 @@ function Sidebar.New(body, top, bottom, options)
     frame:SetPoint("TOPLEFT", top, "BOTTOMLEFT")
     frame:SetPoint("BOTTOMLEFT", bottom, "TOPLEFT")
     rail.frame = frame
-    local back = frame:CreateTexture(nil, "BACKGROUND")
-    back:SetAllPoints()
-    back:SetColorTexture(Sidebar.SHADE[1], Sidebar.SHADE[2], Sidebar.SHADE[3], Sidebar.SHADE[4])
     local edge = frame:CreateTexture(nil, "BORDER")
     edge:SetColorTexture(ns.Bags.RULE[1], ns.Bags.RULE[2], ns.Bags.RULE[3], ns.Bags.RULE[4])
     edge:SetPoint("TOPRIGHT")
@@ -406,8 +403,8 @@ function Sidebar.New(body, top, bottom, options)
     head:SetHeight(Sidebar.HEAD)
     rail.head = head
     local label = head:CreateFontString(nil, "ARTWORK")
-    label:SetFontObject(Core.Font("SaneUIBagsSideHead", "GameFontHighlightSmall", 10) or "GameFontHighlightSmall")
-    label:SetTextColor(Sidebar.MUTED[1], Sidebar.MUTED[2], Sidebar.MUTED[3])
+    label:SetFontObject(ns.Paper.Font("SaneUIBagsSideHead", 14, true))
+    label:SetTextColor(ns.Paper.SOFT[1], ns.Paper.SOFT[2], ns.Paper.SOFT[3], ns.Paper.SOFT[4])
     label:SetPoint("LEFT", 8, 0)
     label:SetText(options.word or "")
     rail.label = label

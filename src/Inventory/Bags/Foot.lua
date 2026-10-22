@@ -42,9 +42,9 @@ Foot.TOKENS = 3        -- the currencies the game lets the backpack watch (MAX_W
 Foot.TOKEN = 17        -- a currency's icon
 Foot.TOKEN_CUT = 5 / 64
 Foot.TOKEN_GAP = 5
-Foot.ACT = 18          -- the bar's button for what can be done here
-Foot.ACT_COLOR = { 0.85, 0.82, 0.55 }
-Foot.ACT_LIT = { 1, 0.96, 0.66 }
+Foot.ACT = 22          -- the bar's button for what can be done here: a leather patch
+Foot.ACT_COLOR = { Core.Journal.LEATHER[1], Core.Journal.LEATHER[2], Core.Journal.LEATHER[3] } -- pressed into the patch
+Foot.ACT_LIT = Core.Journal.LIT
 Foot.STEP = 0.08       -- seconds between two items sold
 
 local Contents = ns.Contents
@@ -128,23 +128,29 @@ local function MakeBag(index)
     local made, button = pcall(CreateFrame, "ItemButton", nil, strip)
     if not made then button = CreateFrame("Button", nil, strip, "ItemButtonTemplate") end
     button:SetSize(Foot.BAG, Foot.BAG)
+    -- a pencil slot on the paper, the bag's icon in it (Core.Journal)
+    local inset = Foot.BAG * Core.Journal.SLOT_ICON
+    Core.Journal.Slot(button, 1, "BACKGROUND")
+    local face = CreateFrame("Frame", nil, button)
+    face:SetPoint("TOPLEFT", inset, -inset)
+    face:SetPoint("BOTTOMRIGHT", -inset, inset)
     local icon = ns.Cells.Part(button, "icon")
     if icon then
         icon:ClearAllPoints()
-        icon:SetAllPoints()
+        icon:SetAllPoints(face)
         icon:SetTexCoord(ns.Cells.ZOOM, 1 - ns.Cells.ZOOM, ns.Cells.ZOOM, 1 - ns.Cells.ZOOM)
     end
     local normal = button.GetNormalTexture and button:GetNormalTexture()
     if normal then normal:SetAlpha(0) end
     local border = ns.Cells.Part(button, "IconBorder")
     if border then border:SetAlpha(0) end
-    edges[button] = ns.Cells.Border(button)
+    edges[button] = ns.Cells.Border(face)
     local font = ns.Cells.Fonts()
     local count = ns.Cells.Part(button, "Count")
     if count then count:Hide() end
     frees[button] = button:CreateFontString(nil, "OVERLAY")
     if font.count then frees[button]:SetFontObject(font.count) end
-    frees[button]:SetPoint("BOTTOMRIGHT", -2, 2)
+    frees[button]:SetPoint("BOTTOMRIGHT", face, "BOTTOMRIGHT", -1, 1)
     button:RegisterForDrag("LeftButton")
     button:RegisterForClicks("LeftButtonUp")
     button:SetScript("OnEnter", function(self) ns.Safe("bags", BagEnter, self) end)
@@ -194,14 +200,15 @@ function Foot.Bags()
     for index, bag in ipairs(Bar()) do
         local button = bags[index] or MakeBag(index)
         bagOf[button] = bag
-        Game("SetItemButtonTexture", button, Icon(bag))
+        local picture = Icon(bag)
+        Game("SetItemButtonTexture", button, picture)
         local size = Contents.Size(bag)
         local left = size > 0 and Core.Plain(Core.Ask(api.GetContainerNumFreeSlots, bag)) or nil
         frees[button]:SetText(left and tostring(left) or "")
         local color = Quality(bag)
         local neutral = ns.Cells.NEUTRAL
         ns.Cells.Edge(edges[button], color and color.r or neutral[1], color and color.g or neutral[2],
-            color and color.b or neutral[3], 1, Core.Pixels(button, 1))
+            color and color.b or neutral[3], picture and 1 or 0, Core.Pixels(button, 1))
         button:ClearAllPoints()
         if before then
             button:SetPoint("LEFT", before, "RIGHT", Foot.BAG_GAP, 0)
@@ -262,7 +269,7 @@ Foot.Deposits = Deposit
 function Foot.Act()
     doing = Junk() and "junk" or nil
     if doing == "junk" then act.text:SetText(Core.Word("SELL_ALL_JUNK_ITEMS", "Sell All Junk Items")) end
-    act:SetWidth(math.max(58, (act.text:GetStringWidth() or 0) + 14))
+    act:SetWidth(math.max(58, (act.text:GetStringWidth() or 0) + 24))
     act:SetShown(doing ~= nil)
 end
 
@@ -414,8 +421,9 @@ function Foot.Build(body, beside, holder)
     ns.Bags.Band(foot, "TOP")
     Foot.frame = foot
     local font = ns.Bags.Fonts().count
+    local ink = ns.Paper.INK
     gold = Label(foot, font)
-    gold.text:SetTextColor(1, 1, 1)
+    gold.text:SetTextColor(ink[1], ink[2], ink[3])
     gold:SetPoint("RIGHT", -(ns.Bags.INSET + ns.Bags.EDGE), 0)
     gold:SetScript("OnEnter", function(self) ns.Safe("bags", GoldEnter, self) end)
     gold:SetScript("OnLeave", GameTooltip_Hide)
@@ -423,7 +431,7 @@ function Foot.Build(body, beside, holder)
     for index = 1, Foot.TOKENS do
         local token = Label(foot, font)
         token:SetID(index)
-        token.text:SetTextColor(1, 1, 1)
+        token.text:SetTextColor(ink[1], ink[2], ink[3])
         token.icon = token:CreateTexture(nil, "ARTWORK")
         token.icon:SetSize(Foot.TOKEN, Foot.TOKEN)
         token.icon:SetTexCoord(Foot.TOKEN_CUT, 1 - Foot.TOKEN_CUT, Foot.TOKEN_CUT, 1 - Foot.TOKEN_CUT)
@@ -436,11 +444,8 @@ function Foot.Build(body, beside, holder)
     act = CreateFrame("Button", nil, beside:GetParent())
     act:SetHeight(Foot.ACT)
     act:SetPoint("RIGHT", beside, "LEFT", -ns.Bags.BAR_GAP, 0)
-    local back = act:CreateTexture(nil, "BACKGROUND")
-    back:SetAllPoints()
-    back:SetColorTexture(0, 0, 0, 0.4)
     act.text = act:CreateFontString(nil, "ARTWORK")
-    act.text:SetFontObject(Core.Font("SaneUIBagsAct", "GameFontHighlightSmall", 10) or "GameFontHighlightSmall")
+    ns.Paper.Leather(act, act.text, Foot.ACT)
     act.text:SetPoint("CENTER")
     ActLit(false)
     act:SetScript("OnClick", function() ns.Safe("bags", Act) end)

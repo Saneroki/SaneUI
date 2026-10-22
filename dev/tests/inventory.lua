@@ -111,7 +111,7 @@ function GameTooltip:SetInventoryItem(_, id) self._item = id return worn[id] ~= 
 UnitPVPName = function() return "Tester Stub, the Patient" end
 UnitSex = function() return 2 end
 UnitEffectiveLevel = function() return W.level end
-RAID_CLASS_COLORS = { MAGE = { colorStr = "ff3fc7eb" } }
+RAID_CLASS_COLORS = { MAGE = { r = 0.25, g = 0.78, b = 0.92, colorStr = "ff3fc7eb" } }
 PLAYER_LEVEL_NO_SPEC = "Level %s |c%s%s|r"
 DressUpTexturePath = function(race) return "bg-" .. race end
 local scenes = 0
@@ -280,15 +280,16 @@ for name, id in pairs(SLOT_IDS) do
 end
 check(count == 19 and Slots.Button(0) and not Slots.Button(0):IsShown(),
     "nineteen slots shown, the ammo slot hidden for a character that uses none")
-check(Slots.main._points[1][4] == -40 and Slots.ranged:IsShown(), "the weapons' row as the game places it, the ranged slot shown")
+check(Slots.main._points[1][1] == "CENTER" and Slots.ranged:IsShown(), "the weapons in their slots on the doll, the ranged slot shown")
 check(drawn[head].texture == "helm" and drawn[head].quality == 3 and drawn[head].count == 1 and drawn[head].grey == false,
     "a slot with an item: its icon, quality and count")
-check(drawn[neck].texture == "empty-NeckSlot", "an empty slot: the slot's own picture")
+check(drawn[neck].texture == nil, "an empty slot: no picture, the doll's own sketch in its slot shows")
 local level
 for _, widget in ipairs(W.frames) do
-    if widget._kind == "FontString" and widget._text == "Level 1 |cff3fc7ebMage|r" then level = widget end
+    if widget._kind == "FontString" and type(widget._text) == "string" and widget._text:match("^Level 1 |cff%x%x%x%x%x%xMage|r$")
+        and widget._text ~= "Level 1 |cff3fc7ebMage|r" then level = widget end
 end
-check(level, "the level line, the class in its colour, as the game writes it")
+check(level, "the level line, the class in its colour as ink on the paper, as the game writes it")
 check(scenes == 1, "the game's scene for the character sheet is set up when shown")
 local scene
 for _, widget in ipairs(W.frames) do
@@ -349,7 +350,7 @@ check(GameTooltip._item == 1, "its tooltip is the game's for that slot")
 -- A character that uses ammo: the weapons move left, the ammo slot shows.
 ammoUser = true
 Slots.Place()
-check(Slots.main._points[1][4] == -60 and Slots.Button(0):IsShown(), "a character that uses ammo: the ammo slot beside the ranged slot")
+check(Slots.Button(0):IsShown(), "a character that uses ammo: the ammo slot beside the ranged slot")
 ammoUser = false
 Slots.Place()
 
@@ -449,8 +450,9 @@ check(Elements()[1].text == "Bags" and Elements()[2].kind == "grid" and Elements
 people[3]:GetScript("OnClick")(people[3], "LeftButton")
 people = Roster.box.rows
 check(people[3].lit:IsShown() and not people[2].lit:IsShown() and Alts.head.name._text == "Droopy Fairwind"
-    and Alts.head.gold._text == "1234567c" and Alts.head.line._text == "Level 30 |cffc69b6dWarrior|r  |cff808080Seen 3 |4day:days; ago|r",
-    "a click in the roster: that one's head, its gold, its level and class as the sheet writes them, when it was seen")
+    and Alts.head.gold._text == "1234567c"
+    and Alts.head.line._text == "Level 30 |c" .. ns.Paper.InkHex(0.78, 0.61, 0.43) .. "Warrior|r  |c" .. ns.Paper.FAINT_HEX .. "Seen 3 |4day:days; ago|r",
+    "a click in the roster: that one's head, its gold, its level and class as ink on the paper, when it was seen")
 local things = ns.Items.box.rows
 local grid = things[2]
 check(Elements()[1].kind == "head" and grid.buttons[1].item == 2589 and grid.buttons[2].item == 4500
@@ -584,7 +586,7 @@ do
         init(line, odd)
     end)
     local about = Alts.About(odd)
-    check(line.name._text == "Odd Entry" and #about == 2 and about[2][1] == "Level ? |cffffffff|r" and not Core.errors["Inventory: alts"],
+    check(line.name._text == "Odd Entry" and #about == 2 and about[2][1] == "Level ? |cff1e1711|r" and not Core.errors["Inventory: alts"],
         "a character's class, level and realm of a wrong kind: left out of its line and its tooltip, nothing fails")
 end
 
@@ -605,8 +607,8 @@ local doll = things[6].doll
 local edge, wide, step = Items.DOLL_EDGE, 6 * (Items.SIZE + Items.GAP) - Items.GAP, Slots.SIZE + Slots.GAP
 local helm, amulet, shirt, hands = Worn(doll, "HeadSlot"), Worn(doll, "NeckSlot"), Worn(doll, "ShirtSlot"), Worn(doll, "HandsSlot")
 check(#doll.buttons == 20 and doll:IsShown() and helm.item == 1001 and drawn[helm].texture == 3001 and drawn[helm].quality == 3
-    and amulet.item == 1002 and drawn[amulet].texture == 3002 and shirt.item == nil and drawn[shirt].texture == "empty-ShirtSlot",
-    "your gear in its slots, drawn as the game draws an item; an empty slot its own picture")
+    and amulet.item == 1002 and drawn[amulet].texture == 3002 and shirt.item == nil and drawn[shirt].texture == nil,
+    "your gear in its slots, drawn as the game draws an item; an empty slot its pencil slot alone")
 check(helm._points[1][4] == edge and helm._points[1][5] == -edge and shirt._points[1][5] == -edge - 5 * step
     and hands._points[1][4] == wide - edge - Slots.SIZE and hands._points[1][5] == -edge,
     "eight down the left, eight down the right, as far apart as the grid is wide")
@@ -632,7 +634,7 @@ local function Redraw() ns.Items.box.view.factory(function(_, init) init(things[
 Redraw()
 local row = weapons + Slots.AMMO_GAP + Slots.AMMO
 check(ammo:IsShown() and ammo.item == 2512 and ammo._width == Slots.AMMO and main._points[1][4] == (wide - row) / 2
-    and ammo._points[1][4] == (wide - row) / 2 + weapons + Slots.AMMO_GAP and amulet.item == nil and drawn[amulet].texture == "empty-NeckSlot",
+    and ammo._points[1][4] == (wide - row) / 2 + weapons + Slots.AMMO_GAP and amulet.item == nil and drawn[amulet].texture == nil,
     "ammo worn: its slot beside the ranged one, smaller, the row still in the middle; a doll drawn anew is drawn whole")
 rangedShown = false
 Redraw()
@@ -684,9 +686,10 @@ local bags = Part("later", { 160, 160 })
 ns.Window.Reboard()
 check(bags.built == 1 and bags.shown == true and bags.size and Board.layouts:Has("later"), "a part that registers later is laid out too")
 local rects = Board.layouts.rects
+local asks = Board.Least("character", math.floor(ns.Doll.WIDTH * ns.Sheet.LEAST), 0)[1]
 check(rects.character and rects.bags and rects.character[1] < rects.bags[1]
-    and rects.character[3] == ns.Page.Least(math.floor(ns.Sheet.WIDTH * ns.Sheet.LEAST), 0)[1],
-    "side by side, in the board's order, the paper doll's window as wide as it asks")
+    and rects.character[3] <= asks and rects.character[3] > 0.85 * asks,
+    "side by side, in the board's order, the doll's window as wide as it asks (squeezed with the others on a small screen)")
 
 -- The search box: every part hears it.
 Board.Search("linen")

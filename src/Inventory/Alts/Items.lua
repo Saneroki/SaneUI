@@ -152,14 +152,23 @@ local function Button(row)
     return button
 end
 
--- An item's square in the bags' flat look: the icon cut round its edge, a thin border in its quality's colour,
--- its count and item level in the bags' fonts.
-local function Square(row)
+-- An item's square in the bags' look: a pencil slot on the paper, the icon in it cut round its edge with a thin
+-- border in its quality's colour, its count and item level in the bags' fonts; plain (a list's line): the icon
+-- alone.
+local function Square(row, plain)
     local button = Button(row)
+    local face = button
+    if not plain then
+        local inset = Items.SIZE * Core.Journal.SLOT_ICON
+        Core.Journal.Slot(button, 1, "BACKGROUND")
+        face = CreateFrame("Frame", nil, button)
+        face:SetPoint("TOPLEFT", inset, -inset)
+        face:SetPoint("BOTTOMRIGHT", -inset, inset)
+    end
     local icon = Cells.Part(button, "icon")
     if icon then
         icon:ClearAllPoints()
-        icon:SetAllPoints()
+        icon:SetAllPoints(face)
         icon:SetTexCoord(Cells.ZOOM, 1 - Cells.ZOOM, Cells.ZOOM, 1 - Cells.ZOOM)
     end
     local normal = button.GetNormalTexture and button:GetNormalTexture()
@@ -171,12 +180,12 @@ local function Square(row)
     if count and font.count then
         count:SetFontObject(font.count)
         count:ClearAllPoints()
-        count:SetPoint("BOTTOMRIGHT", -2, 2)
+        count:SetPoint("BOTTOMRIGHT", face, "BOTTOMRIGHT", -1, 1)
     end
-    local mine = { border = Cells.Border(button) }
+    local mine = { border = Cells.Border(face) }
     mine.level = button:CreateFontString(nil, "OVERLAY", nil, 7)
     if font.level then mine.level:SetFontObject(font.level) end
-    mine.level:SetPoint("TOPLEFT", 1, -1)
+    mine.level:SetPoint("TOPLEFT", face, "TOPLEFT", 1, -1)
     looks[button] = mine
     return button
 end
@@ -210,14 +219,16 @@ local function Line(row)
     line.icon = line:CreateTexture(nil, "ARTWORK")
     line.icon:SetSize(Items.ICON, Items.ICON)
     line.icon:SetPoint("LEFT", 2, 0)
-    line.text = line:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    line.text = line:CreateFontString(nil, "ARTWORK")
+    line.text:SetFontObject(ns.Canvas.Fonts().row)
     line.text:SetPoint("LEFT", line.icon, "RIGHT", 6, 0)
     line.text:SetPoint("RIGHT", -4, 0)
     line.text:SetJustifyH("LEFT")
     line.text:SetWordWrap(false)
+    local shade = ns.Paper.SHADE
     local light = line:CreateTexture(nil, "HIGHLIGHT")
     light:SetAllPoints()
-    light:SetAtlas("Options_List_Hover")
+    light:SetColorTexture(shade[1], shade[2], shade[3], shade[4])
     Mouse(line)
     return line
 end
@@ -230,7 +241,8 @@ local function Wear(line, entry)
     line.text:SetText(name)
     local colours = rawget(_G, "ITEM_QUALITY_COLORS")
     local colour = colours and colours[ItemAPI("GetItemQualityByID", entry.item) or -1]
-    if colour then line.text:SetTextColor(colour.r, colour.g, colour.b) else line.text:SetTextColor(1, 1, 1) end
+    local fonts = ns.Canvas.Fonts()
+    ns.Paper.Color(line.text, colour and colour.r, colour and colour.g, colour and colour.b, fonts.row, fonts.rowColored)
     line:Show()
 end
 
@@ -240,11 +252,12 @@ local function ListRow(row)
     line:SetAllPoints()
     line.back = line:CreateTexture(nil, "BACKGROUND")
     line.back:SetAllPoints()
-    line.back:SetColorTexture(1, 1, 1, 0.03)
+    local zebra, shade = ns.Paper.ZEBRA, ns.Paper.SHADE
+    line.back:SetColorTexture(zebra[1], zebra[2], zebra[3], zebra[4])
     local light = line:CreateTexture(nil, "HIGHLIGHT")
     light:SetAllPoints()
-    light:SetColorTexture(1, 1, 1, 0.08)
-    line.square = Square(line)
+    light:SetColorTexture(shade[1], shade[2], shade[3], shade[4])
+    line.square = Square(line, true)
     line.square:SetSize(Items.ICON, Items.ICON)
     line.cells = {}
     Mouse(line)
@@ -268,7 +281,7 @@ local function List(line, element)
             local cell = line.cells[key]
             if not cell then
                 cell = line:CreateFontString(nil, "ARTWORK")
-                cell:SetFontObject(Core.Font("SaneUIBagsRow", "GameFontHighlightSmall", 11) or "GameFontHighlightSmall")
+                cell:SetFontObject(ns.Canvas.Fonts().row)
                 cell:SetWordWrap(false)
                 cell:SetJustifyH(Columns.DEF[key].number and "RIGHT" or "LEFT")
                 line.cells[key] = cell
@@ -278,7 +291,7 @@ local function List(line, element)
             cell:SetWidth(spot.width)
             local text, r, g, b = Columns.Value(key, { record = record, count = entry.count })
             cell:SetText(text)
-            cell:SetTextColor(r or 1, g or 1, b or 1)
+            ns.Paper.Color(cell, r, g, b, ns.Canvas.Fonts().row, ns.Canvas.Fonts().rowColored)
             cell:Show()
         end
     end
@@ -309,19 +322,15 @@ local function DollSlots()
     return dollSlots
 end
 
--- A slot of the doll: one of the game's item buttons on the game's slot frame, as on the sheet.
+-- A slot of the doll: one of the game's item buttons in a pencil slot on the paper (Core.Journal).
 local function DollSlot(doll, slot)
     local button = Button(doll)
     local small = slot.column == "ammo"
     button:SetSize(small and Slots.AMMO or Slots.SIZE, small and Slots.AMMO or Slots.SIZE)
     button.slotName, button.picture = slot.name, slot.picture
-    local back = CreateFrame("Frame", nil, button)
-    back:SetPoint("CENTER")
-    back:SetSize(1, 1)
-    back:SetFrameLevel(math.max(0, button:GetFrameLevel() - 2))
-    local frame = back:CreateTexture(nil, "BACKGROUND")
-    frame:SetAtlas(small and "UI-Character-Info-GearSlotSmall" or "UI-Character-Info-GearSlot", true)
-    frame:SetPoint("CENTER")
+    Core.Journal.Slot(button, 3, "BACKGROUND")
+    local normal = button.GetNormalTexture and button:GetNormalTexture()
+    if normal then normal:SetAlpha(0) end
     return button
 end
 
@@ -337,7 +346,7 @@ end
 -- dimmed if what it holds is not found (found: [item] = true).
 local function Wearing(button, item, found)
     button.item = item
-    local texture = button.picture
+    local texture = nil -- empty: the pencil slot on the paper alone
     if item then texture = ItemAPI("GetItemIconByID", item) end
     Game("SetItemButtonTexture", button, texture)
     Game("SetItemButtonCount", button, 0)
@@ -397,26 +406,27 @@ local function Head(row, element)
         head.word:SetPoint("BOTTOMLEFT", 2, 4)
         head.number = head:CreateFontString(nil, "ARTWORK")
         head.number:SetPoint("LEFT", head.word, "RIGHT", 4, 0)
-        head.note = head:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+        head.note = head:CreateFontString(nil, "ARTWORK")
+        head.note:SetFontObject(ns.Paper.Font("SaneUIAltsNote", 13))
+        head.note:SetTextColor(ns.Paper.FAINT[1], ns.Paper.FAINT[2], ns.Paper.FAINT[3], ns.Paper.FAINT[4])
         head.note:SetPoint("BOTTOMRIGHT", -2, 5)
-        head.line = head:CreateTexture(nil, "ARTWORK")
-        head.line:SetPoint("LEFT", head.number, "RIGHT", 6, 0)
-        head.line:SetPoint("RIGHT", head.note, "LEFT", -6, 0)
+        head.line = Core.Journal.Rule(head)
+        head.line:SetPoint("BOTTOMLEFT", 0, 1)
+        head.line:SetPoint("BOTTOMRIGHT", 0, 1)
         row.head = head
     end
     local head = row.head
     local sub = element.kind == "sub"
-    local object = sub and Core.Font("SaneUIBagsHead", "GameFontHighlightSmall", 11) or Core.Font("SaneUIBagsPart", "GameFontHighlight", 13)
+    local fonts = ns.Canvas.Fonts()
+    local object = sub and fonts.head or fonts.part
     if object then head.word:SetFontObject(object); head.number:SetFontObject(object) end
-    local color = ns.Canvas.HEAD_COLOR
-    if sub then head.word:SetTextColor(color[1], color[2], color[3]) else head.word:SetTextColor(1, 1, 1) end
-    head.number:SetTextColor(color[1], color[2], color[3], 0.9)
+    local color, ink, faint = ns.Canvas.HEAD_COLOR, ns.Paper.INK, ns.Paper.FAINT
+    if sub then head.word:SetTextColor(color[1], color[2], color[3], color[4]) else head.word:SetTextColor(ink[1], ink[2], ink[3]) end
+    head.number:SetTextColor(faint[1], faint[2], faint[3], faint[4])
     head.word:SetText(element.text or "")
     head.number:SetText(element.number and "(" .. element.number .. ")" or "")
     head.note:SetText(element.note or "")
-    local line = ns.Canvas.HEAD_LINE
-    head.line:SetColorTexture(line[1], line[2], line[3], line[4])
-    head.line:SetHeight(Core.Pixels(head, 1))
+    head.line:SetAlpha(sub and 0.5 or ns.Paper.RULE_ALPHA)
     head:Show()
 end
 
@@ -441,13 +451,13 @@ local function Compact(row, element)
             local label = compact.labels[labels]
             if not label then
                 label = row:CreateFontString(nil, "ARTWORK")
-                label:SetFontObject(Core.Font("SaneUIBagsMember", "GameFontHighlightSmall", 10) or "GameFontHighlightSmall")
+                label:SetFontObject(ns.Canvas.Fonts().member)
                 label:SetJustifyH("LEFT")
                 label:SetWordWrap(false)
                 compact.labels[labels] = label
             end
             local color = ns.Canvas.HEAD_COLOR
-            label:SetTextColor(color[1], color[2], color[3])
+            label:SetTextColor(color[1], color[2], color[3], color[4])
             label:ClearAllPoints()
             label:SetPoint("TOPLEFT", place.x, -place.y)
             label:SetWidth(place.width)
@@ -477,7 +487,9 @@ end
 local function Draw(row, element)
     if not row.buttons then
         row.buttons = {}
-        row.note = row:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+        row.note = row:CreateFontString(nil, "ARTWORK")
+        row.note:SetFontObject(ns.Paper.Font("SaneUIAltsNote", 13))
+        row.note:SetTextColor(ns.Paper.FAINT[1], ns.Paper.FAINT[2], ns.Paper.FAINT[3], ns.Paper.FAINT[4])
     end
     local kind = element.kind
     if kind == "head" or kind == "sub" then Head(row, element) elseif row.head then row.head:Hide() end
