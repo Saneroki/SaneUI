@@ -382,8 +382,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   at least as long as the steepest floor needs to climb between them, `Planner.SLOPE`) between the places of one
   plane, `Planner.APART` seconds more between two that share no region of the walking
   data (a place's: those of the floors under it and within `Planner.REGION` yards), the flights of Core's set
-  *Travel* the player's side may take (a flight point twice, on the ground and in the air, so a flight over many
-  takes off and lands once, `Planner.BOARD`, and is one leg; at `Planner.FLY` yards a second, `Planner.FASTER` times
+  *Travel* the player's side may take (a flight point twice, on the ground and in the air, the air reached by a
+  flight only, taking off with the first: a flight over many takes off and lands once, `Planner.BOARD`, and is one
+  leg, and one comes down at a flight point only after a flight: no walk follows another there, on from another of
+  its floors; at `Planner.FLY` yards a second, `Planner.FASTER` times
   that with the Legacy perk Frequent Flier: `Planner.Pace`, its spell known or its aura on the character), the boats
   and zeppelins of
   *Travel* from dock to dock and its tram from entrance to entrance, those of the player's side or of both (*Travel*'s
@@ -558,6 +560,13 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-22, no walk after a walk at a flight point:** a route that walked to a flight point could take off and
+  come straight down again there and walk on, from another of its floors where the walking data has no way between
+  them (from the Undercity's lift to Sylvanas by the bat handler on the ring, on from the floor under it), or round
+  ground no walk was found over (the Horde's from Teldrassil, a walk drawn straight to Moonglade); 7 of 200
+  journeys between NPCs walked twice in a row so. Now one comes down at a flight point only after a flight: from
+  the lift to Sylvanas is one walk of 748 yards, and the walks drawn straight in those 200 journeys went from 14 to
+  10.
 - **2026-10-22, the walking data both ways; the portals' rooms:** every way between two floors the walking data holds
   now holds both ways and lies where the two meet, so routes no longer start or end on small floors no way led back
   from (rock tops, huts: 0.14 % of the ground), and no line runs over ground without a floor where a walk turned

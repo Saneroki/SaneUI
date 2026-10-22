@@ -3,8 +3,25 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 209 (data in the game), 527 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 209 (data in the game), 528 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: no walk after a walk at a flight point (2026-10-22)
+- `Planner.lua` (`Journey`): taking off is part of the first flight (from a known flight point on the ground, its
+  flights each at `Planner.BOARD` more; the way `"up"` is gone), so the air over a flight point is reached by a flight
+  only and one comes down there (`"down"`) only after a flight. Before, a route that walked to a flight point went up
+  and straight down again (8 seconds) and walked on, from every floor at it (the lowest first): from the Undercity's
+  lift to Sylvanas 78 yards to the bat handler on the ring and 588 on from the floor under it, where one walk from the
+  lift is 748; and round regions the search had found no walk between (the Horde from Teldrassil: straight to
+  Nighthaven's flight point, on to Moonglade's other one). A flight that lands still walks on; walk, take off and fly
+  cost as before.
+- Checked on the real data (outside the game, the walking data of 2026-10-22): of 29 fixed journeys only Orgrimmar to
+  Sylvanas changed (the zeppelin, down a lift, one walk of 748 yards), so too from Brill, the zeppelin tower and the
+  ruins to her; of 200 journeys between NPCs' places (outdoors; indoors in turn) the 7 (8) that walked twice in a row
+  no longer do, walks drawn straight 14 to 10, none, off the data and not from the player 0 as before, 619 ms a route
+  (643), the slowest 4.3 s (5.8).
+- Tests: `dev/tests/navigation.lua` (528 checks: a known flight point on a mesa's edge by its lift, between the two
+  levels the lift joins: from the field to the mesa the lift, not a walk to the flight point and on from it).
 
 ### Navigation: the maps' middle tries keep their zone's colours; the stitched middle level over a sea of its own (2026-10-22)
 - `dev/tools/map-layers`: the middle level's three tries all skip one step (`STRENGTH` 0.95 each, a try another

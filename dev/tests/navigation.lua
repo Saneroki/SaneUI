@@ -3576,6 +3576,36 @@ end)()
     W.Fire("USER_WAYPOINT_UPDATED")
     W.Wait(0)
 end)()
+-- No walk follows another at a flight point: one this character knows on the mesa of tile 6177, 6 yards from its edge
+-- over the field and 14 from lift 8, its regions the field's and the mesa's (within Planner.REGION yards). From the
+-- field to a pin on the mesa the line walked to it, took off and came straight down again (Planner.BOARD seconds,
+-- quicker than the lift's wait and ride) and walked on from the mesa's floor there; one comes down at a flight point
+-- only after a flight now, and the lift is the way.
+;(function()
+    local s = Walk.SAMPLE
+    local function Spot(column, row) return (Coords.TILE + column * s + 12000) / 24000, (20000 + row * s) / 40000 end
+    local nodes, known = C_TaxiMap.GetTaxiNodesForMap, Core.Character(ns.name).flightPoints
+    C_TaxiMap.GetTaxiNodesForMap = function(map)
+        if map ~= 1414 then return nodes(map) end
+        return { { nodeID = 30, name = "Cliff", position = CreateVector2D(Spot(131, 70)), faction = 0 } }
+    end
+    Core.Character(ns.name).flightPoints = { [30] = true }
+    player.map, player.x, player.y = 1414, Spot(40, 64)
+    waypoint = { uiMapID = 1414, position = CreateVector2D(Spot(200, 60)) }
+    shownWay = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Frames(8)
+    local kinds = {}
+    for index, leg in ipairs(shownWay and shownWay.legs or {}) do kinds[index] = leg.kind end
+    check(table.concat(kinds, " ") == "walk lift walk",
+        "a flight point between two levels a lift joins: never up and straight down at it to walk on; the lift")
+    C_TaxiMap.GetTaxiNodesForMap, Core.Character(ns.name).flightPoints = nodes, known
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
 ns.Route.Show = show
 
 os.execute(("rm -rf '%s'"):format(routesFolder))

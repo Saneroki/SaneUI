@@ -1134,8 +1134,9 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     the parts behind are not drawn, and a line runs from the arrow to it (`Route.Cut`).
   - **Every plane:** the graph holds every plane's known flight points, docks, the tram and the hearthstone, so a
     journey crosses a third plane where that is quickest (the hearthstone home, then a ship; Zephras Isle by way of
-    a continent). A flight point is two places, on the ground and in the air: a flight over many takes off and
-    lands once, and is one leg. Aboard a ship the plan does not have (Core's `Data.Trips`), a new pin is planned
+    a continent). A flight point is two places, on the ground and in the air (the air reached by a flight only since
+    2026-10-22, *No walk after a walk at a flight point*): a flight over many takes off and lands once, and is one
+    leg. Aboard a ship the plan does not have (Core's `Data.Trips`), a new pin is planned
     from the pier of the dock it comes to; a ship's landing plans anew. The tram's wait is the time to its next
     train where a ride taught its times (`Trips:TramNext`).
   - **One job:** the journey and its walks are one job of Core's scheduler (a place's floors looked up only for a
@@ -1322,7 +1323,25 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     the surface the route goes back to a lift (1,239 yards and the ride) rather than out by the cave (1,088); and,
     not the lifts' rule, a flight point's place lets a walk go on from another of its floors (up and down at it,
     `Planner.BOARD` seconds): from the lift Orgrimmar to Sylvanas walks to the bat handler on the ring and on from
-    the floor under it, and 7 of the 200 journeys walk twice in a row so.
+    the floor under it, and 7 of the 200 journeys walk twice in a row so (fixed since, below).
+  - **Fixed (2026-10-22): no walk after a walk at a flight point.** A place reached on foot is a node of the journey
+    of its own, from which no walk goes on; but at a flight point the journey went up into the air (`Planner.BOARD`
+    seconds) and straight down again to the ground, from which walks leave, and those start on every floor at a
+    place whose own floor is not known (the lowest first). So a route walked to a flight point on one floor and on
+    from another where the walking data has no way between them (from the lift to Sylvanas: 78 yards to the bat
+    handler on the ring, 588 on from the floor under it), and got round regions the search had found no walk
+    between (from Rut'theran Village straight to Nighthaven's flight point, then on to Moonglade's other one). Now
+    taking off is part of the first flight (the flights from a flight point on the ground, each with
+    `Planner.BOARD`), so the air over a flight point is reached by a flight only and one comes down there only after
+    a flight; a flight that lands still walks on, and walk, take off and fly cost what they did. Checked on the real
+    data (outside the game, the walking data of 2026-10-22, the code before and after): of the 29 fixed journeys only
+    Orgrimmar to Sylvanas changed (the zeppelin, down a lift, one walk of 748 yards), and of the Undercity's those
+    from Brill, the zeppelin tower and the ruins to her the same way. Of the 200 journeys between NPCs' places the 7
+    that walked twice in a row (8 with indoors in turn) no longer do; walks drawn straight 14 to 10 (the Horde's
+    from Teldrassil now walk to Zoram'gar and fly); none, walks off the data and lines not from the player 0 as
+    before; 619 ms a route (643), the slowest 4.3 s (5.8). One other journey changed by chance only: out of a place
+    no walk is found from (Archmage Xylem's) every way costs the same, and another is drawn straight (488 yards to a
+    flight point, where it was 9,495 to a portal).
 - **Built (2026-10-21): the portals; routes checked on the whole real data.** Saneroki asked whether the routes are
   reliable, flexible and robust: checked outside the game, the planner, its search and Core's timetables over every
   walking tile, the game's flight points and the set *Travel*, on journeys through the cities and 200 between NPCs'

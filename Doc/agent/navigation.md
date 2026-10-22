@@ -142,7 +142,8 @@ player's floor (`from`), else every floor under the start and within `Walk.ROOF`
 the climb), to any floor of its regions under the end or within `Search.NEAR`, else the nearest within `Search.FAR`;
 straight off the data at `Search.STRAIGHT` times, each yard up `Search.CLIMB` more; `Search.Start` went.
 `Planner.lua`: every plane's places (a third plane: the hearthstone, then a ship), a flight point twice (ground and
-air: one take-off, the flights one leg), the regions of a place's floors within `Planner.REGION` (sharing none:
+air, the air reached by a flight only: one take-off with the first flight, the flights one leg, no walk on after a
+walk there), the regions of a place's floors within `Planner.REGION` (sharing none:
 `Planner.APART` more), the plan one job of Core's scheduler (`Make`, `Find`), the cut (`Follow`: where along the
 line the player is) drawn by `Route.Cut` (the parts passed gone, a head from the arrow), a ship boarded without the
 plan (`Riding`), the tram's next train (`Trips:TramNext`). Walk's tiles: the 48 asked for last.
@@ -166,7 +167,11 @@ on (`lifts`, `landings`): 1.65 million rectangles, 12.6 MB. The Undercity and th
 (2026-10-22): within one region a place stands below a level on a map the lift's ends lie on (`Round`: in that map's
 box, in the lift's plane; the Undercity's holds its Royal Quarter, up to 344 yards from the nearest lift), else within
 `Lifts.SPREAD` yards of the lift (a lift on no map); before, the Royal Quarter (beyond `SPREAD`) counted as on the
-ruins, so routes from near the lifts went up and round, and walks from the surface ended on the hill over it.
+ruins, so routes from near the lifts went up and round, and walks from the surface ended on the hill over it. No walk
+after a walk at a flight point (2026-10-22): `Journey` takes off with the first flight (`Flights` from the ground
+node, `Planner.BOARD` with it; no `"up"` way), so the air over a flight point (`-node`) is reached by a flight only
+and `"down"` is a landing; before, up and straight down let a walk follow the walk there, on from another of its
+floors (`Search`'s sources: every floor at a place without its own), as from the lift to Sylvanas by the bat handler.
 
 Doodads in the walking data (2026-10-21): `dev/tools/walk-data` reads the doodads' collision (`model`: the M2 header's
 collision triangles; `placements`: the object files' MDDF and each building's doodad sets, `doodads`, set 0 and the
@@ -263,7 +268,8 @@ Flier's faster flights (`Planner.Pace`, `Planner.FASTER`). The routes harness ha
 
 Not yet: a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
 minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
-checks; 524 with the 2026-10-21 changes; 527 with the whole city below), `dev/tests/walk.py` (125; 130 with the
+checks; 524 with the 2026-10-21 changes; 527 with the whole city below; 528 with no walk after a walk at a flight
+point), `dev/tests/walk.py` (125; 130 with the
 teleports' tool; 147 with the walking data's openings).
 
 ## What is not there yet

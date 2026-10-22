@@ -669,8 +669,10 @@ end
 -- and its seconds; nil when none reaches it. No walk follows another (one walk straight on is a way of its own).
 -- measured: { [from] = { [to] = seconds } } walks searched already, in place of their guesses; cut: { [region] = {
 -- [region] = true } } regions no walk was found between (Find), none walked between. A flight point is two places: on
--- the ground (its node's ID) and in the air over it (minus that), so a flight over many flight points takes off and
--- lands once; the flights one after the other are one step (hops: each flight's record and ends, in order).
+-- the ground (its node's ID) and in the air over it (minus that), the air reached by a flight only (taking off is its
+-- first's), so a flight over many flight points takes off and lands once, and one comes down at a flight point only
+-- after a flight (no walk follows another there); the flights one after the other are one step (hops: each flight's
+-- record and ends, in order).
 local function Journey(start, goal, measured, cut)
     local known = Known()
     -- A boat, zeppelin or tram of one side (Core's set Travel: its towns'): none for the other side (their guards).
@@ -769,9 +771,9 @@ local function Journey(start, goal, measured, cut)
     end
     -- Dijkstra over the places; a flight point in the air is its node's ID, negative. A place reached on foot is a node
     -- of its own (its name behind FOOT, Place), from which no walk goes on: a walk on from there would be one walk,
-    -- and the walk straight there is a way of its own (each searched as it is, Find). apart: [node] = the regions of
-    -- the two places the walk to it runs between, where they share none ({ from's, to's }: a guess a search may not
-    -- find).
+    -- and the walk straight there is a way of its own (each searched as it is, Find); nor after taking off there, as
+    -- the air over a flight point is reached by a flight only. apart: [node] = the regions of the two places the walk
+    -- to it runs between, where they share none ({ from's, to's }: a guess a search may not find).
     local best, from, how, done, apart = { start = 0 }, {}, {}, {}, {}
     local finish = FOOT .. "end"
     local current, low
@@ -791,7 +793,7 @@ local function Journey(start, goal, measured, cut)
         local name0, walked = Place(current)
         local here = places[name0]
         if not here then
-            -- In the air over a flight point: on to the next ones, or down.
+            -- In the air over a flight point, come there by a flight: on to the next ones, or down.
             for _, flight in ipairs(Flights(-current, points, known, pace)) do
                 Reach(-flight.to, low + flight.seconds, flight.flight)
             end
@@ -832,8 +834,13 @@ local function Journey(start, goal, measured, cut)
                     end
                 end
             end
-            -- Up into the air at a known flight point.
-            if points[name0] and here == points[name0] then Reach(-name0, low + Planner.BOARD, "up") end
+            -- Off from a known flight point: its flights, taking off and landing (Planner.BOARD) with the first. Never
+            -- up and straight down again: a walk would go on from where one walked to, from any of its floors.
+            if points[name0] and here == points[name0] then
+                for _, flight in ipairs(Flights(name0, points, known, pace)) do
+                    Reach(-flight.to, low + Planner.BOARD + flight.seconds, flight.flight)
+                end
+            end
             -- By sea or air: the boats and zeppelins from a dock; the wait for the next one where its times on this
             -- realm are known (a ride taught them, Data.Ships), else half its round. Underground: the tram (Tram),
             -- its next train where a ride taught its times (Data.Trips), once down at its platform.
@@ -882,8 +889,8 @@ local function Journey(start, goal, measured, cut)
     while at ~= "start" do
         local previous, way = from[at], how[at]
         local a, b = Where(previous), Where(at)
-        if way == "up" or way == "down" then
-            -- Taking off and landing: in the flight's own time.
+        if way == "down" then
+            -- Landing: in the flight's own time (Planner.BOARD, with its first hop).
         elseif type(way) == "table" and way.kind == "flight" then
             local after = steps[1]
             local hop = { flight = way, u1 = a.u, v1 = a.v, u2 = b.u, v2 = b.v }
