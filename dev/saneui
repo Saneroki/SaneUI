@@ -61,6 +61,10 @@ GROUPS = {
         "makemapguides": (["dev/tools/map-meta"], "the guides the painted map is made from", None),
         "makemaplayers": (["dev/tools/map-layers"], "the maps' three levels, zones and instances: inputs paint contact",
                           None),
+        "makeworldmap": (["dev/tools/world-map", "build"], "the world map offline: every layer, the game's and ours, built",
+                         None),
+        "showworldmap": (["dev/tools/world-map", "serve"], "the world map offline in the browser, every layer stacked",
+                         "world map offline, layered"),
     },
     "Data": {
         "data": (["dev/tools/data"], "Core's data framework: check, compile, import", 'check · compile · import'),

@@ -77,14 +77,21 @@ world, that all three share, so they lie over each other exactly.
 - **Its pictures:** image 1 the place's terrain in its frame, lightly blurred and toned down (its textures gone, its
   roads and towns faint), so the model paints the detail as a photograph shows it and not the game's textures;
   image 2 a piece of the close level's painting (how the ground looks). Its layout is held by controls:
-  - **A zone:** image 1's water a sea's blue (its shallows lighter); the controls are its heights (mountains, hills)
-    and the lines where the walking data's water meets land (coasts, lakes, rivers). Its words name the zones
-    reaching into its frame, each by its direction (else the zone's own land was painted over them).
+  - **A zone:** image 1's water a deep, dark blue, dark blue-green in the shallows, and the words ask for dark
+    water lit like the land around it (Saneroki, 2026-10-22: the bright blue stood out from the world); the controls
+    are its heights (mountains, hills) and the lines where the walking data's water meets land (coasts, lakes,
+    rivers). Its words name the zones reaching into its frame, each by its direction (else the zone's own land was
+    painted over them).
   - **An instance:** the control is its plan's clearest edges.
 - **Learned on Westfall (2026-10-22, at an angle):** the sharp terrain as image 1 came back as the game's own; the
   walking data's barriers as lines came back as lakes; without the controls the model painted a closer view than
   the frame; stronger and longer controls kept the game's look. Not the middle level's drawing either: given as a
   picture, its pencil symbols were stamped on the land.
+- **In tiles of high resolution (Saneroki, 2026-10-22):** the world map is the far level painted again in the Atlas'
+  squares, a terrain tile at 2048 pixels (3.84 a yard), for the closest zoom: each square's colour and light from
+  the zones' far renders over it, its shapes from the game's terrain, so neighbours share their light and the
+  squares join into one world (`map-layers tiles`); the final tiles of the game's map, compared outside the game
+  with `dev/tools/world-map`.
 - **The world:** both continents always together (no view of one continent alone), made of the zones' paintings,
   each zone painted on its own and joined along its outline (`map-layers stitch`); each zone clearly sectioned
   from the next, the borders softened where nobody walks. What stands there in the lore is shown, not the game's

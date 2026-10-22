@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>World Map Offline</title>
+<style>
+  :root { --bg: #15161a; --panel: #1f2025; --line: #33353c; --text: #e8e4da; --dim: #9b968b; --accent: #d9a441;
+          --sea: rgb(22, 38, 50); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; height: 100vh;
+         display: grid; grid-template-columns: 300px 1fr; grid-template-rows: auto 1fr; overflow: hidden; }
+  header { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; padding: 8px 14px;
+           border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header h1 { font-size: 15px; margin: 0 12px 0 0; }
+  .tab { background: none; border: 1px solid var(--line); color: var(--text); padding: 5px 11px; border-radius: 6px;
+         cursor: pointer; font: inherit; }
+  .tab[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  select.tab { padding: 4px 8px; }
+  aside { background: var(--panel); border-right: 1px solid var(--line); padding: 12px 14px; overflow: auto; }
+  aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); margin: 6px 0 10px; }
+  .layer { padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .layer label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+  .layer input[type=range] { width: 100%; margin-top: 5px; accent-color: var(--accent); }
+  .layer .value { margin-left: auto; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .row { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+  .row button { background: none; border: 1px solid var(--line); color: var(--text); padding: 4px 9px; border-radius: 6px;
+                cursor: pointer; font: inherit; }
+  .hint { color: var(--dim); font-size: 12px; margin-top: 12px; }
+  main { position: relative; overflow: hidden; cursor: grab; background: var(--sea); }
+  main.dragging { cursor: grabbing; }
+  #stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  #stage .layer-box { position: absolute; left: 0; top: 0; }
+  #stage img { position: absolute; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+  #labels { position: absolute; inset: 0; pointer-events: none; }
+  #labels div { position: absolute; transform: translate(-50%, -50%); color: #fff; font-size: 12px; font-weight: 600;
+                text-shadow: 0 0 3px #000, 0 0 6px #000; white-space: nowrap; }
+  #where { position: absolute; right: 10px; bottom: 8px; background: rgba(0,0,0,.65); padding: 4px 8px; border-radius: 4px;
+           color: var(--dim); font-variant-numeric: tabular-nums; font-size: 12px; }
+  @media (max-width: 820px) {
+    body { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; }
+    aside { border-right: 0; border-bottom: 1px solid var(--line); max-height: 36vh; }
+  }
+</style>
+</head>
+<body>
+<header><h1>World map offline</h1>
+  <label for="place" style="color:var(--dim)">Map</label>
+  <select id="place" class="tab" aria-label="The world map or an instance"></select>
+</header>
+<aside>
+  <h2 id="title"></h2>
+  <div id="layers"></div>
+  <div class="row">
+    <button id="fit">Fit</button>
+    <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="names" checked> Zone names</label>
+  </div>
+  <p class="hint">Wheel to zoom, drag to pan. Every layer lies where the game lays it, by its box in the world: where
+    they agree they lie exactly over each other. Block layers load the level the game would draw at this zoom.</p>
+</aside>
+<main id="view"><div id="stage"></div><div id="labels"></div><div id="where"></div></main>
+<script src="viewer.js"></script>
+</body>
+</html>

@@ -19,7 +19,7 @@ the same spot in each. Each zone is painted on its own; stitch joins the zones a
            reddish, whitish by what it is). A zone in one picture, an instance floor by floor.
   far      a photograph of the land taken straight down from high above, its layout kept with a little leeway
            (levels.toml, [far]), in one picture, painted from noise, the Fun ControlNet Union keeping its layout:
-             a zone      image 1 its terrain, its water a sea's blue, lightly blurred and toned down (far_colours:
+             a zone      image 1 its terrain, its water a dark blue, lightly blurred and toned down (far_colours:
                          its textures gone, its roads and towns faint); image 2 a piece of the close level; the
                          controls its heights (height_map) and the lines where the walking data's water meets land
                          (Core's set Walking, guide_of); its words name the zones reaching into its frame
@@ -45,6 +45,7 @@ Usage:
                              [--out DIR]
   dev/tools/map-layers join [--out DIR]
   dev/tools/map-layers stitch [--out DIR]
+  dev/tools/map-layers tiles [--maps 0,1] [--only I-J,...] [--run DIR] [--status] [--out DIR]
   dev/tools/map-layers contact [--out DIR]
   dev/tools/map-layers status [--out DIR]
 
@@ -57,6 +58,11 @@ Usage:
   join      every subject's close squares joined again, cut along the line where neighbours differ least
   stitch    stitch-<level>-<continent>.jpg: the painted zones' middle and far levels each where it lies on its
             continent, cut by its outline (Navigation's zone masks), the zones' whole paintings under them
+  tiles     the world's high resolution tiles (Saneroki, 2026-10-22: the final tiles of the game's map): every
+            square of the Atlas' plan with land, painted with the far harness, coarse to fine (*The world's high
+            resolution tiles*), into <run>/<map>/sq-<i>-<j>.png (default assets/generated/world-tiles, the Atlas'
+            run layout, which its pack reads), each one's checks in checks.jsonl; --status: "<made> of <all>
+            squares painted"
   contact   contact.jpg: a row per subject: its terrain plan, the game's map, close, middle and far
   status    its first line: "<made> of <all> paintings made"
 
@@ -185,12 +191,13 @@ def affine(fn):
 
 
 def buildings_of(folder, map_id):
-    """The buildings a map's object files place (MODF; with flag 0x8 the file's ID), once each: file, place,
-    turn and scale, as dev/tools/walk-data reads them (doodads left out)."""
+    """The buildings a map's object files place (MODF; with flag 0x8 the file's ID), and the one a map of a building
+    alone places in its WDT, once each: file, place, turn and scale, as dev/tools/walk-data reads them (doodads
+    left out)."""
     found = {}
-    for path in sorted((folder / "adt-obj0").glob("*.adt")):
-        if int(path.stem) // (GRID * GRID) != map_id:
-            continue
+    files = [p for p in sorted((folder / "adt-obj0").glob("*.adt")) if int(p.stem) // (GRID * GRID) == map_id]
+    for path in files + [p for p in [folder / "wdt" / f"{map_id}.wdt"] if p.is_file()]:
+        corner = CENTRE if path.suffix == ".wdt" else 0.0   # a WDT places from the world's middle, a tile from its corner
         data = path.read_bytes()
         for name, at, size in ta.pieces(data, 0, len(data)):
             if name != b"MODF":
@@ -199,7 +206,7 @@ def buildings_of(folder, map_id):
                 (file, unique, px, py, pz, rx, ry, rz, *_, flags, _, _, scale) = struct.unpack_from(
                     "<II3f3f3f3fHHHH", data, start)
                 if flags & 0x8:
-                    found[unique] = {"file": file, "at": (px, py, pz), "turn": (rx, ry, rz),
+                    found[unique] = {"file": file, "at": (px + corner, py, pz + corner), "turn": (rx, ry, rz),
                                      "scale": scale / 1024 if scale else 1}
     return list(found.values())
 
@@ -329,9 +336,10 @@ def framed(picture, resample=Image.Resampling.LANCZOS):
     return picture.resize((SIDE, height), resample)
 
 
-SEA, SHALLOWS = (34, 78, 116), (64, 138, 150)   # the far level's water in its image 1, as a sea seen from high above:
-                                # the deep blue, lighter towards turquoise where the game's water is lighter (the game's
-                                # navy came out nearly black, one flat blue as a flat sheet)
+SEA, SHALLOWS = (18, 38, 54), (34, 64, 66)   # the far level's water in its image 1, as a sea seen from high above:
+                                # a deep, dark blue, dark blue-green where the game's water is lighter, as dark as the
+                                # land is lit (Saneroki, 2026-10-22: the bright blue stood out from the world; the game's
+                                # maps have a dark green water); a flat colour came out as a flat sheet
 FAR_BLUR = 5                    # pixels at SIDE: a far image 1 blurred so: its textures gone, its roads and towns faint
 FAR_COLOUR = 0.65               # and its colours toned down so: the model copied the game's textures and saturation
 
@@ -348,7 +356,7 @@ def sea_of(colours):
 def far_inputs(folder, world, walking, continent, box):
     """A zone's far inputs in its frame, straight from above as its other levels (Saneroki, 2026-10-22: all three
     levels from straight above, every place where it lies in each): far-colours.png (image 1: its terrain, the
-    water a sea's blue), far-height.png and far-water.png (the controls: its heights, the lines where the walking
+    water a dark blue), far-height.png and far-water.png (the controls: its heights, the lines where the walking
     data's water meets land), far-walk.png (the water check's)."""
     plan, height = np.asarray(world.picture(continent, box, SIDE)).copy(), world.heights(continent, box, SIDE)
     walks, sea = walking.picture(continent, box, SIDE), np.isnan(height)
@@ -1083,6 +1091,155 @@ def stitch(args):
             print(f"{path}: {len(here)} zones, {sheet.width} x {sheet.height}")
 
 
+# --- The world's high resolution tiles ------------------------------------------------------------
+# Saneroki, 2026-10-22: the far renders so good that the world map is made of them, in tiles of high resolution (the
+# Atlas' squares: a terrain tile at 2048 pixels, 3.84 a yard), joined into one world; the final tiles of the game's
+# map and of the world map offline (dev/tools/world-map). Coarse to fine: each square takes its colour and light from
+# the zones' far renders over it (as stitch lays them), its shapes from the game's terrain, its heights and water
+# lines as the controls, its main zone's words; so neighbouring squares share their light, and the pack joins their
+# overlaps in two bands. Written in the Atlas' run layout (<continent>/sq-<i>-<j>.png), which its pack reads.
+
+TILES = ROOT / "assets" / "generated" / "world-tiles"
+LOW = 24                        # pixels: what is broader a square takes from the far renders (colour, light), the finer
+                                # from the terrain
+TILE_RELIEF = 150               # yards: a square's heights shaded over at least so much (a flat square stays flat)
+
+
+class Coarse:
+    """The zones' far renders, each over its box: the colour and light of any square under them."""
+
+    def __init__(self, out, state, continent):
+        self.zones = [(s["key"], s["box"], out / s["name"] / "far.png") for s in state["subjects"]
+                      if s["kind"] == "zone" and s["map"] == continent and (out / s["name"] / "far.png").is_file()]
+        self.kept = {}
+
+    def picture(self, path, key):
+        if path not in self.kept:
+            if len(self.kept) > 12:
+                self.kept.pop(next(iter(self.kept)))
+            outline = OUTLINES / f"{key}.blp"
+            mask = Image.open(outline).getchannel("A") if outline.is_file() else None
+            self.kept[path] = (Image.open(path).convert("RGB"), mask)
+        return self.kept[path]
+
+    def of(self, box, size):
+        """The square's box (north, south, west, east) as the far renders show it, size large; None where none."""
+        north, south, west, east = box
+        over = [z for z in self.zones if z[1][1] < north and z[1][0] > south and z[1][3] < west and z[1][2] > east]
+        if not over:
+            return None
+        k = max(SIDE / (z[1][2] - z[1][3]) for z in over)   # at the finest render's scale
+        width, height = max(1, round((west - east) * k)), max(1, round((north - south) * k))
+        sheet = Image.new("RGB", (width, height), SEA)
+        pieces = []
+        for key, zbox, path in over:
+            picture, mask = self.picture(path, key)
+            n, s_, w, e = zbox
+            kx, ky = picture.width / (w - e), picture.height / (n - s_)
+            crop = ((w - west) * kx, (n - north) * ky, (w - east) * kx, (n - south) * ky)
+            piece = picture.transform((width, height), Image.Transform.EXTENT, crop, Image.Resampling.BILINEAR)
+            sheet.paste(piece)   # the whole render first: the sea between the zones
+            if mask is not None:
+                mx, my = mask.width / (w - e), mask.height / (n - s_)
+                alpha = mask.transform((width, height), Image.Transform.EXTENT,
+                                       ((w - west) * mx, (n - north) * my, (w - east) * mx, (n - south) * my),
+                                       Image.Resampling.BILINEAR)
+                pieces.append((piece, alpha))
+        for piece, alpha in pieces:   # each zone over them, cut by its outline
+            sheet.paste(piece, (0, 0), alpha)
+        return sheet.resize((size, size), Image.Resampling.LANCZOS)
+
+
+def square_box(i, j):
+    """An Atlas square's box in the world (north, south, west, east)."""
+    return (CENTRE - j * at.STEP / PER_YARD, CENTRE - (j * at.STEP + at.SQ) / PER_YARD,
+            CENTRE - i * at.STEP / PER_YARD, CENTRE - (i * at.STEP + at.SQ) / PER_YARD)
+
+
+def blur(a, r):
+    return np.asarray(Image.fromarray(a.clip(0, 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(r)), np.float32)
+
+
+def tiles(args):
+    """The world's high resolution tiles: every square of the Atlas' plan with land, painted with the far harness."""
+    out, run = Path(args.out), Path(args.run)
+    state = load_state(out)
+    paths = state["paths"]
+    game = at.Game({"adt": paths["continents"], "tables": paths["tables"], "minimap": paths["minimap"]})
+    guides = at.Guides(game)
+    squares = at.plan(guides, args.maps)
+    if args.only:
+        squares = [s for s in squares if f"{s[1]}-{s[2]}" in args.only]
+    done = [s for s in squares if (run / str(s[0]) / f"sq-{s[1]}-{s[2]}.png").is_file()]
+    if args.status:
+        print(f"{len(done)} of {len(squares)} squares painted ({100 * len(done) / max(1, len(squares)):.1f} %)")
+        return
+    words, briefs = tomllib.loads(LEVELS.read_text()), tomllib.loads(ZONES.read_text())
+    found, _ = ta.zones(Path(paths["tables"]), (0, 1))
+    liquids = {t: f for kinds in game.liquids.values() for t, f in kinds.items()}
+    world = Ground(paths["minimap"], tiles_of(ROOT / "assets" / "data" / "Tiles" / "Tiles.jsonl"),
+                   adt=paths["continents"], liquids=liquids)
+    walking, coarse = Walking(), {c: Coarse(out, state, c) for c in args.maps}
+    start_comfyui()
+    server = ig.Server(ADDRESS)
+    work = run / "inputs"
+    work.mkdir(parents=True, exist_ok=True)
+    for continent, i, j in squares:
+        folder = run / str(continent)
+        target = folder / f"sq-{i}-{j}.png"
+        if target.is_file():
+            continue
+        folder.mkdir(parents=True, exist_ok=True)
+        box = square_box(i, j)
+        square = game.square(continent, i, j)
+        terrain = square["rgb"].astype(np.float32)
+        piece = coarse[continent].of(box, at.SQ)
+        fine = blur(terrain, FAR_BLUR * at.SQ / SIDE * 0.5)
+        colours = fine if piece is None else blur(np.asarray(piece, np.float32), LOW) + fine - blur(fine, LOW)
+        name = f"{continent}-{i}-{j}"
+        Image.fromarray(colours.clip(0, 255).astype(np.uint8)).save(work / f"{name}-colours.png")
+        (piece or Image.fromarray(square["rgb"])).save(work / f"{name}-coarse.png")
+        height = world.heights(continent, box, at.SQ)
+        known = ~np.isnan(height)
+        low = np.percentile(height[known], 1) if known.any() else 0.0
+        high = max(np.percentile(height[known], 99) if known.any() else 1.0, low + TILE_RELIEF)
+        shade = np.where(known, 40 + 215 * ((np.nan_to_num(height) - low) / (high - low)).clip(0, 1), 0)
+        Image.fromarray(shade.astype(np.uint8)).convert("RGB").save(work / f"{name}-height.png")
+        walk = walking.picture(continent, box, at.SQ)
+        guide_of(walk).save(work / f"{name}-water.png")
+        facts = guides.facts(continent, i, j, square)
+        keys = [str(z["uimap"]) for z in facts["zones"] if str(z["uimap"]) in briefs]
+        brief = dict(briefs[keys[0]]) if keys else dict(briefs["sea"], biome="the open sea", colours="deep dark blue")
+        middle = ((box[0] + box[1]) / 2, (box[2] + box[3]) / 2)
+        around = []
+        for other in keys[1:NEIGHBOURS]:
+            b = found[int(other)][1]
+            angle = math.atan2((b[0] + b[1]) / 2 - middle[0], middle[1] - (b[2] + b[3]) / 2)
+            around.append((COMPASS[round(math.degrees(angle) / 45) % 8], briefs[other]["biome"]))
+        prompt = words_of("far", words, brief, False, around)
+        refs = [work / f"{name}-{part}.png" for part in ("colours", "coarse", "height", "water")]
+        best = None
+        for seed in range(1, TRIES + 1):
+            painting, _ = run_one(server, HEIGHTS, refs, prompt, f"tile-{name}", seed,
+                                  {"resolution": READ, "denoise": 1.0, "width": at.SQ, "height": at.SQ})
+            match = agreement(painting, Image.fromarray(square["rgb"]))
+            water = water_check(walk, painting)
+            painting.save(work / f"{name}-try.png")
+            _, text = run_one(server, LOOK, [work / f"{name}-try.png"], look_words("far", brief), f"look-{name}", 1, {})
+            seen_ok, seen = verdict("far", text)
+            ok = (seen_ok and FAR <= match <= COPY and water["added"] <= FAR_WATER[0] and water["lost"] <= FAR_WATER[1])
+            rank = (ok, match <= COPY, seen.get("writing") is False, match)
+            if best is None or rank > best[0]:
+                best = (rank, painting, {"seed": seed, "outlines": round(match, 3), "water": water, "seen": seen, "passes": ok})
+            if ok:
+                break
+        best[1].save(target)
+        with open(folder / "checks.jsonl", "a", encoding="utf-8") as log:
+            log.write(json.dumps({"square": [i, j], "zone": brief.get("name"), **best[2]}) + "\n")
+        print(f"{name}: {brief.get('name')}, seed {best[2]['seed']}, outlines {best[2]['outlines']}, "
+              f"water {best[2]['water']}, passes {best[2]['passes']}", flush=True)
+
+
 def status(args):
     out = Path(args.out)
     state = load_state(out)
@@ -1098,7 +1255,7 @@ def status(args):
 
 def main():
     parser = argparse.ArgumentParser(description="The three levels of Navigation's painted maps.")
-    parser.add_argument("command", choices=("inputs", "paint", "join", "contact", "stitch", "status"))
+    parser.add_argument("command", choices=("inputs", "paint", "join", "contact", "stitch", "tiles", "status"))
     numbers = lambda text: [int(k) for k in text.split(",") if k]  # noqa: E731
     parser.add_argument("--zones", type=numbers, default=[])
     parser.add_argument("--instances", type=numbers, default=[])
@@ -1110,10 +1267,14 @@ def main():
     parser.add_argument("--levels", type=lambda text: set(text.split(",")), default={"close", "middle", "far"})
     parser.add_argument("--whole-close", dest="whole_close", action="store_true")
     parser.add_argument("--kind", choices=("zone", "instance"))
+    parser.add_argument("--maps", type=lambda text: [int(c) for c in text.split(",")], default=[0, 1])
+    parser.add_argument("--run", default=str(TILES))
+    parser.add_argument("--status", action="store_true")
     parser.add_argument("--only", type=lambda text: set(text.split(",")))
     parser.add_argument("--out", default=str(OUT))
     args = parser.parse_args()
-    {"inputs": inputs, "paint": paint, "join": join, "contact": contact, "stitch": stitch, "status": status}[args.command](args)
+    {"inputs": inputs, "paint": paint, "join": join, "contact": contact, "stitch": stitch, "tiles": tiles,
+     "status": status}[args.command](args)
 
 
 if __name__ == "__main__":

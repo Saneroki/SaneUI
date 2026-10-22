@@ -359,8 +359,9 @@ lists, from inputs of its own:
     `QwenImageDiffsynthControlnet`; Saneroki, 2026-10-22: all three levels from straight above, each zone on its
     own, joined along the outlines by `map-layers stitch`): image 1 the place's terrain in its frame, lightly blurred
     and toned down (its textures gone, its roads and towns faint), image 2 a piece of the close level; a photograph
-    of the land, its layout kept. A zone (`qwen21-edit-2ref-i2i-cn2`): image 1's water a sea's blue, its shallows
-    lighter; the controls its heights (`height_map`, 0.35 to 30 % of the steps) and the lines where the walking
+    of the land, its layout kept. A zone (`qwen21-edit-2ref-i2i-cn2`): image 1's water a deep, dark blue, dark
+    blue-green in the shallows, and its words ask for dark water lit like the land (Saneroki, 2026-10-22: the bright
+    blue stood out); the controls its heights (`height_map`, 0.35 to 30 % of the steps) and the lines where the walking
     data's water meets land (0.5 to 35 %), light and early (stronger and longer they kept the game's look); its words
     name the zones reaching into its frame. An instance (`qwen21-edit-2ref-i2i-cn`): the control its clearest edges
     (0.35 to 30 %: at 0.5 to 35 % Zul'Farrak kept the game's raw edges, at 0.8 to 60 % its game terrain). Learned on
@@ -369,6 +370,11 @@ lists, from inputs of its own:
     back as lakes; without controls the model painted a closer view than the frame. Its outlines must share FAR (0.3)
     with the terrain plan and at most COPY (0.97: more is image 1 come back as it is), a zone's water agree with the
     walking data's.
+  - **The world's tiles** (`map-layers tiles`, the GPU job `worldtiles`): the far harness on every land square of
+    the Atlas' grid (2048 pixels a terrain tile), coarse to fine: image 1 the zones' far renders over the square
+    (their colour and light, broader than `LOW` 24 pixels) with the game's terrain for the finer shapes, image 2 the
+    renders' piece, the controls its heights (shaded over at least `TILE_RELIEF` 150 yards) and its water lines, its
+    main zone's words and the zones beside it; checked for writing, outlines (FAR to COPY) and water.
   - **Strength is in steps:** ComfyUI's KSampler runs int(steps / denoise) steps and skips the first ones beyond
     `steps`: with 25 steps a denoise from 0.927 to 0.961 skips one, above it none, so 0.93 and 0.96 make the same
     picture and 0.97 is a painting from noise. Choose a denoise by the steps it skips.

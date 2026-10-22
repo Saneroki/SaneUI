@@ -6,6 +6,28 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 528 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the world map of high resolution tiles; the world map offline; the instance maps (Saneroki, 2026-10-22)
+- **The world's tiles** (`dev/tools/map-layers tiles`; Saneroki: the far renders so precise that the world map is
+  made of them, tiny tiles for extreme zoom, the final tiles of the game's map): every land square of the Atlas'
+  plan (1456, a terrain tile at 2048 pixels) painted with the far harness, coarse to fine: its colour and light from
+  the zones' far renders over it (`Coarse`, as `stitch` lays them), its shapes from the game's terrain, its heights
+  and water lines the controls, its main zone's words and the zones beside it; checked for writing, outlines and
+  water; into `assets/generated/world-tiles/` in the Atlas' run layout. The water dark blue, dark blue-green in the
+  shallows, and the far words ask for dark water lit like the land (Saneroki: the bright blue stood out).
+- **The world map offline** (`dev/tools/world-map`, new; `saneui makeworldmap`, `showworldmap`; the page in
+  `dev/tools/world-map-page/`): every layer laid where the game lays it and stacked, a slider each, zoomed from a
+  continent to the finest blocks (the level chosen as the game's `Painted.Level`): the game's terrain (its minimap
+  tiles as blocks) and zone maps, our zone renders and maps (cut by the zones' outlines), our tiles packed by the
+  Atlas' own pack, the Atlas' pack read by `src/Atlas/Atlas.lua` itself under Lua 5.1 (`dev/tools/world-map-index.lua`);
+  a selector for the world or any instance, each a view of its own.
+- `dev/tools/atlas`: `pack` writes through a given writer (`block`: the viewer's pictures of the game's blocks); its
+  joins between squares and between rows in two bands too (`two_bands`, shared with `join_two`).
+- **The instances**: all 30 dungeons and raids, their terrain extracted from the install (the maps of a building
+  alone placed by their WDT: `buildings_of` reads it, from the world's middle); `paint --kind`.
+- `jobs.toml`: `worldtiles` (priority 10: the zones' far renders, then the squares) and `instancemaps` (priority 2:
+  each instance's far render) in place of `atlas`, `zonemaps`, `mapcompare` and the finished `interface`.
+- Docs: `Navigation.md`, `map-style.md`, `image-generation.md`, `levels.toml`, `Doc/agent/development.md`.
+
 ### Core, Navigation: the map window stands at login again; the tools in Forever's own game folder (2026-10-22)
 - `Window.lua` (`Square`): a title bar button's sign in words is `art.sign` (the full screen's question mark). Since
   24a647c a module's own button (`options.buttons`) took its tip's words (`text`) for such a sign: the quest log's pin

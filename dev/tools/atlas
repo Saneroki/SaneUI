@@ -524,20 +524,30 @@ def light_of_strip(strip):
                       np.float32)
 
 
+def two_bands(a, b, w, axis=1):
+    """Two overlapping strips (a before b along axis) as one: their fine detail meets as w says (the seam's
+    weights of a), their colour and light (blurred by SOFT) fade from a to b across the whole overlap, so a square a
+    little lighter than its neighbour leaves no step at the line (Saneroki, 2026-10-22: no harsh line between
+    squares)."""
+    a, b = a.astype(np.float32), b.astype(np.float32)
+    shape = [1, 1, 1]
+    shape[axis] = a.shape[axis]
+    ramp = np.linspace(1.0, 0.0, a.shape[axis], dtype=np.float32).reshape(shape)
+    wide_a, wide_b = light_of_strip(a), light_of_strip(b)
+    return wide_a * ramp + wide_b * (1 - ramp) + (a - wide_a) * w + (b - wide_b) * (1 - w)
+
+
 def join_two(left, right, cut):
     """Two pictures that overlap by SQ - STEP at the left's right edge, as one. A hard cut in the middle (cut), or
-    in two bands (Saneroki, 2026-10-22: no harsh line between squares): their fine detail meets along the line where
-    they differ least (seam: interlocking, never both trees), their colour and light fade from one to the other
-    across the whole overlap (a square a little lighter than its neighbour leaves no step at the line)."""
+    in two bands (two_bands): their fine detail meets along the line where they differ least (seam: interlocking,
+    never both trees), their colour and light fade from one to the other across the whole overlap."""
     over = SQ - STEP
     a, b = left[:, -over:].astype(np.float32), right[:, :over].astype(np.float32)
     if cut:
         w = (np.arange(over) < over // 2).astype(np.float32)[None, :, None]
         middle = a * w + b * (1 - w)
     else:
-        w, ramp = seam(a, b), np.linspace(1.0, 0.0, over, dtype=np.float32)[None, :, None]
-        wide_a, wide_b = light_of_strip(a), light_of_strip(b)
-        middle = wide_a * ramp + wide_b * (1 - ramp) + (a - wide_a) * w + (b - wide_b) * (1 - w)
+        middle = two_bands(a, b, seam(a, b))
     return np.concatenate([left[:, :-over], middle.clip(0, 255).astype(np.uint8), right[:, over:]], axis=1)
 
 
@@ -610,7 +620,10 @@ def blend_rows(top, bottom, top_kind, bottom_kind):
                          bottom[:, a:b].transpose(1, 0, 2).astype(np.float32)).transpose(1, 0, 2)
     w[(top_kind == PAINTED) & (bottom_kind != PAINTED)] = 1
     w[(bottom_kind == PAINTED) & (top_kind != PAINTED)] = 0
-    rgb[:, part] = (top * w + bottom * (1 - w)).clip(0, 255).astype(np.uint8)
+    mixed = top * w + bottom * (1 - w)
+    if both.any():   # where both are painted, in two bands: their light fades from one to the other down the rows
+        mixed = np.where(both[..., None], two_bands(top, bottom, w, axis=0), mixed)
+    rgb[:, part] = mixed.clip(0, 255).astype(np.uint8)
     kind[:, part] = np.where(both | (top_kind == PAINTED) | (bottom_kind == PAINTED),
                              np.where(w[..., 0] >= 0.5, top_kind, bottom_kind), np.minimum(top_kind, bottom_kind))
     return rgb, kind
@@ -725,9 +738,10 @@ def index_lua(index):
     return "\n".join(lines + ["}", ""])
 
 
-def pack(out, game, guides, continent, mood, to, painted_only=False):
+def pack(out, game, guides, continent, mood, to, painted_only=False, block=None):
     """One continent's squares as blocks in to/Art/<continent>/<level>/<row>_<column>.blp; returns its index
-    (level: row: columns) and the number of blocks."""
+    (level: row: columns) and the number of blocks. block(level, row, column, rgb): writes each block instead (the
+    world viewer's pictures: the same blocks the game draws)."""
     width = ta.GRID * PX
     count = -(-(width - SQ) // STEP) + 1
     planned = set(plan(guides, [continent]))
@@ -738,12 +752,15 @@ def pack(out, game, guides, continent, mood, to, painted_only=False):
     jobs = collections.deque()
 
     def write(level, row, column, rgb):
+        index.setdefault(level, {}).setdefault(row, []).append(column)
+        if block:
+            block(level, row, column, rgb)
+            return
         path = art / str(level) / f"{row}_{column}.blp"
         path.parent.mkdir(parents=True, exist_ok=True)
         jobs.append(pool.submit(lambda: path.write_bytes(blp_of(dxt1(rgb), BLOCK))))
         while len(jobs) > 64:   # the encoders keep up, or the blocks waiting would fill the memory
             jobs.popleft().result()
-        index.setdefault(level, {}).setdefault(row, []).append(column)
         written.add(path)
 
     pyramid = Pyramid(width, write)
@@ -760,10 +777,11 @@ def pack(out, game, guides, continent, mood, to, painted_only=False):
                 painting = np.asarray(Image.open(path).convert("RGB"))
                 if not painted_only:
                     painting = colour_of(painting, game.square(continent, i, j), mood)
-                if last is not None and last == i - 1:   # cut against the painted square on its left
-                    w = seam(rgb[:, x0:x0 + over].astype(np.float32), painting[:, :over].astype(np.float32))
+                if last is not None and last == i - 1:   # joined to the painted square on its left, in two bands
+                    left_part = rgb[:, x0:x0 + over]
+                    w = seam(left_part.astype(np.float32), painting[:, :over].astype(np.float32))
                     painting = painting.copy()
-                    painting[:, :over] = (rgb[:, x0:x0 + over] * w + painting[:, :over] * (1 - w)).clip(0, 255)
+                    painting[:, :over] = two_bands(left_part, painting[:, :over], w).clip(0, 255)
                 rgb[:, x0:x0 + SQ] = painting
                 kind[:, x0:x0 + SQ] = PAINTED
                 last = i
@@ -783,10 +801,11 @@ def pack(out, game, guides, continent, mood, to, painted_only=False):
     for job in jobs:
         job.result()
     pool.shutdown()
-    for stale in art.glob("*/*.blp"):   # blocks of an earlier pack that this one did not write
+    for stale in [] if block else art.glob("*/*.blp"):   # blocks of an earlier pack that this one did not write
         if stale not in written:
             stale.unlink()
-    return {level: {row: sorted(cols) for row, cols in rows.items()} for level, rows in index.items()}, len(written)
+    return ({level: {row: sorted(cols) for row, cols in rows.items()} for level, rows in index.items()},
+            sum(len(cols) for rows in index.values() for cols in rows.values()))
 
 
 def name_of(continent, i, j):

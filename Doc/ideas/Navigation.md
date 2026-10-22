@@ -188,11 +188,21 @@ minimap) and the full-screen window (the world map) show the same map with the s
   Deadmines, Zul'Farrak and the Hall of Thanes, all three levels; the Eastern Kingdoms and Kalimdor whole, middle
   and far at an angle (2026-10-22, given up); then from straight above, each zone on its own, Westfall joined with
   Elwynn Forest and Duskwood (`stitch`); Duskwood, Ashenvale, the Deadmines and the Hall of Thanes compared with
-  the game's terrain and maps, layer over layer. **Queued (Saneroki, 2026-10-22: "render everything at all 3
-  levels"):** the GPU job `zonemaps` (priority 10): every zone's and city's middle and far levels, 49; the close
-  level is the job `atlas` (held). Then in code: each zone's paintings cut by its outline into the Atlas' blocks
-  (as `stitch` joins them), the zoom blending from one level into the next. The instances wait for the new game
-  build's tables (1.60.1.70532 is installed; their terrain is extracted by build).
+  the game's terrain and maps, layer over layer.
+  - **The world map of high resolution tiles (Saneroki, 2026-10-22, replacing for now the close and middle levels
+    and their jobs):** the far renders are so precise that the world map is made of them: every terrain tile of
+    the Atlas' grid painted with the far harness at 2048 pixels (3.84 a yard, eight times the game's minimap) for
+    the closest zoom, the squares joined into one world; the final tiles of the game's map. Coarse to fine
+    (`map-layers tiles`): each square's colour and light from the zones' far renders over it, its shapes from the
+    game's terrain, its heights and water lines the controls, its zone's words, so neighbours share their light.
+    The water dark blue, dark blue-green in the shallows (the bright blue stood out). The GPU job `worldtiles`
+    (priority 10): the zones' far renders, then the 1456 squares of land. The instances: one large far render
+    each, once the new game build's tables are in (1.60.1.70532 is installed; their terrain is extracted by build).
+  - **The world map offline (Saneroki, 2026-10-22):** `dev/tools/world-map` (`saneui makeworldmap`,
+    `showworldmap`): every layer laid where the game lays it and stacked in a web page, a slider each, from a whole
+    continent down to the finest blocks: the game's terrain and zone maps, our zone renders and maps, our tiles
+    packed by the Atlas' own pack, the Atlas' pack read by the Atlas module itself under Lua 5.1; the instances.
+    For refining the world map outside the game.
 - **Instance maps as the world map, apart from it (Saneroki, 2026-10-21):** the instance maps are completely
   independent of the world map and separate from it (their own view, data, pictures, packs and jobs; never part of
   the world's picture), but they work in the same way and are made in the same way: the same three levels, one
