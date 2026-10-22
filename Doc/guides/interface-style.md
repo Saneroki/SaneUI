@@ -101,21 +101,20 @@ with as little room for frame and ornament as the look allows.
   - **the top:** its leather strap with the ribbon bookmark hanging from it, the hinge, and the small patch in
     the right corner (the close button); under it the pencil-drawn paper label that holds the window's title,
     written in Kalam by code;
-  - **the edges:** the thin stitched leather binding, the clasp on the right, the pages' edges showing;
-  - **the corners:** the metal caps and the page corners of the stacked pages;
-  - **the bottom:** the page running down to its own stack of pages. No leather strap or patches lie over the
-    paper at the bottom. The page curls onto the stack and the bindings run down into the corner caps as one
-    painted piece (Saneroki, 2026-10-22: no straight cut-off, the bottom one piece with the edges and the paper).
-    Code cut the strap's rows out of #12, so the page and the stack below came from rows that never met; one
-    masked repaint of that band at 4K, between the bindings, from the page's lowest stretch to the stack's top
-    (`catalog.py bottom`), joins them; the stack, the bindings and the corner caps stay #12's own (a wider band
-    had the model paint new caps and no stack, or the page's tips past the bindings). The stack is one piece
-    stretched between its two corners, so its lines run on without a join.
-  - **Joins:** the top and the bottom are their ends and a middle stretched whole between them, joined edge to
-    edge, so the strap, the label and the stack run on (a cross-fade showed as blocks or seams). The edges run
-    from under the top's corners to under the bottom's caps; above the caps the binding is the edges' own (the
-    strap left a knot in #12's right one). The title label's light is evened out in code, its grain kept (the
-    paper that covered its writing showed as lighter blocks).
+  - **the edges and the bottom: one image** (Saneroki, 2026-10-22): #12's left edge, the thin stitched leather
+    binding with the pages' edges beside it. The right edge is it mirrored, standing where #12's book ends; the
+    bottom is it turned a quarter, its leather facing down. Where a side meets the bottom the corner is mitred,
+    like a picture frame, so the stitching turns the corner. The clasp hangs on the right edge's middle;
+  - **the corners:** at the top #12's metal caps and the hinge; at the bottom #12's rounded metal caps, laid
+    over the mitred corners, which are rounded to #12's outline under them (Saneroki, 2026-10-22);
+  - **the edges' paper** (the pages' edges beside the binding) is moved toward the page's tone and fades into
+    the page, so the cream page and the tan edges meet without a line (Saneroki, 2026-10-22);
+  - **no straight cut-off:** #12's own bottom (the page stack, cut where its strap was) is no longer used: it never
+    fitted the page, the edges and the paper.
+- **Joins:** the top is its two ends and a middle stretched whole between them, joined edge to edge, so the strap
+  and the label run on (a cross-fade showed seams). The edges run from under the top's corners down to the
+  bottom's mitres. The title label's light is evened out in code, its grain kept (the paper that covered its
+  writing showed as lighter blocks).
 - The harness uses #12's own pixels for all of it (*The harness*): its parts fit together exactly at their own
   scale. Repeats are joined without seams; where #12 has things that are not wanted, code cuts them out (the
   strap's rows) or covers them with #12's own paper (the label's writing).
@@ -280,8 +279,7 @@ needs, for responsive, flexible designs).
      in code (the letters in #12's title label).
   5. The results go to `assets/generated/interface/hires/`; `pencil.py` takes the pencil box's lines from the
      hires #14.
-  6. `catalog.py bottom`: the window's bottom repainted once as one piece (*The window's top, edges and bottom*).
-  7. `catalog.py masks`: the two whole picks (#12, #3) have a background round them; ComfyUI's background removal
+  6. `catalog.py masks`: the two whole picks (#12, #3) have a background round them; ComfyUI's background removal
      (BiRefNet, `dev/imagegen/workflows/birefnet-mask.json`) finds it, once each, so their outside becomes
      transparent.
 - **Pieces** (`pieces.py`, `assets/generated/interface/pieces/`, Saneroki, 2026-10-22): the final puzzle pieces
@@ -289,10 +287,15 @@ needs, for responsive, flexible designs).
   - **The window** from #12, its paper moved to the page's tone: `frame-top-left`, `-middle`, `-right` (the
     strap, ribbon, title label and corner patch; the middle stretched whole, joined edge to edge; its paper fades
     into the page);
-    `frame-bottom-left`, `-middle`, `-right` (the page curling onto its stack and the two corners, from the
-    repainted bottom; the stack stretched whole between the corners, joined edge to edge; its paper fades into
-    the page); `frame-left` and `frame-right` (tiles that repeat down without a seam), `frame-clasp`. The title's and the close button's places are in `pieces.json`.
-  - **The character window** (`doll`): #3 whole, on the page's tone; code fills its slots and strips.
+    `frame-left` (the edge: a tile that repeats down without a seam, its paper fading into the page),
+    `frame-right` (it mirrored), `frame-bottom` (it turned a quarter, repeating along), `frame-cap-left` and
+    `-right` (the bottom corners' metal caps), `frame-corner-left` and `-right` (their rounded outlines, which
+    code cuts the mitred corners to), `frame-clasp`. The title's and the close button's places are in `pieces.json`.
+  - **The character window** (`doll`): #3 whole, on the page's tone; code fills its slots and strips. Its
+    outside is what the background removal and #3's backdrop colour (a dark, cool grey reached from the
+    border) call outside, cut to the frame's bounds, only the part that hangs together with the window (the
+    removal alone kept only the hero). Code bends its two slot columns along the arc as one piece, so its
+    edge curves with them, no steps.
   - **Cut-outs:** `patch` (every button and side tab), `tab-arrow`, `tab-arrow-b`, `tab-patch`, `edge-left`,
     `edge-right`, and every kit part (`kit3-01` to `kit4-11`). Their rim (the pick's light background left at
     their edge) is coloured from inside them, so no halo shows on any page.
@@ -310,8 +313,8 @@ needs, for responsive, flexible designs).
 
   Text is always the code's, so it is sharp at any size.
 - **Layouts at any scale:** `compose.py` lays out in the pixels of a 1080p screen, and `S` turns them into pixels
-  (2 at 4K); the pieces are scaled to it. The full screen (`views/fullscreen.png`, 3840 x 2160) is always made at
-  4K: the character window, the guild window and the chat window side by side.
+  (2 at 4K); the pieces are scaled to it. The job lays out every view at 4K; the full screen
+  (`views/fullscreen.png`, 3840 x 2160): the character window, the guild window and the chat window side by side.
 - **For the game:** the pieces become textures by `Doc/guides/images.md` (format, mipmaps, sizes). Margins for
   slicing are taken at the pieces' scale.
 - **Known flaw:** the two blades of the kit (`kit3-11`, `kit4-08`) keep the bites along their top edge that their
@@ -383,7 +386,7 @@ lines, cuts the final pieces, lays out the views and the 4K full screen, and reb
 - Run it now: `saneui switch interface`.
 - After a decision changed (a pick, a cut, a part's source): `saneui rebuildstart interface` forgets what was
   made (`catalog.py --rebuild`) and renders it all anew.
-- Single steps by hand: `python3 dev/imagegen/sets/interface/catalog.py clean|hires|bottom|masks|pencil|pieces|views`;
+- Single steps by hand: `python3 dev/imagegen/sets/interface/catalog.py clean|hires|masks|pencil|pieces|views`;
   the pieces and the views need no graphics card (`pieces.py`, `compose.py`, `gallery.py`).
 - See the results: the gallery, `assets/generated/interface/index.html` (`.claude/launch.json` "interface").
 

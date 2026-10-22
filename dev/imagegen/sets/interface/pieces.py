@@ -31,24 +31,31 @@ SCALE = 2           # the pieces are at 4K: twice the pixels of the picks (a lay
 # The window: #12 (clean/frame.png) in its own pixels (the 1080p layout's), cut at SCALE
 FRAME_X = (196, 380, 530, 836)         # left end | middle (no rivet, stretched) | right end of the top
 FRAME_TOP = (86, 210)                  # the top: strap, ribbon, corner patch, title label, a little paper
-FRAME_BOTTOM_X = (196, 262, 748, 836)  # the bottom: its left corner | the page stack (stretched whole) | right corner
-FRAME_BOTTOM = (806, 876)              # the bottom: the page's lowest stretch curling onto its stack, the stack, the
-                                       # corners (catalog.py bottom painted them as one piece)
-PAGE_END = 832                         # about where the page ends on the stack: content stays above it
-CAPS = 828                             # where the corner caps begin: above it, outside BINDING, the bottom is left
-BINDING = (228, 772)                   # to the edges' tiles (#12's strap, cut there, left a knot on the right one)
-EDGES_END = 846                        # the edges' tiles run down to here, under the corner caps
-EDGES_START = 106                      # and from here, under the top's corners (above it #12's cover has not begun)
+EDGES_START = 106                      # the edges' tiles run from here, under the top's corners (above it #12's
+                                       # cover has not begun)
 FRAME_LEFT = (196, 240, 300, 600)      # the left edge: x from-to, the plain stretch it repeats (y)
-FRAME_RIGHT = (764, 836, 230, 370)     # the right edge, above its clasp
-CLASP = (764, 380, 836, 510)
+CLASP = (786, 372, 836, 518)           # the clasp with the leather it hangs from (the right edge is the left one
+                                       # mirrored, Saneroki, 2026-10-22: one image for the sides and the bottom)
+RIGHT_IN = 20                          # #12's book ends 20 pixels before the top's right end: the mirrored right
+                                       # edge stands that far in
 TITLE_AT = (372, 182)                  # where the title label's writing starts
 LABEL = (332, 166, 712, 196)           # the title label's inside: its light evened out (the paper that covered its
                                        # writing showed as lighter blocks), its grain kept
 CLOSE_AT = (770, 124)                  # the middle of the corner patch on the strap: the close button
-TOP_FADE, BOTTOM_FADE = 26, 14         # the top's and bottom's paper fades into the page over so many pixels
+CAPS = {"left": (196, 830, 262, 878), "right": (752, 830, 818, 878)}   # #12's rounded metal caps at its bottom
+                                       # corners (Saneroki, 2026-10-22: kept over the mitred corners)
+CAP_RING = {"left": 26, "right": 18}   # how thick the metal is along the book's rounded outline (inside the right
+                                       # one #12's wider right edge begins)
+CAP_TIPS = {"left": (204, 870), "right": (808, 870)}   # each corner's outer tip: the metal is kept within
+CAP_REACH = (58, 14)                   # so many pixels of it, fading out over the last ones
+TOP_FADE = 26                          # the top's paper fades into the page over so many pixels
+EDGE_FADE = 14                         # the edge's paper (the pages' edges) fades into the page over so many
+EDGE_MATCH = 0.8                       # how far the edge's paper moves to the page's tone (Saneroki, 2026-10-22:
+                                       # its tan met the cream page in a harsh line)
 FRAME_PAPER = (300, 200, 560, 240)     # a stretch of #12's plain paper, for its tone
 DOLL_PAPER = (420, 120, 470, 200)      # the same in #3 (behind the hero's head)
+DOLL_FRAME = (222, 50, 798, 962)       # #3's window at most (its strips over the border included): its painted
+                                       # landscape round it is cut off there
 
 # piece: its part at 4K (hires/<part>.png), a cut-out whose rim is cleaned
 PARTS = {"patch": "patch", "tab-arrow": "top-tab-arrow", "tab-arrow-b": "top-tab-arrow-b", "tab-patch": "top-tab-patch",
@@ -138,6 +145,26 @@ def tone_shift(img, sample):
     return out
 
 
+def match_edge(img, box, k=EDGE_MATCH):
+    """The paper beside the binding (the pages' edges, a darker tan than the page) moved toward the page's tone in
+    the box (pixels), its grain and its lines kept: each light pixel scaled by the page's tone over the strip's own,
+    the leather (dark pixels) untouched."""
+    x0, y0, x1, y1 = box
+    region = img.crop(box)
+    a = np.asarray(region.convert("RGB"), dtype=np.float32)
+    lum = a.mean(axis=2)
+    paper_ = lum > 130
+    if not paper_.any():
+        return img
+    ref = np.median(a[paper_], axis=0)
+    w = (np.clip((lum - 110) / 50, 0, 1) * k)[..., None]
+    a = a * (1 - w) + a * (np.array(paper.TONE, dtype=np.float32) / ref) * w
+    out = Image.fromarray(a.clip(0, 255).astype(np.uint8)).convert("RGBA")
+    out.putalpha(region.getchannel("A"))
+    img.paste(out, (x0, y0))
+    return img
+
+
 def fade(img, side, length):
     """img with its alpha faded to nothing toward a side ('top', 'bottom', 'left', 'right') over length pixels."""
     w, h = img.size
@@ -176,10 +203,36 @@ def trim(img, floor=8):
     return img.crop(box) if box else img
 
 
-def masked(name, size):
-    """The 4K render of a whole pick with its outside transparent (catalog.py masks: the background removal)."""
-    img = Image.open(os.path.join(HIRES, name + ".png")).convert("RGB").resize(size, Image.LANCZOS).convert("RGBA")
-    img.putalpha(Image.open(os.path.join(HIRES, name + "-mask.png")).convert("L").resize(size, Image.LANCZOS))
+def backdrop(img):
+    """The pick's painted backdrop round the window: the dark, cool grey reached from the picture's border (the
+    window's leather is warm, its paper light), so its outside is found by its colour too."""
+    a = np.asarray(img.convert("RGB"), dtype=np.int16)
+    grey = (a.max(axis=2) < 80) & (a[..., 0] - a[..., 2] < 10)
+    pad = Image.new("L", (img.width + 2, img.height + 2), 255)
+    pad.paste(Image.fromarray(grey.astype(np.uint8) * 255).filter(ImageFilter.MedianFilter(5)), (1, 1))
+    ImageDraw.floodfill(pad, (0, 0), 128)
+    return pad.crop((1, 1, img.width + 1, img.height + 1)).point(lambda v: 255 if v == 128 else 0)
+
+
+def masked(name, size, within=None):
+    """The 4K render of a whole pick with its outside transparent: what the background removal (catalog.py masks)
+    or the backdrop's colour (backdrop: the removal keeps only the hero of #3) calls the window, together."""
+    img = Image.open(os.path.join(HIRES, name + ".png")).convert("RGB").resize(size, Image.LANCZOS)
+    removal = Image.open(os.path.join(HIRES, name + "-mask.png")).convert("L").resize(size, Image.LANCZOS)
+    inside = ImageChops.invert(backdrop(img)).filter(ImageFilter.GaussianBlur(1.2 * SCALE))
+    alpha = ImageChops.lighter(removal, inside)
+    # only what hangs together with the window (the middle of the picture): islands of the painted backdrop go
+    if within:                                         # the window's bounds, where known
+        box = Image.new("L", size)
+        ImageDraw.Draw(box).rectangle(z(within), fill=255)
+        alpha = ImageChops.multiply(alpha, box.filter(ImageFilter.GaussianBlur(2 * SCALE)))
+    # thin links to islands broken (shrunk, then grown back on the part that holds the middle)
+    k = 9 * SCALE | 1
+    solid = alpha.point(lambda v: 255 if v > 128 else 0).filter(ImageFilter.MinFilter(k))
+    ImageDraw.floodfill(solid, (size[0] // 2, size[1] // 2), 128)
+    window = solid.point(lambda v: 255 if v == 128 else 0).filter(ImageFilter.MaxFilter(k + 2 * SCALE))
+    img = img.convert("RGBA")
+    img.putalpha(ImageChops.multiply(alpha, window))
     return img
 
 
@@ -202,39 +255,58 @@ def main():
     soft = Image.new("L", inside.size)
     ImageDraw.Draw(soft).rectangle((4 * SCALE, 3 * SCALE, inside.width - 4 * SCALE, inside.height - 3 * SCALE), fill=255)
     f.paste(even, (lx0_, ly0_), soft.filter(ImageFilter.GaussianBlur(2 * SCALE)))
+    # the paper beside both bindings, down the whole window, moved toward the page's tone
+    f = match_edge(f, z((FRAME_LEFT[0], FRAME_TOP[0], FRAME_LEFT[1], 1024)))
+    f = match_edge(f, z((FRAME_X[3] - RIGHT_IN - (FRAME_LEFT[1] - FRAME_LEFT[0]), FRAME_TOP[0], FRAME_X[3], 1024)))
     x0, x1, x2, x3 = z(FRAME_X)
     t0, t1 = z(FRAME_TOP)
-    b0, b1 = z(FRAME_BOTTOM)
     for end, (a, b), how in (("left", (x0, x1), "its left end, kept whole"),
                              ("middle", (x1, x2), "its middle, stretched whole between the ends, joined edge to edge (its lines "
                                                  "run along it)"),
                              ("right", (x2, x3), "its right end, kept whole; the close button is its corner patch")):
         save(f"frame-top-{end}", fade(f.crop((a, t0, b, t1)), "bottom", TOP_FADE * SCALE),
              f"the window's top (strap, ribbon, title label): {how}; its paper fades into the page")
-    bx0, bx1, bx2, bx3 = z(FRAME_BOTTOM_X)
-    for end, (a, b), how in (("left", (bx0, bx1), "its left corner, kept whole"),
-                             ("middle", (bx1, bx2), "the page stack, stretched whole between the corners (no repeat, "
-                                                    "no cross-fade: its lines run on)"),
-                             ("right", (bx2, bx3), "its right corner, kept whole")):
-        piece = fade(f.crop((a, b0, b, b1)), "top", BOTTOM_FADE * SCALE)
-        if end != "middle":      # the binding above the caps is the edges' (no strap left there)
-            keep = Image.new("L", piece.size, 255)
-            cut = (0, BINDING[0] * SCALE - a) if end == "left" else (BINDING[1] * SCALE - a, piece.width)
-            ImageDraw.Draw(keep).rectangle((cut[0], 0, cut[1], (CAPS - FRAME_BOTTOM[0]) * SCALE), fill=0)
-            piece.putalpha(ImageChops.multiply(piece.getchannel("A"), keep.filter(ImageFilter.GaussianBlur(2 * SCALE))))
-        save(f"frame-bottom-{end}", piece,
-             f"the window's bottom (the page curling onto its stack, the corners): {how}; its paper fades into the "
-             f"page; content stays {FRAME_BOTTOM[1] - PAGE_END} layout pixels above its foot")
     lx0, lx1, ly0, ly1 = z(FRAME_LEFT)
-    rx0, rx1, ry0, ry1 = z(FRAME_RIGHT)
-    save("frame-left", seamless_y(f.crop((lx0, ly0, lx1, ly1))), "the window's left edge: repeats down without a seam")
-    save("frame-right", seamless_y(f.crop((rx0, ry0, rx1, ry1))), "the window's right edge: repeats down without a seam")
-    save("frame-clasp", f.crop(z(CLASP)), "the clasp, on the right edge's middle")
+    left = fade(seamless_y(f.crop((lx0, ly0, lx1, ly1))), "right", EDGE_FADE * SCALE)   # its paper into the page
+    save("frame-left", left, "the window's left edge: repeats down without a seam")
+    # the bottom (Saneroki, 2026-10-22): the left edge itself turned a quarter, its leather facing down; the sides
+    # meet it in a mitred corner (compose.py)
+    save("frame-bottom", left.rotate(90, expand=True), "the window's bottom: the left edge turned a quarter, its "
+                                                        "leather facing down; repeats along without a seam; the sides "
+                                                        "meet it in mitred corners, cut from the inner corner to the "
+                                                        "outer one")
+    save("frame-right", left.transpose(Image.FLIP_LEFT_RIGHT), "the window's right edge: the left one mirrored; "
+                                                                  "repeats down without a seam")
+    save("frame-clasp", fade(fade(fade(f.crop(z(CLASP)), "left", 12 * SCALE), "top", 14 * SCALE), "bottom", 14 * SCALE),
+         "the clasp and the leather it hangs from, on the right edge's middle; its right side on the top's right end's")
+    # the rounded metal caps of #12's bottom corners: the metal alone (a ring along the book's outline), and the
+    # corner's rounded outline, which code cuts the mitred corner to
+    outline = Image.open(os.path.join(HIRES, "window-mask.png")).convert("L").resize(f.size, Image.LANCZOS)
+    for side, box in CAPS.items():
+        inner = outline.filter(ImageFilter.MinFilter(2 * CAP_RING[side] * SCALE + 1)).filter(ImageFilter.GaussianBlur(3 * SCALE))
+        ring = ImageChops.subtract(outline, inner)
+        cap = f.crop(z(box))
+        bx0, by0 = z(box)[:2]
+        tx, ty = z(CAP_TIPS[side])
+        yy, xx = np.mgrid[0:cap.height, 0:cap.width]
+        dist = np.hypot(xx + bx0 - tx, yy + by0 - ty)
+        near = np.clip((CAP_REACH[0] * SCALE - dist) / (CAP_REACH[1] * SCALE), 0, 1)
+        rise = np.clip(yy / (12 * SCALE), 0, 1)        # and fading in below the box's top
+        alpha = np.asarray(ring.crop(z(box)), dtype=np.float32) * near * rise
+        cap.putalpha(Image.fromarray(alpha.astype(np.uint8)))
+        save(f"frame-cap-{side}", cap, f"the rounded metal cap of the bottom {side} corner (#12's), laid over the mitred "
+                                       f"corner; its {'left' if side == 'left' else 'right'} and bottom on the window's")
+        shape = Image.new("RGBA", cap.size, (255, 255, 255, 0))
+        top = Image.linear_gradient("L").transpose(Image.FLIP_TOP_BOTTOM).resize((cap.width, 16 * SCALE))
+        ramp = Image.new("L", cap.size, 0)
+        ramp.paste(top, (0, 0))                        # the rounding comes in below the box's top, no step
+        shape.putalpha(ImageChops.lighter(outline.crop(z(box)), ramp))
+        save(f"frame-corner-{side}", shape, f"the bottom {side} corner's rounded outline: code keeps the frame inside it")
     made["frame-top-left"]["title_at"] = [TITLE_AT[0] - FRAME_X[0], TITLE_AT[1] - FRAME_TOP[0]]
     made["frame-top-right"]["close_at"] = [CLOSE_AT[0] - FRAME_X[2], CLOSE_AT[1] - FRAME_TOP[0]]
 
     # the character window, whole
-    doll = tone_shift(masked("doll", (1024 * SCALE, 1024 * SCALE)), z(DOLL_PAPER))
+    doll = tone_shift(masked("doll", (1024 * SCALE, 1024 * SCALE), DOLL_FRAME), z(DOLL_PAPER))
     save("doll", doll, "the character window (#3) whole: code fills its slots and strips; not trimmed, so its slots "
                        "stay where compose.py's DOLL has them")
 

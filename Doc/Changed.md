@@ -1519,6 +1519,15 @@ Saneroki asked for a much richer bag view, in features and looks.
   too (`butt`; the cross-fade `band` is gone), the title label's light evened out in code (`LABEL`), the edges'
   tiles from under the top's corners to under the bottom's caps (`EDGES_START`, `EDGES_END`), the binding above
   the bottom's caps the edges' own (`CAPS`, `BINDING`: no strap knot). `compose.py --scale 2` takes whole numbers.
+- The window's frame one image (Saneroki, 2026-10-22: the bottom never fitted; the sides liked): the bottom is
+  the left edge turned a quarter, the right edge the left one mirrored where #12's book ends (`RIGHT_IN`), mitred
+  corners, #12's rounded metal caps over the bottom corners (`CAPS`, `frame-cap-*`, `frame-corner-*`); the
+  repainted bottom and its step `catalog.py bottom` are gone. The edges' tan paper moved toward the page's tone
+  and fading into it (`match_edge`, `EDGE_FADE`), the clasp faded in. The character window's outside also found
+  by its backdrop's colour and cut to its frame (the background removal kept only the hero; `backdrop`,
+  `DOLL_FRAME`); its slot columns bent along the arc as one piece (no steps in its edge). The four parts whose
+  cut-outs had holes (the arrow tabs, the edges) are rendered once more from the filled ones; every view laid out
+  at 4K by the job.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.

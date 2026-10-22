@@ -271,14 +271,13 @@ def slot(canvas, x, y, s, img):
 # tiles that repeat (the right with its clasp). The top's and bottom's paper fades into the page. Lengths in #12's
 # pixels, the layout's.
 FRAME_T = pieces.FRAME_TOP[1] - pieces.FRAME_TOP[0]
-FRAME_B = pieces.FRAME_BOTTOM[1] - pieces.FRAME_BOTTOM[0]
+FRAME_B = pieces.FRAME_LEFT[1] - pieces.FRAME_LEFT[0]          # the bottom is the left edge turned
 FRAME_L = pieces.FRAME_LEFT[1] - pieces.FRAME_LEFT[0]
-FRAME_R = pieces.FRAME_RIGHT[1] - pieces.FRAME_RIGHT[0]
-CLASP_H = pieces.CLASP[3] - pieces.CLASP[1]
+FRAME_R = FRAME_L + pieces.RIGHT_IN                            # the right edge (the left one mirrored) and the room
+                                                               # right of it to the top's right end
+CLASP_W, CLASP_H = pieces.CLASP[2] - pieces.CLASP[0], pieces.CLASP[3] - pieces.CLASP[1]
 TITLE_AT = (pieces.TITLE_AT[0] - pieces.FRAME_X[0], pieces.TITLE_AT[1] - pieces.FRAME_TOP[0])
 CLOSE_FROM_RIGHT = (pieces.FRAME_X[3] - pieces.CLOSE_AT[0], pieces.CLOSE_AT[1] - pieces.FRAME_TOP[0])
-PAGE_FOOT = pieces.FRAME_BOTTOM[1] - pieces.PAGE_END          # the bottom's height below the page's end
-EDGES_FOOT = pieces.FRAME_BOTTOM[1] - pieces.EDGES_END        # the bottom's height below the edges' end
 EDGES_HEAD = pieces.EDGES_START - pieces.FRAME_TOP[0]         # the top's height above the edges' start
 
 
@@ -316,9 +315,10 @@ class Window:
         self.MARGIN = M = margin or self.MARGIN
         self.canvas = Image.new("RGBA", zz(w + 2 * M, h + 2 * M))
         # the page: from the edges' inner sides, under the top and bottom's paper
-        x0, y0, x1, y1 = (M + FRAME_L - 6, M + FRAME_T - 30, M + w - FRAME_R + 6, M + h - PAGE_FOOT + 4)
+        x0, y0, x1, y1 = (M + FRAME_L - 22, M + FRAME_T - 30, M + w - FRAME_R + 22, M + h - FRAME_B + 22)   # under
+        # the edges' paper, which fades into it
         put(self.canvas, paper.page(z(x1 - x0), z(y1 - y0), seed, edge=0), (x0, y0))
-        self.content = (M + FRAME_L + 8, M + FRAME_T + 2, M + w - FRAME_R - 8, M + h - PAGE_FOOT - (52 if buttons else 8))
+        self.content = (M + FRAME_L + 8, M + FRAME_T + 2, M + w - FRAME_R - 8, M + h - FRAME_B - (52 if buttons else 8))
         self.side_tabs, self.buttons, self.bands = side_tabs, buttons, bands
 
     def finish(self):
@@ -332,12 +332,42 @@ class Window:
                 mark.putalpha(ImageOps.invert(g).point(lambda v: int(v * 0.6)))
                 put(c, mark, (M - 19, y + 11))
         # the edges first, the whole height, so their leather runs on under the top's and bottom's fades
-        edge_h = z(h - EDGES_FOOT - EDGES_HEAD)                            # from under the top's corners down
-        put(c, column(piece("frame-left"), edge_h), (M, M + EDGES_HEAD))   # under the bottom's corner caps
-        put(c, column(piece("frame-right"), edge_h), (M + w - FRAME_R, M + EDGES_HEAD))
-        put(c, piece("frame-clasp"), (M + w - FRAME_R, M + (h - CLASP_H) // 2))
+        # the sides from under the top's corners to the foot, the bottom (the left side turned) along the foot, and
+        # where they meet a mitred corner: each side owns the half of the corner square on its side of the line
+        # from the inner corner to the outer one
+        edge_h = z(h - EDGES_HEAD)
+        left, right = column(piece("frame-left"), edge_h), column(piece("frame-right"), edge_h)
+        span = w - pieces.RIGHT_IN                                       # the book's width, the bottom's length
+        bottom = Image.new("RGBA", (z(span), z(FRAME_B)))
+        tile = piece("frame-bottom")
+        for x in range(0, bottom.width, tile.width):
+            bottom.alpha_composite(tile, (x, 0))
+        lw, rw, bh = left.width, right.width, bottom.height
+        keep = Image.new("L", left.size, 255)
+        ImageDraw.Draw(keep).polygon([(0, edge_h), (lw, edge_h - bh), (lw, edge_h)], fill=0)
+        left.putalpha(ImageChops.multiply(left.getchannel("A"), keep))
+        keep = Image.new("L", right.size, 255)
+        ImageDraw.Draw(keep).polygon([(rw, edge_h), (0, edge_h - bh), (0, edge_h)], fill=0)
+        right.putalpha(ImageChops.multiply(right.getchannel("A"), keep))
+        cut = Image.new("L", bottom.size, 255)
+        ImageDraw.Draw(cut).polygon([(0, 0), (lw, 0), (0, bh)], fill=0)
+        ImageDraw.Draw(cut).polygon([(bottom.width, 0), (bottom.width - rw, 0), (bottom.width, bh)], fill=0)
+        bottom.putalpha(ImageChops.multiply(bottom.getchannel("A"), cut))
+        put(c, bottom, (M, M + h - FRAME_B))
+        put(c, left, (M, M + EDGES_HEAD))
+        put(c, right, (M + span - FRAME_L, M + EDGES_HEAD))
+        # the bottom corners rounded as #12's, its metal caps over them
+        for side in ("left", "right"):
+            box = pieces.CAPS[side]
+            cw, ch = box[2] - box[0], box[3] - box[1]
+            at = (M, M + h - ch) if side == "left" else (M + w - (pieces.FRAME_X[3] - box[0]), M + h - ch)
+            shape = piece(f"frame-corner-{side}").getchannel("A")
+            region = c.crop((z(at[0]), z(at[1]), z(at[0]) + shape.width, z(at[1]) + shape.height))
+            region.putalpha(ImageChops.multiply(region.getchannel("A"), shape))
+            c.paste(region, zz(*at))
+            put(c, piece(f"frame-cap-{side}"), at)
+        put(c, piece("frame-clasp"), (M + w - CLASP_W, M + (h - CLASP_H) // 2))
         put(c, butt(*(piece(f"frame-top-{e}") for e in ("left", "middle", "right")), z(w)), (M, M))
-        put(c, butt(*(piece(f"frame-bottom-{e}") for e in ("left", "middle", "right")), z(w)), (M, M + h - FRAME_B))
         # the title on the label, in Kalam; the close button on the corner patch, pressed in
         write(c, (M + TITLE_AT[0], M + TITLE_AT[1]), self.title, 22, "Bold", anchor="lm")
         press(c, (M + w - CLOSE_FROM_RIGHT[0], M + CLOSE_FROM_RIGHT[1]), "x", 17)
@@ -349,8 +379,8 @@ class Window:
         x = M + FRAME_L + 30
         for label in self.buttons:   # the patch stretched by nine slices (its rivets kept), never repeated
             width = 40 + len(label) * 10
-            put(c, nine(part("patch"), z(width), z(34), 0.2, 0.2, 0.2, 0.2), (x, M + h - PAGE_FOOT - 44))
-            press(c, (x + width // 2, M + h - PAGE_FOOT - 27), label, 14)
+            put(c, nine(part("patch"), z(width), z(34), 0.2, 0.2, 0.2, 0.2), (x, M + h - FRAME_B - 44))
+            press(c, (x + width // 2, M + h - FRAME_B - 27), label, 14)
             x += width + 8
         return c
 
@@ -518,19 +548,29 @@ def view_character():
     shift = {}
     tones = {sgn: tuple(int(v) for v in np.median(np.asarray(c.crop(zz(*box)).convert("RGB")).reshape(-1, 3), axis=0))
              for sgn, box in ((-1, (372, 269, 402, 278)), (1, (622, 269, 652, 278)))}   # the paper between two rows
-    for j, y in enumerate(DOLL_ROWS):
-        dx = round(ARC * math.sin(math.pi * (j + 1) / 7))
-        shift[j] = dx
-        for x0, x1, sgn in ((226, 410, -1), (606, 792, 1)):
-            row = (x0, y - 3, x1, y + 73)
-            cut = c.crop(zz(*row))
-            gap = (x1 - dx - 4, row[1], x1, row[3]) if sgn < 0 else (x0, row[1], x0 + dx + 4, row[3])
-            fill = paper.page(z(gap[2] - gap[0]), z(gap[3] - gap[1]), f"gap{j}{sgn}", edge=0, stained=False, tone=tones[sgn])
-            mask = Image.new("L", fill.size)
-            ImageDraw.Draw(mask).rectangle((0, z(3), fill.width, fill.height - z(4)), fill=255)
-            fill.putalpha(mask.filter(ImageFilter.GaussianBlur(2 * S)))
-            put(c, fill, gap[:2])
-            c.paste(cut, zz(x0 + sgn * dx, row[1]))
+    for j in range(len(DOLL_ROWS)):
+        shift[j] = round(ARC * math.sin(math.pi * (j + 1) / 7))
+    # the two columns bent along the arc as one piece (each pixel row moved by the arc at its height, easing to
+    # nothing above the first row and below the last), so the frame's edge curves with them, no steps; the room
+    # each leaves beside the hero's frame is paper of that spot
+    top, bottom = DOLL_ROWS[0] - 40, DOLL_ROWS[-1] + 110
+    knots = [top] + [y + 35 for y in DOLL_ROWS] + [bottom]
+    ys = np.arange(z(top), z(bottom))
+    dxs = np.rint(np.interp(ys / S, knots, [0] + [shift[j] for j in range(len(DOLL_ROWS))] + [0]) * S).astype(int)
+    a = np.asarray(c).copy()
+    for (x0, x1), sgn in (((DOLL_BOX[0], 410), -1), ((606, DOLL_BOX[2]), 1)):
+        X0, X1 = z(x0), z(x1)
+        src = a[ys[0]:ys[-1] + 1, X0:X1].copy()
+        fill = np.asarray(paper.page(z(ARC) + 2, len(ys), f"arc{sgn}", edge=0, stained=False, tone=tones[sgn]))
+        for r, d in enumerate(dxs):
+            y = ys[r]
+            if sgn < 0:
+                a[y, X0 - d:X1 - d] = src[r]
+                a[y, X1 - d:X1] = fill[r, :d]
+            else:
+                a[y, X0 + d:X1 + d] = src[r]
+                a[y, X0:X0 + d] = fill[r, :d]
+    c = Image.fromarray(a)
     left, right = GEAR["left"], GEAR["right"]
     for sl, (name, pattern) in zip(DOLL["top"], [left[0], right[0]]):
         x0, y0, x1, y1 = sl
