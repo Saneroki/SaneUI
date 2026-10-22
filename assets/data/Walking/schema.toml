@@ -1,9 +1,10 @@
 set = "Walking"
 key = "int"              # a terrain tile, keyed as in the set Tiles: continent * 4096 + row * 64 + column
 learn = false
-about = "Where players can walk, for Navigation's routes: per terrain tile its floors as rectangles with their openings, packed by our tool (Doc/ideas/Navigation.md, *The walking data*)."
+about = "Where players can walk, for Navigation's routes: per terrain tile its floors as rectangles with their openings, and its gates into the next tiles with what the walks between them cost, packed by our tools (Doc/ideas/Navigation.md, *The walking data*, *The coarse layer*)."
 
 [fields]
 map   = { type = "int", min = 0 }          # the game's instance (0 Eastern Kingdoms, 1 Kalimdor, 2991 Zephras Isle)
 links = { type = "list", of = "ref", set = "Walking" }  # the tiles around it that have ground
 block = { type = "text" }                    # the tile's rectangles and openings, packed; its format comes with the tool (dev/tools/walk-data)
+gates = { type = "text" }                    # the coarse layer: the tile's gates into the next tiles and what the walks between them cost, packed (dev/tools/walk-gates)

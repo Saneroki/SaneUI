@@ -23,6 +23,8 @@ Pins.lua
 Nodes.lua
 # Where a player can walk: Core's walking data, unpacked per tile when first needed. Knows no frames
 Walk.lua
+# The walking data's coarse layer: each tile's gates into the next, what the walks between them cost. Knows no frames
+Gates.lua
 # A walk between two points over the walking data, as a job of Core's scheduler. Knows no frames
 Search.lua
 # The lifts on the walking data: each end at its landing, the levels they join, where a place stands. Knows no frames

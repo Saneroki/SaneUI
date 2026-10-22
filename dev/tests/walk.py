@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
-"""Tests of dev/tools/walk-data and dev/tools/travel-data without the game's files: the block's encoding, floors joined
-into surfaces and rectangles on made-up ground (flat land, a steep speck, a hole, a cliff, a bridge, water),
-buildings and doodads placed as the game places them (turned, tilted; a model's collision, a building's doodad sets,
-the object files' placements) and rasterized (a fence, a deck), the openings the game is left to work out and those
-written (each found both ways, on a tile and into the next, on both their rectangles' sides; none through another
-floor but one where a tile's parts need it), regions too small to keep and their order (but the rooms a lift or a
-portal lands in), a flight's path made short, a boat's way (its docks, on the zone maps too, its leaps, which way a
-newer one replaced), a lift's car (its motion, its ends and rides, its own number kept for its place), a way's side
-(its towns', by the flight masters near its docks) and a portal (the client's trigger, where a batch says it brings
-one). And dev/tools/terrain-art's open sky around an isle that floats (walk-data reads the terrain with it). Run by
-dev/tests/run."""
+"""Tests of dev/tools/walk-data, dev/tools/walk-gates and dev/tools/travel-data without the game's files: the block's
+encoding, floors joined into surfaces and rectangles on made-up ground (flat land, a steep speck, a hole, a cliff, a
+bridge, water), buildings and doodads placed as the game places them (turned, tilted; a model's collision, a
+building's doodad sets, the object files' placements) and rasterized (a fence, a deck), the openings the game is left
+to work out and those written (each found both ways, on a tile and into the next, on both their rectangles' sides;
+none through another floor but one where a tile's parts need it), regions too small to keep and their order (but the
+rooms a lift or a portal lands in), a flight's path made short, a boat's way (its docks, on the zone maps too, its
+leaps, which way a newer one replaced), a lift's car (its motion, its ends and rides, its own number kept for its
+place), a way's side (its towns', by the flight masters near its docks) and a portal (the client's trigger, where a
+batch says it brings one). The coarse layer over the walking data (walk-gates): a tile's parts, its gates along each
+border, the ways between them (through a door, round a pond a rider will not swim), their numbers, the field; and the
+master's layer made from its blocks as they are. And dev/tools/terrain-art's open sky around an isle that floats
+(walk-data reads the terrain with it). Run by dev/tests/run."""
 import base64
 import importlib.machinery
 import importlib.util
+import json
 import math
 import os
 import struct
@@ -785,6 +788,99 @@ check("an item's: the items of the client that cast it, no side, no reagent, now
       fields[travel.TELEPORTS + 23453], {"kind": "teleport", "spell": 23453, "name": "Gnomish Transporter",
                                          "items": [18986, 260819]})
 check("a place for a spell the client has as no teleport: left out, and why", left, [(777, "the client has it as no teleport")])
+
+# --- The coarse layer (dev/tools/walk-gates) ----------------------------------------------------------
+gates = load("walk_gates", ROOT / "dev" / "tools" / "walk-gates")
+
+
+def layer(blocks):
+    """Made-up tiles' blocks (as the set holds them) read, joined and parted as the tool does: {key: tile}, borders."""
+    texts = {key: gates.pack(block) for key, block in blocks.items()}
+    tiles = {key: dict(gates.read(text), key=key) for key, text in texts.items()}
+    gates.resolve(tiles)
+    for key, tile in tiles.items():
+        tile["part"] = gates.parts(tile, key)
+    borders = {(key, side): gates.border(tiles, key, side) for key in tiles for side in (1, 2)}
+    return texts, tiles, borders
+
+
+def made(texts, tiles, borders, key):
+    """A tile's field as the tool makes it, read back: [format, check, rects, north, east, south, west, costs]."""
+    job = (key, {name: tiles[key][name] for name in ("rects", "kind", "opens", "part", "key")},
+           gates.sides(tiles, borders, key), gates.check_of(texts, key))
+    return gates.unpack(gates.field(job)[1])
+
+
+def pair(costs, x, y):
+    """The number of the way between the x-th and the y-th gate (x < y) of a tile's one part, and the rider's for it."""
+    size = costs[0]
+    number = (x - 1) * (2 * size - x) // 2 + (y - x)
+    at = 1 + size + size * (size - 1) // 2
+    rides = dict(zip(costs[at + 1::2], costs[at + 2::2]))
+    return costs[size + number], rides.get(number)
+
+
+def parts_of(number):
+    """A way's number taken apart, as Gates.lua does: land, up, down, swum."""
+    return number % 8192, number // 8192 % 1024, number // 2 ** 23 % 1024, number // 2 ** 33
+
+
+# Four fields in a row (tiles 2592 to 2595, 10 yards high), each open into the next along all its edge; the second cut in
+# two by a wall (columns 128 to 143) but at its north end, a door (rows 0 to 15): the halves one surface, the door
+# another, joined by the openings written (Navigation's tests have the same tiles).
+row = {2592: [1, [1, 1, 20], [0, 0, 256, 256, 40], [1, 2]],
+       2593: [1, [2, 1, 20, 1, 1, 20], [0, 0, 128, 256, 40, 144, 0, 112, 256, 40, 128, 0, 16, 16, 40],
+              [5, -2, 0, 15, 10, 4, 1, 2, 4, -2, 0, 15, 5]],
+       2594: [1, [1, 1, 20], [0, 0, 256, 256, 40], [2, 9, 2]],
+       2595: [1, [1, 1, 20], [0, 0, 256, 256, 40], [1, 4]]}
+texts, tiles, borders = layer(row)
+check("a tile's parts: its surfaces joined by the openings between them (the halves and the door one)",
+      tiles[2593]["part"], [1, 1, 1])
+check("a border's gates: where a part meets the next tile's, cut into even pieces of PIECE samples",
+      borders[(2592, 1)], [(0, 63, 1, 1), (64, 127, 1, 1), (128, 191, 1, 1), (192, 255, 1, 1)])
+check("the same gates on the next tile's west side, with its part",
+      gates.sides(tiles, borders, 2593)[3], [(0, 63, 1), (64, 127, 1), (128, 191, 1), (192, 255, 1)])
+walled = made(texts, tiles, borders, 2593)
+check("a tile's field: its format, check (its block's and its neighbours'), rectangles, gates side by side",
+      (walled[0], walled[1], walled[2], walled[3], walled[4][:3], len(walled[6])),
+      (gates.FORMAT, gates.check_of(texts, 2593), 3, [], [0, 63, 1], 12))
+check("its one part: its eight gates, a way between each two, no rider's", (walled[7][:9], len(walled[7])),
+      ([8, 1, 2, 3, 4, 5, 6, 7, 8], 1 + 8 + 28 + 1))
+check("along the east half (the first two east gates' middles 64 samples apart): 133 yards",
+      parts_of(pair(walled[7], 1, 2)[0]), (133, 0, 0, 0))
+check("from the west side to the east by the door, the line pulled through it (258 samples)",
+      parts_of(pair(walled[7], 1, 5)[0]), (538, 0, 0, 0))
+check("from the south of the west side, the same door", parts_of(pair(walled[7], 4, 8)[0]), (1034, 0, 0, 0))
+check("a tile's check: CRC-32 of its block and its neighbours', a missing one empty",
+      gates.check_of(texts, 2592), zlib.crc32(("\n".join([texts[2592], "", texts[2593], "", ""]) + "\n").encode()))
+# A pond across a tile (columns 100 to 155, rows 16 to 255, the water's surface 10 yards high) and a land bridge north
+# of it (rows 0 to 15), fields east and west of the tile: from the west side's second gate to the east side's (rows 64
+# to 127), on foot (a yard swum 1.5) the way swims straight across, 117 of its yards; a rider (3) goes round by the
+# bridge, 650 yards dry, kept besides.
+pond = {2699: [1, [1, 1, 20], [0, 0, 256, 256, 40], [1, 2]],
+        2700: [1, [3, 1, 20, 1, 2, 20], [0, 0, 100, 256, 40, 100, 0, 56, 16, 40, 156, 0, 100, 256, 40, 100, 16, 56, 240, 40],
+               [5, -2, 16, 255, 15, 4, 4, -3, 100, 155, 15, 1, 2, 4, -2, 16, 255, 10]],
+        2701: [1, [1, 1, 20], [0, 0, 256, 256, 40], [1, 14]]}
+texts, tiles, borders = layer(pond)
+across = made(texts, tiles, borders, 2700)
+foot, ride = pair(across[7], 2, 6)
+check("a way that swims: its yards on land and swum; the rider's dry way kept besides",
+      (parts_of(foot), ride and parts_of(ride)), ((417, 0, 0, 117), (650, 0, 0, 0)))
+check("the packed number holds each part in its own room",
+      parts_of(gates.number(1803, 354, 332, 872)), (1803, 354, 332, 872))
+# The master's coarse layer made from its blocks as they are: each tile's check its own block's and its neighbours'
+# (after the walking data is made anew, dev/tools/walk-gates and the import, too).
+newest = {}
+for text in (ROOT / "assets" / "data" / "Walking" / "Walking.jsonl").read_text(encoding="utf-8").splitlines():
+    line = json.loads(text)
+    if line.get("gone"):
+        newest.pop(line["key"], None)
+    else:
+        newest[line["key"]] = dict(newest.get(line["key"], {}), **{k: v for k, v in line.items() if k in ("block", "gates")})
+blocks = {key: entry["block"] for key, entry in newest.items() if "block" in entry}
+stale = [key for key, entry in newest.items() if "gates" not in entry or "block" not in entry
+         or gates.unpack(entry["gates"])[1] != gates.check_of(blocks, key)]
+check("the master's coarse layer: every tile's made from its block and its neighbours' as they are", stale[:5], [])
 
 if failed:
     print(f"Walking data: {failed} of {checks} checks failed.")

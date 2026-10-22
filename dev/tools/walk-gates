@@ -1,0 +1,590 @@
+#!/usr/bin/env python3
+"""Makes the coarse layer of Navigation's walking data from Core's set Walking, its tiles' blocks as dev/tools/walk-data
+makes them: per terrain tile its gates and what the walk between each two of them costs inside the tile, the set's
+field gates (Doc/ideas/Navigation.md, *The coarse layer*). A route's walk crosses the tiles between its start's and its
+end's by their gates first, then is searched rectangle by rectangle along that way (src/Navigation/Gates.lua, Search.lua).
+
+  a part      the rectangles of a tile one can walk between without leaving it: its surfaces, joined by the openings
+              between them on the tile; numbered by its lowest surface (from 1, in the block's order)
+  a gate      where a part of a tile meets a part of the next tile across their border: the openings between the two,
+              joined where they touch along the border, cut into even pieces of at most PIECE samples; its point is
+              the middle of its stretch, on the border. Listed on both tiles alike, in order along the border (first
+              sample, last sample, then the north or west tile's part, then the other's)
+  a cost      of the walk between two gates of one part: the shortest way over the part's rectangles from one gate's
+              point to the other's (Dijkstra, each step from where a rectangle was entered to the nearest point of the
+              next opening, a yard swum at WATERS[0] yards on land), measured along the line pulled straight through
+              the openings it passes: its yards on land, the yards it swims, the yards it climbs and those it goes
+              down (the search counts each yard up a little more, Search.CLIMB). Where the way swims it is chosen again
+              with a yard swum at WATERS[1] (a rider's price) and kept too where that takes another way
+
+  dev/data/staging/walking-gates.jsonl   one line per tile with ground: set Walking, the tile's key, its field gates;
+                                         taken in by dev/tools/data import ... --apply --take
+
+The field is CBOR (the game reads it with C_EncodingUtil.DeserializeCBOR), deflated and in base64, as the blocks: an
+array of the format's number (FORMAT), the tile's check (CRC-32 of its block and of its four neighbours', from the
+north clockwise, each followed by a line feed, a missing one empty: dev/tests/walk.py finds a layer made from other
+blocks), how many rectangles its block has (Navigation passes over a layer made from another block), the gates on its
+north, east, south and west side, and the costs:
+
+  a side's gates   3 numbers each, in order along the border: the first and the last sample of its stretch (counted
+                   along the side from its west end, or its north end) and its part on this tile
+  the costs        per part with two gates or more: how many (k), their numbers on the tile (from 1: the north side's
+                   in order, then the east's, the south's, the west's), then one number for each two of them in order
+                   (1 and 2, 1 and 3, ... 1 and k, 2 and 3, ...): the walk's yards on land + 2^13 x the yards it climbs
+                   from the first to the second + 2^23 x the yards it goes down + 2^33 x the yards it swims (each whole);
+                   then how many ways the rider's price takes instead (w), and for each its pair's number (from 1, in
+                   that order) and that way's number alike
+
+Usage:  dev/tools/walk-gates [walking.jsonl] [--only key[,key...]] [--processes N]
+        walking.jsonl: the set's lines (default the master's assets/data/Walking/Walking.jsonl, an entry's newest
+        version); --only: those tiles' lines alone (their neighbours read too)
+"""
+import base64
+import heapq
+import json
+import math
+import struct
+import sys
+import zlib
+from collections import defaultdict
+from multiprocessing import Pool
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+MASTER = ROOT / "assets" / "data" / "Walking" / "Walking.jsonl"
+STAGING = ROOT / "dev" / "data" / "staging" / "walking-gates.jsonl"
+BUILD = 70245          # the client build of the walking data (dev/tools/walk-data's)
+FORMAT = 1             # the field's format, as Navigation's Gates.lua reads it
+
+GRID = 64              # tiles along each side of a continent
+SIDE = 256             # samples along a tile's side
+SAMPLE = 1600 / 3 / SIDE
+WATER = 2              # a floor's kind: a water's surface (dev/tools/walk-data)
+PIECE = 64             # samples: a gate's longest stretch along a border (a long one cut into even pieces)
+WATERS = (1.5, 3.0)    # yards on land a yard swum costs, on foot and riding (Navigation's water price lies between)
+CLIMB = 0.25           # each yard up costs so many yards more (Navigation's Search.CLIMB)
+LAND, UP, DOWN = 2 ** 13, 2 ** 23, 2 ** 33  # a cost's parts in one number: land + UP x climbed... (below)
+STEP = {0: -GRID, 1: 1, 2: GRID, 3: -1}    # side: the next tile's key, north, east, south, west
+NEXT = {0: (-1, 0), 1: (0, 1), 2: (1, 0), 3: (0, -1)}  # side: its rows and columns away
+
+
+# -------------------------------------------------------------------------------------------------
+#  The blocks, as Navigation's Walk.lua reads them
+# -------------------------------------------------------------------------------------------------
+def decode(data):
+    """CBOR's whole numbers and arrays."""
+    at = 0
+
+    def item():
+        nonlocal at
+        head = data[at]
+        at += 1
+        major, info = head >> 5, head & 31
+        if info < 24:
+            value = info
+        else:
+            size = {24: 1, 25: 2, 26: 4, 27: 8}[info]
+            value = int.from_bytes(data[at:at + size], "big")
+            at += size
+        if major == 0:
+            return value
+        if major == 1:
+            return -1 - value
+        return [item() for _ in range(value)]
+
+    return item()
+
+
+def cbor(value):
+    """A value in CBOR: whole numbers and arrays only."""
+    if isinstance(value, int):
+        major, number = (0, value) if value >= 0 else (1, -1 - value)
+    else:
+        major, number = 4, len(value)
+    if number < 24:
+        head = bytes([major << 5 | number])
+    elif number < 256:
+        head = bytes([major << 5 | 24, number])
+    elif number < 65536:
+        head = bytes([major << 5 | 25]) + struct.pack(">H", number)
+    elif number < 2 ** 32:
+        head = bytes([major << 5 | 26]) + struct.pack(">I", number)
+    else:
+        head = bytes([major << 5 | 27]) + struct.pack(">Q", number)
+    if major == 4:
+        return head + b"".join(cbor(item) for item in value)
+    return head
+
+
+def pack(value):
+    data = zlib.compressobj(9, zlib.DEFLATED, -15)
+    return base64.b64encode(data.compress(cbor(value)) + data.flush()).decode("ascii")
+
+
+def unpack(text):
+    return decode(zlib.decompress(base64.b64decode(text), -15))
+
+
+def read(text):
+    """A tile's block: its rectangles (column, row, width, height, z in quarter yards), each one's kind and surface
+    (from 1), and its openings [side, first, last, where, other] as Walk.lua finds them: those written (on the tile
+    once, the other way added) and those between rectangles of one surface that touch (side None: along the whole
+    edge two rectangles share; where 0 on the tile, else 1 + the next tile's side; other from 0)."""
+    _, surfaces, flat, links = unpack(text)
+    count = len(flat) // 5
+    rects = [tuple(flat[at * 5:at * 5 + 5]) for at in range(count)]
+    kind, surface = [0] * count, [0] * count
+    at = 0
+    for s in range(0, len(surfaces), 3):
+        for _ in range(surfaces[s]):
+            kind[at], surface[at] = surfaces[s + 1], s // 3 + 1
+            at += 1
+    opens = [[] for _ in range(count)]
+    at = 0
+    for rect in range(count):
+        stop = at + links[at]
+        at += 1
+        while at <= stop:
+            value = links[at]
+            if value < 0:
+                side, first, last, target = -1 - value, links[at + 1], links[at + 2], links[at + 3]
+                at += 4
+            else:
+                side = first = last = None
+                target = value
+                at += 1
+            where, other = target % 5, target // 5
+            opens[rect].append([side, first, last, where, other])
+            if where == 0:
+                opens[other].append([None if side is None else (side + 2) % 4, first, last, 0, rect])
+    members = defaultdict(list)
+    for rect in range(count):
+        members[surface[rect]].append(rect)
+    for group in members.values():
+        by_west, by_north = defaultdict(list), defaultdict(list)
+        for rect in group:
+            by_west[rects[rect][0]].append(rect)
+            by_north[rects[rect][1]].append(rect)
+        for rect in group:
+            c, r, w, h, _ = rects[rect]
+            for other in by_west.get(c + w, ()):
+                a, b = max(r, rects[other][1]), min(r + h, rects[other][1] + rects[other][3]) - 1
+                if a <= b:
+                    opens[rect].append([1, a, b, 0, other])
+                    opens[other].append([3, a, b, 0, rect])
+            for other in by_north.get(r + h, ()):
+                a, b = max(c, rects[other][0]), min(c + w, rects[other][0] + rects[other][2]) - 1
+                if a <= b:
+                    opens[rect].append([2, a, b, 0, other])
+                    opens[other].append([0, a, b, 0, rect])
+    return {"rects": rects, "kind": kind, "surface": surface, "opens": opens}
+
+
+def side_of(a, b):
+    """Which side of rectangle a another of its tile touches (Walk.lua's Side)."""
+    if b[1] + b[3] == a[1]:
+        return 0
+    if b[0] == a[0] + a[2]:
+        return 1
+    if b[1] == a[1] + a[3]:
+        return 2
+    return 3
+
+
+def shared(a, b, side, dr, dc):
+    """The first and last sample of the edge two rectangles share on a side of a (b dr, dc tiles away), or None."""
+    bc, br = b[0] + dc * SIDE, b[1] + dr * SIDE
+    if side in (0, 2):
+        first, last = max(a[0], bc), min(a[0] + a[2], bc + b[2]) - 1
+    else:
+        first, last = max(a[1], br), min(a[1] + a[3], br + b[3]) - 1
+    return (first, last) if first <= last else None
+
+
+def resolve(tiles):
+    """Every opening as (side, first, last, the neighbour's key, its index), the whole-edge ones worked out (Walk.lua's
+    Opening); one into a tile not there, or along no shared edge, left out."""
+    for key, tile in tiles.items():
+        rects = tile["rects"]
+        for rect, list_ in enumerate(tile["opens"]):
+            found = []
+            for side, first, last, where, other in list_:
+                there = key if where == 0 else key + STEP[where - 1]
+                next_ = tiles.get(there)
+                if next_ is None or other >= len(next_["rects"]):
+                    continue
+                if first is None:
+                    dr = dc = 0
+                    if where:
+                        side = where - 1
+                        dr, dc = NEXT[side]
+                    else:
+                        side = side_of(rects[rect], next_["rects"][other])
+                    edge = shared(rects[rect], next_["rects"][other], side, dr, dc)
+                    if edge is None:
+                        continue
+                    first, last = edge
+                found.append((side, first, last, there, other))
+            tile["opens"][rect] = found
+
+
+def parts(tile, key):
+    """Each rectangle's part: the lowest surface of those its tile's openings join to its own."""
+    parent = list(range(max(tile["surface"], default=0) + 1))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for rect, list_ in enumerate(tile["opens"]):
+        for _, _, _, there, other in list_:
+            if there == key:
+                a, b = find(tile["surface"][rect]), find(tile["surface"][other])
+                if a != b:
+                    parent[max(a, b)] = min(a, b)
+    return [find(s) for s in tile["surface"]]
+
+
+# -------------------------------------------------------------------------------------------------
+#  The gates
+# -------------------------------------------------------------------------------------------------
+def border(tiles, key, side):
+    """The gates of a tile's east (1) or south (2) border: (first, last, its part, the next tile's part), in order."""
+    there = key + STEP[side]
+    tile, next_ = tiles[key], tiles.get(there)
+    if next_ is None:
+        return []
+    runs = defaultdict(list)
+    for rect, list_ in enumerate(tile["opens"]):
+        for s, first, last, other_key, other in list_:
+            if other_key == there and s == side:
+                runs[(tile["part"][rect], next_["part"][other])].append((first, last))
+    gates = []
+    for (mine, theirs), spans in runs.items():
+        joined = []
+        for first, last in sorted(spans):
+            if joined and first <= joined[-1][1] + 1:
+                joined[-1][1] = max(joined[-1][1], last)
+            else:
+                joined.append([first, last])
+        for first, last in joined:
+            count = math.ceil((last - first + 1) / PIECE)
+            for piece in range(count):
+                a = first + (last - first + 1) * piece // count
+                b = first + (last - first + 1) * (piece + 1) // count - 1
+                gates.append((a, b, mine, theirs))
+    return sorted(gates)
+
+
+def sides(tiles, borders, key):
+    """A tile's gates on its four sides: [(first, last, its part on this tile)] each, as the borders list them."""
+    return {
+        0: [(a, b, theirs) for a, b, _, theirs in borders.get((key + STEP[0], 2), [])],
+        1: [(a, b, mine) for a, b, mine, _ in borders.get((key, 1), [])],
+        2: [(a, b, mine) for a, b, mine, _ in borders.get((key, 2), [])],
+        3: [(a, b, theirs) for a, b, _, theirs in borders.get((key + STEP[3], 1), [])],
+    }
+
+
+# -------------------------------------------------------------------------------------------------
+#  The costs
+# -------------------------------------------------------------------------------------------------
+def segment(rect, side, first, last):
+    """An opening on a rectangle's side as a segment (u east, v north, in samples from the tile's north west corner):
+    a north or south side west to east, an east or west side north to south."""
+    c, r, w, h, _ = rect
+    if side == 0:
+        return (first, -r, last + 1, -r)
+    if side == 2:
+        return (first, -(r + h), last + 1, -(r + h))
+    if side == 1:
+        return (c + w, -first, c + w, -(last + 1))
+    return (c, -first, c, -(last + 1))
+
+
+def point(side, first, last):
+    """A gate's point: the middle of its stretch on the border."""
+    middle = (first + last + 1) / 2
+    return ((middle, 0.0), (float(SIDE), -middle), (middle, -float(SIDE)), (0.0, -middle))[side]
+
+
+def held(u, v, seg):
+    """A point held within a segment (level or upright): the nearest point of it."""
+    au, av, bu, bv = seg
+    if av == bv:
+        return (min(max(u, min(au, bu)), max(au, bu)), av)
+    return (au, min(max(v, min(av, bv)), max(av, bv)))
+
+
+def portal(seg, side):
+    """An opening as left and right ends going through it from the rectangle's side (Search.lua's Portal)."""
+    au, av, bu, bv = seg
+    return (au, av, bu, bv) if side in (0, 1) else (bu, bv, au, av)
+
+
+def cross(au, av, bu, bv, cu, cv):
+    """> 0: c lies left of the way from a to b."""
+    return (bu - au) * (cv - av) - (bv - av) * (cu - au)
+
+
+def funnel(su, sv, portals, eu, ev):
+    """The line from the start to the end pulled through the openings (Search.lua's Funnel): its corners, each with
+    the number of the opening it lies on (0 the start, len(portals) + 1 the end)."""
+    portals = portals + [(eu, ev, eu, ev)]
+    corners = [(su, sv, 0)]
+    apex, left, right = (su, sv), (su, sv), (su, sv)
+    left_at = right_at = 0
+    at, guard = 1, 0
+    while at <= len(portals) and guard < 100000:
+        guard += 1
+        lu, lv, ru, rv = portals[at - 1]
+        again = False
+        if cross(*apex, *right, ru, rv) >= 0:
+            if apex == right or cross(*apex, *left, ru, rv) < 0:
+                right, right_at = (ru, rv), at
+            else:
+                corners.append((*left, left_at))
+                apex = right = left
+                at = left_at + 1
+                right_at = left_at
+                again = True
+        if not again and cross(*apex, *left, lu, lv) <= 0:
+            if apex == left or cross(*apex, *right, lu, lv) > 0:
+                left, left_at = (lu, lv), at
+            else:
+                corners.append((*right, right_at))
+                apex = left = right
+                at = right_at + 1
+                left_at = right_at
+                again = True
+        if not again:
+            at += 1
+    corners.append((eu, ev, len(portals)))
+    return corners
+
+
+def lengths(su, sv, portals, eu, ev, kinds):
+    """The yards of the pulled line on land and swum, along a way of len(portals) + 1 rectangles (their kinds): where
+    it crosses each opening (at a corner on it, else where the straight piece between two corners does), the pieces
+    between in the rectangle between."""
+    corners = funnel(su, sv, portals, eu, ev)
+    count = len(portals)
+    at = [None] * (count + 2)
+    at[0], at[count + 1] = (su, sv), (eu, ev)
+    for (au, av, ia), (bu, bv, ib) in zip(corners, corners[1:]):
+        if 0 < ia <= count:
+            at[ia] = (au, av)
+        for k in range(ia + 1, min(ib, count + 1)):
+            pu, pv, qu, qv = portals[k - 1]
+            if pv == qv:
+                t = (pv - av) / (bv - av) if bv != av else 0.0
+            else:
+                t = (pu - au) / (bu - au) if bu != au else 0.0
+            t = min(max(t, 0.0), 1.0)
+            at[k] = (au + (bu - au) * t, av + (bv - av) * t)
+    land = swum = 0.0
+    for k in range(count + 1):
+        if at[k] is None or at[k + 1] is None:
+            continue
+        piece = math.hypot(at[k + 1][0] - at[k][0], at[k + 1][1] - at[k][1]) * SAMPLE
+        if kinds[k] == WATER:
+            swum += piece
+        else:
+            land += piece
+    return land, swum
+
+
+def ways(tile, gates, members, start, targets, water):
+    """From a gate's point to each of the targets' (gates of its part): Dijkstra over the tile's rectangles, each step
+    from where a rectangle was entered to the nearest point of the next opening, a yard swum at water; then each way's
+    line pulled straight through its openings. {target: (land, up, down, swum)} in whole yards."""
+    rects, kind, opens, key = tile["rects"], tile["kind"], tile["opens"], tile["key"]
+    su, sv = point(*gates[start][:3])
+    cost, entry, parent, heap = {}, {}, {}, []
+    for rect, seg in members[start]:
+        eu, ev = held(su, sv, seg)
+        here = math.hypot(eu - su, ev - sv) * SAMPLE
+        if rect not in cost or here < cost[rect]:
+            cost[rect], entry[rect], parent[rect] = here, (eu, ev), None
+            heapq.heappush(heap, (here, rect))
+    done = set()
+    while heap:
+        here, rect = heapq.heappop(heap)
+        if rect in done:
+            continue
+        done.add(rect)
+        weight = water if kind[rect] == WATER else 1.0
+        fu, fv = entry[rect]
+        for side, first, last, there, other in opens[rect]:
+            if there != key or other in done:
+                continue
+            qu, qv = held(fu, fv, segment(rects[rect], side, first, last))
+            rise = (rects[other][4] - rects[rect][4]) / 4
+            new = here + math.hypot(qu - fu, qv - fv) * SAMPLE * weight + (rise * CLIMB if rise > 0 else 0.0)
+            if other not in cost or new < cost[other]:
+                cost[other], entry[other], parent[other] = new, (qu, qv), (rect, side, first, last)
+                heapq.heappush(heap, (new, other))
+    found = {}
+    for target in targets:
+        tu, tv = point(*gates[target][:3])
+        best = None
+        for rect, seg in members[target]:
+            if rect in cost:
+                fu, fv = entry[rect]
+                qu, qv = held(tu, tv, seg)
+                weight = water if kind[rect] == WATER else 1.0
+                total = cost[rect] + math.hypot(qu - fu, qv - fv) * SAMPLE * weight + math.hypot(tu - qu, tv - qv) * SAMPLE
+                if best is None or total < best[0]:
+                    best = (total, rect)
+        if best is None:
+            continue
+        chain, portals, rect = [best[1]], [], best[1]
+        while parent[rect] is not None:
+            before, side, first, last = parent[rect]
+            portals.append(portal(segment(rects[before], side, first, last), side))
+            chain.append(before)
+            rect = before
+        chain.reverse()
+        portals.reverse()
+        land, swum = lengths(su, sv, portals, tu, tv, [kind[rect] for rect in chain])
+        up = down = 0.0
+        for a, b in zip(chain, chain[1:]):
+            rise = (rects[b][4] - rects[a][4]) / 4
+            if rise > 0:
+                up += rise
+            else:
+                down -= rise
+        found[target] = (round(land), round(up), round(down), round(swum))
+    return found
+
+
+def number(land, up, down, swum):
+    """A way's four numbers in one (its parts' room: land and swum under 8192, up and down under 1024 yards)."""
+    return min(land, LAND - 1) + LAND * min(up, 1023) + UP * min(down, 1023) + DOWN * min(swum, LAND - 1)
+
+
+def field(job):
+    """One tile's field gates: (key, text, its gates, pairs)."""
+    key, tile, around, check = job
+    rects, opens, part = tile["rects"], tile["opens"], tile["part"]
+    gates = [(side, a, b, mine) for side in range(4) for a, b, mine in around[side]]
+    # Each gate's rectangles on this tile: those of its part with an opening across its side within its stretch.
+    edges = defaultdict(list)
+    for rect, list_ in enumerate(opens):
+        for side, first, last, there, _ in list_:
+            if there != key:
+                edges[side].append((first, last, rect))
+    members = []
+    for side, a, b, mine in gates:
+        members.append([(rect, segment(rects[rect], side, max(first, a), min(last, b)))
+                        for first, last, rect in edges[side] if part[rect] == mine and first <= b and last >= a])
+    by_part = defaultdict(list)
+    for at, gate in enumerate(gates):
+        by_part[gate[3]].append(at)
+    costs, pairs = [], 0
+    for _, numbers in sorted(by_part.items()):
+        if len(numbers) < 2:
+            continue
+        foot, ride = {}, {}
+        for x, start in enumerate(numbers):
+            targets = numbers[x + 1:]
+            found = ways(tile, gates, members, start, targets, WATERS[0])
+            foot.update(((start, target), value) for target, value in found.items())
+            if any(value[3] for value in found.values()):
+                ride.update(((start, target), value) for target, value in
+                            ways(tile, gates, members, start, targets, WATERS[1]).items())
+        costs.append(len(numbers))
+        costs.extend(at + 1 for at in numbers)
+        other = []
+        pair = 0
+        for x, start in enumerate(numbers):
+            for target in numbers[x + 1:]:
+                pair += 1
+                value = foot.get((start, target), (0, 0, 0, 0))
+                costs.append(number(*value))
+                swims = ride.get((start, target))
+                if swims is not None and swims != value:
+                    other.extend([pair, number(*swims)])
+        pairs += pair
+        costs.append(len(other) // 2)
+        costs.extend(other)
+    lists = [[value for a, b, mine in around[side] for value in (a, b, mine)] for side in range(4)]
+    return key, pack([FORMAT, check, len(rects)] + lists + [costs]), len(gates), pairs
+
+
+def check_of(blocks, key):
+    """CRC-32 of a tile's block and its four neighbours' (north, east, south, west), each followed by a line feed."""
+    text = "".join((blocks.get(at, "") + "\n") for at in (key, key + STEP[0], key + STEP[1], key + STEP[2], key + STEP[3]))
+    return zlib.crc32(text.encode("ascii"))
+
+
+def lines(path):
+    """The newest version of each tile's line: {key: (its map, its block)}; a tile gone left out."""
+    found = {}
+    for text in path.read_text(encoding="utf-8").splitlines():
+        if not text.strip():
+            continue
+        line = json.loads(text)
+        fields = line.get("fields", line)
+        if line.get("gone"):
+            found.pop(line["key"], None)
+        elif "block" in fields:
+            found[line["key"]] = fields["block"]
+    return found
+
+
+def main():
+    args = sys.argv[1:]
+    if args and args[0] in ("-h", "--help"):
+        print(__doc__.strip())
+        return 0
+    only, processes = None, 24
+    if "--only" in args:
+        at = args.index("--only")
+        only = {int(key) for key in args[at + 1].split(",")}
+        del args[at:at + 2]
+    if "--processes" in args:
+        at = args.index("--processes")
+        processes = int(args[at + 1])
+        del args[at:at + 2]
+    if len(args) > 1:
+        print(__doc__.strip().splitlines()[-3], file=sys.stderr)
+        return 2
+    blocks = lines(Path(args[0]) if args else MASTER)
+    keys = sorted(blocks)
+    if only:
+        wanted = {key + step for key in only for step in (0, -GRID - 1, -GRID, -GRID + 1, -1, 1, GRID - 1, GRID, GRID + 1)}
+        keys = [key for key in keys if key in wanted]
+    tiles = {}
+    for key in keys:
+        tiles[key] = read(blocks[key])
+        tiles[key]["key"] = key
+    resolve(tiles)
+    for key, tile in tiles.items():
+        tile["part"] = parts(tile, key)
+    borders = {(key, side): border(tiles, key, side) for key in tiles for side in (1, 2)}
+    jobs = [(key, {name: tiles[key][name] for name in ("rects", "kind", "opens", "part", "key")},
+             sides(tiles, borders, key), check_of(blocks, key))
+            for key in keys if not only or key in only]
+    STAGING.parent.mkdir(parents=True, exist_ok=True)
+    made, size, gates_count, pairs_count = {}, 0, 0, 0
+    with Pool(processes) as pool:
+        for done, (key, text, gates, pairs) in enumerate(pool.imap_unordered(field, jobs, chunksize=1), 1):
+            made[key] = text
+            size, gates_count, pairs_count = size + len(text), gates_count + gates, pairs_count + pairs
+            if done % 250 == 0 or done == len(jobs):
+                print(f"{done} of {len(jobs)} tiles", file=sys.stderr, flush=True)
+    with open(STAGING, "w", encoding="utf-8") as out:
+        for key in sorted(made):
+            line = {"set": "Walking", "key": key, "game": "forever", "build": BUILD, "src": "game",
+                    "fields": {"gates": made[key]}}
+            out.write(json.dumps(line, separators=(",", ":")) + "\n")
+    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(made)} tiles, {gates_count // 2} gates, {pairs_count} pairs of "
+          f"gates, {size // 1024} KB.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1484,8 +1484,22 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     height) until they stand where only one floor lies under them;
   - no route inside an instance (the game gives no position there).
   To come: a travel pin's ways under the mouse (*Map pins*).
+- **Built (2026-10-22): walks priced by the coarse layer first.** Saneroki: far pins took a couple of seconds to plan.
+  Measured outside the game (the planner over the whole real data, the code of 2c4a814): 95 % of a plan's time was its
+  searches, about 500 ms a route, 3.4 s at worst, and 13 of 383 searches stopped at `Search.MOST` (200,000 rectangles,
+  about 1.3 s each): every one a walk 5 to 11 times its straight line (a Horde character deep in the Alliance's lands)
+  that the journey had guessed at `Planner.DETOUR` (1.3) times it. Trimming the search's inner loop gained nothing: the
+  gain had to come from looking at far fewer rectangles. Now (*The walking data*, its coarse layer):
+  - each walk of the journey chosen is priced first (`Search.Price`: over the coarse layer, a few milliseconds to a few
+    tens), and the journey chosen again with the prices in place of the guesses as before (`Planner.WORSE`,
+    `Planner.TRIES`, `Planner.BUDGET` now in nodes: rectangles and gates); so a walk many times its straight line is
+    never searched as a short one. Only once the journey stays are its walks searched for their lines
+    (`Search.Walk`, along their coarse ways), each once;
+  - a start priced again in one plan (a portal's landing in Dalaran, priced against each lift of the Undercity) goes
+    out of its tiles from the ways out found the first time (`Out`, the plan's memo).
+  - **Weighed and left:** the guess of every walk from the coarse layer: the journey weighs some 1,500 walks each time
+    it is chosen, too many to search even coarsely; the priced ones replace their guesses as before.
 
-### The walking data
 
 Core's set *Walking*, read with Core at the login (every set is Core's since 2026-10-21): per terrain tile a
 block, packed (the game's `C_EncodingUtil` unpacks it), unpacked on first need, the `Walk.KEEP` (48) asked for
@@ -1661,6 +1675,53 @@ samples, *The ground as the game draws it*, below).
     down to the cellar; a wall 4 yards high between the top room and the tower's outer ramp at 130 yards): the
     portals join the two rooms and the cellar with Dalaran, and a route from the streets to a pin there ends on the
     street floor under it.
+- **Built (2026-10-22): the coarse layer.** A walk was searched rectangle by rectangle wherever its length reached (A*
+  with the straight line as its guide looks at everything that much nearer): a walk across a zone 20 to 65 ms, one many
+  times its straight line given up at `Search.MOST`. Over the walking data now a layer of the tiles' gates, the set
+  *Walking*'s field `gates` (made from its blocks by `dev/tools/walk-gates`, read by `Gates.lua`):
+  - **A part** of a tile: its rectangles one can walk between without leaving it (its surfaces joined by the openings
+    between them on the tile), numbered by its lowest surface. **A gate:** where a part of a tile meets a part of the
+    next tile across their border: the openings between the two, joined where they touch along the border, cut into
+    even pieces of at most 64 samples (133 yards: a way through a long stretch is priced through its middle, at most
+    some 17 yards dearer a border crossed); its point the middle of its stretch. The same on both tiles, listed in order
+    along the border (its number, `Gates.Id`, the border's and its place).
+  - **A cost** between two gates of a part: the shortest way over the part's rectangles from the one's point to the
+    other's (Dijkstra), measured along the line pulled through the openings it passes: yards on land, yards swum, yards
+    climbed and gone down, each whole, packed in one number (land + 2^13 x up + 2^23 x down + 2^33 x swum); chosen with
+    a yard swum at 1.5 yards on land (on foot) and, where it swims, again at 3 (a rider), that one kept besides where it
+    differs; the game prices both at the walker's own price and takes the cheaper (`Gates.Cost`). Each yard up costs
+    `Search.CLIMB` more, each way its own climb.
+  - **The field** of a tile: CBOR, deflated, base64 (as the blocks): its format, its check (CRC-32 of its block and its
+    four neighbours': `dev/tests/walk.py` fails on a layer not made from the master's blocks as they are: after
+    `dev/tools/walk-data`, run `dev/tools/walk-gates` and take it in too), its rectangles' count (the game passes over a
+    layer made from another block), its gates side by side, the costs part by part. 21,898 gates, 311,570 ways between
+    two gates of a part, 2.0 MB (the set 26.1 MB, was 24.1), made in some 40 seconds; some 16 KB a tile unpacked, the
+    400 asked for last kept (`Gates.KEEP`).
+  - **The search in two steps** (`Search.lua`): the price, rectangle by rectangle only on the tiles where the walk
+    starts and ends, across every other tile by its gates (reached where an opening crosses a gate's stretch, from its
+    middle held within the opening; across a tile to its part's other gates at their costs); where the start's tiles
+    and the end's lie apart, what the walk costs from each gate on is found back from the end first over the gates
+    alone (`Back`, until each way out of the start's tiles is reached or what is left costs `Search.SLACK` more than
+    the cheapest), and the search out of the start's tiles makes for the cheapest way out (a price looked at 29 % fewer
+    nodes so). Then the line: rectangle by rectangle only on the
+    tiles that way crosses, each step aimed at its next gate, what is left estimated along it `Search.AIM` (1.2) times
+    (a third fewer rectangles for a few tenths of a percent on the cost); on every tile where that finds none.
+  - **Measured** outside the game (200 routes between NPCs, both sides): 119 ms a route (505), the slowest 0.7 s (3.4),
+    one walk drawn straight (nine: the capped ones are found), none given up; with the game's 48 tiles kept unpacked
+    213 ms, the slowest 1.0 s (the code before did not finish 200 routes in 20 minutes so). Of 40 walks of 300 to 8,000
+    yards: the price within 3 % of the old search's cost (median 1 % under), the line's cost median 0.2 % over (90th
+    2.8 %), 70 ms a walk (700), the price 24 ms. The 29 fixed journeys keep their legs; the teleports' 16 all run from
+    the player to the pin.
+  - **A tile's openings only once needed** (`Walk.Links`): an unpacking took some 5 ms, most of it its openings (a
+    table each, some 1.5 MB a tile); looking up the floors at a place needs none (the places' regions when a plan
+    starts unpack a hundred tiles), so they are worked out the first time a search or the floor's following needs them
+    (0.1 ms an unpacking then, 310 KB a tile).
+  - **Weighed and left:** each step of the line aimed at the end, as the search alone does (the line's cost median 1.8 %
+    over: in a winding way the steps cut toward the end through openings that lead elsewhere); aimed within the next
+    gate's stretch where the line on to the gate after it crosses it (no better than its middle); the line searched gate
+    by gate (its turns forced through the gates' middles); finer parts in densely built tiles (Dalaran's 15,000
+    rectangles: a walk out of it is priced through all of them where its way out winds; quarters of a tile cut
+    rectangles that cross them).
 - **Not yet:** one-way drops (a ledge one can jump down but not climb) are no way; an instance's portal or a closed
   gate is no collision (the walking data goes through Zul'Gurub's gate); a doodad the game shows only at times (a
   door, a gate) is a wall all the time; the giant trees' roots are walls where they lie on steep ground; diving (a

@@ -83,6 +83,10 @@ rectangles, --processes N.
 
 Needs Python with NumPy (and Pillow for the pictures). About the game's build of the set Tiles (BUILD).
 
+Once a run is taken in (dev/tools/data import dev/data/staging/walking.jsonl --apply --take), the set's coarse layer is
+made anew from the master's blocks: dev/tools/walk-gates, its staging taken in the same way (dev/tests/walk.py fails on a
+layer not made from the blocks as they are).
+
 Usage:  dev/tools/walk-data <game files> <client tables> [--maps maps] [--only keys] [--pictures folder] [--processes N]
 """
 import base64

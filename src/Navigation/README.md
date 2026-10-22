@@ -355,15 +355,26 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   walls) and water: per terrain tile a block (base64, deflate, CBOR, read by the game's `C_EncodingUtil`) of surfaces
   and rectangles of floors, 2.08 yards a sample, each with its height, kind (the ground, water, a building's floor)
   and region, and the openings into its neighbours. Unpacked when first needed, the `Walk.KEEP` asked for last kept
-  (in a job of Core's scheduler an unpacking may end the job's frame); the openings of two rectangles of one surface
-  that touch are worked out from the rectangles, written ones once on their tile get their other way (each opening
-  lies on the facing sides of its two rectangles and holds both ways, as `dev/tools/walk-data` makes them). `Under`,
+  (in a job of Core's scheduler an unpacking may end the job's frame); its openings only the first time a search or
+  the floor's following needs them (`Walk.Links`: looking up the floors at a place needs none, and they take most of
+  an unpacking's time and memory): those of two rectangles of one surface that touch worked out from the rectangles,
+  written ones once on their tile with their other way (each opening lies on the facing sides of its two rectangles
+  and holds both ways, as `dev/tools/walk-data` makes them). `Under`,
   `Around`, `Nearest`, `Regions`, `Opening`, `Openings`, `Portal`, `Gap`. Floors lie one over the other, and the game
   tells no height of the player (`UnitPosition`'s is always 0): the floor a walker stands on is followed from the
   rectangle they stood on through the openings nearest the way they went (`Walk.Follow`: a cave's mouth, not the path
   up the hill over it), and chosen where it cannot be (`Walk.Floor`): near the height they had (within `Walk.RISE`),
   else outdoors the highest under them, indoors the lowest within `Walk.ROOF` yards, a building's floor before the
   ground (the game's indoors is inside a building or a cave: not the ground deep under Stormwind's buildings).
+- **Gates** (`Gates.lua`, no frames): the walking data's coarse layer, the set *Walking*'s field `gates`, made by
+  `dev/tools/walk-gates` from its blocks: per terrain tile its gates, where one walks across its border into the next
+  tile (the openings between a part of the tile and a part of the next, joined along the border and cut into pieces of
+  at most 64 samples, each the same on both tiles: `Gates.Id`, `Gates.Ends`; a part: the rectangles one walks between
+  without leaving the tile, `Gates.Parts`), and what the walk between each two gates of one part costs inside the tile
+  (`Gates.Cost`: its yards on land, those swum at the walker's price, each yard up `Search.CLIMB` more, of the way on
+  foot and the one a rider takes instead, where the one on foot swims, the cheaper). Unpacked when first needed (some
+  16 KB a tile), the `Gates.KEEP` asked for last kept; a tile's layer made from another block than the one the game
+  holds (another number of rectangles) is passed over there.
 - **Search** (`Search.lua`, no frames): a walk between two points: A* over the rectangles through their openings
   (from where a rectangle was entered to where the straight line on to the end crosses the next opening, so open
   ground costs its straight way; a yard swum at the character's own price, its speed on land over its speed in
@@ -382,7 +393,17 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   reaches). What lies off the walking data is drawn straight and costs `Search.STRAIGHT` times its yards,
   so the line runs from the start to the end itself; the search tells those yards at the end, and `"off"` where no
   floor lies near the start or the end at all (nothing to search). Then the line pulled straight through the openings (a funnel,
-  each opening drawn in from its ends); the heap keeps each node's f as it was put in.
+  each opening drawn in from its ends); the heap keeps each node's f as it was put in. In two steps over the coarse
+  layer: first the price (`Search.Price`), rectangle by rectangle only on the tiles the walk starts and ends on, across
+  every other by its gates (a gate reached where an opening crosses its stretch, from its middle held within the
+  opening; across a tile to its part's other gates at their cost); where the start's tiles and the end's lie apart,
+  guided out of the start's tiles by what the walk costs from each gate on, found back from the end first over the
+  gates (`Back`, until every way out of them is reached or what is left costs `Search.SLACK` more than the cheapest),
+  and a start priced again in one plan goes out of its tiles as the first time (`Out`, kept in the planner's memo);
+  then the line (`Search.Walk`), rectangle by rectangle on the tiles that way crosses only, each step aimed at its next
+  gate, what is left estimated along it (`Search.AIM` times: a little greedy), on every tile where it is not found so
+  (a layer made from other blocks). A walk many times its straight line is priced at once, and a long one looks at a
+  band of rectangles along its way, not at everything as near as its length.
 - **Planner** (`Planner.lua`, no frames): the way to the map pin, a graph over the player, the pin, the known
   flight points, the docks, the tram's entrances, the lifts' and portals' ends and the hearthstone's place on every
   plane (the continents and
@@ -411,15 +432,17 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   `Walk.Landing` within `Planner.ARRIVE` yards, a guess (the place is not yet the game's own, and Teleport:
   Stormwind's height is the Wizard's Sanctum's cellar's, closed in), else like the hearthstone's place; after the leap
   the floor followed is that one); the quickest chosen (Dijkstra; a place reached on foot is a node of its own, from which no walk
-  goes on: the walk straight on is a way of its own), the walks then searched
+  goes on: the walk straight on is a way of its own), the walks then priced by the coarse layer (`Search.Price`)
   (the first from the floor the player stands on: followed every `Planner.FOOT` seconds while there is a pin,
   `Walk.Follow`, else chosen, `Walk.Floor`, and chosen anew after a leap of `Planner.LEAP` yards between two looks,
   a portal; none on a flight, a boat, a zeppelin or the tram; one chosen among others under the player a guess, for which the
   journey counts the regions of every floor around them, until they stand where one floor alone lies under them;
   after a leap, or a hop faster than `Planner.HOP` yards a second (a portal a few yards across: the Wizard's
   Sanctum's, Dalaran's Violet Citadel's), to where a portal brings one, its floor there) and the journey chosen again, up to `Planner.TRIES`
-  times while the plan's searches have looked at fewer than `Planner.BUDGET` rectangles (`Search.looked`), when one is
-  much longer than guessed or not found: a walk not found is none, and where its two places share
+  times while the plan's searches have looked at fewer than `Planner.BUDGET` nodes (`Search.looked`), when one is
+  much dearer than guessed or not found (so a walk many times its straight line is never searched as a short one);
+  once the journey stays, its walks searched along their coarse ways for their lines (`Search.Walk`): a walk not
+  found is none, and where its two places share
   no region, so is every walk between those regions, and one that ends only as near as one walks (Teldrassil's top
   and the shore under it: the portal is the way; where it stays the way, drawn as near as one walks, then straight); one without walking data at an end stays a guess, drawn straight:
   all one job of Core's scheduler, which a new pin stops; the line of the pin before goes at once. Where along the
@@ -542,7 +565,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 | `Painted.lua` | The view Atlas: the module SaneUI_Atlas found at login, loaded when first drawn, its blocks at the level the zoom asks for |
 | `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, gathered. No frames |
 | `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings; the floor a walker stands on, followed or chosen. No frames |
-| `Search.lua` | A walk between two points over the walking data, from the floor the start stands on to a floor at the end. No frames |
+| `Gates.lua` | The walking data's coarse layer: each tile's gates into the next tiles, what the walks between two of them cost, the parts of a tile. No frames |
+| `Search.lua` | A walk between two points over the walking data, from the floor the start stands on to a floor at the end: priced across the tiles by their gates, then drawn along that way. No frames |
 | `Lifts.lua` | The lifts of Core's set *Travel* on the walking data: each end at its landing, the levels they join (stacked or side by side), where a place stands among them. No frames |
 | `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by lift, through portals, by the hearthstone, by the teleports it has; where along it the player is. No frames |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
@@ -571,6 +595,15 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-22, long walks found fast:** a far pin took the planner seconds: each walk was searched rectangle by
+  rectangle as far as its length reached, and one many times its straight line (a Horde character deep in the
+  Alliance's lands) was tried as a short one and given up after 200,000 rectangles, then drawn straight. The walking
+  data has a coarse layer now (`Gates.lua`, `dev/tools/walk-gates`): per tile its gates into the next and what the
+  walks between them cost. A walk is priced over it first (only the tiles it starts and ends on rectangle by
+  rectangle) and drawn along that way; the planner prices the walks of the journey it chose before it searches any.
+  Offline over 200 routes between NPCs: 119 ms a route (505), the slowest 0.7 s (3.4), one walk drawn straight (nine),
+  none given up; a walk costs as before within a few percent (two tenths on the median). A tile's openings are worked
+  out only when a search needs them (looking up the floors at a place needs none).
 - **2026-10-22, water is slow:** a route to Stormwind harbor's boat swam 942 yards along the coast at Longshore, as a
   yard swum cost only twice a yard walked. Walks are now timed at the character's own speeds (as the game tells
   them, riding where it was seen riding), so a rider keeps to land where one on foot swims across; and each step aims

@@ -5,22 +5,36 @@ local _, ns = ...
 --  A walk from one point of a plane to another over the walking data (Walk.lua):
 --  the rectangles from the floor the start stands on to a floor at the end,
 --  through their openings, the shortest by A* (each step costs the way from where
---  the rectangle was entered to where the straight line on to the end crosses the
---  opening, so open ground costs its straight way, not a stair of nearest points;
---  a yard swum the water's price, Search.WATER or the planner's; and Search.CLIMB
---  times what it climbs); then the line pulled straight
---  through the openings it passes (a funnel: corners only where something is in
---  the way), the openings drawn in a little from their ends so the line does not
---  graze a wall. Knows no frames.
+--  the rectangle was entered to where the straight line on to the next aim crosses
+--  the opening, so open ground costs its straight way, not a stair of nearest
+--  points; a yard swum the water's price, Search.WATER or the planner's; and
+--  Search.CLIMB times what it climbs); then the line pulled straight through the
+--  openings it passes (a funnel: corners only where something is in the way), the
+--  openings drawn in a little from their ends so the line does not graze a wall.
+--  Knows no frames.
 --
---      Search.Walk(continent, u1, v1, u2, v2, from, check, water)   points { u1, v1, ..., u2, v2 }, the cost in yards
---                      and the yards from the walking data to the end (0: on it; more than Search.NEAR: as near as
---                      one walks, Search.FAR); nil and "off" where the walking data has no floor near the start or the end
---                      (nothing to search), nil where no way is found (or Search.MOST rectangles were looked at
---                      first); from: the floor the start stands on ({ key, index }, Walk.Follow's), else every
---                      floor under it; check: called between pieces of the work (in a job of Core's scheduler,
---                      its Steps.Check); water: what a yard swum costs in yards on land (the walker's speed on land
---                      over theirs in water), else Search.WATER
+--  In two steps, over the coarse layer (Gates.lua): first the price (Search.Price),
+--  rectangle by rectangle only on the tiles where the walk starts and ends, across
+--  the others by their gates and what the walks between them cost (where the start's
+--  tiles and the end's lie apart: with what the walk costs from each gate on, found
+--  back from the end, to guide it out of the start's tiles, Back); then the line
+--  (Search.Walk), rectangle by rectangle on the tiles that way crosses only, each
+--  step aimed at the way's next gate. So a long walk looks at a band of rectangles
+--  along its way, not at everything as near as its length, and a walk many times
+--  its straight line is priced at once. A start priced again in one plan goes out
+--  of its tiles as the first time (Out, kept in the planner's memo).
+--
+--      Search.Price(continent, u1, v1, u2, v2, from, check, water, memo)   the cost in yards on land, the yards
+--                      from the walking data to the end (0: on it; more than Search.NEAR: as near as one walks,
+--                      Search.FAR) and what Search.Walk needs to draw it; nil and "off" where the walking data has no
+--                      floor near the start or the end (nothing to search), nil where no way is found (or Search.MOST
+--                      nodes were looked at first); from: the floor the start stands on ({ key, index }, Walk.Follow's),
+--                      else every floor under it; check: called between pieces of the work (in a job of Core's
+--                      scheduler, its Steps.Check); water: what a yard swum costs in yards on land (the walker's speed on
+--                      land over theirs in water), else Search.WATER; memo: a table kept while one plan is made
+--      Search.Walk(continent, u1, v1, u2, v2, from, check, water, found)   points { u1, v1, ..., u2, v2 }, the cost and
+--                      the yards from the walking data to the end, or nil (and "off") as Search.Price; found: what
+--                      Search.Price gave for this walk, else it is priced first
 --
 --  The start: on its floor (where that is a guess, the others under it too, taken
 --  only where no way leaves that one, Search.ASIDE), or the floors under it and
@@ -36,7 +50,7 @@ local _, ns = ...
 --  Search.STRAIGHT times its yards: the line always runs from the start to the end,
 --  and a way that reaches the end on foot is taken where there is one.
 -------------------------------------------------------------------------------
-local Walk = ns.Walk
+local Walk, Gates = ns.Walk, ns.Gates
 local Search = {}
 ns.Search = Search
 
@@ -53,9 +67,13 @@ Search.EDGE = 0.8       -- yards an opening is drawn in from its ends
 Search.ASIDE = 500      -- yards more a walk from another floor at the start costs than one from the floor it was
                         -- guessed on: taken only where no way leaves that one (a roof, a rock's top over a street, a
                         -- floor the walking data closes in), and not counted in its cost
-Search.MOST = 200000    -- rectangles looked at, at most, before a search gives up
-Search.looked = 0       -- rectangles looked at by every search so far (a plan counts its own: Planner.BUDGET)
-Search.EVERY = 64       -- rectangles looked at between two looks at the frame's time
+Search.MOST = 200000    -- nodes (rectangles, gates) looked at, at most, before a search gives up
+Search.looked = 0       -- nodes looked at by every search so far (a plan counts its own: Planner.BUDGET)
+Search.EVERY = 64       -- nodes looked at between two looks at the frame's time
+Search.AIM = 1.2        -- times the estimate of what is left counts along the coarse way: the line's search a little
+                        -- greedy (a third fewer rectangles, the walk a few tenths of a percent longer)
+Search.SLACK = 1000     -- yards more than the cheapest way out of the start's tiles found so far the estimate back
+                        -- from the end goes on for the others (Back)
 
 local floor, sqrt = math.floor, math.sqrt
 local GOAL = -1 -- the end itself, reached from each floor at it
@@ -247,25 +265,83 @@ local function Portal(tile, index, side, first, last)
     return { u2, v2, u1, v1 }
 end
 
--- The search itself; check() is called every Search.EVERY rectangles (the scheduler's Check, or nothing).
-local function Run(continent, u1, v1, u2, v2, start, check, water)
-    if not Walk.Ready() then return nil, "off" end
-    local sources, own = Sources(continent, u1, v1, start)
-    if #sources == 0 then return nil, "off" end
-    local regions = {}
-    for _, source in ipairs(sources) do regions[source[1].region[source[2]]] = true end
-    local goals = Goals(continent, u2, v2, regions)
-    -- None of the start's regions near the end: no way, where the end has floors at all near it.
-    if not goals then return nil, not Walk.Nearest(continent, u2, v2, Search.FAR) and "off" or nil end
+
+-- The next tile north, east, south, west.
+local STEP = { [0] = -64, [1] = 1, [2] = 64, [3] = -1 }
+
+-- A point on a tile's side, so many samples along it (from its west end, or its north end).
+local function OnSide(tile, side, along)
+    local s = Walk.SAMPLE
+    if side == 0 then return tile.left + along * s, tile.top end
+    if side == 2 then return tile.left + along * s, tile.top - Walk.SIDE * s end
+    if side == 1 then return tile.left + Walk.SIDE * s, tile.top - along * s end
+    return tile.left, tile.top - along * s
+end
+
+-- The samples of a rectangle's side: its first and last.
+local function SideOf(tile, index, side)
+    local r, base = tile.rects, (index - 1) * 5
+    if side == 0 or side == 2 then return r[base + 1], r[base + 1] + r[base + 3] - 1 end
+    return r[base + 2], r[base + 2] + r[base + 4] - 1
+end
+
+-- The search: A* from the sources (or from the ways out of the start's tiles, opts.exits) to the goals, over
+-- rectangles (ids from Id, above 0) and gates (minus their number); check() is called every Search.EVERY nodes.
+-- opts:
+--   near    [tile key] = true: the tiles searched rectangle by rectangle (where the walk starts and ends); the
+--           others are crossed by their gates (Gates.lua), where both tiles of a border have them. nil: every tile
+--   exits   with near: where the walk leaves the start's tiles and what each costs (Out); the search starts there
+--   guide   with near: what the walk costs from each gate on (Back): the estimate of what is left from a gate, and
+--           on the start's tiles from the cheapest way out of them
+--   out     with near: no goal; every rectangle of the near tiles reached, each gate out of them reached, not crossed
+--   way     the coarse way (Way): only its tiles searched, each step aimed at its next gate, the estimate of what is
+--           left the way's from there (Search.AIM times)
+-- Gives the search's tables, or nil where nothing was found (or Search.MOST nodes were looked at).
+local function Run(sources, goals, u2, v2, check, water, opts)
+    local near, way, guide, out = opts.near, opts.way, opts.guide, opts.out
     local g, from, enterU, enterV, tiles, indexes = {}, {}, {}, {}, {}, {}
-    local viaSide, viaFirst, viaLast = {}, {}, {} -- the opening each floor was reached through, from its from
+    local viaSide, viaFirst, viaLast, across, aim, first = {}, {}, {}, {}, {}, {}
     local closed, heap, keys = {}, {}, {}
-    for _, source in ipairs(sources) do
-        local tile, index, su, sv, cost = source[1], source[2], source[3], source[4], source[5]
-        local id = Id(tile, index)
-        if g[id] == nil or cost < g[id] then
-            g[id], tiles[id], indexes[id], enterU[id], enterV[id] = cost, tile, index, su, sv
-            Push(heap, keys, cost + sqrt((u2 - su) ^ 2 + (v2 - sv) ^ 2), id)
+    local within, ahead = way and way.tiles, way and #way.u or 0
+    local weight = way and Search.AIM or 1
+    -- The estimate of what is left from a point (of a rectangle on tile key, or of the gate gid), its next gate on the
+    -- way m.
+    local function Rest(pu, pv, m, key, gid)
+        if out then return 0 end
+        if m <= ahead then return (sqrt((way.u[m] - pu) ^ 2 + (way.v[m] - pv) ^ 2) + way.rest[m]) * weight end
+        if guide then
+            if gid then return guide.cost[gid] or guide.Least(pu, pv) end
+            if guide.zone[key] then
+                local best, exits = math.huge, guide.exits
+                for e = 1, #exits, 3 do
+                    local du, dv = exits[e] - pu, exits[e + 1] - pv
+                    local rest = sqrt(du * du + dv * dv) + exits[e + 2]
+                    if rest < best then best = rest end
+                end
+                return best
+            end
+        end
+        return sqrt((u2 - pu) ^ 2 + (v2 - pv) ^ 2) * weight
+    end
+    local function Reach(nid, cost, parent, pu, pv, m)
+        if g[nid] == nil or cost < g[nid] then
+            g[nid], from[nid], enterU[nid], enterV[nid], aim[nid] = cost, parent, pu, pv, m
+            first[nid] = parent and first[parent] or nid
+            if nid > 0 then
+                Push(heap, keys, cost + Rest(pu, pv, m, floor(nid / 65536)), nid)
+            else
+                Push(heap, keys, cost + Rest(pu, pv, m, nil, -nid), nid)
+            end
+            return true
+        end
+    end
+    if opts.exits then
+        for gid, exit in pairs(opts.exits) do Reach(-gid, exit[1], nil, exit[2], exit[3], 1) end
+    else
+        for _, source in ipairs(sources) do
+            local tile, index = source[1], source[2]
+            local id = Id(tile, index)
+            if Reach(id, source[5], nil, source[3], source[4], 1) then tiles[id], indexes[id] = tile, index end
         end
     end
     local seen = 0
@@ -278,54 +354,181 @@ local function Run(continent, u1, v1, u2, v2, start, check, water)
             Search.looked = Search.looked + 1
             if seen > Search.MOST then return nil end
             if check and seen % Search.EVERY == 0 then check() end
-            local tile, index = tiles[id], indexes[id]
-            local weight = tile.kind[index] == Walk.WATER and water or 1
-            local fu, fv, here, z = enterU[id], enterV[id], g[id], tile.rects[index * 5] / 4
-            -- A floor at the end: the end itself from it.
-            local goal = goals[id]
-            if goal then
-                local du, dv = goal[3] - fu, goal[4] - fv
-                local cost = here + sqrt(du * du + dv * dv) * weight + goal[5]
-                if g[GOAL] == nil or cost < g[GOAL] then
-                    g[GOAL], from[GOAL] = cost, id
-                    Push(heap, keys, cost, GOAL)
+            local fu, fv, here, m = enterU[id], enterV[id], g[id], aim[id]
+            if id > 0 then
+                local tile, index = tiles[id], indexes[id]
+                local weight = tile.kind[index] == Walk.WATER and water or 1
+                local z = tile.rects[index * 5] / 4
+                local tu, tv = u2, v2 -- where the steps aim
+                if m <= ahead then tu, tv = way.u[m], way.v[m] end
+                -- A floor at the end: the end itself from it.
+                local goal = goals[id]
+                if goal then
+                    local du, dv = goal[3] - fu, goal[4] - fv
+                    local cost = here + sqrt(du * du + dv * dv) * weight + goal[5]
+                    if g[GOAL] == nil or cost < g[GOAL] then
+                        g[GOAL], from[GOAL] = cost, id
+                        Push(heap, keys, cost, GOAL)
+                    end
                 end
-            end
-            for n = 1, #tile.opens[index] do
-                local side, first, last, next, other = Walk.Opening(tile, index, n)
-                local nid = side and next.key * 65536 + other
-                if nid and not closed[nid] then
-                    local au, av, bu, bv = Walk.Portal(tile, index, side, first, last)
-                    local pu, pv = Through(fu, fv, au, av, bu, bv, u2, v2)
-                    local du, dv = pu - fu, pv - fv
-                    local cost = here + sqrt(du * du + dv * dv) * weight
-                    local rise = next.rects[other * 5] / 4 - z
-                    if rise > 0 then cost = cost + rise * Search.CLIMB end
-                    if g[nid] == nil or cost < g[nid] then
-                        g[nid], from[nid] = cost, id
-                        viaSide[nid], viaFirst[nid], viaLast[nid] = side, first, last
-                        enterU[nid], enterV[nid] = pu, pv
-                        tiles[nid], indexes[nid] = next, other
-                        du, dv = u2 - pu, v2 - pv
-                        Push(heap, keys, cost + sqrt(du * du + dv * dv), nid)
+                local gates = near and Gates.Tile(tile.key)
+                if gates and gates.rects ~= tile.count then gates = nil end -- made from another block: none
+                local opens = (tile.opens or Walk.Links(tile))[index]
+                for n = 1, #opens do
+                    local where = opens[n][4]
+                    if where > 0 and gates and not near[tile.key + STEP[where - 1]]
+                        and Gates.Tile(tile.key + STEP[where - 1]) then
+                        -- Into a tile crossed by its gates: the gates on this side of this rectangle's part that the
+                        -- opening reaches, each from where it crosses the opening (the gate's middle, held within
+                        -- both).
+                        local side = where - 1
+                        local low, high = opens[n][2], opens[n][3]
+                        if not low then low, high = SideOf(tile, index, side) end
+                        local part = Gates.Parts(tile)[index]
+                        local list = gates.bySide[side]
+                        for k = 1, #list do
+                            local a = list[k]
+                            local nid = -gates.id[a]
+                            if gates.part[a] == part and gates.first[a] <= high and gates.last[a] >= low
+                                and not closed[nid] then
+                                local lo, hi = math.max(low, gates.first[a]), math.min(high, gates.last[a]) + 1
+                                local middle = (gates.first[a] + gates.last[a] + 1) / 2
+                                local qu, qv = OnSide(tile, side, middle < lo and lo or middle > hi and hi or middle)
+                                local gu, gv = gates.u[a], gates.v[a]
+                                local cost = here + sqrt((qu - fu) ^ 2 + (qv - fv) ^ 2) * weight
+                                    + sqrt((gu - qu) ^ 2 + (gv - qv) ^ 2)
+                                if Reach(nid, cost, id, gu, gv, m) then across[nid] = nil end
+                            end
+                        end
+                    else
+                        local side, low, high, next, other = Walk.Opening(tile, index, n)
+                        local nid = side and next.key * 65536 + other
+                        if nid and not closed[nid] and (not within or within[next.key]) then
+                            local au, av, bu, bv = Walk.Portal(tile, index, side, low, high)
+                            local pu, pv = Through(fu, fv, au, av, bu, bv, tu, tv)
+                            local du, dv = pu - fu, pv - fv
+                            local cost = here + sqrt(du * du + dv * dv) * weight
+                            local rise = next.rects[other * 5] / 4 - z
+                            if rise > 0 then cost = cost + rise * Search.CLIMB end
+                            -- Across the border the way's next gate lies on: on to the gate after it.
+                            local mm = m
+                            if next ~= tile and mm <= ahead and ((way.a[mm] == tile.key and way.b[mm] == next.key)
+                                or (way.b[mm] == tile.key and way.a[mm] == next.key)) then
+                                mm = mm + 1
+                            end
+                            if Reach(nid, cost, id, pu, pv, mm) then
+                                viaSide[nid], viaFirst[nid], viaLast[nid] = side, low, high
+                                tiles[nid], indexes[nid] = next, other
+                            end
+                        end
+                    end
+                end
+            elseif not out then
+                -- A gate: into the rectangles of a tile searched so (those of the gate's part that open across its
+                -- stretch, each entered where the gate's middle is held within its opening), else across a tile to
+                -- the other gates of its part there.
+                local gid = -id
+                local keyA, keyB, sideA = Gates.Ends(gid)
+                for k = 1, 2 do
+                    local key = k == 1 and keyA or keyB
+                    local side = k == 1 and sideA or (sideA + 2) % 4
+                    local gates = Gates.Tile(key)
+                    local a = gates and gates.byId[gid]
+                    if near[key] or not a then
+                        local tile = Walk.Tile(key)
+                        local other = Gates.Tile(k == 1 and keyB or keyA)
+                        local o = other and other.byId[gid]
+                        local low, high
+                        if a then low, high = gates.first[a], gates.last[a]
+                        elseif o then low, high = other.first[o], other.last[o] end
+                        if tile and low then
+                            local part = a and gates.rects == tile.count and gates.part[a]
+                            local parts = part and Gates.Parts(tile)
+                            local edges = Gates.Edges(tile, side)
+                            local middle = (low + high + 1) / 2
+                            for e = 1, #edges, 3 do
+                                local index, f, l = edges[e], edges[e + 1], edges[e + 2]
+                                local nid = Id(tile, index)
+                                if f <= high and l >= low and (not parts or parts[index] == part) and not closed[nid] then
+                                    local lo, hi = math.max(f, low), math.min(l, high) + 1
+                                    local pu, pv = OnSide(tile, side, middle < lo and lo or middle > hi and hi or middle)
+                                    if Reach(nid, here + sqrt((pu - fu) ^ 2 + (pv - fv) ^ 2), id, pu, pv, m) then
+                                        viaSide[nid], tiles[nid], indexes[nid] = nil, tile, index
+                                    end
+                                end
+                            end
+                        end
+                    else
+                        local group = gates.group[a]
+                        for y = 1, group and group.size or 0 do
+                            local b = group.gates[y]
+                            local nid = -gates.id[b]
+                            if b ~= a and not closed[nid]
+                                and Reach(nid, here + Gates.Cost(gates, a, b, water), id, gates.u[b], gates.v[b], m) then
+                                across[nid] = key
+                            end
+                        end
                     end
                 end
             end
         end
     end
-    if g[GOAL] == nil then return nil end
-    -- The openings passed, from the floor it started on to the one it ends on.
-    local last = from[GOAL]
+    if g[GOAL] == nil and not out then return nil end
+    return { g = g, from = from, enterU = enterU, enterV = enterV, tiles = tiles, indexes = indexes, viaSide = viaSide,
+             viaFirst = viaFirst, viaLast = viaLast, across = across, first = first }
+end
+
+-- The walk's start and end on the walking data: its sources, the floor it stands on (own) and its goals; nil and
+-- "off" where the walking data has no floor near the start or the end, nil where none of the start's regions
+-- reaches the end.
+local function Prepare(continent, u1, v1, u2, v2, start)
+    if not Walk.Ready() then return nil, "off" end
+    local sources, own = Sources(continent, u1, v1, start)
+    if #sources == 0 then return nil, "off" end
+    local regions = {}
+    for _, source in ipairs(sources) do regions[source[1].region[source[2]]] = true end
+    local goals = Goals(continent, u2, v2, regions)
+    -- None of the start's regions near the end: no way, where the end has floors at all near it.
+    if not goals then return nil, not Walk.Nearest(continent, u2, v2, Search.FAR) and "off" or nil end
+    return sources, own, goals
+end
+
+-- The coarse way of a search: its gates from the start on (each one's point, what the walk costs from there on, the
+-- two tiles it lies between) and the tiles it crosses (tiles, the start's and the end's given); nil where it crossed no
+-- gate (found rectangle by rectangle all the way).
+local function Way(state, tiles)
+    local list = {}
+    local id = state.from[GOAL]
+    while id do
+        if id < 0 then table.insert(list, 1, id) end
+        id = state.from[id]
+    end
+    if #list == 0 then return nil end
+    local total = state.g[GOAL]
+    local way = { u = {}, v = {}, rest = {}, a = {}, b = {}, tiles = tiles }
+    for m, nid in ipairs(list) do
+        local keyA, keyB = Gates.Ends(-nid)
+        way.u[m], way.v[m], way.rest[m], way.a[m], way.b[m] = state.enterU[nid], state.enterV[nid], total - state.g[nid],
+            keyA, keyB
+        if state.across[nid] then tiles[state.across[nid]] = true end
+    end
+    return way
+end
+
+-- The line of a search found rectangle by rectangle: the openings passed, pulled straight; points, cost, rest.
+local function Line(state, goals, own, u1, v1, u2, v2)
+    local last = state.from[GOAL]
     local goal = goals[last]
     local list = {}
     local id = last
-    while viaSide[id] do
-        local parent = from[id]
-        table.insert(list, 1, Portal(tiles[parent], indexes[parent], viaSide[id], viaFirst[id], viaLast[id]))
+    local tiles, indexes = state.tiles, state.indexes
+    while state.viaSide[id] do
+        local parent = state.from[id]
+        table.insert(list, 1, Portal(tiles[parent], indexes[parent], state.viaSide[id], state.viaFirst[id], state.viaLast[id]))
         id = parent
     end
-    local su, sv = enterU[id], enterV[id]
-    local cost = g[GOAL]
+    local su, sv = state.enterU[id], state.enterV[id]
+    local cost = state.g[GOAL]
     if own and id ~= own then cost = cost - Search.ASIDE end
     local points = Funnel(su, sv, list, goal[3], goal[4])
     -- The start and the end themselves, where they lie off the walking data: straight to it, straight from it (a
@@ -345,6 +548,209 @@ local function Run(continent, u1, v1, u2, v2, start, check, water)
     return points, cost, rest
 end
 
-function Search.Walk(continent, u1, v1, u2, v2, from, check, water)
-    return Run(continent, u1, v1, u2, v2, from, check, water or Search.WATER)
+-- The tiles of a list of floors (the sources, or the goals): [key] = true.
+local function TilesOf(list)
+    local found = {}
+    for _, place in pairs(list) do found[place[1].key] = true end
+    return found
+end
+
+-- Whether two sets of tiles lie apart: none of the one is any of the other or beside it.
+local function Apart(a, b)
+    for key in pairs(a) do
+        for row = -64, 64, 64 do
+            if b[key + row - 1] or b[key + row] or b[key + row + 1] then return false end
+        end
+    end
+    return true
+end
+
+-- What the walk costs from each gate on to its end, by the coarse layer, found back from the end: from the gates on
+-- the end's tiles' borders (each at its straight way to the end) across the tiles crossed by their gates, by what each
+-- of their walks costs, those nearest to the start first (A*), until every way out of the start's tiles (zone: the
+-- gates on their borders) is reached, or what is left costs Search.SLACK more than the cheapest of them so far. The
+-- search from the start then makes for the cheapest way out of its tiles, and from a gate on its cost (one not reached
+-- costs at least what was left then, less its way from the start). nil where no way out of the start's tiles is
+-- reached.
+local function Back(zone, ends, near, u1, v1, u2, v2, water, check)
+    -- Whether the walk crosses a gate's other tile by its gates (one not searched rectangle by rectangle).
+    local function Across(gid, key)
+        local keyA, keyB = Gates.Ends(gid)
+        local other = keyA == key and keyB or keyA
+        return not near[other] and Gates.Tile(other) ~= nil
+    end
+    local exits, count = {}, 0
+    for key in pairs(zone) do
+        local gates = Gates.Tile(key)
+        if not gates then return nil end
+        for a = 1, gates.count do
+            if Across(gates.id[a], key) then exits[gates.id[a]], count = true, count + 1 end
+        end
+    end
+    if count == 0 then return nil end
+    local cost, closed, heap, keys = {}, {}, {}, {}
+    for key in pairs(ends) do
+        local gates = Gates.Tile(key)
+        for a = 1, gates and gates.count or 0 do
+            local gid = gates.id[a]
+            if Across(gid, key) then
+                local gu, gv = gates.u[a], gates.v[a]
+                local c = sqrt((gu - u2) ^ 2 + (gv - v2) ^ 2)
+                if not cost[gid] or c < cost[gid] then
+                    cost[gid] = c
+                    Push(heap, keys, c + sqrt((gu - u1) ^ 2 + (gv - v1) ^ 2), gid)
+                end
+            end
+        end
+    end
+    local reached, best, stop, seen, known = 0, nil, math.huge, 0, {}
+    while heap[1] do
+        local f = keys[1]
+        local gid = Pop(heap, keys)
+        if not closed[gid] then
+            if best and f > best + Search.SLACK then
+                stop = f
+                break
+            end
+            closed[gid], known[gid] = true, cost[gid]
+            seen = seen + 1
+            Search.looked = Search.looked + 1
+            if seen > Search.MOST then
+                stop = f
+                break
+            end
+            if check and seen % Search.EVERY == 0 then check() end
+            if exits[gid] then
+                reached = reached + 1
+                if not best or f < best then best = f end
+                if reached == count then
+                    stop = heap[1] and keys[1] or math.huge
+                    break
+                end
+            end
+            local keyA, keyB = Gates.Ends(gid)
+            for k = 1, 2 do
+                local key = k == 1 and keyA or keyB
+                local gates = not near[key] and Gates.Tile(key)
+                local a = gates and gates.byId[gid]
+                local group = a and gates.group[a]
+                for y = 1, group and group.size or 0 do
+                    local b = group.gates[y]
+                    local bid = gates.id[b]
+                    if b ~= a and not closed[bid] then
+                        local c = cost[gid] + Gates.Cost(gates, b, a, water)
+                        if not cost[bid] or c < cost[bid] then
+                            cost[bid] = c
+                            Push(heap, keys, c + sqrt((gates.u[b] - u1) ^ 2 + (gates.v[b] - v1) ^ 2), bid)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    if not best then return nil end
+    local function Least(gu, gv)
+        local least = stop - sqrt((gu - u1) ^ 2 + (gv - v1) ^ 2)
+        local straight = sqrt((gu - u2) ^ 2 + (gv - v2) ^ 2)
+        return least > straight and least or straight
+    end
+    -- The ways out but those dearer than the cheapest by more than the start's tiles' width: from nowhere in them is
+    -- such a one the cheapest.
+    local found, least, west, east, south, north = {}, math.huge, math.huge, -math.huge, math.huge, -math.huge
+    for gid in pairs(exits) do
+        local gates = Gates.Tile((Gates.Ends(gid)))
+        local at = gates and gates.byId[gid]
+        if at then
+            local gu, gv = gates.u[at], gates.v[at]
+            local c = known[gid] or Least(gu, gv)
+            found[#found + 1] = { gu, gv, c }
+            least, west, east = math.min(least, c), math.min(west, gu), math.max(east, gu)
+            south, north = math.min(south, gv), math.max(north, gv)
+        end
+    end
+    local width = sqrt((east - west) ^ 2 + (north - south) ^ 2)
+    local list = {}
+    for _, exit in ipairs(found) do
+        if exit[3] <= least + width then
+            list[#list + 1], list[#list + 2], list[#list + 3] = exit[1], exit[2], exit[3]
+        end
+    end
+    return { cost = known, exits = list, zone = zone, Least = Least }
+end
+
+-- The ways out of the start's tiles (zone) and what each costs from the start: every rectangle of them reached (a
+-- search with no goal), each opening out of them at the gates of its border there. { [gate's number] = { cost, u, v,
+-- aside } }; aside: its way starts on a floor other than the one the start stands on (Search.ASIDE in its cost).
+local function Out(sources, own, zone, water, check)
+    local state = Run(sources, {}, 0, 0, check, water, { near = zone, out = true })
+    local exits = {}
+    for id, cost in pairs(state and state.g or {}) do
+        if id < GOAL then exits[-id] = { cost, state.enterU[id], state.enterV[id], own ~= nil and state.first[id] ~= own } end
+    end
+    return exits
+end
+
+-- What a walk costs, by the coarse way: see the header. From the start's tiles and those of the end rectangle by
+-- rectangle, across the others by their gates; a start already priced in this plan (memo) from the ways out of its
+-- tiles found then (Out).
+function Search.Price(continent, u1, v1, u2, v2, from, check, water, memo)
+    water = water or Search.WATER
+    local sources, own, goals = Prepare(continent, u1, v1, u2, v2, from)
+    if not sources then return nil, own end
+    local zone, ends = TilesOf(sources), TilesOf(goals)
+    local apart = Apart(zone, ends)
+    local exits
+    if apart and memo then
+        local key = ("%d %.3f %.3f %s %s %s %s"):format(continent, u1, v1, from and from[1] or "", from and from[2] or "",
+            from and from.guess and "?" or "", water)
+        local start = memo[key] or { uses = 0 }
+        memo[key] = start
+        start.uses = start.uses + 1
+        if start.uses > 1 then
+            start.exits = start.exits or Out(sources, own, zone, water, check)
+            exits = start.exits
+        end
+    end
+    local state
+    if exits then
+        state = Run(sources, goals, u2, v2, check, water, { near = ends, exits = exits })
+    else
+        local near = {}
+        for key in pairs(zone) do near[key] = true end
+        for key in pairs(ends) do near[key] = true end
+        local guide = apart and Back(zone, ends, near, u1, v1, u2, v2, water, check) or nil
+        state = Run(sources, goals, u2, v2, check, water, { near = near, guide = guide })
+    end
+    if not state then return nil end
+    local tiles = {}
+    for key in pairs(zone) do tiles[key] = true end
+    for key in pairs(ends) do tiles[key] = true end
+    local way = Way(state, tiles)
+    if not way then
+        -- Found rectangle by rectangle all the way: its line now.
+        local points, cost, rest = Line(state, goals, own, u1, v1, u2, v2)
+        return cost, rest, { points = points, cost = cost, rest = rest }
+    end
+    local id = state.from[GOAL]
+    local goal = goals[id]
+    while state.from[id] do id = state.from[id] end
+    local cost = state.g[GOAL]
+    if (exits and exits[-id][4]) or (not exits and own and id ~= own) then cost = cost - Search.ASIDE end
+    return cost, sqrt((goal[3] - u2) ^ 2 + (goal[4] - v2) ^ 2),
+        { sources = sources, own = own, goals = goals, way = way, water = water }
+end
+
+-- A walk's line: see the header. Along its coarse way, rectangle by rectangle on the tiles it crosses; where the
+-- coarse layer does not fit the walking data (made from other blocks), on every tile.
+function Search.Walk(continent, u1, v1, u2, v2, from, check, water, found)
+    if not found then
+        local cost, rest
+        cost, rest, found = Search.Price(continent, u1, v1, u2, v2, from, check, water)
+        if not cost then return nil, rest end
+    end
+    if found.points then return found.points, found.cost, found.rest end
+    local state = Run(found.sources, found.goals, u2, v2, check, found.water, { way = found.way })
+        or Run(found.sources, found.goals, u2, v2, check, found.water, {})
+    if not state then return nil end
+    return Line(state, found.goals, found.own, u1, v1, u2, v2)
 end

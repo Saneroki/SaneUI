@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: routes to far pins are found many times faster, and a
+  long walk around mountains or through the other side's lands is
+  found and drawn instead of a straight line.
 - Navigation: routes know swimming is slow. Walks are timed at your
   own speed, riding where you ride, so a route keeps to land where
   that is quicker, and runs straighter over open ground.

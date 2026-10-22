@@ -75,6 +75,7 @@ GROUPS = {
         "readmapdata": (["dev/tools/map-data"], "the facts of Navigation's map", None),
         "readtraveldata": (["dev/tools/travel-data"], "flights, boats, zeppelins, the tram and lifts", None),
         "makewalkdata": (["dev/tools/walk-data"], "the walking data of Navigation's routes", None),
+        "makewalkgates": (["dev/tools/walk-gates"], "the walking data's coarse layer: each tile's gates, their costs", None),
         "makecvarlabels": (["dev/tools/cvar-labels"], "the names of the game's settings", None),
         "makesyncpages": (["dev/tools/sync-pages"], "what each of the game's options pages sets", None),
         "compareblizzard": (["dev/tools/blizzard"], "a new game build's interface code against ours", None),

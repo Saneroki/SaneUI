@@ -603,6 +603,11 @@ end
 -- of the roof (4, 59 yards, region 10) a building's. Tile 2340 of the Eastern Kingdoms (its north west corner at u
 -- 2133, v -2133), a city under the ground as the Undercity is: the ruins over it (1, 60 yards, region 11) and its long
 -- hall (2, -40 yards, columns 0 to 239, rows 112 to 143, a building's floor) of the same region, joined far off.
+-- Tiles 2592 to 2595 of the Eastern Kingdoms (row 40, columns 32 to 35; 2592's north west corner at u 0, v -4267), with
+-- the coarse layer (the field gates, walkGates below): four fields in a row (region 20, 10 yards high), each open into
+-- the next along all its edge; 2593 cut in two by a wall (columns 128 to 143) but at its north end, a door (rows 0 to
+-- 15; the halves one surface, the door another, joined by the openings written). Tile 2600 alone, gates only: its
+-- costs as numbers to read.
 local routesFolder = io.popen("mktemp -d -t saneui-routes-XXXXXX"):read("*l") -- kept until the end
 local routesPath = routesFolder .. "/Routes"
 os.execute(("mkdir -p '%s'"):format(routesPath))
@@ -624,14 +629,36 @@ local walkBlocks = {
     [6179] = { 1, { 1, 1, 7,   1, 3, 8,   1, 3, 9,   1, 3, 10 },
                { 0, 0, 256, 256, 40,   0, 0, 64, 64, 200,   16, 16, 32, 32, 260,   52, 16, 8, 32, 236 }, { 0, 0, 0, 0 } },
     [2340] = { 1, { 1, 1, 11,   1, 3, 11 }, { 0, 0, 256, 256, 240,   0, 112, 240, 32, -160 }, { 0, 0 } },
+    [2592] = { 1, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 1, 2 } },
+    [2593] = { 1, { 2, 1, 20,   1, 1, 20 }, { 0, 0, 128, 256, 40,   144, 0, 112, 256, 40,   128, 0, 16, 16, 40 },
+               { 5, -2, 0, 15, 10, 4,   1, 2,   4, -2, 0, 15, 5 } },
+    [2594] = { 1, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 2, 9, 2 } },
+    [2595] = { 1, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 1, 4 } },
+    [2600] = { 1, { 1, 1, 21 }, { 0, 0, 256, 256, 40 }, { 0 } },
 }
-Set(routesPath .. "/Walking.lua", "Walking", "00000008", "int", '"map", "links", "block"', '"int", "list int", "text"',
+-- Their gates (dev/tools/walk-gates' field): one along each border between two of them; through 2593 by its door 718
+-- yards from its west gate's middle to its east one's, across 2594 533. 2600's way between its two gates 400 yards,
+-- 8 up, 2 down, 100 swum (400 + 2^13 x 8 + 2^23 x 2 + 2^33 x 100), a rider's 520 dry.
+local walkGates = {
+    [2592] = { 1, 0, 1, {}, { 0, 255, 1 }, {}, {}, {} },
+    [2593] = { 1, 0, 3, {}, { 0, 255, 1 }, {}, { 0, 255, 1 }, { 2, 1, 2, 718, 0 } },
+    [2594] = { 1, 0, 1, {}, { 0, 255, 1 }, {}, { 0, 255, 1 }, { 2, 1, 2, 533, 0 } },
+    [2595] = { 1, 0, 1, {}, {}, {}, { 0, 255, 1 }, {} },
+    [2600] = { 1, 0, 1, { 0, 255, 1 }, {}, { 0, 255, 1 }, {}, { 2, 1, 2, 859010302352, 1, 1, 520 } },
+}
+Set(routesPath .. "/Walking.lua", "Walking", "00000008", "int", '"map", "links", "block", "gates"',
+    '"int", "list int", "text", "text"',
     'R[3104] = "70245\t\t0\t3105\tblock:3104"\nR[3105] = "70245\t\t0\t3104\tblock:3105"\nR[6176] = "70245\t\t1\t\tblock:6176"\n'
     .. 'R[6177] = "70245\t\t1\t\tblock:6177"\nR[6178] = "70245\t\t1\t\tblock:6178"\nR[6179] = "70245\t\t1\t\tblock:6179"\n'
-    .. 'R[2340] = "70245\t\t0\t\tblock:2340"\n')
+    .. 'R[2340] = "70245\t\t0\t\tblock:2340"\n'
+    .. 'R[2592] = "70245\t\t0\t2593\tblock:2592\tgates:2592"\nR[2593] = "70245\t\t0\t2592\0302594\tblock:2593\tgates:2593"\n'
+    .. 'R[2594] = "70245\t\t0\t2593\0302595\tblock:2594\tgates:2594"\nR[2595] = "70245\t\t0\t2594\tblock:2595\tgates:2595"\n'
+    .. 'R[2600] = "70245\t\t0\t\tblock:2600\tgates:2600"\n')
 W.AddSets(routesPath)
 C_EncodingUtil = { DecodeBase64 = function(text) return text end, DecompressString = function(text) return text end,
-                   DeserializeCBOR = function(text) return walkBlocks[tonumber(text:match("%d+"))] end }
+                   DeserializeCBOR = function(text)
+                       return (text:find("^gates:") and walkGates or walkBlocks)[tonumber(text:match("%d+"))]
+                   end }
 W.AddSets(spawnsPath)
 
 W.LoadCore(root)
@@ -2561,6 +2588,68 @@ check(ending and (-8533.33 - ending[#ending - 2]) / s <= 240.01 and near(ending[
     "to a place nobody can walk to: the walk where one can, nearest to it, then straight to the place itself")
 local far = Search.Walk(1415, 200 * s, -8533.33 - 50 * s, (256 + 30) * s, -8533.33 - 50 * s)
 check(far and #far == 4, "into the next tile: a straight walk where nothing is in the way")
+-- The coarse layer (Gates.lua) on tiles 2592 to 2595: each gate the same on both its tiles, what the walks between a
+-- part's gates cost (each yard up a little more, a yard swum at its price, of the way on foot and a rider's the
+-- cheaper), the parts and edges of a walking tile; a tile's openings worked out only once needed.
+;(function()
+    local Gates = ns.Gates
+    local light = Walk.Tile(2600)
+    check(light and light.opens == nil and light.links ~= nil and light.surface[1] == 1, "a tile unpacked: its openings not yet")
+    Walk.Links(light)
+    check(type(light.opens) == "table" and #light.opens[1] == 0 and light.links == nil, "worked out once needed")
+    local west, middle, alone = Gates.Tile(2592), Gates.Tile(2593), Gates.Tile(2600)
+    check(west and middle and west.count == 1 and middle.count == 2 and middle.side[1] == 1 and middle.side[2] == 3
+        and middle.first[2] == 0 and middle.last[2] == 255 and middle.part[2] == 1,
+        "a tile's gates: the east side's first, then the west's, each its stretch and its part")
+    check(west.id[1] == middle.id[2] and middle.byId[west.id[1]] == 2 and select(1, Gates.Ends(west.id[1])) == 2592
+        and select(2, Gates.Ends(west.id[1])) == 2593 and select(3, Gates.Ends(west.id[1])) == 1,
+        "a gate the same on both its tiles, and the tiles it lies between")
+    check(near(middle.u[1], 2 * Coords.TILE) and near(middle.v[1], -8 * Coords.TILE - 128 * s),
+        "a gate's point: the middle of its stretch, on the border")
+    check(Gates.Cost(middle, 2, 1, 1.5) == 718 and Gates.Cost(middle, 1, 2, 1.5) == 718,
+        "the walk between two gates of one part: as the coarse layer has it (through the door)")
+    check(Gates.Cost(alone, 1, 2, 1) == 502 and Gates.Cost(alone, 2, 1, 1) == 500.5 and Gates.Cost(alone, 1, 2, 1.5) == 520,
+        "each yard up a quarter more (8 one way, 2 the other), a yard swum at its price; a rider's dry way where cheaper")
+    check(Gates.Tile(3104) == nil and Gates.Tile(9999) == nil, "a tile without the coarse layer, or without ground: none")
+    local parts, walled = Gates.Parts(Walk.Tile(2593)), Walk.Tile(2593)
+    local edgeWest, edgeEast = Gates.Edges(walled, 3), Gates.Edges(walled, 1)
+    check(parts[1] == 1 and parts[2] == 1 and parts[3] == 1 and #edgeWest == 3 and edgeWest[1] == 1 and edgeWest[3] == 255
+        and #edgeEast == 3 and edgeEast[1] == 2, "a walking tile's parts (its halves and door one) and its edges")
+end)()
+-- A walk across them: priced by the coarse layer (rectangle by rectangle only on the start's tile and the end's,
+-- through the walled one by its gates), then drawn along that way through the door; a start priced again in one plan
+-- goes out of its tile as the first time; a tile whose coarse layer was made from another block is crossed rectangle
+-- by rectangle.
+;(function()
+    local Gates = ns.Gates
+    local top = -8 * Coords.TILE
+    local su, sv, eu, ev = 128 * s, top - 128 * s, 3 * Coords.TILE + 128 * s, top - 128 * s
+    local cost, rest, found = Search.Price(1415, su, sv, eu, ev, nil, nil, 1.5)
+    check(cost and math.abs(cost - 1784.33) < 0.5 and rest == 0 and found.way and #found.way.u == 3
+        and found.way.tiles[2593] and found.way.tiles[2594],
+        "priced by the coarse layer: into the gate, through the walled tile and across the next by their gates' costs")
+    local points, drawn = Search.Walk(1415, su, sv, eu, ev, nil, nil, 1.5, found)
+    local door = false
+    for index = 1, #(points or {}), 2 do
+        local column, row = (points[index] - Coords.TILE) / s, (top - points[index + 1]) / s
+        if column >= 127.5 and column <= 144.5 and row <= 16.5 then door = true end
+    end
+    check(points and door and drawn >= 1674 and drawn <= 1790 and near(points[1], su) and near(points[#points], ev),
+        "drawn along that way, rectangle by rectangle: through the door, from the start to the end")
+    local memo = {}
+    local first = Search.Price(1415, su, sv, eu, ev, nil, nil, 1.5, memo)
+    local again = Search.Price(1415, su, sv, eu, ev, nil, nil, 1.5, memo)
+    local kept
+    for _, start in pairs(memo) do kept = start end
+    check(first and again and math.abs(first - again) < 0.01 and kept and kept.uses == 2 and kept.exits,
+        "priced again in one plan: from the ways out of its tile found then, at the same cost")
+    walkGates[2592][3] = 2
+    Gates.Forget()
+    local stale = Search.Price(1415, su, sv, eu, ev, nil, nil, 1.5)
+    check(stale and stale > 1674 and stale < 1800, "a coarse layer made from another block: that tile rectangle by rectangle")
+    walkGates[2592][3] = 1
+    Gates.Forget()
+end)()
 -- The journey: the pin far away (Elwynn's south west, 1750 yards), a flight point near the player and one near
 -- the pin, both known: walk, fly, walk.
 C_TaxiMap.GetTaxiNodesForMap = function(map)
@@ -2622,6 +2711,27 @@ Core.Character(ns.name).flightPoints = {}
 ns.Planner.Update()
 Frames(8)
 check(shownWay and #shownWay.legs == 1 and shownWay.legs[1].kind == "walk", "without the flight points known: on foot")
+-- A pin across the walled tile (2593): the walk priced by the coarse layer, drawn along its way through the door.
+;(function()
+    local top = -8 * Coords.TILE
+    local su, sv, eu, ev = 128 * s, top - 128 * s, 3 * Coords.TILE + 128 * s, top - 128 * s
+    local before = { player.map, player.x, player.y, waypoint }
+    player.map, player.x, player.y = 1415, (su + 4000) / 8000, (4000 - sv) / 20000
+    waypoint = { uiMapID = 1415, position = CreateVector2D((eu + 4000) / 8000, (4000 - ev) / 20000) }
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Frames(8)
+    local leg = shownWay and #shownWay.legs == 1 and shownWay.legs[1]
+    local door = false
+    for _, point in ipairs(leg and leg.points or {}) do
+        local column, row = (point.u - Coords.TILE) / s, (top - point.v) / s
+        if column >= 127.5 and column <= 144.5 and row <= 16.5 then door = true end
+    end
+    check(leg and leg.kind == "walk" and door, "a pin across a walled tile: one walk, drawn through its door")
+    player.map, player.x, player.y, waypoint = before[1], before[2], before[3], before[4]
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
 -- A yard swum at its price, the character's own speeds: from the west hall to the east hall at row 170 the channel's
 -- way is the shorter (256 yards, 67 of them swum), the door's the dry one (323 yards). On foot (the game's 7 yards a
 -- second, 4.72 swimming) the walk swims; a rider (14) goes round by the door, and so does the character once it was
@@ -3398,13 +3508,18 @@ end)()
     local function At(column, row) return Coords.TILE + column * s, -row * s end
     local cu, cv = At(136, 136) -- on the courtyard, over no hall
     local mu, mv = At(240, 64)  -- on the mesa, far from its edges
-    local all, walk, hearth = Lifts.All, Search.Walk, Core.Character(ns.name).hearth
+    local all, walk, price, hearth = Lifts.All, Search.Walk, Search.Price, Core.Character(ns.name).hearth
     Lifts.Forget()
     Lifts.All = function() return {} end
     Search.Walk = function(...)
         local points, cost, rest = walk(...)
         if not points and cost == "off" then return nil end
         return points, cost, rest
+    end
+    Search.Price = function(...)
+        local cost, rest, found = price(...)
+        if not cost and rest == "off" then return nil end
+        return cost, rest, found
     end
     Core.Character(ns.name).hearth = nil
     player.map, player.x, player.y = 1414, (cu + 12000) / 24000, (20000 - cv) / 40000
@@ -3418,7 +3533,7 @@ end)()
     check(shownWay and #shownWay.legs == 1 and leg.kind == "walk" and #points >= 3 and edge
         and math.abs(-edge.v / s - 128) < 0.5 and near(points[#points].u, mu) and near(points[#points].v, mv),
         "a pin on a mesa no lift reaches, far from the courtyard: as near as one walks (its edge), then straight to it")
-    Lifts.All, Search.Walk, Core.Character(ns.name).hearth = all, walk, hearth
+    Lifts.All, Search.Walk, Search.Price, Core.Character(ns.name).hearth = all, walk, price, hearth
     Lifts.Forget()
     player.map, player.x, player.y = 1429, 0.75, 0.3
     waypoint = nil

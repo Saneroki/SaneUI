@@ -9,7 +9,9 @@ local _, ns = ...
 --
 --      Walk.Ready()            the set is there
 --      Walk.Tile(key)          a tile's rectangles, unpacked the first time (the game's base64,
---                              deflate and CBOR); the Walk.KEEP asked for last kept; nil without ground
+--                              deflate and CBOR, Walk.Unpack); the Walk.KEEP asked for last kept; nil without ground
+--      Walk.Links(tile)        a tile's openings, worked out the first time they are needed (looking up the
+--                              floors at a place needs none)
 --      Walk.Rect(tile, index)  a rectangle's column, row, width, height (samples), z, kind, region
 --      Walk.Box(tile, index)   a rectangle in the plane: its left, right, top, bottom
 --      Walk.Inside(tile, index, u, v), Walk.Gap(tile, index, u, v)   a point of the plane on it; how far from it
@@ -68,7 +70,8 @@ function Walk.Known()
     return state == "ready" or state == "loading"
 end
 
-local function Unpack(text)
+-- A packed field of the set (a tile's block, its gates: Gates.lua) as the game unpacks it: base64, deflate, CBOR.
+function Walk.Unpack(text)
     local util = rawget(_G, "C_EncodingUtil")
     if not util or type(text) ~= "string" then return nil end
     local raw = util.DecodeBase64(text)
@@ -118,49 +121,66 @@ local function Touching(tile, first, last)
     end
 end
 
--- A tile's block read: its surfaces (how many rectangles each, kind, region), its rectangles (column, row, width,
--- height, z in quarter yards) and their openings; those of one surface that touch are worked out (Touching),
--- those written once on their tile get their other way.
+-- A tile's block read: its surfaces (how many rectangles each, kind, region) and its rectangles (column, row, width,
+-- height, z in quarter yards), each rectangle's kind, region and surface (numbered from 1 in the block's order); its
+-- openings only once they are needed (Walk.Links): they take most of an unpacking's time and memory.
 local function Read(tile, block)
-    local surfaces, rects, links = block[2], block[3], block[4]
-    tile.rects, tile.kind, tile.region, tile.opens = rects, {}, {}, {}
+    local surfaces, rects = block[2], block[3]
+    tile.rects, tile.kind, tile.region, tile.surface, tile.links = rects, {}, {}, {}, block[4]
     tile.count = #rects / 5
-    for index = 1, tile.count do tile.opens[index] = {} end
-    local index = 0
+    local index, number = 0, 0
     for s = 1, #surfaces, 3 do
-        local first = index + 1
+        number = number + 1
         for _ = 1, surfaces[s] do
             index = index + 1
-            tile.kind[index], tile.region[index] = surfaces[s + 1], surfaces[s + 2]
+            tile.kind[index], tile.region[index], tile.surface[index] = surfaces[s + 1], surfaces[s + 2], number
         end
-        Touching(tile, first, index)
     end
-    local at = 1
+end
+
+-- A tile's openings (tile.opens[index]: a rectangle's), worked out the first time they are needed: those of one
+-- surface that touch (Touching), and those the block writes, once on their tile, with their other way.
+function Walk.Links(tile)
+    local opens = tile.opens
+    if opens then return opens end
+    opens = {}
+    tile.opens = opens
+    for index = 1, tile.count do opens[index] = {} end
+    local surface, first = tile.surface, 1
+    for index = 1, tile.count do
+        if index == tile.count or surface[index + 1] ~= surface[index] then
+            Touching(tile, first, index)
+            first = index + 1
+        end
+    end
+    local links, at = tile.links, 1
     for rect = 1, tile.count do
         local stop = at + links[at]
         at = at + 1
         while at <= stop do
             local value = links[at]
-            local side, first, last, target
+            local side, low, high, target
             if value < 0 then
-                side, first, last, target = -1 - value, links[at + 1], links[at + 2], links[at + 3]
+                side, low, high, target = -1 - value, links[at + 1], links[at + 2], links[at + 3]
                 at = at + 4
             else
                 target = value
                 at = at + 1
             end
             local where, other = target % 5, math.floor(target / 5) + 1
-            Open(tile.opens[rect], side, first, last, where, other)
+            Open(opens[rect], side, low, high, where, other)
             -- Written once on its own tile, from the north or west: the other way too.
-            if where == 0 and tile.opens[other] then
+            if where == 0 and opens[other] then
                 if side then
-                    Open(tile.opens[other], (side + 2) % 4, first, last, 0, rect)
+                    Open(opens[other], (side + 2) % 4, low, high, 0, rect)
                 else
-                    Open(tile.opens[other], nil, nil, nil, 0, rect)
+                    Open(opens[other], nil, nil, nil, 0, rect)
                 end
             end
         end
     end
+    tile.links = nil
+    return opens
 end
 
 -- The tile asked for longest ago let go, once more than Walk.KEEP are unpacked.
@@ -189,7 +209,7 @@ function Walk.Tile(key)
     end
     if not Walk.Ready() then return nil end
     local text = Walking:Get(key, "block")
-    local block = text and Unpack(text)
+    local block = text and Walk.Unpack(text)
     if type(block) ~= "table" or block[1] ~= Walk.FORMAT or type(block[2]) ~= "table" or type(block[3]) ~= "table"
         or type(block[4]) ~= "table" then
         open[key] = false
@@ -342,7 +362,7 @@ end
 local STEP = { [0] = -64, [1] = 1, [2] = 64, [3] = -1 } -- the next tile north, east, south, west
 local OFFSET = { [0] = { -1, 0 }, [1] = { 0, 1 }, [2] = { 1, 0 }, [3] = { 0, -1 } } -- its rows, columns away
 function Walk.Opening(tile, index, n)
-    local opening = tile.opens[index][n]
+    local opening = (tile.opens or Walk.Links(tile))[index][n]
     local side, first, last, where, other = opening[1], opening[2], opening[3], opening[4], opening[5]
     local next = tile
     if where > 0 then next = Walk.Tile(tile.key + STEP[where - 1]) end
@@ -365,7 +385,7 @@ end
 -- A rectangle's openings: fn(side, first, last, tile, index) for each, the neighbour's tile unpacked (an opening
 -- into a tile not there is passed over). first and last count along the side on the rectangle's own tile.
 function Walk.Openings(tile, index, fn)
-    for n = 1, #tile.opens[index] do
+    for n = 1, #(tile.opens or Walk.Links(tile))[index] do
         local side, first, last, next, other = Walk.Opening(tile, index, n)
         if side then fn(side, first, last, next, other) end
     end
@@ -450,7 +470,7 @@ function Walk.Follow(continent, u, v, key, index, fromU, fromV)
                 Clean(size)
                 return here.key, number
             end
-            for n = 1, #here.opens[number] do
+            for n = 1, #(here.opens or Walk.Links(here))[number] do
                 local side, first, last, next, other = Walk.Opening(here, number, n)
                 if side and not closed[next.key * 65536 + other] and Off(next, other, u, v) <= Walk.STRIDE then
                     local au, av, bu, bv = Walk.Portal(here, number, side, first, last)

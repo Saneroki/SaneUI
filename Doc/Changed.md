@@ -3,8 +3,50 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 537 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 551 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: long walks found fast and priced near-exactly, by a coarse layer over the walking data (Saneroki, 2026-10-22)
+- Far pins took seconds to plan: on the real data outside the game 505 ms a route, 3.4 s at worst, 95 % of it the
+  searches; 13 of 383 searches stopped at `Search.MOST` (200,000 rectangles), every one a walk 5 to 11 times its
+  straight line (a Horde character deep in the Alliance's lands) that the journey had guessed at 1.3 times it. A
+  search looked at every rectangle as near as its walk was long.
+- **The coarse layer** (`dev/tools/walk-gates`, new, `saneui makewalkgates`; Core's set *Walking*, the new field
+  `gates`, 2.0 MB: the set 26.1 MB): per terrain tile its gates (where a part of the tile, the rectangles one walks
+  between without leaving it, meets a part of the next tile across their border, cut into pieces of at most 64
+  samples) and what the walk between each two gates of a part costs inside the tile (Dijkstra over its rectangles, the
+  line pulled through the openings: yards on land, swum, climbed, gone down, packed in one number; chosen on foot, a
+  yard swum at 1.5, and where it swims again for a rider, at 3). Its check is the CRC of the blocks it was made from.
+  Made from the master in some 40 seconds; taken in with `--take` (a new field at the same build). 21,898 gates,
+  311,570 ways.
+- `Gates.lua` (new, in the TOC after `Walk.lua`): reads it (`Gates.Tile`, the `Gates.KEEP` 400 asked for last kept,
+  some 16 KB each; `Gates.Cost` at the walker's price, the cheaper of the way on foot and the rider's; `Gates.Parts`,
+  `Gates.Edges` of a walking tile; `Gates.Id`, `Gates.Ends`); a tile's layer made from another block (another number
+  of rectangles) is passed over there.
+- `Search.lua`: in two steps. `Search.Price`: rectangle by rectangle only on the start's tiles and the end's, across
+  every other by its gates; where the two lie apart guided out of the start's tiles by the costs found back from the
+  end over the gates first (`Back`, `Search.SLACK`); a start priced again in one plan goes out of its tiles as the
+  first time (`Out`, the planner's memo). `Search.Walk(..., found)`: the line along that coarse way, rectangle by
+  rectangle on its tiles only, each step aimed at its next gate, what is left estimated along it `Search.AIM` (1.2)
+  times; on every tile where that finds none. One search function with options (`Run`), the line (`Line`), the way
+  (`Way`).
+- `Planner.lua`: `Find` prices the chosen journey's walks first (`Search.Price`) and chooses again by the prices; once
+  the journey stays, each walk is searched along its coarse way for its line. `Planner.BUDGET` counts nodes. The
+  coarse layer let go with the walking tiles (`Gates.Forget`).
+- `Walk.lua`: a tile unpacked without its openings, worked out the first time a search or the floor's following needs
+  them (`Walk.Links`): looking up the floors at a place needs none (an unpacking 0.1 ms and 310 KB then, with its
+  openings some 5 ms and 1.5 MB); each rectangle's surface kept (`tile.surface`, for the parts); `Walk.Unpack` shared.
+- Measured on the real data (200 routes between NPCs, both sides): 119 ms a route (505), the slowest 0.7 s (3.4),
+  indoors 118 ms; 0 none, 1 walk drawn straight (9: the capped walks are found), 1 off the data, 0 not from the player;
+  none stopped at `Search.MOST`; with the game's 48 tiles kept unpacked 213 ms, the slowest 1.0 s (the code before did
+  not finish so). Of 40 walks of 300 to 8,000 yards the price within 3 % of the old search's cost, the line's cost
+  0.2 % over on the median (2.8 % at the 90th), 70 ms a walk (700). The 29 fixed journeys keep their legs; the 16
+  teleport journeys all from the player to the pin.
+- Tests: `dev/tests/navigation.lua` (551: a tile's gates, their costs both ways, at a price and a rider's, the parts
+  and edges, the openings once needed; a walk across a walled tile priced by the gates and drawn through its door,
+  priced again from its way out, over a stale layer; the planner's line through the door); `dev/tests/walk.py` (159:
+  the tool's parts, gates, ways through a door and round a pond, its numbers and field; the master's layer made from
+  its blocks as they are).
 
 ### Navigation: walks timed at the character's own speeds, water priced by them (Saneroki, 2026-10-22)
 - Routes swam where land was there: from Westfall to Stormwind harbor's boat a walk swam 942 yards along the coast

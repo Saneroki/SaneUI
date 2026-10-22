@@ -280,11 +280,25 @@ leap `Arrival` takes the nearest end or landing. A teleport's landing floor is a
 that ends only near as `{ near = points }`: none for the journey (`Measured`), drawn where it stays. `Walk.Forget`
 runs when the route is switched off and on the walking data's stamp; both stamps' listeners are `ns.Guard`ed.
 
+The coarse layer (2026-10-22; the plan, *The walking data*, *Built: the coarse layer*, and *The planner*, *Built:
+walks priced by the coarse layer first*): far pins took seconds to plan, a walk many times its straight line given up
+after `Search.MOST` rectangles. `dev/tools/walk-gates` (`saneui makewalkgates`) makes the set *Walking*'s field
+`gates` from its blocks (each tile's gates into the next, the costs between two gates of a part; its check the CRC of
+the blocks it was made from: `dev/tests/walk.py` fails on a stale layer, so after `dev/tools/walk-data` run it and
+`dev/tools/data import dev/data/staging/walking-gates.jsonl --apply --take` too). `Gates.lua` reads it (`Gates.Tile`,
+`Cost`, `Parts`, `Edges`, `Id`, `Ends`). `Search.lua`'s `Run` takes options: the two-level price (`near`: the start's
+and the end's tiles rectangle by rectangle, gates elsewhere; `guide` from `Back`, the costs back from the end;
+`exits` from `Out` for a start priced again, the plan's `memo`), the line along the coarse way (`way`: its tiles
+only, steps aimed at its next gate, `Search.AIM`). `Search.Price` gives cost, rest and what `Search.Walk` needs;
+`Planner.lua`'s `Find` prices the chosen journey's walks first and draws them once it stays. `Walk.lua` unpacks a tile
+without its openings (`Walk.Links` works them out when needed; a rectangle's `surface` kept for the parts). Measured
+with the routes harness outside the project (as 2026-10-21, above).
+
 Not yet: a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
 minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
 checks; 524 with the 2026-10-21 changes; 527 with the whole city below; 528 with no walk after a walk at a flight
-point; 530 with the routing finalized), `dev/tests/walk.py` (125; 130 with the
-teleports' tool; 147 with the walking data's openings).
+point; 530 with the routing finalized; 551 with the coarse layer), `dev/tests/walk.py` (125; 130 with the
+teleports' tool; 147 with the walking data's openings; 159 with the coarse layer).
 
 ## What is not there yet
 
