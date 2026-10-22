@@ -358,10 +358,11 @@ lists, from inputs of its own:
     image 1 the place seen from a plane at an angle, blurred and toned down to where each land lies, image 2 a piece
     of the close level; a photograph of the landscape, its layout kept roughly. A zone (`qwen21-edit-2ref-i2i-cn2`):
     image 1 the game's terrain with its heights standing up (`relief`: the terrain files' heights under the minimap
-    textures, drawn as the voxel spaces of old drew land, 6 s a zone), its water a sea's blue; the controls its depth
-    (0.7 to 60 % of the steps) and the lines where the walking data's water meets land (0.6 to 50 %); its words name
-    the zones around it. An instance (`qwen21-edit-2ref-i2i-cn`): image 1 its plan warped into the view
-    (`plane_view`; its halls lie under rock, which a relief would show), the control its clear edges. Learned on
+    textures, drawn as the voxel spaces of old drew land, 6 s a zone), its water a sea's blue, its shallows lighter;
+    the controls its depth (0.35 to 30 % of the steps) and the lines where the walking data's water meets land (0.5
+    to 35 %), light and early (stronger and longer they kept the game's look); its words name the zones around it. An instance (`qwen21-edit-2ref-i2i-cn`): image 1 its plan warped into the view
+    (`plane_view`; its halls lie under rock, which a relief would show), the control its clearest edges (0.35 to 30 %: at 0.5 to 35 % Zul'Farrak kept the game's raw edges, at 0.8 to 60 % its
+    game terrain). Learned on
     Westfall: the middle drawing as a picture had its pencil symbols stamped on the land; the sharp view as image 1
     came back as the game's own terrain, read at 512 pixels too; the walking data's barriers as lines came back as
     lakes; without controls the model painted a closer view than the frame. Its outlines must share FAR (0.3) with

@@ -27,7 +27,8 @@ last = "Remove every label, name, letter and number, every icon, skull and symbo
 # A zone (images_relief, look_relief; workflow qwen21-edit-2ref-i2i-cn2): image 1 the game's terrain around the frame
 # seen from the plane, its heights standing up (dev/tools/map-layers' relief), its water a sea's blue, blurred and
 # toned down to where each land lies; image 2 a piece of the close level; two controls the layout: the relief's depth
-# (mountains, hills, the plane's angle) and the lines where the walking data's water meets land. Learned on
+# (mountains, hills, the plane's angle) and the lines where the walking data's water meets land, both light and
+# early (depth 0.35 to 30 % of the steps, water 0.5 to 35 %: stronger and longer they kept the game's look). Learned on
 # Westfall: the sharp relief as image 1 came back as the game's own terrain (the edit model copies its picture);
 # the walking data's barriers as lines came back as lakes; without the controls the model painted a closer view.
 # An instance (images, look; workflow qwen21-edit-2ref-i2i-cn): image 1 its plan in a view from a plane (plane_view:
@@ -39,7 +40,7 @@ last = "Remove every label, name, letter and number, every icon, skull and symbo
 # model painted the zone's own land over them), last.
 [far]
 images_relief = "Image 1 is this place seen from a plane high above, at an angle, blurred: it shows only where its lands, forests, fields, mountains, rivers and seas lie and their colours, the land ahead widening towards the top. Image 2 shows its ground up close."
-look_relief = "Make image 1 a sharp, highly detailed photograph taken from a plane high above this place: a realistic fantasy landscape in natural light, seen at the same angle, every land, forest, field, mountain, river, coast and sea where image 1 has it, with its colours. Real trees, rocks, grass, fields, roads and houses in fine detail, as a real aerial photograph shows them; the materials of the ground as image 2 has them."
+look_relief = "Make image 1 a sharp, highly detailed photograph taken from a plane high above this place: a realistic fantasy landscape in natural light, seen at the same angle, every land, forest, field, mountain, river, coast and sea where image 1 has it, with its colours. Real trees, rocks, grass, fields, roads and houses in fine detail, as a real aerial photograph shows them; the materials of the ground as image 2 has them. Photographed with a real camera from an aircraft: true-to-life light, haze and depth, real vegetation, soil and rock; not a painting, not a game, not a 3D render or a model."
 images = "Image 1 is this place seen from a plane high above, at an angle, blurred: it shows only where its halls, caves, rooms, walls, water and rock lie and their colours, the ground ahead widening towards the top. Image 2 shows its ground up close."
 look = "Make image 1 a sharp, highly detailed photograph taken from a plane high above this place: a realistic fantasy place in natural light, seen at the same angle, every hall, cave, room, wall, shore, water and rock where image 1 has it, with its colours. Real stone, timber, earth, water and props in fine detail, as a real aerial photograph shows them; the materials of the ground as image 2 has them."
 open = "Over halls, caves and rooms under the ground or under a roof, the rock and the roofs are cut away so they lie open to view from above."

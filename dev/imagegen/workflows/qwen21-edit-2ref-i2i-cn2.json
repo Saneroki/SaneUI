@@ -203,9 +203,9 @@
     "ref1002",
     0
    ],
-   "strength": 0.7,
+   "strength": 0.35,
    "start_percent": 0.0,
-   "end_percent": 0.6
+   "end_percent": 0.3
   },
   "_meta": {
    "title": "Relief: image 3, the depth of the terrain seen from the plane (ControlNet)"
@@ -239,9 +239,9 @@
     "ref1003",
     0
    ],
-   "strength": 0.6,
+   "strength": 0.5,
    "start_percent": 0.0,
-   "end_percent": 0.5
+   "end_percent": 0.35
   },
   "_meta": {
    "title": "Water: image 4, the lines of the coasts, lakes and rivers (ControlNet)"

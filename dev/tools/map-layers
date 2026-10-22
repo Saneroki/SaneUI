@@ -141,6 +141,8 @@ OUTLINE = 256                   # pixels across at which outlines are compared
 MIDDLE = 0.8                    # of the game's own map's agreement with the terrain: what a middle painting must
                                 # reach (a faithful pencil copy of the Deadmines' map reached 0.84 of it)
 FAR = 0.3                       # what a far painting's outlines must share with its plane view: rough, some leeway
+COPY = 0.97                     # and at most: more is its image 1 come back nearly as it is (the Hall of Thanes' plan
+                                # on grey, 0.98; a real painting of Tanaris' relief reached 0.95)
 FAR_WATER = (0.01, 0.02)        # a zone's far painting: broad water added, or the walking data's water lost, past these
 FAR_STRAY = 0.04                # fails (shares of the picture); a shore may stray so far (of the side)
 FLOOR_FRAME = (0.05, 0.10, 0.95, 0.95)  # the map in an instance floor's art: around it its frame, title banner
@@ -345,10 +347,20 @@ FOV = 40.0                      # the far view's camera: its field of view acros
 LIFT = 1.5                      # its heights raised so much, so hills still stand out from high above
 
 
-SEA = (40, 86, 122)             # the far level's water in its image 1: a sea seen from a plane (the game's navy came
-                                # out nearly black)
+SEA, SHALLOWS = (34, 78, 116), (64, 138, 150)   # the far level's water in its image 1, as a sea seen from a plane:
+                                # the deep blue, lighter towards turquoise where the game's water is lighter (the game's
+                                # navy came out nearly black, one flat blue as a flat sheet)
+
+
+def sea_of(colours):
+    """The game's water (its colours, n x 3) as a sea seen from a plane: deep where the game's is darkest, its
+    shallows lighter."""
+    light = colours.astype(np.float32).mean(-1, keepdims=True)
+    low, high = (np.percentile(light, 5), np.percentile(light, 95)) if light.size else (0, 1)
+    share = ((light - low) / max(high - low, 1.0)).clip(0, 1)
+    return (np.array(SEA) * (1 - share) + np.array(SHALLOWS) * share).astype(np.uint8)
 FAR_BLUR = 12                   # pixels at SIDE: a zone's far image 1 blurred so, its colours only where each land lies
-FAR_COLOUR = 0.8                # and its colours toned down so: the model copied the game's textures and saturation
+FAR_COLOUR = 0.65               # and its colours toned down so: the model copied the game's textures and saturation
 
 
 def far_colours(view):
@@ -502,7 +514,9 @@ def guide_of(walk):
     return Image.fromarray((at.grow(lines, 1) * 255).astype(np.uint8)).convert("RGB")
 
 
-EDGES = 0.92                    # an instance's far guide: the plan's edges stronger than so many of its pixels'
+EDGES = 0.96                    # an instance's far guide: the plan's edges stronger than so many of its pixels' (at
+                                # 0.92, with the control at 0.8 to 60 %, Zul'Farrak came back as its game terrain; the
+                                # control now 0.35 to 30 %)
 
 
 def edges_of(view):
@@ -766,7 +780,8 @@ def inputs(args):
             plan[sea], height[sea] = at.NAVY, 0.0   # no terrain: the open sea, as the close level paints it
             walks = walking.picture(continent, wide, across)
             relief(Image.fromarray(plan), height, k, size, pads).save(folder / "far-plan.png")   # the outlines' measure
-            plan[sea | (np.asarray(walks) == SWIM)] = SEA
+            water = ~sea & (np.asarray(walks) == SWIM)
+            plan[water], plan[sea] = sea_of(plan[water]), SEA   # beyond the terrain the deep sea
             far_colours(relief(Image.fromarray(plan), height, k, size, pads)).save(folder / "far-colours.png")
             relief(None, height, k, size, pads, depth=True).save(folder / "far-depth.png")
             walk = relief(walks, height, k, size, pads, background=NOWHERE)
@@ -952,10 +967,11 @@ def paint_level(server, level, folder, refs, prompt, brief, reference, compare=N
             print(f"{folder.name} {level} {seed}: outlines {match:.3f} (bar {bar:.3f}), {seen}"
                   + (f", water {water}" if water else ""), flush=True)
         mark = checks[f"{level}-{seed}"]
-        rank = (mark["passes"], mark["outlines"])
+        copied = level == "far" and mark["outlines"] > COPY   # its image 1 come back nearly as it is
+        rank = (mark["passes"] and not copied, not copied, mark["outlines"])
         if best is None or rank > best[0]:
             best = (rank, seed)
-        if mark["passes"]:
+        if mark["passes"] and not copied:
             break
     shutil.copyfile(folder / f"{level}-{best[1]}.png", folder / f"{level}.png")
 

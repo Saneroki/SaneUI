@@ -6,6 +6,17 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 209 (data in the game), 524 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 130 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the maps' far level tuned, a copy never kept (Saneroki, 2026-10-22)
+- `dev/tools/map-layers`: a zone's water in the far image 1 shaded as a sea seen from a plane (`sea_of`: `SEA` deep,
+  `SHALLOWS` where the game's water is lighter; beyond the terrain the deep sea), its colours toned down further
+  (`FAR_COLOUR` 0.65); an instance's guide its clearest edges only (`EDGES` 0.96); a far painting whose outlines
+  agree past `COPY` (0.97) is its image 1 come back as it is, never kept (the Hall of Thanes' plan on grey).
+- The controls light and early (stronger and longer they kept the game's look): a zone's depth 0.35 to 30 % of the
+  steps and its water 0.5 to 35 % (`qwen21-edit-2ref-i2i-cn2`), an instance's edges 0.35 to 30 %
+  (`qwen21-edit-2ref-i2i-cn`); a zone's words ask for a real camera (`levels.toml`'s `look_relief`).
+- Samples painted at all three levels: Westfall, Tanaris, the Deadmines, Zul'Farrak, the Hall of Thanes.
+- Tests: `dev/tests/map_layers.py` (61 checks: the sea's shades).
+
 ### Navigation: the maps' far level a view of the terrain standing up, its layout held by controls (Saneroki, 2026-10-22)
 - `dev/tools/map-layers`, the far level painted anew (Saneroki: rough places for lakes, rivers, landmarks, mountains
   and the ground nobody crosses, some leeway, a perspective view from a plane):

@@ -97,6 +97,9 @@ for box in ((300, 0, 450, 0), (600, 0, 450, 0)):   # a wide frame and a tall one
     seen = ml.relief(Image.new("RGB", field.shape[::-1], (90, 90, 90)), field, 1.0, (120, 80), pads)
     check(f"far box: the view's far corners lie on the plan ({box[0]} by {box[2]})",
           seen.getpixel((1, 1)) == seen.getpixel((118, 1)) == (90, 90, 90), True)
+deep = ml.sea_of(np.array([[10, 20, 30], [10, 20, 30], [60, 90, 90], [60, 90, 90]], np.uint8))
+check("sea: the game's darkest water deep blue, its lighter shallows turquoise",
+      (tuple(deep[0]), tuple(deep[-1])), (ml.SEA, ml.SHALLOWS))
 check("relief: no terrain is the background", ml.relief(plan, np.full((400, 600), np.nan, np.float32), 1.0, (40, 30), (0.25, 0.25)).getpixel((20, 15)), (14, 22, 34))
 brief = {"biome": "An old gold mine", "buildings": "Timber.", "places": "Tunnels.", "colours": "brown",
          "atmosphere": "Warm lantern light. Dust."}
