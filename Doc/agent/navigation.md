@@ -162,7 +162,11 @@ samples' space), lets a wall take a sample's floor only in its middle (`CORE`) a
 (`walls[(row, column, side)]`, `stands`, `walled`: `STEP`, `LEDGE`), and keeps the regions the master's lifts land
 on (`lifts`, `landings`): 1.65 million rectangles, 12.6 MB. The Undercity and the ruins are one region (its sewers):
 `Lifts.Levels` makes stacked levels within one region (`level.alone`, `low`, `split`, `Lifts.SPREAD`), and
-`Planner.lua`'s `Over` keeps a place below a level from one on it also where they share a region.
+`Planner.lua`'s `Over` keeps a place below a level from one on it also where they share a region. The whole city
+(2026-10-22): within one region a place stands below a level on a map the lift's ends lie on (`Round`: in that map's
+box, in the lift's plane; the Undercity's holds its Royal Quarter, up to 344 yards from the nearest lift), else within
+`Lifts.SPREAD` yards of the lift (a lift on no map); before, the Royal Quarter (beyond `SPREAD`) counted as on the
+ruins, so routes from near the lifts went up and round, and walks from the surface ended on the hill over it.
 
 Doodads in the walking data (2026-10-21): `dev/tools/walk-data` reads the doodads' collision (`model`: the M2 header's
 collision triangles; `placements`: the object files' MDDF and each building's doodad sets, `doodads`, set 0 and the
@@ -249,7 +253,8 @@ Flier's faster flights (`Planner.Pace`, `Planner.FASTER`). The routes harness ha
 
 Not yet: a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
 minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
-checks; 524 with the 2026-10-21 changes), `dev/tests/walk.py` (125; 130 with the teleports' tool).
+checks; 524 with the 2026-10-21 changes; 527 with the whole city below), `dev/tests/walk.py` (125; 130 with the
+teleports' tool).
 
 ## What is not there yet
 

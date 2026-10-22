@@ -1278,7 +1278,8 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     where a lift's two landings lie in one region, `Lifts.Levels` joins two levels there all the same where they are
     stacked round it (`level.alone`, that lift), told apart by height: the upper from halfway between the landings up
     (`level.split`), the lower within `Walk.RISE` yards of its lower landing's height (`level.low`); a place stands
-    below them only within `Lifts.SPREAD` (250) yards of the lift, and such a level joins no two regions
+    below them only round the lift: on a map its ends lie on (in that map's box: the Undercity's, the whole city),
+    or within `Lifts.SPREAD` (250) yards of it (*The whole city below*), and such a level joins no two regions
     (`Lifts.Joined`). The planner keeps a place below a level and one on it apart also where they share a region
     (`Over`: the lift is the way; two places below one level are a walk apart). A lift within one region whose levels
     lie side by side (the Great Lift) joins none.
@@ -1286,6 +1287,28 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     city's flight master, bank, quarters and throne room and out again, from the canyon to Freewind Post's flight
     master and back, from Dun Morogh down Gnomeregan's lift: walk, lift, walk each; from the lift's lower landing
     into the Magic Quarter on foot all the way; Thunder Bluff's flight master to the Elder Rise over its bridge.
+  - **Fixed (2026-10-22): the whole city below.** Found with the teleports on the real data: Teleport: Undercity
+    lands near the lifts, below their upper level, while Sylvanas in the Royal Quarter stands 265 to 330 yards from
+    the city's three lifts, beyond `Lifts.SPREAD`, so she counted as on the ruins: no walk between the two, and the
+    route went up a lift, over the surface and down by the sewers (1,577 yards where one walk in the city is 881;
+    the hearthstone bound there the same). From Sylvanas to the flight master, the inn or the bank the walk went to
+    a lift's upper end but ended on the canal under it (the search ends on any floor of its regions there), and the
+    line rode down from up there; from Brill, the zeppelin tower or the ruins the walk ended on the hill over her (33
+    yards high, she at -60); the Magic Quarter's mage trainers (256 yards out) likewise. On the walking data the
+    city's floors under the surface reach 344 yards from the nearest lift (9 % of them beyond `SPREAD`: the Royal
+    Quarter, the Magic Quarter's far end, the sewers' tunnel out to the west), every one inside the Undercity map's
+    box. So a place now stands below such a level on a map the lift's ends lie on (`Round`: in that map's box, the
+    game's own bounds of the city), else within `SPREAD` yards of the lift (one on no map). Checked again: the
+    teleport and the hearthstone one walk of 881 yards (52 to the mage trainers); from Sylvanas to the flight
+    master, the inn and the bank on foot, to Brill on foot to a lift, up it and on; from Brill, the zeppelin tower
+    and the ruins down a lift to her floor. The 200 journeys between NPCs' places, outdoors and indoors, are the
+    same route for route; of the fixed journeys only Orgrimmar to Sylvanas changed (the zeppelin, then down a lift
+    into the city). Levels of two regions (Thunder Bluff, Freewind Post, Gnomeregan) and the Great Lift are as they
+    were. Left: the sewers' tunnel, where it runs under the hill below the split, is the city now, so from there to
+    the surface the route goes back to a lift (1,239 yards and the ride) rather than out by the cave (1,088); and,
+    not the lifts' rule, a flight point's place lets a walk go on from another of its floors (up and down at it,
+    `Planner.BOARD` seconds): from the lift Orgrimmar to Sylvanas walks to the bat handler on the ring and on from
+    the floor under it, and 7 of the 200 journeys walk twice in a row so.
 - **Built (2026-10-21): the portals; routes checked on the whole real data.** Saneroki asked whether the routes are
   reliable, flexible and robust: checked outside the game, the planner, its search and Core's timetables over every
   walking tile, the game's flight points and the set *Travel*, on journeys through the cities and 200 between NPCs'

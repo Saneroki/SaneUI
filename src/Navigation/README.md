@@ -433,7 +433,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   where the upper landing overhangs the platform, on the upper. Where a lift's two landings lie in one region (the
   Undercity, joined to the ruins far off by its sewers), its levels are that region's floors round it, stacked,
   told apart by height (the upper from halfway between the landings up, the lower near its lower landing's
-  height), and a place stands below them only within `Lifts.SPREAD` yards of it; a place below a level and one on it
+  height), and a place stands below them only round it: on a map its ends lie on (in that map's box: the
+  Undercity's holds the whole city, its Royal Quarter too, which lies farther from the lifts than `Lifts.SPREAD`
+  yards), or within `Lifts.SPREAD` yards of it; a place below a level and one on it
   are kept apart also where they share a region; a lift within one region whose levels lie side by side (the
   Great Lift) joins none. A walk's guess between two places
   of known heights (the player, a lift's ends) counts the climb too. The floor after a ride (`Rode`): at a lift

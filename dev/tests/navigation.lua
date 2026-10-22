@@ -115,6 +115,9 @@ local MAPS = {
     -- An isle: a zone straight on the world map, on a world's map of its own (2991, as Zephras Isle), 2000 x 2500 yards
     [2521] = { kind = 3, parent = 947, continent = 2991, top = 1000, bottom = -1500, left = 1000, right = -1000,
                world = { 0.55, 0.59, 0.40, 0.44 } },
+    -- A city under the ground (as the Undercity), its map the box of the continent's tile 2340
+    [1460] = { kind = 3, parent = 1415, continent = 0, top = -6400 / 3, bottom = -8000 / 3, left = -6400 / 3,
+               right = -8000 / 3 },
 }
 local player = { map = 1429, x = 0.75, y = 0.3 }
 local waypoint, tracked = nil, false
@@ -496,6 +499,10 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     -- from -20 to 10 yards), on no zone map.
     .. 'R[11] = "70245\t\tlift\t\t\t\t\t\t30'
     .. '\t-133.33\031-1333.33\0311\031\031\031-20\030-133.33\031-1333.33\031\031\031\03110\t\t\t3.5\t16"\n'
+    -- And one in the city on the Eastern Kingdoms' tile 2340, within one region too, on the city's map 1460 (13: x
+    -- -2400, y -2200, from -40 to 60 yards).
+    .. 'R[13] = "70245\t\tlift\t\t1460\03112.5\03150\t1460\03112.5\03150\t\t\t100'
+    .. '\t-2400\031-2200\0310\031\031\031-40\030-2400\031-2200\031\031\031\03160\t\t\t3.5\t16"\n'
     -- A portal (12): its trigger on the west field of tile 6176 (world x -208.33, y -62.5, 10 yards), where it brings
     -- one on the city's building floor of tile 6179 (x -66.67, y -1666.67, 50 yards), on no zone map.
     .. 'R[12] = "70245\t\tportal\t\t\t\t\t\t1606'
@@ -510,7 +517,7 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     .. 'R[4297659] = "70245\t\tteleport\tTeleport: Dalaran\t\t\t\t\t\t\t\t\t\t\talliance\t1297659\t\t17031"\n'
     .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byFromNode[20] = "5"\nI.byFromNode[21] = "6"\nI.byKind = {}\n'
     .. 'I.byKind.boat = "1\0303"\nI.byKind.flight = "2\0305\0306"\nI.byKind.tram = "7"\nI.byKind.zeppelin = "4"\n'
-    .. 'I.byKind.lift = "8\0309\03010\03011"\nI.byKind.portal = "12"\n'
+    .. 'I.byKind.lift = "8\0309\03010\03011\03013"\nI.byKind.portal = "12"\n'
     .. 'I.byKind.teleport = "3003561\0303003567\0303018960\0303023442\0304297659"\n')
 W.AddSets(packPath)
 local spawnsPath = folder .. "/Spawns"
@@ -589,7 +596,9 @@ end
 -- Tile 6178 east of it: a courtyard (1, 10 yards, region 6) over a hall (2, -20 yards) of the same region (joined to
 -- it far off, as the Undercity is to the ruins by its sewers). Tile 6179 east of that: the ground (1, 10 yards, region
 -- 7) deep under a city's building, its floor (2, 50 yards, region 8), its roof (3, 65 yards, region 9) and a deck east
--- of the roof (4, 59 yards, region 10) a building's.
+-- of the roof (4, 59 yards, region 10) a building's. Tile 2340 of the Eastern Kingdoms (its north west corner at u
+-- 2133, v -2133), a city under the ground as the Undercity is: the ruins over it (1, 60 yards, region 11) and its long
+-- hall (2, -40 yards, columns 0 to 239, rows 112 to 143, a building's floor) of the same region, joined far off.
 local routesFolder = io.popen("mktemp -d -t saneui-routes-XXXXXX"):read("*l") -- kept until the end
 local routesPath = routesFolder .. "/Routes"
 os.execute(("mkdir -p '%s'"):format(routesPath))
@@ -610,10 +619,12 @@ local walkBlocks = {
     [6178] = { 1, { 1, 1, 6,   1, 1, 6 }, { 0, 0, 256, 128, 40,   64, 32, 128, 64, -80 }, { 0, 0 } },
     [6179] = { 1, { 1, 1, 7,   1, 3, 8,   1, 3, 9,   1, 3, 10 },
                { 0, 0, 256, 256, 40,   0, 0, 64, 64, 200,   16, 16, 32, 32, 260,   52, 16, 8, 32, 236 }, { 0, 0, 0, 0 } },
+    [2340] = { 1, { 1, 1, 11,   1, 3, 11 }, { 0, 0, 256, 256, 240,   0, 112, 240, 32, -160 }, { 0, 0 } },
 }
 Set(routesPath .. "/Walking.lua", "Walking", "00000008", "int", '"map", "links", "block"', '"int", "list int", "text"',
     'R[3104] = "70245\t\t0\t3105\tblock:3104"\nR[3105] = "70245\t\t0\t3104\tblock:3105"\nR[6176] = "70245\t\t1\t\tblock:6176"\n'
-    .. 'R[6177] = "70245\t\t1\t\tblock:6177"\nR[6178] = "70245\t\t1\t\tblock:6178"\nR[6179] = "70245\t\t1\t\tblock:6179"\n')
+    .. 'R[6177] = "70245\t\t1\t\tblock:6177"\nR[6178] = "70245\t\t1\t\tblock:6178"\nR[6179] = "70245\t\t1\t\tblock:6179"\n'
+    .. 'R[2340] = "70245\t\t0\t\tblock:2340"\n')
 W.AddSets(routesPath)
 C_EncodingUtil = { DecodeBase64 = function(text) return text end, DecompressString = function(text) return text end,
                    DeserializeCBOR = function(text) return walkBlocks[tonumber(text:match("%d+"))] end }
@@ -3506,6 +3517,60 @@ end)()
     Canvas.Use(using)
     Canvas.Layout()
     MAPS[1456] = nil
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
+-- A lift within one region whose city reaches farther from it than Lifts.SPREAD yards (13, on the Eastern Kingdoms'
+-- tile 2340, its ends on the city's map 1460: the Undercity, whose Royal Quarter lies so far from its lifts): the
+-- whole city stands below its upper level, on the city's map. From the lift's foot to the hall's far end on foot (as
+-- from where Teleport: Undercity lands to the Royal Quarter, not up the lift and round); from there to the ruins on
+-- foot to the lift, up it, on foot to the pin.
+;(function()
+    local Lifts, s = ns.Lifts, Walk.SAMPLE
+    local function At(column, row) return 4 * Coords.TILE + column * s, -4 * Coords.TILE - row * s end
+    local function Spot(map, u, v)
+        local info = MAPS[map]
+        return (-u - info.left) / (info.right - info.left), (v - info.top) / (info.bottom - info.top)
+    end
+    local function Route(from, to)
+        waypoint = nil
+        W.Fire("USER_WAYPOINT_UPDATED")
+        W.Wait(0)
+        player.map, player.x, player.y = 1415, Spot(1415, from[1], from[2])
+        waypoint = { uiMapID = 1460, position = CreateVector2D(Spot(1460, to[1], to[2])) }
+        shownWay = nil
+        W.Fire("USER_WAYPOINT_UPDATED")
+        W.Wait(0)
+        Frames(8)
+        local legs, kinds = shownWay and shownWay.legs or {}, {}
+        for index, leg in ipairs(legs) do kinds[index] = leg.kind end
+        local last = legs[#legs] and legs[#legs].points[#legs[#legs].points]
+        local ends = last and math.abs(last.u - to[1]) < 0.5 and math.abs(last.v - to[2]) < 0.5
+        return legs, table.concat(kinds, " "), ends
+    end
+    local lift, level
+    for _, each in ipairs(Lifts.All()) do
+        if each.key == 13 then lift = each end
+    end
+    for _, each in ipairs(Lifts.Levels(1415)) do
+        if lift and each.alone == lift then level = each end
+    end
+    local foot, far, ruins = { At(48, 128) }, { At(230, 128) }, { At(40, 40) }
+    check(lift and Lifts.Landed(lift[1]) and Lifts.Landed(lift[2]) and lift[1].region == 11 and lift[2].region == 11
+        and level and level.stacked and level.maps[1460]
+        and (far[1] - lift.u) ^ 2 + (far[2] - lift.v) ^ 2 > Lifts.SPREAD ^ 2,
+        "a lift within one region on its city's map, the city's hall reaching farther from it than Lifts.SPREAD yards")
+    local indoors = IsIndoors
+    IsIndoors = function() return true end
+    local _, kinds, ends = Route(foot, far)
+    check(kinds == "walk" and ends, "from the lift's foot to the hall's far end: on foot, all the way in the city")
+    local legs
+    legs, kinds, ends = Route(far, ruins)
+    check(kinds == "walk lift walk" and legs[2].near == lift[1] and legs[2].far == lift[2] and ends,
+        "from the hall's far end to the ruins over the city: on foot to the lift, up it, on foot to the pin")
+    IsIndoors = indoors
     player.map, player.x, player.y = 1429, 0.75, 0.3
     waypoint = nil
     W.Fire("USER_WAYPOINT_UPDATED")

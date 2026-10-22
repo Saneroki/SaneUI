@@ -3,8 +3,26 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 209 (data in the game), 524 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 130 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 209 (data in the game), 527 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 130 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: the whole Undercity below its lifts' upper level (Saneroki, 2026-10-22)
+- `Lifts.lua`: within one region (the Undercity under the ruins) a place stands below a lift's upper level on a map
+  the lift's ends lie on (`Round`: in that map's box, in the lift's plane), or within `Lifts.SPREAD` yards of the
+  lift (one on no map). Before, only within `SPREAD` (250 yards), and the Royal Quarter lies 265 to 330 yards from
+  the city's three lifts, the Magic Quarter's far end 256: they counted as on the ruins. So from where Teleport:
+  Undercity lands (or a hearthstone bound there) to Sylvanas the route went up a lift, over the surface and down by
+  the sewers (1,577 yards where one walk is 881); from her to the flight master, the inn or the bank the walk ended
+  on the canal under a lift's top and the line rode down from there; from Brill, the zeppelin tower or the ruins the
+  walk ended on the hill over her.
+- Checked on the real data (outside the game): the city's floors under the surface reach 344 yards from the nearest
+  lift, 9 % beyond `SPREAD`, all in the Undercity map's box. Now the teleport and the hearthstone are one walk of
+  881 yards (52 to the Magic Quarter's mage trainers), walks within the city stay in it, and from the surface the
+  route takes a lift down to her floor. 200 journeys between NPCs' places, outdoors and indoors: the same, route for
+  route (0 none, 14 straight, 7 off the data); of the fixed journeys only Orgrimmar to Sylvanas changed (the
+  zeppelin, then down a lift). Thunder Bluff, Freewind Post, Gnomeregan and the Great Lift as they were.
+- Tests: `dev/tests/navigation.lua` (527 checks: a lift within one region on its city's map, the city's hall
+  reaching beyond `SPREAD`: from the lift's foot to its far end on foot, from there out by the lift).
 
 ### Navigation: the maps' far level tuned, a copy never kept (Saneroki, 2026-10-22)
 - `dev/tools/map-layers`: a zone's water in the far image 1 shaded as a sea seen from a plane (`sea_of`: `SEA` deep,

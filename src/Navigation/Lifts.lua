@@ -43,7 +43,8 @@ local _, ns = ...
 --  it, is none: the lift is the way (Planner.lua).
 --  Where a lift's two landings lie in one region, its levels are its region's floors round it, told apart by their
 --  height: the upper from halfway between the landings up, the lower within Walk.RISE yards of its lower landing's
---  height; a place stands below such a level only within Lifts.SPREAD yards of its lift.
+--  height; a place stands below such a level only round its lift: on a map its ends lie on (in that map's box: the
+--  Undercity's holds the whole city, its Royal Quarter too), or within Lifts.SPREAD yards of it.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords, Walk = ns.Coords, ns.Walk
@@ -53,7 +54,8 @@ ns.Lifts = Lifts
 Lifts.LANDING = 20  -- yards from a lift's end its landing may lie (beside its shaft: a door, a platform)
 Lifts.NEAR = 12     -- yards from its shaft within which a player is at a lift (on its car, or at its landing)
 Lifts.RING = 40     -- yards round a lift's shaft where its levels are looked at: one over the other, or side by side
-Lifts.SPREAD = 250  -- yards round a lift within one region where a place may stand below its upper level (the city)
+Lifts.SPREAD = 250  -- yards round a lift within one region where a place may stand below its upper level, besides
+                    -- on the maps its ends lie on (Round)
 
 local Travel = Core.Data.Set("Travel")
 local lifts       -- every lift, while Core's set Travel stays as it is
@@ -192,13 +194,26 @@ local function Top(list, level, on)
     return top
 end
 
+-- Whether a place lies round a level within one region, where it may stand below it (Lifts' header): within
+-- Lifts.SPREAD yards of its lift, or on a map the lift's ends lie on (in that map's box, in the lift's plane).
+local function Round(level, u, v)
+    local lift = level.alone
+    if (lift.u - u) ^ 2 + (lift.v - v) ^ 2 <= Lifts.SPREAD ^ 2 then return true end
+    for at in pairs(level.maps) do
+        if Coords.PlaneOf(at) == lift.map and Coords.InPlane(at) then
+            local x, y = Coords.ToMap(Coords.Box(at), u, v)
+            if x >= 0 and x <= 1 and y >= 0 and y <= 1 then return true end
+        end
+    end
+    return false
+end
+
 -- Whether a place stands below a stacked level (Lifts' header): by its own floor's height where it is known (ownZ, of
 -- the region own), else by the floors under it (under) of the level's lower level; wide (a pin on the lift's map):
 -- of any other, and with none there, the nearest within Lifts.RING yards. And the region of the floor below that
--- showed it. Within one region, only within Lifts.SPREAD yards of its lift.
+-- showed it. Within one region, only round its lift (Round).
 local function Under(map, u, v, under, level, own, ownZ, wide)
-    local alone = level.alone
-    if alone and (alone.u - u) ^ 2 + (alone.v - v) ^ 2 > Lifts.SPREAD ^ 2 then return false end
+    if level.alone and not Round(level, u, v) then return false end
     local top = Top(under, level, Upper)
     if not top then return false end
     if ownZ then return not Upper(level, own, ownZ) and top > ownZ + Walk.RISE end
