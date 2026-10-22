@@ -21,7 +21,7 @@ Blizzard's code has it ([gui-development.md](gui-development.md)).
 
 ## The idea
 
-An adventurer's journal: an open book of warm off-white parchment bound in thin, stitched dark brown leather. The art
+An adventurer's journal: an open book of light cream parchment bound in thin, stitched dark brown leather. The art
 is a quiet background; the content (icons, names, numbers, text) is what stands out. Everything is compact and dense,
 with as little room for frame and ornament as the look allows.
 
@@ -42,11 +42,10 @@ with as little room for frame and ornament as the look allows.
 ### Paper
 
 - **Texture:** `paper.png`: parchment with soft, large, faint clouds and an extremely subtle grain.
-- **Tone:** a warm off-white, much whiter than the dark brown it was for a day (Saneroki, 2026-10-22). The
-  page's mean colour is (238, 229, 208), just under the picked parchment's own (248, 241, 217), so its clouds
-  still show; #12's strap is about (77, 48, 31). The harness sets it (`paper.py`, `TONE`). The paper of the
-  window (#12) and of the doll (#3) is moved to the same tone, their leather and metal keeping their own colours
-  (`pieces.py`, `tone_shift`).
+- **Tone:** a light cream (Saneroki, 2026-10-22): between the dark brown it was for a day (150, 114, 80) and an
+  off-white (238, 229, 208) that was a little too white. The page's mean colour is (220, 204, 178); #12's strap
+  is about (77, 48, 31). The harness sets it (`paper.py`, `TONE`). The paper of the window (#12) and of the doll
+  (#3) is moved to the same tone, their leather and metal keeping their own colours (`pieces.py`, `tone_shift`).
 - **Made of layers in code**, so a window can be any size and scroll without repeats:
   - `paper.png` scaled to cover the page and cut to it (never stretched or repeated);
   - a soft darker edge;

@@ -39,7 +39,7 @@ TITLE_AT = (372, 182)                  # where the title label's writing starts
 CLOSE_AT = (770, 124)                  # the middle of the corner patch on the strap: the close button
 TOP_FADE, BOTTOM_FADE = 26, 8          # the top's and bottom's paper fades into the page over so many pixels
 FRAME_PAPER = (300, 200, 560, 240)     # a stretch of #12's plain paper, for its tone
-DOLL_PAPER = (430, 720, 600, 760)      # the same in #3
+DOLL_PAPER = (420, 120, 470, 200)      # the same in #3 (behind the hero's head)
 
 # piece: its part at 4K (hires/<part>.png), a cut-out whose rim is cleaned
 PARTS = {"patch": "patch", "tab-arrow": "top-tab-arrow", "tab-arrow-b": "top-tab-arrow-b", "tab-patch": "top-tab-patch",
