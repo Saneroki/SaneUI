@@ -114,9 +114,17 @@ minimap) and the full-screen window (the world map) show the same map with the s
   3D world. They need not be accurate or useful for finding one's way, and need not be seen from straight
   above: a perspective angle is welcome, for the full freedom of the render. The zones' borders fit together,
   each zone clearly sectioned from the next, so the world reads as one picture. Parchment and Scrying keep
-  their own views unchanged. Open: the switch-over zoom between the close squares and the zone paintings, and
-  how the angled paintings meet at the borders (painted per zone and blended, or each continent painted as a
-  whole and cut by the zones' outlines).
+  their own views unchanged. Open: the switch-over zoom between the close squares and the zone paintings. (How the
+  zone paintings meet: painted per zone, from straight above, and joined along the zones' outlines; below.)
+  - **All three from straight above, the zones stitched (Saneroki, 2026-10-22; replacing the far zoom's view from
+    a plane at an angle, and answering the open question above):** every level is seen straight from above in the
+    same world coordinates, so the three lie over each other: every road, major place and pin is in the same spot
+    in each, and one sees where one is in every view. Each zone is painted on its own (its middle and far levels in
+    its own frame, 2048 pixels across) and the zones are joined along their outlines into the world
+    (`dev/tools/map-layers stitch`, cut by Navigation's zone masks); no continent or world is painted as a whole.
+    Each zone keeps its own mood, colours and light by its brief at the far level too; the middle level's
+    parchment is each zone's own colour (greenish, yellowish, reddish, whitish by what the zone is: its land's
+    colour turned into the game maps' yellow-orange).
   - **Strict maps, all three (Saneroki, 2026-10-21, last of the day; replacing the free paintings of this
     decision and the angled middle zoom below):** the close zoom the terrain, pixel-exact; the middle zoom a
     top-down map in Blizzard's style, in pencil on the interface's parchment, exactly over the terrain, looking much
@@ -177,8 +185,9 @@ minimap) and the full-screen window (the world map) show the same map with the s
   close painting; each middle and far painting checked for its outlines and by a vision model. The briefs are
   `dev/imagegen/maps/dungeons.toml` (30 instances, researched from the game's lore texts and pictures and from
   play) and `zones.toml`; the shared words `levels.toml`. Samples painted (2026-10-21): Westfall and Tanaris, the
-  Deadmines, Zul'Farrak and the Hall of Thanes, all three levels; the whole run is queued once Saneroki has seen
-  them.
+  Deadmines, Zul'Farrak and the Hall of Thanes, all three levels; the Eastern Kingdoms and Kalimdor whole, middle
+  and far at an angle (2026-10-22, given up); then from straight above, each zone on its own, Westfall joined with
+  Elwynn Forest and Duskwood (`stitch`); the whole run is queued once Saneroki has seen them.
 - **Instance maps as the world map, apart from it (Saneroki, 2026-10-21):** the instance maps are completely
   independent of the world map and separate from it (their own view, data, pictures, packs and jobs; never part of
   the world's picture), but they work in the same way and are made in the same way: the same three levels, one

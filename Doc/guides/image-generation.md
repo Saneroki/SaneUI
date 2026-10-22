@@ -350,23 +350,25 @@ lists, from inputs of its own:
   - **Close:** the Atlas' own squares, words, water and lava check (up to three seeds) and colour pass, by its own
     code (`dev/tools/atlas`'s `Game`, `words`, `check`, `colour_of`), an instance's map in place of a continent.
   - **Middle** (`qwen21-edit-3ref-i2i`: image to image, starting from image 1 itself): image 1 the game's map
-    art, image 2 the terrain plan, image 3 a piece of the house parchment (where the game has no map, image 1 the
+    art, image 2 the terrain plan, image 3 a piece of the parchment (the house paper's grain in the yellow-orange of the game's maps, a zone's turned
+    towards its land's colour: `parchment`, `land_tone`) (where the game has no map, image 1 the
     plan and image 2 another place's map for its manner); edit words, no brief; strength 0.94, 0.96 (one step
     skipped, two seeds), then 0.98 (none) (at 0.8 and 0.88, six and three skipped, the Deadmines' map stayed the
     game's coloured map, labels and all).
-  - **Far** (from noise, its layout held by controls: the Fun ControlNet Union, `QwenImageDiffsynthControlnet`):
-    image 1 the place seen from a plane at an angle, blurred and toned down to where each land lies, image 2 a piece
-    of the close level; a photograph of the landscape, its layout kept roughly. A zone (`qwen21-edit-2ref-i2i-cn2`):
-    image 1 the game's terrain with its heights standing up (`relief`: the terrain files' heights under the minimap
-    textures, drawn as the voxel spaces of old drew land, 6 s a zone), its water a sea's blue, its shallows lighter;
-    the controls its depth (0.35 to 30 % of the steps) and the lines where the walking data's water meets land (0.5
-    to 35 %), light and early (stronger and longer they kept the game's look); its words name the zones around it. An instance (`qwen21-edit-2ref-i2i-cn`): image 1 its plan warped into the view
-    (`plane_view`; its halls lie under rock, which a relief would show), the control its clearest edges (0.35 to 30 %: at 0.5 to 35 % Zul'Farrak kept the game's raw edges, at 0.8 to 60 % its
-    game terrain). Learned on
-    Westfall: the middle drawing as a picture had its pencil symbols stamped on the land; the sharp view as image 1
-    came back as the game's own terrain, read at 512 pixels too; the walking data's barriers as lines came back as
-    lakes; without controls the model painted a closer view than the frame. Its outlines must share FAR (0.3) with
-    the sharp view, a zone's water agree with the walking data's.
+  - **Far** (straight down, from noise, its layout held by controls: the Fun ControlNet Union,
+    `QwenImageDiffsynthControlnet`; Saneroki, 2026-10-22: all three levels from straight above, each zone on its
+    own, joined along the outlines by `map-layers stitch`): image 1 the place's terrain in its frame, lightly blurred
+    and toned down (its textures gone, its roads and towns faint), image 2 a piece of the close level; a photograph
+    of the land, its layout kept. A zone (`qwen21-edit-2ref-i2i-cn2`): image 1's water a sea's blue, its shallows
+    lighter; the controls its heights (`height_map`, 0.35 to 30 % of the steps) and the lines where the walking
+    data's water meets land (0.5 to 35 %), light and early (stronger and longer they kept the game's look); its words
+    name the zones reaching into its frame. An instance (`qwen21-edit-2ref-i2i-cn`): the control its clearest edges
+    (0.35 to 30 %: at 0.5 to 35 % Zul'Farrak kept the game's raw edges, at 0.8 to 60 % its game terrain). Learned on
+    Westfall, then at an angle: the middle drawing as a picture had its pencil symbols stamped on the land; the sharp
+    terrain as image 1 came back as the game's own, read at 512 pixels too; the walking data's barriers as lines came
+    back as lakes; without controls the model painted a closer view than the frame. Its outlines must share FAR (0.3)
+    with the terrain plan and at most COPY (0.97: more is image 1 come back as it is), a zone's water agree with the
+    walking data's.
   - **Strength is in steps:** ComfyUI's KSampler runs int(steps / denoise) steps and skips the first ones beyond
     `steps`: with 25 steps a denoise from 0.927 to 0.961 skips one, above it none, so 0.93 and 0.96 make the same
     picture and 0.97 is a painting from noise. Choose a denoise by the steps it skips.

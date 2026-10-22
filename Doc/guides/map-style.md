@@ -25,8 +25,8 @@ world, that all three share, so they lie over each other exactly.
 | Level | What it shows | Look | Made from |
 | --- | --- | --- | --- |
 | **Close** | the terrain, pixel-exact: every rock, wall, building, shore and walkable spot where the game has it | a photorealistic satellite photograph of exactly that ground, seen straight down | the game's terrain (an instance's own, with its buildings' indoor maps laid over it), repainted with the Atlas' words (`dev/imagegen/maps/atlas.toml`) |
-| **Middle** | a zone, or one floor of an instance: a top-down map in the manner of the game's own maps, exactly over the terrain | drawn by hand in graphite pencil on the interface's parchment, straight from above | the terrain plan of the frame and the game's map art of it in the same frame (`levels.toml`, `[middle]`) |
-| **Far** | a zone or an instance as a whole, its layout kept roughly, its major places where they lie | a photograph of the landscape from a plane high above, at an angle, realistic fantasy | the place seen from the plane, blurred, a piece of the close level, and controls for its layout (`levels.toml`, `[far]`) |
+| **Middle** | a zone, or one floor of an instance: a top-down map in the manner of the game's own maps, exactly over the terrain | drawn by hand in pencil and brown ink on parchment in each zone's own colour, straight from above | the terrain plan of the frame and the game's map art of it in the same frame (`levels.toml`, `[middle]`) |
+| **Far** | a zone or an instance as a whole, its layout kept, its major places where they lie | a photograph of the land straight down from high above, realistic fantasy | its terrain lightly blurred, a piece of the close level, and controls for its layout (`levels.toml`, `[far]`) |
 
 ### Close: pixel-exact
 
@@ -53,38 +53,42 @@ world, that all three share, so they lie over each other exactly.
   its zone and dungeon maps, its rooms, halls, roads, towns, coasts and rivers shown as the game's map shows them,
   laid exactly over the terrain: every outline, wall, cliff and shore where the terrain has it, the same shape and
   size. The world's zones and the instances' floors alike, straight from above.
-- **Drawn in the interface's paper and pencil** ([interface-style.md](interface-style.md), *Paper*, *Pencil*):
-  graphite pencil on the cream parchment; clean outlines, light hatching on rock, cliffs and ground nobody walks,
-  fine ripples on water, small careful pencil drawings of trees, houses, towers and props where they stand; the
-  walkable ground clean paper. Graphite grey only.
+- **Pencil on parchment in each zone's own colour** (Saneroki, 2026-10-22: "the yellow / orange that the blizzard
+  maps are, instead of the white background", then "greenish, yellowish, reddish, whitish zones depending on its
+  meta data"): the house paper's grain in the yellow-orange of the game's own maps, each zone's turned towards its
+  land's colour (the median of its terrain inside its outline, its water left out: Westfall golden, Elwynn Forest
+  and Duskwood green, Tanaris sand); an instance's in the colour of its game map. Pencil and brown ink, clean
+  outlines, light hatching on rock, cliffs and ground nobody walks, the water a faded grey-blue wash with fine
+  ripples, small careful pencil drawings of trees, houses, towers and props where they stand; the walkable ground
+  plain parchment in its zone's colour. (It was graphite on the interface's cream paper until then.)
 - **Its pictures:** image 1 the game's own map art of it in the frame, which it is drawn again from (its frame,
   title banner and ornaments made parchment first), image 2 the terrain plan of the same frame (the exact outlines),
   image 3 a piece of the parchment. Where the game has no map of the place, image 1 is the terrain plan and another
   place's map gives only its manner. It takes no words of the brief: they drew what they named.
 
-### Far: a photograph from a plane, its layout kept roughly
+### Far: a photograph straight down, its layout kept
 
-- **A photograph of the landscape from a plane high above, at an angle** (Saneroki, 2026-10-21: "a perspective
-  plane view on the landscape"), in natural light: a realistic fantasy world, not a map and not concept art.
-- **Its layout kept roughly, with some leeway,** so it fits the middle and close levels: lakes, rivers, coasts,
+- **A photograph of the land taken straight down from high above** (Saneroki, 2026-10-22: all three levels from
+  straight above, in the same place, so the maps fit together; the view from a plane at an angle given up), in
+  natural light: a realistic fantasy world, not a map and not concept art.
+- **Its layout kept, with a little leeway,** so it lies over the middle and close levels: lakes, rivers, coasts,
   mountains, cliffs and the ground nobody can cross, roads, towns and landmarks where the terrain has them, at their
-  sizes; the biome, mood, atmosphere and lore of its brief; the borders of zones and the walls of an instance.
-- **Its pictures:** image 1 the place seen from the plane (its near edge the frame's south edge, the land ahead
-  widening), blurred and toned down to where each land, forest, field, mountain and sea lies, so the model paints
-  the detail as a photograph shows it and not the game's textures; image 2 a piece of the close level's painting
-  (how the ground looks). Its layout is held by controls, not by image 1:
-  - **A zone:** image 1 is the game's terrain with its heights standing up (the terrain files' heights under the
-    minimap textures, its water a sea's blue); the controls are its depth (mountains, hills, the plane's angle) and
-    the lines where the walking data's water meets land (coasts, lakes, rivers). Its words name the lands around it,
-    each by its direction (else the zone's own land was painted over them).
-  - **An instance:** image 1 is its plan warped into the plane's view (its halls lie under rock, which the terrain's
-    heights would show); the control is the plan's clear edges.
-- **Learned on Westfall (2026-10-22):** the sharp view as image 1 came back as the game's own terrain; the walking
-  data's barriers as lines came back as lakes; without the controls the model painted a closer view than the frame.
-  Not the middle level's drawing either: given as a picture, its pencil symbols were stamped on the land.
-- **The world:** both continents always together (no view of one continent alone); each zone clearly sectioned from
-  the next, the borders softened where nobody walks. What stands there in the lore is shown, not the game's open
-  view: Teldrassil the world tree itself, Ironforge the full mountain.
+  sizes; each zone in its own biome, mood, colours, light and lore by its brief.
+- **Its pictures:** image 1 the place's terrain in its frame, lightly blurred and toned down (its textures gone, its
+  roads and towns faint), so the model paints the detail as a photograph shows it and not the game's textures;
+  image 2 a piece of the close level's painting (how the ground looks). Its layout is held by controls:
+  - **A zone:** image 1's water a sea's blue (its shallows lighter); the controls are its heights (mountains, hills)
+    and the lines where the walking data's water meets land (coasts, lakes, rivers). Its words name the zones
+    reaching into its frame, each by its direction (else the zone's own land was painted over them).
+  - **An instance:** the control is its plan's clearest edges.
+- **Learned on Westfall (2026-10-22, at an angle):** the sharp terrain as image 1 came back as the game's own; the
+  walking data's barriers as lines came back as lakes; without the controls the model painted a closer view than
+  the frame; stronger and longer controls kept the game's look. Not the middle level's drawing either: given as a
+  picture, its pencil symbols were stamped on the land.
+- **The world:** both continents always together (no view of one continent alone), made of the zones' paintings,
+  each zone painted on its own and joined along its outline (`map-layers stitch`); each zone clearly sectioned
+  from the next, the borders softened where nobody walks. What stands there in the lore is shown, not the game's
+  open view: Teldrassil the world tree itself, Ironforge the full mountain.
 - **An instance:** the whole instance in one view, its halls and rooms where they lie, the rock and the roofs over
   them cut away.
 

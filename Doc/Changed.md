@@ -6,6 +6,29 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 209 (data in the game), 527 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 130 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the maps' three levels all from straight above, each zone on its own, joined (Saneroki, 2026-10-22)
+- Saneroki: all three levels seen straight from above in the same world coordinates, so every road, major place and
+  pin is in the same spot in each; each zone painted on its own and the zones joined along their outlines; the far
+  level's view from a plane at an angle given up (`Navigation.md`, *All three from straight above*).
+- `dev/tools/map-layers`:
+  - **Far, straight down:** image 1 the zone's terrain in its frame, its water a sea's blue, lightly blurred
+    (`FAR_BLUR` 5: its roads and towns faint); the controls its heights (`height_map`) and the walking data's water
+    lines (`far_inputs`); an instance's its plan blurred with its clearest edges; outlines measured against the
+    terrain plan. Gone: the relief seen from a plane, the plane view, the far box, the continent views.
+  - **Middle, each zone in its own colour:** the parchment the game maps' yellow-orange turned towards the zone's
+    land (`land_tone`: the median of its terrain inside its outline, stronger by `LAND_COLOUR`: Westfall golden,
+    Elwynn Forest and Duskwood green); an instance's in its game map's colour (`tone_of`); the words keep image 1's
+    tints, the water a faded grey-blue wash (`levels.toml`).
+  - **`stitch`:** the painted zones' middle and far levels laid on their continent, each cut by its outline
+    (Navigation's zone masks, `Art/Zones/`), the zones' whole paintings under them.
+  - **`paint --whole-close`:** a subject's close level over its whole frame; a far level of a zone without a close
+    level takes another zone's on its map.
+- `jobs.toml`: `mapcompare` (priority 2): Duskwood's and Ashenvale's close levels whole, 35 and 126 squares, for
+  comparing all three levels with the game's maps.
+- Docs: `map-style.md`, `image-generation.md`, `levels.toml`, `Navigation.md`.
+- Tests: `dev/tests/map_layers.py` (61 checks: the height map, the walking picture framed, the land tone, the
+  words straight down).
+
 ### Navigation: the whole Undercity below its lifts' upper level (Saneroki, 2026-10-22)
 - `Lifts.lua`: within one region (the Undercity under the ruins) a place stands below a lift's upper level on a map
   the lift's ends lie on (`Round`: in that map's box, in the lift's plane), or within `Lifts.SPREAD` yards of the

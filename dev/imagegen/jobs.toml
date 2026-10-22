@@ -53,3 +53,12 @@ command = ["python3", "dev/imagegen/sets/interface/catalog.py"]
 status = ["python3", "dev/imagegen/sets/interface/catalog.py", "--status"]
 done = '^complete'
 rebuild = ["python3", "dev/imagegen/sets/interface/catalog.py", "--rebuild"]
+
+# The maps' comparison (Saneroki, 2026-10-22: Duskwood and Ashenvale in all three levels, laid over the game's own
+# maps): the two zones' close levels over their whole frames, 35 and 126 squares (dev/tools/map-layers, the samples'
+# run in assets/generated/map-layers; each square skipped once painted).
+[[job]]
+name = "mapcompare"
+priority = 2
+command = ["dev/tools/map-layers", "paint", "--whole-close", "--only", "zone-1431,zone-1440"]
+status = ["dev/tools/map-layers", "status"]

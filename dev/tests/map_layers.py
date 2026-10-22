@@ -57,50 +57,28 @@ check("indoors: a building's point placed and found again (the drawing's inverse
 words = tomllib.loads(ml.LEVELS.read_text())
 check("words: the levels", sorted(words), ["far", "middle"])
 check("words: the middle level's parts", sorted(words["middle"]), ["images", "images_plan", "last", "look", "look_plan"])
-check("words: the far level's parts", sorted(words["far"]), ["around", "images", "images_relief", "last", "look", "look_relief", "open"])
+check("words: the far level's parts", sorted(words["far"]), ["around", "images", "images_zone", "last", "look", "look_zone", "open"])
 check("words: the middle level is pencil on parchment, straight from above",
       all(w in words["middle"]["look"] for w in ("pencil", "parchment", "straight from above")), True)
 check("words: both levels are edits of image 1 (they keep its layout)",
       all(w in words[level]["look"] for level, w in (("middle", "Make image 1 look like"), ("far", "Make image 1 a"))), True)
 check("words: the middle level keeps its layout exactly", "never where or what anything is" in words["middle"]["look"], True)
-check("words: the far level a photograph from a plane of where image 1's places lie, a zone's and an instance's",
-      all(w in words["far"][look] for w in ("photograph", "plane", "where image 1 has it", "image 2")
-          for look in ("look", "look_relief")), True)
-plan = Image.new("RGB", (900, 600), (90, 90, 90))
-ImageDraw.Draw(plan).rectangle((0, 0, 899, 59), fill=(255, 0, 0))       # the padding's north edge: the view's top
-ImageDraw.Draw(plan).rectangle((150, 470, 749, 499), fill=(0, 0, 255))  # just inside the frame's south edge
-view = ml.plane_view(plan, (400, 300))
-check("plane view: its size", view.size, (400, 300))
-check("plane view: the far edge is the plan's north", view.getpixel((200, 2))[0] > 200, True)
-check("plane view: the frame's south edge is near its bottom", view.getpixel((200, 295))[2] > 150, True)
-check("padded: a box grown on each side", ml.padded((100, 0, 100, 0), 0.25), (125.0, -25.0, 125.0, -25.0))
-plan = Image.new("RGB", (600, 400), (90, 90, 90))
-ImageDraw.Draw(plan).rectangle((0, 0, 599, 30), fill=(255, 0, 0))       # the plan's north edge: the view's top
-ImageDraw.Draw(plan).rectangle((120, 300, 479, 330), fill=(0, 0, 255))  # just inside the frame's south edge
-flat = np.zeros((400, 600), np.float32)
-view = ml.relief(plan, flat, 1.0, (400, 300), (0.25, 0.25))
-check("relief: its size", view.size, (400, 300))
-check("relief: the far edge is the plan's north", view.getpixel((200, 3))[0] > 200, True)
-check("relief: the frame's south edge is near its bottom", view.getpixel((200, 296))[2] > 150, True)
-ImageDraw.Draw(plan).rectangle((0, 120, 599, 140), fill=(0, 200, 0))   # a green field north of the middle
-hill = flat.copy()
-hill[150:200, :] = 60                                                   # a ridge south of it, 60 yards high
-green = lambda picture: sum(picture.getpixel((200, y)) == (0, 200, 0) for y in range(300))  # noqa: E731
-check("relief: a ridge hides the land behind it",
-      green(ml.relief(plan, hill, 1.0, (400, 300), (0.25, 0.25))) < green(ml.relief(plan, flat, 1.0, (400, 300), (0.25, 0.25))), True)
-near = ml.relief(None, flat, 1.0, (400, 300), (0.25, 0.25), depth=True)
-check("relief: its depth near white, far dark", near.getpixel((200, 296))[0] > 200 > near.getpixel((200, 3))[0], True)
-for box in ((300, 0, 450, 0), (600, 0, 450, 0)):   # a wide frame and a tall one
-    wide, pads = ml.far_box(box)
-    across = 300
-    field = np.zeros((round(across * (wide[0] - wide[1]) / (wide[2] - wide[3])), across), np.float32)
-    seen = ml.relief(Image.new("RGB", field.shape[::-1], (90, 90, 90)), field, 1.0, (120, 80), pads)
-    check(f"far box: the view's far corners lie on the plan ({box[0]} by {box[2]})",
-          seen.getpixel((1, 1)) == seen.getpixel((118, 1)) == (90, 90, 90), True)
+check("words: the far level a photograph straight down of where image 1's places lie, a zone's and an instance's",
+      all(w in words["far"][look] for w in ("photograph", "straight down", "exactly where image 1 has it", "image 2")
+          for look in ("look", "look_zone")), True)
+check("words: no view at an angle any more", any("angle" in words[level][part] or "plane" in words[level][part]
+                                                for level in words for part in words[level] if isinstance(words[level][part], str)), False)
+heights = np.array([[np.nan, 0.0, 10.0], [20.0, 30.0, 40.0]], np.float32)
+shades = np.asarray(ml.height_map(heights).convert("L"))
+check("height map: the highest ground white, the lowest dark, no terrain black",
+      (int(shades[1, 2]), int(shades[0, 1]), int(shades[0, 0])), (255, 40, 0))
+check("height map: higher is lighter", bool(shades[0, 1] < shades[0, 2] < shades[1, 0] < shades[1, 1] < shades[1, 2]), True)
+classes = Image.fromarray(np.array([[ml.SWIM, ml.WALKED] * 50] * 70, np.uint8))
+check("framed: a walking picture keeps its shades (nearest)",
+      set(np.unique(np.asarray(ml.framed(classes, Image.Resampling.NEAREST)))) <= {ml.SWIM, ml.WALKED}, True)
 deep = ml.sea_of(np.array([[10, 20, 30], [10, 20, 30], [60, 90, 90], [60, 90, 90]], np.uint8))
 check("sea: the game's darkest water deep blue, its lighter shallows turquoise",
       (tuple(deep[0]), tuple(deep[-1])), (ml.SEA, ml.SHALLOWS))
-check("relief: no terrain is the background", ml.relief(plan, np.full((400, 600), np.nan, np.float32), 1.0, (40, 30), (0.25, 0.25)).getpixel((20, 15)), (14, 22, 34))
 brief = {"biome": "An old gold mine", "buildings": "Timber.", "places": "Tunnels.", "colours": "brown",
          "atmosphere": "Warm lantern light. Dust."}
 middle = ml.words_of("middle", words, brief, True)
@@ -110,15 +88,15 @@ check("words: the middle level takes no brief", brief["places"] in middle or "Th
 check("words: no cut-away in the middle level", words["far"]["open"] in middle, False)
 check("words: an instance's far level cuts away its roofs", words["far"]["open"] in far, True)
 check("words: a zone's far level does not", words["far"]["open"] in ml.words_of("far", words, brief, False), False)
-check("words: a zone's far level starts from its blurred relief",
-      ml.words_of("far", words, brief, False).startswith(words["far"]["images_relief"]), True)
+check("words: a zone's far level starts from its blurred terrain",
+      ml.words_of("far", words, brief, False).startswith(words["far"]["images_zone"]), True)
 check("words: the lands around a zone, by direction, before the last sentence",
       "to the east, a dark forest; to the north, hills." in ml.words_of("far", words, brief, False,
                                                                       [("east", "A dark forest"), ("north", "hills")]), True)
 zone = {"box": (100.0, 0.0, 100.0, 0.0), "map": 0, "key": 1}
-found = {1: (0, (100.0, 0.0, 100.0, 0.0), 0), 2: (0, (100.0, 0.0, 0.0, -100.0), 0), 3: (0, (200.0, 100.0, 100.0, 0.0), 0),
-         4: (1, (100.0, 0.0, 0.0, -100.0), 0), 5: (0, (500.0, 400.0, 100.0, 0.0), 0)}
-check("around: the zones beside a zone, east and north; not itself, another continent's or one out of view",
+found = {1: (0, (100.0, 0.0, 100.0, 0.0), 0), 2: (0, (100.0, 0.0, 30.0, -70.0), 0), 3: (0, (130.0, 30.0, 100.0, 0.0), 0),
+         4: (1, (100.0, 0.0, 30.0, -70.0), 0), 5: (0, (500.0, 400.0, 100.0, 0.0), 0)}
+check("around: the zones reaching into a zone's frame, east and north; not itself, another continent's or one out of it",
       sorted(ml.around_of(zone, found, {"1": {}, "2": {}, "3": {}, "4": {}, "5": {}})), [("east", 2), ("north", 3)])
 check("words: the kind of place, in lower case", "This place is an old gold mine." in far, True)
 check("words: the light is the atmosphere's first sentence", "Its light: Warm lantern light." in far, True)
@@ -164,6 +142,23 @@ check("verdict: a far render that is a drawing fails",
       False)
 check("verdict: an answer that cannot be read fails", ml.verdict("far", "no idea")[0], False)
 check("look: the far level asks for the brief's kind of place", brief["biome"] in ml.look_words("far", brief), True)
+check("look: the middle level asks for tinted parchment", "tinted parchment" in ml.look_words("middle", brief), True)
+check("look: the far level asks for a view straight down", "straight down" in ml.look_words("far", brief), True)
+check("words: the middle level washed in image 1's own colours, not on cream",
+      all("parchment" in words["middle"][part] and "cream" not in words["middle"][part] for part in ("look", "look_plan", "last"))
+      and "own colours" in words["middle"]["look"], True)
+green = Image.new("RGB", (60, 40), (70, 120, 40))
+ImageDraw.Draw(green).rectangle((0, 0, 59, 9), fill=(80, 100, 140))   # a strip of grey-blue sea
+check("tone: a green zone's map gives green parchment, its sea left out", ml.tone_of(green), (70, 120, 40))
+grass = Image.new("RGB", (40, 40), (60, 130, 40))
+check("land tone: a green zone's land gives a greener parchment than the game maps' ochre",
+      bool(ml.land_tone(grass, -1)[1] / ml.land_tone(grass, -1)[0] > ml.PARCHMENT[1] / ml.PARCHMENT[0]), True)
+check("land tone: a zone of water only keeps the game maps' ochre", ml.land_tone(Image.new("RGB", (8, 8), (40, 80, 140)), -1), ml.PARCHMENT)
+leafy = np.asarray(ml.parchment((32, 32), ml.tone_of(green))).reshape(-1, 3).mean(0)
+check("parchment: in a green map's tone, green over red and blue", bool(leafy[1] > leafy[0] and leafy[1] > leafy[2]), True)
+paper = np.asarray(ml.parchment((64, 64))).reshape(-1, 3).mean(0)
+check("parchment: the game maps' yellow-orange, red over green over blue",
+      bool(paper[0] > paper[1] > paper[2] and paper[0] - paper[2] > 60), True)
 
 # --- The walking data -----------------------------------------------------------------------------
 
