@@ -23,7 +23,7 @@ Usage:
 
   build   what is missing of the layers (a layer's pictures made again only when its source is newer);
           world.json lists them all; the page (dev/tools/world-map-page/) copied in
-  serve   the page at http://127.0.0.1:8773 (saneui showworldmap; a preview server's PORT)
+  serve   the page on this computer, 127.0.0.1 port 8773 (saneui showworldmap; a preview server's PORT)
 
 Writes (default assets/generated/world-map, never committed): world.json, index.html, viewer.js, <layer>/<continent>/
 <level>/<row>_<column>.jpg for the block layers, <layer>/<continent>/<uiMapID>.webp for the zone layers, instances/.
@@ -298,7 +298,7 @@ def build(args):
     (out / "world.json").write_text(json.dumps(world))
     for page in PAGE.iterdir():
         shutil.copyfile(page, out / page.name)
-    print(f"written {out}; saneui showworldmap serves it at http://127.0.0.1:{PORT}")
+    print(f"written {out}; saneui showworldmap serves it on 127.0.0.1 port {PORT}")
 
 
 def serve(args):
@@ -306,7 +306,7 @@ def serve(args):
     if not (out / "world.json").is_file():
         sys.exit("No world map built yet: saneui makeworldmap")
     handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(out))
-    print(f"The world map at http://127.0.0.1:{args.port} (Ctrl+C stops it)")
+    print(f"The world map on 127.0.0.1 port {args.port}, in a browser (Ctrl+C stops it)")
     http.server.ThreadingHTTPServer(("127.0.0.1", args.port), handler).serve_forever()
 
 
