@@ -107,8 +107,15 @@ with as little room for frame and ornament as the look allows.
     paper at the bottom. The page curls onto the stack and the bindings run down into the corner caps as one
     painted piece (Saneroki, 2026-10-22: no straight cut-off, the bottom one piece with the edges and the paper).
     Code cut the strap's rows out of #12, so the page and the stack below came from rows that never met; one
-    masked repaint of that band at 4K, the whole width with both edges (`catalog.py bottom`), joins them. The
-    stack is one piece stretched between its two corners, so its lines run on without a join.
+    masked repaint of that band at 4K, between the bindings, from the page's lowest stretch to the stack's top
+    (`catalog.py bottom`), joins them; the stack, the bindings and the corner caps stay #12's own (a wider band
+    had the model paint new caps and no stack, or the page's tips past the bindings). The stack is one piece
+    stretched between its two corners, so its lines run on without a join.
+  - **Joins:** the top and the bottom are their ends and a middle stretched whole between them, joined edge to
+    edge, so the strap, the label and the stack run on (a cross-fade showed as blocks or seams). The edges run
+    from under the top's corners to under the bottom's caps; above the caps the binding is the edges' own (the
+    strap left a knot in #12's right one). The title label's light is evened out in code, its grain kept (the
+    paper that covered its writing showed as lighter blocks).
 - The harness uses #12's own pixels for all of it (*The harness*): its parts fit together exactly at their own
   scale. Repeats are joined without seams; where #12 has things that are not wanted, code cuts them out (the
   strap's rows) or covers them with #12's own paper (the label's writing).
@@ -280,7 +287,8 @@ needs, for responsive, flexible designs).
 - **Pieces** (`pieces.py`, `assets/generated/interface/pieces/`, Saneroki, 2026-10-22): the final puzzle pieces
   code builds every window from, at 4K, alone on transparency, trimmed. `pieces.json` says how each is laid.
   - **The window** from #12, its paper moved to the page's tone: `frame-top-left`, `-middle`, `-right` (the
-    strap, ribbon, title label and corner patch; the middle stretches, its paper fades into the page);
+    strap, ribbon, title label and corner patch; the middle stretched whole, joined edge to edge; its paper fades
+    into the page);
     `frame-bottom-left`, `-middle`, `-right` (the page curling onto its stack and the two corners, from the
     repainted bottom; the stack stretched whole between the corners, joined edge to edge; its paper fades into
     the page); `frame-left` and `frame-right` (tiles that repeat down without a seam), `frame-clasp`. The title's and the close button's places are in `pieces.json`.

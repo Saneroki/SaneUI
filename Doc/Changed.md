@@ -1492,6 +1492,11 @@ Saneroki asked for a much richer bag view, in features and looks.
   once, the whole width with both edges, by a masked inpaint of the 4K #12 (`BOTTOM`); `pieces.py` cuts the bottom
   from it with its paper fading into the page (`FRAME_BOTTOM` from 806, `PAGE_END`); the code-drawn page edge is
   gone.
+- The window's bottom repaint kept between the bindings and above the stack (a wider band painted new corner caps
+  and no stack, then the page's tips past the bindings); the masks of #12 and #3 made. The top joined edge to edge
+  too (`butt`; the cross-fade `band` is gone), the title label's light evened out in code (`LABEL`), the edges'
+  tiles from under the top's corners to under the bottom's caps (`EDGES_START`, `EDGES_END`), the binding above
+  the bottom's caps the edges' own (`CAPS`, `BINDING`: no strap knot). `compose.py --scale 2` takes whole numbers.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.

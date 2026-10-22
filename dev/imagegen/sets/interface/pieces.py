@@ -35,10 +35,16 @@ FRAME_BOTTOM_X = (196, 262, 748, 836)  # the bottom: its left corner | the page 
 FRAME_BOTTOM = (806, 876)              # the bottom: the page's lowest stretch curling onto its stack, the stack, the
                                        # corners (catalog.py bottom painted them as one piece)
 PAGE_END = 832                         # about where the page ends on the stack: content stays above it
+CAPS = 828                             # where the corner caps begin: above it, outside BINDING, the bottom is left
+BINDING = (228, 772)                   # to the edges' tiles (#12's strap, cut there, left a knot on the right one)
+EDGES_END = 846                        # the edges' tiles run down to here, under the corner caps
+EDGES_START = 106                      # and from here, under the top's corners (above it #12's cover has not begun)
 FRAME_LEFT = (196, 240, 300, 600)      # the left edge: x from-to, the plain stretch it repeats (y)
 FRAME_RIGHT = (764, 836, 230, 370)     # the right edge, above its clasp
 CLASP = (764, 380, 836, 510)
 TITLE_AT = (372, 182)                  # where the title label's writing starts
+LABEL = (332, 166, 712, 196)           # the title label's inside: its light evened out (the paper that covered its
+                                       # writing showed as lighter blocks), its grain kept
 CLOSE_AT = (770, 124)                  # the middle of the corner patch on the strap: the close button
 TOP_FADE, BOTTOM_FADE = 26, 14         # the top's and bottom's paper fades into the page over so many pixels
 FRAME_PAPER = (300, 200, 560, 240)     # a stretch of #12's plain paper, for its tone
@@ -187,11 +193,21 @@ def main():
 
     # the window, cut along #12's own lines
     f = tone_shift(masked("window", (1024 * SCALE, 1024 * SCALE)), z(FRAME_PAPER))
+    lx0_, ly0_, lx1_, ly1_ = z(LABEL)
+    inside = f.crop((lx0_, ly0_, lx1_, ly1_))
+    a = np.asarray(inside.convert("RGB"), dtype=np.float32)
+    light = np.asarray(inside.convert("RGB").filter(ImageFilter.GaussianBlur(4 * SCALE)), dtype=np.float32)
+    even = a - light + np.median(light.reshape(-1, 3), axis=0)
+    even = Image.fromarray(even.clip(0, 255).astype(np.uint8)).convert("RGBA")
+    soft = Image.new("L", inside.size)
+    ImageDraw.Draw(soft).rectangle((4 * SCALE, 3 * SCALE, inside.width - 4 * SCALE, inside.height - 3 * SCALE), fill=255)
+    f.paste(even, (lx0_, ly0_), soft.filter(ImageFilter.GaussianBlur(2 * SCALE)))
     x0, x1, x2, x3 = z(FRAME_X)
     t0, t1 = z(FRAME_TOP)
     b0, b1 = z(FRAME_BOTTOM)
     for end, (a, b), how in (("left", (x0, x1), "its left end, kept whole"),
-                             ("middle", (x1, x2), "its middle, stretched across (its lines run along it)"),
+                             ("middle", (x1, x2), "its middle, stretched whole between the ends, joined edge to edge (its lines "
+                                                 "run along it)"),
                              ("right", (x2, x3), "its right end, kept whole; the close button is its corner patch")):
         save(f"frame-top-{end}", fade(f.crop((a, t0, b, t1)), "bottom", TOP_FADE * SCALE),
              f"the window's top (strap, ribbon, title label): {how}; its paper fades into the page")
@@ -200,7 +216,13 @@ def main():
                              ("middle", (bx1, bx2), "the page stack, stretched whole between the corners (no repeat, "
                                                     "no cross-fade: its lines run on)"),
                              ("right", (bx2, bx3), "its right corner, kept whole")):
-        save(f"frame-bottom-{end}", fade(f.crop((a, b0, b, b1)), "top", BOTTOM_FADE * SCALE),
+        piece = fade(f.crop((a, b0, b, b1)), "top", BOTTOM_FADE * SCALE)
+        if end != "middle":      # the binding above the caps is the edges' (no strap left there)
+            keep = Image.new("L", piece.size, 255)
+            cut = (0, BINDING[0] * SCALE - a) if end == "left" else (BINDING[1] * SCALE - a, piece.width)
+            ImageDraw.Draw(keep).rectangle((cut[0], 0, cut[1], (CAPS - FRAME_BOTTOM[0]) * SCALE), fill=0)
+            piece.putalpha(ImageChops.multiply(piece.getchannel("A"), keep.filter(ImageFilter.GaussianBlur(2 * SCALE))))
+        save(f"frame-bottom-{end}", piece,
              f"the window's bottom (the page curling onto its stack, the corners): {how}; its paper fades into the "
              f"page; content stays {FRAME_BOTTOM[1] - PAGE_END} layout pixels above its foot")
     lx0, lx1, ly0, ly1 = z(FRAME_LEFT)

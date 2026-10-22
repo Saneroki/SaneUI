@@ -54,15 +54,17 @@ MASKS = ["window", "doll"]                               # whole picks whose out
 # clean.py cut the strap's rows out, the page met a stack, edges and corners from other rows of #12 in a straight
 # line. One masked repaint of that band, the whole width with both edges, at 4K: the model sees the window round it
 # and paints the page curling onto its stack, the bindings running down into the corner caps; all else stays.
-BOTTOM = (186, 796, 846, 858)            # the band repainted, in #12's pixels (the layout's): from over its lowest
-                                         # pencil line down into the stack
+BOTTOM = (222, 798, 784, 836)            # the band repainted, in #12's pixels (the layout's): from over its lowest
+                                         # pencil line to the stack's top only, between the bindings, so the stack,
+                                         # the bindings and the corner caps stay #12's own (a band down into the stack
+                                         # had the model paint them anew; one over the bindings, the page's tips
+                                         # stood out past the book)
 BOTTOM_AROUND = (700, 924)               # the rows the model sees round it
 BOTTOM_WORDS = ("The lower end of an open journal bound in thin stitched dark brown leather, seen straight from the "
                 "front: the plain light cream parchment page runs down and curls gently over its lower edge onto the "
-                "thick stack of page edges beneath it, its edge soft and a little uneven with a faint shadow under "
-                "it; at the left and the right the thin stitched leather binding runs straight down and turns "
-                "smoothly into the metal corner caps. One continuous, coherent piece, the same painting, light and "
-                "colours as above and below it.")
+                "thick stack of page edges beneath it, which stays as it is, its edge soft and a little uneven with a "
+                "faint shadow under it, the page ending just inside the leather binding at the left and the right. "
+                "One continuous, coherent piece, the same painting, light and colours as above and below it.")
 BOTTOM_NEGATIVE = ("straight line, seam, horizontal cut, hard edge, gap, strap, belt, buckle, leather patch, button, "
                    "text, letters, pencil frame, box, blurry, smeared")
 HIRES_WORDS = ("Exactly the same picture in higher resolution: every shape, line, colour, texture and stitch where it "
@@ -177,7 +179,7 @@ def bottom():
     mask = Image.new("L", around.size)
     x0, b0, x1, b1 = (v * SCALE for v in BOTTOM)
     ImageDraw.Draw(mask).rectangle((x0, b0 - y0, x1, b1 - y0), fill=255)
-    mask = mask.filter(ImageFilter.GaussianBlur(6 * SCALE))
+    mask = mask.filter(ImageFilter.GaussianBlur(4 * SCALE))
     work = f"{GEN}/hires/in"
     around.save(path(f"{work}/window-bottom.png"))
     mask.convert("RGB").save(path(f"{work}/window-bottom-mask.png"))

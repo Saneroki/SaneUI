@@ -278,30 +278,13 @@ CLASP_H = pieces.CLASP[3] - pieces.CLASP[1]
 TITLE_AT = (pieces.TITLE_AT[0] - pieces.FRAME_X[0], pieces.TITLE_AT[1] - pieces.FRAME_TOP[0])
 CLOSE_FROM_RIGHT = (pieces.FRAME_X[3] - pieces.CLOSE_AT[0], pieces.CLOSE_AT[1] - pieces.FRAME_TOP[0])
 PAGE_FOOT = pieces.FRAME_BOTTOM[1] - pieces.PAGE_END          # the bottom's height below the page's end
-
-
-def band(left, mid, right, length, blend):
-    """A band of any length (pixels): the left end, the middle stretched along (its lines run along it), the right
-    end; the ends fade into the middle over blend pixels, so no join shows."""
-    h = left.height
-    out = Image.new("RGBA", (length, h))
-    if length <= left.width + right.width:
-        # no wider than its ends: the two ends, met in one blended join in the middle
-        half = (length + blend) // 2
-        out.alpha_composite(left.crop((0, 0, min(half, left.width), h)), (0, 0))
-        r = right.crop((max(0, right.width - (length - half + blend)), 0, right.width, h))
-        out.alpha_composite(fade(r, "left", min(blend, r.width)), (length - r.width, 0))
-        return out
-    mid_w = length - left.width - right.width + 2 * blend
-    out.alpha_composite(mid.resize((mid_w, h), Image.LANCZOS), (left.width - blend, 0))
-    out.alpha_composite(fade(left, "right", blend), (0, 0))
-    out.alpha_composite(fade(right, "left", blend), (length - right.width, 0))
-    return out
+EDGES_FOOT = pieces.FRAME_BOTTOM[1] - pieces.EDGES_END        # the bottom's height below the edges' end
+EDGES_HEAD = pieces.EDGES_START - pieces.FRAME_TOP[0]         # the top's height above the edges' start
 
 
 def butt(left, mid, right, length):
     """A band of any length (pixels) whose middle is stretched whole between its two ends, joined edge to edge: the
-    page stack, whose lines run on from the corners without a cross-fade."""
+    window's top and bottom, whose lines (strap, label, page stack) run on from the ends without a cross-fade."""
     h = left.height
     out = Image.new("RGBA", (length, h))
     mw = length - left.width - right.width
@@ -333,7 +316,7 @@ class Window:
         self.MARGIN = M = margin or self.MARGIN
         self.canvas = Image.new("RGBA", zz(w + 2 * M, h + 2 * M))
         # the page: from the edges' inner sides, under the top and bottom's paper
-        x0, y0, x1, y1 = (M + FRAME_L - 6, M + FRAME_T - 30, M + w - FRAME_R + 6, M + h - FRAME_B + 40)
+        x0, y0, x1, y1 = (M + FRAME_L - 6, M + FRAME_T - 30, M + w - FRAME_R + 6, M + h - PAGE_FOOT + 4)
         put(self.canvas, paper.page(z(x1 - x0), z(y1 - y0), seed, edge=0), (x0, y0))
         self.content = (M + FRAME_L + 8, M + FRAME_T + 2, M + w - FRAME_R - 8, M + h - PAGE_FOOT - (52 if buttons else 8))
         self.side_tabs, self.buttons, self.bands = side_tabs, buttons, bands
@@ -349,10 +332,11 @@ class Window:
                 mark.putalpha(ImageOps.invert(g).point(lambda v: int(v * 0.6)))
                 put(c, mark, (M - 19, y + 11))
         # the edges first, the whole height, so their leather runs on under the top's and bottom's fades
-        put(c, column(piece("frame-left"), z(h)), (M, M))
-        put(c, column(piece("frame-right"), z(h)), (M + w - FRAME_R, M))
+        edge_h = z(h - EDGES_FOOT - EDGES_HEAD)                            # from under the top's corners down
+        put(c, column(piece("frame-left"), edge_h), (M, M + EDGES_HEAD))   # under the bottom's corner caps
+        put(c, column(piece("frame-right"), edge_h), (M + w - FRAME_R, M + EDGES_HEAD))
         put(c, piece("frame-clasp"), (M + w - FRAME_R, M + (h - CLASP_H) // 2))
-        put(c, band(*(piece(f"frame-top-{e}") for e in ("left", "middle", "right")), z(w), z(48)), (M, M))
+        put(c, butt(*(piece(f"frame-top-{e}") for e in ("left", "middle", "right")), z(w)), (M, M))
         put(c, butt(*(piece(f"frame-bottom-{e}") for e in ("left", "middle", "right")), z(w)), (M, M + h - FRAME_B))
         # the title on the label, in Kalam; the close button on the corner patch, pressed in
         write(c, (M + TITLE_AT[0], M + TITLE_AT[1]), self.title, 22, "Bold", anchor="lm")
@@ -808,6 +792,7 @@ def main(args):
     scale = 1
     if args[:1] == ["--scale"]:
         scale, args = float(args[1]), args[2:]
+        scale = int(scale) if scale == int(scale) else scale
     os.makedirs(OUT, exist_ok=True)
     for name in args or VIEWS:
         S = SCALE_OF.get(name, scale)
