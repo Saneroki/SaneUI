@@ -1605,7 +1605,7 @@ Saneroki asked for a much richer bag view, in features and looks.
 - The interface harness's page of pieces (`gallery.py` writes `pieces.html` beside `index.html`): the 61 final
   pieces by group with what `pieces.json` says of each, previews that keep their transparency, a backdrop to choose
   (checks, the page's paper, dark, light), full quality and true pixels on a click, the 4K views built from them.
-- **The interface lab** (`dev/tools/ui-lab`, `dev/uilab/`, `saneui showuilab`, http://127.0.0.1:8774/; guide
+- **The interface lab** (`dev/tools/ui-lab`, `dev/uilab/`, `saneui showuilab`, 127.0.0.1 port 8774; guide
   `Doc/guides/ui-lab.md`): Sane UI's Lua run under Lua 5.1 as the game runs it and drawn in the browser, so windows
   are built with the code that goes into the game. A stand-in of the game's widget API: frames, buttons, check
   buttons, edit boxes, scroll frames, sliders, status bars, message frames, the tooltip, cooldowns, animations;

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The interface lab: Sane UI's Lua drawn in the browser as the game would draw it (Doc/guides/ui-lab.md).
 
-  dev/tools/ui-lab serve [--port 8774]     the lab at http://127.0.0.1:8774/
+  dev/tools/ui-lab serve [--port 8774]     the lab in a browser, on 127.0.0.1 port 8774
   dev/tools/ui-lab check [SCENE]           runs a scene headless for a few seconds, prints its log; exit 1 on errors
 
 The page runs the code of a scene (dev/uilab/scenes/) under Lua 5.1 in the lab's host (dev/uilab/host.lua), with the
@@ -560,7 +560,7 @@ def serve(port):
     first = sorted((LAB / "scenes").glob("*.lua"))
     HOST.scene = str(first[0].relative_to(ROOT)) if first else None
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print(f"The interface lab: http://127.0.0.1:{port}/  (Ctrl+C stops it)")
+    print(f"The interface lab on 127.0.0.1 port {port}, in a browser (Ctrl+C stops it)")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

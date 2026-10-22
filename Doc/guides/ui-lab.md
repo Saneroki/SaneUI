@@ -8,7 +8,7 @@ server (who is online, chat, items) come from a fake server.
 saneui showuilab
 ```
 
-It is at http://127.0.0.1:8774/. `saneui checkuilab [scene]` runs a scene without the page for a few seconds and
+It is on 127.0.0.1 port 8774, in a browser. `saneui checkuilab [scene]` runs a scene without the page for a few seconds and
 prints its log.
 
 ## How it works
