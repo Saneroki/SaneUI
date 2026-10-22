@@ -1326,8 +1326,9 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     `sources.toml`, unverified): the client holds a portal's trigger (its `AreaTrigger`), not where it brings one;
     picked where every record agrees, it asks nothing of who steps in, no door stands at it, there is a way back and
     Forever's world has a floor at both ends. Four in build 70245: Darnassus and Rut'theran Village (the only way
-    between Teldrassil's top and its shore), Stormwind's Wizard's Sanctum up and down (the walking data holds no
-    floor of its rooms, so no route takes it yet; the map shows it). A record per trigger: its key 1200000 + the
+    between Teldrassil's top and its shore), Stormwind's Wizard's Sanctum up and down (its rooms in the walking
+    data since 2026-10-22, closed off from the streets in the game's own walls: a route takes it for a pin in them,
+    from Dalaran by the Skyborne portal; the map shows it). A record per trigger: its key 1200000 + the
     trigger's ID, `path` its place and where it brings one, each with its height, `length`, `from` and `to` (pins).
   - **In the journey:** a portal's two ends are places on their floors (`Walk.Landing` within `Planner.ARRIVE`
     yards), the way through `Planner.PORTAL` seconds, drawn violet; after the leap the floor followed is the one where
@@ -1366,11 +1367,12 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     placed them and each one's target lies beside the other (Stormwind and Dalaran; Dalaran's Citadel), keys 2000000 +
     the object's entry, with their side; and the sides of the ways whose ends show only one side's NPCs (Dalaran's
     Skycutter the Alliance's, Stormwind's Sanctum portals too; the Horde's zeppelins and Mulgore's Skycutter agree with
-    the flight masters). The planner takes a portal only of the player's side or both; Stormwind's Skyborne room is not
-    in the walking data yet, so that pair waits for it.
+    the flight masters). The planner takes a portal only of the player's side or both; Stormwind's Skyborne room is in
+    the walking data since 2026-10-22 (the Wizard's Sanctum's cellar), closed off from the streets in the game's own
+    walls: routes take that pair for a pin in the Sanctum's rooms.
   - **Still found:** a few NPCs' places of Stormwind that Forever's rebuilt city has no floor near; small islands in
-    the walking data where its tool writes an opening between two floors one way only (0.1 % of the ground; a start
-    there falls back).
+    the walking data where its tool wrote an opening between two floors one way only (0.1 % of the ground; gone since
+    2026-10-22, *The walking data*).
 - **Built (2026-10-21): the teleports a character has, and Frequent Flier.**
   - **The teleports** (Core's set *Travel*, kind `teleport`, key 3000000 + the spell's ID; `dev/tools/travel-data
     --teleports`): from Forever's client every class's spell that moves one to a place the server holds (the
@@ -1432,16 +1434,17 @@ samples, *The ground as the game draws it*, below).
   rectangles, towns, caves and mountainsides many small ones.
 - **Regions:** all rectangles one can walk or swim between share a number; a region under `SMALLEST` (3,000
   samples, rooftops, ledges, plateaus nobody walks onto) is left out, and one with the sky over none of its floors or
-  most of them buried (2026-10-21, below), but one a lift lands on (2026-10-21).
+  most of them buried (2026-10-21, below), but one a lift lands on (2026-10-21) or a portal (2026-10-22).
 - **The block** of a tile (CBOR, deflated, base64; the game's `C_EncodingUtil` reads it): its surfaces (count,
   kind, region), its rectangles (column, row, width, height, height in quarter yards) and the openings the game
   cannot work out itself: two rectangles of one surface that touch are open along all their edge (not
   written); every other opening is written (between surfaces, into the next tile, or only part of an edge), on
   its own tile once (`Walk.lua` adds the other way).
-- **Size:** 1,724 tiles of both continents and 26 of Zephras Isle, 2.83 million rectangles (2026-10-21 with the
-  doodads and the ground's triangles; 1.65 million before, 1.45 million the day before), 23.7 MB in the master (23.0
-  MB of blocks; 12.6 and 12.1 before; the master's sets 33 MB in all); about six minutes to make on this computer, the
-  isle alone (`--maps 2991`) a few seconds.
+- **Size:** 1,724 tiles of both continents and 26 of Zephras Isle, 3.03 million rectangles (2026-10-22, every
+  opening on both its rectangles' sides; 2.83 million with the doodads and the ground's triangles, 1.65 million before
+  them, 1.45 million the day before), 24.1 MB in the master (23.3 MB of blocks; 23.7 and 23.0 the day before, 12.6 and
+  12.1 before the doodads; the master's sets 39 MB in all); about seven minutes to make on this computer, the isle
+  alone (`--maps 2991`) a few seconds.
 - **Region numbers** are given in the order of the tiles' keys (a run gives the same numbers again) and hold within
   one map: the planner and the search compare them only there, so the isle, made on its own, numbers from 1. Walks across a zone take
   20 to 65 ms of search, spread over frames by the scheduler.
@@ -1540,6 +1543,45 @@ samples, *The ground as the game draws it*, below).
     within 2 % on the mean, a walk across a zone 5 to 30 ms of search, across a continent up to half a second.
   - **Not joined:** the plateau east of Ironforge (with the area behind the city) and the lower halls of
     Blackfathom's ruins, reached only under water (diving is no walk).
+- **Built (2026-10-22): every opening both ways, on both its rectangles' sides; the portals' rooms.** Checked on
+  the whole data as `Walk.lua` reads it, and with the planner run over it outside the game.
+  - **Both ways:** an opening was found from a rectangle's edge to the first floor beside it one way with its own,
+    and on a tile the tool writes one once (`Walk.lua` adds the other way): where the sample beside held two floors (a
+    stair's foot, a deck), the way back led to the other one and the opening was lost. 129,510 samples (0.14 % of the
+    ground: Un'Goro's rock tops, huts) kept their region's number with no opening reaching them, 4,016 openings into
+    the next tile had no way back. Now every floor beside an edge one way with its own is linked, so each opening is
+    found from both.
+  - **On both rectangles' sides:** an opening must lie on the facing sides of both its rectangles (`Walk.lua` sets
+    its way back there, and the search pulls its line through it). 113,241 of 2.6 million (4 %) did not: a rectangle
+    of another floor overlapping the first in plan (the ground going on under a deck or a stair's foot), or a pair
+    written whole for an edge the two did not share (`Walk.lua`'s `Side` then took the west); lines drawn through them
+    ran over no floor (7 walks in 200 journeys). Now a surface's rectangles end where one of its floors is one way with
+    another surface's floor beside it while the surface goes on there (`cuts`), and only rectangles that meet along
+    a side are linked there (`meets`).
+  - **Not through a floor:** two floors of different surfaces side by side are no way where the higher one goes on
+    into the lower one's sample over it (`through`: from a deck onto the ground under its next sample, from a stair's
+    step onto the ground under the next step; the tool joined such floors all over wherever they lie 2 to 2.6 yards
+    apart). Where a tile's floors would so come apart, it keeps one such way between the two parts (`bridges`):
+    every join the data had stays (Saneroki, 2026-10-22), so a hall whose door is a wall in the walking data is
+    still reached under its floor (Lakeshire's town hall, Booty Bay's shops), and the inner ruins of Lordaeron from
+    the ground under their courtyard (apart, the Undercity's lifts no longer joined stacked levels). Into the next tile
+    every way is taken: an opening on a tile's edge lies on both rectangles' sides however they lie.
+  - **The portals' rooms kept** as the lifts' landings: the regions the ends of set *Travel*'s portals land on
+    (`Walk.Landing` within `LANDING`, as `Planner.ARRIVE`), however small, closed or buried. All 8 portals and 14
+    lifts land: the Wizard's Sanctum's cellar (the Skyborne portal's room too) and its top, the top of Dalaran's
+    Violet Citadel. From Dalaran a route to a pin on the Sanctum goes through the Skyborne portal and trigger 702.
+  - **Measured:** 412 regions, 3.03 million rectangles (2.83), 23.3 MB of blocks; the main regions one part each as
+    `Walk.lua` reads them, no opening without its way back or off its rectangles; the two tiles of Zephras Isle the
+    tool no longer writes marked gone in the master. 200 journeys between NPCs on the same code: none failing, 14
+    walks drawn straight (14), none off the data (7), about 5 % slower (7 % more rectangles); of 53,551 creatures'
+    spawn points 85.07 % stand on a floor at their height (84.95 %).
+  - **Weighed and left:** every way through a floor dropped (the inner ruins and the halls behind doors cut off: 91
+    spawn points without their floor); every one linked, the rectangles cut at each (22 % more rectangles, 18 % more
+    data, routes 10 % slower, or 31 % with the searches' limits raised to find as many walks).
+  - **Found:** the Sanctum's cellar and top are closed off from Stormwind's streets in the game's own walls (no stair
+    down to the cellar; a wall 4 yards high between the top room and the tower's outer ramp at 130 yards): the
+    portals join the two rooms and the cellar with Dalaran, and a route from the streets to a pin there ends on the
+    street floor under it.
 - **Not yet:** one-way drops (a ledge one can jump down but not climb) are no way; an instance's portal or a closed
   gate is no collision (the walking data goes through Zul'Gurub's gate); a doodad the game shows only at times (a
   door, a gate) is a wall all the time; the giant trees' roots are walls where they lie on steep ground; diving (a

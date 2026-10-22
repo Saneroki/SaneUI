@@ -3,8 +3,30 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 209 (data in the game), 527 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 130 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 209 (data in the game), 527 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Navigation: the walking data's openings both ways, on both rectangles; the portals' rooms (Saneroki, 2026-10-22)
+- `dev/tools/walk-data`: `openings` and `across` link every floor beside a rectangle's edge one way with its own (they
+  took the first: the way back of a floor beside two went to the other and was lost, 129,510 samples apart from their
+  region's main part, 4,016 openings into the next tile one way only), only between rectangles that meet along that
+  side (`meets`). `cuts` ends a surface's rectangles where one of its floors is one way with another surface's floor
+  beside it while the surface goes on there, so every opening lies on both rectangles' sides (113,241 did not:
+  `Walk.lua` set their way back elsewhere, and lines pulled through them ran over no floor); `shared` asks that the
+  two meet (`block` wrote such pairs whole, and `Walk.lua`'s `Side` took the west).
+- `through`: two floors of different surfaces are no way where the higher goes on into the lower one's sample over it
+  (a deck and the ground under its next sample, 2 to 2.6 yards apart). `bridges` keeps one such way between two parts
+  of a tile no other opening joins (a hall whose door is a wall in the data, Lordaeron's inner ruins), and `plan` cuts
+  the rectangles again for it: every join the data had stays (Saneroki).
+- `ends` (was `lifts`): the lifts' and the portals' ends; the regions they land on are kept however small (the Wizard's
+  Sanctum's cellar and top, the Skyborne portal's room, the Violet Citadel's top).
+- Core's set *Walking* rebuilt: 412 regions, 3.03 million rectangles (2.83), 24.1 MB (23.7); the two tiles of Zephras
+  Isle the tool no longer writes marked gone. Checked outside the game: no islands, no opening without its way back or
+  off its rectangles, all 14 lifts and 8 portals land; 200 journeys between NPCs: none failing, 14 drawn straight (14),
+  none off the data (7), about 5 % slower; spawn points on a floor at their height 85.07 % (84.95 %).
+- Tests: `dev/tests/walk.py` (147 checks: two floors beside a floor, both ways on a tile and into the next; a deck over
+  the ground, its rectangles cut where it begins; a hall walled round, kept by one way under its floor; the portals'
+  ends and rooms; runs of an opening joined).
 
 ### Atlas, Navigation: the close squares joined in two bands, no harsh line between them (Saneroki, 2026-10-22)
 - `dev/tools/atlas`'s `join_two` (the Atlas' squares and the maps' close levels alike): where two squares overlap

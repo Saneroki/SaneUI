@@ -189,6 +189,16 @@ the way the steepest floor needs (`Planner.SLOPE`). Checked offline on the whole
 spawn points (71 % on a floor at their height), the lifts, walks into the cities and across hilly zones, and the gentlest
 way over the game's triangles where regions part.
 
+Openings both ways (2026-10-22): `dev/tools/walk-data` links every floor beside a rectangle's edge one way with its own
+(`openings`, `across`; it took the first, so a way back went to another floor and was lost: small islands), only
+between rectangles that meet along that side (`meets`; a surface's rectangles end where one of its floors is one way
+with another surface's beside it while the surface goes on, `cuts`; `shared` asks the same of a pair written whole),
+so `Walk.lua`'s way back and the search's line lie on both rectangles. A way through another floor is none
+(`through`), but a tile keeps one where its parts would come apart (`bridges`, `plan`: halls whose doors are walls in
+the data, Lordaeron's inner ruins). The regions portals land on are kept as the lifts' are (`ends`, `landings`). The
+set: 3.03 million rectangles, 24.1 MB in the master. Checked offline: no islands, no opening without its way back or
+off its rectangles, all lifts and portals land, 200 journeys as before but none off the data, about 5 % slower.
+
 ## Built (2026-10-20, 21): quest marks, the filter's sections, dungeon maps, the quest log's clicks
 
 Saneroki's asks (`Doc/ideas/Navigation.md`, *Map pins*, *Full screen*, *Dungeon maps now*; README *History*):
@@ -239,7 +249,7 @@ the search finds none of was drawn straight (now none, its regions cut for the p
 at the end); one side routed through the other's harbours and zeppelin towers (a ship's `side` now: its towns', by
 the flight masters near its docks; batch 13: Forever's portal objects, Stormwind and Dalaran and Dalaran's Citadel,
 and the sides its servers' NPCs show, Dalaran's airship the Alliance's). Forever's ways against Classic's: the plan,
-*The planner*, *Forever's own ways*. Left: the walking data's one-way openings (its tool, small islands).
+*The planner*, *Forever's own ways*. The walking data's one-way openings: fixed 2026-10-22 (below).
 
 The teleports a character has (2026-10-21; the plan, *Built: the teleports a character has, and Frequent Flier*):
 Core's set *Travel*, kind `teleport` (key 3000000 + the spell; fields `spell`, `items`, `reagent`; `dev/tools/
@@ -254,7 +264,7 @@ Flier's faster flights (`Planner.Pace`, `Planner.FASTER`). The routes harness ha
 Not yet: a travel pin's ways under the mouse, search, the guide, the dungeons' three zooms, the
 minimap's small parts (zone text, clock, mail, tracking), rares' spawn areas, patrol paths. Tests: `dev/tests/navigation.lua` (468
 checks; 524 with the 2026-10-21 changes; 527 with the whole city below), `dev/tests/walk.py` (125; 130 with the
-teleports' tool).
+teleports' tool; 147 with the walking data's openings).
 
 ## What is not there yet
 

@@ -351,7 +351,8 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   and rectangles of floors, 2.08 yards a sample, each with its height, kind (the ground, water, a building's floor)
   and region, and the openings into its neighbours. Unpacked when first needed, the `Walk.KEEP` asked for last kept
   (in a job of Core's scheduler an unpacking may end the job's frame); the openings of two rectangles of one surface
-  that touch are worked out from the rectangles, written ones once on their tile get their other way. `Under`,
+  that touch are worked out from the rectangles, written ones once on their tile get their other way (each opening
+  lies on the facing sides of its two rectangles and holds both ways, as `dev/tools/walk-data` makes them). `Under`,
   `Around`, `Nearest`, `Regions`, `Opening`, `Openings`, `Portal`, `Gap`. Floors lie one over the other, and the game
   tells no height of the player (`UnitPosition`'s is always 0): the floor a walker stands on is followed from the
   rectangle they stood on through the openings nearest the way they went (`Walk.Follow`: a cave's mouth, not the path
@@ -557,6 +558,15 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-22, the walking data both ways; the portals' rooms:** every way between two floors the walking data holds
+  now holds both ways and lies where the two meet, so routes no longer start or end on small floors no way led back
+  from (rock tops, huts: 0.14 % of the ground), and no line runs over ground without a floor where a walk turned
+  through a way set beside its floors (7 of 200 journeys between NPCs). A deck and the ground under its next step are
+  no way, but a hall whose door is a wall in the walking data keeps the way under its floor that reached it, and so
+  do the inner ruins of Lordaeron. The rooms the portals bring one to are kept however small: the Wizard's Sanctum's
+  cellar and top, the Skyborne portal's room under the Mage Quarter, the top of Dalaran's Violet Citadel. In the
+  game's own walls the Sanctum's two rooms are closed off from Stormwind's streets, so routes take those portals for a
+  pin in them, from Dalaran by the Skyborne portal.
 - **2026-10-21, the teleports a character has; Frequent Flier:** routes take the teleports the character has where
   they are quicker, from where it stands to where each brings it (`Teleports`, Core's set *Travel*, kind `teleport`:
   the mage's to the capitals and Dalaran, the druid's to Moonglade, the engineers' transporters, the Crumbling

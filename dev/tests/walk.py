@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Tests of dev/tools/walk-data and dev/tools/travel-data without the game's files: the block's encoding, floors
-joined into surfaces and rectangles on made-up ground (flat land, a steep speck, a hole, a cliff, a bridge, water),
+"""Tests of dev/tools/walk-data and dev/tools/travel-data without the game's files: the block's encoding, floors joined
+into surfaces and rectangles on made-up ground (flat land, a steep speck, a hole, a cliff, a bridge, water),
 buildings and doodads placed as the game places them (turned, tilted; a model's collision, a building's doodad sets,
 the object files' placements) and rasterized (a fence, a deck), the openings the game is left to work out and those
-written, regions too small to keep and their order, a flight's path made short, a boat's way (its docks, on the zone
-maps too, its leaps, which way a newer one replaced), a lift's car (its motion, its ends and rides, its own number
-kept for its place), a way's side (its towns', by the flight masters near its docks) and a portal (the client's
-trigger, where a batch says it brings one). And dev/tools/terrain-art's open sky around an isle that floats (walk-data reads the terrain with
-it). Run by dev/tests/run."""
+written (each found both ways, on a tile and into the next, on both their rectangles' sides; none through another
+floor but one where a tile's parts need it), regions too small to keep and their order (but the rooms a lift or a
+portal lands in), a flight's path made short, a boat's way (its docks, on the zone maps too, its leaps, which way a
+newer one replaced), a lift's car (its motion, its ends and rides, its own number kept for its place), a way's side
+(its towns', by the flight masters near its docks) and a portal (the client's trigger, where a batch says it brings
+one). And dev/tools/terrain-art's open sky around an isle that floats (walk-data reads the terrain with it). Run by
+dev/tests/run."""
 import base64
 import importlib.machinery
 import importlib.util
@@ -481,6 +483,98 @@ check("openings within a surface are left to the game", sum(len(w) for w in writ
 check("openings between land and water are written", sum(1 for w in written if w), len({n for n, l in links.items()
       for link in l if rects[n][5] != rects[link[3]][5] and link[0] in (0, 3)}))
 
+
+def read(data):
+    """A block's openings on its tile as the game reads them (Walk.lua's Read): {rectangle: {(where, neighbour)}}, each
+    written on the tile with its way back."""
+    opens, at = {}, 0
+    for rect in range(len(data[2]) // 5):
+        stop = at + 1 + data[3][at]
+        at += 1
+        while at < stop:
+            value = data[3][at]
+            target = data[3][at + 3] if value < 0 else value
+            at += 4 if value < 0 else 1
+            opens.setdefault(rect, set()).add((target % 5, target // 5))
+            if target % 5 == 0:
+                opens.setdefault(target // 5, set()).add((0, rect))
+    return opens
+
+
+# --- Openings both ways ----------------------------------------------------------------------------
+# A deck 3 yards over the ground (row 0, four samples), a floor a yard over the ground south of them (row 1): from it
+# both the ground and the deck to the north are one way. Only the opening from the south one is written (block), so
+# the deck's must be found from there too, not only the ground's (the lower, first of the two).
+rects = [[0, 0, 4, 1, 52, BUILT, 0], [0, 0, 4, 1, 40, LAND, 1], [0, 1, 4, 1, 44, LAND, 2]]
+columns = [[[] for _ in range(SIDE)] for _ in range(SIDE)]
+owner = {}
+for column in range(4):
+    columns[0][column] = [(10.0, LAND, True), (13.0, BUILT, True)]
+    columns[1][column] = [(11.0, LAND, True)]
+    owner[(0, column, 0)], owner[(0, column, 1)], owner[(1, column, 0)] = 1, 0, 2
+links = walk.openings(rects, owner, columns, {})
+check("two floors in one sample beside a floor: the opening found from each of them, and both ways",
+      (links[0], links[1], links[2]), ([[2, 0, 3, 2]], [[2, 0, 3, 2]], [[0, 0, 3, 0], [0, 0, 3, 1]]))
+check("so as the game reads the block, the deck keeps its way to the floor beside it",
+      read(blocked(rects, links)).get(0), {(0, 2)})
+# Into the next tile alike: a floor at the east edge of a tile, the ground and a deck over it at the same place on the
+# west edge of the next; each tile takes the first floor one way with its own.
+tiles = {middle: ([[255, 5, 1, 1, 44, LAND, 0]], {0: []}, {1: [(5, 11.0, 0, ())]}),
+         middle + 1: ([[0, 5, 1, 1, 40, LAND, 0], [0, 5, 1, 1, 52, BUILT, 1]], {0: [], 1: []},
+                      {3: [(5, 10.0, 0, ()), (5, 13.0, 1, ())]})}
+walk.across(tiles)
+check("into the next tile, two floors at one place beside a floor: the opening both ways from each",
+      (tiles[middle][1][0], tiles[middle + 1][1][0], tiles[middle + 1][1][1]),
+      ([[1, 5, 5, 2 * 65536], [1, 5, 5, 2 * 65536 + 1]], [[3, 5, 5, 4 * 65536]], [[3, 5, 5, 4 * 65536]]))
+check("an opening's runs on one side into one neighbour joined where they meet or overlap",
+      walk.merged([[2, 4, 6, 9], [0, 1, 1, 3], [2, 0, 3, 9], [2, 5, 8, 9], [2, 10, 11, 9], [2, 2, 2, 7]]),
+      [[0, 1, 1, 3], [2, 0, 8, 9], [2, 2, 2, 7], [2, 10, 11, 9]])
+check("off a deck onto the ground beside it, not onto the ground under its next sample (through the deck)",
+      (walk.through([10.0, 12.5], [10.0], 12.5, 10.0), walk.through([10.0, 12.5], [10.0, 12.5], 12.5, 10.0)),
+      (False, True))
+check("nor from a stair's step onto the ground under the next step",
+      walk.through([10.0, 11.0], [10.0, 12.0], 11.0, 10.0), True)
+check("the ground going on under a low roof is one way with itself",
+      walk.through([10.0, 12.1], [10.3, 12.4], 10.0, 10.3), False)
+# A deck 2.5 yards over the ground (columns 4 to 7 of rows 0 to 7), the ground going on under it. The ground's
+# rectangles end where the deck begins, so each opening lies on the sides of both its rectangles, as the game reads it
+# from either (Walk.lua adds the other way on the neighbour's facing side) and a line pulled through it keeps to both.
+alone, found, specks, built = ground()
+for row in range(8):
+    for column in range(4, 8):
+        found[(row, column)] = [(10.0, LAND, True), (12.5, BUILT, True)]
+        built[row, column] = True
+rects, owner, columns, links, _ = cut(alone, found, specks, built)
+deck, under = owner[(0, 4, 1)], owner[(0, 4, 0)]
+check("a deck beginning over the ground: the ground's rectangle beside it ends where the deck begins",
+      rects[owner[(0, 3, 0)]][0] + rects[owner[(0, 3, 0)]][2], 4)
+check("every opening between rectangles that meet along its side",
+      all(walk.meets(rects[n], rects[t], side) for n, runs in links.items() for side, _, _, t in runs), True)
+places = {(n, side, p, t) for n, runs in links.items() for side, first, last, t in runs for p in range(first, last + 1)}
+check("each with its way back on the neighbour's facing side",
+      all((t, (side + 2) % 4, p, n) in places for n, side, p, t in places), True)
+check("from the deck onto the ground beside it on its three sides, not under it",
+      sorted({side for side, _, _, t in links[deck] if rects[t][5] == LAND}), [1, 2, 3])
+check("and the ground under it leads onto it nowhere", deck in {t for *_, t in links[under]}, False)
+# A hall 2.5 yards over the ground there, walled round from 12 to 15 yards (its door a wall in the walking data), the
+# ground going on under it and its walls: only a way through its floor reaches it. The tile keeps one (bridges).
+walls = {}
+for row in range(8):
+    walls[(row, 4, 3)] = walls[(row, 7, 1)] = [(12.0, 15.0)]
+for column in range(4, 8):
+    walls[(7, column, 2)] = [(12.0, 15.0)]
+rects, owner, columns = walk.rectangles(alone, found, specks, built, walls)
+links = walk.openings(rects, owner, columns, {}, walls)
+check("a hall walled round, the ground going on under it: no opening onto it",
+      any(rects[t][5] == LAND for *_, t in links[owner[(3, 5, 1)]]), False)
+check("so one way through its floor is kept, each way round", len(walk.bridges(rects, owner, columns, links, walls)), 2)
+rects, owner, columns, links, _ = walk.plan(alone, found, specks, built, walls)
+places = {(n, side, p, t) for n, runs in links.items() for side, first, last, t in runs for p in range(first, last + 1)}
+check("the hall and the ground under it then one opening apart",
+      sum(1 for n, _, _, t in places if rects[n][5] == BUILT and rects[t][5] == LAND), 1)
+check("it too on both rectangles' sides, both ways", all(
+    walk.meets(rects[n], rects[t], side) and (t, (side + 2) % 4, p, n) in places for n, side, p, t in places), True)
+
 # --- Regions ---------------------------------------------------------------------------------------
 small = [[0, 0, 4, 4, 40, LAND, 0], [10, 10, 64, 64, 40, LAND, 1]]
 tiles = {0: (small, {0: [], 1: []}, {})}
@@ -507,8 +601,17 @@ check("one gets off level with the car, beside its shaft, not onto the roof over
 with tempfile.TemporaryDirectory() as folder:
     master = Path(folder) / "Travel.jsonl"
     master.write_text('{"key":1,"kind":"flight","path":[{"x":1,"y":2,"map":0}]}\n'
-                      '{"key":1100001,"kind":"lift","path":[{"x":1,"y":2,"map":1,"z":3},{"x":1,"y":2,"z":9}]}\n')
-    check("the lifts' ends from the master's set Travel", walk.lifts(master), [(1, 1, 2, 3), (1, 1, 2, 9)])
+                      '{"key":1100001,"kind":"lift","path":[{"x":1,"y":2,"map":1,"z":3},{"x":1,"y":2,"z":9}]}\n'
+                      '{"key":1200702,"kind":"portal","path":[{"x":4,"y":5,"map":0,"z":6},{"x":7,"y":8,"z":90}]}\n')
+    check("the lifts' and the portals' ends from the master's set Travel, a portal's trigger first", walk.ends(master),
+          [(1, 1, 2, 3), (1, 1, 2, 9), (0, 4, 5, 6), (0, 7, 8, 90)])
+# The Wizard's Sanctum: a portal from a cellar to a tower's top, each room small and with no sky over it.
+top = walk.HALF - 30 * walk.SAMPLE
+sanctum = {0: ([[0, 0, 4, 4, 4 * 30, BUILT, 0], [28, 28, 4, 4, 4 * 148, BUILT, 1], [60, 60, 4, 4, 4 * 70, BUILT, 2]],
+               {0: [], 1: [], 2: []}, {}, set())}
+check("the rooms a portal's two ends lie in are kept however small, a room no way leads to is not",
+      sorted(walk.regions(sanctum, walk.landings(sanctum, [(0, corner, corner, 30.5), (0, top, top, 148.6)]))),
+      [(0, 0), (0, 1)])
 
 # --- The open sky around an isle that floats (dev/tools/terrain-art) --------------------------------
 art = walk.ART

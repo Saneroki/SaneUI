@@ -33,16 +33,22 @@ bridge narrower than two samples stays open. Two floors side by side are one way
 most CLIMB and no wall stands between them: none rising more than STEP over the higher floor under its ROOM (a wall,
 a railing; a sill does not), none rising more than LEDGE between the two (a ledge; a stair's steps do not).
 
-The floors are joined into rectangles of floors that are all one way with each other (land or water, never both),
-at most WIDEST samples a side: few and large in open land, many and small in towns, caves and on mountains. Each
+The floors are joined into rectangles of floors that are all one way with each other (land or water, never both), at
+most WIDEST samples a side: few and large in open land, many and small in towns, caves and on mountains. Each
 rectangle keeps its height, its kind and the openings along its sides into its neighbours (on its own tile and the
-next), and every rectangle that can be walked to from another has the same region number, so the game can tell at
-once that a place cannot be reached on foot. A region's number holds within its map (the game compares them only
-there): numbered in the order of the tiles' keys, so a run gives the same numbers again. A region smaller than
-SMALLEST samples (a roof, a ledge) is left out, and one with the sky over none of its floors (a cellar the data closes:
-nobody gets in or out) or with most of its floors buried (the ground DEPTH yards and more under a building: Stormwind's
-streets over the ground), but one a lift lands on (the floor nearest a lift's end within LANDING yards, its height
-within RISE, as Navigation finds its landing: Freewind Post's mesa).
+next): every floor beside its edge one way with its own, so each opening is found from both. A floor is one way with
+another surface's beside it only where the way passes through no other floor (off a deck onto the ground beside it,
+not onto the ground under it), but where a tile's floors would so come apart one such way is kept between the two
+parts (a hall whose door is a wall in the data, reached under its floor). A surface's rectangles end where one of its
+floors is one way with another surface's floor beside it while the surface goes on there (the ground under a deck's or
+a stair's edge): an opening lies on the facing sides of both its rectangles, as the game reads it from either. Every
+rectangle that can be walked to from another has the same region number, so the game can tell at once that a place
+cannot be reached on foot. A region's number holds within its map (the game compares them only there): numbered in the
+order of the tiles' keys, so a run gives the same numbers again. A region smaller than SMALLEST samples (a roof, a
+ledge) is left out, and one with the sky over none of its floors (a cellar the data closes: nobody gets in or out) or
+with most of its floors buried (the ground DEPTH yards and more under a building: Stormwind's streets over the
+ground), but one a lift or a portal lands on (the floor nearest its end within LANDING yards, its height within RISE,
+as Navigation finds its landing: Freewind Post's mesa, the Wizard's Sanctum's rooms).
 
   dev/data/staging/walking.jsonl    one line per tile with ground: set Walking, key the tile's key in the set Tiles
                                     (continent * 4096 + row * 64 + column), fields map (the continent), links (the
@@ -70,7 +76,7 @@ The input, as for dev/tools/map-meta, for every map with terrain files (the cont
                 buildings and doodads stand), wmo/ (every placed building's root file <file ID>.wmo and its group
                 files <file ID>_<part>.wmo) and m2/ (every model placed or shown by a building, <file ID>.m2)
   client tables a folder of the game's client tables as CSV (LiquidType, LiquidMaterial)
-and the lifts of the master's set Travel (assets/data/Travel: each end's place and height).
+and the lifts and portals of the master's set Travel (assets/data/Travel: each end's place and height).
 Options: --maps <map>[,<map>...] those maps' tiles only (a map added, as 2991, leaves the others' lines alone), --only
 <key>[,<key>...] some tiles only (with their neighbours' edges), --pictures <folder> a picture of each tile's
 rectangles, --processes N.
@@ -114,10 +120,12 @@ JOIN = 0.25            # yards: spans of a column nearer than this are one
 STAIR = 1.0            # yards: a sloped walkable piece this near over a floor is the same stair or ramp going on
 DEPTH = 10             # yards: the ground with a building this far over it is buried (the ground under a city)
 WIDEST = 32            # samples: a rectangle's longest side
-SMALLEST = 3000        # samples: a region smaller than this (a roof, a ledge) is left out, but one a lift lands on
+SMALLEST = 3000        # samples: a region smaller than this (a roof, a ledge) is left out, but one a lift or a
+                       # portal lands on
 SMALL = 2.0            # yards: a doodad no wider than this either way (a torch, a barrel, a thin trunk) is left out:
                        # one walks round it, where it would take a sample or close the way between two
-LANDING = 20           # yards from a lift's end its landing may lie (Navigation's Lifts.LANDING)
+LANDING = 20           # yards from a lift's or a portal's end its landing may lie (Navigation's Lifts.LANDING and
+                       # Planner.ARRIVE)
 RISE = 12              # yards a landing may lie over or under the lift's end (Navigation's Walk.RISE)
 LEVEL = 3              # a yard up or down counts as this many across when a landing is chosen (Navigation's
                        # Walk.Landing): one gets off level with the car, beside its shaft, not onto the roof over it
@@ -757,6 +765,17 @@ def walled(walls, row, column, side, a, b):
             or stands(walls.get((row + dr, column + dc, (side + 2) % 4), ()), a, b))
 
 
+def through(here, there, a, b):
+    """Whether the way between two floors side by side, at heights a (one of here: its sample's floors' heights) and
+    b (of there), passes through another floor: where the higher one goes on into the lower one's sample over it (of
+    that sample's floors the one nearest the higher's height, as a surface goes on, lies over the lower; a tie too).
+    Off a deck one steps onto the ground beside it, not onto the ground under the deck's next sample, nor from a
+    stair's step onto the ground under the next step; the ground going on under a low roof is the ground."""
+    if a > b:
+        here, there, a, b = there, here, b, a
+    return any(z > a and abs(z - b) <= b - a for z in here if z != a)
+
+
 # -------------------------------------------------------------------------------------------------
 #  Rectangles
 # -------------------------------------------------------------------------------------------------
@@ -802,7 +821,7 @@ def surfaces(columns, walls=None):
     return found
 
 
-def rectangles(alone, found, specks, built, walls=None):
+def rectangles(alone, found, specks, built, walls=None, kept=frozenset()):
     """The tile's floors joined into rectangles: a list of [column, row, width, height, z, kind], owner
     {(row, column, index): rectangle} for every floor, and every column's floors.
 
@@ -811,10 +830,12 @@ def rectangles(alone, found, specks, built, walls=None):
     than WIDEST. Outside buildings a square of two samples a side is taken whole when at least two of its
     samples are of the surface and the rest is ground only too steep (no hole; no floor of its own), walked
     over at the square's mean height: the land's small bumps would else cut it into single samples. Openings
-    link floors of any surfaces that meet (openings)."""
+    link floors of any surfaces that meet (openings); a surface's rectangles end where one is to lie (cuts)."""
     columns = [[floors_of(alone, found, row, column) for column in range(SIDE)] for row in range(SIDE)]
     owner, rects = {}, []
-    for surface, cells in enumerate(surfaces(columns, walls)):
+    parts = surfaces(columns, walls)
+    cut = cuts(columns, parts, walls, kept)
+    for surface, cells in enumerate(parts):
         rows = [r for r, _ in cells]
         cols = [c for _, c in cells]
         r0, c0 = min(rows) // WIDEST * WIDEST, min(cols) // WIDEST * WIDEST
@@ -827,6 +848,10 @@ def rectangles(alone, found, specks, built, walls=None):
         kind = columns[rows[0]][cols[0]][cells[(rows[0], cols[0])]][1]
         across = mask[:, :-1] & mask[:, 1:] & (np.abs(z[:, 1:] - z[:, :-1]) <= CLIMB)
         down = mask[:-1, :] & mask[1:, :] & (np.abs(z[1:, :] - z[:-1, :]) <= CLIMB)
+        for r, c in cut.get((surface, 1), ()):
+            across[r, c] = False
+        for r, c in cut.get((surface, 2), ()):
+            down[r, c] = False
         squares = []
 
         def split(row, column, size):
@@ -903,10 +928,57 @@ def rectangles(alone, found, specks, built, walls=None):
     return rects, owner, columns
 
 
-def openings(rects, owner, columns, borders, walls=None):
-    """The openings of every rectangle on its own tile: {rect: [[side, first, last, neighbour]]}; and what lies
-    along the tile's edges for the next tiles: borders[side] = [(position, z, rect, walls)] per floor there, with
-    the walls on the way to that side (rasterize)."""
+def cuts(columns, parts, walls=None, kept=frozenset()):
+    """Where a surface's rectangles must end: between two samples side by side where the surface goes on and one of
+    its floors there is one way with another surface's floor in the other sample, through no other floor or by a way
+    kept (bridges; the ground going on under a deck or a stair beside it). An opening must lie on the sides of both
+    its rectangles: the game
+    reads one on a tile on the neighbour's facing side too (Walk.lua), and a line pulled through it must keep to both.
+    {(surface, side): {(row, column)}}: the side 1 cuts between a sample and the one east of it, the side 2 ones
+    between a sample and the one south of it (rectangles, surfaces: parts)."""
+    of = {(r, c, i): surface for surface, cells in enumerate(parts) for (r, c), i in cells.items()}
+    found = {}
+    for r in range(SIDE):
+        for c in range(SIDE):
+            here = columns[r][c]
+            for side, dr, dc in SIDES[1:3]:
+                nr, nc = r + dr, c + dc
+                if nr >= SIDE or nc >= SIDE:
+                    continue
+                there = columns[nr][nc]
+                if len(here) < 2 and len(there) < 2:
+                    continue  # a surface goes on across only where one of the two holds another surface's floor too
+                ours = {of.get((r, c, i)) for i in range(len(here))}
+                theirs = {of.get((nr, nc, j)) for j in range(len(there))}
+                heights, others = [f[0] for f in here], [f[0] for f in there]
+                for i, a in enumerate(here):
+                    for j, b in enumerate(there):
+                        one, other = of.get((r, c, i)), of.get((nr, nc, j))
+                        if (one == other or not near(a, b) or walled(walls, r, c, side, a[0], b[0])
+                                or (through(heights, others, a[0], b[0]) and (r, c, i, nr, nc, j) not in kept)):
+                            continue
+                        for surface in {one} & theirs | {other} & ours:
+                            found.setdefault((surface, side), set()).add((r, c))
+    return found
+
+
+def meets(a, b, side):
+    """Whether rectangle b (on a's grid) lies right across a's side: its own facing side along a's."""
+    if side == 0:
+        return b[1] + b[3] == a[1]
+    if side == 1:
+        return b[0] == a[0] + a[2]
+    if side == 2:
+        return b[1] == a[1] + a[3]
+    return b[0] + b[2] == a[0]
+
+
+def openings(rects, owner, columns, borders, walls=None, kept=frozenset()):
+    """The openings of every rectangle on its own tile: {rect: [[side, first, last, neighbour]]}: along each side,
+    every floor beside it one way with its own (another surface's through no other floor, or by a way kept: bridges),
+    of a rectangle that meets it there (cuts), so each opening is found from both; and what lies along the tile's
+    edges for the next tiles: borders[side] = [(position, z, rect, walls)] per floor there, with the walls on the way
+    to that side (rasterize)."""
     walls = walls or {}
     found = {number: [] for number in range(len(rects))}
     for number, (column, row, width, height, *_) in enumerate(rects):
@@ -915,35 +987,95 @@ def openings(rects, owner, columns, borders, walls=None):
                 cells = [(row if side == 0 else row + height - 1, c) for c in range(column, column + width)]
             else:
                 cells = [(r, column + width - 1 if side == 1 else column) for r in range(row, row + height)]
-            run = None
             for r, c in cells:
-                own = None
+                own = mine = None
                 for i, floor in enumerate(columns[r][c]):
                     if owner.get((r, c, i)) == number:
-                        own = floor
+                        own, mine = floor, i
                         break
+                if own is None:
+                    continue
                 nr, nc = r + dr, c + dc
-                target = None
-                if 0 <= nr < SIDE and 0 <= nc < SIDE and own is not None:
-                    for i, floor in enumerate(columns[nr][nc]):
-                        if near(floor, own) and not walled(walls, r, c, side, own[0], floor[0]):
-                            other = owner.get((nr, nc, i))
-                            if other is not None and other != number:
-                                target = other
-                                break
-                elif own is not None:
-                    borders.setdefault(side, []).append((c if side in (0, 2) else r, own[0], number,
-                                                         walls.get((r, c, side), ())))
                 position = c if side in (0, 2) else r
-                if target is not None and run and run[3] == target and run[2] == position - 1:
-                    run[2] = position
-                else:
-                    if run:
-                        found[number].append(run)
-                    run = [side, position, position, target] if target is not None else None
-            if run:
-                found[number].append(run)
-    return found
+                if not (0 <= nr < SIDE and 0 <= nc < SIDE):
+                    borders.setdefault(side, []).append((position, own[0], number, walls.get((r, c, side), ())))
+                    continue
+                for j, floor in enumerate(columns[nr][nc]):
+                    other = owner.get((nr, nc, j))
+                    if (other is not None and other != number and near(floor, own)
+                            and not walled(walls, r, c, side, own[0], floor[0])
+                            and meets(rects[number], rects[other], side)
+                            and (rects[other][6] == rects[number][6] or (r, c, mine, nr, nc, j) in kept
+                                 or not through([f[0] for f in columns[r][c]], [f[0] for f in columns[nr][nc]],
+                                                own[0], floor[0]))):
+                        found[number].append([side, position, position, other])
+    return {number: merged(runs) for number, runs in found.items()}
+
+
+def merged(runs):
+    """A rectangle's openings, those on one side into one neighbour that meet or overlap joined into runs, in the
+    order of their sides and first samples."""
+    out = []
+    for side, first, last, target in sorted(runs, key=lambda run: (run[0], run[3], run[1])):
+        if out and out[-1][0] == side and out[-1][3] == target and first <= out[-1][2] + 1:
+            out[-1][2] = max(out[-1][2], last)
+        else:
+            out.append([side, first, last, target])
+    return sorted(out, key=lambda run: (run[0], run[1], run[3]))
+
+
+def bridges(rects, owner, columns, links, walls=None):
+    """The ways through another floor (through) a tile keeps: where floors one way with each other only so lie in
+    parts no opening of the tile joins, the first such two floors (by row and column) between each two parts, each
+    way round: {(row, column, index, row, column, index)}. A hall whose door is a wall in the walking data is reached
+    under its floor, the inner ruins of Lordaeron from the ground under their courtyard."""
+    parent = list(range(len(rects)))
+
+    def find(node):
+        while parent[node] != node:
+            parent[node] = parent[parent[node]]
+            node = parent[node]
+        return node
+
+    for number, runs in links.items():
+        for *_, target in runs:
+            parent[find(number)] = find(target)
+    kept = set()
+    for r in range(SIDE):
+        for c in range(SIDE):
+            here = columns[r][c]
+            for side, dr, dc in SIDES[1:3]:
+                nr, nc = r + dr, c + dc
+                if nr >= SIDE or nc >= SIDE:
+                    continue
+                there = columns[nr][nc]
+                if len(here) < 2 and len(there) < 2:
+                    continue  # a way through another floor needs one in either sample
+                heights, others = [f[0] for f in here], [f[0] for f in there]
+                for i, a in enumerate(here):
+                    for j, b in enumerate(there):
+                        one, other = owner.get((r, c, i)), owner.get((nr, nc, j))
+                        if (one is None or other is None or rects[one][6] == rects[other][6]
+                                or find(one) == find(other) or not near(a, b)
+                                or walled(walls, r, c, side, a[0], b[0]) or not through(heights, others, a[0], b[0])):
+                            continue
+                        kept |= {(r, c, i, nr, nc, j), (nr, nc, j, r, c, i)}
+                        parent[find(one)] = find(other)
+    return kept
+
+
+def plan(alone, found, specks, built, walls=None):
+    """A tile's rectangles, owner of every floor and floors (rectangles), its openings and borders (openings): with
+    the ways through another floor its parts need (bridges), the rectangles cut again for them."""
+    rects, owner, columns = rectangles(alone, found, specks, built, walls)
+    borders = {}
+    links = openings(rects, owner, columns, borders, walls)
+    kept = bridges(rects, owner, columns, links, walls)
+    if kept:
+        rects, owner, columns = rectangles(alone, found, specks, built, walls, kept)
+        borders = {}
+        links = openings(rects, owner, columns, borders, walls, kept)
+    return rects, owner, columns, links, borders
 
 
 # -------------------------------------------------------------------------------------------------
@@ -992,9 +1124,7 @@ def tile(job):
             np.maximum.at(water if kind in waters else closed, (row[inside], column[inside]),
                           world[inside, 2].astype(np.float32))
     alone, found, specks, built = floors(height, hole, water, closed, spans, walls, steep)
-    rects, owner, columns = rectangles(alone, found, specks, built, walls)
-    borders = {}
-    links = openings(rects, owner, columns, borders, walls)
+    rects, owner, columns, links, borders = plan(alone, found, specks, built, walls)
     if not rects:
         return key, None, None, None, None, None
     opened, buried = set(), {}
@@ -1013,8 +1143,9 @@ NEXT = {0: (-1, 0, 2), 1: (0, 1, 3), 2: (1, 0, 0), 3: (0, -1, 1)}  # side: row s
 
 
 def across(tiles):
-    """The openings between tiles: for each edge, floors at the same place along it one way with each other, no
-    wall on the way between them on either tile."""
+    """The openings between tiles: for each edge, every two floors at the same place along it one way with each
+    other, no wall on the way between them on either tile (each found from both, as on a tile: openings). Through
+    another floor or not: on a tile's edge an opening lies on both its rectangles' sides however they lie."""
     for key, (rects, links, borders, *_) in tiles.items():
         continent, rest = divmod(key, GRID * GRID)
         row, column = divmod(rest, GRID)
@@ -1026,41 +1157,33 @@ def across(tiles):
             for position, z, rect, walls in tiles[other][2].get(opposite, []):
                 theirs.setdefault(position, []).append((z, rect, walls))
             runs = {}
-            for position, z, rect, walls in sorted(borders.get(side, []), key=lambda border: border[:3]):
-                match = None
+            for position, z, rect, walls in borders.get(side, []):
                 for their_z, their_rect, their_walls in theirs.get(position, []):
                     if abs(their_z - z) <= CLIMB and not stands(walls, z, their_z) and not stands(their_walls, z, their_z):
-                        match = their_rect
-                        break
-                if match is None:
-                    continue
-                target = match + 65536 * (1 + side)
-                run = runs.get(rect)
-                if run and run[-1][3] == target and run[-1][2] == position - 1:
-                    run[-1][2] = position
-                else:
-                    runs.setdefault(rect, []).append([side, position, position, target])
-            for rect, list_ in runs.items():
-                links[rect].extend(list_)
+                        runs.setdefault(rect, []).append([side, position, position, their_rect + 65536 * (1 + side)])
+            for rect, units in runs.items():
+                links[rect] = merged(links[rect] + units)
 
 
-def lifts(path=TRAVEL):
-    """Both ends of every lift in the master's set Travel: [(map, x, y, z)] in the world's yards."""
+def ends(path=TRAVEL):
+    """Both ends of every lift and every portal in the master's set Travel: [(map, x, y, z)] in the world's yards (a
+    lift's lower end first, a portal's trigger first)."""
     found = []
     if not path.exists():
         return found
     for text in path.read_text(encoding="utf-8").splitlines():
         line = json.loads(text) if text.strip() else {}
         way = line.get("path") or []
-        if line.get("kind") == "lift" and len(way) >= 2 and "map" in way[0]:
+        if (line.get("kind") in ("lift", "portal") and len(way) >= 2 and "map" in way[0]
+                and all("z" in point for point in way[:2])):
             found.extend((way[0]["map"], point["x"], point["y"], point["z"]) for point in way[:2])
     return found
 
 
 def landings(tiles, ends):
-    """The rectangles the lifts' ends land on, as Navigation finds them (Walk.Landing): of those within LANDING
-    yards whose height lies within RISE of the end, the nearest by the squares of both, the rise LEVEL times.
-    {(key, number)}"""
+    """The rectangles the lifts' and the portals' ends land on, as Navigation finds them (Walk.Landing): of those
+    within LANDING yards whose height lies within RISE of the end, the nearest by the squares of both, the rise LEVEL
+    times. {(key, number)}"""
     found = set()
     for world, x, y, z in ends:
         row, column = int((HALF - x) // TILE), int((HALF - y) // TILE)
@@ -1089,7 +1212,7 @@ def regions(tiles, keep=()):
     than SMALLEST samples get none (nobody walks onto a roof or a ledge from the ground), nor those with the sky over
     none of their floors (a cellar the walking data closes: nobody gets in or out) or most of them buried (the ground
     under Stormwind's buildings, open only to the gaps between them), but those of the rectangles in keep (the lifts'
-    landings: Freewind Post's mesa, the Undercity)."""
+    and the portals' landings: Freewind Post's mesa, the Undercity, the Wizard's Sanctum's rooms)."""
     parent = {}
 
     def find(node):
@@ -1197,9 +1320,11 @@ def cbor(value):
 
 def shared(a, b, side, dr, dc):
     """The first and last sample of the edge two rectangles share on a side of a (b on the tile dr, dc tiles
-    away), or None when they share none."""
+    away), or None when they share none (b does not lie right across that side)."""
     ac, ar, aw, ah = a[0], a[1], a[2], a[3]
     bc, br, bw, bh = b[0] + dc * SIDE, b[1] + dr * SIDE, b[2], b[3]
+    if not meets(a, (bc, br, bw, bh), side):
+        return None
     if side in (0, 2):
         first, last = max(ac, bc), min(ac + aw, bc + bw) - 1
     else:
@@ -1319,7 +1444,7 @@ def main():
             if done % 50 == 0 or done == len(jobs):
                 print(f"{done} of {len(jobs)} tiles read", file=sys.stderr, flush=True)
     across(tiles)
-    tiles = kept(tiles, regions(tiles, landings(tiles, lifts())))
+    tiles = kept(tiles, regions(tiles, landings(tiles, ends())))
     STAGING.parent.mkdir(parents=True, exist_ok=True)
     total, count = 0, 0
     with open(STAGING, "w", encoding="utf-8") as out:

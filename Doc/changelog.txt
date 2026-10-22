@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Navigation: a route's line keeps to ground you can walk on, and no
+  route starts or ends on a rock top or in a hut it could not leave.
+  From Dalaran, routes into Stormwind's Wizard's Sanctum take the
+  Skyborne portal and the Sanctum's own.
 - Navigation: routes use the teleports your character has: a mage's
   to the capitals and Dalaran, a druid's to Moonglade, an engineer's
   transporters, the Crumbling Hearthstone, and a shaman's Astral Recall
