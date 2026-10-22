@@ -187,7 +187,12 @@ minimap) and the full-screen window (the world map) show the same map with the s
   play) and `zones.toml`; the shared words `levels.toml`. Samples painted (2026-10-21): Westfall and Tanaris, the
   Deadmines, Zul'Farrak and the Hall of Thanes, all three levels; the Eastern Kingdoms and Kalimdor whole, middle
   and far at an angle (2026-10-22, given up); then from straight above, each zone on its own, Westfall joined with
-  Elwynn Forest and Duskwood (`stitch`); the whole run is queued once Saneroki has seen them.
+  Elwynn Forest and Duskwood (`stitch`); Duskwood, Ashenvale, the Deadmines and the Hall of Thanes compared with
+  the game's terrain and maps, layer over layer. **Queued (Saneroki, 2026-10-22: "render everything at all 3
+  levels"):** the GPU job `zonemaps` (priority 10): every zone's and city's middle and far levels, 49; the close
+  level is the job `atlas` (held). Then in code: each zone's paintings cut by its outline into the Atlas' blocks
+  (as `stitch` joins them), the zoom blending from one level into the next. The instances wait for the new game
+  build's tables (1.60.1.70532 is installed; their terrain is extracted by build).
 - **Instance maps as the world map, apart from it (Saneroki, 2026-10-21):** the instance maps are completely
   independent of the world map and separate from it (their own view, data, pictures, packs and jobs; never part of
   the world's picture), but they work in the same way and are made in the same way: the same three levels, one

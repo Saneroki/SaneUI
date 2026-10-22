@@ -382,7 +382,8 @@ lists, from inputs of its own:
 - **The check by a vision model** (`dev/imagegen/workflows/qwen3vl-look.json`): ComfyUI's `TextGenerate` with the
   Qwen3-VL model the image model reads its words with looks at a picture and answers questions in JSON, about six
   seconds a picture with no other model to load. The map levels ask about writing, a pencil map seen from above
-  (middle), and a real place, not a map or panels, seen from above, of the brief's kind (far). Tried on the first
+  (middle), and no panels, seen straight down, of the brief's kind (far; whether it is a map counts for nothing:
+  it calls every photograph straight down a map). Tried on the first
   dungeon paintings (2026-10-21): it caught a plan painted flat, a city painted as four panels and a cave painted
   from inside in a reference picture's own view (a second picture may be copied instead of followed: its words say
   what is taken from it, and the check catches it when it is not).

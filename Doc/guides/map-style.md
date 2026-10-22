@@ -105,8 +105,8 @@ more strict"). So:
 - **Checked twice, painted again when it fails:**
   - its outlines against image 1's: how well its edges agree with the terrain's, measured against how well the
     game's own map agrees with it (a middle level must come close to the game's map, a far one less);
-  - by a vision model: no writing, a pencil map seen from above (middle); a real place, not a map or panels, seen
-    from above, of the brief's kind (far);
+  - by a vision model: no writing, a pencil map seen from above (middle); no panels, seen straight down, of the
+    brief's kind (far; the model calls every photograph straight down a map, so that answer is not asked of it);
   - a zone's far level: its water against the walking data's, a shore straying a little.
 
 ## What is drawn over them, never painted

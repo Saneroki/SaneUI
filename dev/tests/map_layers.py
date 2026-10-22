@@ -137,8 +137,11 @@ check("verdict: writing on a map fails",
 check("verdict: a far render passes",
       ml.verdict("far", '{"writing": false, "map_or_drawing": false, "panels": false, "from_above": true, "is_it": true}')[0],
       True)
-check("verdict: a far render that is a drawing fails",
+check("verdict: a far render the vision model calls a map still passes (it calls every photograph straight down one)",
       ml.verdict("far", '{"writing": false, "map_or_drawing": true, "panels": false, "from_above": true, "is_it": true}')[0],
+      True)
+check("verdict: a far render with writing fails",
+      ml.verdict("far", '{"writing": true, "map_or_drawing": false, "panels": false, "from_above": true, "is_it": true}')[0],
       False)
 check("verdict: an answer that cannot be read fails", ml.verdict("far", "no idea")[0], False)
 check("look: the far level asks for the brief's kind of place", brief["biome"] in ml.look_words("far", brief), True)

@@ -6,6 +6,18 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 209 (data in the game), 527 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the Atlas' middle and far levels of every zone queued (Saneroki, 2026-10-22)
+- `jobs.toml`: `zonemaps` (priority 10, beside `atlas`): every zone's and city's middle and far levels, 49 zones
+  (Saneroki: render everything at all three levels so the Atlas works in the game; the close level is the job
+  `atlas`, held). Their inputs are made (`map-layers inputs`, 44 zones more).
+- `dev/tools/map-layers`: `paint --kind zone|instance`; a far painting passes without the vision model's "not a map"
+  (it called every photograph straight down a map, so every zone took three tries); none passing, a painting
+  without writing is kept before one with it (Ashenvale's middle level); an instance without map art takes
+  Uldaman's manner.
+- Compared (a local page, not kept): Duskwood, Ashenvale, the Deadmines and the Hall of Thanes, the game's terrain
+  and maps under our three levels. The instances' full run waits for the new game build's tables (1.60.1.70532).
+- Docs: `Navigation.md`, `map-style.md`, `image-generation.md`. Tests: `dev/tests/map_layers.py` (62 checks).
+
 ### Navigation: the walking data's openings both ways, on both rectangles; the portals' rooms (Saneroki, 2026-10-22)
 - `dev/tools/walk-data`: `openings` and `across` link every floor beside a rectangle's edge one way with its own (they
   took the first: the way back of a floor beside two went to the other and was lost, 129,510 samples apart from their

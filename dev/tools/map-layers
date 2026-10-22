@@ -35,12 +35,14 @@ Each middle and far painting is checked twice and painted again with the next se
   water     a zone's far painting: its broad water against the walking data's (atlas' check, a shore straying up to
             FAR_STRAY, FAR_WATER at most added or lost);
   looks     the vision model (qwen3vl-look) answers in JSON: writing in it; a pencil map on tinted parchment seen
-            from above (middle); a real place, not a map or panels, seen straight down, of the brief's kind (far).
+            from above (middle); no panels, seen straight down, of the brief's kind (far; it calls every photograph
+            straight down a map, so that answer counts for nothing).
 
 Usage:
   dev/tools/map-layers inputs [--zones UIMAPS] [--instances MAPS] [--continents DIR --tables DIR --minimap DIR]
                               [--instance-files DIR] [--mapart DIR] [--out DIR]
-  dev/tools/map-layers paint [--levels close,middle,far] [--whole-close] [--only NAMES] [--out DIR]
+  dev/tools/map-layers paint [--levels close,middle,far] [--whole-close] [--only NAMES] [--kind zone|instance]
+                             [--out DIR]
   dev/tools/map-layers join [--out DIR]
   dev/tools/map-layers stitch [--out DIR]
   dev/tools/map-layers contact [--out DIR]
@@ -49,8 +51,9 @@ Usage:
   inputs    the subjects' frames, terrain plans and the game's map art, remembered in the run's state.json (the
             game's folders default to the Atlas' run's); --zones 1436,1446 --instances 36,209,3065
   paint     the levels in order (the far level takes a piece of the close one: a zone without one another zone's on
-            its map, or its plan), what is missing only; --only zone-1436,...; --whole-close: the close level over
-            the whole frame (a sample paints a zone's main place, an instance's middle)
+            its map, or its plan), what is missing only; --only zone-1436,...; --kind: the zones or the instances
+            only; --whole-close: the close level over the whole frame (a sample paints a zone's main place, an
+            instance's middle)
   join      every subject's close squares joined again, cut along the line where neighbours differ least
   stitch    stitch-<level>-<continent>.jpg: the painted zones' middle and far levels each where it lies on its
             continent, cut by its outline (Navigation's zone masks), the zones' whole paintings under them
@@ -153,7 +156,8 @@ FAR_WATER = (0.01, 0.02)        # a zone's far painting: broad water added, or t
 FAR_STRAY = 0.04                # fails (shares of the picture); a shore may stray so far (of the side)
 FLOOR_FRAME = (0.05, 0.10, 0.95, 0.95)  # the map in an instance floor's art: around it its frame, title banner
 ZONE_FRAME = (0.025, 0.04, 0.975, 0.96)  # and ornaments, a zone's its border: made parchment (they stayed as a strip)
-STYLE_OF = {3065: (70, 1)}      # an instance without map art: whose map shows the manner (Uldaman's halls)
+STYLE_OF = {3065: (70, 1)}      # an instance without map art: whose map shows the manner (Uldaman's halls; any other
+                                # such instance the same)
 
 
 # --- Frames and the terrain plan ----------------------------------------------------------------
@@ -666,9 +670,9 @@ def verdict(level, text):
         seen = {}
     if level == "middle":
         ok = seen.get("writing") is False and seen.get("pencil_map") is True and seen.get("from_above") is True
-    else:
-        ok = (seen.get("writing") is False and seen.get("map_or_drawing") is False and seen.get("panels") is False
-              and seen.get("from_above") is True and seen.get("is_it") is True)
+    else:   # not "map_or_drawing": the vision model calls every photograph straight down a map (2026-10-22, every try)
+        ok = (seen.get("writing") is False and seen.get("panels") is False and seen.get("from_above") is True
+              and seen.get("is_it") is True)
     return ok, seen
 
 
@@ -795,7 +799,7 @@ def inputs(args):
                 if floor.get("tiles"):
                     art, style_only = floor_art(floor, mapart), False
                 else:
-                    other, number = STYLE_OF[key]
+                    other, number = STYLE_OF.get(key, STYLE_OF[3065])
                     art, style_only = floor_art(next(f for f in sets[other] if f["floor"] == number), mapart), True
                 art.resize(picture.size, Image.Resampling.LANCZOS).save(folder / "art.png")
                 records.append({"name": floor_name, "floor": floor["floor"], "box": box, "style_only": style_only})
@@ -940,7 +944,8 @@ def paint_level(server, level, folder, refs, prompt, brief, reference, compare=N
                   + (f", water {water}" if water else ""), flush=True)
         mark = checks[f"{level}-{seed}"]
         copied = level == "far" and mark["outlines"] > COPY   # its image 1 come back nearly as it is
-        rank = (mark["passes"] and not copied, not copied, mark["outlines"])
+        clean = mark.get("seen", {}).get("writing") is False   # none passing: one without writing before the others
+        rank = (mark["passes"] and not copied, not copied, clean, mark["outlines"])
         if best is None or rank > best[0]:
             best = (rank, seed)
         if mark["passes"] and not copied:
@@ -956,7 +961,7 @@ def paint(args):
     start_comfyui()
     server = ig.Server(ADDRESS)
     for subject in state["subjects"]:
-        if args.only and subject["name"] not in args.only:
+        if (args.only and subject["name"] not in args.only) or (args.kind and subject["kind"] != args.kind):
             continue
         instance = subject["kind"] == "instance"
         brief = dict((dungeon_briefs if instance else zone_briefs)[str(subject["key"])])
@@ -1098,6 +1103,7 @@ def main():
     parser.add_argument("--mapart")
     parser.add_argument("--levels", type=lambda text: set(text.split(",")), default={"close", "middle", "far"})
     parser.add_argument("--whole-close", dest="whole_close", action="store_true")
+    parser.add_argument("--kind", choices=("zone", "instance"))
     parser.add_argument("--only", type=lambda text: set(text.split(",")))
     parser.add_argument("--out", default=str(OUT))
     args = parser.parse_args()

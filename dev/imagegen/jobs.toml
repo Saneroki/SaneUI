@@ -41,6 +41,16 @@ status = ["dev/tools/atlas", "status"]
 done = '^(\d+) of \1 squares painted'
 rebuild = ["dev/tools/atlas", "rebuild"]
 
+# The Atlas' middle and far levels, every zone and city of both continents (Saneroki, 2026-10-22: render everything
+# at all three levels so the Atlas works in the game; the close level is the job above): each zone's pencil map on
+# its own parchment and its photograph straight down, in its own frame, to be joined along the zones' outlines
+# (dev/tools/map-layers stitch). 49 zones, two to six paintings each.
+[[job]]
+name = "zonemaps"
+priority = 10
+command = ["dev/tools/map-layers", "paint", "--levels", "middle,far", "--kind", "zone"]
+status = ["dev/tools/map-layers", "status"]
+
 # The interface's whole render (Saneroki, 2026-10-21: the style locked in, clean high quality renders of every part
 # the code needs, at 4K scale; 2026-10-22: the final pieces, one render each, and a full screen of the character,
 # guild and chat windows made from them): the picks cleaned, the parts at 4K, the masks of the whole picks, the
