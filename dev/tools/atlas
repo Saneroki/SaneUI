@@ -515,16 +515,30 @@ def seam(a, b):
     return np.clip(0.5 - (np.arange(width)[None, :] - line[:, None]) / (2 * FEATHER), 0, 1)[..., None]
 
 
+SOFT = 24      # pixels: what is broader than this (a painting's colour and light) fades across the whole overlap
+
+
+def light_of_strip(strip):
+    """A strip's colour and light: blurred by SOFT."""
+    return np.asarray(Image.fromarray(strip.clip(0, 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(SOFT)),
+                      np.float32)
+
+
 def join_two(left, right, cut):
-    """Two pictures that overlap by SQ - STEP at the left's right edge, as one."""
+    """Two pictures that overlap by SQ - STEP at the left's right edge, as one. A hard cut in the middle (cut), or
+    in two bands (Saneroki, 2026-10-22: no harsh line between squares): their fine detail meets along the line where
+    they differ least (seam: interlocking, never both trees), their colour and light fade from one to the other
+    across the whole overlap (a square a little lighter than its neighbour leaves no step at the line)."""
     over = SQ - STEP
     a, b = left[:, -over:].astype(np.float32), right[:, :over].astype(np.float32)
     if cut:
         w = (np.arange(over) < over // 2).astype(np.float32)[None, :, None]
+        middle = a * w + b * (1 - w)
     else:
-        w = seam(a, b)
-    middle = (a * w + b * (1 - w)).clip(0, 255).astype(np.uint8)
-    return np.concatenate([left[:, :-over], middle, right[:, over:]], axis=1)
+        w, ramp = seam(a, b), np.linspace(1.0, 0.0, over, dtype=np.float32)[None, :, None]
+        wide_a, wide_b = light_of_strip(a), light_of_strip(b)
+        middle = wide_a * ramp + wide_b * (1 - ramp) + (a - wide_a) * w + (b - wide_b) * (1 - w)
+    return np.concatenate([left[:, :-over], middle.clip(0, 255).astype(np.uint8), right[:, over:]], axis=1)
 
 
 def join(out, continent, block, cut=False, game=None, mood=MOOD):

@@ -177,6 +177,12 @@ right = np.full((32, at.SQ, 3), 255, np.uint8)
 check("join_two: width", at.join_two(left, right, True).shape, (32, at.SQ + at.STEP, 3))
 check("join_two: hard cut in the middle", (int(at.join_two(left, right, True)[0, at.STEP + over // 2 - 1, 0]),
                                            int(at.join_two(left, right, True)[0, at.STEP + over // 2, 0])), (0, 255))
+dim, bright = np.full((64, at.SQ, 3), 100, np.uint8), np.full((64, at.SQ, 3), 140, np.uint8)
+soft = at.join_two(dim, bright, False)[32, at.STEP - over // 2: at.STEP + 3 * over // 2, 0].astype(int)
+check("join_two: two plain squares, one lighter, meet without a step (their light fades across the overlap)",
+      int(np.abs(np.diff(soft)).max()) <= 2 and int(soft[0]) == 100 and int(soft[-1]) == 140, True)
+check("join_two: the ends of the overlap are the squares' own", (int(at.join_two(dim, bright, False)[0, at.STEP - 1, 0]),
+                                                                 int(at.join_two(dim, bright, False)[0, at.SQ, 0])), (100, 140))
 
 # --- Packing ------------------------------------------------------------------------------------------
 

@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 209 (data in the game), 527 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 130 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Atlas, Navigation: the close squares joined in two bands, no harsh line between them (Saneroki, 2026-10-22)
+- `dev/tools/atlas`'s `join_two` (the Atlas' squares and the maps' close levels alike): where two squares overlap
+  (SQ - STEP, 256 pixels), their fine detail still meets along the line where they differ least (`seam`:
+  interlocking, never both trees), but their colour and light (blurred by `SOFT`, 24 pixels) fade from one to the
+  other across the whole overlap, so a square a little lighter than its neighbour leaves no step at the line.
+- Tests: `dev/tests/atlas.py` (two plain squares of different light meet without a step; the overlap's ends are the
+  squares' own).
+
 ### Navigation: the maps' three levels all from straight above, each zone on its own, joined (Saneroki, 2026-10-22)
 - Saneroki: all three levels seen straight from above in the same world coordinates, so every road, major place and
   pin is in the same spot in each; each zone painted on its own and the zones joined along their outlines; the far
