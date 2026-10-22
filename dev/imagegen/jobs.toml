@@ -42,9 +42,10 @@ done = '^(\d+) of \1 squares painted'
 rebuild = ["dev/tools/atlas", "rebuild"]
 
 # The interface's whole render (Saneroki, 2026-10-21: the style locked in, clean high quality renders of every part
-# the code needs, at 4K scale): the picks cleaned, the parts at 4K, variants to pick from, the pencil pieces, the
-# views and the gallery. Each step skips what it has made. Plan: dev/imagegen/sets/interface/catalog.py;
-# Doc/guides/interface-style.md, *Running it*.
+# the code needs, at 4K scale; 2026-10-22: the final pieces, one render each, and a full screen of the character,
+# guild and chat windows made from them): the picks cleaned, the parts at 4K, the masks of the whole picks, the
+# pencil pieces, the final pieces, the views, the 4K full screen and the gallery. Each step skips what it has made.
+# Plan: dev/imagegen/sets/interface/catalog.py; Doc/guides/interface-style.md, *Running it*.
 [[job]]
 name = "interface"
 priority = 20

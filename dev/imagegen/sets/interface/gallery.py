@@ -18,10 +18,13 @@ SECTIONS = [   # folder (in OUT, or DECIDED for "decided:"), the pictures in it,
     ("clean", "*.png", "Picks cleaned",
      "clean.py: #12 without the strap over its paper and its label's writing; #3 without the rectangle, with stony ground"),
     ("views", "*.png", "Views laid out in code",
-     "compose.py: #12 as the window, the decided parts, the paper, pencil, Kalam, game icons"),
+     "compose.py: from the final pieces: #12 as the window, the paper, pencil, Kalam, game icons; fullscreen.png at 4K"),
     ("hires", "*.png", "Parts in high resolution (4K)", "catalog.py hires: every decided part at twice its size"),
     ("variants", "*.png", "Variants to pick", "catalog.py variants: #14's pencil pieces, kit #17, #18, #24, #27, #28"),
     ("pencil", "*.png", "Pencil pieces", "pencil.py: the pencil lines alone, on transparency"),
+    ("pieces", "*.png", "Final pieces (4K, transparent)",
+     "pieces.py: every decided element at 4K, alone on transparency, for code to build any window from; how each is "
+     "laid is in pieces.json; the full screen in Views is built from these alone"),
 ]
 
 

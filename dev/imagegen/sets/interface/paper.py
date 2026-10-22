@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""The paper of a window as code lays it (Doc/guides/interface-style.md, *Paper*): the picked parchment (paper.png)
-scaled to cover the page and cut to it, never stretched or repeated; a soft darker edge; a few of the picked
+"""The paper of a window as code lays it (Doc/guides/interface-style.md, *Paper*): the picked parchment (its 4K
+piece, pieces/paper.png, once made; paper.png before) scaled to cover the page and cut to it, never stretched or repeated; a soft darker edge; a few of the picked
 stains, faint, at spots seeded by the page, so they stay put while it scrolls. Used by compose.py.
   python3 dev/imagegen/sets/interface/paper.py   ->  assets/generated/interface/paper/<size>.png (three sizes)
 """
@@ -16,6 +16,7 @@ EDGE = 0.20                # the soft darker edge round a page
 STAIN_EVERY = 700 * 700    # paper per stain
 STAIN_ALPHA = 0.30
 STAIN_SIZE = (90, 200)     # a stain's longest side in pixels
+SCALE = 1                  # pixels per layout pixel (compose.py sets it: 2 at 4K); the edge and stains scale with it
 
 _paper = None
 _stains = None
@@ -24,7 +25,8 @@ _stains = None
 def source():
     global _paper
     if _paper is None:
-        _paper = Image.open(os.path.join(REFS, "paper.png")).convert("RGB")
+        piece = os.path.join(ROOT, "assets/generated/interface/pieces/paper.png")
+        _paper = Image.open(piece if os.path.exists(piece) else os.path.join(REFS, "paper.png")).convert("RGB")
     return _paper
 
 
@@ -51,14 +53,14 @@ def page(w, h, seed="page", edge=EDGE, stained=True, tone=TONE):
     img *= np.array(tone, dtype=np.float32) / np.asarray(src, dtype=np.float32).reshape(-1, 3).mean(axis=0)
     yy, xx = np.mgrid[0:h, 0:w]
     dist = np.minimum.reduce([xx, w - 1 - xx, yy, h - 1 - yy]).astype(np.float32)
-    img *= (1 - edge * np.exp(-dist / 26))[..., None]
+    img *= (1 - edge * np.exp(-dist / (26 * SCALE)))[..., None]
     out = Image.fromarray(img.clip(0, 255).astype(np.uint8)).convert("RGBA")
     if stained:
         rnd = random.Random(seed)
         pieces = stains()
-        for _ in range(max(1, round(w * h / STAIN_EVERY)) if pieces else 0):
+        for _ in range(max(1, round(w * h / (STAIN_EVERY * SCALE * SCALE))) if pieces else 0):
             p = rnd.choice(pieces)
-            s = rnd.uniform(*STAIN_SIZE) / max(p.size)
+            s = rnd.uniform(*STAIN_SIZE) * SCALE / max(p.size)
             p = p.resize((max(1, int(p.width * s)), max(1, int(p.height * s))), Image.LANCZOS)
             p = p.rotate(rnd.uniform(0, 360), expand=True, resample=Image.BICUBIC)
             a = p.getchannel("A").point(lambda v: int(v * STAIN_ALPHA))

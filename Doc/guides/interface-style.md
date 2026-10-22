@@ -256,25 +256,52 @@ needs, for responsive, flexible designs).
 - **Scale:** every painted part exists at twice the size it was picked at. The picks were painted for windows of
   about 600 pixels at 1080p, so twice is a 4K screen's scale. The game draws them smaller on smaller screens,
   never larger than this.
+- **One render each** (Saneroki, 2026-10-22): every element is rendered once, at its final quality; no varieties
+  of it. A render is only made again after its decision changed (`--rebuild`).
 - **How:** `catalog.py hires`.
-  1. Each decided part is upscaled in code (Lanczos).
-  2. One gentle pass of Qwen goes over the whole part: `qwen21-inpaint.json` with a full mask, denoise 0.3,
+  1. Each decided part is prepared in code: a cut-out's holes (light metal its cut took for the background) are
+     made solid, their colour carried in from the light pixels round them; a label's painted letters are covered
+     by the part's own leather from beside them on the same rows (the patch tab of #78).
+  2. It is upscaled in code (Lanczos).
+  3. One gentle pass of Qwen goes over the whole part: `qwen21-inpaint.json` with a full mask, denoise 0.3,
      guidance 2.5 and negative words. It sharpens texture, stitches and pencil, and keeps every shape where it is.
-  3. The part's transparency comes back from the upscaled source; marks the pass brought back are covered again
+  4. The part's transparency comes back from the upscaled source; marks the pass brought back are covered again
      in code (the letters in #12's title label).
-  4. The results go to `assets/generated/interface/hires/`; `pencil.py` takes the pencil box's lines from the
+  5. The results go to `assets/generated/interface/hires/`; `pencil.py` takes the pencil box's lines from the
      hires #14.
+  6. `catalog.py masks`: the two whole picks (#12, #3) have a background round them; ComfyUI's background removal
+     (BiRefNet, `dev/imagegen/workflows/birefnet-mask.json`) finds it, once each, so their outside becomes
+     transparent.
+- **Pieces** (`pieces.py`, `assets/generated/interface/pieces/`, Saneroki, 2026-10-22): the final puzzle pieces
+  code builds every window from, at 4K, alone on transparency, trimmed. `pieces.json` says how each is laid.
+  - **The window** from #12, its paper moved to the page's tone: `frame-top-left`, `-middle`, `-right` (the
+    strap, ribbon, title label and corner patch; the middle stretches, its paper fades into the page), the same
+    three for the bottom (the page stack), `frame-left` and `frame-right` (tiles that repeat down without a seam),
+    `frame-clasp`. The title's and the close button's places are in `pieces.json`.
+  - **The character window** (`doll`): #3 whole, on the page's tone; code fills its slots and strips.
+  - **Cut-outs:** `patch` (every button and side tab), `tab-arrow`, `tab-arrow-b`, `tab-patch`, `edge-left`,
+    `edge-right`, and every kit part (`kit3-01` to `kit4-11`). Their rim (the pick's light background left at
+    their edge) is coloured from inside them, so no halo shows on any page.
+  - **Pencil:** `pencil-box` (#14's lines; nine slices) and `pencil-rule` (its top line).
+  - **Paper and decorations:** `paper`, the stains and the sketches.
+
+  The views and the full screen are built from these pieces alone (`compose.py` takes them through `SOURCE` and
+  the frame's pieces), so what the views show is what the pieces can build.
 - **Parts, not pictures:** the code gets parts it can lay out at any size:
-  - the window pieces cut from the hires #12 (its top, bottom, edges, corners, clasp), whose middles stretch or
-    repeat seamlessly;
+  - the window's pieces, whose middles stretch or repeat seamlessly;
   - buttons and tabs whose middles repeat;
   - pencil boxes that keep their corners;
   - paper laid in layers;
   - stains and sketches placed by code.
 
   Text is always the code's, so it is sharp at any size.
-- **For the game:** the hires parts become textures by `Doc/guides/images.md` (format, mipmaps, sizes). Margins
-  for slicing are taken at the hires scale.
+- **Layouts at any scale:** `compose.py` lays out in the pixels of a 1080p screen, and `S` turns them into pixels
+  (2 at 4K); the pieces are scaled to it. The full screen (`views/fullscreen.png`, 3840 x 2160) is always made at
+  4K: the character window, the guild window and the chat window side by side.
+- **For the game:** the pieces become textures by `Doc/guides/images.md` (format, mipmaps, sizes). Margins for
+  slicing are taken at the pieces' scale.
+- **Known flaw:** the two blades of the kit (`kit3-11`, `kit4-08`) keep the bites along their top edge that their
+  cut-outs have.
 
 ## The harness
 
@@ -286,7 +313,7 @@ of its own or on earlier renders.
    it:
    - the window from #12, cleaned in code by `clean.py`. The strap's rows are cut out and the label's writing is
      covered by the label's own paper. It is cut into a top, a bottom and two edges at #12's own scale
-     (`compose.py`, `FRAME_*`); middles are stretched where their lines run lengthwise, or repeated seamlessly;
+     (`pieces.py`, `FRAME_*`); middles are stretched where their lines run lengthwise, or repeated seamlessly;
    - the character doll: `doll.png` itself, its rows moved outward into arcs. `clean.py` inpaints it twice: the
      rectangle behind the hero becomes paper, and the stony ground fills the bottom of his place.
 2. **Crops** (`refs.py`): each decided part is cut out of the picture it was picked in. A crop is the only thing
@@ -305,10 +332,11 @@ of its own or on earlier renders.
    - the game's icons.
 
    No model pass runs over a finished view: a global pass repaints everything and brings back looks of its own.
-6. **High resolution and variants** (`catalog.py`; the GPU runner's job `interface`): every decided part at 4K
-   scale, and variants to pick from (*High resolution*).
-7. **Gallery** (`gallery.py`): the decided references, the cleaned picks, the views, the hires parts and the
-   variants, numbered from #1, at `assets/generated/interface/index.html`.
+6. **High resolution and pieces** (`catalog.py`; the GPU runner's job `interface`): every decided part at 4K
+   scale, rendered once, and cut into the final pieces (*High resolution*).
+7. **Gallery** (`gallery.py`): the decided references, the cleaned picks, the views, the hires parts, the
+   variants of the earlier round (#88–121, still to pick from; no new ones are made) and the final pieces,
+   numbered from #1, at `assets/generated/interface/index.html`.
 
 Tools for when a model must touch a finished picture (ComfyUI has them built in; `clean.py` uses the first three
 through `dev/imagegen/workflows/qwen21-inpaint.json`):
@@ -334,15 +362,15 @@ Rules:
 ## Running it
 
 The whole render is one job of the GPU runner, `interface` (`dev/imagegen/jobs.toml`, priority 20), which runs
-`catalog.py`: it cleans the picks, makes the 4K parts and the variants, takes out the pencil lines, lays out the
-views and rebuilds the gallery. Each step skips what it has made, so a stopped run goes on where it stopped.
+`catalog.py`: it cleans the picks, makes the 4K parts (one render each) and the two masks, takes out the pencil
+lines, cuts the final pieces, lays out the views and the 4K full screen, and rebuilds the gallery. Each step skips what it has made, so a stopped run goes on where it stopped.
 
 - See how far it is: `saneui gpuqueue` (the job's line is `catalog.py --status`).
 - Run it now: `saneui switch interface`.
 - After a decision changed (a pick, a cut, a part's source): `saneui rebuildstart interface` forgets what was
   made (`catalog.py --rebuild`) and renders it all anew.
-- Single steps by hand: `python3 dev/imagegen/sets/interface/catalog.py clean|hires|variants|pencil|views`; the
-  views alone need no graphics card (`compose.py`, `gallery.py`).
+- Single steps by hand: `python3 dev/imagegen/sets/interface/catalog.py clean|hires|masks|pencil|pieces|views`;
+  the pieces and the views need no graphics card (`pieces.py`, `compose.py`, `gallery.py`).
 - See the results: the gallery, `assets/generated/interface/index.html` (`.claude/launch.json` "interface").
 
 When Saneroki decides:
@@ -350,7 +378,7 @@ When Saneroki decides:
 1. The decision goes into this guide.
 2. A liked part is cut out of its picture into `assets/Concept art/UI style/` (only the liked section); a part he
    did not name is archived and never an input.
-3. A view or part that uses it changes in `compose.py` (`SOURCE`), `catalog.py` (`HIRES`, `VARIANTS`) or
+3. A view or part that uses it changes in `compose.py` (`SOURCE`), `catalog.py` (`HIRES`), `pieces.py` or
    `clean.py`.
 4. The job is rebuilt.
 

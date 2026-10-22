@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
-"""The interface's whole render (Doc/guides/interface-style.md, *The harness* and *High resolution*): run by the GPU
-runner as its job "interface" (dev/imagegen/jobs.toml). Each step skips what it has made, so a stopped run goes on
-where it stopped; --rebuild starts anew from the decided references (after a decision changed).
+"""The interface's whole render (Doc/guides/interface-style.md, *The harness* and *Pieces*): run by the GPU runner as
+its job "interface" (dev/imagegen/jobs.toml). Every element is rendered once (Saneroki, 2026-10-22: one render
+each, no varieties); each step skips what it has made, so a stopped run goes on where it stopped; --rebuild starts
+anew from the decided references (after a decision changed).
 
   clean     the decided pictures cleaned (clean.py: #12 and #3)  ->  assets/generated/interface/clean/
+  hires     every decided part at twice its size, the scale of a 4K screen, one render each: upscaled in code
+            (Lanczos), then one gentle pass of Qwen over the whole picture (qwen21-inpaint.json with a full mask, low
+            denoise), which sharpens its detail and keeps everything where it is; transparency put back from the
+            upscaled source. Before it, a cut-out's holes (light metal its cut took for the background) are made
+            solid and a label's painted letters covered  ->  assets/generated/interface/hires/<part>.png
+  masks     the outside of the two whole picks (#12, #3) found by the background removal (birefnet-mask.json)
+            ->  .../hires/<part>-mask.png
+  pencil    the pencil lines of #14 (pencil.py)  ->  .../pencil/
+  pieces    every element cut into its final pieces at 4K, transparent (pieces.py)  ->  .../pieces/, pieces.json
+  views     the views laid out in code from the pieces (compose.py), the full screen at 4K  ->  .../views/, then
+            the gallery (gallery.py)
 
-  hires     every decided part at twice its size, the scale of a 4K screen: upscaled in code (Lanczos), then one
-            gentle pass of Qwen over the whole picture (qwen21-inpaint.json with a full mask, low denoise), which
-            sharpens its detail and keeps everything where it is; transparency put back from the upscaled source
-            ->  assets/generated/interface/hires/<part>.png
-  variants  new variants of decided parts, from their cut-out alone (qwen21-edit-1ref), transparent:
-            #14's pencil box (sections, rules and corners on the paper), and kit parts #17, #18, #24, #27 and #28
-            with their light inset lines  ->  assets/generated/interface/variants/<name>-<seed>.png, then pencil.py
-            turns the pencil ones into graphite lines
-
-  pencil    the pencil lines of #14 and of the pencil variants (pencil.py)  ->  .../pencil/
-  views     the views laid out in code (compose.py)  ->  .../views/, then the gallery (gallery.py)
-
-  python3 dev/imagegen/sets/interface/catalog.py [clean|hires|variants|pencil|views ...]
+  python3 dev/imagegen/sets/interface/catalog.py [clean|hires|masks|pencil|pieces|views ...]
   python3 dev/imagegen/sets/interface/catalog.py --status     how far it is (the runner's status line)
   python3 dev/imagegen/sets/interface/catalog.py --rebuild    forget what was made, so the next run makes it anew
 """
@@ -44,45 +44,13 @@ HIRES = {
     "edge-left": f"{REFS}/elements/edge-left-3.png",
     "edge-right": f"{REFS}/elements/edge-right-1.png",
     "pencil-box": f"{REFS}/elements/top-tab-drawn-1.png",   # #14 (pencil.py takes its lines from the hires one)
-    "band": f"{REFS}/kit/kit3-09.png",
-    "panel-framed": f"{REFS}/kit/kit3-01.png",           # #17
-    "banner": f"{REFS}/kit/kit3-02.png",                 # #18
-    "slider": f"{REFS}/kit/kit3-08.png",                 # #24
-    "slider-blade": f"{REFS}/kit/kit3-11.png",           # #27
-    "banners": f"{REFS}/kit/kit4-01.png",                # #28
 }
+HIRES.update({f"kit{k}-{i:02}": f"{REFS}/kit/kit{k}-{i:02}.png" for k, n in ((3, 11), (4, 11)) for i in range(1, n + 1)})
+LABELS = {"top-tab-patch": (0.12, 0.18, 0.88, 0.82)}     # parts whose painted label is covered (the box inside them)
+MASKS = ["window", "doll"]                               # whole picks whose outside the background removal finds
 HIRES_WORDS = ("Exactly the same picture in higher resolution: every shape, line, colour, texture and stitch where it "
                "is, only sharper and finer, clean and crisp. Nothing added, nothing removed, no text.")
 NEGATIVE = "blurry, smeared, noise, artifacts, extra objects, text, letters, watermark, changed shape"
-
-# name: (decided cut-out, what to vary, seeds)
-VARIANTS = {
-    "pencil-box": (f"{REFS}/elements/top-tab-drawn-1.png",
-                   "a different box drawn the same way: the same clean double pencil line and rounded corners, as a "
-                   "wide section frame; plain paper inside, nothing written", 3),
-    "pencil-rule": (f"{REFS}/elements/top-tab-drawn-1.png",
-                    "only a long straight double pencil line drawn the same way, with a small flourish at each end, "
-                    "as a divider between sections; plain paper", 3),
-    "pencil-corner": (f"{REFS}/elements/top-tab-drawn-1.png",
-                      "only one corner drawn the same way: the double pencil line turning a rounded corner, as the "
-                      "corner piece of a large frame; plain paper", 3),
-    "panel-framed": (f"{REFS}/kit/kit3-01.png",
-                     "a variation of this framed paper panel with the same leather, metal corners and light inset "
-                     "lines, in another proportion", 3),
-    "banner": (f"{REFS}/kit/kit3-02.png",
-               "a variation of this hanging leather banner with the same light inset lines and stitching, its tail "
-               "cut differently", 3),
-    "slider": (f"{REFS}/kit/kit3-08.png",
-               "a variation of this slider bar with the same metal, leather and light inset line, its knob shaped "
-               "differently", 3),
-    "slider-blade": (f"{REFS}/kit/kit3-11.png",
-                     "a variation of this blade-shaped bar with the same metal, leather and light inset line", 3),
-    "banners": (f"{REFS}/kit/kit4-01.png",
-                "a variation of these hanging leather banners with the same light inset lines and stitching", 3),
-}
-VARIANT_BEFORE = ("This is an RGBA format image with transparency. It has an alpha channel and a transparent background. "
-                  "Image 1 is a cut-out of one part of a game interface. Make, alone on the transparent background, "
-                  "seen straight from the front, in exactly its material, colours, line weight and finish:")
 
 
 def path(rel):
@@ -93,16 +61,65 @@ def run(lst, *extra):
     subprocess.run(["dev/tools/imagegen", lst, *extra], cwd=ROOT, check=True)
 
 
+def label_off(img, inner):
+    """A part's painted label taken off: inside the box inner (fractions of its shape's box), the letters (much
+    darker or lighter than the leather round them, with their pressed lip) covered by the part's own leather from
+    beside them on the same rows, so its grain and light run on."""
+    import numpy as np
+    from PIL import ImageDraw, ImageFilter
+    box = img.getchannel("A").point(lambda v: 255 if v > 24 else 0).getbbox()
+    w, h = box[2] - box[0], box[3] - box[1]
+    x0, y0 = box[0] + round(inner[0] * w), box[1] + round(inner[1] * h)
+    x1, y1 = box[0] + round(inner[2] * w), box[1] + round(inner[3] * h)
+    region = img.crop((x0, y0, x1, y1)).convert("L")
+    lum = np.asarray(region, dtype=np.float32)
+    med = float(np.median(lum))
+    letters = Image.fromarray(((lum < med - 28) | (lum > med + 22)).astype(np.uint8) * 255)
+    lb = letters.filter(ImageFilter.MedianFilter(5)).filter(ImageFilter.MaxFilter(max(3, h // 10) | 1)).getbbox()
+    if not lb:
+        return img
+    soft = max(3, h // 16)
+    dst = (max(x0, x0 + lb[0] - 2 * soft), max(y0, y0 + lb[1] - soft), min(x1, x0 + lb[2] + 2 * soft), min(y1, y0 + lb[3] + soft))
+    room_right, room_left = x1 - dst[2], dst[0] - x0
+    sw = min(dst[2] - dst[0], max(room_right, room_left) - 8)
+    src = ((dst[2] + 8, dst[1], dst[2] + 8 + sw, dst[3]) if room_right >= room_left
+           else (dst[0] - 8 - sw, dst[1], dst[0] - 8, dst[3]))
+    # the leather beside the letters, tiled over them with long cross-fades, laid in with a soft edge
+    piece = img.convert("RGB").crop(src)
+    ramp = max(8, piece.width // 3)
+    fill = Image.new("RGB", (dst[2] - dst[0], dst[3] - dst[1]))
+    x = 0
+    while x < fill.width:
+        m = Image.new("L", piece.size, 255)
+        if x:
+            m.paste(Image.linear_gradient("L").rotate(90, expand=True).transpose(Image.FLIP_LEFT_RIGHT).resize((ramp, piece.height)), (0, 0))
+        fill.paste(piece if (x // (piece.width - ramp)) % 2 == 0 else piece.transpose(Image.FLIP_LEFT_RIGHT), (x, 0), m)
+        x += piece.width - ramp
+    m = Image.new("L", fill.size)
+    ImageDraw.Draw(m).rectangle((soft, soft, fill.width - soft - 1, fill.height - soft - 1), fill=255)
+    out = img.copy()
+    rgb = out.convert("RGB")
+    rgb.paste(fill, dst[:2], m.filter(ImageFilter.GaussianBlur(soft / 2)))
+    rgb = rgb.convert("RGBA")
+    rgb.putalpha(img.getchannel("A"))
+    return rgb
+
+
 def hires():
+    import pieces
     work = f"{GEN}/hires/in"
     os.makedirs(path(work), exist_ok=True)
-    lines = ["# Written by catalog.py: the hires pass.", "workflow: dev/imagegen/workflows/qwen21-inpaint.json",
-             "count: 1", f"out: {GEN}/hires/raw"]
+    lines = ["# Written by catalog.py: the hires pass, one render of each part.",
+             "workflow: dev/imagegen/workflows/qwen21-inpaint.json", "count: 1", f"out: {GEN}/hires/raw"]
     todo = []
     for name, src in HIRES.items():
         if os.path.exists(path(f"{GEN}/hires/{name}.png")):
             continue
         img = Image.open(path(src)).convert("RGBA")
+        if src.startswith(REFS):
+            img = pieces.fill_holes(img)[0]
+        if name in LABELS:
+            img = label_off(img, LABELS[name])
         w, h = img.size
         W, H = (w * SCALE + 15) // 16 * 16, (h * SCALE + 15) // 16 * 16      # the model's latent wants 16s
         big = img.resize((W, H), Image.LANCZOS)
@@ -123,7 +140,6 @@ def hires():
         alpha = Image.open(path(f"{work}/{name}-alpha.png"))
         raw.putalpha(alpha.resize(raw.size, Image.LANCZOS))
         if name == "window":   # the pass can bring back faint letters in #12's title label: its own paper again
-            sys.path.insert(0, HERE)
             import clean
             dst, src = (334, 170, 556, 192), (562, 170, 700, 192)
             rgb = clean.apply(raw.convert("RGB"), "copy", (tuple(v * SCALE for v in dst), tuple(v * SCALE for v in src)))
@@ -132,22 +148,20 @@ def hires():
         raw.save(path(f"{GEN}/hires/{name}.png"))
 
 
-def variants():
-    out = f"{GEN}/variants"
-    lines = ["# Written by catalog.py: variants of decided parts to pick from.",
-             "workflow: qwen21-edit-1ref", "set: width=1536, height=1024", f"out: {out}", "count: 3",
-             "flatten: #76706a", f"before: {VARIANT_BEFORE}"]
-    todo = [n for n in VARIANTS if not os.path.exists(path(f"{out}/{n}-3.png"))]
+def masks():
+    """The outside of the whole picks: the background removal's mask of each, once."""
+    todo = [n for n in MASKS if not os.path.exists(path(f"{GEN}/hires/{n}-mask.png"))]
     if not todo:
         return
+    lines = ["# Written by catalog.py: the outside of the whole picks.", "workflow: dev/imagegen/workflows/birefnet-mask.json",
+             "count: 1", f"out: {GEN}/hires/raw"]
     for name in todo:
-        src, words, _ = VARIANTS[name]
-        lines += [f"ref: {src}", f"{name}: {words}"]
-    os.makedirs(path(out), exist_ok=True)
-    lst = f"{GEN}/hires/variants.txt"
-    os.makedirs(os.path.dirname(path(lst)), exist_ok=True)
+        lines += [f"ref: {GEN}/hires/{name}.png", f"{name}-mask: {name}"]
+    lst = f"{GEN}/hires/in/masks.txt"
     open(path(lst), "w").write("\n".join(lines) + "\n")
     run(lst)
+    for name in todo:
+        Image.open(path(f"{GEN}/hires/raw/{name}-mask-1.png")).convert("L").save(path(f"{GEN}/hires/{name}-mask.png"))
 
 
 def clean():
@@ -160,31 +174,37 @@ def pencil():
     subprocess.run(["python3", "dev/imagegen/sets/interface/pencil.py"], cwd=ROOT, check=True)
 
 
+def pieces():
+    subprocess.run(["python3", "dev/imagegen/sets/interface/pieces.py"], cwd=ROOT, check=True)
+
+
 def views():
     subprocess.run(["python3", "dev/imagegen/sets/interface/compose.py"], cwd=ROOT, check=True)
     subprocess.run(["python3", "dev/imagegen/sets/interface/gallery.py"], cwd=ROOT, check=True)
 
 
 def status():
-    """One line: parts and variants made of all; "complete" when everything is there."""
+    """One line: parts made of all, masks, pieces, the full screen; "complete" when everything is there."""
     have = sum(os.path.exists(path(f"{GEN}/hires/{n}.png")) for n in HIRES)
-    var = sum(os.path.exists(path(f"{GEN}/variants/{n}-{seeds}.png")) for n, (_, _, seeds) in VARIANTS.items())
-    views_ = os.path.exists(path(f"{GEN}/views/guild.png"))
-    done = have == len(HIRES) and var == len(VARIANTS) and views_
-    print(f"{'complete: ' if done else ''}{have} of {len(HIRES)} parts at 4K, {var} of {len(VARIANTS)} variants, "
-          f"views {'laid out' if views_ else 'not yet'}")
+    mask = sum(os.path.exists(path(f"{GEN}/hires/{n}-mask.png")) for n in MASKS)
+    cut = os.path.exists(path(f"{GEN}/pieces/pieces.json"))
+    full = os.path.exists(path(f"{GEN}/views/fullscreen.png"))
+    done = have == len(HIRES) and mask == len(MASKS) and cut and full
+    print(f"{'complete: ' if done else ''}{have} of {len(HIRES)} parts at 4K, {mask} of {len(MASKS)} masks, "
+          f"pieces {'cut' if cut else 'not yet'}, full screen {'laid out' if full else 'not yet'}")
 
 
 def rebuild():
     import shutil
-    for d in ("clean", "hires", "variants", "pencil"):
+    for d in ("clean", "hires", "pencil", "pieces", "views"):
         shutil.rmtree(path(f"{GEN}/{d}"), ignore_errors=True)
     print("forgotten: the next run makes everything anew")
 
 
-STEPS = {"clean": clean, "hires": hires, "variants": variants, "pencil": pencil, "views": views}
+STEPS = {"clean": clean, "hires": hires, "masks": masks, "pencil": pencil, "pieces": pieces, "views": views}
 
 if __name__ == "__main__":
+    sys.path.insert(0, HERE)
     if sys.argv[1:] == ["--status"]:
         status()
     elif sys.argv[1:] == ["--rebuild"]:

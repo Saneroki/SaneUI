@@ -1420,6 +1420,16 @@ Saneroki asked for a much richer bag view, in features and looks.
   `--rebuild`; the GPU runner's job `interface` runs it with its status and rebuild. The guide gains *Running it*
   (the commands and how a new decision flows into the harness) and drops the last earlier wording (cream paper,
   loose pencil, paper pieces on the page).
+- The final pieces (Saneroki, 2026-10-22: every element rendered once at final quality, no varieties): new
+  `pieces.py` cuts every decided element into transparent 4K puzzle pieces with `pieces.json` (how each is laid):
+  #12 into the window's top, bottom, edges and clasp, #3 whole, the patch, the tabs, the edges, all 22 kit parts,
+  #14's pencil box and rule, the paper, the stains and sketches. `catalog.py` renders each missing part once: all
+  kit parts (their holes, light metal the cut took for the background, filled first) and the patch tab without
+  its letters; new step `masks` finds the background of #12 and #3 with ComfyUI's background removal (new
+  workflow `birefnet-mask.json`); the variants step is gone. `compose.py` builds every view from the pieces at any
+  scale (layouts in 1080p pixels, `--scale`), each window on transparency, and a new 4K full screen of the
+  character, guild and chat windows; the guild window takes two columns when narrow. The job `interface` is
+  queued again.
 - `dev/tools/imagegen`: an option's seed input (`sampling_mode.seed`) gets the seed too.
 - `gallery.py` takes another set's folder.
 - Qwen's text-to-image workflow takes its size as `aspect_ratio` and `megapixels`, not `width` and `height`.
