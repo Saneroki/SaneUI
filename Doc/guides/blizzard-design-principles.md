@@ -7,8 +7,8 @@ For how to build it, read [gui-development.md](gui-development.md). For code rul
 
 Blizzard has never published one design manifesto. The principles below are collected from talks,
 developer posts and announcements between 2006 and 2025 ([sources](#sources)). Where a statement is old,
-the date is given. The Blizzard code and art in `references/` stay the ground truth: when this guide and
-the reference disagree, the reference wins.
+the date is given. Blizzard's code and art (their newest export, `dev/tools/blizzard where`) stay the ground truth: when this
+guide and they disagree, they win.
 
 ## The principles
 
@@ -48,7 +48,7 @@ class-themed skins so the interface is familiar on every character. "Consistency
 especially interface work."
 
 **For Sane UI:** use the patterns the client already taught the player: the same window frames, tabs,
-buttons, tooltips, sounds and wording. A new pattern needs a strong reason. Look in `references/` for how
+buttons, tooltips, sounds and wording. A new pattern needs a strong reason. Look in Blizzard's code for how
 Blizzard solved the same problem before inventing something.
 
 ### 6. Do not force features in

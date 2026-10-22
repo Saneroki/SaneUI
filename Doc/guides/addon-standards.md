@@ -5,8 +5,8 @@ before writing or reviewing code. For what a feature should show, read
 [blizzard-design-principles.md](blizzard-design-principles.md). For frames and widgets, read
 [gui-development.md](gui-development.md).
 
-Every API named here must be checked against `references/BlizzardInterfaceCode` for this client before
-it is used: the reference is the ground truth, the web is not. Lines marked *(convention)* are
+Every API named here must be checked against Blizzard's code for this client, its newest export
+(`dev/tools/blizzard where`), before it is used: that code is the ground truth, the web is not. Lines marked *(convention)* are
 long-standing community practice, not taken from a page listed under [sources](#sources).
 
 ## 1. Blizzard's rules

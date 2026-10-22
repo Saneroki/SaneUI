@@ -1,9 +1,9 @@
--- What the game's API has, read from Blizzard's own documentation of it (references/BlizzardInterfaceCode,
+-- What the game's API has, read from Blizzard's own documentation of it (the newest export's code,
 -- Blizzard_APIDocumentationGenerated): every widget's methods, every function of every namespace and of the
 -- global one, the enumerations (Enum), the constants (Constants) and the events. The lab knows from it what
 -- the game has that the lab does not do yet, and says so when code uses it, instead of letting it be nil.
-return function(root)
-    local folder = root .. "/references/BlizzardInterfaceCode/Interface/AddOns/Blizzard_APIDocumentationGenerated/"
+return function(code)
+    local folder = code .. "/Interface/AddOns/Blizzard_APIDocumentationGenerated/"
     local found = {}
     local auto
     auto = setmetatable({}, { __index = function(t, k) local v = setmetatable({}, getmetatable(t)); rawset(t, k, v); return v end })

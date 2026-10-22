@@ -1,13 +1,14 @@
 -- The interface lab's host: runs Sane UI's Lua under Lua 5.1 as the game runs it, with the lab's stand-in for the
 -- game's API (dev/uilab/lab/), and talks with the lab's server (dev/tools/ui-lab) a JSON line at a time on its
 -- standard input and output. The server starts it again for a reload.
---   lua5.1 dev/uilab/host.lua <Sane UI's folder>
+--   lua5.1 dev/uilab/host.lua <Sane UI's folder> <Blizzard's code: the newest export's BlizzardInterfaceCode>
 local ROOT = assert(arg[1], "the project's folder")
+local CODE = assert(arg[2] ~= "" and arg[2], "the newest export of Blizzard's code (dev/tools/blizzard where)")
 package.path = ROOT .. "/dev/uilab/?.lua;" .. package.path
 local json = require("json")
 local out = io.stdout
 
-local Lab = { root = ROOT }
+local Lab = { root = ROOT, blizzardCode = CODE }
 Lab.files = {}             -- the files the lab read for this run: the server watches them
 
 function Lab.Watch(path)
@@ -24,7 +25,7 @@ function Lab.Ask(t)
     return json.decode(line)
 end
 
-Lab.docs = require("docs")(ROOT)
+Lab.docs = require("docs")(CODE)
 local function part(name) require("lab." .. name)(Lab) end
 part("core")
 part("game")        -- Lab.G first: the kinds' methods and the parts below put things into it

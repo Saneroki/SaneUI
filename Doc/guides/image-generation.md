@@ -412,8 +412,8 @@ lists, from inputs of its own:
   give it as image 2 in a `-2ref` workflow ("exactly the outline of image 2"). The model is good at
   material and ornament, bad at exact sizes.
 - **Blizzard's art as a second reference:** the game's own frames are the ground truth for how a frame is
-  built (`references/BlizzardInterfaceArt/Interface/FrameGeneral/UIFrameMetal2x.BLP` and its
-  neighbours); the tool takes BLP files as they are.
+  built (`Interface/FrameGeneral/UIFrameMetal2x.BLP` and its neighbours in the newest export's art,
+  `dev/tools/blizzard where`); the tool takes BLP files as they are.
 
 ## Animation
 
@@ -509,6 +509,6 @@ only sideways and a fill that repeats sideways.
 | ComfyUI's documentation, blog and templates (`Comfy-Org/workflow_templates`) | the workflows, the models' files and settings, Qwen 2.1's transparency sentence |
 | The models' pages on Hugging Face | files and sizes |
 | Measured on this computer, 2026-10-17 (`/data/Projects/ImageGen/output/`, `assets/generated/example/`) | the times, what each model did, the words in the recipes |
-| `references/.../SimpleTextureBaseAPIDocumentation.lua`, `UITextureConstantsDocumentation.lua` | slice margins and slice mode |
-| `references/BlizzardInterfaceArt/Interface/FrameGeneral/` | how Blizzard splits a frame into files |
-| `references/.../ActionButtonSpellAlerts.xml`, `SimpleAnimFlipBookAPIDocumentation.lua` | flipbooks: frames, grids, durations |
+| Blizzard's code (the newest export): `SimpleTextureBaseAPIDocumentation.lua`, `UITextureConstantsDocumentation.lua` | slice margins and slice mode |
+| Blizzard's art (the newest export): `Interface/FrameGeneral/` | how Blizzard splits a frame into files |
+| Blizzard's code: `ActionButtonSpellAlerts.xml`, `SimpleAnimFlipBookAPIDocumentation.lua` | flipbooks: frames, grids, durations |

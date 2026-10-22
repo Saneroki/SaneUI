@@ -7,7 +7,7 @@
               (protected, secret values, restrictions), a payload, a template's parents or keys, an enum
   review      Sane UI hooks it or builds on it and its code changed; or an atlas or file Blizzard's code no
               longer names (it may still be in the game)
-  housekeeping  the TOCs' Interface number, files made from references/, notes citing changed files
+  housekeeping  the TOCs' Interface number, files made from Blizzard's code, notes citing changed files
 """
 import difflib
 import re

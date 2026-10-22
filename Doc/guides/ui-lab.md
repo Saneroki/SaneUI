@@ -26,7 +26,7 @@ prints its log.
   - scripts and events, timers, the mouse (focus, clicks, dragging, moving and sizing, the wheel, links in
     text) and the keys.
 - **What the game has but the lab does not do yet** is known from Blizzard's own API documentation
-  (`references/BlizzardInterfaceCode`, `Blizzard_APIDocumentationGenerated`). Such a method, namespace or function
+  (the newest export of its interface, `Blizzard_APIDocumentationGenerated`). Such a method, namespace or function
   is still there, as in the game, and calling it puts a "not in the lab" line in the log. The same documentation
   gives `Enum` (with each one's `Meta`), `Constants` and the list of events: registering an event the game does not
   have is an error, as in the game (the events Blizzard's own code registers count as the game's too).
@@ -105,7 +105,7 @@ The lab's server finds the files by the paths code gives them, as the game does,
 | --- | --- |
 | `Interface\AddOns\SaneUI\...`, `SaneUI_<Module>\...` | `assets/optimized/Core/...` (`<Module>`), then `BUILD/`, then the drafts |
 | `Interface\AddOns\SaneUI\Art\Journal\<piece>` | not chosen yet: `assets/generated/interface/pieces/<piece>.png` |
-| `Interface\...` | Blizzard's art, `references/BlizzardInterfaceArt` |
+| `Interface\...` | Blizzard's art, the newest export's (`dev/tools/blizzard where`) |
 | a file ID (`GetItemInfo`'s icons) | the game's listfile (below) |
 | `Fonts\FRIZQT__.TTF` and the game's other fonts | stand-ins: the client ships them compiled, so they cannot be read |
 | `Interface\AddOns\SaneUI\Fonts\Kalam-Regular.ttf` | the addon's font, else `assets/fonts` by its name |
@@ -149,8 +149,9 @@ The settings of this computer are in `~/.config/saneui/uilab.json`, all optional
   code calls of them does nothing (`CloseAllBags`, `UpdateMicroButtons`). The client's state the lab has no
   source for is its own choice, said where it is made: the CVars it knows, Edit Mode's default layout (Modern),
   the chat windows of a new character, no gamepad, no kiosk.
-- Art: Blizzard's art in `references/` lacks some newer files (the settings panel's metal frame,
-  `uiframemetal2xc60`): they are magenta boxes there.
+- Blizzard's code and art are the newest export's (`dev/tools/blizzard where`), never `references/`; without one on
+  the computer the lab does not start. A picture that export lacks (a few hundred old ones the install does not
+  hold) is a magenta box.
 - No 3D: a model frame is a dashed box.
 - Not the game's renderer: the page draws with the browser. Texts use the font files' widths without kerning.
   Masks, blend modes and texture coordinates follow the game's rules, but sub-pixel edges can differ. Judge the

@@ -12,7 +12,7 @@ read are watched, and a change runs it again, as /reload does. This server start
 Where the textures come from, by the path code gives them:
   Interface\\AddOns\\SaneUI\\...      assets/optimized/Core/... (SaneUI_<Module>: assets/optimized/<Module>/...),
                                     then BUILD/, then the drafts the config names (art not chosen yet)
-  Interface\\...                     Blizzard's art in references/BlizzardInterfaceArt
+  Interface\\...                     Blizzard's art, the newest export's (dev/tools/blizzard where)
   a file ID                         by the listfile the config names
 Settings of this computer (all optional) in ~/.config/saneui/uilab.json:
   client    a folder of the client's tables as CSV (GlobalColor, GlobalStrings, ChrClasses, ...): the game's own
@@ -42,7 +42,10 @@ LAB = ROOT / "dev/uilab"
 WEB = LAB / "web"
 CACHE = ROOT / "assets/generated/ui-lab"
 CONFIG = Path.home() / ".config/saneui/uilab.json"
-ART = ROOT / "references/BlizzardInterfaceArt"
+sys.path.insert(0, str(ROOT / "dev/blizzard"))
+import export as exports  # noqa: E402  (the newest export of Blizzard's interface, never references/)
+CODE = exports.newest("code")   # Blizzard's code and art: the newest export of this computer, else none
+ART = exports.newest("art") or Path("/nonexistent")
 EXTS = (".png", ".tga", ".blp", ".jpg", ".jpeg")
 
 DEFAULT_FONTS = {   # the game's fonts by file name: stand-ins with about their widths and look
@@ -435,7 +438,7 @@ class Host:
             self.saved = json.loads(self.saved_file().read_text())
         except (OSError, ValueError):
             self.saved = {}
-        self.proc = subprocess.Popen(["lua5.1", str(LAB / "host.lua"), str(ROOT)], stdin=subprocess.PIPE,
+        self.proc = subprocess.Popen(["lua5.1", str(LAB / "host.lua"), str(ROOT), str(CODE or "")], stdin=subprocess.PIPE,
                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, cwd=ROOT)
         r = self.send({"op": "start", "scene": self.scene, "world": self.world, "screen": self.screen,
                        "saved": self.saved, "reload": reload})

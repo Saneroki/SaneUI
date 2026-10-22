@@ -2,7 +2,7 @@
 """Views put together in code from the final pieces (pieces.py; Doc/guides/interface-style.md, *Pieces*), the way
 the game will draw them: the leather pieces sliced and repeated, the paper from paper.py, pencil lines from #14's
 pieces, text in Kalam with the paper's grain over it, titles and labels pressed into the leather, game icons from
-references/. Nothing here is painted by a model, so the layout and the look cannot drift. No model pass runs over a
+the newest export of Blizzard's art (dev/tools/blizzard where). Nothing here is painted by a model, so the layout and the look cannot drift. No model pass runs over a
 view. Layouts are in the pixels of a 1080p screen; S turns them into pixels (2 at 4K), and the pieces, made at 4K,
 are scaled to it. Each window comes on transparency, so the full screen lays several side by side.
   python3 dev/imagegen/sets/interface/compose.py [--scale N] [view ...]   ->  assets/generated/interface/views/<view>.png
@@ -20,7 +20,9 @@ import pieces  # noqa: E402
 from pieces import fade  # noqa: E402
 
 PIECES = os.path.join(ROOT, "assets/generated/interface/pieces")
-ICONS = os.path.join(ROOT, "references/BlizzardInterfaceArt/Interface/ICONS")
+sys.path.insert(0, os.path.join(ROOT, "dev/blizzard"))
+import export as exports  # noqa: E402  (the newest export of Blizzard's interface, never references/)
+ICONS = str(exports.required("art") / "Interface" / "ICONS")
 OUT = os.path.join(ROOT, "assets/generated/interface/views")
 KALAM = os.path.join(ROOT, "assets/fonts/Kalam/Kalam-{}.ttf")
 LEATHER_FONT = "/usr/share/fonts/noto/NotoSerif-Regular.ttf"   # a stand-in: no leather font is decided yet
@@ -112,7 +114,7 @@ def nine(img, w, h, l, t, r, b):
 
 
 def icon(pattern, size, seed=0):
-    """A game icon from references/ (the first match of the pattern, or one picked by seed), size layout pixels."""
+    """A game icon of Blizzard's art (the first match of the pattern, or one picked by seed), size layout pixels."""
     files = sorted(glob.glob(os.path.join(ICONS, pattern)))
     if not files:
         return Image.new("RGBA", zz(size, size), (90, 80, 70, 255))

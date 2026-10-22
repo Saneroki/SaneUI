@@ -82,7 +82,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STAGING = ROOT / "dev" / "data" / "staging"
-REFERENCES = ROOT / "references" / "BlizzardInterfaceCode" / "Interface" / "AddOns" / "Blizzard_APIDocumentationGenerated"
+sys.path.insert(0, str(ROOT / "dev" / "blizzard"))
+import export as exports  # noqa: E402  (the newest export of Blizzard's interface, never references/)
+
+
+def documentation():
+    """Blizzard's API documentation of the newest export (dev/tools/blizzard where)."""
+    return exports.required("code") / "Interface" / "AddOns" / "Blizzard_APIDocumentationGenerated"
 
 TEST = re.compile(r"^(Monster - |OLD[A-Z ]|Deprecated|DEPRECATED|Unused|UNUSED|\[PH\]|\[DNT\]|zz|ZZ)"
                   r"|\b(test|NYI|DND|DNT|debug)\b|placeholder", re.IGNORECASE)
@@ -158,7 +164,7 @@ def plain(text):
 
 def enum_values(file, name):
     """{value: name} of one of Blizzard's enums in the generated API documentation."""
-    text = (REFERENCES / file).read_text(encoding="utf-8")
+    text = (documentation() / file).read_text(encoding="utf-8")
     block = text[text.index(f'Name = "{name}"'):]
     block = block[:block.index("\t\t},")]
     return {int(value): field for field, value in re.findall(r'Name = "(\w+)", Type = "\w+", EnumValue = (-?\d+)', block)}
@@ -423,7 +429,7 @@ def trees(t, spells, w):
     """Talents and Legacy; gives the spells of their nodes."""
     legacy = {value: name for name, value in re.findall(
         r'Name = "(LEGACY_TREE_\w+_ID)", Type = "number", Value = (\d+)',
-        (REFERENCES / "LegacyConstantsDocumentation.lua").read_text(encoding="utf-8"))}
+        (documentation() / "LegacyConstantsDocumentation.lua").read_text(encoding="utf-8"))}
     legacy = {tree for tree, name in legacy.items() if name.count("_") == 3}  # LEGACY_TREE_<NAME>_ID: the trees
     classes = classes_of(t)
     class_of = {}

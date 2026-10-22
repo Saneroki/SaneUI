@@ -113,7 +113,7 @@ assets/data/
 ```toml
 [game]
 kind = "game"
-about = "The game itself: its code and tables in references/, its API, our crawls, scans and learned data."
+about = "The game itself: its code (the newest export of its interface) and tables, its API, our crawls, scans and learned data."
 
 [hand]
 kind = "hand"

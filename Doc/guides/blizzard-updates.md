@@ -1,35 +1,45 @@
 # Blizzard updates
 
-What to do when the game gets a new build: compare Blizzard's interface code of that build with the code
-Sane UI is built on (`references/BlizzardInterfaceCode`), and get a todo list of what in Sane UI has to change.
-Read this before taking a new build's code in, or before changing `dev/tools/blizzard`.
+What to do when the game gets a new build: extract Blizzard's interface code and art of that build, compare the
+code with the build before it, and get a todo list of what in Sane UI has to change. Read this before taking a new
+build's code in, or before changing `dev/tools/blizzard`.
 
 The tool is a development tool only: Python in `dev/blizzard/`, run by `dev/tools/blizzard`, tested by
 `dev/tests/blizzard.py`. Nothing of it ships with the addon.
 
+## Sane UI's base: the newest export, a hard rule
+
+Blizzard's code and art that Sane UI is built on, and that its tools read (the lab, the made files, the art tools),
+are the **newest export**: of the exports this computer keeps, the one with the highest version number. Never
+`references/`: that is an old in-game export, kept only to compare with (`git:<revision>`).
+
+- Where they are kept: the folder `~/.config/saneui/blizzard.json` names (`{"exports": "<folder>"}`; or
+  `$BLIZZARD_EXPORTS`). It holds one folder a build, `<product>-<version>/interface/`, with `BlizzardInterfaceCode/`
+  and `BlizzardInterfaceArt/` in the layout of the game's own export (`Interface/AddOns/...`, `Interface/...`) and a
+  note `.build` of the build.
+- `dev/tools/blizzard where` prints the newest export's code and art folders and its build; `dev/blizzard/export.py`
+  (`newest()`, `required()`) gives them to the tools. A tool that needs them and finds none says so and stops.
+- They are read straight from the game's install, without starting the game; the in-game console's `exportInterfaceFiles code` and `art` write the same layout into the game
+  folder, and either can stand in that folder.
+
 ## The pipeline
 
-1. **Export the new code in the game.** Start the game with `-console` (Battle.net: the game's settings,
-   *Additional command line arguments*). At the login screen, `` ` `` opens the console; type
-   `exportInterfaceFiles code`. The game writes `<game folder>/BlizzardInterfaceCode` (`art` instead of `code`
-   writes the art, which the tool does not need).
-2. **Check.** `dev/tools/blizzard check` compares that export with `references/` and writes the todo list to
-   `dev/blizzard/reports/<old build>-to-<new build>.md`, with the same as JSON beside it (not committed),
-   and a summary on the screen. Without a path it reads the game folder `dev/installdev` installs into
-   (`$WOW_FOREVER`); a path may be the game folder, its `BlizzardInterfaceCode` folder or that one's `Interface`.
-   It takes about ten seconds.
+1. **Extract the new build's interface** into the exports' folder, as above. It becomes the newest export at once.
+2. **Check.** `dev/tools/blizzard check` compares the newest export with the one before it and writes the todo list
+   to `dev/blizzard/reports/<old build>-to-<new build>.md`, with the same as JSON beside it (not committed), and a
+   summary on the screen. `--old` gives another export to compare with (its folder, or `git:<revision>` for
+   `references/` as a commit has it); a path as the first argument checks another export than the newest. It takes
+   about ten seconds.
 3. **Work the list from the top**, ticking each item. `dev/tools/blizzard show <name>` shows a symbol in both
    exports with the diff of its code (`show C_Spell.GetSpellInfo`, `show FCF_OpenTemporaryWindow`,
    `show lua:ChatFrameMixin:AddMessage`).
-4. **Adopt.** `dev/tools/blizzard adopt` makes the new export `references/BlizzardInterfaceCode` (byte for byte,
-   with a note `.build` of its build), and makes the files that come from it again (`dev/tools/cvar-labels`,
-   `dev/tools/sync-pages`). Then `saneui installdev`, try it in the game, and commit `references/BlizzardInterfaceCode`
-   with the made files and the fixes. Until the commit, `dev/tools/blizzard check references/BlizzardInterfaceCode
-   --old git:HEAD` gives the list again.
+4. **Adopt.** `dev/tools/blizzard adopt` makes the files that come from Blizzard's code again from the newest export
+   (`dev/tools/cvar-labels`, `dev/tools/sync-pages`). Then `saneui installdev`, try it in the game, and commit the
+   made files with the fixes.
 
-The build of an export comes from the game folder it was exported into (`.flavor.info` names the product,
-`.build.info` one folder up gives its version) or from the `.build` note; `--build 1.60.2.71000` gives it by
-hand. It names the report and gives the TOCs' Interface number (1.60.2 is 16002).
+The build of an export comes from its `.build` note, or from the game folder it was exported into (`.flavor.info`
+names the product, `.build.info` one folder up gives its version); `--build 1.60.2.71000` gives it by hand. It names
+the report and gives the TOCs' Interface number (1.60.2 is 16002).
 
 ## The todo list
 
@@ -39,7 +49,7 @@ hand. It names the report and gives the TOCs' Interface number (1.60.2 is 16002)
 | Deprecated | It lives on only in one of Blizzard's deprecated addons, which a later build removes. The hint is what the stand-in calls: its replacement, as a rule. | Move to the replacement now. |
 | Changed | It is called differently: parameters, the API's arguments and returns, its flags (protected, secret values, restrictions), an event's payload, a structure an API returns, a template's parents, mixin or keys, an enum's values. | Check each call and handler. |
 | Review | Sane UI hooks it and its code changed (the diff is in the list), or Sane UI builds on a Blizzard function or template whose code changed, or an atlas or file Blizzard's code no longer names. | Read the diff; change Sane UI if its hook or its use no longer fits. |
-| Housekeeping | The TOCs' `## Interface` number, files made from `references/` that would change, notes in `src/` and `Doc/` that cite a Blizzard file that changed, and last the adopt. | Do them. |
+| Housekeeping | The TOCs' `## Interface` number, files made from Blizzard's code that would change, notes in `src/` and `Doc/` that cite a Blizzard file that changed, and last the adopt. | Do them. |
 
 Only what Sane UI uses is listed. *For information* at the end lists the API new in the namespaces Sane UI calls.
 
@@ -76,7 +86,7 @@ Blizzard's), with what is reached through them (`C_Spell.GetSpellInfo`, `GameToo
 `Enum.SpellBookSpellBank.Player`); every string, with the call it is given to; what `hooksecurefunc` hooks;
 methods called and keys read by name; attributes of the XML. The names Sane UI defines itself (`function A:Name`,
 `A.Name =`, a table's keys, XML `parentKey`) are its own: a method or key of such a name is not taken as
-Blizzard's. `dev/tools/blizzard uses` counts what Sane UI takes from `references/`; `--list` names it all;
+Blizzard's. `dev/tools/blizzard uses` counts what Sane UI takes from the newest export; `--list` names it all;
 `--unknown` names the globals Sane UI reads that Blizzard's code never mentions (the client's own functions the
 documentation leaves out, or functions an older client had).
 

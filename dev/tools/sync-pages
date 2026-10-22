@@ -2,7 +2,7 @@
 """Makes src/Core/Sync/Data/Pages.lua: for each of the game's options pages in its groups Gameplay and
 Accessibility (Esc > Options), what that page sets, so Sync can keep it with Sane UI's settings.
 
-It reads Blizzard's options code in references/ as this client loads it (game type camelot, which also
+It reads Blizzard's options code of the newest export (dev/tools/blizzard where) as this client loads it (game type camelot, which also
 counts the load group mainline; family Mainline: the TOCs of Blizzard_SettingsDefinitions_Shared and _Frame
 with their conditions, and the Lua files their XML files name). A page is the category a file registers
 (Settings.RegisterVerticalLayoutCategory); a file "<Name>Overrides.lua" adds to the page of <Name>.lua.
@@ -34,8 +34,10 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-# BLIZZARD_CODE: another export than references/ (dev/tools/blizzard check reads a new build's so).
-ADDONS = Path(os.environ.get("BLIZZARD_CODE") or ROOT / "references" / "BlizzardInterfaceCode") / "Interface" / "AddOns"
+sys.path.insert(0, str(ROOT / "dev" / "blizzard"))
+import export as exports  # noqa: E402  (the newest export of Blizzard's interface, never references/)
+# BLIZZARD_CODE: another export than the newest (dev/tools/blizzard check reads another build's so).
+ADDONS = Path(os.environ.get("BLIZZARD_CODE") or exports.required("code")) / "Interface" / "AddOns"
 FOLDERS = ("Blizzard_SettingsDefinitions_Shared", "Blizzard_SettingsDefinitions_Frame")
 BINDINGS = ADDONS / "Blizzard_FrameXML" / "Bindings_Camelot.xml"
 OUTPUT = ROOT / "src" / "Core" / "Sync" / "Data" / "Pages.lua"

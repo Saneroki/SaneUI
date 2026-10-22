@@ -38,7 +38,7 @@ Needs Python with Pillow and NumPy, and ImageMagick 7 (`magick`).
 
 | | What | Why |
 | --- | --- | --- |
-| File | **BLP2** | The client's own format: all of Blizzard's interface art is BLP (about 134,000 files in `references/BlizzardInterfaceArt`). No PNG or JPEG. Uncompressed TGA only for tiny shapes made by code (`dev/tools/tooltip-art`); a shape made by code that is drawn large (the masks of Core's round corners) is BLP2 with DXT5 and mipmaps like the art (`dev/tools/shape-art`). |
+| File | **BLP2** | The client's own format: all of Blizzard's interface art is BLP (about 135,000 files in the newest export's art, `dev/tools/blizzard where`). No PNG or JPEG. Uncompressed TGA only for tiny shapes made by code (`dev/tools/tooltip-art`); a shape made by code that is drawn large (the masks of Core's round corners) is BLP2 with DXT5 and mipmaps like the art (`dev/tools/shape-art`). |
 | Compression | **DXT5** (BLP encoding 2, alpha depth 8, alpha encoding 7) | Like Blizzard's logos (`Interface/GLUES/PROMOTIONS/*-SBC-LOGO.BLP`, `Glues-CharacterSelect-Logo-BG.blp`). One byte per texel, and it stays compressed on the graphics card: a quarter of TGA. Our art has soft edges, which need DXT5's full alpha; DXT1 has only on/off alpha. |
 | Mipmaps | **The full chain, down to 1 x 1** | Like Blizzard's. A third more memory. They keep a picture clean when it is drawn at less than half its size (small screens, small UI scale). |
 | Sides | **Powers of two, at most 1024** | Mipmaps halve evenly, DXT works in blocks of 4 x 4, Blizzard's are. |
@@ -218,11 +218,11 @@ Measured unless the row says *not tried* (then it is reasoned, and could be meas
 
 | Source | Used for |
 | --- | --- |
-| `references/BlizzardInterfaceCode/.../Blizzard_SharedXML/PixelUtil.lua` | a UI unit is `768 / screen height` |
+| Blizzard's code (the newest export), `Blizzard_SharedXML/PixelUtil.lua` | a UI unit is `768 / screen height` |
 | `.../Blizzard_SettingsDefinitions_Shared/Graphics.lua` | UI scale 0.65 to 1.15 |
 | `.../Blizzard_APIDocumentationGenerated/SimpleTextureBaseAPIDocumentation.lua` | `SetTexture(file, wrapH, wrapV, filterMode)` returns `success` |
 | `.../Blizzard_GroupFinder/Shared/LFGFrame.lua` (line 726) | Blizzard falls back when `SetTexture` finds no file |
 | `.../Blizzard_MapCanvas/Blizzard_MapCanvasDetailLayer.lua` | `TRILINEAR` only where art zooms far out |
 | `dev/tools/art-measure` (the sampler as the graphics card works, PSNR against a perfect resize) | the tables under *The size* and *Drawing it* |
-| `references/BlizzardInterfaceArt` (the logos' headers) | BLP2, DXT5, full mipmaps |
+| Blizzard's art, the newest export (the logos' headers) | BLP2, DXT5, full mipmaps |
 | `dev/tools/art` | the recipe and the format as code |

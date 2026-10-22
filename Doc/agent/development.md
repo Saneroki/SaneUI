@@ -32,10 +32,10 @@
 | `dev/tools/voicedb build\|stats\|show\|request\|batch\|names\|check` | The voice database: every game text that gets a voice, its speaker, preset and direction, in `dev/voices/build/` (see `Doc/guides/voice-generation.md`) |
 | `dev/tools/voicegen key\|account\|design\|pick\|names\|say\|sound\|ogg` | Send the voice database's lines, the cast's designs and the names to the cloud voice service; master WAVs and game Ogg files in `dev/voices/sound/`, every file made in `dev/voices/made.jsonl`; short UI sounds as candidates in `assets/generated/sounds/`. Key and service config in `~/.config/saneui/voice-service.json`, never in the repository (stdlib and ffmpeg; see `Doc/guides/voice-generation.md`) |
 | `dev/tools/project-index [--check]` | Regenerate navigation hashes/index, or report stale files |
-| `dev/tools/cvar-labels [--check]` | Regenerate `src/Core/Settings/Data/CVarLabels.lua` (CVar → game string names) from `references/` options code; `--staging [file] [--build N]` writes the same as staging for the data set *CVarLabels* (`dev/data/staging/cvar-labels.jsonl`) |
+| `dev/tools/cvar-labels [--check]` | Regenerate `src/Core/Settings/Data/CVarLabels.lua` (CVar → game string names) from Blizzard's options code (the newest export); `--staging [file] [--build N]` writes the same as staging for the data set *CVarLabels* (`dev/data/staging/cvar-labels.jsonl`) |
 | `dev/tools/data check\|import\|compile\|game\|show\|diff\|stats` | Core's data framework (`Doc/guides/data.md`): check the master in `assets/data/` (run by `dev/tests/run`); `import <staging> [--apply] [--take]` takes staging in, the report first (new, agreeing, changed, older, gone, conflicts; `--take` writes conflicts in as corrections); `compile <folder> [--game G]` Core's set files into Core's addon folder; `game <folder>` a game folder's game version; `show <set> <key>`, `diff <set> [--patch P]`, `stats` for people; `--master <folder>` for another master (tests); Python in `dev/data/` |
-| `dev/tools/sync-pages [--check]` | Regenerate `src/Core/Sync/Data/Pages.lua` (what each of the game's options pages sets) from `references/` options code |
-| `dev/tools/blizzard check\|show\|uses\|adopt` | A new build's Blizzard interface code (the game's `exportInterfaceFiles code`) against `references/`: `check [<new>] [--old <export>\|git:<rev>] [--build V]` writes the todo list of what reaches Sane UI (broken, deprecated, changed, review, housekeeping) to `dev/blizzard/reports/`; `show <name>` a symbol in both with its diff; `uses [--list] [--unknown]` what Sane UI takes from Blizzard; `adopt` makes the new export `references/` and remakes CVarLabels and Pages; Python in `dev/blizzard/` (see `Doc/guides/blizzard-updates.md`) |
+| `dev/tools/sync-pages [--check]` | Regenerate `src/Core/Sync/Data/Pages.lua` (what each of the game's options pages sets) from Blizzard's options code (the newest export) |
+| `dev/tools/blizzard where\|check\|show\|uses\|adopt` | Blizzard's interface code: `where` prints the newest export's code and art folders (Sane UI's base, never `references/`); a new build's export against the one before it: `check [<new>] [--old <export>\|git:<rev>] [--build V]` writes the todo list of what reaches Sane UI (broken, deprecated, changed, review, housekeeping) to `dev/blizzard/reports/`; `show <name>` a symbol in both with its diff; `uses [--list] [--unknown]` what Sane UI takes from Blizzard; `adopt` remakes CVarLabels and Pages from the newest export; Python in `dev/blizzard/` (see `Doc/guides/blizzard-updates.md`) |
 
 Required build tools: Bash, Python 3, `lua5.1`, `luac5.1`, `rsync`. No dependencies need downloading
 for existing offline tests. `WOW_FOREVER` overrides all tools' default Steam/Proton game folder
@@ -73,7 +73,8 @@ the applicable available debugging skill; source-obvious/documentation tasks nee
 
 ## Reference search routes
 
-Start at `references/BlizzardInterfaceCode/Interface/AddOns/` and restrict `rg` to the relevant addon:
+Start at the newest export's `Interface/AddOns/` (`dev/tools/blizzard where` prints its folders; never `references/`)
+and restrict `rg` to the relevant addon:
 
 | Need | Reference addon/directory |
 | --- | --- |
@@ -84,7 +85,7 @@ Start at `references/BlizzardInterfaceCode/Interface/AddOns/` and restrict `rg` 
 | Options lifecycle | `Blizzard_Settings_Shared` (implementation README) |
 | Scroll boxes, fonts, frame templates, pools | `Blizzard_SharedXML`, `Blizzard_SharedXMLBase`, `Blizzard_Fonts_Shared` |
 | API signatures/enums | `Blizzard_APIDocumentationGenerated` |
-| Native images | `references/BlizzardInterfaceArt` (lookup a known path, do not inventory all art) |
+| Native images | the newest export's art (lookup a known path, do not inventory all art) |
 
 Check flavour directories (`Camelot/Classic/Mainline/Shared`) and adjacent TOC conditions before
 assuming a file loads in this client. References are uncommitted.

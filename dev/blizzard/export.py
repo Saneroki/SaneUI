@@ -1,5 +1,6 @@
-"""One export of Blizzard's interface code (the game's ExportInterfaceFiles code, kept in references/), read as
-this client loads it: what it gives every addon, as symbols with an id, a signature and a hash.
+"""One export of Blizzard's interface code (as the game's exportInterfaceFiles code writes it), read as this client
+loads it: what it gives every addon, as symbols with an id, a signature and a hash. Sane UI is built on the newest
+export (newest(): the highest build of the exports' folder this computer's settings name), never on references/.
 
   lua:<chain>        what the Lua files define at their top level: Name, A.B (functions, tables, values), A:B
   xml:<name>         named XML objects: templates (virtual), frames, fonts
@@ -54,6 +55,55 @@ def names_of(value):
     return [value] if len(value) <= 80 and lua.NAMEISH.match(value) else []
 
 
+# Where this computer keeps the exports: ~/.config/saneui/blizzard.json {"exports": "<folder>"}, or $BLIZZARD_EXPORTS.
+# The folder holds one <product>-<version> folder a build, with interface/BlizzardInterfaceCode and
+# interface/BlizzardInterfaceArt in it, the export of that build's code and art.
+CONFIG = Path.home() / ".config" / "saneui" / "blizzard.json"
+
+
+def exports_folder():
+    import os
+    folder = os.environ.get("BLIZZARD_EXPORTS")
+    if not folder and CONFIG.is_file():
+        folder = json.loads(CONFIG.read_text(encoding="utf-8")).get("exports")
+    return Path(folder).expanduser() if folder else None
+
+
+def version_key(version):
+    return tuple(int(part) if part.isdigit() else 0 for part in version.split("."))
+
+
+def all_exports():
+    """Every export of the exports' folder that has its code, newest last: (version, product, interface folder)."""
+    folder = exports_folder()
+    found = []
+    if folder and folder.is_dir():
+        for build in folder.iterdir():
+            product, _, version = build.name.rpartition("-")
+            interface = build / "interface"
+            if product and version and (interface / "BlizzardInterfaceCode" / "Interface" / "AddOns").is_dir():
+                found.append((version, product, interface))
+    return sorted(found, key=lambda e: version_key(e[0]))
+
+
+def newest(kind="code"):
+    """The newest export's code (BlizzardInterfaceCode) or art (BlizzardInterfaceArt) folder, the one with the highest
+    version number; None where this computer has none (its settings name no exports' folder, or it is empty)."""
+    found = all_exports()
+    if not found:
+        return None
+    return found[-1][2] / ("BlizzardInterfaceCode" if kind == "code" else "BlizzardInterfaceArt")
+
+
+def required(kind="code"):
+    """newest(kind), or the reason there is none, and an exit."""
+    folder = newest(kind)
+    if folder is None or not folder.is_dir():
+        raise SystemExit(f"No export of Blizzard's interface {kind}: name the exports' folder in {CONFIG} "
+                         '({"exports": "<folder>"}) or $BLIZZARD_EXPORTS (Doc/guides/blizzard-updates.md).')
+    return folder
+
+
 def locate(path):
     """The folder an export's Interface folder is in: given that folder, its Interface folder, or a game folder
     the game exported into (<game>/BlizzardInterfaceCode)."""
@@ -65,7 +115,8 @@ def locate(path):
 
 
 def from_git(revision, root, into):
-    """references/BlizzardInterfaceCode as the commit revision holds it, unpacked into the folder into."""
+    """references/BlizzardInterfaceCode as the commit revision holds it (the in-game export Sane UI was first built
+    on), unpacked into the folder into: only to compare with."""
     archive = subprocess.run(["git", "-C", str(root), "archive", revision, "references/BlizzardInterfaceCode"],
                              capture_output=True, check=True).stdout
     with tempfile.TemporaryFile() as file:
@@ -77,7 +128,7 @@ def from_git(revision, root, into):
 
 
 def build_of(root):
-    """The game's build an export is of, where it can be known: the note adopt writes (.build), or the game
+    """The game's build an export is of, where it can be known: its note (.build), or the game
     folder it was exported into (.flavor.info names the product, .build.info one folder up its version)."""
     note = root / ".build"
     if note.is_file():

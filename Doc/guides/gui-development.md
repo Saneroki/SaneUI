@@ -13,7 +13,7 @@ layouts, art, fonts and style are Sane UI's, described in [interface-style.md](i
 Blizzard's art, its templates' looks, its fonts and the older bronze skin are no longer the model. The game's
 native windows that Sane UI does not recreate stay as the game draws them, mostly untouched.
 
-What stays from Blizzard for our own windows too: how the game works, found in `references/` as below
+What stays from Blizzard for our own windows too: how the game works, found in Blizzard's code as below
 (its API, events, secure templates and taint, scaling, Esc and the window manager, languages), and the
 design principles of what a view shows and how it behaves
 ([blizzard-design-principles.md](blizzard-design-principles.md)). Where this guide below says to use
@@ -21,13 +21,13 @@ Blizzard's art, templates or fonts for the look, that holds for the native windo
 
 ## The one rule
 
-**Look it up in `references/` first, then build with Blizzard's own parts** (for how it works; the look of
+**Look it up in Blizzard's code first (its newest export, `dev/tools/blizzard where`), then build with Blizzard's own parts** (for how it works; the look of
 our own windows is Sane UI's, above). Blizzard's interface is
 written in the same Lua and XML an addon uses, and its templates, fonts, colours, textures and sounds
 are all available to us. Something built from them looks right, follows the client's scaling and
 languages, and changes with the game. Something drawn by hand does none of that.
 
-1. Find the Blizzard window that solves the nearest problem (`references/BlizzardInterfaceCode/Interface/AddOns/Blizzard_*`).
+1. Find the Blizzard window that solves the nearest problem (`Interface/AddOns/Blizzard_*` of the newest export's code).
 2. See which template, font and art it uses, and how it behaves (open, close, sound, tooltip, Esc).
 3. Use the same parts. Write own code only for what Blizzard has no part for.
 
@@ -115,7 +115,7 @@ registers Sane UI's pages at login for that reason; only their controls wait unt
 
 - **Atlas first:** `texture:SetAtlas("name")`. Atlas names survive when Blizzard repacks its texture
   files. Second choice is a file path into the client (`Interface\...`), found in
-  `references/BlizzardInterfaceArt`. Icons by file ID from the API.
+  the newest export's art. Icons by file ID from the API.
 - Blizzard's art is used from the client, never copied into the addon (policy and licence).
 - Sane UI's own windows use Sane UI's own art ([interface-style.md](interface-style.md)): painted parts
   in `assets/`, stretched and tiled by code, with text, stains and sketches laid over them by code.
@@ -247,7 +247,7 @@ The old `UIDropDownMenu` is still in the client but is a known source of taint
 
 ## Checklist for a new window or widget
 
-- [ ] The nearest Blizzard window was found in `references/` and used as the model.
+- [ ] The nearest Blizzard window was found in Blizzard's code (the newest export) and used as the model.
 - [ ] Built from Blizzard templates; the templates exist for this client's flavour.
 - [ ] Art by atlas or client path, nothing copied; fonts by font object; colours by constant.
 - [ ] A window that opens and closes does it like Blizzard's: sound, Esc, close button. A part that
@@ -263,7 +263,7 @@ The old `UIDropDownMenu` is still in the client but is a known source of taint
 
 | Source | Used for |
 | --- | --- |
-| `references/BlizzardInterfaceCode` (this client) | every template and function name |
+| Blizzard's code, the newest export (`dev/tools/blizzard where`) | every template and function name |
 | [Making scrollable frames (Warcraft Wiki)](https://warcraft.wiki.gg/wiki/Making_scrollable_frames) | Lists |
 | [Secure Execution and Tainting (Warcraft Wiki)](https://warcraft.wiki.gg/wiki/Secure_Execution_and_Tainting) | Changing a Blizzard window |
 | [Secret Values (Warcraft Wiki)](https://warcraft.wiki.gg/wiki/Secret_Values) | widgets that show combat values |

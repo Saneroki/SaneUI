@@ -61,11 +61,10 @@ def markdown(analysis, out, root, new_path_arg=None):
                 lines += ["  <details><summary>diff</summary>", "", "  ```diff"]
                 lines += [f"  {line}" for line in finding.diff]
                 lines += ["  ```", "  </details>"]
-    adopt = "dev/tools/blizzard adopt" + (f" {new_path_arg}" if new_path_arg else "")
     if not sections["housekeeping"]:
         lines += ["", f"## {TITLES['housekeeping']}", ""]
-    lines += [f"- [ ] Take the new export in: `{adopt}` (references/ and the files made from it), then build, "
-              "try it in the game and commit."]
+    lines += ["- [ ] Take the new export in: `dev/tools/blizzard adopt` (the files made from the newest export), "
+              "then build, try it in the game and commit."]
     added = analysis.new_api()
     if added:
         lines += ["", "## For information", "", f"New API in the namespaces Sane UI calls ({len(added)}): "

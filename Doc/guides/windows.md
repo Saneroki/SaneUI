@@ -10,8 +10,8 @@ module's window. Read this before building or changing any window.
 - **Look and behaviour:** [gui-development.md](gui-development.md); **code rules:**
   [addon-standards.md](addon-standards.md). This guide adds what is particular to windows.
 
-`references/` is the ground truth; every fact below marked *verified* was checked there on 2026-10-16,
-with the file it was read in.
+Blizzard's code is the ground truth, its newest export (`dev/tools/blizzard where`); every fact below marked
+*verified* was checked in the in-game export of then on 2026-10-16, with the file it was read in.
 
 ## 1. One system for every window
 
@@ -412,9 +412,10 @@ with *Reset To Default Position* and the grid's snap (`Selection.lua`), `Fuzzy.F
 On 2026-10-20: the seat (section 7, *Seated*) and a strip of a share of the screen's side (`strip`, Combat's half
 of the bottom edge).
 
-## 9. Facts checked in the references
+## 9. Facts checked in Blizzard's code
 
-All in `references/BlizzardInterfaceCode/Interface/AddOns/`, checked 2026-10-16.
+All in `Interface/AddOns/` of Blizzard's code (the in-game export of then; today the newest export, `dev/tools/blizzard
+where`), checked 2026-10-16.
 
 | Fact | Where | What it means for us |
 | --- | --- | --- |

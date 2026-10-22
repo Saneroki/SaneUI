@@ -4,6 +4,7 @@ the API documentation, and the whole comparison on a small export (dev/tests/bli
 from it here with one change of each kind, against a small module that uses each (dev/tests/blizzard/src).
 Run by dev/tests/run."""
 import json
+import os
 import shutil
 import sys
 import tempfile
@@ -81,6 +82,25 @@ with tempfile.TemporaryDirectory() as scratch:
           game / "BlizzardInterfaceCode")
     check("locate: nothing", exports.locate(scratch), None)
     check("build of a game folder's export", exports.build_of(game / "BlizzardInterfaceCode"), "1.60.1.70245")
+
+# The exports' folder: the newest build's code and art, by version number, not by name.
+with tempfile.TemporaryDirectory() as scratch:
+    before = os.environ.get("BLIZZARD_EXPORTS")
+    os.environ["BLIZZARD_EXPORTS"] = scratch
+    for name in ("wowf-1.60.1.70532", "wow_classic_beta-1.60.1.70450", "wowf-1.60.10.1", "wowf-1.61.0.5"):
+        shutil.copytree(FIXTURE / "old", Path(scratch) / name / "interface" / "BlizzardInterfaceCode")
+    (Path(scratch) / "wowf-1.70.0.1" / "interface").mkdir(parents=True)  # no code: not an export
+    check("exports: by version", [e[0] for e in exports.all_exports()],
+          ["1.60.1.70450", "1.60.1.70532", "1.60.10.1", "1.61.0.5"])
+    check("exports: the newest code", exports.newest("code"),
+          Path(scratch) / "wowf-1.61.0.5" / "interface" / "BlizzardInterfaceCode")
+    check("exports: the newest art", exports.newest("art").name, "BlizzardInterfaceArt")
+    os.environ["BLIZZARD_EXPORTS"] = str(Path(scratch) / "none")
+    check("exports: none", exports.newest("code"), None)
+    if before is None:
+        del os.environ["BLIZZARD_EXPORTS"]
+    else:
+        os.environ["BLIZZARD_EXPORTS"] = before
 
 # -- one export -------------------------------------------------------------------------------------------
 
@@ -226,7 +246,7 @@ with tempfile.TemporaryDirectory() as out:
           < text.index("## Review") < text.index("## Housekeeping"), True)
     check("todo: an item", "- [ ] `C_Test.Removed` (API function): gone from the new export." in text, True)
     check("todo: links to the source", "(" in text and "src/Test/Test.lua#L13)" in text, True)
-    adopt = "- [ ] Take the new export in: `dev/tools/blizzard adopt the-game-folder`"
+    adopt = "- [ ] Take the new export in: `dev/tools/blizzard adopt`"
     check("todo: adopt last", text.index(adopt) > text.index("Notes citing") and "- [ ]" not in text[text.index(adopt) + 5:], True)
     data = json.loads(path.with_suffix(".json").read_text())
     check("json: findings", len(data["findings"]), len(found))

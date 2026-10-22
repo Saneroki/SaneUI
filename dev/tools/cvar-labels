@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Writes src/Core/Settings/Data/CVarLabels.lua from Blizzard's options code in references/.
+"""Writes src/Core/Settings/Data/CVarLabels.lua from Blizzard's options code of the newest export
+(dev/tools/blizzard where).
 
 The game's options name a CVar where they show it: a call Settings.SetupCVarCheckbox, SetupCVarSlider or
 SetupCVarDropdown (CVar, ..., label, tooltip) or Settings.RegisterCVarSetting (CVar, ..., label), in
@@ -18,7 +19,7 @@ Usage:  dev/tools/cvar-labels           write the file
         dev/tools/cvar-labels --check   only say whether the file is as this tool would write it
         dev/tools/cvar-labels --staging [file] [--build N]
                                         write staging instead (dev/data/staging/cvar-labels.jsonl); --build:
-                                        the game's build the code in references/ is of, where it is known
+                                        the game's build the newest export is of, where it is known
 """
 import json
 import os
@@ -27,8 +28,10 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-# BLIZZARD_CODE: another export than references/ (dev/tools/blizzard check reads a new build's so).
-ADDONS = Path(os.environ.get("BLIZZARD_CODE") or ROOT / "references" / "BlizzardInterfaceCode") / "Interface" / "AddOns"
+sys.path.insert(0, str(ROOT / "dev" / "blizzard"))
+import export as exports  # noqa: E402  (the newest export of Blizzard's interface, never references/)
+# BLIZZARD_CODE: another export than the newest (dev/tools/blizzard check reads another build's so).
+ADDONS = Path(os.environ.get("BLIZZARD_CODE") or exports.required("code")) / "Interface" / "AddOns"
 FOLDERS = ("Blizzard_SettingsDefinitions_Frame", "Blizzard_SettingsDefinitions_Shared")
 OUTPUT = ROOT / "src" / "Core" / "Settings" / "Data" / "CVarLabels.lua"
 STAGING = ROOT / "dev" / "data" / "staging" / "cvar-labels.jsonl"

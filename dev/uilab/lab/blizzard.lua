@@ -1,5 +1,5 @@
 -- What the game's own interface gives every addon before it loads, taken from Blizzard's code itself
--- (references/BlizzardInterfaceCode): the client's named colours and global strings (from its tables, where the
+-- (the newest export of its interface, dev/tools/blizzard where): the client's named colours and global strings (from its tables, where the
 -- lab's server has them), and Blizzard's addons the game loads before any addon, read from their TOCs, Lua and XML
 -- (lab/xmlui.lua) alike: the shared code and templates (Mixin, pools, callbacks, the backdrop, the buttons, tabs,
 -- scroll boxes, menus), the font objects (GameFontNormal and the rest), the panel manager and the settings panel.
@@ -7,7 +7,7 @@ return function(Lab)
     local S = Lab.S
     local G = Lab.G
     local xml = require("xml")
-    local BLIZ = Lab.root .. "/references/BlizzardInterfaceCode/Interface/AddOns/"
+    local BLIZ = Lab.blizzardCode .. "/Interface/AddOns/"
 
     -- The client's tables -------------------------------------------------------------------------------------------------
     local client = Lab.Ask({ need = "client" })
@@ -177,7 +177,7 @@ return function(Lab)
         loaded[name] = false
         local folder = BLIZ .. name .. "/"
         local toc = io.open(folder .. name .. ".toc")
-        if not toc then Lab.Note("lab", "Blizzard's " .. name .. " is not in references/") return false end
+        if not toc then Lab.Note("lab", "Blizzard's " .. name .. " is not in its export") return false end
         local deps, files = {}, {}
         local side = true
         for line in toc:lines() do

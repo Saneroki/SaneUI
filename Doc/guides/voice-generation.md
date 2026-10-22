@@ -330,7 +330,7 @@ The sounds of windows and buttons: a click, a toggle, a whoosh, a soft chime, a 
 seconds long.
 
 1. **The game's own sounds first:** `PlaySound(SOUNDKIT.<NAME>)` costs nothing, ships nothing and sounds like
-   the game (the names: `SoundKitConstants.lua` in `references/BlizzardInterfaceCode/`; which sound for what:
+   the game (the names: `SoundKitConstants.lua` in Blizzard's code, the newest export; which sound for what:
    `Doc/guides/gui-development.md`, *Windows*). A sound is made only where the game has none that fits.
 2. **Made by the voice service:** `dev/tools/voicegen sound <name> "<what it sounds like>" --seconds 0.5` makes
    four candidates in `assets/generated/sounds/` (not in git), each as it came (`.wav`) and as the game would

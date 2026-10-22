@@ -2,7 +2,7 @@
 draws something, and a few of the lab's rules hold: anchors resolve as the game resolves them, an unknown event is an
 error, a script the kind does not have is an error, what the game has but the lab does not do is told. The XML reader
 on a file of the test's own (dev/tests/uilab/), Blizzard's templates, and Sane UI's Core from its TOC with its window.
-Needs Blizzard's interface export in references/ (the API documentation); without it, it says so and passes."""
+Needs the newest export of Blizzard's interface (dev/tools/blizzard where); without it, it says so and passes."""
 import importlib.machinery
 import importlib.util
 import json
@@ -10,8 +10,11 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-if not (ROOT / "references/BlizzardInterfaceCode/Interface/AddOns/Blizzard_APIDocumentationGenerated").is_dir():
-    print("uilab.py: no Blizzard interface export in references/, the lab is not tested")
+sys.path.insert(0, str(ROOT / "dev/blizzard"))
+import export as exports  # noqa: E402
+CODE = exports.newest("code")
+if not (CODE and (CODE / "Interface/AddOns/Blizzard_APIDocumentationGenerated").is_dir()):
+    print("uilab.py: no export of Blizzard's interface on this computer (dev/tools/blizzard where), the lab is not tested")
     sys.exit(0)
 
 loader = importlib.machinery.SourceFileLoader("uilab", str(ROOT / "dev/tools/ui-lab"))

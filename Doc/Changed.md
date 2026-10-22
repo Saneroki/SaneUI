@@ -6,6 +6,28 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 551 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### dev: Blizzard's code and art from the newest export, never references/ (Saneroki, 2026-10-22)
+- A hard rule (Saneroki, 2026-10-22): Sane UI's tools read Blizzard's interface code and art from the newest
+  export, the build with the highest version number in the exports' folder this computer's settings name
+  (`~/.config/saneui/blizzard.json`, `{"exports": "<folder>"}`, or `$BLIZZARD_EXPORTS`; one
+  `<product>-<version>/interface/` folder a build, with `BlizzardInterfaceCode/` and `BlizzardInterfaceArt/` in the
+  game's export layout). Read straight from the install, without starting the game: Forever 1.60.1.70532, 4,482
+  code files (all but 27 byte for byte the export in `references/`, which 70532 changed or dropped) and 135,442
+  pictures (the settings panel's frames among the 1,633 new ones). `references/` stays only to compare with.
+- `dev/blizzard/export.py`: `exports_folder()`, `all_exports()`, `newest()`, `required()`. `dev/tools/blizzard`:
+  `where` (the newest export's folders and build); `check` and `show` compare the newest with the export before it
+  (or `--old`); `uses` reads the newest; `adopt` remakes the files made from it (CVarLabels, Pages) and copies
+  nothing into `references/` any more.
+- On the newest export now: `dev/tools/cvar-labels`, `dev/tools/sync-pages` (both up to date with it),
+  `dev/tools/game-data` (the API documentation), the interface lab (`dev/tools/ui-lab` and its host: Blizzard's code,
+  documentation and art; it passes the code's folder to the host), the views' game icons
+  (`dev/imagegen/sets/interface/compose.py`), `dev/tests/uilab.py`. `dev/tests/blizzard.py`: the exports' folder (78
+  checks).
+- Docs: `Doc/guides/blizzard-updates.md` (the base, the pipeline), the guides that sent to `references/`
+  (gui-development, windows, addon-standards, blizzard-design-principles, images, image-generation,
+  voice-generation, ui-lab, data), `Doc/agent/development.md`, the source *game*'s words in
+  `assets/data/sources.toml`.
+
 ### Navigation: long walks found fast and priced near-exactly, by a coarse layer over the walking data (Saneroki, 2026-10-22)
 - Far pins took seconds to plan: on the real data outside the game 505 ms a route, 3.4 s at worst, 95 % of it the
   searches; 13 of 383 searches stopped at `Search.MOST` (200,000 rectangles), every one a walk 5 to 11 times its
