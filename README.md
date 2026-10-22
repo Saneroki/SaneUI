@@ -10,7 +10,7 @@ them, and you see what you can train and what it costs.
 
 ## How to use
 - **Install:** copy the folders in `BUILD` (`SaneUI`, `SaneUI_Abilities`, `SaneUI_Tooltips`, `SaneUI_Social`,
-  `SaneUI_Combat`) into `World of Warcraft/_classic_beta_/Interface/AddOns` and restart the game.
+  `SaneUI_Combat`) into `World of Warcraft/_forever_/Interface/AddOns` and restart the game.
 - **Switch modules on and off:** in the addon list, under the category *Sane UI*, the line *Sane UI* has
   the modules under it. Tick or untick each one by itself. *Sane UI* itself must stay ticked.
 - **In the game:** `/sane` says which modules are on and lists their commands. The options are under

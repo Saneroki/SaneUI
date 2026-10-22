@@ -15,7 +15,7 @@
 #         dev/tools/errors short    one line each, without the places
 set -euo pipefail
 
-wow="${WOW_FOREVER:-$HOME/.local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c/Program Files (x86)/World of Warcraft/_classic_beta_}"
+wow="${WOW_FOREVER:-$HOME/.local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c/Program Files (x86)/World of Warcraft/_forever_}"
 command -v lua5.1 >/dev/null || { echo "lua5.1 is not installed." >&2; exit 1; }
 
 found=0
@@ -51,4 +51,4 @@ end
 print(("\n%d of %d entries."):format(math.min(count, #log), #log))
 LUA
 done
-[ "$found" = 1 ] || { echo "No saved settings of Sane UI found under $wow/WTF. Set WOW_FOREVER to the game's _classic_beta_ folder." >&2; exit 1; }
+[ "$found" = 1 ] || { echo "No saved settings of Sane UI found under $wow/WTF. Set WOW_FOREVER to the game's folder (_forever_; the beta's is _classic_beta_)." >&2; exit 1; }

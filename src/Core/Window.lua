@@ -51,8 +51,9 @@ local Core = SaneUI.Core
 --          title = "Social",            -- its name, on its title bar and on its box in Edit Mode
 --          titleBar = true,             -- it has a title bar (without: only while it fills the screen)
 --          buttons = { { atlas = "common-icon-undo", tip = "Start again", click = function(button) end } },
---                                       -- the module's own buttons in the title bar, left of Core's (or texture);
---                                       -- once shown, window.own[i] (its picture: button.picture)
+--                                       -- the module's own buttons in the title bar, left of Core's (or texture;
+--                                       -- text = its tip's words); once shown, window.own[i] (its picture:
+--                                       -- button.picture)
 --          barLine = false,             -- the title bar without the line under it (a window without a skin
 --                                       -- that stands over the game: only its title and buttons)
 --          tabs = { { text = "Spells", build = function(view) end } },  -- views, as the game's tabs (Views.lua)
@@ -595,7 +596,8 @@ local function Box(window)
 end
 
 -- A button of the title bar: the game's square button with a picture on it (an atlas or a texture, half
--- its size; or a sign in words: art.text), the game's click sound, a tip to say what it does.
+-- its size; or a sign in words: art.sign), the game's click sound, a tip to say what it does. A module's button
+-- (options.buttons) is its own art: its text is its tip's words, never a sign.
 -- With template (a secure one), click runs after the template's own (PostClick).
 local function Square(parent, art, text, tip, click, template)
     local button = CreateFrame("Button", nil, parent, template)
@@ -604,9 +606,9 @@ local function Square(parent, art, text, tip, click, template)
     button:SetPushedTexture(SQUARE .. "Down")
     button:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
     local picture
-    if art.text then -- a sign in the game's gold words (the question mark)
+    if art.sign then -- a sign in the game's gold words (the question mark)
         picture = button:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-        picture:SetText(art.text)
+        picture:SetText(art.sign)
     else
         picture = button:CreateTexture(nil, "ARTWORK", nil, 5)
         if art.atlas then picture:SetAtlas(art.atlas) else picture:SetTexture(art.texture) end
@@ -759,7 +761,7 @@ local function Buttons(window)
     if window.edge then
         window.settings = Square(buttons, { atlas = Window.SETTINGS }, Window.TEXT.settings, Window.TEXT.settingsTip,
             function() if Core.Config and Core.Config.Screen then Core.Config.Screen.Toggle(window) end end)
-        window.help = Square(buttons, { text = "?" }, Window.TEXT.help, Window.TEXT.helpTip, function()
+        window.help = Square(buttons, { sign = "?" }, Window.TEXT.help, Window.TEXT.helpTip, function()
             if options.help then options.help() end
         end)
         buttons.list[#buttons.list + 1] = window.settings

@@ -1105,6 +1105,18 @@ traderWindow.edge.settings = { expand = false, motion = "off", expandOpacity = 5
 traderWindow.edge:Update()
 check(not full:IsShown() and toggle._points[1][2] == close and buttons.first == toggle, "a window that may not fill the screen has no full screen button")
 
+-- A module's own button in the title bar: its picture, whatever words its tip has
+;(function()
+    local held = CreateFrame("Frame", nil, UIParent)
+    local heldWindow = Window.New(held, { store = {}, title = "Held", titleBar = true,
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 },
+        buttons = { { atlas = "common-icon-undo", tip = "Start again", text = "Every row as it came.", click = function() end } } })
+    heldWindow:Place()
+    local own = heldWindow.own and heldWindow.own[1]
+    check(own and own.picture._kind == "Texture" and own.picture._atlas == "common-icon-undo",
+        "a module's own button shows its picture; the words of its tip stay in its tip")
+end)()
+
 -- Without a title bar
 local plain = CreateFrame("Frame", nil, UIParent)
 local plainWindow = Window.New(plain, { store = {}, first = { point = "CENTER", x = 0, y = 0 }, edge = true })

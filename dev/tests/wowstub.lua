@@ -158,10 +158,17 @@ end
 -------------------------------------------------------------------------------
 local methods = {}
 W.methods = methods -- a test may add what its module needs of a widget
+-- What a kind of the game's widgets does not have: nil there as in the game (a picture's calls on words).
+local LACKS = {
+    FontString = { SetAtlas = true, SetTexture = true, SetColorTexture = true, SetTexCoord = true },
+    Texture = { SetText = true, SetFont = true, SetFontObject = true },
+}
 local function NewWidget(kind, name, parent)
     local widget = { _kind = kind, _name = name, _parent = parent, _shown = true, _scripts = {}, _events = {},
                      _points = {}, _width = 0, _height = 0, _alpha = 1 }
+    local lacks = LACKS[kind]
     setmetatable(widget, { __index = function(_, key)
+        if lacks and lacks[key] then return nil end
         if methods[key] then return methods[key] end
         if type(key) == "string" and key:match("^%u") then return function() end end
         return nil

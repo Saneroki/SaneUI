@@ -3,8 +3,24 @@
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
 ## 0.3.0 (2026-10-14)
-Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 411 (windows), 209 (data in the game), 528 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
+Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 528 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 147 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
+
+### Core, Navigation: the map window stands at login again; the tools in Forever's own game folder (2026-10-22)
+- `Window.lua` (`Square`): a title bar button's sign in words is `art.sign` (the full screen's question mark). Since
+  24a647c a module's own button (`options.buttons`) took its tip's words (`text`) for such a sign: the quest log's pin
+  was words, not a picture, its look failed (`QuestLog.lua`, `PinLook`: `SetAtlas` on a font string), and at every
+  login Navigation gave the map and the minimap back to the game, so no map, pins or routes of ours; the demo's
+  button showed its tip's words.
+- The tools' game folder (`dev/build`, `dev/tools/errors`, `dev/tools/blizzard`, `dev/saneui`; `WOW_FOREVER` still
+  overrides): Forever's own `_forever_` (product `wowf`), where the game is played since 2026-10-21, in place of the
+  beta's `_classic_beta_`. Core's sets go in there as Forever live's: the copy of the beta's install standing there
+  had sets made for the beta, which Core left unused (walking, travel and every other). `README.md`: installed into
+  `_forever_`.
+- Tests: `dev/tests/wowstub.lua`: a font string has no picture's calls (`SetAtlas`, `SetTexture`, `SetColorTexture`,
+  `SetTexCoord`), a texture none of words' (`SetText`, `SetFont`, `SetFontObject`), as in the game;
+  `dev/tests/window.lua` (412 checks: a module's own button shows its picture, its tip's words in its tip); the quest
+  log's pin in `dev/tests/navigation.lua` now fails on the old code as the game did.
 
 ### Navigation: no walk after a walk at a flight point (2026-10-22)
 - `Planner.lua` (`Journey`): taking off is part of the first flight (from a known flight point on the ground, its

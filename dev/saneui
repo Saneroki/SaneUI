@@ -87,7 +87,7 @@ BACKGROUND = {
 }
 LINK = Path.home() / "bin" / "saneui"
 GAME = Path(os.environ.get("WOW_FOREVER", Path.home() / ".local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c"
-                           "/Program Files (x86)/World of Warcraft/_classic_beta_"))
+                           "/Program Files (x86)/World of Warcraft/_forever_"))
 
 
 def run(argv):
