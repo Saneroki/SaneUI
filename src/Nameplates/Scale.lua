@@ -23,12 +23,15 @@ local _, ns = ...
 --  hidden while no plate shows. The game's unit frame on a plate (its cast
 --  bar) is scaled along, without our size setting.
 --
---  Switched off (or the module standing down): the game's defaults come
---  back, and every plate is at Scale.Full() over the game's own scaling.
---  The CVars are set again a little after the game has its stored settings
---  and Core's Sync has written a profile's (both come after the login and
---  would bring the game's scaling back), and whenever one of them changes
---  (CVAR_UPDATE).
+--  While on, the CVars are ours: set again a little after the game has its
+--  stored settings and Core's Sync has written a profile's (both come after
+--  the login and would bring the game's scaling back), and whenever one of
+--  them changes (CVAR_UPDATE). What they had before ours is kept with the
+--  module's settings and goes back when the setting is switched off, the
+--  module stands down, or the game is about to write its settings (a
+--  logout, a /reload): so a module switched off or not loaded leaves the
+--  game's and the profiles' values alone, and every plate is then at
+--  Scale.Full() over the game's own scaling.
 --  CVars this client does not have are left alone, and none is set in a
 --  fight (some of the game's nameplate CVars are locked then): that waits for
 --  the fight's end.
@@ -58,7 +61,8 @@ Scale.CVARS = {
 }
 
 local waiting = false
-local active = false -- the CVars ours: the plates on our curve
+local active = false  -- the CVars ours: the plates on our curve
+local applied = false -- ours were set this session: switched off, what was there before goes back
 local driver
 
 -- Our bar's size within ten yards, from the setting.
@@ -66,24 +70,48 @@ function Scale.Full()
     return ((ns.options or {}).plateSize or Scale.SIZE) / 100
 end
 
--- Each CVar ours (on) or the game's default (off), where this client has it. Whether all those there are ours.
-local function Apply(on)
-    local done = true
+-- One CVar set: through Core's Sync where it is there (it keeps a profile's game settings and knows which the game
+-- takes), else the game's own. Whether it was set.
+local function Put(name, value)
+    local sync = Core.Sync
+    if sync and sync.SetCVar then return sync.SetCVar(name, value) ~= false end
+    return Core.Ask(C_CVar.SetCVar, name, value) ~= false
+end
+
+-- The values the CVars had before ours (the game's, a profile's, the player's), kept with the module's settings so a
+-- logout can put them back: [name] = value.
+local function Found()
+    local options = ns.options or {}
+    if type(options.foundCVars) ~= "table" then options.foundCVars = {} end
+    return options.foundCVars
+end
+
+-- Each CVar ours, where this client has it; what it had before kept first (once: not a value of ours). Whether all
+-- those there are ours.
+local function Ours()
+    local found, done = Found(), true
     for name, value in pairs(Scale.CVARS) do
-        local now, default = Core.Ask(C_CVar.GetCVarInfo, name)
-        if now ~= nil then
-            local wanted = on and value or default
-            if wanted ~= nil and tostring(now) ~= wanted then
-                -- Through Core's Sync where it is there (it keeps a profile's game settings and knows which the game
-                -- takes), else the game's own.
-                local sync = Core.Sync
-                local set
-                if sync and sync.SetCVar then set = sync.SetCVar(name, wanted) else set = Core.Ask(C_CVar.SetCVar, name, wanted) end
-                done = set ~= false and done
-            end
+        local now = Core.Ask(C_CVar.GetCVarInfo, name)
+        if now ~= nil and tostring(now) ~= value then
+            if found[name] == nil then found[name] = tostring(now) end
+            done = Put(name, value) and done
         end
     end
     return done
+end
+
+-- Each CVar back to what it had before ours (the game's default for one of ours whose earlier value is not known),
+-- and nothing kept any more: from now on they are the game's and the profiles' alone.
+local function Restore()
+    local found = Found()
+    for name, value in pairs(Scale.CVARS) do
+        local now, default = Core.Ask(C_CVar.GetCVarInfo, name)
+        if now ~= nil then
+            local back = found[name] or (tostring(now) == value and default) or nil
+            if back ~= nil and tostring(now) ~= tostring(back) then Put(name, tostring(back)) end
+        end
+        found[name] = nil
+    end
 end
 
 -- The share of the full size a plate has at that distance.
@@ -206,8 +234,13 @@ function Scale.Update()
     end
     if InCombatLockdown() then
         waiting = true
-    else
-        active = Apply(on) and on
+    elseif on then
+        applied = true
+        active = Ours()
+    elseif applied then
+        -- Switched off (or standing down): what was there before ours, once; then the CVars are left alone.
+        applied = false
+        Restore()
     end
     if active then
         for _, dress in pairs(ns.Plate.shown) do
@@ -216,6 +249,14 @@ function Scale.Update()
         end
     end
     Scale.Again()
+end
+
+-- The game about to write its settings (a logout, a /reload): what was there before ours goes back, so with the
+-- module gone the game and the profiles have their own; loaded again, it sets ours again at the login.
+function Scale.Logout()
+    if not applied then return end
+    applied, active = false, false
+    Restore()
 end
 
 -- The game's own again (standing down): out of a fight now, else at its end.
@@ -232,7 +273,7 @@ local watched = {} -- [lower-case CVar name] = true
 for name in pairs(Scale.CVARS) do watched[name:lower()] = true end
 
 local function Changed(name)
-    if type(name) == "string" and watched[name:lower()] then again() end
+    if applied and type(name) == "string" and watched[name:lower()] then again() end
 end
 
 function Scale.Start()

@@ -771,6 +771,23 @@ C_CVar.SetCVar("nameplateNotSelectedAlpha", "0.5")
 W.Fire("PLAYER_ENTERING_WORLD")
 W.Wait(Scale.AGAIN + 0.1)
 check(CVar("nameplateNotSelectedAlpha") == "1", "the world shown: ours again a little later")
+-- Switched off: what was there before ours back once, then the CVars left alone (your own value, a profile's).
+Core.Set(ns.name, "distance", false)
+C_CVar.SetCVar("nameplateMinAlpha", "0.7")
+W.Fire("CVAR_UPDATE", "nameplateMinAlpha", "0.7")
+W.Wait(Scale.AGAIN + 0.1)
+check(CVar("nameplateMinAlpha") == "0.7", "off: a value of yours left alone")
+Core.Set(ns.name, "distance", true)
+check(CVar("nameplateMinAlpha") == "1" and ns.options.foundCVars.nameplateMinAlpha == "0.7", "on: ours, yours kept")
+ns.OnLogout()
+check(CVar("nameplateMinAlpha") == "0.7" and next(ns.options.foundCVars) == nil,
+    "the game about to write its settings: yours back, so a module gone leaves them alone")
+W.Fire("CVAR_UPDATE", "nameplateMinAlpha", "0.7")
+W.Wait(Scale.AGAIN + 0.1)
+check(CVar("nameplateMinAlpha") == "0.7", "and nothing of ours sets them again before the next login")
+Core.Set(ns.name, "distance", false)
+Core.Set(ns.name, "distance", true)
+check(CVar("nameplateMinAlpha") == "1", "the next start: ours again")
 
 -------------------------------------------------------------------------------
 --  Combat text over a plate and over your character

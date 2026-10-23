@@ -221,10 +221,15 @@ fails, every plate is the game's own again.
   `Scale.Born`: a plate appearing grows from nothing within `Scale.GROW` (0.2 s), its alpha up within `Scale.SHOW`
   (0.12 s).
   Off, a plate taken back, standing down (`Scale.Leave`): the dress at `Scale.Full()` over the game's own scaling,
-  seen, the unit frame at 1, the CVars at their defaults (`C_CVar.GetCVarInfo`). CVars through Core's `Sync.SetCVar` where it
-  is there (else `C_CVar.SetCVar`), only those this client has, never in a fight (then at `PLAYER_REGEN_ENABLED`); set
-  again `Scale.AGAIN` (3) seconds after `PLAYER_ENTERING_WORLD` and `VARIABLES_LOADED` (the game's stored settings and
-  Sync's profile come after the login) and after a `CVAR_UPDATE` of one of them.
+  seen, the unit frame at 1. While on, the CVars are ours (`Ours`): what each had before is kept first (`foundCVars` in the
+  module's settings, once, never a value of ours); set again `Scale.AGAIN` (3) seconds after `PLAYER_ENTERING_WORLD`
+  and `VARIABLES_LOADED` (the game's stored settings and Sync's profile come after the login) and after a `CVAR_UPDATE`
+  of one of them. Switched off, standing down, or at the logout (`ns.OnLogout`, `Scale.Logout`: the game writes its
+  settings after it, at a `/reload` too): each goes back to what it had (the game's default for one of ours whose
+  earlier value is not known), nothing is kept, and nothing of ours sets them again until ours are on at the next
+  start; so a module off or not loaded leaves the game's and the profiles' values alone. CVars through Core's
+  `Sync.SetCVar` where it is there (else `C_CVar.SetCVar`), only those this client has, never in a fight (then at
+  `PLAYER_REGEN_ENABLED`).
 - **Combat text** (`CombatText.lua`): each dress hears its unit's `UNIT_COMBAT` (in `Plate.EVENTS`; kind, flags,
   amount, school) and hands it to `CombatText.Hit` (the combat log is closed to addons in this client); your own
   through `Core.OnUnit("UNIT_COMBAT", "player")` while *Over your character* is on, onto a point of ours on `UIParent`
@@ -328,3 +333,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   settles or has moved on by a tenth (`Plate.Refit`), not only at its first size.
 - **2026-10-23:** the game's scaling and fading kept off (Saneroki): its CVars set again after the game's stored
   settings and a profile's, and whenever one changes.
+- **2026-10-23:** the game's nameplate CVars ours only while the module and the setting are on (Saneroki): what they had
+  before goes back when it is switched off and at every logout.
