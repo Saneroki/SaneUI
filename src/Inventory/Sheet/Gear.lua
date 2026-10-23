@@ -2,8 +2,8 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Sheet - Gear
---  The equipment manager of the stats' window (Sidebar.lua), as the game's
---  sheet has it (Camelot's EquipmentManagerPane): your gear sets
+--  The equipment manager, a window of its own on the module's board (the key
+--  "gear", Board.lua) on the journal's page, as the game's sheet has it (Camelot's EquipmentManagerPane): your gear sets
 --  (C_EquipmentSet) in lines on the journal's page (the set's icon in a pencil
 --  slot, its name, red while an item of it is lost, the pencil's tick on the
 --  set you wear, shaded while chosen or under the mouse). A click chooses a
@@ -246,7 +246,7 @@ local function Pencil(pane, word, onClick)
     return button
 end
 
--- The pane under the tabs: the list, and under it the three buttons sharing the list's width.
+-- The window's body: the list, and under it the three buttons sharing the list's width.
 function Gear.Build(pane)
     list = ns.List.New(pane, { inset = Gear.INSET, extent = Extent, draw = Draw, paper = true })
     new = Pencil(pane, Core.Word("PAPERDOLL_NEWEQUIPMENTSET", "New Set"), New)
@@ -270,3 +270,8 @@ function Gear.Show(on)
     end
     if on then Gear.Refresh() end
 end
+
+ns.Board.Part("gear", Core.Word("PAPERDOLL_EQUIPMENTMANAGER", "Equipment Manager"), ns.Board.Least("gear", 260, 300), {
+    Build = function(panel) Gear.Build(panel.body) end,
+    Show = Gear.Show,
+})

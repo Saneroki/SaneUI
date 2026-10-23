@@ -186,6 +186,8 @@ end }
 W.methods.SetVerticalScroll = function(self, offset) self._scroll = offset end
 W.methods.GetVerticalScroll = function(self) return self._scroll or 0 end
 W.methods.GetUnboundedStringWidth = function(self) return #(self._text or "") * 6 end
+-- A font string's font: the game refuses words on one without (the stats' lines are written before they are laid out).
+W.methods.SetFontObject = function(self, font) self._font = font end
 -- The game's side tabs (LargeSideTabButtonTemplate): an icon, checked or not, a handler for the left button let go.
 W.templates.LargeSideTabButtonTemplate = function(widget)
     widget.Icon = W.NewWidget("Texture", nil, widget)
@@ -525,6 +527,7 @@ check(fire.Value._text == "15" and fire.tooltip == "Fire 15", "a resistance: the
 -- The lines are ours, filled by the game's function for their stat; the tooltip is the game's.
 local health = view.sections[1].rows[1]
 check(health.Value._text == "120" and health:GetParent() == view.child, "a stat's line filled by the game's function for it")
+check(health.Label._font and health.Value._font, "its words have their font from the start: the game writes before the layout")
 health.onEnterFunc = function(row) GameTooltip._stat = row end
 health:GetScript("OnEnter")(health)
 check(GameTooltip._stat == health and health.shade:IsShown(), "its tooltip the game's own, the line shaded under the mouse")

@@ -2,8 +2,8 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Sheet - Titles
---  The titles of the stats' window (Sidebar.lua), as the game's sheet lists
---  them (Camelot's TitleManagerPane): None first, then every title you know by
+--  The titles, a window of its own on the module's board (the key "titles",
+--  Board.lua) on the journal's page, as the game's sheet lists them (Camelot's TitleManagerPane): None first, then every title you know by
 --  name, in lines on the journal's page (a light stripe on every other one,
 --  the pencil's tick and shading on the one you wear, its light shading under
 --  the mouse). A click wears that title (SetCurrentTitle, the game's own call).
@@ -98,7 +98,7 @@ function Titles.Refresh()
     ns.List.Fill(list, known)
 end
 
--- The pane under the tabs: the list on the page.
+-- The window's body: the list on the page.
 function Titles.Build(pane)
     list = ns.List.New(pane, { inset = Titles.INSET, extent = Extent, draw = Draw, paper = true })
 end
@@ -115,3 +115,8 @@ function Titles.Show(on)
     if on then Core.OnUnit("UNIT_NAME_UPDATE", "player", later) else Core.OffUnit("UNIT_NAME_UPDATE", "player", later) end
     if on then Titles.Refresh() end
 end
+
+ns.Board.Part("titles", Core.Word("PAPERDOLL_SIDEBAR_TITLES", "Titles"), ns.Board.Least("titles", 240, 300), {
+    Build = function(panel) Titles.Build(panel.body) end,
+    Show = Titles.Show,
+})

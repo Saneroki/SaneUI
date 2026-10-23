@@ -2,10 +2,12 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Sheet - Stats
---  The stats in the stats' window (Sidebar.lua), the player's and the pet's,
---  on the journal's page in Sane UI's own look (Doc/guides/interface-style.md):
---  each of the game's categories (PAPERDOLL_STATCATEGORIES: general,
---  attributes, weapons, modifiers, defense; then the resistances) a section
+--  The stats' window (the key "stats" on the module's board, Board.lua): the
+--  player's stats, and the pet's under them while there is a pet, on the
+--  journal's page in Sane UI's own look (Doc/guides/interface-style.md): each
+--  of the game's categories (PAPERDOLL_STATCATEGORIES: general, attributes,
+--  weapons, modifiers, defense; then the resistances; a pet's named with its
+--  name) a section
 --  with its head written in pencil and ruled, its stats in lines under it
 --  (the name at the left, the value at the right). The sections stand in as
 --  many columns as the window's width holds, in the game's order down each
@@ -46,6 +48,7 @@ Stats.ROW = Fit(20)        -- a stat's line
 Stats.TILE = { Fit(78), Fit(60) } -- a primary attribute's box: its least width, its height
 Stats.TILE_GAP = Fit(10)
 Stats.STEP = Fit(40)       -- the wheel scrolls this far
+Stats.LEAST = 300          -- how low the window may be made
 
 -- The primary attributes (the game's stat names): written large in boxes while all of them fit side by side.
 Stats.PRIMARY = { STRENGTH = true, AGILITY = true, STAMINA = true, INTELLECT = true, SPIRIT = true }
@@ -61,7 +64,7 @@ local Fonts = {
     tileValue = Paper.Font("SaneUIStatsTileValue", 24, true),
 }
 
-local views = {}   -- [unit] = the page for the player, for the pet
+local view         -- the page: its scroll frame, sections, heads, spare lines
 local owed = false -- a refresh was asked for under a restriction
 
 local function Game(name, ...)
@@ -140,8 +143,10 @@ local function Row(view)
     row.shade:SetColorTexture(Paper.SHADE[1], Paper.SHADE[2], Paper.SHADE[3], Paper.SHADE[4])
     row.shade:Hide()
     row.Label = row:CreateFontString(nil, "ARTWORK")
+    row.Label:SetFontObject(Fonts.label) -- a font from the start: the game's function writes before the layout
     row.Label:SetWordWrap(false)
     row.Value = row:CreateFontString(nil, "ARTWORK")
+    row.Value:SetFontObject(Fonts.value)
     row.Value:SetWordWrap(false)
     row.box = J.Box(row, 0.5)
     row:SetScript("OnEnter", ns.Guard(Enter))
@@ -255,37 +260,50 @@ local function Head(view, index)
     return head
 end
 
--- Every line given back, then the sections anew: each category of the unit's with the stats that show, then the
--- resistances. A section of the primary attributes alone is marked: it may stand as boxes.
+-- Whether the player has a pet the game shows stats for.
+local function Pet()
+    return Game("HasPetUI") and UnitExists("pet") and true or false
+end
+
+-- Each category of a unit's (the player's, or the pet's) with the stats that show, added to sections; a pet's
+-- category named with the pet's name. A section of the primary attributes alone is marked: it may stand as boxes.
+local function Categories(view, sections, unit)
+    local categories, info = rawget(_G, "PAPERDOLL_STATCATEGORIES"), rawget(_G, "PAPERDOLL_STATINFO")
+    if type(categories) ~= "table" or type(info) ~= "table" then return end
+    local spec, role = Spec()
+    local owner = unit == "pet" and (UnitName("pet") or Core.Word("PET", "Pet")) or nil
+    for _, category in ipairs(categories) do
+        if (category.unit or "player") == unit then
+            local name = owner and (owner .. ": " .. tostring(category.categoryName or "")) or category.categoryName
+            local section = { name = name, rows = {}, primary = unit == "player" }
+            for _, stat in ipairs(category.stats or {}) do
+                if info[stat.stat] and Shown(stat, spec, role, unit) then
+                    local row = Fill(view, unit, stat, info[stat.stat])
+                    if row then
+                        section.rows[#section.rows + 1] = row
+                        section.primary = section.primary and Stats.PRIMARY[stat.stat] or false
+                    end
+                end
+            end
+            if #section.rows > 0 then sections[#sections + 1] = section end
+        end
+    end
+end
+
+-- Every line given back, then the sections anew: the player's categories, the resistances, and the pet's
+-- categories while there is a pet.
 local function Sections(view)
     for _, section in ipairs(view.sections) do
         for _, row in ipairs(section.rows) do Give(view, row) end
     end
-    local sections, unit = {}, view.unit
-    local categories, info = rawget(_G, "PAPERDOLL_STATCATEGORIES"), rawget(_G, "PAPERDOLL_STATINFO")
-    if type(categories) == "table" and type(info) == "table" then
-        local spec, role = Spec()
-        for _, category in ipairs(categories) do
-            if (category.unit or "player") == unit then
-                local section = { name = category.categoryName, rows = {}, primary = true }
-                for _, stat in ipairs(category.stats or {}) do
-                    if info[stat.stat] and Shown(stat, spec, role, unit) then
-                        local row = Fill(view, unit, stat, info[stat.stat])
-                        if row then
-                            section.rows[#section.rows + 1] = row
-                            section.primary = section.primary and Stats.PRIMARY[stat.stat] or false
-                        end
-                    end
-                end
-                if #section.rows > 0 then sections[#sections + 1] = section end
-            end
-        end
-    end
+    local sections = {}
+    Categories(view, sections, "player")
     local resist = { name = Core.Word("STAT_CATEGORY_RESISTANCE", "Resistances"), rows = {} }
     for _, name in ipairs(Stats.RESISTANCES) do
-        resist.rows[#resist.rows + 1] = Resistance(view, unit, name)
+        resist.rows[#resist.rows + 1] = Resistance(view, "player", name)
     end
     if #resist.rows > 0 then sections[#sections + 1] = resist end
+    if Pet() then Categories(view, sections, "pet") end
     view.sections = sections
 end
 
@@ -404,10 +422,11 @@ end
 -------------------------------------------------------------------------------
 --  The page
 -------------------------------------------------------------------------------
--- The page for a unit (the player's, or the pet's) filling pane: a scrolling page of sections. Returns its frame.
-function Stats.Build(pane, unit)
-    local view = { unit = unit or "player", sections = {}, heads = {}, spare = {} }
-    local scroll = CreateFrame("ScrollFrame", nil, pane)
+-- The page filling the window's body: a scrolling page of sections.
+function Stats.Build(panel)
+    local body = panel.body or panel
+    view = { sections = {}, heads = {}, spare = {} }
+    local scroll = CreateFrame("ScrollFrame", nil, body)
     scroll:SetAllPoints()
     scroll:EnableMouseWheel(true)
     scroll:SetScript("OnMouseWheel", ns.Guard(function(_, delta) Wheel(view, delta) end))
@@ -416,22 +435,18 @@ function Stats.Build(pane, unit)
     scroll:SetScrollChild(child)
     scroll:SetScript("OnSizeChanged", ns.Guard(function() Layout(view) end))
     view.scroll, view.child = scroll, child
-    views[view.unit] = view
-    return scroll
 end
 
--- The pages shown drawn as the stats are now, unless the game restricts addons: then once it no longer does.
+-- The page drawn as the stats are now, unless the game restricts addons: then once it no longer does.
 function Stats.Refresh()
     if Core.Restricted() then
         owed = true
         return
     end
     owed = false
-    for unit, view in pairs(views) do
-        if view.scroll:IsVisible() and (unit == "player" or UnitExists(unit)) then
-            Sections(view)
-            Layout(view)
-        end
+    if view and view.scroll:IsVisible() then
+        Sections(view)
+        Layout(view)
     end
 end
 
@@ -440,9 +455,9 @@ function Stats.Owed()
     return owed
 end
 
--- A unit's page: its scroll frame, its sections and their lines (for the tests).
-function Stats.View(unit)
-    return views[unit or "player"]
+-- The page: its scroll frame, its sections and their lines (for the tests).
+function Stats.View()
+    return view
 end
 
 local later = Core.Later(function() ns.Safe("character", Stats.Refresh) end)
@@ -477,3 +492,6 @@ function Stats.Show(on)
     end
     if on then ns.Safe("character", Stats.Refresh) end
 end
+
+ns.Board.Part("stats", Core.Word("PAPERDOLL_SIDEBAR_STATS", "Character Stats"),
+    ns.Board.Least("stats", Stats.COLUMN + 2 * Stats.PAD, Stats.LEAST), Stats)

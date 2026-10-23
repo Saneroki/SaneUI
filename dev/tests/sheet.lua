@@ -445,40 +445,36 @@ IconTab("reputation"):GetScript("OnClick")(IconTab("reputation"))
 check(not Board.layouts:Has("reputation") and not IconTab("reputation")._selected, "another takes it off again")
 
 -------------------------------------------------------------------------------
---  The stats and the sidebar
+--  The stats, the gear sets and the titles: each a window of its own
 -------------------------------------------------------------------------------
 local stats = Board.Panel("stats")
-local Sidebar = ns.Sidebar
-check(stats and stats:IsShown() and Sidebar.Chosen() == "stats" and stats.title._text == "Character Stats",
-    "the stats' window, the stats tab chosen, the head says so")
-local statsTab, gearTab, titlesTab, petTab = Sidebar.Button("stats"), Sidebar.Button("gear"), Sidebar.Button("titles"), Sidebar.Button("pet")
-check(statsTab.shade:IsShown() and not petTab:IsShown() and gearTab:IsEnabled() and titlesTab:IsEnabled()
-    and statsTab.text._text == "Stats" and gearTab.text._text == "Equipment Manager",
-    "the game's sidebar tabs drawn in pencil: Stats chosen (shaded), no pet's tab without a pet, gear sets and titles to choose")
-check(gearTab._points[1][2] == statsTab:GetParent() and gearTab._points[1][4] == statsTab._width + Sidebar.TAB_GAP,
-    "the tabs side by side, each as wide as its word")
-titlesTab:GetScript("OnClick")(titlesTab)
-check(Sidebar.Chosen() == "titles" and stats.title._text == "Titles" and titlesTab.shade:IsShown() and not statsTab.shade:IsShown(),
-    "Titles chosen: its tab shaded, the head says Titles")
-local titleList = ListIn(stats)
+local Stats = ns.Stats
+check(stats and stats:IsShown() and stats.title._text == "Character Stats" and not ns.Sidebar,
+    "the stats' window, its head says so; no tabs: only the stats")
+local function Heads()
+    local names = {}
+    for _, section in ipairs(Stats.View().sections) do names[#names + 1] = section.name end
+    return table.concat(names, ", ")
+end
+check(not Heads():find("Pet"), "no pet: the player's stats only: " .. Heads())
+check(not Board.layouts:Has("gear") and not Board.layouts:Has("titles"), "the gear sets and the titles are not on the board at first")
+local titles = Open("titles")
+check(titles and titles:IsShown() and titles.title._text == "Titles", "the titles a window of their own")
+local titleList = ListIn(titles)
 local function TitleNames()
     local names = {}
     for index, row in ipairs(titleList.rows) do names[index] = row.text._text .. (row.check:IsShown() and "*" or "") end
     return table.concat(names, ", ")
 end
 check(TitleNames() == "None*, Jenkins, the Patient", "None first and worn, then the titles you know by name: " .. TitleNames())
-local titlesDrawn = titleList.provider
-titlesTab:GetScript("OnClick")(titlesTab)
-check(Sidebar.Chosen() == "titles" and titlesTab.shade:IsShown() and titleList.provider == titlesDrawn,
-    "the tab chosen clicked again: all stays as it is")
 titleList.rows[3]:GetScript("OnClick")(titleList.rows[3])
 check(titleCalls.worn == 1, "a click wears the title, by the game's own call")
 titleWorn = 1
 W.Fire("KNOWN_TITLES_UPDATE")
 W.Wait(0)
 check(TitleNames() == "None, Jenkins, the Patient*", "the game tells of the change: the title worn ticked")
-gearTab:GetScript("OnClick")(gearTab)
-check(Sidebar.Chosen() == "gear", "the equipment manager chosen")
+local gear = Open("gear")
+check(gear and gear:IsShown() and gear.title._text == "Equipment Manager", "the equipment manager a window of its own")
 local gearList
 for _, widget in ipairs(W.frames) do
     local rows = rawget(widget, "rows")
@@ -504,7 +500,7 @@ do
     C_EquipmentSet.CreateEquipmentSet = function(name) Note("create " .. name) end
     local saveButton, newButton
     for _, widget in ipairs(W.frames) do
-        if widget._kind == "Button" and Inside(widget, stats) then
+        if widget._kind == "Button" and Inside(widget, gear) then
             if widget._text == "Save" then saveButton = widget elseif widget._text == "New Set" then newButton = widget end
         end
     end
@@ -519,30 +515,22 @@ do
     check(table.concat(calls, ", ") == "clear, ignore 4, ignore 19, create Raid, clear",
         "New Set: made without the shirt and the tabard, as the game's sheet makes one: " .. table.concat(calls, ", "))
 end
+local unitName = UnitName
+UnitName = function(unit) if unit == "pet" then return "Wolf" end return unitName(unit) end
 hasPet = true
 W.Fire("UNIT_PET", "player")
 W.Wait(0)
-check(petTab:IsShown() and petTab._points[1][4] > titlesTab._points[1][4], "a pet: its tab comes, after the others")
-petTab:GetScript("OnClick")(petTab)
-check(Sidebar.Chosen() == "pet" and stats.title._text == "Pet", "the pet's tab chosen")
+check(Heads() == "General, Modifiers, Resistance, Wolf: Pet", "a pet: its stats under the player's, named with it: " .. Heads())
 hasPet = false
 W.Fire("UNIT_PET", "party1")
 W.Wait(0)
-check(Sidebar.Chosen() == "pet", "another's pet came or went: nothing to do, the player's pet only is listened to")
+check(Heads():find("Wolf: Pet"), "another's pet came or went: nothing to do, the player's pet only is listened to")
 W.Fire("UNIT_PET", "player")
 W.Wait(0)
-check(Sidebar.Chosen() == "stats" and not petTab:IsShown(), "the pet gone: back to the stats")
--- The pet gone while the window is hidden: shown again with the stats.
-hasPet = true
-W.Fire("UNIT_PET", "player")
-W.Wait(0)
-petTab:GetScript("OnClick")(petTab)
-Close("stats")
-hasPet = false
-W.Fire("UNIT_PET", "player")
-W.Wait(0)
-check(Open("stats") == stats and Sidebar.Chosen() == "stats" and stats.title._text == "Character Stats" and not petTab:IsShown(),
-    "the pet gone while the window was hidden: shown again with the stats")
+check(not Heads():find("Pet"), "the pet gone: the player's stats only")
+UnitName = unitName
+Close("gear")
+Close("titles")
 
 -------------------------------------------------------------------------------
 --  Reputation

@@ -35,7 +35,9 @@ Full, it holds the module's windows on **Core's board** (`Core.Board`, `Doc/guid
 | Window | Key | What it holds |
 |---|---|---|
 | Character | `character` | The paper doll (*The character sheet*) |
-| Character Stats | `stats` | The stats, with the game's sidebar: gear sets, titles, the pet's stats |
+| Character Stats | `stats` | The stats, the player's and the pet's |
+| Equipment Manager | `gear` | The gear sets |
+| Titles | `titles` | The titles |
 | Reputation, Skills, PvP, Currency, Statistics | `reputation` … `statistics` | What the game's sheet has behind its tabs, each a window |
 | Bags | `bags` | Our bags (*The bags*) |
 | Characters | `alts` | The other characters' snapshots (*The other characters*) |
@@ -62,13 +64,13 @@ Everything the game's (Camelot) character window has, in our panel:
   sections in as many columns as the window's width holds (each 200 to 300 units at the words' first size, as even
   in height as the game's order lets them be, together in the page's middle), one list in a narrow window. The
   primary attributes stand over the columns as five pencil boxes with their value written large where they fit
-  side by side. The sidebar's tabs are drawn tabs in pencil over the page; the gear sets and titles are lines on
-  the paper. Built the same day.
+  side by side; a pet's stats follow the player's. Built the same day. **Only the stats (Saneroki, 2026-10-23):**
+  no tabs in it; the gear sets and the titles are windows of their own (`gear`, `titles`, lines on the paper).
 - **Its tabs:** Reputation, Skills, Honor (PvP rank), and what else Camelot's `CHARACTER_FRAME_TAB` lists, each
   as the game draws it.
 - **Windows of their own (Saneroki, 2026-10-20):** not one sheet with side tabs, but each part a window on the
-  module's board, moved and sized there like every other: the paper doll (scaled to fit), the stats with the
-  game's sidebar (gear sets, titles, the pet), and each of the game's tabs; what is in a window follows its size.
+  module's board, moved and sized there like every other: the paper doll (scaled to fit), the stats, the gear sets,
+  the titles, and each of the game's tabs; what is in a window follows its size.
 - **Sane UI's own look (Saneroki, 2026-10-22):** the character, the bags, the bank and the alts in the new art and
   style (`Doc/guides/interface-style.md`), still sized on the board by dragging the lines between windows. Built
   the same day: the character on the doll (its own leather and paper; slots in arcs, strips with each item's
@@ -218,8 +220,8 @@ character Core has not read slot by slot yet (it has not logged in since) shows 
 
 1. **The window and the board** (built 2026-10-20): docked in the bottom right corner, its corner fills the
    screen with the parts there are.
-2. **The character sheet** (built 2026-10-20): the paper doll (slots and model), the stats with the sidebar (gear
-   sets, titles, the pet), reputation, skills, PvP, currency and statistics, each a window on the board.
+2. **The character sheet** (built 2026-10-20): the paper doll (slots and model), the stats (the pet's with them),
+   the gear sets, the titles, reputation, skills, PvP, currency and statistics, each a window on the board.
 3. **The bags** (built 2026-10-20): the bags and the bank, the game's item buttons, four views, sorting, the
    search; then pins, the player's own groups and junk marks; next, the steps under *The bags*.
 4. **The other characters** (built 2026-10-20): the snapshot window from `Core.Data.Characters`, an alt's gear

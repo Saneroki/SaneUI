@@ -1,6 +1,6 @@
 # Sane UI: Inventory
 
-**Status:** its window and full screen built; the character sheet built, its parts windows of their own (the paper doll; the stats with the game's sidebar: gear sets, titles, the pet; reputation, skills, PvP, currency, statistics); the bags built, with pins, the player's own groups and junk marks; the other characters' window built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
+**Status:** its window and full screen built; the character sheet built, its parts windows of their own (the paper doll; the stats; gear sets; titles; reputation, skills, PvP, currency, statistics); the bags built, with pins, the player's own groups and junk marks; the other characters' window built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever (interface 16001)
 
 ## TL;DR
 The module for what you carry and wear. Push the mouse into the screen's bottom right corner and the screen
@@ -48,14 +48,14 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     darkened to read on the paper). The page follows the window: narrow, it is one list; wider, the sections stand
     in as many columns as fit, in the game's order, the columns about even in height and kept together in the
     middle; wide enough, your five attributes stand over the columns in pencil boxes with their value written large.
-    The wheel scrolls what does not fit. At its top the game's sidebar tabs, drawn in pencil (the chosen one shaded,
-    one with nothing to show faded, the reason in its tooltip):
-    Stats; Equipment Manager (your gear sets: a click chooses one, a double click or Equip puts it on, Save stores
-    what you wear in it after a question, leaving out the slots the set leaves out, New Set asks a name and leaves out
-    your shirt and tabard, a right click renames or deletes; a new set's icon is changed on the game's own sheet);
-    Titles (a click wears one); Pet (your pet's stats, while you have one). The gear sets and titles are lines on
-    the paper: a set's icon in a pencil slot, the one you wear or the title you carry ticked by hand, the buttons
-    pencil boxes.
+    The wheel scrolls what does not fit. While you have a pet, its stats follow yours, each section named with it.
+  - *Equipment Manager* (added from the dropdown *Windows*): your gear sets on the paper, each with its icon in a
+    pencil slot, the one you wear ticked by hand, red with an item lost. A click chooses one, a double click or
+    Equip puts it on, Save stores what you wear in it after a question (leaving out the slots the set leaves out),
+    New Set asks a name and leaves out your shirt and tabard, a right click renames or deletes; a new set's icon is
+    changed on the game's own sheet.
+  - *Titles* (added from the dropdown *Windows*): None, then the titles you know; a click wears one, the one you
+    wear ticked by hand.
   - *Reputation*: your factions as the game lists them: a click on a header folds or unfolds it, a click on a
     faction chooses it (its standing in numbers under the mouse); at the right the chosen faction, its standing,
     its description and the game's switches At War, Move to Inactive and Show as Experience Bar.
@@ -253,41 +253,32 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     and level drawn over it; on the doll's plain paper (no race background, no frame behind it); an item
     let go over it (a drop, or the left button) where
     `C_PaperDollInfo.CanAutoEquipCursorItem` says it can be: `AutoEquipCursorItem`.
-  - **The stats and the sidebar** (`Sheet/Sidebar.lua`, the part `stats`): the game's right pane as a window, at the
-    game's width (`Sidebar.WIDTH`) and the window's height, in its middle: the game's stat background stretched, its
-    stone at the top, and on it the game's sidebar tabs as our own buttons in its art (42 square,
-    `UI-Character-Info-StatTab`, checked `…-StatTab-Selected`; the game's own tabs show its sheet's panes): Stats with
-    the portrait, Equipment Manager and Titles (`PaperDollSidebarTabs`' icons and coordinates), Pet (`paw-icon`), shown
-    only with `HasPetUI`, the three centred without it as `PaperDollFrame_UpdateSidebarTabLayout` does; a tab the
-    game has nothing for greyed (half seen, desaturated) with its reason in the tooltip. The tab chosen shows its
-    pane under the stone and names the window's head; only it listens to the game; clicked again it stays as it is.
-    The player's `UNIT_PET` lays the tabs out anew (the pet's tab without a pet goes back to the stats, also when the
-    window shows again after the pet went).
-  - **Gear sets** (`Sheet/Gear.lua`): `C_EquipmentSet`'s sets by name in the game's cards (`UI-Character-Info-OutfitCard`
-    and its hover and selected art, the icon in `…-OutfitIcon-Frame`, `…-Icon-Tick` on the set worn, the name red with
-    an item lost); the game's Equip and Save (`SharedButtonSmallTemplate`) and New Set (`PaperDollTertiaryButtonTemplate`
-    with `UI-Character-Info-Icon-Add`). Equip as `EquipmentManager_EquipSet` (not with locked items or while casting:
-    the game's error), Save after `Core.Confirm` (the set's left-out slots set first: `GetIgnoredSlots`,
-    `IgnoreSlotForSave`, `UnignoreSlotForSave`; a new set without the shirt and the tabard, `Gear.LEFT_OUT`; the game's
-    note of them cleared after either, `ClearIgnoredSlotsForSave`), New Set's name by `Core.AskText` (the icon the
-    game's question mark: the game's icon picker is a frame of its own we do not show), a right click's menu to rename
-    or delete. Drawn anew after `EQUIPMENT_SETS_CHANGED`, `EQUIPMENT_SWAP_FINISHED`, `PLAYER_EQUIPMENT_CHANGED`.
-  - **Titles** (`Sheet/Titles.lua`): None, then the titles you know by name, in the game's rows (the stripe, the tick
-    and bar on the one worn, the blue light); a click `SetCurrentTitle`. Drawn anew after `KNOWN_TITLES_UPDATE` and the
-    player's `UNIT_NAME_UPDATE`.
-  - **Stats** (`Sheet/Stats.lua`): for the player and for the pet, the game's `CharacterStatsPaneScrollBoxTemplate`
-    under the stone, its rows the
-    game's element templates (a category's head, a stat, a stat with an icon) filled by the game's `Init`, which
-    calls the game's function for that stat (`PAPERDOLL_STATINFO`). The list is put together by our code as
-    `CharacterStatsPaneScrollBoxMixin:UpdateStats` does (the player's categories of `PAPERDOLL_STATCATEGORIES`,
-    `primary`, `roles`, `showFunc`, the unit's categories, a stat left out at its `hideAt`, a scratch row of ours for
-    the values; then the
-    resistances, `Stats.RESISTANCES`, with `UnitResistance` and the game's tooltip and bonus formatting): the game's
-    list builder borrows the game's own sheet's frame pool, which our code must not touch. Under a restriction
-    (`Core.Restricted`) the stats are secret to addon code (`SecretWhenUnitStatsRestricted`; the player's health
-    always is), so the list is not drawn then: it waits (`Stats.Owed`) and is drawn after `PLAYER_REGEN_ENABLED` or
-    `ADDON_RESTRICTION_STATE_CHANGED`; a row the list lays out again meanwhile is left as it is. Drawn when shown and
-    a frame after the game's stat events (`Core.Later`).
+  - **Stats** (`Sheet/Stats.lua`, the part `stats`, on the journal's page): each stat a line of ours (`Label`,
+    `Value` with their fonts from the start, the tooltip's fields) filled by the game's own function for it
+    (`PAPERDOLL_STATINFO[stat].updateFunc`), as the game fills its rows; which stats show as the game decides it
+    (`PAPERDOLL_STATCATEGORIES`: `primary`, `roles`, `showFunc`, the unit's categories, a stat at its `hideAt` or one
+    the game hides left out); the label's colon taken off, the game's colour codes darkened (`Paper.InkHex`); the
+    tooltip the game's (`onEnterFunc`, else `PaperDollStatTooltip`). Then the resistances (`Stats.RESISTANCES`, the
+    game's `PaperDollFrame_SetResistance`), then the pet's categories while `HasPetUI` and the pet is there, named
+    "<pet>: <category>". The sections are laid out for the page's width (`Layout`): `Stats.COLUMN` to
+    `Stats.COLUMN_MOST` wide columns, the block of them centred, cut in the game's order so the tallest column is as
+    low as it can be (`Cuts`); the primary attributes as five pencil boxes over the block (`AsTile`) where they fit
+    across it, else a section. A `ScrollFrame` and the wheel; laid out again on every size change. Under a
+    restriction (`Core.Restricted`) the stats are secret to addon code, so the page is not drawn then: it waits
+    (`Stats.Owed`) and is drawn after `PLAYER_REGEN_ENABLED` or `ADDON_RESTRICTION_STATE_CHANGED`. Drawn when shown,
+    a frame after the game's stat events and the player's `UNIT_PET` (`Core.Later`).
+  - **Gear sets** (`Sheet/Gear.lua`, the part `gear`, on the journal's page): `C_EquipmentSet`'s sets by name in lines
+    (the icon in a pencil slot, the tick drawn by hand on the set worn, red ink with an item lost; the pencil's
+    shading chosen and under the mouse); Equip, Save and New Set pencil boxes. Equip as `EquipmentManager_EquipSet`
+    (not with locked items or while casting: the game's error), Save after `Core.Confirm` (the set's left-out slots
+    set first: `GetIgnoredSlots`, `IgnoreSlotForSave`, `UnignoreSlotForSave`; a new set without the shirt and the
+    tabard, `Gear.LEFT_OUT`; the game's note of them cleared after either, `ClearIgnoredSlotsForSave`), New Set's
+    name by `Core.AskText` (the icon the game's question mark: the game's icon picker is a frame of its own we do not
+    show), a right click's menu to rename or delete. Drawn anew after `EQUIPMENT_SETS_CHANGED`,
+    `EQUIPMENT_SWAP_FINISHED`, `PLAYER_EQUIPMENT_CHANGED`.
+  - **Titles** (`Sheet/Titles.lua`, the part `titles`, on the journal's page): None, then the titles you know by name,
+    in lines (a faint stripe, the tick drawn by hand and the pencil's shading on the one worn); a click
+    `SetCurrentTitle`. Drawn anew after `KNOWN_TITLES_UPDATE` and the player's `UNIT_NAME_UPDATE`.
   - **The pages** (`Sheet/Page.lua`): the windows of the game's tabs are each a page: its panel's body cut into a
     left part that takes the room (`Page.New`) and, for those that tell of what is chosen, the game's right pane at
     its right (`Page.SIDE` wide, the window's height, its art and stone); `Page.Part` registers it with the board,

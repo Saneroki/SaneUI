@@ -20,20 +20,19 @@ Board.lua
 # What the windows on the journal's page draw with: graphite, the pencil's shading, Kalam, a rule
 Paper.lua
 # The character sheet, our own, its parts windows of their own on the board: what they share first (the doll, the
-# slots, the model, the stats list, a list, the side pane, the rows, the page), then the windows: the character (the paper
-# doll), the stats with the sidebar (gear sets, titles), and what the game's sheet has behind its tabs
+# slots, the model, a list, the side pane, the rows, the page), then the windows: the character (the paper doll), the
+# stats, the gear sets, the titles, and what the game's sheet has behind its tabs
 Sheet\Doll.lua
 Sheet\Slots.lua
 Sheet\Model.lua
-Sheet\Stats.lua
 Sheet\List.lua
 Sheet\Side.lua
 Sheet\Rows.lua
 Sheet\Page.lua
 Sheet\Sheet.lua
+Sheet\Stats.lua
 Sheet\Gear.lua
 Sheet\Titles.lua
-Sheet\Sidebar.lua
 Sheet\Reputation.lua
 Sheet\Skills.lua
 Sheet\PvP.lua

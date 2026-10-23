@@ -9,8 +9,9 @@ local _, ns = ...
 --  the dropdown Windows adds one, and so does its icon's tab beside the
 --  layouts' tabs, lit while it is on). The module's windows, in this order:
 --      character   the character: the paper doll (Sheet/Sheet.lua)
---      stats       the stats and the game's sidebar beside them: gear sets,
---                  titles, the pet's stats (Sheet/Sidebar.lua)
+--      stats       the character's stats, and the pet's (Sheet/Stats.lua)
+--      gear        the gear sets: the game's equipment manager (Sheet/Gear.lua)
+--      titles      the titles (Sheet/Titles.lua)
 --      reputation, skills, pvp, currency, statistics
 --                  what the game's character sheet has behind its tabs, each a
 --                  window of its own (Sheet/)
@@ -54,6 +55,14 @@ end
 Board.ICONS = {
     character = Portrait,
     stats = "Interface/ICONS/Spell_Nature_Strength",
+    gear = function(texture) -- the game's sidebar icons (PaperDollFrameConstants.lua)
+        texture:SetTexture("Interface\\PaperDollInfoFrame\\PaperDollSidebarTabs")
+        texture:SetTexCoord(0.015625, 0.53125, 0.46875, 0.60546875)
+    end,
+    titles = function(texture)
+        texture:SetTexture("Interface\\PaperDollInfoFrame\\PaperDollSidebarTabs")
+        texture:SetTexCoord(0.015625, 0.53125, 0.32421875, 0.4609375)
+    end,
     reputation = "Interface/ICONS/INV_SideTab_Reputation2_c60",
     skills = "Interface/ICONS/Ability_Racial_JackofAllTrades",
     pvp = Honor,
@@ -65,12 +74,13 @@ Board.ICONS = {
 }
 
 -- The windows in Sane UI's own look (Doc/guides/interface-style.md, Core.Journal): the character on its doll (its
--- own leather and paper, "bare"), the stats, the bags, the bank and the alts on the journal's page. The others keep
--- Core's dark plate for now.
-Board.DRESS = { character = "bare", stats = "journal", bags = "journal", bank = "journal", alts = "journal" }
+-- own leather and paper, "bare"), the stats, the gear sets, the titles, the bags, the bank and the alts on the
+-- journal's page. The others keep Core's dark plate for now.
+Board.DRESS = { character = "bare", stats = "journal", gear = "journal", titles = "journal", bags = "journal",
+                bank = "journal", alts = "journal" }
 
 -- The windows in the dropdown's order; those the first layout holds.
-Board.ORDER = { "character", "stats", "reputation", "skills", "pvp", "currency", "statistics", "bags", "bank", "alts" }
+Board.ORDER = { "character", "stats", "gear", "titles", "reputation", "skills", "pvp", "currency", "statistics", "bags", "bank", "alts" }
 Board.FIRST = { character = true, stats = true, bags = true, bank = true, alts = true }
 
 local layouts  -- Core's board, once the window is there (Board.Take)

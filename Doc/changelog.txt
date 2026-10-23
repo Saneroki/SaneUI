@@ -11,8 +11,9 @@ The bigger changes of each version, newest first.
   is a section written in pencil, and the sections stand side by side
   in as many columns as the window is wide; narrow, it is one list.
   With room enough, your five attributes stand on top in boxes with
-  their numbers written large. Its tabs, the gear sets and the titles
-  are drawn in pencil too.
+  their numbers written large; your pet's stats follow yours. The gear
+  sets and the titles are windows of their own now, drawn in pencil
+  too.
 - Inventory: every row of the bags' sidebar has a small pencil drawing
   of its own instead of the game's tiny icons: a backpack for All
   Items, a helmet for Head, a flask for Potions, a campfire for Camp

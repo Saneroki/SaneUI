@@ -11,7 +11,8 @@ local _, ns = ...
 --  character's live model (Model.lua) standing on the page's plain paper. The
 --  doll's top is the head it is dragged by, the X on its right strap. The rest
 --  of the game's sheet stands in windows
---  of its own beside it: the stats and the sidebar (Sidebar.lua), and what the
+--  of its own beside it: the stats (Stats.lua), the gear sets (Gear.lua), the
+--  titles (Titles.lua), and what the
 --  game's sheet has behind its tabs (Reputation.lua, Skills.lua, PvP.lua,
 --  Currency.lua, Statistics.lua).
 --

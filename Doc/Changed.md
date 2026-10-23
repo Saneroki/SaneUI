@@ -6,6 +6,17 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: the stats window shows its stats; only the stats (Saneroki, 2026-10-23)
+- **Fixed:** the page stayed empty in the game: a stat's line had no font until the layout, but the game's function
+  writes into it first, and the game refuses words without a font ("Font not set"). `Row` gives `Label` and `Value`
+  their font objects when made. Test: `dev/tests/inventory.lua` checks the fonts are there before the layout.
+- **Only the stats:** `Sheet/Sidebar.lua` is gone (TOC); `Stats.lua` is the part `stats` itself, one page. The pet's
+  categories follow the player's and the resistances while there is a pet (`HasPetUI` and the pet there), named
+  "<pet>: <category>". The gear sets and the titles are windows of their own on the board (`gear`, `titles`: the
+  journal's dress, the game's sidebar icons on their tabs, not in the first layout; `Board.ORDER` after `stats`).
+- Tests: `dev/tests/inventory.lua` 144 checks, `dev/tests/sheet.lua` 92 (no tabs; the titles and the gear sets in
+  their own windows; a pet's stats on the page and gone with it).
+
 ### Nameplates: our own cast bar (Saneroki, 2026-10-23)
 - **Cast bar** (`Cast.lua`, new in the TOC): under the plate's bar, no gap, as wide and as high as it, round like it;
   the spell's icon at its left end with the seconds left inside it; the spell's name and its target's on one line
