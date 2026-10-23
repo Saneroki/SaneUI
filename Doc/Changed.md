@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: no line between the bar and the cast bar (Saneroki, 2026-10-23)
+- **Bar.Outline** (`Bar.lua`): while a cast shows, the bar reaches down to the cast bar (no pixel of the outline under
+  it), and a seam in the bar's dark (`dress.seam`) lies behind where their round corners meet; the white border of a
+  target no longer shows between them. The bar's inset and caps are set there now, not in `Bar.Fit`.
+- Tests: 216 checks.
+
 ### Nameplates: the cast bar in the game's art, inside one outline with the bar (Saneroki, 2026-10-23)
 - **Art** (`Cast.lua`): the fill in the game's own cast bar atlases (`Cast.ART`: golden standard, channel,
   uninterruptible, interrupted), given through `SetStatusBarTexture` as the game's cast bar does; the flat colours gone.

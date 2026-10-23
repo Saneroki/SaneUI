@@ -150,6 +150,12 @@ function Bar.Make(dress)
     dress.rankLine = Plate(edges, -4)
     dress.rankLine:Hide()
     dress.border = Plate(edges, -3)
+    -- Behind where the bar meets the cast bar under it: the bar's dark, so no border shows between them (Bar.Outline).
+    local seam = edges:CreateTexture(nil, "BACKGROUND", nil, -2)
+    seam:SetTexture(Bar.WHITE)
+    seam:SetVertexColor(Bar.BACKGROUND[1], Bar.BACKGROUND[2], Bar.BACKGROUND[3], 1)
+    seam:Hide()
+    dress.seam = seam
     local health = CreateFrame("StatusBar", nil, dress)
     health:SetFrameLevel(level + 3)
     health:SetStatusBarTexture(Bar.FILL)
@@ -184,19 +190,14 @@ function Bar.Fit(dress)
     local pixel = Core.Pixels(dress, 1)
     local edge = pixel
     dress.edge = edge
-    local health = dress.health
-    health:ClearAllPoints()
-    health:SetPoint("TOPLEFT", dress, "TOPLEFT", edge, -edge)
-    health:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", -edge, edge)
     Bar.Outline(dress)
     local inner = height - 2 * edge
-    Bar.SizeCaps(dress.caps, inner)
     dress.line = math.max(inner * Bar.LINE, pixel * 2)
     dress.power:SetHeight(dress.line)
 end
 
 -- The outline (the border, the rank's line, the glow) around the bar, and around its cast bar too while a cast
--- shows (Cast.lua calls it as one shows or goes): one frame for both.
+-- shows (Cast.lua calls it as one shows or goes): one frame for both, nothing of it between them.
 function Bar.Outline(dress)
     local height = Plain(dress:GetHeight()) or 0
     local pixel = Core.Pixels(dress, 1)
@@ -206,6 +207,23 @@ function Bar.Outline(dress)
     local reach = dress.rank.width - 1 -- the rank's line beyond the dress (the border is its first pixel)
     Around(dress.rankLine, dress, pixel * reach, tall, below)
     for band, glow in ipairs(dress.halo) do Around(glow, dress, pixel * (reach + band), tall, below) end
+    -- The bar a pixel inside the outline; down to the cast bar while one shows, the bar's dark behind where they meet
+    -- (their round corners), so nothing of the outline shows between them.
+    local casting = below ~= dress
+    local health = dress.health
+    health:ClearAllPoints()
+    health:SetPoint("TOPLEFT", dress, "TOPLEFT", pixel, -pixel)
+    health:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", -pixel, casting and 0 or pixel)
+    local inner = height - (casting and 1 or 2) * pixel
+    Bar.SizeCaps(dress.caps, inner)
+    local seam = dress.seam
+    if casting then
+        local round = inner * Bar.CAP
+        seam:ClearAllPoints()
+        seam:SetPoint("TOPLEFT", dress, "BOTTOMLEFT", pixel, round)
+        seam:SetPoint("BOTTOMRIGHT", dress, "BOTTOMRIGHT", -pixel, -round)
+    end
+    seam:SetShown(casting)
     dress.outlined = below
 end
 

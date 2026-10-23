@@ -946,6 +946,8 @@ check(Atlas(castBar.fill) == Cast.ART.cast and castBar.fill._min == casts.namepl
     "from its start to its end, a third done, two seconds left in the icon, in the game's golden cast art")
 check(dress.border._points[2][2] == castBar and dress.halo[1]._points[2][2] == castBar and dress.rankLine._points[2][2] == castBar
     and Near(dress.border.caps[1]._width, 2 * dress._height * Bar.CAP), "one outline, glow and rank line around the bar and the cast bar")
+check(dress.health._points[2][5] == 0 and dress.seam:IsShown() and dress.seam._points[1][3] == "BOTTOMLEFT",
+    "the bar down to the cast bar, the bar's dark behind where they meet: no line between them")
 check(castBar.timer._points[1][2] == castBar.icon, "the seconds inside the icon")
 check(gameCast._alpha == 0, "the game's own cast bar out of sight under ours")
 W.clock = W.clock + 1
@@ -987,6 +989,7 @@ castBar:GetScript("OnUpdate")(castBar, 1)
 check(not castBar:IsShown(), "gone after half a second")
 check(dress.border._points[2][2] == dress and Near(dress.border.caps[1]._width, dress._height * Bar.CAP),
     "no cast: the outline around the bar alone again")
+check(dress.health._points[2][5] == Core.Pixels(dress, 1) and not dress.seam:IsShown(), "and the bar a pixel inside it all round")
 -- Stopped early by the game (cast done): stays half a second; failed: at once.
 casts.nameplate1 = { name = "Frostbolt", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
 W.Fire("UNIT_SPELLCAST_START", "nameplate1")
