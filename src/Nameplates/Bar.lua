@@ -217,16 +217,18 @@ function Bar.Paint(dress, unit)
 end
 
 -- The glow on while you have the unit's aggro (true, false, or the game's answer hidden: the textures take it as it
--- is) or while the unit is a player who may attack you.
+-- is, never compared: a hidden boolean in a comparison is an error) or while the unit is a player who may attack you.
 function Bar.Glow(dress, aggro)
     dress.aggro = aggro
+    local hidden = Core.Secret(aggro)
     for _, glow in ipairs(dress.halo) do
-        if dress.danger or aggro == true then
+        if dress.danger then
             glow:SetAlpha(1)
-        elseif Core.Secret(aggro) then
-            if not pcall(glow.SetAlphaFromBoolean, glow, aggro, 1, 0) then glow:SetAlpha(0) end
+        elseif hidden then
+            -- The game's own alphas for true and false (full, none).
+            if not pcall(glow.SetAlphaFromBoolean, glow, aggro) then glow:SetAlpha(0) end
         else
-            glow:SetAlpha(0)
+            glow:SetAlpha(aggro and 1 or 0)
         end
     end
 end

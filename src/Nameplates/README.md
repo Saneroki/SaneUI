@@ -7,7 +7,7 @@ Starts from the game's own nameplates and keeps what they do well: their size an
 nameplate settings), where they stand and stack, what clicks them, their cast bar and widgets. Over the game's
 health bar it lays its own: a rectangle with round corners, everything on one line inside it: at the left the
 unit's level and your threat on it, in the middle its name, at the right its health and how much is left
-("12 100%" · "Young Wolf" · "1m325k | 100%"). Along its bottom a thin line of the unit's mana, rage or energy,
+("12 100%" · "Young Wolf" · "1.32m | 100%"). Along its bottom a thin line of the unit's mana, rage or energy,
 and on your target your combo points on top of it. Its border tells the unit's rank, a ring around it your
 target and focus, a red glow your aggro or a player who may attack you. Right above the bar your own debuffs,
 left of it up to three of a foe's buffs, right of it the raid marker and the crowd control on the unit. Plates
@@ -30,9 +30,9 @@ fails, every plate is the game's own again.
   it is too high to tell), next to it your threat on it while you are on its threat list: grey while low, orange
   when you are about to take its aggro, red while you have it, and then the whole bar glows red. In the middle
   its name (a player's first name and surname), cut short where it is too long. At the right its health,
-  short (under a thousand as it is, then "12k", then "1m325k"), and "| 100%" how much is left. In a fight the
-  game hides some of these from addons: the health shows then in the game's short form in our steps ("1.32m"),
-  the threat in grey.
+  short (under a thousand as it is, then thousands to one place, "1.2k", then millions to two, "1.32m"; cut,
+  not rounded), and "| 100%" how much is left. In a fight the game hides some of these from addons: the health
+  is then shortened by the game in the same steps, the threat in grey.
 - **The border:** black; gold and thick on a boss, gold and thin on an elite (the game's gold dragon), silver
   and thin on a rare (its silver dragon, also a rare elite). A white ring a pixel outside it on your target, an
   orange one on your focus (the game's colours for them).
@@ -103,7 +103,7 @@ fails, every plate is the game's own again.
   Threat: `UnitDetailedThreatSituation("player", unit)`: nothing without a status; the scaled percentage as
   `%d%%` (`SetFormattedText`, hidden or not); its colour by the status (`Text.THREAT`: 0 grey, 1 orange, 2 and 3
   red), grey where the status is hidden; aggro from `Text.AGGRO` (2) up, or the hidden `isTanking` as it is. Name:
-  `Core.FullName` for players, else `UnitName` as it is. Health: plain, `Text.Short` and `Text.Percent` ("1m325k |
+  `Core.FullName` for players, else `UnitName` as it is. Health: plain, `Text.Short` and `Text.Percent` ("1.32m |
   100%"); hidden, `AbbreviateNumbers` with `Text.STEPS` as its breakpoints (the game's own form where it takes
   none) and `UnitHealthPercent(unit, true, CurveConstants.ScaleTo100)`, both into `SetFormattedText`.
 - **Auras** (`Auras.lua`): three of the game's aura containers per dress (`CreateFrame("AuraContainer", ...,
@@ -168,3 +168,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   on target and focus, a red glow on aggro and on players who may attack you; the game's level box gone; your
   debuffs right on the bar, a foe's buffs left, crowd control right; strangers' plates hidden; plates smaller
   far away.
+- **2026-10-23:** health in thousands to one place and millions to two ("1.2k", "1.32m", Saneroki); the glow no
+  longer compares the game's hidden answer about aggro (the module stood down in a fight).

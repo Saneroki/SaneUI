@@ -8,13 +8,13 @@ local _, ns = ...
 --            threat on it: grey while low, orange when you are about to take
 --            its aggro, red while you have it (and then the bar glows)
 --    middle  its name: a player's first name and surname
---    right   its health, short ("850", "12k", "1m325k"), and how much of it
+--    right   its health, short ("850", "1.2k", "1.32m"), and how much of it
 --            is left ("| 100%")
 --
 --  In a fight the game may hide health and threat from addons (secret
 --  values). The texts then take them as they are, formatted by the game:
---  the percentages as numbers, the health by the game's abbreviation with
---  our own steps ("1.32m"), the threat in grey (its kind cannot be told),
+--  the percentages as numbers, the health by the game's abbreviation in
+--  the same steps, the threat in grey (its kind cannot be told),
 --  and the glow follows the game's hidden answer (Bar.Glow).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -36,10 +36,10 @@ Text.THREAT = {
     [3] = { 1, 0.1, 0.05 },
 }
 Text.AGGRO = 2 -- the first kind that is having it
--- The game's abbreviation for hidden health, in our steps: millions to two places, thousands whole.
+-- The game's abbreviation for hidden health, in the same steps as Text.Short: millions to two places, thousands to one.
 Text.STEPS = {
     { breakpoint = 1000000, abbreviation = "m", significandDivisor = 10000, fractionDivisor = 100, abbreviationIsGlobal = false },
-    { breakpoint = 1000, abbreviation = "k", significandDivisor = 1000, fractionDivisor = 1, abbreviationIsGlobal = false },
+    { breakpoint = 1000, abbreviation = "k", significandDivisor = 100, fractionDivisor = 10, abbreviationIsGlobal = false },
 }
 
 local function Font()
@@ -129,14 +129,19 @@ function Text.Threat(dress, unit)
     ns.Bar.Glow(dress, tanking) -- hidden: the glow takes the game's answer as it is
 end
 
--- A health short: under a thousand as it is, then thousands ("12k"), then millions and thousands ("1m325k").
+-- A number cut (not rounded) to that many places, without the zeros at its end: 1.25 to one place is "1.2", 2.0 "2".
+local function Cut(value, places)
+    local scale = 10 ^ places
+    local text = ("%." .. places .. "f"):format(math.floor(value * scale) / scale)
+    return (text:gsub("%.?0+$", ""))
+end
+
+-- A health short: under a thousand as it is, then thousands to one place ("1.2k"), then millions to two ("1.32m").
 function Text.Short(health)
     health = math.floor(health)
     if health < 1000 then return tostring(health) end
-    if health < 1000000 then return ("%dk"):format(math.floor(health / 1000)) end
-    local millions, thousands = math.floor(health / 1000000), math.floor(health % 1000000 / 1000)
-    if thousands == 0 then return ("%dm"):format(millions) end
-    return ("%dm%dk"):format(millions, thousands)
+    if health < 1000000 then return Cut(health / 1000, 1) .. "k" end
+    return Cut(health / 1000000, 2) .. "m"
 end
 
 -- How much is left, in whole percent: 100 only when full, 1 at least while any is left.

@@ -243,9 +243,10 @@ check(dress.rank == Bar.PLAIN and dress.border._vertex[1] == 0, "a plain one: bl
 -- Health and name as they change.
 units.nameplate1.health, units.nameplate1.most = 1325000, 1325000
 W.Fire("UNIT_HEALTH", "nameplate1")
-check(dress.health._value == 1325000 and dress.value._text == "1m325k | 100%", "health followed, short, and its percent")
-check(Text.Short(850) == "850" and Text.Short(12999) == "12k" and Text.Short(2000000) == "2m" and Text.Short(1132400) == "1m132k",
-    "under a thousand as it is, then thousands, then millions and thousands")
+check(dress.health._value == 1325000 and dress.value._text == "1.32m | 100%", "health followed, short, and its percent")
+check(Text.Short(850) == "850" and Text.Short(1250) == "1.2k" and Text.Short(12999) == "12.9k" and Text.Short(1000) == "1k"
+    and Text.Short(2000000) == "2m" and Text.Short(1329999) == "1.32m" and Text.Short(1300000) == "1.3m",
+    "under a thousand as it is, then thousands to one place, then millions to two, cut, no zeros at the end")
 check(Text.Percent(1, 1000) == 1 and Text.Percent(999, 1000) == 99 and Text.Percent(0, 10) == 0, "whole percent, 1 while any is left")
 units.nameplate1.name = Secret()
 W.Fire("UNIT_NAME_UPDATE", "nameplate1")
@@ -273,7 +274,8 @@ check(dress.threat._color[2] == Text.THREAT[3][2] and dress.halo[1]._alpha == 1 
 local hidden = Secret()
 units.nameplate1.threat = { hidden, Secret(), Secret() }
 W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
-check(type(dress.halo[1]._alpha) == "table" and dress.halo[1]._alpha.from == hidden, "a hidden answer: the glow takes it as it is")
+check(type(dress.halo[1]._alpha) == "table" and dress.halo[1]._alpha.from == hidden and dress.halo[1]._alpha.yes == nil,
+    "a hidden answer: the glow takes it as it is, never compared, with the game's own alphas")
 units.nameplate1.threat = nil
 W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
 check(dress.threat._text == "" and dress.halo[1]._alpha == 0, "off its list: none")

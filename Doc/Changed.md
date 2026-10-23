@@ -6,6 +6,15 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: health as "1.2k" and "1.32m"; the glow no longer stops the module in a fight (Saneroki, 2026-10-23)
+- **Health short** (`Text.Short`): under a thousand as it is, thousands to one place ("1.2k"), millions to two
+  ("1.32m"), cut, not rounded, without zeros at the end ("1k", "1.3m"); the game's abbreviation of hidden health
+  in the same steps (`Text.STEPS`: thousands' `significandDivisor` 100, `fractionDivisor` 10). The "1m325k" form
+  is gone.
+- **Fixed** (the game's error log): `Bar.Glow` compared the game's hidden answer about aggro with `true`, an error
+  in a fight that stood the module down; a hidden answer now goes to `SetAlphaFromBoolean` with the game's own
+  alphas, untouched, and only a plain one is tested.
+
 ### Nameplates: everything inside the bar, the power line, borders by rank, a glow on aggro, auras around the bar, strangers hidden, smaller far away (Saneroki, 2026-10-23)
 - **Inside the bar** (`Text.lua`, new in the TOC): on one line, at the left the unit's level (the game's
   `GetRelativeDifficultyColor`, its skull where too high) and your threat on it (`UnitDetailedThreatSituation`: grey,
