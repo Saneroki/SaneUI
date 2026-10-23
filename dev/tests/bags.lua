@@ -1204,16 +1204,9 @@ bags[0][2].locked = false
 W.Fire("ITEM_LOCK_CHANGED", 0, 2)
 
 -- The clean-up: the game's own.
-local clean
-for _, widget in ipairs(W.frames) do
-    if widget._parent and widget._parent._parent == panel.body and widget._scripts.OnClick and widget._normalAtlas == "bags-button-autosort-up" then clean = widget end
-end
-if not clean then
-    for _, widget in ipairs(W.frames) do
-        if widget._scripts and widget._scripts.OnClick and widget._scripts.OnEnter and widget._parent and widget._parent._parent == panel.body
-            and widget._kind == "Button" and not widget.clean and widget:GetWidth() == ns.Bags.BAR_BUTTON then clean = widget end
-    end
-end
+local clean = ns.Bags.bar.sort
+check(clean.icon._texture and clean.icon._texture:find("Broom") and clean:GetParent() == ns.Bags.bar,
+    "the clean-up: a round broom on the bar")
 clean:GetScript("OnClick")(clean)
 check(calls.sortBags == 1, "the clean-up button: the game's clean-up of the bags")
 W.combat = true
@@ -1331,12 +1324,20 @@ toggle:GetScript("OnClick")(toggle)
 check(not Bags.strip:IsShown() and kept.strip == false, "its button hides the strip, kept")
 toggle:GetScript("OnClick")(toggle)
 check(Bags.strip:IsShown() and kept.strip, "and shows it again")
+local sideFrame = ns.BagSidebar.frame
+ns.Bags.Fold(true)
+check(kept.side == false and not Bags.strip:IsShown() and sideFrame:GetWidth() == ns.Sidebars.FOLDED,
+    "the sidebar folded to its edge: the strip of the bags hidden with it, kept")
+toggle:GetScript("OnClick")(toggle)
+check(kept.side and Bags.strip:IsShown() and sideFrame:GetWidth() == ns.Sidebars.WIDTH,
+    "the bags' button while folded: the sidebar unfolded, the strip shown")
 local bagButtons = {}
 for _, widget in ipairs(W.frames) do
     if widget._parent == Bags.strip and widget._kind == "ItemButton" and widget:IsShown() then bagButtons[#bagButtons + 1] = widget end
 end
 check(#bagButtons == 7, "the bags in the strip: the backpack, four bag slots, the reagent bag's, the keyring")
-check(drawn[bagButtons[2]].texture == "bag-icon" and drawn[bagButtons[4]].texture == "empty-bag", "a bag's icon, an empty slot's picture")
+check(drawn[bagButtons[2]].texture == "bag-icon" and drawn[bagButtons[4]].texture == nil,
+    "a bag's icon; an empty bag slot the pencil slot alone, no picture")
 local freeOnIt
 for _, widget in ipairs(W.frames) do
     if widget._parent == bagButtons[1] and widget._kind == "FontString" and widget._text == "11" then freeOnIt = widget end

@@ -12,7 +12,9 @@ local _, ns = ...
 --  can be dragged: a ghost of it follows the cursor, a line in Sane UI's
 --  colour shows where it would go (a row lit in that colour: into it), and
 --  where it is let go the window's place puts it (its aim says where a row
---  may go, from how far down the row under the cursor is).
+--  may go, from how far down the row under the cursor is). A window that
+--  answers its fold gets an arrow at the head's right: a click folds the
+--  sidebar to a narrow edge with only the arrow, another unfolds it.
 --
 --  The bags' (ns.BagSidebar): at the top the three views (All Items, One
 --  Bag, Each Bag; the one the window opens with first), then Pinned and
@@ -36,6 +38,7 @@ local Bag = {}
 ns.BagSidebar = Bag
 
 Sidebar.WIDTH = 160
+Sidebar.FOLDED = 24        -- a folded sidebar: the arrow alone
 Sidebar.HEAD = 24
 Sidebar.ROW, Sidebar.ROW_GAP = 26, 2
 Sidebar.ICON, Sidebar.ICON_SMALL = 18, 16
@@ -171,7 +174,43 @@ end
 --  A sidebar's rows, anew
 -------------------------------------------------------------------------------
 function Rail:Width()
-    return Sidebar.WIDTH
+    return self.folded and Sidebar.FOLDED or Sidebar.WIDTH
+end
+
+-- Folded to its narrow edge (the arrow alone) or unfolded; the window is told (its fold).
+function Rail:Fold(on)
+    self.folded = on and true or false
+    self.frame:SetWidth(self:Width())
+    self.scroll:SetShown(not on)
+    self.label:SetShown(not on)
+    if self.arrow then
+        self.arrow.text:SetText(on and ">" or "<")
+        self.arrow:ClearAllPoints()
+        if on then
+            self.arrow:SetPoint("TOP", self.frame, "TOP", 0, -2)
+        else
+            self.arrow:SetPoint("RIGHT", self.head, "RIGHT", -4, 0)
+        end
+    end
+end
+
+local function ArrowEnter(arrow)
+    arrow.text:SetAlpha(1)
+    GameTooltip:SetOwner(arrow, "ANCHOR_RIGHT")
+    GameTooltip:SetText(arrow.rail.folded and ns.TEXT.sideUnfold or ns.TEXT.sideFold, 1, 1, 1)
+    GameTooltip:Show()
+end
+
+-- A click: folded or unfolded by the window, the tooltip saying what the next click does.
+local function ArrowClick(arrow)
+    local rail = arrow.rail
+    rail.fold(not rail.folded)
+    if GameTooltip:IsOwned(arrow) then ArrowEnter(arrow) end
+end
+
+local function ArrowLeave(arrow)
+    arrow.text:SetAlpha(0.6)
+    GameTooltip:Hide()
 end
 
 function Rail:Begin()
@@ -383,7 +422,7 @@ end
 
 -- A sidebar in body, under top and above bottom. options: { word (its head's), choose(view), drop(row), menu(row),
 -- add(row), tip(row) (a row's own tooltip: true when it showed one), aim(held, over, part) and place(held, over,
--- where) for rows dragged }.
+-- where) for rows dragged, fold(on) (the arrow's click: the window folds it, Rail:Fold) }.
 function Sidebar.New(body, top, bottom, options)
     local rail = setmetatable({ choose = options.choose, drop = options.drop, menu = options.menu, add = options.add,
                                 tip = options.tip, aim = options.aim, place = options.place }, Rail)
@@ -408,6 +447,22 @@ function Sidebar.New(body, top, bottom, options)
     label:SetPoint("LEFT", 8, 0)
     label:SetText(options.word or "")
     rail.label = label
+    if options.fold then
+        rail.fold = options.fold
+        local arrow = CreateFrame("Button", nil, frame)
+        arrow:SetSize(Sidebar.FOLDED - 4, Sidebar.HEAD - 4)
+        arrow:SetFrameLevel(head:GetFrameLevel() + 2)
+        arrow.rail = rail
+        arrow.text = arrow:CreateFontString(nil, "ARTWORK")
+        arrow.text:SetFontObject(ns.Paper.Font("SaneUIBagsSideArrow", 16, true))
+        arrow.text:SetTextColor(ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3])
+        arrow.text:SetAlpha(0.6)
+        arrow.text:SetPoint("CENTER")
+        arrow:SetScript("OnClick", function(self) ns.Safe("bags", ArrowClick, self) end)
+        arrow:SetScript("OnEnter", function(self) ns.Safe("bags", ArrowEnter, self) end)
+        arrow:SetScript("OnLeave", function(self) ns.Safe("bags", ArrowLeave, self) end)
+        rail.arrow = arrow
+    end
     local scroll = CreateFrame("ScrollFrame", nil, frame)
     scroll:SetPoint("TOPLEFT", head, "BOTTOMLEFT")
     scroll:SetPoint("BOTTOMRIGHT")
@@ -418,6 +473,7 @@ function Sidebar.New(body, top, bottom, options)
     child:SetSize(Sidebar.WIDTH, 1)
     scroll:SetScrollChild(child)
     rail.child = child
+    rail:Fold(false)
     rail.rows = Core.Pool(function() return MakeRow(rail) end)
     rail.dividers = Core.Pool(function()
         local line = child:CreateTexture(nil, "ARTWORK")
@@ -496,6 +552,11 @@ end
 
 function Bag.Width()
     return rail and rail:Width() or Sidebar.WIDTH
+end
+
+-- Folded or unfolded (Bags.Fold keeps it).
+function Bag.Fold(on)
+    if rail then rail:Fold(on) end
 end
 
 -------------------------------------------------------------------------------
@@ -577,6 +638,7 @@ function Bag.Build(body, top, bottom, bags)
         add = function(row) ns.Menus.Add(row) end,
         aim = Bag.Aim,
         place = Bag.Place,
+        fold = function(on) ns.Bags.Fold(on) end,
     })
     Bag.frame = rail.frame
     return rail.frame

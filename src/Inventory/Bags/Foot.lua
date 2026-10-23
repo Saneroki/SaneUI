@@ -10,8 +10,9 @@ local _, ns = ...
 --                   tooltip every character of the account's gold and the
 --                   total, from Core's data (Core.Data.Characters)
 --  The bags themselves, in a strip under the window's bar (its button shows
---  or hides it): a square for the backpack and for each bag slot (the reagent
---  bag's too) and the keyring, the bag's icon in its quality's border, how
+--  or hides it): a pencil slot for the backpack and for each bag slot (the
+--  reagent bag's too) and the keyring; the bag's icon in it, its corners
+--  rounded and no border (an empty bag slot the pencil slot alone), how
 --  many of its slots are free on it, the game's tooltip for it (the bag, or
 --  Equip Container for an empty slot) with its slots taken of how many; the
 --  mouse on it lights that bag's items (Cells.Light); a click or a drag picks
@@ -121,7 +122,6 @@ local function BagClick(button)
     end
 end
 
-local edges = {}  -- [button] = a bag's border (Cells.Border)
 local frees = {}  -- [button] = how many of its slots are free, on it
 
 local function MakeBag(index)
@@ -139,12 +139,23 @@ local function MakeBag(index)
         icon:ClearAllPoints()
         icon:SetAllPoints(face)
         icon:SetTexCoord(ns.Cells.ZOOM, 1 - ns.Cells.ZOOM, ns.Cells.ZOOM, 1 - ns.Cells.ZOOM)
+        local mask = ns.Cells.Part(button, "IconMask")
+        if mask and icon.RemoveMaskTexture then
+            icon:RemoveMaskTexture(mask)
+            mask:Hide()
+        end
+        ns.Cells.Mask(button, ns.Cells.ROUNDED, icon)
+    end
+    local light = button.GetHighlightTexture and button:GetHighlightTexture()
+    if light then
+        light:ClearAllPoints()
+        light:SetAllPoints(face)
+        ns.Cells.Mask(button, ns.Cells.ROUNDED, light)
     end
     local normal = button.GetNormalTexture and button:GetNormalTexture()
     if normal then normal:SetAlpha(0) end
     local border = ns.Cells.Part(button, "IconBorder")
     if border then border:SetAlpha(0) end
-    edges[button] = ns.Cells.Border(face)
     local font = ns.Cells.Fonts()
     local count = ns.Cells.Part(button, "Count")
     if count then count:Hide() end
@@ -174,24 +185,12 @@ local function Bar()
     return list
 end
 
+-- A bag's icon: the backpack's and the keyring's, the bag's in its slot; nil for an empty slot.
 local function Icon(bag)
     if bag == Contents.BACKPACK then return "Interface\\Icons\\ui-hud-actionbar-bag" end
     if bag == Contents.KEYRING then return "Interface\\Icons\\ui-hud-actionbar-keyring" end
     local slot = Slot(bag)
-    local texture = slot and Core.Plain(Core.Ask(GetInventoryItemTexture, "player", slot))
-    if texture then return texture end
-    local paperdoll = rawget(_G, "C_PaperDollInfo")
-    local info = paperdoll and paperdoll.GetInventorySlotInfo or rawget(_G, "GetInventorySlotInfo")
-    local _, picture = Core.Ask(info, "Bag0Slot")
-    return picture
-end
-
--- A bag's quality, for its border (nil: the backpack, the keyring, an empty slot).
-local function Quality(bag)
-    local slot = Slot(bag)
-    local quality = slot and Core.Plain(Core.Ask(rawget(_G, "GetInventoryItemQuality"), "player", slot))
-    local colors = rawget(_G, "ITEM_QUALITY_COLORS")
-    return quality and colors and colors[quality]
+    return slot and Core.Plain(Core.Ask(GetInventoryItemTexture, "player", slot)) or nil
 end
 
 function Foot.Bags()
@@ -202,13 +201,11 @@ function Foot.Bags()
         bagOf[button] = bag
         local picture = Icon(bag)
         Game("SetItemButtonTexture", button, picture)
+        local icon = ns.Cells.Part(button, "icon")
+        if icon then icon:SetShown(picture ~= nil) end
         local size = Contents.Size(bag)
         local left = size > 0 and Core.Plain(Core.Ask(api.GetContainerNumFreeSlots, bag)) or nil
         frees[button]:SetText(left and tostring(left) or "")
-        local color = Quality(bag)
-        local neutral = ns.Cells.NEUTRAL
-        ns.Cells.Edge(edges[button], color and color.r or neutral[1], color and color.g or neutral[2],
-            color and color.b or neutral[3], picture and 1 or 0, Core.Pixels(button, 1))
         button:ClearAllPoints()
         if before then
             button:SetPoint("LEFT", before, "RIGHT", Foot.BAG_GAP, 0)

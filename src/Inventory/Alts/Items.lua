@@ -152,8 +152,8 @@ local function Button(row)
     return button
 end
 
--- An item's square in the bags' look: a pencil slot on the paper, the icon in it cut round its edge with a thin
--- border in its quality's colour, its count and item level in the bags' fonts; plain (a list's line): the icon
+-- An item's square in the bags' look: a pencil slot on the paper, the icon in it cut round its edge, its corners
+-- rounded (Cells.ROUNDED), no border, its count and item level in the bags' fonts; plain (a list's line): the icon
 -- alone.
 local function Square(row, plain)
     local button = Button(row)
@@ -182,7 +182,8 @@ local function Square(row, plain)
         count:ClearAllPoints()
         count:SetPoint("BOTTOMRIGHT", face, "BOTTOMRIGHT", -1, 1)
     end
-    local mine = { border = Cells.Border(face) }
+    if not plain then Cells.Mask(button, Cells.ROUNDED, icon) end
+    local mine = {}
     mine.level = button:CreateFontString(nil, "OVERLAY", nil, 7)
     if font.level then mine.level:SetFontObject(font.level) end
     mine.level:SetPoint("TOPLEFT", face, "TOPLEFT", 1, -1)
@@ -190,7 +191,7 @@ local function Square(row, plain)
     return button
 end
 
--- An item drawn on its square: its icon, count, the border in its quality's colour, the item level of gear.
+-- An item drawn on its square: its icon, count, the item level of gear in its quality's colour.
 local function Fill(button, entry)
     button.item = entry.item
     local record = Items.Record(entry.item)
@@ -203,9 +204,6 @@ local function Fill(button, entry)
     if mine then
         local colors = rawget(_G, "ITEM_QUALITY_COLORS")
         local color = colors and record.quality and colors[record.quality]
-        local neutral = Cells.NEUTRAL
-        Cells.Edge(mine.border, color and color.r or neutral[1], color and color.g or neutral[2], color and color.b or neutral[3], 1,
-            Core.Pixels(button, 1))
         mine.level:SetText(record.level or "")
         if color then mine.level:SetTextColor(color.r, color.g, color.b) end
     end

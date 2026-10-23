@@ -412,7 +412,7 @@ local function Draw()
     local blocks = Blocks()
     Bank.blocks = blocks
     how.bind, how.coin, how.grey, how.set = options.bind == true, options.coin == true, options.grey == true, options.setName == true
-    how.level, how.plain = options.itemLevel ~= false, options.borders == false
+    how.level = options.itemLevel ~= false
     child:SetHeight(math.max(1, canvas:Draw(blocks, room, how)))
     Count()
     Sidebar()

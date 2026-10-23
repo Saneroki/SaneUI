@@ -18,8 +18,8 @@ local _, ns = ...
 --
 --  The look, Sane UI's own (Core.Journal): each cell a pencil slot on the
 --  paper, the icon in it covering its inner line, cut a little round its
---  edge, a thin border in its quality's colour (a quest item's thicker, in
---  gold), the game's highlight,
+--  edge, without a border, its corners rounded by the game's own icon mask
+--  (Cells.ROUNDED; the highlight and the press too), the game's highlight,
 --  a warm glow while pressed; over it, above the cooldown's swipe, the count
 --  at the bottom right, the item level of gear at the top left in its
 --  quality's colour, BoE at the bottom left on gear not yet bound, the
@@ -37,12 +37,11 @@ ns.Cells = Cells
 
 Cells.TEMPLATE = "ContainerFrameItemButtonTemplate"
 Cells.ZOOM = 0.08                       -- the icon's edge cut away, on each side
+Cells.ROUNDED = "Interface\\Common\\common-iconmask" -- the game's mask of an item button's icon: its corners rounded
+Cells.CIRCLE = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask"
 Cells.PRESSED = { 0.973, 0.839, 0.604 } -- the glow while pressed
-Cells.NEUTRAL = { 0.12, 0.09, 0.07 }    -- the border of an item without a quality's colour: graphite
-Cells.QUEST = { 1, 0.82, 0 }            -- a quest item's border
 Cells.EMPTY = { 0.12, 0.09, 0.07 }      -- an empty slot: the paper in its pencil slot, a breath of graphite
 Cells.EMPTY_ALPHA = 0.04
-Cells.EMPTY_EDGE = { 0, 0, 0, 0 }
 Cells.FADED = 0.2                       -- what a search does not find
 Cells.UNUSABLE = { 1, 0.1, 0.1 }
 Cells.MARK, Cells.COIN = 16, 12         -- the quest mark, the junk coin
@@ -125,6 +124,21 @@ local function Border(frame, layer)
 end
 Cells.Border = Border
 
+-- A mask of a texture's own (the rounded icon's, Cells.ROUNDED, or another file) laid over it; the textures given
+-- after it share it. Returns the mask, nil where the client has none.
+function Cells.Mask(owner, file, texture, ...)
+    if not (owner.CreateMaskTexture and texture and texture.AddMaskTexture) then return nil end
+    local mask = owner:CreateMaskTexture()
+    mask:SetTexture(file or Cells.ROUNDED, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    mask:SetAllPoints(texture)
+    texture:AddMaskTexture(mask)
+    for index = 1, select("#", ...) do
+        local other = select(index, ...)
+        if other and other.AddMaskTexture then other:AddMaskTexture(mask) end
+    end
+    return mask
+end
+
 function Cells.Edge(lines, r, g, b, a, thick)
     for index = 1, 4 do lines[index]:SetVertexColor(r, g, b, a or 1) end
     if thick then
@@ -177,7 +191,8 @@ local function Skin(button, holder)
     mine.empty = button:CreateTexture(nil, "BACKGROUND", nil, 1)
     mine.empty:SetAllPoints(face)
     mine.empty:SetColorTexture(Cells.EMPTY[1], Cells.EMPTY[2], Cells.EMPTY[3], 1)
-    mine.border = Border(face)
+    -- the corners rounded: the icon, the empty slot's breath of graphite, the highlight, the press
+    mine.mask = Cells.Mask(button, Cells.ROUNDED, icon, mine.empty, light, pressed)
     -- Above the cooldown's swipe: the words and marks.
     local over = CreateFrame("Frame", nil, button)
     over:SetAllPoints()
@@ -211,12 +226,7 @@ local function Skin(button, holder)
     mine.coin:SetTexCoord(0.12, 0.88, 0.12, 0.88)
     mine.coin:SetSize(Cells.COIN, Cells.COIN)
     mine.coin:SetPoint("BOTTOMLEFT", -3, -3)
-    if over.CreateMaskTexture then
-        local round = over:CreateMaskTexture()
-        round:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-        round:SetAllPoints(mine.coin)
-        mine.coin:AddMaskTexture(round)
-    end
+    Cells.Mask(over, Cells.CIRCLE, mine.coin)
     look[button] = mine
     return mine
 end
@@ -275,8 +285,6 @@ local function Empty(button, mine)
     if icon then icon:Hide() end
     mine.empty:Show()
     mine.empty:SetAlpha(Cells.EMPTY_ALPHA)
-    local edge = Cells.EMPTY_EDGE
-    Cells.Edge(mine.border, edge[1], edge[2], edge[3], edge[4], Core.Pixels(button, 1))
     Plain(mine)
     local cooldown = Part(button, "Cooldown")
     if cooldown and cooldown.Clear then cooldown:Clear() end
@@ -286,7 +294,7 @@ end
 
 -- A button as the record says; how: { faded (a search did not find it), count (a merged stack's), coin (the
 -- junk coin shown), grey (junk greyed), bind (BoE shown), set (the set's name shown), level (the item level
--- shown), plain (no quality's colour on the border) }.
+-- shown) }.
 function Pool:Draw(button, record, how)
     local mine = look[button]
     local holder = mine.holder
@@ -317,16 +325,7 @@ function Pool:Draw(button, record, how)
         local red = record.unusable and Cells.UNUSABLE
         icon:SetVertexColor(red and red[1] or 1, red and red[2] or 1, red and red[3] or 1)
     end
-    local pixel = Core.Pixels(button, 1)
-    local quest = record.quest or record.questID
     local color = rawget(_G, "ITEM_QUALITY_COLORS") and record.quality and ITEM_QUALITY_COLORS[record.quality]
-    if quest then
-        Cells.Edge(mine.border, Cells.QUEST[1], Cells.QUEST[2], Cells.QUEST[3], 1, pixel * 2)
-    elseif color and not (how and how.plain) then
-        Cells.Edge(mine.border, color.r, color.g, color.b, 1, pixel)
-    else
-        Cells.Edge(mine.border, Cells.NEUTRAL[1], Cells.NEUTRAL[2], Cells.NEUTRAL[3], 1, pixel)
-    end
     if record.level and not (how and how.level == false) then
         mine.level:SetText(record.level)
         if color then mine.level:SetTextColor(color.r, color.g, color.b) else mine.level:SetTextColor(1, 1, 1) end
@@ -431,28 +430,12 @@ function Pool:Shown(bag, slot)
     return button ~= nil and button:IsShown()
 end
 
--- A button's icon round (the list's setting) or square again.
-local round = {} -- [button] = its round mask, once made
+-- A button's icon round (the list's setting), or its corners rounded again.
 function Cells.Round(button, on)
-    local icon = Part(button, "icon")
-    if not (icon and icon.AddMaskTexture) then return end
     local mine = look[button]
-    if on and not mine.round then
-        local mask = round[button]
-        if not mask then
-            mask = button:CreateMaskTexture()
-            mask:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-            mask:SetAllPoints(icon)
-            round[button] = mask
-        end
-        icon:AddMaskTexture(mask)
-        for index = 1, 4 do mine.border[index]:Hide() end
-        mine.round = true
-    elseif not on and mine.round then
-        icon:RemoveMaskTexture(round[button])
-        for index = 1, 4 do mine.border[index]:Show() end
-        mine.round = false
-    end
+    if not (mine and mine.mask) or (mine.round or false) == on then return end
+    mine.mask:SetTexture(on and Cells.CIRCLE or Cells.ROUNDED, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    mine.round = on
 end
 
 -- Every button out of sight (the module stood down, or the panel hidden).

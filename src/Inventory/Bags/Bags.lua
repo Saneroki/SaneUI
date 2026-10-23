@@ -7,20 +7,21 @@ local _, ns = ...
 --  game's own bag windows stay as they are: our code neither opens nor closes
 --  them.
 --
---      the bar      a band at the top, a pencil rule under it: how many slots of the bags are
+--      the bar      on the window's title line, after its title: how many slots of the bags are
 --                   taken of how many (every bag's in its tooltip); at the
---                   right what can be done at a vendor or a banker
+--                   right, round buttons with a soft edge (Bags.Round), what can be done at a vendor or a banker
 --                   (Foot.lua), the junk marker (a click, then clicks on
 --                   items mark them as junk or not: Select.lua; an item
 --                   brought to it is marked at once), the bags themselves (in
---                   a strip under the bar at first; a click hides or shows
+--                   a strip at the body's top at first; a click hides or shows
 --                   it), the clean-up: in One Bag our own sort (Sort.lua:
 --                   the items moved into the categories' order, the button
 --                   locked while it runs), in the other views the game's
 --                   (C_Container.SortBags, as the game's bag window's button
 --                   does), the dropdown View: the display (Layout.LOOKS),
 --                   what sorts the items (Contents.ORDERS), what is shown
---      the sidebar  at the left: the views and the categories (Sidebar.lua)
+--      the sidebar  at the left: the views and the categories (Sidebar.lua); folded by its
+--                   arrow to a narrow edge, the strip of the bags hidden with it (kept)
 --      the body     a scroll area with the view chosen as its blocks laid out
 --                   (Views.lua, Layout.lua) and drawn (Canvas.lua), each item
 --                   the game's own item button (Cells.lua); the bank has a
@@ -49,9 +50,11 @@ ns.Bags = Bags
 Bags.EDGE = 6        -- from the panel's sides to what is in it
 Bags.INSET = 8       -- from the scroll area's left to the items
 Bags.SCROLL = 20     -- room at the right for the game's scroll bar
-Bags.BAR = 35        -- the band at the top
+Bags.BAR = 30        -- the bar on the title line
 Bags.BAR_BUTTON = 24 -- a button on it
-Bags.BAR_GAP = 6
+Bags.BAR_GAP = 8
+Bags.BAR_END = 34    -- from the title line's end to the bar's last button
+Bags.SOFT = { 0.42, 0.2, 0.08 } -- a round button's soft edge: the ink's alpha one, two, three pixels out
 Bags.MENU_WIDTH = 110
 Bags.RULE = { ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3], 0.3 } -- the line by the sidebar
 Bags.COUNT_COLOR = ns.Paper.SOFT    -- the bar's count
@@ -122,19 +125,41 @@ end
 -------------------------------------------------------------------------------
 --  Drawing what the layout says
 -------------------------------------------------------------------------------
--- The game's clean-up button (its art and sound), for the bags or a bank (Bank.lua); a broom of the game's icons
--- where the client lacks that art.
-local function CleanButton(parent, click, enter)
-    local button = CreateFrame("Button", nil, parent)
-    button:SetSize(Bags.BAR_BUTTON, Bags.BAR_BUTTON)
-    local textures = rawget(_G, "C_Texture")
-    if not (textures and textures.GetAtlasInfo) or Core.Ask(textures.GetAtlasInfo, "bags-button-autosort-up") then
-        button:SetNormalAtlas("bags-button-autosort-up")
-        button:SetPushedAtlas("bags-button-autosort-down")
-    else
-        button:SetNormalTexture("Interface\\Icons\\INV_BroomMount2_Red")
+-- A round button on the paper (the bar's): its icon cut to a circle, a narrow edge of the pencil's ink fading out
+-- round it (Bags.SOFT), the highlight and (checkable: a CheckButton) the checked light cut to the circle too.
+function Bags.Round(parent, file, checkable, size)
+    size = size or Bags.BAR_BUTTON
+    local button = CreateFrame(checkable and "CheckButton" or "Button", nil, parent)
+    button:SetSize(size, size)
+    local ink = ns.Paper.INK
+    for step, alpha in ipairs(Bags.SOFT) do
+        local ring = button:CreateTexture(nil, "BACKGROUND", nil, -step)
+        ring:SetPoint("TOPLEFT", -step, step)
+        ring:SetPoint("BOTTOMRIGHT", step, -step)
+        ring:SetColorTexture(ink[1], ink[2], ink[3], alpha)
+        Cells.Mask(button, Cells.CIRCLE, ring)
     end
+    local icon = button:CreateTexture(nil, "ARTWORK")
+    icon:SetAllPoints()
+    icon:SetTexture(file)
+    icon:SetTexCoord(Cells.ZOOM, 1 - Cells.ZOOM, Cells.ZOOM, 1 - Cells.ZOOM)
+    button.icon = icon
     button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+    local light = button:GetHighlightTexture()
+    if light then light:SetAllPoints() end
+    local checked
+    if checkable then
+        button:SetCheckedTexture("Interface\\Buttons\\CheckButtonHilight")
+        checked = button:GetCheckedTexture()
+        if checked then checked:SetAllPoints(); checked:SetBlendMode("ADD") end
+    end
+    Cells.Mask(button, Cells.CIRCLE, icon, light, checked)
+    return button
+end
+
+-- The clean-up button, round, a broom (Bags.Round), for the bags or a bank (Bank.lua).
+local function CleanButton(parent, click, enter)
+    local button = Bags.Round(parent, "Interface\\Icons\\INV_Pet_Broom")
     button:SetScript("OnClick", function(self) ns.Safe("bags", click, self) end)
     button:SetScript("OnEnter", function(self) ns.Safe("bags", enter, self) end)
     button:SetScript("OnLeave", GameTooltip_Hide)
@@ -197,7 +222,7 @@ local function Draw()
     local blocks = Views.Build(View(), sections, query, kept.sort, options)
     Bags.blocks = blocks
     how.bind, how.coin, how.grey, how.set = options.bind == true, options.coin == true, options.grey == true, options.setName == true
-    how.level, how.plain = options.itemLevel ~= false, options.borders == false
+    how.level = options.itemLevel ~= false
     child:SetHeight(math.max(1, Bags.canvas:Draw(blocks, room, how)))
     Bags.Count()
     coin:SetShown(Categories.Marker())
@@ -401,19 +426,19 @@ local function Band(frame, edge)
 end
 Bags.Band = Band
 
--- The strip of the bags themselves under the bar, shown or hidden (kept); the sidebar and the scroll area under
--- what shows.
+-- The strip of the bags themselves at the body's top, shown or hidden (kept; hidden too while the sidebar is
+-- folded); the sidebar and the scroll area under what shows.
 local function Strip()
-    local on = kept.strip ~= false
+    local folded = kept.side == false
+    local on = kept.strip ~= false and not folded
     strip:SetShown(on)
-    local above = on and strip or bar
     side:ClearAllPoints()
-    side:SetPoint("TOPLEFT", above, "BOTTOMLEFT")
+    if on then side:SetPoint("TOPLEFT", strip, "BOTTOMLEFT") else side:SetPoint("TOPLEFT", strip:GetParent(), "TOPLEFT") end
     side:SetPoint("BOTTOMLEFT", Foot.frame, "TOPLEFT")
     local list = kept.look == "list"
     columns:ClearAllPoints()
     columns:SetPoint("TOPLEFT", side, "TOPRIGHT", Bags.INSET, -Bags.EDGE)
-    columns:SetPoint("RIGHT", bar, "RIGHT", -(Bags.SCROLL + Bags.INSET), 0)
+    columns:SetPoint("RIGHT", strip, "RIGHT", -(Bags.SCROLL + Bags.INSET), 0)
     columns:SetShown(list)
     scroll:ClearAllPoints()
     if list then
@@ -430,10 +455,24 @@ function Bags.Restrip()
     Strip()
 end
 
-local function ToggleStrip()
-    kept.strip = kept.strip == false
-    Core.Sound(kept.strip and "IG_BACKPACK_OPEN" or "IG_BACKPACK_CLOSE")
+-- The sidebar folded (kept.side false) or unfolded; the strip of the bags goes and comes with it.
+function Bags.Fold(on)
+    kept.side = not on
+    Sidebar.Fold(on)
     Strip()
+    Bags.Size()
+end
+
+-- The bags' button: the strip hidden or shown; while the sidebar is folded, the sidebar unfolded with the strip.
+local function ToggleStrip()
+    if kept.side == false then
+        kept.strip = true
+        Bags.Fold(false)
+    else
+        kept.strip = kept.strip == false
+        Strip()
+    end
+    Core.Sound(kept.strip and "IG_BACKPACK_OPEN" or "IG_BACKPACK_CLOSE")
 end
 
 local function BagsTip(button)
@@ -474,58 +513,45 @@ function Bags.Marked(on)
     if coin then coin:SetChecked(on) end
 end
 
+-- The bar on the window's title line (panel.title, the journal's), after the title's word: the count, then at
+-- the title line's end the junk marker, the bags' button, the clean-up and the dropdown View; the strip of the
+-- bags at the body's top.
 local function Bar(body)
-    bar = CreateFrame("Frame", nil, body)
-    bar:SetPoint("TOPLEFT")
-    bar:SetPoint("TOPRIGHT")
+    local title = panel.title
+    bar = CreateFrame("Frame", nil, panel)
+    if title then
+        bar:SetPoint("LEFT", title, "LEFT")
+        bar:SetPoint("RIGHT", title, "RIGHT", -Bags.BAR_END, 0)
+    else
+        bar:SetPoint("TOPLEFT", body, "TOPLEFT", 0, Bags.BAR)
+        bar:SetPoint("TOPRIGHT", body, "TOPRIGHT", 0, Bags.BAR)
+    end
     bar:SetHeight(Bags.BAR)
-    Band(bar, "BOTTOM")
+    bar:SetFrameLevel((panel.head and panel.head:GetFrameLevel() or panel:GetFrameLevel()) + 5)
     bar.count = bar:CreateFontString(nil, "ARTWORK")
     local font = Fonts()
     if font.count then bar.count:SetFontObject(font.count) end
     bar.count:SetTextColor(Bags.COUNT_COLOR[1], Bags.COUNT_COLOR[2], Bags.COUNT_COLOR[3], Bags.COUNT_COLOR[4])
-    bar.count:SetPoint("LEFT", Bags.INSET + Bags.EDGE, 0)
+    local words = title and title.GetStringWidth and title:GetStringWidth() or 0
+    bar.count:SetPoint("LEFT", words + 2 * Bags.BAR_GAP, 0)
     local hover = CreateFrame("Frame", nil, bar)
     hover:SetAllPoints(bar.count)
     hover:SetScript("OnEnter", function(self) ns.Safe("bags", Foot.FreeTip, self) end)
     hover:SetScript("OnLeave", GameTooltip_Hide)
     menu = ns.Paper.Dropdown(bar, Bags.MENU_WIDTH, Bags.BAR_BUTTON)
-    menu:SetPoint("RIGHT", -Bags.EDGE, 0)
+    menu:SetPoint("RIGHT")
     menu:OverrideText(ns.TEXT.bagsView)
     menu:SetupMenu(ViewMenu)
     sort = CleanButton(bar, Clean, CleanTip)
     sort:SetPoint("RIGHT", menu, "LEFT", -Bags.BAR_GAP, 0)
-    local bags = CreateFrame("CheckButton", nil, bar)
-    bags:SetSize(Bags.BAR_BUTTON, Bags.BAR_BUTTON)
-    bags:SetNormalTexture("Interface\\Icons\\INV_Misc_Bag_08")
-    local picture = bags:GetNormalTexture()
-    if picture then picture:SetTexCoord(Cells.ZOOM, 1 - Cells.ZOOM, Cells.ZOOM, 1 - Cells.ZOOM) end
-    bags:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
-    bags:SetCheckedTexture("Interface\\Buttons\\CheckButtonHilight")
-    local checked = bags:GetCheckedTexture()
-    if checked then checked:SetBlendMode("ADD") end
+    bar.sort = sort
+    local bags = Bags.Round(bar, "Interface\\Icons\\INV_Misc_Bag_08", true)
     bags:SetPoint("RIGHT", sort, "LEFT", -Bags.BAR_GAP, 0)
     bags:SetScript("OnClick", function() ns.Safe("bags", ToggleStrip) end)
     bags:SetScript("OnEnter", function(self) ns.Safe("bags", BagsTip, self) end)
     bags:SetScript("OnLeave", GameTooltip_Hide)
     bar.bags = bags
-    coin = CreateFrame("CheckButton", nil, bar)
-    coin:SetSize(Bags.BAR_BUTTON - 2, Bags.BAR_BUTTON - 2)
-    local icon = coin:CreateTexture(nil, "ARTWORK")
-    icon:SetPoint("CENTER")
-    icon:SetSize(Bags.BAR_BUTTON, Bags.BAR_BUTTON)
-    icon:SetTexture("Interface\\Icons\\INV_Misc_Coin_02")
-    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    if coin.CreateMaskTexture then
-        local round = coin:CreateMaskTexture()
-        round:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-        round:SetAllPoints(icon)
-        icon:AddMaskTexture(round)
-    end
-    coin:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
-    coin:SetCheckedTexture("Interface\\Buttons\\CheckButtonHilight")
-    local lit = coin:GetCheckedTexture()
-    if lit then lit:SetBlendMode("ADD") end
+    coin = Bags.Round(bar, "Interface\\Icons\\INV_Misc_Coin_02", true)
     coin:SetPoint("RIGHT", bags, "LEFT", -Bags.BAR_GAP, 0)
     coin:SetScript("OnClick", function() ns.Safe("bags", CoinClick) end)
     coin:SetScript("OnReceiveDrag", function() ns.Safe("bags", CoinClick) end)
@@ -534,8 +560,8 @@ local function Bar(body)
     bar.coin = coin
     Bags.bar = bar
     strip = CreateFrame("Frame", nil, body)
-    strip:SetPoint("TOPLEFT", bar, "BOTTOMLEFT")
-    strip:SetPoint("TOPRIGHT", bar, "BOTTOMRIGHT")
+    strip:SetPoint("TOPLEFT")
+    strip:SetPoint("TOPRIGHT")
     strip:SetHeight(Foot.STRIP)
     Bags.strip = strip
 end
@@ -546,7 +572,8 @@ function Bags.Build(made)
     local body = panel.body
     Bar(body)
     Foot.Build(body, coin, strip)
-    side = Sidebar.Build(body, bar, Foot.frame, kept)
+    side = Sidebar.Build(body, strip, Foot.frame, kept)
+    Sidebar.Fold(kept.side == false)
     columns = Columns.Build(body, function() Bags.Redraw() end)
     scroll = CreateFrame("ScrollFrame", nil, body, "ScrollFrameTemplate")
     child = CreateFrame("Frame", nil, scroll)

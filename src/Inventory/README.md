@@ -58,18 +58,21 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   - *Statistics*: the game's statistics by category, each category folding by a click.
 - **Your bags** (the window *Bags*): everything you carry, on a page of the journal (Sane UI's own look: paper
   bound in stitched leather, everything on it drawn in pencil, the words in a hand-printed font): each item in a
-  pencil slot, in a thin border of its quality's colour (a quest item's in gold), its item level at the top
-  left, its count at the bottom right, a quest's mark on an item that starts one, red when you cannot use it.
-  - **The bar** at the top: how many of your bags' slots are taken (every bag's in its tooltip); at the right *Sell
-    All Junk Items* at a vendor, the junk marker, the bags' button (your bags stand in a strip under the bar, at
-    first; a click hides it or shows it again: each bag with its free slots on it; point at one to light its items,
-    drop a bag on a slot to put it on, click one to pick it up), the clean-up and the dropdown *View*. The clean-up
+  pencil slot, its icon without a border, its corners rounded, its item level at the top left in its quality's
+  colour, its count at the bottom right, a quest's mark on an item that starts one, red when you cannot use it.
+  - **The bar** on the window's title line, after *Bags*: how many of your bags' slots are taken (every bag's in its
+    tooltip); at the line's end *Sell All Junk Items* at a vendor, then three round buttons with a soft edge (the
+    junk marker, the bags' button, the clean-up) and the dropdown *View*. Your bags stand in a strip at the top of
+    the page, at first; the bags' button hides it or shows it again: each bag's icon in a pencil slot with its corners
+    rounded and its free slots on it, an empty bag slot the pencil slot alone; point at one to light its items,
+    drop a bag on a slot to put it on, click one to pick it up. The clean-up
     in *One Bag* is our own sort: your items move into the order of your categories (pinned ones first, then each
     category in your order, inside one by *Sort By*, the larger stack first), partial stacks of one item joined
     first, the empty slots last; the reagent bag, the keyring and bags for one kind of item stay as they are. The
     button is greyed while it runs; it never starts in a fight and stops at one, or when you pick something up. In
     the other views it is the game's *Clean Up Bags*.
-  - **The sidebar** at the left: *All Items* (every item by category, the categories side by side, as many to a
+  - **The sidebar** at the left (its arrow at the top folds it to a narrow edge and the strip of your bags with
+    it; the arrow or the bags' button unfolds it, kept): *All Items* (every item by category, the categories side by side, as many to a
     line as fit; every category that takes items shown with its items and an empty slot after them, also while
     it holds nothing; the free slots are not shown), *One Bag*
     (every slot of your bags in their order, the empty ones too) and *Each Bag* (every bag by itself), then
@@ -149,7 +152,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 - **Settings:** *Sane UI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
   motion, the background's opacity and texture), *Window corners*, and *Bags*: *Open With*, *Show Pinned Items*,
   *Pinned in One Bag and Each Bag*, *Show Recent Items*, *Recent in One Bag and Each Bag*, *Show Add Category*, *Merge Stacks*, *Junk Marker* (off: no Junk, grey items stay in their
-  categories), *Stack Splitter Everywhere*, *Show Item Level*, *Quality Borders*, *Show BoE*, *Show Set Name*, *Coin
+  categories), *Stack Splitter Everywhere*, *Show Item Level*, *Show BoE*, *Show Set Name*, *Coin
   on Junk*, *Grey Junk*. The dropdown *View* switches some of them too.
 
 ## Technical details
@@ -315,7 +318,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   - **The items** (`Alts/Items.lua`): one scrolling list: a head per place in the bags' style (the bank's with the
     day it was last seen, or *Not seen yet*; the number of items), a bag or bank place as the display says: rows of
     the game's item buttons in the bags' flat look (`ItemButton`, drawn by the game's `SetItemButtonTexture`,
-    `Count`, `Quality`, its border hidden for ours in the quality's colour, the item level of gear; as many to a
+    `Count`, `Quality`, no border, its corners rounded as the bags' (`Cells.ROUNDED`), the item level of gear; as many to a
     row as fit, `Items.Fit`), with Group by Category a head per category (the bags' order and names); lines in the
     bags' list columns (`Columns.Place`, `Value`, `Sort`); or one compact piece (`Layout.Lay` *compact* over the
     categories). An item's record as the bags' (`Items.Record`: `C_Item.GetItemInfoInstant`, `GetItemInfo`,
@@ -424,10 +427,10 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     (`Bags.Sorting`).
   - **The settings** (`Inventory.lua`'s `OPTIONS`, the section *Bags*, Core's options): `first`, `showPinned`,
     `pinnedOne`, `showRecent`, `recentOne`, `addCategory`, `merge`, `marker`, `splitter`, `itemLevel`,
-    `borders`, `bind`, `setName`, `coin`, `grey`; read by the views, the sidebar, the categories (`Categories.Marker`)
+    `bind`, `setName`, `coin`, `grey`; read by the views, the sidebar, the categories (`Categories.Marker`)
     and the cells; changed from the dropdown and menus by `Core.Set`; a change draws the bags anew
-    (`Bags.Settled`). What the window keeps of itself (the display, the order, the columns, the strip, the folded
-    blocks) and the categories' choices stay in `store.bags`.
+    (`Bags.Settled`). What the window keeps of itself (the display, the order, the columns, the strip, the sidebar
+    folded: `side`, the folded blocks) and the categories' choices stay in `store.bags`.
   - **The list's columns** (`Bags/Columns.lua`): `Columns.LIST` (icon, name, level, required, kind, bind, count,
     sell), the ones shown in order (`columns`), widths (`widths`), the sort (`listSort`, `listDown`), round icons
     (`round`), all kept in `store.bags`. `Columns.Place` gives each its place in a line (the name the room left,
@@ -446,9 +449,10 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     (`Cells.short`, `Core.AfterCombat`). Sane UI's look set on the template's own parts once: a pencil slot at the
     button's edge (`Core.Journal.Slot`), the icon inset by `Core.Journal.SLOT_ICON` of the cell over the slot's
     inner line and cut `Cells.ZOOM` round its edge, its mask, border, normal texture and new item's glow away, the
-    highlight to the icon's size, a warm glow pressed; ours beside them in a table of our own: a thin
-    border of the screen's own pixels in the quality's colour (`Cells.QUEST`, twice as thick, on a quest item),
-    above the cooldown's swipe the count, the item level, BoE, the set's name, the game's `QuestNormal` on an item
+    highlight to the icon's size, a warm glow pressed; no border: the icon, the empty slot's graphite, the
+    highlight and the press share the game's mask of an item button's icon with rounded corners (`Cells.ROUNDED`,
+    `Cells.Mask`; a circle, `Cells.CIRCLE`, for the list's round icons, `Cells.Round`); ours beside them in a table
+    of our own: above the cooldown's swipe the count, the item level, BoE, the set's name, the game's `QuestNormal` on an item
     that starts a quest, the junk coin; an empty slot the pencil slot alone.
     Drawn by the template's own functions (`SetItemButtonTexture`, `Quality`, `Count`, `Desaturated`,
     `UpdateCooldown`, …). In the list the button's hit rect reaches over its line. Hooks after its `OnEnter`,
@@ -465,7 +469,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     reagent bag's, the special bags' or a group, which take none), in the grid and the compact display; an item
     on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`.
   - **The sidebar** (`Bags/Sidebar.lua`): `ns.Sidebars.New(body, top, bottom, options)` a window's (rows of the
-    journal's look, `Sidebars.WIDTH` wide, the names in Kalam always shown (one cut short whole in its tooltip), the
+    journal's look, `Sidebars.WIDTH` wide (a window that answers `fold` gets an arrow in the head: `Rail:Fold`, the
+    narrow edge `Sidebars.FOLDED` with the arrow alone), the names in Kalam always shown (one cut short whole in its tooltip), the
     view shown shaded in pencil with a graphite bar at its left; scrolled by the wheel; `Begin`, `Row`,
     `Divider`, `Done`; its `choose`, `drop`, `menu`, `add` answer the clicks); `ns.BagSidebar` the bags' (every
     category switched on, empty ones too; a click `Bags.Choose`, an item on the cursor let go there `Menus.Drop`, a
@@ -506,7 +511,10 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
       click is the game's: the game's question `CONFIRM_BUY_BANK_TAB`, then its purchase. Our code never buys and
       never touches that button's click; only its `OnEnter`/`OnLeave` light our row. Without that template there is
       no row.
-  - **The window** (`Bags/Bags.lua`): the bar (`Bags.BAR`), the strip of the bags (kept: `strip`), the sidebar,
+  - **The window** (`Bags/Bags.lua`): the bar (`Bags.BAR`) on the journal's title line (anchored to `panel.title`,
+    above the head that drags the window; its round buttons `Bags.Round`: the icon in a circle, `Bags.SOFT` the
+    ink's alpha one, two, three pixels out, the highlight and checked light cut to the circle), the strip of the
+    bags at the body's top (kept: `strip`; hidden while the sidebar is folded, `Bags.Fold`, kept: `side`), the sidebar,
     the scroll area, the foot; the heads (a part's, a block's, a group member's) taking items and opening menus,
     the compact display's labels, the list's lines; the dropdown *View* (`WowStyle1DropdownTemplate`) with the
     displays, the orders and the switches (`showPinned`, `showRecent`, `merge`, `first`, the
@@ -517,7 +525,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     `Core.Confirm`. Each choice is kept at once and the window read and drawn anew (`Bags.Refresh`).
   - **The foot** (`Bags/Foot.lua`): the currencies watched (`GetBackpackCurrencyInfo`, `SetBackpackToken`), the
     gold (`Core.Coins`; its tooltip every character's from `Core.Data.Characters` and the total); the strip of
-    the bags (the game's `ItemButton` with its bag icons in a border of the bag's quality, its free slots on it;
+    the bags (the game's `ItemButton` in a pencil slot, its bag icon with the rounded corners of `Cells.ROUNDED` and
+    no border, an empty slot no icon, its free slots on it;
     the game's tooltip for a bag, *Equip Container* for an empty slot; `PickupBagFromSlot`, `PutItemInBag`,
     `PutItemInBackpack`, `PutKeyInKeyRing`, out of a fight); the bar's button for what can be done here (selling
     the junk after the game's `SELL_ALL_JUNK_ITEMS_POPUP` in `Core.Confirm`: the bags read anew, then

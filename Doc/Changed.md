@@ -6,6 +6,21 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Inventory: the bags' bar on the title line; borderless rounded icons; the sidebar folds (2026-10-23)
+- Items (`Bags/Cells.lua`, `Alts/Items.lua`): no border any more (`Cells.QUEST`, `NEUTRAL`, `EMPTY_EDGE` and the
+  setting `borders`, *Quality Borders*, gone); the icon, the empty slot's graphite, the highlight and the press share
+  the game's rounded icon mask (`Cells.ROUNDED`, `Interface\Common\common-iconmask`) through `Cells.Mask`;
+  `Cells.Round` swaps that mask for a circle (`Cells.CIRCLE`) in the list.
+- The bar (`Bags/Bags.lua`) on the journal's title line, anchored to `panel.title` above the head that drags the
+  window: the count after *Bags*, at the line's end (`Bags.BAR_END`) the junk marker, the bags' button and the
+  clean-up as round buttons (`Bags.Round`: the icon in a circle, a soft edge of the ink at `Bags.SOFT` one, two,
+  three pixels out; the clean-up a broom, the bank's too), then *View*. The strip of the bags at the body's top.
+- The sidebar folds (`Bags/Sidebar.lua`: `options.fold`, `Rail:Fold`, the arrow in its head, `Sidebars.FOLDED`):
+  folded, the strip of the bags is hidden too (`Bags.Fold`, kept as `store.bags.side`); the bags' button unfolds it.
+- The strip (`Bags/Foot.lua`): no border; a bag's icon rounded as the items', an empty bag slot no icon (the pencil
+  slot alone, not the game's empty bag picture).
+- `dev/tests/bags.lua`: the round clean-up, folding and unfolding, an empty bag slot without a picture.
+
 ### Inventory: the bags' categories share lines; one kind of empty slot (2026-10-23)
 - The grid (`Bags/Layout.lua`): the blocks flow side by side in bands, `BAND_GAP` apart, as many as fit across;
   each under its own head as wide as it is: its cells, then (where it takes items, `block.plus`) its empty slots,

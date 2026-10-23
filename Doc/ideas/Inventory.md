@@ -120,6 +120,12 @@ button over it (`src/Inventory/README.md`, *The bags*).
 category that takes items shows its items and one empty slot after them, more only to fill its last line, all
 alike: an item let go or clicked on any goes into that category.
 
+**Built (2026-10-23), Saneroki asked:** the items' icons without a border, their corners rounded by the game's own
+icon mask; the bar on the window's title line (the count after *Bags*, round buttons with a soft edge for the junk
+marker, the bags and the clean-up, then *View*); the sidebar folds to a narrow edge and the strip of the bags goes
+with it; an empty bag slot in the strip the pencil slot alone, a bag's icon rounded without a border. The setting
+*Quality Borders* is gone with the borders.
+
 **Next, each its own step:**
 - Spells that work on an item (disenchanting, picking a lock) right from the window: a secure button of the
   game's over the item, out of a fight.
