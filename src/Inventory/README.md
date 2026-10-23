@@ -121,7 +121,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     for the other way), drag it sideways to move it, drag its right edge to size it; a right click on the head
     chooses the columns, moves one, makes the icons round or puts it all back. A click on a category's head folds
     it, Shift and a click folds or unfolds them all.
-  - **"+" and the junk marker:** a *+* follows Pinned and every category that takes items: bring an item to it
+  - **"+" and the junk marker:** an empty slot (no sign in it, like any other) follows Pinned and every category that takes items: bring an item to it
     (picked up, or dragged) and it goes in; click it with nothing held, and the next item you click goes in (the
     rest of the window dims meanwhile; a right click or Esc stops). The coin on the bar is the junk marker: click
     it, then click items to mark them as junk or unmark them, and click it again to stop; an item brought to it
@@ -521,7 +521,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     Recent take nothing, Junk only before it, a group goes before or after a group as a whole.
   - **The drawing** (`Bags/Canvas.lua`): `ns.Canvas.New(child, owner)` a window's: the heads (a right click
     `Menus.Row`, an item let go `Menus.Drop`, in the list a click folds: `folded` in the owner's store), the compact
-    display's labels, a block's empty slots (a "+" in each, lit while an item is held over it), the list's lines
+    display's labels, a block's empty slots (no sign in them, lit while an item is held over it), the list's lines
     and the item buttons (the owner's pool), drawn as
     `Layout.Lay` places them (`canvas:Draw`). `Views.Build` takes a window's own store of blocks.
   - **The bank's window** (`Bags/Bank.lua`, the part `bank`, `Present` while `Contents.bankOpen`; the board leaves

@@ -862,10 +862,12 @@ Categories.Pin(2589, false)
 Categories.Assign(2589, nil)
 Bags.Refresh()
 
--- A category's +: an item brought to it goes in; clicked with nothing, the next item clicked does.
+-- A category's empty slot after its items (the "+"): an item brought to it goes in; clicked with nothing, the next item clicked does.
 local function PlusOf(key)
     for _, widget in ipairs(W.frames) do
-        if widget.sign and widget.key == key and widget:IsShown() then return widget end
+        if widget.canvas and widget:GetObjectType() == "Button" and widget.key == key and widget:IsShown() then
+            return widget
+        end
     end
 end
 local plus = PlusOf("trade")

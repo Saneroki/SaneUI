@@ -41,7 +41,6 @@ local function Fonts()
         part = Paper.Font("SaneUIBagsPart", 19, true),
         row = Paper.Font("SaneUIBagsRow", 14),
         rowColored = Paper.Outlined("SaneUIBagsRowColored", 14),
-        plus = Paper.Font("SaneUIBagsPlus", 27, true),
     }
     return fonts
 end
@@ -200,7 +199,7 @@ function Sheet:Label(place)
     label:Show()
 end
 
--- A block's empty slot, a "+" in it: an item brought to it (picked up and clicked here, or dragged here) goes into
+-- A block's empty slot, drawn as any empty slot (no sign in it, Saneroki, 2026-10-23): an item brought to it (picked up and clicked here, or dragged here) goes into
 -- its category (Pinned's: pinned; Junk's: marked as junk); clicked with nothing, the next item clicked does
 -- (Select.lua).
 local function PlusClick(plus)
@@ -209,7 +208,6 @@ local function PlusClick(plus)
 end
 
 local function PlusEnter(plus)
-    plus.sign:SetAlpha(1)
     plus.lit:SetShown(GetCursorInfo() == "item")
     GameTooltip:SetOwner(plus, "ANCHOR_TOP")
     local group = plus.key:match("^group:(.+)$")
@@ -219,7 +217,6 @@ local function PlusEnter(plus)
 end
 
 local function PlusLeave(plus)
-    plus.sign:SetAlpha(0.5)
     plus.lit:Hide()
     GameTooltip:Hide()
 end
@@ -233,11 +230,6 @@ local function MakePlus(canvas)
     plus.lit:SetAllPoints()
     plus.lit:SetColorTexture(shade[1], shade[2], shade[3], 0.25)
     plus.lit:Hide()
-    plus.sign = plus:CreateFontString(nil, "ARTWORK")
-    plus.sign:SetFontObject(Fonts().plus)
-    plus.sign:SetPoint("CENTER")
-    plus.sign:SetText("+")
-    plus.sign:SetAlpha(0.5)
     plus:SetScript("OnClick", function(self) ns.Safe("bags", PlusClick, self) end)
     plus:SetScript("OnReceiveDrag", function(self) ns.Safe("bags", PlusClick, self) end)
     plus:SetScript("OnEnter", function(self) ns.Safe("bags", PlusEnter, self) end)

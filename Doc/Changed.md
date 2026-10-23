@@ -86,6 +86,11 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
   square fills the screen, another there brings the window back (`Edge:Clicked`). The strips take left clicks only
   while it is on (`SetMouseClickEnabled`); Edge follows Core's own `changed` for it.
 
+### Inventory: no "+" in the empty slots (Saneroki, 2026-10-23)
+- A block's empty slot after its items (Pinned's, a category's) shows no "+" any more, like the empty slots of the
+  other views: `plus.sign` and the font `SaneUIBagsPlus` are gone; the slot still takes an item into its category.
+  The test finds these slots by their key.
+
 ### Inventory: empty slots at half strength (Saneroki, 2026-10-23)
 - An empty slot's pencil lines are drawn at `Cells.EMPTY_SLOT` 0.5, less distracting: empty cells (back to full
   when an item comes), a block's "+" slot (`Canvas`) and an empty bag slot in the strip (`Foot`).
