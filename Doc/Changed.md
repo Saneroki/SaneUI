@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: the game's scaling and fading kept off (Saneroki, 2026-10-23)
+- **Scale.lua:** its CVars (the game's nameplate scaling and fading) were set once at the login; the game's stored
+  settings and Core's Sync (a profile's game settings) come after it and could bring them back. Now they go through
+  `Sync.SetCVar` where Sync is there, and are set again `Scale.AGAIN` (3) seconds after `PLAYER_ENTERING_WORLD` and
+  `VARIABLES_LOADED` and after any `CVAR_UPDATE` of one of them, as the combat text does.
+- Tests: 178 checks.
+
 ### Nameplates: one heal number, not two (Saneroki, 2026-10-23)
 - `CombatText.lua`: the game's own heal numbers over units showed beside ours: the game's stored settings and Core's
   Sync (a profile's game settings) come after the login and turned `floatingCombatTextCombatHealing_v2` back on. The

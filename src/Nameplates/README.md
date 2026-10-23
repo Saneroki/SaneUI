@@ -221,8 +221,10 @@ fails, every plate is the game's own again.
   `Scale.Born`: a plate appearing grows from nothing within `Scale.GROW` (0.2 s), its alpha up within `Scale.SHOW`
   (0.12 s).
   Off, a plate taken back, standing down (`Scale.Leave`): the dress at `Scale.Full()` over the game's own scaling,
-  seen, the unit frame at 1, the CVars at their defaults (`C_CVar.GetCVarInfo`). CVars through `C_CVar.SetCVar`, only
-  those this client has, never in a fight (then at `PLAYER_REGEN_ENABLED`).
+  seen, the unit frame at 1, the CVars at their defaults (`C_CVar.GetCVarInfo`). CVars through Core's `Sync.SetCVar` where it
+  is there (else `C_CVar.SetCVar`), only those this client has, never in a fight (then at `PLAYER_REGEN_ENABLED`); set
+  again `Scale.AGAIN` (3) seconds after `PLAYER_ENTERING_WORLD` and `VARIABLES_LOADED` (the game's stored settings and
+  Sync's profile come after the login) and after a `CVAR_UPDATE` of one of them.
 - **Combat text** (`CombatText.lua`): each dress hears its unit's `UNIT_COMBAT` (in `Plate.EVENTS`; kind, flags,
   amount, school) and hands it to `CombatText.Hit` (the combat log is closed to addons in this client); your own
   through `Core.OnUnit("UNIT_COMBAT", "player")` while *Over your character* is on, onto a point of ours on `UIParent`
@@ -324,3 +326,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   measured anew once the world shows.
 - **2026-10-23:** the outline one screen pixel at every size (Saneroki): a plate is laid out anew when its size
   settles or has moved on by a tenth (`Plate.Refit`), not only at its first size.
+- **2026-10-23:** the game's scaling and fading kept off (Saneroki): its CVars set again after the game's stored
+  settings and a profile's, and whenever one changes.

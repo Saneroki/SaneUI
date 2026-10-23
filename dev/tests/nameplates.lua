@@ -762,6 +762,15 @@ W.Fire("PLAYER_REGEN_ENABLED")
 check(CVar("nameplateSelectedScale") == "1.2" and CVar("nameplateNotSelectedAlpha") == "0.5", "after it: the game's defaults")
 Core.Set(ns.name, "distance", true)
 check(CVar("nameplateSelectedScale") == "1", "on again")
+-- The game's stored settings or a profile put one back after the login: ours again a little later.
+C_CVar.SetCVar("nameplateSelectedScale", "1.2")
+W.Fire("CVAR_UPDATE", "nameplateSelectedScale", "1.2")
+W.Wait(Scale.AGAIN + 0.1)
+check(CVar("nameplateSelectedScale") == "1", "a CVar of ours changed by something else: set again a little later")
+C_CVar.SetCVar("nameplateNotSelectedAlpha", "0.5")
+W.Fire("PLAYER_ENTERING_WORLD")
+W.Wait(Scale.AGAIN + 0.1)
+check(CVar("nameplateNotSelectedAlpha") == "1", "the world shown: ours again a little later")
 
 -------------------------------------------------------------------------------
 --  Combat text over a plate and over your character

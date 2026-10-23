@@ -25,6 +25,10 @@ local _, ns = ...
 --
 --  Switched off (or the module standing down): the game's defaults come
 --  back, and every plate is at Scale.Full() over the game's own scaling.
+--  The CVars are set again a little after the game has its stored settings
+--  and Core's Sync has written a profile's (both come after the login and
+--  would bring the game's scaling back), and whenever one of them changes
+--  (CVAR_UPDATE).
 --  CVars this client does not have are left alone, and none is set in a
 --  fight (some of the game's nameplate CVars are locked then): that waits for
 --  the fight's end.
@@ -70,7 +74,12 @@ local function Apply(on)
         if now ~= nil then
             local wanted = on and value or default
             if wanted ~= nil and tostring(now) ~= wanted then
-                done = Core.Ask(C_CVar.SetCVar, name, wanted) ~= false and done
+                -- Through Core's Sync where it is there (it keeps a profile's game settings and knows which the game
+                -- takes), else the game's own.
+                local sync = Core.Sync
+                local set
+                if sync and sync.SetCVar then set = sync.SetCVar(name, wanted) else set = Core.Ask(C_CVar.SetCVar, name, wanted) end
+                done = set ~= false and done
             end
         end
     end
@@ -214,11 +223,26 @@ function Scale.GiveBack()
     Scale.Update()
 end
 
+-- Once more a little later: after the game's stored settings and Core's Sync have written theirs (both come after
+-- the login; Sync waits 2 seconds) and would bring the game's scaling and fading back, or after something else set
+-- one of ours.
+Scale.AGAIN = 3
+local again = Core.Later(function() Scale.Update() end, Scale.AGAIN)
+local watched = {} -- [lower-case CVar name] = true
+for name in pairs(Scale.CVARS) do watched[name:lower()] = true end
+
+local function Changed(name)
+    if type(name) == "string" and watched[name:lower()] then again() end
+end
+
 function Scale.Start()
     driver = CreateFrame("Frame")
     driver:Hide()
     driver:SetScript("OnUpdate", ns.Guard(Tick))
     Scale.driver = driver
     ns.On("PLAYER_REGEN_ENABLED", Fought)
+    ns.On("PLAYER_ENTERING_WORLD", again)
+    ns.On("VARIABLES_LOADED", again)
+    ns.On("CVAR_UPDATE", Changed)
     Scale.Update()
 end
