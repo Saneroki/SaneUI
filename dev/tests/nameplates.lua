@@ -188,7 +188,8 @@ local function Faded(plate, alpha)
 end
 
 for name, default in pairs({ nameplateMinScale = "1", nameplateMaxScale = "1", nameplateMaxScaleDistance = "10",
-                             nameplateMinScaleDistance = "10", nameplateSelectedScale = "1.2", nameplateMaxDistance = "1000" }) do
+                             nameplateMinScaleDistance = "10", nameplateSelectedScale = "1.2", nameplateMaxDistance = "1000",
+                             nameplateNotSelectedAlpha = "0.5", nameplateMinAlpha = "0.6" }) do
     W.cvarInfo[name] = { default = default }
 end
 W.LoadCore(root)
@@ -238,7 +239,7 @@ check(Text.Guess("nameplate1") == "8.8k" and dress.room.value == L(11),
     "the most hidden: room for a guess from its level and rank (22, a rare: about 4k)")
 check(dress.want == I + L(2) + G + L(10) + G + L(11) + I and dress._width == dress.want, "the bar as wide as its line, no wider")
 check(dress.value._width == 0 and dress.name._width == L(10), "the health as wide as it is (never cut short), the others their room")
-check(dress._scale == ns.Plate.SIZE, "our bar twice the size the plate's scale gives it")
+check(dress.born ~= nil and dress._alpha == 0, "a plate that has just appeared: it springs in, unseen at first")
 units.guess = { level = -1 }
 check(Text.Guess("guess") == "8.88m", "a boss's in millions")
 units.guess = { level = 30, player = true }
@@ -552,18 +553,50 @@ W.Wait(0)
 -------------------------------------------------------------------------------
 --  Smaller far away: the game's CVars, its defaults back when off
 -------------------------------------------------------------------------------
-check(W.cvars.nameplateMinScale == "0.375" and W.cvars.nameplateMaxScale == "1.5" and W.cvars.nameplateMinScaleDistance == "0"
-    and W.cvars.nameplateMaxScaleDistance == "0" and W.cvars.nameplateSelectedScale == "1",
-    "the game's scaling a straight line from one and a half at your feet to a quarter of that at the farthest, nothing else in it")
+check(W.cvars.nameplateMinScale == "0.25" and C_CVar.GetCVar("nameplateMaxScale") == "1" and W.cvars.nameplateMinScaleDistance == "0"
+    and W.cvars.nameplateMaxScaleDistance == "0" and W.cvars.nameplateSelectedScale == "1"
+    and W.cvars.nameplateNotSelectedAlpha == "1" and W.cvars.nameplateMinAlpha == "1",
+    "the game's scaling a straight line from 1 at your feet to a quarter at the farthest, nothing else in it, none of its fading")
+local function Near(a, b) return math.abs(a - b) < 1e-6 end
+check(Near(Scale.Size(0), 1) and Near(Scale.Size(10), 1) and Near(Scale.Size(25), 0.75) and Near(Scale.Size(40), 0.5)
+    and Near(Scale.Size(50), 0.375) and Near(Scale.Size(60), 0.25) and Near(Scale.Size(500), 0.25),
+    "full within 10 yards, half at 40, a quarter at 60, straight between")
+check(Near(Scale.Distance(1, 60), 0) and Near(Scale.Distance(0.625, 60), 30) and Near(Scale.Distance(0.25, 60), 60),
+    "the distance read back from the game's scale")
+check(Scale.Fade(50, 60) == 1 and Near(Scale.Fade(57.5, 60), 0.5) and Scale.Fade(60, 60) == 0, "fading out over the last 5 yards")
+local first, alpha = Scale.Spring(0)
+local swing = 0
+for t = 0, Scale.SPRING.TIME, 0.01 do swing = math.max(swing, (Scale.Spring(t))) end
+check(Near(first, Scale.SPRING.FROM) and alpha == 0 and swing > 1.03 and Scale.Spring(Scale.SPRING.TIME) == 1,
+    "the spring: from smaller, swinging past its size, settled")
+-- The game puts the wolf 30 yards away (its scale 0.625): ours at two thirds of full there, over the game's scale.
+local tick = Scale.driver:GetScript("OnUpdate")
+W.clock = W.clock + 1
+plates.nameplate1:SetScale(0.625)
+tick(Scale.driver, 1)
+check(Scale.driver:IsShown() and Near(dress._scale, Scale.FULL * (2 / 3) / 0.625) and Near(plates.nameplate1.UnitFrame._scale, (2 / 3) / 0.625)
+    and dress._alpha == 1 and dress.born == nil, "30 yards: two thirds of full, the game's unit frame along, opaque, sprung")
+units.target, plates.target = nil, nil
+plates.nameplate1:SetScale(0.25 + 0.75 * 2.5 / 60) -- 57.5 yards
+tick(Scale.driver, 1)
+check(Near(dress._alpha, 0.5), "near the farthest reach: fading out")
+units.target, plates.target = units.nameplate1, plates.nameplate1
+tick(Scale.driver, 1)
+check(dress._alpha == 1, "your target: never faded")
+plates.nameplate1:SetScale(1.2) -- the game's target a little larger: still full, nothing larger
+tick(Scale.driver, 1)
+check(Near(dress._scale * 1.2, Scale.FULL), "a plate the game scales up shows no larger")
+plates.nameplate1:SetScale(1)
 W.combat = true
 Core.Set(ns.name, "distance", false)
-check(W.cvars.nameplateMinScale == "0.375", "off in a fight: the CVars wait")
+check(W.cvars.nameplateMinScale == "0.25" and dress._scale == Scale.FULL and plates.nameplate1.UnitFrame._scale == 1
+    and not Scale.driver:IsShown(), "off in a fight: the plates without our curve at once, the CVars wait")
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
-check(W.cvars.nameplateMinScale == "1" and W.cvars.nameplateMinScaleDistance == "10" and W.cvars.nameplateSelectedScale == "1.2",
-    "after it: the game's defaults")
+check(W.cvars.nameplateMinScale == "1" and W.cvars.nameplateMinScaleDistance == "10" and W.cvars.nameplateSelectedScale == "1.2"
+    and W.cvars.nameplateNotSelectedAlpha == "0.5", "after it: the game's defaults")
 Core.Set(ns.name, "distance", true)
-check(W.cvars.nameplateMinScale == "0.375", "on again")
+check(W.cvars.nameplateMinScale == "0.25" and Scale.driver:IsShown(), "on again")
 
 -------------------------------------------------------------------------------
 --  Plates going, plates the game keeps, standing down
@@ -590,7 +623,8 @@ ns.StandDown("a test")
 check(ns.off and not dress:IsShown() and not friend:IsShown() and Faded(plates.nameplate1, 1) and Faded(plates.nameplate2, 1)
     and plates.nameplate2.UnitFrame._alpha == 1, "standing down, every plate is the game's own again, though a step of ours failed")
 check(Core.errors["Nameplates: auras"] ~= nil, "the step that failed is noted")
-check(W.cvars.nameplateMinScale == "1", "the game's scaling by distance its own again")
+check(W.cvars.nameplateMinScale == "1" and plates.nameplate1.UnitFrame._scale == 1,
+    "the game's scaling by distance its own again, its unit frames at their own scale")
 bar:Hide()
 bar:Show()
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")

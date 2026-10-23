@@ -58,11 +58,14 @@ fails, every plate is the game's own again.
   picks buffs for its own plates. Right of the bar up to two crowd controls on it, by
   anyone; your own show there, not twice. Hover one for its tooltip, as on the game's plates.
 - **Raid marker:** in the line (none on a player you could fight, as on the game's plates).
-- **Smaller far away:** one and a half times their size at your feet, half that at 40 yards, a quarter of it at 60, the farthest the game
-  shows plates of units you have not targeted (its limit, however far its setting says), in one straight line, by
-  the game's own scaling. Your target's plate, which the game shows farther, stays at that quarter beyond.
+- **Size by distance:** one control over every plate's size and transparency, so nothing else pulls at them:
+  full size within 10 yards, gradually down to half at 40 yards, then to a quarter at 60, the farthest the game
+  shows plates of units you have not targeted. Your target's plate, which the game shows farther, stays at that
+  quarter beyond. A plate springs in when it appears (a little small, swinging past its size, settling), and one
+  you have not targeted fades out over the last 5 yards before the game takes it away. The game's larger target,
+  larger elites and its own fading of plates are off meanwhile (fading behind walls stays the game's).
 - **Settings:** *Sane UI > Nameplates*: *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
-  *Combo points in your target's bar*, *Only players you know*, *Smaller far away*. The plates' size, style and
+  *Combo points in your target's bar*, *Only players you know*, *Size by distance*. The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
 
 ## Technical details
@@ -70,8 +73,7 @@ fails, every plate is the game's own again.
   at `NAME_PLATE_UNIT_ADDED`; none for a forbidden plate or your own), a child of the plate (its place, scale and
   fading are ours too), centred on the plate's `UnitFrame.HealthBarsContainer`, made once and kept: the game hands
   plates out again and takes its unit frames from a pool, so each add looks at the plate's unit frame anew (read
-  with `rawget`, never written); `Plate.SIZE` (2) times the size the plate's scale gives it (`SetScale`); as high as
-  its line needs (`Text.Height`: the font's height, `Text.PAD` over and
+  with `rawget`, never written); its size set by `Scale.lua`; as high as its line needs (`Text.Height`: the font's height, `Text.PAD` over and
   under, a pixel of border each) and as wide as the line wants (`Plate.Place`, at every fit and line change; the
   row's width, read in the dress's units, until the line is laid out). While ours shows, the game's parts in `Plate.HIDDEN` (its bar row,
   `name`, `AurasFrame`, `RaidTargetFrame`, `ClassificationFrame`, `LevelFrame`, `PlayerLevelDiffFrame`,
@@ -171,13 +173,23 @@ fails, every plate is the game's own again.
   *i* from *i* - 1 to *i*, each given `GetComboPoints("player", "target")` as the game gives it (secret or not):
   the bar clamps it, so a segment is full from its point on and empty below it, nothing computed with the count.
   The bar's inner caps mask every segment (they reach the first and the last).
-- **Scale** (`Scale.lua`): the game's CVars (`Scale.CVARS`) make its own scaling by distance one straight line from
-  `Scale.NEAR` (1.5) at no distance (`nameplateMaxScale`, `nameplateMaxScaleDistance` 0) to `Scale.FAR` (a quarter of
-  it) at the farthest reach
-  (`nameplateMinScale`, `nameplateMinScaleDistance` 0), with nothing else in it (`nameplateSelectedScale`,
-  `nameplateLargerScale` 1), while *Smaller far away* is on; their defaults (`C_CVar.GetCVarInfo`) when it is off or
-  the module stands down. Through `C_CVar.SetCVar`, only those this client has, never in a fight (then at
-  `PLAYER_REGEN_ENABLED`). Nothing of ours scales a plate.
+- **Scale** (`Scale.lua`): the one hand on every plate's size and transparency. The game does not tell addons how
+  far a unit is, but scales its plates by distance in a straight line: its CVars (`Scale.CVARS`) make that line run
+  from 1 at no distance (`nameplateMaxScale`, `nameplateMaxScaleDistance` 0) to `Scale.LINE` (0.25) at the farthest
+  reach (`nameplateMinScale`, `nameplateMinScaleDistance` 0), with nothing else in it (`nameplateSelectedScale`,
+  `nameplateLargerScale` 1) and its fading off (`nameplateMinAlpha`, `MaxAlpha`, `SelectedAlpha`, `NotSelectedAlpha`
+  1; the occluded one stays). A driver frame's guarded `OnUpdate` (every `Scale.EVERY` 0.05 s while plates show,
+  every frame while one springs; hidden otherwise) reads each plate's `GetScale` back to its distance
+  (`Scale.Distance`, over `nameplateMaxDistance` held to `Scale.FAR`, 60) and sets our dress to `Scale.FULL` (3)
+  times its share on `Scale.CURVE` (1 to 10 yards, 0.5 at 40, 0.25 at 60) over the game's scale, the game's unit
+  frame to the share alone (its cast bar shrinks along), the dress's alpha to `Scale.Fade` (the last `Scale.FADE`
+  5 yards; never for your target) times the spring's. `Scale.Born` (a plate added) starts `Scale.Spring`: from
+  `SPRING.FROM` (0.6) of its size, a damped swing past it, settled in `SPRING.TIME` (0.45 s), alpha up in
+  `SPRING.SHOW`. Changes under `Scale.STEP` are left alone. A plate taken back, the setting off, standing down
+  (`Scale.Leave`): the dress at `Scale.FULL` over the game's own scaling, opaque, the unit frame at 1, the CVars at
+  their defaults (`C_CVar.GetCVarInfo`). CVars through `C_CVar.SetCVar`, only those this client has, never in a
+  fight (then at `PLAYER_REGEN_ENABLED`). The game removes a plate at once, so only fading out near the reach shows
+  a plate going.
 - **Standing down** (`ns.GiveBack`): the game's scaling back, the game's unit frames at alpha 1 and their parts
   too on every unit frame ours ever lay over (the game hands them out again from its pool), then every dress off,
   each by itself; a dress taken off gives the game's parts back first, its bar as made and its texts empty, and
@@ -196,7 +208,7 @@ fails, every plate is the game's own again.
 | `Auras.lua` | Your debuffs above the bar, a foe's buffs left of it, crowd control right of it, in the game's own aura containers |
 | `Marks.lua` | The raid marker, in the line |
 | `Resource.lua` | Your combo points on the power line of your target's bar |
-| `Scale.lua` | Plates smaller far away (the game's own scaling, by its CVars) |
+| `Scale.lua` | Every plate's size and transparency by distance (read from the game's own scaling), springing in, fading out |
 | `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it; strangers' plates hidden |
 
 ## Not there yet
@@ -235,3 +247,6 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   larger at your feet, the same straight line down to a quarter of that at 60 yards.
 - **2026-10-23:** our bar twice the size (Saneroki); the health's room from its most or a guess by level and rank,
   no more room for "888.8k"; the ruler on a frame always shown.
+- **2026-10-23:** one control over size and transparency (Saneroki): full within 10 yards, half at 40, a quarter at
+  60, read from the game's scaling and set by us alone; plates spring in and fade out at the edge; the game's larger
+  target and its fading off.

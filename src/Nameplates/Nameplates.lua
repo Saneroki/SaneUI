@@ -24,7 +24,7 @@ local ADDON, ns = ...
 --                  left of it, crowd control right of it, in the game's own aura
 --                  containers (hidden values and all)
 --    Marks.lua     the raid marker, in the line
---    Scale.lua     plates smaller far away (the game's CVars for it)
+--    Scale.lua     every plate's size and transparency by distance, springing in
 --  Players you cannot attack and do not know show no plate (Plate.lua).
 --  Standing down, every plate is the game's own again (GiveBack).
 -------------------------------------------------------------------------------
@@ -50,8 +50,8 @@ ns.TEXT = {
     resourceTip = "While you have combo points to build (a rogue, a druid in cat form), they show in your target's health bar, on its power line, one segment each.",
     players = "Only players you know",
     playersTip = "Plates of players you cannot attack show only for your group, your guild, your friends and your target. Players you can attack always have one.",
-    distance = "Smaller far away",
-    distanceTip = "Nameplates are largest at your feet, half that at 40 yards and a quarter at 60, the farthest the game shows them.",
+    distance = "Size by distance",
+    distanceTip = "Nameplates full size within 10 yards, half at 40, a quarter at 60, the farthest the game shows them; they spring in when they appear and fade out at the edge. Off: the game's own scaling and fading."
 }
 
 -- What is told when the module stands down (Core's StandDown).

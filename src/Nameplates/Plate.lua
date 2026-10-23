@@ -40,8 +40,6 @@ ns.Plate = Plate
 Plate.HIDDEN = { "HealthBarsContainer", "name", "AurasFrame", "RaidTargetFrame", "ClassificationFrame", "LevelFrame",
                  "PlayerLevelDiffFrame", "selectionHighlight", "aggroHighlight", "aggroHighlightBase",
                  "aggroHighlightAdditive" }
--- Our bar, its line and auras this many times the size the plate's scale gives them.
-Plate.SIZE = 2
 -- What each dress hears of its own unit.
 Plate.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_NAME_UPDATE", "UNIT_FACTION", "UNIT_FLAGS",
                  "UNIT_CLASSIFICATION_CHANGED", "UNIT_LEVEL", "UNIT_THREAT_LIST_UPDATE", "UNIT_POWER_UPDATE",
@@ -49,6 +47,7 @@ Plate.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_NAME_UPDATE", "UNIT_FACT
 
 local dresses = {} -- [the game's plate] = our dress on it
 local shown = {}   -- [unit token] = the dress on that unit's plate, while the game shows it
+Plate.shown = shown -- read by Scale.lua (never written there)
 local owners = setmetatable({}, { __mode = "k" }) -- [the game's unit frame] = the dress over it now
 local bars = setmetatable({}, { __mode = "k" })   -- [the game's health bar] = its unit frame, once followed
 local gear -- asks for players' item levels again, a little later (made below, with Gear)
@@ -173,7 +172,7 @@ local OnSizeChanged = ns.Guard(Fit)
 local function Make(plate)
     local dress = CreateFrame("Frame", nil, plate)
     dress.plate, dress.edge = plate, 0
-    dress:SetScale(Plate.SIZE)
+    dress:SetScale(ns.Scale.FULL) -- its size on the curve once Scale.lua has looked
     ns.Bar.Make(dress)
     ns.Text.Make(dress)
     ns.Marks.Make(dress)
@@ -207,6 +206,7 @@ end
 local function Off(dress)
     if dress.unit and shown[dress.unit] == dress then shown[dress.unit] = nil end
     dress:UnregisterAllEvents()
+    ns.Safe("scale", ns.Scale.Leave, dress) -- the game's unit frame at its own scale, before it is let go
     local frame = dress.frame
     dress.unit, dress.frame = nil, nil
     dress:Hide()
@@ -241,6 +241,7 @@ local function Added(unit)
     Wear(dress) -- shown before it is filled: its texts measured while they show
     Fill(dress)
     Wear(dress)
+    ns.Scale.Born(dress) -- it springs in
     ns.Resource.Again()
     if dress.room.gear == nil and Plain(UnitIsPlayer(unit)) then gear() end
 end
@@ -250,6 +251,7 @@ local function Removed(unit)
     if not dress then return end
     Off(dress)
     ns.Resource.Again()
+    ns.Scale.Again()
 end
 
 -- Target or focus changed: every ring as it is now, and every plate shown or not (your target always is).
@@ -331,6 +333,7 @@ end
 function Plate.GiveBack()
     for _, frame in pairs(bars) do
         ns.Safe("give back", frame.SetAlpha, frame, 1)
+        ns.Safe("give back", frame.SetScale, frame, 1)
         ns.Safe("give back", Parts, frame, 1)
     end
     for _, dress in pairs(dresses) do
