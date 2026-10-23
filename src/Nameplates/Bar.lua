@@ -52,7 +52,8 @@ Bar.GLOW = { 1, 0.08, 0.05 }
 -- Bar.HALO round plates a screen pixel apart, each reaching a pixel farther; Bar.Fade says how solid the glow is in
 -- each pixel's band (1 the innermost, falling off softly), and each plate is as strong as that band needs over the
 -- plates beyond it. The plates' strengths are their vertex colours' alpha, which a texture's own alpha would
--- replace: so they stand on a frame of their own (dress.glow), and only that frame's alpha switches the glow.
+-- replace: so they stand on a frame of their own (dress.glow), under the outline's, and only that frame's alpha
+-- switches the glow.
 Bar.HALO = 6
 function Bar.Fade(band)
     local share = 1 - (band - 1) / Bar.HALO
@@ -124,13 +125,15 @@ local function Around(texture, dress, reach, height)
     Bar.SizeCaps(texture.caps, height + 2 * reach)
 end
 
--- The bar's pieces on the dress: the glow, the rank's line and the border behind, the status bar inside them with
--- its background, fill and power line.
+-- The bar's pieces on the dress, each layer on a frame of its own one level above the last, so none can cover the
+-- one meant above it: the glow, then the rank's line and the border, then the status bar with its background, fill
+-- and power line (and the line of texts above it all, Text.lua).
 function Bar.Make(dress)
-    -- The glow's frame, a level under the dress's: behind the border and the bar.
+    local level = Plain(dress:GetFrameLevel()) or 1
+    -- The glow: its plates' strengths are their vertex alpha, so only its frame's alpha switches it.
     local holder = CreateFrame("Frame", nil, dress)
     holder:SetAllPoints(dress)
-    holder:SetFrameLevel(math.max((Plain(dress:GetFrameLevel()) or 1) - 1, 0))
+    holder:SetFrameLevel(level + 1)
     holder:SetAlpha(0)
     dress.glow, dress.halo = holder, {}
     for band = 1, Bar.HALO do
@@ -138,10 +141,15 @@ function Bar.Make(dress)
         glow:SetVertexColor(Bar.GLOW[1], Bar.GLOW[2], Bar.GLOW[3], Bar.Strength(band))
         dress.halo[band] = glow
     end
-    dress.rankLine = Plate(dress, -4)
+    -- The outline over the glow: the rank's line behind the border.
+    local edges = CreateFrame("Frame", nil, dress)
+    edges:SetAllPoints(dress)
+    edges:SetFrameLevel(level + 2)
+    dress.rankLine = Plate(edges, -4)
     dress.rankLine:Hide()
-    dress.border = Plate(dress, -3)
+    dress.border = Plate(edges, -3)
     local health = CreateFrame("StatusBar", nil, dress)
+    health:SetFrameLevel(level + 3)
     health:SetStatusBarTexture(Bar.FILL)
     health:SetMinMaxValues(0, 1)
     health:SetValue(1)

@@ -25,6 +25,17 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
 - Junk's waste bin is the bin's drawing alone, as large as a slot (`Sheet:Bin`): no pencil slot around it, no inset
   (`Canvas.BIN` is gone). The shade behind it still lights when an item is held over it.
 
+### Nameplates: the glow under the outline; even size changes; half the size; close foes not red (Saneroki, 2026-10-23)
+- **Layers** (`Bar.lua`): the glow, the outline (rank line and border) and the bar each on a frame of its own one level
+  above the last; the glow's frame had been asked one level under the dress, which can come out above the outline.
+- **Even** (`Scale.lua`): no spring; a plate moves to its size at `Scale.SPEED` (1.5 shares a second) in a straight
+  line, grows in from nothing within `Scale.GROW` (0.2 s).
+- **Half the size:** *Nameplate size* under a new key (`plateSize`, 125%, 50 to 300), so the old 250% saved goes.
+- **Red border** (`Range.lua`): a spell with a least range (Charge, Auto Shot) said no to a foe standing too close, so
+  close foes turned red; its no counts for nothing now. A plate's red goes with its unit. `/sane range` prints the
+  game's answers for your target.
+- Tests: 138 checks.
+
 ### Nameplates: distance from your character, size by it alone, no fading (Saneroki, 2026-10-23)
 - **Why:** the game's nameplate scaling, read back as the distance, measures from the camera: near plates read far
   (faded, small) and the selected one huge. Now nothing of the game's sizes or fades a plate.

@@ -7,7 +7,7 @@ local _, ns = ...
 --  then down to half of it at forty yards and a quarter at sixty
 --  (Scale.CURVE, straight between). Selected or not, rank, anything else:
 --  the same size at the same distance. No transparency of ours, but a plate
---  appearing springs in from nothing.
+--  appearing grows in from nothing.
 --
 --  The distance is Range.lua's (from your character, never the camera). The
 --  game's own scaling of plates (by the camera's distance, a larger target,
@@ -15,10 +15,10 @@ local _, ns = ...
 --  and whatever scale the game still gives a plate is undone (our size over
 --  the plate's own scale), so ours is the only one.
 --
---  Each plate moves to its size on a spring (Scale.SPRING: a little past it,
---  then settling), from nothing when it appears, from its last size when its
---  distance changes. A driver frame looks at the distances every
---  Range.EVERY seconds and moves the springs every frame while one moves;
+--  Each plate moves to its size at an even pace, in a straight line
+--  (Scale.SPEED), from its last size when its distance changes, from nothing
+--  when it appears (within Scale.GROW). A driver frame looks at the distances
+--  every Range.EVERY seconds and moves the plates every frame while one moves;
 --  hidden while no plate shows. The game's unit frame on a plate (its cast
 --  bar) is scaled along, without our size setting.
 --
@@ -33,12 +33,11 @@ local Plain = Core.Plain
 local Scale = {}
 ns.Scale = Scale
 
-Scale.SIZE = 250 -- the setting Nameplate size at first: our bar's size within ten yards, in percent
+Scale.SIZE = 125 -- the setting Nameplate size at first: our bar's size within ten yards, in percent
 Scale.CURVE = { { 10, 1 }, { 40, 0.5 }, { 60, 0.25 } } -- { yards, share of the full size }, straight between
--- The spring a plate moves on: its pull to its size, its damping (a little past it, then settling), and when it is
--- still (closer than REST, slower than REST).
-Scale.SPRING = { PULL = 170, DAMP = 15, REST = 0.002 }
-Scale.SHOW = 0.12 -- seconds a plate takes from unseen to seen as it appears
+Scale.SPEED = 1.5  -- how fast a plate moves to a new size: shares of the full size a second, in a straight line
+Scale.GROW = 0.2   -- seconds a plate takes to grow from nothing as it appears
+Scale.SHOW = 0.12  -- seconds a plate takes from unseen to seen as it appears
 -- The game's CVars and ours for them: none of its scaling, none of its fading (but behind walls, which stays its own).
 Scale.CVARS = {
     nameplateMaxScale = "1",
@@ -54,11 +53,10 @@ Scale.CVARS = {
 local waiting = false
 local active = false -- the CVars ours: the plates on our curve
 local driver
-local moving = 0     -- plates on their spring now
 
 -- Our bar's size within ten yards, from the setting.
 function Scale.Full()
-    return ((ns.options or {}).size or Scale.SIZE) / 100
+    return ((ns.options or {}).plateSize or Scale.SIZE) / 100
 end
 
 -- Each CVar ours (on) or the game's default (off), where this client has it. Whether all those there are ours.
@@ -96,24 +94,25 @@ local function Show(dress, share)
     if dress.frame then dress.frame:SetScale(math.max(share / own, 0.001)) end
 end
 
--- One step of a plate's spring towards its size; whether it still moves.
+-- One step of a plate towards its size, at an even pace (faster while it grows in); whether it still moves.
 function Scale.Step(dress, elapsed)
-    local spring = Scale.SPRING
     local aim = dress.aim or 1
-    local now, speed = dress.now or aim, dress.speed or 0
-    elapsed = math.min(elapsed, 0.05) -- a long frame does not throw it
-    speed = speed + (spring.PULL * (aim - now) - spring.DAMP * speed) * elapsed
-    now = now + speed * elapsed
-    local still = math.abs(aim - now) < spring.REST and math.abs(speed) < spring.REST
-    if still then now, speed = aim, 0 end
-    dress.now, dress.speed = now, speed
+    local now = dress.now or aim
+    local pace = dress.growing and aim / Scale.GROW or Scale.SPEED
+    local step = pace * math.min(elapsed, 0.1)
+    if math.abs(aim - now) <= step then
+        now, dress.growing = aim, nil
+    else
+        now = now + (aim > now and step or -step)
+    end
+    dress.now = now
     Show(dress, now)
     if dress.showing then
         dress.showing = math.min(dress.showing + elapsed / Scale.SHOW, 1)
         dress:SetAlpha(dress.showing)
         if dress.showing >= 1 then dress.showing = nil end
     end
-    return not still or dress.showing ~= nil
+    return now ~= aim or dress.showing ~= nil
 end
 
 -- Every plate's size aimed at its distance's (Range.lua's; kept where it could not be told), and shown anew where
@@ -143,16 +142,16 @@ local function Tick(_, elapsed)
     end
 end
 
--- The driver running while plates show (it looks at their distances and reaches, and moves their springs).
+-- The driver running while plates show (it looks at their distances and reaches, and moves the plates).
 function Scale.Again()
     if not driver then return end
     driver:SetShown(not ns.off and next(ns.Plate.shown) ~= nil)
 end
 
--- A plate that has just appeared: it springs in from nothing, to the size of its distance once that is known.
+-- A plate that has just appeared: it grows in from nothing, to the size of its distance once that is known.
 function Scale.Born(dress)
     if not active or ns.off then return end
-    dress.now, dress.speed, dress.aim, dress.moving = 0, 0, Scale.Size(dress.yards or 0), true
+    dress.now, dress.aim, dress.moving, dress.growing = 0, Scale.Size(dress.yards or 0), true, true
     dress.showing = 0
     dress:SetAlpha(0)
     Show(dress, 0)
@@ -165,7 +164,7 @@ function Scale.Leave(dress)
     if dress.frame then dress.frame:SetScale(1) end
     dress:SetScale(Scale.Full())
     dress:SetAlpha(1)
-    dress.now, dress.speed, dress.aim, dress.moving, dress.showing, dress.yards = nil, nil, nil, nil, nil, nil
+    dress.now, dress.aim, dress.moving, dress.growing, dress.showing, dress.yards = nil, nil, nil, nil, nil, nil
 end
 
 local function Fought()

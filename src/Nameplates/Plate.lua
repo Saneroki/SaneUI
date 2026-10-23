@@ -208,6 +208,7 @@ local function Off(dress)
     if dress.unit and shown[dress.unit] == dress then shown[dress.unit] = nil end
     dress:UnregisterAllEvents()
     ns.Safe("scale", ns.Scale.Leave, dress) -- the game's unit frame at its own scale, before it is let go
+    dress.out = nil -- the next unit's reach is its own
     local frame = dress.frame
     dress.unit, dress.frame = nil, nil
     dress:Hide()
@@ -242,7 +243,7 @@ local function Added(unit)
     Wear(dress) -- shown before it is filled: its texts measured while they show
     Fill(dress)
     Wear(dress)
-    ns.Scale.Born(dress) -- it springs in
+    ns.Scale.Born(dress) -- it grows in
     ns.Resource.Again()
     if dress.room.gear == nil and Plain(UnitIsPlayer(unit)) then gear() end
 end

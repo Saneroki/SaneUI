@@ -26,7 +26,7 @@ local ADDON, ns = ...
 --    Marks.lua     the raid marker, in the line
 --    Range.lua     how far each plate's unit is from your character, whether
 --                  your attacks reach it (its border red when not)
---    Scale.lua     every plate's size by that distance alone, on a spring
+--    Scale.lua     every plate's size by that distance alone, moving evenly
 --  Players you cannot attack and do not know show no plate (Plate.lua).
 --  Standing down, every plate is the game's own again (GiveBack).
 -------------------------------------------------------------------------------
@@ -55,7 +55,7 @@ ns.TEXT = {
     players = "Only players you know",
     playersTip = "Plates of players you cannot attack show only for your group, your guild, your friends and your target. Players you can attack always have one.",
     distance = "Size by distance",
-    distanceTip = "Nameplates by their distance from your character alone: full size within 10 yards, half at 40, a quarter at 60; they spring in when they appear. Off: the game's own scaling and fading.",
+    distanceTip = "Nameplates by their distance from your character alone: full size within 10 yards, half at 40, a quarter at 60; they grow in when they appear. Off: the game's own scaling and fading.",
     size = "Nameplate size",
     sizeTip = "How large nameplates are within 10 yards.",
 }
@@ -74,14 +74,14 @@ local OPTIONS = {
     { key = "range", default = true, text = ns.TEXT.range, tip = ns.TEXT.rangeTip },
     { key = "players", default = true, text = ns.TEXT.players, tip = ns.TEXT.playersTip },
     { key = "distance", default = true, text = ns.TEXT.distance, tip = ns.TEXT.distanceTip },
-    { key = "size", default = 250, min = 100, max = 500, step = 10, unit = "%", text = ns.TEXT.size, tip = ns.TEXT.sizeTip },
+    { key = "plateSize", default = 125, min = 50, max = 300, step = 5, unit = "%", text = ns.TEXT.size, tip = ns.TEXT.sizeTip },
 }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "resource" then
         ns.Guarded(ns.Resource.Update)
     elseif key == "range" then
         ns.Guarded(ns.Range.Look)
-    elseif key == "distance" or key == "size" then
+    elseif key == "distance" or key == "plateSize" then
         ns.Guarded(ns.Scale.Update)
     else
         ns.Guarded(ns.Plate.Refresh)

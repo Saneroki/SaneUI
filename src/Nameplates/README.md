@@ -61,9 +61,9 @@ fails, every plate is the game's own again.
 - **Raid marker:** outside the bar, at its left (none on a player you could fight, as on the game's plates). A
   foe's buffs stand left of the icons there.
 - **Size by distance:** a plate's size depends on how far its unit is from your character and on nothing else
-  (selected or not, rank, the camera): *Nameplate size* (250% at first) within 10 yards, gradually down to half of it
+  (selected or not, rank, the camera): *Nameplate size* (125% at first) within 10 yards, gradually down to half of it
   at 40 yards, then to a quarter at 60, the farthest the game shows plates of units you have not targeted. A plate
-  springs in from nothing when it appears, and moves to a new size on a spring. No transparency of ours. The game's
+  grows in from nothing when it appears, and moves to a new size evenly, in a straight line. No transparency of ours. The game's
   own scaling (by the camera) and fading are off meanwhile (fading behind walls stays the game's).
 - **Settings:** *Sane UI > Nameplates*: *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
   *Combo points in your target's bar*, *Out of reach: red border*, *Only players you know*, *Size by distance*, *Nameplate size*. The plates' size, style and
@@ -93,7 +93,8 @@ fails, every plate is the game's own again.
   the game's unit frame on the plate at alpha 0, ours hidden; alpha 1 again with any change, when the plate goes
   and when the module stands down. Where the game does not answer (a hidden value), the plate shows. The plate
   still takes the game's clicks (its place is the game's).
-- **The bar** (`Bar.lua`): from the back, `Bar.HALO` (6) glow plates in `Bar.GLOW` on a frame of their own a level
+- **The bar** (`Bar.lua`): each layer on a frame of its own one level above the last (the glow, the outline, the
+  bar; the line of texts three above the bar), so the glow never covers the outline. From the back, `Bar.HALO` (6) glow plates in `Bar.GLOW` on a frame of their own a level
   under the dress (`dress.glow`, whose alpha alone switches the glow: a texture's own alpha would replace its vertex
   alpha), reaching 1 to 6 screen pixels beyond the rank's line, each as strong (`Bar.Strength`) as its band needs so
   that together they are solid at the bar's edge and fade to nothing outwards (`Bar.Fade`: one minus the band's
@@ -174,9 +175,11 @@ fails, every plate is the game's own again.
   friends; none with a least range), made anew at `SPELLS_CHANGED`. The first rung that reaches the unit bounds the
   distance from above, the last that did not from below, and the unit stands between (`Range.Check`); none reaches:
   between the last and `Range.FAR` (60). Where nothing answers (an item the game will not check, on a foe in a
-  fight perhaps), the last distance stays. Out of reach (`dress.out`): a foe one of your harmful spells says no for
-  and none yes; its border red (`Plate.Light`, `Bar.Border`'s `out`, `Bar.FAR`). `Range.Look` does every plate, every
-  `Range.EVERY` (0.2) seconds, from Scale.lua's driver.
+  fight perhaps), the last distance stays. Out of reach (`dress.out`): a foe one of your harmful spells without a least range says no for
+  and none yes (a spell with a least range, Charge or Auto Shot, says no to a foe too close as well, so its no counts
+  for nothing); cleared when the plate goes; its border red (`Plate.Light`, `Bar.Border`'s `out`, `Bar.FAR`). `Range.Look` does every plate, every
+  `Range.EVERY` (0.2) seconds, from Scale.lua's driver. `/sane range` prints what the game answers for your target:
+  the distance found, and each of your attacks with its reach and the game's answer.
 - **Combo points** (`Resource.lua`): rogues and druids only listen (`UNIT_POWER_UPDATE` with `COMBO_POINTS`,
   `UNIT_MAXPOWER`, `UNIT_DISPLAYPOWER` of the player; `PLAYER_TARGET_CHANGED`, `COMBO_TARGET_CHANGED`; a plate
   coming or going, a power line coming or going), once a frame (`Core.Later`). Shown while the game gives combo
@@ -188,14 +191,15 @@ fails, every plate is the game's own again.
   the bar clamps it, so a segment is full from its point on and empty below it, nothing computed with the count.
   The bar's inner caps mask every segment (they reach the first and the last).
 - **Scale** (`Scale.lua`): a plate's size from its distance alone (`Range.lua`): `Scale.Full()` (the setting
-  *Nameplate size*, `Scale.SIZE` 250% at first) times its share on `Scale.CURVE` (1 to 10 yards, 0.5 at 40, 0.25 at
+  *Nameplate size*, key `plateSize`, `Scale.SIZE` 125% at first) times its share on `Scale.CURVE` (1 to 10 yards, 0.5 at 40, 0.25 at
   60). The game's scaling and fading are off by its CVars (`Scale.CVARS`: `nameplateMaxScale`, `MinScale`,
   `SelectedScale`, `LargerScale`, `MinAlpha`, `MaxAlpha`, `SelectedAlpha`, `NotSelectedAlpha` 1), and whatever scale
   the game still gives a plate (`GetScale`) is undone: our dress at our size over it, the game's unit frame (its
   cast bar) at the share alone over it. A driver frame's guarded `OnUpdate` (hidden while no plate shows) runs
   `Range.Look` every `Range.EVERY` seconds, aims each plate at its share (anew too when the game's scale for it
-  changed) and moves it every frame on a spring (`Scale.Step`: `SPRING.PULL` 170, `DAMP` 15, a little past it, then
-  still within `REST`). `Scale.Born`: a plate appearing starts from nothing, its alpha up within `Scale.SHOW` (0.12 s).
+  changed) and moves it every frame at an even pace (`Scale.Step`: `Scale.SPEED` 1.5 shares a second, never past it).
+  `Scale.Born`: a plate appearing grows from nothing within `Scale.GROW` (0.2 s), its alpha up within `Scale.SHOW`
+  (0.12 s).
   Off, a plate taken back, standing down (`Scale.Leave`): the dress at `Scale.Full()` over the game's own scaling,
   seen, the unit frame at 1, the CVars at their defaults (`C_CVar.GetCVarInfo`). CVars through `C_CVar.SetCVar`, only
   those this client has, never in a fight (then at `PLAYER_REGEN_ENABLED`).
@@ -267,3 +271,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 - **2026-10-23:** distance from your character, never the camera (Saneroki): range checks of the game's items and
   your spells, a ladder from 5 to 50 yards; size by it alone, on a spring, the setting *Nameplate size*; no fading;
   a red border on any foe out of reach of your attacks. The game's scaling had measured from the camera.
+- **2026-10-23:** the glow under the outline, always (Saneroki); sizes change evenly, no spring; nameplates half
+  the size (*Nameplate size* 125%); a spell with a least range no longer turns a close foe red; `/sane range`.

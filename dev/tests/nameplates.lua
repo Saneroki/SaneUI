@@ -301,8 +301,9 @@ for band = 2, #dress.halo do
     fading = fading and Solid(band) < Solid(band - 1) and math.abs(Solid(band) - Bar.Fade(band)) < 1e-9
 end
 check(fading and Solid(#dress.halo) < 0.05, "the glow: solid at the border, fading to almost nothing outwards")
-check(dress.halo[1]._parent == dress.glow and dress.glow._level < (dress._level or 1) or dress.glow._level == 0,
-    "on a frame of its own, behind the dress")
+check(dress.halo[1]._parent == dress.glow and dress.border._parent == dress.rankLine._parent
+    and dress.glow._level < dress.border._parent._level and dress.border._parent._level < dress.health._level,
+    "each layer on a frame of its own: the glow under the outline, the outline under the bar")
 check(dress.border._vertex[1] == Bar.BORDER[1] and dress.border._vertex[4] == Bar.BORDER[4], "the border black: not your target")
 check(dress.health:GetStatusBarTexture()._masks and #dress.health:GetStatusBarTexture()._masks == 2
     and #dress.background._masks == 2 and #dress.border._masks == 2 and #dress.power:GetStatusBarTexture()._masks == 2,
@@ -626,7 +627,7 @@ units.nameplate2.friend = true
 yards.nameplate2 = 47
 check(select(1, Range.Check("nameplate2")) == 47.5 and select(2, Range.Check("nameplate2")) == nil,
     "a friend: on the friends' ladder (45, 50), no reach of attacks")
--- The driver: distances looked at, each plate springing to its size, ours alone deciding.
+-- The driver: distances looked at, each plate moving evenly to its size, ours alone deciding.
 local tick = Scale.driver:GetScript("OnUpdate")
 local function Settle() for _ = 1, 200 do tick(Scale.driver, 0.02) end end
 yards.nameplate1 = 3
@@ -635,7 +636,7 @@ Settle()
 local full = Scale.Full()
 check(Near(dress._scale, full) and Near(plates.nameplate1.UnitFrame._scale, 1) and dress._alpha == 1 and dress.showing == nil,
     "3 yards: full size, seen, settled")
-check(full == 2.5, "full: the setting Nameplate size, 250% at first")
+check(full == 1.25, "full: the setting Nameplate size, 125% at first")
 units.target, plates.target = units.nameplate1, plates.nameplate1
 W.Fire("PLAYER_TARGET_CHANGED")
 Settle()
@@ -644,11 +645,17 @@ plates.nameplate1:SetScale(1.3) -- whatever the game still does to a selected pl
 Settle()
 check(Near(dress._scale * 1.3, full) and Near(plates.nameplate1.UnitFrame._scale * 1.3, 1), "a scale the game still gives a plate: undone")
 plates.nameplate1:SetScale(1)
+Settle()
 yards.nameplate1 = 28
-local peak = 0
-for _ = 1, 200 do tick(Scale.driver, 0.02) peak = math.max(peak, full - dress._scale) end
-check(Near(dress._scale, full * Scale.Size(27.5)) and peak > full * (1 - Scale.Size(27.5)),
-    "28 yards (between 25 and 30): smaller on a spring, a little past its size, settled")
+local even, last, steps = true, dress._scale, {}
+for _ = 1, 200 do
+    tick(Scale.driver, 0.02)
+    if dress._scale > last + 1e-9 or dress._scale < full * Scale.Size(27.5) - 1e-9 then even = false end
+    if dress._scale ~= last then steps[#steps + 1] = last - dress._scale end
+    last = dress._scale
+end
+check(even and Near(dress._scale, full * Scale.Size(27.5)) and #steps > 3 and Near(steps[2], steps[3]),
+    "28 yards (between 25 and 30): smaller in even steps, never past its size")
 check(dress.border._vertex[1] == 1 and dress.border._vertex[2] == 1, "the shot reaches it: your target's border white")
 yards.nameplate1 = 38
 Settle()
@@ -659,10 +666,24 @@ check(dress.border._vertex[2] == Bar.FAR[2], "not your target, still out of reac
 yards.nameplate1 = 3
 Settle()
 check(dress.out == false and dress.border._vertex[1] == Bar.BORDER[1], "in reach of the strike: black again")
-Core.Set(ns.name, "size", 300)
+Core.Set(ns.name, "plateSize", 300)
 Settle()
 check(Near(dress._scale, 3), "the setting Nameplate size: 300%")
-Core.Set(ns.name, "size", 250)
+Core.Set(ns.name, "plateSize", 125)
+yards.nameplate1 = 6
+Settle()
+check(dress.out == true, "6 yards: out of the strike's reach, inside the shot's least: red")
+reach[100] = nil
+harmful[100] = nil -- a character with only a shot (least 8): its no at 6 yards says nothing
+Range.Rebuild()
+Settle()
+check(dress.out == false, "only a spell with a least range, too close for it: not red")
+harmful[100] = true
+Range.Rebuild()
+units.target, plates.target = units.nameplate1, plates.nameplate1
+SlashCmdList.SANEUI("range")
+check(not ns.off, "/sane range tells what the game answers")
+units.target, plates.target = nil, nil
 yards.nameplate1 = 38
 Core.Set(ns.name, "range", false)
 Settle()

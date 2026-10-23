@@ -16,7 +16,9 @@ local _, ns = ...
 --  up to the farthest the game shows plates (Range.FAR).
 --
 --  Out of reach: a foe none of your harmful spells reaches now (one says no,
---  none yes). Its border is red then (Bar.Border), your target's and every
+--  none yes). A spell that reaches only from afar (a least range: Charge,
+--  Auto Shot) says no to a foe too close as well, so its no counts for
+--  nothing. Its border is red then (Bar.Border), your target's and every
 --  other foe's alike (the setting Out of reach: red border).
 --
 --  Looked at every Range.EVERY seconds for every plate shown (Scale.lua's
@@ -133,7 +135,7 @@ function Range.Check(unit)
     for _, entry in ipairs(attacks) do
         local reach = Core.Ask(C_Spell.IsSpellInRange, entry.spell, unit)
         if reach == true then return yards, true end
-        if reach == false then told = true end
+        if reach == false and (entry.least or 0) == 0 then told = true end
     end
     if told then return yards, false end
     return yards, nil
@@ -155,6 +157,21 @@ function Range.Look()
 end
 
 local rebuild = Core.Later(Range.Rebuild)
+
+-- /sane range: what the game answers for your target, each of your attacks with its reach, and the distance found.
+local function Tell()
+    if Plain(UnitExists("target")) ~= true then return ns.Print("Range: no target.") end
+    local yards, reach = Range.Check("target")
+    ns.Print(("Range: about %s yards; your attacks %s."):format(yards and ("%.1f"):format(yards) or "?",
+        reach == true and "reach it" or reach == false and "do not reach it" or "cannot tell"))
+    for _, entry in ipairs(attacks) do
+        local data = Core.Ask(C_Spell.GetSpellInfo, entry.spell)
+        local answer = Core.Ask(C_Spell.IsSpellInRange, entry.spell, "target")
+        ns.Print(("  %s (%s to %s yards): %s"):format(type(data) == "table" and Plain(data.name) or entry.spell,
+            entry.least or 0, entry[1], tostring(answer)))
+    end
+end
+Core.Command("range", "what the nameplates know of your target's distance and your attacks' reach", ns.Guard(Tell))
 
 function Range.Start()
     ns.On("SPELLS_CHANGED", rebuild)
