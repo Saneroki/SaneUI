@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 139 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: new drawings for dodge and evade (Saneroki, 2026-10-23)
+- `dev/tools/combat-art`: the dodge a figure bending far back under an arrow (Saneroki's pick of the tries); the
+  evade an arrow flying through a see-through figure: strokes of their own (`faint`), white at `FAINT` with a lighter
+  dark edge round them (`FAINT_EDGE`), laid under the lines and their edge. `--try` keeps one other idea (the evade
+  with a sword's swing). Textures made anew (`combat-dodge.blp`, `combat-evade.blp`).
+
 ### Nameplates: the immunity a red bubble with an "i"; other ideas for dodge and evade (Saneroki, 2026-10-23)
 - `dev/tools/combat-art`: the immunity's bubble larger, an "i" in its middle, no sparkle; `CombatText.TINTS` draws it
   bright red (`SetVertexColor`, the texture stays white). `--try` draws other ideas into `assets/generated/CombatText/`

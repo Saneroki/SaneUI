@@ -183,6 +183,9 @@ colour.
 - **The rule:** the box's top line, stretched: a section's header underline and dividers.
 - **More pieces** drawn like #14 come from variants to pick from (`catalog.py`, *variants*): a wide section frame,
   a long divider with small flourishes, a corner piece.
+- **Icons on the paper** (Saneroki, 2026-10-23): our own pencil drawings, never the game's tiny painted icons (a
+  row of the bags' sidebar, the fold arrow): one simple object in a few bold graphite outlines, very little
+  shading, centred in a square with a little room round it, thickened a little so it reads at 16 to 18 units.
 - **The podium** (the guild's race): steps drawn as an artist's pencil sketch of real blocks in perspective (each
   with its front, its top face and its side), in clean pencil lines only: firm outer edges, lighter inner edges,
   strokes running a little past their corners, a light second pass and a faint construction line. Nothing is
@@ -204,9 +207,11 @@ What a unit takes, rising over its nameplate and over your character (Saneroki, 
   you).
 - **What did no harm is a drawing, not a word:** a miss, dodge, parry, block, evade or immunity is a pencil line
   drawing, large, with thick lines, white in the game (an immunity, a bubble with an "i", bright red: tinted by
-  code), on transparency
-  with a dark edge round its lines so it reads over any ground, as the outlined numbers do. Drawn by code for now
-  (`dev/tools/combat-art`, in the pencil pieces' manner: strokes running past their ends, a lighter second pass).
+  code), on transparency with a dark edge round its lines so it reads over any ground, as the outlined numbers do.
+  Drawn by code for now (`dev/tools/combat-art`, in the pencil pieces' manner: strokes running past their ends, a
+  lighter second pass).
+- **A dodge** is a figure bending far back under an arrow; **an evade** an arrow flying through a see-through figure
+  (faint white with a lighter edge: nothing there to hit) (Saneroki, 2026-10-23).
 
 ### Chat bubbles
 

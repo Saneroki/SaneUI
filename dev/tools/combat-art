@@ -7,10 +7,10 @@ past their ends, a light second pass; nothing filled or shaded), in white on tra
 them, with thick lines and a dark edge round them, so they read over any ground as the combat text's outlined
 letters do:
     miss     an arrow flying high over a target
-    dodge    an arrow swerving aside, speed lines behind it
+    dodge    a figure bending far back, an arrow flying over it
     parry    two swords crossed, sparks where they meet
     block    a shield, an arrow's strike glancing off its edge
-    evade    a round arrow turning back on itself (the creature runs home)
+    evade    an arrow flying through a see-through figure (nothing there to hit)
     immune   a bubble with its shine, an "i" in its middle
 dev/tools/art makes the game's textures of them (assets/optimized/Nameplates/Art/<name>.blp, drawn 48 x 48). A
 drawing by hand can take a picture's place in assets/CombatText/ under the same name.
@@ -38,6 +38,8 @@ WOBBLE = 0.004       # how far a hand's line strays, a share of the picture
 PAST = 0.035         # how far a straight stroke runs past its ends, a share of its length
 EDGE = 0.022         # the dark edge round the lines, a share of the picture
 EDGE_ALPHA = 0.75    # its strength
+FAINT = 0.45         # a see-through stroke's strength (a figure that is not there)
+FAINT_EDGE = 0.45    # the dark edge round it, a share of the lines' edge
 
 
 def bend(points, steps=24):
@@ -72,9 +74,10 @@ def past(points, share=PAST):
 class Sheet:
     def __init__(self, seed):
         self.lines = Image.new("L", (N, N), 0)
+        self.faint = Image.new("L", (N, N), 0)  # see-through strokes: white at FAINT, no dark edge, under the rest
         self.rand = random.Random(seed)
 
-    def stroke(self, points, width=1.0, curve=False):
+    def stroke(self, points, width=1.0, curve=False, faint=False):
         """One stroke of the pencil through points (shares of the picture): tapered at its ends, its line a little
         unsteady; a lighter, thinner second pass beside it."""
         pts = bend(points) if curve else points
@@ -96,21 +99,32 @@ class Sheet:
                 cx, cy = (x + dx) * N + wob * 0.6, (y + dy) * N + wob
                 level = int(255 * alpha)
                 draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=level)
-            self.lines = ImageChops.lighter(self.lines, layer)  # where strokes cross, the stronger stays
+            if faint:
+                self.faint = ImageChops.lighter(self.faint, layer)
+            else:
+                self.lines = ImageChops.lighter(self.lines, layer)  # where strokes cross, the stronger stays
 
     def picture(self):
-        """White lines with a soft grain, on a dark edge, on transparency."""
-        line = np.asarray(self.lines, dtype=np.float32) / 255
+        """White lines with a soft grain, on a dark edge, on transparency. Bottom up: the see-through strokes' light
+        edge, those strokes in faint white, the lines' edge, the lines."""
         grain = np.asarray(Image.effect_noise((N, N), 40).filter(ImageFilter.GaussianBlur(1.2)), dtype=np.float32) / 255
-        line = np.clip(line * (0.82 + 0.3 * grain), 0, 1)
+        line = np.clip(np.asarray(self.lines, dtype=np.float32) / 255 * (0.82 + 0.3 * grain), 0, 1)
+        shape = np.asarray(self.faint, dtype=np.float32) / 255
         k = int(EDGE * N) | 1
-        around = np.asarray(self.lines.filter(ImageFilter.MaxFilter(k)).filter(ImageFilter.GaussianBlur(k / 4)),
-                            dtype=np.float32) / 255
-        edge = np.clip(around * 1.4, 0, 1) * EDGE_ALPHA
-        alpha = line + edge * (1 - line)
-        grey = np.where(alpha > 0, line / np.maximum(alpha, 1e-6), 0)  # white over the dark edge
+
+        def around(layer):
+            spread = layer.filter(ImageFilter.MaxFilter(k)).filter(ImageFilter.GaussianBlur(k / 4))
+            return np.clip(np.asarray(spread, dtype=np.float32) / 255 * 1.4, 0, 1) * EDGE_ALPHA
+
+        # (value, alpha) laid over each other, "over" each time
+        value, alpha = np.zeros((N, N)), np.zeros((N, N))
+        for v, a in ((0.0, around(self.faint) * FAINT_EDGE * (1 - shape)), (1.0, shape * FAINT),
+                     (0.0, around(self.lines)), (1.0, line)):
+            out = a + alpha * (1 - a)
+            value = np.where(out > 0, (v * a + value * alpha * (1 - a)) / np.maximum(out, 1e-6), 0)
+            alpha = out
         rgba = np.zeros((N, N, 4), dtype=np.uint8)
-        rgba[..., 0] = rgba[..., 1] = rgba[..., 2] = np.clip(grey * 255, 0, 255).astype(np.uint8)
+        rgba[..., 0] = rgba[..., 1] = rgba[..., 2] = np.clip(value * 255, 0, 255).astype(np.uint8)
         rgba[..., 3] = np.clip(alpha * 255, 0, 255).astype(np.uint8)
         return Image.fromarray(rgba, "RGBA")
 
@@ -134,16 +148,6 @@ def miss(s):
         s.stroke([(0.11 + off, 0.295 - off * 0.2), (0.08 + off, 0.38 - off * 0.2)], 0.7)
     s.stroke([(0.52, 0.31), (0.76, 0.26)], 0.55)
     s.stroke([(0.60, 0.37), (0.80, 0.33)], 0.45)
-
-
-def dodge(s):
-    # Coming straight, then swerving up and away; speed lines behind.
-    path = [(0.10, 0.70), (0.38, 0.70), (0.58, 0.62), (0.70, 0.42), (0.80, 0.20)]
-    s.stroke(path, 1.0, curve=True)
-    arrow_head(s, (0.805, 0.19), (0.74, 0.32), 0.14, 30)
-    for y, x0, x1 in ((0.58, 0.06, 0.26), (0.82, 0.08, 0.30), (0.70, 0.02, 0.08)):
-        s.stroke(past([(x0, y), (x1, y)]), 0.55)
-    s.stroke([(0.50, 0.86), (0.66, 0.80), (0.80, 0.66)], 0.5, curve=True)
 
 
 def sword(s, hilt, tip, width=1.0):
@@ -183,16 +187,6 @@ def block(s):
         s.stroke(past([(x0, y0), (x1, y1)]), 0.55)
 
 
-def evade(s):
-    # A round arrow turning back on itself, round a small mark: the place it returns to.
-    s.stroke(arc(0.50, 0.52, 0.30, -40, 250, 72), 1.0)
-    end = (0.50 + 0.30 * math.cos(math.radians(250)), 0.52 + 0.30 * math.sin(math.radians(250)))
-    before = (0.50 + 0.30 * math.cos(math.radians(232)), 0.52 + 0.30 * math.sin(math.radians(232)))
-    arrow_head(s, end, before, 0.14, 32)
-    s.stroke(past([(0.42, 0.52), (0.58, 0.52)]), 0.5)
-    s.stroke(past([(0.50, 0.44), (0.50, 0.60)]), 0.5)
-
-
 def immune(s):
     # A bubble with its shine on the upper left, an "i" in its middle.
     s.stroke(arc(0.50, 0.52, 0.38, 0, 362, 96), 1.0)
@@ -212,23 +206,6 @@ def figure(s, head, neck, hips, hands, feet, width=1.0):
         s.stroke([hips] + (limb if isinstance(limb, list) else [limb]), width * 0.9)
 
 
-def dashed(s, points, dash=0.07, gap=0.045, width=0.6):
-    """A line broken into dashes along the points."""
-    pts = []
-    for a, b in zip(points, points[1:]):
-        n = max(2, int(math.hypot(b[0] - a[0], b[1] - a[1]) / 0.005))
-        pts += [(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n) for i in range(n)]
-    run, on, start = 0.0, True, 0
-    for i in range(1, len(pts)):
-        run += math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])
-        if run >= (dash if on else gap):
-            if on and i - start > 1:
-                s.stroke(pts[start:i + 1], width)
-            on, run, start = not on, 0.0, i
-    if on and len(pts) - start > 1:
-        s.stroke(pts[start:], width)
-
-
 def arrow(s, tail, tip, head=0.11, width=1.0):
     """An arrow in flight: its shaft, its head, its fletching."""
     s.stroke(past([tail, tip], 0.0), width)
@@ -239,7 +216,7 @@ def arrow(s, tail, tip, head=0.11, width=1.0):
         s.stroke([tail, (tail[0] + 0.07 * math.cos(a), tail[1] + 0.07 * math.sin(a))], width * 0.7)
 
 
-def dodge_lean(s):
+def dodge(s):
     # Bent far back, the arrow flying over: dodged.
     figure(s, head=(0.86, 0.50), neck=(0.78, 0.56), hips=(0.60, 0.70),
            hands=[[(0.80, 0.70), (0.90, 0.78)], [(0.70, 0.46), (0.66, 0.36)]],
@@ -248,55 +225,33 @@ def dodge_lean(s):
     s.stroke(arc(0.70, 0.52, 0.20, 200, 245, 16), 0.5)  # the swing of the lean
 
 
-def dodge_aside(s):
-    # Where it stood, a dashed outline the arrow flies through; beside it, the figure, having stepped aside.
-    dashed(s, arc(0.30, 0.22, 0.065, 0, 362, 40))
-    dashed(s, [(0.30, 0.29), (0.30, 0.60)])
-    dashed(s, [(0.30, 0.34), (0.18, 0.50)])
-    dashed(s, [(0.30, 0.34), (0.42, 0.50)])
-    dashed(s, [(0.30, 0.60), (0.22, 0.88)])
-    dashed(s, [(0.30, 0.60), (0.38, 0.88)])
-    arrow(s, (0.02, 0.45), (0.52, 0.45), 0.09)
-    figure(s, head=(0.78, 0.22), neck=(0.76, 0.30), hips=(0.74, 0.60),
-           hands=[(0.62, 0.48), (0.90, 0.46)], feet=[(0.64, 0.88), (0.86, 0.88)])
-    for y in (0.36, 0.52, 0.68):  # the quick step aside
-        s.stroke(past([(0.52, y), (0.60, y)]), 0.5)
+def ghost(s, x=0.50):
+    """A see-through figure, standing, arms a little out."""
+    s.stroke(arc(x, 0.19, 0.085, 0, 362, 48), 1.2, faint=True)
+    s.stroke([(x, 0.29), (x, 0.62)], 1.4, faint=True)
+    s.stroke([(x, 0.36), (x - 0.18, 0.56)], 1.2, faint=True)
+    s.stroke([(x, 0.36), (x + 0.18, 0.56)], 1.2, faint=True)
+    s.stroke([(x, 0.62), (x - 0.12, 0.92)], 1.2, faint=True)
+    s.stroke([(x, 0.62), (x + 0.12, 0.92)], 1.2, faint=True)
 
 
-def evade_flag(s):
-    # A flag on its pole: the place it came from; an arrow going out and turning back to it.
-    s.stroke(past([(0.66, 0.92), (0.66, 0.22)], 0.02), 1.0)
-    s.stroke([(0.66, 0.22), (0.90, 0.30), (0.66, 0.40)], 0.9)
-    s.stroke(past([(0.52, 0.92), (0.82, 0.92)]), 0.7)
-    path = arc(0.34, 0.56, 0.24, 30, 330, 64)[::-1]  # from the flag's foot, round and back to it
-    s.stroke(path, 1.0)
-    arrow_head(s, path[-1], path[-6], 0.12, 30)
+def evade(s):
+    # Nothing there to hit: an arrow flies through a see-through figure.
+    ghost(s)
+    arrow(s, (0.08, 0.45), (0.94, 0.45))
 
 
-def evade_home(s):
-    # A house; an arrow coming back round to its door.
-    s.stroke([(0.52, 0.88), (0.52, 0.52), (0.71, 0.34), (0.90, 0.52), (0.90, 0.88), (0.52, 0.88)], 1.0)
-    s.stroke([(0.64, 0.88), (0.64, 0.70), (0.78, 0.70), (0.78, 0.88)], 0.8)
-    path = [(0.10, 0.90), (0.10, 0.50), (0.22, 0.30), (0.38, 0.30), (0.44, 0.48), (0.44, 0.74)]
-    s.stroke(path, 1.0, curve=True)
-    arrow_head(s, (0.44, 0.78), (0.44, 0.64), 0.11, 32)
-
-
-def evade_run(s):
-    # Running back to the flag it came from (to the left), speed lines behind.
-    figure(s, head=(0.52, 0.24), neck=(0.57, 0.33), hips=(0.68, 0.56),
-           hands=[[(0.48, 0.42), (0.40, 0.38)], [(0.68, 0.40), (0.74, 0.50)]],
-           feet=[[(0.56, 0.68), (0.48, 0.84)], [(0.78, 0.70), (0.90, 0.80)]])
-    for y in (0.30, 0.46, 0.62):
-        s.stroke(past([(0.78, y), (0.94, y)]), 0.5)
-    s.stroke(past([(0.14, 0.92), (0.14, 0.30)], 0.02), 1.0)
-    s.stroke([(0.14, 0.30), (0.32, 0.37), (0.14, 0.45)], 0.9)
+def evade_swing(s):
+    # The same with a sword's swing cutting through it, from its upper right to its lower left.
+    ghost(s)
+    s.stroke(arc(0.98, 0.98, 0.76, 188, 266, 48), 1.1)
+    s.stroke(arc(0.98, 0.98, 0.66, 196, 250, 32), 0.5)
+    s.stroke(arc(0.98, 0.98, 0.56, 205, 238, 20), 0.4)
 
 
 DRAWINGS = {"miss": miss, "dodge": dodge, "parry": parry, "block": block, "evade": evade, "immune": immune}
 # Other ideas to choose from (--try): written to assets/generated/CombatText/, not shipped.
-TRIES = {"dodge-lean": dodge_lean, "dodge-aside": dodge_aside, "evade-flag": evade_flag, "evade-home": evade_home,
-         "evade-run": evade_run}
+TRIES = {"evade-swing": evade_swing}
 
 
 def main(names):
