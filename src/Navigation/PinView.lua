@@ -53,7 +53,7 @@ local hovered             -- the pin's button the mouse is on (Tip), for the rar
 local stage               -- the rare's model frame, once made; false where the client has none
 local Model               -- below
 
--- A pin's tooltip: its name, its lines; a quest's objectives as the game tells them.
+-- A pin's tooltip: its name (an NPC's role: Pins.lua), its lines; a quest's objectives as the game tells them.
 local function Tip(button)
     local pin = button.pin
     if not pin then return end
@@ -62,11 +62,11 @@ local function Tip(button)
         GameTooltip:SetText(Pins.TEXT.gathered:format(#pin.gathered), 1, 1, 1)
         for index, each in ipairs(pin.gathered) do
             if index > 12 then break end
-            GameTooltip:AddLine(each.name or "?", 1, 0.82, 0)
+            GameTooltip:AddLine(each.role or each.name or "?", 1, 0.82, 0)
         end
         return GameTooltip:Show()
     end
-    GameTooltip:SetText(pin.name or "?", 1, 1, 1)
+    GameTooltip:SetText(pin.role or pin.name or "?", 1, 1, 1)
     if pin.kind == "log" and pin.quest then
         if pin.complete then GameTooltip:AddLine(Pins.TEXT.turnIn, 0.2, 1, 0.2) end
         local objectives = Core.Ask(C_QuestLog.GetQuestObjectives, pin.quest)

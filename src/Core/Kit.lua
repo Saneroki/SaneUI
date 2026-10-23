@@ -12,6 +12,9 @@ local Core = SaneUI.Core
 --      Core.Pixels(frame, 2)                -- two of the screen's pixels in the frame's units
 --      Core.Tip(region, title, text, anchor) -- its tooltip (title and text may be functions)
 --      Core.ShowTip(owner, title, text, anchor), Core.HideTip()
+--      Core.Unconfirmed(tooltip)            -- the line under a fact the game has not confirmed (Core.UNCONFIRMED)
+--      Core.TipLook(tooltip, look)          -- a creature that is no unit of the game's, drawn like one (below);
+--      Core.TipSection(tooltip, words)      -- a line that heads a section of it; Core.LookOf(tooltip)
 --      local pool = Core.Pool(make)         -- pool:Take() a part, made by make() when none is free;
 --                                           -- pool:Begin() a new round, pool:Done() hides the rest
 --      Core.Confirm(text, arg, yes)         -- the game's yes/no dialog (GENERIC_CONFIRMATION)
@@ -80,6 +83,51 @@ function Core.HideTip()
 end
 
 -- A region with that tooltip while the mouse is on it. Its own OnEnter and OnLeave stay: these come after.
+-- The line a tooltip ends with where what it shows is not yet confirmed by the game (imported, the older game's):
+-- the words between two red marks (the game's red), in the game's grey. Sane UI's tooltips (the module Tooltips)
+-- know it by its words and draw it as a section's divider, the marks red.
+Core.UNCONFIRMED_WORDS = "Unconfirmed Data"
+do
+    local red = rawget(_G, "RED_FONT_COLOR")
+    local hex = type(red) == "table" and type(red.r) == "number" and Core.Hex(red.r, red.g, red.b) or "FF2020"
+    Core.UNCONFIRMED = ("|cff%s!|r  %s  |cff%s!|r"):format(hex, Core.UNCONFIRMED_WORDS, hex)
+end
+
+function Core.Unconfirmed(tooltip)
+    tooltip:AddLine(Core.UNCONFIRMED, 0.5, 0.5, 0.5)
+end
+
+-- A tooltip about a creature that is no unit of the game's (a boss on a dungeon's map): its look, which Sane UI's
+-- tooltips (the module Tooltips) draw like a unit's: { display (its 3D model: the game's creature display), dragon
+-- ("boss", "elite", "silver": round its portrait), badge (its level: "??" for a boss) }. Its lines are written into
+-- the tooltip as ever: the name, then under it its title and what it is, then its sections, each headed by a line of
+-- Core.TipSection; the game's own tooltip shows them as they are. Kept until the tooltip is cleared (its next
+-- SetOwner); set it right after SetOwner.
+local looks = setmetatable({}, { __mode = "k" })  -- [tooltip] = its look
+local watched = setmetatable({}, { __mode = "k" }) -- [tooltip] = true: its clearing lets go of its look
+
+function Core.TipLook(tooltip, look)
+    if not watched[tooltip] then
+        watched[tooltip] = true
+        tooltip:HookScript("OnTooltipCleared", Core.Guard("tooltip", function(self) looks[self] = nil end))
+    end
+    looks[tooltip] = look
+end
+
+function Core.LookOf(tooltip)
+    return looks[tooltip]
+end
+
+-- A line in the game's gold that heads a section of a tooltip with a look (its words in the section's divider).
+function Core.TipSection(tooltip, words)
+    tooltip:AddLine(words, 1, 0.82, 0)
+    local look, at = looks[tooltip], Core.Plain(tooltip:NumLines())
+    if look and type(at) == "number" then
+        look.sections = look.sections or {}
+        look.sections[at] = true
+    end
+end
+
 function Core.Tip(region, title, text, anchor)
     if region.EnableMouse and not region:IsMouseEnabled() and region.SetMouseMotionEnabled then
         region:SetMouseMotionEnabled(true)

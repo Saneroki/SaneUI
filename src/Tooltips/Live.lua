@@ -130,7 +130,7 @@ local function Auras(panel, unit)
     if live.aurasTop and AurasOpen() then
         local size, gap, crop = ns.Panel.AURA, ns.Panel.AURA_GAP, ns.Pools.ICON_CROP
         local room = math.min(MAX_AURAS, math.floor((live.aurasWidth + gap) / (size + gap)))
-        local x = ns.Panel.SIDE
+        local x = live.aurasLeft or ns.Panel.SIDE
         for pass = 1, 2 do
             local filter = pass == 1 and "HELPFUL" or "HARMFUL"
             local index = 1

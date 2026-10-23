@@ -17,7 +17,8 @@ local _, ns = ...
 --  map has a pin at each, its key the thing's and the point's), thing (a pin of Core's data: the thing's key,
 --  "npc:69", as the game's pins are keyed: the game's word hides every one of Core's for the same thing, *One
 --  pin per thing*), home (the plane u, v are in: Coords.PlaneOf), u, v, map, x, y (on its own map, 0 to 1),
---  atlas or texture, size, name, lines (its tooltip's further lines), and by kind: quest (its ID), complete,
+--  atlas or texture, size, name, role (an NPC's: what it is, its tooltip's heading in place of its name: Bowyer,
+--  Warrior Trainer), lines (its tooltip's further lines), and by kind: quest (its ID), complete,
 --  focused (the quest the game's arrow leads to), to (a map it opens), dim (a flight point not yet found), grey
 --  (a quest too low), tint (its icon's colour: a quest for later, a flight point not yet found), order (drawn over
 --  a lower one).
@@ -100,7 +101,8 @@ Pins.TEXT = {
     open = "Click on the full map: the quest in the quest log",
     openMap = "Shift-click: open its map",
     gathered = "%d here: a click zooms in",
-    unverified = "Not yet confirmed by the game",
+    unverified = Core.UNCONFIRMED, -- (Core.Unconfirmed)
+    questGiver = "Quest giver",
     level = "Level %d to %d",
     towards = "To %s",
 }
@@ -371,8 +373,15 @@ local function FromData(place)
         for _, each in ipairs(services) do
             if SERVICES[each] then service = each break end
         end
+        -- Named by what it is, never by its own name (Saneroki, 2026-10-23): its title (Bowyer, Warrior Trainer), else
+        -- its first service (Innkeeper), else a quest giver; only a rare keeps its name (it is what is hunted).
+        local role = what.title
+        if not role then
+            for _, each in ipairs(services) do
+                if each ~= "repair" and each ~= "questgiver" and Pins.SERVICE_WORDS[each] then role = each break end
+            end
+        end
         local lines = {}
-        if what.title then lines[#lines + 1] = what.title end
         if #offers > 0 then
             pin.kind, pin.atlas, pin.offer = "quest", Pins.ICONS.offer, true
         elseif what.rare then
@@ -390,7 +399,7 @@ local function FromData(place)
             local words = {}
             for _, each in ipairs(services) do
                 -- A trainer's title says what it trains (Warrior Trainer): the word Trainer only without one.
-                if Pins.SERVICE_WORDS[each] and not (each == "trainer" and what.title) then
+                if Pins.SERVICE_WORDS[each] and each ~= role and not (each == "trainer" and what.title) then
                     words[#words + 1] = Pins.SERVICE_WORDS[each]
                 end
             end
@@ -423,6 +432,7 @@ local function FromData(place)
         end
         pin.lines = #lines > 0 and lines or nil
         pin.roles = services
+        if not what.rare then pin.role = Pins.SERVICE_WORDS[role] or role or Pins.TEXT.questGiver end
     elseif kind == "object" then
         local look = OBJECTS[what]
         if not look then return nil end

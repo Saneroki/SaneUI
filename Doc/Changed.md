@@ -6,6 +6,27 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 121 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 54 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Tooltips and Navigation: columns, Unconfirmed Data, pins by role, bosses as creatures (Saneroki, 2026-10-23)
+- Tooltips, `Panel.lua`: a panel taller than the screen (`Tallest`: `UIParent`'s height in the panel's units, less
+  `SCREEN_MARGIN` and the soft edge) is laid again in columns (`Columns`, `ox`): each ends before the row that would
+  run past it, a caption goes on with its rows; the panel as wide as the columns, a groove between two; the icon at
+  the first column's corner (anchored `TOPLEFT` now). `Pools.Rewind` gives back a laying's lines and icons; a unit's
+  buffs and bars follow their column (`aurasLeft`, `block.left`).
+- Core, `Kit.lua`: `Core.UNCONFIRMED` (*! Unconfirmed Data !*, the marks in the game's red) and `Core.Unconfirmed`;
+  `Core.TipLook`, `Core.TipSection`, `Core.LookOf`: a creature that is no unit of the game's, its look kept until
+  the tooltip is cleared.
+- Tooltips: that line a caption with a red *!* at each side (`mark`, `FONTS.mark`; `Read.Rest`); a tooltip with a
+  look read as a creature's (`ns.Figure`, `Kinds/Unit.lua`): its title and kind under the name, its `display` model
+  in the portrait's place, the dragon, the badge, its sections by their heading lines, a row's icon at its start, a
+  detail set in; *Hold ALT for more* on it too.
+- Navigation: an NPC's pin is named by its role (`pin.role`: its title, else its service, else *Quest giver*; a rare
+  keeps its name), as Saneroki asked; `Pins.TEXT.unverified` and `Dungeons.TEXT.unverified` are Core's line. A
+  boss's tooltip (`BossTip`) as a creature's: its name in `Dungeons.FOE`, the dungeon, *Boss*, `Core.TipLook` with
+  its `display`, the boss's dragon and *??*; *Abilities* and *Loot* headed by `Core.TipSection`; an ability's
+  description set in; an item's details with Alt: *Uncollected* first, its effects (`Effect`), then its stats.
+- READMEs (Tooltips, Navigation, Core); tests: `dev/tests/tooltips.lua` 489 (columns, the divider, a boss as a
+  creature), `dev/tests/navigation.lua` 560 (a pin by its role, the boss's lines and look, the items' order).
+
 ### Navigation: a boss's items with Alt show their stats and effects only (Saneroki, 2026-10-23)
 - `Dungeons.lua`: of an item's own tooltip lines only its damage, speed, damage per second, armour, block, stats
   (`Dungeons.KEEP`) and effects (`Dungeons.EFFECTS`: Equip, Use, Chance on hit), as Saneroki asked; no price, slot,

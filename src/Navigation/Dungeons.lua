@@ -18,11 +18,13 @@ local _, ns = ...
 --      the bosses   where Core's set Dungeons has them: the game's boss mark at each one's place and the
 --                   boss's own 3D model standing on it (the game's model of its display), the same size at
 --                   every zoom; a model that would reach past the view's edge is hidden (the engine does not
---                   cut it there), its mark stays. The tooltip: its name, its abilities and what it drops
---                   (the set Bosses: the game's spell and item IDs, kept apart from the game's own encounters
---                   until the game confirms them), each with its icon and name as the game has them, an item
---                   in its quality's colour; and that it is not yet confirmed by the game. With Alt held,
---                   each ability's description and each item's own tooltip lines (its stats) under its name.
+--                   cut it there), its mark stays. The tooltip, as a creature's (Core.TipLook: its model, the
+--                   boss's dragon, ?? for its level): its name, the dungeon, Boss; then the sections Abilities
+--                   and Loot (the set Bosses: the game's spell and item IDs, kept apart from the game's own
+--                   encounters until the game confirms them), each with its icon and name as the game has them,
+--                   an item in its quality's colour; and that it is not yet confirmed by the game. With Alt
+--                   held, each ability's description and each item's details under its name: Uncollected, its
+--                   effects (Use:, Equip:), then its stats.
 --                   The mark shows only where no model stands (no look, or at the view's edge)
 --      enemies      where the set has them, each enemy as a small red dot where it stands (under the bosses),
 --                   its name in the tooltip
@@ -53,8 +55,9 @@ Dungeons.FACING = 0.35 -- radians: the models turned a little from facing the vi
 Dungeons.TEXT = {
     dungeons = Core.Word("DUNGEONS", "Dungeons"),
     floor = "Floor",
-    unverified = "Not yet confirmed by the game",
+    unverified = Core.UNCONFIRMED, -- (Core.Unconfirmed)
     enemy = "An enemy",
+    boss = Core.Word("BOSS", "Boss"),
     abilities = Core.Word("ABILITIES", "Abilities"),
     loot = Core.Word("LOOT", "Loot"),
     more = "and %d more",
@@ -368,16 +371,21 @@ local function Read(id)
     return reader:NumLines() or 0
 end
 
--- A line of an item's tooltip the boss's keeps (Dungeons.KEEP, or one of the game's effects).
-local function Kept(words)
-    for _, pattern in ipairs(Dungeons.KEEP) do
-        if words:find(pattern) then return true end
-    end
+-- Whether a line of an item's tooltip is one of its effects (Use:, Equip:, Chance on hit:).
+local function Effect(words)
     for _, name in ipairs(Dungeons.EFFECTS) do
         local start = rawget(_G, name)
         if type(start) == "string" and words:sub(1, #start) == start then return true end
     end
     return false
+end
+
+-- A line of an item's tooltip the boss's keeps (Dungeons.KEEP, or one of the game's effects).
+local function Kept(words)
+    for _, pattern in ipairs(Dungeons.KEEP) do
+        if words:find(pattern) then return true end
+    end
+    return Effect(words)
 end
 
 -- Whether the player lacks the item's appearance (the game's collection; nil where it cannot tell).
@@ -390,11 +398,23 @@ local function Uncollected(id)
     return not info.appearanceIsCollected
 end
 
--- With Alt held, an item's lines under its name: its own tooltip's stats, damage, armour and effects (Kept), in
--- their colours; and "Uncollected" while the player lacks its appearance.
+-- With Alt held, an item's lines under its name, in their colours: "Uncollected" first while the player lacks its
+-- appearance, then its effects (a recipe's Use: what it teaches), last its stats, damage and armour (Kept).
+local effects, stats = {}, {} -- the lines of each kind, for one item: { words, r, g, b, other, r2, g2, b2 }
+local function Shown(list)
+    for _, line in ipairs(list) do
+        if line[5] and line[5] ~= "" then
+            GameTooltip:AddDoubleLine("    " .. line[1], line[5], line[2], line[3], line[4], line[6], line[7], line[8])
+        else
+            GameTooltip:AddLine("    " .. line[1], line[2], line[3], line[4], true)
+        end
+    end
+end
 local function ItemDetails(id)
     local missing = Uncollected(id)
     local unknown = rawget(_G, "TRANSMOGRIFY_TOOLTIP_APPEARANCE_UNKNOWN")
+    wipe(effects)
+    wipe(stats)
     for index = 2, Read(id) do
         local left, right = _G["SaneUINavigationReaderTextLeft" .. index], _G["SaneUINavigationReaderTextRight" .. index]
         local words, other = left and left:GetText(), right and right:IsShown() and right:GetText()
@@ -402,12 +422,10 @@ local function ItemDetails(id)
             missing = true -- the game's tooltip says so where its collection could not be asked
         elseif words and words ~= "" and Kept(words) then
             local r, g, b = left:GetTextColor()
-            if other and other ~= "" then
-                local r2, g2, b2 = right:GetTextColor()
-                GameTooltip:AddDoubleLine("    " .. words, other, r, g, b, r2, g2, b2)
-            else
-                GameTooltip:AddLine("    " .. words, r, g, b, true)
-            end
+            local r2, g2, b2
+            if other then r2, g2, b2 = right:GetTextColor() end
+            local list = Effect(words) and effects or stats
+            list[#list + 1] = { words, r, g, b, other, r2, g2, b2 }
         end
     end
     if missing then
@@ -416,6 +434,8 @@ local function ItemDetails(id)
         if type(colour) == "table" then r, g, b = colour.r or r, colour.g or g, colour.b or b end
         GameTooltip:AddLine("    " .. Dungeons.TEXT.uncollected, r, g, b)
     end
+    Shown(effects)
+    Shown(stats)
 end
 
 -- With Alt held, a spell's description under its name; asked of the game while it has not loaded it.
@@ -425,7 +445,7 @@ local function SpellDetails(id)
         Core.Ask(C_Spell.RequestLoadSpellData, id)
         return
     end
-    GameTooltip:AddLine(words, 1, 0.82, 0, true)
+    GameTooltip:AddLine("    " .. words, 1, 0.82, 0, true)
 end
 
 -- A spell's line: its icon and name as the game has them; nil where the game does not know it.
@@ -459,7 +479,7 @@ local function Listed(title, ids, line, details)
         else
             local words, r, g, b = line(id)
             if words then
-                if shown == 0 then GameTooltip:AddLine(title, 1, 0.82, 0) end
+                if shown == 0 then Core.TipSection(GameTooltip, title) end
                 shown = shown + 1
                 GameTooltip:AddLine(words, r or 1, g or 1, b or 1)
                 if details then details(id) end
@@ -469,18 +489,27 @@ local function Listed(title, ids, line, details)
     if more > 0 and shown > 0 then GameTooltip:AddLine(Dungeons.TEXT.more:format(more), 0.6, 0.6, 0.6) end
 end
 
+-- A boss's tooltip, as a creature's (Core.TipLook): its name in the game's red of a foe, under it the dungeon and
+-- Boss; its model in the portrait's place with the boss's dragon round it and ?? for its level; then its abilities
+-- and its loot, each a section.
+Dungeons.FOE = { 1, 0.3, 0.25 } -- a foe's name
 local function BossTip(part)
     local mark = part.mark or part
     tipped = part
     GameTooltip:SetOwner(part, "ANCHOR_RIGHT")
-    GameTooltip:SetText(mark.name or "?", 1, 1, 1)
+    Core.TipLook(GameTooltip, { display = mark.display, dragon = "boss", badge = "??" })
+    local foe = Dungeons.FOE
+    GameTooltip:SetText(mark.name or "?", foe[1], foe[2], foe[3])
     local encounter = mark.encounter
+    local place = encounter and SET:Get(ENCOUNTERS:Get(encounter, "instance") or 0, "name")
+    if place then GameTooltip:AddLine(place, 1, 1, 1) end
+    GameTooltip:AddLine(Dungeons.TEXT.boss, 1, 0.82, 0)
     if encounter then
         local alt = IsAltKeyDown()
         Listed(Dungeons.TEXT.abilities, BOSSES:Get(encounter, "abilities"), SpellLine, alt and SpellDetails)
         Listed(Dungeons.TEXT.loot, BOSSES:Get(encounter, "loot"), ItemLine, alt and ItemDetails)
     end
-    GameTooltip:AddLine(Dungeons.TEXT.unverified, 0.5, 0.5, 0.5)
+    Core.Unconfirmed(GameTooltip)
     GameTooltip:Show()
 end
 
@@ -576,8 +605,9 @@ end
 
 local function FoeTip(foe)
     GameTooltip:SetOwner(foe, "ANCHOR_RIGHT")
-    GameTooltip:SetText(foe.npc and NPCS:Get(foe.npc, "name") or Dungeons.TEXT.enemy, 1, 0.3, 0.25)
-    GameTooltip:AddLine(Dungeons.TEXT.unverified, 0.5, 0.5, 0.5)
+    local red = Dungeons.FOE
+    GameTooltip:SetText(foe.npc and NPCS:Get(foe.npc, "name") or Dungeons.TEXT.enemy, red[1], red[2], red[3])
+    Core.Unconfirmed(GameTooltip)
     GameTooltip:Show()
 end
 
@@ -618,7 +648,7 @@ function Dungeons.PlaceBosses(art, scale)
     for index, boss in ipairs(bosses) do
         local mark = marks[index] or Mark()
         marks[index] = mark
-        mark.name, mark.encounter = boss.name, boss.encounter
+        mark.name, mark.encounter, mark.display = boss.name, boss.encounter, boss.display
         local x, y = panX + (boss.x - 0.5) * art.width * scale, panY - (boss.y - 0.5) * art.height * scale
         mark:ClearAllPoints()
         mark:SetPoint("CENTER", frame, "CENTER", x, y)

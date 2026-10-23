@@ -6,6 +6,14 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Tooltips: a tooltip too tall for the screen goes on in a second
+  column beside the first, so all of it can be read.
+- Navigation: map pins name an NPC by what it is (Bowyer, Warrior
+  Trainer, Quest giver), not by its name; what the game has not
+  confirmed yet says "! Unconfirmed Data !". A boss's tooltip on a
+  dungeon's map looks like a creature's, with its model, its dragon
+  and its abilities and loot each in a section; with Alt an item shows
+  Uncollected first, then what it does, then its stats.
 - Inventory: the categories in your bags share lines, as many side by
   side as fit, and each stays visible with its items and an empty slot
   after them. Drag an item onto a category's empty slot to put it in

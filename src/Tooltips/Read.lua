@@ -62,6 +62,8 @@ local LOOK_AHEAD = 3 -- how far a line may stand from where the data has it
 --   flat                                       no sections at all for the game's lines (Generic)
 --   each(row, line)                            the kind's last word on a row Rest makes
 --   nested                                     the caption over a thing inside the thing (a recipe's item)
+--   look                                       a creature that is no unit of the game's (Core.TipLook): its
+--                                              panel is a creature's (ns.Figure, Kinds/Unit.lua)
 local ctx = { L = {} }
 
 -- A line's colour on the dark panel. The game's white is toned down a little (less for a name);
@@ -351,6 +353,10 @@ function Read.Rest()
         local kind = line.type
         if line.used or IsFeedback(line.left) or Read.IsIdLine(line) or Added(line, index) then
             -- nothing
+        elseif line.left == Core.UNCONFIRMED then
+            -- What the tooltip shows is not yet confirmed by the game: a divider of its own, a red ! at each side
+            Read.Caption(Core.UNCONFIRMED_WORDS).mark = true
+            line.used = true
         elseif ctx.nested and kind == NESTED then
             caption = true
         elseif line.blank or kind == BLANK or kind == SEPARATOR then
@@ -464,16 +470,17 @@ function ns.Read(tooltip, data, model, options)
     ctx.head = ctx.fill.head
     ctx.rule, ctx.gap, ctx.section, ctx.name, ctx.flat = false, false, nil, nil, false
     ctx.each, ctx.nested, ctx.nestedIcon = nil, nil, nil
+    ctx.look = not data and Core.LookOf and Core.LookOf(tooltip) or nil
     ctx.head.tag = Tag(tooltip)
     ctx.head.compared = ctx.head.tag ~= "" or nil -- what you wear, beside what you look at
-    local kind = ctx.kind ~= nil and ns.KINDS[ctx.kind] or Read.Generic
+    local kind = ctx.kind ~= nil and ns.KINDS[ctx.kind] or ctx.look and ns.Figure or Read.Generic
     if broken[kind] then return false end
     -- A client update that breaks one reader (a renamed function of the game's) costs that kind
     -- only: the problem is noted and told once, and the other kinds are still drawn.
     local ok, problem = xpcall(kind, Core.Trace, ctx)
     if not ok then
         broken[kind] = true
-        ns.Report(("%s tooltips are the game's own"):format(kind ~= Read.Generic and KIND_NAMES[ctx.kind] or "Other"), problem)
+        ns.Report(("%s tooltips are the game's own"):format(KIND_NAMES[ctx.kind] or kind == ns.Figure and "Creature" or "Other"), problem)
         return false
     end
     -- With Alt held, last: the technical details, then, apart from everything of the panel's own,
@@ -483,7 +490,7 @@ function ns.Read(tooltip, data, model, options)
     if IsAltKeyDown() then
         Details()
         Others()
-    elseif data then
+    elseif data or ctx.look then
         local row = Read.Row()
         row.kind, row.left, row.font = "caption", TEXT.MORE_INFO, "hint"
     end

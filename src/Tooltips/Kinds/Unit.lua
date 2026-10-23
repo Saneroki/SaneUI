@@ -479,5 +479,79 @@ local function Unit(ctx)
     Read.Rest()
 end
 
+-------------------------------------------------------------------------------
+--  A creature that is no unit of the game's (Core.TipLook: a boss on a dungeon's
+--  map), as a creature's panel: its name; under it, as large and close, its
+--  first line (the dungeon: as a creature's title), then small its next lines
+--  up to its first section (Boss); its 3D model in the portrait's place (its
+--  display, the face in view; the skull where none loads), the look's dragon round
+--  it, its level on the plaque. Then its sections, each under the divider its
+--  heading line names (Core.TipSection), its own lines in them: one with an icon
+--  before it has the icon at the row's start, a line set in (its details, with
+--  Alt) is set in under the icon, small.
+-------------------------------------------------------------------------------
+local SKULL = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull" -- the game's boss mark, while no model stands
+local DETAIL_IN = 20 -- a detail line set in under a row's icon
+
+local function Sectioned(line)
+    return line.section
+end
+
+-- A row of a section: an icon at its start ("|T<icon>:...|t name"), a detail ("    words") set in, small.
+local function Each(row, line)
+    local icon, words = row.left:match("^|T([^:|]+):[^|]*|t%s*(.*)$")
+    if icon then
+        row.icon, row.left = tonumber(icon) or icon, words
+        return
+    end
+    local detail = row.left:match("^%s%s+(.+)$")
+    if detail then
+        row.left, row.font, row.indent = detail, "sub", DETAIL_IN
+        if row.right ~= "" then row.right = row.right:match("^%s*(.-)$") end
+    end
+end
+
+local function Figure(ctx)
+    local look, L, head = ctx.look, ctx.L, ctx.head
+    local title = Read.Title(true)
+    Read.AccentFromTitle()
+    -- Its sections: each line after a heading is that heading's
+    local first, name = ctx.count + 1, nil
+    local sections = look.sections or {}
+    for index = 2, ctx.count do
+        local line = L[index]
+        if sections[index] then
+            name, line.used = line.left, true
+            first = math.min(first, index)
+        end
+        line.section = name
+    end
+    -- Under the name: its title as large and close, then small what it is (Boss)
+    for index = 2, first - 1 do
+        local line = L[index]
+        if not line.blank then
+            local row = Read.Line(line, index == 2 and "title" or "detail")
+            if index == 2 then
+                row.flush = true
+                row.lr, row.lg, row.lb = LIGHT[1], LIGHT[2], LIGHT[3]
+            end
+        end
+        line.used = true
+    end
+    if ctx.options.icons then
+        head.icon = SKULL
+        if look.display then head.model, head.modelKind, head.modelZoom = look.display, "display", 1 end
+    end
+    head.dragon = look.dragon
+    head.badge = look.badge
+    if head.badge == "??" then head.badgeR, head.badgeG, head.badgeB = COLOR.RED[1], COLOR.RED[2], COLOR.RED[3] end
+    if head.badge and not head.icon then
+        title.right, title.rr, title.rg, title.rb = head.badge, head.badgeR or LIGHT[1], head.badgeG or LIGHT[2], head.badgeB or LIGHT[3]
+    end
+    ctx.name, ctx.each = Sectioned, Each
+    Read.Rest()
+end
+ns.Figure = Figure
+
 if TYPE.Unit then ns.KINDS[TYPE.Unit] = Unit end
 if TYPE.Corpse then ns.KINDS[TYPE.Corpse] = Unit end -- a dead creature's: the same panel

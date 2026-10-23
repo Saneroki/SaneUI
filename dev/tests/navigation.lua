@@ -1501,8 +1501,10 @@ do
         "the pin filter's row for quests for later: the question mark in red before its words")
     local teacher = pins["npc:75"]
     check(teacher and teacher.pin.kind == "service" and teacher.icon._atlas == "class"
-        and teacher.pin.lines[1] == "Warrior Trainer" and not teacher.pin.lines[2],
+        and teacher.pin.role == "Warrior Trainer" and not teacher.pin.lines,
         "a trainer: its title says what it trains (no plain Trainer), a class's trainer the class book")
+    check(giver.pin.role == Pins.TEXT.questGiver and giver.pin.name ~= giver.pin.role and not pins["npc:72"].pin.lines[1][1]:find(giver.pin.name, 1, true),
+        "an NPC's pin is named by what it is, never by its own name: a quest giver without a title")
     check(not pins["npc:73"], "a giver of quests you have done only: no pin while Done quests is off (the default)")
     local chosen = Core.Copy(ns.options.pins)
     chosen.done = true
@@ -4201,17 +4203,22 @@ end)()
     marks[1]._mouseOver = true
     marks[1]._scripts.OnEnter(marks[1])
     local lines = GameTooltip._lines or {}
-    check(GameTooltip._text == "The First Boss" and lines[1] == Dungeons.TEXT.abilities and lines[2]:find("Cleave", 1, true)
-        and lines[2]:find("132338", 1, true) and lines[3] == Dungeons.TEXT.loot and lines[4]:find("Item 901", 1, true)
-        and lines[4]:find("1901", 1, true) and lines[5] == Dungeons.TEXT.unverified and asked[1] == 902,
+    check(GameTooltip._text == "The First Boss" and lines[3] == Dungeons.TEXT.abilities and lines[4]:find("Cleave", 1, true)
+        and lines[4]:find("132338", 1, true) and lines[5] == Dungeons.TEXT.loot and lines[6]:find("Item 901", 1, true)
+        and lines[6]:find("1901", 1, true) and lines[7] == Dungeons.TEXT.unverified and lines[7] == Core.UNCONFIRMED
+        and asked[1] == 902,
         "its tooltip: the boss's name as the game's encounters have it, its abilities and loot with their icons as the "
         .. "game has them (a spell it does not know left out, an item not loaded asked for), not yet confirmed")
+    local look = Core.LookOf(GameTooltip)
+    check(lines[1] == "Deep Halls" and lines[2] == Dungeons.TEXT.boss and look and look.dragon == "boss" and look.badge == "??"
+        and look.display == marks[1].display,
+        "drawn as a creature's: under its name the dungeon and Boss; its model, the boss's dragon, ?? for its level")
     loaded[902] = true
     GameTooltip._lines = nil -- (the stand-in keeps its lines; the game's tooltip starts anew at SetOwner)
     W.Fire("ITEM_DATA_LOAD_RESULT", 902, true)
     Frames(1)
     lines = GameTooltip._lines or {}
-    check(lines[5] and lines[5]:find("Item 902", 1, true), "the item come: the tooltip drawn again with it")
+    check(lines[7] and lines[7]:find("Item 902", 1, true), "the item come: the tooltip drawn again with it")
     -- Alt held: each ability's description under its name, each item's own tooltip read for its lines.
     local describe, read = C_Spell.GetSpellDescription, {}
     C_Spell.GetSpellDescription = function(id) return id == 801 and "Hits the target and those beside it." or "" end
@@ -4239,19 +4246,19 @@ end)()
     W.Fire("MODIFIER_STATE_CHANGED", "LALT", 1)
     Frames(1)
     lines = GameTooltip._lines or {}
-    check(lines[2] and lines[2]:find("Cleave", 1, true) and lines[3] == "Hits the target and those beside it."
-        and lines[4] == Dungeons.TEXT.loot and read[1] == 901 and read[2] == 902,
+    check(lines[4] and lines[4]:find("Cleave", 1, true) and lines[5] == "    Hits the target and those beside it."
+        and lines[6] == Dungeons.TEXT.loot and read[1] == 901 and read[2] == 902,
         "Alt held: the tooltip drawn again, an ability's description under it, the items' own tooltips read")
-    check(lines[6] == "    41 - 77 Damage | Speed 3.60" and lines[7] == "    (16.4 damage per second)"
-        and lines[8] == "    +12 Strength" and lines[9] == "    Equip: Improves your chance to hit by 1%."
-        and lines[10] == "    " .. Dungeons.TEXT.uncollected and lines[11] and lines[11]:find("Item 902", 1, true),
-        "an item's details: its damage, speed, damage per second, stats and effects, and Uncollected; no binding, slot, "
-        .. "durability, requirement, price or lore")
+    check(lines[8] == "    " .. Dungeons.TEXT.uncollected and lines[9] == "    Equip: Improves your chance to hit by 1%."
+        and lines[10] == "    41 - 77 Damage | Speed 3.60" and lines[11] == "    (16.4 damage per second)"
+        and lines[12] == "    +12 Strength" and lines[13] and lines[13]:find("Item 902", 1, true),
+        "an item's details: Uncollected first, then its effects, last its damage, speed, damage per second and stats; no "
+        .. "binding, slot, durability, requirement, price or lore")
     IsAltKeyDown = function() return false end
     GameTooltip._lines = nil
     W.Fire("MODIFIER_STATE_CHANGED", "LALT", 0)
     Frames(1)
-    check((GameTooltip._lines or {})[3] == Dungeons.TEXT.loot, "Alt let go: the names only again")
+    check((GameTooltip._lines or {})[5] == Dungeons.TEXT.loot, "Alt let go: the names only again")
     C_Spell.GetSpellDescription, W.methods.SetItemByID, W.methods.AddDoubleLine = describe, nil, nil
     ITEM_SPELL_TRIGGER_ONEQUIP, TRANSMOGRIFY_TOOLTIP_APPEARANCE_UNKNOWN = nil, nil
     marks[1]._mouseOver = false

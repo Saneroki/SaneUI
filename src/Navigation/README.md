@@ -48,9 +48,12 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   at first); services, each its
   own (the innkeeper's mug, the banker's bags, a class trainer's book, a profession trainer's scroll, a merchant
   the game's anvil, one of food, reagents, poisons or ammunition the game's icon for those...), entrances, the docks of the boats (a boat) and zeppelins (an airship) with where they go, where
-  herbs and ore grow (*Possible herbs*, *Possible ore*), books (an open book): as far as the data holds them; a place the game has not confirmed says so. A tooltip
-  says what it is: an NPC's title (*Warrior Trainer*, *Weaponsmith*), its quests with their levels, and why a grey
-  one is not for you yet. One pin per thing at each place it stands: the game's word hides the data's. Pins that would cover each other
+  herbs and ore grow (*Possible herbs*, *Possible ore*), books (an open book): as far as the data holds them; a place
+  the game has not confirmed ends its tooltip with *! Unconfirmed Data !* (the marks red; in Sane UI's tooltips a
+  divider of its own). A tooltip says what it is: an NPC by what it is, never by its own name (Saneroki,
+  2026-10-23): its title (*Warrior Trainer*, *Bowyer*, *Expert Blacksmith*), else its service (*Innkeeper*), else
+  *Quest giver*; only a rare keeps its name; then its quests with their levels, and why a grey one is not for you
+  yet. One pin per thing at each place it stands: the game's word hides the data's. Pins that would cover each other
   show as one, in the first one's icon, its tooltip what is there. **A click on any pin**, on the small map and the
   full one, puts the game's map pin where it stands (the golden line leads there; the tooltips do not say so); a
   gathered one zooms in too; on
@@ -107,11 +110,13 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   (26 of Forever's: the classic dungeons and raids, each floor in the game's own map art), A to Z; chosen, its map
   over the map, and beside it its floors. Where the data knows them, each boss as its own 3D model where it stands
   (the game's model of the boss's look; the game's boss mark only where it has no look, or its model would reach
-  past the view's edge). Its tooltip: its name, its abilities and what it drops, each with its icon and name as the
-  game has them (an item in its quality's colour; at most ten of each, then how many more), not yet confirmed by the
-  game; hold Alt for each ability's description and, under each item, only its damage, speed and damage per
-  second, armour and block, stats and effects (Equip, Use, Chance on hit), and *Uncollected* while you lack its look
-  (no price, slot, binding, requirements, durability, set or lore). Where the data knows them, the
+  past the view's edge). Its tooltip is a creature's: its name in a foe's red, under it the dungeon and *Boss*, its
+  model in the portrait's place with the boss's dragon and *??* for its level (in Sane UI's tooltips); then the
+  sections *Abilities* and *Loot*, each with its icon and name as the game has them (an item in its quality's
+  colour; at most ten of each, then how many more), and *! Unconfirmed Data !*; hold Alt for each ability's
+  description and, under each item, *Uncollected* first while you lack its look, then its effects (Use, Equip,
+  Chance on hit: a recipe's what it teaches), last its damage, speed and damage per second, armour and block and
+  stats (no price, slot, binding, requirements, durability, set or lore). Where the data knows them, the
   enemies stand there too, each a small red dot under the bosses, its name in its tooltip (six dungeons so far). The wheel zooms it, a drag moves it, a right
   click goes back to the map it was opened from. Shift and a click on a dungeon's entrance opens it too, and inside a
   dungeon the full map opens on its map, at its lowest floor. Instance maps keep rules of their own, apart from the
@@ -320,7 +325,9 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   game's guild news shows a boss; `Dungeons.MODEL_WIDTH` x `MODEL_HEIGHT`, turned `Dungeons.FACING`), one lower on
   the screen in front (`Dungeons.SPREAD` levels, all under the bar), hidden while it would reach past the view's
   edge (models are not cut there), let go (`ClearModel`) when the view closes; the mark's icon and mouse only while
-  no model stands on it. A boss's tooltip (`BossTip`) lists the
+  no model stands on it. A boss's tooltip (`BossTip`) is drawn as a creature's by Sane UI's tooltips
+  (`Core.TipLook`: its `display`, the `boss` dragon, `??`): its name (`Dungeons.FOE`), the dungeon (the set
+  *Dungeons*' name of its encounter's instance) and *Boss*; each list headed by `Core.TipSection`; it lists the
   set *Bosses*' `abilities` and `loot` (`Listed`, at most `Dungeons.LINES` each; a set of their own, apart from the
   game's *Encounters*, so they stay unverified until the game confirms them): a spell by `C_Spell.GetSpellInfo`,
   an item by `C_Item.GetItemInfo` (asked for with `RequestLoadItemDataByID` while not loaded; drawn again once on
@@ -329,8 +336,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
   with `RequestLoadSpellData`, drawn again on `SPELL_DATA_LOAD_RESULT`), an item's own tooltip lines, read from a
   hidden tooltip (`SaneUINavigationReader`, `SetItemByID`), only those `Dungeons.KEEP` finds (the game's damage,
   damage per second, armour and block sentences, a line starting with a number's sign) or that start with one of
-  the game's effects (`Dungeons.EFFECTS`), in their colours; then *Uncollected* while the player lacks its
-  appearance (`C_TransmogCollection.GetItemInfo`, `GetAppearanceInfoBySource`; else the game's line saying so).
+  the game's effects (`Dungeons.EFFECTS`), in their colours, set in by four spaces: first *Uncollected* while the
+  player lacks its appearance (`C_TransmogCollection.GetItemInfo`, `GetAppearanceInfoBySource`; else the game's
+  line saying so), then the effects, last the stats. The last line, `Core.Unconfirmed`, says that it is not yet
+  confirmed by the game (an enemy's too).
 - **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
   in view, and from where the player is on (the way's cut, `Route.Cut`): the parts behind are not drawn, the one the
   player is on only from there, and a line of its own (the head) runs from the player's arrow to that point; the
@@ -608,6 +617,10 @@ on the screen while the map is small too, and the maps of the dungeons and raids
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-10-23, tooltips by role; bosses as creatures:** as Saneroki asked, an NPC's pin is named by what it is
+  (*Bowyer*, *Warrior Trainer*, *Quest giver*), not by its name; *! Unconfirmed Data !* in place of the old sentence,
+  a divider in Sane UI's tooltips; a boss's tooltip is a creature's (its model, the boss's dragon, *??*), its abilities
+  and loot sections of their own; an item's details with Alt: *Uncollected*, its effects, then its stats.
 - **2026-10-22, no ride straight back:** 5 of 200 routes between NPCs rode a lift up and straight down again (the
   Undercity's, Gnomeregan's), only so that a walk could follow a walk: a place reached on foot lets no walk go on,
   one reached by a ride does. Three things made it pay: a walk to a lift's upper end could end on the city under it,

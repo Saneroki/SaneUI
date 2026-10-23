@@ -957,7 +957,8 @@ check(head(panel).dragon == "elite" and not head(panel).power, "an elite one has
 check(panel.dragon:IsShown() and panel.dragon._texture == "Interface\\HUD\\UIUnitFrameBoss2x" and panel.dragon._points[1][2] == panel.icon
     and panel.dragon._points[1][3] == "CENTER" and math.floor(panel.dragon._width) == 84,
     "the game's own gold dragon for an elite (from its target frame) lies round the portrait")
-check(panel.icon._width == 64 and panel.icon._points[1][1] == "TOPRIGHT" and panel.icon._points[1][4] == 10 and panel.icon._points[1][5] == 10,
+check(panel.icon._width == 64 and panel.icon._points[1][1] == "TOPLEFT" and panel.icon._points[1][4] == panel:GetWidth() + 10 - 64
+    and panel.icon._points[1][5] == 10,
     "the portrait is large and stands out over the corner, where the dragon covers its edge")
 check(row(panel, 3).left == "|cffffd100Elite|r", "under what it is, its rank in the colour of its dragon")
 check(row(panel, 4).left == "Status" and row(panel, 5).kind == "bar" and row(panel, 5).live == "health",
@@ -1646,6 +1647,34 @@ check(row(panel, 1).caps and not head(panel).accent and row(panel, 2).lr == 1 an
 local plainR, plainG = ns.Mix(COLOR.BACKDROP, COLOR.NEUTRAL, 0.28)
 check(math.abs(colors[2].r - plainR) < 1e-9 and math.abs(colors[2].g - plainG) < 1e-9, "its background the same as a dead unit's")
 
+-- Too tall for the screen: the rest goes on in a second column beside the first, as wide, a groove between them
+local long = { { "Long Scroll", nil, GOLD } }
+for line = 1, 40 do long[#long + 1] = { "Line " .. line } end
+UIParent._height = 100
+tip:Fill({ type = TYPE.Object, id = 2 }, long)
+local columnWidth = panel:GetWidth()
+local columnsLeft = {}
+for index = 1, panel.texts.taken do
+    local label = panel.texts[index]
+    if label:IsShown() and label._points[1] then columnsLeft[label._points[1][4]] = true end
+end
+local tallest = 100 - 2 * (ns.Panel.EDGE + 8)
+check(panel:GetHeight() <= tallest and columnsLeft[12] and next(columnsLeft, nil) and panel.icon._points[1][1] == "TOPLEFT",
+    "a tooltip too tall for the screen is no taller than it")
+local ONE = 224 -- a column as wide as this panel would be in one
+local grooves = 0
+for index = 1, panel.lines.taken do
+    local line = panel.lines[index]
+    if line:IsShown() and line._height == panel:GetHeight() - 24 and line._points[1][4] % ONE == 0 then grooves = grooves + 1 end
+end
+local columns = panel:GetWidth() / ONE
+check(columns == 3 and columnsLeft[12 + ONE] and columnsLeft[12 + 2 * ONE] and grooves == 2,
+    "its rows go on in columns beside the first, each as wide as it, a groove between two columns")
+UIParent._height = nil
+long[2] = { "Line 1, changed" } -- (the same lines are not drawn again)
+tip:Fill({ type = TYPE.Object, id = 2 }, long)
+check(panel:GetWidth() < columnWidth, "with room on the screen, one column again")
+
 -- Gathering: how likely a herb or an ore raises your skill (Gathering.lua; Core's data, the sample: Peacebloom
 -- needs Herbalism 1, yellow from 25, grey from 100; Mithril Deposit Mining 175, 200, 275; both thorium veins give
 -- Thorium Ore, the small one from 245)
@@ -1711,6 +1740,32 @@ check(panel:IsShown() and tip:GetAlpha() == 0 and count(panel) == 1 and row(pane
     "a tooltip somebody wrote lines into gets a panel too, its lines as they are written")
 spell()
 check(panel:IsShown() and cells(row(panel, 4)):find("Mana 30 (30%)", 1, true) ~= nil, "(a spell again)")
+tip:Fill(nil, { { "Bowyer" }, { "Repairs" }, { Core.UNCONFIRMED, nil, { 0.5, 0.5, 0.5 } } })
+local marks = {}
+for index = 1, panel.texts.taken do
+    local label = panel.texts[index]
+    if label._text == "!" then marks[#marks + 1] = label end
+end
+check(shape(panel) == "text text UNCONFIRMED DATA" and row(panel, 3).caps and row(panel, 3).mark and #marks == 2
+    and marks[1]._color[1] == ns.COLOR.RED[1] and marks[1]._points[1][4] < marks[2]._points[1][4],
+    "a line Core marks as not confirmed by the game is a divider of its own, Unconfirmed Data, with a red ! at each side")
+-- A creature that is no unit of the game's (Core.TipLook: a boss on a dungeon's map): a creature's panel
+local GOLDEN = { 1, 0.82, 0 }
+tip:Fill(nil, { { "Rattlegore", nil, { 1, 0.3, 0.25 } }, { "Scholomance" }, { "Boss", nil, GOLDEN }, { "Abilities", nil, GOLDEN },
+    { "|T132338:16:16:0:0:64:64:5:59:5:59|t Cleave" }, { "    Hits the target and those beside it.", nil, GOLDEN },
+    { "Loot", nil, GOLDEN }, { "|T1901:16:16|t Bone Blade" }, { "    +12 Strength" },
+    { Core.UNCONFIRMED, nil, { 0.5, 0.5, 0.5 } } }, true)
+Core.TipLook(tip, { display = 11622, dragon = "boss", badge = "??", sections = { [4] = true, [7] = true } })
+frame()
+check(shape(panel) == "text text text ABILITIES text text LOOT text text UNCONFIRMED DATA" and row(panel, 2).font == "title"
+    and row(panel, 2).flush and row(panel, 3).font == "detail" and head(panel).accent and head(panel).ar == 1,
+    "a boss on a dungeon's map: its name, as large under it the dungeon, small Boss; its sections under their dividers")
+check(head(panel).model == 11622 and head(panel).modelKind == "display" and head(panel).dragon == "boss" and head(panel).badge == "??"
+    and head(panel).badgeR == ns.COLOR.RED[1] and hinted(panel),
+    "its model in the portrait's place, the boss's dragon round it, ?? on the plaque; Alt shows more")
+check(row(panel, 5).icon == 132338 and row(panel, 5).left == "Cleave" and row(panel, 6).indent and row(panel, 6).font == "sub"
+    and row(panel, 6).left == "Hits the target and those beside it." and row(panel, 9).left == "+12 Strength",
+    "a row's icon at its start; the details with Alt set in under it, small")
 tip:Fill(nil, { { "Close" }, { "Closes the window." } })
 check(panel:IsShown() and tip:GetAlpha() == 0 and row(panel, 2).left == "Closes the window." and head(panel).icon == nil and not head(panel).strip,
     "lines written into it after a spell's are a hint, not that spell")

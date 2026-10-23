@@ -174,6 +174,13 @@ function Pools.Place(panel, label, x, y, width)
     return Size(label:GetStringHeight())
 end
 
+-- A pool given back to where it stood (taken: its count then), its parts taken since hidden: a draw lays its
+-- rows again (Panel.lua, in columns).
+function Pools.Rewind(pool, taken)
+    for index = taken + 1, pool.taken do pool[index]:Hide() end
+    pool.taken = taken
+end
+
 function NewLine(panel)
     local line = panel:CreateTexture(nil, "ARTWORK", nil, 0)
     line:SetTexture(WHITE)

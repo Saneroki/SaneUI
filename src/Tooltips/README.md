@@ -50,6 +50,7 @@ only read.
   | **Buff, debuff** | Name; *Buff* or *Debuff* and what takes it away (*Magic*); icon; under **Info** the description, in the middle; under **Duration** a bar that runs out with its time, with how long it still runs and who cast it written inside (flat, round corners). The panel has the game's colour of what takes it away (the colour of a debuff's border: magic, curse, poison, disease); a debuff nothing takes away the game's colour for that, a buff nothing takes away none |
   | **Quest** | Name; level (in the colour of its difficulty) and where it stands for you (*In progress*, *Ready to turn in*, *Completed*); under **Info** its text; under **Objectives** a box for each thing to do, ticked and green when it is done |
   | **Herb, ore** (a thing in the world Core's data knows) | As anything else, and under **Professions** the skill it needs and your chance (see *Gathering* below); the game's own line of the skill is left out |
+  | **A creature on a map** (a boss on a dungeon's map: Core's `TipLook`) | As a creature's: its name, under it as large its title (the dungeon), small *Boss*; its 3D model in the portrait's place with the dragon of its rank (gold and winged for a boss) and its level on the plaque (*??*); then its sections (*Abilities*, *Loot*), each line's icon at its start, and with Alt its details set in under it, small |
   | **Anything else** the game fills from data (things in the world such as a mailbox or a chest, macros, the minimap, currencies, mounts, totems, equipment sets, ...) | Name and its lines under it as the game has them, no sections (an empty line is a small gap); a panel without a colour of its own, whatever colour the name has |
 
   **Sections:** every part of a panel under its header is a section with its name on its divider, in small
@@ -63,6 +64,15 @@ only read.
   *Duration*; a quest's *Objectives*; a line of the game's of no other kind under *Details*; Alt's numbers
   under *IDs*; other addons' lines under *Addons* (with Alt). Two neighbours of the same kind are one section
   (the game's empty line between them is a small gap).
+
+  **Unconfirmed Data:** a tooltip about something the game has not confirmed yet (a map's pin from Sane UI's
+  data, a boss's abilities and loot) ends with a divider of its own, *——— ! UNCONFIRMED DATA ! ———*, the marks in
+  the game's red, the words in a section's shade.
+
+  **Too tall for the screen:** a panel that would not fit the screen's height goes on in a second column beside
+  the first (and a third...), each as wide as the first, a fine groove between them; no column is taller than the
+  screen, and a section's name never stays alone at a column's foot. The icon or portrait stays at the first
+  column's corner.
 
   **Hold ALT for more:** at the bottom of every panel of the game's data, while Alt is not held, a tiny line
   between two rules like a section's name (*——— Hold ALT for more ———*) says so; with Alt it gives way to what
@@ -229,6 +239,18 @@ only read.
   a buff's caster). A kind without a file gets `Read.Generic`. Each reader runs in an `xpcall` of its own
   (`ns.Read`): one that fails (a client update renamed a function it uses) is noted and told once
   (`ns.Report`) and switched off, and the tooltips of its kind are the game's own from then on.
+- **Columns** (`Panel.lua`, `Columns`): the rows are laid once in one column; where that would be taller than the
+  screen in the panel's units (`Tallest`: `UIParent`'s height by the scales, less `SCREEN_MARGIN` and the soft edge
+  above and below), each column ends before the row that would run past it (a caption goes on with its rows), the
+  lines and icons of the first laying are given back (`Pools.Rewind`) and the rows laid again, each column starting
+  at the top `width` further right (`ox`); the panel is `width` times the columns wide, a groove between two.
+- **Unconfirmed Data** (`Read.Rest`): a line that is Core's `Core.UNCONFIRMED` is a caption row with `mark`: a red
+  *!* (`FONTS.mark`, `COLOR.RED`) at each side of the name, between it and its rules.
+- **A creature on a map** (`ns.Figure`, in `Kinds/Unit.lua`): a tooltip without the game's data that carries a look
+  of Core's (`Core.LookOf`: `display`, `dragon`, `badge`, `sections` by line) is read as a creature's: its model as
+  the head's `display` model (zoom 1: the face), the skull (`SKULL`) while none loads; each line after a heading of
+  `Core.TipSection` in that section (`ctx.name`); a row's `|T...|t` icon at its start, a line set in by spaces
+  (`ctx.each`) set in under the icon (`DETAIL_IN`), small.
 - **The model** (`Model.lua`): a head and a list of rows, plain data. It has two copies, the one that is
   drawn and one to fill. A shown tooltip is filled again several times a second; after a fill the copies
   are compared, and only a difference draws the panel again. The tables are used again, texts put
@@ -574,6 +596,9 @@ only read.
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## History
+- 2026-10-23 — A tooltip too tall for the screen goes on in columns beside the first. *! Unconfirmed Data !* as a
+  divider of its own, the marks red. A boss on a dungeon's map drawn as a creature: its model, the boss's dragon,
+  *??*, its abilities and loot in sections (Saneroki).
 - 2026-10-19 — Section names in the middle with a rule at each side, both in a dark see-through shade like
   grooves; so are a spell's table captions and lines, its values white. A spell's numbers in a table of four
   columns and two rows (every cell filled, *---* where unknown); what it asks of you (a stance, a form, a

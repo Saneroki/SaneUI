@@ -26,6 +26,11 @@ local ADDON, ns = ...
 --  and are used again for every draw. Its width follows what it holds, in
 --  steps (Fit).
 --
+--  A panel taller than the screen goes on in a second column (and a third...)
+--  beside the first, as wide as it, a groove between them: its rows are laid
+--  once in one column to know their heights, then again with each column
+--  starting at the top where the one before would run off the screen (Columns).
+--
 --  Five pictures are ours (made by dev/tools/tooltip-art; the game has none like
 --  them): Art\soft.tga, the background's shape with its soft edge, and four masks
 --  that give a soft edge: Art\icon-mask.tga and Art\portrait-mask.tga to an icon
@@ -73,6 +78,7 @@ local AURA_WORDS = 30           -- a buff's bar: its insets and the gap between 
 local AURA, AURA_GAP = 20, 2
 local DEFAULT_SIZE, DEFAULT_OPACITY = 14, 97 -- as the settings have them at first (Tooltips.lua)
 local COMPARED_ALPHA = 0.85     -- the panel of what you wear, beside the panel of what you look at
+local SCREEN_MARGIN = 8         -- a panel in columns keeps so much room above and below it on the screen
 -- The dragons round a portrait: the game's own, from its target frame (Interface\HUD\UIUnitFrameBoss2x,
 -- the art the game lays round the target's portrait for a boss, an elite and a rare). Each curls
 -- round a circle: DRAGONS gives its place on the sheet of 512 by 512 (left, top, right, bottom) and
@@ -124,6 +130,9 @@ local BAR_MASK = "Interface\\AddOns\\" .. ADDON .. "\\Art\\bar-mask"
 
 local panels = {}  -- [tooltip] = its panel
 local cells = {}   -- [a strip's row] = its first text, for one draw
+local ox = 0       -- how far right of the panel's left side the column being laid begins, for one draw
+local tops = {}    -- [row] = where it begins, laid in one column (Lay, Columns), for one draw
+local breaks = {}  -- [row] = true: it begins a new column (Columns), for one draw
 local widestCell = 0 -- the widest cell of a panel's tables, for one draw
 local tint = {}    -- the panel's colour, for one draw
 local low, high    -- two colours for gradients, used again for every draw
@@ -147,6 +156,7 @@ local FONTS = {
     section = { font = "GameTooltipText", add = -4, least = 8, groove = true },
     hint = { font = "GameTooltipText", add = -6, least = 7, groove = true },
     detail = { font = "GameTooltipText", add = -4, least = 8 },  -- a unit's kind, PvP
+    mark = { font = "GameTooltipHeaderText", add = -2, least = 9 }, -- the red ! beside Unconfirmed Data
     inside = { font = "GameTooltipText", add = -4, least = 8 },  -- the numbers inside a health bar
 }
 
@@ -202,7 +212,6 @@ local function Create(tooltip)
     panel.back:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", SOFT_OUT, -SOFT_OUT)
     -- The icon or portrait, its edge fading out softly like the panel's (a mask of its shape)
     panel.icon = panel:CreateTexture(nil, "ARTWORK", nil, 1)
-    panel.icon:SetPoint("TOPRIGHT", panel, "TOPRIGHT", ICON_OUT, ICON_OUT)
     panel.icon:SetSize(ICON, ICON)
     panel.iconMask = panel:CreateMaskTexture()
     panel.iconMask:SetAllPoints(panel.icon)
@@ -615,7 +624,15 @@ local function Measure(panel, head, rows, count, r, g, b, iconRoom)
             local font = FONTS[row.font] or FONTS.section
             local caption = Text(panel, font, row.caps and Upper(row.left) or row.left, GROOVE[1], GROOVE[2], GROOVE[3], "CENTER")
             panel.left[index] = caption
-            wanted = math.max(wanted, Width(caption) + 2 * (CAPTION_GAP + CAPTION_RULE))
+            local marks = 0
+            if row.mark then
+                -- A red ! at each side of the name, between it and its rules
+                local red = COLOR.RED
+                panel.after[index] = Text(panel, FONTS.mark, "!", red[1], red[2], red[3], "CENTER")
+                panel.right[index] = Text(panel, FONTS.mark, "!", red[1], red[2], red[3], "CENTER")
+                marks = 2 * (Width(panel.after[index]) + CAPTION_GAP)
+            end
+            wanted = math.max(wanted, Width(caption) + marks + 2 * (CAPTION_GAP + CAPTION_RULE))
         end
     end
     return wanted, tag
@@ -625,6 +642,9 @@ end
 -- words on the lower edge. Returns how far down the picture reaches, and where a plaque wider
 -- than the picture begins (its left and top), for the rows beside it.
 local function Picture(panel, head, badge, width, pictured)
+    -- At the first column's top right corner (a panel in columns is wider than width)
+    panel.icon:ClearAllPoints()
+    panel.icon:SetPoint("TOPLEFT", panel, "TOPLEFT", width + ICON_OUT - ICON, ICON_OUT)
     local figured = Figure(panel, head)
     panel.icon:SetShown(pictured and not figured)
     panel.plaque:SetShown(badge ~= nil)
@@ -667,7 +687,7 @@ end
 local function TextRow(panel, row, index, y, room, reserve, width)
     local left, right, after = panel.left[index], panel.right[index], panel.after[index]
     local font = FONTS[row.font] or FONTS.row
-    local x = SIDE + (row.indent or 0)
+    local x = ox + SIDE + (row.indent or 0)
     if row.icon then
         Icon(panel, row.icon, SMALL_ICON):SetPoint("TOPLEFT", panel, "TOPLEFT", x, -y)
         x, room = x + SMALL_ICON + 4, room - SMALL_ICON - 4
@@ -675,7 +695,7 @@ local function TextRow(panel, row, index, y, room, reserve, width)
     room = room - (row.indent or 0)
     local edge = SIDE + reserve -- from the panel's right side
     if row.iconRight then
-        Icon(panel, row.iconRight, SMALL_ICON):SetPoint("TOPRIGHT", panel, "TOPRIGHT", -edge, -y)
+        Icon(panel, row.iconRight, SMALL_ICON):SetPoint("TOPLEFT", panel, "TOPLEFT", ox + width - edge - SMALL_ICON, -y)
         edge, room = edge + SMALL_ICON + 4, room - SMALL_ICON - 4
     end
     local height
@@ -688,7 +708,7 @@ local function TextRow(panel, row, index, y, room, reserve, width)
         local rightRoom = room - gutter - leftRoom
         right:SetWordWrap(false)
         height = WordsAndAfter(panel, row, left, after, x, y, leftRoom)
-        height = math.max(height, Place(panel, right, width - edge - rightRoom, y, rightRoom))
+        height = math.max(height, Place(panel, right, ox + width - edge - rightRoom, y, rightRoom))
     else
         right:Hide()
         height = WordsAndAfter(panel, row, left, after, x, y, room)
@@ -703,7 +723,7 @@ local function StripRow(panel, row, index, y, inner, hairline)
     local wide = inner / math.max(1, number) -- columns alike, so the rows of a table line up
     local valueTop = y + FONTS.caption.size + 2
     local height = FONTS.caption.size + 2 + FONTS.value.size + 2
-    local x = SIDE
+    local x = ox + SIDE
     for cell = 1, number do
         Place(panel, panel.texts[first + 2 * cell - 2], x, y, wide)
         Place(panel, panel.texts[first + 2 * cell - 1], x, valueTop, wide)
@@ -736,10 +756,10 @@ local function BarRow(panel, row, y, inner, block)
         -- A unit's health (its numbers inside); a buff's time (how long it still runs inside, who
         -- cast it at the right). Flat, with round corners: block is the stretch of them all.
         local bar = LiveBar(panel, row.live, HEALTH_HEIGHT, row.br, row.bg, row.bb)
-        bar:SetPoint("TOPLEFT", panel, "TOPLEFT", SIDE, -y)
+        bar:SetPoint("TOPLEFT", panel, "TOPLEFT", ox + SIDE, -y)
         bar:SetWidth(inner)
         live[row.live] = bar
-        block.top, block.bottom = block.top or y, y + HEALTH_HEIGHT
+        block.top, block.bottom, block.left = block.top or y, y + HEALTH_HEIGHT, block.left or ox
         if bar.texts then for _, text in pairs(bar.texts) do text:Hide() end end
         if row.live == "health" then
             -- In the middle of the bar, over the power bar's strip
@@ -756,9 +776,9 @@ local function BarRow(panel, row, y, inner, block)
         local bar = LiveBar(panel, "inside", HEALTH_HEIGHT, row.br, row.bg, row.bb)
         bar:SetMinMaxValues(0, row.max or 1)
         bar:SetValue(row.value or 0)
-        bar:SetPoint("TOPLEFT", panel, "TOPLEFT", SIDE, -y)
+        bar:SetPoint("TOPLEFT", panel, "TOPLEFT", ox + SIDE, -y)
         bar:SetWidth(inner)
-        block.top, block.bottom = block.top or y, y + HEALTH_HEIGHT
+        block.top, block.bottom, block.left = block.top or y, y + HEALTH_HEIGHT, block.left or ox
         if bar.texts then for _, text in pairs(bar.texts) do text:Hide() end end
         BarText(bar, "LEFT", FONTS.inside):SetText(row.left)
         BarText(bar, "RIGHT", FONTS.inside):SetText(row.right)
@@ -769,14 +789,24 @@ end
 
 local block = {} -- the stretch of a unit's bars, for their round corners, for one draw
 
--- Lays out the rows from y down. Returns the y under the last.
-local function Lay(panel, rows, count, y, width, iconRoom, iconBottom, plaqueLeft, plaqueTop, hairline)
+-- Lays out the rows from y down, a new column at each of breaks (none: one column). Notes where each row
+-- begins (tops). Returns the y under the last, and the lowest y of all columns.
+local function Lay(panel, rows, count, y, width, iconRoom, iconBottom, plaqueLeft, plaqueTop, hairline, columned)
     local inner = width - 2 * SIDE
     local live = panel.live
-    block.top, block.bottom = nil, nil
+    local lowest = 0
+    block.top, block.bottom, block.left = nil, nil, nil
+    ox = 0
     for index = 1, count do
         local row = rows[index]
         local kind = row.kind
+        if columned and breaks[index] then
+            -- The next column, from the top; the icon stands beside the first one only
+            lowest = math.max(lowest, y)
+            ox, y = ox + width, SIDE
+            iconBottom, plaqueLeft = 0, nil
+        end
+        tops[index] = y
         local font = FONTS[row.font] or FONTS.row
         if (row.space or kind ~= "text") and y < iconBottom then y = iconBottom + ROW_GAP end
         if row.space then y = y + SPACE end
@@ -791,8 +821,8 @@ local function Lay(panel, rows, count, y, width, iconRoom, iconBottom, plaqueLef
             -- Whom a unit targets: our word, and right after it the name Live.lua writes
             local word = panel.left[index]
             local wide = math.min(Width(word), room)
-            Place(panel, word, SIDE, y, wide)
-            live.targetName = LiveText(panel, "targetName", font, "LEFT", SIDE + wide + NAME_GAP, y, room - wide - NAME_GAP)
+            Place(panel, word, ox + SIDE, y, wide)
+            live.targetName = LiveText(panel, "targetName", font, "LEFT", ox + SIDE + wide + NAME_GAP, y, room - wide - NAME_GAP)
             y = y + font.size + 2 + ROW_GAP
         elseif kind == "text" then
             if row.flush then y = y - FLUSH end -- close under the row before it (a guild under a name)
@@ -803,29 +833,64 @@ local function Lay(panel, rows, count, y, width, iconRoom, iconBottom, plaqueLef
             y = BarRow(panel, row, y, inner, block)
         elseif kind == "caption" then
             -- A section's name in the middle, and a rule from each side to it
-            local caption = panel.left[index]
+            local caption, before, after = panel.left[index], panel.after[index], panel.right[index]
             local wide = math.min(Width(caption) + 2, inner)
-            local left = SIDE + math.floor((inner - wide) / 2)
+            local left = ox + SIDE + math.floor((inner - wide) / 2)
             y = y + CAPTION_ABOVE
             local height = Place(panel, caption, left, y, wide)
-            local rule = left - SIDE - CAPTION_GAP
+            local outer, mark = 0, 0 -- the marks' room at each side of the name
+            if row.mark and before then
+                mark = Width(before)
+                outer = mark + CAPTION_GAP
+                -- On the name's base line: the marks' text is larger
+                local drop = (FONTS.section.size - FONTS.mark.size) * BASE_LINE
+                Place(panel, before, left - outer, y + drop, mark)
+                Place(panel, after, left + wide + CAPTION_GAP, y + drop, mark)
+            end
+            local rule = left - outer - ox - SIDE - CAPTION_GAP
             if rule >= CAPTION_RULE then
                 local middle = y + math.floor(height / 2)
-                Rule(panel, SIDE, middle, rule, hairline)
-                Rule(panel, left + wide + CAPTION_GAP, middle, rule, hairline)
+                Rule(panel, ox + SIDE, middle, rule, hairline)
+                Rule(panel, left + wide + outer + CAPTION_GAP, middle, rule, hairline)
             end
             y = y + height + CAPTION_BELOW
         elseif kind == "auras" then
-            live.aurasTop, live.aurasWidth = y, inner
+            live.aurasTop, live.aurasWidth, live.aurasLeft = y, inner, ox + SIDE
             y = y + AURA + ROW_GAP
         end
     end
     if block.top then
         panel.barMask:ClearAllPoints()
-        panel.barMask:SetPoint("TOPLEFT", panel, "TOPLEFT", SIDE, -block.top)
-        panel.barMask:SetPoint("BOTTOMRIGHT", panel, "TOPRIGHT", -SIDE, -block.bottom)
+        panel.barMask:SetPoint("TOPLEFT", panel, "TOPLEFT", block.left + SIDE, -block.top)
+        panel.barMask:SetPoint("BOTTOMRIGHT", panel, "TOPLEFT", block.left + width - SIDE, -block.bottom)
     end
-    return y
+    return y, math.max(lowest, y)
+end
+
+-- How tall a panel may be: the screen's height in the panel's units, less a margin above and below.
+local function Tallest(panel)
+    local screen, ui, own = Plain(UIParent:GetHeight()), Plain(UIParent:GetEffectiveScale()), Plain(panel:GetEffectiveScale())
+    if not (type(screen) == "number" and screen > 0 and type(ui) == "number" and type(own) == "number" and own > 0) then return nil end
+    return screen * ui / own - 2 * (SOFT_OUT + SCREEN_MARGIN)
+end
+
+-- Where the columns of a panel too tall for the screen begin (breaks), from the rows laid in one column
+-- (tops, bottom: the y under the last). A column ends before the row that would run past tallest; a
+-- section's name never stays alone at a column's foot: it goes on with its rows. Returns how many columns.
+local function Columns(rows, count, bottom, tallest)
+    for index in pairs(breaks) do breaks[index] = nil end
+    if not tallest or bottom + SIDE - ROW_GAP <= tallest then return 1 end
+    local columns, base, first = 1, 0, 1 -- base: how far up the column's rows are moved; first: its first row
+    for index = 2, count do
+        local under = (index < count and tops[index + 1] or bottom) - base
+        if under + SIDE - ROW_GAP > tallest then
+            local at = index
+            if rows[at - 1].kind == "caption" and at - 1 > first then at = at - 1 end
+            breaks[at] = true
+            columns, base, first = columns + 1, tops[at] - SIDE, at
+        end
+    end
+    return columns
 end
 
 -- The background in the panel's colour (more of it at the top), the dragon round a portrait, how
@@ -894,9 +959,27 @@ function Panel.Draw(panel)
     local iconBottom, plaqueLeft, plaqueTop = Picture(panel, head, badge, width, pictured)
     -- A hairline: one unit of the UI, rounded to whole dots of the screen and never less than one
     -- (Core.Pixels, by the game's PixelUtil): it stays sharp at every scale.
-    y = Lay(panel, rows, count, y, width, iconRoom, iconBottom, plaqueLeft, plaqueTop, Core.Pixels(panel, 1))
+    local hairline = Core.Pixels(panel, 1)
+    local top, lines, icons = y, panel.lines.taken, panel.icons.taken
+    y = Lay(panel, rows, count, top, width, iconRoom, iconBottom, plaqueLeft, plaqueTop, hairline)
+    local columns = Columns(rows, count, y, Tallest(panel))
+    if columns > 1 then
+        -- Laid again in columns: the lines and icons of the first laying given back (texts are placed anew)
+        Pools.Rewind(panel.lines, lines)
+        Pools.Rewind(panel.icons, icons)
+        local _, lowest = Lay(panel, rows, count, top, width, iconRoom, iconBottom, plaqueLeft, plaqueTop, hairline, true)
+        y = lowest
+        panel:SetWidth(width * columns)
+    end
     y = math.max(y, iconBottom + ROW_GAP)
-    panel:SetHeight(y + SIDE - ROW_GAP)
+    local height = y + SIDE - ROW_GAP
+    panel:SetHeight(height)
+    for column = 2, columns do
+        -- A groove between two columns
+        local groove = Line(panel, GROOVE[1], GROOVE[2], GROOVE[3], Pools.GROOVE)
+        groove:SetPoint("TOPLEFT", panel, "TOPLEFT", (column - 1) * width, -SIDE)
+        groove:SetSize(hairline, height - 2 * SIDE)
+    end
     Finish(panel, head, pictured, r, g, b)
     if Pools.Spoilt() then
         panel:Hide()
