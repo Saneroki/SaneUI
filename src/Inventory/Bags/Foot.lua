@@ -36,7 +36,7 @@ local Foot = {}
 ns.Foot = Foot
 
 Foot.HEIGHT = 28
-Foot.BAG = 34          -- a bag's square in the strip
+Foot.BAG = 68          -- a bag's square in the strip (Saneroki, 2026-10-23: twice an item's)
 Foot.BAG_GAP = 4
 Foot.STRIP = Foot.BAG + 12
 Foot.TOKENS = 3        -- the currencies the game lets the backpack watch (MAX_WATCHED_TOKENS)
