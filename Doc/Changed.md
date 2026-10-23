@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 385 checks (Core, with its options and profiles), 351 (Abilities), 482 (Tooltips), 605 (Social), 99 (Sync), 412 (windows), 209 (data in the game), 555 (Navigation), 132 (Inventory), 95 (sheet), 272 (bags), 45 (Combat), 41 (spellbook), 64 (talents), 96 (Nameplates), 107 (Guild), 159 (walking data), 24 (map data), 198 (data tools).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates and Guild; new files in Navigation's, Core's, Social's, Combat's, Inventory's, Nameplates' and Tooltips' TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: the line smaller, nothing cut short, no room left over (Saneroki, 2026-10-23)
+- **Smaller** (`Text.lua`): the line's font is the game's nameplate font's face and outline at `Text.SMALLER` (0.72)
+  of its height, set on every text of ours (`SetFont`); icons `Text.ICON` 1.2 times that height.
+- **Measured right:** texts ("0/7", the name) were cut short and others had room left over, because rooms came from a
+  hidden ruler. Now a plain text is measured on itself, whole (`GetUnboundedStringWidth`), rounded up and a pixel
+  more (`Text.SLACK`); the ruler (alpha 0, shown) only for texts that answer hidden, the health's most and "100%".
+- Tests: 116 checks (the font, the rooms with their slack).
+
 ### Nameplates: one line inside the bar, each piece only while it shows; the bar as wide as the line (Saneroki, 2026-10-23)
 - **The line** (`Text.lua`): left to right the quest objective (the game's sword or sack and "0/7", from
   `Core.UnitQuest`), the raid marker (`Marks.lua`, no longer right of the bar), the level, a player's item level

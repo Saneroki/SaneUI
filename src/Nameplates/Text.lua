@@ -18,8 +18,11 @@ local _, ns = ...
 --    health   short ("850", "1.2k", "1.32m") and how much is left ("| 100%")
 --  The bar is as wide as the line and its insets (Text.Layout, Plate.Place).
 --
---  Widths are measured on a ruler of our own (a font string never given a
---  hidden value: one that was would answer its width hidden too). In a fight
+--  The line's font is the game's for its plates' names, smaller (Text.SMALLER),
+--  the icons as high as it and a little more. A plain text is measured on
+--  itself, whole (not as cut by the width it was given), and given a pixel
+--  more; one that cannot say (a font string once given a hidden value answers
+--  its width hidden) is measured on a ruler of ours, never seen. In a fight
 --  the game may hide health, threat and a name from addons (secret values).
 --  The texts then take them as they are, formatted by the game: the
 --  percentages as numbers, the health by the game's abbreviation in the same
@@ -38,7 +41,9 @@ Text.FONTS = { "SystemFont_NamePlate_Outlined", "SystemFont_NamePlate", "GameFon
 Text.INSET = 5   -- from the bar's ends to the line
 Text.GAP = 4     -- between two pieces of the line
 Text.NEAR = 1    -- between the quest's icon and its count
-Text.ICON = 1.3  -- an icon's size, times the font's height
+Text.SMALLER = 0.72 -- the line's font, a share of the height of the game's font for its plates' names
+Text.ICON = 1.2  -- an icon's size, times the font's height
+Text.SLACK = 1   -- room given to a text beyond its measured width, so it is never cut short by rounding
 Text.NAME = 80   -- the room of a name the game hides, before a plain one was seen
 Text.MOST = 180  -- the most room a name takes (cut short beyond it)
 Text.GEAR = { 0.75, 0.75, 0.75 } -- the item level's colour
@@ -66,20 +71,55 @@ local function Font()
     return nil
 end
 
+-- The line's font: the game's font for its plates' names (its face and outline), smaller, set once on every text
+-- of ours, so a change the game makes to its font object later changes none of them.
+local font
+local function Font()
+    if font then return font end
+    for _, name in ipairs(Text.FONTS) do
+        local object = rawget(_G, name)
+        local file, height, flags
+        if type(object) == "table" and object.GetFont then file, height, flags = object:GetFont() end
+        if type(file) == "string" and type(height) == "number" and height > 0 then
+            font = { name = name, file = file, height = math.max(height * Text.SMALLER, 6), flags = flags or "" }
+            return font
+        end
+    end
+    font = { height = 10 } -- no font object of the game's here: the template's own
+    return font
+end
+
 local function Line(host, justify)
-    local text = host:CreateFontString(nil, "OVERLAY", Font())
+    local look = Font()
+    local text = host:CreateFontString(nil, "OVERLAY", look.name)
+    if look.file then text:SetFont(look.file, look.height, look.flags) end
     text:SetJustifyH(justify)
     text:SetWordWrap(false)
     text:SetTextColor(1, 1, 1)
     return text
 end
 
-local ruler -- a font string of ours that only measures, never shown, never given a hidden value
+-- A text's whole width as drawn (not cut by a width it was given); nil where the text answers it hidden.
+local function Drawn(text)
+    local measure = text.GetUnboundedStringWidth or text.GetStringWidth
+    local width = Plain(measure(text))
+    return type(width) == "number" and width or nil
+end
 
--- How wide a plain text is in the plates' font.
+local ruler -- a font string of ours that only measures: never seen (alpha 0), never given a hidden value
+
+-- How wide a plain text is in the line's font, with its slack.
 function Text.Width(text)
     ruler:SetText(text)
-    return Plain(ruler:GetStringWidth()) or 0
+    return math.ceil(Drawn(ruler) or 0) + Text.SLACK
+end
+
+-- How wide a text of the line is as it shows now (plain): measured on itself; on the ruler where it answers hidden
+-- (a font string once given a hidden value may answer so ever after).
+local function Measure(region, plain)
+    local width = Drawn(region)
+    if width then return math.ceil(width) + Text.SLACK end
+    return Text.Width(plain)
 end
 
 -- The texts on the dress, on a frame of their own above the bar and its lines.
@@ -89,9 +129,9 @@ function Text.Make(dress)
     top:SetFrameLevel(dress.health:GetFrameLevel() + 3)
     if not ruler then
         ruler = Line(top, "LEFT")
-        ruler:Hide()
-        ruler:SetText("0")
-        Text.size = math.floor((Plain(ruler:GetStringHeight()) or 10) * Text.ICON + 0.5)
+        ruler:SetPoint("LEFT", top, "LEFT")
+        ruler:SetAlpha(0)
+        Text.size = math.floor(Font().height * Text.ICON + 0.5)
     end
     local quest = top:CreateTexture(nil, "OVERLAY")
     quest:SetSize(Text.size, Text.size)
@@ -140,7 +180,7 @@ function Text.Name(dress, unit)
     dress.name:SetText(text)
     local plain = Plain(text)
     if type(plain) == "string" then
-        dress.nameRoom = plain ~= "" and math.min(Text.Width(plain), Text.MOST) or nil
+        dress.nameRoom = plain ~= "" and math.min(Measure(dress.name, plain), Text.MOST) or nil
         return Room(dress, "name", dress.nameRoom)
     end
     Room(dress, "name", dress.nameRoom or Text.NAME)
@@ -172,7 +212,7 @@ function Text.Level(dress, unit)
         text:SetTextColor(1, 1, 1)
     end
     if shown then text:SetText(shown) end
-    Room(dress, "level", shown and Text.Width(shown) or nil)
+    Room(dress, "level", shown and Measure(text, shown) or nil)
 end
 
 -- A player's item level ("i32"), as Core's inspections have it (asked for while it has not come); none for
@@ -184,7 +224,7 @@ function Text.Gear(dress, unit)
         if type(level) == "number" and level > 0 then shown = "i" .. level end
     end
     text:SetText(shown or "")
-    Room(dress, "gear", shown and Text.Width(shown) or nil)
+    Room(dress, "gear", shown and Measure(text, shown) or nil)
     return shown ~= nil
 end
 
@@ -202,7 +242,7 @@ function Text.Quest(dress, unit)
     count = kind and count or ""
     text:SetText(count)
     Room(dress, "quest", kind and Text.size or nil)
-    Room(dress, "count", count ~= "" and Text.Width(count) or nil)
+    Room(dress, "count", count ~= "" and Measure(text, count) or nil)
 end
 
 -- Your threat on the unit, and the glow while you have its aggro. Nothing while you are not on its threat list.

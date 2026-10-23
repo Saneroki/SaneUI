@@ -110,13 +110,16 @@ fails, every plate is the game's own again.
   bar's height (two pixels at least), from 0 to `UnitPowerMax`, at `UnitPower` (both as the game gives them), in
   the game's `PowerBarColor` for `UnitPowerType`'s token; hidden where the most is a plain 0 or the setting is
   off; no background. Its coming or going moves the combo points (`Resource.Again`).
-- **The line** (`Text.lua`): on a frame above the bar's (its level three above the bar's), the game's nameplate
-  font (`SystemFont_NamePlate_Outlined`). Each piece has its room (`dress.room[piece]`, none while it does not
+- **The line** (`Text.lua`): on a frame above the bar's (its level three above the bar's), in the game's nameplate
+  font's face and outline (`SystemFont_NamePlate_Outlined`'s `GetFont`), `Text.SMALLER` (0.72) of its height, set on
+  every text of ours once (`SetFont`), so later changes of the game's font object change none. Each piece has its room (`dress.room[piece]`, none while it does not
   show); `Text.Layout` places the pieces from `Text.INSET` in, `Text.GAP` apart (`Text.NEAR` between the quest's
   icon and count), each at `LEFT` of the frame at its x, and wants the bar as wide as the line and its insets
-  (`dress.want`, `Plate.Place`). Rooms are measured on a ruler of ours (`Text.Width`: a font string never shown and
-  never given a hidden value, since one that was would answer its width hidden too); icons are `Text.ICON` times
-  the font's height (`Text.size`). Several pieces set at once lay out once (`dress.holding`). The pieces:
+  (`dress.want`, `Plate.Place`). A plain text's room is its own whole width (`GetUnboundedStringWidth`: not as cut
+  by the width it was given), rounded up, and `Text.SLACK` (1) more; a text that answers hidden (a font string once
+  given a hidden value may ever after), the health's most and the threat's "100%" are measured on a ruler of ours
+  (`Text.Width`: a font string at alpha 0, never given a hidden value). Icons are `Text.ICON` (1.2) times the font's
+  height (`Text.size`). Several pieces set at once lay out once (`dress.holding`). The pieces:
   - *quest*: `Core.UnitQuest(unit)` (`src/Core/Objectives.lua`), not for players: the icon `Text.QUEST` (the game's
     cursors `Attack` and `LootAll`) and the count; kept as it was while the game hides it; again on
     `QUEST_LOG_UPDATE` and `UNIT_QUEST_LOG_CHANGED`, once a frame.
@@ -218,3 +221,5 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 - **2026-10-23:** one line inside the bar, each piece taking room only while it shows: quest objective, raid
   marker, level, item level, threat, name, health; the bar as wide as the line (Saneroki). Combat's quest marks
   step aside meanwhile; the quest reading and the inspections are Core's now.
+- **2026-10-23:** the line's text and icons smaller (Saneroki); each text measured whole on itself, so none is cut
+  short and no room is left over.

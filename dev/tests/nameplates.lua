@@ -45,6 +45,10 @@ function methods:SetFrameLevel(level) self._level = level end
 function methods:SetBlendMode(mode) self._blend = mode end
 -- Text measured as the game would, six wide a letter, ten high; a hidden value has no width the test can know.
 function methods:GetStringWidth() return type(self._text) == "string" and #self._text * 6 or 0 end
+methods.GetUnboundedStringWidth = methods.GetStringWidth
+function methods:SetFont(file, height, flags) self._font = { file, height, flags } end
+-- The game's font for its plates' names: its face, height and outline.
+SystemFont_NamePlate_Outlined = { GetFont = function() return "Fonts\\FRIZQT__.TTF", 14, "OUTLINE" end }
 function methods:GetStringHeight() return 10 end
 
 -- A hidden value of the game's: a table here, never compared.
@@ -215,16 +219,20 @@ check(dress.health._value == wolf and dress.health._max == units.nameplate1.most
 check(dress.health._barColor[1] == 1 and dress.health._barColor[2] == 0, "a creature that attacks on sight: red")
 check(dress.name._text == "Young Wolf", "its name inside the bar")
 check(dress.level._text == "22" and dress.level._color[2] == 1, "its level, in the game's colour for it")
+check(dress.name._font[1] == "Fonts\\FRIZQT__.TTF" and dress.name._font[2] == 14 * Text.SMALLER and dress.name._font[3] == "OUTLINE"
+    and dress.value._font[2] == 14 * Text.SMALLER and Text.size == math.floor(14 * Text.SMALLER * Text.ICON + 0.5),
+    "the game's face and outline, smaller; the icons as high as it and a little more")
 check(dress.threat._text == "" and dress.room.threat == nil and dress.room.quest == nil and dress.room.raid == nil
     and dress.room.gear == nil, "no threat, quest, marker or item level: they take no room")
 check(type(dress.value._text) == "table" and dress.value._text.form == "%s | %d%%", "hidden health: the game's abbreviation and percent")
 -- The line: level, name, health, one after the other; the bar as wide as it and its insets.
 local function X(region) return region._points[1][4] end
 local I, G = Text.INSET, Text.GAP
-check(X(dress.level) == I and X(dress.name) == I + 12 + G and X(dress.value) == I + 12 + G + 60 + G,
+local function L(letters) return letters * 6 + Text.SLACK end -- a text's room: six a letter, and the slack
+check(X(dress.level) == I and X(dress.name) == I + L(2) + G and X(dress.value) == I + L(2) + G + L(10) + G,
     "the level first, then the name, then the health")
-check(dress.room.value == 13 * 6, "hidden health keeps the room of the widest it can show")
-check(dress.want == I + 12 + G + 60 + G + 78 + I and dress._width == dress.want, "the bar as wide as its line, no wider")
+check(dress.room.value == L(13), "hidden health keeps the room of the widest it can show")
+check(dress.want == I + L(2) + G + L(10) + G + L(13) + I and dress._width == dress.want, "the bar as wide as its line, no wider")
 check(dress.border._vertex[1] == 0.8 and dress.rank == Bar.RANKS.rare, "a rare: a thin silver border")
 check(not dress.raid:IsShown(), "no raid marker")
 check(dress.power:IsShown() and dress.power._value == 40 and dress.power._max == 100 and dress.power._barColor[3] == 1,
@@ -283,10 +291,10 @@ W.Fire("UNIT_LEVEL", "nameplate1")
 units.nameplate1.health, units.nameplate1.most = 1325000, 1325000
 W.Fire("UNIT_HEALTH", "nameplate1")
 check(dress.health._value == 1325000 and dress.value._text == "1.32m | 100%", "health followed, short, and its percent")
-check(dress.room.value == 12 * 6 and dress._width == I + 12 + G + 60 + G + 72 + I, "its room the most it shows: the bar narrower")
+check(dress.room.value == L(12) and dress._width == I + L(2) + G + L(10) + G + L(12) + I, "its room the most it shows: the bar narrower")
 units.nameplate1.health = 4000
 W.Fire("UNIT_HEALTH", "nameplate1")
-check(dress.value._text == "4k | 1%" and dress.room.value == 12 * 6, "health going down: the bar keeps its width")
+check(dress.value._text == "4k | 1%" and dress.room.value == L(12), "health going down: the bar keeps its width")
 units.nameplate1.health = 1325000
 W.Fire("UNIT_HEALTH", "nameplate1")
 check(Text.Short(850) == "850" and Text.Short(1250) == "1.2k" and Text.Short(12999) == "12.9k" and Text.Short(1000) == "1k"
@@ -295,7 +303,7 @@ check(Text.Short(850) == "850" and Text.Short(1250) == "1.2k" and Text.Short(129
 check(Text.Percent(1, 1000) == 1 and Text.Percent(999, 1000) == 99 and Text.Percent(0, 10) == 0, "whole percent, 1 while any is left")
 units.nameplate1.name = Secret()
 W.Fire("UNIT_NAME_UPDATE", "nameplate1")
-check(dress.name._text == units.nameplate1.name and dress.room.name == 60, "a hidden name goes to the text as it is, in the room of the last")
+check(dress.name._text == units.nameplate1.name and dress.room.name == L(10), "a hidden name goes to the text as it is, in the room of the last")
 units.nameplate1.name = "Young Wolf"
 W.Fire("UNIT_NAME_UPDATE", "nameplate1")
 units.nameplate1.tapped = true
@@ -311,7 +319,7 @@ W.Fire("UNIT_FLAGS", "nameplate1")
 units.nameplate1.threat = { false, 0, 40 }
 W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
 check(dress.threat._text == "40%" and dress.threat._color[1] == Text.THREAT[0][1] and dress.glow._alpha == 0, "low threat: grey")
-check(X(dress.threat) == I + 12 + G and X(dress.name) == I + 12 + G + 24 + G, "on the list: the threat between the level and the name")
+check(X(dress.threat) == I + L(2) + G and X(dress.name) == I + L(2) + G + L(4) + G, "on the list: the threat between the level and the name")
 units.nameplate1.threat = { false, 1, 95 }
 W.Fire("UNIT_THREAT_SITUATION_UPDATE", "player")
 W.Wait(0)
@@ -329,7 +337,7 @@ check(type(dress.glow._alpha) == "table" and dress.glow._alpha.from == hidden an
     "a hidden answer: the glow takes it as it is, never compared, with the game's own alphas")
 units.nameplate1.threat = nil
 W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
-check(dress.threat._text == "" and dress.glow._alpha == 0 and dress.room.threat == nil and X(dress.name) == I + 12 + G,
+check(dress.threat._text == "" and dress.glow._alpha == 0 and dress.room.threat == nil and X(dress.name) == I + L(2) + G,
     "off its list: none, and no room for it")
 
 -- A quest: the sword and the count first in the line; done, gone.
@@ -337,7 +345,7 @@ units.nameplate1.quest = { { type = 17, leftText = "Wolves Across the Border" },
 W.Fire("QUEST_LOG_UPDATE")
 W.Wait(0)
 check(dress.quest:IsShown() and dress.quest._texture == Text.QUEST.kill and dress.count._text == "3/8"
-    and X(dress.quest) == I and X(dress.count) == I + Text.size + Text.NEAR and X(dress.level) == I + Text.size + Text.NEAR + 18 + G,
+    and X(dress.quest) == I and X(dress.count) == I + Text.size + Text.NEAR and X(dress.level) == I + Text.size + Text.NEAR + L(3) + G,
     "an objective to kill it: the sword and 3/8 before the level")
 units.nameplate1.quest[2] = { type = 8, leftText = "Wolf Pelt: 0/7" }
 W.Fire("UNIT_QUEST_LOG_CHANGED", "player")
@@ -406,7 +414,7 @@ check(friend.health._barColor[1] == 0.78 and friend.name._text == "Bran Stonehea
 units.nameplate2.gear = 32
 check(inspected[#inspected] == "nameplate2" and friend.room.gear == nil, "a player: inspected, nothing shown before the answer")
 W.Fire("INSPECT_READY", "Player-nameplate2")
-check(friend.gear._text == "i32" and X(friend.gear) == X(friend.level) + 12 + G and X(friend.name) == X(friend.gear) + 18 + G,
+check(friend.gear._text == "i32" and X(friend.gear) == X(friend.level) + L(2) + G and X(friend.name) == X(friend.gear) + L(3) + G,
     "the answer: i32 between the level and the name")
 Core.Set(ns.name, "gear", false)
 check(friend.room.gear == nil and friend.gear._text == "", "the setting off: none, no room")
